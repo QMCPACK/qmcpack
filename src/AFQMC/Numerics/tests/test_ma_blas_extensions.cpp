@@ -98,7 +98,7 @@ TEST_CASE("adotpby", "[Numerics][ma_blas_extensions]")
       b[i] = 0.1;
     }
     using ma::adotpby;
-    adotpby(alpha, a, b, beta, y.origin());
+    adotpby(alpha, a, b, beta, y.base());
     CHECK(y[0] == Approx(0.5 * a.size() * 0.01));
   }
   SECTION("complex")
@@ -116,7 +116,7 @@ TEST_CASE("adotpby", "[Numerics][ma_blas_extensions]")
       b[i] = ComplexType(0.1, -0.1);
     }
     using ma::adotpby;
-    adotpby(alpha, a, b, beta, y.origin());
+    adotpby(alpha, a, b, beta, y.base());
     copy_n(y.data(), y.size(), y_cpu.data());
     CHECK(std::real(y_cpu[0]) == Approx(a.size() * 0.01));
     CHECK(std::imag(y_cpu[0]) == Approx(0.00));
@@ -195,7 +195,7 @@ TEST_CASE("sum2D", "[Numerics][ma_blas_extensions]")
   std::vector<double> buffer(3 * 3);
   Tensor2D<double> y({3, 3}, alloc);
   create_data(buffer, 1.0);
-  copy_n(buffer.data(), buffer.size(), y.origin());
+  copy_n(buffer.data(), buffer.size(), y.base());
   using ma::sum;
   double res = sum(y);
   CHECK(res == Approx(36.0));
@@ -207,7 +207,7 @@ TEST_CASE("sum3D", "[Numerics][ma_blas_extensions]")
   std::vector<double> buffer(3 * 3 * 3);
   Tensor3D<double> y({3, 3, 3}, alloc);
   create_data(buffer, 1.0);
-  copy_n(buffer.data(), buffer.size(), y.origin());
+  copy_n(buffer.data(), buffer.size(), y.base());
   using ma::sum;
   double res = sum(y);
   CHECK(res == Approx(351.0));
@@ -219,7 +219,7 @@ TEST_CASE("sum4D", "[Numerics][ma_blas_extensions]")
   std::vector<double> buffer(3 * 3 * 3 * 3);
   Tensor4D<double> y({3, 3, 3, 3}, alloc);
   create_data(buffer, 1.0);
-  copy_n(buffer.data(), buffer.size(), y.origin());
+  copy_n(buffer.data(), buffer.size(), y.base());
   using ma::sum;
   double res = sum(y);
   CHECK(res == Approx(3240.0));
@@ -241,7 +241,7 @@ TEST_CASE("set_identity2D", "[Numerics][ma_blas_extensions]")
   Alloc<double> alloc{};
   std::vector<double> buffer(3 * 3);
   Tensor2D<double> y({3, 3}, alloc);
-  copy_n(buffer.data(), buffer.size(), y.origin());
+  copy_n(buffer.data(), buffer.size(), y.base());
   using ma::set_identity;
   set_identity(y);
   CHECK(y[0][0] == Approx(1.0));
@@ -254,7 +254,7 @@ TEST_CASE("set_identity3D", "[Numerics][ma_blas_extensions]")
   Alloc<double> alloc{};
   std::vector<double> buffer(3 * 3 * 3);
   Tensor3D<double> y({3, 3, 3}, alloc);
-  copy_n(buffer.data(), buffer.size(), y.origin());
+  copy_n(buffer.data(), buffer.size(), y.base());
   using ma::set_identity;
   set_identity(y);
   CHECK(y[0][0][0] == Approx(1.0));
@@ -267,7 +267,7 @@ TEST_CASE("fill2D", "[Numerics][ma_blas_extensions]")
   Alloc<double> alloc{};
   std::vector<double> buffer(2 * 2);
   Tensor2D<double> y({2, 2}, alloc);
-  copy_n(buffer.data(), buffer.size(), y.origin());
+  copy_n(buffer.data(), buffer.size(), y.base());
   using ma::fill;
   fill(y, 2.0);
   Tensor2D<double> ref = {{2.0, 2.0}, {2.0, 2.0}};

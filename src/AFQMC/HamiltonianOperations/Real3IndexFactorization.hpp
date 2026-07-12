@@ -136,10 +136,10 @@ public:
     CMatrix H1({NMO, NMO});
 
     // add sum_n vMF*Spvn, vMF has local contribution only!
-    boost::multi::array_ref<ComplexType, 1> H1D(H1.origin(), {NMO * NMO});
-    std::fill_n(H1D.origin(), H1D.num_elements(), ComplexType(0));
+    boost::multi::array_ref<ComplexType, 1> H1D(H1.base(), {NMO * NMO});
+    std::fill_n(H1D.base(), H1D.num_elements(), ComplexType(0));
     vHS(vMF, H1D);
-    TG.TG().all_reduce_in_place_n(H1D.origin(), H1D.num_elements(), std::plus<>());
+    TG.TG().all_reduce_in_place_n(H1D.base(), H1D.num_elements(), std::plus<>());
 
     // add hij + vn0 and symmetrize
     using ma::conj;
@@ -273,7 +273,7 @@ public:
       else
 #endif
       {
-        Klptr = to_address(SM_TMats.origin()) + cnt;
+        Klptr = to_address(SM_TMats.base()) + cnt;
         cnt += Knr * Knc;
       }
       if (TG.TG_local().root())
@@ -286,7 +286,7 @@ public:
     SpCMatrix_ref Kl(Klptr, {long(Knr), long(Knc)});
 
     for (int n = 0; n < nwalk; n++)
-      std::fill_n(E[n].origin(), 3, ComplexType(0.));
+      std::fill_n(E[n].base(), 3, ComplexType(0.));
 
 
     // one-body contribution
@@ -294,7 +294,7 @@ public:
     // not parallelized for now, since it would require customization of Wfn
     if (addH1)
     {
-      boost::multi::array_cref<ComplexType, 1> haj_ref(to_address(haj[nd].origin()),
+      boost::multi::array_cref<ComplexType, 1> haj_ref(to_address(haj[nd].base()),
                                                        iextensions<1u>{haj[nd].num_elements()});
       ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(E.extension(0), 0));
       for (int i = 0; i < nwalk; i++)
@@ -313,38 +313,38 @@ public:
         size_t cnt_(cnt);
         SPComplexType* ptr(nullptr);
 #if defined(MIXED_PRECISION)
-        ptr = to_address(SM_TMats.origin()) + cnt_;
+        ptr = to_address(SM_TMats.base()) + cnt_;
         cnt_ += nwalk * nel[ispin] * NMO;
         for (int n = 0; n < nwalk; ++n)
         {
           if (n % TG.TG_local().size() != TG.TG_local().rank())
             continue;
-          copy_n_cast(to_address(Gc[n].origin()) + is0, nel[ispin] * NMO, ptr + n * nel[ispin] * NMO);
+          copy_n_cast(to_address(Gc[n].base()) + is0, nel[ispin] * NMO, ptr + n * nel[ispin] * NMO);
         }
         TG.TG_local().barrier();
 #else
         if (nspin == 1)
         {
-          ptr = to_address(Gc.origin());
+          ptr = to_address(Gc.base());
         }
         else
         {
-          ptr = to_address(SM_TMats.origin()) + cnt_;
+          ptr = to_address(SM_TMats.base()) + cnt_;
           cnt_ += nwalk * nel[ispin] * NMO;
           for (int n = 0; n < nwalk; ++n)
           {
             if (n % TG.TG_local().size() != TG.TG_local().rank())
               continue;
-            std::copy_n(to_address(Gc[n].origin()) + is0, nel[ispin] * NMO, ptr + n * nel[ispin] * NMO);
+            std::copy_n(to_address(Gc[n].base()) + is0, nel[ispin] * NMO, ptr + n * nel[ispin] * NMO);
           }
           TG.TG_local().barrier();
         }
 #endif
 
         SpCMatrix_ref GF(ptr, {nwalk * nel[ispin], NMO});
-        SpCMatrix_ref Lan(to_address(Lank[nd * nspin + ispin].origin()), {nel[ispin] * local_nCV, NMO});
-        SpCMatrix_ref Twban(to_address(SM_TMats.origin()) + cnt_, {nwalk * nel[ispin], nel[ispin] * local_nCV});
-        SpC4Tensor_ref T4Dwban(Twban.origin(), {nwalk, nel[ispin], nel[ispin], local_nCV});
+        SpCMatrix_ref Lan(to_address(Lank[nd * nspin + ispin].base()), {nel[ispin] * local_nCV, NMO});
+        SpCMatrix_ref Twban(to_address(SM_TMats.base()) + cnt_, {nwalk * nel[ispin], nel[ispin] * local_nCV});
+        SpC4Tensor_ref T4Dwban(Twban.base(), {nwalk, nel[ispin], nel[ispin], local_nCV});
 
         long i0, iN;
         std::tie(i0, iN) =
@@ -432,8 +432,8 @@ public:
     using AType = typename std::decay<MatA>::type::element;
 
     using std::get;
-    boost::multi::array_ref<      BType, 2> v_(to_address(v.origin()), {get<0>(v.sizes()), 1});
-    boost::multi::array_ref<const AType, 2> X_(to_address(X.origin()), {get<0>(X.sizes()), 1});
+    boost::multi::array_ref<      BType, 2> v_(to_address(v.base()), {get<0>(v.sizes()), 1});
+    boost::multi::array_ref<const AType, 2> X_(to_address(X.base()), {get<0>(X.sizes()), 1});
     return vHS(X_, v_, a, c);
   }
 
@@ -464,29 +464,29 @@ public:
     // setup origin of Xsp and copy_n_cast if necessary
     if (std::is_same<XType, SPComplexType>::value)
     {
-      Xptr = reinterpret_cast<const_sp_pointer>(to_address(X.origin()));
+      Xptr = reinterpret_cast<const_sp_pointer>(to_address(X.base()));
     }
     else
     {
       long i0, iN;
       std::tie(i0, iN) =
           FairDivideBoundary(long(TG.TG_local().rank()), long(X.num_elements()), long(TG.TG_local().size()));
-      copy_n_cast(to_address(X.origin()) + i0, iN - i0, to_address(SM_TMats.origin()) + i0);
-      Xptr = to_address(SM_TMats.origin());
+      copy_n_cast(to_address(X.base()) + i0, iN - i0, to_address(SM_TMats.base()) + i0);
+      Xptr = to_address(SM_TMats.base());
     }
     // setup origin of vsp and copy_n_cast if necessary
     if (std::is_same<vType, SPComplexType>::value)
     {
-      vptr = reinterpret_cast<sp_pointer>(to_address(v.origin()));
+      vptr = reinterpret_cast<sp_pointer>(to_address(v.base()));
     }
     else
     {
       long i0, iN;
       std::tie(i0, iN) =
           FairDivideBoundary(long(TG.TG_local().rank()), long(v.num_elements()), long(TG.TG_local().size()));
-      vptr = to_address(SM_TMats.origin()) + Xmem;
+      vptr = to_address(SM_TMats.base()) + Xmem;
       if (std::abs(c) > 1e-12)
-        copy_n_cast(to_address(v.origin()) + i0, iN - i0, vptr + i0);
+        copy_n_cast(to_address(v.base()) + i0, iN - i0, vptr + i0);
     }
     // setup array references
     boost::multi::array_cref<SPComplexType const, 2> Xsp(Xptr, X.extensions());
@@ -498,7 +498,7 @@ public:
     using std::get;
     if (not std::is_same<vType, SPComplexType>::value)
     {
-      copy_n_cast(to_address(vsp[ik0].origin()), get<1>(vsp.sizes()) * (ikN - ik0), to_address(v[ik0].origin()));
+      copy_n_cast(to_address(vsp[ik0].base()), get<1>(vsp.sizes()) * (ikN - ik0), to_address(v[ik0].base()));
     }
     TG.TG_local().barrier();
   }
@@ -514,8 +514,8 @@ public:
 
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {get<0>(v.sizes()), 1});
-    boost::multi::array_cref<AType, 2> G_(to_address(G.origin()), {get<0>(G.sizes()), 1});
+    boost::multi::array_ref<BType, 2> v_(to_address(v.base()), {get<0>(v.sizes()), 1});
+    boost::multi::array_cref<AType, 2> G_(to_address(G.base()), {get<0>(G.sizes()), 1});
     return vbias(G_, v_, a, c, k);
   }
 
@@ -541,29 +541,29 @@ public:
     // setup origin of Gsp and copy_n_cast if necessary
     if (std::is_same<GType, SPComplexType>::value)
     {
-      Gptr = reinterpret_cast<const_sp_pointer>(to_address(G.origin()));
+      Gptr = reinterpret_cast<const_sp_pointer>(to_address(G.base()));
     }
     else
     {
       long i0, iN;
       std::tie(i0, iN) =
           FairDivideBoundary(long(TG.TG_local().rank()), long(G.num_elements()), long(TG.TG_local().size()));
-      copy_n_cast(to_address(G.origin()) + i0, iN - i0, to_address(SM_TMats.origin()) + i0);
-      Gptr = to_address(SM_TMats.origin());
+      copy_n_cast(to_address(G.base()) + i0, iN - i0, to_address(SM_TMats.base()) + i0);
+      Gptr = to_address(SM_TMats.base());
     }
     // setup origin of vsp and copy_n_cast if necessary
     if (std::is_same<vType, SPComplexType>::value)
     {
-      vptr = reinterpret_cast<sp_pointer>(to_address(v.origin()));
+      vptr = reinterpret_cast<sp_pointer>(to_address(v.base()));
     }
     else
     {
       long i0, iN;
       std::tie(i0, iN) =
           FairDivideBoundary(long(TG.TG_local().rank()), long(v.num_elements()), long(TG.TG_local().size()));
-      vptr = to_address(SM_TMats.origin()) + Gmem;
+      vptr = to_address(SM_TMats.base()) + Gmem;
       if (std::abs(c) > 1e-12)
-        copy_n_cast(to_address(v.origin()) + i0, iN - i0, vptr + i0);
+        copy_n_cast(to_address(v.base()) + i0, iN - i0, vptr + i0);
     }
     // setup array references
     boost::multi::array_cref<SPComplexType const, 2> Gsp(Gptr, G.extensions());
@@ -602,7 +602,7 @@ public:
     using std::get;
     if (not std::is_same<vType, SPComplexType>::value)
     {
-      copy_n_cast(to_address(vsp[ic0].origin()), get<1>(vsp.sizes()) * (icN - ic0), to_address(v[ic0].origin()));
+      copy_n_cast(to_address(vsp[ic0].base()), get<1>(vsp.sizes()) * (icN - ic0), to_address(v[ic0].base()));
     }
     TG.TG_local().barrier();
   }

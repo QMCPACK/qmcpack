@@ -34,7 +34,7 @@ template<class MultiArray1DX,
 MultiArray1DY&& copy(MultiArray1DX&& x, MultiArray1DY&& y)
 {
   assert(x.num_elements() == y.num_elements());
-  copy(x.size(), pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride());
+  copy(x.size(), pointer_dispatch(x.base()), x.stride(), pointer_dispatch(y.base()), y.stride());
   return std::forward<MultiArray1DY>(y);
 }
 
@@ -54,11 +54,11 @@ MultiArray2DY&& copy(MultiArray2DX&& x, MultiArray2DY&& y)
   assert(get<1>(x.sizes()) == get<1>(y.sizes()));
   if ((x.stride() == get<1>(x.sizes())) && (y.stride() == get<1>(y.sizes())))
   {
-    copy(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
+    copy(x.num_elements(), pointer_dispatch(x.base()), 1, pointer_dispatch(y.base()), 1);
   }
   else
   {
-    copy2D(x.size(), get<1>(x.sizes()), pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride());
+    copy2D(x.size(), get<1>(x.sizes()), pointer_dispatch(x.base()), x.stride(), pointer_dispatch(y.base()), y.stride());
   }
   return std::forward<MultiArray2DY>(y);
 }
@@ -86,7 +86,7 @@ MultiArrayNDY&& copy(MultiArrayNDX&& x, MultiArrayNDY&& y)
   assert(get<std::decay<MultiArrayNDY>::type::dimensionality - 1>(y.strides()) == 1);
   assert(x.num_elements() == y.num_elements());
 #endif
-  copy(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
+  copy(x.num_elements(), pointer_dispatch(x.base()), 1, pointer_dispatch(y.base()), 1);
   return std::forward<MultiArrayNDY>(y);
 }
 
@@ -98,7 +98,7 @@ template<class MultiArray1Dx,
 typename std::decay<MultiArray1Dx>::type::element dot(MultiArray1Dx&& x, MultiArray1Dy&& y)
 {
   assert(x.size() == y.size());
-  return dot(x.size(), pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride());
+  return dot(x.size(), pointer_dispatch(x.base()), x.stride(), pointer_dispatch(y.base()), y.stride());
 }
 
 template<class MultiArray2Dx,
@@ -114,7 +114,7 @@ typename std::decay<MultiArray2Dx>::type::element dot(MultiArray2Dx&& x, MultiAr
   assert(y.stride() == get<1>(y.sizes())); // only on contiguous arrays
   assert(get<1>(y.strides()) == 1);         // only on contiguous arrays
   assert(x.num_elements() == y.num_elements());
-  return dot(x.num_elements(), pointer_dispatch(x.origin()), 1, pointer_dispatch(y.origin()), 1);
+  return dot(x.num_elements(), pointer_dispatch(x.base()), 1, pointer_dispatch(y.base()), 1);
 }
 
 template<class T,
@@ -122,7 +122,7 @@ template<class T,
          typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type>
 MultiArray1D&& scal(T a, MultiArray1D&& x)
 {
-  scal(x.size(), a, pointer_dispatch(x.origin()), x.stride());
+  scal(x.size(), a, pointer_dispatch(x.base()), x.stride());
   return std::forward<MultiArray1D>(x);
 }
 
@@ -141,7 +141,7 @@ MultiArrayND&& scal(T a, MultiArrayND&& x)
   using std::get;
   assert(get<std::decay<MultiArrayND>::type::dimensionality - 1>(x.strides()) == 1); // only on contiguous arrays
 #endif
-  scal(x.num_elements(), a, pointer_dispatch(x.origin()), 1);
+  scal(x.num_elements(), a, pointer_dispatch(x.base()), 1);
   return std::forward<MultiArrayND>(x);
 }
 /*
@@ -156,7 +156,7 @@ MultiArray3D scal(T a, MultiArray3D&& x){
         assert( get<0>(x.strides()) == get<1>(x.sizes())*get<2>(x.sizes()) ); // only on contiguous arrays 
         assert( get<1>(x.strides()) == get<2>(x.sizes()) ); // only on contiguous arrays 
         assert( get<2>(x.strides()) == 1 );            // only on contiguous arrays 
-        scal(x.num_elements(), a, pointer_dispatch(x.origin()), 1);
+        scal(x.num_elements(), a, pointer_dispatch(x.base()), 1);
         return std::forward<MultiArray3D>(x);
 }
 */
@@ -174,7 +174,7 @@ template<class T,
 MultiArray1DB&& axpy(T x, MultiArray1DA const& a, MultiArray1DB&& b)
 {
   assert(a.size() == b.size());
-  axpy(a.size(), x, pointer_dispatch(a.origin()), a.stride(), pointer_dispatch(b.origin()), b.stride());
+  axpy(a.size(), x, pointer_dispatch(a.base()), a.stride(), pointer_dispatch(b.base()), b.stride());
   return std::forward<MultiArray1DB>(b);
 }
 
@@ -193,7 +193,7 @@ MultiArray2DB&& axpy(T x, MultiArray2DA const& a, MultiArray2DB&& b)
   assert(get<1>(a.strides()) == 1);         // only on contiguous arrays
   assert(b.stride() == get<1>(b.sizes())); // only on contiguous arrays
   assert(get<1>(b.strides()) == 1);         // only on contiguous arrays
-  axpy(a.num_elements(), x, pointer_dispatch(a.origin()), 1, pointer_dispatch(b.origin()), 1);
+  axpy(a.num_elements(), x, pointer_dispatch(a.base()), 1, pointer_dispatch(b.base()), 1);
   return std::forward<MultiArray2DB>(b);
 }
 
@@ -216,8 +216,8 @@ MultiArray1DY&& gemv(T alpha, MultiArray2DA const& A, MultiArray1DX const& x, T 
   assert(get<1>(A.strides()) == 1); // gemv is not implemented for arrays with non-leading stride != 1
   int M = get<1>(A.sizes());
   int N = A.size();
-  gemv(IN, M, N, alpha, pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(x.origin()), x.stride(), beta,
-       pointer_dispatch(y.origin()), y.stride());
+  gemv(IN, M, N, alpha, pointer_dispatch(A.base()), A.stride(), pointer_dispatch(x.base()), x.stride(), beta,
+       pointer_dispatch(y.base()), y.stride());
   return std::forward<MultiArray1DY>(y);
 } //y := alpha*A*x + beta*y,
 
@@ -281,8 +281,8 @@ MultiArray2DC&& gemm(T alpha, MultiArray2DA const& a, MultiArray2DB const& b, T 
     K = a.size();
     assert(a.size() == b.size() and c.size() == get<1>(b.sizes()) and get<1>(c.sizes()) == get<1>(a.sizes()));
   }
-  gemm(TA, TB, M, N, K, alpha, pointer_dispatch(a.origin()), a.stride(), pointer_dispatch(b.origin()), b.stride(),
-       beta, pointer_dispatch(c.origin()), c.stride());
+  gemm(TA, TB, M, N, K, alpha, pointer_dispatch(const_cast<MultiArray2DA&>(a).base()), a.stride(),
+       pointer_dispatch(const_cast<MultiArray2DB&>(b).base()), b.stride(), beta, pointer_dispatch(c.base()), c.stride());
   return std::forward<MultiArray2DC>(c);
 }
 
@@ -340,8 +340,8 @@ MultiArray3DC&& gemmStridedBatched(T alpha, MultiArray3DA const& a, MultiArray3D
     assert(get<1>(a.sizes()) == get<1>(b.sizes()) and get<1>(c.sizes()) == get<2>(b.sizes()) and get<2>(c.sizes()) == get<2>(a.sizes()));
   }
   using std::get;
-  gemmStridedBatched(TA, TB, M, N, K, alpha, pointer_dispatch(a.origin()), get<1>(a.strides()), a.stride(),
-                     pointer_dispatch(b.origin()), get<1>(b.strides()), b.stride(), beta, pointer_dispatch(c.origin()),
+  gemmStridedBatched(TA, TB, M, N, K, alpha, pointer_dispatch(a.base()), get<1>(a.strides()), a.stride(),
+                     pointer_dispatch(b.base()), get<1>(b.strides()), b.stride(), beta, pointer_dispatch(c.base()),
                      get<1>(c.strides()), c.stride(), a.size());
   return std::forward<MultiArray3DC>(c);
 }
@@ -390,8 +390,8 @@ MultiArray2DC&& geam(T alpha, MultiArray2DA const& a, T beta, MultiArray2DB cons
     assert(a.size() == c.size() and get<1>(a.sizes()) == get<1>(c.sizes()));
     assert(get<1>(b.sizes()) == c.size() and b.size() == get<1>(c.sizes()));
   }
-  geam(TA, TB, get<1>(c.sizes()), c.size(), alpha, pointer_dispatch(a.origin()), a.stride(), beta,
-       pointer_dispatch(b.origin()), b.stride(), pointer_dispatch(c.origin()), c.stride());
+  geam(TA, TB, get<1>(c.sizes()), c.size(), alpha, pointer_dispatch(a.base()), a.stride(), beta,
+       pointer_dispatch(b.base()), b.stride(), pointer_dispatch(c.base()), c.stride());
   return std::forward<MultiArray2DC>(c);
 }
 
@@ -417,8 +417,8 @@ MultiArray2DC&& geam(T alpha, MultiArray2DA const& a, MultiArray2DC&& c)
     assert(get<1>(a.sizes()) == c.size() and a.size() == get<1>(c.sizes()));
   }
   using std::get;
-  geam(TA, TA, get<1>(c.sizes()), c.size(), alpha, pointer_dispatch(a.origin()), a.stride(), T(0),
-       pointer_dispatch(a.origin()), a.stride(), pointer_dispatch(c.origin()), c.stride());
+  geam(TA, TA, get<1>(c.sizes()), c.size(), alpha, pointer_dispatch(a.base()), a.stride(), T(0),
+       pointer_dispatch(a.base()), a.stride(), pointer_dispatch(c.base()), c.stride());
   return std::forward<MultiArray2DC>(c);
 }
 

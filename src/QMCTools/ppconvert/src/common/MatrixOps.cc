@@ -151,7 +151,7 @@ const Array<std::complex<double>,2> operator*(const Array<std::complex<double>,2
 //  colMajor.ordering() = blitz::firstDim, blitz::secondDim;
 //  Array<std::complex<double>,2> C(m,n,colMajor);
 	Array<std::complex<double>, 2> C({m, n}, std::complex<double>{});
-  F77_ZGEMM (&transA, &transB, &m, &n, &k, &alpha, A.data_elements(), &k, 
+  F77_ZGEMM (&transA, &transB, &m, &n, &k, &alpha, A.base(), &k,
            B.data(), &n, &beta, C.data(), &m);
   return C;
 }

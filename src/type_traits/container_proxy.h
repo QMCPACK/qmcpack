@@ -249,8 +249,8 @@ struct container_proxy<boost::multi::array<T,2,Alloc> >
   inline pointer data()
   {
     //using detail::to_address;
-    //return scalar_traits<T>::get_address(to_address(ref.origin()));
-    return scalar_traits<T>::get_address(std::addressof(*ref.origin()));
+    //return scalar_traits<T>::get_address(to_address(ref.base()));
+    return scalar_traits<T>::get_address(std::addressof(*ref.base()));
   }
   inline void resize(size_t n)
   {
@@ -279,8 +279,8 @@ struct container_proxy<boost::multi::array_ref<T,2> >
   inline pointer data()
   {
     //using detail::to_address;
-    //return scalar_traits<T>::get_address(to_address(ref.origin()));
-    return scalar_traits<T>::get_address(std::addressof(*ref.origin()));
+    //return scalar_traits<T>::get_address(to_address(ref.base()));
+    return scalar_traits<T>::get_address(std::addressof(*ref.base()));
   }
   inline void resize(size_t n)
   {

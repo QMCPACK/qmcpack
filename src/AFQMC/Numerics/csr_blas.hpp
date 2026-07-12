@@ -195,7 +195,7 @@ void Matrix2MA(char TA, CSR const& A, MultiArray2D& M)
   else
     throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
   using std::fill_n;
-  fill_n(M.origin(),M.num_elements(),Type(0));
+  fill_n(M.base(),M.num_elements(),Type(0));
   auto pbegin = A.pointers_begin();
   auto pend = A.pointers_end();
   int_type p0(pbegin[0]);
@@ -235,7 +235,7 @@ void Matrix2MAREF(char TA, CSR const& A, MultiArray2D& M)
   else if( (TA=='T' || TA=='H') && ( (M.size(0)!=A.size(1)) || (M.size(1)!=A.size(0)) ) )
     throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
   using std::fill_n;
-  fill_n(M.origin(),M.num_elements(),Type(0));
+  fill_n(M.base(),M.num_elements(),Type(0));
   auto pbegin = A.pointers_begin();
   auto pend = A.pointers_end();
   int_type p0(pbegin[0]);
@@ -284,7 +284,7 @@ void Matrix2MA(char TA, CSR const& A, MultiArray2D& M, Vector const& occups)
       M.reextent({A.size(1),nrows});
   } else
     throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
-  std::fill_n(M.origin(),M.num_elements(),Type(0));
+  std::fill_n(M.base(),M.num_elements(),Type(0));
   auto pbegin = A.pointers_begin();
   auto pend = A.pointers_end();
   auto p0 = pbegin[0];

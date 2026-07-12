@@ -33,7 +33,7 @@ int getrf_optimal_workspace_size(MultiArray2D&& A)
   assert(get<1>(A.strides()) == 1);
 
   int res;
-  getrf_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(), res);
+  getrf_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.base()), A.stride(), res);
   return res;
 }
 
@@ -46,7 +46,7 @@ MultiArray2D&& getrf(MultiArray2D&& m, Array1D& pivot, Buffer&& WORK)
   assert(pivot.size() >= std::min(get<1>(m.sizes()), get<0>(m.sizes()) + 1));
 
   int status = -1;
-  getrf(get<1>(m.sizes()), get<0>(m.sizes()), pointer_dispatch(m.origin()), m.stride(), pointer_dispatch(pivot.data()), status,
+  getrf(get<1>(m.sizes()), get<0>(m.sizes()), pointer_dispatch(m.base()), m.stride(), pointer_dispatch(pivot.data()), status,
         pointer_dispatch(WORK.data()));
   // assert(status==0);
   return std::forward<MultiArray2D>(m);
@@ -60,7 +60,7 @@ int getri_optimal_workspace_size(MultiArray2D&& A)
 
   assert(get<0>(A.sizes()) == get<1>(A.sizes()));
   int lwork = -1;
-  getri_bufferSize(A.size(), pointer_dispatch(A.origin()), A.stride(), lwork);
+  getri_bufferSize(A.size(), pointer_dispatch(A.base()), A.stride(), lwork);
   return lwork;
 }
 
@@ -74,7 +74,7 @@ MultiArray2D&& getri(MultiArray2D&& A, MultiArray1D const& IPIV, Buffer&& WORK)
   assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size())));
 
   int status = -1;
-  getri(A.size(), pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(IPIV.data()),
+  getri(A.size(), pointer_dispatch(A.base()), A.stride(), pointer_dispatch(IPIV.data()),
         pointer_dispatch(WORK.data()), WORK.size(), status);
   assert(status == 0);
   return std::forward<MultiArray2D>(A);
@@ -88,7 +88,7 @@ int geqrf_optimal_workspace_size(MultiArray2D&& A)
   assert(get<1>(A.strides()) == 1);
 
   int res;
-  geqrf_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(), res);
+  geqrf_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.base()), A.stride(), res);
   return res;
 }
 
@@ -104,7 +104,7 @@ MultiArray2D&& geqrf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
   assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size())));
 
   int status = -1;
-  geqrf(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(TAU.origin()),
+  geqrf(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.base()), A.stride(), pointer_dispatch(TAU.base()),
         pointer_dispatch(WORK.data()), WORK.size(), status);
   assert(status == 0);
   return std::forward<MultiArray2D>(A);
@@ -118,7 +118,7 @@ int gelqf_optimal_workspace_size(MultiArray2D&& A)
   assert(get<1>(A.strides()) == 1);
 
   int res;
-  gelqf_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(), res);
+  gelqf_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.base()), A.stride(), res);
   return res;
 }
 
@@ -134,7 +134,7 @@ MultiArray2D&& gelqf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
 
   using std::get;
   int status = -1;
-  gelqf(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(TAU.data()),
+  gelqf(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.base()), A.stride(), pointer_dispatch(TAU.data()),
         pointer_dispatch(WORK.data()), WORK.size(), status);
   assert(status == 0);
   return std::forward<MultiArray2D>(A);
@@ -150,7 +150,7 @@ int gqr_optimal_workspace_size(MultiArray2D&& A)
 
   int res;
   gqr_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))),
-                 pointer_dispatch(A.origin()), A.stride(), res);
+                 pointer_dispatch(A.base()), A.stride(), res);
   return res;
 }
 
@@ -165,7 +165,7 @@ MultiArray2D&& gqr(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
 
   int status = -1;
   gqr(get<1>(A.sizes()), get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))),
-      pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(TAU.origin()), pointer_dispatch(WORK.data()),
+      pointer_dispatch(A.base()), A.stride(), pointer_dispatch(TAU.base()), pointer_dispatch(WORK.data()),
       WORK.size(), status);
   assert(status == 0);
   return std::forward<MultiArray2D>(A);
@@ -180,7 +180,7 @@ int glq_optimal_workspace_size(MultiArray2D&& A)
 
   int res;
   glq_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))),
-                 pointer_dispatch(A.origin()), A.stride(), res);
+                 pointer_dispatch(A.base()), A.stride(), res);
   return res;
 }
 
@@ -196,7 +196,7 @@ MultiArray2D&& glq(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
 
   int status = -1;
   glq(get<1>(A.sizes()), get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(get<0>(A.sizes()), get<1>(A.sizes())))),
-      pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(TAU.data()), pointer_dispatch(WORK.data()),
+      pointer_dispatch(A.base()), A.stride(), pointer_dispatch(TAU.data()), pointer_dispatch(WORK.data()),
       WORK.size(), status);
   assert(status == 0);
   return std::forward<MultiArray2D>(A);
@@ -207,7 +207,7 @@ MultiArray2D&& potrf(MultiArray2D&& A)
 {
   assert(std::get<0>(A.sizes()) == std::get<1>(A.sizes()));
   int INFO;
-  potrf('U', A.size(), pointer_dispatch(A.origin()), A.stride(), INFO);
+  potrf('U', A.size(), pointer_dispatch(A.base()), A.stride(), INFO);
   if (INFO != 0)
     throw std::runtime_error(" error in ma::potrf: Error code != 0");
 }
@@ -220,7 +220,7 @@ int gesvd_optimal_workspace_size(MultiArray2D&& A)
   assert(get<1>(A.strides()) == 1);
 
   int res;
-  gesvd_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), res);
+  gesvd_bufferSize(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.base()), res);
   return res;
 }
 
@@ -243,10 +243,10 @@ MultiArray2D&& gesvd(char jobU,
   // in F: At = (U * S * VT)t = VTt * S * Ut
   // so I need to switch U <--> VT when calling fortran interface
   int status = -1;
-  gesvd(jobVT, jobU, get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(S.origin()),
-        pointer_dispatch(VT.origin()), VT.stride(), // !!!
-        pointer_dispatch(U.origin()), U.stride(),   // !!!
-        pointer_dispatch(WORK.data()), WORK.size(), pointer_dispatch(RWORK.origin()), status);
+  gesvd(jobVT, jobU, get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.base()), A.stride(), pointer_dispatch(S.base()),
+        pointer_dispatch(VT.base()), VT.stride(), // !!!
+        pointer_dispatch(U.base()), U.stride(),   // !!!
+        pointer_dispatch(WORK.data()), WORK.size(), pointer_dispatch(RWORK.base()), status);
   assert(status == 0);
   return std::forward<MultiArray2D>(A);
 }
@@ -293,8 +293,8 @@ std::pair<MultiArray1D, MultiArray2D> symEig(MultiArray2D const& A)
   int LIWORK = -1;
   int INFO;
 
-  hevr(JOBZ, RANGE, UPLO, N, pointer_dispatch(A_.origin()), LDA, VL, VU, IL, IU, ABSTOL, M,
-       pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, pointer_dispatch(ISUPPZ.data()),
+  hevr(JOBZ, RANGE, UPLO, N, pointer_dispatch(A_.base()), LDA, VL, VU, IL, IU, ABSTOL, M,
+       pointer_dispatch(eigVal.base()), pointer_dispatch(eigVec.base()), N, pointer_dispatch(ISUPPZ.data()),
        pointer_dispatch(WORK.data()), LWORK, pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()),
        LIWORK, INFO);
 
@@ -305,8 +305,8 @@ std::pair<MultiArray1D, MultiArray2D> symEig(MultiArray2D const& A)
   LIWORK = int(IWORK[0]);
   IWORK.resize(LIWORK);
 
-  hevr(JOBZ, RANGE, UPLO, N, pointer_dispatch(A_.origin()), LDA, VL, VU, IL, IU, ABSTOL, M,
-       pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, pointer_dispatch(ISUPPZ.data()),
+  hevr(JOBZ, RANGE, UPLO, N, pointer_dispatch(A_.base()), LDA, VL, VU, IL, IU, ABSTOL, M,
+       pointer_dispatch(eigVal.base()), pointer_dispatch(eigVec.base()), N, pointer_dispatch(ISUPPZ.data()),
        pointer_dispatch(WORK.data()), LWORK, pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()),
        LIWORK, INFO);
   if (INFO != 0)
@@ -372,8 +372,8 @@ std::pair<MultiArray1D, MultiArray2D> symEigSelect(MultiArray2DA& A, int neig)
   int LIWORK = -1;
   int INFO;
 
-  hevr(JOBZ, RANGE, UPLO, N, pointer_dispatch(A.origin()), LDA, VL, VU, IL, IU, ABSTOL, M,
-       pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, pointer_dispatch(ISUPPZ.data()),
+  hevr(JOBZ, RANGE, UPLO, N, pointer_dispatch(A.base()), LDA, VL, VU, IL, IU, ABSTOL, M,
+       pointer_dispatch(eigVal.base()), pointer_dispatch(eigVec.base()), N, pointer_dispatch(ISUPPZ.data()),
        pointer_dispatch(WORK.data()), LWORK, pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()),
        LIWORK, INFO);
 
@@ -384,8 +384,8 @@ std::pair<MultiArray1D, MultiArray2D> symEigSelect(MultiArray2DA& A, int neig)
   LIWORK = int(IWORK[0]);
   IWORK.resize(LIWORK);
 
-  hevr(JOBZ, RANGE, UPLO, N, pointer_dispatch(A.origin()), LDA, VL, VU, IL, IU, ABSTOL, M,
-       pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, pointer_dispatch(ISUPPZ.data()),
+  hevr(JOBZ, RANGE, UPLO, N, pointer_dispatch(A.base()), LDA, VL, VU, IL, IU, ABSTOL, M,
+       pointer_dispatch(eigVal.base()), pointer_dispatch(eigVec.base()), N, pointer_dispatch(ISUPPZ.data()),
        pointer_dispatch(WORK.data()), LWORK, pointer_dispatch(RWORK.data()), LRWORK, pointer_dispatch(IWORK.data()),
        LIWORK, INFO);
   if (INFO != 0)
@@ -456,15 +456,15 @@ std::pair<MultiArray1D, MultiArray2D> genEigSelect(MultiArray2DA& A, MultiArray2
   std::vector<int> IFAIL(N);
   int INFO;
 
-  gvx(itype, JOBZ, RANGE, UPLO, N, pointer_dispatch(A.origin()), LDA, pointer_dispatch(S.origin()), LDS, VL, VU, IL, IU,
-      ABSTOL, M, pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, pointer_dispatch(WORK.data()),
+  gvx(itype, JOBZ, RANGE, UPLO, N, pointer_dispatch(A.base()), LDA, pointer_dispatch(S.base()), LDS, VL, VU, IL, IU,
+      ABSTOL, M, pointer_dispatch(eigVal.base()), pointer_dispatch(eigVec.base()), N, pointer_dispatch(WORK.data()),
       LWORK, pointer_dispatch(RWORK.data()), pointer_dispatch(IWORK.data()), IFAIL.data(), INFO);
 
   LWORK = int(real(WORK[0]));
   WORK.resize(LWORK);
 
-  gvx(itype, JOBZ, RANGE, UPLO, N, pointer_dispatch(A.origin()), LDA, pointer_dispatch(S.origin()), LDS, VL, VU, IL, IU,
-      ABSTOL, M, pointer_dispatch(eigVal.origin()), pointer_dispatch(eigVec.origin()), N, pointer_dispatch(WORK.data()),
+  gvx(itype, JOBZ, RANGE, UPLO, N, pointer_dispatch(A.base()), LDA, pointer_dispatch(S.base()), LDS, VL, VU, IL, IU,
+      ABSTOL, M, pointer_dispatch(eigVal.base()), pointer_dispatch(eigVec.base()), N, pointer_dispatch(WORK.data()),
       LWORK, pointer_dispatch(RWORK.data()), pointer_dispatch(IWORK.data()), IFAIL.data(), INFO);
   if (INFO != 0)
     throw std::runtime_error(" error in ma::eig: Error code != 0");

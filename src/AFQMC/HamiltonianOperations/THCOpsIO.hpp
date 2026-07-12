@@ -157,7 +157,7 @@ inline THCOps loadTHCOps(hdf_archive& dump,
       app_error() << " Error in loadTHCOps: Problems reading dataset. \n";
       APP_ABORT("");
     }
-    copy_n_cast(H1_.origin(), NMO * NMO, to_address(H1.origin()));
+    copy_n_cast(H1_.base(), NMO * NMO, to_address(H1.base()));
     if (!dump.readEntry(vn0, "v0"))
     {
       app_error() << " Error in loadTHCOps: Problems reading dataset. \n";
@@ -264,7 +264,7 @@ inline THCOps loadTHCOps(hdf_archive& dump,
     {
       check_wavefunction_consistency(type, &PsiT[nd], &PsiT[nd + skp], NMO, NAEA, NAEB);
       auto hij_(rotateHij(type, &PsiT[nd], &PsiT[nd + skp], H1));
-      std::copy_n(hij_.origin(), hij_.num_elements(), to_address(hij[n].origin()));
+      std::copy_n(hij_.base(), hij_.num_elements(), to_address(hij[n].base()));
     }
   }
   TGwfn.Node().barrier();

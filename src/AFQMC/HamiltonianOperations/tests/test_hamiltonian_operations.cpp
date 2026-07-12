@@ -191,7 +191,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
         nr = 1;
         nc = NEL * NPOL * NMO;
       }
-      boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.origin()), {nr, nc});
+      boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.base()), {nr, nc});
       HOps.energy(Eloc, Gw, 0, TG.getCoreID() == 0);
     }
     Eloc[0][0] = (TG.Node() += ComplexType(Eloc[0][0]));
@@ -227,7 +227,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
         nr = 1;
         nc = NEL * NPOL * NMO;
       }
-      boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.origin()), {nr, nc});
+      boost::multi::array_ref<ComplexType, 2, pointer> Gw(make_device_ptr(G.base()), {nr, nc});
       HOps.vbias(Gw, X, sqrtdt);
     }
     TG.local_barrier();
@@ -327,21 +327,21 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
         }
       }
     }
-    boost::multi::array_ref<ComplexType, 2, pointer> Gw2_(make_device_ptr(Gw2.origin()), {nwalk, dm_size});
+    boost::multi::array_ref<ComplexType, 2, pointer> Gw2_(make_device_ptr(Gw2.base()), {nwalk, dm_size});
     boost::multi::array<ComplexType, 3, Alloc> GFock({2, nwalk, dm_size}, alloc_);
-    fill_n(GFock.origin(), GFock.num_elements(), ComplexType(0.0));
+    fill_n(GFock.base(), GFock.num_elements(), ComplexType(0.0));
     //for(int i = 0; i < nwalk; i++) {
     //std::cout << Gw2_[i][0] << std::endl;
     //}
     //std::cout << "INIT: " << Gw2_[0][0] << " " << Gw2_[0][NMO*NMO] << std::endl;
     HOps.generalizedFockMatrix(Gw2_, GFock[0], GFock[1]);
-    //boost::multi::array_ref<ComplexType,2,pointer> GR(make_device_ptr(GFock[0][0].origin()), {NMO,NMO});
+    //boost::multi::array_ref<ComplexType,2,pointer> GR(make_device_ptr(GFock[0][0].base()), {NMO,NMO});
     //for(int i = 0; i < nwalk; i++) {
     //std::cout << GFock[0][i][0] << std::endl;
     //}
     //std::cout << "GFOCK: " << GFock[0][0][0] << " " << GFock[1][0][0] << std::endl;
     //std::cout << "Fm: " << std::endl;
-    std::fill_n(Mat.origin(), Mat.num_elements(), 0.0);
+    std::fill_n(Mat.base(), Mat.num_elements(), 0.0);
     ref.readEntry(Mat, "Fha");
     for (int i = 0; i < NMO; i++)
     {
@@ -356,7 +356,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
       }
     }
     //std::cout << "Fp: " << std::endl;
-    std::fill_n(Mat.origin(), Mat.num_elements(), 0.0);
+    std::fill_n(Mat.base(), Mat.num_elements(), 0.0);
     ref.readEntry(Mat, "Fpa");
     for (int i = 0; i < NMO; i++)
     {

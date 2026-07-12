@@ -36,7 +36,7 @@ public:
 
   template<class ma>
   walker(ma&& a, const wlk_indices& i_, const wlk_descriptor& d_)
-      : w_(a.origin(), iextensions<1u>{a.size()}), indx(i_), desc(d_)
+      : w_(a.base(), iextensions<1u>{a.size()}), indx(i_), desc(d_)
   {
     static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
   }
@@ -44,9 +44,9 @@ public:
   ~walker() {}
 
   /*
-      walker(walker&& other): w_(other.w_.origin(), iextensions<1u>{other.w_.size()}), 
+      walker(walker&& other): w_(other.w_.base(), iextensions<1u>{other.w_.size()}),
                               indx(other.indx),desc(other.desc)  {} 
-      walker(walker const& other): w_(other.w_.origin(),iextensions<1u>{other.w_.size()}), 
+      walker(walker const& other): w_(other.w_.base(),iextensions<1u>{other.w_.size()}),
                               indx(other.indx),desc(other.desc)  {} 
 */
   // no copy/move assignment
@@ -55,7 +55,7 @@ public:
   walker& operator=(walker&& other) = delete;
   walker& operator=(walker const& other) = delete;
 
-  pointer base() { return (*w_).origin(); }
+  pointer base() { return (*w_).base(); }
   int size() const { return (*w_).size(0); }
   SMType SlaterMatrix(SpinTypes s)
   {
@@ -106,7 +106,7 @@ private:
   const wlk_indices& indx;
   const wlk_descriptor& desc;
 
-  pointer getw_(int P) const { return (*w_).origin() + indx[P]; }
+  pointer getw_(int P) const { return (*w_).base() + indx[P]; }
 };
 
 template<class Ptr>
@@ -117,7 +117,7 @@ struct walker_iterator
 public:
   template<class WBuff>
   walker_iterator(int k, WBuff&& w_, const wlk_indices& i_, const wlk_descriptor& d_)
-      : pos(k), W(w_.origin(), w_.extensions()), indx(&i_), desc(&d_)
+      : pos(k), W(w_.base(), w_.extensions()), indx(&i_), desc(&d_)
   {}
 
   using pointer         = Ptr;
@@ -128,11 +128,11 @@ public:
 
   /*
     walker_iterator(walker_iterator const& it):
-        pos(it.pos),W(it.W.origin(),it.W.extensions()),indx(it.indx),desc(it.desc)
+        pos(it.pos),W(it.W.base(),it.W.extensions()),indx(it.indx),desc(it.desc)
     {}
 
     walker_iterator(walker_iterator && it):
-        pos(it.pos),W(it.W.origin(),it.W.extensions()),indx(it.indx),desc(it.desc)
+        pos(it.pos),W(it.W.base(),it.W.extensions()),indx(it.indx),desc(it.desc)
     {}
 */
 

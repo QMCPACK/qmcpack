@@ -521,8 +521,8 @@ public:
           auto c(abij.configuration(i));
           abij.get_configuration(0, std::get<0>(*c), Ac);
           abij.get_configuration(1, std::get<1>(*c), Bc);
-          boost::multi::array_ref<ComplexType, 2> A_(to_address(RefOrbMats[i].origin()), {NMO, NAEA});
-          boost::multi::array_ref<ComplexType, 2> B_(A_.origin() + A_.num_elements(), {NMO, NAEB});
+          boost::multi::array_ref<ComplexType, 2> A_(to_address(RefOrbMats[i].base()), {NMO, NAEA});
+          boost::multi::array_ref<ComplexType, 2> B_(A_.base() + A_.num_elements(), {NMO, NAEB});
           for (int i = 0, ia = 0; i < NMO; ++i)
             for (int a = 0; a < NAEA; ++a, ia++)
               A_[i][a] = OA_[i][Ac[a]];
@@ -552,7 +552,7 @@ public:
     int n0, n1;
     std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(get<1>(A.sizes())), TG.getNCoresPerTG());
     for (int i = 0; i < ndet; i++)
-      copy_n(RefOrbMats_[i].origin() + n0, n1 - n0, A_[i].origin() + n0);
+      copy_n(RefOrbMats_[i].base() + n0, n1 - n0, A_[i].base() + n0);
     TG.TG_local().barrier();
   }
 

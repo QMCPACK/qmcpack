@@ -50,11 +50,11 @@ void KaKjw_to_KKwaj(int nwalk,
     for (int Kj = 0; Kj < nkpts; Kj++)
     {
       int nj = nopk[Kj];
-      //auto G_(to_address(GKK[0][Ka][Kj].origin()));
+      //auto G_(to_address(GKK[0][Ka][Kj].base()));
       auto G_(B + (Ka * nkpts + Kj) * nwalk * nocc_max * npol * nmo_max);
       for (int a = 0; a < na; a++)
       {
-        //auto Gc_( to_address(Gca[na0+a][p][nj0].origin()) );
+        //auto Gc_( to_address(Gca[na0+a][p][nj0].base()) );
         int apj = a * npol * nmo_max;
         for (int p = 0; p < npol; p++)
         {
@@ -98,13 +98,13 @@ void KaKjw_to_QKajw(int nwalk,
       int nj  = nmo[Kj];
       int na0 = nocc0[Ka];
       int nj0 = nmo0[Kj];
-      //auto G_(to_address(GKK[Q][K].origin()));
+      //auto G_(to_address(GKK[Q][K].base()));
       auto G_(B + (Q * nkpts + K) * nwalk * nocc_max * npol * nmo_max);
       for (int a = 0, a0 = 0; a < na; a++)
       {
         for (int p = 0; p < npol; p++, a0 += nmo_max * nwalk)
         {
-          //auto Gc_( to_address(Gca[na0+a][p][nj0].origin()) );
+          //auto Gc_( to_address(Gca[na0+a][p][nj0].base()) );
           auto Gc_(A + ((na0 + a) * npol + p) * nmo_tot * nwalk + nj0 * nwalk);
           for (int j = 0, apj = a0; j < nj; j++, apj += nwalk)
           {

@@ -107,7 +107,7 @@ public:
     writer = (TG.getGlobalRank() == 0);
 
     DMAverage = mpi3CTensor({2, nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
   template<class MatG, class MatG_host, class HostCVec1, class HostCVec2, class HostCVec3>
@@ -145,8 +145,8 @@ public:
       {
         DMWork = mpi3CTensor({3, nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
-      fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(denom.base(), denom.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(DMWork.base(), DMWork.num_elements(), ComplexType(0.0, 0.0));
     }
     else
     {
@@ -170,7 +170,7 @@ public:
     {
       for (int iw = 0; iw < nw; iw++)
       {
-        copy_n(make_device_ptr(gFock[ic][iw].origin()) + i0, (iN - i0), to_address(DMWork[2][iw].origin()) + i0);
+        copy_n(make_device_ptr(gFock[ic][iw].base()) + i0, (iN - i0), to_address(DMWork[2][iw].base()) + i0);
         ma::axpy(Xw[iw], DMWork[2][iw].sliced(i0, iN), DMWork[ic][iw].sliced(i0, iN));
       }
     }
@@ -206,7 +206,7 @@ public:
     if (TG.TG_local().root())
     {
       ma::scal(ComplexType(1.0 / block_size), DMAverage);
-      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.origin()), DMAverage.num_elements(), std::plus<>(), 0);
+      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.base()), DMAverage.num_elements(), std::plus<>(), 0);
       if (writer)
       {
         dump.push(std::string("GenFockPlus"));
@@ -215,7 +215,7 @@ public:
           dump.push(std::string("Average_") + std::to_string(i));
           std::string padded_iblock =
               std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-          stdCVector_ref DMAverage_(to_address(DMAverage[0][i].origin()), {dm_size});
+          stdCVector_ref DMAverage_(to_address(DMAverage[0][i].base()), {dm_size});
           dump.write(DMAverage_, "gfockp_" + padded_iblock);
           dump.write(Wsum[i], "denominator_" + padded_iblock);
           dump.pop();
@@ -227,7 +227,7 @@ public:
           dump.push(std::string("Average_") + std::to_string(i));
           std::string padded_iblock =
               std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-          stdCVector_ref DMAverage_(to_address(DMAverage[1][i].origin()), {dm_size});
+          stdCVector_ref DMAverage_(to_address(DMAverage[1][i].base()), {dm_size});
           dump.write(DMAverage_, "gfockm_" + padded_iblock);
           dump.write(Wsum[i], "denominator_" + padded_iblock);
           dump.pop();
@@ -236,7 +236,7 @@ public:
       }
     }
     TG.TG_local().barrier();
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
 private:

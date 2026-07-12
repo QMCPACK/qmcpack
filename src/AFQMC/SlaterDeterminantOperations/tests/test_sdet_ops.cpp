@@ -320,8 +320,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(iextensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node});  
 
-  array_ref G(to_address(SMbuff.origin()),{NMO,NMO});
-  array_ref Gc(to_address(SMbuff.origin())+NMO*NMO,{NEL,NMO});
+  array_ref G(to_address(SMbuff.base()),{NMO,NMO});
+  array_ref Gc(to_address(SMbuff.base())+NMO*NMO,{NEL,NMO});
 
   ov_=SDet.MixedDensityMatrix(A,B,G,node,false); check(G,g_ref);
   ov_=SDet.MixedDensityMatrix(Aref,B,G,node,false); check(G,g_ref);
@@ -362,8 +362,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node_});
 
-  array_ref G2(to_address(SMbuff2.origin()),{NMO,NMO});
-  array_ref Gc2(to_address(SMbuff2.origin())+NMO*NMO,{NEL,NMO});
+  array_ref G2(to_address(SMbuff2.base()),{NMO,NMO});
+  array_ref Gc2(to_address(SMbuff2.base())+NMO*NMO,{NEL,NMO});
 
   // switch comm
   ov_=SDet.MixedDensityMatrix(A,B,G2,node_,false); check(G2,g_ref);
@@ -407,12 +407,12 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
                 0.60000 + 0.90000i, 1.10000 + 0.50000i, 0.30000 + 0.60000i, 0.90000 + 0.70000i};
 
   array A({NEL, NMO}, alloc);
-  copy_n(m_a.data(), m_a.size(), A.origin());
+  copy_n(m_a.data(), m_a.size(), A.base());
   array B({NMO, NEL}, alloc);
-  copy_n(m_b.data(), m_b.size(), B.origin());
+  copy_n(m_b.data(), m_b.size(), B.base());
 
-  array_ref Aref(A.origin(), {NEL, NMO});
-  array_ref Bref(B.origin(), {NMO, NEL});
+  array_ref Aref(A.base(), {NEL, NMO});
+  array_ref Bref(B.base(), {NMO, NEL});
 
   SlaterDetOperations SDet(SlaterDetOperations_serial<Type, BufferManager>(NMO, NEL, b));
 
@@ -751,8 +751,8 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff(iextensions<1u>{NMO * (NMO + NEL)},
                                                               shared_allocator<Type>{node});
 
-  array_ref G(to_address(SMbuff.origin()), {NMO, NMO});
-  array_ref Gc(to_address(SMbuff.origin()) + NMO * NMO, {NEL, NMO});
+  array_ref G(to_address(SMbuff.base()), {NMO, NMO});
+  array_ref Gc(to_address(SMbuff.base()) + NMO * NMO, {NEL, NMO});
 
   ov_ = SDet.MixedDensityMatrix(A, B, G, 0.0, node, false);
   check(G, g_ref);
@@ -789,8 +789,8 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO * (NMO + NEL)},
                                                                shared_allocator<Type>{node_});
 
-  array_ref G2(to_address(SMbuff2.origin()), {NMO, NMO});
-  array_ref Gc2(to_address(SMbuff2.origin()) + NMO * NMO, {NEL, NMO});
+  array_ref G2(to_address(SMbuff2.base()), {NMO, NMO});
+  array_ref Gc2(to_address(SMbuff2.base()) + NMO * NMO, {NEL, NMO});
 
   // switch comm
   ov_ = SDet.MixedDensityMatrix(A, B, G2, 0.0, node_, false);
@@ -921,8 +921,8 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff(iextensions<1u>{NMO * (NMO + NEL)},
                                                               shared_allocator<Type>{node});
 
-  array_ref G(to_address(SMbuff.origin()), {NMO, NMO});
-  array_ref Gc(to_address(SMbuff.origin()) + NMO * NMO, {NEL, NMO});
+  array_ref G(to_address(SMbuff.base()), {NMO, NMO});
+  array_ref Gc(to_address(SMbuff.base()) + NMO * NMO, {NEL, NMO});
 
   ov_ = SDet.MixedDensityMatrix(Acsr, B, G, 0.0, node, false);
   check(G, g_ref);
@@ -947,8 +947,8 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO * (NMO + NEL)},
                                                                shared_allocator<Type>{node_});
 
-  array_ref G2(to_address(SMbuff2.origin()), {NMO, NMO});
-  array_ref Gc2(to_address(SMbuff2.origin()) + NMO * NMO, {NEL, NMO});
+  array_ref G2(to_address(SMbuff2.base()), {NMO, NMO});
+  array_ref Gc2(to_address(SMbuff2.base()) + NMO * NMO, {NEL, NMO});
 
   // switch comm
 

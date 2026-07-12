@@ -262,7 +262,7 @@ public:
         while (pos < n)
         {
           using std::fill_n;
-          fill_n(W[pos].origin(), W[pos].size(), ComplexType(0, 0));
+          fill_n(W[pos].base(), W[pos].size(), ComplexType(0, 0));
           reference w0(W[pos], data_displ, wlk_desc);
           //w0.SlaterMatrix(Alpha) = A;
           auto&& SM_(*w0.SlaterMatrix(Alpha));
@@ -338,7 +338,7 @@ public:
     {
       bp_buffer.reextent({bp_walker_size, get<0>(walker_buffer.sizes())});
       using std::fill_n;
-      fill_n(bp_buffer.origin() + data_displ[WEIGHT_FAC] * get<1>(bp_buffer.sizes()),
+      fill_n(bp_buffer.base() + data_displ[WEIGHT_FAC] * get<1>(bp_buffer.sizes()),
              wlk_desc[6] * get<1>(bp_buffer.sizes()), bp_element(1.0));
     }
     if (nbp > 0 && (data_displ[SMN] < 0 || data_displ[SM_AUX] < 0))
@@ -545,9 +545,9 @@ public:
         //walker_buffer[pos][data_displ[WEIGHT]] = ComplexType(itbegin->first,0.0);
         // need synthetic references to make this easier!!!
         using std::fill_n;
-        fill_n(W[pos].origin() + data_displ[WEIGHT], 1, ComplexType(itbegin->first, 0.0));
+        fill_n(W[pos].base() + data_displ[WEIGHT], 1, ComplexType(itbegin->first, 0.0));
         if (wlk_desc[6] > 0 && his_pos >= 0 && his_pos < wlk_desc[6])
-          fill_n(BPW[data_displ[WEIGHT_HISTORY] + his_pos].origin() + pos, 1, ComplexType(itbegin->first, 0.0));
+          fill_n(BPW[data_displ[WEIGHT_HISTORY] + his_pos].base() + pos, 1, ComplexType(itbegin->first, 0.0));
       }
       else
       {
@@ -557,9 +557,9 @@ public:
         //walker_buffer[pos][data_displ[WEIGHT]] = ComplexType(itbegin->first,0.0);
         // need synthetic references to make this easier!!!
         using std::fill_n;
-        fill_n(W[pos].origin() + data_displ[WEIGHT], 1, ComplexType(itbegin->first, 0.0));
+        fill_n(W[pos].base() + data_displ[WEIGHT], 1, ComplexType(itbegin->first, 0.0));
         if (wlk_desc[6] > 0 && his_pos >= 0 && his_pos < wlk_desc[6])
-          fill_n(BPW[data_displ[WEIGHT_HISTORY] + his_pos].origin() + pos, 1, ComplexType(itbegin->first, 0.0));
+          fill_n(BPW[data_displ[WEIGHT_HISTORY] + his_pos].base() + pos, 1, ComplexType(itbegin->first, 0.0));
         for (int i = 0; i < n; i++)
         {
           W[tot_num_walkers] = W[pos];
@@ -643,7 +643,7 @@ public:
     assert(get<1>(walker_buffer.sizes()) == walker_size);
     auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
     using std::copy_n;
-    copy_n(W[n].origin(), walkerSizeIO(), x.origin());
+    copy_n(W[n].base(), walkerSizeIO(), x.base());
   }
 
   template<class Vec>
@@ -655,7 +655,7 @@ public:
     assert(get<1>(walker_buffer.sizes()) == walker_size);
     auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
     using std::copy_n;
-    copy_n(x.origin(), walkerSizeIO(), W[n].origin());
+    copy_n(x.base(), walkerSizeIO(), W[n].base());
   }
 
   template<class TVec>
@@ -696,12 +696,12 @@ public:
       APP_ABORT(" Error: index out of bounds in getFields. \n");
 
     int skip = (data_displ[FIELDS] + ip * wlk_desc[4]) * get<1>(bp_buffer.sizes());
-    return stdCMatrix_ptr(to_address(bp_buffer.origin()) + skip, {wlk_desc[4], get<1>(bp_buffer.sizes())});
+    return stdCMatrix_ptr(to_address(bp_buffer.base()) + skip, {wlk_desc[4], get<1>(bp_buffer.sizes())});
   }
 
   stdCTensor_ptr getFields()
   {
-    return stdCTensor_ptr(to_address(bp_buffer.origin()) + data_displ[FIELDS] * get<1>(bp_buffer.sizes()),
+    return stdCTensor_ptr(to_address(bp_buffer.base()) + data_displ[FIELDS] * get<1>(bp_buffer.sizes()),
                           {wlk_desc[3], wlk_desc[4], get<1>(bp_buffer.sizes())});
   }
 
@@ -713,7 +713,7 @@ public:
     if (V.stride() == get<1>(V.sizes()))
     {
       using std::copy_n;
-      copy_n(V.origin(), F.num_elements(), F.origin());
+      copy_n(V.base(), F.num_elements(), F.base());
     }
     else
       F = V;
@@ -721,13 +721,13 @@ public:
 
   stdCMatrix_ptr getWeightFactors()
   {
-    return stdCMatrix_ptr(to_address(bp_buffer.origin()) + data_displ[WEIGHT_FAC] * get<1>(bp_buffer.sizes()),
+    return stdCMatrix_ptr(to_address(bp_buffer.base()) + data_displ[WEIGHT_FAC] * get<1>(bp_buffer.sizes()),
                           {wlk_desc[6], get<1>(bp_buffer.sizes())});
   }
 
   stdCMatrix_ptr getWeightHistory()
   {
-    return stdCMatrix_ptr(to_address(bp_buffer.origin()) + data_displ[WEIGHT_HISTORY] * get<1>(bp_buffer.sizes()),
+    return stdCMatrix_ptr(to_address(bp_buffer.base()) + data_displ[WEIGHT_HISTORY] * get<1>(bp_buffer.sizes()),
                           {wlk_desc[6], get<1>(bp_buffer.sizes())});
   }
 

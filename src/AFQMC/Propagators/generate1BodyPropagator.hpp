@@ -53,11 +53,11 @@ P_Type generate1BodyPropagator(TaskGroup_& TG,
   if (TG.TG_local().root())
   {
     boost::multi::array<ComplexType, 2> v({NMO, NMO});
-    fill_n(v.origin(), v.num_elements(), ComplexType(0));
+    fill_n(v.base(), v.num_elements(), ComplexType(0));
 
     // running on host regardless
     boost::multi::array<ComplexType, 2> h1_(H1.extensions());
-    std::copy_n(to_address(H1.origin()), H1.num_elements(), h1_.origin());
+    std::copy_n(to_address(H1.base()), H1.num_elements(), h1_.base());
 
     for (int i = 0; i < NMO; i++)
       ma::axpy(-0.5 * dt, h1_[i], v[i]);
@@ -96,13 +96,13 @@ P_Type generate1BodyPropagator(TaskGroup_& TG,
   if (TG.TG_local().root())
   {
     //      boost::multi::array<ComplexType,2> v({NMO,NMO});
-    //      fill_n(v.origin(),v.num_elements(),ComplexType(0));
+    //      fill_n(v.base(),v.num_elements(),ComplexType(0));
 
     // running on host regardless
     boost::multi::array<ComplexType, 2> h1_(H1);
     //boost::multi::array<ComplexType,2> h1ext_(H1ext);
     boost::multi::array<ComplexType, 2> h1ext_({NMO, NMO});
-    //copy_n(H1ext.origin(),NMO*NMO,h1ext_.origin());
+    //copy_n(H1ext.base(),NMO*NMO,h1ext_.base());
     h1ext_ = H1ext;
 
 

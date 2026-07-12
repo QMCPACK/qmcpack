@@ -357,7 +357,7 @@ void read_general_wavefunction(std::ifstream& in,
           /*
           boost::multi::array<ComplexType,2> Mat({2*NMO,NAEA+NAEB});
           if(comm.rank()==0) {
-            std::fill_n(Mat.origin(),2*NMO*(NAEA+NAEB),ComplexType(0.0));
+            std::fill_n(Mat.base(),2*NMO*(NAEA+NAEB),ComplexType(0.0));
             Mat({0,NMO},{0,NAEA}) = OrbMat;
             Mat({NMO,2*NMO},{NAEA,NAEA+NAEB}) = OrbMat({0,NMO},{0,NAEB});
           }  

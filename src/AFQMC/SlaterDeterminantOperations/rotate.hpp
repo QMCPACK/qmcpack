@@ -132,7 +132,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
           continue;
         if (cnt >= ak1)
           break;
-        std::fill_n(vec.origin(), vec.size(), SPComplexType(0, 0));
+        std::fill_n(vec.base(), vec.size(), SPComplexType(0, 0));
         auto Aa = (*Alpha)[a];
         for (int ip = 0; ip < Aa.num_non_zero_elements(); ++ip)
         {
@@ -170,7 +170,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
             continue;
           if (cnt >= ak1)
             break;
-          std::fill_n(vec.origin(), vec.size(), SPComplexType(0, 0));
+          std::fill_n(vec.base(), vec.size(), SPComplexType(0, 0));
           auto Aa = (*Beta)[a];
           for (int ip = 0; ip < Aa.num_non_zero_elements(); ++ip)
           {
@@ -210,7 +210,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
         continue;
       if (cnt >= ak1)
         break;
-      std::fill_n(vec.origin(), vec.size(), SPComplexType(0, 0));
+      std::fill_n(vec.base(), vec.size(), SPComplexType(0, 0));
       auto Aa = (*Alpha)[a];
       for (int ip = 0; ip < Aa.num_non_zero_elements(); ++ip)
       {
@@ -248,7 +248,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
           continue;
         if (cnt >= ak1)
           break;
-        std::fill_n(vec.origin(), vec.size(), SPComplexType(0, 0));
+        std::fill_n(vec.base(), vec.size(), SPComplexType(0, 0));
         auto Aa = (*Beta)[a];
         for (int ip = 0; ip < Aa.num_non_zero_elements(); ++ip)
         {
@@ -334,7 +334,7 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type,
         continue;
       if (cnt >= ak1)
         break;
-      std::fill_n(vec.origin(), vec.size(), SPComplexType(0, 0));
+      std::fill_n(vec.base(), vec.size(), SPComplexType(0, 0));
       auto Aa = (*Alpha)[a];
       for (int ip = 0; ip < Aa.num_non_zero_elements(); ++ip)
       {
@@ -361,7 +361,7 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type,
           continue;
         if (cnt >= ak1)
           break;
-        std::fill_n(vec.origin(), vec.size(), SPComplexType(0, 0));
+        std::fill_n(vec.base(), vec.size(), SPComplexType(0, 0));
         auto Aa = (*Beta)[a];
         for (int ip = 0; ip < Aa.num_non_zero_elements(); ++ip)
         {
@@ -392,7 +392,7 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type,
         continue;
       if (cnt >= ak1)
         break;
-      std::fill_n(vec.origin(), vec.size(), SPComplexType(0, 0));
+      std::fill_n(vec.base(), vec.size(), SPComplexType(0, 0));
       auto Aa = (*Alpha)[a];
       for (int ip = 0; ip < Aa.num_non_zero_elements(); ++ip)
       {
@@ -418,7 +418,7 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type,
           continue;
         if (cnt >= ak1)
           break;
-        std::fill_n(vec.origin(), vec.size(), SPComplexType(0, 0));
+        std::fill_n(vec.base(), vec.size(), SPComplexType(0, 0));
         auto Aa = (*Beta)[a];
         for (int ip = 0; ip < Aa.num_non_zero_elements(); ++ip)
         {
@@ -648,15 +648,15 @@ void getLank(MultiArray2DA&& Aai,
 
   using elementA = typename std::decay<MultiArray2DA>::type::element;
   using element  = typename std::decay<MultiArray3DC>::type::element;
-  boost::multi::array_ref<elementA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
-  boost::multi::array_ref<element, 2> Li_kn(to_address(Likn.origin()), {ni, nk * nchol});
-  boost::multi::array_ref<element, 2> Las_kn(to_address(Lank.origin()), {na * npol, nk * nchol});
+  boost::multi::array_ref<elementA, 2> Aas_i(to_address(Aai.base()), {na * npol, ni});
+  boost::multi::array_ref<element, 2> Li_kn(to_address(Likn.base()), {ni, nk * nchol});
+  boost::multi::array_ref<element, 2> Las_kn(to_address(Lank.base()), {na * npol, nk * nchol});
 
   ma::product(Aas_i, Li_kn, Las_kn);
   for (int a = 0; a < na; a++)
   {
-    boost::multi::array_ref<element, 2> Lskn(to_address(Lank[a].origin()), {npol * nk, nchol});
-    boost::multi::array_ref<element, 2> Lnsk(to_address(Lank[a].origin()), {nchol, npol * nk});
+    boost::multi::array_ref<element, 2> Lskn(to_address(Lank[a].base()), {npol * nk, nchol});
+    boost::multi::array_ref<element, 2> Lnsk(to_address(Lank[a].base()), {nchol, npol * nk});
     buff({0, npol * nk}, {0, nchol}) = Lskn;
     ma::transpose(buff({0, npol * nk}, {0, nchol}), Lnsk);
   }
@@ -696,8 +696,8 @@ void getLank_from_Lkin(MultiArray2DA&& Aai,
 
   using Type     = typename std::decay<MultiArray3DC>::type::element;
   using elementA = typename std::decay<MultiArray2DA>::type::element;
-  boost::multi::array_ref<elementA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
-  boost::multi::array_ref<Type, 2> bnas(to_address(buff.origin()), {nchol, na * npol});
+  boost::multi::array_ref<elementA, 2> Aas_i(to_address(Aai.base()), {na * npol, ni});
+  boost::multi::array_ref<Type, 2> bnas(to_address(buff.base()), {nchol, na * npol});
   // Lank[a][n][k] = sum_i Aai[a][i] conj(Lkin[k][i][n])
   // Lank[as][n][k] = sum_i Aai[as][i] conj(Lkin[k][i][n])
   for (int k = 0; k < nk; k++)
@@ -749,9 +749,9 @@ void getLakn_Lank(MultiArray2DA&& Aai,
   using elmB = typename std::decay<MultiArray3DB>::type::element;
   using elmC = typename std::decay<MultiArray3DC>::type::element;
 
-  boost::multi::array_ref<elmA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
-  boost::multi::array_ref<elmB, 2, decltype(Likn.origin())> Li_kn(Likn.origin(), {ni, nmo * nchol});
-  boost::multi::array_ref<elmC, 2, decltype(Lakn.origin())> Las_kn(Lakn.origin(), {na * npol, nmo * nchol});
+  boost::multi::array_ref<elmA, 2> Aas_i(to_address(Aai.base()), {na * npol, ni});
+  boost::multi::array_ref<elmB, 2, decltype(Likn.base())> Li_kn(Likn.base(), {ni, nmo * nchol});
+  boost::multi::array_ref<elmC, 2, decltype(Lakn.base())> Las_kn(Lakn.base(), {na * npol, nmo * nchol});
 
   ma::product(Aas_i, Li_kn, Las_kn);
   for (int a = 0; a < na; a++)
@@ -795,8 +795,8 @@ void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai,
   using elm2 = typename std::decay<MultiArray2D>::type::element;
   using elmA = typename std::decay<MultiArray2DA>::type::element;
 
-  boost::multi::array_ref<elmA, 2> Aas_i(to_address(Aai.origin()), {na * npol, ni});
-  boost::multi::array_ref<elm2, 2, ptr2> bnas(buff.origin(), {nchol, na * npol});
+  boost::multi::array_ref<elmA, 2> Aas_i(to_address(Aai.base()), {na * npol, ni});
+  boost::multi::array_ref<elm2, 2, ptr2> bnas(buff.base(), {nchol, na * npol});
   // Lakn[a][sk][n] = sum_i Aai[as][i] conj(Lkin[k][i][n])
   for (int k = 0; k < nmo; k++)
   {

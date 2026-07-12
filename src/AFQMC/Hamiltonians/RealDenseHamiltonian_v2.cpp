@@ -139,7 +139,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
         APP_ABORT("");
       }
     }
-    RMatrix_ref h1_(to_address(H1.origin()), H1.extensions());
+    RMatrix_ref h1_(to_address(H1.base()), H1.extensions());
     if (!dump.readEntry(h1_, std::string("hcore")))
     {
       app_error() << " Error in RealDenseHamiltonian_v2::getHamiltonianOperations():"
@@ -151,7 +151,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   {
     // read L
     dump.push("DenseFactorized", false);
-    SpRMatrix_ref L(to_address(Likn.origin()), Likn.extensions());
+    SpRMatrix_ref L(to_address(Likn.base()), Likn.extensions());
     hyperslab_proxy<SpRMatrix_ref, 2> hslab(L,
                                             std::array<size_t, 2>{static_cast<size_t>(NMO * NMO),
                                                                   static_cast<size_t>(global_ncvecs)},
@@ -196,7 +196,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
 
   // for simplicity
   CMatrix H1C({NMO, NMO});
-  copy_n_cast(to_address(H1.origin()), NMO * NMO, H1C.origin());
+  copy_n_cast(to_address(H1.base()), NMO * NMO, H1C.base());
 
   int nt = 0;
   for (int nd = 0; nd < ndet; nd++)
@@ -206,15 +206,15 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
       continue;
     if (type == COLLINEAR)
     {
-      CMatrix_ref haj_r(to_address(haj[nd].origin()), {nup, NMO});
+      CMatrix_ref haj_r(to_address(haj[nd].base()), {nup, NMO});
       ma::product(PsiT[2 * nd], H1C, haj_r);
-      CMatrix_ref hbj_r(to_address(haj[nd].origin()) + (nup * NMO), {ndown, NMO});
+      CMatrix_ref hbj_r(to_address(haj[nd].base()) + (nup * NMO), {ndown, NMO});
       if (ndown > 0)
         ma::product(PsiT[2 * nd + 1], H1C, hbj_r);
     }
     else
     {
-      CMatrix_ref haj_r(to_address(haj[nd].origin()), {nup, NMO});
+      CMatrix_ref haj_r(to_address(haj[nd].base()), {nup, NMO});
       ma::product(ComplexType(2.0), PsiT[nd], H1C, ComplexType(0.0), haj_r);
     }
   }
@@ -233,11 +233,11 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
           for (int k = 0; k < NMO; k++, ik++)
             lik[i][k] = ComplexType(static_cast<RealType>(Likn[ik][nc]), 0.0);
         ma::product(PsiT[nspins * nd], lik, lak);
-        copy_n_cast(lak.origin(), nup * NMO, to_address(Lnak[nspins * nd][nc].origin()));
+        copy_n_cast(lak.base(), nup * NMO, to_address(Lnak[nspins * nd][nc].base()));
         if (type == COLLINEAR)
         {
           ma::product(PsiT[2 * nd + 1], lik, lak.sliced(0, ndown));
-          copy_n_cast(lak.origin(), ndown * NMO, to_address(Lnak[2 * nd + 1][nc].origin()));
+          copy_n_cast(lak.base(), ndown * NMO, to_address(Lnak[2 * nd + 1][nc].base()));
         }
       }
     }
@@ -246,8 +246,8 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   if (distNode.root())
   {
     for (auto& v : Lnak)
-      Qcomm_roots.all_reduce_in_place_n(to_address(v.origin()), v.num_elements(), std::plus<>());
-    std::fill_n(to_address(vn0.origin()), vn0.num_elements(), ComplexType(0.0));
+      Qcomm_roots.all_reduce_in_place_n(to_address(v.base()), v.num_elements(), std::plus<>());
+    std::fill_n(to_address(vn0.base()), vn0.num_elements(), ComplexType(0.0));
   }
   TG.Node().barrier();
 
@@ -258,16 +258,16 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
     if (iN > i0)
     {
       SpRMatrix v_({iN - i0, NMO});
-      SpRMatrix_ref Lijn(to_address(Likn.origin()), {NMO, NMO * local_ncv});
+      SpRMatrix_ref Lijn(to_address(Likn.base()), {NMO, NMO * local_ncv});
       ma::product(-0.5, Lijn.sliced(i0, iN), ma::T(Lijn), 0.0, v_);
-      copy_n_cast(v_.origin(), v_.num_elements(), to_address(vn0[i0].origin()));
+      copy_n_cast(v_.base(), v_.num_elements(), to_address(vn0[i0].base()));
     }
   }
   TG.Node().barrier();
 
   if (distNode.root())
   {
-    distNode_roots.all_reduce_in_place_n(to_address(vn0.origin()), vn0.num_elements(), std::plus<>());
+    distNode_roots.all_reduce_in_place_n(to_address(vn0.base()), vn0.num_elements(), std::plus<>());
     dump.pop();
     dump.close();
   }

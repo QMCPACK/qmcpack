@@ -96,7 +96,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
       std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(G.num_elements()), TG.getNCoresPerTG());
       StaticMatrix Gc(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
       wfn.MixedDensityMatrix_for_vbias(wset, Gc);
-      copy_n_cast(make_device_ptr(Gc.origin()) + Gak0, GakN - Gak0, make_device_ptr(G.origin()) + Gak0);
+      copy_n_cast(make_device_ptr(Gc.base()) + Gak0, GakN - Gak0, make_device_ptr(G.base()) + Gak0);
     }
     TG.local_barrier();
 #else
@@ -111,7 +111,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     AFQMCTimers[vbias_timer].get().start();
     if (free_projection)
     {
-      fill_n(vbias.origin(), localnCV * nwalk, SPComplexType(0.0, 0.0));
+      fill_n(vbias.base(), localnCV * nwalk, SPComplexType(0.0, 0.0));
     }
     else
     {
@@ -127,8 +127,8 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     assemble_X(nsteps, nwalk, sqrtdt, X, vbias, MFfactor, hybrid_weight);
     if (TG.TG_local().size() > 1)
     {
-      TG.TG_local().all_reduce_in_place_n(to_address(MFfactor.origin()), MFfactor.num_elements(), std::plus<>());
-      TG.TG_local().all_reduce_in_place_n(to_address(hybrid_weight.origin()), hybrid_weight.num_elements(),
+      TG.TG_local().all_reduce_in_place_n(to_address(MFfactor.base()), MFfactor.num_elements(), std::plus<>());
+      TG.TG_local().all_reduce_in_place_n(to_address(hybrid_weight.base()), hybrid_weight.num_elements(),
                                           std::plus<>());
     }
     AFQMCTimers[assemble_X_timer].get().stop();
@@ -143,7 +143,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
           auto&& V(*wset.getFields(bp_step));
           if (nsteps == 1)
           {
-            copy_n(X[cv0].origin(), nwalk * (cvN - cv0), V[cv0].origin());
+            copy_n(X[cv0].base(), nwalk * (cvN - cv0), V[cv0].base());
             ma::scal(SPComplexType(sqrtdt), V.sliced(cv0, cvN));
           }
           else
@@ -162,11 +162,11 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     AFQMCTimers[vHS_timer].get().start();
 #if defined(MIXED_PRECISION)
     // is this clever or dirsty? seems to work well and saves memory!
-    SPCMatrix_ref vsp(sp_pointer(make_device_ptr(vHS.origin())), vhs_ext);
+    SPCMatrix_ref vsp(sp_pointer(make_device_ptr(vHS.base())), vhs_ext);
     wfn.vHS(X, vsp, sqrtdt);
     TG.local_barrier();
     if (TG.TG_local().root())
-      inplace_cast<SPComplexType, ComplexType>(vsp.origin(), vsp.num_elements());
+      inplace_cast<SPComplexType, ComplexType>(vsp.base(), vsp.num_elements());
     TG.local_barrier();
 #else
     wfn.vHS(X, vHS, sqrtdt);
@@ -175,7 +175,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     //std::cout<<" Pg vHS: " <<TG.Global().rank() <<" " <<ma::sum(vHS) <<"\n" <<std::endl;
   }
 
-  C3Tensor_ref vHS3D(make_device_ptr(vHS.origin()), vhs3d_ext);
+  C3Tensor_ref vHS3D(make_device_ptr(vHS.base()), vhs3d_ext);
 
   int nx = 1;
   if (walker_type == COLLINEAR)
@@ -278,7 +278,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   StaticMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
   StaticSPMatrix X({long(globalnCV), long(nwalk)},
                    buffer_manager.get_generator().template get_allocator<SPComplexType>());
-  C3Tensor_ref vHS3D(make_device_ptr(vHS.origin()), vhs3d_ext);
+  C3Tensor_ref vHS3D(make_device_ptr(vHS.base()), vhs3d_ext);
 
   using std::get;
 
@@ -306,7 +306,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
 
   assert(get<0>(detR.sizes()) == nwalk);
   assert(get<1>(detR.sizes()) == nrefs * nx);
-  std::fill_n(detR.origin(), detR.num_elements(), ComplexType(1.0, 0.0));
+  std::fill_n(detR.base(), detR.num_elements(), ComplexType(1.0, 0.0));
 
   // from now on, individual work on each walker/step
   const int ntasks_per_core     = int(nx * nwalk) / TG.getNCoresPerTG();
@@ -326,28 +326,28 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   // 0. copy SlaterMatrix to SlaterMatrixAux
   for (int i = 0; i < nwalk; i++)
   {
-    copy_n((*wset[i].SlaterMatrix(Alpha)).origin() + r0, rN - r0, (*wset[i].SlaterMatrixAux(Alpha)).origin() + r0);
+    copy_n((*wset[i].SlaterMatrix(Alpha)).base() + r0, rN - r0, (*wset[i].SlaterMatrixAux(Alpha)).base() + r0);
     // optimize for the single reference case
     if (nrefs == 1)
-      copy_n(Refs[i][0].origin() + r0, rN - r0, make_device_ptr((*wset[i].SlaterMatrix(Alpha)).origin()) + r0);
+      copy_n(Refs[i][0].base() + r0, rN - r0, make_device_ptr((*wset[i].SlaterMatrix(Alpha)).base()) + r0);
   }
   TG.TG_local().barrier();
 
   for (int ni = nbpsteps - 1; ni >= 0; --ni)
   {
     // 1. Get X(nCV,nwalk) from wset
-    copy_n(Fields[ni][cv0].origin(), nwalk * (cvN - cv0), make_device_ptr(X[cv0].origin()));
+    copy_n(Fields[ni][cv0].base(), nwalk * (cvN - cv0), make_device_ptr(X[cv0].base()));
     TG.TG_local().barrier();
 
     // 2. Calculate vHS(M*M,nwalk)/vHS(nwalk,M*M)
     //  X has been scaled by sqrtdt to avoid needing it here
 #if defined(MIXED_PRECISION)
     // is this clever or dirsty? seems to work well and saves memory!
-    SPCMatrix_ref vsp(sp_pointer(make_device_ptr(vHS.origin())), vhs_ext);
+    SPCMatrix_ref vsp(sp_pointer(make_device_ptr(vHS.base())), vhs_ext);
     wfn.vHS(X, vsp);
     TG.local_barrier();
     if (TG.TG_local().root())
-      inplace_cast<SPComplexType, ComplexType>(vsp.origin(), vsp.num_elements());
+      inplace_cast<SPComplexType, ComplexType>(vsp.base(), vsp.num_elements());
     TG.local_barrier();
 #else
     wfn.vHS(X, vHS);
@@ -359,7 +359,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
       // 3. copy reference to SlaterMatrix
       if (nrefs > 1)
         for (int i = 0; i < nwalk; i++)
-          copy_n(Refs[i][nr].origin() + r0, rN - r0, make_device_ptr((*wset[i].SlaterMatrix(Alpha)).origin()) + r0);
+          copy_n(Refs[i][nr].base() + r0, rN - r0, make_device_ptr((*wset[i].SlaterMatrix(Alpha)).base()) + r0);
       TG.TG_local().barrier();
 
       // 4. Propagate walkers
@@ -393,7 +393,7 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
       // 5. copy reference to back
       if (nrefs > 1)
         for (int i = 0; i < nwalk; i++)
-          copy_n(make_device_ptr((*wset[i].SlaterMatrix(Alpha)).origin()) + r0, rN - r0, Refs[i][nr].origin() + r0);
+          copy_n(make_device_ptr((*wset[i].SlaterMatrix(Alpha)).base()) + r0, rN - r0, Refs[i][nr].base() + r0);
       TG.TG_local().barrier();
     }
   }
@@ -402,8 +402,8 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   for (int i = 0; i < nwalk; i++)
   {
     if (nrefs == 1)
-      copy_n((*wset[i].SlaterMatrix(Alpha)).origin() + r0, rN - r0, Refs[i][0].origin() + r0);
-    copy_n((*wset[i].SlaterMatrixAux(Alpha)).origin() + r0, rN - r0, (*wset[i].SlaterMatrix(Alpha)).origin() + r0);
+      copy_n((*wset[i].SlaterMatrix(Alpha)).base() + r0, rN - r0, Refs[i][0].base() + r0);
+    copy_n((*wset[i].SlaterMatrixAux(Alpha)).base() + r0, rN - r0, (*wset[i].SlaterMatrix(Alpha)).base() + r0);
   }
   TG.TG_local().barrier();
 }
@@ -572,8 +572,8 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
       local_vHS = CMatrix({nbatch, NMO * NMO});
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
     int N2 = get<0>(vHS3D.sizes()) * get<1>(vHS3D.sizes());
-    CMatrix_ref vHS2D(vHS3D.origin(), {N2, get<2>(vHS3D.sizes())});
-    C3Tensor_ref local3D(local_vHS.origin(), {nbatch, NMO, NMO});
+    CMatrix_ref vHS2D(vHS3D.base(), {N2, get<2>(vHS3D.sizes())});
+    C3Tensor_ref local3D(local_vHS.base(), {nbatch, NMO, NMO});
     int nt = ni * nwalk;
     for (int iw = 0; iw < nwalk; iw += nbatch, nt += nbatch)
     {
@@ -663,9 +663,9 @@ void AFQMCBasePropagator::Orthogonalize_batched(WlkSet& wset, CMat&& detR)
       Ai.clear();
       for (int ni = 0; ni < nb; ni++)
         Ai.emplace_back(wset[iw + ni].SlaterMatrix(Alpha));
-      SDetOp->BatchedOrthogonalize(Ai, LogOverlapFactor, local_vHS.origin());
+      SDetOp->BatchedOrthogonalize(Ai, LogOverlapFactor, local_vHS.base());
       // GPU trickery,to make sure detR_ is in CPU, since detR is in CPU
-      copy_n(local_vHS.origin(), nb, detR_.origin());
+      copy_n(local_vHS.base(), nb, detR_.base());
       for (int ni = 0; ni < nb; ni++)
         detR[iw + ni][0] *= detR_[ni];
     }
@@ -679,16 +679,16 @@ void AFQMCBasePropagator::Orthogonalize_batched(WlkSet& wset, CMat&& detR)
       Ai.clear();
       for (int ni = 0; ni < nb; ni++)
         Ai.emplace_back(wset[iw + ni].SlaterMatrix(Alpha));
-      SDetOp->BatchedOrthogonalize(Ai, LogOverlapFactor, local_vHS.origin());
-      copy_n(local_vHS.origin(), nb, detR_.origin());
+      SDetOp->BatchedOrthogonalize(Ai, LogOverlapFactor, local_vHS.base());
+      copy_n(local_vHS.base(), nb, detR_.base());
       for (int ni = 0; ni < nb; ni++)
         detR[iw + ni][0] *= detR_[ni];
       // Beta
       Ai.clear();
       for (int ni = 0; ni < nb; ni++)
         Ai.emplace_back(wset[iw + ni].SlaterMatrix(Beta));
-      SDetOp->BatchedOrthogonalize(Ai, LogOverlapFactor, local_vHS.origin());
-      copy_n(local_vHS.origin(), nb, detR_.origin());
+      SDetOp->BatchedOrthogonalize(Ai, LogOverlapFactor, local_vHS.base());
+      copy_n(local_vHS.base(), nb, detR_.base());
       for (int ni = 0; ni < nb; ni++)
         detR[iw + ni][1] *= detR_[ni];
     }
@@ -724,29 +724,29 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps,
   {
     int i0, iN;
     std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(X.num_elements()), TG.TG_local().size());
-    sampleGaussianFields_n(make_device_ptr(X.origin()) + i0, iN - i0, rng);
+    sampleGaussianFields_n(make_device_ptr(X.base()) + i0, iN - i0, rng);
   }
 
   // construct X
-  fill_n(make_device_ptr(HWs.origin()), HWs.num_elements(), ComplexType(0));
-  fill_n(make_device_ptr(MF.origin()), MF.num_elements(), ComplexType(0));
+  fill_n(make_device_ptr(HWs.base()), HWs.num_elements(), ComplexType(0));
+  fill_n(make_device_ptr(MF.base()), MF.num_elements(), ComplexType(0));
 
 // leaving compiler switch until I decide how to do this better
 // basically hide this decision somewhere based on the value of pointer!!!
 // TODO: Move this
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
-  kernels::construct_X(nCV, nsteps, nwalk, free_projection, sqrtdt, vbias_bound, to_address(vMF.origin()),
-                       to_address(vbias.origin()), to_address(HWs.origin()), to_address(MF.origin()),
-                       to_address(X.origin()));
+  kernels::construct_X(nCV, nsteps, nwalk, free_projection, sqrtdt, vbias_bound, to_address(vMF.base()),
+                       to_address(vbias.base()), to_address(HWs.base()), to_address(MF.base()),
+                       to_address(X.base()));
 #else
-  boost::multi::array_ref<XType, 3> X3D(to_address(X.origin()), {long(X.size()), long(nsteps), long(nwalk)});
+  boost::multi::array_ref<XType, 3> X3D(to_address(X.base()), {long(X.size()), long(nsteps), long(nwalk)});
   int m0, mN;
   std::tie(m0, mN) = FairDivideBoundary(TG.TG_local().rank(), nCV, TG.TG_local().size());
   TG.local_barrier();
   for (int m = m0; m < mN; ++m)
   {
     auto X_m = X3D[m];
-    auto vb_ = to_address(vbias[m].origin());
+    auto vb_ = to_address(vbias[m].base());
     auto vmf_t = sqrtdt * apply_bound_vbias(vMF[m], 1.0);
     auto vmf_ = sqrtdt * vMF[m];
     // apply bounds to vbias
@@ -754,9 +754,9 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps,
       vb_[iw] = apply_bound_vbias(vb_[iw], sqrtdt);
     for (int ni = 0; ni < nsteps; ni++)
     {
-      auto X_ = X3D[m][ni].origin();
-      auto hws_ = to_address(HWs[ni].origin());
-      auto mf_ = to_address(MF[ni].origin());
+      auto X_ = X3D[m][ni].base();
+      auto hws_ = to_address(HWs[ni].base());
+      auto mf_ = to_address(MF[ni].base());
       for (int iw = 0; iw < nwalk; iw++)
       {
         // No force bias term when doing free projection.

@@ -40,7 +40,7 @@ static auto decompose(Matrix&& A, Permutation&& P, double tol = std::numeric_lim
 	assert( P.size() >= N );
 
 	auto&& ret = A({0, N}, {0, N});
-	for(auto i : extension(ret)){
+	for(auto i : ret.extension()){
 		if(lup::permute_max_diagonal(A, P, i) < tol) return A({0, i}, {0, i});
 
 		for(auto&& row : A({i + 1, N})){

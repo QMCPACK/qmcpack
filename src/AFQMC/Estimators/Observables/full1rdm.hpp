@@ -137,7 +137,7 @@ public:
         dim[0] = R.size();
         dim[1] = 0;
         // conjugate rotation matrix
-        std::transform(R.origin(), R.origin() + R.num_elements(), R.origin(),
+        std::transform(R.base(), R.base() + R.num_elements(), R.base(),
                        [](const auto& c) { return std::conj(c); });
         stdIMatrix I;
         if (print_from_list)
@@ -151,15 +151,15 @@ public:
         }
         TG.Node().broadcast_n(dim, 2, 0);
         XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
-        copy_n(R.origin(), R.num_elements(), make_device_ptr(XRot.origin()));
+        copy_n(R.base(), R.num_elements(), make_device_ptr(XRot.base()));
         if (TG.Node().root())
-          TG.Cores().broadcast_n(to_address(XRot.origin()), XRot.num_elements(), 0);
+          TG.Cores().broadcast_n(to_address(XRot.base()), XRot.num_elements(), 0);
         if (print_from_list)
         {
           index_list = mpi3IMatrix({dim[1], 2}, shared_allocator<int>{TG.Node()});
-          copy_n(I.origin(), I.num_elements(), make_device_ptr(index_list.origin()));
+          copy_n(I.base(), I.num_elements(), make_device_ptr(index_list.base()));
           if (TG.Node().root())
-            TG.Cores().broadcast_n(to_address(index_list.origin()), index_list.num_elements(), 0);
+            TG.Cores().broadcast_n(to_address(index_list.base()), index_list.num_elements(), 0);
         }
 
         dump.pop();
@@ -170,12 +170,12 @@ public:
         TG.Node().broadcast_n(dim, 2, 0);
         XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
         if (TG.Node().root())
-          TG.Cores().broadcast_n(to_address(XRot.origin()), XRot.num_elements(), 0);
+          TG.Cores().broadcast_n(to_address(XRot.base()), XRot.num_elements(), 0);
         if (print_from_list)
         {
           index_list = mpi3IMatrix({dim[1], 2}, shared_allocator<int>{TG.Node()});
           if (TG.Node().root())
-            TG.Cores().broadcast_n(to_address(index_list.origin()), index_list.num_elements(), 0);
+            TG.Cores().broadcast_n(to_address(index_list.base()), index_list.num_elements(), 0);
         }
       }
       TG.Node().barrier();
@@ -221,7 +221,7 @@ public:
     writer = (TG.getGlobalRank() == 0);
 
     DMAverage = mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
   template<class MatG, class MatG_host, class HostCVec1, class HostCVec2, class HostCVec3>
@@ -258,8 +258,8 @@ public:
       {
         DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
-      fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(denom.base(), denom.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(DMWork.base(), DMWork.num_elements(), ComplexType(0.0, 0.0));
     }
     else
     {
@@ -306,7 +306,7 @@ public:
         dump.push(std::string("Average_") + std::to_string(iav));
         std::string padded_num = std::string(n_zero - std::to_string(counter).length(), '0') + std::to_string(counter);
         dump.write(wgt, "weights_" + padded_num);
-        stdCMatrix_ref DM(to_address(DMWork.origin()), {nw, dm_size});
+        stdCMatrix_ref DM(to_address(DMWork.base()), {nw, dm_size});
         dump.write(DM, "one_rdm_" + padded_num);
         dump.pop();
         dump.pop();
@@ -344,7 +344,7 @@ public:
     if (TG.TG_local().root())
     {
       ma::scal(ComplexType(1.0 / block_size), DMAverage);
-      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.origin()), DMAverage.num_elements(), std::plus<>(), 0);
+      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.base()), DMAverage.num_elements(), std::plus<>(), 0);
       if (writer)
       {
         dump.push(std::string("FullOneRDM"));
@@ -353,7 +353,7 @@ public:
           dump.push(std::string("Average_") + std::to_string(i));
           std::string padded_iblock =
               std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-          stdCVector_ref DMAverage_(to_address(DMAverage[i].origin()), {dm_size});
+          stdCVector_ref DMAverage_(to_address(DMAverage[i].base()), {dm_size});
           dump.write(DMAverage_, "one_rdm_" + padded_iblock);
           dump.write(Wsum[i], "denominator_" + padded_iblock);
           dump.pop();
@@ -362,7 +362,7 @@ public:
       }
     }
     TG.TG_local().barrier();
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
 private:
@@ -412,7 +412,7 @@ private:
     int i0, iN;
     std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), dm_size, TG.TG_local().size());
 
-    stdCMatrix_ref G2D(to_address(G.origin()), {nw, dm_size});
+    stdCMatrix_ref G2D(to_address(G.base()), {nw, dm_size});
 
     for (int iw = 0; iw < nw; iw++)
     {
@@ -462,7 +462,7 @@ private:
         denom[iw] += Xw[iw];
       ma::product(XRot.sliced(i0, iN), G[iw][0], T1);
       ma::product(T1, ma::H(XRot), T2);
-      copy_n(T2.origin(), T2.num_elements(), Grot.origin());
+      copy_n(T2.base(), T2.num_elements(), Grot.base());
       if (print_from_list)
       {
         for (int i = 0; i < index_list.size(); i++)
@@ -480,7 +480,7 @@ private:
       {
         ma::product(XRot.sliced(i0, iN), G[iw][1], T1);
         ma::product(T1, ma::H(XRot), T2);
-        copy_n(T2.origin(), T2.num_elements(), Grot.origin());
+        copy_n(T2.base(), T2.num_elements(), Grot.base());
         if (print_from_list)
         {
           for (int i = 0, ie = index_list.size(); i < ie; i++)

@@ -79,7 +79,7 @@ inline void write_distributed_MA(MultiArray& A,
       // write local piece
       {
         using Mat_ref = boost::multi::array_ref<value_type, 2>;
-        Mat_ref A_(to_address(A.origin()), A.extensions());
+        Mat_ref A_(to_address(A.base()), A.extensions());
         hyperslab_proxy<Mat_ref, 2> slab(A_, gdim, std::array<size_t, 2>{size_t(get<0>(A.sizes())), size_t(get<1>(A.sizes()))}, offset);
         dump.write(slab, name);
       }
@@ -89,7 +89,7 @@ inline void write_distributed_MA(MultiArray& A,
       {
         using Mat = boost::multi::array<value_type, 2>;
         Mat T({static_cast<typename Mat::size_type>(*(it + 2)), static_cast<typename Mat::size_type>(*(it + 3))});
-        TG.TG_Cores().receive_n(T.origin(), T.num_elements(), i, i);
+        TG.TG_Cores().receive_n(T.base(), T.num_elements(), i, i);
         hyperslab_proxy<Mat, 2> slab(T, gdim, std::array<size_t, 2>{*(it + 2), *(it + 3)},
                                      std::array<size_t, 2>{*(it), *(it + 1)});
         dump.write(slab, name);
@@ -105,7 +105,7 @@ inline void write_distributed_MA(MultiArray& A,
       ndim[4 * TG.TG_Cores().rank() + 2] = get<0>(A.sizes());
       ndim[4 * TG.TG_Cores().rank() + 3] = get<1>(A.sizes());
       TG.TG_Cores().all_reduce_in_place_n(ndim.begin(), ndim.size(), std::plus<>());
-      TG.TG_Cores().send_n(to_address(A.origin()), A.num_elements(), 0, TG.TG_Cores().rank());
+      TG.TG_Cores().send_n(to_address(A.base()), A.num_elements(), 0, TG.TG_Cores().rank());
     }
   }
   TG.Global().barrier();

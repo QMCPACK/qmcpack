@@ -216,41 +216,41 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtd
     int i0,iN;
     std::tie(i0,iN) = FairDivideBoundary(TG.TG_local().rank(),int(X.num_elements()),
                                          TG.TG_local().size());  
-    sampleGaussianFields_n(make_device_ptr(X.origin())+i0,iN-i0,*rng);
+    sampleGaussianFields_n(make_device_ptr(X.base())+i0,iN-i0,*rng);
   }
 
   // construct X
-  fill_n(make_device_ptr(HWs.origin()),HWs.num_elements(),ComplexType(0));  
-  fill_n(make_device_ptr(MF.origin()),MF.num_elements(),ComplexType(0));  
+  fill_n(make_device_ptr(HWs.base()),HWs.num_elements(),ComplexType(0));
+  fill_n(make_device_ptr(MF.base()),MF.num_elements(),ComplexType(0));
 
 // leaving compiler switch until I decide how to do this better
 // basically hide this decision somewhere based on the value of pointer!!!
 #ifdef ENABLE_CUDA
   kernels::construct_X(nCV,nsteps,nwalk,free_projection,sqrtdt,vbias_bound,
-                       to_address(vMF.origin()),
-                       to_address(vbias.origin()),
-                       to_address(HWs.origin()),
-                       to_address(MF.origin()),
-                       to_address(X.origin())
+                       to_address(vMF.base()),
+                       to_address(vbias.base()),
+                       to_address(HWs.base()),
+                       to_address(MF.base()),
+                       to_address(X.base())
                       );
 #else
-  boost::multi::array_ref<ComplexType,3> X3D(to_address(X.origin()),
+  boost::multi::array_ref<ComplexType,3> X3D(to_address(X.base()),
                         {long(X.size(0)),long(nsteps),long(nwalk)});
   int m0,mN;
   std::tie(m0,mN) = FairDivideBoundary(TG.TG_local().rank(),nCV,TG.TG_local().size());   
   TG.local_barrier();
   for(int m=m0; m<mN; ++m) { 
     auto X_m = X3D[m];
-    auto vb_ = to_address(vbias[m].origin());
+    auto vb_ = to_address(vbias[m].base());
     auto vmf_t = sqrtdt*apply_bound_vbias(vMF[m],1.0);
     auto vmf_ = sqrtdt*vMF[m];
     // apply bounds to vbias
     for(int iw=0; iw<nwalk; iw++) 
       vb_[iw] = apply_bound_vbias(vb_[iw],sqrtdt);
     for(int ni=0; ni<nsteps; ni++) {
-      auto X_ = X3D[m][ni].origin();
-      auto hws_ = to_address(HWs[ni].origin());
-      auto mf_ = to_address(MF[ni].origin());
+      auto X_ = X3D[m][ni].base();
+      auto hws_ = to_address(HWs[ni].base());
+      auto mf_ = to_address(MF[ni].base());
       for(int iw=0; iw<nwalk; iw++) {
         // No force bias term when doing free projection.
         ComplexType vdiff = free_projection?ComplexType(0.0, 0.0):(im*(vb_[iw]-vmf_t));

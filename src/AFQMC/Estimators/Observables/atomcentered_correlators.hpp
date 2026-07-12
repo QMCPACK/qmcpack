@@ -167,13 +167,13 @@ public:
       NAO = orbs.back();
       S   = CTensor({2, NAO, NMO}, make_node_allocator<ComplexType>(TG));
       XY  = CMatrix({NAO, NAO}, make_node_allocator<ComplexType>(TG));
-      CMatrix_ref S_(make_device_ptr(S[0].origin()), {NAO, NMO});
+      CMatrix_ref S_(make_device_ptr(S[0].base()), {NAO, NMO});
       if (!dump.readEntry(S_, "Left"))
       {
         app_error() << " Error in atomcentered_correlators: Problems reading Left. " << std::endl;
         APP_ABORT("");
       }
-      stdCMatrix_ref S2_(to_address(S[1].origin()), {NAO, NMO});
+      stdCMatrix_ref S2_(to_address(S[1].base()), {NAO, NMO});
       if (!dump.readEntry(S2_, "Right"))
       {
         app_error() << " Error in atomcentered_correlators: Problems reading Right. " << std::endl;
@@ -218,9 +218,9 @@ public:
     }
 
     DMAverage1D = mpi3CTensor({nave, 3, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
-    fill_n(DMAverage1D.origin(), DMAverage1D.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage1D.base(), DMAverage1D.num_elements(), ComplexType(0.0, 0.0));
     DMAverage2D = mpi3CTensor({nave, 3, ns2}, shared_allocator<ComplexType>{TG.TG_local()});
-    fill_n(DMAverage2D.origin(), DMAverage2D.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage2D.base(), DMAverage2D.num_elements(), ComplexType(0.0, 0.0));
   }
 
   template<class MatG, class MatG_host, class HostCVec1, class HostCVec2, class HostCVec3>
@@ -279,9 +279,9 @@ public:
       }
       if (shapes.size() < 2 * nw * nsites * nsites)
         shapes = IVector(iextensions<1u>{2 * nw * nsites * nsites}, IAllocator{});
-      fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
-      fill_n(DMWork1D.origin(), DMWork1D.num_elements(), ComplexType(0.0, 0.0));
-      fill_n(DMWork2D.origin(), DMWork2D.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(denom.base(), denom.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(DMWork1D.base(), DMWork1D.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(DMWork2D.base(), DMWork2D.num_elements(), ComplexType(0.0, 0.0));
     }
     else
     {
@@ -300,11 +300,11 @@ public:
     int iw0(0);
     int i0, iN;
     int nwbatch(nw);
-    std::vector<decltype(ma::pointer_dispatch(S.origin()))> Aarray;
+    std::vector<decltype(ma::pointer_dispatch(S.base()))> Aarray;
     Aarray.reserve(nwbatch * nsites * nsites);
-    std::vector<decltype(ma::pointer_dispatch(S.origin()))> Barray;
+    std::vector<decltype(ma::pointer_dispatch(S.base()))> Barray;
     Barray.reserve(nwbatch * nsites * nsites);
-    std::vector<decltype(ma::pointer_dispatch(S.origin()))> Carray;
+    std::vector<decltype(ma::pointer_dispatch(S.base()))> Carray;
     Carray.reserve(nwbatch * nsites * nsites);
     LocalTGBufferManager buffer_manager;
     while (iw0 < nw)
@@ -326,9 +326,9 @@ public:
         // QwI[iw] = X * G[iw][is] =  S[0] * G[iw][is]
         for (int iw = 0; iw < nwlk; ++iw)
         {
-          Aarray.emplace_back(ma::pointer_dispatch(S[0][i0].origin()));
-          Barray.emplace_back(ma::pointer_dispatch(G[iw0 + iw][is].origin()));
-          Carray.emplace_back(ma::pointer_dispatch(QwI[iw][i0].origin()));
+          Aarray.emplace_back(ma::pointer_dispatch(S[0][i0].base()));
+          Barray.emplace_back(ma::pointer_dispatch(G[iw0 + iw][is].base()));
+          Carray.emplace_back(ma::pointer_dispatch(QwI[iw][i0].base()));
         }
         // careful with fortran ordering
         gemmBatched('N', 'N', NMO, int(iN - i0), NMO, ComplexType(1.0), Barray.data(), NMO, Aarray.data(), NMO,
@@ -341,8 +341,8 @@ public:
         // MwIJ[iw] = QwI * Y =  QwI * T(S[1])
         for (int iw = 0; iw < nwlk; ++iw)
         {
-          Barray.emplace_back(ma::pointer_dispatch(S[1].origin()));
-          Aarray.emplace_back(ma::pointer_dispatch(MwIJ[iw][i0].origin()));
+          Barray.emplace_back(ma::pointer_dispatch(S[1].base()));
+          Aarray.emplace_back(ma::pointer_dispatch(MwIJ[iw][i0].base()));
         }
         // careful with fortran ordering
         gemmBatched('T', 'N', NAO, int(iN - i0), NMO, ComplexType(1.0), Barray.data(), NMO, Carray.data(), NMO,
@@ -356,14 +356,14 @@ public:
           for (int I = 0; I < nsites; ++I, ++p)
             if (p % TG.TG_local().size() == TG.TG_local().rank())
             {
-              Aarray.emplace_back(ma::pointer_dispatch(devNwI[iw].origin() + I));
-              Barray.emplace_back(ma::pointer_dispatch(MwIJ[iw][orbs[I]].origin() + orbs[I]));
+              Aarray.emplace_back(ma::pointer_dispatch(devNwI[iw].base() + I));
+              Barray.emplace_back(ma::pointer_dispatch(MwIJ[iw][orbs[I]].base() + orbs[I]));
               shapes[nt++] = int(orbs[I + 1] - orbs[I]);
             }
         using ma::batched_diagonal_sum;
         batched_diagonal_sum(shapes.data(), Barray.data(), NAO, ComplexType(1.0), Aarray.data(), int(Aarray.size()));
 
-        fill_n(devNwIJ.origin(), devNwIJ.num_elements(), ComplexType(0.0));
+        fill_n(devNwIJ.base(), devNwIJ.num_elements(), ComplexType(0.0));
 
         // NwIJ[iw][I][J] = sum_ij MwIJ[iw][Ij][Jj] * XY[Jj][Ii]
         Aarray.clear();
@@ -374,9 +374,9 @@ public:
             for (int J = 0; J < nsites; ++J, ++p)
               if (p % TG.TG_local().size() == TG.TG_local().rank())
               {
-                Aarray.emplace_back(ma::pointer_dispatch(MwIJ[iw][orbs[I]].origin() + orbs[J]));
-                Barray.emplace_back(ma::pointer_dispatch(XY[orbs[J]].origin() + orbs[I]));
-                Carray.emplace_back(ma::pointer_dispatch(devNwIJ[iw][I].origin() + J));
+                Aarray.emplace_back(ma::pointer_dispatch(MwIJ[iw][orbs[I]].base() + orbs[J]));
+                Barray.emplace_back(ma::pointer_dispatch(XY[orbs[J]].base() + orbs[I]));
+                Carray.emplace_back(ma::pointer_dispatch(devNwIJ[iw][I].base() + J));
                 shapes[nt++] = int(orbs[I + 1] - orbs[I]);
                 shapes[nt++] = int(orbs[J + 1] - orbs[J]);
               }
@@ -386,7 +386,7 @@ public:
         TG.TG_local().barrier();
 
         // testing !!!
-        //        fill_n(devNwIJ.origin(),devNwIJ.num_elements(),ComplexType(0.0));
+        //        fill_n(devNwIJ.base(),devNwIJ.num_elements(),ComplexType(0.0));
         //        TG.TG_local().barrier();
 
         // NwIJ[iw][I][J] = sum_ij MwIJ[iw][Ij][Jj] * MwJI[iw][Jj][Ii]
@@ -398,9 +398,9 @@ public:
             for (int J = 0; J < nsites; ++J, ++p)
               if (p % TG.TG_local().size() == TG.TG_local().rank())
               {
-                Aarray.emplace_back(ma::pointer_dispatch(MwIJ[iw][orbs[I]].origin() + orbs[J]));
-                Barray.emplace_back(ma::pointer_dispatch(MwIJ[iw][orbs[J]].origin() + orbs[I]));
-                Carray.emplace_back(ma::pointer_dispatch(devNwIJ[iw][I].origin() + J));
+                Aarray.emplace_back(ma::pointer_dispatch(MwIJ[iw][orbs[I]].base() + orbs[J]));
+                Barray.emplace_back(ma::pointer_dispatch(MwIJ[iw][orbs[J]].base() + orbs[I]));
+                Carray.emplace_back(ma::pointer_dispatch(devNwIJ[iw][I].base() + J));
                 shapes[nt++] = int(orbs[I + 1] - orbs[I]);
                 shapes[nt++] = int(orbs[J + 1] - orbs[J]);
               }
@@ -410,9 +410,9 @@ public:
         TG.TG_local().barrier();
 
         std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(devNwIJ.num_elements()), TG.TG_local().size());
-        copy_n(devNwIJ.origin() + i0, (iN - i0), NwIJ[is][iw0].origin() + i0);
+        copy_n(devNwIJ.base() + i0, (iN - i0), NwIJ[is][iw0].base() + i0);
         std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(devNwI.num_elements()), TG.TG_local().size());
-        copy_n(devNwI.origin() + i0, (iN - i0), NwI[is][iw0].origin() + i0);
+        copy_n(devNwI.base() + i0, (iN - i0), NwI[is][iw0].base() + i0);
       }
       iw0 += nwlk;
     }
@@ -431,9 +431,9 @@ public:
         continue;
       if (walker_type == CLOSED)
       {
-        stdCMatrix_ref DMcc(to_address(DMWork2D[iw][0].origin()), {nsites, nsites});
-        stdCMatrix_ref DMss(to_address(DMWork2D[iw][1].origin()), {nsites, nsites});
-        stdCMatrix_ref DMcs(to_address(DMWork2D[iw][2].origin()), {nsites, nsites});
+        stdCMatrix_ref DMcc(to_address(DMWork2D[iw][0].base()), {nsites, nsites});
+        stdCMatrix_ref DMss(to_address(DMWork2D[iw][1].base()), {nsites, nsites});
+        stdCMatrix_ref DMcs(to_address(DMWork2D[iw][2].base()), {nsites, nsites});
         auto X_(2.0 * Xw[iw]);
         for (int i = 0; i < nsites; i++)
         {
@@ -450,9 +450,9 @@ public:
       }
       else if (walker_type == COLLINEAR)
       {
-        stdCMatrix_ref DMcc(to_address(DMWork2D[iw][0].origin()), {nsites, nsites});
-        stdCMatrix_ref DMss(to_address(DMWork2D[iw][1].origin()), {nsites, nsites});
-        stdCMatrix_ref DMcs(to_address(DMWork2D[iw][2].origin()), {nsites, nsites});
+        stdCMatrix_ref DMcc(to_address(DMWork2D[iw][0].base()), {nsites, nsites});
+        stdCMatrix_ref DMss(to_address(DMWork2D[iw][1].base()), {nsites, nsites});
+        stdCMatrix_ref DMcs(to_address(DMWork2D[iw][2].base()), {nsites, nsites});
         auto X_(Xw[iw]);
         for (int i = 0; i < nsites; i++)
         {
@@ -491,14 +491,14 @@ public:
       for (int iw = 0; iw < nw; iw++)
         denom[iw] = wgt[iw] / denom[iw];
       {
-        stdCVector_ref DMAv1D(to_address(DMAverage1D[iav].origin()), {3 * nsites});
-        stdCMatrix_ref DMWork2D_(to_address(DMWork1D.origin()), {nw, 3 * nsites});
+        stdCVector_ref DMAv1D(to_address(DMAverage1D[iav].base()), {3 * nsites});
+        stdCMatrix_ref DMWork2D_(to_address(DMWork1D.base()), {nw, 3 * nsites});
         // DMAverage[iav][t][ij] += sum_iw DMWork[iw][t][ij] * denom[iw] = T( DMWork ) * denom
         ma::product(ComplexType(1.0, 0.0), ma::T(DMWork2D_), denom, ComplexType(1.0, 0.0), DMAv1D);
       }
       {
-        stdCVector_ref DMAv1D(to_address(DMAverage2D[iav].origin()), {3 * ns2});
-        stdCMatrix_ref DMWork2D_(to_address(DMWork2D.origin()), {nw, 3 * ns2});
+        stdCVector_ref DMAv1D(to_address(DMAverage2D[iav].base()), {3 * ns2});
+        stdCMatrix_ref DMWork2D_(to_address(DMWork2D.base()), {nw, 3 * ns2});
         // DMAverage[iav][t][ij] += sum_iw DMWork[iw][t][ij] * denom[iw] = T( DMWork ) * denom
         ma::product(ComplexType(1.0, 0.0), ma::T(DMWork2D_), denom, ComplexType(1.0, 0.0), DMAv1D);
       }
@@ -515,9 +515,9 @@ public:
     if (TG.TG_local().root())
     {
       ma::scal(ComplexType(1.0 / block_size), DMAverage1D);
-      TG.TG_heads().reduce_in_place_n(to_address(DMAverage1D.origin()), DMAverage1D.num_elements(), std::plus<>(), 0);
+      TG.TG_heads().reduce_in_place_n(to_address(DMAverage1D.base()), DMAverage1D.num_elements(), std::plus<>(), 0);
       ma::scal(ComplexType(1.0 / block_size), DMAverage2D);
-      TG.TG_heads().reduce_in_place_n(to_address(DMAverage2D.origin()), DMAverage2D.num_elements(), std::plus<>(), 0);
+      TG.TG_heads().reduce_in_place_n(to_address(DMAverage2D.base()), DMAverage2D.num_elements(), std::plus<>(), 0);
       if (writer)
       {
         dump.push(std::string("ATOM_CORRELATORS"));
@@ -529,7 +529,7 @@ public:
             dump.push(std::string("Average_") + std::to_string(i));
             std::string padded_iblock =
                 std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-            stdCVector_ref DMAverage2D_(to_address(DMAverage2D[i][t].origin()), {ns2});
+            stdCVector_ref DMAverage2D_(to_address(DMAverage2D[i][t].base()), {ns2});
             dump.write(DMAverage2D_, "correlator2D_" + type_id2D[t] + padded_iblock);
             dump.write(Wsum[i], "denominator_" + padded_iblock);
             dump.pop();
@@ -544,7 +544,7 @@ public:
             dump.push(std::string("Average_") + std::to_string(i));
             std::string padded_iblock =
                 std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-            stdCVector_ref DMAverage1D_(to_address(DMAverage1D[i][t].origin()), {nsites});
+            stdCVector_ref DMAverage1D_(to_address(DMAverage1D[i][t].base()), {nsites});
             dump.write(DMAverage1D_, "correlator1D_" + type_id1D[t] + padded_iblock);
             dump.write(Wsum[i], "denominator_" + padded_iblock);
             dump.pop();
@@ -555,8 +555,8 @@ public:
       }
     }
     TG.TG_local().barrier();
-    fill_n(DMAverage1D.origin(), DMAverage1D.num_elements(), ComplexType(0.0, 0.0));
-    fill_n(DMAverage2D.origin(), DMAverage2D.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage1D.base(), DMAverage1D.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage2D.base(), DMAverage2D.num_elements(), ComplexType(0.0, 0.0));
   }
 
 private:

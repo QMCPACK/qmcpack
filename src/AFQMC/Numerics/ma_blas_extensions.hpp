@@ -36,7 +36,7 @@ template<class T,
 void adotpby(T const alpha, MultiArray1Dx const& x, MultiArray1Dy const& y, Q const beta, ptr res)
 {
   assert(x.size() == y.size());
-  adotpby(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride(), beta,
+  adotpby(x.size(), alpha, pointer_dispatch(x.base()), x.stride(), pointer_dispatch(y.base()), y.stride(), beta,
           to_address(res));
 }
 
@@ -55,8 +55,8 @@ void adotpby(T const alpha, MultiArray2Dx const& x, MultiArray2Dy const& y, Q co
   if (get<0>(x.sizes()) != get<0>(y.sizes()) || get<0>(x.sizes()) != get<0>(res.sizes()) || get<1>(x.sizes()) != get<1>(y.sizes()) || get<1>(x.strides()) != 1 ||
       get<1>(y.strides()) != 1)
     throw std::runtime_error(" Error: Inconsistent matrix dimensions in adotpby(2D).\n");
-  strided_adotpby(get<0>(x.sizes()), get<1>(x.sizes()), alpha, pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()),
-                  y.stride(), beta, to_address(res.origin()), res.stride());
+  strided_adotpby(get<0>(x.sizes()), get<1>(x.sizes()), alpha, pointer_dispatch(x.base()), x.stride(), pointer_dispatch(y.base()),
+                  y.stride(), beta, to_address(res.base()), res.stride());
 }
 
 template<class T,
@@ -67,7 +67,7 @@ template<class T,
 MultiArray1Dy&& axty(T const alpha, MultiArray1Dx const& x, MultiArray1Dy&& y)
 {
   assert(x.size() == y.size());
-  axty(x.size(), alpha, pointer_dispatch(x.origin()), x.stride(), pointer_dispatch(y.origin()), y.stride());
+  axty(x.size(), alpha, pointer_dispatch(x.base()), x.stride(), pointer_dispatch(y.base()), y.stride());
   return y;
 }
 
@@ -85,7 +85,7 @@ MultiArray2DB&& axty(T const alpha, MultiArray2DA const& A, MultiArray2DB&& B)
   assert(A.stride() == get<1>(A.sizes()));
   assert(get<1>(B.strides()) == 1);
   assert(B.stride() == get<1>(B.sizes()));
-  axty(A.num_elements(), alpha, pointer_dispatch(A.origin()), 1, pointer_dispatch(B.origin()), 1);
+  axty(A.num_elements(), alpha, pointer_dispatch(A.base()), 1, pointer_dispatch(B.base()), 1);
   return B;
 }
 
@@ -105,8 +105,8 @@ MultiArray2DB&& acAxpbB(T const alpha, MultiArray2DA const& A, MultiArray1D cons
   assert(get<0>(A.sizes()) == get<0>(B.sizes()));
   assert(get<1>(A.sizes()) == get<1>(B.sizes()));
   assert(get<1>(A.sizes()) == get<0>(x.sizes()));
-  acAxpbB(get<1>(A.sizes()), get<0>(A.sizes()), alpha, pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(x.origin()),
-          x.stride(), beta, pointer_dispatch(B.origin()), B.stride());
+  acAxpbB(get<1>(A.sizes()), get<0>(A.sizes()), alpha, pointer_dispatch(A.base()), A.stride(), pointer_dispatch(x.base()),
+          x.stride(), beta, pointer_dispatch(B.base()), B.stride());
   return B;
 }
 
@@ -120,7 +120,7 @@ MultiArray1Dy&& adiagApy(T const alpha, MultiArray2DA const& A, MultiArray1Dy&& 
   using std::get;
   assert(get<0>(A.sizes()) == get<1>(A.sizes()));
   assert(get<0>(A.sizes()) == y.size());
-  adiagApy(y.size(), alpha, pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(y.origin()), y.stride());
+  adiagApy(y.size(), alpha, pointer_dispatch(A.base()), A.stride(), pointer_dispatch(y.base()), y.stride());
   return y;
 }
 
@@ -128,7 +128,7 @@ template<class MultiArray1D,
          typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type>
 auto sum(MultiArray1D const& y)
 {
-  return sum(y.size(), pointer_dispatch(y.origin()), y.stride());
+  return sum(y.size(), pointer_dispatch(y.base()), y.stride());
 }
 
 template<class MultiArray2D,
@@ -139,7 +139,7 @@ auto sum(MultiArray2D const& A)
   using std::get;
   assert(get<1>(A.strides()) == 1);
   // blas call assumes fortran ordering
-  return sum(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride());
+  return sum(get<1>(A.sizes()), get<0>(A.sizes()), pointer_dispatch(A.base()), A.stride());
 }
 
 template<class MultiArray3D,
@@ -153,7 +153,7 @@ auto sum(MultiArray3D const& A)
   assert(A.stride() == get<1>(A.sizes()) * get<2>(A.sizes()));
   assert(get<1>(A.strides()) == get<2>(A.sizes()));
   assert(get<2>(A.strides()) == 1);
-  return sum(A.num_elements(), pointer_dispatch(A.origin()), 1);
+  return sum(A.num_elements(), pointer_dispatch(A.base()), 1);
 }
 
 template<class MultiArray4D,
@@ -169,7 +169,7 @@ auto sum(MultiArray4D const& A)
   assert(get<1>(A.strides()) == get<2>(A.sizes()) * get<3>(A.sizes()));
   assert(get<2>(A.strides()) == get<3>(A.sizes()));
   assert(get<3>(A.strides()) == 1);
-  return sum(A.num_elements(), pointer_dispatch(A.origin()), 1);
+  return sum(A.num_elements(), pointer_dispatch(A.base()), 1);
 }
 
 template<class T,
@@ -178,21 +178,21 @@ template<class T,
 MultiArray1D&& setVector(T alpha, MultiArray1D&& a)
 {
   using std::get;
-  set1D(get<0>(a.sizes()), alpha, pointer_dispatch(a.origin()), a.stride());
+  set1D(get<0>(a.sizes()), alpha, pointer_dispatch(a.base()), a.stride());
   return std::forward<MultiArray1D>(a);
 }
 
 template<class MultiArray1D, typename = std::enable_if_t<std::decay<MultiArray1D>::type::dimensionality == 1>>
 void zero_complex_part(MultiArray1D&& a)
 {
-  zero_complex_part(a.num_elements(), pointer_dispatch(a.origin()));
+  zero_complex_part(a.num_elements(), pointer_dispatch(a.base()));
 }
 
 template<class MultiArray2D, typename = std::enable_if_t<std::decay<MultiArray2D>::type::dimensionality == 2>>
 MultiArray2D&& set_identity(MultiArray2D&& m)
 {
   using std::get;
-  set_identity(get<1>(m.sizes()), get<0>(m.sizes()), pointer_dispatch(m.origin()), m.stride());
+  set_identity(get<1>(m.sizes()), get<0>(m.sizes()), pointer_dispatch(m.base()), m.stride());
   return std::forward<MultiArray2D>(m);
 }
 
@@ -202,7 +202,7 @@ template<class MultiArray3D,
 MultiArray3D&& set_identity(MultiArray3D&& m)
 {
   using std::get;
-  set_identity_strided(get<0>(m.sizes()), m.stride(), get<2>(m.sizes()), get<1>(m.sizes()), pointer_dispatch(m.origin()), get<1>(m.strides()));
+  set_identity_strided(get<0>(m.sizes()), m.stride(), get<2>(m.sizes()), get<1>(m.sizes()), pointer_dispatch(m.base()), get<1>(m.strides()));
   return std::forward<MultiArray3D>(m);
 }
 
@@ -213,7 +213,7 @@ MultiArray2D&& fill(MultiArray2D&& m, T const& value)
 {
   using qmcplusplus::afqmc::fill2D;
   using std::get;
-  fill2D(get<0>(m.sizes()), get<1>(m.sizes()), pointer_dispatch(m.origin()), m.stride(), value);
+  fill2D(get<0>(m.sizes()), get<1>(m.sizes()), pointer_dispatch(m.base()), m.stride(), value);
   return std::forward<MultiArray2D>(m);
 }
 
@@ -228,8 +228,8 @@ void get_diagonal_strided(MultiArray3D const& B, MultiArray2D&& A)
   if (get<0>(A.sizes()) != get<0>(B.sizes()) || get<1>(A.sizes()) != get<1>(B.sizes()) || get<1>(A.sizes()) != get<2>(B.sizes()) || get<1>(A.strides()) != 1 ||
       get<2>(B.strides()) != 1)
     throw std::runtime_error(" Error: Inconsistent matrix dimensions in get_diagonal_strided.\n");
-  get_diagonal_strided(get<0>(A.sizes()), get<1>(A.sizes()), pointer_dispatch(B.origin()), get<1>(B.strides()), B.stride(),
-                       pointer_dispatch(A.origin()), A.stride());
+  get_diagonal_strided(get<0>(A.sizes()), get<1>(A.sizes()), pointer_dispatch(B.base()), get<1>(B.strides()), B.stride(),
+                       pointer_dispatch(A.base()), A.stride());
 }
 
 template<class CSR,
@@ -259,7 +259,7 @@ void Matrix2MA(char TA, CSR const& A, MultiArray2D& M)
     throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
   }
   using std::fill_n;
-  fill_n(M.origin(), M.num_elements(), Type(0));
+  fill_n(M.base(), M.num_elements(), Type(0));
   auto pbegin = A.pointers_begin();
   auto pend   = A.pointers_end();
   int_type p0(pbegin[0]);
@@ -311,7 +311,7 @@ void Matrix2MAREF(char TA, CSR const& A, MultiArray2D& M)
   else if ((TA == 'T' || TA == 'H') && ((get<0>(M.sizes()) != get<1>(A.sizes())) || (get<1>(M.sizes()) != get<0>(A.sizes()))))
     throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
   using std::fill_n;
-  fill_n(M.origin(), M.num_elements(), Type(0));
+  fill_n(M.base(), M.num_elements(), Type(0));
   auto pbegin = A.pointers_begin();
   auto pend   = A.pointers_end();
   int_type p0(pbegin[0]);
@@ -379,7 +379,7 @@ void Matrix2MA(char TA, CSR const& A, MultiArray2D& M, Vector const& occups)
   else
     throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");
   using std::fill_n;
-  fill_n(M.origin(), M.num_elements(), Type(0));
+  fill_n(M.base(), M.num_elements(), Type(0));
   auto pbegin = A.pointers_begin();
   auto pend   = A.pointers_end();
   auto p0     = pbegin[0];
@@ -488,8 +488,8 @@ void Matrix2MA(char TA, MA const& A, MultiArray2D& M)
   }
   else
   {
-    geam(TA, TA, get<1>(M.sizes()), get<0>(M.sizes()), Type2(1.0), pointer_dispatch(A.origin()), A.stride(), Type2(0.0),
-         pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(M.origin()), M.stride());
+    geam(TA, TA, get<1>(M.sizes()), get<0>(M.sizes()), Type2(1.0), pointer_dispatch(A.base()), A.stride(), Type2(0.0),
+         pointer_dispatch(A.base()), A.stride(), pointer_dispatch(M.base()), M.stride());
   }
 }
 
@@ -555,8 +555,8 @@ void Matrix2MAREF(char TA, MA const& A, MultiArray2D& M)
   }
   else
   {
-    geam(TA, TA, get<1>(M.sizes()), get<0>(M.sizes()), Type2(1.0), pointer_dispatch(A.origin()), A.stride(), Type2(0.0),
-         pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(M.origin()), M.stride());
+    geam(TA, TA, get<1>(M.sizes()), get<0>(M.sizes()), Type2(1.0), pointer_dispatch(A.base()), A.stride(), Type2(0.0),
+         pointer_dispatch(A.base()), A.stride(), pointer_dispatch(M.base()), M.stride());
   }
 }
 

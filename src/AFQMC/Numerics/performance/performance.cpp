@@ -97,24 +97,24 @@ void timeBatchedQR(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch
 {
   using T    = typename Allocator::value_type;
   int offset = 0;
-  Tensor3D_ref<T> A(buffer.origin(), {nbatch, m, n});
+  Tensor3D_ref<T> A(buffer.base(), {nbatch, m, n});
   offset += A.num_elements();
-  Tensor3D_ref<T> AT(buffer.origin() + offset, {nbatch, n, m});
+  Tensor3D_ref<T> AT(buffer.base() + offset, {nbatch, n, m});
   offset += AT.num_elements();
-  Tensor2D_ref<T> T_(buffer.origin() + offset, {nbatch, m});
+  Tensor2D_ref<T> T_(buffer.base() + offset, {nbatch, m});
   offset += T_.num_elements();
-  Tensor2D_ref<T> scl(buffer.origin() + offset, {nbatch, m});
+  Tensor2D_ref<T> scl(buffer.base() + offset, {nbatch, m});
   offset += T_.num_elements();
   int sz = ma::gqr_optimal_workspace_size(AT[0]);
   //std::cout << buffer.num_elements() << " " << 2*nbatch*m*n + 2*nbatch*m + nbatch*sz << " " << offset << std::endl;
-  Tensor1D_ref<T> WORK(buffer.origin() + offset, boost::multi::iextensions<1u>{nbatch * sz});
+  Tensor1D_ref<T> WORK(buffer.base() + offset, boost::multi::iextensions<1u>{nbatch * sz});
   Alloc<int> ialloc{};
   std::vector<pointer<T>> Aarray;
   Tensor1D<int> IWORK(boost::multi::iextensions<1u>{nbatch * (m + 1)}, ialloc);
   using std::copy_n;
   for (int i = 0; i < nbatch; i++)
   {
-    Aarray.emplace_back(A[i].origin());
+    Aarray.emplace_back(A[i].base());
   }
   // Actual profile.
   Timer timer;
@@ -122,14 +122,14 @@ void timeBatchedQR(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch
     ma::transpose(A[i], AT[i]);
   double ttrans = timer.elapsed();
   timer.restart();
-  geqrfStrided(m, n, AT.origin(), m, m * n, T_.origin(), m, IWORK.origin(), nbatch);
+  geqrfStrided(m, n, AT.base(), m, m * n, T_.base(), m, IWORK.base(), nbatch);
   double tgeqrf = timer.elapsed();
   timer.restart();
   for (int i = 0; i < nbatch; i++)
-    determinant_from_geqrf(n, AT[i].origin(), m, scl[i].origin(), T(0.0));
+    determinant_from_geqrf(n, AT[i].base(), m, scl[i].base(), T(0.0));
   double tdet = timer.elapsed();
   timer.restart();
-  gqrStrided(m, n, n, AT.origin(), m, m * n, T_.origin(), m, WORK.origin(), sz, IWORK.origin(), nbatch);
+  gqrStrided(m, n, n, AT.base(), m, m * n, T_.base(), m, WORK.base(), sz, IWORK.base(), nbatch);
   double tgqr = timer.elapsed();
   out << "  " << std::setw(5) << nbatch << "   " << std::setw(5) << m << " " << std::setw(5) << n << " "
       << std::scientific << ttrans << " " << tgeqrf << " " << tdet << " " << tgqr << "\n";
@@ -140,12 +140,12 @@ void timeQR(std::ostream& out, Allocator& alloc, Buff& buffer, int m)
 {
   using T    = typename Allocator::value_type;
   int offset = 0;
-  Tensor2D_ref<T> A(buffer.origin(), {m, m});
+  Tensor2D_ref<T> A(buffer.base(), {m, m});
   offset += A.num_elements();
-  Tensor1D_ref<T> TAU(buffer.origin() + offset, {m});
+  Tensor1D_ref<T> TAU(buffer.base() + offset, {m});
   offset += TAU.num_elements();
   int sz = ma::gqr_optimal_workspace_size(A);
-  Tensor1D_ref<T> WORK(buffer.origin() + offset, boost::multi::iextensions<1u>{sz});
+  Tensor1D_ref<T> WORK(buffer.base() + offset, boost::multi::iextensions<1u>{sz});
   Timer timer;
   using ma::geqrf;
   geqrf(A, TAU, WORK);
@@ -163,14 +163,14 @@ void timeExchangeKernel(std::ostream& out, Allocator& alloc, Buff& buffer, int n
 {
   using T    = typename Allocator::value_type;
   int offset = 0;
-  Tensor3D_ref<T> Twabn(buffer.origin(), {2 * nbatch, nwalk * nocc, nocc * nchol});
+  Tensor3D_ref<T> Twabn(buffer.base(), {2 * nbatch, nwalk * nocc, nocc * nchol});
   offset += Twabn.num_elements();
-  Tensor1D_ref<T> scal(buffer.origin() + offset, boost::multi::iextensions<1u>{nbatch});
+  Tensor1D_ref<T> scal(buffer.base() + offset, boost::multi::iextensions<1u>{nbatch});
   offset += scal.num_elements();
-  Tensor1D_ref<T> result(buffer.origin() + offset, boost::multi::iextensions<1u>{nwalk});
+  Tensor1D_ref<T> result(buffer.base() + offset, boost::multi::iextensions<1u>{nwalk});
   using ma::batched_dot_wabn_wban;
   Timer timer;
-  batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.origin(), Twabn.origin(), to_address(result.data()), 1);
+  batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.base(), Twabn.base(), to_address(result.data()), 1);
   double time = timer.elapsed();
   out << "    " << std::setw(5) << nbatch << " " << std::setw(5) << nwalk << " " << std::setw(5) << nocc << " "
       << std::setw(5) << nchol << "    " << std::scientific << time << "\n";
@@ -181,11 +181,11 @@ void timeBatchedGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int nbat
 {
   using T    = typename Allocator::value_type;
   int offset = 0;
-  Tensor2D_ref<T> a(buffer.origin(), {m, m});
+  Tensor2D_ref<T> a(buffer.base(), {m, m});
   offset += a.num_elements();
-  Tensor2D_ref<T> b(buffer.origin() + offset, {m, m});
+  Tensor2D_ref<T> b(buffer.base() + offset, {m, m});
   offset += b.num_elements();
-  Tensor3D_ref<T> c(buffer.origin() + offset, {nbatch, m, m});
+  Tensor3D_ref<T> c(buffer.base() + offset, {nbatch, m, m});
   //float scale = float(100.0);
   std::vector<pointer<T>> A_array;
   std::vector<pointer<T>> B_array;
@@ -194,9 +194,9 @@ void timeBatchedGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int nbat
   float beta  = 0.0;
   for (int i = 0; i < nbatch; i++)
   {
-    A_array.emplace_back(a.origin());
-    B_array.emplace_back(b.origin());
-    C_array.emplace_back(c[i].origin());
+    A_array.emplace_back(a.base());
+    B_array.emplace_back(b.base());
+    C_array.emplace_back(c[i].base());
   }
   using ma::gemmBatched;
   Timer timer;
@@ -210,11 +210,11 @@ void timeGemm(std::ostream& out, Allocator& alloc, Buff& buffer, int m, int n)
 {
   using T    = typename Allocator::value_type;
   int offset = 0;
-  Tensor2D_ref<T> a(buffer.origin(), {m, m});
+  Tensor2D_ref<T> a(buffer.base(), {m, m});
   offset += a.num_elements();
-  Tensor2D_ref<T> b(buffer.origin() + offset, {m, n});
+  Tensor2D_ref<T> b(buffer.base() + offset, {m, n});
   offset += b.num_elements();
-  Tensor2D_ref<T> c(buffer.origin() + offset, {m, n});
+  Tensor2D_ref<T> c(buffer.base() + offset, {m, n});
   using ma::product;
   Timer timer;
   product(a, b, c);
@@ -227,8 +227,8 @@ void timeBatchedMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer,
 {
   using T    = typename Allocator::value_type;
   int offset = 0;
-  Tensor3D_ref<T> a(buffer.origin(), {nbatch, m, m});
-  Tensor3D_ref<T> b(buffer.origin() + a.num_elements(), {nbatch, m, m});
+  Tensor3D_ref<T> a(buffer.base(), {nbatch, m, m});
+  Tensor3D_ref<T> b(buffer.base() + a.num_elements(), {nbatch, m, m});
   Alloc<int> ialloc{};
   Tensor1D<int> IWORK(boost::multi::iextensions<1u>{nbatch * (m + 1)}, ialloc);
   std::vector<pointer<T>> A_array, B_array;
@@ -236,18 +236,18 @@ void timeBatchedMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer,
   B_array.reserve(nbatch);
   for (int i = 0; i < nbatch; i++)
   {
-    A_array.emplace_back(a[i].origin());
-    B_array.emplace_back(b[i].origin());
+    A_array.emplace_back(a[i].base());
+    B_array.emplace_back(b[i].base());
   }
   using ma::getrfBatched;
   Timer timer;
-  getrfBatched(m, A_array.data(), m, ma::pointer_dispatch(IWORK.origin()),
-               ma::pointer_dispatch(IWORK.origin()) + nbatch * m, nbatch);
+  getrfBatched(m, A_array.data(), m, ma::pointer_dispatch(IWORK.base()),
+               ma::pointer_dispatch(IWORK.base()) + nbatch * m, nbatch);
   double tgetrf = timer.elapsed();
   using ma::getriBatched;
   timer.restart();
-  getriBatched(m, A_array.data(), m, ma::pointer_dispatch(IWORK.origin()), B_array.data(), m,
-               ma::pointer_dispatch(IWORK.origin()) + nbatch * m, nbatch);
+  getriBatched(m, A_array.data(), m, ma::pointer_dispatch(IWORK.base()), B_array.data(), m,
+               ma::pointer_dispatch(IWORK.base()) + nbatch * m, nbatch);
   double tgetri = timer.elapsed();
   out << "  " << std::setw(6) << nbatch << " " << std::setw(5) << m << " " << std::scientific << tgetrf << " " << tgetri
       << "\n";
@@ -258,8 +258,8 @@ void timeMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer, int m)
 {
   using T    = typename Allocator::value_type;
   int offset = 0;
-  Tensor2D_ref<T> a(buffer.origin(), {m, m});
-  Tensor1D_ref<T> WORK(buffer.origin() + a.num_elements(), boost::multi::iextensions<1u>{m * m});
+  Tensor2D_ref<T> a(buffer.base(), {m, m});
+  Tensor1D_ref<T> WORK(buffer.base() + a.num_elements(), boost::multi::iextensions<1u>{m * m});
   Alloc<int> ialloc{};
   Tensor1D<int> IWORK(boost::multi::iextensions<1u>{m + 1}, ialloc);
   using ma::getrf;
@@ -388,7 +388,7 @@ int main(int argc, char* argv[])
       std::vector<std::complex<double>> tmp(size);
       fillRandomMatrix(tmp);
       using std::copy_n;
-      copy_n(tmp.data(), tmp.size(), buffer.origin());
+      copy_n(tmp.data(), tmp.size(), buffer.base());
     }
     for (auto b : batches)
     {
@@ -413,7 +413,7 @@ int main(int argc, char* argv[])
       std::vector<std::complex<double>> tmp(size);
       fillRandomMatrix(tmp);
       using std::copy_n;
-      copy_n(tmp.data(), tmp.size(), buffer.origin());
+      copy_n(tmp.data(), tmp.size(), buffer.base());
     }
     for (auto m : num_rows)
     {

@@ -184,8 +184,8 @@ public:
     set_shm_buffer(comm, NAEA * (NMO + 2 * M));
     assert(SM_TMats->num_elements() >= NAEA * (NMO + 2 * M));
     boost::multi::array_ref<T, 2> T0(to_address(SM_TMats->origin()), {NMO, NAEA});
-    boost::multi::array_ref<T, 2> T1(to_address(T0.origin()) + T0.num_elements(), {M, NAEA});
-    boost::multi::array_ref<T, 2> T2(to_address(T1.origin()) + T1.num_elements(), {M, NAEA});
+    boost::multi::array_ref<T, 2> T1(to_address(T0.base()) + T0.num_elements(), {M, NAEA});
+    boost::multi::array_ref<T, 2> T2(to_address(T1.base()) + T1.num_elements(), {M, NAEA});
     using ma::H;
     using ma::T;
     if (comm.root())

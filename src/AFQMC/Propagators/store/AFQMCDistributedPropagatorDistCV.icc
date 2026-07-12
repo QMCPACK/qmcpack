@@ -83,7 +83,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       buffer = std::move(sharedCVector(iextensions<1u>{memory_needs}, aux_alloc_));
     }
     memory_report();
-    fill_n(buffer.origin(), buffer.num_elements(), ComplexType(0.0));
+    fill_n(buffer.base(), buffer.num_elements(), ComplexType(0.0));
   }
 
   memory_needs       = nwalk * (2 * Gsize + 2 * NMO * NMO * nsteps);
@@ -102,46 +102,46 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 #endif
     }
     memory_report();
-    fill_n(comm_buffer.origin(), comm_buffer.num_elements(), ComplexType(0.0));
+    fill_n(comm_buffer.base(), comm_buffer.num_elements(), ComplexType(0.0));
     new_shm_space = true;
   }
 
   // convert array to a basic_array<element,1,pointer>. This generates a view of buffer
   // with type basic_array<ComplexType,1,pointer> which eliminates the need to cast origin()
   //auto mem_pool(boost::multi::static_array_cast<ComplexType, pointer>(buffer));
-  CVector_ref mem_pool(make_device_ptr(buffer.origin()), buffer.extensions());
-  stdCVector_ref comm_mem_pool(static_cast<ComplexType*>(comm_buffer.origin()), comm_buffer.extensions());
+  CVector_ref mem_pool(make_device_ptr(buffer.base()), buffer.extensions());
+  stdCVector_ref comm_mem_pool(static_cast<ComplexType*>(comm_buffer.base()), comm_buffer.extensions());
 
   size_t displ = 0;
   // Mixed Density Matrix for walkers at original configuration
-  CMatrix_ref Gwork(mem_pool.origin() + displ, {G_nr, G_nc});
+  CMatrix_ref Gwork(mem_pool.base() + displ, {G_nr, G_nc});
   displ += G_nr * G_nc;
   // vias potential for walkers at original configuration
-  CMatrix_ref vbias(mem_pool.origin() + displ, {long(localnCV), nwalk});
+  CMatrix_ref vbias(mem_pool.base() + displ, {long(localnCV), nwalk});
   displ += localnCV * nwalk;
   // right hand side matrix in calculation of HS potential for all steps: ~ sigma + (vbias-vMF)
   // The same vbias is used in all steps
-  CMatrix_ref X(mem_pool.origin() + displ, {long(localnCV), nwalk * nsteps});
+  CMatrix_ref X(mem_pool.base() + displ, {long(localnCV), nwalk * nsteps});
   displ += localnCV * nwalk * nsteps;
   // HS potential for all steps.
-  CMatrix_ref vHS(mem_pool.origin() + displ, {vhs_nr, vhs_nc});
+  CMatrix_ref vHS(mem_pool.base() + displ, {vhs_nr, vhs_nc});
   displ += vhs_nr * vhs_nc;
   // second view of vHS matrix for use in propagation step
-  C3Tensor_ref vHS3D(vHS.origin(), {vhs3d_n1, vhs3d_n2, vhs3d_n3});
+  C3Tensor_ref vHS3D(vHS.base(), {vhs3d_n1, vhs3d_n2, vhs3d_n3});
 
   // setup communication buffers
   displ = 0;
   // Mixed Density Matrix for walkers at original configuration
-  stdCMatrix_ref Gsend(comm_mem_pool.origin() + displ, {G_nr, G_nc});
+  stdCMatrix_ref Gsend(comm_mem_pool.base() + displ, {G_nr, G_nc});
   displ += G_nr * G_nc;
   // Mixed Density Matrix used for communication
-  stdCMatrix_ref Grecv(comm_mem_pool.origin() + displ, {G_nr, G_nc});
+  stdCMatrix_ref Grecv(comm_mem_pool.base() + displ, {G_nr, G_nc});
   displ += G_nr * G_nc;
   // HS potential for communication
-  stdCMatrix_ref vsend(comm_mem_pool.origin() + displ, {vhs_nr, vhs_nc});
+  stdCMatrix_ref vsend(comm_mem_pool.base() + displ, {vhs_nr, vhs_nc});
   displ += vhs_nr * vhs_nc;
   // HS potential for communication
-  stdCMatrix_ref vrecv(comm_mem_pool.origin() + displ, {vhs_nr, vhs_nc});
+  stdCMatrix_ref vrecv(comm_mem_pool.base() + displ, {vhs_nr, vhs_nc});
 
   // partition G and v for communications: all cores communicate a piece of the matrix
   int vak0, vakN;
@@ -159,13 +159,13 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       MPI_Request_free(&req_vrecv);
     if (req_vsend != MPI_REQUEST_NULL)
       MPI_Request_free(&req_vsend);
-    MPI_Send_init(to_address(Gsend.origin()) + Gak0, (GakN - Gak0) * sizeof(ComplexType), MPI_CHAR, TG.prev_core(),
+    MPI_Send_init(to_address(Gsend.base()) + Gak0, (GakN - Gak0) * sizeof(ComplexType), MPI_CHAR, TG.prev_core(),
                   3456, &TG.TG(), &req_Gsend);
-    MPI_Recv_init(to_address(Grecv.origin()) + Gak0, (GakN - Gak0) * sizeof(ComplexType), MPI_CHAR, TG.next_core(),
+    MPI_Recv_init(to_address(Grecv.base()) + Gak0, (GakN - Gak0) * sizeof(ComplexType), MPI_CHAR, TG.next_core(),
                   3456, &TG.TG(), &req_Grecv);
-    MPI_Send_init(to_address(vsend.origin()) + vak0, (vakN - vak0) * sizeof(ComplexType), MPI_CHAR, TG.prev_core(),
+    MPI_Send_init(to_address(vsend.base()) + vak0, (vakN - vak0) * sizeof(ComplexType), MPI_CHAR, TG.prev_core(),
                   5678, &TG.TG(), &req_vsend);
-    MPI_Recv_init(to_address(vrecv.origin()) + vak0, (vakN - vak0) * sizeof(ComplexType), MPI_CHAR, TG.next_core(),
+    MPI_Recv_init(to_address(vrecv.base()) + vak0, (vakN - vak0) * sizeof(ComplexType), MPI_CHAR, TG.next_core(),
                   5678, &TG.TG(), &req_vrecv);
   }
 
@@ -188,7 +188,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     P1          = std::move(generate1BodyPropagator<P1shm>(TG, 1e-8, dt, H1));
   }
 
-  fill_n(vsend.origin() + vak0, (vakN - vak0), zero);
+  fill_n(vsend.base() + vak0, (vakN - vak0), zero);
 
   TG.local_barrier();
   AFQMCTimers[setup_timer].get().stop();
@@ -211,7 +211,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       MPI_Wait(&req_Grecv, &st);
       MPI_Wait(&req_Gsend, &st); // need to wait for Gsend in order to overwrite Gsend
       ma::copy(Grecv.sliced(Gak0, GakN), Gsend.sliced(Gak0, GakN));
-      copy_n(Grecv.origin() + Gak0, GakN - Gak0, Gwork.origin() + Gak0);
+      copy_n(Grecv.base() + Gak0, GakN - Gak0, Gwork.base() + Gak0);
       TG.local_barrier();
     }
 
@@ -231,8 +231,8 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
     // 4b. Assemble X(nCV,nsteps,nwalk)
     int q = (node_number + k) % nnodes;
-    CMatrix_ref mf_(MFfactor[q * nsteps].origin(), {long(nsteps), long(nwalk)});
-    CMatrix_ref hw_(hybrid_weight[q * nsteps].origin(), {long(nsteps), long(nwalk)});
+    CMatrix_ref mf_(MFfactor[q * nsteps].base(), {long(nsteps), long(nwalk)});
+    CMatrix_ref hw_(hybrid_weight[q * nsteps].base(), {long(nsteps), long(nwalk)});
     assemble_X(nsteps, nwalk, sqrtdt, X, vbias, mf_, hw_);
 
     // 4c. Calculate vHS(M*M,nsteps,nwalk)
@@ -247,17 +247,17 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     {
       MPI_Wait(&req_vrecv, &st);
       MPI_Wait(&req_vsend, &st);
-      copy_n(vrecv.origin() + vak0, vakN - vak0, vsend.origin() + vak0);
+      copy_n(vrecv.base() + vak0, vakN - vak0, vsend.base() + vak0);
     }
 
     // 6. add local contribution to vsend
     using ma::axpy;
 #ifdef ENABLE_CUDA
-    copy_n(vHS.origin() + vak0, vakN - vak0,
-           vrecv.origin() + vak0); // using vrecv as temporary space, since it is free now
-    axpy(vakN - vak0, one, vrecv.origin() + vak0, 1, vsend.origin() + vak0, 1);
+    copy_n(vHS.base() + vak0, vakN - vak0,
+           vrecv.base() + vak0); // using vrecv as temporary space, since it is free now
+    axpy(vakN - vak0, one, vrecv.base() + vak0, 1, vsend.base() + vak0, 1);
 #else
-    axpy(vakN - vak0, one, vHS.origin() + vak0, 1, vsend.origin() + vak0, 1);
+    axpy(vakN - vak0, one, vHS.base() + vak0, 1, vsend.base() + vak0, 1);
 #endif
 
     // 7. start v communication
@@ -271,14 +271,14 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   AFQMCTimers[vHS_comm_overhead_timer].get().start();
   MPI_Wait(&req_vrecv, &st);
   MPI_Wait(&req_vsend, &st);
-  copy_n(vrecv.origin() + vak0, vakN - vak0, vHS.origin() + vak0);
+  copy_n(vrecv.base() + vak0, vakN - vak0, vHS.base() + vak0);
   TG.local_barrier();
 
   // reduce MF and HWs
   if (TG.TG().size() > 1)
   {
-    TG.TG().all_reduce_in_place_n(to_address(MFfactor.origin()), MFfactor.num_elements(), std::plus<>());
-    TG.TG().all_reduce_in_place_n(to_address(hybrid_weight.origin()), hybrid_weight.num_elements(), std::plus<>());
+    TG.TG().all_reduce_in_place_n(to_address(MFfactor.base()), MFfactor.num_elements(), std::plus<>());
+    TG.TG().all_reduce_in_place_n(to_address(hybrid_weight.base()), hybrid_weight.num_elements(), std::plus<>());
   }
   TG.local_barrier();
   AFQMCTimers[vHS_comm_overhead_timer].get().stop();

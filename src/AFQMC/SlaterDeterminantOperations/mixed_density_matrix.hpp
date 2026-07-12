@@ -185,7 +185,7 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
 
   // TNN = TAB[ref,:]
   for (int i = 0; i < NEL; i++)
-    std::copy_n(to_address(TAB[*(ref + i)].origin()), NEL, to_address(TNN[i].origin()));
+    std::copy_n(to_address(TAB[*(ref + i)].base()), NEL, to_address(TNN[i].base()));
 
   // TNN = TNN^(-1)
   Tp ovlp = ma::invert(std::forward<Mat1>(TNN), IWORK, WORK, LogOverlapFactor);
@@ -266,7 +266,7 @@ Tp MixedDensityMatrixFromConfiguration(const MatA& hermA,
 
   // TNN = TAB[ref,:]
   for (int i = 0; i < NEL; i++)
-    std::copy_n(to_address(TAB[*(ref + i)].origin()), NEL, to_address(TNN[i].origin()));
+    std::copy_n(to_address(TAB[*(ref + i)].base()), NEL, to_address(TNN[i].base()));
 
   // TNN = TNN^(-1)
   Tp ovlp = ma::invert(std::forward<Mat1>(TNN), IWORK, WORK, LogOverlapFactor);
@@ -426,19 +426,19 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
 
   // keep a copy of U in UA temporarily
   using std::copy_n;
-  copy_n(U.origin(), U.num_elements(), UA.origin());
+  copy_n(U.base(), U.num_elements(), UA.base());
 
   // get determinant, since you can't get the phase trivially from SVD
   Tp ovlp = ma::determinant(U, IWORK, WORK, LogOverlapFactor);
   //  ma::geqrf(U,VT[0],WORK);
-  //  determinant_from_geqrf(N,U.origin(),U.stride(),VT[1].origin(),LogOverlapFactor,ovlp);
+  //  determinant_from_geqrf(N,U.base(),U.stride(),VT[1].base(),LogOverlapFactor,ovlp);
   //  if you want the correct phase of the determinant
   //  ma::gqr(U,S.sliced(0,N),WORK);
   //  ComplexType ovQ = ma::determinant(U,IWORK,WORK,0.0);
   //  *ovlp *= ovQ;
 
   // restore U
-  copy_n(UA.origin(), U.num_elements(), U.origin());
+  copy_n(UA.base(), U.num_elements(), U.base());
 
   // H(A)*B = AtB = U * S * VT
   // inv(H(A)*B) = inv(AtB) = H(VT) * inv(S) * H(U)
@@ -463,8 +463,8 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
 
 
     // VT = VT * inv(S), which works since S is diagonal and real
-    term_by_term_matrix_vector(ma::TOp_DIV, 0, get<0>(VT.sizes()), get<1>(VT.sizes()), ma::pointer_dispatch(VT.origin()), VT.stride(),
-                               ma::pointer_dispatch(S.origin()), 1);
+    term_by_term_matrix_vector(ma::TOp_DIV, 0, get<0>(VT.sizes()), get<1>(VT.sizes()), ma::pointer_dispatch(VT.base()), VT.stride(),
+                               ma::pointer_dispatch(S.base()), 1);
 
     // BV = H(VT) * H(U)
     ma::product(H(VT), H(U), BV.sliced(0, N));
@@ -483,8 +483,8 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
     ma::product(B, H(VT), BV);
 
     // BV = BV * inv(S), which works since S is diagonal and real
-    term_by_term_matrix_vector(ma::TOp_DIV, 1, get<0>(BV.sizes()), get<1>(BV.sizes()), ma::pointer_dispatch(BV.origin()), BV.stride(),
-                               ma::pointer_dispatch(S.origin()), 1);
+    term_by_term_matrix_vector(ma::TOp_DIV, 1, get<0>(BV.sizes()), get<1>(BV.sizes()), ma::pointer_dispatch(BV.base()), BV.stride(),
+                               ma::pointer_dispatch(S.base()), 1);
 
     // UA = H(U) * H(A)
     ma::product(H(U), H(A), UA);
@@ -574,7 +574,7 @@ Tp OverlapForWoodbury(const MatA& hermA,
 
   // TNN = TMN[ref,:]
   for (int i = 0; i < NEL; i++)
-    std::copy_n(to_address(TMN[*(ref + i)].origin()), NEL, to_address(TNN[i].origin()));
+    std::copy_n(to_address(TMN[*(ref + i)].base()), NEL, to_address(TNN[i].base()));
 
   // TNN -> inv(TNN)
   Tp ovlp = ma::invert(std::forward<MatD>(TNN), IWORK, WORK, LogOverlapFactor);
@@ -864,7 +864,7 @@ Tp OverlapForWoodbury(const MatA& hermA,
   if (comm.rank() == 0)
   {
     for (int i = 0; i < NEL; i++)
-      std::copy_n(to_address(TMN[*(ref + i)].origin()), NEL, to_address(TNN[i].origin()));
+      std::copy_n(to_address(TMN[*(ref + i)].base()), NEL, to_address(TNN[i].base()));
     ovlp = ma::invert(std::forward<MatD>(TNN), IWORK, WORK, LogOverlapFactor);
   }
   comm.broadcast_n(&ovlp, 1, 0);
@@ -942,7 +942,7 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
 
     // TNN = TAB[ref,:]
     for (int i = 0; i < NEL; i++)
-      std::copy_n(to_address(TAB[*(ref + i)].origin()) + N0, Nn - N0, to_address(TNN[i].origin()) + N0);
+      std::copy_n(to_address(TAB[*(ref + i)].base()) + N0, Nn - N0, to_address(TNN[i].base()) + N0);
   }
 
   comm.barrier();
@@ -1056,9 +1056,9 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
   //  TNNi.reserve(nbatch);
   for (int i = 0; i < nbatch; i++)
   {
-    NNarray.emplace_back(TNN3D[i].origin());
-    Carray.emplace_back(C[i].origin());
-    Warray.emplace_back((*Bi[i]).origin());
+    NNarray.emplace_back(TNN3D[i].base());
+    Carray.emplace_back(C[i].base());
+    Warray.emplace_back((*Bi[i]).base());
     Ci.emplace_back(&C[i]);
     //    TNNi.emplace_back(TNN3D[i]);
   }
@@ -1076,16 +1076,16 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
     ma::BatchedProduct('C', 'N', hermA, Bi, Ct);
 
   // Invert Ct into TNN3D
-  getrfBatched(NEL, Carray.data(), ldC, ma::pointer_dispatch(IWORK.origin()),
-               ma::pointer_dispatch(IWORK.origin()) + nbatch * NEL, nbatch);
+  getrfBatched(NEL, Carray.data(), ldC, ma::pointer_dispatch(IWORK.base()),
+               ma::pointer_dispatch(IWORK.base()) + nbatch * NEL, nbatch);
 
   using ma::strided_determinant_from_getrf;
   strided_determinant_from_getrf(NEL, ma::pointer_dispatch(Carray[0]), ldC, C.stride(),
-                                 ma::pointer_dispatch(IWORK.origin()), NEL, LogOverlapFactor, to_address(ovlp.origin()),
+                                 ma::pointer_dispatch(IWORK.base()), NEL, LogOverlapFactor, to_address(ovlp.base()),
                                  nbatch);
 
-  getriBatched(NEL, Carray.data(), ldC, ma::pointer_dispatch(IWORK.origin()), NNarray.data(), ldN,
-               ma::pointer_dispatch(IWORK.origin()) + nbatch * NEL, nbatch);
+  getriBatched(NEL, Carray.data(), ldC, ma::pointer_dispatch(IWORK.base()), NNarray.data(), ldN,
+               ma::pointer_dispatch(IWORK.base()) + nbatch * NEL, nbatch);
 
 
   if (compact)
@@ -1104,7 +1104,7 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
       TNMi.reserve(nbatch);
       for (int i = 0; i < nbatch; i++)
       {
-        NMarray.emplace_back(TNM3D[i].origin());
+        NMarray.emplace_back(TNM3D[i].base());
         TNMi.emplace_back(&TNM3D[i]);
       }
 
@@ -1132,7 +1132,7 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
       std::vector<pointer> NMarray;
       NMarray.reserve(nbatch);
       for (int i = 0; i < nbatch; i++)
-        NMarray.emplace_back(TNM3D[i].origin());
+        NMarray.emplace_back(TNM3D[i].base());
 
       // T2 = T(T1) * T(B)
       // C = T( B * T2) = T(T2) * T(B)
@@ -1212,10 +1212,10 @@ void DensityMatrices(std::vector<MatA> const& Left,
   {
     assert((*Right[i]).stride() == ldR);
     assert((*Left[i]).stride() == ldL);
-    NNarray.emplace_back(TNN3D[i].origin());
-    Garray.emplace_back((*G[i]).origin());
-    Rarray.emplace_back((*Right[i]).origin());
-    Larray.emplace_back((*Left[i]).origin());
+    NNarray.emplace_back(TNN3D[i].base());
+    Garray.emplace_back((*G[i]).base());
+    Rarray.emplace_back((*Right[i]).base());
+    Larray.emplace_back((*Left[i]).base());
   }
 
   // T(conj(A))*B
@@ -1228,14 +1228,14 @@ void DensityMatrices(std::vector<MatA> const& Left,
 
   // T1 = T1^(-1)
   // Invert
-  getrfBatched(NEL, Garray.data(), NEL, ma::pointer_dispatch(IWORK.origin()),
-               ma::pointer_dispatch(IWORK.origin()) + nbatch * NEL, nbatch);
+  getrfBatched(NEL, Garray.data(), NEL, ma::pointer_dispatch(IWORK.base()),
+               ma::pointer_dispatch(IWORK.base()) + nbatch * NEL, nbatch);
 
-  batched_determinant_from_getrf(NEL, Garray.data(), NEL, IWORK.origin(), NEL, LogOverlapFactor,
-                                 to_address(ovlp.origin()), nbatch);
+  batched_determinant_from_getrf(NEL, Garray.data(), NEL, IWORK.base(), NEL, LogOverlapFactor,
+                                 to_address(ovlp.base()), nbatch);
 
-  getriBatched(NEL, Garray.data(), NEL, ma::pointer_dispatch(IWORK.origin()), ma::pointer_dispatch(NNarray.data()), ldN,
-               ma::pointer_dispatch(IWORK.origin()) + nbatch * NEL, nbatch);
+  getriBatched(NEL, Garray.data(), NEL, ma::pointer_dispatch(IWORK.base()), ma::pointer_dispatch(NNarray.data()), ldN,
+               ma::pointer_dispatch(IWORK.base()) + nbatch * NEL, nbatch);
 
   if (compact)
   {
@@ -1250,7 +1250,7 @@ void DensityMatrices(std::vector<MatA> const& Left,
     std::vector<pointer> NMarray;
     NMarray.reserve(nbatch);
     for (int i = 0; i < nbatch; i++)
-      NMarray.emplace_back(TNM3D[i].origin());
+      NMarray.emplace_back(TNM3D[i].base());
 
     if (herm)
     {
@@ -1322,8 +1322,8 @@ void Overlap(std::vector<MatA>& hermA,
   Ci.reserve(nbatch);
   for (int i = 0; i < nbatch; i++)
   {
-    NNarray.emplace_back(TNN3D[i].origin());
-    Warray.emplace_back((*Bi[i]).origin());
+    NNarray.emplace_back(TNN3D[i].base());
+    Warray.emplace_back((*Bi[i]).base());
     Ci.emplace_back(&TNN3D[i]);
   }
 
@@ -1339,11 +1339,11 @@ void Overlap(std::vector<MatA>& hermA,
 
   // T1 = T1^(-1)
   // Invert
-  getrfBatched(NEL, NNarray.data(), ldN, IWORK.origin(), IWORK.origin() + nbatch * NEL, nbatch);
+  getrfBatched(NEL, NNarray.data(), ldN, IWORK.base(), IWORK.base() + nbatch * NEL, nbatch);
 
   using ma::strided_determinant_from_getrf;
-  strided_determinant_from_getrf(NEL, NNarray[0], ldN, TNN3D.stride(), IWORK.origin(), NEL, LogOverlapFactor,
-                                 to_address(ovlp.origin()), nbatch);
+  strided_determinant_from_getrf(NEL, NNarray[0], ldN, TNN3D.stride(), IWORK.base(), NEL, LogOverlapFactor,
+                                 to_address(ovlp.base()), nbatch);
 }
 
 

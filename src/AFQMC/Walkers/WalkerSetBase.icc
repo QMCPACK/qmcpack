@@ -224,7 +224,7 @@ void WalkerSetBase<Alloc, Ptr>::reserve(int n)
   {
     bp_buffer.reextent({bp_walker_size, n});
     using std::fill_n;
-    fill_n(bp_buffer.origin(), bp_buffer.num_elements(), bp_element(0));
+    fill_n(bp_buffer.base(), bp_buffer.num_elements(), bp_element(0));
   }
 }
 

@@ -200,7 +200,7 @@ MultiArray1DC&& product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B,
   csrmv(op_tag<SparseMatrixA>::value, arg(A).size(), arg(A).size(1), elementA(alpha), "GxxCxx",
         pointer_dispatch(arg(A).non_zero_values_data()), pointer_dispatch(arg(A).non_zero_indices2_data()),
         pointer_dispatch(arg(A).pointers_begin()), pointer_dispatch(arg(A).pointers_end()),
-        pointer_dispatch(arg(B).origin()), elementA(beta), pointer_dispatch(C.origin()));
+        pointer_dispatch(arg(B).base()), elementA(beta), pointer_dispatch(C.base()));
 
   return std::forward<MultiArray1DC>(C);
 }
@@ -277,7 +277,7 @@ MultiArray2DC&& product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B,
   csrmm(op_tag<SparseMatrixA>::value, arg(A).size(), get<1>(arg(B).sizes()), get<1>(arg(A).sizes()), elementA(alpha), "GxxCxx",
         pointer_dispatch(arg(A).non_zero_values_data()), pointer_dispatch(arg(A).non_zero_indices2_data()),
         pointer_dispatch(arg(A).pointers_begin()), pointer_dispatch(arg(A).pointers_end()),
-        pointer_dispatch(arg(B).origin()), arg(B).stride(), elementA(beta), pointer_dispatch(C.origin()), C.stride());
+        pointer_dispatch(arg(B).base()), arg(B).stride(), elementA(beta), pointer_dispatch(C.base()), C.stride());
 
   return std::forward<MultiArray2DC>(C);
 }
@@ -336,9 +336,9 @@ void BatchedProduct(char TA,
   //using pointerA_ = typename pointedType<MultiArrayPtr2DA>::element_ptr;
   //using pointerB_ = typename pointedType<MultiArrayPtr2DB>::element_ptr;
   //using pointerC_ = typename pointedType<MultiArrayPtr2DC>::element_ptr;
-  using pointerA = decltype(pointer_dispatch((*A[0]).origin()));
-  using pointerB = decltype(pointer_dispatch((*B[0]).origin()));
-  using pointerC = decltype(pointer_dispatch((*C[0]).origin()));
+  using pointerA = decltype(pointer_dispatch((*A[0]).base()));
+  using pointerB = decltype(pointer_dispatch((*B[0]).base()));
+  using pointerC = decltype(pointer_dispatch((*C[0]).base()));
   using element  = typename pointedType<MultiArrayPtr2DA>::element;
 
   using std::get;
@@ -385,9 +385,9 @@ void BatchedProduct(char TA,
       assert(K == (*A[i]).size());
       assert(N == get<1>((*A[i]).sizes()));
     }
-    Ai.emplace_back(pointer_dispatch((*A[i]).origin()));
-    Bi.emplace_back(pointer_dispatch((*B[i]).origin()));
-    Ci.emplace_back(pointer_dispatch((*C[i]).origin()));
+    Ai.emplace_back(pointer_dispatch((*A[i]).base()));
+    Bi.emplace_back(pointer_dispatch((*B[i]).base()));
+    Ci.emplace_back(pointer_dispatch((*C[i]).base()));
   }
 
   using ma::gemmBatched;
@@ -439,7 +439,7 @@ void BatchedProduct(char TA,
     csrmm(TA, (*A[i]).size(), get<1>((*B[i]).sizes()), get<1>((*A[i]).sizes()), elementA(alpha), "GxxCxx",
           pointer_dispatch((*A[i]).non_zero_values_data()), pointer_dispatch((*A[i]).non_zero_indices2_data()),
           pointer_dispatch((*A[i]).pointers_begin()), pointer_dispatch((*A[i]).pointers_end()),
-          pointer_dispatch((*B[i]).origin()), (*B[i]).stride(), elementA(beta), pointer_dispatch((*C[i]).origin()),
+          pointer_dispatch((*B[i]).base()), (*B[i]).stride(), elementA(beta), pointer_dispatch((*C[i]).base()),
           (*C[i]).stride());
   }
 }
@@ -598,12 +598,12 @@ T invert(MultiArray2D&& m, T LogOverlapFactor)
   boost::multi::array<int, 1, iallocator_type> pivot(extensions{m.size() + 1}, iallocator_type{m.get_allocator()});
 
   getrf(std::forward<MultiArray2D>(m), pivot, WORK);
-  T detvalue = determinant_from_getrf<T>(m.size(), pointer_dispatch(m.origin()), m.stride(),
+  T detvalue = determinant_from_getrf<T>(m.size(), pointer_dispatch(m.base()), m.stride(),
                                          pointer_dispatch(pivot.data()), LogOverlapFactor);
   using std::get;
 
   if (std::abs(detvalue) == 0.0)
-    fill2D(m.size(), get<1>(m.sizes()), pointer_dispatch(m.origin()), m.stride(), element(0.0));
+    fill2D(m.size(), get<1>(m.sizes()), pointer_dispatch(m.base()), m.stride(), element(0.0));
   else
     getri(std::forward<MultiArray2D>(m), pivot, WORK);
   return detvalue;
@@ -619,12 +619,12 @@ T invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T LogOverlapFact
   using qmcplusplus::afqmc::fill2D;
 
   getrf(std::forward<MultiArray2D>(m), pivot, WORK);
-  T detvalue = determinant_from_getrf<T>(m.size(), pointer_dispatch(m.origin()), m.stride(),
+  T detvalue = determinant_from_getrf<T>(m.size(), pointer_dispatch(m.base()), m.stride(),
                                          pointer_dispatch(pivot.data()), LogOverlapFactor);
 
   using std::get;
   if (std::abs(detvalue) == 0.0)
-    fill2D(m.size(), get<1>(m.sizes()), pointer_dispatch(m.origin()), m.stride(), element(0.0));
+    fill2D(m.size(), get<1>(m.sizes()), pointer_dispatch(m.base()), m.stride(), element(0.0));
   else
     getri(std::forward<MultiArray2D>(m), pivot, WORK);
   return detvalue;
@@ -648,10 +648,10 @@ void invert_withSVD(MultiArray2D&& m, MultiArray1DS&& S, MultiArray2DU&& U, Mult
         // inv(m) = H(VT) * inv(S) * H(U)
         gesvd('A','A',std::forward<MultiArray2D>(m),S,U,VT,WORK);
         gesvd_determinant_and_regularization_of_singular_values<T>(m.size(0), 
-                    pointer_dispatch(S.origin()), detvalue);
+                    pointer_dispatch(S.base()), detvalue);
         // VT = VT * inv(S), which works since S is diagonal and real
-        term_by_term_matrix_vector(TOp_DIV,1,VT.size(0),VT.size(1),pointer_dispatch(VT.origin()),
-                    VT.stride(),pointer_dispatch(S.origin()),1);
+        term_by_term_matrix_vector(TOp_DIV,1,VT.size(0),VT.size(1),pointer_dispatch(VT.base()),
+                    VT.stride(),pointer_dispatch(S.base()),1);
         product(H(VT),H(U),std::forward<MultiArray2D>(m));
 }
 */
@@ -664,7 +664,7 @@ T determinant(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK, T LogOverla
   assert(pivot.size() >= m.size());
 
   getrf(std::forward<MultiArray2D>(m), std::forward<MultiArray1D>(pivot), WORK);
-  return determinant_from_getrf<T>(m.size(), pointer_dispatch(m.origin()), m.stride(), pointer_dispatch(pivot.data()),
+  return determinant_from_getrf<T>(m.size(), pointer_dispatch(m.base()), m.stride(), pointer_dispatch(pivot.data()),
                                    LogOverlapFactor);
 }
 
@@ -682,7 +682,7 @@ MultiArray2D exp(MultiArray2D const& A, bool printeV = false)
   typename MultiArray2D::size_type N = A.size();
 
   MultiArray2D ExpA({N, N});
-  std::fill_n(pointer_dispatch(ExpA.origin()), N * N, Type(0));
+  std::fill_n(pointer_dispatch(ExpA.base()), N * N, Type(0));
 
   if (is_hermitian(A))
   {
