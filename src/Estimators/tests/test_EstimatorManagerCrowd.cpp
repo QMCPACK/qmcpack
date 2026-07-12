@@ -92,9 +92,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   UPtrVector<TrialWaveFunction> twfs;
   std::vector<ParticleSet> psets;
 
-  int num_walkers   = 4;
-  int num_electrons = particle_pool.getParticleSet("e")->getTotalNum();
-  int num_ions      = particle_pool.getParticleSet("ion")->getTotalNum();
+  int num_walkers = 4;
 
   for (int iw = 0; iw < num_walkers; ++iw)
   {

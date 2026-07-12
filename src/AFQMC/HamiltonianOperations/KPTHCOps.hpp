@@ -363,7 +363,7 @@ public:
       if (getKr)
       {
         assert(KEright->size(0) == nwalk && KEright->size(1) == nGu);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(KEright->stride() == KEright->size(1));
         Krptr = to_address(KEright->origin());
       }
       else
@@ -374,7 +374,7 @@ public:
       if (getKl)
       {
         assert(KEleft->size(0) == nwalk && KEleft->size(1) == nGu);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(KEleft->stride() == KEleft->size(1));
         Klptr = to_address(KEleft->origin());
       }
       else

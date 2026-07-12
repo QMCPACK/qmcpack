@@ -244,19 +244,19 @@ public:
       if (getKr)
       {
         assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(KEright->stride() == KEright->size(1));
       }
 #if defined(MIXED_PRECISION)
       if (getKl)
       {
         assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(KEleft->stride() == KEleft->size(1));
       }
 #else
       if (getKl)
       {
         assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(KEleft->stride() == KEleft->size(1));
         Klptr = make_device_ptr(KEleft->origin());
       }
       else

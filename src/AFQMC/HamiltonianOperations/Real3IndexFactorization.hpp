@@ -255,19 +255,19 @@ public:
       if (getKr)
       {
         assert(get<0>(KEright->sizes()) == nwalk && get<1>(KEright->sizes()) == local_nCV);
-        assert(KEright->stride(0) == get<1>(KEright->sizes()));
+        assert(KEright->stride() == get<1>(KEright->sizes()));
       }
 #if defined(MIXED_PRECISION)
       if (getKl)
       {
         assert(get<0>(KEleft->sizes()) == nwalk && get<1>(KEleft->sizes()) == local_nCV);
-        assert(KEleft->stride(0) == get<1>(KEleft->sizes()));
+        assert(KEleft->stride() == get<1>(KEleft->sizes()));
       }
 #else
       if (getKl)
       {
         assert(get<0>(KEleft->sizes()) == nwalk && get<1>(KEleft->sizes()) == local_nCV);
-        assert(KEleft->stride(0) == get<1>(KEleft->sizes()));
+        assert(KEleft->stride() == get<1>(KEleft->sizes()));
         Klptr = to_address(KEleft->origin());
       }
       else
