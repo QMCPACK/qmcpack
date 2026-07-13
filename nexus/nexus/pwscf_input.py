@@ -1675,17 +1675,17 @@ class PwscfInput(SimulationInput):
         system.check_folded_system()
         system.update_particles()
         system.change_units('B')
-        p  = system.particles
         s  = system.structure
         nc = system.net_charge
         ns = system.net_spin
 
-        nup = p.up_electron.count
-        ndn = p.down_electron.count
+        nup = system.n_up
+        ndn = system.n_down
 
         self.system.ibrav        = 0
 #        self.system['celldm(1)'] = 1.0e0
-        nions,nspecies = p.count_ions(species=True)
+        nions = system.n_ions
+        nspecies = system.n_species
         self.system.nat          = nions
         self.system.ntyp         = nspecies
         self.system.tot_charge   = nc
@@ -1717,19 +1717,19 @@ class PwscfInput(SimulationInput):
             #end if
         #end if
 
-        atoms = p.get_ions()
         if 'masses' not in self.atomic_species:
             self.atomic_species.masses = obj()
         #end if
-        for name,a in atoms.items():
-            self.atomic_species.masses[name] = convert(a.mass,'me','amu')
+        for name in system.ion_labels:
+            is_elem, element = Elements.is_element(name, return_element=True)
+            self.atomic_species.masses[name] = element.atomic_weight
         #end for
         if elem_order is None:
-            self.atomic_species.atoms = list(sorted(atoms.keys()))
+            self.atomic_species.atoms = list(sorted(system.ion_labels))
         else:
-            if set(elem_order)!=set(atoms.keys()):
-                self.error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(atoms.keys()),elem_order))
-            elif len(elem_order)!=len(atoms):
+            if set(elem_order)!=set(system.ion_labels):
+                self.error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(system.ion_labels),elem_order))
+            elif len(elem_order)!=system.n_ions:
                 self.error('elem_order has repeated elements\nelem_order: {0}'.format(elem_order))
             #end if
             self.atomic_species.atoms = list(elem_order)
@@ -1739,7 +1739,8 @@ class PwscfInput(SimulationInput):
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
             if atom not in pp:
-                iselem,symbol = p.is_element(atom,symbol=True)
+                iselem,element = Elements.is_element(atom,return_element=True)
+                symbol = element.symbol
                 if iselem and symbol in pp:
                     pp[atom] = str(pp[symbol])
                 #end if
@@ -1770,17 +1771,17 @@ class PwscfInput(SimulationInput):
         system.check_folded_system()
         system.update_particles()
         system.change_units('B')
-        p  = system.particles
         s  = system.structure
         nc = system.net_charge
         ns = system.net_spin
 
-        nup = p.up_electron.count
-        ndn = p.down_electron.count
+        nup = system.n_up
+        ndn = system.n_down
 
         self.system.ibrav        = 0
 #        self.system['celldm(1)'] = 1.0e0
-        nions,nspecies = p.count_ions(species=True)
+        nions = system.n_ions
+        nspecies = system.n_species
         self.system.nat          = nions
         self.system.ntyp         = nspecies
         #self.system.nelec        = nup+ndn
@@ -1819,18 +1820,19 @@ class PwscfInput(SimulationInput):
             #end if
         #end if
 
-        atoms = p.get_ions()
         masses = obj()
-        for name,a in atoms.items():
-            masses[name] = convert(a.mass,'me','amu')
+        for name in system.ion_labels:
+            is_elem, element = Elements.is_element(name, return_element=True)
+            masses[name] = element.atomic_weight
         #end for
-        self.atomic_species.atoms  = list(sorted(atoms.keys()))
+        self.atomic_species.atoms  = list(sorted(system.ion_labels))
         self.atomic_species.masses = masses
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
             if atom not in pp:
-                iselem,symbol = p.is_element(atom,symbol=True)
+                iselem,element = Elements.is_element(atom,return_element=True)
+                symbol = element.symbol
                 if iselem and symbol in pp:
                     pp[atom] = str(pp[symbol])
                 #end if
@@ -2265,7 +2267,7 @@ def generate_any_pwscf_input(**kwargs):
 
     # set nbnd using bandfac, if provided
     if nbnd is None and bandfac is not None:
-        nocc = max(system.particles.electron_counts())
+        nocc = max(system.n_up, system.n_down)
         pw.system.nbnd = int(np.ceil(nocc*bandfac))
     #end if
 
