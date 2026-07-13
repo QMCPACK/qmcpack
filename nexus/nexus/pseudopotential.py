@@ -590,15 +590,15 @@ class PseudoSet:
 
     Attributes
     ----------
-    code : {"pwscf", "gamess", "vasp", "qmcpack"}
-        Name of the program that these pseudos are meant for.
     pseudos : dict of str: Path
         Dictionary mapping element labels to their pseudos.
-    pseudo_dirs : set of Path
-        The directories that the pseudopotentials are stored in.
+    code : {"pwscf", "gamess", "vasp", "qmcpack"}
+        Name of the program that these pseudos are meant for.
     Zeffs : Map of str: int
         A ``dict`` or ``obj`` mapping elements to their effective
         nuclear charges (Z-valences).
+    pseudo_dirs : set of Path
+        The directories that the pseudopotentials are stored in.
     legacy_pseudos : dict of str: PseudoSet
         Interface for creating pseudopotentials from the legacy command
         ``ppset``.
@@ -676,7 +676,7 @@ class PseudoSet:
 
         self.Zeffs = Zeffs
 
-        self.pseudo_dirs = set()
+        self.pseudo_dirs: set[Path] = set()
         for pseudo in self.pseudos.values():
             self.pseudo_dirs.add(pseudo.parent)
     #end def __init__
@@ -709,6 +709,12 @@ class PseudoSet:
         for pseudo in pseudos:
             suffixes.add(Path(pseudo).suffix.lower())
 
+        if len(suffixes) == 0:
+            raise RuntimeError(
+                "Can not detect code with no pseudopotentials!\n"
+                "If you are initializing an empty PseudoSet, you must provide a code!"
+                )
+
         for code_key in PseudoSet.file_exts.keys():
             if suffixes.issubset(PseudoSet.file_exts[code_key]):
                 code = code_key
@@ -738,7 +744,7 @@ class PseudoSet:
 
         See Also
         --------
-        known_codes : Codes known by Nexus
+        known_codes : Codes known by Nexus.
         """
         clow = code.lower()
         if clow == "pwscf": # Retain alias for backwards compatibility
@@ -791,6 +797,11 @@ class PseudoSet:
             If this is a list of strings, it is assumed the strings are
             the file suffixes to filter by. The strings should include a
             leading ``.``, e.g. ``.xml``, not ``xml``.
+
+        See Also
+        --------
+        file_exts : Dictionary mapping codes to file extensions.
+        known_codes : Codes known by Nexus.
         """
         if code == "detect":
             if filter_exts is True:
@@ -945,6 +956,96 @@ class PseudoSet:
 
         return Z_effs
     #end def get_Zeffs
+
+    @classmethod
+    def from_mixed_dir(
+        cls,
+        pseudo_dir: PathLike,
+        codes     : str | list[str] = "detect",
+        filters   : Mapping[str, set[str]] | None = None,
+        Zeffs     : Mapping[PathLike, int] = dict(),
+        ) -> dict[str, Self]:
+        """Read in pseudos from a directory with pseudos for more than one code.
+
+        Parameters
+        ----------
+        pseudo_dir : PathLike
+            The directory from which to read pseudopotentials.
+        codes : str or list of str, default="detect"
+            The code(s) to use to separate the files in the directory
+            into their respective groups. If this is set to ``detect``
+            and filters is ``None``, then it will use all known codes
+            and file extensions to filter the pseudos.
+        filters : Map of str to set of str, optional
+            A dictionary mapping codes to the suffixes corresponding to
+            those labels. If this is not provided, then the filters are
+            automatically populated by the codes in ``codes``.
+        Zeffs : Map of str/Elements to int, optional
+            A ``dict`` or ``obj`` mapping elements to their effective
+            nuclear charges (Z-valences). If this is supplied, it will
+            override any parts of the code that may try to parse the
+            pseudopotential to get the Z-valence.
+
+        Returns
+        -------
+        pseudos : dict of str: Self/None
+            A map from the labels provided to the function to the
+            ``PseudoSet`` objects that were created from the pseudos in
+            the directory.
+
+        Notes
+        -----
+        This function is the most generous in terms of what it is able
+        to parse and separate, however it can result in errors if you
+        have multiple pseudos with the same file extension for the same
+        element. If you cannot separate the pseudos, then you will need
+        to specify which pseudos are acceptable in another way.
+
+        See Also
+        --------
+        from_dir : Used to get pseudos after filters have been established.
+        file_exts : Dictionary mapping codes to file extensions.
+        known_codes : Codes known by Nexus.
+        """
+        if filters is None:
+            if codes == "detect":
+                filters = PseudoSet.file_exts
+            elif isinstance(codes, str):
+                code = PseudoSet._check_code_str(codes)
+                filters = {code: PseudoSet.file_exts[code]}
+            else:
+                filters = {}
+                for c in codes:
+                    code = PseudoSet._check_code_str(c)
+                    filters[code] = PseudoSet.file_exts[code]
+        else:
+            checked_filters = {}
+            for code, suffixes in filters.items():
+                code = PseudoSet._check_code_str(code)
+                checked_filters[code] = set(suffixes)
+            filters = checked_filters
+
+        dir = Path(pseudo_dir).resolve()
+
+        if not dir.exists():
+            raise FileNotFoundError(
+                f"Can not find pseudopotential directory: {dir}"
+                )
+        elif not dir.is_dir():
+            raise NotADirectoryError(
+                f"Specified path does not point to a directory: {dir}"
+                )
+
+        pseudos = {}
+        for code, suffixes in filters.items():
+            pseudos[code] = PseudoSet.from_dir(
+                pseudo_dir  = dir,
+                code        = code,
+                filter_exts = suffixes,
+                )
+
+        return pseudos
+    #end def from_mixed_dir
 #end class PseudoSet
 
 # real pseudopotentials

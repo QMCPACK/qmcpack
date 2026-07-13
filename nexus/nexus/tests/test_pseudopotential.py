@@ -1045,6 +1045,150 @@ def test_pseudoset_from_dir_filter(tmp_path):
 #end def test_pseudoset_from_dir_filter
 
 
+def test_pseudoset_from_mixed_dir(tmp_path):
+    pseudo_names = (
+        "C.BFD.xml",
+        "H.BFD.xml",
+        "O.BFD.xml",
+        "C.BFD.upf",
+        "H.BFD.upf",
+        "O.BFD.upf",
+        "Fe.BFD.ncpp",
+        "C.BFD.gms",
+        "H.BFD.gms",
+        "O.BFD.gms",
+        "C.BFD.potcar",
+        "H.BFD.potcar",
+        "O.BFD.potcar",
+        )
+
+    psp_dir = tmp_path / "mixed_pseudos"
+    psp_dir.mkdir()
+    assert psp_dir.exists(), "Failed to create pseudo directory!"
+
+    pseudo_list = []
+    for psp in pseudo_names:
+        pseudo = (psp_dir / psp).resolve()
+        pseudo.touch()
+        assert pseudo.exists(), "Failed to create pseudo file!"
+        pseudo_list.append(pseudo)
+
+    ref_pseudos = {
+        "qmcpack": PseudoSet(
+            pseudos = {
+                "C": (psp_dir / "C.BFD.xml").resolve(),
+                "H": (psp_dir / "H.BFD.xml").resolve(),
+                "O": (psp_dir / "O.BFD.xml").resolve(),
+                },
+            code = "qmcpack",
+            ),
+        "espresso": PseudoSet(
+            pseudos = {
+                "C" : (psp_dir / "C.BFD.upf").resolve(),
+                "H" : (psp_dir / "H.BFD.upf").resolve(),
+                "O" : (psp_dir / "O.BFD.upf").resolve(),
+                "Fe": (psp_dir / "Fe.BFD.ncpp").resolve(),
+                },
+            code="espresso"
+            ),
+        "gamess": PseudoSet(
+            pseudos = {
+                "C": (psp_dir / "C.BFD.gms").resolve(),
+                "H": (psp_dir / "H.BFD.gms").resolve(),
+                "O": (psp_dir / "O.BFD.gms").resolve(),
+                },
+            code="gamess",
+            ),
+        "vasp": PseudoSet(
+            pseudos = {
+                "C": (psp_dir / "C.BFD.potcar").resolve(),
+                "H": (psp_dir / "H.BFD.potcar").resolve(),
+                "O": (psp_dir / "O.BFD.potcar").resolve(),
+                },
+            code="vasp",
+            ),
+    }
+
+    pseudoset = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = "detect", # Default values
+        filters    = None, # Default values
+        )
+
+    assert(pseudoset.keys() == ref_pseudos.keys())
+
+    qmcpack_calc = pseudoset["qmcpack"]
+    qmcpack_ref = ref_pseudos["qmcpack"]
+    assert(qmcpack_calc.pseudos     == qmcpack_ref.pseudos)
+    assert(qmcpack_calc.code        == qmcpack_ref.code)
+    assert(qmcpack_calc.pseudo_dirs == qmcpack_ref.pseudo_dirs)
+
+    espresso_calc = pseudoset["espresso"]
+    espresso_ref = ref_pseudos["espresso"]
+    assert(espresso_calc.pseudos     == espresso_ref.pseudos)
+    assert(espresso_calc.code        == espresso_ref.code)
+    assert(espresso_calc.pseudo_dirs == espresso_ref.pseudo_dirs)
+
+    gamess_calc = pseudoset["gamess"]
+    gamess_ref = ref_pseudos["gamess"]
+    assert(gamess_calc.pseudos     == gamess_ref.pseudos)
+    assert(gamess_calc.code        == gamess_ref.code)
+    assert(gamess_calc.pseudo_dirs == gamess_ref.pseudo_dirs)
+
+    vasp_calc = pseudoset["vasp"]
+    vasp_ref = ref_pseudos["vasp"]
+    assert(vasp_calc.pseudos     == vasp_ref.pseudos)
+    assert(vasp_calc.code        == vasp_ref.code)
+    assert(vasp_calc.pseudo_dirs == vasp_ref.pseudo_dirs)
+
+    pseudoset = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = ["qmcpack", "espresso"],
+        filters    = None,
+        )
+
+    assert(set(pseudoset.keys()) == {"qmcpack", "espresso"})
+
+    qmcpack_calc = pseudoset["qmcpack"]
+    qmcpack_ref = ref_pseudos["qmcpack"]
+    assert(qmcpack_calc.pseudos     == qmcpack_ref.pseudos)
+    assert(qmcpack_calc.code        == qmcpack_ref.code)
+    assert(qmcpack_calc.pseudo_dirs == qmcpack_ref.pseudo_dirs)
+
+    espresso_calc = pseudoset["espresso"]
+    espresso_ref = ref_pseudos["espresso"]
+    assert(espresso_calc.pseudos     == espresso_ref.pseudos)
+    assert(espresso_calc.code        == espresso_ref.code)
+    assert(espresso_calc.pseudo_dirs == espresso_ref.pseudo_dirs)
+
+    pseudoset = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = "detect",
+        filters    = {
+            "QMCPACK": {".xml"},
+            "espresso": {".upf"},
+            },
+        )
+
+    assert(set(pseudoset.keys()) == {"qmcpack", "espresso"})
+
+    qmcpack_calc = pseudoset["qmcpack"]
+    qmcpack_ref = ref_pseudos["qmcpack"]
+    assert(qmcpack_calc.pseudos     == qmcpack_ref.pseudos)
+    assert(qmcpack_calc.code        == qmcpack_ref.code)
+    assert(qmcpack_calc.pseudo_dirs == qmcpack_ref.pseudo_dirs)
+
+    espresso_calc = pseudoset["espresso"]
+    espresso_ref = ref_pseudos["espresso"]
+
+    del espresso_ref.pseudos["Fe"] # Only grabbed `.upf` files
+
+    assert(espresso_calc.pseudos     == espresso_ref.pseudos)
+    assert(espresso_calc.code        == espresso_ref.code)
+    assert(espresso_calc.pseudo_dirs == espresso_ref.pseudo_dirs)
+#end def test_pseudoset_from_mixed_dir
+
+
 def test_get_pseudos(tmp_path):
     xml_dir, _, ref_xml_pseudos = setup_psps(test_dir=tmp_path, code="qmcpack")
     xml_pseudoset = PseudoSet.from_dir(pseudo_dir=xml_dir, code="detect")
