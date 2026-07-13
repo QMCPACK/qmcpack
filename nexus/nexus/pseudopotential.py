@@ -3,11 +3,17 @@
 ##################################################################
 
 """Classes for reading pseudopotential data and converting pseudopotentials between file formats."""
+from __future__ import annotations
+from collections.abc import Mapping
 import os
 from os import PathLike
 from pathlib import Path
 import re
+import traceback
+from typing import Literal, Self
+
 import numpy as np
+
 from .execute import execute
 from .fileio import TextFile
 from .xmlreader import readxml
@@ -18,8 +24,7 @@ from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
 from .utilities import path_string, is_valid_filename
-from collections.abc import Mapping
-from typing import Literal, Self
+
 
 try:
     import matplotlib.pyplot as plt
@@ -588,98 +593,198 @@ class PseudoSet:
     ----------
     code : {"pwscf", "gamess", "vasp", "qmcpack"}
         Name of the program that these pseudos are meant for.
-    pseudos : dict of Element: Path
-        Dictionary mapping elements to their pseudos.
+    pseudos : dict of str: Path
+        Dictionary mapping element labels to their pseudos.
     pseudo_dirs : set of Path
         The directories that the pseudopotentials are stored in.
-    Zeffs : Map of PathLike to int, or None
-        A ``dict`` or ``obj`` mapping pseudos to their effective nuclear
-        charges (Z-valences).
-    label : str or None
-        The label for the pseudopotentials. Only for pseudos created by
-        calling ``ppset``.
+    Zeffs : Map of str: int, or None
+        A ``dict`` or ``obj`` mapping elements to their effective
+        nuclear charges (Z-valences).
+    legacy_pseudos : dict of str: PseudoSet
+        Interface for creating pseudopotentials from the legacy command
+        ``ppset``.
 
     Parameters
     ----------
-    code : {"pwscf", "gamess", "vasp", "qmcpack"}
-        Name of the program that these pseudos are meant for.
-    pseudos : list of str or Path
-        A list of pseudopotential files.
-    Zeffs : Map of PathLike to int, optional
-        A ``dict`` or ``obj`` mapping pseudos to their effective nuclear
+    pseudos : list of str/Path or map of str/Elements to Path
+        A list of pseudopotential files or a ``dict``/``obj`` that maps
+        elements to file paths.
+    code : {"espresso", "gamess", "vasp", "qmcpack", "detect"}, default="detect"
+        The name of the code that the pseudos are formatted for, or
+        if ``"detect"``, will auto-detect the code name from the
+        file extensions.
+    Zeffs : Map of str/Elements to int, optional
+        A ``dict`` or ``obj`` mapping elements to their effective nuclear
         charges (Z-valences). If this is supplied, it will override any
         parts of the code that may try to parse the pseudopotential to
         get the Z-valence.
     """
 
-    known_codes = frozenset(["pwscf", "gamess", "vasp", "qmcpack"])
+    known_codes = frozenset(["espresso", "gamess", "vasp", "qmcpack"])
+    file_exts = {
+        # https://www.quantum-espresso.org/Doc/INPUT_PW.html#id268
+        "espresso": set([".ncpp", ".upf", ".vdb", ".van", ".RRKJ3"]),
+        "gamess":   set([".gms"]),
+        "vasp":     set([".potcar"]),
+        "qmcpack":  set([".xml"]),
+        }
+    legacy_pseudos: dict[str, PseudoSet] = dict()
 
     def __init__(
         self,
-        code   : Literal["pwscf", "gamess", "vasp", "qmcpack"],
-        pseudos: list[PathLike],
+        pseudos: list[PathLike] | Mapping[Elements | str, PathLike],
+        code   : Literal["espresso", "gamess", "vasp", "qmcpack", "detect"] = "detect",
         Zeffs  : Mapping[PathLike, int] | None = None,
-    ):
-        code = code.lower()
-        if code not in PseudoSet.known_codes:
-            raise ValueError(
-                f"Code {code} is not known by Nexus!\n"
-                f"Known codes are {list(PseudoSet.known_codes)}" # list gives better output format
-                )
-        else:
-            self.code = code
-
-        self.Zeffs = Zeffs
+        ):
         self.pseudos = {}
+        if isinstance(pseudos, Mapping):
+            for label, psp in pseudos.items():
+                psp = Path(psp).resolve()
+                if not psp.exists():
+                    warn(
+                        f"Pseudo file {psp} can not be located"
+                        )
+                else:
+                    # No need to check if `label` is already defined since
+                    # dictionary keys are, by definition, unique.
+                    self.pseudos[label] = psp
         for psp in pseudos:
             psp = Path(psp).resolve()
             if not psp.exists():
                 warn(
                     f"Pseudo file {psp} can not be located"
                     )
-            elem_label, symbol, is_elem = pp_elem_label(psp.name)
+
+            _, symbol, is_elem = pp_elem_label(psp.name)
+
             if not is_elem:
                 raise ValueError(
                    f"Can not determine element for pseudopotential file: {psp}\n"
                     "Pseudopotential file names must be prefixed by an atomic symbol or label\n"
                     "(e.g. Si, Si1, etc)"
                     )
-            elem = Elements(symbol)
-            if elem in self.pseudos:
+            elif symbol in self.pseudos:
                 raise ValueError(
                     "Can not provide multiple pseudos for the same element!\n"
                     f"Duplicate pseudo is at index {pseudos.index(psp)}\n"
-                    f"    Existing pseudo file:  {self.pseudos[elem]}\n"
+                    f"    Existing pseudo file:  {self.pseudos[symbol]}\n"
                     f"    Duplicate pseudo file: {psp}"
                     )
-            self.pseudos[elem] = psp
+            else:
+                self.pseudos[symbol] = psp
+
+        if code.lower() == "detect":
+            suffixes = set()
+            for pseudo in self.pseudos.values():
+                suffixes.add(pseudo.suffix)
+
+            for cde in PseudoFile.file_exts.keys():
+                if suffixes.issubset(PseudoSet.file_exts[cde]):
+                    self.code = cde
+        else:
+            self.code = PseudoSet._check_code(code)
+
+        if Zeffs is not None:
+            self.Zeffs = {Path(pth).resolve():z for pth, z in Zeffs.items()}
+        else:
+            self.Zeffs = None
 
         self.pseudo_dirs = set()
         for pseudo in self.pseudos.values():
             self.pseudo_dirs.add(pseudo.parent)
     #end def __init__
 
+    @staticmethod
+    def _check_code(code: str) -> str:
+        """Check to make sure a code string is in the set of known codes.
+
+        Returns
+        -------
+        str
+            Lowercased version of the code.
+
+        Raises
+        ------
+        ValueError
+            If the code is not known by Nexus.
+
+        See Also
+        --------
+        known_codes : Codes known by Nexus
+        """
+        clow = code.lower()
+        if clow == "pwscf": # Retain alias for backwards compatibility
+            warn(
+                "Automatically switching code 'pwscf' to 'espresso'.\n"
+                "In the future using 'pwscf' will be deprecated, please use 'espresso' instead!"
+                )
+            clow = "espresso"
+
+        if clow not in PseudoSet.known_codes:
+            raise ValueError(
+                f"Code {code} is not known by Nexus!\n"
+                f"Known codes are {list(PseudoSet.known_codes)}"
+                )
+        else:
+            return clow
+    #end def check_code
+
     @classmethod
-    def from_dirs(
+    def from_dir(
         cls,
-        code       : Literal["pwscf", "gamess", "vasp", "qmcpack"],
-        pseudo_dirs: list[PathLike],
+        pseudo_dir : PathLike,
+        code       : str = "detect",
         Zeffs      : Mapping[PathLike, int] | None = None,
+        filter_exts: bool = True,
         ) -> Self:
-        """Read in pseudopotentials from a set of directories."""
-        dirs = set([Path(dir).resolve() for dir in pseudo_dirs])
-        pseudos = []
-        for dir in dirs:
-            if not dir.exists():
-                raise FileNotFoundError(
-                    f"Can not find pseudopotential directory: {dir}"
-                    )
-            elif not dir.is_dir():
-                raise NotADirectoryError(
-                    f"Specified path does not point to a directory: {dir}"
-                    )
-            for pseudo in dir.iterdir():
-                pseudos.append(pseudo)
+        """Read in pseudopotentials from a directory.
+
+        Parameters
+        ----------
+        pseudo_dir : PathLike
+            The directory from which to read pseudopotentials.
+        code : {"espresso", "gamess", "vasp", "qmcpack", "detect"}, default="detect"
+            The name of the code that the pseudos are formatted for, or
+            if ``"detect"``, will auto-detect the code name from the
+            file extensions.
+        Zeffs : Map of str/Elements to int, optional
+            A ``dict`` or ``obj`` mapping elements to their effective
+            nuclear charges (Z-valences). If this is supplied, it will
+            override any parts of the code that may try to parse the
+            pseudopotential to get the Z-valence.
+        filter_exts : bool, default=True
+            Optionally filter the files in the directory by their
+            extension. Does nothing when ``code`` is ``"detect"``.
+        """
+        if code == "detect":
+            filter_exts = False
+        else:
+            code = PseudoSet._check_code(code)
+
+        if filter_exts:
+            suffixes = PseudoSet.file_exts[code]
+        else:
+            suffixes = None
+
+        dir = Path(pseudo_dir).resolve()
+
+        if not dir.exists():
+            raise FileNotFoundError(
+                f"Can not find pseudopotential directory: {dir}"
+                )
+        elif not dir.is_dir():
+            raise NotADirectoryError(
+                f"Specified path does not point to a directory: {dir}"
+                )
+        else:
+            pseudos = []
+            if suffixes is None:
+                for pseudo in dir.iterdir():
+                    pseudos.append(pseudo)
+            else:
+                for pseudo in dir.iterdir():
+                    if pseudo.suffix in suffixes:
+                        pseudos.append(pseudo)
 
         return cls(
             code    = code,
@@ -691,7 +796,7 @@ class PseudoSet:
     def get_pseudos(
         self,
         system: PhysicalSystem,
-        code  : Literal["pwscf", "gamess", "vasp", "qmcpack"] | None = None,
+        code  : Literal["espresso", "gamess", "vasp", "qmcpack"] | None = None,
         ):
         """Get the pseudopotential files for the elements in a physical system.
 
@@ -700,35 +805,96 @@ class PseudoSet:
         system : PhysicalSystem
             The system to get pseudopotentials for.
         code : {"pwscf", "gamess", "vasp", "qmcpack"}, optional
-            The name of the code requesting the pseudopotentials. 
+            The name of the code requesting the pseudopotentials.
             If supplied, it will raise an error if the code requested
-            does not match the code of the ``PseudoSet``.
+            does not match the code of the ``PseudoSet``. This provides
+            a way to ensure the user does not provide the wrong pseudos
+            to a ``generate`` call.
         """
         if not system.pseudized:
             return []
 
         if code is not None:
-            clow = code.lower()
-            if clow not in PseudoSet.known_codes:
-                raise ValueError(
-                    f"Code {code} is not known by Nexus!\n"
-                    f"Known codes are {list(PseudoSet.known_codes)}"
-                    )
+            clow = PseudoSet._check_code(code)
             if clow != self.code:
                 raise ValueError(
                     f"Tried to get pseudopotentials for {code} from a set of {self.code} pseudos!"
                     )
 
         pps = []
-        for ion in system.ions.values():
-            if ion.element not in self.pseudos:
+        for label in system.ions.keys():
+            if label not in self.pseudos:
                 raise ValueError(
-                    f"No pseudopotential found for element {ion.element}!"
+                    f"No pseudopotential found for label {label}!"
                     )
-            pps.append(self.pseudos[ion.element])
+            pps.append(self.pseudos[label])
 
         return pps
     #end def get_pseudos
+
+    def get_Zeffs(
+        self,
+        elem_labels: list[Elements | str],
+        missing_as_ae: bool = False,
+        ) -> dict[str, int | float]:
+        """Get the Z-valences for each element in the list of elements.
+
+        Parameters
+        ----------
+        elem_labels : list of Elements or list of str
+            The elements to get Z-valences for.
+        missing_as_ae : bool, default=False
+            Assume any elements for which a pseudopotential can not be
+            found are all-electron, and use their atomic number as the
+            value for the Z-valence. If this is not supplied, and if the
+            Z-valence for an element is not in ``self.Zeff``, this will
+            attempt to extract the Z-valence from the pseudopotential
+            file.
+
+        See Also
+        --------
+        read_upf_z_valence : Used to extract Z-valences from UPF files.
+        read_xml_z_valence : Used to extract Z-valences from XML files.
+        read_potcar_z_valence : Used to extract Z-valences from POTCAR files.
+        """
+        Z_effs = {}
+        for elem in elem_labels:
+            if elem not in self.pseudos:
+                if missing_as_ae:
+                    pass
+                else:
+                    raise ValueError(
+                        f"No pseudopotential found for element {elem}!"
+                        )
+
+            if elem in self.Zeffs:
+                Z_effs[elem] = self.Zeffs[elem]
+            elif missing_as_ae:
+                is_elem, element = Elements.is_element(elem, return_element=True)
+                if not is_elem:
+                    raise ValueError(f"Can not determine element for label '{elem}'")
+                else:
+                    Z_effs[elem] = element.atomic_number
+            else:
+                f_ext = self.pseudos[elem].suffix
+                if f_ext == ".upf":
+                    Z_effs[elem] = read_upf_z_valence(self.pseudos[elem])
+                elif f_ext == ".gms":
+                    raise NotImplementedError(
+                        "Z-valence parsing not implemented for GAMESS pseudopotentials!\n"
+                        "You must supply Z-valences manually until this feature is added."
+                        )
+                elif f_ext == ".poscar":
+                    Z_effs[elem] = read_potcar_z_valence(self.pseudos[elem])
+                elif f_ext == ".xml":
+                    Z_effs[elem] = read_xml_z_valence(self.pseudos[elem])
+                else:
+                    raise ValueError(
+                        f"File extension '{f_ext}' is not known to Nexus, can not extract Z-valence!"
+                        )
+
+        return Z_effs
+    #end def get_Zeffs
 #end class PseudoSet
 
 # real pseudopotentials
