@@ -8422,10 +8422,6 @@ def generate_batched_dmc_calculations(
 
 def generate_qmcpack_input(**kwargs):
     QIcollections.clear()
-    system = kwargs.get('system',None)
-    if isinstance(system,PhysicalSystem):
-        system.update_particles()
-    #end if
     selector = kwargs.pop('input_type','basic')
     if selector=='basic':
         inp = generate_basic_input(**kwargs)

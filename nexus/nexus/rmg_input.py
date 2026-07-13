@@ -3410,7 +3410,6 @@ def generate_any_rmg_input(**kwargs):
             system = system.get_smallest()
         #end if
         system.check_folded_system()
-        system.update_particles()
 
         # set atomic species, positions, magnetic moments and mobility
         if 'atomic_coordinate_type' not in ri:

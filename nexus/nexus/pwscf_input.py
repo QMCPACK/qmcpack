@@ -1673,7 +1673,6 @@ class PwscfInput(SimulationInput):
 
     def incorporate_system(self,system,elem_order=None):
         system.check_folded_system()
-        system.update_particles()
         system.change_units('B')
         s  = system.structure
         nc = system.net_charge
@@ -1769,7 +1768,6 @@ class PwscfInput(SimulationInput):
 
     def incorporate_system_old(self,system,spin_polarized=None):
         system.check_folded_system()
-        system.update_particles()
         system.change_units('B')
         s  = system.structure
         nc = system.net_charge
@@ -1967,12 +1965,6 @@ class PwscfInput(SimulationInput):
 
 
 def generate_pwscf_input(selector,**kwargs):
-    if 'system' in kwargs:
-        system = kwargs['system']
-        if isinstance(system,PhysicalSystem):
-            system.update_particles()
-        #end if
-    #end if
     if selector=='generic':
         return generate_any_pwscf_input(**kwargs)
     if selector=='scf':
