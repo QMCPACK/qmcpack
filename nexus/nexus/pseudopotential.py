@@ -23,7 +23,7 @@ from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
 from .utilities import path_string, is_valid_filename
-
+from .nexus_base import nexus_core
 
 try:
     import matplotlib.pyplot as plt
@@ -627,7 +627,7 @@ class PseudoSet:
         "vasp":     {".potcar"},
         "qmcpack":  {".xml"},
         }
-    legacy_pseudos: dict[str, PseudoSet] = dict()
+    legacy_pseudos: dict[str, dict[str, PseudoSet]] = dict()
 
     def __init__(
         self,
@@ -1046,6 +1046,25 @@ class PseudoSet:
 
         return pseudos
     #end def from_mixed_dir
+
+    @classmethod
+    def _register_legacy_ppset(cls, label: str) -> None:
+        """Take pseudos registered with ``ppset`` and store them as ``PseudoSet`` objects."""
+        cls.legacy_pseudos[label] = {}
+        labeled_set = ppset.pseudos[label]
+        for code, pseudo_files in labeled_set.items():
+            pseudos = {}
+            for elem_label, filename in pseudo_files.items():
+                for path in nexus_core.file_locations:
+                    loc = Path(path).resolve() / filename
+                    if loc.exists():
+                        pseudos[elem_label] = loc
+
+            if code == "pwscf":
+                code = "espresso"
+
+            cls.legacy_pseudos[label][code] = PseudoSet(pseudos=pseudos, code=code)
+    #end def _register_legacy_ppset
 #end class PseudoSet
 
 # real pseudopotentials

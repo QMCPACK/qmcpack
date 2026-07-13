@@ -10,7 +10,8 @@ from typing import Literal
 from . import isolate_nexus_core, TEST_DIR
 from ..testing import value_eq,object_eq
 from nexus.pseudopotential import read_upf_z_valence, read_xml_z_valence, read_potcar_z_valence
-from nexus.pseudopotential import PseudoSet
+from nexus.pseudopotential import PseudoSet, ppset
+from nexus.nexus_base import nexus_core
 
 
 TEST_FILES = {
@@ -195,7 +196,6 @@ h 1 1.00
 
 def test_ppset():
     from ..developer import obj
-    from ..pseudopotential import ppset
 
     ppset_ref = obj(
         pseudos = obj(
@@ -1107,7 +1107,7 @@ def test_pseudoset_from_mixed_dir(tmp_path):
                 },
             code="vasp",
             ),
-    }
+        }
 
     pseudoset = PseudoSet.from_mixed_dir(
         pseudo_dir = psp_dir,
@@ -1269,3 +1269,113 @@ def test_get_Zeffs():
     with pytest.raises(ValueError, match="Can not determine element for label"):
         xml_pseudoset.get_Zeffs(elem_labels=["C", "H", "NotAnElement"], missing_as_ae=True)
 #end def test_get_Zeffs
+
+
+# @isolate_nexus_core
+def test_register_legacy_ppset(tmp_path):
+    pseudo_names = (
+        "C.BFD.xml",
+        "H.BFD.xml",
+        "O.BFD.xml",
+        "C.BFD.upf",
+        "H.BFD.upf",
+        "O.BFD.upf",
+        "C.BFD.gms",
+        "H.BFD.gms",
+        "O.BFD.gms",
+        "C.BFD.potcar",
+        "H.BFD.potcar",
+        "O.BFD.potcar",
+        )
+
+    psp_dir = tmp_path / "mixed_pseudos"
+    psp_dir.mkdir()
+    assert psp_dir.exists(), "Failed to create pseudo directory!"
+
+    nexus_core.file_locations += [str(psp_dir)]
+
+    pseudo_list = []
+    for psp in pseudo_names:
+        pseudo = (psp_dir / psp).resolve()
+        pseudo.touch()
+        assert pseudo.exists(), "Failed to create pseudo file!"
+        pseudo_list.append(pseudo)
+
+    ref_pseudos = {
+        "bfd": {
+            "qmcpack": PseudoSet(
+                pseudos = {
+                    "C": (psp_dir / "C.BFD.xml").resolve(),
+                    "H": (psp_dir / "H.BFD.xml").resolve(),
+                    "O": (psp_dir / "O.BFD.xml").resolve(),
+                    },
+                code = "qmcpack",
+                ),
+            "espresso": PseudoSet(
+                pseudos = {
+                    "C" : (psp_dir / "C.BFD.upf").resolve(),
+                    "H" : (psp_dir / "H.BFD.upf").resolve(),
+                    "O" : (psp_dir / "O.BFD.upf").resolve(),
+                    },
+                code="espresso"
+                ),
+            "gamess": PseudoSet(
+                pseudos = {
+                    "C": (psp_dir / "C.BFD.gms").resolve(),
+                    "H": (psp_dir / "H.BFD.gms").resolve(),
+                    "O": (psp_dir / "O.BFD.gms").resolve(),
+                    },
+                code="gamess",
+                ),
+            "vasp": PseudoSet(
+                pseudos = {
+                    "C": (psp_dir / "C.BFD.potcar").resolve(),
+                    "H": (psp_dir / "H.BFD.potcar").resolve(),
+                    "O": (psp_dir / "O.BFD.potcar").resolve(),
+                    },
+                code="vasp",
+                ),
+            }
+        }
+
+    ppset(
+        label   = 'bfd',
+        pwscf   = ["C.BFD.upf", "H.BFD.upf", "O.BFD.upf"],
+        qmcpack = ["C.BFD.xml", "H.BFD.xml", "O.BFD.xml"],
+        gamess  = ["C.BFD.gms", "H.BFD.gms", "O.BFD.gms"],
+        vasp    = ["C.BFD.potcar", "H.BFD.potcar", "O.BFD.potcar"],
+        )
+
+    PseudoSet._register_legacy_ppset("bfd")
+
+    assert(PseudoSet.legacy_pseudos.keys() == ref_pseudos.keys())
+
+    calc_legacy_pseudos = PseudoSet.legacy_pseudos["bfd"]
+    ref_legacy_pseudos = ref_pseudos["bfd"]
+
+    assert(calc_legacy_pseudos.keys() == ref_legacy_pseudos.keys())
+
+    qmcpack_calc = calc_legacy_pseudos["qmcpack"]
+    qmcpack_ref = ref_legacy_pseudos["qmcpack"]
+    assert(qmcpack_calc.pseudos     == qmcpack_ref.pseudos)
+    assert(qmcpack_calc.code        == qmcpack_ref.code)
+    assert(qmcpack_calc.pseudo_dirs == qmcpack_ref.pseudo_dirs)
+
+    espresso_calc = calc_legacy_pseudos["espresso"]
+    espresso_ref = ref_legacy_pseudos["espresso"]
+    assert(espresso_calc.pseudos     == espresso_ref.pseudos)
+    assert(espresso_calc.code        == espresso_ref.code)
+    assert(espresso_calc.pseudo_dirs == espresso_ref.pseudo_dirs)
+
+    gamess_calc = calc_legacy_pseudos["gamess"]
+    gamess_ref = ref_legacy_pseudos["gamess"]
+    assert(gamess_calc.pseudos     == gamess_ref.pseudos)
+    assert(gamess_calc.code        == gamess_ref.code)
+    assert(gamess_calc.pseudo_dirs == gamess_ref.pseudo_dirs)
+
+    vasp_calc = calc_legacy_pseudos["vasp"]
+    vasp_ref = ref_legacy_pseudos["vasp"]
+    assert(vasp_calc.pseudos     == vasp_ref.pseudos)
+    assert(vasp_calc.code        == vasp_ref.code)
+    assert(vasp_calc.pseudo_dirs == vasp_ref.pseudo_dirs)
+#end def test_register_legacy_ppset
