@@ -1,5 +1,5 @@
 FROM ubuntu:24.04
-LABEL Description="Development version of QMCPACK and Nexus configured for use with complete source codes, plus Quantum ESPRESSO"
+LABEL Description="Development version of QMCPACK and Nexus configured for use with complete source codes, plus Quantum ESPRESSO and PySCF."
 
 SHELL ["/bin/bash", "-c"]
 
