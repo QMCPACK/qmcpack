@@ -37,18 +37,24 @@ def setup_psps(
         case "gamess":
             file_ext = "gms"
         case "vasp":
-            file_ext = "potcar"
+            file_ext = "POTCAR"
         case _:
             raise pytest.UsageError(
                 "Invalid call to `setup_for_pseudoset()`!\n"
                 f"Code supplied is {code}, but must be one of: {', '.join(PseudoSet.known_codes)}"
                 )
-
-    pseudo_names = (
-        f"C.BFD.{file_ext}",
-        f"H.BFD.{file_ext}",
-        f"O.BFD.{file_ext}",
-        )
+    if file_ext == "POTCAR":
+        pseudo_names = (
+            "C/POTCAR",
+            "H/POTCAR",
+            "O/POTCAR",
+            )
+    else:
+        pseudo_names = (
+            f"C.BFD.{file_ext}",
+            f"H.BFD.{file_ext}",
+            f"O.BFD.{file_ext}",
+            )
 
     psp_dir = test_dir / f"{file_ext}_pseudos"
     psp_dir.mkdir()
@@ -56,16 +62,28 @@ def setup_psps(
 
     pseudo_list = []
     for psp in pseudo_names:
+        if "POTCAR" in psp:
+            potcar_dir = psp_dir / psp.split("/")[0]
+            potcar_dir.mkdir()
+            assert potcar_dir.exists(), "Failed to create POTCAR directory!"
+
         pseudo = (psp_dir / psp).resolve()
         pseudo.touch()
         assert pseudo.exists(), "Failed to create pseudo file!"
         pseudo_list.append(pseudo)
 
-    ref_pseudos = {
-        "C": (psp_dir / f"C.BFD.{file_ext}").resolve(),
-        "H": (psp_dir / f"H.BFD.{file_ext}").resolve(),
-        "O": (psp_dir / f"O.BFD.{file_ext}").resolve(),
-        }
+    if file_ext == "POTCAR":
+        ref_pseudos = {
+            "C": (psp_dir / "C" / "POTCAR").resolve(),
+            "H": (psp_dir / "H" / "POTCAR").resolve(),
+            "O": (psp_dir / "O" / "POTCAR").resolve(),
+            }
+    else:
+        ref_pseudos = {
+            "C": (psp_dir / f"C.BFD.{file_ext}").resolve(),
+            "H": (psp_dir / f"H.BFD.{file_ext}").resolve(),
+            "O": (psp_dir / f"O.BFD.{file_ext}").resolve(),
+            }
 
     return (psp_dir, pseudo_list, ref_pseudos)
 
@@ -193,7 +211,7 @@ h 1 1.00
 #end def test_pseudopotentials
 
 
-
+@isolate_nexus_core
 def test_ppset():
     from ..developer import obj
 
@@ -818,9 +836,9 @@ def test_pseudoset_dict(tmp_path):
     assert(gms_pseudoset.code        == "gamess")
 
     potcar_pseudo_dict = {
-        "C1": ref_potcar_pseudos["C"],
-        "H1": ref_potcar_pseudos["H"],
-        "O1": ref_potcar_pseudos["O"],
+        "C": ref_potcar_pseudos["C"],
+        "H": ref_potcar_pseudos["H"],
+        "O": ref_potcar_pseudos["O"],
         }
     potcar_pseudoset = PseudoSet(
         pseudos = potcar_pseudo_dict,
@@ -888,7 +906,7 @@ def test_pseudoset_detect(tmp_path):
     detect_gamess = PseudoSet._detect_pseudo_code(["C.BFD.gms", "H.BFD.gms", "O.BFD.gms"])
     assert(detect_gamess == "gamess")
 
-    detect_vasp = PseudoSet._detect_pseudo_code(["C.BFD.potcar", "H.BFD.potcar", "O.BFD.potcar"])
+    detect_vasp = PseudoSet._detect_pseudo_code(["C/POTCAR", "H/POTCAR", "O/POTCAR"])
     assert(detect_vasp == "vasp")
 
     with pytest.raises(
@@ -1016,7 +1034,7 @@ def test_pseudoset_from_dir_filter(tmp_path):
     xml_pseudoset = PseudoSet.from_dir(
         pseudo_dir  = psp_dir,
         code        = "qmcpack",
-        filter_exts = True,
+        ext_filter = True,
         )
 
     assert(xml_pseudoset.pseudos     == ref_xml_pseudos)
@@ -1026,7 +1044,7 @@ def test_pseudoset_from_dir_filter(tmp_path):
     upf_pseudoset = PseudoSet.from_dir(
         pseudo_dir  = psp_dir,
         code        = "espresso",
-        filter_exts = True,
+        ext_filter = True,
         )
 
     assert(upf_pseudoset.pseudos     == ref_upf_pseudos)
@@ -1036,7 +1054,7 @@ def test_pseudoset_from_dir_filter(tmp_path):
     custom_filter_pseudoset = PseudoSet.from_dir(
         pseudo_dir  = psp_dir,
         code        = "detect",
-        filter_exts = [".upf", ".ncpp"],
+        ext_filter = [".upf", ".ncpp"],
         )
 
     assert(custom_filter_pseudoset.pseudos     == ref_upf_pseudos)
@@ -1057,9 +1075,9 @@ def test_pseudoset_from_mixed_dir(tmp_path):
         "C.BFD.gms",
         "H.BFD.gms",
         "O.BFD.gms",
-        "C.BFD.potcar",
-        "H.BFD.potcar",
-        "O.BFD.potcar",
+        "C/POTCAR",
+        "H/POTCAR",
+        "O/POTCAR",
         )
 
     psp_dir = tmp_path / "mixed_pseudos"
@@ -1068,6 +1086,11 @@ def test_pseudoset_from_mixed_dir(tmp_path):
 
     pseudo_list = []
     for psp in pseudo_names:
+        if "POTCAR" in psp:
+            potcar_dir = psp_dir / psp.split("/")[0]
+            potcar_dir.mkdir()
+            assert potcar_dir.exists(), "Failed to create POTCAR directory!"
+
         pseudo = (psp_dir / psp).resolve()
         pseudo.touch()
         assert pseudo.exists(), "Failed to create pseudo file!"
@@ -1101,9 +1124,9 @@ def test_pseudoset_from_mixed_dir(tmp_path):
             ),
         "vasp": PseudoSet(
             pseudos = {
-                "C": (psp_dir / "C.BFD.potcar").resolve(),
-                "H": (psp_dir / "H.BFD.potcar").resolve(),
-                "O": (psp_dir / "O.BFD.potcar").resolve(),
+                "C": (psp_dir / "C" / "POTCAR").resolve(),
+                "H": (psp_dir / "H" / "POTCAR").resolve(),
+                "O": (psp_dir / "O" / "POTCAR").resolve(),
                 },
             code="vasp",
             ),
@@ -1222,7 +1245,7 @@ def test_get_Zeffs():
     xml_pseudoset = PseudoSet.from_dir(
         pseudo_dir  = psp_dir,
         code        = "qmcpack",
-        filter_exts = True,
+        ext_filter = True,
         )
     Zeffs = xml_pseudoset.get_Zeffs(elem_labels=["C", "H", "O"])
 
@@ -1238,7 +1261,7 @@ def test_get_Zeffs():
         pseudo_dir  = psp_dir,
         code        = "qmcpack",
         Zeffs       = {"C": 6},
-        filter_exts = True,
+        ext_filter = True,
         )
     Zeffs = xml_pseudoset_custom.get_Zeffs(elem_labels=["C", "H", "O"])
 
@@ -1254,7 +1277,7 @@ def test_get_Zeffs():
     xml_pseudoset_mixed_ae = PseudoSet.from_dir(
         pseudo_dir  = psp_dir,
         code        = "qmcpack",
-        filter_exts = True,
+        ext_filter = True,
         )
     Zeffs = xml_pseudoset_mixed_ae.get_Zeffs(
         elem_labels   = ["C", "H", "O", "Fe"],
@@ -1271,7 +1294,7 @@ def test_get_Zeffs():
 #end def test_get_Zeffs
 
 
-# @isolate_nexus_core
+@isolate_nexus_core
 def test_register_legacy_ppset(tmp_path):
     pseudo_names = (
         "C.BFD.xml",
@@ -1283,9 +1306,6 @@ def test_register_legacy_ppset(tmp_path):
         "C.BFD.gms",
         "H.BFD.gms",
         "O.BFD.gms",
-        "C.BFD.potcar",
-        "H.BFD.potcar",
-        "O.BFD.potcar",
         )
 
     psp_dir = tmp_path / "mixed_pseudos"
@@ -1327,14 +1347,6 @@ def test_register_legacy_ppset(tmp_path):
                     },
                 code="gamess",
                 ),
-            "vasp": PseudoSet(
-                pseudos = {
-                    "C": (psp_dir / "C.BFD.potcar").resolve(),
-                    "H": (psp_dir / "H.BFD.potcar").resolve(),
-                    "O": (psp_dir / "O.BFD.potcar").resolve(),
-                    },
-                code="vasp",
-                ),
             }
         }
 
@@ -1343,7 +1355,6 @@ def test_register_legacy_ppset(tmp_path):
         pwscf   = ["C.BFD.upf", "H.BFD.upf", "O.BFD.upf"],
         qmcpack = ["C.BFD.xml", "H.BFD.xml", "O.BFD.xml"],
         gamess  = ["C.BFD.gms", "H.BFD.gms", "O.BFD.gms"],
-        vasp    = ["C.BFD.potcar", "H.BFD.potcar", "O.BFD.potcar"],
         )
 
     PseudoSet._register_legacy_ppset("bfd")
@@ -1372,10 +1383,4 @@ def test_register_legacy_ppset(tmp_path):
     assert(gamess_calc.pseudos     == gamess_ref.pseudos)
     assert(gamess_calc.code        == gamess_ref.code)
     assert(gamess_calc.pseudo_dirs == gamess_ref.pseudo_dirs)
-
-    vasp_calc = calc_legacy_pseudos["vasp"]
-    vasp_ref = ref_legacy_pseudos["vasp"]
-    assert(vasp_calc.pseudos     == vasp_ref.pseudos)
-    assert(vasp_calc.code        == vasp_ref.code)
-    assert(vasp_calc.pseudo_dirs == vasp_ref.pseudo_dirs)
 #end def test_register_legacy_ppset

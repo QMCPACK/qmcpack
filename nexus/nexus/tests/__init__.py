@@ -4,8 +4,8 @@ from pathlib import Path
 from copy import deepcopy
 import functools
 from nexus.nexus_base import nexus_core, nexus_noncore, nexus_core_noncore, nexus_noncore_defaults
-from nexus.generic import generic_settings, object_interface
-from nexus.pseudopotential import Pseudopotentials
+from nexus.generic import generic_settings, object_interface, obj
+from nexus.pseudopotential import Pseudopotentials, ppset
 from nexus.simulation import Simulation
 
 # qmcpack/nexus/nexus/tests/
@@ -121,6 +121,7 @@ def isolate_nexus_core(test_func = None):
         restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
         restore_nexus_log(logging_storage)
         Simulation.clear_all_sims()
+        ppset.pseudos = obj()
         if test_err is not None:
             raise test_err
 
@@ -137,6 +138,7 @@ def isolate_nexus_core(test_func = None):
         restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
         restore_nexus_log(logging_storage)
         Simulation.clear_all_sims()
+        ppset.pseudos = obj()
         if test_err is not None:
             raise test_err
 

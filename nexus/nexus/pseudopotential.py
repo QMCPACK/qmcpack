@@ -624,7 +624,7 @@ class PseudoSet:
         # https://www.quantum-espresso.org/Doc/INPUT_PW.html#id268
         "espresso": {".ncpp", ".upf", ".vdb", ".van", ".rrkj3"},
         "gamess":   {".gms"},
-        "vasp":     {".potcar"},
+        "vasp":     {"potcar"},
         "qmcpack":  {".xml"},
         }
     legacy_pseudos: dict[str, dict[str, PseudoSet]] = dict()
@@ -651,7 +651,12 @@ class PseudoSet:
                 if not psp.exists():
                     warn(f"Pseudo file {psp} can not be located")
 
-                _, symbol, is_elem = pp_elem_label(psp.name)
+                if psp.name.lower() == "potcar":
+                    # POTCARS are stored all with the same name.
+                    # The directory they are in is where the actual element is.
+                    _, symbol, is_elem = pp_elem_label(psp.parent.name)
+                else:
+                    _, symbol, is_elem = pp_elem_label(psp.name)
 
                 if not is_elem:
                     raise ValueError(
@@ -678,7 +683,10 @@ class PseudoSet:
 
         self.pseudo_dirs: set[Path] = set()
         for pseudo in self.pseudos.values():
-            self.pseudo_dirs.add(pseudo.parent)
+            if pseudo.name.lower() == "potcar":
+                self.pseudo_dirs.add(pseudo.parent.parent) # Parent dir of the POTCAR dirs
+            else:
+                self.pseudo_dirs.add(pseudo.parent)
     #end def __init__
 
     @staticmethod
@@ -707,7 +715,11 @@ class PseudoSet:
             pseudos = pseudos.values()
 
         for pseudo in pseudos:
-            suffixes.add(Path(pseudo).suffix.lower())
+            pseudo = Path(pseudo)
+            if pseudo.name.lower() == "potcar":
+                suffixes.add(pseudo.name.lower())
+            else:
+                suffixes.add(pseudo.suffix.lower())
 
         if len(suffixes) == 0:
             raise RuntimeError(
@@ -766,10 +778,10 @@ class PseudoSet:
     @classmethod
     def from_dir(
         cls,
-        pseudo_dir : PathLike,
-        code       : str = "detect",
-        Zeffs      : Mapping[PathLike, int] = dict(),
-        filter_exts: bool | list[str] = True,
+        pseudo_dir: PathLike,
+        code      : str = "detect",
+        Zeffs     : Mapping[PathLike, int] = dict(),
+        ext_filter: bool | list[str] = True,
         ) -> Self:
         """Read in pseudopotentials from a directory.
 
@@ -786,7 +798,7 @@ class PseudoSet:
             nuclear charges (Z-valences). If this is supplied, it will
             override any parts of the code that may try to parse the
             pseudopotential to get the Z-valence.
-        filter_exts : bool or list of str, default=True
+        ext_filter : bool or list of str, default=True
             Optionally filter the files in the directory by their
             extension.
             
@@ -804,17 +816,17 @@ class PseudoSet:
         known_codes : Codes known by Nexus.
         """
         if code == "detect":
-            if filter_exts is True:
-                filter_exts = False
+            if ext_filter is True:
+                ext_filter = False
             else:
                 pass
         else:
             code = PseudoSet._check_code_str(code)
 
-        if filter_exts is True:
+        if ext_filter is True:
             suffixes = PseudoSet.file_exts[code]
-        elif isinstance(filter_exts, list | tuple | set):
-            suffixes = set(filter_exts)
+        elif isinstance(ext_filter, list | tuple | set):
+            suffixes = set(ext_filter)
         else:
             suffixes = None
 
@@ -830,13 +842,15 @@ class PseudoSet:
                 )
         else:
             pseudos = []
-            if suffixes is None:
-                for pseudo in dir.iterdir():
-                    pseudos.append(pseudo)
-            else:
-                for pseudo in dir.iterdir():
-                    if pseudo.suffix in suffixes:
+            for pseudo in dir.iterdir():
+                if pseudo.is_file():
+                    if suffixes is None or pseudo.suffix in suffixes:
                         pseudos.append(pseudo)
+                elif pseudo.is_dir():
+                    if suffixes is None or "potcar" in suffixes:
+                        potcar = pseudo / "POTCAR"
+                        if potcar.exists():
+                            pseudos.append(potcar)
 
         if code == "detect":
             code = cls._detect_pseudo_code(pseudos)
@@ -1041,7 +1055,7 @@ class PseudoSet:
             pseudos[code] = PseudoSet.from_dir(
                 pseudo_dir  = dir,
                 code        = code,
-                filter_exts = suffixes,
+                ext_filter = suffixes,
                 )
 
         return pseudos
