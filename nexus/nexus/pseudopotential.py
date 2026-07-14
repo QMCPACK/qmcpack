@@ -9,7 +9,7 @@ import os
 from os import PathLike
 from pathlib import Path
 import re
-from typing import Literal, Self
+from typing import Literal
 
 import numpy as np
 
@@ -782,7 +782,7 @@ class PseudoSet:
         code      : str = "detect",
         Zeffs     : Mapping[PathLike, int] = dict(),
         ext_filter: bool | list[str] = True,
-        ) -> Self:
+        ) -> PseudoSet:
         """Read in pseudopotentials from a directory.
 
         Parameters
@@ -978,7 +978,7 @@ class PseudoSet:
         codes     : str | list[str] = "detect",
         filters   : Mapping[str, set[str]] | None = None,
         Zeffs     : Mapping[PathLike, int] = dict(),
-        ) -> dict[str, Self]:
+        ) -> dict[str, PseudoSet]:
         """Read in pseudos from a directory with pseudos for more than one code.
 
         Parameters
@@ -1002,7 +1002,7 @@ class PseudoSet:
 
         Returns
         -------
-        pseudos : dict of str: Self/None
+        pseudos : dict of str: PseudoSet/None
             A map from the labels provided to the function to the
             ``PseudoSet`` objects that were created from the pseudos in
             the directory.
