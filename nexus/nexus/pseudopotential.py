@@ -1077,6 +1077,45 @@ class PseudoSet:
         from_dir : Used to get pseudos after filters have been established.
         file_exts : Dictionary mapping codes to file extensions.
         known_codes : Codes known by Nexus.
+
+        Examples
+        --------
+        Filter a large collection of pseudos for multiple codes.
+
+        >>> print(contents_of_pseudo_dir)
+        pseudo_dir 
+        ├── C
+        │   └── POTCAR
+        ├── C.BFD.gms
+        ├── C.ccECP.upf
+        ├── C.ccECP.xml
+        ├── C.USPP.upf
+        ├── H
+        │   └── POTCAR
+        ├── H.BFD.gms
+        ├── H.ccECP.upf
+        ├── H.ccECP.xml
+        └── H.USPP.upf
+        >>> psps = PseudoSet.from_mixed_dir(
+        ...     pseudo_dir=pseudo_dir,
+        ...     patterns={"espresso": "USPP"},
+        ... )
+        >>> for code, ps_set in psps.items():
+        ...     print(f"{code} pseudos:")
+        ...     for lbl, psp in ps_set.pseudos.items():
+        ...         print(f"  {lbl}: {psp}")
+        espresso pseudos:
+        C: /path/to/pseudo_dir/C.USPP.upf
+        H: /path/to/pseudo_dir/H.USPP.upf
+        gamess pseudos:
+        H: /path/to/pseudo_dir/H.BFD.gms
+        C: /path/to/pseudo_dir/C.BFD.gms
+        vasp pseudos:
+        C: /path/to/pseudo_dir/C/POTCAR
+        H: /path/to/pseudo_dir/H/POTCAR
+        qmcpack pseudos:
+        H: /path/to/pseudo_dir/H.ccECP.xml
+        C: /path/to/pseudo_dir/C.ccECP.xml
         """
         if filters is None:
             if codes == "detect":
