@@ -866,7 +866,7 @@ class PseudoSet:
         self,
         system: PhysicalSystem | list[str],
         code  : Literal["espresso", "gamess", "vasp", "qmcpack"] | None = None,
-        ) -> dict[str, Path]:
+        ) -> set[Path]:
         """Get the pseudopotential files for the elements in a physical system.
 
         Parameters
@@ -883,8 +883,8 @@ class PseudoSet:
 
         Returns
         -------
-        pseudos : dict of str: Path
-            A dict mapping labels to the pseudopotential file paths.
+        pseudos : set of Path
+            The pseudopotential paths for the given system of elements.
         """
         if code is not None:
             clow = PseudoSet._check_code_str(code)
@@ -893,7 +893,7 @@ class PseudoSet:
                     f"Tried to get pseudopotentials for {code} from a set of {self.code} pseudos!"
                     )
 
-        pps = {}
+        pps = set()
         if isinstance(system, PhysicalSystem):
             if not system.pseudized:
                 return pps
@@ -907,7 +907,7 @@ class PseudoSet:
                 raise ValueError(
                     f"No pseudopotential found for label {label}!"
                     )
-            pps[label] = self.pseudos[label]
+            pps.add(self.pseudos[label])
 
         return pps
     #end def get_pseudos

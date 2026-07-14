@@ -1217,15 +1217,12 @@ def test_pseudoset_from_mixed_dir(tmp_path):
 def test_get_pseudos(tmp_path):
     xml_dir, _, ref_xml_pseudos = setup_psps(test_dir=tmp_path, code="qmcpack")
     xml_pseudoset = PseudoSet.from_dir(pseudo_dir=xml_dir, code="detect")
+    ref_pseudos = {ref_xml_pseudos["C"], ref_xml_pseudos["H"]}
 
     elements = ["C", "C", "H"]
 
     pseudos = xml_pseudoset.get_pseudos(system=elements, code="qmcpack")
 
-    ref_pseudos = {
-        "C": ref_xml_pseudos["C"],
-        "H": ref_xml_pseudos["H"],
-    }
     assert(pseudos == ref_pseudos)
 
     system = generate_physical_system(
