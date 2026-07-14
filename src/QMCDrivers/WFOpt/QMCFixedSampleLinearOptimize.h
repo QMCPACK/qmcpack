@@ -234,7 +234,7 @@ private:
   void start();
 #ifdef HAVE_LMY_ENGINE
   void engine_start(cqmc::engine::LMYEngine<ValueType>& EngineObj,
-                    DescentEngine& descentEngineObj,
+                    DescentEngine* descentEngineObj,
                     std::string MinMethod);
 #endif
   ///common operation to finish optimization, used by the derived classes

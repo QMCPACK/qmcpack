@@ -346,14 +346,16 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
  *In future, both the LM and descent engines should be children of some parent engine base class.
  * */
 void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                                 DescentEngine& descentEngineObj,
+                                                 DescentEngine* descentEngineObj,
                                                  const std::string& MinMethod)
 {
   const auto num_opt_vars = opt_vars.size();
   if (MinMethod == "descent")
   {
+    if (!descentEngineObj)
+      throw std::runtime_error("Descent optimization requires a DescentEngine");
     //Reset vectors and scalars from any previous iteration
-    descentEngineObj.prepareStorage(omp_get_max_threads(), num_opt_vars);
+    descentEngineObj->prepareStorage(omp_get_max_threads(), num_opt_vars);
   }
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
@@ -438,7 +440,8 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
           std::vector<FullPrecValueType> der_rat_samp_comp(der_rat_samp.begin(), der_rat_samp.end());
           std::vector<FullPrecValueType> le_der_samp_comp(le_der_samp.begin(), le_der_samp.end());
 
-          descentEngineObj.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
+          descentEngineObj->takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0,
+                                       saved[REWEIGHT]);
         }
 #endif
       }
@@ -480,7 +483,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
   if (MinMethod == "adaptive")
     EngineObj.sample_finish();
   else if (MinMethod == "descent")
-    descentEngineObj.sample_finish();
+    descentEngineObj->sample_finish();
 #endif
 
   app_log().flush();

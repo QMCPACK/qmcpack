@@ -627,7 +627,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
 
 #ifdef HAVE_LMY_ENGINE
 void QMCCostFunctionBatched::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                                        DescentEngine& descentEngineObj,
+                                                        DescentEngine* descentEngineObj,
                                                         const std::string& MinMethod)
 { APP_ABORT("LMYEngine not implemented with batch optimization"); }
 #endif

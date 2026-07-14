@@ -159,7 +159,7 @@ public:
   virtual void checkConfigurationsSR(EngineHandle& handle);
 #ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                          DescentEngine& descentEngineObj,
+                                          DescentEngine* descentEngineObj,
                                           const std::string& MinMethod) = 0;
 
 #endif

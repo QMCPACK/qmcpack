@@ -981,7 +981,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   EngineObj->reset();
 
   // generate samples and compute weights, local energies, and derivative vectors
-  engine_start(*EngineObj, *descentEngineObj, MinMethod);
+  engine_start(*EngineObj, descentEngineObj.get(), MinMethod);
 
   // get dimension of the linear method matrices
   size_t N = numParams + 1;
@@ -1018,7 +1018,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     finish();
 
     // take sample
-    engine_start(*EngineObj, *descentEngineObj, MinMethod);
+    engine_start(*EngineObj, descentEngineObj.get(), MinMethod);
   }
 
   // say what we are doing
@@ -1396,7 +1396,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
   optTarget->setneedGrads(true);
 
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
-  engine_start(*EngineObj, *descentEngineObj, MinMethod);
+  engine_start(*EngineObj, descentEngineObj.get(), MinMethod);
 
   int descent_num = descentEngineObj->getDescentNum();
 
@@ -1519,7 +1519,7 @@ void QMCFixedSampleLinearOptimize::start()
 
 #ifdef HAVE_LMY_ENGINE
 void QMCFixedSampleLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>& EngineObj,
-                                                DescentEngine& descentEngineObj,
+                                                DescentEngine* descentEngineObj,
                                                 std::string MinMethod)
 {
   app_log() << "entering engine_start function" << std::endl;
