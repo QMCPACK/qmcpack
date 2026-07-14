@@ -803,7 +803,7 @@ class PseudoSet:
         ext_filter : bool or list of str, default=True
             Optionally filter the files in the directory by their
             extension.
-            
+
             If this is ``True`` it will use the file suffixes
             in ``PseudoSet.file_exts``, unless ``code="detect"``, in
             which case it will do nothing.
@@ -818,6 +818,47 @@ class PseudoSet:
         --------
         file_exts : Dictionary mapping codes to file extensions.
         known_codes : Codes known by Nexus.
+
+        Examples
+        --------
+        Reading pseudos in a directory with only one style of pseudo.
+
+        >>> os.listdir(pseudo_dir)
+        ['H.ccECP.xml', 'C.ccECP.xml', 'Fe.ccECP.xml']
+        >>> psps = PseudoSet.from_dir(pseudo_dir)
+        >>> for lbl, pth in psps.pseudos.items(): print(f"{lbl}: {pth}")
+        H: /path/to/pseudo_dir/H.ccECP.xml
+        C: /path/to/pseudo_dir/C.ccECP.xml
+        Fe: /path/to/pseudo_dir/Fe.ccECP.xml
+
+        Reading in only the UPF pseudos in a directory with UPF and XML
+        pseudos.
+
+        >>> os.listdir(pseudo_dir)
+        ['H.ccECP.xml', 'C.ccECP.xml', 'H.ccECP.upf', 'C.ccECP.upf']
+        >>> psps = PseudoSet.from_dir(pseudo_dir, code="espresso")
+        >>> for lbl, pth in psps.pseudos.items(): print(f"{lbl}: {pth}")
+        C: /path/to/pseudo_dir/C.ccECP.upf
+        H: /path/to/pseudo_dir/H.ccECP.upf
+
+        Filtering out two different kinds of pseudos with the same
+        extensions.
+
+        >>> os.listdir(pseudo_dir)
+        ['H.ccECP.upf', 'C.ccECP.upf', 'H.USPP.upf', 'C.USPP.upf']
+        >>> psps = PseudoSet.from_dir(pseudo_dir, pattern="USPP")
+        >>> for lbl, pth in psps.pseudos.items(): print(f"{lbl}: {pth}")
+        C: /path/to/pseudo_dir/C.USPP.upf
+        H: /path/to/pseudo_dir/H.USPP.upf
+
+        Filtering out pseudos by both extension and pattern.
+
+        >>> os.listdir(pseudo_dir)
+        ['H.ccECP.upf', 'C.ccECP.upf', 'H.USPP.upf', 'C.USPP.upf', 'H.ccECP.xml', 'C.ccECP.xml']
+        >>> psps = PseudoSet.from_dir(pseudo_dir, code="espresso", pattern="ccECP")
+        >>> for lbl, pth in psps.pseudos.items(): print(f"{lbl}: {pth}")
+        C: /path/to/pseudo_dir/C.ccECP.upf
+        H: /path/to/pseudo_dir/H.ccECP.upf
         """
         if code == "detect":
             if ext_filter is True:
