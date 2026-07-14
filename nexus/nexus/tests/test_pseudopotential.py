@@ -5,6 +5,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOPOTENTIAL)
 from ..generic import generic_settings, NexusUserWarning
 generic_settings.raise_error = True
 
+import numpy as np
 from pathlib import Path
 from typing import Literal
 from . import isolate_nexus_core, TEST_DIR
@@ -12,6 +13,7 @@ from ..testing import value_eq,object_eq
 from nexus.pseudopotential import read_upf_z_valence, read_xml_z_valence, read_potcar_z_valence
 from nexus.pseudopotential import PseudoSet, ppset
 from nexus.nexus_base import nexus_core
+from nexus.physical_system import generate_physical_system
 
 
 TEST_FILES = {
@@ -1224,6 +1226,17 @@ def test_get_pseudos(tmp_path):
         "C": ref_xml_pseudos["C"],
         "H": ref_xml_pseudos["H"],
     }
+    assert(pseudos == ref_pseudos)
+
+    system = generate_physical_system(
+        elem = ["C", "H", "H", "H", "H"],
+        pos = np.empty((5,3), dtype=float),
+        C = 4,
+        H = 1,
+        )
+
+    pseudos = xml_pseudoset.get_pseudos(system=system, code="qmcpack")
+
     assert(pseudos == ref_pseudos)
 
     with pytest.raises(ValueError, match="Tried to get pseudopotentials for"):

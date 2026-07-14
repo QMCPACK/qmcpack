@@ -898,7 +898,7 @@ class PseudoSet:
             if not system.pseudized:
                 return pps
             else:
-                elements = system.ions.keys()
+                elements = system.ion_labels
         else:
             elements = system
 
