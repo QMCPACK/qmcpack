@@ -1065,6 +1065,90 @@ def test_pseudoset_from_dir_filter(tmp_path):
 #end def test_pseudoset_from_dir_filter
 
 
+def test_pseudoset_from_dir_pattern(tmp_path):
+    pseudo_names = (
+        "C.BFD.xml",
+        "C.BFD.upf",
+        "H.BFD.xml",
+        "H.BFD.upf",
+        "O.BFD.xml",
+        "O.BFD.upf",
+        "Fe.BFD.ncpp",
+        "C_ONCV_PBE-1.2.upf",
+        "H_ONCV_PBE-1.2.upf",
+        "O_ONCV_PBE-1.2.upf",
+        "Fe_ONCV_PBE-1.2.upf",
+        )
+
+    psp_dir = tmp_path / "mixed_pseudos"
+    psp_dir.mkdir()
+    assert psp_dir.exists(), "Failed to create pseudo directory!"
+
+    extra_dir = psp_dir / "other_directory"
+    extra_dir.mkdir()
+    assert extra_dir.exists(), "Failed to create extra directory!"
+
+    pseudo_list = []
+    for psp in pseudo_names:
+        pseudo = (psp_dir / psp).resolve()
+        pseudo.touch()
+        assert pseudo.exists(), "Failed to create pseudo file!"
+        pseudo_list.append(pseudo)
+
+    ref_xml_pseudos = {
+        "C": (psp_dir / "C.BFD.xml").resolve(),
+        "H": (psp_dir / "H.BFD.xml").resolve(),
+        "O": (psp_dir / "O.BFD.xml").resolve(),
+        }
+
+    ref_upf_bfd_pseudos = {
+        "C" : (psp_dir / "C.BFD.upf").resolve(),
+        "H" : (psp_dir / "H.BFD.upf").resolve(),
+        "O" : (psp_dir / "O.BFD.upf").resolve(),
+        "Fe": (psp_dir / "Fe.BFD.ncpp").resolve(),
+        }
+
+    ref_upf_oncv_pseudos = {
+        "C" : (psp_dir / "C_ONCV_PBE-1.2.upf").resolve(),
+        "H" : (psp_dir / "H_ONCV_PBE-1.2.upf").resolve(),
+        "O" : (psp_dir / "O_ONCV_PBE-1.2.upf").resolve(),
+        "Fe": (psp_dir / "Fe_ONCV_PBE-1.2.upf").resolve(),
+        }
+
+    xml_pseudoset = PseudoSet.from_dir(
+        pseudo_dir  = psp_dir,
+        code        = "qmcpack",
+        ext_filter  = True,
+        )
+
+    assert(xml_pseudoset.pseudos     == ref_xml_pseudos)
+    assert(xml_pseudoset.pseudo_dirs == {psp_dir})
+    assert(xml_pseudoset.code        == "qmcpack")
+
+    upf_bfd_pseudoset = PseudoSet.from_dir(
+        pseudo_dir  = psp_dir,
+        code        = "espresso",
+        ext_filter  = True,
+        pattern     = r"\.BFD\.",
+        )
+
+    assert(upf_bfd_pseudoset.pseudos     == ref_upf_bfd_pseudos)
+    assert(upf_bfd_pseudoset.pseudo_dirs == {psp_dir})
+    assert(upf_bfd_pseudoset.code        == "espresso")
+
+    upf_oncv_pseudoset = PseudoSet.from_dir(
+        pseudo_dir  = psp_dir,
+        code        = "espresso",
+        ext_filter  = True,
+        pattern     = r"_ONCV_PBE-1\.2",
+        )
+
+    assert(upf_oncv_pseudoset.pseudos     == ref_upf_oncv_pseudos)
+    assert(upf_oncv_pseudoset.pseudo_dirs == {psp_dir})
+    assert(upf_oncv_pseudoset.code        == "espresso")
+#end def test_pseudoset_from_dir_pattern
+
+
 def test_pseudoset_from_mixed_dir(tmp_path):
     pseudo_names = (
         "C.BFD.xml",

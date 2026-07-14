@@ -9,6 +9,7 @@ import os
 from os import PathLike
 from pathlib import Path
 import re
+from re import Pattern
 from typing import Literal
 
 import numpy as np
@@ -782,6 +783,7 @@ class PseudoSet:
         code      : str = "detect",
         Zeffs     : Mapping[PathLike, int] = dict(),
         ext_filter: bool | list[str] = True,
+        pattern   : str | Pattern | None = None,
         ) -> PseudoSet:
         """Read in pseudopotentials from a directory.
 
@@ -809,6 +811,8 @@ class PseudoSet:
             If this is a list of strings, it is assumed the strings are
             the file suffixes to filter by. The strings should include a
             leading ``.``, e.g. ``.xml``, not ``xml``.
+        pattern : str or Pattern, optional
+            A string or regex pattern to use to filter files by name.
 
         See Also
         --------
@@ -830,6 +834,9 @@ class PseudoSet:
         else:
             suffixes = None
 
+        if pattern is not None:
+            pattern = re.compile(pattern)
+
         dir = Path(pseudo_dir).resolve()
 
         if not dir.exists():
@@ -840,17 +847,21 @@ class PseudoSet:
             raise NotADirectoryError(
                 f"Specified path does not point to a directory: {dir}"
                 )
-        else:
-            pseudos = []
-            for pseudo in dir.iterdir():
-                if pseudo.is_file():
-                    if suffixes is None or pseudo.suffix in suffixes:
-                        pseudos.append(pseudo)
-                elif pseudo.is_dir():
-                    if suffixes is None or "potcar" in suffixes:
-                        potcar = pseudo / "POTCAR"
-                        if potcar.exists():
-                            pseudos.append(potcar)
+
+        pseudos = []
+        for pseudo in dir.iterdir():
+            if pseudo.is_file() and (suffixes is None or pseudo.suffix in suffixes):
+                pseudos.append(pseudo)
+            elif pseudo.is_dir() and (suffixes is None or "potcar" in suffixes):
+                potcar = pseudo / "POTCAR"
+                if potcar.exists():
+                    pseudos.append(potcar)
+
+        if pattern is not None:
+            pseudos = list(filter(
+                    lambda x: pattern.search(x.name) is not None,
+                    pseudos,
+                ))
 
         if code == "detect":
             code = cls._detect_pseudo_code(pseudos)
@@ -977,7 +988,8 @@ class PseudoSet:
         pseudo_dir: PathLike,
         codes     : str | list[str] = "detect",
         filters   : Mapping[str, set[str]] | None = None,
-        Zeffs     : Mapping[PathLike, int] = dict(),
+        patterns  : Mapping[str, str | Pattern] = dict(),
+        code_Zeffs: Mapping[str, Mapping[str, int]] = dict(),
         ) -> dict[str, PseudoSet]:
         """Read in pseudos from a directory with pseudos for more than one code.
 
@@ -994,11 +1006,14 @@ class PseudoSet:
             A dictionary mapping codes to the suffixes corresponding to
             those labels. If this is not provided, then the filters are
             automatically populated by the codes in ``codes``.
-        Zeffs : Map of str/Elements to int, optional
-            A ``dict`` or ``obj`` mapping elements to their effective
-            nuclear charges (Z-valences). If this is supplied, it will
-            override any parts of the code that may try to parse the
-            pseudopotential to get the Z-valence.
+        patterns : Map of str to str or Pattern, optional
+            A dictionary mapping codes to strings or regex patterns,
+            used to filter out files.
+        code_Zeffs : Map of str to Map of str/Elements to int, optional
+            A ``dict`` or ``obj`` for each code that maps elements to
+            their effective nuclear charges (Z-valences). If this is
+            supplied, it will override any parts of the code that may
+            try to parse the pseudopotential to get the Z-valence.
 
         Returns
         -------
@@ -1012,8 +1027,9 @@ class PseudoSet:
         This function is the most generous in terms of what it is able
         to parse and separate, however it can result in errors if you
         have multiple pseudos with the same file extension for the same
-        element. If you cannot separate the pseudos, then you will need
-        to specify which pseudos are acceptable in another way.
+        element. If you have a lot of pseudos with the same extension,
+        you should use ``PseudoSet.from_dir()`` and provide a pattern to
+        separate the pseudos.
 
         See Also
         --------
@@ -1055,7 +1071,9 @@ class PseudoSet:
             pseudos[code] = PseudoSet.from_dir(
                 pseudo_dir  = dir,
                 code        = code,
-                ext_filter = suffixes,
+                Zeffs       = code_Zeffs.get(code, dict()),
+                ext_filter  = suffixes,
+                pattern     = patterns.get(code, None),
                 )
 
         return pseudos
