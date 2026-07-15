@@ -1440,7 +1440,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
-  app_log() << "This is methodName: " << MinMethod << std::endl;
+  app_log() << "This method name is: " << MinMethod << std::endl;
 
   //Either the adaptive BLM or descent optimization is run
 
