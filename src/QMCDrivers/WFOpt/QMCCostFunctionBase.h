@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/MPIObjectBase.h"
 #include "libxml/xpath.h"
+#include "type_traits/OptionalRef.hpp"
 
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -158,9 +159,11 @@ public:
   //for SR method
   virtual void checkConfigurationsSR(EngineHandle& handle);
 #ifdef HAVE_LMY_ENGINE
+  /** similar to checkConfigurations. With additioal interaction with the LMY engine.
+   * if descentEngineObj is not nullopt, collect results to the descentEngineObj.
+   */
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                          DescentEngine& descentEngineObj,
-                                          const std::string& MinMethod) = 0;
+                                          OptionalRef<DescentEngine> descentEngineObj) = 0;
 
 #endif
 
