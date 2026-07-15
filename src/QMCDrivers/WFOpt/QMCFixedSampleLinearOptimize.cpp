@@ -981,7 +981,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   EngineObj->reset();
 
   // generate samples and compute weights, local energies, and derivative vectors
-  engine_start(*EngineObj, *descentEngineObj, MinMethod);
+  engine_start();
 
   // get dimension of the linear method matrices
   size_t N = numParams + 1;
@@ -1018,7 +1018,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
     finish();
 
     // take sample
-    engine_start(*EngineObj, *descentEngineObj, MinMethod);
+    engine_start();
   }
 
   // say what we are doing
@@ -1396,7 +1396,7 @@ bool QMCFixedSampleLinearOptimize::descent_run()
   optTarget->setneedGrads(true);
 
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
-  engine_start(*EngineObj, *descentEngineObj, MinMethod);
+  engine_start();
 
   int descent_num = descentEngineObj->getDescentNum();
 
@@ -1518,9 +1518,7 @@ void QMCFixedSampleLinearOptimize::start()
 }
 
 #ifdef HAVE_LMY_ENGINE
-void QMCFixedSampleLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>& EngineObj,
-                                                DescentEngine& descentEngineObj,
-                                                std::string MinMethod)
+void QMCFixedSampleLinearOptimize::engine_start()
 {
   app_log() << "entering engine_start function" << std::endl;
 
@@ -1545,8 +1543,10 @@ void QMCFixedSampleLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueTyp
     Timer t2;
     optTarget->getConfigurations(h5FileRoot);
     optTarget->setRng(vmcEngine->getRngRefs());
-    optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
-                                          MinMethod); // computes derivative ratios and pass into engine
+    // computes derivative ratios and pass into engine
+    optTarget->engine_checkConfigurations(*EngineObj,
+                                          MinMethod == "descent" ? makeOptionalRef<DescentEngine>(*descentEngineObj)
+                                                                 : std::nullopt);
     app_log() << "  Execution time = " << std::setprecision(4) << t2.elapsed() << std::endl;
   }
   app_log() << "  </log>" << std::endl;
