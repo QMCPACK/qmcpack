@@ -81,9 +81,7 @@ public:
 
 #ifdef HAVE_LMY_ENGINE
   using ValueType = QMCTraits::ValueType;
-  void engine_start(cqmc::engine::LMYEngine<ValueType>& EngineObj,
-                    DescentEngine& descentEngineObj,
-                    std::string MinMethod);
+  void engine_start();
 #endif
 
 
