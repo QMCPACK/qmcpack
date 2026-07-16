@@ -189,3 +189,66 @@ def test_density(tmp_path):
     assert(text_eq(tot,tot_ref,atol=1e-7))
     assert(text_eq(pol,pol_ref,atol=1e-7))
 #end def test_density
+
+
+def test_spindensity_qmc_level_cell_corner_from_input(tmp_path):
+    import h5py
+    import numpy as np
+
+    exe = TEST_DIR.parent / "bin/qdens"
+
+    infile = tmp_path / 'he.xml'
+    infile.write_text('''<?xml version="1.0"?>
+<simulation>
+  <project id="case" series="0"/>
+  <qmcsystem>
+    <simulationcell>
+      <parameter name="lattice" units="bohr">
+        5 0 0
+        0 5 0
+        0 0 5
+      </parameter>
+      <parameter name="bconds">n n n</parameter>
+    </simulationcell>
+    <particleset name="ion0" size="1">
+      <group name="He"><parameter name="charge">2</parameter></group>
+      <attrib name="position" datatype="posArray">0 0 0</attrib>
+    </particleset>
+    <particleset name="e">
+      <group name="u" size="1"><parameter name="charge">-1</parameter></group>
+      <group name="d" size="1"><parameter name="charge">-1</parameter></group>
+    </particleset>
+  </qmcsystem>
+  <qmc method="vmc_batch" move="pbyp">
+    <estimators>
+      <estimator name="spindensity" type="spindensity">
+        <parameter name="grid">2 2 2</parameter>
+        <parameter name="corner">0 0 0</parameter>
+        <parameter name="cell">
+          2 0 0
+          0 3 0
+          0 0 4
+        </parameter>
+      </estimator>
+    </estimators>
+  </qmc>
+</simulation>
+''')
+
+    stat = tmp_path / 'case.s000.stat.h5'
+    with h5py.File(stat,'w') as h:
+        g = h.create_group('spindensity')
+        u = g.create_group('u')
+        d = g.create_group('d')
+        u.create_dataset('value',data=np.ones((2,8)))
+        d.create_dataset('value',data=2*np.ones((2,8)))
+
+    command = f'{exe} -f xsf -i {infile} {stat}'
+    out,err,rc = execute(command)
+    assert rc==0
+
+    xsf = (tmp_path / 'case.s000.spindensity_u+d.xsf').read_text()
+    assert '3 3 3' in xsf
+    assert '1.05835442E+00 0.00000000E+00 0.00000000E+00' in xsf
+    assert '0.00000000E+00 1.58753163E+00 0.00000000E+00' in xsf
+    assert '0.00000000E+00 0.00000000E+00 2.11670883E+00' in xsf
