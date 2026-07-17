@@ -27,7 +27,6 @@ TEST_CASE("AttributeSet", "[xml]")
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(content));
 
-  xmlNodePtr root = doc.getRoot();
   OhmmsAttributeSet pattrib;
   string name  = "default_name";
   string other = "default";

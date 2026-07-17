@@ -30,7 +30,7 @@ private:
   int walkers_;
 
 public:
-  MultiWalkerTalker(const std::string& name, int walkers) : name_(name), walkers_(walkers) {};
+  MultiWalkerTalker(const std::string& name, int walkers) : name_(name), walkers_(walkers){};
   void registerVector(ListenerVector<Real>& listener_vector) { listener_vectors_.push_back(listener_vector); }
   void reportVector()
   {
@@ -124,7 +124,6 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
 
     FakeRandom<OHMMS_PRECISION_FULL> rng;
 
-    int crowd_id   = 0;
     long walker_id = 0;
     for (auto& crowd_oeb : crowd_loggers)
     {

@@ -27,8 +27,6 @@ namespace qmcplusplus
 {
 TEST_CASE("readCuspInfo", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
-
   using GridType = OneDimGridBase<double>;
 
   Matrix<CuspCorrectionParameters> info;
@@ -66,7 +64,6 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   Libxml2Document doc;
   REQUIRE(doc.parse("hcn.structure.xml"));
-  xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -97,7 +94,6 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   Libxml2Document doc2;
   REQUIRE(doc2.parse("hcn.wfnoj.xml"));
-  xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -233,7 +229,6 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   Libxml2Document doc;
   REQUIRE(doc.parse("hcn.structure.xml"));
-  xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -264,7 +259,6 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   Libxml2Document doc2;
   REQUIRE(doc2.parse("hcn.wfnoj.xml"));
-  xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -406,7 +400,6 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
   Libxml2Document doc;
   REQUIRE(doc.parse("ethanol.structure.xml"));
-  xmlNodePtr root = doc.getRoot();
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -437,7 +430,6 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
   Libxml2Document doc2;
   REQUIRE(doc2.parse("ethanol.wfnoj.xml"));
-  xmlNodePtr root2 = doc2.getRoot();
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));

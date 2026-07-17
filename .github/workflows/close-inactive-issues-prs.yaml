@@ -10,12 +10,13 @@ jobs:
       issues: write
       pull-requests: write
     env:
-      stale-issue-time: 2190 # 6 years
-      stale-pr-time: 2190 # 6 years
+      stale-issue-time: 365 # 1 year
+      stale-pr-time: 365 # 1 year
       close-time: 28   # 4 weeks
     steps:
       - uses: actions/stale@v10.3.0
         with:
+          operations-per-run: 50
           days-before-issue-stale: ${{ env.stale-issue-time }}
           days-before-issue-close: ${{ env.close-time }}
           stale-issue-label: "stale"

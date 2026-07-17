@@ -336,7 +336,7 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
  {"zero", {               0,0,0}},
 };
 )";
- }
+  }
   CHECK(ostr_testing_stream.str() == expected_testable_description);
 }
 
@@ -355,8 +355,7 @@ TEST_CASE("ReferencePoints::HDF5", "[estimators]")
 
   hd.close();
 
-  hdf_archive hd_read;
-  bool okay_read = hd.open(test_file);
+  REQUIRE(hd.open(test_file));
 
   hd.push("reference_points");
 
