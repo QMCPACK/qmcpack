@@ -128,14 +128,19 @@ bool HDFWalkerInput_0_4::read_hdf5(const std::filesystem::path& h5name)
   size_t nw_in = 0;
 
   hdf_archive hin(myComm, false); //everone reads this
-  bool success = hin.open(h5name, H5F_ACC_RDONLY);
+  if (!hin.open(h5name, H5F_ACC_RDONLY))
+    return false;
   //check if hdf and xml versions can work together
   HDFVersion aversion;
 
   hin.read(aversion, hdf::version);
   if (!(aversion < i_info.version))
   {
-    int found_group = hin.is_group(hdf::main_state);
+    if (!hin.is_group(hdf::main_state))
+    {
+      app_error() << " HDF5 group " << hdf::main_state << " not found in " << h5name << std::endl;
+      return false;
+    }
     hin.push(hdf::main_state);
     hin.read(nw_in, hdf::num_walkers);
   }
@@ -192,27 +197,40 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
 {
   size_t nw_in = 0;
 
+  bool success = false;
   if (myComm->rank() == 0)
   {
     hdf_archive hin(myComm); //everone reads this
-    bool success = hin.open(h5name, H5F_ACC_RDONLY);
-    //check if hdf and xml versions can work together
-    HDFVersion aversion;
+    success = hin.open(h5name, H5F_ACC_RDONLY);
+    if (success)
+    {
+      //check if hdf and xml versions can work together
+      HDFVersion aversion;
 
-    hin.read(aversion, hdf::version);
-    if (!(aversion < i_info.version))
-    {
-      int found_group = hin.is_group(hdf::main_state);
-      hin.push(hdf::main_state);
-      hin.read(nw_in, hdf::num_walkers);
-    }
-    else
-    {
-      app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << std::endl;
+      hin.read(aversion, hdf::version);
+      if (!(aversion < i_info.version))
+      {
+        if (!hin.is_group(hdf::main_state))
+        {
+          app_error() << " HDF5 group " << hdf::main_state << " not found in " << h5name << std::endl;
+          success = false;
+        }
+        else
+        {
+          hin.push(hdf::main_state);
+          hin.read(nw_in, hdf::num_walkers);
+        }
+      }
+      else
+      {
+        app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << std::endl;
+      }
     }
   }
 
-  myComm->barrier();
+  mpi::bcast(*myComm, success);
+  if (!success)
+    return false;
   mpi::bcast(*myComm, nw_in);
 
   if (nw_in == 0)
@@ -244,14 +262,21 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
   Buffer_t posin(nw_in * nitems);
   std::vector<QMCTraits::FullPrecRealType> weights_in(nw_in);
   bool has_weights{false};
+  bool success2 = false;
   if (myComm->rank() == 0)
   {
     hdf_archive hin(myComm);
-    bool success = hin.open(h5name, H5F_ACC_RDONLY);
-    hin.push(hdf::main_state);
-    hin.readSlabReshaped(posin, dims, hdf::walkers);
-    has_weights = hin.readEntry(weights_in, hdf::walker_weights);
+    success2 = hin.open(h5name, H5F_ACC_RDONLY);
+    if (success2)
+    {
+      hin.push(hdf::main_state);
+      hin.readSlabReshaped(posin, dims, hdf::walkers);
+      has_weights = hin.readEntry(weights_in, hdf::walker_weights);
+    }
   }
+  mpi::bcast(*myComm, success2);
+  if (!success2)
+    return false;
 
   Buffer_t posout(counts[myComm->rank()]);
   std::vector<QMCTraits::FullPrecRealType> weights_out(counts[myComm->rank()]);
@@ -292,13 +317,20 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
       hin.read(aversion, hdf::version);
       if (!(aversion < i_info.version))
       {
-        int found_group = hin.is_group(hdf::main_state);
-        hin.push(hdf::main_state);
-        hin.read(nw_in, hdf::num_walkers);
-        if (nw_in == 0)
+        if (!hin.is_group(hdf::main_state))
         {
-          app_error() << " No walkers in " << h5name << std::endl;
+          app_error() << " HDF5 group " << hdf::main_state << " not found in " << h5name << std::endl;
           success = false;
+        }
+        else
+        {
+          hin.push(hdf::main_state);
+          hin.read(nw_in, hdf::num_walkers);
+          if (nw_in == 0)
+          {
+            app_error() << " No walkers in " << h5name << std::endl;
+            success = false;
+          }
         }
       }
       else
@@ -327,8 +359,13 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
   }
 
   hdf_archive hin(myComm, true); //everone reads this
-  success         = hin.open(h5name, H5F_ACC_RDONLY);
-  int found_group = hin.is_group(hdf::main_state);
+  if (!hin.open(h5name, H5F_ACC_RDONLY))
+    return false;
+  if (!hin.is_group(hdf::main_state))
+  {
+    app_error() << " HDF5 group " << hdf::main_state << " not found in " << h5name << std::endl;
+    return false;
+  }
   hin.push(hdf::main_state);
 
   using Buffer_t = std::vector<QMCTraits::RealType>;

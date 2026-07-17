@@ -529,12 +529,12 @@ public:
       if (getKr)
       {
         assert(get<0>(KEright->sizes()) == nwalk && get<1>(KEright->sizes()) == local_nCV);
-        assert(KEright->stride(0) == get<1>(KEright->sizes()));
+        assert(KEright->stride() == get<1>(KEright->sizes()));
       }
       if (getKl)
       {
         assert(get<0>(KEleft->sizes()) == nwalk && get<1>(KEleft->sizes()) == local_nCV);
-        assert(KEleft->stride(0) == get<1>(KEleft->sizes()));
+        assert(KEleft->stride() == get<1>(KEleft->sizes()));
       }
     }
     else if (getKr or getKl)
@@ -724,7 +724,7 @@ public:
                 copy_n(scl_factors.data(), scl_factors.size(), dev_scl_factors.origin());
                 using ma::batched_dot_wabn_wban;
                 batched_dot_wabn_wban(scl_factors.size(), nwalk, nocc_max, nchol_max, dev_scl_factors.origin(),
-                                      T1.origin(), to_address(E[0].origin()) + 1, E.stride(0));
+                                      T1.origin(), to_address(E[0].origin()) + 1, E.stride());
 
                 if (addEJ)
                 {
@@ -755,7 +755,7 @@ public:
             copy_n(scl_factors.data(), scl_factors.size(), dev_scl_factors.origin());
             using ma::batched_dot_wabn_wban;
             batched_dot_wabn_wban(scl_factors.size(), nwalk, nocc_max, nchol_max, dev_scl_factors.origin(), T1.origin(),
-                                  to_address(E[0].origin()) + 1, E.stride(0));
+                                  to_address(E[0].origin()) + 1, E.stride());
 
             if (addEJ)
             {
@@ -845,7 +845,7 @@ public:
 #if defined(MIXED_PRECISION)
         if(getKr) {
           assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-          assert(KEright->stride(0) == KEright->size(1));
+          assert(KEright->stride() == KEright->size(1));
         }
 #else
         if(getKr) {
@@ -861,12 +861,12 @@ public:
 #if defined(MIXED_PRECISION)
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-          assert(KEleft->stride(0) == KEleft->size(1));
+          assert(KEleft->stride() == KEleft->size(1));
         }
 #else
         if(getKl) {
           assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-          assert(KEleft->stride(0) == KEleft->size(1));
+          assert(KEleft->stride() == KEleft->size(1));
           Klptr = make_device_ptr(KEleft->origin());
         } else 
 #endif

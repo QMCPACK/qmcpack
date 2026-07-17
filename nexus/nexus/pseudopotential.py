@@ -37,7 +37,9 @@
 #====================================================================#
 
 import os
+from os import PathLike
 from pathlib import Path
+import re
 import numpy as np
 from .execute import execute
 from .fileio import TextFile
@@ -86,6 +88,187 @@ def pp_elem_label(filename,guard=False):
             return elem_label, element, is_elem
     #end if
 #end def pp_elem_label
+
+
+def read_upf_z_valence(file: PathLike) -> int | float:
+    """Read Z-valence from a UPF-compliant pseudopotential file."""
+    # Bind these to the function so we only compile them once.
+    if not (
+        hasattr(read_upf_z_valence, "zval_xml_like_pattern")
+        and hasattr(read_upf_z_valence, "zval_old_pattern")
+        ):
+        # Regex:
+        # `z[_ ]?valence` -> "z_valence" or "z valence"
+        # ` *=? *`        -> "=" or " =" or " = " or " " (whitespace optional)
+        # `([\d\.eEdD]+)` -> Capturing group gets any numbers in scientific notation.
+        # `\"? *() *\"?`  -> Anything between quotes or not, with optional whitespace around it too.
+        # Note: Both of these are similar, but the first is key then value and the second is value then key.
+        zval_xml_like_pattern = re.compile(
+            pattern = r'z[_ ]?valence *=? *\"? *([\d\.eEdD]+) *\"?',
+            flags   = re.IGNORECASE,
+            )
+        zval_old_pattern = re.compile(
+            pattern = r'\"? *([ \d\.eEdD]+) *\"? *=? *z[_ ]?valence',
+            flags   = re.IGNORECASE,
+            )
+        read_upf_z_valence.zval_xml_like_pattern = zval_xml_like_pattern
+        read_upf_z_valence.zval_old_pattern = zval_old_pattern
+    #end if
+
+    zval = None
+    with open(file, "r") as pseudo:
+        found_header_start = False
+        while not found_header_start:
+            line = pseudo.readline()
+            if "<PP_HEADER" in line:
+                found_header_start = True
+
+        if "/>" in line or "</PP_HEADER>" in line: # One-line header
+            zval = re.search(
+                pattern = read_upf_z_valence.zval_xml_like_pattern,
+                string  = line,
+                )
+        else:
+            # We're at the header, but we don't know where the Z-valence is.
+            # Search until we hit a line with a proper end token, or until we hit 200 lines.
+            i = 0
+            while i < 200:
+                i += 1
+                line = pseudo.readline().lower()
+                if "valence" in line:
+                    zval = re.search(
+                        pattern = read_upf_z_valence.zval_xml_like_pattern,
+                        string  = line,
+                        )
+                    if zval is None:
+                        zval = re.search(
+                            pattern = read_upf_z_valence.zval_old_pattern,
+                            string  = line,
+                            )
+                    break
+                elif "/>" in line or "</PP_HEADER>" in line:
+                    break
+                #end if
+            #end while
+        #end if
+
+    if zval is None:
+        error(
+           f"Could not find Z valence in file: {file!s}\n"
+            "You may need to provide the Z valence manually!"
+            )
+    else:
+        zval = float(zval.group(1).lower().replace("d", "e"))
+
+    if zval <= 0 or zval > 118:
+        error(
+            f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
+            )
+    # Round to 8 digits
+    if round(zval, 8).is_integer():
+        return int(zval)
+    else:
+        return zval
+#end def read_upf_z_valence
+
+
+def read_xml_z_valence(file: PathLike) -> int | float:
+    """Read the Z-valence from a QMCPACK-compatible XML pseudopotential file."""
+        # Bind these to the function so we only compile them once.
+    if not hasattr(read_xml_z_valence, "zval_pattern"):
+        # Regex:
+        # `zval  *= *`    -> "zval=" or "zval = " or "zval =" or "zval= "
+        # `([\d\.eEdD]+)` -> Capturing group gets any numbers in scientific notation.
+        # `\"? *() *\"?`  -> Anything between quotes or not, with optional whitespace around it too.
+        read_xml_z_valence.zval_pattern = re.compile(r'zval *= *\" *([\d\.eEdD]+) *\"')
+
+    header_lines = []
+    with open(file, "r") as xml:
+        header_started = False
+        for line in xml:
+            if "<header" in line:
+                header_started = True
+
+            if header_started:
+                header_lines.append(line)
+
+            if "/>" in line or "</header>" in line:
+                if line not in header_lines:
+                    header_lines.append(line)
+                break
+
+    header = " ".join(header_lines)
+    zval = re.search(read_xml_z_valence.zval_pattern, header)
+
+    if zval is None:
+        error(
+           f"Could not find Z valence in file: {file!s}\n"
+            "You may need to provide the Z valence manually!"
+            )
+    else:
+        zval = float(zval.group(1).lower().replace("d", "e"))
+
+    if zval <= 0 or zval > 118:
+        error(
+            f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
+            )
+    # Round to 8 digits
+    if round(zval, 8).is_integer():
+        return int(zval)
+    else:
+        return zval
+#end def read_xml_z_valence
+
+
+def read_potcar_z_valence(file: PathLike) -> int | float:
+    """Read the Z-valence from a POTCAR file.
+
+    This function uses the format specifications from the VASP wiki, and
+    assumes that the file is a valid POTCAR, so the second line should
+    be the Z-valence [1]_.
+
+    References
+    ----------
+    .. [1] https://vasp.at/wiki/POTCAR#File_format
+    """
+    if not hasattr(read_potcar_z_valence, "zval_pattern"):
+        # Regex:
+        # `ZVAL ?= ?`     -> "ZVAL=" or "ZVAL = " or "ZVAL =" or "ZVAL= "
+        # `([\d\.eEdD]+)` -> Capturing group gets any numbers in scientific notation.
+        read_potcar_z_valence.zval_pattern = re.compile(r"ZVAL ?= ?([\d\.eEdD]+)")
+    file = Path(file).resolve()
+    with open(file, "r") as potcar:
+        potcar.readline() # Skip first line
+        z_valence = potcar.readline().strip()
+        try:
+            zval = float(z_valence)
+        except ValueError: # Improperly formatted POTCAR, but try alternative location
+            for line in potcar:
+                if "ZVAL" in line:
+                    zval = re.search(
+                        pattern = read_potcar_z_valence.zval_pattern,
+                        string  = line
+                        )
+                    break
+
+            if zval is None:
+                error(
+                   f"Could not find Z valence in file: {file!s}\n"
+                    "You may need to provide the Z valence manually!"
+                    )
+            else:
+                zval = float(zval.group(1).lower().replace("d", "e"))
+
+    if zval <= 0 or zval > 118:
+        error(
+            f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
+            )
+    # Round to 8 digits
+    if round(zval, 8).is_integer():
+        return int(zval)
+    else:
+        return zval
+#end def read_potcar_z_valence
 
 
 # basic interface for nexus, only gamess really needs this for now
