@@ -618,6 +618,10 @@ class PseudoSet:
         charges (Z-valences). If this is supplied, it will override any
         parts of the code that may try to parse the pseudopotential to
         get the Z-valence.
+    skip_invalid : bool, default=False
+        If ``True``, then this will emit a warning rather than raise an
+        error if a file is not found or if the file does not have a
+        valid name.
     """
 
     known_codes = frozenset(["espresso", "gamess", "vasp", "qmcpack"])
@@ -632,16 +636,22 @@ class PseudoSet:
 
     def __init__(
         self,
-        pseudos: list[PathLike] | Mapping[Elements | str, PathLike],
-        code   : str = "detect",
-        Zeffs  : Mapping[PathLike, int] = dict(),
+        pseudos     : list[PathLike] | Mapping[Elements | str, PathLike],
+        code        : str = "detect",
+        Zeffs       : Mapping[PathLike, int] = dict(),
+        skip_invalid: bool = False,
         ):
         self.pseudos: dict[str, Path] = {}
         if isinstance(pseudos, Mapping):
             for label, psp in pseudos.items():
                 psp = Path(psp).resolve()
                 if not psp.exists():
-                    warn(f"Pseudo file {psp} can not be located")
+                    msg = f"Pseudo file {psp} can not be located"
+                    if skip_invalid:
+                        warn(msg)
+                        continue
+                    else:
+                        raise FileNotFoundError(msg)
                 else:
                     # No need to check if `label` is already defined since
                     # dictionary keys are, by definition, unique.
@@ -650,7 +660,12 @@ class PseudoSet:
             for psp in pseudos:
                 psp = Path(psp).resolve()
                 if not psp.exists():
-                    warn(f"Pseudo file {psp} can not be located")
+                    msg = f"Pseudo file {psp} can not be located"
+                    if skip_invalid:
+                        warn(msg)
+                        continue
+                    else:
+                        raise FileNotFoundError(msg)
 
                 if psp.name.lower() == "potcar":
                     # POTCARS are stored all with the same name.
@@ -660,11 +675,15 @@ class PseudoSet:
                     _, symbol, is_elem = pp_elem_label(psp.name)
 
                 if not is_elem:
-                    raise ValueError(
+                    msg = (
                        f"Can not determine element for pseudopotential file: {psp}\n"
                         "Pseudopotential file names must be prefixed by an atomic symbol or label\n"
                         "(e.g. Si, Si1, etc)"
                         )
+                    if skip_invalid:
+                        warn(msg)
+                    else:
+                        raise ValueError(msg)
                 elif symbol in self.pseudos:
                     raise ValueError(
                         "Can not provide multiple pseudos for the same element!\n"
@@ -779,11 +798,12 @@ class PseudoSet:
     @classmethod
     def from_dir(
         cls,
-        pseudo_dir: PathLike,
-        code      : str = "detect",
-        Zeffs     : Mapping[PathLike, int] = dict(),
-        ext_filter: bool | list[str] = True,
-        pattern   : str | Pattern | None = None,
+        pseudo_dir  : PathLike,
+        code        : str = "detect",
+        Zeffs       : Mapping[PathLike, int] = dict(),
+        ext_filter  : bool | list[str] = True,
+        pattern     : str | Pattern | None = None,
+        skip_invalid: bool = False,
         ) -> PseudoSet:
         """Read in pseudopotentials from a directory.
 
@@ -813,6 +833,10 @@ class PseudoSet:
             leading ``.``, e.g. ``.xml``, not ``xml``.
         pattern : str or Pattern, optional
             A string or regex pattern to use to filter files by name.
+        skip_invalid : bool, default=False
+            If ``True``, then this will emit a warning rather than raise an
+            error if a file is not found or if the file does not have a
+            valid name.
 
         See Also
         --------
@@ -891,26 +915,25 @@ class PseudoSet:
 
         pseudos = []
         for pseudo in dir.iterdir():
-            if pseudo.is_file() and (suffixes is None or pseudo.suffix in suffixes):
-                pseudos.append(pseudo)
+            if pseudo.is_file() and (suffixes is None or pseudo.suffix.lower() in suffixes):
+                if pattern is None or pattern.search(pseudo.name) is not None:
+                    pseudos.append(pseudo)
             elif pseudo.is_dir() and (suffixes is None or "potcar" in suffixes):
-                potcar = pseudo / "POTCAR"
-                if potcar.exists():
-                    pseudos.append(potcar)
-
-        if pattern is not None:
-            pseudos = list(filter(
-                    lambda x: pattern.search(x.name) is not None,
-                    pseudos,
-                ))
+                if pattern is None or pattern.search(pseudo.name) is not None:
+                    potcar = pseudo / "POTCAR"
+                    if potcar.exists():
+                        pseudos.append(potcar)
+                else:
+                   continue
 
         if code == "detect":
             code = cls._detect_pseudo_code(pseudos)
 
         return cls(
-            code    = code,
-            pseudos = pseudos,
-            Zeffs   = Zeffs,
+            code         = code,
+            pseudos      = pseudos,
+            Zeffs        = Zeffs,
+            skip_invalid = skip_invalid,
             )
     #end def from_dir
 
@@ -995,7 +1018,7 @@ class PseudoSet:
             if label in self.Zeffs:
                 Z_effs[label] = self.Zeffs[label]
             elif label in self.pseudos:
-                f_ext = self.pseudos[label].suffix
+                f_ext = self.pseudos[label].suffix.lower()
                 if f_ext == ".upf":
                     Z_effs[label] = read_upf_z_valence(self.pseudos[label])
                 elif f_ext == ".gms":
@@ -1026,11 +1049,12 @@ class PseudoSet:
     @classmethod
     def from_mixed_dir(
         cls,
-        pseudo_dir: PathLike,
-        codes     : str | list[str] = "detect",
-        filters   : Mapping[str, set[str]] | None = None,
-        patterns  : Mapping[str, str | Pattern] = dict(),
-        code_Zeffs: Mapping[str, Mapping[str, int]] = dict(),
+        pseudo_dir  : PathLike,
+        codes       : str | list[str] = "detect",
+        filters     : Mapping[str, set[str]] | None = None,
+        patterns    : Mapping[str, str | Pattern] = dict(),
+        code_Zeffs  : Mapping[str, Mapping[str, int]] = dict(),
+        skip_invalid: bool = False,
         ) -> dict[str, PseudoSet]:
         """Read in pseudos from a directory with pseudos for more than one code.
 
@@ -1055,6 +1079,10 @@ class PseudoSet:
             their effective nuclear charges (Z-valences). If this is
             supplied, it will override any parts of the code that may
             try to parse the pseudopotential to get the Z-valence.
+        skip_invalid : bool, default=False
+            If ``True``, then this will emit a warning rather than raise an
+            error if a file is not found or if the file does not have a
+            valid name.
 
         Returns
         -------
@@ -1149,11 +1177,12 @@ class PseudoSet:
         pseudos = {}
         for code, suffixes in filters.items():
             pseudos[code] = PseudoSet.from_dir(
-                pseudo_dir  = dir,
-                code        = code,
-                Zeffs       = code_Zeffs.get(code, dict()),
-                ext_filter  = suffixes,
-                pattern     = patterns.get(code, None),
+                pseudo_dir   = dir,
+                code         = code,
+                Zeffs        = code_Zeffs.get(code, dict()),
+                ext_filter   = suffixes,
+                pattern      = patterns.get(code, None),
+                skip_invalid = skip_invalid,
                 )
 
         return pseudos
@@ -1177,6 +1206,34 @@ class PseudoSet:
 
             cls.legacy_pseudos[label][code] = PseudoSet(pseudos=pseudos, code=code)
     #end def _register_legacy_ppset
+
+    def __repr__(self) -> str:
+        rep = (
+            "PseudoSet(\n"
+           f"    code = '{self.code}',\n"
+            "    pseudos = {"
+            )
+        if len(self.pseudos) > 0:
+            rep += "\n"
+            lbl_len = max(map(len, self.pseudos.keys()))+2 # Single quotes around label add 2
+            for lbl, pth in self.pseudos.items():
+                rep += f"{' '*8}{f'\'{lbl}\'':<{lbl_len}}: {pth!r},\n"
+            rep += "    },\n"
+        else:
+            rep += "},\n"
+
+        rep += "    Zeffs = {"
+        if len(self.Zeffs) > 0:
+            lbl_len = max(map(len, self.Zeffs.keys()))+2
+            rep += "\n"
+            for lbl, zeff in self.Zeffs:
+                rep += f"{' '*8}{f'\'{lbl}\'':<{lbl_len}}: {zeff!s},\n"
+            rep += "    },\n"
+        else:
+            rep += "},\n"
+        rep += ")\n"
+        return rep
+    #end def __repr__
 #end class PseudoSet
 
 # real pseudopotentials
