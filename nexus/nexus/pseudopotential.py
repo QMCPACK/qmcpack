@@ -883,6 +883,48 @@ class PseudoSet:
         >>> for lbl, pth in psps.pseudos.items(): print(f"{lbl}: {pth}")
         C: /path/to/pseudo_dir/C.ccECP.upf
         H: /path/to/pseudo_dir/H.ccECP.upf
+
+        Filtering out VASP pseudos with similar names. Pattern matches
+        anything *without* an underscore.
+
+        >>> os.listdir(pseudo_dir)
+        ['H_sv_GW', 'C', 'C_GW', 'H_sv', 'H_GW', 'C_sv_GW', 'C_sv', 'H']
+        >>> psps = PseudoSet.from_dir(pseudo_dir, code="vasp", pattern=r"^((?!_).)*$")
+        >>> for lbl, pth in psps.pseudos.items(): print(f"{lbl}: {pth}")
+        C: /path/to/pseudo_dir/C/POTCAR
+        H: /path/to/pseudo_dir/H/POTCAR
+        O: /path/to/pseudo_dir/O/POTCAR
+
+        Filtering out VASP pseudos ending with ``_sv``.
+
+        >>> os.listdir(pseudo_dir)
+        ['H_sv_GW', 'C', 'C_GW', 'H_sv', 'H_GW', 'C_sv_GW', 'C_sv', 'H']
+        >>> psps = PseudoSet.from_dir(pseudo_dir, code="vasp", pattern=r"_sv$",)
+        >>> for lbl, pth in psps.pseudos.items(): print(f"{lbl}: {pth}")
+        C: /path/to/pseudo_dir/C_sv/POTCAR
+        H: /path/to/pseudo_dir/H_sv/POTCAR
+        O: /path/to/pseudo_dir/O_sv/POTCAR
+
+        Filtering out VASP pseudos ending with ``_GW``, but do not
+        contain ``_sv``.
+
+        >>> os.listdir(pseudo_dir)
+        ['H_sv_GW', 'C', 'C_GW', 'H_sv', 'H_GW', 'C_sv_GW', 'C_sv', 'H']
+        >>> psps = PseudoSet.from_dir(pseudo_dir, code="vasp", pattern=r"(?<!sv)_GW",)
+        >>> for lbl, pth in psps.pseudos.items(): print(f"{lbl}: {pth}")
+        C: /path/to/pseudo_dir/C_GW/POTCAR
+        H: /path/to/pseudo_dir/H_GW/POTCAR
+        O: /path/to/pseudo_dir/O_GW/POTCAR
+
+        Filtering out VASP pseudos ending with ``_sv_GW``.
+
+        >>> os.listdir(pseudo_dir)
+        ['H_sv_GW', 'C', 'C_GW', 'H_sv', 'H_GW', 'C_sv_GW', 'C_sv', 'H']
+        >>> psps = PseudoSet.from_dir(pseudo_dir, code="vasp", pattern=r"_sv_GW",)
+        >>> for lbl, pth in psps.pseudos.items(): print(f"{lbl}: {pth}")
+        C: /path/to/pseudo_dir/C_sv_GW/POTCAR
+        H: /path/to/pseudo_dir/H_sv_GW/POTCAR
+        O: /path/to/pseudo_dir/O_sv_GW/POTCAR
         """
         if code == "detect":
             if ext_filter is True:

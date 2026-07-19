@@ -1149,6 +1149,93 @@ def test_pseudoset_from_dir_pattern(tmp_path):
 #end def test_pseudoset_from_dir_pattern
 
 
+
+def test_vasp_pattern_exclude(tmp_path):
+    pseudo_names = (
+        "C/POTCAR",
+        "H/POTCAR",
+        "O/POTCAR",
+        "C_sv/POTCAR",
+        "H_sv/POTCAR",
+        "O_sv/POTCAR",
+        "C_GW/POTCAR",
+        "H_GW/POTCAR",
+        "O_GW/POTCAR",
+        "C_sv_GW/POTCAR",
+        "H_sv_GW/POTCAR",
+        "O_sv_GW/POTCAR",
+        )
+
+    psp_dir = tmp_path / "vasp_pseudos"
+    psp_dir.mkdir()
+    assert psp_dir.exists(), "Failed to create pseudo directory!"
+
+    pseudo_list = []
+    for psp in pseudo_names:
+        potcar_dir = psp_dir / psp.split("/")[0]
+        potcar_dir.mkdir()
+        assert potcar_dir.exists(), "Failed to create POTCAR directory!"
+
+        pseudo = (psp_dir / psp).resolve()
+        pseudo.touch()
+        assert pseudo.exists(), "Failed to create pseudo file!"
+        pseudo_list.append(pseudo)
+
+    ref_reg_pseudos = {
+        "C": (psp_dir / "C" / "POTCAR").resolve(),
+        "H": (psp_dir / "H" / "POTCAR").resolve(),
+        "O": (psp_dir / "O" / "POTCAR").resolve(),
+    }
+    ref_sv_pseudos = {
+        "C": (psp_dir / "C_sv" / "POTCAR").resolve(),
+        "H": (psp_dir / "H_sv" / "POTCAR").resolve(),
+        "O": (psp_dir / "O_sv" / "POTCAR").resolve(),
+    }
+    ref_gw_pseudos = {
+        "C": (psp_dir / "C_GW" / "POTCAR").resolve(),
+        "H": (psp_dir / "H_GW" / "POTCAR").resolve(),
+        "O": (psp_dir / "O_GW" / "POTCAR").resolve(),
+    }
+    ref_sv_gw_pseudos = {
+        "C": (psp_dir / "C_sv_GW" / "POTCAR").resolve(),
+        "H": (psp_dir / "H_sv_GW" / "POTCAR").resolve(),
+        "O": (psp_dir / "O_sv_GW" / "POTCAR").resolve(),
+    }
+
+    reg_pseudoset = PseudoSet.from_dir(
+        pseudo_dir = psp_dir,
+        code       = "vasp",
+        pattern    = r"^((?!_).)*$",
+    )
+
+    assert(reg_pseudoset.pseudos == ref_reg_pseudos)
+
+    sv_pseudoset = PseudoSet.from_dir(
+        pseudo_dir = psp_dir,
+        code       = "vasp",
+        pattern    = r"_sv$",
+    )
+
+    assert(sv_pseudoset.pseudos == ref_sv_pseudos)
+
+    gw_pseudoset = PseudoSet.from_dir(
+        pseudo_dir = psp_dir,
+        code       = "vasp",
+        pattern    = r"(?<!sv)_GW",
+    )
+
+    assert(gw_pseudoset.pseudos == ref_gw_pseudos)
+
+    sv_gw_pseudoset = PseudoSet.from_dir(
+        pseudo_dir = psp_dir,
+        code       = "vasp",
+        pattern    = r"_sv_GW",
+    )
+
+    assert(sv_gw_pseudoset.pseudos == ref_sv_gw_pseudos)
+#end def test_vasp_pattern_exclude
+
+
 def test_pseudoset_from_mixed_dir(tmp_path):
     pseudo_names = (
         "C.BFD.xml",
