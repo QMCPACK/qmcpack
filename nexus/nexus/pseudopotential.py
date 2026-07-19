@@ -1217,7 +1217,7 @@ class PseudoSet:
             rep += "\n"
             lbl_len = max(map(len, self.pseudos.keys()))+2 # Single quotes around label add 2
             for lbl, pth in self.pseudos.items():
-                rep += f"{' '*8}{f'\'{lbl}\'':<{lbl_len}}: {pth!r},\n"
+                rep += f"{' '*8}{f'"{lbl}"':<{lbl_len}}: {pth!r},\n"
             rep += "    },\n"
         else:
             rep += "},\n"
@@ -1227,7 +1227,7 @@ class PseudoSet:
             lbl_len = max(map(len, self.Zeffs.keys()))+2
             rep += "\n"
             for lbl, zeff in self.Zeffs:
-                rep += f"{' '*8}{f'\'{lbl}\'':<{lbl_len}}: {zeff!s},\n"
+                rep += f"{' '*8}{f'"{lbl}"':<{lbl_len}}: {zeff!s},\n"
             rep += "    },\n"
         else:
             rep += "},\n"
