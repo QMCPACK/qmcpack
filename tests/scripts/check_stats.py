@@ -2342,7 +2342,6 @@ def check_values(options,values):
                 ed_vals = ed_values[k]
                 sc_vals = scalars.data[comparisons[k]]
                 if scalars.file_type=='dmc':
-                    print("len(sc_vals)%len(ed_vals)", len(sc_vals)%len(ed_vals), len(sc_vals), " >= ", len(ed_vals))
                     if len(sc_vals)%len(ed_vals)==0 and len(sc_vals)>=len(ed_vals):
                         steps = len(sc_vals)//len(ed_vals)
                         if comparisons[k] == 'LocalEnergy':
@@ -2367,14 +2366,9 @@ def check_values(options,values):
                     exit_fail('energy density per block test cannot be completed\nnumber of energy density and scalar blocks do not match\nenergy density blocks: {0}\nscalar file blocks: {1}'.format(len(ed_vals),len(sc_vals)))
                 #end if
 
-                if scalars.file_type=='dmc':
-                    ftol = 1e-7
-                else:
-                    ftol = 1e-7
                 # This test is actually relative error assuming the
                 # the scv is the true value. since conventionally the
                 # divisor is the true value.
-                print("checking estimator", comparisons[k], "versus scalar agreement")
                 for i,(edv,scv) in enumerate(zip(ed_vals,sc_vals)):
                     if abs((edv-scv)/scv)>ftol:
                         ed_success = False
