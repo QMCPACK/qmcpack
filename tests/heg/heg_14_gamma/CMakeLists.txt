@@ -114,6 +114,86 @@ qmc_run_and_check(
   HEG14GSSJ_NEW_SCALARS # VMC
 )
 
+list(APPEND HEG14GSSJ_DMC_SCALARS "totenergy" "-1.110199  0.000322") # total energy
+list(APPEND HEG14GSSJ_DMC_SCALARS "variance" " 0.022894  0.000060") # energy variance
+
+qmc_run_and_check(
+  short-heg_14_gamma-sj-dmc_batch
+  "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
+  short_heg_SJ_dmc_batch
+  short-heg-SJ-dmc-batch.xml
+  1
+  16
+  TRUE
+  1
+  HEG14GSSJ_DMC_SCALARS # DMC
+)
+
+
+# batch driver energy density
+qmc_run_and_check(
+  short-heg_14_gamma-sj_eden_batch
+  "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
+  short_heg_SJ_eden_batch
+  short-heg-SJ-eden-batch.xml
+  4
+  4
+  TRUE
+  0
+  HEG14GSSJ_NEW_SCALARS # VMC
+)
+
+# batch driver energy density
+qmc_run_and_check(
+  short-heg_14_gamma-sj_dmc_eden_batch
+  "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
+  short_heg_SJ_dmc_eden_batch
+  short-heg-SJ-dmc-eden-batch.xml
+  4
+  4
+  TRUE
+  1
+  HEG14GSSJ_DMC_SCALARS # DMC
+)
+
+function(add_heg_eden_stats_check test_name output_prefix series reference_filename)
+  set(full_name "${test_name}-r4-t4")
+  set(check_name "${full_name}-energydensity")
+  if(QMC_OMP AND HAVE_MPI AND NOT TEST_MAX_PROCS LESS 16)
+    add_test(
+      NAME ${check_name}
+      COMMAND
+        ${Python3_EXECUTABLE}
+        ${qmcpack_SOURCE_DIR}/tests/scripts/check_stats.py
+        -s
+        ${series}
+        -q
+        energydensity,EDcell
+        -e
+        2
+        -c
+        8
+        -p
+        ${output_prefix}
+        -r
+        ${reference_filename}
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
+    set_property(TEST ${check_name} APPEND PROPERTY DEPENDS ${full_name})
+    set_property(TEST ${check_name} APPEND PROPERTY LABELS "QMCPACK-checking-results")
+  endif()
+endfunction()
+
+add_heg_eden_stats_check(
+  short-heg_14_gamma-sj_eden_batch
+  short_heg_SJ_eden_batch
+  0
+  qmc-ref/short_heg_SJ_eden_batch.s000.stat_ref_energydensity.dat)
+add_heg_eden_stats_check(
+  short-heg_14_gamma-sj_dmc_eden_batch
+  short_heg_SJ_dmc_eden_batch
+  1
+  qmc-ref/short_heg_SJ_dmc_eden_batch.s001.stat_ref_energydensity.dat)
+
 # batch deterministic
 if(QMC_MIXED_PRECISION)
   list(APPEND DET_HEG14GSSJ_SCALARS "totenergy" "-1.24699382 0.00002")
