@@ -27,6 +27,7 @@ import sys
 import tarfile
 import tempfile
 import textwrap
+from typing import Literal
 import pprint
 
 
@@ -164,8 +165,8 @@ class NamelistParamDefinition:
     shape: tuple | None = None
     allowed_values: tuple[PwscfInputType] | None = None
     # dependencies: tuple[NamelistParamDefinition] | None = None
-    version_added: tuple[float] | None = None
-    version_removed: tuple[float] | None = None
+    version_added: Version | None = None
+    version_removed: Version | None = None
 # end class NamelistParamDefinition
 
 
@@ -314,6 +315,8 @@ class PWDef:
             else:
                 allowed_values = None
 
+            if "(" in name:
+                name = name.split("(")[0]
             parsed_vars[name] = NamelistParamDefinition(
                 datatype,
                 required,
@@ -487,45 +490,41 @@ class PWDef:
         return output
 
 
-def get_version_info(input_dict: dict[Version, PWDef]) -> dict[Version, PWDef]:
-    param_sets = {}
-    namelists = defaultdict(set)
-
+def get_version_info(input_dict: dict[Version, PWDef]) -> dict[str, dict[str, NamelistParamDefinition]]:
+    nmlist_param_vers = defaultdict(dict)
     for version, data in input_dict.items():
-        param_sets[version] = {}
-        for namelist, param_dict in data.namelist_params.items():
-            namelists[namelist].union()
-            param_sets[version][namelist] = set(param_dict.keys())
+        for namelist, params in data.namelist_params.items():
+            for param, param_def in params.items():
+                if param not in nmlist_param_vers[namelist]:
+                    nmlist_param_vers[namelist][param] = param_def
+                    nmlist_param_vers[namelist][param].version_added = version
+                    nmlist_param_vers[namelist][param].version_removed = version
+                else:
+                    nmlist_param_vers[namelist][param].version_removed = version
 
-    namelist_mins_maxes = {}
-
-    for namelist in namelists:
-        namelist_mins_maxes[namelist] = []
-        for version, vals in param_sets.items():
-            if namelist in vals:
-                namelist_mins_maxes[namelist].append(version)
-    
-    for namelist, versions in namelist_mins_maxes.items():
-        versions = sorted(versions)
-        namelist_mins_maxes[namelist] = {"min": versions[0], "max":versions[-1]}
-
-    pprint.pp(namelist_mins_maxes, indent=2)
-
-    # return input_dict
+    return dict(nmlist_param_vers)
 
 
-def write_namelist_param_enum(input_pw: PWDef):
+def write_namelist_param_enum(input_pw: dict[str, dict[str, NamelistParamDefinition]]):
     namelist_enums = {}
-    for namelist, param_dict in input_pw.namelist_params.items():
+    for namelist, param_dict in input_pw.items():
         namelist_string = ""
         name_max = max(map(len, param_dict.keys()))
         for name, param_def in param_dict.items():
-            if param_def.allowed_values is not None:
-                namelist_string += f"{name:<{name_max}} = {f'{param_def.datatype},':<7}{f'{param_def.required},':<7}{param_def.shape}, {param_def.allowed_values}\n"
-            elif param_def.shape is not None:
-                namelist_string += f"{name:<{name_max}} = {f'{param_def.datatype},':<7}{f'{param_def.required},':<7}{param_def.shape}\n"
+            v_added_str = f"'{param_def.version_added!s}'"
+            if param_def.version_removed != LATEST:
+                v_removed_str = f"'{param_def.version_removed!s}'"
             else:
-                namelist_string += f"{name:<{name_max}} = {f'{param_def.datatype},':<7}{param_def.required:<7}\n"
+                v_removed_str = "None"
+            namelist_string += (
+                f"{name:<{name_max}} = "
+                f"{f'{param_def.datatype},':<7}"
+                f"{f'{param_def.required},':<7}"
+                f"{param_def.shape}, "
+                f"{param_def.allowed_values}, "
+                f"{v_added_str}, "
+                f"{v_removed_str}\n"
+            )
         namelist_enums[namelist] = namelist_string
     return namelist_enums
 
@@ -551,22 +550,21 @@ if __name__ == "__main__":
                 tar.extractall(path=tmp_dir, filter='data')
 
             pw_data = get_total_dict(Path(tmp_dir) / "xml_files")
-    # else:
-    #     pw_data = get_total_dict(xml_path)
+    else:
+        pw_data = get_total_dict(xml_path)
 
     print("Parsing namelist data...\n")
     all_data = {}
     for version in QE_DOC_VERSION_DATES:
         print(version)
         all_data[version] = PWDef(pw_data[version], str(version))
-    data_760 = pw_data[Version("7.6.0")]
-    # defs = PWDef(data_760, "7.6.0")
-    print("\nDone parsing namelist data!\n")
-    get_version_info(all_data)
 
-    sys.exit()
-    # output_file = Path("../nexus/pwscf_input_defs.py").resolve()
-    output_file = Path("./test_output.py").resolve()
+
+    print("\nDone parsing namelist data!\n")
+    input_pw_complete = get_version_info(all_data)
+
+    output_file = Path("../nexus/pwscf_input_defs.py").resolve()
+
     print(f"Writing output to {output_file}\n")
     output_text = f'''\
 """Module for storing input parameters for Quantum ESPRESSO.
@@ -604,7 +602,6 @@ class NamelistParamDefinition:
     required:        bool
     shape:           tuple | None = None
     allowed_values:  tuple[PwscfInputType] | None = None
-    dependencies:    tuple[NamelistParamDefinition] | None = None
     version_added:   tuple[float] | None = None
     version_removed: tuple[float] | None = None
 #end class NamelistDefinition
@@ -620,7 +617,6 @@ class NamelistEnumBase(Enum):
         datatype:        PwscfInputType,
         required:        bool,
         allowed_values:  tuple[PwscfInputType] | None = None,
-        dependencies:    tuple[NamelistParamDefinition] | None = None,
         version_added:   tuple[float] | None = None,
         version_removed: tuple[float] | None = None,
     ):
@@ -629,7 +625,6 @@ class NamelistEnumBase(Enum):
             datatype,
             required,
             allowed_values,
-            dependencies,
             version_added,
             version_removed,
         )
@@ -638,7 +633,7 @@ class NamelistEnumBase(Enum):
 
 
 '''
-    namelist_enums = write_namelist_param_enum()
+    namelist_enums = write_namelist_param_enum(input_pw_complete)
     for key, value in namelist_enums.items():
         value = value.replace("lambda ", "lambda_")
         output_text += (
