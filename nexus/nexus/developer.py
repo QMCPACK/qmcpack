@@ -187,7 +187,7 @@ class DevBaseNexus(DevBase,obj_defended):
 
 
 def to_obj(d):
-    o = obj_nexus()
+    o = obj()
     for k,v in d.items():
         if hasattr(v,'__dict__'):
             o[k] = to_obj(v)

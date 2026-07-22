@@ -1267,6 +1267,24 @@ class obj_deprecated(object_interface):
     def _serial(self,*args,**kwargs):
         return obj_deprecated.serial(self,*args,**kwargs)
 
+
+    # compatibility with the standard dict interface
+    @classmethod
+    def fromkeys(cls,keys,value=None):
+        return cls(dict.fromkeys(keys,value))
+
+    def pop(self,*args,**kwargs):
+        return self.__dict__.pop(*args,**kwargs)
+
+    def popitem(self,*args,**kwargs):
+        return self.__dict__.popitem(*args,**kwargs)
+
+    def setdefault(self,*args,**kwargs):
+        return self.__dict__.setdefault(*args,**kwargs)
+
+    def update(self,*args,**kwargs):
+        return self.__dict__.update(*args,**kwargs)
+
 #end class obj_deprecated
 
 
