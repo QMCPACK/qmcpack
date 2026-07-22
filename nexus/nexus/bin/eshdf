@@ -88,6 +88,18 @@ def user_error(msg):
 #end def user_error
 
 
+def get_path(o,path,value=None):
+    """Retrieve a value from a nested dict-like object by slash-delimited path."""
+    for key in path.split('/'):
+        if key not in o:
+            return value
+        #end if
+        o = o[key]
+    #end for
+    return o
+#end def get_path
+
+
 
 def read_eshdf_nofk_data(filename,Ef,ncore=0,nval=-1):
     from numpy import array,pi,dot,sqrt,abs,zeros
@@ -108,7 +120,7 @@ def read_eshdf_nofk_data(filename,Ef,ncore=0,nval=-1):
     kmag     = sqrt((gv**2).sum(1))
     nk       = h5int(h.electrons.number_of_kpoints)
     ns       = h5int(h.electrons.number_of_spins)
-    occpaths = obj()
+    occpaths = []
     data     = obj()
     for k in range(nk):
         kin_k   = obj()
@@ -131,7 +143,7 @@ def read_eshdf_nofk_data(filename,Ef,ncore=0,nval=-1):
             nk_s  = 0*kmag
             nelec_s = 0
             path = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
-            spin = h.get_path(path)
+            spin = get_path(h,path)
             eig = convert(array(spin.eigenvalues),'Ha','eV')
             nst = h5int(spin.number_of_states)
             nlast = nst
@@ -142,7 +154,7 @@ def read_eshdf_nofk_data(filename,Ef,ncore=0,nval=-1):
                 if e<E_fermi:
                     stpath = path+'/state_{0}/psi_g'.format(st)
                     occpaths.append(stpath)
-                    psi = array(h.get_path(stpath))
+                    psi = array(get_path(h,stpath))
                     nk_orb = (psi**2).sum(1)
                     kin_orb = (kinetic*nk_orb).sum()
                     nelec_s += nk_orb.sum()

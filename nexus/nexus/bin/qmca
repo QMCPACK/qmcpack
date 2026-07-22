@@ -65,7 +65,7 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj,unavailable
+from nexus.developer import DevBase,obj,error,unavailable
 from nexus.unit_converter import convert
 from nexus.numerics import simstats,simplestats,equilibration_length
 import nexus.numpy_extensions as npe
@@ -101,7 +101,7 @@ def sigfig_round(some_float, nsigfig):
     if nsigfig >= 1 and nsigfig == int(nsigfig):
         return round(some_float, nsigfig - int(np.floor(np.log10(abs(some_float))))-1) 
     else:
-        QMCA.class_error("Number of significant figures must be a whole number\nreceived {0}".format(nsigfig))
+        error("Number of significant figures must be a whole number\nreceived {0}".format(nsigfig),'QMCA')
     #end if
 #end sigfig_round
 
@@ -728,7 +728,7 @@ class DatAnalyzer(QBase):
 
 
     def plot_histogram(self,quantity,style,prefix):
-        self.not_implemented()
+        raise NotImplementedError
         #if not quantity in self.data:
         #    self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
         ##end if
