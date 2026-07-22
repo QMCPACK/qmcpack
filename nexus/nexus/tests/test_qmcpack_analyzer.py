@@ -6,7 +6,7 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 from . import isolate_nexus_core, TEST_DIR
-from ..testing import value_eq,object_eq,text_eq,print_diff
+from ..testing import value_eq,object_eq,text_eq
 
 
 def test_empty_init():
@@ -285,8 +285,6 @@ def test_optimization_analysis():
         variance_error
         variance_weight
         '''.split()
-
-    print(repr(opt))
 
     assert(set(opt.keys())==set(opt_keys))
 

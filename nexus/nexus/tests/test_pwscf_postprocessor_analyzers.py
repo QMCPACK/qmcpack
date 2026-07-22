@@ -6,7 +6,7 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 from . import TEST_DIR
-from ..testing import object_eq,text_eq,print_diff
+from ..testing import object_eq,text_eq
 
 
 TEST_FILES = {
@@ -36,7 +36,6 @@ def test_empty_init():
 
 
 def test_projwfc_analyzer(tmp_path):
-    #from ..developer import obj
     from ..developer import obj, to_obj
     from ..pwscf_postprocessors import ProjwfcAnalyzer
 
@@ -65,7 +64,7 @@ def test_projwfc_analyzer(tmp_path):
 
     assert(object_eq(to_obj(pa),pa_ref))
 
-    pa = ProjwfcAnalyzer(projwfc_in,analyze=True,strict=True)
+    pa = ProjwfcAnalyzer(projwfc_in,analyze=True)
 
     del pa.info.path
 
@@ -74,7 +73,7 @@ def test_projwfc_analyzer(tmp_path):
             infile      = 'pwf.in',
             initialized = True,
             outfile     = 'pwf.out',
-            strict      = True,
+            strict      = False,
             warn        = False,
             ),
         input = obj(

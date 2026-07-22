@@ -47,7 +47,6 @@ for file in TEST_FILES.values():
 def make_serial_reference(ri):
     import numpy as np
     from ..developer import obj
-    #s = ri.serial()
     s = dict_serialize(ri,dict_type=obj)
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
@@ -660,7 +659,6 @@ def get_serial_references():
 def check_vs_serial_reference(gi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    #sg = gi.serial()
     sg = dict_serialize(gi,dict_type=obj)
     assert(check_object_eq(sg,sr))
 #end def check_vs_serial_reference
@@ -913,7 +911,6 @@ def test_generate():
         assert(value_eq(R,np.eye(3,dtype=float)))
         assert(tmatrix is None)
         keys = 'bravais_lattice_type','a_length','b_length','c_length','wavefunction_grid'
-        #shared_inputs.delete(keys)
         for k in keys:
             del shared_inputs[k]
         d = dict(**rmg_inputs)
@@ -924,7 +921,6 @@ def test_generate():
             wf_grid_spacing = 0.22,
             pseudos         = ['Ni_oncv.UPF','O_oncv.UPF'],
             system          = nio8,
-            #**obj(rmg_inputs,shared_inputs)
             **d
             )
         assert(value_eq(ri.length_units,'Bohr'))

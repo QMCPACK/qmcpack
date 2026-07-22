@@ -8,7 +8,7 @@ generic_settings.raise_error = True
 
 
 from . import TEST_DIR
-from ..testing import object_eq,print_diff
+from ..testing import object_eq
 
 
 def test_empty_init():
@@ -191,8 +191,6 @@ def test_analyze():
 
     assert(object_eq(to_obj(pa),pa_ref))
 
-
-    #rint(open(str(relax_path)+'/relax.out','r').read())
 
     # relax w/ full analysis
     pa = PwscfAnalyzer(relax_path,'relax.in','relax.out',analyze=True)
@@ -469,15 +467,13 @@ def test_analyze():
                 ),
             ),
         )
-    
+
     assert(object_eq(to_obj(pa),pa_ref))
 
     input_read = deepcopy(pa.input)
 
-    
-
     # nscf w/ analysis
-    pa = PwscfAnalyzer(nscf_path,'nscf.in','nscf.out',analyze=True          )
+    pa = PwscfAnalyzer(nscf_path,'nscf.in','nscf.out',analyze=True)
 
     assert(object_eq(pa.input,input_read))
 

@@ -41,7 +41,6 @@ def format_value(v):
 
 def make_serial_reference(qi):
     from ..developer import obj
-    #s = qi.serial()
     s = dict_serialize(qi,dict_type=obj)
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
@@ -232,7 +231,6 @@ def get_serial_references():
 def check_vs_serial_reference(qi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    #sg = qi.serial()
     sg = dict_serialize(qi,dict_type=obj)
     assert(object_eq(sg,sr))
 #end def check_vs_serial_reference

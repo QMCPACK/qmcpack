@@ -11,48 +11,6 @@ from .. import testing
 from ..testing import object_eq,dict_serialize
 
 
-def format_value(v):
-    import numpy as np
-    s = ''
-    if isinstance(v,np.ndarray):
-        pad = 12*' '
-        s = 'np.array([\n'
-        if len(v.shape)==1:
-            s += pad
-            for vv in v:
-                s += format_value(vv)+','
-            #end for
-            s = s[:-1]
-        else:
-            for vv in v:
-                s += pad + format_value(list(vv))+',\n'
-            #end for
-            s = s[:-2]
-        #end if
-        s += '])'
-    elif isinstance(v,(str,np.bytes_)):
-        s = "'"+str(v)+"'"
-    else:
-        s = str(v)
-    #end if
-    return s
-#end def format_value
-
-
-def make_serial_reference(gi):
-    from ..developer import obj
-    #s = gi.serial()
-    s = dict_serialize(gi,dict_type=obj)
-    ref = '    ref = {\n'
-    for k in sorted(s.keys()):
-        v = s[k]
-        ref +="        '{}' : {},\n".format(k,format_value(v))
-    #end for
-    ref += '        }\n'
-    return ref
-#end def make_serial_reference
-
-
 serial_references = dict()
 
 c_potcar_text = '''
@@ -143,7 +101,6 @@ def get_serial_references():
 def check_vs_serial_reference(gi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    #sg = gi.serial()
     sg = dict_serialize(gi,dict_type=obj)
     same = object_eq(sg,sr)
     if not same:

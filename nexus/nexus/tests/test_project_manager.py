@@ -22,9 +22,6 @@ def test_init():
     def check(v):
         assert isinstance(v,obj)
         assert len(v)==0
-    #assert(pm.simulations==obj())
-    #assert(pm.cascades==obj())
-    #assert(pm.progressing_cascades==obj())
     check(pm.simulations)
     check(pm.cascades)
     check(pm.progressing_cascades)
@@ -40,7 +37,7 @@ def test_add_simulations():
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
-    pm.add_simulations([s for s in sims.values()])
+    pm.add_simulations(list(sims.values()))
 
     assert(list(pm.cascades.keys())==[sims.s1.simid])
     assert(list(pm.progressing_cascades.keys())==[sims.s1.simid])
@@ -81,7 +78,7 @@ def test_traverse_cascades():
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
-        sims.extend([s for s in wf.values()])
+        sims.extend(list(wf.values()))
     #end for
 
     pm = ProjectManager()
@@ -123,7 +120,7 @@ def test_screen_fake_sims():
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
-        sims.extend([s for s in wf.values()])
+        sims.extend(list(wf.values()))
     #end for
 
     pm = ProjectManager()
@@ -160,7 +157,7 @@ def test_resolve_file_collisions():
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
-        sims.extend([s for s in wf.values()])
+        sims.extend(list(wf.values()))
     #end for
 
     pm = ProjectManager()
@@ -199,7 +196,7 @@ def test_propagate_blockages():
     sims = []
     for n in range(n_test_workflows):
         wf = get_test_workflow(n)
-        sims.extend([s for s in wf.values()])
+        sims.extend(list(wf.values()))
     #end for
 
     for s in sims:
@@ -245,7 +242,7 @@ def test_load_cascades():
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
-    pm.add_simulations([s for s in sims.values()])
+    pm.add_simulations(list(sims.values()))
 
     idc = id(pm.cascades)
     idp = id(pm.progressing_cascades)
@@ -274,7 +271,7 @@ def test_check_dependencies():
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
-    pm.add_simulations([s for s in sims.values()])
+    pm.add_simulations(list(sims.values()))
 
     idc = id(pm.cascades)
     idp = id(pm.progressing_cascades)
@@ -302,7 +299,7 @@ def test_write_simulation_status():
     #end for
 
     pm = ProjectManager()
-    pm.add_simulations([s for s in sims.values()])
+    pm.add_simulations(list(sims.values()))
 
     status_modes = nexus_core.status_modes
 
@@ -407,9 +404,8 @@ def test_run_project(tmp_path):
 
     sims = []
     for n in range(n_test_workflows):
-    #for n in range(1):
         wf = get_test_workflow(n)
-        sims.extend([s for s in wf.values()])
+        sims.extend(list(wf.values()))
     #end for
 
     template = '''

@@ -19,47 +19,6 @@ for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"
 
 
-def format_value(v):
-    import numpy as np
-    s = ''
-    if isinstance(v,np.ndarray):
-        pad = 12*' '
-        s = 'np.array([\n'
-        if len(v.shape)==1:
-            s += pad
-            for vv in v:
-                s += format_value(vv)+','
-            #end for
-            s = s[:-1]
-        else:
-            for vv in v:
-                s += pad + format_value(list(vv))+',\n'
-            #end for
-            s = s[:-2]
-        #end if
-        s += '])'
-    elif isinstance(v,(str,np.bytes_)):
-        s = "'"+str(v)+"'"
-    else:
-        s = str(v)
-    #end if
-    return s
-#end def format_value
-
-
-def make_serial_reference(qi):
-    #s = qi.serial()
-    s = dict_serialize(qi,dict_type=obj)
-    ref = '    ref = {\n'
-    for k in sorted(s.keys()):
-        v = s[k]
-        ref +="        '{}' : {},\n".format(k,format_value(v))
-    #end for
-    ref += '        }\n'
-    return ref
-#end def make_serial_reference
-
-
 serial_references = dict()
 
 
@@ -529,7 +488,6 @@ def check_vs_serial_reference(qi,name):
     from ..developer import obj,to_obj
     sr = get_serial_references()[name]
     assert(len(sr)>0)
-    #sq = qi.serial()
     sq = dict_serialize(qi,dict_type=obj)
     def remove_metadata(s):
         metadata_keys = []

@@ -83,8 +83,6 @@ def test_defined_attribute_base():
     DA.define_attributes(**da_attributes)
 
     def get_class_dict(cls):
-        #o = obj()
-        #o.transfer_from(cls.__dict__)
         o = obj(**cls.__dict__)
         for k in list(o.keys()):
             if k.startswith('_'):

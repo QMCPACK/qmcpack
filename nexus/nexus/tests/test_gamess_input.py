@@ -258,7 +258,6 @@ def get_serial_references():
 def check_vs_serial_reference(gi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    #sg = gi.serial()
     sg = dict_serialize(gi,dict_type=obj)
     assert(object_eq(sg,sr))
 #end def check_vs_serial_reference
@@ -440,6 +439,5 @@ def test_generate(tmp_path):
         check_vs_serial_reference(gi,infile)
     #end for
 #end def test_generate
-
 
 

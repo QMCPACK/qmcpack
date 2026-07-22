@@ -84,7 +84,6 @@ def test_settings(tmp_path):
             for k in shared_keys:
                 v1 = o1[k]
                 v2 = o2[k]
-                #if isinstance(v1,obj):
                 if isinstance(v1,(obj,DevBase)):
                     assert(object_eq(v1,v2))
                 else:
@@ -114,12 +113,8 @@ def test_settings(tmp_path):
         assert(len(nexus_noncore.pseudopotentials)==0)
         assert(isinstance(nexus_noncore.basissets,BasisSets))
         assert(len(nexus_noncore.basissets)==0)
-        #nnc_defaults = obj(nexus_noncore_defaults,nexus_core_noncore_defaults)
         nnc_defaults = obj(**nexus_noncore_defaults)
         nnc_defaults.update(**nexus_core_noncore_defaults)
-        nnc_defaults = dict(**nexus_noncore_defaults)
-        nnc_defaults.update(nexus_core_noncore_defaults)
-        nnc_defaults = obj(**nnc_defaults)
         nexus_noncore.pseudopotentials = None
         nexus_noncore.basissets        = None
         assert(object_eq(nexus_noncore,nnc_defaults))

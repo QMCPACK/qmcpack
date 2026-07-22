@@ -62,6 +62,11 @@ class NexusUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
         if module in nexus_modules and "nexus." not in module:
             module = "nexus." + module
+        if module == "nexus.generic":
+            name = {
+                "obj"     : "obj_deprecated",
+                "DevBase" : "DevBaseDeprecated",
+                }.get(name,name)
         return super().find_class(module, name)
 
 
@@ -494,7 +499,8 @@ class object_interface(object):
 
         try:
             tmp = pickle.load(fobj)
-        except ModuleNotFoundError:
+        except (ImportError,ModuleNotFoundError):
+            fobj.seek(0)
             try:
                 # Old pickles from before Nexus was packaged (PR #5700, December 20 2025)
                 # won't have the correct module path. The custom unpickler will handle this by 

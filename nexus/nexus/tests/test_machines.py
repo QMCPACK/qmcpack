@@ -6,6 +6,7 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 import os
+from random import randint
 from copy import deepcopy
 from . import isolate_nexus_core
 from .. import testing
@@ -80,9 +81,8 @@ def test_options():
         n = '-n 1',
         d = '-d 2',
         exe = '--exe',
-        )
+    )
     oi = Options(**inputs)
-    #assert(oi.to_dict()==inputs)
     assert(dict(**oi)==inputs)
 
     # add
@@ -96,14 +96,12 @@ def test_options():
     ref['0'] = opts
     o = Options()
     o.read(opts)
-    #assert(object_eq(o.to_obj(),ref))
     assert(object_eq(to_obj(o),ref))
 
     # write
     opts_write = o.write()
     o2 = Options()
     o2.read(opts_write.strip())
-    #assert(object_eq(o2.to_obj(),ref))
     assert(object_eq(to_obj(o2),ref))
 #end def test_options
 
@@ -287,8 +285,6 @@ def test_job_serial_clone():
     assert(j2.cores==1)
     assert(id(j2)!=id(j1))
     keys = 'serial cores init_info'.split()
-    #j1.delete(keys)
-    #j2.delete(keys)
     for k in keys:
         del j1[k]
         del j2[k]
@@ -368,13 +364,8 @@ def test_machine_list():
 #end def test_machine_list
 
 
-def first(o):
-    return o[min(o.keys())]
-
-
 def test_machine_add():
     from ..machines import Machine
-    #mtest = Machine.machines.first()
     mtest = first(Machine.machines)
     assert(isinstance(mtest,Machine))
     try:
@@ -399,7 +390,6 @@ def test_machine_add():
 
 def test_machine_get():
     from ..machines import Machine
-    #mtest = Machine.machines.first()
     mtest = first(Machine.machines)
     assert(isinstance(mtest,Machine))
 
@@ -685,7 +675,6 @@ def test_supercomputer_scheduling(tmp_path):
         j               = '-j 1',
         n               = '-n 16',
         )
-    #assert(object_eq(j.run_options.to_obj(),refro))
     assert(object_eq(to_obj(j.run_options),refro))
     assert(j.batch_mode==True)
 
@@ -778,13 +767,10 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 #end def test_supercomputer_scheduling
 
 
-from random import randint
 def select_random(d): 
     return d[randint(0,len(d)-1)]
 
 def test_process_job():
-    from random import randint
-    #from ..developer import obj
     from ..developer import obj
     from ..machines import Machine,Job
 
@@ -843,7 +829,6 @@ def test_process_job():
             job = Job(machine=machine.name,**job_input)
             job2 = deepcopy(job)
             machine.process_job(job2)
-            #job_eq = job==job2
             job_eq = object_eq(job,job2)
             machine_idempotent &= job_eq
         #end for

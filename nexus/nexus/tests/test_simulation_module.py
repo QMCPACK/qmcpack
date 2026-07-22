@@ -377,7 +377,6 @@ def get_test_workflow(index,**kwargs):
 
 
 def test_simulation_input(tmp_path):
-    from ..developer import NexusError
     from ..simulation import SimulationInput
 
     # empty init
@@ -423,7 +422,6 @@ def test_simulation_input(tmp_path):
 
 
 def test_simulation_analyzer():
-    from ..developer import NexusError
     from ..simulation import SimulationAnalyzer
 
     # empty init
@@ -879,7 +877,6 @@ def test_init():
 
 
 def test_virtuals():
-    from ..developer import NexusError
     from ..simulation import Simulation
 
     s = Simulation()
@@ -1066,7 +1063,6 @@ def test_file_text(tmp_path):
 
 
 def check_dependency_objects(*sims,**kwargs):
-    #from ..developer import obj
     from ..developer import obj
     from ..simulation import Simulation
     empty    = kwargs.get('empty',False)
@@ -1740,8 +1736,6 @@ def test_save_load_image(tmp_path):
     imagefile = Path(sim.imlocdir) / sim.sim_image
     assert(imagefile.exists())
 
-    #image = obj()
-    #image.load(imagefile)
     image = load(imagefile)
     assert(len(image)==nsave)
     for field in SimulationImage.save_fields:
@@ -2226,7 +2220,6 @@ a    = $a
     #end if
     
     # check image
-    #inds.transfer_from(s,indicators)
     for k in indicators:
         inds[k] = s[k]
     s.reset_indicators()
@@ -2237,7 +2230,6 @@ a    = $a
     assert(not s.finished)
     assert(not s.got_output)
     assert(not s.analyzed)
-    #s.transfer_from(inds,indicators)
     for k in indicators:
         s[k] = inds[k]
 
@@ -2291,7 +2283,6 @@ a    = $a
     #end if
 
     # check image
-    #inds.transfer_from(s,indicators)
     for k in indicators:
         inds[k] = s[k]
     s.reset_indicators()
@@ -2302,7 +2293,6 @@ a    = $a
     assert(s.finished)
     assert(s.got_output)
     assert(s.analyzed)
-    #s.transfer_from(inds,indicators)
     for k in indicators:
         s[k] = inds[k]
 
@@ -2865,7 +2855,7 @@ def test_graph_sims():
 
     sims = get_test_workflow(3)
 
-    graph_sims([s for s in sims.values()],display=False,exit=False)
+    graph_sims(list(sims.values()),display=False,exit=False)
 
     Simulation.clear_all_sims()
 #end def test_graph_sims

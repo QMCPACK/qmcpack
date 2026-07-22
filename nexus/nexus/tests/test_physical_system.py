@@ -22,8 +22,6 @@ def sub_obj(s,keys):
 def system_same(s1,s2,pseudized=True,tiled=False):
     same = True
     keys = ('net_charge','net_spin','pseudized','particles')
-    #o1 = s1.obj(keys)
-    #o2 = s2.obj(keys)
     o1 = sub_obj(s1,keys)
     o2 = sub_obj(s2,keys)
     qsame = object_eq(o1,o2)
@@ -36,7 +34,6 @@ def system_same(s1,s2,pseudized=True,tiled=False):
     if tiled:
         fsame = system_same(s1.folded_system,s2.folded_system)
     #end if
-    print(qsame,vsame,ssame,fsame)
     same = qsame and vsame and ssame and fsame
     return same
 #end def system_same
@@ -283,7 +280,6 @@ def test_physical_system_initialization(tmp_path):
     assert(ref.net_spin==0)
     assert(ref.pseudized)
     assert(object_eq(ref.valency,obj(C=4)))
-    #assert(object_eq(ref.particles.to_obj(),pref))
     assert(object_eq(to_obj(ref.particles),pref))
     assert(structure_same(sref,d8))
     assert(value_eq(sref.axes,3.57*np.eye(3)))
@@ -291,8 +287,6 @@ def test_physical_system_initialization(tmp_path):
     assert(list(sref.elem)==8*['C'])
     assert(value_eq(tuple(sref.pos[-1]),(2.6775,2.6775,0.8925)))
     assert(sref.units=='A')
-    #assert(object_eq(ref.particles.get_ions().to_obj(),obj(C=pref.C)))
-    #assert(object_eq(ref.particles.get_electrons().to_obj(),obj(down_electron=pref.down_electron,up_electron=pref.up_electron)))
     assert(object_eq(to_obj(ref.particles.get_ions()),obj(C=pref.C)))
     assert(object_eq(to_obj(ref.particles.get_electrons()),obj(down_electron=pref.down_electron,up_electron=pref.up_electron)))
 
@@ -303,7 +297,6 @@ def test_physical_system_initialization(tmp_path):
     assert(ref.net_spin==0)
     assert(ref.pseudized)
     assert(object_eq(ref.valency,obj(C=4)))
-    #assert(object_eq(ref.particles.to_obj(),pref))
     assert(object_eq(to_obj(ref.particles),pref))
     assert(structure_same(sref,d8_tile))
     assert(value_eq(sref.axes,3.57*np.eye(3)))
@@ -320,7 +313,6 @@ def test_physical_system_initialization(tmp_path):
     assert(ref.net_spin==0)
     assert(ref.pseudized)
     assert(object_eq(ref.valency,obj(C=4)))
-    #assert(object_eq(ref.particles.to_obj(),pref))
     assert(object_eq(to_obj(ref.particles),pref))
     assert(structure_same(sref,d2))
     assert(value_eq(sref.axes,1.785*np.array([[1.,1,0],[0,1,1],[1,0,1]])))

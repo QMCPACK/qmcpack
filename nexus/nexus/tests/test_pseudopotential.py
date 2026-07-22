@@ -388,8 +388,6 @@ r*potential (L=1) in Ha
     # tests for CasinoPP
     cpp = CasinoPP(casino_file)
 
-    #qo = qpp.to_obj()
-    #co = cpp.to_obj()
     qo = to_obj(qpp)
     co = to_obj(cpp)
     del qo.rmin

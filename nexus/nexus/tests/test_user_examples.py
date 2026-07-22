@@ -151,7 +151,6 @@ def check_generated_files(
         #end if
         if failed:
             # report on failures
-            #from nexus.generic import obj
             from nexus.developer import obj
             dgen = obj(dgen)
             dref = obj(dref)
