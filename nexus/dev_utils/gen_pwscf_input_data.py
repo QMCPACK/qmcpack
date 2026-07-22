@@ -28,7 +28,6 @@ import tarfile
 import tempfile
 import textwrap
 from typing import Literal
-import pprint
 
 
 try:
@@ -44,7 +43,7 @@ except ImportError as err:
 # These are the dates of the commits attached to the INPUT_PW.def
 # files for each version tag in the QE GitLab. Update as needed.
 QE_DOC_VERSION_DATES = {
-    #         DD-MM-YYYY
+    #                  DD-MM-YYYY
     Version("4.0.4"): "18-11-2008",
     Version("4.1.0"): "16-07-2009",
     Version("4.1.1"): "01-10-2009",
@@ -160,13 +159,17 @@ type PwscfInputType = str | bool | int | float | list
 class NamelistParamDefinition:
     """Base class for all namelist variables."""
 
-    datatype: tuple[PwscfInputType]
+    datatype: Literal["int", "float", "bool", "str"]
     required: bool
     shape: tuple | None = None
     allowed_values: tuple[PwscfInputType] | None = None
-    # dependencies: tuple[NamelistParamDefinition] | None = None
     version_added: Version | None = None
     version_removed: Version | None = None
+
+    # This is meant to represent parameters that depend on another parameter
+    # already being set. Currently this isn't handled because it's a bit more
+    # complicated than expected, and it can vary wildly from version to version.
+    # dependencies: tuple[NamelistParamDefinition] | None = None
 # end class NamelistParamDefinition
 
 
@@ -236,7 +239,7 @@ class PWDef:
         # namelist is ("CONTROL", "SYSTEM", ...)
         # param_forms is {"var": list[dict], "dimension": list[dict], ...}
         for namelist, param_forms in input_data["namelist"].items():
-            print(f"Parsing namelist {namelist}...")
+            print(f"  Parsing namelist {namelist}...")
             namelist_params[namelist] = {}
             for param_form, param_defs in param_forms.items():
                 # Apparently sometimes these aren't lists, even
@@ -246,6 +249,7 @@ class PWDef:
                 # Why not just make them all lists? Please?
                 if isinstance(param_defs, dict):
                     param_defs = [param_defs]
+
                 match param_form:
                     case "var":
                         parsed_params = PWDef.parse_namelist_var(param_defs)
@@ -316,12 +320,15 @@ class PWDef:
                 allowed_values = None
 
             if "(" in name:
+                # Older versions of QE had some parameters' names written as, e.g.
+                # `Hubbard_J(i,ityp)`, which is not how it goes into an input file.
                 name = name.split("(")[0]
+
             parsed_vars[name] = NamelistParamDefinition(
-                datatype,
-                required,
-                None,
-                allowed_values,
+                datatype=datatype,
+                required=required,
+                shape=None, # only dimension and multidimension have shapes.
+                allowed_values=allowed_values,
             )
         return parsed_vars
 
@@ -347,11 +354,11 @@ class PWDef:
                 else:
                     required = False
 
-            start = (1,)
+            start = int(dim["start"])
             if dim["end"].isdigit():
-                end = (int(dim["end"]),)
+                end = int(dim["end"])
             else:
-                end = (dim["end"],)
+                end = dim["end"]
             parsed_dimensions[name] = NamelistParamDefinition(
                 datatype=PWDef.f2p_datatype[dim["type"].upper()],
                 required=required,
@@ -372,11 +379,21 @@ class PWDef:
         parsed_multidimensions = {}
         for multidim in multidimension_list:
             name = multidim["name"]
-            start = (1,)
-            if multidim["end"].isdigit():
-                end = (int(multidim["end"]),)
-            else:
-                end = (multidim["end"],)
+            start = []
+            for i in multidim["start"].split(","):
+                if i.isdigit():
+                    start.append(int(i))
+                else:
+                    start.append(i)
+            start = tuple(start)
+
+            end = []
+            for i in multidim["end"].split(","):
+                if i.isdigit():
+                    end.append(int(i))
+                else:
+                    end.append(i)
+            end = tuple(end)
 
             required = multidim.get("status", "")
             if isinstance(required, dict):
@@ -437,9 +454,9 @@ class PWDef:
                     shape = None
 
                 parsed_vargroups[name] = NamelistParamDefinition(
-                    datatype,
-                    required,
-                    shape,
+                    datatype=datatype,
+                    required=required,
+                    shape=shape,
                     allowed_values=None,
                 )
             # end for var in vargroup
@@ -492,15 +509,32 @@ class PWDef:
 
 def get_version_info(input_dict: dict[Version, PWDef]) -> dict[str, dict[str, NamelistParamDefinition]]:
     nmlist_param_vers = defaultdict(dict)
-    for version, data in input_dict.items():
+    # Reverse so we get the param definitions from the latest version of QE
+    # This is kinda hacky, but it's better than only having the param definition
+    # from the version they were added. Something like `allowed_values` may be
+    # wildly outdated, which is just unhelpful.
+    for version, data in reversed(input_dict.items()):
         for namelist, params in data.namelist_params.items():
             for param, param_def in params.items():
                 if param not in nmlist_param_vers[namelist]:
                     nmlist_param_vers[namelist][param] = param_def
+                    nmlist_param_vers[namelist][param].version_removed = version
                     nmlist_param_vers[namelist][param].version_added = version
-                    nmlist_param_vers[namelist][param].version_removed = version
                 else:
-                    nmlist_param_vers[namelist][param].version_removed = version
+                    nmlist_param_vers[namelist][param].version_added = version
+                    # Join together the allowed values from the newest version and any older versions.
+                    # We don't use sets and `set.union` because they are not order-preserving,
+                    # and the allowed values seem to always have the default as the first value.
+                    if (
+                        nmlist_param_vers[namelist][param].allowed_values is not None
+                        and param_def.allowed_values is not None
+                    ):
+                        original_allowed_vals = dict.fromkeys(nmlist_param_vers[namelist][param].allowed_values)
+                        extra_allowed_vals = dict.fromkeys(param_def.allowed_values)
+                        original_allowed_vals.update(extra_allowed_vals)
+                        nmlist_param_vers[namelist][param].allowed_values = (
+                            tuple(original_allowed_vals.keys())
+                        )
 
     return dict(nmlist_param_vers)
 
@@ -508,29 +542,77 @@ def get_version_info(input_dict: dict[Version, PWDef]) -> dict[str, dict[str, Na
 def write_namelist_param_enum(input_pw: dict[str, dict[str, NamelistParamDefinition]]):
     namelist_enums = {}
     for namelist, param_dict in input_pw.items():
-        namelist_string = ""
         name_max = max(map(len, param_dict.keys()))
+        namelist_string = (
+            f"# {'name':^{name_max-2}} = "
+            "type, "
+            "required, "
+            "shape, "
+            "allowed_values, "
+            "v_added, "
+            "v_removed\n"
+        )
         for name, param_def in param_dict.items():
-            v_added_str = f"'{param_def.version_added!s}'"
-            if param_def.version_removed != LATEST:
-                v_removed_str = f"'{param_def.version_removed!s}'"
+            # Handle formatting for the case that the removed version isn't the latest.
+            if param_def.version_added == EARLIEST:
+                param_def.version_added = None
             else:
-                v_removed_str = "None"
-            namelist_string += (
-                f"{name:<{name_max}} = "
-                f"{f'{param_def.datatype},':<7}"
-                f"{f'{param_def.required},':<7}"
-                f"{param_def.shape}, "
-                f"{param_def.allowed_values}, "
-                f"{v_added_str}, "
-                f"{v_removed_str}\n"
-            )
+                param_def.version_added = f"'{param_def.version_added!s}'"
+
+            if param_def.version_removed != LATEST:
+                namelist_string += (
+                    f"{name:<{name_max}} = "
+                    f"{f'{param_def.datatype},':<7}"
+                    f"{f'{param_def.required!s},':<7}"
+                    f"{param_def.shape}, "
+                    f"{param_def.allowed_values}, "
+                    f"{param_def.version_added}, "
+                    f"'{param_def.version_removed!s}'\n"
+                )
+            elif param_def.version_added is not None:
+                namelist_string += (
+                    f"{name:<{name_max}} = "
+                    f"{f'{param_def.datatype},':<7}"
+                    f"{f'{param_def.required!s},':<7}"
+                    f"{param_def.shape}, "
+                    f"{param_def.allowed_values}, "
+                    f"{param_def.version_added}\n"
+                )
+            elif param_def.allowed_values is not None:
+                namelist_string += (
+                    f"{name:<{name_max}} = "
+                    f"{f'{param_def.datatype},':<7}"
+                    f"{f'{param_def.required!s},':<7}"
+                    f"{param_def.shape}, "
+                    f"{param_def.allowed_values}\n"
+                )
+            elif param_def.shape is not None:
+                namelist_string += (
+                    f"{name:<{name_max}} = "
+                    f"{f'{param_def.datatype},':<7}"
+                    f"{f'{param_def.required!s},':<7}"
+                    f"{param_def.shape}\n"
+                )
+            else:
+                namelist_string += (
+                    f"{name:<{name_max}} = "
+                    f"{f'{param_def.datatype},':<7}"
+                    f"{param_def.required!s}\n"
+                )
+
+        namelist_string += (
+            f"# {'name':^{name_max-2}} = "
+            "type, "
+            "required, "
+            "shape, "
+            "allowed_values, "
+            "v_added, "
+            "v_removed\n"
+        )
         namelist_enums[namelist] = namelist_string
     return namelist_enums
 
 
-# json_path = Path("./INPUT_PW_{EARLIEST!s}_to_{LATEST!s}.json").resolve()
-# json_data = PWDef.read_version_json(json_path)
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         xml_path = Path(sys.argv[1]).resolve()
@@ -553,11 +635,12 @@ if __name__ == "__main__":
     else:
         pw_data = get_total_dict(xml_path)
 
-    print("Parsing namelist data...\n")
+    print("Parsing namelist data...")
     all_data = {}
     for version in QE_DOC_VERSION_DATES:
-        print(version)
+        print(f"\nNow parsing version {version!s}...")
         all_data[version] = PWDef(pw_data[version], str(version))
+        print("Success!")
 
 
     print("\nDone parsing namelist data!\n")
