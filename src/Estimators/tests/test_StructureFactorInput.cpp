@@ -23,7 +23,6 @@ using Input = testing::ValidStructureFactorInput;
 TEST_CASE("StructureFactorInput::parseXML::valid", "[estimators]")
 {
   Input input;
-  int test_num = 0;
   for (auto input_xml : input)
   {
     Libxml2Document doc;

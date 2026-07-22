@@ -7,6 +7,7 @@ generic_settings.raise_error = True
 
 from . import TEST_DIR
 from ..testing import value_eq, object_eq
+from .. import numpy_extensions as npe
 
 
 TEST_FILES = {
@@ -145,7 +146,7 @@ def test_xsffile_density(tmp_path):
 
     grid = 3,5,7
     dens = 0.01*np.arange(np.prod(grid),dtype=float)
-    dens.shape=grid
+    npe.reshape_inplace(dens, grid)
 
     ref.add_density(ref.primvec,dens,add_ghost=True)
     assert(ref.is_valid())

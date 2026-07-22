@@ -198,11 +198,11 @@ class GCTA(DevBase):
         Returns the number of electrons in the primitive cell
         '''
         if self.system.folded_system is None:
-            n_up = self.system.particles.up_electron.count
-            n_dn = self.system.particles.down_electron.count
+            n_up = self.system.n_up
+            n_dn = self.system.n_down
         else:
-            n_up = self.system.folded_system.particles.up_electron.count
-            n_dn = self.system.folded_system.particles.down_electron.count
+            n_up = self.system.folded_system.n_up
+            n_dn = self.system.folded_system.n_down
         #end if
         nelecs = n_up + n_dn
         return nelecs
@@ -473,8 +473,8 @@ class GCTA(DevBase):
         '''
         Returns the net charge of a system with multiple twists (not averaged)
         '''
-        n_up = self.system.particles.up_electron.count
-        n_dn = self.system.particles.down_electron.count
+        n_up = self.system.n_up
+        n_dn = self.system.n_down
         n_total = n_up + n_dn
         nelecs_at_twist = self.nelecs_at_twist
         kweights = np.array(self.system.structure.kweights)
@@ -546,8 +546,8 @@ class GCTA(DevBase):
             spin_sum_twists = self.sum_spin_twists()
             qmc_magnet = spin_sum_twists / nosym_kpoints
         #end if
-        n_up = self.system.particles.up_electron.count
-        n_dn = self.system.particles.down_electron.count
+        n_up = self.system.n_up
+        n_dn = self.system.n_down
         n_total = n_up + n_dn
         nelecs_at_twist = self.nelecs_at_twist
         fermi_level = np.array(fermi_level)

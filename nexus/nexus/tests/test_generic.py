@@ -10,6 +10,8 @@ from pathlib import Path
 from . import isolate_nexus_core, FakeLog
 from ..testing import failed,FailedTest
 from ..testing import object_eq,object_neq
+from ..generic import obj_deprecated as obj
+from ..generic import warn, NexusDevWarning, NexusUserWarning, nxs_deprecate
 
 TEST_FILES = {
     "old_nxs_pwscf_input.p": Path(__file__+"/../test_generic_files/old_nxs_pwscf_input.p").resolve(),
@@ -20,7 +22,7 @@ TEST_FILES = {
 
 @isolate_nexus_core
 def test_logging():
-    from ..generic import log,warn,error
+    from ..generic import log,error
     from ..generic import generic_settings,NexusError
 
     logfile = generic_settings.devlog
@@ -63,25 +65,7 @@ def test_logging():
     log(s2,logfile=logfile2)
     assert(logfile.s=='')
     assert(logfile2.s==s2+'\n')
-    
 
-    # test warn
-    logfile.reset()
-    s = 'this is a warning'
-    warn(s)
-    so = '''
-  warning:
-    this is a warning
-'''
-    assert(logfile.s==so)
-    logfile.reset()
-    s = 'this is a warning'
-    warn(s,header='Special')
-    so = '''
-  Special warning:
-    this is a warning
-'''
-    assert(logfile.s==so)
 
     # test error
     #   in testing environment, should raise an error
@@ -404,25 +388,6 @@ def test_intrinsics(tmp_path):
     o.log(s2,logfile=logfile2)
     assert(logfile.s=='')
     assert(logfile2.s==s2+'\n')
-    
-
-    # test warn
-    logfile.reset()
-    s = 'this is a warning'
-    o.warn(s)
-    so = '''
-  DerivedObj warning:
-    this is a warning
-'''
-    assert(logfile.s==so)
-    logfile.reset()
-    s = 'this is a warning'
-    o.warn(s,header='Special')
-    so = '''
-  Special warning:
-    this is a warning
-'''
-    assert(logfile.s==so)
 
     # test error
     #   in testing environment, should raise an error
@@ -464,9 +429,7 @@ def test_intrinsics(tmp_path):
     except Exception as e:
         failed(str(e))
     #end try
-
 #end def test_intrinsics
-
 
 
 def test_extensions():
@@ -1124,9 +1087,7 @@ def test_extensions():
     #end for
     o2 = o.serial()
     assert(object_eq(o2,oref))
-
 #end def test_extensions
-
 
 
 def test_old_nexus_unpickle():
@@ -1256,3 +1217,30 @@ def test_old_nexus_unpickle():
     assert(inp_obj.system.smearing    == "fermi-dirac")
     assert(inp_obj.system.tot_charge  == 0)
 #end def test_old_nexus_unpickle
+
+
+@isolate_nexus_core
+def test_warn():
+    with pytest.warns(NexusUserWarning, match="This is a test warning"):
+        warn("This is a test warning", warn_type="user")
+
+    with pytest.warns(NexusDevWarning, match="This is a developer warning"):
+        warn("This is a developer warning", warn_type="dev")
+    
+    with pytest.warns(NexusUserWarning, match="This is a warning from inside obj"):
+        obj().warn("This is a warning from inside obj")
+#end def test_warn
+
+
+@isolate_nexus_core
+def test_nxs_deprecate():
+
+    @nxs_deprecate(since="2.3.9", replacement="Some other function")
+    def deprecated_function():
+        pass
+
+    with pytest.warns(
+        DeprecationWarning,
+        match="deprecated_function is deprecated as of Nexus version 2.3.9, and will be removed in a future update."
+        ):
+        deprecated_function()

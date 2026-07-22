@@ -431,7 +431,7 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
   // get determinant, since you can't get the phase trivially from SVD
   Tp ovlp = ma::determinant(U, IWORK, WORK, LogOverlapFactor);
   //  ma::geqrf(U,VT[0],WORK);
-  //  determinant_from_geqrf(N,U.origin(),U.stride(0),VT[1].origin(),LogOverlapFactor,ovlp);
+  //  determinant_from_geqrf(N,U.origin(),U.stride(),VT[1].origin(),LogOverlapFactor,ovlp);
   //  if you want the correct phase of the determinant
   //  ma::gqr(U,S.sliced(0,N),WORK);
   //  ComplexType ovQ = ma::determinant(U,IWORK,WORK,0.0);
@@ -463,7 +463,7 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
 
 
     // VT = VT * inv(S), which works since S is diagonal and real
-    term_by_term_matrix_vector(ma::TOp_DIV, 0, get<0>(VT.sizes()), get<1>(VT.sizes()), ma::pointer_dispatch(VT.origin()), VT.stride(0),
+    term_by_term_matrix_vector(ma::TOp_DIV, 0, get<0>(VT.sizes()), get<1>(VT.sizes()), ma::pointer_dispatch(VT.origin()), VT.stride(),
                                ma::pointer_dispatch(S.origin()), 1);
 
     // BV = H(VT) * H(U)
@@ -483,7 +483,7 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
     ma::product(B, H(VT), BV);
 
     // BV = BV * inv(S), which works since S is diagonal and real
-    term_by_term_matrix_vector(ma::TOp_DIV, 1, get<0>(BV.sizes()), get<1>(BV.sizes()), ma::pointer_dispatch(BV.origin()), BV.stride(0),
+    term_by_term_matrix_vector(ma::TOp_DIV, 1, get<0>(BV.sizes()), get<1>(BV.sizes()), ma::pointer_dispatch(BV.origin()), BV.stride(),
                                ma::pointer_dispatch(S.origin()), 1);
 
     // UA = H(U) * H(A)
@@ -1036,14 +1036,14 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
     assert(get<2>(TNM3D.sizes()) == NMO);
   }
   assert(IWORK.num_elements() >= nbatch * (NEL + 1));
-  assert(TNN3D.stride(1) == NEL); // needed by getriBatched
+  assert(get<1>(TNN3D.strides()) == NEL); // needed by getriBatched
 
   using element = typename std::decay<MatC>::type::element;
   using pointer = typename std::decay<MatC>::type::element_ptr;
 
-  int ldw = (*Bi[0]).stride(0);
-  int ldN = TNN3D.stride(1);
-  int ldC = C.stride(1);
+  int ldw = (*Bi[0]).stride();
+  int ldN = get<1>(TNN3D.strides());
+  int ldC = get<1>(C.strides());
   std::vector<pointer> Carray;
   std::vector<pointer> Warray;
   std::vector<pointer> NNarray;
@@ -1080,7 +1080,7 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
                ma::pointer_dispatch(IWORK.origin()) + nbatch * NEL, nbatch);
 
   using ma::strided_determinant_from_getrf;
-  strided_determinant_from_getrf(NEL, ma::pointer_dispatch(Carray[0]), ldC, C.stride(0),
+  strided_determinant_from_getrf(NEL, ma::pointer_dispatch(Carray[0]), ldC, C.stride(),
                                  ma::pointer_dispatch(IWORK.origin()), NEL, LogOverlapFactor, to_address(ovlp.origin()),
                                  nbatch);
 
@@ -1097,7 +1097,7 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
   {
     if (herm)
     {
-      int ldM = TNM3D.stride(1);
+      int ldM = get<1>(TNM3D.strides());
       std::vector<pointer> NMarray;
       std::vector<decltype(&TNM3D[0])> TNMi;
       NMarray.reserve(nbatch);
@@ -1128,7 +1128,7 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
       for (int b = 0; b < nbatch; ++b)
         ma::product(TNN3D[b], H(*hermA[b]), TNM3D[b]);
 
-      int ldM = TNM3D.stride(1);
+      int ldM = get<1>(TNM3D.strides());
       std::vector<pointer> NMarray;
       NMarray.reserve(nbatch);
       for (int i = 0; i < nbatch; i++)
@@ -1196,10 +1196,10 @@ void DensityMatrices(std::vector<MatA> const& Left,
 
   using pointer = typename pointedType<MatC>::element_ptr;
 
-  int ldR = (*Right[0]).stride(0);
-  int ldL = (*Left[0]).stride(0);
-  int ldN = TNN3D.stride(1);
-  int ldG = (*G[0]).stride(0);
+  int ldR = (*Right[0]).stride();
+  int ldL = (*Left[0]).stride();
+  int ldN = get<1>(TNN3D.strides());
+  int ldG = (*G[0]).stride();
   std::vector<pointer> Garray;
   std::vector<pointer> Rarray;
   std::vector<pointer> Larray;
@@ -1210,8 +1210,8 @@ void DensityMatrices(std::vector<MatA> const& Left,
   NNarray.reserve(nbatch);
   for (int i = 0; i < nbatch; i++)
   {
-    assert((*Right[i]).stride(0) == ldR);
-    assert((*Left[i]).stride(0) == ldL);
+    assert((*Right[i]).stride() == ldR);
+    assert((*Left[i]).stride() == ldL);
     NNarray.emplace_back(TNN3D[i].origin());
     Garray.emplace_back((*G[i]).origin());
     Rarray.emplace_back((*Right[i]).origin());
@@ -1246,7 +1246,7 @@ void DensityMatrices(std::vector<MatA> const& Left,
   }
   else
   {
-    int ldM = TNM3D.stride(1);
+    int ldM = get<1>(TNM3D.strides());
     std::vector<pointer> NMarray;
     NMarray.reserve(nbatch);
     for (int i = 0; i < nbatch; i++)
@@ -1312,8 +1312,8 @@ void Overlap(std::vector<MatA>& hermA,
 
   using pointer = typename std::decay<Mat>::type::element_ptr;
 
-  int ldw = (*Bi[0]).stride(0);
-  int ldN = TNN3D.stride(1);
+  int ldw = (*Bi[0]).stride();
+  int ldN = get<1>(TNN3D.strides());
   std::vector<pointer> Warray;
   std::vector<pointer> NNarray;
   std::vector<decltype(&TNN3D[0])> Ci;
@@ -1342,7 +1342,7 @@ void Overlap(std::vector<MatA>& hermA,
   getrfBatched(NEL, NNarray.data(), ldN, IWORK.origin(), IWORK.origin() + nbatch * NEL, nbatch);
 
   using ma::strided_determinant_from_getrf;
-  strided_determinant_from_getrf(NEL, NNarray[0], ldN, TNN3D.stride(0), IWORK.origin(), NEL, LogOverlapFactor,
+  strided_determinant_from_getrf(NEL, NNarray[0], ldN, TNN3D.stride(), IWORK.origin(), NEL, LogOverlapFactor,
                                  to_address(ovlp.origin()), nbatch);
 }
 

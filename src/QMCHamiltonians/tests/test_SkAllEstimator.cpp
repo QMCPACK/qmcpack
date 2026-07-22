@@ -179,9 +179,8 @@ TEST_CASE("SkAll", "[hamiltonian]")
 
 
   // Set up the distance table, match expected layout
-  const int ee_table_id = elec->addTable(*elec);
+  elec->addTable(*elec);
 
-  const auto& dii(elec->getDistTable(ee_table_id));
   elec->update(); // distance table evaluation here
 
   // Check that the skall xml block is valid

@@ -172,15 +172,18 @@ class DevBaseNexus(DevBase,obj_defended):
         kw.setdefault('logfile',self._logfile)
         log(*a,**kw)
 
-    def warn(self,message,header=None):
-        if header is None:
-            header=self.__class__.__name__
-        warn(message,header,logfile=self._logfile)
+    def warn(self,message,indent='    '):
+        warn(
+            message,
+            indent,
+            warn_type = 'class',
+            cls       = type(self).__qualname__,
+            )
 
     def error(self,message,header=None,exit=True,trace=-2):
         if header is None:
             header = self.__class__.__name__
-        error(message,header,exit,trace,self._logfile)
+        error(message,header,exit,trace,logfile=self._logfile)
 
 #end class DevBaseNexus
 

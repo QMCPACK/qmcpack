@@ -644,7 +644,7 @@ void getLank(MultiArray2DA&& Aai,
   assert(get<0>(buff.sizes()) >= npol * nk);
   assert(get<1>(buff.sizes()) >= nchol);
   if (noncollinear)
-    assert(Aai.stride(0) == get<1>(Aai.sizes())); // make sure it is contiguous
+    assert(Aai.stride() == get<1>(Aai.sizes())); // make sure it is contiguous
 
   using elementA = typename std::decay<MultiArray2DA>::type::element;
   using element  = typename std::decay<MultiArray3DC>::type::element;
@@ -692,7 +692,7 @@ void getLank_from_Lkin(MultiArray2DA&& Aai,
   assert(get<2>(Lank.sizes()) == nk * npol);
   assert(buff.num_elements() >= na * npol * nchol);
   if (noncollinear)
-    assert(Aai.stride(0) == get<1>(Aai.sizes())); // make sure it is contiguous
+    assert(Aai.stride() == get<1>(Aai.sizes())); // make sure it is contiguous
 
   using Type     = typename std::decay<MultiArray3DC>::type::element;
   using elementA = typename std::decay<MultiArray2DA>::type::element;
@@ -743,7 +743,7 @@ void getLakn_Lank(MultiArray2DA&& Aai,
   assert(get<2>(Lank.sizes()) == npol * nmo);
 
   if (noncollinear)
-    assert(Aai.stride(0) == get<1>(Aai.sizes())); // make sure it is contiguous
+    assert(Aai.stride() == get<1>(Aai.sizes())); // make sure it is contiguous
 
   using elmA = typename std::decay<MultiArray2DA>::type::element;
   using elmB = typename std::decay<MultiArray3DB>::type::element;
@@ -787,7 +787,7 @@ void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai,
   assert(get<2>(Lank.sizes()) == npol * nmo);
 
   if (noncollinear)
-    assert(Aai.stride(0) == get<1>(Aai.sizes())); // make sure it is contiguous
+    assert(Aai.stride() == get<1>(Aai.sizes())); // make sure it is contiguous
 
   assert(buff.num_elements() >= na * npol * nchol);
 
