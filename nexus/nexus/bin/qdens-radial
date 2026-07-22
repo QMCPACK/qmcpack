@@ -262,6 +262,8 @@ class QMCDensityRadialProcessor(QDRBase):
             if opt_failed:
                 self.error('radii must be a list of values and must be the same length as species list\nyou provided: {0}'.format(rad))
             #end if
+        else:
+            self.error('radii (-r option) must be provided.')
         #end if
 
         #   --seed option
@@ -406,7 +408,7 @@ class QMCDensityRadialProcessor(QDRBase):
                             sum_sq_dict[at] = 0.0
                         #end for
                     else:
-                        for at in equiv_atoms.values():
+                        for at in equiv_atoms:
                             sum_dict[at] = 0.0
                             sum_sq_dict[at] = 0.0
                         #end for
@@ -414,19 +416,19 @@ class QMCDensityRadialProcessor(QDRBase):
                 #end if
 
                 if opt.species is not None and not set(opt.species).issubset(equiv_atoms):
-                    self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,opt.species.tolist()))
+                    self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,list(opt.species)))
                 #end if
                 if opt.cumulative:
                     if opt.species is None:
-                        rdens_samp = cds.cumulative_radial_density(rmax=opt.radii.tolist())
+                        rdens_samp = cds.cumulative_radial_density(rmax=list(opt.radii))
                     else:
-                        rdens_samp = cds.cumulative_radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+                        rdens_samp = cds.cumulative_radial_density(rmax=list(opt.radii),species=list(opt.species))
                     #end if
                 else:
                     if opt.species is None:
-                        rdens_samp = cds.radial_density(rmax=opt.radii.tolist())
+                        rdens_samp = cds.radial_density(rmax=list(opt.radii))
                     else:
-                        rdens_samp = cds.radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+                        rdens_samp = cds.radial_density(rmax=list(opt.radii),species=list(opt.species))
                     #end if
                 #end if
 
@@ -436,7 +438,7 @@ class QMCDensityRadialProcessor(QDRBase):
                         sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2
                     #end for
                 else:
-                    for ati,at in enumerate(equiv_atoms.values()):
+                    for ati,at in enumerate(equiv_atoms):
                         sum_dict[at] += rdens_samp.tot[at].density[-1]
                         sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2
                     #end for
@@ -448,7 +450,7 @@ class QMCDensityRadialProcessor(QDRBase):
                     std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2)
                 #end for
             else:
-                for ati,at in enumerate(equiv_atoms.values()):
+                for ati,at in enumerate(equiv_atoms):
                     std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2)
                 #end for
             #end if
@@ -465,7 +467,7 @@ class QMCDensityRadialProcessor(QDRBase):
         equiv_atoms = list(cd.info.structure.equivalent_atoms().keys())
 
         if opt.species is not None and not set(opt.species).issubset(equiv_atoms):
-            self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,opt.species.tolist()))
+            self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,list(opt.species)))
         #end if
 
         if opt.app=='pwscf':
@@ -480,24 +482,24 @@ class QMCDensityRadialProcessor(QDRBase):
 
         if opt.plot:
             if opt.species is None:
-                cd.plot_radial_density(rmax=opt.radii.tolist(),cumulative=opt.cumulative)
+                cd.plot_radial_density(rmax=list(opt.radii),cumulative=opt.cumulative)
             else: 
-                cd.plot_radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist(),cumulative=opt.cumulative)
+                cd.plot_radial_density(rmax=list(opt.radii),species=list(opt.species),cumulative=opt.cumulative)
             #end if
         #end if
 
         if opt.cumulative:
             cstr = 'Cumulative'
             if opt.species is None:
-                rdens = cd.cumulative_radial_density(rmax=opt.radii.tolist())
+                rdens = cd.cumulative_radial_density(rmax=list(opt.radii))
             else:
-                rdens = cd.cumulative_radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+                rdens = cd.cumulative_radial_density(rmax=list(opt.radii),species=list(opt.species))
         else:
             cstr = 'Non-Cumulative'
             if opt.species is None:
-                rdens = cd.radial_density(rmax=opt.radii.tolist())
+                rdens = cd.radial_density(rmax=list(opt.radii))
             else:
-                rdens = cd.radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+                rdens = cd.radial_density(rmax=list(opt.radii),species=list(opt.species))
         #end if
 
         if opt.species is not None:
@@ -516,7 +518,7 @@ class QMCDensityRadialProcessor(QDRBase):
                 #end if
             #end for
         else:
-            for ati,at in enumerate(equiv_atoms.values()):
+            for ati,at in enumerate(equiv_atoms):
                 if len(opt.radii)>1:
                     # Distinct radii for all species
                     r = opt.radii[ati]
@@ -546,4 +548,3 @@ if __name__=='__main__':
 
     qdensradial.exit()
 #end if
-
