@@ -897,7 +897,6 @@ class XsfFile(StandardFile):
 
 
     def get_density(self):
-        #return self.data.first().first().first()
         def first(d):
             return d[min(d.keys())]
         return first(first(first(self.data)))
@@ -1621,7 +1620,6 @@ def read_poscar_chgcar(host,text):
         poscar = PoscarFile()
     #end if
 
-    #poscar.set(
     poscar.update(
         description = description,
         scale       = scale,
@@ -1636,7 +1634,6 @@ def read_poscar_chgcar(host,text):
         )
 
     if is_chgcar:
-        #host.set(
         host.update(
             poscar         = poscar,
             grid           = grid,

@@ -915,7 +915,6 @@ class QIxml(Names):
             if not hasattr(cls,k):
                 setattr(cls,k,v)
         for v in ['attributes','elements','parameters','attribs','costs','h5tags']:
-            #names = cls.class_get(v)
             names = getattr(cls,v)
             for i in range(len(names)):
                 if names[i] in cls.escape_names:
@@ -930,7 +929,6 @@ class QIxml(Names):
                 cls.plurals_inv[e] = plurals_inv[e]
             #end if
         #end for
-        #cls.plurals = cls.plurals_inv.inverse()
         cls.plurals = obj({v:k for k,v in cls.plurals_inv.items()})
         if cls.exp_names is not None:
             en = obj(**Names.expanded_names)
@@ -1062,7 +1060,6 @@ class QIxml(Names):
             elif isinstance(a,section):
                 self.init_from_inputs(a.args,a.kwargs)
             elif isinstance(a,self.__class__):
-                #self.transfer_from(a)
                 self.update(**a)
             else:
                 self.init_from_inputs(args,kwargs)
@@ -3165,7 +3162,6 @@ plurals = obj(
     transformations = 'transformation',
     rotated_sposets = 'rotated_sposet',
     )
-#plurals_inv = plurals.inverse()
 plurals_inv  = obj({v:k for k,v in plurals.items()})
 plural_names = set(plurals.keys())
 single_names = set(plurals.values())
@@ -9254,7 +9250,6 @@ def generate_basic_input(**kwargs):
     #end if
 
     if len(kw.calculations)==0 and kw.qmc is not None:
-        #qmc_inputs = kw.obj(*qmc_keys)
         qmc_inputs = obj()
         for k in qmc_keys:
             qmc_inputs[k] = kw[k]

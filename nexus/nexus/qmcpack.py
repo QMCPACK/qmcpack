@@ -862,7 +862,6 @@ class Qmcpack(Simulation):
             #end if
 
             # Activate GCTA occupations if gcta is specified by the user
-            #gcta_flavor = self.get_optional('gcta', None)
             gcta_flavor = None
             if 'gcta' in self:
                 gcta_flavor = self.gcta

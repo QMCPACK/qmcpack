@@ -163,7 +163,6 @@ class QmcpackAnalysisRequest(QAobject):
         #end if
         if isinstance(equilibration,(dict,obj)):
             eq = obj()
-            #eq.transfer_from(equilibration)
             eq.update(**equilibration)
         else:
             eq = equilibration
@@ -356,7 +355,6 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             group_num    = group_num,
             system       = input.return_system()
             )
-        #self.info.transfer_from(run_info)
         self.info.update(**run_info)
 
         self.set_global_info()        
@@ -422,7 +420,6 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             maxtime = 0
             times = dict()
             for series,dmc in self.dmc.items():
-                #blocks,steps,timestep = dmc.info.method_input.list('blocks','steps','timestep')
                 blocks,steps,timestep = [dmc.info.method_input[k] for k in ('blocks','steps','timestep')]
                 times[series] = blocks*steps*timestep
                 maxtime = max(times[series],maxtime)
@@ -580,7 +577,6 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             self.info.perform_bundle_average = True
         #end if
         example = [v for v in analyzers.values()][0]
-        #input,system = example.info.tuple('input','system')
         info = example.info
         input,system = info.input,info.system
         self.info.update(
@@ -605,12 +601,10 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         if len(analyzers)>0:
             self.vlog('performing bundle (e.g. twist) averaging',n=1)
             #create local data structures to match those in the bundle
-            #example = analyzers.list()[0].copy()
             ex = []
             for k in sorted_generic(analyzers.keys()):
                 ex.append(analyzers[k])
             example = deepcopy(ex[0])
-            #example = [v for v in analyzers.values()][0]
             for method_type in self.capabilities.methods:
                 if method_type in self:
                     del self[method_type]

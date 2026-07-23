@@ -119,7 +119,6 @@ class Pwscf(Simulation):
         sync_from_scf = sim_args.pop('sync_from_scf',True)
         Simulation.__init__(self,**sim_args)
         self.sync_from_scf = False
-        #calc = self.input.control.get('calculation',None)
         calc = None
         cont = self.input.control
         if 'calculation' in cont:
@@ -141,7 +140,6 @@ class Pwscf(Simulation):
             os.makedirs(outdir)
         #end if
         #copy over vdw_table for vdW-DF functional
-        #if self.path_exists('input/system/input_dft'):
         if 'input_dft' in self.input.system:
             functional = self.input.system.input_dft.lower()
             if '+' not in functional and functional not in allowed_functionals:
@@ -498,7 +496,6 @@ def generate_pwscf(**kwargs):
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 
     if 'input' not in sim_args:
-        #input_type = inp_args.delete_optional('input_type','generic')
         input_type = inp_args.pop('input_type','generic')
         sim_args.input = generate_pwscf_input(input_type,**inp_args)
     #end if

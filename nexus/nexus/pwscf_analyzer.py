@@ -326,7 +326,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     else:
                         index = nfound -1 
                     #end if
-                    #band_channel.append(bk)
                     band_channel[len(band_channel)] = bk
                     #if nfound==1:
                     #    bands.up = obj(

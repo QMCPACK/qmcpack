@@ -182,8 +182,6 @@ class ScalarsDatAnalyzer(DatAnalyzer):
 
 
     def analyze_local(self):
-        #self.load_data_local()
-
         nbe = QAanalyzer.method_info.nblocks_exclude
         self.info.nblocks_exclude = nbe
         data = self.data
@@ -254,7 +252,6 @@ class DmcDatAnalyzer(DatAnalyzer):
         ld = []
         for k in sorted_generic(data.keys()):
             ld.append(data[k])
-        #nsteps = len(data.list()[0])-nse
         nsteps = len(ld)[0]-nse
 
         #nsteps = blocks*steps-nse
@@ -446,7 +443,6 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         if name in data:
             hdfg = data[name]
             hdfg._remove_hidden(deep=False)
-            #self.data.transfer_from(hdfg)
             self.data.update(**hdfg)
             del data[name]
         else:
@@ -1963,7 +1959,6 @@ class SpinDensityAnalyzer(DensityAnalyzerBase):
             hdata = data[name]
             hdata._remove_hidden()
             self.data = QAHDFdata()
-            #self.data.transfer_from(hdata)
             self.data.update(**hdata)
             del data[name]
         else:
@@ -2054,7 +2049,6 @@ class StructureFactorAnalyzer(HDFAnalyzer):
             hdata = data[name]
             hdata._remove_hidden()
             self.data = QAHDFdata()
-            #self.data.transfer_from(hdata)
             self.data.update(**hdata)
             del data[name]
         else:

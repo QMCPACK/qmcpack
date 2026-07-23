@@ -36,7 +36,6 @@ import os
 from pathlib import Path
 from copy import deepcopy
 import numpy as np
-#from .developer import DevBase, obj
 from .developer import DevBase, obj, error
 from .unit_converter import convert
 from .periodic_table import Elements
@@ -96,7 +95,6 @@ class Ion(Particle):
 
     def pseudize(self,valence):
         ps = PseudoIon()
-        #ps.transfer_from(self)
         for k,v in self.items():
             ps[k] = v
         ps.charge = valence
@@ -424,7 +422,6 @@ class PhysicalSystem(Matter):
         if errors:
             self.error('system cannot be generated')
         #end if
-        #self.valency = obj(**valency)
         self.valency = obj(**valency) # culprit!!!
         self.update()
     #end def pseudize

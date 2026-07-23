@@ -1779,7 +1779,6 @@ def generate_any_vasp_input(**kwargs):
         keys = keywords & keyword_file.keywords
         if len(keys)>0:
             kw = obj()
-            #kw.move_from(kwargs,keys)
             for k in keys:
                 if k in kwargs:
                     kw[k] = kwargs[k]

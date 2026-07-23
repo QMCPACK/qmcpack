@@ -86,7 +86,6 @@ import inspect
 import numpy as np
 from numpy import pi, exp, sqrt, sin, cos
 from numpy.linalg import norm
-#from .developer import obj, unavailable, error
 from .developer import obj, unavailable, error
 from .unit_converter import convert
 from .periodic_table import Elements
@@ -1590,4 +1589,3 @@ def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
         return ipoints,xmin,xmax
     #end if
 #end def index_by_layer
-

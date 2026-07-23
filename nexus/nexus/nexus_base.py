@@ -32,7 +32,6 @@ from copy import deepcopy
 from .utilities import path_string
 from .nexus_version import nexus_version
 from .memory import resident
-#from .developer import DevBase, obj, log
 from .developer import DevBase, obj, log, error
 
 
@@ -114,11 +113,8 @@ def restore_nexus_core_defaults():
     nexus_noncore.clear()
     nexus_core_noncore.clear()
 
-    #nexus_core.set(**nexus_core_defaults.copy())
-    #nexus_noncore.set(**nexus_noncore_defaults.copy())
     nexus_core.update(**deepcopy(nexus_core_defaults))
     nexus_noncore.update(**deepcopy(nexus_noncore_defaults))
-    #nexus_core_noncore.transfer_from(nexus_core,keys=list(nexus_core_noncore_defaults.keys()))
     for k in nexus_core_noncore_defaults.keys():
         nexus_core_noncore[k] = nexus_core[k]
 #end def restore_nexus_core_defaults

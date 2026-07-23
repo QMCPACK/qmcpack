@@ -51,7 +51,6 @@ from copy import deepcopy
 import numpy as np
 from numpy import pi
 from numpy.linalg import inv
-#from .developer import DevBase, obj, log, warn, error
 from .developer import DevBase, obj, log, warn, error
 from .unit_converter import convert
 from .periodic_table import Elements
@@ -283,7 +282,6 @@ class PwscfInputBase(DevBase):
 class Element(PwscfInputBase):
     name = None
     def add(self,**variables):
-        #self._set(**variables)
         self.update(**variables)
     #end def add
 
@@ -315,7 +313,6 @@ class Section(Element):
     #end if
 
     def assign(self,**variables):
-        #self.transfer_from(variables)
         self.update(**variables)
     #end def assign
 
@@ -450,7 +447,6 @@ class Section(Element):
                             index_map[index] = tuple(indlist)
                         #end if
                     #end for
-                    #index_map_inv = index_map.inverse()
                     index_map_inv = obj({v:k for k,v in index_map.items()})
                 #end if
 
@@ -1529,9 +1525,6 @@ class PwscfInput(SimulationInput):
         hubbard          = hubbard         ,         
         )
 
-    #element_types = obj()
-    #element_types.transfer_from(section_types)
-    #element_types.transfer_from(card_types)
     element_types = obj(**section_types)
     element_types.update(**card_types)
 
@@ -1708,7 +1701,6 @@ class PwscfInput(SimulationInput):
             if s.at_Gpoint():
                 self.k_points.specifier = 'gamma'
             elif s.at_Lpoint():
-                #self.k_points.set(
                 self.k_points.update(
                     specifier = 'automatic',
                     grid  = (1,1,1),
@@ -1811,7 +1803,6 @@ class PwscfInput(SimulationInput):
             if s.at_Gpoint():
                 self.k_points.specifier = 'gamma'
             elif s.at_Lpoint():
-                #self.k_points.set(
                 self.k_points.update(
                     specifier = 'automatic',
                     grid  = (1,1,1),
@@ -2076,7 +2067,6 @@ def generate_any_pwscf_input(**kwargs):
     # setup for k-point symmetry run
     #   ecutwfc is set to 1 so that pwscf will crash after initialization
     #   symmetrized k-points will still be written to log output
-    #ksymm_run = kwargs.delete_optional('ksymm_run',False)
     ksymm_run = kwargs.pop('ksymm_run',False)
     if ksymm_run:
         kwargs.ecutwfc    = 1
@@ -2114,10 +2104,6 @@ def generate_any_pwscf_input(**kwargs):
     #end if
 
     #copy certain keywords
-    #tot_magnetization = kwargs.get_optional('tot_magnetization',None)
-    #nspin             = kwargs.get_optional('nspin',None)
-    #nbnd              = kwargs.get_optional('nbnd',None)
-    #hubbard_u         = kwargs.get_optional('hubbard_u',None)
     tot_magnetization = kwargs.get('tot_magnetization',None)
     nspin             = kwargs.get('nspin',None)
     nbnd              = kwargs.get('nbnd',None)
@@ -2131,7 +2117,6 @@ def generate_any_pwscf_input(**kwargs):
     if has_pre72_keys + has_v72_keys > 1:
         error('Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72))
     #end if     
-    #occ               = kwargs.get_optional('occupations',None)
     occ               = kwargs.get('occupations',None)
     
     #make an empty input file
@@ -2143,7 +2128,6 @@ def generate_any_pwscf_input(**kwargs):
         keys = set(kwargs.keys()) & section_type.variables
         if len(keys)>0:
             kw = obj()
-            #kw.move_from(kwargs,keys)
             for k in keys:
                 if k in kwargs:
                     kw[k] = kwargs.pop(k)
@@ -2194,7 +2178,6 @@ def generate_any_pwscf_input(**kwargs):
         atom_species.append(element)
         pseudopotentials[element] = ppname
     #end for
-    #pw.atomic_species.set(
     pw.atomic_species.update(
         atoms            = list(sorted(atom_species)),
         pseudopotentials = pseudopotentials,
@@ -2326,7 +2309,6 @@ def generate_any_pwscf_input(**kwargs):
         pw.k_points.specifier = 'gamma'
     elif auto:
         pw.k_points.clear()
-        #pw.k_points.set(
         pw.k_points.update(
             specifier = 'automatic',
             grid      = kgrid,
@@ -2337,7 +2319,6 @@ def generate_any_pwscf_input(**kwargs):
         pw.k_points.specifier = 'gamma'
     elif (at_gamma or sys_gamma) and nogamma:
         pw.k_points.clear()
-        #pw.k_points.set(
         pw.k_points.update(
             specifier = 'automatic',
             grid      = (1,1,1),
@@ -2461,7 +2442,6 @@ def generate_scf_input(prefix       = 'pwscf',
     #end if
 
     pw = PwscfInput()
-    #pw.control.set(
     pw.control.update(
         calculation  = 'scf',
         prefix       = prefix,
@@ -2474,7 +2454,6 @@ def generate_scf_input(prefix       = 'pwscf',
         verbosity    = verbosity,
         wf_collect   = wf_collect
         )
-    #pw.system.set(
     pw.system.update(
         ibrav       = ibrav,
         ecutwfc     = ecut,
@@ -2492,7 +2471,6 @@ def generate_scf_input(prefix       = 'pwscf',
     #end if
     if occupations is not None:
         if occupations=='smearing':
-            #pw.system.set(
             pw.system.update(
                 occupations = occupations,
                 smearing    = smearing,
@@ -2502,7 +2480,6 @@ def generate_scf_input(prefix       = 'pwscf',
             pw.system.occupations = occupations
         #end if
     #end if
-    #pw.electrons.set(
     pw.electrons.update(
         electron_maxstep = electron_maxstep,
         conv_thr    = conv_thr,
@@ -2510,14 +2487,12 @@ def generate_scf_input(prefix       = 'pwscf',
         mixing_beta = mixing_beta,
         diagonalization = diagonalization,
         )
-    #pw.atomic_species.set(
     pw.atomic_species.update(
         atoms            = atoms,
         pseudopotentials = pseudopotentials
         )
 
     if noncolin or lspinorb:
-        #pw.system.set(
         pw.system.update(
             noncolin = noncolin or lspinorb,
             lspinorb = lspinorb
@@ -2602,7 +2577,6 @@ def generate_scf_input(prefix       = 'pwscf',
         ##end if
         if structure.at_Gpoint():
             pw.k_points.clear()
-            #pw.k_points.set(
             pw.k_points.update(
                 specifier = 'automatic',
                 grid  = (1,1,1),
@@ -2610,7 +2584,6 @@ def generate_scf_input(prefix       = 'pwscf',
                 )
         elif structure.at_Lpoint():
             pw.k_points.clear()
-            #pw.k_points.set(
             pw.k_points.update(
                 specifier = 'automatic',
                 grid  = (1,1,1),
@@ -2621,7 +2594,6 @@ def generate_scf_input(prefix       = 'pwscf',
 
     if kgrid is not None:
         pw.k_points.clear()
-        #pw.k_points.set(
         pw.k_points.update(
             specifier = 'automatic',
             grid     = kgrid,
@@ -2629,7 +2601,6 @@ def generate_scf_input(prefix       = 'pwscf',
             )
     elif system is None:
         pw.k_points.clear()
-        #pw.k_points.set(
         pw.k_points.update(
             specifier = 'automatic',
             grid     = (1,1,1),
@@ -2646,7 +2617,6 @@ def generate_scf_input(prefix       = 'pwscf',
 
 def generate_nscf_input(**kwargs):
     pw = generate_scf_input(**kwargs)
-    #pw.control.set(
     pw.control.update(
         calculation = 'nscf'
         )
@@ -2707,7 +2677,6 @@ def generate_relax_input(prefix       = 'pwscf',
     #end if
 
     pw = PwscfInput('ions')
-    #pw.control.set(
     pw.control.update(
         calculation  = 'relax',
         prefix       = prefix,
@@ -2720,7 +2689,6 @@ def generate_relax_input(prefix       = 'pwscf',
         verbosity    = verbosity,
         wf_collect   = wf_collect
         )
-    #pw.system.set(
     pw.system.update(
         ibrav       = 0,
         ecutwfc     = ecut,

@@ -683,7 +683,6 @@ class Convert4qmcInput(SimulationInput):
         self.update(**kwargs)
 
         # assign default values
-        #self.set_optional(**self.input_defaults)
         for k,v in self.input_defaults.items():
             if k not in self:
                 self[k] = v
@@ -1249,7 +1248,6 @@ class PyscfToAfqmcInput(SimulationInput):
         self.update(**kwargs)
 
         # assign default values
-        #self.set_optional(**self.input_defaults)
         for k,v in self.input_defaults.items():
             if k not in self:
                 self[k] = v

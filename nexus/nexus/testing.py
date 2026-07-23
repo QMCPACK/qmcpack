@@ -114,8 +114,6 @@ def object_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,
     diff1 = dict()
     diff2 = dict()
     if not bypass:
-        #o1 = o1._serial().__dict__
-        #o2 = o2._serial().__dict__
         o1 = dict_serialize(o1,dict_type=dict)
         o2 = dict_serialize(o2,dict_type=dict)
     #end if

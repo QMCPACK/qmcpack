@@ -208,7 +208,6 @@ class DefinedAttributeBase(DevBase):
                 sublevel_attributes.add(name)
             #end if
         #end for
-        #cls.class_set(
         d = dict(
             required_attributes = required_attributes,
             deepcopy_attributes = deepcopy_attributes,
@@ -262,7 +261,6 @@ class DefinedAttributeBase(DevBase):
         invalid     = value_names - attr_names
         if len(invalid)>0:
             v = obj()
-            #v.transfer_from(values,invalid)
             for k in invalid:
                 if k in values:
                     v[k] = values[k]
@@ -1250,7 +1248,6 @@ class Density(ObservableWithComponents):
             #end for
         else:
             species = list(rmax.keys())
-            #species_rmax.transfer_from(rmax)
             species_rmax.update(**rmax)
         #end if
         vlog('Constructing spherical grid for each species',n=1,time=True)
@@ -1532,7 +1529,6 @@ class StatFile(DevBase):
         #end for
         if isinstance(observables,str):
             if observables=='all':
-                #self.transfer_from(observable_groups)
                 self.update(**observable_groups)
             #end if
         else:

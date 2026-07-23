@@ -945,7 +945,6 @@ class QMCDensityProcessor(QDBase):
         options,files_in = parser.parse_args()
         
         QDBase.parser = parser
-        #QDBase.options.transfer_from(options.__dict__)
         QDBase.options.update(**options.__dict__)
         
         opt = self.options

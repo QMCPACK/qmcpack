@@ -156,7 +156,6 @@ class VXML(DevBase):
             if 'type' in self._attr:
                 del self._attr.type
             #end if
-            #self.transfer_from(self._attr)
             self.update(**self._attr)
         #end if
 
@@ -890,7 +889,6 @@ class VaspAnalyzer(SimulationAnalyzer):
                         elast = enum==emax
                         elec_step.read(ilast,elast,all=False)
                         if ilast and elast:
-                            #self.transfer_from(elec_step)
                             self.update(**elec_step)
                         #end if
                     #end for
@@ -900,4 +898,3 @@ class VaspAnalyzer(SimulationAnalyzer):
         self.ion_steps = ion_steps
     #end def analyze_outcar
 #end class VaspAnalyzer
-

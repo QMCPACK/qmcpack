@@ -46,7 +46,6 @@ from .fileio import TextFile
 from .xmlreader import readxml
 from .periodic_table import Elements
 from .unit_converter import convert
-#from .developer import DevBase, obj, unavailable, error
 from .developer import DevBase, obj, unavailable, log, error
 from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
@@ -1920,7 +1919,6 @@ class GaussianPP(SemilocalPP):
         else:
             core = Elements(Zcore).symbol
         #end if
-        #self.set(
         self.update(
             core    = core,
             Zval    = Zval,
@@ -2147,7 +2145,6 @@ class GaussianPP(SemilocalPP):
         if l==self.local or l is None:
             v += -self.Zval
         #end if
-        #for g in vcomp:
         for g in vcomp.values():
             if g.rpow==1:
                 v += g.coeff * np.exp(-g.expon*r**2)

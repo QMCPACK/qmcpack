@@ -254,7 +254,6 @@ $calculation
         if calculation is not None and 'calculation' not in self.values:
 
             calc = deepcopy(calculation) # make a local copy
-            #calc.set_optional(
             d = dict(
                 method       = 'RKS',
                 df_fitting   = True,

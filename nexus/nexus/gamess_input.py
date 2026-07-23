@@ -1005,7 +1005,6 @@ def generate_any_gamess_input(**kwargs):
     pskw = deepcopy(ps_defaults)
     ps_overlap = ps_inputs & kwset
     if len(ps_overlap)>0:
-        #pskw.move_from(kwargs,ps_overlap)
         for k in ps_overlap:
             if k in kwargs:
                 pskw[k] = kwargs.pop(k)
@@ -1076,7 +1075,6 @@ def generate_any_gamess_input(**kwargs):
         keywords = group_type.keywords & set(kwrem.keys())
         if len(keywords)>0:
             group_info = obj()
-            #group_info.move_from(kwrem,keywords)
             for k in keywords:
                 if k in kwrem:
                     group_info[k] = kwrem.pop(k)
@@ -1096,7 +1094,6 @@ def generate_any_gamess_input(**kwargs):
             gi.contrl = ContrlGroup()
         #end if
         # allow user override of charge and multiplicity from physical system
-        #gi.contrl.set_optional(
         d = dict(
             icharg = system.net_charge,
             mult   = system.net_spin+1,
@@ -1305,7 +1302,6 @@ def check_keyspec_groups():
 #end def check_keyspec_groups
 
 #check_keyspec_groups()  # uncomment this to check keyword spec group self-consistency
-
 
 
 

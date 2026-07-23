@@ -396,7 +396,6 @@ class QuantumPackageInput(SimulationInput):
 
     def extract_added_keys(self):
         extra = obj()
-        #extra.move_from(self,QuantumPackageInput.added_keys)
         added_keys = QuantumPackageInput.added_keys
         for k in added_keys:
             extra[k] = self[k]
@@ -406,7 +405,6 @@ class QuantumPackageInput(SimulationInput):
 
 
     def restore_added_keys(self,extra):
-        #extra.move_to(self,QuantumPackageInput.added_keys)
         for k in QuantumPackageInput.added_keys:
             self[k] = extra[k]
             del extra[k]
@@ -682,20 +680,17 @@ def generate_quantum_package_input(**kwargs):
     if kw.defaults not in qp_defaults:
         error('cannot generate input\nrequested invalid default set\ndefault set requested: {0}\nvalid options are: {1}'.format(kw.defaults,sorted(qp_defaults.keys())))
     #end if
-    #kw.set_optional(**qp_defaults[kw.defaults])
     for k,v in qp_defaults[kw.defaults].items():
         if k not in kw:
             kw[k] = v
 
     # check for required variables
-    #req_missing = kw.check_required(added_required,exit=False)
     req_missing = set(added_required)-set(kw.keys())
     if len(req_missing)>0:
         error('cannot generate input\nrequired variables are missing\nmissing variables: {0}\nplease supply values for these variables via generate_quantum_package'.format(sorted(req_missing)))
     #end if
 
     # check types of added variables
-    #name,vtype = kw.check_types_optional(added_types,exit=False)
     name,vtype = None,None
     for k,t in added_types.items():
         if k in kw and not isinstance(kw[k],t):
@@ -707,7 +702,6 @@ def generate_quantum_package_input(**kwargs):
     #end if
 
     # separate run inputs from input file variables
-    #run_kw = kw.extract_optional(run_inputs)
     run_kw = obj()
     for k in run_inputs:
         if k in kw:
@@ -722,7 +716,6 @@ def generate_quantum_package_input(**kwargs):
     qpi.run_control.update(**run_kw)
 
     # separate generation inputs from input file variables
-    #gen_kw = kw.extract_optional(gen_inputs)
     gen_kw = obj()
     for k in gen_inputs:
         if k in kw:

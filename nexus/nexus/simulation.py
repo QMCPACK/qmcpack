@@ -73,7 +73,6 @@ from pathlib import Path
 from string import Template
 from subprocess import Popen
 import tempfile
-#from .developer import obj, unavailable, DevBase
 from .developer import DevBase, obj, error, unavailable
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
@@ -228,7 +227,6 @@ class SimulationImage(NexusCore):
 
     def save_image(self,sim,imagefile):
         self.clear()
-        #self.transfer_from(sim,SimulationImage.save_fields)
         for k in SimulationImage.save_fields:
             self[k] = sim[k]
         self.save(imagefile)
@@ -238,7 +236,6 @@ class SimulationImage(NexusCore):
     def load_image(self,sim,imagefile):
         self.clear()
         self.load(imagefile)
-        #self.transfer_to(sim,SimulationImage.load_fields)
         for k in SimulationImage.save_fields:
             sim[k] = self[k]
         self.clear()
@@ -309,8 +306,6 @@ class Simulation(NexusCore):
         inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)    
         sim_args = obj()
         inp_args = obj()
-        #sim_args.transfer_from(kwargs,sim_kw)
-        #inp_args.transfer_from(kwargs,inp_kw)
         for k in sim_kw:
             sim_args[k] = kwargs[k]
         for k in inp_kw:
@@ -1638,7 +1633,6 @@ class SimulationInputTemplateDev(SimulationInput):
         if len(invalid)>0:
             self.error('attempted to assign invalid keywords\ninvalid keywords: {0}\nvalid options are: {1}'.format(sorted(invalid),sorted(self.keywords)))
         #end if
-        #self.values.set(**values)
         self.values.update(**values)
     #end def assign
 

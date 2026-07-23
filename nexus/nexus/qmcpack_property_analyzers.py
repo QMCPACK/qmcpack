@@ -207,15 +207,15 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
         if info.load_jastrow:
             self.load_jastrow_data()
         elif 'filepath' in info:
-            #try:
-            qxml = QmcpackInput(info.filepath)
-            wavefunction = qxml.get('wavefunction')
-            wavefunction = wavefunction.get_single('psi0')
-            info.wfn_xml = wavefunction
-            #except:
-            #    info.wfn_xml = None
-            #    info.fail = True
-            ##end try
+            try:
+                qxml = QmcpackInput(info.filepath)
+                wavefunction = qxml.get('wavefunction')
+                wavefunction = wavefunction.get_single('psi0')
+                info.wfn_xml = wavefunction
+            except:
+                info.wfn_xml = None
+                info.fail = True
+            #end try
         #end if
         if not info.load_jastrow and not info.fail:
             info.wfn_xml.pluralize()
@@ -277,7 +277,6 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
             self.warn('Jastrow read failed, some data will not be available')
             self.info.fail = True
         #end try
-        #self._transfer_from(jastrows)
         self.update(**jastrows)
     #end def analyze_local
 
@@ -341,7 +340,6 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
     #end def plot_jastrows
 
 #end class WavefunctionAnalyzer
-
 
 
 

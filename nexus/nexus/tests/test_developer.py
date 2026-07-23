@@ -370,8 +370,6 @@ def test_dictlike_individual():
     check_dictlike(
         obj,
         check_repr_str = False, # always here
-        #check_iter     = False, # remove when dict-iter is restored
-        #check_copy     = False, # remove when dict-copy is restored
         )
 #end def test_dictlike_individual
 

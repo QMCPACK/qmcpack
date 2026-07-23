@@ -82,7 +82,6 @@ Module contents
 
 import os
 from copy import deepcopy
-#from .developer import DevBase, obj, error, unavailable
 from .developer import DevBase, obj, error, unavailable
 from .fileio import StandardFile,XsfFile
 from . import numpy_extensions as npe

@@ -18,7 +18,6 @@
 
 import time
 from . import memory
-#from .developer import obj, error
 from .developer import obj, error
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
 from .simulation import Simulation
@@ -175,7 +174,6 @@ class ProjectManager(NexusCore):
                 filespace = dict()
                 for sim in simlist:
                     if not sim.allow_overlapping_files:
-                        #files = sim.list('infile','outfile','errfile')
                         files = [sim[k] for k in ('infile','outfile','errfile')]
                         for f in files:
                             if f not in filespace:
@@ -308,7 +306,6 @@ class ProjectManager(NexusCore):
         
     def status_line(self,sim,extra=''):
         indicators = ('setup','sent_files','submitted','finished','got_output','analyzed')
-        #stats = sim.tuple(*indicators)
         stats = tuple([sim[k] for k in indicators])
         status = ''
         for stat in stats:

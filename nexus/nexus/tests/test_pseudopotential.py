@@ -166,7 +166,6 @@ def test_ppset():
         qmcpack = ['C.BFD.xml'],
         )
 
-    #o = ppset.to_obj()
     o = to_obj(ppset)
     assert(object_eq(o,ppset_ref))
 

@@ -3350,22 +3350,11 @@ def generate_any_rmg_input(**kwargs):
     # set default values
     defaults = kwargs.pop('defaults','basic')
     kw = obj(**kwargs)
-    #kw.set_optional(generate_any_defaults[defaults])
     for k,v in generate_any_defaults[defaults].items():
         if k not in kw:
             kw[k] = v
 
     # extract keywords not appearing in RMG input file
-    #text            = kw.delete_optional('text'           , None   )
-    #wf_grid_spacing = kw.delete_optional('wf_grid_spacing', None   )
-    #pseudos         = kw.delete_optional('pseudos'        , None   )
-    #system          = kw.delete_optional('system'         , None   )
-    #copy_system     = kw.delete_optional('copy_system'    , True   )
-    #use_folded      = kw.delete_optional('use_folded'     , False  )
-    #virtual_frac    = kw.delete_optional('virtual_frac'   , None   )
-    #spin_polarized  = kw.delete_optional('spin_polarized' , None   )
-    #default_units   = kw.delete_optional('default_units'  , 'bohr' )
-
     text            = kw.pop('text'           , None   )
     wf_grid_spacing = kw.pop('wf_grid_spacing', None   )
     pseudos         = kw.pop('pseudos'        , None   )

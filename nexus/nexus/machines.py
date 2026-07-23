@@ -51,7 +51,6 @@ from socket import gethostname
 import subprocess
 from subprocess import Popen, CalledProcessError
 import numpy as np
-#from .developer import DevBase, obj, warn
 from .developer import DevBase, obj, error, warn
 from .nexus_base import NexusCore, nexus_core
 from .execute import execute
@@ -285,23 +284,11 @@ class Job(NexusCore):
         self.init_info = deepcopy(kw)
 
         # set defaults
-        #kw.set_optional(**job_defaults)
         for k,v in job_defaults.items():
             if k not in kw:
                 kw[k] = v
 
         # extract keywords not assigned
-        #app          = kw.delete('app')
-        #machine      = kw.delete('machine')
-        #options      = kw.delete('options')
-        #app_flags    = kw.delete('app_flags')
-        #app_options  = kw.delete('app_options')
-        #run_options  = kw.delete('run_options')
-        #sub_options  = kw.delete('sub_options')
-        #env          = kw.delete('env')
-        #fake         = kw.delete('fake')
-        #skip_machine = kw.delete('skip_machine')
-
         app          = kw.pop('app')
         machine      = kw.pop('machine')
         options      = kw.pop('options')
@@ -3687,7 +3674,6 @@ class Summit(Supercomputer):
                 pprs  = ppn//resource_sets_per_node
                 gpurs = 1
             #end if
-            #opt.set(
             data = dict(
                 resource_sets= '-n {0}'.format(nrs),
                 rs_per_node  = '-r {0}'.format(resource_sets_per_node),
@@ -4711,5 +4697,4 @@ get_machine      = Machine.get
 
 #rename Job with lowercase
 job=Job
-
 

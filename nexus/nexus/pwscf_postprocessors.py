@@ -107,7 +107,6 @@
 import os
 from .fileio import TextFile
 from .simulation import Simulation,SimulationInput,SimulationAnalyzer,NullSimulationAnalyzer
-#from .developer import DevBase, obj
 from .developer import DevBase, obj
 
 
