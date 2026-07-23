@@ -41,7 +41,7 @@
 
 
 import numpy as np
-from .developer import DevBase, obj
+from .developer import DevBase, obj, error
 from .hdfreader import HDFgroup
 from .numerics import surface_normals
 
@@ -177,7 +177,7 @@ class QAobject(QAobj_base):
             allowed.sort()
             invalid = list(invalid)
             invalid.sort()
-            cls.class_error('attempted to set unknown variables\n  unknown variables: {0}\n  valid options are: {1}'.format(invalid,allowed))
+            error('attempted to set unknown variables\n  unknown variables: {0}\n  valid options are: {1}'.format(invalid,allowed))
         #end if
         for k,v in kwargs.items():
             setattr(QAobj_base,k,v)

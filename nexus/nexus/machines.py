@@ -52,7 +52,7 @@ import subprocess
 from subprocess import Popen, CalledProcessError
 import numpy as np
 #from .developer import DevBase, obj, warn
-from .developer import DevBase, obj, warn
+from .developer import DevBase, obj, error, warn
 from .nexus_base import NexusCore, nexus_core
 from .execute import execute
 from .utilities import path_string
@@ -813,16 +813,16 @@ class Machine(NexusCore):
     @staticmethod
     def add(machine):
         if not isinstance(machine,Machine):
-            Machine.class_error('attempted to add non-machine instance')
+            error('attempted to add non-machine instance')
         #end if
         if 'name' not in machine:
-            Machine.class_error('attempted to add a machine without a name')
+            error('attempted to add a machine without a name')
         #end if
         name = machine.name
         if name not in Machine.machines:
             Machine.machines[name] = machine
         else:
-            Machine.class_error('attempted to create machine {0}, but it already exists'.format(name))
+            error('attempted to create machine {0}, but it already exists'.format(name))
         #end if
     #end def add
 
@@ -832,13 +832,13 @@ class Machine(NexusCore):
         if isinstance(machine_name,str):
             machine_name = machine_name.lower()
         else:
-            Machine.class_error('machine name must be a string, you provided a '+machine_name.__class__.__name__)
+            error('machine name must be a string, you provided a '+machine_name.__class__.__name__)
         #end if
         if Machine.exists(machine_name):
             machine = Machine.machines[machine_name]
         else:
             machs = sorted(Machine.machines.keys())
-            Machine.class_error('attempted to get machine '+machine_name+', but it is unknown\nknown options are '+str(machs))
+            error('attempted to get machine '+machine_name+', but it is unknown\nknown options are '+str(machs))
         #end if
         return machine
     #end def get
@@ -4711,6 +4711,5 @@ get_machine      = Machine.get
 
 #rename Job with lowercase
 job=Job
-
 
 

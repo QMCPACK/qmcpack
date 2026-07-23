@@ -1395,7 +1395,7 @@ class Qmcpack(Simulation):
                                     bands[bnum] = vb
                                 #end if
                             else:
-                                QmcpackInput.class_error('{0} in excitation has the wrong formatting'.format(b))
+                                error('{0} in excitation has the wrong formatting'.format(b))
                             #end if
                         #end for
                         band_1, band_2 = bands
@@ -1429,10 +1429,10 @@ class Qmcpack(Simulation):
                                 #end if
                             #end for
                             if not found_k1 or not found_k2:
-                                QmcpackInput.class_error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
+                                error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
                             #end if
                         else:
-                            QmcpackInput.class_error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
+                            error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
                         #end if
 
                         tw1,bnd1 = (k_1,band_1)
@@ -1828,7 +1828,7 @@ def generate_cusp_correction(**kwargs):
 
     wf = input.get('wavefunction')
     if 'determinantset' not in wf:
-        Qmcpack.class_error('wavefunction does not have determinantset, cannot create cusp correction','generate_cusp_correction')
+        error('wavefunction does not have determinantset, cannot create cusp correction','generate_cusp_correction')
     #end if
     wf.determinantset.cuspcorrection = True
 

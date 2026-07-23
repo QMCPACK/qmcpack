@@ -484,7 +484,7 @@ class VKeywordFile(VFile):
             msg += '\nall known names:\n  {0}\n'.format(sorted(cls.keywords))
         #end if
         if len(msg)>0:
-            cls.class_error(msg)
+            error(msg)
         #end if
     #end def check_consistency
 
@@ -1728,7 +1728,7 @@ def generate_vasp_input(**kwargs):
     if input_type=='general' or input_type=='generic':
         vi = generate_any_vasp_input(**kwargs)
     else:
-        VaspInput.class_error('input_type {0} is unrecognized\nvalid options are: general'.format(input_type))
+        error('input_type {0} is unrecognized\nvalid options are: general'.format(input_type))
     #end if
     return vi
 #end def generate_vasp_input
@@ -1792,7 +1792,7 @@ def generate_any_vasp_input(**kwargs):
 
     # check for leftover keywords
     if len(kwargs)>0:
-        VaspInput.class_error('unrecognized keywords: {0}'.format(sorted(kwargs.keys())),'generate_vasp_input')
+        error('unrecognized keywords: {0}'.format(sorted(kwargs.keys())),'generate_vasp_input')
     #end if
 
     # incorporate system information
@@ -1840,7 +1840,7 @@ def generate_any_vasp_input(**kwargs):
             kp.kinsert    = vf.kinsert
             kp.kendpoints = vf.kendpoints
         else:
-            VaspInput.class_error('could not set kpoints from user inputs','generate_vasp_input')
+            error('could not set kpoints from user inputs','generate_vasp_input')
         #end if
     #end if
 

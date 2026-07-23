@@ -638,6 +638,8 @@ def test_obj_legacy():
 
 def test_developer_tools_devbase(tmp_path):
     """Exercise the standalone DevBase implementation in developer_tools."""
+    from copy import deepcopy
+
     from ..developer_tools import DevBase
 
     class DerivedDevBase(DevBase):
@@ -674,25 +676,32 @@ def test_developer_tools_devbase(tmp_path):
     assert(isinstance(str(nested),str))
     assert('inner' in repr(nested) and 'plain' in str(nested))
 
-    # Protected dictionary operations retain the derived type and normal
-    # mapping semantics.
+    # Dictionary operations retain the derived type and normal mapping
+    # semantics without relying on removed convenience functions.
     shared = []
     protected = DerivedDevBase(a=1,b=shared)
-    copied = protected._copy()
+    copied = deepcopy(protected)
     assert(type(copied) is DerivedDevBase and copied is not protected)
     assert(dict(copied._items())==dict(protected._items()))
-    assert(copied.b is shared)
+    assert(copied.b is not shared and copied.b==shared)
     assert(set(protected._keys())=={'a','b'})
     assert(list(protected._values())==[1,shared])
-    assert(protected._get('a')==1)
-    assert(protected._get('missing',7)==7)
-    assert(protected._setdefault('c',3)==3 and protected.c==3)
+    assert(protected.a==1)
+    assert('missing' not in protected)
+    if 'c' not in protected:
+        protected.c = 3
+    #end if
+    assert(protected.c==3)
     assert(protected._update(d=4) is None and protected.d==4)
-    assert(protected._pop('d')==4 and 'd' not in protected)
-    key,popped = protected._popitem()
+    popped = protected.d
+    del protected.d
+    assert(popped==4 and 'd' not in protected)
+    key = next(iter(protected.keys()))
+    popped = protected[key]
+    del protected[key]
     assert(key not in protected and popped is not None)
 
-    fromkeys = protected._fromkeys(('x','y'),shared)
+    fromkeys = DerivedDevBase({key:shared for key in ('x','y')})
     assert(type(fromkeys) is DerivedDevBase)
     assert(fromkeys.x is shared and fromkeys.y is shared)
     protected._clear()

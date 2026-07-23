@@ -3250,16 +3250,16 @@ class RmgInput(SimulationInput):
 
 
     def return_structure(self,units='B'):
-        axes       = self.get('lattice_vector',None)
-        axes_unit  = self.get('lattice_units','bohr')
-        lattice    = self.get('bravais_lattice_type','orthorhombic primitive')
-        a          = self.get('a_length',0.0)
-        b          = self.get('b_length',0.0)
-        c          = self.get('c_length',0.0)
+        axes       = self.lattice_vector        if 'lattice_vector'        in self else None
+        axes_unit  = self.lattice_units         if 'lattice_units'         in self else 'bohr'
+        lattice    = self.bravais_lattice_type  if 'bravais_lattice_type' in self else 'orthorhombic primitive'
+        a          = self.a_length              if 'a_length'              in self else 0.0
+        b          = self.b_length              if 'b_length'              in self else 0.0
+        c          = self.c_length              if 'c_length'              in self else 0.0
 
-        coord_type = self.get('atomic_coordinate_type','absolute')
-        coord_unit = self.get('crds_units','bohr')
-        atom_data  = self.get('atoms',obj())
+        coord_type = self.atomic_coordinate_type if 'atomic_coordinate_type' in self else 'absolute'
+        coord_unit = self.crds_units             if 'crds_units'             in self else 'bohr'
+        atom_data  = self.atoms                  if 'atoms'                  in self else obj()
         atoms      = atom_data.get('atoms',None)
         positions  = atom_data.get('positions',None)
 
@@ -3327,7 +3327,7 @@ def generate_rmg_input(**kwargs):
     if selector=='generic':
         return generate_any_rmg_input(**kwargs)
     else:
-        RmgInput.class_error('Input type "{}" has not been implemented for RMG input generation.'.format(selector))
+        error('Input type "{}" has not been implemented for RMG input generation.'.format(selector))
     #end if
 #end def generate_rmg_input
 

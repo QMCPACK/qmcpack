@@ -5722,7 +5722,7 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
             sc.lr_handler = lr_handler
         #end if
         if not axes_valid:
-            QmcpackInput.class_error('invalid axes in generate_simulationcell\nargument system must be provided\naxes of the structure must have non-zero dimension')
+            error('invalid axes in generate_simulationcell\nargument system must be provided\naxes of the structure must have non-zero dimension')
         #end if
     #end if
     if axes_valid:
@@ -5742,7 +5742,7 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
                 npe.reshape_inplace(axes, fs.axes.shape)
                 axes = np.dot(structure.tmatrix,axes)
                 if np.abs(axes-structure.axes).sum()>1e-5:
-                    QmcpackInput.class_error('in generate_simulationcell\nsupercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(structure.axes)+'\nfolded axes tiled:\n'+str(axes))
+                    error('in generate_simulationcell\nsupercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(structure.axes)+'\nfolded axes tiled:\n'+str(axes))
                 #end if
             else:
                 axes = np.array(pwscf_array_string(structure.axes).split(),dtype=float)
@@ -5768,7 +5768,7 @@ def generate_particlesets(electrons   = 'e',
                           hybrid_lmax = None,
                           ):
     if system is None:
-        QmcpackInput.class_error('generate_particlesets argument system must not be None')
+        error('generate_particlesets argument system must not be None')
     #end if
 
     ename = electrons
@@ -5834,10 +5834,10 @@ def generate_particlesets(electrons   = 'e',
                 )
             for hvar,hval in hybrid_vars:
                 if not isinstance(hval,obj):
-                    QmcpackInput.class_error('generate_particlesets argument "{0}" must be of type obj\nyou provided type: {1}\nwith value: {2}'.format(hvar,hval.__class__.__name__,hval))
+                    error('generate_particlesets argument "{0}" must be of type obj\nyou provided type: {1}\nwith value: {2}'.format(hvar,hval.__class__.__name__,hval))
                 #end if
                 if set(hval.keys())!=set(ion_species):
-                    QmcpackInput.class_error('generate_particsets argument "{0}" is incorrect\none entry must be present for each atomic species\natomic species present in the simulation: {1}\nvalues provided for the following species: {2}'.format(hvar,sorted(ion_species),sorted(hval.keys())))
+                    error('generate_particsets argument "{0}" is incorrect\none entry must be present for each atomic species\natomic species present in the simulation: {1}\nvalues provided for the following species: {2}'.format(hvar,sorted(ion_species),sorted(hval.keys())))
                 #end if
             #end for
         #end if
@@ -5884,7 +5884,7 @@ def generate_sposets(type           = None,
                      ):
     ndn = ndown
     if type is None:
-        QmcpackInput.class_error('cannot generate sposets\n  type of sposet not specified')
+        error('cannot generate sposets\n  type of sposet not specified')
     #end if
     if sposets is not None:
         for spo in sposets:
@@ -5893,7 +5893,7 @@ def generate_sposets(type           = None,
     elif occupation=='slater_ground':
         have_counts = not (nup is None or ndown is None)
         if system is None and not have_counts:
-            QmcpackInput.class_error('cannot generate sposets in occupation mode {0}\n  arguments nup & ndown or system must be given to generate_sposets'.format(occupation))
+            error('cannot generate sposets in occupation mode {0}\n  arguments nup & ndown or system must be given to generate_sposets'.format(occupation))
         elif not have_counts:
             nup  = system.n_up
             ndn  = system.n_down
@@ -5928,7 +5928,7 @@ def generate_sposets(type           = None,
             #end for
         #end if
     else:
-        QmcpackInput.class_error('cannot generate sposets in occupation mode {0}\n  generate_sposets currently supports the following occupation modes:\n  slater_ground'.format(occupation))
+        error('cannot generate sposets in occupation mode {0}\n  generate_sposets currently supports the following occupation modes:\n  slater_ground'.format(occupation))
     #end if
     if rotate:
         rotated_sposets = []
@@ -5948,7 +5948,7 @@ def generate_sposet_builder(type,*args,**kwargs):
     elif type=='heg':
         return generate_heg_builder(*args,**kwargs)
     else:
-        QmcpackInput.class_error('cannot generate sposet_builder\n  sposet_builder of type {0} is unrecognized'.format(type))
+        error('cannot generate sposet_builder\n  sposet_builder of type {0} is unrecognized'.format(type))
     #end if
 #end def generate_sposet_builder
 
@@ -6141,7 +6141,7 @@ def generate_determinantset(up             = 'u',
                             rotate         = False,
                             ):
     if system is None:
-        QmcpackInput.class_error('generate_determinantset argument system must not be None')
+        error('generate_determinantset argument system must not be None')
     #end if
     nup  = system.n_up
     ndn  = system.n_down
@@ -6297,7 +6297,7 @@ def check_excitation_type(excitation):
         msg += 'You Provided: {0}'
         msg = msg.format(excitation)
 
-        QmcpackInput.class_error(msg)
+        error(msg)
 
     #end if
 
@@ -6321,7 +6321,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 spinor         = None,
                                 ):
     if system is None:
-        QmcpackInput.class_error('generate_determinantset argument system must not be None')
+        error('generate_determinantset argument system must not be None')
     #end if
     down_spin = 0
     if spin_polarized:
@@ -6412,7 +6412,7 @@ def generate_determinantset_old(type           = 'bspline',
             # If no, then exit. Currently, singlet and triplet 
             # excitations are assumed to have ms = 0.
             if system.n_down != system.n_up:
-                QmcpackInput.class_error('The \'singlet\' and \'triplet\' excitation types currently assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}.\nWe plan to expand to additional cases in the future.'.format(system.n_up,system.n_down))
+                error('The \'singlet\' and \'triplet\' excitation types currently assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use \'up\' or \'down\' types.\nFor your system: Nup={} and Ndown={}.\nWe plan to expand to additional cases in the future.'.format(system.n_up,system.n_down))
             #end if
 
             coeff_sign = ''
@@ -6514,9 +6514,9 @@ def generate_determinantset_old(type           = 'bspline',
                 dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nup-exc_orbs[0])+'0'*(exc_orbs[1]-nup-1)+'1'
 
             elif exc_type == exc_types.kpoint: 
-                QmcpackInput.class_error('{} excitation is not yet available for kpoint type'.format(exc1))
+                error('{} excitation is not yet available for kpoint type'.format(exc1))
             else: 
-                QmcpackInput.class_error('{} excitation is not yet available for band type'.format(exc1))
+                error('{} excitation is not yet available for band type'.format(exc1))
             #end if
 
             return dset
@@ -6534,7 +6534,7 @@ def generate_determinantset_old(type           = 'bspline',
             if len(excitation) == 4:
                 k_1, band_1, k_2, band_2 = excitation
             else:
-                QmcpackInput.class_error('excitation with vb-cb band format works only with special k-points')
+                error('excitation with vb-cb band format works only with special k-points')
             #end if
             
             vb = int(sdet.size / np.abs(np.linalg.det(tilematrix))) -1  # Separate for each spin channel
@@ -6564,7 +6564,7 @@ def generate_determinantset_old(type           = 'bspline',
                         bands[bnum] = vb
                     #end if
                 else:
-                    QmcpackInput.class_error('{0} in excitation has the wrong formatting'.format(b))
+                    error('{0} in excitation has the wrong formatting'.format(b))
                 #end if
             #end for
             band_1, band_2 = bands
@@ -6597,10 +6597,10 @@ def generate_determinantset_old(type           = 'bspline',
                     #end if
                 #end for
                 if not found_k1 or not found_k2:
-                    QmcpackInput.class_error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
+                    error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
                 #end if
             else:
-                QmcpackInput.class_error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
+                error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
             #end if
 
             #Write everything in band (ti,bi) format
@@ -6643,7 +6643,7 @@ def generate_hamiltonian(name         = 'h0',
                          interactions = 'default',
                          ):
     if system is None:
-        QmcpackInput.class_error('generate_hamiltonian argument system must not be None')
+        error('generate_hamiltonian argument system must not be None')
     #end if
 
     ename   = electrons
@@ -6656,7 +6656,7 @@ def generate_hamiltonian(name         = 'h0',
     del wavefunction
 
     if system.n_elec==0:
-        QmcpackInput.class_error('cannot generate hamiltonian, no electrons present')
+        error('cannot generate hamiltonian, no electrons present')
     #end if
 
     pairpots = []
@@ -6669,7 +6669,7 @@ def generate_hamiltonian(name         = 'h0',
                 pairpots.append(coulomb(name='ElecIon',type='coulomb',source=iname,target=ename))
             else:
                 if ppfiles is None or len(ppfiles)==0:
-                    QmcpackInput.class_error('cannot generate hamiltonian\n  system is pseudized, but no pseudopotentials have been provided\n  please provide pseudopotential files via the pseudos keyword')
+                    error('cannot generate hamiltonian\n  system is pseudized, but no pseudopotentials have been provided\n  please provide pseudopotential files via the pseudos keyword')
                 #end if
                 if isinstance(ppfiles,list):
                     pplist = ppfiles
@@ -6695,7 +6695,7 @@ def generate_hamiltonian(name         = 'h0',
                     elif element.symbol in ppfiles:
                         ppfile = ppfiles[element.symbol]
                     else:
-                        QmcpackInput.class_error('pseudos provided to generate_hamiltonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion.name,str(ppfiles)))
+                        error('pseudos provided to generate_hamiltonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion.name,str(ppfiles)))
                     #end if
                     pseudos.add(pseudo(elementtype=ion,href=ppfile))
                 #end for
@@ -6737,10 +6737,10 @@ def generate_hamiltonian(name         = 'h0',
                 elif estname=='pressure':
                     est = pressure(type='Pressure')
                 else:
-                    QmcpackInput.class_error('estimator '+estimator+' has not yet been enabled in generate_basic_input')
+                    error('estimator '+estimator+' has not yet been enabled in generate_basic_input')
                 #end if
             elif not isinstance(estimator,QIxml):
-                QmcpackInput.class_error('generate_hamiltonian received an invalid estimator\n  an estimator must either be a name or a QIxml object\n  inputted estimator type: {0}\n  inputted estimator contents: {1}'.format(estimator.__class__.__name__,estimator))
+                error('generate_hamiltonian received an invalid estimator\n  an estimator must either be a name or a QIxml object\n  inputted estimator type: {0}\n  inputted estimator contents: {1}'.format(estimator.__class__.__name__,estimator))
             elif isinstance(estimator,energydensity):
                 set_optional(est,dict(
                     type = 'EnergyDensity',
@@ -6799,10 +6799,10 @@ def generate_estimators_batched(estimators,
             #if estname=='chiesa':
             #    est = chiesa(name='KEcorr',type='chiesa',source=ename,psi=wfname)
             #else:
-            QmcpackInput.class_error('estimator '+estimator+' has not yet been enabled in generate_estimators')
+            error('estimator '+estimator+' has not yet been enabled in generate_estimators')
             ##end if
         elif not isinstance(estimator,QIxml):
-                QmcpackInput.class_error('generate_estimators received an invalid estimator\n  an estimator must either be a name or a QIxml object\n  inputted estimator type: {0}\n  inputted estimator contents: {1}'.format(estimator.__class__.__name__,estimator))
+                error('generate_estimators received an invalid estimator\n  an estimator must either be a name or a QIxml object\n  inputted estimator type: {0}\n  inputted estimator contents: {1}'.format(estimator.__class__.__name__,estimator))
         elif isinstance(estimator,momentum):
             estimator.type = 'MomentumDistribution'
         elif isinstance(estimator,onebodydensitymatrices):
@@ -6837,7 +6837,7 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
             size = spo.index_max
             del spo.index_max
         else:
-            QmcpackInput.class_error('cannot generate estimator dm1b\n  basis sposet provided does not have a "size" attribute')
+            error('cannot generate estimator dm1b\n  basis sposet provided does not have a "size" attribute')
         #end if
         try:
             # get sposet from wavefunction
@@ -6868,15 +6868,15 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
         except Exception as e:
             msg = 'cannot generate estimator dm1b\n  '
             if wf is None:
-                QmcpackInput.class_error(msg+'wavefunction {0} not found'.format(wfname))
+                error(msg+'wavefunction {0} not found'.format(wfname))
             elif dets is None or det is None:
-                QmcpackInput.class_error(msg+'determinant not found')
+                error(msg+'determinant not found')
             elif builders is None:
-                QmcpackInput.class_error(msg+'sposet_builders not found')
+                error(msg+'sposet_builders not found')
             elif rspo is None:
-                QmcpackInput.class_error(msg+'sposet {0} not found'.format(rsponame))
+                error(msg+'sposet {0} not found'.format(rsponame))
             else:
-                QmcpackInput.class_error(msg+'cause of failure could not be determined\n  see the following error message:\n{0}'.format(e))
+                error(msg+'cause of failure could not be determined\n  see the following error message:\n{0}'.format(e))
             #end if
         #end if
     #end if
@@ -6885,7 +6885,7 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
         spo = dm.basis
         del dm.basis
         if 'type' not in spo:
-            QmcpackInput.class_error('cannot generate estimator dm1b\n  basis sposet provided does not have a "type" attribute')
+            error('cannot generate estimator dm1b\n  basis sposet provided does not have a "type" attribute')
         #end if
         if 'name' not in spo:
             spo.name = 'spo_dm'
@@ -6931,7 +6931,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
         #end if
         jin.append(jterm)
         if len(jin)==0:
-            QmcpackInput.class_error('jastrow generation requested but no orders specified (1,2,and/or 3)')
+            error('jastrow generation requested but no orders specified (1,2,and/or 3)')
         #end if
     else:
         jset = set(['J1','J2','J3'])
@@ -6941,11 +6941,11 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
             elif isinstance(jastrow,dict) or isinstance(jastrow,obj):
                 jdict = dict(**jastrow)
                 if 'type' not in jastrow:
-                    QmcpackInput.class_error("could not determine jastrow type from input\n  field 'type' must be 'J1', 'J2', or 'J3'\n  object you provided: "+str(jastrow))
+                    error("could not determine jastrow type from input\n  field 'type' must be 'J1', 'J2', or 'J3'\n  object you provided: "+str(jastrow))
                 #end if
                 jtype = jdict['type']
                 if jtype not in jset:
-                    QmcpackInput.class_error("invalid jastrow type provided\n  field 'type' must be 'J1', 'J2', or 'J3'\n  object you provided: "+str(jdict))
+                    error("invalid jastrow type provided\n  field 'type' must be 'J1', 'J2', or 'J3'\n  object you provided: "+str(jdict))
                 #end if
                 del jdict['type']
                 if 'system' in jdict:
@@ -6963,7 +6963,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
             elif jastrow[0] in jset:
                 jin.append(generate_jastrow(jastrow,system=system))
             else:
-                QmcpackInput.class_error('starting jastrow unrecognized:\n  '+str(jastrow))
+                error('starting jastrow unrecognized:\n  '+str(jastrow))
             #end if
         #end for
     #end if
@@ -7008,7 +7008,7 @@ def generate_jastrows_alt(
         system       = None,
         ):
     if system is None:
-        QmcpackInput.class_error('input variable "system" is required to generate jastrows','generate_jastrows_alt')
+        error('input variable "system" is required to generate jastrows','generate_jastrows_alt')
     elif system.structure.units!='B':
         system = deepcopy(system)
         system.structure.change_units('B')
@@ -7029,7 +7029,7 @@ def generate_jastrows_alt(
     rwigner = None
     if J1:
         if natoms<1:
-            QmcpackInput.class_error('One-body Jastrow (J1) requested, but no atoms are present','generate_jastrows_alt')
+            error('One-body Jastrow (J1) requested, but no atoms are present','generate_jastrows_alt')
         #end if
         if J1_rcut is None:
             if openbc:
@@ -7052,7 +7052,7 @@ def generate_jastrows_alt(
     #end if
     if J2:
         if nelec<2:
-            QmcpackInput.class_error('Two-body Jastrow (J2) requested, but not enough electrons are present.\nElectrons required: 2 or more\nElectrons present: {}'.format(nelec),'generate_jastrows_alt')
+            error('Two-body Jastrow (J2) requested, but not enough electrons are present.\nElectrons required: 2 or more\nElectrons present: {}'.format(nelec),'generate_jastrows_alt')
         #end if
         if J2_rcut is None:
             if openbc:
@@ -7075,7 +7075,7 @@ def generate_jastrows_alt(
     #end if
     if J3:
         if natoms<1 or nelec<2:
-            QmcpackInput.class_error('Three-body Jastrow (J3) requested, but not enough particles are present.\nAtoms required: 1 or more\nElectrons required: 2 or more\nAtoms present: {}\nElectrons present: {}'.format(natoms,nelec),'generate_jastrows_alt')
+            error('Three-body Jastrow (J3) requested, but not enough particles are present.\nAtoms required: 1 or more\nElectrons required: 2 or more\nAtoms present: {}\nElectrons present: {}'.format(natoms,nelec),'generate_jastrows_alt')
         #end if
         if not openbc:
             if rwigner is None:
@@ -7141,7 +7141,7 @@ def generate_jastrow(descriptor,*args,**kwargs):
             if d in keywords:
                 kwargs[d] = descriptor[i+1]
             else:
-                QmcpackInput.class_error('keyword {0} is unrecognized\n  valid options are: {1}'.format(d,str(keywords)),'generate_jastrow')
+                error('keyword {0} is unrecognized\n  valid options are: {1}'.format(d,str(keywords)),'generate_jastrow')
             #end if
         #end if
     #end for
@@ -7154,7 +7154,7 @@ def generate_jastrow(descriptor,*args,**kwargs):
     elif jtype=='J3':
         jastrow = generate_jastrow3(*args,**kwargs)
     else:
-        QmcpackInput.class_error('jastrow type unrecognized: '+jtype)
+        error('jastrow type unrecognized: '+jtype)
     #end if
     return jastrow
 #end def generate_jastrow
@@ -7169,7 +7169,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
     isperiodic = False
     rwigner = 1e99
     if noelements and nosystem and noelemargs:
-        QmcpackInput.class_error('must specify elements or system','generate_jastrow1')
+        error('must specify elements or system','generate_jastrow1')
     #end if
     if noelements:
         elements = []
@@ -7192,7 +7192,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
     for i in range(len(elements)):
         element = elements[i]
         if cusp == 'Z':
-            QmcpackInput.class_error('need to implement Z cusp','generate_jastrow1')
+            error('need to implement Z cusp','generate_jastrow1')
         else:
             lcusp  = cusp
         #end if
@@ -7234,11 +7234,11 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
             corr.coefficients.optimize = bool(opt)
         if lrcut!=None:
             if isperiodic and lrcut>rwigner:
-                QmcpackInput.class_error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(lrcut,rwigner),'generate_jastrow1')
+                error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(lrcut,rwigner),'generate_jastrow1')
                 
             corr.rcut = lrcut
         elif isopen:
-            QmcpackInput.class_error('rcut must be provided for an open system','generate_jastrow1')
+            error('rcut must be provided for an open system','generate_jastrow1')
         elif isperiodic:
             corr.rcut = rwigner
         #end if
@@ -7259,7 +7259,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
 
 def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),density=None,system=None,init='rpa',opt=None):
     if coeff is None and system is None and (init=='rpa' and density is None or rcut is None):
-        QmcpackInput.class_error('rcut and density or system must be specified','generate_bspline_jastrow2')
+        error('rcut and density or system must be specified','generate_bspline_jastrow2')
     #end if
     isopen      = False
     isperiodic  = False
@@ -7275,7 +7275,7 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
         volume = system.structure.volume()
         if isopen: 
             if rcut is None:
-                QmcpackInput.class_error('rcut must be provided for an open system','generate_bspline_jastrow2')
+                error('rcut must be provided for an open system','generate_bspline_jastrow2')
             #end if
             if init=='rpa':
                 init = 'zero'
@@ -7293,7 +7293,7 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
     if coeff is None:
         if init=='rpa':
             if not allperiodic:
-                QmcpackInput.class_error('rpa initialization can only be used for fully periodic systems','generate_bspline_jastrow2')
+                error('rpa initialization can only be used for fully periodic systems','generate_bspline_jastrow2')
             #end if
             wp = np.sqrt(4*np.pi*density)
             dr = rcut/size
@@ -7304,10 +7304,10 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
         elif init=='zero' or init==0:
             coeff = [size*[0],size*[0]]
         else:
-            QmcpackInput.class_error(str(init)+' is not a valid value for parameter init\n  valid options are: rpa, zero','generate_bspline_jastrow2')
+            error(str(init)+' is not a valid value for parameter init\n  valid options are: rpa, zero','generate_bspline_jastrow2')
         #end if
     elif len(coeff)!=2:
-        QmcpackInput.class_error('must provide 2 sets of coefficients (uu,ud)','generate_bspline_jastrow2')
+        error('must provide 2 sets of coefficients (uu,ud)','generate_bspline_jastrow2')
     #end if
     size = len(coeff[0])
     uname,dname = spins
@@ -7324,7 +7324,7 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
             corr.coefficients.optimize = bool(opt)
     if rcut!=None:
         if isperiodic and rcut>rwigner:
-            QmcpackInput.class_error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(rcut,rwigner),'generate_jastrow2')
+            error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(rcut,rwigner),'generate_jastrow2')
         #end if
         for corr in corrs:
             corr.rcut=rcut
@@ -7371,20 +7371,20 @@ def generate_jastrow2(function='bspline',*args,**kwargs):
     #end if
     spins = kwargs['spins']
     if not isinstance(spins,tuple) and not isinstance(spins,list):
-        QmcpackInput.class_error('spins must be a list or tuple of u/d spin names\n  you provided: '+str(spins))
+        error('spins must be a list or tuple of u/d spin names\n  you provided: '+str(spins))
     #end if
     if len(spins)!=2:
-        QmcpackInput.class_error('name for up and down spins must be specified\n  you provided: '+str(spins))
+        error('name for up and down spins must be specified\n  you provided: '+str(spins))
     #end if
     if not isinstance(function,str):
-        QmcpackInput.class_error('function must be a string\n  you provided: '+str(function),'generate_jastrow2')
+        error('function must be a string\n  you provided: '+str(function),'generate_jastrow2')
     #end if
     if function=='bspline':
         j2 = generate_bspline_jastrow2(*args,**kwargs)
     elif function=='pade':
         j2 = generate_pade_jastrow2(*args,**kwargs)
     else:
-        QmcpackInput.class_error('function is invalid\n  you provided: {0}\n  valid options are: bspline or pade'.format(function),'generate_jastrow2')
+        error('function is invalid\n  you provided: {0}\n  valid options are: bspline or pade'.format(function),'generate_jastrow2')
     #end if
     if 'system' in kwargs and kwargs['system'] is not None:
         system = kwargs['system']
@@ -7406,23 +7406,23 @@ def generate_jastrow2(function='bspline',*args,**kwargs):
 
 def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,iname='ion0',spins=('u','d'),elements=None,system=None,opt=None):
     if elements is None and system is None:
-        QmcpackInput.class_error('must specify elements or system','generate_jastrow3')
+        error('must specify elements or system','generate_jastrow3')
     elif elements is None:
         elements = list(set(system.structure.elem))
     #end if
     if coeff is not None:
-        QmcpackInput.class_error('handling coeff is not yet implemented for generate jastrow3')
+        error('handling coeff is not yet implemented for generate jastrow3')
     #end if
     if len(spins)!=2:
-        QmcpackInput.class_error('must specify name for up and down spins\n  provided: '+str(spins),'generate_jastrow3')
+        error('must specify name for up and down spins\n  provided: '+str(spins),'generate_jastrow3')
     #end if
     if rcut is None:
-        QmcpackInput.class_error('must specify rcut','generate_jastrow3')
+        error('must specify rcut','generate_jastrow3')
     #end if
     if system is not None and system.structure.is_periodic():
         rwigner = system.structure.rwigner()
         if rcut>rwigner:
-            QmcpackInput.class_error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(rcut,rwigner),'generate_jastrow3')
+            error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(rcut,rwigner),'generate_jastrow3')
         #end if
     #end if
     uname,dname = spins
@@ -7524,7 +7524,7 @@ def generate_kspace_jastrow(
     J1k = kc1 is not None
     J2k = kc2 is not None
     if not J1k and not J2k:
-        QmcpackInput.class_error('must have at least one term', 'generate_kspace_jastrow')
+        error('must have at least one term', 'generate_kspace_jastrow')
     #end if      
     if coeff1 is None:
         coeff1 = [0]*nk1
@@ -7532,10 +7532,10 @@ def generate_kspace_jastrow(
         coeff2 = [0]*nk2
 
     if len(coeff1) != nk1:
-        QmcpackInput.class_error('coeff1 mismatch', 'generate_kspace_jastrow')
+        error('coeff1 mismatch', 'generate_kspace_jastrow')
     #end if
     if len(coeff2) != nk2:
-        QmcpackInput.class_error('coeff2 mismatch', 'generate_kspace_jastrow')
+        error('coeff2 mismatch', 'generate_kspace_jastrow')
     #end if
 
     corrs = []
@@ -7622,7 +7622,7 @@ def generate_energydensity(
     refp = None
     sg = []
     if coord is None:
-        QmcpackInput.class_error('coord must be provided','generate_energydensity')
+        error('coord must be provided','generate_energydensity')
     elif coord=='voronoi':
         if name is None:
             name = 'EDvoronoi'
@@ -7633,7 +7633,7 @@ def generate_energydensity(
             name = 'EDcell'
         #end if
         if grid is None:
-            QmcpackInput.class_error('grid must be provided for cartesian coordinates','generate_energydensity')
+            error('grid must be provided for cartesian coordinates','generate_energydensity')
         #end if
         axes = [
             axis(p1='a1',scale='.5',label='x'),
@@ -7651,7 +7651,7 @@ def generate_energydensity(
             name = 'EDatom'
         #end if
         if ion_grids is None:
-            QmcpackInput.class_error('ion_grids must be provided for spherical coordinates','generate_energydensity')
+            error('ion_grids must be provided for spherical coordinates','generate_energydensity')
         #end if
         refp = reference_points(coord='cartesian',points='\nr1 1 0 0\nr2 0 1 0\nr3 0 0 1\n')
         if system is None:
@@ -7700,11 +7700,11 @@ def generate_energydensity(
                 i+=1
             #end for
             if len(missing)>0:
-                QmcpackInput.class_error('ion species not found for spherical grid\nspecies not found: {0}\nspecies present: {1}'.format(sorted(missing),sorted(set(list(system.structure.elem)))),'generate_energydensity')
+                error('ion species not found for spherical grid\nspecies not found: {0}\nspecies present: {1}'.format(sorted(missing),sorted(set(list(system.structure.elem)))),'generate_energydensity')
             #end if
         #end if
     else:
-        QmcpackInput.class_error('unsupported coord type\ncoord type provided: {0}\nsupported coord types: voronoi, cartesian, spherical'.format(coord),'generate_energydensity')
+        error('unsupported coord type\ncoord type provided: {0}\nsupported coord types: voronoi, cartesian, spherical'.format(coord),'generate_energydensity')
     #end if
     ed = energydensity(
         type       = 'EnergyDensity',
@@ -7739,18 +7739,18 @@ def generate_opt(method,
                  nonlocalpp       = False,
                  sample_factor    = 1.0):
     if method not in opt_map:
-        QmcpackInput.class_error('section cannot be generated for optimization method '+method)
+        error('section cannot be generated for optimization method '+method)
     #end if
     if energy is None and rw_variance is None and urw_variance is None:
-        QmcpackInput.class_error('at least one cost parameter must be specified\n options are: energy, rw_variance, urw_variance')
+        error('at least one cost parameter must be specified\n options are: energy, rw_variance, urw_variance')
     #end if
     if params is None and jastrows is None:
-        QmcpackInput.class_error('must provide either number of opt parameters (params) or a list of jastrow objects (jastrows)')
+        error('must provide either number of opt parameters (params) or a list of jastrow objects (jastrows)')
     #end if
     if processes is None:
-        QmcpackInput.class_error('must specify total number of processes')
+        error('must specify total number of processes')
     elif walkers_per_proc is None and threads is None:
-        QmcpackInput.class_error('must specify walkers_per_proc or threads')
+        error('must specify walkers_per_proc or threads')
     #end if
 
     if params is None:
@@ -8797,7 +8797,7 @@ def generate_qmcpack_input(**kwargs):
     elif selector=='opt_jastrow':
         inp = generate_opt_jastrow_input(**kwargs)
     else:
-        QmcpackInput.class_error('selection '+str(selector)+' has not been implemented for qmcpack input generation')
+        error('selection '+str(selector)+' has not been implemented for qmcpack input generation')
     #end if
     return inp
 #end def generate_qmcpack_input
@@ -8907,11 +8907,11 @@ def generate_basic_input(**kwargs):
     # apply method specific defaults
     if kw.qmc is not None:
         if kw.driver not in qmc_defaults:
-            QmcpackInput.class_error('Invalid input for argument "driver".\nInvalid input: {}\nValid options are: {}'.format(kw.driver,sorted(qmc_defaults.keys())),'generate_qmcpack_input')
+            error('Invalid input for argument "driver".\nInvalid input: {}\nValid options are: {}'.format(kw.driver,sorted(qmc_defaults.keys())),'generate_qmcpack_input')
         #end if
         qmc_driver_defaults = qmc_defaults[kw.driver]
         if kw.qmc not in qmc_driver_defaults:
-            QmcpackInput.class_error('Invalid input for argument "qmc".\nInvalid input: {}\nValid options are: {}'.format(kw.qmc,sorted(qmc_driver_defaults.keys())),'generate_qmcpack_input')
+            error('Invalid input for argument "qmc".\nInvalid input: {}\nValid options are: {}'.format(kw.qmc,sorted(qmc_driver_defaults.keys())),'generate_qmcpack_input')
         #end if
         qmc_keys = ['driver']
         set_optional(kw,qmc_driver_defaults[kw.qmc])
@@ -8920,7 +8920,7 @@ def generate_basic_input(**kwargs):
             opt_method_driver_defaults = opt_method_defaults[kw.driver]
             key = (kw.method,kw.minmethod.lower())
             if key not in opt_method_driver_defaults:
-                QmcpackInput.class_error('invalid input for arguments "method,minmethod".\nInvalid input: {}\nValid options are: {}'.format(key,sorted(opt_method_driver_defaults.keys())),'generate_qmcpack_input')
+                error('invalid input for arguments "method,minmethod".\nInvalid input: {}\nValid options are: {}'.format(key,sorted(opt_method_driver_defaults.keys())),'generate_qmcpack_input')
             #end if
             set_optional(kw,opt_method_driver_defaults[key])
             qmc_keys += list(opt_method_driver_defaults[key].keys())
@@ -8931,14 +8931,14 @@ def generate_basic_input(**kwargs):
     # screen for invalid keywords
     invalid_kwargs = set(kw.keys())-valid
     if len(invalid_kwargs)>0:
-        QmcpackInput.class_error('invalid input parameters encountered.\nInvalid input parameters: {0}\nValid options are: {1}'.format(sorted(invalid_kwargs),sorted(valid)),'generate_qmcpack_input')
+        error('invalid input parameters encountered.\nInvalid input parameters: {0}\nValid options are: {1}'.format(sorted(invalid_kwargs),sorted(valid)),'generate_qmcpack_input')
     #end if
 
     batched = kw.driver=='batched'
     legacy  = kw.driver=='legacy'
 
     if kw.system=='missing':
-        QmcpackInput.class_error('argument "system" is missing.\nIf you really do not want particlesets to be generated, set system to None.','generate_qmcpack_input')
+        error('argument "system" is missing.\nIf you really do not want particlesets to be generated, set system to None.','generate_qmcpack_input')
     #end if
     if kw.bconds is None:
         if kw.system is not None:
@@ -9022,7 +9022,7 @@ def generate_basic_input(**kwargs):
 
     if kw.det_format=='new':
         if kw.excitation is not None:
-            QmcpackInput.class_error('user provided "excitation" input argument with new style determinant format.\nPlease add det_format="old" and try again','generate_qmcpack_input')
+            error('user provided "excitation" input argument with new style determinant format.\nPlease add det_format="old" and try again','generate_qmcpack_input')
         #end if
         if kw.system is not None and isinstance(kw.system.structure,Jellium):
             ssb = generate_sposet_builder(
@@ -9038,7 +9038,7 @@ def generate_basic_input(**kwargs):
             if kw.orbitals_h5!='MISSING.h5':
                 orbfile_exists = os.path.exists(kw.orbitals_h5)
                 if kw.check_paths and not orbfile_exists:
-                    QmcpackInput.class_error('user provided "orbitals_h5" path does not exist\nPath provided: {}\nTo disable this check, set check_paths=False'.format(kw.orbitals_h5),'generate_qmcpack_input')
+                    error('user provided "orbitals_h5" path does not exist\nPath provided: {}\nTo disable this check, set check_paths=False'.format(kw.orbitals_h5),'generate_qmcpack_input')
                 #end if
                 if kw.run_path is not None:
                     kw.orbitals_h5 = os.path.relpath(kw.orbitals_h5,kw.run_path)
@@ -9101,7 +9101,7 @@ def generate_basic_input(**kwargs):
             spinor         = kw.spinor,
             )
     else:
-        QmcpackInput.class_error('argument "det_format" is invalid.\nReceived: {0}\nValid options are: new, old'.format(det_format),'generate_qmcpack_input')
+        error('argument "det_format" is invalid.\nReceived: {0}\nValid options are: new, old'.format(det_format),'generate_qmcpack_input')
     #end if
 
 
@@ -9113,11 +9113,11 @@ def generate_basic_input(**kwargs):
 
     if isinstance(kw.jastrows,str) and kw.jastrows.endswith('.xml'):
         if not os.path.exists(kw.jastrows):
-            QmcpackInput.class_error('user provided "jastrows" file path does not exist\nFile path provided: {}'.format(kw.jastrows),'generate_qmcpack_input')
+            error('user provided "jastrows" file path does not exist\nFile path provided: {}'.format(kw.jastrows),'generate_qmcpack_input')
         #end if
         jastrows = read_jastrows(kw.jastrows)
         if jastrows is None:
-            QmcpackInput.class_error('no jastrows found at user provided "jastrows" file.\nFile path provided: {}'.format(kw.jastrows),'generate_qmcpack_input')
+            error('no jastrows found at user provided "jastrows" file.\nFile path provided: {}'.format(kw.jastrows),'generate_qmcpack_input')
         #end if
         kw.jastrows = jastrows
     elif kw.J1 or kw.J2 or kw.J3:
@@ -9190,13 +9190,13 @@ def generate_basic_input(**kwargs):
 
     if kw.opt_params is not None:
         if not isinstance(kw.opt_params,str):
-            QmcpackInput.class_error('opt_params must be a file path.\nYou provided: {}'.format(kw.opt_params),'generate_qmcpack_input')
+            error('opt_params must be a file path.\nYou provided: {}'.format(kw.opt_params),'generate_qmcpack_input')
         #end if
         if not kw.opt_params.endswith('vp.h5'):
-            QmcpackInput.class_error('opt_params must a vp.h5 file.\nYou provided: {}'.format(kw.opt_params),'generate_qmcpack_input')
+            error('opt_params must a vp.h5 file.\nYou provided: {}'.format(kw.opt_params),'generate_qmcpack_input')
         #end if
         if kw.check_paths and not os.path.exists(kw.opt_params):
-            QmcpackInput.class_error('opt_params file does not exist.\nFile path provided: {}\nTo disable this check, set check_paths=False'.format(kw.opt_params),'generate_qmcpack_input')
+            error('opt_params file does not exist.\nFile path provided: {}\nTo disable this check, set check_paths=False'.format(kw.opt_params),'generate_qmcpack_input')
         #end if
         wfn.override_variational_parameters = override_variational_parameters(
             href = os.path.abspath(kw.opt_params)
@@ -9348,7 +9348,7 @@ def generate_basic_afqmc_input(**kwargs):
     # screen for invalid keywords
     invalid_kwargs = set(kw.keys())-valid
     if len(invalid_kwargs)>0:
-        QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs),sorted(valid)),'generate_qmcpack_input')
+        error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs),sorted(valid)),'generate_qmcpack_input')
     #end if
 
     metadata = meta(
@@ -9394,7 +9394,7 @@ def generate_basic_afqmc_input(**kwargs):
         if filename.endswith('.h5'):
             filetype = 'hdf5'
         else:
-            QmcpackInput.class_error('Type of {} file "{}" is unrecognized.\n The following file extensions are allowed: .h5'.format(loc,filename))
+            error('Type of {} file "{}" is unrecognized.\n The following file extensions are allowed: .h5'.format(loc,filename))
         #end if
         return filetype
     #end def get_filetype
@@ -9466,7 +9466,7 @@ def generate_basic_afqmc_input(**kwargs):
             invalid |= not isinstance(est,valid_estimators)
             if invalid:
                 valid_names = [e.__class__.__name__ for e in valid_estimators]
-                QmcpackInput.class_error('invalid estimator input encountered\nexpected one of the following: {}\ninputted type: {}\ninputted value: {}'.format(valid_names,est.__class__.__name__,est))
+                error('invalid estimator input encountered\nexpected one of the following: {}\ninputted type: {}\ninputted value: {}'.format(valid_names,est.__class__.__name__,est))
             #end if
             est.incorporate_defaults()
             estimators.append(est)
@@ -9540,10 +9540,10 @@ def generate_opt_jastrow_input(id  = 'qmc',
                          )
                     )
             else:
-                QmcpackInput.class_error('optimization method '+opt_calc[0]+' has not yet been implemented')
+                error('optimization method '+opt_calc[0]+' has not yet been implemented')
             #end if
         else:
-            QmcpackInput.class_error('optimization calculation is ill formatted\n  opt calc provided: \n'+str(opt_calc))
+            error('optimization calculation is ill formatted\n  opt calc provided: \n'+str(opt_calc))
         #end if
     #end if
 

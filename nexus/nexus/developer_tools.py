@@ -234,17 +234,11 @@ class DevBase:
     __str__  = _pp_str
 
     # protected dict interface
-    def _items(self):              return self.__dict__.items()
-    def _clear(self):              return self.__dict__.clear()
-    def _copy(self):               return self.__class__(self.__dict__)
-    def _fromkeys(self,*a,**kw):   return self.__class__(self.__dict__.fromkeys(*a,**kw))
-    def _get(self,*a,**kw):        return self.__dict__.get(*a,**kw)
     def _keys(self):               return self.__dict__.keys()
-    def _pop(self,*a,**kw):        return self.__dict__.pop(*a,**kw)
     def _values(self):             return self.__dict__.values()
-    def _popitem(self,*a,**kw):    return self.__dict__.popitem(*a,**kw)
-    def _setdefault(self,*a,**kw): return self.__dict__.setdefault(*a,**kw)
+    def _items(self):              return self.__dict__.items()
     def _update(self,*a,**kw):     return self.__dict__.update(*a,**kw)
+    def _clear(self):              return self.__dict__.clear()
 
 
     # save and load

@@ -257,6 +257,11 @@ def test_empty_init():
 
     qi = QuantumPackageInput()
 
+    qi.set(elec_alpha_num=2)
+    assert(qi.get('elec_alpha_num')==2)
+    assert(qi.delete('elec_alpha_num')==2)
+    assert(qi.get('elec_alpha_num') is None)
+
 #end def test_empty_init
 
 

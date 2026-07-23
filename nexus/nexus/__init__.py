@@ -555,7 +555,7 @@ class Settings(NexusCore):
                 #end if
                 if machine_mode==Machine.modes.interactive:
                     if ProjectManager.machine is None:
-                        ProjectManager.class_error('no machine specified for interactive mode')
+                        error('no machine specified for interactive mode')
                     #end if
                     if not isinstance(ProjectManager.machine,Supercomputer):
                         self.error('interactive mode is not supported for machine type '+ProjectManager.machine.__class__.__name__)

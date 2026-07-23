@@ -258,15 +258,6 @@ _____________________________________________________
         os.chdir(NexusCore.working_directory)
     #end def leave
 
-
-    @classmethod
-    def class_error(cls,message,header=None,exit=True,trace=-2,post_header=' Error:'):
-        """Report an error relating to a class."""
-        if header is None:
-            header = cls.__name__
-        #end if
-        error(message,header,exit,trace,logfile=cls._logfile)
-    #end def class_error
 #end class NexusCore
 
 

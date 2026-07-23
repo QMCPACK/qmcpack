@@ -33,7 +33,7 @@ import os
 import numpy as np
 from . import numpy_extensions as npe
 from .generic import sorted_generic
-from .developer import DevBase, obj
+from .developer import DevBase, obj, error
 from .simulation import Simulation,SimulationAnalyzer
 from .vasp_input import Incar
 
@@ -356,7 +356,7 @@ def readval(val):
         #end try
     #end if
     if fail:
-        VXML.class_error('failed to read value: "{0}"'.format(val),'read_vxml')
+        error('failed to read value: "{0}"'.format(val),'read_vxml')
     #end if
     return v
 #end def readval
@@ -365,7 +365,7 @@ def readval(val):
 
 def read_vxml(filepath):
     if not os.path.exists(filepath):
-        VXML.class_error('file {0} does not exist'.format(filepath),'read_vxml')
+        error('file {0} does not exist'.format(filepath),'read_vxml')
     #end if
     #print 'read'
     with open(filepath, "r") as f:
@@ -425,7 +425,7 @@ def read_vxml(filepath):
     #end for
 
     if len(stack)!=1:
-        VXML.class_error('read failed\nxml tree did not seem to close')
+        error('read failed\nxml tree did not seem to close')
     #end if
 
     #print 'parse'
@@ -900,5 +900,4 @@ class VaspAnalyzer(SimulationAnalyzer):
         self.ion_steps = ion_steps
     #end def analyze_outcar
 #end class VaspAnalyzer
-
 

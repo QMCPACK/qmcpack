@@ -353,14 +353,14 @@ def reduce_tilematrix(tiling):
     tiling = np.array(tiling)
     t = np.array(tiling,dtype=int)
     if np.abs(tiling-t).sum()>1e-6:
-        Structure.class_error('requested tiling is non-integer\n tiling requested: '+str(tiling))
+        error('requested tiling is non-integer\n tiling requested: '+str(tiling))
     #end if
 
     dim = len(t)
     matrix_tiling = t.shape == (dim,dim)
     if matrix_tiling:
         if np.abs(det(t))==0:
-            Structure.class_error('requested tiling matrix is singular\ntiling requested: {0}'.format(t))
+            error('requested tiling matrix is singular\ntiling requested: {0}'.format(t))
         #end if
         #find a tiling tuple from the tiling matrix
         # do this by shearing the tiling matrix (or equivalently the tiled cell)
@@ -411,7 +411,7 @@ def reduce_tilematrix(tiling):
                 tr = np.diag(Tnew)
                 nondiagonal = np.abs(Tnew-np.diag(tr)).sum()>1e-6
                 if nondiagonal:
-                    Structure.class_error('could not find a diagonal tiling matrix for generating tiled coordinates')
+                    error('could not find a diagonal tiling matrix for generating tiled coordinates')
                 #end if
                 tvecs.append(np.abs(tr))
             #end if
@@ -1803,7 +1803,7 @@ class Structure(Sobj):
         if nt % 2 != 0:
           msg = 'tilevec must contain even integers'
           msg += ' so that kgrid can be zero centered.'
-          Structure.class_error(msg, 'count_kshells')
+          error(msg, 'count_kshells')
         #end if
       #end for
 
@@ -1819,7 +1819,7 @@ class Structure(Sobj):
       if kcut > klimit:
         msg = 'kcut %3.2f > klimit=%3.2f\n' % (kcut, klimit)
         msg += ' please increase tilevec to be safe.\n'
-        Structure.class_error(msg, 'count_kshells')
+        error(msg, 'count_kshells')
       #end if
 
       sel = (0<kmags) & (kmags<kcut)
@@ -6275,7 +6275,7 @@ def get_kpath(
         primlat = seekpathout['primitive_lattice']
         if not np.isclose(primlat, axes).all():
             #print primlat, axes
-            Structure.class_error(
+            error(
                 'Input lattice is not the conventional lattice. If you like otherwise, set check_standard=False.'
                 )
         #end if
@@ -6326,7 +6326,7 @@ def get_structure_with_bands(
         ''' Use primitive structure '''
         struct_band = get_primitive_cell(structure=structure, symprec=symprec, angle_tolerance=angle_tolerance)['structure']
     else:
-        Structure.class_error('Invalid cell type')
+        error('Invalid cell type')
     #end if
     kpath = get_kpath(structure=struct_band, check_standard=False, with_time_reversal=with_time_reversal)
     return Structure(axes              = struct_band.axes,
@@ -6411,7 +6411,7 @@ def get_band_tiling(
         if kpoints_label is None:
             kpoints_label = []
             if kpoints_rel is None:
-                Structure.class_error(
+                error(
                     "Please define symbolic or crystal coordinates for kpoints. e.g. ['GAMMA', 'K']  or [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]"
                 )
             else:
@@ -6420,13 +6420,13 @@ def get_band_tiling(
                     if any(kindex):
                         kpts[kpath_label[kindex][0]] = np.array(k)
                     else:
-                        Structure.class_error('{0} is not found in the kpath'.format(k))
+                        error('{0} is not found in the kpath'.format(k))
                     #end if
                 #end for
             #end if
         else:
             if kpoints_rel is not None:
-                Structure.class_error('Both symbolic and crystal k-points are defined.')
+                error('Both symbolic and crystal k-points are defined.')
             else:
                 kpoints_rel = []
                 num_kpoints = 0
@@ -6438,7 +6438,7 @@ def get_band_tiling(
                         #end if
                         kpts[k] = np.array(kpath_rel[kindex][0])
                     else:
-                        Structure.class_error('{0} is not found in the kpath'.format(k))
+                        error('{0} is not found in the kpath'.format(k))
                     #end if
                 #end for
             #end if
@@ -6641,7 +6641,7 @@ skp = obj(
 
 def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recenter=True,match_com=False,repackage=False,chained=False):
     if images is None:
-        Structure.class_error('images must be provided','interpolate_structures')
+        error('images must be provided','interpolate_structures')
     #end if
 
     # if a list of structures is provided,
@@ -6688,7 +6688,7 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
         elif system2 is not None:
             system = system2
         else:
-            Structure.class_error('cannot repackage into physical systems since no system object was provided in place of a structure','interpolate_structures')
+            error('cannot repackage into physical systems since no system object was provided in place of a structure','interpolate_structures')
         #end if
         systems = []
         for s in structures:
@@ -6709,7 +6709,7 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
 def structure_animation(filepath,structures,tiling=None):
     path,file = os.path.split(filepath)
     if not file.endswith('xyz'):
-        Structure.class_error('only xyz files are supported for now','structure_animation')
+        error('only xyz files are supported for now','structure_animation')
     #end if
     anim = ''
     for s in structures:
@@ -7669,7 +7669,7 @@ def generate_structure(type='crystal',*args,**kwargs):
     elif type=='basic':
         s = Structure(*args,**kwargs)
     else:
-        Structure.class_error(
+        error(
             str(type)+" is not a valid structure type\n"
             "options are crystal, defect, atom, dimer, trimer, jellium, empty, or basic"
         )
@@ -7712,7 +7712,7 @@ def generate_atom_structure(
         Boundary conditions for the resulting structure.
     """
     if atom is None:
-        Structure.class_error('atom must be provided','generate_atom_structure')
+        error('atom must be provided','generate_atom_structure')
     #end if
     if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
@@ -7768,10 +7768,10 @@ def generate_dimer_structure(
         The axis that the dimer is aligned on.
     """
     if dimer is None:
-        Structure.class_error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
+        error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
     #end if
     if separation is None:
-        Structure.class_error('separation must be provided to construct dimer','generate_dimer_structure')
+        error('separation must be provided to construct dimer','generate_dimer_structure')
     #end if
     if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
@@ -7783,7 +7783,7 @@ def generate_dimer_structure(
     elif axis=='z':
         p2 = [0,0,separation]
     else:
-        Structure.class_error(
+        error(
             "dimer orientation axis must be x,y,z\n"
             "  you provided: {0}".format(axis),
             "generate_dimer_structure"
@@ -7848,32 +7848,32 @@ def generate_trimer_structure(
         The units of the supplied angle.
     """
     if trimer is None:
-        Structure.class_error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
+        error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
     #end if
     if separation is None:
-        Structure.class_error('separation must be provided to construct trimer','generate_trimer_structure')
+        error('separation must be provided to construct trimer','generate_trimer_structure')
     #end if
     if len(separation)!=2:
-        Structure.class_error(
+        error(
             "two separation distances (atom1-atom2,atom1-atom3) must be provided to construct trimer\n"
             "you provided {0} separation distances".format(len(separation)),
             'generate_trimer_structure'
         )
     #end if
     if angle is None:
-        Structure.class_error('angle must be provided to construct trimer','generate_trimer_structure')
+        error('angle must be provided to construct trimer','generate_trimer_structure')
     #end if
     if angular_units=='degrees':
         angle *= pi/180
     elif not angular_units.startswith('rad'):
-        Structure.class_error(
+        error(
             "angular units must be degrees or radians\n"
             "you provided: {0}".format(angular_units),
             'generate_trimer_structure'
         )
     #end if
     if axis==axis2:
-        Structure.class_error(
+        error(
             "axis and axis2 must be different to define the trimer plane\n"
             "you provided {0} for both".format(axis),
             'generate_trimer_structure'
@@ -7890,7 +7890,7 @@ def generate_trimer_structure(
     elif axis=='z':
         p2 = [0,0,separation[0]]
     else:
-        Structure.class_error(
+        error(
             "trimer bond1 (atom2-atom1) orientation axis must be x,y,z\n"
             "  you provided: {0}".format(axis),
             'generate_trimer_structure'
@@ -7913,7 +7913,7 @@ def generate_trimer_structure(
     elif axpair=='xz':
         p3 = [r*c,0,r*s]
     else:
-        Structure.class_error(
+        error(
             "trimer bond2 (atom3-atom1) orientation axis must be x,y,z\n"
             "  you provided: {0}".format(axis2),
             'generate_trimer_structure'
@@ -8125,12 +8125,12 @@ def generate_defect_structure(defect,structure,shape=None,element=None,
     if structure in defects:
         dstruct = defects[structure]
     else:
-        DefectStructure.class_error('defects for '+structure+' structure have not yet been implemented')
+        error('defects for '+structure+' structure have not yet been implemented')
     #end if
     if defect in dstruct:
         drep = dstruct[defect]
     else:
-        DefectStructure.class_error(defect+' defect not found for '+structure+' structure')
+        error(defect+' defect not found for '+structure+' structure')
     #end if
 
     ds = generate_crystal_structure(

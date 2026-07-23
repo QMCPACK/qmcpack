@@ -1993,7 +1993,7 @@ def generate_pwscf_input(selector,**kwargs):
     elif selector=='vc-relax':
         return generate_vcrelax_input(**kwargs)
     else:
-        PwscfInput.class_error('selection '+str(selector)+' has not been implemented for pwscf input generation')
+        error('selection '+str(selector)+' has not been implemented for pwscf input generation')
     #end if
 #end def generate_pwscf_input
 
@@ -2092,7 +2092,7 @@ def generate_any_pwscf_input(**kwargs):
             if defaults in generate_any_defaults:
                 defaults = generate_any_defaults[defaults]
             else:
-                PwscfInput.class_error('invalid default set requested: {0}\n  valid options are {1}'.format(defaults,sorted(generate_any_defaults.keys())))
+                error('invalid default set requested: {0}\n  valid options are {1}'.format(defaults,sorted(generate_any_defaults.keys())))
             #end if
         #end if
     else:
@@ -2110,7 +2110,7 @@ def generate_any_pwscf_input(**kwargs):
     #end for
 
     if ksymm_run and 'calculation' in kwargs and kwargs.calculation!='scf':
-        PwscfInput.class_error('input parameter "calculation" must be set to "scf" when ksymm_run is requested')
+        error('input parameter "calculation" must be set to "scf" when ksymm_run is requested')
     #end if
 
     #copy certain keywords
@@ -2129,7 +2129,7 @@ def generate_any_pwscf_input(**kwargs):
     hub_keys_v72 = 'hubbard hubbard_proj'.lower().split()
     has_v72_keys = any(([_ in kwargs.keys() for _ in hub_keys_v72]))
     if has_pre72_keys + has_v72_keys > 1:
-        PwscfInput.class_error('Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72))
+        error('Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72))
     #end if     
     #occ               = kwargs.get_optional('occupations',None)
     occ               = kwargs.get('occupations',None)
@@ -2203,25 +2203,25 @@ def generate_any_pwscf_input(**kwargs):
     #  physical system information
     if system is None:
         if elem is None:
-            PwscfInput.class_error('system must be provided','generate_pwscf_input')
+            error('system must be provided','generate_pwscf_input')
         else:
             if mass is None:
-                PwscfInput.class_error('"mass" must be provided when "elem" is given','generate_pwscf_input')
+                error('"mass" must be provided when "elem" is given','generate_pwscf_input')
             #end if
             if pos is None:
-                PwscfInput.class_error('"pos" must be provided when "elem" is given','generate_pwscf_input')
+                error('"pos" must be provided when "elem" is given','generate_pwscf_input')
             #end if
             if positions_option is None:
-                PwscfInput.class_error('"atomic_positions_option" must be provided when "elem" is given','generate_pwscf_input')
+                error('"atomic_positions_option" must be provided when "elem" is given','generate_pwscf_input')
             #end if
 
             # fill in atomic_species
             species = set(elem)
             if elem_order is not None:
                 if set(elem_order)!=species:
-                    PwscfInput.class_error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(species),elem_order),'generate_pwscf_input')
+                    error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(species),elem_order),'generate_pwscf_input')
                 elif len(elem_order)!=len(species):
-                    PwscfInput.class_error('elem_order has repeated elements\nelem_order: {0}'.format(elem_order),'generate_pwscf_input')
+                    error('elem_order has repeated elements\nelem_order: {0}'.format(elem_order),'generate_pwscf_input')
                 #end if
                 pw.atomic_species.atoms = list(elem_order)
             else:
@@ -2256,7 +2256,7 @@ def generate_any_pwscf_input(**kwargs):
             npe.reshape_inplace(axes, fs.axes.shape)
             axes = np.dot(s.tmatrix,axes)
             if abs(axes-s.axes).sum()>1e-5:
-                PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(s.axes)+'\nfolded axes tiled:\n'+str(axes),'generate_pwscf_input')
+                error('supercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(s.axes)+'\nfolded axes tiled:\n'+str(axes),'generate_pwscf_input')
             #end if
         else:
             axes = np.array(array_to_string(s.axes).split(),dtype=float)
@@ -2293,7 +2293,7 @@ def generate_any_pwscf_input(**kwargs):
     #  Hubbard U
     if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
-            PwscfInput.class_error('input hubbard_u must be of type dict or obj','generate_pwscf_input')
+            error('input hubbard_u must be of type dict or obj','generate_pwscf_input')
         #end if
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
@@ -2302,7 +2302,7 @@ def generate_any_pwscf_input(**kwargs):
     #  starting magnetization
     if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
-            PwscfInput.class_error('input start_mag must be of type dict or obj','generate_pwscf_input')
+            error('input start_mag must be of type dict or obj','generate_pwscf_input')
         #end if
         pw.system.starting_magnetization = deepcopy(start_mag)
     #end if
@@ -2370,7 +2370,7 @@ def generate_any_pwscf_input(**kwargs):
             hubbard_option = hubbard_card.default_specifier
         else:
             if hubbard_option not in hubbard_card.available_specifiers:
-                PwscfInput.class_error('HUBBARD card specifier "{}" is not valid. Available specifiers: {}'.format(hubbard_option, hubbard_card.available_specifiers))                
+                error('HUBBARD card specifier "{}" is not valid. Available specifiers: {}'.format(hubbard_option, hubbard_card.available_specifiers))
             #end if
         #end if
         pw.hubbard.specifier = hubbard_option
@@ -2385,7 +2385,7 @@ def generate_any_pwscf_input(**kwargs):
     for card_name,option in options.items():
         if option is not None:
             if card_name not in pw:
-                PwscfInput.class_error('Card option provided for card "{}" but card is not present\noption provided: {}'.format(card_name,option))
+                error('Card option provided for card "{}" but card is not present\noption provided: {}'.format(card_name,option))
             #end if
             pw[card_name].change_option(option,pw)
         #end if
@@ -2393,12 +2393,12 @@ def generate_any_pwscf_input(**kwargs):
 
     # check for misformatted kpoints
     if len(pw.k_points)==0:
-        PwscfInput.class_error('k_points section has not been filled in\nplease provide k-point information in either of\n  1) the kgrid input argument\n  2) in the PhysicalSystem object (system input argument)','generate_pwscf_input')
+        error('k_points section has not been filled in\nplease provide k-point information in either of\n  1) the kgrid input argument\n  2) in the PhysicalSystem object (system input argument)','generate_pwscf_input')
     #end if
 
     # check for leftover keywords
     if len(kwargs)>0:
-        PwscfInput.class_error('unrecognized keywords: {0}\nthese keywords are not known to belong to any namelist for PWSCF'.format(sorted(kwargs.keys())),'generate_pwscf_input')
+        error('unrecognized keywords: {0}\nthese keywords are not known to belong to any namelist for PWSCF'.format(sorted(kwargs.keys())),'generate_pwscf_input')
     #end if  
     
     return pw
@@ -2548,7 +2548,7 @@ def generate_scf_input(prefix       = 'pwscf',
         npe.reshape_inplace(axes, fs.axes.shape)
         axes = np.dot(s.tmatrix,axes)
         if abs(axes-s.axes).sum()>1e-5:
-            PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(s.axes)+'\n  folded axes tiled:\n'+str(axes))
+            error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(s.axes)+'\n  folded axes tiled:\n'+str(axes))
         #end if
     else:
         axes = np.array(array_to_string(s.axes).split(),dtype=float)
@@ -2570,14 +2570,14 @@ def generate_scf_input(prefix       = 'pwscf',
 
     if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
-            PwscfInput.class_error('input hubbard_u must be of type dict or obj')
+            error('input hubbard_u must be of type dict or obj')
         #end if
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
     #end if
     if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
-            PwscfInput.class_error('input start_mag must be of type dict or obj')
+            error('input start_mag must be of type dict or obj')
         #end if
         pw.system.starting_magnetization = deepcopy(start_mag)
         #if 'tot_magnetization' in pw.system:
@@ -2595,7 +2595,7 @@ def generate_scf_input(prefix       = 'pwscf',
     if system is not None:
         structure = system.structure
         if group_atoms:
-            PwscfInput.class_warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
+            warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
         #end if
         #if group_atoms:  # disabled, hopefully not needed for qmcpack
         #    structure.group_atoms()
@@ -2775,14 +2775,14 @@ def generate_relax_input(prefix       = 'pwscf',
 
     if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
-            PwscfInput.class_error('input hubbard_u must be of type dict or obj')
+            error('input hubbard_u must be of type dict or obj')
         #end if
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
     #end if
     if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
-            PwscfInput.class_error('input start_mag must be of type dict or obj')
+            error('input start_mag must be of type dict or obj')
         #end if
         pw.system.starting_magnetization = deepcopy(start_mag)
         #if 'tot_magnetization' in pw.system:

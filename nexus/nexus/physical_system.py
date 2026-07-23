@@ -37,7 +37,7 @@ from pathlib import Path
 from copy import deepcopy
 import numpy as np
 #from .developer import DevBase, obj
-from .developer import DevBase, obj
+from .developer import DevBase, obj, error
 from .unit_converter import convert
 from .periodic_table import Elements
 from .structure import Structure, generate_structure, read_structure
@@ -744,7 +744,7 @@ def generate_physical_system(**kwargs):
                 is_path = '/' in s
                 is_file = format in set('xyz xsf poscar cif fhi-aims'.split())
                 if is_path or is_file:
-                    PhysicalSystem.class_error('user provided structure file does not exist\nstructure file path: '+s,'generate_physical_system')
+                    error('user provided structure file does not exist\nstructure file path: '+s,'generate_physical_system')
                 #end if
             #end if
         #end if
@@ -787,7 +787,7 @@ def generate_physical_system(**kwargs):
     else:
         for d in range(len(pretile)):
             if tiling[d]%pretile[d]!=0:
-                PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
+                error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
             #end if
         #end for
         tiling = tuple(np.array(tiling)//np.array(pretile))

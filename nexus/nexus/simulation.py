@@ -74,7 +74,7 @@ from string import Template
 from subprocess import Popen
 import tempfile
 #from .developer import obj, unavailable, DevBase
-from .developer import DevBase, obj, unavailable
+from .developer import DevBase, obj, error, unavailable
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
@@ -322,7 +322,7 @@ class Simulation(NexusCore):
                 if not isinstance(extra,obj):
                     extra = '\nwith value: {0}'.format(system)
                 #end if
-                cls.class_error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
+                error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
             #end if
         #end if
         if 'pseudos' in inp_args and inp_args.pseudos is not None:
@@ -331,10 +331,10 @@ class Simulation(NexusCore):
             if isinstance(pseudos,str):
                 code = cls.code_name()
                 if not ppset.supports_code(code):
-                    cls.class_error('ppset labeled pseudopotential groups are not supported for code "{0}"'.format(code))
+                    error('ppset labeled pseudopotential groups are not supported for code "{0}"'.format(code))
                 #end if
                 if 'system' not in inp_args:
-                    cls.class_error('system must be provided when using a ppset label')
+                    error('system must be provided when using a ppset label')
                 #end if
                 system = inp_args.system
                 pseudos = ppset.get(pseudos,code,system)
@@ -357,11 +357,11 @@ class Simulation(NexusCore):
                 pseudopotentials = nexus_core.pseudopotentials
                 for ppfile in pseudos:
                     if ppfile not in pseudopotentials:
-                        cls.class_error('pseudopotential file {0} cannot be found'.format(ppfile))
+                        error('pseudopotential file {0} cannot be found'.format(ppfile))
                     #end if
                     pp = pseudopotentials[ppfile]
                     if pp.element_label not in species_labels and pp.element not in species:
-                        cls.class_error('the element {0} for pseudopotential file {1} is not in the physical system provided'.format(pp.element,ppfile))
+                        error('the element {0} for pseudopotential file {1} is not in the physical system provided'.format(pp.element,ppfile))
                     #end if
                 #end for
             #end if
@@ -1800,7 +1800,7 @@ def generate_simulation(**kwargs):
     if sim_type=='generic':
         return GenericSimulation(**kwargs)
     else:
-        Simulation.class_error('sim_type {0} is unrecognized'.format(sim_type),'generate_simulation')
+        error('sim_type {0} is unrecognized'.format(sim_type),'generate_simulation')
     #end if
 #end def generate_simulation
 
@@ -1925,7 +1925,7 @@ class DynamicProcess(DevBase):
         identifier = kw['identifier']
         locdir = os.path.join(nc_loc,runs,path)
         if 'dynamic_id' not in kw:
-            cls.class_error('dynamic_id is required for dynamic workflows in a generate_* function.\nSimulation run location: {}\nSimulation identifier  : {}'.format(locdir,identifier))
+            error('dynamic_id is required for dynamic workflows in a generate_* function.\nSimulation run location: {}\nSimulation identifier  : {}'.format(locdir,identifier))
         dynamic_id = kw.pop('dynamic_id')
         dpid = (locdir,identifier,dynamic_id)
         if dpid in DynamicProcess.all_dynamic_processes:
@@ -1934,7 +1934,7 @@ class DynamicProcess(DevBase):
         else:
             dp = None
         if 'requires' not in kw:
-            cls.class_error('dependency requirements must be given via the "requires" keyword for dynamic workflows')
+            error('dependency requirements must be given via the "requires" keyword for dynamic workflows')
         requires = kw.pop('requires')
         dyn_args = obj(dpid=dpid,requires=requires)
         return dp,dyn_args
