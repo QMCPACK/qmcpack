@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "Particle/Walker.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus
 {
