@@ -122,14 +122,7 @@ import numpy as np
 from copy import deepcopy
 from random import randint
 import itertools
-from numpy import (
-    cos,
-    cross,
-    dot,
-    pi,
-    sin,
-    sqrt,
-)
+from numpy import cos,cross,dot,pi,sin,sqrt
 from numpy.linalg import inv, det, norm
 import numpy.typing as npt
 from .unit_converter import convert
@@ -359,14 +352,14 @@ def reduce_tilematrix(tiling):
     tiling = np.array(tiling)
     t = np.array(tiling,dtype=int)
     if np.abs(tiling-t).sum()>1e-6:
-        Structure.class_error('requested tiling is non-integer\n tiling requested: '+str(tiling))
+        error('requested tiling is non-integer\n tiling requested: '+str(tiling))
     #end if
 
     dim = len(t)
     matrix_tiling = t.shape == (dim,dim)
     if matrix_tiling:
         if np.abs(det(t))==0:
-            Structure.class_error('requested tiling matrix is singular\ntiling requested: {0}'.format(t))
+            error('requested tiling matrix is singular\ntiling requested: {0}'.format(t))
         #end if
         #find a tiling tuple from the tiling matrix
         # do this by shearing the tiling matrix (or equivalently the tiled cell)
@@ -417,7 +410,7 @@ def reduce_tilematrix(tiling):
                 tr = np.diag(Tnew)
                 nondiagonal = np.abs(Tnew-np.diag(tr)).sum()>1e-6
                 if nondiagonal:
-                    Structure.class_error('could not find a diagonal tiling matrix for generating tiled coordinates')
+                    error('could not find a diagonal tiling matrix for generating tiled coordinates')
                 #end if
                 tvecs.append(np.abs(tr))
             #end if
@@ -561,7 +554,7 @@ mask_filter = MaskFilter()
 
 def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None,nc=5,Tref=None):
     if mask is not None:
-        mask_filter.set(mask)
+        mask_filter.update(mask)
         filter = mask_filter
     #end if
     dim = 3
@@ -941,7 +934,7 @@ class Structure(Sobj):
 
     @classmethod
     def set_operations(cls):
-        cls.operations.set(
+        cls.operations.update(
             remove_folded_structure = cls.remove_folded_structure,
             recenter = cls.recenter,
             )
@@ -1201,6 +1194,8 @@ class Structure(Sobj):
 
 
     def operate(self,operations):
+        if isinstance(operations,obj):
+            operations = operations.values()
         for op in operations:
             if op not in self.operations:
                 self.error(
@@ -1736,7 +1731,7 @@ class Structure(Sobj):
                 )
             )
         #end if
-        o = other.copy()
+        o = deepcopy(other)
         self.__dict__ = o.__dict__
     #end def clone_from
 
@@ -1805,7 +1800,7 @@ class Structure(Sobj):
         if nt % 2 != 0:
           msg = 'tilevec must contain even integers'
           msg += ' so that kgrid can be zero centered.'
-          Structure.class_error(msg, 'count_kshells')
+          error(msg, 'count_kshells')
         #end if
       #end for
 
@@ -1821,7 +1816,7 @@ class Structure(Sobj):
       if kcut > klimit:
         msg = 'kcut %3.2f > klimit=%3.2f\n' % (kcut, klimit)
         msg += ' please increase tilevec to be safe.\n'
-        Structure.class_error(msg, 'count_kshells')
+        error(msg, 'count_kshells')
       #end if
 
       sel = (0<kmags) & (kmags<kcut)
@@ -2436,7 +2431,7 @@ class Structure(Sobj):
             sub.elem = self.elem[indices].copy()
             sub.pos  = self.pos[indices].copy()
         else:
-            sub = self.copy()
+            sub = deepcopy(self)
             sub.elem = self.elem[indices]
             sub.pos  = self.pos[indices]
         #end if
@@ -2756,7 +2751,7 @@ class Structure(Sobj):
             nbox+=1
         #end if
         nwind = (nbox-1)//2
-        s = self.copy()
+        s = deepcopy(self)
         s.recenter()
         vaxis = s.axes[axis]
         daxis = norm(vaxis)
@@ -2973,7 +2968,7 @@ class Structure(Sobj):
         if voronoi:
             actual_indices = True
             neighbors = self.voronoi_neighbors(indices,restrict=True,distance_ordered=False)
-            for nilist in neighbors:
+            for nilist in neighbors.values():
                 neigh_table.append(nilist)
             #end for
         else:
@@ -3105,7 +3100,7 @@ class Structure(Sobj):
                     dgd[di].append(gi)
                     #degree_map[gi] = d,di
                 #end for
-                for dgd in dgo:
+                for dgd in dgo.values():
                     for di,dgi in dgd.items():
                         dgd[di]=np.array(sorted(dgi),dtype=int)
                     #end for
@@ -3200,8 +3195,8 @@ class Structure(Sobj):
         for o in range(3,order+1):
             o1 = o/2+1    # split half order for odd, same for even, 
             o2 = o1+o%2
-            lg1 = lgraphs.get_optional(o1,None) # sets of half order lines
-            lg2 = lgraphs.get_optional(o2,None)
+            lg1 = lgraphs.get(o1,None) # sets of half order lines
+            lg2 = lgraphs.get(o2,None)
             if lg1 is not None and lg2 is not None:
                 rg = []
                 rset = set()
@@ -3401,7 +3396,7 @@ class Structure(Sobj):
         #end if
         indices = set(indices)
         # make a new version of this (small cell)
-        sn = self.copy()
+        sn = deepcopy(self)
         sn.recenter()
         # tile a large cell periodically
         d = 3
@@ -3845,7 +3840,7 @@ class Structure(Sobj):
             if in_place:
                 return self
             else:
-                return self.copy()
+                return deepcopy(self)
             #end if
         #end if
 
@@ -3868,7 +3863,7 @@ class Structure(Sobj):
             frozen = ncells*list(self.frozen)
         #end if
 
-        ts = self.copy()
+        ts = deepcopy(self)
         ts.center   = center
         ts.set_elem(elem)
         ts.axes     = axes
@@ -3885,15 +3880,15 @@ class Structure(Sobj):
         ts.unique_kpoints()
         if self.is_tiled():
             ts.tmatrix = dot(tilematrix,self.tmatrix)
-            ts.folded_structure = self.folded_structure.copy()
+            ts.folded_structure = deepcopy(self.folded_structure)
         else:
             ts.tmatrix = tilematrix
-            ts.folded_structure = self.copy()
+            ts.folded_structure = deepcopy(self)
         #end if
 
         if in_place:
             self.clear()
-            self.transfer_from(ts)
+            self.update(**ts)
             ts = self
         #end if
 
@@ -4791,7 +4786,7 @@ class Structure(Sobj):
                 n+=1
             #end for
         #end for
-        sn = self.copy()
+        sn = deepcopy(self)
         nnr = nn[:,1:].ravel()
         sn.set_elem(t.elem[nnr])
         sn.pos  = t.pos[nnr]
@@ -4907,7 +4902,7 @@ class Structure(Sobj):
 
 
     def embed(self,small,dims=(0,1,2),dtol=1e-6,utol=1e-6):
-        small = small.copy()
+        small = deepcopy(small)
         small.recenter()
         center = np.array(self.center)
         self.recenter(small.center)
@@ -5018,8 +5013,8 @@ class Structure(Sobj):
 
 
     def interpolate(self,other,images,min_image=True,recenter=True,match_com=False,chained=False):
-        s1 = self.copy()
-        s2 = other.copy()
+        s1 = deepcopy(self)
+        s2 = deepcopy(other)
         s1.remove_folded()
         s2.remove_folded()
         if s2.units!=s1.units:
@@ -5064,7 +5059,7 @@ class Structure(Sobj):
             center = f1*c1   + f2*c2
             axes   = f1*ax1  + f2*ax2
             pos    = f1*pos1 + f2*pos2
-            s = s1.copy()
+            s = deepcopy(s1)
             s.reset_axes(axes)
             s.center = center
             s.pos    = pos
@@ -5507,7 +5502,7 @@ class Structure(Sobj):
 
             "{element:2} {dim1:12.8f} {dim2:12.8f} ... {dimN:12.8f}\\n"
         """
-        s = self.copy()
+        s = deepcopy(self)
         s.change_units(units)
 
         c = ""
@@ -5549,7 +5544,7 @@ class Structure(Sobj):
         if self.dim!=3:
             self.error('write_xyz is currently only implemented for 3 dimensions')
         #end if
-        s = self.copy()
+        s = deepcopy(self)
         s.change_units("A")
 
         c = ''
@@ -5573,7 +5568,7 @@ class Structure(Sobj):
         if self.dim!=3:
             self.error('write_xsf is currently only implemented for 3 dimensions')
         #end if
-        s = self.copy()
+        s = deepcopy(self)
         s.change_units('A')
         c  = ' CRYSTAL\n'
         c += ' PRIMVEC\n'
@@ -5604,7 +5599,7 @@ class Structure(Sobj):
 
 
     def write_poscar(self,filepath=None):
-        s = self.copy()
+        s = deepcopy(self)
         s.change_units('A')
         species,species_count = s.order_by_species()
         poscar = PoscarFile()
@@ -5625,7 +5620,7 @@ class Structure(Sobj):
 
     # test needed
     def write_fhi_aims(self,filepath=None):
-        s = self.copy()
+        s = deepcopy(self)
         s.change_units('A')
         c = ''
         c+='\n'
@@ -6039,7 +6034,7 @@ class Structure(Sobj):
                 tmatrix = None
             else:
                 # apply tiling matrix
-                st = sp.copy().tile(tmatrix)
+                st = deepcopy(sp).tile(tmatrix)
                 # update lattice type
                 rmg_lattice,bv = st.rmg_lattice(ret_bravais=True)
             #end if
@@ -6079,12 +6074,12 @@ class Structure(Sobj):
             all_results = True,
             )
         if rmg_lattice is None and allow_general:
-            s_trans    = self.copy()
+            s_trans    = deepcopy(self)
             rmg_inputs = obj()
             R          = None
             tmatrix    = None
         else:
-            s_trans = self.copy()
+            s_trans = deepcopy(self)
             R = np.dot(inv(s.axes),sp.axes)
             s_trans.matrix_transform(R.T)
             if tmatrix is not None:
@@ -6193,7 +6188,7 @@ def _getseekpath(
     if structure.has_folded():
         structure = structure.folded_structure
     #end if
-    structure = structure.copy()
+    structure = deepcopy(structure)
     if structure.units != 'A':
         structure.change_units('A')
     #end if
@@ -6225,7 +6220,7 @@ def get_conventional_cell(
         volfac      = seekpathout.volume_original_wrt_conv
     bcharge     = structure.background_charge*volfac
     pos         = dot(posd,axes)
-    sout        = structure.copy()
+    sout        = deepcopy(structure)
     elem        = np.array([Elements(i).symbol for i in enumbers], dtype=str)
     if abs(bcharge-int(bcharge)) > 1E-6:
         raise ValueError("Invalid background charge for conventional structure")
@@ -6248,7 +6243,7 @@ def get_primitive_cell(
     volfac      = seekpathout['volume_original_wrt_prim']
     bcharge     = structure.background_charge*volfac
     pos         = dot(posd,axes)
-    sout        = structure.copy()
+    sout        = deepcopy(structure)
     elem        = np.array([Elements(i).symbol for i in enumbers], dtype=str)
     return {'structure' : Structure(axes=axes, elem=elem, pos=pos, background_charge=bcharge, units='A'),
             'T'         : seekpathout['primitive_transformation_matrix']}
@@ -6270,13 +6265,13 @@ def get_kpath(
                                    recipe=recipe, reference_distance=reference_distance, with_time_reversal=with_time_reversal)
     #end if
     if check_standard:
-        structure = structure.copy()
+        structure = deepcopy(structure)
         structure.change_units('A')
         axes    = structure.axes
         primlat = seekpathout['primitive_lattice']
         if not np.isclose(primlat, axes).all():
             #print primlat, axes
-            Structure.class_error(
+            error(
                 'Input lattice is not the conventional lattice. If you like otherwise, set check_standard=False.'
                 )
         #end if
@@ -6319,7 +6314,7 @@ def get_structure_with_bands(
     ):
     if cell == 0:
         ''' Use input structure '''
-        struct_band = structure.copy()
+        struct_band = deepcopy(structure)
     elif cell == 1:
         ''' Use conventional structure '''
         struct_band = get_conventional_cell(structure=structure, symprec=symprec, angle_tolerance=angle_tolerance)['structure']
@@ -6327,7 +6322,7 @@ def get_structure_with_bands(
         ''' Use primitive structure '''
         struct_band = get_primitive_cell(structure=structure, symprec=symprec, angle_tolerance=angle_tolerance)['structure']
     else:
-        Structure.class_error('Invalid cell type')
+        error('Invalid cell type')
     #end if
     kpath = get_kpath(structure=struct_band, check_standard=False, with_time_reversal=with_time_reversal)
     return Structure(axes              = struct_band.axes,
@@ -6412,7 +6407,7 @@ def get_band_tiling(
         if kpoints_label is None:
             kpoints_label = []
             if kpoints_rel is None:
-                Structure.class_error(
+                error(
                     "Please define symbolic or crystal coordinates for kpoints. e.g. ['GAMMA', 'K']  or [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]"
                 )
             else:
@@ -6421,13 +6416,13 @@ def get_band_tiling(
                     if any(kindex):
                         kpts[kpath_label[kindex][0]] = np.array(k)
                     else:
-                        Structure.class_error('{0} is not found in the kpath'.format(k))
+                        error('{0} is not found in the kpath'.format(k))
                     #end if
                 #end for
             #end if
         else:
             if kpoints_rel is not None:
-                Structure.class_error('Both symbolic and crystal k-points are defined.')
+                error('Both symbolic and crystal k-points are defined.')
             else:
                 kpoints_rel = []
                 num_kpoints = 0
@@ -6439,7 +6434,7 @@ def get_band_tiling(
                         #end if
                         kpts[k] = np.array(kpath_rel[kindex][0])
                     else:
-                        Structure.class_error('{0} is not found in the kpath'.format(k))
+                        error('{0} is not found in the kpath'.format(k))
                     #end if
                 #end for
             #end if
@@ -6567,7 +6562,7 @@ def get_band_tiling(
         mats             = np.array(mats)
         for m in mats:
             axes     = structure.axes.copy()
-            s        = structure.copy()
+            s        = deepcopy(structure)
             [m_t, r] = optimal_tilematrix(s.tile(m), volfac=mat_vol_mul)
             m_axes = dot(dot(m_t, m), axes)
             m_cubicity = cube_deviation(m_axes)
@@ -6642,7 +6637,7 @@ skp = obj(
 
 def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recenter=True,match_com=False,repackage=False,chained=False):
     if images is None:
-        Structure.class_error('images must be provided','interpolate_structures')
+        error('images must be provided','interpolate_structures')
     #end if
 
     # if a list of structures is provided,
@@ -6669,12 +6664,12 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
     system1 = None
     system2 = None
     if not isinstance(struct1,Structure):
-        system1 = struct1.copy()
+        system1 = deepcopy(struct1)
         system1.remove_folded()
         struct1 = system1.structure
     #end if
     if not isinstance(struct2,Structure):
-        system2 = struct2.copy()
+        system2 = deepcopy(struct2)
         system2.remove_folded()
         struct2 = system2.structure
     #end if
@@ -6689,11 +6684,11 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
         elif system2 is not None:
             system = system2
         else:
-            Structure.class_error('cannot repackage into physical systems since no system object was provided in place of a structure','interpolate_structures')
+            error('cannot repackage into physical systems since no system object was provided in place of a structure','interpolate_structures')
         #end if
         systems = []
         for s in structures:
-            ps = system.copy()
+            ps = deepcopy(system)
             ps.structure = s
             systems.append(ps)
         #end for
@@ -6710,7 +6705,7 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
 def structure_animation(filepath,structures,tiling=None):
     path,file = os.path.split(filepath)
     if not file.endswith('xyz'):
-        Structure.class_error('only xyz files are supported for now','structure_animation')
+        error('only xyz files are supported for now','structure_animation')
     #end if
     anim = ''
     for s in structures:
@@ -6728,7 +6723,7 @@ def structure_animation(filepath,structures,tiling=None):
 class DefectStructure(Structure):
     def __init__(self,*args,**kwargs):
         if len(args)>0 and isinstance(args[0],Structure):
-            self.transfer_from(args[0],copy=True)
+            self.update(**deepcopy(args[0]))
         else:
             Structure.__init__(self,*args,**kwargs)
         #end if
@@ -7179,7 +7174,7 @@ class Crystal(Structure):
     for (name,cell) in kc_keys:
         desc = known_crystals[name,cell]
         if cell=='prim' and (name,'conv') not in known_crystals:
-            cdesc = desc.copy()
+            cdesc = deepcopy(desc)
             if cdesc.cell=='primitive':
                 cdesc.cell = 'conventional'
                 known_crystals[name,'conv'] = cdesc
@@ -7249,7 +7244,7 @@ class Crystal(Structure):
             add_kpath      = add_kpath     ,
             symm_kgrid     = symm_kgrid    ,
             )
-        generation_info = gi.copy()
+        generation_info = deepcopy(gi)
 
         lattice_in = lattice
         if isinstance(lattice,str):
@@ -7262,19 +7257,19 @@ class Crystal(Structure):
         known_crystal = False
         if (lattice_in,cell) in self.known_crystals:
             known_crystal = True
-            lattice_info = self.known_crystals[lattice_in,cell].copy()
+            lattice_info = deepcopy(self.known_crystals[lattice_in,cell])
         elif (lattice,cell) in self.known_crystals:
             known_crystal = True
-            lattice_info = self.known_crystals[lattice,cell].copy()
+            lattice_info = deepcopy(self.known_crystals[lattice,cell])
         #end if
         
         if known_crystal:
             while 'lattice' in lattice_info and 'cell' in lattice_info and (lattice_info.lattice,lattice_info.cell) in self.known_crystals:
                 li_old = lattice_info
-                lattice_info = self.known_crystals[li_old.lattice,li_old.cell].copy()
+                lattice_info = deepcopy(self.known_crystals[li_old.lattice,li_old.cell])
                 del li_old.lattice
                 del li_old.cell
-                lattice_info.transfer_from(li_old,copy=False)
+                lattice_info.update(**li_old)
             #end while
             if 'cell' in lattice_info:
                 cell = lattice_info.cell
@@ -7310,7 +7305,7 @@ class Crystal(Structure):
                     inputs[var] = lattice_info[var]
                 #end if
             #end for
-            centering,constants,atoms,basis,basis_vectors,tiling,cscale,axes,units=inputs.list('centering','constants','atoms','basis','basis_vectors','tiling','cscale','axes','units')
+            centering,constants,atoms,basis,basis_vectors,tiling,cscale,axes,units=[inputs[k] for k in ('centering','constants','atoms','basis','basis_vectors','tiling','cscale','axes','units')]
         #end if
 
         if constants is None:
@@ -7526,7 +7521,7 @@ class Crystal(Structure):
         #end for
         pos = np.array(pos)
 
-        self.set(
+        self.update(
             constants = np.array([a,b,c]),
             angles    = np.array([alpha,beta,gamma]),
             generation_info = generation_info
@@ -7560,8 +7555,7 @@ class Crystal(Structure):
 
 # test needed
 class Jellium(Structure):
-    prefactors = obj()
-    prefactors.transfer_from({1:2*pi,2:4*pi,3:4./3*pi})
+    prefactors = obj({1:2*pi,2:4*pi,3:4./3*pi})
 
     def __init__(self,charge=None,background_charge=None,cell=None,volume=None,density=None,rs=None,dim=3,
                  axes=None,kpoints=None,kweights=None,kgrid=None,kshift=None,units=None,tiling=None):
@@ -7622,7 +7616,7 @@ class Jellium(Structure):
     #end def rs
 
     def tile(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def tile
 #end class Jellium
 
@@ -7665,7 +7659,7 @@ def generate_structure(type='crystal',*args,**kwargs):
     elif type=='basic':
         s = Structure(*args,**kwargs)
     else:
-        Structure.class_error(
+        error(
             str(type)+" is not a valid structure type\n"
             "options are crystal, defect, atom, dimer, trimer, jellium, empty, or basic"
         )
@@ -7708,7 +7702,7 @@ def generate_atom_structure(
         Boundary conditions for the resulting structure.
     """
     if atom is None:
-        Structure.class_error('atom must be provided','generate_atom_structure')
+        error('atom must be provided','generate_atom_structure')
     #end if
     if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
@@ -7764,10 +7758,10 @@ def generate_dimer_structure(
         The axis that the dimer is aligned on.
     """
     if dimer is None:
-        Structure.class_error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
+        error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
     #end if
     if separation is None:
-        Structure.class_error('separation must be provided to construct dimer','generate_dimer_structure')
+        error('separation must be provided to construct dimer','generate_dimer_structure')
     #end if
     if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
@@ -7779,7 +7773,7 @@ def generate_dimer_structure(
     elif axis=='z':
         p2 = [0,0,separation]
     else:
-        Structure.class_error(
+        error(
             "dimer orientation axis must be x,y,z\n"
             "  you provided: {0}".format(axis),
             "generate_dimer_structure"
@@ -7844,32 +7838,32 @@ def generate_trimer_structure(
         The units of the supplied angle.
     """
     if trimer is None:
-        Structure.class_error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
+        error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
     #end if
     if separation is None:
-        Structure.class_error('separation must be provided to construct trimer','generate_trimer_structure')
+        error('separation must be provided to construct trimer','generate_trimer_structure')
     #end if
     if len(separation)!=2:
-        Structure.class_error(
+        error(
             "two separation distances (atom1-atom2,atom1-atom3) must be provided to construct trimer\n"
             "you provided {0} separation distances".format(len(separation)),
             'generate_trimer_structure'
         )
     #end if
     if angle is None:
-        Structure.class_error('angle must be provided to construct trimer','generate_trimer_structure')
+        error('angle must be provided to construct trimer','generate_trimer_structure')
     #end if
     if angular_units=='degrees':
         angle *= pi/180
     elif not angular_units.startswith('rad'):
-        Structure.class_error(
+        error(
             "angular units must be degrees or radians\n"
             "you provided: {0}".format(angular_units),
             'generate_trimer_structure'
         )
     #end if
     if axis==axis2:
-        Structure.class_error(
+        error(
             "axis and axis2 must be different to define the trimer plane\n"
             "you provided {0} for both".format(axis),
             'generate_trimer_structure'
@@ -7886,7 +7880,7 @@ def generate_trimer_structure(
     elif axis=='z':
         p2 = [0,0,separation[0]]
     else:
-        Structure.class_error(
+        error(
             "trimer bond1 (atom2-atom1) orientation axis must be x,y,z\n"
             "  you provided: {0}".format(axis),
             'generate_trimer_structure'
@@ -7909,7 +7903,7 @@ def generate_trimer_structure(
     elif axpair=='xz':
         p3 = [r*c,0,r*s]
     else:
-        Structure.class_error(
+        error(
             "trimer bond2 (atom3-atom1) orientation axis must be x,y,z\n"
             "  you provided: {0}".format(axis2),
             'generate_trimer_structure'
@@ -8121,12 +8115,12 @@ def generate_defect_structure(defect,structure,shape=None,element=None,
     if structure in defects:
         dstruct = defects[structure]
     else:
-        DefectStructure.class_error('defects for '+structure+' structure have not yet been implemented')
+        error('defects for '+structure+' structure have not yet been implemented')
     #end if
     if defect in dstruct:
         drep = dstruct[defect]
     else:
-        DefectStructure.class_error(defect+' defect not found for '+structure+' structure')
+        error(defect+' defect not found for '+structure+' structure')
     #end if
 
     ds = generate_crystal_structure(

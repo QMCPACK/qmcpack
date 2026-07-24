@@ -51,11 +51,11 @@ from copy import deepcopy
 import numpy as np
 from numpy import pi
 from numpy.linalg import inv
+from .developer import DevBase, obj, log, warn, error
 from .unit_converter import convert
 from .periodic_table import Elements
 from .structure import Structure, kmesh
 from .physical_system import PhysicalSystem
-from .developer import DevBase, obj, log, warn, error
 from .pseudopotential import pp_elem_label
 from .simulation import SimulationInput
 from . import numpy_extensions as npe
@@ -282,15 +282,15 @@ class PwscfInputBase(DevBase):
 class Element(PwscfInputBase):
     name = None
     def add(self,**variables):
-        self._set(**variables)
+        self.update(**variables)
     #end def add
 
     def read(self,lines):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read
 
     def write(self,parent):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write
 
     def post_process_read(self,parent):
@@ -313,7 +313,7 @@ class Section(Element):
     #end if
 
     def assign(self,**variables):
-        self.transfer_from(variables)
+        self.update(**variables)
     #end def assign
 
 
@@ -447,7 +447,7 @@ class Section(Element):
                             index_map[index] = tuple(indlist)
                         #end if
                     #end for
-                    index_map_inv = index_map.inverse()
+                    index_map_inv = obj({v:k for k,v in index_map.items()})
                 #end if
 
                 for index in sorted(index_map_inv.keys()):
@@ -501,15 +501,15 @@ class Card(Element):
     #end def write
 
     def read_text(self,lines):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
     def write_text(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
     def change_specifier(self,new_specifier):
-        self.not_implemented()
+        raise NotImplementedError
     #end def change_specifier
 
     def change_option(self,*args,**kwargs):
@@ -909,7 +909,7 @@ def check_new_variables(exit=True):
     sections = section_classes
     msg = ''
     for section in sections:
-        if section.class_has('new_variables'):
+        if hasattr(section,'new_variables'):
             new_vars = set([v.lower() for v in section.new_variables])
             missing = new_vars-set(section.variables)
             if len(missing)>0:
@@ -1525,9 +1525,8 @@ class PwscfInput(SimulationInput):
         hubbard          = hubbard         ,         
         )
 
-    element_types = obj()
-    element_types.transfer_from(section_types)
-    element_types.transfer_from(card_types)
+    element_types = obj(**section_types)
+    element_types.update(**card_types)
 
     required_elements = ['control','system','electrons','atomic_species','atomic_positions','k_points']
     def __init__(self,*elements):
@@ -1702,7 +1701,7 @@ class PwscfInput(SimulationInput):
             if s.at_Gpoint():
                 self.k_points.specifier = 'gamma'
             elif s.at_Lpoint():
-                self.k_points.set(
+                self.k_points.update(
                     specifier = 'automatic',
                     grid  = (1,1,1),
                     shift = (1,1,1)
@@ -1804,7 +1803,7 @@ class PwscfInput(SimulationInput):
             if s.at_Gpoint():
                 self.k_points.specifier = 'gamma'
             elif s.at_Lpoint():
-                self.k_points.set(
+                self.k_points.update(
                     specifier = 'automatic',
                     grid  = (1,1,1),
                     shift = (1,1,1)
@@ -1859,6 +1858,7 @@ class PwscfInput(SimulationInput):
     #end def incorporate_system_old
 
         
+    # test needed
     def return_system(self,structure_only=False,**valency):
         ibrav = self.system.ibrav
         if ibrav!=0:
@@ -1868,11 +1868,11 @@ class PwscfInput(SimulationInput):
         scale,axes,kaxes = self.get_common_vars('scale','axes','kaxes')
 
         elem = list(self.atomic_positions.atoms)
-        ap = self.atomic_positions.copy()
+        ap = deepcopy(self.atomic_positions)
         ap.change_specifier('bohr',self)
         pos = ap.positions
 
-        kp = self.k_points.copy()
+        kp = deepcopy(self.k_points)
         kp.change_specifier('tpiba',self)
         kpoints = kp.kpoints*(2*pi)/scale
 
@@ -1931,7 +1931,7 @@ class PwscfInput(SimulationInput):
 
 
     def standardize_types(self):
-        for s in self:
+        for s in self.values():
             if isinstance(s,Section):
                 array_keys = []
                 for k in s.keys():
@@ -1984,7 +1984,7 @@ def generate_pwscf_input(selector,**kwargs):
     elif selector=='vc-relax':
         return generate_vcrelax_input(**kwargs)
     else:
-        PwscfInput.class_error('selection '+str(selector)+' has not been implemented for pwscf input generation')
+        error('selection '+str(selector)+' has not been implemented for pwscf input generation')
     #end if
 #end def generate_pwscf_input
 
@@ -2067,7 +2067,7 @@ def generate_any_pwscf_input(**kwargs):
     # setup for k-point symmetry run
     #   ecutwfc is set to 1 so that pwscf will crash after initialization
     #   symmetrized k-points will still be written to log output
-    ksymm_run = kwargs.delete_optional('ksymm_run',False)
+    ksymm_run = kwargs.pop('ksymm_run',False)
     if ksymm_run:
         kwargs.ecutwfc    = 1
         kwargs.nosym      = False
@@ -2082,7 +2082,7 @@ def generate_any_pwscf_input(**kwargs):
             if defaults in generate_any_defaults:
                 defaults = generate_any_defaults[defaults]
             else:
-                PwscfInput.class_error('invalid default set requested: {0}\n  valid options are {1}'.format(defaults,sorted(generate_any_defaults.keys())))
+                error('invalid default set requested: {0}\n  valid options are {1}'.format(defaults,sorted(generate_any_defaults.keys())))
             #end if
         #end if
     else:
@@ -2100,14 +2100,14 @@ def generate_any_pwscf_input(**kwargs):
     #end for
 
     if ksymm_run and 'calculation' in kwargs and kwargs.calculation!='scf':
-        PwscfInput.class_error('input parameter "calculation" must be set to "scf" when ksymm_run is requested')
+        error('input parameter "calculation" must be set to "scf" when ksymm_run is requested')
     #end if
 
     #copy certain keywords
-    tot_magnetization = kwargs.get_optional('tot_magnetization',None)
-    nspin             = kwargs.get_optional('nspin',None)
-    nbnd              = kwargs.get_optional('nbnd',None)
-    hubbard_u         = kwargs.get_optional('hubbard_u',None)
+    tot_magnetization = kwargs.get('tot_magnetization',None)
+    nspin             = kwargs.get('nspin',None)
+    nbnd              = kwargs.get('nbnd',None)
+    hubbard_u         = kwargs.get('hubbard_u',None)
     # Pre 7.2 Hubbard tags
     hub_keys_pre72 = 'hubbard_u hubbard_j0 hubbard_j U_projection_type'.lower().split()
     has_pre72_keys = any(([_ in kwargs.keys() for _ in hub_keys_pre72]))
@@ -2115,9 +2115,9 @@ def generate_any_pwscf_input(**kwargs):
     hub_keys_v72 = 'hubbard hubbard_proj'.lower().split()
     has_v72_keys = any(([_ in kwargs.keys() for _ in hub_keys_v72]))
     if has_pre72_keys + has_v72_keys > 1:
-        PwscfInput.class_error('Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72))
+        error('Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72))
     #end if     
-    occ               = kwargs.get_optional('occupations',None)
+    occ               = kwargs.get('occupations',None)
     
     #make an empty input file
     pw = PwscfInput()
@@ -2128,7 +2128,9 @@ def generate_any_pwscf_input(**kwargs):
         keys = set(kwargs.keys()) & section_type.variables
         if len(keys)>0:
             kw = obj()
-            kw.move_from(kwargs,keys)
+            for k in keys:
+                if k in kwargs:
+                    kw[k] = kwargs.pop(k)
             section = section_type()
             section.assign(**kw)
             pw[section_name] = section
@@ -2136,36 +2138,36 @@ def generate_any_pwscf_input(**kwargs):
     #end for
 
     #process other keywords
-    use_folded       = kwargs.delete_required('use_folded')
-    kgrid            = kwargs.delete_required('kgrid')
-    kshift           = kwargs.delete_required('kshift')
-    system           = kwargs.delete_optional('system',None)
-    pseudos          = kwargs.delete_optional('pseudos',[])
-    elem_order       = kwargs.delete_optional('elem_order',None)
-    mass             = kwargs.delete_optional('mass',None)
-    elem             = kwargs.delete_optional('elem',None)
-    pos              = kwargs.delete_optional('pos',None)
-    totmag_sys       = kwargs.delete_optional('totmag_sys',False)
-    start_mag        = kwargs.delete_optional('start_mag',None)
-    bandfac          = kwargs.delete_optional('bandfac',None)
-    nogamma          = kwargs.delete_optional('nogamma',False)
-    positions_option = kwargs.delete_optional('pos_specifier',None)
+    use_folded       = kwargs.pop('use_folded')
+    kgrid            = kwargs.pop('kgrid')
+    kshift           = kwargs.pop('kshift')
+    system           = kwargs.pop('system',None)
+    pseudos          = kwargs.pop('pseudos',[])
+    elem_order       = kwargs.pop('elem_order',None)
+    mass             = kwargs.pop('mass',None)
+    elem             = kwargs.pop('elem',None)
+    pos              = kwargs.pop('pos',None)
+    totmag_sys       = kwargs.pop('totmag_sys',False)
+    start_mag        = kwargs.pop('start_mag',None)
+    bandfac          = kwargs.pop('bandfac',None)
+    nogamma          = kwargs.pop('nogamma',False)
+    positions_option = kwargs.pop('pos_specifier',None)
     if positions_option is None:
-        positions_option = kwargs.delete_optional('positions_option',None)
+        positions_option = kwargs.pop('positions_option',None)
     #end if
     if positions_option is None:
-        positions_option = kwargs.delete_optional('atomic_positions_option',None)
+        positions_option = kwargs.pop('atomic_positions_option',None)
     #end if
-    kpoints_option   = kwargs.delete_optional('kpoints_option',None)
+    kpoints_option = kwargs.pop('kpoints_option',None)
     if kpoints_option is None:
-        kpoints_option   = kwargs.delete_optional('k_points_option',None)
+        kpoints_option = kwargs.pop('k_points_option',None)
     #end if
-    cell_option      = kwargs.delete_optional('cell_option',None)
+    cell_option = kwargs.pop('cell_option',None)
     if cell_option is None:
-        cell_option      = kwargs.delete_optional('cell_parameters_option',None)
+        cell_option = kwargs.pop('cell_parameters_option',None)
     #end if
-    hubbard_input     = kwargs.delete_optional('hubbard', None)
-    hubbard_option    = kwargs.delete_optional('hubbard_proj',None)
+    hubbard_input  = kwargs.pop('hubbard', None)
+    hubbard_option = kwargs.pop('hubbard_proj',None)
     
     #  pseudopotentials
     pseudopotentials = obj()
@@ -2176,7 +2178,7 @@ def generate_any_pwscf_input(**kwargs):
         atom_species.append(element)
         pseudopotentials[element] = ppname
     #end for
-    pw.atomic_species.set(
+    pw.atomic_species.update(
         atoms            = list(sorted(atom_species)),
         pseudopotentials = pseudopotentials,
         )
@@ -2184,25 +2186,25 @@ def generate_any_pwscf_input(**kwargs):
     #  physical system information
     if system is None:
         if elem is None:
-            PwscfInput.class_error('system must be provided','generate_pwscf_input')
+            error('system must be provided','generate_pwscf_input')
         else:
             if mass is None:
-                PwscfInput.class_error('"mass" must be provided when "elem" is given','generate_pwscf_input')
+                error('"mass" must be provided when "elem" is given','generate_pwscf_input')
             #end if
             if pos is None:
-                PwscfInput.class_error('"pos" must be provided when "elem" is given','generate_pwscf_input')
+                error('"pos" must be provided when "elem" is given','generate_pwscf_input')
             #end if
             if positions_option is None:
-                PwscfInput.class_error('"atomic_positions_option" must be provided when "elem" is given','generate_pwscf_input')
+                error('"atomic_positions_option" must be provided when "elem" is given','generate_pwscf_input')
             #end if
 
             # fill in atomic_species
             species = set(elem)
             if elem_order is not None:
                 if set(elem_order)!=species:
-                    PwscfInput.class_error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(species),elem_order),'generate_pwscf_input')
+                    error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(species),elem_order),'generate_pwscf_input')
                 elif len(elem_order)!=len(species):
-                    PwscfInput.class_error('elem_order has repeated elements\nelem_order: {0}'.format(elem_order),'generate_pwscf_input')
+                    error('elem_order has repeated elements\nelem_order: {0}'.format(elem_order),'generate_pwscf_input')
                 #end if
                 pw.atomic_species.atoms = list(elem_order)
             else:
@@ -2237,7 +2239,7 @@ def generate_any_pwscf_input(**kwargs):
             npe.reshape_inplace(axes, fs.axes.shape)
             axes = np.dot(s.tmatrix,axes)
             if abs(axes-s.axes).sum()>1e-5:
-                PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(s.axes)+'\nfolded axes tiled:\n'+str(axes),'generate_pwscf_input')
+                error('supercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(s.axes)+'\nfolded axes tiled:\n'+str(axes),'generate_pwscf_input')
             #end if
         else:
             axes = np.array(array_to_string(s.axes).split(),dtype=float)
@@ -2274,7 +2276,7 @@ def generate_any_pwscf_input(**kwargs):
     #  Hubbard U
     if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
-            PwscfInput.class_error('input hubbard_u must be of type dict or obj','generate_pwscf_input')
+            error('input hubbard_u must be of type dict or obj','generate_pwscf_input')
         #end if
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
@@ -2283,7 +2285,7 @@ def generate_any_pwscf_input(**kwargs):
     #  starting magnetization
     if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
-            PwscfInput.class_error('input start_mag must be of type dict or obj','generate_pwscf_input')
+            error('input start_mag must be of type dict or obj','generate_pwscf_input')
         #end if
         pw.system.starting_magnetization = deepcopy(start_mag)
     #end if
@@ -2307,7 +2309,7 @@ def generate_any_pwscf_input(**kwargs):
         pw.k_points.specifier = 'gamma'
     elif auto:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid      = kgrid,
             shift     = kshift
@@ -2317,7 +2319,7 @@ def generate_any_pwscf_input(**kwargs):
         pw.k_points.specifier = 'gamma'
     elif (at_gamma or sys_gamma) and nogamma:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid      = (1,1,1),
             shift     = (0,0,0)
@@ -2349,7 +2351,7 @@ def generate_any_pwscf_input(**kwargs):
             hubbard_option = hubbard_card.default_specifier
         else:
             if hubbard_option not in hubbard_card.available_specifiers:
-                PwscfInput.class_error('HUBBARD card specifier "{}" is not valid. Available specifiers: {}'.format(hubbard_option, hubbard_card.available_specifiers))                
+                error('HUBBARD card specifier "{}" is not valid. Available specifiers: {}'.format(hubbard_option, hubbard_card.available_specifiers))
             #end if
         #end if
         pw.hubbard.specifier = hubbard_option
@@ -2364,7 +2366,7 @@ def generate_any_pwscf_input(**kwargs):
     for card_name,option in options.items():
         if option is not None:
             if card_name not in pw:
-                PwscfInput.class_error('Card option provided for card "{}" but card is not present\noption provided: {}'.format(card_name,option))
+                error('Card option provided for card "{}" but card is not present\noption provided: {}'.format(card_name,option))
             #end if
             pw[card_name].change_option(option,pw)
         #end if
@@ -2372,12 +2374,12 @@ def generate_any_pwscf_input(**kwargs):
 
     # check for misformatted kpoints
     if len(pw.k_points)==0:
-        PwscfInput.class_error('k_points section has not been filled in\nplease provide k-point information in either of\n  1) the kgrid input argument\n  2) in the PhysicalSystem object (system input argument)','generate_pwscf_input')
+        error('k_points section has not been filled in\nplease provide k-point information in either of\n  1) the kgrid input argument\n  2) in the PhysicalSystem object (system input argument)','generate_pwscf_input')
     #end if
 
     # check for leftover keywords
     if len(kwargs)>0:
-        PwscfInput.class_error('unrecognized keywords: {0}\nthese keywords are not known to belong to any namelist for PWSCF'.format(sorted(kwargs.keys())),'generate_pwscf_input')
+        error('unrecognized keywords: {0}\nthese keywords are not known to belong to any namelist for PWSCF'.format(sorted(kwargs.keys())),'generate_pwscf_input')
     #end if  
     
     return pw
@@ -2440,7 +2442,7 @@ def generate_scf_input(prefix       = 'pwscf',
     #end if
 
     pw = PwscfInput()
-    pw.control.set(
+    pw.control.update(
         calculation  = 'scf',
         prefix       = prefix,
         restart_mode = restart_mode,
@@ -2452,7 +2454,7 @@ def generate_scf_input(prefix       = 'pwscf',
         verbosity    = verbosity,
         wf_collect   = wf_collect
         )
-    pw.system.set(
+    pw.system.update(
         ibrav       = ibrav,
         ecutwfc     = ecut,
         ecutrho     = ecutrho,
@@ -2469,7 +2471,7 @@ def generate_scf_input(prefix       = 'pwscf',
     #end if
     if occupations is not None:
         if occupations=='smearing':
-            pw.system.set(
+            pw.system.update(
                 occupations = occupations,
                 smearing    = smearing,
                 degauss     = degauss,
@@ -2478,20 +2480,20 @@ def generate_scf_input(prefix       = 'pwscf',
             pw.system.occupations = occupations
         #end if
     #end if
-    pw.electrons.set(
+    pw.electrons.update(
         electron_maxstep = electron_maxstep,
         conv_thr    = conv_thr,
         mixing_mode = mixing_mode,
         mixing_beta = mixing_beta,
         diagonalization = diagonalization,
         )
-    pw.atomic_species.set(
+    pw.atomic_species.update(
         atoms            = atoms,
         pseudopotentials = pseudopotentials
         )
 
     if noncolin or lspinorb:
-        pw.system.set(
+        pw.system.update(
             noncolin = noncolin or lspinorb,
             lspinorb = lspinorb
             )
@@ -2521,7 +2523,7 @@ def generate_scf_input(prefix       = 'pwscf',
         npe.reshape_inplace(axes, fs.axes.shape)
         axes = np.dot(s.tmatrix,axes)
         if abs(axes-s.axes).sum()>1e-5:
-            PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(s.axes)+'\n  folded axes tiled:\n'+str(axes))
+            error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(s.axes)+'\n  folded axes tiled:\n'+str(axes))
         #end if
     else:
         axes = np.array(array_to_string(s.axes).split(),dtype=float)
@@ -2543,14 +2545,14 @@ def generate_scf_input(prefix       = 'pwscf',
 
     if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
-            PwscfInput.class_error('input hubbard_u must be of type dict or obj')
+            error('input hubbard_u must be of type dict or obj')
         #end if
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
     #end if
     if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
-            PwscfInput.class_error('input start_mag must be of type dict or obj')
+            error('input start_mag must be of type dict or obj')
         #end if
         pw.system.starting_magnetization = deepcopy(start_mag)
         #if 'tot_magnetization' in pw.system:
@@ -2568,21 +2570,21 @@ def generate_scf_input(prefix       = 'pwscf',
     if system is not None:
         structure = system.structure
         if group_atoms:
-            PwscfInput.class_warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
+            warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
         #end if
         #if group_atoms:  # disabled, hopefully not needed for qmcpack
         #    structure.group_atoms()
         ##end if
         if structure.at_Gpoint():
             pw.k_points.clear()
-            pw.k_points.set(
+            pw.k_points.update(
                 specifier = 'automatic',
                 grid  = (1,1,1),
                 shift = (0,0,0)
                 )
         elif structure.at_Lpoint():
             pw.k_points.clear()
-            pw.k_points.set(
+            pw.k_points.update(
                 specifier = 'automatic',
                 grid  = (1,1,1),
                 shift = (1,1,1)
@@ -2592,14 +2594,14 @@ def generate_scf_input(prefix       = 'pwscf',
 
     if kgrid is not None:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid     = kgrid,
             shift    = kshift
             )
     elif system is None:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid     = (1,1,1),
             shift    = kshift
@@ -2615,7 +2617,7 @@ def generate_scf_input(prefix       = 'pwscf',
 
 def generate_nscf_input(**kwargs):
     pw = generate_scf_input(**kwargs)
-    pw.control.set(
+    pw.control.update(
         calculation = 'nscf'
         )
     return pw
@@ -2675,7 +2677,7 @@ def generate_relax_input(prefix       = 'pwscf',
     #end if
 
     pw = PwscfInput('ions')
-    pw.control.set(
+    pw.control.update(
         calculation  = 'relax',
         prefix       = prefix,
         restart_mode = 'from_scratch',
@@ -2687,7 +2689,7 @@ def generate_relax_input(prefix       = 'pwscf',
         verbosity    = verbosity,
         wf_collect   = wf_collect
         )
-    pw.system.set(
+    pw.system.update(
         ibrav       = 0,
         ecutwfc     = ecut,
         ecutrho     = ecutrho,
@@ -2698,25 +2700,25 @@ def generate_relax_input(prefix       = 'pwscf',
     #end if
     if occupations is not None:
         if occupations=='smearing':
-            pw.system.set(
+            pw.system.update(
                 occupations = occupations,
                 smearing    = smearing,
                 degauss     = degauss,
                 )
         #end if
     #end if
-    pw.electrons.set(
+    pw.electrons.update(
         electron_maxstep = 1000,
         conv_thr         = conv_thr,
         mixing_beta      = mixing_beta,
         mixing_mode      = mixing_mode,
         diagonalization  = diagonalization
         )
-    pw.atomic_species.set(
+    pw.atomic_species.update(
         atoms            = atoms,
         pseudopotentials = pseudopotentials
         )
-    pw.ions.set(
+    pw.ions.update(
         ion_dynamics      = 'bfgs',
         upscale           = upscale,
         pot_extrapolation = pot_extrapolation,
@@ -2741,14 +2743,14 @@ def generate_relax_input(prefix       = 'pwscf',
 
     if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
-            PwscfInput.class_error('input hubbard_u must be of type dict or obj')
+            error('input hubbard_u must be of type dict or obj')
         #end if
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
     #end if
     if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
-            PwscfInput.class_error('input start_mag must be of type dict or obj')
+            error('input start_mag must be of type dict or obj')
         #end if
         pw.system.starting_magnetization = deepcopy(start_mag)
         #if 'tot_magnetization' in pw.system:
@@ -2774,14 +2776,14 @@ def generate_relax_input(prefix       = 'pwscf',
         ##end if
         if structure.at_Gpoint():
             pw.k_points.clear()
-            pw.k_points.set(
+            pw.k_points.update(
                 specifier = 'automatic',
                 grid  = (1,1,1),
                 shift = (0,0,0)
                 )
         elif structure.at_Lpoint():
             pw.k_points.clear()
-            pw.k_points.set(
+            pw.k_points.update(
                 specifier = 'automatic',
                 grid  = (1,1,1),
                 shift = (1,1,1)
@@ -2791,14 +2793,14 @@ def generate_relax_input(prefix       = 'pwscf',
 
     if kgrid is not None:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid     = kgrid,
             shift    = kshift
             )
     elif system is None:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid     = (1,1,1),
             shift    = kshift
@@ -2823,7 +2825,7 @@ def generate_vcrelax_input(
     **kwargs):
 
     pw = generate_scf_input(**kwargs)
-    pw.control.set(
+    pw.control.update(
         calculation = 'vc-relax'
     )
     pw['ions'] = pw.element_types['ions']()
@@ -2836,16 +2838,16 @@ def generate_vcrelax_input(
         pw.control.forc_conv_thr = forc_conv_thr
     # end if
     if cell_factor is not None:
-        pw.cell.set(cell_factor=cell_factor)
+        pw.cell.update(cell_factor=cell_factor)
     # end if
     if ion_dynamics is not None:
-        pw.ions.set(ion_dynamics=ion_dynamics)
+        pw.ions.update(ion_dynamics=ion_dynamics)
     # end if
     if press_conv_thr is not None:
-        pw.cell.set(press_conv_thr=press_conv_thr)
+        pw.cell.update(press_conv_thr=press_conv_thr)
     # end if
     if cell_dofree is not None:
-        pw.cell.set(cell_dofree=cell_dofree)
+        pw.cell.update(cell_dofree=cell_dofree)
     # end if
 
     return pw
@@ -2866,7 +2868,7 @@ def generate_vcrelax_input(
 #    #end for
 #
 #    pw = PwscfInput()
-#    pw.control.set(
+#    pw.control.update(
 #        calculation  = 'nscf',
 #        prefix       = prefix,
 #        restart_mode = 'from_scratch',
@@ -2877,7 +2879,7 @@ def generate_vcrelax_input(
 #        disk_io      = 'low',
 #        wf_collect   = True
 #        )
-#    pw.system.set(
+#    pw.system.update(
 #        ibrav       = 0,
 #        degauss     = 0.001,
 #        smearing    = 'mp',
@@ -2885,11 +2887,11 @@ def generate_vcrelax_input(
 #        ecutwfc     = ecut,
 #        ecutrho     = 4*ecut
 #        )
-#    pw.electrons.set(
+#    pw.electrons.update(
 #        conv_thr    = 1.e-10,
 #        mixing_beta = 0.7
 #        )
-#    pw.atomic_species.set(
+#    pw.atomic_species.update(
 #        atoms            = atoms,
 #        pseudopotentials = pseudopotentials
 #        )
@@ -2909,7 +2911,7 @@ def generate_vcrelax_input(
 #    #end if
 #    if overwrite_kpoints:
 #        pw.k_points.clear()
-#        pw.k_points.set(
+#        pw.k_points.update(
 #            specifier = 'tpiba',
 #            kpoints   = kpoints,
 #            weights   = weights
@@ -2918,5 +2920,3 @@ def generate_vcrelax_input(
 #
 #    return pw
 ##end def generate_nscf_input
-
-

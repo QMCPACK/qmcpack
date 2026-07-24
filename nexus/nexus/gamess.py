@@ -201,9 +201,9 @@ class Gamess(Simulation):
                         guess_inputs[vname] = GIarray({start:reduced_indices})
                     #end if
                 #end for
-                input.guess.set(**guess_inputs)
+                input.guess.update(**guess_inputs)
             #end if
-            input.guess.set(
+            input.guess.update(
                 guess = 'moread',
                 norb  = norb,
                 prtmo = True,

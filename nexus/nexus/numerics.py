@@ -535,7 +535,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
             auxfunc = auxfuncs[auxname]
             auxres[auxname] = jackknife_aux(psamples,auxfunc,capture=auxcap)
             eq_vol = auxres[auxname][0]
-            auxfuncs.delete(auxname)
+            auxfuncs.pop(auxname)
             for auxname,auxfunc in auxfuncs.items():
                 num_variables = len(inspect.getargspec(auxfunc).args)
                 if num_variables > 1:
@@ -1483,7 +1483,7 @@ def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_ret
     #end for
 
     # Find the mean of each set of points
-    for l in layers:
+    for l in layers.values():
         l.xmean = l.xsum/l.nsum
     #end for
 
@@ -1589,5 +1589,3 @@ def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
         return ipoints,xmin,xmax
     #end if
 #end def index_by_layer
-
-
