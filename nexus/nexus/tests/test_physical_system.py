@@ -1,4 +1,6 @@
 import pytest
+from copy import deepcopy
+
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
 
@@ -12,15 +14,20 @@ from nexus.physical_system import generate_physical_system
 from .test_structure import structure_same
 
 
+def sub_obj(s,keys):
+    from ..developer import obj
+    return obj({k:s[k] for k in keys})
+
+
 def system_same(s1,s2,pseudized=True,tiled=False):
     same = True
     keys = ('net_charge','net_spin','pseudized')
-    o1 = s1.obj(keys)
-    o2 = s2.obj(keys)
+    o1 = sub_obj(s1,keys)
+    o2 = sub_obj(s2,keys)
     qsame = object_eq(o1,o2)
     vsame = True
     if pseudized:
-        vsame = s1.valency==s2.valency
+        vsame = dict(**s1.valency)==dict(**s2.valency)
     #end if
     ssame = structure_same(s1.structure,s2.structure)
     fsame = True
@@ -254,7 +261,7 @@ def test_physical_system_initialization(tmp_path):
 
     # test copy
     for sys in systems:
-        c = sys.copy()
+        c = deepcopy(sys)
         assert(id(c)!=id(sys))
         assert(c.is_valid())
         assert(system_same(c,sys,tiled=sys.has_folded()))

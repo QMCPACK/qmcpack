@@ -83,7 +83,7 @@ if performed_runs:
     print()
     print('The final structure is:')
     print()
-    print(pa.structures.list()[-1].positions)
+    print(list(pa.structures.values())[-1].positions)
 #end if
 
 

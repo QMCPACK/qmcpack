@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_SIMULATIONS)
 
@@ -297,7 +298,7 @@ def test_convert4qmc_incorporate_result():
 
     sim_start = get_convert4qmc_sim()
 
-    sim = sim_start.copy()
+    sim = deepcopy(sim_start)
     try:
         sim.incorporate_result('unknown',None,other)
         raise FailedTest
@@ -310,7 +311,7 @@ def test_convert4qmc_incorporate_result():
     #end try
 
     # incorporate orbitals from gamess
-    sim = sim_start.copy()
+    sim = deepcopy(sim_start)
 
     assert(sim.input_code is None)
     assert(sim.input.gamess_ascii is None)
@@ -323,7 +324,7 @@ def test_convert4qmc_incorporate_result():
     assert(sim.job.app_command=='convert4qmc -gamess ../rhf/rhf.out')
 
     # incorporate orbitals from pyscf
-    sim = sim_start.copy()
+    sim = deepcopy(sim_start)
 
     assert(sim.input_code is None)
     assert(sim.input.pyscf is None)
@@ -334,7 +335,7 @@ def test_convert4qmc_incorporate_result():
     assert(sim.input.orbitals=='../scf.h5')
     
     # incorporate orbitals from quantum package
-    sim = sim_start.copy()
+    sim = deepcopy(sim_start)
 
     assert(sim.input_code is None)
     assert(sim.input.qp is None)

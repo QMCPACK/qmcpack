@@ -194,7 +194,7 @@ def test_get_result(tmp_path):
 def test_incorporate_result(tmp_path):
     import shutil
     from numpy import array
-    from ..developer import obj
+    from ..developer import obj,to_obj
 
     nexus_core.local_directory  = str(tmp_path)
     nexus_core.remote_directory = str(tmp_path)
@@ -258,7 +258,7 @@ def test_incorporate_result(tmp_path):
         vel_coord       = None,
         )
 
-    assert(object_eq(sim2.input.poscar.to_obj(),poscar_ref))
+    assert(object_eq(to_obj(sim2.input.poscar),poscar_ref))
 
     clear_all_sims()
 #end def test_incorporate_result

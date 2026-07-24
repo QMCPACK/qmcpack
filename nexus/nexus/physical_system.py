@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 from copy import deepcopy
 import numpy as np
-from .developer import DevBase, obj, warn
+from .developer import DevBase, obj, error, warn
 from .periodic_table import Elements
 from .structure import Structure, generate_structure, read_structure
 
@@ -179,7 +179,7 @@ class PhysicalSystem(DevBase):
 
 
     def copy(self):
-        cp = DevBase.copy(self)
+        cp = deepcopy(self)
         if self.folded_system is not None and self.structure.folded_structure is not None:
             del cp.folded_system.structure
             cp.folded_system.structure = cp.structure.folded_structure
@@ -220,7 +220,7 @@ class PhysicalSystem(DevBase):
                 net_spin   = self.net_spin
             #end if
         #end if
-        system = self.copy()
+        system = deepcopy(self)
         supersystem = PhysicalSystem(
             structure  = supercell,
             net_charge = net_charge,
@@ -407,14 +407,13 @@ def generate_physical_system(**kwargs):
                 is_path = '/' in s
                 is_file = format in set('xyz xsf poscar cif fhi-aims'.split())
                 if is_path or is_file:
-                    PhysicalSystem.class_error('user provided structure file does not exist\nstructure file path: '+s,'generate_physical_system')
+                    error('user provided structure file does not exist\nstructure file path: '+s,'generate_physical_system')
                 #end if
             #end if
         #end if
     #end if
 
-    generation_info = obj()
-    generation_info.transfer_from(deepcopy(kwargs))
+    generation_info = obj(**deepcopy(kwargs))
 
     net_charge = kwargs['net_charge']
     net_spin   = kwargs['net_spin']
@@ -449,7 +448,7 @@ def generate_physical_system(**kwargs):
     else:
         for d in range(len(pretile)):
             if tiling[d]%pretile[d]!=0:
-                PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
+                error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
             #end if
         #end for
         tiling = tuple(np.array(tiling)//np.array(pretile))
