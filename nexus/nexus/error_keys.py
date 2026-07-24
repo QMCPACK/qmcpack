@@ -609,6 +609,51 @@ qmcpack_error_patterns = (
     r'\b(?:barrier_and_abort|Communicate::abort)\b',
     )
 
+vasp_errors = (
+    'VERY BAD NEWS! internal error in subroutine',
+    'ZBRENT: fatal error in bracketing',
+    'BRMIX: very serious problems',
+    'EDDDAV: Call to ZHEGV failed',
+    'EDDRMM: Call to ZHEGV failed',
+    'LAPACK: Routine ZPOTRF failed',
+    'ERROR FEXCP:',
+    'ERROR: the triple product of the basis vectors',
+    'ERROR: there must be 1 or 3 items on line 2 of POSCAR',
+    )
+
+vasp_error_patterns = (
+    r'^\s*(?:\|\s*)?(?:VERY BAD NEWS!\s*)?'
+    r'(?:internal\s+)?error in subroutine\b',
+    r'^\s*ZBRENT:\s*fatal\s+(?:error|internal)[^\n]*\bbracket',
+    r'^\s*BRMIX:\s*very serious problems\b',
+    r'^\s*(?:EDDDAV|EDDRMM):[^\n]*(?:ZHEGV|ZHEEV)[^\n]*failed\b',
+    r'^\s*LAPACK:[^\n]*\bfailed\b',
+    r'^\s*ERROR FEXCP:',
+    )
+
+gamess_errors = (
+    'EXECUTION OF GAMESS TERMINATED -ABNORMALLY-',
+    'SCF IS UNCONVERGED, TOO MANY ITERATIONS',
+    'SCF DID NOT CONVERGE',
+    'MEMORY REQUEST EXCEEDS AVAILABLE MEMORY',
+    'WORDS OF MEMORY UNAVAILABLE',
+    'INPUT HAS AT LEAST ONE SPELLING OR LOGIC MISTAKE',
+    'THIS JOB CANNOT CONTINUE',
+    'ddikick.x: Fatal error detected',
+    'ddikick.x: application process quit unexpectedly',
+    'ddikick.x: Execution terminated due to error(s)',
+    '*** ERROR TERMINATION ***',
+    )
+
+gamess_error_patterns = (
+    r'\bEXECUTION OF GAMESS TERMINATED\s+-?ABNORMALLY-?(?!\w)',
+    r'\bddikick\.x:\s*application process\s+\d+\s+quit unexpectedly\b',
+    r'\bDDI Process\s+\d+:\s*error code\s+(?!0\b)\d+\b',
+    r'\bSCF\s+(?:IS UNCONVERGED,\s+TOO MANY ITERATIONS|'
+    r'DID NOT CONVERGE)\b',
+    r'\b\d+\s+WORDS OF MEMORY UNAVAILABLE\b',
+    )
+
 
 # Human-readable keys and precise regex patterns are kept separately so the
 # former can be used to document and test what the latter are intended to find.
@@ -662,6 +707,8 @@ _error_keys = {
     'quantum_package' : quantum_package_errors,
     'rmg'             : rmg_errors,
     'qmcpack'         : qmcpack_errors,
+    'vasp'            : vasp_errors,
+    'gamess'          : gamess_errors,
     }
 
 _error_patterns = {
@@ -694,6 +741,8 @@ _error_patterns = {
     'quantum_package' : quantum_package_error_patterns,
     'rmg'             : rmg_error_patterns,
     'qmcpack'         : qmcpack_error_patterns,
+    'vasp'            : vasp_error_patterns,
+    'gamess'          : gamess_error_patterns,
     }
 
 _error_set_names = tuple(_error_keys)
@@ -801,6 +850,8 @@ def find_error_keys(
         quantum_package    = False,
         rmg                = False,
         qmcpack            = False,
+        vasp               = False,
+        gamess             = False,
         # return lines found or not
         return_lines       = False,
         ):
@@ -837,7 +888,7 @@ def find_error_keys(
         Select individual compiled-library error sets.
     numpy, scipy, h5py : bool, optional
         Select individual Python-module error sets.
-    pwscf, pyscf, quantum_package, rmg, qmcpack : bool, optional
+    pwscf, pyscf, quantum_package, rmg, qmcpack, vasp, gamess : bool, optional
         Select individual simulation-code error sets.
     return_lines : bool, optional
         If ``True``, return the lines containing matching diagnostics in
@@ -907,6 +958,8 @@ def find_error_keys(
         'quantum_package' : quantum_package,
         'rmg'             : rmg,
         'qmcpack'         : qmcpack,
+        'vasp'            : vasp,
+        'gamess'          : gamess,
         }
 
     if all_errors:

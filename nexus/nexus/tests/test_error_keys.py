@@ -384,3 +384,73 @@ Total Execution time = 12.4 sec
 ''',
         qmcpack=True,
         )
+
+
+def test_vasp_output():
+    assert find_error_keys(
+        '''
+ -----------------------------------------------------------------------------
+|     VERY BAD NEWS! internal error in subroutine IBZKPT:                    |
+|     Reciprocal lattice and k-lattice belong to different class of lattices |
+ -----------------------------------------------------------------------------
+''',
+        vasp=True,
+        )
+    assert find_error_keys(
+        '''
+  25 F= -.78260631E+03 E0= -.78254989E+03 d E =-.117534E-05
+  ZBRENT: fatal error in bracketing
+  please rerun with smaller EDIFF, or copy CONTCAR to POSCAR and continue
+''',
+        vasp=True,
+        )
+    assert find_error_keys(
+        '''
+DAV:   4    -0.124848E+03   -0.34210E-03
+EDDDAV: Call to ZHEGV failed. Returncode = 6 3 8
+''',
+        vasp=True,
+        )
+    assert not find_error_keys(
+        '''
+WARNING: small aliasing (wrap around) errors must be expected
+reached required accuracy - stopping structural energy minimisation
+General timing and accounting informations for this job:
+''',
+        vasp=True,
+        )
+
+
+def test_gamess_output():
+    assert find_error_keys(
+        '''
+ SCF IS UNCONVERGED, TOO MANY ITERATIONS
+ FINAL UHF ENERGY IS 0.0000000000 AFTER 30 ITERATIONS
+ EXECUTION OF GAMESS TERMINATED -ABNORMALLY- AT Thu Nov 14 13:08:57 2019
+''',
+        gamess=True,
+        )
+    assert find_error_keys(
+        '''
+ ***** ERROR: MEMORY REQUEST EXCEEDS AVAILABLE MEMORY
+ PROCESS NO. 0 WORDS REQUIRED= 300899439 AVAILABLE= 250000000
+ EXECUTION OF GAMESS TERMINATED -ABNORMALLY-
+''',
+        gamess=True,
+        )
+    assert find_error_keys(
+        '''
+ DDI Process 0: error code 911
+ ddikick.x: application process 0 quit unexpectedly.
+ ddikick.x: Execution terminated due to error(s).
+''',
+        gamess=True,
+        )
+    assert not find_error_keys(
+        '''
+          FINAL RHF ENERGY IS      -75.9839481234
+ EXECUTION OF GAMESS TERMINATED NORMALLY
+ TOTAL WALL CLOCK TIME= 1.2 SECONDS, CPU UTILIZATION IS 99.4%
+''',
+        gamess=True,
+        )
