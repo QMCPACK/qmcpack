@@ -558,7 +558,6 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             )
 
         if analyze:
-            print(self.input)
             self.analyze()
         #end if
     #end def __init__ 
