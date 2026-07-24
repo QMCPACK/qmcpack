@@ -346,14 +346,14 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
  *In future, both the LM and descent engines should be children of some parent engine base class.
  * */
 void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                                 DescentEngine& descentEngineObj,
-                                                 const std::string& MinMethod)
+                                                 OptionalRef<DescentEngine> descentEngineObj)
 {
   const auto num_opt_vars = opt_vars.size();
-  if (MinMethod == "descent")
+  if (descentEngineObj)
   {
+    DescentEngine& descent_engine(*descentEngineObj);
     //Reset vectors and scalars from any previous iteration
-    descentEngineObj.prepareStorage(omp_get_max_threads(), num_opt_vars);
+    descent_engine.prepareStorage(omp_get_max_threads(), num_opt_vars);
   }
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
@@ -426,20 +426,18 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
           le_der_samp[i + 1] = HDsaved[i] + etmp * Dsaved[i];
 
 #ifdef HAVE_LMY_ENGINE
-        if (MinMethod == "adaptive")
+        if (descentEngineObj)
         {
-          // pass into engine
-          EngineObj.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
-        }
-        else if (MinMethod == "descent")
-        {
+          DescentEngine& descent_engine(*descentEngineObj);
           //Could remove this copying over if LM engine becomes compatible with complex numbers
           //so that der_rat_samp and le_der_samp are vectors of std::complex<double> when QMC_COMPLEX=1
           std::vector<FullPrecValueType> der_rat_samp_comp(der_rat_samp.begin(), der_rat_samp.end());
           std::vector<FullPrecValueType> le_der_samp_comp(le_der_samp.begin(), le_der_samp.end());
 
-          descentEngineObj.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
+          descent_engine.takeSample(ip, der_rat_samp_comp, le_der_samp_comp, le_der_samp_comp, 1.0, saved[REWEIGHT]);
         }
+        else
+          EngineObj.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
 #endif
       }
       else
@@ -477,10 +475,13 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 
 #ifdef HAVE_LMY_ENGINE
   // engine finish taking samples
-  if (MinMethod == "adaptive")
+  if (descentEngineObj)
+  {
+    DescentEngine& descent_engine(*descentEngineObj);
+    descent_engine.sample_finish();
+  }
+  else
     EngineObj.sample_finish();
-  else if (MinMethod == "descent")
-    descentEngineObj.sample_finish();
 #endif
 
   app_log().flush();

@@ -19,7 +19,7 @@
 
 import os
 from pathlib import Path
-from .developer import obj
+from .developer import obj, error
 from .execute import execute
 from .nexus_base import nexus_core
 from .simulation import Simulation
@@ -56,9 +56,9 @@ class QuantumPackage(Simulation):
 
         if qprc is not None and not nexus_core.status_only:
             if not isinstance(qprc,str):
-                QuantumPackage.class_error('settings input "qprc" must be a path\nreceived type: {0}\nwith value: {1}'.format(qprc.__class__.__name__,qprc))
+                error('settings input "qprc" must be a path\nreceived type: {0}\nwith value: {1}'.format(qprc.__class__.__name__,qprc))
             elif not os.path.exists(qprc):
-                QuantumPackage.class_error('quantum_package.rc file does not exist\nfile path provided via "qprc" in settings\nfile path: {0}'.format(qprc))
+                error('quantum_package.rc file does not exist\nfile path provided via "qprc" in settings\nfile path: {0}'.format(qprc))
             #end if
         #end if
     #end def settings
@@ -88,7 +88,11 @@ class QuantumPackage(Simulation):
         infile = self.identifier+'.in'
         infile = os.path.join(self.locdir,infile)
         f = open(infile,'w')
-        s = self.input.delete_optional('structure',None)
+        s = None
+        if 'structure' in self.input:
+            s = self.input.structure
+            del self.input.structure
+        #end if
         f.write(str(self.input))
         if s is not None:
             self.input.structure = s
@@ -239,7 +243,7 @@ class QuantumPackage(Simulation):
                 n_det = read_qp_value(n_det_path)
                 if isinstance(n_det,int) and n_det<n_det_max:
                     self.save_attempt()
-                    input.set(read_wf=True)
+                    input.update(read_wf=True)
                     self.reset_indicators()
                 #end if
             #end if
@@ -357,7 +361,7 @@ class QuantumPackage(Simulation):
             fc += job2.run_command()+' >{0} 2>{1}\n'.format(slave_outfile,slave_errfile)
 
             if 'fci' in slave and not input.present('distributed_davidson'):
-                input.set(distributed_davidson=True)
+                input.update(distributed_davidson=True)
             #end if
         elif len(fc)>0 or jpost is not None:
             job.divert_out_err()

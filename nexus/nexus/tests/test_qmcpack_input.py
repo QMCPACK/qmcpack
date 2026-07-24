@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
 
@@ -6,7 +7,7 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 from . import isolate_nexus_core, TEST_DIR
-from ..testing import value_eq,object_eq,check_object_eq
+from ..testing import value_eq,object_eq,check_object_eq,dict_serialize
 
 TEST_FILES = {
     "CH4_afqmc.in.xml":    TEST_DIR / "test_qmcpack_input_files/CH4_afqmc.in.xml",
@@ -16,46 +17,6 @@ TEST_FILES = {
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"
-
-
-def format_value(v):
-    import numpy as np
-    s = ''
-    if isinstance(v,np.ndarray):
-        pad = 12*' '
-        s = 'np.array([\n'
-        if len(v.shape)==1:
-            s += pad
-            for vv in v:
-                s += format_value(vv)+','
-            #end for
-            s = s[:-1]
-        else:
-            for vv in v:
-                s += pad + format_value(list(vv))+',\n'
-            #end for
-            s = s[:-2]
-        #end if
-        s += '])'
-    elif isinstance(v,(str,np.bytes_)):
-        s = "'"+str(v)+"'"
-    else:
-        s = str(v)
-    #end if
-    return s
-#end def format_value
-
-
-def make_serial_reference(qi):
-    s = qi.serial()
-    ref = '    ref = {\n'
-    for k in sorted(s.keys()):
-        v = s[k]
-        ref +="        '{}' : {},\n".format(k,format_value(v))
-    #end for
-    ref += '        }\n'
-    return ref
-#end def make_serial_reference
 
 
 serial_references = dict()
@@ -524,10 +485,10 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(qi,name):
-    from ..developer import obj
+    from ..developer import obj,to_obj
     sr = get_serial_references()[name]
     assert(len(sr)>0)
-    sq = qi.serial()
+    sq = dict_serialize(qi,dict_type=obj)
     def remove_metadata(s):
         metadata_keys = []
         for k in s.keys():
@@ -541,7 +502,7 @@ def check_vs_serial_reference(qi,name):
     #end def remove_metadata
     remove_metadata(sq)
     remove_metadata(sr)
-    assert check_object_eq(sq,obj(sr),bypass=True,verbose=True)
+    assert check_object_eq(sq,to_obj(sr),bypass=True,verbose=True)
 #end def check_vs_serial_reference
 
 
@@ -1835,7 +1796,7 @@ def test_incorporate_system():
         qmc             = 'dmc',
         )
 
-    qi_ref = qi.copy()
+    qi_ref = deepcopy(qi)
 
     shift = 0.1
     s = system.structure

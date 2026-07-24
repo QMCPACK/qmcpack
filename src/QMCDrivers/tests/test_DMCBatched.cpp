@@ -31,14 +31,6 @@ class DMCBatchedTest
 public:
   DMCBatchedTest() { up_dtest_ = std::make_unique<SetupDMCTest>(1); }
 
-  void testDependentObjectsValidAfterPopulationChange()
-  {
-    using namespace testing;
-    SetupDMCTest& dtest = get_dtest();
-  }
-
-  SetupDMCTest& get_dtest() { return *up_dtest_; }
-
 private:
   UPtr<SetupDMCTest> up_dtest_;
 };
@@ -75,7 +67,8 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
 
   DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), nullptr, std::move(dmcdriver_input), walker_confs,
                        MCPopulation(comm->size(), comm->rank(), *particle_pool.getParticleSet("e"),
-                                    wavefunction_pool.getWaveFunction().value(), hamiltonian_pool.getHamiltonian().value()),
+                                    wavefunction_pool.getWaveFunction().value(),
+                                    hamiltonian_pool.getHamiltonian().value()),
                        rng_pool.getRngRefs(), comm);
 
   // setStatus must be called before process

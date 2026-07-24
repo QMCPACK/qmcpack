@@ -18,6 +18,7 @@
 
 
 import os
+from copy import deepcopy
 from .developer import obj
 from .hdfreader import HDFreader
 from .qmcpack_analyzer_base import Checks,QAanalyzer,QAHDFdata
@@ -94,11 +95,11 @@ class MethodAnalyzer(QAanalyzer):
             file_prefix  = file_prefix,
             files        = files,
             data_sources = data_sources,
-            method_input = calc.copy(),
+            method_input = deepcopy(calc),
             nblocks_exclude = nblocks_exclude,
             complete     = complete,
             )
-        self.info.transfer_from(method_info)
+        self.info.update(**method_info)
 
         self.vlog('requested sources = '+str(list(request.data_sources)),n=2)
         self.vlog('files available   = '+str(list(files.keys())),n=2)
@@ -130,10 +131,10 @@ class MethodAnalyzer(QAanalyzer):
                 calc_est = calc.get('estimator')
                 estimators = obj()
                 if ham_est is not None:
-                    estimators.transfer_from(ham_est)
+                    estimators.update(**ham_est)
                 #end if
                 if calc_est is not None:
-                    estimators.transfer_from(calc_est)
+                    estimators.update(**calc_est)
                 #end if
                 for estname,est in estimators.items():
                     if est is None:
@@ -211,7 +212,7 @@ class MethodAnalyzer(QAanalyzer):
             #end if
             hdf = hr.obj
             self.data = QAHDFdata()
-            self.data.transfer_from(hdf)
+            self.data.update(**hdf)
         #end if
         remove = []
         for name,value in self.items():

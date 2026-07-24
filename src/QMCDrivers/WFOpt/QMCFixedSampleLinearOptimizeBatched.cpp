@@ -177,17 +177,15 @@ void QMCFixedSampleLinearOptimizeBatched::start()
 }
 
 #ifdef HAVE_LMY_ENGINE
-void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<ValueType>& EngineObj,
-                                                       DescentEngine& descentEngineObj,
-                                                       std::string MinMethod)
+void QMCFixedSampleLinearOptimizeBatched::engine_start()
 {
   app_log() << "entering engine_start function" << std::endl;
 
   std::unique_ptr<EngineHandle> handle;
   if (MinMethod == "descent")
-    handle = std::make_unique<DescentEngineHandle>(descentEngineObj);
+    handle = std::make_unique<DescentEngineHandle>(*descentEngineObj);
   else if (MinMethod == "adaptive")
-    handle = std::make_unique<LMYEngineHandle>(EngineObj);
+    handle = std::make_unique<LMYEngineHandle>(*EngineObj);
   else
     handle = std::make_unique<NullEngineHandle>();
 
@@ -1176,7 +1174,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   EngineObj->reset();
 
   // generate samples and compute weights, local energies, and derivative vectors
-  engine_start(*EngineObj, *descentEngineObj, MinMethod);
+  engine_start();
 
   int new_num = 0;
 
@@ -1320,7 +1318,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
       finish();
 
       // take sample
-      engine_start(*EngineObj, *descentEngineObj, MinMethod);
+      engine_start();
     }
     else
     {
@@ -1331,12 +1329,12 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 
       if (options_LMY_.filter_param)
       {
-        engine_start(*EngineObj, *descentEngineObj, MinMethod);
+        engine_start();
         EngineObj->buildMatricesFromDerivatives();
       }
       else
       {
-        engine_start(*EngineObj, *descentEngineObj, MinMethod);
+        engine_start();
         app_log() << "Should be building matrices from stored samples" << std::endl;
         EngineObj->buildMatricesFromDerivatives();
       }
@@ -1942,7 +1940,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
 bool QMCFixedSampleLinearOptimizeBatched::descent_run()
 {
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
-  engine_start(*EngineObj, *descentEngineObj, MinMethod);
+  engine_start();
 
   int descent_num = descentEngineObj->getDescentNum();
 
@@ -1984,7 +1982,7 @@ bool QMCFixedSampleLinearOptimizeBatched::descent_run()
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
 {
-  app_log() << "This is methodName: " << MinMethod << std::endl;
+  app_log() << "This method name is: " << MinMethod << std::endl;
 
   //Either the adaptive BLM or descent optimization is run
 

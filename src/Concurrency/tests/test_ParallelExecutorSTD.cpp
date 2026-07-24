@@ -19,7 +19,7 @@
 
 namespace qmcplusplus
 {
-void TestTask(const int ip, std::atomic<int>& counter) { ++counter; }
+void TestTask(const int /*ip*/, std::atomic<int>& counter) { ++counter; }
 
 TEST_CASE("ParallelExecutor<STD> function case", "[concurrency]")
 {
@@ -36,7 +36,7 @@ TEST_CASE("ParallelExecutor<STD> lambda case", "[concurrency]")
   ParallelExecutor<Executor::STD_THREADS> test_block;
   std::atomic<int> count(0);
   test_block(
-      num_threads, [](int id, std::atomic<int>& my_count) { ++my_count; }, count);
+      num_threads, [](int /*id*/, std::atomic<int>& my_count) { ++my_count; }, count);
   REQUIRE(count == 8);
 }
 
@@ -47,7 +47,7 @@ TEST_CASE("ParallelExecutor<STD> nested case", "[concurrency]")
   std::atomic<int> count(0);
   test_block(
       num_threads,
-      [num_threads](int task_id, std::atomic<int>& my_count) {
+      [num_threads](int /*task_id*/, std::atomic<int>& my_count) {
         ParallelExecutor<Executor::STD_THREADS> test_block2;
         test_block2(num_threads, TestTask, my_count);
       },

@@ -358,7 +358,7 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
         nbe = len(E)%bt
         E = E[nbe:]
         reblock = len(E)//bt
-        E.shape = (bt,reblock)
+        npe.reshape_inplace(E, (bt,reblock))
         if reblock>1:
             E = E.sum(1)/reblock
         #end if
@@ -713,7 +713,7 @@ if __name__=='__main__':
     fit_type = args.fit_type
     if fit_type in fit_types:
         fit_functions.clear()
-        fit_functions.transfer_from(all_fit_functions[fit_type])
+        fit_functions.update(**all_fit_functions[fit_type])
     else:
         error('unknown fit type: {0}\nvalid options are: {1}'.format(fit_type,fit_types))
     #end if

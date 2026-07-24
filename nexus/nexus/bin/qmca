@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import os
+from copy import deepcopy
 from pathlib import Path
 import sys
 from optparse import OptionParser
@@ -64,7 +65,7 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj,unavailable
+from nexus.developer import DevBase,obj,error,unavailable
 from nexus.unit_converter import convert
 from nexus.numerics import simstats,simplestats,equilibration_length
 import nexus.numpy_extensions as npe
@@ -92,12 +93,15 @@ except (ImportError,RuntimeError):
 #end try
 
 
+def first(d):
+    return d[min(d.keys())]
+
 
 def sigfig_round(some_float, nsigfig):
     if nsigfig >= 1 and nsigfig == int(nsigfig):
         return round(some_float, nsigfig - int(np.floor(np.log10(abs(some_float))))-1) 
     else:
-        QMCA.class_error("Number of significant figures must be a whole number\nreceived {0}".format(nsigfig))
+        error("Number of significant figures must be a whole number\nreceived {0}".format(nsigfig),'QMCA')
     #end if
 #end sigfig_round
 
@@ -271,7 +275,7 @@ class DatAnalyzer(QBase):
             self.error('unable to read series number for file '+filepath,'QMCA')
         #end if
         prefix = filepath.split('.s'+str(series).zfill(3))[0]
-        self.info.set(
+        self.info.update(
             series   = series,
             filepath = filepath,
             filename = filename,
@@ -426,7 +430,7 @@ class DatAnalyzer(QBase):
         #end if
 
         if len(data)>0:
-            example = data.first()
+            example = first(data)
             if 'NumOfWalkers' in data:
                 ts = data.NumOfWalkers.sum()
                 stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0)
@@ -467,11 +471,11 @@ class DatAnalyzer(QBase):
 
     def zero(self):
         self.info.weight = 0.0
-        for d in self.data:
+        for d in self.data.values():
             d[:] = 0.0
         #end for
-        for s in self.stats:
-            s.set(
+        for s in self.stats.values():
+            s.update(
                 mean  = 0.0,
                 error = 0.0,
                 kappa = 0.0,
@@ -493,7 +497,7 @@ class DatAnalyzer(QBase):
 
     def normalize(self):
         w = self.info.weight
-        for d in self.data:
+        for d in self.data.values():
             d[:] /= w
         #end for
     #end def normalize
@@ -709,7 +713,8 @@ class DatAnalyzer(QBase):
         qmax = q[middle:].max()
         qmin = q[middle:].min()
         ylims = (qmean-2*(qmean-qmin),qmean+2*(qmax-qmean))
-        smean,svar = self.stats[quantity].tuple('mean','var')
+        qtmp = self.stats[quantity]
+        smean,svar = qtmp.mean,qtmp.var
         sstd = np.sqrt(svar)
         s = np.arange(len(q))+shift
         xlims = min(s),max(s)
@@ -723,7 +728,7 @@ class DatAnalyzer(QBase):
 
 
     def plot_histogram(self,quantity,style,prefix):
-        self.not_implemented()
+        raise NotImplementedError
         #if not quantity in self.data:
         #    self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
         ##end if
@@ -1003,7 +1008,7 @@ QMCA examples:
         if len(files_in)>0:
             files_in = list(files_tmp[file_order])
         #end if
-        QBase.options.transfer_from(options.__dict__)
+        QBase.options.update(**options.__dict__)
         self.verbose = self.options.verbose
         if self.verbose:
             self.log('\nQMCA: Qmcpack Analysis Tool')
@@ -1195,7 +1200,7 @@ QMCA examples:
                 #end if
             #end for
             if not isdat:
-                self.error('{0} is not a valid source of input\nplease aim qmca at files with the following extensions: {1}'.format(file,allowed_extensions.list()))
+                self.error('{0} is not a valid source of input\nplease aim qmca at files with the following extensions: {1}'.format(file,[v for v in allowed_extensions.values()]))
             #end if
             ifile+=1
         #end for
@@ -1214,7 +1219,7 @@ QMCA examples:
                     filetypes.add(pdata[series].info.type)
                 #end for
                 if len(filetypes)>1:
-                    self.error('files with mixed extensions encountered for series {0}\nextensions encountered: {1}\nplease provide files with only one of the following extensions: {2}'.format(series,sorted(list(filetypes)),allowed_extensions.list()))
+                    self.error('files with mixed extensions encountered for series {0}\nextensions encountered: {1}\nplease provide files with only one of the following extensions: {2}'.format(series,sorted(list(filetypes)),[v for v in allowed_extensions.values()]))
                 #end if
             #end for
             
@@ -1280,9 +1285,9 @@ QMCA examples:
                         w = weights[npf]
                         d = pdata[series]
                         if npf==0:
-                            avg = d.copy()
+                            avg = deepcopy(d)
                             di = d.info
-                            avg.info.set(
+                            avg.info.update(
                                 filename = di.filename.replace(di.prefix,'avg'),
                                 filepath = di.filepath.replace(di.prefix,'avg'),
                                 index    = ns,
@@ -1339,9 +1344,9 @@ QMCA examples:
                             w = weights[npf]
                             d = pdata[series]
                             if npf==0:
-                                avg = d.copy()
+                                avg = deepcopy(d)
                                 di = d.info
-                                avg.info.set(
+                                avg.info.update(
                                     filename = di.filename.replace(di.prefix,batch_prefix),
                                     filepath = di.filepath.replace(di.prefix,batch_prefix),
                                     index    = ns,
@@ -1429,8 +1434,8 @@ QMCA examples:
         #end for
         opt = self.options
         if opt.average and opt.save_average:
-            for fmap in self.file_map:
-                ndata = len(fmap.data.first())
+            for fmap in self.file_map.values():
+                ndata = len(first(fmap.data))
                 data = [np.arange(ndata)]
                 keys = 'index'
                 fmt = ['%i']
@@ -1479,8 +1484,8 @@ QMCA examples:
             quantities = []
             for q in opt.quantities:
                 all_present = True
-                for pdata in self.data:
-                    for d in pdata:
+                for pdata in self.data.values():
+                    for d in pdata.values():
                         all_present &= q in d.data
                     #end for
                 #end for

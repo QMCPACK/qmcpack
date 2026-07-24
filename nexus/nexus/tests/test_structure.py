@@ -5,6 +5,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.STRUCTURE)
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
+from copy import deepcopy
 import numpy as np
 from . import TEST_DIR
 from .. import testing
@@ -13,6 +14,8 @@ from ..testing import object_eq as object_eq_orig
 from ..testing import object_diff as object_diff_orig
 from ..structure import Structure, Crystal
 from ..testing import text_eq
+from .. import numpy_extensions as npe
+from ..structure import generate_atom_structure, generate_dimer_structure, generate_trimer_structure
 
 
 struct_atol = 1e-10
@@ -52,10 +55,14 @@ reference_structures = dict()
 generated_structures = dict()
 crystal_structures   = dict()
 
+def sub_obj(s,keys):
+    from ..developer import obj
+    return obj({k:s[k] for k in keys})
+
 def structure_diff(s1,s2):
     keys = ('units','elem','pos','axes','kpoints','kweights','kaxes')
-    o1 = s1.obj(keys)
-    o2 = s2.obj(keys)
+    o1 = sub_obj(s1,keys)
+    o2 = sub_obj(s2,keys)
     return object_diff(o1,o2,full=True)
 #end def structure_diff
 
@@ -63,8 +70,8 @@ def structure_diff(s1,s2):
 def structure_same(s1,s2):
     import numpy as np
     keys = ('units','elem','axes','kpoints','kweights','kaxes','frozen','mag')
-    o1 = s1.obj(keys)
-    o2 = s2.obj(keys)
+    o1 = sub_obj(s1,keys)
+    o2 = sub_obj(s2,keys)
     osame = object_eq(o1,o2)
     psame = value_eq(s1.pos,s2.pos)
     if osame and not psame and len(s1.pos)==len(s2.pos):
@@ -312,7 +319,7 @@ def test_crystal_init():
 def test_change_units():
     import numpy as np
     ref = get_reference_structures()
-    s = ref.diamond_conv.copy()
+    s = deepcopy(ref.diamond_conv)
     assert(value_eq(s.pos[-1],np.array([2.6775,2.6775,0.8925])))
     s.change_units('B')
     assert(value_eq(s.pos[-1],np.array([5.05974172,5.05974172,1.68658057])))
@@ -323,8 +330,8 @@ def test_change_units():
 def test_rotate():
     import numpy as np
     ref = get_reference_structures()
-    s0 = ref.CuO_prim.copy()
-    s1 = ref.CuO_prim.copy()
+    s0 = deepcopy(ref.CuO_prim)
+    s1 = deepcopy(ref.CuO_prim)
 
     # Test the various parameter choices in the case that rp is given
     # Perform rotation taking x-axis to x-axis (original positions should be found)
@@ -485,7 +492,7 @@ def test_matrix_tiling():
         npass = 0
         for tmat in matrix_tilings:
             tmat = np.array(tmat,dtype=int)
-            tmat.shape = 3,3
+            npe.reshape_inplace(tmat, (3, 3))
             st = s.tile(tmat)
             st.check_tiling()
         #end for
@@ -619,6 +626,178 @@ def test_gen_graphene():
 #end def test_gen_graphene
 
 
+def test_gen_atom():
+    ref_axes = np.array([
+        [4, 0, 0],
+        [0, 4, 0],
+        [0, 0, 4],
+        ], dtype=float)
+    ref_background_charge = 0
+    ref_bconds = ["p", "p", "p"]
+    ref_center = np.array([2, 2, 2], dtype=float)
+    ref_dim = 3
+    ref_elem = ["He"]
+    ref_kaxes = np.array([
+        [1.57079633, 0.00000000, 0.00000000],
+        [0.00000000, 1.57079633, 0.00000000],
+        [0.00000000, 0.00000000, 1.57079633],
+        ], dtype=float)
+    ref_kpoints = np.array([
+        [0.00000000, 0.00000000, 0.00000000],
+        [0.78539816, 0.00000000, 0.00000000],
+        [0.00000000, 0.78539816, 0.00000000],
+        [0.78539816, 0.78539816, 0.00000000],
+        [0.00000000, 0.00000000, 0.78539816],
+        [0.78539816, 0.00000000, 0.78539816],
+        [0.00000000, 0.78539816, 0.78539816],
+        [0.78539816, 0.78539816, 0.78539816],
+        ])
+    ref_kweights = np.array([1, 1, 1, 1, 1, 1, 1, 1], dtype=float)
+    ref_pos = np.array([
+        [2.000, 2.000, 2.000],
+        ], dtype=float)
+    ref_scale = 1.0
+    ref_units = "A"
+
+    structure = generate_atom_structure(
+        atom       = "He",
+        units      = "A",
+        Lbox       = 4.0,
+        kgrid      = [2, 2, 2],
+        bconds     = ["p", "p", "p"],
+        )
+
+    np.testing.assert_allclose(structure.pos,      ref_pos)
+    np.testing.assert_allclose(structure.axes,     ref_axes)
+    np.testing.assert_allclose(structure.center,   ref_center)
+    np.testing.assert_allclose(structure.kaxes,    ref_kaxes)
+    np.testing.assert_allclose(structure.kpoints,  ref_kpoints)
+    np.testing.assert_allclose(structure.kweights, ref_kweights)
+    assert(structure.elem.tolist()     == ref_elem)
+    assert(structure.dim               == ref_dim)
+    assert(structure.bconds.tolist()   == ref_bconds)
+    assert(structure.scale             == ref_scale)
+    assert(structure.units             == ref_units)
+    assert(structure.background_charge == ref_background_charge)
+#end def test_gen_atom
+
+
+def test_gen_dimer():
+    ref_axes = np.array([
+        [4, 0, 0],
+        [0, 4, 0],
+        [0, 0, 4],
+        ], dtype=float)
+    ref_background_charge = 0
+    ref_bconds = ["p", "p", "p"]
+    ref_center = np.array([2, 2, 2], dtype=float)
+    ref_dim = 3
+    ref_elem = ["O", "O"]
+    ref_kaxes = np.array([
+        [1.57079633, 0.00000000, 0.00000000],
+        [0.00000000, 1.57079633, 0.00000000],
+        [0.00000000, 0.00000000, 1.57079633],
+        ], dtype=float)
+    ref_kpoints = np.array([
+        [0.00000000, 0.00000000, 0.00000000],
+        [0.78539816, 0.00000000, 0.00000000],
+        [0.00000000, 0.78539816, 0.00000000],
+        [0.78539816, 0.78539816, 0.00000000],
+        [0.00000000, 0.00000000, 0.78539816],
+        [0.78539816, 0.00000000, 0.78539816],
+        [0.00000000, 0.78539816, 0.78539816],
+        [0.78539816, 0.78539816, 0.78539816],
+        ])
+    ref_kweights = np.array([1, 1, 1, 1, 1, 1, 1, 1], dtype=float)
+    ref_pos = np.array([
+        [1.375, 2.000, 2.000],
+        [2.625, 2.000, 2.000],
+        ], dtype=float)
+    ref_scale = 1.0
+    ref_units = "A"
+
+    structure = generate_dimer_structure(
+        dimer      = ["O", "O"],
+        units      = "A",
+        separation = 1.25,
+        Lbox       = 4.0,
+        kgrid      = [2, 2, 2],
+        bconds     = ["p", "p", "p"],
+        )
+
+    np.testing.assert_allclose(structure.pos,      ref_pos)
+    np.testing.assert_allclose(structure.axes,     ref_axes)
+    np.testing.assert_allclose(structure.center,   ref_center)
+    np.testing.assert_allclose(structure.kaxes,    ref_kaxes)
+    np.testing.assert_allclose(structure.kpoints,  ref_kpoints)
+    np.testing.assert_allclose(structure.kweights, ref_kweights)
+    assert(structure.elem.tolist()     == ref_elem)
+    assert(structure.dim               == ref_dim)
+    assert(structure.bconds.tolist()   == ref_bconds)
+    assert(structure.scale             == ref_scale)
+    assert(structure.units             == ref_units)
+    assert(structure.background_charge == ref_background_charge)
+#end def test_gen_dimer
+
+
+def test_gen_trimer():
+    ref_axes = np.array([
+        [4, 0, 0],
+        [0, 4, 0],
+        [0, 0, 4],
+        ], dtype=float)
+    ref_background_charge = 0
+    ref_bconds = ["p", "p", "p"]
+    ref_center = np.array([2, 2, 2], dtype=float)
+    ref_dim = 3
+    ref_elem = ["O", "H", "H"]
+    ref_kaxes = np.array([
+        [1.57079633, 0.00000000, 0.00000000],
+        [0.00000000, 1.57079633, 0.00000000],
+        [0.00000000, 0.00000000, 1.57079633],
+        ], dtype=float)
+    ref_kpoints = np.array([
+        [0.00000000, 0.00000000, 0.00000000],
+        [0.78539816, 0.00000000, 0.00000000],
+        [0.00000000, 0.78539816, 0.00000000],
+        [0.78539816, 0.78539816, 0.00000000],
+        [0.00000000, 0.00000000, 0.78539816],
+        [0.78539816, 0.00000000, 0.78539816],
+        [0.00000000, 0.78539816, 0.78539816],
+        [0.78539816, 0.78539816, 0.78539816],
+        ])
+    ref_kweights = np.array([1, 1, 1, 1, 1, 1, 1, 1], dtype=float)
+    ref_pos = np.array([
+        [1.62519, 1.51592618, 2.0000],
+        [2.62519, 1.51592618, 2.0000],
+        [1.37481, 2.48407382, 2.0000],
+        ], dtype=float)
+    ref_scale = 1.0
+    ref_units = "A"
+
+    structure = generate_trimer_structure(
+        trimer     = ["O", "H", "H"],
+        units      = "A",
+        separation = [1.0, 1.0],
+        angle      = 104.5,
+        Lbox       = 4.0,
+        kgrid      = [2, 2, 2],
+        )
+
+    np.testing.assert_allclose(structure.pos,      ref_pos)
+    np.testing.assert_allclose(structure.axes,     ref_axes)
+    np.testing.assert_allclose(structure.center,   ref_center)
+    np.testing.assert_allclose(structure.kaxes,    ref_kaxes)
+    np.testing.assert_allclose(structure.kpoints,  ref_kpoints)
+    np.testing.assert_allclose(structure.kweights, ref_kweights)
+    assert(structure.elem.tolist()     == ref_elem)
+    assert(structure.dim               == ref_dim)
+    assert(structure.bconds.tolist()   == ref_bconds)
+    assert(structure.scale             == ref_scale)
+    assert(structure.units             == ref_units)
+    assert(structure.background_charge == ref_background_charge)
+#end def test_gen_trimer
+
 
 def test_read_write(tmp_path):
     """
@@ -712,12 +891,12 @@ def test_bounding_box():
         )
 
     # add a box by hand to the water molecule
-    h2o_diy = h2o.copy()
+    h2o_diy = deepcopy(h2o)
     h2o_diy.set_axes(8.0*np.eye(3))
     assert(value_eq(h2o_diy.axes,8.*np.eye(3)))
 
     # automatically add a bounding box to the water molecule
-    h2o_auto = h2o.copy()
+    h2o_auto = deepcopy(h2o)
     h2o_auto.bounding_box(box='cubic',minsize=8.0)
     assert(value_eq(h2o_auto.axes,8.*np.eye(3)))
     assert(value_eq(tuple(h2o_auto.pos[-1]),(4.,4.75716,4.29313)))
@@ -1022,7 +1201,7 @@ def test_monkhorst_pack_kpoints():
     g44 = g11.tile(4,4,1)
 
     # Add a Gamma-centered 2x2 Monkhorst-Pack grid
-    g44g = g44.copy()
+    g44g = deepcopy(g44)
     g11g = g44g.folded_structure
 
     g44g.add_kmesh(kgrid=(2,2,1),kshift=(0,0,0))
@@ -1034,7 +1213,7 @@ def test_monkhorst_pack_kpoints():
     assert(value_eq(g11g.kpoints_unit(),g11g_ukp_ref))
 
     # Add a shifted 2x2 Monkhorst-Pack grid
-    g44s = g44.copy()
+    g44s = deepcopy(g44)
     g11s = g44s.folded_structure
 
     g44s.add_kmesh(kgrid=(2,2,1),kshift=(0.5,0.5,0))
@@ -1348,7 +1527,7 @@ def test_embed():
     g.recenter(center)
 
     # Represent the "relaxed" cell
-    gr = g.copy()
+    gr = deepcopy(g)
     npos = len(gr.pos)
     dr = gr.min_image_vectors(center)
     npe.reshape_inplace(dr, (npos, 3))
@@ -1369,7 +1548,7 @@ def test_embed():
     gl.recenter(center)
 
     # Embed the relaxed cell in the large unrelaxed cell
-    ge = gl.copy()
+    ge = deepcopy(gl)
     ge.embed(gr)
 
     assert(len(ge.elem)==len(gl.elem))
@@ -1410,11 +1589,11 @@ def test_interpolate():
     npos2 = npos1+g11.axes[0]+g11.axes[1]
 
     # "Relaxed" structure with additional atom on one ring
-    gr1 = g.copy()
+    gr1 = deepcopy(g)
     gr1.add_atoms(['Cr'],[npos1])
 
     # "Relaxed" structure with additional atom on neighboring ring
-    gr2 = g.copy()
+    gr2 = deepcopy(g)
     gr2.add_atoms(['Cr'],[npos2])
     gr2.recenter()
 

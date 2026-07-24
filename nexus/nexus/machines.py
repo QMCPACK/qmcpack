@@ -45,12 +45,13 @@
 
 import os
 from pathlib import Path
+from copy import deepcopy
 import platform
 from socket import gethostname
 import subprocess
 from subprocess import Popen, CalledProcessError
 import numpy as np
-from .developer import DevBase, obj, warn
+from .developer import DevBase, obj, error, warn
 from .nexus_base import NexusCore, nexus_core
 from .execute import execute
 from .utilities import path_string
@@ -120,11 +121,10 @@ class Options(DevBase):
         self.add(**kwargs)
     #end def __init__
 
-
     def add(self,**kwargs):
-        self.transfer_from(kwargs)
+        for k,v in kwargs.items():
+            self[k] = v
     #end def add
-
 
     def read(self,options):
         if isinstance(options,(dict,obj)):
@@ -142,7 +142,6 @@ class Options(DevBase):
             self.error('invalid type provided to Options')
         #end if
     #end def read
-
 
     def write(self):
         s = ''
@@ -220,7 +219,7 @@ job_defaults_nonassign = obj(
     skip_machine       = False,
     )
 
-job_defaults = obj(job_defaults_assign,job_defaults_nonassign)
+job_defaults = obj({**job_defaults_assign,**job_defaults_nonassign})
 
 class Job(NexusCore):
 
@@ -233,7 +232,7 @@ class Job(NexusCore):
         running   = 3,
         finished  = 4
         )
-    state_names = states.inverse()
+    state_names = obj({v:k for k,v in states.items()})
 
     job_count = 0
 
@@ -282,25 +281,27 @@ class Job(NexusCore):
                 self.error("app_name must be a str or Path object!")
 
         # save information used to initialize job object
-        self.init_info = kw.copy()
+        self.init_info = deepcopy(kw)
 
         # set defaults
-        kw.set_optional(**job_defaults)
+        for k,v in job_defaults.items():
+            if k not in kw:
+                kw[k] = v
 
         # extract keywords not assigned
-        app          = kw.delete('app')
-        machine      = kw.delete('machine')
-        options      = kw.delete('options')
-        app_flags    = kw.delete('app_flags')
-        app_options  = kw.delete('app_options')
-        run_options  = kw.delete('run_options')
-        sub_options  = kw.delete('sub_options')
-        env          = kw.delete('env')
-        fake         = kw.delete('fake')
-        skip_machine = kw.delete('skip_machine')
+        app          = kw.pop('app')
+        machine      = kw.pop('machine')
+        options      = kw.pop('options')
+        app_flags    = kw.pop('app_flags')
+        app_options  = kw.pop('app_options')
+        run_options  = kw.pop('run_options')
+        sub_options  = kw.pop('sub_options')
+        env          = kw.pop('env')
+        fake         = kw.pop('fake')
+        skip_machine = kw.pop('skip_machine')
 
         # assign keywords
-        self.set(**kw)
+        self.update(**kw)
 
         # assign fake job
         self.fake_job           = fake
@@ -452,7 +453,7 @@ class Job(NexusCore):
             #end if
         #end if
         sim.set_app_name(app_name)
-        self.set(
+        self.update(
             name    = sim.identifier,
             simid   = sim.simid,
             outfile = sim.outfile,
@@ -710,14 +711,14 @@ class Job(NexusCore):
 
 
     def clone(self):
-        job = self.copy()
+        job = deepcopy(self)
         job.set_id()
         return job
     #end def clone
 
 
     def serial_clone(self):
-        kw = self.init_info.copy()
+        kw = deepcopy(self.init_info)
         kw.serial=True
         return Job(**kw)
     #end def serial_clone
@@ -799,16 +800,16 @@ class Machine(NexusCore):
     @staticmethod
     def add(machine):
         if not isinstance(machine,Machine):
-            Machine.class_error('attempted to add non-machine instance')
+            error('attempted to add non-machine instance')
         #end if
         if 'name' not in machine:
-            Machine.class_error('attempted to add a machine without a name')
+            error('attempted to add a machine without a name')
         #end if
         name = machine.name
         if name not in Machine.machines:
             Machine.machines[name] = machine
         else:
-            Machine.class_error('attempted to create machine {0}, but it already exists'.format(name))
+            error('attempted to create machine {0}, but it already exists'.format(name))
         #end if
     #end def add
 
@@ -818,13 +819,13 @@ class Machine(NexusCore):
         if isinstance(machine_name,str):
             machine_name = machine_name.lower()
         else:
-            Machine.class_error('machine name must be a string, you provided a '+machine_name.__class__.__name__)
+            error('machine name must be a string, you provided a '+machine_name.__class__.__name__)
         #end if
         if Machine.exists(machine_name):
             machine = Machine.machines[machine_name]
         else:
             machs = sorted(Machine.machines.keys())
-            Machine.class_error('attempted to get machine '+machine_name+', but it is unknown\nknown options are '+str(machs))
+            error('attempted to get machine '+machine_name+', but it is unknown\nknown options are '+str(machs))
         #end if
         return machine
     #end def get
@@ -854,32 +855,32 @@ class Machine(NexusCore):
 
 
     def query_queue(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def query_queue
 
     def submit_jobs(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def submit_jobs
 
     # update all job information, must be idempotent
     def process_job(self,job):
-        self.not_implemented()
+        raise NotImplementedError
     #end def process_job
 
     def process_job_options(self,job):
-        self.not_implemented()
+        raise NotImplementedError
     #end def process_job_options
 
     def write_job(self,job,file=False):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_job
 
     def submit_job(self,job):
-        self.not_implemented()
+        raise NotImplementedError
     #end def submit_job
 
     def specialized_bundle_commands(self,job,launcher,serial):
-        self.not_implemented()
+        raise NotImplementedError
     #end def specialized_bundle_commands
 
     def __init__(self,name,queue_size=0):
@@ -955,7 +956,8 @@ class Machine(NexusCore):
                 self.error('app_directories must be of type dict or obj\nyou provided '+ad.__class__.__name__)
             #end if
         #end if
-        self.transfer_from(info)
+        for k,v in info.items():
+            self[k] = v
     #end def incorporate_user_info
 #end class Machine
 
@@ -1087,7 +1089,7 @@ class Workstation(Machine):
 
     def submit_jobs(self):
         cores_used = 0
-        for process in self.processes:
+        for process in self.processes.values():
             cores_used += process.job.cores
         #end for
         cores_available = self.cores-cores_used
@@ -1916,7 +1918,7 @@ class Supercomputer(Machine):
 
 
     def write_job_header(self,job):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_job_header
 
     @staticmethod
@@ -3672,13 +3674,15 @@ class Summit(Supercomputer):
                 pprs  = ppn//resource_sets_per_node
                 gpurs = 1
             #end if
-            opt.set(
+            data = dict(
                 resource_sets= '-n {0}'.format(nrs),
                 rs_per_node  = '-r {0}'.format(resource_sets_per_node),
                 tasks_per_rs = '-a {0}'.format(pprs),
                 cpus_per_rs  = '-c {0}'.format(pprs*job.threads),
                 gpus_per_rs  = '-g {0}'.format(gpurs),
                 )
+            for k,v in data.items():
+                opt[k] = v
             job.run_options.add(**opt)
         #end if
     #end def post_process_job
@@ -4693,9 +4697,4 @@ get_machine      = Machine.get
 
 #rename Job with lowercase
 job=Job
-
-
-
-
-
 

@@ -24,13 +24,14 @@ import os
 from os import PathLike
 from pathlib import Path
 import mmap
+from copy import deepcopy
 import numpy as np
 from numpy.linalg import det, norm
-from .developer import DevBase, obj, error, to_str
+from .developer import DevBase, obj, error
 from .periodic_table import Elements
 from .unit_converter import convert
 from . import numpy_extensions as npe
-from .utilities import path_string
+from .utilities import path_string, to_str
 
 class TextFile(DevBase):
     # interface to mmap files
@@ -305,12 +306,12 @@ class StandardFile(DevBase):
 
 
     def read_text(self,text):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
 
     def write_text(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
 #end class StandardFile
@@ -828,7 +829,7 @@ class XsfFile(StandardFile):
 
     # test needed
     def incorporate_structure(self,structure):
-        s = structure.copy()
+        s = deepcopy(structure)
         s.change_units('A')
         s.recenter()
         elem = []
@@ -896,7 +897,9 @@ class XsfFile(StandardFile):
 
 
     def get_density(self):
-        return self.data.first().first().first()
+        def first(d):
+            return d[min(d.keys())]
+        return first(first(first(self.data)))
     #end def get_density
 
 
@@ -1389,7 +1392,7 @@ class ChgcarFile(StandardFile):
     def incorporate_xsf(self,xsf):
         poscar = PoscarFile()
         poscar.incorporate_xsf(xsf)
-        density = xsf.remove_ghost().copy()
+        density = deepcopy(xsf.remove_ghost())
         self.poscar         = poscar
         self.grid           = np.array(density.shape,dtype=int)
         self.charge_density = density.ravel(order='F')
@@ -1617,7 +1620,7 @@ def read_poscar_chgcar(host,text):
         poscar = PoscarFile()
     #end if
 
-    poscar.set(
+    poscar.update(
         description = description,
         scale       = scale,
         axes        = axes,
@@ -1631,7 +1634,7 @@ def read_poscar_chgcar(host,text):
         )
 
     if is_chgcar:
-        host.set(
+        host.update(
             poscar         = poscar,
             grid           = grid,
             charge_density = charge_density,

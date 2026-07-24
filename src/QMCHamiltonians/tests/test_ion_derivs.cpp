@@ -185,7 +185,6 @@ void test_msd_wrapper(const std::string& wffile,
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
-  int Nelec = elec.getTotalNum();
 
   //////////////////////////////////
   /////////////////////////////////
@@ -218,7 +217,7 @@ void test_msd_wrapper(const std::string& wffile,
   auto ham_ptr = create_CN_Hamiltonian(hf);
   QMCHamiltonian& ham(*ham_ptr);
 
-  RealType eloc = ham.evaluateDeterministic(psi, elec);
+  ham.evaluateDeterministic(psi, elec);
 
   //Enum to give human readable indexing into QMCHamiltonian.
   enum observ_id
@@ -685,7 +684,6 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
-  int Nelec = elec.getTotalNum();
 
   HamiltonianFactory::PSetMap particle_set_map;
   particle_set_map.emplace("e", std::move(elec_ptr));
@@ -842,7 +840,6 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
-  int Nelec = elec.getTotalNum();
 
   HamiltonianFactory::PSetMap particle_set_map;
   particle_set_map.emplace("e", std::move(elec_ptr));
@@ -1005,7 +1002,6 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
-  int Nelec = elec.getTotalNum();
 
   HamiltonianFactory::PSetMap particle_set_map;
   particle_set_map.emplace("e", std::move(elec_ptr));
@@ -1153,7 +1149,6 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
-  int Nelec = elec.getTotalNum();
 
   HamiltonianFactory::PSetMap particle_set_map;
   particle_set_map.emplace("e", std::move(elec_ptr));

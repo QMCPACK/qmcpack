@@ -143,7 +143,7 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   // These hamiltomians are just pro forma arguments needed to hold off UBSan,
   // StructureFactorEstimator never accesses into them.
-  auto hamiltonian_pool  = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
   QMCHamiltonian& gold_hamiltonian(hamiltonian_pool.getHamiltonian().value());
   std::vector<UPtr<QMCHamiltonian>> hams(nwalkers);
   for (int iw = 0; iw < nwalkers; ++iw)
@@ -151,13 +151,6 @@ TEST_CASE("StructureFactorEstimator::Accumulate", "[estimators]")
 
   auto ref_hams = convertUPtrToRefVector(hams);
   RefVectorWithLeader<QMCHamiltonian> rvwl_hams(ref_hams[0], ref_hams);
-
-  auto updateWalker = [](auto& walker, auto& pset_target, auto& trial_wavefunction) {
-    pset_target.update(false);
-    pset_target.donePbyP();
-    trial_wavefunction.evaluateLog(pset_target);
-    //pset_target.saveWalker(walker);
-  };
 
   using QMCT = OperatorEstBase::QMCT;
   std::vector<QMCT::RealType> rng_reals(nwalkers * QMCT::DIM * 2);

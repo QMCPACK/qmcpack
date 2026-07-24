@@ -154,7 +154,7 @@ class Gamess(Simulation):
                     self.block()
                 #end if
                 guess_inputs = obj()
-                ecounts = self.system.particles.electron_counts()
+                ecounts = self.system.n_up, self.system.n_down
                 orbs = result.orbitals
                 order_map = obj(up='iorder',down='jorder')
                 nelec_map = obj(up=ecounts[0],down=ecounts[1])
@@ -201,9 +201,9 @@ class Gamess(Simulation):
                         guess_inputs[vname] = GIarray({start:reduced_indices})
                     #end if
                 #end for
-                input.guess.set(**guess_inputs)
+                input.guess.update(**guess_inputs)
             #end if
-            input.guess.set(
+            input.guess.update(
                 guess = 'moread',
                 norb  = norb,
                 prtmo = True,

@@ -42,18 +42,14 @@ struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
   }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
-  {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(ref.data()), xfer_plist);
-  }
+  { return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(ref.data()), xfer_plist); }
 
   inline bool write(const data_type& ref,
                     hid_t grp,
                     const std::string& aname,
                     const std::vector<hsize_t>& dvec,
                     hid_t xfer_plist) const
-  {
-    return h5d_write(grp, aname.c_str(), dvec.size(), dvec.data(), get_address(ref.data()), xfer_plist);
-  }
+  { return h5d_write(grp, aname.c_str(), dvec.size(), dvec.data(), get_address(ref.data()), xfer_plist); }
 
   inline bool append(const data_type& ref,
                      hid_t grp,
@@ -162,33 +158,61 @@ struct h5data_proxy<std::string>
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     hid_t dataset = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
-    if (dataset > -1)
+    if (dataset < 0)
+      return false;
+    hid_t datatype = H5Dget_type(dataset);
+    if (datatype < 0)
     {
-      hid_t datatype = H5Dget_type(dataset);
-      hsize_t dim_out;
-      if (datatype == H5T_NATIVE_CHAR)
-      {
-        hid_t dataspace = H5Dget_space(dataset);
-        hid_t status    = H5Sget_simple_extent_dims(dataspace, &dim_out, NULL);
-        H5Sclose(dataspace);
-      }
-      else
-      {
-        dim_out = H5Tget_size(datatype);
-      }
-      ref.resize(dim_out);
-      herr_t ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, &(ref[0]));
-      H5Tclose(datatype);
       H5Dclose(dataset);
-      return ret != -1;
+      return false;
     }
-    return false;
+    hsize_t dim_out = 0;
+    if (datatype == H5T_NATIVE_CHAR)
+    {
+      hid_t dataspace = H5Dget_space(dataset);
+      if (dataspace < 0)
+      {
+        H5Tclose(datatype);
+        H5Dclose(dataset);
+        return false;
+      }
+      int ndims = H5Sget_simple_extent_dims(dataspace, &dim_out, NULL);
+      H5Sclose(dataspace);
+      if (ndims < 0)
+      {
+        H5Tclose(datatype);
+        H5Dclose(dataset);
+        return false;
+      }
+    }
+    else
+    {
+      size_t size = H5Tget_size(datatype);
+      if (size == 0)
+      {
+        H5Tclose(datatype);
+        H5Dclose(dataset);
+        return false;
+      }
+      dim_out = size;
+    }
+    ref.resize(dim_out);
+    herr_t ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, &(ref[0]));
+    H5Tclose(datatype);
+    H5Dclose(dataset);
+    return ret >= 0;
   }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     hid_t str80 = H5Tcopy(H5T_C_S1);
-    H5Tset_size(str80, ref.size());
+    if (str80 < 0)
+      return false;
+    if (H5Tset_size(str80, ref.size()) < 0)
+    {
+      H5Tclose(str80);
+      return false;
+    }
     hsize_t dim = 1;
 
     herr_t ret = -1;
@@ -196,17 +220,29 @@ struct h5data_proxy<std::string>
     if (h1 < 0) // missing create one
     {
       hid_t dataspace = H5Screate_simple(1, &dim, NULL);
-      hid_t dataset   = H5Dcreate(grp, aname.c_str(), str80, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      ret             = H5Dwrite(dataset, str80, H5S_ALL, H5S_ALL, xfer_plist, ref.data());
+      if (dataspace < 0)
+      {
+        H5Tclose(str80);
+        return false;
+      }
+      hid_t dataset = H5Dcreate(grp, aname.c_str(), str80, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      if (dataset < 0)
+      {
+        H5Sclose(dataspace);
+        H5Tclose(str80);
+        return false;
+      }
+      ret = H5Dwrite(dataset, str80, H5S_ALL, H5S_ALL, xfer_plist, ref.data());
       H5Sclose(dataspace);
       H5Dclose(dataset);
     }
     else
     {
       ret = H5Dwrite(h1, str80, H5S_ALL, H5S_ALL, xfer_plist, ref.data());
+      H5Dclose(h1);
     }
-    H5Dclose(h1);
-    return ret != -1;
+    H5Tclose(str80);
+    return ret >= 0;
   }
 };
 
@@ -221,23 +257,46 @@ struct h5data_proxy<std::vector<std::string>>
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     hid_t datatype = H5Tcopy(H5T_C_S1);
-    H5Tset_size(datatype, H5T_VARIABLE);
+    if (datatype < 0)
+      return false;
+    if (H5Tset_size(datatype, H5T_VARIABLE) < 0)
+    {
+      H5Tclose(datatype);
+      return false;
+    }
     hid_t dataset = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
     std::vector<char*> char_list;
     herr_t ret = -1;
-    if (dataset > -1)
+    if (dataset >= 0)
     {
-      hsize_t dim_out;
+      hsize_t dim_out = 0;
       hid_t dataspace = H5Dget_space(dataset);
-      hid_t status    = H5Sget_simple_extent_dims(dataspace, &dim_out, NULL);
+      if (dataspace < 0)
+      {
+        H5Dclose(dataset);
+        H5Tclose(datatype);
+        return false;
+      }
+      int ndims = H5Sget_simple_extent_dims(dataspace, &dim_out, NULL);
+      if (ndims < 0)
+      {
+        H5Sclose(dataspace);
+        H5Dclose(dataset);
+        H5Tclose(datatype);
+        return false;
+      }
 
       char_list.resize(dim_out);
       ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
 
-      for (std::size_t i = 0; i < dim_out; i++)
-        ref.push_back(char_list[i]);
+      if (ret >= 0)
+      {
+        for (std::size_t i = 0; i < dim_out; i++)
+          ref.push_back(char_list[i]);
+      }
 
-      H5Dvlen_reclaim(datatype, dataspace, xfer_plist, char_list.data());
+      if (H5Dvlen_reclaim(datatype, dataspace, xfer_plist, char_list.data()) < 0)
+        ret = -1;
 
       H5Sclose(dataspace);
       H5Dclose(dataset);
@@ -255,7 +314,13 @@ struct h5data_proxy<std::vector<std::string>>
     // and stackoverflow
     // https://stackoverflow.com/questions/6184817/hdf5-inserting-a-set-of-strings-in-a-dataset
     hid_t datatype = H5Tcopy(H5T_C_S1);
-    H5Tset_size(datatype, H5T_VARIABLE);
+    if (datatype < 0)
+      return false;
+    if (H5Tset_size(datatype, H5T_VARIABLE) < 0)
+    {
+      H5Tclose(datatype);
+      return false;
+    }
     hsize_t dim = ref.size();
 
     // Create vector of pointers to the actual string data
@@ -268,15 +333,29 @@ struct h5data_proxy<std::vector<std::string>>
     if (h1 < 0) // missing create one
     {
       hid_t dataspace = H5Screate_simple(1, &dim, NULL);
-      hid_t dataset   = H5Dcreate(grp, aname.c_str(), datatype, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      ret             = H5Dwrite(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
+      if (dataspace < 0)
+      {
+        H5Tclose(datatype);
+        return false;
+      }
+      hid_t dataset = H5Dcreate(grp, aname.c_str(), datatype, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      if (dataset < 0)
+      {
+        H5Sclose(dataspace);
+        H5Tclose(datatype);
+        return false;
+      }
+      ret = H5Dwrite(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
       H5Sclose(dataspace);
       H5Dclose(dataset);
     }
     else
+    {
       ret = H5Dwrite(h1, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
+      H5Dclose(h1);
+    }
 
-    H5Dclose(h1);
+    H5Tclose(datatype);
     return ret >= 0;
   }
 };
