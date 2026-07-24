@@ -14,7 +14,26 @@ version and get all the required packages.
 
 Requires the ``xmltodict`` and ``packaging`` packages.
 
-Written by Brock Dyer, last updated on July 15, 2026.
+To use, download the files labeled ``INPUT_PW.def`` from QE's repository
+for every version you wish to support. Append the version of QE that the
+file came from to the file, like so: ``INPUT_PW_7.6.0.def``. Use the
+tool provided at ``q-e/dev-tools/helpdoc`` to transform the ``.def``
+files into ``.xml`` files. With all of the XML files in the same
+directory, call this script with the path to the directory,
+``./gen_pwscf_input_data.py /path/to/xml_dir/``.
+
+It will automatically parse the files and overwrite the file in Nexus's
+source at ``nexus/pwscf_input_defs.py``.
+
+Notes
+-----
+If you get an error about a variable ``$basedir`` not existing, you can
+replace the reference to it on line 186 in ``dev-tools/helpdoc.d/helpdoc.tcl``
+with the absolute path to ``dev-tools``, like so:
+
+    namespace eval schema { ::source [file join /path/to/q-e/dev-tools helpdoc.schema] }
+
+Written by Brock Dyer, last updated on July 24, 2026.
 """
 
 from __future__ import annotations
@@ -24,8 +43,6 @@ from datetime import datetime
 import json
 from pathlib import Path
 import sys
-import tarfile
-import tempfile
 import textwrap
 from typing import Literal
 
@@ -44,34 +61,34 @@ except ImportError as err:
 # files for each version tag in the QE GitLab. Update as needed.
 QE_DOC_VERSION_DATES = {
     #                  DD-MM-YYYY
-    Version("4.0.4"): "18-11-2008",
-    Version("4.1.0"): "16-07-2009",
-    Version("4.1.1"): "01-10-2009",
-    Version("4.1.3"): "24-03-2010",
-    Version("4.2.1"): "12-06-2010",
-    Version("4.3.0"): "13-02-2011",
-    Version("4.3.1"): "20-05-2011",
-    Version("5.0.0"): "11-05-2012",
-    Version("5.0.1"): "04-07-2012",
-    Version("5.0.2"): "04-07-2012",
-    Version("5.1.0"): "25-04-2014",
-    Version("5.1.1"): "16-10-2014",
-    Version("5.1.2"): "02-03-2015",
-    Version("5.2.0"): "20-06-2015",
-    Version("5.2.1"): "30-07-2015",
-    Version("5.3.0"): "07-01-2016",
-    Version("5.4.0"): "20-04-2016",
-    Version("6.0.0"): "19-08-2016",
-    Version("6.1.0"): "24-02-2017",
-    Version("6.2.0"): "03-09-2017",
-    Version("6.2.1"): "25-10-2017",
-    Version("6.3.0"): "15-06-2018",
-    Version("6.4.0"): "01-03-2019",
-    Version("6.4.1"): "03-04-2019",
-    Version("6.5.0"): "21-11-2019",
-    Version("6.6.0"): "19-07-2020",
-    Version("6.7.0"): "30-11-2020",
-    Version("6.8.0"): "22-04-2021",
+    # Version("4.0.4"): "18-11-2008",
+    # Version("4.1.0"): "16-07-2009",
+    # Version("4.1.1"): "01-10-2009",
+    # Version("4.1.3"): "24-03-2010",
+    # Version("4.2.1"): "12-06-2010",
+    # Version("4.3.0"): "13-02-2011",
+    # Version("4.3.1"): "20-05-2011",
+    # Version("5.0.0"): "11-05-2012",
+    # Version("5.0.1"): "04-07-2012",
+    # Version("5.0.2"): "04-07-2012",
+    # Version("5.1.0"): "25-04-2014",
+    # Version("5.1.1"): "16-10-2014",
+    # Version("5.1.2"): "02-03-2015",
+    # Version("5.2.0"): "20-06-2015",
+    # Version("5.2.1"): "30-07-2015",
+    # Version("5.3.0"): "07-01-2016",
+    # Version("5.4.0"): "20-04-2016",
+    # Version("6.0.0"): "19-08-2016",
+    # Version("6.1.0"): "24-02-2017",
+    # Version("6.2.0"): "03-09-2017",
+    # Version("6.2.1"): "25-10-2017",
+    # Version("6.3.0"): "15-06-2018",
+    # Version("6.4.0"): "01-03-2019",
+    # Version("6.4.1"): "03-04-2019",
+    # Version("6.5.0"): "21-11-2019",
+    # Version("6.6.0"): "19-07-2020",
+    # Version("6.7.0"): "30-11-2020",
+    # Version("6.8.0"): "22-04-2021",
     Version("7.0.0"): "18-12-2021",
     Version("7.1.0"): "08-06-2022",
     Version("7.2.0"): "18-03-2023",
@@ -89,20 +106,9 @@ def get_total_dict(
     xml_dir: Path = Path("./xml_files"),
     save_json: bool = False,
 ) -> dict:
-    """Take a directory of files labeled ``INPUT_PW.xml`` and parse them into dictionaries.
+    """Take a directory of files labeled ``INPUT_PW_<version>.xml`` and parse them into dictionaries.
 
     Needs the ``xmltodict`` package.
-
-    Notes
-    -----
-    You can turn the ``INPUT_PW.def`` files into XML by running the
-    Quantum ESPRESSO dev tool ``helpdoc`` found at ``dev-tools/helpdoc``.
-
-    If you get an error about a variable ``$basedir`` not existing, you can
-    replace the reference to it on line 186 in ``dev-tools/helpdoc.d/helpdoc.tcl``
-    with the absolute path to ``dev-tools``, like so:
-
-        namespace eval schema { ::source [file join /path/to/q-e/dev-tools helpdoc.schema] }
     """
     xml_dir = xml_dir.resolve()
     all_inputs_dict = {}
@@ -153,7 +159,7 @@ def get_total_dict(
 #end def get_total_dict
 
 
-type PwscfInputType = str | bool | int | float | list
+type PwscfInputType = str | bool | int | float
 
 @dataclass
 class NamelistParamDefinition:
@@ -513,12 +519,15 @@ def get_version_info(input_dict: dict[Version, PWDef]) -> dict[str, dict[str, Na
     # This is kinda hacky, but it's better than only having the param definition
     # from the version they were added. Something like `allowed_values` may be
     # wildly outdated, which is just unhelpful.
+    prev_version = LATEST
     for version, data in reversed(input_dict.items()):
         for namelist, params in data.namelist_params.items():
             for param, param_def in params.items():
                 if param not in nmlist_param_vers[namelist]:
                     nmlist_param_vers[namelist][param] = param_def
-                    nmlist_param_vers[namelist][param].version_removed = version
+                    # The previous version is the first version that
+                    # the parameter is no longer available in
+                    nmlist_param_vers[namelist][param].version_removed = prev_version
                     nmlist_param_vers[namelist][param].version_added = version
                 else:
                     nmlist_param_vers[namelist][param].version_added = version
@@ -535,6 +544,7 @@ def get_version_info(input_dict: dict[Version, PWDef]) -> dict[str, dict[str, Na
                         nmlist_param_vers[namelist][param].allowed_values = (
                             tuple(original_allowed_vals.keys())
                         )
+        prev_version = version
 
     return dict(nmlist_param_vers)
 
@@ -617,23 +627,14 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         xml_path = Path(sys.argv[1]).resolve()
     else:
-        xml_path = Path("./input_pw_data.tar.bz2").resolve()
+        raise RuntimeError("You must provide the path to the XML directory!")
 
     if not xml_path.exists():
         raise FileNotFoundError(f"Can not find XML data at location {xml_path}")
 
-    if xml_path.is_file():
-        if xml_path.suffixes[0] != ".tar":
-            raise RuntimeError(
-                "Must supply either the XML file directory or a tar file with the XML files"
-            )
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            with tarfile.open(xml_path, mode='r:*') as tar:
-                tar.extractall(path=tmp_dir, filter='data')
-
-            pw_data = get_total_dict(Path(tmp_dir) / "xml_files")
-    else:
-        pw_data = get_total_dict(xml_path)
+    if not xml_path.is_dir():
+        raise NotADirectoryError("The XML path must be a directory!")
+    pw_data = get_total_dict(xml_path)
 
     print("Parsing namelist data...")
     all_data = {}
@@ -653,13 +654,9 @@ if __name__ == "__main__":
 """Module for storing input parameters for Quantum ESPRESSO.
 
 The code in this module was auto-generated by a Python script that
-uses the intermediate XML representation of QE's ``pw.x`` input
-description files.
+uses the intermediate XML representation of QE's ``INPUT_PW.def`` files.
 
 The script is at ``qmcpack/nexus/dev_utils/gen_pwscf_input_data.py``.
-
-A description of how to turn QE's ``.def`` documentation files into
-XML is given in QE's repository, at ``q-e/dev-tools/README.helpdoc``.
 
 This module's code was autogenerated on {datetime.now().strftime("%a %d %b %Y, %I:%M%p")}
 
