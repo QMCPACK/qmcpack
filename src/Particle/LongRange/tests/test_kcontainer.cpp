@@ -9,7 +9,7 @@
 //
 // File created by: Yubo "Paul" Yang, yubo.paul.yang@gmail.com, CCQ @ Flatiron
 //////////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Particle/LongRange/KContainer.h"

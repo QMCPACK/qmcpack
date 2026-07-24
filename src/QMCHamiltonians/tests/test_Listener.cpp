@@ -8,7 +8,7 @@
 //
 // Some code refactored from: DensityMatrices1b.h
 //////////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include <numeric>

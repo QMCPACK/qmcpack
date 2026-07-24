@@ -16,7 +16,7 @@
  *  real-space path that spans regions both inside and outside of the cell are required to agree with
  *  the reference values obtained from PySCF. The reference values were generated from Carbon1x1x1-tw1_gen_mos.py.   
 */
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Configuration.h"

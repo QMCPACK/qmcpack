@@ -8,8 +8,9 @@
 //
 // File created by: Youngjun Lee, leey@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch_all.hpp>
-#include "Utilities/for_testing/Catch2Approx.h"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/benchmark/catch_benchmark.hpp>
+#include <catch2/benchmark/catch_chronometer.hpp>
 
 #include <DualAllocatorAliases.hpp>
 #include <AccelBLAS.hpp>

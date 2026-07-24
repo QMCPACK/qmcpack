@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 #include <string>
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Configuration.h"

@@ -8,8 +8,7 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch_all.hpp>
-#include "Utilities/for_testing/Catch2Approx.h"
+#include <catch2/catch_test_macros.hpp>
 
 #include "Utilities/MPIExceptionWrapper.hpp"
 #include "Message/Communicate.h"

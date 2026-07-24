@@ -11,6 +11,8 @@
 
 #ifndef QMCPLUSPLUS_QMCDRIVERNEWTESTWRAPPER_H
 #define QMCPLUSPLUS_QMCDRIVERNEWTESTWRAPPER_H
+#include <catch2/matchers/catch_matchers_string.hpp>
+
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/DriverTraits.h"
 #include "Particle/SampleStack.h"

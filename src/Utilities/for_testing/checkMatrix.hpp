@@ -16,9 +16,6 @@
 
 #ifndef QMCPLUSPLUS_CHECKMATRIX_HPP
 #define QMCPLUSPLUS_CHECKMATRIX_HPP
-#include <catch2/catch_all.hpp>
-#include "Utilities/for_testing/Catch2Approx.h"
-
 #include <string>
 #include <complex>
 #include <type_traits>

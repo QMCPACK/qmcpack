@@ -8,7 +8,7 @@
 #ifndef QMCPLUSPLUS_CATCH2_APPROX_H
 #define QMCPLUSPLUS_CATCH2_APPROX_H
 
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_approx.hpp>
 
 #include <cmath>
 #include <complex>

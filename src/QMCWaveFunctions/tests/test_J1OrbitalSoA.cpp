@@ -8,7 +8,7 @@
 //
 // File created by: Shiv Upadhyay, shivnupadhyay@gmail.com, University of Pittsburgh
 //////////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Particle/ParticleSetPool.h"

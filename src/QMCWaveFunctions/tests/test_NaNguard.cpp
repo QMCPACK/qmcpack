@@ -8,8 +8,9 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include <NaNguard.h>
 #include <cmath>
 

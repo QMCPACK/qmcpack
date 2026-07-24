@@ -10,8 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <catch2/catch_all.hpp>
-#include "Utilities/for_testing/Catch2Approx.h"
+#include <catch2/catch_session.hpp>
 #include "DeviceManager.h"
 
 #ifdef CATCH_MAIN_HAVE_MPI

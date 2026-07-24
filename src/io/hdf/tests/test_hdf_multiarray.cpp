@@ -9,8 +9,7 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch_all.hpp>
-#include "Utilities/for_testing/Catch2Approx.h"
+#include <catch2/catch_test_macros.hpp>
 
 #include "boost/version.hpp"
 #include <vector>

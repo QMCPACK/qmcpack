@@ -8,7 +8,7 @@
 //
 // File refactored from: Refactored from test_manager.cpp
 //////////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Message/Communicate.h"

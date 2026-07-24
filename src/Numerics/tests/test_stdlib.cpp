@@ -1,5 +1,4 @@
-#include <catch2/catch_all.hpp>
-#include "Utilities/for_testing/Catch2Approx.h"
+#include <catch2/catch_test_macros.hpp>
 
 // Put tests for src/config/stdlib functions here
 

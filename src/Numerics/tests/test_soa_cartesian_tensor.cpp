@@ -12,7 +12,7 @@
 
 // This test is technically in the wrong location.  To be testing code in QMCWaveFunctions, it should
 // be in QMCWaveFunctions/test.   However, it seems better to keep the two CartesianTensor tests together.
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 #include "Message/Communicate.h"
 #include "Numerics/SoaCartesianTensor.h"

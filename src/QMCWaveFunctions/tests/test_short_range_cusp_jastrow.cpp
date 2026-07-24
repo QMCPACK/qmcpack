@@ -8,7 +8,7 @@
 //
 // File created by: Eric Neuscamman, eneuscamman@berkeley.edu, University of California, Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Configuration.h"

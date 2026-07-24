@@ -7,7 +7,7 @@
 // File developed by: William F Godoy, godoywf@ornl.gov, Oak Ridge National Laboratory
 // File created by: William F Godoy, godoywf@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
