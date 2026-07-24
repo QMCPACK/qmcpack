@@ -7,7 +7,7 @@ generic_settings.raise_error = True
 
 from importlib.util import find_spec
 from . import TEST_DIR
-from ..testing import value_eq,check_object_eq
+from ..testing import value_eq,check_object_eq,dict_serialize
 
 TEST_FILES = {
     "AlN32_input":                                                 TEST_DIR / "test_rmg_input_files/AlN32_input",
@@ -46,7 +46,8 @@ for file in TEST_FILES.values():
 
 def make_serial_reference(ri):
     import numpy as np
-    s = ri.serial()
+    from ..developer import obj
+    s = dict_serialize(ri,dict_type=obj)
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
         v = s[k]
@@ -658,7 +659,7 @@ def get_serial_references():
 def check_vs_serial_reference(gi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    sg = gi.serial()
+    sg = dict_serialize(gi,dict_type=obj)
     assert(check_object_eq(sg,sr))
 #end def check_vs_serial_reference
 
@@ -909,14 +910,18 @@ def test_generate():
         nio8.structure = s_trans
         assert(value_eq(R,np.eye(3,dtype=float)))
         assert(tmatrix is None)
-        shared_inputs.delete('bravais_lattice_type','a_length','b_length','c_length','wavefunction_grid')
+        keys = 'bravais_lattice_type','a_length','b_length','c_length','wavefunction_grid'
+        for k in keys:
+            del shared_inputs[k]
+        d = dict(**rmg_inputs)
+        d.update(**shared_inputs)
         ri = generate_rmg_input(
             Hubbard_U       = obj(Ni=6.5),
             virtual_frac    = 1./6,
             wf_grid_spacing = 0.22,
             pseudos         = ['Ni_oncv.UPF','O_oncv.UPF'],
             system          = nio8,
-            **obj(rmg_inputs,shared_inputs)
+            **d
             )
         assert(value_eq(ri.length_units,'Bohr'))
         del ri.length_units

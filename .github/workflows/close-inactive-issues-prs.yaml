@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/stale@v10.3.0
         with:
-          operations-per-run: 10
+          operations-per-run: 50
           days-before-issue-stale: ${{ env.stale-issue-time }}
           days-before-issue-close: ${{ env.close-time }}
           stale-issue-label: "stale"

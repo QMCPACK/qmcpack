@@ -36,7 +36,7 @@ import os
 from pathlib import Path
 from copy import deepcopy
 import numpy as np
-from .developer import DevBase, obj
+from .developer import DevBase, obj, error
 from .unit_converter import convert
 from .periodic_table import Elements
 from .structure import Structure, generate_structure, read_structure
@@ -95,7 +95,8 @@ class Ion(Particle):
 
     def pseudize(self,valence):
         ps = PseudoIon()
-        ps.transfer_from(self)
+        for k,v in self.items():
+            ps[k] = v
         ps.charge = valence
         ps.core_electrons    = ps.protons - valence
         return ps
@@ -136,7 +137,7 @@ class Particles(Matter):
         else:
             iselem,symbol = self.is_element(name,symbol=True)
             if iselem and symbol in self:
-                p = self[symbol].copy()
+                p = deepcopy(self[symbol])
                 p.name = name
                 self[name] = p
             #end if
@@ -280,7 +281,7 @@ class PhysicalSystem(Matter):
         if particles is None:
             self.particles = Particles()
         else:
-            self.particles = particles.copy()
+            self.particles = deepcopy(particles)
         #end if
 
         self.folded_system = None
@@ -359,7 +360,7 @@ class PhysicalSystem(Matter):
     def update(self):
         self.net_charge = self.structure.background_charge
         self.net_spin   = 0
-        for p in self.particles:
+        for p in self.particles.values():
             self.net_charge += p.count*p.charge
             self.net_spin   += p.count*p.spin
         #end for
@@ -376,7 +377,7 @@ class PhysicalSystem(Matter):
             if particle is None:
                 self.error('particle {0} is unknown'.format(name))
             else:
-                particle = particle.copy()
+                particle = deepcopy(particle)
             #end if
             particle.set_count(count)
             plist.append(particle)
@@ -421,7 +422,7 @@ class PhysicalSystem(Matter):
         if errors:
             self.error('system cannot be generated')
         #end if
-        self.valency = obj(**valency)
+        self.valency = obj(**valency) # culprit!!!
         self.update()
     #end def pseudize
 
@@ -512,7 +513,7 @@ class PhysicalSystem(Matter):
 
 
     def copy(self):
-        cp = DevBase.copy(self)
+        cp = deepcopy(self)
         if self.folded_system is not None and self.structure.folded_structure is not None:
             del cp.folded_system.structure
             cp.folded_system.structure = cp.structure.folded_structure
@@ -553,7 +554,7 @@ class PhysicalSystem(Matter):
                 net_spin   = self.net_spin
             #end if
         #end if
-        system = self.copy()
+        system = deepcopy(self)
         supersystem = PhysicalSystem(
             structure  = supercell,
             net_charge = net_charge,
@@ -740,14 +741,13 @@ def generate_physical_system(**kwargs):
                 is_path = '/' in s
                 is_file = format in set('xyz xsf poscar cif fhi-aims'.split())
                 if is_path or is_file:
-                    PhysicalSystem.class_error('user provided structure file does not exist\nstructure file path: '+s,'generate_physical_system')
+                    error('user provided structure file does not exist\nstructure file path: '+s,'generate_physical_system')
                 #end if
             #end if
         #end if
     #end if
 
-    generation_info = obj()
-    generation_info.transfer_from(deepcopy(kwargs))
+    generation_info = obj(**deepcopy(kwargs))
 
     net_charge = kwargs['net_charge']
     net_spin   = kwargs['net_spin']
@@ -784,7 +784,7 @@ def generate_physical_system(**kwargs):
     else:
         for d in range(len(pretile)):
             if tiling[d]%pretile[d]!=0:
-                PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
+                error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
             #end if
         #end for
         tiling = tuple(np.array(tiling)//np.array(pretile))
@@ -851,4 +851,3 @@ def ghost_atoms(*particles):
         Matter.particle_collection.add_particles(Ion(name=particle,mass=0,charge=0,spin=0,protons=0,neutrons=0))
     #end for
 #end def ghost_atoms
-

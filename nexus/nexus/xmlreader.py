@@ -28,8 +28,8 @@ import keyword
 import re
 import os
 import numpy as np
-from .developer import DevBase, obj, valid_variable_name
-from .utilities import path_string
+from .developer import DevBase, obj
+from .utilities import path_string, valid_variable_name
 
 
 def parse_string(s, delim = None):

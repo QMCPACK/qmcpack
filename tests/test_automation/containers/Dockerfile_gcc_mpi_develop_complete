@@ -4,7 +4,7 @@ LABEL Description="Development version of QMCPACK and Nexus configured for use w
 SHELL ["/bin/bash", "-c"]
 
 ENV QE_VERSION="7.6"
-ENV PYSCF_VERSION=2.13.1
+ENV PYSCF_VERSION=2.14.0
 #ENV QMCPACK_VERSION="4.3.0"
 
 ARG USERNAME=qmcuser

@@ -75,7 +75,9 @@ private:
   std::string name_{type_tag};
   std::string type_{type_tag};
   std::string dynamic_{"e"};
-  std::string static_{"ion"};
+  std::string static_{}; // There can't be a default for this since
+                         // some systems, heg namely don't
+                         // have static psets
   bool ion_points_{false};
   EnergyDensityInputSection input_section_;
   ReferencePointsInput ref_points_input_;

@@ -157,10 +157,10 @@ def writeval(val):
 class Namelist(DevBase):
     @classmethod
     def class_init(cls):
-        cls.class_set_optional(
-            namelist = 'unknown',
-            names = [],
-            )
+        if not hasattr(cls,'namelist'):
+            cls.namelist = 'unknown'
+        if not hasattr(cls,'names'):
+            cls.names = []
         cls.name_set = set(cls.names)
     #end def class_init
 
@@ -266,10 +266,10 @@ class Namelist(DevBase):
 class NamelistInput(SimulationInput):
     @classmethod
     def class_init(cls):
-        cls.class_set_optional(
-            namelists = [],
-            namelist_classes = obj(),
-            )
+        if not hasattr(cls,'namelists'):
+            cls.namelists = []
+        if not hasattr(cls,'namelist_classes'):
+            cls.namelist_classes = obj()
         cls.namelist_set = set(cls.namelists)
         cls.name_map     = obj()
         for namelist_name,namelist_cls in cls.namelist_classes.items():
@@ -550,7 +550,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
 
         self.input = ProjwfcInput(infile_path)
 
-        self.info.set(
+        self.info.update(
             path        = path,
             infile      = infile,
             outfile     = outfile,
@@ -558,6 +558,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             )
 
         if analyze:
+            print(self.input)
             self.analyze()
         #end if
     #end def __init__ 
@@ -659,7 +660,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             #end for
         #end while
         if has_ud:
-            for lc in lowdin:
+            for lc in lowdin.values():
                 u = lc.up
                 d = lc.down
                 lc.pol = obj()
@@ -670,7 +671,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
                 #end for
             #end for
         else:
-            for lc in lowdin:
+            for lc in lowdin.values():
                 del lc.up
                 del lc.down
             #end for
@@ -707,13 +708,13 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             if len(lowdin)>0:
                 if 'tot' in lowdin[0]:
                     nelec = 0
-                    for lc in lowdin:
+                    for lc in lowdin.values():
                         nelec += lc.tot.charge
                     #end for
                 #end if
                 if 'pol' in lowdin[0]:
                     npol = 0
-                    for lc in lowdin:
+                    for lc in lowdin.values():
                         npol += lc.pol.charge
                     #end for
                 #end if
@@ -927,7 +928,7 @@ class HpAnalyzer(SimulationAnalyzer):
 
         self.input = HpInput(infile_path)
 
-        self.info.set(
+        self.info.update(
             path        = path,
             infile      = infile,
             outfile     = outfile,
