@@ -8,8 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "PlatformSelector.hpp"
 #include <config.h>

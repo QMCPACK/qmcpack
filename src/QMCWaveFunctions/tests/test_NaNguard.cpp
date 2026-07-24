@@ -8,8 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include <NaNguard.h>
 #include <cmath>
 
@@ -19,9 +19,9 @@ namespace qmcplusplus
 TEST_CASE("NaNguard", "[wavefunction]")
 {
   const QMCTraits::ValueType const_nan = std::sqrt(-1.0);
-  CHECK_THROWS_WITH(NaNguard::checkOneParticleRatio(const_nan, "unit test"), Catch::Matchers::Contains("NaNguard::checkOneParticleRatio"));
+  CHECK_THROWS_WITH(NaNguard::checkOneParticleRatio(const_nan, "unit test"), Catch::Matchers::ContainsSubstring("NaNguard::checkOneParticleRatio"));
   CHECK_NOTHROW(NaNguard::checkOneParticleRatio(0.0, "unit test"));
-  CHECK_THROWS_WITH(NaNguard::checkOneParticleGradients({const_nan, -const_nan, const_nan}, "unit test"), Catch::Matchers::Contains("NaNguard::checkOneParticleGradients"));
+  CHECK_THROWS_WITH(NaNguard::checkOneParticleGradients({const_nan, -const_nan, const_nan}, "unit test"), Catch::Matchers::ContainsSubstring("NaNguard::checkOneParticleGradients"));
   CHECK_NOTHROW(NaNguard::checkOneParticleGradients({0.0,0.0,0.0}, "unit test"));
 }
 }

@@ -19,8 +19,8 @@
 
 
 //#include "catch.hpp"
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "Configuration.h"
 
 // Always test the fallback code, regardless of MKL definition

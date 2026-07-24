@@ -8,8 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "checkVector.hpp"
 #include <iostream>

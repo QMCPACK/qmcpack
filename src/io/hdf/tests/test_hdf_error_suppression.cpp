@@ -8,9 +8,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "hdf/hdf_error_suppression.h"
 
 using namespace qmcplusplus;

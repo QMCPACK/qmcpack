@@ -8,8 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
 #include "FillData.h"
 // Input data and gold data for fillFromText test

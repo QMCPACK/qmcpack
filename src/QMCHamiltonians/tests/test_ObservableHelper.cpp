@@ -8,9 +8,8 @@
 //
 // File created by: William F Godoy, godoywf@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "QMCHamiltonians/ObservableHelper.h"
 #include "io/hdf/hdf_archive.h"

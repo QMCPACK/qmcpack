@@ -10,8 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "DeviceManager.h"
 
 #ifdef CATCH_MAIN_HAVE_MPI
@@ -32,7 +32,9 @@ std::string UTEST_HAMIL, UTEST_WFN;
 int main(int argc, char* argv[])
 {
   Catch::Session session;
-  using namespace Catch::clara;
+  // Run tests in the order they are declared and not default randomized order
+  session.configData().runOrder = Catch::TestRunOrder::Declared;
+  using namespace Catch::Clara;
   // Build command line parser.
   auto cli = session.cli() |
       Opt(UTEST_HAMIL, "UTEST_HAMIL")["--hamil"]("Hamiltonian file to be used by unit test if applicable.") |
@@ -60,7 +62,7 @@ int main(int argc, char* argv[])
   }
   qmcplusplus::print_mem("Before running tests", qmcplusplus::app_log());
   // Run the tests.
-  int result = session.run(argc, argv);
+  int result = session.run();
 #ifdef CATCH_MAIN_HAVE_MPI
   OHMMS::Controller->finalize();
 #endif

@@ -8,9 +8,8 @@
 //
 // File created by: Steven Hahn, hahnse@ornl.gov, Oak Ridge National lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Utilities/FakeRandom.h"
 

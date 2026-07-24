@@ -11,8 +11,8 @@
 
 #ifndef QMCPLUSPLUS_APPROXEQUALITY_HPP
 #define QMCPLUSPLUS_APPROXEQUALITY_HPP
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <optional>
 #include "type_traits/complex_help.hpp"

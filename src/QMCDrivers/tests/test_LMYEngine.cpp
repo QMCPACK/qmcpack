@@ -11,8 +11,8 @@
 //
 
 #ifdef HAVE_LMY_ENGINE
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "VariableSet.h"
 #include "formic/utils/lmyengine/engine.h"

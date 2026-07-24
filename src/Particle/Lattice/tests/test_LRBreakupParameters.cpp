@@ -12,8 +12,8 @@
 
 #include <stdio.h>
 #include <string>
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Configuration.h"
 #include "OhmmsPETE/TinyVector.h"

@@ -196,7 +196,7 @@ public:
     CHECK(QMCDriverNew::determineStepsPerBlock(6, 0, 0, 2) == 1);
 
     CHECK_THROWS_WITH(QMCDriverNew::determineStepsPerBlock(6, 13, 1, 2),
-                      Catch::Contains("more than the total number of walkers"));
+                      Catch::Matchers::ContainsSubstring("more than the total number of walkers"));
   }
 };
 

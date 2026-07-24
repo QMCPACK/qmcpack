@@ -15,7 +15,8 @@
  *  design does not easy allow a unit test.  It may not cover edge case behavior of the
  *  original code in QMCHamiltonian/SpaceGrid.cpp
  */
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "ParseGridInput.hpp"
 #include "Message/UniformCommunicateError.h"

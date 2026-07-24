@@ -9,8 +9,8 @@
 // File refactored from: Refactored from test_manager.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 #include "EstimatorManagerInputTest.h"
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "ValidEnergyDensityInput.h"
 #include "ValidOneBodyDensityMatricesInput.h"

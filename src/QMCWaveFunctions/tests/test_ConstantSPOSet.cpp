@@ -8,9 +8,8 @@
 //
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "Configuration.h"
 #include "QMCWaveFunctions/WaveFunctionTypes.hpp"
 #include "QMCWaveFunctions/tests/ConstantSPOSet.h"

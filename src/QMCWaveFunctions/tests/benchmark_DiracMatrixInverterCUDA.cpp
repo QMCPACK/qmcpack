@@ -15,8 +15,8 @@
  *  Currently it also benchmarks the same size matrix's and batch sizes
  *  using the Legacy DiracMatrix serially.
  */
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <algorithm>
 #include "Configuration.h"

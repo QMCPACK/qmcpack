@@ -117,7 +117,8 @@
  */
 
 // test_twf_fastderiv_raii.cpp
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"

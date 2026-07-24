@@ -11,8 +11,8 @@
 
 #include "MinimalContainers/ConstantSizeMatrix.hpp"
 #include "OhmmsPETE/OhmmsMatrix.h"
-
-#include "catch.hpp"
+#include <catch2/catch_all.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 
 namespace qmcplusplus
