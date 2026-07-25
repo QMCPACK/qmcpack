@@ -15,8 +15,9 @@
 #ifndef AFQMC_DEVICE_POINTERS_HPP
 #define AFQMC_DEVICE_POINTERS_HPP
 
-#include <functional>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "Configuration.h"
+#include <functional>
 #include <cassert>
 
 #include "multi/array_ref.hpp"
