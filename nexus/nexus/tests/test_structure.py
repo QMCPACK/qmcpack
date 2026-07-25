@@ -12,6 +12,7 @@ from .. import testing
 from ..testing import value_eq as value_eq_orig
 from ..testing import object_eq as object_eq_orig
 from ..testing import object_diff as object_diff_orig
+from ..structure import Structure, Crystal
 from ..testing import text_eq
 from .. import numpy_extensions as npe
 from ..structure import generate_atom_structure, generate_dimer_structure, generate_trimer_structure
@@ -2073,3 +2074,111 @@ def test_corners():
     ]
 
     np.testing.assert_allclose(structure.corners(), ref_corners)
+
+
+def test_locate():
+    # Glycine
+    structure = Structure(
+        axes = np.array([
+            [6.00000, 0.00000, 0.00000],
+            [0.00000, 6.00000, 0.00000],
+            [0.00000, 0.00000, 6.00000],
+            ], dtype=float),
+        elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
+        pos = np.array([
+            [ 1.848745, 2.865874, 3.041292],
+            [ 0.679145, 1.977474, 3.067692],
+            [-0.580355, 2.805074, 3.070592],
+            [-0.510755, 4.011174, 3.052592],
+            [-1.779455, 2.202274, 3.093292],
+            [ 1.827545, 3.514674, 3.813792],
+            [ 2.706445, 2.334474, 3.038892],
+            [ 0.690245, 1.335874, 2.186592],
+            [ 0.711045, 1.361274, 3.966292],
+            [-2.558655, 2.774774, 3.094192],
+            ], dtype=float),
+        units="A",
+        )
+
+    other_structure = Structure(
+        axes = np.array([
+            [6.00000, 0.00000, 0.00000],
+            [0.00000, 6.00000, 0.00000],
+            [0.00000, 0.00000, 6.00000],
+            ], dtype=float),
+        )
+
+    atoms_inside_cell  = structure.locate(other_structure)
+    atoms_outside_cell = structure.locate(other_structure, invert=True)
+
+    assert(set(atoms_inside_cell)  == {0, 1, 5, 6, 7, 8})
+    assert(set(atoms_outside_cell) == {9, 2, 3, 4})
+
+    mask_array = np.array([True, True, True, False, False, False, False, False, False, False])
+
+    selected_atoms = structure.locate(mask_array)
+    unselected_atoms = structure.locate(mask_array, invert=True)
+
+    assert(set(selected_atoms)   == {0, 1, 2})
+    assert(set(unselected_atoms) == {3, 4, 5, 6, 7, 8, 9})
+
+    selected_atoms = structure.locate(1)
+    unselected_atoms = structure.locate(1, invert=True)
+
+    assert(set(selected_atoms)   == {1})
+    assert(set(unselected_atoms) == {0, 2, 3, 4, 5, 6, 7, 8, 9})
+
+    selected_atoms = structure.locate([0, 1, 2])
+    unselected_atoms = structure.locate([0, 1, 2], invert=True)
+
+    assert(set(selected_atoms)   == {0, 1, 2})
+    assert(set(unselected_atoms) == {3, 4, 5, 6, 7, 8, 9})
+
+    selected_atoms = structure.locate("O")
+    unselected_atoms = structure.locate("O", invert=True)
+
+    assert(set(selected_atoms)   == {3, 4})
+    assert(set(unselected_atoms) == {0, 1, 2, 5, 6, 7, 8, 9})
+
+    selected_atoms = structure.locate(["O", "C"])
+    unselected_atoms = structure.locate(["O", "C"], invert=True)
+
+    assert(set(selected_atoms)   == {1, 2, 3, 4})
+    assert(set(unselected_atoms) == {0, 5, 6, 7, 8, 9})
+
+    # Select Nitrogen and the Hydrogens attached to it
+    selected_atoms = structure.locate("N", radii=1.100)
+    unselected_atoms = structure.locate("N", invert=True, radii=1.100)
+
+    assert(set(selected_atoms)   == {0, 5, 6})
+    assert(set(unselected_atoms) == {1, 2, 3, 4, 7, 8, 9})
+
+    # Select Nitrogen and the Hydrogens attached to it
+    # as well as the Oxygens and acidic Hydrogen
+    selected_atoms = structure.locate(["N", "O"], radii=[1.100, 1.100, 1.100])
+    unselected_atoms = structure.locate(["N", "O"], invert=True, radii=[1.100, 1.100, 1.100])
+
+    assert(set(selected_atoms)   == {0, 3, 4, 5, 6, 9})
+    assert(set(unselected_atoms) == {1, 2, 7, 8})
+
+
+def test_locate_periodic():
+    conv_prim_locate_ref = {0, 1}
+    conv_conv_locate_ref = {0, 1, 2, 3, 4, 5, 6, 7}
+
+    diamond_conv = Crystal(lattice="diamond", cell="conv")
+
+    diamond_2x2x2 = diamond_conv.tile(2,2,2)
+
+    diamond_prim = Crystal(lattice="diamond", cell="prim")
+
+    located_atoms = diamond_conv.locate(diamond_prim)
+    assert(set(located_atoms) == conv_prim_locate_ref)
+
+    located_atoms = diamond_2x2x2.locate(diamond_prim)
+    assert(set(located_atoms) == conv_prim_locate_ref)
+
+    located_atoms = diamond_2x2x2.locate(diamond_conv)
+    assert(set(located_atoms) == conv_conv_locate_ref)
+    located_atoms = diamond_2x2x2.locate(diamond_conv)
+    assert(set(located_atoms) == conv_conv_locate_ref)
