@@ -3,7 +3,7 @@ name: Build and Push Ubuntu22 OpenMPI build CI Image to GHCR
 on:
   push:
     paths:
-      - 'config/docker/dependencies/ubuntu22/openmpi/**'
+      - 'config/docker/dependencies/ubuntu22-openmpi/**'
     branches:
       - develop
 
@@ -37,7 +37,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: config/docker/dependencies/ubuntu22/openmpi/Dockerfile
+          file: config/docker/dependencies/ubuntu22-openmpi/Dockerfile
           push: true
           tags: | 
             ghcr.io/qmcpack/ubuntu22-openmpi:latest
