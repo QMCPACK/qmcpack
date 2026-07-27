@@ -141,7 +141,7 @@ import keyword
 import numpy as np
 from .numpy_extensions import reshape_inplace
 from .xmlreader import XMLreader, XMLelement
-from .developer import DevBase, obj, error, log, warn
+from .developer import DevBase, dotdict, obj, error, log, warn
 from .generic import sorted_generic
 from .periodic_table import Elements
 from .structure import Structure, Jellium, get_kpath
@@ -6642,10 +6642,48 @@ def generate_hamiltonian(name         = 'h0',
     if system is None:
         error('generate_hamiltonian argument system must not be None')
     #end if
-    if nrule is not None and (not isinstance(nrule,int) or isinstance(nrule,bool)):
-        error('generate_hamiltonian argument nrule must be an integer or None\n  '
+    nrule_types = (dict,dotdict,obj)
+    nrule_is_int = isinstance(nrule,int) and not isinstance(nrule,bool)
+    nrule_is_map = nrule.__class__ in nrule_types if nrule is not None else False
+    if nrule is not None and not nrule_is_int and not nrule_is_map:
+        error('generate_hamiltonian argument nrule must be an integer, dict, '
+              'dotdict, obj, or None\n  '
               'nrule provided: {0}\n  provided type: {1}'.format(
                   nrule,nrule.__class__.__name__))
+    #end if
+    if nrule_is_int and nrule not in range(1,9):
+        error('generate_hamiltonian argument nrule must be one of the '
+              'integers 1 through 8\n  nrule provided: {0}'.format(nrule))
+    #end if
+    if nrule_is_map:
+        ion_labels = set(system.ion_labels)
+        nrule_labels = set(nrule.keys())
+        missing_labels = ion_labels-nrule_labels
+        extra_labels = nrule_labels-ion_labels
+        if len(missing_labels)>0 or len(extra_labels)>0:
+            error('generate_hamiltonian nrule mapping keys must match the '
+                  'atomic species labels\n  expected labels: {0}\n  '
+                  'provided labels: {1}\n  missing labels: {2}\n  '
+                  'unrecognized labels: {3}'.format(
+                      sorted(ion_labels,key=str),
+                      sorted(nrule_labels,key=str),
+                      sorted(missing_labels,key=str),
+                      sorted(extra_labels,key=str)))
+        #end if
+        for ion_label,ion_nrule in nrule.items():
+            if not isinstance(ion_nrule,int) or isinstance(ion_nrule,bool):
+                error('generate_hamiltonian nrule mapping values must be '
+                      'integers\n  atomic species label: {0}\n  '
+                      'nrule provided: {1}\n  provided type: {2}'.format(
+                          ion_label,ion_nrule,ion_nrule.__class__.__name__))
+            #end if
+            if ion_nrule not in range(1,9):
+                error('generate_hamiltonian nrule mapping values must be '
+                      'integers from 1 through 8\n  atomic species label: '
+                      '{0}\n  nrule provided: {1}'.format(
+                          ion_label,ion_nrule))
+            #end if
+        #end for
     #end if
 
     ename   = electrons
@@ -6700,7 +6738,9 @@ def generate_hamiltonian(name         = 'h0',
                         error('pseudos provided to generate_hamiltonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion.name,str(ppfiles)))
                     #end if
                     pp_input = obj(elementtype=ion,href=ppfile)
-                    if nrule is not None:
+                    if nrule_is_map:
+                        pp_input.nrule = nrule[ion]
+                    elif nrule_is_int:
                         pp_input.nrule = nrule
                     #end if
                     pseudos.add(pseudo(**pp_input))
