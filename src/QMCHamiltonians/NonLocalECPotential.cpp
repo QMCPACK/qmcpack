@@ -636,6 +636,143 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(TrialWaveFunction& psi, ParticleS
   return NonLocalMoveAccepted;
 }
 
+std::vector<int> NonLocalECPotential::mw_makeNonLocalMovesPbyP(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                               const RefVectorWithLeader<ParticleSet>& p_list,
+                                                               NonLocalTOperator& move_op)
+{
+  const size_t nw = o_list.size();
+  std::vector<int> num_accepted(nw, 0);
+
+  if (move_op.getMoveKind() != TmoveKind::V1)
+  {
+    for (size_t iw = 0; iw < nw; iw++)
+      num_accepted[iw] =
+          o_list.getCastedElement<NonLocalECPotential>(iw).makeNonLocalMovesPbyP(wf_list[iw], p_list[iw], move_op);
+    return num_accepted;
+  }
+
+  auto& O_leader           = o_list.getCastedLeader<NonLocalECPotential>();
+  ParticleSet& pset_leader = p_list.getLeader();
+
+  // per-walker candidate lists and single-electron job lists, rebuilt per electron
+  std::vector<std::vector<NonLocalData>> tmove_xy(nw);
+  std::vector<std::vector<NLPPJob<Real>>> jel_jobs(nw);
+
+  auto pp_component = std::find_if(O_leader.PPset.begin(), O_leader.PPset.end(), [](auto& ptr) { return bool(ptr); });
+  assert(pp_component != std::end(O_leader.PPset));
+
+  RefVectorWithLeader<NonLocalECPComponent> ecp_component_list(**pp_component);
+  RefVectorWithLeader<ParticleSet> pset_list(pset_leader);
+  RefVectorWithLeader<TrialWaveFunction> psi_list(wf_list.getLeader());
+  RefVector<const NLPPJob<Real>> batch_list;
+  RefVector<std::vector<NonLocalData>> tmove_xy_batch_list;
+  RefVector<VirtualParticleSet> vp_list;
+  std::vector<Real> pairpots(nw);
+
+  ecp_component_list.reserve(nw);
+  pset_list.reserve(nw);
+  psi_list.reserve(nw);
+  batch_list.reserve(nw);
+  tmove_xy_batch_list.reserve(nw);
+
+  for (int ig = 0; ig < pset_leader.groups(); ++ig) //loop over species
+  {
+    TrialWaveFunction::mw_prepareGroup(wf_list, p_list, ig);
+
+    for (int jel = pset_leader.first(ig); jel < pset_leader.last(ig); ++jel)
+    {
+      // candidate ratio evaluations of this electron, batched across walkers.
+      // Neighbor lists are the ones built at the preceding energy evaluation,
+      // matching the single-walker sweep; distances are read fresh so accepts
+      // of earlier electrons in this sweep are seen.
+      size_t max_num_jobs = 0;
+      for (size_t iw = 0; iw < nw; iw++)
+      {
+        auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
+        const ParticleSet& P(p_list[iw]);
+        auto& jobs = jel_jobs[iw];
+        jobs.clear();
+        tmove_xy[iw].clear();
+        const auto& myTable = P.getDistTableAB(O.myTableIndex);
+        const auto& dist    = myTable.getDistRow(jel);
+        const auto& displ   = myTable.getDisplRow(jel);
+        for (const int iat : O.neighbor_lists.getNeighboringIons(jel))
+          jobs.emplace_back(iat, jel, dist[iat], -displ[iat]);
+        max_num_jobs = std::max(max_num_jobs, jobs.size());
+      }
+
+      for (size_t jobid = 0; jobid < max_num_jobs; jobid++)
+      {
+        ecp_component_list.clear();
+        pset_list.clear();
+        psi_list.clear();
+        batch_list.clear();
+        tmove_xy_batch_list.clear();
+        vp_list.clear();
+        vp_list.reserve(nw);
+        for (size_t iw = 0; iw < nw; iw++)
+        {
+          auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
+          if (jobid < jel_jobs[iw].size())
+          {
+            const auto& job = jel_jobs[iw][jobid];
+            ecp_component_list.push_back(*O.PP[job.ion_id]);
+            pset_list.push_back(p_list[iw]);
+            if (O.vp_)
+              vp_list.push_back(*O.vp_);
+            psi_list.push_back(wf_list[iw]);
+            batch_list.push_back(job);
+            tmove_xy_batch_list.push_back(tmove_xy[iw]);
+          }
+        }
+
+        if (O_leader.vp_)
+          NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list, {*O_leader.vp_, std::move(vp_list)},
+                                               psi_list, batch_list, pairpots, tmove_xy_batch_list,
+                                               O_leader.mw_res_handle_.getResource().collection, O_leader.use_DLA);
+        else
+          for (size_t j = 0; j < ecp_component_list.size(); j++)
+            ecp_component_list[j].evaluateOne(pset_list[j], std::nullopt, batch_list[j].get().ion_id, psi_list[j],
+                                              batch_list[j].get().electron_id, batch_list[j].get().ion_elec_dist,
+                                              batch_list[j].get().ion_elec_displ,
+                                              makeOptionalRef<std::vector<NonLocalData>>(tmove_xy_batch_list[j]),
+                                              O_leader.use_DLA);
+      }
+
+      // selection and accepts per walker: identical calls, RNG draw order,
+      // and accept bookkeeping as the single-walker v1 sweep
+      for (size_t iw = 0; iw < nw; iw++)
+      {
+        auto& O                      = o_list.getCastedElement<NonLocalECPotential>(iw);
+        const NonLocalData* oneTMove = move_op.selectMove((*O.myRNG)(), tmove_xy[iw]);
+        if (oneTMove)
+        {
+          TrialWaveFunction& psi = wf_list[iw];
+          ParticleSet& P         = p_list[iw];
+          GradType grad_iat;
+          if (P.makeMoveAndCheck(jel, oneTMove->Delta) && psi.calcRatioGrad(P, jel, grad_iat) != ValueType(0))
+          {
+            psi.acceptMove(P, jel, true);
+            P.acceptMove(jel);
+            num_accepted[iw]++;
+          }
+        }
+      }
+    }
+  }
+
+  for (size_t iw = 0; iw < nw; iw++)
+    if (num_accepted[iw] > 0)
+    {
+      wf_list[iw].completeUpdates();
+      // this step also updates electron positions on the device.
+      p_list[iw].donePbyP(true);
+    }
+
+  return num_accepted;
+}
+
 void NonLocalECPotential::addComponent(int groupID, std::unique_ptr<NonLocalECPComponent>&& ppot)
 {
   for (int iat = 0; iat < PP.size(); iat++)

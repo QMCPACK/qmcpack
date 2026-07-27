@@ -16,7 +16,9 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
+#include "QMCHamiltonians/NonLocalTOperator.h"
 #include "TestListenerFunction.h"
+#include "Utilities/StdRandom.h"
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Utilities/RuntimeOptions.h"
 
@@ -224,6 +226,144 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   total_localpots += std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0);
 
   CHECK(total_localpots == Approx(value3));
+}
+
+namespace
+{
+struct TmoveV1Result
+{
+  std::vector<int> accepts;
+  std::vector<QMCTraits::PosType> final_R;
+};
+
+/** run a two-walker v1 T-move sweep with fixed quadrature grids and
+ *  per-walker seeded RNGs; batched and serial paths must agree walker by
+ *  walker in accepted counts and final electron positions.
+ */
+TmoveV1Result runTmoveV1(bool batched, bool use_VP)
+{
+  using FullPrecReal = QMCTraits::FullPrecRealType;
+
+  Lattice lattice;
+  lattice.BoxBConds = true;
+  lattice.R.diagonal(20.0);
+  lattice.LR_dim_cutoff = 15;
+  lattice.reset();
+  const SimulationCell simulation_cell(lattice);
+
+  ParticleSet ions(simulation_cell);
+  ions.setName("ion");
+  ions.create({2});
+  ions.R[0]                                       = {0.0, 1.0, 0.0};
+  ions.R[1]                                       = {0.0, -1.0, 0.0};
+  SpeciesSet& ion_species                         = ions.getSpeciesSet();
+  int index_species                               = ion_species.addSpecies("Na");
+  int index_charge                                = ion_species.addAttribute("charge");
+  int index_atomic_number                         = ion_species.addAttribute("atomic_number");
+  ion_species(index_charge, index_species)        = 1;
+  ion_species(index_atomic_number, index_species) = 1;
+  ions.createSK();
+  ions.resetGroups();
+  ions.update();
+
+  ParticleSet elec(simulation_cell);
+  elec.setName("elec");
+  elec.create({2, 1});
+  elec.R[0]                  = {0.4, 0.0, 0.0};
+  elec.R[1]                  = {1.0, 0.0, 0.0};
+  elec.R[2]                  = {-0.4, 0.6, -0.3};
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+  int dnIdx                  = tspecies.addSpecies("d");
+  chargeIdx                  = tspecies.addAttribute("charge");
+  massIdx                    = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, dnIdx) = -1;
+  tspecies(massIdx, dnIdx)   = 1.0;
+  elec.createSK();
+  elec.resetGroups();
+  elec.addTable(ions);
+  elec.update();
+
+  ParticleSet elec2(elec);
+  elec2.R[1] = {0.8, 0.3, 0.1};
+  elec2.update();
+
+  RefVectorWithLeader<ParticleSet> p_list(elec, {elec, elec2});
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  TrialWaveFunction psi2(runtime_options);
+  RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi2});
+
+  NonLocalECPotential nl_ecp(ions, elec, false /*enable_DLA*/, use_VP);
+  Communicate* comm = OHMMS::Controller;
+  ECPComponentBuilder ecp_comp_builder("test_read_ecp", comm, 4, 1);
+  bool okay = ecp_comp_builder.read_pp_file("Na.BFD.xml");
+  REQUIRE(okay);
+  UPtr<NonLocalECPComponent> nl_ecp_comp = std::move(ecp_comp_builder.pp_nonloc);
+  nl_ecp.addComponent(0, std::move(nl_ecp_comp));
+  UPtr<OperatorBase> nl_ecp2_ptr = nl_ecp.makeClone(elec2, psi2);
+  auto& nl_ecp2                  = dynamic_cast<NonLocalECPotential&>(*nl_ecp2_ptr);
+
+  StdRandom<FullPrecReal> rng(10101);
+  StdRandom<FullPrecReal> rng2(10201);
+  nl_ecp.setRandomGenerator(&rng);
+  nl_ecp2.setRandomGenerator(&rng2);
+
+  RefVectorWithLeader<OperatorBase> o_list(nl_ecp, {nl_ecp, nl_ecp2});
+  ResourceCollection pset_res("test_pset_res");
+  elec.createResource(pset_res);
+  ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, p_list);
+  ResourceCollection nl_ecp_res("test_nl_ecp_res");
+  nl_ecp.createResource(nl_ecp_res);
+  ResourceCollectionTeamLock<OperatorBase> nl_ecp_lock(nl_ecp_res, o_list);
+
+  testing::TestNonLocalECPotential::copyGridUnrotatedForTest(nl_ecp);
+  testing::TestNonLocalECPotential::copyGridUnrotatedForTest(nl_ecp2);
+
+  // the energy evaluation builds the neighbor lists the v1 sweep reads
+  testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, std::nullopt, true);
+
+  NonLocalTOperator move_op(TmoveKind::V1, 0.5 /*tau*/, 0.0 /*alpha*/, 0.0 /*gamma*/);
+
+  TmoveV1Result res;
+  if (batched)
+    res.accepts = NonLocalECPotential::mw_makeNonLocalMovesPbyP(o_list, twf_list, p_list, move_op);
+  else
+  {
+    res.accepts.resize(2);
+    res.accepts[0] = nl_ecp.makeNonLocalMovesPbyP(psi, elec, move_op);
+    res.accepts[1] = nl_ecp2.makeNonLocalMovesPbyP(psi2, elec2, move_op);
+  }
+  for (int iat = 0; iat < elec.getTotalNum(); ++iat)
+    res.final_R.push_back(elec.R[iat]);
+  for (int iat = 0; iat < elec2.getTotalNum(); ++iat)
+    res.final_R.push_back(elec2.R[iat]);
+  return res;
+}
+} // namespace
+
+TEST_CASE("NonLocalECPotential Tmove v1 batched matches serial", "[hamiltonian]")
+{
+  for (const bool use_VP : {false, true})
+  {
+    const auto serial  = runTmoveV1(false, use_VP);
+    const auto batched = runTmoveV1(true, use_VP);
+
+    REQUIRE(serial.accepts.size() == batched.accepts.size());
+    CHECK(serial.accepts == batched.accepts);
+    // a sweep with no accepted move would leave the accept path untested
+    const int total_accepts = std::accumulate(serial.accepts.begin(), serial.accepts.end(), 0);
+    CHECK(total_accepts > 0);
+
+    REQUIRE(serial.final_R.size() == batched.final_R.size());
+    for (size_t i = 0; i < serial.final_R.size(); ++i)
+      for (int d = 0; d < 3; ++d)
+        CHECK(serial.final_R[i][d] == Approx(batched.final_R[i][d]).epsilon(1e-12));
+  }
 }
 
 } // namespace qmcplusplus
