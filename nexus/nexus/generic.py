@@ -90,12 +90,15 @@ def __nexus_showwarning(message, category, filename, lineno, file=None, line=Non
             indent, msg = message.split("|", maxsplit=1)
         else:
             msg = message
+        assert isinstance(msg,str)
     elif isinstance(message, NexusDevWarning | NexusUserWarning):
         msg    = message.message
         indent = message.indent
         cls    = f"{message.cls}:" if message.cls is not None else ""
+        assert isinstance(msg,str)
     else:
-        msg = message
+        msg = str(message)
+        assert isinstance(msg,str)
 
     if os.path.exists(filename):
         filename = os.path.realpath(filename)
