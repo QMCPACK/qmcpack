@@ -942,7 +942,7 @@ class Machine(NexusCore):
     #end def requeue_job
 
 
-    allowed_user_info = set(['account','local_directory','app_directory','app_directories'])
+    allowed_user_info = frozenset({'account','local_directory','app_directory','app_directories'})
     def incorporate_user_info(self,infoin):
         info = obj(**infoin)
         vars = set(info.keys())
@@ -1281,9 +1281,9 @@ class Supercomputer(Machine):
 
     batch_capable = False #only set to true for specific machines
 
-    aprun_options = set(['n','d'])
+    aprun_options = frozenset({'n','d'})
 
-    required_inputs = [
+    required_inputs = (
         'nodes',
         'procs_per_node',
         'cores_per_proc',
@@ -1293,7 +1293,7 @@ class Supercomputer(Machine):
         'sub_launcher',
         'queue_querier',
         'job_remover'
-        ]
+        )
 
     def __init__(self,
                  nodes          = None,

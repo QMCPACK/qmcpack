@@ -1335,7 +1335,7 @@ class QIxml(Names):
 
         if len(profile.junk)>0:
             print('  '+xname+' (found '+str(junk)+')')
-            for sector in 'attributes elements'.split():
+            for sector in ('attributes', 'elements'):
                 missing = []
                 for n in profile.junk:
                     if n in profile[sector]:
@@ -3489,7 +3489,7 @@ class QmcpackInput(SimulationInput,Names):
     
     profile_collection = None
 
-    opt_methods = set(['opt','linear','cslinear','linear_batch'])
+    opt_methods = frozenset({'opt','linear','cslinear','linear_batch'})
 
     simulation_type = simulation
 

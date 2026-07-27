@@ -256,8 +256,8 @@ class TemplateSimulation(Simulation):
     analyzer_type      = TemplateSimulationAnalyzer
     generic_identifier = 'template_simulation'
     application        = 'template_simulation_exe' #replace with default name of template_simulation executable
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['orbitals']) #what template_simulation produces that other simulations can use
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'orbitals'}) #what template_simulation produces that other simulations can use
 
     def check_result(self,result_name,sim):
         # optional

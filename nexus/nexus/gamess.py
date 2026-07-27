@@ -45,8 +45,8 @@ class Gamess(Simulation):
     generic_identifier = 'gamess'
     application        = 'gamess.x' 
     infile_extension   = '.inp'
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['orbitals'])
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'orbitals'})
 
     ericfmt = None
     mcppath = None

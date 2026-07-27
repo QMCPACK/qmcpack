@@ -14,8 +14,8 @@ class Rmg(Simulation):
     analyzer_type          = RmgAnalyzer
     generic_identifier     = 'rmg'
     application            = 'rmg-cpu' 
-    application_properties = set(['serial','mpi'])
-    application_results    = set([''])
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({''})
 
 
     def check_result(self,result_name,sim):

@@ -71,7 +71,7 @@ class SimulationForTests(Simulation):
     input_type    = SimulationInputForTests
     analyzer_type = SimulationAnalyzerForTests
 
-    application_results = set(['quant1','quant2','quant3'])
+    application_results = frozenset({'quant1','quant2','quant3'})
 
     def check_sim_status(self):
         self.finished = True

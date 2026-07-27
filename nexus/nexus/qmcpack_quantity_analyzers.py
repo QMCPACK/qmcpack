@@ -1510,7 +1510,7 @@ class DMSettings(QAobject):
 
 class DensityMatricesAnalyzer(HDFAnalyzer):
 
-    allowed_settings = ['save_data','jackknife','diagonal','occ_tol','coup_tol','stat_tol']
+    allowed_settings = ('save_data','jackknife','diagonal','occ_tol','coup_tol','stat_tol')
 
     def __init__(self,name,nindent=0):
         HDFAnalyzer.__init__(self)
@@ -2161,7 +2161,7 @@ class SpaceGridInitializer(QAobject):
 
 
 class SpaceGridBase(QAobject):
-    cnames=['cartesian','cylindrical','spherical','voronoi']
+    cnames=('cartesian','cylindrical','spherical','voronoi')
     coord_s2n = dict()
     coord_n2s = dict()
     for i,name in enumerate(cnames):
@@ -2185,7 +2185,7 @@ class SpaceGridBase(QAobject):
 
     axindex = {'x':0,'y':1,'z':2,'r':0,'phi':1,'theta':2}
 
-    quantities=['D','T','V','E','P']
+    quantities=frozenset({'D','T','V','E','P'})
 
     def __init__(self,initobj,options):
         if options is None:

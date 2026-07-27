@@ -608,11 +608,11 @@ class Qmcpack(Simulation):
     generic_identifier = 'qmcpack'
     infile_extension   = '.in.xml'
     application   = 'qmcpack'
-    application_properties = set(['serial','omp','mpi'])
-    application_results    = set(['jastrow','cuspcorr','wavefunction'])
+    application_properties = frozenset({'serial','omp','mpi'})
+    application_results    = frozenset({'jastrow','cuspcorr','wavefunction'})
 
     # dynamic workflow support
-    allowed_requirements = ['none','pwscf_orbitals','jastrow','wavefunction']
+    allowed_requirements = ('none','pwscf_orbitals','jastrow','wavefunction')
 
     def has_afqmc_input(self):
         afqmc_input = False

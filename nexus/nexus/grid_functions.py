@@ -1296,7 +1296,7 @@ class StructuredGrid(Grid):
         )
 
     #: (`set`)  Set of valid boundary condition types.
-    valid_bconds = set(['o','p'])
+    valid_bconds = frozenset({'o','p'})
 
     #: (`obj`)  Keyword mapping of boundary condition types.
     bcond_types = obj(

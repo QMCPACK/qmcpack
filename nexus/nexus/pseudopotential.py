@@ -445,7 +445,7 @@ class Pseudopotentials(DevBase):
 class PPset(DevBase):
     instance_counter = 0
 
-    known_codes = set('pwscf gamess vasp qmcpack'.split())
+    known_codes = frozenset({'vasp', 'pwscf', 'qmcpack', 'gamess'})
 
     default_extensions = obj(
         pwscf   = ['ncpp','upf'],
@@ -631,7 +631,7 @@ class SemilocalPP(Pseudopotential):
     numeric        = False
     interpolatable = True
 
-    formats = ['qmcpack','casino']
+    formats = ('qmcpack','casino')
 
     channel_indices = obj()
     for i,c in enumerate(l_channels):
@@ -1763,7 +1763,7 @@ Number of grid points
 
 class GaussianPP(SemilocalPP):
     requires_format = True
-    formats = SemilocalPP.formats + 'gaussian gamess crystal numhf'.split()
+    formats = (*SemilocalPP.formats, 'gaussian','gamess','crystal','numhf')
 
     @staticmethod
     def process_float(s):

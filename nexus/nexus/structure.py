@@ -7069,7 +7069,7 @@ class Crystal(Structure):
         )
     """Mapping from a lattice type to the required values to create the cell."""
 
-    lattices = list(lattice_constants.keys())
+    lattices = tuple(lattice_constants.keys())
     """List of lattice systems."""
 
     centering_types = obj(
@@ -7102,7 +7102,7 @@ class Crystal(Structure):
         R = [[2./3, 1./3, 1./3],[1./3, 2./3, 2./3]]
         )
 
-    cell_types = set(['primitive','conventional'])
+    cell_types = frozenset({'primitive','conventional'})
     """Types of cells, currently only ``primitive`` and ``conventional``."""
 
     cell_aliases = obj(
@@ -7396,8 +7396,7 @@ class Crystal(Structure):
         }
     """Mapping from material names and their cell types to their crystal information."""
 
-    kc_keys = list(known_crystals.keys())
-    for (name,cell) in kc_keys:
+    for (name,cell) in tuple(known_crystals.keys()):
         desc = known_crystals[name,cell]
         if cell=='prim' and (name,'conv') not in known_crystals:
             cdesc = deepcopy(desc)
@@ -7410,7 +7409,6 @@ class Crystal(Structure):
             #end if
         #end if
     #end if
-    del kc_keys
 
 
     def __init__(self,

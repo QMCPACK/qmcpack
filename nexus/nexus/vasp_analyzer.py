@@ -40,7 +40,7 @@ from .vasp_input import Incar
 # vasp xml reader classes/functions
 
 class VXML(DevBase):
-    basic_types = set('i v dimension field set time'.split())
+    basic_types = frozenset({'dimension', 'field', 'v', 'time', 'i', 'set'})
 
     data_types = obj(int=int,string=str,float=float)
     
@@ -693,10 +693,10 @@ def read_outcar_accounting(vlines,odata):
 
 
 class OutcarData(DevBase):
-    any_functions = [
+    any_functions = (
         ('header_values'   , read_outcar_header_values  ),
-        ]
-    elast_functions = [
+        )
+    elast_functions = (
         ('core_potentials' , read_outcar_core_potentials),
         ('fermi_energy'    , read_outcar_fermi_energy   ),
         ('bands'           , read_outcar_bands          ),
@@ -705,10 +705,10 @@ class OutcarData(DevBase):
         ('stress'          , read_outcar_stress         ),
         ('cell'            , read_outcar_cell           ),
         ('position_force'  , read_outcar_position_force ),
-        ]
-    ilast_functions = [
+        )
+    ilast_functions = (
         ('accounting'      , read_outcar_accounting     ),
-        ]
+        )
 
     read_outcar_functions = any_functions + elast_functions + ilast_functions
 

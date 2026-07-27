@@ -171,7 +171,7 @@ def array_to_string(a,pad='   ',format=pwscf_array_format,converter=noconv,rowse
             
 
 class PwscfInputBase(DevBase):
-    ints=[
+    ints=(
         # pre 5.4
         'nstep','iprint','gdir','nppstr','nberrycyc','ibrav','nat','ntyp',
         'nbnd','nr1','nr2','nr3','nr1s','nr2s','nr3s','nspin',
@@ -183,8 +183,8 @@ class PwscfInputBase(DevBase):
         'nqx1','nqx2','nqx3','esm_nfit','space_group','origin_choice',
         # 6.3 additions
         'dftd3_version',
-        ]
-    floats=[
+        )
+    floats=(
         # pre 5.4
         'dt','max_seconds','etot_conv_thr','forc_conv_thr','celldm','A','B','C',
         'cosAB','cosAC','cosBC','nelec','ecutwfc','ecutrho','degauss',
@@ -204,8 +204,8 @@ class PwscfInputBase(DevBase):
         # 6.3 additions
         'block_1','block_2','block_height','zgate','ts_vdw_econv_thr',
         'starting_charge'
-        ]
-    strs=[
+        )
+    strs=(
         # pre 5.4
         'calculation','title','verbosity','restart_mode','outdir','wfcdir',
         'prefix','disk_io','pseudo_dir','occupations','smearing','input_dft',
@@ -218,8 +218,8 @@ class PwscfInputBase(DevBase):
         'esm_bc','vdw_corr',
         # 6.3 additions
         'efield_phase',
-        ]
-    bools=[
+        )
+    bools=(
         # pre 5.4
         'wf_collect','tstress','tprnfor','lkpoint_dir','tefield','dipfield',
         'lelfield','lberry','nosym','nosym_evc','noinv','force_symmorphic',
@@ -232,32 +232,32 @@ class PwscfInputBase(DevBase):
         'x_gamma_extrapolation','xdm','uniqueb','rhombohedral',
         # 6.3 additions
         'gate','block','relaxz','dftd3_threebody','ts_vdw_isolated','lforcet',
-        ]
+        )
 
-    real_arrays = [
+    real_arrays = (
         'celldm', 'starting_magnetization', 'hubbard_alpha', 'hubbard_u',
         'hubbard_j0', 'hubbard_beta', 'hubbard_j',
         'starting_ns_eigenvalue', 'angle1', 'angle2', 'fixed_magnetization',
         'fe_step', 'efield_cart', 'london_c6', 'london_rvdw',
         'starting_charge' ,
-         ]
+        )
 
-    species_arrays = [
+    species_arrays = (
         'starting_magnetization', 'hubbard_alpha', 'hubbard_u', 'hubbard_j0', 
         'hubbard_beta', 'hubbard_j', 'angle1', 'angle2', 
         'london_c6', 'london_rvdw','starting_charge',
-        ]
+        )
 
     species_array_indices = obj(hubbard_j=1)
 
-    multidimensional_arrays = ['starting_ns_eigenvalue', 'hubbard_j']
+    multidimensional_arrays = ('starting_ns_eigenvalue', 'hubbard_j')
 
-    ints   = [v.lower() for v in ints  ]
-    floats = [v.lower() for v in floats]
-    strs   = [v.lower() for v in strs  ]
-    bools  = [v.lower() for v in bools ]
+    ints   = tuple([v.lower() for v in ints  ])
+    floats = tuple([v.lower() for v in floats])
+    strs   = tuple([v.lower() for v in strs  ])
+    bools  = tuple([v.lower() for v in bools ])
 
-    all_variables = set(ints+floats+strs+bools)
+    all_variables = frozenset(ints+floats+strs+bools)
 
     section_aliases = dict(celldm1='celldm(1)',celldm2='celldm(2)',celldm3='celldm(3)',celldm4='celldm(4)',celldm5='celldm(5)',celldm6='celldm(6)')
 
@@ -523,22 +523,22 @@ class control(Section):
     name = 'control'
 
     # all known keywords
-    variables = [
+    variables = (
         'calculation','title','verbosity','restart_mode','wf_collect','nstep',
         'iprint','tstress','tprnfor','dt','outdir','wfcdir','prefix',
         'lkpoint_dir','max_seconds','etot_conv_thr','forc_conv_thr','disk_io',
         'pseudo_dir','tefield','dipfield','lelfield','nberrycyc','lorbm',
         'lberry','gdir','nppstr','lfcpopt','gate'
-        ]
+        )
 
     # 6.3 keyword spec
-    new_variables =  [
+    new_variables =  (
         'calculation','title','verbosity','restart_mode','wf_collect','nstep',
         'iprint','tstress','tprnfor','dt','outdir','wfcdir','prefix',
         'lkpoint_dir','max_seconds','etot_conv_thr','forc_conv_thr','disk_io',
         'pseudo_dir','tefield','dipfield','lelfield','nberrycyc','lorbm',
         'lberry','gdir','nppstr','lfcpopt','gate'
-        ]
+        )
 
     # 5.4 keyword spec
     #variables = [
@@ -565,7 +565,7 @@ class system(Section):
     name = 'system'
 
     # all known keywords
-    variables = [
+    variables = (
         'ibrav','celldm','A','B','C','cosAB','cosAC','cosBC','nat','ntyp',
         'nbnd','tot_charge','tot_magnetization','starting_magnetization',
         'ecutwfc','ecutrho','ecutfock','nr1','nr2','nr3','nr1s','nr2s','nr3s',
@@ -586,10 +586,10 @@ class system(Section):
         'block','block_1','block_2','block_height','dftd3_threebody',
         'dftd3_version','lforcet','relaxz','starting_charge','ts_vdw_econv_thr',
         'ts_vdw_isolated','zgate'
-        ]
+        )
 
     # 6.3 keyword spec
-    new_variables = [
+    new_variables = (
         'ibrav','celldm','A','B','C','cosAB','cosAC','cosBC','nat','ntyp',
         'nbnd','tot_charge','starting_charge','tot_magnetization',
         'starting_magnetization','ecutwfc','ecutrho','ecutfock','nr1','nr2',
@@ -608,7 +608,7 @@ class system(Section):
         'ts_vdw_econv_thr','ts_vdw_isolated','xdm','xdm_a1','xdm_a2',
         'space_group','uniqueb','origin_choice','rhombohedral','zgate','relaxz',
         'block','block_1','block_2','block_height'
-        ]
+        )
 
     # 5.4 keyword spec
     #variables = [
@@ -762,23 +762,23 @@ class electrons(Section):
     name = 'electrons'
 
     # all known keywords
-    variables = [
+    variables = (
         'electron_maxstep','scf_must_converge','conv_thr','adaptive_thr',
         'conv_thr_init','conv_thr_multi','mixing_mode','mixing_beta',
         'mixing_ndim','mixing_fixed_ns','diagonalization','ortho_para',
         'diago_thr_init','diago_cg_maxiter','diago_david_ndim','diago_full_acc',
         'efield','efield_cart','startingpot','startingwfc','tqr',
         'efield_phase'
-        ]
+        )
 
     # 6.3 keyword spec
-    new_variables = [
+    new_variables = (
         'electron_maxstep','scf_must_converge','conv_thr','adaptive_thr',
         'conv_thr_init','conv_thr_multi','mixing_mode','mixing_beta',
         'mixing_ndim','mixing_fixed_ns','diagonalization','ortho_para',
         'diago_thr_init','diago_cg_maxiter','diago_david_ndim','diago_full_acc',
         'efield','efield_cart','efield_phase','startingpot','startingwfc','tqr'
-        ]
+        )
 
     # 5.4 keyword spec
     #variables = [
@@ -803,7 +803,7 @@ class ions(Section):
     name = 'ions'
 
     # all known keywords
-    variables = [
+    variables = (
         'ion_dynamics','ion_positions','pot_extrapolation','wfc_extrapolation',
         'remove_rigid_rot','ion_temperature','tempw','tolp','delta_t','nraise',
         'refold_pos','upscale','bfgs_ndim','trust_radius_max','trust_radius_min',
@@ -811,15 +811,15 @@ class ions(Section):
         'num_of_images','opt_scheme','CI_scheme','first_last_opt','temp_req',
         'ds','k_max','k_min','path_thr','use_masses','use_freezing','fe_step',
         'g_amplitude','fe_nstep','sw_nstep','phase_space',
-        ]
+        )
 
     # 6.3 keyword spec
-    new_variables = [
+    new_variables = (
         'ion_dynamics','ion_positions','pot_extrapolation','wfc_extrapolation',
         'remove_rigid_rot','ion_temperature','tempw','tolp','delta_t','nraise',
         'refold_pos','upscale','bfgs_ndim','trust_radius_max',
         'trust_radius_min','trust_radius_ini','w_1','w_2'
-        ]
+        )
 
     # 5.4 keyword spec
     #variables = [
@@ -846,16 +846,16 @@ class cell(Section):
     name = 'cell'
 
     # all known keywords
-    variables = [
+    variables = (
         'cell_dynamics','press','wmass','cell_factor','press_conv_thr',
         'cell_dofree'
-        ]
+        )
 
     # 6.3 keyword spec
-    new_variables = [
+    new_variables = (
         'cell_dynamics','press','wmass','cell_factor','press_conv_thr',
         'cell_dofree'
-        ]
+        )
 
     # 5.4 keyword spec
     #variables = [
@@ -874,7 +874,7 @@ class cell(Section):
 class phonon(Section):
     name = 'phonon'
     # all known keywords
-    variables =  ['modenum','xqq']
+    variables =  ('modenum','xqq')
 
     # sometime prior to 5.4
     #variables =  ['modenum','xqq']
@@ -884,10 +884,10 @@ class phonon(Section):
 class ee(Section):
     name = 'ee'
     # all known keywords
-    variables = [
+    variables = (
         'which_compensation','ecutcoarse','mixing_charge_compensation',
         'n_charge_compensation','comp_thr','nlev'
-        ]
+        )
 
     # sometime prior to 5.4
     #variables = [
@@ -1362,7 +1362,7 @@ class occupations(Card):
 
 class hubbard(Card):
     name = 'hubbard'
-    available_specifiers = ['atomic', 'ortho-atomic', 'norm-atomic', 'wf', 'pseudo']
+    available_specifiers = ('atomic', 'ortho-atomic', 'norm-atomic', 'wf', 'pseudo')
     default_specifier = 'atomic'
     system = None
     def read_text(self, lines):        
@@ -1498,10 +1498,10 @@ class hubbard(Card):
 
 class PwscfInput(SimulationInput):
 
-    sections = ['control','system','electrons','ions','cell','phonon','ee']
-    cards    = ['atomic_species','atomic_positions','atomic_forces',
+    sections = ('control','system','electrons','ions','cell','phonon','ee')
+    cards    = ('atomic_species','atomic_positions','atomic_forces',
                 'k_points','cell_parameters','climbing_images','constraints',
-                'collective_vars','occupations', 'hubbard']
+                'collective_vars','occupations', 'hubbard')
 
     section_types = obj(
         control   = control  ,     
@@ -1528,7 +1528,7 @@ class PwscfInput(SimulationInput):
     element_types = obj(**section_types)
     element_types.update(**card_types)
 
-    required_elements = ['control','system','electrons','atomic_species','atomic_positions','k_points']
+    required_elements = ('control','system','electrons','atomic_species','atomic_positions','k_points')
     def __init__(self,*elements):
         elements = list(elements)
         if len(elements)==1 and os.path.exists(elements[0]):

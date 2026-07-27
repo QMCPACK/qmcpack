@@ -322,8 +322,8 @@ class XsfFile(StandardFile):
 
     sftype = 'xsf'
 
-    filetypes     = set(['xsf','axsf','bxsf'])
-    periodicities = set(['molecule','polymer','slab','crystal']) 
+    filetypes     = frozenset({'xsf','axsf','bxsf'})
+    periodicities = frozenset({'molecule','polymer','slab','crystal'})
     dimensions    = obj(molecule=0,polymer=1,slab=2,crystal=3)
 
     # ATOMS  are in units of Angstrom, only provided for 'molecule'

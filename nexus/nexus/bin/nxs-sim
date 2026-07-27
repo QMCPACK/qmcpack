@@ -69,9 +69,9 @@ from nexus.developer import obj,save,load
 
 class SimTool(obj):
     
-    indicators = ['setup','sent_files','submitted','finished','failed','got_output','analyzed']
+    indicators = ('setup','sent_files','submitted','finished','failed','got_output','analyzed')
 
-    fields = set(indicators)
+    fields = frozenset(indicators)
 
 
     def __init__(self):

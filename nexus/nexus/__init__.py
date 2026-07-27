@@ -122,40 +122,28 @@ def read_input(filepath,format=None):
 class Settings(NexusCore):
     singleton = None
 
-    machine_vars = set('''
-        machine         account         machine_info    interactive_cores
-        machine_mode    user
-        '''.split())
+    machine_vars = frozenset({
+        'interactive_cores', 'machine_info', 'machine', 'machine_mode', 'user', 'account'
+        })
 
-    core_assign_vars = set('''
-        status_only     generate_only   runs            results 
-        pseudo_dir      sleep           local_directory remote_directory 
-        monitor         skip_submit     load_images     stages          
-        verbose         debug           trace           progress_tty
-        graph_sims      command_line    dynamic
-        '''.split())
+    core_assign_vars = frozenset({
+        'results', 'load_images', 'remote_directory', 'verbose', 'progress_tty',
+        'command_line', 'sleep', 'monitor', 'debug', 'skip_submit', 'dynamic', 'runs',
+        'stages', 'pseudo_dir', 'graph_sims', 'generate_only', 'trace',
+        'local_directory', 'status_only'
+        })
 
-    core_process_vars = set('''
-        file_locations  mode  status
-        '''.split())
+    core_process_vars = frozenset({'file_locations', 'status', 'mode'})
 
-    noncore_assign_vars = set('''
-        basis_dir
-        '''.split())
+    noncore_assign_vars = frozenset({'basis_dir'})
 
-    noncore_process_vars = set()
-    
-    gamess_vars  = set('''
-        ericfmt         mcppath
-        '''.split())
-    
-    pwscf_vars   = set('''
-        vdw_table
-        '''.split())
+    noncore_process_vars = frozenset()
 
-    qm_package_vars = set('''
-        qprc
-        '''.split())
+    gamess_vars  = frozenset({'ericfmt', 'mcppath'})
+
+    pwscf_vars   = frozenset({'vdw_table'})
+
+    qm_package_vars = frozenset({'qprc'})
 
     nexus_core_vars    = core_assign_vars    | core_process_vars
     nexus_noncore_vars = noncore_assign_vars | noncore_process_vars

@@ -398,20 +398,20 @@ def generate_ppsim(gen_input=None,Sim=None,**kwargs):
 
 class PPInputppNamelist(Namelist):
     namelist = 'inputpp'
-    names    = ['prefix','outdir','filplot','plot_num','spin_component',
-                'sample_bias','kpoint','kband','lsign','emin','emax']
+    names    = ('prefix','outdir','filplot','plot_num','spin_component',
+                'sample_bias','kpoint','kband','lsign','emin','emax')
 #end class PPInputppNamelist
 
 class PPPlotNamelist(Namelist):
     namelist = 'plot'
-    names    = ['nfile','filepp','weight','iflag','output_format',
+    names    = ('nfile','filepp','weight','iflag','output_format',
                 'fileout','interpolation','e1','e2','e3','x0',
-                'nx','ny','nz','radius']
+                'nx','ny','nz','radius')
 #end class PPPlotNamelist
 
 
 class PPInput(NamelistInput):
-    namelists = ['inputpp','plot']
+    namelists = ('inputpp','plot')
     namelist_classes = obj(
         inputpp = PPInputppNamelist,
         plot    = PPPlotNamelist,
@@ -440,13 +440,13 @@ def generate_pp(**kwargs):
 
 class DosNamelist(Namelist):
     namelist = 'dos'
-    names = ['prefix','outdir','ngauss','degauss',
-             'Emin','Emax','DeltaE','fildos']
+    names = ('prefix','outdir','ngauss','degauss',
+             'Emin','Emax','DeltaE','fildos')
 #end class DosNamelist
 
 
 class DosInput(NamelistInput):
-    namelists = ['dos']
+    namelists = ('dos',)
     namelist_classes = obj(
         dos = DosNamelist,
         )
@@ -474,14 +474,14 @@ def generate_dos(**kwargs):
 
 class BandsNamelist(Namelist):
     namelist = 'bands'
-    names = ['prefix','outdir','filband','spin_component',
+    names = ('prefix','outdir','filband','spin_component',
              'lsigma','lp','filp','lsym','no_overlap','plot_2d',
-             'firstk','lastk']
+             'firstk','lastk')
 #end class BandsNamelist
 
 
 class BandsInput(NamelistInput):
-    namelists = ['bands']
+    namelists = ('bands',)
     namelist_classes = obj(
         bands = BandsNamelist,
         )
@@ -509,14 +509,14 @@ def generate_bands(**kwargs):
 
 class ProjwfcNamelist(Namelist):
     namelist = 'projwfc'
-    names = ['ngauss','degauss','Emin','Emax','deltaE',
+    names = ('ngauss','degauss','Emin','Emax','deltaE',
              'prefix','outdir','fildos','filproj','filpdos',
-             'lsym','pawproj','lwrite_overlaps','lbinary_data']
+             'lsym','pawproj','lwrite_overlaps','lbinary_data')
 #end class ProjwfcNamelist
 
 
 class ProjwfcInput(NamelistInput):
-    namelists = ['projwfc']
+    namelists = ('projwfc',)
     namelist_classes = obj(
         projwfc = ProjwfcNamelist,
         )
@@ -814,15 +814,15 @@ def generate_projwfc(**kwargs):
 
 class CpppInputppNamelist(Namelist):
     namelist = 'inputpp'
-    names = ['prefix','fileout','output','outdir','lcharge',
+    names = ('prefix','fileout','output','outdir','lcharge',
              'lforces','ldynamics','lpdb','lrotation',
              'ns1','ns2','ns3','np1','np2','np3','nframes','ndr',
-             'atomic_number','charge_density','state','lbinary']
+             'atomic_number','charge_density','state','lbinary')
 #end class CpppInputppNamelist
 
 
 class CpppInput(NamelistInput):
-    namelists = ['inputpp']
+    namelists = ('inputpp')
     namelist_classes = obj(
         inputpp = CpppInputppNamelist,
         )
@@ -850,13 +850,13 @@ def generate_cppp(**kwargs):
 
 class PwexportInputppNamelist(Namelist):
     namelist = 'inputpp'
-    names = ['prefix','outdir','pseudo_dir','psfile',
-             'single_file','ascii','pp_file','uspp_spsi']
+    names = ('prefix','outdir','pseudo_dir','psfile',
+             'single_file','ascii','pp_file','uspp_spsi')
 #end class PwexportInputppNamelist
 
 
 class PwexportInput(NamelistInput):
-    namelists = ['inputpp']
+    namelists = ('inputpp')
     namelist_classes = obj(
         inputpp = PwexportInputppNamelist,
         )
@@ -884,16 +884,16 @@ def generate_pwexport(**kwargs):
 
 class HpNamelist(Namelist):
     namelist = 'inputhp'
-    names = ['prefix', 'outdir', 'max_seconds', 'nq1', 'nq2', 'nq3', 'skip_equivalence_q', 
+    names = ('prefix', 'outdir', 'max_seconds', 'nq1', 'nq2', 'nq3', 'skip_equivalence_q', 
              'determine_num_pert_only', 'find_atpert', 'docc_thr', 'skip_type', 'equiv_type', 
              'perturb_only_atom', 'start_q', 'last_q', 'sum_pertq', 'compute_hp', 'conv_thr_chi', 
              'thresh_init', 'ethr_nscf', 'niter_max', 'alpha_mix(i)', 'nmix', 'num_neigh', 'lmin', 
-             'rmax', 'dist_thr']
+             'rmax', 'dist_thr')
 #end class HpNamelist
 
 
 class HpInput(NamelistInput):
-    namelists = ['inputhp']
+    namelists = ('inputhp',)
     namelist_classes = obj(
         inputhp = HpNamelist,
         )
@@ -999,7 +999,7 @@ class Hp(PostProcessSimulation):
     analyzer_type      = HpAnalyzer
     generic_identifier = 'hp'
     application        = 'hp.x'
-    application_results = set(['hubbard_parameters'])
+    application_results = frozenset({'hubbard_parameters'})
 
     def check_result(self,result_name,sim):
         calculating_result = False
