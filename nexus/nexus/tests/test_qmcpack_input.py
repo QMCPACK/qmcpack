@@ -1130,6 +1130,7 @@ def test_compose():
 
 def test_generate():
     import numpy as np
+    from ..developer import NexusError
     from ..physical_system import generate_physical_system
     from ..qmcpack_input import generate_qmcpack_input,spindensity
     from ..qmcpack_input import back_propagation,onerdm
@@ -1263,6 +1264,37 @@ def test_generate():
     qi.pluralize()
 
     check_vs_serial_reference(qi,'VO2_M1_afm.in.xml gen')
+
+    # optional pseudopotential integration rule
+    qi_nrule = generate_qmcpack_input(
+        input_type  = 'basic',
+        system      = system,
+        pseudos     = ['V.opt.xml','O.opt.xml'],
+        nrule       = 7,
+        check_paths = False,
+        )
+
+    pseudos = qi_nrule.get('pseudo')
+    assert(len(pseudos)==2)
+    for pseudo in pseudos:
+        assert(pseudo.nrule==7)
+    #end for
+    assert(qi_nrule.write_text().count('nrule="7"')==2)
+
+    for invalid_nrule in (7.0,'4',True):
+        with pytest.raises(
+            NexusError,
+            match = 'nrule must be an integer or None',
+            ):
+            generate_qmcpack_input(
+                input_type  = 'basic',
+                system      = system,
+                pseudos     = ['V.opt.xml','O.opt.xml'],
+                nrule       = invalid_nrule,
+                check_paths = False,
+                )
+        #end with
+    #end for
 
 
     # batched drivers
