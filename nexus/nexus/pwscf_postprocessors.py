@@ -822,7 +822,7 @@ class CpppInputppNamelist(Namelist):
 
 
 class CpppInput(NamelistInput):
-    namelists = ('inputpp')
+    namelists = ('inputpp',)
     namelist_classes = obj(
         inputpp = CpppInputppNamelist,
         )
@@ -856,7 +856,7 @@ class PwexportInputppNamelist(Namelist):
 
 
 class PwexportInput(NamelistInput):
-    namelists = ('inputpp')
+    namelists = ('inputpp',)
     namelist_classes = obj(
         inputpp = PwexportInputppNamelist,
         )

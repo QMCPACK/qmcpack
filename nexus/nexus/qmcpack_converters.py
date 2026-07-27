@@ -306,7 +306,7 @@ class Pw2qmcpack(Simulation):
     application_results    = frozenset({'orbitals','gc_occupation'})
 
     # dynamic workflow support
-    allowed_requirements = ('orbitals')
+    allowed_requirements = ('orbitals',)
 
     def check_result(self,result_name,sim):
         calculating_result = False
