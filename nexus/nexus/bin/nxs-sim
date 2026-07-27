@@ -89,7 +89,7 @@ class SimTool(obj):
     #end def load
 
 
-    def write_state(self,fields=[]):
+    def write_state(self,fields=()):
         if len(fields)==0:
             fields = self.indicators
         #end if
@@ -112,7 +112,7 @@ class SimTool(obj):
     #end def write_state
 
 
-    def write_state_all(self,fields=[]):
+    def write_state_all(self,fields=()):
         if len(fields)==0:
             fields = self.indicators
         #end if

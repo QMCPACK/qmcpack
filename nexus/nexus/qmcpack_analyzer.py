@@ -117,7 +117,7 @@ class QmcpackAnalysisRequest(QAobject):
     def __init__(self,source=None,destination=None,savefile='',
                  methods=None,calculations=None,data_sources=None,quantities=None,
                  warmup_calculations=None,
-                 output=set(['averages','samples']),
+                 output=('averages','samples'),
                  ndmc_blocks=1000,equilibration=None,group_num=None,
                  traces=False,dm_settings=None):
         self.source          = source if not isinstance(source, Path) else str(source.resolve())
