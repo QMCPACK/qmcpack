@@ -231,13 +231,13 @@ def truefalse(var):
 #end def onezero
 
 def render_bool(var,T,F):
-    if isinstance(var,bool) or var in (1,0):
+    if isinstance(var,bool) or var in {1,0}:
         if var:
             return T
         else:
             return F
         #end if
-    elif var in (T,F):
+    elif var in {T,F}:
         return var
     else:
         error('Invalid QMCPACK input encountered.\nUser provided an invalid value of "{}" when yes/no was expected.\nValid options are: "{}", "{}", True, False, 1, 0'.format(var,T,F))
@@ -1094,7 +1094,7 @@ class QIxml(Names):
                     self.error('input element "{}" is unknown'.format(e))
                 #end if
                 self[e] = types[e](value)
-            elif e in ['parameter','attrib','cost','h5tag']:
+            elif e in {'parameter','attrib','cost','h5tag'}:
                 if isinstance(value,XMLelement):
                     value = [value]
                 #end if
@@ -4570,14 +4570,14 @@ class QmcpackInput(SimulationInput,Names):
         driver = self.get('driver_version')
         if driver is None or driver.startswith('batch'):
             driver = 'batched'
-        assert driver in ('batched','legacy')
+        assert driver in {'batched','legacy'}
         return driver
     #end def get_driver()
 
     def set_driver(self,driver):
         if driver.startswith('batch'):
             driver = 'batched'
-        assert driver in ('batched','legacy')
+        assert driver in {'batched','legacy'}
         proj = self.get('project')
         proj.driver_version = driver
     #end set_driver
@@ -6239,7 +6239,7 @@ def check_excitation_type(excitation):
 
     # Check first element
     if not format_failed:
-        if exc1.lower() not in ('up','down','singlet','triplet'):
+        if exc1.lower() not in {'up','down','singlet','triplet'}:
             format_failed = True
         else:
             exc_spin = exc_spins[exc1.lower()]
@@ -6402,7 +6402,7 @@ def generate_determinantset_old(type           = 'bspline',
             sdet = dset.get('updet')
         elif exc_spin==exc_spins.down:
             sdet = dset.get('downdet')
-        elif exc_spin in (exc_spins.singlet,exc_spins.triplet):
+        elif exc_spin in {exc_spins.singlet,exc_spins.triplet}:
 
             # Are there an equal number of up and down electrons?
             # If no, then exit. Currently, singlet and triplet 
@@ -6483,7 +6483,7 @@ def generate_determinantset_old(type           = 'bspline',
                     )
                 )
             
-            if exc_type in (exc_types.energy,exc_types.lowest):
+            if exc_type in {exc_types.energy,exc_types.lowest}:
 
                 nup = system.n_up
                 if exc_type==exc_types.lowest:

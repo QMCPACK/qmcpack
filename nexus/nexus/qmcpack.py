@@ -104,7 +104,7 @@ class GCTA(DevBase):
             symm_kgrid = self.system.generation_info.symm_kgrid
         except:
             symm_kgrid = False
-        if (self.flavor.lower() in ['safl', 'afl']) and (symm_kgrid == True):
+        if (self.flavor.lower() in {'safl', 'afl'}) and (symm_kgrid == True):
             self.error('''
                 safl and afl are not supported with symm_kgrid = True.
                 It is possible to implement the afl and safl algorithms with k-point symmetries
@@ -508,7 +508,7 @@ class GCTA(DevBase):
         Check the net charge of the twist averaged system
         '''
         q_sum_twists = self.sum_charge_twists()
-        if (self.flavor.lower() in ['safl', 'afl']) and (q_sum_twists != 0):
+        if (self.flavor.lower() in {'safl', 'afl'}) and (q_sum_twists != 0):
             self.error('''
                 The sum of charges over all twists is {} electrons!
                 This is not supposed to happen for afl or safl!
@@ -743,7 +743,7 @@ class Qmcpack(Simulation):
                     orb_elem = wf.sposet_builders.bspline
                 elif 'sposet_builders' in wf and 'einspline' in wf.sposet_builders:
                     orb_elem = wf.sposet_builders.einspline
-                elif 'determinantset' in wf and wf.determinantset.type in ('bspline','einspline'):
+                elif 'determinantset' in wf and wf.determinantset.type in {'bspline','einspline'}:
                     orb_elem = wf.determinantset
                 else:
                     self.error('could not incorporate pw2qmcpack orbitals\nbspline sposet_builder and determinantset are both missing')
@@ -1260,7 +1260,7 @@ class Qmcpack(Simulation):
                     # Check that tw1,band1 is no longer in occupied set
                     tw1,bnd1 = exc2.split()[0:2]
                     tw2,bnd2 = exc2.split()[2:4]
-                    if exc1 in ('up','down'):
+                    if exc1 in {'up','down'}:
                         spin_channel = exc1
                         dsc = edata[spin_channel]
                         for idx,(tw,bnd) in enumerate(zip(dsc.TwistIndex,dsc.BandIndex)):
@@ -1287,7 +1287,7 @@ class Qmcpack(Simulation):
                     else:
                         self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
                     #end if
-                elif exc_type in (exc_types.energy,exc_types.lowest):
+                elif exc_type in {exc_types.energy,exc_types.lowest}:
                     # Lowest or Energy Index '-orbindex1 +orbindex2'. Eg., '-4 +5'
                     if exc_type==exc_types.lowest:
                         if exc_spin==exc_spins.down:
@@ -1300,7 +1300,7 @@ class Qmcpack(Simulation):
                         orb1 = int(exc_input[1].split()[0][1:])
                         orb2 = int(exc_input[1].split()[1][1:])
                     #end if
-                    if exc1 in ('up','down'):
+                    if exc1 in {'up','down'}:
 
                         spin_channel = exc1
                         nelec = elns.groups[spin_channel[0]].size
@@ -1330,7 +1330,7 @@ class Qmcpack(Simulation):
                             exc_failure = True
                         #end if
 
-                    elif exc1 in ('singlet','triplet'):
+                    elif exc1 in {'singlet','triplet'}:
                         wf = self.input.get('wavefunction')
                         occ = wf.determinantset.multideterminant.detlist.csf.occ
                         if occ[int(orb1)-1]!='1':
@@ -1351,7 +1351,7 @@ class Qmcpack(Simulation):
 
                 else:
                     # The format is: 'gamma vb z cb'
-                    if exc1 in ('singlet','triplet'):
+                    if exc1 in {'singlet','triplet'}:
                         self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
                     else:
 
@@ -1649,7 +1649,7 @@ class Qmcpack(Simulation):
             orb_elem = wf.sposet_builders.bspline
         elif 'sposet_builders' in wf and 'einspline' in wf.sposet_builders:
             orb_elem = wf.sposet_builders.einspline
-        elif 'determinantset' in wf and wf.determinantset.type in ('bspline','einspline'):
+        elif 'determinantset' in wf and wf.determinantset.type in {'bspline','einspline'}:
             orb_elem = wf.determinantset
         else:
             self.error('Could not incorporate pw2qmcpack orbitals.\nbspline sposet_builder and determinantset are both missing.')

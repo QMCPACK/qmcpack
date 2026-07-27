@@ -1391,7 +1391,7 @@ class PyscfToAfqmc(Simulation):
     def get_result(self,result_name,sim):
         result = obj()
         input = self.input
-        if result_name in ('wavefunction','hamiltonian'):
+        if result_name in {'wavefunction','hamiltonian'}:
             result.h5_file = os.path.join(self.locdir,input.output)
             if input.qmcpack_input is not None:
                 result.xml = os.path.join(self.locdir,input.qmcpack_input)

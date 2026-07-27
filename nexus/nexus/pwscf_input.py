@@ -1129,7 +1129,7 @@ class k_points(Card):
     name = 'k_points'
 
     def read_text(self,lines):
-        if self.specifier in ['tpiba','crystal','tpiba_b','crystal_b','']:
+        if self.specifier in {'tpiba','crystal','tpiba_b','crystal_b',''}:
             self.nkpoints = int(lines[0])
             a = array_from_lines(lines[1:])
             self.kpoints = a[:,0:3]
@@ -1149,7 +1149,7 @@ class k_points(Card):
 
     def write_text(self):
         c = ''        
-        if self.specifier in ('tpiba','crystal','tpiba_b','crystal_b',''):
+        if self.specifier in {'tpiba','crystal','tpiba_b','crystal_b',''}:
             self.nkpoints = len(self.kpoints)
             c+='   '+str(self.nkpoints)+'\n'
             a = np.empty((self.nkpoints,4))
@@ -1400,7 +1400,7 @@ class hubbard(Card):
         contents = ''
         for param, interaction in self.hubbard.items():
             valid_format = True
-            assert(param in ['U', 'J', 'V'])
+            assert(param in {'U', 'J', 'V'})
             assert(isinstance(interaction, dict))
             for label_manifold, value in interaction.items():
                 if isinstance(label_manifold, str):

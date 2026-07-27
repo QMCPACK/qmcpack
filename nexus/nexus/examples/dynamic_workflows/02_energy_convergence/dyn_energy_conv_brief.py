@@ -56,7 +56,7 @@ def gen_qe(run_type   = 'scf',
         path = '01_ecut_conv/ecut_'+str(ecutwfc)
     else:
         path = '02_kgrid_conv/kgrid_{0}{0}{0}'.format(nkgrid)
-    assert run_type in ('scf','nscf')
+    assert run_type in {'scf','nscf'}
     if run_type=='scf':
         kgrid = 3*[nkgrid]
         extra = dict(kgrid=kgrid,requires='none')

@@ -4479,7 +4479,7 @@ class Kagayaki(Supercomputer):
         job.run_options.add(**opt)
 
     def write_job_header(self,job):
-        ppn = 16 if job.queue in ['Default', 'SINGLE', 'LONG', 'DEFAULT'] else 128
+        ppn = 16 if job.queue in {'Default', 'SINGLE', 'LONG', 'DEFAULT'} else 128
         c=''
         c+='#!/bin/bash\n'
         if (job.queue is not None):

@@ -95,7 +95,7 @@ class Gamess(Simulation):
     def check_result(self,result_name,sim):
         input = self.input 
         if result_name=='orbitals':
-            calculating_result = 'contrl' in input and 'scftyp' in input.contrl and input.contrl.scftyp.lower() in ('rhf','rohf','uhf','mcscf','none')
+            calculating_result = 'contrl' in input and 'scftyp' in input.contrl and input.contrl.scftyp.lower() in {'rhf','rohf','uhf','mcscf','none'}
         else:
             calculating_result = False
         #end if

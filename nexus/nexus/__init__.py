@@ -505,7 +505,7 @@ class Settings(NexusCore):
         #end if
         if 'machine' in mset:
             machine_name = mset.machine
-            if machine_name in ("ws", "workstation"):
+            if machine_name in {"ws", "workstation"}:
                 self.log("Automatically detecting physical CPU cores for workstation...", n=1)
                 n_cores = get_cpu_cores()
                 self.log(f"Using {n_cores} core workstation", n=1)
