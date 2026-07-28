@@ -163,7 +163,51 @@ def _pp_str(self,nindent=1):
 
 
 class dotdict(dict):
-    '''A dictionary with dot-access for keys'''
+    """Dictionary supporting attribute-style access to keys.
+
+    ``dotdict`` is a subclass of :class:`dict` and supports the standard
+    dictionary constructor and interface.  String keys that do not collide
+    with class attributes can additionally be read, assigned, and deleted
+    with the dot operator.
+
+    Parameters
+    ----------
+    *args
+        Positional arguments accepted by :class:`dict`.
+    **kwargs
+        Keyword arguments accepted by :class:`dict`.
+
+    Notes
+    -----
+    Dictionary methods take precedence over keys during dot access.  For
+    example, a key named ``"update"`` remains available with item access,
+    while ``mapping.update`` continues to refer to :meth:`dict.update`.
+    Missing keys accessed with the dot operator raise :class:`KeyError`, as
+    they do with item access.
+
+    Examples
+    --------
+    Keys and attributes provide interchangeable access when their names do
+    not collide with dictionary attributes.
+
+    >>> data = dotdict(answer=42)
+    >>> data.answer
+    42
+    >>> data.units = "eV"
+    >>> data["units"]
+    'eV'
+
+    Colliding keys are retained but require item access.
+
+    >>> data["update"] = "stored value"
+    >>> data["update"]
+    'stored value'
+    >>> callable(data.update)
+    True
+    >>> data.update(extra=1)
+    >>> data.extra
+    1
+    """
     def __getattr__(self, item):
         return self[item]
     __setattr__ = dict.__setitem__
@@ -179,6 +223,70 @@ class dotdict(dict):
 
 
 class obj:
+    """Dictionary-like object sharing storage between keys and attributes.
+
+    ``obj`` implements the usual mutable dictionary interface without
+    inheriting from :class:`dict`.  Its entries are stored directly in the
+    instance attribute dictionary, so item and dot access are two views of
+    the same data.
+
+    Parameters
+    ----------
+    *args
+        Positional arguments accepted by :class:`dict`.
+    **kwargs
+        Keyword arguments accepted by :class:`dict`.
+
+    Notes
+    -----
+    Unlike :class:`dotdict`, an entry whose key matches an ordinary ``obj``
+    method shadows that method during dot access.  The hidden method can
+    still be invoked through the class, but ``obj`` is most safely used as a
+    drop-in dictionary replacement when keys do not overlap its methods.
+
+    ``repr`` displays the type of each stored value, and ``str`` provides an
+    indented, value-oriented representation.  These representations
+    intentionally differ from dictionary syntax.  Missing attributes raise
+    :class:`AttributeError`, while missing item access raises
+    :class:`KeyError`.
+
+    Examples
+    --------
+    Item and attribute operations act on the same entries.
+
+    >>> data = obj(answer=42)
+    >>> data.answer
+    42
+    >>> data["units"] = "eV"
+    >>> data.units
+    'eV'
+
+    Keys can shadow methods because entries are also instance attributes.
+
+    >>> data["update"] = "stored value"
+    >>> data.update
+    'stored value'
+    >>> type(data).update(data, extra=1)
+    >>> data.extra
+    1
+
+    The custom text representations emphasize values and their types.
+
+    >>> o = obj(i=1,r=2.3,s='hello',o2=obj(b={1,2,3},c=[5,6,7]))
+    >>> print(repr(o))
+      i                     int
+      o2                    obj
+      r                     float
+      s                     str
+    >>> print(o)
+      i               = 1
+      r               = 2.3
+      s               = hello
+      o2
+        b               = {1, 2, 3}
+        c               = [5, 6, 7]
+      end o2
+    """
     # dict interface
     @classmethod
     def fromkeys(cls, keys, value=None):
