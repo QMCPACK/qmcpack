@@ -99,8 +99,8 @@ class TextFile(DevBase):
                 'number of tokens: {1}\n'
                 'number of formats provided: {2}'.format(
                     line,len(stokens),len(formats)
+                    )
                 )
-            )
         #end if
         tokens = []
         if all_same:
@@ -138,7 +138,7 @@ class TextFile(DevBase):
                     self.error(
                         'relative positioning must be either 0 (begin), 1 (current), or 2 (end)\n'
                         'you provided: {0}'.format(whence)
-                    )
+                        )
                 #end if
             #end if
             if whence!=2:
@@ -822,7 +822,7 @@ class XsfFile(StandardFile):
             return [(
                 'xsf file must have animation, bands, structure, or data\n'
                 'the current file is missing all of these'
-            )]
+                )]
         #end if
     #end def validity_checks
 
@@ -1409,7 +1409,7 @@ def read_poscar_chgcar(host,text):
         error(
             'read_poscar_chgcar must be used in conjunction with PoscarFile or ChgcarFile objects only\n'
             'encountered object of type: {0}'.format(host.__class__.__name__)
-        )
+            )
     #end if
 
     # read lines and remove fortran comments
@@ -1442,8 +1442,8 @@ def read_poscar_chgcar(host,text):
             'file {0} must have at least {1} lines\n'
             'only {2} lines found'.format(
                 host.filepath, min_lines, nlines
+                )
             )
-        )
     #end if
     description = lines[0]
     dim = 3
@@ -1584,8 +1584,8 @@ def read_poscar_chgcar(host,text):
                     'grid size: {1}\n'
                     'density size: {2}'.format(
                         grid, ng, density.size
+                        )
                     )
-                )
             #end if
             ndens = density.size//ng
             if ndens==1:
@@ -1607,7 +1607,7 @@ def read_poscar_chgcar(host,text):
                     '  2) charge and collinear spin densities (2 densities)\n'
                     '  3) charge and non-collinear spin densities (4 densities)\n'
                     'number of densities found: {0}'.format(ndens)
-                )
+                    )
             #end if
         else:
             host.error('file {0} is incomplete (missing density)'.format(host.filepath))

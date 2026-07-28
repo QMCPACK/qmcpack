@@ -262,7 +262,7 @@ def example_structure_h4():
     elem = ['H']*natom
     pos = np.array([
       [0, 0, 0], [alat/2., 0, 0], [0, alat/2, 0], [0, 0, alat/2]
-    ])
+      ])
     s1 = Structure(axes=axes, elem=elem, pos=pos, units='B')
     return s1
 #end def example_structure_h4
@@ -1460,8 +1460,8 @@ def test_min_image_distances():
             [ 6, 28, 30],
             [21, 29, 31],
             [ 0, 24, 30],
-        ]
-    )
+            ]
+        )
 
     for nti,nti_ref in zip(nt,nt_ref):
         assert(set(nti)==set(nti_ref))
@@ -1823,7 +1823,7 @@ def test_group_atoms():
             [6.00000, 0.00000, 0.00000],
             [0.00000, 6.00000, 0.00000],
             [0.00000, 0.00000, 6.00000],
-        ], dtype=np.float64),
+            ], dtype=np.float64),
         elem = unordered_elem,
         pos = np.array([
             [ 0.711045, 1.361274, 3.966292],
@@ -1836,9 +1836,9 @@ def test_group_atoms():
             [ 0.690245, 1.335874, 2.186592],
             [-1.779455, 2.202274, 3.093292],
             [-2.558655, 2.774774, 3.094192],
-        ], dtype=np.float64),
+            ], dtype=np.float64),
         units="A",
-    )
+        )
 
     np.testing.assert_array_equal(structure.elem, unordered_elem)
 
@@ -1856,7 +1856,7 @@ def test_rename():
             [6.00000, 0.00000, 0.00000],
             [0.00000, 6.00000, 0.00000],
             [0.00000, 0.00000, 6.00000],
-        ], dtype=np.float64),
+            ], dtype=np.float64),
         elem = original_elem,
         pos = np.array([
             [ 1.848745, 2.865874, 3.041292],
@@ -1869,9 +1869,9 @@ def test_rename():
             [ 0.690245, 1.335874, 2.186592],
             [ 0.711045, 1.361274, 3.966292],
             [-2.558655, 2.774774, 3.094192],
-        ], dtype=np.float64),
+            ], dtype=np.float64),
         units="A",
-    )
+        )
 
     np.testing.assert_array_equal(structure.elem, original_elem)
 
@@ -1882,7 +1882,7 @@ def test_rename():
         C = "Np",
         O = "Te",
         H = "Ag",
-    )
+        )
 
     np.testing.assert_array_equal(structure.elem, new_elem)
 
@@ -1894,13 +1894,13 @@ def test_reset_axes():
         [6.00000, 0.00000, 0.00000],
         [0.00000, 6.00000, 0.00000],
         [0.00000, 0.00000, 6.00000],
-    ], dtype=np.float64)
+        ], dtype=np.float64)
 
     original_kaxes = np.array([
         [1.0471975511965976, 0.0, 0.0],
         [0.0, 1.0471975511965976, 0.0],
         [0.0, 0.0, 1.0471975511965976],
-    ], dtype=np.float64)
+        ], dtype=np.float64)
 
     original_center = np.array([3.0, 3.0, 3.0], dtype=np.float64)
 
@@ -1918,9 +1918,9 @@ def test_reset_axes():
             [ 0.690245, 1.335874, 2.186592],
             [ 0.711045, 1.361274, 3.966292],
             [-2.558655, 2.774774, 3.094192],
-        ], dtype=np.float64),
+            ], dtype=np.float64),
         units="A",
-    )
+        )
 
     np.testing.assert_array_equal(structure.axes, original_axes)
     np.testing.assert_array_equal(structure.kaxes, original_kaxes)
@@ -1930,13 +1930,13 @@ def test_reset_axes():
         [12.00000,  0.00000,  0.00000],
         [ 0.00000, 12.00000,  0.00000],
         [ 0.00000,  0.00000, 12.00000],
-    ], dtype=np.float64)
+        ], dtype=np.float64)
 
     new_kaxes = np.array([
         [0.5235987755982988, 0.0, 0.0],
         [0.0, 0.5235987755982988, 0.0],
         [0.0, 0.0, 0.5235987755982988],
-    ], dtype=np.float64)
+        ], dtype=np.float64)
 
     new_center = np.array([6.0, 6.0, 6.0], dtype=np.float64)
 
@@ -1954,13 +1954,13 @@ def test_reset_axes_none():
         [6.00000, 0.00000, 0.00000],
         [0.00000, 6.00000, 0.00000],
         [0.00000, 0.00000, 6.00000],
-    ], dtype=np.float64)
+        ], dtype=np.float64)
 
     original_kaxes = np.array([
         [7.0, 0.0, 0.0],
         [0.0, 7.0, 0.0],
         [0.0, 0.0, 7.0],
-    ], dtype=np.float64)
+        ], dtype=np.float64)
 
     original_center = np.array([400.0, 400.0, 400.0], dtype=np.float64)
 
@@ -1978,10 +1978,10 @@ def test_reset_axes_none():
             [ 0.690245, 1.335874, 2.186592],
             [ 0.711045, 1.361274, 3.966292],
             [-2.558655, 2.774774, 3.094192],
-        ], dtype=np.float64),
+            ], dtype=np.float64),
         units="A",
         center = original_center,
-    )
+        )
 
     structure.kaxes = original_kaxes
 
@@ -1993,7 +1993,7 @@ def test_reset_axes_none():
         [1.0471975511965976, 0.0, 0.0],
         [0.0, 1.0471975511965976, 0.0],
         [0.0, 0.0, 1.0471975511965976],
-    ], dtype=np.float64)
+        ], dtype=np.float64)
 
     ref_center = np.array([3.0, 3.0, 3.0], dtype=np.float64)
 
@@ -2011,7 +2011,7 @@ def test_write_axes():
             [6.00000,  0.00000,   0.00000],
             [0.00000, 12.00000,   0.00000],
             [0.00000,  0.00000, 300.00000],
-        ], dtype=np.float64),
+            ], dtype=np.float64),
         elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
         pos = np.array([
             [ 1.848745, 2.865874, 3.041292],
@@ -2024,15 +2024,15 @@ def test_write_axes():
             [ 0.690245, 1.335874, 2.186592],
             [ 0.711045, 1.361274, 3.966292],
             [-2.558655, 2.774774, 3.094192],
-        ], dtype=np.float64),
+            ], dtype=np.float64),
         units="A",
-    )
+        )
 
     ref_write_axes = (
         "  6.00000000   0.00000000   0.00000000\n"
         "  0.00000000  12.00000000   0.00000000\n"
         "  0.00000000   0.00000000 300.00000000\n"
-    )
+        )
     calc_write_axes = structure.write_axes()
     assert(text_eq(calc_write_axes, ref_write_axes))
 
@@ -2045,7 +2045,7 @@ def test_corners():
             [7.00000,  0.00000,  0.00000],
             [0.00000, 14.00000,  0.00000],
             [0.00000,  0.00000, 35.00000],
-        ], dtype=np.float64),
+            ], dtype=np.float64),
         elem = ["N", "C", "C", "O", "O", "H", "H", "H", "H", "H"],
         pos = np.array([
             [ 1.848745, 2.865874, 3.041292],
@@ -2058,9 +2058,9 @@ def test_corners():
             [ 0.690245, 1.335874, 2.186592],
             [ 0.711045, 1.361274, 3.966292],
             [-2.558655, 2.774774, 3.094192],
-        ], dtype=np.float64),
+            ], dtype=np.float64),
         units="A",
-    )
+        )
 
     ref_corners = [
         [0.0,  0.0,  0.0],
@@ -2071,7 +2071,7 @@ def test_corners():
         [0.0, 14.0, 35.0],
         [7.0,  0.0, 35.0],
         [7.0, 14.0, 35.0],
-    ]
+        ]
 
     np.testing.assert_allclose(structure.corners(), ref_corners)
 
