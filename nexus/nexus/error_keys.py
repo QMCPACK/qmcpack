@@ -28,15 +28,18 @@ shell_errors = (
     )
 
 shell_error_patterns = (
-    (r'^.*\b(?:segmentation fault|floating point exception|'
-     r'illegal instruction|bus error|bad system call)'
-     r'(?:\s+\(core dumped\))?\s*$'),
+    r'^.*\b(?:segmentation fault|floating point exception|'
+    r'illegal instruction|bus error|bad system call)'
+    r'(?:\s+\(core dumped\))?\s*$'
+    ,
     r'^.*\b(?:aborted|killed)(?:\s+\(core dumped\))?\s*$',
     r'^.*\bterminated\s*$',
-    (r'\b(?:out of memory|cannot allocate memory|oom-kill(?:er)?|'
-     r'invoked oom-killer|killed process\s+\d+)\b'),
-    (r'\b(?:stack smashing detected|general protection fault|'
-     r'Machine Check Exception)\b'),
+    r'\b(?:out of memory|cannot allocate memory|oom-kill(?:er)?|'
+    r'invoked oom-killer|killed process\s+\d+)\b'
+    ,
+    r'\b(?:stack smashing detected|general protection fault|'
+    r'Machine Check Exception)\b'
+    ,
     r'\b(?:MCE|EDAC)[^\n]{0,80}\bHardware Error\b',
     )
 
@@ -59,12 +62,14 @@ linux_exit_signals = (
     )
 
 linux_signal_error_patterns = (
-    (r'\b(?:terminated|killed|exited|aborted|died|received signal)\b'
-     r'[^\n]{0,80}\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|'
-     r'SYS|TRAP|XCPU|XFSZ)\b'),
-    (r'\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|'
-     r'XCPU|XFSZ)\b[^\n]{0,80}'
-     r'\b(?:terminated|killed|exited|aborted|died)\b'),
+    r'\b(?:terminated|killed|exited|aborted|died|received signal)\b'
+    r'[^\n]{0,80}\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|'
+    r'SYS|TRAP|XCPU|XFSZ)\b'
+    ,
+    r'\bSIG(?:HUP|ILL|ABRT|FPE|KILL|SEGV|PIPE|TERM|BUS|SYS|TRAP|'
+    r'XCPU|XFSZ)\b[^\n]{0,80}'
+    r'\b(?:terminated|killed|exited|aborted|died)\b'
+    ,
     r'\bterminated with signal\s+\d+\b',
     r'\bexited on signal\s+\d+\b',
     )
@@ -110,21 +115,24 @@ posix_errno_keys = (
     )
 
 posix_error_patterns = (
-    (r'^(?:.*:\s*)?(?:no such file or directory|permission denied|'
-     r'not a directory|is a directory|no space left on device|'
-     r'too many open files|cannot allocate memory|connection refused|'
-     r'connection timed out|network is unreachable|address already in use|'
-     r'broken pipe)\s*$'),
-    (r'\b(?:fatal|error|exception|failed|cannot|unable)[^\n]{0,100}'
-     r'\b(?:no such file or directory|permission denied|not a directory|'
-     r'is a directory|no space left on device|too many open files|'
-     r'cannot allocate memory|connection refused|connection timed out|'
-     r'network is unreachable|address already in use|broken pipe)\b'),
-    (r'\b(?:errno|error|failed|failure|fatal)[^\n]{0,40}'
-     r'\b(?:ENOENT|EACCES|EISDIR|ENOTDIR|ENOSPC|EMFILE|ENOMEM|'
-     r'ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EADDRINUSE|EPIPE|EIO|ENXIO|'
-     r'EBADF|EBUSY|ENODEV|EROFS|EDQUOT|ECONNRESET|EHOSTUNREACH|'
-     r'ENOTCONN)\b'),
+    r'^(?:.*:\s*)?(?:no such file or directory|permission denied|'
+    r'not a directory|is a directory|no space left on device|'
+    r'too many open files|cannot allocate memory|connection refused|'
+    r'connection timed out|network is unreachable|address already in use|'
+    r'broken pipe)\s*$'
+    ,
+    r'\b(?:fatal|error|exception|failed|cannot|unable)[^\n]{0,100}'
+    r'\b(?:no such file or directory|permission denied|not a directory|'
+    r'is a directory|no space left on device|too many open files|'
+    r'cannot allocate memory|connection refused|connection timed out|'
+    r'network is unreachable|address already in use|broken pipe)\b'
+    ,
+    r'\b(?:errno|error|failed|failure|fatal)[^\n]{0,40}'
+    r'\b(?:ENOENT|EACCES|EISDIR|ENOTDIR|ENOSPC|EMFILE|ENOMEM|'
+    r'ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EADDRINUSE|EPIPE|EIO|ENXIO|'
+    r'EBADF|EBUSY|ENODEV|EROFS|EDQUOT|ECONNRESET|EHOSTUNREACH|'
+    r'ENOTCONN)\b'
+    ,
     )
 
 
@@ -137,11 +145,13 @@ infiniband_errors = (
 
 infiniband_error_patterns = (
     r'\bUCX\s+ERROR\b',
-    (r'\b(?:ucp|uct|ucs)_[a-z0-9_]+\b[^\n]{0,80}'
-     r'\b(?:failed|error|unreachable|timed out)\b'),
+    r'\b(?:ucp|uct|ucs)_[a-z0-9_]+\b[^\n]{0,80}'
+    r'\b(?:failed|error|unreachable|timed out)\b'
+    ,
     r'\bibv_[a-z0-9_]+\b[^\n]{0,80}\b(?:failed|error)\b',
-    (r'\b(?:libfabric|ofi_[a-z0-9_]+)\b[^\n]{0,80}'
-     r'\b(?:error|failed|unreachable)\b'),
+    r'\b(?:libfabric|ofi_[a-z0-9_]+)\b[^\n]{0,80}'
+    r'\b(?:error|failed|unreachable)\b'
+    ,
     )
 
 lustre_errors = (
@@ -150,8 +160,9 @@ lustre_errors = (
     )
 
 lustre_error_patterns = (
-    (r'\bLNet(?:Error)?\b[^\n]{0,80}\b(?:error|failed|fatal|timeout|'
-     r'unreachable)\b'),
+    r'\bLNet(?:Error)?\b[^\n]{0,80}\b(?:error|failed|fatal|timeout|'
+    r'unreachable)\b'
+    ,
     r'\bLustre\b[^\n]{0,80}\b(?:error|failed|fatal|evicted)\b',
     )
 
@@ -161,8 +172,9 @@ gpfs_errors = (
     )
 
 gpfs_error_patterns = (
-    (r'\bGPFS\b[^\n]{0,80}\b(?:deadlock detected|disk unavailable|'
-     r'unmounted abnormally|token expired)\b'),
+    r'\bGPFS\b[^\n]{0,80}\b(?:deadlock detected|disk unavailable|'
+    r'unmounted abnormally|token expired)\b'
+    ,
     )
 
 slurm_errors = (
@@ -174,10 +186,12 @@ slurm_errors = (
     )
 
 slurm_error_patterns = (
-    (r'\bState=(?:FAILED|TIMEOUT|NODE_FAIL|OUT_OF_MEMORY|BOOT_FAIL|'
-     r'DEADLINE|CANCELLED|PREEMPTED)\b'),
-    (r'\b(?:JOB|STEP)[^\n]{0,80}\b(?:CANCELLED|FAILED|OUT_OF_MEMORY|'
-     r'TIMEOUT|NODE_FAIL)\b'),
+    r'\bState=(?:FAILED|TIMEOUT|NODE_FAIL|OUT_OF_MEMORY|BOOT_FAIL|'
+    r'DEADLINE|CANCELLED|PREEMPTED)\b'
+    ,
+    r'\b(?:JOB|STEP)[^\n]{0,80}\b(?:CANCELLED|FAILED|OUT_OF_MEMORY|'
+    r'TIMEOUT|NODE_FAIL)\b'
+    ,
     r'\b(?:launch failed|oom-kill)\b',
     )
 
@@ -285,8 +299,9 @@ mpi_error_patterns = (
     r'\bone or more processes exited with non-zero status\b',
     r'\bprocess returned a non-zero exit code\b',
     r'\bPrimary job terminated normally, but\b',
-    (r'\b(?:mpirun|mpiexec|orterun|prterun)\b[^\n]{0,120}'
-     r'\b(?:aborted|failed|non-zero|signal|terminated)\b'),
+    r'\b(?:mpirun|mpiexec|orterun|prterun)\b[^\n]{0,120}'
+    r'\b(?:aborted|failed|non-zero|signal|terminated)\b'
+    ,
     r'\b(?:exited on|terminated with) signal(?:\s+\d+)?\b',
     )
 
@@ -359,14 +374,17 @@ cuda_errors = (
     )
 
 cuda_error_patterns = (
-    (r'\bcudaError(?:MemoryAllocation|InitializationError|LaunchFailure|'
-     r'LaunchTimeout|LaunchOutOfResources|IllegalAddress|'
-     r'NoKernelImageForDevice|InsufficientDriver|SystemDriverMismatch|'
-     r'ECCUncorrectable|Unknown)\b'),
-    (r'\bnccl(?:UnhandledCudaError|SystemError|InternalError|'
-     r'InvalidArgument|InvalidUsage|RemoteError)\b'),
-    (r'\b(?:NCCL|UCX|CUDA|socket|transport)[^\n]{0,80}'
-     r'\bcall to connect failed\b'),
+    r'\bcudaError(?:MemoryAllocation|InitializationError|LaunchFailure|'
+    r'LaunchTimeout|LaunchOutOfResources|IllegalAddress|'
+    r'NoKernelImageForDevice|InsufficientDriver|SystemDriverMismatch|'
+    r'ECCUncorrectable|Unknown)\b'
+    ,
+    r'\bnccl(?:UnhandledCudaError|SystemError|InternalError|'
+    r'InvalidArgument|InvalidUsage|RemoteError)\b'
+    ,
+    r'\b(?:NCCL|UCX|CUDA|socket|transport)[^\n]{0,80}'
+    r'\bcall to connect failed\b'
+    ,
     )
 
 hip_errors = (
@@ -376,11 +394,13 @@ hip_errors = (
     )
 
 hip_error_patterns = (
-    (r'\bhipError(?:MemoryAllocation|InitializationError|LaunchFailure|'
-     r'LaunchTimeOut|LaunchOutOfResources|IllegalAddress|NoBinaryForGpu|'
-     r'InsufficientDriver|ECCNotCorrectable|Unknown)\b'),
-    (r'\b(?:amdgpu|kfd)[^\n]{0,100}\b(?:GPU fault|page fault|ring timeout|'
-     r'GPU reset|uncorrectable)\b'),
+    r'\bhipError(?:MemoryAllocation|InitializationError|LaunchFailure|'
+    r'LaunchTimeOut|LaunchOutOfResources|IllegalAddress|NoBinaryForGpu|'
+    r'InsufficientDriver|ECCNotCorrectable|Unknown)\b'
+    ,
+    r'\b(?:amdgpu|kfd)[^\n]{0,100}\b(?:GPU fault|page fault|ring timeout|'
+    r'GPU reset|uncorrectable)\b'
+    ,
     )
 
 
@@ -431,8 +451,9 @@ blas_errors = (
     )
 
 blas_error_patterns = (
-    (r'\bon entry to\s+[a-z0-9_]+\s+parameter(?: number)?\s+\d+'
-     r'\s+had an illegal value\b'),
+    r'\bon entry to\s+[a-z0-9_]+\s+parameter(?: number)?\s+\d+'
+    r'\s+had an illegal value\b'
+    ,
     )
 
 lapack_errors = (
@@ -446,9 +467,10 @@ lapack_errors = (
     )
 
 lapack_error_patterns = (
-    (r'\b(?:LAPACK|[sdcz][a-z0-9_]{3,})[^\n]{0,100}'
-     r'\b(?:matrix is singular|is not positive definite|failed to converge|'
-     r'computational failure)\b'),
+    r'\b(?:LAPACK|[sdcz][a-z0-9_]{3,})[^\n]{0,100}'
+    r'\b(?:matrix is singular|is not positive definite|failed to converge|'
+    r'computational failure)\b'
+    ,
     )
 
 # Failure to import FFTW wisdom is recoverable and fftw_execute is merely an
@@ -468,9 +490,10 @@ hdf5_errors = (
 
 hdf5_error_patterns = (
     r'HDF5-DIAG:\s*Error\s*detected',
-    (r'\b(?:major|minor):\s*(?:file accessibility|unable to open file|'
-     r'unable to create file|write failed|read failed|object not found|'
-     r'bad value)\b'),
+    r'\b(?:major|minor):\s*(?:file accessibility|unable to open file|'
+    r'unable to create file|write failed|read failed|object not found|'
+    r'bad value)\b'
+    ,
     )
 
 libxml2_errors = (
@@ -484,8 +507,9 @@ libxml2_errors = (
     )
 
 libxml2_error_patterns = (
-    (r'\b(?:parser|schemas?|xml)[^\n]{0,80}'
-     r'\b(?:error|validation failed|not expected|failed to load)\b'),
+    r'\b(?:parser|schemas?|xml)[^\n]{0,80}'
+    r'\b(?:error|validation failed|not expected|failed to load)\b'
+    ,
     )
 
 
@@ -500,8 +524,9 @@ numpy_errors = (
     )
 
 numpy_error_patterns = (
-    (r'^\s*(?:numpy[\w.]*\.)?(?:LinAlgError|AxisError|'
-     r'DTypePromotionError|TooHardError|_ArrayMemoryError)\s*:'),
+    r'^\s*(?:numpy[\w.]*\.)?(?:LinAlgError|AxisError|'
+    r'DTypePromotionError|TooHardError|_ArrayMemoryError)\s*:'
+    ,
     )
 
 scipy_errors = (
@@ -516,8 +541,9 @@ scipy_errors = (
     )
 
 scipy_error_patterns = (
-    (r'^\s*(?:scipy[\w.]*\.)?(?:ArpackError|ArpackNoConvergence|'
-     r'NoConvergence|QhullError)\s*:'),
+    r'^\s*(?:scipy[\w.]*\.)?(?:ArpackError|ArpackNoConvergence|'
+    r'NoConvergence|QhullError)\s*:'
+    ,
     )
 
 h5py_errors = (
@@ -531,10 +557,11 @@ h5py_errors = (
 
 h5py_error_patterns = (
     r'^\s*(?:h5py[\w.]*\.)?CheckWriteEligibilityError\s*:',
-    (r'^\s*(?:OSError|RuntimeError|ValueError):[^\n]*'
-     r'(?:unable to (?:open|create|read|write)|file signature not found|'
-     r'object doesn\'t exist|bad object header|address overflow|'
-     r'no write intent)'),
+    r'^\s*(?:OSError|RuntimeError|ValueError):[^\n]*'
+    r'(?:unable to (?:open|create|read|write)|file signature not found|'
+    r'object doesn\'t exist|bad object header|address overflow|'
+    r'no write intent)'
+    ,
     )
 
 
@@ -560,8 +587,9 @@ pyscf_errors = (
     )
 
 pyscf_error_patterns = (
-    (r'\b(?:SCF|CASSCF|UCASSCF|CCSD|Newton)[^\n]{0,40}'
-     r'\bnot converged\b'),
+    r'\b(?:SCF|CASSCF|UCASSCF|CCSD|Newton)[^\n]{0,40}'
+    r'\bnot converged\b'
+    ,
     r'^\s*(?:pyscf[\w.]*\.)?LibxcError\s*:',
     )
 
@@ -576,8 +604,9 @@ quantum_package_errors = (
     )
 
 quantum_package_error_patterns = (
-    (r'\b(?:Davidson|CIPSI|SCF|selection)[^\n]{0,60}'
-     r'\bnot converged\b'),
+    r'\b(?:Davidson|CIPSI|SCF|selection)[^\n]{0,60}'
+    r'\bnot converged\b'
+    ,
     )
 
 rmg_errors = (
@@ -590,10 +619,12 @@ rmg_error_patterns = (
     r'\bRMG(?:DFT)?\s*(?:Error|Fatal|Critical)\s*:',
     r'\b(?:Fatal|Critical)\s+RMG(?:DFT)?\s+error\b',
     r'\bSCF[^\n]{0,60}\b(?:failed to converge|not converged)\b',
-    (r'\b(?:multigrid|Davidson|subspace)[^\n]{0,60}'
-     r'\b(?:failed|breakdown|not converged)\b'),
-    (r'\b(?:domain decomposition|grid decomposition)[^\n]{0,60}'
-     r'\bfailed\b'),
+    r'\b(?:multigrid|Davidson|subspace)[^\n]{0,60}'
+    r'\b(?:failed|breakdown|not converged)\b'
+    ,
+    r'\b(?:domain decomposition|grid decomposition)[^\n]{0,60}'
+    r'\bfailed\b'
+    ,
     )
 
 qmcpack_errors = (
@@ -624,8 +655,9 @@ vasp_errors = (
     )
 
 vasp_error_patterns = (
-    (r'^\s*(?:\|\s*)?(?:VERY BAD NEWS!\s*)?'
-     r'(?:internal\s+)?error in subroutine\b'),
+    r'^\s*(?:\|\s*)?(?:VERY BAD NEWS!\s*)?'
+    r'(?:internal\s+)?error in subroutine\b'
+    ,
     r'^\s*ZBRENT:\s*fatal\s+(?:error|internal)[^\n]*\bbracket',
     r'^\s*BRMIX:\s*very serious problems\b',
     r'^\s*(?:EDDDAV|EDDRMM):[^\n]*(?:ZHEGV|ZHEEV)[^\n]*failed\b',
@@ -651,8 +683,9 @@ gamess_error_patterns = (
     r'\bEXECUTION OF GAMESS TERMINATED\s+-?ABNORMALLY-?(?!\w)',
     r'\bddikick\.x:\s*application process\s+\d+\s+quit unexpectedly\b',
     r'\bDDI Process\s+\d+:\s*error code\s+(?!0\b)\d+\b',
-    (r'\bSCF\s+(?:IS UNCONVERGED,\s+TOO MANY ITERATIONS|'
-     r'DID NOT CONVERGE)\b'),
+    r'\bSCF\s+(?:IS UNCONVERGED,\s+TOO MANY ITERATIONS|'
+    r'DID NOT CONVERGE)\b'
+    ,
     r'\b\d+\s+WORDS OF MEMORY UNAVAILABLE\b',
     )
 
