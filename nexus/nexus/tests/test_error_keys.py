@@ -76,8 +76,14 @@ def test_selectors():
         all_errors=True,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+            ValueError,
+            match='at least one error set must be requested by find_error_keys',
+            ):
         find_error_keys('anything')
+
+    with pytest.raises(TypeError):
+        find_error_keys('anything', True)
 
 
 def test_operating_system_catches():
@@ -144,7 +150,7 @@ def test_compiled_code_catches():
         )
     assert find_error_keys(
         'ERROR: AddressSanitizer: heap-use-after-free',
-        cplusplus=True,
+        cpp=True,
         )
     assert find_error_keys(
         'kernel launch returned cudaErrorIllegalAddress',
