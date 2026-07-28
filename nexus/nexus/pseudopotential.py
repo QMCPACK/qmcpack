@@ -417,7 +417,7 @@ class Pseudopotentials(DevBase):
 # user interface to group sets of pseudopotentials together and refer to them by labels
 #   labeling should eliminate the need to provide lists of pseudopotential files to each 
 #   simulation object (e.g. via a generate_* call) separately
-class GlobalPPset(DevBase):
+class PPset(DevBase):
     instance_counter = 0
 
     known_codes = set('pwscf gamess vasp qmcpack'.split())
@@ -430,87 +430,46 @@ class GlobalPPset(DevBase):
         )
 
     def __init__(self):
-        if GlobalPPset.instance_counter!=0:
-            self.error(
-                'cannot instantiate more than one PPset object\n'
-                'intended use follows a singleton pattern'
-            )
+        if PPset.instance_counter!=0:
+            self.error('cannot instantiate more than one PPset object\nintended use follows a singleton pattern')
         #end if
-        GlobalPPset.instance_counter+=1
+        PPset.instance_counter+=1
         self.pseudos = obj()
     #end def __init__
 
     def supports_code(self,code):
-        return code in GlobalPPset.known_codes
+        return code in PPset.known_codes
     #end def supports_code
 
-    def __call__(self, label: str, **code_pps):
+    def __call__(self,label,**code_pps):
         if not isinstance(label,str):
-            self.error(
-                'incorrect use of ppset\n'
-                'label provided must be a string\n'
-                'received type instead: {0}\n'
-                'with value: {1}'.format(label.__class__.__name__,label)
-            )
+            self.error('incorrect use of ppset\nlabel provided must be a string\nreceived type instead: {0}\nwith value: {1}'.format(label.__class__.__name__,label))
         #end if
         if label in self.pseudos:
-            self.error(
-                'incorrect use of ppset\n'
-                'pseudopotentials with label "{0}" have already been added to ppset'.format(label)
-            )
+            self.error('incorrect use of ppset\npseudopotentials with label "{0}" have already been added to ppset'.format(label))
         #end if
         pseudos = obj()
         self.pseudos[label]=pseudos
         for code,pps in code_pps.items():
             clow = code.lower()
             if clow not in self.known_codes:
-                self.error(
-                    'incorrect use of ppset\n'
-                    'invalid simulation code "{0}" provided with set labeled "{1}"\n'
-                    'known simulation codes are: {2}'.format(
-                        code, label, sorted(self.known_codes)
-                    )
-                )
+                self.error('incorrect use of ppset\ninvalid simulation code "{0}" provided with set labeled "{1}"\nknown simulation codes are: {2}'.format(code,label,sorted(self.known_codes)))
             #end if
             if not isinstance(pps,(list,tuple)):
-                self.error(
-                    'incorrect use of ppset\n'
-                    'must provide a list of pseudopotentials for code "{0}" in set labeled "{1}"\n'
-                    'type provided instead of list: {2}'.format(
-                        code, label, pps.__class__.__name__
-                    )
-                )
+                self.error('incorrect use of ppset\nmust provide a list of pseudopotentials for code "{0}" in set labeled "{1}"\ntype provided instead of list: {2}'.format(code,label,pps.__class__.__name__))
             #end if
             ppcoll = obj()
             for pp in pps:
-                if not isinstance(pp,str):
-                    self.error(
-                        'incorrect use of ppset\n'
-                        'non-filename provided with set labeled "{0}" for simulation code "{1}"\n'
-                        'each pseudopential file name must be a string\n'
-                        'received type: {2}\n'
-                        'with value: {3}'.format(
-                            label, code, pp.__class__.__name__, pp
-                        )
-                    )
-                #end if
-                elem_label,symbol,is_elem = pp_elem_label(pp)
+                if not isinstance(pp, (str, Path)):
+                    self.error('incorrect use of ppset\nnon-filename provided with set labeled "{0}" for simulation code "{1}"\neach pseudopential file name must be a string\nreceived type: {2}\nwith value: {3}'.format(label,code,pp.__class__.__name__,pp))
+                else:
+                    pp = path_string(pp)
+                    elem_label, symbol, is_elem = pp_elem_label(pp)
+
                 if not is_elem:
-                    self.error(
-                        'invalid filename provided to ppset\n'
-                        'cannot determine element for pseudopotential file: {0}\n'
-                        'pseudopotential file names must be prefixed by an atomic symbol or label\n'
-                        '(e.g. Si, Si1, etc)'.format(pp)
-                    )
+                    self.error('invalid filename provided to ppset\ncannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(pp))
                 elif symbol in ppcoll:
-                    self.error(
-                        'incorrect use of ppset\n'
-                        'more than one pseudopotential file provided for element "{0}" for code "{1}" in set labeled "{2}"\n'
-                        'first file: {3}\n'
-                        'second file: {4}'.format(
-                            symbol, code, label, ppcoll[symbol], pp
-                        )
-                    )
+                    self.error('incorrect use of ppset\nmore than one pseudopotential file provided for element "{0}" for code "{1}" in set labeled "{2}"\nfirst file: {3}\nsecond file: {4}'.format(symbol,code,label,ppcoll[symbol],pp))
                 #end if
                 ppcoll[symbol] = path_string(pp)
             #end for
@@ -533,58 +492,30 @@ class GlobalPPset(DevBase):
         #end if
         species_labels,species = system.structure.species(symbol=True)
         if not isinstance(label,str):
-            self.error(
-                'incorrect use of ppset\n'
-                'label provided must be a string\n'
-                'received type instead: {0}\n'
-                'with value: {1}'.format(label.__class__.__name__, label)
-            )
+            self.error('incorrect use of ppset\nlabel provided must be a string\nreceived type instead: {0}\nwith value: {1}'.format(label.__class__.__name__,label))
         #end if
         if not self.has_set(label):
-            self.error(
-                'incorrect use of ppset\n'
-                'pseudopotential set labeled "{0}" is not present in ppset\n'
-                'set labels present: {1}\n'
-                'please either provide pseudopotentials with label "{0}" or correct the provided label'
-                .format(label, sorted(self.pseudos.keys()))
-            )
+            self.error('incorrect use of ppset\npseudopotential set labeled "{0}" is not present in ppset\nset labels present: {1}\nplease either provide pseudopotentials with label "{0}" or correct the provided label'.format(label,sorted(self.pseudos.keys())))
         #end if
         pseudos = self.pseudos[label]
         clow = code.lower()
         if clow not in self.known_codes:
-            self.error(
-                'simulation code "{0}" is not known to ppset\n'
-                'known codes are: {1}'.format(
-                    code, sorted(self.known_codes)
-                )
-            )
+            self.error('simulation code "{0}" is not known to ppset\nknown codes are: {1}'.format(code,sorted(self.known_codes)))
         elif clow not in pseudos:
-            self.error(
-                'incorrect use of ppset\n'
-                'pseudopotentials were not provided for simulation code "{0}" in set labeled "{1}"\n'
-                'pseudopotentials are required for physical system with pseudo-elements: {2}\n'
-                'please add these pseudopotentials for code "{0}" in set "{1}"'
-                .format(code, label, sorted(species))
-            )
+            self.error('incorrect use of ppset\npseudopotentials were not provided for simulation code "{0}" in set labeled "{1}"\npseudopotentials are required for physical system with pseudo-elements: {2}\nplease add these pseudopotentials for code "{0}" in set "{1}"'.format(code,label,sorted(species)))
         #end if
         ppcoll = pseudos[clow]
         pps = []
         for symbol in species:
             if symbol not in ppcoll:
-                self.error(
-                    'incorrect use of ppset\n'
-                    'pseudopotentials were not provided for element "{0}" code "{1}" in set labeled "{2}"\n'
-                    'physical system encountered with pseudo-elements: {3}\n'
-                    'please ensure that pseudopotentials are provided for these elements in set "{2}" for code "{1}"'
-                    .format(symbol, code, label, sorted(species))
-                )
+                self.error('incorrect use of ppset\npseudopotentials were not provided for element "{0}" code "{1}" in set labeled "{2}"\nphysical system encountered with pseudo-elements: {3}\nplease ensure that pseudopotentials are provided for these elements in set "{2}" for code "{1}"'.format(symbol,code,label,sorted(species)))
             #end if
             pps.append(ppcoll[symbol])
         #end for
         return pps
     #end def get
 #end class PPset
-ppset = GlobalPPset() # Retain `ppset` alias for backwards compatibility
+ppset = PPset()
 
 
 class PseudoSet:
