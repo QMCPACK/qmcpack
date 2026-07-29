@@ -49,7 +49,7 @@ if(ENABLE_DEEPQMC_INFERENCE)
       ${WFBASE_SRCS}
       DeepQMC/DeepQMCBridge.cpp
       DeepQMC/DeepQMCWaveFunctionBuilder.cpp
-      DeepQMC/DeepQMCWaveFunctionComponent.cpp)
+      DeepQMC/DeepQMCWF.cpp)
 endif()
 ########################
 # build jastrows

@@ -9,8 +9,8 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_DEEPQMCWAVEFUNCTIONCOMPONENT_H
-#define QMCPLUSPLUS_DEEPQMCWAVEFUNCTIONCOMPONENT_H
+#ifndef QMCPLUSPLUS_DEEPQMCWF_H
+#define QMCPLUSPLUS_DEEPQMCWF_H
 
 #include <memory>
 #include <string>
@@ -22,19 +22,13 @@
 namespace qmcplusplus
 {
 
-class DeepQMCWaveFunctionComponent : public WaveFunctionComponent
+class DeepQMCWF : public WaveFunctionComponent
 {
 public:
-  DeepQMCWaveFunctionComponent(std::string name,
-                               const ParticleSet& ions,
-                               std::unique_ptr<const DeepQMCBridge> bridge,
-                               int mol_idx);
-  DeepQMCWaveFunctionComponent(std::string name,
-                               const ParticleSet& ions,
-                               std::shared_ptr<const DeepQMCBridge> bridge,
-                               int mol_idx);
+  DeepQMCWF(std::string name, const ParticleSet& ions, std::unique_ptr<const DeepQMCBridge> bridge, int mol_idx);
+  DeepQMCWF(std::string name, const ParticleSet& ions, std::shared_ptr<const DeepQMCBridge> bridge, int mol_idx);
 
-  std::string getClassName() const override { return "DeepQMCWaveFunctionComponent"; }
+  std::string getClassName() const override { return "DeepQMCWF"; }
 
   LogValue evaluateLog(const ParticleSet& P,
                        ParticleSet::ParticleGradient& G,

@@ -21,7 +21,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/DeepQMC/DeepQMCBridge.h"
-#include "QMCWaveFunctions/DeepQMC/DeepQMCWaveFunctionComponent.h"
+#include "QMCWaveFunctions/DeepQMC/DeepQMCWF.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
@@ -118,7 +118,7 @@ ParticleSet makeIons(const SimulationCell& simulation_cell)
 }
 } // namespace
 
-TEST_CASE("DeepQMCWaveFunctionComponent batched evaluateLog", "[wavefunction][deepqmc]")
+TEST_CASE("DeepQMCWF batched evaluateLog", "[wavefunction][deepqmc]")
 {
   const SimulationCell simulation_cell;
   ParticleSet ions  = makeIons(simulation_cell);
@@ -126,8 +126,8 @@ TEST_CASE("DeepQMCWaveFunctionComponent batched evaluateLog", "[wavefunction][de
   ParticleSet elec1 = makeElectrons(simulation_cell, {{2.0, 2.1, 2.2}, {3.0, 3.1, 3.2}});
 
   auto bridge = std::make_shared<RecordingDeepQMCBridge>();
-  DeepQMCWaveFunctionComponent comp0("deep", ions, bridge, 7);
-  DeepQMCWaveFunctionComponent comp1("deep", ions, bridge, 7);
+  DeepQMCWF comp0("deep", ions, bridge, 7);
+  DeepQMCWF comp1("deep", ions, bridge, 7);
 
   ParticleSet::ParticleGradient G0, G1;
   ParticleSet::ParticleLaplacian L0, L1;
@@ -191,7 +191,7 @@ TEST_CASE("DeepQMCWaveFunctionComponent batched evaluateLog", "[wavefunction][de
   CHECK(L1[1] == Approx(1001.0));
 }
 
-TEST_CASE("DeepQMCWaveFunctionComponent batched PbyP methods", "[wavefunction][deepqmc]")
+TEST_CASE("DeepQMCWF batched PbyP methods", "[wavefunction][deepqmc]")
 {
   const SimulationCell simulation_cell;
   ParticleSet ions  = makeIons(simulation_cell);
@@ -199,8 +199,8 @@ TEST_CASE("DeepQMCWaveFunctionComponent batched PbyP methods", "[wavefunction][d
   ParticleSet elec1 = makeElectrons(simulation_cell, {{2.0, 2.1, 2.2}, {3.0, 3.1, 3.2}});
 
   auto bridge = std::make_shared<CoordinateLogDeepQMCBridge>();
-  DeepQMCWaveFunctionComponent comp0("deep", ions, bridge, 7);
-  DeepQMCWaveFunctionComponent comp1("deep", ions, bridge, 7);
+  DeepQMCWF comp0("deep", ions, bridge, 7);
+  DeepQMCWF comp1("deep", ions, bridge, 7);
 
   ParticleSet::ParticleGradient G0(elec0.getTotalNum()), G1(elec1.getTotalNum());
   ParticleSet::ParticleLaplacian L0(elec0.getTotalNum()), L1(elec1.getTotalNum());
@@ -268,9 +268,9 @@ TEST_CASE("TrialWaveFunction dispatches DeepQMC batched PbyP methods", "[wavefun
 
   auto bridge = std::make_shared<CoordinateLogDeepQMCBridge>();
   TrialWaveFunction twf0(runtime_options, "deepqmc0");
-  twf0.addComponent(std::make_unique<DeepQMCWaveFunctionComponent>("DNN", ions, bridge, 7));
+  twf0.addComponent(std::make_unique<DeepQMCWF>("DNN", ions, bridge, 7));
   TrialWaveFunction twf1(runtime_options, "deepqmc1");
-  twf1.addComponent(std::make_unique<DeepQMCWaveFunctionComponent>("DNN", ions, bridge, 7));
+  twf1.addComponent(std::make_unique<DeepQMCWF>("DNN", ions, bridge, 7));
 
   RefVectorWithLeader<TrialWaveFunction> wf_list(twf0);
   wf_list.push_back(twf0);
@@ -309,7 +309,7 @@ TEST_CASE("TrialWaveFunction dispatches DeepQMC batched PbyP methods", "[wavefun
   CHECK(twf1.getLogPsi() == Approx(old_log1));
 }
 
-TEST_CASE("DeepQMCWaveFunctionComponent batched evaluateGL delegates to one batch", "[wavefunction][deepqmc]")
+TEST_CASE("DeepQMCWF batched evaluateGL delegates to one batch", "[wavefunction][deepqmc]")
 {
   const SimulationCell simulation_cell;
   ParticleSet ions  = makeIons(simulation_cell);
@@ -317,8 +317,8 @@ TEST_CASE("DeepQMCWaveFunctionComponent batched evaluateGL delegates to one batc
   ParticleSet elec1 = makeElectrons(simulation_cell, {{2.0, 2.1, 2.2}, {3.0, 3.1, 3.2}});
 
   auto bridge = std::make_shared<RecordingDeepQMCBridge>();
-  DeepQMCWaveFunctionComponent comp0("deep", ions, bridge, 7);
-  DeepQMCWaveFunctionComponent comp1("deep", ions, bridge, 7);
+  DeepQMCWF comp0("deep", ions, bridge, 7);
+  DeepQMCWF comp1("deep", ions, bridge, 7);
 
   ParticleSet::ParticleGradient G0(elec0.getTotalNum()), G1(elec1.getTotalNum());
   ParticleSet::ParticleLaplacian L0(elec0.getTotalNum()), L1(elec1.getTotalNum());
@@ -490,14 +490,14 @@ TEST_CASE("PythonDeepQMCBridge can load a real DeepQMC He checkpoint", "[wavefun
     CHECK(std::abs(value) < 1.0e100);
 }
 
-TEST_CASE("DeepQMCWaveFunctionComponent single walker delegates to batched evaluateLog", "[wavefunction][deepqmc]")
+TEST_CASE("DeepQMCWF single walker delegates to batched evaluateLog", "[wavefunction][deepqmc]")
 {
   const SimulationCell simulation_cell;
   ParticleSet ions = makeIons(simulation_cell);
   ParticleSet elec = makeElectrons(simulation_cell, {{0.0, 0.1, 0.2}, {1.0, 1.1, 1.2}});
 
   auto bridge = std::make_shared<RecordingDeepQMCBridge>();
-  DeepQMCWaveFunctionComponent comp("deep", ions, bridge, 3);
+  DeepQMCWF comp("deep", ions, bridge, 3);
 
   ParticleSet::ParticleGradient G;
   ParticleSet::ParticleLaplacian L;

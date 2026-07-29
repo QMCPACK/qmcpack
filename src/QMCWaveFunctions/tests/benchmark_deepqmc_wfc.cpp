@@ -20,7 +20,7 @@
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/DeepQMC/DeepQMCBridge.h"
-#include "QMCWaveFunctions/DeepQMC/DeepQMCWaveFunctionComponent.h"
+#include "QMCWaveFunctions/DeepQMC/DeepQMCWF.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Utilities/RuntimeOptions.h"
 
@@ -65,7 +65,7 @@ std::unique_ptr<TrialWaveFunction> makeDeepQMCTrialWaveFunction(const RuntimeOpt
                                                                 std::shared_ptr<const DeepQMCBridge> bridge)
 {
   auto twf = std::make_unique<TrialWaveFunction>(runtime_options, "deepqmc_benchmark");
-  twf->addComponent(std::make_unique<DeepQMCWaveFunctionComponent>("DNN", ions, std::move(bridge), 0));
+  twf->addComponent(std::make_unique<DeepQMCWF>("DNN", ions, std::move(bridge), 0));
   return twf;
 }
 
