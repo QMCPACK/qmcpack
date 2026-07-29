@@ -9,6 +9,9 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
+/** @file
+ * @brief Declaration of a wavefunction component backed by DeepQMC neural-network inference.
+ */
 #ifndef QMCPLUSPLUS_DEEPQMCWF_H
 #define QMCPLUSPLUS_DEEPQMCWF_H
 
@@ -22,12 +25,37 @@
 namespace qmcplusplus
 {
 
+/** Wavefunction component that evaluates a DeepQMC neural-network ansatz.
+ *
+ * DeepQMCWF delegates log-value, gradient, and laplacian evaluation to a
+ * DeepQMCBridge implementation.  The component stores a reference to the ion
+ * ParticleSet, gathers electron coordinates from each target ParticleSet, and
+ * batches multi-walker calls through the shared bridge object.
+ *
+ * Particle-by-particle ratio and gradient methods evaluate the proposed
+ * electron position through the bridge and cache the proposed log value until
+ * acceptMove() or restore() completes the move.
+ */
 class DeepQMCWF : public WaveFunctionComponent
 {
 public:
+  /** Constructor transferring ownership of the DeepQMC bridge.
+   * @param name component name from the input wavefunction node
+   * @param ions source ion ParticleSet used to provide nuclear coordinates
+   * @param bridge bridge object used for DeepQMC inference
+   * @param mol_idx molecule index passed through to the DeepQMC model
+   */
   DeepQMCWF(std::string name, const ParticleSet& ions, std::unique_ptr<const DeepQMCBridge> bridge, int mol_idx);
+
+  /** Constructor sharing an existing DeepQMC bridge.
+   * @param name component name from the input wavefunction node
+   * @param ions source ion ParticleSet used to provide nuclear coordinates
+   * @param bridge shared bridge object used for DeepQMC inference
+   * @param mol_idx molecule index passed through to the DeepQMC model
+   */
   DeepQMCWF(std::string name, const ParticleSet& ions, std::shared_ptr<const DeepQMCBridge> bridge, int mol_idx);
 
+  /// Return the concrete wavefunction component class name.
   std::string getClassName() const override { return "DeepQMCWF"; }
 
   LogValue evaluateLog(const ParticleSet& P,
@@ -84,25 +112,37 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tpq) const override;
 
+  /// Return the ion ParticleSet supplying nuclear coordinates.
   const ParticleSet& getIons() const { return ions_; }
+  /// Return the bridge used for DeepQMC inference.
   const DeepQMCBridge& getBridge() const { return *bridge_; }
+  /// Return the molecule index passed to DeepQMC.
   int getMolIdx() const { return mol_idx_; }
 
 private:
+  /// Flatten ion coordinates into the contiguous layout expected by DeepQMCBridge.
   static std::vector<RealType> flattenIonCoords(const ParticleSet& ions);
+  /// Append electron coordinates, substituting activeR(active_iat) for proposed moves.
   static void appendElectronCoords(const ParticleSet& electrons,
                                    std::vector<RealType>& electron_coords,
                                    int active_iat = -1);
 
+  /// Evaluate one DeepQMC batch for all walkers in wfc_list and p_list.
   static DeepQMCBridge::BatchResult evaluateBatch(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                                   const RefVectorWithLeader<ParticleSet>& p_list,
                                                   int active_iat = -1);
+  /// Evaluate a single walker by forwarding through the batched path.
   DeepQMCBridge::BatchResult evaluateOne(const ParticleSet& electrons, int active_iat = -1) const;
 
+  /// Ion ParticleSet used to provide nuclear coordinates.
   const ParticleSet& ions_;
+  /// Shared inference bridge so clones can reuse the same Python/JAX model instance.
   std::shared_ptr<const DeepQMCBridge> bridge_;
+  /// Molecule index passed through to the DeepQMC model.
   int mol_idx_;
+  /// True when ratio() or ratioGrad() has cached a proposed log value.
   bool has_proposed_log_value_ = false;
+  /// Cached proposed log value for a particle-by-particle move.
   LogValue proposed_log_value_ = LogValue(0);
 };
 
