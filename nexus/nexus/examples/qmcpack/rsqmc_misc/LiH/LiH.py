@@ -179,7 +179,7 @@ qmc = generate_qmcpack(
             blocks               = 1,
             timestep             = 1.0,
             usedrift             = False,
-           ),
+            ),
         dmc(
             minimumtargetwalkers = 128,
             reconfiguration      = 'no',
@@ -188,7 +188,7 @@ qmc = generate_qmcpack(
             steps                = 10,
             blocks               = 200,
             nonlocalmoves        = True,
-           )
+            )
         ],
     dependencies   = [(p2q,'orbitals'),(opt,'jastrow')],
     )

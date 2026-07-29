@@ -3362,7 +3362,7 @@ linear.defaults.update(
 #    nstabilizers      = 10,
 #    stabilizerscale   = .5,
 #    usebuffer         = True,
-    )
+     )
 cslinear.defaults.update(
     method='cslinear', move='pbyp', checkpoint=-1,
     #estimators = classcollection(localenergy)
@@ -6163,7 +6163,7 @@ def generate_determinantset(up             = 'u',
                     sposet = spo_u,
                     size   = nup
                     )
-            )
+                )
         #end if
         if ndn > 0:
             determinants_list.append(
@@ -6173,7 +6173,7 @@ def generate_determinantset(up             = 'u',
                     sposet = spo_d,
                     size   = ndn
                     )
-            )
+                )
         #end if
     else:
         if nup+ndn > 0:
@@ -6184,7 +6184,7 @@ def generate_determinantset(up             = 'u',
                     sposet = spo_u,
                     size   = nup+ndn,
                     )
-            )
+                )
         #end if
     #end if
     dset = determinantset(
@@ -6339,7 +6339,7 @@ def generate_determinantset_old(type           = 'bspline',
                     size = nup,
                     occupation=section(mode='ground',spindataset=0)
                     ),
-            )
+                )
         #end if
         if ndn > 0:
             determinants_list.append(
@@ -6348,7 +6348,7 @@ def generate_determinantset_old(type           = 'bspline',
                     size = ndn,
                     occupation=section(mode='ground',spindataset=down_spin)
                     )
-            )
+                )
         #end if
     else:
         if nup+ndn > 0:
@@ -6358,7 +6358,7 @@ def generate_determinantset_old(type           = 'bspline',
                     size = nup+ndn,
                     occupation=section(mode='ground',spindataset=0)
                     ),
-            )
+                )
         #end if
     #end if
     dset = determinantset(
@@ -6423,14 +6423,14 @@ def generate_determinantset_old(type           = 'bspline',
                                       occupation      = section(mode='ground'),
                                       coefficient     = section(size=90,spindataset=0),
                                       spos            = ''
-                                     ),
+                                      ),
                                sposet(name            = 'spo_d',
                                       spindataset     = 1,
                                       size            = system.n_up+1,
                                       occupation      = section(mode='ground'),
                                       coefficient     = section(spindataset=1),
                                       spos            = ''
-                                     )]
+                                      )]
             else:
                 sposet_list = [sposet(name            = 'spo_ud',
                                       spindataset     = 0,
@@ -6438,7 +6438,7 @@ def generate_determinantset_old(type           = 'bspline',
                                       occupation      = section(mode='ground'),
                                       coefficient     = section(spindataset=0),
                                       spos            = ''
-                                     )]
+                                      )]
             #end if
 
             dset = determinantset(
@@ -7658,7 +7658,7 @@ def generate_energydensity(
     scale     = None,
     ion_grids = None,
     system    = None,
-):
+    ):
     if dynamic is None:
         dynamic = 'e'
     #end if
@@ -9670,7 +9670,7 @@ if __name__=='__main__':
             net_charge = 1,
             net_spin   = 1,
             Ge = 4
-        )
+            )
 
         gi = generate_qmcpack_input('basic',system=system)
         
@@ -9690,7 +9690,7 @@ if __name__=='__main__':
             net_charge = 1,
             net_spin   = 1,
             Ge = 4
-        )
+            )
 
         gi = generate_qmcpack_input('basic',system=system)
         
@@ -10059,7 +10059,7 @@ if __name__=='__main__':
                                     )
                                 ]
                             )
-                        ),
+                         ),
                     qmc(
                         method = 'vmc',
                         multiple = 'no',
@@ -10251,7 +10251,7 @@ if __name__=='__main__':
                             reweightedvariance   = 0.,
                             estimator = localenergy(hdf5='no')
                             )
-                        ),
+                         ),
                     vmc(multiple='no',warp='no',move='pbyp',
                         walkers  =  1,
                         blocks   =  2,

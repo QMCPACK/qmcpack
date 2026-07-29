@@ -45,7 +45,7 @@ from .qmcpack_quantity_analyzers import (
     SpinDensityAnalyzer,
     StructureFactorAnalyzer,
     DensityAnalyzer,
-)
+    )
 from .qmcpack_method_analyzers import OptAnalyzer, VmcAnalyzer, DmcAnalyzer
 from .qmcpack_result_analyzers import OptimizationAnalyzer, TimestepStudyAnalyzer
 from .simulation import SimulationAnalyzer,Simulation
