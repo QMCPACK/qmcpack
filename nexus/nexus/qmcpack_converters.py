@@ -44,6 +44,7 @@
 
 
 import os
+from types import MappingProxyType
 import numpy as np
 from .developer import obj, error
 from .nexus_base import nexus_core
@@ -111,7 +112,7 @@ class Pw2qmcpackInput(SimulationInput):
     strs   = ('outdir','prefix')
     bools  = ('write_psir',)
 
-    var_types = dict()
+    var_types = dict()  # noqa: RUF012
     for v in ints:
         var_types[v]=int
     #end for
@@ -124,7 +125,7 @@ class Pw2qmcpackInput(SimulationInput):
     for v in bools:
         var_types[v]=bool
     #end for
-
+    var_types: MappingProxyType[str, type] = MappingProxyType(var_types)
     allowed = frozenset(ints+floats+strs+bools)
 
     def read_text(self,contents,filepath=None):

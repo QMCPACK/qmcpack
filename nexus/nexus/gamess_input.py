@@ -32,6 +32,7 @@
 
 
 from copy import deepcopy
+from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
 from .developer import DevBase, obj, error, warn
@@ -90,8 +91,10 @@ class KeywordGroup(Group):
     lineindent = '         '
 
 
-    booldict = {'.true.':True,'.TRUE.':True,'.t.':True,'.T.':True,
-                '.false.':False,'.FALSE.':False,'.f.':False,'.F.':False}
+    booldict = MappingProxyType({
+        '.true.' :True, '.TRUE.' :True, '.t.':True, '.T.':True,
+        '.false.':False,'.FALSE.':False,'.f.':False,'.F.':False
+        })
 
     def readval(self,val):
         fail = False

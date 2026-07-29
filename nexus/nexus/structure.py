@@ -119,6 +119,7 @@ Module contents
 from __future__ import annotations
 import os
 from pathlib import Path
+from types import MappingProxyType
 from typing import TypeAlias
 import numpy as np
 from copy import deepcopy
@@ -7131,7 +7132,7 @@ class Crystal(Structure):
     #  springermaterials.com
 
 
-    known_crystals = {
+    known_crystals = {  # noqa: RUF012
         ('diamond','fcc'):obj(
             lattice   = 'cubic',
             cell      = 'primitive',
@@ -7409,7 +7410,7 @@ class Crystal(Structure):
             #end if
         #end if
     #end if
-
+    known_crystals = MappingProxyType(known_crystals)
 
     def __init__(self,
                  lattice        = None,

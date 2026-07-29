@@ -48,6 +48,7 @@ import os
 import sys
 import inspect
 from copy import deepcopy
+from types import MappingProxyType
 import numpy as np
 from numpy import pi
 from numpy.linalg import inv
@@ -254,9 +255,16 @@ class PwscfInputBase(DevBase):
 
     all_variables = ints | floats | strs | bools
 
-    section_aliases = dict(celldm1='celldm(1)',celldm2='celldm(2)',celldm3='celldm(3)',celldm4='celldm(4)',celldm5='celldm(5)',celldm6='celldm(6)')
+    section_aliases = MappingProxyType(dict(
+        celldm1='celldm(1)',
+        celldm2='celldm(2)',
+        celldm3='celldm(3)',
+        celldm4='celldm(4)',
+        celldm5='celldm(5)',
+        celldm6='celldm(6)'
+        ))
 
-    var_types = dict()
+    var_types = dict()  # noqa: RUF012
     for v in ints:
         var_types[v]=int
     #end for
@@ -269,6 +277,7 @@ class PwscfInputBase(DevBase):
     for v in bools:
         var_types[v]=bool
     #end for
+    var_types: MappingProxyType[str, type] = MappingProxyType(var_types)
 #end class PwscfInputBase
 
 

@@ -45,6 +45,8 @@
 
 import os
 from pathlib import Path
+from types import MappingProxyType
+from typing import ClassVar
 from copy import deepcopy
 import platform
 from socket import gethostname
@@ -750,7 +752,7 @@ class Job(NexusCore):
 
 class Machine(NexusCore):
 
-    machines = dict()
+    machines: ClassVar[dict] = dict()
 
     modes = obj(
         none        = 0,
@@ -3447,7 +3449,7 @@ class Baseline(Supercomputer):
     name = 'baseline'
     requires_account = True
     batch_capable    = True
-    queue_configs={
+    queue_configs=MappingProxyType({
         'default': 'batch_cnms',
         'batch': {
             'max_nodes': 138,
@@ -3473,7 +3475,7 @@ class Baseline(Supercomputer):
             'max_nodes': 1,
             'max_walltime': '24:00:00',
         }
-    }
+    })
     def write_job_header(self,job):
         self.validate_queue_config(job)
 
@@ -3502,7 +3504,7 @@ class Frontier(Supercomputer):
     requires_account = True
     batch_capable    = True
 
-    queue_configs = {
+    queue_configs = MappingProxyType({
         'default': 'batch',
         'batch': {
             'max_nodes': 9664,
@@ -3516,7 +3518,7 @@ class Frontier(Supercomputer):
             'max_nodes': 1,
             'max_walltime': '01:00:00',
         }
-    }
+    })
 
     def pre_process_job(self,job):
         # Set default queue and node type
@@ -3589,7 +3591,7 @@ class Besms(Supercomputer):
     requires_account = True
     batch_capable    = True
     # Using sinfo to get the queue configs
-    queue_configs={
+    queue_configs=MappingProxyType({
         'default': 't92',
         't92': {
             'max_nodes': 10,
@@ -3603,7 +3605,7 @@ class Besms(Supercomputer):
             'max_nodes': 166,
             'max_walltime': '48:00:00',
         },
-    }
+    })
     def write_job_header(self,job):
         self.validate_queue_config(job)
 
@@ -3815,7 +3817,7 @@ class Leonardo(Supercomputer):
     # https://docs.hpc.cineca.it/hpc/leonardo.html#file-systems-and-data-managment
     # parallel partition: boost_usr_prod 
     # GPUs: up to 4 gpus per node
-    booster_qos = {
+    booster_qos = MappingProxyType({
         'normal': {
             'max_nodes' : 64,
             'min_nodes' : 1,
@@ -3836,7 +3838,7 @@ class Leonardo(Supercomputer):
             'max_nodes' : 8,
             'max_hours' : 96.0,  # 4 giorni
         },
-    }
+    })
     # serial partition: lrd_all_serial
     # No GPUs, Hyperthreading x 2, Budget Free, 30800 MB RAM
     serial_partition  = 'lrd_all_serial'

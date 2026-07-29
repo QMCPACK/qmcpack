@@ -22,7 +22,7 @@
 import os
 import sys
 import traceback
-from typing import TextIO
+from typing import TextIO, ClassVar
 from copy import deepcopy
 import pickle
 from pickle import UnpicklingError
@@ -1449,7 +1449,7 @@ class DevBaseDeprecated(obj_deprecated):
 
 
 class Void(object):
-    void_items = dict()
+    void_items: ClassVar[dict] = dict()
 
     @classmethod
     def _unavailable(cls,self):

@@ -38,6 +38,7 @@
 
 import os
 from os import PathLike
+from types import MappingProxyType
 from pathlib import Path
 import re
 import numpy as np
@@ -2820,7 +2821,7 @@ class CasinoPP(SemilocalPP):
     numeric         = True
     interpolatable  = False
 
-    unitmap = dict(rydberg='Ry',hartree='Ha',ev='eV')
+    unitmap = MappingProxyType(dict(rydberg='Ry',hartree='Ha',ev='eV'))
 
     def read(self,filepath,format=None):
         filepath = path_string(filepath)

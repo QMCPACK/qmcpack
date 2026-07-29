@@ -39,6 +39,7 @@
 
 import os
 from copy import deepcopy
+from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
 from .nexus_base import nexus_noncore
@@ -967,7 +968,7 @@ class Penaltypot(VFormattedFile):  # metadynamics -> 6.62.4 (2nd one)
 
 class Poscar(VFormattedFile):
 
-    bool_map = {True:'T',False:'F'}
+    bool_map = MappingProxyType({True:'T',False:'F'})
 
     def __init__(self,filepath=None):
         self.description = None

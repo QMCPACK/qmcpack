@@ -73,6 +73,7 @@ from pathlib import Path
 from string import Template
 from subprocess import Popen
 import tempfile
+from typing import ClassVar
 from .developer import DevBase, obj, error, unavailable
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
@@ -275,8 +276,8 @@ class Simulation(NexusCore):
     sim_count = 0
     creating_fake_sims = False
 
-    sim_directories = dict()
-    all_sims = []
+    sim_directories: ClassVar[dict] = dict()
+    all_sims: ClassVar[list] = []
 
     @classmethod
     def clear_all_sims(cls):
