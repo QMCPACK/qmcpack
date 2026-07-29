@@ -157,8 +157,6 @@ class ScalarsDatAnalyzer(DatAnalyzer):
         filepath = self.info.filepath
         quantities = QAanalyzer.request.quantities
 
-        print()
-        print(filepath)
         lt = np.loadtxt(filepath)
         if len(lt.shape)==1:
             npe.reshape_inplace(lt, (1, len(lt)))
