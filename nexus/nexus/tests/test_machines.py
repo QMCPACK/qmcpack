@@ -6,6 +6,8 @@ from ..generic import generic_settings
 generic_settings.raise_error = True
 
 import os
+from random import randint
+from copy import deepcopy
 from . import isolate_nexus_core
 from .. import testing
 from ..testing import object_eq,object_diff,failed,FailedTest
@@ -21,9 +23,9 @@ def get_machine_data():
     if len(machines_data)==0:
         workstations   = obj()
         supercomputers = obj()
-        for machine in Machine.machines:
+        for machine in Machine.machines.values():
             if isinstance(machine,Workstation):
-                workstations.append(machine)
+                workstations[len(workstations)] = machine
             elif isinstance(machine,Supercomputer):
                 supercomputers[machine.name] = machine
             else:
@@ -42,7 +44,7 @@ def get_machine_data():
 def get_all_machines():
     from ..machines import Machine
     if len(all_machines)==0:
-        for m in Machine.machines:
+        for m in Machine.machines.values():
             all_machines.append(m)
         #end for
     #end if
@@ -67,7 +69,7 @@ def test_get_cpu_cores():
 
 
 def test_options():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..machines import Options
 
     # empty init
@@ -81,7 +83,7 @@ def test_options():
         exe = '--exe',
         )
     oi = Options(**inputs)
-    assert(oi.to_dict()==inputs)
+    assert(dict(**oi)==inputs)
 
     # add
     oa = Options()
@@ -94,18 +96,19 @@ def test_options():
     ref['0'] = opts
     o = Options()
     o.read(opts)
-    assert(object_eq(o.to_obj(),ref))
+    assert(object_eq(to_obj(o),ref))
 
     # write
     opts_write = o.write()
     o2 = Options()
     o2.read(opts_write.strip())
-    assert(object_eq(o2.to_obj(),ref))
+    assert(object_eq(to_obj(o2),ref))
 #end def test_options
 
 
 
 def test_job_init():
+    from ..developer import obj
     from ..machines import Job,job
     from ..machines import job_defaults
     from ..machines import job_defaults_assign,job_defaults_nonassign
@@ -136,7 +139,10 @@ def test_job_init():
     assert(len(jda-set(j.keys()))==0)
     assert(len(j.app_props)==0)
     j.app_props = None # set back to default
-    assert(object_eq(j.obj(*jda),job_defaults_assign))
+    jo = obj()
+    for k in jda:
+        jo[k] = j[k]
+    assert(object_eq(jo,job_defaults_assign))
 #end def test_job_init
 
 
@@ -230,6 +236,8 @@ def test_job_get_machine():
 #end def test_job_get_machine
 
 
+def first(d):
+    return d[min(d.keys())]
 
 def test_job_set_environment():
     from ..machines import job
@@ -237,8 +245,8 @@ def test_job_set_environment():
     workstations,supercomputers = get_machine_data()
 
     machines = []
-    machines.append(workstations.first())
-    machines.append(supercomputers.first())
+    machines.append(first(workstations))
+    machines.append(first(supercomputers))
 
     for m in machines:
         j = job(machine=m.name,skip_machine=True)
@@ -277,8 +285,9 @@ def test_job_serial_clone():
     assert(j2.cores==1)
     assert(id(j2)!=id(j1))
     keys = 'serial cores init_info'.split()
-    j1.delete(keys)
-    j2.delete(keys)
+    for k in keys:
+        del j1[k]
+        del j2[k]
     assert(object_eq(j2,j1))
 #end def test_job_serial_clone
 
@@ -344,7 +353,7 @@ def test_machine_list():
     from ..machines import Machine
 
     assert(len(Machine.machines)>0)
-    for m in Machine.machines:
+    for m in Machine.machines.values():
         assert(isinstance(m,Machine))
         exists = m.name in Machine.machines
         assert(exists)
@@ -355,10 +364,9 @@ def test_machine_list():
 #end def test_machine_list
 
 
-
 def test_machine_add():
     from ..machines import Machine
-    mtest = Machine.machines.first()
+    mtest = first(Machine.machines)
     assert(isinstance(mtest,Machine))
     try:
         Machine.add(mtest)
@@ -382,7 +390,7 @@ def test_machine_add():
 
 def test_machine_get():
     from ..machines import Machine
-    mtest = Machine.machines.first()
+    mtest = first(Machine.machines)
     assert(isinstance(mtest,Machine))
 
     m = Machine.get(mtest.name)
@@ -454,7 +462,7 @@ def test_machine_instantiation():
 
 
 def test_workstation_init():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..machines import Workstation
 
     ws = Workstation('wsi',16,'mpirun')
@@ -477,7 +485,7 @@ def test_workstation_init():
         processes       = obj(),
         )
 
-    assert(object_eq(ws.to_obj(),refws))
+    assert(object_eq(to_obj(ws),refws))
 
 #end def test_workstation_init
 
@@ -590,7 +598,7 @@ def test_workstation_scheduling(tmp_path):
 
 
 def test_supercomputer_init():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..machines import Theta
 
     class ThetaInit(Theta):
@@ -627,7 +635,7 @@ def test_supercomputer_init():
         system_queue    = obj(),
         )
 
-    assert(object_eq(sc.to_obj(),refsc))
+    assert(object_eq(to_obj(sc),refsc))
 
 #end def test_supercomputer_init
 
@@ -636,7 +644,7 @@ def test_supercomputer_init():
 def test_supercomputer_scheduling(tmp_path):
     import os
     import time
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..machines import Theta
     from ..machines import job,Job
 
@@ -667,7 +675,7 @@ def test_supercomputer_scheduling(tmp_path):
         j               = '-j 1',
         n               = '-n 16',
         )
-    assert(object_eq(j.run_options.to_obj(),refro))
+    assert(object_eq(to_obj(j.run_options),refro))
     assert(j.batch_mode==True)
 
 
@@ -684,7 +692,7 @@ def test_supercomputer_scheduling(tmp_path):
 export OMP_NUM_THREADS=8
 aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     wj = sc.write_job(j)
-    for flag in refro:
+    for flag in refro.values():
         assert(flag in wj)
     #end for
     assert('aprun ' in wj)
@@ -759,9 +767,10 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 #end def test_supercomputer_scheduling
 
 
+def select_random(d): 
+    return d[randint(0,len(d)-1)]
 
 def test_process_job():
-    from random import randint
     from ..developer import obj
     from ..machines import Machine,Job
 
@@ -786,7 +795,7 @@ def test_process_job():
     njobs = nwj
     for nm in range(nworkstations):
         if nworkstations<len(workstations):
-            machine = workstations.select_random() # select machine at random
+            machine = select_random(workstations) # select machine at random
         else:
             machine = workstations[nm]
         #end if
@@ -810,7 +819,7 @@ def test_process_job():
         #end for
         job_inputs.extend(job_inputs_base)
         for job_input in job_inputs_base: # run in serial
-            ji = job_input.copy()
+            ji = deepcopy(job_input)
             ji.serial = True
             job_inputs.append(ji)
         #end for
@@ -818,9 +827,10 @@ def test_process_job():
         machine_idempotent = True
         for job_input in job_inputs:
             job = Job(machine=machine.name,**job_input)
-            job2 = obj.copy(job)
+            job2 = deepcopy(job)
             machine.process_job(job2)
-            machine_idempotent &= job==job2
+            job_eq = object_eq(job,job2)
+            machine_idempotent &= job_eq
         #end for
         if not machine_idempotent:
             not_idempotent[machine.name] = machine
@@ -834,7 +844,7 @@ def test_process_job():
     cores_min   = 1
     threads_min = 1
     shared_job_inputs = obj(name='some_job',account='some_account')
-    for machine in supercomputers:
+    for machine in supercomputers.values():
         job_inputs = []
         job_inputs_base = []
         threads_max = 2*machine.cores_per_node
@@ -885,13 +895,13 @@ def test_process_job():
         job_inputs.extend(job_inputs_base)
         # now add serial jobs
         for job_input in job_inputs_base:
-            ji = job_input.copy()
+            ji = deepcopy(job_input)
             ji.serial = True
             job_inputs.append(ji)
         #end for
         # now add local, serial jobs
         for job_input in job_inputs_base:
-            ji = job_input.copy()
+            ji = deepcopy(job_input)
             ji.serial = True
             ji.local  = True
             job_inputs.append(ji)
@@ -924,7 +934,7 @@ def test_process_job():
                     assert(job.cores==job_input.cores)
                 #end if
             #end if
-            job2 = obj.copy(job)
+            job2 = deepcopy(job)
             machine.process_job(job2)
             job_idempotent = object_eq(job,job2)
             if not job_idempotent:
@@ -1323,7 +1333,7 @@ def test_job_run_command():
         #end if
         job_inputs = job_inputs_orig
         if name=='summit': # exceptional treatment for summit nodes
-            job_inputs = job_inputs_orig.copy()
+            job_inputs = deepcopy(job_inputs_orig)
             jtypes = list(job_inputs.keys())
             for jtype in jtypes:
                 if 'p' in jtype:
@@ -1331,7 +1341,7 @@ def test_job_run_command():
                 else:
                     jcpu = job_inputs[jtype]
                     jcpu.gpus = 0
-                    jgpu = jcpu.copy()
+                    jgpu = deepcopy(jcpu)
                     jgpu.gpus = 6
                     job_inputs[jtype+'_g6'] = jgpu
                 #end if
@@ -2252,7 +2262,7 @@ srun -N 2 -n 64 test.x
         else:
             acc = None
         #end if
-        ji = job_inputs.copy()
+        ji = deepcopy(job_inputs)
         if name=='summit': # exceptional treatment for summit nodes
             ji.gpus = 6
         if name=='flight':

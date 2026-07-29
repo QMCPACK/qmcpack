@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOPOTENTIAL)
 
@@ -145,7 +146,7 @@ h 1 1.00
 
 
 def test_ppset():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..pseudopotential import ppset
 
     ppset_ref = obj(
@@ -165,7 +166,7 @@ def test_ppset():
         qmcpack = ['C.BFD.xml'],
         )
 
-    o = ppset.to_obj()
+    o = to_obj(ppset)
     assert(object_eq(o,ppset_ref))
 
     assert(ppset.supports_code('pwscf'))
@@ -184,6 +185,7 @@ def test_ppset():
 
 def test_pseudopotential_classes(tmp_path):
     import numpy as np
+    from ..developer import to_obj
     from ..pseudopotential import SemilocalPP
     from ..pseudopotential import GaussianPP
     from ..pseudopotential import QmcpackPP
@@ -255,7 +257,7 @@ def test_pseudopotential_classes(tmp_path):
     assert(value_eq(qpp.v_at_zero('s'),22.551641791033372))
     assert(value_eq(qpp.v_at_zero('p'),-19.175372435022126))
 
-    qpp_fake = qpp.copy()
+    qpp_fake = deepcopy(qpp)
     r = np.linspace(0,10,6)
     vloc = 0*r + qpp.Zval
     vnl  = 0*r
@@ -386,8 +388,8 @@ r*potential (L=1) in Ha
     # tests for CasinoPP
     cpp = CasinoPP(casino_file)
 
-    qo = qpp.to_obj()
-    co = cpp.to_obj()
+    qo = to_obj(qpp)
+    co = to_obj(cpp)
     del qo.rmin
     del qo.rmax
     assert(object_eq(co,qo,atol=1e-12))

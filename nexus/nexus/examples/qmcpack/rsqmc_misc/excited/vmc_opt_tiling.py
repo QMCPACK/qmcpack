@@ -85,7 +85,7 @@ nscf = generate_pwscf(
     verbosity    = 'high', #verbosity must be set to high
     pseudos      = ['C.BFD.upf'], 
     dependencies = (scf, 'charge_density'),
-)
+    )
 
 conv = generate_pw2qmcpack(
     identifier   = 'conv',
