@@ -22,7 +22,7 @@ except:
 #end try
 
 try:
-    from scipy.optimize import fmin
+    from scipy.optimize import fmin  # noqa: F401
 except ImportError:
     print('qmc-fit error: scipy is not present on your machine.\n  Please install scipy and retry.')
 #end try

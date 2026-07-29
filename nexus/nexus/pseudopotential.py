@@ -36,6 +36,7 @@
 #                                                                    #
 #====================================================================#
 
+from copy import deepcopy
 import os
 from os import PathLike
 from pathlib import Path

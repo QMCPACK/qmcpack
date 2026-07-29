@@ -19,18 +19,15 @@
 #====================================================================#
 
 
-from .developer_tools import save,load,_pp_repr,_pp_str,dotdict,obj,DevBase
-from .debug import ci, interact
+from .developer_tools import save,load,_pp_repr,_pp_str,dotdict,obj,DevBase  # noqa: F401
+from .debug import ci, interact  # noqa: F401
 
 
-from .generic import NexusError, log, error, warn, message 
-from .generic import unavailable, available, Void
-from .generic import obj_deprecated, DevBaseDeprecated
+from .generic import NexusError, log, error, warn, message  # noqa: F401
+from .generic import unavailable, available, Void  # noqa: F401
+from .generic import obj_deprecated, DevBaseDeprecated  # noqa: F401
 
 
-import sys
-import copy
-import pickle
 import traceback
 from .generic import generic_settings
 
