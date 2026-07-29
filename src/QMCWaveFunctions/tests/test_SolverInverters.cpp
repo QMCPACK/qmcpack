@@ -8,9 +8,7 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_template_test_macros.hpp>
 
 #include "Configuration.h"
 #include "Common/Queue.hpp"
