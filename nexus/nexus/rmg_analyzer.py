@@ -4,8 +4,10 @@
 
 
 import os
+from copy import deepcopy
 import numpy as np
-from .developer import obj, to_str
+from .developer import obj
+from .utilities import to_str
 from .fileio import TextFile
 from .unit_converter import convert
 from .simulation import SimulationAnalyzer, Simulation
@@ -258,7 +260,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                             grid_pe = np.array(grid_pe,dtype=int)
                             spacing = np.array(spacing,dtype=float)
                             ecut,ecut_charge,ecut_units = b.equivalent_energy_cutoffs.split()
-                            b.set(
+                            b.update(
                                 grid         = grid,
                                 grid_pe      = grid_pe,
                                 grid_spacing = spacing,
@@ -420,7 +422,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     def return_initial_structure(self):
         s = None
         if 'setup_info' in self and 'structure' in self.setup_info:
-            s = self.setup_info.structure.copy()
+            s = deepcopy(self.setup_info.structure)
         #end if
         return s
     #end def return_initial_structure

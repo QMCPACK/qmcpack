@@ -16,6 +16,8 @@ case "$1" in
       # e.g. ctest
       echo "PATH=$PATH" >> $GITHUB_ENV
     fi
+
+    cmake --version
     
     if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
     then
@@ -282,15 +284,7 @@ case "$1" in
   test)
     
     # Run only deterministic tests (reasonable for CI) by default
-    case "${GH_JOBNAME}" in
-      *"macOS-GCC16"*"-Real"*)
-        TEST_LABEL="-L deterministic -E deterministic-unit_test_estimators"
-        # estimator test bus error on mac only
-      ;;
-      *)  
-        TEST_LABEL="-L deterministic"
-      ;;  
-    esac  
+    TEST_LABEL="-L deterministic"  
 
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     

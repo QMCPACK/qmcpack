@@ -51,7 +51,7 @@ from .qmcpack_input import (
     generate_opt,
     generate_opts,
     check_excitation_type,
-)
+    )
 from .qmcpack_analyzer import QmcpackAnalyzer
 from .qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToAfqmc
 from .pyscf_sim import Pyscf
@@ -68,6 +68,16 @@ try:
 except:
     h5py = unavailable('h5py')
 #end try
+
+
+def get_path(o, path, value=None):
+    """Retrieve a value from a nested dict-like object by slash-delimited path."""
+    for key in path.split('/'):
+        if key not in o:
+            return value
+        o = o[key]
+    return o
+
 
 
 class GCTA(DevBase):
@@ -158,7 +168,7 @@ class GCTA(DevBase):
             kweights.append(kw)
             for ispin in range(nspins):
                 path = 'electrons/kpoint_{0}/spin_{1}'.format(ikpoint,ispin)
-                spin = h.get_path(path)
+                spin = get_path(h,path)
                 eigs = convert(np.array(spin.eigenvalues),'Ha','eV')
                 nstates = h5_scalar(spin.number_of_states)
                 data[ikpoint,ispin] = obj(
@@ -188,11 +198,11 @@ class GCTA(DevBase):
         Returns the number of electrons in the primitive cell
         '''
         if self.system.folded_system is None:
-            n_up = self.system.particles.up_electron.count
-            n_dn = self.system.particles.down_electron.count
+            n_up = self.system.n_up
+            n_dn = self.system.n_down
         else:
-            n_up = self.system.folded_system.particles.up_electron.count
-            n_dn = self.system.folded_system.particles.down_electron.count
+            n_up = self.system.folded_system.n_up
+            n_dn = self.system.folded_system.n_down
         #end if
         nelecs = n_up + n_dn
         return nelecs
@@ -463,8 +473,8 @@ class GCTA(DevBase):
         '''
         Returns the net charge of a system with multiple twists (not averaged)
         '''
-        n_up = self.system.particles.up_electron.count
-        n_dn = self.system.particles.down_electron.count
+        n_up = self.system.n_up
+        n_dn = self.system.n_down
         n_total = n_up + n_dn
         nelecs_at_twist = self.nelecs_at_twist
         kweights = np.array(self.system.structure.kweights)
@@ -536,8 +546,8 @@ class GCTA(DevBase):
             spin_sum_twists = self.sum_spin_twists()
             qmc_magnet = spin_sum_twists / nosym_kpoints
         #end if
-        n_up = self.system.particles.up_electron.count
-        n_dn = self.system.particles.down_electron.count
+        n_up = self.system.n_up
+        n_dn = self.system.n_down
         n_total = n_up + n_dn
         nelecs_at_twist = self.nelecs_at_twist
         fermi_level = np.array(fermi_level)
@@ -852,7 +862,9 @@ class Qmcpack(Simulation):
             #end if
 
             # Activate GCTA occupations if gcta is specified by the user
-            gcta_flavor = self.get_optional('gcta', None)
+            gcta_flavor = None
+            if 'gcta' in self:
+                gcta_flavor = self.gcta
 
             if (gcta_flavor is not None) and (self.sent_files is not True):
                 # Create a GCTA object with deepcopied arguments to avoid interference with Qmcpack instance
@@ -991,7 +1003,7 @@ class Qmcpack(Simulation):
                 #end def process_jastrow
                 if wavefunction is None:
                     qs = input.get('qmcsystem')
-                    qs.wavefunction = optwf.copy()
+                    qs.wavefunction = deepcopy(optwf)
                 else:
                     jold = process_jastrow(wavefunction)
                     jopt = process_jastrow(optwf)
@@ -1002,7 +1014,7 @@ class Qmcpack(Simulation):
                         #end if
                     #end for
                     if len(jnew)==1:
-                        wavefunction.jastrow = jnew[0].copy()
+                        wavefunction.jastrow = deepcopy(jnew[0])
                     else:
                         wavefunction.jastrows = collection(jnew)
                     #end if
@@ -1017,7 +1029,7 @@ class Qmcpack(Simulation):
                 self.error('incorporating particles from '+sim.__class__.__name__+' has not been implemented')
             # end if
         elif result_name=='structure':
-            relstruct = result.structure.copy()
+            relstruct = deepcopy(result.structure)
             relstruct.change_units('B')
             self.system.structure = relstruct
             self.system.remove_folded()
@@ -1040,7 +1052,7 @@ class Qmcpack(Simulation):
             if isinstance(sim,Qmcpack):
                 opt = QmcpackInput(result.opt_file)
                 qs = input.get('qmcsystem')
-                wfn = opt.qmcsystem.wavefunction.copy()
+                wfn = deepcopy(opt.qmcsystem.wavefunction)
                 ovp = 'override_variational_parameters' # name is too long
                 if ovp in wfn:
                     href = os.path.join(sim.locdir,wfn[ovp].href)
@@ -1062,9 +1074,11 @@ class Qmcpack(Simulation):
                 #end if
                 if 'xml' in result:
                     xml = QmcpackInput(result.xml)
-                    info_new = xml.simulation.afqmcinfo.copy()
+                    info_new = deepcopy(xml.simulation.afqmcinfo)
                     info = self.input.simulation.afqmcinfo
-                    info.set_optional(**info_new)
+                    for k,v in info_new.items():
+                        if k not in info:
+                            info[k] = v
                     # override particular inputs set by default
                     if 'generation_info' in input._metadata:
                         g = input._metadata.generation_info
@@ -1380,13 +1394,13 @@ class Qmcpack(Simulation):
                                     bands[bnum] = vb
                                 #end if
                             else:
-                                QmcpackInput.class_error('{0} in excitation has the wrong formatting'.format(b))
+                                error('{0} in excitation has the wrong formatting'.format(b))
                             #end if
                         #end for
                         band_1, band_2 = bands
                         
                         # Convert k_1 k_2 to wavevector indexes
-                        structure = self.system.structure.get_smallest().copy()
+                        structure = deepcopy(self.system.structure.get_smallest())
                         structure.change_units('A')
 
                         from .structure import get_kpath
@@ -1414,10 +1428,10 @@ class Qmcpack(Simulation):
                                 #end if
                             #end for
                             if not found_k1 or not found_k2:
-                                QmcpackInput.class_error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
+                                error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
                             #end if
                         else:
-                            QmcpackInput.class_error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
+                            error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
                         #end if
 
                         tw1,bnd1 = (k_1,band_1)
@@ -1515,10 +1529,10 @@ class Qmcpack(Simulation):
                         elecs = self.nelecs_at_twist[itwist]
                         # step 1: resize particlesets
                         nup = elecs[0]
-                        qi.get('u').set(size=nup)
+                        qi.get('u').update(size=nup)
                         if len(elecs) == 2:
                             ndn = elecs[1]
-                            qi.get('d').set(size=ndn)
+                            qi.get('d').update(size=ndn)
                         #end if
                         # step 2: resize determinants
                         dset = qi.get('determinantset')
@@ -1537,7 +1551,7 @@ class Qmcpack(Simulation):
                             #end if
                             spo_name = det.get('sposet')
                             spo_size_map[spo_name] = nelec
-                            det.set(size=nelec)
+                            det.update(size=nelec)
                         #end for
                         # step 3: resize orbital sets
                         sb = qi.get('sposet_builder')
@@ -1546,7 +1560,7 @@ class Qmcpack(Simulation):
                         sposets = bb.sposets
                         for spo in sposets:
                             if spo.name in spo_size_map:
-                                spo.set(size=spo_size_map[spo.name])
+                                spo.update(size=spo_size_map[spo.name])
                             #end if
                         #end for
                     #end for
@@ -1727,7 +1741,7 @@ class Qmcpack(Simulation):
         #end def process_jastrow
         if wavefunction is None:
             qs = input.get('qmcsystem')
-            qs.wavefunction = optwf.copy()
+            qs.wavefunction = deepcopy(optwf)
         else:
             jold = process_jastrow(wavefunction)
             jopt = process_jastrow(optwf)
@@ -1736,7 +1750,7 @@ class Qmcpack(Simulation):
                 if jtype not in jopt:
                     jnew.append(jold[jtype])
             if len(jnew)==1:
-                wavefunction.jastrow = jnew[0].copy()
+                wavefunction.jastrow = deepcopy(jnew[0])
             else:
                 wavefunction.jastrows = collection(jnew)
     #end def receive_jastrow
@@ -1745,7 +1759,7 @@ class Qmcpack(Simulation):
     def receive_wavefunction(self,wf_file):
         opt = QmcpackInput(wf_file)
         qs  = input.get('qmcsystem')
-        wfn = opt.qmcsystem.wavefunction.copy()
+        wfn = deepcopy(opt.qmcsystem.wavefunction)
         ovp = 'override_variational_parameters' # name is too long
         if ovp in wfn:
             wfn[ovp].href = os.path.relpath(wfn[ovp].href,self.locdir)
@@ -1813,7 +1827,7 @@ def generate_cusp_correction(**kwargs):
 
     wf = input.get('wavefunction')
     if 'determinantset' not in wf:
-        Qmcpack.class_error('wavefunction does not have determinantset, cannot create cusp correction','generate_cusp_correction')
+        error('wavefunction does not have determinantset, cannot create cusp correction','generate_cusp_correction')
     #end if
     wf.determinantset.cuspcorrection = True
 

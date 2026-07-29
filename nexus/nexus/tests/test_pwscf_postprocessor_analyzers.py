@@ -36,7 +36,7 @@ def test_empty_init():
 
 
 def test_projwfc_analyzer(tmp_path):
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..pwscf_postprocessors import ProjwfcAnalyzer
 
     projwfc_in = TEST_FILES["pwf.in"]
@@ -62,8 +62,7 @@ def test_projwfc_analyzer(tmp_path):
             ),
         )
 
-    assert(object_eq(pa.to_obj(),pa_ref))
-
+    assert(object_eq(to_obj(pa),pa_ref))
 
     pa = ProjwfcAnalyzer(projwfc_in,analyze=True)
 
@@ -150,7 +149,7 @@ def test_projwfc_analyzer(tmp_path):
             ),
         )
 
-    assert(object_eq(pa.to_obj(),pa_ref))
+    assert(object_eq(to_obj(pa),pa_ref))
 
 
     lowdin_file = tmp_path / 'pwf.lowdin'

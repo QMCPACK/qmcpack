@@ -37,14 +37,16 @@
 #====================================================================#
 
 import os
+from os import PathLike
 from pathlib import Path
+import re
 import numpy as np
 from .execute import execute
 from .fileio import TextFile
 from .xmlreader import readxml
 from .periodic_table import Elements
 from .unit_converter import convert
-from .developer import DevBase, obj, unavailable, error
+from .developer import DevBase, obj, unavailable, log, error
 from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
@@ -76,7 +78,7 @@ def pp_elem_label(filename,guard=False):
                 'cannot determine element for pseudopotential file: {0}\n'
                 'pseudopotential file names must be prefixed by an atomic symbol or label\n'
                 '(e.g. Si, Si1, etc)'.format(filename)
-            )
+                )
         #end if
         return elem_label, element.symbol
     else:
@@ -86,6 +88,187 @@ def pp_elem_label(filename,guard=False):
             return elem_label, element, is_elem
     #end if
 #end def pp_elem_label
+
+
+def read_upf_z_valence(file: PathLike) -> int | float:
+    """Read Z-valence from a UPF-compliant pseudopotential file."""
+    # Bind these to the function so we only compile them once.
+    if not (
+        hasattr(read_upf_z_valence, "zval_xml_like_pattern")
+        and hasattr(read_upf_z_valence, "zval_old_pattern")
+        ):
+        # Regex:
+        # `z[_ ]?valence` -> "z_valence" or "z valence"
+        # ` *=? *`        -> "=" or " =" or " = " or " " (whitespace optional)
+        # `([\d\.eEdD]+)` -> Capturing group gets any numbers in scientific notation.
+        # `\"? *() *\"?`  -> Anything between quotes or not, with optional whitespace around it too.
+        # Note: Both of these are similar, but the first is key then value and the second is value then key.
+        zval_xml_like_pattern = re.compile(
+            pattern = r'z[_ ]?valence *=? *\"? *([\d\.eEdD]+) *\"?',
+            flags   = re.IGNORECASE,
+            )
+        zval_old_pattern = re.compile(
+            pattern = r'\"? *([ \d\.eEdD]+) *\"? *=? *z[_ ]?valence',
+            flags   = re.IGNORECASE,
+            )
+        read_upf_z_valence.zval_xml_like_pattern = zval_xml_like_pattern
+        read_upf_z_valence.zval_old_pattern = zval_old_pattern
+    #end if
+
+    zval = None
+    with open(file, "r") as pseudo:
+        found_header_start = False
+        while not found_header_start:
+            line = pseudo.readline()
+            if "<PP_HEADER" in line:
+                found_header_start = True
+
+        if "/>" in line or "</PP_HEADER>" in line: # One-line header
+            zval = re.search(
+                pattern = read_upf_z_valence.zval_xml_like_pattern,
+                string  = line,
+                )
+        else:
+            # We're at the header, but we don't know where the Z-valence is.
+            # Search until we hit a line with a proper end token, or until we hit 200 lines.
+            i = 0
+            while i < 200:
+                i += 1
+                line = pseudo.readline().lower()
+                if "valence" in line:
+                    zval = re.search(
+                        pattern = read_upf_z_valence.zval_xml_like_pattern,
+                        string  = line,
+                        )
+                    if zval is None:
+                        zval = re.search(
+                            pattern = read_upf_z_valence.zval_old_pattern,
+                            string  = line,
+                            )
+                    break
+                elif "/>" in line or "</PP_HEADER>" in line:
+                    break
+                #end if
+            #end while
+        #end if
+
+    if zval is None:
+        error(
+           f"Could not find Z valence in file: {file!s}\n"
+            "You may need to provide the Z valence manually!"
+           )
+    else:
+        zval = float(zval.group(1).lower().replace("d", "e"))
+
+    if zval <= 0 or zval > 118:
+        error(
+            f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
+            )
+    # Round to 8 digits
+    if round(zval, 8).is_integer():
+        return int(zval)
+    else:
+        return zval
+#end def read_upf_z_valence
+
+
+def read_xml_z_valence(file: PathLike) -> int | float:
+    """Read the Z-valence from a QMCPACK-compatible XML pseudopotential file."""
+        # Bind these to the function so we only compile them once.
+    if not hasattr(read_xml_z_valence, "zval_pattern"):
+        # Regex:
+        # `zval  *= *`    -> "zval=" or "zval = " or "zval =" or "zval= "
+        # `([\d\.eEdD]+)` -> Capturing group gets any numbers in scientific notation.
+        # `\"? *() *\"?`  -> Anything between quotes or not, with optional whitespace around it too.
+        read_xml_z_valence.zval_pattern = re.compile(r'zval *= *\" *([\d\.eEdD]+) *\"')
+
+    header_lines = []
+    with open(file, "r") as xml:
+        header_started = False
+        for line in xml:
+            if "<header" in line:
+                header_started = True
+
+            if header_started:
+                header_lines.append(line)
+
+            if "/>" in line or "</header>" in line:
+                if line not in header_lines:
+                    header_lines.append(line)
+                break
+
+    header = " ".join(header_lines)
+    zval = re.search(read_xml_z_valence.zval_pattern, header)
+
+    if zval is None:
+        error(
+           f"Could not find Z valence in file: {file!s}\n"
+            "You may need to provide the Z valence manually!"
+           )
+    else:
+        zval = float(zval.group(1).lower().replace("d", "e"))
+
+    if zval <= 0 or zval > 118:
+        error(
+            f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
+            )
+    # Round to 8 digits
+    if round(zval, 8).is_integer():
+        return int(zval)
+    else:
+        return zval
+#end def read_xml_z_valence
+
+
+def read_potcar_z_valence(file: PathLike) -> int | float:
+    """Read the Z-valence from a POTCAR file.
+
+    This function uses the format specifications from the VASP wiki, and
+    assumes that the file is a valid POTCAR, so the second line should
+    be the Z-valence [1]_.
+
+    References
+    ----------
+    .. [1] https://vasp.at/wiki/POTCAR#File_format
+    """
+    if not hasattr(read_potcar_z_valence, "zval_pattern"):
+        # Regex:
+        # `ZVAL ?= ?`     -> "ZVAL=" or "ZVAL = " or "ZVAL =" or "ZVAL= "
+        # `([\d\.eEdD]+)` -> Capturing group gets any numbers in scientific notation.
+        read_potcar_z_valence.zval_pattern = re.compile(r"ZVAL ?= ?([\d\.eEdD]+)")
+    file = Path(file).resolve()
+    with open(file, "r") as potcar:
+        potcar.readline() # Skip first line
+        z_valence = potcar.readline().strip()
+        try:
+            zval = float(z_valence)
+        except ValueError: # Improperly formatted POTCAR, but try alternative location
+            for line in potcar:
+                if "ZVAL" in line:
+                    zval = re.search(
+                        pattern = read_potcar_z_valence.zval_pattern,
+                        string  = line
+                        )
+                    break
+
+            if zval is None:
+                error(
+                   f"Could not find Z valence in file: {file!s}\n"
+                    "You may need to provide the Z valence manually!"
+                   )
+            else:
+                zval = float(zval.group(1).lower().replace("d", "e"))
+
+    if zval <= 0 or zval > 118:
+        error(
+            f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
+            )
+    # Round to 8 digits
+    if round(zval, 8).is_integer():
+        return int(zval)
+    else:
+        return zval
+#end def read_potcar_z_valence
 
 
 # basic interface for nexus, only gamess really needs this for now
@@ -215,13 +398,13 @@ class Pseudopotentials(DevBase):
             ppfiles = ppfiles[0]
         #end if
         pps = []
-        self.log('\n  Pseudopotentials')
+        log('\n  Pseudopotentials')
         for filepath in ppfiles:
             filename = os.path.basename(filepath)
             elem_label,symbol,is_elem = pp_elem_label(filename)
             is_file = os.path.isfile(filepath)
             if is_elem and is_file:
-                self.log('    reading pp: ',filepath)
+                log('    reading pp: ',filepath)
                 ext = filepath.split('.')[-1].lower()
                 if ext=='gms':
                     pp = gamessPPFile(filepath)
@@ -230,12 +413,12 @@ class Pseudopotentials(DevBase):
                 #end if
                 pps.append(pp)
             elif not is_file:
-                self.log('    ignoring directory: ',filepath)
+                log('    ignoring directory: ',filepath)
             elif not is_elem:
-                self.log('    ignoring file w/o atomic symbol: ',filepath)
+                log('    ignoring file w/o atomic symbol: ',filepath)
             #end if
         #end for
-        self.log(' ')
+        log(' ')
         self.addpp(pps)
     #end def readpp
 
@@ -423,19 +606,19 @@ class Pseudopotential(DevBase):
 
 
     def read_text(self,text,format=None,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
     def write_text(self,format=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
     def convert(self,format):
-        self.not_implemented()
+        raise NotImplementedError
     #end def convert
 
     def plot(self,r=None,show=True):
-        self.not_implemented()
+        raise NotImplementedError
     #end def plot
 #end class Pseudopotential
 
@@ -753,7 +936,7 @@ class SemilocalPP(Pseudopotential):
     # evaluate r*potential based on a potential component object
     #  component representation is specific to each derived class
     def evaluate_comp_rV(self,r,l,vcomp):
-        self.not_implemented()
+        raise NotImplementedError
     #end def evaluate_comp_rV
 
 
@@ -1736,7 +1919,7 @@ class GaussianPP(SemilocalPP):
         else:
             core = Elements(Zcore).symbol
         #end if
-        self.set(
+        self.update(
             core    = core,
             Zval    = Zval,
             Zcore   = Zcore,
@@ -1908,7 +2091,7 @@ class GaussianPP(SemilocalPP):
         bs = None
         if self.basis is not None:
             bs = GaussianBasisSet()
-            bs.basis = self.basis.copy()
+            bs.basis = deepcopy(self.basis)
         #end if
         return bs
     #end def get_basis
@@ -1923,7 +2106,7 @@ class GaussianPP(SemilocalPP):
     def uncontract(self):
         if self.basis is not None:
             bs = GaussianBasisSet()
-            bs.basis = self.basis.copy()
+            bs.basis = deepcopy(self.basis)
             bs.uncontract()
             self.basis = bs.basis
         #end if
@@ -1962,7 +2145,7 @@ class GaussianPP(SemilocalPP):
         if l==self.local or l is None:
             v += -self.Zval
         #end if
-        for g in vcomp:
+        for g in vcomp.values():
             if g.rpow==1:
                 v += g.coeff * np.exp(-g.expon*r**2)
             else:
@@ -2005,7 +2188,8 @@ class GaussianPP(SemilocalPP):
             self.error('component {} not present in PP.'.format(l))
         #end if
         chan_labels = ['s','p','d','f','g','h','i','j']
-        self.components[chan_labels[l]].append(obj(coeff=coeff,expon=expon,rpow=rpow))
+        comp = self.components[chan_labels[l]]
+        comp[len(comp)] = obj(coeff=coeff,expon=expon,rpow=rpow)
     #end def append_to_component
 
 
@@ -2020,7 +2204,7 @@ class GaussianPP(SemilocalPP):
             self.error('component {} not present in PP.'.format(l))
         #end if
         chan_labels = ['s','p','d','f','g','h','i','j']
-        for term in self.components[chan_labels[l]]:
+        for term in self.components[chan_labels[l]].values():
             term.coeff*=scale
         #end for
     #end def scale_component
@@ -2043,29 +2227,35 @@ class GaussianPP(SemilocalPP):
         chan_labels = list(self.l_channels)
         remove = []
         for l in np.arange(self.lmax+1):
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                if abs(term.coeff)<1e-12 and len(self.components[chan_labels[l]])>1:
+            comp_l = self.components[chan_labels[l]]
+            for term_idx,k in enumerate(comp_l.keys()):
+                term = comp_l[term_idx]
+                if abs(term.coeff)<1e-12 and len(comp_l)>1:
                     remove.append((chan_labels[l],term_idx))
                 #end if
             #end for
         #end for
         for r in remove:
-            self.components[r[0]].delete(r[1])
+            self.components[r[0]].pop(r[1])
         #end for
-        comps = self.components.copy()
+        comps = deepcopy(self.components)
         for l in np.arange(self.lmax+1):
             comps[chan_labels[l]] = obj()
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                comps[chan_labels[l]].append(term)
+            cl = self.components[chan_labels[l]]
+            for k in cl.keys():
+                comp_l = comps[chan_labels[l]]
+                comp_l[len(comp_l)] = cl[k]
             #end for
         #end for
-        self.components = comps.copy()
-        comps = self.components.copy()
+        self.components = deepcopy(comps)
+        comps = deepcopy(self.components)
         for l in np.arange(self.lmax+1):
             terms = []
             comps[chan_labels[l]] = obj()
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                terms.append(term.list())
+            cl = self.components[chan_labels[l]]
+            for k in cl.keys():
+                term = cl[k]
+                terms.append([term[k] for k in sorted(term.keys())])
             #end for
             terms = np.array(terms)
             like_terms = []
@@ -2102,7 +2292,9 @@ class GaussianPP(SemilocalPP):
             # update comps
             comps[chan_labels[l]] = obj()
             added = []
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+            comp_l = self.components[chan_labels[l]]
+            for term_idx,k in enumerate(comp_l.keys()):
+                term = comp_l[k]
                 if any(term_idx in subl for subl in like_terms):
                     if term_idx in added:
                         continue
@@ -2110,32 +2302,35 @@ class GaussianPP(SemilocalPP):
                         for mlist in like_terms:
                             if term_idx in mlist and term_idx not in added:
                                 coeff = 0.0
-                                mod_term = term.copy()
+                                mod_term = deepcopy(term)
                                 for ti in mlist: 
                                     coeff += self.components[chan_labels[l]][ti].coeff
                                 #end for
                                 if abs(coeff)>1e-12:
                                     mod_term.coeff = coeff
-                                    comps[chan_labels[l]].append(mod_term)
+                                    cl = comps[chan_labels[l]]
+                                    cl[len(cl)] = mod_term
                                 #end if
                                 added.extend(mlist)
                             #end if
                         #end for
                     #end if
                 else:
-                    comps[chan_labels[l]].append(term)
+                    cl = comps[chan_labels[l]]
+                    cl[len(cl)] = term
                     added.append(term_idx)
                 #end if
             #end for
             if len(comps[chan_labels[l]])==0:
                 # All terms cancelled. Add placeholder
-                plcehldr = self.components['s'][0].copy()
+                plcehldr = deepcopy(self.components['s'][0])
                 plcehldr.coeff = 0.0
                 plcehldr.rpow = 2
                 plcehldr.expon = 1.0
-                comps[chan_labels[l]].append(plcehldr)
+                cl = comps[chan_labels[l]]
+                cl[len(cl)] = plcehldr
         #end for
-        self.components = comps.copy()
+        self.components = deepcopy(comps)
     #end def simplify
 
 
@@ -2146,9 +2341,9 @@ class GaussianPP(SemilocalPP):
         '''
         # CHECK IF THIS WORKS FOR lmax=1 !!!!!!
         # Only checked for lmax=2 and higher
-        p1 = self.copy()
+        p1 = deepcopy(self)
         p1.simplify()
-        p2 = self.copy()
+        p2 = deepcopy(self)
         p2.transform_to_truncated_L2(keep='s p',lmax=p2.lmax)
         p2.simplify()
         return object_eq(p2,p1)
@@ -2410,7 +2605,8 @@ class GaussianPP(SemilocalPP):
             plt.show()
         #end if
         for expon_idx,expon in enumerate(exps0):
-            self.components['s'].append(obj(coeff=1.0*popt[expon_idx],expon=expon,rpow=2))
+            cs = self.components.s
+            cs[len(cs)] = obj(coeff=1.0*popt[expon_idx],expon=expon,rpow=2)
         #end if
         self.transform_to_truncated_L2(keep='s p',lmax=self.lmax)
         self.simplify()
@@ -2479,8 +2675,8 @@ class GaussianPP(SemilocalPP):
                 self.append_to_component(lmax,fctr*term.coeff,term.expon,term.rpow)
             #end for
 
-            vm_comp = self.components[chan_labels[lm]].copy()
-            vn_comp = self.components[chan_labels[ln]].copy()
+            vm_comp = deepcopy(self.components[chan_labels[lm]])
+            vn_comp = deepcopy(self.components[chan_labels[ln]])
             for l in np.arange(lmax):
                 fctr = l*(l+1)-lmax*(lmax+1)
                 fctr = float(fctr)/(lm*(lm+1)-ln*(ln+1))
@@ -2505,12 +2701,13 @@ class GaussianPP(SemilocalPP):
                 self.append_to_component(lmax,fctr*term.coeff,term.expon,term.rpow)
             #end for
 
-            vm_comp = self.components[chan_labels[lm]].copy()
+            vm_comp = deepcopy(self.components[chan_labels[lm]])
             for l in np.arange(lmax):
                 fctr = l*(l+1)-lmax*(lmax+1)
                 fctr = float(fctr)/(lm*(lm+1)-lloc*(lloc+1))
                 self.components[chan_labels[l]] = obj()
-                for term_idx,term in enumerate(vm_comp):
+                for k in vm_comp.keys():
+                    term = vm_comp[k]
                     self.append_to_component(l,coeff=fctr*term.coeff,expon=term.expon,rpow=term.rpow)
                 #end for
             #end for
@@ -2710,4 +2907,3 @@ class CasinoPP(SemilocalPP):
     #end def evaluate_comp_rV
 
 #end class CasinoPP
-

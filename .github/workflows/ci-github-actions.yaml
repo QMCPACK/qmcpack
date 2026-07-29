@@ -212,19 +212,19 @@ jobs:
         include:
           - jobname: GCC14-NoMPI-Debug-Real
             container:
-              image: ghcr.io/qmcpack/centos10:latest
+              image: ghcr.io/qmcpack/centos10-openmpi:latest
               options: -u 1001
           - jobname: GCC14-NoMPI-NoOMP-Real
             container:
-              image: ghcr.io/qmcpack/centos10:latest
+              image: ghcr.io/qmcpack/centos10-openmpi:latest
               options: -u 1001
           - jobname: GCC14-NoMPI-NoOMP-Complex
             container:
-              image: ghcr.io/qmcpack/centos10:latest
+              image: ghcr.io/qmcpack/centos10-openmpi:latest
               options: -u 1001
           - jobname: GCC14-NoMPI-Sandbox-Real
             container:
-              image: ghcr.io/qmcpack/centos10:latest
+              image: ghcr.io/qmcpack/centos10-openmpi:latest
               options: -u 1001
 
     steps:

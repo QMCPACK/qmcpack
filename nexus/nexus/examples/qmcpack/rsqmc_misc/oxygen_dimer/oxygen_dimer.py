@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 
+from copy import deepcopy
+
 # import nexus functions
 from nexus import settings,job,run_project
 from nexus import generate_physical_system
@@ -46,10 +48,10 @@ linopt1 = linear(
     nstabilizers         = 3,
     )
 
-linopt2 = linopt1.copy()  
+linopt2 = deepcopy(linopt1)
 linopt2.samples = 20480 # opt w/ 20000 samples
 
-linopt3 = linopt1.copy()
+linopt3 = deepcopy(linopt1)
 linopt3.samples = 40960 # opt w/ 40000 samples
 
 opt_calcs = [loop(max=8,qmc=linopt1), # loops over opt's

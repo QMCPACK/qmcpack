@@ -68,11 +68,12 @@
 import os
 import sys
 import shutil
+from copy import deepcopy
 from pathlib import Path
 from string import Template
 from subprocess import Popen
 import tempfile
-from .developer import obj, unavailable, DevBase
+from .developer import DevBase, obj, error, unavailable
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
@@ -83,7 +84,7 @@ from .utilities import path_string
  
 class SimulationInput(NexusCore):
     def is_valid(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def is_valid
 
     def read_file_text(self,filepath):
@@ -129,21 +130,21 @@ class SimulationInput(NexusCore):
     #end def return_structure
 
     def read_text(self,text,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
     def write_text(self,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
     def incorporate_system(self,system):
         #take information from a physical system object and fill in input file
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_system
 
     def return_system(self,structure_only=False):
         #create a physical system object from input file information
-        self.not_implemented()
+        raise NotImplementedError
     #end def return_system
 #end class SimulationInput
 
@@ -152,11 +153,11 @@ class SimulationInput(NexusCore):
 
 class SimulationAnalyzer(NexusCore):
     def __init__(self,sim):
-        self.not_implemented()
+        raise NotImplementedError
     #end def __init__
 
     def analyze(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def analyze
 #end class SimulationAnalyzer
 
@@ -165,7 +166,7 @@ class SimulationAnalyzer(NexusCore):
 
 class SimulationEmulator(NexusCore):
     def run(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def run
 #end class SimulationEmulator
 
@@ -226,7 +227,8 @@ class SimulationImage(NexusCore):
 
     def save_image(self,sim,imagefile):
         self.clear()
-        self.transfer_from(sim,SimulationImage.save_fields)
+        for k in SimulationImage.save_fields:
+            self[k] = sim[k]
         self.save(imagefile)
         self.clear()
     #end def save_image
@@ -234,7 +236,8 @@ class SimulationImage(NexusCore):
     def load_image(self,sim,imagefile):
         self.clear()
         self.load(imagefile)
-        self.transfer_to(sim,SimulationImage.load_fields)
+        for k in SimulationImage.save_fields:
+            sim[k] = self[k]
         self.clear()
     #end def load_image
 
@@ -303,8 +306,10 @@ class Simulation(NexusCore):
         inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)    
         sim_args = obj()
         inp_args = obj()
-        sim_args.transfer_from(kwargs,sim_kw)
-        inp_args.transfer_from(kwargs,inp_kw)
+        for k in sim_kw:
+            sim_args[k] = kwargs[k]
+        for k in inp_kw:
+            inp_args[k] = kwargs[k]
         if 'system' in inp_args:
             system = inp_args.system
             if not isinstance(system,PhysicalSystem):
@@ -312,7 +317,7 @@ class Simulation(NexusCore):
                 if not isinstance(extra,obj):
                     extra = '\nwith value: {0}'.format(system)
                 #end if
-                cls.class_error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
+                error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
             #end if
         #end if
         if 'pseudos' in inp_args and inp_args.pseudos is not None:
@@ -321,10 +326,10 @@ class Simulation(NexusCore):
             if isinstance(pseudos,str):
                 code = cls.code_name()
                 if not ppset.supports_code(code):
-                    cls.class_error('ppset labeled pseudopotential groups are not supported for code "{0}"'.format(code))
+                    error('ppset labeled pseudopotential groups are not supported for code "{0}"'.format(code))
                 #end if
                 if 'system' not in inp_args:
-                    cls.class_error('system must be provided when using a ppset label')
+                    error('system must be provided when using a ppset label')
                 #end if
                 system = inp_args.system
                 pseudos = ppset.get(pseudos,code,system)
@@ -347,11 +352,11 @@ class Simulation(NexusCore):
                 pseudopotentials = nexus_core.pseudopotentials
                 for ppfile in pseudos:
                     if ppfile not in pseudopotentials:
-                        cls.class_error('pseudopotential file {0} cannot be found'.format(ppfile))
+                        error('pseudopotential file {0} cannot be found'.format(ppfile))
                     #end if
                     pp = pseudopotentials[ppfile]
                     if pp.element_label not in species_labels and pp.element not in species:
-                        cls.class_error('the element {0} for pseudopotential file {1} is not in the physical system provided'.format(pp.element,ppfile))
+                        error('the element {0} for pseudopotential file {1} is not in the physical system provided'.format(pp.element,ppfile))
                     #end if
                 #end for
             #end if
@@ -459,7 +464,7 @@ class Simulation(NexusCore):
         elif not isinstance(self.job,Job):
             self.error('Input field job must be set to a Job object\nyou provided an object of type: {0}\nwith value: {1}'.format(self.job.__class__.__name__,self.job))
         #end if
-        self.job = self.job.copy()
+        self.job = deepcopy(self.job)
         self.init_job_extra()
         self.job.initialize(self)
     #end def init_job
@@ -515,7 +520,7 @@ class Simulation(NexusCore):
             self.error('input must be of type {0}\nreceived {1}\nplease provide input appropriate to {2}'.format(self.input_type.__name__,self.input.__class__.__name__,self.__class__.__name__))
         #end if
         if isinstance(self.system,PhysicalSystem):
-            self.system = self.system.copy()
+            self.system = deepcopy(self.system)
             consistent,msg = self.system.check_consistent(exit=False,message=True)
             if not consistent:
                 locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
@@ -599,7 +604,7 @@ class Simulation(NexusCore):
 
     def active(self):
         deps_completed = True
-        for dep in self.dependencies:
+        for dep in self.dependencies.values():
             deps_completed &= dep.sim.completed()
         #end for
         active = deps_completed and not self.completed()
@@ -619,27 +624,27 @@ class Simulation(NexusCore):
 
 
     def check_result(self,result_name,sim):
-        self.not_implemented()
+        raise NotImplementedError
     #end def check_result
 
     def get_result(self,result_name,sim):
-        self.not_implemented()
+        raise NotImplementedError
     #end def get_result
 
     def incorporate_result(self,result_name,result,sim):
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_result
 
     def app_command(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def app_command
 
     def check_sim_status(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def check_sim_status
 
     def get_output_files(self): # returns list of output files to save
-        self.not_implemented()
+        raise NotImplementedError
     #end def get_output_files
 
 
@@ -794,7 +799,7 @@ class Simulation(NexusCore):
     def acquire_dependents(self,sim):
         # acquire the dependents from the other simulation
         dsims = obj(sim.dependents)
-        for dsim in dsims:
+        for dsim in dsims.values():
             dep = dsim.dependencies[sim.simid]
             dsim.depends(self,*dep.result_names)
         #end for
@@ -808,12 +813,12 @@ class Simulation(NexusCore):
     def eliminate(self):
         # reverse relationship of dependents (downstream)
         dsims = obj(self.dependents)
-        for dsim in dsims:
+        for dsim in dsims.values():
             dsim.undo_depends(self)
         #end for
         # reverse relationship of dependencies (upstream)
         deps = obj(self.dependencies)
-        for dep in deps:
+        for dep in deps.values():
             self.undo_depends(dep.sim)
         #end for
         # mark sim to be ignored in all future interactions
@@ -823,7 +828,7 @@ class Simulation(NexusCore):
 
     def check_dependencies(self,result):
         dep_satisfied = result.dependencies_satisfied
-        for dep in self.dependencies:
+        for dep in self.dependencies.values():
             sim = dep.sim
             for result_name in dep.result_names:
                 if result_name!='other':
@@ -849,13 +854,13 @@ class Simulation(NexusCore):
 
     def get_dependencies(self):
         if nexus_core.generate_only or self.finished:
-            for dep in self.dependencies:
+            for dep in self.dependencies.values():
                 for result_name in dep.result_names:
                     dep.results[result_name] = result_name
                 #end for
             #end for
         else:
-            for dep in self.dependencies:
+            for dep in self.dependencies.values():
                 sim = dep.sim
                 for result_name in dep.result_names:
                     if result_name!='other':
@@ -893,7 +898,7 @@ class Simulation(NexusCore):
         if simids is None:
             simids = set()
         #end if
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             simids.add(sim.simid)
             sim.downstream_simids(simids)
         #end for
@@ -1214,7 +1219,7 @@ class Simulation(NexusCore):
 
     def reset_wait_ids(self):
         self.wait_ids = set(self.dependency_ids)
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             sim.reset_wait_ids()
         #end for
     #end def reset_wait_ids
@@ -1223,7 +1228,7 @@ class Simulation(NexusCore):
     def check_subcascade(self):
         finished = self.finished or self.block
         if not self.block and not self.block_subcascade and not self.failed:
-            for sim in self.dependents:
+            for sim in self.dependents.values():
                 finished &= sim.check_subcascade()
             #end for
         #end if
@@ -1237,7 +1242,7 @@ class Simulation(NexusCore):
             self.block = True
         #end if
         self.block_subcascade = True
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             sim.block_dependents()
         #end for
     #end def block_dependents
@@ -1315,7 +1320,7 @@ class Simulation(NexusCore):
                 progress = self.finished
             #end if
             if progress and not self.block_subcascade and not self.failed:
-                for sim in self.dependents:
+                for sim in self.dependents.values():
                     if not sim.bundled:
                         sim.progress(self.simid)
                     #end if
@@ -1357,7 +1362,7 @@ class Simulation(NexusCore):
             #end if
             self.loaded = True
         #end if
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             sim.reconstruct_cascade()
         #end for
         return self
@@ -1371,7 +1376,7 @@ class Simulation(NexusCore):
         #end if
         if len(self.wait_ids)==0:
             operation(self,*args,**kwargs)
-            for sim in self.dependents:
+            for sim in self.dependents.values():
                 kwargs['dependency_id'] = self.simid
                 sim.traverse_cascade(operation,*args,**kwargs)
             #end for
@@ -1382,7 +1387,7 @@ class Simulation(NexusCore):
     # used only in tests
     def traverse_full_cascade(self,operation,*args,**kwargs):
         operation(self,*args,**kwargs)
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             sim.traverse_full_cascade(operation,*args,**kwargs)
         #end for
     #end def traverse_full_cascade
@@ -1403,7 +1408,7 @@ class Simulation(NexusCore):
         outs.append(list(self.dependency_ids))
         self.log(*outs,n=n)
         n+=1
-        for sim in self.dependents:
+        for sim in self.dependents.values():
             sim.write_dependents(n=n,location=location,block_status=block_status)
         #end for
     #end def write_dependents
@@ -1463,11 +1468,11 @@ class Simulation(NexusCore):
     # dynamic workflow support
     
     def fill_produces(self):
-        self.not_implemented('fill_produces')
+        raise NotImplementedError('fill_produces')
     #end def fill_produces
 
     def fill_products(self):
-        self.not_implemented('fill_products')
+        raise NotImplementedError('fill_products')
     #end def fill_products
 #end class Simulation
 
@@ -1507,7 +1512,7 @@ class NullSimulationInput(SimulationInput):
     #end def incorporate_system
 
     def return_system(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def return_system
 #end class NullSimulationInput
 
@@ -1628,7 +1633,7 @@ class SimulationInputTemplateDev(SimulationInput):
         if len(invalid)>0:
             self.error('attempted to assign invalid keywords\ninvalid keywords: {0}\nvalid options are: {1}'.format(sorted(invalid),sorted(self.keywords)))
         #end if
-        self.values.set(**values)
+        self.values.update(**values)
     #end def assign
 
     def read_text(self,text,filepath=None):
@@ -1789,7 +1794,7 @@ def generate_simulation(**kwargs):
     if sim_type=='generic':
         return GenericSimulation(**kwargs)
     else:
-        Simulation.class_error('sim_type {0} is unrecognized'.format(sim_type),'generate_simulation')
+        error('sim_type {0} is unrecognized'.format(sim_type),'generate_simulation')
     #end if
 #end def generate_simulation
 
@@ -1841,7 +1846,7 @@ def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True,display
         nodes[node.id] = node
         graph.add_node(node.node)
     #end for
-    for node in nodes:
+    for node in nodes.values():
         for simid,dep in node.sim.dependencies.items():
             other = nodes[simid].node
             if quants:
@@ -1914,7 +1919,7 @@ class DynamicProcess(DevBase):
         identifier = kw['identifier']
         locdir = os.path.join(nc_loc,runs,path)
         if 'dynamic_id' not in kw:
-            cls.class_error('dynamic_id is required for dynamic workflows in a generate_* function.\nSimulation run location: {}\nSimulation identifier  : {}'.format(locdir,identifier))
+            error('dynamic_id is required for dynamic workflows in a generate_* function.\nSimulation run location: {}\nSimulation identifier  : {}'.format(locdir,identifier))
         dynamic_id = kw.pop('dynamic_id')
         dpid = (locdir,identifier,dynamic_id)
         if dpid in DynamicProcess.all_dynamic_processes:
@@ -1923,7 +1928,7 @@ class DynamicProcess(DevBase):
         else:
             dp = None
         if 'requires' not in kw:
-            cls.class_error('dependency requirements must be given via the "requires" keyword for dynamic workflows')
+            error('dependency requirements must be given via the "requires" keyword for dynamic workflows')
         requires = kw.pop('requires')
         dyn_args = obj(dpid=dpid,requires=requires)
         return dp,dyn_args
@@ -2100,7 +2105,7 @@ class DynamicProcess(DevBase):
         if isinstance(struct,str):
             struct = read_structure(struct)
         else:
-            struct = struct.copy()
+            struct = deepcopy(struct)
         self.sim.receive_structure(struct)
     #end def structure
 

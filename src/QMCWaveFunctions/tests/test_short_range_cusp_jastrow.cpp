@@ -23,8 +23,6 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
 {
   using RealType = OptimizableFunctorBase::real_type;
 
-  Communicate* c = OHMMS::Controller;
-
   // prepare xml input to set up the functor
   const std::string xmltext("<tmp>                                                               "
                             "  <correlation rcut=\"6\" cusp=\"3\" elementType=\"Li\">            "
