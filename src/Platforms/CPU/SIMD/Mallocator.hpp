@@ -26,8 +26,6 @@ struct Mallocator
 {
   using value_type    = T;
   using size_type     = size_t;
-  using pointer       = T*;
-  using const_pointer = const T*;
 
   static constexpr size_t alignment = ALIGN;
 

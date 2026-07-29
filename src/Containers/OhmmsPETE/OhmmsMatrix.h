@@ -29,8 +29,6 @@ class Matrix
 public:
   using Type_t        = T;
   using value_type    = T;
-  using pointer       = T*;
-  using const_pointer = const T*;
   using Container_t   = Vector<T, Alloc>;
   using size_type     = typename Container_t::size_type;
   using iterator      = typename Container_t::iterator;
@@ -204,18 +202,18 @@ public:
 
   // Get and Set Operations for assignment operators
   // returns a pointer of i-th row
-  inline pointer data() { return X.data(); }
+  inline value_type* data() { return X.data(); }
 
   // returns a pointer of i-th row
-  inline const_pointer data() const { return X.data(); }
+  inline const value_type* data() const { return X.data(); }
 
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  inline pointer device_data()
+  inline value_type* device_data()
   {
     return X.device_data();
   }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  inline const_pointer device_data() const
+  inline const value_type* device_data() const
   {
     return X.device_data();
   }
@@ -226,12 +224,12 @@ public:
   /// returns a pointer of i-th row, g++ iterator problem
   inline Type_t* data(size_type i) { return X.data() + i * D2; }
 
-  inline pointer first_address() { return X.data(); }
+  inline value_type* first_address() { return X.data(); }
 
   // returns a pointer of i-th row
-  inline const_pointer first_address() const { return X.data(); }
+  inline const value_type* first_address() const { return X.data(); }
 
-  inline pointer last_address() { return X.data() + X.size(); }
+  inline value_type* last_address() { return X.data() + X.size(); }
 
   // returns a pointer of i-th row
   inline const Type_t* last_address() const { return X.data() + X.size(); }

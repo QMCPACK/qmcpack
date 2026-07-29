@@ -41,8 +41,6 @@ struct DualAllocator : public HostAllocator
 {
   using Value        = typename HostAllocator::value_type;
   using Size         = typename HostAllocator::size_type;
-  using Pointer      = typename HostAllocator::pointer;
-  using ConstPointer = typename HostAllocator::const_pointer;
 
   DualAllocator() : device_ptr_(nullptr) {};
   DualAllocator(const DualAllocator&) : device_ptr_(nullptr) {}
@@ -80,7 +78,7 @@ struct DualAllocator : public HostAllocator
 
   void attachReference(const DualAllocator& from, std::ptrdiff_t ptr_offset)
   {
-    device_ptr_ = const_cast<Pointer>(from.get_device_ptr()) + ptr_offset;
+    device_ptr_ = const_cast<Value*>(from.get_device_ptr()) + ptr_offset;
   }
 
   T* get_device_ptr() { return device_ptr_; }
