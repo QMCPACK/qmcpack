@@ -81,7 +81,7 @@ def test_options():
         n = '-n 1',
         d = '-d 2',
         exe = '--exe',
-    )
+        )
     oi = Options(**inputs)
     assert(dict(**oi)==inputs)
 

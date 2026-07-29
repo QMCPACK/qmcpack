@@ -1952,12 +1952,12 @@ def test_magnetization_density():
                             corner     = '1 1 1',
                             integrator = 'simpsons',
                             samples    = 9,
-                        ),
-                    ],
+                            ),
+                        ],
+                    ),
                 ),
             ),
-        ),
-    )
+        )
     qi_grid.pluralize()
 
     # Verify XML output structure for grid case
@@ -1972,7 +1972,7 @@ def test_magnetization_density():
         '<parameter name="integrator" > simpsons </parameter>',
         '<parameter name="samples" > 9 </parameter>',
         '</estimator>'
-    ]
+        ]
     for pattern in expected_xml_patterns:
         assert pattern_in_text(pattern, text), f"Missing or incorrect pattern: {pattern}"
     assert 'name="dr"' not in text, "dr parameter should not be present"
@@ -1994,12 +1994,12 @@ def test_magnetization_density():
                             corner     = '1 1 1',
                             integrator = 'simpsons',
                             samples    = 9,
-                        ),
-                    ],
+                            ),
+                        ],
+                    ),
                 ),
             ),
-        ),
-    )
+        )
     qi_dr.pluralize()
 
     # Verify XML output structure for dr case
@@ -2014,7 +2014,7 @@ def test_magnetization_density():
         '<parameter name="integrator" > simpsons </parameter>',
         '<parameter name="samples" > 9 </parameter>',
         '</estimator>'
-    ]
+        ]
     for pattern in expected_xml_patterns:
         assert pattern_in_text(pattern, text), f"Missing or incorrect pattern: {pattern}"
     assert 'name="grid"' not in text, "grid parameter should not be present"
@@ -2024,21 +2024,21 @@ def test_magnetization_density():
         meta(
             lattice  = obj(units='bohr'),
             position = obj(condition='0', datatype='posArray'),
-        ),
+            ),
         simulation(
             project = section(
                 id='qmc',
                 series=0,
-            ),
+                ),
             qmcsystem = section(
                 simulationcell = section(
                     lattice = np.array([
                         [10.0, 0.0, 0.0],
                         [0.0, 10.0, 0.0],
                         [0.0, 0.0, 10.0]
-                    ]),
+                        ]),
                     bconds = np.array(tuple('ppp')),
-                ),
+                    ),
                 hamiltonian = section(
                     name = 'h0',
                     type = 'generic',
@@ -2052,12 +2052,12 @@ def test_magnetization_density():
                             corner     = '1 1 1',
                             integrator = 'simpsons',
                             samples    = 9,
-                        ),
-                    ],
+                            ),
+                        ],
+                    ),
                 ),
             ),
-        ),
-    )
+        )
     qi_full.pluralize()
 
     # Verify full system XML output
@@ -2078,7 +2078,7 @@ def test_magnetization_density():
         '<parameter name="samples" > 9 </parameter>',
         '</estimator>',
         '</hamiltonian>'
-    ]
+        ]
     for pattern in expected_xml_patterns:
         assert pattern_in_text(pattern, text), f"Missing or incorrect pattern: {pattern}"
     assert 'name="dr"' not in text, "dr parameter should not be present"

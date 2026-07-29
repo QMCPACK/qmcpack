@@ -78,7 +78,7 @@ def pp_elem_label(filename,guard=False):
                 'cannot determine element for pseudopotential file: {0}\n'
                 'pseudopotential file names must be prefixed by an atomic symbol or label\n'
                 '(e.g. Si, Si1, etc)'.format(filename)
-            )
+                )
         #end if
         return elem_label, element.symbol
     else:
@@ -156,7 +156,7 @@ def read_upf_z_valence(file: PathLike) -> int | float:
         error(
            f"Could not find Z valence in file: {file!s}\n"
             "You may need to provide the Z valence manually!"
-            )
+           )
     else:
         zval = float(zval.group(1).lower().replace("d", "e"))
 
@@ -204,7 +204,7 @@ def read_xml_z_valence(file: PathLike) -> int | float:
         error(
            f"Could not find Z valence in file: {file!s}\n"
             "You may need to provide the Z valence manually!"
-            )
+           )
     else:
         zval = float(zval.group(1).lower().replace("d", "e"))
 
@@ -255,7 +255,7 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
                 error(
                    f"Could not find Z valence in file: {file!s}\n"
                     "You may need to provide the Z valence manually!"
-                    )
+                   )
             else:
                 zval = float(zval.group(1).lower().replace("d", "e"))
 
