@@ -38,8 +38,10 @@ DeepQMCWaveFunctionComponent::DeepQMCWaveFunctionComponent(std::string name,
                                                            const ParticleSet& ions,
                                                            std::unique_ptr<const DeepQMCBridge> bridge,
                                                            int mol_idx)
-    : DeepQMCWaveFunctionComponent(std::move(name), ions,
-                                   std::shared_ptr<const DeepQMCBridge>(std::move(bridge)), mol_idx)
+    : DeepQMCWaveFunctionComponent(std::move(name),
+                                   ions,
+                                   std::shared_ptr<const DeepQMCBridge>(std::move(bridge)),
+                                   mol_idx)
 {}
 
 DeepQMCWaveFunctionComponent::DeepQMCWaveFunctionComponent(std::string name,

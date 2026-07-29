@@ -12,6 +12,8 @@
 #ifndef QMCPLUSPLUS_DEEPQMCWAVEFUNCTIONBUILDER_H
 #define QMCPLUSPLUS_DEEPQMCWAVEFUNCTIONBUILDER_H
 
+#include <memory>
+
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus
