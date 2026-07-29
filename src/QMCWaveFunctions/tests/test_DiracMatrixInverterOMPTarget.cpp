@@ -9,7 +9,6 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
-#include "Utilities/for_testing/Catch2Approx.h"
 #include <algorithm>
 #include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"

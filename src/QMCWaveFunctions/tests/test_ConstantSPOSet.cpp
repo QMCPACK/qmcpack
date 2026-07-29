@@ -9,7 +9,6 @@
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
-#include "Utilities/for_testing/Catch2Approx.h"
 #include "Configuration.h"
 #include "QMCWaveFunctions/WaveFunctionTypes.hpp"
 #include "QMCWaveFunctions/tests/ConstantSPOSet.h"

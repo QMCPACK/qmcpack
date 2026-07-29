@@ -27,6 +27,10 @@
 #include "Platforms/Host/OutputManager.h"
 #include "Message/Communicate.h"
 
+#ifdef TEST_CASE
+#include "Utilities/for_testing/Catch2Approx.h"
+#endif
+
 //define empty DEBUG_MEMORY
 #define DEBUG_MEMORY(msg)
 //uncomment this out to trace the call tree of destructors

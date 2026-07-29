@@ -9,7 +9,6 @@
 // File created by: Fionn Malone, malone14@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
-#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Configuration.h"
 
