@@ -1956,10 +1956,10 @@ def test_register_legacy_ppset(tmp_path):
 
 
 def test_pseudoset_repr(tmp_path):
-    qmcpack_dir, _, _ = setup_psps(test_dir=tmp_path, code="qmcpack")
-    pseudoset = PseudoSet.from_dir(
-        pseudo_dir = qmcpack_dir,
-        code ="qmcpack",
+    qmcpack_dir,  _, ref_qmcpack_pseudos  = setup_psps(test_dir=tmp_path, code="qmcpack")
+    pseudoset = PseudoSet(
+        pseudos = ref_qmcpack_pseudos,
+        codes="qmcpack",
         Zeffs={
             "H": 1,
             "C": 4,
@@ -1971,9 +1971,9 @@ def test_pseudoset_repr(tmp_path):
 PseudoSet(
     codes = {{'qmcpack'}},
     pseudos = {{
-        'O': PosixPath('{qmcpack_dir}/O.BFD..xml'),
-        'H': PosixPath('{qmcpack_dir}/H.BFD..xml'),
         'C': PosixPath('{qmcpack_dir}/C.BFD..xml'),
+        'H': PosixPath('{qmcpack_dir}/H.BFD..xml'),
+        'O': PosixPath('{qmcpack_dir}/O.BFD..xml'),
     }},
     Zeffs = {{
         'H': 1,
