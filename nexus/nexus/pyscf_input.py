@@ -82,7 +82,7 @@ class PyscfInput(SimulationInputTemplateDev):
         'ms',
         )
 
-    cell_order = (
+    cell_order = [  # noqa: RUF012
         'dump_input',
         'parse_arg',
         'a',
@@ -105,13 +105,14 @@ class PyscfInput(SimulationInputTemplateDev):
         'h',
         'drop_exponent',
         'nimgs',
-        )
+        ]
+
     for k in mole_order:
         if k not in cell_order:
-            cell_order = (*cell_order, k)
+            cell_order.append(k)
         #end if
     #end for
-
+    cell_order: tuple[str] = tuple(cell_order)
     mole_allowed = frozenset(mole_order)
     cell_allowed = frozenset(cell_order)
     

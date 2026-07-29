@@ -2185,7 +2185,7 @@ class SpaceGridBase(QAobject):
 
     axindex = {'x':0,'y':1,'z':2,'r':0,'phi':1,'theta':2}
 
-    quantities=frozenset({'D','T','V','E','P'})
+    quantities=('D','T','V','E','P')
 
     def __init__(self,initobj,options):
         if options is None:

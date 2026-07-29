@@ -171,7 +171,7 @@ def array_to_string(a,pad='   ',format=pwscf_array_format,converter=noconv,rowse
             
 
 class PwscfInputBase(DevBase):
-    ints=(
+    ints=frozenset({
         # pre 5.4
         'nstep','iprint','gdir','nppstr','nberrycyc','ibrav','nat','ntyp',
         'nbnd','nr1','nr2','nr3','nr1s','nr2s','nr3s','nspin',
@@ -183,13 +183,13 @@ class PwscfInputBase(DevBase):
         'nqx1','nqx2','nqx3','esm_nfit','space_group','origin_choice',
         # 6.3 additions
         'dftd3_version',
-        )
-    floats=(
+        })
+    floats=frozenset({
         # pre 5.4
-        'dt','max_seconds','etot_conv_thr','forc_conv_thr','celldm','A','B','C',
-        'cosAB','cosAC','cosBC','nelec','ecutwfc','ecutrho','degauss',
+        'dt','max_seconds','etot_conv_thr','forc_conv_thr','celldm','a','b','c',
+        'cosab','cosac','cosbc','nelec','ecutwfc','ecutrho','degauss',
         'tot_charge','tot_magnetization','starting_magnetization','nelup',
-        'neldw','ecfixed','qcutz','q2sigma','Hubbard_alpha','Hubbard_U','Hubbard_J',
+        'neldw','ecfixed','qcutz','q2sigma','hubbard_alpha','hubbard_u','hubbard_j',
         'starting_ns_eigenvalue','emaxpos','eopreg','eamp','angle1','angle2',
         'fixed_magnetization','lambda','london_s6','london_rcut','conv_thr',
         'mixing_beta','diago_thr_init','efield','tempw','tolp','delta_t','upscale',
@@ -199,65 +199,60 @@ class PwscfInputBase(DevBase):
         'mixing_charge_compensation','comp_thr','exx_fraction','ecutfock',
         # 5.4 additions
         'conv_thr_init','conv_thr_multi','efield_cart','screening_parameter',
-        'ecutvcut','Hubbard_J0','Hubbard_beta','Hubbard_J','esm_w',
-        'esm_efield','fcp_mu','london_c6','london_rvdw','xdm_a1','xdm_a2',
+        'ecutvcut','hubbard_j0','hubbard_beta','esm_w','esm_efield','fcp_mu',
+        'london_c6','london_rvdw','xdm_a1','xdm_a2',
         # 6.3 additions
         'block_1','block_2','block_height','zgate','ts_vdw_econv_thr',
         'starting_charge'
-        )
-    strs=(
+        })
+    strs=frozenset({
         # pre 5.4
         'calculation','title','verbosity','restart_mode','outdir','wfcdir',
         'prefix','disk_io','pseudo_dir','occupations','smearing','input_dft',
-        'U_projection_type','constrained_magnetization','mixing_mode',
+        'u_projection_type','constrained_magnetization','mixing_mode',
         'diagonalization','startingpot','startingwfc','ion_dynamics',
         'ion_positions','phase_space','pot_extrapolation','wfc_extrapolation',
-        'ion_temperature','opt_scheme','CI_scheme','cell_dynamics',
+        'ion_temperature','opt_scheme','ci_scheme','cell_dynamics',
         'cell_dofree','which_compensation','assume_isolated','exxdiv_treatment',
         # 5.4 additions
         'esm_bc','vdw_corr',
         # 6.3 additions
         'efield_phase',
-        )
-    bools=(
+        })
+    bools=frozenset({
         # pre 5.4
         'wf_collect','tstress','tprnfor','lkpoint_dir','tefield','dipfield',
         'lelfield','lberry','nosym','nosym_evc','noinv','force_symmorphic',
         'noncolin','lda_plus_u','lspinorb','do_ee','london','diago_full_acc',
         'tqr','remove_rigid_rot','refold_pos','first_last_opt','use_masses',
-        'use_freezing','la2F',
+        'use_freezing','la2f',
         # 5.4 additions
         'lorbm','lfcpopt','scf_must_converge','adaptive_thr','no_t_rev',
         'use_all_frac','one_atom_occupations','starting_spin_angle',
         'x_gamma_extrapolation','xdm','uniqueb','rhombohedral',
         # 6.3 additions
         'gate','block','relaxz','dftd3_threebody','ts_vdw_isolated','lforcet',
-        )
+        })
 
-    real_arrays = (
+    real_arrays = frozenset({
         'celldm', 'starting_magnetization', 'hubbard_alpha', 'hubbard_u',
         'hubbard_j0', 'hubbard_beta', 'hubbard_j',
         'starting_ns_eigenvalue', 'angle1', 'angle2', 'fixed_magnetization',
         'fe_step', 'efield_cart', 'london_c6', 'london_rvdw',
-        'starting_charge' ,
-        )
+        'starting_charge',
+        })
 
-    species_arrays = (
-        'starting_magnetization', 'hubbard_alpha', 'hubbard_u', 'hubbard_j0', 
-        'hubbard_beta', 'hubbard_j', 'angle1', 'angle2', 
+    species_arrays = frozenset({
+        'starting_magnetization', 'hubbard_alpha', 'hubbard_u', 'hubbard_j0',
+        'hubbard_beta', 'hubbard_j', 'angle1', 'angle2',
         'london_c6', 'london_rvdw','starting_charge',
-        )
+        })
 
     species_array_indices = obj(hubbard_j=1)
 
-    multidimensional_arrays = ('starting_ns_eigenvalue', 'hubbard_j')
+    multidimensional_arrays = frozenset({'starting_ns_eigenvalue', 'hubbard_j'})
 
-    ints   = tuple([v.lower() for v in ints  ])
-    floats = tuple([v.lower() for v in floats])
-    strs   = tuple([v.lower() for v in strs  ])
-    bools  = tuple([v.lower() for v in bools ])
-
-    all_variables = frozenset(ints+floats+strs+bools)
+    all_variables = ints | floats | strs | bools
 
     section_aliases = dict(celldm1='celldm(1)',celldm2='celldm(2)',celldm3='celldm(3)',celldm4='celldm(4)',celldm5='celldm(5)',celldm6='celldm(6)')
 

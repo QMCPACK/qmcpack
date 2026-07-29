@@ -548,29 +548,27 @@ class Convert4qmcInput(SimulationInput):
 
     input_order = (
         *input_codes,
-        *(
-            'prefix',
-            'hdf5',
-            'add_cusp',
-            'psi_tag',
-            'ion_tag',
-            'no_jastrow',
-            'production',
-            'orbitals',
-            'multidet',
-            'gridtype',
-            'first',
-            'last',
-            'size',
-            'ci',
-            'read_initial_guess',
-            'target_state',
-            'natural_orbitals',
-            'threshold',
-            'opt_det_coeffs',
-            'zero_ci',
-            'add_3body_J'
-            )
+        'prefix',
+        'hdf5',
+        'add_cusp',
+        'psi_tag',
+        'ion_tag',
+        'no_jastrow',
+        'production',
+        'orbitals',
+        'multidet',
+        'gridtype',
+        'first',
+        'last',
+        'size',
+        'ci',
+        'read_initial_guess',
+        'target_state',
+        'natural_orbitals',
+        'threshold',
+        'opt_det_coeffs',
+        'zero_ci',
+        'add_3body_J'
         )
 
     input_aliases = obj(

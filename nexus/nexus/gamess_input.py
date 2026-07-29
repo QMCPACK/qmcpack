@@ -753,17 +753,20 @@ class GamessInput(SimulationInput,GIbase):
         basis  = BasisGroup,
         )
 
-    keyspec_group_order = ()
+    keyspec_group_order = []  # noqa: RUF012
     for gname in group_order:
         if gname in keyspec_groups:
-            keyspec_group_order = (*keyspec_group_order, gname)
+            keyspec_group_order.append(gname)
         #end if
     #end for
+    keyspec_group_order: tuple[str] = tuple(keyspec_group_order)
 
-    all_keywords = frozenset()
+    all_keywords = set()  # noqa: RUF012
     for g in keyspec_groups.values():
         all_keywords |= g.keywords
     #end for
+    all_keywords: frozenset[str] = frozenset(all_keywords)
+
     group_keyword_overlap = all_groups & all_keywords
     all_names = all_groups | all_keywords
     
