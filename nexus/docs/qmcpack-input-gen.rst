@@ -34,11 +34,16 @@ A dictionary can be used to select a different rule for each atomic species:
   </hamiltonian>
 
 
-As secondary, but more expensive, option, a single integer applies the same rule to every atomic species:
+A secondary, more expensive option applies the same rule to every atomic species via a single integer.
+This is not recommended unless a single simple convergence parameter is desired:
 
 .. code-block:: python
 
-  qmc = generate_qmcpack(...,pseudos=['Fe.ccECP.xml'],nrule=7)
+  qmc = generate_qmcpack(
+      ...,
+      pseudos = ['V.ccECP.xml','O.ccECP.xml'],
+      nrule   = 6,
+      )
 
 .. code-block:: xml
 
@@ -46,6 +51,7 @@ As secondary, but more expensive, option, a single integer applies the same rule
      <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
      <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
      <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
-        <pseudo elementType="Fe" href="Fe.ccECP.xml" nrule="7"/>
+        <pseudo elementType="O" href="O.ccECP.xml" nrule="6"/>
+        <pseudo elementType="V" href="V.ccECP.xml" nrule="6"/>
      </pairpot>
   </hamiltonian>
