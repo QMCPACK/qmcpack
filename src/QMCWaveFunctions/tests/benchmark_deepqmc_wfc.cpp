@@ -112,7 +112,7 @@ TEST_CASE("DeepQMC TrialWaveFunction mw_evaluateLog batching benchmark", "[wavef
   // WaveFunctionComponent rather than through WaveFunctionFactory/XML. The external
   // Python environment still needs to be supplied by the launcher, e.g. PYTHONPATH
   // containing DeepQMC and its dependencies.
-  auto bridge = makePythonDeepQMCBridge(checkpoint_path, "");
+  std::shared_ptr<const DeepQMCBridge> bridge = makePythonDeepQMCBridge(checkpoint_path, "");
 
   const SimulationCell simulation_cell;
   ParticleSet ions = makeIons(simulation_cell);

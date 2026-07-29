@@ -42,10 +42,10 @@ public:
 };
 
 /** Construct the real Python/JAX-backed DeepQMC inference bridge. */
-std::shared_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_path, std::string python_module_path);
+std::unique_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_path, std::string python_module_path);
 
 /** Placeholder useful for tests and clear disabled-path errors. */
-std::shared_ptr<const DeepQMCBridge> makeUnavailableDeepQMCBridge(std::string reason);
+std::unique_ptr<const DeepQMCBridge> makeUnavailableDeepQMCBridge(std::string reason);
 
 } // namespace qmcplusplus
 

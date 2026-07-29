@@ -269,14 +269,14 @@ private:
 };
 } // namespace
 
-std::shared_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_path, std::string python_module_path)
+std::unique_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_path, std::string python_module_path)
 {
-  return std::make_shared<PythonDeepQMCBridge>(std::move(model_path), std::move(python_module_path));
+  return std::make_unique<PythonDeepQMCBridge>(std::move(model_path), std::move(python_module_path));
 }
 
-std::shared_ptr<const DeepQMCBridge> makeUnavailableDeepQMCBridge(std::string reason)
+std::unique_ptr<const DeepQMCBridge> makeUnavailableDeepQMCBridge(std::string reason)
 {
-  return std::make_shared<UnavailableDeepQMCBridge>(std::move(reason));
+  return std::make_unique<UnavailableDeepQMCBridge>(std::move(reason));
 }
 
 } // namespace qmcplusplus

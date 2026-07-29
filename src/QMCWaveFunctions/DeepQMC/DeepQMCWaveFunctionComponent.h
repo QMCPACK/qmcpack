@@ -21,6 +21,10 @@ class DeepQMCWaveFunctionComponent : public WaveFunctionComponent
 public:
   DeepQMCWaveFunctionComponent(std::string name,
                                const ParticleSet& ions,
+                               std::unique_ptr<const DeepQMCBridge> bridge,
+                               int mol_idx);
+  DeepQMCWaveFunctionComponent(std::string name,
+                               const ParticleSet& ions,
                                std::shared_ptr<const DeepQMCBridge> bridge,
                                int mol_idx);
 
