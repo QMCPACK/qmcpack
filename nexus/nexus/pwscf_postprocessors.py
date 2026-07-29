@@ -524,7 +524,7 @@ class ProjwfcInput(NamelistInput):
 
 
 class ProjwfcAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,outfile=None,analyze=False,warn=False,strict=False):
+    def __init__(self,arg0=None,outfile=None,*,analyze=False,warn=False,strict=False):
         self.info = obj(
             outfile     = outfile,
             warn        = warn,
@@ -678,7 +678,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
         self.lowdin = lowdin
     #end def read_lowdin
 
-    def write_lowdin(self,filepath=None,sum=None,tot=None,pol=None,up=None,down=None,all=True,long=False):
+    def write_lowdin(self,filepath=None,sum=None,tot=None,pol=None,up=None,down=None,*,all=True,long=False):
         if tot is None:
             tot = all
         #end if
@@ -901,7 +901,7 @@ class HpInput(NamelistInput):
 
 
 class HpAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,outfile=None,analyze=False,warn=False,strict=False):
+    def __init__(self,arg0=None,outfile=None,*,analyze=False,warn=False,strict=False):
         self.info = obj(
             outfile     = outfile,
             warn        = warn,

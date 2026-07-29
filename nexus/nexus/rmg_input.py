@@ -2599,7 +2599,7 @@ class RmgKeyword(DevBase):
     #end def assign
 
 
-    def valid(self,value,message=False):
+    def valid(self,value,*,message=False):
         msg   = ''
         if not isinstance(value,self.value_type):
             msg += 'Keyword "{}" has the wrong type.\n  Type expected: {}\n  Type provided: {}\n'.format(self.key_name,self.key_type,value.__class__.__name__)
@@ -2643,7 +2643,7 @@ class FormattedRmgKeyword(RmgKeyword):
         raise NotImplementedError
     #end def assign
 
-    def valid(self,value,message=False):
+    def valid(self,value,*,message=False):
         valid = self.valid_no_msg(value)
         if not message:
             return valid
@@ -2983,7 +2983,7 @@ class HubbardUKeyword(RmgKeyword):
         #end if
     #end def assign
 
-    def valid(self,value,message=False):
+    def valid(self,value,*,message=False):
         valid = True
         for k,v in value.items():
             if not isinstance(k,rmg_value_types.string):
@@ -3103,7 +3103,7 @@ class RmgCalcModes(DevBase):
         return mode
     #end def short_mode
 
-    def mode_match(self,text,short=False):
+    def mode_match(self,text,*,short=False):
         mode = None
         text = text.lower()
         for full_mode in self.full_calc_modes:
@@ -3221,7 +3221,7 @@ class RmgInput(SimulationInput):
     #end def write_text
 
 
-    def check_valid(self,exit=True):
+    def check_valid(self,*,exit=True):
         msg = ''
         allowed = set(input_spec.keywords.keys())
         present = set(self.keys())

@@ -85,6 +85,7 @@ def is_relative_path(path: str | bytes | Path):
 
 def path_string(
     path:     str | bytes | Path,
+    *,
     strict:   bool = False,
     relative: bool = False,
     check:    bool = False,

@@ -692,7 +692,7 @@ class Convert4qmcInput(SimulationInput):
     #end def __init__
 
 
-    def check_valid(self,exit=True):
+    def check_valid(self,*,exit=True):
         valid = True
         # check that all inputs have valid types and assign them
         for k,v in self.items():
@@ -1257,7 +1257,7 @@ class PyscfToAfqmcInput(SimulationInput):
     #end def __init__
 
 
-    def check_valid(self,exit=True):
+    def check_valid(self,*,exit=True):
         valid = True
         # check that all inputs have valid types and assign them
         for k,v in self.items():

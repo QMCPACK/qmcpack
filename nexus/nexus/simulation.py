@@ -142,7 +142,7 @@ class SimulationInput(NexusCore):
         raise NotImplementedError
     #end def incorporate_system
 
-    def return_system(self,structure_only=False):
+    def return_system(self,*,structure_only=False):
         #create a physical system object from input file information
         raise NotImplementedError
     #end def return_system
@@ -290,7 +290,7 @@ class Simulation(NexusCore):
 
     # test needed
     @classmethod
-    def separate_inputs(cls,kwargs,overlapping_kw=-1,copy_pseudos=True,sim_kw=None):
+    def separate_inputs(cls,kwargs,overlapping_kw=-1,*,copy_pseudos=True,sim_kw=None):
         if overlapping_kw==-1:
             overlapping_kw = set(['system'])
         elif overlapping_kw is None:
@@ -915,7 +915,7 @@ class Simulation(NexusCore):
     #end def copy_file
 
 
-    def save_image(self,all=False):
+    def save_image(self,*,all=False):
         imagefile = os.path.join(self.imlocdir,self.sim_image)
         if os.path.exists(imagefile):
             os.system('rm '+imagefile)
@@ -930,7 +930,7 @@ class Simulation(NexusCore):
     #end def save_image
 
 
-    def load_image(self,imagepath=None,all=False):
+    def load_image(self,imagepath=None,*,all=False):
         if imagepath is None:
             imagepath=os.path.join(self.imlocdir,self.sim_image)
         #end if
@@ -999,9 +999,9 @@ class Simulation(NexusCore):
     #end def idstr
 
 
-    def write_inputs(self,save_image=True):
+    def write_inputs(self,*,save_image=True):
         self.pre_write_inputs(save_image)
-        self.enter(self.locdir,False,self.simid)
+        self.enter(self.locdir,changedir=False,msg=self.simid)
         self.log('writing input files'+self.idstr(),n=3)
         self.write_prep()
         if self.infile is not None:
@@ -1033,10 +1033,10 @@ class Simulation(NexusCore):
     #end def write_inputs
 
 
-    def send_files(self,enter=True):
+    def send_files(self,*,enter=True):
         self.pre_send_files(enter)
         if enter:
-            self.enter(self.locdir,False,self.simid)
+            self.enter(self.locdir,changedir=False,msg=self.simid)
         #end if
         self.log('sending required files'+self.idstr(),n=3)
         if not os.path.exists(self.remdir):
@@ -1158,7 +1158,7 @@ class Simulation(NexusCore):
             self.load_image(results_image)
         #end if
         if self.finished:
-            self.enter(self.locdir,False,self.simid)
+            self.enter(self.locdir,changedir=False,msg=self.simid)
             self.log('copying results'+self.idstr(),n=3)
             if not nexus_core.generate_only:
                 output_files = self.get_output_files()
@@ -1198,7 +1198,7 @@ class Simulation(NexusCore):
             os.makedirs(self.imresdir)
         #end if
         if self.finished:
-            self.enter(self.locdir,False,self.simid)
+            self.enter(self.locdir,changedir=False,msg=self.simid)
             self.log('analyzing'+self.idstr(),n=3)
             if not nexus_core.generate_only:
                 analyzer = self.analyzer_type(self)
@@ -1237,7 +1237,7 @@ class Simulation(NexusCore):
     #end def check_subcascade
 
 
-    def block_dependents(self,block_self=True):
+    def block_dependents(self,*,block_self=True):
         if block_self:
             self.block = True
         #end if
@@ -1304,7 +1304,7 @@ class Simulation(NexusCore):
             elif mode==modes.all:
                 if not self.setup:
                     self.write_inputs()
-                    self.send_files(False)
+                    self.send_files(enter=False)
                 #end if
                 if not self.finished:
                     self.submit()
@@ -1393,7 +1393,7 @@ class Simulation(NexusCore):
     #end def traverse_full_cascade
 
 
-    def write_dependents(self,n=0,location=False,block_status=False):
+    def write_dependents(self,n=0,*,location=False,block_status=False):
         outs = [self.__class__.__name__,self.identifier,self.simid]
         if location:
             outs.append(self.locdir)
@@ -1452,7 +1452,7 @@ class Simulation(NexusCore):
     #end def execute
 
 
-    def show_input(self,exit=True):
+    def show_input(self,*,exit=True):
         print()
         print(80*'=')
         print('Input file for simulation "{}"\nDirectory: {}'.format(self.identifier,self.locdir))
@@ -1815,7 +1815,7 @@ except:
 #end try
 
 exit_call = sys.exit
-def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True,display=True):
+def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,display=True):
     if sims is None:
         sims = Simulation.all_sims
     #end if
@@ -2025,6 +2025,7 @@ class DynamicProcess(DevBase):
                                req_name,
                                req_value = None,
                                req_type  = str,
+                               *,
                                is_path   = False,
                                ):
         '''Support requirement setter functions'''

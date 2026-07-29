@@ -1073,7 +1073,7 @@ class Structure(Sobj):
     #end def __init__
 
 
-    def check_consistent(self,tol=1e-8,exit=True,message=False):
+    def check_consistent(self,tol=1e-8,*,exit=True,message=False):
         msg = ''
         if self.has_axes():
             kaxes = 2*pi*inv(self.axes).T
@@ -1284,7 +1284,7 @@ class Structure(Sobj):
     #end def has_folded_structure
 
             
-    def group_atoms(self, folded=True) -> None:
+    def group_atoms(self, *, folded=True) -> None:
         """Group the atoms by their element type, sorting in alphabetical order.
 
         Parameters
@@ -1319,12 +1319,12 @@ class Structure(Sobj):
             #end if
         #end if
         if self.folded_structure is not None and folded:
-            self.folded_structure.group_atoms(folded)
+            self.folded_structure.group_atoms(folded=folded)
         #end if
     #end def group_atoms
 
 
-    def rename(self, folded=True, **name_pairs) -> None:
+    def rename(self, *, folded=True, **name_pairs) -> None:
         """Rename element names in a structure.
 
         Parameters
@@ -1512,7 +1512,7 @@ class Structure(Sobj):
 
     
     # test needed
-    def miller_direction(self,h,k,l,normalize=False):
+    def miller_direction(self,h,k,l,*,normalize=False):
         d = dot((h,k,l),self.axes)
         if normalize:
             d/=norm(d)
@@ -1522,7 +1522,7 @@ class Structure(Sobj):
 
     
     # test needed
-    def miller_normal(self,h,k,l,normalize=False):
+    def miller_normal(self,h,k,l,*,normalize=False):
         d = dot((h,k,l),self.kaxes)
         if normalize:
             d/=norm(d)
@@ -1553,7 +1553,7 @@ class Structure(Sobj):
     #end def project_plane
 
         
-    def bounding_box(self,scale=1.0,minsize=None,mindist=0,box='tight',recenter=False):
+    def bounding_box(self,scale=1.0,minsize=None,mindist=0,box='tight',*,recenter=False):
         pmin    = self.pos.min(0)-mindist
         pmax    = self.pos.max(0)+mindist
         pcenter = (pmax+pmin)/2
@@ -1592,7 +1592,7 @@ class Structure(Sobj):
                 )
         #end if
         self.reset_axes(scale*axes)
-        self.slide(self.center-pcenter,recenter)
+        self.slide(self.center-pcenter,recenter=recenter)
     #end def bounding_box
 
 
@@ -1939,7 +1939,7 @@ class Structure(Sobj):
     #    while remaining periodically correct
     #   note that the unshearing procedure is not unique
     #   it depends on the order of unshearing operations
-    def unsheared_axes(self,axes=None,distances=False):
+    def unsheared_axes(self,axes=None,*,distances=False):
         if self.dim!=3:
             self.error('unsheared_axes is currently only implemented for 3 dimensions')
         #end if
@@ -1972,7 +1972,7 @@ class Structure(Sobj):
     #   note that the product of distances is not the cell volume in general
     #   see "unsheared_axes" function
     #   (e.g. a volume preserving shear may bring two face planes arbitrarily close)
-    def face_vectors(self,axes=None,distances=False):
+    def face_vectors(self,axes=None,*,distances=False):
         if axes is None:
             axes = self.axes
         #end if
@@ -2021,7 +2021,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def rotate(self,r,rp=None,passive=False,units="radians",check=True):
+    def rotate(self,r,rp=None,*,passive=False,units="radians",check=True):
         """Arbitrary rotation of the structure.
 
         Parameters
@@ -2169,7 +2169,7 @@ class Structure(Sobj):
         
     
     # test needed
-    def change_units(self,units,folded=True):
+    def change_units(self,units,*,folded=True):
         if units!=self.units:
             scale = convert(1,self.units,units)
             self.scale  *= scale
@@ -2189,7 +2189,7 @@ class Structure(Sobj):
     # test needed
     # insert sep space at loc along axis
     #   if sep<0, space is removed instead
-    def cleave(self,axis,loc,sep=None,remove=False,tol=1e-6):
+    def cleave(self,axis,loc,sep=None,*,remove=False,tol=1e-6):
         self.remove_folded_structure()
         if isinstance(axis,int):
             if sep is None:
@@ -2272,7 +2272,7 @@ class Structure(Sobj):
 
                               
     # test needed
-    def slide(self,v,recenter=True):
+    def slide(self,v,*,recenter=True):
         v = np.array(v)
         pos = self.pos
         for i in range(len(pos)):
@@ -2282,7 +2282,7 @@ class Structure(Sobj):
             self.recenter()
         #end if
         if self.folded_structure is not None:
-            self.folded_structure.slide(v,recenter)
+            self.folded_structure.slide(v,recenter=recenter)
         #end if
     #end def slide
 
@@ -2308,6 +2308,7 @@ class Structure(Sobj):
     def locate_by_cell(
         self,
         cell  : Structure | npt.NDArray,
+        *,
         invert: bool = False,
         ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure contained by a crystal cell.
@@ -2343,6 +2344,7 @@ class Structure(Sobj):
     def locate_by_mask(
         self,
         mask_array: npt.ArrayLike,
+        *,
         invert    : bool = False,
         ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by a mask array.
@@ -2367,6 +2369,7 @@ class Structure(Sobj):
     def locate_by_indices(
         self,
         indices: int | list[int],
+        *,
         invert : bool = False,
         ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by an index or list of indices.
@@ -2403,6 +2406,7 @@ class Structure(Sobj):
     def locate_by_elements(
         self,
         elements: ElementOrList,
+        *,
         invert  : bool = False,
         ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by their element.
@@ -2440,6 +2444,7 @@ class Structure(Sobj):
         self,
         pos   : PosType,
         radii : RType,
+        *,
         invert: bool = False,
         ) -> npt.NDArray[np.int64]:
         """Locate atoms in a structure if they are within a distance from a position.
@@ -2491,6 +2496,7 @@ class Structure(Sobj):
         self,
         identifiers: IdType,
         radii      : RType = None,
+        *,
         invert     : bool  = False,
         ) -> npt.NDArray[np.int64]:
         """Locate atoms in a structure by some identifier(s).
@@ -2582,7 +2588,7 @@ class Structure(Sobj):
     #end def locate
 
 
-    def freeze(self,identifiers=None,radii=None,exterior=False,negate=False,directions='xyz'):
+    def freeze(self,identifiers=None,radii=None,*,exterior=False,negate=False,directions='xyz'):
         if isinstance(identifiers,np.ndarray) and identifiers.shape==self.pos.shape and identifiers.dtype==bool:
             if negate:
                 self.frozen = ~identifiers
@@ -2594,7 +2600,7 @@ class Structure(Sobj):
         if identifiers is None:
             indices = np.arange(len(self.pos),dtype=int)
         else:
-            indices = self.locate(identifiers,radii,exterior)
+            indices = self.locate(identifiers,radii,invert=exterior)
         #end if
         if len(indices)==0:
             self.error('failed to select any atoms to freeze')
@@ -2681,8 +2687,8 @@ class Structure(Sobj):
 
     
     # test needed
-    def replace(self,identifiers,elem=None,pos=None,radii=None,exterior=False):
-        indices = self.locate(identifiers,radii,exterior)
+    def replace(self,identifiers,elem=None,pos=None,radii=None,*,exterior=False):
+        indices = self.locate(identifiers,radii,invert=exterior)
         if isinstance(elem,Structure):
             cell = elem
             elem = cell.elem
@@ -2867,7 +2873,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def species(self,symbol=False):
+    def species(self,*,symbol=False):
         if not symbol:
             return set(self.elem)
         else:
@@ -2883,7 +2889,7 @@ class Structure(Sobj):
 
         
     # test needed
-    def ordered_species(self,symbol=False):
+    def ordered_species(self,*,symbol=False):
         speclab_set    = set()
         species_labels = []
         if not symbol:
@@ -2915,7 +2921,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def order_by_species(self,folded=False):
+    def order_by_species(self,*,folded=False):
         species        = []
         species_counts = []
         elem_indices   = []
@@ -2972,7 +2978,7 @@ class Structure(Sobj):
     #     3.0 = [ 0, 1, 2, 3 ]
     #     6.0 = [ 4, 5, 6, 7 ]
     #     9.0 = [ 8, 9,10,11 ]
-    def layers(self,axis=0,dtol=0.03,dbin=0.01,plot=False,composition=False):
+    def layers(self,axis=0,dtol=0.03,dbin=0.01,*,plot=False,composition=False):
         nbox = int(dtol/dbin)
         if nbox%2==0:
             nbox+=1
@@ -3077,7 +3083,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def shells(self,identifiers,radii=None,exterior=False,cumshells=False,distances=False,dtol=1e-6):
+    def shells(self,identifiers,radii=None,*,exterior=False,cumshells=False,distances=False,dtol=1e-6):
         # get indices for 'core' and 'bulk'
         #   core is selected by identifiers, forms core for shells to be built around
         #   bulk is all atoms except for core
@@ -3094,7 +3100,7 @@ class Structure(Sobj):
             core_ind = self.locate(bulk_ind,invert=True)
             bulk = self.pos[bulk_ind]
         else:
-            core_ind = self.locate(identifiers,radii,exterior)
+            core_ind = self.locate(identifiers,radii,invert=exterior)
             bulk_ind = self.locate(core_ind,invert=True)
             core = self.pos[core_ind]
             bulk = self.pos[bulk_ind]
@@ -3182,7 +3188,7 @@ class Structure(Sobj):
     #           6    #   sum of vertex degrees is 6 (each atom is connected to 2 others)
     #             (2,2,2) = [ (0,1,2) ]           # graphs with vertex degree (2,2,2)  
 
-    def connected_graphs(self,order,indices=None,rmax=None,nmax=None,voronoi=False,degree=False,site_maps=False,**spec_max):
+    def connected_graphs(self,order,indices=None,rmax=None,nmax=None,*,voronoi=False,degree=False,site_maps=False,**spec_max):
         if indices is None:
             indices = np.arange(len(self.pos),dtype=int)
             pos = self.pos
@@ -3487,7 +3493,7 @@ class Structure(Sobj):
     #end def min_image_centroids
     
     
-    def min_image_vectors(self,points=None,points2=None,axes=None,pairs=True):
+    def min_image_vectors(self,points=None,points2=None,axes=None,*,pairs=True):
         if points is None:
             points = self.pos
         elif isinstance(points,Structure):
@@ -3549,7 +3555,7 @@ class Structure(Sobj):
     #end def min_image_vectors
 
 
-    def min_image_distances(self,points=None,points2=None,axes=None,vectors=False,pairs=True):
+    def min_image_distances(self,points=None,points2=None,axes=None,*,vectors=False,pairs=True):
         vtable = self.min_image_vectors(points,points2,axes,pairs=pairs)
         rdim = len(vtable.shape)-1
         dtable = sqrt((vtable**2).sum(rdim))
@@ -3561,8 +3567,8 @@ class Structure(Sobj):
     #end def min_image_distances
 
 
-    def distance_table(self,points=None,points2=None,axes=None,vectors=False):
-        return self.min_image_distances(points,points2,axes,vectors)
+    def distance_table(self,points=None,points2=None,axes=None,*,vectors=False):
+        return self.min_image_distances(points,points2,axes,vectors=vectors)
     #end def distance_table
 
 
@@ -3571,7 +3577,7 @@ class Structure(Sobj):
     #end def vector_table
 
     
-    def neighbor_table(self,points=None,points2=None,axes=None,distances=False,vectors=False):
+    def neighbor_table(self,points=None,points2=None,axes=None,*,distances=False,vectors=False):
         dtable,vtable = self.min_image_distances(points,points2,axes,vectors=True)
         ntable = np.empty(dtable.shape,dtype=int)
         for i in range(len(dtable)):
@@ -3617,7 +3623,7 @@ class Structure(Sobj):
 
     # test needed
     # get all neighbors according to contacting voronoi polyhedra in PBC
-    def voronoi_neighbors(self,indices=None,restrict=False,distance_ordered=True):
+    def voronoi_neighbors(self,indices=None,*,restrict=False,distance_ordered=True):
         if indices is None:
             indices = np.arange(len(self.pos))
         #end if
@@ -3675,7 +3681,7 @@ class Structure(Sobj):
 
 
     def voronoi_vectors(self,indices=None,restrict=None):
-        ni = self.voronoi_neighbors(indices,restrict)
+        ni = self.voronoi_neighbors(indices,restrict=restrict)
         vt = self.vector_table()
         vv = obj()
         for i,vi in ni.items():
@@ -3685,8 +3691,8 @@ class Structure(Sobj):
     #end def voronoi_vectors
 
 
-    def voronoi_distances(self,indices=None,restrict=False):
-        vv = self.voronoi_vectors(indices,restrict)
+    def voronoi_distances(self,indices=None,*,restrict=False):
+        vv = self.voronoi_vectors(indices,restrict=restrict)
         vd = obj()
         for i,vvi in vv.items():
             vd[i] = norm(vvi,axis=1)
@@ -3696,7 +3702,7 @@ class Structure(Sobj):
 
 
     def voronoi_radii(self,indices=None,restrict=None):
-        vd = self.voronoi_distances(indices,restrict)
+        vd = self.voronoi_distances(indices,restrict=restrict)
         vr = obj()
         for i,vdi in vd.items():
             vr[i] = vdi.min()/2
@@ -3722,7 +3728,7 @@ class Structure(Sobj):
 
     # test needed
     # get nearest neighbors according to constraints (voronoi, max distance, coord. number)
-    def nearest_neighbors(self,indices=None,rmax=None,nmax=None,restrict=False,voronoi=False,distances=False,**spec_max):
+    def nearest_neighbors(self,indices=None,rmax=None,nmax=None,*,restrict=False,voronoi=False,distances=False,**spec_max):
         if indices is None:
             indices = np.arange(len(self.pos))
         #end if
@@ -3792,7 +3798,7 @@ class Structure(Sobj):
 
     # test needed
     # determine local chemical coordination limited by constraints
-    def chemical_coordination(self,indices=None,nmax=None,rmax=None,restrict=False,voronoi=False,neighbors=False,distances=False,**spec_max):
+    def chemical_coordination(self,indices=None,nmax=None,rmax=None,*,restrict=False,voronoi=False,neighbors=False,distances=False,**spec_max):
         if indices is None:
             indices = np.arange(len(self.pos))
         #end if
@@ -3898,7 +3904,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def recenter_k(self,kpoints=None,kaxes=None,kcenter=None,remove_duplicates=False):
+    def recenter_k(self,kpoints=None,kaxes=None,kcenter=None,*,remove_duplicates=False):
         """Center k-points around the provided center of k-space.
         
         Parameters
@@ -3985,7 +3991,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def inside(self,pos,axes=None,center=None,tol=1e-8,separate=False):
+    def inside(self,pos,axes=None,center=None,tol=1e-8,*,separate=False):
         if axes is None:
             axes=self.axes
         #end if
@@ -4265,7 +4271,7 @@ class Structure(Sobj):
     #end def tile_opt
 
 
-    def check_tiling(self,tol=1e-6,exit=True):
+    def check_tiling(self,tol=1e-6,*,exit=True):
         msg = ''
         if not self.is_tiled():
             return msg
@@ -4420,7 +4426,7 @@ class Structure(Sobj):
     #end def fold
 
 
-    def tilematrix(self,small=None,tol=1e-6,status=False):
+    def tilematrix(self,small=None,tol=1e-6,*,status=False):
         if small is None:
             if self.folded_structure is not None:
                 small = self.folded_structure
@@ -4457,7 +4463,7 @@ class Structure(Sobj):
     #end def tilematrix
 
 
-    def primitive(self,source=None,tmatrix=False,add_kpath=False,**kwargs):
+    def primitive(self,source=None,*,tmatrix=False,add_kpath=False,**kwargs):
         res = None
         allowed_sources = set(['seekpath'])
         if source is None or isinstance(source,bool):
@@ -4497,13 +4503,13 @@ class Structure(Sobj):
     #end def primitive
 
 
-    def become_primitive(self,source=None,add_kpath=False,**kwargs):
+    def become_primitive(self,source=None,*,add_kpath=False,**kwargs):
         prim = self.primitive(source=source,add_kpath=add_kpath,**kwargs)
         self.clone_from(prim)
     #end def become_primitive
             
 
-    def add_kpoints(self,kpoints,kweights=None,unique=False,recenter=True,cell_unit=False):
+    def add_kpoints(self,kpoints,kweights=None,*,unique=False,recenter=True,cell_unit=False):
         if kweights is None:
             kweights = np.ones((len(kpoints),))
         #end if
@@ -4546,7 +4552,7 @@ class Structure(Sobj):
     #end def kgrid_from_kspacing
 
 
-    def add_kmesh(self,kgrid=None,kshift=None,unique=False,kspacing=None):
+    def add_kmesh(self,kgrid=None,kshift=None,kspacing=None,*,unique=False):
         if kspacing is not None:
             kgrid = self.kgrid_from_kspacing(kspacing)
         elif kgrid is None:
@@ -4633,7 +4639,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def inversion_symmetrize_kpoints(self,tol=1e-10,folded=False):
+    def inversion_symmetrize_kpoints(self,tol=1e-10,*,folded=False):
         kp    = self.kpoints
         kaxes = self.kaxes
         ntable,dtable = self.neighbor_table(kp,-kp,kaxes,distances=True)
@@ -4754,7 +4760,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def unique_positions(self,tol=1e-10,folded=False):
+    def unique_positions(self,tol=1e-10,*,folded=False):
         pos,weights,pmap = self.unique_points(self.pos,self.axes)
         if len(pos)!=len(self.pos):
             self.pos = pos
@@ -4767,7 +4773,7 @@ class Structure(Sobj):
 
         
     # test needed
-    def unique_kpoints(self,tol=1e-10,folded=False):
+    def unique_kpoints(self,tol=1e-10,*,folded=False):
         kmap = obj()
         kp   = self.kpoints
         if len(kp)>0:
@@ -4990,7 +4996,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def bonds(self,neighbors,vectors=False):
+    def bonds(self,neighbors,*,vectors=False):
         if self.dim!=3:
             self.error('bonds is currently only implemented for 3 dimensions')
         #end if
@@ -5029,7 +5035,7 @@ class Structure(Sobj):
 
         
     # test needed
-    def displacement(self,reference,map=False):
+    def displacement(self,reference,*,map=False):
         if self.dim!=3:
             self.error('displacement is currently only implemented for 3 dimensions')
         #end if
@@ -5239,7 +5245,7 @@ class Structure(Sobj):
     #end def shell
 
 
-    def interpolate(self,other,images,min_image=True,recenter=True,match_com=False,chained=False):
+    def interpolate(self,other,images,*,min_image=True,recenter=True,match_com=False,chained=False):
         s1 = deepcopy(self)
         s2 = deepcopy(other)
         s1.remove_folded()
@@ -5371,7 +5377,7 @@ class Structure(Sobj):
     #end def makov_payne
 
 
-    def read(self,filepath,format=None,elem=None,block=None,grammar='1.1',cell='prim',contents=False):
+    def read(self,filepath,format=None,elem=None,block=None,grammar='1.1',cell='prim',*,contents=False):
         if os.path.exists(filepath):
             filepath = path_string(filepath)
             path,file = os.path.split(filepath)
@@ -5711,7 +5717,7 @@ class Structure(Sobj):
     #end def write
 
 
-    def pos_to_str(self, units: str = "A", with_elem: bool = False):
+    def pos_to_str(self, units: str = "A", *, with_elem: bool = False):
         """Write the positions of a structure to a string, optionally with atomic symbols.
 
         Parameters
@@ -6089,7 +6095,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def space_group_operations(self,tol=1e-5,unit=False):
+    def space_group_operations(self,tol=1e-5,*,unit=False):
         ds = self.get_symmetry(symprec=tol)
         if ds is None:
             self.error(
@@ -6116,14 +6122,14 @@ class Structure(Sobj):
     #end def space_group_operations
 
 
-    def point_group_operations(self,tol=1e-5,unit=False):
+    def point_group_operations(self,tol=1e-5,*,unit=False):
         rotations,translations = self.space_group_operations(tol=tol,unit=unit)
         no_trans = translations.max(axis=1) < tol
         return rotations[no_trans]
     #end def point_group_operations
 
 
-    def check_point_group_operations(self,rotations=None,tol=1e-5,unit=False,dtol=1e-5,ncheck=1,exit=False):
+    def check_point_group_operations(self,rotations=None,tol=1e-5,dtol=1e-5,ncheck=1,*,unit=False,exit=False):
         if rotations is None:
             rotations = self.point_group_operations(tol=tol,unit=unit)
         #ned if
@@ -6224,7 +6230,7 @@ class Structure(Sobj):
         cubic_F        = 'Cubic Face Centered',
         )
 
-    def rmg_lattice(self,allow_tile=False,all_results=False,ret_bravais=False,exit=False,warn=False):
+    def rmg_lattice(self,*,allow_tile=False,all_results=False,ret_bravais=False,exit=False,warn=False):
         # output variables
         rmg_lattice = None
         tmatrix     = None
@@ -6294,7 +6300,7 @@ class Structure(Sobj):
     #end def rmg_lattice
 
 
-    def rmg_transform(self,allow_tile=False,allow_general=False,all_results=False):
+    def rmg_transform(self,*,allow_tile=False,allow_general=False,all_results=False):
         rmg_lattice,tmatrix,s,sp,bv = self.rmg_lattice(
             allow_tile  = allow_tile,
             exit        = not allow_general,
@@ -6399,12 +6405,13 @@ except:
 
 def _getseekpath(
     structure          = None, 
-    with_time_reversal = False, 
     recipe             = 'hpkot', 
     reference_distance = 0.025, 
     threshold          = 1E-7, 
     symprec            = 1E-5, 
     angle_tolerance    = 1.0,
+    *,
+    with_time_reversal = False,
     ):
     if not isinstance(structure, Structure):
         raise TypeError(
@@ -6875,7 +6882,16 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
         for n in range(len(structures_in)-1):
             struct1 = structures_in[n]
             struct2 = structures_in[n+1]
-            structs = interpolate_structures(struct1,struct2,images,min_image,recenter,match_com,repackage,chained=True)
+            structs = interpolate_structures(
+                struct1   = struct1,
+                struct2   = struct2,
+                images    = images,
+                min_image = min_image,
+                recenter  = recenter,
+                match_com = match_com,
+                repackage = repackage,
+                chained   = True
+                )
             if n==0:
                 structures.append(structs[0])
             #end if
@@ -6902,7 +6918,13 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
     #end if
 
     # perform the interpolation
-    structures = struct1.interpolate(struct2,images,min_image,recenter,match_com)
+    structures = struct1.interpolate(
+        struct2   = struct2,
+        images    = images,
+        min_image = min_image,
+        recenter  = recenter,
+        match_com = match_com,
+        )
 
     # repackage into physical system objects if requested
     if repackage:

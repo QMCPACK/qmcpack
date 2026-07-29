@@ -231,7 +231,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
     #end def analyze_local
 
 
-    def summarize(self,units='eV',norm=1.,energy=True,variance=True,header=True):
+    def summarize(self,units='eV',norm=1.,*,energy=True,variance=True,header=True):
         if isinstance(norm,str):
             norm = norm.replace('_',' ').replace('-',' ')
             if norm=='per atom':
@@ -271,7 +271,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
     #end def summarize
 
 
-    def plot_opt_convergence(self,title=None,saveonly=False):
+    def plot_opt_convergence(self,title=None,*,saveonly=False):
         if title is None:
             ts = 'Optimization: Energy/Variance Convergence'
         else:
@@ -313,7 +313,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
     #end def plot_opt_convergence
     
 
-    def plot_jastrow_convergence(self,title=None,saveonly=False,optconv=True):
+    def plot_jastrow_convergence(self,title=None,*,saveonly=False,optconv=True):
         if title is None:
             tsin = None
         else:
@@ -413,7 +413,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
         self.errors    = errors[order]
     #end def analyze_local
 
-    def summarize(self,units='eV',header=True):
+    def summarize(self,units='eV',*,header=True):
         timesteps = self.timesteps
         energies  = convert(self.energies.copy(),'Ha',units)
         errors    = convert(self.errors.copy(),'Ha',units)

@@ -119,7 +119,7 @@ class QmcpackAnalysisRequest(QAobject):
                  warmup_calculations=None,
                  output=set(['averages','samples']),
                  ndmc_blocks=1000,equilibration=None,group_num=None,
-                 traces=False,dm_settings=None):
+                 *,traces=False,dm_settings=None):
         self.source          = source if not isinstance(source, Path) else str(source.resolve())
         self.destination     = destination     
         self.savefile        = str(savefile)
@@ -473,7 +473,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     #end def load_data
 
 
-    def analyze(self,force=False):
+    def analyze(self,*,force=False):
         if not self.info.analyzed or force:
             if not self.info.data_loaded:
                 self.load_data()
@@ -666,7 +666,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
 
 
-    def save(self,filepath=None,overwrite=True):
+    def save(self,filepath=None,*,overwrite=True):
         if filepath is None:
             filepath = self.info.savefilepath
         #end if
@@ -696,7 +696,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
 
 
-    def check_traces(self,verbose=False,pad=None,header=None):
+    def check_traces(self,*,verbose=False,pad=None,header=None):
         if pad is None:
             pad = ''
         #end if
@@ -720,7 +720,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     #end def check_traces
 
 
-    def plot_trace(self,quantity,style='b-',offset=0,source='scalar',mlabels=True,
+    def plot_trace(self,quantity,style='b-',offset=0,source='scalar',*,mlabels=True,
                    mlines=True,show=True,alloff=False):
         mlabels &= not alloff
         mlines  &= not alloff

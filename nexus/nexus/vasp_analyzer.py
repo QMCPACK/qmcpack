@@ -725,7 +725,7 @@ class OutcarData(DevBase):
     #end def __init__
 
 
-    def read(self,ilast=False,elast=False,all=True):
+    def read(self,*,ilast=False,elast=False,all=True):
         ilast |= all
         elast |= all
         vlines = self.vlines
@@ -754,7 +754,7 @@ class OutcarData(DevBase):
 # main analyzer class
 
 class VaspAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,xml=False,analyze=False):
+    def __init__(self,arg0=None,*,xml=False,analyze=False):
         path     = None
         prefix   = None
         incar    = None
@@ -887,7 +887,7 @@ class VaspAnalyzer(SimulationAnalyzer):
                     emax = np.array(list(ion_step.keys()),dtype=int).max()
                     for enum,elec_step in ion_step.items():
                         elast = enum==emax
-                        elec_step.read(ilast,elast,all=False)
+                        elec_step.read(ilast=ilast,elast=elast,all=False)
                         if ilast and elast:
                             self.update(**elec_step)
                         #end if

@@ -449,7 +449,7 @@ class hobj(obj):
         warn(message,header,logfile=logfile)
     #end def warn
 
-    def error(self,message,header=None,exit=True,trace=-2):
+    def error(self,message,header=None,*,exit=True,trace=-2):
         if header is None:
             header = self.__class__.__name__
         logfile = self.__dict__.get('_logfile',None)
@@ -593,6 +593,7 @@ class QIobj(DevBase):
 
     @staticmethod
     def settings(
+        *,
         permissive_read  = False,
         permissive_write = False,
         permissive_init  = False,
@@ -651,7 +652,7 @@ class collection(hidden):
         self.remove(name)
     #end def __delattr__
 
-    def add(self,element,strict=True,key=None):
+    def add(self,element,*,strict=True,key=None):
         if not isinstance(element,QIxml):
             self.error('collection cannot be formed\nadd attempted for non QIxml element\ntype received: {0}'.format(element.__class__.__name__))
         #end if
@@ -939,7 +940,7 @@ class QIxml(Names):
     #end def init_class
 
 
-    def write(self,indent_level=0,pad='   ',first=False):
+    def write(self,indent_level=0,pad='   ',*,first=False):
         param.set_precision(self.get_precision())
         if not QIobj.permissive_write:
             self.check_junk(exit=True)
@@ -1226,7 +1227,7 @@ class QIxml(Names):
     #end def init_from_kwargs
 
 
-    def incorporate_defaults(self,elements=False,overwrite=False,propagate=True):
+    def incorporate_defaults(self,*,elements=False,overwrite=False,propagate=True):
         for name,value in self.defaults.items():
             defval=None
             if isinstance(value,classcollection):
@@ -1257,11 +1258,11 @@ class QIxml(Names):
         if propagate:
             for name,value in self.items():
                 if isinstance(value,QIxml):
-                    value.incorporate_defaults(elements,overwrite)
+                    value.incorporate_defaults(elements=elements,overwrite=overwrite)
                 elif isinstance(value,collection):
                     for v in value:
                         if isinstance(v,QIxml):
-                            v.incorporate_defaults(elements,overwrite)
+                            v.incorporate_defaults(elements=elements,overwrite=overwrite)
                         #end if
                     #end for
                 #end if
@@ -1270,7 +1271,7 @@ class QIxml(Names):
     #end def incorporate_defaults                    
 
 
-    def check_junk(self,junk=None,exit=False):
+    def check_junk(self,junk=None,*,exit=False):
         if junk is None:
             ks = set(self.keys())
             h5tags     = ks & set(self.h5tags)
@@ -1389,7 +1390,7 @@ class QIxml(Names):
     #end def get_single
 
 
-    def get(self,names,namedict=None,host=False,root=True):
+    def get(self,names,namedict=None,*,host=False,root=True):
         if namedict is None:
             namedict = {}
         #end if
@@ -1434,7 +1435,7 @@ class QIxml(Names):
         #end for
         for name,value in self.items():
             if isinstance(value,QIxml):
-                value.get(names,namedict,host,root=False)
+                value.get(names,namedict,host=host,root=False)
             elif isinstance(value,collection):
                 for n,v in value.items():
                     name_absent = n not in namedict
@@ -1452,7 +1453,7 @@ class QIxml(Names):
                         #end if
                     #end if
                     if isinstance(v,QIxml):
-                        v.get(names,namedict,host,root=False)
+                        v.get(names,namedict,host=host,root=False)
                     #end if
                 #end if
             #end if
@@ -1675,7 +1676,7 @@ class QIxml(Names):
     #end def pluralize
 
 
-    def difference(self,other,root=True):
+    def difference(self,other,*,root=True):
         if root:
             q1 = deepcopy(self)
             q2 = deepcopy(other)
@@ -1980,7 +1981,7 @@ class Param(Names):
     #end def read
 
 
-    def write(self,value,mode='attr',tag='parameter',name=None,pad='   ',write_type=None,normal_elem=False):
+    def write(self,value,mode='attr',tag='parameter',name=None,pad='   ',write_type=None,*,normal_elem=False):
         c = ''
         attr_mode = mode=='attr'
         elem_mode = mode=='elem'
@@ -3649,7 +3650,7 @@ class QmcpackInput(SimulationInput,Names):
     #end def write_text
 
 
-    def unroll_calculations(self,modify=True):
+    def unroll_calculations(self,*,modify=True):
         qmc = []
         sim = self.simulation
         if 'calculations' in sim:
@@ -3705,9 +3706,9 @@ class QmcpackInput(SimulationInput,Names):
         return base.get_host(names)
     #end def get_host
 
-    def incorporate_defaults(self,elements=False,overwrite=False,propagate=False):
+    def incorporate_defaults(self,*,elements=False,overwrite=False,propagate=False):
         base = self.get_base()
-        base.incorporate_defaults(elements,overwrite,propagate)
+        base.incorporate_defaults(elements=elements,overwrite=overwrite,propagate=propagate)
     #end def incorporate_defaults
 
     def pluralize(self):
@@ -3767,7 +3768,7 @@ class QmcpackInput(SimulationInput,Names):
         return xml
     #end def read_xml
 
-    def include_xml(self,xmlfile,replace=True,exists=True):
+    def include_xml(self,xmlfile,*,replace=True,exists=True):
         xml = self.read_xml(xmlfile)
         Param.metadata = self._metadata
         for name,exml in xml.items():
@@ -4327,7 +4328,7 @@ class QmcpackInput(SimulationInput,Names):
     #end def get_electron_particle_set
 
 
-    def return_system(self,structure_only=False):
+    def return_system(self,*,structure_only=False):
         input = deepcopy(self)
         input.pluralize()
         axes,ps,H = input.get('lattice','particlesets','hamiltonian')
@@ -4643,7 +4644,7 @@ class QmcpackInput(SimulationInput,Names):
         wfn.jastrows = make_collection(jastrows)
     #end def gen_jastrows
 
-    def optimize_jastrows(self,opt=True):
+    def optimize_jastrows(self,*,opt=True):
         opt = bool(opt)
         jastrows = self.get_jastrows()
         if jastrows is not None:
@@ -4701,7 +4702,7 @@ class QmcpackInput(SimulationInput,Names):
         return self.get('multideterminant')
     #end def get_multidet
 
-    def optimize_multidet(self,opt=True):
+    def optimize_multidet(self,*,opt=True):
         opt = bool(opt)
         md  = self.get_multidet()
         if md is None:
@@ -5471,7 +5472,7 @@ class QmcpackInput(SimulationInput,Names):
         # set jastrow params
         if self.has_jastrows():
             if jastrow_opt is not None:
-                self.optimize_jastrows(jastrow_opt)
+                self.optimize_jastrows(opt=jastrow_opt)
         # set multidet params
         if self.has_multidet():
             if multidet_h5 is not None:
@@ -5479,7 +5480,7 @@ class QmcpackInput(SimulationInput,Names):
             if multidet_cutoff is not None:
                 self.set_multidet_params(cutoff=multidet_cutoff)
             if multidet_opt is not None:
-                self.optimize_multidet(multidet_opt)
+                self.optimize_multidet(opt=multidet_opt)
         # set hamiltonian params
         if pseudo_files is not None:
             assert isinstance(pseudo_files,(dict,obj))
