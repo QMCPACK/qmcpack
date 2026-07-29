@@ -60,9 +60,9 @@ std::unique_ptr<ParticleSet> makeElectrons(const SimulationCell& simulation_cell
   return electrons;
 }
 
-std::unique_ptr<TrialWaveFunction> makeDeepQMCTrialWaveFunction(const RuntimeOptions& runtime_options,
-                                                                const ParticleSet& ions,
-                                                                std::shared_ptr<const DeepQMCBridge> bridge)
+std::unique_ptr<TrialWaveFunction> makeTrialWaveFunctionWithDeepQMC(const RuntimeOptions& runtime_options,
+                                                                    const ParticleSet& ions,
+                                                                    std::shared_ptr<const DeepQMCBridge> bridge)
 {
   auto twf = std::make_unique<TrialWaveFunction>(runtime_options, "deepqmc_benchmark");
   twf->addComponent(std::make_unique<DeepQMCWF>("DNN", ions, std::move(bridge), 0));
@@ -82,7 +82,7 @@ struct DeepQMCBenchmarkBatch
     for (int iw = 0; iw < batch_size; ++iw)
     {
       electrons.push_back(makeElectrons(simulation_cell, iw));
-      wavefunctions.push_back(makeDeepQMCTrialWaveFunction(runtime_options, ions, bridge));
+      wavefunctions.push_back(makeTrialWaveFunctionWithDeepQMC(runtime_options, ions, bridge));
     }
 
     wf_refs = std::make_unique<RefVectorWithLeader<TrialWaveFunction>>(*wavefunctions.front());
