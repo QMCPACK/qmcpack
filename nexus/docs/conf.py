@@ -61,6 +61,8 @@ extensions = [
     "numpydoc",
 ]
 
+autodoc_inherit_docstrings = False
+
 copybutton_exclude = '.linenos, .gp, .go' # Don't copy line numbers, prompts, or outputs.
 
 bibtex_bibfiles = ['bibs/methods.bib']
