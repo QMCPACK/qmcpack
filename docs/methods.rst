@@ -224,6 +224,8 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move                     |
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
+  | ``estimator_period``           | integer      | :math:`> 0`             | 1           | Number of steps between estimator measurements       |
+  +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``samples``                    | integer      | :math:`\geq 0`          | 0           | Total number of walker samples for this VMC run      |
   +--------------------------------+--------------+-------------------------+-------------+------------------------------------------------------+
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency                     |
@@ -289,6 +291,9 @@ Additional information:
   reducing overall statistical efficiency. For VMC, typically the
   acceptance ratio should be close to 50% for an efficient
   simulation.
+
+- ``estimator_period`` The period with which estimators are evaluated, measured in steps. If measurements have a significant
+    correlation time, this can reduce the computational cost of unnecesarily frequent estimator evaluations.
 
 - ``samples`` The intended total number of samples that will be made in the QMC section. This is primarily intended for VMC
   wavefunction optimization. The implementation always obtains at least the requested number but may obtain slightly more samples
@@ -1474,6 +1479,8 @@ Parameters:
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
   | ``timestep``                   | real         | :math:`> 0`             | 0.1               | Time step for each electron move                |
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
+  | ``estimator_period``           | integer      | :math:`> 0`             | 1                 | Number of steps between estimator measurements  |
+  +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
   | ``nonlocalmoves``              | string       | yes, no, v0, v1, v3     | no                | Run with T-moves                                |
   +--------------------------------+--------------+-------------------------+-------------------+-------------------------------------------------+
   | ``branching_cutoff_scheme``    | string       | classic/DRV/ZSGMA/YL    | classic           | Branch cutoff scheme                            |
@@ -1518,6 +1525,8 @@ Parameters:
   ``walkers_per_rank`` times the number MPI ranks.
 
 - ``target_walkers`` The target population size. Population control algorithms work towards this target. Do not confuse it with the actual walker count during random walking. The default will be the number of walkers when a DMC calculation starts, namely ``total_walkers``.
+
+- ``estimator_period`` The period with which estimators are evaluated, measured in steps. If measurements have a significant correlation time, as is typical in DMC, this can reduce the computational cost of unnecesarily frequent estimator evaluations.
 
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
