@@ -8,8 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "Concurrency/ParallelExecutor.hpp"
 
@@ -59,7 +59,7 @@ TEST_CASE("ParallelExecutor<OPENMP> nested case", "[concurrency]")
   };
 #ifdef _OPENMP
   REQUIRE_THROWS_WITH(test_block(num_threads, nested_tasks, count),
-                      Catch::Contains("ParallelExecutor should not be used for nested openmp threading"));
+                      Catch::Matchers::ContainsSubstring("ParallelExecutor should not be used for nested openmp threading"));
 #endif
 }
 

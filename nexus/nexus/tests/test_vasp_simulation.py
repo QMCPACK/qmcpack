@@ -182,7 +182,7 @@ def test_get_result(tmp_path):
               scale           = 1.0,
               units           = 'A',
               ),
-        )
+          )
 
     assert(check_object_eq(result,result_ref))
 
@@ -203,7 +203,7 @@ def test_incorporate_result(tmp_path):
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
         pseudo_strs=[c_potcar_text],
-    )
+        )
 
     sim = setup_vasp_sim(tmp_path,identifier='diamond',copy_files=True)
 

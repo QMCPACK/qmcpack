@@ -18,8 +18,8 @@
  *  But several ParticleSet functions use the global Random so we have to avoid the normal
  *  sequence of particleset state transforms and set particle positions explicitly.
  */
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <iostream>
 #include "OneBodyDensityMatrices.h"
