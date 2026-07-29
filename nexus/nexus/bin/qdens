@@ -249,7 +249,7 @@ class QDBase(DevBase):
 
     def exit(self):
         self.vlog('\n{0} finished\n'.format(self.name))
-        exit()
+        sys.exit()
     #end def exit
 
     def error(self,msg,loc=None):

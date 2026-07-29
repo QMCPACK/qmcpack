@@ -38,7 +38,7 @@ from .generic import generic_settings
 
 
 def deprecation_error():
-    message = (
+    msg = (
         'A now-deprecated member function of obj has been called.\n'
         'Please report this issue to the Nexus developers immediately.\n'
         'To temporarily restore the deprecated implementation, uncomment the\n'
@@ -50,7 +50,7 @@ def deprecation_error():
     report = (
         '\n{0}\n{1}\n{0}\n'
         '{0}\nTraceback (most recent call last):\n{2}{0}\n'
-        '{0}\n{1}\n{0}'.format(highlight,message,stack)
+        '{0}\n{1}\n{0}'.format(highlight,msg,stack)
         )
     raise RuntimeError(report)
 #end def deprecation_error
@@ -172,18 +172,18 @@ class DevBaseNexus(DevBase,obj_defended):
         kw.setdefault('logfile',self._logfile)
         log(*a,**kw)
 
-    def warn(self,message,indent='    '):
+    def warn(self,msg,indent='    '):
         warn(
-            message,
+            msg,
             indent,
             warn_type = 'class',
             cls       = type(self).__qualname__,
             )
 
-    def error(self,message,header=None,exit=True,trace=-2):
+    def error(self,msg,header=None,exit=True,trace=-2):
         if header is None:
             header = self.__class__.__name__
-        error(message,header,exit,trace,logfile=self._logfile)
+        error(msg,header,exit,trace,logfile=self._logfile)
 
 #end class DevBaseNexus
 

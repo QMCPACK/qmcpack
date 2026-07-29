@@ -134,6 +134,7 @@
 
 
 import os
+import sys
 from pathlib import Path
 from copy import deepcopy
 import inspect
@@ -1370,7 +1371,7 @@ class QIxml(Names):
                 #end if
             #end if
             if junk!=set(['analysis']) and junk!=set(['ratio']) and junk!=set(['randmo']) and junk!=set(['printeloc', 'source']) and junk!=set(['warmup_steps']) and junk!=set(['sposet_collection']) and junk!=set(['eigensolve', 'atom']) and junk!=set(['maxweight', 'reweightedvariance', 'unreweightedvariance', 'energy', 'exp0', 'stabilizerscale', 'minmethod', 'alloweddifference', 'stepsize', 'beta', 'minwalkers', 'nstabilizers', 'bigchange', 'usebuffer']) and junk!=set(['loop2']) and junk!=set(['random']) and junk!=set(['max_steps']):
-                exit()
+                sys.exit()
             #end if
         #end if
 
@@ -10104,7 +10105,7 @@ if __name__=='__main__':
 
 
         #something broke this, check later
-        exit()
+        sys.exit()
         qs=QmcpackInput(
             simulation = section(
                 project = section(
@@ -10280,7 +10281,7 @@ if __name__=='__main__':
         sg = est.edcell.spacegrid
         print(repr(est))
 
-        exit()
+        sys.exit()
 
 
 

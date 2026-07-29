@@ -1585,9 +1585,9 @@ class Supercomputer(Machine):
             None
         elif launcher=='ibrun': # Lonestar contribution from Paul Young
             job.run_options.add(
-	        np	= '-n '+str(job.processes),
-	        p	= '-o '+str(0),
-	        )
+            np	= '-n '+str(job.processes),
+            p	= '-o '+str(0),
+            )
         elif launcher=='jsrun': # Summit
             None # Summit class takes care of this in post_process_job
         elif launcher=='lrun': # Lassen
