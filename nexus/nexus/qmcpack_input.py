@@ -141,7 +141,7 @@ import keyword
 import numpy as np
 from .numpy_extensions import reshape_inplace
 from .xmlreader import XMLreader, XMLelement
-from .developer import DevBase, obj, error, log, warn
+from .developer import DevBase, dotdict, obj, error, log, warn
 from .generic import sorted_generic
 from .periodic_table import Elements
 from .structure import Structure, Jellium, get_kpath
@@ -6637,9 +6637,53 @@ def generate_hamiltonian(name         = 'h0',
                          system       = None,
                          wf_elem      = None,
                          interactions = 'default',
+                         nrule        = None,
                          ):
     if system is None:
         error('generate_hamiltonian argument system must not be None')
+    #end if
+    nrule_types = (dict,dotdict,obj)
+    nrule_is_int = isinstance(nrule,int) and not isinstance(nrule,bool)
+    nrule_is_map = nrule.__class__ in nrule_types if nrule is not None else False
+    if nrule is not None and not nrule_is_int and not nrule_is_map:
+        error('generate_hamiltonian argument nrule must be an integer, dict, '
+              'dotdict, obj, or None\n  '
+              'nrule provided: {0}\n  provided type: {1}'.format(
+                  nrule,nrule.__class__.__name__))
+    #end if
+    if nrule_is_int and nrule not in range(1,9):
+        error('generate_hamiltonian argument nrule must be one of the '
+              'integers 1 through 8\n  nrule provided: {0}'.format(nrule))
+    #end if
+    if nrule_is_map:
+        ion_labels = set(system.ion_labels)
+        nrule_labels = set(nrule.keys())
+        missing_labels = ion_labels-nrule_labels
+        extra_labels = nrule_labels-ion_labels
+        if len(missing_labels)>0 or len(extra_labels)>0:
+            error('generate_hamiltonian nrule mapping keys must match the '
+                  'atomic species labels\n  expected labels: {0}\n  '
+                  'provided labels: {1}\n  missing labels: {2}\n  '
+                  'unrecognized labels: {3}'.format(
+                      sorted(ion_labels,key=str),
+                      sorted(nrule_labels,key=str),
+                      sorted(missing_labels,key=str),
+                      sorted(extra_labels,key=str)))
+        #end if
+        for ion_label,ion_nrule in nrule.items():
+            if not isinstance(ion_nrule,int) or isinstance(ion_nrule,bool):
+                error('generate_hamiltonian nrule mapping values must be '
+                      'integers\n  atomic species label: {0}\n  '
+                      'nrule provided: {1}\n  provided type: {2}'.format(
+                          ion_label,ion_nrule,ion_nrule.__class__.__name__))
+            #end if
+            if ion_nrule not in range(1,9):
+                error('generate_hamiltonian nrule mapping values must be '
+                      'integers from 1 through 8\n  atomic species label: '
+                      '{0}\n  nrule provided: {1}'.format(
+                          ion_label,ion_nrule))
+            #end if
+        #end for
     #end if
 
     ename   = electrons
@@ -6693,7 +6737,13 @@ def generate_hamiltonian(name         = 'h0',
                     else:
                         error('pseudos provided to generate_hamiltonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion.name,str(ppfiles)))
                     #end if
-                    pseudos.add(pseudo(elementtype=ion,href=ppfile))
+                    pp_input = obj(elementtype=ion,href=ppfile)
+                    if nrule_is_map:
+                        pp_input.nrule = nrule[ion]
+                    elif nrule_is_int:
+                        pp_input.nrule = nrule
+                    #end if
+                    pseudos.add(pseudo(**pp_input))
                 #end for
                 pp = pseudopotential(name='PseudoPot',type='pseudo',source=iname,wavefunction=wfname,format=format,pseudos=pseudos)
                 if algorithm is not None:
@@ -8512,13 +8562,14 @@ def generate_batched_opt_calculations(
     if init_samples is None and init_steps is None and not has.steps:
         init_samples = 204800
     #end if
-    if not has.sr_tau:
-        if has.linesearch and opt_inputs.line_search:
-            opt_inputs.sr_tau = 0.1
-        else:
-            opt_inputs.sr_tau = 0.01
+    if has.minmethod and opt_inputs.minmethod=='sr_cg':
+        if not has.sr_tau:
+            if has.linesearch and opt_inputs.line_search:
+                opt_inputs.sr_tau = 0.1
+            else:
+                opt_inputs.sr_tau = 0.01
+            #end if
         #end if
-    #end if
     for k in list(opt_inputs.keys()):
         if opt_inputs[k] is None:
             del opt_inputs[k]
@@ -8579,11 +8630,12 @@ def generate_batched_opt_calculations(
         if init_steps is not None:
             init_opt.steps = init_steps
         #end if
-        if init_sr_tau is not None:
-            init_opt.sr_tau = init_sr_tau
-        #end if
-        if init_line_search is not None:
-            init_opt.line_search = init_line_search
+        if sr_cg:
+            if init_sr_tau is not None:
+                init_opt.sr_tau = init_sr_tau
+            #end if
+            if init_line_search is not None:
+                init_opt.line_search = init_line_search
         if not sr_cg:
             init_opt.minwalkers = init_minwalkers
         #end if
@@ -8603,6 +8655,7 @@ def generate_batched_opt_calculations(
     #end if
 
     opt_calcs.append(loop(max=cycles,qmc=cost_opt))
+
     return opt_calcs
 #end def generate_batched_opt_calculations
 
@@ -8840,6 +8893,7 @@ gen_basic_input_defaults = obj(
     excitation       = None,             
     system           = 'missing',        
     pseudos          = None,
+    nrule            = None,
     pseudo_algorithm = None,
     spinor           = None,
     dla              = None,
@@ -9215,6 +9269,7 @@ def generate_basic_input(**kwargs):
     hmltn = generate_hamiltonian(
         system       = kw.system,
         pseudos      = kw.pseudos,
+        nrule         = kw.nrule,
         algorithm    = kw.pseudo_algorithm,
         dla          = kw.dla,
         interactions = kw.interactions,
@@ -9501,7 +9556,8 @@ def generate_opt_jastrow_input(id  = 'qmc',
                                nonlocalpp       = False,
                                sample_factor    = 1.0,
                                opt_calcs        = None,
-                               det_format       = 'new'):
+                               det_format       = 'new',
+                               nrule            = None):
     jastrows = generate_jastrows(jastrows,system)
 
     if opt_calcs is None:
@@ -9553,6 +9609,7 @@ def generate_opt_jastrow_input(id  = 'qmc',
         orbitals_h5    = orbitals_h5    ,
         system         = system         ,
         pseudos        = pseudos        ,
+        nrule          = nrule          ,
         jastrows       = jastrows       ,
         corrections    = corrections    ,
         observables    = observables    ,

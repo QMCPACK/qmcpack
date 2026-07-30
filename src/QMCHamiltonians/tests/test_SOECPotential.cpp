@@ -8,8 +8,7 @@
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia Nationaln Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "Configuration.h"
 #include "QMCHamiltonians/SOECPotential.h"

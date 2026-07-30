@@ -13,3 +13,4 @@ User Guide
     examples
     user-scripts
     qmcpack-input-mod
+    qmcpack-input-gen
