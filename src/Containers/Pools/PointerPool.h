@@ -22,10 +22,9 @@ class PointerPool
 {
 public:
   using buffer_type = CONT;
-  using pointer     = typename CONT::pointer;
 
   // Local data routines
-  pointer getPointer(int index, buffer_type& buffer) { return &(buffer[offsets[index]]); }
+  typename CONT::value_type* getPointer(int index, buffer_type& buffer) { return &(buffer[offsets[index]]); }
 
   void allocate(buffer_type& buffer) { buffer.resize(totalSize); }
 
