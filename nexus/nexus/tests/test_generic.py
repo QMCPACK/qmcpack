@@ -1135,7 +1135,7 @@ def test_old_nexus_unpickle():
     ref_atomic_positions_atoms = [
         "Ge", "Ge", "Ge", "Ge", "Ge", "Ge", "Ge", "Ge", "Ge",
         "Ge", "Ge", "Ge", "Ge", "Ge", "Ge", "Ge", "Ge",
-    ]
+        ]
 
     ref_atomic_positions_positions = np.array([
         [ 5.34792496,  5.34792496,  5.34792496],
@@ -1155,13 +1155,13 @@ def test_old_nexus_unpickle():
         [ 8.02188743,  8.02188743, 13.36981239],
         [10.69584991, 10.69584991, 10.69584991],
         [13.36981239, 13.36981239, 13.36981239],
-    ], dtype=np.float64)
+        ], dtype=np.float64)
 
     ref_cell_parameters_vectors = np.array([
         [10.69584991, 10.69584991,  0.        ],
         [ 0.        , 10.69584991, 10.69584991],
         [10.69584991,  0.        , 10.69584991],
-    ], dtype=np.float64)
+        ], dtype=np.float64)
 
     inp_obj = obj()
     if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':

@@ -105,7 +105,7 @@ def get_cpu_cores() -> int:
                 warn(
                    f"Operating system '{sysname}' not recognized by Nexus.\n"
                     "Could not get number of physical CPU cores, defaulting to logical..."
-                    )
+                   )
 
     except CalledProcessError as err:
         warn(
@@ -3452,28 +3452,28 @@ class Baseline(Supercomputer):
         'batch': {
             'max_nodes': 138,
             'max_walltime': '24:00:00',
-        },
+            },
         'batch_low_memory': {
             'max_nodes': 68,
             'max_walltime': '24:00:00',
-        },
+            },
         'batch_high_memory': {
             'max_nodes': 70,
             'max_walltime': '24:00:00',
-        },
+            },
         'batch_ccsi': {
             'max_nodes': 20,
             'max_walltime': '24:00:00',
-        },
+            },
         'batch_cnms': {
             'max_nodes': 20,
             'max_walltime': '24:00:00',
-        },
+            },
         'gpu_acmhs': {
             'max_nodes': 1,
             'max_walltime': '24:00:00',
+            }
         }
-    }
     def write_job_header(self,job):
         self.validate_queue_config(job)
 
@@ -3507,16 +3507,16 @@ class Frontier(Supercomputer):
         'batch': {
             'max_nodes': 9664,
             'max_walltime': '12:00:00',
-        },
+            },
         'extended': {
             'max_nodes': 1894,
             'max_walltime': '24:00:00',
-        },
+            },
         'debug': {
             'max_nodes': 1,
             'max_walltime': '01:00:00',
+            }
         }
-    }
 
     def pre_process_job(self,job):
         # Set default queue and node type
@@ -3543,20 +3543,20 @@ class Frontier(Supercomputer):
             job.run_options.add(
                 cpu_bind='--cpu-bind=threads',
                 threads_per_core='--threads-per-core={0}'.format(job.threads)
-            )            
+                )
         elif 'gpu' in job.constraint:
             gpus_per_task = int(np.floor(float(self.gpus_per_node)/job.processes_per_node))
             job.run_options.add(
                 gpu_bind='--gpu-bind=closest',
                 gpus_per_task='--gpus-per-task={0}'.format(gpus_per_task)
-            )
+                )
         #end if
         job.run_options.add(
             N='-N {}'.format(job.nodes),
             n='-n {}'.format(job.processes),
             c='-c {}'.format(job.threads),
 
-        )
+            )
 
     def write_job_header(self, job):
         self.validate_queue_config(job)
@@ -3594,16 +3594,16 @@ class Besms(Supercomputer):
         't92': {
             'max_nodes': 10,
             'max_walltime': '672:00:00',
-        },
+            },
         't92-burst': {
             'max_nodes': 25,
             'max_walltime': '672:00:00',
-        },
+            },
         'burst': {
             'max_nodes': 166,
             'max_walltime': '48:00:00',
-        },
-    }
+            },
+        }
     def write_job_header(self,job):
         self.validate_queue_config(job)
 
@@ -3820,23 +3820,23 @@ class Leonardo(Supercomputer):
             'max_nodes' : 64,
             'min_nodes' : 1,
             'max_hours' : 24.0,
-        },
+            },
         'boost_qos_dbg': {
             'max_nodes' : 4,
             'min_nodes' : 1,
             'max_hours' : 0.5,   # 30 minuti
-        },
+            },
         'boost_qos_bprod': {
             'min_nodes' : 65,
             'max_nodes' : 256,
             'max_hours' : 24.0,
-        },
+            },
         'boost_qos_lprod': {
             'min_nodes' : 1,
             'max_nodes' : 8,
             'max_hours' : 96.0,  # 4 giorni
-        },
-    }
+            },
+        }
     # serial partition: lrd_all_serial
     # No GPUs, Hyperthreading x 2, Budget Free, 30800 MB RAM
     serial_partition  = 'lrd_all_serial'
@@ -3853,13 +3853,13 @@ class Leonardo(Supercomputer):
         job.run_options.add(
             N='-N {}'.format(job.nodes),
             n='-n {}'.format(job.processes),
-        )
+            )
 
         # If OpenMP threads are requested, set -c and cpu binding
         if job.threads > 1:
             job.run_options.add(
                 c='-c {}'.format(job.threads),
-            )
+                )
 
             # Only add cpu_bind if not already specified by the user
             if 'cpu_bind' not in job.run_options:
@@ -3894,7 +3894,7 @@ class Leonardo(Supercomputer):
             + job.hours
             + job.minutes / 60.0
             + job.seconds / 3600.0
-        )
+            )
 
         if serial_mode:
             # ===== SERIAL MODE: lrd_all_serial =====
@@ -3905,7 +3905,7 @@ class Leonardo(Supercomputer):
                 raise RuntimeError(
                     f'The serial queue (partition=lrd_all_serial) allows exactly 1 node, '
                     f'but job.nodes={job.nodes}.'
-                )
+                    )
 
             # Check total cores (processes_per_node * threads)
             ppn = getattr(job, 'processes_per_node', None)
@@ -3917,7 +3917,7 @@ class Leonardo(Supercomputer):
                     raise RuntimeError(
                         f'The serial queue (partition=lrd_all_serial) allows at most {self.serial_max_cores} cores, '
                         f'but you requested {total_cores} (ppn={ppn}, threads={threads}).'
-                    )
+                        )
             # end if
 
             # Enforce serial walltime limit
@@ -3925,7 +3925,7 @@ class Leonardo(Supercomputer):
                 raise RuntimeError(
                     f'Requested runtime ({job.total_hours:.2f} h) exceeds '
                     f'lrd_all_serial limit ({self.serial_max_hours:.2f} h).'
-                )
+                    )
 
         else:
             # ===== BOOSTER MODE: boost_usr_prod with QoS table =====
@@ -3941,7 +3941,7 @@ class Leonardo(Supercomputer):
                 raise RuntimeError(
                     f'Unknown QoS "{job.queue}" for machine "leonardo". '
                     f'Valid QoS: {", ".join(self.booster_qos.keys())}.'
-                )
+                    )
             # end if
 
             min_nodes = qos_rules.get('min_nodes', 1)
@@ -3953,14 +3953,14 @@ class Leonardo(Supercomputer):
                 raise RuntimeError(
                     f'Requested nodes ({job.nodes}) < min ({min_nodes}) '
                     f'for QoS {job.queue}.'
-                )
+                    )
             # end if
 
             if max_nodes is not None and job.nodes > max_nodes:
                 raise RuntimeError(
                     f'Requested nodes ({job.nodes}) > max ({max_nodes}) '
                     f'for QoS {job.queue}.'
-                )
+                    )
             # end if
 
             # Enforce walltime limit
@@ -3968,7 +3968,7 @@ class Leonardo(Supercomputer):
                 raise RuntimeError(
                     f'Requested runtime ({job.total_hours:.2f} h) exceeds '
                     f'limit ({max_hours:.2f} h) for QoS {job.queue}.'
-                )
+                    )
             # end if
         # end if serial_mode
 
@@ -3982,7 +3982,7 @@ class Leonardo(Supercomputer):
             job.hours + 24 * job.days,
             job.minutes,
             job.seconds
-        )
+            )
         c += f'#SBATCH --output={job.outfile}\n'
         c += f'#SBATCH --error={job.errfile}\n'
 
@@ -4687,7 +4687,7 @@ Ruby(         1480,   2,    28,  192,  100,   'srun',   'sbatch',  'squeue', 'sc
 Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Inti(           13,   2,    64,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Baseline(      128,   2,    64,  512,  100,   'srun',   'sbatch',  'squeue', 'scancel')
-Besms(         166,   1,    96,  768, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Besms(         166,   2,    96,  768, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Frontier(     9856,   4,    14,   64, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Aurora(      10624,   2,   102,  512, 1000,'mpiexec',     'qsub',   'qstat',    'qdel')
 
