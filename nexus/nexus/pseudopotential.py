@@ -2758,8 +2758,8 @@ class QmcpackPP(SemilocalPP):
             if l2.format!='r*V':
                 self.error('unrecognized potential format: {0}\nthe only supported format is r*V'.format(l2.format))
             #end if
-            from nexus.developer import ci
             if isinstance(l2.radfunc.data,str):
+                # fix edge case: no spaces between written floats
                 text = l2.radfunc.data
                 text = re.sub(r'(?<!e)-', ' -', text)
                 l2.radfunc.data = np.array(text.split(),dtype=float)
