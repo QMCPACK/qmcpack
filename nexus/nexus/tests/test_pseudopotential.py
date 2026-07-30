@@ -652,7 +652,7 @@ wfc_cutoff="4.363174091908e1" rho_cutoff="2.755329390766e2" l_max="2" l_max_rho=
 #end def test_read_upf_z_valence
 
 
-def test_read_xml_z_valence(tmp_path):
+def test_read_qmcpack_xml_z_valence(tmp_path):
     xml_file = TEST_FILES["C.BFD.xml"]
 
     z_valence = read_qmcpack_xml_z_valence(xml_file)
@@ -1520,7 +1520,7 @@ def test_pseudoset_from_mixed_dir(tmp_path):
 #end def test_pseudoset_from_mixed_dir
 
 
-def test_pseudoset_from_mixed_dir_fails(tmp_path):
+def test_pseudoset_from_mixed_dir_rmg_collision(tmp_path):
     pseudo_names = (
         "C.BFD.xml",
         "H.BFD.xml",
@@ -1528,6 +1528,9 @@ def test_pseudoset_from_mixed_dir_fails(tmp_path):
         "C.BFD.upf",
         "H.BFD.upf",
         "O.BFD.upf",
+        # Throw in some misc files to make sure they get ignored
+        "C.tmp",
+        "C2.other",
         )
 
     psp_dir = tmp_path / "mixed_pseudos"
@@ -1536,11 +1539,6 @@ def test_pseudoset_from_mixed_dir_fails(tmp_path):
 
     pseudo_list = []
     for psp in pseudo_names:
-        if "POTCAR" in psp:
-            potcar_dir = psp_dir / psp.split("/")[0]
-            potcar_dir.mkdir()
-            assert potcar_dir.exists(), "Failed to create POTCAR directory!"
-
         pseudo = (psp_dir / psp).resolve()
         pseudo.touch()
         assert pseudo.exists(), "Failed to create pseudo file!"
@@ -1713,7 +1711,262 @@ def test_pseudoset_from_mixed_dir_fails(tmp_path):
     assert(pyscf_calc.pseudos     == pyscf_ref.pseudos)
     assert(pyscf_calc.codes       == pyscf_ref.codes)
     assert(pyscf_calc.pseudo_dirs == pyscf_ref.pseudo_dirs)
-#end def test_pseudoset_from_mixed_dir_fails
+#end def test_pseudoset_from_mixed_dir_rmg_collision
+
+
+def test_pseudoset_from_mixed_dir_espresso_collision(tmp_path):
+    pseudo_names = (
+        "C.BFD.upf",
+        "C1.uspp.UPF",
+        "C_4.ncpp",
+        )
+
+    psp_dir = tmp_path / "espresso_collision"
+    psp_dir.mkdir()
+    assert psp_dir.exists(), "Failed to create pseudo directory!"
+
+    pseudo_list = []
+    for psp in pseudo_names:
+        pseudo = (psp_dir / psp).resolve()
+        pseudo.touch()
+        assert pseudo.exists(), "Failed to create pseudo file!"
+        pseudo_list.append(pseudo)
+
+    with pytest.raises(
+        RuntimeError,
+        match=(
+            "Duplicate element detected for code 'espresso'\n"
+            "Either remove 'espresso' from the selected codes, or specify "
+            "`filters` and/or `patterns` to ensure the collision does not happen"
+            ),
+        ):
+        _ = PseudoSet.from_mixed_dir(
+            pseudo_dir = psp_dir,
+            codes      = None, # Default values
+            extensions = None, # Default values
+            )
+
+    # Filter by pattern
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"espresso"},
+        patterns   = {"espresso": "BFD"},
+        )
+
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"espresso"},
+        patterns   = {"espresso": "uspp"},
+        )
+
+    # Filter by extension
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"espresso"},
+        extensions = {"espresso": ".ncpp"},
+        )
+#end def test_pseudoset_from_mixed_dir_espresso_collision
+
+
+def test_pseudoset_from_mixed_dir_vasp_collision(tmp_path):
+    pseudo_names = (
+        "C/POTCAR",
+        "N/POTCAR",
+        "C4-special.vasp",
+        )
+
+    psp_dir = tmp_path / "vasp_collision"
+    psp_dir.mkdir()
+    assert psp_dir.exists(), "Failed to create pseudo directory!"
+
+    pseudo_list = []
+    for psp in pseudo_names:
+        if "POTCAR" in psp:
+            potcar_dir = psp_dir / psp.split("/")[0]
+            potcar_dir.mkdir()
+            assert potcar_dir.exists(), "Failed to create POTCAR directory!"
+
+        pseudo = (psp_dir / psp).resolve()
+        pseudo.touch()
+        assert pseudo.exists(), "Failed to create pseudo file!"
+        pseudo_list.append(pseudo)
+
+    with pytest.raises(
+            RuntimeError,
+            match=(
+                "Duplicate element detected for code 'vasp'\n"
+                "Either remove 'vasp' from the selected codes, or specify "
+                "`filters` and/or `patterns` to ensure the collision does not happen"
+                ),
+            ):
+            _ = PseudoSet.from_mixed_dir(
+                pseudo_dir = psp_dir,
+                codes      = {"vasp"},
+                extensions = None,
+                )
+    
+    # Filter by pattern
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"vasp"},
+        patterns   = {"vasp": "special"},
+        )
+
+    # Filter by extension
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"vasp"},
+        extensions = {"vasp": ".vasp"},
+        )
+
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"vasp"},
+        extensions = {"vasp": "POTCAR"},
+        )
+
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"vasp"},
+        extensions = {"vasp": "potcar"},
+        )
+#end def test_pseudoset_from_mixed_dir_vasp_collision
+
+
+def test_pseudoset_from_mixed_dir_gamess_collision(tmp_path):
+    pseudo_names = (
+        "C.gms",
+        "C_special.gamess",
+        "N.gamess",
+        )
+
+    psp_dir = tmp_path / "gamess_collision"
+    psp_dir.mkdir()
+    assert psp_dir.exists(), "Failed to create pseudo directory!"
+
+    pseudo_list = []
+    for psp in pseudo_names:
+        pseudo = (psp_dir / psp).resolve()
+        pseudo.touch()
+        assert pseudo.exists(), "Failed to create pseudo file!"
+        pseudo_list.append(pseudo)
+
+    with pytest.raises(
+            RuntimeError,
+            match=(
+                "Duplicate element detected for code 'gamess'\n"
+                "Either remove 'gamess' from the selected codes, or specify "
+                "`filters` and/or `patterns` to ensure the collision does not happen"
+                ),
+            ):
+            _ = PseudoSet.from_mixed_dir(
+                pseudo_dir = psp_dir,
+                codes      = None, # Default values
+                extensions = None, # Default values
+                )
+
+    with pytest.raises(
+            RuntimeError,
+            match=(
+                "Duplicate element detected for code 'gamess'\n"
+                "Either remove 'gamess' from the selected codes, or specify "
+                "`filters` and/or `patterns` to ensure the collision does not happen"
+                ),
+            ):
+            _ = PseudoSet.from_mixed_dir(
+                pseudo_dir = psp_dir,
+                codes      = {"gamess"},
+                extensions = None,
+                )
+    
+    # Filter by pattern
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"gamess"},
+        patterns   = {"gamess": "special"},
+        )
+
+    # Filter by extension
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"gamess"},
+        extensions = {"gamess": ".gamess"},
+        )
+
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"gamess"},
+        extensions = {"gamess": ".gms"},
+        )
+#end def test_pseudoset_from_mixed_dir_gamess_collision
+
+
+def test_pseudoset_from_mixed_dir_pyscf_collision(tmp_path):
+    pseudo_names = (
+        "C.nwchem",
+        "C_special.gth",
+        "N.gth",
+        )
+
+    psp_dir = tmp_path / "pyscf_collision"
+    psp_dir.mkdir()
+    assert psp_dir.exists(), "Failed to create pseudo directory!"
+
+    pseudo_list = []
+    for psp in pseudo_names:
+        pseudo = (psp_dir / psp).resolve()
+        pseudo.touch()
+        assert pseudo.exists(), "Failed to create pseudo file!"
+        pseudo_list.append(pseudo)
+
+    with pytest.raises(
+            RuntimeError,
+            match=(
+                "Duplicate element detected for code 'pyscf'\n"
+                "Either remove 'pyscf' from the selected codes, or specify "
+                "`filters` and/or `patterns` to ensure the collision does not happen"
+                ),
+            ):
+            _ = PseudoSet.from_mixed_dir(
+                pseudo_dir = psp_dir,
+                codes      = None, # Default values
+                extensions = None, # Default values
+                )
+
+    with pytest.raises(
+            RuntimeError,
+            match=(
+                "Duplicate element detected for code 'pyscf'\n"
+                "Either remove 'pyscf' from the selected codes, or specify "
+                "`filters` and/or `patterns` to ensure the collision does not happen"
+                ),
+            ):
+            _ = PseudoSet.from_mixed_dir(
+                pseudo_dir = psp_dir,
+                codes      = {"pyscf"},
+                extensions = None,
+                )
+    
+    # Filter by pattern
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"pyscf"},
+        patterns   = {"pyscf": "special"},
+        )
+
+    # Filter by extension
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"pyscf"},
+        extensions = {"pyscf": ".gth"},
+        )
+
+    _ = PseudoSet.from_mixed_dir(
+        pseudo_dir = psp_dir,
+        codes      = {"pyscf"},
+        extensions = {"pyscf": ".nwchem"},
+        )
+#end def test_pseudoset_from_mixed_dir_pyscf_collision
 
 
 def test_pseudoset_from_mixed_dir_mismatches(tmp_path):
