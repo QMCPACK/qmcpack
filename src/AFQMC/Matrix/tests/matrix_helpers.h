@@ -60,9 +60,15 @@ template<class M1,
          typename = void>
 void verify_approx(M1 const& A, M2 const& B)
 {
-  REQUIRE(A.size() == B.size());
-  for (int i = 0; i < A.size(); i++)
-    verify_approx(A[i], B[i]);
+  auto const a_size = A.size();
+  auto const b_size = B.size();
+  REQUIRE(a_size == b_size);
+  for (int i = 0; i < a_size; i++)
+  {
+    auto const a_slice = A[i];
+    auto const b_slice = B[i];
+    verify_approx(a_slice, b_slice);
+  }
 }
 
 } // namespace qmcplusplus

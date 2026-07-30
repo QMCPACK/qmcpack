@@ -81,7 +81,7 @@ def test_options():
         n = '-n 1',
         d = '-d 2',
         exe = '--exe',
-    )
+        )
     oi = Options(**inputs)
     assert(dict(**oi)==inputs)
 
@@ -2146,7 +2146,7 @@ srun test.x''',
 #SBATCH -J jobname
 #SBATCH -t 06:30:00
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=96
+#SBATCH --ntasks-per-node=192
 #SBATCH --cpus-per-task=1
 #SBATCH -o test.out
 #SBATCH -e test.err

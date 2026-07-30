@@ -2,6 +2,7 @@
 
 import copy
 import pickle
+from collections.abc import MutableMapping
 from numbers import Number
 
 
@@ -377,3 +378,5 @@ def to_obj(d):
             o[k] = v
     return o
 #end def to_obj
+
+MutableMapping.register(obj)

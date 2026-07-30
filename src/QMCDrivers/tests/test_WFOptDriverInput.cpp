@@ -9,9 +9,7 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "QMCDrivers/WFOpt/WFOptDriverInput.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
