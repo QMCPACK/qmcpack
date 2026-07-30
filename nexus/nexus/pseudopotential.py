@@ -36,6 +36,7 @@
 #                                                                    #
 #====================================================================#
 
+from copy import deepcopy
 import os
 from os import PathLike
 from pathlib import Path
@@ -626,7 +627,12 @@ class Pseudopotential(DevBase):
 
 class SemilocalPP(Pseudopotential):
     l_channels   = tuple('spdfghiklmnoqrtuvwxyz')
-    channel_colors = obj(s='g',p='r',d='b',f='m',g='c',h='k',i='g',L2='k')
+    channel_colors = obj(s='g',p='r',d='b',f='m',g='c',
+                         h='g',i='r',j='b',k='m',l='c',
+                         m='g',n='r',o='b',q='m',r='c',
+                         t='g',u='r',v='b',w='m',x='c',
+                         y='g',z='r',
+                         L2='k')
 
     numeric        = False
     interpolatable = True
@@ -1393,6 +1399,7 @@ class SemilocalPP(Pseudopotential):
 
                 
     def plot_L2(self,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None,color=None):
+        color_in = color
         if fig:
             plt.figure(tight_layout=True)
         #end if
@@ -1401,10 +1408,12 @@ class SemilocalPP(Pseudopotential):
         elif r is None:
             r = np.linspace(rmin,rmax,1000)
         #end if
+        rin=r
         vs = self.evaluate_channel(r,'s',with_local=True,rmin=rmin-1e-12)
         for c in self.l_channels[1:]:
+            r = rin
             if c in self.components:
-                if color is None:
+                if color_in is None:
                     color = self.channel_colors[c]
                 #end if
                 v = self.evaluate_channel(r,c,with_L2=False,rmin=rmin-1e-12)
@@ -1536,7 +1545,9 @@ class SemilocalPP(Pseudopotential):
 
             mid_norm = MidNorm(vmin,vmax,0.0)
 
-            cs = ax.contourf(X,Z,V,levels=lev,cmap=cmap,clim=(vmin,vmax),norm=mid_norm)
+            cs = ax.contourf(X,Z,V,levels=lev,cmap=cmap,
+                             norm=mid_norm)
+            cs.set_clim(vmin,vmax)
             plt.plot(rc*cos,rc*sin,'k--',lw=2)
 
             fig.colorbar(cs, ax=ax, shrink=0.9)
@@ -1646,7 +1657,7 @@ class SemilocalPP(Pseudopotential):
                 if n%3==0:
                     L2 += dpad
                 #end if
-                L2 += '{0:22.14e}'.format(d)
+                L2 += ' {0:22.14e}'.format(d)
                 n+=1
             #end for
             L2 = L2.rstrip()+'\n'
@@ -1668,7 +1679,7 @@ class SemilocalPP(Pseudopotential):
                     if n%3==0:
                         semilocal+=dpad
                     #end if
-                    semilocal+='{0:22.14e}'.format(d)
+                    semilocal+=' {0:22.14e}'.format(d)
                     n+=1
                 #end for
                 semilocal = semilocal.rstrip()+'\n'
@@ -2762,6 +2773,11 @@ class QmcpackPP(SemilocalPP):
             if l2.format!='r*V':
                 self.error('unrecognized potential format: {0}\nthe only supported format is r*V'.format(l2.format))
             #end if
+            if isinstance(l2.radfunc.data,str):
+                # fix edge case: no spaces between written floats
+                text = l2.radfunc.data
+                text = re.sub(r'(?<!e)-', ' -', text)
+                l2.radfunc.data = np.array(text.split(),dtype=float)
             self.components.L2 = l2.radfunc.data.copy()
         #end if
         sl = pp.semilocal
