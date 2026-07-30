@@ -1544,7 +1544,7 @@ class SemilocalPP(Pseudopotential):
 
             mid_norm = MidNorm(vmin,vmax,0.0)
 
-            cs = ax.contourf(X,Z,V,levels=lev,cmap=cmap,#clim=(vmin,vmax),
+            cs = ax.contourf(X,Z,V,levels=lev,cmap=cmap,
                              norm=mid_norm)
             cs.set_clim(vmin,vmax)
             plt.plot(rc*cos,rc*sin,'k--',lw=2)
