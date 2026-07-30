@@ -303,6 +303,7 @@ def test_analyze():
         kpoints
         parameters
         '''.split()
+
     assert(set(vxml.modeling.keys())==set(keys))
 
     parameters = obj(

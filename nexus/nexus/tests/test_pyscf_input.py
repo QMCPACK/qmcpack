@@ -46,7 +46,7 @@ mf.kernel()
 
 
 def test_empty_init():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..pyscf_input import PyscfInput,generate_pyscf_input
 
     ref = obj(
@@ -61,7 +61,7 @@ def test_empty_init():
         )
 
     pi = PyscfInput()
-    assert(object_eq(pi.to_obj(),ref))
+    assert(object_eq(to_obj(pi),ref))
 
     pi2 = generate_pyscf_input()
     assert(isinstance(pi2,PyscfInput))
@@ -71,7 +71,7 @@ def test_empty_init():
 
 
 def test_generate(tmp_path):
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..physical_system import generate_physical_system
     from ..pyscf_input import generate_pyscf_input
 
@@ -127,7 +127,7 @@ def test_generate(tmp_path):
         )
     del pi.template
     del pi.values
-    assert(object_eq(pi.to_obj(),ref_internal))
+    assert(object_eq(to_obj(pi),ref_internal))
 
     
     # diamond crystal
@@ -192,7 +192,7 @@ def test_generate(tmp_path):
 
     del pi.template
     del pi.values
-    assert(object_eq(pi.to_obj(),ref_internal))
+    assert(object_eq(to_obj(pi),ref_internal))
 
     # water molecule without template
     xyz_path = tmp_path / 'H2O.xyz'
@@ -270,7 +270,7 @@ def test_generate(tmp_path):
     del pi.values
     del pi.calculation
     del pi.template
-    assert(object_eq(pi.to_obj(),ref_internal))
+    assert(object_eq(to_obj(pi),ref_internal))
 
     
     # MnO crystal without template
@@ -391,7 +391,7 @@ def test_generate(tmp_path):
     del pi.values
     del pi.calculation
     del pi.template
-    assert(object_eq(pi.to_obj(),ref_internal))
+    assert(object_eq(to_obj(pi),ref_internal))
 #end def test_generate
 
 

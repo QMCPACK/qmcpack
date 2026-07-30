@@ -9,9 +9,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsData/AttributeSet.h"
@@ -34,7 +33,7 @@ TEST_CASE("AttributeSet", "[xml]")
   pattrib.add(name, "name");
   pattrib.add(other, "other");
   pattrib.add(deprecated_tag, "deprecated_tag", {"abc", "def"}, TagStatus::DEPRECATED);
-  CHECK_THROWS_WITH(pattrib.put(doc.getRoot()), Catch::Matchers::Contains("is not valid"));
+  CHECK_THROWS_WITH(pattrib.put(doc.getRoot()), Catch::Matchers::ContainsSubstring("is not valid"));
 
   REQUIRE(name == "here");
   REQUIRE(other == "default");

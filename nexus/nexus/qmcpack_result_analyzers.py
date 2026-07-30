@@ -27,6 +27,7 @@
 
 
 import numpy as np
+from copy import deepcopy
 from .developer import obj
 from .unit_converter import convert
 from .qmcpack_analyzer_base import QAobject,QAanalyzer
@@ -168,7 +169,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
         #end for
                 
 
-        self.set(
+        self.update(
             any_complete   = any_complete,
             all_complete   = all_complete,
             unstable       = unstable,
@@ -225,7 +226,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
             opt_series -= 1
             self.optimal_series = opt_series
             self.optimal_file = opts[opt_series].info.files.opt
-            self.optimal_wavefunction = opts[opt_series].wavefunction.info.wfn_xml.copy()
+            self.optimal_wavefunction = deepcopy(opts[opt_series].wavefunction.info.wfn_xml)
         #end if
     #end def analyze_local
 
@@ -382,7 +383,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
 class TimestepStudyAnalyzer(ResultAnalyzer):
     def __init__(self,dmc,nindent=0):
         QAanalyzer.__init__(self,nindent=nindent)
-        self.set(
+        self.update(
             dmc = dmc,
             timesteps = [],
             energies  = [],
@@ -398,7 +399,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
         timesteps = []
         energies  = []
         errors    = []
-        for dmc in self.dmc:
+        for dmc in self.dmc.values():
             timesteps.append(dmc.info.method_input.timestep)
             energies.append(dmc.scalars.LocalEnergy.mean)
             errors.append(dmc.scalars.LocalEnergy.error)

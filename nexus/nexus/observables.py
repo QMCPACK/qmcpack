@@ -13,7 +13,7 @@ from .unit_converter import convert
 from .developer import DevBase, obj, log, error, unavailable
 from .numerics import simstats
 from .grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
-from .grid_functions import SpheroidGrid
+from .grid_functions import SpheroidGrid,ParallelotopeGridFunction
 from .structure import Structure, get_seekpath_full
 from .fileio import XsfFile
 from .hdfreader import read_hdf
@@ -32,6 +32,15 @@ try:
 except:
     h5py = unavailable('h5py')
 #end try
+
+
+def get_path(o, path, value=None):
+    """Retrieve a value from a nested dict-like object by slash-delimited path."""
+    for key in path.split('/'):
+        if key not in o:
+            return value
+        o = o[key]
+    return o
 
 
 class VLog(DevBase):
@@ -99,7 +108,7 @@ class VLog(DevBase):
 
     def set_verbosity(self,level):
         if level not in self.verbosity_levels:
-            vlinv = self.verbosity_levels.inverse()
+            vlinv = {v:k for k,v in self.verbosity_levels.items()}
             error('Cannot set verbosity level to "{}".\nValid options are: {}'.format(level,[vlinv[i] for i in sorted(vlinv.keys())]))
         #end if
         self.verbosity = self.verbosity_levels[level]
@@ -153,13 +162,11 @@ class DefinedAttributeBase(DevBase):
         if len(other_cls)==1 and issubclass(other_cls[0],DefinedAttributeBase):
             cls.obtain_attributes(other_cls[0])
         #end if
-        if cls.class_has('attribute_definitions'):
+        if hasattr(cls,'attribute_definitions'):
             attr_defs = cls.attribute_definitions
         else:
             attr_defs = obj()
-            cls.class_set(
-                attribute_definitions = attr_defs
-                )
+            setattr(cls,'attribute_definitions',attr_defs)
         #end if
         for name,attr_props in attribute_properties.items():
             attr_props = AttributeProperties(**attr_props)
@@ -173,8 +180,8 @@ class DefinedAttributeBase(DevBase):
                 #end for
             #end if
         #end for
-        if cls.class_has('unassigned_default'):
-            for p in attr_defs:
+        if hasattr(cls,'unassigned_default'):
+            for p in attr_defs.values():
                 if 'default' not in p.assigned:
                     p.default = cls.unassigned_default
                 #end if
@@ -201,21 +208,21 @@ class DefinedAttributeBase(DevBase):
                 sublevel_attributes.add(name)
             #end if
         #end for
-        cls.class_set(
+        d = dict(
             required_attributes = required_attributes,
             deepcopy_attributes = deepcopy_attributes,
             typed_attributes    = typed_attributes,
             toplevel_attributes = toplevel_attributes,
             sublevel_attributes = sublevel_attributes,
             )
+        for k,v in d.items():
+            setattr(cls,k,v)
     #end def define_attributes
 
 
     @classmethod
     def obtain_attributes(cls,super_cls):
-        cls.class_set(
-            attribute_definitions = super_cls.attribute_definitions.copy()
-            )
+        setattr(cls,'attribute_definitions',deepcopy(super_cls.attribute_definitions))
     #end def obtain_attributes
 
 
@@ -254,7 +261,9 @@ class DefinedAttributeBase(DevBase):
         invalid     = value_names - attr_names
         if len(invalid)>0:
             v = obj()
-            v.transfer_from(values,invalid)
+            for k in invalid:
+                if k in values:
+                    v[k] = values[k]
             self.error('Attempted to set unrecognized attributes\nUnrecognized attributes:\n{}'.format(v))
         #end if
         missing = set(cls.required_attributes) - value_names
@@ -328,7 +337,7 @@ class DefinedAttributeBase(DevBase):
 
     def check_unassigned(self,value):
         cls = self.__class__
-        unassigned = cls.class_has('unassigned_default') and value is cls.unassigned_default
+        unassigned = hasattr(cls,'unassigned_default') and value is cls.unassigned_default
         return unassigned
     #end def check_unassigned
 
@@ -593,14 +602,14 @@ def read_eshdf_nofk_data(filename,Ef):
             nk_s    = np.zeros((ngvecs,),dtype=float)
             nelec_s = 0
             path    = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
-            spin    = h.get_path(path)
+            spin    = get_path(h,path)
             eigs    = convert(np.array(spin.eigenvalues),'Ha','eV')
             nstates = h5int(spin.number_of_states)
             for st in range(nstates):
                 eig = eigs[st]
                 if eig<E_fermi:
                     stpath   = path+'/state_{0}/psi_g'.format(st)
-                    psi      = np.array(h.get_path(stpath))
+                    psi      = np.array(get_path(h,stpath))
                     nk_orb   = (psi**2).sum(1)
                     kin_orb  = (kinetic*nk_orb).sum()
                     nelec_s += nk_orb.sum()
@@ -656,7 +665,7 @@ class MomentumDistribution(ObservableWithComponents):
             vlog('Filtering applied previously with tolerance {:6.4e}, skipping.'.format(prior_tol))
             return data
         #end if
-        k     = data.first().k
+        k     = data[min(data.keys())].k
         km    = np.linalg.norm(k,axis=1)
         kmax  = 0.
         order = km.argsort()
@@ -992,7 +1001,7 @@ class MomentumDistributionDFT(MomentumDistribution):
             sdata.k.extend(data.k)
             sdata.nk.extend(data.nk)
         #end for
-        for sdata in spin_data:
+        for sdata in spin_data.values():
             sdata.k  = np.array(sdata.k)
             sdata.nk = np.array(sdata.nk)
         #end for
@@ -1163,7 +1172,7 @@ class Density(ObservableWithComponents):
     def volume_normalize(self):
         g = self.get_attribute('grid')
         dV = g.volume()/g.ncells
-        for c in self.components():
+        for c in self.components().values():
             c.values /= dV
         #end for
     #end def volume_normalize
@@ -1197,7 +1206,7 @@ class Density(ObservableWithComponents):
     def change_density_units(self,units):
         units_old = self.get_attribute('density_units')
         dscale    = 1.0/convert(1.0,units_old,units)
-        for c in self.components():
+        for c in self.components().values():
             c.values *= dscale**3
         #end for
         self.set_attribute('density_units',units) # Update the object info to reflect the conversion
@@ -1239,7 +1248,7 @@ class Density(ObservableWithComponents):
             #end for
         else:
             species = list(rmax.keys())
-            species_rmax.transfer_from(rmax)
+            species_rmax.update(**rmax)
         #end if
         vlog('Constructing spherical grid for each species',n=1,time=True)
         species_grids = obj()
@@ -1305,10 +1314,10 @@ class Density(ObservableWithComponents):
             kwargs['comps_return'] = True
             crdfs = self.radial_density(**kwargs)
         else:
-            crdfs = rdfs.copy()
+            crdfs = deepcopy(rdfs)
         #end if
-        for crdf in crdfs:
-            for d in crdf:
+        for crdf in crdfs.values():
+            for d in crdf.values():
                 dr = d.radius[1]-d.radius[0]
                 d.density = d.density.cumsum()*dr
             #end for
@@ -1329,7 +1338,7 @@ class Density(ObservableWithComponents):
         else:
             rdfs = self.cumulative_radial_density(component=component,**kwargs)
         #end if
-        rdf = rdfs.first()
+        rdf = rdfs[min(rdfs.keys())]
         species = list(rdf.keys())
 
         dist_units = self.get_attribute('distance_units',None)
@@ -1403,23 +1412,23 @@ class Density(ObservableWithComponents):
 Density.define_attributes(
     Observable,
     raw = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     u = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     d = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     tot = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     pol = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     grid = obj(
@@ -1520,7 +1529,7 @@ class StatFile(DevBase):
         #end for
         if isinstance(observables,str):
             if observables=='all':
-                self.transfer_from(observable_groups)
+                self.update(**observable_groups)
             #end if
         else:
             for obs in observables:
@@ -1554,7 +1563,7 @@ class StatFile(DevBase):
         #end if
         if single and groups is not None:
             if len(groups)==1:
-                return groups.first()
+                return groups[min(groups.keys())]
             else:
                 self.error('Single stat.h5 observable group requested, but multiple are present.\nGroups present: {}'.format(sorted(groups.keys())))
             #end if

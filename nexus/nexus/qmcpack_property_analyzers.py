@@ -277,7 +277,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
             self.warn('Jastrow read failed, some data will not be available')
             self.info.fail = True
         #end try
-        self._transfer_from(jastrows)
+        self.update(**jastrows)
     #end def analyze_local
 
 
@@ -340,7 +340,6 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
     #end def plot_jastrows
 
 #end class WavefunctionAnalyzer
-
 
 
 
