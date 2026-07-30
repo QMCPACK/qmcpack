@@ -16,6 +16,8 @@ case "$1" in
       # e.g. ctest
       echo "PATH=$PATH" >> $GITHUB_ENV
     fi
+
+    cmake --version
     
     if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
     then
