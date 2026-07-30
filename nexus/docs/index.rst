@@ -18,6 +18,8 @@ The Nexus User Guide
    reading
    python-basics
    theory
+   nexus-jobs
    qmcpack-input-gen
    qmcpack-input-mod
+   adding-supercomputer-machine
    code-style

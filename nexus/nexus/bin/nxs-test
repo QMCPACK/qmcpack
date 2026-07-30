@@ -11,6 +11,31 @@ for development.
 """
 
 import sys
+from contextlib import redirect_stdout
+from pathlib import Path
+
+
+def write_job_ref_table(output_file):
+    """Write fresh machine job-command and submission-file references."""
+    from nexus import testing
+    from nexus.tests.test_machines import test_job_run_command, test_write_job
+
+    try:
+        testing.global_data['job_ref_table'] = True
+        with output_file.open('w') as f:
+            with redirect_stdout(f):
+                print('Updated machine/job reference tables')
+                print('===================================')
+                print()
+                print('Paste the entries below into job_run_ref in '
+                      'tests/test_machines.py::test_job_run_command.')
+                test_job_run_command()
+                print()
+                print('Paste the entries below into job_write_ref in '
+                      'tests/test_machines.py::test_write_job.')
+                test_write_job()
+    finally:
+        testing.global_data['job_ref_table'] = False
 
 if sys.version_info[0:3] < (3, 10, 0):
     v = sys.version_info[0:3]
@@ -39,7 +64,16 @@ except ImportError:
 if __name__ == "__main__":
 
     import os
-    from pathlib import Path
+
+    if len(sys.argv) > 1 and sys.argv[1] == '--job-ref-table':
+        if len(sys.argv) > 2:
+            print('--job-ref-table does not accept additional arguments.')
+            sys.exit(1)
+
+        output_file = Path.cwd() / 'updated_job_ref_table.txt'
+        write_job_ref_table(output_file)
+        print(f'Updated job reference tables written to {output_file}')
+        sys.exit(0)
 
     test_dir = Path(__file__).resolve().parent.parent / "tests"
 
@@ -55,12 +89,15 @@ if __name__ == "__main__":
         if "-h" in sys.argv or "--help" in sys.argv:
             print(
                 "Usage:\n"
-                '$ nxs-test <pytest_args>\n\n'
+                '$ nxs-test <pytest_args>\n'
+                '$ nxs-test --job-ref-table\n\n'
                 "See https://docs.pytest.org/en/stable/how-to/usage.html\n"
                 "for specification of arguments.\n\n"
                 "To select only specific tests, use `-k '<expr>'` from\n"
                 "Pytest's section on specifying which tests to run.\n"
-                "The other methods listed there are not supported by nxs-test."
+                "The other methods listed there are not supported by nxs-test.\n\n"
+                "--job-ref-table writes updated machine job-command and submission-file\n"
+                "reference entries to updated_job_ref_table.txt in the current directory."
             )
             sys.exit(1)
 

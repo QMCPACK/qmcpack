@@ -258,6 +258,10 @@ class Job(NexusCore):
 
 
     def __init__(self,**kwargs):
+        # guard against invalid keys
+        invalid = set(kwargs.keys())-set(job_defaults.keys())
+        if len(invalid)>0:
+            self.error('Invalid job arguments provided.\nInvalid arguments: {}\nValid options are: {}'.format(sorted(invalid),list(job_defaults.keys())))
         # rewrap keyword arguments
         kw = obj(**kwargs)
         # Ensure no pathlib.Path objects are stored
