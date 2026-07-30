@@ -44,7 +44,7 @@
 
 
 import os
-import sys
+from types import MappingProxyType
 import numpy as np
 from .developer import obj, error
 from .nexus_base import nexus_core
@@ -57,8 +57,6 @@ from .quantum_package import QuantumPackage
 from .unit_converter import convert
 from .hdfreader import read_hdf
 
-if sys.version_info[0:3] < (3, 15, 0):
-    from types import MappingProxyType as frozendict
 
 # read/write functions associated with pw2qmcpack only
 def read_str(sv):
@@ -127,7 +125,7 @@ class Pw2qmcpackInput(SimulationInput):
     for v in bools:
         var_types[v]=bool
     #end for
-    var_types: frozendict[str, type] = frozendict(var_types)
+    var_types: MappingProxyType[str, type] = MappingProxyType(var_types)
     allowed = frozenset(ints+floats+strs+bools)
 
     def read_text(self,contents,filepath=None):

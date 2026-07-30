@@ -48,6 +48,7 @@ import os
 import sys
 import inspect
 from copy import deepcopy
+from types import MappingProxyType
 import numpy as np
 from numpy import pi
 from numpy.linalg import inv
@@ -59,9 +60,6 @@ from .physical_system import PhysicalSystem
 from .pseudopotential import pp_elem_label
 from .simulation import SimulationInput
 from . import numpy_extensions as npe
-
-if sys.version_info[0:3] < (3, 15, 0):
-    from types import MappingProxyType as frozendict
 
 def read_str(sv):
     return sv.strip('"').strip("'")
@@ -257,7 +255,7 @@ class PwscfInputBase(DevBase):
 
     all_variables = ints | floats | strs | bools
 
-    section_aliases = frozendict(dict(
+    section_aliases = MappingProxyType(dict(
         celldm1='celldm(1)',
         celldm2='celldm(2)',
         celldm3='celldm(3)',
@@ -279,7 +277,7 @@ class PwscfInputBase(DevBase):
     for v in bools:
         var_types[v]=bool
     #end for
-    var_types: frozendict[str, type] = frozendict(var_types)
+    var_types: MappingProxyType[str, type] = MappingProxyType(var_types)
 #end class PwscfInputBase
 
 

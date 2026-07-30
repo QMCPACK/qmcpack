@@ -38,8 +38,8 @@
 
 
 import os
-import sys
 from copy import deepcopy
+from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
 from .nexus_base import nexus_noncore
@@ -49,9 +49,6 @@ from .physical_system import PhysicalSystem
 from .developer import DevBase, obj, error
 from .utilities import path_string
 from . import numpy_extensions as npe
-
-if sys.version_info[0:3] < (3, 15, 0):
-    from types import MappingProxyType as frozendict
 
 # support functions for keyword files
 
@@ -971,7 +968,7 @@ class Penaltypot(VFormattedFile):  # metadynamics -> 6.62.4 (2nd one)
 
 class Poscar(VFormattedFile):
 
-    bool_map = frozendict({True:'T',False:'F'})
+    bool_map = MappingProxyType({True:'T',False:'F'})
 
     def __init__(self,filepath=None):
         self.description = None

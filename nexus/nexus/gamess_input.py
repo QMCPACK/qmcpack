@@ -31,8 +31,8 @@
 #====================================================================#
 
 
-import sys
 from copy import deepcopy
+from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
 from .developer import DevBase, obj, error, warn
@@ -40,8 +40,6 @@ from .nexus_base import nexus_noncore
 from .simulation import SimulationInput
 from .utilities import path_string
 
-if sys.version_info[0:3] < (3, 15, 0):
-    from types import MappingProxyType as frozendict
 
 class GIbase(DevBase):
     def message(self,msg,**kwargs):
@@ -93,7 +91,7 @@ class KeywordGroup(Group):
     lineindent = '         '
 
 
-    booldict = frozendict({
+    booldict = MappingProxyType({
         '.true.' :True, '.TRUE.' :True, '.t.':True, '.T.':True,
         '.false.':False,'.FALSE.':False,'.f.':False,'.F.':False
         })

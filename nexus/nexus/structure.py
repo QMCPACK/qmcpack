@@ -119,7 +119,7 @@ Module contents
 from __future__ import annotations
 import os
 from pathlib import Path
-import sys
+from types import MappingProxyType
 from typing import TypeAlias
 import numpy as np
 from copy import deepcopy
@@ -136,8 +136,6 @@ from .developer import DevBase, obj, unavailable, error
 from .utilities import path_string
 from . import numpy_extensions as npe
 
-if sys.version_info[0:3] < (3, 15, 0):
-    from types import MappingProxyType as frozendict
 
 IdType: TypeAlias = "Structure | npt.NDArray[np.bool_] | int | str | Elements | list[str | Elements | int | float]"
 """Alias for identifiers that can be used to locate specific atoms in a Structure."""
@@ -7412,7 +7410,7 @@ class Crystal(Structure):
             #end if
         #end if
     #end if
-    known_crystals = frozendict(known_crystals)
+    known_crystals = MappingProxyType(known_crystals)
 
     def __init__(self,
                  lattice        = None,

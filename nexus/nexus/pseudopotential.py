@@ -38,7 +38,7 @@
 
 import os
 from os import PathLike
-import sys
+from types import MappingProxyType
 from pathlib import Path
 import re
 import numpy as np
@@ -52,9 +52,6 @@ from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
 from .utilities import path_string, is_valid_filename
-
-if sys.version_info[0:3] < (3, 15, 0):
-    from types import MappingProxyType as frozendict
 
 try:
     import matplotlib.pyplot as plt
@@ -2824,7 +2821,7 @@ class CasinoPP(SemilocalPP):
     numeric         = True
     interpolatable  = False
 
-    unitmap = frozendict(dict(rydberg='Ry',hartree='Ha',ev='eV'))
+    unitmap = MappingProxyType(dict(rydberg='Ry',hartree='Ha',ev='eV'))
 
     def read(self,filepath,format=None):
         filepath = path_string(filepath)
