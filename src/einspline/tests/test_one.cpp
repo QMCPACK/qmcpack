@@ -9,9 +9,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "einspline/bspline_base.h"
 #include "einspline/bspline_create.h"
@@ -22,6 +21,7 @@
 
 #include <stdio.h>
 #include <vector>
+#include <memory>
 #include "config/stdlib/Constants.h"
 
 TEST_CASE("double_1d_natural", "[einspline]")
