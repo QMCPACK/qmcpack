@@ -16,6 +16,7 @@ extern "C"
 #include <Python.h>
 }
 
+#include <mutex>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
@@ -212,6 +213,7 @@ public:
       throw std::runtime_error("DeepQMC electron coordinate size does not match batch_size * n_elec * 3");
 
     BatchResult batch_result;
+    std::lock_guard<std::mutex> lock(call_mutex_);
     PyGILState_STATE gil_state = PyGILState_Ensure();
     try
     {
@@ -239,6 +241,7 @@ public:
 
   ~PythonDeepQMCBridge()
   {
+    std::lock_guard<std::mutex> lock(call_mutex_);
     if (Py_IsInitialized())
     {
       PyGILState_STATE gil_state = PyGILState_Ensure();
@@ -258,6 +261,7 @@ private:
   std::string python_module_path_;
   PyObjectHandle python_module_;
   PyObjectHandle python_instance_;
+  mutable std::mutex call_mutex_;
 };
 
 class UnavailableDeepQMCBridge : public DeepQMCBridge
