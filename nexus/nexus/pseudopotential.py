@@ -148,15 +148,15 @@ def read_upf_z_valence(file: PathLike) -> int | float:
 #end def read_upf_z_valence
 
 
-def read_xml_z_valence(file: PathLike) -> int | float:
+def read_qmcpack_xml_z_valence(file: PathLike) -> int | float:
     """Read the Z-valence from a QMCPACK-compatible XML pseudopotential file."""
         # Bind these to the function so we only compile them once.
-    if not hasattr(read_xml_z_valence, "zval_pattern"):
+    if not hasattr(read_qmcpack_xml_z_valence, "zval_pattern"):
         # Regex:
         # `zval  *= *`    -> "zval=" or "zval = " or "zval =" or "zval= "
         # `([\d\.eEdD]+)` -> Capturing group gets any numbers in scientific notation.
         # `\"? *() *\"?`  -> Anything between quotes or not, with optional whitespace around it too.
-        read_xml_z_valence.zval_pattern = re.compile(r'zval *= *\" *([\d\.eEdD]+) *\"')
+        read_qmcpack_xml_z_valence.zval_pattern = re.compile(r'zval *= *\" *([\d\.eEdD]+) *\"')
 
     header_lines = []
     with open(file, "r") as xml:
@@ -174,7 +174,7 @@ def read_xml_z_valence(file: PathLike) -> int | float:
                 break
 
     header = " ".join(header_lines)
-    zval = re.search(read_xml_z_valence.zval_pattern, header)
+    zval = re.search(read_qmcpack_xml_z_valence.zval_pattern, header)
 
     if zval is None:
         error(
@@ -1170,7 +1170,7 @@ class PseudoSet(DevBase):
         elem_labels: Iterable[Elements | str] | PhysicalSystem,
         *,
         missing_as_ae: bool = False,
-        ) -> dict[str, int | float]:
+        ) -> dict[str, int]:
         """Get the Z-valences for each element in the list of elements.
 
         Parameters
@@ -1184,6 +1184,12 @@ class PseudoSet(DevBase):
             Z-valence for an element is not in ``self.Zeff``, this will
             attempt to extract the Z-valence from the pseudopotential
             file.
+
+        Returns
+        -------
+        elem_Zeff : dict of str: int
+            A dictionary mapping element labels to their effective
+            nuclear charges.
 
         See Also
         --------
@@ -1209,10 +1215,10 @@ class PseudoSet(DevBase):
                         "You must supply Z-valences manually until this feature is added."
                         )
                     raise NotImplementedError(msg)
-                elif f_ext == "poscar":
+                elif f_ext in ["potcar", ".vasp"]:
                     Z_effs[label] = read_potcar_z_valence(self.pseudos[label])
                 elif f_ext == ".xml":
-                    Z_effs[label] = read_xml_z_valence(self.pseudos[label])
+                    Z_effs[label] = read_qmcpack_xml_z_valence(self.pseudos[label])
                 else:
                     msg = f"File extension '{f_ext}' is not parseable by Nexus, can not extract Z-valence!"
                     raise ValueError(msg)

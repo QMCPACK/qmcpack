@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Literal
 from . import isolate_nexus_core, TEST_DIR
 from ..testing import value_eq,object_eq
-from nexus.pseudopotential import read_upf_z_valence, read_xml_z_valence, read_potcar_z_valence
+from nexus.pseudopotential import read_upf_z_valence, read_qmcpack_xml_z_valence, read_potcar_z_valence
 from nexus.pseudopotential import PseudoSet, ppset
 from nexus.nexus_base import nexus_core
 from nexus.physical_system import generate_physical_system
@@ -655,7 +655,7 @@ wfc_cutoff="4.363174091908e1" rho_cutoff="2.755329390766e2" l_max="2" l_max_rho=
 def test_read_xml_z_valence(tmp_path):
     xml_file = TEST_FILES["C.BFD.xml"]
 
-    z_valence = read_xml_z_valence(xml_file)
+    z_valence = read_qmcpack_xml_z_valence(xml_file)
 
     assert(isinstance(z_valence, int))
     assert(z_valence == 4)
@@ -680,7 +680,7 @@ def test_read_xml_z_valence(tmp_path):
     xml_file_float = tmp_path / "pseudo.xml"
     xml_file_float.write_text(xml_with_float)
 
-    z_valence_float = read_xml_z_valence(xml_file_float)
+    z_valence_float = read_qmcpack_xml_z_valence(xml_file_float)
 
     assert(z_valence_float == 4.5)    
 #end def test_read_xml_z_valence
