@@ -177,7 +177,7 @@ class DevBaseNexus(DevBase,obj_defended):
             cls       = type(self).__qualname__,
             )
 
-    def error(self,msg,header=None,exit=True,trace=-2):
+    def error(self,msg,*,header=None,exit=True,trace=-2):
         if header is None:
             header = self.__class__.__name__
         error(msg,header,exit,trace,logfile=self._logfile)

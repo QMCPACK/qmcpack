@@ -95,7 +95,7 @@ class PhysicalSystem(DevBase):
     #end def pseudize
 
         
-    def check_folded_system(self,exit=True,message=False):
+    def check_folded_system(self,*,exit=True,message=False):
         msg = ''
         sys_folded    = self.folded_system is not None
         struct_folded = self.structure.folded_structure is not None
@@ -117,7 +117,7 @@ class PhysicalSystem(DevBase):
     #end def check_folded_system
 
 
-    def check_consistent(self,tol=1e-8,exit=True,message=False):
+    def check_consistent(self,tol=1e-8,*,exit=True,message=False):
         fs,fm = self.check_folded_system(exit=False,message=True)
         cs,cm = self.structure.check_consistent(tol,exit=False,message=True)
         msg = ''
@@ -160,7 +160,7 @@ class PhysicalSystem(DevBase):
     #end def group_atoms
 
 
-    def rename(self,folded=True,**name_pairs):
+    def rename(self,*,folded=True,**name_pairs):
         self.structure.rename(folded=False,**name_pairs)
         if self.pseudized:
             for old,new in name_pairs.items():

@@ -82,7 +82,7 @@ def all_children(pid=None):
     return all_list
 
 
-def memory(since=0.0, children=False):
+def memory(since=0.0, *, children=False):
     '''Return memory usage in bytes.
     '''
     mem = 0.0
@@ -93,7 +93,7 @@ def memory(since=0.0, children=False):
     return mem
 
 
-def resident(since=0.0, children=False):
+def resident(since=0.0, *, children=False):
     '''Return resident memory usage in bytes.
     '''
     mem = 0.0
@@ -106,7 +106,7 @@ def resident(since=0.0, children=False):
     #return _VmB('VmRSS:') - since
 
 
-def stacksize(since=0.0, children=False):
+def stacksize(since=0.0, *, children=False):
     '''Return stack size in bytes.
     '''
     mem = 0.0

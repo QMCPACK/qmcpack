@@ -492,7 +492,7 @@ class Job(NexusCore):
     #end def set_processes
 
 
-    def set_environment(self,limited_env=False,clear_env=False,**env):
+    def set_environment(self,*,limited_env=False,clear_env=False,**env):
         machine = self.get_machine()
         if isinstance(machine,Supercomputer):
             limited_env = True
@@ -555,7 +555,7 @@ class Job(NexusCore):
 
 
     # test needed
-    def write(self,file=False):
+    def write(self,*,file=False):
         machine = self.get_machine()
         return machine.write_job(self,file=file)
     #end def write
@@ -576,7 +576,7 @@ class Job(NexusCore):
     #end def reenter_queue
 
 
-    def run_command(self,launcher=None,redirect=False,serial=False):
+    def run_command(self,launcher=None,*,redirect=False,serial=False):
         if self.template is not None:
             return ''
         #end if
@@ -871,7 +871,7 @@ class Machine(NexusCore):
         raise NotImplementedError
     #end def process_job_options
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         raise NotImplementedError
     #end def write_job
 
@@ -1156,7 +1156,7 @@ class Workstation(Machine):
     #end def job_command
 
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         c = self.job_command(job)
         return c
     #end def write_job
@@ -1886,7 +1886,7 @@ class Supercomputer(Machine):
     #end def setup_environment
 
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         if job.template is None:
             env = self.setup_environment(job)
