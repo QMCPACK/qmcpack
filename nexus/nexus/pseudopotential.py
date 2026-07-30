@@ -1764,7 +1764,7 @@ Number of grid points
 
 class GaussianPP(SemilocalPP):
     requires_format = True
-    formats = (*SemilocalPP.formats, 'gaussian','gamess','crystal','numhf')
+    formats = SemilocalPP.formats + ('gaussian','gamess','crystal','numhf')
 
     @staticmethod
     def process_float(s):
