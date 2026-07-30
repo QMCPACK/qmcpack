@@ -319,7 +319,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
         else:
             tsin = title
         #end if
-        from matplotlib.pyplot import figure,subplot,xlabel,ylabel,plot,errorbar,title,xticks,xlim
+        from matplotlib.pyplot import figure,subplot,xlabel,ylabel,title
 
         opt = self.opts
         nopt = len(opt)
@@ -429,7 +429,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
     #end def summarize
 
     def plot_timestep_convergence(self):
-        from matplotlib.pyplot import figure,subplot,xlabel,ylabel,plot,errorbar,title,text,xticks,rcParams,savefig,xlim
+        from matplotlib.pyplot import figure,xlabel,ylabel,plot,errorbar,title,text,xticks,rcParams,savefig,xlim
 
         params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
           'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}

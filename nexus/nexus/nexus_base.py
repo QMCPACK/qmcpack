@@ -32,7 +32,7 @@ from copy import deepcopy
 from .utilities import path_string
 from .nexus_version import nexus_version
 from .memory import resident
-from .developer import DevBase, obj, log, error
+from .developer import DevBase, obj, log
 
 
 # Nexus namespaces
