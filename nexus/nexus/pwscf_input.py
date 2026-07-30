@@ -2379,7 +2379,8 @@ def generate_any_pwscf_input(**kwargs):
 
 
 
-def generate_scf_input(prefix       = 'pwscf',
+def generate_scf_input(*,
+                       prefix       = 'pwscf',
                        outdir       = 'pwscf_output',
                        input_dft    = None,
                        exx_fraction = None,
@@ -2618,7 +2619,8 @@ def generate_nscf_input(**kwargs):
 
 
 
-def generate_relax_input(prefix       = 'pwscf',
+def generate_relax_input(*,
+                         prefix       = 'pwscf',
                          outdir       = 'pwscf_output',
                          input_dft    = None,
                          exx_fraction = None,

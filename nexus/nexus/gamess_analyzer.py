@@ -52,7 +52,7 @@ class GamessAnalyzer(SimulationAnalyzer):
 
 
 
-    def __init__(self,arg0=None,prefix=None,analyze=False,exit=False,**outfilenames):
+    def __init__(self,arg0=None,prefix=None,*,analyze=False,exit=False,**outfilenames):
         self.info = obj(
             exit   = exit,
             path   = None,

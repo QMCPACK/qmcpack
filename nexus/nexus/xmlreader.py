@@ -277,7 +277,7 @@ class XMLelement(DevBase):
     reads an xml file and creates a dynamic object out of its contents
 '''
 class XMLreader(DevBase):
-    def __init__(self,fpath=None,element_joins=None,element_aliases=None,strip_prefix=None,xml=None,*,contract_names=False,warn=True):
+    def __init__(self,fpath=None,*,element_joins=None,element_aliases=None,strip_prefix=None,xml=None,contract_names=False,warn=True):
         if element_joins is None:
             element_joins = []
         if element_aliases is None:
@@ -512,7 +512,7 @@ class XMLreader(DevBase):
 
 
 
-def readxml(fpath=None,element_joins=None,element_aliases=None,contract_names=False,strip_prefix=None,warn=True,xml=None):
+def readxml(fpath=None,*,element_joins=None,element_aliases=None,contract_names=False,strip_prefix=None,warn=True,xml=None):
     xr = XMLreader(
         fpath           = fpath,
         element_joins   = element_joins,

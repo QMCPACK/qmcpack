@@ -226,7 +226,7 @@ except:
 cif2cell_unit_dict = dict(angstrom='A',bohr='B',nm='nm')
 
 
-def read_cif_celldata(filepath,block=None,grammar='1.1'):
+def read_cif_celldata(filepath,*,block=None,grammar='1.1'):
     # read cif file with PyCifRW
     path,cif_file = os.path.split(filepath)
     if path!='':
@@ -269,8 +269,8 @@ def read_cif_celldata(filepath,block=None,grammar='1.1'):
 
 
 
-def read_cif_cell(filepath,block=None,grammar='1.1',cell='prim'):
-    cd = read_cif_celldata(filepath,block,grammar)
+def read_cif_cell(filepath,*,block=None,grammar='1.1',cell='prim'):
+    cd = read_cif_celldata(filepath,block=block,grammar=grammar)
 
     if cell.startswith('prim'):
         cell = cd.primitive()
@@ -285,9 +285,9 @@ def read_cif_cell(filepath,block=None,grammar='1.1',cell='prim'):
 
 
 
-def read_cif(filepath,block=None,grammar='1.1',cell='prim',args_only=False):
+def read_cif(filepath,*,block=None,grammar='1.1',cell='prim',args_only=False):
     if isinstance(filepath,str):
-        cell = read_cif_cell(filepath,block,grammar,cell)
+        cell = read_cif_cell(filepath,block=block,grammar=grammar,cell=cell)
     else:
         cell = filepath
     #end if
@@ -959,6 +959,7 @@ class Structure(Sobj):
 
 
     def __init__(self,
+                 *,
                  axes              = None,
                  scale             = 1.,
                  elem              = None,
@@ -5619,7 +5620,7 @@ class Structure(Sobj):
 
 
     def read_cif(self,filepath,block=None,grammar='1.1',cell='prim'):
-        axes,elem,pos,units = read_cif(filepath,block,grammar,cell,args_only=True)
+        axes,elem,pos,units = read_cif(filepath,block=block,grammar=grammar,cell=cell,args_only=True)
         self.dim = 3
         self.set_axes(axes)
         self.set_elem(elem)
@@ -6484,6 +6485,7 @@ def get_primitive_cell(
 #end def get_primitive_cell
 
 def get_kpath(
+    *,
     structure          = None, 
     check_standard     = True, 
     with_time_reversal = False, 
@@ -6538,6 +6540,7 @@ def get_symmetry(
 #end def get_symmetry
 
 def get_structure_with_bands(
+    *,
     cell               = 0, 
     structure          = None, 
     with_time_reversal = False,
@@ -6569,6 +6572,7 @@ def get_structure_with_bands(
 
 # test needed
 def get_band_tiling(
+    *,
     structure      = None, 
     check_standard = True, 
     use_ktol       = True, 
@@ -6614,7 +6618,7 @@ def get_band_tiling(
                 #end for
             #end for
         else:
-            self.error('Volume multiplier must be integer')
+            error('Volume multiplier must be integer')
         #end if
         
         return edges
@@ -6817,7 +6821,7 @@ def get_band_tiling(
     mat_vars, mat_vol_mul   = find_vars(alphas,min_volfac,max_volfac,target_volfac,use_ktol)   # Variables to construct upper triangular matrices
     mats                    = find_mats(mat_vars,alphas)                                       # List of upper triangular matrices that are commensurate with alphas
     final_mat               = find_cubic_mat(mats, structure, mat_vol_mul)                     # Matrix leading to a lattice with highest cubicity, optimized using elementary operations
-    shift                   = find_shift(final_mat, structure, kpts0)                          # Find the grid shift
+    shift                   = find_shift(final_mat, structure, kpt0)                           # Find the grid shift
     o = obj()
     o.mat   = final_mat
     o.shift = shift
@@ -6826,6 +6830,7 @@ def get_band_tiling(
 #end def get_band_tiling
 
 def get_seekpath_full(
+        *,
         structure      = None,
         seekpathout    = None,
         conventional   = False,
@@ -6869,7 +6874,7 @@ skp = obj(
 
 
 
-def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recenter=True,match_com=False,repackage=False,chained=False):
+def interpolate_structures(struct1,struct2=None,*,images=None,min_image=True,recenter=True,match_com=False,repackage=False,chained=False):
     if images is None:
         error('images must be provided','interpolate_structures')
     #end if
@@ -7437,6 +7442,7 @@ class Crystal(Structure):
 
 
     def __init__(self,
+                 *,
                  lattice        = None,
                  cell           = None,
                  centering      = None,
@@ -7918,6 +7924,7 @@ def generate_structure(type='crystal',*args,**kwargs):
 
 
 def generate_atom_structure(
+    *,
     atom        = None,
     units       = 'A',
     Lbox        = None,
@@ -7968,6 +7975,7 @@ def generate_atom_structure(
 
 
 def generate_dimer_structure(
+    *,
     dimer       = None,
     units       = 'A',
     separation  = None,
@@ -8039,6 +8047,7 @@ def generate_dimer_structure(
 
 
 def generate_trimer_structure(
+    *,
     trimer        = None,
     units         = 'A',
     separation    = None,
@@ -8180,6 +8189,7 @@ def generate_jellium_structure(*args,**kwargs):
 
 
 def generate_crystal_structure(
+    *,
     lattice        = None,
     cell           = None,
     centering      = None,
@@ -8358,7 +8368,7 @@ defects = obj(
     )
 
 
-def generate_defect_structure(defect,structure,shape=None,element=None,
+def generate_defect_structure(*,defect,structure,shape=None,element=None,
                               tiling=None,scale=1.,kgrid=None,kshift=(0,0,0),
                               units=None,struct_type=DefectStructure):
     if structure in defects:
@@ -8392,7 +8402,7 @@ def generate_defect_structure(defect,structure,shape=None,element=None,
 #end def generate_defect_structure
 
 
-def read_structure(filepath,elem=None,format=None):
+def read_structure(filepath,*,elem=None,format=None):
     s = generate_structure('empty')
     s.read(filepath,elem=elem,format=format)
     return s

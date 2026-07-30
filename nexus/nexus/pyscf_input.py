@@ -122,6 +122,7 @@ class PyscfInput(SimulationInputTemplateDev):
                  custom      = None,     # obj w/ $ prefixed vars in template
                  system      = None,     # physical system object
                  units       = None,     # input units desired
+                 *,
                  use_folded  = True,     # use folded system/primitive cell
                  mole        = None,     # obj w/ Mole variables
                  cell        = None,     # obj w/ Cell variables

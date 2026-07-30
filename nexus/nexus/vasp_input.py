@@ -1859,7 +1859,7 @@ def generate_any_vasp_input(**kwargs):
 
 
 
-def generate_poscar(structure,coord='cartesian'):
+def generate_poscar(structure,*,coord='cartesian'):
     s = deepcopy(structure)
     s.change_units('A')
     species,species_count = s.order_by_species()

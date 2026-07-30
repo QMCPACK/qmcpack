@@ -3577,7 +3577,13 @@ class QmcpackInput(SimulationInput,Names):
         if xml is not None or os.path.exists(filepath):
             element_joins=['qmcsystem']
             element_aliases=dict(loop='qmc')
-            xml = XMLreader(filepath,element_joins,element_aliases,warn=False,xml=xml).obj
+            xml = XMLreader(
+                filepath,
+                element_joins   = element_joins,
+                element_aliases = element_aliases,
+                warn            = False,
+                xml             = xml,
+                ).obj
             xml.condense()
             self._metadata = meta() #store parameter/attrib attribute metadata
             Param.metadata = self._metadata
@@ -3757,9 +3763,20 @@ class QmcpackInput(SimulationInput,Names):
             element_joins=['qmcsystem']
             element_aliases=dict(loop='qmc')
             if xml is None:
-                xml = XMLreader(filepath,element_joins,element_aliases,warn=False).obj
+                xml = XMLreader(
+                    filepath,
+                    element_joins   = element_joins,
+                    element_aliases = element_aliases,
+                    warn            = False,
+                    ).obj
             else:
-                xml = XMLreader(None,element_joins,element_aliases,warn=False,xml=xml).obj
+                xml = XMLreader(
+                    None,
+                    element_joins   = element_joins,
+                    element_aliases = element_aliases,
+                    warn            = False,
+                    xml             = xml,
+                    ).obj
             #end if
             xml.condense()
         else:
@@ -4829,6 +4846,7 @@ class QmcpackInput(SimulationInput,Names):
 
 
     def modify(self,
+               *,
                driver              = None,
                remove_system       = False,
                change_system       = False,
@@ -5755,7 +5773,8 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
 #end def generate_simulationcell
 
 
-def generate_particlesets(electrons   = 'e',
+def generate_particlesets(*,
+                          electrons   = 'e',
                           ions        = 'ion0',
                           up          = 'u',
                           down        = 'd',
@@ -5868,6 +5887,7 @@ def generate_particlesets(electrons   = 'e',
 
 
 def generate_sposets(type           = None,
+                     *,
                      occupation     = None,
                      spin_polarized = False,
                      nup            = None,
@@ -5952,6 +5972,7 @@ def generate_sposet_builder(type,*args,**kwargs):
 
 
 def generate_bspline_builder(type           = 'bspline',
+                             *,
                              meshfactor     = 1.0,
                              precision      = 'float',
                              twistnum       = None, 
@@ -6030,7 +6051,8 @@ def generate_bspline_builder(type           = 'bspline',
 #end def generate_bspline_builder
 
 
-def generate_heg_builder(twist          = None,
+def generate_heg_builder(*,
+                         twist          = None,
                          spin_polarized = False,
                          spo_up         = 'spo_u',
                          spo_down       = 'spo_d',
@@ -6126,7 +6148,8 @@ def partition_sposets(sposet_builder,partition,partition_meshfactors=None):
 #end def partition_sposets
 
 
-def generate_determinantset(up             = 'u',
+def generate_determinantset(*,
+                            up             = 'u',
                             down           = 'd',
                             spo_up         = 'spo_u',
                             spo_down       = 'spo_d',
@@ -6304,6 +6327,7 @@ def check_excitation_type(excitation):
 
 
 def generate_determinantset_old(type           = 'bspline',
+                                *,
                                 meshfactor     = 1.0,
                                 precision      = 'float',
                                 twistnum       = None, 
@@ -6955,7 +6979,7 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
 
 
 
-def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
+def generate_jastrows(jastrows,system=None,*,return_list=False,check_ions=False):
     jin = []
     have_ions = True
     if check_ions and system is not None:
@@ -7027,6 +7051,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
 
 
 def generate_jastrows_alt(
+        *,
         J1           = False,
         J2           = False,
         J3           = False,
@@ -7507,6 +7532,7 @@ def generate_kspace_jastrow(
         kc2:    float | None = None, 
         nk1:    int          = 0, 
         nk2:    int          = 0,
+        *,
         symm1:  str          = 'isotropic', 
         symm2:  str          = 'isotropic', 
         coeff1: list         = None, 
@@ -7770,6 +7796,7 @@ def generate_energydensity(
 
 opt_map = dict(linear=linear,cslinear=cslinear,linear_batch=linear_batch)
 def generate_opt(method,
+                 *,
                  repeat           = 1,
                  energy           = None,
                  rw_variance      = None,
@@ -9530,6 +9557,7 @@ def generate_basic_afqmc_input(**kwargs):
 
 
 def generate_opt_jastrow_input(id  = 'qmc',
+                               *,
                                series           = 0,
                                purpose          = '',
                                seed             = None,
@@ -9631,7 +9659,12 @@ if __name__=='__main__':
 
     element_joins=['qmcsystem']
     element_aliases=dict(loop='qmc')
-    xml = XMLreader(filepath,element_joins,element_aliases,warn=False).obj
+    xml = XMLreader(
+        filepath,
+        element_joins   = element_joins,
+        element_aliases = element_aliases,
+        warn            = False,
+        ).obj
     xml.condense()
 
     qi = QmcpackInput()
