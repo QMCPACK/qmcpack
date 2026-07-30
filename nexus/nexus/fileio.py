@@ -21,7 +21,6 @@
 
 
 import os
-from os import PathLike
 from pathlib import Path
 import mmap
 from copy import deepcopy

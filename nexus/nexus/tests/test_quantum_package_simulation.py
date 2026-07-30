@@ -151,7 +151,6 @@ def test_incorporate_result():
 
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
-    import os
     from ..nexus_base import nexus_core
 
     nexus_core.runs = ''

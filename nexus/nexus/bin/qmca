@@ -582,7 +582,7 @@ class DatAnalyzer(QBase):
                         factor
                         )
                     )
-            exit()
+            sys.exit()
         #end if
 
         if len(quantities)==1 and not opt.all_quantities:
@@ -857,7 +857,7 @@ QMCA examples:
         if self.verbose:
             self.log('\nQMCA finished\n')
         #end if
-        exit()
+        sys.exit()
     #end def exit
 
 

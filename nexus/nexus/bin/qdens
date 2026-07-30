@@ -67,7 +67,7 @@ def find_nexus_modules():
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
 import nexus.numpy_extensions as npe
-from nexus.developer import DevBase,obj,error,ci,unavailable
+from nexus.developer import DevBase,obj,error,unavailable
 import nexus.memory as memory
 from nexus.hdfreader import HDFreader
 from nexus.fileio import XsfFile,ChgcarFile
@@ -92,21 +92,15 @@ except:
 
 
 try:
-    import matplotlib
-    gui_envs = ['GTKAgg','TKAgg','Qt4Agg','WXAgg']
-    for gui in gui_envs:
-        try:
-            matplotlib.use(gui,warn=False, force=True)
-            from matplotlib import pyplot
-            success = True
-            break
-        except:
-            continue
-        #end try
-    #end for
     import matplotlib.pyplot as plt
-    params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
-          'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
+    params = {
+        'legend.fontsize'      : 14,
+        'figure.facecolor'     : 'white',
+        'figure.subplot.hspace': 0.,
+        'axes.labelsize'       : 16,
+        'xtick.labelsize'      : 14,
+        'ytick.labelsize'      : 14,
+        }
     plt.rcParams.update(params)
 except:
     plt = unavailable('matplotlib.pyplot')
@@ -249,7 +243,7 @@ class QDBase(DevBase):
 
     def exit(self):
         self.vlog('\n{0} finished\n'.format(self.name))
-        exit()
+        sys.exit()
     #end def exit
 
     def error(self,msg,loc=None):
