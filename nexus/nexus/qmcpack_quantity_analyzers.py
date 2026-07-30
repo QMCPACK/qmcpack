@@ -70,8 +70,8 @@
 import os
 import re
 import copy
+import sys
 from copy import deepcopy
-from types import MappingProxyType
 import numpy as np
 from numpy import pi,sin,cos,sqrt
 from numpy.linalg import LinAlgError, inv, det, eig
@@ -83,6 +83,8 @@ from .numerics import ndgrid, simstats, simplestats, equilibration_length
 from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAdata, QAHDFdata
 from . import numpy_extensions as npe
 
+if sys.version_info[0:3] < (3, 15, 0):
+    from types import MappingProxyType as frozendict
 
 def first(o):
     return o[min(o.keys())]
@@ -2162,13 +2164,13 @@ class SpaceGridInitializer(QAobject):
 
 
 class SpaceGridBase(QAobject):
-    coord_s2n = MappingProxyType({
+    coord_s2n = frozendict({
         'cartesian':   0,
         'cylindrical': 1,
         'spherical':   2,
         'voronoi':     3,
         })
-    coord_n2s = MappingProxyType({n: s for s, n in coord_s2n.items()})
+    coord_n2s = frozendict({n: s for s, n in coord_s2n.items()})
 
     cartesian   = coord_s2n['cartesian']
     cylindrical = coord_s2n['cylindrical']
@@ -2181,7 +2183,7 @@ class SpaceGridBase(QAobject):
     rlabel = 3
     plabel = 4
     tlabel = 5
-    axlabel_s2n = MappingProxyType({
+    axlabel_s2n = frozendict({
         'x'    : xlabel,
         'y'    : ylabel,
         'z'    : zlabel,
@@ -2189,9 +2191,9 @@ class SpaceGridBase(QAobject):
         'phi'  : plabel,
         'theta': tlabel,
         })
-    axlabel_n2s = MappingProxyType({n: s for s, n in axlabel_s2n.items()})
+    axlabel_n2s = frozendict({n: s for s, n in axlabel_s2n.items()})
 
-    axindex = MappingProxyType({'x':0,'y':1,'z':2,'r':0,'phi':1,'theta':2})
+    axindex = frozendict({'x':0,'y':1,'z':2,'r':0,'phi':1,'theta':2})
 
     quantities=('D','T','V','E','P')
 

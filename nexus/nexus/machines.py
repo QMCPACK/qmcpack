@@ -44,8 +44,8 @@
 
 
 import os
+import sys
 from pathlib import Path
-from types import MappingProxyType
 from typing import ClassVar
 from copy import deepcopy
 import platform
@@ -60,6 +60,8 @@ from .utilities import path_string
 import importlib.util
 import importlib.machinery
 
+if sys.version_info[0:3] < (3, 15, 0):
+    from types import MappingProxyType as frozendict
 
 def our_load_source(modname, filename):
     """" Replacement for the deprecated imp.load_source function"""
@@ -3449,7 +3451,7 @@ class Baseline(Supercomputer):
     name = 'baseline'
     requires_account = True
     batch_capable    = True
-    queue_configs=MappingProxyType({
+    queue_configs=frozendict({
         'default': 'batch_cnms',
         'batch': {
             'max_nodes': 138,
@@ -3504,7 +3506,7 @@ class Frontier(Supercomputer):
     requires_account = True
     batch_capable    = True
 
-    queue_configs = MappingProxyType({
+    queue_configs = frozendict({
         'default': 'batch',
         'batch': {
             'max_nodes': 9664,
@@ -3591,7 +3593,7 @@ class Besms(Supercomputer):
     requires_account = True
     batch_capable    = True
     # Using sinfo to get the queue configs
-    queue_configs=MappingProxyType({
+    queue_configs=frozendict({
         'default': 't92',
         't92': {
             'max_nodes': 10,
@@ -3817,7 +3819,7 @@ class Leonardo(Supercomputer):
     # https://docs.hpc.cineca.it/hpc/leonardo.html#file-systems-and-data-managment
     # parallel partition: boost_usr_prod 
     # GPUs: up to 4 gpus per node
-    booster_qos = MappingProxyType({
+    booster_qos = frozendict({
         'normal': {
             'max_nodes' : 64,
             'min_nodes' : 1,
