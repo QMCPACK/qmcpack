@@ -2000,12 +2000,12 @@ def test_pseudoset_from_mixed_dir_mismatches(tmp_path):
 
     with pytest.raises(
         ValueError,
-        match="Mismatch between provided code Zeffs and codes!",
+        match="Mismatch between provided code Zeff map and codes!",
         ):
         PseudoSet.from_mixed_dir(
-            pseudo_dir = tmp_path,
-            codes      = {"espresso"},
-            code_Zeffs = {
+            pseudo_dir    = tmp_path,
+            codes         = {"espresso"},
+            code_Zeff_map = {
                 "espresso": {"H": 1},
                 "rmg": {"H": 1}, # Not in the specified codes
                 },
@@ -2056,9 +2056,9 @@ def test_get_pseudos(tmp_path):
 #end def test_get_pseudos
 
 
-def test_get_Zeffs():
+def test_get_Zeff():
     psp_dir = TEST_FILES["C.BFD.xml"].parent.resolve()
-    ref_Zeffs_default = {
+    ref_Zeff_default = {
         "C": 4,
         "H": 1,
         "O": 6,
@@ -2069,11 +2069,11 @@ def test_get_Zeffs():
         code        = "qmcpack",
         ext_filter  = None,
         )
-    Zeffs = qmcpack_pseudoset.get_Zeffs(elem_labels=["C", "H", "O"])
+    Zeff = qmcpack_pseudoset.get_Zeff(elem_labels=["C", "H", "O"])
 
-    assert(Zeffs == ref_Zeffs_default)
+    assert(Zeff == ref_Zeff_default)
 
-    ref_Zeffs_customized = {
+    ref_Zeff_customized = {
         "C": 6,
         "H": 1,
         "O": 6,
@@ -2082,14 +2082,14 @@ def test_get_Zeffs():
     qmcpack_pseudoset_custom = PseudoSet.from_dir(
         pseudo_dir  = psp_dir,
         code        = "qmcpack",
-        Zeffs       = {"C": 6},
-        ext_filter = None,
+        Zeff_map    = {"C": 6},
+        ext_filter  = None,
         )
-    Zeffs = qmcpack_pseudoset_custom.get_Zeffs(elem_labels=["C", "H", "O"])
+    Zeff = qmcpack_pseudoset_custom.get_Zeff(elem_labels=["C", "H", "O"])
 
-    assert(Zeffs == ref_Zeffs_customized)
+    assert(Zeff == ref_Zeff_customized)
 
-    ref_Zeffs_mixed_ae = {
+    ref_Zeff_mixed_ae = {
         "C":   4,
         "H":   1,
         "O":   6,
@@ -2101,19 +2101,19 @@ def test_get_Zeffs():
         code        = "qmcpack",
         ext_filter  = None,
         )
-    Zeffs = qmcpack_pseudoset_mixed_ae.get_Zeffs(
+    Zeff = qmcpack_pseudoset_mixed_ae.get_Zeff(
         elem_labels   = ["C", "H", "O", "Fe"],
         missing_as_ae = True,
         )
 
-    assert(Zeffs == ref_Zeffs_mixed_ae)
+    assert(Zeff == ref_Zeff_mixed_ae)
 
     with pytest.raises(ValueError, match="No pseudopotential found for label"):
-        qmcpack_pseudoset.get_Zeffs(elem_labels=["C", "H", "Fe"])
+        qmcpack_pseudoset.get_Zeff(elem_labels=["C", "H", "Fe"])
 
     with pytest.raises(ValueError, match="Can not determine element for label"):
-        qmcpack_pseudoset.get_Zeffs(elem_labels=["C", "H", "NotAnElement"], missing_as_ae=True)
-#end def test_get_Zeffs
+        qmcpack_pseudoset.get_Zeff(elem_labels=["C", "H", "NotAnElement"], missing_as_ae=True)
+#end def test_get_Zeff
 
 
 @isolate_nexus_core
@@ -2211,9 +2211,9 @@ def test_register_legacy_ppset(tmp_path):
 def test_pseudoset_repr(tmp_path):
     qmcpack_dir,  _, ref_qmcpack_pseudos  = setup_psps(test_dir=tmp_path, code="qmcpack")
     pseudoset = PseudoSet(
-        pseudos = ref_qmcpack_pseudos,
-        codes="qmcpack",
-        Zeffs={
+        pseudos  =  ref_qmcpack_pseudos,
+        codes    = "qmcpack",
+        Zeff_map = {
             "H": 1,
             "C": 4,
             "O": 6,
@@ -2228,7 +2228,7 @@ PseudoSet(
         'H': PosixPath('{qmcpack_dir}/H.BFD..xml'),
         'O': PosixPath('{qmcpack_dir}/O.BFD..xml'),
     }},
-    Zeffs = {{
+    Zeff_map = {{
         'H': 1,
         'C': 4,
         'O': 6,
@@ -2236,3 +2236,4 @@ PseudoSet(
 )
 """
     assert(repr(pseudoset) == ref_repr)
+#end def test_pseudoset_repr

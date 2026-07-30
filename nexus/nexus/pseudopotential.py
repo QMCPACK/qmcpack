@@ -530,12 +530,12 @@ class PseudoSet(DevBase):
         Name of the program(s) that these pseudos are meant for. Due to
         overlap between some programs for file extension, this can
         occasionally contain more than one code.
-    Zeffs : Map of str: int
+    Zeff_map : Map of str: int
         A ``dict`` or ``obj`` mapping elements to their effective
         nuclear charges (Z-valences).
     pseudo_dirs : set of Path
         The directories that the pseudopotentials are stored in.
-    legacy_pseudos : dict of str: PseudoSet
+    legacy_pseudos : dict of str: PseudoSet (class attribute)
         Interface for creating pseudopotentials from the legacy command
         ``ppset``.
 
@@ -548,12 +548,12 @@ class PseudoSet(DevBase):
         The name of the code that the pseudos are formatted for, or
         if ``"detect"``, will auto-detect the code name from the
         file extensions.
-    Zeffs : Map of str/Elements to int, optional
+    Zeff_map : Map of str/Elements to int, optional
         A ``dict`` or ``obj`` mapping elements to their effective nuclear
         charges (Z-valences). If this is supplied, it will override any
         parts of the code that may try to parse the pseudopotential to
         get the Z-valence.
-    skip_invalid : bool, default=False
+    skip_invalid : bool, default=False (keyword-only)
         If ``True``, then this will emit a warning rather than raise an
         error if a file is not found or if the file does not have a
         valid name.
@@ -575,7 +575,7 @@ class PseudoSet(DevBase):
         self,
         pseudos     : Iterable[PathLike] | Mapping[Elements | str, PathLike],
         codes       : str | Iterable[str] = "detect",
-        Zeffs       : Mapping[PathLike, int] | None = None,
+        Zeff_map    : Mapping[PathLike, int] | None = None,
         *,
         skip_invalid: bool = False,
         ):
@@ -652,7 +652,7 @@ class PseudoSet(DevBase):
             msg = f"`codes` must be either 'detect', str, or an iterable of str, but has type `{type(codes).__name__}`"
             raise TypeError(msg)
 
-        self.Zeffs = dict(Zeffs) if Zeffs is not None else {}
+        self.Zeff_map = dict(Zeff_map) if Zeff_map is not None else {}
 
         self.pseudo_dirs: set[Path] = set()
         for pseudo in self.pseudos.values():
@@ -732,7 +732,7 @@ class PseudoSet(DevBase):
         cls,
         pseudo_dir: PathLike,
         code      : str = "detect",
-        Zeffs     : Mapping[PathLike, int] | None = None,
+        Zeff_map  : Mapping[PathLike, int] | None = None,
         ext_filter: str | Iterable[str] | None = None,
         pattern   : str | Pattern | None = None,
         *,
@@ -750,7 +750,7 @@ class PseudoSet(DevBase):
             The name of the code that the pseudos are formatted for,
             or if ``"detect"``, will auto-detect the code name from the
             file extensions.
-        Zeffs : Map of str/Elements to int, optional
+        Zeff_map : Map of str/Elements to int, optional
             A ``dict`` or ``obj`` mapping elements to their effective
             nuclear charges (Z-valences). If this is supplied, it will
             override any parts of the code that may try to parse the
@@ -768,7 +768,7 @@ class PseudoSet(DevBase):
             should include a leading ``.``, e.g. ``.xml``, not ``xml``.
         pattern : str or Pattern, optional
             A string or regex pattern to use to filter files by name.
-        skip_invalid : bool, default=False
+        skip_invalid : bool, default=False (keyword-only)
             If ``True``, then this will emit a warning rather than raise an
             error if a file is not found or if the file does not have a
             valid name.
@@ -909,7 +909,7 @@ class PseudoSet(DevBase):
         return cls(
             codes        = code,
             pseudos      = pseudos,
-            Zeffs        = Zeffs,
+            Zeff_map     = Zeff_map,
             skip_invalid = skip_invalid,
             )
     #end def from_dir
@@ -917,11 +917,11 @@ class PseudoSet(DevBase):
     @classmethod
     def from_mixed_dir(
         cls,
-        pseudo_dir: PathLike,
-        codes     : str | list[str] | None = None,
-        extensions: Mapping[str, set[str]] | None = None,
-        patterns  : Mapping[str, str | Pattern] | None = None,
-        code_Zeffs: Mapping[str, Mapping[str, int]] | None = None,
+        pseudo_dir   : PathLike,
+        codes        : str | list[str] | None = None,
+        extensions   : Mapping[str, set[str]] | None = None,
+        patterns     : Mapping[str, str | Pattern] | None = None,
+        code_Zeff_map: Mapping[str, Mapping[str, int]] | None = None,
         *,
         skip_invalid: bool = False,
         ) -> dict[Literal["espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"], PseudoSet]:
@@ -938,22 +938,23 @@ class PseudoSet(DevBase):
             into their respective groups. If this is set to ``detect``
             and filters is ``None``, then it will use all known codes
             and file extensions to filter the pseudos.
-        filters : Map of str to set of str, optional
-            A dictionary mapping codes to the suffixes corresponding to
-            those labels. If this is not provided, then the filters are
-            automatically populated by the codes in ``codes``.
+        extensions : Map of str to set of str, optional
+            A dictionary mapping codes to the file extensions
+            corresponding to those labels. If this is not provided, then
+            the filters are automatically populated by the codes in
+            ``codes``.
         patterns : Map of str to str or Pattern, optional
             A dictionary mapping codes to strings or regex patterns,
             used to filter out files.
-        code_Zeffs : Map of str to Map of str/Elements to int, optional
+        code_Zeff_map : Map of str to Map of str/Elements to int, optional
             A ``dict`` or ``obj`` for each code that maps elements to
             their effective nuclear charges (Z-valences). If this is
             supplied, it will override any parts of the code that may
             try to parse the pseudopotential to get the Z-valence.
-        skip_invalid : bool, default=False
-            If ``True``, then this will emit a warning rather than raise an
-            error if a file is not found or if the file does not have a
-            valid name.
+        skip_invalid : bool, default=False (keyword-only)
+            If ``True``, then this will emit a warning rather than raise
+            an error if a file is not found or if the file does not have
+            a valid name.
 
         Returns
         -------
@@ -1006,23 +1007,23 @@ class PseudoSet(DevBase):
         ...     for lbl, psp in ps_set.pseudos.items():
         ...         print(f"  {lbl}: {psp}")
         espresso pseudos:
-        H: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/H.ccECP.upf
-        C: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/C.ccECP.upf
+        H: /path/to/pseudo_dir/H.ccECP.upf
+        C: /path/to/pseudo_dir/C.ccECP.upf
         gamess pseudos:
-        C: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/C.BFD.gms
-        H: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/H.BFD.gms
+        C: /path/to/pseudo_dir/C.BFD.gms
+        H: /path/to/pseudo_dir/H.BFD.gms
         vasp pseudos:
-        C: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/C/POTCAR
-        H: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/H/POTCAR
+        C: /path/to/pseudo_dir/C/POTCAR
+        H: /path/to/pseudo_dir/H/POTCAR
         qmcpack pseudos:
-        C: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/C.ccECP.xml
-        H: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/H.ccECP.xml
+        C: /path/to/pseudo_dir/C.ccECP.xml
+        H: /path/to/pseudo_dir/H.ccECP.xml
         rmg pseudos:
-        C: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/C.USPP.upf
-        H: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/H.USPP.upf
+        C: /path/to/pseudo_dir/C.USPP.upf
+        H: /path/to/pseudo_dir/H.USPP.upf
         pyscf pseudos:
-        C: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/C.BFD.gth
-        H: /home/brock/Documents/github/qmcpack/ignored_files/pseudo_dir/H.BFD.gth
+        C: /path/to/pseudo_dir/C.BFD.gth
+        H: /path/to/pseudo_dir/H.BFD.gth
         """
         psp_dir = Path(pseudo_dir).resolve()
 
@@ -1074,13 +1075,13 @@ class PseudoSet(DevBase):
                         code = PseudoSet._check_code_str(c)
                         checked_filters[code] = extensions.get(c)
 
-        if code_Zeffs is None:
-            code_Zeffs = {}
-        elif codes is not None and not set(codes) >= set(code_Zeffs.keys()):
+        if code_Zeff_map is None:
+            code_Zeff_map = {}
+        elif codes is not None and not set(codes) >= set(code_Zeff_map.keys()):
             msg = (
-                "Mismatch between provided code Zeffs and codes!\n"
+                "Mismatch between provided code Zeff map and codes!\n"
                 f"Provided codes: {tuple(codes)}\n"
-                f"Zeff keys:      {tuple(code_Zeffs.keys())}"
+                f"Zeff keys:      {tuple(code_Zeff_map.keys())}"
                 )
             raise ValueError(msg)
 
@@ -1100,7 +1101,7 @@ class PseudoSet(DevBase):
                 pseudos[code] = PseudoSet.from_dir(
                     pseudo_dir   = psp_dir,
                     code         = code,
-                    Zeffs        = code_Zeffs.get(code),
+                    Zeff_map     = code_Zeff_map.get(code),
                     ext_filter   = suffixes,
                     pattern      = patterns.get(code),
                     skip_invalid = skip_invalid,
@@ -1165,7 +1166,7 @@ class PseudoSet(DevBase):
         return pps
     #end def get_pseudos
 
-    def get_Zeffs(
+    def get_Zeff(
         self,
         elem_labels: Iterable[Elements | str] | PhysicalSystem,
         *,
@@ -1177,7 +1178,7 @@ class PseudoSet(DevBase):
         ----------
         elem_labels : list of Elements or list of str or PhysicalSystem
             The elements or system to get Z-valences for.
-        missing_as_ae : bool, default=False
+        missing_as_ae : bool, default=False (keyword-only)
             Assume any elements for which a pseudopotential can not be
             found are all-electron, and use their atomic number as the
             value for the Z-valence. If this is not supplied, and if the
@@ -1201,14 +1202,14 @@ class PseudoSet(DevBase):
             elem_labels = elem_labels.ion_labels
 
         elem_labels = set(elem_labels) # Unique only, saves on iteration.
-        Z_effs = {}
+        Z_eff_map = {}
         for label in elem_labels:
-            if label in self.Zeffs:
-                Z_effs[label] = self.Zeffs[label]
+            if label in self.Zeff_map:
+                Z_eff_map[label] = self.Zeff_map[label]
             elif label in self.pseudos:
                 f_ext = self.pseudos[label].suffix.lower()
                 if f_ext == ".upf":
-                    Z_effs[label] = read_upf_z_valence(self.pseudos[label])
+                    Z_eff_map[label] = read_upf_z_valence(self.pseudos[label])
                 elif f_ext in (".gms", ".gamess"):
                     msg = (
                         "Z-valence parsing not implemented for GAMESS pseudopotentials!\n"
@@ -1216,25 +1217,25 @@ class PseudoSet(DevBase):
                         )
                     raise NotImplementedError(msg)
                 elif f_ext in ["potcar", ".vasp"]:
-                    Z_effs[label] = read_potcar_z_valence(self.pseudos[label])
+                    Z_eff_map[label] = read_potcar_z_valence(self.pseudos[label])
                 elif f_ext == ".xml":
-                    Z_effs[label] = read_qmcpack_xml_z_valence(self.pseudos[label])
+                    Z_eff_map[label] = read_qmcpack_xml_z_valence(self.pseudos[label])
                 else:
                     msg = f"File extension '{f_ext}' is not parseable by Nexus, can not extract Z-valence!"
-                    raise ValueError(msg)
+                    raise NotImplementedError(msg)
             elif missing_as_ae:
                 is_elem, element = Elements.is_element(label, return_element=True)
                 if not is_elem:
                     msg = f"Can not determine element for label '{label}'"
                     raise ValueError(msg)
                 else:
-                    Z_effs[label] = element.atomic_number
+                    Z_eff_map[label] = element.atomic_number
             else:
                 msg = f"No pseudopotential found for label {label}!"
                 raise ValueError(msg)
 
-        return Z_effs
-    #end def get_Zeffs
+        return Z_eff_map
+    #end def get_Zeff
 
     @classmethod
     def _register_legacy_ppset(cls, label: str) -> None:
@@ -1272,11 +1273,11 @@ class PseudoSet(DevBase):
         else:
             rep += "},\n"
 
-        rep += "    Zeffs = {"
-        if len(self.Zeffs) > 0:
-            lbl_len = max(map(len, self.Zeffs.keys()))+2
+        rep += "    Zeff_map = {"
+        if len(self.Zeff_map) > 0:
+            lbl_len = max(map(len, self.Zeff_map.keys()))+2
             rep += "\n"
-            for lbl, zeff in self.Zeffs.items():
+            for lbl, zeff in self.Zeff_map.items():
                 lbl = f"'{lbl}'"
                 rep += f"{' '*8}{lbl:<{lbl_len}}: {zeff!s},\n"
             rep += "    },\n"
@@ -1285,9 +1286,6 @@ class PseudoSet(DevBase):
         rep += ")\n"
         return rep
     #end def __repr__
-
-    def __str__(self) -> str:
-        return repr(self) # Override bad str with custom repr.
 #end class PseudoSet
 
 # real pseudopotentials
