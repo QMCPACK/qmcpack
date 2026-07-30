@@ -12,8 +12,7 @@
 #include <atomic>
 #include <thread>
 #include <functional>
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "Concurrency/ParallelExecutor.hpp"
 

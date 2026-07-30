@@ -44,5 +44,5 @@ if(BUILD_MICRO_BENCHMARKS)
     target_link_libraries(${UTEST_EXE} platform_omptarget_LA)
   endif()
 
-  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}> --allow-running-no-tests)
 endif(BUILD_MICRO_BENCHMARKS)

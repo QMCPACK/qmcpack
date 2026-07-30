@@ -40,7 +40,7 @@ try:
         'y_max': y.max(),
         'matrix_mean': matrix.mean(),
         'matrix_std': matrix.std()
-    }
+        }
 
     # Save statistics
     with open('data/statistics.txt', 'w') as f:

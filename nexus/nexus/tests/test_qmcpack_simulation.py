@@ -208,7 +208,7 @@ def test_incorporate_result(tmp_path):
             "\n"
             "End of Dataset\n"
             )]
-    )
+        )
 
     # incorporate vasp structure
     sim = get_qmcpack_sim(identifier='qmc_vasp_structure',tiling=(2,2,2))
