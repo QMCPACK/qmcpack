@@ -27,13 +27,13 @@ template<class T, typename Alloc = std::allocator<T>>
 class Matrix
 {
 public:
-  using Type_t        = T;
-  using value_type    = T;
-  using Container_t   = Vector<T, Alloc>;
-  using size_type     = typename Container_t::size_type;
-  using iterator      = typename Container_t::iterator;
-  using This_t        = Matrix<T, Alloc>;
-  using Alloc_t       = Alloc;
+  using Type_t      = T;
+  using value_type  = T;
+  using Container_t = Vector<T, Alloc>;
+  using size_type   = typename Container_t::size_type;
+  using iterator    = typename Container_t::iterator;
+  using This_t      = Matrix<T, Alloc>;
+  using Alloc_t     = Alloc;
 
   Matrix() : D1(0), D2(0) {} // Default Constructor initializes to zero.
 
@@ -196,9 +196,7 @@ public:
    */
   template<class RHS, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   This_t& operator=(const RHS& rhs)
-  {
-    return assign(*this, rhs);
-  }
+  { return assign(*this, rhs); }
 
   // Get and Set Operations for assignment operators
   // returns a pointer of i-th row
@@ -209,14 +207,10 @@ public:
 
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline value_type* device_data()
-  {
-    return X.device_data();
-  }
+  { return X.device_data(); }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline const value_type* device_data() const
-  {
-    return X.device_data();
-  }
+  { return X.device_data(); }
 
   // returns a const pointer of i-th row
   inline const Type_t* data(size_type i) const { return X.data() + i * D2; }
@@ -243,30 +237,22 @@ public:
 
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Type_t& operator()(size_type i)
-  {
-    return X[i];
-  }
+  { return X[i]; }
 
   // returns the i-th value in D1*D2 vector
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Type_t operator()(size_type i) const
-  {
-    return X[i];
-  }
+  { return X[i]; }
 
   // returns val(i,j)
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Type_t& operator()(size_type i, size_type j)
-  {
-    return X[i * D2 + j];
-  }
+  { return X[i * D2 + j]; }
 
   // returns val(i,j)
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline const Type_t& operator()(size_type i, size_type j) const
-  {
-    return X[i * D2 + j];
-  }
+  { return X[i * D2 + j]; }
 
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void swap_rows(int r1, int r2)
@@ -292,9 +278,7 @@ public:
 
   template<class IT, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void replaceRow(IT first, size_type i)
-  {
-    std::copy(first, first + D2, X.begin() + i * D2);
-  }
+  { std::copy(first, first + D2, X.begin() + i * D2); }
 
   template<class IT, typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline void replaceColumn(IT first, size_type j)
@@ -392,14 +376,10 @@ public:
   // Abstract Dual Space Transfers
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   void updateTo(size_type size = 0, std::ptrdiff_t offset = 0)
-  {
-    X.updateTo(size, offset);
-  }
+  { X.updateTo(size, offset); }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   void updateFrom(size_type size = 0, std::ptrdiff_t offset = 0)
-  {
-    X.updateFrom(size, offset);
-  }
+  { X.updateFrom(size, offset); }
 
 protected:
   size_type D1, D2;

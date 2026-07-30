@@ -70,9 +70,7 @@ public:
    */
   template<typename CONTAINER>
   Vector(const CONTAINER& from, T* ref, size_type n) : nLocal(n), X(ref)
-  {
-    qmc_allocator_traits<Alloc>::attachReference(from.mAllocator, mAllocator, ref - from.data());
-  }
+  { qmc_allocator_traits<Alloc>::attachReference(from.mAllocator, mAllocator, ref - from.data()); }
 
   /** Initializer list constructor that can deal with both POD
    *  and nontrivial nested elements with move assignment operators.
@@ -203,15 +201,11 @@ public:
   // Get and Set Operations
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Type_t& operator[](size_type i)
-  {
-    return X[i];
-  }
+  { return X[i]; }
 
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline const Type_t& operator[](size_type i) const
-  {
-    return X[i];
-  }
+  { return X[i]; }
 
   //inline Type_t& operator()(size_type i)
   //{
@@ -237,14 +231,10 @@ public:
    */
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline value_type* device_data()
-  {
-    return mAllocator.get_device_ptr();
-  }
+  { return mAllocator.get_device_ptr(); }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline const value_type* device_data() const
-  {
-    return mAllocator.get_device_ptr();
-  }
+  { return mAllocator.get_device_ptr(); }
 
   inline value_type* first_address() { return X; }
   inline const value_type* first_address() const { return X; }

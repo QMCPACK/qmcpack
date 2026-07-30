@@ -24,8 +24,8 @@ namespace qmcplusplus
 template<typename T, size_t ALIGN>
 struct Mallocator
 {
-  using value_type    = T;
-  using size_type     = size_t;
+  using value_type = T;
+  using size_type  = size_t;
 
   static constexpr size_t alignment = ALIGN;
 
@@ -79,14 +79,10 @@ struct Mallocator
 
 template<class T1, size_t ALIGN1, class T2, size_t ALIGN2>
 bool operator==(const Mallocator<T1, ALIGN1>&, const Mallocator<T2, ALIGN2>&)
-{
-  return ALIGN1 == ALIGN2;
-}
+{ return ALIGN1 == ALIGN2; }
 template<class T1, size_t ALIGN1, class T2, size_t ALIGN2>
 bool operator!=(const Mallocator<T1, ALIGN1>&, const Mallocator<T2, ALIGN2>&)
-{
-  return ALIGN1 != ALIGN2;
-}
+{ return ALIGN1 != ALIGN2; }
 } // namespace qmcplusplus
 
 #endif
