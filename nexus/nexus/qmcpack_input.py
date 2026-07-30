@@ -8563,13 +8563,14 @@ def generate_batched_opt_calculations(
     if init_samples is None and init_steps is None and not has.steps:
         init_samples = 204800
     #end if
-    if not has.sr_tau:
-        if has.linesearch and opt_inputs.line_search:
-            opt_inputs.sr_tau = 0.1
-        else:
-            opt_inputs.sr_tau = 0.01
+    if has.minmethod and opt_inputs.minmethod=='sr_cg':
+        if not has.sr_tau:
+            if has.linesearch and opt_inputs.line_search:
+                opt_inputs.sr_tau = 0.1
+            else:
+                opt_inputs.sr_tau = 0.01
+            #end if
         #end if
-    #end if
     for k in list(opt_inputs.keys()):
         if opt_inputs[k] is None:
             del opt_inputs[k]
@@ -8630,11 +8631,12 @@ def generate_batched_opt_calculations(
         if init_steps is not None:
             init_opt.steps = init_steps
         #end if
-        if init_sr_tau is not None:
-            init_opt.sr_tau = init_sr_tau
-        #end if
-        if init_line_search is not None:
-            init_opt.line_search = init_line_search
+        if sr_cg:
+            if init_sr_tau is not None:
+                init_opt.sr_tau = init_sr_tau
+            #end if
+            if init_line_search is not None:
+                init_opt.line_search = init_line_search
         if not sr_cg:
             init_opt.minwalkers = init_minwalkers
         #end if
@@ -8654,6 +8656,7 @@ def generate_batched_opt_calculations(
     #end if
 
     opt_calcs.append(loop(max=cycles,qmc=cost_opt))
+
     return opt_calcs
 #end def generate_batched_opt_calculations
 

@@ -7,8 +7,8 @@
 // File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_template_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Numerics/RotationMatrix3D.h"
 #include <string>

@@ -10,8 +10,7 @@
 // Fionn D. Malone, malone14@llnl.gov
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "Configuration.h"
 
 #undef APP_ABORT

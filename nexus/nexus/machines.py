@@ -4687,7 +4687,7 @@ Ruby(         1480,   2,    28,  192,  100,   'srun',   'sbatch',  'squeue', 'sc
 Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Inti(           13,   2,    64,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Baseline(      128,   2,    64,  512,  100,   'srun',   'sbatch',  'squeue', 'scancel')
-Besms(         166,   1,    96,  768, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Besms(         166,   2,    96,  768, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Frontier(     9856,   4,    14,   64, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Aurora(      10624,   2,   102,  512, 1000,'mpiexec',     'qsub',   'qstat',    'qdel')
 
