@@ -261,6 +261,15 @@ private:
   std::string python_module_path_;
   PyObjectHandle python_module_;
   PyObjectHandle python_instance_;
+  /** Serialize calls into this Python bridge instance.
+   *
+   * DeepQMCWF clones share one bridge, so independent OpenMP crowds may reach
+   * the same Python object concurrently.  The GIL protects Python C API access,
+   * but Python extension/runtime code used underneath DeepQMC may release the
+   * GIL.  This instance-local mutex avoids reentrant calls into the Python
+   * bridge without introducing any thread creation or execution policy; it only
+   * protects this external runtime object.
+   */
   mutable std::mutex call_mutex_;
 };
 
