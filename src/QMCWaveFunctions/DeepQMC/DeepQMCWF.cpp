@@ -39,18 +39,6 @@ DeepQMCWF::DeepQMCWF(std::string name,
                      const ParticleSet& ions,
                      std::unique_ptr<const DeepQMCBridge> bridge,
                      int mol_idx)
-    : DeepQMCWF(SharedBridgeTag{},
-                std::move(name),
-                ions,
-                std::shared_ptr<const DeepQMCBridge>(std::move(bridge)),
-                mol_idx)
-{}
-
-DeepQMCWF::DeepQMCWF(SharedBridgeTag,
-                     std::string name,
-                     const ParticleSet& ions,
-                     std::shared_ptr<const DeepQMCBridge> bridge,
-                     int mol_idx)
     : WaveFunctionComponent(std::move(name)), ions_(ions), bridge_(std::move(bridge)), mol_idx_(mol_idx)
 {
   assert(bridge_);
@@ -323,7 +311,7 @@ void DeepQMCWF::evaluateDerivatives(ParticleSet& P,
 
 std::unique_ptr<WaveFunctionComponent> DeepQMCWF::makeClone(ParticleSet& tpq) const
 {
-  return std::make_unique<DeepQMCWF>(SharedBridgeTag{}, my_name_, ions_, bridge_, mol_idx_);
+  return std::make_unique<DeepQMCWF>(*this);
 }
 
 } // namespace qmcplusplus
