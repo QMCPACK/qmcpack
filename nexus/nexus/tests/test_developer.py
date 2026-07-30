@@ -2,12 +2,12 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.DEVELOPER)
 
+from collections.abc import Mapping, MutableMapping
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
 
 from ..testing import failed,FailedTest
-
 
 
 def test_unavailable():
@@ -722,3 +722,24 @@ def test_developer_tools_devbase(tmp_path):
     assert(len(value)==0)
 
 #end def test_developer_tools_devbase
+
+
+def test_obj_virtual_subclass():
+    from ..developer_tools import obj
+    from ..developer import obj_nexus
+    from ..developer import obj_deprecated
+
+    assert(issubclass(obj, MutableMapping))
+    assert(issubclass(obj, Mapping))
+    assert(isinstance(obj(), MutableMapping))
+    assert(isinstance(obj(), Mapping))
+
+    assert(issubclass(obj_nexus, MutableMapping))
+    assert(issubclass(obj_nexus, Mapping))
+    assert(isinstance(obj_nexus(), MutableMapping))
+    assert(isinstance(obj_nexus(), Mapping))
+
+    assert(not issubclass(obj_deprecated, MutableMapping))
+    assert(not issubclass(obj_deprecated, Mapping))
+    assert(not isinstance(obj_deprecated(), MutableMapping))
+    assert(not isinstance(obj_deprecated(), Mapping))

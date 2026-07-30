@@ -99,8 +99,6 @@ struct CUDAManagedAllocator
 {
   using value_type    = T;
   using size_type     = size_t;
-  using pointer       = T*;
-  using const_pointer = const T*;
 
   CUDAManagedAllocator() = default;
   template<class U>
