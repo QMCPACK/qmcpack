@@ -14,7 +14,6 @@
 
 #include <cstring>
 #include "QMCDrivers/WalkerProperties.h"
-#include "Configuration.h"
 #include "Particle/WalkerConfigurations.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/HDFWalkerInput_0_4.h"

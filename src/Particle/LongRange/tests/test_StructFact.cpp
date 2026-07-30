@@ -13,7 +13,6 @@
 
 #include <vector>
 #include <complex>
-#include "Configuration.h"
 #include "ParticleSet.h"
 #include "LongRange/StructFact.h"
 

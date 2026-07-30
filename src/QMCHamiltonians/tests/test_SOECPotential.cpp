@@ -11,7 +11,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
-#include "Configuration.h"
 #include "QMCHamiltonians/SOECPotential.h"
 #include "QMCWaveFunctions/ElectronGas/FreeOrbital.h"
 #include "QMCWaveFunctions/SpinorSet.h"

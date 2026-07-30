@@ -13,7 +13,6 @@
 #include <iostream>
 #include <vector>
 
-#include "Configuration.h"
 #include "QMCTools/QMCFiniteSize/SkParserBase.h"
 #include "QMCTools/QMCFiniteSize/SkParserASCII.h"
 #include "QMCTools/QMCFiniteSize/QMCFiniteSize.h"

@@ -19,7 +19,6 @@
 #include <string>
 
 #include <checkMatrix.hpp>
-#include "Configuration.h"
 #include <Listener.hpp>
 #include <OhmmsData/Libxml2Doc.h>
 #include <OhmmsPETE/OhmmsMatrix.h>

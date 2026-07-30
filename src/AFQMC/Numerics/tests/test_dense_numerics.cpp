@@ -18,9 +18,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-//#include "catch.hpp"
+
 #include <catch2/catch_test_macros.hpp>
-#include "Configuration.h"
 
 // Always test the fallback code, regardless of MKL definition
 //#undef HAVE_MKL

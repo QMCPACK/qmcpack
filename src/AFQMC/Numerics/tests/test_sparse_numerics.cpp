@@ -17,7 +17,6 @@
 //    Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
-#include "Configuration.h"
 
 // Always test the fallback code, regardless of MKL definition
 #define MKL_INT int

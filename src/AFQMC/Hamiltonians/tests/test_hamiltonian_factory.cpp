@@ -12,7 +12,6 @@
 //#undef NDEBUG
 #include <catch2/catch_test_macros.hpp>
 
-#include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "ProjectData.h"

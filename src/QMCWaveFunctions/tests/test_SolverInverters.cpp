@@ -11,7 +11,6 @@
 #include <catch2/catch_template_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
-#include "Configuration.h"
 #include "Common/Queue.hpp"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include "QMCWaveFunctions/Fermion/InverterAccel.hpp"
