@@ -250,7 +250,11 @@ struct DiracDet
           log_value  = newlog;
           double err = r / ratio_full - 1;
           ratio_error += err;
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
           if (std::abs(err) > eps)
           {
             cout << i << " accepted: curRatio " << r << " error " << err << endl;
@@ -259,7 +263,11 @@ struct DiracDet
         }
       }
     }
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
     cout << "Cummulative ratio_error " << ratio_error << endl;
   }
 };
@@ -280,7 +288,11 @@ void checkIdentity(const MT1& a, const MT2& b, const string& tag)
       error += (i == j) ? std::abs(e - cone) : std::abs(e);
     }
   }
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
   cout << tag << " Identity Error = " << error / nrows / nrows << endl;
 }
 
@@ -294,7 +306,11 @@ void checkDiff(const MT1& a, const MT2& b, const string& tag)
   for (int i = 0; i < nrows; ++i)
     for (int j = 0; j < ncols; ++j)
       error += std::abs(static_cast<double>(a(i, j) - b(i, j)));
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
   cout << tag << " diff Error = " << error / nrows / nrows << endl;
 }
 

@@ -315,7 +315,11 @@ void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end, bo
       cumNorm[ipsi] += 1.0 / sumratio[ipsi];
     }
   }
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
   print_mem("Memory Usage after the buffer registration", app_log());
 }
 

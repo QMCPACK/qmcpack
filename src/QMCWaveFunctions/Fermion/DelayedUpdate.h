@@ -190,7 +190,11 @@ public:
             BLAS::gemm('T', 'N', delay_count, std::min(norb - x_offset, block_size), norb, cone, U.data(), norb,
                        Ainv[x_offset], norb, czero, tempMat[x_offset], lda_Binv);
           }
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
           for (int i = 0; i < delay_count; i++)
             tempMat(delay_list[i], i) -= cone;
 #pragma omp for

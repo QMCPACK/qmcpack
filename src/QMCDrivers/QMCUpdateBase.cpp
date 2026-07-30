@@ -276,7 +276,11 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     H.saveProperty(awalker.getPropertyBase());
     awalker.Weight = 1.;
   }
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
   print_mem("Memory Usage after the buffer registration", app_log());
 }
 

@@ -141,7 +141,11 @@ int main(int argc, char** argv)
     const int nels  = count_electrons(ions);
     const int nels3 = 3 * nels;
 
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
     {
       nptcl  = nels;
       ncrews = omp_get_max_threads();
@@ -212,7 +216,11 @@ int main(int argc, char** argv)
           spo.evaluate_vgh_pfor(els.R[iel]); //internally using omp for over the blocks
           vgh_t_loc2 += clock.elapsed();
 
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
           if (ur[iel] > accept)
           {
             els.R[iel] = pos;
@@ -248,7 +256,11 @@ int main(int argc, char** argv)
       v_t_loc += v_t_loc2;
       my_vals += my_vals2;
 
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
       nknots_copy = nknots;
 
     } //parallel region

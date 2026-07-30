@@ -163,7 +163,11 @@ int main(int argc, char** argv)
     const int nels  = count_electrons(ions);
     const int nels3 = 3 * nels;
 
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
     nptcl = nels;
 
     { //create up/down electrons
@@ -193,7 +197,11 @@ int main(int argc, char** argv)
     ParticlePos delta(nels);
     ParticlePos rOnSphere(nknots);
 
+#if _OPENMP >= 202111
+#pragma omp masked
+#else
 #pragma omp master
+#endif
     nknots_copy = nknots;
 
     RealType sqrttau = 2.0;
