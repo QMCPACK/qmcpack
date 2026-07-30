@@ -67,7 +67,7 @@ void NonLocalTOperator::put(xmlNodePtr cur)
   else
     throw std::runtime_error("NonLocalTOperator::put unknown nonlocalmove option " + use_tmove);
 
-#if _OPENMP >= 202111
+#if _OPENMP >= 202011
 #pragma omp masked
 #else
 #pragma omp master

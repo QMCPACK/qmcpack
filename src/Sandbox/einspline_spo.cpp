@@ -163,7 +163,7 @@ int main(int argc, char** argv)
     const int nels  = count_electrons(ions);
     const int nels3 = 3 * nels;
 
-#if _OPENMP >= 202111
+#if _OPENMP >= 202011
 #pragma omp masked
 #else
 #pragma omp master
@@ -197,7 +197,7 @@ int main(int argc, char** argv)
     ParticlePos delta(nels);
     ParticlePos rOnSphere(nknots);
 
-#if _OPENMP >= 202111
+#if _OPENMP >= 202011
 #pragma omp masked
 #else
 #pragma omp master

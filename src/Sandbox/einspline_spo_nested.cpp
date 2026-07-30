@@ -141,7 +141,7 @@ int main(int argc, char** argv)
     const int nels  = count_electrons(ions);
     const int nels3 = 3 * nels;
 
-#if _OPENMP >= 202111
+#if _OPENMP >= 202011
 #pragma omp masked
 #else
 #pragma omp master
@@ -216,7 +216,7 @@ int main(int argc, char** argv)
           spo.evaluate_vgh_pfor(els.R[iel]); //internally using omp for over the blocks
           vgh_t_loc2 += clock.elapsed();
 
-#if _OPENMP >= 202111
+#if _OPENMP >= 202011
 #pragma omp masked
 #else
 #pragma omp master
@@ -256,7 +256,7 @@ int main(int argc, char** argv)
       v_t_loc += v_t_loc2;
       my_vals += my_vals2;
 
-#if _OPENMP >= 202111
+#if _OPENMP >= 202011
 #pragma omp masked
 #else
 #pragma omp master

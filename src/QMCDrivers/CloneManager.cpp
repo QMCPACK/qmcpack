@@ -116,7 +116,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
   #pragma omp parallel
   {
     // check sizes
-#if _OPENMP >= 202111
+#if _OPENMP >= 202011
     #pragma omp masked
 #else
     #pragma omp master

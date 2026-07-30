@@ -67,7 +67,7 @@ int main()
         int L1_num_thread = omp_get_num_threads();
 #pragma omp parallel
         {
-#if _OPENMP >= 202111
+#if _OPENMP >= 202011
 #pragma omp masked
 #else
 #pragma omp master

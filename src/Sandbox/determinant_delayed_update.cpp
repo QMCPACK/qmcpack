@@ -239,7 +239,7 @@ int main(int argc, char** argv)
   int nthreads_nested = 1;
 #pragma omp parallel
   {
-#if _OPENMP >= 202111
+#if _OPENMP >= 202011
 #pragma omp masked
 #else
 #pragma omp master

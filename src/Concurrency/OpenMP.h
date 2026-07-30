@@ -37,7 +37,7 @@ inline int getNextLevelNumThreads()
   int num_threads = 1;
 #pragma omp parallel
   {
-#if _OPENMP >= 202111
+#if _OPENMP >= 202011
 #pragma omp masked
 #else
 #pragma omp master
