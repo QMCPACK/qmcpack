@@ -8,8 +8,7 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "Configuration.h"
 #include "Numerics/Quadrature.h"
@@ -122,7 +121,7 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
 
   elec.createSK();
   elec.resetGroups();
-  const int ei_table_index = elec.addTable(ions);
+  elec.addTable(ions);
   elec.update();
 
   ParticleSet elec2(elec);

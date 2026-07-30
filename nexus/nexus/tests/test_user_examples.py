@@ -103,7 +103,7 @@ def check_generated_files(
         pw2qmcpack = Pw2qmcpackInput,
         gamess     = GamessInput,
         qmcpack    = QmcpackInput,
-    )
+        )
 
     ref_filepath = reference_dir / example_path / filepath
     gen_filepath = tmp_dir / example_path / filepath
@@ -112,11 +112,11 @@ def check_generated_files(
         raise FileNotFoundError(
             "Reference file is missing\n"
             f"File should be located at: {ref_filepath!s}"
-        )
+            )
     elif not gen_filepath.exists():
         raise FileNotFoundError(
             f"Input file was not generated: {gen_filepath!s}"
-        )
+            )
 
     input_class = input_classes[code]
     ref_input = input_class(str(ref_filepath))
@@ -151,7 +151,7 @@ def check_generated_files(
         #end if
         if failed:
             # report on failures
-            from nexus.generic import obj
+            from nexus.developer import obj
             dgen = obj(dgen)
             dref = obj(dref)
             msg  = 'reference and generated input files differ\n'
@@ -197,7 +197,7 @@ def test_pwscf_relax_Ge_T(tmp_path):
             tmp_path,
             test_data["path"],
             filepath,
-        )
+            )
         assert(success), message
 
 

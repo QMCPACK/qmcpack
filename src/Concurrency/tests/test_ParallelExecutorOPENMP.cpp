@@ -8,8 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "Concurrency/ParallelExecutor.hpp"
 
@@ -17,7 +17,7 @@ namespace qmcplusplus
 {
 /** Openmp generally works but is not guaranteed with std::atomic
  */
-void TestTaskOMP(const int ip, int& counter)
+void TestTaskOMP(const int /*ip*/, int& counter)
 {
 #pragma omp atomic update
   counter++;
@@ -40,7 +40,7 @@ TEST_CASE("ParallelExecutor<OPENMP> lambda case", "[concurrency]")
   int count(0);
   test_block(
       num_threads,
-      [](int id, int& c) {
+      [](int /*id*/, int& c) {
 #pragma omp atomic update
         c++;
       },
@@ -53,13 +53,13 @@ TEST_CASE("ParallelExecutor<OPENMP> nested case", "[concurrency]")
   int num_threads = 1;
   ParallelExecutor<Executor::OPENMP> test_block;
   int count(0);
-  auto nested_tasks = [num_threads](int task_id, int& my_count) {
+  auto nested_tasks = [num_threads](int /*task_id*/, int& my_count) {
     ParallelExecutor<Executor::OPENMP> test_block2;
     test_block2(num_threads, TestTaskOMP, my_count);
   };
 #ifdef _OPENMP
   REQUIRE_THROWS_WITH(test_block(num_threads, nested_tasks, count),
-                      Catch::Contains("ParallelExecutor should not be used for nested openmp threading"));
+                      Catch::Matchers::ContainsSubstring("ParallelExecutor should not be used for nested openmp threading"));
 #endif
 }
 

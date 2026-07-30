@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.GRID_FUNCTIONS)
 
@@ -516,7 +517,7 @@ def test_grid_initialization():
     props = get_props()
 
     # check validity
-    for g in grids:
+    for g in grids.values():
         assert(g.valid())
     #end for
 
@@ -641,7 +642,7 @@ def test_grid_reset():
     for grid_type,inputs in grid_inputs:
         empty_grid = grid_type()
         grid = grid_type(**inputs)
-        grid_copy = grid.copy()
+        grid_copy = deepcopy(grid)
         grid.reset()
         assert(object_eq(grid,empty_grid))
         grid.initialize(**inputs)
@@ -665,7 +666,7 @@ def test_grid_set_operations():
     points = np.linspace(0,1,2*10)
     npe.reshape_inplace(points, (10, 2))
     for name in grids_check:
-        g = grids[name].copy()
+        g = deepcopy(grids[name])
         g.set_points(points)
         assert(value_eq(g.points,points))
         assert(id(g.points)!=id(points))
@@ -677,7 +678,7 @@ def test_grid_set_operations():
     # set shape
     for name in grids_check:
         p = props[name]
-        g = grids[name].copy()
+        g = deepcopy(grids[name])
         g.set_shape(p.cells)
         assert(g.shape==p.cells)
     #end for
@@ -685,7 +686,7 @@ def test_grid_set_operations():
     # set bconds
     for name in grids_check:
         p = props[name]
-        g = grids[name].copy()
+        g = deepcopy(grids[name])
         bcs = tuple('oo')
         g.set_bconds(bcs)
         assert(tuple(g.bconds)==bcs)
@@ -697,7 +698,7 @@ def test_grid_set_operations():
     # set axes
     for name in grids_check:
         p = props[name]
-        g = grids[name].copy()
+        g = deepcopy(grids[name])
         dim = p.grid_dim
         if g.surface:
             dim += 1
@@ -711,8 +712,8 @@ def test_grid_set_operations():
     # set origin
     for name in grids_check:
         p = props[name]
-        g = grids[name].copy()
-        go = g.copy()
+        g = deepcopy(grids[name])
+        go = deepcopy(g)
         origin = np.array(p.space_dim*(4.5,))
         g.set_origin(origin)
         assert(value_eq(g.origin,origin))
@@ -741,7 +742,7 @@ def test_grid_copy():
         gc = deepcopy(g)
         assert(object_eq(gc,g))
         assert(id(gc.points)!=id(g.points))
-        gc = g.copy()
+        gc = deepcopy(g)
         assert(object_eq(gc,g))
         assert(id(gc.points)!=id(g.points))
         gc = g.copy(shallow=True)
@@ -763,7 +764,7 @@ def test_grid_translate():
     grids_check = 'p22c s22c c23c'.split()
 
     def translate_and_check(g,shift):
-        gt = g.copy()
+        gt = deepcopy(g)
         gt.translate(shift)
         shift = np.array(shift).ravel()
         assert(value_eq(gt.origin-g.origin,shift))
@@ -775,7 +776,7 @@ def test_grid_translate():
 
     for name in grids_check:
         p = props[name]
-        g = grids[name].copy()
+        g = deepcopy(grids[name])
         shift = p.space_dim*(6.7,)
         translate_and_check(g,shift)
         shift = np.array(shift)
@@ -795,8 +796,8 @@ def test_grid_reshape():
     for name in sorted(grids.keys()):
         p = props[name]
         if p.bconds is None and p.sheared and p.translated:
-            g = grids[name].copy()
-            gref = g.copy()
+            g = deepcopy(grids[name])
+            gref = deepcopy(g)
             points_shape = tuple(list(g.points.shape))
             grid_shape   = tuple(list(g.shape))
             g.reshape_full()
@@ -866,10 +867,10 @@ def test_grid_unit_points():
     #   of general points (perhaps those falling outside the grid 
     #   domain) onto the unit space.
     for name in sorted(grids.keys()):
-        g = grids[name].copy()
+        g = deepcopy(grids[name])
         p = props[name]
         if p.centered:
-            gref = g.copy()
+            gref = deepcopy(g)
             upoints_ref = ugrids[p.grid_dim]
             upoints = g.unit_points()
             assert(value_eq(upoints,upoints_ref))
@@ -943,8 +944,8 @@ def test_grid_cell_indices():
     for name in sorted(grids.keys()):
         p = props[name]
         if p.centered:
-            g = grids[name].copy()
-            gref = g.copy()
+            g = deepcopy(grids[name])
+            gref = deepcopy(g)
             assert(value_eq(g.cell_indices(),indices[p.grid_dim]))
             assert(object_eq(g,gref))
         #end if
@@ -993,8 +994,8 @@ def test_grid_inside():
 
     for name in sorted(grids.keys()):
         p = props[name]
-        g = grids[name].copy()
-        gref = g.copy()
+        g = deepcopy(grids[name])
+        gref = deepcopy(g)
 
         # all grid points should be in the domain
         points = g.points
@@ -1071,8 +1072,8 @@ def test_grid_project():
 
     for name in sorted(grids.keys()):
         p = props[name]
-        g = grids[name].copy()
-        gref = g.copy()
+        g = deepcopy(grids[name])
+        gref = deepcopy(g)
 
         ugrids = []
         for bc in g.bconds:
@@ -1353,7 +1354,7 @@ def test_grid_function_initialization():
     for name in sorted(grids.keys()):
         p = props[name]
         if p.sheared and p.bconds is None and not p.translated:
-            g = grids[name].copy()
+            g = deepcopy(grids[name])
             gftype = gfmap[g.__class__.__name__]
             f = unit_function(g.unit_points())
             gf = gftype(

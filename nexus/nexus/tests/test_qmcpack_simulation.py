@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_SIMULATION)
 
@@ -207,7 +208,7 @@ def test_incorporate_result(tmp_path):
             "\n"
             "End of Dataset\n"
             )]
-    )
+        )
 
     # incorporate vasp structure
     sim = get_qmcpack_sim(identifier='qmc_vasp_structure',tiling=(2,2,2))
@@ -228,7 +229,7 @@ def test_incorporate_result(tmp_path):
     ion0 = sim.input.get('ion0')
     c = ion0.groups.C
     cp0 = c.position[0].copy()
-    s = result.structure.copy()
+    s = deepcopy(result.structure)
     s.change_units('B')
     rp0 = s.pos[0]
     zero = array([0,0,0],dtype=float)
@@ -275,7 +276,7 @@ def test_incorporate_result(tmp_path):
 
     wfn_file  = tmp_path / 'c4q_orbitals.wfj.xml'
     wfn_file2 = tmp_path / 'c4q_orbitals.orbs.h5'
-    input = sim.input.copy()
+    input = deepcopy(sim.input)
     dset = input.get('determinantset')
     dset.href = 'orbs.h5'
     qs = input.simulation.qmcsystem
@@ -412,4 +413,3 @@ def test_check_sim_status(tmp_path):
 
     clear_all_sims()
 #end def test_check_sim_status()
-

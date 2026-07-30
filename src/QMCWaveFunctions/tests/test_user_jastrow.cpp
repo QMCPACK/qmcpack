@@ -8,9 +8,7 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "Configuration.h"
 #include "Message/Communicate.h"
@@ -22,8 +20,6 @@ namespace qmcplusplus
 TEST_CASE("UserJastrowFunctor", "[wavefunction]")
 {
   using RealType = OptimizableFunctorBase::real_type;
-
-  Communicate* c = OHMMS::Controller;
 
   UserFunctor<RealType> uf("test_functor");
 

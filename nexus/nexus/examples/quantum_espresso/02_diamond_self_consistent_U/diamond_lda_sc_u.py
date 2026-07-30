@@ -55,7 +55,7 @@ for step in range(num_steps):
         nogamma      = True,
         hubbard      = hubbard,
         dependencies = hubbard_result
-    )
+        )
     scf.show_input()
     sims.append(scf)
 
@@ -67,7 +67,7 @@ for step in range(num_steps):
         job          = job(cores=16,app='hp.x'),
         path         = 'diamond/scf_step_{}'.format(step),
         dependencies = (sims[-1], 'other')
-    )
+        )
     sims.append(hp)
 
 run_project()

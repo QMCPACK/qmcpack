@@ -95,6 +95,16 @@ readval={str:read_str,int:read_int,float:read_float,bool:read_bool}
 writeval={str:write_str,int:write_int,float:write_float,bool:write_bool}
 
 
+def get_path(o, path, value=None):
+    """Retrieve a value from a nested dict-like object by slash-delimited path."""
+    for key in path.split('/'):
+        if key not in o:
+            return value
+        o = o[key]
+    return o
+
+
+
 class Pw2qmcpackInput(SimulationInput):
     ints   = []
     floats = []
@@ -213,7 +223,7 @@ def read_eshdf_eig_data(filename, Ef_list):
             E_fermi = Ef+1e-8
             eig_s = []
             path = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
-            spin = h.get_path(path)
+            spin = get_path(h,path)
             eig = convert(np.array(spin.eigenvalues),'Ha','eV')
             nst = h5int(spin.number_of_states)
             for st in range(nst):
@@ -266,7 +276,8 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
         if isinstance(arg0,Simulation):
             sim = arg0
             self.infile = sim.infile
-            prefix,outdir = sim.input.inputpp.tuple('prefix','outdir')
+            prefix = sim.input.inputpp.prefix
+            outdir = sim.input.inputpp.outdir
             self.dir = sim.locdir
             self.h5file = os.path.join(sim.locdir,outdir,prefix+'.pwscf.h5')
         else:
@@ -281,7 +292,7 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
     #end def analyze
 
     def get_result(self,result_name):
-        self.not_implemented()
+        raise NotImplementedError
     #end def get_result
 #end class Pw2qmcpackAnalyzer
 
@@ -669,10 +680,12 @@ class Convert4qmcInput(SimulationInput):
         #end if
 
         # assign inputs
-        self.set(**kwargs)
+        self.update(**kwargs)
 
         # assign default values
-        self.set_optional(**self.input_defaults)
+        for k,v in self.input_defaults.items():
+            if k not in self:
+                self[k] = v
 
         # check that all keyword inputs are valid
         self.check_valid()
@@ -1232,10 +1245,12 @@ class PyscfToAfqmcInput(SimulationInput):
         #end if
 
         # assign inputs
-        self.set(**kwargs)
+        self.update(**kwargs)
 
         # assign default values
-        self.set_optional(**self.input_defaults)
+        for k,v in self.input_defaults.items():
+            if k not in self:
+                self[k] = v
 
         # check that all keyword inputs are valid
         self.check_valid()

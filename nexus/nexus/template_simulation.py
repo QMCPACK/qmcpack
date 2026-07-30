@@ -177,7 +177,7 @@ class TemplateSimulationInput(SimulationInput):
         #  only necessary if you want to populate atomic positions, etc
         #  from a PhysicalSystem object
         # if you don't want to implement it, no action is required
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_system
 #end class TemplateSimulationInput
 
@@ -280,7 +280,7 @@ class TemplateSimulation(Simulation):
         #  e.g.
         #  other_sim.depends(template_simulation_sim,'orbitals')  or similar
         # if you don't want to implement it, uncomment the line below
-        #self.not_implemented()
+        #raise NotImplementedError
 
         result = obj()
         input    = self.input
@@ -300,7 +300,7 @@ class TemplateSimulation(Simulation):
         #  e.g.
         #  template_simulation_sim.depends(other_sim,'structure')  or similar
         # if you don't want to implement it no action is required
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_result
 
 

@@ -24,13 +24,14 @@ import os
 from os import PathLike
 from pathlib import Path
 import mmap
+from copy import deepcopy
 import numpy as np
 from numpy.linalg import det, norm
-from .developer import DevBase, obj, error, to_str
+from .developer import DevBase, obj, error
 from .periodic_table import Elements
 from .unit_converter import convert
 from . import numpy_extensions as npe
-from .utilities import path_string
+from .utilities import path_string, to_str
 
 class TextFile(DevBase):
     # interface to mmap files
@@ -98,8 +99,8 @@ class TextFile(DevBase):
                 'number of tokens: {1}\n'
                 'number of formats provided: {2}'.format(
                     line,len(stokens),len(formats)
+                    )
                 )
-            )
         #end if
         tokens = []
         if all_same:
@@ -137,7 +138,7 @@ class TextFile(DevBase):
                     self.error(
                         'relative positioning must be either 0 (begin), 1 (current), or 2 (end)\n'
                         'you provided: {0}'.format(whence)
-                    )
+                        )
                 #end if
             #end if
             if whence!=2:
@@ -305,12 +306,12 @@ class StandardFile(DevBase):
 
 
     def read_text(self,text):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
 
     def write_text(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
 #end class StandardFile
@@ -821,14 +822,14 @@ class XsfFile(StandardFile):
             return [(
                 'xsf file must have animation, bands, structure, or data\n'
                 'the current file is missing all of these'
-            )]
+                )]
         #end if
     #end def validity_checks
 
 
     # test needed
     def incorporate_structure(self,structure):
-        s = structure.copy()
+        s = deepcopy(structure)
         s.change_units('A')
         s.recenter()
         elem = []
@@ -896,7 +897,9 @@ class XsfFile(StandardFile):
 
 
     def get_density(self):
-        return self.data.first().first().first()
+        def first(d):
+            return d[min(d.keys())]
+        return first(first(first(self.data)))
     #end def get_density
 
 
@@ -1389,7 +1392,7 @@ class ChgcarFile(StandardFile):
     def incorporate_xsf(self,xsf):
         poscar = PoscarFile()
         poscar.incorporate_xsf(xsf)
-        density = xsf.remove_ghost().copy()
+        density = deepcopy(xsf.remove_ghost())
         self.poscar         = poscar
         self.grid           = np.array(density.shape,dtype=int)
         self.charge_density = density.ravel(order='F')
@@ -1406,7 +1409,7 @@ def read_poscar_chgcar(host,text):
         error(
             'read_poscar_chgcar must be used in conjunction with PoscarFile or ChgcarFile objects only\n'
             'encountered object of type: {0}'.format(host.__class__.__name__)
-        )
+            )
     #end if
 
     # read lines and remove fortran comments
@@ -1439,8 +1442,8 @@ def read_poscar_chgcar(host,text):
             'file {0} must have at least {1} lines\n'
             'only {2} lines found'.format(
                 host.filepath, min_lines, nlines
+                )
             )
-        )
     #end if
     description = lines[0]
     dim = 3
@@ -1581,8 +1584,8 @@ def read_poscar_chgcar(host,text):
                     'grid size: {1}\n'
                     'density size: {2}'.format(
                         grid, ng, density.size
+                        )
                     )
-                )
             #end if
             ndens = density.size//ng
             if ndens==1:
@@ -1604,7 +1607,7 @@ def read_poscar_chgcar(host,text):
                     '  2) charge and collinear spin densities (2 densities)\n'
                     '  3) charge and non-collinear spin densities (4 densities)\n'
                     'number of densities found: {0}'.format(ndens)
-                )
+                    )
             #end if
         else:
             host.error('file {0} is incomplete (missing density)'.format(host.filepath))
@@ -1617,7 +1620,7 @@ def read_poscar_chgcar(host,text):
         poscar = PoscarFile()
     #end if
 
-    poscar.set(
+    poscar.update(
         description = description,
         scale       = scale,
         axes        = axes,
@@ -1631,7 +1634,7 @@ def read_poscar_chgcar(host,text):
         )
 
     if is_chgcar:
-        host.set(
+        host.update(
             poscar         = poscar,
             grid           = grid,
             charge_density = charge_density,

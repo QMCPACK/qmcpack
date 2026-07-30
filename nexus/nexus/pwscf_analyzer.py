@@ -171,6 +171,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if self.info.md_only:
                 return
             #end if
+
         except:
             nx+=1
             if self.info.warn:
@@ -269,7 +270,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     up_spin   = False
                     index = -1
                 #end if
-                              
+
                 if 'number of k points=' in l:
                     try:
                         num_kpoints      = int(l.strip().split()[4])
@@ -325,7 +326,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     else:
                         index = nfound -1 
                     #end if
-                    band_channel.append(bk)
+                    band_channel[len(band_channel)] = bk
                     #if nfound==1:
                     #    bands.up = obj(
                     #        eigs = eigs,
@@ -342,10 +343,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
             vbm        = obj(energy=-1.0e6)
             cbm        = obj(energy=1.0e6)
             direct_gap = obj(energy=1.0e6)
-            for band_channel in bands:
-                for b in band_channel:
-                    e_val  = np.max(b.eigs[b.occs > 0.5])
-                    e_cond = np.min(b.eigs[b.occs < 0.5])
+            for band_channel in bands.values():
+                for b in band_channel.values():
+                    occ   = b.occs > 0.5
+                    unocc = b.occs < 0.5
+                    e_val  = np.max(b.eigs[occ])
+                    e_cond = np.min(b.eigs[unocc])
 
                     if e_val > vbm.energy:
                         vbm.energy          = e_val
@@ -392,7 +395,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if nfound>0:
                 self.bands = bands
             #end if
-            # Kayahan edited --end
+
+        # Kayahan edited --end
+
         except:
             nx+=1
             if self.info.warn:
@@ -697,7 +702,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         #end if
                     #end for
                 #end for
-                self.xmldata.set(
+                self.xmldata.update(
                     data    = data,
                     kpoints = kpoints
                     )
@@ -728,7 +733,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             spins = obj(up='up',down='up')
         #end if
         tot = obj(up=0,down=0)
-        for kp in kpoints:
+        for kp in kpoints.values():
             w = kp.weight
             for s,sl in spins.items():
                 tot[s] += w*kp[sl].occupations.sum()
@@ -738,7 +743,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         text += '  {0: 3.2f}  {1: 3.2f}  {2: 3.2f}  {3: 3.2f}\n'.format(tot.up+tot.down,tot.up-tot.down,tot.up,tot.down)
         text += '\nkpoint electron counts\n'
         weights = []
-        for kp in kpoints:
+        for kp in kpoints.values():
             weights.append(kp.weight)
         #end for
         weights = np.array(weights,dtype=float)

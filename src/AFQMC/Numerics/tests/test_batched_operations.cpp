@@ -10,8 +10,7 @@
 // Fionn D. Malone, malone14@llnl.gov
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "Configuration.h"
 
 #undef APP_ABORT
@@ -299,7 +298,7 @@ TEST_CASE("Aijk_Bkj_Cik", "[Numerics][batched_operations]")
   // C = alpha * numpy.einsum('wnu,nu->uw', A, B)
   using ma::Aijk_Bkj_Cik;
   using std::get;
-  Aijk_Bkj_Cik(ni, nj, nk, A.origin(), get<1>(A.sizes()), A.stride(0), B.origin(), B.stride(0), C.origin(), C.stride(0));
+  Aijk_Bkj_Cik(ni, nj, nk, A.origin(), get<1>(A.sizes()), A.stride(), B.origin(), B.stride(), C.origin(), C.stride());
   Tensor2D<ComplexType> ref({ni, nk}, 4.0, alloc);
   ref[0][0] = 2.0;
   ref[1][0] = 2.0;
@@ -335,7 +334,7 @@ TEST_CASE("element_wise_Aij_Bjk_Ckij", "[Numerics][batched_operations]")
     Tensor2D<ComplexType> B({nj, nk}, 2.0, alloc);
     Tensor3D<ComplexType> C({nk, ni, nj}, 0.0, alloc);
     using std::get;
-    element_wise_Aij_Bjk_Ckij('N', ni, nj, nk, A.origin(), A.stride(0), B.origin(), B.stride(0), C.origin(), get<1>(C.sizes()),
+    element_wise_Aij_Bjk_Ckij('N', ni, nj, nk, A.origin(), A.stride(), B.origin(), B.stride(), C.origin(), get<1>(C.sizes()),
                               get<2>(C.sizes()));
     Tensor3D<ComplexType> ref({nk, ni, nj}, 6.0, alloc);
     verify_approx(C, ref);
@@ -346,7 +345,7 @@ TEST_CASE("element_wise_Aij_Bjk_Ckij", "[Numerics][batched_operations]")
     Tensor3D<ComplexType> C({nk, ni, nj}, 0.0, alloc);
 
     using std::get;
-    element_wise_Aij_Bjk_Ckij('C', ni, nj, nk, A.origin(), A.stride(0), B.origin(), B.stride(0), C.origin(), get<1>(C.sizes()),
+    element_wise_Aij_Bjk_Ckij('C', ni, nj, nk, A.origin(), A.stride(), B.origin(), B.stride(), C.origin(), get<1>(C.sizes()),
                               get<2>(C.sizes()));
     Tensor3D<ComplexType> ref({nk, ni, nj}, ComplexType(-6.0, 3.0), alloc);
     verify_approx(C, ref);
@@ -367,8 +366,8 @@ void test_Aij_Bjk_Ckji()
   Tensor3D<T2> C({nk, nj, ni}, 0.0, alloc_b);
 
   using std::get;
-  element_wise_Aij_Bjk_Ckji(ni, nj, nk, A.origin(), A.stride(0), B.origin(), B.stride(0), C.origin(), get<2>(C.sizes()),
-                            C.stride(0));
+  element_wise_Aij_Bjk_Ckji(ni, nj, nk, A.origin(), A.stride(), B.origin(), B.stride(), C.origin(), get<2>(C.sizes()),
+                            C.stride());
   Tensor3D<T2> ref({nk, nj, ni}, T2(-3.0, -6.0), alloc_b);
   verify_approx(C, ref);
 }

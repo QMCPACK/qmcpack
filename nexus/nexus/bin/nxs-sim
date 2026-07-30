@@ -64,7 +64,7 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import obj
+from nexus.developer import obj,save,load
 
 
 class SimTool(obj):
@@ -82,8 +82,7 @@ class SimTool(obj):
 
     def load(self,paths):
         for path in paths:
-            sim = obj()
-            sim.load(path)
+            sim = load(path)
             self.sims.append(sim)
             self.paths.append(path)
         #end for
@@ -175,7 +174,7 @@ class SimTool(obj):
                     sim.process_id = None
                 #end if
             #end for
-            sim.save(path)
+            save(sim,path)
         #end for
     #end def set_indicators
                 

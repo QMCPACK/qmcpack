@@ -38,8 +38,6 @@ public:
   using iterator       = T*;
   using const_iterator = const T*;
   using size_type      = typename Alloc::size_type;
-  using pointer        = typename Alloc::pointer;
-  using const_pointer  = typename Alloc::const_pointer;
   using This_t         = Vector<T, Alloc>;
 
   /** constructor with size n*/
@@ -72,9 +70,7 @@ public:
    */
   template<typename CONTAINER>
   Vector(const CONTAINER& from, T* ref, size_type n) : nLocal(n), X(ref)
-  {
-    qmc_allocator_traits<Alloc>::attachReference(from.mAllocator, mAllocator, ref - from.data());
-  }
+  { qmc_allocator_traits<Alloc>::attachReference(from.mAllocator, mAllocator, ref - from.data()); }
 
   /** Initializer list constructor that can deal with both POD
    *  and nontrivial nested elements with move assignment operators.
@@ -205,15 +201,11 @@ public:
   // Get and Set Operations
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline Type_t& operator[](size_type i)
-  {
-    return X[i];
-  }
+  { return X[i]; }
 
   template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   inline const Type_t& operator[](size_type i) const
-  {
-    return X[i];
-  }
+  { return X[i]; }
 
   //inline Type_t& operator()(size_type i)
   //{
@@ -231,28 +223,24 @@ public:
   inline iterator end() { return X + nLocal; }
   inline const_iterator end() const { return X + nLocal; }
 
-  inline pointer data() { return X; }
-  inline const_pointer data() const { return X; }
+  inline value_type* data() { return X; }
+  inline const value_type* data() const { return X; }
 
   /** Return the device_ptr matching X if this is a vector attached or
    *  owning dual space memory.
    */
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  inline pointer device_data()
-  {
-    return mAllocator.get_device_ptr();
-  }
+  inline value_type* device_data()
+  { return mAllocator.get_device_ptr(); }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
-  inline const_pointer device_data() const
-  {
-    return mAllocator.get_device_ptr();
-  }
+  inline const value_type* device_data() const
+  { return mAllocator.get_device_ptr(); }
 
-  inline pointer first_address() { return X; }
-  inline const_pointer first_address() const { return X; }
+  inline value_type* first_address() { return X; }
+  inline const value_type* first_address() const { return X; }
 
-  inline pointer last_address() { return X + nLocal; }
-  inline const_pointer last_address() const { return X + nLocal; }
+  inline value_type* last_address() { return X + nLocal; }
+  inline const value_type* last_address() const { return X + nLocal; }
 
   // Abstract Dual Space Transfers
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>

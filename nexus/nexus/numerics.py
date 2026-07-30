@@ -387,14 +387,14 @@ def murnaghan(p, V):
 def birch(p, V):
     return p[0] + 9 * p[1] * p[2] / 16 * ((p[1] / V) ** (2.0 / 3) - 1) ** 2 * (
         2 + (p[3] - 4) * ((p[1] / V) ** (2.0 / 3) - 1)
-    )
+        )
 
 def vinet(p, V):
     return p[0] + 2 * p[1] * p[2] / (p[3] - 1) ** 2 * (
         2
         - (2 + 3 * (p[3] - 1) * ((V / p[1]) ** (1.0 / 3) - 1))
         * exp(-1.5 * (p[3] - 1) * ((V / p[1]) ** (1.0 / 3) - 1))
-    )
+        )
 
 def murnaghan_pressure(p, V):
     return p[1] / p[2] * ((p[0] / V) ** p[2] - 1)
@@ -406,7 +406,7 @@ def birch_pressure(p, V):
         * (p[0] / V) ** (5.0 / 3)
         * ((p[0] / V) ** (2.0 / 3) - 1)
         * (1.0 + 0.75 * (p[2] - 1) * ((p[0] / V) ** (2.0 / 3) - 1))
-    )
+        )
 
 def vinet_pressure(p, V):
     return (
@@ -415,7 +415,7 @@ def vinet_pressure(p, V):
         * (1.0 - (V / p[0]) ** (1.0 / 3))
         * (p[0] / V) ** (2.0 / 3)
         * exp(1.5 * (p[2] - 1) * (1.0 - (V / p[0]) ** (1.0 / 3)))
-    )
+        )
 
 
 eos_funcs = obj(
@@ -535,7 +535,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
             auxfunc = auxfuncs[auxname]
             auxres[auxname] = jackknife_aux(psamples,auxfunc,capture=auxcap)
             eq_vol = auxres[auxname][0]
-            auxfuncs.delete(auxname)
+            auxfuncs.pop(auxname)
             for auxname,auxfunc in auxfuncs.items():
                 num_variables = len(inspect.getargspec(auxfunc).args)
                 if num_variables > 1:
@@ -1483,7 +1483,7 @@ def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_ret
     #end for
 
     # Find the mean of each set of points
-    for l in layers:
+    for l in layers.values():
         l.xmean = l.xsum/l.nsum
     #end for
 
@@ -1589,5 +1589,3 @@ def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
         return ipoints,xmin,xmax
     #end if
 #end def index_by_layer
-
-

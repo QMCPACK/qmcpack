@@ -1,11 +1,11 @@
 FROM ubuntu:24.04
-LABEL Description="Development version of QMCPACK and Nexus configured for use with complete source codes, plus Quantum ESPRESSO"
+LABEL Description="Development version of QMCPACK and Nexus configured for use with complete source codes, plus Quantum ESPRESSO and PySCF."
 
 SHELL ["/bin/bash", "-c"]
 
-ENV QE_VERSION="7.5"
-ENV PYSCF_VERSION=2.13.0
-#ENV QMCPACK_VERSION="4.1.0"
+ENV QE_VERSION="7.6"
+ENV PYSCF_VERSION=2.14.0
+#ENV QMCPACK_VERSION="4.3.0"
 
 ARG USERNAME=qmcuser
 ARG USER_UID=1201
@@ -22,7 +22,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
 # QMCPACK and NEXUS dependencies, plus:
-# * gfortan for convenient QE build
+# * gfortran for convenient QE build
 # * matplotlib for qmca plotting
 # (apt-get update already run above)
 RUN apt-get install -y --no-install-recommends \
@@ -38,7 +38,7 @@ RUN apt-get install -y --no-install-recommends \
 COPY *.crt /usr/local/share/ca-certificates/
 RUN update-ca-certificates
 
-# Quatum ESPRESSO installation
+# Quantum ESPRESSO installation
 WORKDIR /scratch
 RUN wget https://gitlab.com/QEF/q-e/-/archive/qe-${QE_VERSION}/q-e-qe-${QE_VERSION}.tar.gz && tar xzvf q-e-qe-${QE_VERSION}.tar.gz && cd q-e-qe-${QE_VERSION} && pwd && \
     mkdir build_mpi && cd build_mpi && \

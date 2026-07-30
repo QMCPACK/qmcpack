@@ -9,9 +9,7 @@
 //
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "Estimators/MagnetizationDensityInput.h"
 #include "ValidMagnetizationDensityInput.h"
 #include "Configuration.h"

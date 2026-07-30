@@ -9,9 +9,7 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "Configuration.h"
 #include "Numerics/Quadrature.h"
@@ -251,7 +249,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //Now we set up the nonlocal ECP component.
   ECPComponentBuilder ecp("test_read_ecp", c);
 
-  bool okay2 = ecp.read_pp_file("Na.BFD.xml");
+  REQUIRE(ecp.read_pp_file("Na.BFD.xml"));
 
   NonLocalECPComponent* nlpp = ecp.pp_nonloc.get();
 
