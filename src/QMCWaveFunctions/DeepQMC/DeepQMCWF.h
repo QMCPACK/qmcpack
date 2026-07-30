@@ -38,6 +38,10 @@ namespace qmcplusplus
  */
 class DeepQMCWF : public WaveFunctionComponent
 {
+  /// Private tag selecting the shared-bridge constructor used only by makeClone().
+  struct SharedBridgeTag
+  {};
+
 public:
   /** Constructor transferring ownership of the DeepQMC bridge.
    * @param name component name from the input wavefunction node
@@ -47,13 +51,25 @@ public:
    */
   DeepQMCWF(std::string name, const ParticleSet& ions, std::unique_ptr<const DeepQMCBridge> bridge, int mol_idx);
 
-  /** Constructor sharing an existing DeepQMC bridge.
+  /** Constructor sharing an existing DeepQMC bridge for makeClone().
+   *
+   * The leading SharedBridgeTag makes this overload unambiguous when callers pass
+   * a std::unique_ptr to a concrete DeepQMCBridge implementation and documents
+   * that shared-bridge construction is not part of the normal external API.  The
+   * tag type is private, so outside code cannot name or create it, but the
+   * constructor itself is public so std::make_unique can instantiate it from
+   * makeClone().
+   *
    * @param name component name from the input wavefunction node
    * @param ions source ion ParticleSet used to provide nuclear coordinates
    * @param bridge shared bridge object used for DeepQMC inference
    * @param mol_idx molecule index passed through to the DeepQMC model
    */
-  DeepQMCWF(std::string name, const ParticleSet& ions, std::shared_ptr<const DeepQMCBridge> bridge, int mol_idx);
+  DeepQMCWF(SharedBridgeTag,
+            std::string name,
+            const ParticleSet& ions,
+            std::shared_ptr<const DeepQMCBridge> bridge,
+            int mol_idx);
 
   /// Return the concrete wavefunction component class name.
   std::string getClassName() const override { return "DeepQMCWF"; }

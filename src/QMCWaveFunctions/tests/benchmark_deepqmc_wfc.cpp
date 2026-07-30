@@ -62,7 +62,7 @@ std::unique_ptr<ParticleSet> makeElectrons(const SimulationCell& simulation_cell
 
 std::unique_ptr<TrialWaveFunction> makeTrialWaveFunctionWithDeepQMC(const RuntimeOptions& runtime_options,
                                                                     const ParticleSet& ions,
-                                                                    std::shared_ptr<const DeepQMCBridge> bridge)
+                                                                    std::unique_ptr<const DeepQMCBridge> bridge)
 {
   auto twf = std::make_unique<TrialWaveFunction>(runtime_options, "deepqmc_benchmark");
   twf->addComponent(std::make_unique<DeepQMCWF>("DNN", ions, std::move(bridge), 0));
@@ -75,14 +75,17 @@ struct DeepQMCBenchmarkBatch
                         const RuntimeOptions& runtime_options,
                         const SimulationCell& simulation_cell,
                         const ParticleSet& ions,
-                        std::shared_ptr<const DeepQMCBridge> bridge)
+                        const std::string& checkpoint_path)
   {
     electrons.reserve(batch_size);
     wavefunctions.reserve(batch_size);
     for (int iw = 0; iw < batch_size; ++iw)
     {
       electrons.push_back(makeElectrons(simulation_cell, iw));
-      wavefunctions.push_back(makeTrialWaveFunctionWithDeepQMC(runtime_options, ions, bridge));
+      auto bridge = iw == 0
+          ? makePythonDeepQMCBridge(checkpoint_path, "")
+          : makeUnavailableDeepQMCBridge("Only the leader bridge is used by batched DeepQMCWF evaluation");
+      wavefunctions.push_back(makeTrialWaveFunctionWithDeepQMC(runtime_options, ions, std::move(bridge)));
     }
 
     wf_refs = std::make_unique<RefVectorWithLeader<TrialWaveFunction>>(*wavefunctions.front());
@@ -118,8 +121,6 @@ TEST_CASE("DeepQMC TrialWaveFunction mw_evaluateLog batching benchmark", "[wavef
   // WaveFunctionComponent rather than through WaveFunctionFactory/XML. The external
   // Python environment still needs to be supplied by the launcher, e.g. PYTHONPATH
   // containing DeepQMC and its dependencies.
-  std::shared_ptr<const DeepQMCBridge> bridge = makePythonDeepQMCBridge(checkpoint_path, "");
-
   const SimulationCell simulation_cell;
   ParticleSet ions = makeIons(simulation_cell);
   RuntimeOptions runtime_options;
@@ -129,7 +130,7 @@ TEST_CASE("DeepQMC TrialWaveFunction mw_evaluateLog batching benchmark", "[wavef
   {
     DYNAMIC_SECTION("batch size " << batch_size)
     {
-      DeepQMCBenchmarkBatch batch(batch_size, runtime_options, simulation_cell, ions, bridge);
+      DeepQMCBenchmarkBatch batch(batch_size, runtime_options, simulation_cell, ions, checkpoint_path);
 
       // Trigger Python/JAX setup and shape-specialized compilation outside the timed region.
       batch.evaluate();

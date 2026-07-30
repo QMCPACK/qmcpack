@@ -125,9 +125,10 @@ TEST_CASE("DeepQMCWF batched evaluateLog", "[wavefunction][deepqmc]")
   ParticleSet elec0 = makeElectrons(simulation_cell, {{0.0, 0.1, 0.2}, {1.0, 1.1, 1.2}});
   ParticleSet elec1 = makeElectrons(simulation_cell, {{2.0, 2.1, 2.2}, {3.0, 3.1, 3.2}});
 
-  auto bridge = std::make_shared<RecordingDeepQMCBridge>();
-  DeepQMCWF comp0("deep", ions, bridge, 7);
-  DeepQMCWF comp1("deep", ions, bridge, 7);
+  auto bridge_owner = std::make_unique<RecordingDeepQMCBridge>();
+  auto* bridge      = bridge_owner.get();
+  DeepQMCWF comp0("deep", ions, std::move(bridge_owner), 7);
+  DeepQMCWF comp1("deep", ions, std::make_unique<RecordingDeepQMCBridge>(), 7);
 
   ParticleSet::ParticleGradient G0, G1;
   ParticleSet::ParticleLaplacian L0, L1;
@@ -198,9 +199,10 @@ TEST_CASE("DeepQMCWF batched PbyP methods", "[wavefunction][deepqmc]")
   ParticleSet elec0 = makeElectrons(simulation_cell, {{0.0, 0.1, 0.2}, {1.0, 1.1, 1.2}});
   ParticleSet elec1 = makeElectrons(simulation_cell, {{2.0, 2.1, 2.2}, {3.0, 3.1, 3.2}});
 
-  auto bridge = std::make_shared<CoordinateLogDeepQMCBridge>();
-  DeepQMCWF comp0("deep", ions, bridge, 7);
-  DeepQMCWF comp1("deep", ions, bridge, 7);
+  auto bridge_owner = std::make_unique<CoordinateLogDeepQMCBridge>();
+  auto* bridge      = bridge_owner.get();
+  DeepQMCWF comp0("deep", ions, std::move(bridge_owner), 7);
+  DeepQMCWF comp1("deep", ions, std::make_unique<CoordinateLogDeepQMCBridge>(), 7);
 
   ParticleSet::ParticleGradient G0(elec0.getTotalNum()), G1(elec1.getTotalNum());
   ParticleSet::ParticleLaplacian L0(elec0.getTotalNum()), L1(elec1.getTotalNum());
@@ -266,11 +268,12 @@ TEST_CASE("TrialWaveFunction dispatches DeepQMC batched PbyP methods", "[wavefun
   ParticleSet elec0 = makeElectrons(simulation_cell, {{0.0, 0.1, 0.2}, {1.0, 1.1, 1.2}});
   ParticleSet elec1 = makeElectrons(simulation_cell, {{2.0, 2.1, 2.2}, {3.0, 3.1, 3.2}});
 
-  auto bridge = std::make_shared<CoordinateLogDeepQMCBridge>();
+  auto bridge_owner = std::make_unique<CoordinateLogDeepQMCBridge>();
+  auto* bridge      = bridge_owner.get();
   TrialWaveFunction twf0(runtime_options, "deepqmc0");
-  twf0.addComponent(std::make_unique<DeepQMCWF>("DNN", ions, bridge, 7));
+  twf0.addComponent(std::make_unique<DeepQMCWF>("DNN", ions, std::move(bridge_owner), 7));
   TrialWaveFunction twf1(runtime_options, "deepqmc1");
-  twf1.addComponent(std::make_unique<DeepQMCWF>("DNN", ions, bridge, 7));
+  twf1.addComponent(std::make_unique<DeepQMCWF>("DNN", ions, std::make_unique<CoordinateLogDeepQMCBridge>(), 7));
 
   RefVectorWithLeader<TrialWaveFunction> wf_list(twf0);
   wf_list.push_back(twf0);
@@ -316,9 +319,10 @@ TEST_CASE("DeepQMCWF batched evaluateGL delegates to one batch", "[wavefunction]
   ParticleSet elec0 = makeElectrons(simulation_cell, {{0.0, 0.1, 0.2}, {1.0, 1.1, 1.2}});
   ParticleSet elec1 = makeElectrons(simulation_cell, {{2.0, 2.1, 2.2}, {3.0, 3.1, 3.2}});
 
-  auto bridge = std::make_shared<RecordingDeepQMCBridge>();
-  DeepQMCWF comp0("deep", ions, bridge, 7);
-  DeepQMCWF comp1("deep", ions, bridge, 7);
+  auto bridge_owner = std::make_unique<RecordingDeepQMCBridge>();
+  auto* bridge      = bridge_owner.get();
+  DeepQMCWF comp0("deep", ions, std::move(bridge_owner), 7);
+  DeepQMCWF comp1("deep", ions, std::make_unique<RecordingDeepQMCBridge>(), 7);
 
   ParticleSet::ParticleGradient G0(elec0.getTotalNum()), G1(elec1.getTotalNum());
   ParticleSet::ParticleLaplacian L0(elec0.getTotalNum()), L1(elec1.getTotalNum());
@@ -496,8 +500,9 @@ TEST_CASE("DeepQMCWF single walker delegates to batched evaluateLog", "[wavefunc
   ParticleSet ions = makeIons(simulation_cell);
   ParticleSet elec = makeElectrons(simulation_cell, {{0.0, 0.1, 0.2}, {1.0, 1.1, 1.2}});
 
-  auto bridge = std::make_shared<RecordingDeepQMCBridge>();
-  DeepQMCWF comp("deep", ions, bridge, 3);
+  auto bridge_owner = std::make_unique<RecordingDeepQMCBridge>();
+  auto* bridge      = bridge_owner.get();
+  DeepQMCWF comp("deep", ions, std::move(bridge_owner), 3);
 
   ParticleSet::ParticleGradient G;
   ParticleSet::ParticleLaplacian L;
