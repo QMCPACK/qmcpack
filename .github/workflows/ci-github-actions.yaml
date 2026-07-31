@@ -144,7 +144,9 @@ jobs:
 
   ubuntu24:
     runs-on: ubuntu-latest
-    container: ${{ matrix.container }}
+    container:
+      image: ghcr.io/qmcpack/ubuntu24-openmpi:latest
+      options: -u 1001
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: Linux
@@ -156,9 +158,6 @@ jobs:
             GCC13-MPI-Debug-Gcov-Real,
             GCC13-MPI-Debug-Gcov-Complex,
           ]
-        container:
-          image: ghcr.io/qmcpack/ubuntu24-openmpi:latest
-          options: -u 1001
 
     steps:
       - name: Checkout Action
@@ -228,7 +227,9 @@ jobs:
 
   centos10:
     runs-on: ubuntu-latest
-    container: ${{ matrix.container }}
+    container:
+      image: ghcr.io/qmcpack/centos10-openmpi:latest
+      options: -u 1001
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: Linux
@@ -243,9 +244,6 @@ jobs:
             GCC14-NoMPI-NoOMP-Complex,
             GCC14-NoMPI-Sandbox-Real,
           ]
-        container:
-          image: ghcr.io/qmcpack/centos10-openmpi:latest
-          options: -u 1001
 
     steps:
       - name: Checkout Action
