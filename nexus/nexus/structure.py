@@ -118,7 +118,9 @@ Module contents
 
 from __future__ import annotations
 import os
+import sys
 from pathlib import Path
+from types import MappingProxyType
 from typing import TypeAlias
 import numpy as np
 from copy import deepcopy
@@ -1810,7 +1812,7 @@ class Structure(Sobj):
     #end def distances
 
 
-    def count_kshells(self, kcut, tilevec=[12, 12, 12], nkdig=10):
+    def count_kshells(self, kcut, tilevec=(12, 12, 12), nkdig=10):
       # check tilevec input
       for nt in tilevec:
         if nt % 2 != 0:
@@ -6687,7 +6689,7 @@ def get_band_tiling(
                 max_volfac = target_volfac
             else:
                 print("target_volfac and {min_volfac, max_volfac} cannot be defined together!")
-                exit()
+                sys.exit()
             #end if
         #end if
         
@@ -6725,7 +6727,7 @@ def get_band_tiling(
         #end for
         if vars == []:
             print('Change ktol')
-            exit()
+            sys.exit()
         else:
             can_be_found = False
             vol_mul = 1
@@ -6734,7 +6736,7 @@ def get_band_tiling(
                     can_be_found = True
                 elif volfac*vol_mul > max_volfac:
                     print('Increase max_volfac or target_volfac!')
-                    exit()
+                    sys.exit()
                 else:
                     vol_mul+=1
                 #end if
@@ -7069,7 +7071,7 @@ class Crystal(Structure):
         )
     """Mapping from a lattice type to the required values to create the cell."""
 
-    lattices = list(lattice_constants.keys())
+    lattices = tuple(lattice_constants.keys())
     """List of lattice systems."""
 
     centering_types = obj(
@@ -7102,7 +7104,7 @@ class Crystal(Structure):
         R = [[2./3, 1./3, 1./3],[1./3, 2./3, 2./3]]
         )
 
-    cell_types = set(['primitive','conventional'])
+    cell_types = frozenset({'primitive','conventional'})
     """Types of cells, currently only ``primitive`` and ``conventional``."""
 
     cell_aliases = obj(
@@ -7131,7 +7133,7 @@ class Crystal(Structure):
     #  springermaterials.com
 
 
-    known_crystals = {
+    known_crystals = {  # noqa: RUF012
         ('diamond','fcc'):obj(
             lattice   = 'cubic',
             cell      = 'primitive',
@@ -7396,8 +7398,7 @@ class Crystal(Structure):
         }
     """Mapping from material names and their cell types to their crystal information."""
 
-    kc_keys = list(known_crystals.keys())
-    for (name,cell) in kc_keys:
+    for (name,cell) in tuple(known_crystals.keys()):
         desc = known_crystals[name,cell]
         if cell=='prim' and (name,'conv') not in known_crystals:
             cdesc = deepcopy(desc)
@@ -7410,8 +7411,7 @@ class Crystal(Structure):
             #end if
         #end if
     #end if
-    del kc_keys
-
+    known_crystals = MappingProxyType(known_crystals)
 
     def __init__(self,
                  lattice        = None,

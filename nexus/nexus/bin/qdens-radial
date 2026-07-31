@@ -64,7 +64,7 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj,error,ci,unavailable
+from nexus.developer import DevBase,obj,error,unavailable
 import nexus.memory as memory
 from nexus.observables import ChargeDensity, vlog
 from nexus.fileio import XsfFile
@@ -117,7 +117,7 @@ class QDRBase(DevBase):
 
     def exit(self):
         self.vlog('\n{0} finished\n'.format(self.name))
-        exit()
+        sys.exit()
     #end def exit
 
     def error(self,msg,loc=None):

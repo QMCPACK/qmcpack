@@ -30,7 +30,7 @@ from .pwscf_analyzer import PwscfAnalyzer
 from .execute import execute
 
 
-unique_vdw_functionals = [
+unique_vdw_functionals = (
     'optb86b-vdw',
     'vdw-df3', # optB88+vdW
     'vdw-df',
@@ -39,11 +39,11 @@ unique_vdw_functionals = [
     'vdw-df-c09',
     'vdw-df2-c09',
     'rvv10',
-    ]
-repeat_vdw_functionals = [
+    )
+repeat_vdw_functionals = (
     'vdw-df4', # 'optB86b-vdW'
-    ]
-unique_functionals = [
+    )
+unique_functionals = (
     'revpbe',
     'pw86pbe',
     'b86bpbe',
@@ -70,14 +70,16 @@ unique_functionals = [
     'sogga',
     'm06l',
     'ev93',
-    ]+unique_vdw_functionals
-repeat_functionals = [
+    *unique_vdw_functionals
+    )
+repeat_functionals = (
     'q2d', # pbeq2d
     'pz', # lda
-    ]+repeat_vdw_functionals
+    *repeat_vdw_functionals
+    )
 
-vdw_functionals     = set(unique_vdw_functionals+repeat_vdw_functionals)
-allowed_functionals = set(unique_functionals+repeat_functionals)
+vdw_functionals     = frozenset(unique_vdw_functionals+repeat_vdw_functionals)
+allowed_functionals = frozenset(unique_functionals+repeat_functionals)
 
 
 
@@ -86,15 +88,15 @@ class Pwscf(Simulation):
     analyzer_type = PwscfAnalyzer
     generic_identifier = 'pwscf'
     application = 'pw.x'
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['charge_density','orbitals','structure','restart'])
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'charge_density','orbitals','structure','restart'})
 
     supports_restarts = True # supports restartable, but not force restart yet
 
     vdw_table = None
 
     # dynamic workflow support
-    allowed_requirements = ['none','structure','charge_density','orbitals']
+    allowed_requirements = ('none','structure','charge_density','orbitals')
 
     @staticmethod
     def settings(vdw_table=None):

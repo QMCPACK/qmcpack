@@ -30,10 +30,9 @@ highlight_language = "python"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-import sys, os
+import os
+import sys
 sys.path.append(os.path.abspath('extensions'))
-
-import sphinx_rtd_theme
 
 extensions = ['sphinxcontrib.bibtex', "sphinx_rtd_theme"]
 bibtex_bibfiles = ['bibs/methods.bib']

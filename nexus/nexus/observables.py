@@ -1,5 +1,6 @@
 # Python standard library imports
 import os
+import sys
 import inspect
 from time import process_time
 from copy import deepcopy
@@ -782,7 +783,7 @@ class MomentumDistribution(ObservableWithComponents):
         print(c.grid.cell_grid_shape)
         print("ci called from MomentumDistribution.backfold()")
         ci()
-        exit()
+        sys.exit()
     #end def backfold
 
 
@@ -1461,18 +1462,11 @@ class EnergyDensity(Density):
 
 class StatFile(DevBase):
 
-    scalars = set('''
-        LocalEnergy   
-        LocalEnergy_sq
-        Kinetic       
-        LocalPotential
-        ElecElec      
-        IonIon        
-        LocalECP      
-        NonLocalECP   
-        KEcorr        
-        MPC           
-        '''.split())
+    scalars = frozenset({
+        'LocalEnergy', 'ElecElec', 'Kinetic', 'NonLocalECP','LocalPotential',
+        'KEcorr', 'LocalECP', 'IonIon', 'MPC', 'LocalEnergy_sq'
+        })
+
 
     observable_aliases = obj(
         momentum_distribution = ['nofk'],

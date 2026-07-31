@@ -47,7 +47,7 @@ def parse_string(s, delim = None):
     #end try
 
     # Check if bool
-    if s.lower() in ["true", "false"]:
+    if s.lower() in {"true", "false"}:
         return s.lower() == "true" # return True if s=="true" else False
     #end if
 

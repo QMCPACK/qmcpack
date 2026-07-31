@@ -523,17 +523,17 @@ public:
 
   inline T& operator()(int i, int j) { return (A(index(i, j))); }
 
-  inline SymmArray<T>(const SymmArray<T>& B)
+  inline SymmArray(const SymmArray& B)
   {
     resize(B.N);
     A = B.A;
   }
-  inline SymmArray<T>& operator=(const SymmArray<T>& B)
+  inline SymmArray& operator=(const SymmArray& B)
   {
     A = B.A;
     return *this;
   }
-  inline SymmArray<T>() { N = 0; }
+  inline SymmArray() { N = 0; }
 };
 
 
