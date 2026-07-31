@@ -129,7 +129,7 @@ if __name__ == '__main__':
     # spin (up=0,down=1)
     sp = int(sys.argv[5])
 
-    if not sp in (0,1):
+    if not sp in {0,1}:
         print('Invalid spin specfied: {}'.format(sp))
         print('Must be either 0 (up) or 1 (down)')
         sys.exit()

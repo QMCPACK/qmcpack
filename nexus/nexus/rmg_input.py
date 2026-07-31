@@ -2662,7 +2662,7 @@ class FormattedRmgKeyword(RmgKeyword):
 class FormattedTableRmgKeyword(FormattedRmgKeyword):
     array_options  = None
     array_types    = None
-    exclude_fields = set()
+    exclude_fields = frozenset()
 
     def assign(self,value):
         if isinstance(value,str):
@@ -2717,9 +2717,9 @@ class FormattedTableRmgKeyword(FormattedRmgKeyword):
 
 
 class PseudopotentialKeyword(FormattedTableRmgKeyword):
-    array_options = [
-        set(('species','pseudos')),
-        ]
+    array_options = (
+        frozenset({'species','pseudos'}),
+        )
     array_types   = obj(
         species = rmg_value_types.string,
         pseudos = rmg_value_types.string,
@@ -2747,9 +2747,9 @@ class PseudopotentialKeyword(FormattedTableRmgKeyword):
 
 
 class KpointsKeyword(FormattedTableRmgKeyword):
-    array_options = [
-        set(('kpoints','weights')),
-        ]
+    array_options = (
+        frozenset({'kpoints','weights'}),
+        )
     array_types   = obj(
         kpoints = rmg_value_types.double,
         weights = rmg_value_types.double,
@@ -2777,9 +2777,9 @@ class KpointsKeyword(FormattedTableRmgKeyword):
 
 
 class KpointsBandstructureKeyword(FormattedTableRmgKeyword):
-    array_options = [
-        set(('kpoints','counts','labels')),
-        ]
+    array_options = (
+        frozenset({'kpoints','counts','labels'}),
+        )
     array_types   = obj(
         kpoints = rmg_value_types.double,
         counts  = rmg_value_types.integer,
@@ -2812,14 +2812,14 @@ class AtomsKeyword(FormattedTableRmgKeyword):
 
     formats = ('basic','movable','movable_moment','moment','spin_ratio','full_spin')
 
-    array_options = [
-        set(('atoms','positions')),
-        set(('atoms','positions','movable')),
-        set(('atoms','positions','moments')),
-        set(('atoms','positions','movable','moments')),
-        set(('atoms','positions','movable','spin_ratio')),
-        set(('atoms','positions','movable','spin_ratio','spin_theta','spin_phi')),
-        ]
+    array_options = (
+        frozenset({'atoms','positions'}),
+        frozenset({'atoms','positions','movable'}),
+        frozenset({'atoms','positions','moments'}),
+        frozenset({'atoms','positions','movable','moments'}),
+        frozenset({'atoms','positions','movable','spin_ratio'}),
+        frozenset({'atoms','positions','movable','spin_ratio','spin_theta','spin_phi'}),
+        )
     array_types   = obj(
         atoms      = rmg_value_types.string,
         positions  = rmg_value_types.double,
@@ -2829,7 +2829,7 @@ class AtomsKeyword(FormattedTableRmgKeyword):
         spin_theta = rmg_value_types.double,
         spin_phi   = rmg_value_types.double,
         )
-    exclude_fields = ['format']
+    exclude_fields = frozenset({'format'})
 
 
     def read(self,value):

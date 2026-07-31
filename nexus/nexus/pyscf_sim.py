@@ -30,8 +30,8 @@ class Pyscf(Simulation):
     generic_identifier = 'pyscf'
     infile_extension   = '.py'
     application        = 'python3'
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['orbitals','wavefunction'])
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'orbitals','wavefunction'})
 
 
     def check_result(self,result_name,sim):

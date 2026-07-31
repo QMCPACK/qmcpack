@@ -316,14 +316,14 @@ def test_get_output_files(tmp_path):
 
     sim = setup_vasp_sim(tmp_path)
 
-    vfiles = 'INCAR KPOINTS POSCAR CONTCAR OUTCAR'.split()
+    vfiles = {'CONTCAR', 'KPOINTS', 'POSCAR', 'OUTCAR', 'INCAR'}
     for vfile in vfiles:
         (tmp_path / vfile).touch()
     #end for
 
     files = sim.get_output_files()
 
-    assert(value_eq(files,vfiles))
+    assert(set(files) == vfiles)
 
     for vfile in vfiles:
         assert((tmp_path / (sim.identifier+'.'+vfile)))

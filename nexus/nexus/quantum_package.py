@@ -34,8 +34,8 @@ class QuantumPackage(Simulation):
     generic_identifier = 'qp'
     infile_extension   = '.ezfio'
     application        = 'qp_run'
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['orbitals']) 
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'orbitals'})
 
     allow_overlapping_files = True
 
