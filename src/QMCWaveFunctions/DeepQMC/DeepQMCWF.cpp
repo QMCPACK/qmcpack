@@ -41,8 +41,10 @@ DeepQMCWF::DeepQMCWF(std::string name,
                      int mol_idx)
     : WaveFunctionComponent(std::move(name)), ions_(ions), bridge_(std::move(bridge)), mol_idx_(mol_idx)
 {
-  assert(bridge_);
+  assert(bridge_ && "DeepQMCWF requires a non-null DeepQMCBridge!");
 }
+
+DeepQMCWF::DeepQMCWF(const DeepQMCWF&) = default;
 
 std::vector<DeepQMCWF::RealType> DeepQMCWF::flattenIonCoords(const ParticleSet& ions)
 {

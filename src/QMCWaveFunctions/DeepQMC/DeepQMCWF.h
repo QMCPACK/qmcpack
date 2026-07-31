@@ -53,7 +53,7 @@ public:
    * walker clones reuse the same DeepQMC inference object while keeping their
    * own WaveFunctionComponent state.
    */
-  DeepQMCWF(const DeepQMCWF&) = default;
+  DeepQMCWF(const DeepQMCWF&);
 
   /// Return the concrete wavefunction component class name.
   std::string getClassName() const override { return "DeepQMCWF"; }
