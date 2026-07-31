@@ -3475,8 +3475,8 @@ class Baseline(Supercomputer):
             'max_nodes': 1,
             'max_walltime': '24:00:00',
             }
-        }
-    })
+        })
+
     def write_job_header(self,job):
         self.validate_queue_config(job)
 
@@ -3519,8 +3519,7 @@ class Frontier(Supercomputer):
             'max_nodes': 1,
             'max_walltime': '01:00:00',
             }
-        }
-    })
+        })
 
     def pre_process_job(self,job):
         # Set default queue and node type
