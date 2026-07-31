@@ -194,6 +194,25 @@ case "$1" in
               -DCMAKE_CXX_COMPILER=g++ \
               ${GITHUB_WORKSPACE}
       ;;
+      *"Clang22-NoMPI"*"-Offload"*)
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=clang-22 \
+              -DCMAKE_CXX_COMPILER=clang++-22 \
+              -DQMC_GPU=openmp \
+              -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
+              -DUSE_OBJECT_TARGET=ON \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"Clang22-MPI"*)
+        export OMPI_CC=clang-22
+        export OMPI_CXX=clang++-22        
+        echo "OMPI_CC=clang-22" >> $GITHUB_ENV
+        echo "OMPI_CXX=clang++-22" >> $GITHUB_ENV
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=mpicc \
+              -DCMAKE_CXX_COMPILER=mpiCC \
+              ${GITHUB_WORKSPACE}
+      ;;
       *"Clang16"*"-Offload"*)
         echo 'Configure for building OpenMP offload with clang16 on x86_64 target'
         cmake -GNinja $CMAKE_OPTIONS \
