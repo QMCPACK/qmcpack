@@ -2632,7 +2632,7 @@ def generate_relax_input(prefix       = 'pwscf',
                          conv_thr     = 1e-6,
                          mixing_mode  = 'plain',
                          mixing_beta  = .7,
-			 diagonalization = 'david',
+                         diagonalization = 'david',
                          occupations  = 'smearing',
                          smearing     = 'fermi-dirac',
                          degauss      = 0.0001,
@@ -2823,11 +2823,11 @@ def generate_vcrelax_input(
     pw = generate_scf_input(**kwargs)
     pw.control.update(
         calculation = 'vc-relax'
-    )
+        )
     pw['ions'] = pw.element_types['ions']()
     pw['cell'] = pw.element_types['cell'](
         press       = press,
-    )
+        )
 
     # expand this section if you need more control over the input
     if forc_conv_thr is not None:

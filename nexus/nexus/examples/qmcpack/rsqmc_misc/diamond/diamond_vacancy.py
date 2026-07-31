@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
-from nexus import *
+from nexus import settings, job, run_project
+from nexus import generate_physical_system, generate_pwscf
 
 settings(
     pseudo_dir    = '../../pseudopotentials',

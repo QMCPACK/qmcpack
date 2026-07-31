@@ -251,7 +251,7 @@ class Settings(NexusCore):
                 "cif2cell":   {"min_ver": "x.x.x", "status": "optional"},
                 "pydot":      {"min_ver": "x.x.x", "status": "optional"},
                 "seekpath":   {"min_ver": "x.x.x", "status": "optional"},
-            }
+                }
 
         nxs_deps = {k:v for k, v in sorted(nxs_deps.items(), key=lambda x: pkg_sort.get(x[0], 1000))}
 

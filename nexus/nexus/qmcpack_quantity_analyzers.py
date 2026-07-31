@@ -68,6 +68,7 @@
 
 
 import os
+import sys
 import re
 import copy
 from copy import deepcopy
@@ -2407,7 +2408,7 @@ class SpaceGridBase(QAobject):
             self.error('SpaceGrid attempted initialization from '+self.iname,exit=False)
             self.error('SpaceGrid is incomplete',exit=False)
             if exit_on_fail:
-                exit()
+                sys.exit()
             #end if
         #end if
         return succeeded
@@ -3441,7 +3442,7 @@ def SpaceGrid(init,opts=None):
         return VoronoiGrid(init,opts)
     else:
         print('SpaceGrid '+coord+' has not been implemented, exiting...')
-        exit()
+        sys.exit()
     #end if
 
 #end def SpaceGrid

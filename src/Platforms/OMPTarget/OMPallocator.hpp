@@ -62,8 +62,6 @@ struct OMPallocator : public HostAllocator
 {
   using value_type    = typename HostAllocator::value_type;
   using size_type     = typename HostAllocator::size_type;
-  using pointer       = typename HostAllocator::pointer;
-  using const_pointer = typename HostAllocator::const_pointer;
 
   OMPallocator() = default;
   /** Gives you a OMPallocator with no state.
@@ -116,7 +114,7 @@ struct OMPallocator : public HostAllocator
 
   void attachReference(const OMPallocator& from, std::ptrdiff_t ptr_offset)
   {
-    device_ptr_ = const_cast<typename OMPallocator::pointer>(from.get_device_ptr()) + ptr_offset;
+    device_ptr_ = const_cast<T*>(from.get_device_ptr()) + ptr_offset;
   }
 
   T* get_device_ptr() { return device_ptr_; }
@@ -188,8 +186,6 @@ class OMPTargetAllocator
 public:
   using value_type    = T;
   using size_type     = size_t;
-  using pointer       = T*;
-  using const_pointer = const T*;
 
   OMPTargetAllocator() = default;
   template<class U>

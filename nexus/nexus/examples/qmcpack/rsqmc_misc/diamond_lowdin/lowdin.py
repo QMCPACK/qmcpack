@@ -111,14 +111,13 @@ def matprint(m):
 
 if __name__ == '__main__':
 
-    from nexus.developer import ci
     from nexus.qmcpack_analyzer import QmcpackAnalyzer
-    from uncertainties import ufloat,unumpy
+    from uncertainties import unumpy
 
     # Exit if atomic_proj.xml and outdir locations not given
     if(len(sys.argv)<5):
         print("Usage: lowdin.py <pw_prefix> <pw_outdir> <qmc_directory> <qmc_identifier> <spin>")
-        quit()
+        sys.exit()
     #end if
 
     pw_prefix = sys.argv[1]
@@ -133,7 +132,7 @@ if __name__ == '__main__':
     if not sp in {0,1}:
         print('Invalid spin specfied: {}'.format(sp))
         print('Must be either 0 (up) or 1 (down)')
-        quit()
+        sys.exit()
     #end if
 
     # Collect parameters from atomic_proj.xml.

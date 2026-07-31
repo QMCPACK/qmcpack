@@ -28,7 +28,7 @@ import os
 from copy import deepcopy
 import numpy as np
 from .simulation import Simulation, NullSimulationAnalyzer
-from .qmcpack_input import (
+from .qmcpack_input import (  # noqa: F401
     QmcpackInput,
     TracedQmcpackInput,
     loop,

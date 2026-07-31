@@ -89,7 +89,7 @@ dryrun  = options.__dict__['dryrun']
 
 if help:
     print(parser.format_help())
-    exit()
+    sys.exit()
 #end if
 
 paths = dict()
@@ -129,7 +129,7 @@ if len(paths)>0:
     #end if
 else:
     print('redo: no simulation directories found')
-    exit()
+    sys.exit()
 #end if
 cwd = os.getcwd()
 for path in sorted(paths.keys()):

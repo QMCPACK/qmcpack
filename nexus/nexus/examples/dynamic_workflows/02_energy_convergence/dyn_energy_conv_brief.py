@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import sys
 from nexus import settings,job,workflow_manager
 from nexus import generate_physical_system
 from nexus import generate_pwscf
@@ -100,7 +101,7 @@ while not converged:
             if nruns>max_runs:
                 dE = abs(energies[-1]-energies[-2])
                 print('\nMaximum number of runs exceeded!!!')
-                exit(1)
+                sys.exit(1)
             # dynamic portion
             ecut = int(((1.5*ecut)//10)*10)
             qe   = gen_qe(ecutwfc=ecut)
@@ -109,7 +110,7 @@ while not converged:
             converged = True
     elif qe.fail:
         print('\nQE run failed!!!')
-        exit(1)
+        sys.exit(1)
     wm.poll(1)
 
 # determine k-point grid, using the converged energy cutoff
@@ -130,7 +131,7 @@ while not converged:
             if nruns>max_runs:
                 dE = abs(energies[-1]-energies[-2])
                 print('\nMaximum number of runs exceeded!!!')
-                exit(1)
+                sys.exit(1)
             # dynamic portion
             nkgrid += 1
             qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
@@ -139,7 +140,7 @@ while not converged:
             converged = True
     elif qe.fail:
         print('\nQE run failed!!!')
-        exit(1)
+        sys.exit(1)
     wm.poll(1)
 
 

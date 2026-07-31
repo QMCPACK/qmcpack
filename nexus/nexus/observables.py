@@ -1,5 +1,6 @@
 # Python standard library imports
 import os
+import sys
 import inspect
 from time import process_time
 from copy import deepcopy
@@ -782,7 +783,7 @@ class MomentumDistribution(ObservableWithComponents):
         print(c.grid.cell_grid_shape)
         print("ci called from MomentumDistribution.backfold()")
         ci()
-        exit()
+        sys.exit()
     #end def backfold
 
 
