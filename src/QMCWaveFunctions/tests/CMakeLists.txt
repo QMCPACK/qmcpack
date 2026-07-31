@@ -110,6 +110,9 @@ set(TRIALWF_SRC
     test_lattice_gaussian.cpp
     test_twf_fastderiv_raii.cpp
     test_TWFGrads.cpp)
+if(ENABLE_DEEPQMC_INFERENCE)
+  set(TRIALWF_SRC ${TRIALWF_SRC} test_deepqmc_wfc.cpp)
+endif()
 
 set(SPOSET_SRC
     test_spo_collection_input_spline.cpp
@@ -211,6 +214,23 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
   endif()
 
 endforeach()
+
+if(ENABLE_DEEPQMC_INFERENCE AND BUILD_MICRO_BENCHMARKS)
+  set(UTEST_EXE benchmark_deepqmc_wfc)
+  add_executable(${UTEST_EXE} benchmark_deepqmc_wfc.cpp)
+  target_link_libraries(
+    ${UTEST_EXE}
+    catch_main
+    qmcwfs
+    platform_LA
+    platform_runtime
+    utilities_for_test
+    container_testing)
+  if(USE_OBJECT_TARGET)
+    target_link_libraries(${UTEST_EXE} qmcutil qmcparticle qmcparticle_omptarget qmcwfs_omptarget platform_omptarget_LA)
+  endif()
+  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+endif()
 
 if((ENABLE_CUDA OR ENABLE_SYCL) AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_diracmatrixcompute)
