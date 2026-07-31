@@ -7,7 +7,6 @@ generic_settings.raise_error = True
 
 from pathlib import Path
 
-from .. import testing
 from ..testing import object_eq, dict_serialize
 
 
@@ -279,7 +278,6 @@ def test_read():
 
 
 def test_generate(tmp_path):
-    import os
     from ..physical_system import generate_physical_system
     from ..quantum_package_input import generate_quantum_package_input
 

@@ -1,7 +1,5 @@
 #! /usr/bin/env python3
 
-import numpy as np
-
 from nexus.unit_converter import convert
 
 from nexus import settings,job,obj,run_project

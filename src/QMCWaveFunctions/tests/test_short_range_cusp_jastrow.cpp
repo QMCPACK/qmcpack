@@ -8,9 +8,7 @@
 //
 // File created by: Eric Neuscamman, eneuscamman@berkeley.edu, University of California, Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "Configuration.h"
 #include "Message/Communicate.h"

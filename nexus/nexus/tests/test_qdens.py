@@ -32,7 +32,7 @@ def test_density(tmp_path):
         dmc_path / "dmc.in.xml",
         dmc_path / "dmc.out",
         dmc_path / "dmc.err",
-    )
+        )
 
     assert(set(dmc_path.iterdir()) == set(files_bef))
 
@@ -100,7 +100,7 @@ def test_density(tmp_path):
         tmp_path / "dmc/dmc.s003.SpinDensity_u-err.xsf",
         tmp_path / "dmc/dmc.s003.SpinDensity_u.xsf",
         tmp_path / "dmc/dmc.s003.stat.h5",
-    )
+        )
 
     assert(set(dmc_path.iterdir()) == set(files_aft))
 
