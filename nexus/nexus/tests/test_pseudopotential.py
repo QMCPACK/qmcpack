@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOPOTENTIAL)
 
@@ -145,7 +146,7 @@ h 1 1.00
 
 
 def test_ppset():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..pseudopotential import ppset
 
     ppset_ref = obj(
@@ -165,7 +166,7 @@ def test_ppset():
         qmcpack = ['C.BFD.xml'],
         )
 
-    o = ppset.to_obj()
+    o = to_obj(ppset)
     assert(object_eq(o,ppset_ref))
 
     assert(ppset.supports_code('pwscf'))
@@ -184,6 +185,7 @@ def test_ppset():
 
 def test_pseudopotential_classes(tmp_path):
     import numpy as np
+    from ..developer import to_obj
     from ..pseudopotential import SemilocalPP
     from ..pseudopotential import GaussianPP
     from ..pseudopotential import QmcpackPP
@@ -255,7 +257,7 @@ def test_pseudopotential_classes(tmp_path):
     assert(value_eq(qpp.v_at_zero('s'),22.551641791033372))
     assert(value_eq(qpp.v_at_zero('p'),-19.175372435022126))
 
-    qpp_fake = qpp.copy()
+    qpp_fake = deepcopy(qpp)
     r = np.linspace(0,10,6)
     vloc = 0*r + qpp.Zval
     vnl  = 0*r
@@ -275,8 +277,8 @@ def test_pseudopotential_classes(tmp_path):
       <radfunc>
         <grid type="linear" units="bohr" ri="0.0" rf="10.0" npts="6"/>
         <data>
-          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
-          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
+           4.00000000000000e+00   4.00000000000000e+00   4.00000000000000e+00
+           4.00000000000000e+00   4.00000000000000e+00   4.00000000000000e+00
         </data>
       </radfunc>
     </vps>
@@ -284,8 +286,8 @@ def test_pseudopotential_classes(tmp_path):
       <radfunc>
         <grid type="linear" units="bohr" ri="0.0" rf="10.0" npts="6"/>
         <data>
-          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
-          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
+           4.00000000000000e+00   4.00000000000000e+00   4.00000000000000e+00
+           4.00000000000000e+00   4.00000000000000e+00   4.00000000000000e+00
         </data>
       </radfunc>
     </vps>
@@ -294,6 +296,24 @@ def test_pseudopotential_classes(tmp_path):
 
     qtext = qpp_fake.write_qmcpack()
     assert(qtext.strip()==qtext_ref.strip())
+
+    # Read legacy QMCpack files in which adjacent L2 values ran together
+    # because a value filled the allotted output field width.
+    l2_text = '''  <L2 units="hartree" format="r*V" cutoff="10.0">
+    <radfunc>
+      <grid type="linear" units="bohr" ri="0.0" rf="10.0" npts="3"/>
+      <data>
+         1.00000000000000e+00-2.00000000000000e+00 3.00000000000000e+00
+      </data>
+    </radfunc>
+  </L2>
+'''
+    qtext_legacy_l2 = qtext.replace('  <semilocal',l2_text+'  <semilocal')
+    legacy_l2_file = tmp_path / 'legacy_l2.qmcpack'
+    legacy_l2_file.write_text(qtext_legacy_l2)
+    qpp_legacy_l2 = QmcpackPP(legacy_l2_file)
+    assert(qpp_legacy_l2.has_L2())
+    assert(value_eq(qpp_legacy_l2.components.L2,np.array([1.,-2.,3.])))
 
     ctext_ref = '''C pseudopotential converted by Nexus
 Atomic number and pseudo-charge
@@ -386,8 +406,8 @@ r*potential (L=1) in Ha
     # tests for CasinoPP
     cpp = CasinoPP(casino_file)
 
-    qo = qpp.to_obj()
-    co = cpp.to_obj()
+    qo = to_obj(qpp)
+    co = to_obj(cpp)
     del qo.rmin
     del qo.rmax
     assert(object_eq(co,qo,atol=1e-12))

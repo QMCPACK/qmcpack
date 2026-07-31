@@ -122,7 +122,7 @@ class SimulationBundle(Simulation):
         for sim in self.sims:
             sim_ids.add(sim.simid)
             depsim_ids |= sim.downstream_simids()
-            for d in sim.dependencies:
+            for d in sim.dependencies.values():
                 deps.append((d.sim,'other'))
             #end for
         #end for

@@ -3,6 +3,7 @@
 import gc
 import os
 import sys
+from copy import deepcopy
 from pathlib import Path
 from optparse import OptionParser
 
@@ -66,7 +67,7 @@ def find_nexus_modules():
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
 import nexus.numpy_extensions as npe
-from nexus.developer import DevBase,obj,error,ci,unavailable
+from nexus.developer import DevBase,obj,error,unavailable
 import nexus.memory as memory
 from nexus.hdfreader import HDFreader
 from nexus.fileio import XsfFile,ChgcarFile
@@ -91,21 +92,15 @@ except:
 
 
 try:
-    import matplotlib
-    gui_envs = ['GTKAgg','TKAgg','Qt4Agg','WXAgg']
-    for gui in gui_envs:
-        try:
-            matplotlib.use(gui,warn=False, force=True)
-            from matplotlib import pyplot
-            success = True
-            break
-        except:
-            continue
-        #end try
-    #end for
     import matplotlib.pyplot as plt
-    params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
-          'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
+    params = {
+        'legend.fontsize'      : 14,
+        'figure.facecolor'     : 'white',
+        'figure.subplot.hspace': 0.,
+        'axes.labelsize'       : 16,
+        'xtick.labelsize'      : 14,
+        'ytick.labelsize'      : 14,
+        }
     plt.rcParams.update(params)
 except:
     plt = unavailable('matplotlib.pyplot')
@@ -128,6 +123,8 @@ def h5_array(val):
 #end def h5_array
 
 
+def first(d):
+    return d[min(d.keys())]
 
 
 
@@ -177,7 +174,7 @@ def qmcpack_filepath(basepath,tokens,g=None):
 
 
 def get_grid(s,dr=None,delta=None,x_min=None,x_max=None,y_min=None,y_max=None,z_min=None,z_max=None):
-    s = s.copy()
+    s = deepcopy(s)
     s.change_units('B')
     grid = []
     if delta is None:
@@ -246,7 +243,7 @@ class QDBase(DevBase):
 
     def exit(self):
         self.vlog('\n{0} finished\n'.format(self.name))
-        exit()
+        sys.exit()
     #end def exit
 
     def error(self,msg,loc=None):
@@ -312,25 +309,25 @@ class SingleDensity(QDBase):
         #end if
         if grid is not None:
             if len(grid)!=3:
-                self._error('inputted grid must have length 3, received {0}'.format(grid))
+                QDBase.error(self,'inputted grid must have length 3, received {0}'.format(grid))
             #end if
             self.grid = np.array(grid,dtype=int)
         #end if
         if structure is not None:
-            self.structure = structure.copy()
+            self.structure = deepcopy(structure)
         #end if
         if extension is not None:
             self.extension = extension
         #end if
         if density_corner is not None:
             if len(density_corner)!=3:
-                self._error('inputted density_corner must have length 3, received {0}'.format(density_corner))
+                QDBase.error(self,'inputted density_corner must have length 3, received {0}'.format(density_corner))
             #end if
             self.density_corner = np.array(density_corner,dtype=float)
         #end if
         if density_cell is not None:
             if len(np.array(density_cell).ravel())!=9:
-                self._error('inputted density_cell must have length 9, received {0}'.format(density_cell))
+                QDBase.error(self,'inputted density_cell must have length 9, received {0}'.format(density_cell))
             #end if
             self.density_cell = np.array(density_cell,dtype=float)
         #end if
@@ -345,7 +342,7 @@ class SingleDensity(QDBase):
             return
         #end if
         if not isinstance(value,types):
-            self._error('expected {0} for {1}, but received type "{2}"'.format(stypes,name,value.__class__.__name__))
+            QDBase.error(self,'expected {0} for {1}, but received type "{2}"'.format(stypes,name,value.__class__.__name__))
         #end if
     #end def check_type
 
@@ -357,7 +354,7 @@ class SingleDensity(QDBase):
 
     def require(self,name,action):
         if self[name] is None:
-            self._error('cannot {0}, {1} is not present'.format(action,name))
+            QDBase.error(self,'cannot {0}, {1} is not present'.format(action,name))
         #end if
     #end def require
 
@@ -377,7 +374,7 @@ class SingleDensity(QDBase):
         elif format=='chgcar':
             self.write_chgcar(prefix)
         else:
-            self._error('invalid density format requested\nformat requested: {0}\nallowed options: xsf, dat'.format(format))
+            QDBase.error(self,'invalid density format requested\nformat requested: {0}\nallowed options: xsf, dat'.format(format))
         #end if
     #end def write
 
@@ -404,12 +401,12 @@ class SingleDensity(QDBase):
         density_corner = self.density_corner
         # data needs to be laid out in i,j,k order for xsf
         if g is None:
-            self._error('grid must be specified (via --grid or --input) for output format xsf')
+            QDBase.error(self,'grid must be specified (via --grid or --input) for output format xsf')
         #end if
         if s is None:
-            self._error('structure must be specified (via --structure) for output format xsf')
+            QDBase.error(self,'structure must be specified (via --structure) for output format xsf')
         #end if
-        s = s.copy()
+        s = deepcopy(s)
         p = s.pos.ravel()
         if p.min()>0 and p.max()<1.0:
             s.pos_to_cartesian()
@@ -451,12 +448,12 @@ class SingleDensity(QDBase):
         s           = self.structure
         # data needs to be laid out in i,j,k order for xsf
         if g is None:
-            self._error('grid must be specified (via --grid or --input) for output format xsf')
+            QDBase.error(self,'grid must be specified (via --grid or --input) for output format xsf')
         #end if
         if s is None:
-            self._error('structure must be specified (via --structure) for output format xsf')
+            QDBase.error(self,'structure must be specified (via --structure) for output format xsf')
         #end if
-        s = s.copy()
+        s = deepcopy(s)
         p = s.pos.ravel()
         if p.min()>0 and p.max()<1.0:
             s.pos_to_cartesian()
@@ -602,9 +599,9 @@ class StatFile(QDBase):
         self.total_weight += weight
         if not stat.use_dens:
             if self.spin_density_data is None:
-                self.spin_density_data = stat.spin_density_data.copy()
-                for spin_density in self.spin_density_data:
-                    for spin in spin_density:
+                self.spin_density_data = deepcopy(stat.spin_density_data)
+                for spin_density in self.spin_density_data.values():
+                    for spin in spin_density.values():
                         spin.value         *= weight
                         #spin.value_squared *= weight
                     #end for
@@ -620,8 +617,8 @@ class StatFile(QDBase):
             #end if
         else:
             if self.density_data is None:
-                self.density_data = stat.density_data.copy()
-                for density in self.density_data:
+                self.density_data = deepcopy(stat.density_data)
+                for density in self.density_data.values():
                     density.value *= weight
                 #end for
             else:
@@ -636,14 +633,14 @@ class StatFile(QDBase):
                 
     def normalize(self):
         if not self.use_dens:
-            for spin_density in self.spin_density_data:
-                for spin in spin_density:
+            for spin_density in self.spin_density_data.values():
+                for spin in spin_density.values():
                     spin.value         /= self.total_weight
                     #spin.value_squared /= self.total_weight
                 #end for
             #end for
         else:
-            for density in self.density_data:
+            for density in self.density_data.values():
                 density.value /= self.total_weight
             #end if
         #end if
@@ -662,7 +659,7 @@ class StatFile(QDBase):
                 g = None
                 if opt.grids is not None and name in opt.grids:
                     g = opt.grids[name]
-                    for data in spin_density:
+                    for data in spin_density.values():
                         ncells = g[0]*g[1]*g[2]
                         data_cells = data.value.shape[-1]
                         if ncells!=data_cells:
@@ -736,7 +733,7 @@ class StatFile(QDBase):
                 g = None
                 if opt.grids is not None and name in opt.grids:
                     g = opt.grids[name]
-                    for data in density:
+                    for data in density.values():
                         ncells = g[0]*g[1]*g[2]
                         data_cells = data.shape[-1]*data.shape[-2]*data.shape[-3]
                         if ncells!=data_cells:
@@ -772,7 +769,7 @@ class StatFile(QDBase):
             for name,spin_density in self.spin_density_results.items():
                 prefix = '{0}.{1}'.format(self.file_prefix,name)
                 for format in formats:
-                    for single_density in spin_density:
+                    for single_density in spin_density.values():
                         single_density.write(prefix,format)
                     #end for
                 #end for
@@ -781,7 +778,7 @@ class StatFile(QDBase):
             for name,density in self.density_results.items():
                 prefix = '{0}.{1}'.format(self.file_prefix,name)
                 for format in formats:
-                    for single_density in density:
+                    for single_density in density.values():
                         single_density.write(prefix,format)
                     #end for
                 #end for
@@ -796,7 +793,7 @@ class StatFile(QDBase):
         ndim = 3
         permute = dim!=0
         if opt.structure is not None:
-            s = opt.structure.copy()
+            s = deepcopy(opt.structure)
             s.change_units('A')
             rmax = np.linalg.norm(s.axes[dim])
         else:
@@ -942,7 +939,7 @@ class QMCDensityProcessor(QDBase):
         options,files_in = parser.parse_args()
         
         QDBase.parser = parser
-        QDBase.options.transfer_from(options.__dict__)
+        QDBase.options.update(**options.__dict__)
         
         opt = self.options
         
@@ -996,7 +993,7 @@ class QMCDensityProcessor(QDBase):
                         e[s] = ei[s]
                     #end for
                 elif isinstance(ei,dict):
-                    e.transfer_from(ei)
+                    e.update(ei)
                 else:
                     equil_failed = True
                 #end if
@@ -1027,7 +1024,7 @@ class QMCDensityProcessor(QDBase):
                             e[s] = ei[s]
                         #end for
                     elif isinstance(ei,dict):
-                        e.transfer_from(ei)
+                        e.update(ei)
                     else:
                         reblock_failed = True
                     #end if
@@ -1084,7 +1081,7 @@ class QMCDensityProcessor(QDBase):
                 if 'estimators' in ham:
                     est_sources.append(ham.estimators)
                 elif len(ham)>0:
-                    ham = ham.first() # hamiltonian collection
+                    ham = first(ham) # hamiltonian collection
                     if 'estimators' in ham:
                         est_sources.append(ham.estimators)
                     #end if
@@ -1134,7 +1131,7 @@ class QMCDensityProcessor(QDBase):
                             density_cell = convert(density_cell, 'B', 'A')
                         else:
                             # If density_cell is not given, use the structure cell
-                            dens_struct = structure.copy()
+                            dens_struct = deepcopy(structure)
                             dens_struct.change_units('A')
                             density_cell = dens_struct.axes
                         #end if
@@ -1337,11 +1334,11 @@ class QMCDensityProcessor(QDBase):
         for batch_prefix in sorted(batch_files.keys()):
             stat_files = batch_files[batch_prefix]
             basepath,file_prefix = os.path.split(batch_prefix)
-            ref_file = os.path.split(stat_files.first().first())[1]
+            ref_file = os.path.split(first(first(stat_files)))[1]
             ref_tokens = ref_file.split('.')
 
             nseries = len(stat_files)
-            ngroups = len(stat_files.first())
+            ngroups = len(first(stat_files))
 
             self.vmlog('\n\nprocessing batch {0}, {1} series, {2} groups'.format(batch_prefix,nseries,ngroups))
             self.vlog(str(stat_files))
@@ -1386,7 +1383,7 @@ class QMCDensityProcessor(QDBase):
                             #end if
                             weights = opt.weights
                         #end if
-                        sref_tokens = os.path.split(sfiles.first())[1].split('.')
+                        sref_tokens = os.path.split(first(sfiles))[1].split('.')
                         avg_filepath = qmcpack_filepath(basepath,sref_tokens,g='avg')
                         stat_avg = StatFile()
                         n=0
@@ -1420,7 +1417,7 @@ class QMCDensityProcessor(QDBase):
                     self.vmlog('  processing series {0} files'.format(series))
                     sfiles = stat_files[series]
                     if len(sfiles)>0:
-                        for filepath in sfiles:
+                        for filepath in sfiles.values():
                             self.vlog('    processing file {0}'.format(filepath))
                             stat = StatFile(filepath)
                             if isinstance(opt.equilibration,int):
@@ -1461,6 +1458,3 @@ if __name__=='__main__':
 
     qdens.exit()
 #end if
-
-
-

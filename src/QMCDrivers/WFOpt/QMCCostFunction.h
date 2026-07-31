@@ -41,8 +41,7 @@ public:
   void checkConfigurations(EngineHandle& handle) override;
 #ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                  DescentEngine& descentEngineObj,
-                                  const std::string& MinMethod) override;
+                                  OptionalRef<DescentEngine> descentEngineObj) override;
 #endif
 
 

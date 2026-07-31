@@ -129,7 +129,7 @@ class ProjectManager(NexusCore):
         else:
             self.log('cascades',n=1)
         #end if
-        for c in self.progressing_cascades:
+        for c in self.progressing_cascades.values():
             self.log('cascade',c.simid,'checking in',n=2)
         #end for
         self.check_dependencies()
@@ -174,7 +174,7 @@ class ProjectManager(NexusCore):
                 filespace = dict()
                 for sim in simlist:
                     if not sim.allow_overlapping_files:
-                        files = sim.list('infile','outfile','errfile')
+                        files = [sim[k] for k in ('infile','outfile','errfile')]
                         for f in files:
                             if f not in filespace:
                                 filespace[f] = [sim]
@@ -244,10 +244,10 @@ class ProjectManager(NexusCore):
 
                     
     def traverse_cascades(self,operation=trivial,*args,**kwargs):
-        for cascade in self.cascades:
+        for cascade in self.cascades.values():
             cascade.reset_wait_ids()
         #end for
-        for cascade in self.cascades:
+        for cascade in self.cascades.values():
             cascade.traverse_cascade(operation,*args,**kwargs)
         #end for
         return
@@ -260,7 +260,7 @@ class ProjectManager(NexusCore):
         self.log('\ncascade status',n=1)
         self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
         all_sids = set()
-        for sim in self.simulations:
+        for sim in self.simulations.values():
             add = False
             if status==status_modes.active:
                 add = sim.active()
@@ -306,7 +306,7 @@ class ProjectManager(NexusCore):
         
     def status_line(self,sim,extra=''):
         indicators = ('setup','sent_files','submitted','finished','got_output','analyzed')
-        stats = sim.tuple(*indicators)
+        stats = tuple([sim[k] for k in indicators])
         status = ''
         for stat in stats:
             status+=str(int(stat))
@@ -344,7 +344,7 @@ class ProjectManager(NexusCore):
 
 
     def update_process_ids(self):
-        for sim in self.simulations:
+        for sim in self.simulations.values():
             sim.update_process_id()
         #end for
     #end def update_process_ids

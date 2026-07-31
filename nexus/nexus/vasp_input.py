@@ -38,6 +38,7 @@
 
 
 import os
+from copy import deepcopy
 import numpy as np
 from .periodic_table import Elements
 from .nexus_base import nexus_noncore
@@ -345,12 +346,12 @@ class VFile(Vobj):
 
 
     def read_text(self,text,filepath=''):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
 
     def write_text(self,filepath=''):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
 
@@ -431,18 +432,17 @@ class VKeywordFile(VFile):
         cls.kw_arrays  = VKeywordFile.kw_arrays
         cls.kw_fields  = VKeywordFile.kw_fields
         for kw_field in cls.kw_fields:
-            if not cls.class_has(kw_field):
-                cls.class_set_single(kw_field,set())
-            #end if
+            if not hasattr(cls,kw_field):
+                setattr(cls,kw_field,set())
         #end for
         #cls.check_consistency()
         cls.scalar_keywords = set()
         for scalar_field in cls.kw_scalars:
-            cls.scalar_keywords |= cls.class_get(scalar_field)
+            cls.scalar_keywords |= getattr(cls,scalar_field)
         #end for
         cls.array_keywords = set()
         for array_field in cls.kw_arrays:
-            cls.array_keywords |= cls.class_get(array_field)
+            cls.array_keywords |= getattr(cls,array_field)
         #end for
         cls.keywords = cls.scalar_keywords | cls.array_keywords
         cls.type = obj()
@@ -450,7 +450,7 @@ class VKeywordFile(VFile):
         cls.write_value  = obj()
         cls.assign_value = obj()
         for type in cls.kw_scalars + cls.kw_arrays:
-            for name in cls.class_get(type):
+            for name in getattr(cls,type):
                 cls.type[name] = type
                 cls.read_value[name]   = read_value_functions[type]
                 cls.write_value[name]  = write_value_functions[type]
@@ -467,13 +467,13 @@ class VKeywordFile(VFile):
         types = cls.kw_scalars+cls.kw_arrays
         untyped = set(cls.keywords)
         for type in types:
-            untyped -= cls.class_get(type)
+            untyped -= getattr(cls,type)
         #end for
         if len(untyped)>0:
             msg += '\nvariables without a type:\n  {0}\n'.format(sorted(untyped))
         #end if
         for type in types:
-            unknown = cls.class_get(type)-cls.keywords
+            unknown = getattr(cls,type)-cls.keywords
             if len(unknown)>0:
                 msg += '\nunknown {0}:\n  {1}\n'.format(type,sorted(unknown))
                 all_unknown |= unknown
@@ -484,7 +484,7 @@ class VKeywordFile(VFile):
             msg += '\nall known names:\n  {0}\n'.format(sorted(cls.keywords))
         #end if
         if len(msg)>0:
-            cls.class_error(msg)
+            error(msg)
         #end if
     #end def check_consistency
 
@@ -1169,7 +1169,7 @@ class Poscar(VFormattedFile):
             vel_coord = None
             vel = None
         #end if
-        self.set(
+        self.update(
             description = description,
             scale       = scale,
             axes        = axes,
@@ -1327,7 +1327,7 @@ class Potcar(VFormattedFile):
             start = n
             n=text.find('\n',start,end)+1
             pend = n
-            self.pseudos.append(text[pstart:pend])
+            self.pseudos[len(self.pseudos)] = text[pstart:pend]
             pstart = pend
             start  = pend
             iter+=1
@@ -1499,7 +1499,7 @@ class VaspInput(SimulationInput,Vobj):
         # assign poscar
         species = None
         if len(structure.elem)>0:
-            s = structure.copy()
+            s = deepcopy(structure)
             s.change_units('A')
             species,species_count = s.order_by_species()
             poscar = Poscar()
@@ -1728,7 +1728,7 @@ def generate_vasp_input(**kwargs):
     if input_type=='general' or input_type=='generic':
         vi = generate_any_vasp_input(**kwargs)
     else:
-        VaspInput.class_error('input_type {0} is unrecognized\nvalid options are: general'.format(input_type))
+        error('input_type {0} is unrecognized\nvalid options are: general'.format(input_type))
     #end if
     return vi
 #end def generate_vasp_input
@@ -1779,7 +1779,10 @@ def generate_any_vasp_input(**kwargs):
         keys = keywords & keyword_file.keywords
         if len(keys)>0:
             kw = obj()
-            kw.move_from(kwargs,keys)
+            for k in keys:
+                if k in kwargs:
+                    kw[k] = kwargs[k]
+                    del kwargs[k]
             vfile = keyword_file()
             vfile.assign(**kw)
             vi[name] = vfile
@@ -1788,7 +1791,7 @@ def generate_any_vasp_input(**kwargs):
 
     # check for leftover keywords
     if len(kwargs)>0:
-        VaspInput.class_error('unrecognized keywords: {0}'.format(sorted(kwargs.keys())),'generate_vasp_input')
+        error('unrecognized keywords: {0}'.format(sorted(kwargs.keys())),'generate_vasp_input')
     #end if
 
     # incorporate system information
@@ -1836,7 +1839,7 @@ def generate_any_vasp_input(**kwargs):
             kp.kinsert    = vf.kinsert
             kp.kendpoints = vf.kendpoints
         else:
-            VaspInput.class_error('could not set kpoints from user inputs','generate_vasp_input')
+            error('could not set kpoints from user inputs','generate_vasp_input')
         #end if
     #end if
 
@@ -1857,7 +1860,7 @@ def generate_any_vasp_input(**kwargs):
 
 
 def generate_poscar(structure,coord='cartesian'):
-    s = structure.copy()
+    s = deepcopy(structure)
     s.change_units('A')
     species,species_count = s.order_by_species()
     poscar = Poscar()

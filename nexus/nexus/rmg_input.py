@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 
 from .developer import DevBase, obj, error
 from .unit_converter import convert
@@ -2631,15 +2632,15 @@ class RmgKeyword(DevBase):
 
 class FormattedRmgKeyword(RmgKeyword):
     def read(self,value):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read
 
     def write(self,value):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write
 
     def assign(self,value):
-        self.not_implemented()
+        raise NotImplementedError
     #end def assign
 
     def valid(self,value,message=False):
@@ -2652,7 +2653,7 @@ class FormattedRmgKeyword(RmgKeyword):
     #end def valid
 
     def valid_no_msg(self,value):
-        self.not_implemented()
+        raise NotImplementedError
     #end def valid_no_msg
 #end class FormattedRmgKeyword
 
@@ -3150,7 +3151,7 @@ class RmgInput(SimulationInput):
             #end if
         #end for
         if len(unrecognized)>0:
-            unrec = obj(values).obj(unrecognized)
+            unrec = obj({k:values[k] for k in unrecognized})
             self.error('Unrecognized keywords encountered during assignment.\nUnrecognized keywords: {}\nCorresponding values:\n{}'.format(list(sorted(unrecognized)),unrec))
         #end if
     #end def assign
@@ -3249,16 +3250,16 @@ class RmgInput(SimulationInput):
 
 
     def return_structure(self,units='B'):
-        axes       = self.get('lattice_vector',None)
-        axes_unit  = self.get('lattice_units','bohr')
-        lattice    = self.get('bravais_lattice_type','orthorhombic primitive')
-        a          = self.get('a_length',0.0)
-        b          = self.get('b_length',0.0)
-        c          = self.get('c_length',0.0)
+        axes       = self.lattice_vector        if 'lattice_vector'        in self else None
+        axes_unit  = self.lattice_units         if 'lattice_units'         in self else 'bohr'
+        lattice    = self.bravais_lattice_type  if 'bravais_lattice_type' in self else 'orthorhombic primitive'
+        a          = self.a_length              if 'a_length'              in self else 0.0
+        b          = self.b_length              if 'b_length'              in self else 0.0
+        c          = self.c_length              if 'c_length'              in self else 0.0
 
-        coord_type = self.get('atomic_coordinate_type','absolute')
-        coord_unit = self.get('crds_units','bohr')
-        atom_data  = self.get('atoms',obj())
+        coord_type = self.atomic_coordinate_type if 'atomic_coordinate_type' in self else 'absolute'
+        coord_unit = self.crds_units             if 'crds_units'             in self else 'bohr'
+        atom_data  = self.atoms                  if 'atoms'                  in self else obj()
         atoms      = atom_data.get('atoms',None)
         positions  = atom_data.get('positions',None)
 
@@ -3326,7 +3327,7 @@ def generate_rmg_input(**kwargs):
     if selector=='generic':
         return generate_any_rmg_input(**kwargs)
     else:
-        RmgInput.class_error('Input type "{}" has not been implemented for RMG input generation.'.format(selector))
+        error('Input type "{}" has not been implemented for RMG input generation.'.format(selector))
     #end if
 #end def generate_rmg_input
 
@@ -3349,18 +3350,20 @@ def generate_any_rmg_input(**kwargs):
     # set default values
     defaults = kwargs.pop('defaults','basic')
     kw = obj(**kwargs)
-    kw.set_optional(generate_any_defaults[defaults])
+    for k,v in generate_any_defaults[defaults].items():
+        if k not in kw:
+            kw[k] = v
 
     # extract keywords not appearing in RMG input file
-    text            = kw.delete_optional('text'           , None   )
-    wf_grid_spacing = kw.delete_optional('wf_grid_spacing', None   )
-    pseudos         = kw.delete_optional('pseudos'        , None   )
-    system          = kw.delete_optional('system'         , None   )
-    copy_system     = kw.delete_optional('copy_system'    , True   )
-    use_folded      = kw.delete_optional('use_folded'     , False  )
-    virtual_frac    = kw.delete_optional('virtual_frac'   , None   )
-    spin_polarized  = kw.delete_optional('spin_polarized' , None   )
-    default_units   = kw.delete_optional('default_units'  , 'bohr' )
+    text            = kw.pop('text'           , None   )
+    wf_grid_spacing = kw.pop('wf_grid_spacing', None   )
+    pseudos         = kw.pop('pseudos'        , None   )
+    system          = kw.pop('system'         , None   )
+    copy_system     = kw.pop('copy_system'    , True   )
+    use_folded      = kw.pop('use_folded'     , False  )
+    virtual_frac    = kw.pop('virtual_frac'   , None   )
+    spin_polarized  = kw.pop('spin_polarized' , None   )
+    default_units   = kw.pop('default_units'  , 'bohr' )
 
     default_units = dict(
         a        = 'angstrom',
@@ -3404,13 +3407,12 @@ def generate_any_rmg_input(**kwargs):
 
         # add system details
         if copy_system:
-            system = system.copy()
+            system = deepcopy(system)
         #end if
         if use_folded:
             system = system.get_smallest()
         #end if
         system.check_folded_system()
-        system.update_particles()
 
         # set atomic species, positions, magnetic moments and mobility
         if 'atomic_coordinate_type' not in ri:

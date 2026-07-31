@@ -63,8 +63,7 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.nexus_version import nexus_version
-from nexus.developer import obj
+from nexus.developer import obj,save,load
 
 
 class SimTool(obj):
@@ -82,8 +81,7 @@ class SimTool(obj):
 
     def load(self,paths):
         for path in paths:
-            sim = obj()
-            sim.load(path)
+            sim = load(path)
             self.sims.append(sim)
             self.paths.append(path)
         #end for
@@ -100,7 +98,7 @@ class SimTool(obj):
             for f in forbidden:
                 print('  ',f)
             #end for
-            exit()
+            sys.exit()
         #end if
         for i in range(len(self.paths)):
             path = self.paths[i]
@@ -123,7 +121,7 @@ class SimTool(obj):
             for f in forbidden:
                 print('  ',f)
             #end for
-            exit()
+            sys.exit()
         #end if
         for i in range(len(self.paths)):
             path = self.paths[i]
@@ -156,7 +154,7 @@ class SimTool(obj):
         if len(inds)==0:
             print('no indicators specified')
             print('  options are: '+self.indicators)
-            exit()
+            sys.exit()
         #end if
         forbidden = set(inds)-set(self.indicators)
         if len(forbidden)>0:
@@ -164,7 +162,7 @@ class SimTool(obj):
             for f in forbidden:
                 print('  ',f)
             #end for
-            exit()
+            sys.exit()
         #end if
         for i in range(len(self.paths)):
             path = self.paths[i]
@@ -175,7 +173,7 @@ class SimTool(obj):
                     sim.process_id = None
                 #end if
             #end for
-            sim.save(path)
+            save(sim,path)
         #end for
     #end def set_indicators
                 
@@ -193,7 +191,7 @@ if __name__=='__main__':
         for comm in allowed_commands:
             print('   ',comm)
         #end for
-        exit()
+        sys.exit()
     #end if
 
     paths = []
@@ -212,9 +210,9 @@ if __name__=='__main__':
     #end for
 
 
-    if not command in allowed_commands:
+    if command not in allowed_commands:
         print('command '+command+' not recognized')
-        exit()
+        sys.exit()
     #end if
 
     if len(paths)==0:
@@ -222,7 +220,7 @@ if __name__=='__main__':
             paths = ['./sim.p']
         else:
             print('no simulation images found')
-            exit()
+            sys.exit()
         #end if
     #end if
 

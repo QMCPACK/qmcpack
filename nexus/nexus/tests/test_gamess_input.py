@@ -8,7 +8,7 @@ generic_settings.raise_error = True
 import shutil
 from . import isolate_nexus_core, TEST_DIR
 from nexus.nexus_base import nexus_core
-from ..testing import object_eq
+from ..testing import object_eq,dict_serialize
 
 
 TEST_FILES = {
@@ -21,21 +21,6 @@ TEST_FILES = {
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"
-
-
-def make_serial_reference(gi):
-    s = gi.serial()
-    ref = '    ref = {\n'
-    for k in sorted(s.keys()):
-        v = s[k]
-        if isinstance(v,str):
-            v = "'"+v+"'"
-        #end if
-        ref +="        '{}' : {},\n".format(k,v)
-    #end for
-    ref += '        }\n'
-    return ref
-#end def make_serial_reference
 
 
 serial_references = dict()
@@ -273,7 +258,7 @@ def get_serial_references():
 def check_vs_serial_reference(gi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    sg = gi.serial()
+    sg = dict_serialize(gi,dict_type=obj)
     assert(object_eq(sg,sr))
 #end def check_vs_serial_reference
 
@@ -454,6 +439,5 @@ def test_generate(tmp_path):
         check_vs_serial_reference(gi,infile)
     #end for
 #end def test_generate
-
 
 

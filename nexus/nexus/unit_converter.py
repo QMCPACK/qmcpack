@@ -20,7 +20,9 @@
 #====================================================================#
 
 
-from .developer import DevBase, obj, error
+from .developer import error
+from .developer import obj
+from .developer import DevBase
 
 
 class Unit(DevBase):
@@ -203,4 +205,3 @@ class UnitConverter(DevBase):
 def convert(value,source_unit,target_unit):
     return UnitConverter.convert(value,source_unit,target_unit)[0]
 #end def convert
-

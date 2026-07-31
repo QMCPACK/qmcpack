@@ -36,6 +36,7 @@
 #                                                                    #
 #====================================================================#
 
+from copy import deepcopy
 import os
 from os import PathLike
 from pathlib import Path
@@ -46,7 +47,7 @@ from .fileio import TextFile
 from .xmlreader import readxml
 from .periodic_table import Elements
 from .unit_converter import convert
-from .developer import DevBase, obj, unavailable, error
+from .developer import DevBase, obj, unavailable, log, error
 from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
@@ -78,7 +79,7 @@ def pp_elem_label(filename,guard=False):
                 'cannot determine element for pseudopotential file: {0}\n'
                 'pseudopotential file names must be prefixed by an atomic symbol or label\n'
                 '(e.g. Si, Si1, etc)'.format(filename)
-            )
+                )
         #end if
         return elem_label, element.symbol
     else:
@@ -156,7 +157,7 @@ def read_upf_z_valence(file: PathLike) -> int | float:
         error(
            f"Could not find Z valence in file: {file!s}\n"
             "You may need to provide the Z valence manually!"
-            )
+           )
     else:
         zval = float(zval.group(1).lower().replace("d", "e"))
 
@@ -204,7 +205,7 @@ def read_xml_z_valence(file: PathLike) -> int | float:
         error(
            f"Could not find Z valence in file: {file!s}\n"
             "You may need to provide the Z valence manually!"
-            )
+           )
     else:
         zval = float(zval.group(1).lower().replace("d", "e"))
 
@@ -255,7 +256,7 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
                 error(
                    f"Could not find Z valence in file: {file!s}\n"
                     "You may need to provide the Z valence manually!"
-                    )
+                   )
             else:
                 zval = float(zval.group(1).lower().replace("d", "e"))
 
@@ -398,13 +399,13 @@ class Pseudopotentials(DevBase):
             ppfiles = ppfiles[0]
         #end if
         pps = []
-        self.log('\n  Pseudopotentials')
+        log('\n  Pseudopotentials')
         for filepath in ppfiles:
             filename = os.path.basename(filepath)
             elem_label,symbol,is_elem = pp_elem_label(filename)
             is_file = os.path.isfile(filepath)
             if is_elem and is_file:
-                self.log('    reading pp: ',filepath)
+                log('    reading pp: ',filepath)
                 ext = filepath.split('.')[-1].lower()
                 if ext=='gms':
                     pp = gamessPPFile(filepath)
@@ -413,12 +414,12 @@ class Pseudopotentials(DevBase):
                 #end if
                 pps.append(pp)
             elif not is_file:
-                self.log('    ignoring directory: ',filepath)
+                log('    ignoring directory: ',filepath)
             elif not is_elem:
-                self.log('    ignoring file w/o atomic symbol: ',filepath)
+                log('    ignoring file w/o atomic symbol: ',filepath)
             #end if
         #end for
-        self.log(' ')
+        log(' ')
         self.addpp(pps)
     #end def readpp
 
@@ -606,19 +607,19 @@ class Pseudopotential(DevBase):
 
 
     def read_text(self,text,format=None,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
     def write_text(self,format=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
     def convert(self,format):
-        self.not_implemented()
+        raise NotImplementedError
     #end def convert
 
     def plot(self,r=None,show=True):
-        self.not_implemented()
+        raise NotImplementedError
     #end def plot
 #end class Pseudopotential
 
@@ -626,7 +627,12 @@ class Pseudopotential(DevBase):
 
 class SemilocalPP(Pseudopotential):
     l_channels   = tuple('spdfghiklmnoqrtuvwxyz')
-    channel_colors = obj(s='g',p='r',d='b',f='m',g='c',h='k',i='g',L2='k')
+    channel_colors = obj(s='g',p='r',d='b',f='m',g='c',
+                         h='g',i='r',j='b',k='m',l='c',
+                         m='g',n='r',o='b',q='m',r='c',
+                         t='g',u='r',v='b',w='m',x='c',
+                         y='g',z='r',
+                         L2='k')
 
     numeric        = False
     interpolatable = True
@@ -936,7 +942,7 @@ class SemilocalPP(Pseudopotential):
     # evaluate r*potential based on a potential component object
     #  component representation is specific to each derived class
     def evaluate_comp_rV(self,r,l,vcomp):
-        self.not_implemented()
+        raise NotImplementedError
     #end def evaluate_comp_rV
 
 
@@ -1393,6 +1399,7 @@ class SemilocalPP(Pseudopotential):
 
                 
     def plot_L2(self,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None,color=None):
+        color_in = color
         if fig:
             plt.figure(tight_layout=True)
         #end if
@@ -1401,10 +1408,12 @@ class SemilocalPP(Pseudopotential):
         elif r is None:
             r = np.linspace(rmin,rmax,1000)
         #end if
+        rin=r
         vs = self.evaluate_channel(r,'s',with_local=True,rmin=rmin-1e-12)
         for c in self.l_channels[1:]:
+            r = rin
             if c in self.components:
-                if color is None:
+                if color_in is None:
                     color = self.channel_colors[c]
                 #end if
                 v = self.evaluate_channel(r,c,with_L2=False,rmin=rmin-1e-12)
@@ -1536,7 +1545,9 @@ class SemilocalPP(Pseudopotential):
 
             mid_norm = MidNorm(vmin,vmax,0.0)
 
-            cs = ax.contourf(X,Z,V,levels=lev,cmap=cmap,clim=(vmin,vmax),norm=mid_norm)
+            cs = ax.contourf(X,Z,V,levels=lev,cmap=cmap,
+                             norm=mid_norm)
+            cs.set_clim(vmin,vmax)
             plt.plot(rc*cos,rc*sin,'k--',lw=2)
 
             fig.colorbar(cs, ax=ax, shrink=0.9)
@@ -1646,7 +1657,7 @@ class SemilocalPP(Pseudopotential):
                 if n%3==0:
                     L2 += dpad
                 #end if
-                L2 += '{0:22.14e}'.format(d)
+                L2 += ' {0:22.14e}'.format(d)
                 n+=1
             #end for
             L2 = L2.rstrip()+'\n'
@@ -1668,7 +1679,7 @@ class SemilocalPP(Pseudopotential):
                     if n%3==0:
                         semilocal+=dpad
                     #end if
-                    semilocal+='{0:22.14e}'.format(d)
+                    semilocal+=' {0:22.14e}'.format(d)
                     n+=1
                 #end for
                 semilocal = semilocal.rstrip()+'\n'
@@ -1919,7 +1930,7 @@ class GaussianPP(SemilocalPP):
         else:
             core = Elements(Zcore).symbol
         #end if
-        self.set(
+        self.update(
             core    = core,
             Zval    = Zval,
             Zcore   = Zcore,
@@ -2091,7 +2102,7 @@ class GaussianPP(SemilocalPP):
         bs = None
         if self.basis is not None:
             bs = GaussianBasisSet()
-            bs.basis = self.basis.copy()
+            bs.basis = deepcopy(self.basis)
         #end if
         return bs
     #end def get_basis
@@ -2106,7 +2117,7 @@ class GaussianPP(SemilocalPP):
     def uncontract(self):
         if self.basis is not None:
             bs = GaussianBasisSet()
-            bs.basis = self.basis.copy()
+            bs.basis = deepcopy(self.basis)
             bs.uncontract()
             self.basis = bs.basis
         #end if
@@ -2145,7 +2156,7 @@ class GaussianPP(SemilocalPP):
         if l==self.local or l is None:
             v += -self.Zval
         #end if
-        for g in vcomp:
+        for g in vcomp.values():
             if g.rpow==1:
                 v += g.coeff * np.exp(-g.expon*r**2)
             else:
@@ -2188,7 +2199,8 @@ class GaussianPP(SemilocalPP):
             self.error('component {} not present in PP.'.format(l))
         #end if
         chan_labels = ['s','p','d','f','g','h','i','j']
-        self.components[chan_labels[l]].append(obj(coeff=coeff,expon=expon,rpow=rpow))
+        comp = self.components[chan_labels[l]]
+        comp[len(comp)] = obj(coeff=coeff,expon=expon,rpow=rpow)
     #end def append_to_component
 
 
@@ -2203,7 +2215,7 @@ class GaussianPP(SemilocalPP):
             self.error('component {} not present in PP.'.format(l))
         #end if
         chan_labels = ['s','p','d','f','g','h','i','j']
-        for term in self.components[chan_labels[l]]:
+        for term in self.components[chan_labels[l]].values():
             term.coeff*=scale
         #end for
     #end def scale_component
@@ -2226,29 +2238,35 @@ class GaussianPP(SemilocalPP):
         chan_labels = list(self.l_channels)
         remove = []
         for l in np.arange(self.lmax+1):
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                if abs(term.coeff)<1e-12 and len(self.components[chan_labels[l]])>1:
+            comp_l = self.components[chan_labels[l]]
+            for term_idx,k in enumerate(comp_l.keys()):
+                term = comp_l[term_idx]
+                if abs(term.coeff)<1e-12 and len(comp_l)>1:
                     remove.append((chan_labels[l],term_idx))
                 #end if
             #end for
         #end for
         for r in remove:
-            self.components[r[0]].delete(r[1])
+            self.components[r[0]].pop(r[1])
         #end for
-        comps = self.components.copy()
+        comps = deepcopy(self.components)
         for l in np.arange(self.lmax+1):
             comps[chan_labels[l]] = obj()
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                comps[chan_labels[l]].append(term)
+            cl = self.components[chan_labels[l]]
+            for k in cl.keys():
+                comp_l = comps[chan_labels[l]]
+                comp_l[len(comp_l)] = cl[k]
             #end for
         #end for
-        self.components = comps.copy()
-        comps = self.components.copy()
+        self.components = deepcopy(comps)
+        comps = deepcopy(self.components)
         for l in np.arange(self.lmax+1):
             terms = []
             comps[chan_labels[l]] = obj()
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                terms.append(term.list())
+            cl = self.components[chan_labels[l]]
+            for k in cl.keys():
+                term = cl[k]
+                terms.append([term[k] for k in sorted(term.keys())])
             #end for
             terms = np.array(terms)
             like_terms = []
@@ -2285,7 +2303,9 @@ class GaussianPP(SemilocalPP):
             # update comps
             comps[chan_labels[l]] = obj()
             added = []
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+            comp_l = self.components[chan_labels[l]]
+            for term_idx,k in enumerate(comp_l.keys()):
+                term = comp_l[k]
                 if any(term_idx in subl for subl in like_terms):
                     if term_idx in added:
                         continue
@@ -2293,32 +2313,35 @@ class GaussianPP(SemilocalPP):
                         for mlist in like_terms:
                             if term_idx in mlist and term_idx not in added:
                                 coeff = 0.0
-                                mod_term = term.copy()
+                                mod_term = deepcopy(term)
                                 for ti in mlist: 
                                     coeff += self.components[chan_labels[l]][ti].coeff
                                 #end for
                                 if abs(coeff)>1e-12:
                                     mod_term.coeff = coeff
-                                    comps[chan_labels[l]].append(mod_term)
+                                    cl = comps[chan_labels[l]]
+                                    cl[len(cl)] = mod_term
                                 #end if
                                 added.extend(mlist)
                             #end if
                         #end for
                     #end if
                 else:
-                    comps[chan_labels[l]].append(term)
+                    cl = comps[chan_labels[l]]
+                    cl[len(cl)] = term
                     added.append(term_idx)
                 #end if
             #end for
             if len(comps[chan_labels[l]])==0:
                 # All terms cancelled. Add placeholder
-                plcehldr = self.components['s'][0].copy()
+                plcehldr = deepcopy(self.components['s'][0])
                 plcehldr.coeff = 0.0
                 plcehldr.rpow = 2
                 plcehldr.expon = 1.0
-                comps[chan_labels[l]].append(plcehldr)
+                cl = comps[chan_labels[l]]
+                cl[len(cl)] = plcehldr
         #end for
-        self.components = comps.copy()
+        self.components = deepcopy(comps)
     #end def simplify
 
 
@@ -2329,9 +2352,9 @@ class GaussianPP(SemilocalPP):
         '''
         # CHECK IF THIS WORKS FOR lmax=1 !!!!!!
         # Only checked for lmax=2 and higher
-        p1 = self.copy()
+        p1 = deepcopy(self)
         p1.simplify()
-        p2 = self.copy()
+        p2 = deepcopy(self)
         p2.transform_to_truncated_L2(keep='s p',lmax=p2.lmax)
         p2.simplify()
         return object_eq(p2,p1)
@@ -2593,7 +2616,8 @@ class GaussianPP(SemilocalPP):
             plt.show()
         #end if
         for expon_idx,expon in enumerate(exps0):
-            self.components['s'].append(obj(coeff=1.0*popt[expon_idx],expon=expon,rpow=2))
+            cs = self.components.s
+            cs[len(cs)] = obj(coeff=1.0*popt[expon_idx],expon=expon,rpow=2)
         #end if
         self.transform_to_truncated_L2(keep='s p',lmax=self.lmax)
         self.simplify()
@@ -2662,8 +2686,8 @@ class GaussianPP(SemilocalPP):
                 self.append_to_component(lmax,fctr*term.coeff,term.expon,term.rpow)
             #end for
 
-            vm_comp = self.components[chan_labels[lm]].copy()
-            vn_comp = self.components[chan_labels[ln]].copy()
+            vm_comp = deepcopy(self.components[chan_labels[lm]])
+            vn_comp = deepcopy(self.components[chan_labels[ln]])
             for l in np.arange(lmax):
                 fctr = l*(l+1)-lmax*(lmax+1)
                 fctr = float(fctr)/(lm*(lm+1)-ln*(ln+1))
@@ -2688,12 +2712,13 @@ class GaussianPP(SemilocalPP):
                 self.append_to_component(lmax,fctr*term.coeff,term.expon,term.rpow)
             #end for
 
-            vm_comp = self.components[chan_labels[lm]].copy()
+            vm_comp = deepcopy(self.components[chan_labels[lm]])
             for l in np.arange(lmax):
                 fctr = l*(l+1)-lmax*(lmax+1)
                 fctr = float(fctr)/(lm*(lm+1)-lloc*(lloc+1))
                 self.components[chan_labels[l]] = obj()
-                for term_idx,term in enumerate(vm_comp):
+                for k in vm_comp.keys():
+                    term = vm_comp[k]
                     self.append_to_component(l,coeff=fctr*term.coeff,expon=term.expon,rpow=term.rpow)
                 #end for
             #end for
@@ -2748,6 +2773,11 @@ class QmcpackPP(SemilocalPP):
             if l2.format!='r*V':
                 self.error('unrecognized potential format: {0}\nthe only supported format is r*V'.format(l2.format))
             #end if
+            if isinstance(l2.radfunc.data,str):
+                # fix edge case: no spaces between written floats
+                text = l2.radfunc.data
+                text = re.sub(r'(?<!e)-', ' -', text)
+                l2.radfunc.data = np.array(text.split(),dtype=float)
             self.components.L2 = l2.radfunc.data.copy()
         #end if
         sl = pp.semilocal
@@ -2893,4 +2923,3 @@ class CasinoPP(SemilocalPP):
     #end def evaluate_comp_rV
 
 #end class CasinoPP
-

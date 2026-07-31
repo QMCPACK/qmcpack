@@ -19,7 +19,7 @@
 
 import os
 import numpy as np
-from .developer import obj, unavailable
+from .developer import obj
 from .unit_converter import convert
 from .periodic_table import Elements
 from .numerics import simstats, simplestats
@@ -171,6 +171,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if self.info.md_only:
                 return
             #end if
+
         except:
             nx+=1
             if self.info.warn:
@@ -269,7 +270,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     up_spin   = False
                     index = -1
                 #end if
-                              
+
                 if 'number of k points=' in l:
                     try:
                         num_kpoints      = int(l.strip().split()[4])
@@ -325,7 +326,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     else:
                         index = nfound -1 
                     #end if
-                    band_channel.append(bk)
+                    band_channel[len(band_channel)] = bk
                     #if nfound==1:
                     #    bands.up = obj(
                     #        eigs = eigs,
@@ -342,10 +343,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
             vbm        = obj(energy=-1.0e6)
             cbm        = obj(energy=1.0e6)
             direct_gap = obj(energy=1.0e6)
-            for band_channel in bands:
-                for b in band_channel:
-                    e_val  = np.max(b.eigs[b.occs > 0.5])
-                    e_cond = np.min(b.eigs[b.occs < 0.5])
+            for band_channel in bands.values():
+                for b in band_channel.values():
+                    occ   = b.occs > 0.5
+                    unocc = b.occs < 0.5
+                    e_val  = np.max(b.eigs[occ])
+                    e_cond = np.min(b.eigs[unocc])
 
                     if e_val > vbm.energy:
                         vbm.energy          = e_val
@@ -392,7 +395,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if nfound>0:
                 self.bands = bands
             #end if
-            # Kayahan edited --end
+
+        # Kayahan edited --end
+
         except:
             nx+=1
             if self.info.warn:
@@ -697,7 +702,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         #end if
                     #end for
                 #end for
-                self.xmldata.set(
+                self.xmldata.update(
                     data    = data,
                     kpoints = kpoints
                     )
@@ -728,7 +733,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             spins = obj(up='up',down='up')
         #end if
         tot = obj(up=0,down=0)
-        for kp in kpoints:
+        for kp in kpoints.values():
             w = kp.weight
             for s,sl in spins.items():
                 tot[s] += w*kp[sl].occupations.sum()
@@ -738,7 +743,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         text += '  {0: 3.2f}  {1: 3.2f}  {2: 3.2f}  {3: 3.2f}\n'.format(tot.up+tot.down,tot.up-tot.down,tot.up,tot.down)
         text += '\nkpoint electron counts\n'
         weights = []
-        for kp in kpoints:
+        for kp in kpoints.values():
             weights.append(kp.weight)
         #end for
         weights = np.array(weights,dtype=float)
@@ -841,6 +846,16 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True,k_labels=None):
+        import matplotlib.pyplot as plt
+        params = {
+            'legend.fontsize'      : 14,
+            'figure.facecolor'     : 'white',
+            'figure.subplot.hspace': 0.,
+            'axes.labelsize'       : 16,
+            'xtick.labelsize'      : 14,
+            'ytick.labelsize'      : 14,
+            }
+        plt.rcParams.update(params)
         if 'bands' in self:
             success = True
             if filename is None:
@@ -850,30 +865,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
             else:
                 filepath = os.path.join(filepath,filename)
             #end if
-            try:
-                import matplotlib
-                gui_envs = ['GTKAgg','TKAgg','agg','Qt4Agg','WXAgg']
-                for gui in gui_envs:
-                    try:
-                        matplotlib.use(gui, force=True)
-                        from matplotlib import pyplot
-                        success = True
-                        break
-                    except:
-                        continue
-                    #end try
-                #end for
-                from matplotlib.pyplot import figure,plot,ylabel,show,ylim,xlim,rcParams,savefig,gca,xticks,axvline, scatter
-                params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
-                              'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
-                rcParams.update(params)
-            except(ImportError, RuntimeError):
-                success = False
-            if not success:
-                figure,plot,ylabel,show,ylim,xlim,rcParams,savefig,xticks = unavailable('matplotlib.pyplot','figure','plot','ylabel','show','ylim','xlim','rcParams','savefig','xticks')
-            #end if
-            fig    = figure()
-            ax     = gca()
+
+            fig    = plt.figure()
+            ax     = plt.gca()
             nbands = self.input.system.nbnd
 
             if k_labels is None:
@@ -906,19 +900,19 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     y.append(bi['eigs'][nb])
                 #end for
                 y = np.array(y) - self.bands.vbm.energy
-                plot(x, y, 'k')
+                plt.plot(x, y, 'k')
                 if len(self.bands.down) > 0:
                     y = []
                     for bi in self.bands.down:
                         y.append(bi['eigs'][nb])
                     #end for
                     y = np.array(y) - self.bands.vbm.energy
-                    plot(x, y, 'r')
+                    plt.plot(x, y, 'r')
                 #end if              
             #end for
             for ln, li in enumerate(labels):
                 if li != '':
-                    axvline(x[ln], ymin=-100, ymax=100, linewidth=3, color='k')
+                    plt.axvline(x[ln], ymin=-100, ymax=100, linewidth=3, color='k')
                     if li == 'GAMMA':
                         labels[ln] = r'$\Gamma$'
                     elif li != '':
@@ -931,14 +925,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end for
             
-            xlim([np.min(x), np.max(x)])
+            plt.xlim([np.min(x), np.max(x)])
             if max_min_e is None:
-                ylim(-5, +5)
+                plt.ylim(-5, +5)
             else:
-                ylim(max_min_e[0],max_min_e[1])
+                plt.ylim(max_min_e[0],max_min_e[1])
             #end if
-            ylabel('Energy (eV)')
-            xticks(x, labels)
+            plt.ylabel('Energy (eV)')
+            plt.xticks(x, labels)
             ax.tick_params(axis='x', which='both', length=0)
             ax.tick_params(axis='x', which='both', pad=10)
         #end if
@@ -947,18 +941,18 @@ class PwscfAnalyzer(SimulationAnalyzer):
             cbm = self.bands.cbm
             for kn, ki in enumerate(self.bands.up):
                 if (vbm.kpoint_rel == ki['kpoint_rel']).all():
-                    scatter(x[kn], 0, c='green', s=100)
+                    plt.scatter(x[kn], 0, c='green', s=100)
                 #end if
                 if (cbm.kpoint_rel == ki['kpoint_rel']).all():
-                    scatter(x[kn], cbm.energy-vbm.energy, c='r', s=100)
+                    plt.scatter(x[kn], cbm.energy-vbm.energy, c='r', s=100)
                 #end if
             #end for
         #end if
         if save:
-            savefig(filename, format='pdf',bbox_inches='tight')
+            plt.savefig(filename, format='pdf',bbox_inches='tight')
         #end if
         if show:
-            show()
+            plt.show()
         #end if
     #end def plot_bandstructure
 

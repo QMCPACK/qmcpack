@@ -16,17 +16,6 @@
 #      Can function like a standard dict, also mixes in parts of     #
 #        the list interface.                                         #
 #                                                                    #
-#    generic                                                         #
-#      More efficient implementation of AllAbilities+obj interface.  #
-#      Intended to allow for method namespace infringement without   #
-#        loss of access to functionality.                            #
-#      Limited use so far.                                           #
-#                                                                    #
-#    hidden                                                          #
-#      Like generic, but allows for hidden storage.                  #
-#      Can be used, e.g., to make an ordered object class.           #
-#      See use in qmcpack_input.py.                                  #
-#                                                                    #
 #====================================================================#
 
 
@@ -43,7 +32,8 @@ import warnings
 from typing import TypeAlias
 import functools
 
-from .utilities import sorted_py2, path_string
+from .utilities import path_string
+from .developer_tools import sorted_py2 as sorted_generic
 
 VersionStr: TypeAlias = str
 
@@ -95,7 +85,7 @@ def __nexus_showwarning(message, category, filename, lineno, file=None, line=Non
         indent = message.indent
         cls    = f"{message.cls}:" if message.cls is not None else ""
     else:
-        msg = message
+        msg = str(message)
 
     if os.path.exists(filename):
         filename = os.path.realpath(filename)
@@ -119,8 +109,6 @@ def nocopy(value):
 
 
 
-sorted_generic = sorted_py2
-
 nexus_modules = [mod.stem for mod in Path(__file__).parent.iterdir() if mod.suffix == ".py"]
 
 class NexusUnpickler(pickle.Unpickler):
@@ -131,6 +119,11 @@ class NexusUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
         if module in nexus_modules and "nexus." not in module:
             module = "nexus." + module
+        if module == "nexus.generic":
+            name = {
+                "obj"     : "obj_deprecated",
+                "DevBase" : "DevBaseDeprecated",
+                }.get(name,name)
         return super().find_class(module, name)
 
 
@@ -650,7 +643,8 @@ class object_interface(object):
 
         try:
             tmp = pickle.load(fobj)
-        except ModuleNotFoundError:
+        except (ImportError,ModuleNotFoundError):
+            fobj.seek(0)
             try:
                 # Old pickles from before Nexus was packaged (PR #5700, December 20 2025)
                 # won't have the correct module path. The custom unpickler will handle this by 
@@ -831,7 +825,7 @@ class object_interface(object):
 
 
 
-class obj(object_interface):
+class obj_deprecated(object_interface):
 
     def __init__(self,*vars,**kwargs):
         for var in vars:
@@ -889,7 +883,7 @@ class obj(object_interface):
     #end def list_optional
 
     def tuple(self,*keys):
-        return tuple(obj.list(self,*keys))
+        return tuple(obj_deprecated.list(self,*keys))
     #end def tuple
 
     def dict(self,*keys):
@@ -909,7 +903,7 @@ class obj(object_interface):
     def to_dict(self):
         d = dict()
         for k,v in self._items():
-            if isinstance(v,obj):
+            if isinstance(v,obj_deprecated):
                 d[k] = v._to_dict()
             else:
                 d[k] = v
@@ -925,7 +919,7 @@ class obj(object_interface):
         elif nkeys==1 and isinstance(keys[0],(list,tuple)):
             keys = keys[0]
         #end if
-        o = obj()
+        o = obj_deprecated()
         for k in keys:
             o[k] = self[k]
         #end for
@@ -933,9 +927,9 @@ class obj(object_interface):
     #end def obj
 
     def to_obj(self):
-        o = obj()
+        o = obj_deprecated()
         for k,v in self._items():
-            if isinstance(v,obj):
+            if isinstance(v,obj_deprecated):
                 o[k] = v._to_obj()
             else:
                 o[k] = v
@@ -1025,7 +1019,7 @@ class obj(object_interface):
         if key in self:
             value = self[key]
         else:
-            obj.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,self._sorted_keys()))
+            obj_deprecated.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,self._sorted_keys()))
         #end if
         return value
     #end def get_required
@@ -1065,7 +1059,7 @@ class obj(object_interface):
             value = self[key]
             del self[key]
         else:
-            obj.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,self._sorted_keys()))
+            obj_deprecated.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,self._sorted_keys()))
         #end if
         return value
     #end def delete_required
@@ -1179,15 +1173,15 @@ class obj(object_interface):
     #end def move_to_optional
 
     def copy_from(self,other,keys=None,deep=True):
-        obj.transfer_from(self,other,keys,copy=deep)
+        obj_deprecated.transfer_from(self,other,keys,copy=deep)
     #end def copy_from
 
     def copy_to(self,other,keys=None,deep=True):
-        obj.transfer_to(self,other,keys,copy=deep)
+        obj_deprecated.transfer_to(self,other,keys,copy=deep)
     #end def copy_to
 
     def extract(self,keys=None,optional=False):
-        ext = obj()
+        ext = obj_deprecated()
         ext.move_from(self,keys,optional=optional)
         return ext
     #end def extract
@@ -1307,12 +1301,12 @@ class obj(object_interface):
     def serial(self,s=None,path=None):
         first = s is None
         if first:
-            s = obj()
+            s = obj_deprecated()
             path = ''
         #end if
         for k,v in self._items():
             p = path+str(k)
-            if isinstance(v,obj):
+            if isinstance(v,obj_deprecated):
                 if len(v)==0:
                     s[p]=v
                 else:
@@ -1331,266 +1325,315 @@ class obj(object_interface):
     # access preserving functions
     #  list interface
     def _append(self,*args,**kwargs):
-        obj.append(self,*args,**kwargs)
+        obj_deprecated.append(self,*args,**kwargs)
     #  return representations
     def _list(self,*args,**kwargs):
-        return obj.list(self,*args,**kwargs)
+        return obj_deprecated.list(self,*args,**kwargs)
     def _list_optional(self,*args,**kwargs):
-        return obj.list_optional(self,*args,**kwargs)
+        return obj_deprecated.list_optional(self,*args,**kwargs)
     def _tuple(self,*args,**kwargs):
-        return obj.tuple(self,*args,**kwargs)
+        return obj_deprecated.tuple(self,*args,**kwargs)
     def _dict(self,*args,**kwargs):
-        return obj.dict(self,*args,**kwargs)
+        return obj_deprecated.dict(self,*args,**kwargs)
     def _to_dict(self,*args,**kwargs):
-        return obj.to_dict(self,*args,**kwargs)
+        return obj_deprecated.to_dict(self,*args,**kwargs)
     def _obj(self,*args,**kwargs):
-        return obj.obj(self,*args,**kwargs)
+        return obj_deprecated.obj(self,*args,**kwargs)
     def _to_obj(self,*args,**kwargs):
-        return obj.to_obj(self,*args,**kwargs)
+        return obj_deprecated.to_obj(self,*args,**kwargs)
     #  list extensions
     def _first(self,*args,**kwargs):
-        return obj.first(self,*args,**kwargs)
+        return obj_deprecated.first(self,*args,**kwargs)
     def _last(self,*args,**kwargs):
-        return obj.last(self,*args,**kwargs)
+        return obj_deprecated.last(self,*args,**kwargs)
     def _select_random(self,*args,**kwargs):
-        return obj.select_random(self,*args,**kwargs)
+        return obj_deprecated.select_random(self,*args,**kwargs)
     #  dict extensions
     def _sorted_keys(self,*args,**kwargs):
-        return obj.sorted_keys(self,*args,**kwargs)
+        return obj_deprecated.sorted_keys(self,*args,**kwargs)
     def _random_key(self,*args,**kwargs):
-        obj.random_key(self,*args,**kwargs)
+        obj_deprecated.random_key(self,*args,**kwargs)
     def _set(self,*args,**kwargs):
-        obj.set(self,*args,**kwargs)
+        obj_deprecated.set(self,*args,**kwargs)
     def _set_optional(self,*args,**kwargs):
-        obj.set_optional(self,*args,**kwargs)
+        obj_deprecated.set_optional(self,*args,**kwargs)
     def _get(self,*args,**kwargs):
-        obj.get(self,*args,**kwargs)
+        obj_deprecated.get(self,*args,**kwargs)
     def _get_optional(self,*args,**kwargs):
-        obj.get_optional(self,*args,**kwargs)
+        obj_deprecated.get_optional(self,*args,**kwargs)
     def _get_required(self,*args,**kwargs):
-        obj.get_required(self,*args,**kwargs)
+        obj_deprecated.get_required(self,*args,**kwargs)
     def _delete(self,*args,**kwargs):
-        obj.delete(self,*args,**kwargs)
+        obj_deprecated.delete(self,*args,**kwargs)
     def _delete_optional(self,*args,**kwargs):
-        obj.delete_optional(self,*args,**kwargs)
+        obj_deprecated.delete_optional(self,*args,**kwargs)
     def _delete_required(self,*args,**kwargs):
-        obj.delete_required(self,*args,**kwargs)
+        obj_deprecated.delete_required(self,*args,**kwargs)
     def _add(self,*args,**kwargs):
-        obj.add(self,*args,**kwargs)
+        obj_deprecated.add(self,*args,**kwargs)
     def _add_optional(self,*args,**kwargs):
-        obj.add_optional(self,*args,**kwargs)
+        obj_deprecated.add_optional(self,*args,**kwargs)
     def _transfer_from(self,*args,**kwargs):
-        obj.transfer_from(self,*args,**kwargs)
+        obj_deprecated.transfer_from(self,*args,**kwargs)
     def _transfer_to(self,*args,**kwargs):
-        obj.transfer_to(self,*args,**kwargs)
+        obj_deprecated.transfer_to(self,*args,**kwargs)
     def _move_from(self,*args,**kwargs):
-        obj.move_from(self,*args,**kwargs)
+        obj_deprecated.move_from(self,*args,**kwargs)
     def _move_to(self,*args,**kwargs):
-        obj.move_to(self,*args,**kwargs)
+        obj_deprecated.move_to(self,*args,**kwargs)
     def _move_from_optional(self,*args,**kwargs):
-        obj.move_from_optional(self,*args,**kwargs)
+        obj_deprecated.move_from_optional(self,*args,**kwargs)
     def _move_to_optional(self,*args,**kwargs):
-        obj.move_to_optional(self,*args,**kwargs)
+        obj_deprecated.move_to_optional(self,*args,**kwargs)
     def _copy_from(self,*args,**kwargs):
-        obj.copy_from(self,*args,**kwargs)
+        obj_deprecated.copy_from(self,*args,**kwargs)
     def _copy_to(self,*args,**kwargs):
-        obj.copy_to(self,*args,**kwargs)
+        obj_deprecated.copy_to(self,*args,**kwargs)
     def _extract(self,*args,**kwargs):
-        obj.extract(self,*args,**kwargs)
+        obj_deprecated.extract(self,*args,**kwargs)
     def _extract_optional(self,*args,**kwargs):
-        obj.extract_optional(self,*args,**kwargs)
+        obj_deprecated.extract_optional(self,*args,**kwargs)
     def _check_required(self,*args,**kwargs):
-        obj.check_required(self,*args,**kwargs)
+        obj_deprecated.check_required(self,*args,**kwargs)
     def _check_types(self,*args,**kwargs):
-        obj.check_types(self,*args,**kwargs)
+        obj_deprecated.check_types(self,*args,**kwargs)
     def _check_types_optional(self,*args,**kwargs):
-        obj.check_types_optional(self,*args,**kwargs)
+        obj_deprecated.check_types_optional(self,*args,**kwargs)
     def _shallow_copy(self,*args,**kwargs):
-        obj.shallow_copy(self,*args,**kwargs)
+        obj_deprecated.shallow_copy(self,*args,**kwargs)
     def _inverse(self,*args,**kwargs):
-        return obj.inverse(self,*args,**kwargs)
+        return obj_deprecated.inverse(self,*args,**kwargs)
     def _path_exists(self,*args,**kwargs):
-        obj.path_exists(self,*args,**kwargs)
+        obj_deprecated.path_exists(self,*args,**kwargs)
     def _set_path(self,*args,**kwargs):
-        obj.set_path(self,*args,**kwargs)
+        obj_deprecated.set_path(self,*args,**kwargs)
     def _get_path(self,*args,**kwargs):
-        obj.get_path(self,*args,**kwargs)
+        obj_deprecated.get_path(self,*args,**kwargs)
     def _serial(self,*args,**kwargs):
-        return obj.serial(self,*args,**kwargs)
-
-#end class obj
+        return obj_deprecated.serial(self,*args,**kwargs)
 
 
+    # compatibility with the standard dict interface
+    @classmethod
+    def fromkeys(cls,keys,value=None):
+        return cls(dict.fromkeys(keys,value))
 
+    def pop(self,*args,**kwargs):
+        return self.__dict__.pop(*args,**kwargs)
 
+    def popitem(self,*args,**kwargs):
+        return self.__dict__.popitem(*args,**kwargs)
 
-class hobj(obj):
-    def __init__(self,*args,**kwargs):
-        obj.__init__(self,*args,**kwargs)
-    #end def __init__
+    def setdefault(self,*args,**kwargs):
+        return self.__dict__.setdefault(*args,**kwargs)
 
-    @property
-    def _dict(self):
-        return self.__dict__
-    #end def _dict
+    def update(self,*args,**kwargs):
+        return self.__dict__.update(*args,**kwargs)
 
-    @property
-    def _alt(self):
-        return self.__dict__
-    #end def _alt
-
-    def __len__(self):
-        return len(self._dict)
-    #end def __len__
-
-    def __contains__(self,name):
-        return name in self._dict
-    #end def __contains__
-
-    def __getitem__(self,name):
-        return self._dict[name]
-    #end def __getitem__
-
-    def __setitem__(self,name,value):
-        self._dict[name] = value
-    #end def __setitem__
-
-    def __delitem__(self,name):
-        del self._dict[name]
-    #end def __delitem__
-
-    def __iter__(self):
-        d = self._dict
-        for item in d.__dict__:
-            yield d[item]
-        #end for
-    #end def __iter__
-
-    def keys(self):
-        return self._dict.keys()
-    #end def keys
-
-    def values(self):
-        return self._dict.values()
-    #end def keys
-
-    def items(self):
-        return self._dict.items()
-    #end def items
-
-    def clear(self):
-        self._dict.clear()
-    #end def clear
-
-    # access preserving functions
-    #  dict interface
-    def _keys(self,*args,**kwargs):
-        return hobj.keys(self,*args,**kwargs)
-    def _values(self,*args,**kwargs):
-        hobj.values(self,*args,**kwargs)
-    def _items(self,*args,**kwargs):         
-        return hobj.items(self,*args,**kwargs)         
-    def _clear(self,*args,**kwargs):
-        hobj.clear(self,*args,**kwargs)
-#end class hobj
+#end class obj_deprecated
 
 
 
-class hidden(hobj):
-    def __init__(self,*vals,**kwargs):
-        d = object.__getattribute__(self,'__dict__')
-        d['_hidden_'] = hobj()
-        d['_public_'] = hobj()
-        hobj.__init__(self,*vals,**kwargs)
-    #end def __init__
 
-    @property
-    def _dict(self):
-        return self.__dict__['_public_']
-    #end def __get_dict
 
-    @property
-    def _alt(self):
-        return self.__dict__['_hidden_']
-    #end def __alt
-
-    def __getattribute__(self,name):
-        d = object.__getattribute__(self,'__dict__')
-        if '_public_' in d:
-            p = d['_public_']
-            if name in p:
-                return p[name]
-            else:
-                return object.__getattribute__(self,name)
-            #end if
+class DevBaseDeprecated(obj_deprecated):
+    def not_implemented(self,name=None):
+        if name is None:
+            msg = 'a member function has not been implemented for class "{}"'.format(self.__class__.__name__)
         else:
-            return object.__getattribute__(self,name)
+            msg = 'member function "{}" has not been implemented for class "{}"'.format(name,self.__class__.__name__)
+        self.error(msg,trace=True)
+    #end def not_implemented
+#end class DevBaseDeprecated
+
+
+
+class Void(object):
+    void_items = dict()
+
+    @classmethod
+    def _unavailable(cls,self):
+        sid = id(self)
+        if sid in Void.void_items:
+            module,item = Void.void_items[id(self)]
+        else:
+            module,item = None,None
         #end if
-    #end def __getattribute__
+        if module is None and item is None:
+            msg = 'encountered a void item from an unavailable module'
+        elif module is None:
+            msg = 'item '+str(item)+' is from an unavailable module'
+        elif item is None:
+            msg = 'encountered a void item from unavailable module '+str(module)+'  \nthis python module must be installed on your system to use this feature'
+        else:
+            msg = 'item '+str(item)+' is from unavailable module '+str(module)+'  \nthis python module must be installed on your system to use this feature'
+        #end if
+        error(msg,'import')
+    #end def _unavailable
 
-    def __setattr__(self,name,value):
-        self._dict[name] = value
-    #end def __setattr__
+        
+    @classmethod
+    def _class_unavailable(cls):
+        msg = 'encountered a void item from an unavailable module'
+        error(msg,'import')
+    #end def _class_unavailable
+        
 
-    def __delattr__(self,name):
-        del self._dict[name]
-    #end def __delattr__
 
-    def hidden(self):
-        return self.__dict__['_hidden_']
-    #end def hidden
+    def __init__(self,module=None,item=None):
+        Void.void_items[id(self)] = module,item
+    #end def __init__
 
-    def public(self):
-        return self.__dict__['_public_']
-    #end def public
 
-    def _hidden(self):
-        return hidden.hidden(self)
-    #end def _hidden
+    #list of magic functions taken from the following sources
+    #  http://web.archive.org/web/20110131211638/http://diveintopython3.org/special-method-names.html
+    #  http://www.ironpythoninaction.com/magic-methods.html
 
-    def _public(self):
-        return hidden.public(self)
-    #end def _public
 
-    def open_log(self,filepath):
-        self._alt._open_log(filepath)
-    #end def open_log
+    #class methods
+    @classmethod
+    def __instancecheck__(cls,*args,**kwargs):       Void._class_unavailable()
+    @classmethod
+    def __subclasscheck__(cls,*args,**kwargs):       Void._class_unavailable()
+    @classmethod
+    def __subclasshook__(cls,*args,**kwargs):        Void._class_unavailable()
+    
 
-    def close_log(self):
-        self._alt._close_log()
-    #end def close_log
+    #member methods
+    #def __new__(self,*args,**kwargs):
+    #    Void._unavailable(self)
+    def __eq__(self,*args,**kwargs):           Void._unavailable(self)
+    def __ne__(self,*args,**kwargs):           Void._unavailable(self)
+    def __lt__(self,*args,**kwargs):           Void._unavailable(self)
+    def __le__(self,*args,**kwargs):           Void._unavailable(self)
+    def __gt__(self,*args,**kwargs):           Void._unavailable(self)
+    def __ge__(self,*args,**kwargs):           Void._unavailable(self)
+    def __nonzero__(self,*args,**kwargs):      Void._unavailable(self)
+    def __subclasses__(self,*args,**kwargs):   Void._unavailable(self)
+    def __call__(self,*args,**kwargs):         Void._unavailable(self)
+    def __hash__(self,*args,**kwargs):         Void._unavailable(self)
+    #def __del__(self,*args,**kwargs):         Void._unavailable(self)
+    def __dir__(self,*args,**kwargs):          Void._unavailable(self)
+    def __getitem__(self,*args,**kwargs):      Void._unavailable(self)
+    def __setitem__(self,*args,**kwargs):      Void._unavailable(self)
+    def __delitem__(self,*args,**kwargs):      Void._unavailable(self)
+    def __len__(self,*args,**kwargs):          Void._unavailable(self)
+    def __contains__(self,*args,**kwargs):     Void._unavailable(self)
+    def __iter__(self,*args,**kwargs):         Void._unavailable(self)
+    def __reversed__(self,*args,**kwargs):     Void._unavailable(self)
+    def __missing__(self,*args,**kwargs):      Void._unavailable(self)
+    def __length_hint__(self,*args,**kwargs):  Void._unavailable(self)
+    def __repr__(self,*args,**kwargs):         Void._unavailable(self)
+    def __str__(self,*args,**kwargs):          Void._unavailable(self)
+    def __unicode__(self,*args,**kwargs):      Void._unavailable(self)
+    def __getattr__(self,*args,**kwargs):      Void._unavailable(self)
+    def __setattr__(self,*args,**kwargs):      Void._unavailable(self)
+    def __delattr__(self,*args,**kwargs):      Void._unavailable(self)
+    def __getattribute__(self,*args,**kwargs): Void._unavailable(self)
+    def __add__(self,*args,**kwargs):          Void._unavailable(self)
+    def __sub__(self,*args,**kwargs):          Void._unavailable(self)
+    def __mul__(self,*args,**kwargs):          Void._unavailable(self)
+    def __floordiv__(self,*args,**kwargs):     Void._unavailable(self)
+    def __div__(self,*args,**kwargs):          Void._unavailable(self)
+    def __truediv__(self,*args,**kwargs):      Void._unavailable(self)
+    def __mod__(self,*args,**kwargs):          Void._unavailable(self)
+    def __divmod__(self,*args,**kwargs):       Void._unavailable(self)
+    def __pow__(self,*args,**kwargs):          Void._unavailable(self)
+    def __lshift__(self,*args,**kwargs):       Void._unavailable(self)
+    def __rshift__(self,*args,**kwargs):       Void._unavailable(self)
+    def __and__(self,*args,**kwargs):          Void._unavailable(self)
+    def __xor__(self,*args,**kwargs):          Void._unavailable(self)
+    def __or__(self,*args,**kwargs):           Void._unavailable(self)
+    def __neg__(self,*args,**kwargs):          Void._unavailable(self)
+    def __pos__(self,*args,**kwargs):          Void._unavailable(self)
+    def __abs__(self,*args,**kwargs):          Void._unavailable(self)
+    def __invert__(self,*args,**kwargs):       Void._unavailable(self)
+    def __complex__(self,*args,**kwargs):      Void._unavailable(self)
+    def __int__(self,*args,**kwargs):          Void._unavailable(self)
+    def __float__(self,*args,**kwargs):        Void._unavailable(self)
+    def __oct__(self,*args,**kwargs):          Void._unavailable(self)
+    def __hex__(self,*args,**kwargs):          Void._unavailable(self)
+    def __index__(self,*args,**kwargs):        Void._unavailable(self)
+    def __enter__(self,*args,**kwargs):        Void._unavailable(self)
+    def __exit__(self,*args,**kwargs):         Void._unavailable(self)
+    def __get__(self,*args,**kwargs):          Void._unavailable(self)
+    def __set__(self,*args,**kwargs):          Void._unavailable(self)
+    def __delete__(self,*args,**kwargs):       Void._unavailable(self)
+    def __doc__(self,*args,**kwargs):          Void._unavailable(self)
+    def __dict__(self,*args,**kwargs):         Void._unavailable(self)
+    #def __slots__(self,*args,**kwargs):       Void._unavailable(self)
+    def __class__(self,*args,**kwargs):        Void._unavailable(self)
+    def __bases__(self,*args,**kwargs):        Void._unavailable(self)
+    def __name__(self,*args,**kwargs):         Void._unavailable(self)
+    def __all__(self,*args,**kwargs):          Void._unavailable(self)
+    def __file__(self,*args,**kwargs):         Void._unavailable(self)
+    def __module__(self,*args,**kwargs):       Void._unavailable(self)
+    #def __metaclass__(self,*args,**kwargs):   Void._unavailable(self)
+    def __import__(self,*args,**kwargs):       Void._unavailable(self)
+    def __radd__(self,*args,**kwargs):         Void._unavailable(self)
+    def __rsub__(self,*args,**kwargs):         Void._unavailable(self)
+    def __rmul__(self,*args,**kwargs):         Void._unavailable(self)
+    def __rtruediv__(self,*args,**kwargs):     Void._unavailable(self)
+    def __rfloordiv__(self,*args,**kwargs):    Void._unavailable(self)
+    def __rmod__(self,*args,**kwargs):         Void._unavailable(self)
+    def __rdivmod__(self,*args,**kwargs):      Void._unavailable(self)
+    def __rpow__(self,*args,**kwargs):         Void._unavailable(self)
+    def __rlshift__(self,*args,**kwargs):      Void._unavailable(self)
+    def __rrshift__(self,*args,**kwargs):      Void._unavailable(self)
+    def __rand__(self,*args,**kwargs):         Void._unavailable(self)
+    def __rxor__(self,*args,**kwargs):         Void._unavailable(self)
+    def __ror__(self,*args,**kwargs):          Void._unavailable(self)
+    def __iadd__(self,*args,**kwargs):         Void._unavailable(self)
+    def __isub__(self,*args,**kwargs):         Void._unavailable(self)
+    def __imul__(self,*args,**kwargs):         Void._unavailable(self)
+    def __itruediv__(self,*args,**kwargs):     Void._unavailable(self)
+    def __ifloordiv__(self,*args,**kwargs):    Void._unavailable(self)
+    def __imod__(self,*args,**kwargs):         Void._unavailable(self)
+    def __ipow__(self,*args,**kwargs):         Void._unavailable(self)
+    def __ilshift__(self,*args,**kwargs):      Void._unavailable(self)
+    def __irshift__(self,*args,**kwargs):      Void._unavailable(self)
+    def __iand__(self,*args,**kwargs):         Void._unavailable(self)
+    def __ixor__(self,*args,**kwargs):         Void._unavailable(self)
+    def __ior__(self,*args,**kwargs):          Void._unavailable(self)
+    def __round__(self,*args,**kwargs):        Void._unavailable(self)
+    def __ceil__(self,*args,**kwargs):         Void._unavailable(self)
+    def __floor__(self,*args,**kwargs):        Void._unavailable(self)
+    def __trunc__(self,*args,**kwargs):        Void._unavailable(self)
+    def __bool__(self,*args,**kwargs):         Void._unavailable(self)
+    def __copy__(self,*args,**kwargs):         Void._unavailable(self)
+    def __deepcopy__(self,*args,**kwargs):     Void._unavailable(self)
+    def __getstate__(self,*args,**kwargs):     Void._unavailable(self)
+    def __reduce__(self,*args,**kwargs):       Void._unavailable(self)
+    def __reduce_ex__(self,*args,**kwargs):    Void._unavailable(self)
+    def __getnewargs__(self,*args,**kwargs):   Void._unavailable(self)
+    def __setstate__(self,*args,**kwargs):     Void._unavailable(self)
+    def __bytes__(self,*args,**kwargs):        Void._unavailable(self)
+    def __format__(self,*args,**kwargs):       Void._unavailable(self)
+    def __next__(self,*args,**kwargs):         Void._unavailable(self)
+#end class Void
 
-    def write(self,s):
-        self._alt._write(s)
-    #end def write
 
-    def log(self,*items,**kwargs):
-        self._alt._log(*items,**kwargs)
-    #end def log
+def unavailable(module,*items):
+    voids = []
+    if len(items)==0:
+        voids.append(Void(module))
+    #end if
+    for item in items:
+        voids.append(Void(module,item))
+    #end for
+    if len(voids)==1:
+        return voids[0]
+    else:
+        return voids
+    #end if
+#end def unavailable
 
-    def __repr__(self):
-        s=''
-        for k in self._sorted_keys():
-            if not isinstance(k,str) or k[0]!='_':
-                v=self._dict[k]
-                if hasattr(v,'__class__'):
-                    s+='  {0:<20}  {1:<20}\n'.format(k,v.__class__.__name__)
-                else:
-                    s+='  {0:<20}  {1:<20}\n'.format(k,type(v))
-                #end if
-            #end if
-        #end for
-        return s
-    #end def __repr__
 
-    #  log, warning, and error messages
-    def _open_log(self,*args,**kwargs):
-        hidden.open_log(self,*args,**kwargs)
-    def _close_log(self,*args,**kwargs):
-        hidden.close_log(self,*args,**kwargs)
-    def _write(self,*args,**kwargs):
-        hidden.write(self,*args,**kwargs)
-    def _log(self,*args,**kwargs):
-        hidden.log(self,*args,**kwargs)
-
-#end class hidden
+def available(*items):
+    for item in items:
+        if isinstance(item,Void):
+            return False
+        #end if
+    #end for
+    return True
+#end def available
