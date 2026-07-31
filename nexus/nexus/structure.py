@@ -118,6 +118,7 @@ Module contents
 
 from __future__ import annotations
 import os
+import sys
 from pathlib import Path
 from typing import TypeAlias
 import numpy as np
@@ -6687,7 +6688,7 @@ def get_band_tiling(
                 max_volfac = target_volfac
             else:
                 print("target_volfac and {min_volfac, max_volfac} cannot be defined together!")
-                exit()
+                sys.exit()
             #end if
         #end if
         
@@ -6725,7 +6726,7 @@ def get_band_tiling(
         #end for
         if vars == []:
             print('Change ktol')
-            exit()
+            sys.exit()
         else:
             can_be_found = False
             vol_mul = 1
@@ -6734,7 +6735,7 @@ def get_band_tiling(
                     can_be_found = True
                 elif volfac*vol_mul > max_volfac:
                     print('Increase max_volfac or target_volfac!')
-                    exit()
+                    sys.exit()
                 else:
                     vol_mul+=1
                 #end if
