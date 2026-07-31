@@ -38,15 +38,26 @@ include(AddRPATH)
 ######################################################################
 
 #--------------------------------------------------------------------
-# Set C++ standard
+# Set C++ standard and run basic checks
 #--------------------------------------------------------------------
+include(InspectCompilerCXXDefaultSTD)
 set(QMC_CXX_STANDARD
-    17
+    ${COMPILER_CXX_STANDARD_DEFAULT}
     CACHE STRING "QMCPACK C++ language standard")
-if(NOT QMC_CXX_STANDARD EQUAL 17)
-  message(WARNING "C++17 is the only language standard officially supported by this QMCPACK version. "
+message(STATUS "Compiling with C++${QMC_CXX_STANDARD} language standard")
+if(NOT (QMC_CXX_STANDARD EQUAL 17 OR QMC_CXX_STANDARD EQUAL 20))
+  message(WARNING "C++17 and C++20 are the only versions of language standard officially supported by this QMCPACK version. "
                   "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
 endif()
+
+set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Check that a C++ compiler is compatible with the underlying libstdc++
+include(Testlibstdc++)
+# Check that a C++ standard library is configured properly
+include(TestCxx17Library)
 
 #--------------------------------------------------------------------
 # Programmind model related build options
@@ -220,19 +231,6 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
   message(FATAL_ERROR "Mixing C and C++ compilers from different vendors is not permitted. Current "
                       "C compiler is ${CMAKE_C_COMPILER_ID} but C++ compiler is ${CMAKE_CXX_COMPILER_ID}.")
 endif()
-
-#-----------------------------------------------------------------------
-# Set C++ minimum standard and run basic checks
-#-----------------------------------------------------------------------
-set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Check that a C++ compiler is compatible with the underlying libstdc++
-include(Testlibstdc++)
-
-# Check that a C++ standard library is configured properly
-include(TestCxx17Library)
 
 #-----------------------------------------------------------------------
 # SETUP SANITIZERS FLAGS
