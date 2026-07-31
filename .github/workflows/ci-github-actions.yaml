@@ -190,7 +190,7 @@ jobs:
   ubuntu26:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/qmcpack/ubuntu24-openmpi:latest
+      image: ghcr.io/qmcpack/ubuntu26-openmpi:latest
       options: -u 1001
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
