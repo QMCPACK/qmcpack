@@ -311,6 +311,8 @@ case "$1" in
     if [[ "${GH_JOBNAME}" =~ (-MPI-) ]]
     then
       echo "Enabling OpenMPI oversubscription"
+      export PRTE_MCA_rmaps_base_oversubscribe=1
+      export PRTE_MCA_hwloc_base_binding_policy=none
       export OMPI_MCA_rmaps_base_oversubscribe=1
       export OMPI_MCA_hwloc_base_binding_policy=none
       
