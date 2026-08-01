@@ -307,7 +307,7 @@ case "$1" in
 
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     
-    # Enable oversubscription in OpenMPI
+    # Required OpenMPI settings
     if [[ "${GH_JOBNAME}" =~ (-MPI-) ]]
     then
       echo "Enabling OpenMPI oversubscription"
@@ -316,6 +316,14 @@ case "$1" in
       export OMPI_MCA_rmaps_base_oversubscribe=1
       export OMPI_MCA_hwloc_base_binding_policy=none
       
+      # Ensure OpenMPI can create session dirs when running as non-root inside container via workspace TMP
+      # Symptom: "A call to mkdir was unable to create the desired directory" & "orte_session_dir failed"
+      OMPI_TMP_DIR="${GITHUB_WORKSPACE:-$(pwd)}/ompi_tmp"
+      mkdir -p "$OMPI_TMP_DIR"
+      chmod 1777 "$OMPI_TMP_DIR"
+      export OMPI_MCA_orte_tmpdir_base="$OMPI_TMP_DIR"
+      export TMPDIR="$OMPI_TMP_DIR"
+
       if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
       then
         echo "Set the management layer to ucx"
