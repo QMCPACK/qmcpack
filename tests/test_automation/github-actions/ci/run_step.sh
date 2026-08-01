@@ -328,6 +328,11 @@ case "$1" in
        TEST_LABEL="-L unit"
     fi
 
+    if [[ "${GH_JOBNAME}" =~ (Clang22-NoMPI-Offload*) ]]
+    then
+       export KMP_TEAMS_THREAD_LIMIT=1
+    fi
+
     if [[ "${GH_JOBNAME}" =~ (CUDA) ]]
     then
       if [[ "${GH_JOBNAME}" =~ (-Offload) ]]
