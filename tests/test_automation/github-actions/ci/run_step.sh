@@ -311,8 +311,13 @@ case "$1" in
     if [[ "${GH_JOBNAME}" =~ (-MPI-) ]]
     then
       echo "Enabling OpenMPI oversubscription"
-      export PRTE_MCA_rmaps_base_oversubscribe=1
-      export PRTE_MCA_hwloc_base_binding_policy=none
+      # Use PRTE config file for OpenMPI 5.x
+      mkdir $HOME/.prte
+      cat >$HOME/.prte/mca-params.conf <<EOF
+rmaps_default_mapping_policy = :oversubscribe
+hwloc_base_binding_policy = none
+EOF
+      # OpenMPI 4.x settings
       export OMPI_MCA_rmaps_base_oversubscribe=1
       export OMPI_MCA_hwloc_base_binding_policy=none
       
