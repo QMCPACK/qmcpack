@@ -312,17 +312,14 @@ case "$1" in
     then
       echo "Enabling OpenMPI oversubscription"
       # Use PRTE config file for OpenMPI 5.x
-      # Not run on self-hosted runners
-      if [ "$RUNNER_ENVIRONMENT" = "GitHub Actions" ]; then
-        echo "Creating PRTE config file for OpenMPI 5.x"
-        mkdir $HOME/.prte
-        cat >$HOME/.prte/mca-params.conf <<EOF
-        mkdir $HOME/.prte
+      echo "Creating PRTE config file for OpenMPI 5.x"
+      mkdir $HOME/.prte
+      cat >$HOME/.prte/mca-params.conf <<EOF
+      mkdir $HOME/.prte
         cat >$HOME/.prte/mca-params.conf <<EOF
 rmaps_default_mapping_policy = :oversubscribe
 hwloc_base_binding_policy = none
 EOF
-      fi  
       # OpenMPI 4.x settings
       export OMPI_MCA_rmaps_base_oversubscribe=1
       export OMPI_MCA_hwloc_base_binding_policy=none
