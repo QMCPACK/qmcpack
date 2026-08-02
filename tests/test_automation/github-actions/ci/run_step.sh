@@ -315,8 +315,6 @@ case "$1" in
       echo "Creating PRTE config file for OpenMPI 5.x"
       mkdir $HOME/.prte
       cat >$HOME/.prte/mca-params.conf <<EOF
-      mkdir $HOME/.prte
-        cat >$HOME/.prte/mca-params.conf <<EOF
 rmaps_default_mapping_policy = :oversubscribe
 hwloc_base_binding_policy = none
 EOF
