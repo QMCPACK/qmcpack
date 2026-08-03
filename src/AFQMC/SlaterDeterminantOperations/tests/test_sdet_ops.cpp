@@ -17,14 +17,6 @@
 
 #include "ProjectData.h"
 
-// Avoid the need to link with other libraries just to get APP_ABORT
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
-
 #include <stdio.h>
 #include <string>
 #include <vector>

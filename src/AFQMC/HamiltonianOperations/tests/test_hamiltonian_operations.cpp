@@ -19,13 +19,6 @@
 #include "hdf/hdf_archive.h"
 #include "hdf/hdf_multi.h"
 
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
-
 #include <string>
 #include <vector>
 #include <complex>

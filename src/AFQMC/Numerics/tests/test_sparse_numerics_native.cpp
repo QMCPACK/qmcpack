@@ -24,13 +24,6 @@
 #define MKL_Complex8 std::complex<float>
 #define MKL_Complex16 std::complex<double>
 
-#undef APP_ABORT
-#define APP_ABORT(x) \
-  {                  \
-    std::cout << x;  \
-    throw;           \
-  }
-
 #include <iostream>
 #include <vector>
 

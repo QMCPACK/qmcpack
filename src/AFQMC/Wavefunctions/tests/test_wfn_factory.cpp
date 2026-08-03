@@ -21,13 +21,6 @@
 #include "Utilities/Timer.h"
 #include "Platforms/Host/OutputManager.h"
 
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
-
 #include <string>
 #include <vector>
 #include <complex>

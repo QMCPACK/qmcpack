@@ -12,13 +12,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
 
-#undef APP_ABORT
-#define APP_ABORT(x) \
-  {                  \
-    std::cout << x;  \
-    exit(0);         \
-  }
-
 #include <vector>
 
 
@@ -37,7 +30,6 @@
 
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
-
 
 using boost::multi::array;
 using boost::multi::array_ref;
