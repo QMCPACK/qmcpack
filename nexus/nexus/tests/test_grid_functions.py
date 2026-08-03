@@ -473,7 +473,7 @@ def get_grids():
             #end for
         #end for
 
-        for name,grid in grids.items():
+        for name in grids:
             props[name] = properties_from_name(name)
         #end for
 

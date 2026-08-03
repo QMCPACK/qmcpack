@@ -1561,7 +1561,7 @@ class Structure(Sobj):
         prange  = pmax-pmin
         if minsize is not None:
             for i,pr in enumerate(prange):
-                prange[i] = max(minsize,prange[i])
+                prange[i] = max(minsize,pr)
             #end for
         #end if
         if box=='tight':
@@ -6125,6 +6125,8 @@ class Structure(Sobj):
 
 
     def check_point_group_operations(self,rotations=None,tol=1e-5,unit=False,dtol=1e-5,ncheck=1,exit=False):
+        msg = "Checking point group operations is not implemented, it requires implementing a 'point' parameter!"
+        raise NotImplementedError(msg)
         if rotations is None:
             rotations = self.point_group_operations(tol=tol,unit=unit)
         #ned if
@@ -6139,8 +6141,8 @@ class Structure(Sobj):
                 rp = np.dot(r-rc,R)+rc
                 dt = self.min_image_distances(r,rp)
                 same = True
-                for d in dt:
-                    same &= dt.min()<dtol
+                for d in dt: # TODO: What is this supposed to loop over?
+                    same &= d.min()<dtol
                 #end for
                 all_same &= same
             #end for

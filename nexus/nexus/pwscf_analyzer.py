@@ -417,7 +417,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     conf = obj()
                     axes = []
                     cont = True
-                    for d in (0,1,2):
+                    for d in (0,1,2): # What is happening here? Should `d` be used?
                         i+=1
                         axes.append(np.array(lines[i].split(),dtype=float))
                     #end for
@@ -493,7 +493,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             while i<nlines:
                 l = lines[i]
                 if l.find('total   stress')!=-1:
-                    for j in range(3):
+                    for j in range(3):  # noqa: B007
                         i+=1
                         stress.append(list(np.array(lines[i].split(),dtype=float)))
                     #end for
@@ -522,7 +522,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     conf = obj()
                     aforces = []
                     found_atom = False
-                    for j in range(10):
+                    for j in range(10):  # noqa: B007
                         i+=1
                         if i<nlines and 'atom' in lines[i]:
                             found_atom = True

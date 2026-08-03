@@ -191,7 +191,7 @@ def test_pwscf_relax_Ge_T(tmp_path):
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, filetype, filepath in test_data["files"]:  # noqa: B007
         success, message = check_generated_files(
             code,
             tmp_path,
@@ -226,7 +226,7 @@ def test_gamess_H2O(tmp_path):
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, filetype, filepath in test_data["files"]:  # noqa: B007
         success, message = check_generated_files(
             code,
             tmp_path,
@@ -261,7 +261,7 @@ def test_qmcpack_H2O(tmp_path):
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, filetype, filepath in test_data["files"]:  # noqa: B007
         success, message = check_generated_files(
             code,
             tmp_path,
@@ -296,7 +296,7 @@ def test_qmcpack_LiH(tmp_path):
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, filetype, filepath in test_data["files"]:  # noqa: B007
         success, message = check_generated_files(
             code,
             tmp_path,
@@ -330,7 +330,7 @@ def test_qmcpack_c20(tmp_path):
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, filetype, filepath in test_data["files"]:  # noqa: B007
         success, message = check_generated_files(
             code,
             tmp_path,
@@ -366,7 +366,7 @@ def test_qmcpack_diamond(tmp_path):
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, filetype, filepath in test_data["files"]:  # noqa: B007
         success, message = check_generated_files(
             code,
             tmp_path,
@@ -403,7 +403,7 @@ def test_qmcpack_graphene(tmp_path):
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, filetype, filepath in test_data["files"]:  # noqa: B007
         success, message = check_generated_files(
             code,
             tmp_path,
@@ -437,7 +437,7 @@ def test_qmcpack_oxygen_dimer(tmp_path):
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, filetype, filepath in test_data["files"]:  # noqa: B007
         success, message = check_generated_files(
             code,
             tmp_path,

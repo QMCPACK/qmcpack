@@ -221,7 +221,7 @@ class ProjectManager(NexusCore):
     def load_cascades(self):
         cascades = obj()
         progressing_cascades = obj()
-        for cid,cascade in self.cascades.items():
+        for cascade in self.cascades.values():
             rc = cascade.reconstruct_cascade()
             cascades[rc.simid] = rc 
             progressing_cascades[rc.simid] = rc
@@ -326,7 +326,7 @@ class ProjectManager(NexusCore):
         NexusCore.gc.collect()
         finished = []
         progressing_cascades = self.progressing_cascades
-        for cid,cascade in progressing_cascades.items():
+        for cascade in progressing_cascades.values():
             cascade.reset_wait_ids()
         #end for
         for cid,cascade in progressing_cascades.items():

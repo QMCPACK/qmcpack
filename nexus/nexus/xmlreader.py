@@ -141,13 +141,13 @@ class XMLelement(DevBase):
         #end if
         if len(self._elements)>0:
             s+= '  elements:\n'
-            for k,v in self._elements.items():
+            for k in self._elements:
                 s+= '    '+k+'\n'
             #end for
         #end if
         if len(self._texts)>0:
             s+= '  texts:\n'
-            for k,v in self._texts.items():
+            for k in self._texts:
                 s+= '    '+k+'\n'
             #end for
         #end if
@@ -180,7 +180,7 @@ class XMLelement(DevBase):
 
     # test needed
     def condense(self):
-        for name,elem in self._elements.items():
+        for elem in self._elements.values():
             if isinstance(elem,XMLelement):
                 elem.condense()
             #end if
@@ -193,7 +193,7 @@ class XMLelement(DevBase):
         #end if
         for cname in cnames:
             cmax = 1
-            for name,elem in self._elements.items():
+            for name in self._elements.keys():
                 ns = name.split(cname)
                 if len(ns)==2 and ns[1].isdigit():
                     cmax = max(cmax,int(ns[1]))
@@ -247,7 +247,7 @@ class XMLelement(DevBase):
 
                     
     def remove_hidden(self):
-        for name,elem in self._elements.items():
+        for elem in self._elements.values():
             if isinstance(elem,XMLelement):
                 elem.remove_hidden()
             elif isinstance(elem,list):
@@ -259,7 +259,7 @@ class XMLelement(DevBase):
             #end if
         #end for
         remove = []
-        for name,value in self.items():
+        for name in self.keys():
             if str(name)[0]=='_':
                 remove.append(name)
             #end if

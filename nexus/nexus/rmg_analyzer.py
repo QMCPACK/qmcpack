@@ -285,7 +285,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                         try:
                             header,body,lines = other_blocks.k_points
                             del other_blocks.k_points
-                            for i,line in enumerate(lines):
+                            for i,line in enumerate(lines):  # noqa: B007
                                 if 'Weight in crystal unit' in line:
                                     break
                                 #end if
@@ -322,7 +322,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                             #end if
                             pos = []
                             spec = []
-                            for i,line in enumerate(lines):
+                            for i,line in enumerate(lines):  # noqa: B007
                                 if 'Species' in line:
                                     break
                                 #end if

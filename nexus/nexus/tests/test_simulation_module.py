@@ -154,13 +154,13 @@ def generate_network():
 
     sims = []
 
-    for n in range(randint(nheads)+1):
+    for n in range(randint(nheads)+1):  # noqa: B007
         sims.append([])
     #end for
 
-    for isim in range(nsims):
+    for isim in range(nsims):  # noqa: B007
         deps = []
-        for idep in range(randint(nconnections)+1):
+        for idep in range(randint(nconnections)+1):  # noqa: B007
             if len(sims)>0:
                 i = randint(len(sims))
                 deps.append(i)
@@ -708,7 +708,7 @@ c    = 3
     assert(len(si)==4)
     assert(len(si.filenames)==3)
     assert(object_eq(si.filenames,filenames))
-    for name,keyword_set in keywords_ref.items():
+    for name in keywords_ref:
         assert(name in si)
         sit = si[name]
         assert(sit.keywords==set())

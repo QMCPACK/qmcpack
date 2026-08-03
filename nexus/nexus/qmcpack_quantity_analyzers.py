@@ -2875,7 +2875,7 @@ class RectilinearGrid(SpaceGridBase):
             ndu_per_interval[iaxis] = np.zeros((ndom_tot,),dtype=int)
             idom=0
             for i in range(len(ndom_int)):
-                for ii in range(ndom_int[i]):
+                for ii in range(ndom_int[i]):  # noqa: B007
                     ndu_per_interval[iaxis][idom] = ndu_int[i]
                     idom+=1
                 #end 
