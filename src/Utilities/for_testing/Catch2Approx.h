@@ -15,6 +15,8 @@
 #include <limits>
 #include <ostream>
 
+#include <config.h>
+
 class Approx : public Catch::Approx
 {
 public:
@@ -111,5 +113,11 @@ private:
   std::complex<double> value_;
   double epsilon_ = std::numeric_limits<float>::epsilon() * 100;
 };
+
+#ifdef QMC_COMPLEX
+using ValueApprox = ::ComplexApprox;
+#else
+using ValueApprox = ::Approx;
+#endif
 
 #endif
