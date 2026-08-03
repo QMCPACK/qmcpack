@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.14"
+# requires-python = ">=3.10"
 # dependencies = [
 #     "packaging>=26.2",
 #     "xmltodict>=1.0.4",
@@ -15,95 +15,117 @@ version and get all the required packages.
 Requires the ``xmltodict`` and ``packaging`` packages.
 
 To use, download the files labeled ``INPUT_PW.def`` from QE's repository
-for every version you wish to support. Append the version of QE that the
-file came from to the file, like so: ``INPUT_PW_7.6.0.def``. Use the
-tool provided at ``q-e/dev-tools/helpdoc`` to transform the ``.def``
-files into ``.xml`` files. With all of the XML files in the same
-directory, call this script with the path to the directory,
-``./gen_pwscf_input_data.py /path/to/xml_dir/``.
+for every version you wish to support [1]_. Append the version of QE
+that the file came from to the file, like so: ``INPUT_PW_7.6.0.def``.
+Use the tool provided at ``q-e/dev-tools/helpdoc`` to transform the
+``.def`` files into ``.xml``, ``.txt``, and ``.html`` files [2]_. Then,
+add the newest version to the ``QE_DOC_VERSION_DATES`` variable in this
+script and comment out the unsupported versions. With all of the
+``.xml`` files in the same directory, call this script with the path to
+the directory, ``./gen_pwscf_input_data.py /path/to/xml_dir/``.
 
 It will automatically parse the files and overwrite the file in Nexus's
 source at ``nexus/pwscf_input_defs.py``.
 
 Notes
 -----
+To get multiple versions of the ``INPUT_PW.def`` files, use the version
+switcher dropdown on the GitLab page, and look in the ``tags`` for each
+version you wish to use. The variable ``QE_DOC_VERSION_DATES`` also has
+links for each version already in it.
+
 If you get an error about a variable ``$basedir`` not existing, you can
 replace the reference to it on line 186 in ``dev-tools/helpdoc.d/helpdoc.tcl``
 with the absolute path to ``dev-tools``, like so:
 
     namespace eval schema { ::source [file join /path/to/q-e/dev-tools helpdoc.schema] }
 
-Written by Brock Dyer, last updated on July 24, 2026.
+Written by Brock Dyer, last updated on August 3, 2026.
+
+References
+----------
+.. [1] https://gitlab.com/QEF/q-e/-/blob/develop/PW/Doc/INPUT_PW.def
+.. [2] https://gitlab.com/QEF/q-e/-/blob/develop/dev-tools/README.helpdoc
 """
 
 from __future__ import annotations
+
+import json
+import sys
+import textwrap
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-import json
 from pathlib import Path
-import sys
-import textwrap
-from typing import Literal
+from typing import Literal, TypeAlias
+
+
+if sys.version_info[0:3] < (3, 10, 0):
+    msg = "This script must be run with Python 3.10.0 or greater!\n"
+    raise RuntimeError(msg)
 
 
 try:
     import xmltodict
 except ImportError as err:
-    raise err("The Python package xmltodict is required for this script!")
+    msg = "The Python package xmltodict is required for this script!"
+    raise err(msg)
 
 try:
     from packaging.version import Version
 except ImportError as err:
-    raise err("The Python package 'packaging' is required for this script!")
+    msg = "The Python package 'packaging' is required for this script!"
+    raise err(msg)
 
 # These are the dates of the commits attached to the INPUT_PW.def
 # files for each version tag in the QE GitLab. Update as needed.
 QE_DOC_VERSION_DATES = {
     #                  DD-MM-YYYY
-    # Version("4.0.4"): "18-11-2008",
-    # Version("4.1.0"): "16-07-2009",
-    # Version("4.1.1"): "01-10-2009",
-    # Version("4.1.3"): "24-03-2010",
-    # Version("4.2.1"): "12-06-2010",
-    # Version("4.3.0"): "13-02-2011",
-    # Version("4.3.1"): "20-05-2011",
-    # Version("5.0.0"): "11-05-2012",
-    # Version("5.0.1"): "04-07-2012",
-    # Version("5.0.2"): "04-07-2012",
-    # Version("5.1.0"): "25-04-2014",
-    # Version("5.1.1"): "16-10-2014",
-    # Version("5.1.2"): "02-03-2015",
-    # Version("5.2.0"): "20-06-2015",
-    # Version("5.2.1"): "30-07-2015",
-    # Version("5.3.0"): "07-01-2016",
-    # Version("5.4.0"): "20-04-2016",
-    # Version("6.0.0"): "19-08-2016",
-    # Version("6.1.0"): "24-02-2017",
-    # Version("6.2.0"): "03-09-2017",
-    # Version("6.2.1"): "25-10-2017",
-    # Version("6.3.0"): "15-06-2018",
-    # Version("6.4.0"): "01-03-2019",
-    # Version("6.4.1"): "03-04-2019",
-    # Version("6.5.0"): "21-11-2019",
-    # Version("6.6.0"): "19-07-2020",
-    # Version("6.7.0"): "30-11-2020",
-    # Version("6.8.0"): "22-04-2021",
-    Version("7.0.0"): "18-12-2021",
-    Version("7.1.0"): "08-06-2022",
-    Version("7.2.0"): "18-03-2023",
-    Version("7.3.0"): "29-11-2023",
-    Version("7.3.1"): "21-02-2024",
-    Version("7.4.0"): "16-10-2024",
-    Version("7.4.1"): "03-02-2025",
-    Version("7.5.0"): "30-06-2025",
-    Version("7.6.0"): "02-06-2026",
+    # Version("4.0.4"): "18-11-2008", # https://gitlab.com/QEF/q-e/-/blob/qe-4.0.4/doc-def/INPUT_PW.def
+    # Version("4.1.0"): "16-07-2009", # https://gitlab.com/QEF/q-e/-/blob/qe-4.1/doc-def/INPUT_PW.def
+    # Version("4.1.1"): "01-10-2009", # https://gitlab.com/QEF/q-e/-/blob/qe-4.1.1/doc-def/INPUT_PW.def
+    # Version("4.1.3"): "24-03-2010", # https://gitlab.com/QEF/q-e/-/blob/qe-4.1.3/doc-def/INPUT_PW.def
+    # Version("4.2.1"): "12-06-2010", # https://gitlab.com/QEF/q-e/-/blob/qe-4.2.1/doc-def/INPUT_PW.def
+    # Version("4.3.0"): "13-02-2011", # https://gitlab.com/QEF/q-e/-/blob/qe-4.3/doc-def/INPUT_PW.def
+    # Version("4.3.1"): "20-05-2011", # https://gitlab.com/QEF/q-e/-/blob/qe-4.3.1/doc-def/INPUT_PW.def
+    # Version("4.3.2"): "16-06-2011", # https://gitlab.com/QEF/q-e/-/blob/qe-4.3.2/doc-def/INPUT_PW.def
+    # Version("5.0.0"): "11-05-2012", # https://gitlab.com/QEF/q-e/-/blob/qe-5.0/PW/Doc/INPUT_PW.def
+    # Version("5.0.1"): "04-07-2012", # https://gitlab.com/QEF/q-e/-/blob/qe-5.0.1/PW/Doc/INPUT_PW.def
+    # Version("5.0.2"): "04-07-2012", # https://gitlab.com/QEF/q-e/-/blob/qe-5.0.2/PW/Doc/INPUT_PW.def
+    # Version("5.1.0"): "25-04-2014", # https://gitlab.com/QEF/q-e/-/blob/qe-5.1.0/PW/Doc/INPUT_PW.def
+    # Version("5.1.1"): "16-10-2014", # https://gitlab.com/QEF/q-e/-/blob/qe-5.1.1/PW/Doc/INPUT_PW.def
+    # Version("5.1.2"): "02-03-2015", # https://gitlab.com/QEF/q-e/-/blob/qe-5.1.2/PW/Doc/INPUT_PW.def
+    # Version("5.2.0"): "20-06-2015", # https://gitlab.com/QEF/q-e/-/blob/qe-5.2.0/PW/Doc/INPUT_PW.def
+    # Version("5.2.1"): "30-07-2015", # https://gitlab.com/QEF/q-e/-/blob/qe-5.2.1/PW/Doc/INPUT_PW.def
+    # Version("5.3.0"): "07-01-2016", # https://gitlab.com/QEF/q-e/-/blob/qe-5.3/PW/Doc/INPUT_PW.def
+    # Version("5.4.0"): "20-04-2016", # https://gitlab.com/QEF/q-e/-/blob/qe-5.4/PW/Doc/INPUT_PW.def
+    # Version("6.0.0"): "19-08-2016", # https://gitlab.com/QEF/q-e/-/blob/qe-6.0.0/PW/Doc/INPUT_PW.def
+    # Version("6.1.0"): "24-02-2017", # https://gitlab.com/QEF/q-e/-/blob/qe-6.1.0/PW/Doc/INPUT_PW.def
+    # Version("6.2.0"): "03-09-2017", # https://gitlab.com/QEF/q-e/-/blob/qe-6.2.0/PW/Doc/INPUT_PW.def
+    # Version("6.2.1"): "25-10-2017", # https://gitlab.com/QEF/q-e/-/blob/qe-6.2.1/PW/Doc/INPUT_PW.def
+    # Version("6.3.0"): "15-06-2018", # https://gitlab.com/QEF/q-e/-/blob/qe-6.3/PW/Doc/INPUT_PW.def
+    # Version("6.4.0"): "01-03-2019", # https://gitlab.com/QEF/q-e/-/blob/qe-6.4/PW/Doc/INPUT_PW.def
+    # Version("6.4.1"): "03-04-2019", # https://gitlab.com/QEF/q-e/-/blob/qe-6.4.1/PW/Doc/INPUT_PW.def
+    # Version("6.5.0"): "21-11-2019", # https://gitlab.com/QEF/q-e/-/blob/qe-6.5/PW/Doc/INPUT_PW.def
+    # Version("6.6.0"): "19-07-2020", # https://gitlab.com/QEF/q-e/-/blob/qe-6.6/PW/Doc/INPUT_PW.def
+    # Version("6.7.0"): "30-11-2020", # https://gitlab.com/QEF/q-e/-/blob/qe-6.7MaX-Release/PW/Doc/INPUT_PW.def
+    # Version("6.8.0"): "22-04-2021", # https://gitlab.com/QEF/q-e/-/blob/qe-6.8/PW/Doc/INPUT_PW.def
+    Version("7.0.0"): "18-12-2021", # https://gitlab.com/QEF/q-e/-/blob/qe-7.0/PW/Doc/INPUT_PW.def
+    Version("7.1.0"): "08-06-2022", # https://gitlab.com/QEF/q-e/-/blob/qe-7.1/PW/Doc/INPUT_PW.def
+    Version("7.2.0"): "18-03-2023", # https://gitlab.com/QEF/q-e/-/blob/qe-7.2/PW/Doc/INPUT_PW.def
+    Version("7.3.0"): "29-11-2023", # https://gitlab.com/QEF/q-e/-/blob/qe-7.3/PW/Doc/INPUT_PW.def
+    Version("7.3.1"): "21-02-2024", # https://gitlab.com/QEF/q-e/-/blob/qe-7.3.1/PW/Doc/INPUT_PW.def
+    Version("7.4.0"): "16-10-2024", # https://gitlab.com/QEF/q-e/-/blob/qe-7.4/PW/Doc/INPUT_PW.def
+    Version("7.4.1"): "03-02-2025", # https://gitlab.com/QEF/q-e/-/blob/qe-7.4.1/PW/Doc/INPUT_PW.def
+    Version("7.5.0"): "30-06-2025", # https://gitlab.com/QEF/q-e/-/blob/qe-7.5/PW/Doc/INPUT_PW.def
+    Version("7.6.0"): "02-06-2026", # https://gitlab.com/QEF/q-e/-/blob/qe-7.6/PW/Doc/INPUT_PW.def
 }
 EARLIEST = list(QE_DOC_VERSION_DATES.keys())[0]
 LATEST = list(QE_DOC_VERSION_DATES.keys())[-1]
 
 def get_total_dict(
     xml_dir: Path = Path("./xml_files"),
+    *,
     save_json: bool = False,
 ) -> dict:
     """Take a directory of files labeled ``INPUT_PW_<version>.xml`` and parse them into dictionaries.
@@ -112,11 +134,21 @@ def get_total_dict(
     """
     xml_dir = xml_dir.resolve()
     all_inputs_dict = {}
-    for file in xml_dir.iterdir():
+    # Sort since it appears nicer on script output if a file is skipped
+    for file in sorted(xml_dir.iterdir(), key=lambda x: Version(x.stem.removeprefix("INPUT_PW_"))):
         if file.suffix != ".xml":
             continue
 
         qe_version = Version(file.stem.removeprefix("INPUT_PW_"))
+        # Skip versions that aren't listed, prevents accidentally reading
+        # more files than requested.
+        if qe_version not in QE_DOC_VERSION_DATES:
+            print(
+                f"Skipping file with version not in known versions: {file}\n"
+                "If you intended to use this file, please update `QE_DOC_VERSION_DATES`\n"
+                "to reflect the desired versions.\n"
+            )
+            continue
 
         with open(file, "rb") as inp:
             # These are labeled as being ISO-8859-1 encoded, but as best I can tell they
@@ -159,7 +191,7 @@ def get_total_dict(
 #end def get_total_dict
 
 
-type PwscfInputType = str | bool | int | float
+PwscfInputType: TypeAlias = str | bool | int | float
 
 @dataclass
 class NamelistParamDefinition:
@@ -434,10 +466,11 @@ class PWDef:
             for var in vargroup["var"]:
                 name = var["name"]
                 if not datatype_checked and "," in datatype:
-                    raise NotImplementedError(
+                    msg = (
                         "Namelist vargroups with heterogeneous types are not implemented!\n"
                         f"Either contact a developer or enter the data for {name} manually!"
                     )
+                    raise NotImplementedError(msg)
                 elif not datatype_checked:
                     datatype = PWDef.f2p_datatype[datatype]
                     datatype_checked = True
@@ -452,10 +485,11 @@ class PWDef:
                         required = False
 
                 if "start" in vargroup.keys() or "end" in vargroup.keys():
-                    raise NotImplementedError(
+                    msg = (
                         "Vargroups of dimensions/multidimensions are not implemented!\n"
                         f"Either contact a developer or enter the data for {name} manually!"
                     )
+                    raise NotImplementedError(msg)
                 else:
                     shape = None
 
@@ -497,9 +531,8 @@ class PWDef:
                     case "multidimension":
                         parsed_params = PWDef.parse_namelist_multidimension(group_defs)
                     case "group":
-                        raise NotImplementedError(
-                            "Groups containing form 'group' are not implemented yet!"
-                        )
+                        msg = "Groups containing form 'group' are not implemented yet!"
+                        raise NotImplementedError(msg)
                     case _:
                         continue
                 # end match
@@ -509,8 +542,7 @@ class PWDef:
     @staticmethod
     def read_version_json(json_path: Path) -> dict:
         with open(json_path, "r") as json_inp:
-            output = json.load(json_inp)
-        return output
+            return json.load(json_inp)
 
 
 def get_version_info(input_dict: dict[Version, PWDef]) -> dict[str, dict[str, NamelistParamDefinition]]:
@@ -624,16 +656,24 @@ def write_namelist_param_enum(input_pw: dict[str, dict[str, NamelistParamDefinit
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 and sys.argv[1] not in {"-h", "--help"}:
         xml_path = Path(sys.argv[1]).resolve()
     else:
-        raise RuntimeError("You must provide the path to the XML directory!")
+        print(
+            "You must provide the path to the XML directory!\n"
+            "Usage: `./gen_pwscf_input_data.py /path/to/xml_dir/`\n"
+            "Read the docstring of this file for more info:\n"
+            f"{Path(__file__).resolve()}"
+        )
+        sys.exit(1)
 
     if not xml_path.exists():
-        raise FileNotFoundError(f"Can not find XML data at location {xml_path}")
+        msg = f"Can not find XML data at location {xml_path}"
+        raise FileNotFoundError(msg)
 
     if not xml_path.is_dir():
-        raise NotADirectoryError("The XML path must be a directory!")
+        msg = "The XML path must point to a directory!"
+        raise NotADirectoryError(msg)
     pw_data = get_total_dict(xml_path)
 
     print("Parsing namelist data...")
@@ -647,7 +687,7 @@ if __name__ == "__main__":
     print("\nDone parsing namelist data!\n")
     input_pw_complete = get_version_info(all_data)
 
-    output_file = Path("../nexus/pwscf_input_defs.py").resolve()
+    output_file = Path(__file__).parent.parent / "nexus/pwscf_input_defs.py"
 
     print(f"Writing output to {output_file}\n")
     output_text = f'''\
@@ -660,7 +700,7 @@ The script is at ``qmcpack/nexus/dev_utils/gen_pwscf_input_data.py``.
 
 This module's code was autogenerated on {datetime.now().strftime("%a %d %b %Y, %I:%M%p")}
 
-The supported QE versions are v{EARLIEST!s}-v{LATEST!s}
+The supported QE versions are v{EARLIEST!s} - v{LATEST!s}
 """
 
 from __future__ import annotations
@@ -695,7 +735,7 @@ class NamelistEnumBase(Enum):
     def __new__(
         cls,
         datatype:        PwscfInputType,
-        required:        bool,
+        required:        bool,  # noqa: FBT001
         allowed_values:  tuple[PwscfInputType] | None = None,
         version_added:   tuple[float] | None = None,
         version_removed: tuple[float] | None = None,
