@@ -3,9 +3,10 @@ python:
       - any-glob-to-any-file:
           - "**/*.py"
 
-c++:
+"c/c++":
   - changed-files:
       - any-glob-to-any-file:
+          - "**/*.c"
           - "**/*.cc"
           - "**/*.cpp"
           - "**/*.cxx"
