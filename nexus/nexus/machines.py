@@ -334,6 +334,63 @@ class Job(NexusCore):
         Bypass machine processing.  Intended for tests and narrowly scoped
         debugging rather than normal user scripts.
 
+    Attributes
+    ----------
+    init_info : obj
+        Copy of the keyword arguments supplied at construction, before
+        defaults and aliases are resolved.
+    machine : str or None
+        Name of the selected registered machine.
+    name, app_name, app_command : str or None
+        Scheduler name, application name, and finalized application command.
+    directory, subdir, abs_dir, abs_subdir : str or None
+        Requested and resolved local and submission directories.  The
+        ``abs_*`` attributes are assigned during simulation initialization.
+    outfile, errfile, subfile : str or None
+        Standard-output, standard-error, and submission file names.
+    app_props : list
+        Application properties supplied by the simulation or user.
+    full_command, template : str or None
+        User-provided complete run command or submission-file text.
+    presub, postsub : str
+        Shell text written immediately before or after the run command.
+    bundled_jobs, relative : sequence of Job or None, bool
+        Optional bundled jobs and whether their commands use relative paths.
+    cores, nodes, threads : int or None
+        Requested or finalized total CPU cores, node count, and OpenMP threads
+        per process.
+    processes, processes_per_node, processes_per_proc : int or None
+        Finalized total MPI ranks and their node- and processor-package-level
+        decomposition.
+    procs, grains, tot_cores, ppn : int or None
+        Machine-derived processor-package count, allocation granularity,
+        allocated core capacity, and machine-specific per-node setting.
+    app_options, run_options, sub_options : Options
+        Options appended to the application command, run launcher, and
+        submission launcher, respectively.
+    env : dict or None
+        Final environment variables for the job, including
+        ``OMP_NUM_THREADS`` after machine processing.
+    queue, account, qos, constraint, reservation, filesystems : str or None
+        Scheduler and machine-specific allocation settings.
+    gpus, cpus_per_task, ntasks_per_core : int or None
+        Optional accelerator and scheduler resource settings.
+    days, hours, minutes, seconds : int
+        Normalized walltime components.
+    serial, local, user_env : bool
+        Execution and environment-preservation controls.
+    batch_mode : bool
+        Whether the selected machine is currently running in batch mode.
+    internal_id, system_id : int or str or None
+        Nexus-assigned job identifier and scheduler-assigned identifier.
+    status : int
+        Current lifecycle state, one of the values in ``Job.states``.
+    submitted, finished, successful, crashed, overtime : bool
+        Submission and completion-status flags.
+    fake_job, user_app_command : bool
+        Flags indicating a fake job and whether ``app_command`` was provided
+        directly by the user.
+
     Notes
     -----
     The selected machine validates and finalizes resource layout, launcher
@@ -395,7 +452,12 @@ class Job(NexusCore):
         # guard against invalid keys
         invalid = set(kwargs.keys())-set(job_defaults.keys())
         if len(invalid)>0:
-            self.error('Invalid job arguments provided.\nInvalid arguments: {}\nValid options are: {}'.format(sorted(invalid),list(job_defaults.keys())))
+            self.error('Invalid job arguments provided.\n'
+                       'Invalid arguments: {}\n'
+                       'Valid options are: {}'.format(
+                           sorted(invalid),list(job_defaults.keys())
+                           )
+                       )
         # rewrap keyword arguments
         kw = obj(**kwargs)
         # Ensure no pathlib.Path objects are stored
