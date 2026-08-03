@@ -1,0 +1,45 @@
+#! /usr/bin/env python3
+
+"""Write fresh Nexus machine job-command and submission-file references."""
+
+import sys
+from contextlib import redirect_stdout
+from pathlib import Path
+
+
+def write_job_ref_table(output_file):
+    """Write fresh machine job-command and submission-file references."""
+    source_root = Path(__file__).resolve().parent.parent
+    package_root = source_root.parent
+    if str(package_root) not in sys.path:
+        sys.path.insert(0, str(package_root))
+
+    from nexus import testing
+    from nexus.tests.test_machines import test_job_run_command, test_write_job
+
+    try:
+        testing.global_data['job_ref_table'] = True
+        with output_file.open('w') as f:
+            with redirect_stdout(f):
+                print('Updated machine/job reference tables')
+                print('===================================')
+                print()
+                print('Paste the entries below into job_run_ref in '
+                      'tests/test_machines.py::test_job_run_command.')
+                test_job_run_command()
+                print()
+                print('Paste the entries below into job_write_ref in '
+                      'tests/test_machines.py::test_write_job.')
+                test_write_job()
+    finally:
+        testing.global_data['job_ref_table'] = False
+
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        print('Usage: write-job-ref')
+        sys.exit(1)
+
+    output_file = Path.cwd() / 'updated_job_ref_table.txt'
+    write_job_ref_table(output_file)
+    print(f'Updated job reference tables written to {output_file}')

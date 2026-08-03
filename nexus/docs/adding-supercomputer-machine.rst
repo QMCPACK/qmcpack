@@ -168,7 +168,7 @@ the reference file written:
 
 .. code-block:: bash
 
-   nxs-test --job-ref-table
+   dev_bin/write-job-ref
 
 
 This writes ``updated_job_ref_table.txt`` to the current working directory. The
