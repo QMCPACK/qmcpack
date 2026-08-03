@@ -163,12 +163,11 @@ For a permanent machine, also update ``test_write_job`` by adding the expected
 batch script to ``job_write_ref``; otherwise that test will hit a missing
 reference for the newly registered machine.
 
-To print fresh references, run this command from the directory where you want
-the reference file written:
+To print fresh references, run this command from the Nexus repository root:
 
 .. code-block:: bash
 
-   dev_bin/write-job-ref
+   dev_utils/write-job-ref
 
 
 This writes ``updated_job_ref_table.txt`` to the current working directory. The

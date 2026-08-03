@@ -9,7 +9,7 @@ from pathlib import Path
 
 def write_job_ref_table(output_file):
     """Write fresh machine job-command and submission-file references."""
-    source_root = Path(__file__).resolve().parent.parent
+    source_root = Path(__file__).resolve().parent.parent / 'nexus'
     package_root = source_root.parent
     if str(package_root) not in sys.path:
         sys.path.insert(0, str(package_root))
