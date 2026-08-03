@@ -127,7 +127,7 @@ class QAobject(QAobj_base):
 
     plotter = Plotter()
 
-    opt_methods = set(['opt','linear','cslinear'])
+    opt_methods = frozenset({'opt','linear','cslinear'})
 
     def __init__(self):
         return
@@ -159,7 +159,7 @@ class QAobject(QAobj_base):
     #end def _relink_dynamic_methods
 
 
-    _allowed_settings = set(['optimize'])
+    _allowed_settings = frozenset({'optimize'})
     _default_settings = obj(
         #optimize = 'variance'
         optimize = 'lastcost'
@@ -346,9 +346,9 @@ class QAanalyzer(QAobject):
     run_info     = None
     method_info  = None
 
-    opt_methods = set(['opt','linear','cslinear'])
-    vmc_methods = set(['vmc','vmc_batch'])
-    dmc_methods = set(['dmc','dmc_batch'])
+    opt_methods = frozenset({'opt','linear','cslinear'})
+    vmc_methods = frozenset({'vmc','vmc_batch'})
+    dmc_methods = frozenset({'dmc','dmc_batch'})
 
 
     def __init__(self,nindent=0):

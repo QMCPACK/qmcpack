@@ -15,8 +15,8 @@
 #ifndef AFQMC_DEVICE_POINTERS_HPP
 #define AFQMC_DEVICE_POINTERS_HPP
 
-#include <functional>
 #include "Configuration.h"
+#include <functional>
 #include <cassert>
 
 #include "multi/array_ref.hpp"

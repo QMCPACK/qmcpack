@@ -22,7 +22,7 @@
 import os
 import sys
 import traceback
-from typing import TextIO
+from typing import TextIO, ClassVar
 from copy import deepcopy
 import pickle
 from pickle import UnpicklingError
@@ -85,7 +85,7 @@ def __nexus_showwarning(message, category, filename, lineno, file=None, line=Non
         indent = message.indent
         cls    = f"{message.cls}:" if message.cls is not None else ""
     else:
-        msg = message
+        msg = str(message)
 
     if os.path.exists(filename):
         filename = os.path.realpath(filename)
@@ -1449,7 +1449,7 @@ class DevBaseDeprecated(obj_deprecated):
 
 
 class Void(object):
-    void_items = dict()
+    void_items: ClassVar[dict] = dict()
 
     @classmethod
     def _unavailable(cls,self):

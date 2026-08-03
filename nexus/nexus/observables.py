@@ -1463,18 +1463,11 @@ class EnergyDensity(Density):
 
 class StatFile(DevBase):
 
-    scalars = set('''
-        LocalEnergy   
-        LocalEnergy_sq
-        Kinetic       
-        LocalPotential
-        ElecElec      
-        IonIon        
-        LocalECP      
-        NonLocalECP   
-        KEcorr        
-        MPC           
-        '''.split())
+    scalars = frozenset({
+        'LocalEnergy', 'ElecElec', 'Kinetic', 'NonLocalECP','LocalPotential',
+        'KEcorr', 'LocalECP', 'IonIon', 'MPC', 'LocalEnergy_sq'
+        })
+
 
     observable_aliases = obj(
         momentum_distribution = ['nofk'],

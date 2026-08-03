@@ -513,13 +513,13 @@ def test_qixml_class_init():
     attr_types = obj(
         tag            = str,
         identifier     = (str,tuple),
-        attributes     = list,
-        elements       = list,
+        attributes     = tuple,
+        elements       = tuple,
         text           = str,
-        parameters     = list,
-        attribs        = list,
-        costs          = list,
-        h5tags         = list,
+        parameters     = tuple,
+        attribs        = tuple,
+        costs          = tuple,
+        h5tags         = tuple,
         types          = obj,
         write_types    = obj,
         attr_types     = obj,
@@ -527,11 +527,11 @@ def test_qixml_class_init():
         defaults       = obj,
         collection_id  = str,
         exp_names      = obj,
-        params         = list,
+        params         = tuple,
         plurals_inv    = obj,
         plurals        = obj,
         expanded_names = obj,
-        afqmc_order    = list,
+        afqmc_order    = tuple,
         )
     optional = set(['expanded_names','afqmc_order'])
     assert(len(attr_types)==21)

@@ -28,7 +28,7 @@ from .structure import Structure, generate_structure, read_structure
 
 class PhysicalSystem(DevBase):
 
-    ghost_aliases = ["Xx"]
+    ghost_aliases = ("Xx",)
 
     def __init__(self,structure=None,net_charge=0,net_spin=0,**valency):
         self.pseudized = False

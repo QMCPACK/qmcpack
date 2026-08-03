@@ -194,6 +194,25 @@ case "$1" in
               -DCMAKE_CXX_COMPILER=g++ \
               ${GITHUB_WORKSPACE}
       ;;
+      *"Clang22-NoMPI"*"-Offload"*)
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=clang-22 \
+              -DCMAKE_CXX_COMPILER=clang++-22 \
+              -DQMC_GPU=openmp \
+              -DOFFLOAD_TARGET=x86_64-pc-linux-gnu \
+              -DUSE_OBJECT_TARGET=ON \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"Clang22-MPI"*)
+        export OMPI_CC=clang-22
+        export OMPI_CXX=clang++-22        
+        echo "OMPI_CC=clang-22" >> $GITHUB_ENV
+        echo "OMPI_CXX=clang++-22" >> $GITHUB_ENV
+        cmake -GNinja $CMAKE_OPTIONS \
+              -DCMAKE_C_COMPILER=mpicc \
+              -DCMAKE_CXX_COMPILER=mpiCC \
+              ${GITHUB_WORKSPACE}
+      ;;
       *"Clang16"*"-Offload"*)
         echo 'Configure for building OpenMP offload with clang16 on x86_64 target'
         cmake -GNinja $CMAKE_OPTIONS \
@@ -288,13 +307,29 @@ case "$1" in
 
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     
-    # Enable oversubscription in OpenMPI
+    # Required OpenMPI settings
     if [[ "${GH_JOBNAME}" =~ (-MPI-) ]]
     then
       echo "Enabling OpenMPI oversubscription"
+      # Use PRTE config file for OpenMPI 5.x
+      echo "Creating PRTE config file for OpenMPI 5.x"
+      mkdir $HOME/.prte
+      cat >$HOME/.prte/mca-params.conf <<EOF
+rmaps_default_mapping_policy = :oversubscribe
+hwloc_base_binding_policy = none
+EOF
+      # OpenMPI 4.x settings
       export OMPI_MCA_rmaps_base_oversubscribe=1
       export OMPI_MCA_hwloc_base_binding_policy=none
       
+      # Ensure OpenMPI can create session dirs when running as non-root inside container via workspace TMP
+      # Symptom: "A call to mkdir was unable to create the desired directory" & "orte_session_dir failed"
+      OMPI_TMP_DIR="${GITHUB_WORKSPACE:-$(pwd)}/ompi_tmp"
+      mkdir -p "$OMPI_TMP_DIR"
+      chmod 1777 "$OMPI_TMP_DIR"
+      export OMPI_MCA_orte_tmpdir_base="$OMPI_TMP_DIR"
+      export TMPDIR="$OMPI_TMP_DIR"
+
       if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
       then
         echo "Set the management layer to ucx"
@@ -307,6 +342,11 @@ case "$1" in
        export KMP_TEAMS_THREAD_LIMIT=1
        # Run only unit tests (reasonable for CI)
        TEST_LABEL="-L unit"
+    fi
+
+    if [[ "${GH_JOBNAME}" =~ (Clang22-NoMPI-Offload*) ]]
+    then
+       export KMP_TEAMS_THREAD_LIMIT=1
     fi
 
     if [[ "${GH_JOBNAME}" =~ (CUDA) ]]

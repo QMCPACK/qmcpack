@@ -73,6 +73,7 @@ from pathlib import Path
 from string import Template
 from subprocess import Popen
 import tempfile
+from typing import ClassVar
 from .developer import DevBase, obj, error, unavailable
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
@@ -173,7 +174,7 @@ class SimulationEmulator(NexusCore):
 
 
 class SimulationImage(NexusCore):
-    save_only_fields = set([
+    save_only_fields = frozenset({
             # user block (temporary) of (sim+) subcascade
             'block',
             'block_subcascade',
@@ -185,9 +186,9 @@ class SimulationImage(NexusCore):
             'imlocdir',
             'imremdir',
             'imresdir',
-            ])
+            })
 
-    load_fields = set([
+    load_fields = frozenset({
             # important sim variables
             'identifier',
             'path',
@@ -217,7 +218,7 @@ class SimulationImage(NexusCore):
             'analyzed',
             # cascade status flag
             'subcascade_finished',
-            ])
+            })
 
     save_fields = load_fields | save_only_fields
 
@@ -253,14 +254,16 @@ class Simulation(NexusCore):
     outfile_extension  = '.out'
     errfile_extension  = '.err'
     application   = 'simapp'
-    application_properties = set(['serial'])
-    application_results    = set()
+    application_properties = frozenset({'serial'})
+    application_results    = frozenset()
     allow_overlapping_files = False
-    allowed_inputs = set(['identifier','path','infile','outfile','errfile','imagefile',
-                          'input','job','files','dependencies','analysis_request',
-                          'block','block_subcascade','app_name','app_props','system',
-                          'skip_submit','force_write','simlabel','fake_sim',
-                          'restartable','force_restart'])
+    allowed_inputs = frozenset({
+        'identifier','path','infile','outfile','errfile','imagefile',
+        'input','job','files','dependencies','analysis_request',
+        'block','block_subcascade','app_name','app_props','system',
+        'skip_submit','force_write','simlabel','fake_sim',
+        'restartable','force_restart'
+        })
     sim_imagefile      = 'sim.p'
     input_imagefile    = 'input.p'
     analyzer_imagefile = 'analyzer.p'
@@ -273,8 +276,8 @@ class Simulation(NexusCore):
     sim_count = 0
     creating_fake_sims = False
 
-    sim_directories = dict()
-    all_sims = []
+    sim_directories: ClassVar[dict] = dict()
+    all_sims: ClassVar[list] = []
 
     @classmethod
     def clear_all_sims(cls):
@@ -1901,7 +1904,7 @@ class DynamicProcess(DevBase):
 
     all_dynamic_processes = obj()
 
-    allowed_requirements = set([
+    allowed_requirements = frozenset({
         'none',
         'structure',
         'charge_density',
@@ -1909,7 +1912,7 @@ class DynamicProcess(DevBase):
         'jastrow',
         'wavefunction',
         'pwscf_orbitals', # explicit QE
-        ])
+        })
 
     @classmethod
     def check_first_gen(cls,kw):

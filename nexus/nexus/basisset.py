@@ -6,6 +6,7 @@
 import os
 from copy import deepcopy
 from pathlib import Path
+from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
 from .developer import DevBase, obj, log, error, unavailable
@@ -292,10 +293,10 @@ def process_gaussian_text(text,format,*,pp=True,basis=True,preserve_spacing=Fals
 class GaussianBasisSet(DevBase):
     lset_full = tuple('spdfghijk')
     lstyles = obj(s='g-',p='r-',d='b-',f='m-',g='c-',h='k-',i='g-.',j='r-.',k='b-.')
-    formats = 'gaussian gamess'.split()
+    formats = ('gaussian', 'gamess')
 
-    crystal_lmap = {0:'s',1:'sp',2:'p',3:'d',4:'f'}
-    crystal_lmap_reverse = dict(s=0,sp=1,p=2,d=3,f=4)
+    crystal_lmap = MappingProxyType({0:'s',1:'sp',2:'p',3:'d',4:'f'})
+    crystal_lmap_reverse = MappingProxyType(dict(s=0,sp=1,p=2,d=3,f=4))
 
     @staticmethod
     def process_float(s):

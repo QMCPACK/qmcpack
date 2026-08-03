@@ -159,3 +159,10 @@ if(ENABLE_GCOV)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -O0 -fno-inline -fno-inline-small-functions -fno-default-inline")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage -O0 -fno-inline -fno-inline-small-functions -fno-default-inline")
 endif(ENABLE_GCOV)
+
+# Workaround Apple SDK headers using C11 spelling of static_assert which GCC
+# does not accept as an extension
+if(APPLE)
+  add_compile_definitions("$<$<COMPILE_LANGUAGE:CXX>:_Static_assert=static_assert>")
+endif()
+

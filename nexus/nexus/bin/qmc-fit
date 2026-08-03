@@ -89,6 +89,7 @@ from nexus.developer import obj,log,error
 from nexus.numerics import jackknife,jackknife_aux
 from nexus.numerics import simstats,equilibration_length
 from nexus.numerics import curve_fit,least_squares
+from nexus.numerics import eos_fit as num_eos_fit  # noqa: F401
 from nexus.numerics import morse_fit,morse,morse_re,morse_De
 from nexus.numerics import morse_Einf as morse_einf
 from nexus.numerics import morse_a,morse_width,morse_depth,morse_Ee,morse_k
