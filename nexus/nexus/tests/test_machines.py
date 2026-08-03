@@ -2250,7 +2250,6 @@ srun -N 2 -n 64 test.x
         hours       = 6,
         minutes     = 30,
         env         = obj(ENV_VAR=1),
-        identifier  = 'test',
         outfile     = 'test.out',
         errfile     = 'test.err',
         app_command = 'test.x',

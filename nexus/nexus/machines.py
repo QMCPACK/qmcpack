@@ -222,6 +222,140 @@ job_defaults_nonassign = obj(
 job_defaults = obj({**job_defaults_assign,**job_defaults_nonassign})
 
 class Job(NexusCore):
+    """Describe the resources and execution settings for a Nexus simulation.
+
+    Jobs are normally supplied through the :func:`job` alias when creating a
+    simulation.  During simulation initialization, Nexus copies the job,
+    assigns simulation-specific paths and output files, supplies an
+    application command when needed, and lets the selected machine complete
+    the resource and scheduler settings.
+
+    Parameters
+    ----------
+    name : str, default='jobname'
+        Scheduler job name.
+    app, app_name : str or pathlib.Path, optional
+        Executable name or path.  ``app`` is the usual user-facing alias for
+        ``app_name``.  If neither an application nor ``app_command`` is
+        supplied, the simulation generator can provide the executable.
+    app_command : str, optional
+        Complete application command.  When provided, it overrides the
+        command normally constructed from the application name and simulation
+        input.
+    machine : str, optional
+        Registered machine name.  If omitted, the machine selected through
+        :func:`settings` is used.
+    cores : int, optional
+        Total CPU cores to request.  On workstations this determines the MPI
+        rank count; on batch machines it is converted to a node request when
+        necessary.
+    nodes : int, optional
+        Number of whole nodes to request on a batch machine.  The machine
+        derives remaining resource quantities from its node definition.
+    threads : int, default=1
+        OpenMP threads per process.  Nexus sets ``OMP_NUM_THREADS`` and,
+        where possible, derives the MPI process count from ``cores`` and this
+        value.
+    processes : int, optional
+        Total MPI process count.  On supercomputers this is normally a
+        derived value: ``nodes * processes_per_node`` when
+        ``processes_per_node`` is supplied, or ``floor(cores / threads)``
+        otherwise.  Prefer ``cores``, ``nodes``, ``threads``, and, when a
+        manual layout is needed, ``processes_per_node`` over setting this
+        field directly.
+    processes_per_node : int, optional
+        MPI processes (ranks) per allocated node.  This is the primary
+        process-layout override for batch machines.  When provided, a
+        supercomputer sets ``processes`` to ``nodes * processes_per_node``;
+        otherwise it derives the per-node rank count from the requested cores
+        and threads.  Choose a value for which
+        ``processes_per_node * threads`` fits the available cores on each
+        node, and follow any machine-specific CPU or GPU limits.  Scheduler
+        headers and launchers commonly use it as ``--ntasks-per-node``,
+        ``-N``, ``--ppn``, or an equivalent option.
+    processes_per_proc : int, optional
+        MPI processes per physical processor package (typically a socket).
+        Nexus derives this as ``processes / (nodes * procs_per_node)`` only
+        when the division is exact; otherwise the value is ``None``.  It is
+        primarily an output describing the finalized layout.  Some ``aprun``
+        machine classes use the derived value for their ``-S`` launcher
+        option, so it should generally not be set directly.
+    ppn : int, optional
+        Machine-specific processes- or cores-per-node setting.  The generic
+        supercomputer path defaults it to the machine's ``cores_per_node``;
+        consult the selected machine class before overriding it.
+    serial : bool, default=False
+        Run without an MPI launcher when there is one process.  Threaded
+        serial jobs can still use ``threads`` greater than one.
+    local : bool, default=False
+        Execute locally instead of submitting to the machine queue.  This is
+        independent of ``serial``.
+    hours, minutes, seconds, days : int, default=0
+        Requested walltime.  Values are normalized before a machine writes
+        its scheduler-specific time format.
+    queue : str, optional
+        Queue or scheduler partition.
+    account : str, optional
+        Allocation or project account.  Required by machines whose
+        ``requires_account`` setting is true.
+    qos, constraint, reservation, filesystems : str, optional
+        Scheduler- or machine-specific resource fields.
+    gpus : int, optional
+        GPU request, interpreted according to the selected machine's
+        conventions.
+    outfile, errfile, subfile : str or pathlib.Path, optional
+        Standard-output, standard-error, and submission-file names.
+    directory, subdir : str or pathlib.Path, optional
+        Local run and submission directories.
+    env : mapping, optional
+        Environment variables for the job.  Supercomputers write these as
+        exports in the submission file; workstations pass them to the local
+        process environment.
+    presub, postsub : str, default=''
+        Shell text placed immediately before or after the run command.
+    app_options, app_flags : str, sequence of str, or mapping, optional
+        Options appended after the application command.  ``app_flags`` is an
+        alias for ``app_options``.
+    run_options, options : str, sequence of str, or mapping, optional
+        Options appended after the machine launcher.  ``options`` is an alias
+        for ``run_options``.
+    sub_options : str, sequence of str, or mapping, optional
+        Options appended after the scheduler submission launcher.
+    full_command : str, optional
+        Complete run command.  When set, Nexus does not construct a launcher
+        and application command.
+    template : str, optional
+        Complete submission-file text.  When set, Nexus writes this text
+        instead of generating a scheduler header and run command.
+    user_env : bool, default=True
+        Request that scheduler submission preserve the user environment when
+        the machine supports that control.
+    skip_machine : bool, default=False
+        Bypass machine processing.  Intended for tests and narrowly scoped
+        debugging rather than normal user scripts.
+
+    Notes
+    -----
+    The selected machine validates and finalizes resource layout, launcher
+    options, and scheduler headers.  Machine-specific classes can assign
+    defaults for fields such as ``queue`` or ``constraint`` and can interpret
+    GPU and scheduler options differently.  Reusable ``Job`` objects are
+    safe as simulation templates because Nexus copies them during simulation
+    creation.
+
+    Examples
+    --------
+    A workstation MPI job can specify only the required resources and
+    application.
+
+    >>> job(cores=16, app='pw.x')
+
+    A hybrid MPI/OpenMP batch job can request nodes, threads, walltime, and
+    scheduler metadata.
+
+    >>> job(machine='frontier', account='ABC123', nodes=2, threads=4,
+    ...     hours=1, app='qmcpack')
+    """
 
     machine = None #default machine if none is specified in settings
 
@@ -4701,4 +4835,3 @@ get_machine      = Machine.get
 
 #rename Job with lowercase
 job=Job
-

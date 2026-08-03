@@ -122,6 +122,36 @@ This requests 16 total cores with 4 threads per process. Nexus sets
 ``OMP_NUM_THREADS`` and computes the number of processes as ``cores / threads``
 where possible. The examples use this pattern for QMCPACK hybrid jobs.
 
+MPI Process Layout
+^^^^^^^^^^^^^^^^^^
+
+Nexus uses three related fields to describe the finalized MPI layout:
+
+- ``processes`` is the total number of MPI ranks in the job. On a
+  supercomputer, Nexus normally derives it as ``cores / threads``.
+- ``processes_per_node`` is the MPI ranks placed on each allocated node. This
+  is the main field to set when the default per-node layout is not appropriate.
+  If it is set, Nexus uses ``nodes * processes_per_node`` as the total process
+  count.
+- ``processes_per_proc`` is the MPI ranks per physical processor package,
+  usually a socket. Nexus derives it only when the ranks divide evenly across
+  all processor packages; otherwise it is ``None``. It is mainly a description
+  of the final layout, although some ``aprun`` machines use it to form ``-S``.
+
+For example, use fewer MPI ranks per node with more OpenMP threads by setting
+``processes_per_node`` explicitly:
+
+.. code-block:: python
+
+   job(nodes=2, threads=4, processes_per_node=8, app='qmcpack')
+
+
+This creates 16 MPI ranks total, with four threads per rank. Make sure that
+``processes_per_node * threads`` fits the CPU cores available on a node and
+obeys any machine-specific CPU or GPU limits. In most cases, specify ``cores``
+or ``nodes`` with ``threads`` and let Nexus derive the process layout; use
+``processes_per_node`` only to select a deliberate rank/thread decomposition.
+
 4. Run Serial or Threaded-Serial Codes
 --------------------------------------
 
@@ -405,4 +435,3 @@ You can also run a script with generation mode and inspect the generated submiss
 .. code-block:: bash
 
    ./my_nexus_script.py --generate_only
-
