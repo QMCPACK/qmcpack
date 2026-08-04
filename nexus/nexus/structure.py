@@ -6125,6 +6125,8 @@ class Structure(Sobj):
 
 
     def check_point_group_operations(self,rotations=None,tol=1e-5,unit=False,dtol=1e-5,ncheck=1,exit=False):
+        msg = "Checking point group operations is not implemented, it requires implementing a 'point' parameter!"
+        raise NotImplementedError(msg)
         if rotations is None:
             rotations = self.point_group_operations(tol=tol,unit=unit)
         #ned if
