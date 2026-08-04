@@ -9,8 +9,8 @@
 // File created by: Eric Neuscamman, eneuscamman@berkeley.edu, University of California, Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/Jastrow/ShortRangeCuspFunctor.h"
