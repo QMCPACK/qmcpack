@@ -4,6 +4,9 @@ build:
   os: ubuntu-26.04
   tools:
     python: "3.14"
+  jobs:
+    pre_create_environment:
+      - mkdir $READTHEDOCS_VIRTUALENV_PATH
 
 sphinx:
   configuration: nexus/docs/conf.py
