@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
 
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
