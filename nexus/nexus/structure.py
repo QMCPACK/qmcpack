@@ -6141,8 +6141,8 @@ class Structure(Sobj):
                 rp = np.dot(r-rc,R)+rc
                 dt = self.min_image_distances(r,rp)
                 same = True
-                for d in dt:
-                    same &= dt.min()<dtol
+                for d in dt:  # BUG: unused loop control
+                    same &= dt.min()<dtol  # BUG: dt.min() is zero for any rotation
                 #end for
                 all_same &= same
             #end for
