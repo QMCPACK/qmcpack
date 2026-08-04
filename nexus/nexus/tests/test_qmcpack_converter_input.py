@@ -235,7 +235,7 @@ def test_pyscf_to_afqmc_input_init():
     assert(pi.input=='scf.chk')
     assert(pi.output=='afqmc.h5')
     assert(value_eq(pi.cholesky_threshold,1e-5))
-    assert(value_eq(pi.verbose,True))
+    assert(value_eq(pi.verbose,v2=True))
 
     pi2 = generate_pyscf_to_afqmc_input(
         i = 'scf.chk',

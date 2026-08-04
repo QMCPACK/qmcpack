@@ -62,7 +62,7 @@ class VLog(DevBase):
     #end def __init__
 
 
-    def __call__(self,msg,level='low',n=0,time=False,mem=False,width=75):
+    def __call__(self,msg,level='low',n=0,*,time=False,mem=False,width=75):
         if self.verbosity==self.verbosity_levels.none:
             return
         elif self.verbosity >= self.verbosity_levels[level]:
@@ -291,7 +291,7 @@ class DefinedAttributeBase(DevBase):
     #end def set_attributes
 
 
-    def check_attributes(self,exit=False):
+    def check_attributes(self,*,exit=False):
         msg = ''
         cls = self.__class__
         a = obj()
@@ -366,7 +366,7 @@ class DefinedAttributeBase(DevBase):
     #end def set_attribute
 
 
-    def get_attribute(self,name,value=missing,assigned=True):
+    def get_attribute(self,name,value=missing,*,assigned=True):
         default_value    = value
         default_provided = not missing(default_value)
         require_assigned = assigned and not default_provided
@@ -658,7 +658,7 @@ class MomentumDistribution(ObservableWithComponents):
     #end def get_raw_data
 
 
-    def filter_raw_data(self,filter_tol=1e-5,store=True):
+    def filter_raw_data(self,filter_tol=1e-5,*,store=True):
         vlog('Filtering raw n(k) data with tolerance {:6.4e}'.format(filter_tol))
         prior_tol = self.get_attribute('raw_filter_tol',assigned=False)
         data  = self.get_raw_data()
@@ -710,7 +710,7 @@ class MomentumDistribution(ObservableWithComponents):
     #end def filter_raw_data
 
 
-    def map_raw_data_onto_grid(self,unfold=False,filter_tol=1e-5):
+    def map_raw_data_onto_grid(self,*,unfold=False,filter_tol=1e-5):
         vlog('\nMapping raw n(k) data onto regular grid')
         data = self.get_raw_data()
         structure = self.get_attribute('structure',assigned=unfold)
@@ -795,6 +795,7 @@ class MomentumDistribution(ObservableWithComponents):
                             a1_range     = (0,1),
                             a2_range     = (0,1),
                             grid_spacing = 0.3,
+                            *,
                             unit_in      = False,
                             unit_out     = False,
                             boundary     = True,
@@ -831,7 +832,7 @@ class MomentumDistribution(ObservableWithComponents):
     #end def plot_plane_contours
 
 
-    def plot_radial_raw(self,quants='all',kmax=None,fmt='b.',fig=True,show=True):
+    def plot_radial_raw(self,quants='all',kmax=None,fmt='b.',*,fig=True,show=True):
         data = self.get_raw_data()
         if quants=='all':
             quants = list(data.keys())
@@ -869,7 +870,7 @@ class MomentumDistribution(ObservableWithComponents):
     #end def plot_radial_raw
 
 
-    def plot_directional_raw(self,kdir,quants='all',kmax=None,fmt='b.',fig=True,show=True,reflect=False):
+    def plot_directional_raw(self,kdir,quants='all',kmax=None,fmt='b.',*,fig=True,show=True,reflect=False):
         data = self.get_raw_data()
         kdir = np.array(kdir,dtype=float)
         kdir /= np.linalg.norm(kdir)
@@ -959,7 +960,7 @@ MomentumDistribution.define_attributes(
 
 class MomentumDistributionDFT(MomentumDistribution):
 
-    def read_eshdf(self,filepath,E_fermi=None,savefile=None,unfold=False,grid=True):
+    def read_eshdf(self,filepath,E_fermi=None,savefile=None,*,unfold=False,grid=True):
 
         save = False
         if savefile is not None:
@@ -1214,7 +1215,7 @@ class Density(ObservableWithComponents):
     #end def change_density_units
 
 
-    def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,single=False,interp_kwargs=None,comps_return=False,species=None):
+    def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,*,single=False,interp_kwargs=None,comps_return=False,species=None):
         
         vlog('Computing radial density',time=True)
         vlog('Current memory:',n=1,mem=True)
@@ -1309,7 +1310,7 @@ class Density(ObservableWithComponents):
     #end def radial_density
 
 
-    def cumulative_radial_density(self,rdfs=None,comps_return=False,**kwargs):
+    def cumulative_radial_density(self,rdfs=None,*,comps_return=False,**kwargs):
         component = kwargs.get('component',None)
         if rdfs is None:
             kwargs['comps_return'] = True
@@ -1331,7 +1332,7 @@ class Density(ObservableWithComponents):
     #end def cumulative_radial_density
 
 
-    def plot_radial_density(self,component=None,show=True,cumulative=False,**kwargs):
+    def plot_radial_density(self,component=None,*,show=True,cumulative=False,**kwargs):
         vlog('Plotting radial density')
         kwargs['comps_return'] = True
         if not cumulative:
@@ -1540,7 +1541,7 @@ class StatFile(DevBase):
     #end def condenst_name
 
 
-    def observable_groups(self,observable,single=False):
+    def observable_groups(self,observable,*,single=False):
         if inspect.isclass(observable):
             observable = observable.__name__
         elif isinstance(observable,Observable):

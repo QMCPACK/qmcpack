@@ -190,7 +190,7 @@ class Pw2qmcpackInput(SimulationInput):
 #end class Pw2qmcpackInput
 
 
-def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',write_psir=False):
+def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',*,write_psir=False):
     pw = Pw2qmcpackInput(
         prefix     = prefix,
         outdir     = outdir,
@@ -694,7 +694,7 @@ class Convert4qmcInput(SimulationInput):
     #end def __init__
 
 
-    def check_valid(self,exit=True):
+    def check_valid(self,*,exit=True):
         valid = True
         # check that all inputs have valid types and assign them
         for k,v in self.items():
@@ -1259,7 +1259,7 @@ class PyscfToAfqmcInput(SimulationInput):
     #end def __init__
 
 
-    def check_valid(self,exit=True):
+    def check_valid(self,*,exit=True):
         valid = True
         # check that all inputs have valid types and assign them
         for k,v in self.items():

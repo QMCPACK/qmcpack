@@ -253,7 +253,7 @@ def morse_rDw_fit(re,De,w,m1,m2=None,Einf=0.0,Dunit='eV'):
 #    pf    = morse_fit(r,E)                           returns fitted parameters
 #  jackknife statistical fits, E is two dimensional with blocks as first dimension
 #    pf,pmean,perror = morse_fit(r,E,jackknife=True)  returns jackknife estimates of parameters
-def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxres=None,capture=None):
+def morse_fit(r,E,p0=None,*,jackknife=False,cost=least_squares,auxfuncs=None,auxres=None,capture=None):
     if isinstance(E,(list,tuple)):
         E = np.array(E,dtype=float)
     #end if
@@ -344,7 +344,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
 # morse_fit_fine: fit data to a morse potential and interpolate on a fine grid
 #   compute direct jackknife variations in the fitted curves 
 #   by using morse as an auxiliary jackknife function
-def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_squares,capture=None):  
+def morse_fit_fine(r,E,p0=None,rfine=None,*,both=False,jackknife=False,cost=least_squares,capture=None):  
     if rfine is None:
         rfine = np.linspace(r.min(),r.max(),400)
     #end if
@@ -353,7 +353,16 @@ def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_
         )
     auxres = obj()
 
-    res = morse_fit(r,E,p0,jackknife,cost,auxfuncs,auxres,capture)
+    res = morse_fit(
+        r         = r,
+        E         = E,
+        p0        = p0,
+        jackknife = jackknife,
+        cost      = cost,
+        auxfuncs  = auxfuncs,
+        auxres    = auxres,
+        capture   = capture,
+        )
 
     if not jackknife:
         pf = res
@@ -461,7 +470,7 @@ def eos_param(p,param,type='vinet'):
 #end def eos_param
 
 
-def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfuncs=None,auxres=None,capture=None):
+def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',*,jackknife=False,auxfuncs=None,auxres=None,capture=None):
     if isinstance(V,(list,tuple)):
         V = np.array(V,dtype=float)
     #end if
@@ -1007,7 +1016,7 @@ def simstats(x,dim=None):
 
 
 
-def simplestats(x,dim=None,full=False):
+def simplestats(x,dim=None,*,full=False):
     if dim is None:
         dim=len(x.shape)-1
     #end if
@@ -1023,7 +1032,7 @@ def simplestats(x,dim=None,full=False):
 #end def simplestats
 
 
-def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True,seed_from_hash=True):
+def equilibration_length(x,tail=.5,*,plot=False,xlim=None,bounces=2,random=True,seed_from_hash=True):
     if seed_from_hash:
         np.random.seed(hash(tuple(x))%(2**32))
     #end if
@@ -1357,7 +1366,7 @@ def distance_table(p1,p2,ordering=0):
 
 
 
-def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
+def nearest_neighbors(n,points,qpoints=None,*,return_distances=False,slow=False):
     extra = 0
     if qpoints is None:
         qpoints=points
@@ -1447,7 +1456,7 @@ def convex_hull(points,dimension=None,tol=None):
 
 
 
-def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_return=False):
+def layers_1d(xpoints,tol,xmin=None,xmax=None,*,merge=True,periodic=False,full_return=False):
 
     # Update inputs to be consistent with periodic merge, if requested
     if merge and periodic:
@@ -1531,7 +1540,7 @@ def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_ret
 
 
 
-def layer_means_1d(xpoints,tol,full_return=False):
+def layer_means_1d(xpoints,tol,*,full_return=False):
     # Get layer data
     layers,xmin,xmax = layers_1d(xpoints,tol,full_return=True)
 
@@ -1554,7 +1563,7 @@ def layer_means_1d(xpoints,tol,full_return=False):
 
 
 
-def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
+def index_by_layer_1d(xpoints,tol,*,uniform=True,check=True,full_return=False):
     # Get layer means
     xlayer,xmin,xmax = layer_means_1d(xpoints,tol,full_return=True)
 
