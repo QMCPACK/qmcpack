@@ -6140,7 +6140,7 @@ class Structure(Sobj):
                 dt = self.min_image_distances(r,rp)
                 same = True
                 for d in dt: # TODO: What is this supposed to loop over?
-                    same &= d.min()<dtol
+                    same &= dt.min()<dtol
                 #end for
                 all_same &= same
             #end for
