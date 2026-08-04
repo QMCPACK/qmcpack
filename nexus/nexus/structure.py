@@ -6132,6 +6132,8 @@ class Structure(Sobj):
 
 
     def check_point_group_operations(self,rotations=None,tol=1e-5,dtol=1e-5,ncheck=1,*,unit=False,exit=False):
+        msg = "Checking point group operations is not implemented, it requires implementing a 'point' parameter!"
+        raise NotImplementedError(msg)
         if rotations is None:
             rotations = self.point_group_operations(tol=tol,unit=unit)
         #ned if
@@ -6146,8 +6148,8 @@ class Structure(Sobj):
                 rp = np.dot(r-rc,R)+rc
                 dt = self.min_image_distances(r,rp)
                 same = True
-                for d in dt: # TODO: What is this supposed to loop over?
-                    same &= dt.min()<dtol
+                for d in dt:  # BUG: unused loop control
+                    same &= dt.min()<dtol  # BUG: dt.min() is zero for any rotation
                 #end for
                 all_same &= same
             #end for
