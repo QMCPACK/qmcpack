@@ -598,7 +598,7 @@ class VKeywordFile(VFile):
 
 
 class VFormattedFile(VFile):
-    def read_lines(self,text,remove_empty=False):
+    def read_lines(self,text,*,remove_empty=False):
         raw_lines = text.splitlines()
         lines = []
         for line in raw_lines:
@@ -1174,7 +1174,7 @@ class Poscar(VFormattedFile):
     #end def write_text
 
 
-    def check_complete(self,exit=True):
+    def check_complete(self,*,exit=True):
         msg = ''
         if self.scale is None:
             msg += 'scale is missing\n'
@@ -1418,7 +1418,7 @@ class VaspInput(SimulationInput,Vobj):
     #end def write
 
 
-    def incorporate_system(self,system,incorp_kpoints=True,coord='cartesian',set_nelect=True):
+    def incorporate_system(self,system,coord='cartesian',*,incorp_kpoints=True,set_nelect=True):
         structure = system.structure
 
         # assign kpoints
@@ -1467,7 +1467,7 @@ class VaspInput(SimulationInput,Vobj):
     #end def incorporate_system
 
 
-    def return_system(self,structure_only=False,**valency):
+    def return_system(self,*,structure_only=False,**valency):
         axes  = self.poscar.axes
         scale = self.poscar.scale
         axes  = scale*axes
@@ -1794,7 +1794,7 @@ def generate_any_vasp_input(**kwargs):
 
 
 
-def generate_poscar(structure,coord='cartesian'):
+def generate_poscar(structure,*,coord='cartesian'):
     s = deepcopy(structure)
     s.change_units('A')
     species,species_count = s.order_by_species()

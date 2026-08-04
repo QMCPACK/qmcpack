@@ -117,7 +117,7 @@ def test_valid_variable_name():
 #end def test_valid_variable_name
 
 
-def check_dictlike(dict_type,check_repr_str=True,check_iter=True,check_copy=True):
+def check_dictlike(dict_type,*,check_repr_str=True,check_iter=True,check_copy=True):
     """Exercise the standard constructor and method interface of *dict_type*.
 
     The function returns ``None`` on success and raises ``AssertionError`` when

@@ -909,7 +909,7 @@ for sec in section_classes:
 #end for
 
 
-def check_new_variables(exit=True):
+def check_new_variables(*,exit=True):
     sections = section_classes
     msg = ''
     for section in sections:
@@ -935,7 +935,7 @@ def check_new_variables(exit=True):
 #check_new_variables()
 
 
-def check_section_classes(exit=True):
+def check_section_classes(*,exit=True):
     sections = section_classes
     all_variables = PwscfInputBase.all_variables
     global_missing = set(all_variables)
@@ -1861,7 +1861,7 @@ class PwscfInput(SimulationInput):
 
         
     # test needed
-    def return_system(self,structure_only=False,**valency):
+    def return_system(self,*,structure_only=False,**valency):
         ibrav = self.system.ibrav
         if ibrav!=0:
             self.error('ability to handle non-zero ibrav not yet implemented')
@@ -2383,7 +2383,8 @@ def generate_any_pwscf_input(**kwargs):
 
 
 
-def generate_scf_input(prefix       = 'pwscf',
+def generate_scf_input(*,
+                       prefix       = 'pwscf',
                        outdir       = 'pwscf_output',
                        input_dft    = None,
                        exx_fraction = None,
@@ -2622,7 +2623,8 @@ def generate_nscf_input(**kwargs):
 
 
 
-def generate_relax_input(prefix       = 'pwscf',
+def generate_relax_input(*,
+                         prefix       = 'pwscf',
                          outdir       = 'pwscf_output',
                          input_dft    = None,
                          exx_fraction = None,

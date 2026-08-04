@@ -957,7 +957,7 @@ class TracesFileHDF(QAobject):
         return self.accumulated_scalars() and self.checked_particle_sums()
     #end def formed_diagnostic_data
 
-    def load(self,filepath=None,force=False):
+    def load(self,filepath=None,*,force=False):
         if not self.loaded() or force:
             if filepath is None:
                 if self.info.filepath is None:
@@ -1022,7 +1022,7 @@ class TracesFileHDF(QAobject):
     #end def init_trace
 
 
-    def check_particle_sums(self,tol=1e-8,force=False):
+    def check_particle_sums(self,tol=1e-8,*,force=False):
         if not self.checked_particle_sums() or force:
             self.load()
             t = self.real_traces
@@ -1057,7 +1057,7 @@ class TracesFileHDF(QAobject):
     #end def check_particle_sums
 
     
-    def accumulate_scalars(self,force=False):
+    def accumulate_scalars(self,*,force=False):
         if not self.accumulated_scalars() or force:
             # get block and step information for the qmc method
             blocks = self.info.blocks
@@ -2144,7 +2144,7 @@ class SpaceGridInitializer(QAobject):
         return
     #end def __init__
 
-    def check_complete(self,exit_on_fail=True):
+    def check_complete(self,*,exit_on_fail=True):
         succeeded = True
         for k,v in self.items():
             if v is None:
@@ -2394,7 +2394,7 @@ class SpaceGridBase(QAobject):
         None
     #end def init_from_xmlelement
 
-    def check_complete(self,exit_on_fail=True):
+    def check_complete(self,*,exit_on_fail=True):
         succeeded = True
         for k,v in self.items():
             if k[0]!='_' and v is None:
@@ -3149,7 +3149,7 @@ class RectilinearGrid(SpaceGridBase):
     #end def set_origin
 
 
-    def interpolate_across(self,quantities,spacegrids,outside,integration=False,warn=False):
+    def interpolate_across(self,quantities,spacegrids,outside,*,integration=False,warn=False):
         #if the grid is to be used for integration confirm that domains 
         #  of this spacegrid subdivide source spacegrid domains
         if integration:
