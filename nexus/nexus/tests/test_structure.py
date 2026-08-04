@@ -244,7 +244,7 @@ def get_crystal_structures():
     from ..structure import Crystal,generate_structure
     if len(crystal_structures)==0:
         crys = crystal_structures
-        for (latt,cell) in Crystal.known_crystals:
+        for (latt,cell) in Crystal.known_crystals.keys():
             s = generate_structure(structure=latt,cell=cell)
             crys[latt+'_'+cell] = s
         #end for

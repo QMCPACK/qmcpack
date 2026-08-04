@@ -141,13 +141,13 @@ class XMLelement(DevBase):
         #end if
         if len(self._elements)>0:
             s+= '  elements:\n'
-            for k in self._elements:
+            for k in self._elements.keys():
                 s+= '    '+k+'\n'
             #end for
         #end if
         if len(self._texts)>0:
             s+= '  texts:\n'
-            for k in self._texts:
+            for k in self._texts.keys():
                 s+= '    '+k+'\n'
             #end for
         #end if

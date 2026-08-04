@@ -417,7 +417,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     conf = obj()
                     axes = []
                     cont = True
-                    for d in (0,1,2): # What is happening here? Should `d` be used?
+                    for d in range(3):  # noqa: B007
                         i+=1
                         axes.append(np.array(lines[i].split(),dtype=float))
                     #end for
