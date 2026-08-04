@@ -1129,7 +1129,7 @@ def check_dependency_objects(*sims,**kwargs):
 
 
 
-def check_dependency(sim2,sim1,quants=('other',),only=False,objects=False):
+def check_dependency(sim2,sim1,quants=('other',),*,only=False,objects=False):
     # sim2 depends on sim1 for all quantities
     if objects:
         check_dependency_objects(sim1)

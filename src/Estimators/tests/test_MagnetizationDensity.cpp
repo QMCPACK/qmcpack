@@ -10,9 +10,9 @@
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "Estimators/MagnetizationDensityInput.h"
 #include "ValidMagnetizationDensityInput.h"
-#include "Configuration.h"
 //#include "QMCHamiltonians/MagDensityEstimator.h"
 //for wavefunction
 #include "OhmmsData/Libxml2Doc.h"

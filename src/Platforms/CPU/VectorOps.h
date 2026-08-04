@@ -34,6 +34,9 @@
 #ifndef OHMMS_PARTICLEATTRIB_OPS_H
 #define OHMMS_PARTICLEATTRIB_OPS_H
 
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/OhmmsVector.h"
+
 namespace qmcplusplus
 {
 template<class T1, class T2, unsigned D>

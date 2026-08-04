@@ -496,7 +496,7 @@ class QuantumPackageInput(SimulationInput):
     #end def incorporate_system
 
 
-    def check_valid(self,sections=True,variables=True,types=True,run_type=True,exit=True):
+    def check_valid(self,*,sections=True,variables=True,types=True,run_type=True,exit=True):
         msg = ''
 
         extra = self.extract_added_keys()

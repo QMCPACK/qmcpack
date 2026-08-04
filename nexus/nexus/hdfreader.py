@@ -106,7 +106,7 @@ class HDFgroup(DevBase):
     #end def __init__
 
 
-    def _remove_hidden(self,deep=True):
+    def _remove_hidden(self,*,deep=True):
         if '_parent' in self:
             del self._parent
         #end if
@@ -263,7 +263,7 @@ class HDFgroup(DevBase):
 
 class HDFreader(DevBase):
     
-    def __init__(self,fpath,verbose=False,view=False):
+    def __init__(self,fpath,*,verbose=False,view=False):
         fpath = path_string(fpath)
         HDFglobals.view = view
 
@@ -379,6 +379,6 @@ class HDFreader(DevBase):
 
 
 
-def read_hdf(fpath,verbose=False,view=False):
+def read_hdf(fpath,*,verbose=False,view=False):
     return HDFreader(fpath=fpath,verbose=verbose,view=view).obj
 #end def read_hdf

@@ -73,7 +73,7 @@ class ProjectManager(NexusCore):
     #end def add_cascade
 
 
-    def run_project(self,status=False,status_only=False):
+    def run_project(self,*,status=False,status_only=False):
         self.log('\nProject starting',n=0)
         self.init_cascades()
         status_only = status_only or nexus_core.status_only

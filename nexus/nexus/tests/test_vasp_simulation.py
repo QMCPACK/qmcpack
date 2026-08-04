@@ -15,7 +15,7 @@ from ..testing import value_eq,object_eq,check_object_eq
 from .test_vasp_input import c_potcar_text, TEST_FILES
 
 
-def setup_vasp_sim(path,identifier='vasp',copy_files=False):
+def setup_vasp_sim(path,identifier='vasp',*,copy_files=False):
     import shutil
     from ..nexus_base import nexus_core
     from ..machines import job

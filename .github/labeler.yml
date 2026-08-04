@@ -1,0 +1,52 @@
+python:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.py"
+
+"c/c++":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.c"
+          - "**/*.cc"
+          - "**/*.cpp"
+          - "**/*.cxx"
+          - "**/*.c++"
+          - "**/*.C"
+          - "**/*.h"
+          - "**/*.hh"
+          - "**/*.hpp"
+          - "**/*.hxx"
+          - "**/*.h++"
+          - "**/*.H"
+          - "**/*.ipp"
+          - "**/*.inl"
+          - "**/*.tpp"
+          - "**/*.ixx"
+          - "**/*.cppm"
+          - "**/*.ccm"
+          - "**/*.cxxm"
+          - "**/*.cu"
+          - "**/*.cuh"
+          - "**/*.hip"
+
+cmake:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/CMakeLists.txt"
+          - "**/*.cmake"
+          - "**/*.cmake.in"
+          - "**/CMakePresets.json"
+          - "**/CMakeUserPresets.json"
+          - "**/CMakeSettings.json"
+          - "CMake/**"
+
+nexus:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "nexus/**"
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "nexus/docs/**"

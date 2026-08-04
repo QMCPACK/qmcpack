@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
 
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "QMCDrivers/Crowd.h"
 #include "type_traits/template_types.hpp"

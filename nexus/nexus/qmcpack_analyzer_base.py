@@ -469,7 +469,7 @@ class QAanalyzer(QAobject):
         #end for
     #end def load_data
 
-    def analyze(self,force=False):
+    def analyze(self,*,force=False):
         self.set_global_info()
         if not self.info.data_loaded:
             self.load_data_local()
@@ -477,11 +477,11 @@ class QAanalyzer(QAobject):
         #end if
         for value in self.values():
             if isinstance(value,QAanalyzer):
-                value.analyze(force)
+                value.analyze(force=force)
             elif isinstance(value,QAanalyzerCollection):
                 for v in value.values():
                     if isinstance(v,QAanalyzer):
-                        v.analyze(force)
+                        v.analyze(force=force)
                     #end if
                 #end for
             #end if

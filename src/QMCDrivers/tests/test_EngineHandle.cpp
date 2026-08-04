@@ -13,7 +13,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/WFOpt/EngineHandle.h"
-#include "Configuration.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus

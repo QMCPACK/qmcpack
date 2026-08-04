@@ -12,16 +12,8 @@
 
 #undef NDEBUG
 #include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "Configuration.h"
-
-// Avoid the need to link with other libraries just to get APP_ABORT
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Utilities/RandomGenerator.h"

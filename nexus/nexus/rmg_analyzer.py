@@ -50,7 +50,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     #end def calculation_shortmode
 
 
-    def __init__(self,arg0=None,analyze=False):
+    def __init__(self,arg0=None,*,analyze=False):
         if arg0 is None:
             return
         elif isinstance(arg0,Simulation):
@@ -79,7 +79,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     #end def __init__
 
 
-    def analyze(self,guard=True):
+    def analyze(self,*,guard=True):
         if not self.initialized:
             return
         #end if
@@ -148,7 +148,7 @@ class RmgAnalyzer(SimulationAnalyzer):
             name = name[:-1].replace('/','_').replace('-','_')
             return name
         #end def process_name
-        def process_value(v,list=False):
+        def process_value(v,*,list=False):
             v = v.strip()
             units = None
             try:
