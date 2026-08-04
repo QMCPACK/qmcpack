@@ -17,4 +17,4 @@ python:
         - dev
       extras:
         - full
-      path: .
+      path: nexus
