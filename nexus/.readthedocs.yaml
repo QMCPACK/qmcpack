@@ -4,14 +4,6 @@ build:
   os: ubuntu-26.04
   tools:
     python: "3.14"
-  jobs:
-    pre_create_environment:
-      - echo "Printing READTHEDOCS_VIRTUALENV_PATH"
-      - echo $READTHEDOCS_VIRTUALENV_PATH
-      - echo "Printing UV_PROJECT"
-      - echo $UV_PROJECT
-      - echo "Running ls -a"
-      - ls -a
 
 sphinx:
   configuration: nexus/docs/conf.py
