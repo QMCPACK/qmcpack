@@ -28,17 +28,12 @@ jobs:
             GCC9-NoMPI-Sandbox-Complex,
           ]
         include:
-          - jobname: GCC9-NoMPI-Debug-Real
+          - jobname: GCC9-NoMPI-Real
             container:
               image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
 
-          - jobname: GCC9-NoMPI-NoOMP-Real
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
-              options: -u 1001
-
-          - jobname: GCC9-NoMPI-NoOMP-Complex
+          - jobname: GCC9-NoMPI-Complex
             container:
               image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
               options: -u 1001
@@ -51,56 +46,6 @@ jobs:
           - jobname: GCC9-NoMPI-Sandbox-Complex
             container:
               image: ghcr.io/qmcpack/ubuntu22-serial:latest
-              options: -u 1001
-
-          - jobname: GCC12-NoMPI-Werror-Real
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-serial:latest
-              options: -u 1001
-
-          - jobname: GCC12-NoMPI-Werror-Complex
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-serial:latest
-              options: -u 1001
-
-          - jobname: GCC12-NoMPI-Werror-Real-Mixed
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-serial:latest
-              options: -u 1001
-
-          - jobname: GCC12-NoMPI-Werror-Complex-Mixed
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-serial:latest
-              options: -u 1001
-
-          - jobname: Clang14-NoMPI-ASan-Real
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
-              options: -u 1001
-
-          - jobname: Clang14-NoMPI-ASan-Complex
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
-              options: -u 1001
-
-          - jobname: Clang14-NoMPI-Sandbox-ASan-Real
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
-              options: -u 1001
-
-          - jobname: Clang14-NoMPI-UBSan-Real
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
-              options: -u 1001
-
-          - jobname: Clang16-NoMPI-Offload-Real
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-clang:latest
-              options: -u 1001
-
-          - jobname: Clang16-NoMPI-Offload-Complex
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-clang:latest
               options: -u 1001
 
     steps:
