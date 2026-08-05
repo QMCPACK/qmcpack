@@ -27,34 +27,34 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # * matplotlib for qmca plotting
 # (apt-get update already run above)
 RUN apt-get install -y --no-install-recommends \
-    ca-certificates \
-    make \
-    ninja-build \
-    git \
-    cmake \
-    wget \
     bzip2 \
-    rsync \
+    ca-certificates \
+    cmake \
     g++ \
     gfortran \
-    openmpi-bin \
-    libopenmpi-dev \
+    git \
     libboost-dev \
-    libopenblas-openmp-dev \
+    libfftw3-dev \
     libhdf5-dev \
+    libopenblas-openmp-dev \
+    libopenmpi-dev \
     libxml2-dev \
-    libfftw3-dev
+    make \
+    ninja-build \
+    openmpi-bin \
+    rsync \
+    wget
 
 RUN apt-get install -y --no-install-recommends \
-    python3-numpy \
-    python3-scipy \
-    python3-pandas \
+    python3-coverage \
     python3-h5py \
     python3-matplotlib \
-    python3-coverage \
+    python3-numpy \
+    python3-pandas \
     python3-pytest \
     python3-pytest-cov \
-    python3-pytest-order
+    python3-pytest-order \
+    python3-scipy
 
 # Convenience feature to setup certificates for behind firewall builds.
 # * Copy any provided certificates into the container and update the SSL config

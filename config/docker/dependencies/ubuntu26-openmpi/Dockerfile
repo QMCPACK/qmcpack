@@ -19,45 +19,44 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         liboffload-22-dev \
         clang-format-22 \
         clang-tidy-22 \
-        gcovr \
-        python3 \
         cmake \
-        ninja-build \
-        libboost-all-dev \
+        curl \
+        gcovr \
         git \
-        libopenmpi-dev \
+        hdf5-tools \
+        libboost-all-dev \
+        libfftw3-dev \
         libhdf5-openmpi-dev \
         libhdf5-serial-dev \
-        hdf5-tools \
-        libfftw3-dev \
         libopenblas-openmp-dev \
+        libopenmpi-dev \
         libxml2-dev \
-        sudo \
-        curl \
+        ninja-build \
+        numdiff \
+        python3 \
         rsync \
-        wget \
         software-properties-common \
+        sudo \
         vim \
-        numdiff
+        wget
 
 # Python packages for Nexus and testing
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y \
-        python3-numpy \
-        python3-scipy \
-        python3-matplotlib \
-        python3-h5py \
-        python3-pandas \
+        python3-cif2cell \
         python3-coverage \
+        python3-h5py \
+        python3-matplotlib \
+        python3-numpy \
+        python3-pandas \
+        python3-pip \
         python3-pytest \
         python3-pytest-cov \
         python3-pytest-order \
-        python3-cif2cell \
-        python3-spglib \
-        python3-pip
+        python3-scipy \
+        python3-spglib
 
-# Install gcovr from pip since the Ubuntu version doesn't support files >9999 lines
-# https://github.com/gcovr/gcovr/pull/883
+# Install gcovr from pip for latest features
 RUN export DEBIAN_FRONTEND=noninteractive \
     && sudo pip3 install --break-system-packages gcovr==8.6
 
