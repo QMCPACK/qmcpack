@@ -10,6 +10,10 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y \
         gcc \
         g++ \
+        gcc-9 \
+        g++-9 \
+        gcc-13 \
+        g++-13 \
         clang \
         clang-format \
         clang-tidy \
