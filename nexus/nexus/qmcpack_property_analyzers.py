@@ -186,9 +186,9 @@ class PropertyAnalyzer(QAanalyzer):
 
 class WavefunctionAnalyzer(PropertyAnalyzer):
 
-    jastrow_types = ['J1','J2','J3']
+    jastrow_types = ('J1','J2','J3')
 
-    def __init__(self,arg0=None,load_jastrow=False,nindent=0):
+    def __init__(self,arg0=None,*,load_jastrow=False,nindent=0):
         QAanalyzer.__init__(self,nindent=nindent)
         self.info.load_jastrow = load_jastrow
 
@@ -277,7 +277,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
             self.warn('Jastrow read failed, some data will not be available')
             self.info.fail = True
         #end try
-        self._transfer_from(jastrows)
+        self.update(**jastrows)
     #end def analyze_local
 
 
@@ -340,7 +340,6 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
     #end def plot_jastrows
 
 #end class WavefunctionAnalyzer
-
 
 
 

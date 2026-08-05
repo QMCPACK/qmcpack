@@ -25,6 +25,7 @@
 
 
 import os
+from copy import deepcopy
 from .developer import obj
 from .simulation import Simulation
 from .vasp_input import VaspInput,generate_vasp_input,generate_poscar,Poscar
@@ -37,12 +38,16 @@ class Vasp(Simulation):
     analyzer_type      = VaspAnalyzer
     generic_identifier = 'vasp'
     application        = 'vasp' 
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['structure']) 
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'structure'})
 
     allow_overlapping_files = True
 
-    vasp_save_files = 'INCAR KPOINTS POSCAR CONTCAR DOSCAR EIGENVAL IBZKPT OSZICAR OUTCAR PCDAT XDATCAR vasprun.xml'.split()
+    vasp_save_files = (
+        'DOSCAR', 'IBZKPT', 'CONTCAR', 'KPOINTS', 'PCDAT', 'POSCAR',
+        'OUTCAR', 'vasprun.xml', 'EIGENVAL', 'INCAR', 'XDATCAR', 'OSZICAR'
+        )
+
 
     def set_files(self):
         self.infile  = 'INCAR'
@@ -104,7 +109,7 @@ class Vasp(Simulation):
                 if len(neb_structures)>1:
                     self.error('NEB simulation at {0} depends on more than two structures\n  please check your inputs'.format(self.locdir))
                 #end if
-                neb_structures.append(result.structure.copy())
+                neb_structures.append(deepcopy(result.structure))
                 if len(neb_structures)==2:
                     input.setup_neb(*neb_structures,images=input.incar.images)
                 #end if
@@ -177,5 +182,4 @@ def generate_vasp(**kwargs):
 
     return vasp
 #end def generate_vasp
-
 

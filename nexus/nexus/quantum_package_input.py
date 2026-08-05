@@ -17,6 +17,7 @@
 
 
 import os
+from copy import deepcopy
 from .developer import DevBase,  obj, log, error
 from .structure import Structure
 from .physical_system import PhysicalSystem
@@ -80,7 +81,7 @@ def write_qp_value(value_filepath,value):
     elif isinstance(value,str):
         svalue = value
     else:
-        QuantumPackageInput.class_error('invalid type encountered on write\nattempted to write variable: {0}\nwith type: {1}\nvalid type options: bool,int,float,str'.format(value_filepath,value.__class__.__name__))
+        error('invalid type encountered on write\nattempted to write variable: {0}\nwith type: {1}\nvalid type options: bool,int,float,str'.format(value_filepath,value.__class__.__name__))
     #end if
     f = open(value_filepath,'w')
     f.write(svalue+'\n')
@@ -284,54 +285,22 @@ class Section(DevBase):
 
 class QuantumPackageInput(SimulationInput):
 
-    added_keys = '''
-        structure
-        run_control
-        '''.split()
+    added_keys = frozenset({'structure', 'run_control'})
 
     # get these by running
     #   qp_run -h
-    run_types = set('''
-        cis
-        cisd
-        diagonalize_h
-        fci
-        fcidump
-        four_idx_transform
-        install
-        ks_scf
-        molden
-        print_ci_vectors
-        print_e_conv
-        print_ecmd_pbe_ontop
-        print_h0j
-        print_pgm
-        print_rsdft_variational_energy
-        print_wf
-        pt2
-        qmc_create_wf
-        qmc_e_curve
-        qp_ao_ijkl_r3_ints
-        qp_cipsi_rsh
-        qp_convert_qmcpack_to_ezfio.py
-        reorder_dets
-        rs_ks_scf
-        save_for_qmcpack
-        save_natorb
-        save_one_e_dm
-        save_ortho_mos
-        scf
-        target_pt2_qmc
-        truncate_wf_spin
-        truncate_wf_spin_no_H
-        two_body_dm.main
-        uninstall
-        write_2_body_dm_fci_dump
-        write_effective_rsdft_hamiltonian
-        write_erf_and_regular_ints
-        write_integrals_erf
-        write_rsdft_h_read_ints
-        '''.split())
+    run_types = frozenset({
+        'scf', 'write_2_body_dm_fci_dump', 'truncate_wf_spin', 'cis',
+        'qp_ao_ijkl_r3_ints', 'print_ci_vectors', 'write_erf_and_regular_ints', 'pt2',
+        'write_rsdft_h_read_ints', 'qmc_e_curve', 'fcidump', 'save_natorb',
+        'qp_convert_qmcpack_to_ezfio.py', 'print_e_conv', 'reorder_dets', 'fci',
+        'print_h0j', 'write_effective_rsdft_hamiltonian', 'write_integrals_erf',
+        'install', 'target_pt2_qmc', 'diagonalize_h', 'qmc_create_wf', 'molden',
+        'two_body_dm.main', 'uninstall', 'qp_cipsi_rsh', 'print_wf',
+        'four_idx_transform', 'save_ortho_mos', 'cisd', 'print_ecmd_pbe_ontop', 'ks_scf',
+        'print_pgm', 'save_one_e_dm', 'truncate_wf_spin_no_H', 'save_for_qmcpack',
+        'rs_ks_scf', 'print_rsdft_variational_energy'
+        })
 
 
     def __init__(self,filepath=None):
@@ -386,7 +355,8 @@ class QuantumPackageInput(SimulationInput):
         value = None
         secname = variable_section[name]
         if secname in self and name in self[secname]:
-            value = self[secname].delete(name)
+            value = self[secname][name]
+            del self[secname][name]
         #end if
         return value
     #end def delete
@@ -394,13 +364,18 @@ class QuantumPackageInput(SimulationInput):
 
     def extract_added_keys(self):
         extra = obj()
-        extra.move_from(self,QuantumPackageInput.added_keys)
+        added_keys = QuantumPackageInput.added_keys
+        for k in added_keys:
+            extra[k] = self[k]
+            del self[k]
         return extra
     #end def extract_added_keys
 
 
     def restore_added_keys(self,extra):
-        extra.move_to(self,QuantumPackageInput.added_keys)
+        for k in QuantumPackageInput.added_keys:
+            self[k] = extra[k]
+            del extra[k]
     #end def restore_added_keys
 
 
@@ -465,7 +440,7 @@ class QuantumPackageInput(SimulationInput):
             struct_file = prefix+'.xyz'
             self.structure.write_xyz(struct_file)
             command = 'qp_create_ezfio'
-            if self.path_exists('ao_basis/ao_basis'):
+            if 'ao_basis' in self and 'ao_basis' in self.ao_basis:
                 command += ' -b '+self.ao_basis.ao_basis
             #end if
             command += ' '+struct_file
@@ -507,21 +482,21 @@ class QuantumPackageInput(SimulationInput):
 
 
     def read_text(self,text,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
 
     def write_text(self,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
 
     def incorporate_system(self,system):
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_system
 
 
-    def check_valid(self,sections=True,variables=True,types=True,run_type=True,exit=True):
+    def check_valid(self,*,sections=True,variables=True,types=True,run_type=True,exit=True):
         msg = ''
 
         extra = self.extract_added_keys()
@@ -595,24 +570,12 @@ class QuantumPackageInput(SimulationInput):
 
 
 
-run_inputs = set('''
-    prefix
-    run_type
-    frozen_core
-    cis_loop
-    converge_dets
-    sleep
-    slave
-    postprocess
-    save_natorb
-    four_idx_transform
-    save_for_qmcpack
-    '''.split())
-gen_inputs = set('''
-    system
-    defaults
-    validate
-    '''.split())
+run_inputs = frozenset({
+    'sleep', 'frozen_core', 'run_type', 'save_natorb', 'prefix', 'cis_loop',
+    'postprocess', 'save_for_qmcpack', 'slave', 'converge_dets', 'four_idx_transform'
+    })
+gen_inputs = frozenset({'system', 'defaults', 'validate'})
+
 added_inputs = run_inputs | gen_inputs
 added_types = obj(
     # run inputs
@@ -632,12 +595,7 @@ added_types = obj(
     defaults           = str,
     validate           = bool,
     )
-added_required = set('''
-    system
-    prefix
-    run_type
-    sleep
-    '''.split())
+added_required = frozenset({'system', 'sleep', 'run_type', 'prefix'})
 qp_defaults_version = 'v1'
 shared_defaults = obj(
     # run inputs
@@ -668,37 +626,51 @@ def generate_quantum_package_input(**kwargs):
 
     # rewrap keywords and apply defaults
     kw  = obj(**kwargs)
-    kw.set_optional(defaults=qp_defaults_version)
+    if 'defaults' not in kw:
+        kw.defaults = qp_defaults_version
     if kw.defaults not in qp_defaults:
-        QuantumPackageInput.class_error('cannot generate input\nrequested invalid default set\ndefault set requested: {0}\nvalid options are: {1}'.format(kw.defaults,sorted(qp_defaults.keys())))
+        error('cannot generate input\nrequested invalid default set\ndefault set requested: {0}\nvalid options are: {1}'.format(kw.defaults,sorted(qp_defaults.keys())))
     #end if
-    kw.set_optional(**qp_defaults[kw.defaults])
+    for k,v in qp_defaults[kw.defaults].items():
+        if k not in kw:
+            kw[k] = v
 
     # check for required variables
-    req_missing = kw.check_required(added_required,exit=False)
+    req_missing = set(added_required)-set(kw.keys())
     if len(req_missing)>0:
-        QuantumPackageInput.class_error('cannot generate input\nrequired variables are missing\nmissing variables: {0}\nplease supply values for these variables via generate_quantum_package'.format(sorted(req_missing)))
+        error('cannot generate input\nrequired variables are missing\nmissing variables: {0}\nplease supply values for these variables via generate_quantum_package'.format(sorted(req_missing)))
     #end if
 
     # check types of added variables
-    name,vtype = kw.check_types_optional(added_types,exit=False)
+    name,vtype = None,None
+    for k,t in added_types.items():
+        if k in kw and not isinstance(kw[k],t):
+            name = k
+            vtype = t
+            break
     if name is not None:
-        QuantumPackageInput.class_error('cannot generate input\nvariable "{0}" has the wrong type\ntype required: {1}\ntype provided: {2}'.format(name,vtype.__name__,kw[name].__class__.__name__))
+        error('cannot generate input\nvariable "{0}" has the wrong type\ntype required: {1}\ntype provided: {2}'.format(name,vtype.__name__,kw[name].__class__.__name__))
     #end if
 
     # separate run inputs from input file variables
-    run_kw = kw.extract_optional(run_inputs)
+    run_kw = obj()
+    for k in run_inputs:
+        if k in kw:
+            run_kw[k] = kw.pop(k)
     if run_kw.run_type not in QuantumPackageInput.run_types:
         valid = ''
         for rt in sorted(QuantumPackageInput.run_types):
             valid += '  '+rt+'\n'
         #end for
-        QuantumPackageInput.class_error('cannot generate input\ninvalid run_type requested\nrun_type provided: {0}\nvalid options are:\n{1}'.format(run_kw.run_type,valid))
+        error('cannot generate input\ninvalid run_type requested\nrun_type provided: {0}\nvalid options are:\n{1}'.format(run_kw.run_type,valid))
     #end if
-    qpi.run_control.set(**run_kw)
+    qpi.run_control.update(**run_kw)
 
     # separate generation inputs from input file variables
-    gen_kw = kw.extract_optional(gen_inputs)
+    gen_kw = obj()
+    for k in gen_inputs:
+        if k in kw:
+            gen_kw[k] = kw.pop(k)
 
     # partition inputs into sections and variables
     sections = obj()
@@ -717,7 +689,7 @@ def generate_quantum_package_input(**kwargs):
         elif is_var:
             variables[name] = value
         else:
-            QuantumPackageInput.class_error('cannot generate input\nencountered name that is not known as a section or variable\nunrecognized name provided: {0}\nvalid sections: {1}\nvalid variables: {2}'.format(name,sorted(known_sections),sorted(known_variables)))
+            error('cannot generate input\nencountered name that is not known as a section or variable\nunrecognized name provided: {0}\nvalid sections: {1}\nvalid variables: {2}'.format(name,sorted(known_sections),sorted(known_variables)))
         #end if
     #end for
 
@@ -732,11 +704,11 @@ def generate_quantum_package_input(**kwargs):
     # assign variables to sections
     for varname,var in variables.items():
         if varname not in variable_section:
-            QuantumPackageInput.class_error('cannot generate input\nsection cannot be fond for variable provided\nunrecognized variable: {0}'.format(varname))
+            error('cannot generate input\nsection cannot be fond for variable provided\nunrecognized variable: {0}'.format(varname))
         #end if
         secname = variable_section[varname]
         if isinstance(secname,tuple):
-            QuantumPackageInput.class_error('cannot generate input\nsection cannot be uniquely determined from variable name\nvariable name provided: {0}\npossible sections: {1}\nplease provide this variable directly within on of the input sections listed and try again'.format(varname,secname))
+            error('cannot generate input\nsection cannot be uniquely determined from variable name\nvariable name provided: {0}\npossible sections: {1}\nplease provide this variable directly within on of the input sections listed and try again'.format(varname,secname))
         #end if
         if secname not in qpi:
             qpi[secname] = Section()
@@ -746,7 +718,7 @@ def generate_quantum_package_input(**kwargs):
 
     # incorporate atomic and electronic structure
     system = gen_kw.system
-    qpi.structure = system.structure.copy()
+    qpi.structure = deepcopy(system.structure)
     if 'electrons' not in qpi:
         qpi.electrons = Section()
     #end if

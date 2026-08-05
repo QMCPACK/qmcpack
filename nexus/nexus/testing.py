@@ -19,7 +19,7 @@ def float_diff(v1,v2,atol=def_atol,rtol=def_rtol):
 
 
 # determine if two values differ
-def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,int_as_float=False):
+def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,*,int_as_float=False):
     diff = False
     v1_bool  = isinstance(v1,(bool,np.bool_))
     v2_bool  = isinstance(v2,(bool,np.bool_))
@@ -48,7 +48,7 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,int_as_float=False):
             diff = True
         else:
             for vv1,vv2 in zip(v1,v2):
-                diff |= value_diff(vv1,vv2,atol,rtol,int_as_float)
+                diff |= value_diff(vv1,vv2,atol,rtol,int_as_float=int_as_float)
             #end for
         #end if
     elif isinstance(v1,np.ndarray):
@@ -58,7 +58,7 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,int_as_float=False):
             diff = True
         else:
             for vv1,vv2 in zip(v1,v2):
-                diff |= value_diff(vv1,vv2,atol,rtol,int_as_float)
+                diff |= value_diff(vv1,vv2,atol,rtol,int_as_float=int_as_float)
             #end for
         #end if
     elif isinstance(v1,dict):
@@ -68,7 +68,7 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,int_as_float=False):
             diff = True
         else:
             for k in k1:
-                diff |= value_diff(v1[k],v2[k],atol,rtol,int_as_float)
+                diff |= value_diff(v1[k],v2[k],atol,rtol,int_as_float=int_as_float)
             #end for
         #end if
     elif isinstance(v1,set):
@@ -84,13 +84,38 @@ def value_diff(v1,v2,atol=def_atol,rtol=def_rtol,int_as_float=False):
 #end def value_diff
 
 
+
+
+def dict_serialize(d,serial=None,path=None,dict_type=None):
+    # serialize a dict-like object (flat string_path-value mapping)
+    if dict_type is None:
+        dict_type = d.__class__
+    first = serial is None
+    if first:
+        serial = dict_type()
+        path = ''
+    for k,v in d.items():
+        p = path+str(k)
+        if hasattr(v,'items') and callable(getattr(v,'items')) and not isinstance(v,type):
+            if len(v)==0:
+                serial[p]=dict_type()
+            else:
+                dict_serialize(v,serial,p+'/',dict_type)
+        else:
+            serial[p]=v
+    if first:
+        return serial
+#end def dict_serialize
+
+
+
 # determine if two objects differ
-def object_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,bypass=False):
+def object_diff(o1,o2,atol=def_atol,rtol=def_rtol,*,int_as_float=False,full=False,bypass=False):
     diff1 = dict()
     diff2 = dict()
     if not bypass:
-        o1 = o1._serial().__dict__
-        o2 = o2._serial().__dict__
+        o1 = dict_serialize(o1,dict_type=dict)
+        o2 = dict_serialize(o2,dict_type=dict)
     #end if
     keys1 = set(o1.keys())
     keys2 = set(o2.keys())
@@ -106,7 +131,7 @@ def object_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,
     for k in km:
         v1 = o1[k]
         v2 = o2[k]
-        if value_diff(v1,v2,atol,rtol,int_as_float):
+        if value_diff(v1,v2,atol,rtol,int_as_float=int_as_float):
             diff1[k] = v1
             diff2[k] = v2
         #end if
@@ -143,12 +168,12 @@ def read_text_tokens(t):
     return tokens
 #end def read_text_tokens
 
-def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,by_line=False):
+def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,*,int_as_float=False,full=False,by_line=False):
     t1 = t1.replace(',',' , ')
     t2 = t2.replace(',',' , ')
     tokens1 = read_text_tokens(t1)
     tokens2 = read_text_tokens(t2)
-    diff = value_diff(tokens1,tokens2,atol,rtol,int_as_float)
+    diff = value_diff(tokens1,tokens2,atol,rtol,int_as_float=int_as_float)
     if not full:
         return diff
     elif not by_line:
@@ -156,7 +181,7 @@ def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,by
         diff2 = dict()
         nmin = min(len(tokens1),len(tokens2))
         for n,(v1,v2) in enumerate(zip(tokens1[:nmin],tokens2[:nmin])):
-            if value_diff(v1,v2,atol,rtol,int_as_float):
+            if value_diff(v1,v2,atol,rtol,int_as_float=int_as_float):
                 diff1[n] = v1
                 diff2[n] = v2
             #end if
@@ -182,7 +207,7 @@ def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,by
         for n,(l1,l2) in enumerate(zip(lines1[:nmin],lines2[:nmin])):
             tokens1 = read_text_tokens(l1)
             tokens2 = read_text_tokens(l2)
-            if value_diff(tokens1,tokens2,atol,rtol,int_as_float):
+            if value_diff(tokens1,tokens2,atol,rtol,int_as_float=int_as_float):
                 diff1[n] = l1
                 diff2[n] = l2
             #end if
@@ -204,8 +229,8 @@ def text_diff(t1,t2,atol=def_atol,rtol=def_rtol,int_as_float=False,full=False,by
 
 
 # print the difference between two objects
-def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,int_as_float=False,text=False,by_line=False): # used in debugging, not actual tests
-    from .generic import obj
+def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,*,int_as_float=False,text=False,by_line=False): # used in debugging, not actual tests
+    from .developer import obj
     hline = '========== {} =========='
     print(hline.format('left object'))
     print(o1)
@@ -261,8 +286,8 @@ def check_object_eq(o1,o2,**kwargs):
 
 # additional convenience functions to use value_diff and object_diff
 value_neq = value_diff
-def value_eq(*args,**kwargs):
-    return not value_neq(*args,**kwargs)
+def value_eq(v1,v2,atol=def_atol,rtol=def_rtol,*,int_as_float=False):
+    return not value_neq(v1,v2,atol,rtol,int_as_float=int_as_float)
 #end def value_eq
 
 object_neq = object_diff

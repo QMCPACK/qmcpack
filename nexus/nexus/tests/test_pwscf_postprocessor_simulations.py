@@ -59,7 +59,6 @@ def test_check_result():
 
 
 def test_get_result():
-    from ..developer import NexusError
     from ..machines import job
 
     for cls,gen in get_class_generators():
@@ -68,7 +67,7 @@ def test_get_result():
         try:
             sim.get_result('anything',None)
             raise FailedTest
-        except NexusError:
+        except NotImplementedError:
             None
         except FailedTest:
             failed()
@@ -83,7 +82,6 @@ def test_get_result():
 
 
 def test_incorporate_result():
-    from ..developer import NexusError
     from ..machines import job
 
     for cls,gen in get_class_generators():
@@ -92,7 +90,7 @@ def test_incorporate_result():
         try:
             sim.incorporate_result('anything',None,None)
             raise FailedTest
-        except NexusError:
+        except NotImplementedError:
             None
         except FailedTest:
             failed()

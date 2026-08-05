@@ -45,8 +45,8 @@ class Gamess(Simulation):
     generic_identifier = 'gamess'
     application        = 'gamess.x' 
     infile_extension   = '.inp'
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['orbitals'])
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'orbitals'})
 
     ericfmt = None
     mcppath = None
@@ -95,7 +95,7 @@ class Gamess(Simulation):
     def check_result(self,result_name,sim):
         input = self.input 
         if result_name=='orbitals':
-            calculating_result = 'contrl' in input and 'scftyp' in input.contrl and input.contrl.scftyp.lower() in ('rhf','rohf','uhf','mcscf','none')
+            calculating_result = 'contrl' in input and 'scftyp' in input.contrl and input.contrl.scftyp.lower() in {'rhf','rohf','uhf','mcscf','none'}
         else:
             calculating_result = False
         #end if
@@ -201,9 +201,9 @@ class Gamess(Simulation):
                         guess_inputs[vname] = GIarray({start:reduced_indices})
                     #end if
                 #end for
-                input.guess.set(**guess_inputs)
+                input.guess.update(**guess_inputs)
             #end if
-            input.guess.set(
+            input.guess.update(
                 guess = 'moread',
                 norb  = norb,
                 prtmo = True,

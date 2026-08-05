@@ -16,6 +16,7 @@
 #====================================================================#
 
 
+from copy import deepcopy
 import numpy as np
 from .developer import obj, error
 from .simulation import SimulationInputTemplateDev
@@ -59,60 +60,61 @@ class PyscfInput(SimulationInputTemplateDev):
 
     allowed_types = basic_types+(np.ndarray,)
 
-    mole_order = '''
-        dump_input
-        parse_arg
-        verbose
-        output
-        max_memory
-        atom
-        basis
-        unit
-        nucmod
-        ecp
-        charge
-        spin
-        symmetry
-        symmetry_subgroup
-        cart
-        nelec
-        nelectron
-        multiplicity
-        ms
-        '''.split()
+    mole_order = (
+        'dump_input',
+        'parse_arg',
+        'verbose',
+        'output',
+        'max_memory',
+        'atom',
+        'basis',
+        'unit',
+        'nucmod',
+        'ecp',
+        'charge',
+        'spin',
+        'symmetry',
+        'symmetry_subgroup',
+        'cart',
+        'nelec',
+        'nelectron',
+        'multiplicity',
+        'ms',
+        )
 
-    cell_order = '''
-        dump_input
-        parse_arg
-        a
-        mesh
-        ke_cutoff
-        precision
-        nimgs
-        ew_eta
-        ew_cut
-        pseudo
-        basis
-        h
-        dimension
-        rcut
-        ecp
-        low_dim_ft_type
-        unit
-        atom
-        gs
-        h
-        drop_exponent
-        nimgs
-        '''.split()
+    cell_order = [  # noqa: RUF012
+        'dump_input',
+        'parse_arg',
+        'a',
+        'mesh',
+        'ke_cutoff',
+        'precision',
+        'nimgs',
+        'ew_eta',
+        'ew_cut',
+        'pseudo',
+        'basis',
+        'h',
+        'dimension',
+        'rcut',
+        'ecp',
+        'low_dim_ft_type',
+        'unit',
+        'atom',
+        'gs',
+        'h',
+        'drop_exponent',
+        'nimgs',
+        ]
+
     for k in mole_order:
         if k not in cell_order:
             cell_order.append(k)
         #end if
     #end for
-
-    mole_allowed = set(mole_order)
-    cell_allowed = set(cell_order)
+    cell_order: tuple[str] = tuple(cell_order)
+    mole_allowed = frozenset(mole_order)
+    cell_allowed = frozenset(cell_order)
     
 
     def __init__(self,
@@ -121,6 +123,7 @@ class PyscfInput(SimulationInputTemplateDev):
                  custom      = None,     # obj w/ $ prefixed vars in template
                  system      = None,     # physical system object
                  units       = None,     # input units desired
+                 *,
                  use_folded  = True,     # use folded system/primitive cell
                  mole        = None,     # obj w/ Mole variables
                  cell        = None,     # obj w/ Cell variables
@@ -196,9 +199,9 @@ $calculation
             if 'system' not in self.keywords:
                 self.error('cannot incorporate "system" input\n$system is not present in template input'+extra)
             #end if
-            system = system.copy() # make a local copy
+            system = deepcopy(system) # make a local copy
             if use_folded and system.has_folded():
-                tiled_structure = system.structure.copy()
+                tiled_structure = deepcopy(system.structure)
                 system = system.folded_system
             #end if
             s = system.structure
@@ -219,11 +222,11 @@ $calculation
             sys_inputs.charge = system.net_charge
             sys_inputs.spin   = system.net_spin
             if is_solid:
-                folded_structure     = s.copy()
+                folded_structure     = deepcopy(s)
                 sys_inputs.dimension = len(s.axes)
                 sys_inputs.a         = s.write_axes()
                 if len(s.kpoints)>0:
-                    skp = s.copy()
+                    skp = deepcopy(s)
                     skp.change_units('B')
                     sys_kpoints = skp.kpoints.copy()
                 #end if
@@ -236,7 +239,7 @@ $calculation
             sys_allowed = PyscfInput.mole_allowed
             sys_order   = PyscfInput.mole_order
             if mole is not None:
-                sys_inputs.set(**mole)
+                sys_inputs.update(**mole)
             #end if
         elif is_cell:
             sys_name    = 'cell'
@@ -244,7 +247,7 @@ $calculation
             sys_allowed = PyscfInput.cell_allowed
             sys_order   = PyscfInput.cell_order
             if cell is not None:
-                sys_inputs.set(**cell)
+                sys_inputs.update(**cell)
             #end if
         else:
             None # no action needed if not molecule or periodic solid
@@ -252,8 +255,8 @@ $calculation
 
         if calculation is not None and 'calculation' not in self.values:
 
-            calc = calculation.copy() # make a local copy
-            calc.set_optional(
+            calc = deepcopy(calculation) # make a local copy
+            d = dict(
                 method       = 'RKS',
                 df_fitting   = True,
                 xc           = 'pbe',
@@ -267,6 +270,9 @@ $calculation
                 u_val        = None,
                 C_ao_lo      = 'minao',
                 )
+            for k,v in d.items():
+                if k not in calc:
+                    calc[k] = v
             if calc.u_val is not None:
                 calc.u_val = np.array(calc.u_val)
             #end if

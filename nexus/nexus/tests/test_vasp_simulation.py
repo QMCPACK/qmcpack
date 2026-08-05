@@ -15,7 +15,7 @@ from ..testing import value_eq,object_eq,check_object_eq
 from .test_vasp_input import c_potcar_text, TEST_FILES
 
 
-def setup_vasp_sim(path,identifier='vasp',copy_files=False):
+def setup_vasp_sim(path,identifier='vasp',*,copy_files=False):
     import shutil
     from ..nexus_base import nexus_core
     from ..machines import job
@@ -182,7 +182,7 @@ def test_get_result(tmp_path):
               scale           = 1.0,
               units           = 'A',
               ),
-        )
+          )
 
     assert(check_object_eq(result,result_ref))
 
@@ -194,7 +194,7 @@ def test_get_result(tmp_path):
 def test_incorporate_result(tmp_path):
     import shutil
     from numpy import array
-    from ..developer import obj
+    from ..developer import obj,to_obj
 
     nexus_core.local_directory  = str(tmp_path)
     nexus_core.remote_directory = str(tmp_path)
@@ -203,7 +203,7 @@ def test_incorporate_result(tmp_path):
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
         pseudo_strs=[c_potcar_text],
-    )
+        )
 
     sim = setup_vasp_sim(tmp_path,identifier='diamond',copy_files=True)
 
@@ -258,7 +258,7 @@ def test_incorporate_result(tmp_path):
         vel_coord       = None,
         )
 
-    assert(object_eq(sim2.input.poscar.to_obj(),poscar_ref))
+    assert(object_eq(to_obj(sim2.input.poscar),poscar_ref))
 
     clear_all_sims()
 #end def test_incorporate_result
@@ -316,14 +316,14 @@ def test_get_output_files(tmp_path):
 
     sim = setup_vasp_sim(tmp_path)
 
-    vfiles = 'INCAR KPOINTS POSCAR CONTCAR OUTCAR'.split()
+    vfiles = {'CONTCAR', 'KPOINTS', 'POSCAR', 'OUTCAR', 'INCAR'}
     for vfile in vfiles:
         (tmp_path / vfile).touch()
     #end for
 
     files = sim.get_output_files()
 
-    assert(value_eq(files,vfiles))
+    assert(set(files) == vfiles)
 
     for vfile in vfiles:
         assert((tmp_path / (sim.identifier+'.'+vfile)))

@@ -253,7 +253,7 @@ def morse_rDw_fit(re,De,w,m1,m2=None,Einf=0.0,Dunit='eV'):
 #    pf    = morse_fit(r,E)                           returns fitted parameters
 #  jackknife statistical fits, E is two dimensional with blocks as first dimension
 #    pf,pmean,perror = morse_fit(r,E,jackknife=True)  returns jackknife estimates of parameters
-def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxres=None,capture=None):
+def morse_fit(r,E,p0=None,*,jackknife=False,cost=least_squares,auxfuncs=None,auxres=None,capture=None):
     if isinstance(E,(list,tuple)):
         E = np.array(E,dtype=float)
     #end if
@@ -344,7 +344,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
 # morse_fit_fine: fit data to a morse potential and interpolate on a fine grid
 #   compute direct jackknife variations in the fitted curves 
 #   by using morse as an auxiliary jackknife function
-def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_squares,capture=None):  
+def morse_fit_fine(r,E,p0=None,rfine=None,*,both=False,jackknife=False,cost=least_squares,capture=None):  
     if rfine is None:
         rfine = np.linspace(r.min(),r.max(),400)
     #end if
@@ -353,7 +353,16 @@ def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_
         )
     auxres = obj()
 
-    res = morse_fit(r,E,p0,jackknife,cost,auxfuncs,auxres,capture)
+    res = morse_fit(
+        r         = r,
+        E         = E,
+        p0        = p0,
+        jackknife = jackknife,
+        cost      = cost,
+        auxfuncs  = auxfuncs,
+        auxres    = auxres,
+        capture   = capture,
+        )
 
     if not jackknife:
         pf = res
@@ -387,14 +396,14 @@ def murnaghan(p, V):
 def birch(p, V):
     return p[0] + 9 * p[1] * p[2] / 16 * ((p[1] / V) ** (2.0 / 3) - 1) ** 2 * (
         2 + (p[3] - 4) * ((p[1] / V) ** (2.0 / 3) - 1)
-    )
+        )
 
 def vinet(p, V):
     return p[0] + 2 * p[1] * p[2] / (p[3] - 1) ** 2 * (
         2
         - (2 + 3 * (p[3] - 1) * ((V / p[1]) ** (1.0 / 3) - 1))
         * exp(-1.5 * (p[3] - 1) * ((V / p[1]) ** (1.0 / 3) - 1))
-    )
+        )
 
 def murnaghan_pressure(p, V):
     return p[1] / p[2] * ((p[0] / V) ** p[2] - 1)
@@ -406,7 +415,7 @@ def birch_pressure(p, V):
         * (p[0] / V) ** (5.0 / 3)
         * ((p[0] / V) ** (2.0 / 3) - 1)
         * (1.0 + 0.75 * (p[2] - 1) * ((p[0] / V) ** (2.0 / 3) - 1))
-    )
+        )
 
 def vinet_pressure(p, V):
     return (
@@ -415,7 +424,7 @@ def vinet_pressure(p, V):
         * (1.0 - (V / p[0]) ** (1.0 / 3))
         * (p[0] / V) ** (2.0 / 3)
         * exp(1.5 * (p[2] - 1) * (1.0 - (V / p[0]) ** (1.0 / 3)))
-    )
+        )
 
 
 eos_funcs = obj(
@@ -461,7 +470,7 @@ def eos_param(p,param,type='vinet'):
 #end def eos_param
 
 
-def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfuncs=None,auxres=None,capture=None):
+def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',*,jackknife=False,auxfuncs=None,auxres=None,capture=None):
     if isinstance(V,(list,tuple)):
         V = np.array(V,dtype=float)
     #end if
@@ -535,7 +544,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
             auxfunc = auxfuncs[auxname]
             auxres[auxname] = jackknife_aux(psamples,auxfunc,capture=auxcap)
             eq_vol = auxres[auxname][0]
-            auxfuncs.delete(auxname)
+            auxfuncs.pop(auxname)
             for auxname,auxfunc in auxfuncs.items():
                 num_variables = len(inspect.getargspec(auxfunc).args)
                 if num_variables > 1:
@@ -1007,7 +1016,7 @@ def simstats(x,dim=None):
 
 
 
-def simplestats(x,dim=None,full=False):
+def simplestats(x,dim=None,*,full=False):
     if dim is None:
         dim=len(x.shape)-1
     #end if
@@ -1023,7 +1032,7 @@ def simplestats(x,dim=None,full=False):
 #end def simplestats
 
 
-def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True,seed_from_hash=True):
+def equilibration_length(x,tail=.5,*,plot=False,xlim=None,bounces=2,random=True,seed_from_hash=True):
     if seed_from_hash:
         np.random.seed(hash(tuple(x))%(2**32))
     #end if
@@ -1357,7 +1366,7 @@ def distance_table(p1,p2,ordering=0):
 
 
 
-def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
+def nearest_neighbors(n,points,qpoints=None,*,return_distances=False,slow=False):
     extra = 0
     if qpoints is None:
         qpoints=points
@@ -1447,7 +1456,7 @@ def convex_hull(points,dimension=None,tol=None):
 
 
 
-def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_return=False):
+def layers_1d(xpoints,tol,xmin=None,xmax=None,*,merge=True,periodic=False,full_return=False):
 
     # Update inputs to be consistent with periodic merge, if requested
     if merge and periodic:
@@ -1483,7 +1492,7 @@ def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_ret
     #end for
 
     # Find the mean of each set of points
-    for l in layers:
+    for l in layers.values():
         l.xmean = l.xsum/l.nsum
     #end for
 
@@ -1531,7 +1540,7 @@ def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_ret
 
 
 
-def layer_means_1d(xpoints,tol,full_return=False):
+def layer_means_1d(xpoints,tol,*,full_return=False):
     # Get layer data
     layers,xmin,xmax = layers_1d(xpoints,tol,full_return=True)
 
@@ -1554,7 +1563,7 @@ def layer_means_1d(xpoints,tol,full_return=False):
 
 
 
-def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
+def index_by_layer_1d(xpoints,tol,*,uniform=True,check=True,full_return=False):
     # Get layer means
     xlayer,xmin,xmax = layer_means_1d(xpoints,tol,full_return=True)
 
@@ -1589,5 +1598,3 @@ def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
         return ipoints,xmin,xmax
     #end if
 #end def index_by_layer
-
-

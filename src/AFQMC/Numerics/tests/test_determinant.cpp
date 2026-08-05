@@ -10,17 +10,8 @@
 // Fionn D. Malone, malone14@llnl.gov
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
-#include "complex_approx.hpp"
-#include "Configuration.h"
-
-#undef APP_ABORT
-#define APP_ABORT(x) \
-  {                  \
-    std::cout << x;  \
-    exit(0);         \
-  }
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <vector>
 

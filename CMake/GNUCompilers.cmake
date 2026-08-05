@@ -143,7 +143,7 @@ file(
   "#include <iostream>\n#if __GLIBC__ == 2 && ( __GLIBC_MINOR__ == 22 || __GLIBC_MINOR__ == 23 )\n#error buggy glibc version\n#endif\n int main() { return 0; }\n"
 )
 try_compile(PASS_GLIBC ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_glibc.cxx
-            CMAKE_FLAGS "${CMAKE_CXX_FLAGS}" OUTPUT_VARIABLE COMPILE_OUTPUT)
+            CMAKE_FLAGS "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}" OUTPUT_VARIABLE COMPILE_OUTPUT)
 if(NOT PASS_GLIBC)
   message(FATAL_ERROR "Test glibc compilation failed. Output:\n${COMPILE_OUTPUT}")
 endif()
@@ -159,3 +159,10 @@ if(ENABLE_GCOV)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -O0 -fno-inline -fno-inline-small-functions -fno-default-inline")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage -O0 -fno-inline -fno-inline-small-functions -fno-default-inline")
 endif(ENABLE_GCOV)
+
+# Workaround Apple SDK headers using C11 spelling of static_assert which GCC
+# does not accept as an extension
+if(APPLE)
+  add_compile_definitions("$<$<COMPILE_LANGUAGE:CXX>:_Static_assert=static_assert>")
+endif()
+

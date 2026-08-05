@@ -13,8 +13,7 @@
 
 #undef NDEBUG
 
-//#include "catch.hpp"
-#include "Configuration.h"
+
 
 #include <vector>
 #include <iostream>

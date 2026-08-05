@@ -41,7 +41,7 @@
 
 
 import numpy as np
-from .developer import DevBase, obj
+from .developer import DevBase, obj, error
 from .hdfreader import HDFgroup
 from .numerics import surface_normals
 
@@ -127,7 +127,7 @@ class QAobject(QAobj_base):
 
     plotter = Plotter()
 
-    opt_methods = set(['opt','linear','cslinear'])
+    opt_methods = frozenset({'opt','linear','cslinear'})
 
     def __init__(self):
         return
@@ -159,13 +159,14 @@ class QAobject(QAobj_base):
     #end def _relink_dynamic_methods
 
 
-    _allowed_settings = set(['optimize'])
+    _allowed_settings = frozenset({'optimize'})
     _default_settings = obj(
         #optimize = 'variance'
         optimize = 'lastcost'
         #optimize = 'energy_within_variance_tol'  # also ewvt
         )
-    QAobj_base.class_set(**_default_settings)
+    for k,v in _default_settings.items():
+        setattr(QAobj_base,k,v)
 
     @classmethod
     def settings(cls,**kwargs):
@@ -176,9 +177,10 @@ class QAobject(QAobj_base):
             allowed.sort()
             invalid = list(invalid)
             invalid.sort()
-            cls.class_error('attempted to set unknown variables\n  unknown variables: {0}\n  valid options are: {1}'.format(invalid,allowed))
+            error('attempted to set unknown variables\n  unknown variables: {0}\n  valid options are: {1}'.format(invalid,allowed))
         #end if
-        QAobj_base.class_set(**kwargs)
+        for k,v in kwargs.items():
+            setattr(QAobj_base,k,v)
     #end settings
 #end class QAobject
 
@@ -243,7 +245,7 @@ class QAinformation(obj):
 
 class QAdata(QAobject):
     def zero(self):
-        for value in self:
+        for value in self.values():
             value[:] = 0
         #end for
         #self.sum()
@@ -272,7 +274,7 @@ class QAdata(QAobject):
     #end def accumulate
 
     def normalize(self,normalization):
-        for value in self:
+        for value in self.values():
             value/=normalization
         #end for
         #self.sum()
@@ -281,7 +283,7 @@ class QAdata(QAobject):
 
     def sum(self):
         s = 0
-        for value in self:
+        for value in self.values():
             s+=value.sum()
         #end for
         print('                sum = {0}'.format(s))
@@ -324,7 +326,7 @@ class QAHDFdata(QAdata):
     #end def accumulate
 
     def normalize(self,normalization):
-        for value in self:
+        for value in self.values():
             if isinstance(value,HDFgroup):
                 value.normalize(normalization,'value','value_squared')
             #end if
@@ -344,9 +346,9 @@ class QAanalyzer(QAobject):
     run_info     = None
     method_info  = None
 
-    opt_methods = set(['opt','linear','cslinear'])
-    vmc_methods = set(['vmc','vmc_batch'])
-    dmc_methods = set(['dmc','dmc_batch'])
+    opt_methods = frozenset({'opt','linear','cslinear'})
+    vmc_methods = frozenset({'vmc','vmc_batch'})
+    dmc_methods = frozenset({'dmc','dmc_batch'})
 
 
     def __init__(self,nindent=0):
@@ -383,7 +385,7 @@ class QAanalyzer(QAobject):
     #end def reset_indicators
 
     def init_sub_analyzers(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def init_sub_analyzers
 
     def load_data_local(self):
@@ -467,7 +469,7 @@ class QAanalyzer(QAobject):
         #end for
     #end def load_data
 
-    def analyze(self,force=False):
+    def analyze(self,*,force=False):
         self.set_global_info()
         if not self.info.data_loaded:
             self.load_data_local()
@@ -475,11 +477,11 @@ class QAanalyzer(QAobject):
         #end if
         for name,value in self.items():
             if isinstance(value,QAanalyzer):
-                value.analyze(force)
+                value.analyze(force=force)
             elif isinstance(value,QAanalyzerCollection):
                 for n,v in value.items():
                     if isinstance(v,QAanalyzer):
-                        v.analyze(force)
+                        v.analyze(force=force)
                     #end if
                 #end for
             #end if
@@ -517,7 +519,7 @@ class QAanalyzer(QAobject):
 
     def zero_data(self):
         self.vlog('zeroing '+self.__class__.__name__+' data',n=1)
-        for value in self:
+        for value in self.values():
             if isinstance(value,QAdata):
                 value.zero()
             #end if
@@ -618,7 +620,7 @@ class QAanalyzer(QAobject):
 
     def normalize_data(self,normalization):
         self.vlog('normalizing '+self.__class__.__name__+' data',n=1)
-        for value in self:
+        for value in self.values():
             if isinstance(value,QAdata):
                 value.normalize(normalization)
             #end if

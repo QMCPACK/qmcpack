@@ -28,8 +28,8 @@ import keyword
 import re
 import os
 import numpy as np
-from .developer import DevBase, obj, valid_variable_name
-from .utilities import path_string
+from .developer import DevBase, obj
+from .utilities import path_string, valid_variable_name
 
 
 def parse_string(s, delim = None):
@@ -47,7 +47,7 @@ def parse_string(s, delim = None):
     #end try
 
     # Check if bool
-    if s.lower() in ["true", "false"]:
+    if s.lower() in {"true", "false"}:
         return s.lower() == "true" # return True if s=="true" else False
     #end if
 
@@ -277,7 +277,7 @@ class XMLelement(DevBase):
     reads an xml file and creates a dynamic object out of its contents
 '''
 class XMLreader(DevBase):
-    def __init__(self,fpath=None,element_joins=None,element_aliases=None,contract_names=False,strip_prefix=None,warn=True,xml=None):
+    def __init__(self,fpath=None,*,element_joins=None,element_aliases=None,strip_prefix=None,xml=None,contract_names=False,warn=True):
         if element_joins is None:
             element_joins = []
         if element_aliases is None:
@@ -331,7 +331,7 @@ class XMLreader(DevBase):
         #  Set the current xml element
         self.obj = XMLelement()
         self.cur=[self.obj]
-        self.parser.Parse(self.xml,True)
+        self.parser.Parse(self.xml,True)  # noqa: FBT003
 
         #the expat parser is troublesome in that it
         # -does not have typical class members
@@ -512,7 +512,15 @@ class XMLreader(DevBase):
 
 
 
-def readxml(fpath=None,element_joins=None,element_aliases=None,contract_names=False,strip_prefix=None,warn=True,xml=None):
-    xr = XMLreader(fpath,element_joins,element_aliases,contract_names,strip_prefix,warn,xml=xml)
+def readxml(fpath=None,*,element_joins=None,element_aliases=None,contract_names=False,strip_prefix=None,warn=True,xml=None):
+    xr = XMLreader(
+        fpath           = fpath,
+        element_joins   = element_joins,
+        element_aliases = element_aliases,
+        strip_prefix    = strip_prefix,
+        xml             = xml,
+        contract_names  = contract_names,
+        warn            = warn,
+        )
     return xr.obj
 #end def readxml

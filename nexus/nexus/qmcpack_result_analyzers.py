@@ -27,6 +27,7 @@
 
 
 import numpy as np
+from copy import deepcopy
 from .developer import obj
 from .unit_converter import convert
 from .qmcpack_analyzer_base import QAobject,QAanalyzer
@@ -168,7 +169,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
         #end for
                 
 
-        self.set(
+        self.update(
             any_complete   = any_complete,
             all_complete   = all_complete,
             unstable       = unstable,
@@ -225,12 +226,12 @@ class OptimizationAnalyzer(ResultAnalyzer):
             opt_series -= 1
             self.optimal_series = opt_series
             self.optimal_file = opts[opt_series].info.files.opt
-            self.optimal_wavefunction = opts[opt_series].wavefunction.info.wfn_xml.copy()
+            self.optimal_wavefunction = deepcopy(opts[opt_series].wavefunction.info.wfn_xml)
         #end if
     #end def analyze_local
 
 
-    def summarize(self,units='eV',norm=1.,energy=True,variance=True,header=True):
+    def summarize(self,units='eV',norm=1.,*,energy=True,variance=True,header=True):
         if isinstance(norm,str):
             norm = norm.replace('_',' ').replace('-',' ')
             if norm=='per atom':
@@ -270,7 +271,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
     #end def summarize
 
 
-    def plot_opt_convergence(self,title=None,saveonly=False):
+    def plot_opt_convergence(self,title=None,*,saveonly=False):
         if title is None:
             ts = 'Optimization: Energy/Variance Convergence'
         else:
@@ -312,13 +313,13 @@ class OptimizationAnalyzer(ResultAnalyzer):
     #end def plot_opt_convergence
     
 
-    def plot_jastrow_convergence(self,title=None,saveonly=False,optconv=True):
+    def plot_jastrow_convergence(self,title=None,*,saveonly=False,optconv=True):
         if title is None:
             tsin = None
         else:
             tsin = title
         #end if
-        from matplotlib.pyplot import figure,subplot,xlabel,ylabel,plot,errorbar,title,xticks,xlim
+        from matplotlib.pyplot import figure,subplot,xlabel,ylabel,title
 
         opt = self.opts
         nopt = len(opt)
@@ -382,7 +383,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
 class TimestepStudyAnalyzer(ResultAnalyzer):
     def __init__(self,dmc,nindent=0):
         QAanalyzer.__init__(self,nindent=nindent)
-        self.set(
+        self.update(
             dmc = dmc,
             timesteps = [],
             energies  = [],
@@ -398,7 +399,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
         timesteps = []
         energies  = []
         errors    = []
-        for dmc in self.dmc:
+        for dmc in self.dmc.values():
             timesteps.append(dmc.info.method_input.timestep)
             energies.append(dmc.scalars.LocalEnergy.mean)
             errors.append(dmc.scalars.LocalEnergy.error)
@@ -412,7 +413,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
         self.errors    = errors[order]
     #end def analyze_local
 
-    def summarize(self,units='eV',header=True):
+    def summarize(self,units='eV',*,header=True):
         timesteps = self.timesteps
         energies  = convert(self.energies.copy(),'Ha',units)
         errors    = convert(self.errors.copy(),'Ha',units)
@@ -428,7 +429,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
     #end def summarize
 
     def plot_timestep_convergence(self):
-        from matplotlib.pyplot import figure,subplot,xlabel,ylabel,plot,errorbar,title,text,xticks,rcParams,savefig,xlim
+        from matplotlib.pyplot import figure,xlabel,ylabel,plot,errorbar,title,text,xticks,rcParams,savefig,xlim
 
         params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
           'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}

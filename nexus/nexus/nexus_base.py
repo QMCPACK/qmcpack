@@ -28,6 +28,7 @@
 import os
 import gc as garbage_collector
 from os import PathLike
+from copy import deepcopy
 from .utilities import path_string
 from .nexus_version import nexus_version
 from .memory import resident
@@ -112,9 +113,10 @@ def restore_nexus_core_defaults():
     nexus_noncore.clear()
     nexus_core_noncore.clear()
 
-    nexus_core.set(**nexus_core_defaults.copy())
-    nexus_noncore.set(**nexus_noncore_defaults.copy())
-    nexus_core_noncore.transfer_from(nexus_core,keys=list(nexus_core_noncore_defaults.keys()))
+    nexus_core.update(**deepcopy(nexus_core_defaults))
+    nexus_noncore.update(**deepcopy(nexus_noncore_defaults))
+    for k in nexus_core_noncore_defaults.keys():
+        nexus_core_noncore[k] = nexus_core[k]
 #end def restore_nexus_core_defaults
 
 restore_nexus_core_defaults()
@@ -223,7 +225,7 @@ _____________________________________________________
         #end if
     #end def tlog
 
-    def enter(self, directory: PathLike, changedir: bool = True, msg: str = ''):
+    def enter(self, directory: PathLike, *, changedir: bool = True, msg: str = ''):
         """Have Nexus enter a directory and change its current working directory.
         
         Parameters
@@ -251,6 +253,7 @@ _____________________________________________________
     def leave(self):
         os.chdir(NexusCore.working_directory)
     #end def leave
+
 #end class NexusCore
 
 

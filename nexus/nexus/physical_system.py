@@ -5,8 +5,8 @@
 
 #====================================================================#
 #  physical_system.py                                                #
-#    Representations of matter, particles, and particles collected   #
-#    together in complete systems.                                   #
+#    Representations of particles collected together in complete     #
+#    systems.                                                        #
 #                                                                    #
 #  Content summary:                                                  #
 #    PhysicalSystem                                                  #
@@ -15,272 +15,27 @@
 #    generate_physical_system                                        #
 #      User function to create arbitrary physical systems.           #
 #                                                                    #
-#    Matter                                                          #
-#      Base class for all forms of matter.                           #
-#      Class contains a list of all matter known to Nexus.           #
-#                                                                    #
-#    Particle                                                        #
-#      Class representing a particular particle species.             #
-#                                                                    #
-#    Ion, PseudoIon                                                  #
-#      Specialized Particle classes for ion species and ions         #
-#      represented by pseudopotentials.                              #
-#                                                                    #
-#    Particles                                                       #
-#      A collection of particles.                                    #
-#      PhysicalSystem objects contain a Particles instance.          #
-#                                                                    #
 #====================================================================#
 
 import os
 from pathlib import Path
 from copy import deepcopy
 import numpy as np
-from .developer import DevBase, obj
-from .unit_converter import convert
+from .developer import DevBase, obj, error, warn
 from .periodic_table import Elements
 from .structure import Structure, generate_structure, read_structure
 
 
-class Matter(DevBase):
-    particle_collection = None
+class PhysicalSystem(DevBase):
 
-    @classmethod
-    def set_elements(cls,elements):
-        cls.elements = set(elements)
-    #end def set_elements
+    ghost_aliases = ("Xx",)
 
-    @classmethod
-    def set_particle_collection(cls,pc):
-        cls.particle_collection = pc
-    #end def set_particle_collection
-
-    @classmethod
-    def new_particles(cls,*particles,**named_particles):
-        cls.particle_collection.add_particles(*particles,**named_particles)
-    #end def new_particles
-
-    def is_element(self,name,symbol=False):
-        if symbol:
-            is_elem, element = Elements.is_element(name, return_element=symbol)
-            return is_elem, element.symbol
-        else:
-            is_elem = Elements.is_element(name)
-            return is_elem
-    #end def is_element
-#end class Matter
-
-
-class Particle(Matter):
-    def __init__(self,name=None,mass=None,charge=None,spin=None):
-        self.name   = name  
-        self.mass   = mass  
-        self.charge = charge
-        self.spin   = spin  
-    #end def __init__
-
-    def set_count(self,count):
-        self.count  = count 
-    #end def set_count
-#end class Particle
-
-
-class Ion(Particle):
-    def __init__(self,name=None,mass=None,charge=None,spin=None,
-                 protons=None,neutrons=None):
-        Particle.__init__(self,name,mass,charge,spin)
-        self.protons  = protons
-        self.neutrons = neutrons
-    #end def __init__
-
-    def pseudize(self,valence):
-        ps = PseudoIon()
-        ps.transfer_from(self)
-        ps.charge = valence
-        ps.core_electrons    = ps.protons - valence
-        return ps
-    #end def pseudize
-#end class Ion
-
-
-class PseudoIon(Ion):
-    def __init__(self,name=None,mass=None,charge=None,spin=None,
-                 protons=None,neutrons=None,core_electrons=None):
-        Ion.__init__(self,name,mass,charge,spin,protons,neutrons)
-        self.core_electrons    = core_electrons    
-    #end def __init__
-#end class PseudoIon
-
-
-class Particles(Matter):
-    def __init__(self,*particles,**named_particles):
-        self.add_particles(*particles,**named_particles)
-    #end def __init__
-
-    def add_particles(self,*particles,**named_particles):
-        if len(particles)==1 and isinstance(particles[0],list):
-            particles = particles[0]
-        #end if
-        for particle in particles:
-            self[particle.name] = particle
-        #end for
-        for name,particle in named_particles.items():
-            self[name] = particle
-        #end for
-    #end def add_particles
-
-    def get_particle(self,name):
-        p = None
-        if name in self:
-            p = self[name]
-        else:
-            iselem,symbol = self.is_element(name,symbol=True)
-            if iselem and symbol in self:
-                p = self[symbol].copy()
-                p.name = name
-                self[name] = p
-            #end if
-        #end if
-        return p
-    #end def get_particle
-
-    # test needed
-    def get(self,quantity):
-        q = obj()
-        for name,particle in self.items():
-            q[name] = particle[quantity]
-        #end for
-        return q
-    #end def get
-
-    def rename(self,**name_pairs):
-        for old,new in name_pairs.items():
-            if old in self:
-                o = self[old]
-                o.name = new
-                del self[old]
-                if new in self:
-                    self[new].count += o.count
-                else:
-                    self[new] = o
-                #end if
-            #end if
-        #end for
-    #end def rename
-
-    def get_ions(self):
-        ions = obj()
-        for name,particle in self.items():
-            if self.is_element(name):
-                ions[name] = particle
-            #end if
-        #end for
-        return ions
-    #end def get_ions
-        
-    def count_ions(self,species=False):
-        nions = 0
-        nspecies = 0
-        for name,particle in self.items():
-            if self.is_element(name):
-                nspecies += 1
-                nions += particle.count
-            #end if
-        #end for
-        if species:
-            return nions,nspecies
-        else:
-            return nions
-        #end if
-    #end def count_ions
-
-    def get_electrons(self):
-        electrons = obj()
-        for electron in ('up_electron','down_electron'):
-            if electron in self:
-                electrons[electron] = self[electron]
-            #end if
-        #end for
-        return electrons
-    #end def get_electrons
-
-    def count_electrons(self):
-        nelectrons = 0
-        for electron in ('up_electron','down_electron'):
-            if electron in self:
-                nelectrons += self[electron].count
-            #end if
-        #end for
-        return nelectrons
-    #end def count_electrons
-
-    def electron_counts(self):
-        counts = []
-        for electron in ('up_electron','down_electron'):
-            if electron in self:
-                counts.append(self[electron].count)
-            else:
-                counts.append(0)
-            #end if
-        #end for
-        return counts
-    #end def electron_counts
-#end class Particles
-
-amu_me = convert(1.,'amu','me')
-
-plist = [
-    Particle('up_electron'  ,1.0,-1, 1),
-    Particle('down_electron',1.0,-1,-1),
-    ]
-
-for elem in Elements:
-    plist.append(
-        Ion(
-            name     = elem.symbol,
-            mass     = elem.atomic_weight * amu_me,
-            charge   = elem.atomic_number,
-            spin     = 0, # Don't have this data
-            protons  = elem.atomic_number,
-            neutrons = round(elem.atomic_weight-elem.atomic_number),
-        )
-    )
-#end for
-for elem in Elements:
-    for mass_number, rel_atomic_mass in elem.isotopes.items():
-        plist.append(
-            Ion(
-                name     = f"{elem.symbol}_{mass_number}",
-                mass     = rel_atomic_mass * amu_me,
-                charge   = elem.atomic_number,
-                spin     = 0, # Don't have this data
-                protons  = elem.atomic_number,
-                neutrons = round(rel_atomic_mass - elem.atomic_number),
-            )
-        )
-    #end for
-#end for
-
-Matter.set_elements([e.symbol for e in Elements])
-Matter.set_particle_collection(Particles(plist))
-
-del plist
-
-
-
-class PhysicalSystem(Matter):
-
-    def __init__(self,structure=None,net_charge=0,net_spin=0,particles=None,**valency):
+    def __init__(self,structure=None,net_charge=0,net_spin=0,**valency):
         self.pseudized = False
         if structure is None:
             self.structure = Structure()
         else:
             self.structure = structure
-        #end if
-        if particles is None:
-            self.particles = Particles()
-        else:
-            self.particles = particles.copy()
         #end if
 
         self.folded_system = None
@@ -316,117 +71,31 @@ class PhysicalSystem(Matter):
                 structure  = structure.folded_structure,
                 net_charge = net_charge_fold,
                 net_spin   = net_spin_fold,
-                particles  = particles,
                 **valency
                 )
         #end if
-
-        self.valency_in = obj(**valency)
-        self.net_charge_in = net_charge
-        self.net_spin_in   = net_spin
-
-        self.update_particles(clear=False)
+        if valency is not None and len(valency) > 0:
+            self.pseudize(**valency)
+        else:
+            self.valency = None
+        self.net_charge = net_charge
+        self.net_spin   = net_spin
 
         self.check_folded_system()
     #end def __init__
 
 
-    def update_particles(self,clear=True):
-        #add ions
-        pc = dict()
-        elem = list(self.structure.elem)
-        for ion in set(elem):
-            pc[ion] = elem.count(ion)
-        #end for
-        missing = set(pc.keys())-set(self.particles.keys())
-        if len(missing)>0 or len(elem)==0:
-            if clear:
-                self.particles.clear()
-            #end if
-            self.add_particles(**pc)
-
-            #pseudize
-            if len(self.valency_in)>0:
-                self.pseudize(**self.valency_in)
-            #end if
-
-            #add electrons
-            self.generate_electrons(self.net_charge_in,self.net_spin_in)
-        #end if
-    #end def update_particles
-
-
-    def update(self):
-        self.net_charge = self.structure.background_charge
-        self.net_spin   = 0
-        for p in self.particles:
-            self.net_charge += p.count*p.charge
-            self.net_spin   += p.count*p.spin
-        #end for
-        self.net_charge = int(round(float(self.net_charge)))
-        self.net_spin   = int(round(float(self.net_spin)))
-    #end def update
-
-
-    def add_particles(self,**particle_counts):
-        pc = self.particle_collection # all known particles
-        plist = []
-        for name,count in particle_counts.items():
-            particle = pc.get_particle(name)
-            if particle is None:
-                self.error('particle {0} is unknown'.format(name))
-            else:
-                particle = particle.copy()
-            #end if
-            particle.set_count(count)
-            plist.append(particle)
-        #end for
-        self.particles.add_particles(plist)
-        self.update()
-    #end def add_particles
-
-
-    def generate_electrons(self,net_charge=0,net_spin=0):
-        nelectrons = -net_charge + self.net_charge
-        if net_spin=='low':
-            net_spin = nelectrons%2
-        #end if
-        nup   = float(nelectrons + net_spin - self.net_spin)/2
-        ndown = float(nelectrons - net_spin + self.net_spin)/2        
-        if abs(nup-int(nup))>1e-3:
-            self.error('requested spin state {0} incompatible with {1} electrons'.format(net_spin,nelectrons))
-        #end if
-        nup   = int(nup)
-        ndown = int(ndown)
-        self.add_particles(up_electron=nup,down_electron=ndown)
-    #end def generate_electrons
-
-
     def pseudize(self,**valency):
-        errors = False
-        for ion,valence_charge in valency.items():
-            if ion in self.particles:
-                ionp = self.particles[ion]
-                if isinstance(ionp,Ion):
-                    self.particles[ion] = ionp.pseudize(valence_charge)
-                    self.pseudized = True
-                else:
-                    self.error(ion+' cannot be pseudized',exit=False)
-                #end if
-            else:
+        for ion in valency.keys():
+            if ion not in self.ion_labels:
                 self.error(ion+' is not in the physical system',exit=False)
-                errors = True
-            #end if
-        #end for
-        if errors:
-            self.error('system cannot be generated')
-        #end if
+
         self.valency = obj(**valency)
-        self.update()
+        self.pseudized = True
     #end def pseudize
 
         
-    def check_folded_system(self,exit=True,message=False):
+    def check_folded_system(self,*,exit=True,message=False):
         msg = ''
         sys_folded    = self.folded_system is not None
         struct_folded = self.structure.folded_structure is not None
@@ -448,7 +117,7 @@ class PhysicalSystem(Matter):
     #end def check_folded_system
 
 
-    def check_consistent(self,tol=1e-8,exit=True,message=False):
+    def check_consistent(self,tol=1e-8,*,exit=True,message=False):
         fs,fm = self.check_folded_system(exit=False,message=True)
         cs,cm = self.structure.check_consistent(tol,exit=False,message=True)
         msg = ''
@@ -491,8 +160,7 @@ class PhysicalSystem(Matter):
     #end def group_atoms
 
 
-    def rename(self,folded=True,**name_pairs):
-        self.particles.rename(**name_pairs)
+    def rename(self,*,folded=True,**name_pairs):
         self.structure.rename(folded=False,**name_pairs)
         if self.pseudized:
             for old,new in name_pairs.items():
@@ -503,7 +171,6 @@ class PhysicalSystem(Matter):
                     del self.valency[old]
                 #end if
             #end for
-            self.valency_in = self.valency
         #end if
         if self.folded_system is not None and folded:
             self.folded_system.rename(folded=folded,**name_pairs)
@@ -512,7 +179,7 @@ class PhysicalSystem(Matter):
 
 
     def copy(self):
-        cp = DevBase.copy(self)
+        cp = deepcopy(self)
         if self.folded_system is not None and self.structure.folded_structure is not None:
             del cp.folded_system.structure
             cp.folded_system.structure = cp.structure.folded_structure
@@ -553,7 +220,7 @@ class PhysicalSystem(Matter):
                 net_spin   = self.net_spin
             #end if
         #end if
-        system = self.copy()
+        system = deepcopy(self)
         supersystem = PhysicalSystem(
             structure  = supercell,
             net_charge = net_charge,
@@ -628,7 +295,7 @@ class PhysicalSystem(Matter):
 
 
     def kf_rpa(self):
-      nelecs = self.particles.electron_counts()
+      nelecs = (self.n_up, self.n_down)
       volume = self.structure.volume()
       kvol1 = (2*np.pi)**3/volume  # k-space volume per particle
       kfs = [(3*nelec*kvol1/(4*np.pi))**(1./3) for nelec in nelecs]
@@ -641,7 +308,7 @@ class PhysicalSystem(Matter):
         ions = self.structure.elem.tolist()
         tot_charge = 0
         for ion in ions:
-            if hasattr(self, "valency"):
+            if self.valency is not None:
                 if ion in self.valency:
                     tot_charge += self.valency[ion]
                 else:
@@ -675,7 +342,7 @@ class PhysicalSystem(Matter):
 
     @property
     def Zeff(self):
-        if hasattr(self, "valency"):
+        if self.valency is not None:
             return self.valency
 
         Zeff = {}
@@ -740,14 +407,13 @@ def generate_physical_system(**kwargs):
                 is_path = '/' in s
                 is_file = format in set('xyz xsf poscar cif fhi-aims'.split())
                 if is_path or is_file:
-                    PhysicalSystem.class_error('user provided structure file does not exist\nstructure file path: '+s,'generate_physical_system')
+                    error('user provided structure file does not exist\nstructure file path: '+s,'generate_physical_system')
                 #end if
             #end if
         #end if
     #end if
 
-    generation_info = obj()
-    generation_info.transfer_from(deepcopy(kwargs))
+    generation_info = obj(**deepcopy(kwargs))
 
     net_charge = kwargs['net_charge']
     net_spin   = kwargs['net_spin']
@@ -758,11 +424,9 @@ def generate_physical_system(**kwargs):
     del kwargs['tiled_spin']
     del kwargs['extensive']
     if 'particles' in kwargs:
-        particles = kwargs['particles']
+        warn("The keyword `particles` is no longer valid. Please remove from your scripts!")
         del kwargs['particles']
-    else:
-        generation_info.particles = None
-    #end if
+
     pretile = kwargs['pretile']
     del kwargs['pretile']
     valency = dict()
@@ -784,7 +448,7 @@ def generate_physical_system(**kwargs):
     else:
         for d in range(len(pretile)):
             if tiling[d]%pretile[d]!=0:
-                PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
+                error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
             #end if
         #end for
         tiling = tuple(np.array(tiling)//np.array(pretile))
@@ -848,7 +512,5 @@ def generate_physical_system(**kwargs):
 # test needed
 def ghost_atoms(*particles):
     for particle in particles:
-        Matter.particle_collection.add_particles(Ion(name=particle,mass=0,charge=0,spin=0,protons=0,neutrons=0))
-    #end for
+        PhysicalSystem.ghost_aliases.append(particle)
 #end def ghost_atoms
-

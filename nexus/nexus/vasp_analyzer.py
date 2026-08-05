@@ -31,15 +31,16 @@
 
 import os
 import numpy as np
+from . import numpy_extensions as npe
+from .generic import sorted_generic
+from .developer import DevBase, obj, error
 from .simulation import Simulation,SimulationAnalyzer
 from .vasp_input import Incar
-from .developer import DevBase, obj
-from . import numpy_extensions as npe
 
 # vasp xml reader classes/functions
 
 class VXML(DevBase):
-    basic_types = set('i v dimension field set time'.split())
+    basic_types = frozenset({'dimension', 'field', 'v', 'time', 'i', 'set'})
 
     data_types = obj(int=int,string=str,float=float)
     
@@ -112,7 +113,7 @@ class VXML(DevBase):
             #end if
         #end for
         # have all sub objects parse (read fields, set _value)
-        for v in self:
+        for v in self.values():
             if isinstance(v,VXML):
                 v._parse()
             #end if
@@ -155,7 +156,7 @@ class VXML(DevBase):
             if 'type' in self._attr:
                 del self._attr.type
             #end if
-            self.transfer_from(self._attr)
+            self.update(**self._attr)
         #end if
 
         return
@@ -230,10 +231,10 @@ class VXML(DevBase):
                     else:
                         dtype = float
                     #end if
-                    fields.append(obj(name=fname,dtype=dtype))
+                    fields[len(fields)] = obj(name=fname,dtype=dtype)
                 elif line.startswith('<set'):
                     if not set_dims:
-                        dims   = dims.list()
+                        dims = [v for v in dims.values()]
                         dims.reverse()
                         dims = tuple(dims)
                         dim_counts = np.zeros((len(dims),),dtype=int)
@@ -286,7 +287,7 @@ class VXML(DevBase):
         del self._attr
         del self._lines
         del self._value
-        for v in self:
+        for v in self.values():
             if isinstance(v,VXML):
                 v._remove_hidden()
             #end if
@@ -303,7 +304,7 @@ class VXMLcoll(VXML):
 
     def _reorder(self):
         n=0
-        for key in self.sorted_keys():
+        for key in sorted_generic(self.keys()):
             value = self[key]
             if isinstance(value,VXML):
                 del self[key]
@@ -354,7 +355,7 @@ def readval(val):
         #end try
     #end if
     if fail:
-        VXML.class_error('failed to read value: "{0}"'.format(val),'read_vxml')
+        error('failed to read value: "{0}"'.format(val),'read_vxml')
     #end if
     return v
 #end def readval
@@ -363,7 +364,7 @@ def readval(val):
 
 def read_vxml(filepath):
     if not os.path.exists(filepath):
-        VXML.class_error('file {0} does not exist'.format(filepath),'read_vxml')
+        error('file {0} does not exist'.format(filepath),'read_vxml')
     #end if
     #print 'read'
     with open(filepath, "r") as f:
@@ -423,7 +424,7 @@ def read_vxml(filepath):
     #end for
 
     if len(stack)!=1:
-        VXML.class_error('read failed\nxml tree did not seem to close')
+        error('read failed\nxml tree did not seem to close')
     #end if
 
     #print 'parse'
@@ -692,10 +693,10 @@ def read_outcar_accounting(vlines,odata):
 
 
 class OutcarData(DevBase):
-    any_functions = [
+    any_functions = (
         ('header_values'   , read_outcar_header_values  ),
-        ]
-    elast_functions = [
+        )
+    elast_functions = (
         ('core_potentials' , read_outcar_core_potentials),
         ('fermi_energy'    , read_outcar_fermi_energy   ),
         ('bands'           , read_outcar_bands          ),
@@ -704,10 +705,10 @@ class OutcarData(DevBase):
         ('stress'          , read_outcar_stress         ),
         ('cell'            , read_outcar_cell           ),
         ('position_force'  , read_outcar_position_force ),
-        ]
-    ilast_functions = [
+        )
+    ilast_functions = (
         ('accounting'      , read_outcar_accounting     ),
-        ]
+        )
 
     read_outcar_functions = any_functions + elast_functions + ilast_functions
 
@@ -724,7 +725,7 @@ class OutcarData(DevBase):
     #end def __init__
 
 
-    def read(self,ilast=False,elast=False,all=True):
+    def read(self,*,ilast=False,elast=False,all=True):
         ilast |= all
         elast |= all
         vlines = self.vlines
@@ -753,7 +754,7 @@ class OutcarData(DevBase):
 # main analyzer class
 
 class VaspAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,xml=False,analyze=False):
+    def __init__(self,arg0=None,*,xml=False,analyze=False):
         path     = None
         prefix   = None
         incar    = None
@@ -886,9 +887,9 @@ class VaspAnalyzer(SimulationAnalyzer):
                     emax = np.array(list(ion_step.keys()),dtype=int).max()
                     for enum,elec_step in ion_step.items():
                         elast = enum==emax
-                        elec_step.read(ilast,elast,all=False)
+                        elec_step.read(ilast=ilast,elast=elast,all=False)
                         if ilast and elast:
-                            self.transfer_from(elec_step)
+                            self.update(**elec_step)
                         #end if
                     #end for
                 #end if
@@ -897,5 +898,3 @@ class VaspAnalyzer(SimulationAnalyzer):
         self.ion_steps = ion_steps
     #end def analyze_outcar
 #end class VaspAnalyzer
-
-

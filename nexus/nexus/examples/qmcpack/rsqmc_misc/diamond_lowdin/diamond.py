@@ -10,8 +10,6 @@ from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack
 from nexus import vmc
 
-from nexus.structure import *
-
 from nexus.qmcpack_input import dm1b
 from nexus.qmcpack_input import sposet
 

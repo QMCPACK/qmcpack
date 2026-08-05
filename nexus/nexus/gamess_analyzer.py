@@ -36,11 +36,17 @@ class GamessAnalyzer(SimulationAnalyzer):
     lset_full = 'spdfg'
 
     lxyz = obj(
-        s = set('s'.split()),
-        p = set('x y z'.split()),
-        d = set('xx yy zz xy xz yz'.split()),
-        f = set('xxx yyy zzz xxy xxz yyx yyz zzx zzy xyz'.split()),
-        g = set('xxxx yyyy zzzz xxxy xxxz yyyx yyyz zzzx zzzy xxyy xxzz yyzz xxyz yyxz zzxy'.split()),
+        s = frozenset('s'),
+        p = frozenset({'x', 'y', 'z'}),
+        d = frozenset({'xz', 'yz', 'yy', 'xy', 'xx', 'zz'}),
+        f = frozenset({
+            'yyz', 'zzy', 'zzz', 'yyy', 'xxz', 'xyz', 'yyx', 'xxy', 'xxx', 'zzx'
+            }),
+        g = frozenset({
+            'xxxx', 'zzzx', 'yyyx', 'xxxz', 'yyyz',
+            'xxyy', 'zzxy', 'yyyy', 'xxzz', 'yyxz',
+            'yyzz', 'xxyz', 'zzzy', 'zzzz', 'xxxy'
+            }),
         )
 
     lxyz_reverse = obj()
@@ -52,7 +58,7 @@ class GamessAnalyzer(SimulationAnalyzer):
 
 
 
-    def __init__(self,arg0=None,prefix=None,analyze=False,exit=False,**outfilenames):
+    def __init__(self,arg0=None,prefix=None,*,analyze=False,exit=False,**outfilenames):
         self.info = obj(
             exit   = exit,
             path   = None,
@@ -409,8 +415,8 @@ class GamessAnalyzer(SimulationAnalyzer):
                 spec_index = np.array(spec_index,dtype=int),
                 angular    = np.array(angular   ,dtype=str),
                 )
-            basis.transfer_from(linds)
-            ao_populations.set(
+            basis.update(**linds)
+            ao_populations.update(
                 mulliken         = mulliken,
                 lowdin           = lowdin,
                 mulliken_shell   = mulliken_shell,

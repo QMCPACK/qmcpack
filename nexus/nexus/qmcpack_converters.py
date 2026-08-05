@@ -44,6 +44,7 @@
 
 
 import os
+from types import MappingProxyType
 import numpy as np
 from .developer import obj, error
 from .nexus_base import nexus_core
@@ -95,13 +96,23 @@ readval={str:read_str,int:read_int,float:read_float,bool:read_bool}
 writeval={str:write_str,int:write_int,float:write_float,bool:write_bool}
 
 
-class Pw2qmcpackInput(SimulationInput):
-    ints   = []
-    floats = []
-    strs   = ['outdir','prefix']
-    bools  = ['write_psir']
+def get_path(o, path, value=None):
+    """Retrieve a value from a nested dict-like object by slash-delimited path."""
+    for key in path.split('/'):
+        if key not in o:
+            return value
+        o = o[key]
+    return o
 
-    var_types = dict()
+
+
+class Pw2qmcpackInput(SimulationInput):
+    ints   = ()
+    floats = ()
+    strs   = ('outdir','prefix')
+    bools  = ('write_psir',)
+
+    var_types = dict()  # noqa: RUF012
     for v in ints:
         var_types[v]=int
     #end for
@@ -114,8 +125,8 @@ class Pw2qmcpackInput(SimulationInput):
     for v in bools:
         var_types[v]=bool
     #end for
-
-    allowed = set(ints+floats+strs+bools)
+    var_types: MappingProxyType[str, type] = MappingProxyType(var_types)
+    allowed = frozenset(ints+floats+strs+bools)
 
     def read_text(self,contents,filepath=None):
         lines = contents.split('\n')
@@ -179,7 +190,7 @@ class Pw2qmcpackInput(SimulationInput):
 #end class Pw2qmcpackInput
 
 
-def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',write_psir=False):
+def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',*,write_psir=False):
     pw = Pw2qmcpackInput(
         prefix     = prefix,
         outdir     = outdir,
@@ -213,7 +224,7 @@ def read_eshdf_eig_data(filename, Ef_list):
             E_fermi = Ef+1e-8
             eig_s = []
             path = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
-            spin = h.get_path(path)
+            spin = get_path(h,path)
             eig = convert(np.array(spin.eigenvalues),'Ha','eV')
             nst = h5int(spin.number_of_states)
             for st in range(nst):
@@ -266,7 +277,8 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
         if isinstance(arg0,Simulation):
             sim = arg0
             self.infile = sim.infile
-            prefix,outdir = sim.input.inputpp.tuple('prefix','outdir')
+            prefix = sim.input.inputpp.prefix
+            outdir = sim.input.inputpp.outdir
             self.dir = sim.locdir
             self.h5file = os.path.join(sim.locdir,outdir,prefix+'.pwscf.h5')
         else:
@@ -281,7 +293,7 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
     #end def analyze
 
     def get_result(self,result_name):
-        self.not_implemented()
+        raise NotImplementedError
     #end def get_result
 #end class Pw2qmcpackAnalyzer
 
@@ -291,11 +303,11 @@ class Pw2qmcpack(Simulation):
     analyzer_type = Pw2qmcpackAnalyzer
     generic_identifier = 'pw2qmcpack'
     application = 'pw2qmcpack.x'
-    application_properties = set(['serial'])
-    application_results    = set(['orbitals','gc_occupation'])
+    application_properties = frozenset({'serial'})
+    application_results    = frozenset({'orbitals','gc_occupation'})
 
     # dynamic workflow support
-    allowed_requirements = ['orbitals']
+    allowed_requirements = ('orbitals',)
 
     def check_result(self,result_name,sim):
         calculating_result = False
@@ -523,41 +535,42 @@ def generate_pw2qmcpack(**kwargs):
 
 class Convert4qmcInput(SimulationInput):
 
-    input_codes = '''
-        pyscf              
-        qp                 
-        gaussian           
-        casino             
-        vsvb               
-        gamess             
-        gamess_ascii       
-        gamess_fmo         
-        gamess_xml         
-        '''.split()
+    input_codes = (
+        'pyscf',
+        'qp',
+        'gaussian',
+        'casino',
+        'vsvb',
+        'gamess',
+        'gamess_ascii',
+        'gamess_fmo',
+        'gamess_xml'
+        )
 
-    input_order = input_codes + '''
-        prefix             
-        hdf5               
-        add_cusp           
-        psi_tag            
-        ion_tag            
-        no_jastrow         
-        production         
-        orbitals
-        multidet
-        gridtype
-        first
-        last
-        size
-        ci                 
-        read_initial_guess 
-        target_state       
-        natural_orbitals   
-        threshold          
-        opt_det_coeffs
-        zero_ci            
-        add_3body_J
-        '''.split()
+    input_order = (
+        *input_codes,
+        'prefix',
+        'hdf5',
+        'add_cusp',
+        'psi_tag',
+        'ion_tag',
+        'no_jastrow',
+        'production',
+        'orbitals',
+        'multidet',
+        'gridtype',
+        'first',
+        'last',
+        'size',
+        'ci',
+        'read_initial_guess',
+        'target_state',
+        'natural_orbitals',
+        'threshold',
+        'opt_det_coeffs',
+        'zero_ci',
+        'add_3body_J'
+        )
 
     input_aliases = obj(
         pyscf              = 'pyscf',
@@ -669,17 +682,19 @@ class Convert4qmcInput(SimulationInput):
         #end if
 
         # assign inputs
-        self.set(**kwargs)
+        self.update(**kwargs)
 
         # assign default values
-        self.set_optional(**self.input_defaults)
+        for k,v in self.input_defaults.items():
+            if k not in self:
+                self[k] = v
 
         # check that all keyword inputs are valid
         self.check_valid()
     #end def __init__
 
 
-    def check_valid(self,exit=True):
+    def check_valid(self,*,exit=True):
         valid = True
         # check that all inputs have valid types and assign them
         for k,v in self.items():
@@ -791,8 +806,8 @@ class Convert4qmc(Simulation):
     analyzer_type          = Convert4qmcAnalyzer
     generic_identifier     = 'convert4qmc'
     application            = 'convert4qmc'
-    application_properties = set(['serial'])
-    application_results    = set(['orbitals','particles','determinantset'])
+    application_properties = frozenset({'serial'})
+    application_results    = frozenset({'orbitals','particles','determinantset'})
     renew_app_command      = True
 
     def __init__(self,*args,**kwargs):
@@ -1016,8 +1031,8 @@ class Convertpw4qmc(Simulation):
     analyzer_type          = Convertpw4qmcAnalyzer
     generic_identifier     = 'convertpw4qmc'
     application            = 'convertpw4qmc'
-    application_properties = set(['serial'])
-    application_results    = set(['orbitals'])
+    application_properties = frozenset({'serial'})
+    application_results    = frozenset({'orbitals'})
     renew_app_command      = True
 
     def set_app_name(self,app_name):
@@ -1146,22 +1161,22 @@ def generate_convertpw4qmc(**kwargs):
 
 class PyscfToAfqmcInput(SimulationInput):
 
-    input_order = '''
-        help
-        input
-        output
-        wavefunction
-        qmcpack_input
-        cholesky_threshold
-        kpoint
-        gdf
-        ao
-        cas
-        disable_ham
-        num_dets
-        real_ham
-        verbose
-        '''.split()
+    input_order = (
+        'help',
+        'input',
+        'output',
+        'wavefunction',
+        'qmcpack_input',
+        'cholesky_threshold',
+        'kpoint',
+        'gdf',
+        'ao',
+        'cas',
+        'disable_ham',
+        'num_dets',
+        'real_ham',
+        'verbose'
+        )
 
     input_flags = obj(
         help               = 'h',
@@ -1232,17 +1247,19 @@ class PyscfToAfqmcInput(SimulationInput):
         #end if
 
         # assign inputs
-        self.set(**kwargs)
+        self.update(**kwargs)
 
         # assign default values
-        self.set_optional(**self.input_defaults)
+        for k,v in self.input_defaults.items():
+            if k not in self:
+                self[k] = v
 
         # check that all keyword inputs are valid
         self.check_valid()
     #end def __init__
 
 
-    def check_valid(self,exit=True):
+    def check_valid(self,*,exit=True):
         valid = True
         # check that all inputs have valid types and assign them
         for k,v in self.items():
@@ -1351,8 +1368,8 @@ class PyscfToAfqmc(Simulation):
     analyzer_type          = PyscfToAfqmcAnalyzer
     generic_identifier     = 'pyscf2afqmc'
     application            = 'pyscf_to_afqmc.py'
-    application_properties = set(['serial'])
-    application_results    = set(['wavefunction','hamiltonian'])
+    application_properties = frozenset({'serial'})
+    application_results    = frozenset({'wavefunction','hamiltonian'})
     renew_app_command      = True
 
 
@@ -1376,7 +1393,7 @@ class PyscfToAfqmc(Simulation):
     def get_result(self,result_name,sim):
         result = obj()
         input = self.input
-        if result_name in ('wavefunction','hamiltonian'):
+        if result_name in {'wavefunction','hamiltonian'}:
             result.h5_file = os.path.join(self.locdir,input.output)
             if input.qmcpack_input is not None:
                 result.xml = os.path.join(self.locdir,input.qmcpack_input)

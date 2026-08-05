@@ -2,7 +2,8 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_SIMULATION)
 
-from ..generic import generic_settings, obj
+from ..generic import generic_settings
+from ..developer import obj
 generic_settings.raise_error = True
 
 from pathlib import Path

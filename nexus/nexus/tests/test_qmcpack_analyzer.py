@@ -10,7 +10,7 @@ from ..testing import value_eq,object_eq,text_eq
 
 
 def test_empty_init():
-    from ..developer import obj
+    from ..developer import obj,to_obj
     from ..qmcpack_analyzer import QmcpackAnalyzer
 
     qa = QmcpackAnalyzer()
@@ -57,13 +57,13 @@ def test_empty_init():
 
     assert(len(data_sources-data_sources_ref)==0)
 
-    assert(object_eq(qa.to_obj(),qa_ref))
+    assert(object_eq(to_obj(qa),qa_ref))
 #end def test_empty_init    
 
 
 
 def test_vmc_dmc_analysis():
-    from ..developer import obj
+    from ..developer import obj,to_obj
     from ..qmcpack_analyzer import QmcpackAnalyzer
 
     test_files = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma"
@@ -199,7 +199,7 @@ def test_vmc_dmc_analysis():
             ),
         )
 
-    assert(object_eq(scalars.to_obj(),scalars_ref))
+    assert(object_eq(to_obj(scalars),scalars_ref))
 
     
     # test analysis of dmc data
@@ -230,7 +230,7 @@ def test_vmc_dmc_analysis():
 @isolate_nexus_core
 def test_optimization_analysis():
     from numpy import array
-    from ..developer import obj
+    from ..developer import obj,to_obj
     from ..qmcpack_analyzer import QmcpackAnalyzer
 
     infile = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/opt/opt.in.xml"
@@ -358,7 +358,7 @@ def test_optimization_analysis():
         variance_weight = None,
         )
 
-    assert(object_eq(opt.to_obj(),opt_ref,atol=1e-8))
+    assert(object_eq(to_obj(opt),opt_ref,atol=1e-8))
 #end def test_optimization_analysis
 
 
@@ -408,7 +408,6 @@ def test_twist_average_analysis():
 
 def test_density_analysis():
     _ = pytest.importorskip("h5py")
-    import os
     from numpy import array
     from ..qmcpack_analyzer import QmcpackAnalyzer
 

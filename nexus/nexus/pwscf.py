@@ -18,6 +18,7 @@
 
 
 import os
+from copy import deepcopy
 import shutil
 import numpy as np
 from .nexus_base import nexus_core
@@ -29,7 +30,7 @@ from .pwscf_analyzer import PwscfAnalyzer
 from .execute import execute
 
 
-unique_vdw_functionals = [
+unique_vdw_functionals = (
     'optb86b-vdw',
     'vdw-df3', # optB88+vdW
     'vdw-df',
@@ -38,11 +39,11 @@ unique_vdw_functionals = [
     'vdw-df-c09',
     'vdw-df2-c09',
     'rvv10',
-    ]
-repeat_vdw_functionals = [
+    )
+repeat_vdw_functionals = (
     'vdw-df4', # 'optB86b-vdW'
-    ]
-unique_functionals = [
+    )
+unique_functionals = (
     'revpbe',
     'pw86pbe',
     'b86bpbe',
@@ -69,14 +70,16 @@ unique_functionals = [
     'sogga',
     'm06l',
     'ev93',
-    ]+unique_vdw_functionals
-repeat_functionals = [
+    *unique_vdw_functionals
+    )
+repeat_functionals = (
     'q2d', # pbeq2d
     'pz', # lda
-    ]+repeat_vdw_functionals
+    *repeat_vdw_functionals
+    )
 
-vdw_functionals     = set(unique_vdw_functionals+repeat_vdw_functionals)
-allowed_functionals = set(unique_functionals+repeat_functionals)
+vdw_functionals     = frozenset(unique_vdw_functionals+repeat_vdw_functionals)
+allowed_functionals = frozenset(unique_functionals+repeat_functionals)
 
 
 
@@ -85,15 +88,15 @@ class Pwscf(Simulation):
     analyzer_type = PwscfAnalyzer
     generic_identifier = 'pwscf'
     application = 'pw.x'
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['charge_density','orbitals','structure','restart'])
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'charge_density','orbitals','structure','restart'})
 
     supports_restarts = True # supports restartable, but not force restart yet
 
     vdw_table = None
 
     # dynamic workflow support
-    allowed_requirements = ['none','structure','charge_density','orbitals']
+    allowed_requirements = ('none','structure','charge_density','orbitals')
 
     @staticmethod
     def settings(vdw_table=None):
@@ -118,7 +121,10 @@ class Pwscf(Simulation):
         sync_from_scf = sim_args.pop('sync_from_scf',True)
         Simulation.__init__(self,**sim_args)
         self.sync_from_scf = False
-        calc = self.input.control.get('calculation',None)
+        calc = None
+        cont = self.input.control
+        if 'calculation' in cont:
+            calc = cont.calculation
         if calc=='nscf':
             self.sync_from_scf = sync_from_scf
         #end if
@@ -136,7 +142,7 @@ class Pwscf(Simulation):
             os.makedirs(outdir)
         #end if
         #copy over vdw_table for vdW-DF functional
-        if self.path_exists('input/system/input_dft'):
+        if 'input_dft' in self.input.system:
             functional = self.input.system.input_dft.lower()
             if '+' not in functional and functional not in allowed_functionals:
                 self.warn('functional "{0}" is unknown to pwscf'.format(functional))
@@ -215,7 +221,7 @@ class Pwscf(Simulation):
             #end if
             pos   = scale*np.array(pos)
             
-            structure = self.system.structure.copy()
+            structure = deepcopy(self.system.structure)
             structure.change_units('B')
             structure.pos = pos
             structure.set_elem(atoms)
@@ -276,7 +282,7 @@ class Pwscf(Simulation):
 
             #end if
         elif result_name=='structure':
-            relstruct = result.structure.copy()
+            relstruct = deepcopy(result.structure)
             relstruct.change_units('B')
             self.system.structure = relstruct
             self.system.remove_folded()
@@ -284,7 +290,7 @@ class Pwscf(Simulation):
             input = self.input
             preserve_kp = 'k_points' in input and 'specifier' in input.k_points and (input.k_points.specifier=='automatic' or input.k_points.specifier=='gamma')
             if preserve_kp:
-                kp = input.k_points.copy()
+                kp = deepcopy(input.k_points)
             #end if
             input.incorporate_system(self.system)
             if preserve_kp:
@@ -420,7 +426,7 @@ class Pwscf(Simulation):
         if 'structure' in self.produces:
             pa = analyzer
             structs = pa.structures
-            struct  = structs[len(structs)-1].copy()
+            struct  = deepcopy(structs[len(structs)-1])
             pos     = struct.positions
             atoms   = struct.atoms
             if 'celldm(1)' in self.input.system:
@@ -428,7 +434,7 @@ class Pwscf(Simulation):
             else:
                 scale = 1.0
             pos = scale*np.array(pos)
-            structure = self.system.structure.copy()
+            structure = deepcopy(self.system.structure)
             structure.change_units('B')
             structure.set_pos(pos)
             structure.set_elem(atoms)
@@ -472,7 +478,7 @@ class Pwscf(Simulation):
         input = self.input
         preserve_kp = 'k_points' in input and 'specifier' in input.k_points and (input.k_points.specifier=='automatic' or input.k_points.specifier=='gamma')
         if preserve_kp:
-            kp = input.k_points.copy()
+            kp = deepcopy(input.k_points)
         input.incorporate_system(self.system)
         if preserve_kp:
             input.k_points = kp
@@ -492,7 +498,7 @@ def generate_pwscf(**kwargs):
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 
     if 'input' not in sim_args:
-        input_type = inp_args.delete_optional('input_type','generic')
+        input_type = inp_args.pop('input_type','generic')
         sim_args.input = generate_pwscf_input(input_type,**inp_args)
     #end if
     pwscf = Pwscf(**sim_args)

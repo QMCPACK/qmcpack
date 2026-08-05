@@ -23,6 +23,7 @@
 
 import os
 import sys
+from copy import deepcopy
 import importlib
 from importlib.metadata import PackageNotFoundError
 
@@ -121,40 +122,28 @@ def read_input(filepath,format=None):
 class Settings(NexusCore):
     singleton = None
 
-    machine_vars = set('''
-        machine         account         machine_info    interactive_cores
-        machine_mode    user
-        '''.split())
+    machine_vars = frozenset({
+        'interactive_cores', 'machine_info', 'machine', 'machine_mode', 'user', 'account'
+        })
 
-    core_assign_vars = set('''
-        status_only     generate_only   runs            results 
-        pseudo_dir      sleep           local_directory remote_directory 
-        monitor         skip_submit     load_images     stages          
-        verbose         debug           trace           progress_tty
-        graph_sims      command_line    dynamic
-        '''.split())
+    core_assign_vars = frozenset({
+        'results', 'load_images', 'remote_directory', 'verbose', 'progress_tty',
+        'command_line', 'sleep', 'monitor', 'debug', 'skip_submit', 'dynamic', 'runs',
+        'stages', 'pseudo_dir', 'graph_sims', 'generate_only', 'trace',
+        'local_directory', 'status_only'
+        })
 
-    core_process_vars = set('''
-        file_locations  mode  status
-        '''.split())
+    core_process_vars = frozenset({'file_locations', 'status', 'mode'})
 
-    noncore_assign_vars = set('''
-        basis_dir
-        '''.split())
+    noncore_assign_vars = frozenset({'basis_dir'})
 
-    noncore_process_vars = set()
-    
-    gamess_vars  = set('''
-        ericfmt         mcppath
-        '''.split())
-    
-    pwscf_vars   = set('''
-        vdw_table
-        '''.split())
+    noncore_process_vars = frozenset()
 
-    qm_package_vars = set('''
-        qprc
-        '''.split())
+    gamess_vars  = frozenset({'ericfmt', 'mcppath'})
+
+    pwscf_vars   = frozenset({'vdw_table'})
+
+    qm_package_vars = frozenset({'qprc'})
 
     nexus_core_vars    = core_assign_vars    | core_process_vars
     nexus_noncore_vars = noncore_assign_vars | noncore_process_vars
@@ -187,8 +176,8 @@ class Settings(NexusCore):
     #end def __init__
 
 
-    def error(self,message,header='settings',exit=True,trace=True):
-        NexusCore.error(self,message,header,exit,trace)
+    def error(self,message,*,header='settings',exit=True,trace=True):
+        NexusCore.error(self,message,header=header,exit=exit,trace=trace)
     #end def error
 
 
@@ -237,7 +226,7 @@ class Settings(NexusCore):
             "cif2cell":   5,
             "pydot":      6,
             "seekpath":   7,
-        }
+            }
 
         try:
             nxs_requirements = importlib.metadata.requires("nexus")
@@ -262,7 +251,7 @@ class Settings(NexusCore):
                 "cif2cell":   {"min_ver": "x.x.x", "status": "optional"},
                 "pydot":      {"min_ver": "x.x.x", "status": "optional"},
                 "seekpath":   {"min_ver": "x.x.x", "status": "optional"},
-            }
+                }
 
         nxs_deps = {k:v for k, v in sorted(nxs_deps.items(), key=lambda x: pkg_sort.get(x[0], 1000))}
 
@@ -332,9 +321,9 @@ class Settings(NexusCore):
 
 
         # copy input settings
-        self.transfer_from(mach_kw.copy())
-        self.transfer_from(gamess_kw.copy())
-        self.transfer_from(pwscf_kw.copy())
+        self.update(**deepcopy(mach_kw))
+        self.update(**deepcopy(gamess_kw))
+        self.update(**deepcopy(pwscf_kw))
 
         # process machine settings
         self.process_machine_settings(mach_kw)
@@ -346,12 +335,13 @@ class Settings(NexusCore):
         self.process_noncore_settings(kw)
 
         # transfer select core data to the global namespace
-        nexus_core_noncore.transfer_from(nexus_core,list(nexus_core_noncore.keys()))
-        nexus_noncore.set(**nexus_core_noncore.copy()) # prevent write to core namespace
+        for k in nexus_core_noncore.keys():
+            nexus_core_noncore[k] = nexus_core[k]
+        nexus_noncore.update(**deepcopy(nexus_core_noncore)) # prevent write to core namespace
 
         # copy final core and noncore settings
-        self.transfer_from(nexus_core.copy())
-        self.transfer_from(nexus_noncore.copy())
+        self.update(**deepcopy(nexus_core))
+        self.update(**deepcopy(nexus_noncore))
 
 
         # process gamess settings
@@ -447,8 +437,7 @@ class Settings(NexusCore):
 
         # parse the command line inputs
         options,files_in = parser.parse_args()
-        opt = obj()
-        opt.transfer_from(options.__dict__)
+        opt = obj(**options.__dict__)
 
         # check that all options are allowed (developer check)
         invalid = set(opt.keys())-Settings.allowed_vars
@@ -504,7 +493,7 @@ class Settings(NexusCore):
         #end if
         if 'machine' in mset:
             machine_name = mset.machine
-            if machine_name in ("ws", "workstation"):
+            if machine_name in {"ws", "workstation"}:
                 self.log("Automatically detecting physical CPU cores for workstation...", n=1)
                 n_cores = get_cpu_cores()
                 self.log(f"Using {n_cores} core workstation", n=1)
@@ -545,7 +534,7 @@ class Settings(NexusCore):
                 #end if
                 if machine_mode==Machine.modes.interactive:
                     if ProjectManager.machine is None:
-                        ProjectManager.class_error('no machine specified for interactive mode')
+                        error('no machine specified for interactive mode')
                     #end if
                     if not isinstance(ProjectManager.machine,Supercomputer):
                         self.error('interactive mode is not supported for machine type '+ProjectManager.machine.__class__.__name__)
@@ -681,4 +670,3 @@ class Settings(NexusCore):
 
 # create settings functor for UI
 settings = Settings()
-

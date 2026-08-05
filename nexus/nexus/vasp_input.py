@@ -38,6 +38,8 @@
 
 
 import os
+from copy import deepcopy
+from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
 from .nexus_base import nexus_noncore
@@ -345,12 +347,12 @@ class VFile(Vobj):
 
 
     def read_text(self,text,filepath=''):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
 
     def write_text(self,filepath=''):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
 
@@ -419,9 +421,9 @@ class VFile(Vobj):
 
 
 class VKeywordFile(VFile):
-    kw_scalars = ['ints','reals','bools','strings']
-    kw_arrays  = ['int_arrays','real_arrays','bool_arrays']
-    kw_fields  = kw_scalars + kw_arrays + ['keywords','unsupported']
+    kw_scalars = ('ints','reals','bools','strings')
+    kw_arrays  = ('int_arrays','real_arrays','bool_arrays')
+    kw_fields  = kw_scalars + kw_arrays + ('keywords','unsupported')
 
     keyword_classification = None
 
@@ -431,18 +433,17 @@ class VKeywordFile(VFile):
         cls.kw_arrays  = VKeywordFile.kw_arrays
         cls.kw_fields  = VKeywordFile.kw_fields
         for kw_field in cls.kw_fields:
-            if not cls.class_has(kw_field):
-                cls.class_set_single(kw_field,set())
-            #end if
+            if not hasattr(cls,kw_field):
+                setattr(cls,kw_field,set())
         #end for
         #cls.check_consistency()
         cls.scalar_keywords = set()
         for scalar_field in cls.kw_scalars:
-            cls.scalar_keywords |= cls.class_get(scalar_field)
+            cls.scalar_keywords |= getattr(cls,scalar_field)
         #end for
         cls.array_keywords = set()
         for array_field in cls.kw_arrays:
-            cls.array_keywords |= cls.class_get(array_field)
+            cls.array_keywords |= getattr(cls,array_field)
         #end for
         cls.keywords = cls.scalar_keywords | cls.array_keywords
         cls.type = obj()
@@ -450,7 +451,7 @@ class VKeywordFile(VFile):
         cls.write_value  = obj()
         cls.assign_value = obj()
         for type in cls.kw_scalars + cls.kw_arrays:
-            for name in cls.class_get(type):
+            for name in getattr(cls,type):
                 cls.type[name] = type
                 cls.read_value[name]   = read_value_functions[type]
                 cls.write_value[name]  = write_value_functions[type]
@@ -467,13 +468,13 @@ class VKeywordFile(VFile):
         types = cls.kw_scalars+cls.kw_arrays
         untyped = set(cls.keywords)
         for type in types:
-            untyped -= cls.class_get(type)
+            untyped -= getattr(cls,type)
         #end for
         if len(untyped)>0:
             msg += '\nvariables without a type:\n  {0}\n'.format(sorted(untyped))
         #end if
         for type in types:
-            unknown = cls.class_get(type)-cls.keywords
+            unknown = getattr(cls,type)-cls.keywords
             if len(unknown)>0:
                 msg += '\nunknown {0}:\n  {1}\n'.format(type,sorted(unknown))
                 all_unknown |= unknown
@@ -484,7 +485,7 @@ class VKeywordFile(VFile):
             msg += '\nall known names:\n  {0}\n'.format(sorted(cls.keywords))
         #end if
         if len(msg)>0:
-            cls.class_error(msg)
+            error(msg)
         #end if
     #end def check_consistency
 
@@ -597,7 +598,7 @@ class VKeywordFile(VFile):
 
 
 class VFormattedFile(VFile):
-    def read_lines(self,text,remove_empty=False):
+    def read_lines(self,text,*,remove_empty=False):
         raw_lines = text.splitlines()
         lines = []
         for line in raw_lines:
@@ -646,191 +647,125 @@ class Incar(VKeywordFile):
     #   ichain lclimb ltangentold ldneb lnebcell jacobian timestep
 
     # some of these are mixed type arrays or other oddly formatted fields
-    unsupported = set()
+    unsupported = frozenset()
 
     # these appear on the vasp wiki but have broken documentation
-    broken_docs = set('dmft_basis lkpoints_wan nomega_dump'.split())
+    broken_docs = frozenset({'lkpoints_wan', 'nomega_dump', 'dmft_basis'})
 
-    ints = set('''
-      antires apaco 
-      ch_nedos clnt cln cll 
-      elmin exxoep
-      findiff fockcorr
-      hflmax hflmaxf hills_bin
-      ialgo ibrion ichain icharg ichibare i_constrained_m icorelevel idipol 
-      iepsilon igpar images imix inimix iniwav ipead isif ismear ispin istart 
-      isym ivdw iwavpr 
-      kblock kpar kpoints_opt_mode kpoints_opt_nkbatch 
-      ldauprint ldautype lmaxfock lmaxfockae lmaxfockmp2 lmaxmix lmaxmp2 
-      lmaxpaw lorbit 
-      maxmem maxmix mdalgo mixpre
-      ml_ff_icouple_mb ml_ff_ireg_mb ml_ff_istart ml_ff_lmax2_mb 
-      ml_ff_mrb1_mb ml_ff_mrb2_mb ml_ff_natom_coupled_mb 
-      ml_iafilt2 ml_ialgo_linreg ml_icriteria ml_ireg ml_iscale_toten ml_istart
-      ml_iweight ml_lmax2 ml_mb ml_mconf ml_mconf_new ml_mhis ml_mrb1 ml_mrb2
-      ml_natom_coupled ml_nhyp ml_nmdint ml_nrank_sparsdes
-      naturalo 
-      nbands nbandsgw nbandso nbandsv nblk nblock nblock_fock nbmod nbseeig
-      ncore ncore_in_image1 ncshmem 
-      nedos nelm nelmall nelmdl nelmgw nelmin 
-      nfree 
-      ngx ngxf ngy ngyf ngz ngzf 
-      nkred nkredx nkredy nkredz 
-      nmaxfockae 
-      nomega nomegapar nomegar 
-      npaco npar nppstr 
-      nrmm 
-      nsim nstorb nsw
-      ntaupar ntemper 
-      num_wann nupdown 
-      nwrite 
-      phon_nstruct phon_ntlist phon_nwrite plevel proutine
-      shakemaxiter smass spring 
-      voskown
-      '''.split())
+    ints = frozenset({
+        'npaco', 'ml_iscale_toten', 'phon_nstruct', 'ml_ialgo_linreg', 'kpoints_opt_mode',
+        'i_constrained_m', 'nbseeig', 'nomegapar', 'lmaxfockmp2', 'nkredy', 'nbandsgw',
+        'inimix', 'maxmem', 'nblock', 'ngy', 'lmaxmix', 'ibrion', 'phon_ntlist',
+        'ml_nhyp', 'nppstr', 'kpar', 'isif', 'ialgo', 'ngxf', 'ml_mrb2', 'plevel',
+        'ismear', 'iniwav', 'clnt', 'shakemaxiter', 'nstorb', 'nmaxfockae', 'phon_nwrite',
+        'num_wann', 'kblock', 'nbands', 'nblock_fock', 'elmin', 'nomegar', 'ml_mhis',
+        'nelmdl', 'hills_bin', 'ml_icriteria', 'nkredz', 'findiff', 'ichibare', 'nblk',
+        'nwrite', 'maxmix', 'lmaxmp2', 'proutine', 'apaco', 'nkredx', 'nelm', 'ncshmem',
+        'ml_ff_istart', 'iepsilon', 'igpar', 'ldauprint', 'ipead', 'ml_ff_icouple_mb',
+        'nbmod', 'nelmgw', 'nedos', 'lmaxfock', 'fockcorr', 'ml_ff_mrb1_mb', 'ml_nmdint',
+        'ngyf', 'ml_ireg', 'ml_ff_lmax2_mb', 'nomega', 'nsim', 'ngzf', 'mdalgo', 'ivdw',
+        'nelmin', 'ispin', 'cll', 'imix', 'smass', 'cln', 'hflmax', 'antires', 'nupdown',
+        'hflmaxf', 'ml_ff_natom_coupled_mb', 'exxoep', 'ncore_in_image1', 'npar',
+        'nelmall', 'ml_natom_coupled', 'mixpre', 'ldautype', 'ntaupar', 'nbandso',
+        'ml_iweight', 'naturalo', 'ncore', 'ml_ff_ireg_mb', 'ml_lmax2', 'nfree',
+        'ntemper', 'ml_istart', 'ch_nedos', 'ml_iafilt2', 'ml_mrb1', 'idipol', 'ngz',
+        'nrmm', 'lmaxfockae', 'ml_mconf_new', 'isym', 'ml_mb', 'ml_nrank_sparsdes', 'ngx',
+        'nsw', 'images', 'nkred', 'iwavpr', 'nbandsv', 'ml_mconf', 'icharg',
+        'kpoints_opt_nkbatch', 'ml_ff_mrb2_mb', 'lorbit', 'ichain', 'istart', 'lmaxpaw',
+        'voskown', 'spring', 'icorelevel'
+        })
 
-    reals = set('''
-      aexx aggac aggax aldac aldax amin amix amix_mag andersen_prob
-      bmix bmix_mag bparam
-      ch_sigma cshift clz cmbja cmbjb cparam
-      deper dimer_dist dq
-      ebreak ediff ediffg efield emax emin enaug encut encutfock encutgw 
-      encutgwsoft enini enmax enmin epsilon estop
-      hfalpha hfrcut hfscreen hills_h hills_w hitoler
-      jacobian
-      kspacing 
-      lambda langevin_gamma_l libxc1_pn libxc2_pn
-      mbja mbjb minrot
-      ml_afilt2 ml_cdoub ml_csig ml_cslope ml_ctifor ml_cx ml_eps_low ml_eps_reg
-      ml_ff_rcouple_mb ml_ff_rcut1_mb ml_ff_rcut2_mb ml_ff_sion1_mb 
-      ml_ff_sion2_mb ml_ff_w1_mb ml_ff_w2_mb
-      ml_rcouple ml_rcut1 ml_rcut2 ml_rdes_sparsdes ml_sclc_ctifor ml_sigv0
-      ml_sigw0 ml_sion1 ml_sion2 ml_w1 ml_wtifor ml_wtoten ml_wtsif
-      nelect 
-      ofield_a ofield_kappa ofield_q6_far ofield_q6_near omegamax omegamin 
-      omegatl
-      param1 param2 pmass pomass potim pstress pthreshold 
-      scalee scsrad shaketol shaketolsoft sigma smass step_max step_size symprec 
-      tebeg teend time timestep
-      vcaimages vcutoff vdw_a1 vdw_a2 vdw_cnradius vdw_d vdw_radius vdw_scaling 
-      vdw_sr vdw_s6 vdw_s8
-      wc weimin 
-      zab_vdw zval 
-      '''.split())
 
-    bools = set('''
-      addgrid
-      ch_lspec
-      evenonly evenonlygw
-      gga_compat 
-      kpoints_opt
-      ladder laechg lasph lasync 
-      lberry lblueout lbone 
-      lcalceps lcalcpol lcharg lchargh5 lchimag lclimb lcorr 
-      ldau ldiag ldipol ldisentangle ldisentangled ldneb 
-      lefg lelf lepsilon 
-      lfermigw lfinite_temperature lfockace lfockaedft lfxc
-      lh5 lhartree lhfcalc lhyperfine 
-      lintpol_kpath
-      lkpoints_opt lkproj 
-      llraug
-      lmaxtau lmixtau lmodelhf lmono lmp2lt
-      lnabla lnebcell lnlrpa lnmr_sym_red lnoncollinear 
-      loptics lorbitalreal lorbmom
-      lpard lpead lpead_sym_red lphon_dispersion lphon_polar lplane 
-      lreal_compat lrpa lrpaforce
-      lscaaware lscalapack lscaler0 lscalu lscdm lsck lscsgrad lselfenergy lsepb
-      lsepk lsingles lsmp2lt lsorbit lspectral lspectralgw lspiral lsubrot
-      ltangentold ltboundlibxc ltemper lthomas ltriplet
-      luse_vdw 
-      lvdw lvdw_ewald lvdwexpansion lvdwscs lvhar lvtot 
-      lwannier90 lwannier90_auto_window lwannier90_run lwave lwaveh5 lweighted 
-      lwrite_mmn_amn lwrite_unk lwrite_wannier_xsf lwrite_wanproj
-      lzeroz
-      ml_ff_lcouple_mb ml_ff_lheat_mb ml_ff_lmlff 
-      ml_ff_lnorm1_mb ml_ff_lnorm2_mb ml_ff_lsic_mb ml_ff_lsupervec_mb
-      ml_lafilt2 ml_lcouple ml_leatom ml_lheat ml_lmlff ml_lsparsdes 
-      ml_luse_names
-      kgamma 
-      nlspline
-      oddonly oddonlygw
-      pflat phon_lbose phon_lmc
-      skip_edotp
-      '''.split())
+    reals = frozenset({
+        'shaketolsoft', 'minrot', 'ml_sclc_ctifor', 'param2', 'ml_ff_w2_mb', 'weimin',
+        'enaug', 'encut', 'omegatl', 'amix_mag', 'sigma', 'symprec', 'ml_eps_low', 'clz',
+        'encutgw', 'ml_sion1', 'ediffg', 'ml_ff_w1_mb', 'ml_sion2', 'andersen_prob',
+        'emax', 'ofield_kappa', 'vdw_s6', 'bparam', 'aldac', 'cmbjb', 'nelect',
+        'pthreshold', 'pstress', 'ml_ff_rcut1_mb', 'vdw_cnradius', 'ml_sigv0',
+        'ml_wtoten', 'deper', 'zab_vdw', 'bmix_mag', 'ml_ctifor', 'ofield_q6_near',
+        'hills_w', 'potim', 'vcaimages', 'ml_rcut2', 'ml_afilt2', 'scalee', 'bmix',
+        'lambda', 'libxc2_pn', 'step_max', 'ml_cdoub', 'omegamax', 'hfrcut', 'aexx',
+        'ml_rcouple', 'encutfock', 'vdw_sr', 'vdw_radius', 'shaketol', 'ml_wtsif',
+        'ml_sigw0', 'omegamin', 'ml_wtifor', 'hfscreen', 'amix', 'cparam', 'emin',
+        'langevin_gamma_l', 'wc', 'ediff', 'pmass', 'efield', 'timestep', 'jacobian',
+        'epsilon', 'zval', 'amin', 'ch_sigma', 'step_size', 'vcutoff', 'hills_h',
+        'vdw_s8', 'aggac', 'pomass', 'ml_eps_reg', 'time', 'param1', 'smass', 'cshift',
+        'libxc1_pn', 'ml_cslope', 'scsrad', 'vdw_a2', 'hitoler', 'ml_ff_sion1_mb',
+        'vdw_a1', 'encutgwsoft', 'estop', 'vdw_d', 'mbja', 'enmax', 'ml_rcut1',
+        'ofield_q6_far', 'ml_rdes_sparsdes', 'ofield_a', 'tebeg', 'ml_cx', 'dq',
+        'kspacing', 'enmin', 'ml_csig', 'vdw_scaling', 'ml_w1', 'mbjb', 'dimer_dist',
+        'hfalpha', 'ml_ff_rcut2_mb', 'ebreak', 'ml_ff_sion2_mb', 'teend', 'aldax',
+        'ml_ff_rcouple_mb', 'enini', 'aggax', 'cmbja'
+        })
 
-    strings = set('''
-      algo 
-      fftwmakeplan
-      gga 
-      libxc1 libxc2 locproj lreal
-      metagga
-      nthreads_lo nthreads_hi nthreads_mu
-      prec precfock
-      quad_efg
-      stop_on system
-      wannier90_win
-      '''.split())
+    bools = frozenset({
+        'lhfcalc', 'lvdw_ewald', 'lrpaforce', 'lreal_compat', 'skip_edotp',
+        'ml_ff_lsupervec_mb', 'lselfenergy', 'lnmr_sym_red', 'ladder', 'lfxc',
+        'ldipol', 'lspectral', 'lsingles', 'lnoncollinear', 'ldiag', 'ldneb', 'lfockace',
+        'lmaxtau', 'lplane', 'ml_ff_lheat_mb', 'lwrite_wanproj', 'lblueout',
+        'ldisentangle', 'ml_ff_lcouple_mb', 'lchimag', 'ml_ff_lnorm1_mb', 'lcalcpol',
+        'ldisentangled', 'lkpoints_opt', 'lvdwscs', 'lvtot', 'lmodelhf', 'lelf', 'pflat',
+        'lepsilon', 'ml_lheat', 'phon_lmc', 'lsck', 'lwannier90', 'lphon_polar',
+        'lfockaedft', 'lscaaware', 'lvdwexpansion', 'lscalapack', 'ml_leatom', 'lberry',
+        'lnabla', 'ml_ff_lnorm2_mb', 'nlspline', 'lasync', 'ml_lsparsdes', 'lrpa',
+        'loptics', 'ml_lmlff', 'lscaler0', 'llraug', 'ml_ff_lsic_mb', 'evenonly',
+        'lhyperfine', 'lwaveh5', 'lscsgrad', 'lsubrot', 'lweighted', 'lscdm', 'lcorr',
+        'luse_vdw', 'ml_ff_lmlff', 'lzeroz', 'lvdw', 'lscalu', 'lmixtau', 'phon_lbose',
+        'lcharg', 'lspectralgw', 'lorbitalreal', 'kgamma', 'lpead', 'oddonlygw',
+        'addgrid', 'ltemper', 'evenonlygw', 'lvhar', 'lkproj', 'lwannier90_run',
+        'oddonly', 'lasph', 'kpoints_opt', 'lsorbit', 'lorbmom', 'ltangentold',
+        'gga_compat', 'lnebcell', 'lmp2lt', 'ldau', 'ltriplet', 'lwrite_wannier_xsf',
+        'lbone', 'lefg', 'ch_lspec', 'lfinite_temperature', 'lnlrpa', 'lcalceps',
+        'lsmp2lt', 'lspiral', 'ml_luse_names', 'ml_lafilt2', 'lh5', 'lwrite_unk',
+        'laechg', 'lmono', 'lpead_sym_red', 'ltboundlibxc', 'lfermigw', 'lwave',
+        'lhartree', 'lwrite_mmn_amn', 'lclimb', 'lsepb', 'ml_lcouple', 'lthomas',
+        'lwannier90_auto_window', 'lchargh5', 'lsepk', 'lphon_dispersion', 'lpard',
+        'lintpol_kpath'
+        })
 
-    int_arrays = set('''
-      iband 
-      kpoint_bse kpuse 
-      ldaul
-      ml_icouple
-      ncrpa_bands nsubsys ntarget_states 
-      random_seed
-      smearings
-      '''.split())
+    strings = frozenset({
+        'stop_on', 'nthreads_lo', 'system', 'libxc1', 'lreal', 'wannier90_win', 'gga',
+        'nthreads_mu', 'algo', 'locproj', 'metagga', 'libxc2', 'precfock', 'quad_efg',
+        'nthreads_hi', 'prec', 'fftwmakeplan'
+        })
 
-    real_arrays = set('''
-      cmbj
-      dipol 
-      efield_pead eint
-      ferdo ferwe 
-      increm 
-      langevin_gamma ldauj ldauu
-      magmom m_constr
-      ml_eatom_ref
-      ml_ff_eatom
-      ngyromag
-      phon_born_charges phon_dielectric phon_tlist psubsys
-      qmaxfockae qspiral
-      ropt rwigs 
-      saxis
-      tsubsys 
-      value_max value_min vca vdw_alpha vdw_c6 vdw_c6au vdw_r0 vdw_r0au
-      '''.split())
+    int_arrays = frozenset({
+        'iband', 'smearings', 'ldaul', 'ntarget_states', 'kpuse', 'kpoint_bse',
+        'random_seed', 'nsubsys', 'ncrpa_bands', 'ml_icouple'
+        })
 
-    bool_arrays = set('''
-      lattice_constraints lvdw_onecell
-      '''.split()) # formatted: F F T, etc
+
+    real_arrays = frozenset({
+        'vdw_alpha', 'cmbj', 'efield_pead', 'phon_dielectric', 'ferwe', 'value_max',
+        'm_constr', 'vdw_c6', 'rwigs', 'dipol', 'tsubsys', 'ngyromag', 'vca', 'vdw_r0',
+        'magmom', 'langevin_gamma', 'value_min', 'ml_ff_eatom', 'ldauu', 'ferdo',
+        'ml_eatom_ref', 'eint', 'vdw_c6au', 'ropt', 'phon_born_charges', 'qmaxfockae',
+        'psubsys', 'ldauj', 'saxis', 'increm', 'phon_tlist', 'qspiral', 'vdw_r0au'
+        })
+
+    bool_arrays = frozenset({'lvdw_onecell', 'lattice_constraints'}) # formatted: F F T, etc
 
     keyword_classification = obj(
-        array_dimensions = '''
-        nkpts nkdim nbands nedos nions ldim lmdim nplwv irmax irdmax 
-        ngx ngy ngz ngxf ngyf ngzf 
-        '''.split(),
+        array_dimensions = (
+            'nbands', 'ngzf', 'nplwv', 'ngxf', 'lmdim', 'ngy', 'ngz', 'irdmax', 'irmax',
+            'nions', 'nkpts', 'nkdim', 'ldim', 'ngyf', 'nedos', 'ngx'
+            ),
         )
 
     # updated 220609
-    deprecated = set('''
-        elmin enmax enmin 
-        hflmaxf 
-        ichain 
-        jacobian 
-        lclimb ldneb lmaxfockmp2 lmaxmp2 lnebcell ltangentold lvdw lvdwscs 
-        mbja mbjb 
-        skip_edotp 
-        timestep 
-        vdw_scaling
-        '''.split())
+    deprecated = frozenset({
+        'lvdwscs', 'mbja', 'enmax', 'skip_edotp', 'lvdw', 'timestep', 'jacobian',
+        'enmin', 'lmaxfockmp2', 'vdw_scaling', 'elmin', 'mbjb', 'lclimb', 'hflmaxf',
+        'ldneb', 'lmaxmp2', 'ltangentold', 'lnebcell', 'ichain'
+        })
 
 #end class Incar
 
 
 
 class Stopcar(VKeywordFile):
-    keywords = set('lstop labort'.split())
-    bools    = set('lstop labort'.split())
+    keywords = frozenset({'lstop', 'labort'})
+    bools    = frozenset({'lstop', 'labort'})
 #end class Stopcar
 
 
@@ -1033,7 +968,7 @@ class Penaltypot(VFormattedFile):  # metadynamics -> 6.62.4 (2nd one)
 
 class Poscar(VFormattedFile):
 
-    bool_map = {True:'T',False:'F'}
+    bool_map = MappingProxyType({True:'T',False:'F'})
 
     def __init__(self,filepath=None):
         self.description = None
@@ -1169,7 +1104,7 @@ class Poscar(VFormattedFile):
             vel_coord = None
             vel = None
         #end if
-        self.set(
+        self.update(
             description = description,
             scale       = scale,
             axes        = axes,
@@ -1239,7 +1174,7 @@ class Poscar(VFormattedFile):
     #end def write_text
 
 
-    def check_complete(self,exit=True):
+    def check_complete(self,*,exit=True):
         msg = ''
         if self.scale is None:
             msg += 'scale is missing\n'
@@ -1327,7 +1262,7 @@ class Potcar(VFormattedFile):
             start = n
             n=text.find('\n',start,end)+1
             pend = n
-            self.pseudos.append(text[pstart:pend])
+            self.pseudos[len(self.pseudos)] = text[pstart:pend]
             pstart = pend
             start  = pend
             iter+=1
@@ -1418,15 +1353,15 @@ class Exhcar(VFormattedFile):
 
 class VaspInput(SimulationInput,Vobj):
 
-    all_inputs  = '''
-      EXHCAR   ICONST  INCAR  KPOINTS  PENALTYPOT  POSCAR  POTCAR  
-      STOPCAR  WAVEDER
-      '''.split()
-    all_outputs = '''
-      CHG     CHGCAR  CONTCAR  DOSCAR   ELFCAR   EIGENVAL HILLSPOT     
-      IBZKPT  LOCPOT  OSZICAR  OUTCAR   PCDAT    PRJCAR  
-      PROCAR  PROOUT  REPORT   TMPCAR   WAVECAR  XDATCAR  vasprun.xml
-      '''.split()# note that CHGCAR, TMPCAR, and WAVECAR sometimes contain input
+    all_inputs  = (
+        'PENALTYPOT', 'KPOINTS', 'WAVEDER', 'ICONST',
+        'POSCAR', 'STOPCAR', 'EXHCAR', 'POTCAR', 'INCAR',
+        )
+    all_outputs = (
+        'IBZKPT', 'LOCPOT', 'PRJCAR', 'PCDAT', 'ELFCAR', 'TMPCAR', 'DOSCAR', 'CHGCAR',
+        'CONTCAR', 'HILLSPOT', 'PROCAR', 'EIGENVAL', 'WAVECAR', 'REPORT', 'CHG',
+        'OUTCAR', 'PROOUT', 'XDATCAR', 'vasprun.xml', 'OSZICAR',
+        )# note that CHGCAR, TMPCAR, and WAVECAR sometimes contain input
 
     input_files = obj(
         #exhcar     = Exhcar,
@@ -1483,7 +1418,7 @@ class VaspInput(SimulationInput,Vobj):
     #end def write
 
 
-    def incorporate_system(self,system,incorp_kpoints=True,coord='cartesian',set_nelect=True):
+    def incorporate_system(self,system,coord='cartesian',*,incorp_kpoints=True,set_nelect=True):
         structure = system.structure
 
         # assign kpoints
@@ -1499,7 +1434,7 @@ class VaspInput(SimulationInput,Vobj):
         # assign poscar
         species = None
         if len(structure.elem)>0:
-            s = structure.copy()
+            s = deepcopy(structure)
             s.change_units('A')
             species,species_count = s.order_by_species()
             poscar = Poscar()
@@ -1532,7 +1467,7 @@ class VaspInput(SimulationInput,Vobj):
     #end def incorporate_system
 
 
-    def return_system(self,structure_only=False,**valency):
+    def return_system(self,*,structure_only=False,**valency):
         axes  = self.poscar.axes
         scale = self.poscar.scale
         axes  = scale*axes
@@ -1728,7 +1663,7 @@ def generate_vasp_input(**kwargs):
     if input_type=='general' or input_type=='generic':
         vi = generate_any_vasp_input(**kwargs)
     else:
-        VaspInput.class_error('input_type {0} is unrecognized\nvalid options are: general'.format(input_type))
+        error('input_type {0} is unrecognized\nvalid options are: general'.format(input_type))
     #end if
     return vi
 #end def generate_vasp_input
@@ -1779,7 +1714,10 @@ def generate_any_vasp_input(**kwargs):
         keys = keywords & keyword_file.keywords
         if len(keys)>0:
             kw = obj()
-            kw.move_from(kwargs,keys)
+            for k in keys:
+                if k in kwargs:
+                    kw[k] = kwargs[k]
+                    del kwargs[k]
             vfile = keyword_file()
             vfile.assign(**kw)
             vi[name] = vfile
@@ -1788,7 +1726,7 @@ def generate_any_vasp_input(**kwargs):
 
     # check for leftover keywords
     if len(kwargs)>0:
-        VaspInput.class_error('unrecognized keywords: {0}'.format(sorted(kwargs.keys())),'generate_vasp_input')
+        error('unrecognized keywords: {0}'.format(sorted(kwargs.keys())),'generate_vasp_input')
     #end if
 
     # incorporate system information
@@ -1836,7 +1774,7 @@ def generate_any_vasp_input(**kwargs):
             kp.kinsert    = vf.kinsert
             kp.kendpoints = vf.kendpoints
         else:
-            VaspInput.class_error('could not set kpoints from user inputs','generate_vasp_input')
+            error('could not set kpoints from user inputs','generate_vasp_input')
         #end if
     #end if
 
@@ -1856,8 +1794,8 @@ def generate_any_vasp_input(**kwargs):
 
 
 
-def generate_poscar(structure,coord='cartesian'):
-    s = structure.copy()
+def generate_poscar(structure,*,coord='cartesian'):
+    s = deepcopy(structure)
     s.change_units('A')
     species,species_count = s.order_by_species()
     poscar = Poscar()

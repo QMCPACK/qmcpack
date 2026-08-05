@@ -2,13 +2,15 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.MACHINES)
 
-from ..generic import generic_settings
+from ..generic import generic_settings, NexusError
 generic_settings.raise_error = True
 
 import os
+from random import randint
+from copy import deepcopy
 from . import isolate_nexus_core
 from .. import testing
-from ..testing import object_eq,object_diff,failed,FailedTest
+from ..testing import object_eq,object_diff
 from ..utilities import path_string
 
 all_machines = []
@@ -21,13 +23,14 @@ def get_machine_data():
     if len(machines_data)==0:
         workstations   = obj()
         supercomputers = obj()
-        for machine in Machine.machines:
+        for machine in Machine.machines.values():
             if isinstance(machine,Workstation):
-                workstations.append(machine)
+                workstations[len(workstations)] = machine
             elif isinstance(machine,Supercomputer):
                 supercomputers[machine.name] = machine
             else:
-                failed()
+                msg = "Machine detected that is not a Workstation or Supercomputer!"
+                pytest.fail(msg)
             #end if
         #end for
         machines_data['ws'] = workstations
@@ -42,7 +45,7 @@ def get_machine_data():
 def get_all_machines():
     from ..machines import Machine
     if len(all_machines)==0:
-        for m in Machine.machines:
+        for m in Machine.machines.values():
             all_machines.append(m)
         #end for
     #end if
@@ -51,7 +54,7 @@ def get_all_machines():
 
 
 def get_supercomputers():
-    ws,sc = get_machine_data()
+    _ws,sc = get_machine_data()
     return sc
 #end def get_supercomputers
 
@@ -67,7 +70,7 @@ def test_get_cpu_cores():
 
 
 def test_options():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..machines import Options
 
     # empty init
@@ -81,7 +84,7 @@ def test_options():
         exe = '--exe',
         )
     oi = Options(**inputs)
-    assert(oi.to_dict()==inputs)
+    assert(dict(**oi)==inputs)
 
     # add
     oa = Options()
@@ -94,18 +97,19 @@ def test_options():
     ref['0'] = opts
     o = Options()
     o.read(opts)
-    assert(object_eq(o.to_obj(),ref))
+    assert(object_eq(to_obj(o),ref))
 
     # write
     opts_write = o.write()
     o2 = Options()
     o2.read(opts_write.strip())
-    assert(object_eq(o2.to_obj(),ref))
+    assert(object_eq(to_obj(o2),ref))
 #end def test_options
 
 
 
 def test_job_init():
+    from ..developer import obj
     from ..machines import Job,job
     from ..machines import job_defaults
     from ..machines import job_defaults_assign,job_defaults_nonassign
@@ -121,14 +125,11 @@ def test_job_init():
     assert(id(job)==id(Job))
 
     # empty init should fail w/o implicit or explicit machine
-    try:
+    with pytest.raises(
+        NexusError,
+        match="machine name must be a string, you provided",
+        ):
         job()
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
 
     # empty init should succeed if machine is bypassed
     j = job(skip_machine=True)
@@ -136,7 +137,10 @@ def test_job_init():
     assert(len(jda-set(j.keys()))==0)
     assert(len(j.app_props)==0)
     j.app_props = None # set back to default
-    assert(object_eq(j.obj(*jda),job_defaults_assign))
+    jo = obj()
+    for k in jda:
+        jo[k] = j[k]
+    assert(object_eq(jo,job_defaults_assign))
 #end def test_job_init
 
 
@@ -230,6 +234,8 @@ def test_job_get_machine():
 #end def test_job_get_machine
 
 
+def first(d):
+    return d[min(d.keys())]
 
 def test_job_set_environment():
     from ..machines import job
@@ -237,8 +243,8 @@ def test_job_set_environment():
     workstations,supercomputers = get_machine_data()
 
     machines = []
-    machines.append(workstations.first())
-    machines.append(supercomputers.first())
+    machines.append(first(workstations))
+    machines.append(first(supercomputers))
 
     for m in machines:
         j = job(machine=m.name,skip_machine=True)
@@ -277,8 +283,9 @@ def test_job_serial_clone():
     assert(j2.cores==1)
     assert(id(j2)!=id(j1))
     keys = 'serial cores init_info'.split()
-    j1.delete(keys)
-    j2.delete(keys)
+    for k in keys:
+        del j1[k]
+        del j2[k]
     assert(object_eq(j2,j1))
 #end def test_job_serial_clone
 
@@ -288,54 +295,36 @@ def test_machine_virtuals():
     from ..machines import Machine
     arg0 = None
     arg1 = None
-    try:
+    with pytest.raises(
+        NotImplementedError
+        ):
         Machine.query_queue(arg0)
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
-    try:
+
+    with pytest.raises(
+        NotImplementedError
+        ):
         Machine.submit_jobs(arg0)
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
-    try:
+
+    with pytest.raises(
+        NotImplementedError
+        ):
         Machine.process_job(arg0,arg1)
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
-    try:
+
+    with pytest.raises(
+        NotImplementedError
+        ):
         Machine.process_job_options(arg0,arg1)
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
-    try:
+
+    with pytest.raises(
+        NotImplementedError
+        ):
         Machine.write_job(arg0,arg1,file=False)
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
-    try:
+
+    with pytest.raises(
+        NotImplementedError
+        ):
         Machine.submit_job(arg0,arg1)
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
+
 #end def test_machine_virtuals
 
 
@@ -344,7 +333,7 @@ def test_machine_list():
     from ..machines import Machine
 
     assert(len(Machine.machines)>0)
-    for m in Machine.machines:
+    for m in Machine.machines.values():
         assert(isinstance(m,Machine))
         exists = m.name in Machine.machines
         assert(exists)
@@ -355,55 +344,44 @@ def test_machine_list():
 #end def test_machine_list
 
 
-
 def test_machine_add():
     from ..machines import Machine
-    mtest = Machine.machines.first()
+    mtest = first(Machine.machines)
     assert(isinstance(mtest,Machine))
-    try:
+    with pytest.raises(
+        NexusError,
+        match="attempted to create machine"
+        ):
         Machine.add(mtest)
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
-    try:
+
+    with pytest.raises(
+        NexusError,
+        match="attempted to add non-machine instance"
+        ):
         Machine.add('my_machine')
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
 #end def test_machine_add
 
 
 
 def test_machine_get():
     from ..machines import Machine
-    mtest = Machine.machines.first()
+    mtest = first(Machine.machines)
     assert(isinstance(mtest,Machine))
 
     m = Machine.get(mtest.name)
     assert(isinstance(m,Machine))
     assert(id(m)==id(mtest))
-    try:
+    with pytest.raises(
+        NexusError,
+        match="machine name must be a string, you provided a ",
+        ):
         Machine.get(m)
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
-    try:
+
+    with pytest.raises(
+        NexusError,
+        match="attempted to get machine some_nonexistant_machine, but it is unknown",
+        ):
         Machine.get('some_nonexistant_machine')
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
 #end def test_machine_get
 
 
@@ -411,22 +389,18 @@ def test_machine_get():
 def test_machine_instantiation():
     from ..machines import Machine
     # test guards against empty/invalid instantiation
-    try:
+    with pytest.raises(
+        TypeError,
+        match="missing 1 required positional argument: 'name'",
+        ):
         Machine()
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
-    try:
+
+    with pytest.raises(
+        NexusError,
+        match="machine name must be a string",
+        ):
         Machine(123)
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
+
     # test creation of a new machine
     test_name = 'test_machine'
     assert(not Machine.exists(test_name))
@@ -437,14 +411,11 @@ def test_machine_instantiation():
     m.validate()
 
     # test guards against multiple instantiation
-    try:
+    with pytest.raises(
+        NexusError,
+        match="attempted to create machine test_machine, but it already exists",
+        ):
         Machine(name=test_name)
-        raise FailedTest
-    except FailedTest:
-        failed()
-    except:
-        None
-    #end try
 
     # remove test machine
     del Machine.machines.test_machine
@@ -454,7 +425,7 @@ def test_machine_instantiation():
 
 
 def test_workstation_init():
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..machines import Workstation
 
     ws = Workstation('wsi',16,'mpirun')
@@ -477,7 +448,7 @@ def test_workstation_init():
         processes       = obj(),
         )
 
-    assert(object_eq(ws.to_obj(),refws))
+    assert(object_eq(to_obj(ws),refws))
 
 #end def test_workstation_init
 
@@ -485,12 +456,12 @@ def test_workstation_init():
 
 # imitate Job.initialize w/o involving simulation object
 def init_job(j,
-             id  = 'job_ident',
-             dir = './',
+             identifier = 'job_ident',
+             directory  = './',
              ):
     import os
-    identifier = id
-    directory  = path_string(dir)
+    identifier = identifier
+    directory  = path_string(directory)
     j.set_id()
     j.identifier  = identifier
     j.directory   = directory
@@ -524,7 +495,7 @@ def test_workstation_scheduling(tmp_path):
     assert(j.processes==2)
     assert(j.run_options.np=='-np 2')
     assert(j.batch_mode==False)
-    init_job(j,dir=tmp_path) # imitate interaction w/ simulation object
+    init_job(j,directory=tmp_path) # imitate interaction w/ simulation object
     assert(ws.write_job(j)=='export OMP_NUM_THREADS=2\nmpirun -np 2 echo run')
 
     j = job(machine=ws.name,serial=True)
@@ -535,7 +506,7 @@ def test_workstation_scheduling(tmp_path):
     assert(j.processes==1)
     assert(j.run_options.np=='-np 1')
     assert(j.batch_mode==False)
-    init_job(j,dir=tmp_path) # imitate interaction w/ simulation object
+    init_job(j,directory=tmp_path) # imitate interaction w/ simulation object
     assert(ws.write_job(j)=='export OMP_NUM_THREADS=1\necho run')
 
 
@@ -590,8 +561,8 @@ def test_workstation_scheduling(tmp_path):
 
 
 def test_supercomputer_init():
-    from ..developer import obj
-    from ..machines import Theta
+    from ..developer import obj, to_obj
+    from ..machines import Theta, Machine
 
     class ThetaInit(Theta):
         name = 'theta_init'
@@ -627,8 +598,11 @@ def test_supercomputer_init():
         system_queue    = obj(),
         )
 
-    assert(object_eq(sc.to_obj(),refsc))
+    assert(object_eq(to_obj(sc),refsc))
 
+    # remove test machine
+    del Machine.machines["theta_init"]
+    assert(not Machine.exists("theta_init"))
 #end def test_supercomputer_init
 
 
@@ -636,8 +610,8 @@ def test_supercomputer_init():
 def test_supercomputer_scheduling(tmp_path):
     import os
     import time
-    from ..developer import obj
-    from ..machines import Theta
+    from ..developer import obj, to_obj
+    from ..machines import Theta, Machine
     from ..machines import job,Job
 
     # create supercomputer for testing
@@ -667,12 +641,12 @@ def test_supercomputer_scheduling(tmp_path):
         j               = '-j 1',
         n               = '-n 16',
         )
-    assert(object_eq(j.run_options.to_obj(),refro))
+    assert(object_eq(to_obj(j.run_options),refro))
     assert(j.batch_mode==True)
 
 
     # test write_job()
-    init_job(j,id='123',dir=tmp_path) # imitate interaction w/ simulation object
+    init_job(j,identifier='123',directory=tmp_path) # imitate interaction w/ simulation object
     ref_wj = '''#!/bin/bash
 #COBALT -q default
 #COBALT -A ABC123
@@ -684,7 +658,7 @@ def test_supercomputer_scheduling(tmp_path):
 export OMP_NUM_THREADS=8
 aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     wj = sc.write_job(j)
-    for flag in refro:
+    for flag in refro.values():
         assert(flag in wj)
     #end for
     assert('aprun ' in wj)
@@ -714,7 +688,9 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 
     subfile_path = os.path.join(tmp_path,j.subfile)
     assert(os.path.exists(subfile_path))
-    wj = open(subfile_path,'r').read().strip()
+    with open(subfile_path, "r") as f:
+        wj = f.read().strip()
+
     assert('aprun ' in wj)
     assert(' echo run' in wj)
     def scomp(s):
@@ -756,19 +732,22 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     assert(sc.finished==set([j.internal_id]))
     assert(set(sc.jobs.keys())==set([j.internal_id]))
 
+    # remove test machine
+    del Machine.machines["theta_sched"]
+    assert(not Machine.exists("theta_sched"))
 #end def test_supercomputer_scheduling
 
 
+def select_random(d): 
+    return d[randint(0,len(d)-1)]
 
 def test_process_job():
-    from random import randint
     from ..developer import obj
     from ..machines import Machine,Job
 
     nw  = 5
     nwj = 5
     nsj = 5
-    nij = 5
 
     workstations,supercomputers = get_machine_data()
 
@@ -786,7 +765,7 @@ def test_process_job():
     njobs = nwj
     for nm in range(nworkstations):
         if nworkstations<len(workstations):
-            machine = workstations.select_random() # select machine at random
+            machine = select_random(workstations) # select machine at random
         else:
             machine = workstations[nm]
         #end if
@@ -810,7 +789,7 @@ def test_process_job():
         #end for
         job_inputs.extend(job_inputs_base)
         for job_input in job_inputs_base: # run in serial
-            ji = job_input.copy()
+            ji = deepcopy(job_input)
             ji.serial = True
             job_inputs.append(ji)
         #end for
@@ -818,9 +797,10 @@ def test_process_job():
         machine_idempotent = True
         for job_input in job_inputs:
             job = Job(machine=machine.name,**job_input)
-            job2 = obj.copy(job)
+            job2 = deepcopy(job)
             machine.process_job(job2)
-            machine_idempotent &= job==job2
+            job_eq = object_eq(job,job2)
+            machine_idempotent &= job_eq
         #end for
         if not machine_idempotent:
             not_idempotent[machine.name] = machine
@@ -834,7 +814,7 @@ def test_process_job():
     cores_min   = 1
     threads_min = 1
     shared_job_inputs = obj(name='some_job',account='some_account')
-    for machine in supercomputers:
+    for machine in supercomputers.values():
         job_inputs = []
         job_inputs_base = []
         threads_max = 2*machine.cores_per_node
@@ -885,13 +865,13 @@ def test_process_job():
         job_inputs.extend(job_inputs_base)
         # now add serial jobs
         for job_input in job_inputs_base:
-            ji = job_input.copy()
+            ji = deepcopy(job_input)
             ji.serial = True
             job_inputs.append(ji)
         #end for
         # now add local, serial jobs
         for job_input in job_inputs_base:
-            ji = job_input.copy()
+            ji = deepcopy(job_input)
             ji.serial = True
             ji.local  = True
             job_inputs.append(ji)
@@ -924,14 +904,14 @@ def test_process_job():
                     assert(job.cores==job_input.cores)
                 #end if
             #end if
-            job2 = obj.copy(job)
+            job2 = deepcopy(job)
             machine.process_job(job2)
             job_idempotent = object_eq(job,job2)
             if not job_idempotent:
-                d,d1,d2 = object_diff(job,job2,full=True)
+                _d,d1,d2 = object_diff(job,job2,full=True)
                 change = obj(job_before=obj(d1),job_after=obj(d2))
                 msg = machine.name+'\n'+str(change)
-                failed(msg)
+                pytest.fail(msg)
             #end if
             machine_idempotent &= job_idempotent
         #end for
@@ -946,7 +926,7 @@ def test_process_job():
             mlist+= '\n  '+name
         #end for
         msg='\n\nsome machines failed process_job idempotency test:{0}'.format(mlist)
-        failed(msg)
+        pytest.fail(msg)
     #end if
     Machine.allow_warnings = allow_warn
 
@@ -958,7 +938,7 @@ def test_job_run_command():
     from ..developer import obj
     from ..machines import Machine,Job
 
-    workstations,supercomputers = get_machine_data()
+    _workstations,supercomputers = get_machine_data()
 
     allow_warn = Machine.allow_warnings
     Machine.allow_warnings = False
@@ -988,13 +968,12 @@ def test_job_run_command():
                 args.append(t)
             #end if
         #end for
-        jc = obj(
+        return obj(
             launcher   = launcher,
             executable = exe,
             args       = args,
             options    = options,
             )
-        return jc
     #end def parse_job_command
 
     def job_commands_equal(c1,c2):
@@ -1315,6 +1294,10 @@ def test_job_run_command():
         n2_t2_e   = obj(nodes=2,threads=2,env=obj(ENV_VAR=1)),
         )
     for name in sorted(supercomputers.keys()):
+        # Protect from parallel runs that may run at the same time as
+        # test_supercomputer_init and test_supercomputer_scheduling
+        if name in {"theta_init" "theta_sched"}:
+            continue
         m = supercomputers[name]
         if m.requires_account:
             acc = 'ABC123'
@@ -1323,7 +1306,7 @@ def test_job_run_command():
         #end if
         job_inputs = job_inputs_orig
         if name=='summit': # exceptional treatment for summit nodes
-            job_inputs = job_inputs_orig.copy()
+            job_inputs = deepcopy(job_inputs_orig)
             jtypes = list(job_inputs.keys())
             for jtype in jtypes:
                 if 'p' in jtype:
@@ -1331,7 +1314,7 @@ def test_job_run_command():
                 else:
                     jcpu = job_inputs[jtype]
                     jcpu.gpus = 0
-                    jgpu = jcpu.copy()
+                    jgpu = deepcopy(jcpu)
                     jgpu.gpus = 6
                     job_inputs[jtype+'_g6'] = jgpu
                 #end if
@@ -1352,7 +1335,16 @@ def test_job_run_command():
             #end if
             ref_command = job_run_ref[name,jtype]
             if not job_commands_equal(command,ref_command):
-                failed('Job.run_command for machine "{0}" does not match the reference\njob inputs:\n{1}\nreference command: {2}\nincorrect command: {3}'.format(name,job_inputs[jtype],ref_command,command))
+                msg = (
+                    'Job.run_command for machine "{0}" does not match the reference\n'
+                    'job inputs:\n'
+                    '{1}\n'
+                    'reference command: {2}\n'
+                    'incorrect command: {3}'.format(
+                        name,job_inputs[jtype],ref_command,command
+                        )
+                    )
+                pytest.fail(msg)
             #end for
         #end for
     #end for
@@ -2136,7 +2128,7 @@ srun test.x''',
 #SBATCH -J jobname
 #SBATCH -t 06:30:00
 #SBATCH -N 2
-#SBATCH --ntasks-per-node=96
+#SBATCH --ntasks-per-node=192
 #SBATCH --cpus-per-task=1
 #SBATCH -o test.out
 #SBATCH -e test.err
@@ -2218,17 +2210,17 @@ srun -N 2 -n 64 test.x
             #end if
         #end for
         tokens.extend(lines.pop().split())
-        jo = obj(
+        return obj(
             lines  = lines,
             tokens = set(tokens),
             )
-        return jo
     #end def process_job_file
 
     def job_files_same(jf1,jf2):
         jf1 = process_job_file(jf1)
         jf2 = process_job_file(jf2)
-        if not object_eq(jf1,jf2): print(f"compare --------------------\n * wj *\n{jf1}\n * ref_wj *\n{jf2}\n")
+        if not object_eq(jf1,jf2):
+            print(f"compare --------------------\n * wj *\n{jf1}\n * ref_wj *\n{jf2}\n")
         return object_eq(jf1,jf2)
     #end def job_files_same
 
@@ -2252,7 +2244,7 @@ srun -N 2 -n 64 test.x
         else:
             acc = None
         #end if
-        ji = job_inputs.copy()
+        ji = deepcopy(job_inputs)
         if name=='summit': # exceptional treatment for summit nodes
             ji.gpus = 6
         if name=='flight':
