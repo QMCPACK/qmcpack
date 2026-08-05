@@ -285,54 +285,22 @@ class Section(DevBase):
 
 class QuantumPackageInput(SimulationInput):
 
-    added_keys = '''
-        structure
-        run_control
-        '''.split()
+    added_keys = frozenset({'structure', 'run_control'})
 
     # get these by running
     #   qp_run -h
-    run_types = set('''
-        cis
-        cisd
-        diagonalize_h
-        fci
-        fcidump
-        four_idx_transform
-        install
-        ks_scf
-        molden
-        print_ci_vectors
-        print_e_conv
-        print_ecmd_pbe_ontop
-        print_h0j
-        print_pgm
-        print_rsdft_variational_energy
-        print_wf
-        pt2
-        qmc_create_wf
-        qmc_e_curve
-        qp_ao_ijkl_r3_ints
-        qp_cipsi_rsh
-        qp_convert_qmcpack_to_ezfio.py
-        reorder_dets
-        rs_ks_scf
-        save_for_qmcpack
-        save_natorb
-        save_one_e_dm
-        save_ortho_mos
-        scf
-        target_pt2_qmc
-        truncate_wf_spin
-        truncate_wf_spin_no_H
-        two_body_dm.main
-        uninstall
-        write_2_body_dm_fci_dump
-        write_effective_rsdft_hamiltonian
-        write_erf_and_regular_ints
-        write_integrals_erf
-        write_rsdft_h_read_ints
-        '''.split())
+    run_types = frozenset({
+        'scf', 'write_2_body_dm_fci_dump', 'truncate_wf_spin', 'cis',
+        'qp_ao_ijkl_r3_ints', 'print_ci_vectors', 'write_erf_and_regular_ints', 'pt2',
+        'write_rsdft_h_read_ints', 'qmc_e_curve', 'fcidump', 'save_natorb',
+        'qp_convert_qmcpack_to_ezfio.py', 'print_e_conv', 'reorder_dets', 'fci',
+        'print_h0j', 'write_effective_rsdft_hamiltonian', 'write_integrals_erf',
+        'install', 'target_pt2_qmc', 'diagonalize_h', 'qmc_create_wf', 'molden',
+        'two_body_dm.main', 'uninstall', 'qp_cipsi_rsh', 'print_wf',
+        'four_idx_transform', 'save_ortho_mos', 'cisd', 'print_ecmd_pbe_ontop', 'ks_scf',
+        'print_pgm', 'save_one_e_dm', 'truncate_wf_spin_no_H', 'save_for_qmcpack',
+        'rs_ks_scf', 'print_rsdft_variational_energy'
+        })
 
 
     def __init__(self,filepath=None):
@@ -528,7 +496,7 @@ class QuantumPackageInput(SimulationInput):
     #end def incorporate_system
 
 
-    def check_valid(self,sections=True,variables=True,types=True,run_type=True,exit=True):
+    def check_valid(self,*,sections=True,variables=True,types=True,run_type=True,exit=True):
         msg = ''
 
         extra = self.extract_added_keys()
@@ -602,24 +570,12 @@ class QuantumPackageInput(SimulationInput):
 
 
 
-run_inputs = set('''
-    prefix
-    run_type
-    frozen_core
-    cis_loop
-    converge_dets
-    sleep
-    slave
-    postprocess
-    save_natorb
-    four_idx_transform
-    save_for_qmcpack
-    '''.split())
-gen_inputs = set('''
-    system
-    defaults
-    validate
-    '''.split())
+run_inputs = frozenset({
+    'sleep', 'frozen_core', 'run_type', 'save_natorb', 'prefix', 'cis_loop',
+    'postprocess', 'save_for_qmcpack', 'slave', 'converge_dets', 'four_idx_transform'
+    })
+gen_inputs = frozenset({'system', 'defaults', 'validate'})
+
 added_inputs = run_inputs | gen_inputs
 added_types = obj(
     # run inputs
@@ -639,12 +595,7 @@ added_types = obj(
     defaults           = str,
     validate           = bool,
     )
-added_required = set('''
-    system
-    prefix
-    run_type
-    sleep
-    '''.split())
+added_required = frozenset({'system', 'sleep', 'run_type', 'prefix'})
 qp_defaults_version = 'v1'
 shared_defaults = obj(
     # run inputs

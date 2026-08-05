@@ -45,6 +45,8 @@
 
 import os
 from pathlib import Path
+from types import MappingProxyType
+from typing import ClassVar
 from copy import deepcopy
 import platform
 from socket import gethostname
@@ -492,7 +494,7 @@ class Job(NexusCore):
     #end def set_processes
 
 
-    def set_environment(self,limited_env=False,clear_env=False,**env):
+    def set_environment(self,*,limited_env=False,clear_env=False,**env):
         machine = self.get_machine()
         if isinstance(machine,Supercomputer):
             limited_env = True
@@ -555,7 +557,7 @@ class Job(NexusCore):
 
 
     # test needed
-    def write(self,file=False):
+    def write(self,*,file=False):
         machine = self.get_machine()
         return machine.write_job(self,file=file)
     #end def write
@@ -576,7 +578,7 @@ class Job(NexusCore):
     #end def reenter_queue
 
 
-    def run_command(self,launcher=None,redirect=False,serial=False):
+    def run_command(self,launcher=None,*,redirect=False,serial=False):
         if self.template is not None:
             return ''
         #end if
@@ -750,7 +752,7 @@ class Job(NexusCore):
 
 class Machine(NexusCore):
 
-    machines = dict()
+    machines: ClassVar[dict] = dict()
 
     modes = obj(
         none        = 0,
@@ -871,7 +873,7 @@ class Machine(NexusCore):
         raise NotImplementedError
     #end def process_job_options
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         raise NotImplementedError
     #end def write_job
 
@@ -942,7 +944,7 @@ class Machine(NexusCore):
     #end def requeue_job
 
 
-    allowed_user_info = set(['account','local_directory','app_directory','app_directories'])
+    allowed_user_info = frozenset({'account','local_directory','app_directory','app_directories'})
     def incorporate_user_info(self,infoin):
         info = obj(**infoin)
         vars = set(info.keys())
@@ -1156,7 +1158,7 @@ class Workstation(Machine):
     #end def job_command
 
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         c = self.job_command(job)
         return c
     #end def write_job
@@ -1281,9 +1283,9 @@ class Supercomputer(Machine):
 
     batch_capable = False #only set to true for specific machines
 
-    aprun_options = set(['n','d'])
+    aprun_options = frozenset({'n','d'})
 
-    required_inputs = [
+    required_inputs = (
         'nodes',
         'procs_per_node',
         'cores_per_proc',
@@ -1293,7 +1295,7 @@ class Supercomputer(Machine):
         'sub_launcher',
         'queue_querier',
         'job_remover'
-        ]
+        )
 
     def __init__(self,
                  nodes          = None,
@@ -1886,7 +1888,7 @@ class Supercomputer(Machine):
     #end def setup_environment
 
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         if job.template is None:
             env = self.setup_environment(job)
@@ -3447,7 +3449,7 @@ class Baseline(Supercomputer):
     name = 'baseline'
     requires_account = True
     batch_capable    = True
-    queue_configs={
+    queue_configs=MappingProxyType({
         'default': 'batch_cnms',
         'batch': {
             'max_nodes': 138,
@@ -3473,7 +3475,8 @@ class Baseline(Supercomputer):
             'max_nodes': 1,
             'max_walltime': '24:00:00',
             }
-        }
+        })
+
     def write_job_header(self,job):
         self.validate_queue_config(job)
 
@@ -3502,7 +3505,7 @@ class Frontier(Supercomputer):
     requires_account = True
     batch_capable    = True
 
-    queue_configs = {
+    queue_configs = MappingProxyType({
         'default': 'batch',
         'batch': {
             'max_nodes': 9664,
@@ -3516,7 +3519,7 @@ class Frontier(Supercomputer):
             'max_nodes': 1,
             'max_walltime': '01:00:00',
             }
-        }
+        })
 
     def pre_process_job(self,job):
         # Set default queue and node type
@@ -3589,7 +3592,7 @@ class Besms(Supercomputer):
     requires_account = True
     batch_capable    = True
     # Using sinfo to get the queue configs
-    queue_configs={
+    queue_configs=MappingProxyType({
         'default': 't92',
         't92': {
             'max_nodes': 10,
@@ -3602,8 +3605,8 @@ class Besms(Supercomputer):
         'burst': {
             'max_nodes': 166,
             'max_walltime': '48:00:00',
-            },
-        }
+        },
+    })
     def write_job_header(self,job):
         self.validate_queue_config(job)
 
@@ -3815,7 +3818,7 @@ class Leonardo(Supercomputer):
     # https://docs.hpc.cineca.it/hpc/leonardo.html#file-systems-and-data-managment
     # parallel partition: boost_usr_prod 
     # GPUs: up to 4 gpus per node
-    booster_qos = {
+    booster_qos = MappingProxyType({
         'normal': {
             'max_nodes' : 64,
             'min_nodes' : 1,
@@ -3835,8 +3838,8 @@ class Leonardo(Supercomputer):
             'min_nodes' : 1,
             'max_nodes' : 8,
             'max_hours' : 96.0,  # 4 giorni
-            },
-        }
+        },
+    })
     # serial partition: lrd_all_serial
     # No GPUs, Hyperthreading x 2, Budget Free, 30800 MB RAM
     serial_partition  = 'lrd_all_serial'
@@ -4479,7 +4482,7 @@ class Kagayaki(Supercomputer):
         job.run_options.add(**opt)
 
     def write_job_header(self,job):
-        ppn = 16 if job.queue in ['Default', 'SINGLE', 'LONG', 'DEFAULT'] else 128
+        ppn = 16 if job.queue in {'Default', 'SINGLE', 'LONG', 'DEFAULT'} else 128
         c=''
         c+='#!/bin/bash\n'
         if (job.queue is not None):

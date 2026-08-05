@@ -17,6 +17,7 @@
 
 
 import time
+from typing import ClassVar
 from . import memory
 from .developer import obj, error
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
@@ -72,7 +73,7 @@ class ProjectManager(NexusCore):
     #end def add_cascade
 
 
-    def run_project(self,status=False,status_only=False):
+    def run_project(self,*,status=False,status_only=False):
         self.log('\nProject starting',n=0)
         self.init_cascades()
         status_only = status_only or nexus_core.status_only
@@ -388,8 +389,8 @@ class DynamicWorkflowManager(NexusCore):
     '''Replacement for ProjectManager for dynamic workflows'''
 
     # all dynamic processes encountered
-    all_dp         = set() # all dp found via add_new_dyn_procs
-    all_sims       = set() # all sims associated w/ dp
+    all_dp: ClassVar[set]   = set() # all dp found via add_new_dyn_procs
+    all_sims: ClassVar[set] = set() # all sims associated w/ dp
 
     def __init__(self):
         # dynamic processes by status

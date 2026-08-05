@@ -908,10 +908,11 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
 }
 
 TEST_CASE("LCAOrbitalSet batched PBC DiamondC",
-          "[wavefunction]"){SECTION("2x1x1 real"){test_LCAO_DiamondC_2x1x1_real(false);
-} // namespace qmcplusplus
+          "[wavefunction]")
+{
+  SECTION("2x1x1 real") { test_LCAO_DiamondC_2x1x1_real(false); }
 #ifdef QMC_COMPLEX
-SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(false); }
+  SECTION("2x1x1 cplx") { test_LCAO_DiamondC_2x1x1_cplx(false); }
 #endif
 }
 

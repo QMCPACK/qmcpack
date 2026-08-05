@@ -12,7 +12,6 @@
 #include <vector>
 #include <algorithm>
 
-#include "Configuration.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/tests/WalkerConsumer.h"

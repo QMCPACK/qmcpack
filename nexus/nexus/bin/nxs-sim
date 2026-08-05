@@ -68,9 +68,9 @@ from nexus.developer import obj,save,load
 
 class SimTool(obj):
     
-    indicators = ['setup','sent_files','submitted','finished','failed','got_output','analyzed']
+    indicators = ('setup','sent_files','submitted','finished','failed','got_output','analyzed')
 
-    fields = set(indicators)
+    fields = frozenset(indicators)
 
 
     def __init__(self):
@@ -88,7 +88,7 @@ class SimTool(obj):
     #end def load
 
 
-    def write_state(self,fields=[]):
+    def write_state(self,fields=()):
         if len(fields)==0:
             fields = self.indicators
         #end if
@@ -111,7 +111,7 @@ class SimTool(obj):
     #end def write_state
 
 
-    def write_state_all(self,fields=[]):
+    def write_state_all(self,fields=()):
         if len(fields)==0:
             fields = self.indicators
         #end if

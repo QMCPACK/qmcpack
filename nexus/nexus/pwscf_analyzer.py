@@ -81,7 +81,7 @@ def pwscf_time(tsin):
 
 
 class PwscfAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,analyze=False,xml=False,warn=False,md_only=False):
+    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,*,analyze=False,xml=False,warn=False,md_only=False):
         if isinstance(arg0,Simulation):
             sim = arg0
             path = sim.locdir
@@ -716,7 +716,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def analyze
 
 
-    def write_electron_counts(self,filepath=None,return_flag=False):
+    def write_electron_counts(self,filepath=None,*,return_flag=False):
         if not return_flag:
             if not self.info.xml:
                 self.error('xml data has not been processed\ncannot write electron counts')
@@ -790,7 +790,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def md_statistics
 
 
-    def md_plots(self,show=True):
+    def md_plots(self,*,show=True):
 
         md = self.md_data
 
@@ -845,7 +845,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def make_movie
 
 
-    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True,k_labels=None):
+    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, *, show=False, save=True, show_vbm_cbm=True,k_labels=None):
         import matplotlib.pyplot as plt
         params = {
             'legend.fontsize'      : 14,

@@ -38,12 +38,16 @@ class Vasp(Simulation):
     analyzer_type      = VaspAnalyzer
     generic_identifier = 'vasp'
     application        = 'vasp' 
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['structure']) 
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'structure'})
 
     allow_overlapping_files = True
 
-    vasp_save_files = 'INCAR KPOINTS POSCAR CONTCAR DOSCAR EIGENVAL IBZKPT OSZICAR OUTCAR PCDAT XDATCAR vasprun.xml'.split()
+    vasp_save_files = (
+        'DOSCAR', 'IBZKPT', 'CONTCAR', 'KPOINTS', 'PCDAT', 'POSCAR',
+        'OUTCAR', 'vasprun.xml', 'EIGENVAL', 'INCAR', 'XDATCAR', 'OSZICAR'
+        )
+
 
     def set_files(self):
         self.infile  = 'INCAR'

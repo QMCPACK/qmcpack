@@ -145,13 +145,13 @@ class SimulationBundle(Simulation):
                 msg +='  {0:<8} {1:>4} {2}\n'.format(sim.identifier,sim.simid,sim.locdir)
             #end for
             msg+='please remove the necessary sims from the bundle and try again\nthe excluded sims can likely be bundled separately'
-            self.error(msg,'bundle')
+            self.error(msg,header='bundle')
         #end if
         self.depends(*deps)
     #end def bundle_dependencies
 
 
-    def bundle_jobs(self,relative=False,serial=False):
+    def bundle_jobs(self,*,relative=False,serial=False):
         jobs        = []
         job0        = self.sims[0].job
         time        = Job.zero_time()
@@ -181,7 +181,7 @@ class SimulationBundle(Simulation):
             jobs.append(job)
         #end for
         if len(thread_set)>1:
-            self.error('bundling jobs with different numbers of threads is not yet supported\nthread inputs provided: {0}'.format(sorted(thread_set),trace=False))
+            self.error('bundling jobs with different numbers of threads is not yet supported\nthread inputs provided: {0}'.format(sorted(thread_set)),trace=False)
         #end if
         if len(queue_set)>1:
             self.error('bundling jobs with different queues is not allowed\nqueue inputs provided: {0}'.format(sorted(queue_set)),trace=False)
