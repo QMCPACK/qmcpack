@@ -45,12 +45,14 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         python3-cif2cell \
         python3-coverage \
         python3-h5py \
+        python3-matplotlib \
         python3-numpy \
         python3-pandas \
         python3-pip \
         python3-pytest \
         python3-pytest-cov \
         python3-pytest-order \
+        python3-scipy \
         python3-spglib
 
 # Install gcovr from pip since the Ubuntu 24.04 apt version doesn't support files >9999 lines
