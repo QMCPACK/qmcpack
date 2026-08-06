@@ -16,7 +16,12 @@ The Nexus User Guide
 `GitHub <https://github.com/QMCPACK/qmcpack>`_ |
 `Report an Issue <https://github.com/QMCPACK/qmcpack/issues>`_
 
-The Nexus Python package provides both basic and advanced tooling for running calculations on supercomputing clusters for several density functional theory (DFT) and wavefunction theory (WFT) programs, as well as for driving QMCPACK calculations.
+Nexus is a Python package for orchestrating atomistic and quantum-mechanical workflows on local workstations through to
+leadership-class supercomputers, and analyzing the results. It supports both periodic solid-state and molecular systems, with
+particular emphasis on quantum Monte Carlo (QMC) calculations and QMCPACK. Workflows based solely on quantum chemical methods
+(PySCF, GAMESS, Quantum Package) or density functional theory (Quantum ESPRESSO, RMG, VASP) are also fully supported. Nexus
+differentiates itself by supporting arbitrary combinations of methods and codes, ease of use, and by its lightweight nature and
+minimal dependencies.
 
 .. toctree::
    :hidden:
