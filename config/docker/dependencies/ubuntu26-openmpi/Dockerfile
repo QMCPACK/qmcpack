@@ -2,55 +2,61 @@ FROM ubuntu:26.04
 
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get clean \
-    && apt-get update -y \
+    && apt-get update \
     && apt-get upgrade -y apt-utils \
     && apt-get install -y gpg wget
 
 RUN export DEBIAN_FRONTEND=noninteractive \
-    && apt-get install gcc g++ \
-        gcc-15 g++-15 \
-        gcc-16 g++-16 \
-        clang-22 libomp-22-dev liboffload-22-dev clang-format-22 clang-tidy-22 \
-        gcovr \
-        python3 \
+    && apt-get install -y \
+        gcc \
+        g++ \
+        gcc-15 \
+        g++-15 \
+        gcc-16 \
+        g++-16 \
+        clang-22 \
+        libomp-22-dev \
+        liboffload-22-dev \
+        clang-format-22 \
+        clang-tidy-22 \
         cmake \
-        ninja-build \
-        libboost-all-dev \
+        curl \
+        gcovr \
         git \
-        libopenmpi-dev \
+        hdf5-tools \
+        libboost-all-dev \
+        libfftw3-dev \
         libhdf5-openmpi-dev \
         libhdf5-serial-dev \
-        hdf5-tools \
-        libfftw3-dev \
         libopenblas-openmp-dev \
+        libopenmpi-dev \
         libxml2-dev \
-        sudo \
-        curl \
-        rsync \
-        wget \
-        software-properties-common \
-        vim \
+        ninja-build \
         numdiff \
-        -y
+        python3 \
+        rsync \
+        software-properties-common \
+        sudo \
+        vim \
+        wget
 
 # Python packages for Nexus and testing
 RUN export DEBIAN_FRONTEND=noninteractive \
-    && apt-get install python3-numpy \
-        python3-scipy \
-        python3-matplotlib \
-        python3-h5py \
-        python3-pandas \
+    && apt-get install -y \
+        python3-cif2cell \
         python3-coverage \
+        python3-h5py \
+        python3-matplotlib \
+        python3-numpy \
+        python3-pandas \
+        python3-pip \
         python3-pytest \
         python3-pytest-cov \
         python3-pytest-order \
-        python3-cif2cell \
-        python3-spglib \
-        python3-pip \
-        -y
+        python3-scipy \
+        python3-spglib
 
-# Install gcovr from pip since the Ubuntu version doesn't support files >9999 lines
-# https://github.com/gcovr/gcovr/pull/883
+# Install gcovr from pip for latest features
 RUN export DEBIAN_FRONTEND=noninteractive \
     && sudo pip3 install --break-system-packages gcovr==8.6
 

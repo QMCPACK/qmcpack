@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get clean \
-    && apt-get update -y \
+    && apt-get update \
     && apt-get upgrade -y apt-utils \
     && apt-get install -y gpg wget
 
@@ -11,7 +11,9 @@ RUN wget https://apt.kitware.com/kitware-archive.sh \
     && sh kitware-archive.sh
 
 RUN export DEBIAN_FRONTEND=noninteractive \
-    && apt-get install gcc-12 g++-12 \
+    && apt-get install -y \
+        gcc-12 \
+        g++-12 \
         clang-14 \
         clang-format-14 \
         clang-tidy-14 \
@@ -33,20 +35,19 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         wget \
         software-properties-common \
         vim \
-        numdiff \
-        -y
+        numdiff
 
 # Python packages for tests
 RUN export DEBIAN_FRONTEND=noninteractive \
-    && apt-get install python3-numpy \
+    && apt-get install -y \
+        python3-numpy \
         python3-h5py \
         python3-pandas \
         python3-coverage \
         python3-pytest \
         python3-pytest-cov \
         python3-pytest-order \
-        python3-pip \
-        -y
+        python3-pip
 
 RUN export DEBIAN_FRONTEND=noninteractive \
     && pip3 install cif2cell
