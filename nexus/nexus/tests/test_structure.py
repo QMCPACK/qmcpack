@@ -244,7 +244,7 @@ def get_crystal_structures():
     from ..structure import Crystal,generate_structure
     if len(crystal_structures)==0:
         crys = crystal_structures
-        for (latt,cell),inputs in Crystal.known_crystals.items():
+        for (latt,cell) in Crystal.known_crystals.keys():
             s = generate_structure(structure=latt,cell=cell)
             crys[latt+'_'+cell] = s
         #end for
@@ -428,7 +428,7 @@ def test_diagonal_tiling():
         (6, 4, 6),
         (6, 6, 4),
         ]
-    for name,s in ref.items():
+    for s in ref.values():
         for tvec in diag_tilings:
             st = s.tile(tvec)
             st.check_tiling()

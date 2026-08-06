@@ -188,7 +188,7 @@ def write_array(arr,same=equality,render=str,max_repeat=3):
         if count>max_repeat:
             s += '{0}*{1} '.format(count,render(value))
         else:
-            for i in range(count):
+            for i in range(count):  # noqa: B007
                 s += render(value)+' '
             #end for
         #end if
