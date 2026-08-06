@@ -61,9 +61,7 @@ public:
     MultiDiracDetMultiWalkerResource(const MultiDiracDetMultiWalkerResource&) : MultiDiracDetMultiWalkerResource() {}
 
     std::unique_ptr<Resource> makeClone() const override
-    {
-      return std::make_unique<MultiDiracDetMultiWalkerResource>(*this);
-    }
+    { return std::make_unique<MultiDiracDetMultiWalkerResource>(*this); }
 
     void resizeConstants(size_t nw)
     {
@@ -151,9 +149,7 @@ public:
   inline bool isOptimizable() const final { return Phi->isOptimizable(); }
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
-  {
-    Phi->extractOptimizableObjectRefs(opt_obj_refs);
-  }
+  { Phi->extractOptimizableObjectRefs(opt_obj_refs); }
 
   inline void checkOutVariables(const OptVariables& active) override
   {

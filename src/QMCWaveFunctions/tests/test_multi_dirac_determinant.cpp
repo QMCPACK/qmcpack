@@ -68,7 +68,7 @@ public:
   T customized_evaluate()
   {
     build_interal_data(EXT_LEVEL);
-    return calcSmallDeterminant(EXT_LEVEL, dots.data(), it_things.data(),dots.cols());
+    return calcSmallDeterminant(EXT_LEVEL, dots.data(), it_things.data(), dots.cols());
   }
 };
 
@@ -89,9 +89,9 @@ TEST_CASE("SmallMatrixDetCalculator::evaluate-Small", "[wavefunction][fermion][m
   CHECK(double_test.customized_evaluate<4>() == Approx(-0.87890625));
   CHECK(double_test.customized_evaluate<5>() == Approx(-0.96768));
 
-  CHECK(double_test.generic_evaluate(1<<3) == Approx(-1.1086723208));
-  CHECK(double_test.generic_evaluate(1<<7) == Approx(-1.3432116824));
-  CHECK(double_test.generic_evaluate(1<<12) == Approx(-1.3586431786));
+  CHECK(double_test.generic_evaluate(1 << 3) == Approx(-1.1086723208));
+  CHECK(double_test.generic_evaluate(1 << 7) == Approx(-1.3432116824));
+  CHECK(double_test.generic_evaluate(1 << 12) == Approx(-1.3586431786));
 }
 
 } // namespace qmcplusplus

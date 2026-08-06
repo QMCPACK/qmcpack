@@ -3,7 +3,7 @@
 Modifying Existing QMCPACK Input Files with Nexus Tools
 =======================================================
 
-Below are a few examples on using the ``QmcpackInput.modify`` function to 
+Below are a few examples on using the :py:meth:`.QmcpackInput.modify` function to 
 modify existing QMCPACK input files, e.g. those made by the converters, 
 previously generated with Nexus, or created by hand.
 
@@ -214,7 +214,7 @@ Modification Example
 --------------------
 
 This example touches on a subset of the features made available through 
-the ``modify`` function.  
+the :py:meth:`~.QmcpackInput.modify` function.  
 
 As a set of simultaneous changes, we demonstrate 1) changing the orbital 
 file path in ``<determinantset/>``, 2) changing the multideterminant filepath 
