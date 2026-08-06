@@ -228,7 +228,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
         jnames = {'One-Body':'J1','Two-Body':'J2','Three-Body':'J3'}
         jastrows = QAobject()
-        for jt,jn in jnames.items():
+        for jn in jnames.values():
             jastrows[jn] = QAobject()
         #end for
         del jastrows.J3
@@ -284,7 +284,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
     def load_jastrow_data(self):
         ext = '.g'+str(self.batch_index).zfill(3)+'.dat'
         for jt in self.jastrow_types:
-            for jn,je in self[jt].items():
+            for jn in self[jt].keys():
                 J = self[jt][jn]
                 data = np.loadtxt(os.path.join(self.sourcepath,jt+'.'+jn+ext))
                 J.r  = data[:,0]

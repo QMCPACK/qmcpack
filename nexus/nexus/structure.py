@@ -1562,7 +1562,7 @@ class Structure(Sobj):
         prange  = pmax-pmin
         if minsize is not None:
             for i,pr in enumerate(prange):
-                prange[i] = max(minsize,prange[i])
+                prange[i] = max(minsize,pr)
             #end for
         #end if
         if box=='tight':
