@@ -219,9 +219,7 @@ DiracDeterminantWithBackflow::PsiValue DiracDeterminantWithBackflow::ratio(Parti
 }
 
 void DiracDeterminantWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
-{
-  APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evaluateRatiosAlltoOne. \n");
-}
+{ APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evaluateRatiosAlltoOne. \n"); }
 
 DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
 {
@@ -990,9 +988,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 std::unique_ptr<DiracDeterminantWithBackflow> DiracDeterminantWithBackflow::makeCopyWithBF(
     SPOSet& phi,
     BackflowTransformation& BF) const
-{
-  return std::make_unique<DiracDeterminantWithBackflow>(phi, BF, FirstIndex, LastIndex);
-}
+{ return std::make_unique<DiracDeterminantWithBackflow>(phi, BF, FirstIndex, LastIndex); }
 
 void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
 {
