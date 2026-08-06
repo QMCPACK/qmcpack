@@ -1595,7 +1595,7 @@ class SemilocalPP(Pseudopotential):
         # from l channels, reconstruct nonlocal components
         vcs.clear()
         vloc = vls[local]
-        for l,vl in vls.items():
+        for l in vls.keys():
             if l==local:
                 vcs[l] = vloc
             else:
@@ -1891,7 +1891,7 @@ class SemilocalPP(Pseudopotential):
         r    = None
         vmin = None
         vmax = None
-        for l,(rc,vc) in rv.items():
+        for rc, vc in rv.values():
             if r is None:
                 r = rc
                 vmin = np.array(vc)
@@ -2579,7 +2579,7 @@ class GaussianPP(SemilocalPP):
             while i<len(lines):
                 n = int(lines[i]); i+=1
                 terms = []
-                for j in range(n):
+                for j in range(n):  # noqa: B007
                     coeff,rpow,expon = lines[i].split(); i+=1
                     terms.append((float(coeff),int(rpow),float(expon)))
                 #end for
@@ -2595,7 +2595,7 @@ class GaussianPP(SemilocalPP):
                 i+=1 # skip comment line
                 n = int(lines[i]); i+=1
                 terms = []
-                for j in range(n):
+                for j in range(n):  # noqa: B007
                     rpow,expon,coeff = lines[i].split(); i+=1
                     terms.append((float(coeff),int(rpow),float(expon)))
                 #end for
@@ -2627,7 +2627,7 @@ class GaussianPP(SemilocalPP):
             for nt in nterms:
                 lmax += 1
                 terms = []
-                for n in range(nt):
+                for n in range(nt):  # noqa: B007
                     expon,coeff,rpow = lines[i].split(); i+=1
                     terms.append((float(coeff),int(rpow)+2,float(expon)))
                 #end for
@@ -2644,7 +2644,7 @@ class GaussianPP(SemilocalPP):
             while i<len(lines):
                 n = int(lines[i]); i+=1
                 terms = []
-                for j in range(n):
+                for j in range(n):  # noqa: B007
                     rpow,expon,coeff = lines[i].split(); i+=1
                     terms.append((float(coeff),int(rpow),float(expon)))
                 #end for
@@ -2672,7 +2672,7 @@ class GaussianPP(SemilocalPP):
             while i<len(lines):
                 for n in ns:
                     terms = []
-                    for j in range(n):
+                    for j in range(n):  # noqa: B007
                         rpow,expon,coeff = lines[i].split(); i+=1
                         terms.append((float(coeff),int(rpow),float(expon)))
                     #end for
@@ -2814,7 +2814,7 @@ class GaussianPP(SemilocalPP):
                 channels.append(channel)
                 ccount += 1
             #end for
-            for i in range(6-ccount): # crystal14 goes up to g (hence the 6)
+            for i in range(6-ccount): # crystal14 goes up to g (hence the 6)  # noqa: B007
                 tline += ' 0'
             #end for
             text += tline+'\n'
@@ -3014,7 +3014,7 @@ class GaussianPP(SemilocalPP):
         remove = []
         for l in np.arange(self.lmax+1):
             comp_l = self.components[chan_labels[l]]
-            for term_idx,k in enumerate(comp_l.keys()):
+            for term_idx,k in enumerate(comp_l.keys()): # TODO: Is this enumerate needed?
                 term = comp_l[term_idx]
                 if abs(term.coeff)<1e-12 and len(comp_l)>1:
                     remove.append((chan_labels[l],term_idx))
@@ -3467,10 +3467,10 @@ class GaussianPP(SemilocalPP):
                 fctr = l*(l+1)-lmax*(lmax+1)
                 fctr = float(fctr)/(lm*(lm+1)-ln*(ln+1))
                 self.components[chan_labels[l]] = obj()
-                for term_idx,term in enumerate(vm_comp):
+                for term in vm_comp:
                     self.append_to_component(l,coeff=fctr*term.coeff,expon=term.expon,rpow=term.rpow)
                 #end for
-                for term_idx,term in enumerate(vn_comp):
+                for term in vn_comp:
                     self.append_to_component(l,coeff=-fctr*term.coeff,expon=term.expon,rpow=term.rpow)
                 #end for
             #end for

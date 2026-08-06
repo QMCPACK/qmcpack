@@ -1971,8 +1971,8 @@ class DynamicProcess(DevBase):
         if not isinstance(produces,(tuple,list,set)):
             self.error('keyword "requires" must be a tuple, list or set of products')
         for prod in produces:
-            if not isinstance(req,str):
-                self.error('each product in "produces" must be given as a string.\nType received: {}\nValue received: {}'.format(req.__class__.__name__,req))
+            if not isinstance(prod,str):
+                self.error('each product in "produces" must be given as a string.\nType received: {}\nValue received: {}'.format(prod.__class__.__name__,prod))
         produces = set(produces)
 
         # initial values

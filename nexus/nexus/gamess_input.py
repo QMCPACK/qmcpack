@@ -1154,7 +1154,7 @@ def generate_any_gamess_input(**kwargs):
             #end for
             ecp = ''
             atoms = set()
-            for i,a in enumerate(elem_ecp):
+            for a in elem_ecp:
                 if a in pps:
                     pp = pps[a]
                     if a in atoms:
