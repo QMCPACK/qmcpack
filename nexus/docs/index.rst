@@ -16,8 +16,8 @@ The Nexus User Guide
 `GitHub <https://github.com/QMCPACK/qmcpack>`_ |
 `Report an Issue <https://github.com/QMCPACK/qmcpack/issues>`_
 
-Nexus is a Python package for orchestrating atomistic and quantum-mechanical workflows on local workstations through to
-leadership-class supercomputers, and analyzing the results. It supports both periodic solid-state and molecular systems, with
+Nexus is a Python package for orchestrating workflows of atomistic and quantum-mechanical calculations on local workstations through
+to leadership-class supercomputers, and analyzing the results. It supports both periodic solid-state and molecular systems, with
 particular emphasis on quantum Monte Carlo (QMC) calculations and QMCPACK. Workflows based solely on quantum chemical methods
 (PySCF, GAMESS, Quantum Package) or density functional theory (Quantum ESPRESSO, RMG, VASP) are also fully supported. Nexus
 differentiates itself by supporting arbitrary combinations of methods and codes, ease of use, and by its lightweight nature and
