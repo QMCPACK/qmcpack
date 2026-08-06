@@ -557,8 +557,8 @@ def read_outcar_bands(vlines,odata):
         #end for
         vlines.advance(n)
     #end if
-    for ns,spin in bands.items():
-        for nk,kpoint in spin.items():
+    for spin in bands.values():
+        for kpoint in spin.values():
             kpoint.energies    = np.array(kpoint.energies,dtype=float)
             kpoint.occupations = np.array(kpoint.occupations,dtype=float)
         #end for
@@ -738,7 +738,7 @@ class OutcarData(DevBase):
                 read_functions.extend(self.ilast_functions)
             #end if
         #end if
-        for quantity,read_function in read_functions:
+        for quantity,read_function in read_functions:  # noqa: B007
             try:
                 read_function(vlines,self)
             except:

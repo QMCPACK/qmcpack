@@ -1215,7 +1215,7 @@ QMCA examples:
             serieslist = sorted(list(seriesset))
             for series in serieslist:
                 filetypes = set()
-                for prefix,pdata in data.items():
+                for pdata in data.values():
                     filetypes.add(pdata[series].info.type)
                 #end for
                 if len(filetypes)>1:

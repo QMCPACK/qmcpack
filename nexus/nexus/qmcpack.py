@@ -307,7 +307,7 @@ class GCTA(DevBase):
             error('Traceback level should be at least one. {} was given.'.format(levels))
         #end if
         current_dep = dependency
-        for level in range(levels):
+        for level in range(levels):  # noqa: B007
             len_dep = 0
             for dep in current_dep.dependencies:
                 if isinstance(dep.sim, cls):
@@ -374,7 +374,7 @@ class GCTA(DevBase):
                 kweight = data[ikpoint,ispin].kweight
                 ksym_range = kweight * norm_factor
                 ksym_range = self.int_kpoint_weight(ksym_range)
-                for ksym in range(ksym_range):
+                for ksym in range(ksym_range):  # noqa: B007
                     combined_eigens.extend(data[ikpoint,ispin].eig)
                 #end for
             #end for
@@ -408,7 +408,7 @@ class GCTA(DevBase):
                 kweight = data[ikpoint,ispin].kweight
                 ksym_range = kweight * norm_factor
                 ksym_range = self.int_kpoint_weight(ksym_range)
-                for ksym in range(ksym_range):
+                for ksym in range(ksym_range):  # noqa: B007
                     combined_eigens[ispin].extend(data[ikpoint,ispin].eig)
                 #end for
             #end for
@@ -845,7 +845,7 @@ class Qmcpack(Simulation):
                     self.error('cannot incorporate orbitals from pyscf\nwrong number k-points are present\nexpected: {}\npresent: {}'.format(nkpoints,len(skpoints)))
                 #end if
                 twist_updates = []
-                for n,(h5file,kp) in enumerate(zip(result.orb_files,result.kpoints)):
+                for h5file,kp in zip(result.orb_files,result.kpoints):
                     filepath = os.path.join(result.location,h5file)
                     tu = obj(
                         twistnum = -1,
