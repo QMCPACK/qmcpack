@@ -106,12 +106,6 @@ html_css_files = [
     'custom.css',
 ]
 html_theme_options = {
-    "logo": {
-        #"alt_text": "Nexus Docs",
-        "text": "Nexus Documentation",
-        "image_dark": "_static/nexus_logo.svg",
-        "image_light": "_static/nexus_logo.svg",
-    },
     "icon_links": [
         {
             "name": "GitHub",
@@ -130,7 +124,6 @@ html_theme_options = {
     "pygments_light_style": "default",
     "pygments_dark_style": "monokai",
 }
-html_favicon = "_static/nexus_logo.svg"
 
 html_sidebars = {
     "theory": [],
