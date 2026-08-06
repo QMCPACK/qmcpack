@@ -9,22 +9,39 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <array>
 #include <unordered_map>
 #include <sstream>
+#include <vector>
 #include "NativeInitializerPrint.hpp"
 
-/** \file
- *  Tests NativeInitializerPrint more strictly than necessary, what it really needs to produce
- *  is a text representation that can be pasted into test programs and produce the same
- *  Native representation as the object that was written out. That would require a second pass
- *  of compilation as part of the test program which I'd be impressed if someone could
- *  figure out how to integrate with our unite testing.
- */
 namespace qmcplusplus
 {
+namespace
+{
+/** Helper function to process the NativePrint test output
+ *
+ * NativePrint wraps newline-delimited map entries in an outer pair of braces. Sort 
+ * the entry lines to avoid relying on the unspecified iteration order of std::unordered_map.
+ */
+std::vector<std::string> getSortedMapEntries(const std::string& output)
+{
+  REQUIRE(output.size() >= 4); // Protect following checks from oob access
+  REQUIRE(output.front() == '{');
+  REQUIRE(output.compare(output.size() - 3, 3, "\n};") == 0);
+
+  std::istringstream entry_stream(output.substr(1, output.size() - 4));
+  std::vector<std::string> entries;
+  for (std::string entry; std::getline(entry_stream, entry);)
+    entries.push_back(entry);
+
+  std::sort(entries.begin(), entries.end());
+  return entries;
+}
+} // namespace
 
 TEST_CASE("NativePrint::array", "[utilities][for_testing]")
 {
@@ -41,19 +58,24 @@ TEST_CASE("NativePrint::array", "[utilities][for_testing]")
 TEST_CASE("NativePrint::unordered_map<std::string, std::vector<Vector<T>>>", "[utilities][for_testing]")
 {
   std::ostringstream oss;
-  std::unordered_map<std::string, std::vector<Vector<double>>> test_map{{"alpha", {{0.0, 1.1}, {2.2}}},
-                                                                        {"beta", {{3.3}, {4.4}}},
-                                                                        {"lambda", {{6.5, 3.6}, {3.2, 3.3}}}};
-  oss << NativePrint(test_map);
-  CHECK(std::string("{{{\"lambda\"}, {{6.5, 3.6, },{3.2, 3.3, }, }},\n{{\"beta\"}, {{3.3, },{4.4, }, "
-                    "}},\n{{\"alpha\"}, {{0, 1.1, },{2.2, }, }},\n};") == oss.str());
+  std::unordered_map<std::string, std::vector<Vector<double>>> test_map_with_doubles{{"alpha", {{0.0, 1.1}, {2.2}}},
+                                                                                     {"beta", {{3.3}, {4.4}}},
+                                                                                     {"lambda",
+                                                                                      {{6.5, 3.6}, {3.2, 3.3}}}};
+  oss << NativePrint(test_map_with_doubles);
+  const std::vector<std::string> expected_double_entries{{R"({{"alpha"}, {{0, 1.1, },{2.2, }, }},)"},
+                                                         {R"({{"beta"}, {{3.3, },{4.4, }, }},)"},
+                                                         {R"({{"lambda"}, {{6.5, 3.6, },{3.2, 3.3, }, }},)"}};
+  CHECK(expected_double_entries == getSortedMapEntries(oss.str()));
 
   std::ostringstream oss2;
-  std::unordered_map<std::string, std::vector<Vector<int>>> test_map2{{"alpha", {{0, 1}, {2}}},
-                                                                      {"beta", {{3}, {4}}},
-                                                                      {"lambda", {{6, 3}, {3, 3}}}};
-  oss2 << NativePrint(test_map2);
-  CHECK(std::string("{{{\"lambda\"}, {{6, 3, },{3, 3, }, }},\n{{\"beta\"}, {{3, },{4, }, "
-                    "}},\n{{\"alpha\"}, {{0, 1, },{2, }, }},\n};") == oss2.str());
+  std::unordered_map<std::string, std::vector<Vector<int>>> test_map_with_ints{{"alpha", {{0, 1}, {2}}},
+                                                                               {"beta", {{3}, {4}}},
+                                                                               {"lambda", {{6, 3}, {3, 3}}}};
+  oss2 << NativePrint(test_map_with_ints);
+  const std::vector<std::string> expected_int_entries{{R"({{"alpha"}, {{0, 1, },{2, }, }},)"},
+                                                      {R"({{"beta"}, {{3, },{4, }, }},)"},
+                                                      {R"({{"lambda"}, {{6, 3, },{3, 3, }, }},)"}};
+  CHECK(expected_int_entries == getSortedMapEntries(oss2.str()));
 }
 } // namespace qmcplusplus
