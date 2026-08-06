@@ -141,7 +141,7 @@ from . import numpy_extensions as npe
 IdType: TypeAlias = "Structure | npt.NDArray[np.bool_] | int | str | Elements | list[str | Elements | int | float]"
 """Alias for identifiers that can be used to locate specific atoms in a Structure."""
 
-PosType: TypeAlias = list[int | npt.NDArray[np.floating]]
+PosType: TypeAlias = list[int] | npt.NDArray[np.floating]
 """Alias for types that can be used as positions in a ``locate`` call."""
 
 RType: TypeAlias = int | float | list[int | float]
