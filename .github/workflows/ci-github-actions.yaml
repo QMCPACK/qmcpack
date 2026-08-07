@@ -142,7 +142,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jobname: [macOS-GCC16-NoMPI-Real]
+        jobname:
+          [
+            macOS-GCC16-NoMPI-Real,
+            macOS-AppleClang-NoMPI-NoOMP-Real
+          ]
 
     steps:
       - name: Checkout Action
