@@ -141,7 +141,7 @@ case "$1" in
               # -DCMAKE_EXE_LINKER_FLAGS="-Wl,-ld_classic" used with gcc-14, macos-14
       ;;
       *"macOS-AppleClang"*"-Real"*)
-        echo 'Configure for building on macOS using Apple's clang compiler"
+        echo "Configure for building on macOS using Apple's clang compiler"
         cmake -GNinja $CMAKE_OPTIONS \
               -DCMAKE_C_COMPILER=clang \
               -DCMAKE_CXX_COMPILER=clang++ \
