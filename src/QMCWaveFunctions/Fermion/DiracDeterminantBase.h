@@ -74,9 +74,7 @@ public:
   inline bool isOptimizable() const final { return phi_.isOptimizable(); }
 
   virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override
-  {
-    throw std::runtime_error("DiracDeterminantBase::registerTWFFastDerivWrapper must be overridden\n");
-  }
+  { throw std::runtime_error("DiracDeterminantBase::registerTWFFastDerivWrapper must be overridden\n"); }
 
   virtual void evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi) override
   {
@@ -123,9 +121,7 @@ public:
       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
       const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
       std::vector<std::vector<ValueType>>& ratios) const override
-  {
-    mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios);
-  }
+  { mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios); }
 
   // used by DiracDeterminantWithBackflow
   virtual void evaluateDerivatives(ParticleSet& P,
@@ -134,9 +130,7 @@ public:
                                    Matrix<RealType>& dlogpsi,
                                    Array<GradType, 3>& dG,
                                    Matrix<RealType>& dL)
-  {
-    APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::evaluateDerivatives");
-  }
+  { APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::evaluateDerivatives"); }
 
   // final keyword is intended to disable makeClone being further inherited.
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const final

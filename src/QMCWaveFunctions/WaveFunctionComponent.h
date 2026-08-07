@@ -178,9 +178,7 @@ public:
   // }
 
   virtual void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi_all)
-  {
-    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + getClassName() + " class.");
-  }
+  { APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + getClassName() + " class."); }
 
   /** Prepare internal data for updating WFC correspond to a particle group
    * It should be called before moving particles of a given group.
@@ -264,9 +262,7 @@ public:
                                   int iat,
                                   TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
                                   TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
-  {
-    return GradType();
-  }
+  { return GradType(); }
 
 
   /** evaluate the ratio of the new to old WaveFunctionComponent value and the new gradient
@@ -284,9 +280,7 @@ public:
    * @param spingrad_iat spin gradient for the active particle
    */
   virtual PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat)
-  {
-    return ratioGrad(P, iat, grad_iat);
-  }
+  { return ratioGrad(P, iat, grad_iat); }
 
   template<CoordsType CT>
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,

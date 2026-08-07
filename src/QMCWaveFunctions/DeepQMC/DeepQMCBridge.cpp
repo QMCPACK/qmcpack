@@ -91,9 +91,7 @@ std::string formatPythonError()
 }
 
 [[noreturn]] void throwPythonError(const std::string& context)
-{
-  throw std::runtime_error(context + ": " + formatPythonError());
-}
+{ throw std::runtime_error(context + ": " + formatPythonError()); }
 
 void ensurePythonInitialized()
 {
@@ -279,9 +277,7 @@ public:
   explicit UnavailableDeepQMCBridge(std::string reason) : reason_(std::move(reason)) {}
 
   BatchResult evaluateLogBatch(const std::vector<RealType>&, const std::vector<RealType>&, int, int, int) const override
-  {
-    throw std::runtime_error("DeepQMC inference bridge is not available: " + reason_);
-  }
+  { throw std::runtime_error("DeepQMC inference bridge is not available: " + reason_); }
 
 private:
   std::string reason_;
@@ -289,13 +285,9 @@ private:
 } // namespace
 
 std::unique_ptr<const DeepQMCBridge> makePythonDeepQMCBridge(std::string model_path, std::string python_module_path)
-{
-  return std::make_unique<PythonDeepQMCBridge>(std::move(model_path), std::move(python_module_path));
-}
+{ return std::make_unique<PythonDeepQMCBridge>(std::move(model_path), std::move(python_module_path)); }
 
 std::unique_ptr<const DeepQMCBridge> makeUnavailableDeepQMCBridge(std::string reason)
-{
-  return std::make_unique<UnavailableDeepQMCBridge>(std::move(reason));
-}
+{ return std::make_unique<UnavailableDeepQMCBridge>(std::move(reason)); }
 
 } // namespace qmcplusplus

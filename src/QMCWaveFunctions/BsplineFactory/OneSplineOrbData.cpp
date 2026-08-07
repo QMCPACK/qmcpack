@@ -44,9 +44,7 @@ OneSplineOrbData::OneSplineOrbData(const TinyVector<int, 3>& mesh_size,
                                    const TinyVector<int, 3>& halfG,
                                    const bool isComplex)
     : mesh_size_(mesh_size), isComplex_(isComplex)
-{
-  create(halfG);
-}
+{ create(halfG); }
 
 OneSplineOrbData::~OneSplineOrbData() { clear(); }
 

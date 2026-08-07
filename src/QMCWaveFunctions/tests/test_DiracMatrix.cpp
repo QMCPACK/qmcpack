@@ -27,9 +27,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-using RealType         = QMCTraits::RealType;
-using ValueType        = QMCTraits::ValueType;
-using LogValue         = std::complex<QMCTraits::QTFull::RealType>;
+using RealType  = QMCTraits::RealType;
+using ValueType = QMCTraits::ValueType;
+using LogValue  = std::complex<QMCTraits::QTFull::RealType>;
 using ::LogComplexApprox;
 
 TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
