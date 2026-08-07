@@ -138,16 +138,14 @@ jobs:
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: macOS
-
     strategy:
       fail-fast: false
       matrix:
         jobname:
           [
             macOS-GCC16-NoMPI-Real,
-            macOS-AppleClang-NoMPI-NoOMP-Real
+            macOS-AppleClang-NoMPI-NoOMP-Real,
           ]
-
     steps:
       - name: Checkout Action
         uses: actions/checkout@v7
