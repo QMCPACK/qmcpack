@@ -99,9 +99,7 @@ public:
   }
 
   inline RealType& dLval_saved(int I, int p, int i)
-  {
-    return _dLval_saved[I * max_num_derivs() * num_els + p * num_els + i];
-  }
+  { return _dLval_saved[I * max_num_derivs() * num_els + p * num_els + i]; }
 
   void addFunc(std::unique_ptr<CountingGaussian> func, std::string fid)
   {

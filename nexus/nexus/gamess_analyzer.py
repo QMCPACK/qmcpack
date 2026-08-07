@@ -36,11 +36,17 @@ class GamessAnalyzer(SimulationAnalyzer):
     lset_full = 'spdfg'
 
     lxyz = obj(
-        s = set('s'.split()),
-        p = set('x y z'.split()),
-        d = set('xx yy zz xy xz yz'.split()),
-        f = set('xxx yyy zzz xxy xxz yyx yyz zzx zzy xyz'.split()),
-        g = set('xxxx yyyy zzzz xxxy xxxz yyyx yyyz zzzx zzzy xxyy xxzz yyzz xxyz yyxz zzxy'.split()),
+        s = frozenset('s'),
+        p = frozenset({'x', 'y', 'z'}),
+        d = frozenset({'xz', 'yz', 'yy', 'xy', 'xx', 'zz'}),
+        f = frozenset({
+            'yyz', 'zzy', 'zzz', 'yyy', 'xxz', 'xyz', 'yyx', 'xxy', 'xxx', 'zzx'
+            }),
+        g = frozenset({
+            'xxxx', 'zzzx', 'yyyx', 'xxxz', 'yyyz',
+            'xxyy', 'zzxy', 'yyyy', 'xxzz', 'yyxz',
+            'yyzz', 'xxyz', 'zzzy', 'zzzz', 'xxxy'
+            }),
         )
 
     lxyz_reverse = obj()
@@ -52,7 +58,7 @@ class GamessAnalyzer(SimulationAnalyzer):
 
 
 
-    def __init__(self,arg0=None,prefix=None,analyze=False,exit=False,**outfilenames):
+    def __init__(self,arg0=None,prefix=None,*,analyze=False,exit=False,**outfilenames):
         self.info = obj(
             exit   = exit,
             path   = None,
@@ -203,7 +209,7 @@ class GamessAnalyzer(SimulationAnalyzer):
 
     def read_energy_components(self,log,energy):
         if log is not None and log.seek('ENERGY COMPONENTS',0)!=-1:
-            for n in range(18):
+            for n in range(18):  # noqa: B007
                 line = log.readline()
                 if '=' in line and 'ENERGY' in line:
                     nameline,value = line.split('=')
@@ -267,7 +273,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                 eigenvalue.extend(log.readtokens())
                 symmetry.extend(log.readtokens())
                 coeff = []
-                for icao in range(cao_tot):
+                for icao in range(cao_tot):  # noqa: B007
                     tokens = log.readtokens()
                     if not have_basis:
                         e = tokens[1]
@@ -345,7 +351,7 @@ class GamessAnalyzer(SimulationAnalyzer):
             for l in GamessAnalyzer.lset_full:
                 linds[l]=[]
             #end for
-            for icao in range(cao_tot):
+            for icao in range(cao_tot):  # noqa: B007
                 tokens = log.readtokens()
                 e = tokens[1]
                 element.append(e[0].upper()+e[1:].lower())
@@ -478,7 +484,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                     #end for
                     all_double = True
                     norbs = 0
-                    for ind,cnt in ind_counts.items():
+                    for cnt in ind_counts.values():
                         count = cnt//nln
                         norbs+=count
                         all_double = all_double and count%2==0

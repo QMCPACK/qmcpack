@@ -21,7 +21,6 @@
 
 
 import os
-from os import PathLike
 from pathlib import Path
 import mmap
 from copy import deepcopy
@@ -322,8 +321,8 @@ class XsfFile(StandardFile):
 
     sftype = 'xsf'
 
-    filetypes     = set(['xsf','axsf','bxsf'])
-    periodicities = set(['molecule','polymer','slab','crystal']) 
+    filetypes     = frozenset({'xsf','axsf','bxsf'})
+    periodicities = frozenset({'molecule','polymer','slab','crystal'})
     dimensions    = obj(molecule=0,polymer=1,slab=2,crystal=3)
 
     # ATOMS  are in units of Angstrom, only provided for 'molecule'
@@ -849,7 +848,7 @@ class XsfFile(StandardFile):
     #end def incorporate_structure
 
 
-    def add_density(self,cell,density,name='density',corner=None,grid=None,centered=False,add_ghost=False):
+    def add_density(self,cell,density,name='density',corner=None,grid=None,*,centered=False,add_ghost=False):
         if corner is None:
             corner = np.zeros((3,),dtype=float)
         #end if
@@ -935,7 +934,7 @@ class XsfFile(StandardFile):
 
     
     # test needed
-    def norm(self,density=None,vnorm=True):
+    def norm(self,density=None,*,vnorm=True):
         if density is None:
             density = self.get_density()
         #end if

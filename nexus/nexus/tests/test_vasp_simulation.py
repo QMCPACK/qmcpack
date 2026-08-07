@@ -15,7 +15,7 @@ from ..testing import value_eq,object_eq,check_object_eq
 from .test_vasp_input import c_potcar_text, TEST_FILES
 
 
-def setup_vasp_sim(path,identifier='vasp',copy_files=False):
+def setup_vasp_sim(path,identifier='vasp',*,copy_files=False):
     import shutil
     from ..nexus_base import nexus_core
     from ..machines import job
@@ -316,14 +316,14 @@ def test_get_output_files(tmp_path):
 
     sim = setup_vasp_sim(tmp_path)
 
-    vfiles = 'INCAR KPOINTS POSCAR CONTCAR OUTCAR'.split()
+    vfiles = {'CONTCAR', 'KPOINTS', 'POSCAR', 'OUTCAR', 'INCAR'}
     for vfile in vfiles:
         (tmp_path / vfile).touch()
     #end for
 
     files = sim.get_output_files()
 
-    assert(value_eq(files,vfiles))
+    assert(set(files) == vfiles)
 
     for vfile in vfiles:
         assert((tmp_path / (sim.identifier+'.'+vfile)))

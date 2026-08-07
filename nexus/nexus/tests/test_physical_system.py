@@ -19,7 +19,7 @@ def sub_obj(s,keys):
     return obj({k:s[k] for k in keys})
 
 
-def system_same(s1,s2,pseudized=True,tiled=False):
+def system_same(s1,s2,*,pseudized=True,tiled=False):
     same = True
     keys = ('net_charge','net_spin','pseudized')
     o1 = sub_obj(s1,keys)

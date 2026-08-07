@@ -120,9 +120,7 @@ public:
   /** Set Rmax */
   template<typename T>
   inline void setRmax(T rmax)
-  {
-    Rmax = (rmax > 0) ? rmax : MultiRnl.rmax();
-  }
+  { Rmax = (rmax > 0) ? rmax : MultiRnl.rmax(); }
 
   ///set the current offset
   inline void setCenter(int c, int offset) {}
@@ -1472,9 +1470,7 @@ public:
   }
 
   void createResource(ResourceCollection& collection) const
-  {
-    collection.addResource(std::make_unique<SoaAtomicBSetMultiWalkerMem>());
-  }
+  { collection.addResource(std::make_unique<SoaAtomicBSetMultiWalkerMem>()); }
 
   void acquireResource(ResourceCollection& collection,
                        const RefVectorWithLeader<SoaAtomicBasisSet>& atom_basis_list) const
@@ -1500,9 +1496,7 @@ private:
     SoaAtomicBSetMultiWalkerMem(const SoaAtomicBSetMultiWalkerMem&) : SoaAtomicBSetMultiWalkerMem() {}
 
     std::unique_ptr<Resource> makeClone() const override
-    {
-      return std::make_unique<SoaAtomicBSetMultiWalkerMem>(*this);
-    }
+    { return std::make_unique<SoaAtomicBSetMultiWalkerMem>(*this); }
 
     OffloadArray4D ylm_vgl;     // [5][Nelec][PBC][NYlm]
     OffloadArray4D rnl_vgl;     // [5][Nelec][PBC][NRnl]

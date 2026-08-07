@@ -200,14 +200,10 @@ ExampleHeComponent::PsiValue ExampleHeComponent::ratioGrad(ParticleSet& P, int i
 
 
 ExampleHeComponent::LogValue ExampleHeComponent::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
-{
-  return evaluateLog(P, P.G, P.L);
-}
+{ return evaluateLog(P, P.G, P.L); }
 
 std::unique_ptr<WaveFunctionComponent> ExampleHeComponent::makeClone(ParticleSet& tpq) const
-{
-  return std::make_unique<ExampleHeComponent>(*this);
-}
+{ return std::make_unique<ExampleHeComponent>(*this); }
 
 void ExampleHeComponent::resetParametersExclusive(const OptVariables& active)
 {

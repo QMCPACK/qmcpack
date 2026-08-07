@@ -3,9 +3,8 @@
 from nexus import settings,job,run_project
 from nexus import generate_physical_system
 from nexus import generate_pwscf
-from nexus import generate_pw2qmcpack
-from nexus import generate_qmcpack,vmc
-from nexus.structure import *
+
+from nexus.structure import get_primitive_cell, get_kpath
 
 settings(
     pseudo_dir    = '../../pseudopotentials',

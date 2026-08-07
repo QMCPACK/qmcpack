@@ -209,7 +209,7 @@ public:
       int id);
 
 private:
-  using PinnedVecSizeT    = Vector<size_t, OffloadPinnedAllocator<size_t>>;
+  using PinnedVecSizeT = Vector<size_t, OffloadPinnedAllocator<size_t>>;
 
   /// multi walker shared memory buffer
   struct SoaLocalizedBSetMultiWalkerMem;
@@ -228,7 +228,6 @@ private:
   * and performs the one‐time upload. Called only once from Constructor
   */
   void initializeSpeciesOffsets();
-
 };
 } // namespace qmcplusplus
 #endif

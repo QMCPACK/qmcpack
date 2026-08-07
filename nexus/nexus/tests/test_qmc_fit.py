@@ -12,7 +12,6 @@ from ..testing import execute,text_eq
 
 def test_fit(tmp_path):
     _ = pytest.importorskip("scipy")
-    import os
 
     exe = TEST_DIR.parent / "bin/qmc-fit"        
     dmc_path = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/dmc"

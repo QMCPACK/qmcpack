@@ -64,7 +64,7 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj,error,ci,unavailable
+from nexus.developer import DevBase,obj,error,unavailable
 import nexus.memory as memory
 from nexus.observables import ChargeDensity, vlog
 from nexus.fileio import XsfFile
@@ -117,7 +117,7 @@ class QDRBase(DevBase):
 
     def exit(self):
         self.vlog('\n{0} finished\n'.format(self.name))
-        exit()
+        sys.exit()
     #end def exit
 
     def error(self,msg,loc=None):
@@ -380,7 +380,7 @@ class QMCDensityRadialProcessor(QDRBase):
                 resample_xsf_data = deepcopy(file)
                 for d1_idx, d1 in enumerate(file.data[3]['density']['density'].values):
                     for d2_idx, d2 in enumerate(d1):
-                        for d3_idx, d3 in enumerate(d2):
+                        for d3_idx in range(len(d2)):
                             mu = file.data[3]['density']['density'].values[d1_idx][d2_idx][d3_idx]
                             sgma = err_data.data[3]['density']['density'].values[d1_idx][d2_idx][d3_idx]
                             sample = np.random.normal(mu,sgma)
@@ -433,12 +433,12 @@ class QMCDensityRadialProcessor(QDRBase):
                 #end if
 
                 if opt.species is not None:
-                    for ati,at in enumerate(opt.species):
+                    for at in opt.species:
                         sum_dict[at] += rdens_samp.tot[at].density[-1]
                         sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2
                     #end for
                 else:
-                    for ati,at in enumerate(equiv_atoms):
+                    for at in equiv_atoms:
                         sum_dict[at] += rdens_samp.tot[at].density[-1]
                         sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2
                     #end for
@@ -446,11 +446,11 @@ class QMCDensityRadialProcessor(QDRBase):
 
             #end for
             if opt.species is not None:
-                for ati,at in enumerate(opt.species):
+                for at in opt.species:
                     std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2)
                 #end for
             else:
-                for ati,at in enumerate(equiv_atoms):
+                for at in equiv_atoms:
                     std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2)
                 #end for
             #end if

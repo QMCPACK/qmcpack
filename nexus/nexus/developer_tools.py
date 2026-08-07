@@ -2,6 +2,7 @@
 
 import copy
 import pickle
+from collections.abc import MutableMapping
 from numbers import Number
 
 
@@ -24,7 +25,7 @@ def per_type_cmp(type_):
 #ned def per_type_cmp
 
 class python2_sort_key(object):
-    _unhandled_types = {complex}
+    _unhandled_types = frozenset({complex})
 
     def __init__(self, ob):
        self._ob = ob
@@ -377,3 +378,5 @@ def to_obj(d):
             o[k] = v
     return o
 #end def to_obj
+
+MutableMapping.register(obj)
