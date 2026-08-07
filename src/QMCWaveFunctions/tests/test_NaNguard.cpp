@@ -20,9 +20,11 @@ namespace qmcplusplus
 TEST_CASE("NaNguard", "[wavefunction]")
 {
   const QMCTraits::ValueType const_nan = std::sqrt(-1.0);
-  CHECK_THROWS_WITH(NaNguard::checkOneParticleRatio(const_nan, "unit test"), Catch::Matchers::ContainsSubstring("NaNguard::checkOneParticleRatio"));
+  CHECK_THROWS_WITH(NaNguard::checkOneParticleRatio(const_nan, "unit test"),
+                    Catch::Matchers::ContainsSubstring("NaNguard::checkOneParticleRatio"));
   CHECK_NOTHROW(NaNguard::checkOneParticleRatio(0.0, "unit test"));
-  CHECK_THROWS_WITH(NaNguard::checkOneParticleGradients({const_nan, -const_nan, const_nan}, "unit test"), Catch::Matchers::ContainsSubstring("NaNguard::checkOneParticleGradients"));
-  CHECK_NOTHROW(NaNguard::checkOneParticleGradients({0.0,0.0,0.0}, "unit test"));
+  CHECK_THROWS_WITH(NaNguard::checkOneParticleGradients({const_nan, -const_nan, const_nan}, "unit test"),
+                    Catch::Matchers::ContainsSubstring("NaNguard::checkOneParticleGradients"));
+  CHECK_NOTHROW(NaNguard::checkOneParticleGradients({0.0, 0.0, 0.0}, "unit test"));
 }
-}
+} // namespace qmcplusplus

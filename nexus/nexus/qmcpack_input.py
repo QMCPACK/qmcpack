@@ -1258,7 +1258,7 @@ class QIxml(Names):
             #end if
         #end for
         if propagate:
-            for name,value in self.items():
+            for value in self.values():
                 if isinstance(value,QIxml):
                     value.incorporate_defaults(elements=elements,overwrite=overwrite)
                 elif isinstance(value,collection):
@@ -1435,7 +1435,7 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QIxml):
                 value.get(names,namedict,host=host,root=False)
             elif isinstance(value,collection):
@@ -1501,7 +1501,7 @@ class QIxml(Names):
         for name in remove:
             del self[name]
         #end for
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QIxml):
                 value.remove(*names)
             elif isinstance(value,collection):
@@ -1527,7 +1527,7 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for vname,val in self.items():
+        for val in self.values():
             if isinstance(val,QIxml):
                 val.assign(**kwargs)
             elif isinstance(val,collection):
@@ -1573,7 +1573,7 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for vname,val in self.items():
+        for val in self.values():
             if isinstance(val,QIxml):
                 val.replace(*args,**kwargs)
             elif isinstance(val,collection):
@@ -2821,7 +2821,7 @@ class loop(QIxml):
         elif 'calculations' in self:
             calcs = self.calculations
         #end if
-        for n in range(self.max):
+        for n in range(self.max):  # noqa: B007
             for i in range(len(calcs)):
                 calculations.append(deepcopy(calcs[i]))
             #end for
@@ -4366,7 +4366,7 @@ class QmcpackInput(SimulationInput,Names):
             #end if
         #end for
         if len(ion_list)==0: #try to identify ions by positive charged groups
-            for name,p in ps.items():
+            for p in ps.values():
                 if 'groups' in p:
                     for g in p.groups:
                         if 'charge' in g and g.charge>0:
@@ -4664,7 +4664,7 @@ class QmcpackInput(SimulationInput,Names):
         jastrows = self.get_jastrows()
         if jastrows is not None:
             jastrow_classes = tuple(jastrow.types.values())
-            for n,Jn in jastrows.items():
+            for Jn in jastrows.values():
                 if not isinstance(Jn,QIxml):
                     continue
                 assert isinstance(Jn,jastrow_classes)
@@ -7897,7 +7897,7 @@ def generate_opts(opt_reqs,**kwargs):
 def set_optional(d,d2):
     for k,v in d2.items():
         if k not in d:
-            d[k] = d2[k]
+            d[k] = v
 
 opt_legacy_defaults = obj(
     method          = 'linear',
@@ -8511,7 +8511,7 @@ def generate_legacy_dmc_calculations(
             )
     #end if
     tfac = 1.0
-    for n in range(ntimesteps):
+    for n in range(ntimesteps):  # noqa: B007
         sfac = 1.0/tfac
         dmc_calcs.append(
             dmc(
@@ -8816,7 +8816,7 @@ def generate_batched_dmc_calculations(
             )
     #end if
     tfac = 1.0
-    for n in range(ntimesteps):
+    for n in range(ntimesteps):  # noqa: B007
         sfac = 1.0/tfac
         dmc_calcs.append(
             dmc(

@@ -756,7 +756,7 @@ class GBase(PlotHandler):
         (`External API`) Reset all attributes to default values.
         """
         cls = self.__class__
-        for name,(dtype,default) in cls.persistent_data_types.items():
+        for name,(dtype,default) in cls.persistent_data_types.items():  # noqa: B007
             self[name] = default
         #end for
     #end def reset
