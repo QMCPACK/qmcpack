@@ -34,9 +34,7 @@ struct NonLocalECPotential::NonLocalECPotentialMultiWalkerResource : public Reso
   NonLocalECPotentialMultiWalkerResource() : Resource("NonLocalECPotential") {}
 
   std::unique_ptr<Resource> makeClone() const override
-  {
-    return std::make_unique<NonLocalECPotentialMultiWalkerResource>(*this);
-  }
+  { return std::make_unique<NonLocalECPotentialMultiWalkerResource>(*this); }
 
   ResourceCollection collection{"NLPPcollection"};
   /// a crowds worth of per particle nonlocal ecp potential values
@@ -144,9 +142,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(TrialWa
 void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                       const RefVectorWithLeader<ParticleSet>& p_list) const
-{
-  mw_evaluateImpl(o_list, wf_list, p_list, false, std::nullopt);
-}
+{ mw_evaluateImpl(o_list, wf_list, p_list, false, std::nullopt); }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(TrialWaveFunction& psi, ParticleSet& P)
 {
@@ -157,9 +153,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(TrialWa
 void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
                                                    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list) const
-{
-  mw_evaluateImpl(o_list, wf_list, p_list, true, std::nullopt);
-}
+{ mw_evaluateImpl(o_list, wf_list, p_list, true, std::nullopt); }
 
 void NonLocalECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
                                                  const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -662,6 +656,17 @@ std::vector<int> NonLocalECPotential::mw_makeNonLocalMovesPbyP(const RefVectorWi
   auto pp_component = std::find_if(O_leader.PPset.begin(), O_leader.PPset.end(), [](auto& ptr) { return bool(ptr); });
   assert(pp_component != std::end(O_leader.PPset));
 
+  // generate random numbers in the order exactly the same as serialization code path.
+  // Note that: O.myRNG of the same batch are exactly identical and thus the order matters.
+  // ad-hoc allocating rng_vals memory is sub-optimal and needs to be taken care.
+  Matrix<RealType> rng_vals(nw, pset_leader.getTotalNum());
+  for (int iw = 0; iw < rng_vals.rows(); iw++)
+  {
+    auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
+    for (int jel = 0; jel < rng_vals.cols(); jel++)
+      rng_vals[iw][jel] = (*O.myRNG)();
+  }
+
   RefVectorWithLeader<NonLocalECPComponent> ecp_component_list(**pp_component);
   RefVectorWithLeader<ParticleSet> pset_list(pset_leader);
   RefVectorWithLeader<TrialWaveFunction> psi_list(wf_list.getLeader());
@@ -745,7 +750,7 @@ std::vector<int> NonLocalECPotential::mw_makeNonLocalMovesPbyP(const RefVectorWi
       for (size_t iw = 0; iw < nw; iw++)
       {
         auto& O                      = o_list.getCastedElement<NonLocalECPotential>(iw);
-        const NonLocalData* oneTMove = move_op.selectMove((*O.myRNG)(), tmove_xy[iw]);
+        const NonLocalData* oneTMove = move_op.selectMove(rng_vals[iw][jel], tmove_xy[iw]);
         if (oneTMove)
         {
           TrialWaveFunction& psi = wf_list[iw];
@@ -804,8 +809,6 @@ void NonLocalECPotential::releaseResource(ResourceCollection& collection,
 }
 
 std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
-{
-  return std::make_unique<NonLocalECPotential>(*this, qp);
-}
+{ return std::make_unique<NonLocalECPotential>(*this, qp); }
 
 } // namespace qmcplusplus
