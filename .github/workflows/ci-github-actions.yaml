@@ -72,7 +72,8 @@ jobs:
           files: ../qmcpack-build/coverage.xml,../qmcpack-build/python_coverage.xml
           flags: tests-deterministic # optional
           name: codecov-QMCPACK # optional
-          fail_ci_if_error: true # optional (default = false)
+          disable_search: true # only upload the files listed above
+          fail_ci_if_error: false # codecov service errors must not fail CI
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -129,7 +130,8 @@ jobs:
           files: ../qmcpack-build/coverage.xml,../qmcpack-build/python_coverage.xml
           flags: tests-deterministic # optional
           name: codecov-QMCPACK # optional
-          fail_ci_if_error: true # optional (default = false)
+          disable_search: true # only upload the files listed above
+          fail_ci_if_error: false # codecov service errors must not fail CI
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
