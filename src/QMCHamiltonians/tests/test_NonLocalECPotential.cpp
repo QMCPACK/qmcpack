@@ -351,6 +351,13 @@ TEST_CASE("NonLocalECPotential mw_evaluate ragged job counts", "[hamiltonian]")
   CHECK(nl_ecp2.getValue() == Approx(mw_value2));
   testing::TestNonLocalECPotential::evaluateImpl(nl_ecp3, psi3, elec3, false, true);
   CHECK(nl_ecp3.getValue() == Approx(mw_value3));
+
+  // the T-move candidate column flows through the same compacted lists;
+  // collecting it must not disturb the values
+  testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, true, std::nullopt, true);
+  CHECK(nl_ecp.getValue() == Approx(mw_value));
+  CHECK(nl_ecp2.getValue() == Approx(mw_value2));
+  CHECK(nl_ecp3.getValue() == Approx(mw_value3));
 }
 
 } // namespace qmcplusplus
