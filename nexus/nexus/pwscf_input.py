@@ -60,6 +60,7 @@ from .physical_system import PhysicalSystem
 from .pseudopotential import pp_elem_label
 from .simulation import SimulationInput
 from . import numpy_extensions as npe
+from nexus import ppinfo
 
 def read_str(sv):
     return sv.strip('"').strip("'")
@@ -2168,6 +2169,8 @@ def generate_any_pwscf_input(**kwargs):
     #  pseudopotentials
     pseudopotentials = obj()
     atom_species = []
+    if system is not None:
+        pseudos = ppinfo.remap('pwscf',pseudos,system)
     for ppname in pseudos:
         #element = ppname[0:2].strip('.')
         label,element = pp_elem_label(ppname,guard=True)

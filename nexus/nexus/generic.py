@@ -333,9 +333,10 @@ def error(
     message(msg,header,post_header,indent,logfile)
     if exit:
         log('  exiting.\n')
-        if trace is True: # Preserve old behavior
-            trace = None
-        traceback.print_stack(limit=trace)
+        #if trace is True: # Preserve old behavior
+        #    trace = None
+        #traceback.print_stack(limit=trace)
+        traceback.print_stack()
         #end if
         exit_call()
     #end if
