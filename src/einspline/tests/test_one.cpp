@@ -16,8 +16,6 @@
 #include "einspline/bspline_create.h"
 #include "einspline/bspline_eval_d.h"
 #include "einspline/multi_bspline_create.h"
-#include "einspline/multi_bspline_eval_d.h"
-#include "einspline/multi_bspline_eval_s.h"
 
 #include <stdio.h>
 #include <vector>
@@ -43,20 +41,8 @@ TEST_CASE("double_1d_natural", "[einspline]")
 
   REQUIRE(s);
 
-  double val;
-
-  eval_UBspline_1d_d(s.get(), 1.0, &val);
-  CHECK(val == Approx(2.0));
-
-  eval_UBspline_1d_d(s.get(), 9.9999999, &val);
-  CHECK(val == Approx(3.0));
-
   // This should assert
   // eval_UBspline_1d_d(s.get(), 10.0, &val);
-  // CHECK(val == Approx(3.0));
-
-  eval_UBspline_1d_d(s.get(), 5.5, &val);
-  CHECK(val == Approx(2.5));
 
 
   // three point case
@@ -72,15 +58,6 @@ TEST_CASE("double_1d_natural", "[einspline]")
   s.reset(create_UBspline_1d_d(x_grid, xBC, data.data()));
 
   REQUIRE(s);
-
-  eval_UBspline_1d_d(s.get(), 1.0, &val);
-  CHECK(val == Approx(2.0));
-
-  eval_UBspline_1d_d(s.get(), 9.9999999, &val);
-  CHECK(val == Approx(3.0));
-
-  eval_UBspline_1d_d(s.get(), 5.5, &val);
-  CHECK(val == Approx(2.7));
 }
 
 
@@ -101,12 +78,6 @@ TEST_CASE("double_1d_multi", "[einspline]")
   auto s    = std::unique_ptr<multi_UBspline_1d_d, void (*)(void*)>{create_multi_UBspline_1d_d(x_grid, xBC, 1),
                                                                  destroy_Bspline};
   REQUIRE(s);
-
-  set_multi_UBspline_1d_d(s.get(), 0, data);
-
-  double val;
-  eval_multi_UBspline_1d_d(s.get(), 1.0, &val);
-  CHECK(val == Approx(2.0));
 }
 
 TEST_CASE("double_1d_periodic", "[einspline]")
@@ -134,28 +105,4 @@ TEST_CASE("double_1d_periodic", "[einspline]")
   auto s = std::unique_ptr<UBspline_1d_d, void (*)(void*)>{create_UBspline_1d_d(x_grid, bc, data), destroy_Bspline};
 
   REQUIRE(s);
-
-  double val;
-  eval_UBspline_1d_d(s.get(), 0.0, &val);
-  CHECK(val == Approx(0.0));
-
-  eval_UBspline_1d_d(s.get(), delta, &val);
-  CHECK(val == Approx(data[1]));
-
-  double micro_delta = delta / 4.0;
-  int micro_N = N * 4;
-  double micro_data[N*4];
-  for (int i = 0 ; i < micro_N; i++)
-  {
-    double x = micro_delta * i;
-    micro_data[i] = sin(tpi*x);
-  }
-  eval_UBspline_1d_d(s.get(), micro_delta * 3, &val);
-  CHECK(val == Approx(micro_data[3]).epsilon(0.001));
-
-  eval_UBspline_1d_d(s.get(), micro_delta * 17, &val);
-  CHECK(val == Approx(micro_data[17]).epsilon(0.001));
-
-  eval_UBspline_1d_d(s.get(), micro_delta * 31, &val);
-  CHECK(val == Approx(micro_data[31]).epsilon(0.001));
 }

@@ -206,15 +206,9 @@ UBspline_3d_d* create(UBspline_3d_d* s, VT& start, VT& end, IT& ng, IT& halfg, i
 
 inline void set(UBspline_3d_d* s, double* restrict data) { recompute_UBspline_3d_d(s, data); }
 
-inline void set(multi_UBspline_3d_d* spline, int i, UBspline_3d_d* spline_in, const int* offset, const int* N)
-{
-  copy_UBspline_3d_d(spline, i, spline_in, offset, N);
-}
 
-inline void set(multi_UBspline_3d_s* spline, int i, UBspline_3d_d* spline_in, const int* offset, const int* N)
-{
-  copy_UBspline_3d_d_s(spline, i, spline_in, offset, N);
-}
+
+
 
 
 

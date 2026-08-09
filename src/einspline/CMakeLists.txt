@@ -17,7 +17,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 set(SRCS bspline_create.c bspline_data.c multi_bspline_create.c multi_bspline_copy.c)
 
-set(SRCS ${SRCS} bspline_eval_d_std.cpp multi_bspline_eval_s_std3.cpp multi_bspline_eval_d_std3.cpp
+set(SRCS ${SRCS} bspline_eval_d_std.cpp 
          )
 
 add_library(einspline ${SRCS})
