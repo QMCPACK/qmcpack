@@ -45,143 +45,7 @@ namespace qmcplusplus
    */
 namespace einspline
 {
-/** create spline for double */
-template<typename GT, typename BCT>
-multi_UBspline_3d_d* create(multi_UBspline_3d_d* s, GT& grid, BCT& bc, int num_splines)
-{
-  return create_multi_UBspline_3d_d(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], num_splines);
-}
 
-/** create spline for float */
-template<typename GT, typename BCT>
-multi_UBspline_3d_s* create(multi_UBspline_3d_s* s, GT& grid, BCT& bc, int num_splines)
-{
-  return create_multi_UBspline_3d_s(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], num_splines);
-}
-
-/////another creation functions
-/** create spline and initialized it */
-template<typename VT, typename IT>
-multi_UBspline_3d_s* create(multi_UBspline_3d_s* s, VT& start, VT& end, IT& ng, bc_code bc, int num_splines)
-{
-  Ugrid x_grid, y_grid, z_grid;
-  BCtype_s xBC, yBC, zBC;
-  x_grid.start = start[0];
-  x_grid.end   = end[0];
-  x_grid.num   = ng[0];
-  y_grid.start = start[1];
-  y_grid.end   = end[1];
-  y_grid.num   = ng[1];
-  z_grid.start = start[2];
-  z_grid.end   = end[2];
-  z_grid.num   = ng[2];
-  xBC.lCode = xBC.rCode = bc;
-  yBC.lCode = yBC.rCode = bc;
-  zBC.lCode = zBC.rCode = bc;
-  return create_multi_UBspline_3d_s(x_grid, y_grid, z_grid, xBC, yBC, zBC, num_splines);
-}
-
-/** convert double to single precision */
-inline void convert(multi_UBspline_3d_d* in, multi_UBspline_3d_s* out)
-{
-  BCtype_s xbc, ybc, zbc;
-  xbc.lCode = in->xBC.lCode;
-  xbc.rCode = in->xBC.rCode;
-  ybc.lCode = in->yBC.lCode;
-  ybc.rCode = in->yBC.rCode;
-  zbc.lCode = in->zBC.lCode;
-  zbc.rCode = in->zBC.rCode;
-
-  xbc.lVal = (float)(in->xBC.lVal);
-  xbc.rVal = (float)(in->xBC.rVal);
-  ybc.lVal = (float)(in->yBC.lVal);
-  ybc.rVal = (float)(in->yBC.rVal);
-  zbc.lVal = (float)(in->zBC.lVal);
-  zbc.rVal = (float)(in->zBC.rVal);
-
-  out = create_multi_UBspline_3d_s(in->x_grid, in->y_grid, in->z_grid, xbc, ybc, zbc, in->num_splines);
-  simd::copy(out->coefs, in->coefs, in->coefs_size);
-}
-/** create  multi_UBspline_3d_d*
-     * @param s dummy multi_UBspline_3d_d* 
-     * @param start starting grid values
-     * @param end ending grid values
-     * @param ng number of grids for [start,end)
-     * @param bc boundary condition
-     * @param num_splines number of splines to do 
-     */
-template<typename VT, typename IT>
-multi_UBspline_3d_d* create(multi_UBspline_3d_d* s, VT& start, VT& end, IT& ng, bc_code bc, int num_splines)
-{
-  Ugrid x_grid, y_grid, z_grid;
-  BCtype_d xBC, yBC, zBC;
-  x_grid.start = start[0];
-  x_grid.end   = end[0];
-  x_grid.num   = ng[0];
-  y_grid.start = start[1];
-  y_grid.end   = end[1];
-  y_grid.num   = ng[1];
-  z_grid.start = start[2];
-  z_grid.end   = end[2];
-  z_grid.num   = ng[2];
-  xBC.lCode = xBC.rCode = bc;
-  yBC.lCode = yBC.rCode = bc;
-  zBC.lCode = zBC.rCode = bc;
-  return create_multi_UBspline_3d_d(x_grid, y_grid, z_grid, xBC, yBC, zBC, num_splines);
-}
-
-template<typename VT, typename IT>
-multi_UBspline_3d_d* create(multi_UBspline_3d_d* s,
-                            VT& start,
-                            VT& end,
-                            IT& ng,
-                            bc_code xbc,
-                            bc_code ybc,
-                            bc_code zbc,
-                            int num_splines)
-{
-  Ugrid x_grid, y_grid, z_grid;
-  BCtype_d xBC, yBC, zBC;
-  x_grid.start = start[0];
-  x_grid.end   = end[0];
-  x_grid.num   = ng[0];
-  y_grid.start = start[1];
-  y_grid.end   = end[1];
-  y_grid.num   = ng[1];
-  z_grid.start = start[2];
-  z_grid.end   = end[2];
-  z_grid.num   = ng[2];
-  xBC.lCode = xBC.rCode = xbc;
-  yBC.lCode = yBC.rCode = ybc;
-  zBC.lCode = zBC.rCode = zbc;
-  return create_multi_UBspline_3d_d(x_grid, y_grid, z_grid, xBC, yBC, zBC, num_splines);
-}
-
-/** interfaces to use UBspline_3d_X 
-     *
-     * - create
-     * - set
-     * - evaluate
-     */
-template<typename VT, typename IT>
-UBspline_3d_d* create(UBspline_3d_d* s, VT& start, VT& end, IT& ng, bc_code bc, int n = 1)
-{
-  Ugrid x_grid, y_grid, z_grid;
-  BCtype_d xBC, yBC, zBC;
-  x_grid.start = start[0];
-  x_grid.end   = end[0];
-  x_grid.num   = ng[0];
-  y_grid.start = start[1];
-  y_grid.end   = end[1];
-  y_grid.num   = ng[1];
-  z_grid.start = start[2];
-  z_grid.end   = end[2];
-  z_grid.num   = ng[2];
-  xBC.lCode = xBC.rCode = bc;
-  yBC.lCode = yBC.rCode = bc;
-  zBC.lCode = zBC.rCode = bc;
-  return create_UBspline_3d_d(x_grid, y_grid, z_grid, xBC, yBC, zBC, NULL);
-}
 
 template<typename VT, typename IT>
 UBspline_3d_d* create(UBspline_3d_d* s, VT& start, VT& end, IT& ng, IT& halfg, int n = 1)
@@ -206,12 +70,6 @@ UBspline_3d_d* create(UBspline_3d_d* s, VT& start, VT& end, IT& ng, IT& halfg, i
 
 inline void set(UBspline_3d_d* s, double* restrict data) { recompute_UBspline_3d_d(s, data); }
 
-
-
-
-
-
-
 // 1D spline
 /** create a single spline for double */
 template<typename VT>
@@ -234,8 +92,6 @@ UBspline_1d_d* create(UBspline_1d_d* s,
   grid.num   = spline_npoints;
   return create_UBspline_1d_d(grid, bc, indata);
 }
-
-
 
 /** spline destroy */
 template<typename SplineType>
