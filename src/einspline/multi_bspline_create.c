@@ -19,47 +19,6 @@ int posix_memalign(void **memptr, size_t alignment, size_t size);
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-////       Helper functions for spline creation         ////
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
-void init_sse_data();
-
-void
-find_coefs_1d_d (Ugrid grid, BCtype_d bc, 
-		 double *data,  intptr_t dstride,
-		 double *coefs, intptr_t cstride);
-
-void 
-solve_deriv_interp_1d_s (float bands[], float coefs[],
-			 int M, int cstride);
-
-// On input, bands should be filled with:
-// row 0   :  abcdInitial from boundary conditions
-// rows 1:M:  basis functions in first 3 cols, data in last
-// row M+1 :  abcdFinal   from boundary conditions
-// cstride gives the stride between values in coefs.
-// On exit, coefs with contain interpolating B-spline coefs
-void 
-solve_periodic_interp_1d_s (float bands[], float coefs[],
-			    int M, int cstride);
-
-// On input, bands should be filled with:
-// row 0   :  abcdInitial from boundary conditions
-// rows 1:M:  basis functions in first 3 cols, data in last
-// row M+1 :  abcdFinal   from boundary conditions
-// cstride gives the stride between values in coefs.
-// On exit, coefs with contain interpolating B-spline coefs
-void 
-solve_antiperiodic_interp_1d_s (float bands[], float coefs[],
-				int M, int cstride);
-
-void
-find_coefs_1d_s (Ugrid grid, BCtype_s bc, 
-		 float *data,  intptr_t dstride,
-		 float *coefs, intptr_t cstride);
-
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
 ////     Single-Precision, Real Creation Routines       ////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
