@@ -11,30 +11,33 @@
 #include "bspline_structs.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
-////              Spline creation functions             ////
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////
+  ////              Spline creation functions             ////
+  ////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////
 
-///////////////////////////////
-// Uniform, double precision //
-/////////////////////////////////////
-// Create 1D uniform single-precision Bspline
-  UBspline_1d_d *
-  create_UBspline_1d_d (Ugrid x_grid, BCtype_d xBC, double *data);
+  ///////////////////////////////
+  // Uniform, double precision //
+  ///////////////////////////////
 
-// Create 3D uniform single-precision Bspline
-  UBspline_3d_d *
-  create_UBspline_3d_d (Ugrid x_grid,   Ugrid   y_grid,   Ugrid z_grid,
-                        BCtype_d  xBC,  BCtype_d   yBC, BCtype_d   zBC,
-                        double *data);
+  // Create 1D uniform single-precision Bspline
+  UBspline_1d_d* create_UBspline_1d_d(Ugrid x_grid, BCtype_d xBC, double* data);
 
-  void
-  recompute_UBspline_3d_d (UBspline_3d_d* spline, double *data);
+  // Create 3D uniform single-precision Bspline
+  UBspline_3d_d* create_UBspline_3d_d(Ugrid x_grid,
+                                      Ugrid y_grid,
+                                      Ugrid z_grid,
+                                      BCtype_d xBC,
+                                      BCtype_d yBC,
+                                      BCtype_d zBC,
+                                      double* data);
+
+  void recompute_UBspline_3d_d(UBspline_3d_d* spline, double* data);
 
 #ifdef __cplusplus
 }

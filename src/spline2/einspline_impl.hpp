@@ -109,14 +109,10 @@ inline void destroy(SplineType* restrict& spline)
 
 // 1D spline interface to einspline routines.
 inline void set(multi_UBspline_1d_d* spline, int i, UBspline_1d_d* spline_in, const int offset, const int N)
-{
-  copy_UBspline_1d_d(spline, i, spline_in, offset, N);
-}
+{ copy_UBspline_1d_d(spline, i, spline_in, offset, N); }
 
 inline void set(multi_UBspline_1d_s* spline, int i, UBspline_1d_d* spline_in, const int offset, const int N)
-{
-  copy_UBspline_1d_d_s(spline, i, spline_in, offset, N);
-}
+{ copy_UBspline_1d_d_s(spline, i, spline_in, offset, N); }
 
 inline multi_UBspline_1d_d* create(multi_UBspline_1d_d* s, Ugrid& grid, BCtype_d& bc, int num_splines)
 {
