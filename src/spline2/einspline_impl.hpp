@@ -64,11 +64,12 @@ UBspline_3d_d* create(UBspline_3d_d* s, VT& start, VT& end, IT& ng, IT& halfg, i
   xBC.lCode = xBC.rCode = (halfg[0]) ? ANTIPERIODIC : PERIODIC;
   yBC.lCode = yBC.rCode = (halfg[1]) ? ANTIPERIODIC : PERIODIC;
   zBC.lCode = zBC.rCode = (halfg[2]) ? ANTIPERIODIC : PERIODIC;
-  ;
+
   return create_UBspline_3d_d(x_grid, y_grid, z_grid, xBC, yBC, zBC, NULL);
 }
 
-inline void set(UBspline_3d_d* s, double* restrict data) { recompute_UBspline_3d_d(s, data); }
+// recompute UBspline_3d_d coefficients from raw data
+inline void recompute(UBspline_3d_d* s, double* restrict data) { recompute_UBspline_3d_d(s, data); }
 
 // 1D spline
 /** create a single spline for double */
