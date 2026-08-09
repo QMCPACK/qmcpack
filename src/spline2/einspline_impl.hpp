@@ -48,7 +48,7 @@ namespace einspline
 
 
 template<typename VT, typename IT>
-UBspline_3d_d* create(UBspline_3d_d* s, VT& start, VT& end, IT& ng, IT& halfg, int n = 1)
+UBspline_3d_d* create_UBspline_3d_d(VT& start, VT& end, IT& ng, IT& halfg)
 {
   Ugrid x_grid, y_grid, z_grid;
   BCtype_d xBC, yBC, zBC;
@@ -73,13 +73,12 @@ inline void recompute(UBspline_3d_d* s, double* restrict data) { recompute_UBspl
 
 // 1D spline
 /** create a single spline for double */
-template<typename VT>
-UBspline_1d_d* create(UBspline_1d_d* s,
-                      const VT& start,
-                      const VT& end,
-                      const int spline_npoints,
-                      double* indata,
-                      bool lFlat)
+template<typename T>
+UBspline_1d_d* create_UBspline_1d_d(const T start,
+                                    const T end,
+                                    const int spline_npoints,
+                                    double* indata,
+                                    bool lFlat)
 {
   BCtype_d bc;
   if (lFlat)
