@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include "bspline_base.h"
 
-///////////////////////////
-// Single precision real //
-///////////////////////////
+//////////////////////
+// Single precision //
+//////////////////////
 typedef struct
 {
   spline_code spcode;
@@ -34,9 +34,9 @@ typedef struct
 } UBspline_3d_s;
 
 
-///////////////////////////
-// Double precision real //
-///////////////////////////
+//////////////////////
+// Double precision //
+//////////////////////
 typedef struct
 {
   spline_code spcode;
@@ -57,21 +57,5 @@ typedef struct
   BCtype_d xBC, yBC, zBC;
   size_t coefs_size;
 } UBspline_3d_d;
-
-
-
-//////////////////////////////
-// Single precision complex //
-//////////////////////////////
-
-
-
-
-//////////////////////////////
-// Double precision complex //
-//////////////////////////////
-
-
-
 
 #endif

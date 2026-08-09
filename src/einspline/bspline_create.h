@@ -20,14 +20,14 @@ extern "C" {
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
+///////////////////////////////
+// Uniform, double precision //
 /////////////////////////////////////
-// Uniform, double precision, real //
-/////////////////////////////////////
-// Create 1D uniform single-precision, real Bspline
+// Create 1D uniform single-precision Bspline
   UBspline_1d_d *
   create_UBspline_1d_d (Ugrid x_grid, BCtype_d xBC, double *data);
 
-// Create 3D uniform single-precision, real Bspline
+// Create 3D uniform single-precision Bspline
   UBspline_3d_d *
   create_UBspline_3d_d (Ugrid x_grid,   Ugrid   y_grid,   Ugrid z_grid,
                         BCtype_d  xBC,  BCtype_d   yBC, BCtype_d   zBC,
