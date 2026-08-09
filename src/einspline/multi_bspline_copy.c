@@ -15,9 +15,6 @@ extern "C" {
 #endif
 
 
-
-  // just checking not used
-
   void copy_UBspline_1d_d(multi_UBspline_1d_d* multi, int i
       , const UBspline_1d_d* single, const int offset, const int N)
   {

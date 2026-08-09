@@ -25,8 +25,8 @@
 ////////////////////////////////////////////////////////////
 
 typedef enum { PERIODIC, DERIV1, DERIV2, FLAT, NATURAL, ANTIPERIODIC } bc_code;
-typedef enum { U1D       , U2D       , U3D      ,
-               MULTI_U1D , MULTI_U2D , MULTI_U3D,
+typedef enum { U1D       , U3D      ,
+               MULTI_U1D , MULTI_U3D
              } spline_code;
 typedef enum { SINGLE_REAL, DOUBLE_REAL }
 type_code;

@@ -71,25 +71,6 @@ eval_UBspline_1d_d (UBspline_1d_d * restrict spline,
   *val += coefs[i+3]*(Ad[12]*tp[0] + Ad[13]*tp[1] + Ad[14]*tp[2] + Ad[15]*tp[3]);
 }
 
-/** Value and first derivative */
-/* Value, first derivative, and second derivative */
-
-
-
-/************************************************************/
-/* 2D double-precision, real evaluation functions           */
-/************************************************************/
-
-/* Value only */
-
-
-/* Value and gradient */
-
-/* Value, gradient, and laplacian */
-
-/* Value, gradient, and Hessian */
-
-
 /************************************************************/
 /* 3D double-precision, real evaluation functions           */
 /************************************************************/
@@ -168,15 +149,3 @@ eval_UBspline_3d_d (UBspline_3d_d * restrict spline,
                 b[3]*(P(3,3,0)*c[0]+P(3,3,1)*c[1]+P(3,3,2)*c[2]+P(3,3,3)*c[3])));
 #undef P
 }
-
-/* Value and gradient */
-
-
-
-/* Value, gradient, and laplacian */
-
-
-
-
-
-/* Value, gradient, and Hessian */
