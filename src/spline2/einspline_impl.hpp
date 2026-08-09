@@ -52,25 +52,11 @@ multi_UBspline_3d_d* create(multi_UBspline_3d_d* s, GT& grid, BCT& bc, int num_s
   return create_multi_UBspline_3d_d(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], num_splines);
 }
 
-/** create spline for std::complex<double> */
-template<typename GT, typename BCT>
-multi_UBspline_3d_z* create(multi_UBspline_3d_z* s, GT& grid, BCT& bc, int num_splines)
-{
-  return create_multi_UBspline_3d_z(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], num_splines);
-}
-
 /** create spline for float */
 template<typename GT, typename BCT>
 multi_UBspline_3d_s* create(multi_UBspline_3d_s* s, GT& grid, BCT& bc, int num_splines)
 {
   return create_multi_UBspline_3d_s(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], num_splines);
-}
-
-/** create spline for std::complex<float> */
-template<typename GT, typename BCT>
-multi_UBspline_3d_c* create(multi_UBspline_3d_c* s, GT& grid, BCT& bc, int num_splines)
-{
-  return create_multi_UBspline_3d_c(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], num_splines);
 }
 
 /** set bspline for the i-th orbital for double-to-double
@@ -119,57 +105,6 @@ inline void evaluate_vgh(multi_UBspline_3d_d* restrict spline, const PT& r, VT& 
     */
 template<typename PT, typename VT, typename GT, typename HT, typename GG>
 inline void evaluate_vghgh(multi_UBspline_3d_d* restrict spline, const PT& r, VT& psi, GT& grad, HT& hess, GG& gradhess)
-{
-  eval_multi_UBspline_3d_d_vghgh(spline, r[0], r[1], r[2], psi.data(), grad[0].data(), hess[0].data(),
-                                 gradhess[0].data());
-}
-
-/** set bspline for the i-th orbital for std::complex<double>-to-complex<double>
-     * @param spline multi_UBspline_3d_z
-     * @param i the orbital index
-     * @param indata starting address of the input data
-     */
-inline void set(multi_UBspline_3d_z* spline, int i, std::complex<double>* restrict indata)
-{
-  set_multi_UBspline_3d_z(spline, i, indata);
-}
-
-/** evaluate values only using multi_UBspline_3d_z 
-    */
-template<typename PT, typename VT>
-inline void evaluate(multi_UBspline_3d_z* restrict spline, const PT& r, VT& psi)
-{
-  eval_multi_UBspline_3d_z(spline, r[0], r[1], r[2], psi.data());
-}
-
-/** evaluate values and gradients using multi_UBspline_3d_z 
-    */
-template<typename PT, typename VT, typename GT>
-inline void evaluate_vg(multi_UBspline_3d_z* restrict spline, const PT& r, VT& psi, GT& grad)
-{
-  eval_multi_UBspline_3d_z_vg(spline, r[0], r[1], r[2], psi.data(), grad[0].data());
-}
-
-/** evaluate values, gradients and laplacians using multi_UBspline_3d_z 
-    */
-template<typename PT, typename VT, typename GT>
-inline void evaluate_vgl(multi_UBspline_3d_z* restrict spline, const PT& r, VT& psi, GT& grad, VT& lap)
-{
-  eval_multi_UBspline_3d_z_vgl(spline, r[0], r[1], r[2], psi.data(), grad[0].data(), lap.data());
-}
-
-/** evaluate values, gradients and hessians using multi_UBspline_3d_z 
-    */
-template<typename PT, typename VT, typename GT, typename HT>
-inline void evaluate_vgh(multi_UBspline_3d_z* restrict spline, const PT& r, VT& psi, GT& grad, HT& hess)
-{
-  eval_multi_UBspline_3d_z_vgh(spline, r[0], r[1], r[2], psi.data(), grad[0].data(), hess[0].data());
-}
-
-/** evaluate values, gradients hessians and gradient of the hessians using multi_UBspline_3d_d 
-    */
-template<typename PT, typename VT, typename GT, typename HT, typename GG>
-inline void evaluate_vghgh(multi_UBspline_3d_z* restrict spline, const PT& r, VT& psi, GT& grad, HT& hess, GG& gradhess)
 {
   eval_multi_UBspline_3d_d_vghgh(spline, r[0], r[1], r[2], psi.data(), grad[0].data(), hess[0].data(),
                                  gradhess[0].data());
@@ -227,58 +162,6 @@ inline void evaluate_vgh(multi_UBspline_3d_s* restrict spline, const PT& r, VT& 
   eval_multi_UBspline_3d_s_vgh(spline, r[0], r[1], r[2], psi.data(), grad[0].data(), hess[0].data());
 }
 
-/** set bspline for the i-th orbital for std::complex<float>-to-complex<float>
-     * @param spline multi_UBspline_3d_c
-     * @param i the orbital index
-     * @param indata starting address of the input data
-     */
-inline void set(multi_UBspline_3d_c* spline, int i, std::complex<float>* restrict indata)
-{
-  set_multi_UBspline_3d_c(spline, i, indata);
-}
-
-/** set bspline for the i-th orbital for std::complex<double>-to-complex<float>
-     * @param spline multi_UBspline_3d_c
-     * @param i the orbital index
-     * @param indata starting address of the input data
-     */
-inline void set(multi_UBspline_3d_c* spline, int i, std::complex<double>* restrict indata)
-{
-  set_multi_UBspline_3d_c_z(spline, i, indata);
-}
-
-/** evaluate values only using multi_UBspline_3d_c 
-    */
-template<typename PT, typename VT>
-inline void evaluate(multi_UBspline_3d_c* restrict spline, const PT& r, VT& psi)
-{
-  eval_multi_UBspline_3d_c(spline, r[0], r[1], r[2], psi.data());
-}
-
-/** evaluate values and gradients using multi_UBspline_3d_c 
-    */
-template<typename PT, typename VT, typename GT>
-inline void evaluate_vg(multi_UBspline_3d_c* restrict spline, const PT& r, VT& psi, GT& grad)
-{
-  eval_multi_UBspline_3d_c_vg(spline, r[0], r[1], r[2], psi.data(), grad[0].data());
-}
-
-/** evaluate values, gradients and laplacians using multi_UBspline_3d_c 
-    */
-template<typename PT, typename VT, typename GT>
-inline void evaluate_vgl(multi_UBspline_3d_c* restrict spline, const PT& r, VT& psi, GT& grad, VT& lap)
-{
-  eval_multi_UBspline_3d_c_vgl(spline, r[0], r[1], r[2], psi.data(), grad[0].data(), lap.data());
-}
-
-/** evaluate values, gradients and hessians using multi_UBspline_3d_c 
-    */
-template<typename PT, typename VT, typename GT, typename HT>
-inline void evaluate_vgh(multi_UBspline_3d_c* restrict spline, const PT& r, VT& psi, GT& grad, HT& hess)
-{
-  eval_multi_UBspline_3d_c_vgh(spline, r[0], r[1], r[2], psi.data(), grad[0].data(), hess[0].data());
-}
-
 /////another creation functions
 /** create spline and initialized it */
 template<typename VT, typename IT>
@@ -301,28 +184,6 @@ multi_UBspline_3d_s* create(multi_UBspline_3d_s* s, VT& start, VT& end, IT& ng, 
   return create_multi_UBspline_3d_s(x_grid, y_grid, z_grid, xBC, yBC, zBC, num_splines);
 }
 
-
-/** create spline for std::complex<double> */
-template<typename VT, typename IT>
-multi_UBspline_3d_c* create(multi_UBspline_3d_c* s, VT& start, VT& end, IT& ng, bc_code bc, int num_splines)
-{
-  Ugrid x_grid, y_grid, z_grid;
-  BCtype_c xBC, yBC, zBC;
-  x_grid.start = start[0];
-  x_grid.end   = end[0];
-  x_grid.num   = ng[0];
-  y_grid.start = start[1];
-  y_grid.end   = end[1];
-  y_grid.num   = ng[1];
-  z_grid.start = start[2];
-  z_grid.end   = end[2];
-  z_grid.num   = ng[2];
-  xBC.lCode = xBC.rCode = bc;
-  yBC.lCode = yBC.rCode = bc;
-  zBC.lCode = zBC.rCode = bc;
-  return create_multi_UBspline_3d_c(x_grid, y_grid, z_grid, xBC, yBC, zBC, num_splines);
-}
-
 /** convert double to single precision */
 inline void convert(multi_UBspline_3d_d* in, multi_UBspline_3d_s* out)
 {
@@ -342,34 +203,6 @@ inline void convert(multi_UBspline_3d_d* in, multi_UBspline_3d_s* out)
   zbc.rVal = (float)(in->zBC.rVal);
 
   out = create_multi_UBspline_3d_s(in->x_grid, in->y_grid, in->z_grid, xbc, ybc, zbc, in->num_splines);
-  simd::copy(out->coefs, in->coefs, in->coefs_size);
-}
-
-/** convert std::complex<double> to std::complex<float> */
-inline void convert(multi_UBspline_3d_z* in, multi_UBspline_3d_c* out)
-{
-  BCtype_c xbc, ybc, zbc;
-  xbc.lCode = in->xBC.lCode;
-  xbc.rCode = in->xBC.rCode;
-  ybc.lCode = in->yBC.lCode;
-  ybc.rCode = in->yBC.rCode;
-  zbc.lCode = in->zBC.lCode;
-  zbc.rCode = in->zBC.rCode;
-
-  xbc.lVal_r = (float)(in->xBC.lVal_r);
-  xbc.lVal_i = (float)(in->xBC.lVal_i);
-  xbc.rVal_r = (float)(in->xBC.rVal_r);
-  xbc.rVal_i = (float)(in->xBC.rVal_i);
-  ybc.lVal_r = (float)(in->yBC.lVal_r);
-  ybc.lVal_i = (float)(in->yBC.lVal_i);
-  ybc.rVal_r = (float)(in->yBC.rVal_r);
-  ybc.rVal_i = (float)(in->yBC.rVal_i);
-  zbc.lVal_r = (float)(in->zBC.lVal_r);
-  zbc.lVal_i = (float)(in->zBC.lVal_i);
-  zbc.rVal_r = (float)(in->zBC.rVal_r);
-  zbc.rVal_i = (float)(in->zBC.rVal_i);
-
-  out = create_multi_UBspline_3d_c(in->x_grid, in->y_grid, in->z_grid, xbc, ybc, zbc, in->num_splines);
   simd::copy(out->coefs, in->coefs, in->coefs_size);
 }
 /** create  multi_UBspline_3d_d*
@@ -425,27 +258,6 @@ multi_UBspline_3d_d* create(multi_UBspline_3d_d* s,
   yBC.lCode = yBC.rCode = ybc;
   zBC.lCode = zBC.rCode = zbc;
   return create_multi_UBspline_3d_d(x_grid, y_grid, z_grid, xBC, yBC, zBC, num_splines);
-}
-
-/** create spline for std::complex<double> */
-template<typename VT, typename IT>
-multi_UBspline_3d_z* create(multi_UBspline_3d_z* s, VT& start, VT& end, IT& ng, bc_code bc, int num_splines)
-{
-  Ugrid x_grid, y_grid, z_grid;
-  BCtype_z xBC, yBC, zBC;
-  x_grid.start = start[0];
-  x_grid.end   = end[0];
-  x_grid.num   = ng[0];
-  y_grid.start = start[1];
-  y_grid.end   = end[1];
-  y_grid.num   = ng[1];
-  z_grid.start = start[2];
-  z_grid.end   = end[2];
-  z_grid.num   = ng[2];
-  xBC.lCode = xBC.rCode = bc;
-  yBC.lCode = yBC.rCode = bc;
-  zBC.lCode = zBC.rCode = bc;
-  return create_multi_UBspline_3d_z(x_grid, y_grid, z_grid, xBC, yBC, zBC, num_splines);
 }
 
 /** interfaces to use UBspline_3d_X 
