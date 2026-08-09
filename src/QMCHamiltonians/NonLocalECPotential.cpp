@@ -378,15 +378,18 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
                                              psi_list, batch_list, pairpots, tmove_xy_all_batch_list,
                                              O_leader.mw_res_handle_.getResource().collection, O_leader.use_DLA);
       else
-        for (size_t iw = 0; iw < nw; iw++)
-          pairpots[iw] =
-              ecp_component_list[iw].evaluateOne(pset_list[iw], std::nullopt, batch_list[iw].get().ion_id, psi_list[iw],
-                                                 batch_list[iw].get().electron_id, batch_list[iw].get().ion_elec_dist,
-                                                 batch_list[iw].get().ion_elec_displ,
-                                                 compute_txy_all ? makeOptionalRef<std::vector<NonLocalData>>(
-                                                                       tmove_xy_all_batch_list[iw])
-                                                                 : std::nullopt,
-                                                 O_leader.use_DLA);
+        // The batch lists are compacted: a walker with no job at this jobid
+        // is absent, so they can be shorter than nw. Index by batch slot,
+        // matching the accumulation loop below.
+        for (size_t j = 0; j < ecp_component_list.size(); j++)
+          pairpots[j] =
+              ecp_component_list[j].evaluateOne(pset_list[j], std::nullopt, batch_list[j].get().ion_id, psi_list[j],
+                                                batch_list[j].get().electron_id, batch_list[j].get().ion_elec_dist,
+                                                batch_list[j].get().ion_elec_displ,
+                                                compute_txy_all ? makeOptionalRef<std::vector<NonLocalData>>(
+                                                                      tmove_xy_all_batch_list[j])
+                                                                : std::nullopt,
+                                                O_leader.use_DLA);
 
       // Right now this is just over walker but could and probably should be over a set
       // larger than the walker count.  The easiest way to not complicate the per particle

@@ -227,4 +227,137 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   CHECK(total_localpots == Approx(value3));
 }
 
+TEST_CASE("NonLocalECPotential mw_evaluate ragged job counts", "[hamiltonian]")
+{
+  using Real         = QMCTraits::RealType;
+  using FullPrecReal = QMCTraits::FullPrecRealType;
+
+  Lattice lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(20.0);
+  lattice.LR_dim_cutoff = 15;
+  lattice.reset();
+
+  const SimulationCell simulation_cell(lattice);
+
+  ParticleSet ions(simulation_cell);
+
+  ions.setName("ion");
+  ions.create({2});
+  ions.R[0] = {0.0, 1.0, 0.0};
+  ions.R[1] = {0.0, -1.0, 0.0};
+
+  SpeciesSet& ion_species                         = ions.getSpeciesSet();
+  int index_species                               = ion_species.addSpecies("Na");
+  int index_charge                                = ion_species.addAttribute("charge");
+  int index_atomic_number                         = ion_species.addAttribute("atomic_number");
+  ion_species(index_charge, index_species)        = 1;
+  ion_species(index_atomic_number, index_species) = 1;
+  ions.createSK();
+  ions.resetGroups();
+  ions.update();
+
+  ParticleSet elec(simulation_cell);
+  elec.setName("elec");
+  elec.create({2, 1});
+  elec.R[0] = {0.4, 0.0, 0.0};
+  elec.R[1] = {1.0, 0.0, 0.0};
+  elec.R[2] = {0.0, 0.0, 0.0};
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+
+  int dnIdx                  = tspecies.addSpecies("d");
+  chargeIdx                  = tspecies.addAttribute("charge");
+  massIdx                    = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, dnIdx) = -1;
+  tspecies(massIdx, dnIdx)   = 1.0;
+
+  elec.createSK();
+  elec.resetGroups();
+  elec.addTable(ions);
+  elec.update();
+
+  ParticleSet elec2(elec);
+  elec2.update();
+
+  // The third walker's lone down electron sits 2.0 from ion 0 and 4.0 from
+  // ion 1; the Na.BFD.xml cutoff lies between, so this walker carries one
+  // fewer job than the other two in its species group and the per-jobid
+  // batch lists in mw_evaluateImpl are compacted below the walker count.
+  ParticleSet elec3(elec);
+  elec3.R[2] = {0.0, 3.0, 0.0};
+  elec3.update();
+
+  RefVectorWithLeader<ParticleSet> p_list(elec, {elec, elec2, elec3});
+
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  TrialWaveFunction psi2(runtime_options);
+  TrialWaveFunction psi3(runtime_options);
+  RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi2, psi3});
+
+  NonLocalECPotential nl_ecp(ions, elec, false /*use_DLA*/, false /*use_VP*/);
+
+  Communicate* comm = OHMMS::Controller;
+  ECPComponentBuilder ecp_comp_builder("test_read_ecp", comm, 4, 1);
+
+  bool okay = ecp_comp_builder.read_pp_file("Na.BFD.xml");
+  REQUIRE(okay);
+  UPtr<NonLocalECPComponent> nl_ecp_comp = std::move(ecp_comp_builder.pp_nonloc);
+  nl_ecp.addComponent(0, std::move(nl_ecp_comp));
+  UPtr<OperatorBase> nl_ecp2_ptr = nl_ecp.makeClone(elec2, psi2);
+  auto& nl_ecp2                  = dynamic_cast<NonLocalECPotential&>(*nl_ecp2_ptr);
+  UPtr<OperatorBase> nl_ecp3_ptr = nl_ecp.makeClone(elec3, psi3);
+  auto& nl_ecp3                  = dynamic_cast<NonLocalECPotential&>(*nl_ecp3_ptr);
+
+  StdRandom<FullPrecReal> rng(10101);
+  StdRandom<FullPrecReal> rng2(10201);
+  StdRandom<FullPrecReal> rng3(10301);
+  nl_ecp.setRandomGenerator(&rng);
+  nl_ecp2.setRandomGenerator(&rng2);
+  nl_ecp3.setRandomGenerator(&rng3);
+
+  RefVectorWithLeader<OperatorBase> o_list(nl_ecp, {nl_ecp, nl_ecp2, nl_ecp3});
+  ResourceCollection pset_res("test_pset_res");
+  elec.createResource(pset_res);
+  ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, p_list);
+  ResourceCollection nl_ecp_res("test_nl_ecp_res");
+  nl_ecp.createResource(nl_ecp_res);
+  ResourceCollectionTeamLock<OperatorBase> nl_ecp_lock(nl_ecp_res, o_list);
+
+  testing::TestNonLocalECPotential::copyGridUnrotatedForTest(nl_ecp);
+  testing::TestNonLocalECPotential::copyGridUnrotatedForTest(nl_ecp2);
+  testing::TestNonLocalECPotential::copyGridUnrotatedForTest(nl_ecp3);
+
+  testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, std::nullopt, true);
+
+  const auto mw_value  = nl_ecp.getValue();
+  const auto mw_value2 = nl_ecp2.getValue();
+  const auto mw_value3 = nl_ecp3.getValue();
+
+  // walkers 1 and 2 are identical; walker 3 differs, so a batch value bleeding
+  // across walker slots cannot satisfy all three checks below
+  CHECK(mw_value == Approx(mw_value2));
+  CHECK(mw_value3 != Approx(mw_value));
+
+  testing::TestNonLocalECPotential::evaluateImpl(nl_ecp, psi, elec, false, true);
+  CHECK(nl_ecp.getValue() == Approx(mw_value));
+  testing::TestNonLocalECPotential::evaluateImpl(nl_ecp2, psi2, elec2, false, true);
+  CHECK(nl_ecp2.getValue() == Approx(mw_value2));
+  testing::TestNonLocalECPotential::evaluateImpl(nl_ecp3, psi3, elec3, false, true);
+  CHECK(nl_ecp3.getValue() == Approx(mw_value3));
+
+  // the T-move candidate column flows through the same compacted lists;
+  // collecting it must not disturb the values
+  testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, true, std::nullopt, true);
+  CHECK(nl_ecp.getValue() == Approx(mw_value));
+  CHECK(nl_ecp2.getValue() == Approx(mw_value2));
+  CHECK(nl_ecp3.getValue() == Approx(mw_value3));
+}
+
 } // namespace qmcplusplus
