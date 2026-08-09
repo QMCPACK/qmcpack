@@ -73,39 +73,16 @@ extern "C" {
 ///////////////////////////////////////
 
 // Create 3D uniform single-precision, real Bspline
-  multi_UBspline_3d_c *
-  create_multi_UBspline_3d_c (Ugrid  x_grid, Ugrid y_grid, Ugrid z_grid,
-                              BCtype_c  xBC, BCtype_c yBC, BCtype_c zBC,
-                              int num_splines);
 
 // Set the data for the splines, and compute spline coefficients
-
-
-  void
-  set_multi_UBspline_3d_c (multi_UBspline_3d_c *spline, int spline_num,
-                           complex_float *data);
-
-  void
-  set_multi_UBspline_3d_c_z (multi_UBspline_3d_c *spline, int spline_num,
-                             complex_double *data);
 
 ///////////////////////////////////////
 // Uniform, double precision, complex//
 ///////////////////////////////////////
 
 // Create 3D uniform double-precision, complex Bspline
-  multi_UBspline_3d_z *
-  create_multi_UBspline_3d_z (Ugrid  x_grid, Ugrid   y_grid, Ugrid z_grid,
-                              BCtype_z  xBC, BCtype_z   yBC, BCtype_z zBC,
-                              int num_splines);
 
 // Set the data for the splines, and compute spline coefficients
-
-
-
-  void
-  set_multi_UBspline_3d_z (multi_UBspline_3d_z *spline, int spline_num,
-                           complex_double *data);
 
 #ifdef __cplusplus
 }
