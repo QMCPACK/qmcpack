@@ -308,11 +308,10 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     moved_nonlocal_walker_elecs.reserve(num_walkers);
     moved_nonlocal_walker_twfs.reserve(num_walkers);
 
-    for (int iw = 0; iw < walkers.size(); ++iw)
-    {
-      walker_non_local_moves_accepted[iw] =
-          walker_hamiltonians[iw].makeNonLocalMoves(walker_twfs[iw], walker_elecs[iw], step_context.non_local_ops);
+    walker_non_local_moves_accepted = ham_dispatcher.flex_makeNonLocalMoves(walker_hamiltonians, walker_twfs,
+                                                                            walker_elecs, step_context.non_local_ops);
 
+    for (int iw = 0; iw < walkers.size(); ++iw)
       if (walker_non_local_moves_accepted[iw] > 0)
       {
         crowd.incNonlocalAccept(walker_non_local_moves_accepted[iw]);
@@ -320,7 +319,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         moved_nonlocal_walker_elecs.push_back(walker_elecs[iw]);
         moved_nonlocal_walker_twfs.push_back(walker_twfs[iw]);
       }
-    }
 
     if (moved_nonlocal_walkers.size())
     {
