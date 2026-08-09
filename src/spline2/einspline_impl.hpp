@@ -319,13 +319,7 @@ inline void set(multi_UBspline_3d_s* spline, int i, UBspline_3d_d* spline_in, co
   copy_UBspline_3d_d_s(spline, i, spline_in, offset, N);
 }
 
-template<typename PT>
-inline double evaluate(UBspline_3d_d* restrict spline, const PT& r)
-{
-  double res;
-  eval_UBspline_3d_d(spline, r[0], r[1], r[2], &res);
-  return res;
-}
+
 
 // 1D spline
 /** create a single spline for double */
@@ -350,14 +344,7 @@ UBspline_1d_d* create(UBspline_1d_d* s,
   return create_UBspline_1d_d(grid, bc, indata);
 }
 
-/** spline evaluation */
-template<typename PT>
-inline double evaluate(UBspline_1d_d* restrict spline, const PT& r)
-{
-  double res;
-  eval_UBspline_3d_d(spline, r, &res);
-  return res;
-}
+
 
 /** spline destroy */
 template<typename SplineType>

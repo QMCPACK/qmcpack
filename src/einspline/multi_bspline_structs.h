@@ -25,16 +25,6 @@ typedef struct
   size_t coefs_size;
 } multi_UBspline_1d_s;
 
-typedef struct
-{
-  spline_code spcode;
-  type_code    tcode;
-  float* restrict coefs;
-  intptr_t x_stride, y_stride;
-  Ugrid x_grid, y_grid;
-  BCtype_s xBC, yBC;
-  int num_splines;
-} multi_UBspline_2d_s;
 
 typedef struct
 {
@@ -64,16 +54,6 @@ typedef struct
   size_t coefs_size;
 } multi_UBspline_1d_d;
 
-typedef struct
-{
-  spline_code spcode;
-  type_code    tcode;
-  double* restrict coefs;
-  intptr_t x_stride, y_stride;
-  Ugrid x_grid, y_grid;
-  BCtype_d xBC, yBC;
-  int num_splines;
-} multi_UBspline_2d_d;
 
 typedef struct
 {

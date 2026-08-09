@@ -21,15 +21,6 @@ typedef struct
   BCtype_s xBC;
 } UBspline_1d_s;
 
-typedef struct
-{
-  spline_code spcode;
-  type_code    tcode;
-  float* restrict coefs;
-  int x_stride;
-  Ugrid x_grid, y_grid;
-  BCtype_s xBC, yBC;
-} UBspline_2d_s;
 
 typedef struct
 {
@@ -55,15 +46,6 @@ typedef struct
   BCtype_d xBC;
 } UBspline_1d_d;
 
-typedef struct
-{
-  spline_code spcode;
-  type_code    tcode;
-  double* restrict coefs;
-  int x_stride;
-  Ugrid x_grid, y_grid;
-  BCtype_d xBC, yBC;
-} UBspline_2d_d;
 
 typedef struct
 {
