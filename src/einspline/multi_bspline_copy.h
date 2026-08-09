@@ -26,8 +26,6 @@ extern "C" {
   copy_multi_UBspline_3d_s (multi_UBspline_3d_s* spline);
 
 /// Create 3D uniform double-precision, real Bspline
-  multi_UBspline_3d_d *
-  copy_multi_UBspline_3d_d (multi_UBspline_3d_d* spline);
 
   /** copy UBspline_3d_d to multi_UBspine_3d_X
    *

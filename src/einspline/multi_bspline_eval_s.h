@@ -17,11 +17,6 @@ eval_multi_UBspline_1d_s (const multi_UBspline_1d_s *spline,
                           float x,
                           float* restrict vals);
 
-void
-eval_multi_UBspline_1d_s_vg (const multi_UBspline_1d_s *spline,
-                             float x,
-                             float* restrict vals,
-                             float* restrict grads);
 
 void
 eval_multi_UBspline_1d_s_vgl (const multi_UBspline_1d_s *spline,
@@ -31,40 +26,13 @@ eval_multi_UBspline_1d_s_vgl (const multi_UBspline_1d_s *spline,
                               float* restrict lapl);
 
 
-void
-eval_multi_UBspline_1d_s_vgh (const multi_UBspline_1d_s *spline,
-                              float x,
-                              float* restrict vals,
-                              float* restrict grads,
-                              float* restrict hess);
 
 /************************************************************/
 /* 2D single-precision, complex evaluation functions        */
 /************************************************************/
-void
-eval_multi_UBspline_2d_s(const multi_UBspline_2d_s *spline,
-                         double x, double y,
-                         float* restrict vals);
 
-void
-eval_multi_UBspline_2d_s_vg (const multi_UBspline_2d_s *spline,
-                             double x, double y,
-                             float* restrict vals,
-                             float* restrict grads);
 
-void
-eval_multi_UBspline_2d_s_vgl (const multi_UBspline_2d_s *spline,
-                              double x, double y,
-                              float* restrict vals,
-                              float* restrict grads,
-                              float* restrict lapl);
 
-void
-eval_multi_UBspline_2d_s_vgh (const multi_UBspline_2d_s *spline,
-                              double x, double y,
-                              float* restrict vals,
-                              float* restrict grads,
-                              float* restrict hess);
 
 /************************************************************/
 /* 3D single-precision, complex evaluation functions        */
