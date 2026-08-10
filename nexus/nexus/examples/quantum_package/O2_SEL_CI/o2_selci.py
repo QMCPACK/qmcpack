@@ -5,7 +5,7 @@ from nexus import generate_physical_system
 from nexus import generate_quantum_package
 
 # note: you must source the QP config file before running this script
-#   source /home/ubuntu/apps/qp2/quantum_package.rc
+#   source /your/path/to/quantum_package.rc
 
 settings(
     results       = '',
