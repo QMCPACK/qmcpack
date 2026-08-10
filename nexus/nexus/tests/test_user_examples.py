@@ -9,12 +9,13 @@ import pytest
 
 from ..developer import obj
 from ..generic import generic_settings
-from ..testing import object_diff
+from ..testing import object_diff, text_diff
 from ..pwscf_input import PwscfInput
 from ..qmcpack_converters import Pw2qmcpackInput
 from ..gamess_input import GamessInput
 from ..qmcpack_input import QmcpackInput
 from ..rmg_input import RmgInput
+from ..pyscf_input import PyscfInput
 from . import TEST_DIR, NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.USER_EXAMPLES)
@@ -39,22 +40,34 @@ def copy_pseudos(code: str, tmp_dir: Path):
         shutil.copytree(espresso_pseudos, output_path, dirs_exist_ok=True)
     else:
         raise ValueError(f"Invalid code for pseudopotential identification: {code}")
+#end def copy_pseudos
 
 
-def copy_example_files(example_dir: str, tmp_dir: Path):
+def copy_example_files(
+    example_dir: str,
+    tmp_dir: Path,
+    *,
+    template_file: Path | None = None
+    ):
 
     example_path = example_root / example_dir
     output_path = tmp_dir / example_dir
 
-    return shutil.copytree(
+    test_path = shutil.copytree(
         src           = example_path,
         dst           = output_path,
         dirs_exist_ok = True,
-        ignore        = ignore_patterns("*.py"),
+        ignore        = ignore_patterns("*.py", "*.rst"),
         )
 
+    if template_file is not None:
+        shutil.copy(template_file, test_path)
 
-def run_example_script(script: Path, test_path: Path):
+    return test_path
+#end def copy_example_files
+
+
+def run_example_script(script: Path, test_path: Path) -> tuple[bool, str]:
 
     script = script.resolve() # Absolute path helps in debugging
     old_cwd = Path.cwd()
@@ -75,11 +88,11 @@ def run_example_script(script: Path, test_path: Path):
             "\n"
             "stdout:\n"
             "=======\n"
-           f"{out}\n"
+           f"{str(out, encoding='utf-8')}\n"
             "\n"
             "stderr:\n"
             "=======\n"
-           f"{err}\n"
+           f"{str(err, encoding='utf-8')}\n"
             "\n"
             "Return code:\n"
             "============\n"
@@ -89,6 +102,7 @@ def run_example_script(script: Path, test_path: Path):
         return False, msg
     else:
         return True, "Success!"
+#end def run_example_script
 
 
 def check_generated_files(
@@ -96,14 +110,14 @@ def check_generated_files(
     tmp_dir: Path,
     example_path: str,
     filepath: str,
-    ):
-
+    ) -> tuple[bool, str]:
     input_classes = dict(
         pwscf      = PwscfInput,
         pw2qmcpack = Pw2qmcpackInput,
         gamess     = GamessInput,
         qmcpack    = QmcpackInput,
         rmg        = RmgInput,
+        pyscf      = PyscfInput,
         )
 
     ref_filepath = reference_dir / example_path / filepath
@@ -119,10 +133,19 @@ def check_generated_files(
         msg = f"Input file was not generated: {gen_filepath!s}"
         raise FileNotFoundError(msg)
 
-    input_class = input_classes[code]
-    ref_input = input_class(str(ref_filepath))
-    gen_input = input_class(str(gen_filepath))
-    diff, dgen, dref = object_diff(gen_input, ref_input, full=True)
+    if code == "pyscf":
+        # PyscfInput does template string things, which we can't really
+        # evaluate, so instead we just do a direct text comparison of the
+        # generated output from the test.
+        ref_input = ref_filepath.read_text()
+        gen_input = gen_filepath.read_text()
+        diff, dgen, dref = text_diff(ref_input, gen_input, full=True)
+    else:
+        input_class = input_classes[code]
+        ref_input = input_class(str(ref_filepath))
+        gen_input = input_class(str(gen_filepath))
+        diff, dgen, dref = object_diff(gen_input, ref_input, full=True)
+
     if diff:
         # assume failure
         failed = True
@@ -166,6 +189,7 @@ def check_generated_files(
         #end if
     #end if
     return True, "Success!"
+#end def check_generated_files
 
 
 def test_pwscf_relax_Ge_T(tmp_path):
@@ -476,3 +500,36 @@ def test_rmg_diamond(tmp_path):
             )
         assert(success), message
 #end def test_rmg_diamond
+
+
+def test_pyscf_h2o_ae_hf(tmp_path):
+    test_data = dict(
+        path = 'pyscf/01_h2o_hf',
+        scripts = [
+            'h2o_ae_hf.py',
+            ],
+        files = [
+            ('pyscf', 'input', 'runs/h2o_ae_hf/scf.py'),
+            ],
+        )
+
+    test_path = copy_example_files(
+        example_dir   = test_data["path"],
+        tmp_dir       = tmp_path,
+        template_file = example_root / "pyscf/01_h2o_hf/scf_template.py",
+        )
+
+    for script in test_data["scripts"]:
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
+        assert(success), message
+
+    for code, _filetype, filepath in test_data["files"]:
+        success, message = check_generated_files(
+            code,
+            tmp_path,
+            test_data["path"],
+            filepath,
+            )
+        assert(success), message
+#end def test_pyscf_h2o_ae_hf
