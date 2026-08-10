@@ -36,10 +36,10 @@ template<typename ST>
 class AtomicOrbitals
 {
 public:
-  static const int D           = 3;
-  using AtomicBCType           = typename bspline_traits<ST, 1>::BCType;
-  using PointType              = TinyVector<ST, D>;
-  using value_type             = ST;
+  static const int D = 3;
+  using AtomicBCType = typename bspline_traits<ST, 1>::BCType;
+  using PointType    = TinyVector<ST, D>;
+  using value_type   = ST;
 
   using vContainer_type = aligned_vector<ST>;
 
