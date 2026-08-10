@@ -16,8 +16,8 @@ can be used in``~/.nexus/local_machines.py``.
 
 In the following we describe a step-by-step process for adding a new machine. 
 
-1. Choose the Closest Existing Machine
---------------------------------------
+Choose the Closest Existing Machine
+-----------------------------------
 
 To minimize the work required, start by finding a machine that uses the same scheduler and run launcher.
 For example:
@@ -32,7 +32,7 @@ If the header and launcher behavior are shared by several machines, consider
 deriving from the existing intermediate class, such as ``NerscMachine`` or
 ``SnlMachine``. Otherwise, derive directly from ``Supercomputer``.
 
-2. Add the Machine Class
+Adding the Machine Class
 ------------------------
 
 Place the new class near similar machines in ``machines.py``. At minimum, define
@@ -97,8 +97,8 @@ Important class details:
   already-processed jobs, so avoid appending duplicate options or mutating
   machine-wide state in a way that changes later jobs unexpectedly.
 
-3. Understand the role of the Base Class
----------------------------------------
+Understanding the role of the Base Class
+----------------------------------------
 
 ``Supercomputer.process_job`` fills in missing ``cores`` or ``nodes``, computes
 ``processes``, ``processes_per_node``, ``processes_per_proc``, ``ppn``, applies the
@@ -122,7 +122,7 @@ launcher behavior is not appropriate at all.
 ``Options.write()`` sorts option keys before building the command, so choose
 stable keys if test output ordering matters.
 
-4. Register the Machine
+Registering the Machine
 -----------------------
 
 At the bottom of ``machines.py``, add an instance to the ``#Known machines`` block:
@@ -151,8 +151,8 @@ The positional arguments are:
 actual socket/package layout when it matters for binding or
 ``processes_per_proc``.
 
-5. Update Machine Tests
------------------------
+Updating the Machine Tests
+--------------------------
 
 Adding the instance registers the machine in ``Machine.machines``, so the generic
 machine tests will include it automatically.
@@ -186,8 +186,8 @@ machine into the corresponding table, then review them manually. The generated
 commands and submission files are useful starting points, not a substitute for
 checking scheduler syntax against the machine documentation.
 
-6. Run the Tests
-----------------
+Running the Tests
+-----------------
 
 From the repository root, run the machine tests that cover the new definition:
 
