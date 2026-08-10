@@ -19,7 +19,7 @@
 
 import os
 import numpy as np
-from .developer import obj, unavailable
+from .developer import obj
 from .unit_converter import convert
 from .periodic_table import Elements
 from .numerics import simstats, simplestats
@@ -81,7 +81,7 @@ def pwscf_time(tsin):
 
 
 class PwscfAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,analyze=False,xml=False,warn=False,md_only=False):
+    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,*,analyze=False,xml=False,warn=False,md_only=False):
         if isinstance(arg0,Simulation):
             sim = arg0
             path = sim.locdir
@@ -417,7 +417,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     conf = obj()
                     axes = []
                     cont = True
-                    for d in (0,1,2):
+                    for d in range(3):  # noqa: B007
                         i+=1
                         axes.append(np.array(lines[i].split(),dtype=float))
                     #end for
@@ -493,7 +493,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             while i<nlines:
                 l = lines[i]
                 if l.find('total   stress')!=-1:
-                    for j in range(3):
+                    for j in range(3):  # noqa: B007
                         i+=1
                         stress.append(list(np.array(lines[i].split(),dtype=float)))
                     #end for
@@ -522,7 +522,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     conf = obj()
                     aforces = []
                     found_atom = False
-                    for j in range(10):
+                    for j in range(10):  # noqa: B007
                         i+=1
                         if i<nlines and 'atom' in lines[i]:
                             found_atom = True
@@ -716,7 +716,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def analyze
 
 
-    def write_electron_counts(self,filepath=None,return_flag=False):
+    def write_electron_counts(self,filepath=None,*,return_flag=False):
         if not return_flag:
             if not self.info.xml:
                 self.error('xml data has not been processed\ncannot write electron counts')
@@ -790,7 +790,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def md_statistics
 
 
-    def md_plots(self,show=True):
+    def md_plots(self,*,show=True):
 
         md = self.md_data
 
@@ -845,7 +845,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def make_movie
 
 
-    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True,k_labels=None):
+    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, *, show=False, save=True, show_vbm_cbm=True,k_labels=None):
+        import matplotlib.pyplot as plt
+        params = {
+            'legend.fontsize'      : 14,
+            'figure.facecolor'     : 'white',
+            'figure.subplot.hspace': 0.,
+            'axes.labelsize'       : 16,
+            'xtick.labelsize'      : 14,
+            'ytick.labelsize'      : 14,
+            }
+        plt.rcParams.update(params)
         if 'bands' in self:
             success = True
             if filename is None:
@@ -855,30 +865,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
             else:
                 filepath = os.path.join(filepath,filename)
             #end if
-            try:
-                import matplotlib
-                gui_envs = ['GTKAgg','TKAgg','agg','Qt4Agg','WXAgg']
-                for gui in gui_envs:
-                    try:
-                        matplotlib.use(gui, force=True)
-                        from matplotlib import pyplot
-                        success = True
-                        break
-                    except:
-                        continue
-                    #end try
-                #end for
-                from matplotlib.pyplot import figure,plot,ylabel,show,ylim,xlim,rcParams,savefig,gca,xticks,axvline, scatter
-                params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
-                              'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
-                rcParams.update(params)
-            except(ImportError, RuntimeError):
-                success = False
-            if not success:
-                figure,plot,ylabel,show,ylim,xlim,rcParams,savefig,xticks = unavailable('matplotlib.pyplot','figure','plot','ylabel','show','ylim','xlim','rcParams','savefig','xticks')
-            #end if
-            fig    = figure()
-            ax     = gca()
+
+            fig    = plt.figure()
+            ax     = plt.gca()
             nbands = self.input.system.nbnd
 
             if k_labels is None:
@@ -911,19 +900,19 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     y.append(bi['eigs'][nb])
                 #end for
                 y = np.array(y) - self.bands.vbm.energy
-                plot(x, y, 'k')
+                plt.plot(x, y, 'k')
                 if len(self.bands.down) > 0:
                     y = []
                     for bi in self.bands.down:
                         y.append(bi['eigs'][nb])
                     #end for
                     y = np.array(y) - self.bands.vbm.energy
-                    plot(x, y, 'r')
+                    plt.plot(x, y, 'r')
                 #end if              
             #end for
             for ln, li in enumerate(labels):
                 if li != '':
-                    axvline(x[ln], ymin=-100, ymax=100, linewidth=3, color='k')
+                    plt.axvline(x[ln], ymin=-100, ymax=100, linewidth=3, color='k')
                     if li == 'GAMMA':
                         labels[ln] = r'$\Gamma$'
                     elif li != '':
@@ -936,14 +925,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end for
             
-            xlim([np.min(x), np.max(x)])
+            plt.xlim([np.min(x), np.max(x)])
             if max_min_e is None:
-                ylim(-5, +5)
+                plt.ylim(-5, +5)
             else:
-                ylim(max_min_e[0],max_min_e[1])
+                plt.ylim(max_min_e[0],max_min_e[1])
             #end if
-            ylabel('Energy (eV)')
-            xticks(x, labels)
+            plt.ylabel('Energy (eV)')
+            plt.xticks(x, labels)
             ax.tick_params(axis='x', which='both', length=0)
             ax.tick_params(axis='x', which='both', pad=10)
         #end if
@@ -952,18 +941,18 @@ class PwscfAnalyzer(SimulationAnalyzer):
             cbm = self.bands.cbm
             for kn, ki in enumerate(self.bands.up):
                 if (vbm.kpoint_rel == ki['kpoint_rel']).all():
-                    scatter(x[kn], 0, c='green', s=100)
+                    plt.scatter(x[kn], 0, c='green', s=100)
                 #end if
                 if (cbm.kpoint_rel == ki['kpoint_rel']).all():
-                    scatter(x[kn], cbm.energy-vbm.energy, c='r', s=100)
+                    plt.scatter(x[kn], cbm.energy-vbm.energy, c='r', s=100)
                 #end if
             #end for
         #end if
         if save:
-            savefig(filename, format='pdf',bbox_inches='tight')
+            plt.savefig(filename, format='pdf',bbox_inches='tight')
         #end if
         if show:
-            show()
+            plt.show()
         #end if
     #end def plot_bandstructure
 

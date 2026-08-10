@@ -127,7 +127,7 @@ class QAobject(QAobj_base):
 
     plotter = Plotter()
 
-    opt_methods = set(['opt','linear','cslinear'])
+    opt_methods = frozenset({'opt','linear','cslinear'})
 
     def __init__(self):
         return
@@ -159,7 +159,7 @@ class QAobject(QAobj_base):
     #end def _relink_dynamic_methods
 
 
-    _allowed_settings = set(['optimize'])
+    _allowed_settings = frozenset({'optimize'})
     _default_settings = obj(
         #optimize = 'variance'
         optimize = 'lastcost'
@@ -294,7 +294,7 @@ class QAdata(QAobject):
 
 class QAHDFdata(QAdata):
     def zero(self):
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,HDFgroup):
                 value.zero('value','value_squared')
             #end if
@@ -346,9 +346,9 @@ class QAanalyzer(QAobject):
     run_info     = None
     method_info  = None
 
-    opt_methods = set(['opt','linear','cslinear'])
-    vmc_methods = set(['vmc','vmc_batch'])
-    dmc_methods = set(['dmc','dmc_batch'])
+    opt_methods = frozenset({'opt','linear','cslinear'})
+    vmc_methods = frozenset({'vmc','vmc_batch'})
+    dmc_methods = frozenset({'dmc','dmc_batch'})
 
 
     def __init__(self,nindent=0):
@@ -437,11 +437,11 @@ class QAanalyzer(QAobject):
 
     def propagate_indicators(self,**kwargs):
         self.reset_indicators(**kwargs)
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QAanalyzer):
                 value.propagate_indicators(**kwargs)
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.items():
+                for v in value.values():
                     if isinstance(v,QAanalyzer):
                         v.propagate_indicators(**kwargs)
                     #end if
@@ -456,11 +456,11 @@ class QAanalyzer(QAobject):
             self.load_data_local()
             self.info.data_loaded = True
         #end if
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QAanalyzer):
                 value.load_data()
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.items():
+                for v in value.values():
                     if isinstance(v,QAanalyzer):
                         v.load_data()
                     #end if
@@ -469,19 +469,19 @@ class QAanalyzer(QAobject):
         #end for
     #end def load_data
 
-    def analyze(self,force=False):
+    def analyze(self,*,force=False):
         self.set_global_info()
         if not self.info.data_loaded:
             self.load_data_local()
             self.info.data_loaded = True
         #end if
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QAanalyzer):
-                value.analyze(force)
+                value.analyze(force=force)
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.items():
+                for v in value.values():
                     if isinstance(v,QAanalyzer):
-                        v.analyze(force)
+                        v.analyze(force=force)
                     #end if
                 #end for
             #end if
@@ -503,11 +503,11 @@ class QAanalyzer(QAobject):
                 del self[name]
             #end if
         #end for                
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QAanalyzer):
                 value.remove_data()
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.items():
+                for v in value.values():
                     if isinstance(v,QAanalyzer):
                         v.remove_data()
                     #end if
@@ -524,11 +524,11 @@ class QAanalyzer(QAobject):
                 value.zero()
             #end if
         #end if
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QAanalyzer):
                 value.zero_data()
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.items():
+                for v in value.values():
                     if isinstance(v,QAanalyzer):
                         v.zero_data()
                     #end if
@@ -625,11 +625,11 @@ class QAanalyzer(QAobject):
                 value.normalize(normalization)
             #end if
         #end if
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QAanalyzer):
                 value.normalize_data(normalization)
             elif isinstance(value,QAanalyzerCollection):
-                for n,v in value.items():
+                for v in value.values():
                     if isinstance(v,QAanalyzer):
                         v.normalize_data(normalization)
                     #end if

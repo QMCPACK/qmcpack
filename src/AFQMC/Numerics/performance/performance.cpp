@@ -22,7 +22,6 @@
 #include "AFQMC/Numerics/ma_blas.hpp"
 #include "AFQMC/Numerics/batched_operations.hpp"
 #include "AFQMC/Numerics/ma_operations.hpp"
-#include "AFQMC/Matrix/tests/matrix_helpers.h"
 #include "AFQMC/Memory/buffer_managers.h"
 #include "AFQMC/Memory/arch.hpp"
 

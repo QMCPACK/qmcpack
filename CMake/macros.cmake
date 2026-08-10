@@ -580,7 +580,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     # note: NAME, COMMAND, and WORKING_DIRECTORY must be upper case in add_test!
 
     # build test name
-    set(full_name "${base_name}-${procs}-${threads}")
+    set(full_name "${base_name}-r${procs}-t${threads}")
     message(VERBOSE "Adding test ${full_name}")
 
     # add run (task 1)

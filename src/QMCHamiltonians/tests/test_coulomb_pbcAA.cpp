@@ -10,6 +10,7 @@
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <CoulombPBCAA.h>
 
@@ -18,7 +19,6 @@
 #include <string>
 
 #include <checkMatrix.hpp>
-#include "Configuration.h"
 #include <Listener.hpp>
 #include <OhmmsData/Libxml2Doc.h>
 #include <OhmmsPETE/OhmmsMatrix.h>

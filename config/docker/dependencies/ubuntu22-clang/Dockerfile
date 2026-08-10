@@ -1,40 +1,49 @@
 FROM ubuntu:22.04
 
-RUN export DEBIAN_FRONTEND=noninteractive &&\
-    apt-get update -y &&\
-    apt-get upgrade -y apt-utils &&\
-    apt-get install -y gpg wget
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get upgrade -y apt-utils \
+    && apt-get install -y gpg wget
 
 # Dependencies
-RUN wget https://apt.kitware.com/kitware-archive.sh &&\
-    sh kitware-archive.sh
+RUN wget https://apt.kitware.com/kitware-archive.sh \
+    && sh kitware-archive.sh
 
-RUN export DEBIAN_FRONTEND=noninteractive &&\
-    apt-get install gcc g++ \ 
-    python3 \
-    cmake \
-    ninja-build \
-    libboost-all-dev \
-    git \
-    libhdf5-serial-dev \
-    hdf5-tools \
-    libfftw3-dev \
-    libopenblas-openmp-dev \
-    libxml2-dev \
-    sudo \
-    curl \
-    rsync \
-    python3-numpy python3-pytest python3-pytest-cov python3-pytest-order \
-    wget \
-    software-properties-common \
-    vim \
-    -y
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get install -y \
+        gcc \
+        g++ \
+        cmake \
+        ninja-build \
+        libboost-all-dev \
+        git \
+        libhdf5-serial-dev \
+        hdf5-tools \
+        libfftw3-dev \
+        libopenblas-openmp-dev \
+        libxml2-dev \
+        sudo \
+        curl \
+        rsync \
+        python3 \
+        python3-numpy \
+        python3-pytest \
+        python3-pytest-cov \
+        python3-pytest-order \
+        wget \
+        software-properties-common \
+        vim
 
 # add the latest clang development
-RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key| apt-key add - &&\
-    apt-add-repository 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main'
-RUN apt-get update -y &&\     
-    apt-get install clang-16 clang-tools-16 libomp-16-dev -y
+RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
+    && apt-add-repository 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main'
+
+RUN apt-get update
+
+RUN apt-get install -y \
+    clang-16 \
+    clang-tools-16 \
+    libomp-16-dev
 
 # must add a user different from root to run MPI executables
 RUN useradd -ms /bin/bash user

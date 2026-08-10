@@ -68,9 +68,11 @@
 
 
 import os
+import sys
 import re
 import copy
 from copy import deepcopy
+from types import MappingProxyType
 import numpy as np
 from numpy import pi,sin,cos,sqrt
 from numpy.linalg import LinAlgError, inv, det, eig
@@ -955,7 +957,7 @@ class TracesFileHDF(QAobject):
         return self.accumulated_scalars() and self.checked_particle_sums()
     #end def formed_diagnostic_data
 
-    def load(self,filepath=None,force=False):
+    def load(self,filepath=None,*,force=False):
         if not self.loaded() or force:
             if filepath is None:
                 if self.info.filepath is None:
@@ -1020,7 +1022,7 @@ class TracesFileHDF(QAobject):
     #end def init_trace
 
 
-    def check_particle_sums(self,tol=1e-8,force=False):
+    def check_particle_sums(self,tol=1e-8,*,force=False):
         if not self.checked_particle_sums() or force:
             self.load()
             t = self.real_traces
@@ -1055,7 +1057,7 @@ class TracesFileHDF(QAobject):
     #end def check_particle_sums
 
     
-    def accumulate_scalars(self,force=False):
+    def accumulate_scalars(self,*,force=False):
         if not self.accumulated_scalars() or force:
             # get block and step information for the qmc method
             blocks = self.info.blocks
@@ -1510,7 +1512,7 @@ class DMSettings(QAobject):
 
 class DensityMatricesAnalyzer(HDFAnalyzer):
 
-    allowed_settings = ['save_data','jackknife','diagonal','occ_tol','coup_tol','stat_tol']
+    allowed_settings = ('save_data','jackknife','diagonal','occ_tol','coup_tol','stat_tol')
 
     def __init__(self,name,nindent=0):
         HDFAnalyzer.__init__(self)
@@ -2142,7 +2144,7 @@ class SpaceGridInitializer(QAobject):
         return
     #end def __init__
 
-    def check_complete(self,exit_on_fail=True):
+    def check_complete(self,*,exit_on_fail=True):
         succeeded = True
         for k,v in self.items():
             if v is None:
@@ -2161,13 +2163,13 @@ class SpaceGridInitializer(QAobject):
 
 
 class SpaceGridBase(QAobject):
-    cnames=['cartesian','cylindrical','spherical','voronoi']
-    coord_s2n = dict()
-    coord_n2s = dict()
-    for i,name in enumerate(cnames):
-        coord_s2n[name]=i
-        coord_n2s[i]=name
-    #end for
+    coord_s2n = MappingProxyType({
+        'cartesian':   0,
+        'cylindrical': 1,
+        'spherical':   2,
+        'voronoi':     3,
+        })
+    coord_n2s = MappingProxyType({n: s for s, n in coord_s2n.items()})
 
     cartesian   = coord_s2n['cartesian']
     cylindrical = coord_s2n['cylindrical']
@@ -2180,12 +2182,19 @@ class SpaceGridBase(QAobject):
     rlabel = 3
     plabel = 4
     tlabel = 5
-    axlabel_s2n = {'x':xlabel,'y':ylabel,'z':zlabel,'r':rlabel,'phi':plabel,'theta':tlabel}
-    axlabel_n2s = {xlabel:'x',ylabel:'y',zlabel:'z',rlabel:'r',plabel:'phi',tlabel:'theta'}
+    axlabel_s2n = MappingProxyType({
+        'x'    : xlabel,
+        'y'    : ylabel,
+        'z'    : zlabel,
+        'r'    : rlabel,
+        'phi'  : plabel,
+        'theta': tlabel,
+        })
+    axlabel_n2s = MappingProxyType({n: s for s, n in axlabel_s2n.items()})
 
-    axindex = {'x':0,'y':1,'z':2,'r':0,'phi':1,'theta':2}
+    axindex = MappingProxyType({'x':0,'y':1,'z':2,'r':0,'phi':1,'theta':2})
 
-    quantities=['D','T','V','E','P']
+    quantities=('D','T','V','E','P')
 
     def __init__(self,initobj,options):
         if options is None:
@@ -2385,7 +2394,7 @@ class SpaceGridBase(QAobject):
         None
     #end def init_from_xmlelement
 
-    def check_complete(self,exit_on_fail=True):
+    def check_complete(self,*,exit_on_fail=True):
         succeeded = True
         for k,v in self.items():
             if k[0]!='_' and v is None:
@@ -2399,7 +2408,7 @@ class SpaceGridBase(QAobject):
             self.error('SpaceGrid attempted initialization from '+self.iname,exit=False)
             self.error('SpaceGrid is incomplete',exit=False)
             if exit_on_fail:
-                exit()
+                sys.exit()
             #end if
         #end if
         return succeeded
@@ -2866,7 +2875,7 @@ class RectilinearGrid(SpaceGridBase):
             ndu_per_interval[iaxis] = np.zeros((ndom_tot,),dtype=int)
             idom=0
             for i in range(len(ndom_int)):
-                for ii in range(ndom_int[i]):
+                for ii in range(ndom_int[i]):  # noqa: B007
                     ndu_per_interval[iaxis][idom] = ndu_int[i]
                     idom+=1
                 #end 
@@ -3140,7 +3149,7 @@ class RectilinearGrid(SpaceGridBase):
     #end def set_origin
 
 
-    def interpolate_across(self,quantities,spacegrids,outside,integration=False,warn=False):
+    def interpolate_across(self,quantities,spacegrids,outside,*,integration=False,warn=False):
         #if the grid is to be used for integration confirm that domains 
         #  of this spacegrid subdivide source spacegrid domains
         if integration:
@@ -3433,7 +3442,7 @@ def SpaceGrid(init,opts=None):
         return VoronoiGrid(init,opts)
     else:
         print('SpaceGrid '+coord+' has not been implemented, exiting...')
-        exit()
+        sys.exit()
     #end if
 
 #end def SpaceGrid

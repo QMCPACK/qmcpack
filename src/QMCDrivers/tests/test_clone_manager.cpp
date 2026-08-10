@@ -11,7 +11,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/RuntimeOptions.h"

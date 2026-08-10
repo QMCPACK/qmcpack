@@ -32,7 +32,7 @@ from copy import deepcopy
 from .utilities import path_string
 from .nexus_version import nexus_version
 from .memory import resident
-from .developer import DevBase, obj, log, error
+from .developer import DevBase, obj, log
 
 
 # Nexus namespaces
@@ -225,7 +225,7 @@ _____________________________________________________
         #end if
     #end def tlog
 
-    def enter(self, directory: PathLike, changedir: bool = True, msg: str = ''):
+    def enter(self, directory: PathLike, *, changedir: bool = True, msg: str = ''):
         """Have Nexus enter a directory and change its current working directory.
         
         Parameters

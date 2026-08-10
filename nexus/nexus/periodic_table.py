@@ -230,6 +230,7 @@ class Elements(ElementData, Enum):
     @staticmethod
     def is_element(
         value: str,
+        *,
         return_element: bool = False,
         ) -> bool | tuple[bool, Elements]:
         """Robust method that will try to match a wide array of element

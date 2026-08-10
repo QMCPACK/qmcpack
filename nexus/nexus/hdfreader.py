@@ -72,13 +72,13 @@ class HDFgroup(DevBase):
         s=''
         if len(self._datasets)>0:
             s+='  datasets:\n'
-            for k,v in self._datasets.items():
+            for k in self._datasets.keys():
                 s+= '    '+k+'\n'
             #end for
         #end if
         if len(self._groups)>0:
             s+= '  groups:\n'
-            for k,v in self._groups.items():
+            for k in self._groups.keys():
                 s+= '    '+k+'\n'
             #end for
         #end if
@@ -106,12 +106,12 @@ class HDFgroup(DevBase):
     #end def __init__
 
 
-    def _remove_hidden(self,deep=True):
+    def _remove_hidden(self,*,deep=True):
         if '_parent' in self:
             del self._parent
         #end if
         if deep:
-            for name,value in self.items():
+            for value in self.values():
                 if isinstance(value,HDFgroup):
                     value._remove_hidden()
                 #end if
@@ -263,7 +263,7 @@ class HDFgroup(DevBase):
 
 class HDFreader(DevBase):
     
-    def __init__(self,fpath,verbose=False,view=False):
+    def __init__(self,fpath,*,verbose=False,view=False):
         fpath = path_string(fpath)
         HDFglobals.view = view
 
@@ -379,6 +379,6 @@ class HDFreader(DevBase):
 
 
 
-def read_hdf(fpath,verbose=False,view=False):
+def read_hdf(fpath,*,verbose=False,view=False):
     return HDFreader(fpath=fpath,verbose=verbose,view=view).obj
 #end def read_hdf

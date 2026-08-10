@@ -24,6 +24,9 @@
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/LatticeGaussianProductBuilder.h"
 #include "QMCWaveFunctions/ExampleHeBuilder.h"
+#ifdef ENABLE_DEEPQMC_INFERENCE
+#include "QMCWaveFunctions/DeepQMC/DeepQMCWaveFunctionBuilder.h"
+#endif
 
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
@@ -120,6 +123,15 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
     {
       auto exampleHe_builder = std::make_unique<ExampleHeBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(exampleHe_builder->buildComponent(cur));
+    }
+    else if (cname == "deepqmc")
+    {
+#ifdef ENABLE_DEEPQMC_INFERENCE
+      auto deepqmc_builder = std::make_unique<DeepQMCWaveFunctionBuilder>(myComm, targetPtcl, ptclPool);
+      targetPsi->addComponent(deepqmc_builder->buildComponent(cur));
+#else
+      APP_ABORT("DeepQMC wavefunction input requires ENABLE_DEEPQMC_INFERENCE=ON");
+#endif
     }
     else if (cname == "override_variational_parameters")
     {

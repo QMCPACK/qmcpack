@@ -40,7 +40,7 @@ from .vasp_input import Incar
 # vasp xml reader classes/functions
 
 class VXML(DevBase):
-    basic_types = set('i v dimension field set time'.split())
+    basic_types = frozenset({'dimension', 'field', 'v', 'time', 'i', 'set'})
 
     data_types = obj(int=int,string=str,float=float)
     
@@ -557,8 +557,8 @@ def read_outcar_bands(vlines,odata):
         #end for
         vlines.advance(n)
     #end if
-    for ns,spin in bands.items():
-        for nk,kpoint in spin.items():
+    for spin in bands.values():
+        for kpoint in spin.values():
             kpoint.energies    = np.array(kpoint.energies,dtype=float)
             kpoint.occupations = np.array(kpoint.occupations,dtype=float)
         #end for
@@ -693,10 +693,10 @@ def read_outcar_accounting(vlines,odata):
 
 
 class OutcarData(DevBase):
-    any_functions = [
+    any_functions = (
         ('header_values'   , read_outcar_header_values  ),
-        ]
-    elast_functions = [
+        )
+    elast_functions = (
         ('core_potentials' , read_outcar_core_potentials),
         ('fermi_energy'    , read_outcar_fermi_energy   ),
         ('bands'           , read_outcar_bands          ),
@@ -705,10 +705,10 @@ class OutcarData(DevBase):
         ('stress'          , read_outcar_stress         ),
         ('cell'            , read_outcar_cell           ),
         ('position_force'  , read_outcar_position_force ),
-        ]
-    ilast_functions = [
+        )
+    ilast_functions = (
         ('accounting'      , read_outcar_accounting     ),
-        ]
+        )
 
     read_outcar_functions = any_functions + elast_functions + ilast_functions
 
@@ -725,7 +725,7 @@ class OutcarData(DevBase):
     #end def __init__
 
 
-    def read(self,ilast=False,elast=False,all=True):
+    def read(self,*,ilast=False,elast=False,all=True):
         ilast |= all
         elast |= all
         vlines = self.vlines
@@ -738,7 +738,7 @@ class OutcarData(DevBase):
                 read_functions.extend(self.ilast_functions)
             #end if
         #end if
-        for quantity,read_function in read_functions:
+        for quantity,read_function in read_functions:  # noqa: B007
             try:
                 read_function(vlines,self)
             except:
@@ -754,7 +754,7 @@ class OutcarData(DevBase):
 # main analyzer class
 
 class VaspAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,xml=False,analyze=False):
+    def __init__(self,arg0=None,*,xml=False,analyze=False):
         path     = None
         prefix   = None
         incar    = None
@@ -887,7 +887,7 @@ class VaspAnalyzer(SimulationAnalyzer):
                     emax = np.array(list(ion_step.keys()),dtype=int).max()
                     for enum,elec_step in ion_step.items():
                         elast = enum==emax
-                        elec_step.read(ilast,elast,all=False)
+                        elec_step.read(ilast=ilast,elast=elast,all=False)
                         if ilast and elast:
                             self.update(**elec_step)
                         #end if
