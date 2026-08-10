@@ -87,14 +87,6 @@ void CoulombPBCAB::checkoutParticleQuantities(TraceManager& tm)
   }
 }
 
-void CoulombPBCAB::informOfPerParticleListener()
-{
-  // This is written so it can be called again and again.
-  pset_ions_.turnOnPerParticleSK();
-  Peln.turnOnPerParticleSK();
-  OperatorBase::informOfPerParticleListener();
-}
-
 void CoulombPBCAB::deleteParticleQuantities()
 {
   if (streaming_particles_)
@@ -105,6 +97,13 @@ void CoulombPBCAB::deleteParticleQuantities()
 }
 #endif
 
+void CoulombPBCAB::informOfPerParticleListener()
+{
+  // This is written so it can be called again and again.
+  pset_ions_.turnOnPerParticleSK();
+  Peln.turnOnPerParticleSK();
+  OperatorBase::informOfPerParticleListener();
+}
 
 CoulombPBCAB::Return_t CoulombPBCAB::evaluate(ParticleSet& P)
 {
