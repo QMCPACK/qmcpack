@@ -178,7 +178,7 @@ public:
    * @param single UBspline_3d_d
    * @param int index of single in multi
    */
-  void set_spline(const typename bspline_traits<double, 3>::SingleSplineType& single, int i)
+  void set_spline(const UBspline_3d_d& single, int i)
   {
     size_t iblock = 0;
     while (iblock < spline_blocks.size() && i >= offsets_[iblock + 1])

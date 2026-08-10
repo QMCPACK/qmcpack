@@ -35,9 +35,9 @@ void OneSplineOrbData::create(const TinyVector<int, 3>& halfG)
 
   TinyVector<double, 3> start(0.0);
   TinyVector<double, 3> end(1.0);
-  spline_r = einspline::create(spline_r, start, end, mesh_size_, halfG);
+  spline_r = einspline::create_UBspline_3d_d(start, end, mesh_size_, halfG);
   if (isComplex_)
-    spline_i = einspline::create(spline_i, start, end, mesh_size_, halfG);
+    spline_i = einspline::create_UBspline_3d_d(start, end, mesh_size_, halfG);
 }
 
 OneSplineOrbData::OneSplineOrbData(const TinyVector<int, 3>& mesh_size,
