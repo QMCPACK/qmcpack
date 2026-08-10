@@ -22,6 +22,7 @@
 #include <array>
 #include <cstddef>
 #include <vector>
+#include <stdexcept>
 #include "spline2/bspline_traits.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 
