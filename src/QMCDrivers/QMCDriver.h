@@ -179,8 +179,10 @@ public:
   ///Observables manager
   EstimatorManagerBase* Estimators;
 
+#if !defined(REMOVE_TRACEMANAGER)
   ///Traces manager
   std::unique_ptr<TraceManager> Traces;
+#endif
 
   ///Traces manager
   std::unique_ptr<WalkerLogManager> wlog_manager_;
