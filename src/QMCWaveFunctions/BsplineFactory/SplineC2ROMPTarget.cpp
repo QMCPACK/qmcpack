@@ -96,7 +96,8 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
     results_scratch.resize(sposet_padded_size);
 
     // Ye: need to extract sizes and pointers before entering target region
-    const auto* spline_ptr    = SplineInst->getSplinePtr();
+    const auto* spline_ptr    = SplineInst->getSplineDevicePtr();
+    const auto* spline_coefs  = SplineInst->getSplineCoefsDevicePtr();
     auto* offload_scratch_ptr = offload_scratch.data();
     auto* results_scratch_ptr = results_scratch.data();
     auto* psi_ptr             = psi.data();
@@ -111,6 +112,7 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
     {
       ScopedTimer offload(offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) \
+                      is_device_ptr(spline_ptr, spline_coefs) \
                       map(always, from: results_scratch_ptr[0:sposet_padded_size])")
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
@@ -123,7 +125,7 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c,
+          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = omptarget::min(last / 2, num_complex_splines);
@@ -174,7 +176,8 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   results_scratch.resize(sposet_padded_size * nVP);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr           = SplineInst->getSplinePtr();
+  const auto* spline_ptr           = SplineInst->getSplineDevicePtr();
+  const auto* spline_coefs         = SplineInst->getSplineCoefsDevicePtr();
   auto* offload_scratch_ptr        = offload_scratch.data();
   auto* results_scratch_ptr        = results_scratch.data();
   const auto myKcart_padded_size   = myKcart->capacity();
@@ -188,6 +191,7 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) \
+                is_device_ptr(spline_ptr, spline_coefs) \
                 map(always, to: psiinv_ptr[0:psiinv_pos_copy.size()]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*nVP])")
     for (int iat = 0; iat < nVP; iat++)
@@ -207,7 +211,7 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c,
+          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = omptarget::min(last / 2, num_complex_splines);
@@ -299,7 +303,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
   mw_results_scratch.resize(sposet_padded_size * mw_nVP);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr           = SplineInst->getSplinePtr();
+  const auto* spline_ptr           = SplineInst->getSplineDevicePtr();
+  const auto* spline_coefs         = SplineInst->getSplineCoefsDevicePtr();
   auto* offload_scratch_ptr        = mw_offload_scratch.data();
   auto* results_scratch_ptr        = mw_results_scratch.data();
   const auto myKcart_padded_size   = myKcart->capacity();
@@ -312,6 +317,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
+                is_device_ptr(spline_ptr, spline_coefs) \
                 map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()]) \
                 map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
     for (int iat = 0; iat < mw_nVP; iat++)
@@ -333,7 +339,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c,
+          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = omptarget::min(last / 2, num_complex_splines);
@@ -516,7 +522,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   results_scratch.resize(sposet_padded_size * 5);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr    = SplineInst->getSplinePtr();
+  const auto* spline_ptr    = SplineInst->getSplineDevicePtr();
+  const auto* spline_coefs  = SplineInst->getSplineCoefsDevicePtr();
   auto* offload_scratch_ptr = offload_scratch.data();
   auto* results_scratch_ptr = results_scratch.data();
   const auto x = r[0], y = r[1], z = r[2];
@@ -533,6 +540,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) \
+                is_device_ptr(spline_ptr, spline_coefs) \
                 map(always, from: results_scratch_ptr[0:sposet_padded_size*5])")
     for (int team_id = 0; team_id < NumTeams; team_id++)
     {
@@ -552,7 +560,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = 0; index < last - first; index++)
       {
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c, da, db,
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da, db,
                                              dc, d2a, d2b, d2c, offload_scratch_ptr + first + index,
                                              spline_padded_size);
         const int output_index = first + index;
@@ -602,7 +610,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   results_scratch.resize(sposet_padded_size * num_pos * 5);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr           = SplineInst->getSplinePtr();
+  const auto* spline_ptr           = SplineInst->getSplineDevicePtr();
+  const auto* spline_coefs         = SplineInst->getSplineCoefsDevicePtr();
   auto* pos_copy_ptr               = multi_pos.data();
   auto* offload_scratch_ptr        = offload_scratch.data();
   auto* results_scratch_ptr        = results_scratch.data();
@@ -618,6 +627,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
+                    is_device_ptr(spline_ptr, spline_coefs) \
                     map(always, to: pos_copy_ptr[0:num_pos*6]) \
                     map(always, from: results_scratch_ptr[0:sposet_padded_size*num_pos*5])")
     for (int iw = 0; iw < num_pos; iw++)
@@ -643,7 +653,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c, da,
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da,
                                                db, dc, d2a, d2b, d2c, offload_scratch_iw_ptr + first + index,
                                                spline_padded_size);
           const int output_index = first + index;
@@ -766,7 +776,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   rg_private.resize(num_pos, NumTeams * 4);
 
   // Ye: need to extract sizes and pointers before entering target region
-  const auto* spline_ptr           = SplineInst->getSplinePtr();
+  const auto* spline_ptr           = SplineInst->getSplineDevicePtr();
+  const auto* spline_coefs         = SplineInst->getSplineCoefsDevicePtr();
   auto* buffer_H2D_ptr             = buffer_H2D.data();
   auto* offload_scratch_ptr        = mw_offload_scratch.data();
   auto* results_scratch_ptr        = mw_results_scratch.data();
@@ -786,6 +797,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
+                    is_device_ptr(spline_ptr, spline_coefs) \
                     map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
                     map(always, from: rg_private_ptr[0:rg_private.size()])")
     for (int iw = 0; iw < num_pos; iw++)
@@ -814,7 +826,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c, da,
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da,
                                                db, dc, d2a, d2b, d2c, offload_scratch_iw_ptr + first + index,
                                                spline_padded_size);
           const int output_index = first + index;

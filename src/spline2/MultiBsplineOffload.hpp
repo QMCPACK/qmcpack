@@ -34,6 +34,9 @@ private:
   using Alloc = OffloadAllocator<T>;
   ///use allocator
   MultiBsplineAllocator<T, Alloc> myAllocator;
+  ///device addresses cached after the spline allocations are finalized
+  typename Base::SplineType* spline_device_ptr_ = nullptr;
+  T* spline_coefs_device_ptr_                    = nullptr;
 
   typename Base::SplineType* createImpl(const Ugrid grid[3],
                                         const typename Base::BoundaryCondition bc[3],
@@ -47,6 +50,9 @@ public:
   ~MultiBsplineOffload() override;
 
   void finalize() override;
+
+  typename Base::SplineType* getSplineDevicePtr() override { return spline_device_ptr_; }
+  T* getSplineCoefsDevicePtr() override { return spline_coefs_device_ptr_; }
 };
 
 extern template class MultiBsplineOffload<float>;

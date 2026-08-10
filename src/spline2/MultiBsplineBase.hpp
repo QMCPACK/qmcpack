@@ -144,6 +144,14 @@ public:
     return spline_blocks[0];
   }
 
+  /** Device addresses used directly inside offload regions.
+   *
+   * Host-only spline implementations use the host addresses. Offload
+   * implementations override these accessors with cached device addresses.
+   */
+  virtual SplineType* getSplineDevicePtr() { return getSplinePtr(); }
+  virtual T* getSplineCoefsDevicePtr() { return getSplinePtr()->coefs; }
+
   SplineType& getBlock(size_t iblock) { return *spline_blocks[iblock]; }
   const SplineType& getBlock(size_t iblock) const { return *spline_blocks[iblock]; }
 

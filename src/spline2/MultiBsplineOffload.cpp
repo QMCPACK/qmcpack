@@ -40,6 +40,8 @@ void MultiBsplineOffload<T>::finalize()
   for (auto spline_m : Base::spline_blocks)
   {
     auto* coefs = spline_m->coefs;
+    spline_device_ptr_       = getOffloadDevicePtr(spline_m);
+    spline_coefs_device_ptr_ = getOffloadDevicePtr(coefs);
     // attach pointers on the device to achieve deep copy
     PRAGMA_OFFLOAD("omp target map(always, to: spline_m[:1], coefs[:spline_m->coefs_size])")
     { spline_m->coefs = coefs; }
