@@ -12,5 +12,7 @@ User Guide
     installation
     examples
     user-scripts
+    nexus-jobs
     qmcpack-input-mod
     qmcpack-input-gen
+    adding-supercomputer-machine

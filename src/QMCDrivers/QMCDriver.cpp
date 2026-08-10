@@ -17,6 +17,8 @@
 
 
 #include "QMCDriver.h"
+#include <limits>
+#include <typeinfo>
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -27,8 +29,7 @@
 #include "RandomNumberControl.h"
 #include "hdf/HDFVersion.h"
 #include "Utilities/qmc_common.h"
-#include <limits>
-#include <typeinfo>
+#include "Concurrency/OpenMP.h"
 
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #if !defined(REMOVE_TRACEMANAGER)

@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "PairCorrelationEstimator.h"
+#include <set>
 #include "OperatorEstBase.h"
 #include <DistanceTable.h>
 
