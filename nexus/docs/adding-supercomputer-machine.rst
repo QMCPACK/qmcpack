@@ -3,18 +3,27 @@
 Adding a Supercomputer Machine
 ==============================
 
-This note describes how to add a permanent machine definition to
-``machines.py``. For a one-off local cluster, use the same class and
-instantiation pattern in ``~/.nexus/local_machines.py`` instead.
+This section describes how to add a permanent machine definition to ``machines.py``. These definitions are used by Nexus to generate
+job submission scripts, and subsequently to help submit and monitor jobs. Within Nexus, ``Supercomputer`` refers to any machine that
+uses a batch scheduler such at Slurm or PBS and not the size of the machine. This could include even a small workstation where a
+batch scheduler is installed and used to schedule jobs overnight. If a new machine only requires common or default behaviors, the
+new machine definition will require minimal Python code due to the functionality provided by the ``Supercomputer`` base class. Runs
+on machines that do not have a batch scheduler should use one of the workstation machine definitions.
 
-1. Choose the Closest Existing Pattern
+We encourage submission of new permanent machine definitions to the Nexus repository on GitHub to reduce the need for ongoing local
+maintenance and to share them with other users. For a one-off local computational cluster, the same class and instantiation patterns
+can be used in``~/.nexus/local_machines.py``. 
+
+In the following we describe a step-by-step process for adding a new machine. 
+
+1. Choose the Closest Existing Machine
 --------------------------------------
 
-Start by finding a machine that uses the same scheduler and run launcher.
+To minimize the work required, start by finding a machine that uses the same scheduler and run launcher.
 For example:
 
-- SLURM plus ``srun``: see ``Andes``, ``Rhea``, ``Frontier``, ``Leonardo``.
-- SLURM plus ``mpirun``: see ``CadesSlurm``, ``Tomcat3``, ``Improv``.
+- Slurm plus ``srun``: see ``Andes``, ``Rhea``, ``Frontier``, ``Leonardo``.
+- Slurm plus ``mpirun``: see ``CadesSlurm``, ``Tomcat3``, ``Improv``.
 - PBS plus ``mpiexec``: see ``Polaris``, ``Aurora``.
 - PBS plus ``aprun``: see ``BlueWatersXE``, ``BlueWatersXK``, ``Theta``.
 - LSF plus ``jsrun`` or ``lrun``: see ``Summit``, ``Lassen``.
@@ -88,8 +97,8 @@ Important class details:
   already-processed jobs, so avoid appending duplicate options or mutating
   machine-wide state in a way that changes later jobs unexpectedly.
 
-3. Know What the Base Class Already Does
-----------------------------------------
+3. Understand the role of the Base Class
+---------------------------------------
 
 ``Supercomputer.process_job`` fills in missing ``cores`` or ``nodes``, computes
 ``processes``, ``processes_per_node``, ``processes_per_proc``, ``ppn``, applies the
@@ -177,8 +186,8 @@ machine into the corresponding table, then review them manually. The generated
 commands and submission files are useful starting points, not a substitute for
 checking scheduler syntax against the machine documentation.
 
-6. Run the Focused Tests
-------------------------
+6. Run the Tests
+----------------
 
 From the repository root, run the machine tests that cover the new definition:
 
@@ -189,7 +198,9 @@ From the repository root, run the machine tests that cover the new definition:
      nexus/tests/test_machines.py::test_job_run_command \
      nexus/tests/test_machines.py::test_write_job
 
-
 If the new machine requires an extra mandatory job field, either provide a safe
 default in the machine class or add a narrow special case in the relevant test,
 as ``summit`` and ``flight`` already do.
+
+If you are also using and configuring QMCPACK alongside Nexus, you can more simply run the machines test using ``ctest -R ntest_nexus_machines``, or all the Nexus tests with ``ctest -R nexus``,
+from the QMCPACK build directory.

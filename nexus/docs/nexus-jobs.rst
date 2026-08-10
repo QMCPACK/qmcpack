@@ -24,10 +24,10 @@ job inherit it:
        )
 
 
-Common workstation choices are ``ws1``, ``ws4``, ``ws8``, and ``ws16``. ``settings``
-also accepts ``machine='ws'`` or ``machine='workstation'`` to auto-detect physical
-CPU cores and register a matching workstation.
+Common workstation choices are ``ws1``, ``ws4``, ``ws8``, and ``ws16``. You may also use``machine='ws'`` or
+``machine='workstation'`` to auto-detect physical CPU cores and register a matching workstation.
 
+More commonly, a named supercomputer is used a specified in the machine entry.
 For cluster or supercomputing machines that require an allocation, set the account globally:
 
 .. code-block:: python
@@ -152,6 +152,8 @@ obeys any machine-specific CPU or GPU limits. In most cases, specify ``cores``
 or ``nodes`` with ``threads`` and let Nexus derive the process layout; use
 ``processes_per_node`` only to select a deliberate rank/thread decomposition.
 
+When using complex node, thread and process settings, it is highly recommended to verify that the generated job script is correct.
+
 4. Run Serial or Threaded-Serial Codes
 --------------------------------------
 
@@ -173,8 +175,8 @@ Threaded serial jobs are also supported:
    job(serial=True, threads=16)
 
 
-The PySCF examples use this form because PySCF should run without MPI but can
-still use threads. Nexus still exports ``OMP_NUM_THREADS=16``.
+The PySCF examples use this form because PySCF do not support MPI by default, but is
+highly threaded. In this case Nexus still exports ``OMP_NUM_THREADS=16``.
 
 5. Specify the Application
 --------------------------
@@ -222,7 +224,7 @@ Use ``hours``, ``minutes``, ``seconds``, and ``days``:
 
 Nexus normalizes time values. For example, ``minutes=127`` becomes 2 hours and 7
 minutes. Machine headers convert this time into the scheduler-specific format
-such as PBS, SLURM, LoadLeveler, or LSF walltime.
+such as PBS, Slurm, LoadLeveler, or LSF walltime.
 
 7. Add Environment and Shell Snippets
 -------------------------------------
@@ -256,6 +258,8 @@ command:
 
 For supercomputers, these lines are placed in the batch script. For
 workstations, they are included in the command block run locally.
+
+Common uses for these options are loading modules or activating a special Python environment for a particular job.
 
 8. Pass Options
 ---------------
@@ -344,14 +348,14 @@ workflow controls, not job-resource settings.
    job(full_command='custom_launcher --flag input.in > out 2> err')
 
 
-Only use this when Nexus cannot express the command with ``app``, ``app_options``,
-and ``run_options``. When ``full_command`` is set, Nexus does not add the machine
-launcher or application options for you.
+Only use this when Nexus cannot express the command with ``app``, ``app_options``, and ``run_options``. When ``full_command`` is
+set, Nexus does not add the machine launcher or application options for you. Use of the ``full_command`` option is discouraged
+because it reduces the portability of scripts.
 
 12. Common Recipes from the Examples
 ------------------------------------
 
-Workstation MPI code:
+Workstation MPI code (16 MPI tasks only):
 
 .. code-block:: python
 
@@ -365,7 +369,7 @@ Converter or small helper:
    job(cores=1, app='pw2qmcpack.x')
 
 
-Hybrid MPI/OpenMP QMCPACK:
+Hybrid MPI/OpenMP QMCPACK (4 MPI tasks each with 4 OpenMP threads):
 
 .. code-block:: python
 
@@ -410,11 +414,20 @@ Batch job with scheduler metadata:
        )
 
 
-13. Debug the Generated Command
--------------------------------
+13. Verify and Debug the Generated Scripts
+------------------------------------------
 
-For a quick check, you can print out the submission file contents ahead of time, for example:
+When creating new Jobs or using new machine, it is highly recommended to verify that the created job scripts are correct. As with
+any job, incorrect settings can lead to very slow or failed runs and wasted resources.
 
+You can run a script with generation mode and inspect the generated submission files manually:
+
+.. code-block:: bash
+
+   ./my_nexus_script.py --generate_only
+
+
+Alternatively, within Python, you can print out the submission file contents ahead of time:
 
 .. code-block:: python
 
@@ -430,8 +443,3 @@ For a quick check, you can print out the submission file contents ahead of time,
   print(scf.job.write())
   exit()
 
-You can also run a script with generation mode and inspect the generated submission files manually:
-
-.. code-block:: bash
-
-   ./my_nexus_script.py --generate_only
