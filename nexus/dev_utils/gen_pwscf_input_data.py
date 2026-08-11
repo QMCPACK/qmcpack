@@ -9,6 +9,9 @@
 
 """Script for generating the input parameter enums for ``nexus/pwscf_input.py``.
 
+A more complete guide to using this script can be found in the Nexus
+documentation.
+
 Designed to be run with ``uv``, which will ensure the correct Python
 version and get all the required packages.
 
