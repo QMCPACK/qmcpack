@@ -1144,7 +1144,9 @@ class Simulation(NexusCore):
 
     def check_status(self):
         self.pre_check_status()
+        newly_exited_queue = False
         if self.job.finished:
+            newly_exited_queue = 'exited_queue' not in self.timestamps
             self.record_timestamp('exited_queue')
         #end if
         if nexus_core.generate_only: 
@@ -1161,6 +1163,13 @@ class Simulation(NexusCore):
             #end if
             if not self.finished and should_check:
                 self.check_sim_status()
+            elif not self.finished:
+                exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
+                elapsed = datetime.now().astimezone() - exited_queue
+                if elapsed.total_seconds()>nexus_core.timeout:
+                    self.record_timestamp('timed_out')
+                    self.failed = True
+                #end if
             #end if
             if self.failed:
                 self.finished = True
@@ -1171,6 +1180,8 @@ class Simulation(NexusCore):
         #end if
         if self.finished:
             self.record_timestamp('finished')
+            self.save_image()
+        elif newly_exited_queue:
             self.save_image()
         #end if
     #end def check_status

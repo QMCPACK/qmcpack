@@ -128,7 +128,7 @@ class Settings(NexusCore):
 
     core_assign_vars = frozenset({
         'results', 'load_images', 'remote_directory', 'verbose', 'progress_tty',
-        'command_line', 'sleep', 'monitor', 'debug', 'skip_submit', 'dynamic', 'runs',
+        'command_line', 'sleep', 'timeout', 'monitor', 'debug', 'skip_submit', 'dynamic', 'runs',
         'stages', 'pseudo_dir', 'graph_sims', 'generate_only', 'trace',
         'local_directory', 'status_only'
         })

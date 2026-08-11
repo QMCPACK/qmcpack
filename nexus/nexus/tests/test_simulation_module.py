@@ -2055,6 +2055,64 @@ def test_check_status(tmp_path):
 
 
 @isolate_nexus_core
+def test_check_status_timeout(tmp_path):
+    from datetime import datetime,timedelta
+    from ..simulation import Simulation
+
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_core.timeout = 10
+
+    # output files that arrive before the timeout are checked normally
+    s = get_test_sim()
+    s.create_directories()
+    s.job.finished = True
+
+    s.check_status()
+
+    assert(not s.failed)
+    assert(not s.finished)
+    assert(set(s.timestamps.keys())=={'exited_queue'})
+    image_file = Path(s.imlocdir).resolve() / s.sim_image
+    assert(image_file.exists())
+
+    exited_queue = s.timestamps.exited_queue
+    s.timestamps = obj()
+    s.load_image()
+    assert(s.timestamps.exited_queue==exited_queue)
+
+    (Path(s.locdir).resolve() / s.outfile).write_text('out')
+    (Path(s.locdir).resolve() / s.errfile).write_text('err')
+    s.check_status()
+
+    assert(not s.failed)
+    assert(s.finished)
+    assert('timed_out' not in s.timestamps)
+
+    # missing output files beyond the timeout mark the simulation failed
+    s = get_test_sim()
+    s.create_directories()
+    s.job.finished = True
+    nexus_core.timeout = 1
+    exited_queue = (datetime.now().astimezone()-timedelta(seconds=2)).isoformat()
+    s.timestamps.exited_queue = exited_queue
+
+    s.check_status()
+
+    assert(s.failed)
+    assert(s.finished)
+    assert(s.timestamps.exited_queue==exited_queue)
+    assert(set(s.timestamps.keys())=={
+        'exited_queue','timed_out','failed','finished'
+        })
+    assert(datetime.fromisoformat(s.timestamps.timed_out).tzinfo is not None)
+
+    Simulation.clear_all_sims()
+#end def test_check_status_timeout
+
+
+@isolate_nexus_core
 def test_get_output(tmp_path):
     from ..simulation import Simulation
 

@@ -49,7 +49,7 @@ def test_settings(tmp_path):
                 'load_images', 'local_directory', 'mode', 'modes', 'monitor',
                 'primary_modes', 'progress_tty', 'pseudo_dir',
                 'pseudopotentials', 'remote_directory', 'results', 'runs',
-                'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
+                'skip_submit', 'sleep', 'stages', 'stages_set', 'status', 'timeout',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
                 ])
         nnckeys_check = set([
@@ -62,6 +62,7 @@ def test_settings(tmp_path):
                 'modes', 'monitor', 'primary_modes', 'progress_tty',
                 'pseudo_dir', 'pseudopotentials', 'remote_directory', 'results',
                 'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
+                'timeout',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
                 ])
         setkeys_allowed = setkeys_check | Settings.allowed_vars
@@ -125,6 +126,7 @@ def test_settings(tmp_path):
     
     # check that core settings are at default values
     assert(object_eq(nexus_core,nexus_core_defaults))
+    assert(nexus_core.timeout==5*60)
     assert(object_eq(nexus_noncore,nexus_noncore_defaults))
     assert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
     aux_defaults()
@@ -152,12 +154,14 @@ def test_settings(tmp_path):
         pseudo_dir    = pseudo_path,
         status_only   = 0,
         generate_only = 1,
+        timeout       = 10,
         machine       = 'ws16',
         command_line  = False,
         )
     check_settings_core_noncore()
     assert(nexus_core.status_only==0)
     assert(nexus_core.generate_only==1)
+    assert(nexus_core.timeout==10)
     assert(nexus_core.pseudo_dir=='./pseudopotentials')
     assert(len(nexus_core.pseudopotentials)==4)
     assert(set(nexus_core.pseudopotentials.keys())==set(pseudos))
