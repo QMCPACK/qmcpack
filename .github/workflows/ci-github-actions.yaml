@@ -11,9 +11,10 @@ on:
       - main
 
 jobs:
-  ubuntu22:
-    runs-on: ubuntu-latest
-    container: ${{ matrix.container }}
+  ubuntu24:
+    container:
+      image: ghcr.io/qmcpack/ubuntu24-openmpi:latest
+      options: -u 1001
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: Linux
@@ -27,27 +28,6 @@ jobs:
             GCC9-MPI-Sandbox-Real,
             GCC9-NoMPI-Sandbox-Complex,
           ]
-        include:
-          - jobname: GCC9-NoMPI-Real
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
-              options: -u 1001
-
-          - jobname: GCC9-NoMPI-Complex
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
-              options: -u 1001
-
-          - jobname: GCC9-MPI-Sandbox-Real
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-openmpi:latest
-              options: -u 1001
-
-          - jobname: GCC9-NoMPI-Sandbox-Complex
-            container:
-              image: ghcr.io/qmcpack/ubuntu22-serial:latest
-              options: -u 1001
-
     steps:
       - name: Checkout Action
         uses: actions/checkout@v7
@@ -105,7 +85,6 @@ jobs:
             Clang22-NoMPI-Offload-Real,
             Clang22-NoMPI-Offload-Complex,
           ]
-
     steps:
       - name: Checkout Action
         uses: actions/checkout@v7
