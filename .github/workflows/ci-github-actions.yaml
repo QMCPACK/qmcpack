@@ -12,6 +12,7 @@ on:
 
 jobs:
   ubuntu24:
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/qmcpack/ubuntu24-openmpi:latest
       options: -u 1001
