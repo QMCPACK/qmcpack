@@ -174,3 +174,22 @@ def test_settings(tmp_path):
     # check that a new empty settings works following basic
     check_empty_settings()
 #end def test_settings
+
+
+@isolate_nexus_core
+def test_command_line_timeout():
+    import sys
+    from nexus import settings
+    from ..developer import obj
+
+    argv = sys.argv
+    try:
+        sys.argv = ['nexus_script.py','--timeout=12.5']
+        script_settings = obj()
+        settings.process_command_line_settings(script_settings)
+    finally:
+        sys.argv = argv
+    #end try
+
+    assert(script_settings.timeout==12.5)
+#end def test_command_line_timeout
