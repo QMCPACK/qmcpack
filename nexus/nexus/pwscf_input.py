@@ -204,22 +204,51 @@ def array_to_string(a,pad='   ',format=pwscf_array_format,converter=noconv,rowse
 #end def array_to_string
 
 
-def get_var_types(
-    var_type: type[PwscfInputType] | Literal["array", "species_array", "multidim"]
-    ) -> frozenset[str]:
-    variables = set()
+def _get_var_types() -> (
+    tuple[
+        frozenset[str], # ints
+        frozenset[str], # floats
+        frozenset[str], # strs
+        frozenset[str], # bools
+        frozenset[str], # real_arrays
+        frozenset[str], # species_arrays
+        frozenset[str], # multidimensional_arrays
+        ]
+    ):
+    """Get all variable types from the namelist definitions.
+
+    Returns
+    -------
+    ints : frozenset of str
+        All integer-type variables. (scalars and arrays)
+    floats : frozenset of str
+        All float-type variables. (scalars and arrays)
+    strs : frozenset of str
+        All string-type variables. (scalars and arrays)
+    bools : frozenset of str
+        All boolean-type variables. (scalars and arrays)
+    real_arrays : frozenset of str
+        All array variables. (all datatypes)
+    species_arrays : frozenset of str
+        All array variables whose size depends on species. (all datatypes)
+    multidimensional_arrays : frozenset of str
+        All multidimensional array variables. (all datatypes, fixed-size and species arrays)
+    """
+    ints = set()
+    floats = set()
+    strs = set()
+    bools = set()
+    real_arrays = set()
+    species_arrays = set()
+    multidimensional_arrays = set()
+
     for nmlist in NAMELIST_DEFINITIONS:
         for var in nmlist:
-            if var_type == "array":
-                if var.shape is not None:
-                    variables.add(var.name)
-            elif var_type == "species_array":
-                if var.shape is None:
-                    continue
+            if var.shape is not None:
+                real_arrays.add(var.name)
 
                 if isinstance(var.shape[1], str):
-                    variables.add(var.name)
-
+                    species_arrays.add(var.name)
                 elif (
                     isinstance(var.shape[1], tuple)
                     and (
@@ -228,34 +257,39 @@ def get_var_types(
                         or isinstance(var.shape[1][-1], str)
                         )
                     ):
-                    variables.add(var.name)
-
-            elif var_type == "multidim":
-                if var.shape is None:
-                    continue
+                    species_arrays.add(var.name)
 
                 if isinstance(var.shape[0], tuple) and len(var.shape[0]) >= 2:
-                    variables.add(var.name)
+                    multidimensional_arrays.add(var.name)
+            #end if var.shape is not None
 
+            if var.datatype is int:
+                ints.add(var.name)
+            elif var.datatype is float:
+                floats.add(var.name)
+            elif var.datatype is str:
+                strs.add(var.name)
+            elif var.datatype is bool:
+                bools.add(var.name)
             else:
-                if var.datatype is var_type:
-                    variables.add(var.name)
+                msg = f"Variable {var.name} has an invalid datatype `{var.datatype.__name__}`!"
+                raise ValueError(msg)
 
-    return frozenset(variables)
+    return (
+        frozenset(ints),
+        frozenset(floats),
+        frozenset(strs),
+        frozenset(bools),
+        frozenset(real_arrays),
+        frozenset(species_arrays),
+        frozenset(multidimensional_arrays),
+        )
 #end def get_var_types
 
 
 class PwscfInputBase(DevBase):
-    ints   = get_var_types(int)
-    floats = get_var_types(float)
-    strs   = get_var_types(str)
-    bools  = get_var_types(bool)
-
-    real_arrays = get_var_types("array")
-
-    species_arrays = get_var_types("species_array")
-
-    multidimensional_arrays = get_var_types("multidim")
+    (ints, floats, strs, bools, real_arrays,
+     species_arrays, multidimensional_arrays) = _get_var_types()
 
     species_array_indices = obj(
         hubbard_j=1,
@@ -706,7 +740,7 @@ def check_section_classes(*,exit=True):
                 lmiss = local_missing[name]
                 if len(lmiss)>0:
                     vmiss = []
-                    for vname in secs[name].varlist:
+                    for vname in secs[name].variables:
                         if vname in lmiss:
                             vmiss.append(vname)
                         #end if
