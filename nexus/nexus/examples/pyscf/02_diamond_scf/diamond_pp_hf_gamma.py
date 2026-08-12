@@ -27,9 +27,17 @@ system = generate_physical_system(
 
 scf = generate_pyscf(
     identifier = 'scf',                      # log output goes to scf.out
+
+    # Use Hartree-Fock methods
     path       = 'diamond_pp_hf_gamma',      # directory to run in
+    template   = './hf_template.py',         # pyscf hf template file
+
+    # Alternative using DFT.
+    # Uncomment the lines below and comment out the lines above to run.
+    # path       = 'diamond_pp_dft_gamma',      # directory to run in
+    # template   = './dft_template.py',         # pyscf dft template file
+
     job        = job(serial=True,threads=16),# pyscf must run w/o mpi
-    template   = './scf_template.py',        # pyscf template file
     system     = system,
     cell       = obj(                        # used to make Cell() inputs
         basis         = 'bfd-vdz',
