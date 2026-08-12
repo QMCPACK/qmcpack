@@ -311,6 +311,21 @@ def test_quoted_string_preservation():
     assert(incar.system=='a; b # c ! d = e')
     assert(incar.wannier90_win=='Begin; x=y # z!')
     assert(incar.encut==400.0)
+
+    generated = Incar()
+    generated.assign(
+        system        = ' a; b # c ! d ',
+        wannier90_win = 'line ending in \\',
+        )
+    generated_text = generated.write_text()
+
+    assert('SYSTEM        = " a; b # c ! d "' in generated_text)
+    assert('WANNIER90_WIN = "line ending in \\"' in generated_text)
+
+    reread = Incar()
+    reread.read_text(generated_text)
+    assert(reread.system==' a; b # c ! d ')
+    assert(reread.wannier90_win=='line ending in \\')
 #end def test_quoted_string_preservation
 
 
@@ -335,7 +350,27 @@ def test_array_compression_roundtrip():
     assert(np.array_equal(reread.lattice_constraints,[True]*4))
     assert(np.array_equal(reread.magmom,[1.5]*4))
     assert(np.array_equal(reread.random_seed,[2]*4))
+
+    values = np.array([1.0,1.0000004,1.0000002,2.0,2.0,2.0,2.0])
+    incar.assign(magmom=values)
+    text = incar.write_text()
+
+    assert('MAGMOM              = 1.0 1.0000004 1.0000002 4*2.0' in text)
+
+    reread.read_text(text)
+    assert(np.array_equal(reread.magmom,values))
 #end def test_array_compression_roundtrip
+
+
+def test_real_array_fortran_exponents():
+    import numpy as np
+    from ..vasp_input import Incar
+
+    incar = Incar()
+    incar.read_text('MAGMOM = 2*1D-1 -2d+0')
+
+    assert(np.array_equal(incar.magmom,[0.1,0.1,-2.0]))
+#end def test_real_array_fortran_exponents
 
 
 def test_invalid_keyword_input():

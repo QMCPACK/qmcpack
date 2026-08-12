@@ -109,7 +109,8 @@ def read_int_array(sval):
 
 
 def read_real_array(sval):
-    return np.array(expand_array(sval),dtype=float)
+    values = [v.lower().replace('d','e') for v in expand_array(sval)]
+    return np.array(values,dtype=float)
 #end def read_real_array
 
 
@@ -143,10 +144,14 @@ def write_bool(v):
 
 
 def write_string(v):
-    if '\n' not in v:
-        return v
+    quote = (
+        '\n' in v or ';' in v or '#' in v or '!' in v or
+        v.endswith('\\') or v != v.strip()
+        )
+    if quote:
+        return '"'+v+'"'
     else:
-        return '"'+v+'"' # multi-line string
+        return v
     #end if
 #end def write_string
 
@@ -154,11 +159,6 @@ def write_string(v):
 def equality(a,b):
     return a==b
 #end def equality
-
-
-def real_equality(a,b):
-    return np.abs(a-b)<=1e-6*(np.abs(a)+np.abs(b))/2
-#end def real_equality
 
 
 def render_bool(v):
@@ -211,7 +211,7 @@ def write_int_array(a):
 
 
 def write_real_array(a):
-    return write_array(a,same=real_equality)
+    return write_array(a)
 #end def write_real_array
 
 
