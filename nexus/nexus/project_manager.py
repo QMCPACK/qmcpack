@@ -27,14 +27,13 @@ from .machines import Machine,Job
 
 
 def color_status_result(result,logfile):
-    if result not in ('SUCCESS','FAILURE'):
+    if result not in {'SUCCESS','FAILURE'}:
         return result
     #end if
     if 'NO_COLOR' in os.environ:
         return result
     #end if
-    isatty = getattr(logfile,'isatty',None)
-    if not callable(isatty) or not isatty():
+    if not hasattr(logfile,'isatty') or not logfile.isatty():
         return result
     #end if
     if result=='SUCCESS':
@@ -347,7 +346,7 @@ class ProjectManager(NexusCore):
             #end if
         #end if
         result = color_status_result(result,self._logfile)
-        sline = '{0}  {1:<7}  {2:<8}  {3:<6}  {4}'.format(status,result,pid,sim.identifier,sim.locdir)
+        sline = '{}  {:<7}  {:<8}  {:<6}  {}'.format(status,result,pid,sim.identifier,sim.locdir)
         self.log(sline,extra,n=2)
     #end def status_line
 

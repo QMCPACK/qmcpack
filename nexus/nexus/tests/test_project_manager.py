@@ -389,8 +389,8 @@ def test_color_status_result(monkeypatch):
         #end def isatty
     #end class TestLog
 
-    tty_log = TestLog(True)
-    file_log = TestLog(False)
+    tty_log = TestLog(is_tty=True)
+    file_log = TestLog(is_tty=False)
 
     monkeypatch.delenv('NO_COLOR',raising=False)
     assert(color_status_result('SUCCESS',tty_log)=='\033[42mSUCCESS\033[0m')
