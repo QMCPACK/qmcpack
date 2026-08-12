@@ -314,9 +314,7 @@ void DiracDeterminant<PL, VT, FPVT>::acceptMove(ParticleSet& P, int iat, bool sa
 */
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::restore(int iat)
-{
-  curRatio = 1.0;
-}
+{ curRatio = 1.0; }
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::completeUpdates()
@@ -421,9 +419,7 @@ void DiracDeterminant<PL, VT, FPVT>::copyFromBuffer(ParticleSet& P, WFBufferType
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
-{
-  twf.addGroup(P, P.getGroupID(FirstIndex), &phi_);
-}
+{ twf.addGroup(P, P.getGroupID(FirstIndex), &phi_); }
 
 /** return the ratio only for the  iat-th partcle move
  * @param P current configuration
@@ -711,23 +707,17 @@ void DiracDeterminant<PL, VT, FPVT>::evaluateDerivatives(ParticleSet& P,
                                                          const OptVariables& active,
                                                          Vector<ValueType>& dlogpsi,
                                                          Vector<ValueType>& dhpsioverpsi)
-{
-  phi_.evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
-}
+{ phi_.evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex); }
 
 template<PlatformKind PL, typename VT, typename FPVT>
 void DiracDeterminant<PL, VT, FPVT>::evaluateDerivativesWF(ParticleSet& P,
                                                            const OptVariables& active,
                                                            Vector<ValueType>& dlogpsi)
-{
-  phi_.evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);
-}
+{ phi_.evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex); }
 
 template<PlatformKind PL, typename VT, typename FPVT>
 std::unique_ptr<DiracDeterminantBase> DiracDeterminant<PL, VT, FPVT>::makeCopy(SPOSet& phi) const
-{
-  return std::make_unique<DiracDeterminant<PL, VT, FPVT>>(phi, FirstIndex, LastIndex, ndelay_, matrix_inverter_kind_);
-}
+{ return std::make_unique<DiracDeterminant<PL, VT, FPVT>>(phi, FirstIndex, LastIndex, ndelay_, matrix_inverter_kind_); }
 
 template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
