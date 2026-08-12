@@ -602,10 +602,13 @@ def test_keyword_catalog_integrity():
         Incar.real_arrays,
         Incar.bool_arrays,
         )
-    assert(len(Incar.keywords)==684)
+    assert(len(Incar.keywords)==687)
     assert(sum(map(len,keyword_sets))==len(Incar.keywords))
     assert(Incar.deprecated<=Incar.keywords)
     assert(Incar.unsupported.isdisjoint(Incar.keywords))
+    assert('elph_transport_nedos' in Incar.ints)
+    assert('csvr_period' in Incar.reals)
+    assert('elph_rotateprojectors' in Incar.bools)
 #end def test_keyword_catalog_integrity
 
 
@@ -708,6 +711,24 @@ def test_kpoints_labels_and_related_files():
     reread = Kpoints()
     reread.read_text(automatic.write_text())
     assert(reread.kgrid==10.5)
+
+    explicit = Kpoints()
+    explicit.read_text(
+        'labeled points\n'
+        '2\n'
+        'reciprocal\n'
+        '0 0 0 1 Gamma\n'
+        '0.5 0 0 0 X point\n'
+        )
+    assert(np.array_equal(explicit.labels,['Gamma','X point']))
+    reread = Kpoints()
+    reread.read_text(explicit.write_text())
+    assert(np.array_equal(reread.labels,explicit.labels))
+
+    blank_description = Kpoints()
+    blank_description.read_text('\n0\nGamma\n12 12 12\n')
+    assert(blank_description.mode=='auto')
+    assert(np.array_equal(blank_description.kgrid,[12,12,12]))
 #end def test_kpoints_labels_and_related_files
 
 

@@ -1078,10 +1078,11 @@ class Incar(VKeywordFile):
         'antires', 'ch_nedos', 'cll', 'cln', 'clnt', 'drotmax', 'efermi_nedos',
         'elmin', 'elph_fermi_nedos', 'elph_ismear', 'elph_lr', 'elph_nbands',
         'elph_selfen_band_start_kp', 'elph_selfen_band_stop_kp',
-        'elph_selfen_nw', 'elph_transport_driver', 'elph_transport_nedos_plot',
-        'elph_wf_comm_opt', 'exxoep', 'findiff', 'fmp_direction', 'fmp_period',
-        'fmp_snumber', 'fmp_swapnum', 'fnmin', 'fockcorr', 'hflmax', 'hflmaxf',
-        'hills_bin', 'i_constrained_m', 'ialgo', 'iall_in_one', 'ibrion',
+        'elph_selfen_nw', 'elph_transport_driver', 'elph_transport_nedos',
+        'elph_transport_nedos_plot', 'elph_wf_comm_opt', 'exxoep', 'findiff',
+        'fmp_direction', 'fmp_period', 'fmp_snumber', 'fmp_swapnum', 'fnmin',
+        'fockcorr', 'hflmax', 'hflmaxf', 'hills_bin', 'i_constrained_m',
+        'ialgo', 'iall_in_one', 'ibrion',
         'ibse', 'ichain', 'icharg', 'ichibare', 'icorelevel', 'idipol',
         'iepsilon', 'ifc_asr', 'ifc_lr', 'igpar', 'ilbfgsmem', 'images',
         'imix', 'inimix', 'iniwav', 'inmrprint', 'iopt', 'ipead',
@@ -1117,9 +1118,10 @@ class Incar(VKeywordFile):
         'aexx', 'aggac', 'aggax', 'aldac', 'aldax', 'alpha_vdw', 'amggac',
         'amggax', 'amin', 'amix', 'amix_mag', 'andersen_prob', 'apaco', 'bexx',
         'bmix', 'bmix_mag', 'bparam', 'ch_amplification', 'ch_sigma', 'clz',
-        'cmbja', 'cmbjb', 'cmbje', 'cparam', 'cshift', 'ddr', 'deg_threshold',
-        'deper', 'dfnmax', 'dfnmin', 'dimer_dist', 'dq', 'ebreak', 'ediff',
-        'ediffg', 'efield', 'elph_kspacing', 'elph_selfen_band_start',
+        'cmbja', 'cmbjb', 'cmbje', 'cparam', 'cshift', 'csvr_period', 'ddr',
+        'deg_threshold', 'deper', 'dfnmax', 'dfnmin', 'dimer_dist', 'dq',
+        'ebreak', 'ediff', 'ediffg', 'efield', 'elph_kspacing',
+        'elph_selfen_band_start',
         'elph_selfen_band_stop', 'elph_selfen_broad_tol', 'elph_selfen_wrange',
         'elph_transport_dfermi_tol', 'elph_transport_emax',
         'elph_transport_emax_plot', 'elph_transport_emin',
@@ -1157,11 +1159,12 @@ class Incar(VKeywordFile):
 
     bools = frozenset({
         'addgrid', 'ch_lspec', 'elph_ignore_imag_phonons', 'elph_pot_generate',
-        'elph_prepare', 'elph_run', 'elph_selfen_dw', 'elph_selfen_fan',
-        'elph_selfen_g_skip', 'elph_selfen_gaps', 'elph_selfen_imag_skip',
-        'elph_selfen_static', 'elph_transport', 'elph_useblas',
-        'elph_userecip', 'elph_wf_cache_prefill', 'elph_wf_redistribute',
-        'elph_write_hdf5vel', 'elph_write_textvel', 'evenonly', 'evenonlygw',
+        'elph_prepare', 'elph_rotateprojectors', 'elph_run', 'elph_selfen_dw',
+        'elph_selfen_fan', 'elph_selfen_g_skip', 'elph_selfen_gaps',
+        'elph_selfen_imag_skip', 'elph_selfen_static', 'elph_transport',
+        'elph_useblas', 'elph_userecip', 'elph_wf_cache_prefill',
+        'elph_wf_redistribute', 'elph_write_hdf5vel', 'elph_write_textvel',
+        'evenonly', 'evenonlygw',
         'gga_compat', 'interactive', 'kgamma', 'kpoints_opt', 'ladder',
         'laechg', 'lall_in_one', 'lasph', 'lasync', 'lautoscale', 'lberry',
         'lblueout', 'lbone', 'lcalceps', 'lcalcpol', 'lcharg', 'lchargh5',
@@ -1396,7 +1399,14 @@ class Kpoints(VFormattedFile):
 
 
     def read_text(self,text,filepath=''):
-        lines = self.read_lines(text,remove_empty=True)
+        lines_in = self.read_lines(text,remove_empty=False)
+        if len(lines_in)>0:
+            lines = [lines_in[0]] + [
+                line for line in lines_in[1:] if len(line)>0
+                ]
+        else:
+            lines = []
+        #end if
         if len(lines)>2:
             if ' ' not in lines[1]:
                 iselect = int(lines[1])
@@ -1445,12 +1455,18 @@ class Kpoints(VFormattedFile):
                 self.coord = self.coord_options(cselect)
                 nkpoints = iselect
                 kpw = []
+                labels = []
                 for line in lines[3:3+nkpoints]:
-                    kpw.append(line.split())
+                    tokens = line.split()
+                    kpw.append(tokens[:4])
+                    labels.append(' '.join(tokens[4:]))
                 #end for
                 kpw = np.array(kpw,dtype=float)
                 self.kpoints  = kpw[:,0:3]
                 self.kweights = kpw[:,3].ravel()
+                if any(len(label)>0 for label in labels):
+                    self.labels = np.array(labels,dtype=str)
+                #end if
                 tetline = 3+nkpoints
                 if len(lines)>tetline and lines[tetline].lower()[0]=='t':
                     self.tetrahedra = obj()
@@ -1520,7 +1536,14 @@ class Kpoints(VFormattedFile):
             for n in range(len(self.kpoints)):
                 kp = self.kpoints[n]
                 kw = self.kweights[n]
-                text+=' {0:18.14f} {1:18.14f} {2:18.14f} {3:12.8f}\n'.format(kp[0],kp[1],kp[2],kw)
+                text += (
+                    ' {0:18.14f} {1:18.14f} {2:18.14f} {3:12.8f}'
+                    .format(kp[0],kp[1],kp[2],kw)
+                    )
+                if 'labels' in self and len(self.labels[n])>0:
+                    text += '  {0}'.format(self.labels[n])
+                #end if
+                text += '\n'
             #end for
             if 'tetrahedra' in self and len(self.tetrahedra)>0:
                 ntets = len(self.tetrahedra)
