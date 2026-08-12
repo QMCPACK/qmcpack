@@ -28,3 +28,45 @@ pyscf = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+indent-width = 4
+
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "YTT",
+    "BLE001",
+    "FBT",
+    "B",
+    "A",
+    "FA",
+    "ISC",
+    "PT",
+    "Q003",
+    "RET",
+    "SIM",
+    "ARG",
+    "EM",
+    "NPY001",
+    "E101",
+    "E401",
+    "E701",
+    "E702",
+    "E703",
+    "E711",
+    "E713",
+    "E714",
+    "E721",
+    "E731",
+    "W",
+    "F",
+    "PLE",
+    "PLR1722",
+    "PLR2044",
+    "PLW",
+    "RUF",
+    "TRY",
+]
