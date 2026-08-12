@@ -2182,3 +2182,41 @@ def test_locate_periodic():
     assert(set(located_atoms) == conv_conv_locate_ref)
     located_atoms = diamond_2x2x2.locate(diamond_conv)
     assert(set(located_atoms) == conv_conv_locate_ref)
+
+
+def test_reorder_atom_data():
+    structure = Structure(
+        axes   = np.diag([2.0,3.0,4.0]),
+        elem   = ['H','He','Li'],
+        pos    = [[0,0,0],[1,0,0],[2,0,0]],
+        mag    = [10,20,30],
+        frozen = [[True,False,False],
+                  [False,True,False],
+                  [False,False,True]],
+        units  = 'A',
+        )
+    structure.kpoints = np.array(
+        [[0.0,0.0,0.0],[0.1,0.0,0.0],[0.2,0.0,0.0]]
+        )
+    structure.kweights = np.array([1.0,2.0,3.0])
+    structure.atom_ids = np.array([100,200,300])
+    axes = structure.axes.copy()
+    kpoints = structure.kpoints.copy()
+    kweights = structure.kweights.copy()
+
+    structure.reorder([2,0,1])
+
+    assert(np.array_equal(structure.elem,['Li','H','He']))
+    assert(np.array_equal(structure.pos[:,0],[2,0,1]))
+    assert(np.array_equal(structure.mag,[30,10,20]))
+    assert(np.array_equal(
+        structure.frozen,
+        [[False,False,True],
+         [True,False,False],
+         [False,True,False]],
+        ))
+    assert(np.array_equal(structure.atom_ids,[300,100,200]))
+    assert(np.array_equal(structure.axes,axes))
+    assert(np.array_equal(structure.kpoints,kpoints))
+    assert(np.array_equal(structure.kweights,kweights))
+#end def test_reorder_atom_data

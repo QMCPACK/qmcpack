@@ -3024,6 +3024,16 @@ def generate_any_vasp_input(**kwargs):
 
 
 def generate_poscar(structure,*,coord='cartesian'):
+    if isinstance(structure,PhysicalSystem):
+        structure = structure.structure
+    #end if
+    if not isinstance(structure,Structure):
+        error(
+            'structure must be a Structure or PhysicalSystem\n'
+            'you provided: {0}'.format(structure.__class__.__name__),
+            'generate_poscar'
+            )
+    #end if
     s = deepcopy(structure)
     s.change_units('A')
     species,species_count = s.order_by_species()

@@ -1316,8 +1316,7 @@ class Structure(Sobj):
         if len(self.elem)>0:
             order = self.elem.argsort()
             if (self.elem!=self.elem[order]).any():
-                self.elem = self.elem[order]
-                self.pos  = self.pos[order]
+                self.reorder(order)
             #end if
         #end if
         if self.folded_structure is not None and folded:
@@ -2958,9 +2957,38 @@ class Structure(Sobj):
 
     # test needed
     def reorder(self,order):
-        order = np.array(order)
-        self.elem = self.elem[order]
-        self.pos  = self.pos[order]
+        natoms = len(self.elem)
+        order = np.asarray(order)
+        if order.ndim!=1 or len(order)!=natoms:
+            self.error(
+                'atom reordering must contain one index per atom\n'
+                '  number of atoms: {0}\n'
+                '  order shape: {1}'.format(natoms,order.shape)
+                )
+        #end if
+        if not np.issubdtype(order.dtype,np.integer):
+            self.error('atom reordering indices must be integers')
+        #end if
+        order = order.astype(int,copy=False)
+        if not np.array_equal(np.sort(order),np.arange(natoms)):
+            self.error(
+                'atom reordering indices must be a permutation of 0 through '
+                '{0}'.format(natoms-1)
+                )
+        #end if
+
+        non_atom_arrays = {
+            'axes', 'bconds', 'center', 'kaxes', 'kpoints', 'kweights',
+            'tmatrix',
+            }
+        for name,value in list(self.items()):
+            if (
+                name not in non_atom_arrays and isinstance(value,np.ndarray) and
+                value.ndim>0 and value.shape[0]==natoms
+                ):
+                self[name] = value[order]
+            #end if
+        #end for
     #end def reorder
 
     

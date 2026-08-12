@@ -1044,6 +1044,38 @@ def test_return_system_sampling_and_electronic_state():
 #end def test_return_system_sampling_and_electronic_state
 
 
+def test_generate_poscar_reorders_atom_data_and_accepts_system():
+    import numpy as np
+    from ..physical_system import PhysicalSystem
+    from ..structure import Structure
+    from ..vasp_input import generate_poscar
+
+    structure = Structure(
+        axes   = np.eye(3),
+        elem   = ['C','H','C'],
+        pos    = [[0,0,0],[0.5,0,0],[0.25,0,0]],
+        frozen = [[True,False,False],
+                  [False,True,False],
+                  [False,False,True]],
+        units  = 'A',
+        )
+    system = PhysicalSystem(structure=structure)
+
+    poscar = generate_poscar(system,coord='direct')
+
+    assert(poscar.elem==['C','H'])
+    assert(poscar.elem_count==[2,1])
+    assert(np.array_equal(poscar.pos[:,0],[0.0,0.25,0.5]))
+    assert(np.array_equal(
+        poscar.dynamic,
+        [[False,True,True],
+         [True,True,False],
+         [True,False,True]],
+        ))
+    assert(np.array_equal(structure.elem,['C','H','C']))
+#end def test_generate_poscar_reorders_atom_data_and_accepts_system
+
+
 def test_vasp_input_run_type():
     from ..vasp_input import Incar,VaspInput
 
