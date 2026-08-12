@@ -180,6 +180,7 @@ def test_get_result(tmp_path):
     restart_sim.create_directories()
     restart_root = Path(restart_sim.locdir) / 'restart_source.s000'
     restart_input = deepcopy(restart_sim.input)
+    restart_input.simulation.project.series = 1
     restart_input.simulation.mcwalkerset = mcwalkerset(
         fileroot = 'restart_source.s000',
         version  = (4,3),
@@ -204,6 +205,8 @@ def test_get_result(tmp_path):
     assert(Path(restart.random_file)==random_file)
     assert(restart.mcwalkerset.fileroot=='restart_source.s000')
     assert(tuple(restart.mcwalkerset.version)==(4,3))
+    assert(restart.project_id=='restart_source')
+    assert(restart.project_series==1)
 
     random_file.unlink()
     with pytest.raises(NexusError,match='restart files do not exist'):
@@ -463,7 +466,9 @@ def test_incorporate_result(tmp_path):
 
     restart_root = tmp_path / 'restart1/restart_source.s001'
     result = obj(restarts=[obj(
-        fileroot = str(restart_root),
+        fileroot       = str(restart_root),
+        project_id     = 'restart_source',
+        project_series = 2,
         mcwalkerset = mcwalkerset(
             fileroot  = 'restart_source.s001',
             version   = (4,3),
@@ -475,7 +480,8 @@ def test_incorporate_result(tmp_path):
 
     assert('mcwalkerset' not in sim.input.simulation)
 
-    sim.incorporate_result('restart',result,sim)
+    restart_source = obj(locdir=str(tmp_path/'restart1'))
+    sim.incorporate_result('restart',result,restart_source)
 
     walkers = sim.input.simulation.mcwalkerset
     assert(walkers.fileroot=='../restart1/restart_source.s001')
@@ -483,8 +489,28 @@ def test_incorporate_result(tmp_path):
     assert(walkers.collected)
     assert(walkers.node==-1)
     assert(walkers.nprocs==4)
+    assert(sim.input.simulation.project.id=='restart_target')
+    assert(sim.input.simulation.project.series==0)
     restart_text = sim.input.write_text()
     assert(restart_text.index('<mcwalkerset')<restart_text.index('<qmc method'))
+
+    sim = get_qmcpack_sim(
+        identifier   = 'restart_same_dir',
+        path         = 'restart1',
+        calculations = [dmc()],
+        )
+
+    sim.incorporate_result('restart',result,restart_source)
+
+    project = sim.input.simulation.project
+    walkers = sim.input.simulation.mcwalkerset
+    assert(project.id=='restart_source')
+    assert(project.series==2)
+    assert(walkers.fileroot=='restart_source.s001')
+    outfiles = sim.input.get_output_info('outfiles')
+    assert('restart_source.s002.scalar.dat' in outfiles)
+    assert('restart_source.s002.stat.h5' in outfiles)
+    assert('restart_source.s002.dmc.dat' in outfiles)
 
 
     # incorporate qmcpack wavefunction

@@ -742,6 +742,8 @@ class Qmcpack(Simulation):
             random_file = random_file,
             fileroot    = source_root,
             mcwalkerset = walkers,
+            project_id     = cont_input.simulation.project.id,
+            project_series = int(cont_input.simulation.project.series),
             twistnum    = twistnum,
             )
     #end def get_restart_entry
@@ -820,6 +822,16 @@ class Qmcpack(Simulation):
                 self.restart_entries = deepcopy(result.restarts)
             else:
                 self.incorporate_restart_entry(input,result.restarts[0])
+            #end if
+            same_directory = os.path.abspath(sim.locdir)==os.path.abspath(self.locdir)
+            if same_directory:
+                project_ids = set(r.project_id for r in result.restarts)
+                project_series = set(r.project_series for r in result.restarts)
+                if len(project_ids)!=1 or len(project_series)!=1:
+                    self.error('same-directory QMCPACK restart files contain inconsistent project metadata\n  project ids: {}\n  project series: {}'.format(sorted(project_ids),sorted(project_series)))
+                #end if
+                input.simulation.project.id = project_ids.pop()
+                input.simulation.project.series = project_series.pop()
             #end if
         elif result_name=='orbitals':
             gcta_possible = False
