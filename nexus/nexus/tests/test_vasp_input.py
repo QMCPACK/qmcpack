@@ -964,6 +964,7 @@ def test_write(tmp_path):
 
 @isolate_nexus_core
 def test_generate(tmp_path):
+    import numpy as np
     from ..nexus_base import nexus_noncore
     from ..physical_system import generate_physical_system
     from ..vasp_input import generate_vasp_input,VaspInput
@@ -1010,6 +1011,22 @@ def test_generate(tmp_path):
 
     vi_title = generate_vasp_input(title='diamond')
     assert(vi_title.incar.system=='diamond')
+
+    kbasis = np.array([
+        [0.25,0.00,0.00],
+        [0.00,0.25,0.00],
+        [0.00,0.00,0.25],
+        ])
+    kshift = (0.5,0.0,0.5)
+    vi_basis = generate_vasp_input(
+        kbasis=kbasis,
+        kcoord='reciprocal',
+        kshift=kshift,
+        )
+    assert(vi_basis.kpoints.mode=='basis')
+    assert(vi_basis.kpoints.coord=='reciprocal')
+    assert(np.array_equal(vi_basis.kpoints.kbasis,kbasis))
+    assert(vi_basis.kpoints.kshift==kshift)
 #end def test_generate
 
 

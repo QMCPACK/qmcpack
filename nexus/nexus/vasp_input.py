@@ -3073,6 +3073,11 @@ def generate_any_vasp_input(**kwargs):
             kp.kpoints  = vf.kpoints
             kp.kweights = vf.kweights
             kp.coord    = vf.kcoord
+        elif vf.kbasis is not None:
+            kp.mode   = 'basis'
+            kp.kbasis = vf.kbasis
+            kp.coord  = vf.kcoord
+            kp.kshift = vf.kshift
         elif vf.kgrid is not None:
             kp.mode      = 'auto'
             kp.centering = vf.kcenter
