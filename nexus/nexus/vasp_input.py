@@ -1862,26 +1862,44 @@ class Poscar(VFormattedFile):
                 )
             lcur += 3
         #end if
+        vector_header = None
+        vectors = None
         if lcur<len(lines) and not self.is_empty(lines,lcur):
-            cline = lines[lcur].lower()
+            header = lines[lcur]
+            cline = header.lower()
             lcur+=1
             if lcur+npos>len(lines):
-                self.error('file {0} is incomplete (missing velocities)'.format(filepath))
+                self.error(
+                    'file {0} is incomplete (missing post-position vectors)'
+                    .format(filepath)
+                    )
             #end if
-            cartesian = (
-                len(cline)==0 or cline[0]=='c' or cline[0]=='k'
+            is_velocity = (
+                len(cline)==0 or cline[0] in ('c','k','d')
                 )
-            if cartesian:
-                vel_coord = 'cartesian'
+            if is_velocity:
+                cartesian = len(cline)==0 or cline[0] in ('c','k')
+                if cartesian:
+                    vel_coord = 'cartesian'
+                else:
+                    vel_coord = 'direct'
+                #end if
+                vector_header = header
             else:
-                vel_coord = 'direct'
+                vel_coord = None
+                vector_header = header
             #end if
-            svel = []
+            svectors = []
             for i in range(npos):
-                svel.append(lines[lcur+i].split())
+                svectors.append(lines[lcur+i].split()[:3])
             #end for
             lcur += npos
-            vel = np.array(svel,dtype=float)
+            vectors = np.array(svectors,dtype=float)
+            if is_velocity:
+                vel = vectors
+            else:
+                vel = None
+            #end if
         else:
             vel_coord = None
             vel = None
@@ -1903,6 +1921,10 @@ class Poscar(VFormattedFile):
             vel_coord   = vel_coord,
             vel         = vel,
             )
+        if vectors is not None:
+            self.vector_header = vector_header
+            self.vectors = vectors
+        #end if
         if labels is not None:
             self.labels = labels
         #end if
@@ -1989,12 +2011,27 @@ class Poscar(VFormattedFile):
             #end for
         #end if
         if self.vel is not None:
+            vectors = self.vel
             if self.vel_coord=='cartesian':
-                text += '\n'
+                vector_header = ''
             else:
-                text += self.vel_coord+'\n'
+                vector_header = self.vel_coord
             #end if
-            for v in self.vel:
+        else:
+            vectors = self.vectors if 'vectors' in self else None
+            vector_header = (
+                self.vector_header if 'vector_header' in self else None
+                )
+        #end if
+        if vectors is not None:
+            if vector_header is None:
+                self.error(
+                    'post-position vector header is missing for file {0}'
+                    .format(filepath)
+                    )
+            #end if
+            text += vector_header+'\n'
+            for v in vectors:
                 text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(*v)
             #end for
         #end if
@@ -2024,6 +2061,13 @@ class Poscar(VFormattedFile):
         #end if
         if self.vel is not None and self.vel_coord is None:
             msg += 'vel_coord is missing\n'
+        #end if
+        if 'vectors' in self and self.vectors is not None:
+            if 'vector_header' not in self or self.vector_header is None:
+                msg += 'vector_header is missing\n'
+            elif np.shape(self.vectors)!=(int(np.sum(self.elem_count)),3):
+                msg += 'vectors must have shape (number of atoms, 3)\n'
+            #end if
         #end if
         if exit and len(msg)>0:
             self.error(msg)
@@ -2315,6 +2359,10 @@ class VaspInput(SimulationInput,Vobj):
             if s.frozen is not None:
                 poscar.dynamic = s.frozen==False
             #end if
+            if s.vel is not None:
+                poscar.vel_coord = 'cartesian'
+                poscar.vel = s.vel.copy()
+            #end if
             self.poscar = poscar
         #end if
 
@@ -2382,6 +2430,19 @@ class VaspInput(SimulationInput,Vobj):
         else:
             self.error('invalid POSCAR coordinate specifier: {0}'.format(self.poscar.coord))
         #end if
+        vel = None
+        if self.poscar.vel is not None:
+            if self.poscar.vel_coord=='direct':
+                vel = np.dot(self.poscar.vel,axes)
+            elif self.poscar.vel_coord=='cartesian':
+                vel = self.poscar.vel.copy()
+            else:
+                self.error(
+                    'invalid POSCAR velocity coordinate specifier: {0}'
+                    .format(self.poscar.vel_coord)
+                    )
+            #end if
+        #end if
         
         center=axes.sum(0)/2.0
         
@@ -2434,6 +2495,7 @@ class VaspInput(SimulationInput,Vobj):
             elem     = elem,
             scale    = scale,
             pos      = pos,
+            vel      = vel,
             center   = center,
             kgrid    = kgrid,
             kshift   = kshift,
@@ -3053,6 +3115,10 @@ def generate_poscar(structure,*,coord='cartesian'):
     #end if
     if s.frozen is not None:
         poscar.dynamic = s.frozen==False
+    #end if
+    if s.vel is not None:
+        poscar.vel_coord = 'cartesian'
+        poscar.vel = s.vel.copy()
     #end if
     return poscar
 #end def generate_poscar

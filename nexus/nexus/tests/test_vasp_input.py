@@ -795,6 +795,7 @@ def test_poscar_extended_format():
     structure = vasp_input.return_system(structure_only=True)
     assert(np.array_equal(structure.axes,np.diag([1.0,2.0,3.0])))
     assert(np.allclose(structure.pos,[[0.25,0.5,0.75]]))
+    assert(np.array_equal(structure.vel,[[1.0,2.0,3.0]]))
 
     reread = Poscar()
     reread.read_text(poscar.write_text())
@@ -1048,12 +1049,13 @@ def test_generate_poscar_reorders_atom_data_and_accepts_system():
     import numpy as np
     from ..physical_system import PhysicalSystem
     from ..structure import Structure
-    from ..vasp_input import generate_poscar
+    from ..vasp_input import generate_poscar,Poscar
 
     structure = Structure(
         axes   = np.eye(3),
         elem   = ['C','H','C'],
         pos    = [[0,0,0],[0.5,0,0],[0.25,0,0]],
+        vel    = [[1,0,0],[2,0,0],[3,0,0]],
         frozen = [[True,False,False],
                   [False,True,False],
                   [False,False,True]],
@@ -1066,6 +1068,8 @@ def test_generate_poscar_reorders_atom_data_and_accepts_system():
     assert(poscar.elem==['C','H'])
     assert(poscar.elem_count==[2,1])
     assert(np.array_equal(poscar.pos[:,0],[0.0,0.25,0.5]))
+    assert(poscar.vel_coord=='cartesian')
+    assert(np.array_equal(poscar.vel[:,0],[1,3,2]))
     assert(np.array_equal(
         poscar.dynamic,
         [[False,True,True],
@@ -1073,7 +1077,56 @@ def test_generate_poscar_reorders_atom_data_and_accepts_system():
          [True,False,True]],
         ))
     assert(np.array_equal(structure.elem,['C','H','C']))
+
+    reread = Poscar()
+    reread.read_text(poscar.write_text())
+    assert(reread.vel_coord=='cartesian')
+    assert(np.array_equal(reread.vel[:,0],[1,3,2]))
 #end def test_generate_poscar_reorders_atom_data_and_accepts_system
+
+
+def test_poscar_inline_comments_and_named_vector_block():
+    import numpy as np
+    from ..vasp_input import Poscar
+
+    text = (
+        'synthetic triclinic structure\n'
+        '1.2345 ! arbitrary scale\n'
+        '2.1 0.2 0.3 ! first lattice vector\n'
+        '0.4 3.2 0.5 # second lattice vector\n'
+        '0.6 0.7 4.3 ! third lattice vector\n'
+        'Li Ne ! synthetic species pair\n'
+        '2 1 # deliberately unequal counts\n'
+        'Direct ! coordinate mode\n'
+        '0.11 0.22 0.33 ! Li 1\n'
+        '0.44 0.55 0.66 # Li 2\n'
+        '0.77 0.88 0.99 ! Ne\n'
+        'initial forces ! named vector block\n'
+        '1.1 -2.2 3.3 ! vector 1\n'
+        '-4.4 5.5 -6.6 ! vector 2\n'
+        '7.7 -8.8 9.9 ! vector 3\n'
+        )
+    poscar = Poscar()
+    poscar.read_text(text)
+
+    assert(poscar.scale==1.2345)
+    assert(np.allclose(
+        poscar.axes,
+        [[2.1,0.2,0.3],[0.4,3.2,0.5],[0.6,0.7,4.3]],
+        ))
+    assert(poscar.coord=='direct')
+    assert(poscar.vel is None)
+    assert(poscar.vector_header=='initial forces')
+    assert(np.allclose(
+        poscar.vectors,
+        [[1.1,-2.2,3.3],[-4.4,5.5,-6.6],[7.7,-8.8,9.9]],
+        ))
+
+    reread = Poscar()
+    reread.read_text(poscar.write_text())
+    assert(reread.vector_header=='initial forces')
+    assert(np.array_equal(reread.vectors,poscar.vectors))
+#end def test_poscar_inline_comments_and_named_vector_block
 
 
 def test_vasp_input_run_type():

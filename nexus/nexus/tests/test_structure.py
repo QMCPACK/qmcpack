@@ -2190,6 +2190,7 @@ def test_reorder_atom_data():
         elem   = ['H','He','Li'],
         pos    = [[0,0,0],[1,0,0],[2,0,0]],
         mag    = [10,20,30],
+        vel    = [[1,0,0],[2,0,0],[3,0,0]],
         frozen = [[True,False,False],
                   [False,True,False],
                   [False,False,True]],
@@ -2209,6 +2210,7 @@ def test_reorder_atom_data():
     assert(np.array_equal(structure.elem,['Li','H','He']))
     assert(np.array_equal(structure.pos[:,0],[2,0,1]))
     assert(np.array_equal(structure.mag,[30,10,20]))
+    assert(np.array_equal(structure.vel[:,0],[3,1,2]))
     assert(np.array_equal(
         structure.frozen,
         [[False,False,True],

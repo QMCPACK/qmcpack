@@ -181,6 +181,7 @@ def test_get_result(tmp_path):
                                  dtype=float),
               scale           = 1.0,
               units           = 'A',
+              vel             = None,
               ),
           )
 
