@@ -38,6 +38,7 @@
 
 
 import os
+import re
 from copy import deepcopy
 from functools import partial
 from numbers import Integral,Real
@@ -357,6 +358,17 @@ assign_value_functions = obj(
     )
 
 
+block_type_names = MappingProxyType({
+    'int':        'ints',
+    'real':       'reals',
+    'bool':       'bools',
+    'string':     'strings',
+    'int_array':  'int_arrays',
+    'real_array': 'real_arrays',
+    'bool_array': 'bool_arrays',
+    })
+
+
 def mixed_type_matches(value,value_type):
     if value_type=='strings':
         return isinstance(value,str)
@@ -572,6 +584,7 @@ class VKeywordFile(VFile):
 
     keyword_classification = None
     mixed_types = MappingProxyType({})
+    block_constructs = MappingProxyType({})
 
     @classmethod
     def class_init(cls):
@@ -629,11 +642,207 @@ class VKeywordFile(VFile):
             cls.write_value[name] = partial(write_mixed,types)
             cls.assign_value[name] = partial(assign_mixed,types)
         #end for
+        for block_name,schema in cls.block_constructs.items():
+            if block_name=='image_*' and schema=='keywords':
+                continue
+            elif not isinstance(schema,MappingProxyType):
+                raise TypeError(
+                    'schema for block construct {0} must be read-only'
+                    .format(block_name)
+                    )
+            #end if
+            for field,value_type in schema.items():
+                if value_type not in block_type_names:
+                    raise ValueError(
+                        'invalid type {0} for block field {1}/{2}'
+                        .format(value_type,block_name,field)
+                        )
+                #end if
+            #end for
+        #end for
     #end def class_init
+
+
+    @classmethod
+    def block_schema(cls,name):
+        if name in cls.block_constructs:
+            return cls.block_constructs[name]
+        elif re.fullmatch(r'image_[1-9][0-9]*',name):
+            return cls.block_constructs.get('image_*',None)
+        else:
+            return None
+        #end if
+    #end def block_schema
+
+
+    @classmethod
+    def is_block_name(cls,name):
+        return cls.block_schema(name) is not None
+    #end def is_block_name
+
+
+    def extract_block_constructs(self,text):
+        block_names = [
+            re.escape(name) for name in self.block_constructs
+            if name!='image_*'
+            ]
+        if 'image_*' in self.block_constructs:
+            block_names.append(r'image_[1-9][0-9]*')
+        #end if
+        if len(block_names)==0:
+            return text,obj()
+        #end if
+        pattern = re.compile(
+            r'\b('+'|'.join(block_names)+r')\s*(?:=\s*)?\{',
+            re.IGNORECASE,
+            )
+        blocks = obj()
+        output = ''
+        start = 0
+        while True:
+            match = pattern.search(text,start)
+            if match is None:
+                output += text[start:]
+                break
+            #end if
+            output += text[start:match.start()]
+            depth = 1
+            end = match.end()
+            while end<len(text) and depth>0:
+                if text[end]=='{':
+                    depth += 1
+                elif text[end]=='}':
+                    depth -= 1
+                #end if
+                end += 1
+            #end while
+            name = match.group(1).lower()
+            if depth!=0:
+                self.error('block construct {0} is not closed'.format(name))
+            #end if
+            label = '--block{0}--'.format(str(len(blocks)).zfill(3))
+            blocks[label] = text[match.end():end-1]
+            output += name+' = '+label
+            start = end
+        #end while
+        return output,blocks
+    #end def extract_block_constructs
+
+
+    def block_field_type(self,block_name,field,schema):
+        if schema=='keywords':
+            if field not in self.keywords:
+                raise ValueError(
+                    '{0} is not an INCAR keyword'.format(field.upper())
+                    )
+            #end if
+            return self.type[field]
+        elif field not in schema:
+            raise ValueError(
+                '{0} is not a field of block construct {1}'
+                .format(field.upper(),block_name.upper())
+                )
+        else:
+            return block_type_names[schema[field]]
+        #end if
+    #end def block_field_type
+
+
+    def read_block_construct(self,name,text,multiline_values):
+        schema = self.block_schema(name)
+        value = obj()
+        expression = ''
+        for line in text.splitlines():
+            line = self.remove_comment(line).strip()
+            if len(line)==0:
+                continue
+            #end if
+            expression += line
+            if expression.endswith('\\'):
+                expression = expression[:-1]+' '
+                continue
+            #end if
+            for token in expression.split(';'):
+                if len(token.strip())==0:
+                    continue
+                elif '=' not in token:
+                    raise ValueError(
+                        'missing assignment in block {0}: {1}'
+                        .format(name.upper(),token.strip())
+                        )
+                #end if
+                field,sval = token.split('=',1)
+                field = field.lower().strip()
+                sval = sval.strip()
+                if sval.startswith('--multiline'):
+                    sval = multiline_values[sval]
+                #end if
+                value_type = self.block_field_type(name,field,schema)
+                if isinstance(value_type,tuple):
+                    value[field] = read_mixed(value_type,sval)
+                else:
+                    value[field] = read_value_functions[value_type](sval)
+                #end if
+            #end for
+            expression = ''
+        #end for
+        if len(expression)>0:
+            raise ValueError(
+                'incomplete line continuation in block {0}'.format(name)
+                )
+        #end if
+        return value
+    #end def read_block_construct
+
+
+    def assign_block_construct(self,name,value):
+        if not isinstance(value,(dict,obj)):
+            raise TypeError('block construct value must be a dict or obj')
+        #end if
+        schema = self.block_schema(name)
+        assigned = obj()
+        for field,field_value in value.items():
+            field = field.lower()
+            value_type = self.block_field_type(name,field,schema)
+            if isinstance(value_type,tuple):
+                assigned[field] = assign_mixed(value_type,field_value)
+            else:
+                assigned[field] = assign_value_functions[value_type](
+                    field_value
+                    )
+            #end if
+        #end for
+        return assigned
+    #end def assign_block_construct
+
+
+    def write_block_construct(self,name,value):
+        value = self.assign_block_construct(name,value)
+        schema = self.block_schema(name)
+        fields = value.keys()
+        maxlen = max(map(len,fields),default=0)
+        text = name.upper()+' = {\n'
+        for field in sorted(fields):
+            value_type = self.block_field_type(name,field,schema)
+            if isinstance(value_type,tuple):
+                sval = write_mixed(value_type,value[field])
+            else:
+                sval = write_value_functions[value_type](value[field])
+            #end if
+            text += '  {0:<{1}} = {2}\n'.format(
+                field.upper(),maxlen,sval
+                )
+        #end for
+        return text+'}\n'
+    #end def write_block_construct
 
 
     def read_text(self,text,filepath=''):
         text,multiline_values = self.preprocess_multiline_strings(text)
+        text = '\n'.join(
+            self.remove_comment(line) for line in text.splitlines()
+            )
+        text,blocks = self.extract_block_constructs(text)
         lines = text.splitlines()
         expression = None
         continued  = False
@@ -663,10 +872,56 @@ class VKeywordFile(VFile):
                             name,value = token.split('=',1)
                             name  = name.lower().strip()
                             value = value.strip()
-                            if name in self.keywords:
-                                if value.startswith('--multiline'):
-                                    value = multiline_values[value]
+                            if value.startswith('--multiline'):
+                                value = multiline_values[value]
+                            #end if
+                            if self.is_block_name(name):
+                                try:
+                                    block_value = self.read_block_construct(
+                                        name,blocks[value],multiline_values
+                                        )
+                                    if name not in self:
+                                        self[name] = obj()
+                                    #end if
+                                    for field,field_value in block_value.items():
+                                        self[name][field] = field_value
+                                    #end for
+                                except Exception as e:
+                                    self.error(
+                                        'read failed for block construct {0}'
+                                        '\nexception:\n{1}'.format(name,e)
+                                        )
+                                #end try
+                                continue
+                            elif '/' in name:
+                                block_name,field = name.split('/',1)
+                                schema = self.block_schema(block_name)
+                                if schema is not None:
+                                    try:
+                                        value_type = self.block_field_type(
+                                            block_name,field,schema
+                                            )
+                                        if isinstance(value_type,tuple):
+                                            value = read_mixed(value_type,value)
+                                        else:
+                                            value = read_value_functions[
+                                                value_type
+                                                ](value)
+                                        #end if
+                                        if block_name not in self:
+                                            self[block_name] = obj()
+                                        #end if
+                                        self[block_name][field] = value
+                                    except Exception as e:
+                                        self.error(
+                                            'read failed for block field {0}'
+                                            '\nexception:\n{1}'.format(name,e)
+                                            )
+                                    #end try
+                                    continue
                                 #end if
+                            #end if
+                            if name in self.keywords:
                                 try:
                                     value = self.read_value[name](value)
                                     self[name] = value
@@ -700,6 +955,18 @@ class VKeywordFile(VFile):
         valfmt = '{0:<'+str(maxlen)+'} = {1}\n'
         for name in sorted(self.keys()):
             value = self[name]
+            if self.is_block_name(name):
+                try:
+                    text += self.write_block_construct(name,value)
+                except Exception as e:
+                    self.error(
+                        'write failed for file {0} block construct {1}'
+                        '\nvalue: {2}\nexception:\n{3}'
+                        .format(filepath,name,value,e)
+                        )
+                #end try
+                continue
+            #end if
             try:
                 svalue = self.write_value[name](value)
             except Exception as e:
@@ -713,7 +980,18 @@ class VKeywordFile(VFile):
 
     def assign(self,**values):
         for name,value in values.items():
-            if name not in self.keywords:
+            if self.is_block_name(name):
+                try:
+                    self[name] = self.assign_block_construct(name,value)
+                except Exception as e:
+                    self.error(
+                        'assign failed for block construct {0}'
+                        '\nvalue: {1}\nexception:\n{2}'
+                        .format(name,value,e)
+                        )
+                #end try
+                continue
+            elif name not in self.keywords:
                 self.error(
                     '{0} is not a keyword for the {1} file'
                     .format(name.upper(),self.__class__.__name__.upper())
@@ -778,17 +1056,7 @@ class Incar(VKeywordFile):
 
     # VTST extensions:  https://henkelmangroup.github.io/vtsttools/
 
-    # Block-style INCAR constructs cannot be represented by the flat
-    # keyword-file reader/writer.
-    unsupported = frozenset({
-        'image_1', 'kernel_truncation/factor',
-        'kernel_truncation/idimensionality', 'kernel_truncation/ipad',
-        'kernel_truncation/isurface', 'kernel_truncation/lcoarsen',
-        'kernel_truncation/ltruncate', 'plugins/force_and_stress',
-        'plugins/local_potential', 'plugins/machine_learning',
-        'plugins/ml_mode', 'plugins/ml_outblock', 'plugins/ml_output_mode',
-        'plugins/neighbor_cutoff', 'plugins/occupancies', 'plugins/structure',
-        })
+    unsupported = frozenset()
 
     # Pages still present in Nexus history but absent or malformed on the wiki.
     broken_docs = frozenset({
@@ -973,6 +1241,29 @@ class Incar(VKeywordFile):
             'nions', 'nkpts', 'nkdim', 'ldim', 'ngyf', 'nedos', 'ngx'
             ),
         )
+
+    block_constructs = MappingProxyType({
+        'kernel_truncation': MappingProxyType({
+            'factor':          'real',
+            'idimensionality': 'int',
+            'ipad':            'int',
+            'isurface':        'int',
+            'lcoarsen':        'bool',
+            'ltruncate':       'bool',
+            }),
+        'plugins': MappingProxyType({
+            'force_and_stress': 'bool',
+            'local_potential':  'bool',
+            'machine_learning': 'bool',
+            'ml_mode':          'string',
+            'ml_outblock':      'int',
+            'ml_output_mode':   'int',
+            'neighbor_cutoff':  'real',
+            'occupancies':      'bool',
+            'structure':        'bool',
+            }),
+        'image_*': 'keywords',
+        })
 
     # Retained for backwards compatibility.
     deprecated = frozenset({
@@ -1962,6 +2253,7 @@ def generate_any_vasp_input(**kwargs):
     keywords = set(kwargs.keys())
     for name,keyword_file in VaspInput.keyword_files.items():
         keys = keywords & keyword_file.keywords
+        keys |= {key for key in keywords if keyword_file.is_block_name(key)}
         if len(keys)>0:
             kw = obj()
             for k in keys:

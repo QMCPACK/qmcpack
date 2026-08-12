@@ -290,6 +290,128 @@ def test_mixed_keyword_types():
 #end def test_mixed_keyword_types
 
 
+def test_block_constructs():
+    from types import MappingProxyType
+    from ..developer import obj
+    from ..vasp_input import Incar,generate_vasp_input
+
+    assert(isinstance(Incar.block_constructs,MappingProxyType))
+    assert(isinstance(
+        Incar.block_constructs['kernel_truncation'],MappingProxyType
+        ))
+    assert(Incar.block_constructs['kernel_truncation']['lcoarsen']=='bool')
+    assert(Incar.block_constructs['plugins']['ml_outblock']=='int')
+    assert(Incar.block_constructs['image_*']=='keywords')
+
+    generated = generate_vasp_input(
+        kernel_truncation = obj(
+            factor          = 0.5,
+            idimensionality = 2,
+            isurface        = 3,
+            lcoarsen        = False,
+            ltruncate       = True,
+            ),
+        plugins = {
+            'force_and_stress': True,
+            'ml_mode':          'run',
+            'ml_outblock':      4,
+            'neighbor_cutoff':  6.5,
+            },
+        )
+    incar = generated.incar
+    assert(isinstance(incar.kernel_truncation,obj))
+    assert(isinstance(incar.plugins,obj))
+
+    text = incar.write_text()
+    assert(
+        'KERNEL_TRUNCATION = {\n'
+        '  FACTOR          = 0.5\n'
+        '  IDIMENSIONALITY = 2\n'
+        '  ISURFACE        = 3\n'
+        '  LCOARSEN        = .FALSE.\n'
+        '  LTRUNCATE       = .TRUE.\n'
+        '}\n' in text
+        )
+    assert(
+        'PLUGINS = {\n'
+        '  FORCE_AND_STRESS = .TRUE.\n'
+        '  ML_MODE          = run\n'
+        '  ML_OUTBLOCK      = 4\n'
+        '  NEIGHBOR_CUTOFF  = 6.5\n'
+        '}\n' in text
+        )
+
+    reread = Incar()
+    reread.read_text(text)
+    assert(isinstance(reread.kernel_truncation,obj))
+    assert(reread.kernel_truncation==incar.kernel_truncation)
+    assert(reread.plugins==incar.plugins)
+#end def test_block_constructs
+
+
+def test_block_construct_parsing():
+    import numpy as np
+    from ..developer import obj
+    from ..vasp_input import Incar
+
+    text = (
+        'ENCUT = 400\n'
+        'KERNEL_TRUNCATION {\n'
+        '  LTRUNCATE = T; IDIMENSIONALITY = 2\n'
+        '  ISURFACE = 3 # surface normal\n'
+        '}\n'
+        'PLUGINS/FORCE_AND_STRESS = T\n'
+        'PLUGINS/ML_MODE = "run"\n'
+        'IMAGE_2 = {\n'
+        '  ENCUT = 450\n'
+        '  LREAL = Auto\n'
+        '  MAGMOM = 2*1D-1\n'
+        '}\n'
+        )
+    incar = Incar()
+    incar.read_text(text)
+
+    assert(incar.encut==400.0)
+    assert(incar.kernel_truncation==obj(
+        ltruncate=True,idimensionality=2,isurface=3
+        ))
+    assert(incar.plugins==obj(force_and_stress=True,ml_mode='run'))
+    assert(isinstance(incar.image_2,obj))
+    assert(incar.image_2.encut==450.0)
+    assert(incar.image_2.lreal=='Auto')
+    assert(np.array_equal(incar.image_2.magmom,[0.1,0.1]))
+
+    reread = Incar()
+    reread.read_text(incar.write_text())
+    assert(reread.kernel_truncation==incar.kernel_truncation)
+    assert(reread.plugins==incar.plugins)
+    assert(reread.image_2.encut==450.0)
+    assert(np.array_equal(reread.image_2.magmom,[0.1,0.1]))
+
+    ordered = Incar()
+    ordered.read_text(
+        'PLUGINS/FORCE_AND_STRESS = T\n'
+        'PLUGINS/ML_MODE = none\n'
+        'PLUGINS = { ML_MODE = run }\n'
+        )
+    assert(ordered.plugins.force_and_stress)
+    assert(ordered.plugins.ml_mode=='run')
+
+    with pytest.raises(NexusError,match='assign failed for block construct'):
+        Incar().assign(kernel_truncation={'unknown':1})
+    #end with
+    with pytest.raises(NexusError,match='read failed for block construct'):
+        Incar().read_text('PLUGINS = { ML_OUTBLOCK = 1.5 }')
+    #end with
+    with pytest.raises(
+        NexusError,
+        match='block construct plugins is not closed',
+        ):
+        Incar().read_text('PLUGINS = { ML_MODE = run')
+    #end with
+#end def test_block_construct_parsing
+
+
 def test_integer_assignment_validation():
     import numpy as np
     from ..vasp_input import Incar,generate_vasp_input
