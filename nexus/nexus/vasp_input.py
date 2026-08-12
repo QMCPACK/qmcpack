@@ -2256,6 +2256,15 @@ class VaspInput(SimulationInput,Vobj):
                 self[name] = self.input_files[name](filepath)
             #end if
         #end for
+        image_dirs = [
+            name for name in os.listdir(path)
+            if len(name)==2 and name.isdigit() and
+            os.path.isfile(os.path.join(path,name,'POSCAR'))
+            ]
+        if len(image_dirs)>0:
+            self.poscar = NebPoscars()
+            self.poscar.read(path)
+        #end if
     #end def read
 
 
@@ -2275,8 +2284,10 @@ class VaspInput(SimulationInput,Vobj):
         if len(structure.kpoints)>0 and incorp_kpoints:
             kpoints = Kpoints()
             kpoints.mode     = 'explicit'
-            kpoints.coord    = 'cartesian'
-            kpoints.kpoints  = structure.kpoints.copy()
+            kpoints.coord    = 'reciprocal'
+            kpoints.kpoints  = np.dot(
+                structure.kpoints,np.linalg.inv(structure.kaxes)
+                )
             kpoints.kweights = structure.kweights.copy()
             self.kpoints = kpoints
         #end if
@@ -2321,6 +2332,14 @@ class VaspInput(SimulationInput,Vobj):
 
 
     def return_system(self,*,structure_only=False,**valency):
+        if 'poscar' not in self:
+            self.error('POSCAR is required to generate a physical system')
+        elif isinstance(self.poscar,NebPoscars):
+            self.error(
+                'return_system cannot select a structure from an NEB path; '
+                'select an image POSCAR first'
+                )
+        #end if
         raw_axes = self.poscar.axes
         input_scale = self.poscar.scale
         if np.isscalar(input_scale) and input_scale<0:
@@ -2331,8 +2350,29 @@ class VaspInput(SimulationInput,Vobj):
         axes  = scale_factor*raw_axes
         scale = 1.0
  
-        velem       = self.poscar.elem
+        pot_info = None
+        velem = self.poscar.elem
+        if velem is None and 'potcar' in self:
+            pot_info = self.potcar.pot_info()
+            if len(pot_info)>0:
+                velem = np.array(
+                    [pot_info[n].element for n in range(len(pot_info))]
+                    )
+            #end if
+        #end if
+        if velem is None:
+            self.error(
+                'POSCAR does not contain species names and they could not be '
+                'recovered from POTCAR'
+                )
+        #end if
         velem_count = self.poscar.elem_count
+        if len(velem)!=len(velem_count):
+            self.error(
+                'the number of POSCAR species does not match the number of '
+                'species counts'
+                )
+        #end if
         elem        = vasp_to_nexus_elem(velem,velem_count)
  
         if self.poscar.coord=='direct':
@@ -2345,8 +2385,6 @@ class VaspInput(SimulationInput,Vobj):
         
         center=axes.sum(0)/2.0
         
-        kpoints  = None
-        kweights = None
         kgrid    = None
         kshift   = None
 
@@ -2354,23 +2392,42 @@ class VaspInput(SimulationInput,Vobj):
             kpoints_file = None
         elif 'kpoints' in self:
             kpoints_file = self.kpoints
+        elif 'incar' in self and 'kspacing' in self.incar:
+            kpoints_file = None
         else:
-            self.error('KPOINTS is required to generate a physical system')
+            kpoints_file = None
         #end if
 
         if kpoints_file is not None and kpoints_file.mode=="auto":
-            kshift=kpoints_file.kshift
-            if kshift is None:
+            if 'kshift' in kpoints_file and kpoints_file.kshift is not None:
+                kshift = kpoints_file.kshift
+            else:
                 kshift = np.zeros(3,dtype=float)
             #end if
-            if kpoints_file.centering=="monkhorst-pack":
+            centering = kpoints_file.centering.lower()
+            if centering.startswith('m'):
                 kshift=kshift+np.array([0.5,0.5,0.5])
-            elif kpoints_file.centering=="gamma":
+            elif centering.startswith('g'):
                 pass
             #end if
-            kgrid=kpoints_file.kgrid
-        elif kpoints_file is not None:
-            self.error('system generation does not currently work with manually specified k-points')
+            if centering.startswith('a'):
+                reciprocal_axes = 2*np.pi*np.linalg.inv(axes).T
+                kgrid = tuple(
+                    max(1,int(
+                        kpoints_file.kgrid*np.linalg.norm(kaxis)/(2*np.pi)+0.5
+                        ))
+                    for kaxis in reciprocal_axes
+                    )
+            else:
+                kgrid=kpoints_file.kgrid
+            #end if
+        elif kpoints_file is not None and kpoints_file.mode not in (
+            'explicit',
+            ):
+            self.error(
+                'system generation does not currently work with KPOINTS '
+                'mode: {0}'.format(kpoints_file.mode)
+                )
         #end if
         structure = Structure(
             axes     = axes,
@@ -2378,13 +2435,42 @@ class VaspInput(SimulationInput,Vobj):
             scale    = scale,
             pos      = pos,
             center   = center,
-            kpoints  = kpoints,
-            kweights = kweights,
             kgrid    = kgrid,
             kshift   = kshift,
             units    = 'A',
             rescale  = False,
             )
+
+        if kpoints_file is not None and kpoints_file.mode=='explicit':
+            if kpoints_file.coord=='reciprocal':
+                kpoints = np.dot(kpoints_file.kpoints,structure.kaxes)
+            elif kpoints_file.coord=='cartesian':
+                kpoints = 2*np.pi*kpoints_file.kpoints/scale_factor
+            else:
+                self.error(
+                    'invalid KPOINTS coordinate specifier: {0}'
+                    .format(kpoints_file.coord)
+                    )
+            #end if
+            structure.add_kpoints(
+                kpoints,kpoints_file.kweights,recenter=False
+                )
+        elif not structure_only and kpoints_file is None:
+            if 'incar' in self and 'kspacing' in self.incar:
+                kspacing = self.incar.kspacing
+            else:
+                kspacing = 0.5
+            #end if
+            if 'incar' in self and 'kgamma' in self.incar:
+                kgamma = self.incar.kgamma
+            else:
+                kgamma = True
+            #end if
+            kshift = (0,0,0) if kgamma else (0.5,0.5,0.5)
+            structure.add_kmesh(
+                kspacing=kspacing,kshift=kshift
+                )
+        #end if
          
         structure.zero_corner()
         structure.recenter()
@@ -2393,24 +2479,47 @@ class VaspInput(SimulationInput,Vobj):
             return structure
         #end if
 
-        ion_charge = 0
-        atoms      = list(elem)
-        for atom in atoms:
-            if atom not in valency:
-                self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()'.format(atom))
+        system_valency = dict(valency)
+        if pot_info is None and 'potcar' in self:
+            pot_info = self.potcar.pot_info()
+        #end if
+        if pot_info is not None and len(pot_info)==len(velem):
+            for n,species in enumerate(velem):
+                info = pot_info[n]
+                if species not in system_valency:
+                    system_valency[species] = info.Zval
+                #end if
+            #end for
+        #end if
+
+        atoms = list(elem)
+        for atom in set(atoms):
+            if atom not in system_valency:
+                self.error(
+                    'valence charge for atom {0} has not been defined\n'
+                    'please provide the valence charge as an argument to '
+                    'return_system()'.format(atom)
+                    )
             #end if
-            ion_charge += atoms.count(atom)*valency[atom]
         #end for
 
-        ####WARNING:  Assuming that the netcharge and netspin are ZERO. 
-        net_charge = 0
-        net_spin   = 0
+        ion_charge = sum(system_valency[atom] for atom in atoms)
+        if 'incar' in self and 'nelect' in self.incar:
+            net_charge = ion_charge-self.incar.nelect
+        else:
+            net_charge = 0
+        #end if
+        if 'incar' in self and 'nupdown' in self.incar:
+            net_spin = self.incar.nupdown
+        else:
+            net_spin = 0
+        #end if
 
         system = PhysicalSystem(
             structure  = structure,
             net_charge = net_charge,
             net_spin   = net_spin,
-            **valency
+            **system_valency
             )
  
         return system
@@ -2493,21 +2602,263 @@ class VaspInput(SimulationInput,Vobj):
 
 
     def run_type(self):
+        if 'incar' not in self:
+            return 'unknown'
+        #end if
         incar = self.incar
+        ibrion = incar.ibrion if 'ibrion' in incar else -1
+        nsw = incar.nsw if 'nsw' in incar else 0
         # check for neb
-        if 'images' in incar:
+        if 'images' in incar and incar.images>0:
             run_type = 'neb'
-        elif 'ibrion' in incar and incar.ibrion>0.5:
+        elif ibrion in (5,6,7,8):
+            run_type = 'phonon'
+        elif nsw<=0 or ibrion==-1:
+            run_type = 'static'
+        elif ibrion==0:
+            run_type = 'md'
+        elif ibrion>0:
             run_type = 'relax'
-        elif 'ibrion' in incar and incar.ibrion==0:
-            run_type = 'md'
-        elif 'nsw' in incar and incar.nsw>1.5:
-            run_type = 'md'
         else:
             run_type = 'unknown'
         #end if
         return run_type
     #end def run_type
+
+
+    def validate(self,*,runnable=True,exit=True):
+        """Check VASP input completeness and cross-file consistency."""
+        messages = []
+        required = ('incar','poscar','potcar') if runnable else ()
+        for name in required:
+            if name not in self:
+                messages.append('{0} is missing'.format(name.upper()))
+            #end if
+        #end for
+
+        poscars = []
+        if 'poscar' in self:
+            if isinstance(self.poscar,NebPoscars):
+                indices = sorted(self.poscar.keys())
+                if indices!=list(range(len(indices))):
+                    messages.append(
+                        'NEB image directories are not consecutively numbered '
+                        'from 00'
+                        )
+                #end if
+                poscars = [self.poscar[n] for n in indices]
+                if len(poscars)<2:
+                    messages.append('NEB input requires at least two POSCARs')
+                #end if
+                if 'incar' not in self or 'images' not in self.incar:
+                    messages.append('NEB POSCARs require IMAGES in INCAR')
+                elif self.incar.images!=len(poscars)-2:
+                    messages.append(
+                        'INCAR IMAGES does not match the number of NEB '
+                        'POSCARs'
+                        )
+                #end if
+            else:
+                poscars = [self.poscar]
+                if (
+                    'incar' in self and 'images' in self.incar and
+                    self.incar.images>0
+                    ):
+                    messages.append(
+                        'INCAR IMAGES requires POSCARs in NEB image directories'
+                        )
+                #end if
+            #end if
+        #end if
+
+        for n,poscar in enumerate(poscars):
+            prefix = 'POSCAR' if len(poscars)==1 else 'NEB POSCAR {0:02d}'.format(n)
+            complete = poscar.check_complete(exit=False).strip()
+            if len(complete)>0:
+                messages.append('{0}: {1}'.format(
+                    prefix,complete.replace('\n','; ')
+                    ))
+                continue
+            #end if
+            natoms = int(np.sum(poscar.elem_count))
+            if len(poscar.pos)!=natoms:
+                messages.append(
+                    '{0}: atom counts do not match the number of positions'
+                    .format(prefix)
+                    )
+            #end if
+            if poscar.elem is not None and len(poscar.elem)!=len(poscar.elem_count):
+                messages.append(
+                    '{0}: species names do not match species counts'
+                    .format(prefix)
+                    )
+            #end if
+            if (
+                poscar.dynamic is not None and
+                np.shape(poscar.dynamic)!=(natoms,3)
+                ):
+                messages.append(
+                    '{0}: selective-dynamics flags must have shape ({1}, 3)'
+                    .format(prefix,natoms)
+                    )
+            #end if
+        #end for
+
+        if len(poscars)>1:
+            reference = poscars[0]
+            for n,poscar in enumerate(poscars[1:],1):
+                if not np.array_equal(poscar.elem_count,reference.elem_count):
+                    messages.append(
+                        'NEB POSCAR {0:02d} has different species counts'
+                        .format(n)
+                        )
+                elif (
+                    reference.elem is not None and poscar.elem is not None and
+                    not np.array_equal(poscar.elem,reference.elem)
+                    ):
+                    messages.append(
+                        'NEB POSCAR {0:02d} has different species names'
+                        .format(n)
+                        )
+                #end if
+                if (
+                    reference.scale is not None and poscar.scale is not None and
+                    reference.axes is not None and poscar.axes is not None
+                    ):
+                    reference_axes = np.asarray(reference.scale)*reference.axes
+                    image_axes = np.asarray(poscar.scale)*poscar.axes
+                    if not np.allclose(image_axes,reference_axes):
+                        messages.append(
+                            'NEB POSCAR {0:02d} has different lattice vectors'
+                            .format(n)
+                            )
+                    #end if
+                #end if
+            #end for
+        #end if
+
+        if 'kpoints' in self:
+            kpoints = self.kpoints
+            if kpoints.mode not in ('auto','basis','line','explicit'):
+                messages.append('KPOINTS mode is missing or invalid')
+            elif kpoints.mode=='explicit':
+                if 'kpoints' not in kpoints or 'kweights' not in kpoints:
+                    messages.append(
+                        'explicit KPOINTS require points and weights'
+                        )
+                else:
+                    nkpoints = len(kpoints.kpoints)
+                    if np.shape(kpoints.kpoints)!=(nkpoints,3):
+                        messages.append(
+                            'KPOINTS points must have shape (N, 3)'
+                            )
+                    #end if
+                    if len(kpoints.kweights)!=nkpoints:
+                        messages.append(
+                            'KPOINTS weights do not match the number of points'
+                            )
+                    #end if
+                #end if
+                if (
+                    'coord' not in kpoints or
+                    kpoints.coord not in ('cartesian','reciprocal')
+                    ):
+                    messages.append(
+                        'explicit KPOINTS coordinates are missing or invalid'
+                        )
+                #end if
+            elif kpoints.mode=='auto':
+                if 'centering' not in kpoints:
+                    messages.append('automatic KPOINTS centering is missing')
+                else:
+                    centering = str(kpoints.centering).lower()
+                #end if
+                if 'centering' in kpoints and (
+                    len(centering)==0 or centering[0] not in ('a','g','m')
+                    ):
+                    messages.append('automatic KPOINTS centering is invalid')
+                elif 'centering' in kpoints and centering.startswith('a'):
+                    if (
+                        'kgrid' not in kpoints or
+                        not np.isscalar(kpoints.kgrid) or kpoints.kgrid<=0
+                        ):
+                        messages.append(
+                            'fully automatic KPOINTS length must be positive'
+                            )
+                    #end if
+                elif 'centering' in kpoints and (
+                    'kgrid' not in kpoints or np.shape(kpoints.kgrid)!=(3,)
+                    ):
+                    messages.append('automatic KPOINTS grid must have length 3')
+                #end if
+            elif kpoints.mode=='basis':
+                if 'kbasis' not in kpoints or np.shape(kpoints.kbasis)!=(3,3):
+                    messages.append('KPOINTS basis must have shape (3, 3)')
+                #end if
+            elif kpoints.mode=='line':
+                if (
+                    'kendpoints' not in kpoints or
+                    np.ndim(kpoints.kendpoints)!=2 or
+                    np.shape(kpoints.kendpoints)[1:]!=(3,)
+                    ):
+                    messages.append('KPOINTS points must have shape (N, 3)')
+                #end if
+            #end if
+        #end if
+
+        if (
+            'incar' in self and 'kspacing' in self.incar and
+            self.incar.kspacing<=0
+            ):
+            messages.append('INCAR KSPACING must be positive')
+        #end if
+
+        if 'potcar' in self and len(poscars)>0:
+            try:
+                pot_info = self.potcar.pot_info()
+            except Exception as exception:
+                messages.append('POTCAR metadata could not be read: {0}'.format(
+                    exception
+                    ))
+            else:
+                if len(pot_info)>0:
+                    nspecies = len(poscars[0].elem_count)
+                    if len(pot_info)!=nspecies:
+                        messages.append(
+                            'POTCAR datasets do not match POSCAR species counts'
+                            )
+                    elif poscars[0].elem is not None:
+                        pot_elem = [
+                            pot_info[n].element for n in range(len(pot_info))
+                            ]
+                        pos_elem = []
+                        for species in poscars[0].elem:
+                            iselem,element = Elements.is_element(
+                                species,return_element=True
+                                )
+                            pos_elem.append(
+                                element.symbol if iselem else species
+                                )
+                        #end for
+                        if pot_elem!=pos_elem:
+                            messages.append(
+                                'POTCAR species do not match POSCAR species'
+                                )
+                        #end if
+                    #end if
+                elif runnable:
+                    messages.append('POTCAR contains no datasets')
+                #end if
+            #end try
+        #end if
+
+        if len(messages)>0 and exit:
+            self.error(
+                'VASP input is invalid:\n  '+'\n  '.join(messages)
+                )
+        #end if
+        return len(messages)==0
+    #end def validate
 
 
     def producing_structure(self):

@@ -989,3 +989,142 @@ def test_generate(tmp_path):
     vi_title = generate_vasp_input(title='diamond')
     assert(vi_title.incar.system=='diamond')
 #end def test_generate
+
+
+def test_return_system_sampling_and_electronic_state():
+    import numpy as np
+    from ..vasp_input import Incar,Kpoints,Poscar,Potcar,VaspInput
+
+    poscar = Poscar()
+    poscar.scale = 1.0
+    poscar.axes = 2*np.eye(3)
+    poscar.elem = None
+    poscar.elem_count = np.array([1])
+    poscar.coord = 'direct'
+    poscar.pos = np.array([[0.0,0.0,0.0]])
+
+    potcar = Potcar()
+    potcar.read_text(
+        'PAW_PBE H 01Jan2001\n'
+        '1.0\n'
+        'VRHFIN =H:\n'
+        'End of Dataset\n'
+        )
+    kpoints = Kpoints()
+    kpoints.mode = 'explicit'
+    kpoints.coord = 'reciprocal'
+    kpoints.kpoints = np.array([[0.25,0.0,0.0]])
+    kpoints.kweights = np.array([2.0])
+
+    vasp_input = VaspInput()
+    vasp_input.poscar = poscar
+    vasp_input.potcar = potcar
+    vasp_input.kpoints = kpoints
+    vasp_input.incar = Incar()
+    vasp_input.incar.assign(nelect=0.5,nupdown=1)
+    system = vasp_input.return_system()
+
+    assert(np.array_equal(system.structure.elem,['H']))
+    assert(np.allclose(system.structure.kpoints,[[np.pi/4,0,0]]))
+    assert(np.array_equal(system.structure.kweights,[2.0]))
+    assert(system.net_charge==0.5)
+    assert(system.net_spin==1)
+    assert(system.valency.H==1)
+
+    del vasp_input.kpoints
+    vasp_input.incar = Incar()
+    vasp_input.incar.assign(kspacing=2.0,kgamma=False)
+    system = vasp_input.return_system()
+    assert(len(system.structure.kpoints)==8)
+
+    vasp_input.kpoints = Kpoints()
+    vasp_input.kpoints.read_text('automatic\n0\nAuto\n4.0\n')
+    system = vasp_input.return_system()
+    assert(len(system.structure.kpoints)==8)
+#end def test_return_system_sampling_and_electronic_state
+
+
+def test_vasp_input_run_type():
+    from ..vasp_input import Incar,VaspInput
+
+    vasp_input = VaspInput()
+    assert(vasp_input.run_type()=='unknown')
+
+    cases = (
+        (dict(),                         'static'),
+        (dict(nsw=10),                   'static'),
+        (dict(ibrion=0,nsw=10),          'md'),
+        (dict(ibrion=2,nsw=10),          'relax'),
+        (dict(ibrion=6,nsw=1),           'phonon'),
+        (dict(ibrion=2,nsw=10,images=3), 'neb'),
+    )
+    for inputs,expected in cases:
+        vasp_input.incar = Incar()
+        vasp_input.incar.assign(**inputs)
+        assert(vasp_input.run_type()==expected
+               )
+    #end for
+#end def test_vasp_input_run_type
+
+
+def test_neb_input_roundtrip(tmp_path):
+    import numpy as np
+    from ..vasp_input import Incar,NebPoscars,Poscar,VaspInput
+
+    vasp_input = VaspInput()
+    vasp_input.incar = Incar()
+    vasp_input.incar.images = 1
+    vasp_input.poscar = NebPoscars()
+    for n,x in enumerate((0.0,0.5,1.0)):
+        poscar = Poscar()
+        poscar.scale = 1.0
+        poscar.axes = np.eye(3)
+        poscar.elem = np.array(['H'])
+        poscar.elem_count = np.array([1])
+        poscar.coord = 'direct'
+        poscar.pos = np.array([[x,0.0,0.0]])
+        vasp_input.poscar[n] = poscar
+    #end for
+
+    vasp_input.write(tmp_path)
+    reread = VaspInput(tmp_path)
+
+    assert(isinstance(reread.poscar,NebPoscars))
+    assert(sorted(reread.poscar.keys())==[0,1,2])
+    assert(np.allclose(reread.poscar[1].pos,[[0.5,0.0,0.0]]))
+#end def test_neb_input_roundtrip
+
+
+def test_vasp_input_validation():
+    import numpy as np
+    from ..vasp_input import Incar,Kpoints,Poscar,Potcar,VaspInput
+
+    vasp_input = VaspInput()
+    vasp_input.incar = Incar()
+    vasp_input.poscar = Poscar()
+    vasp_input.poscar.scale = 1.0
+    vasp_input.poscar.axes = np.eye(3)
+    vasp_input.poscar.elem = np.array(['H'])
+    vasp_input.poscar.elem_count = np.array([1])
+    vasp_input.poscar.coord = 'direct'
+    vasp_input.poscar.pos = np.array([[0.0,0.0,0.0]])
+    vasp_input.potcar = Potcar()
+    vasp_input.potcar.read_text(
+        'PAW_PBE H 01Jan2001\n'
+        '1.0\n'
+        'VRHFIN =H:\n'
+        'End of Dataset\n'
+        )
+
+    assert(vasp_input.validate(exit=False))
+
+    vasp_input.kpoints = Kpoints()
+    vasp_input.kpoints.mode = 'explicit'
+    vasp_input.kpoints.coord = 'reciprocal'
+    vasp_input.kpoints.kpoints = np.zeros((2,3))
+    vasp_input.kpoints.kweights = np.ones(1)
+    assert(not vasp_input.validate(exit=False))
+    with pytest.raises(NexusError,match='KPOINTS weights'):
+        vasp_input.validate()
+    #end with
+#end def test_vasp_input_validation
