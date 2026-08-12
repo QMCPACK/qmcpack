@@ -12,9 +12,13 @@
 add_library(platform_rocm_runtime INTERFACE)
 target_link_libraries(platform_rocm_runtime INTERFACE hip::host)
 
-set(ROCM_LA_SRCS hipBLAS.cpp)
-add_library(platform_rocm_LA ${ROCM_LA_SRCS})
-target_link_libraries(platform_rocm_LA PUBLIC roc::hipblas roc::rocsolver)
+add_library(platform_rocm_LA hipBLAS.cpp rocBLAS_MFs.cpp)
+# rocBLAS_MFs.cpp calls rocBLAS directly: for copy_batched because hipBLAS does not
+# re-export the batched BLAS1 calls, and for gemv_batched and ger_batched because
+# hipBLAS does not re-export the alpha/beta array setters. roc::rocblas is PUBLIC because
+# AccelBLAS_CUDA.hpp includes rocBLAS_MFs.hpp. It costs nothing: rocSOLVER already
+# links rocBLAS PUBLIC, so it is in the link line either way.
+target_link_libraries(platform_rocm_LA PUBLIC roc::hipblas roc::rocsolver roc::rocblas)
 target_link_libraries(platform_rocm_LA PRIVATE platform_rocm_runtime)
 
 # Add HIPBLAS_V2 for hipBLAS < 3.0.0
