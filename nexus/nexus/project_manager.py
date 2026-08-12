@@ -16,6 +16,7 @@
 #====================================================================#
 
 
+import os
 import time
 from typing import ClassVar
 from . import memory
@@ -23,6 +24,26 @@ from .developer import obj, error
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
 from .simulation import Simulation
 from .machines import Machine,Job
+
+
+def color_status_result(result,logfile):
+    if result not in ('SUCCESS','FAILURE'):
+        return result
+    #end if
+    if 'NO_COLOR' in os.environ:
+        return result
+    #end if
+    isatty = getattr(logfile,'isatty',None)
+    if not callable(isatty) or not isatty():
+        return result
+    #end if
+    if result=='SUCCESS':
+        background = '\033[42m'
+    else:
+        background = '\033[41m'
+    #end if
+    return background+result+'\033[0m'
+#end def color_status_result
 
 
 def trivial(sim,*args,**kwargs):
@@ -317,7 +338,16 @@ class ProjectManager(NexusCore):
         else:
             pid = sim.process_id
         #end if
-        sline = '{0}  {1}  {2:<8}  {3:<6}  {4}'.format(status,str(int(sim.failed)),pid,sim.identifier,sim.locdir)
+        result = ''
+        if sim.finished:
+            if sim.failed:
+                result = 'FAILURE'
+            else:
+                result = 'SUCCESS'
+            #end if
+        #end if
+        result = color_status_result(result,self._logfile)
+        sline = '{0}  {1:<7}  {2:<8}  {3:<6}  {4}'.format(status,result,pid,sim.identifier,sim.locdir)
         self.log(sline,extra,n=2)
     #end def status_line
 
