@@ -400,6 +400,38 @@ def test_qmcpack_diamond(tmp_path):
 #end def test_qmcpack_diamond
 
 
+@pytest.mark.parametrize(
+    "example_dir,script",
+    [
+        (
+            '05_diamond_dft_dmc_restart',
+            'diamond_lda_dmc_restart_same_dir.py',
+            ),
+        (
+            '05_diamond_dft_dmc_restart',
+            'diamond_lda_dmc_restart_separate_dirs.py',
+            ),
+        (
+            '06_diamond_dft_dmc_twistavg_restart',
+            'diamond_lda_dmc_twistavg_restart_same_dir.py',
+            ),
+        (
+            '06_diamond_dft_dmc_twistavg_restart',
+            'diamond_lda_dmc_twistavg_restart_separate_dirs.py',
+            ),
+        ],
+    )
+def test_qmcpack_restart_examples(tmp_path,example_dir,script):
+    path = 'qmcpack/rsqmc_quantum_espresso/'+example_dir
+    test_path = copy_example_files(path,tmp_path)
+    copy_pseudos('qmcpack',tmp_path)
+
+    script_path = example_root / path / script
+    success,message = run_example_script(script_path,test_path)
+    assert(success),message
+#end def test_qmcpack_restart_examples
+
+
 def test_qmcpack_graphene(tmp_path):
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/graphene',
