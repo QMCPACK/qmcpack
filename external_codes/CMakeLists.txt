@@ -26,6 +26,8 @@ if(DEFINED CMAKE_REQUIRED_QUIET)
 endif()
 set(CMAKE_REQUIRED_QUIET TRUE)
 add_subdirectory(Catch2 EXCLUDE_FROM_ALL)
+# Catch2's floating-point matchers use infinities, which -ffast-math otherwise assumes cannot occur.
+target_compile_options(Catch2 PRIVATE $<$<CXX_COMPILER_ID:Clang,GNU>:-fno-finite-math-only>)
 if(QMC_CMAKE_REQUIRED_QUIET_WAS_DEFINED)
   set(CMAKE_REQUIRED_QUIET "${QMC_CMAKE_REQUIRED_QUIET_SAVED}")
 else()
