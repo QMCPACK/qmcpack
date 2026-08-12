@@ -2111,7 +2111,7 @@ class simulation(QIxml):
     attributes = ('method',) # afqmc
     elements   = ('project','random','include','qmcsystem','particleset', # rsqmc
                   'wavefunction','hamiltonian','init','traces',           # rsqmc
-                  'qmc','loop','mcwalkerset','cmc',                       # rsqmc
+                  'mcwalkerset','qmc','loop','cmc',                       # rsqmc
                   'afqmcinfo','walkerset','propagator','execute')         # afqmc
     afqmc_order = ('project','random','afqmcinfo','hamiltonian',
                    'wavefunction','walkerset','propagator','execute')
@@ -5542,7 +5542,7 @@ class BundledQmcpackInput(SimulationInput):
     def __init__(self,inputs,filenames):
         self.inputs = obj()
         for input in inputs:
-            self.inputs.append(input)
+            self.inputs[len(self.inputs)] = input
         #end for
         self.filenames = filenames
     #end def __init__
@@ -5635,7 +5635,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
 
     def bundle_inputs(self,quantity,values,input):
         range = len(self.inputs),len(self.inputs)+len(values)
-        self.quantities.append(obj(quantity=quantity,range=range))
+        self.quantities[len(self.quantities)] = obj(quantity=quantity,range=range)
         for value in values:
             inp = deepcopy(input)
             qhost = inp.get_host(quantity)                               
@@ -5651,8 +5651,8 @@ class TracedQmcpackInput(BundledQmcpackInput):
             else:
                 self.error('quantity '+quantity+' was not found in '+input.__class__.__name__)
             #end if
-            self.variables.append(obj(quantity=quantity,value=value))
-            self.inputs.append(inp)
+            self.variables[len(self.variables)] = obj(quantity=quantity,value=value)
+            self.inputs[len(self.inputs)] = inp
         #end for
     #end def bundle_inputs
 
