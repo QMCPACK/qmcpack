@@ -470,6 +470,18 @@ class VKeywordFile(VFile):
         msg  = ''
         all_unknown = set()
         types = cls.kw_scalars+cls.kw_arrays
+        for n,type1 in enumerate(types):
+            names1 = getattr(cls,type1)
+            for type2 in types[n+1:]:
+                overlap = names1 & getattr(cls,type2)
+                if len(overlap)>0:
+                    msg += (
+                        '\nvariables with multiple types ({0}, {1}):\n'
+                        '  {2}\n'.format(type1,type2,sorted(overlap))
+                        )
+                #end if
+            #end for
+        #end for
         untyped = set(cls.keywords)
         for type in types:
             untyped -= getattr(cls,type)
@@ -647,120 +659,201 @@ class Incar(VKeywordFile):
     # VASP wiki with incar keys/tags
     #   https://www.vasp.at/wiki/index.php/Category:INCAR_tag
 
-    # VTST extensions:  http://theory.cm.utexas.edu/vtsttools/index.html
-    #   ichain lclimb ltangentold ldneb lnebcell jacobian timestep
+    # VTST extensions:  https://henkelmangroup.github.io/vtsttools/
 
-    # some of these are mixed type arrays or other oddly formatted fields
-    unsupported = frozenset()
-
-    # these appear on the vasp wiki but have broken documentation
-    broken_docs = frozenset({'lkpoints_wan', 'nomega_dump', 'dmft_basis'})
-
-    ints = frozenset({
-        'npaco', 'ml_iscale_toten', 'phon_nstruct', 'ml_ialgo_linreg', 'kpoints_opt_mode',
-        'i_constrained_m', 'nbseeig', 'nomegapar', 'lmaxfockmp2', 'nkredy', 'nbandsgw',
-        'inimix', 'maxmem', 'nblock', 'ngy', 'lmaxmix', 'ibrion', 'phon_ntlist',
-        'ml_nhyp', 'nppstr', 'kpar', 'isif', 'ialgo', 'ngxf', 'ml_mrb2', 'plevel',
-        'ismear', 'iniwav', 'clnt', 'shakemaxiter', 'nstorb', 'nmaxfockae', 'phon_nwrite',
-        'num_wann', 'kblock', 'nbands', 'nblock_fock', 'elmin', 'nomegar', 'ml_mhis',
-        'nelmdl', 'hills_bin', 'ml_icriteria', 'nkredz', 'findiff', 'ichibare', 'nblk',
-        'nwrite', 'maxmix', 'lmaxmp2', 'proutine', 'apaco', 'nkredx', 'nelm', 'ncshmem',
-        'ml_ff_istart', 'iepsilon', 'igpar', 'ldauprint', 'ipead', 'ml_ff_icouple_mb',
-        'nbmod', 'nelmgw', 'nedos', 'lmaxfock', 'fockcorr', 'ml_ff_mrb1_mb', 'ml_nmdint',
-        'ngyf', 'ml_ireg', 'ml_ff_lmax2_mb', 'nomega', 'nsim', 'ngzf', 'mdalgo', 'ivdw',
-        'nelmin', 'ispin', 'cll', 'imix', 'smass', 'cln', 'hflmax', 'antires', 'nupdown',
-        'hflmaxf', 'ml_ff_natom_coupled_mb', 'exxoep', 'ncore_in_image1', 'npar',
-        'nelmall', 'ml_natom_coupled', 'mixpre', 'ldautype', 'ntaupar', 'nbandso',
-        'ml_iweight', 'naturalo', 'ncore', 'ml_ff_ireg_mb', 'ml_lmax2', 'nfree',
-        'ntemper', 'ml_istart', 'ch_nedos', 'ml_iafilt2', 'ml_mrb1', 'idipol', 'ngz',
-        'nrmm', 'lmaxfockae', 'ml_mconf_new', 'isym', 'ml_mb', 'ml_nrank_sparsdes', 'ngx',
-        'nsw', 'images', 'nkred', 'iwavpr', 'nbandsv', 'ml_mconf', 'icharg',
-        'kpoints_opt_nkbatch', 'ml_ff_mrb2_mb', 'lorbit', 'ichain', 'istart', 'lmaxpaw',
-        'voskown', 'spring', 'icorelevel'
+    # Block-style INCAR constructs cannot be represented by the flat
+    # keyword-file reader/writer.
+    unsupported = frozenset({
+        'image_1', 'kernel_truncation/factor',
+        'kernel_truncation/idimensionality', 'kernel_truncation/ipad',
+        'kernel_truncation/isurface', 'kernel_truncation/lcoarsen',
+        'kernel_truncation/ltruncate', 'plugins/force_and_stress',
+        'plugins/local_potential', 'plugins/machine_learning',
+        'plugins/ml_mode', 'plugins/ml_outblock', 'plugins/ml_output_mode',
+        'plugins/neighbor_cutoff', 'plugins/occupancies', 'plugins/structure',
         })
 
+    # Pages still present in Nexus history but absent or malformed on the wiki.
+    broken_docs = frozenset({
+        'dmft_basis',
+        })
+
+    ints = frozenset({
+        'antires', 'ch_nedos', 'cll', 'cln', 'clnt', 'drotmax', 'efermi_nedos',
+        'elmin', 'elph_fermi_nedos', 'elph_ismear', 'elph_lr', 'elph_nbands',
+        'elph_selfen_band_start_kp', 'elph_selfen_band_stop_kp',
+        'elph_selfen_nw', 'elph_transport_driver', 'elph_transport_nedos_plot',
+        'elph_wf_comm_opt', 'exxoep', 'findiff', 'fmp_direction', 'fmp_period',
+        'fmp_snumber', 'fmp_swapnum', 'fnmin', 'fockcorr', 'hflmax', 'hflmaxf',
+        'hills_bin', 'i_constrained_m', 'ialgo', 'iall_in_one', 'ibrion',
+        'ibse', 'ichain', 'icharg', 'ichibare', 'icorelevel', 'idipol',
+        'iepsilon', 'ifc_asr', 'ifc_lr', 'igpar', 'ilbfgsmem', 'images',
+        'imix', 'inimix', 'iniwav', 'inmrprint', 'iopt', 'ipead',
+        'irc_direction', 'irc_stop', 'isearch', 'isif', 'ismear', 'ispin',
+        'istart', 'isym', 'ivdw', 'ivdw_nl', 'iwavpr', 'kblock', 'kpar',
+        'kpoints_opt_mode', 'kpoints_opt_nkbatch', 'ldauprint', 'ldautype',
+        'libmbd_n_omega_grid', 'lmaxfock', 'lmaxfockae', 'lmaxfockmp2',
+        'lmaxmix', 'lmaxmp2', 'lmaxpaw', 'lmaxtau', 'lorbit', 'maxmem',
+        'maxmix', 'mdalgo', 'mixpre',
+        'ml_calgo', 'ml_desc_type', 'ml_estblock', 'ml_ff_icouple_mb',
+        'ml_ff_ireg_mb', 'ml_ff_istart', 'ml_ff_lmax2_mb', 'ml_ff_mrb1_mb',
+        'ml_ff_mrb2_mb', 'ml_ff_natom_coupled_mb', 'ml_iafilt2',
+        'ml_ialgo_linreg', 'ml_icriteria', 'ml_ireg', 'ml_iscale_toten',
+        'ml_istart', 'ml_iweight', 'ml_lmax2', 'ml_mb', 'ml_mb_min',
+        'ml_mconf', 'ml_mconf_new', 'ml_mhis', 'ml_mopot_nm', 'ml_mrb1',
+        'ml_mrb2', 'ml_natom_coupled', 'ml_ncshmem', 'ml_nhyp', 'ml_nmdint',
+        'ml_nrank_sparsdes', 'ml_outblock', 'ml_output_mode', 'ml_srpot_n0',
+        'naturalo', 'nbands', 'nbands_wave', 'nbandsexact', 'nbandsgw',
+        'nbandso', 'nbandsv', 'nblk', 'nblock', 'nblock_fock', 'nbmod',
+        'nbseblocko', 'nbseblockv', 'nbseeig', 'ncore', 'ncore_in_image1',
+        'ncshmem', 'nedos', 'nelm', 'nelmall', 'nelmdl', 'nelmgw', 'nelmin',
+        'nfree', 'ngx', 'ngxf', 'ngy', 'ngyf', 'ngz', 'ngzf', 'nhc_nchains',
+        'nhc_nrespa', 'nhc_ns', 'nkred', 'nkredx', 'nkredy', 'nkredz',
+        'nmaxfockae', 'nomega', 'nomega_dump', 'nomegapar', 'nomegar', 'npaco',
+        'npar', 'nppstr', 'nrmm', 'nsim', 'nstorb', 'nsw', 'ntaupar',
+        'ntemper', 'num_wann', 'nwrite', 'phon_dos', 'phon_nedos',
+        'phon_nstruct', 'phon_ntlist', 'phon_nwrite', 'plevel', 'proutine',
+        'pyamff_maxepoch', 'pyamff_maxiter', 'shakemaxiter', 'snl',
+        'transport_nedos', 'voskown', 'wrt_nmrcur',
+        })
 
     reals = frozenset({
-        'shaketolsoft', 'minrot', 'ml_sclc_ctifor', 'param2', 'ml_ff_w2_mb', 'weimin',
-        'enaug', 'encut', 'omegatl', 'amix_mag', 'sigma', 'symprec', 'ml_eps_low', 'clz',
-        'encutgw', 'ml_sion1', 'ediffg', 'ml_ff_w1_mb', 'ml_sion2', 'andersen_prob',
-        'emax', 'ofield_kappa', 'vdw_s6', 'bparam', 'aldac', 'cmbjb', 'nelect',
-        'pthreshold', 'pstress', 'ml_ff_rcut1_mb', 'vdw_cnradius', 'ml_sigv0',
-        'ml_wtoten', 'deper', 'zab_vdw', 'bmix_mag', 'ml_ctifor', 'ofield_q6_near',
-        'hills_w', 'potim', 'vcaimages', 'ml_rcut2', 'ml_afilt2', 'scalee', 'bmix',
-        'lambda', 'libxc2_pn', 'step_max', 'ml_cdoub', 'omegamax', 'hfrcut', 'aexx',
-        'ml_rcouple', 'encutfock', 'vdw_sr', 'vdw_radius', 'shaketol', 'ml_wtsif',
-        'ml_sigw0', 'omegamin', 'ml_wtifor', 'hfscreen', 'amix', 'cparam', 'emin',
-        'langevin_gamma_l', 'wc', 'ediff', 'pmass', 'efield', 'timestep', 'jacobian',
-        'epsilon', 'zval', 'amin', 'ch_sigma', 'step_size', 'vcutoff', 'hills_h',
-        'vdw_s8', 'aggac', 'pomass', 'ml_eps_reg', 'time', 'param1', 'smass', 'cshift',
-        'libxc1_pn', 'ml_cslope', 'scsrad', 'vdw_a2', 'hitoler', 'ml_ff_sion1_mb',
-        'vdw_a1', 'encutgwsoft', 'estop', 'vdw_d', 'mbja', 'enmax', 'ml_rcut1',
-        'ofield_q6_far', 'ml_rdes_sparsdes', 'ofield_a', 'tebeg', 'ml_cx', 'dq',
-        'kspacing', 'enmin', 'ml_csig', 'vdw_scaling', 'ml_w1', 'mbjb', 'dimer_dist',
-        'hfalpha', 'ml_ff_rcut2_mb', 'ebreak', 'ml_ff_sion2_mb', 'teend', 'aldax',
-        'ml_ff_rcouple_mb', 'enini', 'aggax', 'cmbja'
+        'aexx', 'aggac', 'aggax', 'aldac', 'aldax', 'alpha_vdw', 'amggac',
+        'amggax', 'amin', 'amix', 'amix_mag', 'andersen_prob', 'apaco', 'bexx',
+        'bmix', 'bmix_mag', 'bparam', 'ch_amplification', 'ch_sigma', 'clz',
+        'cmbja', 'cmbjb', 'cmbje', 'cparam', 'cshift', 'ddr', 'deg_threshold',
+        'deper', 'dfnmax', 'dfnmin', 'dimer_dist', 'dq', 'ebreak', 'ediff',
+        'ediffg', 'efield', 'elph_kspacing', 'elph_selfen_band_start',
+        'elph_selfen_band_stop', 'elph_selfen_broad_tol', 'elph_selfen_wrange',
+        'elph_transport_dfermi_tol', 'elph_transport_emax',
+        'elph_transport_emax_plot', 'elph_transport_emin',
+        'elph_transport_emin_plot', 'elph_wf_cache_mb', 'emax', 'emin',
+        'enaug', 'encut', 'encutfock', 'encutgw', 'encutgwsoft', 'encutlr',
+        'enini', 'enmax', 'enmin', 'epsilon', 'estop', 'ewald_cutoff',
+        'falpha', 'fdstep', 'ftimedec', 'ftimeinc', 'ftimemax', 'gamma_vdw',
+        'hfalpha', 'hfrcut', 'hfscreen', 'hills_h', 'hills_w', 'hitoler',
+        'invcurv', 'irc_delta0', 'irc_maxstep', 'irc_minstep', 'irc_vnorm0',
+        'jacobian', 'kspacing', 'kspacing_opt', 'lambda', 'lanczosthr',
+        'langevin_gamma_l', 'libmbd_k_grid_shift', 'libmbd_mbd_a',
+        'libmbd_mbd_beta', 'libmbd_ts_d', 'libmbd_ts_sr', 'libxc1_pn',
+        'libxc2_pn', 'maxdis', 'maxmove', 'mbja', 'mbjb', 'minrot',
+        'ml_afilt2', 'ml_cdoub', 'ml_csig', 'ml_cslope', 'ml_ctifor', 'ml_cx',
+        'ml_emppot_rcut', 'ml_eps_low', 'ml_eps_reg', 'ml_ff_rcouple_mb',
+        'ml_ff_rcut1_mb', 'ml_ff_rcut2_mb', 'ml_ff_sion1_mb', 'ml_ff_sion2_mb',
+        'ml_ff_w1_mb', 'ml_ff_w2_mb', 'ml_mopot_dm', 'ml_mopot_rkm',
+        'ml_mopot_rm', 'ml_rcouple', 'ml_rcut1', 'ml_rcut2',
+        'ml_rdes_sparsdes', 'ml_sclc_ctifor', 'ml_sigv0', 'ml_sigw0',
+        'ml_sion1', 'ml_sion2', 'ml_srpot_b0', 'ml_srpot_s0', 'ml_w1',
+        'ml_wtifor', 'ml_wtoten', 'ml_wtsif', 'msdgw_f', 'nelect', 'nupdown',
+        'ofield_a', 'ofield_kappa', 'ofield_q6_far', 'ofield_q6_near',
+        'omegamax', 'omegamin', 'omegatl', 'param1', 'param2', 'phon_g_cutoff',
+        'phon_sigma', 'pmass', 'potim', 'pstress', 'pthreshold', 'pyamff_etol',
+        'pyamff_fcoeff', 'pyamff_ftol', 'pyamff_maxmove', 'pyamff_swftol',
+        'pyamff_tol', 'rsmbj', 'scalee', 'scissor', 'scsrad', 'sdalpha', 'sdr',
+        'shaketol', 'shaketolsoft', 'sigma', 'sltol', 'smass', 'smbj',
+        'spring', 'step_max', 'step_size', 'symprec', 'tebeg', 'teend',
+        'tilambda', 'time', 'timestep', 'transport_relaxation_time',
+        'vacpotflat', 'vcaimages', 'vcutoff', 'vdw_a1', 'vdw_a2', 'vdw_beta',
+        'vdw_cnradius', 'vdw_d', 'vdw_radius', 'vdw_s6', 'vdw_s8', 'vdw_s9',
+        'vdw_scaling', 'vdw_sr', 'vdw_sr8', 'wc', 'weimin', 'xcm_pn',
+        'zab_vdw', 'zval',
         })
 
     bools = frozenset({
-        'lhfcalc', 'lvdw_ewald', 'lrpaforce', 'lreal_compat', 'skip_edotp',
-        'ml_ff_lsupervec_mb', 'lselfenergy', 'lnmr_sym_red', 'ladder', 'lfxc',
-        'ldipol', 'lspectral', 'lsingles', 'lnoncollinear', 'ldiag', 'ldneb', 'lfockace',
-        'lmaxtau', 'lplane', 'ml_ff_lheat_mb', 'lwrite_wanproj', 'lblueout',
-        'ldisentangle', 'ml_ff_lcouple_mb', 'lchimag', 'ml_ff_lnorm1_mb', 'lcalcpol',
-        'ldisentangled', 'lkpoints_opt', 'lvdwscs', 'lvtot', 'lmodelhf', 'lelf', 'pflat',
-        'lepsilon', 'ml_lheat', 'phon_lmc', 'lsck', 'lwannier90', 'lphon_polar',
-        'lfockaedft', 'lscaaware', 'lvdwexpansion', 'lscalapack', 'ml_leatom', 'lberry',
-        'lnabla', 'ml_ff_lnorm2_mb', 'nlspline', 'lasync', 'ml_lsparsdes', 'lrpa',
-        'loptics', 'ml_lmlff', 'lscaler0', 'llraug', 'ml_ff_lsic_mb', 'evenonly',
-        'lhyperfine', 'lwaveh5', 'lscsgrad', 'lsubrot', 'lweighted', 'lscdm', 'lcorr',
-        'luse_vdw', 'ml_ff_lmlff', 'lzeroz', 'lvdw', 'lscalu', 'lmixtau', 'phon_lbose',
-        'lcharg', 'lspectralgw', 'lorbitalreal', 'kgamma', 'lpead', 'oddonlygw',
-        'addgrid', 'ltemper', 'evenonlygw', 'lvhar', 'lkproj', 'lwannier90_run',
-        'oddonly', 'lasph', 'kpoints_opt', 'lsorbit', 'lorbmom', 'ltangentold',
-        'gga_compat', 'lnebcell', 'lmp2lt', 'ldau', 'ltriplet', 'lwrite_wannier_xsf',
-        'lbone', 'lefg', 'ch_lspec', 'lfinite_temperature', 'lnlrpa', 'lcalceps',
-        'lsmp2lt', 'lspiral', 'ml_luse_names', 'ml_lafilt2', 'lh5', 'lwrite_unk',
-        'laechg', 'lmono', 'lpead_sym_red', 'ltboundlibxc', 'lfermigw', 'lwave',
-        'lhartree', 'lwrite_mmn_amn', 'lclimb', 'lsepb', 'ml_lcouple', 'lthomas',
-        'lwannier90_auto_window', 'lchargh5', 'lsepk', 'lphon_dispersion', 'lpard',
-        'lintpol_kpath'
+        'addgrid', 'ch_lspec', 'elph_ignore_imag_phonons', 'elph_pot_generate',
+        'elph_prepare', 'elph_run', 'elph_selfen_dw', 'elph_selfen_fan',
+        'elph_selfen_g_skip', 'elph_selfen_gaps', 'elph_selfen_imag_skip',
+        'elph_selfen_static', 'elph_transport', 'elph_useblas',
+        'elph_userecip', 'elph_wf_cache_prefill', 'elph_wf_redistribute',
+        'elph_write_hdf5vel', 'elph_write_textvel', 'evenonly', 'evenonlygw',
+        'gga_compat', 'interactive', 'kgamma', 'kpoints_opt', 'ladder',
+        'laechg', 'lall_in_one', 'lasph', 'lasync', 'lautoscale', 'lberry',
+        'lblueout', 'lbone', 'lcalceps', 'lcalcpol', 'lcharg', 'lchargh5',
+        'lchimag', 'lclimb', 'lcorr', 'ldau', 'ldiag', 'ldipol',
+        'ldisentangle', 'ldisentangled', 'ldmatrix', 'ldneb', 'ldownsample',
+        'lefg', 'lelf', 'lepsilon', 'lfermigw', 'lfinite_temperature',
+        'lfockace', 'lfockaedft', 'lfockstd', 'lfxc', 'lglobal', 'lh5',
+        'lhartree', 'lhfcalc', 'lhyperfine', 'lintpol_kpath', 'lkpoints_opt',
+        'lkpoints_wan', 'lkproj', 'llineopt', 'llraug', 'lmixtau', 'lmodelhf',
+        'lmono', 'lmp2lt', 'lnabla', 'lnebcell', 'lnicsall', 'lnlrpa',
+        'lnmr_sym_red', 'lnmrcar', 'lnmrleg', 'lnmrshield', 'lnoaugxc',
+        'lnoncollinear', 'loptics', 'lorbitalreal', 'lorbmom', 'lpard',
+        'lpardh5', 'lpead', 'lpead_sym_red', 'lphon_dispersion', 'lphon_polar',
+        'lphon_read_force_constants', 'lplane', 'lposnics', 'lreal_compat',
+        'lrhfcalc', 'lrpa', 'lrpaforce', 'lscaaware', 'lscalapack', 'lscaler0',
+        'lscalu', 'lscdm', 'lsck', 'lscrpa', 'lscsgrad', 'lselfenergy',
+        'lsepb', 'lsepk', 'lsfbxc', 'lsingles', 'lsmp2lt', 'lsorbit',
+        'lsoshift', 'lspectral', 'lspectralgw', 'lspin_vdw', 'lspiral',
+        'lsubrot', 'lsynch5', 'ltangentold', 'ltau', 'ltboundlibxc', 'ltemper',
+        'lthomas', 'ltriplet', 'ltssurf', 'ltwo_centre', 'luse_vdw',
+        'lusenccl', 'lvacpotav', 'lvdw', 'lvdw_ewald', 'lvdwexpansion',
+        'lvdwscs', 'lvgvappl', 'lvgvcalc', 'lvhar', 'lvtot', 'lwannier90',
+        'lwannier90_auto_window', 'lwannier90_run', 'lwave', 'lwaveh5',
+        'lweighted', 'lwrite_mmn_amn', 'lwrite_spn', 'lwrite_unk',
+        'lwrite_wannier_xsf', 'lwrite_wanproj', 'lwrt_augmented_density',
+        'lzeroz', 'lzora', 'ml_ff_lcouple_mb', 'ml_ff_lheat_mb', 'ml_ff_lmlff',
+        'ml_ff_lnorm1_mb', 'ml_ff_lnorm2_mb', 'ml_ff_lsic_mb',
+        'ml_ff_lsupervec_mb', 'ml_lafilt2', 'ml_lbasis_discard', 'ml_lcouple',
+        'ml_leatom', 'ml_lemppot', 'ml_lerr', 'ml_lfast', 'ml_lheat', 'ml_lib',
+        'ml_lmlff', 'ml_lsparsdes', 'ml_luse_names', 'nlspline', 'nucind',
+        'oddonly', 'oddonlygw', 'pflat', 'phon_lbose', 'phon_lmc',
+        'skip_edotp', 'velocity',
         })
 
     strings = frozenset({
-        'stop_on', 'nthreads_lo', 'system', 'libxc1', 'lreal', 'wannier90_win', 'gga',
-        'nthreads_mu', 'algo', 'locproj', 'metagga', 'libxc2', 'precfock', 'quad_efg',
-        'nthreads_hi', 'prec', 'fftwmakeplan'
+        'algo', 'bandgap', 'bseprec', 'checkpoint_fd', 'cutoff_type',
+        'dftd4_model', 'dftd4_xc', 'efermi', 'elph_decompose', 'elph_driver',
+        'elph_mode', 'elph_scattering_approx', 'fftwmakeplan', 'gga',
+        'libmbd_method', 'libmbd_parallel_mode', 'libmbd_vdw_params_kind',
+        'libmbd_xc', 'libxc1', 'libxc2', 'locproj', 'lreal', 'metagga',
+        'ml_grace_model', 'ml_mode', 'ml_type', 'nthreads_hi', 'nthreads_lo',
+        'nthreads_mu', 'prec', 'precfock', 'pyamff_conv', 'pyamff_model',
+        'pyamff_opt', 'random_generator', 'sdftd3_damping', 'sdftd3_xc',
+        'stop_on', 'system', 'wannier90_win', 'wrt_density', 'wrt_potential',
+        'xc',
         })
 
     int_arrays = frozenset({
-        'iband', 'smearings', 'ldaul', 'ntarget_states', 'kpuse', 'kpoint_bse',
-        'random_seed', 'nsubsys', 'ncrpa_bands', 'ml_icouple'
+        'elph_nbands_sum', 'iband', 'k_multiply', 'kpoint_bse', 'kpuse',
+        'ldaul', 'libmbd_k_grid', 'ml_icouple', 'ml_mopot_ijm', 'ncrpa_bands',
+        'nsubsys', 'ntarget_states', 'random_seed',
         })
-
 
     real_arrays = frozenset({
-        'vdw_alpha', 'cmbj', 'efield_pead', 'phon_dielectric', 'ferwe', 'value_max',
-        'm_constr', 'vdw_c6', 'rwigs', 'dipol', 'tsubsys', 'ngyromag', 'vca', 'vdw_r0',
-        'magmom', 'langevin_gamma', 'value_min', 'ml_ff_eatom', 'ldauu', 'ferdo',
-        'ml_eatom_ref', 'eint', 'vdw_c6au', 'ropt', 'phon_born_charges', 'qmaxfockae',
-        'psubsys', 'ldauj', 'saxis', 'increm', 'phon_tlist', 'qspiral', 'vdw_r0au'
+        'bext', 'bseelectron', 'bsehole', 'cmbj', 'cutoff_mu', 'cutoff_sigma',
+        'dipol', 'efield_pead', 'efor', 'eint', 'elph_pot_fft_mesh',
+        'elph_pot_lattice', 'elph_selfen_carrier_den',
+        'elph_selfen_carrier_den_range', 'elph_selfen_carrier_per_cell',
+        'elph_selfen_delta', 'elph_selfen_energy_window', 'elph_selfen_ikpt',
+        'elph_selfen_kpts', 'elph_selfen_mu', 'elph_selfen_mu_range',
+        'elph_selfen_temps', 'elph_selfen_temps_range', 'fbias_a', 'fbias_d',
+        'fbias_r0', 'ferdo', 'ferwe', 'increm', 'langevin_gamma', 'ldauj',
+        'ldauu', 'libmbd_alpha', 'libmbd_c6au', 'libmbd_r0au', 'm_constr',
+        'magmom', 'ml_eatom_ref', 'ml_ff_eatom', 'ngyromag',
+        'phon_born_charges', 'phon_dielectric', 'phon_tlist', 'pomass',
+        'psubsys', 'qmaxfockae', 'qspiral', 'quad_efg', 'ropt', 'rwigs',
+        'saxis', 'smearings', 'spring_k', 'spring_r0', 'spring_v0', 'tsubsys',
+        'value_max', 'value_min', 'vca', 'vdw_alpha', 'vdw_c6', 'vdw_c6au',
+        'vdw_r0', 'vdw_r0au', 'xc_c',
         })
 
-    bool_arrays = frozenset({'lvdw_onecell', 'lattice_constraints'}) # formatted: F F T, etc
+    bool_arrays = frozenset({
+        'fmp_active', 'lattice_constraints', 'lvdw_onecell',
+        })
 
     keyword_classification = obj(
         array_dimensions = (
-            'nbands', 'ngzf', 'nplwv', 'ngxf', 'lmdim', 'ngy', 'ngz', 'irdmax', 'irmax',
+            'nbands', 'ngzf', 'nplwv', 'ngxf', 'lmdim', 'ngy', 'ngz',
+            'irdmax', 'irmax',
             'nions', 'nkpts', 'nkdim', 'ldim', 'ngyf', 'nedos', 'ngx'
             ),
         )
 
-    # updated 220609
+    # Retained for backwards compatibility.
     deprecated = frozenset({
-        'lvdwscs', 'mbja', 'enmax', 'skip_edotp', 'lvdw', 'timestep', 'jacobian',
-        'enmin', 'lmaxfockmp2', 'vdw_scaling', 'elmin', 'mbjb', 'lclimb', 'hflmaxf',
-        'ldneb', 'lmaxmp2', 'ltangentold', 'lnebcell', 'ichain'
+        'elmin', 'enmax', 'enmin', 'hflmaxf', 'ichain', 'jacobian', 'lclimb',
+        'ldneb', 'lmaxfockmp2', 'lmaxmp2', 'lnebcell', 'ltangentold', 'lvdw',
+        'lvdwscs', 'mbja', 'mbjb', 'skip_edotp', 'timestep', 'vdw_scaling',
         })
 
 #end class Incar

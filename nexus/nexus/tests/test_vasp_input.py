@@ -132,6 +132,72 @@ def test_keyword_consistency():
 #end def test_keyword_consistency
 
 
+def test_current_keyword_types():
+    from ..vasp_input import Incar
+
+    expected = {
+        'ints': {
+            'efermi_nedos', 'elph_nbands', 'iopt', 'libmbd_n_omega_grid',
+            'ml_output_mode',
+            },
+        'reals': {
+            'apaco', 'ddr', 'elph_kspacing', 'nupdown', 'spring',
+            },
+        'bools': {
+            'elph_run', 'lglobal', 'ml_lib',
+            },
+        'strings': {
+            'efermi', 'elph_driver', 'ml_mode', 'pyamff_model', 'xc',
+            },
+        'int_arrays': {
+            'elph_nbands_sum', 'libmbd_k_grid',
+            },
+        'real_arrays': {
+            'elph_selfen_temps', 'pomass', 'quad_efg', 'smearings',
+            },
+        'bool_arrays': {
+            'fmp_active',
+            },
+        }
+
+    for keyword_type,keywords in expected.items():
+        for keyword in keywords:
+            assert(Incar.type[keyword]==keyword_type)
+        #end for
+    #end for
+#end def test_current_keyword_types
+
+
+def test_current_keywords_roundtrip():
+    import numpy as np
+    from ..vasp_input import Incar
+
+    incar = Incar()
+    incar.assign(
+        elph_driver       = 'el',
+        elph_nbands       = 8,
+        elph_run          = True,
+        elph_selfen_temps = [0.0,300.0],
+        fmp_active        = [True,False],
+        iopt              = 7,
+        lglobal           = True,
+        spring            = -5.0,
+        )
+
+    reread = Incar()
+    reread.read_text(incar.write_text())
+
+    assert(reread.elph_driver=='el')
+    assert(reread.elph_nbands==8)
+    assert(reread.elph_run)
+    assert(np.array_equal(reread.elph_selfen_temps,[0.0,300.0]))
+    assert(np.array_equal(reread.fmp_active,[True,False]))
+    assert(reread.iopt==7)
+    assert(reread.lglobal)
+    assert(reread.spring==-5.0)
+#end def test_current_keywords_roundtrip
+
+
 def test_keyword_file_roundtrip():
     import numpy as np
     from ..vasp_input import Incar
