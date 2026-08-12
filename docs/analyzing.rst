@@ -1434,9 +1434,37 @@ time. The planned successor to this tool (``qstat``) will expand access
 to other observables and will retain at least the non-plotting
 capabilities of ``qdens``.
 
-To use ``qdens``, Nexus must be installed along with NumPy and H5Py. A
-short list of example use cases are covered in the next section. Current
-input flags are:
+To use ``qdens``, Nexus must be installed along with NumPy and H5Py.
+
+Quick start
+~~~~~~~~~~~
+
+First, enable a ``spindensity`` estimator in the QMCPACK input and run
+QMCPACK to produce the corresponding ``stat.h5`` file.  For example:
+
+.. code-block:: xml
+
+  <estimator type="spindensity" name="SpinDensity" report="yes">
+    <parameter name="grid">40 40 40</parameter>
+  </estimator>
+
+Then post-process the output, normally into XSF for visualization:
+
+::
+
+  qdens -f xsf -i qmc.in.xml qmc.s000.stat.h5
+
+The input file supplied with ``-i`` provides the structure and density
+metadata.  In particular, ``qdens`` reads the spin-density grid and any
+custom ``cell`` and ``corner`` from the estimator, including estimators
+placed in a ``qmc`` block such as ``vmc_batch``.  The resulting XSF files
+can be opened in viewers such as XCrysDen or VESTA.  ``_u`` and ``_d``
+contain the up- and down-spin densities, ``_u+d`` is the total charge
+density, and ``_u-d`` is the spin density; ``+err`` and ``-err`` files
+contain the mean plus or minus its estimated error.
+
+A short list of additional use cases is covered below. Current input flags
+are:
 
 .. code-block:: 
 

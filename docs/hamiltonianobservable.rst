@@ -41,7 +41,7 @@ for individual potentials is given in the sections that follow.
   +------------------+----------------------------------------------------+
   | parent elements: | ``simulation, qmcsystem``                          |
   +------------------+----------------------------------------------------+
-  | child elements:  | ``pairpot extpot estimator constant`` (deprecated) |
+  | child elements:  | ``pairpot extpot constant``; bare ``estimator`` is deprecated |
   +------------------+----------------------------------------------------+
 
 attributes:
@@ -510,21 +510,64 @@ density matrix (``dm1b``), :math:`S(k)` based kinetic energy correction
 (``chiesa``), and force
 (``Force``) estimators. Other estimators are not yet covered.
 
-When an ``<estimator/>`` element appears in ``<hamiltonian/>``, it is
-evaluated for all applicable chained QMC runs (e.g.,
-VMC\ :math:`\rightarrow`\ DMC\ :math:`\rightarrow`\ DMC). Estimators are
-generally not accumulated during wavefunction optimization sections. If
-an ``<estimator/>`` element is instead provided in a particular
-``<qmc/>`` element, that estimator is only evaluated for that specific
-section (e.g., during VMC only).
+Modern batched estimator input
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For batched VMC and DMC, place estimators in an ``<estimators>``
+container.  A container in ``<qmcsystem/>`` is global and applies to all
+batched QMC sections.  A container in a ``<qmc method="vmc_batch"/>`` or
+``<qmc method="dmc_batch"/>`` section is local to that section.  Do not
+place the same estimator in both a global and a local container unless it
+is intended to be accumulated twice.
+
+For example, this spin-density estimator is applied to every following
+batched QMC section:
+
+.. code-block:: xml
+
+  <qmcsystem>
+    <!-- simulation cell, particlesets, wavefunction, and hamiltonian -->
+    <estimators>
+      <estimator type="spindensity" name="SpinDensity" report="yes">
+        <parameter name="grid">40 40 40</parameter>
+      </estimator>
+    </estimators>
+  </qmcsystem>
+
+To enable an estimator only for one batched run, put the container in
+that QMC section instead:
+
+.. code-block:: xml
+
+  <qmc method="vmc_batch" move="pbyp">
+    <estimators>
+      <estimator type="spindensity" name="SpinDensity" report="yes">
+        <parameter name="grid">40 40 40</parameter>
+      </estimator>
+    </estimators>
+    <!-- QMC parameters -->
+  </qmc>
+
+A bare ``<estimator/>`` directly in a ``<qmc/>`` section is accepted for
+backward compatibility but deprecated.  QMCPACK prints a warning in its
+normal run output because this legacy idiom prevents future input
+validation.  Use the ``<estimators>`` container for new batched inputs.
+Legacy VMC and DMC QMC sections do not accept a qmc-level
+``<estimators>`` container.
+
+A bare ``<estimator/>`` in ``<hamiltonian/>`` is the legacy Hamiltonian
+observable mechanism.  It is evaluated for all applicable chained QMC
+runs (for example, VMC\ :math:`\rightarrow`\ DMC\ :math:`\rightarrow`
+DMC), rather than being scoped to a single QMC section.  Estimators are
+generally not accumulated during wavefunction optimization sections.
 
 ``estimator`` factory element:
 
-  +------------------+----------------------+
-  | parent elements: | ``hamiltonian, qmc`` |
-  +------------------+----------------------+
-  | type selector:   | ``type`` attribute   |
-  +------------------+----------------------+
+  +------------------+---------------------------+
+  | parent elements: | ``estimators``             |
+  +------------------+---------------------------+
+  | type selector:   | ``type`` attribute         |
+  +------------------+---------------------------+
 
   +------------------+------------------+-----------------------------------------------------------+
   | **type options** | density          | Density on a grid                                         |
@@ -806,6 +849,8 @@ Additional information:
        0.0  0.0 10.0
     </parameter>
   </estimator>
+
+Post-process the resulting ``stat.h5`` output with :ref:`qdens`.
 
 Magnetization density estimator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

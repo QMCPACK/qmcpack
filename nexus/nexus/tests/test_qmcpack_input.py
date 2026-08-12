@@ -3,7 +3,7 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
 
-from ..generic import generic_settings
+from ..generic import NexusError, generic_settings
 generic_settings.raise_error = True
 
 from . import isolate_nexus_core, TEST_DIR
@@ -1481,6 +1481,43 @@ def test_read():
     assert value_eq(pos,pos_ref)
 
 #end def test_read
+
+
+@pytest.mark.parametrize('batched_method,legacy_method',[
+    ('vmc_batch','vmc'),
+    ('dmc_batch','dmc'),
+    ])
+def test_batched_qmc_estimators(tmp_path,batched_method,legacy_method):
+    import numpy as np
+    from ..qmcpack_input import QmcpackInput
+
+    batched_input = '''<simulation>
+  <qmc method="{}" move="pbyp">
+    <estimators>
+      <estimator type="spindensity" name="SpinDensity">
+        <parameter name="grid">2 3 4</parameter>
+        <parameter name="corner">0 0 0</parameter>
+        <parameter name="cell">2 0 0 0 3 0 0 0 4</parameter>
+      </estimator>
+    </estimators>
+  </qmc>
+</simulation>
+'''.format(batched_method)
+    filepath = tmp_path / 'batched_estimators.xml'
+    filepath.write_text(batched_input)
+
+    qi = QmcpackInput(filepath)
+    qi.pluralize()
+    sd = qi.simulation.calculations[0].estimators.estimators.SpinDensity
+    assert value_eq(sd.grid,np.array([2,3,4]))
+    assert value_eq(sd.corner,np.zeros(3))
+    assert value_eq(sd.cell,np.array([[2.,0.,0.],[0.,3.,0.],[0.,0.,4.]]))
+
+    legacy_filepath = tmp_path / 'legacy_estimators.xml'
+    legacy_filepath.write_text(batched_input.replace(batched_method,legacy_method))
+    with pytest.raises(NexusError):
+        QmcpackInput(legacy_filepath)
+#end def test_batched_qmc_estimators
 
 
 

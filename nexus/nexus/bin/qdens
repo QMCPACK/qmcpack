@@ -4,7 +4,6 @@ import gc
 import os
 import sys
 from copy import deepcopy
-import xml.etree.ElementTree as ET
 from pathlib import Path
 from optparse import OptionParser
 
@@ -195,63 +194,9 @@ def get_grid(s,dr=None,delta=None,x_min=None,x_max=None,y_min=None,y_max=None,z_
 #end def get_grid
 
 
-def _xml_float_array(text,shape=None):
-    values = np.array([float(v) for v in text.split()],dtype=float)
-    if shape is not None:
-        npe.reshape_inplace(values, shape)
-    #end if
-    return values
-#end def _xml_float_array
-
-
-def _xml_int_array(text,shape=None):
-    values = np.array([int(v) for v in text.split()],dtype=int)
-    if shape is not None:
-        npe.reshape_inplace(values, shape)
-    #end if
-    return values
-#end def _xml_int_array
-
-
 def _has_valid_axes(structure):
     return structure is not None and np.array(structure.axes).shape==(3,3)
 #end def _has_valid_axes
-
-
-def _read_density_estimators_from_xml(filepath):
-    estimators = obj()
-    root = ET.parse(filepath).getroot()
-    for elem in root.iter('estimator'):
-        etype = elem.get('type')
-        if etype not in ('spindensity','density'):
-            continue
-        #end if
-        name = elem.get('name')
-        if not name:
-            name = 'SpinDensity' if etype=='spindensity' else 'Density'
-        #end if
-        entry = obj(type=etype)
-        for child in elem:
-            if child.tag!='parameter':
-                continue
-            #end if
-            pname = child.get('name')
-            if pname is None or child.text is None:
-                continue
-            #end if
-            text = child.text.strip()
-            if pname=='grid':
-                entry.grid = _xml_int_array(text)
-            elif pname=='cell':
-                entry.cell = _xml_float_array(text,(3,3))
-            elif pname=='corner':
-                entry.corner = _xml_float_array(text)
-            #end if
-        #end for
-        estimators[name] = entry
-    #end for
-    return estimators
-#end def _read_density_estimators_from_xml
 
 
 def reblock(data,eq,rb=None,filepath=None):
@@ -1166,7 +1111,7 @@ class QMCDensityProcessor(QDBase):
                 for series in sorted(calcs.keys()):
                     qmc = calcs[series]
                     if 'estimators' in qmc:
-                        est_sources.append(qmc.estimators)
+                        est_sources.append(qmc.estimators.estimators)
                     #end if
                 #end for
             #end if
@@ -1239,32 +1184,6 @@ class QMCDensityProcessor(QDBase):
                         #end if
                     #end if
                 #end for
-            #end for
-            # QmcpackInput currently misses some estimator placements (e.g.
-            # vmc_batch/qmc-level estimators) and does not support spin-density
-            # cell/corner.  Supplement with a direct XML scan of estimator nodes.
-            for name,sd in _read_density_estimators_from_xml(opt.input).items():
-                if name in grids:
-                    continue
-                #end if
-                if sd.type=='spindensity':
-                    if 'grid' in sd:
-                        grids[name] = sd.grid
-                    else:
-                        self.error('could not identify grid data for spin density named "{0}"\nin QMCPACK input file: {1}'.format(name,opt.input))
-                    #end if
-                    if 'cell' in sd:
-                        if not _has_valid_axes(structure):
-                            structure.axes = sd.cell.copy()
-                        #end if
-                        density_cell = convert(sd.cell.copy(),'B','A')
-                    #end if
-                    if 'corner' in sd:
-                        density_corner = convert(sd.corner.copy(),'B','A')
-                    #end if
-                elif sd.type=='density' and 'grid' in sd:
-                    grids[name] = sd.grid
-                #end if
             #end for
             if len(grids)>0:
                 opt.grids = grids

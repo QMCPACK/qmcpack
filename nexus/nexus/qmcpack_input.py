@@ -2983,7 +2983,7 @@ class vmc_batch(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ('method','move','profiling','kdelay','checkpoint')
-    elements   = ('estimator',)
+    elements   = ('estimator','estimators')
     parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','usedrift')
     write_types = obj(usedrift=yesno,profiling=yesno)
 #end class vmc_batch
@@ -2995,7 +2995,7 @@ class dmc_batch(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ('method','move','profiling','kdelay','checkpoint')
-    elements   = ('estimator',)
+    elements   = ('estimator','estimators')
     parameters = ('total_walkers','walkers_per_rank','crowd_serialize_walkers','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound')
     write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno, crowd_serialize_walkers=yesno)
 #end class dmc_batch
