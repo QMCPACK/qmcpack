@@ -392,7 +392,7 @@ class Settings(NexusCore):
                         )
         parser.add_option('--timeout',dest='timeout',
                         default='none',
-                        help='Number of seconds to wait for output and error files after a job exits the queue before marking the simulation as failed (default={0}).'.format(nexus_core_defaults.timeout)
+                        help='Number of seconds to wait for output and error files after a job exits the queue before marking the simulation as failed (default={}).'.format(nexus_core_defaults.timeout)
                         )
         parser.add_option('--machine',dest='machine',
                         default='none',
@@ -451,7 +451,7 @@ class Settings(NexusCore):
 
         # pre-process options, full processing occurs upon return
         boolean_options = set(['status_only','generate_only','progress_tty'])
-        real_options = set(['sleep','timeout'])
+        real_options = {'sleep', 'timeout'}
         for ropt in real_options:
             if opt[ropt]!='none':
                 try:

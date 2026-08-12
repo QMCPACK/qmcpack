@@ -1,7 +1,10 @@
 import pytest
+import sys
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.SETTINGS_OPERATION)
 
+from .. import settings
+from ..developer import obj
 from ..generic import generic_settings
 generic_settings.raise_error = True
 
@@ -16,7 +19,7 @@ def test_settings(tmp_path):
     # test full imports
     import os
     from nexus import settings,Settings
-    from ..developer import DevBase,obj
+    from ..developer import DevBase
     from ..nexus_base import nexus_core,nexus_core_defaults
     from ..nexus_base import nexus_noncore,nexus_noncore_defaults
     from ..nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
@@ -178,10 +181,6 @@ def test_settings(tmp_path):
 
 @isolate_nexus_core
 def test_command_line_timeout():
-    import sys
-    from nexus import settings
-    from ..developer import obj
-
     argv = sys.argv
     try:
         sys.argv = ['nexus_script.py','--timeout=12.5']

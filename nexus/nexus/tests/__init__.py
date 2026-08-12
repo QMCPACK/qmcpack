@@ -20,6 +20,7 @@ NEXUS_CORE_KEYS = (
     "stages_set",
     "status",
     "sleep",
+    "timeout",
     "file_locations",
     "pseudo_dir",
     "pseudopotentials",

@@ -123,9 +123,7 @@ def restore_nexus_core_defaults():
 restore_nexus_core_defaults()
 
 
-nexus_core_no_process = set('''
-  status_only  generate_only  sleep  timeout
-  '''.split())
+nexus_core_no_process = {'status_only', 'generate_only', 'sleep', 'timeout'}
 
 
 class NexusCore(DevBase):
