@@ -132,6 +132,128 @@ def test_keyword_consistency():
 #end def test_keyword_consistency
 
 
+def test_keyword_file_roundtrip():
+    import numpy as np
+    from ..vasp_input import Incar
+
+    text = 'SYSTEM = "first line\nsecond line"\nENCUT = 400\nLATTICE_CONSTRAINTS = t f .TRUE.\n'
+    incar = Incar()
+    incar.read_text(text)
+
+    assert(incar.system=='first line\nsecond line')
+    assert(incar.encut==400.0)
+    assert(np.array_equal(incar.lattice_constraints,(True,False,True)))
+
+    reread = Incar()
+    reread.read_text(incar.write_text())
+    assert(reread.system==incar.system)
+    assert(reread.encut==incar.encut)
+#end def test_keyword_file_roundtrip
+
+
+def test_kpoints_tetrahedra_roundtrip():
+    import numpy as np
+    from ..developer import obj
+    from ..vasp_input import Kpoints
+
+    kpoints = Kpoints()
+    kpoints.mode = 'explicit'
+    kpoints.coord = 'reciprocal'
+    kpoints.kpoints = np.array([[0.0,0.0,0.0]])
+    kpoints.kweights = np.array([1.0])
+    kpoints.tetrahedra = obj()
+    kpoints.tetrahedra[0] = obj(
+        volume     = 0.5,
+        degeneracy = 1,
+        corners    = np.array([1,1,1,1]),
+        )
+
+    reread = Kpoints()
+    reread.read_text(kpoints.write_text())
+
+    assert(reread.mode=='explicit')
+    assert(len(reread.tetrahedra)==1)
+    assert(reread.tetrahedra[0].volume==0.5)
+    assert(np.array_equal(reread.tetrahedra[0].corners,(1,1,1,1)))
+#end def test_kpoints_tetrahedra_roundtrip
+
+
+def test_poscar_coordinates_and_structure_conversion():
+    import numpy as np
+    from ..vasp_input import Poscar,VaspInput
+
+    poscar = Poscar()
+    poscar.scale = 2.0
+    poscar.axes = np.eye(3)
+    poscar.elem = np.array(['H'])
+    poscar.elem_count = np.array([1])
+    poscar.coord = 'direct'
+    poscar.pos = np.array([[0.25,0.25,0.25]])
+
+    vasp_input = VaspInput()
+    vasp_input.poscar = poscar
+    poscar.change_specifier('cartesian',vasp_input)
+    poscar.change_specifier('direct',vasp_input)
+    assert(np.allclose(poscar.pos,[[0.25,0.25,0.25]]))
+    assert(poscar.check_complete()=='')
+
+    structure = vasp_input.return_system(structure_only=True)
+    assert(np.allclose(structure.axes,2.0*np.eye(3)))
+    assert(np.allclose(structure.pos,[[0.5,0.5,0.5]]))
+
+    selective_text = '''selective dynamics
+1.0
+1 0 0
+0 1 0
+0 0 1
+H
+1
+Selective dynamics
+Direct
+0 0 0 t f t
+'''
+    selective = Poscar()
+    selective.read_text(selective_text)
+    assert(np.array_equal(selective.dynamic,[[True,False,True]]))
+#end def test_poscar_coordinates_and_structure_conversion
+
+
+def test_potcar_construction_and_metadata(tmp_path):
+    from ..vasp_input import Potcar
+
+    empty = Potcar()
+    assert(empty.write_text()=='')
+
+    potcar_text = 'PAW_PBE H 01Jan2001\n1.0\nVRHFIN =H:\nEnd of Dataset'
+    potcar_file = tmp_path / 'H.POTCAR'
+    potcar_file.write_text(potcar_text)
+
+    potcar = Potcar(potcar_file)
+    assert(len(potcar.pseudos)==1)
+    assert(potcar.write_text()==potcar_text)
+
+    info = potcar.pot_info()
+    assert(len(info)==1)
+    assert(info[0].element=='H')
+    assert(info[0].Zval==1)
+
+    configured = Potcar(tmp_path,['H.POTCAR'])
+    configured.load()
+    assert(configured.pseudos[0]==potcar_text)
+#end def test_potcar_construction_and_metadata
+
+
+def test_input_filename_filtering(tmp_path):
+    from ..vasp_input import VaspInput
+
+    (tmp_path / 'INCAR').write_text('ENCUT = 100\n')
+    (tmp_path / 'job_INCAR.in').write_text('ENCUT = 200\n')
+
+    vasp_input = VaspInput(tmp_path,prefix='job_',postfix='.in')
+    assert(vasp_input.incar.encut==200.0)
+#end def test_input_filename_filtering
+
+
 
 def test_empty_init():
     from ..vasp_input import VaspInput
@@ -212,4 +334,10 @@ def test_generate(tmp_path):
     del vi.potcar.filepath
 
     check_vs_serial_reference(vi,'generate')
+
+    vi_minimal = generate_vasp_input(system=dia16)
+    assert(vi_minimal.incar.nelect==64)
+
+    vi_title = generate_vasp_input(title='diamond')
+    assert(vi_title.incar.system=='diamond')
 #end def test_generate

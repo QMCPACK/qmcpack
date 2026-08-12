@@ -108,11 +108,11 @@ def read_real_array(sval):
 #end def read_real_array
 
 
-bool_array_dict = dict(T=True,F=False)
+bool_array_dict = dict(T=True,F=False,TRUE=True,FALSE=False)
 def read_bool_array(sval):
     barr = []
     for v in expand_array(sval):
-        barr.append(bool_array_dict[v])
+        barr.append(bool_array_dict[v.upper().strip('.')])
     #end for
     return np.array(barr,dtype=bool)
 #end def read_bool_array
@@ -166,6 +166,9 @@ def render_bool(v):
 
 
 def write_array(arr,same=equality,render=str,max_repeat=3):
+    if len(arr)==0:
+        return ''
+    #end if
     value_counts = []
     count = 0
     value = arr[0]
@@ -413,6 +416,7 @@ class VFile(Vobj):
                 #end if
                 istart = i+1
             #end for
+            text += text_in[istart:]
         #end if
         return text,mvals
     #end def preprocess_multiline_strings
@@ -882,10 +886,10 @@ class Kpoints(VFormattedFile):
                     tet_volume = float(tokens[1])
                     for n in range(ntets):
                         tokens = lines[tetline+2+n].split()
-                        self.tetrahedra.append(
-                            obj(volume     = tet_volume,
-                                degeneracy = int(tokens[0]),
-                                corners    = np.array(tokens[1:],dtype=int))
+                        self.tetrahedra[len(self.tetrahedra)] = obj(
+                            volume     = tet_volume,
+                            degeneracy = int(tokens[0]),
+                            corners    = np.array(tokens[1:],dtype=int),
                             )
                     #end for
                 #end if
@@ -943,12 +947,12 @@ class Kpoints(VFormattedFile):
                 ntets = len(self.tetrahedra)
                 tets = self.tetrahedra
                 text+='tetrahedra\n'
-                text+=' {0} {1}'.format(ntets,tets[0].volume)
+                text+=' {0} {1}\n'.format(ntets,tets[0].volume)
                 for n in range(ntets):
                     t = tets[n]
                     d = t.degeneracy
                     c = t.corners
-                    text+=' {0:d} {1:d} {2:d} {3:d}\n'.format(d,*c)
+                    text+=' {0:d} {1:d} {2:d} {3:d} {4:d}\n'.format(d,*c)
                 #end for
             #end if
         else:
@@ -987,10 +991,7 @@ class Poscar(VFormattedFile):
 
     def change_specifier(self,specifier,vasp_input_class):
         axes=vasp_input_class.poscar.axes
-        scale=vasp_input_class.poscar.scale
-        unitcellvec=axes*scale
 
-        #units are in angstroms.  
         pos=self.pos
         spec=self.coord  #the current specifier
         
@@ -1000,7 +1001,7 @@ class Poscar(VFormattedFile):
         if spec=="cartesian":
             pass
         elif spec=="direct":
-            pos=np.dot(pos,unitcellvec)
+            pos=np.dot(pos,axes)
         else:
             self.error("Poscar.change_specifier():  %s is not a valid coordinate specifier"%(spec))
         #end if
@@ -1078,7 +1079,7 @@ class Poscar(VFormattedFile):
         pos  = np.array(spos[:,0:3],dtype=float)
         if selective_dynamics:
             dynamic = np.array(spos[:,3:6],dtype=str)
-            dynamic = dynamic=='T'
+            dynamic = np.char.upper(dynamic)=='T'
         else:
             dynamic = None
         #end if
@@ -1194,7 +1195,7 @@ class Poscar(VFormattedFile):
         if self.vel is not None and self.vel_coord is None:
             msg += 'vel_coord is missing\n'
         #end if
-        if exit:
+        if exit and len(msg)>0:
             self.error(msg)
         #end if
         return msg
@@ -1239,7 +1240,7 @@ class Potcar(VFormattedFile):
         self.files    = files
         self.filepath = filepath
         self.pseudos  = obj()
-        if not os.path.isdir(filepath):
+        if filepath is not None and not os.path.isdir(filepath):
             VFile.__init__(self,filepath)
         else:
             VFile.__init__(self)
@@ -1248,28 +1249,23 @@ class Potcar(VFormattedFile):
 
 
     def read_text(self,text,filepath=''):
-        start  = 0
-        end    = len(text)
-        pstart = start
-        pend   = end
-        n      = 0
-        iter   = 0
-        while n<end and iter<20:
-            n = text.find('End of Dataset',start,end)
+        marker = 'End of Dataset'
+        pstart = 0
+        end = len(text)
+        while pstart<end:
+            n = text.find(marker,pstart,end)
             if n==-1:
                 break
             #end if
-            start = n
-            n=text.find('\n',start,end)+1
-            pend = n
+            line_end = text.find('\n',n+len(marker),end)
+            if line_end==-1:
+                pend = end
+            else:
+                pend = line_end+1
+            #end if
             self.pseudos[len(self.pseudos)] = text[pstart:pend]
             pstart = pend
-            start  = pend
-            iter+=1
         #end while
-        if iter>=20:
-            self.error('failed to read file {0}'.format(filepath))
-        #end if
     #end def read_text
 
 
@@ -1296,7 +1292,9 @@ class Potcar(VFormattedFile):
         elif self.filepath is not None and self.files is not None:
             pots = obj()
             for file in self.files:
-                pots.append(open(os.path.join(self.filepath,file),'r').read())
+                with open(os.path.join(self.filepath,file),'r') as f:
+                    pots[len(pots)] = f.read()
+                #end with
             #end for
         else:
             pots = obj()
@@ -1316,7 +1314,7 @@ class Potcar(VFormattedFile):
             n2 = pot.find(':',n1+1)
             element = pot[n1:n2].strip()
 
-            pot_info.append(obj(label=label,Zval=Zval,element=element))
+            pot_info[len(pot_info)] = obj(label=label,Zval=Zval,element=element)
         #end for
         return pot_info
     #end def pot_info
@@ -1337,7 +1335,9 @@ class Potcar(VFormattedFile):
         self.pseudos.clear()
         if self.filepath is not None and self.files is not None:
             for file in self.files:
-                self.pseudos.append(open(os.path.join(self.filepath,file),'r').read())
+                with open(os.path.join(self.filepath,file),'r') as f:
+                    self.pseudos[len(self.pseudos)] = f.read()
+                #end with
             #end for
         #end if
     #end def load
@@ -1394,11 +1394,19 @@ class VaspInput(SimulationInput,Vobj):
         path = self.get_path(filepath)
         for file in os.listdir(path):
             name = str(file)
-            if len(prefix)>0 and name.startswith(prefix):
-                name = name.split(prefix,1)[1]
+            if len(prefix)>0:
+                if name.startswith(prefix):
+                    name = name.split(prefix,1)[1]
+                else:
+                    continue
+                #end if
             #end if
-            if len(postfix)>0 and name.endswith(postfix):
-                name = name.rsplit(postfix,1)[0]
+            if len(postfix)>0:
+                if name.endswith(postfix):
+                    name = name.rsplit(postfix,1)[0]
+                else:
+                    continue
+                #end if
             #end if
             name = name.lower()
             if name in self.input_files:
@@ -1460,6 +1468,9 @@ class VaspInput(SimulationInput,Vobj):
         # handle charged systems
         if set_nelect or system.net_charge!=0:
             #  warning: spin polarization is handled by the user!
+            if 'incar' not in self:
+                self.incar = Incar()
+            #end if
             self.incar.nelect = system.n_elec
         #end if
 
@@ -1468,17 +1479,27 @@ class VaspInput(SimulationInput,Vobj):
 
 
     def return_system(self,*,structure_only=False,**valency):
-        axes  = self.poscar.axes
-        scale = self.poscar.scale
-        axes  = scale*axes
+        raw_axes = self.poscar.axes
+        input_scale = self.poscar.scale
+        if input_scale<0:
+            scale_factor = (abs(input_scale)/abs(np.linalg.det(raw_axes)))**(1.0/3.0)
+        else:
+            scale_factor = input_scale
+        #end if
+        axes  = scale_factor*raw_axes
         scale = 1.0
  
         velem       = self.poscar.elem
         velem_count = self.poscar.elem_count
         elem        = vasp_to_nexus_elem(velem,velem_count)
  
-        self.poscar.change_specifier('cartesian',self)
-        pos=self.poscar.pos
+        if self.poscar.coord=='direct':
+            pos = np.dot(self.poscar.pos,axes)
+        elif self.poscar.coord=='cartesian':
+            pos = scale_factor*self.poscar.pos
+        else:
+            self.error('invalid POSCAR coordinate specifier: {0}'.format(self.poscar.coord))
+        #end if
         
         center=axes.sum(0)/2.0
         
@@ -1487,15 +1508,26 @@ class VaspInput(SimulationInput,Vobj):
         kgrid    = None
         kshift   = None
 
-        if self.kpoints.mode=="auto":
-            kshift=self.kpoints.kshift
-            if self.kpoints.centering=="monkhorst-pack":
+        if structure_only:
+            kpoints_file = None
+        elif 'kpoints' in self:
+            kpoints_file = self.kpoints
+        else:
+            self.error('KPOINTS is required to generate a physical system')
+        #end if
+
+        if kpoints_file is not None and kpoints_file.mode=="auto":
+            kshift=kpoints_file.kshift
+            if kshift is None:
+                kshift = np.zeros(3,dtype=float)
+            #end if
+            if kpoints_file.centering=="monkhorst-pack":
                 kshift=kshift+np.array([0.5,0.5,0.5])
-            elif self.kpoints.centering=="gamma":
+            elif kpoints_file.centering=="gamma":
                 pass
             #end if
-            kgrid=self.kpoints.kgrid
-        else:
+            kgrid=kpoints_file.kgrid
+        elif kpoints_file is not None:
             self.error('system generation does not currently work with manually specified k-points')
         #end if
         structure = Structure(
@@ -1731,6 +1763,9 @@ def generate_any_vasp_input(**kwargs):
 
     # incorporate system information
     species = None
+    if system_str is not None and 'incar' not in vi:
+        vi.incar = Incar()
+    #end if
     if vf.system is not None:
         species = vi.incorporate_system(
             system         = vf.system,
