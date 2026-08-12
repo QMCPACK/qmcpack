@@ -19,6 +19,8 @@ Separate directories
 
 Give the two simulations different paths.  Nexus writes an ``mcwalkerset``
 with a relative path to the checkpoint and retains the project ID of ``qmc2``.
+See ``05_diamond_dft_dmc_restart/diamond_lda_dmc_restart_separate_dirs.py``
+in ``examples/qmcpack/rsqmc_quantum_espresso`` for a complete workflow.
 
 .. code-block:: python
 
@@ -37,6 +39,8 @@ Use distinct Nexus identifiers but the same path.  Nexus continues the
 QMCPACK project ID and series from the continuation XML, producing successive
 files such as ``dmc.s001.*`` and ``dmc.s002.*`` without colliding Nexus input,
 output, error, or analyzer files.
+See ``05_diamond_dft_dmc_restart/diamond_lda_dmc_restart_same_dir.py`` for a
+complete workflow.
 
 .. code-block:: python
 
@@ -53,4 +57,5 @@ Twist averaging
 
 The same patterns apply to twist-averaged calculations.  The initial and
 restarted simulations must have matching twist grids; Nexus pairs and checks
-the checkpoint for each twist.
+the checkpoint for each twist.  Both directory layouts are demonstrated in
+``examples/qmcpack/rsqmc_quantum_espresso/06_diamond_dft_dmc_twistavg_restart``.
