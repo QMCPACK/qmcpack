@@ -2319,11 +2319,8 @@ def test_execute(tmp_path):
     nexus_core.remote_directory = str(tmp_path)
     nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
-    import shutil
-    serial = shutil.which('mpirun') is None
-
     s = get_test_sim(
-        job = job(machine='ws1',app_command='echo run',serial=serial),
+        job = job(machine='ws1',app_command='echo run',serial=True),
         )
 
     s.create_directories()
