@@ -559,6 +559,53 @@ def test_workstation_scheduling(tmp_path):
 #end def test_workstation_scheduling
 
 
+@isolate_nexus_core
+def test_workstation_requeue(tmp_path):
+    import time
+    from ..machines import Workstation
+    from ..machines import job,Job
+
+    ws = Workstation('ws_requeue',16,'mpirun')
+    j = job(machine=ws.name,serial=True)
+    init_job(j,directory=tmp_path)
+
+    old_pid = 987654321
+    j.system_id = old_pid
+
+    assert(j.status==Job.states.none)
+    assert(j.internal_id not in ws.jobs)
+    assert(j.internal_id not in ws.waiting)
+
+    j.reenter_queue()
+
+    assert(j.status==Job.states.waiting)
+    assert(j.system_id==old_pid)
+    assert(j.internal_id in ws.jobs)
+    assert(id(ws.jobs[j.internal_id])==id(j))
+    assert(ws.waiting==set([j.internal_id]))
+    assert(len(ws.running)==0)
+    assert(len(ws.processes)==0)
+
+    ws.submit_jobs()
+
+    assert(j.status==Job.states.running)
+    assert(j.system_id!=old_pid)
+    assert(ws.waiting==set())
+    assert(ws.running==set([j.internal_id]))
+    assert(set(ws.processes.keys())==set([j.system_id]))
+
+    time.sleep(0.1)
+    ws.query_queue()
+
+    assert(j.finished)
+    assert(j.status==Job.states.finished)
+    assert(ws.running==set())
+    assert(ws.finished==set([j.internal_id]))
+    assert(len(ws.processes)==0)
+
+#end def test_workstation_requeue
+
+
 
 def test_supercomputer_init():
     from ..developer import obj, to_obj

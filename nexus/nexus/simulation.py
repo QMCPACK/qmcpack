@@ -947,11 +947,6 @@ class Simulation(NexusCore):
         if 'process_id' not in self:
             self.process_id = self.job.system_id
         #end if
-        # handle workstation reloading
-        machine = self.job.get_machine()
-        if isinstance(machine,Workstation):
-            if self.submitted and not self.finished:
-                self.reset_indicators()
     #end def load_image
 
 
