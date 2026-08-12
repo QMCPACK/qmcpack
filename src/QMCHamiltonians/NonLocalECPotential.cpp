@@ -218,16 +218,18 @@ void NonLocalECPotential::evaluateImpl(TrialWaveFunction& psi, ParticleSet& P, b
           neighbor_lists.addElecIonPair(jel, iat);
 
           value_ += pairpot;
+#if !defined(REMOVE_TRACEMANAGER)
           if (streaming_particles_)
           {
             Ve_samp(jel) += 0.5 * pairpot;
             Vi_samp(iat) += 0.5 * pairpot;
           }
+#endif
         }
     }
   }
 
-#if !defined(TRACE_CHECK)
+#if !defined(TRACE_CHECK) && !defined(REMOVE_TRACEMANAGER)
   if (streaming_particles_)
   {
     Return_t Vnow = value_;

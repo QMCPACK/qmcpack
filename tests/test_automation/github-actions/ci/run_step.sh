@@ -7,15 +7,6 @@ case "$1" in
 
   # Configure qmcpack using cmake out-of-source builds 
   configure)
-    
-    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
-    then
-      echo "Use recent cmake v3.21.3"
-      export PATH=/opt/cmake-3.21.3-linux-x86_64/bin:$PATH
-      # Make current environment variables available to subsequent steps, 
-      # e.g. ctest
-      echo "PATH=$PATH" >> $GITHUB_ENV
-    fi
 
     cmake --version
     
@@ -148,27 +139,23 @@ case "$1" in
               -DQMC_INSTALL_NEXUS=OFF \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9"*"-CUDA-AFQMC"*)
-        echo 'Configure for building with CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
+      *"GCC9-MPI"**)
+        echo 'Configure for GCC9 MPI'
+        export OMPI_CC=gcc-9
+        export OMPI_CXX=g++-9
+        # Make current environment variables available to subsequent steps
+        echo "OMPI_CC=gcc-9" >> $GITHUB_ENV
+        echo "OMPI_CXX=g++-9" >> $GITHUB_ENV
         cmake -GNinja $CMAKE_OPTIONS \
-              -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
-              -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
-              -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
-              -DBUILD_AFQMC=ON \
-              -DQMC_GPU=cuda \
-              -DQMC_GPU_ARCHS=sm_70 \
-              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
-              -DQMC_DATA=$QMC_DATA_DIR \
+              -DCMAKE_C_COMPILER=mpicc \
+              -DCMAKE_CXX_COMPILER=mpicxx \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9"*"-MKL-"*)
-        echo 'Configure for building with GCC and Intel MKL'
-
-        source /opt/intel2020/mkl/bin/mklvars.sh intel64
-
+        *"GCC9-NoMPI"**)
+        echo 'Configure for GCC9 NoMPI'
         cmake -GNinja $CMAKE_OPTIONS \
-              -DBLA_VENDOR=Intel10_64lp \
-              -DQMC_DATA=$QMC_DATA_DIR \
+              -DCMAKE_C_COMPILER=gcc-9 \
+              -DCMAKE_CXX_COMPILER=g++-9 \
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC15-MPI"*"-Gcov"*)
