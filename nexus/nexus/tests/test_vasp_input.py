@@ -677,6 +677,40 @@ def test_kpoints_tetrahedra_roundtrip():
 #end def test_kpoints_tetrahedra_roundtrip
 
 
+def test_kpoints_labels_and_related_files():
+    import numpy as np
+    from ..vasp_input import (
+        Kpoints,KpointsElph,KpointsOpt,KpointsWan,Qpoints
+        )
+
+    text = (
+        'band path\n'
+        '20\n'
+        'line mode\n'
+        'reciprocal\n'
+        '0 0 0 Gamma\n'
+        '0.5 0 0 X\n'
+        )
+    for cls in (Kpoints,KpointsElph,KpointsOpt,KpointsWan,Qpoints):
+        kpoints = cls()
+        kpoints.read_text(text)
+        assert(np.array_equal(kpoints.kendpoints,[[0,0,0],[0.5,0,0]]))
+        assert(np.array_equal(kpoints.labels,['Gamma','X']))
+
+        reread = cls()
+        reread.read_text(kpoints.write_text())
+        assert(np.array_equal(reread.labels,['Gamma','X']))
+    #end for
+
+    automatic = Kpoints()
+    automatic.read_text('automatic\n0\nAuto\n10.5\n')
+    assert(automatic.kgrid==10.5)
+    reread = Kpoints()
+    reread.read_text(automatic.write_text())
+    assert(reread.kgrid==10.5)
+#end def test_kpoints_labels_and_related_files
+
+
 def test_poscar_coordinates_and_structure_conversion():
     import numpy as np
     from ..vasp_input import Poscar,VaspInput
@@ -715,6 +749,121 @@ Direct
     selective.read_text(selective_text)
     assert(np.array_equal(selective.dynamic,[[True,False,True]]))
 #end def test_poscar_coordinates_and_structure_conversion
+
+
+def test_poscar_extended_format():
+    import numpy as np
+    from ..vasp_input import Poscar,VaspInput
+
+    text = (
+        'extended structure # retained as a comment\n'
+        '1 2 3\n'
+        '1 0 0\n'
+        '0 1 0\n'
+        '0 0 1\n'
+        'H\n'
+        '1\n'
+        'direct\n'
+        '0.25 0.25 0.25 center\n'
+        'Lattice velocities and vectors\n'
+        '1\n'
+        '0.1 0 0\n'
+        '0 0.2 0\n'
+        '0 0 0.3\n'
+        '1 0 0\n'
+        '0 2 0\n'
+        '0 0 3\n'
+        '\n'
+        '1.0 2.0 3.0\n'
+        '\n'
+        'predictor-corrector state\n'
+        '0.5\n'
+        )
+    poscar = Poscar()
+    poscar.read_text(text)
+
+    assert(np.array_equal(poscar.scale,[1.0,2.0,3.0]))
+    assert(np.array_equal(poscar.labels,['center']))
+    assert(poscar.lattice_vel_init==1)
+    assert(np.array_equal(poscar.lattice_vel,np.diag([0.1,0.2,0.3])))
+    assert(poscar.vel_coord=='cartesian')
+    assert(np.array_equal(poscar.vel,[[1.0,2.0,3.0]]))
+    assert('predictor-corrector state' in poscar.md_extra)
+
+    vasp_input = VaspInput()
+    vasp_input.poscar = poscar
+    structure = vasp_input.return_system(structure_only=True)
+    assert(np.array_equal(structure.axes,np.diag([1.0,2.0,3.0])))
+    assert(np.allclose(structure.pos,[[0.25,0.5,0.75]]))
+
+    reread = Poscar()
+    reread.read_text(poscar.write_text())
+    assert(np.array_equal(reread.scale,poscar.scale))
+    assert(np.array_equal(reread.labels,poscar.labels))
+    assert(reread.vel_coord=='cartesian')
+    assert(reread.md_extra==poscar.md_extra)
+
+    poscar.elem = np.array(['H1'])
+    assert('H1 ' in poscar.write_text())
+#end def test_poscar_extended_format
+
+
+def test_auxiliary_formatted_files():
+    import numpy as np
+    from ..vasp_input import Iconst,Ircar,Penaltypot
+
+    iconst = Iconst()
+    iconst.read_text(
+        'R 1 2 0\n'
+        'W 1 2 1.1 9 14 5\n'
+        'S 1.0 -1.0 7\n'
+        )
+    assert(iconst.coordinates[0].flag=='R')
+    assert(iconst.coordinates[1]['items']==(1,2,1.1,9,14))
+    assert(iconst.coordinates[2].status==7)
+    reread_iconst = Iconst()
+    reread_iconst.read_text(iconst.write_text())
+    assert(reread_iconst.coordinates==iconst.coordinates)
+
+    penaltypot = Penaltypot()
+    penaltypot.read_text('1.0 2.0 0.5\n2.0 3.0 -0.5\n')
+    assert(np.array_equal(
+        penaltypot.hills,[[1.0,2.0,0.5],[2.0,3.0,-0.5]]
+        ))
+    reread_penalty = Penaltypot()
+    reread_penalty.read_text(penaltypot.write_text())
+    assert(np.array_equal(reread_penalty.hills,penaltypot.hills))
+
+    irccar = Ircar()
+    irccar.read_text('2\n0.0 0.5\n1.0 0.5\n')
+    assert(np.array_equal(irccar.points,[[0.0,0.5],[1.0,0.5]]))
+    reread_irccar = Ircar()
+    reread_irccar.read_text(irccar.write_text())
+    assert(np.array_equal(reread_irccar.points,irccar.points))
+#end def test_auxiliary_formatted_files
+
+
+def test_extended_input_file_registry(tmp_path):
+    from ..vasp_input import VaspInput,VRawFile
+
+    raw_files = ('CHGCAR','DYNMATFULL','GAMMA','HESSEMAT','ML_AB','ML_FF',
+                 'TAUCAR','WANPROJ')
+    for filename in raw_files:
+        (tmp_path / filename).write_text(filename+' synthetic data\n')
+    #end for
+    (tmp_path / 'KPOINTS_OPT').write_text(
+        'mesh\n0\nGamma\n1 1 1\n'
+        )
+
+    vasp_input = VaspInput(tmp_path)
+    for filename in raw_files:
+        name = filename.lower()
+        assert(isinstance(vasp_input[name],VRawFile))
+        assert(vasp_input[name].text==filename+' synthetic data\n')
+    #end for
+    assert(vasp_input.kpoints_opt.mode=='auto')
+    assert('EXHCAR' not in VaspInput.all_inputs)
+#end def test_extended_input_file_registry
 
 
 def test_potcar_construction_and_metadata(tmp_path):

@@ -32,7 +32,7 @@
 #    VFormattedFile                                                  #
 #      Base class for VASP input files with strict formatting.       #
 #      Derived classes handle specialized I/O for each file.         #
-#      See Iconst, Kpoints, Penaltypot, Poscar, Potcar, and Exhcar.  #
+#      See Iconst, Kpoints, Penaltypot, Poscar, and Potcar.         #
 #                                                                    #
 #====================================================================#
 
@@ -456,6 +456,8 @@ def write_mixed(types,value):
 
 
 class Vobj(DevBase):
+    """Base class for VASP input objects."""
+
     def get_path(self,filepath):
         filepath = path_string(filepath)
         if os.path.exists(filepath) and os.path.isdir(filepath):
@@ -473,6 +475,8 @@ class Vobj(DevBase):
 
 
 class VFile(Vobj):
+    """Base class for VASP input files."""
+
     def __init__(self,filepath=None):
         if filepath is not None:
             filepath = path_string(filepath)
@@ -578,6 +582,8 @@ class VFile(Vobj):
 
 
 class VKeywordFile(VFile):
+    """Base class for keyword-based VASP files."""
+
     kw_scalars = ('ints','reals','bools','strings')
     kw_arrays  = ('int_arrays','real_arrays','bool_arrays')
     kw_fields  = kw_scalars + kw_arrays + ('keywords','unsupported')
@@ -883,7 +889,9 @@ class VKeywordFile(VFile):
                                     if name not in self:
                                         self[name] = obj()
                                     #end if
-                                    for field,field_value in block_value.items():
+                                    for field,field_value in (
+                                        block_value.items()
+                                        ):
                                         self[name][field] = field_value
                                     #end for
                                 except Exception as e:
@@ -1009,6 +1017,8 @@ class VKeywordFile(VFile):
 
 
 class VFormattedFile(VFile):
+    """Base class for structured VASP files."""
+
     def read_lines(self,text,*,remove_empty=False):
         raw_lines = text.splitlines()
         lines = []
@@ -1050,6 +1060,7 @@ class VFormattedFile(VFile):
 
  
 class Incar(VKeywordFile):
+    """Represent a VASP INCAR file."""
 
     # VASP wiki with incar keys/tags
     #   https://www.vasp.at/wiki/index.php/Category:INCAR_tag
@@ -1277,6 +1288,8 @@ class Incar(VKeywordFile):
 
 
 class Stopcar(VKeywordFile):
+    """Represent a VASP STOPCAR file."""
+
     keywords = frozenset({'lstop', 'labort'})
     bools    = frozenset({'lstop', 'labort'})
 #end class Stopcar
@@ -1292,12 +1305,57 @@ del VKeywordFile.kw_fields
 
 
 class Iconst(VFormattedFile):  # metadynamics -> 6.62.4
-    None
+    """Represent geometric constraints in an ICONST file."""
+
+    def __init__(self,filepath=None):
+        self.coordinates = obj()
+        VFile.__init__(self,filepath)
+    #end def __init__
+
+
+    def read_text(self,text,filepath=''):
+        self.coordinates.clear()
+        lines = self.read_lines(text,remove_empty=True)
+        for line in lines:
+            tokens = line.split()
+            if len(tokens)<2:
+                self.error('invalid ICONST line: {0}'.format(line))
+            #end if
+            values = []
+            for token in tokens[1:-1]:
+                try:
+                    value = int(token)
+                except ValueError:
+                    value = read_real(token)
+                #end try
+                values.append(value)
+            #end for
+            self.coordinates[len(self.coordinates)] = obj(
+                flag   = tokens[0],
+                items  = tuple(values),
+                status = int(tokens[-1]),
+                )
+        #end for
+    #end def read_text
+
+
+    def write_text(self,filepath=''):
+        text = ''
+        for index in sorted(self.coordinates.keys()):
+            coordinate = self.coordinates[index]
+            values = [coordinate.flag]
+            values.extend(map(str,coordinate['items']))
+            values.append(str(assign_int(coordinate.status)))
+            text += ' '.join(values)+'\n'
+        #end for
+        return text
+    #end def write_text
 #end class Iconst
 
 
 
 class Kpoints(VFormattedFile):
+    """Represent Brillouin-zone sampling in a KPOINTS file."""
 
     #  mode == explicit
     #    coord    = cartesian/reciprocal
@@ -1350,7 +1408,7 @@ class Kpoints(VFormattedFile):
                 if cselect=='a':  # fully auto mesh
                     self.mode      = 'auto'
                     self.centering = self.centering_options[cselect]
-                    self.kgrid     = int(lines[3])
+                    self.kgrid     = read_real(lines[3])
                 elif cselect=='g' or cselect=='m': # gamma or monkhorst mesh
                     self.mode      = 'auto'
                     self.centering = self.centering_options[cselect]
@@ -1372,10 +1430,16 @@ class Kpoints(VFormattedFile):
                 self.kinsert = iselect
                 self.coord   = self.coord_options(lines[3].lower()[0])
                 endpoints = []
+                labels = []
                 for line in lines[4:]:
-                    endpoints.append(line.split())
+                    tokens = line.split()
+                    endpoints.append(tokens[:3])
+                    labels.append(' '.join(tokens[3:]))
                 #end for
                 self.kendpoints = np.array(endpoints,dtype=float)
+                if any(len(label)>0 for label in labels):
+                    self.labels = np.array(labels,dtype=str)
+                #end if
             else: # explicit kpoints
                 self.mode  = 'explicit'
                 self.coord = self.coord_options(cselect)
@@ -1417,7 +1481,7 @@ class Kpoints(VFormattedFile):
             #end if
             if self.centering=='auto':
                 text+='auto\n'
-                text+=' {0:d}\n'.format(self.kgrid)
+                text+=' {0}\n'.format(self.kgrid)
             elif self.centering=='gamma' or self.centering=='monkhorst-pack':
                 text+='{0}\n'.format(self.centering)
                 text+=' {0:d} {1:d} {2:d}\n'.format(*self.kgrid)
@@ -1439,7 +1503,13 @@ class Kpoints(VFormattedFile):
             text+='{0}\n'.format(self.coord)
             npoints = len(self.kendpoints)
             for n in range(npoints):
-                text+=' {0:18.14f} {1:18.14f} {2:18.14f}   1\n'.format(*self.kendpoints[n])
+                text += ' {0:18.14f} {1:18.14f} {2:18.14f}'.format(
+                    *self.kendpoints[n]
+                    )
+                if 'labels' in self and len(self.labels[n])>0:
+                    text += '  {0}'.format(self.labels[n])
+                #end if
+                text += '\n'
                 if n!=npoints-1 and n%2==1:
                     text+='\n'
                 #end if
@@ -1472,14 +1542,169 @@ class Kpoints(VFormattedFile):
 #end class Kpoints
 
 
+class KpointsOpt(Kpoints):
+    """Represent a VASP KPOINTS_OPT file."""
+#end class KpointsOpt
+
+
+class KpointsElph(Kpoints):
+    """Represent a VASP KPOINTS_ELPH file."""
+#end class KpointsElph
+
+
+class KpointsWan(Kpoints):
+    """Represent a VASP KPOINTS_WAN file."""
+#end class KpointsWan
+
+
+class Qpoints(Kpoints):
+    """Represent phonon sampling in a QPOINTS file."""
+#end class Qpoints
+
+
 
 class Penaltypot(VFormattedFile):  # metadynamics -> 6.62.4 (2nd one)
-    None
+    """Represent bias potentials in a PENALTYPOT file."""
+
+    def __init__(self,filepath=None):
+        self.hills = np.empty((0,0),dtype=float)
+        VFile.__init__(self,filepath)
+    #end def __init__
+
+
+    def read_text(self,text,filepath=''):
+        lines = self.read_lines(text,remove_empty=True)
+        rows = [line.split() for line in lines]
+        if len(rows)==0:
+            self.hills = np.empty((0,0),dtype=float)
+        elif len({len(row) for row in rows})!=1:
+            self.error('PENALTYPOT rows must have equal lengths')
+        else:
+            self.hills = np.array(rows,dtype=float)
+        #end if
+    #end def read_text
+
+
+    def write_text(self,filepath=''):
+        text = ''
+        hills = np.asarray(self.hills,dtype=float)
+        if hills.ndim!=2:
+            self.error('PENALTYPOT hills must be a two-dimensional array')
+        #end if
+        for hill in hills:
+            text += ' '.join(map(str,hill))+'\n'
+        #end for
+        return text
+    #end def write_text
 #end class Penaltypot
+
+
+class Ircar(VFormattedFile):
+    """Represent a discretized path in an IRCCAR file."""
+
+    def __init__(self,filepath=None):
+        self.points = np.empty((0,0),dtype=float)
+        VFile.__init__(self,filepath)
+    #end def __init__
+
+
+    def read_text(self,text,filepath=''):
+        lines = self.read_lines(text,remove_empty=True)
+        if len(lines)==0:
+            self.error('IRCCAR is empty')
+        #end if
+        npoints = int(lines[0])
+        if len(lines[1:])!=npoints:
+            self.error(
+                'IRCCAR declares {0} points but contains {1}'
+                .format(npoints,len(lines[1:]))
+                )
+        #end if
+        rows = [line.split() for line in lines[1:]]
+        if len(rows)>0 and len({len(row) for row in rows})!=1:
+            self.error('IRCCAR point rows must have equal lengths')
+        #end if
+        self.points = np.array(rows,dtype=float)
+    #end def read_text
+
+
+    def write_text(self,filepath=''):
+        points = np.asarray(self.points,dtype=float)
+        if points.ndim!=2:
+            self.error('IRCCAR points must be a two-dimensional array')
+        #end if
+        text = str(len(points))+'\n'
+        for point in points:
+            text += ' '.join(map(str,point))+'\n'
+        #end for
+        return text
+    #end def write_text
+#end class Ircar
+
+
+class VRawFile(VFormattedFile):
+    """Preserve a VASP text file without interpreting it."""
+
+    def __init__(self,filepath=None):
+        self.text = ''
+        VFile.__init__(self,filepath)
+    #end def __init__
+
+
+    def read_text(self,text,filepath=''):
+        self.text = text
+    #end def read_text
+
+
+    def write_text(self,filepath=''):
+        return self.text
+    #end def write_text
+#end class VRawFile
+
+
+class Hessemat(VRawFile):
+    """Represent a VASP HESSEMAT file."""
+#end class Hessemat
+
+
+class Gamma(VRawFile):
+    """Represent a VASP GAMMA file."""
+#end class Gamma
+
+
+class Wanproj(VRawFile):
+    """Represent a VASP WANPROJ file."""
+#end class Wanproj
+
+
+class MlAb(VRawFile):
+    """Represent a VASP ML_AB file."""
+#end class MlAb
+
+
+class MlFf(VRawFile):
+    """Represent a VASP ML_FF file."""
+#end class MlFf
+
+
+class Dynmatfull(VRawFile):
+    """Represent a VASP DYNMATFULL file."""
+#end class Dynmatfull
+
+
+class Chgcar(VRawFile):
+    """Represent a VASP CHGCAR file."""
+#end class Chgcar
+
+
+class Taucar(VRawFile):
+    """Represent a VASP TAUCAR file."""
+#end class Taucar
 
 
 
 class Poscar(VFormattedFile):
+    """Represent a VASP POSCAR file."""
 
     bool_map = MappingProxyType({True:'T',False:'F'})
 
@@ -1536,9 +1761,19 @@ class Poscar(VFormattedFile):
         if nlines<min_lines:
             self.error('file {0} must have at least {1} lines\n  only {2} lines found'.format(filepath,min_lines,nlines))
         #end if
-        description = lines[0]
+        description = text.split('\n',1)[0].strip()
         dim = 3
-        scale = float(lines[1].strip())
+        scale_values = np.array(lines[1].split(),dtype=float)
+        if len(scale_values)==1:
+            scale = float(scale_values[0])
+        elif len(scale_values)==3:
+            scale = scale_values
+        else:
+            self.error(
+                'file {0} must contain one or three scaling factors'
+                .format(filepath)
+                )
+        #end if
         axes = np.empty((dim,dim))
         axes[0] = np.array(lines[2].split(),dtype=float)
         axes[1] = np.array(lines[3].split(),dtype=float)
@@ -1584,13 +1819,48 @@ class Poscar(VFormattedFile):
             spos.append(lines[lcur+i].split())
         #end for
         lcur += npos
-        spos = np.array(spos)
-        pos  = np.array(spos[:,0:3],dtype=float)
+        pos = np.array([tokens[:3] for tokens in spos],dtype=float)
         if selective_dynamics:
-            dynamic = np.array(spos[:,3:6],dtype=str)
+            dynamic = np.array([tokens[3:6] for tokens in spos],dtype=str)
             dynamic = np.char.upper(dynamic)=='T'
+            label_start = 6
         else:
             dynamic = None
+            label_start = 3
+        #end if
+        labels = []
+        for tokens in spos:
+            labels.append(' '.join(tokens[label_start:]))
+        #end for
+        if not any(len(label)>0 for label in labels):
+            labels = None
+        else:
+            labels = np.array(labels,dtype=str)
+        #end if
+
+        lattice_vel_init = None
+        lattice_vel = None
+        lattice_vectors = None
+        if lcur<len(lines) and lines[lcur].lower().startswith('l'):
+            if lcur+8>len(lines):
+                self.error(
+                    'file {0} is incomplete (missing lattice velocities)'
+                    .format(filepath)
+                    )
+            #end if
+            lcur += 1
+            lattice_vel_init = int(lines[lcur].split()[0])
+            lcur += 1
+            lattice_vel = np.array(
+                [lines[lcur+i].split()[:3] for i in range(3)],
+                dtype=float,
+                )
+            lcur += 3
+            lattice_vectors = np.array(
+                [lines[lcur+i].split()[:3] for i in range(3)],
+                dtype=float,
+                )
+            lcur += 3
         #end if
         if lcur<len(lines) and not self.is_empty(lines,lcur):
             cline = lines[lcur].lower()
@@ -1598,7 +1868,9 @@ class Poscar(VFormattedFile):
             if lcur+npos>len(lines):
                 self.error('file {0} is incomplete (missing velocities)'.format(filepath))
             #end if
-            cartesian = len(cline)>0 and (cline[0]=='c' or cline[0]=='k')
+            cartesian = (
+                len(cline)==0 or cline[0]=='c' or cline[0]=='k'
+                )
             if cartesian:
                 vel_coord = 'cartesian'
             else:
@@ -1614,6 +1886,11 @@ class Poscar(VFormattedFile):
             vel_coord = None
             vel = None
         #end if
+        if lcur<len(lines) and not self.is_empty(lines,lcur):
+            md_extra = '\n'.join(lines[lcur:])+'\n'
+        else:
+            md_extra = None
+        #end if
         self.update(
             description = description,
             scale       = scale,
@@ -1624,8 +1901,19 @@ class Poscar(VFormattedFile):
             pos         = pos,
             dynamic     = dynamic,
             vel_coord   = vel_coord,
-            vel         = vel
+            vel         = vel,
             )
+        if labels is not None:
+            self.labels = labels
+        #end if
+        if lattice_vel is not None:
+            self.lattice_vel_init = lattice_vel_init
+            self.lattice_vel = lattice_vel
+            self.lattice_vectors = lattice_vectors
+        #end if
+        if md_extra is not None:
+            self.md_extra = md_extra
+        #end if
     #end def read_text
 
 
@@ -1640,17 +1928,17 @@ class Poscar(VFormattedFile):
         else:
             text += self.description+'\n'
         #end if
-        text += ' {0}\n'.format(self.scale)
+        if np.isscalar(self.scale):
+            text += ' {0}\n'.format(self.scale)
+        else:
+            text += ' {0} {1} {2}\n'.format(*self.scale)
+        #end if
         for a in self.axes:
             text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(*a)
         #end for
         if self.elem is not None:
             for e in self.elem:
-                iselem, element = Elements.is_element(e, return_element=True)
-                if not iselem:
-                    self.error('{0} is not an element'.format(e))
-                #end if
-                text += element.symbol+' '
+                text += str(e)+' '
             #end for
             text += '\n'
         #end if
@@ -1663,22 +1951,55 @@ class Poscar(VFormattedFile):
         #end if
         text += self.coord+'\n'
         if self.dynamic is None:
-            for p in self.pos:
-                text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(*p)
+            for i,p in enumerate(self.pos):
+                text += ' {0:18.14f} {1:18.14f} {2:18.14f}'.format(*p)
+                if 'labels' in self and len(self.labels[i])>0:
+                    text += '  {0}'.format(self.labels[i])
+                #end if
+                text += '\n'
             #end for
         else:
             bm = self.bool_map
             for i in range(len(self.pos)):
                 p = self.pos[i]
                 d = self.dynamic[i]
-                text += ' {0:18.14f} {1:18.14f} {2:18.14f}  {3}  {4}  {5}\n'.format(p[0],p[1],p[2],bm[d[0]],bm[d[1]],bm[d[2]])
+                text += (
+                    ' {0:18.14f} {1:18.14f} {2:18.14f}'
+                    '  {3}  {4}  {5}'
+                    .format(p[0],p[1],p[2],bm[d[0]],bm[d[1]],bm[d[2]])
+                    )
+                if 'labels' in self and len(self.labels[i])>0:
+                    text += '  {0}'.format(self.labels[i])
+                #end if
+                text += '\n'
+            #end for
+        #end if
+        if 'lattice_vel' in self:
+            text += 'Lattice velocities and vectors\n'
+            text += ' {0}\n'.format(self.lattice_vel_init)
+            for vector in self.lattice_vel:
+                text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(
+                    *vector
+                    )
+            #end for
+            for vector in self.lattice_vectors:
+                text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(
+                    *vector
+                    )
             #end for
         #end if
         if self.vel is not None:
-            text += self.vel_coord+'\n'
+            if self.vel_coord=='cartesian':
+                text += '\n'
+            else:
+                text += self.vel_coord+'\n'
+            #end if
             for v in self.vel:
                 text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(*v)
             #end for
+        #end if
+        if 'md_extra' in self:
+            text += self.md_extra
         #end if
         return text
     #end def write_text
@@ -1714,6 +2035,8 @@ class Poscar(VFormattedFile):
 
 
 class NebPoscars(Vobj):
+    """Manage POSCAR files for a chain of NEB images."""
+
     def read(self,filepath):
         path = self.get_path(filepath)
         dirs = os.listdir(path)
@@ -1745,6 +2068,8 @@ class NebPoscars(Vobj):
 
 
 class Potcar(VFormattedFile):
+    """Represent concatenated datasets in a POTCAR file."""
+
     def __init__(self,filepath=None,files=None):
         self.files    = files
         self.filepath = filepath
@@ -1854,17 +2179,14 @@ class Potcar(VFormattedFile):
 
 
 
-class Exhcar(VFormattedFile):
-    None
-#end class Exhcar
-
-
-
 class VaspInput(SimulationInput,Vobj):
+    """Collect the input files for a VASP calculation."""
 
     all_inputs  = (
-        'PENALTYPOT', 'KPOINTS', 'WAVEDER', 'ICONST',
-        'POSCAR', 'STOPCAR', 'EXHCAR', 'POTCAR', 'INCAR',
+        'CHGCAR', 'DYNMATFULL', 'GAMMA', 'HESSEMAT', 'ICONST', 'INCAR',
+        'IRCCAR', 'KPOINTS', 'KPOINTS_ELPH', 'KPOINTS_OPT', 'KPOINTS_WAN',
+        'ML_AB', 'ML_FF', 'PENALTYPOT', 'POSCAR', 'POTCAR', 'QPOINTS',
+        'STOPCAR', 'TAUCAR', 'WANPROJ', 'WAVEDER',
         )
     all_outputs = (
         'IBZKPT', 'LOCPOT', 'PRJCAR', 'PCDAT', 'ELFCAR', 'TMPCAR', 'DOSCAR', 'CHGCAR',
@@ -1873,15 +2195,26 @@ class VaspInput(SimulationInput,Vobj):
         )# note that CHGCAR, TMPCAR, and WAVECAR sometimes contain input
 
     input_files = obj(
-        #exhcar     = Exhcar,
-        #iconst     = Iconst,
-        incar      = Incar,
-        kpoints    = Kpoints,
-        #penaltypot = Penaltypot,
-        poscar     = Poscar,
-        potcar     = Potcar,
-        #stopcar    = Stopcar,
-        #waveder    = Waveder
+        chgcar       = Chgcar,
+        dynmatfull   = Dynmatfull,
+        gamma        = Gamma,
+        hessemat     = Hessemat,
+        iconst       = Iconst,
+        incar        = Incar,
+        irccar       = Ircar,
+        kpoints      = Kpoints,
+        kpoints_elph = KpointsElph,
+        kpoints_opt  = KpointsOpt,
+        kpoints_wan  = KpointsWan,
+        ml_ab        = MlAb,
+        ml_ff        = MlFf,
+        penaltypot   = Penaltypot,
+        poscar       = Poscar,
+        potcar       = Potcar,
+        qpoints      = Qpoints,
+        stopcar      = Stopcar,
+        taucar       = Taucar,
+        wanproj      = Wanproj,
         )
 
     keyword_files = obj(
@@ -1990,7 +2323,7 @@ class VaspInput(SimulationInput,Vobj):
     def return_system(self,*,structure_only=False,**valency):
         raw_axes = self.poscar.axes
         input_scale = self.poscar.scale
-        if input_scale<0:
+        if np.isscalar(input_scale) and input_scale<0:
             scale_factor = (abs(input_scale)/abs(np.linalg.det(raw_axes)))**(1.0/3.0)
         else:
             scale_factor = input_scale
