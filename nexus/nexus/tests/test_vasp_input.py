@@ -166,7 +166,7 @@ def test_current_keyword_types():
             'elph_run', 'lglobal', 'ml_lib',
             },
         'strings': {
-            'efermi', 'elph_driver', 'ml_mode', 'pyamff_model', 'xc',
+            'elph_driver', 'ml_mode', 'pyamff_model', 'xc',
             },
         'int_arrays': {
             'elph_nbands_sum', 'libmbd_k_grid',
@@ -183,6 +183,18 @@ def test_current_keyword_types():
         for keyword in keywords:
             assert(Incar.type[keyword]==keyword_type)
         #end for
+    #end for
+
+    expected_mixed = {
+        'bext':   ('reals','real_arrays'),
+        'efermi': ('strings','reals'),
+        'libxc1': ('strings','ints'),
+        'libxc2': ('strings','ints'),
+        'lreal':  ('strings','bools'),
+        }
+    assert(dict(Incar.mixed_types)==expected_mixed)
+    for keyword,types in expected_mixed.items():
+        assert(Incar.type[keyword]==types)
     #end for
 #end def test_current_keyword_types
 
@@ -217,6 +229,65 @@ def test_current_keywords_roundtrip():
     assert(reread.lglobal)
     assert(reread.spring==-5.0)
 #end def test_current_keywords_roundtrip
+
+
+def test_mixed_keyword_types():
+    import numpy as np
+    from ..vasp_input import Incar,generate_vasp_input
+
+    generated = generate_vasp_input(
+        bext   = 0.02,
+        efermi = 5.4,
+        libxc1 = 101,
+        libxc2 = 'GGA_C_PBE',
+        lreal  = False,
+        )
+    incar = generated.incar
+
+    assert(incar.bext==0.02)
+    assert(incar.efermi==5.4)
+    assert(incar.libxc1==101)
+    assert(incar.libxc2=='GGA_C_PBE')
+    assert(incar.lreal is False)
+
+    reread = Incar()
+    reread.read_text(incar.write_text())
+    assert(reread.bext==0.02)
+    assert(reread.efermi==5.4)
+    assert(reread.libxc1==101)
+    assert(reread.libxc2=='GGA_C_PBE')
+    assert(reread.lreal is False)
+
+    reread.read_text(
+        'BEXT = 0 0 0.1\n'
+        'EFERMI = MIDGAP\n'
+        'LIBXC1 = GGA_X_PBE\n'
+        'LREAL = Auto\n'
+        )
+    assert(np.array_equal(reread.bext,[0.0,0.0,0.1]))
+    assert(reread.efermi=='MIDGAP')
+    assert(reread.libxc1=='GGA_X_PBE')
+    assert(reread.lreal=='Auto')
+
+    invalid = (
+        ('bext','0.1'),
+        ('efermi',True),
+        ('libxc1',1.25),
+        ('lreal',2),
+        )
+    for keyword,value in invalid:
+        with pytest.raises(
+            NexusError,
+            match='assign failed for keyword {0}'.format(keyword),
+            ):
+            Incar().assign(**{keyword:value})
+        #end with
+    #end for
+
+    with pytest.raises(NexusError,match='read failed for keyword efermi'):
+        Incar().read_text('EFERMI = 1.0 2.0')
+    #end with
+#end def test_mixed_keyword_types
 
 
 def test_integer_assignment_validation():

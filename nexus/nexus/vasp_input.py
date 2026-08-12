@@ -39,6 +39,7 @@
 
 import os
 from copy import deepcopy
+from functools import partial
 from numbers import Integral,Real
 from types import MappingProxyType
 import numpy as np
@@ -356,6 +357,89 @@ assign_value_functions = obj(
     )
 
 
+def mixed_type_matches(value,value_type):
+    if value_type=='strings':
+        return isinstance(value,str)
+    elif value_type=='bools':
+        return isinstance(value,(bool,np.bool_,Integral,np.integer))
+    elif value_type in ('ints','reals'):
+        return (
+            isinstance(value,(Real,np.integer,np.floating)) and
+            not isinstance(value,(bool,np.bool_))
+            )
+    elif value_type in ('int_arrays','real_arrays','bool_arrays'):
+        return isinstance(value,(tuple,list,np.ndarray))
+    else:
+        raise ValueError('unknown keyword value type: {0}'.format(value_type))
+    #end if
+#end def mixed_type_matches
+
+
+def assign_mixed(types,value):
+    errors = []
+    for value_type in types:
+        if mixed_type_matches(value,value_type):
+            try:
+                return assign_value_functions[value_type](value)
+            except Exception as e:
+                errors.append('{0}: {1}'.format(value_type,e))
+            #end try
+        #end if
+    #end for
+    message = 'value does not match permitted types: {0}'.format(types)
+    if len(errors)>0:
+        message += '\n'+'\n'.join(errors)
+    #end if
+    raise ValueError(message)
+#end def assign_mixed
+
+
+def read_mixed(types,sval):
+    scalar_types = {'ints','reals','bools'}
+    array_types = {'int_arrays','real_arrays','bool_arrays'}
+    try:
+        nvalues = len(expand_array(sval))
+    except Exception:
+        nvalues = len(sval.split())
+    #end try
+    if nvalues>1:
+        ordered_types = (array_types,)
+    else:
+        ordered_types = scalar_types,array_types
+    #end if
+    errors = []
+    for type_group in ordered_types:
+        for value_type in types:
+            if value_type in type_group:
+                try:
+                    return read_value_functions[value_type](sval)
+                except Exception as e:
+                    errors.append('{0}: {1}'.format(value_type,e))
+                #end try
+            #end if
+        #end for
+    #end for
+    if nvalues==1 and 'strings' in types:
+        return read_string(sval)
+    #end if
+    raise ValueError(
+        'value does not match permitted types: {0}\n{1}'
+        .format(types,'\n'.join(errors))
+        )
+#end def read_mixed
+
+
+def write_mixed(types,value):
+    converted = assign_mixed(types,value)
+    for value_type in types:
+        if mixed_type_matches(converted,value_type):
+            return write_value_functions[value_type](converted)
+        #end if
+    #end for
+    raise ValueError('value does not match permitted types: {0}'.format(types))
+#end def write_mixed
+
+
 
 
 
@@ -487,6 +571,7 @@ class VKeywordFile(VFile):
     kw_fields  = kw_scalars + kw_arrays + ('keywords','unsupported')
 
     keyword_classification = None
+    mixed_types = MappingProxyType({})
 
     @classmethod
     def class_init(cls):
@@ -517,6 +602,32 @@ class VKeywordFile(VFile):
                 cls.write_value[name]  = write_value_functions[type]
                 cls.assign_value[name] = assign_value_functions[type]
             #end for
+        #end for
+        for name,types in cls.mixed_types.items():
+            if name not in cls.keywords:
+                raise ValueError(
+                    'mixed-type keyword is not classified: {0}'.format(name)
+                    )
+            #end if
+            classified_type = cls.type[name]
+            if classified_type not in types:
+                raise ValueError(
+                    'classified type {0} is not permitted for keyword {1}'
+                    .format(classified_type,name)
+                    )
+            #end if
+            for value_type in types:
+                if value_type not in read_value_functions:
+                    raise ValueError(
+                        'invalid type {0} for keyword {1}'
+                        .format(value_type,name)
+                        )
+                #end if
+            #end for
+            cls.type[name] = types
+            cls.read_value[name] = partial(read_mixed,types)
+            cls.write_value[name] = partial(write_mixed,types)
+            cls.assign_value[name] = partial(assign_mixed,types)
         #end for
     #end def class_init
 
@@ -845,6 +956,14 @@ class Incar(VKeywordFile):
 
     bool_arrays = frozenset({
         'fmp_active', 'lattice_constraints', 'lvdw_onecell',
+        })
+
+    mixed_types = MappingProxyType({
+        'bext':   ('reals','real_arrays'),
+        'efermi': ('strings','reals'),
+        'libxc1': ('strings','ints'),
+        'libxc2': ('strings','ints'),
+        'lreal':  ('strings','bools'),
         })
 
     keyword_classification = obj(
