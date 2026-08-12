@@ -2,7 +2,7 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 
-from ..generic import generic_settings
+from ..generic import generic_settings,NexusError
 generic_settings.raise_error = True
 
 from nexus.nexus_base import nexus_core
@@ -127,7 +127,26 @@ def test_keyword_consistency():
     from ..vasp_input import Incar,Stopcar
 
     for cls in Incar,Stopcar:
-        cls.check_consistency()
+        scalar_keywords = set()
+        array_keywords = set()
+        typed_keywords = set()
+        for keyword_type in cls.kw_scalars+cls.kw_arrays:
+            keywords = getattr(cls,keyword_type)
+            assert(typed_keywords.isdisjoint(keywords))
+            typed_keywords |= keywords
+            if keyword_type in cls.kw_scalars:
+                scalar_keywords |= keywords
+            else:
+                array_keywords |= keywords
+            #end if
+        #end for
+        assert(scalar_keywords==cls.scalar_keywords)
+        assert(array_keywords==cls.array_keywords)
+        assert(typed_keywords==cls.keywords)
+        assert(set(cls.type.keys())==cls.keywords)
+        assert(set(cls.read_value.keys())==cls.keywords)
+        assert(set(cls.write_value.keys())==cls.keywords)
+        assert(set(cls.assign_value.keys())==cls.keywords)
     #end for
 #end def test_keyword_consistency
 
@@ -180,6 +199,7 @@ def test_current_keywords_roundtrip():
         elph_selfen_temps = [0.0,300.0],
         fmp_active        = [True,False],
         iopt              = 7,
+        libmbd_k_grid     = [2,2,1],
         lglobal           = True,
         spring            = -5.0,
         )
@@ -193,9 +213,194 @@ def test_current_keywords_roundtrip():
     assert(np.array_equal(reread.elph_selfen_temps,[0.0,300.0]))
     assert(np.array_equal(reread.fmp_active,[True,False]))
     assert(reread.iopt==7)
+    assert(np.array_equal(reread.libmbd_k_grid,[2,2,1]))
     assert(reread.lglobal)
     assert(reread.spring==-5.0)
 #end def test_current_keywords_roundtrip
+
+
+def test_integer_assignment_validation():
+    import numpy as np
+    from ..vasp_input import Incar,generate_vasp_input
+
+    incar = Incar()
+    incar.assign(
+        ibrion      = np.int64(2),
+        images      = 3.0+5e-9,
+        random_seed = [1,2.0-5e-9,np.int32(3)],
+        )
+    assert(incar.ibrion==2)
+    assert(incar.images==3)
+    assert(np.array_equal(incar.random_seed,[1,2,3]))
+
+    generated = generate_vasp_input(ibrion=2.0+5e-9)
+    assert(generated.incar.ibrion==2)
+
+    invalid_scalars = (
+        True,
+        '3',
+        2.0+2e-8,
+        2.1,
+        np.nan,
+        np.inf,
+        float(2**54),
+        )
+    for value in invalid_scalars:
+        with pytest.raises(NexusError,match='assign failed for keyword ibrion'):
+            Incar().assign(ibrion=value)
+        #end with
+    #end for
+
+    invalid_arrays = (
+        [1,2.1,3],
+        [1,True,3],
+        [1,'2',3],
+        [[1,2],[3,4]],
+        )
+    for value in invalid_arrays:
+        with pytest.raises(
+            NexusError,
+            match='assign failed for keyword random_seed',
+            ):
+            Incar().assign(random_seed=value)
+        #end with
+    #end for
+
+    with pytest.raises(NexusError,match='element at index 1'):
+        Incar().assign(random_seed=[1,2.1,3])
+    #end with
+    with pytest.raises(NexusError,match='assign failed for keyword ibrion'):
+        generate_vasp_input(ibrion=2.1)
+    #end with
+#end def test_integer_assignment_validation
+
+
+def test_keyword_syntax_parsing():
+    import numpy as np
+    from ..vasp_input import Incar
+
+    text = (
+        'ENCUT = 4D2; ISMEAR = -1 ! trailing comment\n'
+        'MAGMOM = 2*1.5 \\\n'
+        '         2*-1.5 # another comment\n'
+        'LCHARG = .false.\n'
+        'IBRION = 1; IBRION = 2\n'
+        )
+    incar = Incar()
+    incar.read_text(text)
+
+    assert(incar.encut==400.0)
+    assert(incar.ismear==-1)
+    assert(np.array_equal(incar.magmom,[1.5,1.5,-1.5,-1.5]))
+    assert(not incar.lcharg)
+    assert(incar.ibrion==2)
+#end def test_keyword_syntax_parsing
+
+
+def test_quoted_string_preservation():
+    from ..vasp_input import Incar
+
+    text = (
+        'SYSTEM = "a; b # c ! d = e"; '
+        'WANNIER90_WIN = "Begin; x=y # z!"\n'
+        'ENCUT = 400\n'
+        )
+    incar = Incar()
+    incar.read_text(text)
+
+    assert(incar.system=='a; b # c ! d = e')
+    assert(incar.wannier90_win=='Begin; x=y # z!')
+    assert(incar.encut==400.0)
+#end def test_quoted_string_preservation
+
+
+def test_array_compression_roundtrip():
+    import numpy as np
+    from ..vasp_input import Incar
+
+    incar = Incar()
+    incar.assign(
+        lattice_constraints = [True]*4,
+        magmom               = [1.5]*4,
+        random_seed          = [2]*4,
+        )
+    text = incar.write_text()
+
+    assert('4*T' in text)
+    assert('4*1.5' in text)
+    assert('4*2' in text)
+
+    reread = Incar()
+    reread.read_text(text)
+    assert(np.array_equal(reread.lattice_constraints,[True]*4))
+    assert(np.array_equal(reread.magmom,[1.5]*4))
+    assert(np.array_equal(reread.random_seed,[2]*4))
+#end def test_array_compression_roundtrip
+
+
+def test_invalid_keyword_input():
+    from ..vasp_input import Incar
+
+    with pytest.raises(NexusError,match='NOT_A_TAG is not a keyword'):
+        Incar().assign(not_a_tag=1)
+    #end with
+    with pytest.raises(NexusError,match='read failed for keyword lcharg'):
+        Incar().read_text('LCHARG = maybe')
+    #end with
+    with pytest.raises(NexusError,match='assign failed for keyword magmom'):
+        Incar().assign(magmom=1.0)
+    #end with
+    with pytest.raises(NexusError,match='quotation marks.*not paired'):
+        Incar().read_text('SYSTEM = "unfinished')
+    #end with
+    with pytest.raises(NexusError,match='incomplete line continuation'):
+        Incar().read_text('ENCUT = 400 \\')
+    #end with
+    with pytest.raises(NexusError,match='repeat count must be non-negative'):
+        Incar().read_text('MAGMOM = -2*1.0')
+    #end with
+#end def test_invalid_keyword_input
+
+
+def test_keyword_catalog_integrity():
+    from ..vasp_input import Incar
+
+    keyword_sets = (
+        Incar.ints,
+        Incar.reals,
+        Incar.bools,
+        Incar.strings,
+        Incar.int_arrays,
+        Incar.real_arrays,
+        Incar.bool_arrays,
+        )
+    assert(len(Incar.keywords)==684)
+    assert(sum(map(len,keyword_sets))==len(Incar.keywords))
+    assert(Incar.deprecated<=Incar.keywords)
+    assert(Incar.unsupported.isdisjoint(Incar.keywords))
+#end def test_keyword_catalog_integrity
+
+
+def test_deprecated_keyword_compatibility():
+    from ..vasp_input import Incar
+
+    incar = Incar()
+    incar.assign(
+        ichain     = 0,
+        jacobian   = 1.0,
+        lclimb     = True,
+        ldneb      = False,
+        timestep   = 0.1,
+        )
+    reread = Incar()
+    reread.read_text(incar.write_text())
+
+    assert(reread.ichain==0)
+    assert(reread.jacobian==1.0)
+    assert(reread.lclimb)
+    assert(not reread.ldneb)
+    assert(reread.timestep==0.1)
+#end def test_deprecated_keyword_compatibility
 
 
 def test_keyword_file_roundtrip():

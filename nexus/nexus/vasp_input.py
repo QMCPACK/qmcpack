@@ -39,6 +39,7 @@
 
 import os
 from copy import deepcopy
+from numbers import Integral,Real
 from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
@@ -65,7 +66,11 @@ def expand_array(sval):
     for v in sval.split():
         if '*' in v:
             n,vv = v.rsplit('*',1)
-            sarr.extend(int(n)*[vv])
+            n = int(n)
+            if n<0:
+                raise ValueError('array repeat count must be non-negative')
+            #end if
+            sarr.extend(n*[vv])
         else:
             sarr.append(v)
         #end if
@@ -221,6 +226,37 @@ def assign_bool(v):
 #end def assign_bool
 
 
+integer_tolerance = 1e-8
+max_exact_float_integer = 2**53
+def assign_int(v):
+    if isinstance(v,(bool,np.bool_)):
+        raise TypeError('value must be an integer, not a boolean')
+    elif isinstance(v,(Integral,np.integer)):
+        return int(v)
+    elif isinstance(v,(Real,np.floating)):
+        value = float(v)
+        if not np.isfinite(value):
+            raise ValueError('value must be finite')
+        elif abs(value)>max_exact_float_integer:
+            raise ValueError(
+                'floating-point integer values must not exceed {0}'
+                .format(max_exact_float_integer)
+                )
+        #end if
+        nearest = round(value)
+        if not np.isclose(value,nearest,rtol=0.0,atol=integer_tolerance):
+            raise ValueError(
+                'real value {0} is not within {1} of an integer'
+                .format(v,integer_tolerance)
+                )
+        #end if
+        return int(nearest)
+    else:
+        raise TypeError('value must be an integer or real number')
+    #end if
+#end def assign_int
+
+
 def assign_string(v):
     if isinstance(v,str):
         return v
@@ -232,7 +268,28 @@ def assign_string(v):
 
 def assign_int_array(a):
     if isinstance(a,(tuple,list,np.ndarray)):
-        return np.array(a,dtype=int)
+        array = np.asarray(a,dtype=object)
+        if array.ndim!=1:
+            raise ValueError('value must be a one-dimensional array')
+        #end if
+        values = []
+        for index,value in enumerate(array):
+            try:
+                values.append(assign_int(value))
+            except (TypeError,ValueError) as e:
+                raise type(e)(
+                    'invalid integer array element at index {0}: {1}'
+                    .format(index,e)
+                    ) from e
+            #end try
+        #end for
+        try:
+            return np.array(values,dtype=int)
+        except (OverflowError,TypeError,ValueError) as e:
+            raise ValueError(
+                'integer array values cannot be represented: {0}'.format(e)
+                ) from e
+        #end try
     else:
         raise ValueError('value must be a tuple, list, or array')
     #end if
@@ -289,7 +346,7 @@ write_value_functions = obj(
     )
 
 assign_value_functions = obj(
-    ints        = int,
+    ints        = assign_int,
     reals       = float,
     bools       = assign_bool,
     strings     = assign_string,
@@ -440,7 +497,6 @@ class VKeywordFile(VFile):
             if not hasattr(cls,kw_field):
                 setattr(cls,kw_field,set())
         #end for
-        #cls.check_consistency()
         cls.scalar_keywords = set()
         for scalar_field in cls.kw_scalars:
             cls.scalar_keywords |= getattr(cls,scalar_field)
@@ -463,65 +519,6 @@ class VKeywordFile(VFile):
             #end for
         #end for
     #end def class_init
-
-
-    @classmethod
-    def check_consistency(cls):
-        msg  = ''
-        all_unknown = set()
-        types = cls.kw_scalars+cls.kw_arrays
-        for n,type1 in enumerate(types):
-            names1 = getattr(cls,type1)
-            for type2 in types[n+1:]:
-                overlap = names1 & getattr(cls,type2)
-                if len(overlap)>0:
-                    msg += (
-                        '\nvariables with multiple types ({0}, {1}):\n'
-                        '  {2}\n'.format(type1,type2,sorted(overlap))
-                        )
-                #end if
-            #end for
-        #end for
-        untyped = set(cls.keywords)
-        for type in types:
-            untyped -= getattr(cls,type)
-        #end for
-        if len(untyped)>0:
-            msg += '\nvariables without a type:\n  {0}\n'.format(sorted(untyped))
-        #end if
-        for type in types:
-            unknown = getattr(cls,type)-cls.keywords
-            if len(unknown)>0:
-                msg += '\nunknown {0}:\n  {1}\n'.format(type,sorted(unknown))
-                all_unknown |= unknown
-            #end if
-        #end for
-        if len(all_unknown)>0:
-            msg += '\nall unknown names:\n  {0}\n'.format(sorted(all_unknown))
-            msg += '\nall known names:\n  {0}\n'.format(sorted(cls.keywords))
-        #end if
-        if len(msg)>0:
-            error(msg)
-        #end if
-    #end def check_consistency
-
-
-    @classmethod
-    def print_current_keyword_differences(cls,current_keywords):
-        if isinstance(current_keywords,str):
-            current_keywords = current_keywords.split()
-        #end if
-        kw_cur = set(current_keywords)
-        kw_old = cls.keywords
-        kw_add = kw_cur-kw_old
-        kw_rem = kw_old-kw_cur
-        print()
-        print('{} keywords added:'.format(cls.__name__))
-        print(list(sorted(kw_add)))
-        print()
-        print('{} keywords removed:'.format(cls.__name__))
-        print(list(sorted(kw_rem)))
-    #end def print_current_keyword_differences
 
 
     def read_text(self,text,filepath=''):
@@ -576,6 +573,9 @@ class VKeywordFile(VFile):
                 #end if
             #end if
         #end for
+        if continued:
+            self.error('incomplete line continuation at end of file')
+        #end if
     #end def read_text
 
                                 
@@ -602,6 +602,12 @@ class VKeywordFile(VFile):
 
     def assign(self,**values):
         for name,value in values.items():
+            if name not in self.keywords:
+                self.error(
+                    '{0} is not a keyword for the {1} file'
+                    .format(name.upper(),self.__class__.__name__.upper())
+                    )
+            #end if
             try:
                 self[name] = self.assign_value[name](value)
             except Exception as e:
