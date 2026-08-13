@@ -449,11 +449,10 @@ class hobj(obj):
         warn(message,header,logfile=logfile)
     #end def warn
 
-    def error(self,message,header=None,*,exit=True,trace=-2):
+    def error(self,message,header=None):
         if header is None:
             header = self.__class__.__name__
-        logfile = self.__dict__.get('_logfile',None)
-        error(message,header,exit,trace,logfile)
+        error(message,header)
     #end def error
 
     # access preserving functions
@@ -9174,7 +9173,7 @@ def generate_basic_input(**kwargs):
             spinor         = kw.spinor,
             )
     else:
-        error('argument "det_format" is invalid.\nReceived: {0}\nValid options are: new, old'.format(det_format),'generate_qmcpack_input')
+        error('argument "det_format" is invalid.\nReceived: {0}\nValid options are: new, old'.format(kw.det_format),'generate_qmcpack_input')
     #end if
 
 
