@@ -265,12 +265,7 @@ def assign_int_array(a):
                 raise type(e)(msg) from None
             #end try
         #end for
-        try:
-            return np.array(values,dtype=int)
-        except (OverflowError,TypeError,ValueError) as e:
-            msg = 'integer array values cannot be represented: {}'.format(e)
-            raise ValueError(msg) from e
-        #end try
+        return np.array(values,dtype=int)
     else:
         msg = 'value must be a tuple, list, or array'
         raise ValueError(msg)
@@ -878,54 +873,36 @@ class VKeywordFile(VFile):
                                 value = multiline_values[value]
                             #end if
                             if self.is_block_name(name):
-                                try:
-                                    block_value = self.read_block_construct(
-                                        name,blocks[value],multiline_values
-                                        )
-                                    if name not in self:
-                                        self[name] = obj()
-                                    #end if
-                                    for field,field_value in (
-                                        block_value.items()
-                                        ):
-                                        self[name][field] = field_value
-                                    #end for
-                                except Exception as e:  # noqa: BLE001
-                                    self.error(
-                                        'read failed for block construct {}\n'
-                                        'exception:\n'
-                                        '{}'.format(name,e)
-                                        )
-                                #end try
+                                block_value = self.read_block_construct(
+                                    name,blocks[value],multiline_values
+                                    )
+                                if name not in self:
+                                    self[name] = obj()
+                                #end if
+                                for field,field_value in block_value.items():
+                                    self[name][field] = field_value
+                                #end for
                                 continue
                             elif '/' in name:
                                 block_name,field = name.split('/',1)
                                 schema = self.block_schema(block_name)
                                 if schema is not None:
-                                    try:
-                                        value_type = self.block_field_type(
-                                            block_name,field,schema
+                                    value_type = self.block_field_type(
+                                        block_name,field,schema
+                                        )
+                                    if isinstance(value_type,tuple):
+                                        value = read_mixed(
+                                            value,types=value_type
                                             )
-                                        if isinstance(value_type,tuple):
-                                            value = read_mixed(
-                                                value,types=value_type
-                                                )
-                                        else:
-                                            value = read_value_functions[
-                                                value_type
-                                                ](value)
-                                        #end if
-                                        if block_name not in self:
-                                            self[block_name] = obj()
-                                        #end if
-                                        self[block_name][field] = value
-                                    except Exception as e:  # noqa: BLE001
-                                        self.error(
-                                            'read failed for block field {}\n'
-                                            'exception:\n'
-                                            '{}'.format(name,e)
-                                            )
-                                    #end try
+                                    else:
+                                        value = read_value_functions[
+                                            value_type
+                                            ](value)
+                                    #end if
+                                    if block_name not in self:
+                                        self[block_name] = obj()
+                                    #end if
+                                    self[block_name][field] = value
                                     continue
                                 #end if
                             #end if
@@ -981,17 +958,7 @@ class VKeywordFile(VFile):
         for name in sorted(self.keys()):
             value = self[name]
             if self.is_block_name(name):
-                try:
-                    text += self.write_block_construct(name,value)
-                except Exception as e:  # noqa: BLE001
-                    self.error(
-                        'write failed for file {} block construct {}\n'
-                        'value: {}\n'
-                        'exception:\n'
-                        '{}'
-                        .format(filepath,name,value,e)
-                        )
-                #end try
+                text += self.write_block_construct(name,value)
                 continue
             #end if
             try:
@@ -1014,17 +981,7 @@ class VKeywordFile(VFile):
     def assign(self,**values):
         for name,value in values.items():
             if self.is_block_name(name):
-                try:
-                    self[name] = self.assign_block_construct(name,value)
-                except Exception as e:  # noqa: BLE001
-                    self.error(
-                        'assign failed for block construct {}\n'
-                        'value: {}\n'
-                        'exception:\n'
-                        '{}'
-                        .format(name,value,e)
-                        )
-                #end try
+                self[name] = self.assign_block_construct(name,value)
                 continue
             elif name not in self.keywords:
                 self.error(

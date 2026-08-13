@@ -408,10 +408,10 @@ def test_block_construct_parsing():
     assert(ordered.plugins.force_and_stress)
     assert(ordered.plugins.ml_mode=='run')
 
-    with pytest.raises(NexusError,match='assign failed for block construct'):
+    with pytest.raises(ValueError,match='not a field of block construct'):
         Incar().assign(kernel_truncation={'unknown':1})
     #end with
-    with pytest.raises(NexusError,match='read failed for block construct'):
+    with pytest.raises(ValueError,match='invalid literal for int'):
         Incar().read_text('PLUGINS = { ML_OUTBLOCK = 1.5 }')
     #end with
     with pytest.raises(
@@ -425,7 +425,7 @@ def test_block_construct_parsing():
 
 def test_integer_assignment_validation():
     import numpy as np
-    from ..vasp_input import Incar,generate_vasp_input
+    from ..vasp_input import Incar,assign_int_array,generate_vasp_input
 
     incar = Incar()
     incar.assign(
@@ -474,8 +474,8 @@ def test_integer_assignment_validation():
     with pytest.raises(NexusError,match='element at index 1'):
         Incar().assign(random_seed=[1,2.1,3])
     #end with
-    with pytest.raises(NexusError,match='cannot be represented'):
-        Incar().assign(random_seed=[1,2**100,3])
+    with pytest.raises(OverflowError):
+        assign_int_array([1,2**100,3])
     #end with
     with pytest.raises(NexusError,match='assign failed for keyword ibrion'):
         generate_vasp_input(ibrion=2.1)
