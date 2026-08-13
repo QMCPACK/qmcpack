@@ -3000,15 +3000,15 @@ class Structure(Sobj):
     #end def order_by_species
 
 
-    # test needed
     def reorder(self,order):
+        """Reorder all atom-sized member arrays."""
         natoms = len(self.elem)
         order = np.asarray(order)
         if order.ndim!=1 or len(order)!=natoms:
             self.error(
                 'atom reordering must contain one index per atom\n'
-                '  number of atoms: {0}\n'
-                '  order shape: {1}'.format(natoms,order.shape)
+                '  number of atoms: {}\n'
+                '  order shape: {}'.format(natoms,order.shape)
                 )
         #end if
         if not np.issubdtype(order.dtype,np.integer):
@@ -3018,7 +3018,7 @@ class Structure(Sobj):
         if not np.array_equal(np.sort(order),np.arange(natoms)):
             self.error(
                 'atom reordering indices must be a permutation of 0 through '
-                '{0}'.format(natoms-1)
+                '{}'.format(natoms-1)
                 )
         #end if
 
@@ -3028,8 +3028,10 @@ class Structure(Sobj):
             }
         for name,value in list(self.items()):
             if (
-                name not in non_atom_arrays and isinstance(value,np.ndarray) and
-                value.ndim>0 and value.shape[0]==natoms
+                name not in non_atom_arrays and
+                isinstance(value,np.ndarray) and
+                value.ndim>0 and
+                value.shape[0]==natoms
                 ):
                 self[name] = value[order]
             #end if

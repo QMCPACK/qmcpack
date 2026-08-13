@@ -67,7 +67,7 @@ def generate_serial_references():
         'potcar/files' : ['C.POTCAR'],
         'potcar/pseudos' : obj(),
         }
-    
+
     ref_read = ref.copy()
 
     ref_read['incar/nelect']       = 64.0
@@ -124,9 +124,12 @@ for file in TEST_FILES.values():
 
 
 def test_keyword_consistency():
-    from ..vasp_input import Incar,Stopcar
+    from ..vasp_input import Incar,Stopcar,VKeywordFile
 
     for cls in Incar,Stopcar:
+        assert(isinstance(cls.scalar_keywords,frozenset))
+        assert(isinstance(cls.array_keywords,frozenset))
+        assert(isinstance(cls.keywords,frozenset))
         scalar_keywords = set()
         array_keywords = set()
         typed_keywords = set()
@@ -148,6 +151,14 @@ def test_keyword_consistency():
         assert(set(cls.write_value.keys())==cls.keywords)
         assert(set(cls.assign_value.keys())==cls.keywords)
     #end for
+
+    class AdditionalKeywordFile(VKeywordFile):
+        bools = frozenset({'flag'})
+    #end class AdditionalKeywordFile
+
+    AdditionalKeywordFile.class_init()
+    assert(AdditionalKeywordFile.keywords==frozenset({'flag'}))
+    assert(AdditionalKeywordFile.type.flag=='bools')
 #end def test_keyword_consistency
 
 
@@ -448,6 +459,7 @@ def test_integer_assignment_validation():
         [1,2.1,3],
         [1,True,3],
         [1,'2',3],
+        [1,2**100,3],
         [[1,2],[3,4]],
         )
     for value in invalid_arrays:
@@ -461,6 +473,9 @@ def test_integer_assignment_validation():
 
     with pytest.raises(NexusError,match='element at index 1'):
         Incar().assign(random_seed=[1,2.1,3])
+    #end with
+    with pytest.raises(NexusError,match='cannot be represented'):
+        Incar().assign(random_seed=[1,2**100,3])
     #end with
     with pytest.raises(NexusError,match='assign failed for keyword ibrion'):
         generate_vasp_input(ibrion=2.1)
@@ -578,7 +593,7 @@ def test_invalid_keyword_input():
     with pytest.raises(NexusError,match='assign failed for keyword magmom'):
         Incar().assign(magmom=1.0)
     #end with
-    with pytest.raises(NexusError,match='quotation marks.*not paired'):
+    with pytest.raises(NexusError,match=r'quotation marks.*not paired'):
         Incar().read_text('SYSTEM = "unfinished')
     #end with
     with pytest.raises(NexusError,match='incomplete line continuation'):
@@ -832,7 +847,9 @@ def test_poscar_extended_format():
 
 def test_auxiliary_formatted_files():
     import numpy as np
-    from ..vasp_input import Iconst,Ircar,Penaltypot
+    from ..vasp_input import Iconst,Ircar,Irccar,Penaltypot
+
+    assert(Ircar is Irccar)
 
     iconst = Iconst()
     iconst.read_text(
@@ -856,10 +873,10 @@ def test_auxiliary_formatted_files():
     reread_penalty.read_text(penaltypot.write_text())
     assert(np.array_equal(reread_penalty.hills,penaltypot.hills))
 
-    irccar = Ircar()
+    irccar = Irccar()
     irccar.read_text('2\n0.0 0.5\n1.0 0.5\n')
     assert(np.array_equal(irccar.points,[[0.0,0.5],[1.0,0.5]]))
-    reread_irccar = Ircar()
+    reread_irccar = Irccar()
     reread_irccar.read_text(irccar.write_text())
     assert(np.array_equal(reread_irccar.points,irccar.points))
 #end def test_auxiliary_formatted_files
@@ -951,7 +968,7 @@ def test_write(tmp_path):
     test_files_dir = TEST_FILES['diamond_INCAR'].parent
 
     vi_read = VaspInput(test_files_dir, prefix='diamond_')
-    
+
     vi_read.write(tmp_path, prefix='write_diamond_')
 
     vi_write = VaspInput(tmp_path, prefix='write_diamond_')
@@ -982,22 +999,22 @@ def test_generate(tmp_path):
 
     dia16 = generate_physical_system(
         structure = TEST_FILES['d16bulk.POSCAR'],
-        C         = 4                  
+        C         = 4
         )
 
-    vi = generate_vasp_input(      
-        system       = dia16,            
-        pseudos      = ['C.POTCAR'], 
+    vi = generate_vasp_input(
+        system       = dia16,
+        pseudos      = ['C.POTCAR'],
         input_type   = 'generic',
-        istart       = 0, 
+        istart       = 0,
         icharg       = 2,
         encut        = 450,
         nsw          = 5,
         ibrion       = 2,
         isif         = 2,
         kcenter      = 'monkhorst',
-        kgrid        = (2,2,2),                
-        kshift       = (0,0,0),              
+        kgrid        = (2,2,2),
+        kshift       = (0,0,0),
         )
 
     assert(isinstance(vi,VaspInput))
