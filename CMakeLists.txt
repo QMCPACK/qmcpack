@@ -75,12 +75,6 @@ if(DEFINED ENABLE_CUDA OR DEFINED ENABLE_ROCM OR DEFINED QMC_CUDA2HIP OR DEFINED
 endif()
 
 include(DetermineGPUFeatures)
-set(QMC_CTEST_NUM_GPUS
-    1
-    CACHE STRING "Number of GPUs available to CTest on the local node")
-if(NOT QMC_CTEST_NUM_GPUS MATCHES "^[1-9][0-9]*$")
-  message(FATAL_ERROR "QMC_CTEST_NUM_GPUS must be a positive integer, but is \"${QMC_CTEST_NUM_GPUS}\"")
-endif()
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
@@ -684,11 +678,6 @@ if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
   endif()
 
-  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    string(REPLACE "sm_" "" CUDA_ARCH_NUMBERS "${QMC_GPU_ARCHS}")
-    set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_NUMBERS})
-  endif()
-
   enable_language(CUDA)
   if(ENABLE_CUDA)
     include(TestCUDAHostCompatibility)
@@ -991,7 +980,18 @@ set(DART_TESTING_TIMEOUT
     3600
     CACHE STRING "Maximum time for one test")
 enable_testing()
-if(QMC_GPU)
+
+set(QMC_CTEST_NUM_GPUS 1 CACHE STRING "Number of GPUs available to CTest on the local node")
+if(NOT QMC_CTEST_NUM_GPUS MATCHES "^[1-9][0-9]*$")
+  message(FATAL_ERROR "QMC_CTEST_NUM_GPUS must be a positive integer, but is \"${QMC_CTEST_NUM_GPUS}\"")
+endif()
+
+set(VALID_GPU_VISIBILITY_VARIABLES "CUDA_VISIBLE_DEVICES" "ROCR_VISIBLE_DEVICES" "ZE_AFFINITY_MASK")
+set(QMC_GPU_VISIBILITY_VARIABLE ${QMC_GPU_VISIBILITY_VARIABLE_DEFAULT} CACHE STRING "GPU visibility environment variable name. Valid input ${VALID_GPU_VISIBILITY_VARIABLES}")
+if(QMC_GPU_VISIBILITY_VARIABLE)
+  if(NOT QMC_GPU_VISIBILITY_VARIABLE IN_LIST VALID_GPU_VISIBILITY_VARIABLES)
+    message(FATAL_ERROR "Invalid QMC_GPU_VISIBILITY_VARIABLE input, value must be one of ${VALID_GPU_VISIBILITY_VARIABLES}")
+  endif()
   math(EXPR QMC_LAST_GPU_ID "${QMC_CTEST_NUM_GPUS} - 1")
   set(QMC_CTEST_GPU_RESOURCES "")
   foreach(QMC_GPU_ID RANGE 0 ${QMC_LAST_GPU_ID})
@@ -1009,22 +1009,16 @@ if(QMC_GPU)
       "{\n  \"version\": { \"major\": 1, \"minor\": 0 },\n  \"local\": [\n    {\n      \"gpus\": [\n${QMC_CTEST_GPU_RESOURCES}\n      ]\n    }\n  ]\n}\n"
   )
   message(STATUS "CTest GPU resources: ${QMC_CTEST_NUM_GPUS}")
-endif()
-include(CTest)
-
-# Determine environment variable to set GPU visibility based on the GPU architecture
-if(QMC_GPU)
-  if(QMC_CUDA2HIP OR QMC_GPU_ARCHS MATCHES "(^|;)gfx")
-    set(QMC_GPU_VISIBILITY_VARIABLE ROCR_VISIBLE_DEVICES)
-  elseif(ENABLE_SYCL OR QMC_GPU_ARCHS MATCHES "(^|;)intel_gpu_")
-    set(QMC_GPU_VISIBILITY_VARIABLE ZE_AFFINITY_MASK)
-  else()
-    set(QMC_GPU_VISIBILITY_VARIABLE CUDA_VISIBLE_DEVICES)
-  endif()
+  message(STATUS "CTest GPU visibility environment variable: ${QMC_GPU_VISIBILITY_VARIABLE}")
   set(QMC_GPU_TEST_LAUNCHER ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/gpu_test_resource_launcher.py
                             ${QMC_GPU_VISIBILITY_VARIABLE})
+elseif(QMC_GPU)
+  message(WARNING "QMC_GPU_VISIBILITY_VARIABLE is empty. CTest GPU resource management feature cannot be used. "
+                  "CTest may show slow or failing tests due to GPU oversubscription when running concurrent tests. "
+                  "Set QMC_GPU_VISIBILITY_VARIABLE to the GPU visibility environment variable name based on your GPU. "
+                  "Candidates are ${VALID_GPU_VISIBILITY_VARIABLES}.")
 endif()
-
+include(CTest)
 
 #-------------------------------------------------------------------
 # Check if PySCF is available
