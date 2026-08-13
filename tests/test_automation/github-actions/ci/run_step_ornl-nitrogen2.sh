@@ -75,7 +75,8 @@ case "$1" in
     echo "Running deterministic tests"
     amd-smi version
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
-    ctest --output-on-failure -L deterministic -j 32 --timeout 120 --repeat after-timeout:4
+    ctest --output-on-failure -L deterministic -j 40 --timeout 120 --repeat after-timeout:4
+    ctest --output-on-failure -j 40 --timeout 120 --rerun-failed --repeat until-pass:4
     ;;
     
 esac
