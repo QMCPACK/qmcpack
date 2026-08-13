@@ -1305,7 +1305,7 @@ class QIxml(Names):
 
             #print(obj(dict(self.__class__.__dict__)))
 
-            self.error(msg,header='QmcpackInput',exit=exit,trace=exit)
+            self.error(msg,'QmcpackInput',exit=exit,trace=exit)
         #end if
     #end def check_junk
 
@@ -2922,7 +2922,7 @@ class vmc(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ('method','move','profiling','kdelay',         # batched
-                  'multiple','warp','gpu','checkpoint','trace','append', # legacy - batched
+                  'multiple','warp','gpu','checkpoint','trace', # legacy - batched
                   'target','completed','id')
     elements   = ('estimator', # batched
                   'record')    # legacy - batched
@@ -2936,14 +2936,14 @@ class vmc(QIxml):
                   'minimumtargetwalkers','max_seconds')
     write_types = obj(usedrift=yesno,profiling=yesno,                   # batched
                       gpu=yesno,nonlocalpp=yesno,reconfiguration=yesno, # legacy - batched
-                      ratio=yesno,completed=yesno,append=yesno)
+                      ratio=yesno,completed=yesno)
 #end class vmc
 
 class dmc(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ('method','move','profiling','kdelay',         # batched
-                  'gpu','multiple','warp','checkpoint','trace','append', # legacy - batched
+                  'gpu','multiple','warp','checkpoint','trace', # legacy - batched
                   'target','completed','id','continue')
     elements   = ('estimator',)
     parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps',
@@ -2964,16 +2964,16 @@ class dmc(QIxml):
                       crowd_serialize_walkers=yesno,    # batched
                       nonlocalmoves=yesnostr,use_nonblocking=yesno,
                       gpu=yesno,fastgrad=yesno,completed=yesno,killnode=yesno, # legacy - batched
-                      swap_walkers=yesno,l2_diffusion=yesno,append=yesno)
+                      swap_walkers=yesno,l2_diffusion=yesno)
 #end class dmc
 
 class rmc(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ('method','multiple','target','observables','target','warp','append')
+    attributes = ('method','multiple','target','observables','target','warp')
     parameters = ('blocks','steps','chains','cuts','bounce','clone','walkers','timestep','trunclength','maxtouch','mass','collect')
     elements = ('qmcsystem',)
-    write_types = obj(collect=yesno,append=yesno)
+    write_types = obj(collect=yesno)
 #end class rmc
 
 class vmc_batch(QIxml):
@@ -2982,10 +2982,10 @@ class vmc_batch(QIxml):
     # batched driver compatible inputs have yet not been listed anywhere. 
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ('method','move','profiling','kdelay','checkpoint','append')
+    attributes = ('method','move','profiling','kdelay','checkpoint')
     elements   = ('estimator','estimators')
     parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','usedrift')
-    write_types = obj(usedrift=yesno,profiling=yesno,append=yesno)
+    write_types = obj(usedrift=yesno,profiling=yesno)
 #end class vmc_batch
 
 class dmc_batch(QIxml):
@@ -2994,10 +2994,10 @@ class dmc_batch(QIxml):
     # batched driver compatible inputs have yet not been listed anywhere.
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ('method','move','profiling','kdelay','checkpoint','append')
+    attributes = ('method','move','profiling','kdelay','checkpoint')
     elements   = ('estimator','estimators')
     parameters = ('total_walkers','walkers_per_rank','crowd_serialize_walkers','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound')
-    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno, crowd_serialize_walkers=yesno,append=yesno)
+    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno, crowd_serialize_walkers=yesno)
 #end class dmc_batch
 
 class linear_batch(QIxml):
@@ -3686,7 +3686,8 @@ class QmcpackInput(SimulationInput,Names):
         ``<qmcsystem>`` and a local container below each ``<qmc>`` section.
         The returned containers are deliberately not merged: QMCPACK combines
         their children when constructing each driver, and callers that need
-        semantic estimator metadata must retain the QMC-section scope.
+        semantic estimator metadata must retain the QMC-section scope. Series
+        assignments follow Nexus's existing output-info convention.
         """
         sim = self.simulation
         global_estimators = []
@@ -3713,16 +3714,10 @@ class QmcpackInput(SimulationInput,Names):
 
         qmc_inputs = []
         series = sim.project.series
-        first_qmc = True
         for qmc in self.unroll_calculations(modify=False):
-            append = 'append' in qmc and qmc.append in ('yes',True)
-            if not first_qmc and not append:
-                series += 1
-            #end if
             local_estimators = qmc.estimators if 'estimators' in qmc else None
-            qmc_inputs.append(obj(qmc=qmc,series=series,append=append,
-                                  estimators=local_estimators))
-            first_qmc = False
+            qmc_inputs.append(obj(qmc=qmc,series=series,estimators=local_estimators))
+            series += 1
         #end for
         return obj(global_estimators=global_estimators,qmc=qmc_inputs)
     #end def get_qmc_estimator_inputs
@@ -4027,12 +4022,13 @@ class QmcpackInput(SimulationInput,Names):
         outfiles = []
 
         if not self.is_afqmc_input():
-            qmc_inputs = self.get_qmc_estimator_inputs().qmc
-            for qmc_input in qmc_inputs:
-                qo = qmc_input.qmc
+            qmc_ur = self.unroll_calculations(modify=False)
+            n=0
+            for qo in qmc_ur:
                 q = obj()
                 q.prefix = prefix
-                q.series = qmc_input.series
+                q.series = series+n
+                n+=1
                 method = qo.method
                 if method in self.opt_methods:
                     q.type = 'opt'
