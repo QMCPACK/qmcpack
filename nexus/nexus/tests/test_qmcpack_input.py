@@ -1489,9 +1489,17 @@ def test_read():
     ])
 def test_batched_qmc_estimators(tmp_path,batched_method,legacy_method):
     import numpy as np
-    from ..qmcpack_input import QmcpackInput
+    from ..qmcpack_input import QmcpackInput,vmc,dmc,rmc,vmc_batch,dmc_batch
 
     batched_input = '''<simulation>
+  <project id="case" series="5"/>
+  <qmcsystem>
+    <estimators>
+      <estimator type="spindensity" name="GlobalSpinDensity">
+        <parameter name="grid">2 3 4</parameter>
+      </estimator>
+    </estimators>
+  </qmcsystem>
   <qmc method="{}" move="pbyp">
     <estimators>
       <estimator type="spindensity" name="SpinDensity">
@@ -1501,17 +1509,40 @@ def test_batched_qmc_estimators(tmp_path,batched_method,legacy_method):
       </estimator>
     </estimators>
   </qmc>
+  <qmc method="{}" move="pbyp">
+    <estimators>
+      <estimator type="spindensity" name="SecondSpinDensity">
+        <parameter name="grid">3 3 4</parameter>
+      </estimator>
+    </estimators>
+  </qmc>
+  <qmc method="{}" move="pbyp" append="yes">
+    <estimators>
+      <estimator type="spindensity" name="AppendedSpinDensity">
+        <parameter name="grid">4 3 4</parameter>
+      </estimator>
+    </estimators>
+  </qmc>
 </simulation>
-'''.format(batched_method)
+'''.format(batched_method,batched_method,batched_method)
     filepath = tmp_path / 'batched_estimators.xml'
     filepath.write_text(batched_input)
 
     qi = QmcpackInput(filepath)
     qi.pluralize()
-    sd = qi.simulation.calculations[0].estimators.estimators.SpinDensity
+    scoped = qi.get_qmc_estimator_inputs()
+    sd = scoped.qmc[0].estimators.estimators.SpinDensity
     assert value_eq(sd.grid,np.array([2,3,4]))
-    assert value_eq(sd.corner,np.zeros(3))
-    assert value_eq(sd.cell,np.array([[2.,0.,0.],[0.,3.,0.],[0.,0.,4.]]))
+    assert value_eq(sd.corner,np.array([0,0,0]))
+    assert value_eq(sd.cell,np.array([[2,0,0],[0,3,0],[0,0,4]]))
+    assert list(scoped.global_estimators.estimators.keys())==['GlobalSpinDensity']
+    assert [q.series for q in scoped.qmc]==[5,6,6]
+    assert [q.append for q in scoped.qmc]==[False,False,True]
+    assert [q.series for q in qi.get_output_info('qmc')]==[5,6,6]
+    for qmc_type in (vmc,dmc,rmc,vmc_batch,dmc_batch):
+        qmc = qmc_type(method=qmc_type.__name__,append=True)
+        assert 'append="yes"' in qmc.write()
+    #end for
 
     legacy_filepath = tmp_path / 'legacy_estimators.xml'
     legacy_filepath.write_text(batched_input.replace(batched_method,legacy_method))
@@ -1519,6 +1550,24 @@ def test_batched_qmc_estimators(tmp_path,batched_method,legacy_method):
         QmcpackInput(legacy_filepath)
 #end def test_batched_qmc_estimators
 
+
+def test_qmc_append_series_mapping(tmp_path):
+    from ..qmcpack_input import QmcpackInput
+
+    filepath = tmp_path / 'qmc_append.xml'
+    filepath.write_text('''<simulation>
+  <project id="case" series="5"/>
+  <qmc method="vmc"/>
+  <qmc method="rmc" append="yes"/>
+  <qmc method="dmc"/>
+</simulation>
+''')
+    qi = QmcpackInput(filepath)
+    scoped = qi.get_qmc_estimator_inputs()
+    assert [q.series for q in scoped.qmc]==[5,5,6]
+    assert [q.append for q in scoped.qmc]==[False,True,False]
+    assert [q.series for q in qi.get_output_info('qmc')]==[5,5,6]
+#end def test_qmc_append_series_mapping
 
 
 def test_write(tmp_path):
