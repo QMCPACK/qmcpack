@@ -8,6 +8,7 @@ generic_settings.raise_error = True
 
 from . import TEST_DIR
 import shutil
+from ..execute import execute as execute_raw
 from ..testing import execute, text_eq
 
 
@@ -252,3 +253,191 @@ def test_spindensity_qmc_level_cell_corner_from_input(tmp_path):
     assert '1.05835442E+00 0.00000000E+00 0.00000000E+00' in xsf
     assert '0.00000000E+00 1.58753163E+00 0.00000000E+00' in xsf
     assert '0.00000000E+00 0.00000000E+00 2.11670883E+00' in xsf
+
+    out,err,rc = execute_raw(f'{exe} -f chgcar -i {infile} {stat}')
+    assert rc!=0
+    assert 'cannot write CHGCAR with a density cell different from the simulation cell' in out+err
+
+
+def _write_series_spindensity_input(filepath):
+    filepath.write_text('''<?xml version="1.0"?>
+<simulation>
+  <project id="case" series="5"/>
+  <qmcsystem>
+    <simulationcell>
+      <parameter name="lattice" units="bohr">
+        5 0 0
+        0 5 0
+        0 0 5
+      </parameter>
+      <parameter name="bconds">p p p</parameter>
+    </simulationcell>
+    <particleset name="ion0" size="1">
+      <group name="He"><parameter name="charge">2</parameter></group>
+      <attrib name="position" datatype="posArray">0 0 0</attrib>
+    </particleset>
+    <particleset name="e">
+      <group name="u" size="1"><parameter name="charge">-1</parameter></group>
+      <group name="d" size="1"><parameter name="charge">-1</parameter></group>
+    </particleset>
+    <estimators>
+      <estimator name="GlobalSpinDensity" type="spindensity">
+        <parameter name="grid">2 2 2</parameter>
+      </estimator>
+    </estimators>
+  </qmcsystem>
+  <qmc method="vmc_batch" move="pbyp">
+    <estimators>
+      <estimator name="SpinDensity" type="spindensity">
+        <parameter name="grid">2 2 2</parameter>
+        <parameter name="corner">0 0 0</parameter>
+        <parameter name="cell">2 0 0  0 3 0  0 0 4</parameter>
+      </estimator>
+    </estimators>
+  </qmc>
+  <qmc method="dmc_batch" move="pbyp">
+    <estimators>
+      <estimator name="SpinDensity" type="spindensity">
+        <parameter name="grid">2 3 4</parameter>
+        <parameter name="corner">1 2 3</parameter>
+        <parameter name="cell">4 0 0  0 5 0  0 0 6</parameter>
+      </estimator>
+    </estimators>
+  </qmc>
+</simulation>
+''')
+
+
+def _write_spin_density_stat(filepath,spin_density_cells,*,global_cells=8,name='SpinDensity'):
+    import h5py
+    import numpy as np
+
+    estimators = [(name,spin_density_cells)]
+    if global_cells is not None:
+        estimators.insert(0,('GlobalSpinDensity',global_cells))
+    #end if
+    with h5py.File(filepath,'w') as h5:
+        for estimator,cells in estimators:
+            group = h5.create_group(estimator)
+            group.create_group('u').create_dataset('value',data=np.ones((2,cells)))
+            group.create_group('d').create_dataset('value',data=2*np.ones((2,cells)))
+
+
+def test_density_metadata_preserves_bounded_legacy_grid(tmp_path):
+    import h5py
+    import numpy as np
+
+    exe = TEST_DIR.parent / 'bin/qdens'
+    infile = tmp_path / 'density.xml'
+    infile.write_text('''<?xml version="1.0"?>
+<simulation>
+  <project id="density" series="0"/>
+  <qmcsystem>
+    <simulationcell>
+      <parameter name="lattice" units="bohr">
+        6 0 0
+        0 6 0
+        0 0 6
+      </parameter>
+      <parameter name="bconds">n n n</parameter>
+    </simulationcell>
+    <particleset name="ion0" size="1">
+      <group name="He"><parameter name="charge">2</parameter></group>
+      <attrib name="position" datatype="posArray">0 0 0</attrib>
+    </particleset>
+    <particleset name="e">
+      <group name="u" size="1"><parameter name="charge">-1</parameter></group>
+      <group name="d" size="1"><parameter name="charge">-1</parameter></group>
+    </particleset>
+    <hamiltonian name="h0" type="generic" target="e">
+      <estimator name="Density" type="density" delta="1 1 1"
+                 x_min="1" x_max="3" y_min="2" y_max="5" z_min="0" z_max="4"/>
+    </hamiltonian>
+  </qmcsystem>
+  <qmc method="vmc"><parameter name="blocks">2</parameter></qmc>
+</simulation>
+''')
+    stat = tmp_path / 'density.s000.stat.h5'
+    with h5py.File(stat,'w') as h5:
+        h5.create_group('Density').create_dataset('value',data=np.ones((2,2,3,4)))
+
+    out,err,rc = execute(f'{exe} -f xsf -i {infile} {stat}')
+    assert rc==0, out+err
+    xsf = (tmp_path / 'density.s000.Density_q.xsf').read_text()
+    assert '3 4 5' in xsf
+    assert '7.93765813E-01 1.32294302E+00 2.64588604E-01' in xsf
+    assert '1.05835442E+00 0.00000000E+00 0.00000000E+00' in xsf
+    assert '0.00000000E+00 1.58753163E+00 0.00000000E+00' in xsf
+    assert '0.00000000E+00 0.00000000E+00 2.11670883E+00' in xsf
+
+
+def test_spindensity_metadata_is_selected_per_series(tmp_path):
+    exe = TEST_DIR.parent / 'bin/qdens'
+    infile = tmp_path / 'case.xml'
+    _write_series_spindensity_input(infile)
+    stat5 = tmp_path / 'case.s005.stat.h5'
+    stat6 = tmp_path / 'case.s006.stat.h5'
+    _write_spin_density_stat(stat5,8)
+    _write_spin_density_stat(stat6,24)
+
+    out,err,rc = execute(f'{exe} -f xsf -i {infile} {stat5} {stat6}')
+    assert rc==0, out+err
+    assert (tmp_path / 'case.s005.GlobalSpinDensity_u+d.xsf').exists()
+    assert (tmp_path / 'case.s006.GlobalSpinDensity_u+d.xsf').exists()
+
+    first = (tmp_path / 'case.s005.SpinDensity_u+d.xsf').read_text()
+    second = (tmp_path / 'case.s006.SpinDensity_u+d.xsf').read_text()
+    assert '3 3 3' in first
+    assert '3 4 5' in second
+    assert '1.05835442E+00 0.00000000E+00 0.00000000E+00' in first
+    assert '0.00000000E+00 1.58753163E+00 0.00000000E+00' in first
+    assert '2.11670883E+00 0.00000000E+00 0.00000000E+00' in second
+    assert '0.00000000E+00 2.64588604E+00 0.00000000E+00' in second
+    assert '2.64588604E-01 3.96882906E-01 5.29177209E-01' in first
+    assert '1.05835442E+00 1.49933542E+00 1.98441453E+00' in second
+
+
+def test_spindensity_input_metadata_overrides_grid_fallback(tmp_path):
+    exe = TEST_DIR.parent / 'bin/qdens'
+    infile = tmp_path / 'case.xml'
+    _write_series_spindensity_input(infile)
+    stat = tmp_path / 'case.s005.stat.h5'
+    _write_spin_density_stat(stat,8)
+
+    out,err,rc = execute(f'{exe} -f xsf -g "1 1 8" -i {infile} {stat}')
+    assert rc==0, out+err
+    assert 'Ignoring --grid' in out+err
+    assert '3 3 3' in (tmp_path / 'case.s005.SpinDensity_u+d.xsf').read_text()
+
+
+def test_spindensity_input_hdf5_grid_mismatch_fails_clearly(tmp_path):
+    exe = TEST_DIR.parent / 'bin/qdens'
+    infile = tmp_path / 'case.xml'
+    _write_series_spindensity_input(infile)
+    stat = tmp_path / 'case.s005.stat.h5'
+    _write_spin_density_stat(stat,7)
+
+    out,err,rc = execute_raw(f'{exe} -f xsf -i {infile} {stat}')
+    assert rc!=0
+    message = out+err
+    assert 'density grid does not match number of HDF5 data cells' in message
+    assert 'series: 5' in message
+    assert 'estimator: SpinDensity' in message
+    assert 'HDF5 data cells: 7' in message
+    assert str(stat) in message
+
+
+def test_spindensity_series_mismatch_requires_unambiguous_fallback(tmp_path):
+    exe = TEST_DIR.parent / 'bin/qdens'
+    infile = tmp_path / 'case.xml'
+    _write_series_spindensity_input(infile)
+    stat = tmp_path / 'case.s007.stat.h5'
+    _write_spin_density_stat(stat,8,global_cells=None)
+
+    out,err,rc = execute_raw(f'{exe} -f xsf -i {infile} {stat}')
+    assert rc!=0
+    assert 'could not find input metadata for density estimator "SpinDensity" in series 7' in out+err
+
+    out,err,rc = execute_raw(f'{exe} -f xsf -g "3 3 3" -i {infile} {stat}')
+    assert rc!=0
+    assert 'density grid does not match number of HDF5 data cells' in out+err
