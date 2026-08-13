@@ -5541,8 +5541,8 @@ class BundledQmcpackInput(SimulationInput):
     
     def __init__(self,inputs,filenames):
         self.inputs = obj()
-        for input in inputs:
-            self.inputs[len(self.inputs)] = input
+        for inp in inputs:
+            self.inputs[len(self.inputs)] = inp
         #end for
         self.filenames = filenames
     #end def __init__
@@ -5551,8 +5551,8 @@ class BundledQmcpackInput(SimulationInput):
     def get_output_info(self,*requests):
         outfiles = []
 
-        for index,input in self.inputs.items():
-            outfs = input.get_output_info('outfiles')
+        for index,inp in self.inputs.items():
+            outfs = inp.get_output_info('outfiles')
             infile = self.filenames[index]
             outfile= infile.rsplit('.',1)[0]+'.g'+str(index).zfill(3)+'.qmc'
             outfiles.append(infile)
@@ -5607,11 +5607,11 @@ class BundledQmcpackInput(SimulationInput):
             ##end if
             c = ''
             for i in range(len(self.inputs)):
-                input = self.inputs[i]
+                inp = self.inputs[i]
                 bfile = self.filenames[i]
                 c += bfile+'\n'
                 bfilepath = os.path.join(path,bfile)
-                input.write(bfilepath)
+                inp.write(bfilepath)
             #end for
             fobj = open(filepath,'w')
             fobj.write(c)

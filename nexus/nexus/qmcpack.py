@@ -793,10 +793,10 @@ class Qmcpack(Simulation):
         elif result_name=='restart':
             result.restarts = []
             if isinstance(self.input,TracedQmcpackInput):
-                for group,input in self.input.inputs.items():
+                for group,inp in self.input.inputs.items():
                     var = self.input.variables[group]
                     twistnum = var.value if var.quantity=='twistnum' else None
-                    result.restarts.append(self.get_restart_entry(input,group,twistnum))
+                    result.restarts.append(self.get_restart_entry(inp,group,twistnum))
                 #end for
             else:
                 result.restarts.append(self.get_restart_entry(self.input))
@@ -816,7 +816,11 @@ class Qmcpack(Simulation):
             downstream_bundled = self.should_twist_average
             upstream_bundled = nrestart>1
             if upstream_bundled != downstream_bundled:
-                self.error('QMCPACK restart dependencies require matching single-twist or twist-averaged simulations\n  upstream restart count: {}\n  downstream twist averaged: {}'.format(nrestart,downstream_bundled))
+                self.error(
+                    'QMCPACK restart dependencies require matching single-twist or twist-averaged simulations\n'
+                    '  upstream restart count: {}\n'
+                    '  downstream twist averaged: {}'.format(nrestart,downstream_bundled)
+                    )
             #end if
             if upstream_bundled:
                 self.restart_entries = deepcopy(result.restarts)
@@ -828,7 +832,11 @@ class Qmcpack(Simulation):
                 project_ids = set(r.project_id for r in result.restarts)
                 project_series = set(r.project_series for r in result.restarts)
                 if len(project_ids)!=1 or len(project_series)!=1:
-                    self.error('same-directory QMCPACK restart files contain inconsistent project metadata\n  project ids: {}\n  project series: {}'.format(sorted(project_ids),sorted(project_series)))
+                    self.error(
+                        'same-directory QMCPACK restart files contain inconsistent project metadata\n'
+                        '  project ids: {}\n'
+                        '  project series: {}'.format(sorted(project_ids),sorted(project_series))
+                        )
                 #end if
                 input.simulation.project.id = project_ids.pop()
                 input.simulation.project.series = project_series.pop()
@@ -1676,18 +1684,33 @@ class Qmcpack(Simulation):
             #end if
             if 'restart_entries' in self:
                 if not isinstance(self.input,TracedQmcpackInput):
-                    self.error('twist-averaged QMCPACK restart could not be matched to bundled downstream inputs')
+                    self.error(
+                        'twist-averaged QMCPACK restart could not be matched to bundled downstream inputs'
+                        )
                 #end if
                 if len(self.restart_entries)!=len(self.input.inputs):
-                    self.error('twist-averaged QMCPACK restart count does not match the downstream input count\n  upstream restart count: {}\n  downstream input count: {}'.format(len(self.restart_entries),len(self.input.inputs)))
+                    self.error(
+                        'twist-averaged QMCPACK restart count does not match the downstream input count\n'
+                        '  upstream restart count: {}\n'
+                        '  downstream input count: {}'.format(
+                            len(self.restart_entries),len(self.input.inputs)
+                            )
+                        )
                 #end if
-                for group,input in self.input.inputs.items():
+                for group,inp in self.input.inputs.items():
                     restart = self.restart_entries[group]
                     var = self.input.variables[group]
                     if restart.twistnum is None or var.quantity!='twistnum' or restart.twistnum!=var.value:
-                        self.error('twist-averaged QMCPACK restart does not match the downstream twist\n  bundle index: {}\n  upstream twist: {}\n  downstream variable: {}={}'.format(group,restart.twistnum,var.quantity,var.value))
+                        self.error(
+                            'twist-averaged QMCPACK restart does not match the downstream twist\n'
+                            '  bundle index: {}\n'
+                            '  upstream twist: {}\n'
+                            '  downstream variable: {}={}'.format(
+                                group,restart.twistnum,var.quantity,var.value
+                                )
+                            )
                     #end if
-                    self.incorporate_restart_entry(input,restart)
+                    self.incorporate_restart_entry(inp,restart)
                 #end for
             #end if
         #end if

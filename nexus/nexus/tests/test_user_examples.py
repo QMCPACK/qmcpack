@@ -400,35 +400,49 @@ def test_qmcpack_diamond(tmp_path):
 #end def test_qmcpack_diamond
 
 
-@pytest.mark.parametrize(
-    "example_dir,script",
-    [
-        (
-            '05_diamond_dft_dmc_restart',
-            'diamond_lda_dmc_restart_same_dir.py',
+def test_qmcpack_restart_examples(tmp_path):
+    test_cases = [
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/05_diamond_dft_dmc_restart',
+            script = 'diamond_lda_dmc_restart_same_dir.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_restart/dmc.in.xml')],
             ),
-        (
-            '05_diamond_dft_dmc_restart',
-            'diamond_lda_dmc_restart_separate_dirs.py',
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/05_diamond_dft_dmc_restart',
+            script = 'diamond_lda_dmc_restart_separate_dirs.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_initial/dmc.in.xml')],
             ),
-        (
-            '06_diamond_dft_dmc_twistavg_restart',
-            'diamond_lda_dmc_twistavg_restart_same_dir.py',
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/06_diamond_dft_dmc_twistavg_restart',
+            script = 'diamond_lda_dmc_twistavg_restart_same_dir.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_twist_restart/dmc.g000.twistnum_0.in.xml')],
             ),
-        (
-            '06_diamond_dft_dmc_twistavg_restart',
-            'diamond_lda_dmc_twistavg_restart_separate_dirs.py',
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/06_diamond_dft_dmc_twistavg_restart',
+            script = 'diamond_lda_dmc_twistavg_restart_separate_dirs.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_twist_initial/dmc.g000.twistnum_0.in.xml')],
             ),
-        ],
-    )
-def test_qmcpack_restart_examples(tmp_path,example_dir,script):
-    path = 'qmcpack/rsqmc_quantum_espresso/'+example_dir
-    test_path = copy_example_files(path,tmp_path)
-    copy_pseudos('qmcpack',tmp_path)
+        ]
 
-    script_path = example_root / path / script
-    success,message = run_example_script(script_path,test_path)
-    assert(success),message
+    for test_case in test_cases:
+        case_dir = tmp_path / test_case.script.replace('.py','')
+        test_path = copy_example_files(test_case.path,case_dir)
+        copy_pseudos('qmcpack',case_dir)
+
+        script_path = example_root / test_case.path / test_case.script
+        success,message = run_example_script(script_path,test_path)
+        assert(success),message
+
+        for code,_filetype,filepath in test_case.files:
+            success,message = check_generated_files(
+                code,
+                case_dir,
+                test_case.path,
+                filepath,
+                )
+            assert(success),message
+        #end for
+    #end for
 #end def test_qmcpack_restart_examples
 
 

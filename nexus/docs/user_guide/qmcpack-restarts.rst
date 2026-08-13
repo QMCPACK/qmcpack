@@ -14,6 +14,15 @@ Request a restart through a simulation dependency:
 The final QMC section in ``qmc1`` must enable checkpointing.  Nexus reads its
 continuation XML and checks for both the walker and random-state HDF5 files.
 
+Two directory layouts are supported:
+
+* Separate directories keep each simulation's files isolated and make each
+  run easier to inspect independently, but use more directories and relative
+  paths to the checkpoint.
+* A shared directory preserves QMCPACK's conventional continuous project
+  series in one place, but co-locates the output and requires distinct Nexus
+  identifiers to protect Nexus-managed files.
+
 Separate directories
 --------------------
 

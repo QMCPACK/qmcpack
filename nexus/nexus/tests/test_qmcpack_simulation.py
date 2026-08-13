@@ -261,9 +261,9 @@ def test_restart_twist_average(tmp_path):
     source.twist_average([0,1])
     source.input = source.input.trace('twistnum',[0,1])
 
-    for group,input in source.input.inputs.items():
+    for group,inp in source.input.inputs.items():
         fileroot = 'restart_source.g{}.s000'.format(str(group).zfill(3))
-        restart_input = deepcopy(input)
+        restart_input = deepcopy(inp)
         restart_input.simulation.mcwalkerset = mcwalkerset(
             fileroot  = fileroot,
             version   = (4,3),
@@ -292,8 +292,8 @@ def test_restart_twist_average(tmp_path):
     target.write_prep()
 
     assert(isinstance(target.input,TracedQmcpackInput))
-    for group,input in target.input.inputs.items():
-        walkers = input.simulation.mcwalkerset
+    for group,inp in target.input.inputs.items():
+        walkers = inp.simulation.mcwalkerset
         expected = '../restart1/restart_source.g{}.s000'.format(str(group).zfill(3))
         assert(walkers.fileroot==expected)
         assert(target.input.variables[group].value==result.restarts[group].twistnum)
