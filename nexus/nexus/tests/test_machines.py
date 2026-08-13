@@ -562,8 +562,7 @@ def test_workstation_scheduling(tmp_path):
 @isolate_nexus_core
 def test_workstation_requeue(tmp_path):
     import time
-    from ..machines import Workstation
-    from ..machines import job,Job
+    from ..machines import Workstation, job, Job
 
     ws = Workstation('ws_requeue',16,'mpirun')
     j = job(machine=ws.name,serial=True)

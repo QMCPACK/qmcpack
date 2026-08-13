@@ -1372,7 +1372,7 @@ class Workstation(Machine):
             job.status = job.states.waiting
             self.waiting.add(jid)
         else:
-            self.error('requeue_job received non-Job instance '+job.__class__.__name__)
+            self.error('requeue_job received non-Job instance '+type(job).__name__)
         #end if
     #end def requeue_job
 
