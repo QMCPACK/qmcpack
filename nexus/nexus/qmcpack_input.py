@@ -449,12 +449,6 @@ class hobj(obj):
         warn(message,header,logfile=logfile)
     #end def warn
 
-    def error(self,message,header=None):
-        if header is None:
-            header = self.__class__.__name__
-        error(message,header)
-    #end def error
-
     # access preserving functions
     #  dict interface
     def _keys(self,*args,**kwargs):
