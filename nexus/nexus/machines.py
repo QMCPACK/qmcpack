@@ -224,6 +224,197 @@ job_defaults_nonassign = obj(
 job_defaults = obj({**job_defaults_assign,**job_defaults_nonassign})
 
 class Job(NexusCore):
+    """Describe the resources and execution settings for a Nexus simulation.
+
+    Jobs are normally supplied through the :func:`job` alias when creating a
+    simulation.  During simulation initialization, Nexus copies the job,
+    assigns simulation-specific paths and output files, supplies an
+    application command when needed, and lets the selected machine complete
+    the resource and scheduler settings.
+
+    Parameters
+    ----------
+    name : str, default='jobname'
+        Scheduler job name.
+    app, app_name : str or pathlib.Path, optional
+        Executable name or path.  ``app`` is the usual user-facing alias for
+        ``app_name``.  If neither an application nor ``app_command`` is
+        supplied, the simulation generator can provide the executable.
+    app_command : str, optional
+        Complete application command.  When provided, it overrides the
+        command normally constructed from the application name and simulation
+        input.
+    machine : str, optional
+        Registered machine name.  If omitted, the machine selected through
+        :func:`settings` is used.
+    cores : int, optional
+        Total CPU cores to request.  On workstations this determines the MPI
+        rank count; on batch machines it is converted to a node request when
+        necessary.
+    nodes : int, optional
+        Number of whole nodes to request on a batch machine.  The machine
+        derives remaining resource quantities from its node definition.
+    threads : int, default=1
+        OpenMP threads per process.  Nexus sets ``OMP_NUM_THREADS`` and,
+        where possible, derives the MPI process count from ``cores`` and this
+        value.
+    processes : int, optional
+        Total MPI process count.  On supercomputers this is normally a
+        derived value: ``nodes * processes_per_node`` when
+        ``processes_per_node`` is supplied, or ``floor(cores / threads)``
+        otherwise.  Prefer ``cores``, ``nodes``, ``threads``, and, when a
+        manual layout is needed, ``processes_per_node`` over setting this
+        field directly.
+    processes_per_node : int, optional
+        MPI processes (ranks) per allocated node.  This is the primary
+        process-layout override for batch machines.  When provided, a
+        supercomputer sets ``processes`` to ``nodes * processes_per_node``;
+        otherwise it derives the per-node rank count from the requested cores
+        and threads.  Choose a value for which
+        ``processes_per_node * threads`` fits the available cores on each
+        node, and follow any machine-specific CPU or GPU limits.  Scheduler
+        headers and launchers commonly use it as ``--ntasks-per-node``,
+        ``-N``, ``--ppn``, or an equivalent option.
+    processes_per_proc : int, optional
+        MPI processes per physical processor package (typically a socket).
+        Nexus derives this as ``processes / (nodes * procs_per_node)`` only
+        when the division is exact; otherwise the value is ``None``.  It is
+        primarily an output describing the finalized layout.  Some ``aprun``
+        machine classes use the derived value for their ``-S`` launcher
+        option, so it should generally not be set directly.
+    ppn : int, optional
+        Machine-specific processes- or cores-per-node setting.  The generic
+        supercomputer path defaults it to the machine's ``cores_per_node``;
+        consult the selected machine class before overriding it.
+    serial : bool, default=False
+        Run without an MPI launcher when there is one process.  Threaded
+        serial jobs can still use ``threads`` greater than one.
+    local : bool, default=False
+        Execute locally instead of submitting to the machine queue.  This is
+        independent of ``serial``.
+    hours, minutes, seconds, days : int, default=0
+        Requested walltime.  Values are normalized before a machine writes
+        its scheduler-specific time format.
+    queue : str, optional
+        Queue or scheduler partition.
+    account : str, optional
+        Allocation or project account.  Required by machines whose
+        ``requires_account`` setting is true.
+    qos, constraint, reservation, filesystems : str, optional
+        Scheduler- or machine-specific resource fields.
+    gpus : int, optional
+        GPU request, interpreted according to the selected machine's
+        conventions.
+    outfile, errfile, subfile : str or pathlib.Path, optional
+        Standard-output, standard-error, and submission-file names.
+    directory, subdir : str or pathlib.Path, optional
+        Local run and submission directories.
+    env : mapping, optional
+        Environment variables for the job.  Supercomputers write these as
+        exports in the submission file; workstations pass them to the local
+        process environment.
+    presub, postsub : str, default=''
+        Shell text placed immediately before or after the run command.
+    app_options, app_flags : str, sequence of str, or mapping, optional
+        Options appended after the application command.  ``app_flags`` is an
+        alias for ``app_options``.
+    run_options, options : str, sequence of str, or mapping, optional
+        Options appended after the machine launcher.  ``options`` is an alias
+        for ``run_options``.
+    sub_options : str, sequence of str, or mapping, optional
+        Options appended after the scheduler submission launcher.
+    full_command : str, optional
+        Complete run command.  When set, Nexus does not construct a launcher
+        and application command.
+    template : str, optional
+        Complete submission-file text.  When set, Nexus writes this text
+        instead of generating a scheduler header and run command.
+    user_env : bool, default=True
+        Request that scheduler submission preserve the user environment when
+        the machine supports that control.
+    skip_machine : bool, default=False
+        Bypass machine processing.  Intended for tests and narrowly scoped
+        debugging rather than normal user scripts.
+
+    Attributes
+    ----------
+    init_info : obj
+        Copy of the keyword arguments supplied at construction, before
+        defaults and aliases are resolved.
+    machine : str or None
+        Name of the selected registered machine.
+    name, app_name, app_command : str or None
+        Scheduler name, application name, and finalized application command.
+    directory, subdir, abs_dir, abs_subdir : str or None
+        Requested and resolved local and submission directories.  The
+        ``abs_*`` attributes are assigned during simulation initialization.
+    outfile, errfile, subfile : str or None
+        Standard-output, standard-error, and submission file names.
+    app_props : list
+        Application properties supplied by the simulation or user.
+    full_command, template : str or None
+        User-provided complete run command or submission-file text.
+    presub, postsub : str
+        Shell text written immediately before or after the run command.
+    bundled_jobs, relative : sequence of Job or None, bool
+        Optional bundled jobs and whether their commands use relative paths.
+    cores, nodes, threads : int or None
+        Requested or finalized total CPU cores, node count, and OpenMP threads
+        per process.
+    processes, processes_per_node, processes_per_proc : int or None
+        Finalized total MPI ranks and their node- and processor-package-level
+        decomposition.
+    procs, grains, tot_cores, ppn : int or None
+        Machine-derived processor-package count, allocation granularity,
+        allocated core capacity, and machine-specific per-node setting.
+    app_options, run_options, sub_options : Options
+        Options appended to the application command, run launcher, and
+        submission launcher, respectively.
+    env : dict or None
+        Final environment variables for the job, including
+        ``OMP_NUM_THREADS`` after machine processing.
+    queue, account, qos, constraint, reservation, filesystems : str or None
+        Scheduler and machine-specific allocation settings.
+    gpus, cpus_per_task, ntasks_per_core : int or None
+        Optional accelerator and scheduler resource settings.
+    days, hours, minutes, seconds : int
+        Normalized walltime components.
+    serial, local, user_env : bool
+        Execution and environment-preservation controls.
+    batch_mode : bool
+        Whether the selected machine is currently running in batch mode.
+    internal_id, system_id : int or str or None
+        Nexus-assigned job identifier and scheduler-assigned identifier.
+    status : int
+        Current lifecycle state, one of the values in ``Job.states``.
+    submitted, finished, successful, crashed, overtime : bool
+        Submission and completion-status flags.
+    fake_job, user_app_command : bool
+        Flags indicating a fake job and whether ``app_command`` was provided
+        directly by the user.
+
+    Notes
+    -----
+    The selected machine validates and finalizes resource layout, launcher
+    options, and scheduler headers.  Machine-specific classes can assign
+    defaults for fields such as ``queue`` or ``constraint`` and can interpret
+    GPU and scheduler options differently.  Reusable ``Job`` objects are
+    safe as simulation templates because Nexus copies them during simulation
+    creation.
+
+    Examples
+    --------
+    A workstation MPI job can specify only the required resources and
+    application.
+
+    >>> job(cores=16, app='pw.x')
+
+    A hybrid MPI/OpenMP batch job can request nodes, threads, walltime, and
+    scheduler metadata.
+
+    >>> job(machine='frontier', account='ABC123', nodes=2, threads=4,
+    ...     hours=1, app='qmcpack')
+    """
 
     machine = None #default machine if none is specified in settings
 
@@ -260,6 +451,15 @@ class Job(NexusCore):
 
 
     def __init__(self,**kwargs):
+        # guard against invalid keys
+        invalid = set(kwargs.keys())-set(job_defaults.keys())
+        if len(invalid)>0:
+            self.error('Invalid job arguments provided.\n'
+                       'Invalid arguments: {}\n'
+                       'Valid options are: {}'.format(
+                           sorted(invalid),list(job_defaults.keys())
+                           )
+                       )
         # rewrap keyword arguments
         kw = obj(**kwargs)
         # Ensure no pathlib.Path objects are stored
@@ -494,7 +694,7 @@ class Job(NexusCore):
     #end def set_processes
 
 
-    def set_environment(self,limited_env=False,clear_env=False,**env):
+    def set_environment(self,*,limited_env=False,clear_env=False,**env):
         machine = self.get_machine()
         if isinstance(machine,Supercomputer):
             limited_env = True
@@ -557,7 +757,7 @@ class Job(NexusCore):
 
 
     # test needed
-    def write(self,file=False):
+    def write(self,*,file=False):
         machine = self.get_machine()
         return machine.write_job(self,file=file)
     #end def write
@@ -578,7 +778,7 @@ class Job(NexusCore):
     #end def reenter_queue
 
 
-    def run_command(self,launcher=None,redirect=False,serial=False):
+    def run_command(self,launcher=None,*,redirect=False,serial=False):
         if self.template is not None:
             return ''
         #end if
@@ -873,7 +1073,7 @@ class Machine(NexusCore):
         raise NotImplementedError
     #end def process_job_options
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         raise NotImplementedError
     #end def write_job
 
@@ -1158,7 +1358,7 @@ class Workstation(Machine):
     #end def job_command
 
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         c = self.job_command(job)
         return c
     #end def write_job
@@ -1888,7 +2088,7 @@ class Supercomputer(Machine):
     #end def setup_environment
 
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         if job.template is None:
             env = self.setup_environment(job)
@@ -4700,4 +4900,3 @@ get_machine      = Machine.get
 
 #rename Job with lowercase
 job=Job
-

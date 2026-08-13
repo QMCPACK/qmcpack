@@ -224,7 +224,7 @@ _____________________________________________________
         #end if
     #end def tlog
 
-    def enter(self, directory: PathLike, changedir: bool = True, msg: str = ''):
+    def enter(self, directory: PathLike, *, changedir: bool = True, msg: str = ''):
         """Have Nexus enter a directory and change its current working directory.
         
         Parameters

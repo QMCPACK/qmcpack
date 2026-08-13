@@ -208,7 +208,7 @@ class gamessBasisFile(gaussBasisFile):
 #end class gamessBasisFile
 
 
-def process_gaussian_text(text,format,pp=True,basis=True,preserve_spacing=False):
+def process_gaussian_text(text,format,*,pp=True,basis=True,preserve_spacing=False):
     if format=='gamess' or format=='gaussian' or format=='atomscf':
         rawlines = text.splitlines()
         sections = []
@@ -362,7 +362,7 @@ class GaussianBasisSet(DevBase):
                 ngauss = int(tokens[1])
                 scale  = np.array(tokens[2:],dtype=float)
                 bterms = obj()
-                for j in range(ngauss):
+                for j in range(ngauss):  # noqa: B007
                     index,expon,coeff = basis_lines[i].split(); i+=1
                     expon = GaussianBasisSet.process_float(expon)
                     coeff = GaussianBasisSet.process_float(coeff)
@@ -379,7 +379,7 @@ class GaussianBasisSet(DevBase):
                 ngauss = int(tokens[1])
                 scale  = np.array(tokens[2:],dtype=float)
                 bterms = obj()
-                for j in range(ngauss):
+                for j in range(ngauss):  # noqa: B007
                     expon,coeff = basis_lines[i].split(); i+=1
                     expon = GaussianBasisSet.process_float(expon)
                     coeff = GaussianBasisSet.process_float(coeff)
@@ -402,7 +402,7 @@ class GaussianBasisSet(DevBase):
                 ltext = GaussianBasisSet.crystal_lmap[l_type]
                 if ltext!='sp':
                     bterms = obj()
-                    for j in range(ngauss):
+                    for j in range(ngauss):  # noqa: B007
                         expon,coeff = basis_lines[i].split(); i+=1
                         expon = GaussianBasisSet.process_float(expon)
                         coeff = GaussianBasisSet.process_float(coeff)
@@ -412,7 +412,7 @@ class GaussianBasisSet(DevBase):
                 else: # sp has shared exponent for s and p, split them now
                     sterms = obj()
                     pterms = obj()
-                    for j in range(ngauss):
+                    for j in range(ngauss):  # noqa: B007
                         expon,scoeff,pcoeff = basis_lines[i].split(); i+=1
                         expon = GaussianBasisSet.process_float(expon)
                         scoeff = GaussianBasisSet.process_float(scoeff)
@@ -816,7 +816,7 @@ class GaussianBasisSet(DevBase):
                 
 
     # test needed
-    def incorporate(self,other,tol=1e-3,unique=False):
+    def incorporate(self,other,tol=1e-3,*,unique=False):
         uncontracted = self.uncontracted() and other.uncontracted()
         lbasis       = self.lbasis()
         lbasis_other = other.lbasis()
@@ -872,7 +872,7 @@ class GaussianBasisSet(DevBase):
     #end def incorporate
 
 
-    def plot(self,r=None,rmin=0.01,rmax=8.0,show=True,fig=True,sep=False,prim=False,style=None,fmt=None,nsub=None):
+    def plot(self,r=None,rmin=0.01,rmax=8.0,*,show=True,fig=True,sep=False,prim=False,style=None,fmt=None,nsub=None):
         if r is None:
             r = np.linspace(rmin,rmax,1000)
         #end if
@@ -950,7 +950,7 @@ class GaussianBasisSet(DevBase):
     #end def plot_primitives
 
 
-    def plot_prim_widths(self,show=True,fig=True,sep=False,style='o',fmt=None,nsub=None,semilog=True,label=True):
+    def plot_prim_widths(self,*,show=True,fig=True,sep=False,style='o',fmt=None,nsub=None,semilog=True,label=True):
         if self.contracted():
             self.error('cannot plot primitive gaussian widths because basis is contracted')
         #end if

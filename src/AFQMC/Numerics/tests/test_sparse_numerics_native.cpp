@@ -17,20 +17,12 @@
 //    Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
-#include "Configuration.h"
 
 // Always test the fallback code, regardless of MKL definition
 #undef HAVE_MKL
 #define MKL_INT int
 #define MKL_Complex8 std::complex<float>
 #define MKL_Complex16 std::complex<double>
-
-#undef APP_ABORT
-#define APP_ABORT(x) \
-  {                  \
-    std::cout << x;  \
-    throw;           \
-  }
 
 #include <iostream>
 #include <vector>

@@ -63,9 +63,7 @@ struct PadeFunctor : public OptimizableFunctorBase
   ///default constructor
   PadeFunctor(const std::string& my_name)
       : OptimizableFunctorBase(my_name), Opt_A(false), Opt_B(true), A(1.0), B0(1.0), Scale(1.0), ID_A("0"), ID_B("0")
-  {
-    reset();
-  }
+  { reset(); }
 
   constexpr static bool isOMPoffload() { return false; }
 
@@ -177,9 +175,7 @@ struct PadeFunctor : public OptimizableFunctorBase
                              const T* mw_dist, // [nw][DIM+1][n_padded]
                              T* mw_cur_allu,   // [nw][3][n_padded]
                              Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
-  {
-    throw std::runtime_error("PadeFunctor mw_evaluateVGL not implemented!");
-  }
+  { throw std::runtime_error("PadeFunctor mw_evaluateVGL not implemented!"); }
 
   inline real_type f(real_type r) override { return evaluate(r) - AoverB; }
 
@@ -203,9 +199,7 @@ struct PadeFunctor : public OptimizableFunctorBase
                            T* mw_allUat,     // [nw][DIM+2][n_padded]
                            T* mw_cur_allu,   // [nw][3][n_padded]
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
-  {
-    throw std::runtime_error("PadeFunctor mw_updateVGL not implemented!");
-  }
+  { throw std::runtime_error("PadeFunctor mw_updateVGL not implemented!"); }
 
   /// compute derivatives with respect to A and B
   inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs) override
@@ -332,9 +326,7 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
   ///constructor
   Pade2ndOrderFunctor(const std::string& my_name, real_type a = 1.0, real_type b = 1.0, real_type c = 1.0)
       : OptimizableFunctorBase(my_name), A(a), B(b), C(c), ID_A("0"), ID_B("0"), ID_C("0")
-  {
-    reset();
-  }
+  { reset(); }
 
   OptimizableFunctorBase* makeClone() const override { return new Pade2ndOrderFunctor(*this); }
 
@@ -648,9 +640,7 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
         ID_B("0"),
         ID_C("0"),
         ID_D("0")
-  {
-    reset();
-  }
+  { reset(); }
 
   OptimizableFunctorBase* makeClone() const override { return new PadeTwo2ndOrderFunctor(*this); }
 

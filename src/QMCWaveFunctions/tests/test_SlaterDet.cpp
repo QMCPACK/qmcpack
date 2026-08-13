@@ -138,9 +138,7 @@ public:
                            Vector<ValueType>& dhpsioverpsi) override
   {}
   std::unique_ptr<DiracDeterminantBase> makeCopy(SPOSet& spo) const override
-  {
-    return std::make_unique<DummyDiracDetWithMW>(getClassName(), spo, FirstIndex, LastIndex);
-  }
+  { return std::make_unique<DummyDiracDetWithMW>(getClassName(), spo, FirstIndex, LastIndex); }
 };
 
 TEST_CASE("SlaterDet mw_ APIs", "[wavefunction]")

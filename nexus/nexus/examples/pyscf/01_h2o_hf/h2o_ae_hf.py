@@ -18,7 +18,7 @@ scf = generate_pyscf(
     identifier = 'scf',               # log output goes to scf.out
     path       = 'h2o_ae_hf',         # directory to run in
     job        = job(serial=True),    # pyscf must run serially         
-    template   = './scf_template.py', # pyscf template file
+    template   = './scf_template.py',  # pyscf template file
     system     = system,
     mole       = obj(                 # used to make Mole() inputs
         basis    = 'ccpvtz',

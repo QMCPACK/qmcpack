@@ -32,9 +32,7 @@ struct TWFFastDerivWrapper::TWFFastDerivWrapperMultiWalkerMem : public Resource
   TWFFastDerivWrapperMultiWalkerMem(const TWFFastDerivWrapperMultiWalkerMem&);
 
   std::unique_ptr<Resource> makeClone() const override
-  {
-    return std::make_unique<TWFFastDerivWrapperMultiWalkerMem>(*this);
-  }
+  { return std::make_unique<TWFFastDerivWrapperMultiWalkerMem>(*this); }
   // BLAS/LAPACK handles
 #if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && defined(ENABLE_OFFLOAD)
   compute::Queue<VendorKind> queue;
@@ -951,9 +949,7 @@ TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P
 }
 
 void TWFFastDerivWrapper::createResource(ResourceCollection& collection)
-{
-  collection.addResource(std::make_unique<TWFFastDerivWrapperMultiWalkerMem>());
-}
+{ collection.addResource(std::make_unique<TWFFastDerivWrapperMultiWalkerMem>()); }
 
 void TWFFastDerivWrapper::acquireResource(ResourceCollection& collection,
                                           const RefVectorWithLeader<TWFFastDerivWrapper>& wrappers)

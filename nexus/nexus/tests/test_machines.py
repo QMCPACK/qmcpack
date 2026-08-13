@@ -777,12 +777,12 @@ def test_process_job():
         threads_max   = machine.cores
         job_inputs = []
         job_inputs_base = []
-        for nj in range(njobs): # vary cores
+        for nj in range(njobs): # vary cores  # noqa: B007
             cores   = randint(cores_min,cores_max)
             threads = randint(threads_min,threads_max)
             job_inputs_base.append(obj(cores=cores,threads=threads))
         #end for
-        for nj in range(njobs): # vary processes
+        for nj in range(njobs): # vary processes  # noqa: B007
             processes   = randint(processes_min,processes_max)
             threads = randint(threads_min,threads_max)
             job_inputs_base.append(obj(processes=processes,threads=threads))
@@ -821,19 +821,19 @@ def test_process_job():
         # sample small number of nodes more heavily
         nodes_max   = min(small_node_ceiling,machine.nodes)
         cores_max   = min(small_node_ceiling*machine.cores_per_node,machine.cores)
-        for nj in range(njobs): # nodes alone
+        for nj in range(njobs): # nodes alone  # noqa: B007
             nodes   = randint(nodes_min,nodes_max)
             threads = randint(threads_min,threads_max)
             job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
             job_inputs_base.append(job_input)
         #end for
-        for nj in range(njobs): # cores alone
+        for nj in range(njobs): # cores alone  # noqa: B007
             cores   = randint(cores_min,cores_max)
             threads = randint(threads_min,threads_max)
             job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
             job_inputs_base.append(job_input)
         #end for
-        for nj in range(njobs): # nodes and cores
+        for nj in range(njobs): # nodes and cores  # noqa: B007
             nodes   = randint(nodes_min,nodes_max)
             cores   = randint(cores_min,cores_max)
             threads = randint(threads_min,threads_max)
@@ -843,19 +843,19 @@ def test_process_job():
         # sample full node set
         nodes_max = machine.nodes
         cores_max = machine.cores
-        for nj in range(njobs): # nodes alone
+        for nj in range(njobs): # nodes alone  # noqa: B007
             nodes   = randint(nodes_min,nodes_max)
             threads = randint(threads_min,threads_max)
             job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
             job_inputs_base.append(job_input)
         #end for
-        for nj in range(njobs): # cores alone
+        for nj in range(njobs): # cores alone  # noqa: B007
             cores   = randint(cores_min,cores_max)
             threads = randint(threads_min,threads_max)
             job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
             job_inputs_base.append(job_input)
         #end for
-        for nj in range(njobs): # nodes and cores
+        for nj in range(njobs): # nodes and cores  # noqa: B007
             nodes   = randint(nodes_min,nodes_max)
             cores   = randint(cores_min,cores_max)
             threads = randint(threads_min,threads_max)
@@ -2232,7 +2232,6 @@ srun -N 2 -n 64 test.x
         hours       = 6,
         minutes     = 30,
         env         = obj(ENV_VAR=1),
-        identifier  = 'test',
         outfile     = 'test.out',
         errfile     = 'test.err',
         app_command = 'test.x',

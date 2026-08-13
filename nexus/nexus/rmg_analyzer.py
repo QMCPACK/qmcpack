@@ -50,7 +50,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     #end def calculation_shortmode
 
 
-    def __init__(self,arg0=None,analyze=False):
+    def __init__(self,arg0=None,*,analyze=False):
         if arg0 is None:
             return
         elif isinstance(arg0,Simulation):
@@ -79,7 +79,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     #end def __init__
 
 
-    def analyze(self,guard=True):
+    def analyze(self,*,guard=True):
         if not self.initialized:
             return
         #end if
@@ -148,7 +148,7 @@ class RmgAnalyzer(SimulationAnalyzer):
             name = name[:-1].replace('/','_').replace('-','_')
             return name
         #end def process_name
-        def process_value(v,list=False):
+        def process_value(v,*,list=False):
             v = v.strip()
             units = None
             try:
@@ -285,7 +285,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                         try:
                             header,body,lines = other_blocks.k_points
                             del other_blocks.k_points
-                            for i,line in enumerate(lines):
+                            for i,line in enumerate(lines):  # noqa: B007
                                 if 'Weight in crystal unit' in line:
                                     break
                                 #end if
@@ -322,7 +322,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                             #end if
                             pos = []
                             spec = []
-                            for i,line in enumerate(lines):
+                            for i,line in enumerate(lines):  # noqa: B007
                                 if 'Species' in line:
                                     break
                                 #end if
