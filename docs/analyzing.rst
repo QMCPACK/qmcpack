@@ -1435,8 +1435,24 @@ to other observables and will retain at least the non-plotting
 capabilities of ``qdens``.
 
 To use ``qdens``, Nexus must be installed along with NumPy and H5Py. A
-short list of example use cases are covered in the next section. Current
-input flags are:
+short list of example use cases are covered in the next section. When ``-i``
+is provided, qdens obtains each density estimator's grid and sampling geometry
+from the QMCPACK input section that produced the ``sNNN`` output file.  This
+input metadata is authoritative: matching ``--grid``, ``--density_cell``, and
+``--density_corner`` options are ignored with a warning.  Without matching
+input metadata, these options retain their legacy role as fallback metadata
+for a single unambiguous density group.
+
+The grid dimensions must describe the stored HDF5 data exactly; qdens checks
+that their product equals the number of stored bins.  ``--reblock`` performs
+statistical block coarsening only.  qdens does not resample a spatial density
+grid.  The fallback ``--density_cell`` and ``--density_corner`` options set
+the geometry written to output files but do not move or resample the stored
+density values, so they should describe the data's actual sampling geometry.
+CHGCAR output is available only when the density sampling cell is the
+simulation cell with a zero corner; use XSF for a subcell or shifted density.
+
+Current input flags are:
 
 .. code-block:: 
 
@@ -1460,16 +1476,20 @@ input flags are:
     -w WEIGHTS, --weights=WEIGHTS
                           List of weights for averaging (default=None).
     -i INPUT, --input=INPUT
-                          QMCPACK input file containing structure and grid
-                          information (default=None).
+                          QMCPACK input file; matching estimator metadata is
+                          used per output series (default=None).
     -s STRUCTURE, --structure=STRUCTURE
                           File containing atomic structure (default=None).
-    -g GRID, --grid=GRID  Density grid dimensions (default=None).
+    -g GRID, --grid=GRID  Fallback density grid dimensions; must match stored
+                          bins and is ignored when input metadata matches
+                          (default=None).
     -c CELL, --cell=CELL  Simulation cell axes (default=None).
     --density_cell=DENSITY_CELL
-                          Density cell axes (default=None).
+                          Fallback density cell axes; ignored when input
+                          metadata matches (default=None).
     --density_corner=DENSITY_CORNER
-                          Density cell corner (default=None).
+                          Fallback density cell corner; ignored when input
+                          metadata matches (default=None).
     --lineplot=LINEPLOT   Produce a line plot along the selected dimension: 0,
                           1, or 2 (default=None).
     --noplot              Do not show plots interactively (default=False).

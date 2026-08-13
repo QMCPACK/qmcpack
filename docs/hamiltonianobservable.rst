@@ -703,10 +703,37 @@ Spin density estimator
 
 The spin density is similar to the total density described previously.  In this case, the sum over particles is performed independently for each spin component.
 
+For batched VMC and DMC, place modern estimator-manager input in an
+``<estimators>`` container.  A container below ``<qmcsystem>`` supplies
+global estimators to every QMC section, while a container below a batched
+``<qmc>`` section supplies estimators only to that section.  QMCPACK
+combines global and local containers; a local estimator does not override a
+global estimator with the same name.  The legacy ``<hamiltonian>`` placement
+remains supported, but new inputs should use an ``<estimators>`` container.
+Bare ``<estimator>`` children of a ``<qmc>`` section are deprecated because
+they prevent complete input validation.
+
+.. code-block:: xml
+
+   <qmcsystem>
+     <estimators>
+       <estimator name="GlobalSpinDensity" type="spindensity">
+         <parameter name="grid">40 40 40</parameter>
+       </estimator>
+     </estimators>
+   </qmcsystem>
+   <qmc method="vmc_batch" move="pbyp">
+     <estimators>
+       <estimator name="SpinDensity" type="spindensity">
+         <parameter name="grid">80 80 80</parameter>
+       </estimator>
+     </estimators>
+   </qmc>
+
 ``estimator type=spindensity`` element:
 
   +------------------+----------------------+
-  | parent elements: | ``hamiltonian, qmc`` |
+  | parent elements: | ``estimators``       |
   +------------------+----------------------+
   | child elements:  | *None*               |
   +------------------+----------------------+
