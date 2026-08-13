@@ -252,7 +252,7 @@ class DmcDatAnalyzer(DatAnalyzer):
         ld = []
         for k in sorted_generic(data.keys()):
             ld.append(data[k])
-        nsteps = len(ld)[0]-nse
+        nsteps = len(ld[0])-nse
 
         #nsteps = blocks*steps-nse
         block_avg = nsteps > 2*ndmc_blocks
