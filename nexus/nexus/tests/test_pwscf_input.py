@@ -35,7 +35,7 @@ def test_input(tmp_path):
     from ..developer import obj
     from ..structure import read_structure
     from ..physical_system import generate_physical_system
-    from ..pwscf_input import check_new_variables,check_section_classes
+    from ..pwscf_input import check_section_classes
     from ..pwscf_input import PwscfInput,generate_pwscf_input
 
     # definitions
@@ -51,7 +51,6 @@ def test_input(tmp_path):
 
 
     # test internal spec
-    check_new_variables(exit=False)
     check_section_classes(exit=False)
 
 

@@ -16,6 +16,17 @@
 
 include(test_labels)
 
+# Reserve one GPU for a test. CTest obtains the available GPU IDs from the
+# resource specification generated in the top-level CMakeLists.txt.
+function(SET_TEST_GPU_RESOURCES TESTNAME)
+  if(ENABLE_CUDA
+     OR ENABLE_ROCM
+     OR ENABLE_SYCL
+     OR ENABLE_OFFLOAD)
+    set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_GROUPS "gpus:1")
+  endif()
+endfunction()
+
 # Function to copy a directory
 function(COPY_DIRECTORY SRC_DIR DST_DIR)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}")
@@ -142,8 +153,8 @@ function(
     if(${TOT_PROCS} GREATER ${TEST_MAX_PROCS})
       message(VERBOSE "Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
     else()
-      add_test(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
-                                        ${QMC_APP} ${ARGN})
+      add_test(NAME ${TESTNAME} COMMAND ${QMC_GPU_TEST_LAUNCHER} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS}
+                                        ${MPIEXEC_PREFLAGS} ${QMC_APP} ${ARGN})
       set_tests_properties(
         ${TESTNAME}
         PROPERTIES FAIL_REGULAR_EXPRESSION
@@ -168,7 +179,7 @@ function(
     endif()
   else()
     if((${PROCS} STREQUAL "1"))
-      add_test(NAME ${TESTNAME} COMMAND ${QMC_APP} ${ARGN})
+      add_test(NAME ${TESTNAME} COMMAND ${QMC_GPU_TEST_LAUNCHER} ${QMC_APP} ${ARGN})
       set_tests_properties(
         ${TESTNAME}
         PROPERTIES FAIL_REGULAR_EXPRESSION
@@ -198,12 +209,7 @@ function(
       APPEND
       PROPERTY LABELS "QMCPACK")
 
-    if(ENABLE_CUDA
-       OR ENABLE_ROCM
-       OR ENABLE_SYCL
-       OR ENABLE_OFFLOAD)
-      set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
-    endif()
+    set_test_gpu_resources(${TESTNAME})
 
     if(ENABLE_OFFLOAD)
       set_property(TEST ${TESTNAME} APPEND PROPERTY ENVIRONMENT "OMP_TARGET_OFFLOAD=mandatory")
