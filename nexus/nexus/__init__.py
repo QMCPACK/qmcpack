@@ -176,8 +176,8 @@ class Settings(NexusCore):
     #end def __init__
 
 
-    def error(self,message,*,header='settings',exit=True,trace=True):
-        NexusCore.error(self,message,header=header,exit=exit,trace=trace)
+    def error(self,message,*,header='settings'):
+        NexusCore.error(self,message,header=header)
     #end def error
 
 

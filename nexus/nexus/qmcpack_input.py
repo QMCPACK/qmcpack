@@ -1303,8 +1303,10 @@ class QIxml(Names):
             ##end if
 
             #print(obj(dict(self.__class__.__dict__)))
-
-            self.error(msg,'QmcpackInput',exit=exit,trace=exit)
+            if exit:
+                self.error(msg,'QmcpackInput')
+            else:
+                self.warn(msg)
         #end if
     #end def check_junk
 
@@ -1885,7 +1887,7 @@ class QIxmlFactory(Names):
         else:
             msg = self.name+' factory is not aware of the following subtype:\n'
             msg+= '    '+type+'\n'
-            self.error(msg,exit=False,trace=False)
+            self.warn(msg)
         #end if
     #end def __call__
 
@@ -3590,20 +3592,19 @@ class QmcpackInput(SimulationInput,Names):
                 #try to determine the type
                 elements = []
                 keys = []
-                error = False
+                msg = ""
                 for key,value in xml.items():
                     if isinstance(key,str) and key[0]!='_':
                         if key in types:
                             elements.append(types[key](value))
                             keys.append(key)
                         else:
-                            self.error('element '+key+' is not a recognized type',exit=False)
-                            error = True
+                            msg += 'element '+key+' is not a recognized type'
                         #end if
                     #end if
                 #end for
-                if error:
-                    self.error('cannot read input xml file')
+                if len(msg) > 0:
+                    self.error(f'cannot read input xml file:\n{msg}')
                 #end if
                 if len(elements)==0:
                     self.error('no valid elements were found for input xml file')
@@ -4053,13 +4054,13 @@ class QmcpackInput(SimulationInput,Names):
         no_particleset = particlesets is None
         no_wavefunction = wavefunction is None
         if no_lattice:
-            self.error('a simulationcell lattice must be present to generate jastrows',exit=False)
+            self.warn('a simulationcell lattice must be present to generate jastrows')
         #end if
         if no_particleset:
-            self.error('a particleset must be present to generate jastrows',exit=False)
+            self.warn('a particleset must be present to generate jastrows')
         #end if
         if no_wavefunction:
-            self.error('a wavefunction must be present to generate jastrows',exit=False)
+            self.warn('a wavefunction must be present to generate jastrows')
         #end if
         if no_lattice or no_particleset or no_wavefunction:
             self.error('jastrows cannot be generated')
