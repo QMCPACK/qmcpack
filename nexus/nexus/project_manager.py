@@ -18,7 +18,7 @@
 
 import os
 import time
-from typing import ClassVar
+from typing import ClassVar,Literal,TextIO
 from . import memory
 from .developer import obj, error
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
@@ -26,7 +26,8 @@ from .simulation import Simulation
 from .machines import Machine,Job
 
 
-def color_status_result(result,logfile):
+def color_status_result(result: Literal['SUCCESS','FAILURE'] | str,logfile: TextIO) -> str:
+    """Apply a green or red background to terminal status results."""
     if result not in {'SUCCESS','FAILURE'}:
         return result
     #end if
@@ -37,9 +38,9 @@ def color_status_result(result,logfile):
         return result
     #end if
     if result=='SUCCESS':
-        background = '\033[42m'
+        background = '\033[42m' # green background
     else:
-        background = '\033[41m'
+        background = '\033[41m' # red background
     #end if
     return background+result+'\033[0m'
 #end def color_status_result
@@ -321,6 +322,9 @@ class ProjectManager(NexusCore):
                 self.status_line(sim)
             #end for
         #end if
+        if len(all_sids)==0:
+            self.log('(No simulations present)',n=2)
+        #end if
         self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
     #end def write_simulation_status
 
@@ -339,11 +343,7 @@ class ProjectManager(NexusCore):
         #end if
         result = ''
         if sim.finished:
-            if sim.failed:
-                result = 'FAILURE'
-            else:
-                result = 'SUCCESS'
-            #end if
+            result = 'FAILURE' if sim.failed else 'SUCCESS'
         #end if
         result = color_status_result(result,self._logfile)
         sline = '{}  {:<7}  {:<8}  {:<6}  {}'.format(status,result,pid,sim.identifier,sim.locdir)

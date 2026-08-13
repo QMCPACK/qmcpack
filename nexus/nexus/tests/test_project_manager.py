@@ -345,6 +345,7 @@ def test_write_simulation_status():
     status_ref = '''
   cascade status
     setup, sent_files, submitted, finished, got_output, analyzed, failed
+    (No simulations present)
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     '''
     assert(status_log().strip()==status_ref.strip())
