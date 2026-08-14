@@ -1,4 +1,5 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_INPUT)
 
@@ -319,9 +320,9 @@ def test_write(tmp_path):
 @isolate_nexus_core
 def test_generate(tmp_path):
     from ..developer import obj
-    from ..nexus_base import nexus_noncore
-    from ..pseudopotential import Pseudopotentials
+    from ..pseudopotential import ppinfo
     from ..physical_system import generate_physical_system
+    from ..gamess import Gamess
     from ..gamess_input import generate_gamess_input
 
     ppfiles = ["H.BFD_V5Z_ANO.gms","O.BFD_V5Z.gms"]
@@ -331,16 +332,13 @@ def test_generate(tmp_path):
     nexus_core.local_directory  = str(tmp_path)
     nexus_core.remote_directory = str(tmp_path)
     nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
-    ppfiles_full = []
     for file in ppfiles:
         pp = TEST_FILES[file]
-        pp_copied = shutil.copy(
+        shutil.copy(
             src=pp,
             dst=pp_dir / file,
             )
-        ppfiles_full.append(str(pp_copied))
-
-    nexus_noncore.pseudopotentials = Pseudopotentials(ppfiles_full)
+    ppinfo.setup(str(pp_dir))
 
     input_files = ['rhf.inp','cisd.inp','cas.inp']
 
@@ -438,6 +436,16 @@ def test_generate(tmp_path):
         gi = generate_gamess_input(**inputs[infile])
         check_vs_serial_reference(gi,infile)
     #end for
+
+    ppinfo.add_ppset('bfd',gamess=ppfiles)
+    labeled_input = deepcopy(inputs['rhf.inp'])
+    labeled_input.pseudos = 'bfd'
+    gi = generate_gamess_input(**labeled_input)
+    check_vs_serial_reference(gi,'rhf.inp')
+
+    sim_args,inp_args = Gamess.separate_inputs(labeled_input,copy_pseudos=False)
+    assert('files' not in sim_args)
+    assert(inp_args.pseudos==ppfiles)
+    gi = generate_gamess_input(**inp_args)
+    check_vs_serial_reference(gi,'rhf.inp')
 #end def test_generate
-
-

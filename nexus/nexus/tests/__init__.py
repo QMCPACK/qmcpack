@@ -6,7 +6,7 @@ import functools
 from nexus.nexus_base import nexus_core, nexus_noncore, nexus_core_noncore, nexus_noncore_defaults
 from nexus.generic import generic_settings, object_interface
 from nexus.developer import obj
-from nexus.pseudopotential import Pseudopotentials, ppset
+from nexus.pseudopotential import ppinfo
 from nexus.simulation import Simulation
 
 # qmcpack/nexus/nexus/tests/
@@ -112,6 +112,7 @@ def isolate_nexus_core(test_func = None):
     @functools.wraps(test_func)
     def wrap_path(tmp_path):
         nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
+        ppinfo_storage = deepcopy(ppinfo)
         logfile, logging_storage = divert_nexus_log()
         try:
             test_func(tmp_path)
@@ -120,15 +121,18 @@ def isolate_nexus_core(test_func = None):
             test_err = err
 
         restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
+        ppinfo.path   = ppinfo_storage.path
+        ppinfo.files  = ppinfo_storage.files
+        ppinfo.ppsets = ppinfo_storage.ppsets
         restore_nexus_log(logging_storage)
         Simulation.clear_all_sims()
-        ppset.pseudos = obj()
         if test_err is not None:
             raise test_err
 
     @functools.wraps(test_func)
     def wrap():
         nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
+        ppinfo_storage = deepcopy(ppinfo)
         logfile, logging_storage = divert_nexus_log()
         try:
             test_func()
@@ -137,9 +141,11 @@ def isolate_nexus_core(test_func = None):
             test_err = err
 
         restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
+        ppinfo.path   = ppinfo_storage.path
+        ppinfo.files  = ppinfo_storage.files
+        ppinfo.ppsets = ppinfo_storage.ppsets
         restore_nexus_log(logging_storage)
         Simulation.clear_all_sims()
-        ppset.pseudos = obj()
         if test_err is not None:
             raise test_err
 
@@ -154,7 +160,7 @@ def create_pseudo_files(
     pseudos: list[str],
     pseudo_strs: list[str | None] | None = None
     ):
-    """Create pseudopotential files and add them to the global pseudopotentials.
+    """Create pseudopotential files and register their directory with PPInfo.
 
     This function must be called in a function that has been decorated
     with ``@isolate_nexus_core(needs_tmp_path=True)``.
@@ -182,16 +188,12 @@ def create_pseudo_files(
     pseudo_dir = tmp_dir / "pseudopotentials"
     pseudo_dir.mkdir(parents=True)
 
-    new_pseudos = []
     for pseudo, text in zip(pseudos, pseudo_strs):
         pseudo_file = pseudo_dir / pseudo
         pseudo_file.write_text(text)
-        new_pseudos.append(pseudo_file)
 
 
-    pseudopotentials = Pseudopotentials(new_pseudos)
-    nexus_core.pseudopotentials    = pseudopotentials
-    nexus_noncore.pseudopotentials = pseudopotentials
+    ppinfo.setup(str(pseudo_dir))
     nexus_core.pseudo_dir    = str(pseudo_dir)
     nexus_noncore.pseudo_dir = str(pseudo_dir)
 

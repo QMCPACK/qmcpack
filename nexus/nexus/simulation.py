@@ -313,8 +313,8 @@ class Simulation(NexusCore):
             sim_args[k] = kwargs[k]
         for k in inp_kw:
             inp_args[k] = kwargs[k]
-        if 'system' in inp_args:
-            system = inp_args.system
+        system = inp_args.get('system',None)
+        if system is not None:
             if not isinstance(system,PhysicalSystem):
                 extra=''
                 if not isinstance(extra,obj):
@@ -326,10 +326,15 @@ class Simulation(NexusCore):
 
         if 'pseudos' in inp_args and inp_args.pseudos is not None:
             code = cls.code_name()
-            pp_files = ppinfo.full_paths(code,inp_args.pseudos,system)
-            if 'files' not in sim_args:
-                sim_args.files = []
-            sim_args.files = list(sim_args.files) + pp_files
+            pseudos = ppinfo.remap(code,inp_args.pseudos,system)
+            inp_args.pseudos = pseudos
+            if copy_pseudos:
+                pp_files = ppinfo.full_paths(code,pseudos,system)
+                if 'files' not in sim_args:
+                    sim_args.files = []
+                sim_args.files = list(sim_args.files) + pp_files
+            #end if
+        #end if
 
         #if 'pseudos' in inp_args and inp_args.pseudos is not None:
         #    pseudos = inp_args.pseudos

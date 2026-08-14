@@ -250,8 +250,7 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
 
 class PPInfo(DevBase):
     def __init__(self,path=None):
-        if path is not None: # not used this way (yet?)
-            self.setup(path)
+        self.setup(path)
     
     def setup(self,path):
         files = []
@@ -286,7 +285,11 @@ class PPInfo(DevBase):
     def full_paths(self,code,pseudos,system):
         pseudos = self.remap(code,pseudos,system)
         def fullpath(pp):
-            return os.path.realpath(os.path.join(self.path,pp))
+            if self.path is None or os.path.isabs(pp):
+                return os.path.realpath(pp)
+            else:
+                return os.path.realpath(os.path.join(self.path,pp))
+            #end if
         pseudo_filepaths = [fullpath(pp) for pp in pseudos]
         return pseudo_filepaths
 
@@ -296,94 +299,6 @@ ppinfo = PPInfo()
 # override old ppset
 def ppset(label,**codes_pps):
     ppinfo.add_ppset(label,**codes_pps)
-
-
-
-
-# basic interface for nexus, only gamess really needs this for now
-class PseudoFile(DevBase):
-    def __init__(self,filepath=None):
-        self.element       = None
-        self.element_label = None
-        self.filename      = None
-        self.location      = None
-        if filepath is not None:
-            self.filename = os.path.basename(filepath)
-            self.location = os.path.abspath(filepath)
-            elem_label,symbol,is_elem = pp_elem_label(self.filename)
-            if not is_elem:
-                msg = '(111) cannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filepath)
-                self.error(msg)
-                #raise RuntimeError(msg)
-            #end if
-            self.element = symbol
-            self.element_label = elem_label
-            self.read(filepath)
-        #end if
-    #end def __init__
-
-    def read(self,filepath):
-        None
-    #end def read
-#end class PseudoFile
-
-#################################################
-### NOTE: GAMESS really does need this        ###
-###       Removing Pseudopotentials breaks it ###
-###       FIX in new implementation           ###
-#################################################
-class gamessPPFile(PseudoFile):
-    def __init__(self,filepath=None):
-        self.pp_text    = None
-        self.pp_name    = None
-        self.basis_text = None
-        PseudoFile.__init__(self,filepath)
-    #end def __init__
-
-    def read(self,filepath):
-        with open(filepath, "r") as f:
-            lines = f.read().splitlines()
-        new_block  = True
-        tokens     = []
-        block      = ''
-        nline = 0
-        for line in lines:
-            nline+=1
-            ls = line.strip()
-            if len(ls)>0 and ls[0]!='!' and ls[0]!='#':
-                if new_block:
-                    tokens = ls.split()
-                    new_block = False
-                    if len(tokens)!=5:
-                        block+=line+'\n'
-                    #end if
-                else:
-                    block+=line+'\n'
-                #end if
-            #end if
-            if (len(ls)==0 or nline==len(lines)) and len(block)>0:
-                block = block.rstrip()
-                if len(tokens)==4:
-                    self.pp_text = block
-                    self.pp_name = tokens[0]
-                elif len(tokens)==5:
-                    self.basis_text = block
-                else:
-                    self.error('could not identify text block in {0} as pseudopotential or basis text\btext block:\n{1}'.format(self.filename,block))
-                #end if
-                new_block = True
-                tokens    = []
-                block     = ''
-            #end if
-        #end for
-        if self.pp_text is None:
-            self.error('could not find pseudopotential text in '+self.filename)
-        #end if
-        if self.basis_text is None:
-            self.error('could not find basis text in '+self.filename)
-        #end if
-    #end def read
-#end class gamessPPFile
 
 
 
