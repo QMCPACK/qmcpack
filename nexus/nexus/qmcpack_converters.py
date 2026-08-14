@@ -377,17 +377,23 @@ class Pw2qmcpack(Simulation):
                 #end if
                 pwdir = os.path.abspath(os.path.join(sim.locdir ,pwoutdir))
                 p2dir = os.path.abspath(os.path.join(self.locdir,p2outdir))
-                errors = False
+                msg = ""
                 if pwdir!=p2dir:
-                    self.error('to use orbitals, '+self.generic_identifier+' must have the same outdir as pwscf\n  pwscf outdir: '+pwdir+'\n  '+self.generic_identifier+' outdir: '+p2dir,exit=False)
-                    errors = True
+                    msg += (
+                        'to use orbitals, '+self.generic_identifier+' must have the same outdir as pwscf\n'
+                        '  pwscf outdir: '+pwdir+'\n'
+                        '  '+self.generic_identifier+' outdir: '+p2dir+'\n'
+                        )
                 #end if
                 if pwprefix!=p2prefix:
-                    self.error('to use orbitals, '+self.generic_identifier+' must have the same prefix as pwscf\n  pwscf prefix: '+pwprefix+'\n  '+self.generic_identifier+' prefix: '+p2prefix,exit=False)
-                    errors = True
+                    msg += (
+                        'to use orbitals, '+self.generic_identifier+' must have the same prefix as pwscf\n'
+                        '  pwscf prefix: '+pwprefix+'\n'
+                        '  '+self.generic_identifier+' prefix: '+p2prefix+"\n"
+                        )
                 #end if
-                if errors:
-                    self.error(self.generic_identifier+' cannot use orbitals from pwscf')
+                if len(msg) > 0:
+                    self.error(self.generic_identifier+f' cannot use orbitals from pwscf:\n{msg}')
                 #end if
             else:
                 implemented = False
@@ -1105,17 +1111,18 @@ class Convertpw4qmc(Simulation):
                 pwsdir = os.path.abspath(os.path.join(sim.locdir ,pwoutdir, pwprefix+'.save'))
                 charge_density_h5 = os.path.join(pwsdir, 'charge-density.hdf5')
                 data_file_schema  = os.path.join(pwsdir, 'data-file-schema.xml')
-                errors = False
+                msg = ""
                 if not os.path.exists(data_file_schema):
-                    self.error('to use orbitals, '+self.generic_identifier+' must have data-file-schema.xml file', exit=False)
-                    errors = True
+                    msg += 'to use orbitals, '+self.generic_identifier+' must have data-file-schema.xml file'
                 #end if
                 if not os.path.exists(charge_density_h5):
-                    self.error('to use orbitals, '+self.generic_identifier+' must have charge-density.h5 file.\nNeed to rebuild QE with hdf5 support', exit=False)
-                    errors = True
+                    msg += (
+                        'to use orbitals, '+self.generic_identifier+' must have charge-density.h5 file.\n'
+                        'Need to rebuild QE with hdf5 support'
+                        )
                 #end if
-                if errors:
-                    self.error(self.generic_identifier+' cannot use orbitals from pwscf')
+                if len(msg) > 0:
+                    self.error(self.generic_identifier+f' cannot use orbitals from pwscf:\n{msg}')
                 #end if
                 if self.input.data_file is None:
                     self.input.data_file = data_file_schema

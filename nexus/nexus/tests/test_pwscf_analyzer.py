@@ -3,9 +3,6 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_ANALYZER)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 
 from . import TEST_DIR
 from ..testing import object_eq

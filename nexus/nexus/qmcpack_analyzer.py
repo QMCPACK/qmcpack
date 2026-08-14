@@ -277,8 +277,10 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
     def change_request(self,request):
         if not isinstance(request,QmcpackAnalysisRequest):
-            self.error('input request must be a QmcpackAnalysisRequest',exit=False)
-            self.error('  type provided: '+str(type(request)))
+            self.error(
+                'input request must be a QmcpackAnalysisRequest\n'
+                '  type provided: '+str(type(request))
+                )
         #end if
         request.complete()
         self.info.request = request

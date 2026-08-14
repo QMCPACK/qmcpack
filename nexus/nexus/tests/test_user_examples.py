@@ -8,7 +8,6 @@ from subprocess import PIPE, Popen
 import pytest
 
 from ..developer import obj
-from ..generic import generic_settings
 from ..testing import object_diff, text_diff
 from ..pwscf_input import PwscfInput
 from ..qmcpack_converters import Pw2qmcpackInput
@@ -19,7 +18,6 @@ from ..pyscf_input import PyscfInput
 from . import TEST_DIR, NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.USER_EXAMPLES)
-generic_settings.raise_error = True
 
 nexus_root = TEST_DIR.parent.parent # qmcpack/nexus
 example_root  = nexus_root / "nexus/examples"

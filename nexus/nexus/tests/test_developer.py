@@ -3,20 +3,15 @@ from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.DEVELOPER)
 
 from collections.abc import Mapping, MutableMapping
-from ..generic import generic_settings
-generic_settings.raise_error = True
+
 
 
 from ..testing import failed,FailedTest
 
 
 def test_unavailable():
-    from ..generic import generic_settings
     from ..developer import Void, NexusError
     from ..developer import unavailable, available
-
-    gre = generic_settings.raise_error
-    generic_settings.raise_error = True
 
     try:
         import keyword
@@ -93,9 +88,6 @@ def test_unavailable():
             #end try
         #end for
     #end for
-
-    generic_settings.raise_error = gre
-
 #end def test_unavailable
 
 

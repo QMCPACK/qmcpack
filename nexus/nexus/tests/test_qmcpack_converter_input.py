@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from ..testing import value_eq,object_eq
 
