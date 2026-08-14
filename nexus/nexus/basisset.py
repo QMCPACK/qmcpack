@@ -32,19 +32,18 @@ class BasisSets(DevBase):
         #end if
         bsfiles = []
         bss     = []
-        errors = False
+        msg = ""
         for bs in basissets:
             if isinstance(bs,BasisFile):
                 bss.append(bs)
             elif isinstance(bs,(str, Path)):
                 bsfiles.append(bs)
             else:
-                self.error('expected BasisFile type or filepath, got '+str(type(bs)),exit=False)
-                errors = True
+                msg += 'expected BasisFile type or filepath, got '+str(type(bs))+"\n"
             #end if
         #end for
-        if errors:
-            self.error('cannot create Basissets object')
+        if len(msg) > 0:
+            self.error(f'cannot create Basissets object\n{msg}')
         #end if
 
         if len(bss)>0:
