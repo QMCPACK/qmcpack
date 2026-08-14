@@ -25,7 +25,7 @@ if(DEFINED CMAKE_REQUIRED_QUIET)
   set(QMC_CMAKE_REQUIRED_QUIET_WAS_DEFINED TRUE)
 endif()
 set(CMAKE_REQUIRED_QUIET TRUE)
-# Catch2 is not validated with fast-math. Conservatively avoid warnings and potential problems. 
+# Catch2 is not validated with fast-math. Conservatively avoid warnings and potential problems.
 set(QMC_CXX_FLAGS_SAVED "${CMAKE_CXX_FLAGS}")
 if(CMAKE_CXX_FLAGS MATCHES " -ffast-math")
   string(REPLACE " -ffast-math" " -fno-fast-math" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
