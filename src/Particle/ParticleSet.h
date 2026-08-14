@@ -126,7 +126,7 @@ public:
   ///@}
 
   ///current MC step
-  int current_step;
+  int current_step{0};
 
   ///default constructor
   ParticleSet(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
