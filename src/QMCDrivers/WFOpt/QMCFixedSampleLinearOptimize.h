@@ -26,11 +26,12 @@
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
 #include "OutputMatrix.h"
-#include "LinearMethod.h"
 
 namespace qmcplusplus
 {
 
+///forward declaration of a cost function
+class QMCCostFunctionBase;
 class GradientTest;
 class VMC;
 
@@ -41,7 +42,7 @@ class VMC;
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimize : public QMCDriver, public LinearMethod, private NRCOptimization<QMCTraits::RealType>
+class QMCFixedSampleLinearOptimize : public QMCDriver, private NRCOptimization<QMCTraits::RealType>
 {
 public:
   ///Constructor.
