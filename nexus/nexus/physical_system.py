@@ -88,7 +88,7 @@ class PhysicalSystem(DevBase):
     def pseudize(self,**valency):
         for ion in valency.keys():
             if ion not in self.ion_labels:
-                self.error(ion+' is not in the physical system',exit=False)
+                self.error(ion+' is not in the physical system')
 
         self.valency = obj(**valency)
         self.pseudized = True

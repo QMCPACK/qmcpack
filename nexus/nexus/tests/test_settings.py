@@ -5,8 +5,6 @@ pytestmark = pytest.mark.order(NexusTestOrder.SETTINGS_OPERATION)
 
 from .. import settings
 from ..developer import obj
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from pathlib import Path
 from . import isolate_nexus_core

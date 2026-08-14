@@ -2,8 +2,8 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 
-from ..generic import generic_settings,NexusError
-generic_settings.raise_error = True
+
+from ..generic import NexusError
 
 from nexus.nexus_base import nexus_core
 from . import isolate_nexus_core, TEST_DIR

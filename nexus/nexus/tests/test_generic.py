@@ -3,8 +3,6 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.GENERIC_OPERATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from pathlib import Path
 from . import isolate_nexus_core, FakeLog
@@ -66,40 +64,13 @@ def test_logging():
     assert(logfile.s=='')
     assert(logfile2.s==s2+'\n')
 
-
     # test error
-    #   in testing environment, should raise an error
-    try:
+    with pytest.raises(NexusError, match="testing environment"):
         error('testing environment')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
-    #   in standard/user environment, should print message
-    generic_settings.raise_error = False
-    logfile.reset()
-    error('this is an error',header='User',exit=False)
-    so = '''
-  User error:
-    this is an error
-'''
-    assert(logfile.s==so)
-    generic_settings.raise_error = True
-    #   in testing environment, should raise an error
-    try:
-        error('testing environment')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
+
+    # test error with header
+    with pytest.raises(NexusError, match="header error:\ntesting environment"):
+        error('testing environment', "header")
 #end def test_logging
 
 
@@ -108,7 +79,7 @@ def test_intrinsics(tmp_path):
     # test object_interface functions
     import os
     from ..generic import obj_deprecated as obj,object_interface
-    from ..generic import generic_settings,NexusError
+    from ..generic import NexusError
     from numpy import array,bool_
 
     # test object set/get
@@ -390,45 +361,8 @@ def test_intrinsics(tmp_path):
     assert(logfile2.s==s2+'\n')
 
     # test error
-    #   in testing environment, should raise an error
-    try:
+    with pytest.raises(NexusError, match="testing environment"):
         o.error('testing environment')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
-    #   in standard/user environment, should print message
-    generic_settings.raise_error = False
-    logfile.reset()
-    o.error('this is an error',exit=False)
-    so = '''
-  DerivedObj error:
-    this is an error
-'''
-    assert(logfile.s==so)
-    logfile.reset()
-    o.error('this is an error',header='User',exit=False)
-    so = '''
-  User error:
-    this is an error
-'''
-    assert(logfile.s==so)
-    generic_settings.raise_error = True
-    #   in testing environment, should raise an error
-    try:
-        o.error('testing environment')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 #end def test_intrinsics
 
 

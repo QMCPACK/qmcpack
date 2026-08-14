@@ -426,6 +426,7 @@ void NEEnergyDensityEstimator::zero()
   for (auto& spacegrid : spacegrids_)
     spacegrid->zero();
   walkers_weight_ = 0;
+  nsamples_       = 0;
 }
 
 std::unique_ptr<OperatorEstBase> NEEnergyDensityEstimator::spawnCrowdClone() const
