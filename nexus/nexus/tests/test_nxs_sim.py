@@ -2,9 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.NXS_SIM)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 import sys
 from . import isolate_nexus_core, TEST_DIR
 from ..testing import clear_all_sims

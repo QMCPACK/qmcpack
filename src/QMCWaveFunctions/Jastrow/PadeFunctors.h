@@ -572,7 +572,7 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
     int left_pad_space = 5;
     app_log() << std::endl;
     myVars.print(app_log(), left_pad_space, true);
-    //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")")
+
     return true;
   }
 
@@ -895,7 +895,7 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
     int left_pad_space = 5;
     app_log() << std::endl;
     myVars.print(app_log(), left_pad_space, true);
-    //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")")
+
     return true;
   }
 

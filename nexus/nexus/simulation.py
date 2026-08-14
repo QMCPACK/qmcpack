@@ -775,19 +775,18 @@ class Simulation(NexusCore):
             dep = obj()
             dep.sim = sim
             rn = []
-            unrecognized_names = False
+            msg = ""
             app_results = sim.application_results | set(['other'])
             for name in d[1:]:
                 result_name = self.condense_name(name)
                 if result_name in app_results:
                     rn.append(result_name)
                 else:
-                    unrecognized_names = True
-                    self.error(name+' is not known to be a result of '+sim.__class__.__name__,exit=False)
+                    msg += name+' is not known to be a result of '+sim.__class__.__name__+"\n"
                 #end if
             #end for
-            if unrecognized_names:
-                self.error('unrecognized dependencies specified for simulation '+self.identifier)
+            if len(msg) > 0:
+                self.error('unrecognized dependencies specified for simulation '+self.identifier+f":\n{msg}")
             #end if
             dep.result_names = rn
             dep.results = obj()
@@ -867,7 +866,17 @@ class Simulation(NexusCore):
                         calculating_result = sim.check_result(result_name,self)
                     #end if
                     if not calculating_result:
-                        self.error('simulation {0} id {1} is not calculating result {2}\nrequired by simulation {3} id {4}\n{5} {6} directory: {7}\n{8} {9} directory: {10}'.format(sim.identifier,sim.simid,result_name,self.identifier,self.simid,sim.identifier,sim.simid,sim.locdir,self.identifier,self.simid,self.locdir),exit=False)
+                        self.warn(
+                            'simulation {0} id {1} is not calculating result {2}\n'
+                            'required by simulation {3} id {4}\n'
+                            '{5} {6} directory: {7}\n'
+                            '{8} {9} directory: {10}'.format(
+                                sim.identifier, sim.simid, result_name,   # {0}, {1}, {2}
+                                self.identifier, self.simid,              # {3}, {4}
+                                sim.identifier, sim.simid, sim.locdir,    # {5}, {6}, {7}
+                                self.identifier, self.simid, self.locdir, # {8}, {9}, {10}
+                                )
+                            )
                     #end if
                 else:
                     calculating_result = True

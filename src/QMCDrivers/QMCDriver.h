@@ -94,7 +94,7 @@ public:
   /// whether to allow traces
   bool allow_traces;
   /// traces xml
-  xmlNodePtr traces_xml;
+  xmlNodePtr traces_xml{nullptr};
 
   /// whether to allow traces
   bool allow_walker_logs;

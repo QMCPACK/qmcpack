@@ -167,57 +167,7 @@ struct NRCOptimization
   }
 
 
-  bool lineoptimization()
-  {
-    std::vector<Return_t> x(5), y(5), coefs(5), deriv(4);
-    qmcplusplus::Matrix<Return_t> S(5, 5);
-    x[0] = -2 * quadstep;
-    x[1] = -quadstep;
-    x[2] = 0.0;
-    x[3] = quadstep;
-    x[4] = 2 * quadstep;
-    Return_t start_cost, cost;
-    validFuncVal = true;
-    for (int i = 0; i < 5; i++)
-    {
-      y[i] = Func(x[i]);
-      for (int j = 0; j < 5; j++)
-        S(i, j) = std::pow(x[i], j);
-    }
-    start_cost = y[2];
-    if (validFuncVal)
-    {
-      qmcplusplus::invert_matrix(S, false);
-      qmcplusplus::MatrixOperators::product(S, &(y[0]), &(coefs[0]));
-      Lambda = QuarticMinimum(coefs);
-      if (std::abs(Lambda) > largeQuarticStep || qmcplusplus::isnan(Lambda))
-        return lineoptimization2();
-      cost = Func(Lambda);
-      if (qmcplusplus::isnan(cost) || cost > start_cost)
-        return lineoptimization2();
-    }
-    else
-    {
-      return lineoptimization2();
-    }
-    //fprintf (stderr, "Minimum found at %1.8f\n", Lambda);
-    current_step++;
-    return true;
-    // HACK HACK HACK
-    //     if (Lambda < 0.0) {
-    // char fname[50];
-    // snprintf (fname, 50, "line_opt_%d.dat", current_step);
-    // FILE *fout = fopen (fname, "w");
-    // for (double lam=-0.01; lam<=0.01; lam+=0.0001) {
-    //   double val = 0.0;
-    //   for (int j=0; j<5; j++)
-    // 	val += coefs[j] * std::pow(lam, j);
-    //   fprintf (fout, "%1.8f %1.12e %1.12e\n", lam, Func(lam), val);
-    // }
-    // fclose(fout);
-    //     }
-    // END HACK HACK HACK
-  }
+
 
   bool lineoptimization3(int points, Return_t& zeroCost)
   {

@@ -1425,23 +1425,21 @@ class PwscfInput(SimulationInput):
 
         vals = []
         loc = locals()
-        errors = False
+        msg = ""
         for var in vars:
             if var in loc:
                 val = loc[var]
                 if val is None:
-                    self.error('requested variable '+var+' was not found',exit=False)
-                    errors = True
+                    msg += 'requested variable '+var+' was not found\n'
                 #end if
             else:
-                self.error('requested variable '+var+' is not computed by get_common_vars',exit=False)
-                errors = True
+                msg += 'requested variable '+var+' is not computed by get_common_vars\n'
                 val = None
             #end if
             vals.append(val)
         #end for
-        if errors:
-            self.error('could not get requested variables')
+        if len(msg) > 0:
+            self.error(f'could not get requested variables:\n{msg}')
         #end if
         return vals
     #end def get_common_vars
