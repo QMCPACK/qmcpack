@@ -2042,7 +2042,6 @@ def test_register_legacy_ppset(tmp_path):
                     "H": (psp_dir / "H.BFD.xml").resolve(),
                     "O": (psp_dir / "O.BFD.xml").resolve(),
                     },
-                codes = "qmcpack",
                 ),
             "espresso": PseudoSet(
                 pseudos = {
@@ -2050,7 +2049,6 @@ def test_register_legacy_ppset(tmp_path):
                     "H" : (psp_dir / "H.BFD.upf").resolve(),
                     "O" : (psp_dir / "O.BFD.upf").resolve(),
                     },
-                codes="espresso"
                 ),
             "gamess": PseudoSet(
                 pseudos = {
@@ -2058,7 +2056,6 @@ def test_register_legacy_ppset(tmp_path):
                     "H": (psp_dir / "H.BFD.gms").resolve(),
                     "O": (psp_dir / "O.BFD.gms").resolve(),
                     },
-                codes="gamess",
                 ),
             }
         }
@@ -2070,21 +2067,42 @@ def test_register_legacy_ppset(tmp_path):
         gamess  = ["C.BFD.gms", "H.BFD.gms", "O.BFD.gms"],
         )
 
-    assert set(PseudoSet.labeled_pseudosets) == {
-        ('bfd','espresso'),
-        ('bfd','gamess'),
-        ('bfd','qmcpack'),
+    assert set(PseudoSet.labeled_pseudosets) == {'bfd'}
+    assert set(PseudoSet.labeled_pseudosets['bfd']) == {
+        'espresso','gamess','qmcpack'
         }
 
     for code,ref_pseudoset in ref_pseudos['bfd'].items():
-        pseudoset = PseudoSet.labeled_pseudosets['bfd',code]
+        pseudoset = PseudoSet.labeled_pseudosets['bfd'][code]
         assert pseudoset.pseudos == ref_pseudoset.pseudos
         assert pseudoset.codes == ref_pseudoset.codes
         assert pseudoset.pseudo_dirs == ref_pseudoset.pseudo_dirs
     #end for
 
-    with pytest.raises(NexusError,match='is not present in PseudoSet.pseudo_files'):
+    with pytest.raises(NexusError,match='label "bfd" is already registered'):
+        ppset(label='bfd',qmcpack=['C.BFD.xml','H.BFD.xml','O.BFD.xml'])
+
+    with pytest.raises(NexusError,match='are not present in PseudoSet.pseudo_files'):
         ppset(label='missing',qmcpack=['Ne.missing.xml'])
+
+    with pytest.raises(NexusError,match='same elements'):
+        ppset(
+            label   = 'unequal_elements',
+            pwscf   = ['C.BFD.upf','H.BFD.upf'],
+            qmcpack = ['C.BFD.xml','O.BFD.xml'],
+            )
+
+    with pytest.raises(NexusError,match='not compatible with that code'):
+        ppset(label='incompatible',gamess=['C.BFD.xml','H.BFD.xml','O.BFD.xml'])
+
+    ppset(
+        label = 'shared_upf',
+        pwscf = ['C.BFD.upf','H.BFD.upf','O.BFD.upf'],
+        rmg   = ['C.BFD.upf','H.BFD.upf','O.BFD.upf'],
+        )
+    shared = PseudoSet.labeled_pseudosets['shared_upf']
+    assert set(shared) == {'espresso','rmg'}
+    assert shared['espresso'] is not shared['rmg']
 
     PseudoSet.pseudo_files = pseudo_files
     PseudoSet.labeled_pseudosets = labeled_pseudosets

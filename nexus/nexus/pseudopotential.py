@@ -296,29 +296,32 @@ class PPInfo(DevBase):
 #end class PPInfo
 ppinfo = PPInfo()
 
+
 # override old ppset
 def ppset(label,**codes_pps):
-    pseudosets = []
-    for code,pseudofiles in codes_pps.items():
-        pseudo_paths = []
-        for filename in pseudofiles:
-            if filename not in PseudoSet.pseudo_files:
-                error(
-                    'pseudopotential file "{0}" is not present in '
-                    'PseudoSet.pseudo_files'.format(filename)
-                    )
-            #end if
-            pseudo_paths.append(PseudoSet.pseudo_files[filename])
-        #end for
-        pseudosets.append(PseudoSet(pseudos=pseudo_paths,codes=code))
-    #end for
+    if label in PseudoSet.labeled_pseudosets:
+        error(f'pseudopotential set label "{label}" is already registered')
+    pps_coll = {}
+    ref_elements = None
+    for code,ppfiles in codes_pps.items():
+        missing = set(ppfiles)-PseudoSet.pseudo_files.keys()
+        if len(missing)>0:
+            error(f'pseudopotential files "{missing}" are not present in PseudoSet.pseudo_files')
+        pps = PseudoSet([PseudoSet.pseudo_files[f] for f in ppfiles])
+        code = PseudoSet._check_code_str(code)
+        if code not in pps.codes:
+            error(f'pseudopotential files provided for code "{code}" are not compatible with that code')
+        elements = set(pps.pseudos)
+        if ref_elements is None:
+            ref_elements = elements
+        elif elements!=ref_elements:
+            error(f'pseudopotential set "{label}" must contain potentials for the same elements for each code')
+        pps_coll[code] = pps
+    PseudoSet.labeled_pseudosets[label] = pps_coll
 
     ppinfo.add_ppset(label,**codes_pps)
-    for pseudoset in pseudosets:
-        for code in pseudoset.codes:
-            PseudoSet.labeled_pseudosets[label,code] = pseudoset
-        #end for
-    #end for
+#end def ppset
+
 
 
 class PseudoSet(DevBase):
@@ -339,8 +342,8 @@ class PseudoSet(DevBase):
         The directories that the pseudopotentials are stored in.
     pseudo_files : dict of str: str (class attribute)
         Dictionary mapping pseudopotential file names to their full paths.
-    labeled_pseudosets : dict of (str, str): PseudoSet (class attribute)
-        Pseudopotential sets registered by label and compatible code.
+    labeled_pseudosets : dict of str: dict of str: PseudoSet (class attribute)
+        Pseudopotential sets registered by label, then compatible code.
 
     Parameters
     ----------
@@ -373,7 +376,7 @@ class PseudoSet(DevBase):
         })
     known_codes = frozenset(file_exts.keys())
     pseudo_files: ClassVar[dict[str, str]] = dict()
-    labeled_pseudosets: ClassVar[dict[tuple[str, str], PseudoSet]] = dict()
+    labeled_pseudosets: ClassVar[dict[str, dict[str, PseudoSet]]] = dict()
 
     def __init__(
         self,
