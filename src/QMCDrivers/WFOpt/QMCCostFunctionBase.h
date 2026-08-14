@@ -172,7 +172,7 @@ public:
   inline bool getneedGrads() const { return needGrads; }
 
   inline void setneedGrads(bool tf) { needGrads = tf; }
-  inline void setDMC() { vmc_or_dmc = 1.0; }
+
 
   inline const OptVariables& getOptVariables() const { return opt_vars; }
 
@@ -297,7 +297,7 @@ protected:
   ///stream for debug
   std::unique_ptr<std::ostream> debug_stream;
 
-  bool checkParameters();
+
   void updateXmlNodes();
 
   /// Flag on whether the variational parameter override is output to the new wavefunction
