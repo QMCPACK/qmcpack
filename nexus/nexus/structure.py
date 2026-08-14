@@ -855,6 +855,8 @@ class Structure(Sobj):
     mag : NDArray of float or None
         Magnetic moments of each atom, or ``None`` if system is not
         magnetized.
+    vel : NDArray of float or None
+        Cartesian velocity vectors for each atom.
     tmatrix : NDArray of int or None
         A vector of ints for tiling the cell in each dimension.
         See :py:meth:`~.Structure.tile()` for more information.
@@ -880,6 +882,8 @@ class Structure(Sobj):
         is an element and its position. Overrides ``elem`` and ``pos``.
     mag : ArrayLike, optional
         Magnetic moments of each atom.
+    vel : ArrayLike, optional
+        Cartesian velocity vectors for each atom.
     center : ArrayLike, optional
         Defined center of the cell, defaults to the ``[0.5, 0.5, 0.5]``
         point of the cell.
@@ -967,6 +971,7 @@ class Structure(Sobj):
                  pos               = None,
                  elem_pos          = None,
                  mag               = None,
+                 vel               = None,
                  center            = None,
                  kpoints           = None,
                  kweights          = None,
@@ -1032,6 +1037,7 @@ class Structure(Sobj):
         self.set_elem(elem)
         self.set_pos(pos)
         self.set_mag(mag)
+        self.set_vel(vel)
         self.set_frozen(frozen)
         self.kpoints  = np.empty((0,dim))            
         self.kweights = np.empty((0,))         
@@ -1116,6 +1122,15 @@ class Structure(Sobj):
                     )
                 )
         #end if
+        if self.vel is not None and self.vel.shape!=pshape:
+            msg += (
+                "vel does not have the right shape\n"
+                "vel shape: {}\n"
+                "Correct shape: {}\n".format(
+                    self.vel.shape, pshape
+                    )
+                )
+        #end if
         if self.frozen is not None and self.frozen.shape!=pshape:
             msg += (
                 "frozen is not the right shape\n"
@@ -1182,6 +1197,24 @@ class Structure(Sobj):
             #end if
         #end if
     #end def set_mag
+
+
+    def set_vel(self,vel=None):
+        if vel is None:
+            self.vel = None
+        else:
+            self.vel = np.array(vel,dtype=float)
+            if self.vel.shape!=self.pos.shape:
+                self.error(
+                    "Velocity vectors must have the same shape as positions.\n"
+                    "Positions shape: {0}\n"
+                    "Velocity shape: {1}".format(
+                        self.pos.shape,self.vel.shape
+                        )
+                    )
+            #end if
+        #end if
+    #end def set_vel
 
 
     def set_frozen(self,frozen=None):
@@ -1316,8 +1349,7 @@ class Structure(Sobj):
         if len(self.elem)>0:
             order = self.elem.argsort()
             if (self.elem!=self.elem[order]).any():
-                self.elem = self.elem[order]
-                self.pos  = self.pos[order]
+                self.reorder(order)
             #end if
         #end if
         if self.folded_structure is not None and folded:
@@ -1697,6 +1729,9 @@ class Structure(Sobj):
         if len(self.pos)>0:
             self.pos = dot(self.pos,P)
         #end if
+        if self.vel is not None:
+            self.vel = dot(self.vel,P)
+        #end if
         if len(self.kaxes)>0:
             self.kaxes = dot(self.kaxes,P)
         #end if
@@ -1712,6 +1747,9 @@ class Structure(Sobj):
     # test needed
     def rotate_plane(self,plane,angle,units='degrees'):
         self.pos = rotate_plane(plane,angle,self.pos,units)
+        if self.vel is not None:
+            self.vel = rotate_plane(plane,angle,self.vel,units)
+        #end if
         if self.has_axes():
             axes = rotate_plane(plane,angle,self.axes,units)
             self.reset_axes(axes)
@@ -2144,6 +2182,9 @@ class Structure(Sobj):
         kaxinv = inv(self.kaxes)
         kaxnew = dot(self.kaxes,inv(A).T)
         self.pos     = dot(dot(self.pos,axinv),axnew)
+        if self.vel is not None:
+            self.vel = dot(self.vel,A)
+        #end if
         self.center  = dot(dot(self.center,axinv),axnew)
         self.kpoints = dot(dot(self.kpoints,kaxinv),kaxnew)
         self.axes  = axnew
@@ -2177,6 +2218,9 @@ class Structure(Sobj):
             self.scale  *= scale
             self.axes   *= scale
             self.pos    *= scale
+            if self.vel is not None:
+                self.vel *= scale
+            #end if
             self.center *= scale
             self.kaxes  /= scale
             self.kpoints/= scale
@@ -2956,11 +3000,42 @@ class Structure(Sobj):
     #end def order_by_species
 
 
-    # test needed
     def reorder(self,order):
-        order = np.array(order)
-        self.elem = self.elem[order]
-        self.pos  = self.pos[order]
+        """Reorder all atom-sized member arrays."""
+        natoms = len(self.elem)
+        order = np.asarray(order)
+        if order.ndim!=1 or len(order)!=natoms:
+            self.error(
+                'atom reordering must contain one index per atom\n'
+                '  number of atoms: {}\n'
+                '  order shape: {}'.format(natoms,order.shape)
+                )
+        #end if
+        if not np.issubdtype(order.dtype,np.integer):
+            self.error('atom reordering indices must be integers')
+        #end if
+        order = order.astype(int,copy=False)
+        if not np.array_equal(np.sort(order),np.arange(natoms)):
+            self.error(
+                'atom reordering indices must be a permutation of 0 through '
+                '{}'.format(natoms-1)
+                )
+        #end if
+
+        non_atom_arrays = {
+            'axes', 'bconds', 'center', 'kaxes', 'kpoints', 'kweights',
+            'tmatrix',
+            }
+        for name,value in list(self.items()):
+            if (
+                name not in non_atom_arrays and
+                isinstance(value,np.ndarray) and
+                value.ndim>0 and
+                value.shape[0]==natoms
+                ):
+                self[name] = value[order]
+            #end if
+        #end for
     #end def reorder
 
     
@@ -4090,9 +4165,13 @@ class Structure(Sobj):
         kpoints  = np.array(self.kpoints)
         kweights = np.array(self.kweights)
         mag      = None
+        vel      = None
         frozen   = None
         if self.mag is not None:
             mag = ncells*list(self.mag)
+        #end if
+        if self.vel is not None:
+            vel = ncells*list(self.vel)
         #end if
         if self.frozen is not None:
             frozen = ncells*list(self.frozen)
@@ -4108,6 +4187,7 @@ class Structure(Sobj):
         ts.kpoints  = kpoints
         ts.kweights = kweights
         ts.set_mag(mag)
+        ts.set_vel(vel)
         ts.set_frozen(frozen)
         ts.background_charge = ncells*self.background_charge
 
