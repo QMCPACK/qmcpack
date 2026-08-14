@@ -65,15 +65,18 @@
 #====================================================================#
 
 
+import contextlib
 import os
 import sys
 import shutil
+import tempfile
+import traceback
+from functools import partial
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from string import Template
 from subprocess import Popen
-import tempfile
 from typing import ClassVar
 from .developer import DevBase, obj, error, unavailable
 from .structure import Structure, read_structure
@@ -434,6 +437,7 @@ class Simulation(NexusCore):
         self.infile         = None
         self.outfile        = None
         self.errfile        = None
+        self.nexus_logfile  = None
         self.bundleable     = True
         self.bundled        = False
         self.bundler        = None
@@ -594,6 +598,8 @@ class Simulation(NexusCore):
         if self.errfile is None:
             self.errfile = self.identifier + self.errfile_extension
         #end if
+        if self.nexus_logfile is None:
+            self.nexus_logfile = self.identifier + ".nexus.log"
     #end def set_files
 
 
@@ -2302,3 +2308,45 @@ class DynamicProcess(DevBase):
         return self.sim.failed
         #return self.sim.finished and self.sim.failed
 #end class DynamicProcess
+
+
+class sim_err_handler:
+    """Context manager for simulation-specific error handling/logging."""
+    def __init__(self, sim: Simulation):
+        self.sim = sim
+        self.logfile = Path(sim.remdir).resolve() / sim.nexus_logfile
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        if exc_type is None:
+            return True
+
+        if issubclass(exc_type, KeyboardInterrupt):
+            # KeyboardInterrupt means full stop, the user has cancelled the run
+            sys.__excepthook__(exc_type, exc_value, exc_tb)
+            return False
+
+        # Check for these first. If they are both true, then we have likely already reported an error.
+        if not (self.sim.failed and self.sim.finished):
+            self.sim.failed = True
+            self.sim.finished = True
+
+            exc_msg = traceback.format_exception(exc_type, exc_value, exc_tb)
+            with open(self.logfile, "a") as errf:
+                errf.write("".join(exc_msg))
+                errf.flush()
+
+            err = f"Error occurred in simulation '{self.sim.identifier}'."
+            loc = f"See the simulation log file at '{self.sim.locdir}/{self.sim.nexus_logfile}'"
+            lenloc = len(loc) + 2 # Padding around error message
+            print(
+                f"\n{'':!^{lenloc+4}}\n"
+                f"!!{err:^{lenloc}}!!\n"
+                f"!!{loc:^{lenloc}}!!\n"
+                f"{'':!^{lenloc+4}}\n"
+                )
+
+        return True
+#end class sim_err_handler
