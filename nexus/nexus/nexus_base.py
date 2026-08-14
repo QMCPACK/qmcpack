@@ -71,8 +71,7 @@ nexus_noncore_defaults = obj(
 
 # core namespace elements that can be accessed by noncore classes
 nexus_core_noncore_defaults = obj(
-    pseudo_dir        = None,              # used by: Settings, VaspInput
-    pseudopotentials  = None,              # used by: Simulation, GamessInput
+    pseudo_dir = None, # used by: Settings, VaspInput
     )
 
 nexus_core_defaults = obj(

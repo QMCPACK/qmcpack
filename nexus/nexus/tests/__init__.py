@@ -22,13 +22,11 @@ NEXUS_CORE_KEYS = (
     "sleep",
     "file_locations",
     "pseudo_dir",
-    "pseudopotentials",
     "runs",
     "results",
     )
 NEXUS_NONCORE_KEYS = (
     "pseudo_dir",
-    "pseudopotentials",
     )
 
 def divert_nexus_core():
@@ -62,8 +60,6 @@ def restore_nexus_core(nexus_core_storage: dict, nexus_noncore_storage: dict):
     for key in list(nexus_noncore.keys()):
         if key not in nexus_noncore_defaults:
             del nexus_noncore[key]
-
-    nexus_core_noncore.pseudopotentials = None
 
     assert len(nexus_noncore_storage) == 0, "Nexus Core keys have not been properly reset!"
     assert len(nexus_core_storage) == 0,    "Nexus NonCore keys have not been properly reset!"

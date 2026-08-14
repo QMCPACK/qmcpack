@@ -20,7 +20,7 @@ def test_settings(tmp_path):
     from ..nexus_base import nexus_core,nexus_core_defaults
     from ..nexus_base import nexus_noncore,nexus_noncore_defaults
     from ..nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
-    from ..pseudopotential import Pseudopotentials
+    from ..pseudopotential import ppinfo
     from ..basisset import BasisSets
     from ..machines import Job,Workstation
     from ..project_manager import ProjectManager
@@ -48,19 +48,19 @@ def test_settings(tmp_path):
                 'file_locations', 'generate_only', 'graph_sims', 'indent',
                 'load_images', 'local_directory', 'mode', 'modes', 'monitor',
                 'primary_modes', 'progress_tty', 'pseudo_dir',
-                'pseudopotentials', 'remote_directory', 'results', 'runs',
+                'remote_directory', 'results', 'runs',
                 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
                 ])
         nnckeys_check = set([
-                'basis_dir', 'basissets', 'pseudo_dir', 'pseudopotentials'
+                'basis_dir', 'basissets', 'pseudo_dir'
                 ])
         setkeys_check = set([
                 'command_line','basis_dir', 'basissets', 'debug',
                 'dependent_modes', 'emulate', 'file_locations', 'generate_only',
                 'graph_sims', 'indent', 'load_images', 'local_directory', 'mode',
                 'modes', 'monitor', 'primary_modes', 'progress_tty',
-                'pseudo_dir', 'pseudopotentials', 'remote_directory', 'results',
+                'pseudo_dir', 'remote_directory', 'results',
                 'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
                 ])
@@ -100,22 +100,19 @@ def test_settings(tmp_path):
         settings.command_line   = True
         nexus_core.command_line = True
         check_settings_core_noncore()
-        # nexus core sets basic run stages and Pseudopotentials object
+        # nexus core sets basic run stages and PPInfo is empty
         assert(nexus_core.stages_set==set(nexus_core_defaults.primary_modes))
-        assert(isinstance(nexus_core.pseudopotentials,Pseudopotentials))
-        assert(len(nexus_core.pseudopotentials)==0)
+        assert(ppinfo.path is None)
+        assert(len(ppinfo.files)==0)
+        assert(len(ppinfo.ppsets)==0)
         nexus_core.stages_set       = set()
         nexus_core.stages           = []
-        nexus_core.pseudopotentials = None
         assert(object_eq(nexus_core,nexus_core_defaults))
-        # nexus noncore sets Pseudopotentials and BasisSets objects
-        assert(isinstance(nexus_noncore.pseudopotentials,Pseudopotentials))
-        assert(len(nexus_noncore.pseudopotentials)==0)
+        # nexus noncore sets a BasisSets object
         assert(isinstance(nexus_noncore.basissets,BasisSets))
         assert(len(nexus_noncore.basissets)==0)
         nnc_defaults = obj(**nexus_noncore_defaults)
         nnc_defaults.update(**nexus_core_noncore_defaults)
-        nexus_noncore.pseudopotentials = None
         nexus_noncore.basissets        = None
         assert(object_eq(nexus_noncore,nnc_defaults))
         # other settings objects should be at default also
@@ -158,9 +155,10 @@ def test_settings(tmp_path):
     check_settings_core_noncore()
     assert(nexus_core.status_only==0)
     assert(nexus_core.generate_only==1)
-    assert(nexus_core.pseudo_dir=='./pseudopotentials')
-    assert(len(nexus_core.pseudopotentials)==4)
-    assert(set(nexus_core.pseudopotentials.keys())==set(pseudos))
+    pseudo_path = str((tmp_path / 'pseudopotentials').resolve())
+    assert(nexus_core.pseudo_dir==pseudo_path)
+    assert(ppinfo.path==pseudo_path)
+    assert(set(ppinfo.files)==set(pseudos))
     assert(settings.machine=='ws16')
     assert(Job.machine=='ws16')
     assert(isinstance(ProjectManager.machine,Workstation))
