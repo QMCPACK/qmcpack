@@ -78,7 +78,6 @@ from .developer import DevBase, obj, error, unavailable
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
-from .pseudopotential import ppset, ppinfo
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
 from .utilities import path_string
 
@@ -293,7 +292,7 @@ class Simulation(NexusCore):
 
     # test needed
     @classmethod
-    def separate_inputs(cls,kwargs,overlapping_kw=-1,copy_pseudos=True,sim_kw=None):
+    def separate_inputs(cls,kwargs,overlapping_kw=-1,sim_kw=None):
         if overlapping_kw==-1:
             overlapping_kw = set(['system'])
         elif overlapping_kw is None:
@@ -324,59 +323,6 @@ class Simulation(NexusCore):
             #end if
         #end if
 
-        if 'pseudos' in inp_args and inp_args.pseudos is not None:
-            code = cls.code_name()
-            pseudos = ppinfo.remap(code,inp_args.pseudos,system)
-            inp_args.pseudos = pseudos
-            if copy_pseudos:
-                pp_files = ppinfo.full_paths(code,pseudos,system)
-                if 'files' not in sim_args:
-                    sim_args.files = []
-                sim_args.files = list(sim_args.files) + pp_files
-            #end if
-        #end if
-
-        #if 'pseudos' in inp_args and inp_args.pseudos is not None:
-        #    pseudos = inp_args.pseudos
-        #    # support ppset labels
-        #    if isinstance(pseudos,str):
-        #        code = cls.code_name()
-        #        if not ppset.supports_code(code):
-        #            error('ppset labeled pseudopotential groups are not supported for code "{0}"'.format(code))
-        #        #end if
-        #        if 'system' not in inp_args:
-        #            error('system must be provided when using a ppset label')
-        #        #end if
-        #        system = inp_args.system
-        #        pseudos = ppset.get(pseudos,code,system)
-        #        if 'pseudos' in sim_args:
-        #            sim_args.pseudos = pseudos
-        #        #end if
-        #        inp_args.pseudos = pseudos
-        #    #end if
-        #    if copy_pseudos:
-        #        if 'files' in sim_args:
-        #            sim_args.files = list(sim_args.files)
-        #        else:
-        #            sim_args.files = list()
-        #        #end if
-        #        sim_args.files.extend(list(pseudos))
-        #    #end if
-        #    if 'system' in inp_args:
-        #        system = inp_args.system
-        #        species_labels,species = system.structure.species(symbol=True)
-        #        pseudopotentials = nexus_core.pseudopotentials
-        #        for ppfile in pseudos:
-        #            if ppfile not in pseudopotentials:
-        #                error('pseudopotential file {0} cannot be found'.format(ppfile))
-        #            #end if
-        #            pp = pseudopotentials[ppfile]
-        #            if pp.element_label not in species_labels and pp.element not in species:
-        #                error('the element {0} for pseudopotential file {1} is not in the physical system provided'.format(pp.element,ppfile))
-        #            #end if
-        #        #end for
-        #    #end if
-        ##end if
         # this is already done in Simulation.__init__()
         #if 'system' in inp_args and isinstance(inp_args.system,PhysicalSystem):
         #    inp_args.system = inp_args.system.copy()

@@ -322,7 +322,6 @@ def test_generate(tmp_path):
     from ..developer import obj
     from ..pseudopotential import ppinfo
     from ..physical_system import generate_physical_system
-    from ..gamess import Gamess
     from ..gamess_input import generate_gamess_input
 
     ppfiles = ["H.BFD_V5Z_ANO.gms","O.BFD_V5Z.gms"]
@@ -443,9 +442,4 @@ def test_generate(tmp_path):
     gi = generate_gamess_input(**labeled_input)
     check_vs_serial_reference(gi,'rhf.inp')
 
-    sim_args,inp_args = Gamess.separate_inputs(labeled_input,copy_pseudos=False)
-    assert('files' not in sim_args)
-    assert(inp_args.pseudos==ppfiles)
-    gi = generate_gamess_input(**inp_args)
-    check_vs_serial_reference(gi,'rhf.inp')
 #end def test_generate

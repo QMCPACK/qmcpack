@@ -57,10 +57,9 @@ from .unit_converter import convert
 from .periodic_table import Elements
 from .structure import Structure, kmesh
 from .physical_system import PhysicalSystem
-from .pseudopotential import pp_elem_label
+from .pseudopotential import pp_elem_label, ppinfo
 from .simulation import SimulationInput
 from . import numpy_extensions as npe
-from nexus import ppinfo
 
 def read_str(sv):
     return sv.strip('"').strip("'")
@@ -2428,6 +2427,9 @@ def generate_scf_input(prefix       = 'pwscf',
     if pseudos is None:
         pseudos = []
     #end if
+    if system is not None:
+        pseudos = ppinfo.remap('pwscf',pseudos,system)
+    #end if
     pseudopotentials = obj()
     atoms = []
     for ppname in pseudos:
@@ -2661,6 +2663,9 @@ def generate_relax_input(prefix       = 'pwscf',
                          ):
     if pseudos is None:
         pseudos = []
+    #end if
+    if system is not None:
+        pseudos = ppinfo.remap('pwscf',pseudos,system)
     #end if
     
     pseudopotentials = obj()

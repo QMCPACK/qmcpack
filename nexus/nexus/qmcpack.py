@@ -57,6 +57,7 @@ from .qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToA
 from .pyscf_sim import Pyscf
 from .developer import DevBase, obj, error, unavailable
 from .nexus_base import nexus_core
+from .pseudopotential import ppinfo
 from .hdfreader import read_hdf
 from .unit_converter import convert
 from .pwscf import Pwscf
@@ -1771,6 +1772,15 @@ class Qmcpack(Simulation):
 
 
 def generate_qmcpack(**kwargs):
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        pseudos = ppinfo.remap('qmcpack',pseudos,system)
+        kwargs['pseudos'] = pseudos
+        pp_files = ppinfo.full_paths('qmcpack',pseudos,system)
+        kwargs['files'] = list(kwargs.get('files',[])) + pp_files
+    #end if
+
     sim_args,inp_args = Qmcpack.separate_inputs(kwargs)
 
     exc = None
@@ -1820,6 +1830,15 @@ def generate_cusp_correction(**kwargs):
     kwargs['jastrows']     = []
     kwargs['corrections']  = []
     kwargs['calculations'] = []
+
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        pseudos = ppinfo.remap('qmcpack',pseudos,system)
+        kwargs['pseudos'] = pseudos
+        pp_files = ppinfo.full_paths('qmcpack',pseudos,system)
+        kwargs['files'] = list(kwargs.get('files',[])) + pp_files
+    #end if
 
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
