@@ -742,3 +742,168 @@ To update the ``uv.lock`` file, run
     > uv lock --upgrade
 
 which will automatically determine the correct versions of each package for each version of Python that is supported.
+
+
+.. _dev_utils:
+
+Developer utilities
+-------------------
+
+Nexus allows the use of specialized Python scripts for auto-generating code that goes into the distribution form of Nexus.
+These are useful when a module, e.g. :py:mod:`~nexus.pwscf_input_defs` contains information that is *only* ever gathered from an external source.
+Another example is :py:mod:`~nexus.periodic_table`, which contains an enumeration with data from IUPAC and NIST.
+
+Here we have detailed descriptions of how to use the developer utilities currently available in Nexus.
+
+
+.. _pwscf_input_autogen:
+
+``gen_pwscf_input_data.py``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This script is used to automatically generate the :py:mod:`~nexus.pwscf_input_defs` module from Quantum ESPRESSO's ``INPUT_PW.def`` files.
+
+This script requires that you have cloned the QE source code
+
+.. code-block:: console
+
+    > git clone https://gitlab.com/QEF/q-e.git
+
+Additionally, you will need to download the dependencies listed in the `README.helpdoc file <https://gitlab.com/QEF/q-e/-/blob/develop/dev-tools/README.helpdoc>`__, as well as the ``xmltodict`` and ``packaging`` Python packages.
+If you are using ``uv``, the Python packages will be installed automatically when running the script, otherwise you will need to run the following command
+
+.. code-block:: console
+
+    > python3 -m pip install xmltodict packaging
+
+To use this script, go to `Quantum ESPRESSO's GitLab <https://gitlab.com/QEF/q-e/-/blob/develop/PW/Doc/INPUT_PW.def>`__ and download the ``INPUT_PW.def`` file there.
+Rename the file to have the version attached, for example: ``INPUT_PW_7.6.0.def``.
+Do this for each version of QE that you wish to include, using the version switcher and searching in the tags for the version.
+Links for versions 4.0.4 to 7.6.0 are included in :py:mod:`~dev_utils.gen_pwscf_input_data` as comments after each line in the ``QE_DOC_VERSION_DATES`` dictionary.
+
+Once you have all of the files, run the QE helpdoc tool to convert the files to XML format.
+
+.. code-block:: console
+
+    > ls
+    INPUT_PW_7.5.0.def  INPUT_PW_7.6.0.def
+    > /path/to/q-e/dev-tools/helpdoc INPUT_PW*.def
+
+This will create ``.txt``, ``.xml``, and potentially ``.html`` files out of the ``.def`` files.
+
+You may get the following output if the script fails:
+
+.. code-block::
+
+    ***
+    *** Parsing the helpdoc.schema
+    ***
+    
+    can't read "basedir": no such variable
+        while executing
+    "file join $basedir helpdoc.schema"
+        (in namespace eval "::helpdoc::schema" script line 1)
+        invoked from within
+    "namespace eval schema { ::source [file join $basedir helpdoc.schema] }"
+        (procedure "readSchema" line 3)
+        invoked from within
+    "readSchema "
+        (procedure "::helpdoc::process" line 8)
+        invoked from within
+    "::helpdoc::process $argv"
+        (file "../../q-e/dev-tools/helpdoc" line 51)
+
+If you get this error, simply go to ``q-e/dev-tools/helpdoc.d/helpdoc.tcl`` and replace the following code (likely around lines 180-190)
+
+.. code-block:: tcl
+
+    namespace eval schema { ::source [file join $basedir helpdoc.schema] }
+
+with
+
+.. code-block:: tcl
+
+    namespace eval schema { ::source [file join /path/to/q-e/dev-tools helpdoc.schema] }
+
+and rerun the command.
+A successful run should produce a large amount of output text, along the lines of
+
+.. code-block::
+
+    ***
+    *** Parsing the helpdoc.schema
+    ***
+
+       parsing ROOTELEMENT input_description ... 
+          parsing ATTRIBUTE distribution ... ok
+          parsing ATTRIBUTE package ... ok
+          parsing ATTRIBUTE program ... ok
+          parsing OPTIONAL  ... 
+             parsing INTERLEAVE  ... 
+                parsing ELEMENT intro ... 
+                OK - parsing ELEMENT intro completed
+                parsing ELEMENT toc ... 
+                OK - parsing ELEMENT toc completed
+             OK - parsing INTERLEAVE completed
+          OK - parsing OPTIONAL completed
+          parsing +  ... 
+    ...
+
+Even if you get an error at the end like
+
+.. code-block::
+
+    [Error]
+    Execution of xsltproc failed with error message:
+    
+    warning: failed to load external entity "input_xx.xsl"
+    error
+    xsltParseStylesheetFile : cannot parse input_xx.xsl
+    compilation error: file INPUT_PW_7.6.0.xml line 5 element input_description
+    xsltParseStylesheetProcess : document is not a stylesheet
+       Executing:  /usr/bin/xsltproc --stringparam version "" --stringparam current-date "Tue Aug 11 13:43:20 EDT 2026" INPUT_PW_7.6.0.xml > INPUT_PW_7.6.0.html ...
+
+the ``.xml`` files should still exist, and you can proceed. The error only relates to the production of the ``.html`` files, which are not needed for this script.
+
+At this point, assuming you had version 7.5.0 and 7.6.0 in the directory (as shown above), your directory will now look like so
+
+.. code-block:: console
+
+    > ls
+    INPUT_PW_7.5.0.def   INPUT_PW_7.5.0.txt  INPUT_PW_7.6.0.def   INPUT_PW_7.6.0.txt
+    INPUT_PW_7.5.0.html  INPUT_PW_7.5.0.xml  INPUT_PW_7.6.0.html  INPUT_PW_7.6.0.xml
+
+You can then call the script on the directory that contains all of the files (it will automatically grab only the ``.xml`` files), like so
+
+.. code-block:: console
+
+    > ./gen_pwscf_input_data.py /path/to/xml_dir/
+
+    Parsing namelist data...
+
+    Now parsing version 7.5.0...
+      Parsing namelist CONTROL...
+      Parsing namelist SYSTEM...
+      Parsing namelist ELECTRONS...
+      Parsing namelist IONS...
+      Parsing namelist CELL...
+      Parsing namelist FCP...
+      Parsing namelist RISM...
+    Success!
+
+    Now parsing version 7.6.0...
+      Parsing namelist CONTROL...
+      Parsing namelist SYSTEM...
+      Parsing namelist ELECTRONS...
+      Parsing namelist IONS...
+      Parsing namelist CELL...
+      Parsing namelist FCP...
+      Parsing namelist RISM...
+    Success!
+
+    Done parsing namelist data!
+
+    Writing output to /your/path/to/qmcpack/nexus/nexus/pwscf_input_defs.py
+
+At this point, the namelists have been successfully written.
+You are encouraged to run ``pytest`` to verify that there are no errors caused by the script.
