@@ -322,11 +322,6 @@ class Simulation(NexusCore):
                 error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
             #end if
         #end if
-
-        # this is already done in Simulation.__init__()
-        #if 'system' in inp_args and isinstance(inp_args.system,PhysicalSystem):
-        #    inp_args.system = inp_args.system.copy()
-        ##end if
         return sim_args,inp_args
     #end def separate_inputs
 
