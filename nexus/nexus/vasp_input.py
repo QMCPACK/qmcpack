@@ -797,7 +797,10 @@ class VKeywordFile(VFile):
 
     def assign_block_construct(self,name,value):
         if not isinstance(value,Mapping):
-            msg = 'block construct value must be a mapping'
+            msg = (
+                'block construct value should be a mapping, but is {}'
+                .format(type(value).__name__)
+                )
             raise TypeError(msg)
         #end if
         schema = self.block_schema(name)

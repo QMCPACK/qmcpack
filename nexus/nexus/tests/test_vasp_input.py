@@ -303,7 +303,7 @@ def test_mixed_keyword_types():
 
     with pytest.raises(
         ValueError,
-        match='unknown value for keyword value_type.*must be one of',
+        match=r'unknown value for keyword value_type.*must be one of',
         ):
         mixed_type_matches(1.0,'unknown')
     #end with
@@ -369,6 +369,13 @@ def test_block_constructs():
     assert(isinstance(reread.kernel_truncation,obj))
     assert(reread.kernel_truncation==incar.kernel_truncation)
     assert(reread.plugins==incar.plugins)
+
+    with pytest.raises(
+        TypeError,
+        match='block construct value should be a mapping, but is list',
+        ):
+        Incar().assign_block_construct('plugins',[])
+    #end with
 #end def test_block_constructs
 
 
