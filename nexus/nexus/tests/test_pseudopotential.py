@@ -3,7 +3,7 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOPOTENTIAL)
 
-from ..generic import generic_settings, NexusUserWarning
+from ..generic import generic_settings, NexusError, NexusUserWarning
 generic_settings.raise_error = True
 
 import numpy as np
@@ -2027,6 +2027,13 @@ def test_register_legacy_ppset(tmp_path):
         assert pseudo.exists(), "Failed to create pseudo file!"
         pseudo_list.append(pseudo)
 
+    pseudo_files = PseudoSet.pseudo_files
+    labeled_pseudosets = PseudoSet.labeled_pseudosets
+    PseudoSet.pseudo_files = {
+        pseudo.name:str(pseudo) for pseudo in pseudo_list
+        }
+    PseudoSet.labeled_pseudosets = {}
+
     ref_pseudos = {
         "bfd": {
             "qmcpack": PseudoSet(
@@ -2063,32 +2070,24 @@ def test_register_legacy_ppset(tmp_path):
         gamess  = ["C.BFD.gms", "H.BFD.gms", "O.BFD.gms"],
         )
 
-    #PseudoSet._register_legacy_ppset("bfd")
-    #
-    #assert(PseudoSet.labeled_pseudos.keys() == ref_pseudos.keys())
-    #
-    #calc_legacy_pseudos = PseudoSet.labeled_pseudos["bfd"]
-    #ref_legacy_pseudos = ref_pseudos["bfd"]
-    #
-    #assert(calc_legacy_pseudos.keys() == ref_legacy_pseudos.keys())
-    #
-    #qmcpack_calc = calc_legacy_pseudos["qmcpack"]
-    #qmcpack_ref = ref_legacy_pseudos["qmcpack"]
-    #assert(qmcpack_calc.pseudos     == qmcpack_ref.pseudos)
-    #assert(qmcpack_calc.codes       == qmcpack_ref.codes)
-    #assert(qmcpack_calc.pseudo_dirs == qmcpack_ref.pseudo_dirs)
-    #
-    #espresso_calc = calc_legacy_pseudos["espresso"]
-    #espresso_ref = ref_legacy_pseudos["espresso"]
-    #assert(espresso_calc.pseudos     == espresso_ref.pseudos)
-    #assert(espresso_calc.codes       == espresso_ref.codes)
-    #assert(espresso_calc.pseudo_dirs == espresso_ref.pseudo_dirs)
-    #
-    #gamess_calc = calc_legacy_pseudos["gamess"]
-    #gamess_ref = ref_legacy_pseudos["gamess"]
-    #assert(gamess_calc.pseudos     == gamess_ref.pseudos)
-    #assert(gamess_calc.codes       == gamess_ref.codes)
-    #assert(gamess_calc.pseudo_dirs == gamess_ref.pseudo_dirs)
+    assert set(PseudoSet.labeled_pseudosets) == {
+        ('bfd','espresso'),
+        ('bfd','gamess'),
+        ('bfd','qmcpack'),
+        }
+
+    for code,ref_pseudoset in ref_pseudos['bfd'].items():
+        pseudoset = PseudoSet.labeled_pseudosets['bfd',code]
+        assert pseudoset.pseudos == ref_pseudoset.pseudos
+        assert pseudoset.codes == ref_pseudoset.codes
+        assert pseudoset.pseudo_dirs == ref_pseudoset.pseudo_dirs
+    #end for
+
+    with pytest.raises(NexusError,match='is not present in PseudoSet.pseudo_files'):
+        ppset(label='missing',qmcpack=['Ne.missing.xml'])
+
+    PseudoSet.pseudo_files = pseudo_files
+    PseudoSet.labeled_pseudosets = labeled_pseudosets
 #end def test_register_legacy_ppset
 
 

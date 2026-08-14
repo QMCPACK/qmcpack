@@ -298,7 +298,27 @@ ppinfo = PPInfo()
 
 # override old ppset
 def ppset(label,**codes_pps):
+    pseudosets = []
+    for code,pseudofiles in codes_pps.items():
+        pseudo_paths = []
+        for filename in pseudofiles:
+            if filename not in PseudoSet.pseudo_files:
+                error(
+                    'pseudopotential file "{0}" is not present in '
+                    'PseudoSet.pseudo_files'.format(filename)
+                    )
+            #end if
+            pseudo_paths.append(PseudoSet.pseudo_files[filename])
+        #end for
+        pseudosets.append(PseudoSet(pseudos=pseudo_paths,codes=code))
+    #end for
+
     ppinfo.add_ppset(label,**codes_pps)
+    for pseudoset in pseudosets:
+        for code in pseudoset.codes:
+            PseudoSet.labeled_pseudosets[label,code] = pseudoset
+        #end for
+    #end for
 
 
 class PseudoSet(DevBase):
