@@ -41,19 +41,17 @@ function(
   set(TEST_NAME ${TEST_NAME}-r${PROCS}-t${THREADS})
   math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
   if(HAVE_MPI)
-    add_test(NAME ${TEST_NAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
-                                       ${QMC_APP} ${PERF_ARGS} ${INPUT_FILE})
+    add_test(NAME ${TEST_NAME} COMMAND ${QMC_GPU_TEST_LAUNCHER} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS}
+                                       ${MPIEXEC_PREFLAGS} ${QMC_APP} ${PERF_ARGS} ${INPUT_FILE})
   else()
-    add_test(NAME ${TEST_NAME} COMMAND ${QMC_APP} ${PERF_ARGS} ${INPUT_FILE})
+    add_test(NAME ${TEST_NAME} COMMAND ${QMC_GPU_TEST_LAUNCHER} ${QMC_APP} ${PERF_ARGS} ${INPUT_FILE})
   endif()
 
   set_tests_properties(${TEST_NAME} PROPERTIES LABELS "performance")
   set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY "${WDIR}")
   set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${THREADS})
   set_tests_properties(${TEST_NAME} PROPERTIES PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE)
-  if(ENABLE_CUDA OR ENABLE_SYCL OR ENABLE_OFFLOAD)
-    set_tests_properties(${TEST_NAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
-  endif()
+  set_test_gpu_resources(${TEST_NAME})
 
   if(ENABLE_TIMERS)
     add_test(NAME "${TEST_NAME}-time" COMMAND ${Python3_EXECUTABLE} ../process_perf.py ${INPUT_FILE})

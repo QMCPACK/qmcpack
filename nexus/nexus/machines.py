@@ -1364,6 +1364,19 @@ class Workstation(Machine):
     #end def write_job
 
 
+    def requeue_job(self,job):
+        if isinstance(job,Job):
+            jid = job.internal_id
+            self.process_job(job)
+            self.jobs[jid] = job
+            job.status = job.states.waiting
+            self.waiting.add(jid)
+        else:
+            self.error('requeue_job received non-Job instance '+type(job).__name__)
+        #end if
+    #end def requeue_job
+
+
     def submit_job(self,job):
         pad = self.enter(job.directory,msg=job.simid)
         command = self.job_command(job,pad=pad)
