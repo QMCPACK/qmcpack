@@ -400,6 +400,52 @@ def test_qmcpack_diamond(tmp_path):
 #end def test_qmcpack_diamond
 
 
+def test_qmcpack_restart_examples(tmp_path):
+    test_cases = [
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/05_diamond_dft_dmc_restart',
+            script = 'diamond_lda_dmc_restart_same_dir.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_restart/dmc.in.xml')],
+            ),
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/05_diamond_dft_dmc_restart',
+            script = 'diamond_lda_dmc_restart_separate_dirs.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_initial/dmc.in.xml')],
+            ),
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/06_diamond_dft_dmc_twistavg_restart',
+            script = 'diamond_lda_dmc_twistavg_restart_same_dir.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_twist_restart/dmc.g000.twistnum_0.in.xml')],
+            ),
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/06_diamond_dft_dmc_twistavg_restart',
+            script = 'diamond_lda_dmc_twistavg_restart_separate_dirs.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_twist_initial/dmc.g000.twistnum_0.in.xml')],
+            ),
+        ]
+
+    for test_case in test_cases:
+        case_dir = tmp_path / test_case.script.replace('.py','')
+        test_path = copy_example_files(test_case.path,case_dir)
+        copy_pseudos('qmcpack',case_dir)
+
+        script_path = example_root / test_case.path / test_case.script
+        success,message = run_example_script(script_path,test_path)
+        assert(success),message
+
+        for code,_filetype,filepath in test_case.files:
+            success,message = check_generated_files(
+                code,
+                case_dir,
+                test_case.path,
+                filepath,
+                )
+            assert(success),message
+        #end for
+    #end for
+#end def test_qmcpack_restart_examples
+
+
 def test_qmcpack_graphene(tmp_path):
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/graphene',

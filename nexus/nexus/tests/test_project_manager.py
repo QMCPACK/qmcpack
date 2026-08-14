@@ -307,21 +307,21 @@ def test_write_simulation_status():
         log.reset()
         pm.write_simulation_status()
         s = log.contents()
-        return s
+        return '\n'.join(line.rstrip() for line in s.splitlines())
     #end def status_log
 
     assert(nexus_core.status==status_modes.none)
     status_ref = '''
-  cascade status 
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
-    000000  0  ------    test_sim_s11  ./runs/  
-    000000  0  ------    test_sim_s21  ./runs/  
-    000000  0  ------    test_sim_s12  ./runs/  
-    000000  0  ------    test_sim_s22  ./runs/  
-    000000  0  ------    test_sim_s3  ./runs/  
-    000000  0  ------    test_sim_s4  ./runs/  
-    000000  0  ------    test_sim_s5  ./runs/  
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+  cascade status
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    000000           ------    test_sim_s11  ./runs/
+    000000           ------    test_sim_s21  ./runs/
+    000000           ------    test_sim_s12  ./runs/
+    000000           ------    test_sim_s22  ./runs/
+    000000           ------    test_sim_s3  ./runs/
+    000000           ------    test_sim_s4  ./runs/
+    000000           ------    test_sim_s5  ./runs/
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
     '''
     assert(status_log().strip()==status_ref.strip())
 
@@ -330,11 +330,11 @@ def test_write_simulation_status():
 
     nexus_core.status = status_modes.active
     status_ref = '''
-  cascade status 
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
-    000000  0  ------    test_sim_s11  ./runs/  
-    000000  0  ------    test_sim_s12  ./runs/  
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+  cascade status
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    000000           ------    test_sim_s11  ./runs/
+    000000           ------    test_sim_s12  ./runs/
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
     '''
     assert(status_log().strip()==status_ref.strip())
 
@@ -343,14 +343,68 @@ def test_write_simulation_status():
 
     nexus_core.status = status_modes.failed
     status_ref = '''
-  cascade status 
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+  cascade status
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    (No simulations present)
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     '''
     assert(status_log().strip()==status_ref.strip())
 
+    sim = sims.s11
+    sim.setup      = True
+    sim.sent_files = True
+    sim.submitted  = True
+
+    log.reset()
+    pm.status_line(sim)
+    assert(log.contents().strip()=='111000           ------    test_sim_s11  ./runs/')
+
+    sim.finished  = True
+    sim.got_output = True
+    sim.analyzed   = True
+
+    log.reset()
+    pm.status_line(sim)
+    assert(log.contents().strip()=='111111  SUCCESS  ------    test_sim_s11  ./runs/')
+
+    sim.failed = True
+
+    log.reset()
+    pm.status_line(sim)
+    assert(log.contents().strip()=='111111  FAILURE  ------    test_sim_s11  ./runs/')
+
     Simulation.clear_all_sims()
 #end def test_write_simulation_status
+
+
+def test_color_status_result(monkeypatch):
+    from ..project_manager import color_status_result
+
+    class TestLog:
+        def __init__(self,is_tty):
+            self.is_tty = is_tty
+        #end def __init__
+
+        def isatty(self):
+            return self.is_tty
+        #end def isatty
+    #end class TestLog
+
+    tty_log = TestLog(is_tty=True)
+    file_log = TestLog(is_tty=False)
+
+    monkeypatch.delenv('NO_COLOR',raising=False)
+    assert(color_status_result('SUCCESS',tty_log)=='\033[42mSUCCESS\033[0m')
+    assert(color_status_result('FAILURE',tty_log)=='\033[41mFAILURE\033[0m')
+    assert(color_status_result('',tty_log)=='')
+    assert(color_status_result('SUCCESS',file_log)=='SUCCESS')
+    assert(color_status_result('FAILURE',file_log)=='FAILURE')
+
+    monkeypatch.setenv('NO_COLOR','1')
+    assert(color_status_result('SUCCESS',tty_log)=='SUCCESS')
+    assert(color_status_result('FAILURE',tty_log)=='FAILURE')
+
+#end def test_color_status_result
 
 
 @isolate_nexus_core
