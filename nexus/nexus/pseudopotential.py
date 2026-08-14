@@ -317,9 +317,10 @@ class PseudoSet(DevBase):
         nuclear charges (Z-valences).
     pseudo_dirs : set of Path
         The directories that the pseudopotentials are stored in.
-    legacy_pseudos : dict of str: PseudoSet (class attribute)
-        Interface for creating pseudopotentials from the legacy command
-        ``ppset``.
+    pseudo_files : dict of str: str (class attribute)
+        Dictionary mapping pseudopotential file names to their full paths.
+    labeled_pseudosets : dict of (str, str): PseudoSet (class attribute)
+        Pseudopotential sets registered by label and compatible code.
 
     Parameters
     ----------
@@ -351,7 +352,8 @@ class PseudoSet(DevBase):
         "pyscf":    frozenset({".nwchem", ".gth"})
         })
     known_codes = frozenset(file_exts.keys())
-    labeled_pseudos: ClassVar[dict[str, dict[str, PseudoSet]]] = dict()
+    pseudo_files: ClassVar[dict[str, str]] = dict()
+    labeled_pseudosets: ClassVar[dict[tuple[str, str], PseudoSet]] = dict()
 
     def __init__(
         self,
@@ -1022,7 +1024,7 @@ class PseudoSet(DevBase):
     #@classmethod
     #def _register_legacy_ppset(cls, label: str) -> None:
     #    """Take pseudos registered with ``ppset`` and store them as ``PseudoSet`` objects."""
-    #    cls.labeled_pseudos[label] = {}
+    #    cls.labeled_pseudosets[label] = {}
     #    labeled_set = ppset.pseudos[label]
     #    for code, pseudo_files in labeled_set.items():
     #        pseudos = {}
@@ -1036,7 +1038,7 @@ class PseudoSet(DevBase):
     #        if code == "pwscf":
     #            code = "espresso"
     #
-    #        cls.labeled_pseudos[label][code] = PseudoSet(pseudos=pseudos, codes=code)
+    #        cls.labeled_pseudosets[label][code] = PseudoSet(pseudos=pseudos, codes=code)
     ##end def _register_legacy_ppset
 
     def __repr__(self) -> str:
