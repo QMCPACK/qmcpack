@@ -1019,25 +1019,25 @@ class PseudoSet(DevBase):
         return Z_eff_map
     #end def get_Zeff
 
-    @classmethod
-    def _register_legacy_ppset(cls, label: str) -> None:
-        """Take pseudos registered with ``ppset`` and store them as ``PseudoSet`` objects."""
-        cls.labeled_pseudos[label] = {}
-        labeled_set = ppset.pseudos[label]
-        for code, pseudo_files in labeled_set.items():
-            pseudos = {}
-            for elem_label, filename in pseudo_files.items():
-                for path in nexus_core.file_locations:
-                    loc = Path(path).resolve() / filename
-                    if loc.exists():
-                        pseudos[elem_label] = loc
-                        break
-
-            if code == "pwscf":
-                code = "espresso"
-
-            cls.labeled_pseudos[label][code] = PseudoSet(pseudos=pseudos, codes=code)
-    #end def _register_legacy_ppset
+    #@classmethod
+    #def _register_legacy_ppset(cls, label: str) -> None:
+    #    """Take pseudos registered with ``ppset`` and store them as ``PseudoSet`` objects."""
+    #    cls.labeled_pseudos[label] = {}
+    #    labeled_set = ppset.pseudos[label]
+    #    for code, pseudo_files in labeled_set.items():
+    #        pseudos = {}
+    #        for elem_label, filename in pseudo_files.items():
+    #            for path in nexus_core.file_locations:
+    #                loc = Path(path).resolve() / filename
+    #                if loc.exists():
+    #                    pseudos[elem_label] = loc
+    #                    break
+    #
+    #        if code == "pwscf":
+    #            code = "espresso"
+    #
+    #        cls.labeled_pseudos[label][code] = PseudoSet(pseudos=pseudos, codes=code)
+    ##end def _register_legacy_ppset
 
     def __repr__(self) -> str:
         rep = (

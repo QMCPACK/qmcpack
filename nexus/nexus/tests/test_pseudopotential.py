@@ -2063,32 +2063,32 @@ def test_register_legacy_ppset(tmp_path):
         gamess  = ["C.BFD.gms", "H.BFD.gms", "O.BFD.gms"],
         )
 
-    PseudoSet._register_legacy_ppset("bfd")
-
-    assert(PseudoSet.labeled_pseudos.keys() == ref_pseudos.keys())
-
-    calc_legacy_pseudos = PseudoSet.labeled_pseudos["bfd"]
-    ref_legacy_pseudos = ref_pseudos["bfd"]
-
-    assert(calc_legacy_pseudos.keys() == ref_legacy_pseudos.keys())
-
-    qmcpack_calc = calc_legacy_pseudos["qmcpack"]
-    qmcpack_ref = ref_legacy_pseudos["qmcpack"]
-    assert(qmcpack_calc.pseudos     == qmcpack_ref.pseudos)
-    assert(qmcpack_calc.codes       == qmcpack_ref.codes)
-    assert(qmcpack_calc.pseudo_dirs == qmcpack_ref.pseudo_dirs)
-
-    espresso_calc = calc_legacy_pseudos["espresso"]
-    espresso_ref = ref_legacy_pseudos["espresso"]
-    assert(espresso_calc.pseudos     == espresso_ref.pseudos)
-    assert(espresso_calc.codes       == espresso_ref.codes)
-    assert(espresso_calc.pseudo_dirs == espresso_ref.pseudo_dirs)
-
-    gamess_calc = calc_legacy_pseudos["gamess"]
-    gamess_ref = ref_legacy_pseudos["gamess"]
-    assert(gamess_calc.pseudos     == gamess_ref.pseudos)
-    assert(gamess_calc.codes       == gamess_ref.codes)
-    assert(gamess_calc.pseudo_dirs == gamess_ref.pseudo_dirs)
+    #PseudoSet._register_legacy_ppset("bfd")
+    #
+    #assert(PseudoSet.labeled_pseudos.keys() == ref_pseudos.keys())
+    #
+    #calc_legacy_pseudos = PseudoSet.labeled_pseudos["bfd"]
+    #ref_legacy_pseudos = ref_pseudos["bfd"]
+    #
+    #assert(calc_legacy_pseudos.keys() == ref_legacy_pseudos.keys())
+    #
+    #qmcpack_calc = calc_legacy_pseudos["qmcpack"]
+    #qmcpack_ref = ref_legacy_pseudos["qmcpack"]
+    #assert(qmcpack_calc.pseudos     == qmcpack_ref.pseudos)
+    #assert(qmcpack_calc.codes       == qmcpack_ref.codes)
+    #assert(qmcpack_calc.pseudo_dirs == qmcpack_ref.pseudo_dirs)
+    #
+    #espresso_calc = calc_legacy_pseudos["espresso"]
+    #espresso_ref = ref_legacy_pseudos["espresso"]
+    #assert(espresso_calc.pseudos     == espresso_ref.pseudos)
+    #assert(espresso_calc.codes       == espresso_ref.codes)
+    #assert(espresso_calc.pseudo_dirs == espresso_ref.pseudo_dirs)
+    #
+    #gamess_calc = calc_legacy_pseudos["gamess"]
+    #gamess_ref = ref_legacy_pseudos["gamess"]
+    #assert(gamess_calc.pseudos     == gamess_ref.pseudos)
+    #assert(gamess_calc.codes       == gamess_ref.codes)
+    #assert(gamess_calc.pseudo_dirs == gamess_ref.pseudo_dirs)
 #end def test_register_legacy_ppset
 
 
