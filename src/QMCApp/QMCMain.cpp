@@ -156,7 +156,7 @@ bool QMCMain::execute()
   Timer t0;
   if (xml_doc_stack_.empty())
   {
-    ERRORMSG("No valid input file exists! Aborting QMCMain::execute")
+    app_error() << "No valid input file exists! Aborting QMCMain::execute" << std::endl;
     return false;
   }
 
