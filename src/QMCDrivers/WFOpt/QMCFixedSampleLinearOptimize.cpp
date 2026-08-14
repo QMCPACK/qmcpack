@@ -899,11 +899,11 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
     LinearMethod::getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    Lambda = LinearMethod::getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
+    auto lambda = LinearMethod::getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(shift_index).at(i + 1) *= Lambda;
+      parameterDirections.at(shift_index).at(i + 1) *= lambda;
   }
 }
 
@@ -1310,11 +1310,11 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   }
 
   // compute the scaling constant to apply to the update
-  Lambda = LinearMethod::getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
+  auto lambda = LinearMethod::getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
   // scale the update by the scaling constant
   for (int i = 0; i < numParams; i++)
-    parameterDirections.at(i + 1) *= Lambda;
+    parameterDirections.at(i + 1) *= lambda;
 
   // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);

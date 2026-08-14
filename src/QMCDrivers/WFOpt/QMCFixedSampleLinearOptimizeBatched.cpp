@@ -1060,11 +1060,11 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
     LinearMethod::getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    objFuncWrapper_.Lambda = LinearMethod::getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
+    auto lambda = LinearMethod::getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(shift_index).at(i + 1) *= objFuncWrapper_.Lambda;
+      parameterDirections.at(shift_index).at(i + 1) *= lambda;
   }
 }
 
@@ -1704,19 +1704,19 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     app_log() << "  Execution time (eigenvalue) = " << std::setprecision(4) << t_eigen.elapsed() << std::endl;
 
     // compute the scaling constant to apply to the update
-    objFuncWrapper_.Lambda = LinearMethod::getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
+    auto lambda = LinearMethod::getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
     if (do_output_matrices_hdf_)
     {
       hout.write(lowestEV, "lowest_eigenvalue");
       hout.write(parameterDirections, "scaled_eigenvector");
-      hout.write(objFuncWrapper_.Lambda, "non_linear_rescale");
+      hout.write(lambda, "non_linear_rescale");
       hout.close();
     }
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(i + 1) *= objFuncWrapper_.Lambda;
+      parameterDirections.at(i + 1) *= lambda;
   }
   myComm->bcast(parameterDirections);
 
