@@ -122,8 +122,9 @@ def write_bool(v):
 
 def write_string(v):
     quote = (
-        not set(v).isdisjoint(set('\n;#!')) or
-        v.endswith('\\') or v != v.strip()
+        not set(v).isdisjoint(set('\n;#!'))
+        or v.endswith('\\')
+        or v != v.strip()
         )
     if quote:
         return '"'+v+'"'
@@ -353,13 +354,16 @@ def mixed_type_matches(value,value_type):
         return isinstance(value,(bool,np.bool_,int,np.integer))
     elif value_type in ('ints','reals'):
         return (
-            isinstance(value,(int,float,np.integer,np.floating)) and
-            not isinstance(value,(bool,np.bool_))
+            isinstance(value,(int,float,np.integer,np.floating))
+            and not isinstance(value,(bool,np.bool_))
             )
     elif value_type in ('int_arrays','real_arrays','bool_arrays'):
         return isinstance(value,(tuple,list,np.ndarray))
     else:
-        msg = 'unknown keyword value type: {}'.format(value_type)
+        msg = (
+            'unknown value for keyword value_type: {}, must be one of {}'
+            .format(value_type,list(block_type_names.values()))
+            )
         raise ValueError(msg)
     #end if
 #end def mixed_type_matches
@@ -372,7 +376,9 @@ def assign_mixed(value,*,types):
             try:
                 return assign_value_functions[value_type](value)
             except Exception as e:  # noqa: BLE001
-                errors.append('{0}: {1}'.format(value_type,e))
+                errors.append(
+                    '{0} for value {1}: {2}'.format(value_type,value,e)
+                    )
             #end try
         #end if
     #end for
@@ -826,8 +832,8 @@ class VKeywordFile(VFile):
             else:
                 sval = write_value_functions[value_type](value[field])
             #end if
-            text += '  {0:<{1}} = {2}\n'.format(
-                field.upper(),maxlen,sval
+            text += '  {0:<{fmt}} = {1}\n'.format(
+                field.upper(),sval,fmt=maxlen
                 )
         #end for
         return text+'}\n'
@@ -2322,8 +2328,9 @@ class VaspInput(SimulationInput,Vobj):
         #end for
         image_dirs = [
             name for name in os.listdir(path)
-            if len(name)==2 and name.isdigit() and
-            os.path.isfile(os.path.join(path,name,'POSCAR'))
+            if len(name)==2
+            and name.isdigit()
+            and os.path.isfile(os.path.join(path,name,'POSCAR'))
             ]
         if len(image_dirs)>0:
             self.poscar = NebPoscars()
@@ -2574,8 +2581,7 @@ class VaspInput(SimulationInput,Vobj):
             #end for
         #end if
 
-        atoms = elem
-        for atom in set(atoms):
+        for atom in set(elem):
             if atom not in system_valency:
                 self.error(
                     'valence charge for atom {0} has not been defined\n'
@@ -2585,7 +2591,7 @@ class VaspInput(SimulationInput,Vobj):
             #end if
         #end for
 
-        ion_charge = sum(system_valency[atom] for atom in atoms)
+        ion_charge = sum(system_valency[atom] for atom in elem)
         if 'incar' in self and 'nelect' in self.incar:
             net_charge = ion_charge-self.incar.nelect
         else:
@@ -2765,9 +2771,9 @@ class VaspInput(SimulationInput,Vobj):
             else:
                 poscars = [self.poscar]
                 if (
-                    'incar' in self and
-                    'images' in self.incar and
-                    self.incar.images>0
+                    'incar' in self
+                    and 'images' in self.incar
+                    and self.incar.images>0
                     ):
                     messages.append(
                         'INCAR IMAGES requires POSCARs in NEB image directories'
@@ -2799,8 +2805,8 @@ class VaspInput(SimulationInput,Vobj):
                     )
             #end if
             if (
-                poscar.dynamic is not None and
-                np.shape(poscar.dynamic)!=(natoms,3)
+                poscar.dynamic is not None
+                and np.shape(poscar.dynamic)!=(natoms,3)
                 ):
                 messages.append(
                     '{0}: selective-dynamics flags must have shape ({1}, 3)'
@@ -2818,8 +2824,9 @@ class VaspInput(SimulationInput,Vobj):
                         .format(n)
                         )
                 elif (
-                    reference.elem is not None and poscar.elem is not None and
-                    not np.array_equal(poscar.elem,reference.elem)
+                    reference.elem is not None
+                    and poscar.elem is not None
+                    and not np.array_equal(poscar.elem,reference.elem)
                     ):
                     messages.append(
                         'NEB POSCAR {0:02d} has different species names'
@@ -2827,8 +2834,10 @@ class VaspInput(SimulationInput,Vobj):
                         )
                 #end if
                 if (
-                    reference.scale is not None and poscar.scale is not None and
-                    reference.axes is not None and poscar.axes is not None
+                    reference.scale is not None
+                    and poscar.scale is not None
+                    and reference.axes is not None
+                    and poscar.axes is not None
                     ):
                     reference_axes = np.asarray(reference.scale)*reference.axes
                     image_axes = np.asarray(poscar.scale)*poscar.axes
@@ -2865,8 +2874,8 @@ class VaspInput(SimulationInput,Vobj):
                     #end if
                 #end if
                 if (
-                    'coord' not in kpoints or
-                    kpoints.coord not in ('cartesian','reciprocal')
+                    'coord' not in kpoints
+                    or kpoints.coord not in ('cartesian','reciprocal')
                     ):
                     messages.append(
                         'explicit KPOINTS coordinates are missing or invalid'
@@ -2884,8 +2893,9 @@ class VaspInput(SimulationInput,Vobj):
                     messages.append('automatic KPOINTS centering is invalid')
                 elif 'centering' in kpoints and centering.startswith('a'):
                     if (
-                        'kgrid' not in kpoints or
-                        not np.isscalar(kpoints.kgrid) or kpoints.kgrid<=0
+                        'kgrid' not in kpoints
+                        or not np.isscalar(kpoints.kgrid)
+                        or kpoints.kgrid<=0
                         ):
                         messages.append(
                             'fully automatic KPOINTS length must be positive'
@@ -2901,11 +2911,11 @@ class VaspInput(SimulationInput,Vobj):
                     messages.append('KPOINTS basis must have shape (3, 3)')
                 #end if
             elif (
-                kpoints.mode=='line' and
-                (
-                    'kendpoints' not in kpoints or
-                    np.ndim(kpoints.kendpoints)!=2 or
-                    np.shape(kpoints.kendpoints)[1:]!=(3,)
+                kpoints.mode=='line'
+                and (
+                    'kendpoints' not in kpoints
+                    or np.ndim(kpoints.kendpoints)!=2
+                    or np.shape(kpoints.kendpoints)[1:]!=(3,)
                     )
                 ):
                 messages.append('KPOINTS points must have shape (N, 3)')
@@ -2913,8 +2923,9 @@ class VaspInput(SimulationInput,Vobj):
         #end if
 
         if (
-            'incar' in self and 'kspacing' in self.incar and
-            self.incar.kspacing<=0
+            'incar' in self
+            and 'kspacing' in self.incar
+            and self.incar.kspacing<=0
             ):
             messages.append('INCAR KSPACING must be positive')
         #end if

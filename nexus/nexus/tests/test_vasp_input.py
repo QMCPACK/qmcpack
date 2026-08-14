@@ -244,7 +244,9 @@ def test_current_keywords_roundtrip():
 
 def test_mixed_keyword_types():
     import numpy as np
-    from ..vasp_input import Incar,generate_vasp_input
+    from ..vasp_input import (
+        Incar,assign_mixed,generate_vasp_input,mixed_type_matches,
+        )
 
     generated = generate_vasp_input(
         bext   = 0.02,
@@ -297,6 +299,16 @@ def test_mixed_keyword_types():
 
     with pytest.raises(NexusError,match='read failed for keyword efermi'):
         Incar().read_text('EFERMI = 1.0 2.0')
+    #end with
+
+    with pytest.raises(
+        ValueError,
+        match='unknown value for keyword value_type.*must be one of',
+        ):
+        mixed_type_matches(1.0,'unknown')
+    #end with
+    with pytest.raises(ValueError,match='ints for value 1.5'):
+        assign_mixed(1.5,types=('ints',))
     #end with
 #end def test_mixed_keyword_types
 
