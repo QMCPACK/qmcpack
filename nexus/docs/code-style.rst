@@ -527,13 +527,13 @@ Prefer dot style over string literals:
 
 :red:`No`: ``name = data['nested']['path']['to']['name']``
 
-:yellow:`Maybe`: ``for k in keys: print(d[k]["valence"])``
-
 :green:`Yes`: ``name = data.nested.path.to.name``
 
 .. note::
 
     Dot style places limits on using :py:class:`dict` ; use :py:class:`~.obj` or :py:class:`~.dotdict` for those cases.
+    If you are creating a user-facing function that accepts a mapping, do not require :py:class:`~.obj` or :py:class:`~.dotdict`,
+    either use the :py:class:`dict` interface or convert the argument internally.
 
 In classes, avoid set/get syntax. Instead promote dot access:
 
@@ -574,12 +574,13 @@ If function execution is needed for set/get, use properties:
     class MyClass(DevBase):
         @property
         def data(self):
-            return self._data
+            output = repackage_data(self.internal_data)
+            return output
         #end def data
 
         @data.setter
         def data(self, data):
-            self._data = data
+            self.internal_data = process_data(data)
         #end def data
     #end class MyClass
 
@@ -622,7 +623,8 @@ Use ``raise`` and select an `exception <https://docs.python.org/3/library/except
 
 At the user interfaces (i.e. ``generate_*``) liberally check input and use one of Nexus's errors, such as :py:exc:`~.NexusError`.
 
-Make limited use of ``try-except``. Only use if you know exactly what the error is and how to fix it.
+Make limited use of ``try-except``.
+Only use if you know exactly what the error is and how to fix it and generally only covering small/localized sections of code (e.g. not on top of deeply nested function call trees)
 
 Allow the code to error out to reveal the actual problem (``try-except`` can mask it).
 
