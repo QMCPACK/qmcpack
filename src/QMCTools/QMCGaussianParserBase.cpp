@@ -327,17 +327,17 @@ void QMCGaussianParserBase::setOccupationNumbers()
         e.insert(std::pair<value_type, int>(EigVal_beta[i], 1));
       int n = 0;
       std::multimap<value_type, int>::iterator it(e.begin());
-      LOGMSG("Unrestricted HF. Sorted eigen values")
+      qmcplusplus::app_log() << "Unrestricted HF. Sorted eigen values" << std::endl;
       while (n < NumberOfEls && it != e.end())
       {
-        LOGMSG(n << " " << (*it).first << " " << (*it).second)
+        qmcplusplus::app_log() << n << " " << (*it).first << " " << (*it).second << std::endl;
         ++it;
         ++n;
       }
     }
     //}
-    LOGMSG("Number of alpha electrons " << NumberOfAlpha)
-    LOGMSG("Number of beta electrons " << NumberOfBeta)
+    qmcplusplus::app_log() << "Number of alpha electrons " << NumberOfAlpha << std::endl;
+    qmcplusplus::app_log() << "Number of beta electrons " << NumberOfBeta << std::endl;
     Occ_alpha.resize(numMO, 0);
     Occ_beta.resize(numMO, 0);
     for (int i = 0; i < NumberOfAlpha; i++)
