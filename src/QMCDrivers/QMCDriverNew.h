@@ -104,7 +104,7 @@ public:
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
   /// whether to allow walker logs
-  bool allow_walker_logs;
+  bool allow_walker_logs{false};
   /// walker logs input
   WalkerLogInput walker_logs_input;
   //xmlNodePtr walker_logs_xml;

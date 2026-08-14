@@ -27,6 +27,9 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   ParticleSet ions(simulation_cell);
   ParticleSet elecs(simulation_cell);
 
+  CHECK(ions.current_step == 0);
+  ions.current_step = 13;
+
   ions.setName("ions");
   elecs.setName("electrons");
 
@@ -59,6 +62,9 @@ TEST_CASE("ParticleSet distance table management", "[particle]")
   ParticleSet elecs_copy(elecs);
   REQUIRE(elecs_copy.getDistTable(ei_table_id2).get_origin().getName() == "ions");
   REQUIRE(elecs_copy.getDistTable(ee_table_id2).get_origin().getName() == "electrons");
+
+  ParticleSet ions_copy(ions);
+  CHECK(ions_copy.current_step == 13);
 }
 
 TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
