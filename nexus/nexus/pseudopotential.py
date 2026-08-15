@@ -248,56 +248,7 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
 
 
 
-class PPInfo(DevBase):
-    def __init__(self,path=None):
-        self.setup(path)
-    
-    def setup(self,path):
-        files = []
-        if path is not None:
-            assert os.path.exists(path)
-            for f in os.listdir(path):
-                if os.path.isfile(os.path.join(path,f)):
-                    files.append(f)
-        self.path   = path
-        self.files  = files
-        self.ppsets = obj()
 
-    def add_ppset(self,label,**code_pps):
-        pps = obj()
-        for code,pplist in code_pps.items():
-            ppc = obj()
-            for ppfile in pplist:
-                elem_label,elem_symbol = pp_elem_label(ppfile,guard=True)
-                ppc[elem_symbol] = ppfile
-            pps[code] = ppc
-        self.ppsets[label] = pps
-
-    def remap(self,code,pseudos,system):
-        if not isinstance(pseudos,str):
-            return pseudos
-        label   = pseudos
-        pp_map  = self.ppsets[label][code]
-        species_labels,species = system.structure.species(symbol=True)
-        pseudos = [pp_map[elem_symbol] for elem_symbol in sorted(species)]
-        return pseudos
-
-    def full_paths(self,code,pseudos,system):
-        pseudos = self.remap(code,pseudos,system)
-        def fullpath(pp):
-            if self.path is None or os.path.isabs(pp):
-                return os.path.realpath(pp)
-            else:
-                return os.path.realpath(os.path.join(self.path,pp))
-            #end if
-        pseudo_filepaths = [fullpath(pp) for pp in pseudos]
-        return pseudo_filepaths
-
-#end class PPInfo
-ppinfo = PPInfo()
-
-
-# override old ppset
 def ppset(label,**codes_pps):
     if label in PseudoSet.labeled_pseudosets:
         error(f'pseudopotential set label "{label}" is already registered')
@@ -318,8 +269,6 @@ def ppset(label,**codes_pps):
             error(f'pseudopotential set "{label}" must contain potentials for the same elements for each code')
         pps_coll[code] = pps
     PseudoSet.labeled_pseudosets[label] = pps_coll
-
-    ppinfo.add_ppset(label,**codes_pps)
 #end def ppset
 
 
@@ -382,6 +331,8 @@ class PseudoSet(DevBase):
 
     @staticmethod
     def pseudo_remap(code,pseudos,system):
+        if pseudos is None:
+            return {}
         if isinstance(pseudos,str):
             label = pseudos
             if label not in PseudoSet.labeled_pseudosets:

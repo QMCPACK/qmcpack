@@ -20,7 +20,7 @@ def test_settings(tmp_path):
     from ..nexus_base import nexus_core,nexus_core_defaults
     from ..nexus_base import nexus_noncore,nexus_noncore_defaults
     from ..nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
-    from ..pseudopotential import ppinfo
+    from ..pseudopotential import PseudoSet
     from ..basisset import BasisSets
     from ..machines import Job,Workstation
     from ..project_manager import ProjectManager
@@ -100,11 +100,10 @@ def test_settings(tmp_path):
         settings.command_line   = True
         nexus_core.command_line = True
         check_settings_core_noncore()
-        # nexus core sets basic run stages and PPInfo is empty
+        # nexus core sets basic run stages and PseudoSet registries are empty
         assert(nexus_core.stages_set==set(nexus_core_defaults.primary_modes))
-        assert(ppinfo.path is None)
-        assert(len(ppinfo.files)==0)
-        assert(len(ppinfo.ppsets)==0)
+        assert(len(PseudoSet.pseudo_files)==0)
+        assert(len(PseudoSet.labeled_pseudosets)==0)
         nexus_core.stages_set       = set()
         nexus_core.stages           = []
         assert(object_eq(nexus_core,nexus_core_defaults))
@@ -157,8 +156,10 @@ def test_settings(tmp_path):
     assert(nexus_core.generate_only==1)
     pseudo_path = str((tmp_path / 'pseudopotentials').resolve())
     assert(nexus_core.pseudo_dir==pseudo_path)
-    assert(ppinfo.path==pseudo_path)
-    assert(set(ppinfo.files)==set(pseudos))
+    assert(PseudoSet.pseudo_files=={
+        pseudo:str((Path(pseudo_path)/pseudo).resolve()) for pseudo in pseudos
+        })
+    assert(len(PseudoSet.labeled_pseudosets)==0)
     assert(settings.machine=='ws16')
     assert(Job.machine=='ws16')
     assert(isinstance(ProjectManager.machine,Workstation))

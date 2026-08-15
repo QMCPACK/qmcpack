@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from .developer import DevBase, obj, error
 from .unit_converter import convert
-from .pseudopotential import pp_elem_label, ppinfo
+from .pseudopotential import pp_elem_label, PseudoSet
 from .structure import generate_structure
 from .simulation import SimulationInput
 from . import numpy_extensions as npe
@@ -3389,7 +3389,7 @@ def generate_any_rmg_input(**kwargs):
 
     # incorporate pseudopotentials details provided via "pseudos"
     if pseudos is not None:
-        pseudos = ppinfo.remap('rmg',pseudos,system)
+        pseudos = PseudoSet.pseudo_remap('rmg',pseudos,system)
         species = []
         pps     = []
         for ppname in pseudos:

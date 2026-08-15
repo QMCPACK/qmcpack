@@ -320,7 +320,7 @@ def test_write(tmp_path):
 @isolate_nexus_core
 def test_generate(tmp_path):
     from ..developer import obj
-    from ..pseudopotential import ppinfo
+    from ..pseudopotential import PseudoSet,ppset
     from ..physical_system import generate_physical_system
     from ..gamess_input import generate_gamess_input
 
@@ -337,7 +337,10 @@ def test_generate(tmp_path):
             src=pp,
             dst=pp_dir / file,
             )
-    ppinfo.setup(str(pp_dir))
+    PseudoSet.pseudo_files = {
+        file:str((pp_dir/file).resolve()) for file in ppfiles
+        }
+    PseudoSet.labeled_pseudosets = {}
 
     input_files = ['rhf.inp','cisd.inp','cas.inp']
 
@@ -436,7 +439,7 @@ def test_generate(tmp_path):
         check_vs_serial_reference(gi,infile)
     #end for
 
-    ppinfo.add_ppset('bfd',gamess=ppfiles)
+    ppset('bfd',gamess=ppfiles)
     labeled_input = deepcopy(inputs['rhf.inp'])
     labeled_input.pseudos = 'bfd'
     gi = generate_gamess_input(**labeled_input)

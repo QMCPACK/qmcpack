@@ -4,7 +4,7 @@
 
 
 from .simulation import Simulation
-from .pseudopotential import ppinfo
+from .pseudopotential import PseudoSet
 from .rmg_input import RmgInput, generate_rmg_input
 from .rmg_analyzer import RmgAnalyzer
 
@@ -62,10 +62,9 @@ def generate_rmg(**kwargs):
     pseudos = kwargs.get('pseudos',None)
     if pseudos is not None:
         system = kwargs.get('system',None)
-        pseudos = ppinfo.remap('rmg',pseudos,system)
+        pseudos = PseudoSet.pseudo_remap('rmg',pseudos,system)
         kwargs['pseudos'] = pseudos
-        pp_files = ppinfo.full_paths('rmg',pseudos,system)
-        kwargs['files'] = list(kwargs.get('files',[])) + pp_files
+        kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
     #end if
 
     sim_args,inp_args = Rmg.separate_inputs(kwargs)

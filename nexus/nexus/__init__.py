@@ -40,7 +40,7 @@ from .project_manager import ProjectManager,     DynamicWorkflowManager,     wor
 
 from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
 from .physical_system import PhysicalSystem,     generate_physical_system
-from .pseudopotential import Pseudopotential, PseudoSet,    ppset, ppinfo
+from .pseudopotential import Pseudopotential, PseudoSet,    ppset
 from .basisset        import BasisSets
 from .bundle          import bundle
 
@@ -625,8 +625,8 @@ class Settings(NexusCore):
             pseudo_dir = os.path.abspath(pseudo_dir)
             nexus_core.pseudo_dir = pseudo_dir
         #end if
-        ppinfo.setup(pseudo_dir)
         PseudoSet.pseudo_files.clear()
+        PseudoSet.labeled_pseudosets.clear()
         if pseudo_dir is not None:
             for filename in os.listdir(pseudo_dir):
                 filepath = os.path.join(pseudo_dir,filename)

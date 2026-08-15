@@ -38,7 +38,7 @@ import numpy as np
 from .periodic_table import Elements
 from .developer import DevBase, obj, error, warn
 from .nexus_base import nexus_noncore
-from .pseudopotential import pp_elem_label, ppinfo
+from .pseudopotential import pp_elem_label, PseudoSet
 from .simulation import SimulationInput
 from .utilities import path_string
 
@@ -1208,8 +1208,8 @@ def generate_any_gamess_input(**kwargs):
                 coord = 'unique',
                 ecp   = 'read'
                 )
-            pseudo_files = ppinfo.full_paths('gamess',pskw.pseudos,system)
-            pps = _read_gamess_pseudopotentials(pseudo_files)
+            pseudo_files = PseudoSet.pseudo_remap('gamess',pskw.pseudos,system)
+            pps = _read_gamess_pseudopotentials(pseudo_files.values())
             for i,a in enumerate(elem):
                 Z = Elements(a).atomic_number
                 data+='{0} {1} {2:16.8f} {3:16.8f} {4:16.8f}\n'.format(a,Z,*pos[i])
@@ -1374,4 +1374,3 @@ def check_keyspec_groups():
 #end def check_keyspec_groups
 
 #check_keyspec_groups()  # uncomment this to check keyword spec group self-consistency
-
