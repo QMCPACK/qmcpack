@@ -215,6 +215,15 @@ bool QMCFixedSampleLinearOptimize::run()
   optdir.resize(numParams, 0);
   optparam.resize(numParams, 0);
 
+  auto costfunc_evaluator = [this](RealType dl)
+  {
+    for (int i = 0; i < optparam.size(); i++)
+      optTarget->Params(i) = optparam[i] + dl * optdir[i];
+    RealType c = optTarget->Cost(false);
+    validFuncVal = optTarget->IsValid;
+    return c;
+  };
+
   while (Total_iterations < Max_iterations)
   {
     Total_iterations += 1;
@@ -331,7 +340,7 @@ bool QMCFixedSampleLinearOptimize::run()
           int npts(7);
           quadstep         = stepsize * Lambda;
           largeQuarticStep = bigChange / bigVec;
-          Valid            = lineoptimization3(npts, evaluated_cost);
+          Valid            = lineoptimization3(costfunc_evaluator, npts, evaluated_cost);
         }
         else
           Valid = lineoptimization2();

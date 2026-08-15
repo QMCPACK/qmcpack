@@ -317,6 +317,15 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
   optdir.resize(numParams, 0);
   optparam.resize(numParams, 0);
 
+  auto costfunc_evaluator = [this](RealType dl)
+  {
+    for (int i = 0; i < optparam.size(); i++)
+      optTarget->Params(i) = optparam[i] + dl * optdir[i];
+    RealType c = optTarget->Cost(false);
+    objFuncWrapper_.validFuncVal = optTarget->IsValid;
+    return c;
+  };
+
   while (Total_iterations < Max_iterations)
   {
     Total_iterations += 1;
@@ -429,7 +438,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
           int npts(7);
           objFuncWrapper_.quadstep         = objFuncWrapper_.stepsize * objFuncWrapper_.Lambda;
           objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
-          Valid                            = objFuncWrapper_.lineoptimization3(npts, evaluated_cost);
+          Valid                            = objFuncWrapper_.lineoptimization3(costfunc_evaluator, npts, evaluated_cost);
         }
         else
           Valid = objFuncWrapper_.lineoptimization2();
@@ -1878,6 +1887,15 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
 
     optdir.resize(numParams, 0);
     optparam.resize(numParams, 0);
+
+    auto costfunc_evaluator = [this](RealType dl)
+    {
+      for (int i = 0; i < optparam.size(); i++)
+        optTarget->Params(i) = optparam[i] + dl * optdir[i];
+      RealType c = optTarget->Cost(false);
+      objFuncWrapper_.validFuncVal = optTarget->IsValid;
+      return c;
+    };
 
     //set up line search stuff
     for (int i = 0; i < numParams; i++)

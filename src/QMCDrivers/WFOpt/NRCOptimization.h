@@ -29,6 +29,8 @@
 #include <algorithm>
 #endif
 #include <limits>
+#include <functional>
+
 //template<class T>
 //inline void shift (T& a, T& b, T& c, T d) {
 //  a = b; b= c; c = d;
@@ -167,9 +169,7 @@ struct NRCOptimization
   }
 
 
-
-
-  bool lineoptimization3(int points, Return_t& zeroCost)
+  bool lineoptimization3(const std::function<Return_t(Return_t)>& evalCost, int points, Return_t& zeroCost)
   {
     // quartic fit with variable number of points for input.
     //  least squares solver
