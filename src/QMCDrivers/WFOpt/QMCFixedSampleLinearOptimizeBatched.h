@@ -89,7 +89,7 @@ public:
 
 
 private:
-  NRCOptimization<RealType> objFuncWrapper_;
+  NRCOptimization<RealType> nrc_opt_;
 
   inline bool ValidCostFunction(bool valid)
   {

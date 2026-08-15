@@ -306,12 +306,11 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
   optdir.resize(numParams, 0);
   optparam.resize(numParams, 0);
 
-  auto costfunc_evaluator = [this](RealType dl)
-  {
+  auto costfunc_evaluator = [this](RealType dl) {
     for (int i = 0; i < optparam.size(); i++)
       optTarget->Params(i) = optparam[i] + dl * optdir[i];
-    RealType c = optTarget->Cost(false);
-    objFuncWrapper_.validFuncVal = optTarget->IsValid;
+    RealType c            = optTarget->Cost(false);
+    nrc_opt_.validFuncVal = optTarget->IsValid;
     return c;
   };
 
@@ -384,7 +383,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       {
         ScopedTimer local(eigenvalue_timer_);
         LinearMethod::getLowestEigenvector(Right, currentParameterDirections);
-        objFuncWrapper_.Lambda = LinearMethod::getNonLinearRescale(currentParameterDirections, S, *optTarget);
+        nrc_opt_.Lambda = LinearMethod::getNonLinearRescale(currentParameterDirections, S, *optTarget);
       }
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -394,11 +393,11 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       RealType evaluated_cost(startCost);
       if (MinMethod == "rescale")
       {
-        if (std::abs(objFuncWrapper_.Lambda * bigVec) > bigChange)
+        if (std::abs(nrc_opt_.Lambda * bigVec) > bigChange)
         {
           goodStep = false;
-          app_log() << "  Failed Step. Magnitude of largest parameter change: "
-                    << std::abs(objFuncWrapper_.Lambda * bigVec) << std::endl;
+          app_log() << "  Failed Step. Magnitude of largest parameter change: " << std::abs(nrc_opt_.Lambda * bigVec)
+                    << std::endl;
           if (stability == 0)
           {
             failedTries++;
@@ -408,7 +407,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
             stability = nstabilizers;
         }
         for (int i = 0; i < numParams; i++)
-          optTarget->Params(i) = currentParameters[i] + objFuncWrapper_.Lambda * currentParameterDirections[i + 1];
+          optTarget->Params(i) = currentParameters[i] + nrc_opt_.Lambda * currentParameterDirections[i + 1];
         optTarget->IsValid = true;
       }
       else
@@ -417,22 +416,22 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
           optparam[i] = currentParameters[i];
         for (int i = 0; i < numParams; i++)
           optdir[i] = currentParameterDirections[i + 1];
-        objFuncWrapper_.TOL              = param_tol / bigVec;
-        objFuncWrapper_.AbsFuncTol       = true;
-        objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
-        objFuncWrapper_.LambdaMax        = 0.5 * objFuncWrapper_.Lambda;
+        nrc_opt_.TOL              = param_tol / bigVec;
+        nrc_opt_.AbsFuncTol       = true;
+        nrc_opt_.largeQuarticStep = bigChange / bigVec;
+        nrc_opt_.LambdaMax        = 0.5 * nrc_opt_.Lambda;
         line_min_timer_.start();
         if (MinMethod == "quartic")
         {
           int npts(7);
-          objFuncWrapper_.quadstep         = objFuncWrapper_.stepsize * objFuncWrapper_.Lambda;
-          objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
-          Valid                            = objFuncWrapper_.lineoptimization3(costfunc_evaluator, npts, evaluated_cost);
+          nrc_opt_.quadstep         = nrc_opt_.stepsize * nrc_opt_.Lambda;
+          nrc_opt_.largeQuarticStep = bigChange / bigVec;
+          Valid                     = nrc_opt_.lineoptimization3(costfunc_evaluator, npts, evaluated_cost);
         }
         else
-          Valid = objFuncWrapper_.lineoptimization2(costfunc_evaluator);
+          Valid = nrc_opt_.lineoptimization2(costfunc_evaluator);
         line_min_timer_.stop();
-        RealType biggestParameterChange = bigVec * std::abs(objFuncWrapper_.Lambda);
+        RealType biggestParameterChange = bigVec * std::abs(nrc_opt_.Lambda);
         if (biggestParameterChange > bigChange)
         {
           goodStep = false;
@@ -446,7 +445,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
         else
         {
           for (int i = 0; i < numParams; i++)
-            optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
+            optTarget->Params(i) = optparam[i] + nrc_opt_.Lambda * optdir[i];
           app_log() << "  Good Step. Largest LM parameter change:" << biggestParameterChange << std::endl;
         }
       }
@@ -1859,7 +1858,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
       // compute the scaling constant to apply to the update
       for (int i = 0; i < numParams; i++)
         parameterDirections[i + 1] = param_update[i];
-      objFuncWrapper_.Lambda = cg.getNonLinearRescale(*optTarget);
+      nrc_opt_.Lambda = cg.getNonLinearRescale(*optTarget);
     }
   }
 
@@ -1877,12 +1876,11 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
     optdir.resize(numParams, 0);
     optparam.resize(numParams, 0);
 
-    auto costfunc_evaluator = [this](RealType dl)
-    {
+    auto costfunc_evaluator = [this](RealType dl) {
       for (int i = 0; i < optparam.size(); i++)
         optTarget->Params(i) = optparam[i] + dl * optdir[i];
-      RealType c = optTarget->Cost(false);
-      objFuncWrapper_.validFuncVal = optTarget->IsValid;
+      RealType c            = optTarget->Cost(false);
+      nrc_opt_.validFuncVal = optTarget->IsValid;
       return c;
     };
 
@@ -1897,31 +1895,31 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
       bigVec = std::max(bigVec, std::abs(parameterDirections[i + 1]));
 
     //Settings for line search, taken from previous_linear_methods_run
-    objFuncWrapper_.TOL              = param_tol / bigVec;
-    objFuncWrapper_.AbsFuncTol       = true;
-    objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
-    objFuncWrapper_.LambdaMax        = 0.5 * objFuncWrapper_.Lambda;
-    bool Valid                       = true;
+    nrc_opt_.TOL              = param_tol / bigVec;
+    nrc_opt_.AbsFuncTol       = true;
+    nrc_opt_.largeQuarticStep = bigChange / bigVec;
+    nrc_opt_.LambdaMax        = 0.5 * nrc_opt_.Lambda;
+    bool Valid                = true;
     {
       ScopedTimer local(line_min_timer_);
-      Valid = objFuncWrapper_.lineoptimization2(costfunc_evaluator);
+      Valid = nrc_opt_.lineoptimization2(costfunc_evaluator);
     }
 
-    if (Valid || (!Valid && std::abs(objFuncWrapper_.Lambda) > 0.0))
+    if (Valid || (!Valid && std::abs(nrc_opt_.Lambda) > 0.0))
     {
       for (int i = 0; i < numParams; i++)
-        optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
+        optTarget->Params(i) = optparam[i] + nrc_opt_.Lambda * optdir[i];
     }
     else
     {
       for (int i = 0; i < numParams; i++)
-        optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
+        optTarget->Params(i) = currentParameters.at(i) + nrc_opt_.Lambda * parameterDirections.at(i + 1);
     }
   }
   else
   {
     for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
+      optTarget->Params(i) = currentParameters.at(i) + nrc_opt_.Lambda * parameterDirections.at(i + 1);
   }
 
   // say what we are doing
