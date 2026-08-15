@@ -2079,6 +2079,23 @@ def test_register_legacy_ppset(tmp_path):
         assert pseudoset.pseudo_dirs == ref_pseudoset.pseudo_dirs
     #end for
 
+    system = generate_physical_system(
+        elem = ['O','C','H'],
+        pos  = np.empty((3,3),dtype=float),
+        C    = 4,
+        H    = 1,
+        O    = 6,
+        )
+    remapped = PseudoSet.pseudo_remap('qmcpack','bfd',system)
+    assert list(remapped) == ['C.BFD.xml','H.BFD.xml','O.BFD.xml']
+    assert remapped == {
+        filename:PseudoSet.pseudo_files[filename] for filename in remapped
+        }
+
+    explicit = ['O.BFD.xml','C.BFD.xml']
+    remapped = PseudoSet.pseudo_remap('qmcpack',explicit,system)
+    assert list(remapped) == explicit
+
     with pytest.raises(NexusError,match='label "bfd" is already registered'):
         ppset(label='bfd',qmcpack=['C.BFD.xml','H.BFD.xml','O.BFD.xml'])
 
@@ -2094,6 +2111,21 @@ def test_register_legacy_ppset(tmp_path):
 
     with pytest.raises(NexusError,match='not compatible with that code'):
         ppset(label='incompatible',gamess=['C.BFD.xml','H.BFD.xml','O.BFD.xml'])
+
+    with pytest.raises(NexusError,match='label "unknown" is not registered'):
+        PseudoSet.pseudo_remap('qmcpack','unknown',system)
+
+    with pytest.raises(NexusError,match='are not present in PseudoSet.pseudo_files'):
+        PseudoSet.pseudo_remap('qmcpack',['Ne.missing.xml'],system)
+
+    missing_species = generate_physical_system(
+        elem = ['C','N'],
+        pos  = np.empty((2,3),dtype=float),
+        C    = 4,
+        N    = 5,
+        )
+    with pytest.raises(NexusError,match=r"does not contain species \['N'\]"):
+        PseudoSet.pseudo_remap('qmcpack','bfd',missing_species)
 
     ppset(
         label = 'shared_upf',

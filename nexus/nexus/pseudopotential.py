@@ -375,8 +375,34 @@ class PseudoSet(DevBase):
         "pyscf":    frozenset({".nwchem", ".gth"})
         })
     known_codes = frozenset(file_exts.keys())
-    pseudo_files: ClassVar[dict[str, str]] = dict()
+
+    # all original functionality
+    pseudo_files      : ClassVar[dict[str, str]] = dict()
     labeled_pseudosets: ClassVar[dict[str, dict[str, PseudoSet]]] = dict()
+
+    @staticmethod
+    def pseudo_remap(code,pseudos,system):
+        if isinstance(pseudos,str):
+            label = pseudos
+            if label not in PseudoSet.labeled_pseudosets:
+                error(f'pseudopotential set label "{label}" is not registered')
+            code = PseudoSet._check_code_str(code)
+            if code not in PseudoSet.labeled_pseudosets[label]:
+                error(f'pseudopotential set "{label}" is not available for code "{code}"')
+            pps = PseudoSet.labeled_pseudosets[label][code]
+            species = system.structure.species(symbol=True)[1]
+            missing = set(species)-pps.pseudos.keys()
+            if missing:
+                error(f'pseudopotential set "{label}" does not contain species {sorted(missing)}')
+            pseudos = [pps.pseudos[e].name for e in sorted(species)]
+        missing = set(pseudos)-PseudoSet.pseudo_files.keys()
+        if missing:
+            error(f'pseudopotential files {missing} are not present in PseudoSet.pseudo_files')
+        return {f:PseudoSet.pseudo_files[f] for f in pseudos}
+    #end def pseudo_remap
+
+    # end all original functionality
+
 
     def __init__(
         self,
