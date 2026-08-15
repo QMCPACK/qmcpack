@@ -28,6 +28,7 @@
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include "Message/UniformCommunicateError.h"
+#include "Numerics/DeterminantOperators.h"
 #include "LinearMethod.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
