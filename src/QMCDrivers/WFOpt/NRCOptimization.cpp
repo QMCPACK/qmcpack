@@ -203,11 +203,11 @@ bool NRCOptimization<T>::lineoptimization3(const std::function<Return_t(Return_t
     qmcplusplus::LinearFit(y, S, coefs);
     Lambda = QuarticMinimum(coefs);
     if (std::abs(Lambda) > largeQuarticStep || qmcplusplus::isnan(Lambda) || (Lambda == 0.0))
-      return lineoptimization2(largeQuarticStep);
+      return lineoptimization2(evalCost, largeQuarticStep);
     zeroCost = Func(Lambda);
     //       std::cout <<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<< std::endl;
     if (qmcplusplus::isnan(zeroCost) || zeroCost > start_cost)
-      return lineoptimization2(largeQuarticStep);
+      return lineoptimization2(evalCost, largeQuarticStep);
   }
   else
   {
@@ -233,7 +233,7 @@ bool NRCOptimization<T>::lineoptimization3(const std::function<Return_t(Return_t
 }
 
 template<class T>
-bool NRCOptimization<T>::lineoptimization2(Return_t maxStep)
+bool NRCOptimization<T>::lineoptimization2(const std::function<Return_t(Return_t)>& evalCost, Return_t maxStep)
 {
   Return_t ax = 0;
   Return_t bx(0), fa, fx, fb;
@@ -249,7 +249,7 @@ bool NRCOptimization<T>::lineoptimization2(Return_t maxStep)
   bool success = true;
   validFuncVal = true;
   qmcplusplus::app_log() << "Before:  ax = " << ax << "  bx=" << xx << "  cx=" << bx << std::endl;
-  success = mnbrakNRC(ax, xx, bx, fa, fx, fb, maxStep);
+  success = mnbrakNRC(evalCost, ax, xx, bx, fa, fx, fb, maxStep);
   if ((!success && !validFuncVal) || (success && !validFuncVal))
   {
     Lambda = 0.0;
@@ -266,7 +266,7 @@ bool NRCOptimization<T>::lineoptimization2(Return_t maxStep)
   }
   qmcplusplus::app_log() << "After:  ax = " << ax << "  bx=" << xx << "  cx=" << bx << std::endl;
   Lambda      = 0.0e0;
-  Return_t ep = brentNRC(ax, xx, bx, Lambda);
+  Return_t ep = brentNRC(evalCost, ax, xx, bx, Lambda);
   if (validFuncVal)
   {
     qmcplusplus::app_log() << "Minimum found at lambda = " << Lambda << std::endl;
@@ -284,7 +284,7 @@ bool NRCOptimization<T>::lineoptimization2(Return_t maxStep)
 }
 
 template<class T>
-T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx, Return_t cx, Return_t& xmin)
+T NRCOptimization<T>::brentNRC(const std::function<Return_t(Return_t)>& evalCost, Return_t ax, Return_t bx, Return_t cx, Return_t& xmin)
 {
   Return_t a, b, etemp, fu, fv, fw, fx, p, q, r, tol1, tol2, u, v, w, x, xm;
   Return_t e = 0.0, d = 0.0;
@@ -381,7 +381,8 @@ T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx, Return_t cx, Return_t& 
 }
 
 template<class T>
-bool NRCOptimization<T>::mnbrakNRC(Return_t& ax,
+bool NRCOptimization<T>::mnbrakNRC(const std::function<Return_t(Return_t)>& evalCost,
+                                   Return_t& ax,
                                    Return_t& bx,
                                    Return_t& cx,
                                    Return_t& fa,

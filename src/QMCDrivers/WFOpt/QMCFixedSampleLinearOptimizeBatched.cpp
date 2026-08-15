@@ -442,7 +442,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
           Valid                            = objFuncWrapper_.lineoptimization3(costfunc_evaluator, npts, evaluated_cost);
         }
         else
-          Valid = objFuncWrapper_.lineoptimization2();
+          Valid = objFuncWrapper_.lineoptimization2(costfunc_evaluator);
         line_min_timer_.stop();
         RealType biggestParameterChange = bigVec * std::abs(objFuncWrapper_.Lambda);
         if (biggestParameterChange > bigChange)
@@ -1916,7 +1916,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
     bool Valid                       = true;
     {
       ScopedTimer local(line_min_timer_);
-      Valid = objFuncWrapper_.lineoptimization2();
+      Valid = objFuncWrapper_.lineoptimization2(costfunc_evaluator);
     }
 
     if (Valid || (!Valid && std::abs(objFuncWrapper_.Lambda) > 0.0))

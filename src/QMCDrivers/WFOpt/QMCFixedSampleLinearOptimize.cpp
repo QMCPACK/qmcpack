@@ -344,7 +344,7 @@ bool QMCFixedSampleLinearOptimize::run()
           Valid            = lineoptimization3(costfunc_evaluator, npts, evaluated_cost);
         }
         else
-          Valid = lineoptimization2();
+          Valid = lineoptimization2(costfunc_evaluator);
         line_min_timer_.stop();
         RealType biggestParameterChange = bigVec * std::abs(Lambda);
         if (biggestParameterChange > bigChange)

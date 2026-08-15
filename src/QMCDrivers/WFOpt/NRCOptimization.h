@@ -65,7 +65,7 @@ struct NRCOptimization
 
   bool lineoptimization3(const std::function<Return_t(Return_t)>& evalCost, int points, Return_t& zeroCost);
 
-  bool lineoptimization2(Return_t maxStep = 1e9);
+  bool lineoptimization2(const std::function<Return_t(Return_t)>& evalCost, Return_t maxStep = 1e9);
 
   inline void shift(Return_t& a, Return_t& b, Return_t& c, Return_t d)
   {
@@ -74,9 +74,10 @@ struct NRCOptimization
     c = d;
   }
 
-  T brentNRC(Return_t ax, Return_t bx, Return_t cx, Return_t& xmin);
+  T brentNRC(const std::function<Return_t(Return_t)>& evalCost, Return_t ax, Return_t bx, Return_t cx, Return_t& xmin);
 
-  bool mnbrakNRC(Return_t& ax,
+  bool mnbrakNRC(const std::function<Return_t(Return_t)>& evalCost,
+                 Return_t& ax,
                  Return_t& bx,
                  Return_t& cx,
                  Return_t& fa,
