@@ -129,14 +129,14 @@ bool NRCOptimization<T>::lineoptimization3(const std::function<Return_t(Return_t
   std::vector<bool> cFailed(points, false);
   int nFailed(0);
   validFuncVal = true;
-  y[0]         = Func(x[0]);
+  y[0]         = evalCost(x[0]);
   if (!validFuncVal)
   {
     cFailed[0] = true;
     nFailed++;
   }
   y[1] = zeroCost;
-  y[2] = Func(x[2]);
+  y[2] = evalCost(x[2]);
   if (!validFuncVal)
   {
     cFailed[2] = true;
@@ -160,7 +160,7 @@ bool NRCOptimization<T>::lineoptimization3(const std::function<Return_t(Return_t
   }
   for (int i = 3; i < points; i++)
   {
-    y[i] = Func(x[i]);
+    y[i] = evalCost(x[i]);
     if (!validFuncVal)
     {
       cFailed[i] = true;
@@ -204,7 +204,7 @@ bool NRCOptimization<T>::lineoptimization3(const std::function<Return_t(Return_t
     Lambda = QuarticMinimum(coefs);
     if (std::abs(Lambda) > largeQuarticStep || qmcplusplus::isnan(Lambda) || (Lambda == 0.0))
       return lineoptimization2(evalCost, largeQuarticStep);
-    zeroCost = Func(Lambda);
+    zeroCost = evalCost(Lambda);
     //       std::cout <<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<< std::endl;
     if (qmcplusplus::isnan(zeroCost) || zeroCost > start_cost)
       return lineoptimization2(evalCost, largeQuarticStep);
@@ -225,7 +225,7 @@ bool NRCOptimization<T>::lineoptimization3(const std::function<Return_t(Return_t
   //   double val = 0.0;
   //   for (int j=0; j<5; j++)
   //    val += coefs[j] * std::pow(lam, j);
-  //   fprintf (fout, "%1.8f %1.12e %1.12e\n", lam, Func(lam), val);
+  //   fprintf (fout, "%1.8f %1.12e %1.12e\n", lam, evalCost(lam), val);
   // }
   // fclose(fout);
   //     }
@@ -243,7 +243,7 @@ bool NRCOptimization<T>::lineoptimization2(const std::function<Return_t(Return_t
   //     snprintf (fname, 50, "line_opt_%d.dat", current_step++);
   //     FILE *fout = fopen (fname, "w");
   //     for (double lam=-0.01; lam<=0.01; lam+=0.0001)
-  //       fprintf (fout, "%1.8f %1.12e\n", lam, Func(lam));
+  //       fprintf (fout, "%1.8f %1.12e\n", lam, evalCost(lam));
   //     fclose(fout);
   // END HACK HACK HACK
   bool success = true;
@@ -284,7 +284,11 @@ bool NRCOptimization<T>::lineoptimization2(const std::function<Return_t(Return_t
 }
 
 template<class T>
-T NRCOptimization<T>::brentNRC(const std::function<Return_t(Return_t)>& evalCost, Return_t ax, Return_t bx, Return_t cx, Return_t& xmin)
+T NRCOptimization<T>::brentNRC(const std::function<Return_t(Return_t)>& evalCost,
+                               Return_t ax,
+                               Return_t bx,
+                               Return_t cx,
+                               Return_t& xmin)
 {
   Return_t a, b, etemp, fu, fv, fw, fx, p, q, r, tol1, tol2, u, v, w, x, xm;
   Return_t e = 0.0, d = 0.0;
@@ -292,7 +296,7 @@ T NRCOptimization<T>::brentNRC(const std::function<Return_t(Return_t)>& evalCost
   a            = ((ax < cx) ? ax : cx);
   b            = ((ax > cx) ? ax : cx);
   x = w = v = bx;
-  fw = fv = fx = Func(x);
+  fw = fv = fx = evalCost(x);
   if (!validFuncVal)
     return 0.0;
   for (int iter = 1; iter <= ITMAX; iter++)
@@ -344,7 +348,7 @@ T NRCOptimization<T>::brentNRC(const std::function<Return_t(Return_t)>& evalCost
     }
     //u=(std::abs(d) >= tol1 ? x+d : x+sign(tol1,d));
     u  = (std::abs(d) >= tol1 ? x + d : x + sign2<T>::apply(tol1, d));
-    fu = Func(u); // fu=(*f)(u);
+    fu = evalCost(u); // fu=(*f)(u);
     if (!validFuncVal)
       return 0.0;
     if (fu <= fx)
@@ -392,10 +396,10 @@ bool NRCOptimization<T>::mnbrakNRC(const std::function<Return_t(Return_t)>& eval
 {
   Return_t ulim, u, r, q, fu, dum = 0.0e0;
   validFuncVal = true;
-  fa           = Func(ax); // *fa=(*func)(*ax);
+  fa           = evalCost(ax); // *fa=(*func)(*ax);
   if (!validFuncVal)
     return false;
-  fb = Func(bx); // *fb=(*func)(*bx);
+  fb = evalCost(bx); // *fb=(*func)(*bx);
   if (!validFuncVal)
   {
     validFuncVal = true;
@@ -408,7 +412,7 @@ bool NRCOptimization<T>::mnbrakNRC(const std::function<Return_t(Return_t)>& eval
     shift(dum, fb, fa, dum);
   }
   cx = bx + GOLD * (bx - ax);
-  fc = Func(cx); // *fc=(*func)(*cx);
+  fc = evalCost(cx); // *fc=(*func)(*cx);
   if (!validFuncVal)
   {
     validFuncVal = true;
@@ -423,9 +427,9 @@ bool NRCOptimization<T>::mnbrakNRC(const std::function<Return_t(Return_t)>& eval
     ulim = (bx) + GLIMIT * (cx - bx);
     if ((bx - u) * (u - cx) > 0.0)
     {
-      fu = Func(u); // fu=(*func)(u);
-                    // this is a problematic case, since both bx,cx is good,
-                    // but u, which is in between {bx,cx} is bad.
+      fu = evalCost(u); // fu=(*func)(u);
+                        // this is a problematic case, since both bx,cx is good,
+                        // but u, which is in between {bx,cx} is bad.
       if (!validFuncVal)
       {
         validFuncVal = true;
@@ -446,7 +450,7 @@ bool NRCOptimization<T>::mnbrakNRC(const std::function<Return_t(Return_t)>& eval
         return true;
       }
       u  = cx + GOLD * (cx - bx);
-      fu = Func(u); //fu=(*func)(u);
+      fu = evalCost(u); //fu=(*func)(u);
       if (!validFuncVal)
       {
         bx           = cx;
@@ -456,7 +460,7 @@ bool NRCOptimization<T>::mnbrakNRC(const std::function<Return_t(Return_t)>& eval
     }
     else if ((cx - u) * (u - ulim) > 0.0)
     {
-      fu = Func(u); //fu=(*func)(u);
+      fu = evalCost(u); //fu=(*func)(u);
       if (!validFuncVal)
       {
         bx           = cx;
@@ -466,7 +470,7 @@ bool NRCOptimization<T>::mnbrakNRC(const std::function<Return_t(Return_t)>& eval
       if (fu < fc)
       {
         shift(bx, cx, u, cx + GOLD * (cx - bx));
-        shift(fb, fc, fu, Func(u));
+        shift(fb, fc, fu, evalCost(u));
         if (!validFuncVal)
         {
           bx           = cx;
@@ -478,7 +482,7 @@ bool NRCOptimization<T>::mnbrakNRC(const std::function<Return_t(Return_t)>& eval
     else if ((u - ulim) * (ulim - cx) >= 0.0)
     {
       u  = ulim;
-      fu = Func(u); //fu=(*func)(u);
+      fu = evalCost(u); //fu=(*func)(u);
       if (!validFuncVal)
       {
         bx           = cx;
@@ -489,7 +493,7 @@ bool NRCOptimization<T>::mnbrakNRC(const std::function<Return_t(Return_t)>& eval
     else
     {
       u  = cx + GOLD * (cx - bx);
-      fu = Func(u); //fu=(*func)(u);
+      fu = evalCost(u); //fu=(*func)(u);
       if (!validFuncVal)
       {
         bx           = cx;

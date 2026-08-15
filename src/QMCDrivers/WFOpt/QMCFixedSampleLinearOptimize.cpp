@@ -131,17 +131,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
 
 QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize() = default;
 
-QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealType dl)
-{
-  for (int i = 0; i < optparam.size(); i++)
-    optTarget->Params(i) = optparam[i] + dl * optdir[i];
-  RealType c = optTarget->Cost(false);
-  //only allow this to go false if it was true. If false, stay false
-  //    if (validFuncVal)
-  validFuncVal = optTarget->IsValid;
-  return c;
-}
-
 bool QMCFixedSampleLinearOptimize::test_run()
 {
   // generate samples and compute weights, local energies, and derivative vectors

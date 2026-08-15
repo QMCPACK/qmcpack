@@ -48,11 +48,6 @@ struct NRCOptimization
 
   virtual ~NRCOptimization() {}
 
-  /** evaluate the value for y+dl*x
-   *
-   * Lineminimization uses this function to find the minimum along the x direction
-   */
-  virtual Return_t Func(Return_t dl) = 0;
 
   Return_t Lambda;
   Return_t ZEPS, CGOLD, TOL, GLIMIT, TINY, GOLD;

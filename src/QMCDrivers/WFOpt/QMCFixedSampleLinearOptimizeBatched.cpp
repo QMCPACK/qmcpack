@@ -68,7 +68,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
           "QMCLinearOptimizeBatched::",
           comm,
           "QMCLinearOptimizeBatched"),
-      objFuncWrapper_(*this),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
@@ -141,17 +140,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
 
 /** Clean up the vector */
 QMCFixedSampleLinearOptimizeBatched::~QMCFixedSampleLinearOptimizeBatched() = default;
-
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::costFunc(RealType dl)
-{
-  for (int i = 0; i < optparam.size(); i++)
-    optTarget->Params(i) = optparam[i] + dl * optdir[i];
-  QMCFixedSampleLinearOptimizeBatched::RealType c = optTarget->Cost(false);
-  //only allow this to go false if it was true. If false, stay false
-  //    if (validFuncVal)
-  objFuncWrapper_.validFuncVal = optTarget->IsValid;
-  return c;
-}
 
 void QMCFixedSampleLinearOptimizeBatched::start()
 {
