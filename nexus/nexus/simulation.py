@@ -93,17 +93,16 @@ class SimulationInput(NexusCore):
         if not os.path.exists(filepath):
             self.error('file does not exist:  '+filepath)
         #end if
-        fobj = open(filepath,'r')
-        text = fobj.read()
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            text = fobj.read()
+
         return text
     #end def read_file_text
 
     def write_file_text(self,filepath,text):
-        fobj = open(filepath,'w')
-        fobj.write(text)
-        fobj.flush()
-        fobj.close()
+        with open(filepath,'w') as fobj:
+            fobj.write(text)
+            fobj.flush()
     #end def write_file_text
 
     def read(self,filepath):
@@ -735,9 +734,9 @@ class Simulation(NexusCore):
 
     def _file_text(self,filename):
         filepath = os.path.join(self.locdir,self[filename])
-        fobj = open(filepath,'r')
-        text = fobj.read()
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            text = fobj.read()
+
         return text
     #end def _file_text
 
@@ -1498,9 +1497,8 @@ class Simulation(NexusCore):
             self.log(pad+'Would have executed:  '+command)
         else:
             self.log(pad+'Executing:  '+command)
-            fout = open(self.outfile,'w')
-            ferr = open(self.errfile,'w')
-            out,err = Popen(command,env=env,stdout=fout,stderr=ferr,shell=True,close_fds=True).communicate()
+            with open(self.outfile,'w') as fout, open(self.errfile,'w') as ferr:
+                out,err = Popen(command,env=env,stdout=fout,stderr=ferr,shell=True,close_fds=True).communicate()
         #end if
         self.leave()
         self.submitted = True
@@ -1922,8 +1920,8 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
     #end for
 
     if savefile is None:
-        fout = tempfile.NamedTemporaryFile(suffix='.png')
-        savefile = fout.name
+        with tempfile.NamedTemporaryFile(suffix='.png') as fout:
+            savefile = fout.name
         #savefile = './sims.png'
     #end if
     fmt = savefile.rsplit('.',1)[1]
