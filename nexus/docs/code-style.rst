@@ -1,24 +1,152 @@
+.. raw:: html
+
+    <style> .red {color:red; font-weight:bold} </style>
+    <style> .yellow {color:yellow; font-weight:bold} </style>
+    <style> .green {color:green; font-weight:bold} </style>
+    <style> .lred {color:red; font-weight:bold; font-size:x-large} </style>
+    <style> .lgreen {color:green; font-weight:bold; font-size:x-large} </style>
+
+.. role:: red
+.. role:: yellow
+.. role:: green
+.. role:: lred
+.. role:: lgreen
+
 .. _code-style:
 
 
 Code Style for Developers
 =========================
 
-This section outlines requirements and recommendations regarding new code developed in Nexus.  Please consult and follow this documentation prior to submitting pull requests on GitHub (https://github.com/QMCPACK/qmcpack).  This will save a lot of time and effort during code reviews.
+This section outlines requirements and recommendations regarding new code developed in Nexus. Please consult and follow this documentation prior to submitting pull requests on `GitHub <https://github.com/QMCPACK/qmcpack>`__. This will save a lot of time and effort during code reviews.
 
 
 .. _text-style:
 
 Text style
 ----------
-  
-Class names are camel case: ``class BaseClass:``.
+
+Class names are **CamelCase**: ``class BaseClass:``.
+
+All other code is **snake_case**: ``def perform_work():``.
+
+**CamelCase** means the first letter of each word is capitalized with no separation between words. **snake_case** means each word is lowercase with single underscores separating each word.
 
 
-All other code is snake case: ``def perform_work():``.
+.. _writing-strings:
 
-Camel case means the first letter of each word is capitalized with no separation between words. Snake case means each word is lowercase with single underscores separating each word.
+Writing Strings
+---------------
 
+Split long strings with newlines on the newline characters:
+
+:lred:`No`
+
+.. code-block:: python
+
+    raise ValueError("This is a really super duper long error message.\nIt will display as many lines\nand realistically there is no good reason for this to be\nover 150 characters long on one line")
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    raise ValueError(
+        "This is a really super duper long error message.\n"
+        "It will display as many lines\n"
+        "and realistically there is no good reason for this to be\n"
+        "over 150 characters long on one line"
+        )
+
+It is preferable to keep strings that do not have newlines on a single line so that users can use tools like ``grep`` to search for them in source code.
+
+:lred:`No`
+
+.. code-block:: python
+
+    raise ValueError(
+        "This is a string that is a single line but is actually quite "
+        "long and may extend well past the suggested line length limits of Nexus"
+        )
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    raise ValueError(
+        "This is a string that is a single line but is actually quite long and may extend well past the suggested line length limits of Nexus"
+        )
+
+This does not always apply for f-strings or formatted strings, which are generally unable to be grepped regardless of if they are split across multiple lines.
+
+:lred:`No`
+
+.. code-block:: python
+
+    raise ValueError(f"This is an f-string that has {included} substitutions but is also a single line and is {greater_than} the suggested line length limits of Nexus")
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    raise ValueError(
+        f"This is single line that is {greater_than} the suggested line length "
+        f"limits of Nexus {included} but "
+        f"has substitutions that make it {hard} to grep."
+        )
+
+Prefer `f-strings <https://docs.python.org/3/reference/lexical_analysis.html#f-strings>`__ over :py:meth:`str.format()`:
+
+:lred:`No`
+
+.. code-block:: python
+
+    msg += (
+        "Values are not consistent.\n"
+        "Present thing:\n"
+        "{0}\n"
+        "Given value:\n"
+        "{1}\n"
+        "Consistent value:\n"
+        "{2}\n"
+        "Absolute difference: {3}\n".format(
+            present, given, consistent, diff
+            )
+        )
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    msg += (
+        "Values are not consistent.\n"
+        "Present thing:\n"
+        f"{present}\n"
+        "Given value:\n"
+        f"{given}\n"
+        "Consistent value:\n"
+        f"{consistent}\n"
+        f"Absolute difference: {diff}\n"
+        )
+
+Avoid putting non-minimal code inside an f-string, prefer to assign to a variable beforehand.
+
+:lred:`No`
+
+.. code-block:: python
+
+    msg += (
+        f"Present value: {sum([i for i in thing])} does not match given {sum([i for i in given])}\n"
+        )
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    present = sum([i for i in thing])
+    given = sum([i for i in given])
+    msg += (
+        f"Present value: {present} does not match given {given}\n"
+        )
 
 
 .. _variable-names:
@@ -28,49 +156,31 @@ Variable and function names
 
 Be descriptive and generally limit names to three words or less for legibility.
 
-No: ``def slice_dice_and_mince_data(data):``
+:lred:`No`
 
-Yes: ``def slice_data(data):``
+.. code-block:: python
 
-No: ``total_amount_of_money_in_bag = total_number_of_pennies_in_bag + number_of_pennies_in_a_nickel*total_number_of_nickels_in_bag + number_of_pennies_in_a_dime*total_number_of_nickels_in_bag + ...``
+    def slice_dice_and_mince_data(data):
+        ...
 
-Yes: ``money_tot = pennies + 5*nickels + 10*dimes + ...``
+:lgreen:`Yes`
 
+.. code-block:: python
 
+    def slice_data(data):
+        ...
 
-.. _documentation-style:
+:lred:`No`
 
-Documentation style
--------------------
+.. code-block:: python
 
-Use inline comments, but not on every line and be brief.
+    total_amount_of_money_in_bag = total_number_of_pennies_in_bag + number_of_pennies_in_a_nickel*total_number_of_nickels_in_bag + number_of_pennies_in_a_dime*total_number_of_nickels_in_bag + ...
 
-Class and function level docstrings are encouraged.  For these, 
-follow ``numpy`` formatting for class/function docs (see https://numpydoc.readthedocs.io/en/latest/format.html):
+:lgreen:`Yes`
 
+.. code-block:: python
 
-::
-
-  def real(value):
-      """
-      Return the real part of the complex argument.
-      
-      Parameters
-      ----------
-          value: array_like
-              Input array.
-      
-      Returns
-      -------
-          output: ndarray or scalar
-              The real component of the complex argument. 
-              If value is real, the type of value is used for 
-              the output. If value has complex elements, 
-              the returned type is float.
-      """
-      ...
-  #end def real
-
+    money_tot = pennies + 5*nickels + 10*dimes + ...
 
 
 .. _encapsulation:
@@ -80,56 +190,55 @@ Encapsulation
 
 Function and class endings are delimited with a comment:
 
-::
+.. code-block:: python
 
     def perform_work():
         ...
     #end def perform_work
 
-    BaseClass:
+    class BaseClass:
         ...
-    #end BaseClass
+    #end class BaseClass
 
-Enclosing comments such as ``#end if`` and ``#end for`` are not required,
-but are encouraged in cases of deep nesting for readability.
+Enclosing comments such as ``#end if`` and ``#end for`` are not required, but are encouraged in cases of deep nesting for readability.
 
 For closing parentheses (and similar), the closing character should have the same indentation as the function arguments or e.g. list elements.
 
-No:
+:lred:`No`
 
-::
-
-    def operate(key1 = 'key1',
-                key2 = 'key2',
-                key3 = 'key3',
-    ):            
-        key = (key1,key2,key3)
-        return key
-    #end def operate
-
-Yes:
-
-::
+.. code-block:: python
 
     def operate(key1 = 'key1',
                 key2 = 'key2',
                 key3 = 'key3',
-                ):            
+    ):
         key = (key1,key2,key3)
         return key
     #end def operate
 
-No:
- 
-::
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    def operate(key1 = 'key1',
+                key2 = 'key2',
+                key3 = 'key3',
+                ):
+        key = (key1,key2,key3)
+        return key
+    #end def operate
+
+:lred:`No`
+
+.. code-block:: python
 
     d = dict(a = 1,
              b = 2,
     )
 
-Yes:
- 
-::
+:lgreen:`Yes`
+
+.. code-block:: python
 
     d = dict(a = 1,
              b = 2,
@@ -140,9 +249,9 @@ Yes:
     d = dict(a = 1,
              b = 2)
 
-No:
- 
-::
+:lred:`No`
+
+.. code-block:: python
 
     l = ['key1',
          'key2',
@@ -150,9 +259,9 @@ No:
     ]
 
 
-Yes:
- 
-::
+:lgreen:`Yes`
+
+.. code-block:: python
 
     l = ['key1',
          'key2',
@@ -165,8 +274,54 @@ Yes:
          'key2',
          'key3']
 
+:lred:`No`
 
-        
+.. code-block:: python
+
+    def operate(argument1='arg1',other_thing='other',
+                key='key',value='bar',extra_thing='bean',
+                other_extra='bean2'):
+        ...
+    #end def operate
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    def operate(
+        argument1   = 'arg1',
+        other_thing = 'other',
+        key         = 'key',
+        value       = 'bar',
+        extra_thing = 'bean',
+        other_extra = 'bean2',
+        ):
+        ...
+    #end def operate
+
+
+.. _opening-files:
+
+Opening Files
+-------------
+
+The preferred way to open files in Nexus is with a `context manager <https://docs.python.org/3/reference/compound_stmts.html#the-with-statement>`__.
+This prevents accidentally leaving a file open if you don't explicitly close it.
+
+:lred:`No`
+
+.. code-block:: python
+
+    fobj = open("/path/to/file", "r")
+    text = fobj.read()
+    fobj.close()
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    with open("/path/to/file", "r") as fobj:
+        text = fobj.read()
 
 
 .. _function-arguments:
@@ -176,11 +331,75 @@ Function arguments
 
 Use keyword arguments when calling a function, unless they are few.
 
-Do not require positional or keyword arguments in function definitions.
+You should require that all boolean-type arguments are keyword-only, done by `placing an asterisk argument <https://peps.python.org/pep-3102/>`__ before the boolean argument.
+This prevent's mistakes due to `Python's "truthiness" evaluation <https://docs.python.org/3/library/stdtypes.html#truth-value-testing>`__.
 
-Functions with arbitrary arguments are allowed: ``def mega_function(*args,**kwargs):``
+:lred:`No`
 
+.. code-block:: python
 
+    def func(arg0: int, arg1: bool, arg2: int):
+        ...
+    #end def func
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    def func(arg0: int, *, arg1: bool, arg2: int):
+        ...
+    #end def func
+
+Functions with arbitrary arguments are allowed, but generally discouraged if there is not a good reason.
+
+:lred:`No`
+
+.. code-block:: python
+
+    def func(**kwargs):
+        thing1 = kwargs.get("thing1", 0)
+        thing2 = kwargs.get("thing2", 0)
+        return thing1 + thing2
+    #end def func
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    def func(
+        thing1 = 0,
+        thing2 = 0,
+        ):
+        return thing1 + thing2
+    #end def func
+
+You should use kwargs when calling another function whose arguments may vary over time, or are excessively long.
+This makes the outer function less prone to becoming out of date if the inner function changes.
+
+:lred:`No`
+
+.. code-block:: python
+
+    def func_calling_func(mine1, mine2, other1, other2, ..., otherN):
+        my_kwargs = [mine1, mine2]
+        other_stuff = other_func(other1, other2, ..., otherN)
+        return my_kwargs, other_stuff
+    #end def func_calling_func
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    def func_calling_func(arg0, **kwargs):
+        # Pull out your arguments, which depend on arg0
+        my_kwargs = []
+        for k in kwargs.items():
+            if k in get_args(arg0):
+                my_kwargs.append(kwargs.pop(k))
+        # Remaining things in kwargs get passed to other_func
+        other_stuff = other_func(**kwargs)
+        return my_kwargs, other_stuff
+    #end def func_calling_func
 
 
 .. _classes:
@@ -196,6 +415,50 @@ Use "heavy" base classes to promote light derived classes.
 
 Avoid set/get accessors.
 
+New classes in Nexus should always inherit from :py:class:`DevBase`.
+
+:lred:`No`
+
+.. code-block:: python
+
+    class MyClass:
+        ...
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    from .developer import DevBase
+
+    class MyClass(DevBase):
+        ...
+
+
+Class variables should be immutable if they are not dynamic.
+If you have a dynamic class variable, annotate it with ``typing.ClassVar`` to make sure a linter doesn't flag it.
+
+:lred:`No`
+
+.. code-block:: python
+
+    class MyClass(DevBase):
+        unique_vals = {"a", "b", "c"} # sets are mutable
+        sequence = [1, 2, 3] # lists are mutable
+        mapping = {"a": 1, "b": 2} # dicts are mutable
+        class_storage = obj() # Is this a class variable or an instance default?
+
+:lgreen:`Yes`
+
+.. code-block:: python
+
+    from types import MappingProxyType
+    from typing import ClassVar
+
+    class MyClass(DevBase):
+        unique_vals = frozenset({"a", "b", "c"}) # frozenset is built in
+        sequence = (1, 2, 3) # Use a tuple
+        mapping = MappingProxyType({"a": 1, "b": 2}) # Read-only view on a dict
+        class_storage: ClassVar = obj() # This is a class variable, not an instance default
 
 
 .. _type-hints:
@@ -203,18 +466,18 @@ Avoid set/get accessors.
 Type hints
 ----------
 
-Type hints are not encouraged, but are allowed in new code with the 
+Type hints are not encouraged, but are allowed in new code with the
 following stipulations:
 
-  1. They appear only in function argument lists and not in code bodies.
+#. They appear only in function argument lists and not in code bodies.
 
-  2. If a specific type (or types) is actually required by a type-hinted argument, then explicit runtime checking is required (e.g. via ``isinstance``).
+#. If a specific type (or types) is actually required by a type-hinted argument, then explicit runtime checking is required (e.g. via ``isinstance``).
 
-  3. If the actually allowed types are significantly broader or narrower than a type hint suggests, then documentation for that argument must appear in a docstring. 
+#. If the actually allowed types are significantly broader or narrower than a type hint suggests, then documentation for that argument must appear in a docstring.
 
 In Nexus, the meaning of type hints is explicitly as loose documentation. In and of themselves, they do not represent strict requirements.
 
-Given the limited nature of documentation that type hints provide, docstrings 
+Given the limited nature of documentation that type hints provide, docstrings
 are generally preferred. This follows the philosophy:
 
 * "If you need documentation, write it."
@@ -222,24 +485,23 @@ are generally preferred. This follows the philosophy:
 * "If you need specific types, enforce them."
 
 
-
 .. _type-enforcement:
 
 Type enforcement
 ----------------
-Python is a dynamic language, so do not insist on strong typing unless it is necessary.  Instead, promote duck-typing where possible:
+Python is a dynamically-typed language, so do not insist on strong typing unless it is necessary. Instead, promote `duck-typing <https://docs.python.org/3/glossary.html#term-duck-typing>`__ where possible:
 
-No:
+:lred:`No`
 
-::
+.. code-block:: python
 
     def exponentiate(values):
-        assert isinstance(values,list)
+        assert isinstance(values,list) # A tuple, set, frozenset, or numpy array is also valid
         return [np.exp(v) for v in values]
 
-Yes:
+:lgreen:`Yes`
 
-::
+.. code-block:: python
 
     def exponentiate(values):
         return [np.exp(v) for v in values]
@@ -247,13 +509,13 @@ Yes:
 
 Use type conversion for flexibility where possible:
 
-Less: ``assert isinstance(item_counts,np.ndarray)``
+:yellow:`Less`: ``assert isinstance(item_counts,np.ndarray)``
 
-More: ``item_counts = np.asarray(item_counts)``
+:green:`More`: ``item_counts = np.asarray(item_counts)``
 
-Less: ``assert isinstance(x,float)``
+:yellow:`Less`: ``assert isinstance(x,float)``
 
-More: ``x = float(x)``
+:green:`More`: ``x = float(x)``
 
 
 .. _accessors:
@@ -261,62 +523,66 @@ More: ``x = float(x)``
 Accessors
 ---------
 
-Strictly use dot style over string literals:
-    
-No : ``name = data['nested']['path']['to']['name']``
+Prefer dot style over string literals:
 
-Yes: ``name = data.nested.path.to.name``
+:red:`No`: ``name = data['nested']['path']['to']['name']``
 
-Note: dot style places limits on using ``dict`` ; use ``obj`` for those cases.
+:green:`Yes`: ``name = data.nested.path.to.name``
+
+.. note::
+
+    Dot style places limits on using :py:class:`dict` ; use :py:class:`~.obj` or :py:class:`~.dotdict` for those cases.
+    If you are creating a user-facing function that accepts a mapping, do not require :py:class:`~.obj` or :py:class:`~.dotdict`,
+    either use the :py:class:`dict` interface or convert the argument internally.
 
 In classes, avoid set/get syntax. Instead promote dot access:
 
-No:
+:lred:`No`
 
-::
+.. code-block:: python
 
-    class DataClass:
-        def __init__(self,data):
-            self.data = data
+    class MyClass(DevBase):
+        def __init__(self, data):
+            self._data = data
         #end def __init__
-      
+
         def get_data(self):
-            return self.data
+            return self._data
         #end def get_data
 
-        def set_data(self,data):
-            self.data = data
+        def set_data(self, data):
+            self._data = data
         #end def set_data
-    #end class DataClass
+    #end class MyClass
 
-Yes: 
+:lgreen:`Yes`
 
-::
+.. code-block:: python
 
-    DataClass:
+    class MyClass(DevBase):
         def __init__(self,data):
             self.data = data
         #end def __init__
-    #end class DataClass
+    #end class MyClass
 
 If function execution is needed for set/get, use properties:
 
-Yes:
+:lgreen:`Yes`
 
-::
+.. code-block:: python
 
-    class DataClass:
+    class MyClass(DevBase):
         @property
-        def data(self,data):
-            ...
+        def data(self):
+            output = repackage_data(self.internal_data)
+            return output
         #end def data
 
         @data.setter
-        def data(self,data):
-            ...
+        def data(self, data):
+            self.internal_data = process_data(data)
         #end def data
-    #end class DataClass
-
+    #end class MyClass
 
 
 .. _imports:
@@ -324,24 +590,23 @@ Yes:
 Imports
 -------
 
-Use deferred (a.k.a. "lazy") imports.  
+Use deferred (a.k.a. "lazy") imports.
 
-With deferred imports, Nexus requires the minimum from external libraries and only fails if a specific missing functionality is actually used during execution.  This way, Nexus will often operate successfully even if some libraries are missing or outdated.
-
-
+With deferred imports, Nexus requires the minimum from external libraries and only fails if a specific missing functionality is actually used during execution.
+This way, Nexus will often operate successfully even if some libraries are missing or outdated.
 
 Top-level/header imports:
 
-::
+.. code-block:: python
 
     try:
         import h5py
     except:
         h5py = unavailable('h5py')
-  
-Function/method imports:
 
-::
+Function/method imports (preferred):
+
+.. code-block:: python
 
     def save_data():
         import h5py
@@ -349,22 +614,19 @@ Function/method imports:
     #end def save_data
 
 
-
 .. _exceptions:
 
 Exceptions
 ----------
 
-Use ``raise`` only for low-level utility code.
+Use ``raise`` and select an `exception <https://docs.python.org/3/library/exceptions.html>`__ that best describes the problem.
 
-Use ``error()`` for code at higher levels, especially close to user interfaces.
+At the user interfaces (i.e. ``generate_*``) liberally check input and use one of Nexus's errors, such as :py:exc:`~.NexusError`.
 
-At the user interfaces (i.e. ``generate_*``) liberally check input and use ``error()``.
+Make limited use of ``try-except``.
+Only use if you know exactly what the error is and how to fix it and generally only covering small/localized sections of code (e.g. not on top of deeply nested function call trees)
 
-Make limited use of ``try-except``.  Only use if you know exactly what the error is and how to fix it.
-
-Allow the code to error out to reveal the actual problem (``try-except`` masks it).
-
+Allow the code to error out to reveal the actual problem (``try-except`` can mask it).
 
 
 .. _auto-formatting:
@@ -377,7 +639,6 @@ Nexus code is not required to follow formats used by auto-formatting tools.
 If you use such a tool for newly committed code, ensure that the formatted code is largely consistent with existing code in the Nexus repository.
 
 
-
 .. _unit-tests:
 
 Unit tests
@@ -385,14 +646,16 @@ Unit tests
 
 Developers are encouraged to include unit tests with newly committed code.
 
+Nexus uses the `pytest <https://docs.pytest.org/en/stable/index.html>`__ framework for all testing.
+
 It is best if new or modified functionality is tested at some level of encapsulation.
 
-If only one test is to be written, please enclose as much functionality as possible (i.e. at a higher level in the call tree). 
+If only one test is to be written, please enclose as much functionality as possible (i.e. at a higher level in the call tree).
+As an example, see ``def test_ndgrid():`` in ``nexus/tests/test_numerics.py``.
 
-As an example, see ``def test_ndgrid():`` in ``nexus/tests/unit/test_numerics.py``.  
+More specific unit testing is encouraged if possible. See ``nexus/tests/test_periodic_table.py`` or the tests for :py:class:`~.PseudoSet` in ``nexus/tests/test_pseudopotential.py`` for examples of good unit tests.
 
-If you have questions about how to integrate unit tests into Nexus, please reach out to a Nexus developer. 
-
+If you have questions about how to integrate unit tests into Nexus, please reach out to a Nexus developer, or `open an issue on GitHub <https://github.com/QMCPACK/qmcpack/issues>`__.
 
 
 .. _user_documentation:
@@ -400,11 +663,52 @@ If you have questions about how to integrate unit tests into Nexus, please reach
 User documentation
 ------------------
 
-Developers are encouraged to include documentation in the Nexus manual for code that will be accessed at the user level.
+Developers are strongly encouraged to include documentation with their code, especially if that code will be accessed at the user level.
 
 For example, all ``generate_*`` functions should have user documentation, but sadly do not.
 
-If functionality includes operations commonly used by materials/chemical scientists, e.g. structure manipulation, adding documentation to the manual is also encouraged. 
+If functionality includes operations commonly used by materials/chemical scientists, e.g. structure manipulation, adding documentation to the user guide is also encouraged.
+
+See :py:mod:`~nexus.periodic_table` or :py:class:`~.PseudoSet` for examples of thorough documentation.
+
+.. _documentation-style:
+
+Documentation style
+^^^^^^^^^^^^^^^^^^^
+
+Class and function level docstrings are encouraged.  For these,
+follow NumPy's formatting for class/function docs (see `the numpydoc format <https://numpydoc.readthedocs.io/en/latest/format.html>`__):
+
+.. code-block:: python
+
+    def real(value):
+        """Return the real part of the complex argument.
+
+        Parameters
+        ----------
+        value: array_like
+            Input array.
+
+        Returns
+        -------
+        output: ndarray or scalar
+            The real component of the complex argument.
+            If value is real, the type of value is used for
+            the output. If value has complex elements,
+            the returned type is float.
+
+        Examples
+        --------
+        >>> real(1.3 + 2.8j)
+        1.03
+
+        It works with Numpy arrays too.
+
+        >>> real(np.array([1+2j, 3+4j]))
+        array([1., 3.])
+        """
+        return value.real
+    #end def real
 
 
 .. _uv_lock:
@@ -416,15 +720,15 @@ A recent addition to Nexus is a lockfile generated by ``uv``. This is an automat
 
 To sync your ``uv`` virtual environment to this file, you can simply run
 
-.. code-block::
+.. code-block:: console
 
-    uv sync
+    > uv sync
 
 To get all of the dependencies, you can run
 
-.. code-block::
+.. code-block:: console
 
-    uv sync --all-groups --all-extras
+    > uv sync --all-groups --all-extras
 
 which will install all of the optional dependencies for Nexus.
 
@@ -435,9 +739,9 @@ Updating the ``uv.lock`` file should only be done when there has been a bump in 
 
 To update the ``uv.lock`` file, run
 
-.. code-block::
+.. code-block:: console
 
-    uv lock --upgrade
+    > uv lock --upgrade
 
 which will automatically determine the correct versions of each package for each version of Python that is supported.
 
