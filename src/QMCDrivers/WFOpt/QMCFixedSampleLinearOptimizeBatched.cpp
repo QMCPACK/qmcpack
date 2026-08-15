@@ -31,6 +31,7 @@
 #include "Numerics/MatrixOperators.h"
 #include "EstimatorInputDelegates.h"
 #include "Message/UniformCommunicateError.h"
+#include "LinearMethod.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -384,8 +385,8 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       {
         ScopedTimer local(eigenvalue_timer_);
-        getLowestEigenvector(Right, currentParameterDirections);
-        objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
+        LinearMethod::getLowestEigenvector(Right, currentParameterDirections);
+        objFuncWrapper_.Lambda = LinearMethod::getNonLinearRescale(currentParameterDirections, S, *optTarget);
       }
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -1056,14 +1057,14 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
         std::swap(prdMat(i, j), prdMat(j, i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
+    LinearMethod::getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
+    auto lambda = LinearMethod::getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(shift_index).at(i + 1) *= objFuncWrapper_.Lambda;
+      parameterDirections.at(shift_index).at(i + 1) *= lambda;
   }
 }
 
@@ -1683,12 +1684,12 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     if (eigensolver_ == "general")
     {
       app_log() << "  Using generalized eigenvalue solver (ggev)" << std::endl;
-      lowestEV = getLowestEigenvector_Gen(hamMat, invMat, parameterDirections);
+      lowestEV = LinearMethod::getLowestEigenvector_Gen(hamMat, invMat, parameterDirections);
     }
     else if (eigensolver_ == "inverse")
     {
       app_log() << "  Using inverse + regular eigenvalue solver (geev)" << std::endl;
-      lowestEV = getLowestEigenvector_Inv(hamMat, invMat, parameterDirections);
+      lowestEV = LinearMethod::getLowestEigenvector_Inv(hamMat, invMat, parameterDirections);
     }
     else if (eigensolver_ == "arpack")
     {
@@ -1703,19 +1704,19 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     app_log() << "  Execution time (eigenvalue) = " << std::setprecision(4) << t_eigen.elapsed() << std::endl;
 
     // compute the scaling constant to apply to the update
-    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
+    auto lambda = LinearMethod::getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
     if (do_output_matrices_hdf_)
     {
       hout.write(lowestEV, "lowest_eigenvalue");
       hout.write(parameterDirections, "scaled_eigenvector");
-      hout.write(objFuncWrapper_.Lambda, "non_linear_rescale");
+      hout.write(lambda, "non_linear_rescale");
       hout.close();
     }
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(i + 1) *= objFuncWrapper_.Lambda;
+      parameterDirections.at(i + 1) *= lambda;
   }
   myComm->bcast(parameterDirections);
 

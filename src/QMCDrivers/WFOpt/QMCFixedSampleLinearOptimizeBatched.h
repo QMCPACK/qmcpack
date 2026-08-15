@@ -29,7 +29,6 @@
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
 #include "OutputMatrix.h"
-#include "LinearMethod.h"
 
 namespace qmcplusplus
 {
@@ -47,7 +46,7 @@ class VMCBatched;
 class GradientTest;
 
 
-class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew, LinearMethod
+class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew
 {
 public:
   ///Constructor.

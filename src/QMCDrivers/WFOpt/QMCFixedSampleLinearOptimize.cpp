@@ -28,6 +28,7 @@
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include "Message/UniformCommunicateError.h"
+#include "LinearMethod.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -286,8 +287,8 @@ bool QMCFixedSampleLinearOptimize::run()
 
       {
         ScopedTimer local(eigenvalue_timer_);
-        getLowestEigenvector(Right, currentParameterDirections);
-        Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
+        LinearMethod::getLowestEigenvector(Right, currentParameterDirections);
+        Lambda = LinearMethod::getNonLinearRescale(currentParameterDirections, S, *optTarget);
       }
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -895,14 +896,14 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
         std::swap(prdMat(i, j), prdMat(j, i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
+    LinearMethod::getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
+    auto lambda = LinearMethod::getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(shift_index).at(i + 1) *= Lambda;
+      parameterDirections.at(shift_index).at(i + 1) *= lambda;
   }
 }
 
@@ -1305,15 +1306,15 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
   {
     ScopedTimer local(eigenvalue_timer_);
-    getLowestEigenvector(prdMat, parameterDirections);
+    LinearMethod::getLowestEigenvector(prdMat, parameterDirections);
   }
 
   // compute the scaling constant to apply to the update
-  Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
+  auto lambda = LinearMethod::getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
   // scale the update by the scaling constant
   for (int i = 0; i < numParams; i++)
-    parameterDirections.at(i + 1) *= Lambda;
+    parameterDirections.at(i + 1) *= lambda;
 
   // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);
