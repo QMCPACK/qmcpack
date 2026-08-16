@@ -91,8 +91,8 @@ bool WaveFunctionTesterBatched::run()
       output << "Walker # " << walker_index << '\n';
       for (int particle_index = 0; particle_index < particle_count; ++particle_index)
       {
-        ParticleSet::GradType finite_gradient;
-        ParticleSet::ValueType finite_laplacian      = 0.0;
+        auto finite_gradient                          = analytic_gradient[particle_index];
+        auto finite_laplacian                         = analytic_laplacian[particle_index] - analytic_laplacian[particle_index];
         const ParticleSet::PosType original_position = electrons.R[particle_index];
         const RealType log_center                    = wavefunction.evaluateLog(electrons);
 
