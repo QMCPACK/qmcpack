@@ -78,9 +78,9 @@ qmc_run_and_check(
   DET_SHO_VMCBATCH_SCALARS
 )
 
-simple_run_and_check(short-sho-grad_lap "${qmcpack_SOURCE_DIR}/tests/models/sho" grad_lap.xml 1 1 check_grad_lap.py)
+simple_run_and_check(deterministic-sho-grad_lap "${qmcpack_SOURCE_DIR}/tests/models/sho" grad_lap.xml 1 1 check_grad_lap.py)
 
-simple_run_and_check(short-sho-batch-grad_lap "${qmcpack_SOURCE_DIR}/tests/models/sho" grad_lap_batch.xml 1 1 check_grad_lap.py)
+simple_run_and_check(deterministic-sho-batch-grad_lap "${qmcpack_SOURCE_DIR}/tests/models/sho" grad_lap_batch.xml 1 1 check_grad_lap.py)
 
 qmc_run_and_check(
   short-grid_ext_pot-vmc

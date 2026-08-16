@@ -2,6 +2,7 @@
 <project id="grad_lap_batch" series="0">
   <parameter name="driver_version">batched</parameter>
 </project>
+  <random seed="1776"/>
 
   <qmcsystem>
     <simulationcell>
