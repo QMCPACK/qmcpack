@@ -28,6 +28,7 @@
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include "Message/UniformCommunicateError.h"
+#include "Numerics/DeterminantOperators.h"
 #include "LinearMethod.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
@@ -130,17 +131,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
 
 QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize() = default;
 
-QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealType dl)
-{
-  for (int i = 0; i < optparam.size(); i++)
-    optTarget->Params(i) = optparam[i] + dl * optdir[i];
-  RealType c = optTarget->Cost(false);
-  //only allow this to go false if it was true. If false, stay false
-  //    if (validFuncVal)
-  validFuncVal = optTarget->IsValid;
-  return c;
-}
-
 bool QMCFixedSampleLinearOptimize::test_run()
 {
   // generate samples and compute weights, local energies, and derivative vectors
@@ -214,6 +204,15 @@ bool QMCFixedSampleLinearOptimize::run()
   //   proposed direction and new parameters
   optdir.resize(numParams, 0);
   optparam.resize(numParams, 0);
+
+  auto costfunc_evaluator = [this](RealType dl)
+  {
+    for (int i = 0; i < optparam.size(); i++)
+      optTarget->Params(i) = optparam[i] + dl * optdir[i];
+    RealType c = optTarget->Cost(false);
+    validFuncVal = optTarget->IsValid;
+    return c;
+  };
 
   while (Total_iterations < Max_iterations)
   {
@@ -331,10 +330,10 @@ bool QMCFixedSampleLinearOptimize::run()
           int npts(7);
           quadstep         = stepsize * Lambda;
           largeQuarticStep = bigChange / bigVec;
-          Valid            = lineoptimization3(npts, evaluated_cost);
+          Valid            = lineoptimization3(costfunc_evaluator, npts, evaluated_cost);
         }
         else
-          Valid = lineoptimization2();
+          Valid = lineoptimization2(costfunc_evaluator);
         line_min_timer_.stop();
         RealType biggestParameterChange = bigVec * std::abs(Lambda);
         if (biggestParameterChange > bigChange)
