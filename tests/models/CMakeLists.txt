@@ -21,8 +21,20 @@ list(APPEND GEP_SCALARS "latdev" "1.0   0.013")
 qmc_run_and_check(
   short-sho-vmc
   "${qmcpack_SOURCE_DIR}/tests/models/sho"
-  m5
+  vmc_sho
   vmc_sho.xml
+  1
+  16
+  TRUE
+  0
+  SHO_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-sho-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/models/sho"
+  vmcbatch_sho
+  vmcbatch_sho.xml
   1
   16
   TRUE
@@ -32,11 +44,25 @@ qmc_run_and_check(
 
 simple_run_and_check(short-sho-grad_lap "${qmcpack_SOURCE_DIR}/tests/models/sho" grad_lap.xml 1 1 check_grad_lap.py)
 
+simple_run_and_check(short-sho-batch-grad_lap "${qmcpack_SOURCE_DIR}/tests/models/sho" grad_lap_batch.xml 1 1 check_grad_lap.py)
+
 qmc_run_and_check(
   short-grid_ext_pot-vmc
   "${qmcpack_SOURCE_DIR}/tests/models/grid_external_potential"
-  grid_ext_pot
+  vmc_grid_ext_pot
   vmc_grid_ext_pot.xml
+  1
+  16
+  TRUE
+  0
+  GEP_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-grid_ext_pot-vmcbatch
+  "${qmcpack_SOURCE_DIR}/tests/models/grid_external_potential"
+  vmcbatch_grid_ext_pot
+  vmcbatch_grid_ext_pot.xml
   1
   16
   TRUE

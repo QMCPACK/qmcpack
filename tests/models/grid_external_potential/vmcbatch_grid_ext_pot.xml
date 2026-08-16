@@ -1,6 +1,6 @@
 <simulation>
-<project id="vmc_grid_ext_pot" series="0">
-  <parameter name="driver_version">legacy</parameter>
+<project id="vmcbatch_grid_ext_pot" series="0">
+  <parameter name="driver_version">batched</parameter>
 </project>
   <qmcsystem>
     <simulationcell>
@@ -41,7 +41,7 @@
     </hamiltonian>
   </qmcsystem>
 
-  <qmc method="vmc" move="not_pbyp_or_whatever">
+  <qmc method="vmc" move="pbyp">
     <parameter name="blocks">   256  </parameter>
     <parameter name="steps">      2  </parameter>
     <parameter name="substeps">   2  </parameter>

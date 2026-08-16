@@ -1,6 +1,6 @@
 <simulation>
-<project id="vmc_grid_ext_pot" series="0">
-  <parameter name="driver_version">legacy</parameter>
+<project id="vmcbatch_sho" series="0">
+  <parameter name="driver_version">batched</parameter>
 </project>
   <qmcsystem>
     <simulationcell>
@@ -22,8 +22,8 @@
         </attrib>
       </group>
     </particleset>
-    <particleset name="trap_center" size="1">
-      <group name="center">
+    <particleset name="trap_center">
+      <group name="center" size="1">
         <attrib name="position" datatype="posArray" condition="0">
           0 0 0
         </attrib>
@@ -35,13 +35,13 @@
     </wavefunction>
 
     <hamiltonian name="h0" type="generic" target="e">
-      <extpot type="grid" file_name="sho.h5" start="-5.0" end="5.0" num="22" pbc="false" dataset_name="pot_data"/>
+      <extpot type="HarmonicExt" mass="5.0" energy="0.3"/>
       <estimator name="skinetic" type="specieskinetic"/>
       <estimator type="latticedeviation" name="latdev" hdf5="no" per_xyz="no" target="e" tgroup="m5" source="trap_center" sgroup="center"/>
     </hamiltonian>
   </qmcsystem>
 
-  <qmc method="vmc" move="not_pbyp_or_whatever">
+  <qmc method="vmc" move="pbyp">
     <parameter name="blocks">   256  </parameter>
     <parameter name="steps">      2  </parameter>
     <parameter name="substeps">   2  </parameter>
