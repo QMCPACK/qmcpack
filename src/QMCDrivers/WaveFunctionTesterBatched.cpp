@@ -72,9 +72,9 @@ bool WaveFunctionTesterBatched::run()
   output.precision(15);
   output << "Numerical gradient and Laplacian test\n";
 
-  bool all_okay = true;
-  const RealType delta = input_.get_delta() > 0.0 ? input_.get_delta() : 1.0e-4;
-  const RealType tolerance = input_.get_tolerance() > 0.0 ? input_.get_tolerance() : 1.0e-3;
+  bool all_okay                         = true;
+  const RealType delta                  = input_.get_delta() > 0.0 ? input_.get_delta() : 1.0e-4;
+  const RealType tolerance              = input_.get_tolerance() > 0.0 ? input_.get_tolerance() : 1.0e-3;
   constexpr RealType absolute_tolerance = 1.0e-7;
 
   for (int crowd_index = 0; crowd_index < crowds_.size(); ++crowd_index)
@@ -82,9 +82,9 @@ bool WaveFunctionTesterBatched::run()
     Crowd& crowd = *crowds_[crowd_index];
     for (int walker_index = 0; walker_index < crowd.size(); ++walker_index)
     {
-      ParticleSet& electrons = crowd.get_walker_elecs()[walker_index];
+      ParticleSet& electrons          = crowd.get_walker_elecs()[walker_index];
       TrialWaveFunction& wavefunction = crowd.get_walker_twfs()[walker_index];
-      const int particle_count = electrons.getTotalNum();
+      const int particle_count        = electrons.getTotalNum();
       ParticleSet::ParticleGradient analytic_gradient(electrons.G);
       ParticleSet::ParticleLaplacian analytic_laplacian(electrons.L);
 
@@ -92,9 +92,9 @@ bool WaveFunctionTesterBatched::run()
       for (int particle_index = 0; particle_index < particle_count; ++particle_index)
       {
         ParticleSet::GradType finite_gradient;
-        ParticleSet::ValueType finite_laplacian = 0.0;
+        ParticleSet::ValueType finite_laplacian      = 0.0;
         const ParticleSet::PosType original_position = electrons.R[particle_index];
-        const RealType log_center = wavefunction.evaluateLog(electrons);
+        const RealType log_center                    = wavefunction.evaluateLog(electrons);
 
         for (int dimension = 0; dimension < OHMMS_DIM; ++dimension)
         {
@@ -118,19 +118,21 @@ bool WaveFunctionTesterBatched::run()
         electrons.update();
         wavefunction.evaluateLog(electrons);
 
-        const auto analytic_lap = analytic_laplacian[particle_index];
-        const auto lap_error = std::abs(analytic_lap - finite_laplacian);
-        const auto lap_denom = std::max(std::abs(analytic_lap), std::abs(finite_laplacian));
+        const auto analytic_lap       = analytic_laplacian[particle_index];
+        const auto lap_error          = std::abs(analytic_lap - finite_laplacian);
+        const auto lap_denom          = std::max(std::abs(analytic_lap), std::abs(finite_laplacian));
         const auto lap_relative_error = lap_denom > 0.0 ? lap_error / lap_denom : 0.0;
 
         std::array<RealType, OHMMS_DIM> gradient_relative_errors;
         for (int dimension = 0; dimension < OHMMS_DIM; ++dimension)
         {
-          const auto gradient_error = std::abs(analytic_gradient[particle_index][dimension] - finite_gradient[dimension]);
+          const auto gradient_error =
+              std::abs(analytic_gradient[particle_index][dimension] - finite_gradient[dimension]);
           const auto gradient_denom =
               std::max(std::abs(analytic_gradient[particle_index][dimension]), std::abs(finite_gradient[dimension]));
           gradient_relative_errors[dimension] = gradient_denom > 0.0 ? gradient_error / gradient_denom : 0.0;
-          all_okay = all_okay && !(gradient_relative_errors[dimension] > tolerance && gradient_error > absolute_tolerance);
+          all_okay =
+              all_okay && !(gradient_relative_errors[dimension] > tolerance && gradient_error > absolute_tolerance);
         }
         all_okay = all_okay && !(lap_relative_error > tolerance && lap_error > absolute_tolerance);
 
@@ -152,7 +154,7 @@ bool WaveFunctionTesterBatched::run()
       for (int particle_index = 0; particle_index < particle_count; ++particle_index)
       {
         ParticleSet::PosType displacement;
-        displacement = 1.0e-3;
+        displacement               = 1.0e-3;
         const RealType initial_log = wavefunction.evaluateLog(electrons);
         electrons.makeMove(particle_index, displacement);
         const TrialWaveFunction::PsiValue internal_ratio = wavefunction.calcRatio(electrons, particle_index);
@@ -163,11 +165,11 @@ bool WaveFunctionTesterBatched::run()
         electrons.R[particle_index] += displacement;
         electrons.update();
         const RealType displaced_log = wavefunction.evaluateLog(electrons);
-        electrons.R[particle_index] = original_position;
+        electrons.R[particle_index]  = original_position;
         electrons.update();
         wavefunction.evaluateLog(electrons);
 
-        const RealType computed_ratio = std::exp(displaced_log - initial_log);
+        const RealType computed_ratio  = std::exp(displaced_log - initial_log);
         const RealType ratio_of_ratios = std::abs(internal_ratio) / computed_ratio;
         output << particle_index << ' ' << ratio_of_ratios << ' ' << computed_ratio << ' ' << internal_ratio << '\n';
         all_okay = all_okay && std::abs(ratio_of_ratios - 1.0) <= 1.0e-6;

@@ -361,10 +361,12 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
       }
 
       const auto estimator_input = qmcdriver_input.get_estimator_manager_input();
-      new_driver = std::make_unique<WaveFunctionTesterBatched>(
-          project_data_, std::move(qmcdriver_input), makeEstimatorManager(emi, estimator_input), std::move(tester_input), qmc_system,
-          MCPopulation(comm->size(), comm->rank(), qmc_system, primaryPsi, primaryH),
-          RandomNumberControl::getChildrenRefs(), comm);
+      new_driver = std::make_unique<WaveFunctionTesterBatched>(project_data_, std::move(qmcdriver_input),
+                                                               makeEstimatorManager(emi, estimator_input),
+                                                               std::move(tester_input), qmc_system,
+                                                               MCPopulation(comm->size(), comm->rank(), qmc_system,
+                                                                            primaryPsi, primaryH),
+                                                               RandomNumberControl::getChildrenRefs(), comm);
       new_driver->setUpdateMode(1);
     }
     else

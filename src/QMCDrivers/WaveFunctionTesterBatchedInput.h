@@ -31,9 +31,9 @@ public:
   RealType get_tolerance() const { return tolerance_; }
 
 private:
-  bool run_basic_ = true;
-  bool run_ratio_ = false;
-  RealType delta_ = 0.0;
+  bool run_basic_     = true;
+  bool run_ratio_     = false;
+  RealType delta_     = 0.0;
   RealType tolerance_ = 0.0;
 };
 } // namespace qmcplusplus
