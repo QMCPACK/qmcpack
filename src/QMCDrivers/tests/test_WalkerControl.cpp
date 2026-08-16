@@ -20,6 +20,7 @@
 #include "WaveFunctionPool.h"
 #include "HamiltonianPool.h"
 #include "QMCDrivers/MCPopulation.h"
+#include "QMCDrivers/QMCDriverNew.h"
 #include "Utilities/MPIExceptionWrapper.hpp"
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
 #include "Platforms/Host/OutputManager.h"
@@ -300,6 +301,46 @@ TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control
       }
     }
   };
+  MPIExceptionWrapper mew;
+  mew(test_func);
+}
+
+// Verify that the global walker start/end offsets are computed consistently across MPI ranks,
+// even when each rank owns a different number of walkers. This guards the driver bookkeeping
+// used to map local walker indices to the global population layout.
+TEST_CASE("QMCDriverNew MPI offset bookkeeping", "[drivers][walker_control]")
+{
+  auto test_func = []() {
+    Communicate* comm = OHMMS::Controller;
+    // Each rank has a different number of walkers: rank r has r+1 walkers
+    int local_walker_count = comm->rank() + 1;
+
+    WalkerConfigurations walker_configs;
+    walker_configs.createWalkers(local_walker_count, 1);
+    QMCDriverNew::setWalkerOffsets(walker_configs, comm);
+
+    // Gather the actual walker counts from all ranks to compute expected offsets
+    std::vector<int> all_walker_counts(comm->size(), 0);
+    all_walker_counts[comm->rank()] = local_walker_count;
+    comm->allreduce(all_walker_counts);
+
+    // Compute expected cumulative offsets
+    std::vector<int> expected_offsets(comm->size() + 1, 0);
+    std::partial_sum(all_walker_counts.begin(), all_walker_counts.end(), expected_offsets.begin() + 1);
+
+    // Verify the walker offset structure
+    REQUIRE(walker_configs.getWalkerOffsets().size() == static_cast<size_t>(comm->size() + 1));
+    CHECK(walker_configs.getGlobalNumWalkers() == std::accumulate(all_walker_counts.begin(), all_walker_counts.end(), 0));
+    
+    // Check all offsets match expected cumulative sums
+    for (int ir = 0; ir < comm->size() + 1; ++ir)
+      CHECK(walker_configs.getWalkerOffsets()[ir] == expected_offsets[ir]);
+
+    // Verify rank-specific offsets
+    CHECK(walker_configs.getWalkerOffsets()[comm->rank()] == expected_offsets[comm->rank()]);
+    CHECK(walker_configs.getWalkerOffsets()[comm->rank() + 1] == expected_offsets[comm->rank() + 1]);
+  };
+
   MPIExceptionWrapper mew;
   mew(test_func);
 }
