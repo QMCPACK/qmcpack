@@ -62,8 +62,6 @@ public:
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5);
 
-  RealType Func(RealType dl) override;
-
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
 
   QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
