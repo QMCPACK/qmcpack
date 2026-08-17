@@ -29,7 +29,7 @@ QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& ps
     : QMCCostFunctionBase(w, psi, h, comm),
       fill_timer_(createGlobalTimer("QMCCostFunction::fillOverlapHamiltonianMatrices", timer_level_medium))
 {
-  CSWeight = 1.0;
+
   app_log() << " Using QMCCostFunction::QMCCostFunction" << std::endl;
 }
 
@@ -591,7 +591,7 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
   //    app_log()<<"After Purge"<<wgt_tot<<" "<< std::endl;
   for (int i = 0; i < SumValue.size(); i++)
     SumValue[i] = 0.0;
-  CSWeight = wgt_tot = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
+  wgt_tot = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
   for (int ip = 0; ip < NumThreads; ip++)
   {
     int nw = wClones[ip]->numSamples();

@@ -57,7 +57,6 @@ protected:
   */
   std::vector<Matrix<Return_t>*> DerivRecords;
   std::vector<Matrix<Return_rt>*> HDerivRecords;
-  Return_rt CSWeight;
 
   EffectiveWeight correlatedSampling(bool needGrad = true) override;
 

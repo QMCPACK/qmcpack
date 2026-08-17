@@ -243,13 +243,7 @@ protected:
   OptVariables opt_vars;
   // unchanged initial checked-in variables
   OptVariables InitVariables;
-  /** index mapping for <negate> constraints
-   *
-   * - negateVarMap[i][0] : index in opt_vars
-   * - negateVarMap[i][1] : index in opt_vars
-   */
-  ///index mapping for <negative> constraints
-  std::vector<TinyVector<int, 2>> negateVarMap;
+
   ///stream to which progress is sent
   std::ostream* msg_stream;
   ///xml node to be dumped
