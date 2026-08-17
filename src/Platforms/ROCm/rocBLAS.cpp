@@ -36,20 +36,10 @@ rocblas_operation convertOperation(const char trans)
         std::string(1, trans));
 }
 
-/** Puts the handle in alpha/beta array mode and restores it on scope exit.
+/** Puts the handle in alpha/beta array mode and restores the prior state on scope exit.
  *
- * The strides apply only under rocblas_pointer_mode_device, and both are modal
- * state on a handle shared with every other BLAS call on this stream. The rocBLAS
- * header: "Restore to value 0 if no longer applicable to later function calls."
- * Safe to restore right after an async launch; the values are baked into the
- * kernel arguments.
- *
- * ger has no beta; setting that stride too is harmless and keeps one guard for
- * both entry points.
- *
- * This mutates state on the handle for the duration of the call, so the same
- * handle must not be used concurrently from another host thread. QMCPACK gives
- * each Queue its own BLASHandle, so nothing shares one today.
+ * Temporarily mutates rocBLAS handle state, so the same handle must not be used
+ * concurrently from another host thread.
  */
 class AlphaBetaArrayGuard
 {
@@ -57,6 +47,17 @@ public:
   AlphaBetaArrayGuard(rocblas_handle handle) : handle_(handle), status_(rocblas_status_success)
   {
     if (rocblas_status st = rocblas_get_pointer_mode(handle_, &prior_mode_); st != rocblas_status_success)
+    {
+      status_ = st;
+      return;
+    }
+    if (rocblas_status st = rocblas_get_batch_alpha_stride(handle_, &prior_alpha_stride_);
+        st != rocblas_status_success)
+    {
+      status_ = st;
+      return;
+    }
+    if (rocblas_status st = rocblas_get_batch_beta_stride(handle_, &prior_beta_stride_); st != rocblas_status_success)
     {
       status_ = st;
       return;
@@ -86,9 +87,9 @@ public:
   ~AlphaBetaArrayGuard()
   {
     if (beta_stride_set_)
-      rocblas_set_batch_beta_stride(handle_, 0);
+      rocblas_set_batch_beta_stride(handle_, prior_beta_stride_);
     if (alpha_stride_set_)
-      rocblas_set_batch_alpha_stride(handle_, 0);
+      rocblas_set_batch_alpha_stride(handle_, prior_alpha_stride_);
     if (mode_set_)
       rocblas_set_pointer_mode(handle_, prior_mode_);
   }
@@ -101,10 +102,12 @@ public:
 
 private:
   rocblas_handle handle_;
-  rocblas_pointer_mode prior_mode_ = rocblas_pointer_mode_host;
-  bool mode_set_                   = false;
-  bool alpha_stride_set_           = false;
-  bool beta_stride_set_            = false;
+  rocblas_pointer_mode prior_mode_   = rocblas_pointer_mode_host;
+  rocblas_stride prior_alpha_stride_ = 0;
+  rocblas_stride prior_beta_stride_  = 0;
+  bool mode_set_                     = false;
+  bool alpha_stride_set_             = false;
+  bool beta_stride_set_              = false;
   rocblas_status status_;
 };
 } // namespace

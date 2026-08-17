@@ -735,9 +735,9 @@ if(ENABLE_ROCM)
   endif()
 
   # rocBLAS is used directly, not through hipBLAS, for the batched BLAS1/2 calls in
-  # Platforms/ROCm/rocBLAS.cpp that hipBLAS does not re-export. rocSOLVER already
-  # pulls rocBLAS in as a PUBLIC dependency, so this find_package costs nothing; it is
-  # what makes rocblas_VERSION available.
+  # Platforms/ROCm/rocBLAS.cpp that hipBLAS does not re-export. rocSOLVER pulls rocBLAS
+  # in as a PUBLIC dependency, which links the library but leaves rocblas_VERSION unset,
+  # so this call is what makes the version check below possible.
   find_package(rocblas CONFIG REQUIRED)
 
   # Opt-in. QMCPACK's own batched gemv and ger kernels remain the default.
