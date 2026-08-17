@@ -324,7 +324,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
   app_log() << "  Total weights = " << etemp[1] << std::endl;
   app_log().flush();
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
+
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
   SumValue[SUM_WGTSQ]     = etemp[1];
@@ -481,7 +481,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
   app_log().flush();
 
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
+
 }
 #endif
 

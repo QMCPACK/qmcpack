@@ -429,7 +429,7 @@ void QMCFixedSampleLinearOptimize::run()
   }
 
   finish();
-  optTarget->getReportCounter();
+
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction
@@ -1223,8 +1223,7 @@ void QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   nTargetSamples = init_num_samp;
 
   //app_log() << "block first second third end " << block_first << block_second << block_third << endl;
-  // return whether the cost function's report counter is positive
-  optTarget->getReportCounter();
+
 }
 #endif
 
@@ -1389,8 +1388,7 @@ void QMCFixedSampleLinearOptimize::one_shift_run()
   // perform some finishing touches for this linear method iteration
   finish();
 
-  // return whether the cost function's report counter is positive
-  optTarget->getReportCounter();
+
 }
 
 #ifdef HAVE_LMY_ENGINE
@@ -1438,7 +1436,7 @@ void QMCFixedSampleLinearOptimize::descent_run()
 
 
   finish();
-  optTarget->getReportCounter();
+
 }
 #endif
 
@@ -1478,7 +1476,7 @@ void QMCFixedSampleLinearOptimize::hybrid_run()
     descent_run();
 
   app_log() << "Finished a hybrid step" << std::endl;
-  optTarget->getReportCounter();
+
 }
 #endif
 

@@ -130,7 +130,7 @@ public:
   ///report  parameters in HDF5 at the end
   void reportParametersH5();
   ///return the counter which keeps track of optimization steps
-  inline int getReportCounter() const { return ReportCounter; }
+
 
   void setWaveFunctionNode(xmlNodePtr cur) { m_wfPtr = cur; }
 
@@ -205,7 +205,7 @@ protected:
   /// global number of samples to use in correlated sampling
   int NumSamples;
   ///counter for output
-  int ReportCounter;
+
   ///weights for energy and variance in the cost function
   Return_rt w_en, w_var, w_abs, w_w;
   ///value of the cost function

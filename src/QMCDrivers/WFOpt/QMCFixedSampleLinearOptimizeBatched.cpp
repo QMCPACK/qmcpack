@@ -509,7 +509,7 @@ void QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
   }
 
   finish();
-  optTarget->getReportCounter();
+
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction
@@ -1566,8 +1566,7 @@ void QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   optTarget->setNumSamples(init_num_samp);
 
   //app_log() << "block first second third end " << options_LMY_.block_first << options_LMY_.block_second << options_LMY_.block_third << endl;
-  // return whether the cost function's report counter is positive
-  optTarget->getReportCounter();
+
 }
 #endif
 
@@ -1776,11 +1775,10 @@ void QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   // perform some finishing touches for this linear method iteration
   finish();
 
-  // return whether the cost function's report counter is positive
-  optTarget->getReportCounter();
+
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_gradient()
+void QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_gradient()
 {
   app_log() << std::endl
             << "*****************************************************************************" << std::endl
@@ -1930,7 +1928,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
   finish();
 
   // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+
 }
 
 #ifdef HAVE_LMY_ENGINE
@@ -1971,7 +1969,7 @@ void QMCFixedSampleLinearOptimizeBatched::descent_run()
   }
 
   finish();
-  optTarget->getReportCounter();
+
 }
 #endif
 
@@ -2007,7 +2005,7 @@ void QMCFixedSampleLinearOptimizeBatched::hybrid_run()
     descent_run();
 
   app_log() << "Finished a hybrid step" << std::endl;
-  optTarget->getReportCounter();
+
 }
 #endif
 
