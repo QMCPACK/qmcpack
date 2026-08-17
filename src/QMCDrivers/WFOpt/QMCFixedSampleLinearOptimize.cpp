@@ -205,12 +205,11 @@ bool QMCFixedSampleLinearOptimize::run()
   optdir.resize(numParams, 0);
   optparam.resize(numParams, 0);
 
-  auto costfunc_evaluator = [this](RealType dl)
-  {
+  auto costfunc_evaluator = [this](RealType dl) {
     for (int i = 0; i < optparam.size(); i++)
       optTarget->Params(i) = optparam[i] + dl * optdir[i];
     auto effective_weight = optTarget->correlatedSampling(false);
-    validFuncVal = optTarget->isEffectiveWeightValid(effective_weight);;
+    validFuncVal          = optTarget->isEffectiveWeightValid(effective_weight);
     return optTarget->computedCost();
   };
 
@@ -226,7 +225,7 @@ bool QMCFixedSampleLinearOptimize::run()
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currentParameters[i];
     cost_function_timer_.start();
-  auto effective_weight = optTarget->correlatedSampling(true);
+    auto effective_weight = optTarget->correlatedSampling(true);
     RealType lastCost(optTarget->computedCost());
     cost_function_timer_.stop();
     //     if cost function is currently invalid continue
@@ -360,7 +359,7 @@ bool QMCFixedSampleLinearOptimize::run()
         // 	newCost=evaluated_cost;
         //get cost at new minimum
         auto effective_weight = optTarget->correlatedSampling(false);
-        newCost = optTarget->computedCost();
+        newCost               = optTarget->computedCost();
         app_log() << " OldCost: " << lastCost << " NewCost: " << newCost << " Delta Cost:" << (newCost - lastCost)
                   << std::endl;
         optTarget->printEstimates();
@@ -1134,7 +1133,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   {
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currParams.at(i) + (k == central_index ? 0.0 : parameterDirections.at(k).at(i + 1));
-    costValues.at(k)   = optTarget->LMYEngineCost(false, *EngineObj);
+    costValues.at(k) = optTarget->LMYEngineCost(false, *EngineObj);
     good_update.at(k) =
         (good_update.at(k) && std::abs((initCost - costValues.at(k)) / initCost) < max_relative_cost_change);
     if (!good_update.at(k))
@@ -1337,7 +1336,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
             << "largest LM parameter change : " << largestChange << " at parameter " << max_element << std::endl;
 
   // compute the new cost
-        auto effective_weight = optTarget->correlatedSampling(false);
+  auto effective_weight  = optTarget->correlatedSampling(false);
   const RealType newCost = optTarget->computedCost();
 
   app_log() << std::endl

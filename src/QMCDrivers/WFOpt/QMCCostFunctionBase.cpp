@@ -282,7 +282,6 @@ void QMCCostFunctionBase::reportParametersH5()
 }
 
 
-
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
  * @param q current xmlNode
  * @return true if successful
@@ -995,7 +994,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool nee
                                                                   cqmc::engine::LMYEngine<Return_t>& EngineObj)
 {
   // prepare local energies, weights, and possibly derivative vectors
-  auto effective_weight = correlatedSampling(needDeriv);
+  correlatedSampling(needDeriv);
   // since we are using the LMYEngine, compute and return it's cost function value
   return this->LMYEngineCost_detail(EngineObj);
 }
