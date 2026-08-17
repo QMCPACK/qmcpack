@@ -8,6 +8,7 @@ generic_settings.raise_error = True
 
 import numpy as np
 from pathlib import Path
+from types import MappingProxyType
 from typing import Literal
 from . import isolate_nexus_core, TEST_DIR
 from ..testing import value_eq,object_eq
@@ -1977,3 +1978,158 @@ def test_pseudo_remap_generated_pseudoset(tmp_path):
         pseudo.name: str(pseudo) for pseudo in reference_pseudos.values()
         }
     assert remapped_twice == remapped
+
+
+def test_from_mixed_dir_includes_all_selected_codes_with_partial_extensions(tmp_path):
+    (tmp_path / "C.upf").touch()
+
+    pseudosets = PseudoSet.from_mixed_dir(
+        pseudo_dir = tmp_path,
+        codes      = {"qmcpack", "espresso"},
+        extensions = {"qmcpack": {".xml"}},
+        )
+
+    assert set(pseudosets) == {"qmcpack", "espresso"}
+
+
+def test_from_mixed_dir_detect_selects_all_known_codes(tmp_path):
+    pseudosets = PseudoSet.from_mixed_dir(
+        pseudo_dir = tmp_path,
+        codes      = "detect",
+        )
+
+    assert set(pseudosets) == PseudoSet.known_codes
+
+
+def test_from_mixed_dir_normalizes_code_alias_maps(tmp_path):
+    (tmp_path / "C.BFD.upf").touch()
+    (tmp_path / "C.ONCV.upf").touch()
+
+    pseudosets = PseudoSet.from_mixed_dir(
+        pseudo_dir    = tmp_path,
+        codes         = "pwscf",
+        patterns      = {"pwscf": "ONCV"},
+        code_Zeff_map = {"pwscf": {"C": 4}},
+        )
+
+    assert set(pseudosets) == {"espresso"}
+    assert pseudosets["espresso"].pseudos == {
+        "C": (tmp_path / "C.ONCV.upf").resolve()
+        }
+    assert pseudosets["espresso"].Zeff_map == {"C": 4}
+
+
+def test_from_mixed_dir_returns_canonical_code_keys(tmp_path):
+    (tmp_path / "C.xml").touch()
+
+    pseudosets = PseudoSet.from_mixed_dir(
+        pseudo_dir = tmp_path,
+        codes      = {"QMCPACK"},
+        extensions = {"QMCPACK": {".xml"}},
+        )
+
+    assert set(pseudosets) == {"qmcpack"}
+
+
+def test_from_dir_detect_is_case_insensitive(tmp_path):
+    (tmp_path / "C.xml").touch()
+
+    pseudoset = PseudoSet.from_dir(
+        pseudo_dir = tmp_path,
+        code       = "DETECT",
+        )
+
+    assert pseudoset.codes == {"qmcpack", "rmg"}
+
+
+def test_from_dir_accepts_empty_extension_filter(tmp_path):
+    (tmp_path / "C.xml").touch()
+
+    pseudoset = PseudoSet.from_dir(
+        pseudo_dir = tmp_path,
+        code       = "qmcpack",
+        ext_filter = [],
+        )
+
+    assert pseudoset.pseudos == {}
+
+
+def test_from_dir_does_not_consume_extension_filter_iterator(tmp_path):
+    pseudo = tmp_path / "C.xml"
+    pseudo.touch()
+
+    pseudoset = PseudoSet.from_dir(
+        pseudo_dir = tmp_path,
+        code       = "detect",
+        ext_filter = iter([".xml"]),
+        )
+
+    assert pseudoset.pseudos == {"C": pseudo.resolve()}
+
+
+def test_from_dir_reports_invalid_extension_filter_elements(tmp_path):
+    with pytest.raises(TypeError, match="`ext_filter` must be"):
+        PseudoSet.from_dir(
+            pseudo_dir = tmp_path,
+            code       = "qmcpack",
+            ext_filter = {1},
+            )
+
+
+def test_from_mixed_dir_does_not_mutate_extensions(tmp_path):
+    extensions = {"qmcpack": {".xml"}}
+    reference = deepcopy(extensions)
+
+    PseudoSet.from_mixed_dir(
+        pseudo_dir = tmp_path,
+        extensions = extensions,
+        )
+
+    assert extensions == reference
+
+
+def test_from_mixed_dir_accepts_immutable_extensions_mapping(tmp_path):
+    extensions = MappingProxyType({"qmcpack": {".xml"}})
+
+    pseudosets = PseudoSet.from_mixed_dir(
+        pseudo_dir = tmp_path,
+        extensions = extensions,
+        )
+
+    assert "qmcpack" in pseudosets
+
+
+def test_from_mixed_dir_preserves_invalid_filename_error(tmp_path):
+    (tmp_path / "not_an_element.xml").touch()
+
+    with pytest.raises(ValueError, match="Can not determine element"):
+        PseudoSet.from_mixed_dir(
+            pseudo_dir = tmp_path,
+            codes      = "qmcpack",
+            )
+
+
+def test_from_mixed_dir_preserves_subclass(tmp_path):
+    class DerivedPseudoSet(PseudoSet):
+        pass
+
+    (tmp_path / "C.xml").touch()
+    pseudosets = DerivedPseudoSet.from_mixed_dir(
+        pseudo_dir = tmp_path,
+        codes      = "qmcpack",
+        )
+
+    assert isinstance(pseudosets["qmcpack"], DerivedPseudoSet)
+
+
+def test_from_dir_ignores_potcar_directories(tmp_path):
+    element_dir = tmp_path / "C"
+    element_dir.mkdir()
+    (element_dir / "POTCAR").mkdir()
+
+    pseudoset = PseudoSet.from_dir(
+        pseudo_dir = tmp_path,
+        code       = "vasp",
+        )
+
+    assert pseudoset.pseudos == {}
