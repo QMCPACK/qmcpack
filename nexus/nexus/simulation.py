@@ -2340,12 +2340,12 @@ class sim_err_handler:
 
             err = f"Error occurred in simulation '{self.sim.identifier}'."
             loc = f"See the simulation log file at '{self.sim.locdir}/{self.sim.nexus_logfile}'"
-            lenloc = len(loc) + 2 # Padding around error message
+            lenloc = len(loc) + 4 # Padding around error message
             print(
-                f"\n{'':!^{lenloc+4}}\n"
-                f"!!{err:^{lenloc}}!!\n"
-                f"!!{loc:^{lenloc}}!!\n"
-                f"{'':!^{lenloc+4}}\n"
+                f"\n{'':!^{lenloc}}\n"
+                f"{err:^{lenloc}}\n"
+                f"{loc:^{lenloc}}\n"
+                f"{'':!^{lenloc}}\n"
                 )
 
         return True
