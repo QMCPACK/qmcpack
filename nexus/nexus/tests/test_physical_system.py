@@ -4,9 +4,6 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 import numpy as np
 from ..testing import value_eq,object_eq
 from nexus.physical_system import generate_physical_system

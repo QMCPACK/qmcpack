@@ -3,9 +3,6 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 
 from . import isolate_nexus_core, TEST_DIR
 from ..testing import failed
@@ -35,7 +32,7 @@ def test_input(tmp_path):
     from ..developer import obj
     from ..structure import read_structure
     from ..physical_system import generate_physical_system
-    from ..pwscf_input import check_new_variables,check_section_classes
+    from ..pwscf_input import check_section_classes
     from ..pwscf_input import PwscfInput,generate_pwscf_input
 
     # definitions
@@ -51,7 +48,6 @@ def test_input(tmp_path):
 
 
     # test internal spec
-    check_new_variables(exit=False)
     check_section_classes(exit=False)
 
 

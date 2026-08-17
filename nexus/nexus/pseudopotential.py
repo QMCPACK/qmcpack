@@ -337,19 +337,18 @@ class Pseudopotentials(DevBase):
         #end if
         ppfiles = []
         pps     = []
-        errors = False
+        msg = ""
         for pp in pseudopotentials:
             if isinstance(pp,PseudoFile):
                 pps.append(pp)
             elif isinstance(pp, str | Path):
                 ppfiles.append(path_string(pp))
             else:
-                self.error('expected PseudoFile type or filepath, got '+str(type(pp)),exit=False)
-                errors = True
+                msg += 'expected PseudoFile type or filepath, got '+str(type(pp))+"\n"
             #end if
         #end for
-        if errors:
-            self.error('cannot create Pseudopotentials object')
+        if len(msg) > 0:
+            self.error(f'cannot create Pseudopotentials object:\n{msg}')
         #end if
         if len(pps)>0:
             self.addpp(pps)

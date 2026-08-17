@@ -15,4 +15,5 @@ User Guide
     nexus-jobs
     qmcpack-input-mod
     qmcpack-input-gen
+    qmcpack-restarts
     adding-supercomputer-machine

@@ -3,8 +3,6 @@ from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PERIODIC_TABLE)
 
 from ..periodic_table import Elements
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 
 def test_periodic_table():

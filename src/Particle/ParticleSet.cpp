@@ -69,6 +69,7 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
 
 ParticleSet::ParticleSet(const ParticleSet& p)
     : Properties(p.Properties),
+      current_step(p.current_step),
       simulation_cell_(p.simulation_cell_),
       same_mass_(true),
       is_spinor_(false),
