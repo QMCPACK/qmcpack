@@ -131,7 +131,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
 
 QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize() = default;
 
-bool QMCFixedSampleLinearOptimize::test_run()
+void QMCFixedSampleLinearOptimize::test_run()
 {
   // generate samples and compute weights, local energies, and derivative vectors
   start();
@@ -139,7 +139,6 @@ bool QMCFixedSampleLinearOptimize::test_run()
   testEngineObj->run(*optTarget, get_root_name());
 
   finish();
-  return true;
 }
 
 void QMCFixedSampleLinearOptimize::run()
@@ -929,7 +928,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
-bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
+void QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 {
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
@@ -1225,11 +1224,11 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   //app_log() << "block first second third end " << block_first << block_second << block_third << endl;
   // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+  optTarget->getReportCounter();
 }
 #endif
 
-bool QMCFixedSampleLinearOptimize::one_shift_run()
+void QMCFixedSampleLinearOptimize::one_shift_run()
 {
   // ensure the cost function is set to compute derivative vectors
   optTarget->setneedGrads(true);
@@ -1391,12 +1390,12 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   finish();
 
   // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+  optTarget->getReportCounter();
 }
 
 #ifdef HAVE_LMY_ENGINE
 //Function for optimizing using gradient descent
-bool QMCFixedSampleLinearOptimize::descent_run()
+void QMCFixedSampleLinearOptimize::descent_run()
 {
   const bool saved_grads_flag = optTarget->getneedGrads();
 
@@ -1439,14 +1438,14 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 
 
   finish();
-  return (optTarget->getReportCounter() > 0);
+  optTarget->getReportCounter();
 }
 #endif
 
 
 //Function for controlling the alternation between sections of descent optimization and Blocked LM optimization.
 #ifdef HAVE_LMY_ENGINE
-bool QMCFixedSampleLinearOptimize::hybrid_run()
+void QMCFixedSampleLinearOptimize::hybrid_run()
 {
   app_log() << "This method name is: " << MinMethod << std::endl;
 
@@ -1479,7 +1478,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     descent_run();
 
   app_log() << "Finished a hybrid step" << std::endl;
-  return (optTarget->getReportCounter() > 0);
+  optTarget->getReportCounter();
 }
 #endif
 

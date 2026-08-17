@@ -270,7 +270,7 @@ void QMCFixedSampleLinearOptimizeBatched::run()
     previous_linear_methods_run();
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::test_run()
+void QMCFixedSampleLinearOptimizeBatched::test_run()
 {
   // generate samples and compute weights, local energies, and derivative vectors
   start();
@@ -278,11 +278,9 @@ bool QMCFixedSampleLinearOptimizeBatched::test_run()
   testEngineObj->run(*optTarget, get_root_name());
 
   finish();
-
-  return true;
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
+void QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
 {
   start();
   bool Valid(true);
@@ -511,7 +509,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
   }
 
   finish();
-  return (optTarget->getReportCounter() > 0);
+  optTarget->getReportCounter();
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction
@@ -1073,7 +1071,7 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
-bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
+void QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 {
   EngineObj->setStoringSamples(options_LMY_.store_samples);
 
@@ -1569,11 +1567,11 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 
   //app_log() << "block first second third end " << options_LMY_.block_first << options_LMY_.block_second << options_LMY_.block_third << endl;
   // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+  optTarget->getReportCounter();
 }
 #endif
 
-bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
+void QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 {
   // ensure the cost function is set to compute derivative vectors
   optTarget->setneedGrads(true);
@@ -1779,7 +1777,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   finish();
 
   // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+  optTarget->getReportCounter();
 }
 
 bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_gradient()
@@ -1937,7 +1935,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
 
 #ifdef HAVE_LMY_ENGINE
 //Function for optimizing using gradient descent
-bool QMCFixedSampleLinearOptimizeBatched::descent_run()
+void QMCFixedSampleLinearOptimizeBatched::descent_run()
 {
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
   engine_start();
@@ -1973,14 +1971,14 @@ bool QMCFixedSampleLinearOptimizeBatched::descent_run()
   }
 
   finish();
-  return (optTarget->getReportCounter() > 0);
+  optTarget->getReportCounter();
 }
 #endif
 
 
 //Function for controlling the alternation between sections of descent optimization and BLM optimization.
 #ifdef HAVE_LMY_ENGINE
-bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
+void QMCFixedSampleLinearOptimizeBatched::hybrid_run()
 {
   app_log() << "This method name is: " << MinMethod << std::endl;
 
@@ -2009,7 +2007,7 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
     descent_run();
 
   app_log() << "Finished a hybrid step" << std::endl;
-  return (optTarget->getReportCounter() > 0);
+  optTarget->getReportCounter();
 }
 #endif
 
