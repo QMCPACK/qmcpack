@@ -250,43 +250,24 @@ void QMCFixedSampleLinearOptimizeBatched::run()
   {
     app_log() << "Doing gradient test run" << std::endl;
     test_run();
-    return;
   }
 #ifdef HAVE_LMY_ENGINE
-  if (options_LMY_.doHybrid)
+  else if (options_LMY_.doHybrid)
   {
     app_log() << "Doing hybrid run" << std::endl;
     hybrid_run();
-    return;
   }
-  // if requested, perform the update via the adaptive three-shift or single-shift method
-  if (options_LMY_.current_optimizer_type == OptimizerType::ADAPTIVE)
-  {
+  else if (options_LMY_.current_optimizer_type == OptimizerType::ADAPTIVE)
     adaptive_three_shift_run();
-    return;
-  }
-
-  if (options_LMY_.current_optimizer_type == OptimizerType::DESCENT)
-  {
+  else if (options_LMY_.current_optimizer_type == OptimizerType::DESCENT)
     descent_run();
-    return;
-  }
-
 #endif
-
-  if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
-  {
+  else if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
     one_shift_run();
-    return;
-  }
-
-  if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
-  {
+  else if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
     stochastic_reconfiguration_conjugate_gradient();
-    return;
-  }
-
-  previous_linear_methods_run();
+  else
+    previous_linear_methods_run();
 }
 
 bool QMCFixedSampleLinearOptimizeBatched::test_run()
