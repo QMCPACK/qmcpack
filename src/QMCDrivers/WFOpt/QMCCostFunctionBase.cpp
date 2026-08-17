@@ -120,8 +120,6 @@ void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
 
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
 {
-  //reset the wave function
-  resetPsi();
   //evaluate new local energies
   EffectiveWeight effective_weight = correlatedSampling(needGrad);
   IsValid                          = isEffectiveWeightValid(effective_weight);

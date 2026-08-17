@@ -60,12 +60,10 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     {
       // + FiniteDiff
       opt_vars[i] = PM[i] + FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostPlus = computedCost();
       // - FiniteDiff
       opt_vars[i] = PM[i] - FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostMinus = computedCost();
       // calculate gradient
@@ -75,7 +73,6 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
   }
   else
   {
-    resetPsi();
     //evaluate new local energies and derivatives
     EffectiveWeight effective_weight = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
@@ -638,8 +635,10 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
 {
   ScopedTimer tmp_timer(corr_sampling_timer_);
 
+  resetPsi();
+
   {
-    //    synchronize the random number generator with the node
+    // synchronize the random number generator with the node
     (*MoverRng[0]) = (*RngSaved[0]);
     H.setRandomGenerator(MoverRng[0]);
   }
