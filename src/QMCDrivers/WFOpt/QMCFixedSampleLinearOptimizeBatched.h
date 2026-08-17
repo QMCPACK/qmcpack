@@ -67,7 +67,7 @@ public:
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
 
   ///Run the Optimization algorithm.
-  bool run() override;
+  void run() override;
   ///preprocess xml node
   void process(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization

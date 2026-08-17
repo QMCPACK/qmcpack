@@ -235,7 +235,7 @@ void QMCFixedSampleLinearOptimizeBatched::generateSamples()
   optTarget->setRootName(get_root_name());
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::run()
+void QMCFixedSampleLinearOptimizeBatched::run()
 {
   if (do_output_matrices_csv_ && !output_matrices_initialized_)
   {
@@ -249,31 +249,44 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
   if (doGradientTest)
   {
     app_log() << "Doing gradient test run" << std::endl;
-    return test_run();
+    test_run();
+    return;
   }
 #ifdef HAVE_LMY_ENGINE
   if (options_LMY_.doHybrid)
   {
     app_log() << "Doing hybrid run" << std::endl;
-    return hybrid_run();
+    hybrid_run();
+    return;
   }
-
   // if requested, perform the update via the adaptive three-shift or single-shift method
   if (options_LMY_.current_optimizer_type == OptimizerType::ADAPTIVE)
-    return adaptive_three_shift_run();
+  {
+    adaptive_three_shift_run();
+    return;
+  }
 
   if (options_LMY_.current_optimizer_type == OptimizerType::DESCENT)
-    return descent_run();
+  {
+    descent_run();
+    return;
+  }
 
 #endif
 
   if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
-    return one_shift_run();
+  {
+    one_shift_run();
+    return;
+  }
 
   if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
-    return stochastic_reconfiguration_conjugate_gradient();
+  {
+    stochastic_reconfiguration_conjugate_gradient();
+    return;
+  }
 
-  return previous_linear_methods_run();
+  previous_linear_methods_run();
 }
 
 bool QMCFixedSampleLinearOptimizeBatched::test_run()

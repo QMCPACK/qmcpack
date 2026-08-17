@@ -56,7 +56,7 @@ public:
   ~QMCFixedSampleLinearOptimize() override;
 
   ///Run the Optimization algorithm.
-  bool run() override;
+  void run() override;
   ///preprocess xml node
   bool put(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization

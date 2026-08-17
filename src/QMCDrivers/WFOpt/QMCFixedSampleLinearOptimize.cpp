@@ -139,11 +139,10 @@ bool QMCFixedSampleLinearOptimize::test_run()
   testEngineObj->run(*optTarget, get_root_name());
 
   finish();
-
   return true;
 }
 
-bool QMCFixedSampleLinearOptimize::run()
+void QMCFixedSampleLinearOptimize::run()
 {
   if (do_output_matrices_ && !output_matrices_initialized_)
   {
@@ -157,7 +156,8 @@ bool QMCFixedSampleLinearOptimize::run()
   if (doGradientTest)
   {
     app_log() << "Doing gradient test run" << std::endl;
-    return test_run();
+    test_run();
+    return;
   }
 
 #ifdef HAVE_LMY_ENGINE
@@ -165,7 +165,8 @@ bool QMCFixedSampleLinearOptimize::run()
   {
 #if !defined(QMC_COMPLEX)
     app_log() << "Doing hybrid run" << std::endl;
-    return hybrid_run();
+    hybrid_run();
+    return;
 #else
     myComm->barrier_and_abort(" Error: Hybrid method does not work with QMC_COMPLEX=1. \n");
 #endif
@@ -173,7 +174,10 @@ bool QMCFixedSampleLinearOptimize::run()
 
   if (current_optimizer_type_ == OptimizerType::DESCENT)
 #if !defined(QMC_COMPLEX)
-    return descent_run();
+  {
+    descent_run();
+    return;
+  }
 #else
     myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX=1. \n");
 #endif
@@ -181,13 +185,19 @@ bool QMCFixedSampleLinearOptimize::run()
 
   // if requested, perform the update via the adaptive three-shift or single-shift method
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
-    return adaptive_three_shift_run();
+  {
+    adaptive_three_shift_run();
+    return;
+  }
 
 
 #endif
 
   if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
-    return one_shift_run();
+  {
+    one_shift_run();
+    return;
+  }
 
   start();
   bool Valid(true);
@@ -420,7 +430,7 @@ bool QMCFixedSampleLinearOptimize::run()
   }
 
   finish();
-  return (optTarget->getReportCounter() > 0);
+  optTarget->getReportCounter();
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction
