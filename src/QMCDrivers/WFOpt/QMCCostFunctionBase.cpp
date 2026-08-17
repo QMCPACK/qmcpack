@@ -118,14 +118,6 @@ void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
   //       }
 }
 
-QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
-{
-  //evaluate new local energies
-  EffectiveWeight effective_weight = correlatedSampling(needGrad);
-  IsValid                          = isEffectiveWeightValid(effective_weight);
-  return computedCost();
-}
-
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham)
 { throw std::runtime_error("Need to implement fillHamVec"); }
 
@@ -1003,9 +995,9 @@ void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const 
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool needDeriv,
                                                                   cqmc::engine::LMYEngine<Return_t>& EngineObj)
 {
-  // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
-  const Return_rt standardCost = this->Cost(needDeriv);
-
+  // prepare local energies, weights, and possibly derivative vectors
+  auto effective_weight = correlatedSampling(needDeriv);
+  IsValid               = isEffectiveWeightValid(effective_weight);
   // since we are using the LMYEngine, compute and return it's cost function value
   return this->LMYEngineCost_detail(EngineObj);
 }

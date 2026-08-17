@@ -209,9 +209,9 @@ bool QMCFixedSampleLinearOptimize::run()
   {
     for (int i = 0; i < optparam.size(); i++)
       optTarget->Params(i) = optparam[i] + dl * optdir[i];
-    RealType c = optTarget->Cost(false);
-    validFuncVal = optTarget->IsValid;
-    return c;
+    auto effective_weight = optTarget->correlatedSampling(false);
+    validFuncVal = optTarget->isEffectiveWeightValid(effective_weight);;
+    return optTarget->computedCost();
   };
 
   while (Total_iterations < Max_iterations)
@@ -226,10 +226,11 @@ bool QMCFixedSampleLinearOptimize::run()
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currentParameters[i];
     cost_function_timer_.start();
-    RealType lastCost(optTarget->Cost(true));
+  auto effective_weight = optTarget->correlatedSampling(true);
+    RealType lastCost(optTarget->computedCost());
     cost_function_timer_.stop();
     //     if cost function is currently invalid continue
-    Valid = optTarget->IsValid;
+    Valid = optTarget->isEffectiveWeightValid(effective_weight);
     if (!ValidCostFunction(Valid))
       continue;
     RealType newCost(lastCost);
@@ -359,13 +360,14 @@ bool QMCFixedSampleLinearOptimize::run()
         // 	this may have been evaluated already
         // 	newCost=evaluated_cost;
         //get cost at new minimum
-        newCost = optTarget->Cost(false);
+        auto effective_weight = optTarget->correlatedSampling(false);
+        newCost = optTarget->computedCost();
         app_log() << " OldCost: " << lastCost << " NewCost: " << newCost << " Delta Cost:" << (newCost - lastCost)
                   << std::endl;
         optTarget->printEstimates();
         //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
         // mmorales
-        Valid = optTarget->IsValid;
+        Valid = optTarget->isEffectiveWeightValid(effective_weight);
         //if (MinMethod!="rescale" && !ValidCostFunction(Valid))
         if (!ValidCostFunction(Valid))
         {
@@ -1338,8 +1340,8 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
             << "largest LM parameter change : " << largestChange << " at parameter " << max_element << std::endl;
 
   // compute the new cost
-  optTarget->IsValid     = true;
-  const RealType newCost = optTarget->Cost(false);
+        auto effective_weight = optTarget->correlatedSampling(false);
+  const RealType newCost = optTarget->computedCost();
 
   app_log() << std::endl
             << "******************************************************************************" << std::endl
@@ -1349,7 +1351,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
             << newCost - initCost << std::endl
             << "******************************************************************************" << std::endl;
 
-  if (!optTarget->IsValid || qmcplusplus::isnan(newCost))
+  if (!optTarget->isEffectiveWeightValid(effective_weight) || qmcplusplus::isnan(newCost))
   {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i = 0; i < numParams; i++)
