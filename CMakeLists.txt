@@ -734,38 +734,25 @@ if(ENABLE_ROCM)
     message(FATAL_ERROR "QMCPACK requires hipBLAS minimum version 2.0.0 from ROCm 6.0. Detected ${hipblas_VERSION}.")
   endif()
 
-  find_package(rocsolver CONFIG REQUIRED)
-  find_package(rocthrust CONFIG REQUIRED)
-
   # rocBLAS is used directly, not through hipBLAS, for the batched BLAS1/2 calls in
   # Platforms/ROCm/rocBLAS.cpp that hipBLAS does not re-export. rocSOLVER already
   # pulls rocBLAS in as a PUBLIC dependency, so this find_package costs nothing; it is
   # what makes rocblas_VERSION available.
   find_package(rocblas CONFIG REQUIRED)
 
-  # rocBLAS 5.5.0 added alpha/beta arrays via rocblas_set_batch_alpha_stride and
-  # rocblas_set_batch_beta_stride, which is the whole reason QMCPACK carries its own
-  # batched gemv and ger kernels. The 5.5.0 changelog lists both: alpha and beta arrays
-  # for batched gemv, and an alpha array for batched ger/geru/gerc. Absent from
-  # rocBLAS 5.2 (ROCm 7.2) and earlier. 5.3 and 5.4 were never publicly released, so
-  # 5.5.0 rather than a lower bound within the interval where it landed.
-  # (copy_batched needs none of this and is used unconditionally.)
-  if(rocblas_VERSION VERSION_GREATER_EQUAL "5.5.0")
-    set(QMC_ROCBLAS_ALPHA_BETA_ARRAYS_SUPPORTED ON)
-  else()
-    set(QMC_ROCBLAS_ALPHA_BETA_ARRAYS_SUPPORTED OFF)
-  endif()
-
   # Opt-in. QMCPACK's own batched gemv and ger kernels remain the default.
+  # (copy_batched needs no alpha and is used unconditionally.)
   option(QMC_ROCBLAS_ALPHA_BETA_ARRAYS "Use rocBLAS batched gemv/ger with alpha/beta arrays" OFF)
 
-  if(QMC_ROCBLAS_ALPHA_BETA_ARRAYS AND NOT QMC_ROCBLAS_ALPHA_BETA_ARRAYS_SUPPORTED)
-    message(FATAL_ERROR "QMC_ROCBLAS_ALPHA_BETA_ARRAYS=ON requires rocBLAS 5.5.0 or newer, "
-                        "found ${rocblas_VERSION}. rocblas_set_batch_alpha_stride is absent, "
-                        "so the build would fail to link.")
-  endif()
-
   if(QMC_ROCBLAS_ALPHA_BETA_ARRAYS)
+    # rocBLAS 5.5.0 added alpha/beta arrays via rocblas_set_batch_alpha_stride and
+    # rocblas_set_batch_beta_stride, absent from rocBLAS 5.2 (ROCm 7.2) and earlier.
+    # 5.3 and 5.4 were never publicly released.
+    if(rocblas_VERSION VERSION_LESS "5.5.0")
+      message(FATAL_ERROR "QMC_ROCBLAS_ALPHA_BETA_ARRAYS=ON requires rocBLAS 5.5.0 or newer, "
+                          "found ${rocblas_VERSION}. rocblas_set_batch_alpha_stride is absent, "
+                          "so the build would fail to link.")
+    endif()
     message(STATUS "Using rocBLAS batched gemv and ger with alpha/beta arrays "
                    "(rocBLAS ${rocblas_VERSION})")
   else()
@@ -773,6 +760,9 @@ if(ENABLE_ROCM)
                    "QMC_ROCBLAS_ALPHA_BETA_ARRAYS=ON for the rocBLAS implementations "
                    "(requires rocBLAS 5.5.0 or newer, found ${rocblas_VERSION}).")
   endif()
+
+  find_package(rocsolver CONFIG REQUIRED)
+  find_package(rocthrust CONFIG REQUIRED)
 
   # architecture flags
   if(DEFINED HIP_ARCH)
