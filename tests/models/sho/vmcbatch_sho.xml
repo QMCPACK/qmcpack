@@ -46,5 +46,6 @@
     <parameter name="steps">      2  </parameter>
     <parameter name="substeps">   2  </parameter>
     <parameter name="timestep"> 2.0  </parameter>
+    <parameter name="usedrift">  yes </parameter>
   </qmc>
 </simulation>
