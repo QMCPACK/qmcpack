@@ -3,8 +3,7 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOSET)
 
-from ..generic import generic_settings, NexusError, NexusUserWarning
-generic_settings.raise_error = True
+from ..generic import NexusError, NexusUserWarning
 
 import numpy as np
 from pathlib import Path

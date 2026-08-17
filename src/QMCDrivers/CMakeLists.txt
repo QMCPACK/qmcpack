@@ -37,6 +37,7 @@ set(QMCDRIVERS
     WFOpt/Eigensolver.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
+    WFOpt/NRCOptimization.cpp
     WFOpt/OutputMatrix.cpp
     WFOpt/WFOptDriverInput.cpp
     WFOpt/GradientTestInput.cpp

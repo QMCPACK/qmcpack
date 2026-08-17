@@ -83,6 +83,7 @@ public:
   const SPOSet::SPOMap& spomap_;
   ParticleSet& Pq;
   const ParticleSet* Pc;
+#if !defined(REMOVE_TRACEMANAGER)
   TraceSample<TraceReal>* w_trace;
   TraceSample<TraceComp>* T_trace;
   CombinedTraceSample<TraceReal>* Vq_trace;
@@ -92,6 +93,7 @@ public:
   CombinedTraceSample<TraceReal>* Vcc_trace;
   std::vector<Value_t> E_samp;
   CombinedTraceSample<TraceReal>* E_trace;
+#endif
 
 
   bool initialized;
@@ -155,7 +157,9 @@ public:
   Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
   //optional standard interface
+#if !defined(REMOVE_TRACEMANAGER)
   void getRequiredTraces(TraceManager& tm) override;
+#endif
   void setRandomGenerator(RandomBase<FullPrecRealType>* rng) override;
 
   //required for Collectables interface
@@ -165,10 +169,13 @@ public:
   //should be empty for Collectables interface
   void setObservables(PropertySetType& plist) override {}
   void setParticlePropertyList(PropertySetType& plist, int offset) override {}
+
+#if !defined(REMOVE_TRACEMANAGER)
   void contributeScalarQuantities() override {}
   void checkoutScalarQuantities(TraceManager& tm) override {}
   void collectScalarQuantities() override {}
   void deleteScalarQuantities() override {}
+#endif
 
   //obsolete?
   bool get(std::ostream& os) const override { return false; }

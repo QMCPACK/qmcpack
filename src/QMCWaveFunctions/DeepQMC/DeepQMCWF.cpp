@@ -40,9 +40,7 @@ DeepQMCWF::DeepQMCWF(std::string name,
                      std::unique_ptr<const DeepQMCBridge> bridge,
                      int mol_idx)
     : WaveFunctionComponent(std::move(name)), ions_(ions), bridge_(std::move(bridge)), mol_idx_(mol_idx)
-{
-  assert(bridge_ && "DeepQMCWF requires a non-null DeepQMCBridge!");
-}
+{ assert(bridge_ && "DeepQMCWF requires a non-null DeepQMCBridge!"); }
 
 DeepQMCWF::DeepQMCWF(const DeepQMCWF&) = default;
 
@@ -258,9 +256,7 @@ void DeepQMCWF::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& 
                               const RefVector<ParticleSet::ParticleGradient>& G_list,
                               const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                               bool fromscratch) const
-{
-  mw_evaluateLog(wfc_list, p_list, G_list, L_list);
-}
+{ mw_evaluateLog(wfc_list, p_list, G_list, L_list); }
 
 void DeepQMCWF::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
@@ -299,9 +295,7 @@ DeepQMCWF::PsiValue DeepQMCWF::ratioGrad(ParticleSet& P, int iat, GradType& grad
 }
 
 DeepQMCWF::LogValue DeepQMCWF::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
-{
-  return evaluateLog(P, P.G, P.L);
-}
+{ return evaluateLog(P, P.G, P.L); }
 
 void DeepQMCWF::evaluateDerivatives(ParticleSet& P,
                                     const OptVariables& optvars,
@@ -312,8 +306,6 @@ void DeepQMCWF::evaluateDerivatives(ParticleSet& P,
 }
 
 std::unique_ptr<WaveFunctionComponent> DeepQMCWF::makeClone(ParticleSet& tpq) const
-{
-  return std::make_unique<DeepQMCWF>(*this);
-}
+{ return std::make_unique<DeepQMCWF>(*this); }
 
 } // namespace qmcplusplus

@@ -78,6 +78,7 @@ nexus_core_defaults = obj(
     status_only       = False,             # used by: ProjectManager
     generate_only     = False,             # used by: Simulation,Machine
     sleep             = 3,                 # used by: ProjectManager
+    timeout           = 5*60,              # used by: Simulation
     runs              = 'runs',            # used by: Simulation,Machine
     results           = '',                # used by: Simulation
     local_directory   = './',              # used by: Simulation,Machine
@@ -121,9 +122,7 @@ def restore_nexus_core_defaults():
 restore_nexus_core_defaults()
 
 
-nexus_core_no_process = set('''
-  status_only  generate_only  sleep
-  '''.split())
+nexus_core_no_process = {'status_only', 'generate_only', 'sleep', 'timeout'}
 
 
 class NexusCore(DevBase):
@@ -224,7 +223,7 @@ _____________________________________________________
         #end if
     #end def tlog
 
-    def enter(self, directory: PathLike, changedir: bool = True, msg: str = ''):
+    def enter(self, directory: PathLike, *, changedir: bool = True, msg: str = ''):
         """Have Nexus enter a directory and change its current working directory.
         
         Parameters

@@ -756,7 +756,7 @@ class GBase(PlotHandler):
         (`External API`) Reset all attributes to default values.
         """
         cls = self.__class__
-        for name,(dtype,default) in cls.persistent_data_types.items():
+        for name,(dtype,default) in cls.persistent_data_types.items():  # noqa: B007
             self[name] = default
         #end for
     #end def reset
@@ -844,10 +844,10 @@ class GBase(PlotHandler):
         msgs = self.validity_checks()
         valid = len(msgs)==0
         if not valid and exit:
-            for msg in msgs:
-                self.error(msg,exit=False,trace=False)
-            #end for
-            self.error('{} is not valid, see error messages above'.format(cls.descriptor))
+            self.error(
+                '{} is not valid, see error messages:\n'
+                '{}'.format(cls.descriptor, "\n".join(msgs))
+                )
         #end if
         return valid
     #end def check_valid

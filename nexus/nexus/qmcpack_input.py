@@ -450,13 +450,6 @@ class hobj(obj):
         warn(message,header,logfile=logfile)
     #end def warn
 
-    def error(self,message,header=None,exit=True,trace=-2):
-        if header is None:
-            header = self.__class__.__name__
-        logfile = self.__dict__.get('_logfile',None)
-        error(message,header,exit,trace,logfile)
-    #end def error
-
     # access preserving functions
     #  dict interface
     def _keys(self,*args,**kwargs):
@@ -594,6 +587,7 @@ class QIobj(DevBase):
 
     @staticmethod
     def settings(
+        *,
         permissive_read  = False,
         permissive_write = False,
         permissive_init  = False,
@@ -652,7 +646,7 @@ class collection(hidden):
         self.remove(name)
     #end def __delattr__
 
-    def add(self,element,strict=True,key=None):
+    def add(self,element,*,strict=True,key=None):
         if not isinstance(element,QIxml):
             self.error('collection cannot be formed\nadd attempted for non QIxml element\ntype received: {0}'.format(element.__class__.__name__))
         #end if
@@ -942,7 +936,7 @@ class QIxml(Names):
     #end def init_class
 
 
-    def write(self,indent_level=0,pad='   ',first=False):
+    def write(self,indent_level=0,pad='   ',*,first=False):
         param.set_precision(self.get_precision())
         if not QIobj.permissive_write:
             self.check_junk(exit=True)
@@ -1229,7 +1223,7 @@ class QIxml(Names):
     #end def init_from_kwargs
 
 
-    def incorporate_defaults(self,elements=False,overwrite=False,propagate=True):
+    def incorporate_defaults(self,*,elements=False,overwrite=False,propagate=True):
         for name,value in self.defaults.items():
             defval=None
             if isinstance(value,classcollection):
@@ -1258,13 +1252,13 @@ class QIxml(Names):
             #end if
         #end for
         if propagate:
-            for name,value in self.items():
+            for value in self.values():
                 if isinstance(value,QIxml):
-                    value.incorporate_defaults(elements,overwrite)
+                    value.incorporate_defaults(elements=elements,overwrite=overwrite)
                 elif isinstance(value,collection):
                     for v in value:
                         if isinstance(v,QIxml):
-                            v.incorporate_defaults(elements,overwrite)
+                            v.incorporate_defaults(elements=elements,overwrite=overwrite)
                         #end if
                     #end for
                 #end if
@@ -1273,7 +1267,7 @@ class QIxml(Names):
     #end def incorporate_defaults                    
 
 
-    def check_junk(self,junk=None,exit=False):
+    def check_junk(self,junk=None,*,exit=False):
         if junk is None:
             ks = set(self.keys())
             h5tags     = ks & set(self.h5tags)
@@ -1304,8 +1298,10 @@ class QIxml(Names):
             ##end if
 
             #print(obj(dict(self.__class__.__dict__)))
-
-            self.error(msg,'QmcpackInput',exit=exit,trace=exit)
+            if exit:
+                self.error(msg,'QmcpackInput')
+            else:
+                self.warn(msg)
         #end if
     #end def check_junk
 
@@ -1392,7 +1388,7 @@ class QIxml(Names):
     #end def get_single
 
 
-    def get(self,names,namedict=None,host=False,root=True):
+    def get(self,names,namedict=None,*,host=False,root=True):
         if namedict is None:
             namedict = {}
         #end if
@@ -1435,9 +1431,9 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QIxml):
-                value.get(names,namedict,host,root=False)
+                value.get(names,namedict,host=host,root=False)
             elif isinstance(value,collection):
                 for n,v in value.items():
                     name_absent = n not in namedict
@@ -1455,7 +1451,7 @@ class QIxml(Names):
                         #end if
                     #end if
                     if isinstance(v,QIxml):
-                        v.get(names,namedict,host,root=False)
+                        v.get(names,namedict,host=host,root=False)
                     #end if
                 #end if
             #end if
@@ -1501,7 +1497,7 @@ class QIxml(Names):
         for name in remove:
             del self[name]
         #end for
-        for name,value in self.items():
+        for value in self.values():
             if isinstance(value,QIxml):
                 value.remove(*names)
             elif isinstance(value,collection):
@@ -1527,7 +1523,7 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for vname,val in self.items():
+        for val in self.values():
             if isinstance(val,QIxml):
                 val.assign(**kwargs)
             elif isinstance(val,collection):
@@ -1573,7 +1569,7 @@ class QIxml(Names):
                 #end if
             #end if
         #end for
-        for vname,val in self.items():
+        for val in self.values():
             if isinstance(val,QIxml):
                 val.replace(*args,**kwargs)
             elif isinstance(val,collection):
@@ -1678,7 +1674,7 @@ class QIxml(Names):
     #end def pluralize
 
 
-    def difference(self,other,root=True):
+    def difference(self,other,*,root=True):
         if root:
             q1 = deepcopy(self)
             q2 = deepcopy(other)
@@ -1886,7 +1882,7 @@ class QIxmlFactory(Names):
         else:
             msg = self.name+' factory is not aware of the following subtype:\n'
             msg+= '    '+type+'\n'
-            self.error(msg,exit=False,trace=False)
+            self.warn(msg)
         #end if
     #end def __call__
 
@@ -1983,7 +1979,7 @@ class Param(Names):
     #end def read
 
 
-    def write(self,value,mode='attr',tag='parameter',name=None,pad='   ',write_type=None,normal_elem=False):
+    def write(self,value,mode='attr',tag='parameter',name=None,pad='   ',write_type=None,*,normal_elem=False):
         c = ''
         attr_mode = mode=='attr'
         elem_mode = mode=='elem'
@@ -2111,7 +2107,7 @@ class simulation(QIxml):
     attributes = ('method',) # afqmc
     elements   = ('project','random','include','qmcsystem','particleset', # rsqmc
                   'wavefunction','hamiltonian','init','traces',           # rsqmc
-                  'qmc','loop','mcwalkerset','cmc',                       # rsqmc
+                  'mcwalkerset','qmc','loop','cmc',                       # rsqmc
                   'afqmcinfo','walkerset','propagator','execute')         # afqmc
     afqmc_order = ('project','random','afqmcinfo','hamiltonian',
                    'wavefunction','walkerset','propagator','execute')
@@ -2821,7 +2817,7 @@ class loop(QIxml):
         elif 'calculations' in self:
             calcs = self.calculations
         #end if
-        for n in range(self.max):
+        for n in range(self.max):  # noqa: B007
             for i in range(len(calcs)):
                 calculations.append(deepcopy(calcs[i]))
             #end for
@@ -3575,7 +3571,13 @@ class QmcpackInput(SimulationInput,Names):
         if xml is not None or os.path.exists(filepath):
             element_joins=['qmcsystem']
             element_aliases=dict(loop='qmc')
-            xml = XMLreader(filepath,element_joins,element_aliases,warn=False,xml=xml).obj
+            xml = XMLreader(
+                filepath,
+                element_joins   = element_joins,
+                element_aliases = element_aliases,
+                warn            = False,
+                xml             = xml,
+                ).obj
             xml.condense()
             self._metadata = meta() #store parameter/attrib attribute metadata
             Param.metadata = self._metadata
@@ -3585,20 +3587,19 @@ class QmcpackInput(SimulationInput,Names):
                 #try to determine the type
                 elements = []
                 keys = []
-                error = False
+                msg = ""
                 for key,value in xml.items():
                     if isinstance(key,str) and key[0]!='_':
                         if key in types:
                             elements.append(types[key](value))
                             keys.append(key)
                         else:
-                            self.error('element '+key+' is not a recognized type',exit=False)
-                            error = True
+                            msg += 'element '+key+' is not a recognized type'
                         #end if
                     #end if
                 #end for
-                if error:
-                    self.error('cannot read input xml file')
+                if len(msg) > 0:
+                    self.error(f'cannot read input xml file:\n{msg}')
                 #end if
                 if len(elements)==0:
                     self.error('no valid elements were found for input xml file')
@@ -3648,7 +3649,7 @@ class QmcpackInput(SimulationInput,Names):
     #end def write_text
 
 
-    def unroll_calculations(self,modify=True):
+    def unroll_calculations(self,*,modify=True):
         qmc = []
         sim = self.simulation
         if 'calculations' in sim:
@@ -3704,9 +3705,9 @@ class QmcpackInput(SimulationInput,Names):
         return base.get_host(names)
     #end def get_host
 
-    def incorporate_defaults(self,elements=False,overwrite=False,propagate=False):
+    def incorporate_defaults(self,*,elements=False,overwrite=False,propagate=False):
         base = self.get_base()
-        base.incorporate_defaults(elements,overwrite,propagate)
+        base.incorporate_defaults(elements=elements,overwrite=overwrite,propagate=propagate)
     #end def incorporate_defaults
 
     def pluralize(self):
@@ -3755,9 +3756,20 @@ class QmcpackInput(SimulationInput,Names):
             element_joins=['qmcsystem']
             element_aliases=dict(loop='qmc')
             if xml is None:
-                xml = XMLreader(filepath,element_joins,element_aliases,warn=False).obj
+                xml = XMLreader(
+                    filepath,
+                    element_joins   = element_joins,
+                    element_aliases = element_aliases,
+                    warn            = False,
+                    ).obj
             else:
-                xml = XMLreader(None,element_joins,element_aliases,warn=False,xml=xml).obj
+                xml = XMLreader(
+                    None,
+                    element_joins   = element_joins,
+                    element_aliases = element_aliases,
+                    warn            = False,
+                    xml             = xml,
+                    ).obj
             #end if
             xml.condense()
         else:
@@ -3766,7 +3778,7 @@ class QmcpackInput(SimulationInput,Names):
         return xml
     #end def read_xml
 
-    def include_xml(self,xmlfile,replace=True,exists=True):
+    def include_xml(self,xmlfile,*,replace=True,exists=True):
         xml = self.read_xml(xmlfile)
         Param.metadata = self._metadata
         for name,exml in xml.items():
@@ -4037,13 +4049,13 @@ class QmcpackInput(SimulationInput,Names):
         no_particleset = particlesets is None
         no_wavefunction = wavefunction is None
         if no_lattice:
-            self.error('a simulationcell lattice must be present to generate jastrows',exit=False)
+            self.warn('a simulationcell lattice must be present to generate jastrows')
         #end if
         if no_particleset:
-            self.error('a particleset must be present to generate jastrows',exit=False)
+            self.warn('a particleset must be present to generate jastrows')
         #end if
         if no_wavefunction:
-            self.error('a wavefunction must be present to generate jastrows',exit=False)
+            self.warn('a wavefunction must be present to generate jastrows')
         #end if
         if no_lattice or no_particleset or no_wavefunction:
             self.error('jastrows cannot be generated')
@@ -4326,7 +4338,7 @@ class QmcpackInput(SimulationInput,Names):
     #end def get_electron_particle_set
 
 
-    def return_system(self,structure_only=False):
+    def return_system(self,*,structure_only=False):
         input = deepcopy(self)
         input.pluralize()
         axes,ps,H = input.get('lattice','particlesets','hamiltonian')
@@ -4349,7 +4361,7 @@ class QmcpackInput(SimulationInput,Names):
             #end if
         #end for
         if len(ion_list)==0: #try to identify ions by positive charged groups
-            for name,p in ps.items():
+            for p in ps.values():
                 if 'groups' in p:
                     for g in p.groups:
                         if 'charge' in g and g.charge>0:
@@ -4642,12 +4654,12 @@ class QmcpackInput(SimulationInput,Names):
         wfn.jastrows = make_collection(jastrows)
     #end def gen_jastrows
 
-    def optimize_jastrows(self,opt=True):
+    def optimize_jastrows(self,*,opt=True):
         opt = bool(opt)
         jastrows = self.get_jastrows()
         if jastrows is not None:
             jastrow_classes = tuple(jastrow.types.values())
-            for n,Jn in jastrows.items():
+            for Jn in jastrows.values():
                 if not isinstance(Jn,QIxml):
                     continue
                 assert isinstance(Jn,jastrow_classes)
@@ -4700,7 +4712,7 @@ class QmcpackInput(SimulationInput,Names):
         return self.get('multideterminant')
     #end def get_multidet
 
-    def optimize_multidet(self,opt=True):
+    def optimize_multidet(self,*,opt=True):
         opt = bool(opt)
         md  = self.get_multidet()
         if md is None:
@@ -4827,6 +4839,7 @@ class QmcpackInput(SimulationInput,Names):
 
 
     def modify(self,
+               *,
                driver              = None,
                remove_system       = False,
                change_system       = False,
@@ -5470,7 +5483,7 @@ class QmcpackInput(SimulationInput,Names):
         # set jastrow params
         if self.has_jastrows():
             if jastrow_opt is not None:
-                self.optimize_jastrows(jastrow_opt)
+                self.optimize_jastrows(opt=jastrow_opt)
         # set multidet params
         if self.has_multidet():
             if multidet_h5 is not None:
@@ -5478,7 +5491,7 @@ class QmcpackInput(SimulationInput,Names):
             if multidet_cutoff is not None:
                 self.set_multidet_params(cutoff=multidet_cutoff)
             if multidet_opt is not None:
-                self.optimize_multidet(multidet_opt)
+                self.optimize_multidet(opt=multidet_opt)
         # set hamiltonian params
         if pseudo_files is not None:
             assert isinstance(pseudo_files,(dict,obj))
@@ -5523,8 +5536,8 @@ class BundledQmcpackInput(SimulationInput):
     
     def __init__(self,inputs,filenames):
         self.inputs = obj()
-        for input in inputs:
-            self.inputs.append(input)
+        for inp in inputs:
+            self.inputs[len(self.inputs)] = inp
         #end for
         self.filenames = filenames
     #end def __init__
@@ -5533,8 +5546,8 @@ class BundledQmcpackInput(SimulationInput):
     def get_output_info(self,*requests):
         outfiles = []
 
-        for index,input in self.inputs.items():
-            outfs = input.get_output_info('outfiles')
+        for index,inp in self.inputs.items():
+            outfs = inp.get_output_info('outfiles')
             infile = self.filenames[index]
             outfile= infile.rsplit('.',1)[0]+'.g'+str(index).zfill(3)+'.qmc'
             outfiles.append(infile)
@@ -5589,11 +5602,11 @@ class BundledQmcpackInput(SimulationInput):
             ##end if
             c = ''
             for i in range(len(self.inputs)):
-                input = self.inputs[i]
+                inp = self.inputs[i]
                 bfile = self.filenames[i]
                 c += bfile+'\n'
                 bfilepath = os.path.join(path,bfile)
-                input.write(bfilepath)
+                inp.write(bfilepath)
             #end for
             fobj = open(filepath,'w')
             fobj.write(c)
@@ -5617,7 +5630,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
 
     def bundle_inputs(self,quantity,values,input):
         range = len(self.inputs),len(self.inputs)+len(values)
-        self.quantities.append(obj(quantity=quantity,range=range))
+        self.quantities[len(self.quantities)] = obj(quantity=quantity,range=range)
         for value in values:
             inp = deepcopy(input)
             qhost = inp.get_host(quantity)                               
@@ -5633,8 +5646,8 @@ class TracedQmcpackInput(BundledQmcpackInput):
             else:
                 self.error('quantity '+quantity+' was not found in '+input.__class__.__name__)
             #end if
-            self.variables.append(obj(quantity=quantity,value=value))
-            self.inputs.append(inp)
+            self.variables[len(self.variables)] = obj(quantity=quantity,value=value)
+            self.inputs[len(self.inputs)] = inp
         #end for
     #end def bundle_inputs
 
@@ -5753,7 +5766,8 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
 #end def generate_simulationcell
 
 
-def generate_particlesets(electrons   = 'e',
+def generate_particlesets(*,
+                          electrons   = 'e',
                           ions        = 'ion0',
                           up          = 'u',
                           down        = 'd',
@@ -5866,6 +5880,7 @@ def generate_particlesets(electrons   = 'e',
 
 
 def generate_sposets(type           = None,
+                     *,
                      occupation     = None,
                      spin_polarized = False,
                      nup            = None,
@@ -5950,6 +5965,7 @@ def generate_sposet_builder(type,*args,**kwargs):
 
 
 def generate_bspline_builder(type           = 'bspline',
+                             *,
                              meshfactor     = 1.0,
                              precision      = 'float',
                              twistnum       = None, 
@@ -6028,7 +6044,8 @@ def generate_bspline_builder(type           = 'bspline',
 #end def generate_bspline_builder
 
 
-def generate_heg_builder(twist          = None,
+def generate_heg_builder(*,
+                         twist          = None,
                          spin_polarized = False,
                          spo_up         = 'spo_u',
                          spo_down       = 'spo_d',
@@ -6124,7 +6141,8 @@ def partition_sposets(sposet_builder,partition,partition_meshfactors=None):
 #end def partition_sposets
 
 
-def generate_determinantset(up             = 'u',
+def generate_determinantset(*,
+                            up             = 'u',
                             down           = 'd',
                             spo_up         = 'spo_u',
                             spo_down       = 'spo_d',
@@ -6302,6 +6320,7 @@ def check_excitation_type(excitation):
 
 
 def generate_determinantset_old(type           = 'bspline',
+                                *,
                                 meshfactor     = 1.0,
                                 precision      = 'float',
                                 twistnum       = None, 
@@ -6955,7 +6974,7 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
 
 
 
-def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
+def generate_jastrows(jastrows,system=None,*,return_list=False,check_ions=False):
     jin = []
     have_ions = True
     if check_ions and system is not None:
@@ -7027,6 +7046,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
 
 
 def generate_jastrows_alt(
+        *,
         J1           = False,
         J2           = False,
         J3           = False,
@@ -7507,6 +7527,7 @@ def generate_kspace_jastrow(
         kc2:    float | None = None, 
         nk1:    int          = 0, 
         nk2:    int          = 0,
+        *,
         symm1:  str          = 'isotropic', 
         symm2:  str          = 'isotropic', 
         coeff1: list         = None, 
@@ -7770,6 +7791,7 @@ def generate_energydensity(
 
 opt_map = dict(linear=linear,cslinear=cslinear,linear_batch=linear_batch)
 def generate_opt(method,
+                 *,
                  repeat           = 1,
                  energy           = None,
                  rw_variance      = None,
@@ -7872,7 +7894,7 @@ def generate_opts(opt_reqs,**kwargs):
 def set_optional(d,d2):
     for k,v in d2.items():
         if k not in d:
-            d[k] = d2[k]
+            d[k] = v
 
 opt_legacy_defaults = obj(
     method          = 'linear',
@@ -8486,7 +8508,7 @@ def generate_legacy_dmc_calculations(
             )
     #end if
     tfac = 1.0
-    for n in range(ntimesteps):
+    for n in range(ntimesteps):  # noqa: B007
         sfac = 1.0/tfac
         dmc_calcs.append(
             dmc(
@@ -8791,7 +8813,7 @@ def generate_batched_dmc_calculations(
             )
     #end if
     tfac = 1.0
-    for n in range(ntimesteps):
+    for n in range(ntimesteps):  # noqa: B007
         sfac = 1.0/tfac
         dmc_calcs.append(
             dmc(
@@ -9149,7 +9171,7 @@ def generate_basic_input(**kwargs):
             spinor         = kw.spinor,
             )
     else:
-        error('argument "det_format" is invalid.\nReceived: {0}\nValid options are: new, old'.format(det_format),'generate_qmcpack_input')
+        error('argument "det_format" is invalid.\nReceived: {0}\nValid options are: new, old'.format(kw.det_format),'generate_qmcpack_input')
     #end if
 
 
@@ -9533,6 +9555,7 @@ def generate_basic_afqmc_input(**kwargs):
 
 
 def generate_opt_jastrow_input(id  = 'qmc',
+                               *,
                                series           = 0,
                                purpose          = '',
                                seed             = None,
@@ -9634,7 +9657,12 @@ if __name__=='__main__':
 
     element_joins=['qmcsystem']
     element_aliases=dict(loop='qmc')
-    xml = XMLreader(filepath,element_joins,element_aliases,warn=False).obj
+    xml = XMLreader(
+        filepath,
+        element_joins   = element_joins,
+        element_aliases = element_aliases,
+        warn            = False,
+        ).obj
     xml.condense()
 
     qi = QmcpackInput()

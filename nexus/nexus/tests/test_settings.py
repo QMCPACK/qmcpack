@@ -1,9 +1,10 @@
 import pytest
+import sys
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.SETTINGS_OPERATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
+from .. import settings
+from ..developer import obj
 
 from pathlib import Path
 from . import isolate_nexus_core
@@ -16,7 +17,7 @@ def test_settings(tmp_path):
     # test full imports
     import os
     from nexus import settings,Settings
-    from ..developer import DevBase,obj
+    from ..developer import DevBase
     from ..nexus_base import nexus_core,nexus_core_defaults
     from ..nexus_base import nexus_noncore,nexus_noncore_defaults
     from ..nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
@@ -49,7 +50,7 @@ def test_settings(tmp_path):
                 'load_images', 'local_directory', 'mode', 'modes', 'monitor',
                 'primary_modes', 'progress_tty', 'pseudo_dir',
                 'remote_directory', 'results', 'runs',
-                'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
+                'skip_submit', 'sleep', 'stages', 'stages_set', 'status', 'timeout',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
                 ])
         nnckeys_check = set([
@@ -62,6 +63,7 @@ def test_settings(tmp_path):
                 'modes', 'monitor', 'primary_modes', 'progress_tty',
                 'pseudo_dir', 'remote_directory', 'results',
                 'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
+                'timeout',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
                 ])
         setkeys_allowed = setkeys_check | Settings.allowed_vars
@@ -121,6 +123,7 @@ def test_settings(tmp_path):
     
     # check that core settings are at default values
     assert(object_eq(nexus_core,nexus_core_defaults))
+    assert(nexus_core.timeout==5*60)
     assert(object_eq(nexus_noncore,nexus_noncore_defaults))
     assert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
     aux_defaults()
@@ -148,12 +151,14 @@ def test_settings(tmp_path):
         pseudo_dir    = pseudo_path,
         status_only   = 0,
         generate_only = 1,
+        timeout       = 10,
         machine       = 'ws16',
         command_line  = False,
         )
     check_settings_core_noncore()
     assert(nexus_core.status_only==0)
     assert(nexus_core.generate_only==1)
+    assert(nexus_core.timeout==10)
     pseudo_path = str((tmp_path / 'pseudopotentials').resolve())
     assert(nexus_core.pseudo_dir==pseudo_path)
     assert(PseudoSet.pseudo_files=={
@@ -169,3 +174,18 @@ def test_settings(tmp_path):
     # check that a new empty settings works following basic
     check_empty_settings()
 #end def test_settings
+
+
+@isolate_nexus_core
+def test_command_line_timeout():
+    argv = sys.argv
+    try:
+        sys.argv = ['nexus_script.py','--timeout=12.5']
+        script_settings = obj()
+        settings.process_command_line_settings(script_settings)
+    finally:
+        sys.argv = argv
+    #end try
+
+    assert(script_settings.timeout==12.5)
+#end def test_command_line_timeout

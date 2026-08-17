@@ -3,8 +3,7 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOPOTENTIAL)
 
-from ..generic import generic_settings, NexusError, NexusUserWarning
-generic_settings.raise_error = True
+from ..generic import NexusUserWarning
 
 import numpy as np
 from . import TEST_DIR

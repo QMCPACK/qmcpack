@@ -15,8 +15,8 @@ Docker containers are identified by `domain/image:tag` and stored using `The Git
 Currently available containers have pre-installed QMCPACK dependencies, see the Dockerfile file link for available dependencies on each image:
 
 - `Linux containers <https://github.com/orgs/QMCPACK/packages>`_ 
-   - ghcr.io/qmcpack/ubuntu22-openmpi:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu22/openmpi/Dockerfile>`_
-   - ghcr.io/qmcpack/ubuntu22-clang:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu22/clang/Dockerfile>`_
+   - ghcr.io/qmcpack/ubuntu26-openmpi:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu26/openmpi/Dockerfile>`_
+   - ghcr.io/qmcpack/ubuntu24-openmpi:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/ubuntu24/openmpi/Dockerfile>`_
    - ghcr.io/qmcpack/centos10:latest: `Dockerfile <https://github.com/QMCPACK/qmcpack/blob/develop/config/docker/dependencies/centos10/Dockerfile>`_
 
 
@@ -35,7 +35,7 @@ Running Docker Containers
 
    .. code-block:: bash
    
-      docker pull ghcr.io/qmcpack/ubuntu22-openmpi:latest
+      docker pull ghcr.io/qmcpack/ubuntu26-openmpi:latest
 
 3. **Run an image**: the `docker run` command will spin up a container with using the image we just downloaded from step 2. Alternatively, `docker run` will automatically fallback to pulling the image and tag from the container registry.
 
@@ -43,7 +43,7 @@ Running Docker Containers
 
    .. code-block:: bash
 
-      docker run -it ghcr.io/qmcpack/ubuntu22-openmpi:latest /bin/bash
+      docker run -it ghcr.io/qmcpack/ubuntu26-openmpi:latest /bin/bash
 
    The above will run the container in interactive mode dropping the default `user` to `/home/user` using the `bash` shell. If `sudo` access is needed (e.g. install a package `sudo apt-get install emacs`) the password for the default `user` is also `user`.
 
@@ -51,7 +51,7 @@ Running Docker Containers
 
    .. code-block:: bash
 
-      docker run -u $(id -u `stat -c "%U" .`):$(id -g `stat -c "%G" .`) -v <QMCPACK Source Directory>:/home/user -it ghcr.io/qmcpack/ubuntu22-openmpi:latest /bin/bash
+      docker run -u $(id -u `stat -c "%U" .`):$(id -g `stat -c "%G" .`) -v <QMCPACK Source Directory>:/home/user -it ghcr.io/qmcpack/ubuntu26-openmpi:latest /bin/bash
 
 
    Flags used by `docker run` (Note: The flags -i and -t are combined above):
@@ -68,7 +68,7 @@ Running Docker Containers
 
    .. code-block:: bash
 
-      docker run -u root -v path/to/QMCPACK:home/user -it ghcr.io/qmcpack/ubuntu22-openmpi:latest /bin/bash
+      docker run -u root -v path/to/QMCPACK:home/user -it ghcr.io/qmcpack/ubuntu26-openmpi:latest /bin/bash
 
 
 Building QMCPACK in Containers

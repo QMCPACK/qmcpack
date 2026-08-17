@@ -3,10 +3,6 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.GRID_FUNCTIONS)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
-
 def test_coord_conversion():
 
     import numpy as np
@@ -473,7 +469,7 @@ def get_grids():
             #end for
         #end for
 
-        for name,grid in grids.items():
+        for name in grids.keys():
             props[name] = properties_from_name(name)
         #end for
 

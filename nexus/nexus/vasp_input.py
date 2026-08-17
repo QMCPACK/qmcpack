@@ -2,43 +2,20 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+"""Support I/O, generation, and manipulation of VASP input files.
 
-#====================================================================#
-#  vasp_input.py                                                     #
-#    Supports I/O, generation, and manipulation of VASP input files. #
-#                                                                    #
-#  Content summary:                                                  #
-#    VaspInput                                                       #
-#      SimulationInput class for VASP.                               #
-#                                                                    #
-#    generate_vasp_input                                             #
-#      User-facing function to generate arbitrary VASP input files.  #
-#                                                                    #
-#    generate_poscar                                                 #
-#      Function to create a Poscar object from a Structure object.   #
-#                                                                    #
-#    Vobj                                                            #
-#      Base class for VASP input classes.                            #
-#                                                                    #
-#    VFile                                                           #
-#      Base class for a VASP file.                                   #
-#                                                                    #
-#    VKeywordFile                                                    #
-#      Base class for VASP input files in keyword format.            #
-#      I/O handled at base class level.                              #
-#      Derived classes contain the keyword spec. for each file.      #
-#      See Incar and Stopcar classes.                                #
-#                                                                    #
-#    VFormattedFile                                                  #
-#      Base class for VASP input files with strict formatting.       #
-#      Derived classes handle specialized I/O for each file.         #
-#      See Iconst, Kpoints, Penaltypot, Poscar, Potcar, and Exhcar.  #
-#                                                                    #
-#====================================================================#
+``VaspInput`` collects the files for a VASP calculation, while
+``generate_vasp_input`` and ``generate_poscar`` provide user-facing input
+generation. Keyword files share parsing and writing through ``VKeywordFile``;
+strictly formatted files derive from ``VFormattedFile``.
+"""
 
 
 import os
+import re
+from collections.abc import Mapping
 from copy import deepcopy
+from functools import partial
 from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
@@ -66,7 +43,12 @@ def expand_array(sval):
     for v in sval.split():
         if '*' in v:
             n,vv = v.rsplit('*',1)
-            sarr.extend(int(n)*[vv])
+            n = int(n)
+            if n<0:
+                msg = 'array repeat count must be non-negative'
+                raise ValueError(msg)
+            #end if
+            sarr.extend(n*[vv])
         else:
             sarr.append(v)
         #end if
@@ -105,15 +87,16 @@ def read_int_array(sval):
 
 
 def read_real_array(sval):
-    return np.array(expand_array(sval),dtype=float)
+    values = [v.lower().replace('d','e') for v in expand_array(sval)]
+    return np.array(values,dtype=float)
 #end def read_real_array
 
 
-bool_array_dict = dict(T=True,F=False)
+bool_array_dict = dict(T=True,F=False,TRUE=True,FALSE=False)
 def read_bool_array(sval):
     barr = []
     for v in expand_array(sval):
-        barr.append(bool_array_dict[v])
+        barr.append(bool_array_dict[v.upper().strip('.')])
     #end for
     return np.array(barr,dtype=bool)
 #end def read_bool_array
@@ -139,10 +122,15 @@ def write_bool(v):
 
 
 def write_string(v):
-    if '\n' not in v:
-        return v
+    quote = (
+        not set(v).isdisjoint(set('\n;#!'))
+        or v.endswith('\\')
+        or v != v.strip()
+        )
+    if quote:
+        return '"'+v+'"'
     else:
-        return '"'+v+'"' # multi-line string
+        return v
     #end if
 #end def write_string
 
@@ -150,11 +138,6 @@ def write_string(v):
 def equality(a,b):
     return a==b
 #end def equality
-
-
-def real_equality(a,b):
-    return np.abs(a-b)<=1e-6*(np.abs(a)+np.abs(b))/2
-#end def real_equality
 
 
 def render_bool(v):
@@ -167,6 +150,9 @@ def render_bool(v):
 
 
 def write_array(arr,same=equality,render=str,max_repeat=3):
+    if len(arr)==0:
+        return ''
+    #end if
     value_counts = []
     count = 0
     value = arr[0]
@@ -189,7 +175,7 @@ def write_array(arr,same=equality,render=str,max_repeat=3):
         if count>max_repeat:
             s += '{0}*{1} '.format(count,render(value))
         else:
-            for i in range(count):
+            for i in range(count):  # noqa: B007
                 s += render(value)+' '
             #end for
         #end if
@@ -204,7 +190,7 @@ def write_int_array(a):
 
 
 def write_real_array(a):
-    return write_array(a,same=real_equality)
+    return write_array(a)
 #end def write_real_array
 
 
@@ -219,20 +205,72 @@ def assign_bool(v):
 #end def assign_bool
 
 
+integer_tolerance = 1e-8
+max_exact_float_integer = 2**53
+def assign_int(v):
+    if isinstance(v,(bool,np.bool_)):
+        msg = 'value must be an integer, not a boolean'
+        raise TypeError(msg)
+    elif isinstance(v,(int,np.integer)):
+        return int(v)
+    elif isinstance(v,(float,np.floating)):
+        value = float(v)
+        if not np.isfinite(value):
+            msg = 'value must be finite'
+            raise ValueError(msg)
+        elif abs(value)>max_exact_float_integer:
+            msg = 'floating-point integer values must not exceed {}'.format(
+                max_exact_float_integer
+                )
+            raise ValueError(msg)
+        #end if
+        nearest = round(value)
+        if not np.isclose(value,nearest,rtol=0.0,atol=integer_tolerance):
+            msg = 'real value {} is not within {} of an integer'.format(
+                v,integer_tolerance
+                )
+            raise ValueError(msg)
+        #end if
+        return nearest
+    else:
+        msg = 'value must be an integer or real number'
+        raise TypeError(msg)
+    #end if
+#end def assign_int
+
+
 def assign_string(v):
     if isinstance(v,str):
         return v
     else:
-        raise ValueError('value must be a string')
+        msg = 'value must be a string'
+        raise ValueError(msg)
     #end if
 #end def assign_string
 
 
 def assign_int_array(a):
     if isinstance(a,(tuple,list,np.ndarray)):
-        return np.array(a,dtype=int)
+        array = np.asarray(a,dtype=object)
+        if array.ndim!=1:
+            msg = 'value must be a one-dimensional array'
+            raise ValueError(msg)
+        #end if
+        values = []
+        for index,value in enumerate(array):
+            try:
+                values.append(assign_int(value))
+            except (TypeError,ValueError) as e:
+                msg = 'invalid integer array element at index {}: {}'.format(
+                    index,e
+                    )
+                raise type(e)(msg) from None
+            #end try
+        #end for
+        return np.array(values,dtype=int)
     else:
-        raise ValueError('value must be a tuple, list, or array')
+        msg = 'value must be a tuple, list, or array'
+        raise ValueError(msg)
     #end if
 #end def assign_int_array
 
@@ -241,7 +279,8 @@ def assign_real_array(a):
     if isinstance(a,(tuple,list,np.ndarray)):
         return np.array(a,dtype=float)
     else:
-        raise ValueError('value must be a tuple, list, or array')
+        msg = 'value must be a tuple, list, or array'
+        raise ValueError(msg)
     #end if
 #end def assign_real_array
 
@@ -250,12 +289,13 @@ def assign_bool_array(a):
     if isinstance(a,(tuple,list,np.ndarray)):
         return np.array(a,dtype=bool)
     else:
-        raise ValueError('value must be a tuple, list, or array')
+        msg = 'value must be a tuple, list, or array'
+        raise ValueError(msg)
     #end if
 #end def assign_bool_array
 
 
-#utility functions to convert from VASP internal objects to 
+#utility functions to convert from VASP internal objects to
 #nexus objects:
 def vasp_to_nexus_elem(elem,elem_count):
     syselem=[]
@@ -287,20 +327,123 @@ write_value_functions = obj(
     )
 
 assign_value_functions = obj(
-    ints        = int,
+    ints        = assign_int,
     reals       = float,
     bools       = assign_bool,
     strings     = assign_string,
     int_arrays  = assign_int_array,
     real_arrays = assign_real_array,
-    bool_arrays = assign_bool_array    
+    bool_arrays = assign_bool_array
     )
+
+
+block_type_names = MappingProxyType({
+    'int':        'ints',
+    'real':       'reals',
+    'bool':       'bools',
+    'string':     'strings',
+    'int_array':  'int_arrays',
+    'real_array': 'real_arrays',
+    'bool_array': 'bool_arrays',
+    })
+
+
+def mixed_type_matches(value,value_type):
+    if value_type=='strings':
+        return isinstance(value,str)
+    elif value_type=='bools':
+        return isinstance(value,(bool,np.bool_,int,np.integer))
+    elif value_type in ('ints','reals'):
+        return (
+            isinstance(value,(int,float,np.integer,np.floating))
+            and not isinstance(value,(bool,np.bool_))
+            )
+    elif value_type in ('int_arrays','real_arrays','bool_arrays'):
+        return isinstance(value,(tuple,list,np.ndarray))
+    else:
+        msg = (
+            'unknown value for keyword value_type: {}, must be one of {}'
+            .format(value_type,list(block_type_names.values()))
+            )
+        raise ValueError(msg)
+    #end if
+#end def mixed_type_matches
+
+
+def assign_mixed(value,*,types):
+    errors = []
+    for value_type in types:
+        if mixed_type_matches(value,value_type):
+            try:
+                return assign_value_functions[value_type](value)
+            except Exception as e:  # noqa: BLE001
+                errors.append(
+                    '{0} for value {1}: {2}'.format(value_type,value,e)
+                    )
+            #end try
+        #end if
+    #end for
+    message = 'value does not match permitted types: {0}'.format(types)
+    if len(errors)>0:
+        message += '\n'+'\n'.join(errors)
+    #end if
+    raise ValueError(message)
+#end def assign_mixed
+
+
+def read_mixed(sval,*,types):
+    scalar_types = {'ints','reals','bools'}
+    array_types = {'int_arrays','real_arrays','bool_arrays'}
+    try:
+        nvalues = len(expand_array(sval))
+    except Exception:  # noqa: BLE001
+        nvalues = len(sval.split())
+    #end try
+    if nvalues>1:
+        ordered_types = (array_types,)
+    else:
+        ordered_types = scalar_types,array_types
+    #end if
+    errors = []
+    for type_group in ordered_types:
+        for value_type in types:
+            if value_type in type_group:
+                try:
+                    return read_value_functions[value_type](sval)
+                except Exception as e:  # noqa: BLE001
+                    errors.append('{0}: {1}'.format(value_type,e))
+                #end try
+            #end if
+        #end for
+    #end for
+    if nvalues==1 and 'strings' in types:
+        return read_string(sval)
+    #end if
+    msg = 'value does not match permitted types: {}\n{}'.format(
+        types,'\n'.join(errors)
+        )
+    raise ValueError(msg)
+#end def read_mixed
+
+
+def write_mixed(value,*,types):
+    converted = assign_mixed(value,types=types)
+    for value_type in types:
+        if mixed_type_matches(converted,value_type):
+            return write_value_functions[value_type](converted)
+        #end if
+    #end for
+    msg = 'value does not match permitted types: {}'.format(types)
+    raise ValueError(msg)
+#end def write_mixed
 
 
 
 
 
 class Vobj(DevBase):
+    """Base class for VASP input objects."""
+
     def get_path(self,filepath):
         filepath = path_string(filepath)
         if os.path.exists(filepath) and os.path.isdir(filepath):
@@ -318,6 +461,8 @@ class Vobj(DevBase):
 
 
 class VFile(Vobj):
+    """Base class for VASP input files."""
+
     def __init__(self,filepath=None):
         if filepath is not None:
             filepath = path_string(filepath)
@@ -395,7 +540,11 @@ class VFile(Vobj):
                 plocs.pop()
             #end if
             if n>=nqmax:
-                self.error('max number of multi-line strings exceeded.\nOver {} quotation marks found in file.'.format(nqmax-1))
+                self.error(
+                    'max number of multi-line strings exceeded.\n'
+                    'Over {} quotation marks found in file.'
+                    .format(nqmax-1)
+                    )
             #end if
             if len(plocs)%2!=0:
                 self.error('quotation marks for multi-line strings are not paired')
@@ -414,6 +563,7 @@ class VFile(Vobj):
                 #end if
                 istart = i+1
             #end for
+            text += text_in[istart:]
         #end if
         return text,mvals
     #end def preprocess_multiline_strings
@@ -422,11 +572,15 @@ class VFile(Vobj):
 
 
 class VKeywordFile(VFile):
+    """Base class for keyword-based VASP files."""
+
     kw_scalars = ('ints','reals','bools','strings')
     kw_arrays  = ('int_arrays','real_arrays','bool_arrays')
     kw_fields  = kw_scalars + kw_arrays + ('keywords','unsupported')
 
     keyword_classification = None
+    mixed_types = MappingProxyType({})
+    block_constructs = MappingProxyType({})
 
     @classmethod
     def class_init(cls):
@@ -436,17 +590,22 @@ class VKeywordFile(VFile):
         for kw_field in cls.kw_fields:
             if not hasattr(cls,kw_field):
                 setattr(cls,kw_field,set())
+            #end if
+            setattr(cls,kw_field,frozenset(getattr(cls,kw_field)))
         #end for
-        #cls.check_consistency()
         cls.scalar_keywords = set()
         for scalar_field in cls.kw_scalars:
             cls.scalar_keywords |= getattr(cls,scalar_field)
         #end for
+        cls.scalar_keywords = frozenset(cls.scalar_keywords)
         cls.array_keywords = set()
         for array_field in cls.kw_arrays:
             cls.array_keywords |= getattr(cls,array_field)
         #end for
-        cls.keywords = cls.scalar_keywords | cls.array_keywords
+        cls.array_keywords = frozenset(cls.array_keywords)
+        cls.keywords = frozenset(
+            cls.scalar_keywords | cls.array_keywords
+            )
         cls.type = obj()
         cls.read_value   = obj()
         cls.write_value  = obj()
@@ -459,58 +618,238 @@ class VKeywordFile(VFile):
                 cls.assign_value[name] = assign_value_functions[type]
             #end for
         #end for
+        for name,types in cls.mixed_types.items():
+            if name not in cls.keywords:
+                msg = 'mixed-type keyword is not classified: {}'.format(name)
+                raise ValueError(msg)
+            #end if
+            classified_type = cls.type[name]
+            if classified_type not in types:
+                msg = (
+                    'classified type {} is not permitted for keyword {}'
+                    .format(classified_type,name)
+                    )
+                raise ValueError(msg)
+            #end if
+            for value_type in types:
+                if value_type not in read_value_functions:
+                    msg = 'invalid type {} for keyword {}'.format(
+                        value_type,name
+                        )
+                    raise ValueError(msg)
+                #end if
+            #end for
+            cls.type[name] = types
+            cls.read_value[name] = partial(read_mixed,types=types)
+            cls.write_value[name] = partial(write_mixed,types=types)
+            cls.assign_value[name] = partial(assign_mixed,types=types)
+        #end for
+        for block_name,schema in cls.block_constructs.items():
+            if block_name=='image_*' and schema=='keywords':
+                continue
+            elif not isinstance(schema,MappingProxyType):
+                msg = (
+                    'schema for block construct {} must be read-only'
+                    .format(block_name)
+                    )
+                raise TypeError(msg)
+            #end if
+            for field,value_type in schema.items():
+                if value_type not in block_type_names:
+                    msg = 'invalid type {} for block field {}/{}'.format(
+                        value_type,block_name,field
+                        )
+                    raise ValueError(msg)
+                #end if
+            #end for
+        #end for
     #end def class_init
 
 
     @classmethod
-    def check_consistency(cls):
-        msg  = ''
-        all_unknown = set()
-        types = cls.kw_scalars+cls.kw_arrays
-        untyped = set(cls.keywords)
-        for type in types:
-            untyped -= getattr(cls,type)
-        #end for
-        if len(untyped)>0:
-            msg += '\nvariables without a type:\n  {0}\n'.format(sorted(untyped))
+    def block_schema(cls,name):
+        if name in cls.block_constructs:
+            return cls.block_constructs[name]
+        elif re.fullmatch(r'image_[1-9][0-9]*',name):
+            return cls.block_constructs.get('image_*',None)
+        else:
+            return None
         #end if
-        for type in types:
-            unknown = getattr(cls,type)-cls.keywords
-            if len(unknown)>0:
-                msg += '\nunknown {0}:\n  {1}\n'.format(type,sorted(unknown))
-                all_unknown |= unknown
-            #end if
-        #end for
-        if len(all_unknown)>0:
-            msg += '\nall unknown names:\n  {0}\n'.format(sorted(all_unknown))
-            msg += '\nall known names:\n  {0}\n'.format(sorted(cls.keywords))
-        #end if
-        if len(msg)>0:
-            error(msg)
-        #end if
-    #end def check_consistency
+    #end def block_schema
 
 
     @classmethod
-    def print_current_keyword_differences(cls,current_keywords):
-        if isinstance(current_keywords,str):
-            current_keywords = current_keywords.split()
+    def is_block_name(cls,name):
+        return cls.block_schema(name) is not None
+    #end def is_block_name
+
+
+    def extract_block_constructs(self,text):
+        block_names = [
+            re.escape(name) for name in self.block_constructs
+            if name!='image_*'
+            ]
+        if 'image_*' in self.block_constructs:
+            block_names.append(r'image_[1-9][0-9]*')
         #end if
-        kw_cur = set(current_keywords)
-        kw_old = cls.keywords
-        kw_add = kw_cur-kw_old
-        kw_rem = kw_old-kw_cur
-        print()
-        print('{} keywords added:'.format(cls.__name__))
-        print(list(sorted(kw_add)))
-        print()
-        print('{} keywords removed:'.format(cls.__name__))
-        print(list(sorted(kw_rem)))
-    #end def print_current_keyword_differences
+        if len(block_names)==0:
+            return text,obj()
+        #end if
+        pattern = re.compile(
+            r'\b('+'|'.join(block_names)+r')\s*(?:=\s*)?\{',
+            re.IGNORECASE,
+            )
+        blocks = obj()
+        output = ''
+        start = 0
+        while True:
+            match = pattern.search(text,start)
+            if match is None:
+                output += text[start:]
+                break
+            #end if
+            output += text[start:match.start()]
+            depth = 1
+            end = match.end()
+            while end<len(text) and depth>0:
+                if text[end]=='{':
+                    depth += 1
+                elif text[end]=='}':
+                    depth -= 1
+                #end if
+                end += 1
+            #end while
+            name = match.group(1).lower()
+            if depth!=0:
+                self.error('block construct {0} is not closed'.format(name))
+            #end if
+            label = '--block{0}--'.format(str(len(blocks)).zfill(3))
+            blocks[label] = text[match.end():end-1]
+            output += name+' = '+label
+            start = end
+        #end while
+        return output,blocks
+    #end def extract_block_constructs
+
+
+    def block_field_type(self,block_name,field,schema):
+        if schema=='keywords':
+            if field not in self.keywords:
+                msg = '{} is not an INCAR keyword'.format(field.upper())
+                raise ValueError(msg)
+            #end if
+            return self.type[field]
+        elif field not in schema:
+            msg = '{} is not a field of block construct {}'.format(
+                field.upper(),block_name.upper()
+                )
+            raise ValueError(msg)
+        else:
+            return block_type_names[schema[field]]
+        #end if
+    #end def block_field_type
+
+
+    def read_block_construct(self,name,text,multiline_values):
+        schema = self.block_schema(name)
+        value = obj()
+        expression = ''
+        for line in text.splitlines():
+            line = self.remove_comment(line).strip()
+            if len(line)==0:
+                continue
+            #end if
+            expression += line
+            if expression.endswith('\\'):
+                expression = expression[:-1]+' '
+                continue
+            #end if
+            for token in expression.split(';'):
+                if len(token.strip())==0:
+                    continue
+                elif '=' not in token:
+                    msg = 'missing assignment in block {}: {}'.format(
+                        name.upper(),token.strip()
+                        )
+                    raise ValueError(msg)
+                #end if
+                field,sval = token.split('=',1)
+                field = field.lower().strip()
+                sval = sval.strip()
+                if sval.startswith('--multiline'):
+                    sval = multiline_values[sval]
+                #end if
+                value_type = self.block_field_type(name,field,schema)
+                if isinstance(value_type,tuple):
+                    value[field] = read_mixed(sval,types=value_type)
+                else:
+                    value[field] = read_value_functions[value_type](sval)
+                #end if
+            #end for
+            expression = ''
+        #end for
+        if len(expression)>0:
+            msg = 'incomplete line continuation in block {}'.format(name)
+            raise ValueError(msg)
+        #end if
+        return value
+    #end def read_block_construct
+
+
+    def assign_block_construct(self,name,value):
+        if not isinstance(value,Mapping):
+            msg = (
+                'block construct value should be a mapping, but is {}'
+                .format(type(value).__name__)
+                )
+            raise TypeError(msg)
+        #end if
+        schema = self.block_schema(name)
+        assigned = obj()
+        for field,field_value in value.items():
+            field = field.lower()
+            value_type = self.block_field_type(name,field,schema)
+            if isinstance(value_type,tuple):
+                assigned[field] = assign_mixed(
+                    field_value,types=value_type
+                    )
+            else:
+                assigned[field] = assign_value_functions[value_type](
+                    field_value
+                    )
+            #end if
+        #end for
+        return assigned
+    #end def assign_block_construct
+
+
+    def write_block_construct(self,name,value):
+        value = self.assign_block_construct(name,value)
+        schema = self.block_schema(name)
+        fields = value.keys()
+        maxlen = max(map(len,fields),default=0)
+        text = name.upper()+' = {\n'
+        for field in sorted(fields):
+            value_type = self.block_field_type(name,field,schema)
+            if isinstance(value_type,tuple):
+                sval = write_mixed(value[field],types=value_type)
+            else:
+                sval = write_value_functions[value_type](value[field])
+            #end if
+            text += '  {0:<{fmt}} = {1}\n'.format(
+                field.upper(),sval,fmt=maxlen
+                )
+        #end for
+        return text+'}\n'
+    #end def write_block_construct
 
 
     def read_text(self,text,filepath=''):
         text,multiline_values = self.preprocess_multiline_strings(text)
+        text = '\n'.join(
+            self.remove_comment(line) for line in text.splitlines()
+            )
+        text,blocks = self.extract_block_constructs(text)
         lines = text.splitlines()
         expression = None
         continued  = False
@@ -540,30 +879,84 @@ class VKeywordFile(VFile):
                             name,value = token.split('=',1)
                             name  = name.lower().strip()
                             value = value.strip()
-                            if name in self.keywords:
-                                if value.startswith('--multiline'):
-                                    value = multiline_values[value]
+                            if value.startswith('--multiline'):
+                                value = multiline_values[value]
+                            #end if
+                            if self.is_block_name(name):
+                                block_value = self.read_block_construct(
+                                    name,blocks[value],multiline_values
+                                    )
+                                if name not in self:
+                                    self[name] = obj()
                                 #end if
+                                for field,field_value in block_value.items():
+                                    self[name][field] = field_value
+                                #end for
+                                continue
+                            elif '/' in name:
+                                block_name,field = name.split('/',1)
+                                schema = self.block_schema(block_name)
+                                if schema is not None:
+                                    value_type = self.block_field_type(
+                                        block_name,field,schema
+                                        )
+                                    if isinstance(value_type,tuple):
+                                        value = read_mixed(
+                                            value,types=value_type
+                                            )
+                                    else:
+                                        value = read_value_functions[
+                                            value_type
+                                            ](value)
+                                    #end if
+                                    if block_name not in self:
+                                        self[block_name] = obj()
+                                    #end if
+                                    self[block_name][field] = value
+                                    continue
+                                #end if
+                            #end if
+                            if name in self.keywords:
                                 try:
                                     value = self.read_value[name](value)
                                     self[name] = value
-                                except Exception as e:
-                                    self.error('read failed for keyword {0}\nkeyword type: {1}\ninput text: {2}\nexception:\n{3}'.format(name,self.type[name],token,e))
+                                except Exception as e:  # noqa: BLE001
+                                    self.error(
+                                        'read failed for keyword {}\n'
+                                        'keyword type: {}\n'
+                                        'input text: {}\n'
+                                        'exception:\n'
+                                        '{}'.format(
+                                            name,self.type[name],token,e
+                                            )
+                                        )
                                 #end try
                             elif name in self.unsupported:
-                                self.warn('keyword {0} is not currently supported'.format(name))
+                                self.warn(
+                                    'keyword {0} is not currently supported'
+                                    .format(name)
+                                    )
                             else:
                                 #ci(lcs(),gs())
-                                self.error('{0} is not a keyword for the {1} file'.format(name.upper(),self.__class__.__name__.upper()))
+                                self.error(
+                                    '{0} is not a keyword for the {1} file'
+                                    .format(
+                                        name.upper(),
+                                        self.__class__.__name__.upper(),
+                                        )
+                                    )
                             #end if
                         #end if
                     #end for
                 #end if
             #end if
         #end for
+        if continued:
+            self.error('incomplete line continuation at end of file')
+        #end if
     #end def read_text
 
-                                
+
     def write_text(self,filepath=''):
         text = ''
         maxlen=0
@@ -574,10 +967,20 @@ class VKeywordFile(VFile):
         valfmt = '{0:<'+str(maxlen)+'} = {1}\n'
         for name in sorted(self.keys()):
             value = self[name]
+            if self.is_block_name(name):
+                text += self.write_block_construct(name,value)
+                continue
+            #end if
             try:
                 svalue = self.write_value[name](value)
-            except Exception as e:
-                self.error('write failed for file {0} keyword {1}\nkeyword type: {2}\nvalue: {3}\nexception:\n{4}'.format(filepath,name,self.type[name],value,e))
+            except Exception as e:  # noqa: BLE001
+                self.error(
+                    'write failed for file {} keyword {}\n'
+                    'keyword type: {}\n'
+                    'value: {}\n'
+                    'exception:\n'
+                    '{}'.format(filepath,name,self.type[name],value,e)
+                    )
             #end try
             text += valfmt.format(name.upper(),svalue)
         #end for
@@ -587,10 +990,25 @@ class VKeywordFile(VFile):
 
     def assign(self,**values):
         for name,value in values.items():
+            if self.is_block_name(name):
+                self[name] = self.assign_block_construct(name,value)
+                continue
+            elif name not in self.keywords:
+                self.error(
+                    '{0} is not a keyword for the {1} file'
+                    .format(name.upper(),self.__class__.__name__.upper())
+                    )
+            #end if
             try:
                 self[name] = self.assign_value[name](value)
-            except Exception as e:
-                self.error('assign failed for keyword {0}\nkeyword type: {1}\nvalue: {2}\nexception:\n{3}'.format(name,self.type[name],value,e))
+            except Exception as e:  # noqa: BLE001
+                self.error(
+                    'assign failed for keyword {}\n'
+                    'keyword type: {}\n'
+                    'value: {}\n'
+                    'exception:\n'
+                    '{}'.format(name,self.type[name],value,e)
+                    )
             #end try
         #end for
     #end def assign
@@ -599,7 +1017,9 @@ class VKeywordFile(VFile):
 
 
 class VFormattedFile(VFile):
-    def read_lines(self,text,remove_empty=False):
+    """Base class for structured VASP files."""
+
+    def read_lines(self,text,*,remove_empty=False):
         raw_lines = text.splitlines()
         lines = []
         for line in raw_lines:
@@ -630,7 +1050,7 @@ class VFormattedFile(VFile):
             end = len(lines)
         #end if
         is_empty = True
-        for line in lines[start:end]: 
+        for line in lines[start:end]:
             is_empty &= len(line)==0
         #end for
         return is_empty
@@ -638,126 +1058,232 @@ class VFormattedFile(VFile):
 #end class VFormattedFile
 
 
- 
+
 class Incar(VKeywordFile):
+    """Represent a VASP INCAR file."""
 
     # VASP wiki with incar keys/tags
     #   https://www.vasp.at/wiki/index.php/Category:INCAR_tag
 
-    # VTST extensions:  http://theory.cm.utexas.edu/vtsttools/index.html
-    #   ichain lclimb ltangentold ldneb lnebcell jacobian timestep
+    # VTST extensions:  https://henkelmangroup.github.io/vtsttools/
 
-    # some of these are mixed type arrays or other oddly formatted fields
     unsupported = frozenset()
 
-    # these appear on the vasp wiki but have broken documentation
-    broken_docs = frozenset({'lkpoints_wan', 'nomega_dump', 'dmft_basis'})
-
-    ints = frozenset({
-        'npaco', 'ml_iscale_toten', 'phon_nstruct', 'ml_ialgo_linreg', 'kpoints_opt_mode',
-        'i_constrained_m', 'nbseeig', 'nomegapar', 'lmaxfockmp2', 'nkredy', 'nbandsgw',
-        'inimix', 'maxmem', 'nblock', 'ngy', 'lmaxmix', 'ibrion', 'phon_ntlist',
-        'ml_nhyp', 'nppstr', 'kpar', 'isif', 'ialgo', 'ngxf', 'ml_mrb2', 'plevel',
-        'ismear', 'iniwav', 'clnt', 'shakemaxiter', 'nstorb', 'nmaxfockae', 'phon_nwrite',
-        'num_wann', 'kblock', 'nbands', 'nblock_fock', 'elmin', 'nomegar', 'ml_mhis',
-        'nelmdl', 'hills_bin', 'ml_icriteria', 'nkredz', 'findiff', 'ichibare', 'nblk',
-        'nwrite', 'maxmix', 'lmaxmp2', 'proutine', 'apaco', 'nkredx', 'nelm', 'ncshmem',
-        'ml_ff_istart', 'iepsilon', 'igpar', 'ldauprint', 'ipead', 'ml_ff_icouple_mb',
-        'nbmod', 'nelmgw', 'nedos', 'lmaxfock', 'fockcorr', 'ml_ff_mrb1_mb', 'ml_nmdint',
-        'ngyf', 'ml_ireg', 'ml_ff_lmax2_mb', 'nomega', 'nsim', 'ngzf', 'mdalgo', 'ivdw',
-        'nelmin', 'ispin', 'cll', 'imix', 'smass', 'cln', 'hflmax', 'antires', 'nupdown',
-        'hflmaxf', 'ml_ff_natom_coupled_mb', 'exxoep', 'ncore_in_image1', 'npar',
-        'nelmall', 'ml_natom_coupled', 'mixpre', 'ldautype', 'ntaupar', 'nbandso',
-        'ml_iweight', 'naturalo', 'ncore', 'ml_ff_ireg_mb', 'ml_lmax2', 'nfree',
-        'ntemper', 'ml_istart', 'ch_nedos', 'ml_iafilt2', 'ml_mrb1', 'idipol', 'ngz',
-        'nrmm', 'lmaxfockae', 'ml_mconf_new', 'isym', 'ml_mb', 'ml_nrank_sparsdes', 'ngx',
-        'nsw', 'images', 'nkred', 'iwavpr', 'nbandsv', 'ml_mconf', 'icharg',
-        'kpoints_opt_nkbatch', 'ml_ff_mrb2_mb', 'lorbit', 'ichain', 'istart', 'lmaxpaw',
-        'voskown', 'spring', 'icorelevel'
+    # Pages still present in Nexus history but absent or malformed on the wiki.
+    broken_docs = frozenset({
+        'dmft_basis',
         })
 
+    ints = frozenset({
+        'antires', 'ch_nedos', 'cll', 'cln', 'clnt', 'drotmax', 'efermi_nedos',
+        'elmin', 'elph_fermi_nedos', 'elph_ismear', 'elph_lr', 'elph_nbands',
+        'elph_selfen_band_start_kp', 'elph_selfen_band_stop_kp',
+        'elph_selfen_nw', 'elph_transport_driver', 'elph_transport_nedos',
+        'elph_transport_nedos_plot', 'elph_wf_comm_opt', 'exxoep', 'findiff',
+        'fmp_direction', 'fmp_period', 'fmp_snumber', 'fmp_swapnum', 'fnmin',
+        'fockcorr', 'hflmax', 'hflmaxf', 'hills_bin', 'i_constrained_m',
+        'ialgo', 'iall_in_one', 'ibrion',
+        'ibse', 'ichain', 'icharg', 'ichibare', 'icorelevel', 'idipol',
+        'iepsilon', 'ifc_asr', 'ifc_lr', 'igpar', 'ilbfgsmem', 'images',
+        'imix', 'inimix', 'iniwav', 'inmrprint', 'iopt', 'ipead',
+        'irc_direction', 'irc_stop', 'isearch', 'isif', 'ismear', 'ispin',
+        'istart', 'isym', 'ivdw', 'ivdw_nl', 'iwavpr', 'kblock', 'kpar',
+        'kpoints_opt_mode', 'kpoints_opt_nkbatch', 'ldauprint', 'ldautype',
+        'libmbd_n_omega_grid', 'lmaxfock', 'lmaxfockae', 'lmaxfockmp2',
+        'lmaxmix', 'lmaxmp2', 'lmaxpaw', 'lmaxtau', 'lorbit', 'maxmem',
+        'maxmix', 'mdalgo', 'mixpre',
+        'ml_calgo', 'ml_desc_type', 'ml_estblock', 'ml_ff_icouple_mb',
+        'ml_ff_ireg_mb', 'ml_ff_istart', 'ml_ff_lmax2_mb', 'ml_ff_mrb1_mb',
+        'ml_ff_mrb2_mb', 'ml_ff_natom_coupled_mb', 'ml_iafilt2',
+        'ml_ialgo_linreg', 'ml_icriteria', 'ml_ireg', 'ml_iscale_toten',
+        'ml_istart', 'ml_iweight', 'ml_lmax2', 'ml_mb', 'ml_mb_min',
+        'ml_mconf', 'ml_mconf_new', 'ml_mhis', 'ml_mopot_nm', 'ml_mrb1',
+        'ml_mrb2', 'ml_natom_coupled', 'ml_ncshmem', 'ml_nhyp', 'ml_nmdint',
+        'ml_nrank_sparsdes', 'ml_outblock', 'ml_output_mode', 'ml_srpot_n0',
+        'naturalo', 'nbands', 'nbands_wave', 'nbandsexact', 'nbandsgw',
+        'nbandso', 'nbandsv', 'nblk', 'nblock', 'nblock_fock', 'nbmod',
+        'nbseblocko', 'nbseblockv', 'nbseeig', 'ncore', 'ncore_in_image1',
+        'ncshmem', 'nedos', 'nelm', 'nelmall', 'nelmdl', 'nelmgw', 'nelmin',
+        'nfree', 'ngx', 'ngxf', 'ngy', 'ngyf', 'ngz', 'ngzf', 'nhc_nchains',
+        'nhc_nrespa', 'nhc_ns', 'nkred', 'nkredx', 'nkredy', 'nkredz',
+        'nmaxfockae', 'nomega', 'nomega_dump', 'nomegapar', 'nomegar', 'npaco',
+        'npar', 'nppstr', 'nrmm', 'nsim', 'nstorb', 'nsw', 'ntaupar',
+        'ntemper', 'num_wann', 'nwrite', 'phon_dos', 'phon_nedos',
+        'phon_nstruct', 'phon_ntlist', 'phon_nwrite', 'plevel', 'proutine',
+        'pyamff_maxepoch', 'pyamff_maxiter', 'shakemaxiter', 'snl',
+        'transport_nedos', 'voskown', 'wrt_nmrcur',
+        })
 
     reals = frozenset({
-        'shaketolsoft', 'minrot', 'ml_sclc_ctifor', 'param2', 'ml_ff_w2_mb', 'weimin',
-        'enaug', 'encut', 'omegatl', 'amix_mag', 'sigma', 'symprec', 'ml_eps_low', 'clz',
-        'encutgw', 'ml_sion1', 'ediffg', 'ml_ff_w1_mb', 'ml_sion2', 'andersen_prob',
-        'emax', 'ofield_kappa', 'vdw_s6', 'bparam', 'aldac', 'cmbjb', 'nelect',
-        'pthreshold', 'pstress', 'ml_ff_rcut1_mb', 'vdw_cnradius', 'ml_sigv0',
-        'ml_wtoten', 'deper', 'zab_vdw', 'bmix_mag', 'ml_ctifor', 'ofield_q6_near',
-        'hills_w', 'potim', 'vcaimages', 'ml_rcut2', 'ml_afilt2', 'scalee', 'bmix',
-        'lambda', 'libxc2_pn', 'step_max', 'ml_cdoub', 'omegamax', 'hfrcut', 'aexx',
-        'ml_rcouple', 'encutfock', 'vdw_sr', 'vdw_radius', 'shaketol', 'ml_wtsif',
-        'ml_sigw0', 'omegamin', 'ml_wtifor', 'hfscreen', 'amix', 'cparam', 'emin',
-        'langevin_gamma_l', 'wc', 'ediff', 'pmass', 'efield', 'timestep', 'jacobian',
-        'epsilon', 'zval', 'amin', 'ch_sigma', 'step_size', 'vcutoff', 'hills_h',
-        'vdw_s8', 'aggac', 'pomass', 'ml_eps_reg', 'time', 'param1', 'smass', 'cshift',
-        'libxc1_pn', 'ml_cslope', 'scsrad', 'vdw_a2', 'hitoler', 'ml_ff_sion1_mb',
-        'vdw_a1', 'encutgwsoft', 'estop', 'vdw_d', 'mbja', 'enmax', 'ml_rcut1',
-        'ofield_q6_far', 'ml_rdes_sparsdes', 'ofield_a', 'tebeg', 'ml_cx', 'dq',
-        'kspacing', 'enmin', 'ml_csig', 'vdw_scaling', 'ml_w1', 'mbjb', 'dimer_dist',
-        'hfalpha', 'ml_ff_rcut2_mb', 'ebreak', 'ml_ff_sion2_mb', 'teend', 'aldax',
-        'ml_ff_rcouple_mb', 'enini', 'aggax', 'cmbja'
+        'aexx', 'aggac', 'aggax', 'aldac', 'aldax', 'alpha_vdw', 'amggac',
+        'amggax', 'amin', 'amix', 'amix_mag', 'andersen_prob', 'apaco', 'bexx',
+        'bmix', 'bmix_mag', 'bparam', 'ch_amplification', 'ch_sigma', 'clz',
+        'cmbja', 'cmbjb', 'cmbje', 'cparam', 'cshift', 'csvr_period', 'ddr',
+        'deg_threshold', 'deper', 'dfnmax', 'dfnmin', 'dimer_dist', 'dq',
+        'ebreak', 'ediff', 'ediffg', 'efield', 'elph_kspacing',
+        'elph_selfen_band_start',
+        'elph_selfen_band_stop', 'elph_selfen_broad_tol', 'elph_selfen_wrange',
+        'elph_transport_dfermi_tol', 'elph_transport_emax',
+        'elph_transport_emax_plot', 'elph_transport_emin',
+        'elph_transport_emin_plot', 'elph_wf_cache_mb', 'emax', 'emin',
+        'enaug', 'encut', 'encutfock', 'encutgw', 'encutgwsoft', 'encutlr',
+        'enini', 'enmax', 'enmin', 'epsilon', 'estop', 'ewald_cutoff',
+        'falpha', 'fdstep', 'ftimedec', 'ftimeinc', 'ftimemax', 'gamma_vdw',
+        'hfalpha', 'hfrcut', 'hfscreen', 'hills_h', 'hills_w', 'hitoler',
+        'invcurv', 'irc_delta0', 'irc_maxstep', 'irc_minstep', 'irc_vnorm0',
+        'jacobian', 'kspacing', 'kspacing_opt', 'lambda', 'lanczosthr',
+        'langevin_gamma_l', 'libmbd_k_grid_shift', 'libmbd_mbd_a',
+        'libmbd_mbd_beta', 'libmbd_ts_d', 'libmbd_ts_sr', 'libxc1_pn',
+        'libxc2_pn', 'maxdis', 'maxmove', 'mbja', 'mbjb', 'minrot',
+        'ml_afilt2', 'ml_cdoub', 'ml_csig', 'ml_cslope', 'ml_ctifor', 'ml_cx',
+        'ml_emppot_rcut', 'ml_eps_low', 'ml_eps_reg', 'ml_ff_rcouple_mb',
+        'ml_ff_rcut1_mb', 'ml_ff_rcut2_mb', 'ml_ff_sion1_mb', 'ml_ff_sion2_mb',
+        'ml_ff_w1_mb', 'ml_ff_w2_mb', 'ml_mopot_dm', 'ml_mopot_rkm',
+        'ml_mopot_rm', 'ml_rcouple', 'ml_rcut1', 'ml_rcut2',
+        'ml_rdes_sparsdes', 'ml_sclc_ctifor', 'ml_sigv0', 'ml_sigw0',
+        'ml_sion1', 'ml_sion2', 'ml_srpot_b0', 'ml_srpot_s0', 'ml_w1',
+        'ml_wtifor', 'ml_wtoten', 'ml_wtsif', 'msdgw_f', 'nelect', 'nupdown',
+        'ofield_a', 'ofield_kappa', 'ofield_q6_far', 'ofield_q6_near',
+        'omegamax', 'omegamin', 'omegatl', 'param1', 'param2', 'phon_g_cutoff',
+        'phon_sigma', 'pmass', 'potim', 'pstress', 'pthreshold', 'pyamff_etol',
+        'pyamff_fcoeff', 'pyamff_ftol', 'pyamff_maxmove', 'pyamff_swftol',
+        'pyamff_tol', 'rsmbj', 'scalee', 'scissor', 'scsrad', 'sdalpha', 'sdr',
+        'shaketol', 'shaketolsoft', 'sigma', 'sltol', 'smass', 'smbj',
+        'spring', 'step_max', 'step_size', 'symprec', 'tebeg', 'teend',
+        'tilambda', 'time', 'timestep', 'transport_relaxation_time',
+        'vacpotflat', 'vcaimages', 'vcutoff', 'vdw_a1', 'vdw_a2', 'vdw_beta',
+        'vdw_cnradius', 'vdw_d', 'vdw_radius', 'vdw_s6', 'vdw_s8', 'vdw_s9',
+        'vdw_scaling', 'vdw_sr', 'vdw_sr8', 'wc', 'weimin', 'xcm_pn',
+        'zab_vdw', 'zval',
         })
 
     bools = frozenset({
-        'lhfcalc', 'lvdw_ewald', 'lrpaforce', 'lreal_compat', 'skip_edotp',
-        'ml_ff_lsupervec_mb', 'lselfenergy', 'lnmr_sym_red', 'ladder', 'lfxc',
-        'ldipol', 'lspectral', 'lsingles', 'lnoncollinear', 'ldiag', 'ldneb', 'lfockace',
-        'lmaxtau', 'lplane', 'ml_ff_lheat_mb', 'lwrite_wanproj', 'lblueout',
-        'ldisentangle', 'ml_ff_lcouple_mb', 'lchimag', 'ml_ff_lnorm1_mb', 'lcalcpol',
-        'ldisentangled', 'lkpoints_opt', 'lvdwscs', 'lvtot', 'lmodelhf', 'lelf', 'pflat',
-        'lepsilon', 'ml_lheat', 'phon_lmc', 'lsck', 'lwannier90', 'lphon_polar',
-        'lfockaedft', 'lscaaware', 'lvdwexpansion', 'lscalapack', 'ml_leatom', 'lberry',
-        'lnabla', 'ml_ff_lnorm2_mb', 'nlspline', 'lasync', 'ml_lsparsdes', 'lrpa',
-        'loptics', 'ml_lmlff', 'lscaler0', 'llraug', 'ml_ff_lsic_mb', 'evenonly',
-        'lhyperfine', 'lwaveh5', 'lscsgrad', 'lsubrot', 'lweighted', 'lscdm', 'lcorr',
-        'luse_vdw', 'ml_ff_lmlff', 'lzeroz', 'lvdw', 'lscalu', 'lmixtau', 'phon_lbose',
-        'lcharg', 'lspectralgw', 'lorbitalreal', 'kgamma', 'lpead', 'oddonlygw',
-        'addgrid', 'ltemper', 'evenonlygw', 'lvhar', 'lkproj', 'lwannier90_run',
-        'oddonly', 'lasph', 'kpoints_opt', 'lsorbit', 'lorbmom', 'ltangentold',
-        'gga_compat', 'lnebcell', 'lmp2lt', 'ldau', 'ltriplet', 'lwrite_wannier_xsf',
-        'lbone', 'lefg', 'ch_lspec', 'lfinite_temperature', 'lnlrpa', 'lcalceps',
-        'lsmp2lt', 'lspiral', 'ml_luse_names', 'ml_lafilt2', 'lh5', 'lwrite_unk',
-        'laechg', 'lmono', 'lpead_sym_red', 'ltboundlibxc', 'lfermigw', 'lwave',
-        'lhartree', 'lwrite_mmn_amn', 'lclimb', 'lsepb', 'ml_lcouple', 'lthomas',
-        'lwannier90_auto_window', 'lchargh5', 'lsepk', 'lphon_dispersion', 'lpard',
-        'lintpol_kpath'
+        'addgrid', 'ch_lspec', 'elph_ignore_imag_phonons', 'elph_pot_generate',
+        'elph_prepare', 'elph_rotateprojectors', 'elph_run', 'elph_selfen_dw',
+        'elph_selfen_fan', 'elph_selfen_g_skip', 'elph_selfen_gaps',
+        'elph_selfen_imag_skip', 'elph_selfen_static', 'elph_transport',
+        'elph_useblas', 'elph_userecip', 'elph_wf_cache_prefill',
+        'elph_wf_redistribute', 'elph_write_hdf5vel', 'elph_write_textvel',
+        'evenonly', 'evenonlygw',
+        'gga_compat', 'interactive', 'kgamma', 'kpoints_opt', 'ladder',
+        'laechg', 'lall_in_one', 'lasph', 'lasync', 'lautoscale', 'lberry',
+        'lblueout', 'lbone', 'lcalceps', 'lcalcpol', 'lcharg', 'lchargh5',
+        'lchimag', 'lclimb', 'lcorr', 'ldau', 'ldiag', 'ldipol',
+        'ldisentangle', 'ldisentangled', 'ldmatrix', 'ldneb', 'ldownsample',
+        'lefg', 'lelf', 'lepsilon', 'lfermigw', 'lfinite_temperature',
+        'lfockace', 'lfockaedft', 'lfockstd', 'lfxc', 'lglobal', 'lh5',
+        'lhartree', 'lhfcalc', 'lhyperfine', 'lintpol_kpath', 'lkpoints_opt',
+        'lkpoints_wan', 'lkproj', 'llineopt', 'llraug', 'lmixtau', 'lmodelhf',
+        'lmono', 'lmp2lt', 'lnabla', 'lnebcell', 'lnicsall', 'lnlrpa',
+        'lnmr_sym_red', 'lnmrcar', 'lnmrleg', 'lnmrshield', 'lnoaugxc',
+        'lnoncollinear', 'loptics', 'lorbitalreal', 'lorbmom', 'lpard',
+        'lpardh5', 'lpead', 'lpead_sym_red', 'lphon_dispersion', 'lphon_polar',
+        'lphon_read_force_constants', 'lplane', 'lposnics', 'lreal_compat',
+        'lrhfcalc', 'lrpa', 'lrpaforce', 'lscaaware', 'lscalapack', 'lscaler0',
+        'lscalu', 'lscdm', 'lsck', 'lscrpa', 'lscsgrad', 'lselfenergy',
+        'lsepb', 'lsepk', 'lsfbxc', 'lsingles', 'lsmp2lt', 'lsorbit',
+        'lsoshift', 'lspectral', 'lspectralgw', 'lspin_vdw', 'lspiral',
+        'lsubrot', 'lsynch5', 'ltangentold', 'ltau', 'ltboundlibxc', 'ltemper',
+        'lthomas', 'ltriplet', 'ltssurf', 'ltwo_centre', 'luse_vdw',
+        'lusenccl', 'lvacpotav', 'lvdw', 'lvdw_ewald', 'lvdwexpansion',
+        'lvdwscs', 'lvgvappl', 'lvgvcalc', 'lvhar', 'lvtot', 'lwannier90',
+        'lwannier90_auto_window', 'lwannier90_run', 'lwave', 'lwaveh5',
+        'lweighted', 'lwrite_mmn_amn', 'lwrite_spn', 'lwrite_unk',
+        'lwrite_wannier_xsf', 'lwrite_wanproj', 'lwrt_augmented_density',
+        'lzeroz', 'lzora', 'ml_ff_lcouple_mb', 'ml_ff_lheat_mb', 'ml_ff_lmlff',
+        'ml_ff_lnorm1_mb', 'ml_ff_lnorm2_mb', 'ml_ff_lsic_mb',
+        'ml_ff_lsupervec_mb', 'ml_lafilt2', 'ml_lbasis_discard', 'ml_lcouple',
+        'ml_leatom', 'ml_lemppot', 'ml_lerr', 'ml_lfast', 'ml_lheat', 'ml_lib',
+        'ml_lmlff', 'ml_lsparsdes', 'ml_luse_names', 'nlspline', 'nucind',
+        'oddonly', 'oddonlygw', 'pflat', 'phon_lbose', 'phon_lmc',
+        'skip_edotp', 'velocity',
         })
 
     strings = frozenset({
-        'stop_on', 'nthreads_lo', 'system', 'libxc1', 'lreal', 'wannier90_win', 'gga',
-        'nthreads_mu', 'algo', 'locproj', 'metagga', 'libxc2', 'precfock', 'quad_efg',
-        'nthreads_hi', 'prec', 'fftwmakeplan'
+        'algo', 'bandgap', 'bseprec', 'checkpoint_fd', 'cutoff_type',
+        'dftd4_model', 'dftd4_xc', 'efermi', 'elph_decompose', 'elph_driver',
+        'elph_mode', 'elph_scattering_approx', 'fftwmakeplan', 'gga',
+        'libmbd_method', 'libmbd_parallel_mode', 'libmbd_vdw_params_kind',
+        'libmbd_xc', 'libxc1', 'libxc2', 'locproj', 'lreal', 'metagga',
+        'ml_grace_model', 'ml_mode', 'ml_type', 'nthreads_hi', 'nthreads_lo',
+        'nthreads_mu', 'prec', 'precfock', 'pyamff_conv', 'pyamff_model',
+        'pyamff_opt', 'random_generator', 'sdftd3_damping', 'sdftd3_xc',
+        'stop_on', 'system', 'wannier90_win', 'wrt_density', 'wrt_potential',
+        'xc',
         })
 
     int_arrays = frozenset({
-        'iband', 'smearings', 'ldaul', 'ntarget_states', 'kpuse', 'kpoint_bse',
-        'random_seed', 'nsubsys', 'ncrpa_bands', 'ml_icouple'
+        'elph_nbands_sum', 'iband', 'k_multiply', 'kpoint_bse', 'kpuse',
+        'ldaul', 'libmbd_k_grid', 'ml_icouple', 'ml_mopot_ijm', 'ncrpa_bands',
+        'nsubsys', 'ntarget_states', 'random_seed',
         })
-
 
     real_arrays = frozenset({
-        'vdw_alpha', 'cmbj', 'efield_pead', 'phon_dielectric', 'ferwe', 'value_max',
-        'm_constr', 'vdw_c6', 'rwigs', 'dipol', 'tsubsys', 'ngyromag', 'vca', 'vdw_r0',
-        'magmom', 'langevin_gamma', 'value_min', 'ml_ff_eatom', 'ldauu', 'ferdo',
-        'ml_eatom_ref', 'eint', 'vdw_c6au', 'ropt', 'phon_born_charges', 'qmaxfockae',
-        'psubsys', 'ldauj', 'saxis', 'increm', 'phon_tlist', 'qspiral', 'vdw_r0au'
+        'bext', 'bseelectron', 'bsehole', 'cmbj', 'cutoff_mu', 'cutoff_sigma',
+        'dipol', 'efield_pead', 'efor', 'eint', 'elph_pot_fft_mesh',
+        'elph_pot_lattice', 'elph_selfen_carrier_den',
+        'elph_selfen_carrier_den_range', 'elph_selfen_carrier_per_cell',
+        'elph_selfen_delta', 'elph_selfen_energy_window', 'elph_selfen_ikpt',
+        'elph_selfen_kpts', 'elph_selfen_mu', 'elph_selfen_mu_range',
+        'elph_selfen_temps', 'elph_selfen_temps_range', 'fbias_a', 'fbias_d',
+        'fbias_r0', 'ferdo', 'ferwe', 'increm', 'langevin_gamma', 'ldauj',
+        'ldauu', 'libmbd_alpha', 'libmbd_c6au', 'libmbd_r0au', 'm_constr',
+        'magmom', 'ml_eatom_ref', 'ml_ff_eatom', 'ngyromag',
+        'phon_born_charges', 'phon_dielectric', 'phon_tlist', 'pomass',
+        'psubsys', 'qmaxfockae', 'qspiral', 'quad_efg', 'ropt', 'rwigs',
+        'saxis', 'smearings', 'spring_k', 'spring_r0', 'spring_v0', 'tsubsys',
+        'value_max', 'value_min', 'vca', 'vdw_alpha', 'vdw_c6', 'vdw_c6au',
+        'vdw_r0', 'vdw_r0au', 'xc_c',
         })
 
-    bool_arrays = frozenset({'lvdw_onecell', 'lattice_constraints'}) # formatted: F F T, etc
+    bool_arrays = frozenset({
+        'fmp_active', 'lattice_constraints', 'lvdw_onecell',
+        })
+
+    mixed_types = MappingProxyType({
+        'bext':   ('reals','real_arrays'),
+        'efermi': ('strings','reals'),
+        'libxc1': ('strings','ints'),
+        'libxc2': ('strings','ints'),
+        'lreal':  ('strings','bools'),
+        })
 
     keyword_classification = obj(
         array_dimensions = (
-            'nbands', 'ngzf', 'nplwv', 'ngxf', 'lmdim', 'ngy', 'ngz', 'irdmax', 'irmax',
+            'nbands', 'ngzf', 'nplwv', 'ngxf', 'lmdim', 'ngy', 'ngz',
+            'irdmax', 'irmax',
             'nions', 'nkpts', 'nkdim', 'ldim', 'ngyf', 'nedos', 'ngx'
             ),
         )
 
-    # updated 220609
+    block_constructs = MappingProxyType({
+        'kernel_truncation': MappingProxyType({
+            'factor':          'real',
+            'idimensionality': 'int',
+            'ipad':            'int',
+            'isurface':        'int',
+            'lcoarsen':        'bool',
+            'ltruncate':       'bool',
+            }),
+        'plugins': MappingProxyType({
+            'force_and_stress': 'bool',
+            'local_potential':  'bool',
+            'machine_learning': 'bool',
+            'ml_mode':          'string',
+            'ml_outblock':      'int',
+            'ml_output_mode':   'int',
+            'neighbor_cutoff':  'real',
+            'occupancies':      'bool',
+            'structure':        'bool',
+            }),
+        'image_*': 'keywords',
+        })
+
+    # Retained for backwards compatibility.
     deprecated = frozenset({
-        'lvdwscs', 'mbja', 'enmax', 'skip_edotp', 'lvdw', 'timestep', 'jacobian',
-        'enmin', 'lmaxfockmp2', 'vdw_scaling', 'elmin', 'mbjb', 'lclimb', 'hflmaxf',
-        'ldneb', 'lmaxmp2', 'ltangentold', 'lnebcell', 'ichain'
+        'elmin', 'enmax', 'enmin', 'hflmaxf', 'ichain', 'jacobian', 'lclimb',
+        'ldneb', 'lmaxfockmp2', 'lmaxmp2', 'lnebcell', 'ltangentold', 'lvdw',
+        'lvdwscs', 'mbja', 'mbjb', 'skip_edotp', 'timestep', 'vdw_scaling',
         })
 
 #end class Incar
@@ -765,6 +1291,8 @@ class Incar(VKeywordFile):
 
 
 class Stopcar(VKeywordFile):
+    """Represent a VASP STOPCAR file."""
+
     keywords = frozenset({'lstop', 'labort'})
     bools    = frozenset({'lstop', 'labort'})
 #end class Stopcar
@@ -773,19 +1301,61 @@ class Stopcar(VKeywordFile):
 for cls in Incar,Stopcar:
     cls.class_init()
 #end for
-del VKeywordFile.kw_scalars
-del VKeywordFile.kw_arrays
-del VKeywordFile.kw_fields
 
 
 
 class Iconst(VFormattedFile):  # metadynamics -> 6.62.4
-    None
+    """Represent geometric constraints in an ICONST file."""
+
+    def __init__(self,filepath=None):
+        self.coordinates = obj()
+        VFile.__init__(self,filepath)
+    #end def __init__
+
+
+    def read_text(self,text,filepath=''):
+        self.coordinates.clear()
+        lines = self.read_lines(text,remove_empty=True)
+        for line in lines:
+            tokens = line.split()
+            if len(tokens)<2:
+                self.error('invalid ICONST line: {0}'.format(line))
+            #end if
+            values = []
+            for token in tokens[1:-1]:
+                try:
+                    value = int(token)
+                except ValueError:
+                    value = read_real(token)
+                #end try
+                values.append(value)
+            #end for
+            self.coordinates[len(self.coordinates)] = obj(
+                flag   = tokens[0],
+                items  = tuple(values),
+                status = int(tokens[-1]),
+                )
+        #end for
+    #end def read_text
+
+
+    def write_text(self,filepath=''):
+        text = ''
+        for index in sorted(self.coordinates.keys()):
+            coordinate = self.coordinates[index]
+            values = [coordinate.flag]
+            values.extend(map(str,coordinate['items']))
+            values.append(str(assign_int(coordinate.status)))
+            text += ' '.join(values)+'\n'
+        #end for
+        return text
+    #end def write_text
 #end class Iconst
 
 
 
 class Kpoints(VFormattedFile):
+    """Represent Brillouin-zone sampling in a KPOINTS file."""
 
     #  mode == explicit
     #    coord    = cartesian/reciprocal
@@ -802,7 +1372,7 @@ class Kpoints(VFormattedFile):
     #    centering = auto/gamma/monkhorst-pack
     #    kgrid     = number of grid points for each direction (single integer)
     #    kshift    = optional shift of k-point grid
-    #    
+    #
     #  mode == basis
     #    coord  = cartesian/reciprocal
     #    kbasis = 3x3 matrix of kpoint basis vectors
@@ -826,7 +1396,14 @@ class Kpoints(VFormattedFile):
 
 
     def read_text(self,text,filepath=''):
-        lines = self.read_lines(text,remove_empty=True)
+        lines_in = self.read_lines(text,remove_empty=False)
+        if len(lines_in)>0:
+            lines = [lines_in[0]] + [
+                line for line in lines_in[1:] if len(line)>0
+                ]
+        else:
+            lines = []
+        #end if
         if len(lines)>2:
             if ' ' not in lines[1]:
                 iselect = int(lines[1])
@@ -838,7 +1415,7 @@ class Kpoints(VFormattedFile):
                 if cselect=='a':  # fully auto mesh
                     self.mode      = 'auto'
                     self.centering = self.centering_options[cselect]
-                    self.kgrid     = int(lines[3])
+                    self.kgrid     = read_real(lines[3])
                 elif cselect=='g' or cselect=='m': # gamma or monkhorst mesh
                     self.mode      = 'auto'
                     self.centering = self.centering_options[cselect]
@@ -860,21 +1437,33 @@ class Kpoints(VFormattedFile):
                 self.kinsert = iselect
                 self.coord   = self.coord_options(lines[3].lower()[0])
                 endpoints = []
+                labels = []
                 for line in lines[4:]:
-                    endpoints.append(line.split())
+                    tokens = line.split()
+                    endpoints.append(tokens[:3])
+                    labels.append(' '.join(tokens[3:]))
                 #end for
                 self.kendpoints = np.array(endpoints,dtype=float)
+                if any(len(label)>0 for label in labels):
+                    self.labels = np.array(labels,dtype=str)
+                #end if
             else: # explicit kpoints
                 self.mode  = 'explicit'
                 self.coord = self.coord_options(cselect)
                 nkpoints = iselect
                 kpw = []
+                labels = []
                 for line in lines[3:3+nkpoints]:
-                    kpw.append(line.split())
+                    tokens = line.split()
+                    kpw.append(tokens[:4])
+                    labels.append(' '.join(tokens[4:]))
                 #end for
                 kpw = np.array(kpw,dtype=float)
                 self.kpoints  = kpw[:,0:3]
                 self.kweights = kpw[:,3].ravel()
+                if any(len(label)>0 for label in labels):
+                    self.labels = np.array(labels,dtype=object)
+                #end if
                 tetline = 3+nkpoints
                 if len(lines)>tetline and lines[tetline].lower()[0]=='t':
                     self.tetrahedra = obj()
@@ -883,10 +1472,10 @@ class Kpoints(VFormattedFile):
                     tet_volume = float(tokens[1])
                     for n in range(ntets):
                         tokens = lines[tetline+2+n].split()
-                        self.tetrahedra.append(
-                            obj(volume     = tet_volume,
-                                degeneracy = int(tokens[0]),
-                                corners    = np.array(tokens[1:],dtype=int))
+                        self.tetrahedra[len(self.tetrahedra)] = obj(
+                            volume     = tet_volume,
+                            degeneracy = int(tokens[0]),
+                            corners    = np.array(tokens[1:],dtype=int),
                             )
                     #end for
                 #end if
@@ -905,15 +1494,19 @@ class Kpoints(VFormattedFile):
             #end if
             if self.centering=='auto':
                 text+='auto\n'
-                text+=' {0:d}\n'.format(self.kgrid)
+                text+=' {0}\n'.format(self.kgrid)
             elif self.centering=='gamma' or self.centering=='monkhorst-pack':
                 text+='{0}\n'.format(self.centering)
-                text+=' {0:d} {1:d} {2:d}\n'.format(*self.kgrid)
+                text+=' {0} {1} {2}\n'.format(*self.kgrid)
                 if self.kshift is not None:
                     text+=' {0} {1} {2}\n'.format(*self.kshift)
                 #end if
             else:
-                self.error('invalid centering for file {0}: {1}\nvalid options are: auto, gamma, monkhorst-pack'.format(filepath,self.centering))
+                self.error(
+                    'invalid centering for file {0}: {1}\n'
+                    'valid options are: auto, gamma, monkhorst-pack'
+                    .format(filepath,self.centering)
+                    )
             #end if
         elif self.mode=='basis':
             text+='basis mesh\n 0\n'
@@ -927,7 +1520,13 @@ class Kpoints(VFormattedFile):
             text+='{0}\n'.format(self.coord)
             npoints = len(self.kendpoints)
             for n in range(npoints):
-                text+=' {0:18.14f} {1:18.14f} {2:18.14f}   1\n'.format(*self.kendpoints[n])
+                text += ' {0:18.14f} {1:18.14f} {2:18.14f}'.format(
+                    *self.kendpoints[n]
+                    )
+                if 'labels' in self and len(self.labels[n])>0:
+                    text += '  {0}'.format(self.labels[n])
+                #end if
+                text += '\n'
                 if n!=npoints-1 and n%2==1:
                     text+='\n'
                 #end if
@@ -938,36 +1537,205 @@ class Kpoints(VFormattedFile):
             for n in range(len(self.kpoints)):
                 kp = self.kpoints[n]
                 kw = self.kweights[n]
-                text+=' {0:18.14f} {1:18.14f} {2:18.14f} {3:12.8f}\n'.format(kp[0],kp[1],kp[2],kw)
+                text += (
+                    ' {0:18.14f} {1:18.14f} {2:18.14f} {3:12.8f}'
+                    .format(kp[0],kp[1],kp[2],kw)
+                    )
+                if 'labels' in self and len(self.labels[n])>0:
+                    text += '  {0}'.format(self.labels[n])
+                #end if
+                text += '\n'
             #end for
             if 'tetrahedra' in self and len(self.tetrahedra)>0:
                 ntets = len(self.tetrahedra)
                 tets = self.tetrahedra
                 text+='tetrahedra\n'
-                text+=' {0} {1}'.format(ntets,tets[0].volume)
+                text+=' {0} {1}\n'.format(ntets,tets[0].volume)
                 for n in range(ntets):
                     t = tets[n]
                     d = t.degeneracy
                     c = t.corners
-                    text+=' {0:d} {1:d} {2:d} {3:d}\n'.format(d,*c)
+                    text+=' {0} {1} {2} {3} {4}\n'.format(d,*c)
                 #end for
             #end if
         else:
-            self.error('invalid mode: {0}\nvalid options are: auto, basis, line, explicit')
+            self.error(
+                'invalid mode: {0}\n'
+                'valid options are: auto, basis, line, explicit'
+                )
         #end if
-        return text 
+        return text
     #end def write_text
 #end class Kpoints
 
 
+class KpointsOpt(Kpoints):
+    """Represent a VASP KPOINTS_OPT file."""
+#end class KpointsOpt
+
+
+class KpointsElph(Kpoints):
+    """Represent a VASP KPOINTS_ELPH file."""
+#end class KpointsElph
+
+
+class KpointsWan(Kpoints):
+    """Represent a VASP KPOINTS_WAN file."""
+#end class KpointsWan
+
+
+class Qpoints(Kpoints):
+    """Represent phonon sampling in a QPOINTS file."""
+#end class Qpoints
+
+
 
 class Penaltypot(VFormattedFile):  # metadynamics -> 6.62.4 (2nd one)
-    None
+    """Represent bias potentials in a PENALTYPOT file."""
+
+    def __init__(self,filepath=None):
+        self.hills = np.empty((0,0),dtype=float)
+        VFile.__init__(self,filepath)
+    #end def __init__
+
+
+    def read_text(self,text,filepath=''):
+        lines = self.read_lines(text,remove_empty=True)
+        rows = [line.split() for line in lines]
+        if len(rows)==0:
+            self.hills = np.empty((0,0),dtype=float)
+        elif len({len(row) for row in rows})!=1:
+            self.error('PENALTYPOT rows must have equal lengths')
+        else:
+            self.hills = np.array(rows,dtype=float)
+        #end if
+    #end def read_text
+
+
+    def write_text(self,filepath=''):
+        text = ''
+        hills = np.asarray(self.hills,dtype=float)
+        if hills.ndim!=2:
+            self.error('PENALTYPOT hills must be a two-dimensional array')
+        #end if
+        for hill in hills:
+            text += ' '.join(map(str,hill))+'\n'
+        #end for
+        return text
+    #end def write_text
 #end class Penaltypot
+
+
+class Irccar(VFormattedFile):
+    """Represent a discretized path in an IRCCAR file."""
+
+    def __init__(self,filepath=None):
+        self.points = np.empty((0,0),dtype=float)
+        VFile.__init__(self,filepath)
+    #end def __init__
+
+
+    def read_text(self,text,filepath=''):
+        lines = self.read_lines(text,remove_empty=True)
+        if len(lines)==0:
+            self.error('IRCCAR is empty')
+        #end if
+        npoints = int(lines[0])
+        if len(lines[1:])!=npoints:
+            self.error(
+                'IRCCAR declares {0} points but contains {1}'
+                .format(npoints,len(lines[1:]))
+                )
+        #end if
+        rows = [line.split() for line in lines[1:]]
+        if len(rows)>0 and len({len(row) for row in rows})!=1:
+            self.error('IRCCAR point rows must have equal lengths')
+        #end if
+        self.points = np.array(rows,dtype=float)
+    #end def read_text
+
+
+    def write_text(self,filepath=''):
+        points = np.asarray(self.points,dtype=float)
+        if points.ndim!=2:
+            self.error('IRCCAR points must be a two-dimensional array')
+        #end if
+        text = str(len(points))+'\n'
+        for point in points:
+            text += ' '.join(map(str,point))+'\n'
+        #end for
+        return text
+    #end def write_text
+#end class Irccar
+
+
+# Retained for backwards compatibility.
+Ircar = Irccar
+
+
+class VRawFile(VFormattedFile):
+    """Preserve a VASP text file without interpreting it."""
+
+    def __init__(self,filepath=None):
+        self.text = ''
+        VFile.__init__(self,filepath)
+    #end def __init__
+
+
+    def read_text(self,text,filepath=''):
+        self.text = text
+    #end def read_text
+
+
+    def write_text(self,filepath=''):
+        return self.text
+    #end def write_text
+#end class VRawFile
+
+
+class Hessemat(VRawFile):
+    """Represent a VASP HESSEMAT file."""
+#end class Hessemat
+
+
+class Gamma(VRawFile):
+    """Represent a VASP GAMMA file."""
+#end class Gamma
+
+
+class Wanproj(VRawFile):
+    """Represent a VASP WANPROJ file."""
+#end class Wanproj
+
+
+class MlAb(VRawFile):
+    """Represent a VASP ML_AB file."""
+#end class MlAb
+
+
+class MlFf(VRawFile):
+    """Represent a VASP ML_FF file."""
+#end class MlFf
+
+
+class Dynmatfull(VRawFile):
+    """Represent a VASP DYNMATFULL file."""
+#end class Dynmatfull
+
+
+class Chgcar(VRawFile):
+    """Represent a VASP CHGCAR file."""
+#end class Chgcar
+
+
+class Taucar(VRawFile):
+    """Represent a VASP TAUCAR file."""
+#end class Taucar
 
 
 
 class Poscar(VFormattedFile):
+    """Represent a VASP POSCAR file."""
 
     bool_map = MappingProxyType({True:'T',False:'F'})
 
@@ -988,22 +1756,22 @@ class Poscar(VFormattedFile):
 
     def change_specifier(self,specifier,vasp_input_class):
         axes=vasp_input_class.poscar.axes
-        scale=vasp_input_class.poscar.scale
-        unitcellvec=axes*scale
 
-        #units are in angstroms.  
         pos=self.pos
         spec=self.coord  #the current specifier
-        
+
         if spec==specifier:
             return
         #end if
         if spec=="cartesian":
             pass
         elif spec=="direct":
-            pos=np.dot(pos,unitcellvec)
+            pos=np.dot(pos,axes)
         else:
-            self.error("Poscar.change_specifier():  %s is not a valid coordinate specifier"%(spec))
+            self.error(
+                'Poscar.change_specifier():  {0} is not a valid coordinate '
+                'specifier'.format(spec)
+                )
         #end if
         spec=specifier  #the new specifier
 
@@ -1012,7 +1780,10 @@ class Poscar(VFormattedFile):
         elif spec=="direct":
             pos=np.dot(pos,np.linalg.inv(axes))
         else:
-            self.error("Poscar.change_specifier():  %s is not a valid coordinate specifier"%(spec))
+            self.error(
+                'Poscar.change_specifier():  {0} is not a valid coordinate '
+                'specifier'.format(spec)
+                )
         #end if
 
         self.coord=spec
@@ -1025,11 +1796,25 @@ class Poscar(VFormattedFile):
         nlines = len(lines)
         min_lines = 8
         if nlines<min_lines:
-            self.error('file {0} must have at least {1} lines\n  only {2} lines found'.format(filepath,min_lines,nlines))
+            self.error(
+                'file {0} must have at least {1} lines\n'
+                '  only {2} lines found'
+                .format(filepath,min_lines,nlines)
+                )
         #end if
-        description = lines[0]
+        description = text.split('\n',1)[0].strip()
         dim = 3
-        scale = float(lines[1].strip())
+        scale_values = np.array(lines[1].split(),dtype=float)
+        if len(scale_values)==1:
+            scale = float(scale_values[0])
+        elif len(scale_values)==3:
+            scale = scale_values
+        else:
+            self.error(
+                'file {0} must contain one or three scaling factors'
+                .format(filepath)
+                )
+        #end if
         axes = np.empty((dim,dim))
         axes[0] = np.array(lines[2].split(),dtype=float)
         axes[1] = np.array(lines[3].split(),dtype=float)
@@ -1075,35 +1860,87 @@ class Poscar(VFormattedFile):
             spos.append(lines[lcur+i].split())
         #end for
         lcur += npos
-        spos = np.array(spos)
-        pos  = np.array(spos[:,0:3],dtype=float)
+        pos = np.array([tokens[:3] for tokens in spos],dtype=float)
         if selective_dynamics:
-            dynamic = np.array(spos[:,3:6],dtype=str)
-            dynamic = dynamic=='T'
+            dynamic = np.array([tokens[3:6] for tokens in spos],dtype=str)
+            dynamic = np.char.upper(dynamic)=='T'
+            label_start = 6
         else:
             dynamic = None
+            label_start = 3
         #end if
+        labels = []
+        for tokens in spos:
+            labels.append(' '.join(tokens[label_start:]))
+        #end for
+        if not any(len(label)>0 for label in labels):
+            labels = None
+        else:
+            labels = np.array(labels,dtype=str)
+        #end if
+
+        lattice_vel_init = None
+        lattice_vel = None
+        lattice_vectors = None
+        if lcur<len(lines) and lines[lcur].lower().startswith('l'):
+            if lcur+8>len(lines):
+                self.error(
+                    'file {0} is incomplete (missing lattice velocities)'
+                    .format(filepath)
+                    )
+            #end if
+            lcur += 1
+            lattice_vel_init = int(lines[lcur].split()[0])
+            lcur += 1
+            lattice_vel = np.array(
+                [lines[lcur+i].split()[:3] for i in range(3)],
+                dtype=float,
+                )
+            lcur += 3
+            lattice_vectors = np.array(
+                [lines[lcur+i].split()[:3] for i in range(3)],
+                dtype=float,
+                )
+            lcur += 3
+        #end if
+        vector_header = None
+        vectors = None
         if lcur<len(lines) and not self.is_empty(lines,lcur):
-            cline = lines[lcur].lower()
+            header = lines[lcur]
+            cline = header.lower()
             lcur+=1
             if lcur+npos>len(lines):
-                self.error('file {0} is incomplete (missing velocities)'.format(filepath))
+                self.error(
+                    'file {0} is incomplete (missing post-position vectors)'
+                    .format(filepath)
+                    )
             #end if
-            cartesian = len(cline)>0 and (cline[0]=='c' or cline[0]=='k')
-            if cartesian:
-                vel_coord = 'cartesian'
+            is_velocity = (
+                len(cline)==0 or cline[0] in ('c','k','d')
+                )
+            if is_velocity:
+                cartesian = len(cline)==0 or cline[0] in ('c','k')
+                vel_coord = 'cartesian' if cartesian else 'direct'
+                vector_header = header
             else:
-                vel_coord = 'direct'
+                vel_coord = None
+                vector_header = header
             #end if
-            svel = []
+            svectors = []
             for i in range(npos):
-                svel.append(lines[lcur+i].split())
+                svectors.append(lines[lcur+i].split()[:3])
             #end for
             lcur += npos
-            vel = np.array(svel,dtype=float)
+            vectors = np.array(svectors,dtype=float)
+            vel = vectors if is_velocity else None
         else:
             vel_coord = None
             vel = None
+        #end if
+        if lcur<len(lines) and not self.is_empty(lines,lcur):
+            md_extra = '\n'.join(lines[lcur:])+'\n'
+        else:
+            md_extra = None
         #end if
         self.update(
             description = description,
@@ -1115,15 +1952,33 @@ class Poscar(VFormattedFile):
             pos         = pos,
             dynamic     = dynamic,
             vel_coord   = vel_coord,
-            vel         = vel
+            vel         = vel,
             )
+        if vectors is not None:
+            self.vector_header = vector_header
+            self.vectors = vectors
+        #end if
+        if labels is not None:
+            self.labels = labels
+        #end if
+        if lattice_vel is not None:
+            self.lattice_vel_init = lattice_vel_init
+            self.lattice_vel = lattice_vel
+            self.lattice_vectors = lattice_vectors
+        #end if
+        if md_extra is not None:
+            self.md_extra = md_extra
+        #end if
     #end def read_text
 
 
     def write_text(self,filepath=''):
         msg = self.check_complete(exit=False)
         if msg!='':
-            self.error('incomplete data to write file {0}\n{1}'.format(filepath,msg))
+            self.error(
+                'incomplete data to write file {0}\n'
+                '{1}'.format(filepath,msg)
+                )
         #end if
         text = ''
         if self.description is None:
@@ -1131,17 +1986,17 @@ class Poscar(VFormattedFile):
         else:
             text += self.description+'\n'
         #end if
-        text += ' {0}\n'.format(self.scale)
+        if np.isscalar(self.scale):
+            text += ' {0}\n'.format(self.scale)
+        else:
+            text += ' {0} {1} {2}\n'.format(*self.scale)
+        #end if
         for a in self.axes:
             text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(*a)
         #end for
         if self.elem is not None:
             for e in self.elem:
-                iselem, element = Elements.is_element(e, return_element=True)
-                if not iselem:
-                    self.error('{0} is not an element'.format(e))
-                #end if
-                text += element.symbol+' '
+                text += str(e)+' '
             #end for
             text += '\n'
         #end if
@@ -1154,28 +2009,74 @@ class Poscar(VFormattedFile):
         #end if
         text += self.coord+'\n'
         if self.dynamic is None:
-            for p in self.pos:
-                text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(*p)
+            for i,p in enumerate(self.pos):
+                text += ' {0:18.14f} {1:18.14f} {2:18.14f}'.format(*p)
+                if 'labels' in self and len(self.labels[i])>0:
+                    text += '  {0}'.format(self.labels[i])
+                #end if
+                text += '\n'
             #end for
         else:
             bm = self.bool_map
             for i in range(len(self.pos)):
                 p = self.pos[i]
                 d = self.dynamic[i]
-                text += ' {0:18.14f} {1:18.14f} {2:18.14f}  {3}  {4}  {5}\n'.format(p[0],p[1],p[2],bm[d[0]],bm[d[1]],bm[d[2]])
+                text += (
+                    ' {0:18.14f} {1:18.14f} {2:18.14f}'
+                    '  {3}  {4}  {5}'
+                    .format(p[0],p[1],p[2],bm[d[0]],bm[d[1]],bm[d[2]])
+                    )
+                if 'labels' in self and len(self.labels[i])>0:
+                    text += '  {0}'.format(self.labels[i])
+                #end if
+                text += '\n'
+            #end for
+        #end if
+        if 'lattice_vel' in self:
+            text += 'Lattice velocities and vectors\n'
+            text += ' {0}\n'.format(self.lattice_vel_init)
+            for vector in self.lattice_vel:
+                text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(
+                    *vector
+                    )
+            #end for
+            for vector in self.lattice_vectors:
+                text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(
+                    *vector
+                    )
             #end for
         #end if
         if self.vel is not None:
-            text += self.vel_coord+'\n'
-            for v in self.vel:
+            vectors = self.vel
+            vector_header = (
+                '' if self.vel_coord=='cartesian' else self.vel_coord
+                )
+        else:
+            vectors = self.vectors if 'vectors' in self else None
+            vector_header = (
+                self.vector_header if 'vector_header' in self else None
+                )
+        #end if
+        if vectors is not None:
+            if vector_header is None:
+                self.error(
+                    'post-position vector header is missing for file {0}'
+                    .format(filepath)
+                    )
+            #end if
+            text += vector_header+'\n'
+            for v in vectors:
                 text += ' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(*v)
             #end for
+        #end if
+        if 'md_extra' in self:
+            text += self.md_extra
         #end if
         return text
     #end def write_text
 
 
-    def check_complete(self,exit=True):
+    def check_complete(self,*,exit=True):
         msg = ''
         if self.scale is None:
             msg += 'scale is missing\n'
@@ -1195,7 +2096,14 @@ class Poscar(VFormattedFile):
         if self.vel is not None and self.vel_coord is None:
             msg += 'vel_coord is missing\n'
         #end if
-        if exit:
+        if 'vectors' in self and self.vectors is not None:
+            if 'vector_header' not in self or self.vector_header is None:
+                msg += 'vector_header is missing\n'
+            elif np.shape(self.vectors)!=(int(np.sum(self.elem_count)),3):
+                msg += 'vectors must have shape (number of atoms, 3)\n'
+            #end if
+        #end if
+        if exit and len(msg)>0:
             self.error(msg)
         #end if
         return msg
@@ -1205,6 +2113,8 @@ class Poscar(VFormattedFile):
 
 
 class NebPoscars(Vobj):
+    """Manage POSCAR files for a chain of NEB images."""
+
     def read(self,filepath):
         path = self.get_path(filepath)
         dirs = os.listdir(path)
@@ -1236,11 +2146,13 @@ class NebPoscars(Vobj):
 
 
 class Potcar(VFormattedFile):
+    """Represent concatenated datasets in a POTCAR file."""
+
     def __init__(self,filepath=None,files=None):
         self.files    = files
         self.filepath = filepath
         self.pseudos  = obj()
-        if not os.path.isdir(filepath):
+        if filepath is not None and not os.path.isdir(filepath):
             VFile.__init__(self,filepath)
         else:
             VFile.__init__(self)
@@ -1249,28 +2161,19 @@ class Potcar(VFormattedFile):
 
 
     def read_text(self,text,filepath=''):
-        start  = 0
-        end    = len(text)
-        pstart = start
-        pend   = end
-        n      = 0
-        iter   = 0
-        while n<end and iter<20:
-            n = text.find('End of Dataset',start,end)
+        marker = 'End of Dataset'
+        pstart = 0
+        end = len(text)
+        while pstart<end:
+            n = text.find(marker,pstart,end)
             if n==-1:
                 break
             #end if
-            start = n
-            n=text.find('\n',start,end)+1
-            pend = n
+            line_end = text.find('\n',n+len(marker),end)
+            pend = end if line_end==-1 else line_end+1
             self.pseudos[len(self.pseudos)] = text[pstart:pend]
             pstart = pend
-            start  = pend
-            iter+=1
         #end while
-        if iter>=20:
-            self.error('failed to read file {0}'.format(filepath))
-        #end if
     #end def read_text
 
 
@@ -1297,7 +2200,9 @@ class Potcar(VFormattedFile):
         elif self.filepath is not None and self.files is not None:
             pots = obj()
             for file in self.files:
-                pots.append(open(os.path.join(self.filepath,file),'r').read())
+                with open(os.path.join(self.filepath,file),'r') as f:
+                    pots[len(pots)] = f.read()
+                #end with
             #end for
         else:
             pots = obj()
@@ -1317,12 +2222,12 @@ class Potcar(VFormattedFile):
             n2 = pot.find(':',n1+1)
             element = pot[n1:n2].strip()
 
-            pot_info.append(obj(label=label,Zval=Zval,element=element))
+            pot_info[len(pot_info)] = obj(label=label,Zval=Zval,element=element)
         #end for
         return pot_info
     #end def pot_info
 
-    
+
     def label_to_potcar_name(self,label):
         func,elem = label.split()[0:2]
         tag = ''
@@ -1338,7 +2243,9 @@ class Potcar(VFormattedFile):
         self.pseudos.clear()
         if self.filepath is not None and self.files is not None:
             for file in self.files:
-                self.pseudos.append(open(os.path.join(self.filepath,file),'r').read())
+                with open(os.path.join(self.filepath,file),'r') as f:
+                    self.pseudos[len(self.pseudos)] = f.read()
+                #end with
             #end for
         #end if
     #end def load
@@ -1346,17 +2253,14 @@ class Potcar(VFormattedFile):
 
 
 
-class Exhcar(VFormattedFile):
-    None
-#end class Exhcar
-
-
-
 class VaspInput(SimulationInput,Vobj):
+    """Collect the input files for a VASP calculation."""
 
     all_inputs  = (
-        'PENALTYPOT', 'KPOINTS', 'WAVEDER', 'ICONST',
-        'POSCAR', 'STOPCAR', 'EXHCAR', 'POTCAR', 'INCAR',
+        'CHGCAR', 'DYNMATFULL', 'GAMMA', 'HESSEMAT', 'ICONST', 'INCAR',
+        'IRCCAR', 'KPOINTS', 'KPOINTS_ELPH', 'KPOINTS_OPT', 'KPOINTS_WAN',
+        'ML_AB', 'ML_FF', 'PENALTYPOT', 'POSCAR', 'POTCAR', 'QPOINTS',
+        'STOPCAR', 'TAUCAR', 'WANPROJ', 'WAVEDER',
         )
     all_outputs = (
         'IBZKPT', 'LOCPOT', 'PRJCAR', 'PCDAT', 'ELFCAR', 'TMPCAR', 'DOSCAR', 'CHGCAR',
@@ -1365,15 +2269,26 @@ class VaspInput(SimulationInput,Vobj):
         )# note that CHGCAR, TMPCAR, and WAVECAR sometimes contain input
 
     input_files = obj(
-        #exhcar     = Exhcar,
-        #iconst     = Iconst,
-        incar      = Incar,
-        kpoints    = Kpoints,
-        #penaltypot = Penaltypot,
-        poscar     = Poscar,
-        potcar     = Potcar,
-        #stopcar    = Stopcar,
-        #waveder    = Waveder
+        chgcar       = Chgcar,
+        dynmatfull   = Dynmatfull,
+        gamma        = Gamma,
+        hessemat     = Hessemat,
+        iconst       = Iconst,
+        incar        = Incar,
+        irccar       = Irccar,
+        kpoints      = Kpoints,
+        kpoints_elph = KpointsElph,
+        kpoints_opt  = KpointsOpt,
+        kpoints_wan  = KpointsWan,
+        ml_ab        = MlAb,
+        ml_ff        = MlFf,
+        penaltypot   = Penaltypot,
+        poscar       = Poscar,
+        potcar       = Potcar,
+        qpoints      = Qpoints,
+        stopcar      = Stopcar,
+        taucar       = Taucar,
+        wanproj      = Wanproj,
         )
 
     keyword_files = obj(
@@ -1395,11 +2310,19 @@ class VaspInput(SimulationInput,Vobj):
         path = self.get_path(filepath)
         for file in os.listdir(path):
             name = str(file)
-            if len(prefix)>0 and name.startswith(prefix):
-                name = name.split(prefix,1)[1]
+            if len(prefix)>0:
+                if name.startswith(prefix):
+                    name = name.split(prefix,1)[1]
+                else:
+                    continue
+                #end if
             #end if
-            if len(postfix)>0 and name.endswith(postfix):
-                name = name.rsplit(postfix,1)[0]
+            if len(postfix)>0:
+                if name.endswith(postfix):
+                    name = name.rsplit(postfix,1)[0]
+                else:
+                    continue
+                #end if
             #end if
             name = name.lower()
             if name in self.input_files:
@@ -1407,6 +2330,16 @@ class VaspInput(SimulationInput,Vobj):
                 self[name] = self.input_files[name](filepath)
             #end if
         #end for
+        image_dirs = [
+            name for name in os.listdir(path)
+            if len(name)==2
+            and name.isdigit()
+            and os.path.isfile(os.path.join(path,name,'POSCAR'))
+            ]
+        if len(image_dirs)>0:
+            self.poscar = NebPoscars()
+            self.poscar.read(path)
+        #end if
     #end def read
 
 
@@ -1419,15 +2352,17 @@ class VaspInput(SimulationInput,Vobj):
     #end def write
 
 
-    def incorporate_system(self,system,incorp_kpoints=True,coord='cartesian',set_nelect=True):
+    def incorporate_system(self,system,coord='cartesian',*,incorp_kpoints=True,set_nelect=True):
         structure = system.structure
 
         # assign kpoints
         if len(structure.kpoints)>0 and incorp_kpoints:
             kpoints = Kpoints()
             kpoints.mode     = 'explicit'
-            kpoints.coord    = 'cartesian'
-            kpoints.kpoints  = structure.kpoints.copy()
+            kpoints.coord    = 'reciprocal'
+            kpoints.kpoints  = np.dot(
+                structure.kpoints,np.linalg.inv(structure.kaxes)
+                )
             kpoints.kweights = structure.kweights.copy()
             self.kpoints = kpoints
         #end if
@@ -1455,12 +2390,19 @@ class VaspInput(SimulationInput,Vobj):
             if s.frozen is not None:
                 poscar.dynamic = s.frozen==False
             #end if
+            if s.vel is not None:
+                poscar.vel_coord = 'cartesian'
+                poscar.vel = s.vel.copy()
+            #end if
             self.poscar = poscar
         #end if
 
         # handle charged systems
         if set_nelect or system.net_charge!=0:
             #  warning: spin polarization is handled by the user!
+            if 'incar' not in self:
+                self.incar = Incar()
+            #end if
             self.incar.nelect = system.n_elec
         #end if
 
@@ -1468,51 +2410,161 @@ class VaspInput(SimulationInput,Vobj):
     #end def incorporate_system
 
 
-    def return_system(self,structure_only=False,**valency):
-        axes  = self.poscar.axes
-        scale = self.poscar.scale
-        axes  = scale*axes
+    def return_system(self,*,structure_only=False,**valency):
+        if 'poscar' not in self:
+            self.error('POSCAR is required to generate a physical system')
+        elif isinstance(self.poscar,NebPoscars):
+            self.error(
+                'return_system cannot select a structure from an NEB path; '
+                'select an image POSCAR first'
+                )
+        #end if
+        raw_axes = self.poscar.axes
+        input_scale = self.poscar.scale
+        if np.isscalar(input_scale) and input_scale<0:
+            scale_factor = (abs(input_scale)/abs(np.linalg.det(raw_axes)))**(1.0/3.0)
+        else:
+            scale_factor = input_scale
+        #end if
+        axes  = scale_factor*raw_axes
         scale = 1.0
- 
-        velem       = self.poscar.elem
+
+        pot_info = None
+        velem = self.poscar.elem
+        if velem is None and 'potcar' in self:
+            pot_info = self.potcar.pot_info()
+            if len(pot_info)>0:
+                velem = np.array(
+                    [pot_info[n].element for n in range(len(pot_info))]
+                    )
+            #end if
+        #end if
+        if velem is None:
+            self.error(
+                'POSCAR does not contain species names and they could not be '
+                'recovered from POTCAR'
+                )
+        #end if
         velem_count = self.poscar.elem_count
+        if len(velem)!=len(velem_count):
+            self.error(
+                'the number of POSCAR species does not match the number of '
+                'species counts'
+                )
+        #end if
         elem        = vasp_to_nexus_elem(velem,velem_count)
- 
-        self.poscar.change_specifier('cartesian',self)
-        pos=self.poscar.pos
-        
+
+        if self.poscar.coord=='direct':
+            pos = np.dot(self.poscar.pos,axes)
+        elif self.poscar.coord=='cartesian':
+            pos = scale_factor*self.poscar.pos
+        else:
+            self.error('invalid POSCAR coordinate specifier: {0}'.format(self.poscar.coord))
+        #end if
+        vel = None
+        if self.poscar.vel is not None:
+            if self.poscar.vel_coord=='direct':
+                vel = np.dot(self.poscar.vel,axes)
+            elif self.poscar.vel_coord=='cartesian':
+                vel = self.poscar.vel.copy()
+            else:
+                self.error(
+                    'invalid POSCAR velocity coordinate specifier: {0}'
+                    .format(self.poscar.vel_coord)
+                    )
+            #end if
+        #end if
+
         center=axes.sum(0)/2.0
-        
-        kpoints  = None
-        kweights = None
+
         kgrid    = None
         kshift   = None
 
-        if self.kpoints.mode=="auto":
-            kshift=self.kpoints.kshift
-            if self.kpoints.centering=="monkhorst-pack":
+        if structure_only:
+            kpoints_file = None
+        elif 'kpoints' in self:
+            kpoints_file = self.kpoints
+        elif 'incar' in self and 'kspacing' in self.incar:
+            kpoints_file = None
+        else:
+            kpoints_file = None
+        #end if
+
+        if kpoints_file is not None and kpoints_file.mode=="auto":
+            if 'kshift' in kpoints_file and kpoints_file.kshift is not None:
+                kshift = kpoints_file.kshift
+            else:
+                kshift = np.zeros(3,dtype=float)
+            #end if
+            centering = kpoints_file.centering.lower()
+            if centering.startswith('m'):
                 kshift=kshift+np.array([0.5,0.5,0.5])
-            elif self.kpoints.centering=="gamma":
+            elif centering.startswith('g'):
                 pass
             #end if
-            kgrid=self.kpoints.kgrid
-        else:
-            self.error('system generation does not currently work with manually specified k-points')
+            if centering.startswith('a'):
+                reciprocal_axes = 2*np.pi*np.linalg.inv(axes).T
+                kgrid = tuple(
+                    max(1,int(
+                        kpoints_file.kgrid*np.linalg.norm(kaxis)/(2*np.pi)+0.5
+                        ))
+                    for kaxis in reciprocal_axes
+                    )
+            else:
+                kgrid=kpoints_file.kgrid
+            #end if
+        elif kpoints_file is not None and kpoints_file.mode not in (
+            'explicit',
+            ):
+            self.error(
+                'system generation does not currently work with KPOINTS '
+                'mode: {0}'.format(kpoints_file.mode)
+                )
         #end if
         structure = Structure(
             axes     = axes,
             elem     = elem,
             scale    = scale,
             pos      = pos,
+            vel      = vel,
             center   = center,
-            kpoints  = kpoints,
-            kweights = kweights,
             kgrid    = kgrid,
             kshift   = kshift,
             units    = 'A',
             rescale  = False,
             )
-         
+
+        if kpoints_file is not None and kpoints_file.mode=='explicit':
+            if kpoints_file.coord=='reciprocal':
+                kpoints = np.dot(kpoints_file.kpoints,structure.kaxes)
+            elif kpoints_file.coord=='cartesian':
+                kpoints = 2*np.pi*kpoints_file.kpoints/scale_factor
+            else:
+                self.error(
+                    'invalid KPOINTS coordinate specifier: {0}'
+                    .format(kpoints_file.coord)
+                    )
+            #end if
+            structure.add_kpoints(
+                kpoints,kpoints_file.kweights,recenter=False
+                )
+        elif not structure_only and kpoints_file is None:
+            if 'incar' in self and 'kspacing' in self.incar:
+                kspacing = self.incar.kspacing
+            else:
+                kspacing = 0.5
+            #end if
+            if 'incar' in self and 'kgamma' in self.incar:
+                kgamma = self.incar.kgamma
+            else:
+                kgamma = True
+            #end if
+            kshift = (0,0,0) if kgamma else (0.5,0.5,0.5)
+            structure.add_kmesh(
+                kspacing=kspacing,kshift=kshift
+                )
+        #end if
+
         structure.zero_corner()
         structure.recenter()
 
@@ -1520,26 +2572,48 @@ class VaspInput(SimulationInput,Vobj):
             return structure
         #end if
 
-        ion_charge = 0
-        atoms      = list(elem)
-        for atom in atoms:
-            if atom not in valency:
-                self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()'.format(atom))
+        system_valency = dict(valency)
+        if pot_info is None and 'potcar' in self:
+            pot_info = self.potcar.pot_info()
+        #end if
+        if pot_info is not None and len(pot_info)==len(velem):
+            for n,species in enumerate(velem):
+                info = pot_info[n]
+                if species not in system_valency:
+                    system_valency[species] = info.Zval
+                #end if
+            #end for
+        #end if
+
+        for atom in set(elem):
+            if atom not in system_valency:
+                self.error(
+                    'valence charge for atom {0} has not been defined\n'
+                    'please provide the valence charge as an argument to '
+                    'return_system()'.format(atom)
+                    )
             #end if
-            ion_charge += atoms.count(atom)*valency[atom]
         #end for
 
-        ####WARNING:  Assuming that the netcharge and netspin are ZERO. 
-        net_charge = 0
-        net_spin   = 0
+        ion_charge = sum(system_valency[atom] for atom in elem)
+        if 'incar' in self and 'nelect' in self.incar:
+            net_charge = ion_charge-self.incar.nelect
+        else:
+            net_charge = 0
+        #end if
+        if 'incar' in self and 'nupdown' in self.incar:
+            net_spin = self.incar.nupdown
+        else:
+            net_spin = 0
+        #end if
 
         system = PhysicalSystem(
             structure  = structure,
             net_charge = net_charge,
             net_spin   = net_spin,
-            **valency
+            **system_valency
             )
- 
+
         return system
     #end def return_system
 
@@ -1560,7 +2634,11 @@ class VaspInput(SimulationInput,Vobj):
                 if not iselem:
                     self.error('{0} is not an element'.format(element))
                 elif symbol not in pseudo_map:
-                    self.error('pseudopotential for element {0} not found\nelements present: {1}'.format(symbol,sorted(pseudo_map.keys())))
+                    self.error(
+                        'pseudopotential for element {0} not found\n'
+                        'elements present: {1}'
+                        .format(symbol,sorted(pseudo_map.keys()))
+                        )
                 #end if
                 ordered_pseudos.append(pseudo_map[symbol])
             #end for
@@ -1576,19 +2654,33 @@ class VaspInput(SimulationInput,Vobj):
         #end if
         for s in structures:
             if not isinstance(s,(Structure,PhysicalSystem)):
-                self.error('arguments to setup NEB must either be structure or system objects\n  received an object of type: {0}'.format(s.__class__.__name__))
+                self.error(
+                    'arguments to setup NEB must either be structure or '
+                    'system objects\n'
+                    '  received an object of type: {0}'
+                    .format(s.__class__.__name__)
+                    )
             #end if
         #end for
         interp_args['repackage'] = False
 
         # generate NEB image structures
         if len(structures)<2:
-            self.error('must provide at least two structures to setup NEB\n  you provided: {0}'.format(len(structures)))
+            self.error(
+                'must provide at least two structures to setup NEB\n'
+                '  you provided: {0}'.format(len(structures))
+                )
         elif len(structures)==2:
             incar_images = 'images' in self.incar
             kwarg_images = 'images' in interp_args
             if incar_images and kwarg_images and self.incar.images!=interp_args['images']:
-                self.error('images provided in incar and setup_neb do not match\n  please ensure they match to remove ambiguity\n  incar images: {0}\n  setup_neb images: {1}'.format(self.incar.images,interp_args['images']))
+                self.error(
+                    'images provided in incar and setup_neb do not match\n'
+                    '  please ensure they match to remove ambiguity\n'
+                    '  incar images: {0}\n'
+                    '  setup_neb images: {1}'
+                    .format(self.incar.images,interp_args['images'])
+                    )
             elif incar_images:
                 interp_args['images'] = self.incar.images
             elif kwarg_images:
@@ -1605,11 +2697,17 @@ class VaspInput(SimulationInput,Vobj):
                 neb_structures = structures
             #end if
             if 'images' in self.incar and len(neb_structures)!=self.incar.images+2:
-                self.error('number of structures provided to setup_neb must be consistent with number of images in INCAR\n  INCAR images: {0}\n  structures provided {1}'.format(self.incar.images,len(neb_structures)))
+                self.error(
+                    'number of structures provided to setup_neb must be '
+                    'consistent with number of images in INCAR\n'
+                    '  INCAR images: {0}\n'
+                    '  structures provided {1}'
+                    .format(self.incar.images,len(neb_structures))
+                    )
             #end if
             self.incar.images = len(neb_structures)-2
         #end if
-        
+
         # create a poscar for each structure and include in input file
         neb_poscars = NebPoscars()
         for n in range(len(neb_structures)):
@@ -1620,21 +2718,268 @@ class VaspInput(SimulationInput,Vobj):
 
 
     def run_type(self):
+        if 'incar' not in self:
+            return 'unknown'
+        #end if
         incar = self.incar
+        ibrion = incar.ibrion if 'ibrion' in incar else -1
+        nsw = incar.nsw if 'nsw' in incar else 0
         # check for neb
-        if 'images' in incar:
+        if 'images' in incar and incar.images>0:
             run_type = 'neb'
-        elif 'ibrion' in incar and incar.ibrion>0.5:
+        elif ibrion in {5,6,7,8}:
+            run_type = 'phonon'
+        elif nsw<=0 or ibrion==-1:
+            run_type = 'static'
+        elif ibrion==0:
+            run_type = 'md'
+        elif ibrion>0:
             run_type = 'relax'
-        elif 'ibrion' in incar and incar.ibrion==0:
-            run_type = 'md'
-        elif 'nsw' in incar and incar.nsw>1.5:
-            run_type = 'md'
         else:
             run_type = 'unknown'
         #end if
         return run_type
     #end def run_type
+
+
+    def validate(self,*,runnable=True,exit=True):
+        """Check VASP input completeness and cross-file consistency."""
+        messages = []
+        required = ('incar','poscar','potcar') if runnable else ()
+        for name in required:
+            if name not in self:
+                messages.append('{0} is missing'.format(name.upper()))
+            #end if
+        #end for
+
+        poscars = []
+        if 'poscar' in self:
+            if isinstance(self.poscar,NebPoscars):
+                indices = sorted(self.poscar.keys())
+                if indices!=list(range(len(indices))):
+                    messages.append(
+                        'NEB image directories are not consecutively numbered from 00'
+                        )
+                #end if
+                poscars = [self.poscar[n] for n in indices]
+                if len(poscars)<2:
+                    messages.append('NEB input requires at least two POSCARs')
+                #end if
+                if 'incar' not in self or 'images' not in self.incar:
+                    messages.append('NEB POSCARs require IMAGES in INCAR')
+                elif self.incar.images!=len(poscars)-2:
+                    messages.append(
+                        'INCAR IMAGES does not match the number of NEB POSCARs'
+                        )
+                #end if
+            else:
+                poscars = [self.poscar]
+                if (
+                    'incar' in self
+                    and 'images' in self.incar
+                    and self.incar.images>0
+                    ):
+                    messages.append(
+                        'INCAR IMAGES requires POSCARs in NEB image directories'
+                        )
+                #end if
+            #end if
+        #end if
+
+        for n,poscar in enumerate(poscars):
+            prefix = 'POSCAR' if len(poscars)==1 else 'NEB POSCAR {0:02d}'.format(n)
+            complete = poscar.check_complete(exit=False).strip()
+            if len(complete)>0:
+                messages.append('{0}: {1}'.format(
+                    prefix,complete.replace('\n','; ')
+                    ))
+                continue
+            #end if
+            natoms = int(np.sum(poscar.elem_count))
+            if len(poscar.pos)!=natoms:
+                messages.append(
+                    '{0}: atom counts do not match the number of positions'
+                    .format(prefix)
+                    )
+            #end if
+            if poscar.elem is not None and len(poscar.elem)!=len(poscar.elem_count):
+                messages.append(
+                    '{0}: species names do not match species counts'
+                    .format(prefix)
+                    )
+            #end if
+            if (
+                poscar.dynamic is not None
+                and np.shape(poscar.dynamic)!=(natoms,3)
+                ):
+                messages.append(
+                    '{0}: selective-dynamics flags must have shape ({1}, 3)'
+                    .format(prefix,natoms)
+                    )
+            #end if
+        #end for
+
+        if len(poscars)>1:
+            reference = poscars[0]
+            for n,poscar in enumerate(poscars[1:],1):
+                if not np.array_equal(poscar.elem_count,reference.elem_count):
+                    messages.append(
+                        'NEB POSCAR {0:02d} has different species counts'
+                        .format(n)
+                        )
+                elif (
+                    reference.elem is not None
+                    and poscar.elem is not None
+                    and not np.array_equal(poscar.elem,reference.elem)
+                    ):
+                    messages.append(
+                        'NEB POSCAR {0:02d} has different species names'
+                        .format(n)
+                        )
+                #end if
+                if (
+                    reference.scale is not None
+                    and poscar.scale is not None
+                    and reference.axes is not None
+                    and poscar.axes is not None
+                    ):
+                    reference_axes = np.asarray(reference.scale)*reference.axes
+                    image_axes = np.asarray(poscar.scale)*poscar.axes
+                    if not np.allclose(image_axes,reference_axes):
+                        messages.append(
+                            'NEB POSCAR {0:02d} has different lattice vectors'
+                            .format(n)
+                            )
+                    #end if
+                #end if
+            #end for
+        #end if
+
+        if 'kpoints' in self:
+            kpoints = self.kpoints
+            if kpoints.mode not in ('auto','basis','line','explicit'):
+                messages.append('KPOINTS mode is missing or invalid')
+            elif kpoints.mode=='explicit':
+                if 'kpoints' not in kpoints or 'kweights' not in kpoints:
+                    messages.append(
+                        'explicit KPOINTS require points and weights'
+                        )
+                else:
+                    nkpoints = len(kpoints.kpoints)
+                    if np.shape(kpoints.kpoints)!=(nkpoints,3):
+                        messages.append(
+                            'KPOINTS points must have shape (N, 3)'
+                            )
+                    #end if
+                    if len(kpoints.kweights)!=nkpoints:
+                        messages.append(
+                            'KPOINTS weights do not match the number of points'
+                            )
+                    #end if
+                #end if
+                if (
+                    'coord' not in kpoints
+                    or kpoints.coord not in ('cartesian','reciprocal')
+                    ):
+                    messages.append(
+                        'explicit KPOINTS coordinates are missing or invalid'
+                        )
+                #end if
+            elif kpoints.mode=='auto':
+                if 'centering' not in kpoints:
+                    messages.append('automatic KPOINTS centering is missing')
+                else:
+                    centering = str(kpoints.centering).lower()
+                #end if
+                if 'centering' in kpoints and (
+                    len(centering)==0 or centering[0] not in ('a','g','m')
+                    ):
+                    messages.append('automatic KPOINTS centering is invalid')
+                elif 'centering' in kpoints and centering.startswith('a'):
+                    if (
+                        'kgrid' not in kpoints
+                        or not np.isscalar(kpoints.kgrid)
+                        or kpoints.kgrid<=0
+                        ):
+                        messages.append(
+                            'fully automatic KPOINTS length must be positive'
+                            )
+                    #end if
+                elif 'centering' in kpoints and (
+                    'kgrid' not in kpoints or np.shape(kpoints.kgrid)!=(3,)
+                    ):
+                    messages.append('automatic KPOINTS grid must have length 3')
+                #end if
+            elif kpoints.mode=='basis':
+                if 'kbasis' not in kpoints or np.shape(kpoints.kbasis)!=(3,3):
+                    messages.append('KPOINTS basis must have shape (3, 3)')
+                #end if
+            elif (
+                kpoints.mode=='line'
+                and (
+                    'kendpoints' not in kpoints
+                    or np.ndim(kpoints.kendpoints)!=2
+                    or np.shape(kpoints.kendpoints)[1:]!=(3,)
+                    )
+                ):
+                messages.append('KPOINTS points must have shape (N, 3)')
+            #end if
+        #end if
+
+        if (
+            'incar' in self
+            and 'kspacing' in self.incar
+            and self.incar.kspacing<=0
+            ):
+            messages.append('INCAR KSPACING must be positive')
+        #end if
+
+        if 'potcar' in self and len(poscars)>0:
+            try:
+                pot_info = self.potcar.pot_info()
+            except Exception as exception:  # noqa: BLE001
+                messages.append('POTCAR metadata could not be read: {0}'.format(
+                    exception
+                    ))
+            else:
+                if len(pot_info)>0:
+                    nspecies = len(poscars[0].elem_count)
+                    if len(pot_info)!=nspecies:
+                        messages.append(
+                            'POTCAR datasets do not match POSCAR species counts'
+                            )
+                    elif poscars[0].elem is not None:
+                        pot_elem = [
+                            pot_info[n].element for n in range(len(pot_info))
+                            ]
+                        pos_elem = []
+                        for species in poscars[0].elem:
+                            iselem,element = Elements.is_element(
+                                species,return_element=True
+                                )
+                            pos_elem.append(
+                                element.symbol if iselem else species
+                                )
+                        #end for
+                        if pot_elem!=pos_elem:
+                            messages.append(
+                                'POTCAR species do not match POSCAR species'
+                                )
+                        #end if
+                    #end if
+                elif runnable:
+                    messages.append('POTCAR contains no datasets')
+                #end if
+            #end try
+        #end if
+
+        if len(messages)>0 and exit:
+            self.error(
+                'VASP input is invalid:\n  '+'\n  '.join(messages)
+                )
+        #end if
+        return len(messages)==0
+    #end def validate
 
 
     def producing_structure(self):
@@ -1664,7 +3009,10 @@ def generate_vasp_input(**kwargs):
     if input_type=='general' or input_type=='generic':
         vi = generate_any_vasp_input(**kwargs)
     else:
-        error('input_type {0} is unrecognized\nvalid options are: general'.format(input_type))
+        error(
+            'input_type {0} is unrecognized\n'
+            'valid options are: general'.format(input_type)
+            )
     #end if
     return vi
 #end def generate_vasp_input
@@ -1716,6 +3064,7 @@ def generate_any_vasp_input(**kwargs):
     keywords = set(kwargs.keys())
     for name,keyword_file in VaspInput.keyword_files.items():
         keys = keywords & keyword_file.keywords
+        keys |= {key for key in keywords if keyword_file.is_block_name(key)}
         if len(keys)>0:
             kw = obj()
             for k in keys:
@@ -1735,6 +3084,9 @@ def generate_any_vasp_input(**kwargs):
 
     # incorporate system information
     species = None
+    if system_str is not None and 'incar' not in vi:
+        vi.incar = Incar()
+    #end if
     if vf.system is not None:
         species = vi.incorporate_system(
             system         = vf.system,
@@ -1763,6 +3115,11 @@ def generate_any_vasp_input(**kwargs):
             kp.kpoints  = vf.kpoints
             kp.kweights = vf.kweights
             kp.coord    = vf.kcoord
+        elif vf.kbasis is not None:
+            kp.mode   = 'basis'
+            kp.kbasis = vf.kbasis
+            kp.coord  = vf.kcoord
+            kp.kshift = vf.kshift
         elif vf.kgrid is not None:
             kp.mode      = 'auto'
             kp.centering = vf.kcenter
@@ -1798,7 +3155,17 @@ def generate_any_vasp_input(**kwargs):
 
 
 
-def generate_poscar(structure,coord='cartesian'):
+def generate_poscar(structure,*,coord='cartesian'):
+    if isinstance(structure,PhysicalSystem):
+        structure = structure.structure
+    #end if
+    if not isinstance(structure,Structure):
+        error(
+            'structure must be a Structure or PhysicalSystem\n'
+            'you provided: {}'.format(type(structure).__name__),
+            'generate_poscar'
+            )
+    #end if
     s = deepcopy(structure)
     s.change_units('A')
     species,species_count = s.order_by_species()
@@ -1814,10 +3181,18 @@ def generate_poscar(structure,coord='cartesian'):
         poscar.coord  = 'direct'
         poscar.pos    = s.pos_unit()
     else:
-        error('coord must be either direct or cartesian\nyou provided: {0}'.format(coord),'generate_poscar')
+        error(
+            'coord must be either direct or cartesian\n'
+            'you provided: {0}'.format(coord),
+            'generate_poscar',
+            )
     #end if
     if s.frozen is not None:
         poscar.dynamic = s.frozen==False
+    #end if
+    if s.vel is not None:
+        poscar.vel_coord = 'cartesian'
+        poscar.vel = s.vel.copy()
     #end if
     return poscar
 #end def generate_poscar

@@ -293,19 +293,7 @@ void QMCCostFunctionBase::reportParametersH5()
     }
   }
 }
-/** Apply constraints on the optimizables.
- *
- * Here is where constraints should go
- */
-bool QMCCostFunctionBase::checkParameters()
-{
-  bool samesign = true;
-  //if(samesign) {
-  //  paramList.pop_back();
-  //  paramList.push_front(OptParams);
-  //}
-  return samesign;
-}
+
 
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
@@ -966,10 +954,9 @@ bool QMCCostFunctionBase::isEffectiveWeightValid(EffectiveWeight effective_weigh
             << std::endl;
   if (effective_weight < MinNumWalkers)
   {
-    WARNMSG("    Smaller than the user specified threshold \"minwalkers\" = "
-            << MinNumWalkers << std::endl
-            << "  If this message appears frequently. You might have to be cautious. " << std::endl
-            << "  Find info about parameter \"minwalkers\" in the user manual!");
+    app_warning() << "    Smaller than the user specified threshold \"minwalkers\" = " << MinNumWalkers << std::endl
+                  << "  If this message appears frequently. You might have to be cautious. " << std::endl
+                  << "  Find info about parameter \"minwalkers\" in the user manual!" << std::endl;
     return false;
   }
 

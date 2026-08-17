@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.VASP_SIMULATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from pathlib import Path
 from . import isolate_nexus_core, create_pseudo_files
@@ -15,7 +13,7 @@ from ..testing import value_eq,object_eq,check_object_eq
 from .test_vasp_input import c_potcar_text, TEST_FILES
 
 
-def setup_vasp_sim(path,identifier='vasp',copy_files=False):
+def setup_vasp_sim(path,identifier='vasp',*,copy_files=False):
     import shutil
     from ..nexus_base import nexus_core
     from ..machines import job
@@ -181,6 +179,7 @@ def test_get_result(tmp_path):
                                  dtype=float),
               scale           = 1.0,
               units           = 'A',
+              vel             = None,
               ),
           )
 

@@ -21,6 +21,7 @@
 #include "QMCDrivers/DMC/WalkerControlMPI.h"
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
 #endif
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {

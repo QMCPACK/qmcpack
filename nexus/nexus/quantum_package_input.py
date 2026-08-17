@@ -241,7 +241,7 @@ def extract_input_specification(*ezfio_paths):
             error('cannot extract input spec from path\ninput path provided does not exist\ninput path provided: {0}'.format(epath),'Quantum Package')
         #end if
         log('  extracting from: {0}'.format(epath))
-        for path,dirs,files in os.walk(epath):
+        for path,dirs,files in os.walk(epath):  # noqa: B007
             for file in files:
                 if 'save' not in path and 'work' not in path:
                     if not file.startswith('.') and not file.endswith('.gz'):
@@ -388,7 +388,7 @@ class QuantumPackageInput(SimulationInput):
         elif not epath.endswith('.ezfio'):
             self.error('cannot read input\nprovided path does not end in an ezfio directory\ndirectory must end with .ezfio\npath provided:  {0}'.format(epath))
         #end if
-        for path,dirs,files in os.walk(epath):
+        for path,dirs,files in os.walk(epath):  # noqa: B007
             for file in files:
                 if 'save' not in path:
                     if not file.startswith('.') and not file.endswith('.gz'):
@@ -496,7 +496,7 @@ class QuantumPackageInput(SimulationInput):
     #end def incorporate_system
 
 
-    def check_valid(self,sections=True,variables=True,types=True,run_type=True,exit=True):
+    def check_valid(self,*,sections=True,variables=True,types=True,run_type=True,exit=True):
         msg = ''
 
         extra = self.extract_added_keys()

@@ -18,6 +18,7 @@
 #include <type_traits>
 
 #include "multi/array.hpp"
+#include "Utilities/for_testing/Catch2Approx.h"
 
 using std::complex;
 using std::string;

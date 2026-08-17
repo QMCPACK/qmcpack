@@ -16,13 +16,34 @@
 #====================================================================#
 
 
+import os
 import time
-from typing import ClassVar
+from typing import ClassVar,Literal,TextIO
 from . import memory
 from .developer import obj, error
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
 from .simulation import Simulation
 from .machines import Machine,Job
+
+
+def color_status_result(result: Literal['SUCCESS','FAILURE'] | str,logfile: TextIO) -> str:
+    """Apply a green or red background to terminal status results."""
+    if result not in {'SUCCESS','FAILURE'}:
+        return result
+    #end if
+    if 'NO_COLOR' in os.environ:
+        return result
+    #end if
+    if not hasattr(logfile,'isatty') or not logfile.isatty():
+        return result
+    #end if
+    if result=='SUCCESS':
+        background = '\033[42m' # green background
+    else:
+        background = '\033[41m' # red background
+    #end if
+    return background+result+'\033[0m'
+#end def color_status_result
 
 
 def trivial(sim,*args,**kwargs):
@@ -73,7 +94,7 @@ class ProjectManager(NexusCore):
     #end def add_cascade
 
 
-    def run_project(self,status=False,status_only=False):
+    def run_project(self,*,status=False,status_only=False):
         self.log('\nProject starting',n=0)
         self.init_cascades()
         status_only = status_only or nexus_core.status_only
@@ -221,7 +242,7 @@ class ProjectManager(NexusCore):
     def load_cascades(self):
         cascades = obj()
         progressing_cascades = obj()
-        for cid,cascade in self.cascades.items():
+        for cascade in self.cascades.values():
             rc = cascade.reconstruct_cascade()
             cascades[rc.simid] = rc 
             progressing_cascades[rc.simid] = rc
@@ -301,6 +322,9 @@ class ProjectManager(NexusCore):
                 self.status_line(sim)
             #end for
         #end if
+        if len(all_sids)==0:
+            self.log('(No simulations present)',n=2)
+        #end if
         self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
     #end def write_simulation_status
 
@@ -317,7 +341,12 @@ class ProjectManager(NexusCore):
         else:
             pid = sim.process_id
         #end if
-        sline = '{0}  {1}  {2:<8}  {3:<6}  {4}'.format(status,str(int(sim.failed)),pid,sim.identifier,sim.locdir)
+        result = ''
+        if sim.finished:
+            result = 'FAILURE' if sim.failed else 'SUCCESS'
+        #end if
+        result = color_status_result(result,self._logfile)
+        sline = '{}  {:<7}  {:<8}  {:<6}  {}'.format(status,result,pid,sim.identifier,sim.locdir)
         self.log(sline,extra,n=2)
     #end def status_line
 
@@ -326,7 +355,7 @@ class ProjectManager(NexusCore):
         NexusCore.gc.collect()
         finished = []
         progressing_cascades = self.progressing_cascades
-        for cid,cascade in progressing_cascades.items():
+        for cascade in progressing_cascades.values():
             cascade.reset_wait_ids()
         #end for
         for cid,cascade in progressing_cascades.items():

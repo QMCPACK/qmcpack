@@ -129,7 +129,7 @@ class Settings(NexusCore):
 
     core_assign_vars = frozenset({
         'results', 'load_images', 'remote_directory', 'verbose', 'progress_tty',
-        'command_line', 'sleep', 'monitor', 'debug', 'skip_submit', 'dynamic', 'runs',
+        'command_line', 'sleep', 'timeout', 'monitor', 'debug', 'skip_submit', 'dynamic', 'runs',
         'stages', 'pseudo_dir', 'graph_sims', 'generate_only', 'trace',
         'local_directory', 'status_only'
         })
@@ -177,8 +177,8 @@ class Settings(NexusCore):
     #end def __init__
 
 
-    def error(self,message,header='settings',exit=True,trace=True):
-        NexusCore.error(self,message,header,exit,trace)
+    def error(self,message,*,header='settings'):
+        NexusCore.error(self,message,header=header)
     #end def error
 
 
@@ -391,6 +391,10 @@ class Settings(NexusCore):
                         default='none',
                         help='Number of seconds between polls.  At each poll, simulations are actually run provided all simulations they depend on have successfully completed (default={0}).'.format(nexus_core_defaults.sleep)
                         )
+        parser.add_option('--timeout',dest='timeout',
+                        default='none',
+                        help='Number of seconds to wait for output and error files after a job exits the queue before marking the simulation as failed (default={}).'.format(nexus_core_defaults.timeout)
+                        )
         parser.add_option('--machine',dest='machine',
                         default='none',
                         help="(Required) Name of the machine the simulations will be run on.  Workstations with between 1 and 128 cores may be specified by 'ws1' to 'ws128' (works for any machine where only mpirun is used).  For a complete listing of currently available machines (including those at HPC centers) please see the manual."
@@ -448,7 +452,7 @@ class Settings(NexusCore):
 
         # pre-process options, full processing occurs upon return
         boolean_options = set(['status_only','generate_only','progress_tty'])
-        real_options = set(['sleep'])
+        real_options = {'sleep', 'timeout'}
         for ropt in real_options:
             if opt[ropt]!='none':
                 try:

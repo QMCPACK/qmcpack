@@ -110,7 +110,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     auto pit(ptclPool.find(sourceInp));
     if (pit == ptclPool.end())
     {
-      ERRORMSG("Missing source ParticleSet" << sourceInp);
+      app_error() << "Missing source ParticleSet" << sourceInp << std::endl;
       APP_ABORT("HamiltonianFactory::addCoulombPotential");
       return;
     }
@@ -183,14 +183,14 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   auto pit(ptclPool.find(a));
   if (pit == ptclPool.end())
   {
-    ERRORMSG("Missing source ParticleSet" << a)
+    app_error() << "Missing source ParticleSet" << a << std::endl;
     return;
   }
   ParticleSet* source = pit->second.get();
   pit                 = ptclPool.find(targetName);
   if (pit == ptclPool.end())
   {
-    ERRORMSG("Missing target ParticleSet" << targetName)
+    app_error() << "Missing target ParticleSet" << targetName << std::endl;
     return;
   }
   ParticleSet* target = pit->second.get();
@@ -232,7 +232,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   }
   else
   {
-    ERRORMSG("Failed to recognize Force mode " << mode);
+    app_error() << "Failed to recognize Force mode " << mode << std::endl;
   }
 #endif
 }
@@ -254,7 +254,7 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   auto pit(ptclPool.find(src));
   if (pit == ptclPool.end())
   {
-    ERRORMSG("Missing source ParticleSet" << src)
+    app_error() << "Missing source ParticleSet" << src << std::endl;
     return;
   }
   ParticleSet* ion = pit->second.get();

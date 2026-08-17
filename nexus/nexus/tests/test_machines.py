@@ -2,8 +2,7 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.MACHINES)
 
-from ..generic import generic_settings, NexusError
-generic_settings.raise_error = True
+from ..generic import NexusError
 
 import os
 from random import randint
@@ -559,6 +558,52 @@ def test_workstation_scheduling(tmp_path):
 #end def test_workstation_scheduling
 
 
+@isolate_nexus_core
+def test_workstation_requeue(tmp_path):
+    import time
+    from ..machines import Workstation, job, Job
+
+    ws = Workstation('ws_requeue',16,'mpirun')
+    j = job(machine=ws.name,serial=True)
+    init_job(j,directory=tmp_path)
+
+    old_pid = 987654321
+    j.system_id = old_pid
+
+    assert(j.status==Job.states.none)
+    assert(j.internal_id not in ws.jobs)
+    assert(j.internal_id not in ws.waiting)
+
+    j.reenter_queue()
+
+    assert(j.status==Job.states.waiting)
+    assert(j.system_id==old_pid)
+    assert(j.internal_id in ws.jobs)
+    assert(id(ws.jobs[j.internal_id])==id(j))
+    assert(ws.waiting==set([j.internal_id]))
+    assert(len(ws.running)==0)
+    assert(len(ws.processes)==0)
+
+    ws.submit_jobs()
+
+    assert(j.status==Job.states.running)
+    assert(j.system_id!=old_pid)
+    assert(ws.waiting==set())
+    assert(ws.running==set([j.internal_id]))
+    assert(set(ws.processes.keys())==set([j.system_id]))
+
+    time.sleep(0.1)
+    ws.query_queue()
+
+    assert(j.finished)
+    assert(j.status==Job.states.finished)
+    assert(ws.running==set())
+    assert(ws.finished==set([j.internal_id]))
+    assert(len(ws.processes)==0)
+
+#end def test_workstation_requeue
+
+
 
 def test_supercomputer_init():
     from ..developer import obj, to_obj
@@ -777,12 +822,12 @@ def test_process_job():
         threads_max   = machine.cores
         job_inputs = []
         job_inputs_base = []
-        for nj in range(njobs): # vary cores
+        for nj in range(njobs): # vary cores  # noqa: B007
             cores   = randint(cores_min,cores_max)
             threads = randint(threads_min,threads_max)
             job_inputs_base.append(obj(cores=cores,threads=threads))
         #end for
-        for nj in range(njobs): # vary processes
+        for nj in range(njobs): # vary processes  # noqa: B007
             processes   = randint(processes_min,processes_max)
             threads = randint(threads_min,threads_max)
             job_inputs_base.append(obj(processes=processes,threads=threads))
@@ -821,19 +866,19 @@ def test_process_job():
         # sample small number of nodes more heavily
         nodes_max   = min(small_node_ceiling,machine.nodes)
         cores_max   = min(small_node_ceiling*machine.cores_per_node,machine.cores)
-        for nj in range(njobs): # nodes alone
+        for nj in range(njobs): # nodes alone  # noqa: B007
             nodes   = randint(nodes_min,nodes_max)
             threads = randint(threads_min,threads_max)
             job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
             job_inputs_base.append(job_input)
         #end for
-        for nj in range(njobs): # cores alone
+        for nj in range(njobs): # cores alone  # noqa: B007
             cores   = randint(cores_min,cores_max)
             threads = randint(threads_min,threads_max)
             job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
             job_inputs_base.append(job_input)
         #end for
-        for nj in range(njobs): # nodes and cores
+        for nj in range(njobs): # nodes and cores  # noqa: B007
             nodes   = randint(nodes_min,nodes_max)
             cores   = randint(cores_min,cores_max)
             threads = randint(threads_min,threads_max)
@@ -843,19 +888,19 @@ def test_process_job():
         # sample full node set
         nodes_max = machine.nodes
         cores_max = machine.cores
-        for nj in range(njobs): # nodes alone
+        for nj in range(njobs): # nodes alone  # noqa: B007
             nodes   = randint(nodes_min,nodes_max)
             threads = randint(threads_min,threads_max)
             job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
             job_inputs_base.append(job_input)
         #end for
-        for nj in range(njobs): # cores alone
+        for nj in range(njobs): # cores alone  # noqa: B007
             cores   = randint(cores_min,cores_max)
             threads = randint(threads_min,threads_max)
             job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
             job_inputs_base.append(job_input)
         #end for
-        for nj in range(njobs): # nodes and cores
+        for nj in range(njobs): # nodes and cores  # noqa: B007
             nodes   = randint(nodes_min,nodes_max)
             cores   = randint(cores_min,cores_max)
             threads = randint(threads_min,threads_max)
@@ -2232,7 +2277,6 @@ srun -N 2 -n 64 test.x
         hours       = 6,
         minutes     = 30,
         env         = obj(ENV_VAR=1),
-        identifier  = 'test',
         outfile     = 'test.out',
         errfile     = 'test.err',
         app_command = 'test.x',

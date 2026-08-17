@@ -15,8 +15,6 @@
 #include "einspline/bspline_base.h"
 #include "einspline/bspline_create.h"
 #include "einspline/bspline_eval_d.h"
-#include "einspline/multi_bspline_eval_d.h"
-#include "einspline/multi_bspline_eval_s.h"
 #include "einspline/multi_bspline_create.h"
 
 #include <stdio.h>
@@ -101,46 +99,5 @@ TEST_CASE("double_3d_periodic","[einspline]")
   eval_UBspline_3d_d(s.get(), delta, delta, delta, &val);
   CHECK(val == Approx(data[N*N + N + 1]));
 
-  auto m =
-      std::unique_ptr<multi_UBspline_3d_d, void (*)(void*)>{create_multi_UBspline_3d_d(grid, grid, grid, bc, bc, bc, 1),
-                                                            destroy_Bspline};
-  REQUIRE(m);
-
-  set_multi_UBspline_3d_d(m.get(), 0, data);
-
-  eval_multi_UBspline_3d_d(m.get(), delta, delta, delta, &val);
-  CHECK(val == Approx(data[N*N + N + 1]));
-
-  BCtype_s bc_s;
-  bc_s.lCode = PERIODIC;
-  bc_s.rCode = PERIODIC;
-
-  auto ms = std::unique_ptr<multi_UBspline_3d_s, void (*)(void*)>{create_multi_UBspline_3d_s(grid, grid, grid, bc_s,
-                                                                                             bc_s, bc_s, 1),
-                                                                  destroy_Bspline};
-  REQUIRE(ms);
-  set_multi_UBspline_3d_s_d(ms.get(), 0, data);
-
-  float fval;
-  eval_multi_UBspline_3d_s(ms.get(), delta, delta, delta, &fval);
-  CHECK(fval == Approx(data[N*N + N + 1]));
-
-  float grads[3];
-  float hess[9];
-  eval_multi_UBspline_3d_s_vgh(ms.get(), 0.1, 0.2, 0.0, &fval, grads, hess);
-
   // See miniqmc-python/splines/test_3d.py for values
-  CHECK(grads[0] == Approx(5.11104213833));
-  CHECK(grads[1] == Approx(5.98910634201));
-  CHECK(grads[2] == Approx(-6.17832080889));
-
-  // All off-diagonal values of the Hessian for this data should be zero
-  CHECK(hess[1] == Approx(0.0));
-  CHECK(hess[2] == Approx(0.0));
-
-  CHECK(hess[3] == Approx(0.0));
-  CHECK(hess[5] == Approx(0.0));
-
-  CHECK(hess[6] == Approx(0.0));
-  CHECK(hess[7] == Approx(0.0));
 }

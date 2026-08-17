@@ -19,6 +19,8 @@
 #====================================================================#
 
 
+from typing import NoReturn
+
 from .developer_tools import save,load,_pp_repr,_pp_str,dotdict,obj,DevBase  # noqa: F401
 from .debug import ci, interact  # noqa: F401
 
@@ -177,10 +179,10 @@ class DevBaseNexus(DevBase,obj_defended):
             cls       = type(self).__qualname__,
             )
 
-    def error(self,msg,header=None,exit=True,trace=-2):
+    def error(self, msg: str, *, header: str | None = None) -> NoReturn:
         if header is None:
-            header = self.__class__.__name__
-        error(msg,header,exit,trace,logfile=self._logfile)
+            header = type(self).__name__
+        error(msg, header)
 
 #end class DevBaseNexus
 

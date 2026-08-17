@@ -678,11 +678,6 @@ if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
   endif()
 
-  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    string(REPLACE "sm_" "" CUDA_ARCH_NUMBERS "${QMC_GPU_ARCHS}")
-    set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_NUMBERS})
-  endif()
-
   enable_language(CUDA)
   if(ENABLE_CUDA)
     include(TestCUDAHostCompatibility)
@@ -732,6 +727,33 @@ if(ENABLE_ROCM)
   # Check for minimum required rocBLAS version
   if(hipblas_VERSION VERSION_LESS "2.0.0")
     message(FATAL_ERROR "QMCPACK requires hipBLAS minimum version 2.0.0 from ROCm 6.0. Detected ${hipblas_VERSION}.")
+  endif()
+
+  # rocBLAS is used directly, not through hipBLAS, for the batched BLAS1/2 calls in
+  # Platforms/ROCm/rocBLAS.cpp that hipBLAS does not re-export. rocSOLVER pulls rocBLAS
+  # in as a PUBLIC dependency, which links the library but leaves rocblas_VERSION unset,
+  # so this call is what makes the version check below possible.
+  find_package(rocblas CONFIG REQUIRED)
+
+  # Opt-in. QMCPACK's own batched gemv and ger kernels remain the default.
+  # (copy_batched needs no alpha and is used unconditionally.)
+  option(QMC_ROCBLAS_ALPHA_BETA_ARRAYS "Use rocBLAS batched gemv/ger with alpha/beta arrays" OFF)
+
+  if(QMC_ROCBLAS_ALPHA_BETA_ARRAYS)
+    # rocBLAS 5.5.0 added alpha/beta arrays via rocblas_set_batch_alpha_stride and
+    # rocblas_set_batch_beta_stride, absent from rocBLAS 5.2 (ROCm 7.2) and earlier.
+    # 5.3 and 5.4 were never publicly released.
+    if(rocblas_VERSION VERSION_LESS "5.5.0")
+      message(FATAL_ERROR "QMC_ROCBLAS_ALPHA_BETA_ARRAYS=ON requires rocBLAS 5.5.0 or newer, "
+                          "found ${rocblas_VERSION}. rocblas_set_batch_alpha_stride is absent, "
+                          "so the build would fail to link.")
+    endif()
+    message(STATUS "Using rocBLAS batched gemv and ger with alpha/beta arrays "
+                   "(rocBLAS ${rocblas_VERSION})")
+  else()
+    message(STATUS "Using QMCPACK's own batched gemv and ger kernels. Set "
+                   "QMC_ROCBLAS_ALPHA_BETA_ARRAYS=ON for the rocBLAS implementations "
+                   "(requires rocBLAS 5.5.0 or newer, found ${rocblas_VERSION}).")
   endif()
 
   find_package(rocsolver CONFIG REQUIRED)
@@ -963,6 +985,16 @@ if(QMC_DATA)
 endif()
 
 #-------------------------------------------------------------------
+# Verify Python3 available
+#-------------------------------------------------------------------
+find_package(Python3)
+if(NOT Python3_FOUND)
+  message(FATAL_ERROR "Could not find required python3")
+endif(NOT Python3_FOUND)
+
+include(python)
+
+#-------------------------------------------------------------------
 # CTest
 #-------------------------------------------------------------------
 set(DROP_METHOD "http")
@@ -975,16 +1007,45 @@ set(DART_TESTING_TIMEOUT
     3600
     CACHE STRING "Maximum time for one test")
 enable_testing()
-include(CTest)
 
-#-------------------------------------------------------------------
-# Verify Python3 available
-#-------------------------------------------------------------------
-find_package(Python3)
-if(NOT Python3_FOUND)
-  message(FATAL_ERROR "Could not find required python3")
-endif(NOT Python3_FOUND)
-include(python)
+set(QMC_CTEST_NUM_GPUS 1 CACHE STRING "Number of GPUs available to CTest on the local node")
+if(NOT QMC_CTEST_NUM_GPUS MATCHES "^[1-9][0-9]*$")
+  message(FATAL_ERROR "QMC_CTEST_NUM_GPUS must be a positive integer, but is \"${QMC_CTEST_NUM_GPUS}\"")
+endif()
+
+set(VALID_GPU_VISIBILITY_VARIABLES "CUDA_VISIBLE_DEVICES" "ROCR_VISIBLE_DEVICES" "ZE_AFFINITY_MASK")
+set(QMC_GPU_VISIBILITY_VARIABLE ${QMC_GPU_VISIBILITY_VARIABLE_DEFAULT} CACHE STRING "GPU visibility environment variable name. Valid input ${VALID_GPU_VISIBILITY_VARIABLES}")
+if(QMC_GPU_VISIBILITY_VARIABLE)
+  if(NOT QMC_GPU_VISIBILITY_VARIABLE IN_LIST VALID_GPU_VISIBILITY_VARIABLES)
+    message(FATAL_ERROR "Invalid QMC_GPU_VISIBILITY_VARIABLE input, value must be one of ${VALID_GPU_VISIBILITY_VARIABLES}")
+  endif()
+  math(EXPR QMC_LAST_GPU_ID "${QMC_CTEST_NUM_GPUS} - 1")
+  set(QMC_CTEST_GPU_RESOURCES "")
+  foreach(QMC_GPU_ID RANGE 0 ${QMC_LAST_GPU_ID})
+    if(QMC_CTEST_GPU_RESOURCES)
+      string(APPEND QMC_CTEST_GPU_RESOURCES ",\n")
+    endif()
+    string(APPEND QMC_CTEST_GPU_RESOURCES "        { \"id\": \"${QMC_GPU_ID}\", \"slots\": 1 }")
+  endforeach()
+
+  set(CTEST_RESOURCE_SPEC_FILE "${qmcpack_BINARY_DIR}/CTestGPUResourceSpec.json")
+  file(
+    GENERATE
+    OUTPUT "${CTEST_RESOURCE_SPEC_FILE}"
+    CONTENT
+      "{\n  \"version\": { \"major\": 1, \"minor\": 0 },\n  \"local\": [\n    {\n      \"gpus\": [\n${QMC_CTEST_GPU_RESOURCES}\n      ]\n    }\n  ]\n}\n"
+  )
+  message(STATUS "CTest GPU resources: ${QMC_CTEST_NUM_GPUS}")
+  message(STATUS "CTest GPU visibility environment variable: ${QMC_GPU_VISIBILITY_VARIABLE}")
+  set(QMC_GPU_TEST_LAUNCHER ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/gpu_test_resource_launcher.py
+                            ${QMC_GPU_VISIBILITY_VARIABLE})
+elseif(QMC_GPU)
+  message(WARNING "QMC_GPU_VISIBILITY_VARIABLE is empty. CTest GPU resource management feature cannot be used. "
+                  "CTest may show slow or failing tests due to GPU oversubscription when running concurrent tests. "
+                  "Set QMC_GPU_VISIBILITY_VARIABLE to the GPU visibility environment variable name based on your GPU. "
+                  "Candidates are ${VALID_GPU_VISIBILITY_VARIABLES}.")
+endif()
+include(CTest)
 
 #-------------------------------------------------------------------
 # Check if PySCF is available

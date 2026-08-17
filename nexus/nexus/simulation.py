@@ -69,6 +69,7 @@ import os
 import sys
 import shutil
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 from string import Template
 from subprocess import Popen
@@ -142,7 +143,7 @@ class SimulationInput(NexusCore):
         raise NotImplementedError
     #end def incorporate_system
 
-    def return_system(self,structure_only=False):
+    def return_system(self,*,structure_only=False):
         #create a physical system object from input file information
         raise NotImplementedError
     #end def return_system
@@ -215,6 +216,8 @@ class SimulationImage(NexusCore):
             'failed',
             'got_output',
             'analyzed',
+            # event timestamps
+            'timestamps',
             # cascade status flag
             'subcascade_finished',
             })
@@ -228,7 +231,11 @@ class SimulationImage(NexusCore):
     def save_image(self,sim,imagefile):
         self.clear()
         for k in SimulationImage.save_fields:
-            self[k] = sim[k]
+            if k=='timestamps':
+                self[k] = dict(sim[k])
+            else:
+                self[k] = sim[k]
+            #end if
         self.save(imagefile)
         self.clear()
     #end def save_image
@@ -237,7 +244,16 @@ class SimulationImage(NexusCore):
         self.clear()
         self.load(imagefile)
         for k in SimulationImage.save_fields:
-            sim[k] = self[k]
+            if k=='timestamps':
+                if k in self:
+                    sim[k] = obj(self[k])
+                else:
+                    # support images written before timestamps were added
+                    sim[k] = obj()
+                #end if
+            else:
+                sim[k] = self[k]
+            #end if
         self.clear()
     #end def load_image
 
@@ -358,6 +374,7 @@ class Simulation(NexusCore):
         self.failed         = False
         self.got_output     = False
         self.analyzed       = False
+        self.timestamps     = obj()
         self.subcascade_finished = False
         self.dependency_ids = set()
         self.wait_ids       = set()
@@ -547,6 +564,13 @@ class Simulation(NexusCore):
     #end def reset_indicators
 
 
+    def record_timestamp(self,event):
+        if event not in self.timestamps:
+            self.timestamps[event] = datetime.now().astimezone().isoformat()
+        #end if
+    #end def record_timestamp
+
+
     def completed(self):
         completed  = self.setup
         completed &= self.sent_files 
@@ -705,19 +729,18 @@ class Simulation(NexusCore):
             dep = obj()
             dep.sim = sim
             rn = []
-            unrecognized_names = False
+            msg = ""
             app_results = sim.application_results | set(['other'])
             for name in d[1:]:
                 result_name = self.condense_name(name)
                 if result_name in app_results:
                     rn.append(result_name)
                 else:
-                    unrecognized_names = True
-                    self.error(name+' is not known to be a result of '+sim.__class__.__name__,exit=False)
+                    msg += name+' is not known to be a result of '+sim.__class__.__name__+"\n"
                 #end if
             #end for
-            if unrecognized_names:
-                self.error('unrecognized dependencies specified for simulation '+self.identifier)
+            if len(msg) > 0:
+                self.error('unrecognized dependencies specified for simulation '+self.identifier+f":\n{msg}")
             #end if
             dep.result_names = rn
             dep.results = obj()
@@ -797,7 +820,17 @@ class Simulation(NexusCore):
                         calculating_result = sim.check_result(result_name,self)
                     #end if
                     if not calculating_result:
-                        self.error('simulation {0} id {1} is not calculating result {2}\nrequired by simulation {3} id {4}\n{5} {6} directory: {7}\n{8} {9} directory: {10}'.format(sim.identifier,sim.simid,result_name,self.identifier,self.simid,sim.identifier,sim.simid,sim.locdir,self.identifier,self.simid,self.locdir),exit=False)
+                        self.warn(
+                            'simulation {0} id {1} is not calculating result {2}\n'
+                            'required by simulation {3} id {4}\n'
+                            '{5} {6} directory: {7}\n'
+                            '{8} {9} directory: {10}'.format(
+                                sim.identifier, sim.simid, result_name,   # {0}, {1}, {2}
+                                self.identifier, self.simid,              # {3}, {4}
+                                sim.identifier, sim.simid, sim.locdir,    # {5}, {6}, {7}
+                                self.identifier, self.simid, self.locdir, # {8}, {9}, {10}
+                                )
+                            )
                     #end if
                 else:
                     calculating_result = True
@@ -872,7 +905,7 @@ class Simulation(NexusCore):
     #end def copy_file
 
 
-    def save_image(self,all=False):
+    def save_image(self,*,all=False):
         imagefile = os.path.join(self.imlocdir,self.sim_image)
         if os.path.exists(imagefile):
             os.system('rm '+imagefile)
@@ -887,7 +920,7 @@ class Simulation(NexusCore):
     #end def save_image
 
 
-    def load_image(self,imagepath=None,all=False):
+    def load_image(self,imagepath=None,*,all=False):
         if imagepath is None:
             imagepath=os.path.join(self.imlocdir,self.sim_image)
         #end if
@@ -956,9 +989,9 @@ class Simulation(NexusCore):
     #end def idstr
 
 
-    def write_inputs(self,save_image=True):
+    def write_inputs(self,*,save_image=True):
         self.pre_write_inputs(save_image)
-        self.enter(self.locdir,False,self.simid)
+        self.enter(self.locdir,changedir=False,msg=self.simid)
         self.log('writing input files'+self.idstr(),n=3)
         self.write_prep()
         if self.infile is not None:
@@ -967,6 +1000,7 @@ class Simulation(NexusCore):
         #end if
         self.job.write(file=True)
         self.setup = True
+        self.record_timestamp('setup')
         if save_image:
             self.save_image()
             self.input.save(os.path.join(self.imlocdir,self.input_image))
@@ -990,10 +1024,10 @@ class Simulation(NexusCore):
     #end def write_inputs
 
 
-    def send_files(self,enter=True):
+    def send_files(self,*,enter=True):
         self.pre_send_files(enter)
         if enter:
-            self.enter(self.locdir,False,self.simid)
+            self.enter(self.locdir,changedir=False,msg=self.simid)
         #end if
         self.log('sending required files'+self.idstr(),n=3)
         if not os.path.exists(self.remdir):
@@ -1024,6 +1058,7 @@ class Simulation(NexusCore):
             #end if
         #end for
         self.sent_files = True
+        self.record_timestamp('sent_files')
         self.save_image()
         send_imfiles=[self.sim_image,self.input_image]
         remote = self.imremdir
@@ -1051,6 +1086,7 @@ class Simulation(NexusCore):
                 #end if
             #end if
             self.submitted = True
+            self.record_timestamp('submitted')
             if (self.job.batch_mode or not nexus_core.monitor) and not nexus_core.generate_only:
                 self.save_image()
             #end if
@@ -1071,6 +1107,11 @@ class Simulation(NexusCore):
 
     def check_status(self):
         self.pre_check_status()
+        newly_exited_queue = False
+        if self.job.finished:
+            newly_exited_queue = 'exited_queue' not in self.timestamps
+            self.record_timestamp('exited_queue')
+        #end if
         if nexus_core.generate_only: 
             self.finished = self.job.finished
         elif self.job.finished:
@@ -1085,12 +1126,25 @@ class Simulation(NexusCore):
             #end if
             if not self.finished and should_check:
                 self.check_sim_status()
+            elif not self.finished:
+                exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
+                elapsed = datetime.now().astimezone() - exited_queue
+                if elapsed.total_seconds()>nexus_core.timeout:
+                    self.record_timestamp('timed_out')
+                    self.failed = True
+                #end if
             #end if
             if self.failed:
                 self.finished = True
             #end if
         #end if
+        if self.failed:
+            self.record_timestamp('failed')
+        #end if
         if self.finished:
+            self.record_timestamp('finished')
+            self.save_image()
+        elif newly_exited_queue:
             self.save_image()
         #end if
     #end def check_status
@@ -1115,7 +1169,7 @@ class Simulation(NexusCore):
             self.load_image(results_image)
         #end if
         if self.finished:
-            self.enter(self.locdir,False,self.simid)
+            self.enter(self.locdir,changedir=False,msg=self.simid)
             self.log('copying results'+self.idstr(),n=3)
             if not nexus_core.generate_only:
                 output_files = self.get_output_files()
@@ -1145,6 +1199,7 @@ class Simulation(NexusCore):
                 #end if
             #end if
             self.got_output = True
+            self.record_timestamp('got_output')
             self.save_image()
         #end if
     #end def get_output
@@ -1155,7 +1210,7 @@ class Simulation(NexusCore):
             os.makedirs(self.imresdir)
         #end if
         if self.finished:
-            self.enter(self.locdir,False,self.simid)
+            self.enter(self.locdir,changedir=False,msg=self.simid)
             self.log('analyzing'+self.idstr(),n=3)
             if not nexus_core.generate_only:
                 analyzer = self.analyzer_type(self)
@@ -1165,6 +1220,7 @@ class Simulation(NexusCore):
                 del analyzer
             #end if
             self.analyzed = True
+            self.record_timestamp('analyzed')
             self.save_image()
 
             # support dynamic workflows
@@ -1194,7 +1250,7 @@ class Simulation(NexusCore):
     #end def check_subcascade
 
 
-    def block_dependents(self,block_self=True):
+    def block_dependents(self,*,block_self=True):
         if block_self:
             self.block = True
         #end if
@@ -1261,7 +1317,7 @@ class Simulation(NexusCore):
             elif mode==modes.all:
                 if not self.setup:
                     self.write_inputs()
-                    self.send_files(False)
+                    self.send_files(enter=False)
                 #end if
                 if not self.finished:
                     self.submit()
@@ -1350,7 +1406,7 @@ class Simulation(NexusCore):
     #end def traverse_full_cascade
 
 
-    def write_dependents(self,n=0,location=False,block_status=False):
+    def write_dependents(self,n=0,*,location=False,block_status=False):
         outs = [self.__class__.__name__,self.identifier,self.simid]
         if location:
             outs.append(self.locdir)
@@ -1402,6 +1458,7 @@ class Simulation(NexusCore):
         #end if
         self.leave()
         self.submitted = True
+        self.record_timestamp('submitted')
         if self.job is not None:
             job.status = job.states.finished
             self.job.finished = True
@@ -1409,7 +1466,7 @@ class Simulation(NexusCore):
     #end def execute
 
 
-    def show_input(self,exit=True):
+    def show_input(self,*,exit=True):
         print()
         print(80*'=')
         print('Input file for simulation "{}"\nDirectory: {}'.format(self.identifier,self.locdir))
@@ -1772,7 +1829,7 @@ except:
 #end try
 
 exit_call = sys.exit
-def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True,display=True):
+def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,display=True):
     if sims is None:
         sims = Simulation.all_sims
     #end if
@@ -1925,8 +1982,8 @@ class DynamicProcess(DevBase):
         if not isinstance(produces,(tuple,list,set)):
             self.error('keyword "requires" must be a tuple, list or set of products')
         for prod in produces:
-            if not isinstance(req,str):
-                self.error('each product in "produces" must be given as a string.\nType received: {}\nValue received: {}'.format(req.__class__.__name__,req))
+            if not isinstance(prod,str):
+                self.error('each product in "produces" must be given as a string.\nType received: {}\nValue received: {}'.format(prod.__class__.__name__,prod))
         produces = set(produces)
 
         # initial values
@@ -1982,6 +2039,7 @@ class DynamicProcess(DevBase):
                                req_name,
                                req_value = None,
                                req_type  = str,
+                               *,
                                is_path   = False,
                                ):
         '''Support requirement setter functions'''

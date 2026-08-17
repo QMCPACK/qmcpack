@@ -4,9 +4,6 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 import numpy as np
 from ..testing import value_eq,object_eq
 from nexus.physical_system import generate_physical_system
@@ -19,7 +16,7 @@ def sub_obj(s,keys):
     return obj({k:s[k] for k in keys})
 
 
-def system_same(s1,s2,pseudized=True,tiled=False):
+def system_same(s1,s2,*,pseudized=True,tiled=False):
     same = True
     keys = ('net_charge','net_spin','pseudized')
     o1 = sub_obj(s1,keys)

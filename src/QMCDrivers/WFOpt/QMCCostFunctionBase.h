@@ -98,13 +98,21 @@ public:
   ///return optimization parameter i
   Return_t Params(int i) const { return opt_vars[i]; }
   int getType(int i) const { return opt_vars.getType(i); }
-  ///return the cost value for CGMinimization
+  /**
+   * @brief the cost function value with correlated sampling.
+   * @param needGrad if true, compute the derivatives of energy with respect to parameters
+   * @return cost function value
+   */
   Return_rt Cost(bool needGrad = true);
 
   ///return the cost value for CGMinimization
   Return_rt computedCost();
   void printEstimates();
-  ///return the gradient of cost value for CGMinimization
+  /**
+   * @brief compute the derivatives of cost function with respect to parameters
+   * @param[out] PGradient derivatives
+   * @param[in] PM parameters with which derivatives are evaluated
+   */
   virtual void GradCost(std::vector<Return_rt>& PGradient,
                         const std::vector<Return_rt>& PM,
                         Return_rt FiniteDiff = 0) = 0;
@@ -172,7 +180,7 @@ public:
   inline bool getneedGrads() const { return needGrads; }
 
   inline void setneedGrads(bool tf) { needGrads = tf; }
-  inline void setDMC() { vmc_or_dmc = 1.0; }
+
 
   inline const OptVariables& getOptVariables() const { return opt_vars; }
 
@@ -297,7 +305,7 @@ protected:
   ///stream for debug
   std::unique_ptr<std::ostream> debug_stream;
 
-  bool checkParameters();
+
   void updateXmlNodes();
 
   /// Flag on whether the variational parameter override is output to the new wavefunction
