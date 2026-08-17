@@ -123,8 +123,7 @@ public:
 
   inline void getParameterTypes(std::vector<int>& types) const { return opt_vars.getParameterTypeList(types); }
 
-  ///dump the current parameters and other report
-  void Report();
+
   ///report  parameters at the end
   void reportParameters();
 
@@ -198,8 +197,6 @@ protected:
   ///Hamiltonian
   QMCHamiltonian& H;
 
-  ///if true, do not write the *.opt.#.xml
-  bool Write2OneXml;
   /** |E-E_T|^PowerE is used for the cost function
    *
    * default PowerE=1
@@ -297,8 +294,6 @@ protected:
   std::vector<ParticleGradient*> dLogPsi;
   ///** Fixed  Laplacian , \f$\nabla^2\ln\Psi\f$, components */
   std::vector<ParticleLaplacian*> d2LogPsi;
-  ///stream for debug
-  std::unique_ptr<std::ostream> debug_stream;
 
 
   void updateXmlNodes();
