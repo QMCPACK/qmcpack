@@ -57,7 +57,7 @@ from .qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToA
 from .pyscf_sim import Pyscf
 from .developer import DevBase, obj, error, unavailable
 from .nexus_base import nexus_core
-from .pseudo_set import PseudoSet
+from .pseudoset import PseudoSet
 from .hdfreader import read_hdf
 from .unit_converter import convert
 from .pwscf import Pwscf

@@ -6,6 +6,18 @@ from collections.abc import MutableMapping
 from numbers import Number
 
 
+class Unset:
+    """Sentinel type for distinguishing an omitted argument from ``None``."""
+
+    def __repr__(self):
+        return "unset"
+    #end def __repr__
+#end class Unset
+
+
+unset = Unset()
+
+
 # attempt to regain python 2 sorting
 # code below is from https://stackoverflow.com/questions/26575183/how-can-i-get-2-x-like-sorting-behaviour-in-python-3-x
 #===========================

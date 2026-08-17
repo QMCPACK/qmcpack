@@ -4,7 +4,7 @@
 
 
 from .simulation import Simulation
-from .pseudo_set import PseudoSet
+from .pseudoset import PseudoSet
 from .rmg_input import RmgInput, generate_rmg_input
 from .rmg_analyzer import RmgAnalyzer
 

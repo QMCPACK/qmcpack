@@ -57,7 +57,7 @@ from .unit_converter import convert
 from .periodic_table import Elements
 from .structure import Structure, kmesh
 from .physical_system import PhysicalSystem
-from .pseudo_set import pp_elem_label, PseudoSet
+from .pseudoset import pp_elem_label, PseudoSet
 from .simulation import SimulationInput
 from . import numpy_extensions as npe
 

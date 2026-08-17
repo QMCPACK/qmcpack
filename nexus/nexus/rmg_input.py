@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from .developer import DevBase, obj, error
 from .unit_converter import convert
-from .pseudo_set import pp_elem_label, PseudoSet
+from .pseudoset import pp_elem_label, PseudoSet
 from .structure import generate_structure
 from .simulation import SimulationInput
 from . import numpy_extensions as npe

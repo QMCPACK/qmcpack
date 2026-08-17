@@ -147,7 +147,7 @@ from .generic import sorted_generic
 from .periodic_table import Elements
 from .structure import Structure, Jellium, get_kpath
 from .physical_system import PhysicalSystem
-from .pseudo_set import pp_elem_label, PseudoSet
+from .pseudoset import pp_elem_label, PseudoSet
 from .simulation import SimulationInput, SimulationInputTemplate
 from .pwscf_input import array_to_string as pwscf_array_string
 from .utilities import path_string

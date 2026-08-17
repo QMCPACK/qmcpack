@@ -20,7 +20,7 @@ def test_settings(tmp_path):
     from ..nexus_base import nexus_core,nexus_core_defaults
     from ..nexus_base import nexus_noncore,nexus_noncore_defaults
     from ..nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
-    from ..pseudo_set import PseudoSet
+    from ..pseudoset import PseudoSet
     from ..basisset import BasisSets
     from ..machines import Job,Workstation
     from ..project_manager import ProjectManager
