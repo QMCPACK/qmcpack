@@ -313,7 +313,6 @@ bool QMCFixedSampleLinearOptimize::run()
         }
         for (int i = 0; i < numParams; i++)
           optTarget->Params(i) = currentParameters[i] + Lambda * currentParameterDirections[i + 1];
-        optTarget->IsValid = true;
       }
       else
       {
@@ -1115,7 +1114,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
   for (int i = 0; i < numParams; i++)
     optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i + 1);
-  optTarget->IsValid      = true;
   const RealType initCost = optTarget->LMYEngineCost(false, *EngineObj);
 
   // compute the update directions for the smaller and larger shifts relative to that of the middle shift
@@ -1136,7 +1134,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   {
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currParams.at(i) + (k == central_index ? 0.0 : parameterDirections.at(k).at(i + 1));
-    optTarget->IsValid = true;
     costValues.at(k)   = optTarget->LMYEngineCost(false, *EngineObj);
     good_update.at(k) =
         (good_update.at(k) && std::abs((initCost - costValues.at(k)) / initCost) < max_relative_cost_change);

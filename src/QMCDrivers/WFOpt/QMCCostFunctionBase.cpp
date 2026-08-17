@@ -59,7 +59,6 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
   //default: don't check fo MinNumWalkers
   MinNumWalkers = 0.3;
   SumValue.resize(SUM_INDEX_SIZE, 0.0);
-  IsValid = true;
 #if defined(QMCCOSTFUNCTION_DEBUG)
   std::array<char, 16> fname;
   int length = std::snprintf(fname.data(), fname.size(), "optdebug.p%d", OHMMS::Controller->rank());
@@ -997,7 +996,6 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool nee
 {
   // prepare local energies, weights, and possibly derivative vectors
   auto effective_weight = correlatedSampling(needDeriv);
-  IsValid               = isEffectiveWeightValid(effective_weight);
   // since we are using the LMYEngine, compute and return it's cost function value
   return this->LMYEngineCost_detail(EngineObj);
 }

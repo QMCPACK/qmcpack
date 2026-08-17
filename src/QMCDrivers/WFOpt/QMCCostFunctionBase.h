@@ -83,11 +83,6 @@ public:
   ///process xml node
   bool put(xmlNodePtr cur);
   void resetCostFunction(std::vector<xmlNodePtr>& cset);
-  /** boolean to indicate if the cost function is valid.
-   *
-   * Can be used by optimizers to stop optimization.
-   */
-  bool IsValid;
   ///Save opt parameters to HDF5
   bool reportH5;
   bool CI_Opt;

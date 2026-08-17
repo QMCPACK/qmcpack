@@ -165,8 +165,6 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
       if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs * EDtotals[j];
     }
-
-    IsValid = isEffectiveWeightValid(effective_weight);
   }
 }
 
@@ -415,7 +413,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   app_log().flush();
   setTargetEnergy(Etarget);
   ReportCounter = 0;
-  IsValid       = true;
 
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
@@ -610,7 +607,6 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
   app_log().flush();
   setTargetEnergy(Etarget);
   ReportCounter = 0;
-  IsValid       = true;
 
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
