@@ -27,65 +27,14 @@
     rocblasAssert((ans), cause, __FILE__, __LINE__); \
   }
 /// prints rocBLAS error messages. Always use rocblasErrorCheck macro.
-inline void rocblasAssert(rocblas_status code,
-                          const std::string& cause,
-                          const char* file,
-                          int line,
-                          bool abort = true)
+inline void rocblasAssert(rocblas_status code, const std::string& cause, const char* file, int line)
 {
   if (code != rocblas_status_success)
   {
-    std::string rocblas_error;
-    switch (code)
-    {
-    case rocblas_status_invalid_handle:
-      rocblas_error = "rocblas_status_invalid_handle";
-      break;
-    case rocblas_status_not_implemented:
-      rocblas_error = "rocblas_status_not_implemented";
-      break;
-    case rocblas_status_invalid_pointer:
-      rocblas_error = "rocblas_status_invalid_pointer";
-      break;
-    case rocblas_status_invalid_size:
-      rocblas_error = "rocblas_status_invalid_size";
-      break;
-    case rocblas_status_memory_error:
-      rocblas_error = "rocblas_status_memory_error";
-      break;
-    case rocblas_status_internal_error:
-      rocblas_error = "rocblas_status_internal_error";
-      break;
-    case rocblas_status_perf_degraded:
-      rocblas_error = "rocblas_status_perf_degraded";
-      break;
-    case rocblas_status_size_query_mismatch:
-      rocblas_error = "rocblas_status_size_query_mismatch";
-      break;
-    case rocblas_status_size_increased:
-      rocblas_error = "rocblas_status_size_increased";
-      break;
-    case rocblas_status_size_unchanged:
-      rocblas_error = "rocblas_status_size_unchanged";
-      break;
-    case rocblas_status_invalid_value:
-      rocblas_error = "rocblas_status_invalid_value";
-      break;
-    case rocblas_status_continue:
-      rocblas_error = "rocblas_status_continue";
-      break;
-    case rocblas_status_check_numerics_fail:
-      rocblas_error = "rocblas_status_check_numerics_fail";
-      break;
-    default:
-      rocblas_error = "<unknown>";
-    }
-
     std::ostringstream err;
-    err << "rocblasAssert: " << rocblas_error << ", file " << file << " , line " << line << std::endl
+    err << "rocblasAssert: " << rocblas_status_to_string(code) << ", file " << file << " , line " << line << std::endl
         << cause << std::endl;
     std::cerr << err.str();
-    //if (abort) exit(code);
     throw std::runtime_error(cause);
   }
 }

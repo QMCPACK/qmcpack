@@ -46,6 +46,10 @@ rocblas_operation convertOperation(const char trans)
  *
  * ger has no beta; setting that stride too is harmless and keeps one guard for
  * both entry points.
+ *
+ * This mutates state on the handle for the duration of the call, so the same
+ * handle must not be used concurrently from another host thread. QMCPACK gives
+ * each Queue its own BLASHandle, so nothing shares one today.
  */
 class AlphaBetaArrayGuard
 {
@@ -69,17 +73,22 @@ public:
       status_ = st;
       return;
     }
+    alpha_stride_set_ = true;
     if (rocblas_status st = rocblas_set_batch_beta_stride(handle_, 1); st != rocblas_status_success)
     {
       status_ = st;
       return;
     }
+    beta_stride_set_ = true;
   }
 
+  /// undoes what the constructor got as far as, in reverse order
   ~AlphaBetaArrayGuard()
   {
-    rocblas_set_batch_alpha_stride(handle_, 0);
-    rocblas_set_batch_beta_stride(handle_, 0);
+    if (beta_stride_set_)
+      rocblas_set_batch_beta_stride(handle_, 0);
+    if (alpha_stride_set_)
+      rocblas_set_batch_alpha_stride(handle_, 0);
     if (mode_set_)
       rocblas_set_pointer_mode(handle_, prior_mode_);
   }
@@ -94,6 +103,8 @@ private:
   rocblas_handle handle_;
   rocblas_pointer_mode prior_mode_ = rocblas_pointer_mode_host;
   bool mode_set_                   = false;
+  bool alpha_stride_set_           = false;
+  bool beta_stride_set_            = false;
   rocblas_status status_;
 };
 } // namespace
