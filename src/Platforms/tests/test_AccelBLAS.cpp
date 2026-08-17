@@ -16,6 +16,7 @@
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <CPU/BLAS.hpp>
+#include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
 {
@@ -313,6 +314,21 @@ void test_gemv_cases()
 #endif
 }
 
+/** value with an imaginary part when T is complex, real value otherwise.
+ *
+ * ger computes A += alpha * x * y^T and must not conjugate y. Filling y with real
+ * values only, as the rest of this file does, makes geru and gerc indistinguishable
+ * and leaves the choice untested.
+ */
+template<typename T>
+T testValue(const double re, const double im)
+{
+  if constexpr (IsComplex_t<T>::value)
+    return T(re, im);
+  else
+    return T(re);
+}
+
 template<PlatformKind PL, typename T>
 void test_one_ger(const int M, const int N)
 {
@@ -328,7 +344,7 @@ void test_one_ger(const int M, const int N)
   for (int i = 0; i < M; i++)
     x[i] = i;
   for (int i = 0; i < N; i++)
-    y[i] = N - i;
+    y[i] = testValue<T>(N - i, i + 1);
 
   for (int j = 0; j < M; j++)
     for (int i = 0; i < N; i++)
@@ -365,7 +381,7 @@ void test_one_ger(const int M, const int N)
   for (int i = 0; i < M; i++)
     x2[i] = i - 1;
   for (int i = 0; i < N; i++)
-    y2[i] = N + i;
+    y2[i] = testValue<T>(N + i, -(i + 1));
 
   for (int j = 0; j < M; j++)
     for (int i = 0; i < N; i++)
