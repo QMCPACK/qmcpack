@@ -41,7 +41,7 @@ from .project_manager import ProjectManager,     DynamicWorkflowManager,     wor
 from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
 from .physical_system import PhysicalSystem,     generate_physical_system
 from .pseudopotential import Pseudopotential
-from .pseudoset       import PseudoSet, ppset
+from .pseudoset       import PseudoSet, generate_pseudoset, ppset
 from .basisset        import BasisSets
 from .bundle          import bundle
 

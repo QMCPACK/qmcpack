@@ -1981,6 +1981,13 @@ def test_pseudo_remap_generated_pseudoset(tmp_path):
 
 
 def test_from_mixed_dir_includes_all_selected_codes_with_partial_extensions(tmp_path):
+    """Every explicitly selected code should be represented in the result.
+
+    ``from_mixed_dir`` currently constructs a completed ``checked_filters``
+    mapping for all entries in ``codes``, but does not assign that mapping back
+    to ``extensions``.  It therefore iterates only over the explicitly supplied
+    extension entries and silently drops selected codes that have no entry.
+    """
     (tmp_path / "C.upf").touch()
 
     pseudosets = PseudoSet.from_mixed_dir(
@@ -1993,6 +2000,12 @@ def test_from_mixed_dir_includes_all_selected_codes_with_partial_extensions(tmp_
 
 
 def test_from_mixed_dir_detect_selects_all_known_codes(tmp_path):
+    """The documented ``codes='detect'`` mode should select all known codes.
+
+    The current implementation treats ``detect`` as if it were the name of an
+    executable code and passes it to ``_check_code_str``.  Since ``detect`` is
+    a selection mode rather than a member of ``known_codes``, it is rejected.
+    """
     pseudosets = PseudoSet.from_mixed_dir(
         pseudo_dir = tmp_path,
         codes      = "detect",
@@ -2002,6 +2015,14 @@ def test_from_mixed_dir_detect_selects_all_known_codes(tmp_path):
 
 
 def test_from_mixed_dir_normalizes_code_alias_maps(tmp_path):
+    """Aliases must be normalized consistently across all code-keyed inputs.
+
+    ``pwscf`` is normalized to ``espresso`` while constructing extension
+    filters, but the keys in ``patterns`` and ``code_Zeff_map`` remain
+    unnormalized.  Later lookups use ``espresso``, so the requested pattern and
+    effective-charge map are lost; here that also leaves two carbon files and
+    produces a misleading duplicate-element failure.
+    """
     (tmp_path / "C.BFD.upf").touch()
     (tmp_path / "C.ONCV.upf").touch()
 
@@ -2020,6 +2041,13 @@ def test_from_mixed_dir_normalizes_code_alias_maps(tmp_path):
 
 
 def test_from_mixed_dir_returns_canonical_code_keys(tmp_path):
+    """Result keys should use the same canonical lowercase code vocabulary.
+
+    Code validation is case-insensitive, but when both ``codes`` and
+    ``extensions`` are supplied the normalized filter mapping is discarded.
+    The current result is consequently keyed by the raw input ``'QMCPACK'``
+    even though the contained ``PseudoSet`` identifies itself as ``qmcpack``.
+    """
     (tmp_path / "C.xml").touch()
 
     pseudosets = PseudoSet.from_mixed_dir(
@@ -2032,6 +2060,13 @@ def test_from_mixed_dir_returns_canonical_code_keys(tmp_path):
 
 
 def test_from_dir_detect_is_case_insensitive(tmp_path):
+    """The special ``detect`` value should be case-insensitive like code names.
+
+    ``PseudoSet.__init__`` lowercases ``detect`` and ordinary program names are
+    checked case-insensitively.  ``from_dir`` instead compares against the exact
+    lowercase spelling before validation, causing ``DETECT`` to be interpreted
+    as an unknown program name.
+    """
     (tmp_path / "C.xml").touch()
 
     pseudoset = PseudoSet.from_dir(
@@ -2043,6 +2078,13 @@ def test_from_dir_detect_is_case_insensitive(tmp_path):
 
 
 def test_from_dir_accepts_empty_extension_filter(tmp_path):
+    """An empty extension iterable should consistently select no files.
+
+    Empty iterables satisfy the advertised iterable input type.  The current
+    validation calls ``next(iter(ext_filter))`` without handling exhaustion,
+    so an empty list raises ``StopIteration`` rather than returning an empty
+    explicitly typed ``PseudoSet``.
+    """
     (tmp_path / "C.xml").touch()
 
     pseudoset = PseudoSet.from_dir(
@@ -2055,6 +2097,12 @@ def test_from_dir_accepts_empty_extension_filter(tmp_path):
 
 
 def test_from_dir_does_not_consume_extension_filter_iterator(tmp_path):
+    """Validation must not consume the first value from a one-shot iterator.
+
+    The current type check advances the iterator once and then constructs a set
+    from only the remaining values.  A one-element iterator therefore becomes
+    an empty filter, and automatic code detection subsequently sees no files.
+    """
     pseudo = tmp_path / "C.xml"
     pseudo.touch()
 
@@ -2068,6 +2116,13 @@ def test_from_dir_does_not_consume_extension_filter_iterator(tmp_path):
 
 
 def test_from_dir_reports_invalid_extension_filter_elements(tmp_path):
+    """Invalid iterable members should produce the documented type diagnostic.
+
+    After detecting a non-string member, the current error construction indexes
+    ``ext_filter[0]``.  Valid iterable types such as ``set`` are not necessarily
+    subscriptable, so this case raises an incidental ``set is not subscriptable``
+    error instead of explaining that extension-filter members must be strings.
+    """
     with pytest.raises(TypeError, match="`ext_filter` must be"):
         PseudoSet.from_dir(
             pseudo_dir = tmp_path,
@@ -2077,6 +2132,13 @@ def test_from_dir_reports_invalid_extension_filter_elements(tmp_path):
 
 
 def test_from_mixed_dir_does_not_mutate_extensions(tmp_path):
+    """Input mappings should remain unchanged after directory discovery.
+
+    With ``codes=None``, the current implementation fills missing code entries
+    by assigning directly into the caller's ``extensions`` dictionary.  This
+    unexpectedly expands user-owned configuration with every known code even
+    though the method later creates a separate normalized mapping.
+    """
     extensions = {"qmcpack": {".xml"}}
     reference = deepcopy(extensions)
 
@@ -2089,6 +2151,12 @@ def test_from_mixed_dir_does_not_mutate_extensions(tmp_path):
 
 
 def test_from_mixed_dir_accepts_immutable_extensions_mapping(tmp_path):
+    """Any object satisfying the annotated ``Mapping`` contract should work.
+
+    The signature accepts a general ``Mapping``, but the implementation assumes
+    item assignment is available while inserting defaults.  A read-only mapping
+    therefore fails before its contents can be copied and normalized.
+    """
     extensions = MappingProxyType({"qmcpack": {".xml"}})
 
     pseudosets = PseudoSet.from_mixed_dir(
@@ -2100,6 +2168,13 @@ def test_from_mixed_dir_accepts_immutable_extensions_mapping(tmp_path):
 
 
 def test_from_mixed_dir_preserves_invalid_filename_error(tmp_path):
+    """Non-collision validation errors should retain their original meaning.
+
+    ``from_mixed_dir`` currently catches every ``ValueError`` from ``from_dir``
+    and rewrites it as a duplicate-element ``RuntimeError``.  An invalid element
+    prefix is unrelated to duplicate files and should remain the specific
+    filename-validation ``ValueError`` produced by ``PseudoSet`` construction.
+    """
     (tmp_path / "not_an_element.xml").touch()
 
     with pytest.raises(ValueError, match="Can not determine element"):
@@ -2110,6 +2185,13 @@ def test_from_mixed_dir_preserves_invalid_filename_error(tmp_path):
 
 
 def test_from_mixed_dir_preserves_subclass(tmp_path):
+    """A classmethod invoked on a subclass should construct that subclass.
+
+    ``from_mixed_dir`` calls ``PseudoSet.from_dir`` directly instead of
+    ``cls.from_dir``.  This bypasses normal classmethod polymorphism and returns
+    base-class objects even when discovery was requested through a derived
+    ``PseudoSet`` class.
+    """
     class DerivedPseudoSet(PseudoSet):
         pass
 
@@ -2123,6 +2205,12 @@ def test_from_mixed_dir_preserves_subclass(tmp_path):
 
 
 def test_from_dir_ignores_potcar_directories(tmp_path):
+    """A POTCAR candidate must be a file, not merely an existing path.
+
+    Directory discovery currently tests ``POTCAR.exists()`` and passes the path
+    to ``PseudoSet`` without checking ``is_file()``.  A directory named POTCAR
+    is consequently registered as a usable VASP pseudopotential.
+    """
     element_dir = tmp_path / "C"
     element_dir.mkdir()
     (element_dir / "POTCAR").mkdir()
