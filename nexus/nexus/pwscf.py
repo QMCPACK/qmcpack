@@ -24,7 +24,7 @@ import numpy as np
 from .nexus_base import nexus_core
 from .developer import obj
 from .physical_system import PhysicalSystem
-from .pseudopotential import PseudoSet
+from .pseudo_set import PseudoSet
 from .simulation import Simulation, DynamicProcess
 from .pwscf_input import PwscfInput, generate_pwscf_input
 from .pwscf_analyzer import PwscfAnalyzer

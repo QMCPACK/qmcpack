@@ -27,7 +27,7 @@
 import os
 from copy import deepcopy
 from .developer import obj
-from .pseudopotential import PseudoSet
+from .pseudo_set import PseudoSet
 from .simulation import Simulation
 from .vasp_input import VaspInput,generate_vasp_input,generate_poscar,Poscar
 from .vasp_analyzer import VaspAnalyzer
