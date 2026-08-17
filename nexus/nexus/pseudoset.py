@@ -18,6 +18,8 @@ from .developer_tools import unset
 from .physical_system import PhysicalSystem
 from .pseudopotential import pp_elem_label
 
+
+
 def read_upf_z_valence(file: PathLike) -> int | float:
     """Read Z-valence from a UPF-compliant pseudopotential file."""
     # Bind these to the function so we only compile them once.
@@ -100,6 +102,7 @@ def read_upf_z_valence(file: PathLike) -> int | float:
 #end def read_upf_z_valence
 
 
+
 def read_qmcpack_xml_z_valence(file: PathLike) -> int | float:
     """Read the Z-valence from a QMCPACK-compatible XML pseudopotential file."""
         # Bind these to the function so we only compile them once.
@@ -146,6 +149,7 @@ def read_qmcpack_xml_z_valence(file: PathLike) -> int | float:
     else:
         return zval
 #end def read_xml_z_valence
+
 
 
 def read_potcar_z_valence(file: PathLike) -> int | float:
@@ -281,10 +285,40 @@ class PseudoSet(DevBase):
     pseudo_files      : ClassVar[dict[str, str]] = dict()
     labeled_pseudosets: ClassVar[dict[str, dict[str, PseudoSet]]] = dict()
 
+
     @staticmethod
     def pseudo_remap(code,pseudos,system):
         if pseudos is None:
             return {}
+        if isinstance(pseudos, Mapping) and len(pseudos)>0:
+            contains_pseudosets = any(
+                isinstance(pseudoset, PseudoSet) for pseudoset in pseudos.values()
+                )
+            if contains_pseudosets:
+                if not all(isinstance(pseudoset, PseudoSet) for pseudoset in pseudos.values()):
+                    raise TypeError(
+                        "A pseudopotential-set mapping must contain only PseudoSet values"
+                        )
+                code = PseudoSet._check_code_str(code)
+                if code not in pseudos:
+                    error(f'pseudopotential set is not available for code "{code}"')
+                if system is None:
+                    raise ValueError(
+                        "A system must be provided with a pseudopotential-set mapping"
+                        )
+                pps = pseudos[code]
+                species = system.structure.species(symbol=True)[1]
+                missing = set(species)-pps.pseudos.keys()
+                if missing:
+                    error(
+                        f'pseudopotential set does not contain species {sorted(missing)}'
+                        )
+                return {
+                    pps.pseudos[element].name: str(pps.pseudos[element])
+                    for element in sorted(species)
+                    }
+        if isinstance(pseudos, Mapping):
+            return dict(pseudos)
         if isinstance(pseudos,str):
             label = pseudos
             if label not in PseudoSet.labeled_pseudosets:
@@ -460,6 +494,7 @@ class PseudoSet(DevBase):
         else:
             return clow
     #end def _check_code_str
+
 
     @classmethod
     def from_dir(
@@ -647,6 +682,7 @@ class PseudoSet(DevBase):
             skip_invalid = skip_invalid,
             )
     #end def from_dir
+
 
     @classmethod
     def from_mixed_dir(
@@ -852,6 +888,7 @@ class PseudoSet(DevBase):
         return pseudos
     #end def from_mixed_dir
 
+
     def get_pseudos(
         self,
         system: PhysicalSystem | Iterable[str],
@@ -899,6 +936,7 @@ class PseudoSet(DevBase):
 
         return pps
     #end def get_pseudos
+
 
     def get_Zeff(
         self,
@@ -971,6 +1009,7 @@ class PseudoSet(DevBase):
         return Z_eff_map
     #end def get_Zeff
 
+
     def __repr__(self) -> str:
         rep = (
             "PseudoSet(\n"
@@ -1001,6 +1040,7 @@ class PseudoSet(DevBase):
         return rep
     #end def __repr__
 #end class PseudoSet
+
 
 
 def generate_pseudoset(

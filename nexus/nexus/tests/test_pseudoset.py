@@ -1952,3 +1952,28 @@ def test_generate_pseudoset_label(tmp_path):
     finally:
         PseudoSet.pseudo_files = pseudo_files
         PseudoSet.labeled_pseudosets = labeled_pseudosets
+
+
+def test_pseudo_remap_generated_pseudoset(tmp_path):
+    pseudo_dir, _, reference_pseudos = setup_psps(test_dir=tmp_path, code="qmcpack")
+    generated = generate_pseudoset(pseudo_dir=pseudo_dir, code="qmcpack")
+    system = generate_physical_system(
+        elem = ["O", "C", "H"],
+        pos  = np.empty((3, 3), dtype=float),
+        C    = 4,
+        H    = 1,
+        O    = 6,
+        )
+
+    pseudo_files = deepcopy(PseudoSet.pseudo_files)
+    try:
+        PseudoSet.pseudo_files = {}
+        remapped = PseudoSet.pseudo_remap("qmcpack", generated, system)
+        remapped_twice = PseudoSet.pseudo_remap("qmcpack", remapped, system)
+    finally:
+        PseudoSet.pseudo_files = pseudo_files
+
+    assert remapped == {
+        pseudo.name: str(pseudo) for pseudo in reference_pseudos.values()
+        }
+    assert remapped_twice == remapped
