@@ -738,7 +738,7 @@ if(ENABLE_ROCM)
   find_package(rocthrust CONFIG REQUIRED)
 
   # rocBLAS is used directly, not through hipBLAS, for the batched BLAS1/2 calls in
-  # Platforms/ROCm/rocBLAS_MFs.cpp that hipBLAS does not re-export. rocSOLVER already
+  # Platforms/ROCm/rocBLAS.cpp that hipBLAS does not re-export. rocSOLVER already
   # pulls rocBLAS in as a PUBLIC dependency, so this find_package costs nothing; it is
   # what makes rocblas_VERSION available.
   find_package(rocblas CONFIG REQUIRED)

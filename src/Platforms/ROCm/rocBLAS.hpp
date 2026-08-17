@@ -11,8 +11,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_ROCBLAS_MFS_H
-#define QMCPLUSPLUS_ROCBLAS_MFS_H
+#ifndef QMCPLUSPLUS_ROCBLAS_H
+#define QMCPLUSPLUS_ROCBLAS_H
 
 #include <complex>
 #include <hipblas/hipblas.h>
@@ -36,7 +36,7 @@ namespace qmcplusplus
  * so the cast is sound and the calls inherit the stream hipblasSetStream already bound.
  * Same idiom as hipBLAS.cpp.
  */
-namespace rocBLAS_MFs
+namespace rocBLAS
 {
 // BLAS2
 #ifdef QMC_ROCBLAS_ALPHA_BETA_ARRAYS
@@ -218,7 +218,7 @@ hipblasStatus_t copy_batched(hipblasHandle_t handle,
                              const int incy,
                              const int batch_count);
 
-} // namespace rocBLAS_MFs
+} // namespace rocBLAS
 
 } // namespace qmcplusplus
-#endif // QMCPLUSPLUS_ROCBLAS_MFS_H
+#endif // QMCPLUSPLUS_ROCBLAS_H

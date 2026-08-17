@@ -11,14 +11,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "rocBLAS_MFs.hpp"
+#include "rocBLAS.hpp"
 #include <stdexcept>
 #include <string>
 #include <rocblas/rocblas.h>
 
 namespace qmcplusplus
 {
-namespace rocBLAS_MFs
+namespace rocBLAS
 {
 namespace
 {
@@ -66,7 +66,7 @@ rocblas_operation convertOperation(const char trans)
     return rocblas_operation_conjugate_transpose;
   else
     throw std::runtime_error(
-        "rocBLAS_MFs::convertOperation trans can only be 'N', 'T', 'C', 'n', 't', 'c'. Input value is " +
+        "rocBLAS::convertOperation trans can only be 'N', 'T', 'C', 'n', 't', 'c'. Input value is " +
         std::string(1, trans));
 }
 
@@ -575,5 +575,5 @@ hipblasStatus_t copy_batched(hipblasHandle_t handle,
                            reinterpret_cast<rocblas_double_complex* const*>(out), incy, batch_count);
 }
 
-} // namespace rocBLAS_MFs
+} // namespace rocBLAS
 } // namespace qmcplusplus
