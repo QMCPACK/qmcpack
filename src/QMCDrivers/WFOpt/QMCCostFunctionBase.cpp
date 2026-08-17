@@ -39,7 +39,6 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
       H(h),
       Write2OneXml(true),
       PowerE(2),
-      NumCostCalls(0),
       NumSamples(0),
       w_en(0.9),
       w_var(0.1),
@@ -121,7 +120,6 @@ void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
 
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
 {
-  NumCostCalls++;
   //reset the wave function
   resetPsi();
   //evaluate new local energies

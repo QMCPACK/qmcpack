@@ -208,8 +208,6 @@ protected:
    * default PowerE=1
    */
   int PowerE;
-  ///number of times cost function evaluated
-  int NumCostCalls;
   /// global number of samples to use in correlated sampling
   int NumSamples;
   ///counter for output
