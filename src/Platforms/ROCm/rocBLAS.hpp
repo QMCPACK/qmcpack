@@ -15,13 +15,85 @@
 #define QMCPLUSPLUS_ROCBLAS_H
 
 #include <complex>
-#include <hipblas/hipblas.h>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <stdexcept>
+#include <rocblas/rocblas.h>
 #include "config.h"
+
+#define rocblasErrorCheck(ans, cause)                \
+  {                                                  \
+    rocblasAssert((ans), cause, __FILE__, __LINE__); \
+  }
+/// prints rocBLAS error messages. Always use rocblasErrorCheck macro.
+inline void rocblasAssert(rocblas_status code,
+                          const std::string& cause,
+                          const char* file,
+                          int line,
+                          bool abort = true)
+{
+  if (code != rocblas_status_success)
+  {
+    std::string rocblas_error;
+    switch (code)
+    {
+    case rocblas_status_invalid_handle:
+      rocblas_error = "rocblas_status_invalid_handle";
+      break;
+    case rocblas_status_not_implemented:
+      rocblas_error = "rocblas_status_not_implemented";
+      break;
+    case rocblas_status_invalid_pointer:
+      rocblas_error = "rocblas_status_invalid_pointer";
+      break;
+    case rocblas_status_invalid_size:
+      rocblas_error = "rocblas_status_invalid_size";
+      break;
+    case rocblas_status_memory_error:
+      rocblas_error = "rocblas_status_memory_error";
+      break;
+    case rocblas_status_internal_error:
+      rocblas_error = "rocblas_status_internal_error";
+      break;
+    case rocblas_status_perf_degraded:
+      rocblas_error = "rocblas_status_perf_degraded";
+      break;
+    case rocblas_status_size_query_mismatch:
+      rocblas_error = "rocblas_status_size_query_mismatch";
+      break;
+    case rocblas_status_size_increased:
+      rocblas_error = "rocblas_status_size_increased";
+      break;
+    case rocblas_status_size_unchanged:
+      rocblas_error = "rocblas_status_size_unchanged";
+      break;
+    case rocblas_status_invalid_value:
+      rocblas_error = "rocblas_status_invalid_value";
+      break;
+    case rocblas_status_continue:
+      rocblas_error = "rocblas_status_continue";
+      break;
+    case rocblas_status_check_numerics_fail:
+      rocblas_error = "rocblas_status_check_numerics_fail";
+      break;
+    default:
+      rocblas_error = "<unknown>";
+    }
+
+    std::ostringstream err;
+    err << "rocblasAssert: " << rocblas_error << ", file " << file << " , line " << line << std::endl
+        << cause << std::endl;
+    std::cerr << err.str();
+    //if (abort) exit(code);
+    throw std::runtime_error(cause);
+  }
+}
 
 namespace qmcplusplus
 {
-/** Drop-in replacements for the CUDA/cuBLAS_missing_functions.cu kernels, backed by
- * rocBLAS. Same conventions as cuBLAS_MFs:
+/** Batched rocBLAS calls that hipBLAS does not re-export, used in place of the
+ * CUDA/cuBLAS_missing_functions.cu kernels. Same conventions as cuBLAS_MFs:
  * 1) column major just like the BLAS fortran API
  * 2) all the functions are asynchronous
  * 3) all the pointer arguments are expected as device pointers.
@@ -31,17 +103,17 @@ namespace qmcplusplus
  * QMC_ROCBLAS_ALPHA_BETA_ARRAYS gate on gemv_batched and ger_batched, an opt-in that is
  * OFF by default. copy_batched has no alpha and is always available.
  *
- * The handle is the hipBLAS handle owned by BLASHandle<PlatformKind::CUDA>, cast to
- * rocblas_handle internally. hipBLAS's AMD backend stores the rocBLAS handle verbatim,
- * so the cast is sound and the calls inherit the stream hipblasSetStream already bound.
- * Same idiom as hipBLAS.cpp.
+ * The handle is the rocBLAS handle underlying the hipBLAS handle owned by
+ * BLASHandle<PlatformKind::CUDA>; the caller casts it. hipBLAS's AMD backend stores the
+ * rocBLAS handle verbatim, so the cast is sound and the calls inherit the stream
+ * hipblasSetStream already bound. Same idiom as hipBLAS.cpp.
  */
 namespace rocBLAS
 {
 // BLAS2
 #ifdef QMC_ROCBLAS_ALPHA_BETA_ARRAYS
 /** Xgemv batched API
- * @param handle hipBLAS handle carrying the stream for asynchronous computation
+ * @param handle rocBLAS handle carrying the stream for asynchronous computation
  * @param trans whether A matrices are transposed
  * @param m number of rows in A
  * @param n number of columns in A
@@ -55,64 +127,64 @@ namespace rocBLAS
  * @param incy increment for the elements of y. It cannot be zero.
  * @param batch_count batch size
  */
-hipblasStatus_t gemv_batched(hipblasHandle_t handle,
-                             const char trans,
-                             const int m,
-                             const int n,
-                             const float* alpha,
-                             const float* const A[],
-                             const int lda,
-                             const float* const x[],
-                             const int incx,
-                             const float* beta,
-                             float* const y[],
-                             const int incy,
-                             const int batch_count);
+rocblas_status gemv_batched(rocblas_handle handle,
+                            const char trans,
+                            const int m,
+                            const int n,
+                            const float* alpha,
+                            const float* const A[],
+                            const int lda,
+                            const float* const x[],
+                            const int incx,
+                            const float* beta,
+                            float* const y[],
+                            const int incy,
+                            const int batch_count);
 
-hipblasStatus_t gemv_batched(hipblasHandle_t handle,
-                             const char trans,
-                             const int m,
-                             const int n,
-                             const double* alpha,
-                             const double* const A[],
-                             const int lda,
-                             const double* const x[],
-                             const int incx,
-                             const double* beta,
-                             double* const y[],
-                             const int incy,
-                             const int batch_count);
+rocblas_status gemv_batched(rocblas_handle handle,
+                            const char trans,
+                            const int m,
+                            const int n,
+                            const double* alpha,
+                            const double* const A[],
+                            const int lda,
+                            const double* const x[],
+                            const int incx,
+                            const double* beta,
+                            double* const y[],
+                            const int incy,
+                            const int batch_count);
 
-hipblasStatus_t gemv_batched(hipblasHandle_t handle,
-                             const char trans,
-                             const int m,
-                             const int n,
-                             const std::complex<float>* alpha,
-                             const std::complex<float>* const A[],
-                             const int lda,
-                             const std::complex<float>* const x[],
-                             const int incx,
-                             const std::complex<float>* beta,
-                             std::complex<float>* const y[],
-                             const int incy,
-                             const int batch_count);
+rocblas_status gemv_batched(rocblas_handle handle,
+                            const char trans,
+                            const int m,
+                            const int n,
+                            const std::complex<float>* alpha,
+                            const std::complex<float>* const A[],
+                            const int lda,
+                            const std::complex<float>* const x[],
+                            const int incx,
+                            const std::complex<float>* beta,
+                            std::complex<float>* const y[],
+                            const int incy,
+                            const int batch_count);
 
-hipblasStatus_t gemv_batched(hipblasHandle_t handle,
-                             const char trans,
-                             const int m,
-                             const int n,
-                             const std::complex<double>* alpha,
-                             const std::complex<double>* const A[],
-                             const int lda,
-                             const std::complex<double>* const x[],
-                             const int incx,
-                             const std::complex<double>* beta,
-                             std::complex<double>* const y[],
-                             const int incy,
-                             const int batch_count);
+rocblas_status gemv_batched(rocblas_handle handle,
+                            const char trans,
+                            const int m,
+                            const int n,
+                            const std::complex<double>* alpha,
+                            const std::complex<double>* const A[],
+                            const int lda,
+                            const std::complex<double>* const x[],
+                            const int incx,
+                            const std::complex<double>* beta,
+                            std::complex<double>* const y[],
+                            const int incy,
+                            const int batch_count);
 
 /** Xger batched API
- * @param handle hipBLAS handle carrying the stream for asynchronous computation
+ * @param handle rocBLAS handle carrying the stream for asynchronous computation
  * @param m number of rows in A
  * @param n number of columns in A
  * @param alpha the factor vector of A
@@ -127,58 +199,58 @@ hipblasStatus_t gemv_batched(hipblasHandle_t handle,
  * Complex maps to rocblas_Xgeru_batched, not gerc: the replaced kernel does not
  * conjugate y.
  */
-hipblasStatus_t ger_batched(hipblasHandle_t handle,
-                            const int m,
-                            const int n,
-                            const float* alpha,
-                            const float* const x[],
-                            const int incx,
-                            const float* const y[],
-                            const int incy,
-                            float* const A[],
-                            const int lda,
-                            const int batch_count);
+rocblas_status ger_batched(rocblas_handle handle,
+                           const int m,
+                           const int n,
+                           const float* alpha,
+                           const float* const x[],
+                           const int incx,
+                           const float* const y[],
+                           const int incy,
+                           float* const A[],
+                           const int lda,
+                           const int batch_count);
 
-hipblasStatus_t ger_batched(hipblasHandle_t handle,
-                            const int m,
-                            const int n,
-                            const double* alpha,
-                            const double* const x[],
-                            const int incx,
-                            const double* const y[],
-                            const int incy,
-                            double* const A[],
-                            const int lda,
-                            const int batch_count);
+rocblas_status ger_batched(rocblas_handle handle,
+                           const int m,
+                           const int n,
+                           const double* alpha,
+                           const double* const x[],
+                           const int incx,
+                           const double* const y[],
+                           const int incy,
+                           double* const A[],
+                           const int lda,
+                           const int batch_count);
 
-hipblasStatus_t ger_batched(hipblasHandle_t handle,
-                            const int m,
-                            const int n,
-                            const std::complex<float>* alpha,
-                            const std::complex<float>* const x[],
-                            const int incx,
-                            const std::complex<float>* const y[],
-                            const int incy,
-                            std::complex<float>* const A[],
-                            const int lda,
-                            const int batch_count);
+rocblas_status ger_batched(rocblas_handle handle,
+                           const int m,
+                           const int n,
+                           const std::complex<float>* alpha,
+                           const std::complex<float>* const x[],
+                           const int incx,
+                           const std::complex<float>* const y[],
+                           const int incy,
+                           std::complex<float>* const A[],
+                           const int lda,
+                           const int batch_count);
 
-hipblasStatus_t ger_batched(hipblasHandle_t handle,
-                            const int m,
-                            const int n,
-                            const std::complex<double>* alpha,
-                            const std::complex<double>* const x[],
-                            const int incx,
-                            const std::complex<double>* const y[],
-                            const int incy,
-                            std::complex<double>* const A[],
-                            const int lda,
-                            const int batch_count);
+rocblas_status ger_batched(rocblas_handle handle,
+                           const int m,
+                           const int n,
+                           const std::complex<double>* alpha,
+                           const std::complex<double>* const x[],
+                           const int incx,
+                           const std::complex<double>* const y[],
+                           const int incy,
+                           std::complex<double>* const A[],
+                           const int lda,
+                           const int batch_count);
 #endif // QMC_ROCBLAS_ALPHA_BETA_ARRAYS
 
 // BLAS1
 /** Xcopy batched API
- * @param handle hipBLAS handle carrying the stream for asynchronous computation
+ * @param handle rocBLAS handle carrying the stream for asynchronous computation
  * @param n number of elements to be copied
  * @param in device array of device pointers of vector
  * @param incx increment for the elements of in. It cannot be zero.
@@ -186,37 +258,37 @@ hipblasStatus_t ger_batched(hipblasHandle_t handle,
  * @param incy increment for the elements of out. It cannot be zero.
  * @param batch_count batch size
  */
-hipblasStatus_t copy_batched(hipblasHandle_t handle,
-                             const int n,
-                             const float* const in[],
-                             const int incx,
-                             float* const out[],
-                             const int incy,
-                             const int batch_count);
+rocblas_status copy_batched(rocblas_handle handle,
+                            const int n,
+                            const float* const in[],
+                            const int incx,
+                            float* const out[],
+                            const int incy,
+                            const int batch_count);
 
-hipblasStatus_t copy_batched(hipblasHandle_t handle,
-                             const int n,
-                             const double* const in[],
-                             const int incx,
-                             double* const out[],
-                             const int incy,
-                             const int batch_count);
+rocblas_status copy_batched(rocblas_handle handle,
+                            const int n,
+                            const double* const in[],
+                            const int incx,
+                            double* const out[],
+                            const int incy,
+                            const int batch_count);
 
-hipblasStatus_t copy_batched(hipblasHandle_t handle,
-                             const int n,
-                             const std::complex<float>* const in[],
-                             const int incx,
-                             std::complex<float>* const out[],
-                             const int incy,
-                             const int batch_count);
+rocblas_status copy_batched(rocblas_handle handle,
+                            const int n,
+                            const std::complex<float>* const in[],
+                            const int incx,
+                            std::complex<float>* const out[],
+                            const int incy,
+                            const int batch_count);
 
-hipblasStatus_t copy_batched(hipblasHandle_t handle,
-                             const int n,
-                             const std::complex<double>* const in[],
-                             const int incx,
-                             std::complex<double>* const out[],
-                             const int incy,
-                             const int batch_count);
+rocblas_status copy_batched(rocblas_handle handle,
+                            const int n,
+                            const std::complex<double>* const in[],
+                            const int incx,
+                            std::complex<double>* const out[],
+                            const int incy,
+                            const int batch_count);
 
 } // namespace rocBLAS
 

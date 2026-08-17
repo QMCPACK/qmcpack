@@ -228,10 +228,11 @@ inline void gemv_batched(BLASHandle<PlatformKind::CUDA>& handle,
                          const int batch_count)
 {
 #ifdef QMC_ROCBLAS_ALPHA_BETA_ARRAYS
-  // h_cublas is bound to h_stream by cublasSetStream, so ordering is preserved
-  cublasErrorCheck(rocBLAS::gemv_batched(handle.h_cublas, trans, m, n, alpha, A, lda, x, incx, beta, y, incy,
-                                         batch_count),
-                   "rocBLAS::gemv_batched failed!");
+  // hipBLAS's AMD backend stores the rocBLAS handle verbatim, so the cast is sound and the
+  // call inherits the stream cublasSetStream already bound. Same idiom as hipBLAS.cpp.
+  rocblasErrorCheck(rocBLAS::gemv_batched(reinterpret_cast<rocblas_handle>(handle.h_cublas), trans, m, n, alpha, A, lda,
+                                          x, incx, beta, y, incy, batch_count),
+                    "rocBLAS::gemv_batched failed!");
 #else
   cudaErrorCheck(cuBLAS_MFs::gemv_batched(handle.h_stream, trans, m, n, alpha, A, lda, x, incx, beta, y, incy,
                                           batch_count),
@@ -316,8 +317,9 @@ inline void ger_batched(BLASHandle<PlatformKind::CUDA>& handle,
 {
 #ifdef QMC_ROCBLAS_ALPHA_BETA_ARRAYS
   // Complex dispatches to geru, not gerc: the kernel this replaces does not conjugate y.
-  cublasErrorCheck(rocBLAS::ger_batched(handle.h_cublas, m, n, alpha, x, incx, y, incy, A, lda, batch_count),
-                   "rocBLAS::ger_batched failed!");
+  rocblasErrorCheck(rocBLAS::ger_batched(reinterpret_cast<rocblas_handle>(handle.h_cublas), m, n, alpha, x, incx, y,
+                                         incy, A, lda, batch_count),
+                    "rocBLAS::ger_batched failed!");
 #else
   cudaErrorCheck(cuBLAS_MFs::ger_batched(handle.h_stream, m, n, alpha, x, incx, y, incy, A, lda, batch_count),
                  "cuBLAS_MFs::ger_batched failed!");
@@ -335,8 +337,9 @@ inline void copy_batched(BLASHandle<PlatformKind::CUDA>& handle,
 {
 #ifdef QMC_CUDA2HIP
   // no alpha, so nothing to version-gate: rocblas_Xcopy_batched predates the ROCm 6.0 floor
-  cublasErrorCheck(rocBLAS::copy_batched(handle.h_cublas, n, in, incx, out, incy, batch_count),
-                   "rocBLAS::copy_batched failed!");
+  rocblasErrorCheck(rocBLAS::copy_batched(reinterpret_cast<rocblas_handle>(handle.h_cublas), n, in, incx, out, incy,
+                                          batch_count),
+                    "rocBLAS::copy_batched failed!");
 #else
   cudaErrorCheck(cuBLAS_MFs::copy_batched(handle.h_stream, n, in, incx, out, incy, batch_count),
                  "cuBLAS_MFs::copy_batched failed!");
