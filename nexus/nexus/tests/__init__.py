@@ -5,7 +5,7 @@ from copy import deepcopy
 import functools
 from nexus.nexus_base import nexus_core, nexus_noncore, nexus_noncore_defaults
 from nexus.generic import generic_settings, object_interface
-from nexus.pseudopotential import PseudoSet
+from nexus.pseudoset import PseudoSet
 from nexus.simulation import Simulation
 
 # qmcpack/nexus/nexus/tests/
@@ -230,6 +230,7 @@ class NexusTestOrder(IntEnum):
     STRUCTURE                       = auto()
     PHYSICAL_SYSTEM                 = auto()
     BASISSET                        = auto()
+    PSEUDOSET                       = auto()
     PSEUDOPOTENTIAL                 = auto()
     NEXUS_BASE                      = auto()
     ERROR_KEYS                      = auto()
