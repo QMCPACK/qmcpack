@@ -1,9 +1,10 @@
+import numpy as np
 import pytest
 from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
 
-from ..generic import NexusError, generic_settings
+from ..generic import generic_settings
 generic_settings.raise_error = True
 
 from . import isolate_nexus_core, TEST_DIR
@@ -1483,24 +1484,22 @@ def test_read():
 #end def test_read
 
 
-@pytest.mark.parametrize('batched_method',[
-    'vmc_batch',
-    'dmc_batch',
-    ])
-def test_batched_qmc_estimators(tmp_path,batched_method):
-    import numpy as np
+@pytest.mark.parametrize(
+    'qmc_method',
+    ('vmc','dmc','vmc_batch','dmc_batch'),
+    )
+def test_qmc_estimator_input_scoping(tmp_path,qmc_method):
     from ..qmcpack_input import QmcpackInput
 
-    batched_input = '''<simulation>
+    qmc_input = '''\
+<simulation>
   <project id="case" series="5"/>
-  <qmcsystem>
-    <estimators>
-      <estimator type="spindensity" name="GlobalSpinDensity">
-        <parameter name="grid">2 3 4</parameter>
-      </estimator>
-    </estimators>
-  </qmcsystem>
-  <qmc method="{}" move="pbyp">
+  <estimators>
+    <estimator type="spindensity" name="GlobalSpinDensity">
+      <parameter name="grid">2 3 4</parameter>
+    </estimator>
+  </estimators>
+  <qmc method="{qmc_method}" move="pbyp">
     <estimators>
       <estimator type="spindensity" name="SpinDensity">
         <parameter name="grid">2 3 4</parameter>
@@ -1509,7 +1508,7 @@ def test_batched_qmc_estimators(tmp_path,batched_method):
       </estimator>
     </estimators>
   </qmc>
-  <qmc method="{}" move="pbyp">
+  <qmc method="{qmc_method}" move="pbyp">
     <estimators>
       <estimator type="spindensity" name="SecondSpinDensity">
         <parameter name="grid">3 3 4</parameter>
@@ -1517,22 +1516,27 @@ def test_batched_qmc_estimators(tmp_path,batched_method):
     </estimators>
   </qmc>
 </simulation>
-'''.format(batched_method,batched_method)
-    filepath = tmp_path / 'batched_estimators.xml'
-    filepath.write_text(batched_input)
+'''.format(qmc_method=qmc_method)
+    filepath = tmp_path / 'qmc_estimators.xml'
+    filepath.write_text(qmc_input)
 
     qi = QmcpackInput(filepath)
     qi.pluralize()
-    scoped = qi.get_qmc_estimator_inputs()
-    sd = scoped.qmc[0].estimators.estimators.SpinDensity
-    assert value_eq(sd.grid,np.array([2,3,4]))
-    assert value_eq(sd.corner,np.array([0,0,0]))
-    assert value_eq(sd.cell,np.array([[2,0,0],[0,3,0],[0,0,4]]))
-    assert list(scoped.global_estimators.estimators.keys())==['GlobalSpinDensity']
-    assert [q.series for q in scoped.qmc]==[5,6]
-    assert [q.series for q in qi.get_output_info('qmc')]==[5,6]
+    scoped_estimators = qi.get_qmc_estimator_inputs()
+    spin_density = scoped_estimators.qmc[0].estimators.estimators.SpinDensity
 
-#end def test_batched_qmc_estimators
+    assert 'qmcsystem' not in qi.simulation
+    assert spin_density.grid.dtype == np.dtype(int)
+    assert value_eq(spin_density.grid,np.array([2,3,4],dtype=int))
+    assert value_eq(spin_density.corner,np.array([0,0,0],dtype=int))
+    assert value_eq(
+        spin_density.cell,np.array([[2,0,0],[0,3,0],[0,0,4]],dtype=int))
+    assert list(scoped_estimators.global_estimators.estimators.keys()) == [
+        'GlobalSpinDensity']
+    assert [qmc_input.series for qmc_input in scoped_estimators.qmc] == [5,6]
+    assert [output.series for output in qi.get_output_info('qmc')] == [5,6]
+
+#end def test_qmc_estimator_input_scoping
 
 
 

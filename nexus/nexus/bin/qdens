@@ -173,30 +173,19 @@ def qmcpack_filepath(basepath,tokens,g=None):
 #end def qmcpack_filepath
 
 
-def get_grid(s,dr=None,delta=None,x_min=None,x_max=None,y_min=None,y_max=None,z_min=None,z_max=None):
-    s = deepcopy(s)
-    s.change_units('B')
-    grid = []
-    if delta is None:
-        cell = s.axes.copy()
-    else:
-        dr = delta
-        cell = np.array([[1,0,0],
-                         [0,1,0],
-                         [0,0,1]])
-    #end if
-    n = 0
-    for a in cell:
-        grid.append(int(np.ceil(np.sqrt(np.dot(a,a))/dr[n])))
-        n+=1
-    #end for
-    return tuple(grid)
-#end def get_grid
-
-
 def _has_valid_axes(structure):
     return structure is not None and np.array(structure.axes).shape==(3,3)
 #end def _has_valid_axes
+
+
+def _has_orthorhombic_axes(structure):
+    if not _has_valid_axes(structure):
+        return False
+    #end if
+    axes = np.array(structure.axes,dtype=float)
+    metric = np.dot(axes,axes.T)
+    return np.allclose(metric,np.diag(np.diag(metric)))
+#end def _has_orthorhombic_axes
 
 
 def reblock(data,eq,rb=None,filepath=None):
@@ -696,7 +685,11 @@ class StatFile(QDBase):
     def check_grid(self,name,grid,data_cells):
         ncells = int(grid[0]*grid[1]*grid[2])
         if ncells!=data_cells:
-            self.error('density grid does not match number of HDF5 data cells\nfile path: {0}\nseries: {1}\nestimator: {2}\ngrid: {3}\ngrid cells: {4}\nHDF5 data cells: {5}'.format(self.filepath,self.series,name,grid,ncells,data_cells))
+            self.error(
+                'density grid does not match number of HDF5 data cells\n'
+                'file path: {0}\nseries: {1}\nestimator: {2}\ngrid: {3}\n'
+                'grid cells: {4}\nHDF5 data cells: {5}'
+                .format(self.filepath,self.series,name,grid,ncells,data_cells))
         #end if
     #end def check_grid
 
@@ -715,12 +708,18 @@ class StatFile(QDBase):
                     self.check_grid(name,g,data.value.shape[-1])
                     npe.reshape_inplace(data.value, (len(data.value),g[0],g[1],g[2]))
                 #end for
+                # reblock the data
                 if hasattr(spin_density, 'u'):
-                    u_data = reblock(spin_density.u.value,equilibration,reblock_factor,self.filepath)
+                    u_data = reblock(
+                        spin_density.u.value,equilibration,reblock_factor,
+                        self.filepath)
                 #end if
                 if hasattr(spin_density, 'd'):
-                    d_data = reblock(spin_density.d.value,equilibration,reblock_factor,self.filepath)
+                    d_data = reblock(
+                        spin_density.d.value,equilibration,reblock_factor,
+                        self.filepath)
                 #end if
+                # save the reblocked data
                 if hasattr(spin_density, 'u'):
                     spin_density.u.clear()
                     spin_density.u.value = u_data
@@ -729,26 +728,47 @@ class StatFile(QDBase):
                     spin_density.d.clear()
                     spin_density.d.value = d_data
                 #end if
+                # make the single density means/errors
                 sres = obj()
                 density_cell   = metadata.density_cell
                 density_corner = metadata.density_corner
                 if hasattr(spin_density, 'u'):
-                    sres.u = SingleDensity(structure=opt.structure,grid=g,data=u_data,
-                                            extension='_u',density_cell=density_cell,
-                                            density_corner=density_corner)
+                    sres.u = SingleDensity(
+                        structure      = opt.structure,
+                        grid           = g,
+                        data           = u_data,
+                        extension      = '_u',
+                        density_cell   = density_cell,
+                        density_corner = density_corner,
+                        )
                 #end if
                 if hasattr(spin_density, 'd'):
-                    sres.d = SingleDensity(structure=opt.structure,grid=g,data=d_data,
-                                            extension='_d',density_cell=density_cell,
-                                            density_corner=density_corner)
+                    sres.d = SingleDensity(
+                        structure      = opt.structure,
+                        grid           = g,
+                        data           = d_data,
+                        extension      = '_d',
+                        density_cell   = density_cell,
+                        density_corner = density_corner,
+                        )
                 #end if
                 if (hasattr(spin_density, 'u')) and (hasattr(spin_density, 'd')):
-                    sres.tot = SingleDensity(structure=opt.structure,grid=g,data=u_data+d_data,
-                                              extension='_u+d',density_cell=density_cell,
-                                              density_corner=density_corner)
-                    sres.pol = SingleDensity(structure=opt.structure,grid=g,data=u_data-d_data,
-                                              extension='_u-d',density_cell=density_cell,
-                                              density_corner=density_corner)
+                    sres.tot = SingleDensity(
+                        structure      = opt.structure,
+                        grid           = g,
+                        data           = u_data+d_data,
+                        extension      = '_u+d',
+                        density_cell   = density_cell,
+                        density_corner = density_corner,
+                        )
+                    sres.pol = SingleDensity(
+                        structure      = opt.structure,
+                        grid           = g,
+                        data           = u_data-d_data,
+                        extension      = '_u-d',
+                        density_cell   = density_cell,
+                        density_corner = density_corner,
+                        )
                 #end if
                 self.spin_density_results[name] = sres
             #end for
@@ -761,13 +781,22 @@ class StatFile(QDBase):
                     self.check_grid(name,g,data.shape[-1]*data.shape[-2]*data.shape[-3])
                     npe.reshape_inplace(data, (len(data),g[0],g[1],g[2]))
                 #end for
-                q_data = reblock(density.value,equilibration,reblock_factor,self.filepath)
+                # reblock the data
+                q_data = reblock(
+                    density.value,equilibration,reblock_factor,self.filepath)
+                # save the reblocked data
                 density.clear()
                 density.value = q_data
+                # make the single density means/errors
                 sres = obj()
-                sres.q = SingleDensity(structure=opt.structure,grid=g,data=q_data,
-                                        extension='_q',density_cell=metadata.density_cell,
-                                        density_corner=metadata.density_corner)
+                sres.q = SingleDensity(
+                    structure      = opt.structure,
+                    grid           = g,
+                    data           = q_data,
+                    extension      = '_q',
+                    density_cell   = metadata.density_cell,
+                    density_corner = metadata.density_corner,
+                    )
                 self.density_results[name] = sres
             #end for
         #end if
@@ -878,30 +907,44 @@ class QMCDensityProcessor(QDBase):
     #end def __init__
 
 
-    def estimator_children(self,source):
-        if source is None:
+    def estimator_children(self,estimators):
+        """Return estimator-name/XML pairs from a pluralized container.
+
+        A pluralized ``<estimators>`` element retains its ``estimators``
+        child collection, while legacy Hamiltonian input can already be that
+        collection.
+        """
+        if estimators is None:
             return []
-        elif 'estimators' in source:
-            return source.estimators.items()
+        elif 'estimators' in estimators:
+            return estimators.estimators.items()
         else:
-            return source.items()
+            return estimators.items()
         #end if
     #end def estimator_children
 
 
-    def add_density_metadata(self,source,metadata,structure,scope):
-        for name,xml in self.estimator_children(source):
-            if isinstance(xml,density_xml):
-                name = 'Density'
-            #end if
-            if not isinstance(xml,(spindensity_xml,density_xml)):
-                continue
-            #end if
-            if name in metadata:
-                self.error('ambiguous density estimator metadata for "{0}" in {1}'.format(name,scope))
-            #end if
+    def get_input_bconds(self,qi):
+        simulation_cell = qi.get('simulationcell')
+        if simulation_cell is None or 'bconds' not in simulation_cell:
+            return None
+        #end if
+        bconds = simulation_cell.bconds
+        if isinstance(bconds,str):
+            bconds = bconds.split()
+        #end if
+        return tuple(bconds)
+    #end def get_input_bconds
+
+
+    def add_density_metadata(self,estimators,metadata,structure,bconds,metadata_scope):
+        for name,xml in self.estimator_children(estimators):
             if isinstance(xml,spindensity_xml):
-                density_cell_b = None
+                if name in metadata:
+                    self.error(
+                        'ambiguous density estimator metadata for "{0}" in {1}'
+                        .format(name,metadata_scope))
+                #end if
                 if 'cell' in xml:
                     density_cell_b = np.array(xml.cell,dtype=float).reshape(3,3)
                 else:
@@ -912,33 +955,64 @@ class QMCDensityProcessor(QDBase):
                 if 'grid' in xml:
                     grid = np.array(xml.grid,dtype=int)
                 elif 'dr' in xml:
-                    grid = np.array([int(np.ceil(np.linalg.norm(axis)/dr))
-                                     for axis,dr in zip(density_cell_b,xml.dr)],dtype=int)
+                    grid = np.array(
+                        [int(np.ceil(np.linalg.norm(axis)/dr))
+                         for axis,dr in zip(density_cell_b,xml.dr,strict=True)],
+                        dtype=int)
                 else:
-                    self.error('could not identify grid data for spin density named "{0}" in QMCPACK input file: {1}'.format(name,self.options.input))
+                    self.error(
+                        'could not identify grid data for spin density named "{0}" '
+                        'in QMCPACK input file: {1}'.format(name,self.options.input))
                 #end if
                 if 'corner' in xml:
                     density_corner_b = xml.corner.copy()
                 elif 'center' in xml:
-                    density_corner_b = xml.center.copy()-0.5*np.sum(density_cell_b,axis=0)
+                    density_corner_b = (
+                        xml.center.copy()-0.5*np.sum(density_cell_b,axis=0))
                 else:
                     density_corner_b = np.zeros(3)
                 #end if
                 density_cell   = convert(density_cell_b,'B','A')
                 density_corner = convert(density_corner_b,'B','A')
-            else:
+            elif isinstance(xml,density_xml):
+                name = 'Density'
+                if name in metadata:
+                    self.error(
+                        'ambiguous density estimator metadata for "{0}" in {1}'
+                        .format(name,metadata_scope))
+                #end if
                 bound_names = ('x_min','x_max','y_min','y_max','z_min','z_max')
                 have_bounds = [bound in xml for bound in bound_names]
                 if any(have_bounds) and not all(have_bounds):
-                    self.error('density estimator "{0}" must provide all x_min/x_max, y_min/y_max, and z_min/z_max bounds in QMCPACK input file: {1}'.format(name,self.options.input))
+                    self.error(
+                        'density estimator "{0}" must provide all x_min/x_max, '
+                        'y_min/y_max, and z_min/z_max bounds in QMCPACK input '
+                        'file: {1}'.format(name,self.options.input))
                 #end if
                 if all(have_bounds):
-                    density_corner_b = np.array((xml.x_min,xml.y_min,xml.z_min),dtype=float)
-                    density_extent_b = np.array((xml.x_max-xml.x_min,
-                                                 xml.y_max-xml.y_min,
-                                                 xml.z_max-xml.z_min),dtype=float)
+                    if not _has_orthorhombic_axes(structure):
+                        self.error(
+                            'bounded density estimator "{0}" requires an '
+                            'orthorhombic simulation cell in QMCPACK input file: '
+                            '{1}'.format(name,self.options.input))
+                    #end if
+                    if bconds is not None and not all(
+                            bcond in ('n','o') for bcond in bconds):
+                        self.error(
+                            'bounded density estimator "{0}" requires open '
+                            'boundary conditions in QMCPACK input file: {1}'
+                            .format(name,self.options.input))
+                    #end if
+                    density_corner_b = np.array(
+                        (xml.x_min,xml.y_min,xml.z_min),dtype=float)
+                    density_extent_b = np.array(
+                        (xml.x_max-xml.x_min,xml.y_max-xml.y_min,
+                         xml.z_max-xml.z_min),dtype=float)
                     if np.any(density_extent_b<=0):
-                        self.error('density estimator "{0}" has non-positive bounded density-cell dimensions in QMCPACK input file: {1}'.format(name,self.options.input))
+                        self.error(
+                            'density estimator "{0}" has non-positive bounded '
+                            'density-cell dimensions in QMCPACK input file: {1}'
+                            .format(name,self.options.input))
                     #end if
                     density_cell_b = np.diag(density_extent_b)
                 else:
@@ -950,16 +1024,28 @@ class QMCDensityProcessor(QDBase):
                 if 'grid' in xml:
                     grid = np.array(xml.grid,dtype=int)
                 elif 'delta' in xml:
-                    grid = np.array([int(np.ceil(np.linalg.norm(axis)/delta))
-                                     for axis,delta in zip(density_cell_b,xml.delta)],dtype=int)
+                    delta = np.array(xml.delta,dtype=float)
+                    if (delta.shape!=(3,) or not np.all(np.isfinite(delta))
+                            or np.any(delta<=0)):
+                        self.error(
+                            'density estimator "{0}" must provide three positive '
+                            'delta values in QMCPACK input file: {1}'
+                            .format(name,self.options.input))
+                    #end if
+                    grid = np.ceil(1.0/delta).astype(int)
                 else:
-                    self.error('could not identify grid data for density named "{0}" in QMCPACK input file: {1}'.format(name,self.options.input))
+                    self.error(
+                        'could not identify grid data for density named "{0}" '
+                        'in QMCPACK input file: {1}'.format(name,self.options.input))
                 #end if
                 density_cell   = convert(density_cell_b,'B','A')
                 density_corner = convert(density_corner_b,'B','A')
+            else:
+                continue
             #end if
             metadata[name] = obj(grid=grid,density_cell=density_cell,
-                                 density_corner=density_corner,source=scope)
+                                 density_corner=density_corner,
+                                 source=metadata_scope)
         #end for
     #end def add_density_metadata
 
@@ -967,34 +1053,39 @@ class QMCDensityProcessor(QDBase):
     def read_input_metadata(self,qi,structure):
         qi.pluralize()
         metadata = obj(static=obj(),series=obj())
+        bconds = self.get_input_bconds(qi)
 
-        ham = qi.get('hamiltonian')
-        if ham is not None:
-            if 'estimators' in ham:
-                self.add_density_metadata(ham.estimators,metadata.static,structure,
-                                          'legacy Hamiltonian estimator input')
-            elif len(ham)>0:
-                ham = first(ham)
-                if 'estimators' in ham:
-                    self.add_density_metadata(ham.estimators,metadata.static,structure,
-                                              'legacy Hamiltonian estimator input')
+        hamiltonian_input = qi.get('hamiltonian')
+        if hamiltonian_input is not None:
+            if 'estimators' in hamiltonian_input:
+                self.add_density_metadata(
+                    hamiltonian_input.estimators,metadata.static,structure,bconds,
+                    'legacy Hamiltonian estimator input')
+            elif len(hamiltonian_input)>0:
+                hamiltonian_input = first(hamiltonian_input)
+                if 'estimators' in hamiltonian_input:
+                    self.add_density_metadata(
+                        hamiltonian_input.estimators,metadata.static,structure,bconds,
+                        'legacy Hamiltonian estimator input')
                 #end if
             #end if
         #end if
 
-        scoped = qi.get_qmc_estimator_inputs()
-        for qmc_input in scoped.qmc:
+        scoped_estimators = qi.get_qmc_estimator_inputs()
+        for qmc_input in scoped_estimators.qmc:
             series = qmc_input.series
             if series not in metadata.series:
                 # Keep legacy Hamiltonian estimators separate: scoped metadata
                 # applies only to this output series and takes precedence.
                 series_metadata = obj()
-                self.add_density_metadata(scoped.global_estimators,series_metadata,structure,
-                                          'global estimator input')
+                self.add_density_metadata(
+                    scoped_estimators.global_estimators,series_metadata,structure,
+                    bconds,'global estimator input')
                 metadata.series[series] = series_metadata
             #end if
-            self.add_density_metadata(qmc_input.estimators,metadata.series[series],structure,
-                                      'QMC section for series {0}'.format(series))
+            self.add_density_metadata(
+                qmc_input.estimators,metadata.series[series],structure,bconds,
+                'QMC section for series {0}'.format(series))
         #end for
         return metadata
     #end def read_input_metadata

@@ -1,4 +1,10 @@
+import shutil
+
+import numpy as np
 import pytest
+
+h5py = pytest.importorskip('h5py')
+
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QDENS)
 
@@ -7,8 +13,6 @@ generic_settings.raise_error = True
 
 
 from . import TEST_DIR
-import shutil
-from ..execute import execute as execute_raw
 from ..testing import execute, text_eq
 
 
@@ -192,14 +196,12 @@ def test_density(tmp_path):
 #end def test_density
 
 
-def test_spindensity_qmc_level_cell_corner_from_input(tmp_path):
-    import h5py
-    import numpy as np
+def test_qmc_spindensity_metadata_uses_cell_and_corner(tmp_path):
+    exe = TEST_DIR.parent / 'bin/qdens'
 
-    exe = TEST_DIR.parent / "bin/qdens"
-
-    infile = tmp_path / 'he.xml'
-    infile.write_text('''<?xml version="1.0"?>
+    input_file = tmp_path / 'he.xml'
+    input_file.write_text('''\
+<?xml version="1.0"?>
 <simulation>
   <project id="case" series="0"/>
   <qmcsystem>
@@ -236,17 +238,16 @@ def test_spindensity_qmc_level_cell_corner_from_input(tmp_path):
 </simulation>
 ''')
 
-    stat = tmp_path / 'case.s000.stat.h5'
-    with h5py.File(stat,'w') as h:
-        g = h.create_group('spindensity')
+    stat_file = tmp_path / 'case.s000.stat.h5'
+    with h5py.File(stat_file,'w') as h5:
+        g = h5.create_group('spindensity')
         u = g.create_group('u')
         d = g.create_group('d')
         u.create_dataset('value',data=np.ones((2,8)))
         d.create_dataset('value',data=2*np.ones((2,8)))
 
-    command = f'{exe} -f xsf -i {infile} {stat}'
-    out,err,rc = execute(command)
-    assert rc==0
+    command = f'{exe} -f xsf -i {input_file} {stat_file}'
+    execute(command)
 
     xsf = (tmp_path / 'case.s000.spindensity_u+d.xsf').read_text()
     assert '3 3 3' in xsf
@@ -254,15 +255,24 @@ def test_spindensity_qmc_level_cell_corner_from_input(tmp_path):
     assert '0.00000000E+00 1.58753163E+00 0.00000000E+00' in xsf
     assert '0.00000000E+00 0.00000000E+00 2.11670883E+00' in xsf
 
-    out,err,rc = execute_raw(f'{exe} -f chgcar -i {infile} {stat}')
-    assert rc!=0
-    assert 'cannot write CHGCAR with a density cell different from the simulation cell' in out+err
+    with pytest.raises(
+            AssertionError,
+            match='cannot write CHGCAR with a density cell different from the simulation cell'):
+        execute(f'{exe} -f chgcar -i {input_file} {stat_file}')
+    #end with
+#end def test_qmc_spindensity_metadata_uses_cell_and_corner
 
 
 def _write_series_spindensity_input(filepath):
-    filepath.write_text('''<?xml version="1.0"?>
+    filepath.write_text('''\
+<?xml version="1.0"?>
 <simulation>
   <project id="case" series="5"/>
+  <estimators>
+    <estimator name="GlobalSpinDensity" type="spindensity">
+      <parameter name="grid">2 2 2</parameter>
+    </estimator>
+  </estimators>
   <qmcsystem>
     <simulationcell>
       <parameter name="lattice" units="bohr">
@@ -280,11 +290,6 @@ def _write_series_spindensity_input(filepath):
       <group name="u" size="1"><parameter name="charge">-1</parameter></group>
       <group name="d" size="1"><parameter name="charge">-1</parameter></group>
     </particleset>
-    <estimators>
-      <estimator name="GlobalSpinDensity" type="spindensity">
-        <parameter name="grid">2 2 2</parameter>
-      </estimator>
-    </estimators>
   </qmcsystem>
   <qmc method="vmc_batch" move="pbyp">
     <estimators>
@@ -306,12 +311,10 @@ def _write_series_spindensity_input(filepath):
   </qmc>
 </simulation>
 ''')
+#end def _write_series_spindensity_input
 
 
 def _write_spin_density_stat(filepath,spin_density_cells,*,global_cells=8,name='SpinDensity'):
-    import h5py
-    import numpy as np
-
     estimators = [(name,spin_density_cells)]
     if global_cells is not None:
         estimators.insert(0,('GlobalSpinDensity',global_cells))
@@ -321,15 +324,14 @@ def _write_spin_density_stat(filepath,spin_density_cells,*,global_cells=8,name='
             group = h5.create_group(estimator)
             group.create_group('u').create_dataset('value',data=np.ones((2,cells)))
             group.create_group('d').create_dataset('value',data=2*np.ones((2,cells)))
+#end def _write_spin_density_stat
 
 
-def test_density_metadata_preserves_bounded_legacy_grid(tmp_path):
-    import h5py
-    import numpy as np
-
+def test_bounded_density_metadata_uses_fractional_delta(tmp_path):
     exe = TEST_DIR.parent / 'bin/qdens'
-    infile = tmp_path / 'density.xml'
-    infile.write_text('''<?xml version="1.0"?>
+    input_file = tmp_path / 'density.xml'
+    input_file.write_text('''\
+<?xml version="1.0"?>
 <simulation>
   <project id="density" series="0"/>
   <qmcsystem>
@@ -350,25 +352,81 @@ def test_density_metadata_preserves_bounded_legacy_grid(tmp_path):
       <group name="d" size="1"><parameter name="charge">-1</parameter></group>
     </particleset>
     <hamiltonian name="h0" type="generic" target="e">
-      <estimator name="Density" type="density" delta="1 1 1"
+      <estimator name="Density" type="density" delta="0.5 0.25 0.25"
                  x_min="1" x_max="3" y_min="2" y_max="5" z_min="0" z_max="4"/>
     </hamiltonian>
   </qmcsystem>
   <qmc method="vmc"><parameter name="blocks">2</parameter></qmc>
 </simulation>
 ''')
-    stat = tmp_path / 'density.s000.stat.h5'
-    with h5py.File(stat,'w') as h5:
-        h5.create_group('Density').create_dataset('value',data=np.ones((2,2,3,4)))
+    stat_file = tmp_path / 'density.s000.stat.h5'
+    with h5py.File(stat_file,'w') as h5:
+        h5.create_group('Density').create_dataset(
+            'value',data=np.ones((2,2,4,4),dtype=float))
 
-    out,err,rc = execute(f'{exe} -f xsf -i {infile} {stat}')
-    assert rc==0, out+err
+    execute(f'{exe} -f xsf -i {input_file} {stat_file}')
     xsf = (tmp_path / 'density.s000.Density_q.xsf').read_text()
-    assert '3 4 5' in xsf
-    assert '7.93765813E-01 1.32294302E+00 2.64588604E-01' in xsf
+    assert '3 5 5' in xsf
+    assert '7.93765813E-01 1.25679587E+00 2.64588604E-01' in xsf
     assert '1.05835442E+00 0.00000000E+00 0.00000000E+00' in xsf
     assert '0.00000000E+00 1.58753163E+00 0.00000000E+00' in xsf
     assert '0.00000000E+00 0.00000000E+00 2.11670883E+00' in xsf
+#end def test_bounded_density_metadata_uses_fractional_delta
+
+
+@pytest.mark.parametrize(
+    'lattice,bconds,delta,message',
+    (
+        ((6,0,0,0,6,0,0,0,6),'p p p','0.5 0.25 0.25',
+         'open boundary conditions'),
+        ((6,1,0,0,6,0,0,0,6),'n n n','0.5 0.25 0.25',
+         'orthorhombic simulation cell'),
+        ((6,0,0,0,6,0,0,0,6),'n n n','0 0.25 0.25',
+         'three positive delta values'),
+        ),
+    )
+def test_bounded_density_metadata_validates_cell_and_delta(
+        tmp_path,lattice,bconds,delta,message):
+    lattice = '\n        '.join(
+        ' '.join(str(value) for value in axis) for axis in np.array(lattice).reshape(3,3))
+    exe = TEST_DIR.parent / 'bin/qdens'
+    input_file = tmp_path / 'density.xml'
+    input_file.write_text(f'''\
+<?xml version="1.0"?>
+<simulation>
+  <project id="density" series="0"/>
+  <qmcsystem>
+    <simulationcell>
+      <parameter name="lattice" units="bohr">
+        {lattice}
+      </parameter>
+      <parameter name="bconds">{bconds}</parameter>
+    </simulationcell>
+    <particleset name="ion0" size="1">
+      <group name="He"><parameter name="charge">2</parameter></group>
+      <attrib name="position" datatype="posArray">0 0 0</attrib>
+    </particleset>
+    <particleset name="e">
+      <group name="u" size="1"><parameter name="charge">-1</parameter></group>
+      <group name="d" size="1"><parameter name="charge">-1</parameter></group>
+    </particleset>
+    <hamiltonian name="h0" type="generic" target="e">
+      <estimator name="Density" type="density" delta="{delta}"
+                 x_min="1" x_max="3" y_min="2" y_max="5" z_min="0" z_max="4"/>
+    </hamiltonian>
+  </qmcsystem>
+  <qmc method="vmc"><parameter name="blocks">2</parameter></qmc>
+</simulation>
+''')
+    stat_file = tmp_path / 'density.s000.stat.h5'
+    with h5py.File(stat_file,'w') as h5:
+        h5.create_group('Density').create_dataset(
+            'value',data=np.ones((2,2,4,4),dtype=float))
+
+    with pytest.raises(AssertionError, match=message):
+        execute(f'{exe} -f xsf -i {input_file} {stat_file}')
+    #end with
+#end def test_bounded_density_metadata_validates_cell_and_delta
 
 
 def test_spindensity_metadata_is_selected_per_series(tmp_path):
@@ -380,8 +438,7 @@ def test_spindensity_metadata_is_selected_per_series(tmp_path):
     _write_spin_density_stat(stat5,8)
     _write_spin_density_stat(stat6,24)
 
-    out,err,rc = execute(f'{exe} -f xsf -i {infile} {stat5} {stat6}')
-    assert rc==0, out+err
+    execute(f'{exe} -f xsf -i {infile} {stat5} {stat6}')
     assert (tmp_path / 'case.s005.GlobalSpinDensity_u+d.xsf').exists()
     assert (tmp_path / 'case.s006.GlobalSpinDensity_u+d.xsf').exists()
 
@@ -395,6 +452,7 @@ def test_spindensity_metadata_is_selected_per_series(tmp_path):
     assert '0.00000000E+00 2.64588604E+00 0.00000000E+00' in second
     assert '2.64588604E-01 3.96882906E-01 5.29177209E-01' in first
     assert '1.05835442E+00 1.49933542E+00 1.98441453E+00' in second
+#end def test_spindensity_metadata_is_selected_per_series
 
 
 def test_spindensity_input_metadata_overrides_grid_fallback(tmp_path):
@@ -404,10 +462,10 @@ def test_spindensity_input_metadata_overrides_grid_fallback(tmp_path):
     stat = tmp_path / 'case.s005.stat.h5'
     _write_spin_density_stat(stat,8)
 
-    out,err,rc = execute(f'{exe} -f xsf -g "1 1 8" -i {infile} {stat}')
-    assert rc==0, out+err
-    assert 'Ignoring --grid' in out+err
+    out,err,_ = execute(f'{exe} -f xsf -g "1 1 8" -i {infile} {stat}')
+    assert 'Ignoring --grid' in out + err
     assert '3 3 3' in (tmp_path / 'case.s005.SpinDensity_u+d.xsf').read_text()
+#end def test_spindensity_input_metadata_overrides_grid_fallback
 
 
 def test_spindensity_input_hdf5_grid_mismatch_fails_clearly(tmp_path):
@@ -417,14 +475,17 @@ def test_spindensity_input_hdf5_grid_mismatch_fails_clearly(tmp_path):
     stat = tmp_path / 'case.s005.stat.h5'
     _write_spin_density_stat(stat,7)
 
-    out,err,rc = execute_raw(f'{exe} -f xsf -i {infile} {stat}')
-    assert rc!=0
-    message = out+err
-    assert 'density grid does not match number of HDF5 data cells' in message
+    with pytest.raises(
+            AssertionError,
+            match='density grid does not match number of HDF5 data cells') as error:
+        execute(f'{exe} -f xsf -i {infile} {stat}')
+    #end with
+    message = str(error.value)
     assert 'series: 5' in message
     assert 'estimator: SpinDensity' in message
     assert 'HDF5 data cells: 7' in message
     assert str(stat) in message
+#end def test_spindensity_input_hdf5_grid_mismatch_fails_clearly
 
 
 def test_spindensity_series_mismatch_requires_unambiguous_fallback(tmp_path):
@@ -434,10 +495,15 @@ def test_spindensity_series_mismatch_requires_unambiguous_fallback(tmp_path):
     stat = tmp_path / 'case.s007.stat.h5'
     _write_spin_density_stat(stat,8,global_cells=None)
 
-    out,err,rc = execute_raw(f'{exe} -f xsf -i {infile} {stat}')
-    assert rc!=0
-    assert 'could not find input metadata for density estimator "SpinDensity" in series 7' in out+err
+    with pytest.raises(
+            AssertionError,
+            match='could not find input metadata for density estimator "SpinDensity" in series 7'):
+        execute(f'{exe} -f xsf -i {infile} {stat}')
+    #end with
 
-    out,err,rc = execute_raw(f'{exe} -f xsf -g "3 3 3" -i {infile} {stat}')
-    assert rc!=0
-    assert 'density grid does not match number of HDF5 data cells' in out+err
+    with pytest.raises(
+            AssertionError,
+            match='density grid does not match number of HDF5 data cells'):
+        execute(f'{exe} -f xsf -g "3 3 3" -i {infile} {stat}')
+    #end with
+#end def test_spindensity_series_mismatch_requires_unambiguous_fallback

@@ -2110,7 +2110,7 @@ param = Param()
 class simulation(QIxml):
     attributes = ('method',) # afqmc
     elements   = ('project','random','include','qmcsystem','particleset', # rsqmc
-                  'wavefunction','hamiltonian','init','traces',           # rsqmc
+                  'wavefunction','hamiltonian','init','traces','estimators', # rsqmc
                   'qmc','loop','mcwalkerset','cmc',                       # rsqmc
                   'afqmcinfo','walkerset','propagator','execute')         # afqmc
     afqmc_order = ('project','random','afqmcinfo','hamiltonian',
@@ -2924,8 +2924,8 @@ class vmc(QIxml):
     attributes = ('method','move','profiling','kdelay',         # batched
                   'multiple','warp','gpu','checkpoint','trace', # legacy - batched
                   'target','completed','id')
-    elements   = ('estimator', # batched
-                  'record')    # legacy - batched
+    elements   = ('estimator','estimators', # batched
+                  'record')                 # legacy - batched
     parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps',         # batched
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
@@ -2945,7 +2945,7 @@ class dmc(QIxml):
     attributes = ('method','move','profiling','kdelay',         # batched
                   'gpu','multiple','warp','checkpoint','trace', # legacy - batched
                   'target','completed','id','continue')
-    elements   = ('estimator',)
+    elements   = ('estimator','estimators')
     parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps',
                   'crowd_serialize_walkers',            # batched
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
@@ -3682,15 +3682,19 @@ class QmcpackInput(SimulationInput,Names):
     def get_qmc_estimator_inputs(self):
         """Return global and section-local estimator containers by output series.
 
-        QMCPACK permits one global ``<estimators>`` container below
-        ``<qmcsystem>`` and a local container below each ``<qmc>`` section.
-        The returned containers are deliberately not merged: QMCPACK combines
-        their children when constructing each driver, and callers that need
-        semantic estimator metadata must retain the QMC-section scope. Series
-        assignments follow Nexus's existing output-info convention.
+        QMCPACK permits at most one global ``<estimators>`` container, either
+        below ``<simulation>`` or below ``<qmcsystem>``, and a local container
+        below each VMC or DMC ``<qmc>`` section.  The returned containers are
+        deliberately not merged: QMCPACK combines their children when
+        constructing each driver, and callers that need semantic estimator
+        metadata must retain the QMC-section scope. Series assignments follow
+        Nexus's existing output-info convention.
         """
         sim = self.simulation
         global_estimators = []
+        if 'estimators' in sim:
+            global_estimators.append(sim.estimators)
+        #end if
         if 'qmcsystem' in sim:
             qmcsystems = [sim.qmcsystem]
         elif 'qmcsystems' in sim:
