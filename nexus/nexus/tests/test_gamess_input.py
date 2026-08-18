@@ -318,7 +318,7 @@ def test_write(tmp_path):
 @isolate_nexus_core
 def test_generate(tmp_path):
     from ..developer import obj
-    from ..pseudoset import PseudoSet,ppset
+    from ..pseudopotential import PseudoSet,ppset
     from ..physical_system import generate_physical_system
     from ..gamess_input import generate_gamess_input
 

@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Literal
 from . import isolate_nexus_core, TEST_DIR
 from ..testing import value_eq,object_eq
-from nexus.pseudoset import read_upf_z_valence, read_qmcpack_xml_z_valence, read_potcar_z_valence
-from nexus.pseudoset import PseudoSet, ppset
+from nexus.pseudopotential import read_upf_z_valence, read_qmcpack_xml_z_valence, read_potcar_z_valence
+from nexus.pseudopotential import PseudoSet, ppset
 from nexus.nexus_base import nexus_core
 from nexus.physical_system import generate_physical_system
 

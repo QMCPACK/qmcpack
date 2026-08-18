@@ -59,7 +59,7 @@ from . import numpy_extensions as npe
 from .developer import DevBase, error, log, obj, warn
 from .periodic_table import Elements
 from .physical_system import PhysicalSystem
-from .pseudoset import pp_elem_label, PseudoSet
+from .pseudopotential import pp_elem_label, PseudoSet
 from .pwscf_input_defs import (
     CellDefinitions,
     ControlDefinitions,
