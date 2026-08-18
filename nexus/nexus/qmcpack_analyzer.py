@@ -277,8 +277,10 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
     def change_request(self,request):
         if not isinstance(request,QmcpackAnalysisRequest):
-            self.error('input request must be a QmcpackAnalysisRequest',exit=False)
-            self.error('  type provided: '+str(type(request)))
+            self.error(
+                'input request must be a QmcpackAnalysisRequest\n'
+                '  type provided: '+str(type(request))
+                )
         #end if
         request.complete()
         self.info.request = request
@@ -513,9 +515,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     def bundle(self,source):
         self.vlog('bundled run detected',n=1)
         if os.path.exists(source):
-            fobj = open(source,'r')
-            lines = fobj.read().split('\n')
-            fobj.close()
+            with open(source,'r') as fobj:
+                lines = fobj.read().split('\n')
         else:
             self.error('source file '+source+' does not exist')
         #end if

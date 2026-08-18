@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from importlib.util import find_spec
 from . import TEST_DIR

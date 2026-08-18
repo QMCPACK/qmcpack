@@ -372,8 +372,14 @@ void QMCDriver::setWalkerOffsets()
     W[iw]->setWalkerID(id);
     W[iw]->setParentID(id);
   }
-  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
-  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
+  // Compute total walker weights and counts. W.EnsembleProperty.NumSamples and W.EnsembleProperty.Weight are only set during branching / measureProperties.
+  QMCTraits::FullPrecRealType total_weight = 0;
+  for (int iw = 0; iw < nw[myComm->rank()]; ++iw)
+    total_weight += W[iw]->Weight;
+  myComm->allreduce(total_weight);
+
+  app_log() << "  Total number of walkers: " << nwoff.back() << std::endl;
+  app_log() << "  Total weight: " << total_weight << std::endl;
 }
 
 

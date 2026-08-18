@@ -28,6 +28,8 @@
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include "Message/UniformCommunicateError.h"
+#include "Numerics/DeterminantOperators.h"
+#include "LinearMethod.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -129,17 +131,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
 
 QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize() = default;
 
-QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealType dl)
-{
-  for (int i = 0; i < optparam.size(); i++)
-    optTarget->Params(i) = optparam[i] + dl * optdir[i];
-  RealType c = optTarget->Cost(false);
-  //only allow this to go false if it was true. If false, stay false
-  //    if (validFuncVal)
-  validFuncVal = optTarget->IsValid;
-  return c;
-}
-
 bool QMCFixedSampleLinearOptimize::test_run()
 {
   // generate samples and compute weights, local energies, and derivative vectors
@@ -214,6 +205,14 @@ bool QMCFixedSampleLinearOptimize::run()
   optdir.resize(numParams, 0);
   optparam.resize(numParams, 0);
 
+  auto costfunc_evaluator = [this](RealType dl) {
+    for (int i = 0; i < optparam.size(); i++)
+      optTarget->Params(i) = optparam[i] + dl * optdir[i];
+    auto effective_weight = optTarget->correlatedSampling(false);
+    validFuncVal          = optTarget->isEffectiveWeightValid(effective_weight);
+    return optTarget->computedCost();
+  };
+
   while (Total_iterations < Max_iterations)
   {
     Total_iterations += 1;
@@ -226,10 +225,11 @@ bool QMCFixedSampleLinearOptimize::run()
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currentParameters[i];
     cost_function_timer_.start();
-    RealType lastCost(optTarget->Cost(true));
+    auto effective_weight = optTarget->correlatedSampling(true);
+    RealType lastCost(optTarget->computedCost());
     cost_function_timer_.stop();
     //     if cost function is currently invalid continue
-    Valid = optTarget->IsValid;
+    Valid = optTarget->isEffectiveWeightValid(effective_weight);
     if (!ValidCostFunction(Valid))
       continue;
     RealType newCost(lastCost);
@@ -286,8 +286,8 @@ bool QMCFixedSampleLinearOptimize::run()
 
       {
         ScopedTimer local(eigenvalue_timer_);
-        getLowestEigenvector(Right, currentParameterDirections);
-        Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
+        LinearMethod::getLowestEigenvector(Right, currentParameterDirections);
+        Lambda = LinearMethod::getNonLinearRescale(currentParameterDirections, S, *optTarget);
       }
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -312,7 +312,6 @@ bool QMCFixedSampleLinearOptimize::run()
         }
         for (int i = 0; i < numParams; i++)
           optTarget->Params(i) = currentParameters[i] + Lambda * currentParameterDirections[i + 1];
-        optTarget->IsValid = true;
       }
       else
       {
@@ -330,10 +329,10 @@ bool QMCFixedSampleLinearOptimize::run()
           int npts(7);
           quadstep         = stepsize * Lambda;
           largeQuarticStep = bigChange / bigVec;
-          Valid            = lineoptimization3(npts, evaluated_cost);
+          Valid            = lineoptimization3(costfunc_evaluator, npts, evaluated_cost);
         }
         else
-          Valid = lineoptimization2();
+          Valid = lineoptimization2(costfunc_evaluator);
         line_min_timer_.stop();
         RealType biggestParameterChange = bigVec * std::abs(Lambda);
         if (biggestParameterChange > bigChange)
@@ -359,13 +358,14 @@ bool QMCFixedSampleLinearOptimize::run()
         // 	this may have been evaluated already
         // 	newCost=evaluated_cost;
         //get cost at new minimum
-        newCost = optTarget->Cost(false);
+        auto effective_weight = optTarget->correlatedSampling(false);
+        newCost               = optTarget->computedCost();
         app_log() << " OldCost: " << lastCost << " NewCost: " << newCost << " Delta Cost:" << (newCost - lastCost)
                   << std::endl;
         optTarget->printEstimates();
         //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
         // mmorales
-        Valid = optTarget->IsValid;
+        Valid = optTarget->isEffectiveWeightValid(effective_weight);
         //if (MinMethod!="rescale" && !ValidCostFunction(Valid))
         if (!ValidCostFunction(Valid))
         {
@@ -895,14 +895,14 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
         std::swap(prdMat(i, j), prdMat(j, i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
+    LinearMethod::getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
+    auto lambda = LinearMethod::getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(shift_index).at(i + 1) *= Lambda;
+      parameterDirections.at(shift_index).at(i + 1) *= lambda;
   }
 }
 
@@ -1113,7 +1113,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
   for (int i = 0; i < numParams; i++)
     optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i + 1);
-  optTarget->IsValid      = true;
   const RealType initCost = optTarget->LMYEngineCost(false, *EngineObj);
 
   // compute the update directions for the smaller and larger shifts relative to that of the middle shift
@@ -1134,8 +1133,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   {
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currParams.at(i) + (k == central_index ? 0.0 : parameterDirections.at(k).at(i + 1));
-    optTarget->IsValid = true;
-    costValues.at(k)   = optTarget->LMYEngineCost(false, *EngineObj);
+    costValues.at(k) = optTarget->LMYEngineCost(false, *EngineObj);
     good_update.at(k) =
         (good_update.at(k) && std::abs((initCost - costValues.at(k)) / initCost) < max_relative_cost_change);
     if (!good_update.at(k))
@@ -1305,15 +1303,15 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
   {
     ScopedTimer local(eigenvalue_timer_);
-    getLowestEigenvector(prdMat, parameterDirections);
+    LinearMethod::getLowestEigenvector(prdMat, parameterDirections);
   }
 
   // compute the scaling constant to apply to the update
-  Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
+  auto lambda = LinearMethod::getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
   // scale the update by the scaling constant
   for (int i = 0; i < numParams; i++)
-    parameterDirections.at(i + 1) *= Lambda;
+    parameterDirections.at(i + 1) *= lambda;
 
   // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);
@@ -1338,8 +1336,8 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
             << "largest LM parameter change : " << largestChange << " at parameter " << max_element << std::endl;
 
   // compute the new cost
-  optTarget->IsValid     = true;
-  const RealType newCost = optTarget->Cost(false);
+  auto effective_weight  = optTarget->correlatedSampling(false);
+  const RealType newCost = optTarget->computedCost();
 
   app_log() << std::endl
             << "******************************************************************************" << std::endl
@@ -1349,7 +1347,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
             << newCost - initCost << std::endl
             << "******************************************************************************" << std::endl;
 
-  if (!optTarget->IsValid || qmcplusplus::isnan(newCost))
+  if (!optTarget->isEffectiveWeightValid(effective_weight) || qmcplusplus::isnan(newCost))
   {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i = 0; i < numParams; i++)

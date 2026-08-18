@@ -2,9 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.OBSERVABLES)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 from ..testing import check_object_eq
 from ..testing import FailedTest,failed
 

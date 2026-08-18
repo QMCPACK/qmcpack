@@ -449,13 +449,6 @@ class hobj(obj):
         warn(message,header,logfile=logfile)
     #end def warn
 
-    def error(self,message,header=None,*,exit=True,trace=-2):
-        if header is None:
-            header = self.__class__.__name__
-        logfile = self.__dict__.get('_logfile',None)
-        error(message,header,exit,trace,logfile)
-    #end def error
-
     # access preserving functions
     #  dict interface
     def _keys(self,*args,**kwargs):
@@ -1304,8 +1297,10 @@ class QIxml(Names):
             ##end if
 
             #print(obj(dict(self.__class__.__dict__)))
-
-            self.error(msg,'QmcpackInput',exit=exit,trace=exit)
+            if exit:
+                self.error(msg,'QmcpackInput')
+            else:
+                self.warn(msg)
         #end if
     #end def check_junk
 
@@ -1886,7 +1881,7 @@ class QIxmlFactory(Names):
         else:
             msg = self.name+' factory is not aware of the following subtype:\n'
             msg+= '    '+type+'\n'
-            self.error(msg,exit=False,trace=False)
+            self.warn(msg)
         #end if
     #end def __call__
 
@@ -2111,7 +2106,7 @@ class simulation(QIxml):
     attributes = ('method',) # afqmc
     elements   = ('project','random','include','qmcsystem','particleset', # rsqmc
                   'wavefunction','hamiltonian','init','traces','estimators', # rsqmc
-                  'qmc','loop','mcwalkerset','cmc',                       # rsqmc
+                  'mcwalkerset','qmc','loop','cmc',                          # rsqmc
                   'afqmcinfo','walkerset','propagator','execute')         # afqmc
     afqmc_order = ('project','random','afqmcinfo','hamiltonian',
                    'wavefunction','walkerset','propagator','execute')
@@ -3591,20 +3586,19 @@ class QmcpackInput(SimulationInput,Names):
                 #try to determine the type
                 elements = []
                 keys = []
-                error = False
+                msg = ""
                 for key,value in xml.items():
                     if isinstance(key,str) and key[0]!='_':
                         if key in types:
                             elements.append(types[key](value))
                             keys.append(key)
                         else:
-                            self.error('element '+key+' is not a recognized type',exit=False)
-                            error = True
+                            msg += 'element '+key+' is not a recognized type'
                         #end if
                     #end if
                 #end for
-                if error:
-                    self.error('cannot read input xml file')
+                if len(msg) > 0:
+                    self.error(f'cannot read input xml file:\n{msg}')
                 #end if
                 if len(elements)==0:
                     self.error('no valid elements were found for input xml file')
@@ -4101,13 +4095,13 @@ class QmcpackInput(SimulationInput,Names):
         no_particleset = particlesets is None
         no_wavefunction = wavefunction is None
         if no_lattice:
-            self.error('a simulationcell lattice must be present to generate jastrows',exit=False)
+            self.warn('a simulationcell lattice must be present to generate jastrows')
         #end if
         if no_particleset:
-            self.error('a particleset must be present to generate jastrows',exit=False)
+            self.warn('a particleset must be present to generate jastrows')
         #end if
         if no_wavefunction:
-            self.error('a wavefunction must be present to generate jastrows',exit=False)
+            self.warn('a wavefunction must be present to generate jastrows')
         #end if
         if no_lattice or no_particleset or no_wavefunction:
             self.error('jastrows cannot be generated')
@@ -5588,8 +5582,8 @@ class BundledQmcpackInput(SimulationInput):
     
     def __init__(self,inputs,filenames):
         self.inputs = obj()
-        for input in inputs:
-            self.inputs.append(input)
+        for inp in inputs:
+            self.inputs[len(self.inputs)] = inp
         #end for
         self.filenames = filenames
     #end def __init__
@@ -5598,8 +5592,8 @@ class BundledQmcpackInput(SimulationInput):
     def get_output_info(self,*requests):
         outfiles = []
 
-        for index,input in self.inputs.items():
-            outfs = input.get_output_info('outfiles')
+        for index,inp in self.inputs.items():
+            outfs = inp.get_output_info('outfiles')
             infile = self.filenames[index]
             outfile= infile.rsplit('.',1)[0]+'.g'+str(index).zfill(3)+'.qmc'
             outfiles.append(infile)
@@ -5654,15 +5648,14 @@ class BundledQmcpackInput(SimulationInput):
             ##end if
             c = ''
             for i in range(len(self.inputs)):
-                input = self.inputs[i]
+                inp = self.inputs[i]
                 bfile = self.filenames[i]
                 c += bfile+'\n'
                 bfilepath = os.path.join(path,bfile)
-                input.write(bfilepath)
+                inp.write(bfilepath)
             #end for
-            fobj = open(filepath,'w')
-            fobj.write(c)
-            fobj.close()
+            with open(filepath,'w') as fobj:
+                fobj.write(c)
         #end if
     #end def write
 #end class BundledQmcpackInput
@@ -5682,7 +5675,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
 
     def bundle_inputs(self,quantity,values,input):
         range = len(self.inputs),len(self.inputs)+len(values)
-        self.quantities.append(obj(quantity=quantity,range=range))
+        self.quantities[len(self.quantities)] = obj(quantity=quantity,range=range)
         for value in values:
             inp = deepcopy(input)
             qhost = inp.get_host(quantity)                               
@@ -5698,8 +5691,8 @@ class TracedQmcpackInput(BundledQmcpackInput):
             else:
                 self.error('quantity '+quantity+' was not found in '+input.__class__.__name__)
             #end if
-            self.variables.append(obj(quantity=quantity,value=value))
-            self.inputs.append(inp)
+            self.variables[len(self.variables)] = obj(quantity=quantity,value=value)
+            self.inputs[len(self.inputs)] = inp
         #end for
     #end def bundle_inputs
 
@@ -9221,7 +9214,7 @@ def generate_basic_input(**kwargs):
             spinor         = kw.spinor,
             )
     else:
-        error('argument "det_format" is invalid.\nReceived: {0}\nValid options are: new, old'.format(det_format),'generate_qmcpack_input')
+        error('argument "det_format" is invalid.\nReceived: {0}\nValid options are: new, old'.format(kw.det_format),'generate_qmcpack_input')
     #end if
 
 

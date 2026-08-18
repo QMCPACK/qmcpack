@@ -4,8 +4,6 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from . import isolate_nexus_core, TEST_DIR
 from ..testing import value_eq,object_eq,check_object_eq,dict_serialize

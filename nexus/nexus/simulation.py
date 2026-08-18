@@ -93,17 +93,16 @@ class SimulationInput(NexusCore):
         if not os.path.exists(filepath):
             self.error('file does not exist:  '+filepath)
         #end if
-        fobj = open(filepath,'r')
-        text = fobj.read()
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            text = fobj.read()
+
         return text
     #end def read_file_text
 
     def write_file_text(self,filepath,text):
-        fobj = open(filepath,'w')
-        fobj.write(text)
-        fobj.flush()
-        fobj.close()
+        with open(filepath,'w') as fobj:
+            fobj.write(text)
+            fobj.flush()
     #end def write_file_text
 
     def read(self,filepath):
@@ -735,9 +734,9 @@ class Simulation(NexusCore):
 
     def _file_text(self,filename):
         filepath = os.path.join(self.locdir,self[filename])
-        fobj = open(filepath,'r')
-        text = fobj.read()
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            text = fobj.read()
+
         return text
     #end def _file_text
 
@@ -775,19 +774,18 @@ class Simulation(NexusCore):
             dep = obj()
             dep.sim = sim
             rn = []
-            unrecognized_names = False
+            msg = ""
             app_results = sim.application_results | set(['other'])
             for name in d[1:]:
                 result_name = self.condense_name(name)
                 if result_name in app_results:
                     rn.append(result_name)
                 else:
-                    unrecognized_names = True
-                    self.error(name+' is not known to be a result of '+sim.__class__.__name__,exit=False)
+                    msg += name+' is not known to be a result of '+sim.__class__.__name__+"\n"
                 #end if
             #end for
-            if unrecognized_names:
-                self.error('unrecognized dependencies specified for simulation '+self.identifier)
+            if len(msg) > 0:
+                self.error('unrecognized dependencies specified for simulation '+self.identifier+f":\n{msg}")
             #end if
             dep.result_names = rn
             dep.results = obj()
@@ -867,7 +865,17 @@ class Simulation(NexusCore):
                         calculating_result = sim.check_result(result_name,self)
                     #end if
                     if not calculating_result:
-                        self.error('simulation {0} id {1} is not calculating result {2}\nrequired by simulation {3} id {4}\n{5} {6} directory: {7}\n{8} {9} directory: {10}'.format(sim.identifier,sim.simid,result_name,self.identifier,self.simid,sim.identifier,sim.simid,sim.locdir,self.identifier,self.simid,self.locdir),exit=False)
+                        self.warn(
+                            'simulation {0} id {1} is not calculating result {2}\n'
+                            'required by simulation {3} id {4}\n'
+                            '{5} {6} directory: {7}\n'
+                            '{8} {9} directory: {10}'.format(
+                                sim.identifier, sim.simid, result_name,   # {0}, {1}, {2}
+                                self.identifier, self.simid,              # {3}, {4}
+                                sim.identifier, sim.simid, sim.locdir,    # {5}, {6}, {7}
+                                self.identifier, self.simid, self.locdir, # {8}, {9}, {10}
+                                )
+                            )
                     #end if
                 else:
                     calculating_result = True
@@ -1489,9 +1497,8 @@ class Simulation(NexusCore):
             self.log(pad+'Would have executed:  '+command)
         else:
             self.log(pad+'Executing:  '+command)
-            fout = open(self.outfile,'w')
-            ferr = open(self.errfile,'w')
-            out,err = Popen(command,env=env,stdout=fout,stderr=ferr,shell=True,close_fds=True).communicate()
+            with open(self.outfile,'w') as fout, open(self.errfile,'w') as ferr:
+                out,err = Popen(command,env=env,stdout=fout,stderr=ferr,shell=True,close_fds=True).communicate()
         #end if
         self.leave()
         self.submitted = True
@@ -1913,8 +1920,8 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
     #end for
 
     if savefile is None:
-        fout = tempfile.NamedTemporaryFile(suffix='.png')
-        savefile = fout.name
+        with tempfile.NamedTemporaryFile(suffix='.png') as fout:
+            savefile = fout.name
         #savefile = './sims.png'
     #end if
     fmt = savefile.rsplit('.',1)[1]

@@ -166,9 +166,8 @@ class ScalarsDatAnalyzer(DatAnalyzer):
 
         data = lt[:,1:].transpose()
 
-        fobj = open(filepath,'r')
-        variables = fobj.readline().split()[2:]
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            variables = fobj.readline().split()[2:]
 
         self.data = QAdata()
         for i in range(len(variables)):
@@ -220,9 +219,8 @@ class DmcDatAnalyzer(DatAnalyzer):
 
         data = lt[:,1:].transpose()
 
-        fobj = open(filepath,'r')
-        variables = fobj.readline().split()[2:]
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            variables = fobj.readline().split()[2:]
 
         self.data = QAdata()
         for i in range(len(variables)):
@@ -2145,19 +2143,18 @@ class SpaceGridInitializer(QAobject):
     #end def __init__
 
     def check_complete(self,*,exit_on_fail=True):
-        succeeded = True
+        msg = ""
         for k,v in self.items():
             if v is None:
-                succeeded=False
                 if exit_on_fail:
-                    self.error('  SpaceGridInitializer.'+k+' must be provided',exit=False)
+                    msg += '  SpaceGridInitializer.'+k+' must be provided\n'
                 #end if
             #end if
         #end if
-        if not succeeded and exit_on_fail:
-            self.error('  SpaceGridInitializer is incomplete')
+        if len(msg) > 0 and exit_on_fail:
+            self.error(f'  SpaceGridInitializer is incomplete:\n{msg}')
         #end if
-        return succeeded
+        return len(msg) == 0
     #end def check_complete
 #end class SpaceGridInitializer
 
@@ -2395,23 +2392,23 @@ class SpaceGridBase(QAobject):
     #end def init_from_xmlelement
 
     def check_complete(self,*,exit_on_fail=True):
-        succeeded = True
+        msg = ""
         for k,v in self.items():
             if k[0]!='_' and v is None:
-                succeeded=False
                 if exit_on_fail:
-                    self.error('SpaceGridBase.'+k+' must be provided',exit=False)
+                    msg += 'SpaceGridBase.'+k+' must be provided'
                 #end if
             #end if
         #end if
-        if not succeeded:
-            self.error('SpaceGrid attempted initialization from '+self.iname,exit=False)
-            self.error('SpaceGrid is incomplete',exit=False)
-            if exit_on_fail:
-                sys.exit()
+        if len(msg) > 0 and exit_on_fail:
+            self.error(
+                'SpaceGrid attempted initialization from '+self.iname+'\n'
+                'SpaceGrid is incomplete:\n'
+                f'{msg}'
+                )
             #end if
         #end if
-        return succeeded
+        return len(msg) == 0
     #end def check_complete
 
     def _reset_dynamic_methods(self):
@@ -2675,7 +2672,7 @@ class RectilinearGrid(SpaceGridBase):
 
     def initialize(self): #like qmcpack SpaceGridBase.initialize
         write=False
-        succeeded=True
+        msg = ""
     
         ndomains=-1
     
@@ -2711,8 +2708,10 @@ class RectilinearGrid(SpaceGridBase):
                 axlabel[d]=ax_spherical[d]
             #end 
         else:
-            self.error("  Coordinate supplied to spacegrid must be cartesian, cylindrical, or spherical\n  You provided "+coord,exit=False)
-            succeeded=False
+            msg += (
+                "  Coordinate supplied to spacegrid must be cartesian, cylindrical, or spherical\n"
+                "  You provided "+coord+"\n"
+                )
         #end 
         self.coordinate = SpaceGridBase.coord_s2n[self.coord]
         coordinate = self.coordinate    
@@ -2773,8 +2772,10 @@ class RectilinearGrid(SpaceGridBase):
             u1=1.0*eval(tokens[0])
             umin[iaxis]=u1
             if(abs(u1)>1.0000001):
-                self.error("  interval endpoints cannot be greater than 1\n  endpoint provided: "+str(u1),exit=False)
-                succeeded=False
+                msg += (
+                    "  interval endpoints cannot be greater than 1\n"
+                    "  endpoint provided: "+str(u1)+"\n"
+                    )
             #end 
             is_int=False
             has_paren_val=False
@@ -2793,12 +2794,13 @@ class RectilinearGrid(SpaceGridBase):
                         print("      u1,u2 = ",u1,",",u2)
                     #end 
                     if(u2<u1):
-                        self.error("  interval ("+str(u1)+","+str(u2)+") is negative",exit=False)
-                        succeeded=False
+                        msg += "  interval ("+str(u1)+","+str(u2)+") is negative\n"
                     #end 
                     if(abs(u2)>1.0000001):
-                        self.error("  interval endpoints cannot be greater than 1\n  endpoint provided: "+str(u2),exit=False)
-                        succeeded=False
+                        msg += (
+                            "  interval endpoints cannot be greater than 1\n"
+                            "  endpoint provided: "+str(u2)+"\n"
+                            )
                     #end 
                     if(is_int):
                         du_int[interval]=(u2-u1)/ndom_i
@@ -2807,8 +2809,7 @@ class RectilinearGrid(SpaceGridBase):
                         du_int[interval]=du_i
                         ndom_int[interval]=np.floor((u2-u1)/du_i+.5)
                         if(abs(u2-u1-du_i*ndom_int[interval])>utol):
-                            self.error("  interval ("+str(u1)+","+str(u2)+") not divisible by du="+str(du_i),exit=False)
-                            succeeded=False
+                            msg += "  interval ("+str(u1)+","+str(u2)+") not divisible by du="+str(du_i)+"\n"
                         #end 
                     #end 
                     u1=u2
@@ -2835,8 +2836,7 @@ class RectilinearGrid(SpaceGridBase):
             for i in range(len(du_int)):
                 ndu_int[i]=np.floor(du_int[i]/du_min+.5)
                 if(abs(du_int[i]-ndu_int[i]*du_min)>utol):
-                    self.error("interval {0} of axis {1} is not divisible by smallest subinterval {2}".format(i+1,iaxis+1,du_min),exit=False)
-                    succeeded=False
+                    msg += "interval {0} of axis {1} is not divisible by smallest subinterval {2}\n".format(i+1,iaxis+1,du_min)
                 #end 
             #end      
     
@@ -2892,18 +2892,24 @@ class RectilinearGrid(SpaceGridBase):
         for d in range(DIM):
             if axlabel[d] in cartmap:
                 if(umin[d]<-1.0 or umax[d]>1.0):
-                    self.error("  grid values for {0} must fall in [-1,1]\n".format(axlabel[d])+"  interval provided: [{0},{1}]".format(umin[d],umax[d]),exit=False)
-                    succeeded=False
+                    msg += (
+                        "  grid values for {0} must fall in [-1,1]\n"
+                        "  interval provided: [{1},{2}]\n".format(axlabel[d],umin[d],umax[d])
+                        )
                 #end if
             elif(axlabel[d]=="phi"):
                 if(abs(umin[d])+abs(umax[d])>1.0):
-                    self.error("  phi interval cannot be longer than 1\n  interval length provided: {0}".format(abs(umin[d])+abs(umax[d])),exit=False)
-                    succeeded=False
+                    msg += (
+                        "  phi interval cannot be longer than 1\n"
+                        "  interval length provided: {0}\n".format(abs(umin[d])+abs(umax[d]))
+                        )
                 #end if
             else:
                 if(umin[d]<0.0 or umax[d]>1.0):
-                    self.error("  grid values for {0} must fall in [0,1]\n".format(axlabel[d])+"  interval provided: [{0},{1}]".format(umin[d],umax[d]),exit=False)
-                    succeeded=False
+                    msg += (
+                        "  grid values for {0} must fall in [0,1]\n"
+                        "  interval provided: [{1},{2}]\n".format(axlabel[d],umin[d],umax[d])
+                        )
                 #end if
             #end if
         #end for
@@ -3031,11 +3037,11 @@ class RectilinearGrid(SpaceGridBase):
 
         #succeeded = succeeded and check_grid()
     
-        if(self.init_exit_fail and not succeeded):
-            self.error(" in def initialize")
+        if self.init_exit_fail and len(msg) > 0:
+            self.error(f" in def initialize:\n{msg}")
         #end 
 
-        return succeeded
+        return len(msg) == 0
     #end def initialize
 
     def point2unit_cartesian(self,point):

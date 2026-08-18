@@ -22,7 +22,7 @@
 import os
 import sys
 import traceback
-from typing import TextIO, ClassVar
+from typing import NoReturn, TextIO, ClassVar
 from copy import deepcopy
 import pickle
 from pickle import UnpicklingError
@@ -39,7 +39,14 @@ VersionStr: TypeAlias = str
 
 class generic_settings:
     devlog         = sys.stdout
-    raise_error    = False
+
+    # Warnings for trying to reference or set `raise_error`
+    @property
+    def raise_error(self):
+        warn("Referencing `raise_error` is deprecated!", warn_type="dev")
+    @raise_error.setter
+    def raise_error(self, _):
+        warn("Setting `raise_error` is deprecated!", warn_type="dev")
 #end class generic_settings
 
 
@@ -127,25 +134,19 @@ class NexusUnpickler(pickle.Unpickler):
         return super().find_class(module, name)
 
 
-def log(*items,**kwargs):
-    indent  = None
-    logfile = generic_settings.devlog
-    if len(kwargs)>0:
-        indent  = kwargs.pop('indent' ,None   )
-        logfile = kwargs.pop('logfile',logfile)
-        n       = kwargs.pop('n',0)
-        if n!=0:
-            if indent is None:
-                indent = n*'  '
-            else:
-                indent = n*indent
-            #end if
-        #end if
-        if len(kwargs)>0:
-            valid = 'indent logfile n'.split()
-            error('Invalid keyword arguments provided.\nInvalid keywords: {0}\nValid options are: {1}'.format(sorted(kwargs.keys()),valid),'log')
-        #end if
-    #end if
+def log(
+    *items,
+    indent: str | None = None,
+    logfile: TextIO | None = None,
+    n: int = 0
+    ) -> None:
+    logfile = logfile if logfile is not None else generic_settings.devlog
+    if n!=0:
+        if indent is None:
+            indent = n*'  '
+        else:
+            indent = n*indent
+
     if len(items)==1 and isinstance(items[0],str):
         s = items[0]
     else:
@@ -274,15 +275,8 @@ def nxs_deprecate(
 #end def nxs_deprecate
 
 
-def error(
-    msg     : str,
-    header  : str | None    = None,
-    exit    : bool          = True,
-    trace   : int | None    = -1,
-    indent  : str           = '    ',
-    logfile : TextIO | None = None,
-    ):
-    """Report an error.
+def error(msg: str, header: str | None = None) -> NoReturn:
+    """Raise a ``NexusError``
 
     Parameters
     ----------
@@ -291,54 +285,10 @@ def error(
     header : str, optional
         Header to print before the message. Will have ``" error:"`` appended to
         it.
-    exit : bool, default=True
-        Whether or not to force an exit through ``sys.exit()``. See Notes.
-    trace : int or None, default=-1
-        How much of the traceback to print.
-
-        ``None`` prints the full traceback, positive integers limit to a number
-        of frames relative to this function, and negative integers limit to a
-        number of frames up to this function. Setting this to ``0`` will disable
-        the traceback completely.
-
-        The default value is ``-1``, which will print only the traceback up to
-        the location that this function was called, but will not show the
-        location of this function.
-    indent : str, default="    "
-        A string that will be used to indent the error message.
-    logfile : TextIO, default=generic_settings.devlog
-        The already-opened file to write to. Typically this is ``sys.stdout``.
-
-    Raises
-    ------
-    NexusError
-        If ``generic_settings.raise_error = True``.
-
-    Notes
-    -----
-    If you set ``exit=True``, then this will call ``sys.exit(1)``, which will
-    force an exit that can not be caught or handled.
-
-    See Also
-    --------
-    generic_settings
     """
-    if generic_settings.raise_error:
-        raise NexusError(msg)
-    #end if
-    if logfile is None:
-        logfile = generic_settings.devlog
-    #end if
-    post_header=' error:'
-    message(msg,header,post_header,indent,logfile)
-    if exit:
-        log('  exiting.\n')
-        if trace is True: # Preserve old behavior
-            trace = None
-        traceback.print_stack(limit=trace)
-        #end if
-        exit_call()
-    #end if
+    header = f"{header} error:" if header is not None else "error:"
+    msg = f"{header}\n{msg}"
+    raise NexusError(msg)
 #end def error
 
 
@@ -626,12 +576,9 @@ class object_interface(object):
         if fpath is None:
             fpath='./'+self.__class__.__name__+'.p'
         #end if
-        fobj = open(fpath,'wb')
-        binary = pickle.HIGHEST_PROTOCOL
-        pickle.dump(self,fobj,binary)
-        fobj.close()
-        del fobj
-        del binary
+        with open(fpath,'wb') as fobj:
+            pickle.dump(self,fobj,pickle.HIGHEST_PROTOCOL)
+
         return
     #end def save
 
@@ -639,41 +586,28 @@ class object_interface(object):
         if fpath is None:
             fpath='./'+self.__class__.__name__+'.p'
         #end if
-        fobj = open(fpath,'rb')
-
-        try:
-            tmp = pickle.load(fobj)
-        except (ImportError,ModuleNotFoundError):
-            fobj.seek(0)
+        with open(fpath,'rb') as fobj:
             try:
-                # Old pickles from before Nexus was packaged (PR #5700, December 20 2025)
-                # won't have the correct module path. The custom unpickler will handle this by 
-                # prepending "nexus." to the module path
-                tmp = NexusUnpickler(fobj).load()
-            except UnpicklingError:
+                tmp = pickle.load(fobj)
+            except (ImportError,ModuleNotFoundError):
+                fobj.seek(0)
                 try:
+                    # Old pickles from before Nexus was packaged (PR #5700, December 20 2025)
+                    # won't have the correct module path. The custom unpickler will handle this by 
+                    # prepending "nexus." to the module path
+                    tmp = NexusUnpickler(fobj).load()
+                except UnpicklingError:
                     # NumPy pickles can use latin1 encoding
                     # They will likely still fail from an underflow since they are not pickle-compliant
                     tmp = NexusUnpickler(fobj).load(encoding='latin1')
-                except UnpicklingError:
-                    # fallback for files created with protocol 5
-                    # in environments that only support up to protocol 4
-                    try:
-                        import pickle5
-                        tmp = pickle5.load(fobj)
-                    except ImportError:
-                        have_pickle5 = False
-                        error("Highest pickle protocol in current python version is {}, but {} is written using a higher protocol. Install pickle5, e.g. via pip, to enable protocol 5 in python <= 3.7.x".format(pickle.HIGHEST_PROTOCOL, fpath))
                 #end try
             #end try
-        #end try
-        fobj.close()
+        #end with
         d = self.__dict__
         d.clear()
         for k,v in tmp.__dict__.items():
             d[k] = v
         #end for
-        del fobj
         del tmp
         return
     #end def load
@@ -707,7 +641,7 @@ class object_interface(object):
         warn(msg, indent, warn_type="class", cls=type(self).__qualname__)
     #end def warn
 
-    def error(self,message,header=None,exit=True,trace=-2):
+    def error(self,message,header=None):
         """Report an error inside a class.
 
         This is the same as ``generic.error()``, but with ``trace=-2`` as the
@@ -717,7 +651,7 @@ class object_interface(object):
         if header is None:
             header = self.__class__.__name__
         #end if
-        error(message,header,exit,trace,logfile=self._logfile)
+        error(message,header)
     #end def error
 
     @classmethod
@@ -734,7 +668,7 @@ class object_interface(object):
     #end def class_warn
 
     @classmethod
-    def class_error(cls,message,header=None,exit=True,trace=-2,post_header=' Error:'):
+    def class_error(cls,message,header=None):
         """Report an error relating to a class.
 
         See Also
@@ -745,7 +679,7 @@ class object_interface(object):
         if header is None:
             header = cls.__name__
         #end if
-        error(message,header,exit,trace,logfile=cls._logfile)
+        error(message,header)
     #end def class_error
 
     @classmethod

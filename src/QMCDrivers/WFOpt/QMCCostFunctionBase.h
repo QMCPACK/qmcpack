@@ -83,11 +83,6 @@ public:
   ///process xml node
   bool put(xmlNodePtr cur);
   void resetCostFunction(std::vector<xmlNodePtr>& cset);
-  /** boolean to indicate if the cost function is valid.
-   *
-   * Can be used by optimizers to stop optimization.
-   */
-  bool IsValid;
   ///Save opt parameters to HDF5
   bool reportH5;
   bool CI_Opt;
@@ -98,13 +93,15 @@ public:
   ///return optimization parameter i
   Return_t Params(int i) const { return opt_vars[i]; }
   int getType(int i) const { return opt_vars.getType(i); }
-  ///return the cost value for CGMinimization
-  Return_rt Cost(bool needGrad = true);
 
   ///return the cost value for CGMinimization
   Return_rt computedCost();
   void printEstimates();
-  ///return the gradient of cost value for CGMinimization
+  /**
+   * @brief compute the derivatives of cost function with respect to parameters
+   * @param[out] PGradient derivatives
+   * @param[in] PM parameters with which derivatives are evaluated
+   */
   virtual void GradCost(std::vector<Return_rt>& PGradient,
                         const std::vector<Return_rt>& PM,
                         Return_rt FiniteDiff = 0) = 0;
@@ -115,6 +112,14 @@ public:
   inline void setNumSamples(int newNumSamples) { NumSamples = newNumSamples; }
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset = false) = 0;
+
+  /** run correlated sampling
+   * return effective walkers (\sum_i w_i)^2/(Nw * \sum_i w^2_i)
+   */
+  virtual EffectiveWeight correlatedSampling(bool needGrad = true) = 0;
+
+  /// check the validity of the effective weight calculated by correlatedSampling
+  bool isEffectiveWeightValid(EffectiveWeight effective_weight) const;
 
   inline void getParameterTypes(std::vector<int>& types) const { return opt_vars.getParameterTypeList(types); }
 
@@ -172,7 +177,7 @@ public:
   inline bool getneedGrads() const { return needGrads; }
 
   inline void setneedGrads(bool tf) { needGrads = tf; }
-  inline void setDMC() { vmc_or_dmc = 1.0; }
+
 
   inline const OptVariables& getOptVariables() const { return opt_vars; }
 
@@ -200,8 +205,6 @@ protected:
    * default PowerE=1
    */
   int PowerE;
-  ///number of times cost function evaluated
-  int NumCostCalls;
   /// global number of samples to use in correlated sampling
   int NumSamples;
   ///counter for output
@@ -297,19 +300,11 @@ protected:
   ///stream for debug
   std::unique_ptr<std::ostream> debug_stream;
 
-  bool checkParameters();
+
   void updateXmlNodes();
 
   /// Flag on whether the variational parameter override is output to the new wavefunction
   bool do_override_output;
-
-  /** run correlated sampling
-   * return effective walkers (\sum_i w_i)^2/(Nw * \sum_i w^2_i)
-   */
-  virtual EffectiveWeight correlatedSampling(bool needGrad = true) = 0;
-
-  /// check the validity of the effective weight calculated by correlatedSampling
-  bool isEffectiveWeightValid(EffectiveWeight effective_weight) const;
 
   /// survey all the optimizable objects
   UniqueOptObjRefs extractOptimizableObjects(TrialWaveFunction& psi) const;

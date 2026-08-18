@@ -3,8 +3,6 @@ from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_SIMULATIONS)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from pathlib import Path
 
@@ -381,7 +379,7 @@ def test_convert4qmc_check_sim_status(tmp_path):
     outfile_text = 'QMCGaussianParserBase::dump'
     outfile.write_text(outfile_text)
 
-    assert(outfile_text in open(outfile,'r').read())
+    assert(outfile_text in outfile.read_text())
     for filename in sim.list_output_files():
         filepath = Path(sim.locdir).resolve() / filename
         filepath.touch()
