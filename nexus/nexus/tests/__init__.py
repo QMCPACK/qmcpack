@@ -233,7 +233,6 @@ class NexusTestOrder(IntEnum):
     BASISSET                        = auto()
     PSEUDOPOTENTIAL                 = auto()
     NEXUS_BASE                      = auto()
-    PSEUDOSET                       = auto()
     ERROR_KEYS                      = auto()
     MACHINES                        = auto()
     SIMULATION                      = auto()
