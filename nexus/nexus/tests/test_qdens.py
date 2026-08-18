@@ -445,12 +445,12 @@ def test_spindensity_metadata_is_selected_per_series(tmp_path):
     first = (tmp_path / 'series_spindensity.s005.SpinDensity_u+d.xsf').read_text()
     second = (tmp_path / 'series_spindensity.s006.SpinDensity_u+d.xsf').read_text()
     assert '3 3 3' in first
-    assert '3 4 5' in second
     assert '1.05835442E+00 0.00000000E+00 0.00000000E+00' in first
     assert '0.00000000E+00 1.58753163E+00 0.00000000E+00' in first
+    assert '2.64588604E-01 3.96882906E-01 5.29177209E-01' in first
+    assert '3 4 5' in second
     assert '2.11670883E+00 0.00000000E+00 0.00000000E+00' in second
     assert '0.00000000E+00 2.64588604E+00 0.00000000E+00' in second
-    assert '2.64588604E-01 3.96882906E-01 5.29177209E-01' in first
     assert '1.05835442E+00 1.49933542E+00 1.98441453E+00' in second
 #end def test_spindensity_metadata_is_selected_per_series
 
