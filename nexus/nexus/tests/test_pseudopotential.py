@@ -129,7 +129,7 @@ def test_pp_elem_label():
         assert(symbol==refsymbol)
     #end for
 
-    with pytest.raises(RuntimeError,match="file name .* is invalid"):
+    with pytest.raises(RuntimeError,match=r"file name .* is invalid"):
         pp_elem_label('../C.xml',guard=True)
 
     with pytest.raises(RuntimeError,match="cannot determine element"):

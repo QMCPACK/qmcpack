@@ -21,12 +21,11 @@ from .fileio import TextFile
 from .xmlreader import readxml
 from .periodic_table import Elements
 from .unit_converter import convert
-from .developer import DevBase, obj, unavailable, log, error, warn
+from .developer import DevBase, obj, unavailable, error, warn
 from .basisset import process_gaussian_text, GaussianBasisSet
 from .physical_system import PhysicalSystem
 from .testing import object_eq
 from .utilities import path_string, is_valid_filename
-from .nexus_base import nexus_core
 
 try:
     import matplotlib.pyplot as plt

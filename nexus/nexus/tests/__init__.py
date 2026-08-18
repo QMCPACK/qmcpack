@@ -3,9 +3,8 @@ from enum import IntEnum, auto
 from pathlib import Path
 from copy import deepcopy
 import functools
-from nexus.nexus_base import nexus_core, nexus_noncore, nexus_core_noncore, nexus_noncore_defaults
+from nexus.nexus_base import nexus_core, nexus_noncore, nexus_noncore_defaults
 from nexus.generic import generic_settings, object_interface
-from nexus.developer import obj
 from nexus.pseudopotential import PseudoSet
 from nexus.simulation import Simulation
 
