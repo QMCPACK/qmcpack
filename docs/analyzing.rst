@@ -1427,7 +1427,8 @@ Using the qdens tool to obtain electron densities
 The ``qdens`` tool is provided to post-process the heavy density data
 produced by QMCPACK and output the mean density (with and without
 errorbars) in file formats viewable with, e.g., XCrysDen or VESTA. The
-tool currently works only with the ``SpinDensity`` estimator in QMCPACK.
+tool supports the ``SpinDensity`` in for both batched and legacy
+drivers and the legacy ``Density`` estimator for legacy drivers in QMCPACK.
 
 Note: this tool is provisional and may be changed or replaced at any
 time. The planned successor to this tool (``qstat``) will expand access
@@ -1454,7 +1455,7 @@ simulation cell with a zero corner; use XSF for a subcell or shifted density.
 
 Current input flags are:
 
-.. code-block:: 
+.. code-block::
 
   >qdens
 
@@ -1612,7 +1613,7 @@ The radial density can be chosen to be non-cumulative or cumulative (integrated)
   >qdens-radial
 
   Usage: qdens-radial [options] xsf_file
-  
+
   Options:
     --version             show program's version number and exit
     -h, --help            Print help information and exit (default=False).
@@ -1680,7 +1681,7 @@ Estimate of the extrapolated atomic occupation:
 ::
 
   qdens-radial -p -s O -r 1.1 -c --vmc=dmc.s000.Density_q.xsf dmc.s002.Density_q.xsf
-  
+
 Output:
 
 ::
@@ -1714,4 +1715,3 @@ Output:
   Will compute 20 samples...
   ...
   Cumulative Value of O Species at Cutoff 1.1 is: 6.55517033828574+/-0.001558553749396279
-
