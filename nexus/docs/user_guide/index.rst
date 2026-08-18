@@ -11,6 +11,7 @@ User Guide
     overview
     installation
     examples
+    nexus-behavior
     user-scripts
     nexus-jobs
     qmcpack-input-mod
