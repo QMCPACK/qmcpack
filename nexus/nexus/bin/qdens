@@ -244,7 +244,7 @@ class QDBase(DevBase):
         if loc is None:
             loc = self.name
         #end if
-        error(msg,loc,exit=False)
+        error(msg,loc)
         sys.exit(1)
     #end def error
 
@@ -458,12 +458,10 @@ class SingleDensity(QDBase):
         #end if
         s.change_units('A')
         cell   = s.axes
-        density_cell   = self.density_cell
-        density_corner = self.density_corner
-        if density_cell is not None and not np.allclose(density_cell,cell):
+        if self.density_cell is not None and not np.allclose(self.density_cell,cell):
             QDBase.error(self,'cannot write CHGCAR with a density cell different from the simulation cell; use XSF output instead')
         #end if
-        if density_corner is not None and not np.allclose(density_corner,np.zeros(3)):
+        if self.density_corner is not None and not np.allclose(self.density_corner,np.zeros(3)):
             QDBase.error(self,'cannot write CHGCAR with a nonzero density corner; use XSF output instead')
         #end if
 
@@ -657,10 +655,20 @@ class StatFile(QDBase):
         if metadata is None:
             groups = self.density_data if self.use_dens else self.spin_density_data
             if len(groups)==1 and opt.grid is not None:
-                metadata = obj(grid=opt.grid,density_cell=opt.density_cell,
-                               density_corner=opt.density_corner,source='command line')
+                metadata = obj(
+                    grid=opt.grid,
+                    density_cell=opt.density_cell,
+                    density_corner=opt.density_corner,
+                    source='command line',
+                    )
             else:
-                self.error('could not find input metadata for density estimator "{0}" in series {1}\nfile path: {2}\nprovide --grid only when this file contains one density estimator'.format(name,self.series,self.filepath))
+                self.error(
+                    'could not find input metadata for density estimator "{0}" in series {1}\n'
+                    'file path: {2}\n'
+                    'provide --grid only when this file contains one density estimator'.format(
+                        name,self.series,self.filepath
+                        )
+                    )
             #end if
         else:
             ignored = []
@@ -686,8 +694,12 @@ class StatFile(QDBase):
         if ncells!=data_cells:
             self.error(
                 'density grid does not match number of HDF5 data cells\n'
-                'file path: {0}\nseries: {1}\nestimator: {2}\ngrid: {3}\n'
-                'grid cells: {4}\nHDF5 data cells: {5}'
+                'file path: {0}\n'
+                'series: {1}\n'
+                'estimator: {2}\n'
+                'grid: {3}\n'
+                'grid cells: {4}\n'
+                'HDF5 data cells: {5}'
                 .format(self.filepath,self.series,name,grid,ncells,data_cells))
         #end if
     #end def check_grid
@@ -1025,10 +1037,10 @@ class QMCDensityProcessor(QDBase):
                 elif 'delta' in xml:
                     delta = np.array(xml.delta,dtype=float)
                     if (delta.shape!=(3,) or not np.all(np.isfinite(delta))
-                            or np.any(delta<=0)):
+                            or np.any(delta<=0) or np.any(delta>=1)):
                         self.error(
                             'density estimator "{0}" must provide three positive '
-                            'delta values in QMCPACK input file: {1}'
+                            'delta values less than one in QMCPACK input file: {1}'
                             .format(name,self.options.input))
                     #end if
                     grid = np.ceil(1.0/delta).astype(int)
