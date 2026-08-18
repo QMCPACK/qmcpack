@@ -267,7 +267,7 @@ def _write_series_spindensity_input(filepath):
     filepath.write_text('''\
 <?xml version="1.0"?>
 <simulation>
-  <project id="case" series="5"/>
+  <project id="series_spindensity" series="5"/>
   <estimators>
     <estimator name="GlobalSpinDensity" type="spindensity">
       <parameter name="grid">2 2 2</parameter>
@@ -431,19 +431,19 @@ def test_bounded_density_metadata_validates_cell_and_delta(
 
 def test_spindensity_metadata_is_selected_per_series(tmp_path):
     exe = TEST_DIR.parent / 'bin/qdens'
-    infile = tmp_path / 'case.xml'
+    infile = tmp_path / 'series_spindensity.xml'
     _write_series_spindensity_input(infile)
-    stat5 = tmp_path / 'case.s005.stat.h5'
-    stat6 = tmp_path / 'case.s006.stat.h5'
+    stat5 = tmp_path / 'series_spindensity.s005.stat.h5'
+    stat6 = tmp_path / 'series_spindensity.s006.stat.h5'
     _write_spin_density_stat(stat5,8)
     _write_spin_density_stat(stat6,24)
 
     execute(f'{exe} -f xsf -i {infile} {stat5} {stat6}')
-    assert (tmp_path / 'case.s005.GlobalSpinDensity_u+d.xsf').exists()
-    assert (tmp_path / 'case.s006.GlobalSpinDensity_u+d.xsf').exists()
+    assert (tmp_path / 'series_spindensity.s005.GlobalSpinDensity_u+d.xsf').exists()
+    assert (tmp_path / 'series_spindensity.s006.GlobalSpinDensity_u+d.xsf').exists()
 
-    first = (tmp_path / 'case.s005.SpinDensity_u+d.xsf').read_text()
-    second = (tmp_path / 'case.s006.SpinDensity_u+d.xsf').read_text()
+    first = (tmp_path / 'series_spindensity.s005.SpinDensity_u+d.xsf').read_text()
+    second = (tmp_path / 'series_spindensity.s006.SpinDensity_u+d.xsf').read_text()
     assert '3 3 3' in first
     assert '3 4 5' in second
     assert '1.05835442E+00 0.00000000E+00 0.00000000E+00' in first
@@ -457,22 +457,22 @@ def test_spindensity_metadata_is_selected_per_series(tmp_path):
 
 def test_spindensity_input_metadata_overrides_grid_fallback(tmp_path):
     exe = TEST_DIR.parent / 'bin/qdens'
-    infile = tmp_path / 'case.xml'
+    infile = tmp_path / 'series_spindensity.xml'
     _write_series_spindensity_input(infile)
-    stat = tmp_path / 'case.s005.stat.h5'
+    stat = tmp_path / 'series_spindensity.s005.stat.h5'
     _write_spin_density_stat(stat,8)
 
     out,err,_ = execute(f'{exe} -f xsf -g "1 1 8" -i {infile} {stat}')
     assert 'Ignoring --grid' in out + err
-    assert '3 3 3' in (tmp_path / 'case.s005.SpinDensity_u+d.xsf').read_text()
+    assert '3 3 3' in (tmp_path / 'series_spindensity.s005.SpinDensity_u+d.xsf').read_text()
 #end def test_spindensity_input_metadata_overrides_grid_fallback
 
 
 def test_spindensity_input_hdf5_grid_mismatch_fails_clearly(tmp_path):
     exe = TEST_DIR.parent / 'bin/qdens'
-    infile = tmp_path / 'case.xml'
+    infile = tmp_path / 'series_spindensity.xml'
     _write_series_spindensity_input(infile)
-    stat = tmp_path / 'case.s005.stat.h5'
+    stat = tmp_path / 'series_spindensity.s005.stat.h5'
     _write_spin_density_stat(stat,7)
 
     with pytest.raises(
@@ -490,9 +490,9 @@ def test_spindensity_input_hdf5_grid_mismatch_fails_clearly(tmp_path):
 
 def test_spindensity_series_mismatch_requires_unambiguous_fallback(tmp_path):
     exe = TEST_DIR.parent / 'bin/qdens'
-    infile = tmp_path / 'case.xml'
+    infile = tmp_path / 'series_spindensity.xml'
     _write_series_spindensity_input(infile)
-    stat = tmp_path / 'case.s007.stat.h5'
+    stat = tmp_path / 'series_spindensity.s007.stat.h5'
     _write_spin_density_stat(stat,8,global_cells=None)
 
     with pytest.raises(
