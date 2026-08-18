@@ -24,6 +24,7 @@ import numpy as np
 from .nexus_base import nexus_core
 from .developer import obj
 from .physical_system import PhysicalSystem
+from .pseudopotential import PseudoSet
 from .simulation import Simulation, DynamicProcess
 from .pwscf_input import PwscfInput, generate_pwscf_input
 from .pwscf_analyzer import PwscfAnalyzer
@@ -492,6 +493,14 @@ def generate_pwscf(**kwargs):
         dp,dyn_args = DynamicProcess.check_first_gen(kwargs)
         if dp is not None:
             return dp
+
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        pseudos = PseudoSet.pseudo_remap('pwscf',pseudos,system)
+        kwargs['pseudos'] = pseudos
+        kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
+    #end if
 
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 

@@ -31,12 +31,14 @@
 #====================================================================#
 
 
+import os
 from copy import deepcopy
 from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
 from .developer import DevBase, obj, error, warn
 from .nexus_base import nexus_noncore
+from .pseudopotential import pp_elem_label, PseudoSet
 from .simulation import SimulationInput
 from .utilities import path_string
 
@@ -46,6 +48,68 @@ class GIbase(DevBase):
         self.error(msg,**kwargs)
     #end def message
 #end class GIbase
+
+
+def _read_gamess_pseudopotential(filepath):
+    filename = os.path.basename(filepath)
+    element_label,element = pp_elem_label(filename,guard=True)
+    pseudo = obj(
+        filename      = filename,
+        element       = element,
+        element_label = element_label,
+        pp_text       = None,
+        pp_name       = None,
+        basis_text    = None,
+        )
+
+    with open(filepath, "r") as f:
+        lines = f.read().splitlines()
+    new_block = True
+    tokens = []
+    block = ''
+    for nline,line in enumerate(lines,1):
+        ls = line.strip()
+        if len(ls)>0 and ls[0]!='!' and ls[0]!='#':
+            if new_block:
+                tokens = ls.split()
+                new_block = False
+                if len(tokens)!=5:
+                    block += line+'\n'
+                #end if
+            else:
+                block += line+'\n'
+            #end if
+        #end if
+        if (len(ls)==0 or nline==len(lines)) and len(block)>0:
+            block = block.rstrip()
+            if len(tokens)==4:
+                pseudo.pp_text = block
+                pseudo.pp_name = tokens[0]
+            elif len(tokens)==5:
+                pseudo.basis_text = block
+            else:
+                error('could not identify text block in {0} as pseudopotential or basis text\ntext block:\n{1}'.format(filename,block))
+            #end if
+            new_block = True
+            tokens = []
+            block = ''
+        #end if
+    #end for
+    if pseudo.pp_text is None:
+        error('could not find pseudopotential text in '+filename)
+    #end if
+    return pseudo
+#end def _read_gamess_pseudopotential
+
+
+def _read_gamess_pseudopotentials(pseudo_files):
+    pseudos = obj()
+    for filepath in pseudo_files:
+        pseudo = _read_gamess_pseudopotential(filepath)
+        pseudos[pseudo.element_label] = pseudo
+    #end for
+    return pseudos
+#end def _read_gamess_pseudopotentials
 
 
 class GIarray(GIbase):
@@ -1144,11 +1208,12 @@ def generate_any_gamess_input(**kwargs):
                 coord = 'unique',
                 ecp   = 'read'
                 )
-            pps = nexus_noncore.pseudopotentials.pseudos_by_atom(*pskw.pseudos)
+            pseudo_files = PseudoSet.pseudo_remap('gamess',pskw.pseudos,system)
+            pps = _read_gamess_pseudopotentials(pseudo_files.values())
             for i,a in enumerate(elem):
                 Z = Elements(a).atomic_number
                 data+='{0} {1} {2:16.8f} {3:16.8f} {4:16.8f}\n'.format(a,Z,*pos[i])
-                if a in pps:
+                if a in pps and pps[a].basis_text is not None:
                     data += pps[a].basis_text+'\n\n'
                 #end if
             #end for
@@ -1309,6 +1374,3 @@ def check_keyspec_groups():
 #end def check_keyspec_groups
 
 #check_keyspec_groups()  # uncomment this to check keyword spec group self-consistency
-
-
-
