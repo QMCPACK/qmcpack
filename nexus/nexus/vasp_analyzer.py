@@ -717,9 +717,9 @@ class OutcarData(DevBase):
             if not os.path.exists(filepath):
                 self.error('file {0} does not exist'.format(filepath))
             #end if
-            f = open(filepath,'r')
-            lines = f.read().splitlines()
-            f.close()
+            with open(filepath,'r') as f:
+                lines = f.read().splitlines()
+
         #end if
         self.vlines   = VaspLines(lines)
     #end def __init__
@@ -847,10 +847,9 @@ class VaspAnalyzer(SimulationAnalyzer):
         if not os.path.exists(outcar):
             self.error('outcar file {0} does not exist'.format(outcar))
         #end if
-        oc = open(outcar,'r')
-        lines = oc.read().splitlines()
-        oc.close()
-        del oc
+        with open(outcar,'r') as oc:
+            lines = oc.read().splitlines()
+
         # gather initialization lines
         init = []
         n = 0

@@ -309,9 +309,9 @@ def test_intrinsics(tmp_path):
     s = 'log output'
     o.write(s)
     o.close_log()
-    f = open('log.out','r')
-    so = f.read()
-    f.close()
+    with open('log.out','r') as f:
+        so = f.read()
+
     os.remove('log.out')
     assert(so==s)
 

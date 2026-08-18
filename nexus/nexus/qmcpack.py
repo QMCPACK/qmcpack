@@ -57,6 +57,7 @@ from .qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToA
 from .pyscf_sim import Pyscf
 from .developer import DevBase, obj, error, unavailable
 from .nexus_base import nexus_core
+from .pseudopotential import PseudoSet
 from .hdfreader import read_hdf
 from .unit_converter import convert
 from .pwscf import Pwscf
@@ -1582,7 +1583,8 @@ class Qmcpack(Simulation):
                     self.failed = True
                     self.warn(msg)
                     filename = self.identifier+'_errors.txt'
-                    open(os.path.join(self.locdir,filename),'w').write(msg)
+                    with open(os.path.join(self.locdir,filename),'w') as fobj:
+                        fobj.write(msg)
                 #end if
 
             #end if
@@ -1634,9 +1636,8 @@ class Qmcpack(Simulation):
                         kp  = kpoints[twist_index]
                         kpq = kpoints_qmcpack[twist_index]
                         contents = ' {: 16.6f}  {: 16.12f} {: 16.12f} {: 16.12f}  {: 16.12f} {: 16.12f} {: 16.12f}\n'.format(kw,*kp,*kpq)
-                        fobj = open(os.path.join(self.locdir,twist_filename),'w')
-                        fobj.write(contents)
-                        fobj.close()
+                        with open(os.path.join(self.locdir,twist_filename),'w') as fobj:
+                            fobj.write(contents)
                     #end if
                 #end for
                 grand_canonical_twist_average = 'nelecs_at_twist' in self
@@ -1918,6 +1919,14 @@ class Qmcpack(Simulation):
 
 
 def generate_qmcpack(**kwargs):
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        pseudos = PseudoSet.pseudo_remap('qmcpack',pseudos,system)
+        kwargs['pseudos'] = pseudos
+        kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
+    #end if
+
     sim_args,inp_args = Qmcpack.separate_inputs(kwargs)
 
     exc = None
@@ -1967,6 +1976,14 @@ def generate_cusp_correction(**kwargs):
     kwargs['jastrows']     = []
     kwargs['corrections']  = []
     kwargs['calculations'] = []
+
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        pseudos = PseudoSet.pseudo_remap('qmcpack',pseudos,system)
+        kwargs['pseudos'] = pseudos
+        kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
+    #end if
 
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 

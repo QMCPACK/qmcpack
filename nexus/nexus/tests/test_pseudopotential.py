@@ -129,143 +129,15 @@ def test_pp_elem_label():
         assert(symbol==refsymbol)
     #end for
 
+    with pytest.raises(RuntimeError,match=r"file name .* is invalid"):
+        pp_elem_label('../C.xml',guard=True)
+
+    with pytest.raises(RuntimeError,match="cannot determine element"):
+        pp_elem_label('invalid.xml',guard=True)
+
 #end def test_pp_elem_label
 
 
-@isolate_nexus_core
-def test_pseudopotentials():
-    from ..pseudopotential import Pseudopotentials
-    from ..pseudopotential import PseudoFile
-    from ..pseudopotential import gamessPPFile
-
-    # empty initialization
-    Pseudopotentials()
-    PseudoFile()
-    gamessPPFile()
-
-    # standard initialization
-    file_paths = list(TEST_FILES.values())
-    pps = Pseudopotentials(file_paths)
-
-    for fn in TEST_FILES.keys():
-        assert(fn in pps)
-        pp = pps[fn]
-        assert(isinstance(pp,PseudoFile))
-        if fn.endswith('.gms'):
-            assert(isinstance(pp,gamessPPFile))
-        #end if
-        assert(pp.element=='C')
-        assert(pp.element_label=='C')
-        assert(pp.filename==fn)
-    #end for
-
-    basis_ref = '''s 9 1.00
-1 0.051344     0.013991
-2 0.102619     0.169852
-3 0.205100     0.397529
-4 0.409924     0.380369
-5 0.819297     0.180113
-6 1.637494     -0.033512
-7 3.272791     -0.121499
-8 6.541187     0.015176
-9 13.073594     -0.000705
-s 1 1.00
-1 0.098302     1.000000
-s 1 1.00
-1 0.232034     1.000000
-s 1 1.00
-1 0.744448     1.000000
-s 1 1.00
-1 1.009914     1.000000
-p 9 1.00
-1 0.029281     0.001787
-2 0.058547     0.050426
-3 0.117063     0.191634
-4 0.234064     0.302667
-5 0.468003     0.289868
-6 0.935757     0.210979
-7 1.871016     0.112024
-8 3.741035     0.054425
-9 7.480076     0.021931
-p 1 1.00
-1 0.084047     1.000000
-p 1 1.00
-1 0.216618     1.000000
-p 1 1.00
-1 0.576869     1.000000
-p 1 1.00
-1 1.006252     1.000000
-d 1 1.00
-1 0.206619     1.000000
-d 1 1.00
-1 0.606933     1.000000
-d 1 1.00
-1 1.001526     1.000000
-d 1 1.00
-1 1.504882     1.000000
-f 1 1.00
-1 0.400573     1.000000
-f 1 1.00
-1 1.099564     1.000000
-f 1 1.00
-1 1.501091     1.000000
-g 1 1.00
-1 0.797648     1.000000
-g 1 1.00
-1 1.401343     1.000000
-h 1 1.00
-1 1.001703     1.000000'''
-
-    pp_ref = '''C-QMC GEN 2 1
-3
-4.00000000 1 8.35973821
-33.43895285 3 4.48361888
--19.17537323 2 3.93831258
-1
-22.55164191 2 5.02991637'''
-
-    pp = pps['C.BFD.gms']
-    assert(pp.basis_text==basis_ref)
-    assert(pp.pp_text==pp_ref)
-
-#end def test_pseudopotentials
-
-
-@isolate_nexus_core
-def test_ppset():
-    from ..developer import obj, to_obj
-
-    ppset_ref = obj(
-        pseudos = obj(
-            bfd = obj(
-                gamess  = obj(C='C.BFD.gms'),
-                pwscf   = obj(C='C.BFD.upf'),
-                qmcpack = obj(C='C.BFD.xml'),
-                ),
-            ),
-        )
-
-    ppset(
-        label   = 'bfd',
-        gamess  = ['C.BFD.gms'],
-        pwscf   = ['C.BFD.upf'],
-        qmcpack = ['C.BFD.xml'],
-        )
-
-    o = to_obj(ppset)
-    assert(object_eq(o,ppset_ref))
-
-    assert(ppset.supports_code('pwscf'))
-    assert(ppset.supports_code('gamess'))
-    assert(ppset.supports_code('vasp'))
-    assert(ppset.supports_code('qmcpack'))
-
-    assert(ppset.has_set('bfd'))
-
-
-    # need to add test for get() method
-    #   depends on PhysicalSystem
-#end def test_ppset
 
 
 
@@ -2160,6 +2032,13 @@ def test_register_legacy_ppset(tmp_path):
         assert pseudo.exists(), "Failed to create pseudo file!"
         pseudo_list.append(pseudo)
 
+    pseudo_files = PseudoSet.pseudo_files
+    labeled_pseudosets = PseudoSet.labeled_pseudosets
+    PseudoSet.pseudo_files = {
+        pseudo.name:str(pseudo) for pseudo in pseudo_list
+        }
+    PseudoSet.labeled_pseudosets = {}
+
     ref_pseudos = {
         "bfd": {
             "qmcpack": PseudoSet(
@@ -2168,7 +2047,6 @@ def test_register_legacy_ppset(tmp_path):
                     "H": (psp_dir / "H.BFD.xml").resolve(),
                     "O": (psp_dir / "O.BFD.xml").resolve(),
                     },
-                codes = "qmcpack",
                 ),
             "espresso": PseudoSet(
                 pseudos = {
@@ -2176,7 +2054,6 @@ def test_register_legacy_ppset(tmp_path):
                     "H" : (psp_dir / "H.BFD.upf").resolve(),
                     "O" : (psp_dir / "O.BFD.upf").resolve(),
                     },
-                codes="espresso"
                 ),
             "gamess": PseudoSet(
                 pseudos = {
@@ -2184,7 +2061,6 @@ def test_register_legacy_ppset(tmp_path):
                     "H": (psp_dir / "H.BFD.gms").resolve(),
                     "O": (psp_dir / "O.BFD.gms").resolve(),
                     },
-                codes="gamess",
                 ),
             }
         }
@@ -2196,32 +2072,90 @@ def test_register_legacy_ppset(tmp_path):
         gamess  = ["C.BFD.gms", "H.BFD.gms", "O.BFD.gms"],
         )
 
-    PseudoSet._register_legacy_ppset("bfd")
+    assert set(PseudoSet.labeled_pseudosets) == {'bfd'}
+    assert set(PseudoSet.labeled_pseudosets['bfd']) == {
+        'espresso','gamess','qmcpack'
+        }
 
-    assert(PseudoSet.labeled_pseudos.keys() == ref_pseudos.keys())
+    for code,ref_pseudoset in ref_pseudos['bfd'].items():
+        pseudoset = PseudoSet.labeled_pseudosets['bfd'][code]
+        assert pseudoset.pseudos == ref_pseudoset.pseudos
+        assert pseudoset.codes == ref_pseudoset.codes
+        assert pseudoset.pseudo_dirs == ref_pseudoset.pseudo_dirs
+    #end for
 
-    calc_legacy_pseudos = PseudoSet.labeled_pseudos["bfd"]
-    ref_legacy_pseudos = ref_pseudos["bfd"]
+    system = generate_physical_system(
+        elem = ['O','C','H'],
+        pos  = np.empty((3,3),dtype=float),
+        C    = 4,
+        H    = 1,
+        O    = 6,
+        )
+    remapped = PseudoSet.pseudo_remap('qmcpack','bfd',system)
+    assert list(remapped) == ['C.BFD.xml','H.BFD.xml','O.BFD.xml']
+    assert remapped == {
+        filename:PseudoSet.pseudo_files[filename] for filename in remapped
+        }
 
-    assert(calc_legacy_pseudos.keys() == ref_legacy_pseudos.keys())
+    explicit = ['O.BFD.xml','C.BFD.xml']
+    remapped = PseudoSet.pseudo_remap('qmcpack',explicit,system)
+    assert list(remapped) == explicit
 
-    qmcpack_calc = calc_legacy_pseudos["qmcpack"]
-    qmcpack_ref = ref_legacy_pseudos["qmcpack"]
-    assert(qmcpack_calc.pseudos     == qmcpack_ref.pseudos)
-    assert(qmcpack_calc.codes       == qmcpack_ref.codes)
-    assert(qmcpack_calc.pseudo_dirs == qmcpack_ref.pseudo_dirs)
+    qmcpack_pseudoset = PseudoSet.labeled_pseudosets['bfd']['qmcpack']
+    generated = {'qmcpack':qmcpack_pseudoset}
+    with pytest.raises(TypeError,match='must contain only PseudoSet values'):
+        PseudoSet.pseudo_remap(
+            'qmcpack',{'qmcpack':qmcpack_pseudoset,'espresso':None},system
+            )
+    with pytest.raises(ValueError,match='not available for code "gamess"'):
+        PseudoSet.pseudo_remap('gamess',generated,system)
+    with pytest.raises(ValueError,match='A system must be provided'):
+        PseudoSet.pseudo_remap('qmcpack',generated,None)
 
-    espresso_calc = calc_legacy_pseudos["espresso"]
-    espresso_ref = ref_legacy_pseudos["espresso"]
-    assert(espresso_calc.pseudos     == espresso_ref.pseudos)
-    assert(espresso_calc.codes       == espresso_ref.codes)
-    assert(espresso_calc.pseudo_dirs == espresso_ref.pseudo_dirs)
+    with pytest.raises(ValueError,match='label "bfd" is already registered'):
+        ppset(label='bfd',qmcpack=['C.BFD.xml','H.BFD.xml','O.BFD.xml'])
 
-    gamess_calc = calc_legacy_pseudos["gamess"]
-    gamess_ref = ref_legacy_pseudos["gamess"]
-    assert(gamess_calc.pseudos     == gamess_ref.pseudos)
-    assert(gamess_calc.codes       == gamess_ref.codes)
-    assert(gamess_calc.pseudo_dirs == gamess_ref.pseudo_dirs)
+    with pytest.raises(ValueError,match='are not present in PseudoSet.pseudo_files'):
+        ppset(label='missing',qmcpack=['Ne.missing.xml'])
+
+    with pytest.raises(ValueError,match='same elements'):
+        ppset(
+            label   = 'unequal_elements',
+            pwscf   = ['C.BFD.upf','H.BFD.upf'],
+            qmcpack = ['C.BFD.xml','O.BFD.xml'],
+            )
+
+    with pytest.raises(ValueError,match='not compatible with that code'):
+        ppset(label='incompatible',gamess=['C.BFD.xml','H.BFD.xml','O.BFD.xml'])
+
+    with pytest.raises(ValueError,match='label "unknown" is not registered'):
+        PseudoSet.pseudo_remap('qmcpack','unknown',system)
+
+    with pytest.raises(ValueError,match='are not present in PseudoSet.pseudo_files'):
+        PseudoSet.pseudo_remap('qmcpack',['Ne.missing.xml'],system)
+
+    missing_species = generate_physical_system(
+        elem = ['C','N'],
+        pos  = np.empty((2,3),dtype=float),
+        C    = 4,
+        N    = 5,
+        )
+    with pytest.raises(ValueError,match=r"does not contain species \['N'\]"):
+        PseudoSet.pseudo_remap('qmcpack',generated,missing_species)
+    with pytest.raises(ValueError,match=r"does not contain species \['N'\]"):
+        PseudoSet.pseudo_remap('qmcpack','bfd',missing_species)
+
+    ppset(
+        label = 'shared_upf',
+        pwscf = ['C.BFD.upf','H.BFD.upf','O.BFD.upf'],
+        rmg   = ['C.BFD.upf','H.BFD.upf','O.BFD.upf'],
+        )
+    shared = PseudoSet.labeled_pseudosets['shared_upf']
+    assert set(shared) == {'espresso','rmg'}
+    assert shared['espresso'] is not shared['rmg']
+
+    PseudoSet.pseudo_files = pseudo_files
+    PseudoSet.labeled_pseudosets = labeled_pseudosets
 #end def test_register_legacy_ppset
 
 

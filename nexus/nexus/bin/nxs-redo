@@ -94,7 +94,8 @@ if help:
 
 paths = dict()
 if len(paths_in)==1 and os.path.exists(paths_in[0]) and os.path.isfile(paths_in[0]):
-    text = open(paths_in[0],'r').read()
+    with open(paths_in[0],'r') as fobj:
+        text = fobj.read()
     paths_in = []
     for line in text.splitlines():
         tokens = line.split()

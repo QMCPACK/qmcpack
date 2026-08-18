@@ -26,6 +26,7 @@ import sys
 from copy import deepcopy
 import importlib
 from importlib.metadata import PackageNotFoundError
+from pathlib import Path
 
 from .nexus_version import nexus_version
 from .generic       import generic_settings
@@ -40,7 +41,7 @@ from .project_manager import ProjectManager,     DynamicWorkflowManager,     wor
 
 from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
 from .physical_system import PhysicalSystem,     generate_physical_system
-from .pseudopotential import Pseudopotential,    Pseudopotentials,           ppset
+from .pseudopotential import Pseudopotential, PseudoSet, ppset
 from .basisset        import BasisSets
 from .bundle          import bundle
 
@@ -621,23 +622,22 @@ class Settings(NexusCore):
                 nexus_core.file_locations.extend([path_string(f) for f in fl])
             #end if
         #end if
-        if 'pseudo_dir' not in kw:
-            nexus_core.pseudopotentials = Pseudopotentials()
-        else:
-            pseudo_dir = kw.pseudo_dir
-            nexus_core.file_locations.append(pseudo_dir)
-            if not os.path.exists(pseudo_dir):
-                self.error('pseudo_dir "{0}" does not exist'.format(pseudo_dir),trace=False)
+        pseudo_dir = kw.get('pseudo_dir',None)
+        if pseudo_dir is not None:
+            if not os.path.isdir(pseudo_dir):
+                self.error('pseudo_dir "{0}" does not exist or is not a directory'.format(pseudo_dir),trace=False)
             #end if
-            files = os.listdir(pseudo_dir)
-            ppfiles = []
-            for f in files:
-                pf = os.path.join(pseudo_dir,f)
-                if os.path.isfile(pf):
-                    ppfiles.append(pf)
+            pseudo_dir = os.path.abspath(pseudo_dir)
+            nexus_core.pseudo_dir = pseudo_dir
+        #end if
+        PseudoSet.pseudo_files.clear()
+        PseudoSet.labeled_pseudosets.clear()
+        if pseudo_dir is not None:
+            for file in Path(pseudo_dir).iterdir():
+                if file.is_file():
+                    PseudoSet.pseudo_files[file.name] = str(file.resolve())
                 #end if
             #end for
-            nexus_core.pseudopotentials = Pseudopotentials(ppfiles)        
         #end if
 
         # backwards compatibility with prior results_dir default
