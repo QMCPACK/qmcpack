@@ -4,6 +4,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 
 
 from ..generic import NexusError
+from ..pseudopotential import PseudoSet
 
 from nexus.nexus_base import nexus_core
 from . import isolate_nexus_core, TEST_DIR
@@ -1014,7 +1015,6 @@ def test_generate(tmp_path):
     nexus_noncore.pseudo_dir = pseudo_dir
 
     (pseudo_dir / 'C.POTCAR').write_text(c_potcar_text)
-    from ..pseudopotential import PseudoSet
     PseudoSet.pseudo_files = {
         'C.POTCAR':str((pseudo_dir/'C.POTCAR').resolve())
         }

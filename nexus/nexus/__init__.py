@@ -26,6 +26,7 @@ import sys
 from copy import deepcopy
 import importlib
 from importlib.metadata import PackageNotFoundError
+from pathlib import Path
 
 from .nexus_version import nexus_version
 from .generic       import generic_settings
@@ -632,10 +633,9 @@ class Settings(NexusCore):
         PseudoSet.pseudo_files.clear()
         PseudoSet.labeled_pseudosets.clear()
         if pseudo_dir is not None:
-            for filename in os.listdir(pseudo_dir):
-                filepath = os.path.join(pseudo_dir,filename)
-                if os.path.isfile(filepath):
-                    PseudoSet.pseudo_files[filename] = os.path.realpath(filepath)
+            for file in Path(pseudo_dir).iterdir():
+                if file.is_file():
+                    PseudoSet.pseudo_files[file.name] = str(file.resolve())
                 #end if
             #end for
         #end if

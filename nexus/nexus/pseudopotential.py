@@ -37,7 +37,8 @@ except:
 
 def pp_elem_label(filename,*,guard=False):
     if guard and not is_valid_filename(filename):
-        error(f"Pseudopotential file name {filename} is invalid!")
+        msg = f"Pseudopotential file name {filename} is invalid!"
+        raise RuntimeError(msg)
 
     el = ''
     for c in filename:
@@ -50,9 +51,12 @@ def pp_elem_label(filename,*,guard=False):
     is_elem, element = Elements.is_element(el, return_element=True)
     if guard: 
         if not is_elem:
-            msg = '(000) cannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filename)
-            #raise RuntimeError(msg)
-            error(msg)
+            msg = (
+               f"cannot determine element for pseudopotential file: {filename}\n"
+                "pseudopotential file names must be prefixed by an atomic symbol or label\n"
+                "(e.g. Si, Si1, etc)"
+                )
+            raise RuntimeError(msg)
         #end if
         return elem_label, element.symbol
     else:
@@ -252,22 +256,26 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
 
 def ppset(label,**codes_pps):
     if label in PseudoSet.labeled_pseudosets:
-        error(f'pseudopotential set label "{label}" is already registered')
+        msg = f'pseudopotential set label "{label}" is already registered'
+        raise ValueError(msg)
     pps_coll = {}
     ref_elements = None
     for code,ppfiles in codes_pps.items():
         missing = set(ppfiles)-PseudoSet.pseudo_files.keys()
         if len(missing)>0:
-            error(f'pseudopotential files "{missing}" are not present in PseudoSet.pseudo_files')
+            msg = f'pseudopotential files "{missing}" are not present in PseudoSet.pseudo_files'
+            raise ValueError(msg)
         pps = PseudoSet([PseudoSet.pseudo_files[f] for f in ppfiles])
         code = PseudoSet._check_code_str(code)
         if code not in pps.codes:
-            error(f'pseudopotential files provided for code "{code}" are not compatible with that code')
+            msg = f'pseudopotential files provided for code "{code}" are not compatible with that code'
+            raise ValueError(msg)
         elements = set(pps.pseudos)
         if ref_elements is None:
             ref_elements = elements
         elif elements!=ref_elements:
-            error(f'pseudopotential set "{label}" must contain potentials for the same elements for each code')
+            msg = f'pseudopotential set "{label}" must contain potentials for the same elements for each code'
+            raise ValueError(msg)
         pps_coll[code] = pps
     PseudoSet.labeled_pseudosets[label] = pps_coll
 #end def ppset
@@ -340,23 +348,21 @@ class PseudoSet(DevBase):
                 )
             if contains_pseudosets:
                 if not all(isinstance(pseudoset, PseudoSet) for pseudoset in pseudos.values()):
-                    raise TypeError(
-                        "A pseudopotential-set mapping must contain only PseudoSet values"
-                        )
+                    msg = "A pseudopotential-set mapping must contain only PseudoSet values"
+                    raise TypeError(msg)
                 code = PseudoSet._check_code_str(code)
                 if code not in pseudos:
-                    error(f'pseudopotential set is not available for code "{code}"')
+                    msg = f'pseudopotential set is not available for code "{code}"'
+                    raise ValueError(msg)
                 if system is None:
-                    raise ValueError(
-                        "A system must be provided with a pseudopotential-set mapping"
-                        )
+                    msg = "A system must be provided with a pseudopotential-set mapping"
+                    raise ValueError(msg)
                 pps = pseudos[code]
                 species = system.structure.species(symbol=True)[1]
                 missing = set(species)-pps.pseudos.keys()
                 if missing:
-                    error(
-                        f'pseudopotential set does not contain species {sorted(missing)}'
-                        )
+                    msg = f'pseudopotential set does not contain species {sorted(missing)}'
+                    raise ValueError(msg)
                 return {
                     pps.pseudos[element].name: str(pps.pseudos[element])
                     for element in sorted(species)
@@ -366,19 +372,23 @@ class PseudoSet(DevBase):
         if isinstance(pseudos,str):
             label = pseudos
             if label not in PseudoSet.labeled_pseudosets:
-                error(f'pseudopotential set label "{label}" is not registered')
+                msg = f'pseudopotential set label "{label}" is not registered'
+                raise ValueError(msg)
             code = PseudoSet._check_code_str(code)
             if code not in PseudoSet.labeled_pseudosets[label]:
-                error(f'pseudopotential set "{label}" is not available for code "{code}"')
+                msg = f'pseudopotential set "{label}" is not available for code "{code}"'
+                raise ValueError(msg)
             pps = PseudoSet.labeled_pseudosets[label][code]
             species = system.structure.species(symbol=True)[1]
             missing = set(species)-pps.pseudos.keys()
             if missing:
-                error(f'pseudopotential set "{label}" does not contain species {sorted(missing)}')
+                msg = f'pseudopotential set "{label}" does not contain species {sorted(missing)}'
+                raise ValueError(msg)
             pseudos = [pps.pseudos[e].name for e in sorted(species)]
         missing = set(pseudos)-PseudoSet.pseudo_files.keys()
         if missing:
-            error(f'pseudopotential files {missing} are not present in PseudoSet.pseudo_files')
+            msg = f'pseudopotential files {missing} are not present in PseudoSet.pseudo_files'
+            raise ValueError(msg)
         return {f:PseudoSet.pseudo_files[f] for f in pseudos}
     #end def pseudo_remap
 
@@ -426,7 +436,7 @@ class PseudoSet(DevBase):
 
                 if not is_elem:
                     msg = (
-                       f"(333) Can not determine element for pseudopotential file: {psp}\n"
+                       f"Can not determine element for pseudopotential file: {psp}\n"
                         "Pseudopotential file names must be prefixed by an atomic symbol or label\n"
                         "(e.g. Si, Si1, etc)"
                         )
