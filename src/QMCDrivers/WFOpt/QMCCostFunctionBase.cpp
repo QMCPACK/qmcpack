@@ -39,7 +39,6 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
       H(h),
       Write2OneXml(true),
       PowerE(2),
-      NumCostCalls(0),
       NumSamples(0),
       w_en(0.9),
       w_var(0.1),
@@ -60,7 +59,6 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
   //default: don't check fo MinNumWalkers
   MinNumWalkers = 0.3;
   SumValue.resize(SUM_INDEX_SIZE, 0.0);
-  IsValid = true;
 #if defined(QMCCOSTFUNCTION_DEBUG)
   std::array<char, 16> fname;
   int length = std::snprintf(fname.data(), fname.size(), "optdebug.p%d", OHMMS::Controller->rank());
@@ -117,17 +115,6 @@ void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
   //         for (int i=1; i<opt_vars.size(); ++i) *msg_stream << "," << opt_vars.name(i) ;
   //         *msg_stream << std::endl;
   //       }
-}
-
-QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
-{
-  NumCostCalls++;
-  //reset the wave function
-  resetPsi();
-  //evaluate new local energies
-  EffectiveWeight effective_weight = correlatedSampling(needGrad);
-  IsValid                          = isEffectiveWeightValid(effective_weight);
-  return computedCost();
 }
 
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham)
@@ -293,7 +280,6 @@ void QMCCostFunctionBase::reportParametersH5()
     }
   }
 }
-
 
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
@@ -1007,9 +993,8 @@ void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const 
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool needDeriv,
                                                                   cqmc::engine::LMYEngine<Return_t>& EngineObj)
 {
-  // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
-  const Return_rt standardCost = this->Cost(needDeriv);
-
+  // prepare local energies, weights, and possibly derivative vectors
+  correlatedSampling(needDeriv);
   // since we are using the LMYEngine, compute and return it's cost function value
   return this->LMYEngineCost_detail(EngineObj);
 }
