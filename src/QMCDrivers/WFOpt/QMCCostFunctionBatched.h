@@ -66,8 +66,7 @@ public:
   void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec) override;
 
 protected:
-  /// H components used in correlated sampling. It can be KE or KE+NLPP
-  std::vector<std::string> H_KE_node_names_;
+
 
   Matrix<Return_rt> RecordsOnNode_;
 

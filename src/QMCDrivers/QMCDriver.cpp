@@ -306,7 +306,7 @@ void QMCDriver::recordBlock(int block)
   }
 }
 
-bool QMCDriver::finalize(int block, bool dumpwalkers)
+void QMCDriver::finalize(int block, bool dumpwalkers)
 {
   if (DumpConfig && dumpwalkers)
     wOut->dump(W, block);
@@ -319,8 +319,6 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
 
   if (DumpConfig)
     RandomNumberControl::write(RootName, myComm);
-
-  return true;
 }
 
 /** Add walkers to the end of the ensemble of walkers.

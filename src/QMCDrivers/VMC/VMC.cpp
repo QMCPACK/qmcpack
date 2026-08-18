@@ -57,7 +57,7 @@ VMC::VMC(const ProjectData& project_data,
   prevStepsBetweenSamples = nStepsBetweenSamples;
 }
 
-bool VMC::run()
+void VMC::run()
 {
   resetRun();
   //start the main estimator
@@ -142,7 +142,7 @@ bool VMC::run()
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
   //finalize a qmc section
-  return finalize(nBlocks, !wrotesamples);
+  finalize(nBlocks, !wrotesamples);
 }
 
 void VMC::resetRun()
