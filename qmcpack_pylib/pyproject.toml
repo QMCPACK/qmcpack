@@ -3,7 +3,7 @@ name = "qmcpack-pylib"
 version = "0.1.0"
 description = "QMCPACK-specific Python libraries and scripts"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "ase>=3.29.0",
     "autograd>=1.9.1",
@@ -24,10 +24,29 @@ gpaw = [
 pyscf = [
     "pyscf>=2.14.0",
 ]
+nexus = [
+    "nexus"
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "coverage>=7.13.5",
+    "pytest-cov>=7.0.0",
+    "pytest-order>=1.3.0",
+]
+docs = [
+    "sphinx>=7.2.6",
+    "sphinx_rtd_theme>=2.0.0",
+    "sphinxcontrib-bibtex>=2.6.2",
+]
+
+[tool.uv.sources]
+nexus = { editable = true, path = "../nexus" }
 
 [tool.ruff]
 line-length = 100

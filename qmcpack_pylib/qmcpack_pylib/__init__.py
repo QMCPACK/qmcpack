@@ -1,2 +1,1 @@
-def hello() -> str:
-    return "Hello from qmcpack-pylib!"
+"""Python code for QMCPACK"""
