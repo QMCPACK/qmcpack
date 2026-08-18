@@ -758,7 +758,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}  {5: 3.2f}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up-kpt.down,kpt.up,kpt.down)
         #end for
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath,'w') as fobj:
+                fobj.write(text)
         #end if
         if not return_flag:
             return text
@@ -839,7 +840,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 struct=struct.tile(2,2,2)
                 ss=struct.write_xyz()
                 movie += ss
-                open(filepath,'w').write(movie)
+                with open(filepath,'w') as fobj:
+                    fobj.write(movie)
             #end for
         #end for
     #end def make_movie

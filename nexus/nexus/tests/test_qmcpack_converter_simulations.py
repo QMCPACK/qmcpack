@@ -379,7 +379,7 @@ def test_convert4qmc_check_sim_status(tmp_path):
     outfile_text = 'QMCGaussianParserBase::dump'
     outfile.write_text(outfile_text)
 
-    assert(outfile_text in open(outfile,'r').read())
+    assert(outfile_text in outfile.read_text())
     for filename in sim.list_output_files():
         filepath = Path(sim.locdir).resolve() / filename
         filepath.touch()

@@ -26,11 +26,12 @@
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
 #include "OutputMatrix.h"
-#include "LinearMethod.h"
 
 namespace qmcplusplus
 {
 
+///forward declaration of a cost function
+class QMCCostFunctionBase;
 class GradientTest;
 class VMC;
 
@@ -41,7 +42,7 @@ class VMC;
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimize : public QMCDriver, public LinearMethod, private NRCOptimization<QMCTraits::RealType>
+class QMCFixedSampleLinearOptimize : public QMCDriver, private NRCOptimization<QMCTraits::RealType>
 {
 public:
   ///Constructor.
@@ -60,8 +61,6 @@ public:
   bool put(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5);
-
-  RealType Func(RealType dl) override;
 
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
 

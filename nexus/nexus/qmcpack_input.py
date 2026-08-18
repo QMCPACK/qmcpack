@@ -5607,9 +5607,8 @@ class BundledQmcpackInput(SimulationInput):
                 bfilepath = os.path.join(path,bfile)
                 inp.write(bfilepath)
             #end for
-            fobj = open(filepath,'w')
-            fobj.write(c)
-            fobj.close()
+            with open(filepath,'w') as fobj:
+                fobj.write(c)
         #end if
     #end def write
 #end class BundledQmcpackInput

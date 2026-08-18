@@ -303,9 +303,9 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
     Ekap  = []
     n = 0
     for scalar_file in scalar_files:
-        fobj = open(scalar_file,'r')
-        quantities = fobj.readline().split()[2:]
-        fobj.close()
+        with open(scalar_file,'r') as fobj:
+            quantities = fobj.readline().split()[2:]
+
         rawdata = np.loadtxt(scalar_file)[:,1:].transpose()
         qdata = obj()
         for i in range(len(quantities)):

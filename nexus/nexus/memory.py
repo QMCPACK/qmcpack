@@ -40,9 +40,8 @@ def _VmB(VmKey, pid=None):
         pid = os.getpid()
     proc_status = '/proc/%d/status' % pid
     try:
-        t = open(proc_status)
-        v = t.read()
-        t.close()
+        with open(proc_status) as t:
+            v = t.read()
     except:
         return 0.0  # non-Linux?
      # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
@@ -60,9 +59,8 @@ def _VmB(VmKey, pid=None):
 def get_children(pid):
     proc_children = '/proc/%d/task/%d/children'%(pid,pid)
     try:
-        t = open(proc_children,'r')
-        v = t.read()
-        t.close()
+        with open(proc_children,'r') as t:
+            v = t.read()
     except:
         return []
 
