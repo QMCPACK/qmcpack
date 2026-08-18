@@ -337,7 +337,7 @@ protected:
    * Accumulate energy and weight is written to a hdf5 file.
    * Finialize the estimators
    */
-  bool finalize(int block, bool dumpwalkers = true);
+  void finalize(int block, bool dumpwalkers = true);
 
   int rotation;
   std::string getRotationName(std::string RootName);
