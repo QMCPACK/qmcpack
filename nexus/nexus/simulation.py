@@ -65,15 +65,18 @@
 #====================================================================#
 
 
+import contextlib
 import os
 import sys
 import shutil
+import tempfile
+import traceback
+from functools import partial
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from string import Template
 from subprocess import Popen
-import tempfile
 from typing import ClassVar
 from .developer import DevBase, obj, error, unavailable
 from .structure import Structure, read_structure
@@ -92,17 +95,16 @@ class SimulationInput(NexusCore):
         if not os.path.exists(filepath):
             self.error('file does not exist:  '+filepath)
         #end if
-        fobj = open(filepath,'r')
-        text = fobj.read()
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            text = fobj.read()
+
         return text
     #end def read_file_text
 
     def write_file_text(self,filepath,text):
-        fobj = open(filepath,'w')
-        fobj.write(text)
-        fobj.flush()
-        fobj.close()
+        with open(filepath,'w') as fobj:
+            fobj.write(text)
+            fobj.flush()
     #end def write_file_text
 
     def read(self,filepath):
@@ -388,6 +390,7 @@ class Simulation(NexusCore):
         self.infile         = None
         self.outfile        = None
         self.errfile        = None
+        self.nexus_logfile  = None
         self.bundleable     = True
         self.bundled        = False
         self.bundler        = None
@@ -548,6 +551,8 @@ class Simulation(NexusCore):
         if self.errfile is None:
             self.errfile = self.identifier + self.errfile_extension
         #end if
+        if self.nexus_logfile is None:
+            self.nexus_logfile = self.identifier + ".nexus.log"
     #end def set_files
 
 
@@ -689,9 +694,9 @@ class Simulation(NexusCore):
 
     def _file_text(self,filename):
         filepath = os.path.join(self.locdir,self[filename])
-        fobj = open(filepath,'r')
-        text = fobj.read()
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            text = fobj.read()
+
         return text
     #end def _file_text
 
@@ -1452,9 +1457,8 @@ class Simulation(NexusCore):
             self.log(pad+'Would have executed:  '+command)
         else:
             self.log(pad+'Executing:  '+command)
-            fout = open(self.outfile,'w')
-            ferr = open(self.errfile,'w')
-            out,err = Popen(command,env=env,stdout=fout,stderr=ferr,shell=True,close_fds=True).communicate()
+            with open(self.outfile,'w') as fout, open(self.errfile,'w') as ferr:
+                out,err = Popen(command,env=env,stdout=fout,stderr=ferr,shell=True,close_fds=True).communicate()
         #end if
         self.leave()
         self.submitted = True
@@ -1876,8 +1880,8 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
     #end for
 
     if savefile is None:
-        fout = tempfile.NamedTemporaryFile(suffix='.png')
-        savefile = fout.name
+        with tempfile.NamedTemporaryFile(suffix='.png') as fout:
+            savefile = fout.name
         #savefile = './sims.png'
     #end if
     fmt = savefile.rsplit('.',1)[1]
@@ -2256,3 +2260,45 @@ class DynamicProcess(DevBase):
         return self.sim.failed
         #return self.sim.finished and self.sim.failed
 #end class DynamicProcess
+
+
+class sim_err_handler:
+    """Context manager for simulation-specific error handling/logging."""
+    def __init__(self, sim: Simulation):
+        self.sim = sim
+        self.logfile = Path(sim.remdir).resolve() / sim.nexus_logfile
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        if exc_type is None:
+            return True
+
+        if issubclass(exc_type, KeyboardInterrupt):
+            # KeyboardInterrupt means full stop, the user has cancelled the run
+            sys.__excepthook__(exc_type, exc_value, exc_tb)
+            return False
+
+        # Check for these first. If they are both true, then we have likely already reported an error.
+        if not (self.sim.failed and self.sim.finished):
+            self.sim.failed = True
+            self.sim.finished = True
+
+            exc_msg = traceback.format_exception(exc_type, exc_value, exc_tb)
+            with open(self.logfile, "a") as errf:
+                errf.write("".join(exc_msg))
+                errf.flush()
+
+            err = f"Error occurred in simulation '{self.sim.identifier}'."
+            loc = f"See the simulation log file at '{self.sim.locdir}/{self.sim.nexus_logfile}'"
+            lenloc = len(loc) + 4 # Padding around error message
+            print(
+                f"\n{'':!^{lenloc}}\n"
+                f"{err:^{lenloc}}\n"
+                f"{loc:^{lenloc}}\n"
+                f"{'':!^{lenloc}}\n"
+                )
+
+        return True
+#end class sim_err_handler

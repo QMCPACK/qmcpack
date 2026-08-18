@@ -1583,7 +1583,8 @@ class Qmcpack(Simulation):
                     self.failed = True
                     self.warn(msg)
                     filename = self.identifier+'_errors.txt'
-                    open(os.path.join(self.locdir,filename),'w').write(msg)
+                    with open(os.path.join(self.locdir,filename),'w') as fobj:
+                        fobj.write(msg)
                 #end if
 
             #end if
@@ -1635,9 +1636,8 @@ class Qmcpack(Simulation):
                         kp  = kpoints[twist_index]
                         kpq = kpoints_qmcpack[twist_index]
                         contents = ' {: 16.6f}  {: 16.12f} {: 16.12f} {: 16.12f}  {: 16.12f} {: 16.12f} {: 16.12f}\n'.format(kw,*kp,*kpq)
-                        fobj = open(os.path.join(self.locdir,twist_filename),'w')
-                        fobj.write(contents)
-                        fobj.close()
+                        with open(os.path.join(self.locdir,twist_filename),'w') as fobj:
+                            fobj.write(contents)
                     #end if
                 #end for
                 grand_canonical_twist_average = 'nelecs_at_twist' in self
