@@ -38,7 +38,7 @@ import numpy as np
 from .periodic_table import Elements
 from .developer import DevBase, obj, error, warn
 from .nexus_base import nexus_noncore
-from .pseudopotential import pp_elem_label, PseudoSet
+from .pseudoset import pp_elem_label, PseudoSet
 from .simulation import SimulationInput
 from .utilities import path_string
 
