@@ -437,7 +437,7 @@ void DMCBatched::process(xmlNodePtr node)
     measureImbalance("Startup");
 }
 
-bool DMCBatched::run()
+void DMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
@@ -547,7 +547,7 @@ bool DMCBatched::run()
   wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
 
-  return finalize(num_blocks, true);
+  finalize(num_blocks, true);
 }
 
 RefVector<QMCDriverNew::ContextForSteps> DMCBatched::getContextForStepsRefs() const
