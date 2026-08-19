@@ -308,22 +308,15 @@ public:
                               int iat,
                               const std::vector<Scalar_t>& sdispls);
 
-  /** Install a complete all-particle proposal relative to a resolved walker snapshot.
+  /** Install a crowd of complete all-particle proposals relative to resolved walker snapshots.
    *
-   * The resolved walker is the authoritative baseline for positions and spins; CT selects
-   * which components receive displacements. The complete proposal is validated before R
-   * is changed. An invalid proposal restores the resolved snapshot and returns false.
-   * Distance tables and, unless skipped, the structure factor are fully updated. No particle
-   * is left active.
-   */
-  template<CoordsType CT>
-  bool makeMoveAllParticles(const Walker_t& resolved_walker, const MCCoords<CT>& displacements, bool skipSK = false);
-
-  /** Batched complete all-particle proposal.
-   *
-   * Displacements use particle-major flattened storage: iat * number_of_walkers + iw.
-   * Invalid walkers remain at their resolved snapshots and are marked false in are_valid.
-   * p_list must be a resource-compatible clone crowd with its team resources acquired.
+   * Each resolved walker is the authoritative baseline for positions and spins; CT selects
+   * which components receive displacements. Displacements use particle-major flattened
+   * storage: iat * number_of_walkers + iw. Every input is validated before the crowd is
+   * mutated. Invalid walkers remain at their resolved snapshots and are marked false in
+   * are_valid. Distance tables and, unless skipped, structure factors are fully updated.
+   * No particle is left active. p_list must be a resource-compatible clone crowd with its
+   * team resources acquired.
    */
   template<CoordsType CT>
   static void mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
@@ -438,14 +431,11 @@ public:
                                        Index_t iat,
                                        const std::vector<bool>& isAccepted);
 
-  /** Resolve a complete all-particle proposal against the authoritative walker snapshot.
+  /** Resolve complete all-particle proposals for a resource-acquired clone crowd.
    *
-   * Acceptance retains the installed proposal. Rejection restores positions and spins
-   * from resolved_walker and updates all affected ParticleSet derived state.
+   * Acceptance retains each installed proposal. Rejection restores positions and spins
+   * from the corresponding authoritative walker snapshot and updates ParticleSet derived state.
    */
-  void accept_rejectMoveAllParticles(const Walker_t& resolved_walker, bool accepted, bool skipSK = false);
-
-  /// Batched complete all-particle transaction resolution for a resource-acquired clone crowd.
   static void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
                                                const RefVector<Walker_t>& resolved_walkers,
                                                const std::vector<bool>& accepted,
