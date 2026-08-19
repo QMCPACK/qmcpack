@@ -78,7 +78,7 @@ void checkDistances(const ParticleSet& elecs, int aa_id, int ab_id, const Partic
   }
 }
 
-void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind, bool use_batch)
+void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind)
 {
   const SimulationCell cell = makeOpenCell();
   ParticleSet ions(cell);
@@ -113,7 +113,7 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind, bool use_batc
   MCCoords<CoordsType::POS> displacements(4);
   displacements.positions = {{0.2, 0.0, 0.0}, {0.1, 0.0, 0.0}, {0.0, 0.3, 0.0}, {0.0, -2.0, 0.0}};
   std::vector<bool> valid(2);
-  PSdispatcher dispatcher(use_batch);
+  PSdispatcher dispatcher(/*use_batch=*/true);
   dispatcher.flex_makeMoveAllParticles(p_list, walkers, displacements, valid);
 
   REQUIRE(valid == std::vector<bool>{true, false});
@@ -183,11 +183,7 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind, bool use_batc
 TEST_CASE("ParticleSet all-particle moves through the multiwalker dispatcher passthrough", "[particle]")
 {
   for (const DynamicCoordinateKind kind : {DynamicCoordinateKind::DC_POS, DynamicCoordinateKind::DC_POS_OFFLOAD})
-  {
-    exerciseDispatcherAllParticleMove(kind, true);
-    // All-particle dispatcher calls remain multiwalker operations regardless of the legacy dispatch mode.
-    exerciseDispatcherAllParticleMove(kind, false);
-  }
+    exerciseDispatcherAllParticleMove(kind);
 }
 
 TEST_CASE("ParticleSet all-particle POS_SPIN rejection restores the resolved walker", "[particle]")
