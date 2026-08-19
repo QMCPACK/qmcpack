@@ -35,13 +35,24 @@ Python installation and are only available when the environment is activated.
     pip install --upgrade pip # Optional unless pip is outdated
     pip install "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
 
-This will install Nexus and the minimum required dependencies, currently only numpy. To take full advantage of Nexus's
-capabilities, optional dependencies include ``scipy``, ``h5py``, ``matplotlib``, ``spglib``, ``cif2cell``,
-``pydot``, and ``seekpath``. A complete install command would look like this
+This will install Nexus and the standard dependencies, which currently are `numpy <https://numpy.org/doc/stable/>`__, `scipy <https://scipy.org/>`__, `matplotlib <https://matplotlib.org/>`__, and `h5py <https://www.h5py.org/>`__.
+To take full advantage of Nexus's capabilities, optional dependencies include `spglib <https://spglib.readthedocs.io/en/stable/python-interface.html>`__, `cif2cell <https://github.com/torbjornbjorkman/cif2cell>`__, `pydot <https://github.com/pydot/pydot>`__, and `seekpath <https://seekpath.readthedocs.io/en/latest/>`__.
+A complete install command would look like this
 
 .. code-block:: bash
 
     pip install "nexus[full]@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+
+If you have difficulty installing some of these packages, note that Nexus can drive workflows if only numpy is installed.
+This type of install can be performed with:
+
+.. code-block:: bash
+
+    pip install "numpy>=1.22.0,!=2.4.0"
+    pip install --no-deps "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
+
+If pip is not available on your machine, you can perform a numpy-only install manually (set ``PYTHONPATH``).
+See :ref:`manual_install` for more details.
 
 To subsequently use the environment:
 
@@ -70,9 +81,9 @@ The following will result in a system-wide installation: (prepending ``python3 -
 
     pip install "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
 
-will install Nexus with ``numpy`` as the only dependency. This is the only required dependency. To take full advantage of Nexus's
-capabilities, optional dependencies include ``scipy``, ``h5py``, ``matplotlib``, ``spglib``, ``cif2cell``,
-``pydot``, and ``seekpath``. A complete install command would look like this
+This will install Nexus and the standard dependencies, which currently are ``numpy``, ``scipy``, ``matplotlib``, and ``h5py``.
+To take full advantage of Nexus's capabilities, optional dependencies include ``spglib``, ``cif2cell``, ``pydot``, and ``seekpath``.
+A complete install command would look like this
 
 .. code-block:: bash
 
