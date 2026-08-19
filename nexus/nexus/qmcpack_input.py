@@ -873,6 +873,8 @@ class Names(QIobj):
 
 class QIxml(Names):
 
+    unsupported = ()
+
     def init_from_args(self,args):
         print()
         print('In init from args (not implemented).')
@@ -907,11 +909,13 @@ class QIxml(Names):
             defaults    = obj(),
             collection_id = None,
             exp_names   = None,
+            element_aliases = obj(),
+            unsupported = (),
             )
         for k,v in fields.items():
-            if not hasattr(cls,k):
+            if k not in cls.__dict__:
                 setattr(cls,k,v)
-        for v in ['attributes','elements','parameters','attribs','costs','h5tags']:
+        for v in ['attributes','elements','parameters','attribs','costs','h5tags','unsupported']:
             names = list(getattr(cls,v))
             for i in range(len(names)):
                 if names[i] in cls.escape_names:
@@ -1035,7 +1039,7 @@ class QIxml(Names):
                     #end for
                 #end if
             #end for
-            if self.text is not None:
+            if self.text is not None and self.text in self:
                 c = c.rstrip('\n')
                 c+=param.write(self[self.text],mode='elem',pad=ip,tag=None,normal_elem=True)
             #end if
@@ -1076,22 +1080,23 @@ class QIxml(Names):
         junk = xa-attr
         junk_elem = []
         for e,ecap in el.items():
+            schema_e = self.element_aliases.get(e,e)
             value = xml._elements[ecap]
-            if (isinstance(value,list) or isinstance(value,tuple)) and e in self.plurals_inv.keys():
-                if e not in types:
-                    self.error('input element "{}" is unknown'.format(e))
+            if (isinstance(value,list) or isinstance(value,tuple)) and schema_e in self.plurals_inv.keys():
+                if schema_e not in types:
+                    self.error('input element "{}" is unknown'.format(schema_e))
                 #end if
-                p = self.plurals_inv[e]
+                p = self.plurals_inv[schema_e]
                 plist = []
                 for instance in value:
-                    plist.append(types[e](instance))
+                    plist.append(types[schema_e](instance))
                 #end for
                 self[p] = make_collection(plist)
-            elif e in self.elements:
-                if e not in types:
-                    self.error('input element "{}" is unknown'.format(e))
+            elif schema_e in self.elements:
+                if schema_e not in types:
+                    self.error('input element "{}" is unknown'.format(schema_e))
                 #end if
-                self[e] = types[e](value)
+                self[schema_e] = types[schema_e](value)
             elif e in {'parameter','attrib','cost','h5tag'}:
                 if isinstance(value,XMLelement):
                     value = [value]
@@ -2107,7 +2112,7 @@ class simulation(QIxml):
     attributes = ('method',) # afqmc
     elements   = ('project','random','include','qmcsystem','particleset', # rsqmc
                   'wavefunction','hamiltonian','init','traces',           # rsqmc
-                  'mcwalkerset','qmc','loop','cmc',                       # rsqmc
+                  'mcwalkerset','qmc','loop','cmc','walkerlogs',          # rsqmc
                   'afqmcinfo','walkerset','propagator','execute')         # afqmc
     afqmc_order = ('project','random','afqmcinfo','hamiltonian',
                    'wavefunction','walkerset','propagator','execute')
@@ -2148,33 +2153,40 @@ class include(QIxml):
 
 class mcwalkerset(QIxml):
     attributes = ('fileroot','version','collected','node','nprocs','href','target','file','walkers')
+    unsupported = ('target','walkers')
     write_types = obj(collected=yesno)
 #end class mcwalkerset
 
 class qmcsystem(QIxml):
     attributes = ('dim',) #,'wavefunction','hamiltonian')  # breaks QmcpackInput
     elements = ('simulationcell','particleset','wavefunction','hamiltonian','random','init','mcwalkerset','estimators')
+    unsupported = ('dim',)
 #end class qmcsystem
 
 
 class simulationcell(QIxml):
     attributes = ('name','tilematrix')
-    parameters = ('lattice','reciprocal','bconds','lr_dim_cutoff','lr_tol','lr_handler','rs','nparticles','scale','uc_grid')
+    parameters = ('lattice','reciprocal','bconds','vacuum','lr_dim_cutoff','lr_tol','lr_handler',
+                  'ewald_grid','rs','nparticles','scale','uc_grid')
+    unsupported = ('name','tilematrix','reciprocal','uc_grid')
 #end class simulationcell
 
 class particleset(QIxml):
-    attributes = ('name','size','random','random_source','randomsrc','charge','source','spinor')
+    attributes = ('name','id','size','random','random_source','randomsrc','charge','source',
+                  'spinor','role','gpu')
     elements   = ('group','simulationcell')
     attribs    = ('ionid','position')
+    unsupported = ('charge','source','role','simulationcell')
     write_types= obj(random=yesno,spinor=yesno)
-    identifier = 'name'
+    identifier = ('name','id')
 #end class particleset
 
 class group(QIxml):
-    attributes = ('name','size','mass') # mass attr and param, bad bad bad!!!
+    attributes = ('name','id','size','mass')
     parameters = ('charge','valence','atomicnumber','mass','lmax',
-                  'cutoff_radius','spline_radius','spline_npoints')
+                  'cutoff_radius','inner_cutoff','spline_radius','spline_npoints')
     attribs    = ('position',)
+    unsupported = ('id','mass')
     identifier = 'name'
 #end class group
 
@@ -2186,26 +2198,37 @@ class sposet(QIxml):
                   'spindataset','cuspinfo','sort','gpu','href','twistnum',
                   'gs_sposet','basis_sposet','same_k','frequency','mass',
                   'source','version','precision','tilematrix',
-                  'meshfactor')
-    elements   = ('occupation','coefficient','coefficients')
+                  'meshfactor','twist')
+    elements   = ('occupation','coefficient','coefficients','coefs_mem')
     text       = None
     identifier = 'name'
 #end class sposet
 
 class rotated_sposet(QIxml):
     attributes = ('name',)
-    elements   = ('sposet',)
+    elements   = ('sposet','opt_vars')
     identifier = 'name'
 #end class rotated_sposet
+
+class opt_vars(QIxml):
+    text = 'values'
+#end class opt_vars
+
+class coefs_mem(QIxml):
+    attributes = ('distributed_ranks','shared_ranks')
+#end class coefs_mem
 
 class bspline_builder(QIxml):
     tag         = 'sposet_builder'
     identifier  = 'type'
     attributes  = ('type','href','sort','tilematrix','twistnum','twist','source',
                    'version','meshfactor','gpu','transform','precision','truncate',
-                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag','hybridrep','gpusharing')
+                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag','hybridrep','gpusharing',
+                   'skip_checks','check_orb_norm','save_coefs')
     elements    = ('sposet','rotated_sposet')
-    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,hybridrep=yesno,gpusharing=yesno)
+    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,
+                      hybridrep=yesno,gpusharing=yesno,skip_checks=yesno,
+                      check_orb_norm=yesno,save_coefs=yesno)
 #end class bspline_builder
 
 class heg_builder(QIxml):
@@ -2218,7 +2241,7 @@ class heg_builder(QIxml):
 class molecular_orbital_builder(QIxml):
     tag = 'sposet_builder'
     identifier  = 'type'
-    attributes  = ('name','type','transform','source','cuspcorrection','href')
+    attributes  = ('name','type','transform','source','cuspcorrection','href','keyword','key')
     elements    = ('basisset','sposet')
     elements    = ('basisset','sposet','rotated_sposet')
     write_types = obj(transform=yesno,cuspcorrection=yesno)
@@ -2236,6 +2259,8 @@ sposet_builder = QIxmlFactory(
     types   = dict(bspline=bspline_builder,
                    einspline=bspline_builder,
                    heg=heg_builder,
+                   free=heg_builder,
+                   jellium=heg_builder,
                    composite=composite_builder,
                    molecularorbital = molecular_orbital_builder),
     typekey = 'type'
@@ -2246,6 +2271,8 @@ sposet_collection = QIxmlFactory(
     types   = dict(bspline=bspline_builder,
                    einspline=bspline_builder,
                    heg=heg_builder,
+                   free=heg_builder,
+                   jellium=heg_builder,
                    composite=composite_builder,
                    molecularorbital = molecular_orbital_builder),
     typekey = 'type'
@@ -2256,9 +2283,14 @@ class wavefunction(QIxml):
     attributes = ('name','target','id','ref', # rsqmc
                   'info','type') # afqmc
     parameters = ('filetype','filename','cutoff') # afqmc
-    elements   = ('sposet_builder','determinantset','jastrow','override_variational_parameters','sposet_collection')
+    elements   = ('sposet_builder','determinantset','jastrow','override_variational_parameters','sposet_collection','ionwf')
     identifier = ('name','id')
 #end class wavefunction
+
+class ionwf(QIxml):
+    attributes = ('source','name','width')
+    identifier = 'name'
+#end class ionwf
 
 class determinantset(QIxml):
     attributes = ('type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages','gpusharing')
@@ -2289,7 +2321,7 @@ class grid(QIxml):
 #end class grid
 
 class atomicbasisset(QIxml):
-    attributes = ('type','elementtype','expandylm','href','normalized','name','angular')
+    attributes = ('type','elementtype','expandylm','expm','href','normalized','name','angular')
     elements   = ('grid','basisgroup')
     identifier = 'elementtype'
     write_types= obj(#expandylm=yesno,
@@ -2327,12 +2359,13 @@ class occupation(QIxml):
 #end class occupation
 
 class multideterminant(QIxml):
-    attributes = ('optimize','spo_up','spo_dn')
+    attributes = ('optimize','spo_up','spo_dn','algorithm','spo_0','spo_1')
     elements   = ('detlist',)
 #end class multideterminant
 
 class detlist(QIxml):
-    attributes = ('size','type','nca','ncb','nea','neb','nstates','cutoff','ext_level','href','optimize')
+    attributes = ('size','type','nca','ncb','nea','neb','nstates','cutoff','ext_level','href','optimize',
+                  'zero_cutoff','zerocutoff','sortby','opt_coeffs')
     elements   = ('ci','csf')
 #end class detlist
 
@@ -2401,10 +2434,10 @@ class kspace_jastrow(QIxml):
 
 class rpa_jastrow(QIxml):
     tag = 'jastrow'
-    attributes = ('type','name','source','function','kc')
-    parameters = ('longrange',)
+    attributes = ('type','name','source','function','longrange','shortrange')
+    parameters = ('rs','kc')
     identifier = 'name'
-    write_types = obj(longrange=yesno)
+    write_types = obj(longrange=yesno,shortrange=yesno)
 #end class rpa_jastrow
 
 class correlation(QIxml):
@@ -2459,17 +2492,17 @@ class estimators(QIxml):
 #end class estimators
 
 class hamiltonian(QIxml):
-    attributes = ('name','type','target','default', # rsqmc
+    attributes = ('name','type','target','default','wavefunction', # rsqmc
                   'info') # afqmc
     parameters = ('filetype','filename') # afqmc
-    elements   = ('pairpot','constant','estimator')
+    elements   = ('pairpot','constant','extpot','estimator')
     identifier = 'name'
 #end class hamiltonian
 
 class coulomb(QIxml):
     tag = 'pairpot'
-    attributes  = ('type','name','source','target','physical','forces')
-    write_types = obj(physical=yesno)
+    attributes  = ('type','name','source','target','physical','forces','pbc','gpu')
+    write_types = obj(physical=yesno,forces=yesno,pbc=yesno)
     identifier  = 'name'
 #end class coulomb
 
@@ -2480,21 +2513,25 @@ class constant(QIxml):
 
 class pseudopotential(QIxml):
     tag = 'pairpot'
-    attributes = ('type','name','source','wavefunction','format','target','forces','dla','algorithm')
+    attributes = ('type','name','source','wavefunction','format','target','forces','dla','algorithm',
+                  'pbc','physicalso','spin_integrator')
     elements   = ('pseudo',)
-    write_types= obj(forces=yesno,dla=yesno)
+    write_types= obj(forces=yesno,dla=yesno,pbc=yesno,physicalso=yesno)
     identifier = 'name'
 #end class pseudopotential
 
 class pseudo(QIxml):
-    attributes = ('elementtype','href','format','cutoff','lmax','nrule','l_local')
+    attributes = ('elementtype','symbol','href','format','cutoff','lmax','nrule','l_local','disable_randomize_grid')
     elements   = ('header','local','grid')
     identifier = 'elementtype'
+    unsupported = ('cutoff',)
+    write_types = obj(disable_randomize_grid=yesno)
 #end class pseudo
 
 class mpc(QIxml):
     tag='pairpot'
-    attributes=('type','name','source','target','ecut','physical')
+    attributes=('type','name','source','target','ecut','cutoff','physical')
+    unsupported=('ecut',)
     write_types = obj(physical=yesno)
     identifier='name'
 #end class mpc
@@ -2515,6 +2552,29 @@ pairpot = QIxmlFactory(
     types = dict(coulomb=coulomb,pseudo=pseudopotential,
                  pseudopotential=pseudopotential,mpc=mpc,
                  cpp=cpp),
+    typekey = 'type'
+    )
+
+class harmonic_extpot(QIxml):
+    tag = 'extpot'
+    attributes = ('type','name','source','target','mass','frequency','energy','length','center')
+    identifier = 'name'
+#end class harmonic_extpot
+
+class grid_extpot(QIxml):
+    tag = 'extpot'
+    attributes = ('type','name','source','target','start','end','num','file_name','dataset_name','pbc')
+    identifier = 'name'
+    write_types = obj(pbc=yesno)
+#end class grid_extpot
+
+extpot = QIxmlFactory(
+    name  = 'extpot',
+    types = dict(harmonic_ext=harmonic_extpot,
+                 harmonicext=harmonic_extpot,
+                 harmonic_extpot=harmonic_extpot,
+                 grid_extpot=grid_extpot,
+                 grid=grid_extpot),
     typekey = 'type'
     )
 
@@ -2554,7 +2614,7 @@ class spacegrid(QIxml):
 #end class spacegrid
 
 class origin(QIxml):
-    attributes = ('p1','p2')
+    attributes = ('p1','p2','fraction')
 #end class origin
 
 class axis(QIxml):
@@ -2604,18 +2664,21 @@ class magnetizationdensity(QIxml):
 
 class structurefactor(QIxml):
     tag = 'estimator'
-    attributes  = ('type','name','report')
-    write_types = obj(report=yesno)
+    attributes  = ('type','name','report','source','target','hdf5','writerho','writeionion')
+    unsupported = ('report','hdf5','writerho','writeionion')
+    write_types = obj(report=yesno,hdf5=yesno,writerho=yesno,writeionion=yesno)
     identifier  = 'name'
 #end class structurefactor
 
 class force(QIxml):
     tag = 'estimator'
     attributes = ('type','name','mode','source','species','target','addionion',
-                  'fast_derivatives','spacewarp','epsilon')
-    parameters = ('rcut','nbasis','weightexp')
+                  'add_ion_ion_','pbc','fast_derivatives','spacewarp','epsilon')
+    parameters = ('rcut','nbasis','weightexp','weight_exp')
+    unsupported = ('addionion','weightexp')
     identifier = 'name'
-    write_types= obj(addionion=yesno,fast_derivatives=yesno,spacewarp=yesno)
+    write_types= obj(addionion=yesno,add_ion_ion_=yesno,pbc=yesno,
+                     fast_derivatives=yesno,spacewarp=yesno)
 #end class force
 
 class forwardwalking(QIxml):
@@ -2704,17 +2767,55 @@ class dm1b(QIxml): # legacy
     tag         = 'estimator'
     identifier  = 'type'
     attributes  = ('type','name','reuse')#reuse is a temporary dummy keyword
-    parameters  = ('energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed','samples')
-    write_types = obj(energy_matrix=yesno,check_overlap=yesno,check_derivatives=yesno,acceptance_ratio=yesno,rstats=yesno,normalized=yesno,volume_normed=yesno)
+    parameters  = ('energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center',
+                   'check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed',
+                   'samples','warmup','timestep','use_drift')
+    unsupported = ('reuse','basis_size')
+    write_types = obj(energy_matrix=yesno,use_drift=yesno,check_overlap=yesno,check_derivatives=yesno,
+                      acceptance_ratio=yesno,rstats=yesno,normalized=yesno,volume_normed=yesno)
 #end class dm1b
 
 class onebodydensitymatrices(QIxml): # batched
     tag         = 'estimator'
     identifier  = 'type'
     attributes  = ('type','name','reuse')#reuse is a temporary dummy keyword
-    parameters  = ('energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed','samples')
-    write_types = obj(energy_matrix=yesno,check_overlap=yesno,check_derivatives=yesno,acceptance_ratio=yesno,rstats=yesno,normalized=yesno,volume_normed=yesno)
+    parameters  = ('energy_matrix','basis_size','integrator','points','scale','basis','evaluator','center','corner',
+                   'check_overlap','check_derivatives','acceptance_ratio','rstats','normalized','volume_normed',
+                   'samples','timestep','use_drift')
+    unsupported = ('reuse','basis_size')
+    write_types = obj(energy_matrix=yesno,use_drift=yesno,check_overlap=yesno,check_derivatives=yesno,
+                      acceptance_ratio=yesno,rstats=yesno,normalized=yesno,volume_normed=yesno)
 #end class onebodydensitymatrices
+
+class paircorrelation(QIxml):
+    tag = 'estimator'
+    attributes = ('type','name','num_bin','rmax','dr','debug','sources')
+    identifier = 'name'
+    unsupported = ('debug','sources')
+    write_types = obj(debug=yesno)
+#end class paircorrelation
+
+class specieskinetic(QIxml):
+    tag = 'estimator'
+    attributes = ('type','name','hdf5')
+    identifier = 'name'
+    write_types = obj(hdf5=yesno)
+#end class specieskinetic
+
+class latticedeviation(QIxml):
+    tag = 'estimator'
+    attributes = ('type','name','source','target','tgroup','sgroup','hdf5','per_xyz')
+    identifier = 'name'
+    write_types = obj(hdf5=yesno,per_xyz=yesno)
+#end class latticedeviation
+
+class perparticlehamiltonianlogger(QIxml):
+    tag = 'estimator'
+    attributes = ('type','name','to_stdout','validate_per_particle_sum')
+    identifier = 'name'
+    unsupported = ('validate_per_particle_sum',)
+    write_types = obj(to_stdout=yesno,validate_per_particle_sum=yesno)
+#end class perparticlehamiltonianlogger
 
 
 # afqmc estimators
@@ -2751,6 +2852,10 @@ estimator = QIxmlFactory(
                  momentum               = momentum,
                  momentumdistribution   = momentumdistribution,
                  onebodydensitymatrices = onebodydensitymatrices,
+                 paircorrelation        = paircorrelation,
+                 specieskinetic         = specieskinetic,
+                 latticedeviation       = latticedeviation,
+                 perparticlehamiltonianlogger = perparticlehamiltonianlogger,
                  # afqmc estimators   
                  back_propagation       = back_propagation,
                  ),
@@ -2767,7 +2872,8 @@ class observable(QIxml):
 
 
 class init(QIxml):
-    attributes = ('source','target')
+    attributes = ('source','target','use_volume')
+    write_types = obj(use_volume=yesno)
 #end class
 
 
@@ -2801,8 +2907,20 @@ class traces(QIxml):
 
 
 class record(QIxml):
-    attributes = ('name','stride')
+    attributes = ('name','stride','period')
+    unsupported = ('name',)
 #end class record
+
+class walkerlogs(QIxml):
+    attributes = ('step_period','particle','min','max','median','quantiles','verbose')
+    write_types = obj(particle=yesno,min=yesno,max=yesno,median=yesno,
+                      quantiles=yesno,verbose=yesno)
+#end class walkerlogs
+
+class qmc_system_selector(QIxml):
+    tag = 'qmcsystem'
+    attributes = ('wavefunction','hamiltonian')
+#end class qmc_system_selector
 
 
 class loop(QIxml):
@@ -2828,7 +2946,10 @@ class loop(QIxml):
 
 
 class optimize(QIxml):
-    text = 'parameters'
+    attributes = ('method',)
+    parameters = ('output_param_file','finite_diff_delta')
+    text = 'variables'
+    write_types = obj(output_param_file=yesno)
 #end class optimize
 
 class cg_optimizer(QIxml):
@@ -2847,12 +2968,20 @@ class flex_optimizer(QIxml):
                   'rich','xypolish','gfactor')
 #end class flex_optimizer
 
+class hybrid_optimizer(QIxml):
+    tag = 'optimizer'
+    attributes = ('num_updates',)
+    parameters = ('minmethod',)
+#end class hybrid_optimizer
+
 
 
 optimizer = QIxmlFactory(
     name    = 'optimizer',
-    types   = dict(cg=cg_optimizer,flexopt=flex_optimizer),
+    types   = dict(cg=cg_optimizer,flexopt=flex_optimizer,
+                   hybrid=hybrid_optimizer,hybrid_optimizer=hybrid_optimizer),
     typekey = 'method',
+    default = 'hybrid',
     )
 
 
@@ -2868,6 +2997,7 @@ class optimize_qmc(QIxml):
                   'en_ref','usebuffer','substeps','stepsbetweensamples',
                   'samplesperthread','max_steps','nonlocalpp')
     elements = ('optimize','optimizer','estimator')
+    unsupported = ('completed',)
     costs    = ('energy','variance','difference','weight','unreweightedvariance','reweightedvariance')
     write_types = obj(renew=yesno,completed=yesno)
 #end class optimize_qmc
@@ -2876,8 +3006,8 @@ class linear(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ('method','move','profiling','kdelay', # batched
-                  'checkpoint','gpu','trace')           # legacy - batched
-    elements   = ('estimator',)
+                  'checkpoint','gpu','trace','append','walkerlog','hdf5') # legacy - batched
+    elements   = ('estimator','optimize','optimizer','qmc_system_selector')
     parameters = ('total_walkers','walkers_per_rank','crowds','opt_num_crowds',   # batched
                   'walkers','warmupsteps','blocks','steps','substeps','timestep', # who knows
                   'usedrift','stepsbetweensamples','samples','minmethod',
@@ -2887,22 +3017,33 @@ class linear(QIxml):
                   'max_its','cgsteps','eigcg','stabilizermethod',
                   'rnwarmupsteps','walkersperthread','minke','gradtol','alpha',
                   'tries','min_walkers','samplesperthread',
-                  'shift_i','shift_s','max_relative_change','max_param_change',
+                  'shift_i','shift_s','max_relative_change','max_relative_cost_change','max_param_change',
                   'chase_lowest','chase_closest','block_lm','nblocks','nolds',
-                  'nkept','max_seconds','spin_mass',
+                  'nkept','nsamp_comp','omega','num_shifts','cost_increase_tol','target_shift_i','targetexcited',
+                  'max_seconds','spin_mass','blocks_between_recompute','drift_modifier','drift_unr_a',
+                  'maxdisplsq','debug_checks','measure_imbalance',
                   'sr_tau','sr_tolerance','sr_regularization','line_search',
+                  'output_matrices_csv','freeze_parameters','flavor','tjf_2body_eta','tjf_1body_eta',
+                  'f_eta','ci_eta','gauss_eta','orb_eta','ramp_eta','ramp_num','stored_vectors',
+                  'print_derivs','collection_step','compute_step',
                   )
+    unsupported = ('max_relative_change',)
+    element_aliases = obj(qmcsystem='qmc_system_selector')
     costs      = ('energy','unreweightedvariance','reweightedvariance','variance','difference')
-    write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,
+    write_types = obj(gpu=yesno,append=yesno,walkerlog=yesno,hdf5=yesno,
+                      usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,
                       use_nonlocalpp_deriv=yesno,chase_lowest=yesno,
-                      chase_closest=yesno,block_lm=yesno,line_search=yesno)
+                      chase_closest=yesno,block_lm=yesno,line_search=yesno,
+                      targetexcited=yesno,measure_imbalance=yesno,
+                      output_matrices_csv=yesno,freeze_parameters=yesno,
+                      print_derivs=yesno)
 #end class linear
 
 class cslinear(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ('method','move','checkpoint','gpu','trace')
-    elements   = ('estimator',)
+    elements   = ('estimator','qmc_system_selector')
     parameters = ('walkers','warmupsteps','blocks','steps','substeps','timestep',
                   'usedrift','stepsbetweensamples','samples','minmethod',
                   'minwalkers','maxweight','nonlocalpp','usebuffer',
@@ -2911,6 +3052,7 @@ class cslinear(QIxml):
                   'stabilizermethod','cswarmupsteps','alpha_error','gevsplit',
                   'beta_error','use_nonlocalpp_deriv')
     costs      = ('energy','unreweightedvariance','reweightedvariance')
+    element_aliases = obj(qmcsystem='qmc_system_selector')
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,use_nonlocalpp_deriv=yesno,usebuffer=yesno)
 #end class cslinear
 
@@ -2919,18 +3061,22 @@ class vmc(QIxml):
     tag = 'qmc'
     attributes = ('method','move','profiling','kdelay',         # batched
                   'multiple','warp','gpu','checkpoint','trace', # legacy - batched
-                  'target','completed','id')
+                  'target','completed','id','append','walkerlog')
     elements   = ('estimator', # batched
-                  'record')    # legacy - batched
+                  'record','qmc_system_selector') # legacy - batched
     parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps',         # batched
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
                   'stepsbetweensamples','samplesperthread','samples','usedrift',
-                  'spin_mass','estimator_period',
+                  'spin_mass','estimator_period','blocks_between_recompute','drift_modifier',
+                  'drift_unr_a','maxdisplsq','debug_checks','measure_imbalance','crowd_serialize_walkers',
                   'walkers','nonlocalpp','tau','walkersperthread','reconfiguration', # legacy - batched
                   'dmcwalkersperthread','current','ratio','firststep',
                   'minimumtargetwalkers','max_seconds')
-    write_types = obj(usedrift=yesno,profiling=yesno,                   # batched
+    unsupported = ('completed',)
+    element_aliases = obj(qmcsystem='qmc_system_selector')
+    write_types = obj(usedrift=yesno,profiling=yesno,append=yesno,walkerlog=yesno,
+                      measure_imbalance=yesno,crowd_serialize_walkers=yesno, # batched
                       gpu=yesno,nonlocalpp=yesno,reconfiguration=yesno, # legacy - batched
                       ratio=yesno,completed=yesno)
 #end class vmc
@@ -2940,8 +3086,8 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ('method','move','profiling','kdelay',         # batched
                   'gpu','multiple','warp','checkpoint','trace', # legacy - batched
-                  'target','completed','id','continue')
-    elements   = ('estimator',)
+                  'target','completed','id','continue','append','walkerlog')
+    elements   = ('estimator','record','qmc_system_selector')
     parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps',
                   'crowd_serialize_walkers',            # batched
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
@@ -2949,14 +3095,20 @@ class dmc(QIxml):
                   'stepsbetweensamples','samplesperthread','samples','reconfiguration',
                   'nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking',
                   'branching_cutoff_scheme','feedback','sigmabound',
-                  'spin_mass','estimator_period',
+                  'spin_mass','estimator_period','blocks_between_recompute','drift_modifier',
+                  'drift_unr_a','maxdisplsq','debug_checks','measure_imbalance',
                   'walkers','nonlocalmove','pop_control','targetwalkers',               # legacy - batched
                   'minimumtargetwalkers','energybound','feedback','recordwalkers',
                   'fastgrad','popcontrol','branchinterval','usedrift','storeconfigs',
                   'en_ref','tau','alpha','gamma','max_branch','killnode','swap_walkers',
                   'swap_trigger','branching_cutoff_scheme','l2_diffusion','maxage',
-                  'max_seconds')
-    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,
+                  'max_seconds','refenergy_update_scheme','energyupdateinterval','target_walkers',
+                  'refenergy','warmupbyreconfiguration','debug_disable_branching','maxcopy')
+    unsupported = ('completed',)
+    element_aliases = obj(qmcsystem='qmc_system_selector')
+    write_types = obj(usedrift=yesno,profiling=yesno,append=yesno,walkerlog=yesno,
+                      reconfiguration=yesno,measure_imbalance=yesno,
+                      debug_disable_branching=yesno,
                       crowd_serialize_walkers=yesno,    # batched
                       nonlocalmoves=yesnostr,use_nonblocking=yesno,
                       gpu=yesno,fastgrad=yesno,completed=yesno,killnode=yesno, # legacy - batched
@@ -2966,10 +3118,15 @@ class dmc(QIxml):
 class rmc(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ('method','multiple','target','observables','target','warp')
-    parameters = ('blocks','steps','chains','cuts','bounce','clone','walkers','timestep','trunclength','maxtouch','mass','collect')
-    elements = ('qmcsystem',)
-    write_types = obj(collect=yesno)
+    attributes = ('method','multiple','target','observables','warp','append','profiling','checkpoint','trace','walkerlog')
+    parameters = ('blocks','steps','chains','cuts','bounce','clone','walkers','timestep','trunclength','maxtouch','mass','collect',
+                  'warmupsteps','drift','beta','beads','resize','vmcpresteps','usedrift','usescaleddrift',
+                  'action','equilsteps')
+    elements = ('estimator','qmc_system_selector')
+    unsupported = ('chains','cuts','bounce','clone','trunclength','maxtouch','mass','collect','observables')
+    element_aliases = obj(qmcsystem='qmc_system_selector')
+    write_types = obj(collect=yesno,append=yesno,profiling=yesno,walkerlog=yesno,
+                      usedrift=yesno,usescaleddrift=yesno)
 #end class rmc
 
 class vmc_batch(QIxml):
@@ -2978,10 +3135,12 @@ class vmc_batch(QIxml):
     # batched driver compatible inputs have yet not been listed anywhere. 
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ('method','move','profiling','kdelay','checkpoint')
-    elements   = ('estimator',)
-    parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','usedrift')
-    write_types = obj(usedrift=yesno,profiling=yesno)
+    attributes = ('method','move','profiling','kdelay','checkpoint','append','walkerlog')
+    elements   = ('estimator','record','qmc_system_selector')
+    parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','usedrift','spin_mass','estimator_period','blocks_between_recompute','drift_modifier','drift_unr_a','maxdisplsq','debug_checks','measure_imbalance','crowd_serialize_walkers')
+    element_aliases = obj(qmcsystem='qmc_system_selector')
+    write_types = obj(usedrift=yesno,profiling=yesno,append=yesno,walkerlog=yesno,
+                      measure_imbalance=yesno,crowd_serialize_walkers=yesno)
 #end class vmc_batch
 
 class dmc_batch(QIxml):
@@ -2990,10 +3149,14 @@ class dmc_batch(QIxml):
     # batched driver compatible inputs have yet not been listed anywhere.
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ('method','move','profiling','kdelay','checkpoint')
-    elements   = ('estimator',)
-    parameters = ('total_walkers','walkers_per_rank','crowd_serialize_walkers','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound')
-    write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno, crowd_serialize_walkers=yesno)
+    attributes = ('method','move','profiling','kdelay','checkpoint','append','walkerlog')
+    elements   = ('estimator','record','qmc_system_selector')
+    parameters = ('total_walkers','walkers_per_rank','crowd_serialize_walkers','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound','spin_mass','estimator_period','blocks_between_recompute','drift_modifier','drift_unr_a','maxdisplsq','debug_checks','measure_imbalance','refenergy_update_scheme','energyupdateinterval','target_walkers','refenergy','warmupbyreconfiguration','debug_disable_branching','maxcopy')
+    element_aliases = obj(qmcsystem='qmc_system_selector')
+    write_types = obj(usedrift=yesno,profiling=yesno,append=yesno,walkerlog=yesno,
+                      reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno,
+                      crowd_serialize_walkers=yesno,measure_imbalance=yesno,
+                      debug_disable_branching=yesno)
 #end class dmc_batch
 
 class linear_batch(QIxml):
@@ -3002,8 +3165,8 @@ class linear_batch(QIxml):
     # batched driver compatible inputs have yet not been listed anywhere.
     collection_id = 'qmc'
     tag = 'qmc'
-    attributes = ('method','move','profiling','kdelay')
-    elements   = ('estimator',)
+    attributes = ('method','move','profiling','kdelay','checkpoint','append','walkerlog','hdf5')
+    elements   = ('estimator','optimize','optimizer','qmc_system_selector')
     parameters = ('walkers','warmupsteps','blocks','steps','substeps','timestep',
                   'usedrift','stepsbetweensamples','samples','minmethod',
                   'minwalkers','maxweight','nonlocalpp','use_nonlocalpp_deriv',
@@ -3014,11 +3177,41 @@ class linear_batch(QIxml):
                   'tries','min_walkers','samplesperthread',
                   'shift_i','shift_s','max_relative_change','max_param_change',
                   'chase_lowest','chase_closest','block_lm','nblocks','nolds',
-                  'nkept',
-                  'crowds','opt_num_crowds'
+                  'nkept','crowds','opt_num_crowds','spin_mass','blocks_between_recompute',
+                  'drift_modifier','drift_unr_a','maxdisplsq','debug_checks','measure_imbalance',
+                  'omega','filter_param','deriv_threshold','store_samples','filter_info',
+                  'output_matrices_csv','output_matrices_hdf','freeze_parameters','line_search','eigensolver',
+                  'options_lmy_.targetexcited','options_lmy_.block_lm','options_lmy_.nblocks',
+                  'options_lmy_.nolds','options_lmy_.nkept','options_lmy_.nsamp_comp',
+                  'options_lmy_.max_relative_cost_change','options_lmy_.max_param_change',
+                  'options_lmy_.num_shifts','options_lmy_.cost_increase_tol','options_lmy_.target_shift_i',
+                  'flavor','tjf_2body_eta','tjf_1body_eta','f_eta','ci_eta','gauss_eta','orb_eta',
+                  'ramp_eta','ramp_num','stored_vectors','print_derivs','collection_step','compute_step'
                   )
+    unsupported = ('max_relative_change',)
+    element_aliases = obj(qmcsystem='qmc_system_selector')
+    exp_names = obj({
+        'options_lmy_.targetexcited'           : 'options_LMY_.targetExcited',
+        'options_lmy_.block_lm'                : 'options_LMY_.block_lm',
+        'options_lmy_.nblocks'                 : 'options_LMY_.nblocks',
+        'options_lmy_.nolds'                   : 'options_LMY_.nolds',
+        'options_lmy_.nkept'                   : 'options_LMY_.nkept',
+        'options_lmy_.nsamp_comp'              : 'options_LMY_.nsamp_comp',
+        'options_lmy_.max_relative_cost_change': 'options_LMY_.max_relative_cost_change',
+        'options_lmy_.max_param_change'        : 'options_LMY_.max_param_change',
+        'options_lmy_.num_shifts'              : 'options_LMY_.num_shifts',
+        'options_lmy_.cost_increase_tol'       : 'options_LMY_.cost_increase_tol',
+        'options_lmy_.target_shift_i'          : 'options_LMY_.target_shift_i',
+        })
     costs      = ('energy','unreweightedvariance','reweightedvariance','variance','difference')
-    write_types = obj(usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno,chase_lowest=yesno,chase_closest=yesno,block_lm=yesno)
+    write_types = obj(usedrift=yesno,append=yesno,walkerlog=yesno,hdf5=yesno,
+                      nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno,
+                      chase_lowest=yesno,chase_closest=yesno,block_lm=yesno,
+                      measure_imbalance=yesno,filter_param=yesno,store_samples=yesno,
+                      filter_info=yesno,output_matrices_csv=yesno,output_matrices_hdf=yesno,
+                      freeze_parameters=yesno,line_search=yesno,print_derivs=yesno)
+    write_types['options_lmy_.targetexcited'] = yesno
+    write_types['options_lmy_.block_lm'] = yesno
 #end class linear_batch
 
 class wftest(QIxml):
@@ -3093,7 +3286,8 @@ class gen(QIxml):
 
 classes = [   #standard classes
     simulation,project,application,random,qmcsystem,simulationcell,particleset,
-    group,hamiltonian,constant,pseudopotential,coulomb,pseudo,mpc,chiesa,density,
+    group,hamiltonian,constant,pseudopotential,coulomb,pseudo,mpc,
+    harmonic_extpot,grid_extpot,chiesa,density,
     localenergy,energydensity,spacegrid,origin,axis,wavefunction,
     determinantset,slaterdeterminant,basisset,grid,determinant,occupation,
     jastrow1,jastrow2,jastrow3,
@@ -3101,14 +3295,15 @@ classes = [   #standard classes
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,array_traces,
     reference_points,nearestneighbors,neighbor_trace,dm1b,
     coefficient,radfunc,spindensity,structurefactor,magnetizationdensity,
-    sposet,bspline_builder,composite_builder,heg_builder,include,
+    paircorrelation,specieskinetic,latticedeviation,perparticlehamiltonianlogger,
+    sposet,opt_vars,coefs_mem,bspline_builder,composite_builder,heg_builder,include,
     multideterminant,detlist,ci,mcwalkerset,csf,det,
-    optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
-    header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
+    optimize,cg_optimizer,flex_optimizer,hybrid_optimizer,optimize_qmc,wftest,kspace_jastrow,
+    header,local,force,forwardwalking,observable,record,walkerlogs,qmc_system_selector,rmc,pressure,dmccorrection,
     nofk,mpc_est,flux,orbitalimages,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
     host,date,user,rpa_jastrow,momentum,override_variational_parameters,
-    momentumdistribution,onebodydensitymatrices,estimators,rotated_sposet,
+    momentumdistribution,onebodydensitymatrices,estimators,rotated_sposet,ionwf,
     # afqmc classes
     afqmcinfo,walkerset,propagator,execute,back_propagation,onerdm
     ]
@@ -3117,6 +3312,7 @@ types = dict( #simple types and factories
     #date              = param,
     #user              = param,
     pairpot           = pairpot,
+    extpot            = extpot,
     estimator         = estimator,
     sposet_builder    = sposet_builder,
     sposet_collection = sposet_collection,
@@ -3152,6 +3348,7 @@ plurals = obj(
     dets            = 'det',
     observables     = 'observable',
     optimizes       = 'optimize',
+    optimizers      = 'optimizer',
     #coefficientss   = 'coefficients', # bad plurality of qmcpack
     constants       = 'constant',
     mcwalkersets    = 'mcwalkerset',
@@ -3191,6 +3388,7 @@ Names.set_expanded_names(
     atomicbasisset   = 'atomicBasisSet',
     basisgroup       = 'basisGroup',
     expandylm        = 'expandYlm',
+    expm             = 'expM',
     mo               = 'MO',
     numerical        = 'Numerical',
     nearestneighbors = 'NearestNeighbors',
@@ -3203,8 +3401,25 @@ Names.set_expanded_names(
     l_local          = 'l-local',
     pbcimages        = 'PBCimages',
     dla              = 'DLA',
+    physicalso       = 'physicalSO',
+    harmonicext      = 'HarmonicExt',
     l2_diffusion     = 'L2_diffusion',
     maxage           = 'MaxAge',
+    maxcopy          = 'maxCopy',
+    maxdisplsq       = 'maxDisplSq',
+    drift_unr_a      = 'drift_UNR_a',
+    energyupdateinterval = 'energyUpdateInterval',
+    refenergy        = 'refEnergy',
+    warmupbyreconfiguration = 'warmupByReconfiguration',
+    targetexcited    = 'targetExcited',
+    usescaleddrift   = 'useScaledDrift',
+    action           = 'Action',
+    ramp_eta         = 'Ramp_eta',
+    ramp_num         = 'Ramp_num',
+    stored_vectors   = 'Stored_Vectors',
+    paircorrelation  = 'PairCorrelation',
+    structurefactor  = 'StructureFactor',
+    perparticlehamiltonianlogger = 'PerParticleHamiltonianLogger',
     sigmabound       = 'sigmaBound',
     spin_mass        = 'spin_mass',
     )

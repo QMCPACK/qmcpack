@@ -525,6 +525,8 @@ def test_qixml_class_init():
         defaults       = obj,
         collection_id  = str,
         exp_names      = obj,
+        element_aliases = obj,
+        unsupported    = tuple,
         params         = tuple,
         plurals_inv    = obj,
         plurals        = obj,
@@ -532,7 +534,7 @@ def test_qixml_class_init():
         afqmc_order    = tuple,
         )
     optional = set(['expanded_names','afqmc_order'])
-    assert(len(attr_types)==21)
+    assert(len(attr_types)==23)
 
     def valid_name(s):
         v = True
@@ -568,9 +570,193 @@ def test_qixml_class_init():
                 #end if
             #end if
         #end for
+        declared_inputs = set(cls.attributes+cls.parameters+cls.elements)
+        assert(set(cls.unsupported)<=declared_inputs)
     #end for
 
 #end def test_qixml_class_init
+
+
+def test_qixml_live_and_unsupported_parameters(tmp_path):
+    from ..qmcpack_input import QIxml
+    from ..qmcpack_input import QmcpackInput
+    from ..qmcpack_input import atomicbasisset,bspline_builder,coefs_mem,dmc,group,init
+    from ..qmcpack_input import force,hamiltonian,harmonic_extpot,hybrid_optimizer
+    from ..qmcpack_input import linear,linear_batch,mpc,multideterminant,onebodydensitymatrices,optimize
+    from ..qmcpack_input import mcwalkerset,paircorrelation,particleset,pseudo,pseudopotential
+    from ..qmcpack_input import qmc_system_selector,qmcsystem,rpa_jastrow,simulation,simulationcell
+    from ..qmcpack_input import sposet,structurefactor,walkerlogs
+
+    assert(QIxml.unsupported==())
+    assert(multideterminant.unsupported==())
+    assert(pseudo.unsupported==('cutoff',))
+    assert(mpc.unsupported==('ecut',))
+    assert(force.unsupported==('addionion','weightexp'))
+    assert(structurefactor.unsupported==('report','hdf5','writerho','writeionion'))
+    assert(paircorrelation.unsupported==('debug','sources'))
+    assert(linear.unsupported==('max_relative_change',))
+    assert(onebodydensitymatrices.unsupported==('reuse','basis_size'))
+    assert(mcwalkerset.unsupported==('target','walkers'))
+    assert(qmcsystem.unsupported==('dim',))
+    assert(simulationcell.unsupported==('name','tilematrix','reciprocal','uc_grid'))
+    assert(particleset.unsupported==('charge','source','role','simulationcell'))
+    assert(group.unsupported==('id','mass'))
+
+    obdm = onebodydensitymatrices(
+        type = 'OneBodyDensityMatrices',
+        name = 'OneBodyDensityMatrices',
+        basis = 'spo_ud',
+        volume_normed = False,
+        )
+    obdm_xml = obdm.write()
+    assert('<parameter name="volume_normed"' in obdm_xml)
+    assert('>    no' in obdm_xml)
+
+    cell = simulationcell(
+        vacuum = 1.5,
+        ewald_grid = 1001,
+        )
+    cell_xml = cell.write()
+    assert('<parameter name="vacuum"' in cell_xml)
+    assert('<parameter name="ewald_grid"' in cell_xml)
+
+    pset = particleset(
+        id = 'e',
+        gpu = 'omptarget',
+        spinor = True,
+        groups = [group(name='u',size=1,charge=-1)],
+        )
+    pset_xml = pset.write()
+    assert('<particleset id="e"' in pset_xml)
+    assert('gpu="omptarget"' in pset_xml)
+    assert('spinor="yes"' in pset_xml)
+
+    init_xml = init(source='ion0',target='e',use_volume=True).write()
+    assert('<init source="ion0" target="e" use_volume="yes"/>' in init_xml)
+
+    basis = atomicbasisset(elementtype='C',expm='yes')
+    assert('elementType="C"' in basis.write())
+    assert('expM="yes"' in basis.write())
+
+    builder = bspline_builder(
+        type = 'bspline',
+        skip_checks = True,
+        check_orb_norm = False,
+        save_coefs = True,
+        sposet = sposet(
+            name = 'spo-u',
+            size = 4,
+            coefs_mem = coefs_mem(distributed_ranks=2,shared_ranks=4),
+            ),
+        )
+    builder_xml = builder.write()
+    assert('skip_checks="yes"' in builder_xml)
+    assert('check_orb_norm="no"' in builder_xml)
+    assert('save_coefs="yes"' in builder_xml)
+    assert('<coefs_mem distributed_ranks="2" shared_ranks="4"/>' in builder_xml)
+
+    rpa = rpa_jastrow(
+        type = 'rpa',
+        longrange = True,
+        shortrange = False,
+        rs = 2.0,
+        kc = 1.0,
+        )
+    rpa_xml = rpa.write()
+    assert('longrange="yes"' in rpa_xml)
+    assert('shortrange="no"' in rpa_xml)
+    assert('<parameter name="rs"' in rpa_xml)
+    assert('<parameter name="kc"' in rpa_xml)
+
+    pp = pseudopotential(
+        type = 'pseudo',
+        pbc = False,
+        physicalso = True,
+        spin_integrator = 'exact',
+        )
+    pp_xml = pp.write()
+    assert('pbc="no"' in pp_xml)
+    assert('physicalSO="yes"' in pp_xml)
+    assert('spin_integrator="exact"' in pp_xml)
+
+    ham = hamiltonian(
+        name = 'h0',
+        wavefunction = 'psi0',
+        extpot = harmonic_extpot(type='harmonic_ext',mass=1.0,frequency=2.0),
+        estimator = paircorrelation(type='paircorrelation',dr=0.1),
+        )
+    ham_xml = ham.write()
+    assert('wavefunction="psi0"' in ham_xml)
+    assert('<extpot type="harmonic_ext"' in ham_xml)
+    assert('<estimator type="PairCorrelation"' in ham_xml)
+
+    calc = dmc(
+        method = 'dmc',
+        append = 'yes',
+        drift_unr_a = 1.0,
+        maxdisplsq = 4.0,
+        energyupdateinterval = 10,
+        refenergy = -1.0,
+        maxcopy = 2,
+        qmc_system_selector = qmc_system_selector(
+            wavefunction = 'psi1',
+            hamiltonian = 'h1',
+            ),
+        )
+    calc_xml = calc.write()
+    assert('append="yes"' in calc_xml)
+    assert('<parameter name="drift_UNR_a"' in calc_xml)
+    assert('<parameter name="maxDisplSq"' in calc_xml)
+    assert('<parameter name="energyUpdateInterval"' in calc_xml)
+    assert('<parameter name="refEnergy"' in calc_xml)
+    assert('<parameter name="maxCopy"' in calc_xml)
+    assert('<qmcsystem wavefunction="psi1" hamiltonian="h1"/>' in calc_xml)
+
+    selector_file = tmp_path/'qmc_system_selector.xml'
+    selector_file.write_text('''<simulation>
+  <project id="qmc" series="0"/>
+  <qmc method="dmc">
+    <qmcsystem wavefunction="psi1" hamiltonian="h1"/>
+  </qmc>
+</simulation>
+''')
+    selector_input = QmcpackInput(selector_file)
+    selector = selector_input.simulation.qmc.qmc_system_selector
+    assert(selector.wavefunction=='psi1')
+    assert(selector.hamiltonian=='h1')
+
+    opt = linear(
+        method = 'linear',
+        max_relative_cost_change = 5.0,
+        optimize = optimize(
+            method = 'gradient_test',
+            output_param_file = True,
+            finite_diff_delta = 1e-5,
+            ),
+        optimizers = [
+            hybrid_optimizer(num_updates=3,minmethod='adaptive'),
+            hybrid_optimizer(num_updates=2,minmethod='descent'),
+            ],
+        )
+    opt_xml = opt.write()
+    assert('<parameter name="max_relative_cost_change"' in opt_xml)
+    assert('<optimize method="gradient_test">' in opt_xml)
+    assert(opt_xml.count('<optimizer num_updates=')==2)
+    assert('<parameter name="MinMethod"' in opt_xml)
+
+    batched = linear_batch(
+        method = 'linear_batch',
+        **{'options_LMY_.targetExcited':'yes'},
+        )
+    assert('<parameter name="options_LMY_.targetExcited"' in batched.write())
+
+    sim = simulation(
+        walkerlogs = walkerlogs(step_period=4,particle=True,quantiles=False),
+        )
+    sim_xml = sim.write()
+    assert('<walkerlogs step_period="4" particle="yes" quantiles="no"/>' in sim_xml)
+
+#end def test_qixml_live_and_unsupported_parameters
 
 
 
