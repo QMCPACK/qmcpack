@@ -312,11 +312,13 @@ public:
    *
    * Each resolved walker is the authoritative baseline for positions and spins; CT selects
    * which components receive displacements. Displacements use particle-major flattened
-   * storage: iat * number_of_walkers + iw. Every input is validated before the crowd is
-   * mutated. Invalid walkers remain at their resolved snapshots and are marked false in
-   * are_valid. Distance tables and, unless skipped, structure factors are fully updated.
-   * No particle is left active. p_list must be a resource-compatible clone crowd with its
-   * team resources acquired.
+   * storage: iat * number_of_walkers + iw. The caller must supply a nonempty,
+   * resource-acquired clone crowd with matching topology, particle counts, aligned walker
+   * and output lists, exact displacement sizes, and no active particles. These caller
+   * invariants are checked in Debug and assumed in Release. Proposal finiteness and lattice
+   * validity are simulation outcomes checked in every build. Invalid walkers remain at
+   * their resolved snapshots and are marked false in are_valid. Distance tables and,
+   * unless skipped, structure factors are fully updated. No particle is left active.
    */
   template<CoordsType CT>
   static void mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
@@ -434,7 +436,10 @@ public:
   /** Resolve complete all-particle proposals for a resource-acquired clone crowd.
    *
    * Acceptance retains each installed proposal. Rejection restores positions and spins
-   * from the corresponding authoritative walker snapshot and updates ParticleSet derived state.
+   * from the corresponding authoritative walker snapshot and updates ParticleSet derived
+   * state. The caller must provide a nonempty, resource-acquired clone crowd with aligned
+   * walker and decision lists, matching particle counts, and no active particles. These
+   * caller invariants are checked in Debug and assumed in Release.
    */
   static void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
                                                const RefVector<Walker_t>& resolved_walkers,

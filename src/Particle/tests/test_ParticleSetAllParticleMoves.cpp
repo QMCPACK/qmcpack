@@ -4,9 +4,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
-#include <cstring>
-#include <limits>
+#include <cstdlib>
 #include <memory>
 #include <stdexcept>
 
@@ -26,21 +24,15 @@ namespace qmcplusplus
 namespace
 {
 template<typename REAL>
-REAL makePositiveInfinity()
+REAL parseNonfinite(const char* value)
 {
-  REAL result;
-  if constexpr (sizeof(REAL) == sizeof(std::uint32_t))
-  {
-    const std::uint32_t bits = UINT32_C(0x7f800000);
-    std::memcpy(&result, &bits, sizeof(result));
-  }
+  if constexpr (sizeof(REAL) == sizeof(float))
+    return std::strtof(value, nullptr);
   else
   {
-    static_assert(sizeof(REAL) == sizeof(std::uint64_t));
-    const std::uint64_t bits = UINT64_C(0x7ff0000000000000);
-    std::memcpy(&result, &bits, sizeof(result));
+    static_assert(sizeof(REAL) == sizeof(double));
+    return std::strtod(value, nullptr);
   }
-  return result;
 }
 
 SimulationCell makeOpenCell()
@@ -246,7 +238,7 @@ TEST_CASE("ParticleSet all-particle POS_SPIN rejection restores the resolved wal
   CHECK(pset.getActivePtcl() == -1);
 
   displacements.positions = {{}, {}};
-  displacements.spins     = {0.0, makePositiveInfinity<ParticleSet::RealType>()};
+  displacements.spins     = {0.0, parseNonfinite<ParticleSet::RealType>("inf")};
   REQUIRE_FALSE(transaction.makeMove(displacements));
   CHECK(pset.spins[0] == Approx(walker.spins[0]));
   CHECK(pset.spins[1] == Approx(walker.spins[1]));
@@ -413,18 +405,19 @@ TEST_CASE("ParticleSet all-particle moves reject nonfinite proposals atomically"
   pset.saveWalker(walker);
 
   MCCoords<CoordsType::POS> displacements(2);
-  displacements.positions = {{0.2, 0.0, 0.0}, {0.0, std::numeric_limits<ParticleSet::RealType>::quiet_NaN(), 0.0}};
+  displacements.positions = {{0.2, 0.0, 0.0}, {0.0, parseNonfinite<ParticleSet::RealType>("nan"), 0.0}};
   SingleWalkerAllParticleContext transaction(pset, walker);
   REQUIRE_FALSE(transaction.makeMove(displacements));
   checkPosition(pset, 0, walker.R[0]);
   checkPosition(pset, 1, walker.R[1]);
 
-  displacements.positions[1] = {0.0, makePositiveInfinity<ParticleSet::RealType>(), 0.0};
+  displacements.positions[1] = {0.0, parseNonfinite<ParticleSet::RealType>("inf"), 0.0};
   REQUIRE_FALSE(transaction.makeMove(displacements));
   checkPosition(pset, 0, walker.R[0]);
   checkPosition(pset, 1, walker.R[1]);
 }
 
+#ifndef NDEBUG
 TEST_CASE("ParticleSet all-particle moves reject malformed and active transactions", "[particle]")
 {
   ParticleSet pset(makeOpenCell());
@@ -479,5 +472,6 @@ TEST_CASE("ParticleSet batched all-particle move rejects mismatched crowd topolo
   checkPosition(p1, 0, w1.R[0]);
   checkPosition(p1, 1, w1.R[1]);
 }
+#endif
 
 } // namespace qmcplusplus

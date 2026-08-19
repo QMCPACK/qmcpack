@@ -20,7 +20,9 @@
 #include <numeric>
 #include <iomanip>
 #include <stdexcept>
+#ifndef NDEBUG
 #include <typeinfo>
+#endif
 #include "ParticleSet.h"
 #include "Particle/DynamicCoordinatesBuilder.h"
 #include "Platforms/CPU/math.hpp"
@@ -448,6 +450,7 @@ bool isFinitePosition(const ParticleSet::SingleParticlePos& position)
   return true;
 }
 
+#ifndef NDEBUG
 void validateAllParticleCrowdTopology(const RefVectorWithLeader<ParticleSet>& p_list)
 {
   const ParticleSet& leader        = p_list.getLeader();
@@ -472,6 +475,7 @@ void validateAllParticleCrowdTopology(const RefVectorWithLeader<ParticleSet>& p_
     }
   }
 }
+#endif
 } // namespace
 
 template<CoordsType CT>
@@ -482,18 +486,20 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
                                           bool skipSK)
 {
   const size_t num_walkers = p_list.size();
+#ifndef NDEBUG
   if (num_walkers == 0 || resolved_walkers.size() != num_walkers || are_valid.size() != num_walkers)
     throw std::runtime_error("All-particle transaction walker counts do not match.");
 
   validateAllParticleCrowdTopology(p_list);
+#endif
   const size_t num_particles = p_list[0].getTotalNum();
+#ifndef NDEBUG
   if (displacements.positions.size() != num_particles * num_walkers)
     throw std::runtime_error("Flattened all-particle displacement count does not match the crowd.");
   if constexpr (CT == CoordsType::POS_SPIN)
     if (displacements.spins.size() != num_particles * num_walkers)
       throw std::runtime_error("Flattened all-particle spin displacement count does not match the crowd.");
 
-  // Validate every input before mutating any member of the crowd.
   for (size_t iw = 0; iw < num_walkers; ++iw)
   {
     const Walker_t& resolved_walker = resolved_walkers[iw];
@@ -504,6 +510,7 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
         resolved_walker.spins.size() != num_particles)
       throw std::runtime_error("All-particle transaction particle counts do not match.");
   }
+#endif
 
   std::vector<ParticlePos> proposed_positions;
   std::vector<ParticleScalar> proposed_spins;
@@ -901,6 +908,7 @@ void ParticleSet::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<Par
                                                    bool skipSK)
 {
   const size_t num_walkers = p_list.size();
+#ifndef NDEBUG
   if (num_walkers == 0 || resolved_walkers.size() != num_walkers || accepted.size() != num_walkers)
     throw std::runtime_error("All-particle transaction walker counts do not match.");
 
@@ -916,6 +924,7 @@ void ParticleSet::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<Par
         resolved_walker.spins.size() != num_particles)
       throw std::runtime_error("All-particle transaction particle counts do not match.");
   }
+#endif
 
   std::vector<bool> rejected(num_walkers);
   bool any_rejected = false;
