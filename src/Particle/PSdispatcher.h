@@ -37,6 +37,20 @@ public:
 
   void flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false) const;
 
+  /// Dispatch a complete all-particle proposal using particle-major flattened displacements.
+  template<CoordsType CT>
+  void flex_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
+                                 const RefVector<Walker_t>& resolved_walkers,
+                                 const MCCoords<CT>& displacements,
+                                 std::vector<bool>& are_valid,
+                                 bool skipSK = false) const;
+
+  /// Dispatch mixed accept/reject resolution of complete all-particle proposals.
+  void flex_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const RefVector<Walker_t>& resolved_walkers,
+                                          const std::vector<bool>& accepted,
+                                          bool skipSK = false) const;
+
   template<CoordsType CT>
   void flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                      int iat,
