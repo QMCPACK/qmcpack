@@ -180,11 +180,12 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind, bool use_batc
 }
 } // namespace
 
-TEST_CASE("ParticleSet all-particle moves through batched and serialized dispatch", "[particle]")
+TEST_CASE("ParticleSet all-particle moves through the multiwalker dispatcher passthrough", "[particle]")
 {
   for (const DynamicCoordinateKind kind : {DynamicCoordinateKind::DC_POS, DynamicCoordinateKind::DC_POS_OFFLOAD})
   {
     exerciseDispatcherAllParticleMove(kind, true);
+    // All-particle dispatcher calls remain multiwalker operations regardless of the legacy dispatch mode.
     exerciseDispatcherAllParticleMove(kind, false);
   }
 }

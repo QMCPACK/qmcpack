@@ -12,8 +12,6 @@
 
 #include "PSdispatcher.h"
 
-#include <stdexcept>
-
 namespace qmcplusplus
 {
 PSdispatcher::PSdispatcher(bool use_batch) : use_batch_(use_batch) {}
@@ -51,46 +49,7 @@ void PSdispatcher::flex_makeMoveAllParticles(const RefVectorWithLeader<ParticleS
                                              std::vector<bool>& are_valid,
                                              bool skipSK) const
 {
-  if (use_batch_)
-  {
-    ParticleSet::mw_makeMoveAllParticles(p_list, resolved_walkers, displacements, are_valid, skipSK);
-    return;
-  }
-
-  const size_t num_walkers = p_list.size();
-  if (num_walkers == 0 || resolved_walkers.size() != num_walkers || are_valid.size() != num_walkers)
-    throw std::runtime_error("All-particle transaction walker counts do not match.");
-  const size_t num_particles = p_list[0].getTotalNum();
-  if (displacements.positions.size() != num_particles * num_walkers)
-    throw std::runtime_error("Flattened all-particle displacement count does not match the crowd.");
-  if constexpr (CT == CoordsType::POS_SPIN)
-    if (displacements.spins.size() != num_particles * num_walkers)
-      throw std::runtime_error("Flattened all-particle spin displacement count does not match the crowd.");
-
-  // Complete crowd validation prevents a malformed later walker from exposing a partial update.
-  for (size_t iw = 0; iw < num_walkers; ++iw)
-  {
-    const Walker_t& resolved_walker = resolved_walkers[iw];
-    if (p_list[iw].getActivePtcl() != -1)
-      throw std::runtime_error("Cannot start an all-particle transaction with an active particle.");
-    if (p_list[iw].getTotalNum() != num_particles || p_list[iw].R.size() != num_particles ||
-        p_list[iw].spins.size() != num_particles || resolved_walker.R.size() != num_particles ||
-        resolved_walker.spins.size() != num_particles)
-      throw std::runtime_error("All-particle transaction particle counts do not match.");
-  }
-
-  for (size_t iw = 0; iw < num_walkers; ++iw)
-  {
-    MCCoords<CT> walker_displacements(num_particles);
-    for (size_t iat = 0; iat < num_particles; ++iat)
-    {
-      const size_t flat_index             = iat * num_walkers + iw;
-      walker_displacements.positions[iat] = displacements.positions[flat_index];
-      if constexpr (CT == CoordsType::POS_SPIN)
-        walker_displacements.spins[iat] = displacements.spins[flat_index];
-    }
-    are_valid[iw] = p_list[iw].makeMoveAllParticles(resolved_walkers[iw], walker_displacements, skipSK);
-  }
+  ParticleSet::mw_makeMoveAllParticles(p_list, resolved_walkers, displacements, are_valid, skipSK);
 }
 
 void PSdispatcher::flex_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
@@ -98,29 +57,7 @@ void PSdispatcher::flex_accept_rejectMoveAllParticles(const RefVectorWithLeader<
                                                       const std::vector<bool>& accepted,
                                                       bool skipSK) const
 {
-  if (use_batch_)
-  {
-    ParticleSet::mw_accept_rejectMoveAllParticles(p_list, resolved_walkers, accepted, skipSK);
-    return;
-  }
-
-  const size_t num_walkers = p_list.size();
-  if (num_walkers == 0 || resolved_walkers.size() != num_walkers || accepted.size() != num_walkers)
-    throw std::runtime_error("All-particle transaction walker counts do not match.");
-  const size_t num_particles = p_list[0].getTotalNum();
-  for (size_t iw = 0; iw < num_walkers; ++iw)
-  {
-    const Walker_t& resolved_walker = resolved_walkers[iw];
-    if (p_list[iw].getActivePtcl() != -1)
-      throw std::runtime_error("Cannot resolve an all-particle transaction with an active particle.");
-    if (p_list[iw].getTotalNum() != num_particles || p_list[iw].R.size() != num_particles ||
-        p_list[iw].spins.size() != num_particles || resolved_walker.R.size() != num_particles ||
-        resolved_walker.spins.size() != num_particles)
-      throw std::runtime_error("All-particle transaction particle counts do not match.");
-  }
-
-  for (size_t iw = 0; iw < num_walkers; ++iw)
-    p_list[iw].accept_rejectMoveAllParticles(resolved_walkers[iw], accepted[iw], skipSK);
+  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, resolved_walkers, accepted, skipSK);
 }
 
 template<CoordsType CT>
