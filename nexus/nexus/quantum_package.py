@@ -87,17 +87,17 @@ class QuantumPackage(Simulation):
         # write an ascii representation of the input changes
         infile = self.identifier+'.in'
         infile = os.path.join(self.locdir,infile)
-        f = open(infile,'w')
-        s = None
-        if 'structure' in self.input:
-            s = self.input.structure
-            del self.input.structure
-        #end if
-        f.write(str(self.input))
-        if s is not None:
-            self.input.structure = s
-        #end if
-        f.close()
+        with open(infile,'w') as f:
+            s = None
+            if 'structure' in self.input:
+                s = self.input.structure
+                del self.input.structure
+            #end if
+            f.write(str(self.input))
+            if s is not None:
+                self.input.structure = s
+            #end if
+        #end with
 
         # copy ezfio directory from dependencies
         qp_dirs = []
@@ -122,9 +122,9 @@ class QuantumPackage(Simulation):
                             self.failed = True
                             self.block_dependents()
                         else:
-                            f = open(sync_record,'w')
-                            f.write(command+'\n')
-                            f.close()
+                            with open(sync_record,'w') as f:
+                                f.write(command+'\n')
+
                             execute('qp_edit -c {0}'.format(d_ezfio))
                         #end if
                     #end if
@@ -224,9 +224,9 @@ class QuantumPackage(Simulation):
         failed = False
         if scf:
             outfile = os.path.join(self.locdir,self.outfile)
-            f = open(outfile,'r')
-            output = f.read()
-            f.close()
+            with open(outfile,'r') as f:
+                output = f.read()
+
             hf_not_converged = '* SCF energy' not in output
             failed |= hf_not_converged
         #end if

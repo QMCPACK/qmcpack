@@ -22,7 +22,7 @@ from typing import ClassVar,Literal,TextIO
 from . import memory
 from .developer import obj, error
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
-from .simulation import Simulation
+from .simulation import Simulation, sim_err_handler
 from .machines import Machine,Job
 
 
@@ -356,16 +356,18 @@ class ProjectManager(NexusCore):
         finished = []
         progressing_cascades = self.progressing_cascades
         for cascade in progressing_cascades.values():
-            cascade.reset_wait_ids()
+            with sim_err_handler(sim=cascade): # Wrap execution in sim error handler
+                cascade.reset_wait_ids()
         #end for
         for cid,cascade in progressing_cascades.items():
-            if not cascade.bundled or cascade.bundler.finished:
-                cascade.progress()
-            #end if
-            cascade.check_subcascade()
-            if cascade.subcascade_finished:
-                finished.append(cid)
-            #end if
+            with sim_err_handler(sim=cascade): # Wrap execution in sim error handler
+                
+                if not cascade.bundled or cascade.bundler.finished:
+                    cascade.progress()
+
+                cascade.check_subcascade()
+                if cascade.subcascade_finished:
+                    finished.append(cid)
         #end for
         for cid in finished:
             del progressing_cascades[cid]

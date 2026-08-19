@@ -1400,11 +1400,11 @@ class Density(ObservableWithComponents):
                     filename = '{}.{}.{}_{}.dat'.format(prefix,gname,sname,cname)
                     filepath = os.path.join(path,filename)
                     vlog('Saving file '+filepath,n=1)
-                    f = open(filepath,'w')
-                    for r,d in zip(srdf.radius,srdf.density):
-                        f.write('{: 16.8e} {: 16.8e}\n'.format(r,d))
-                    #end for
-                    f.close()
+                    with open(filepath,'w') as f:
+                        for r,d in zip(srdf.radius,srdf.density):
+                            f.write('{: 16.8e} {: 16.8e}\n'.format(r,d))
+                        #end for
+                    #end with
                 #end for
             #end for
         #end for

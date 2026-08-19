@@ -319,9 +319,9 @@ class DatAnalyzer(QBase):
         #end if
         data = lt[:,1:].transpose()
         self.info.nsamples = data.shape[1]
-        fobj = open(filepath,'r')
-        variables = fobj.readline().split()[2:]
-        # fobj.close()
+        with open(filepath,'r') as fobj:
+            variables = fobj.readline().split()[2:]
+
         Econv  = convert(1.0,'Ha',self.info.units)
         Econv2 = Econv**2
         for i in range(len(variables)):
@@ -1258,13 +1258,14 @@ QMCA examples:
                         for prefix in sorted(prefixes):
                             twist_info_file = prefix+'.twist_info.dat'
                             if os.path.exists(twist_info_file):
-                                fobj = open(twist_info_file)
-                                try:
-                                    weight = float(fobj.read().strip().split()[0])
-                                    weights.append(weight)
-                                except:
-                                    None
-                                #end try
+                                with open(twist_info_file) as fobj:
+                                    try:
+                                        weight = float(fobj.read().strip().split()[0])
+                                        weights.append(weight)
+                                    except:
+                                        pass
+                                    #end try
+                                #end with
                             #end if
                         #end for
                         if len(weights)!=len(prefixes):
@@ -1320,13 +1321,14 @@ QMCA examples:
                         for prefix in sorted(prefixes):
                             twist_info_file = prefix+'.twist_info.dat'
                             if os.path.exists(twist_info_file):
-                                fobj = open(twist_info_file)
-                                try:
-                                    weight = float(fobj.read().strip().split()[0])
-                                    weights.append(weight)
-                                except:
-                                    None
-                                #end try
+                                with open(twist_info_file) as fobj:
+                                    try:
+                                        weight = float(fobj.read().strip().split()[0])
+                                        weights.append(weight)
+                                    except:
+                                        pass
+                                    #end try
+                                #end with
                             #end if
                         #end for
                         if len(weights)!=len(prefixes):

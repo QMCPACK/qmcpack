@@ -2121,9 +2121,9 @@ class Supercomputer(Machine):
         #end if
         if file:
             filepath = os.path.join(job.directory,job.subfile)
-            fobj = open(filepath,'w')
-            fobj.write(c)
-            fobj.close()
+            with open(filepath,'w') as fobj:
+                fobj.write(c)
+
             if self.executable_subfile:
                 os.system('chmod +x '+filepath)
             #end if

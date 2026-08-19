@@ -383,11 +383,10 @@ class SingleDensity(QDBase):
         extension   = self.extension
         density     = self.mean
         density_err = self.error
-        f = open('{0}{1}.dat'.format(prefix,extension),'w')
-        for d,de in zip(density.ravel(),density_err.ravel()):
-            f.write('{0: 16.8e}  {1: 16.8e}\n'.format(d,de))
-        #end for
-        f.close()
+        with open('{0}{1}.dat'.format(prefix,extension),'w') as f:
+            for d,de in zip(density.ravel(),density_err.ravel()):
+                f.write('{0: 16.8e}  {1: 16.8e}\n'.format(d,de))
+            #end for
     #end def write_dat
 
 
@@ -1360,13 +1359,14 @@ class QMCDensityProcessor(QDBase):
                                 for group in sorted(sfiles.keys()):
                                     twist_info_file = '{}.g{}.twist_info.dat'.format(batch_prefix,str(group).zfill(3))
                                     if os.path.exists(twist_info_file):
-                                        fobj = open(twist_info_file)
-                                        try:
-                                            weight = float(fobj.read().strip().split()[0])
-                                            weights.append(weight)
-                                        except:
-                                            None
-                                        #end try
+                                        with open(twist_info_file) as fobj:
+                                            try:
+                                                weight = float(fobj.read().strip().split()[0])
+                                                weights.append(weight)
+                                            except:
+                                                pass
+                                            #end try
+                                        #end with
                                     #end if
                                 #end for
                                 if len(weights)!=len(sfiles):

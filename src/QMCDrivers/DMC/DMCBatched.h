@@ -117,7 +117,7 @@ public:
    */
   void process(xmlNodePtr cur) override;
 
-  bool run() override;
+  void run() override;
 
   QMCRunType getRunType() override { return QMCRunType::DMC_BATCH; }
 

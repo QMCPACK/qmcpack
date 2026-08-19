@@ -7052,7 +7052,9 @@ def structure_animation(filepath,structures,tiling=None):
             anim += s.tile(tiling).write_xyz()
         #end if
     #end for
-    open(filepath,'w').write(anim)
+    with open(filepath, 'w') as f:
+        f.write(anim)
+
 #end def structure_animation
 
 

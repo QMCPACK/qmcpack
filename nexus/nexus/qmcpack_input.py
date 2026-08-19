@@ -147,6 +147,7 @@ from .generic import sorted_generic
 from .periodic_table import Elements
 from .structure import Structure, Jellium, get_kpath
 from .physical_system import PhysicalSystem
+from .pseudopotential import pp_elem_label, PseudoSet
 from .simulation import SimulationInput, SimulationInputTemplate
 from .pwscf_input import array_to_string as pwscf_array_string
 from .utilities import path_string
@@ -5607,9 +5608,8 @@ class BundledQmcpackInput(SimulationInput):
                 bfilepath = os.path.join(path,bfile)
                 inp.write(bfilepath)
             #end for
-            fobj = open(filepath,'w')
-            fobj.write(c)
-            fobj.close()
+            with open(filepath,'w') as fobj:
+                fobj.write(c)
         #end if
     #end def write
 #end class BundledQmcpackInput
@@ -6708,6 +6708,8 @@ def generate_hamiltonian(name         = 'h0',
     iname   = ions
     wfname  = wavefunction
     ppfiles = pseudos
+    ppfiles = PseudoSet.pseudo_remap('qmcpack',ppfiles,system)
+    ppfiles = obj((pp_elem_label(f,guard=True)[1],f) for f in ppfiles)
     del electrons
     del ions
     del pseudos

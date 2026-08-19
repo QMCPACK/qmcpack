@@ -131,7 +131,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
 
 QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize() = default;
 
-bool QMCFixedSampleLinearOptimize::test_run()
+void QMCFixedSampleLinearOptimize::test_run()
 {
   // generate samples and compute weights, local energies, and derivative vectors
   start();
@@ -139,11 +139,9 @@ bool QMCFixedSampleLinearOptimize::test_run()
   testEngineObj->run(*optTarget, get_root_name());
 
   finish();
-
-  return true;
 }
 
-bool QMCFixedSampleLinearOptimize::run()
+void QMCFixedSampleLinearOptimize::run()
 {
   if (do_output_matrices_ && !output_matrices_initialized_)
   {
@@ -157,7 +155,8 @@ bool QMCFixedSampleLinearOptimize::run()
   if (doGradientTest)
   {
     app_log() << "Doing gradient test run" << std::endl;
-    return test_run();
+    test_run();
+    return;
   }
 
 #ifdef HAVE_LMY_ENGINE
@@ -165,7 +164,8 @@ bool QMCFixedSampleLinearOptimize::run()
   {
 #if !defined(QMC_COMPLEX)
     app_log() << "Doing hybrid run" << std::endl;
-    return hybrid_run();
+    hybrid_run();
+    return;
 #else
     myComm->barrier_and_abort(" Error: Hybrid method does not work with QMC_COMPLEX=1. \n");
 #endif
@@ -173,7 +173,10 @@ bool QMCFixedSampleLinearOptimize::run()
 
   if (current_optimizer_type_ == OptimizerType::DESCENT)
 #if !defined(QMC_COMPLEX)
-    return descent_run();
+  {
+    descent_run();
+    return;
+  }
 #else
     myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX=1. \n");
 #endif
@@ -181,13 +184,19 @@ bool QMCFixedSampleLinearOptimize::run()
 
   // if requested, perform the update via the adaptive three-shift or single-shift method
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
-    return adaptive_three_shift_run();
+  {
+    adaptive_three_shift_run();
+    return;
+  }
 
 
 #endif
 
   if (current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
-    return one_shift_run();
+  {
+    one_shift_run();
+    return;
+  }
 
   start();
   bool Valid(true);
@@ -205,13 +214,12 @@ bool QMCFixedSampleLinearOptimize::run()
   optdir.resize(numParams, 0);
   optparam.resize(numParams, 0);
 
-  auto costfunc_evaluator = [this](RealType dl)
-  {
+  auto costfunc_evaluator = [this](RealType dl) {
     for (int i = 0; i < optparam.size(); i++)
       optTarget->Params(i) = optparam[i] + dl * optdir[i];
-    RealType c = optTarget->Cost(false);
-    validFuncVal = optTarget->IsValid;
-    return c;
+    auto effective_weight = optTarget->correlatedSampling(false);
+    validFuncVal          = optTarget->isEffectiveWeightValid(effective_weight);
+    return optTarget->computedCost();
   };
 
   while (Total_iterations < Max_iterations)
@@ -226,10 +234,11 @@ bool QMCFixedSampleLinearOptimize::run()
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currentParameters[i];
     cost_function_timer_.start();
-    RealType lastCost(optTarget->Cost(true));
+    auto effective_weight = optTarget->correlatedSampling(true);
+    RealType lastCost(optTarget->computedCost());
     cost_function_timer_.stop();
     //     if cost function is currently invalid continue
-    Valid = optTarget->IsValid;
+    Valid = optTarget->isEffectiveWeightValid(effective_weight);
     if (!ValidCostFunction(Valid))
       continue;
     RealType newCost(lastCost);
@@ -312,7 +321,6 @@ bool QMCFixedSampleLinearOptimize::run()
         }
         for (int i = 0; i < numParams; i++)
           optTarget->Params(i) = currentParameters[i] + Lambda * currentParameterDirections[i + 1];
-        optTarget->IsValid = true;
       }
       else
       {
@@ -359,13 +367,14 @@ bool QMCFixedSampleLinearOptimize::run()
         // 	this may have been evaluated already
         // 	newCost=evaluated_cost;
         //get cost at new minimum
-        newCost = optTarget->Cost(false);
+        auto effective_weight = optTarget->correlatedSampling(false);
+        newCost               = optTarget->computedCost();
         app_log() << " OldCost: " << lastCost << " NewCost: " << newCost << " Delta Cost:" << (newCost - lastCost)
                   << std::endl;
         optTarget->printEstimates();
         //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
         // mmorales
-        Valid = optTarget->IsValid;
+        Valid = optTarget->isEffectiveWeightValid(effective_weight);
         //if (MinMethod!="rescale" && !ValidCostFunction(Valid))
         if (!ValidCostFunction(Valid))
         {
@@ -420,7 +429,7 @@ bool QMCFixedSampleLinearOptimize::run()
   }
 
   finish();
-  return (optTarget->getReportCounter() > 0);
+
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction
@@ -919,7 +928,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
-bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
+void QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 {
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
@@ -1113,7 +1122,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
   for (int i = 0; i < numParams; i++)
     optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i + 1);
-  optTarget->IsValid      = true;
   const RealType initCost = optTarget->LMYEngineCost(false, *EngineObj);
 
   // compute the update directions for the smaller and larger shifts relative to that of the middle shift
@@ -1134,8 +1142,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   {
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currParams.at(i) + (k == central_index ? 0.0 : parameterDirections.at(k).at(i + 1));
-    optTarget->IsValid = true;
-    costValues.at(k)   = optTarget->LMYEngineCost(false, *EngineObj);
+    costValues.at(k) = optTarget->LMYEngineCost(false, *EngineObj);
     good_update.at(k) =
         (good_update.at(k) && std::abs((initCost - costValues.at(k)) / initCost) < max_relative_cost_change);
     if (!good_update.at(k))
@@ -1216,12 +1223,11 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   nTargetSamples = init_num_samp;
 
   //app_log() << "block first second third end " << block_first << block_second << block_third << endl;
-  // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+
 }
 #endif
 
-bool QMCFixedSampleLinearOptimize::one_shift_run()
+void QMCFixedSampleLinearOptimize::one_shift_run()
 {
   // ensure the cost function is set to compute derivative vectors
   optTarget->setneedGrads(true);
@@ -1338,8 +1344,8 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
             << "largest LM parameter change : " << largestChange << " at parameter " << max_element << std::endl;
 
   // compute the new cost
-  optTarget->IsValid     = true;
-  const RealType newCost = optTarget->Cost(false);
+  auto effective_weight  = optTarget->correlatedSampling(false);
+  const RealType newCost = optTarget->computedCost();
 
   app_log() << std::endl
             << "******************************************************************************" << std::endl
@@ -1349,7 +1355,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
             << newCost - initCost << std::endl
             << "******************************************************************************" << std::endl;
 
-  if (!optTarget->IsValid || qmcplusplus::isnan(newCost))
+  if (!optTarget->isEffectiveWeightValid(effective_weight) || qmcplusplus::isnan(newCost))
   {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i = 0; i < numParams; i++)
@@ -1382,13 +1388,12 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // perform some finishing touches for this linear method iteration
   finish();
 
-  // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+
 }
 
 #ifdef HAVE_LMY_ENGINE
 //Function for optimizing using gradient descent
-bool QMCFixedSampleLinearOptimize::descent_run()
+void QMCFixedSampleLinearOptimize::descent_run()
 {
   const bool saved_grads_flag = optTarget->getneedGrads();
 
@@ -1431,14 +1436,14 @@ bool QMCFixedSampleLinearOptimize::descent_run()
 
 
   finish();
-  return (optTarget->getReportCounter() > 0);
+
 }
 #endif
 
 
 //Function for controlling the alternation between sections of descent optimization and Blocked LM optimization.
 #ifdef HAVE_LMY_ENGINE
-bool QMCFixedSampleLinearOptimize::hybrid_run()
+void QMCFixedSampleLinearOptimize::hybrid_run()
 {
   app_log() << "This method name is: " << MinMethod << std::endl;
 
@@ -1471,7 +1476,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     descent_run();
 
   app_log() << "Finished a hybrid step" << std::endl;
-  return (optTarget->getReportCounter() > 0);
+
 }
 #endif
 

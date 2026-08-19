@@ -37,9 +37,7 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
       W(w),
       Psi(psi),
       H(h),
-      Write2OneXml(true),
       PowerE(2),
-      NumCostCalls(0),
       NumSamples(0),
       w_en(0.9),
       w_var(0.1),
@@ -60,16 +58,6 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
   //default: don't check fo MinNumWalkers
   MinNumWalkers = 0.3;
   SumValue.resize(SUM_INDEX_SIZE, 0.0);
-  IsValid = true;
-#if defined(QMCCOSTFUNCTION_DEBUG)
-  std::array<char, 16> fname;
-  int length = std::snprintf(fname.data(), fname.size(), "optdebug.p%d", OHMMS::Controller->rank());
-  if (length < 0)
-    throw std::runtime_error("Error generating filename");
-  debug_stream = std::make_unique<std::ofstream>(fname.data());
-  debug_stream->setf(std::ios::scientific, std::ios::floatfield);
-  debug_stream->precision(8);
-#endif
 }
 
 /** Clean up the vector */
@@ -79,7 +67,6 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
   delete_iter(d2LogPsi.begin(), d2LogPsi.end());
   if (m_doc_out != nullptr)
     xmlFreeDoc(m_doc_out);
-  debug_stream.reset();
 }
 
 void QMCCostFunctionBase::setRng(RefVector<RandomBase<FullPrecRealType>> r)
@@ -117,17 +104,6 @@ void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
   //         for (int i=1; i<opt_vars.size(); ++i) *msg_stream << "," << opt_vars.name(i) ;
   //         *msg_stream << std::endl;
   //       }
-}
-
-QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
-{
-  NumCostCalls++;
-  //reset the wave function
-  resetPsi();
-  //evaluate new local energies
-  EffectiveWeight effective_weight = correlatedSampling(needGrad);
-  IsValid                          = isEffectiveWeightValid(effective_weight);
-  return computedCost();
 }
 
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::fillHamVec(std::vector<Return_rt>& ham)
@@ -176,46 +152,6 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   if (std::abs(w_w) > small)
     CostValue += w_w * curVar;
   return CostValue;
-}
-
-
-void QMCCostFunctionBase::Report()
-{
-  //reset the wavefunction for with the new variables
-  resetPsi();
-  if (!myComm->rank())
-  {
-    updateXmlNodes();
-    std::array<char, 128> newxml;
-    int length{0};
-    if (Write2OneXml)
-      length = std::snprintf(newxml.data(), newxml.size(), "%s.opt.xml", RootName.c_str());
-    else
-      length = std::snprintf(newxml.data(), newxml.size(), "%s.opt.%d.xml", RootName.c_str(), ReportCounter);
-    if (length < 0)
-      throw std::runtime_error("Error generating fileroot");
-    xmlSaveFormatFile(newxml.data(), m_doc_out, 1);
-    if (msg_stream)
-    {
-      msg_stream->precision(8);
-      *msg_stream << " curCost " << std::setw(5) << ReportCounter << std::setw(16) << CostValue << std::setw(16)
-                  << curAvg_w << std::setw(16) << curAvg << std::setw(16) << curVar_w << std::setw(16) << curVar
-                  << std::setw(16) << curVar_abs << std::endl;
-      *msg_stream << " curVars " << std::setw(5) << ReportCounter;
-      for (int i = 0; i < opt_vars.size(); i++)
-        *msg_stream << std::setw(16) << opt_vars[i];
-      *msg_stream << std::endl;
-    }
-    //report the data
-    //Psi.reportStatus(*mgs_stream);
-  }
-#if defined(QMCCOSTFUNCTION_DEBUG)
-  *debug_stream << ReportCounter;
-  opt_vars.print(*debug_stream);
-  *debug_stream << std::endl;
-#endif
-  ReportCounter++;
-  //myComm->barrier();
 }
 
 void QMCCostFunctionBase::reportParameters()
@@ -295,7 +231,6 @@ void QMCCostFunctionBase::reportParametersH5()
 }
 
 
-
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
  * @param q current xmlNode
  * @return true if successful
@@ -315,12 +250,10 @@ void QMCCostFunctionBase::reportParametersH5()
 bool QMCCostFunctionBase::put(xmlNodePtr q)
 {
   std::string includeNonlocalH;
-  std::string writeXmlPerStep("no");
   std::string computeNLPPderiv;
   std::string GEVType;
   astring variational_subset_str;
   ParameterSet m_param;
-  m_param.add(writeXmlPerStep, "dumpXML");
   m_param.add(MinNumWalkers, "minwalkers");
   m_param.add(MaxWeight, "maxWeight");
   m_param.add(includeNonlocalH, "nonlocalpp", {}, TagStatus::DEPRECATED);
@@ -348,7 +281,6 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
 
   // app_log() << "  QMCCostFunctionBase::put " << std::endl;
   // m_param.get(app_log());
-  Write2OneXml = (writeXmlPerStep == "no");
 
   // parse "cost"
   std::vector<xmlNodePtr> cset;
@@ -1007,9 +939,8 @@ void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const 
 QMCCostFunctionBase::Return_rt QMCCostFunctionBase::LMYEngineCost(const bool needDeriv,
                                                                   cqmc::engine::LMYEngine<Return_t>& EngineObj)
 {
-  // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
-  const Return_rt standardCost = this->Cost(needDeriv);
-
+  // prepare local energies, weights, and possibly derivative vectors
+  correlatedSampling(needDeriv);
   // since we are using the LMYEngine, compute and return it's cost function value
   return this->LMYEngineCost_detail(EngineObj);
 }

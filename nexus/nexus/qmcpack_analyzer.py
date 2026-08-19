@@ -515,9 +515,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     def bundle(self,source):
         self.vlog('bundled run detected',n=1)
         if os.path.exists(source):
-            fobj = open(source,'r')
-            lines = fobj.read().split('\n')
-            fobj.close()
+            with open(source,'r') as fobj:
+                lines = fobj.read().split('\n')
         else:
             self.error('source file '+source+' does not exist')
         #end if

@@ -4,6 +4,7 @@
 
 
 from .simulation import Simulation
+from .pseudopotential import PseudoSet
 from .rmg_input import RmgInput, generate_rmg_input
 from .rmg_analyzer import RmgAnalyzer
 
@@ -58,6 +59,14 @@ class Rmg(Simulation):
 
 
 def generate_rmg(**kwargs):
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        pseudos = PseudoSet.pseudo_remap('rmg',pseudos,system)
+        kwargs['pseudos'] = pseudos
+        kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
+    #end if
+
     sim_args,inp_args = Rmg.separate_inputs(kwargs)
 
     if 'input' not in sim_args:
