@@ -5,7 +5,7 @@ from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
 
 
-from . import isolate_nexus_core, TEST_DIR
+from . import isolate_nexus_core, register_pseudo_files, TEST_DIR
 from ..testing import value_eq,object_eq,check_object_eq,dict_serialize
 
 TEST_FILES = {
@@ -1127,7 +1127,9 @@ def test_compose():
 
 
 
+@isolate_nexus_core
 def test_generate():
+    register_pseudo_files(['V.opt.xml','O.opt.xml'])
     import numpy as np
     from ..developer import NexusError,dotdict,obj
     from ..generic import obj_deprecated
@@ -1912,6 +1914,7 @@ def test_get():
 
 @isolate_nexus_core
 def test_incorporate_system():
+    register_pseudo_files(['V.opt.xml','O.opt.xml'])
     from ..physical_system import generate_physical_system
     from ..qmcpack_input import generate_qmcpack_input
 
@@ -2003,7 +2006,9 @@ def test_generate_kspace_jastrow():
 
 
 
+@isolate_nexus_core
 def test_excited_state():
+    register_pseudo_files(['C.BFD.xml'])
     from nexus import generate_physical_system
     from nexus import generate_qmcpack_input
 

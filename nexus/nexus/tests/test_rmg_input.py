@@ -4,7 +4,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
 
 
 from importlib.util import find_spec
-from . import TEST_DIR
+from . import isolate_nexus_core, register_pseudo_files, TEST_DIR
 from ..testing import value_eq,check_object_eq,dict_serialize
 
 TEST_FILES = {
@@ -728,7 +728,11 @@ def test_write(tmp_path):
 
 
 
+@isolate_nexus_core
 def test_generate():
+    register_pseudo_files([
+        'Ni_oncv.UPF','O_oncv.UPF','Pt.rel-pbe-n-rrkjus.UPF'
+        ])
     import numpy as np
     from ..developer import obj
     from ..unit_converter import convert

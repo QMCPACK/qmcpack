@@ -4,7 +4,7 @@ from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_INPUT)
 
 
-from . import isolate_nexus_core, TEST_DIR
+from . import isolate_nexus_core, register_pseudo_files, TEST_DIR
 from ..testing import failed
 from ..testing import object_eq,object_diff
 
@@ -27,6 +27,9 @@ for file in TEST_FILES.values():
 
 @isolate_nexus_core
 def test_input(tmp_path):
+    register_pseudo_files([
+        'V.opt.upf','O.opt.upf','Fe.pbe-nd-rrkjus.UPF'
+        ])
     # imports
     import numpy as np
     from ..developer import obj

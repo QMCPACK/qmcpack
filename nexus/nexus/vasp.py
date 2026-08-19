@@ -27,6 +27,7 @@
 import os
 from copy import deepcopy
 from .developer import obj
+from .pseudopotential import PseudoSet
 from .simulation import Simulation
 from .vasp_input import VaspInput,generate_vasp_input,generate_poscar,Poscar
 from .vasp_analyzer import VaspAnalyzer
@@ -175,11 +176,16 @@ class Vasp(Simulation):
 
 
 def generate_vasp(**kwargs):
-    sim_args,inp_args = Vasp.separate_inputs(kwargs,copy_pseudos=False)
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        kwargs['pseudos'] = PseudoSet.pseudo_remap('vasp',pseudos,system)
+    #end if
+
+    sim_args,inp_args = Vasp.separate_inputs(kwargs)
 
     sim_args.input = generate_vasp_input(**inp_args)
     vasp = Vasp(**sim_args)
 
     return vasp
 #end def generate_vasp
-

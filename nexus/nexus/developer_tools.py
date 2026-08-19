@@ -1,9 +1,19 @@
-
-
 import copy
 import pickle
 from collections.abc import MutableMapping
 from numbers import Number
+
+
+class Unset:
+    """Sentinel type for distinguishing an omitted argument from ``None``."""
+
+    def __repr__(self):
+        return "unset"
+    #end def __repr__
+#end class Unset
+
+
+unset = Unset()
 
 
 # attempt to regain python 2 sorting

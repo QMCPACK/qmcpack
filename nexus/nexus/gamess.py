@@ -261,7 +261,7 @@ class Gamess(Simulation):
 
 
 def generate_gamess(**kwargs):
-    sim_args,inp_args = Gamess.separate_inputs(kwargs,copy_pseudos=False,sim_kw=['mo_reorder'])
+    sim_args,inp_args = Gamess.separate_inputs(kwargs,sim_kw=['mo_reorder'])
 
     if 'input' not in sim_args:
         sim_args.input = generate_gamess_input(**inp_args)
@@ -270,7 +270,6 @@ def generate_gamess(**kwargs):
 
     return gamess
 #end def generate_gamess
-
 
 
 

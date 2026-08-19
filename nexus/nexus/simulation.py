@@ -65,21 +65,23 @@
 #====================================================================#
 
 
+import contextlib
 import os
 import sys
 import shutil
+import tempfile
+import traceback
+from functools import partial
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from string import Template
 from subprocess import Popen
-import tempfile
 from typing import ClassVar
 from .developer import DevBase, obj, error, unavailable
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
-from .pseudopotential import ppset
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
 from .utilities import path_string
 
@@ -308,7 +310,7 @@ class Simulation(NexusCore):
 
     # test needed
     @classmethod
-    def separate_inputs(cls,kwargs,overlapping_kw=-1,*,copy_pseudos=True,sim_kw=None):
+    def separate_inputs(cls,kwargs,overlapping_kw=-1,sim_kw=None):
         if overlapping_kw==-1:
             overlapping_kw = set(['system'])
         elif overlapping_kw is None:
@@ -328,8 +330,8 @@ class Simulation(NexusCore):
             sim_args[k] = kwargs[k]
         for k in inp_kw:
             inp_args[k] = kwargs[k]
-        if 'system' in inp_args:
-            system = inp_args.system
+        system = inp_args.get('system',None)
+        if system is not None:
             if not isinstance(system,PhysicalSystem):
                 extra=''
                 if not isinstance(extra,obj):
@@ -338,51 +340,6 @@ class Simulation(NexusCore):
                 error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
             #end if
         #end if
-        if 'pseudos' in inp_args and inp_args.pseudos is not None:
-            pseudos = inp_args.pseudos
-            # support ppset labels
-            if isinstance(pseudos,str):
-                code = cls.code_name()
-                if not ppset.supports_code(code):
-                    error('ppset labeled pseudopotential groups are not supported for code "{0}"'.format(code))
-                #end if
-                if 'system' not in inp_args:
-                    error('system must be provided when using a ppset label')
-                #end if
-                system = inp_args.system
-                pseudos = ppset.get(pseudos,code,system)
-                if 'pseudos' in sim_args:
-                    sim_args.pseudos = pseudos
-                #end if
-                inp_args.pseudos = pseudos
-            #end if
-            if copy_pseudos:
-                if 'files' in sim_args:
-                    sim_args.files = list(sim_args.files)
-                else:
-                    sim_args.files = list()
-                #end if
-                sim_args.files.extend(list(pseudos))
-            #end if
-            if 'system' in inp_args:
-                system = inp_args.system
-                species_labels,species = system.structure.species(symbol=True)
-                pseudopotentials = nexus_core.pseudopotentials
-                for ppfile in pseudos:
-                    if ppfile not in pseudopotentials:
-                        error('pseudopotential file {0} cannot be found'.format(ppfile))
-                    #end if
-                    pp = pseudopotentials[ppfile]
-                    if pp.element_label not in species_labels and pp.element not in species:
-                        error('the element {0} for pseudopotential file {1} is not in the physical system provided'.format(pp.element,ppfile))
-                    #end if
-                #end for
-            #end if
-        #end if
-        # this is already done in Simulation.__init__()
-        #if 'system' in inp_args and isinstance(inp_args.system,PhysicalSystem):
-        #    inp_args.system = inp_args.system.copy()
-        ##end if
         return sim_args,inp_args
     #end def separate_inputs
 
@@ -433,6 +390,7 @@ class Simulation(NexusCore):
         self.infile         = None
         self.outfile        = None
         self.errfile        = None
+        self.nexus_logfile  = None
         self.bundleable     = True
         self.bundled        = False
         self.bundler        = None
@@ -593,6 +551,8 @@ class Simulation(NexusCore):
         if self.errfile is None:
             self.errfile = self.identifier + self.errfile_extension
         #end if
+        if self.nexus_logfile is None:
+            self.nexus_logfile = self.identifier + ".nexus.log"
     #end def set_files
 
 
@@ -2300,3 +2260,45 @@ class DynamicProcess(DevBase):
         return self.sim.failed
         #return self.sim.finished and self.sim.failed
 #end class DynamicProcess
+
+
+class sim_err_handler:
+    """Context manager for simulation-specific error handling/logging."""
+    def __init__(self, sim: Simulation):
+        self.sim = sim
+        self.logfile = Path(sim.remdir).resolve() / sim.nexus_logfile
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        if exc_type is None:
+            return True
+
+        if issubclass(exc_type, KeyboardInterrupt):
+            # KeyboardInterrupt means full stop, the user has cancelled the run
+            sys.__excepthook__(exc_type, exc_value, exc_tb)
+            return False
+
+        # Check for these first. If they are both true, then we have likely already reported an error.
+        if not (self.sim.failed and self.sim.finished):
+            self.sim.failed = True
+            self.sim.finished = True
+
+            exc_msg = traceback.format_exception(exc_type, exc_value, exc_tb)
+            with open(self.logfile, "a") as errf:
+                errf.write("".join(exc_msg))
+                errf.flush()
+
+            err = f"Error occurred in simulation '{self.sim.identifier}'."
+            loc = f"See the simulation log file at '{self.sim.locdir}/{self.sim.nexus_logfile}'"
+            lenloc = len(loc) + 4 # Padding around error message
+            print(
+                f"\n{'':!^{lenloc}}\n"
+                f"{err:^{lenloc}}\n"
+                f"{loc:^{lenloc}}\n"
+                f"{'':!^{lenloc}}\n"
+                )
+
+        return True
+#end class sim_err_handler
