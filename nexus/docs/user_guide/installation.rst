@@ -35,7 +35,7 @@ Python installation and are only available when the environment is activated.
     pip install --upgrade pip # Optional unless pip is outdated
     pip install "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
 
-This will install Nexus and the standard dependencies, which currently are `numpy <https://numpy.org/doc/stable/>`__, `scipy <https://scipy.org/>`__, `matplotlib <https://matplotlib.org/>`__, and `h5py <https://www.h5py.org/>`__.
+This will install Nexus and the standard dependencies, which currently are `numpy <https://numpy.org/doc/stable/>`__, `scipy <https://scipy.org/>`__, `matplotlib <https://matplotlib.org/>`__, `h5py <https://www.h5py.org/>`__, and `pytest <https://docs.pytest.org/en/stable/>`__.
 To take full advantage of Nexus's capabilities, optional dependencies include `spglib <https://spglib.readthedocs.io/en/stable/python-interface.html>`__, `cif2cell <https://github.com/torbjornbjorkman/cif2cell>`__, `pydot <https://github.com/pydot/pydot>`__, and `seekpath <https://seekpath.readthedocs.io/en/latest/>`__.
 A complete install command would look like this
 
