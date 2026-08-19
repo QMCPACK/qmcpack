@@ -219,7 +219,7 @@ class QDBase(DevBase):
     verbose = None
     options = obj()
     parser  = None
-    
+
     def vlog(self,*args,**kwargs):
         if self.verbose:
             DevBase.log(self,*args,**kwargs)
@@ -245,7 +245,6 @@ class QDBase(DevBase):
             loc = self.name
         #end if
         error(msg,loc)
-        sys.exit(1)
     #end def error
 
     # options accessor functions
@@ -358,7 +357,7 @@ class SingleDensity(QDBase):
         self.mean,self.error = simplestats(data,dim=0)
     #end def analyze
 
-        
+
     def write(self,prefix,format):
         self.vlog('      writing files for {0}{1} (format={2})'.format(prefix,self.extension,format))
         if format=='xsf':
@@ -623,7 +622,7 @@ class StatFile(QDBase):
         #end if
     #end def accumulate
 
-                
+
     def normalize(self):
         if not self.use_dens:
             for spin_density in self.spin_density_data.values():
@@ -812,7 +811,7 @@ class StatFile(QDBase):
             #end for
         #end if
     #end def analyze
-        
+
 
 
     def write_output_files(self,formats):
@@ -861,9 +860,9 @@ class StatFile(QDBase):
                 rmax = None
             #end if
             prefix = '{0}.{1}_lineplot_{2}'.format(self.file_prefix,name,sdim)
-            data  = {'u':spin_density.u.value, 
-                     'd': spin_density.d.value, 
-                     'u+d': spin_density.u.value+spin_density.d.value, 
+            data  = {'u':spin_density.u.value,
+                     'd': spin_density.d.value,
+                     'u+d': spin_density.u.value+spin_density.d.value,
                      'u-d': spin_density.u.value-spin_density.d.value}
             for key,datum in data.items():
                 if permute:
@@ -1173,24 +1172,24 @@ class QMCDensityProcessor(QDBase):
                           default='use',
                           help='Use twist weights in twist_info.dat files or not.  Options: "use", "ignore", "require".  "use" means use when present, "ignore" means do not use, "require" means must be used (default=%default).'
                           )
-        
-        
+
+
         options,files_in = parser.parse_args()
-        
+
         QDBase.parser = parser
         QDBase.options.update(**options.__dict__)
-        
+
         opt = self.options
-        
+
         QDBase.verbose = opt.verbose
-         
+
         if opt.help or len(files_in)==0:
             self.help()
             self.exit()
         #end if
 
         self.vlog('\n{0} initializing'.format(self.name))
-        
+
         if self.verbose:
             self.log('\noptions provided:')
             self.log(str(self.options))
@@ -1274,7 +1273,7 @@ class QMCDensityProcessor(QDBase):
             #end try
             if reblock_failed:
                 self.error('cannot process reblock option\nvalue must be an integer, list, or dict\nyou provided: '+str(opt.reblock))
-            #end if        
+            #end if
         #end if
 
         #   --average option
@@ -1406,7 +1405,7 @@ class QMCDensityProcessor(QDBase):
         if opt.verbose and opt.input_metadata is not None:
             self.log('input density metadata found for series: {0}'.format(sorted(opt.input_metadata.series.keys())))
         #end if
-        
+
         for file in files_in:
             if not os.path.exists(file):
                 self.error('file does not exist: {0}'.format(file))
