@@ -4,7 +4,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <algorithm>
 #include <cmath>
-#include <cstdlib>
 #include <memory>
 #include <stdexcept>
 
@@ -23,18 +22,6 @@ namespace qmcplusplus
 {
 namespace
 {
-template<typename REAL>
-REAL parseNonfinite(const char* value)
-{
-  if constexpr (sizeof(REAL) == sizeof(float))
-    return std::strtof(value, nullptr);
-  else
-  {
-    static_assert(sizeof(REAL) == sizeof(double));
-    return std::strtod(value, nullptr);
-  }
-}
-
 SimulationCell makeOpenCell()
 {
   Lattice lattice;
@@ -82,11 +69,17 @@ public:
   }
 
   template<CoordsType CT>
-  bool makeMove(const MCCoords<CT>& displacements, bool skipSK = false)
+  void makeMove(const MCCoords<CT>& displacements, std::vector<bool>& valid, bool skipSK = false)
   {
-    std::vector<bool> valid(1);
-    ParticleSet::mw_makeMoveAllParticles(p_list_, walkers_, displacements, valid, skipSK);
-    return valid[0];
+    ParticleSet::mw_makeMoveAllParticles(p_list_, displacements, valid, skipSK);
+  }
+
+  template<CoordsType CT>
+  std::vector<bool> makeMove(const MCCoords<CT>& displacements, bool skipSK = false)
+  {
+    std::vector<bool> valid(displacements.positions.size());
+    makeMove(displacements, valid, skipSK);
+    return valid;
   }
 
   void resolve(bool accepted, bool skipSK = false)
@@ -135,14 +128,14 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind)
   // The flattened storage is particle-major: iat * nw + iw.
   MCCoords<CoordsType::POS> displacements(4);
   displacements.positions = {{0.2, 0.0, 0.0}, {0.1, 0.0, 0.0}, {0.0, 0.3, 0.0}, {0.0, -2.0, 0.0}};
-  std::vector<bool> valid(2);
+  std::vector<bool> valid(4);
   PSdispatcher dispatcher(/*use_batch=*/true);
-  dispatcher.flex_makeMoveAllParticles(p_list, walkers, displacements, valid);
+  dispatcher.flex_makeMoveAllParticles(p_list, displacements, valid);
 
-  REQUIRE(valid == std::vector<bool>{true, false});
+  REQUIRE(valid == std::vector<bool>{true, true, true, false});
   checkPosition(p0, 0, {0.7, 0.5, 0.5});
   checkPosition(p0, 1, {1.5, 1.3, 0.5});
-  checkPosition(p1, 0, w1.R[0]);
+  checkPosition(p1, 0, {0.6, 0.5, 0.5});
   checkPosition(p1, 1, w1.R[1]);
   CHECK(p0.getActivePtcl() == -1);
   CHECK(p1.getActivePtcl() == -1);
@@ -151,6 +144,7 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind)
 
   dispatcher.flex_accept_rejectMoveAllParticles(p_list, walkers, {true, false});
   checkPosition(p0, 0, {0.7, 0.5, 0.5});
+  checkPosition(p1, 0, w1.R[0]);
   checkPosition(p1, 1, w1.R[1]);
   checkDistances(p0, aa_id, ab_id, ions);
   checkDistances(p1, aa_id, ab_id, ions);
@@ -159,8 +153,8 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind)
   dispatcher.flex_saveWalker(p_list, walkers);
   MCCoords<CoordsType::POS> next_displacements(4);
   next_displacements.positions = {{0.1, 0.0, 0.0}, {0.0, 0.0, 0.2}, {0.0, 0.1, 0.0}, {0.1, 0.0, 0.0}};
-  dispatcher.flex_makeMoveAllParticles(p_list, walkers, next_displacements, valid);
-  REQUIRE(valid == std::vector<bool>{true, true});
+  dispatcher.flex_makeMoveAllParticles(p_list, next_displacements, valid);
+  REQUIRE(valid == std::vector<bool>{true, true, true, true});
   dispatcher.flex_accept_rejectMoveAllParticles(p_list, walkers, {false, true});
 
   checkPosition(p0, 0, {0.7, 0.5, 0.5});
@@ -178,8 +172,8 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind)
     for (int iat = 0; iat < p_list[iw].getTotalNum(); ++iat)
       CHECK(walkers[iw].get().R[iat] == p_list[iw].R[iat]);
 
-  dispatcher.flex_makeMoveAllParticles(p_list, walkers, next_displacements, valid);
-  REQUIRE(valid == std::vector<bool>{true, true});
+  dispatcher.flex_makeMoveAllParticles(p_list, next_displacements, valid);
+  REQUIRE(valid == std::vector<bool>{true, true, true, true});
   const ParticleSet::ParticlePos accepted_r0(p0.R);
   const ParticleSet::ParticlePos accepted_r1(p1.R);
   dispatcher.flex_accept_rejectMoveAllParticles(p_list, walkers, {true, true});
@@ -190,8 +184,8 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind)
   }
 
   dispatcher.flex_saveWalker(p_list, walkers);
-  dispatcher.flex_makeMoveAllParticles(p_list, walkers, next_displacements, valid);
-  REQUIRE(valid == std::vector<bool>{true, true});
+  dispatcher.flex_makeMoveAllParticles(p_list, next_displacements, valid);
+  REQUIRE(valid == std::vector<bool>{true, true, true, true});
   dispatcher.flex_accept_rejectMoveAllParticles(p_list, walkers, {false, false});
   for (int iat = 0; iat < p0.getTotalNum(); ++iat)
   {
@@ -211,7 +205,8 @@ TEST_CASE("ParticleSet all-particle moves through the multiwalker dispatcher pas
 
 TEST_CASE("ParticleSet all-particle POS_SPIN rejection restores the resolved walker", "[particle]")
 {
-  ParticleSet pset(makeOpenCell());
+  const SimulationCell cell = makeOpenCell();
+  ParticleSet pset(cell);
   pset.create({2});
   pset.setSpinor(true);
   pset.R[0]  = {0.5, 0.5, 0.5};
@@ -226,7 +221,7 @@ TEST_CASE("ParticleSet all-particle POS_SPIN rejection restores the resolved wal
   displacements.spins     = {0.5, -0.25};
   SingleWalkerAllParticleContext transaction(pset, walker);
 
-  REQUIRE(transaction.makeMove(displacements));
+  REQUIRE(transaction.makeMove(displacements) == std::vector<bool>{true, true});
   CHECK(pset.spins[0] == Approx(0.75));
   CHECK(pset.spins[1] == Approx(-0.75));
   transaction.resolve(false);
@@ -236,19 +231,12 @@ TEST_CASE("ParticleSet all-particle POS_SPIN rejection restores the resolved wal
   CHECK(pset.spins[0] == Approx(walker.spins[0]));
   CHECK(pset.spins[1] == Approx(walker.spins[1]));
   CHECK(pset.getActivePtcl() == -1);
-
-  displacements.positions = {{}, {}};
-  displacements.spins     = {0.0, parseNonfinite<ParticleSet::RealType>("inf")};
-  REQUIRE_FALSE(transaction.makeMove(displacements));
-  CHECK(pset.spins[0] == Approx(walker.spins[0]));
-  CHECK(pset.spins[1] == Approx(walker.spins[1]));
-  checkPosition(pset, 0, walker.R[0]);
-  checkPosition(pset, 1, walker.R[1]);
 }
 
 TEST_CASE("ParticleSet batched all-particle POS_SPIN resolves mixed outcomes", "[particle]")
 {
-  ParticleSet p0(makeOpenCell());
+  const SimulationCell cell = makeOpenCell();
+  ParticleSet p0(cell);
   p0.create({2});
   p0.R[0]  = {0.5, 0.5, 0.5};
   p0.R[1]  = {1.5, 1.0, 0.5};
@@ -267,15 +255,17 @@ TEST_CASE("ParticleSet batched all-particle POS_SPIN resolves mixed outcomes", "
   ResourceCollectionTeamLock<ParticleSet> lock(resources, p_list);
 
   MCCoords<CoordsType::POS_SPIN> displacements(4);
-  displacements.positions = {{0.1, 0.0, 0.0}, {0.2, 0.0, 0.0}, {0.0, 0.1, 0.0}, {0.0, 0.2, 0.0}};
+  displacements.positions = {{0.1, 0.0, 0.0}, {0.2, 0.0, 0.0}, {0.0, 0.1, 0.0}, {0.0, -2.0, 0.0}};
   displacements.spins     = {0.5, 1.0, -0.25, -0.75};
-  std::vector<bool> valid(2);
-  ParticleSet::mw_makeMoveAllParticles(p_list, walkers, displacements, valid);
-  REQUIRE(valid == std::vector<bool>{true, true});
+  std::vector<bool> valid(4);
+  ParticleSet::mw_makeMoveAllParticles(p_list, displacements, valid);
+  REQUIRE(valid == std::vector<bool>{true, true, true, false});
   CHECK(p0.spins[0] == Approx(0.75));
   CHECK(p0.spins[1] == Approx(-0.75));
   CHECK(p1.spins[0] == Approx(1.25));
-  CHECK(p1.spins[1] == Approx(-1.25));
+  CHECK(p1.spins[1] == Approx(w1.spins[1]));
+  checkPosition(p1, 0, {0.7, 0.5, 0.5});
+  checkPosition(p1, 1, w1.R[1]);
 
   ParticleSet::mw_accept_rejectMoveAllParticles(p_list, walkers, {true, false});
   CHECK(p0.spins[0] == Approx(0.75));
@@ -293,7 +283,8 @@ TEST_CASE("ParticleSet all-particle periodic proposal remains unwrapped and supp
   lattice.R                  = ParticleSet::Tensor_t(2.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 2.0);
   lattice.explicitly_defined = true;
   lattice.reset();
-  ParticleSet pset{SimulationCell(lattice)};
+  const SimulationCell cell(lattice);
+  ParticleSet pset(cell);
   pset.create({1});
   pset.R[0] = {1.8, 0.5, 0.5};
   pset.update();
@@ -304,7 +295,7 @@ TEST_CASE("ParticleSet all-particle periodic proposal remains unwrapped and supp
   MCCoords<CoordsType::POS> displacement(1);
   displacement.positions = {{0.5, 0.0, 0.0}};
   SingleWalkerAllParticleContext transaction(pset, walker);
-  REQUIRE(transaction.makeMove(displacement, true));
+  REQUIRE(transaction.makeMove(displacement, true) == std::vector<bool>{true});
   checkPosition(pset, 0, {2.3, 0.5, 0.5});
   transaction.resolve(false, true);
   checkPosition(pset, 0, walker.R[0]);
@@ -326,7 +317,8 @@ TEST_CASE("ParticleSet all-particle move honors structure-factor skipping", "[pa
   std::fill(displacement.positions.begin(), displacement.positions.end(), ParticleSet::PosType{});
   displacement.positions[0] = {0.2, 0.1, 0.0};
   SingleWalkerAllParticleContext transaction(pset, walker);
-  REQUIRE(transaction.makeMove(displacement, true));
+  const std::vector<bool> skip_sk_valid = transaction.makeMove(displacement, true);
+  REQUIRE(std::all_of(skip_sk_valid.begin(), skip_sk_valid.end(), [](bool valid) { return valid; }));
   for (size_t i = 0; i < resolved_rhok_r.size(); ++i)
   {
     CHECK(pset.getSK().rhok_r.data()[i] == Approx(resolved_rhok_r.data()[i]));
@@ -334,7 +326,8 @@ TEST_CASE("ParticleSet all-particle move honors structure-factor skipping", "[pa
   }
 
   transaction.resolve(false, true);
-  REQUIRE(transaction.makeMove(displacement));
+  const std::vector<bool> update_sk_valid = transaction.makeMove(displacement);
+  REQUIRE(std::all_of(update_sk_valid.begin(), update_sk_valid.end(), [](bool valid) { return valid; }));
   bool any_rhok_changed = false;
   for (size_t i = 0; i < resolved_rhok_r.size(); ++i)
     any_rhok_changed = any_rhok_changed || pset.getSK().rhok_r.data()[i] != Approx(resolved_rhok_r.data()[i]) ||
@@ -378,9 +371,9 @@ TEST_CASE("ParticleSet batched all-particle move updates and restores structure 
   std::fill(displacements.positions.begin(), displacements.positions.end(), ParticleSet::PosType{});
   displacements.positions[0] = {0.2, 0.1, 0.0};
   displacements.positions[1] = {-0.1, 0.2, 0.0};
-  std::vector<bool> valid(num_walkers);
-  ParticleSet::mw_makeMoveAllParticles(p_list, walkers, displacements, valid);
-  REQUIRE(valid == std::vector<bool>{true, true});
+  std::vector<bool> valid(num_particles * num_walkers);
+  ParticleSet::mw_makeMoveAllParticles(p_list, displacements, valid);
+  REQUIRE(std::all_of(valid.begin(), valid.end(), [](bool is_valid) { return is_valid; }));
   const auto proposed_rhok_r = p0.getSK().rhok_r;
   const auto proposed_rhok_i = p0.getSK().rhok_i;
 
@@ -394,9 +387,10 @@ TEST_CASE("ParticleSet batched all-particle move updates and restores structure 
   }
 }
 
-TEST_CASE("ParticleSet all-particle moves reject nonfinite proposals atomically", "[particle]")
+TEST_CASE("ParticleSet all-particle moves filter boundary-invalid particles independently", "[particle]")
 {
-  ParticleSet pset(makeOpenCell());
+  const SimulationCell cell = makeOpenCell();
+  ParticleSet pset(cell);
   pset.create({2});
   pset.R[0] = {0.5, 0.5, 0.5};
   pset.R[1] = {1.5, 0.5, 0.5};
@@ -405,14 +399,22 @@ TEST_CASE("ParticleSet all-particle moves reject nonfinite proposals atomically"
   pset.saveWalker(walker);
 
   MCCoords<CoordsType::POS> displacements(2);
-  displacements.positions = {{0.2, 0.0, 0.0}, {0.0, parseNonfinite<ParticleSet::RealType>("nan"), 0.0}};
+  displacements.positions = {{0.2, 0.0, 0.0}, {0.0, -1.0, 0.0}};
   SingleWalkerAllParticleContext transaction(pset, walker);
-  REQUIRE_FALSE(transaction.makeMove(displacements));
-  checkPosition(pset, 0, walker.R[0]);
+  REQUIRE(transaction.makeMove(displacements) == std::vector<bool>{true, false});
+  checkPosition(pset, 0, {0.7, 0.5, 0.5});
   checkPosition(pset, 1, walker.R[1]);
 
-  displacements.positions[1] = {0.0, parseNonfinite<ParticleSet::RealType>("inf"), 0.0};
-  REQUIRE_FALSE(transaction.makeMove(displacements));
+  // Fast particle validity and full-configuration Monte Carlo acceptance are independent.
+  transaction.resolve(true);
+  pset.saveWalker(walker);
+  displacements.positions[0] = {0.1, 0.0, 0.0};
+  displacements.positions[1] = {0.0, 4.0, 0.0};
+  REQUIRE(transaction.makeMove(displacements) == std::vector<bool>{true, false});
+  checkPosition(pset, 0, {0.8, 0.5, 0.5});
+  checkPosition(pset, 1, walker.R[1]);
+
+  transaction.resolve(false);
   checkPosition(pset, 0, walker.R[0]);
   checkPosition(pset, 1, walker.R[1]);
 }
@@ -420,7 +422,8 @@ TEST_CASE("ParticleSet all-particle moves reject nonfinite proposals atomically"
 #ifndef NDEBUG
 TEST_CASE("ParticleSet all-particle moves reject malformed and active transactions", "[particle]")
 {
-  ParticleSet pset(makeOpenCell());
+  const SimulationCell cell = makeOpenCell();
+  ParticleSet pset(cell);
   pset.create({2});
   pset.R[0] = {0.5, 0.5, 0.5};
   pset.R[1] = {1.5, 0.5, 0.5};
@@ -435,10 +438,13 @@ TEST_CASE("ParticleSet all-particle moves reject malformed and active transactio
 
   MCCoords<CoordsType::POS> displacements(2);
   displacements.positions = {{0.1, 0.0, 0.0}, {0.0, 0.1, 0.0}};
+  std::vector<bool> malformed_validity(1);
+  REQUIRE_THROWS_AS(transaction.makeMove(displacements, malformed_validity), std::runtime_error);
+
   pset.makeMove(0, {0.1, 0.0, 0.0});
   REQUIRE_THROWS_AS(transaction.makeMove(displacements), std::runtime_error);
 
-  ParticleSet malformed_pset(makeOpenCell());
+  ParticleSet malformed_pset(cell);
   malformed_pset.create({1});
   ParticleSet::Walker_t malformed_walker(2);
   SingleWalkerAllParticleContext malformed_transaction(malformed_pset, malformed_walker);
@@ -447,7 +453,8 @@ TEST_CASE("ParticleSet all-particle moves reject malformed and active transactio
 
 TEST_CASE("ParticleSet batched all-particle move rejects mismatched crowd topology before mutation", "[particle]")
 {
-  ParticleSet p0(makeOpenCell());
+  const SimulationCell cell = makeOpenCell();
+  ParticleSet p0(cell);
   p0.setName("e");
   p0.create({2});
   p0.R[0] = {0.5, 0.5, 0.5};
@@ -461,12 +468,11 @@ TEST_CASE("ParticleSet batched all-particle move rejects mismatched crowd topolo
   p0.saveWalker(w0);
   p1.saveWalker(w1);
   RefVectorWithLeader<ParticleSet> p_list(p0, {p0, p1});
-  RefVector<ParticleSet::Walker_t> walkers{w0, w1};
   MCCoords<CoordsType::POS> displacements(4);
   displacements.positions = {{0.1, 0.0, 0.0}, {0.2, 0.0, 0.0}, {0.0, 0.1, 0.0}, {0.0, 0.2, 0.0}};
-  std::vector<bool> valid(2);
+  std::vector<bool> valid(4);
 
-  REQUIRE_THROWS_AS(ParticleSet::mw_makeMoveAllParticles(p_list, walkers, displacements, valid), std::runtime_error);
+  REQUIRE_THROWS_AS(ParticleSet::mw_makeMoveAllParticles(p_list, displacements, valid), std::runtime_error);
   checkPosition(p0, 0, w0.R[0]);
   checkPosition(p0, 1, w0.R[1]);
   checkPosition(p1, 0, w1.R[0]);

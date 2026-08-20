@@ -309,21 +309,19 @@ public:
                               int iat,
                               const std::vector<Scalar_t>& sdispls);
 
-  /** Install a crowd of complete all-particle proposals relative to resolved walker snapshots.
+  /** Install a crowd of complete all-particle proposals relative to current ParticleSet state.
    *
-   * Each resolved walker is the authoritative baseline for positions. For POS_SPIN, it is
-   * also the baseline for spins. Displacements use particle-major flattened storage:
-   * iat * number_of_walkers + iw. The caller must supply a nonempty,
-   * resource-acquired clone crowd with matching topology, particle counts, aligned walker
-   * and output lists, exact displacement sizes, and no active particles. These caller
-   * invariants are checked in Debug and assumed in Release. Proposal finiteness and lattice
-   * validity are simulation outcomes checked in every build. Invalid walkers remain at
-   * their resolved snapshots and are marked false in are_valid. Distance tables and,
-   * unless skipped, structure factors are fully updated. No particle is left active.
+   * Displacements and are_valid use particle-major flattened storage:
+   * iat * number_of_walkers + iw. The caller must supply a nonempty, resource-acquired
+   * clone crowd with matching topology and particle counts, exact input and output sizes,
+   * and no active particles. These caller invariants are checked in Debug and assumed in
+   * Release. Each proposal receives the same lattice-validity check as mw_makeMove.
+   * Invalid particle proposals leave that particle unchanged; they do not reject the full
+   * configuration. Distance tables and, unless skipped, structure factors are fully
+   * updated. No particle is left active.
    */
   template<CoordsType CT>
   static void mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
-                                      const RefVector<Walker_t>& walkers,
                                       const MCCoords<CT>& displacements,
                                       std::vector<bool>& are_valid,
                                       bool skipSK = false);

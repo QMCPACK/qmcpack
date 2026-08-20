@@ -40,7 +40,6 @@ public:
   /// Pass a complete all-particle proposal directly to the multiwalker implementation.
   template<CoordsType CT>
   void flex_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
-                                 const RefVector<Walker_t>& walkers,
                                  const MCCoords<CT>& displacements,
                                  std::vector<bool>& are_valid,
                                  bool skipSK = false) const;
