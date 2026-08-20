@@ -309,7 +309,7 @@ class DefinedAttributeBase(DevBase):
                     'Attribute destination "{}" does not exist at the top level.\n'
                     'This is a developer error.'.format(p.dest)
                     )
-                raise NexusError
+                raise NexusError(msg)
             #end if
             self._set_attribute(self[p.dest],name,values[name],p)
         #end for
