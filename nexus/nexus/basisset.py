@@ -43,7 +43,10 @@ class BasisSets(DevBase):
             #end if
         #end for
         if len(msg) > 0:
-            msg = f'cannot create Basissets object\n{msg}'
+            msg = (
+                'cannot create Basissets object\n'
+                f'{msg}'
+                )
             raise TypeError(msg)
         #end if
 
@@ -97,7 +100,10 @@ class BasisSets(DevBase):
                 bs = self[bsfile]
                 bss[bs.element_label] = bs
             else:
-                msg = 'basis file not found\nmissing file: {0}'.format(bsfile)
+                msg = (
+                    'basis file not found\n'
+                    'missing file: {0}'.format(bsfile)
+                    )
                 raise FileNotFoundError(msg)
             #end if
         #end for
@@ -119,7 +125,11 @@ class BasisFile(DevBase):
             elem_label = self.filename.split('.')[0]
             is_elem, elem = Elements.is_element(elem_label, return_element=True)
             if not is_elem:
-                msg = 'cannot determine element for basis file: {0}\nbasis file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filepath)
+                msg = (
+                    'cannot determine element for basis file: {0}\n'
+                    'basis file names must be prefixed by an atomic symbol or label\n'
+                    '(e.g. Si, Si1, etc)'.format(filepath)
+                    )
                 raise RuntimeError(msg)
             #end if
             self.element = elem.symbol
@@ -146,7 +156,10 @@ class gaussBasisFile(BasisFile):
 
     def cleaned_text(self):
         if self.text is None:
-            msg = 'text requested prior to read\nfile: {0}'.format(self.location)
+            msg = (
+                'text requested prior to read\n'
+                'file: {0}'.format(self.location)
+                )
             raise NexusError(msg)
         #end if
         return self.text
@@ -321,10 +334,16 @@ class GaussianBasisSet(DevBase):
 
     def read(self,filepath,format=None):
         if format is None:
-            msg = 'format keyword must be specified to read file {0}\nvalid options are: {1}'.format(filepath,self.formats)
+            msg = (
+                'format keyword must be specified to read file {0}\n'
+                'valid options are: {1}'.format(filepath,self.formats)
+                )
             raise ValueError(msg)
         elif format not in self.formats:
-            msg = 'incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats)
+            msg = (
+                'incorrect format requested: {0}\n'
+                'valid options are: {1}'.format(format,self.formats)
+                )
             raise ValueError(msg)
         #end if
         if not os.path.exists(filepath):
@@ -341,10 +360,16 @@ class GaussianBasisSet(DevBase):
 
     def write(self,filepath=None,format=None):
         if format is None:
-            msg = 'format keyword must be specified to write file {0}\nvalid options are: {1}'.format(filepath,self.formats)
+            msg = (
+                'format keyword must be specified to write file {0}\n'
+                'valid options are: {1}'.format(filepath,self.formats)
+                )
             raise ValueError(msg)
         elif format not in self.formats:
-            msg = 'incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats)
+            msg = (
+                'incorrect format requested: {0}\n'
+                'valid options are: {1}'.format(format,self.formats)
+                )
             raise ValueError(msg)
         #end if
         text = self.write_text(format)

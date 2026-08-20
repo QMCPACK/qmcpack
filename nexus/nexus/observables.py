@@ -442,9 +442,15 @@ class DefinedAttributeBase(DevBase):
                     extra = ' at location "{}"'.format(p.dest)
                 #end if
                 if not present:
-                    msg = 'Cannot get attribute "{}"{}.\nAttribute does not exist.'.format(name,extra)
+                    msg = (
+                        'Cannot get attribute "{}"{}.\n'
+                        'Attribute does not exist.'.format(name,extra)
+                        )
                 else:
-                    msg = 'Cannot get attribute "{}"{}.\nAttribute has not been assigned.'.format(name,extra)
+                    msg = (
+                        'Cannot get attribute "{}"{}.\n'
+                        'Attribute has not been assigned.'.format(name,extra)
+                        )
                 #end if
                 raise ValueError(msg)
             #end if

@@ -1408,9 +1408,15 @@ class Void(object):
         elif module is None:
             msg = 'item '+str(item)+' is from an unavailable module'
         elif item is None:
-            msg = 'encountered a void item from unavailable module '+str(module)+'  \nthis python module must be installed on your system to use this feature'
+            msg = (
+                'encountered a void item from unavailable module '+str(module)+'  \n'
+                'this python module must be installed on your system to use this feature'
+                )
         else:
-            msg = 'item '+str(item)+' is from unavailable module '+str(module)+'  \nthis python module must be installed on your system to use this feature'
+            msg = (
+                'item '+str(item)+' is from unavailable module '+str(module)+'  \n'
+                'this python module must be installed on your system to use this feature'
+                )
         #end if
         raise ImportError(msg)
     #end def _unavailable

@@ -108,7 +108,10 @@ class GamessAnalyzer(SimulationAnalyzer):
 
     def analyze(self):
         if not self.info.initialized:
-            msg = 'cannot perform analysis\nGamessAnalyzer has not been initialized'
+            msg = (
+                'cannot perform analysis\n'
+                'GamessAnalyzer has not been initialized'
+                )
             raise RuntimeError(msg)
         #end if
         self.analyze_log()
@@ -124,7 +127,11 @@ class GamessAnalyzer(SimulationAnalyzer):
         elif os.path.exists(filename):
             filepath = filename
         elif self.info.exit:
-            msg = 'output file does not exist at either of the locations below:\n  {0}\n  {1}'.format(outfile,filename)
+            msg = (
+                'output file does not exist at either of the locations below:\n'
+                '  {0}\n'
+                '  {1}'.format(outfile,filename)
+                )
             raise FileNotFoundError(msg)
         else:
             return None
@@ -272,7 +279,13 @@ class GamessAnalyzer(SimulationAnalyzer):
                 if j==jmax:
                     success=False
                     if self.info.exit:
-                        msg = 'could not find start of orbitals for {0}\nnumber of orbitals read successfully: {1}\nnumber of orbitals not read: {2}'.format(header,mos_found,mos_tot-mos_found)
+                        msg = (
+                            'could not find start of orbitals for {0}\n'
+                            'number of orbitals read successfully: {1}\n'
+                            'number of orbitals not read: {2}'.format(
+                                header, mos_found, mos_tot-mos_found
+                                )
+                            )
                         raise FileFormatError(msg)
                     else:
                         break
@@ -320,7 +333,13 @@ class GamessAnalyzer(SimulationAnalyzer):
             if i==imax:
                 success=False
                 if self.info.exit:
-                    msg = 'orbital read failed for {0}\nnumber of orbitals read successfully: {1}\nnumber of orbitals not read: {2}'.format(header,mos_found,mos_tot-mos_found)
+                    msg = (
+                        'orbital read failed for {0}\n'
+                        'number of orbitals read successfully: {1}\n'
+                        'number of orbitals not read: {2}'.format(
+                            header, mos_found, mos_tot-mos_found
+                            )
+                        )
                     raise FileFormatError(msg)
             #end if
             if success:

@@ -86,7 +86,11 @@ def _read_gamess_pseudopotential(filepath):
             elif len(tokens)==5:
                 pseudo.basis_text = block
             else:
-                msg = 'could not identify text block in {0} as pseudopotential or basis text\ntext block:\n{1}'.format(filename,block)
+                msg = (
+                    'could not identify text block in {0} as pseudopotential or basis text\n'
+                    'text block:\n'
+                    '{1}'.format(filename,block)
+                    )
                 raise FileFormatError(msg)
             #end if
             new_block = True
@@ -116,7 +120,11 @@ class GIarray(GIbase):
     def __init__(self,d):
         for n,v in d.items():
             if not isinstance(n,int):
-                msg = "keys must be integers\nattempted to initialize array from input provided: {0}\nnote that dict's are used only for arrays".format(d)
+                msg = (
+                    "keys must be integers\n"
+                    "attempted to initialize array from input provided: {0}\n"
+                    "note that dict's are used only for arrays".format(d)
+                    )
                 raise TypeError(msg)
             #end if
             if isinstance(v,(tuple,list,np.ndarray)):
@@ -943,13 +951,19 @@ class GamessInput(SimulationInput,GIbase):
                 elif not ingroup:
                     None
                 else:
-                    msg = 'invalid text encountered during read of line number {0}:\n{1}'.format(n,line)
+                    msg = (
+                        'invalid text encountered during read of line number {0}:\n'
+                        '{1}'.format(n,line)
+                        )
                     raise FileFormatError(msg)
                 #end if
             elif ls=='' or line[0]!=' ' or not ingroup:
                 None
             else:
-                msg = 'invalid text encountered during read of line number {0}:\n{1}'.format(n,line)
+                msg = (
+                    'invalid text encountered during read of line number {0}:\n'
+                    '{1}'.format(n,line)
+                    )
                 raise FileFormatError(msg)
             #end if                    
             # specialized parsing for unknown card groups
@@ -990,7 +1004,11 @@ class GamessInput(SimulationInput,GIbase):
                 #end try
             #end if
             if failed:
-                msg = 'Read failure: group "{0}" does not appear to be a keyword group\nand a generic read of card data failed\ndata for this group will not be available'.format(group_name)
+                msg = (
+                    'Read failure: group "{0}" does not appear to be a keyword group\n'
+                    'and a generic read of card data failed\n'
+                    'data for this group will not be available'.format(group_name)
+                    )
                 raise FileFormatError(msg)
             #end if
         #end for
@@ -1020,7 +1038,12 @@ class GamessInput(SimulationInput,GIbase):
         contents = ''
         extra_groups = set(self.keys())-set(self.group_order)
         if len(extra_groups)>0:
-            msg = 'write failed\nthe following groups are unknown: {0}'.format(sorted(extra_groups))
+            msg = (
+                'write failed\n'
+                'the following groups are unknown: {0}'.format(
+                    sorted(extra_groups)
+                    )
+                )
             raise ValueError(msg)
         #end if
         for group in self.group_order:
@@ -1056,7 +1079,10 @@ def generate_gamess_input(**kwargs):
     if input_type=='general':
         gi = generate_any_gamess_input(**kwargs)
     else:
-        msg = 'input_type {0} is unrecognized\nvalid options are: general'.format(input_type)
+        msg = (
+            'input_type {0} is unrecognized\n'
+            'valid options are: general'.format(input_type)
+            )
         raise ValueError(msg)
     #end if
     return gi
@@ -1334,19 +1360,30 @@ def check_keyspec_groups():
         if len(overlaps)>0:
             msg = '  keyspec group {0} has overlapping keywords'.format(g.__name__)
             for tname1,tname2 in sorted(overlaps.keys()):
-                msg += '    \n {0} {1} overlap: {2}\n'.format(tname1,tname2,overlaps[tname1,tname2])
+                msg += (
+                    '    \n'
+                    ' {0} {1} overlap: {2}\n'.format(
+                        tname1, tname2, overlaps[tname1,tname2]
+                        )
+                    )
             #end for
             err += msg
         #end if
         for tname in sorted(go.keys()):
             extra_keys = go[tname]-g.keywords
             if len(extra_keys)>0:
-                err += '  keyspec group {0} has unrecognized {1} keywords:\n    {2}\n'.format(g.__name__,tname,sorted(extra_keys))
+                err += (
+                    '  keyspec group {0} has unrecognized {1} keywords:\n'
+                    '    {2}\n'.format(g.__name__,tname,sorted(extra_keys))
+                    )
             #end if
         #end for
         extra_keys = set(g.allowed_values.keys())-g.keywords
         if len(extra_keys)>0:
-            err += '  keyspec group {0} has unrecognized allowed_value keywords:\n    {1}\n'.format(g.__name__,sorted(extra_keys))
+            err += (
+                '  keyspec group {0} has unrecognized allowed_value keywords:\n'
+                '    {1}\n'.format(g.__name__,sorted(extra_keys))
+                )
         #end if
         type_keys = set()
         for keys in go.values():
@@ -1354,7 +1391,10 @@ def check_keyspec_groups():
         #end for
         undefined = g.keywords-type_keys
         if len(undefined)>0:
-            err += '  keyspec group {0} has keywords w/o type assignment:\n    {1}\n'.format(g.__name__,sorted(undefined))
+            err += (
+                '  keyspec group {0} has keywords w/o type assignment:\n'
+                '    {1}\n'.format(g.__name__,sorted(undefined))
+                )
         #end if
 
         #check that allowed values for each keyword have the right type
@@ -1371,7 +1411,11 @@ def check_keyspec_groups():
                 if kw in g.allowed_values:
                     for val in g.allowed_values[kw]:
                         if not isinstance(val,type):
-                            err += '  allowed values of {0} keyword {1} are not all {2}: {3}\n'.format(g.__name__,kw,tname,sorted(g.allowed_values[kw]))
+                            err += (
+                                '  allowed values of {0} keyword {1} are not all {2}: {3}\n'.format(
+                                    g.__name__, kw, tname, sorted(g.allowed_values[kw])
+                                    )
+                                )
                             break
                         #end if
                     #end for
@@ -1398,14 +1442,21 @@ def check_keyspec_groups():
     if len(overlaps)>0:
         wrn += '\n  Note: some groups have overlapping keywords\n'
         for gname1,gname2 in sorted(overlaps.keys()):
-            wrn += '    groups {0} and {1} have overlapping keywords:\n      {2}\n'.format(gname1,gname2,overlaps[gname1,gname2])
+            wrn += (
+                '    groups {0} and {1} have overlapping keywords:\n'
+                '      {2}\n'.format(gname1, gname2, overlaps[gname1,gname2])
+                )
         #end for
     #end if
 
     #note any overlapping keyword and group names (also a feature)
     overlap = GamessInput.all_keywords & set(GamessInput.group_order)
     if len(overlap)>0:
-        wrn += '\n  Note: some group names overlap with keywords:\n    {0}\n'.format(sorted(overlap))
+        wrn += (
+            '\n'
+            '  Note: some group names overlap with keywords:\n'
+            '    {0}\n'.format(sorted(overlap))
+            )
     #end if
 
     if len(err)>0:

@@ -1380,7 +1380,10 @@ def distance_table(p1,p2,ordering=0):
             n=n2
             dt=dt.T
         else:
-            msg = 'ordering must be 1 or 2,\nyou provided '+str(ordering)
+            msg = (
+                'ordering must be 1 or 2,\n'
+                'you provided '+str(ordering)
+                )
             raise ValueError(msg)
         #end if
         order = np.empty(dt.shape,dtype=int)

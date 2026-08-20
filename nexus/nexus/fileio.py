@@ -261,7 +261,10 @@ class StandardFile(DevBase):
 
     def read(self,filepath):
         if not os.path.exists(filepath):
-            msg = 'read failed\nfile does not exist: {0}'.format(filepath)
+            msg = (
+                'read failed\n'
+                'file does not exist: {0}'.format(filepath)
+                )
             raise FileNotFoundError(msg)
         #end if
         with open(filepath, "r") as f:
@@ -340,7 +343,10 @@ class XsfFile(StandardFile):
         self.order       = None
         if order is not None:
             if order!='F' and order!='C':
-                msg = 'order must by C or F\nyou provided: {}'.format(order)
+                msg = (
+                    'order must by C or F\n'
+                    'you provided: {}'.format(order)
+                    )
                 raise ValueError(msg)
             #end if
             self.order = order
@@ -368,7 +374,10 @@ class XsfFile(StandardFile):
     def read_text(self,text,order=None):
         if order is not None:
             if order!='F' and order!='C':
-                msg = 'order must by C or F\nyou provided: {}'.format(order)
+                msg = (
+                    'order must by C or F\n'
+                    'you provided: {}'.format(order)
+                    )
                 raise ValueError(msg)
             #end if
             self.order = order

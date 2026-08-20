@@ -1206,7 +1206,10 @@ class Machine(NexusCore):
         if 'app_directories' in info:
             ad = info.app_directories
             if not isinstance(ad,dict) and not isinstance(ad,obj):
-                msg = 'app_directories must be of type dict or obj\nyou provided '+ad.__class__.__name__
+                msg = (
+                    'app_directories must be of type dict or obj\n'
+                    'you provided '+ad.__class__.__name__
+                    )
                 raise TypeError(msg)
             #end if
         #end if
