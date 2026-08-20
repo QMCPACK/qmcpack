@@ -4,38 +4,95 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Collection, Mapping
+from copy import deepcopy
 from os import PathLike
 from pathlib import Path
 from re import Pattern
 from types import MappingProxyType
 from typing import ClassVar, Literal
 
-from .developer import DevBase, error, obj, warn
+from .developer import DevBase, obj, warn
+from .generic import nxs_deprecate
 from .periodic_table import Elements
 from .physical_system import PhysicalSystem
 from .utilities import is_valid_filename
 
 
-def pp_elem_label(filename,*,guard=False):
+def pp_elem_label(
+    filename: PathLike, *, guard=False,
+    ) -> tuple[str, str] | tuple[str, str, bool]:
+    """Get the label and atomic symbol of an element from a pseudopotential file name.
+
+    Parameters
+    ----------
+    filename : PathLike
+        Either a :class:`Path` object or the name of a file as a string.
+    guard : bool, default=False
+        Optionally raise an error if the file name is invalid or if the filename
+        does not begin with a valid element prefix.
+
+    Returns
+    -------
+    elem_label : str
+        The label of the pseudopotential file.
+    symbol : str
+        The atomic symbol of the element that the pseudopotential file describes.
+    is_elem : bool
+        A bool to indicate whether or not the file has a valid element label.
+        If ``guard=True`` this is not returned, and an error is raised if the
+        file does not have a valid prefix.
+
+    Examples
+    --------
+    >>> pp_elem_label("Si.ccECP.xml")
+    ('Si', 'Si', True)
+    >>> pp_elem_label("Si-USPP.upf")
+    ('Si', 'Si', True)
+    >>> pp_elem_label("Si_NCPP.upf")
+    ('Si', 'Si', True)
+    >>> pp_elem_label("Si1.ccECP.xml")
+    ('Si1', 'Si', True)
+    >>> pp_elem_label("Not_An_Element.ccECP.xml")
+    ('Not', 'Not', False)
+
+    Passing a ``Path`` object only gets the file name.
+
+    >>> from pathlib import Path
+    >>> pp_elem_label(Path("/path/to/pseudo_dir/Si.ccECP.xml"))
+    ('Si', 'Si', True)
+
+    Use ``guard=True`` if you want to raise an error and not deal with an
+    invalid output.
+
+    >>> pp_elem_label("Not_An_Element.ccECP.xml", guard=True)
+    Traceback (most recent call last):
+        ...
+    RuntimeError: cannot determine element for pseudopotential file: Not_An_Element.ccECP.xml
+    pseudopotential file names must be prefixed by an atomic symbol or label
+    (e.g. Si, Si1, etc)
+    """
+    if isinstance(filename, Path):
+        filename = filename.name
+
     if guard and not is_valid_filename(filename):
         msg = f"Pseudopotential file name {filename} is invalid!"
         raise RuntimeError(msg)
 
     el = ''
     for c in filename:
-        if c=='.' or c=='_' or c=='-':
+        if c in {".", "_", "-"}:
             break
         #end if
         el+=c
     #end for
     elem_label = el
     is_elem, element = Elements.is_element(el, return_element=True)
-    if guard: 
+    if guard:
         if not is_elem:
             msg = (
-               f"cannot determine element for pseudopotential file: {filename}\n"
-                "pseudopotential file names must be prefixed by an atomic symbol or label\n"
+               f"Cannot determine element for pseudopotential file: {filename}\n"
+                "Pseudopotential file names must be prefixed by an atomic symbol or label\n"
                 "(e.g. Si, Si1, etc)"
                 )
             raise RuntimeError(msg)
@@ -113,17 +170,19 @@ def read_upf_z_valence(file: PathLike) -> int | float:
         #end if
 
     if zval is None:
-        error(
+        msg = (
            f"Could not find Z valence in file: {file!s}\n"
             "You may need to provide the Z valence manually!"
-           )
+            )
+        raise RuntimeError(msg)
     else:
         zval = float(zval.group(1).lower().replace("d", "e"))
 
     if zval <= 0 or zval > 118:
-        error(
+        msg = (
             f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
             )
+        raise RuntimeError(msg)
     # Round to 8 digits
     if round(zval, 8).is_integer():
         return int(zval)
@@ -162,17 +221,19 @@ def read_qmcpack_xml_z_valence(file: PathLike) -> int | float:
     zval = re.search(read_qmcpack_xml_z_valence.zval_pattern, header)
 
     if zval is None:
-        error(
+        msg = (
            f"Could not find Z valence in file: {file!s}\n"
             "You may need to provide the Z valence manually!"
-           )
+            )
+        raise RuntimeError(msg)
     else:
         zval = float(zval.group(1).lower().replace("d", "e"))
 
     if zval <= 0 or zval > 118:
-        error(
+        msg = (
             f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
             )
+        raise RuntimeError(msg)
     # Round to 8 digits
     if round(zval, 8).is_integer():
         return int(zval)
@@ -214,17 +275,19 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
                     break
 
             if zval is None:
-                error(
+                msg = (
                    f"Could not find Z valence in file: {file!s}\n"
                     "You may need to provide the Z valence manually!"
-                   )
+                    )
+                raise RuntimeError(msg)
             else:
                 zval = float(zval.group(1).lower().replace("d", "e"))
 
     if zval <= 0 or zval > 118:
-        error(
+        msg = (
             f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
             )
+        raise RuntimeError(msg)
     # Round to 8 digits
     if round(zval, 8).is_integer():
         return int(zval)
@@ -234,29 +297,70 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
 
 
 
+@nxs_deprecate(since="2.4.0", replacement="generate_pseudoset")
+def ppset(label: str, **codes_pps: list[str]):
+    """Register pseudopotentials for codes with a label.
 
+    This is intended as a backwards-compatible interface to not break
+    existing user code. Users are suggested to migrate to
+    :func:`generate_pseudoset` or calling :class:`PseudoSet` and its methods for
+    pseudopotential handling.
 
-def ppset(label,**codes_pps):
+    Parameters
+    ----------
+    label : str
+        Label of the pseudopotential set.
+    **codes_pps
+        Map of codes to the names of the pseudopotential files.
+
+    Notes
+    -----
+    Using this function is generally discouraged for users as the use of
+    a string label for identifying pseudopotentials prevents Python from
+    raising a :exc:`SyntaxError` when the label supplied to later
+    functions does not match the label used when calling this function.
+
+    For this reason, it is strongly encouraged to use :func:`generate_pseudoset`
+    or :class:`PseudoSet` and/or its member functions :meth:`PseudoSet.from_dir`
+    and :meth:`PseudoSet.from_mixed_dir`.
+
+    See Also
+    --------
+    PseudoSet.file_exts : Known file extensions
+    PseudoSet.from_dir : Automatically reading pseudos from a directory
+    PseudoSet.from_mixed_dir : Automatically reading pseudos from a directory
+
+    Examples
+    --------
+    After passing ``pseudo_dir`` to :data:`~nexus.settings`, call this with the
+    file names for each pseudopotential.
+
+    >>> ppset(
+    ...     label   = 'bfd',
+    ...     pwscf   = ["C.BFD.upf", "H.BFD.upf", "O.BFD.upf"],
+    ...     qmcpack = ["C.BFD.xml", "H.BFD.xml", "O.BFD.xml"],
+    ...     )
+    """
     if label in PseudoSet.labeled_pseudosets:
-        msg = f'pseudopotential set label "{label}" is already registered'
+        msg = f'Pseudopotential set label "{label}" is already registered!'
         raise ValueError(msg)
     pps_coll = {}
     ref_elements = None
-    for code,ppfiles in codes_pps.items():
+    for code, ppfiles in codes_pps.items():
         missing = set(ppfiles)-PseudoSet.pseudo_files.keys()
         if len(missing)>0:
-            msg = f'pseudopotential files "{missing}" are not present in PseudoSet.pseudo_files'
+            msg = f'Pseudopotential files "{missing}" are not present in PseudoSet.pseudo_files!'
             raise ValueError(msg)
         pps = PseudoSet([PseudoSet.pseudo_files[f] for f in ppfiles])
         code = PseudoSet._check_code_str(code)
         if code not in pps.codes:
-            msg = f'pseudopotential files provided for code "{code}" are not compatible with that code'
+            msg = f'Pseudopotential files provided for code "{code}" are not compatible with that code!'
             raise ValueError(msg)
         elements = set(pps.pseudos)
         if ref_elements is None:
             ref_elements = elements
         elif elements!=ref_elements:
-            msg = f'pseudopotential set "{label}" must contain potentials for the same elements for each code'
+            msg = f'Pseudopotential set "{label}" must contain potentials for the same elements for each code!'
             raise ValueError(msg)
         pps_coll[code] = pps
     PseudoSet.labeled_pseudosets[label] = pps_coll
@@ -309,19 +413,22 @@ class PseudoSet(DevBase):
         # https://www.quantum-espresso.org/Doc/INPUT_PW.html#id268
         "espresso": frozenset({".ncpp", ".upf", ".vdb", ".van", ".rrkj3"}),
         "gamess":   frozenset({".gms", ".gamess"}),
-        "vasp":     frozenset({"potcar", ".vasp"}),
+        "vasp":     frozenset({"potcar", ".potcar", ".vasp"}),
         "qmcpack":  frozenset({".xml"}),
         "rmg":      frozenset({".upf", ".xml"}),
         "pyscf":    frozenset({".nwchem", ".gth"})
         })
     known_codes = frozenset(file_exts.keys())
 
-    pseudo_files      : ClassVar[dict[str, str]] = dict()
-    labeled_pseudosets: ClassVar[dict[str, dict[str, PseudoSet]]] = dict()
-
+    pseudo_files      : ClassVar[dict[str, str]] = {}
+    labeled_pseudosets: ClassVar[dict[str, dict[str, PseudoSet]]] = {}
 
     @staticmethod
-    def pseudo_remap(code,pseudos,system):
+    def pseudo_remap(
+        code: Literal["espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"],
+        pseudos: Mapping[str, PseudoSet] | list[str] | str | None,
+        system: PhysicalSystem,
+        ):
         if pseudos is None:
             return {}
         if isinstance(pseudos, Mapping) and len(pseudos)>0:
@@ -334,7 +441,7 @@ class PseudoSet(DevBase):
                     raise TypeError(msg)
                 code = PseudoSet._check_code_str(code)
                 if code not in pseudos:
-                    msg = f'pseudopotential set is not available for code "{code}"'
+                    msg = f'Pseudopotential set is not available for code "{code}"'
                     raise ValueError(msg)
                 if system is None:
                     msg = "A system must be provided with a pseudopotential-set mapping"
@@ -343,7 +450,7 @@ class PseudoSet(DevBase):
                 species = system.structure.species(symbol=True)[1]
                 missing = set(species)-pps.pseudos.keys()
                 if missing:
-                    msg = f'pseudopotential set does not contain species {sorted(missing)}'
+                    msg = f'Pseudopotential set does not contain species {sorted(missing)}'
                     raise ValueError(msg)
                 return {
                     pps.pseudos[element].name: str(pps.pseudos[element])
@@ -354,22 +461,22 @@ class PseudoSet(DevBase):
         if isinstance(pseudos,str):
             label = pseudos
             if label not in PseudoSet.labeled_pseudosets:
-                msg = f'pseudopotential set label "{label}" is not registered'
-                raise ValueError(msg)
+                msg = f'Pseudopotential set label "{label}" is not registered'
+                raise KeyError(msg)
             code = PseudoSet._check_code_str(code)
             if code not in PseudoSet.labeled_pseudosets[label]:
-                msg = f'pseudopotential set "{label}" is not available for code "{code}"'
-                raise ValueError(msg)
+                msg = f'Pseudopotential set "{label}" is not available for code "{code}"'
+                raise KeyError(msg)
             pps = PseudoSet.labeled_pseudosets[label][code]
             species = system.structure.species(symbol=True)[1]
             missing = set(species)-pps.pseudos.keys()
             if missing:
-                msg = f'pseudopotential set "{label}" does not contain species {sorted(missing)}'
+                msg = f'Pseudopotential set "{label}" does not contain species {sorted(missing)}'
                 raise ValueError(msg)
             pseudos = [pps.pseudos[e].name for e in sorted(species)]
         missing = set(pseudos)-PseudoSet.pseudo_files.keys()
         if missing:
-            msg = f'pseudopotential files {missing} are not present in PseudoSet.pseudo_files'
+            msg = f'Pseudopotential files {missing} are not present in PseudoSet.pseudo_files'
             raise ValueError(msg)
         return {f:PseudoSet.pseudo_files[f] for f in pseudos}
     #end def pseudo_remap
@@ -377,9 +484,9 @@ class PseudoSet(DevBase):
 
     def __init__(
         self,
-        pseudos     : Iterable[PathLike] | Mapping[Elements | str, PathLike],
-        codes       : str | Iterable[str] = "detect",
-        Zeff_map    : Mapping[PathLike, int] | None = None,
+        pseudos : Collection[PathLike] | Mapping[Elements | str, PathLike],
+        codes   : str | Collection[str] = "detect",
+        Zeff_map: Mapping[PathLike, int] | None = None,
         *,
         skip_invalid: bool = False,
         ):
@@ -442,16 +549,14 @@ class PseudoSet(DevBase):
                 self.codes = self._detect_pseudo_code(self.pseudos)
             else:
                 self.codes = {PseudoSet._check_code_str(codes)}
-        elif isinstance(codes, Iterable):
+        elif isinstance(codes, Collection):
             if not isinstance(next(iter(codes)), str):
                 msg = (
-                    "`codes` must be either 'detect', str, or an iterable of str, "
-                    "but is an iterable of `{type(next(iter(codes))).__name__}`"
+                    "`codes` must be either 'detect', str, or an collection of str, "
+                    f"but is a collection of `{type(next(iter(codes))).__name__}`"
                     )
                 raise TypeError(msg)
-            self.codes = set([
-                PseudoSet._check_code_str(code) for code in codes
-                ])
+            self.codes = {PseudoSet._check_code_str(code) for code in codes}
         else:
             msg = f"`codes` must be either 'detect', str, or an iterable of str, but has type `{type(codes).__name__}`"
             raise TypeError(msg)
@@ -468,7 +573,7 @@ class PseudoSet(DevBase):
 
     @staticmethod
     def _detect_pseudo_code(
-        pseudos: Mapping[str, PathLike] | Iterable[PathLike]
+        pseudos: Mapping[str, PathLike] | Collection[PathLike]
         ) -> set[Literal["espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"]]:
         """Detect the code based on the suffix of the pseudos."""
         codes = set()
@@ -538,7 +643,7 @@ class PseudoSet(DevBase):
         pseudo_dir: PathLike,
         code      : str = "detect",
         Zeff_map  : Mapping[PathLike, int] | None = None,
-        ext_filter: str | Iterable[str] | None = None,
+        extension : str | Collection[str] | None = None,
         pattern   : str | Pattern | None = None,
         *,
         skip_invalid: bool = False,
@@ -560,7 +665,7 @@ class PseudoSet(DevBase):
             nuclear charges (Z-valences). If this is supplied, it will
             override any parts of the code that may try to parse the
             pseudopotential to get the Z-valence.
-        ext_filter : str or list of str, optional
+        extension : str or list of str, optional
             Optionally filter the files in the directory by their
             extension.
 
@@ -665,19 +770,19 @@ class PseudoSet(DevBase):
         if code != "detect":
             code = PseudoSet._check_code_str(code)
 
-        if ext_filter is None:
+        if extension is None:
             if code != "detect":
-                ext_filter = PseudoSet.file_exts[code]
-        elif isinstance(ext_filter, str):
-            ext_filter = {ext_filter.lower()}
-        elif isinstance(ext_filter, Iterable):
-            if not isinstance(next(iter(ext_filter)), str):
-                msg = f"`ext_filter` must be either None, str, or an iterable of str, but is {type(ext_filter[0]).__name__}"
+                extension = PseudoSet.file_exts[code]
+        elif isinstance(extension, str):
+            extension = {extension.lower()}
+        elif isinstance(extension, Collection):
+            if not isinstance(next(iter(extension)), str):
+                msg = f"`extension` must be either None, str, or a collection of str, but is {type(extension[0]).__name__}"
                 raise TypeError(msg)
 
-            ext_filter = set([ext.lower() for ext in ext_filter])
+            extension = set([ext.lower() for ext in extension])
         else:
-            msg = f"`ext_filter` must be either None, str, or an iterable of str, but is {type(ext_filter).__name__}"
+            msg = f"`extension` must be either None, str, or an iterable of str, but is {type(extension).__name__}"
             raise TypeError(msg)
 
         if pattern is not None:
@@ -694,10 +799,10 @@ class PseudoSet(DevBase):
 
         pseudos = []
         for pseudo in psp_dir.iterdir():
-            if pseudo.is_file() and (ext_filter is None or pseudo.suffix.lower() in ext_filter):
+            if pseudo.is_file() and (extension is None or pseudo.suffix.lower() in extension):
                 if pattern is None or pattern.search(pseudo.name) is not None:
                     pseudos.append(pseudo)
-            elif pseudo.is_dir() and (ext_filter is None or "potcar" in ext_filter):
+            elif pseudo.is_dir() and (extension is None or "potcar" in extension):
                 if pattern is None or pattern.search(pseudo.name) is not None:
                     potcar_upper = pseudo / "POTCAR"
                     potcar_lower = pseudo / "potcar"
@@ -725,9 +830,9 @@ class PseudoSet(DevBase):
         cls,
         pseudo_dir   : PathLike,
         codes        : str | list[str] | None = None,
-        extensions   : Mapping[str, set[str]] | None = None,
-        patterns     : Mapping[str, str | Pattern] | None = None,
-        code_Zeff_map: Mapping[str, Mapping[str, int]] | None = None,
+        extensions   : Mapping[str, set[str]] | str | None = None,
+        patterns     : Mapping[str, str | Pattern] | str | None = None,
+        code_Zeff_map: Mapping[str, Mapping[str, int]] | Mapping[str, int] | None = None,
         *,
         skip_invalid: bool = False,
         ) -> dict[Literal["espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"], PseudoSet]:
@@ -744,7 +849,7 @@ class PseudoSet(DevBase):
             into their respective groups. If this is set to ``detect``
             and filters is ``None``, then it will use all known codes
             and file extensions to filter the pseudos.
-        extensions : Map of str to set of str, optional
+        extensions : Map of str to set of str or a single str, optional
             A dictionary mapping codes to the file extensions
             corresponding to those labels. If this is not provided, then
             the filters are automatically populated by the codes in
@@ -840,17 +945,25 @@ class PseudoSet(DevBase):
             msg = f"Specified path does not point to a directory: {psp_dir}"
             raise NotADirectoryError(msg)
 
+        if isinstance(codes, str):
+            codes = {PseudoSet._check_code_str(codes)}
+        elif isinstance(codes, Collection):
+
+            codes = {PseudoSet._check_code_str(code) for code in codes}
         if extensions is None:
             if codes is None:
                 extensions = PseudoSet.file_exts
             else:
                 if isinstance(codes, str):
-                    codes = {codes}
+                    codes = {PseudoSet._check_code_str(codes)}
+                else:
+                    codes = {PseudoSet._check_code_str(code) for code in codes}
                 extensions = {}
                 for c in codes:
                     code = PseudoSet._check_code_str(c)
                     extensions[code] = PseudoSet.file_exts[code]
         else:
+            extensions = deepcopy(dict(extensions))
             if codes is None:
                 if len(extensions) < len(PseudoSet.known_codes):
                     # codes is None, so we want all codes. Make sure any codes with
@@ -866,7 +979,9 @@ class PseudoSet(DevBase):
                 extensions = checked_filters
             else:
                 if isinstance(codes, str):
-                    codes = {codes}
+                    codes = {PseudoSet._check_code_str(codes)}
+                else:
+                    codes = {PseudoSet._check_code_str(code) for code in codes}
                 # More filters than codes, or filters provided for unselected codes
                 if not set(codes) >= set(extensions.keys()):
                     msg = (
@@ -880,6 +995,7 @@ class PseudoSet(DevBase):
                     for c in codes:
                         code = PseudoSet._check_code_str(c)
                         checked_filters[code] = extensions.get(c)
+                    extensions = checked_filters
 
         if code_Zeff_map is None:
             code_Zeff_map = {}
@@ -904,19 +1020,19 @@ class PseudoSet(DevBase):
         pseudos = {}
         for code, suffixes in extensions.items():
             try:
-                pseudos[code] = PseudoSet.from_dir(
+                pseudos[code] = cls.from_dir(
                     pseudo_dir   = psp_dir,
                     code         = code,
                     Zeff_map     = code_Zeff_map.get(code),
-                    ext_filter   = suffixes,
+                    extension    = suffixes,
                     pattern      = patterns.get(code),
                     skip_invalid = skip_invalid,
                     )
             except ValueError as err:
                 msg = format(err) + (
-                    f"\n\nDuplicate element detected for code '{code}'\n"
+                    f"\n\nProblem detected for code '{code}'\n"
                     f"Either remove '{code}' from the selected codes, or specify "
-                    "`filters` and/or `patterns` to ensure the collision does not happen.\n"
+                    "`filters` and/or `patterns` to ensure the problem does not occur.\n"
                     )
                 # Raise from None to prevent exception chain.
                 raise RuntimeError(msg) from None
@@ -924,59 +1040,177 @@ class PseudoSet(DevBase):
         return pseudos
     #end def from_mixed_dir
 
-
-    def get_pseudos(
+    def _get_pseudos(
         self,
-        system: PhysicalSystem | Iterable[str],
-        code  : Literal["espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"] | None = None,
-        ) -> set[Path] | None:
+        system: PhysicalSystem | Collection[str],
+        code: Literal["espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"] | None = None,
+        ) -> dict[str, str]:
+        """Private helper function for getting the pseudo files for a given system."""
+        code = PseudoSet._check_code_str(code)
+        if code not in self.codes:
+            msg = f'Pseudopotential set is not available for code "{code}"'
+            raise ValueError(msg)
+
+        if isinstance(system, PhysicalSystem):
+            species = set(system.structure.species(symbol=True)[1])
+        else:
+            species = set()
+            for elem in system:
+                is_elem, element = Elements.is_element(elem, return_element=True)
+                if not is_elem:
+                    msg = f"Non-element in provided system: '{element}'"
+                else:
+                    species.add(element.symbol)
+            #end for
+        #end if
+        missing = species.difference(set(self.pseudos.keys()))
+        if missing:
+            msg = (
+                'Pseudopotential set does not contain the following species:\n'
+                f'{sorted(missing)}'
+                )
+            raise ValueError(msg)
+
+        return {
+            self.pseudos[element].name: str(self.pseudos[element])
+            for element in sorted(species)
+            }
+
+
+    @staticmethod
+    def get_pseudos(
+        pseudos: PseudoSet | str | Collection[str] | dict[str, Path] | None,
+        system : PhysicalSystem | Collection[str],
+        code   : Literal["espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"] | None = None,
+        ) -> dict[str, str]:
         """Get the pseudopotential files for the elements in a physical system.
 
         Parameters
         ----------
-        system : PhysicalSystem or list of str
-            The system to get pseudopotentials for, or a list of element
+        pseudos : PseudoSet or str or Collection of str or dict[str: PathLike] or None
+            Either a :class:`PseudoSet` object, a string label from
+            :func:`ppset`, a list of pseudopotential file names, a dictionary
+            mapping file names to file paths, or ``None``.
+        system : PhysicalSystem or collection of str
+            The system to get pseudopotentials for, or a collection of element
             labels.
         code : {"espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"}, optional
             The name of the code requesting the pseudopotentials.
             If supplied, it will raise an error if the code requested
-            does not match the code of the ``PseudoSet``. This provides
-            a way to ensure the user does not provide the wrong pseudos
-            to a ``generate`` call.
+            does not match the code of the :class:`PseudoSet`. This
+            provides a way to ensure the user does not provide the wrong
+            pseudos to a ``generate`` call.
 
         Returns
         -------
-        pseudos : set of Path
-            The pseudopotential paths for the given system of elements.
+        pseudos : dict[str, str]
+            A dictionary mapping pseudopotential file names to their full paths.
+
+        Examples
+        --------
+        Call with an instance of :class:`PseudoSet`.
+
+        >>> psps = PseudoSet(["C.ccECP.xml", "H.ccECP.xml", "O.ccECP.xml"])
+        >>> PseudoSet.get_pseudos(
+        ...     pseudos=psps,
+        ...     system=["C", "H"],
+        ...     code="qmcpack",
+        ...     )
+        {'C.ccECP.xml': '/path/to/pseudo_dir/C.ccECP.xml',
+         'H.ccECP.xml': '/path/to/pseudo_dir/H.ccECP.xml'}
+
+        Or call as a static method with a label after using :func:`ppset`.
+
+        >>> ppset(
+        ...     label   = 'my_pseudos',
+        ...     pwscf   = ["C.ccECP.upf", "H.ccECP.upf", "O.ccECP.upf"],
+        ...     qmcpack = ["C.ccECP.xml", "H.ccECP.xml", "O.ccECP.xml"],
+        ...     )
+        >>> PseudoSet.get_pseudos(
+        ...     pseudos="my_pseudos",
+        ...     system=["C", "H"],
+        ...     code="qmcpack",
+        ...     )
+        {'C.ccECP.xml': '/path/to/pseudo_dir/C.ccECP.xml',
+         'H.ccECP.xml': '/path/to/pseudo_dir/H.ccECP.xml'}
+
+        You can also call as a static method with a list of
+        pseudopotential names.
+
+        >>> PseudoSet.get_pseudos(
+        ...     pseudos=["C.ccECP.xml", "H.ccECP.xml"],
+        ...     system=["C", "H"]
+        ...     )
+        {'C.ccECP.xml': '/path/to/pseudo_dir/C.ccECP.xml',
+         'H.ccECP.xml': '/path/to/pseudo_dir/H.ccECP.xml'}
         """
-        if code is not None:
-            clow = PseudoSet._check_code_str(code)
-            if clow not in self.codes:
-                msg = f"Tried to get pseudopotentials for {code} from a set of {'/'.join(self.codes)} pseudos!"
-                raise ValueError(msg)
+        if pseudos is None:
+            return {}
+        if isinstance(pseudos, PseudoSet):
+            return pseudos._get_pseudos(system=system, code=code)
+        elif isinstance(pseudos, Mapping) and len(pseudos) > 0:
+            contains_pseudosets = any(
+                isinstance(pseudoset, PseudoSet) for pseudoset in pseudos.values()
+                )
+            if contains_pseudosets:
+                if not all(isinstance(pseudoset, PseudoSet) for pseudoset in pseudos.values()):
+                    msg = "A pseudopotential-set mapping must contain only PseudoSet values"
+                    raise TypeError(msg)
 
-        pps = set()
-        if isinstance(system, PhysicalSystem):
-            if not system.pseudized:
-                return None
+                code = PseudoSet._check_code_str(code)
+                if code not in pseudos:
+                    msg = f'Pseudopotential set is not available for code "{code}"'
+                    raise ValueError(msg)
+
+                if system is None:
+                    msg = "A system must be provided with a pseudopotential-set mapping"
+                    raise ValueError(msg)
+
+                psps = pseudos[code]
+                return psps._get_pseudos(system=system, code=code)
+
+            else: # Non-pseudoset objects as values, likely to occur when re-called.
+                return dict(pseudos)
+        elif isinstance(pseudos, str):
+            label = pseudos
+            if label not in PseudoSet.labeled_pseudosets:
+                msg = (
+                    f'Pseudopotential set label "{label}" is not registered\n'
+                    f'Registered labels are {[*PseudoSet.labeled_pseudosets]}'
+                    )
+                raise KeyError(msg)
+
+            code = PseudoSet._check_code_str(code)
+            if code not in PseudoSet.labeled_pseudosets[label]:
+                msg = (
+                    f'Pseudopotential set "{label}" is not available for code "{code}"\n'
+                    f'Available codes for {label} are {[*PseudoSet.labeled_pseudosets[label]]}'
+                    )
+                raise KeyError(msg)
+
+            psps = PseudoSet.labeled_pseudosets[label][code]
+            return psps._get_pseudos(system=system, code=code)
+        elif isinstance(pseudos, list):
+            if len(pseudos) == 0:
+                return {}
             else:
-                elements = system.ion_labels
+                missing = set(pseudos) - PseudoSet.pseudo_files.keys()
+                if len(missing) > 0:
+                    msg = f'The following pseudopotential files are not present in PseudoSet.pseudo_files:\n'
+                    for psp in sorted(missing):
+                        msg += f"  - {str(psp)}\n"
+                    raise FileNotFoundError(msg)
+                psps = PseudoSet([PseudoSet.pseudo_files[f] for f in pseudos])
+                return psps._get_pseudos(system=system, code=code)
         else:
-            elements = system
-
-        for label in elements:
-            if label not in self.pseudos:
-                msg = f"No pseudopotential found for label {label}!"
-                raise ValueError(msg)
-            pps.add(self.pseudos[label])
-
-        return pps
+            msg = f"Expected PseudoSet or str or Collection of str or dict[str: PseudoSet] or None, but got {type(pseudos).__name__}!"
+            raise TypeError(msg)
     #end def get_pseudos
 
 
     def get_Zeff(
         self,
-        elem_labels: Iterable[Elements | str] | PhysicalSystem,
+        elem_labels: Collection[Elements | str] | PhysicalSystem,
         *,
         missing_as_ae: bool = False,
         ) -> dict[str, int]:
@@ -1018,15 +1252,15 @@ class PseudoSet(DevBase):
                 f_ext = self.pseudos[label].suffix.lower()
                 if f_ext == ".upf":
                     Z_eff_map[label] = read_upf_z_valence(self.pseudos[label])
-                elif f_ext in (".gms", ".gamess"):
+                elif f_ext in PseudoSet.file_exts["gamess"]:
                     msg = (
                         "Z-valence parsing not implemented for GAMESS pseudopotentials!\n"
                         "You must supply Z-valences manually until this feature is added."
                         )
                     raise NotImplementedError(msg)
-                elif f_ext in ["potcar", ".vasp"]:
+                elif f_ext in PseudoSet.file_exts["vasp"]:
                     Z_eff_map[label] = read_potcar_z_valence(self.pseudos[label])
-                elif f_ext == ".xml":
+                elif f_ext in PseudoSet.file_exts["qmcpack"]:
                     Z_eff_map[label] = read_qmcpack_xml_z_valence(self.pseudos[label])
                 else:
                     msg = f"File extension '{f_ext}' is not parseable by Nexus, can not extract Z-valence!"

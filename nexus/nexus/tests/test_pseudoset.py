@@ -786,9 +786,9 @@ def test_pseudoset_from_dir_filter(tmp_path):
         }
 
     qmcpack_pseudoset = PseudoSet.from_dir(
-        pseudo_dir  = psp_dir,
-        code        = "qmcpack",
-        ext_filter  = None,
+        pseudo_dir = psp_dir,
+        code       = "qmcpack",
+        extension  = None,
         )
 
     assert(qmcpack_pseudoset.pseudos     == ref_qmcpack_pseudos)
@@ -796,9 +796,9 @@ def test_pseudoset_from_dir_filter(tmp_path):
     assert(qmcpack_pseudoset.codes       == {"qmcpack"})
 
     espresso_pseudoset = PseudoSet.from_dir(
-        pseudo_dir  = psp_dir,
-        code        = "espresso",
-        ext_filter  = None,
+        pseudo_dir = psp_dir,
+        code       = "espresso",
+        extension  = None,
         )
 
     assert(espresso_pseudoset.pseudos     == ref_espresso_pseudos)
@@ -806,9 +806,9 @@ def test_pseudoset_from_dir_filter(tmp_path):
     assert(espresso_pseudoset.codes       == {"espresso"})
 
     custom_filter_pseudoset = PseudoSet.from_dir(
-        pseudo_dir  = psp_dir,
-        code        = "detect",
-        ext_filter  = [".upf", ".ncpp"],
+        pseudo_dir = psp_dir,
+        code       = "detect",
+        extension  = [".upf", ".ncpp"],
         )
 
     assert(custom_filter_pseudoset.pseudos     == ref_espresso_pseudos)
@@ -868,9 +868,9 @@ def test_pseudoset_from_dir_pattern(tmp_path):
         }
 
     qmcpack_pseudoset = PseudoSet.from_dir(
-        pseudo_dir  = psp_dir,
-        code        = "qmcpack",
-        ext_filter  = None,
+        pseudo_dir = psp_dir,
+        code       = "qmcpack",
+        extension  = None,
         )
 
     assert(qmcpack_pseudoset.pseudos     == ref_qmcpack_pseudos)
@@ -878,10 +878,10 @@ def test_pseudoset_from_dir_pattern(tmp_path):
     assert(qmcpack_pseudoset.codes       == {"qmcpack"})
 
     espresso_bfd_pseudoset = PseudoSet.from_dir(
-        pseudo_dir  = psp_dir,
-        code        = "espresso",
-        ext_filter  = None,
-        pattern     = r"\.BFD\.",
+        pseudo_dir = psp_dir,
+        code       = "espresso",
+        extension  = None,
+        pattern    = r"\.BFD\.",
         )
 
     assert(espresso_bfd_pseudoset.pseudos     == ref_espresso_bfd_pseudos)
@@ -889,10 +889,10 @@ def test_pseudoset_from_dir_pattern(tmp_path):
     assert(espresso_bfd_pseudoset.codes       == {"espresso"})
 
     espresso_oncv_pseudoset = PseudoSet.from_dir(
-        pseudo_dir  = psp_dir,
-        code        = "espresso",
-        ext_filter  = None,
-        pattern     = r"_ONCV_PBE-1\.2",
+        pseudo_dir = psp_dir,
+        code       = "espresso",
+        extension  = None,
+        pattern    = r"_ONCV_PBE-1\.2",
         )
 
     assert(espresso_oncv_pseudoset.pseudos     == ref_espresso_oncv_pseudos)
@@ -1713,9 +1713,9 @@ def test_get_Zeff():
         }
 
     qmcpack_pseudoset = PseudoSet.from_dir(
-        pseudo_dir  = psp_dir,
-        code        = "qmcpack",
-        ext_filter  = None,
+        pseudo_dir = psp_dir,
+        code       = "qmcpack",
+        extension  = None,
         )
     Zeff = qmcpack_pseudoset.get_Zeff(elem_labels=["C", "H", "O"])
 
@@ -1728,10 +1728,10 @@ def test_get_Zeff():
         }
 
     qmcpack_pseudoset_custom = PseudoSet.from_dir(
-        pseudo_dir  = psp_dir,
-        code        = "qmcpack",
-        Zeff_map    = {"C": 6},
-        ext_filter  = None,
+        pseudo_dir = psp_dir,
+        code       = "qmcpack",
+        Zeff_map   = {"C": 6},
+        extension  = None,
         )
     Zeff = qmcpack_pseudoset_custom.get_Zeff(elem_labels=["C", "H", "O"])
 
@@ -1745,9 +1745,9 @@ def test_get_Zeff():
         }
 
     qmcpack_pseudoset_mixed_ae = PseudoSet.from_dir(
-        pseudo_dir  = psp_dir,
-        code        = "qmcpack",
-        ext_filter  = None,
+        pseudo_dir = psp_dir,
+        code       = "qmcpack",
+        extension  = None,
         )
     Zeff = qmcpack_pseudoset_mixed_ae.get_Zeff(
         elem_labels   = ["C", "H", "O", "Fe"],
