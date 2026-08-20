@@ -175,7 +175,8 @@ class HDFgroup(DevBase):
                 svalue = self[name]
                 ovalue = other[name]
                 if not isinstance(svalue,np.ndarray) or not isinstance(ovalue,np.ndarray):
-                    self.error(name+' is not an array')
+                    msg = name+' is not an array'
+                    raise TypeError(msg)
                 #end if
                 shape  = np.minimum(svalue.shape,ovalue.shape)
                 self[name] = np.resize(svalue,shape)
@@ -187,7 +188,8 @@ class HDFgroup(DevBase):
                 if name in other and isinstance(other[name],HDFgroup):
                     value.minsize(other[name])
                 else:
-                    self.error(name+' not found in minsize partner')
+                    msg = name+' not found in minsize partner'
+                    raise KeyError(msg)
                 #end if
             #end if
         #end for
@@ -204,11 +206,13 @@ class HDFgroup(DevBase):
                 svalue = self[name]
                 ovalue = other[name]
                 if not isinstance(svalue,np.ndarray) or not isinstance(ovalue,np.ndarray):
-                    self.error(name+' is not an array')
+                    msg = name+' is not an array'
+                    raise TypeError(msg)
                 #end if
                 shape  = np.minimum(svalue.shape,ovalue.shape)
                 if np.abs(shape-np.array(svalue.shape)).sum() > 0:
-                    self.error(name+' in partner is too large')
+                    msg = name+' in partner is too large'
+                    raise ValueError(msg)
                 #end if
                 ranges = []
                 for s in shape:
@@ -224,7 +228,8 @@ class HDFgroup(DevBase):
                 if name in other and isinstance(other[name],HDFgroup):
                     value.accumulate(other[name])
                 else:
-                    self.error(name+' not found in accumulate partner')
+                    msg = name+' not found in accumulate partner'
+                    raise KeyError(msg)
                 #end if
             #end if
         #end for
@@ -308,7 +313,8 @@ class HDFreader(DevBase):
                     elif isinstance(v, h5py.Group):
                         self.add_group(hcur,cur,k,v)
                     else:
-                        self.error('encountered invalid type: '+str(type(v)))
+                        msg = 'encountered invalid type: '+str(type(v))
+                        raise TypeError(msg)
                 else:
                     self.warn('attribute '+k+' is not a valid variable name and has been ignored')
                 #end if
