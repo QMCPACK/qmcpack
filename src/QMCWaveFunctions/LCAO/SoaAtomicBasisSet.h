@@ -708,6 +708,10 @@ public:
           MultiRnl.evaluate(r_new, phi_r);
           ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
           const ValueType Phase = periodic_image_phase_factors_[iter] * correctphase;
+#if defined(QMC_COMPLEX) && defined(__GNUC__) && (__GNUC__ >= 15)
+          //workaround GCC 15 incorrect results in "LCAOrbitalSet batched PBC DiamondC" test on Intel SPR and GNR when built as complex.
+          #pragma GCC novector
+#endif
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
             psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * Phase;
         }
