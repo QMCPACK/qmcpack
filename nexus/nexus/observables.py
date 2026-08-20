@@ -11,7 +11,7 @@ import numpy as np
 # Nexus imports
 from . import memory
 from .unit_converter import convert
-from .developer import DevBase, obj, log, error, unavailable
+from .developer import DevBase, obj, log, unavailable, NexusError, FileFormatError
 from .numerics import simstats
 from .grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
 from .grid_functions import SpheroidGrid,ParallelotopeGridFunction
@@ -110,7 +110,13 @@ class VLog(DevBase):
     def set_verbosity(self,level):
         if level not in self.verbosity_levels:
             vlinv = {v:k for k,v in self.verbosity_levels.items()}
-            error('Cannot set verbosity level to "{}".\nValid options are: {}'.format(level,[vlinv[i] for i in sorted(vlinv.keys())]))
+            msg = (
+                'Cannot set verbosity level to "{}".\n'
+                'Valid options are: {}'.format(
+                    level, [vlinv[i] for i in sorted(vlinv.keys())]
+                    )
+                )
+            raise ValueError(msg)
         #end if
         self.verbosity = self.verbosity_levels[level]
     #end def set_verbosity
@@ -144,7 +150,13 @@ class AttributeProperties(DevBase):
         self.deepcopy   = kwargs.pop('deepcopy'  , False)
         self.required   = kwargs.pop('required'  , False)
         if len(kwargs)>0:
-            self.error('Invalid init variable attributes received.\nInvalid attributes:\n{}\nThis is a developer error.'.format(obj(kwargs)))
+            msg = (
+                'Invalid init variable attributes received.\n'
+                'Invalid attributes:\n'
+                '{}\n'
+                'This is a developer error.'.format(obj(kwargs))
+                )
+            raise NexusError(msg)
         #end if
     #end def __init__
 #end class AttributeProperties
@@ -265,7 +277,12 @@ class DefinedAttributeBase(DevBase):
             for k in invalid:
                 if k in values:
                     v[k] = values[k]
-            self.error('Attempted to set unrecognized attributes\nUnrecognized attributes:\n{}'.format(v))
+            msg = (
+                'Attempted to set unrecognized attributes\n'
+                'Unrecognized attributes:\n'
+                '{}'.format(v)
+                )
+            raise ValueError(msg)
         #end if
         missing = set(cls.required_attributes) - value_names
         if len(missing)>0:
@@ -273,7 +290,11 @@ class DefinedAttributeBase(DevBase):
             for n in sorted(missing):
                 msg += '\n  '+n
             #end for
-            self.error('Required attributes are missing.\nPlease provide the following attributes during initialization:{}'.format(msg))
+            msg = (
+                'Required attributes are missing.\n'
+                'Please provide the following attributes during initialization:{}'.format(msg)
+                )
+            raise ValueError(msg)
         #end if
         props = cls.attribute_definitions
         toplevel_names = value_names & cls.toplevel_attributes
@@ -284,7 +305,11 @@ class DefinedAttributeBase(DevBase):
         for name in sublevel_names:
             p = props[name]
             if p.dest not in self:
-                self.error('Attribute destination "{}" does not exist at the top level.\nThis is a developer error.'.format(p.dest))
+                msg = (
+                    'Attribute destination "{}" does not exist at the top level.\n'
+                    'This is a developer error.'.format(p.dest)
+                    )
+                raise NexusError
             #end if
             self._set_attribute(self[p.dest],name,values[name],p)
         #end for
@@ -330,7 +355,7 @@ class DefinedAttributeBase(DevBase):
         #end for
         valid = len(msg)==0
         if not valid and exit:
-            self.error(msg)
+            raise ValueError(msg)
         #end if
         return valid
     #end def check_attributes
@@ -347,11 +372,22 @@ class DefinedAttributeBase(DevBase):
         cls = self.__class__
         props = cls.attribute_definitions
         if name not in props:
-            self.error('Cannot set unrecognized attribute "{}".\nValid options are: {}'.format(name,sorted(props.keys())))
+            msg = (
+                'Cannot set unrecognized attribute "{}".\n'
+                'Valid options are: {}'.format(name,sorted(props.keys()))
+                )
+            raise ValueError(msg)
         #end if
         p = props[name]
         if p.type is not None and not isinstance(value,p.type):
-            self.error('Cannot set attribute "{}".\nExpected value with type: {}\nReceived value with type: {}'.format(name,p.type.__name__,value.__class__.__name__))
+            msg = (
+                'Cannot set attribute "{}".\n'
+                'Expected value with type: {}\n'
+                'Received value with type: {}'.format(
+                    name,p.type.__name__,value.__class__.__name__
+                    )
+                )
+            raise TypeError(msg)
         #end if
         if p.deepcopy:
             value = deepcopy(value)
@@ -359,7 +395,11 @@ class DefinedAttributeBase(DevBase):
         if p.dest is None:
             self[name] = value
         elif p.dest not in self:
-            self.error('Cannot set attribute "{}".\nAttribute destination "{}" does not exist.'.format(name,p.dest))
+            msg = (
+                'Cannot set attribute "{}".\n'
+                'Attribute destination "{}" does not exist.'.format(name,p.dest)
+                )
+            raise ValueError(msg)
         else:
             self[p.dest][name] = value
         #end if
@@ -373,7 +413,11 @@ class DefinedAttributeBase(DevBase):
         cls = self.__class__
         props = cls.attribute_definitions
         if name not in props:
-            self.error('Cannot get unrecognized attribute "{}".\nValid options are: {}'.format(name,sorted(props.keys())))
+            msg = (
+                'Cannot get unrecognized attribute "{}".\n'
+                'Valid options are: {}'.format(name,sorted(props.keys()))
+                )
+            raise ValueError(msg)
         #end if
         p = props[name]
         value = missing
@@ -402,7 +446,7 @@ class DefinedAttributeBase(DevBase):
                 else:
                     msg = 'Cannot get attribute "{}"{}.\nAttribute has not been assigned.'.format(name,extra)
                 #end if
-                self.error(msg)
+                raise ValueError(msg)
             #end if
         #end if
         return value
@@ -426,7 +470,11 @@ class DefinedAttributeBase(DevBase):
         if p.dest is None:
             self[name] = value
         elif p.dest not in self:
-            self.error('Attribute destination "{}" does not exist at the top level.\nThis is a developer error.'.format(p.dest))
+            msg = (
+                'Attribute destination "{}" does not exist at the top level.\n'
+                'This is a developer error.'.format(p.dest)
+                )
+            raise NexusError(msg)
         else:
             self[p.dest][name] = value
         #end if
@@ -436,7 +484,14 @@ class DefinedAttributeBase(DevBase):
     def _set_attribute(self,container,name,value,props):
         p = props
         if p.type is not None and not isinstance(value,p.type):
-            self.error('Cannot set attribute "{}".\nExpected value with type: {}\nReceived value with type: {}'.format(name,p.type.__name__,value.__class__.__name__))
+            msg = (
+                'Cannot set attribute "{}".\n'
+                'Expected value with type: {}\n'
+                'Received value with type: {}'.format(
+                    name,p.type.__name__,value.__class__.__name__
+                    )
+                )
+            raise TypeError(msg)
         #end if
         if p.deepcopy:
             value = deepcopy(value)
@@ -493,7 +548,11 @@ class ObservableWithComponents(Observable):
         if name is None:
             name = self.default_component_name
         elif name not in self.components:
-            self.error('"{}" is not a known component.\nValid options are: {}'.format(name,self.component_names))
+            msg = (
+                '"{}" is not a known component.\n'
+                'Valid options are: {}'.format(name,self.component_names)
+                )
+            raise ValueError(msg)
         #end if
         return name
     #end def process_component_name
@@ -509,9 +568,14 @@ class ObservableWithComponents(Observable):
             return self.default_component()
         #end if
         if name not in self.component_names:
-            self.error('"{}" is not a known component.\nValid options are: {}'.format(name,self.component_names))
+            msg = (
+                '"{}" is not a known component.\n'
+                'Valid options are: {}'.format(name,self.component_names)
+                )
+            raise ValueError(msg)
         elif name not in self:
-            self.error('Component "{}" not found.'.format(name))
+            msg = 'Component "{}" not found.'.format(name)
+            raise AttributeError(msg, name=name, obj=self)
         #end if
         comp = self.get_attribute(name)
         return comp
@@ -527,7 +591,8 @@ class ObservableWithComponents(Observable):
                 #end if
             #end for
             if len(comps)==0:
-                self.error('No components found.')
+                msg = 'No components found.'
+                raise ValueError(msg)
             #end if
         else:
             if isinstance(names,str):
@@ -535,9 +600,14 @@ class ObservableWithComponents(Observable):
             #end if
             for name in names:
                 if name not in self.component_names:
-                    self.error('"{}" is not a known component.\nValid options are: {}'.format(name,self.component_names))
+                    msg = (
+                        '"{}" is not a known component.\n'
+                        'Valid options are: {}'.format(name,self.component_names)
+                        )
+                    raise ValueError(msg)
                 elif name not in self:
-                    self.error('Component "{}" not found.'.format(name))
+                    msg = 'Component "{}" not found.'.format(name)
+                    raise AttributeError(msg, name=name, obj=self)
                 #end if
                 comps[name] = self[name]
             #end for
@@ -652,7 +722,8 @@ class MomentumDistribution(ObservableWithComponents):
     def get_raw_data(self):
         data = self.get_attribute('raw')
         if len(data)==0:
-            self.error('Raw n(k) data is not present.')
+            msg = 'Raw n(k) data is not present.'
+            raise RuntimeError(msg)
         #end if
         return data
     #end def get_raw_data
@@ -982,7 +1053,11 @@ class MomentumDistributionDFT(MomentumDistribution):
             self.info.E_fermi = E_fermi
         #end if
         if E_fermi is None:
-            self.error('Cannot read n(k) from ESHDF file.  Fermi energy (eV) is required to populate n(k) from ESHDF data.\nFile being read: {}'.format(filepath))
+            msg = (
+                'Cannot read n(k) from ESHDF file.  Fermi energy (eV) is required to populate n(k) from ESHDF data.\n'
+                'File being read: {}'.format(filepath)
+                )
+            raise FileFormatError(msg)
         #end if
 
         vlog.increment()
@@ -1257,7 +1332,12 @@ class Density(ObservableWithComponents):
         for s in species:
             srmax = species_rmax[s]
             if srmax<1e-3:
-                self.error('Cannot compute radial density.\n"rmax" must be set to a finite value.\nrmax provided for species "{}": {}'.format(s,srmax))
+                msg = (
+                    'Cannot compute radial density.\n'
+                    '"rmax" must be set to a finite value.\n'
+                    'rmax provided for species "{}": {}'.format(s,srmax)
+                    )
+                raise ValueError(msg)
             #end if
             nr = int(np.ceil(srmax/dr))
             species_grids[s] = SpheroidGrid(
@@ -1501,7 +1581,11 @@ class StatFile(DevBase):
             
     def read(self,filepath,observables='all'):
         if not os.path.exists(filepath):
-            self.error('Cannot read file.\nFile path does not exist: {}'.format(filepath))
+            msg = (
+                'Cannot read file.\n'
+                'File path does not exist: {}'.format(filepath)
+                )
+            raise FileNotFoundError(msg)
         #end if
         h5 = h5py.File(filepath,'r')
         observable_groups = obj()
@@ -1560,7 +1644,11 @@ class StatFile(DevBase):
             if len(groups)==1:
                 return groups[min(groups.keys())]
             else:
-                self.error('Single stat.h5 observable group requested, but multiple are present.\nGroups present: {}'.format(sorted(groups.keys())))
+                msg = (
+                    'Single stat.h5 observable group requested, but multiple are present.\n'
+                    'Groups present: {}'.format(sorted(groups.keys()))
+                    )
+                raise ValueError(msg)
             #end if
         else:
             return groups

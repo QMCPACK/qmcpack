@@ -86,7 +86,7 @@ import inspect
 import numpy as np
 from numpy import pi, exp, sqrt, sin, cos
 from numpy.linalg import norm
-from .developer import obj, unavailable, error
+from .developer import obj, unavailable
 from .unit_converter import convert
 from .periodic_table import Elements
 
@@ -118,14 +118,19 @@ cost_functions = obj(
 def curve_fit(x,y,f,p0,cost='least_squares',optimizer='fmin'):
     if isinstance(cost,str):
         if cost not in cost_functions:
-            error('"{0}" is an invalid cost function\nvalid options are: {1}'.format(cost,sorted(cost_functions.keys())))
+            msg = (
+                '"{0}" is an invalid cost function\n'
+                'valid options are: {1}'.format(cost,sorted(cost_functions.keys()))
+                )
+            raise ValueError(msg)
         #end if
         cost = cost_functions[cost]
     #end if
     if optimizer=='fmin':
         p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000,disp=0)
     else:
-        error('optimizers other than fmin are not supported yet','curve_fit')
+        msg = 'optimizers other than fmin are not supported yet'
+        raise NotImplementedError(msg)
     #end if
     return p
 #end def curve_fit
@@ -304,7 +309,8 @@ def morse_fit(r,E,p0=None,*,jackknife=False,cost=least_squares,auxfuncs=None,aux
     perror = None
     if jackknife:
         if Edata is None:
-            error('cannot perform jackknife fit because blocked data was not provided (only the means are present)','morse_fit')
+            msg = 'cannot perform jackknife fit because blocked data was not provided (only the means are present)'
+            raise ValueError(msg)
         #end if
         pmean,perror = numerics_jackknife(data     = Edata,
                                           function = curve_fit,
@@ -452,7 +458,11 @@ eos_param_funcs = obj(
 
 def eos_eval(p,V,type='vinet'):
     if type not in eos_funcs:
-        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
+        msg = (
+            '"{0}" is not a valid EOS type\n'
+            'valid options are: {1}'.format(sorted(eos_funcs.keys()))
+            )
+        raise ValueError(msg)
     #end if
     return eos_funcs[type](p,V)
 #end def eos_eval
@@ -460,11 +470,21 @@ def eos_eval(p,V,type='vinet'):
 
 def eos_param(p,param,type='vinet'):
     if type not in eos_param_funcs:
-        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_param_funcs.keys())))
+        msg = (
+            '"{0}" is not a valid EOS type\n'
+            'valid options are: {1}'.format(sorted(eos_param_funcs.keys()))
+            )
+        raise ValueError(msg)
     #end if
     eos_pfuncs = eos_param_funcs[type]
     if param not in eos_pfuncs:
-        error('"{0}" is not an available parameter for a {1} fit\navailable parameters are: {2}'.format(param,type,sorted(eos_pfuncs.keys())))
+        msg = (
+            '"{0}" is not an available parameter for a {1} fit\n'
+            'available parameters are: {2}'.format(
+                param, type, sorted(eos_pfuncs.keys())
+                )
+            )
+        raise ValueError(msg)
     #end if
     return eos_pfuncs[param](p)
 #end def eos_param
@@ -483,7 +503,11 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',*,jackknife=False,auxf
         E     = Edata.mean(axis=0)
     #end if
     if type not in eos_funcs:
-        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
+        msg = (
+            '"{0}" is not a valid EOS type\n'
+            'valid options are: {1}'.format(sorted(eos_funcs.keys()))
+            )
+        raise ValueError(msg)
     #end if
     eos_func = eos_funcs[type]
 
@@ -522,7 +546,8 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',*,jackknife=False,auxf
     perror = None
     if jackknife:
         if Edata is None:
-            error('cannot perform jackknife fit because blocked data was not provided (only the means are present)','morse_fit')
+            msg = 'cannot perform jackknife fit because blocked data was not provided (only the means are present)'
+            raise ValueError(msg)
         #end if
         pmean,perror = numerics_jackknife(data     = Edata,
                                           function = curve_fit,
@@ -702,7 +727,8 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
         elif len(auxfunc)==4:
             auxfunc,args,kwargs,position = auxfunc
         else:
-            error('between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {0}'.format(len(auxfunc)))
+            msg = 'between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {0}'.format(len(auxfunc))
+            raise ValueError(msg)
         #end if
     #end if
 
@@ -765,7 +791,8 @@ def check_jackknife_inputs(args,kwargs,position):
         elif isinstance(position,str):
             kwargpos = True
         else:
-            error('position must be an integer or keyword, received: {0}'.format(position),'jackknife')
+            msg = 'position must be an integer or keyword, received: {0}'.format(position)
+            raise TypeError(msg)
         #end if
     elif args is None and kwargs is None:
         args     = [None]
@@ -775,7 +802,8 @@ def check_jackknife_inputs(args,kwargs,position):
         argpos   = True
         position = 0
     else:
-        error('function argument position for input data must be provided','jackknife')
+        msg = 'function argument position for input data must be provided'
+        raise ValueError(msg)
     #end if
     if args is None:
         args = []
@@ -1352,7 +1380,8 @@ def distance_table(p1,p2,ordering=0):
             n=n2
             dt=dt.T
         else:
-            error('ordering must be 1 or 2,\nyou provided '+str(ordering),'distance_table')
+            msg = 'ordering must be 1 or 2,\nyou provided '+str(ordering)
+            raise ValueError(msg)
         #end if
         order = np.empty(dt.shape,dtype=int)
         for i in range(n):
@@ -1379,7 +1408,13 @@ def nearest_neighbors(n,points,qpoints=None,*,return_distances=False,slow=False)
         #end if
     #end if
     if n>len(qpoints)-extra:
-        error('requested more than the total number of neighbors\nmaximum is: {0}\nyou requested: {1}\nexiting.'.format(len(qpoints)-extra,n),'nearest_neighbors')
+        msg = (
+            'requested more than the total number of neighbors\n'
+            'maximum is: {0}\n'
+            'you requested: {1}\n'
+            'exiting.'.format(len(qpoints)-extra,n)
+            )
+        raise ValueError(msg)
     #end if
     slow = slow or scipy_unavailable
     if not slow:
@@ -1461,7 +1496,8 @@ def layers_1d(xpoints,tol,xmin=None,xmax=None,*,merge=True,periodic=False,full_r
     # Update inputs to be consistent with periodic merge, if requested
     if merge and periodic:
         if xmax is None:
-            error('"xmax" must be provided.','layers_1d')
+            msg = '"xmax" must be provided.'
+            raise ValueError(msg)
         elif xmin is None:
             xmin = 0.0
         #end if
@@ -1575,7 +1611,15 @@ def index_by_layer_1d(xpoints,tol,*,uniform=True,check=True,full_return=False):
         dxmin   = dxlayer.min()
         dxmax   = dxlayer.max()
         if np.abs(dxmax-dxmin)>2*tol:
-            error('Could not determine layer separation.\nLayers are not evenly spaced.\nMin layer spacing: {}\nMax layer spacing: {}\nSpread   : {}\nTolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol),'index_by_layer_1d')
+            msg = (
+                'Could not determine layer separation.\n'
+                'Layers are not evenly spaced.\n'
+                'Min layer spacing: {}\n'
+                'Max layer spacing: {}\n'
+                'Spread   : {}\n'
+                'Tolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol)
+                )
+            raise RuntimeError(msg)
         #end if
         dx = dxlayer.mean()
     else:
@@ -1588,7 +1632,8 @@ def index_by_layer_1d(xpoints,tol,*,uniform=True,check=True,full_return=False):
     # Check the layer indices, if requested
     if check:
         if np.abs(ipoints*dx+xmin-xpoints).max()>3*tol: # Tolerance accounts for merge
-            error('Layer indexing failed.','index_by_layer_1d')
+            msg = 'Layer indexing failed.'
+            raise RuntimeError(msg)
         #end if
     #end if
 

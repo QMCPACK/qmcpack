@@ -97,16 +97,11 @@ def test_get_result(tmp_path):
     analyzer = sim.analyzer_type(sim)
     analyzer.save(Path(sim.imresdir).resolve() / sim.analyzer_image)
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = sim.get_result('orbitals',None)
 
@@ -135,16 +130,11 @@ def test_incorporate_result():
 
     sim = get_gamess_sim('rhf')
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to incorporate result unknown has not been implemented",
+        ):
         sim.incorporate_result('unknown',None,None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = obj(
         vec       = 'vec text',

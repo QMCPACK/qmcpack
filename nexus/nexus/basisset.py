@@ -9,7 +9,7 @@ from pathlib import Path
 from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
-from .developer import DevBase, obj, log, error, unavailable
+from .developer import DevBase, obj, log, unavailable, NexusError
 from .fileio import TextFile
 from .utilities import path_string, to_str
 
@@ -43,7 +43,8 @@ class BasisSets(DevBase):
             #end if
         #end for
         if len(msg) > 0:
-            self.error(f'cannot create Basissets object\n{msg}')
+            msg = f'cannot create Basissets object\n{msg}'
+            raise TypeError(msg)
         #end if
 
         if len(bss)>0:
@@ -96,7 +97,8 @@ class BasisSets(DevBase):
                 bs = self[bsfile]
                 bss[bs.element_label] = bs
             else:
-                self.error('basis file not found\nmissing file: {0}'.format(bsfile))
+                msg = 'basis file not found\nmissing file: {0}'.format(bsfile)
+                raise FileNotFoundError(msg)
             #end if
         #end for
         return bss
@@ -117,7 +119,8 @@ class BasisFile(DevBase):
             elem_label = self.filename.split('.')[0]
             is_elem, elem = Elements.is_element(elem_label, return_element=True)
             if not is_elem:
-                self.error('cannot determine element for basis file: {0}\nbasis file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filepath))
+                msg = 'cannot determine element for basis file: {0}\nbasis file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filepath)
+                raise RuntimeError(msg)
             #end if
             self.element = elem.symbol
             self.element_label = elem_label
@@ -143,7 +146,8 @@ class gaussBasisFile(BasisFile):
 
     def cleaned_text(self):
         if self.text is None:
-            self.error('text requested prior to read\nfile: {0}'.format(self.location))
+            msg = 'text requested prior to read\nfile: {0}'.format(self.location)
+            raise NexusError(msg)
         #end if
         return self.text
     #end def cleaned_text
@@ -153,7 +157,8 @@ class gaussBasisFile(BasisFile):
             filepath = self.location
         #end if
         if not os.path.exists(filepath):
-            self.error('file does not exist: {0}'.format(filepath))
+            msg = 'file does not exist: {0}'.format(filepath)
+            raise FileNotFoundError(msg)
         #end if
         file = TextFile(filepath)
         self.read_file(file)
@@ -275,7 +280,8 @@ def process_gaussian_text(text,format,*,pp=True,basis=True,preserve_spacing=Fals
             #end if
         #end for
     else:
-        error('{0} format is unknown'.format(format),'process_gaussian_text')
+        msg = '{0} format is unknown'.format(format)
+        raise NotImplementedError(msg)
     #end if
     if pp and basis:
         return pp_lines,basis_lines
@@ -284,7 +290,8 @@ def process_gaussian_text(text,format,*,pp=True,basis=True,preserve_spacing=Fals
     elif basis:
         return basis_lines
     else:
-        error('must request pp or basis')
+        msg = 'must request pp or basis'
+        raise ValueError(msg)
     #end if
 #end def process_gaussian_text
 
@@ -314,12 +321,15 @@ class GaussianBasisSet(DevBase):
 
     def read(self,filepath,format=None):
         if format is None:
-            self.error('format keyword must be specified to read file {0}\nvalid options are: {1}'.format(filepath,self.formats))
+            msg = 'format keyword must be specified to read file {0}\nvalid options are: {1}'.format(filepath,self.formats)
+            raise ValueError(msg)
         elif format not in self.formats:
-            self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
+            msg = 'incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats)
+            raise ValueError(msg)
         #end if
         if not os.path.exists(filepath):
-            self.error('cannot read {0}, file does not exist'.format(filepath))
+            msg = 'cannot read {0}, file does not exist'.format(filepath)
+            raise FileNotFoundError(msg)
         #end if
         #self.name = split_delims(os.path.split(filepath)[1])[0]
         self.name = os.path.split(filepath)[1].split('.')[0]
@@ -331,9 +341,11 @@ class GaussianBasisSet(DevBase):
 
     def write(self,filepath=None,format=None):
         if format is None:
-            self.error('format keyword must be specified to write file {0}\nvalid options are: {1}'.format(filepath,self.formats))
+            msg = 'format keyword must be specified to write file {0}\nvalid options are: {1}'.format(filepath,self.formats)
+            raise ValueError(msg)
         elif format not in self.formats:
-            self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
+            msg = 'incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats)
+            raise ValueError(msg)
         #end if
         text = self.write_text(format)
         if filepath is not None:
@@ -391,7 +403,8 @@ class GaussianBasisSet(DevBase):
             while i<len(basis_lines):
                 tokens = basis_lines[i].split(); i+=1
                 if len(tokens)!=5:
-                    self.error('could not parse crystal basisset, input may be misformatted')
+                    msg = 'could not parse crystal basisset, input may be misformatted'
+                    raise RuntimeError(msg)
                 #end if
                 basis_type    =   int(tokens[0])
                 l_type        =   int(tokens[1])
@@ -424,7 +437,8 @@ class GaussianBasisSet(DevBase):
                 #end if
             #end while
         else:
-            self.error('ability to read file format {0} has not been implemented'.format(format))
+            msg = 'ability to read file format {0} has not been implemented'.format(format)
+            raise NotImplementedError(msg)
         #end if
         # sort the basis in s,p,d,f,... order
         self.lsort()
@@ -469,7 +483,8 @@ class GaussianBasisSet(DevBase):
             for ib in range(len(self.basis)):
                 b = self.basis[ib]
                 if b.l not in self.crystal_lmap_reverse:
-                    self.error('{0} channels cannot be handled by crystal'.format(b.l))
+                    msg = '{0} channels cannot be handled by crystal'.format(b.l)
+                    raise NotImplementedError(msg)
                 #end if
                 Zf = 0
                 if occ is not None and b.l in occ and lcounts[b.l]<len(occ[b.l]):
@@ -485,7 +500,8 @@ class GaussianBasisSet(DevBase):
                 #end for
             #end for
         else:
-            self.error('ability to write file format {0} has not been implemented'.format(format))
+            msg = 'ability to write file format {0} has not been implemented'.format(format)
+            raise NotImplementedError(msg)
         #end if
         return text
     #end def write_text
@@ -635,7 +651,8 @@ class GaussianBasisSet(DevBase):
     # test needed
     def prim_expons(self):
         if self.contracted():
-            self.error('cannot find primitive gaussian expons because basis is contracted')
+            msg = 'cannot find primitive gaussian expons because basis is contracted'
+            raise NexusError(msg)
         #end if
         lbasis = self.lbasis()
         gexpon = obj()
@@ -653,7 +670,8 @@ class GaussianBasisSet(DevBase):
     # test needed
     def prim_widths(self):
         if self.contracted():
-            self.error('cannot find primitive gaussian widths because basis is contracted')
+            msg = 'cannot find primitive gaussian widths because basis is contracted'
+            raise NexusError(msg)
         #end if
         lbasis = self.lbasis()
         gwidth = obj()
@@ -676,7 +694,8 @@ class GaussianBasisSet(DevBase):
         #end if
         for l,lsel in lselectors.items():
             if l not in lbasis:
-                self.error('cannot remove basis functions from channel {0}, channel not present'.format(l))
+                msg = 'cannot remove basis functions from channel {0}, channel not present'.format(l)
+                raise KeyError(msg)
             #end if
             lbas = lbasis[l]
             if isinstance(lsel,float):
@@ -687,9 +706,11 @@ class GaussianBasisSet(DevBase):
                 elif comp=='>':
                     less = False
                 elif comp is None:
-                    self.error('comp argument must be provided (< or >)')
+                    msg = 'comp argument must be provided (< or >)'
+                    raise ValueError(msg)
                 else:
-                    self.error('comp must be < or >, you provided: {0}'.format(comp))
+                    msg = 'comp must be < or >, you provided: {0}'.format(comp)
+                    raise ValueError(msg)
                 #end if
                 gw = gwidths[l]
                 iw = np.arange(len(gw))
@@ -711,21 +732,24 @@ class GaussianBasisSet(DevBase):
             elif isinstance(lsel,int):                
                 if comp=='<':
                     if lsel>len(lbas):
-                        self.error('cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
+                        msg = 'cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas))
+                        raise NexusError(msg)
                     #end if
                     for i in range(lsel):
                         del lbas[i]
                     #end for
                 elif comp=='>':
                     if lsel>len(lbas):
-                        self.error('cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
+                        msg = 'cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas))
+                        raise NexusError(msg)
                     #end if
                     for i in range(len(lbas)-lsel,len(lbas)):
                         del lbas[i]
                     #end for
                 else:
                     if lsel>=len(lbas):
-                        self.error('cannot remove basis function {0} from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
+                        msg = 'cannot remove basis function {0} from channel {1} as it only has {2}'.format(lsel,l,len(lbas))
+                        raise NexusError(msg)
                     #end if
                     del lbas[lsel]
                 #end if
@@ -951,7 +975,8 @@ class GaussianBasisSet(DevBase):
 
     def plot_prim_widths(self,*,show=True,fig=True,sep=False,style='o',fmt=None,nsub=None,semilog=True,label=True):
         if self.contracted():
-            self.error('cannot plot primitive gaussian widths because basis is contracted')
+            msg = 'cannot plot primitive gaussian widths because basis is contracted'
+            raise NexusError(msg)
         #end if
         ptitle = '{0} {1} primitive widths'.format(self.name,self.basis_size())
         if fig:
