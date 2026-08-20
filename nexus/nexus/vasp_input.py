@@ -3053,7 +3053,11 @@ def generate_any_vasp_input(**kwargs):
         #end if
     #end for
     if vf.pseudos is not None:
-        vf.pseudos = PseudoSet.pseudo_remap('vasp',vf.pseudos,vf.system)
+        vf.pseudos = PseudoSet.get_pseudos(
+            pseudos = vf.pseudos,
+            system = vf.system,
+            code = 'vasp',
+            )
     #end if
     gen_kpoints = 'kspacing' not in kwargs
 
