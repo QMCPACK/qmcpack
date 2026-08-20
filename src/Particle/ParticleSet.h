@@ -43,6 +43,7 @@ class DistanceTableAA;
 class DistanceTableAB;
 class ResourceCollection;
 class StructFact;
+struct ParticleSetMultiWalkerMem;
 struct SKMultiWalkerMem;
 
 /** Specialized paritlce class for atomistic simulations
@@ -310,9 +311,9 @@ public:
 
   /** Install a crowd of complete all-particle proposals relative to resolved walker snapshots.
    *
-   * Each resolved walker is the authoritative baseline for positions and spins; CT selects
-   * which components receive displacements. Displacements use particle-major flattened
-   * storage: iat * number_of_walkers + iw. The caller must supply a nonempty,
+   * Each resolved walker is the authoritative baseline for positions. For POS_SPIN, it is
+   * also the baseline for spins. Displacements use particle-major flattened storage:
+   * iat * number_of_walkers + iw. The caller must supply a nonempty,
    * resource-acquired clone crowd with matching topology, particle counts, aligned walker
    * and output lists, exact displacement sizes, and no active particles. These caller
    * invariants are checked in Debug and assumed in Release. Proposal finiteness and lattice
@@ -635,6 +636,9 @@ protected:
 
   ///Structure factor
   std::unique_ptr<StructFact> structure_factor_;
+
+  /// multiwalker operation data
+  ResourceHandle<ParticleSetMultiWalkerMem> mw_mem_handle_;
 
   ///multi walker structure factor data
   ResourceHandle<SKMultiWalkerMem> mw_structure_factor_data_handle_;

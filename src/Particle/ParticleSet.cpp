@@ -47,6 +47,24 @@ enum PSetTimers
   PS_update
 };
 
+/** Reusable crowd scratch for ParticleSet multiwalker operations.
+ *
+ * Proposal storage uses the same particle-major layout as all-particle displacements.
+ * Spin storage remains empty until a POS_SPIN operation needs it.
+ */
+struct ParticleSetMultiWalkerMem : public Resource
+{
+  ParticleSet::ParticlePos proposed_positions;
+  ParticleSet::ParticleScalar proposed_spins;
+  std::vector<bool> rejected;
+
+  ParticleSetMultiWalkerMem() : Resource("ParticleSetMultiWalkerMem") {}
+
+  ParticleSetMultiWalkerMem(const ParticleSetMultiWalkerMem&) : ParticleSetMultiWalkerMem() {}
+
+  std::unique_ptr<Resource> makeClone() const override { return std::make_unique<ParticleSetMultiWalkerMem>(*this); }
+};
+
 static const TimerNameList_t<PSetTimers> generatePSetTimerNames(std::string& obj_name)
 {
   return {{PS_newpos, "ParticleSet:" + obj_name + "::computeNewPosDT"},
@@ -512,30 +530,32 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
   }
 #endif
 
-  std::vector<ParticlePos> proposed_positions;
-  std::vector<ParticleScalar> proposed_spins;
-  proposed_positions.reserve(num_walkers);
-  proposed_spins.reserve(num_walkers);
+  ParticleSetMultiWalkerMem& mw_mem = p_list.getLeader().mw_mem_handle_.getResource();
+  ParticlePos& proposed_positions   = mw_mem.proposed_positions;
+  proposed_positions.resize(num_particles * num_walkers);
+  if constexpr (CT == CoordsType::POS_SPIN)
+    mw_mem.proposed_spins.resize(num_particles * num_walkers);
+  else
+    mw_mem.proposed_spins.clear();
+
   for (size_t iw = 0; iw < num_walkers; ++iw)
   {
     const Walker_t& walker = walkers[iw];
-    proposed_positions.emplace_back(walker.R);
-    proposed_spins.emplace_back(walker.spins);
-    are_valid[iw]       = true;
-    const auto& lattice = p_list[iw].simulation_cell_.getLattice();
+    are_valid[iw]          = true;
+    const auto& lattice    = p_list[iw].simulation_cell_.getLattice();
     for (size_t iat = 0; iat < num_particles; ++iat)
     {
-      const size_t flat_index = iat * num_walkers + iw;
-      proposed_positions[iw][iat] += displacements.positions[flat_index];
-      bool particle_is_valid = isFinitePosition(proposed_positions[iw][iat]);
+      const size_t flat_index        = iat * num_walkers + iw;
+      proposed_positions[flat_index] = walker.R[iat] + displacements.positions[flat_index];
+      bool particle_is_valid         = isFinitePosition(proposed_positions[flat_index]);
       if (particle_is_valid && lattice.explicitly_defined)
-        particle_is_valid = lattice.isValid(lattice.toUnit(proposed_positions[iw][iat]));
+        particle_is_valid = lattice.isValid(lattice.toUnit(proposed_positions[flat_index]));
       are_valid[iw] = are_valid[iw] && particle_is_valid;
 
       if constexpr (CT == CoordsType::POS_SPIN)
       {
-        proposed_spins[iw][iat] += displacements.spins[flat_index];
-        are_valid[iw] = are_valid[iw] && qmcplusplus::isfinite(proposed_spins[iw][iat]);
+        mw_mem.proposed_spins[flat_index] = walker.spins[iat] + displacements.spins[flat_index];
+        are_valid[iw]                     = are_valid[iw] && qmcplusplus::isfinite(mw_mem.proposed_spins[flat_index]);
       }
     }
   }
@@ -544,14 +564,18 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
   {
     const Walker_t& walker = walkers[iw];
     if (are_valid[iw])
-    {
-      p_list[iw].R     = proposed_positions[iw];
-      p_list[iw].spins = proposed_spins[iw];
-    }
+      for (size_t iat = 0; iat < num_particles; ++iat)
+      {
+        const size_t flat_index = iat * num_walkers + iw;
+        p_list[iw].R[iat]       = proposed_positions[flat_index];
+        if constexpr (CT == CoordsType::POS_SPIN)
+          p_list[iw].spins[iat] = mw_mem.proposed_spins[flat_index];
+      }
     else
     {
-      p_list[iw].R     = walker.R;
-      p_list[iw].spins = walker.spins;
+      p_list[iw].R = walker.R;
+      if constexpr (CT == CoordsType::POS_SPIN)
+        p_list[iw].spins = walker.spins;
     }
   }
 
@@ -926,7 +950,8 @@ void ParticleSet::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<Par
   }
 #endif
 
-  std::vector<bool> rejected(num_walkers);
+  std::vector<bool>& rejected = p_list.getLeader().mw_mem_handle_.getResource().rejected;
+  rejected.resize(num_walkers);
   bool any_rejected = false;
   for (size_t iw = 0; iw < num_walkers; ++iw)
   {
@@ -1098,6 +1123,7 @@ void ParticleSet::initPropertyList()
 
 void ParticleSet::createResource(ResourceCollection& collection) const
 {
+  collection.addResource(std::make_unique<ParticleSetMultiWalkerMem>());
   coordinates_->createResource(collection);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->createResource(collection);
@@ -1107,7 +1133,8 @@ void ParticleSet::createResource(ResourceCollection& collection) const
 
 void ParticleSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
 {
-  auto& ps_leader = p_list.getLeader();
+  auto& ps_leader          = p_list.getLeader();
+  ps_leader.mw_mem_handle_ = collection.lendResource<ParticleSetMultiWalkerMem>();
   ps_leader.coordinates_->acquireResource(collection, extractCoordsRefList(p_list));
   for (int i = 0; i < ps_leader.DistTables.size(); i++)
     ps_leader.DistTables[i]->acquireResource(collection, extractDTRefList(p_list, i));
@@ -1119,6 +1146,7 @@ void ParticleSet::acquireResource(ResourceCollection& collection, const RefVecto
 void ParticleSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
 {
   auto& ps_leader = p_list.getLeader();
+  collection.takebackResource(ps_leader.mw_mem_handle_);
   ps_leader.coordinates_->releaseResource(collection, extractCoordsRefList(p_list));
   for (int i = 0; i < ps_leader.DistTables.size(); i++)
     ps_leader.DistTables[i]->releaseResource(collection, extractDTRefList(p_list, i));
