@@ -1421,6 +1421,14 @@ class Void(object):
         raise ImportError(msg)
     #end def _unavailable
 
+
+    @classmethod
+    def _class_unavailable(cls):
+        msg = 'encountered a void item from an unavailable module'
+        raise ImportError(msg)
+    #end def _class_unavailable
+
+
     def __init__(self,module=None,item=None):
         Void.void_items[id(self)] = module,item
     #end def __init__
