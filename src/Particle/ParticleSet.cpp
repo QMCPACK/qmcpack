@@ -480,14 +480,14 @@ void validateAllParticleCrowdTopology(const RefVectorWithLeader<ParticleSet>& p_
 
 template<CoordsType CT>
 void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
-                                          const RefVector<Walker_t>& resolved_walkers,
+                                          const RefVector<Walker_t>& walkers,
                                           const MCCoords<CT>& displacements,
                                           std::vector<bool>& are_valid,
                                           bool skipSK)
 {
   const size_t num_walkers = p_list.size();
 #ifndef NDEBUG
-  if (num_walkers == 0 || resolved_walkers.size() != num_walkers || are_valid.size() != num_walkers)
+  if (num_walkers == 0 || walkers.size() != num_walkers || are_valid.size() != num_walkers)
     throw std::runtime_error("All-particle transaction walker counts do not match.");
 
   validateAllParticleCrowdTopology(p_list);
@@ -502,12 +502,12 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
 
   for (size_t iw = 0; iw < num_walkers; ++iw)
   {
-    const Walker_t& resolved_walker = resolved_walkers[iw];
+    const Walker_t& walker = walkers[iw];
     if (p_list[iw].getActivePtcl() != -1)
       throw std::runtime_error("Cannot start an all-particle transaction with an active particle.");
     if (p_list[iw].getTotalNum() != num_particles || p_list[iw].R.size() != num_particles ||
-        p_list[iw].spins.size() != num_particles || resolved_walker.R.size() != num_particles ||
-        resolved_walker.spins.size() != num_particles)
+        p_list[iw].spins.size() != num_particles || walker.R.size() != num_particles ||
+        walker.spins.size() != num_particles)
       throw std::runtime_error("All-particle transaction particle counts do not match.");
   }
 #endif
@@ -518,9 +518,9 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
   proposed_spins.reserve(num_walkers);
   for (size_t iw = 0; iw < num_walkers; ++iw)
   {
-    const Walker_t& resolved_walker = resolved_walkers[iw];
-    proposed_positions.emplace_back(resolved_walker.R);
-    proposed_spins.emplace_back(resolved_walker.spins);
+    const Walker_t& walker = walkers[iw];
+    proposed_positions.emplace_back(walker.R);
+    proposed_spins.emplace_back(walker.spins);
     are_valid[iw]       = true;
     const auto& lattice = p_list[iw].simulation_cell_.getLattice();
     for (size_t iat = 0; iat < num_particles; ++iat)
@@ -542,7 +542,7 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
 
   for (size_t iw = 0; iw < num_walkers; ++iw)
   {
-    const Walker_t& resolved_walker = resolved_walkers[iw];
+    const Walker_t& walker = walkers[iw];
     if (are_valid[iw])
     {
       p_list[iw].R     = proposed_positions[iw];
@@ -550,8 +550,8 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
     }
     else
     {
-      p_list[iw].R     = resolved_walker.R;
-      p_list[iw].spins = resolved_walker.spins;
+      p_list[iw].R     = walker.R;
+      p_list[iw].spins = walker.spins;
     }
   }
 
@@ -903,25 +903,25 @@ void ParticleSet::mw_accept_rejectSpinMove(const RefVectorWithLeader<ParticleSet
 }
 
 void ParticleSet::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
-                                                   const RefVector<Walker_t>& resolved_walkers,
+                                                   const RefVector<Walker_t>& walkers,
                                                    const std::vector<bool>& accepted,
                                                    bool skipSK)
 {
   const size_t num_walkers = p_list.size();
 #ifndef NDEBUG
-  if (num_walkers == 0 || resolved_walkers.size() != num_walkers || accepted.size() != num_walkers)
+  if (num_walkers == 0 || walkers.size() != num_walkers || accepted.size() != num_walkers)
     throw std::runtime_error("All-particle transaction walker counts do not match.");
 
   validateAllParticleCrowdTopology(p_list);
   const size_t num_particles = p_list[0].getTotalNum();
   for (size_t iw = 0; iw < num_walkers; ++iw)
   {
-    const Walker_t& resolved_walker = resolved_walkers[iw];
+    const Walker_t& walker = walkers[iw];
     if (p_list[iw].active_ptcl_ != -1)
       throw std::runtime_error("Cannot resolve an all-particle transaction with an active particle.");
     if (p_list[iw].getTotalNum() != num_particles || p_list[iw].R.size() != num_particles ||
-        p_list[iw].spins.size() != num_particles || resolved_walker.R.size() != num_particles ||
-        resolved_walker.spins.size() != num_particles)
+        p_list[iw].spins.size() != num_particles || walker.R.size() != num_particles ||
+        walker.spins.size() != num_particles)
       throw std::runtime_error("All-particle transaction particle counts do not match.");
   }
 #endif
@@ -933,9 +933,9 @@ void ParticleSet::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<Par
     rejected[iw] = !accepted[iw];
     if (rejected[iw])
     {
-      const Walker_t& resolved_walker = resolved_walkers[iw];
-      p_list[iw].R                    = resolved_walker.R;
-      p_list[iw].spins                = resolved_walker.spins;
+      const Walker_t& walker = walkers[iw];
+      p_list[iw].R           = walker.R;
+      p_list[iw].spins       = walker.spins;
       p_list[iw].coordinates_->setAllParticlePos(p_list[iw].R);
       any_rejected = true;
     }
@@ -1165,13 +1165,13 @@ template void ParticleSet::mw_makeMove<CoordsType::POS_SPIN>(const RefVectorWith
                                                              const MCCoords<CoordsType::POS_SPIN>& displs,
                                                              OptionalRef<std::vector<bool>> are_valid);
 template void ParticleSet::mw_makeMoveAllParticles<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
-                                                                    const RefVector<Walker_t>& resolved_walkers,
+                                                                    const RefVector<Walker_t>& walkers,
                                                                     const MCCoords<CoordsType::POS>& displacements,
                                                                     std::vector<bool>& are_valid,
                                                                     bool skipSK);
 template void ParticleSet::mw_makeMoveAllParticles<CoordsType::POS_SPIN>(
     const RefVectorWithLeader<ParticleSet>& p_list,
-    const RefVector<Walker_t>& resolved_walkers,
+    const RefVector<Walker_t>& walkers,
     const MCCoords<CoordsType::POS_SPIN>& displacements,
     std::vector<bool>& are_valid,
     bool skipSK);

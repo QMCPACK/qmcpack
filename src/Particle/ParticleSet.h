@@ -322,7 +322,7 @@ public:
    */
   template<CoordsType CT>
   static void mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
-                                      const RefVector<Walker_t>& resolved_walkers,
+                                      const RefVector<Walker_t>& walkers,
                                       const MCCoords<CT>& displacements,
                                       std::vector<bool>& are_valid,
                                       bool skipSK = false);
@@ -442,7 +442,7 @@ public:
    * caller invariants are checked in Debug and assumed in Release.
    */
   static void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
-                                               const RefVector<Walker_t>& resolved_walkers,
+                                               const RefVector<Walker_t>& walkers,
                                                const std::vector<bool>& accepted,
                                                bool skipSK = false);
 
