@@ -298,7 +298,7 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
 
 
 @nxs_deprecate(since="2.4.0", replacement="generate_pseudoset")
-def ppset(label: str, **codes_pps: list[str]):
+def ppset(label: str, **codes_pps: Collection[str]):
     """Register pseudopotentials for codes with a label.
 
     This is intended as a backwards-compatible interface to not break
@@ -311,7 +311,7 @@ def ppset(label: str, **codes_pps: list[str]):
     label : str
         Label of the pseudopotential set.
     **codes_pps
-        Map of codes to the names of the pseudopotential files.
+        Map of codes to collections of names of the pseudopotential files.
 
     Notes
     -----
@@ -344,24 +344,28 @@ def ppset(label: str, **codes_pps: list[str]):
     if label in PseudoSet.labeled_pseudosets:
         msg = f'Pseudopotential set label "{label}" is already registered!'
         raise ValueError(msg)
+
     pps_coll = {}
     ref_elements = None
     for code, ppfiles in codes_pps.items():
-        missing = set(ppfiles)-PseudoSet.pseudo_files.keys()
+        missing = set(ppfiles) - PseudoSet.pseudo_files.keys()
         if len(missing)>0:
             msg = f'Pseudopotential files "{missing}" are not present in PseudoSet.pseudo_files!'
             raise ValueError(msg)
-        pps = PseudoSet([PseudoSet.pseudo_files[f] for f in ppfiles])
+
+        pps = PseudoSet(ppfiles)
         code = PseudoSet._check_code_str(code)
         if code not in pps.codes:
             msg = f'Pseudopotential files provided for code "{code}" are not compatible with that code!'
             raise ValueError(msg)
+
         elements = set(pps.pseudos)
         if ref_elements is None:
             ref_elements = elements
         elif elements!=ref_elements:
             msg = f'Pseudopotential set "{label}" must contain potentials for the same elements for each code!'
             raise ValueError(msg)
+
         pps_coll[code] = pps
     PseudoSet.labeled_pseudosets[label] = pps_coll
 #end def ppset
@@ -380,29 +384,27 @@ class PseudoSet(DevBase):
         overlap between some programs for file extension, this can
         occasionally contain more than one code.
     Zeff_map : Map of str: int
-        A :class:`dict` or :class:`obj` mapping elements to their effective
-        nuclear charges (Z-valences).
+        A mapping of elements to their effective nuclear charges (Z-valences).
     pseudo_dirs : set of Path
         The directories that the pseudopotentials are stored in.
     pseudo_files : dict of str: str (class attribute)
-        Dictionary mapping pseudopotential file names to their full paths.
+        Dictionary mapping pseudopotential file names to their full paths, set
+        by passing ``pseudo_dir`` to :data:`~nexus.settings`.
     labeled_pseudosets : dict of str: dict of str: PseudoSet (class attribute)
         Pseudopotential sets registered by label, then compatible code.
 
     Parameters
     ----------
     pseudos : collection of str/Path or map of str/Elements to Path
-        A collection of pseudopotential files or a :class:`dict`/:class:`obj`
-        that maps elements to file paths.
+        A collection of pseudopotential files or a map of elements to file paths.
     codes : one or more of {"espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf", "detect"}, default="detect"
         The name of the code that the pseudos are formatted for, or
         if ``"detect"``, will auto-detect the code name from the
         file extensions.
     Zeff_map : Map of str/Elements to int, optional
-        A :class:`dict` or :class:`obj` mapping elements to their effective
-        nuclear charges (Z-valences). If this is supplied, it will override any
-        parts of the code that may try to parse the pseudopotential file to
-        get the Z-valence.
+        A mapping of elements to their effective nuclear charges (Z-valences).
+        If this is supplied, it will override any parts of the code that may try
+        to parse the pseudopotential file to get the Z-valence.
     skip_invalid : bool, default=False (keyword-only)
         If ``True``, then this will emit a warning rather than raise an
         error if a file is not found or if the file does not have a
@@ -414,7 +416,7 @@ class PseudoSet(DevBase):
         "espresso": frozenset({".ncpp", ".upf", ".vdb", ".van", ".rrkj3"}),
         "gamess":   frozenset({".gms", ".gamess"}),
         "vasp":     frozenset({"potcar", ".potcar", ".vasp"}),
-        "qmcpack":  frozenset({".xml", ".data"}), # .data is CASINO format
+        "qmcpack":  frozenset({".xml", ".data"}), # .data is for CASINO format
         "rmg":      frozenset({".upf", ".xml"}),
         "pyscf":    frozenset({".nwchem", ".gth"})
         })
@@ -628,35 +630,32 @@ class PseudoSet(DevBase):
         Parameters
         ----------
         pseudo_dir : PathLike
-            The directory from which to read pseudopotentials.
-            Does not support nested directories, except for those that
-            contain a POTCAR file.
+            The directory from which to read pseudopotentials. Does not support
+            nested directories, except for those that contain a POTCAR file.
         code : {"espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf", "detect"}, default="detect"
-            The name of the code that the pseudos are formatted for,
-            or if ``"detect"``, will auto-detect the code name from the
-            file extensions.
+            The name of the code that the pseudos are formatted for, or if
+            ``"detect"``, will auto-detect the code name from the file
+            extensions.
         Zeff_map : Map of str/Elements to int, optional
-            A ``dict`` or ``obj`` mapping elements to their effective
-            nuclear charges (Z-valences). If this is supplied, it will
-            override any parts of the code that may try to parse the
-            pseudopotential to get the Z-valence.
+            A mapping of elements to their effective nuclear charges
+            (Z-valences). If this is supplied, it will override any parts of the
+            code that may try to parse the pseudopotential to get the Z-valence.
         extension : str or list of str, optional
-            Optionally filter the files in the directory by their
-            extension.
+            Optionally filter the files in the directory by their extension.
 
-            If this is ``None`` it will use the file suffixes
-            in ``PseudoSet.file_exts``, unless ``codes="detect"``, in
-            which case it will do nothing.
+            If this is ``None`` it will use the file suffixes in
+            ``PseudoSet.file_exts``, unless ``codes="detect"``, in which case it
+            will do nothing.
 
-            If this is a string or list of strings, it is assumed the
-            string(s) are the file suffixes to filter by. The strings
-            should include a leading ``.``, e.g. ``.xml``, not ``xml``.
+            If this is a string or list of strings, it is assumed the string(s)
+            are the file suffixes to filter by. The strings should include a
+            leading ``.``, e.g. ``.xml``, not ``xml``.
         pattern : str or Pattern, optional
             A string or regex pattern to use to filter files by name.
         skip_invalid : bool, default=False (keyword-only)
             If ``True``, then this will emit a warning rather than raise an
-            error if a file is not found or if the file does not have a
-            valid name.
+            error if a file is not found or if the file does not have a valid
+            name.
 
         See Also
         --------
@@ -675,8 +674,7 @@ class PseudoSet(DevBase):
         C: /path/to/pseudo_dir/C.ccECP.xml
         Fe: /path/to/pseudo_dir/Fe.ccECP.xml
 
-        Reading in only the UPF pseudos in a directory with UPF and XML
-        pseudos.
+        Reading in only the UPF pseudos in a directory with UPF and XML pseudos.
 
         >>> os.listdir(pseudo_dir)
         ['H.ccECP.xml', 'C.ccECP.xml', 'H.ccECP.upf', 'C.ccECP.upf']
@@ -685,8 +683,7 @@ class PseudoSet(DevBase):
         C: /path/to/pseudo_dir/C.ccECP.upf
         H: /path/to/pseudo_dir/H.ccECP.upf
 
-        Filtering out two different kinds of pseudos with the same
-        extensions.
+        Filtering two different kinds of pseudos with the same extensions.
 
         >>> os.listdir(pseudo_dir)
         ['H.ccECP.upf', 'C.ccECP.upf', 'H.USPP.upf', 'C.USPP.upf']
@@ -695,7 +692,7 @@ class PseudoSet(DevBase):
         C: /path/to/pseudo_dir/C.USPP.upf
         H: /path/to/pseudo_dir/H.USPP.upf
 
-        Filtering out pseudos by both extension and pattern.
+        Filtering pseudos by both extension and pattern.
 
         >>> os.listdir(pseudo_dir)
         ['H.ccECP.upf', 'C.ccECP.upf', 'H.USPP.upf', 'C.USPP.upf', 'H.ccECP.xml', 'C.ccECP.xml']
@@ -704,8 +701,8 @@ class PseudoSet(DevBase):
         C: /path/to/pseudo_dir/C.ccECP.upf
         H: /path/to/pseudo_dir/H.ccECP.upf
 
-        Filtering out VASP pseudos with similar names. Pattern matches
-        anything *without* an underscore.
+        Filtering out VASP pseudos with similar names. Pattern matches anything
+        *without* an underscore.
 
         >>> os.listdir(pseudo_dir)
         ['H_sv_GW', 'C', 'C_GW', 'H_sv', 'H_GW', 'C_sv_GW', 'C_sv', 'H']
@@ -714,7 +711,7 @@ class PseudoSet(DevBase):
         C: /path/to/pseudo_dir/C/POTCAR
         H: /path/to/pseudo_dir/H/POTCAR
 
-        Filtering out VASP pseudos ending with ``_sv``.
+        Including VASP pseudos ending with ``_sv``.
 
         >>> os.listdir(pseudo_dir)
         ['H_sv_GW', 'C', 'C_GW', 'H_sv', 'H_GW', 'C_sv_GW', 'C_sv', 'H']
@@ -723,7 +720,7 @@ class PseudoSet(DevBase):
         C: /path/to/pseudo_dir/C_sv/POTCAR
         H: /path/to/pseudo_dir/H_sv/POTCAR
 
-        Filtering out VASP pseudos ending with ``_GW``, but do not
+        Including VASP pseudos ending with ``_GW``, but do not
         contain ``_sv``.
 
         >>> os.listdir(pseudo_dir)
@@ -733,7 +730,7 @@ class PseudoSet(DevBase):
         C: /path/to/pseudo_dir/C_GW/POTCAR
         H: /path/to/pseudo_dir/H_GW/POTCAR
 
-        Filtering out VASP pseudos ending with ``_sv_GW``.
+        Including only VASP pseudos ending with ``_sv_GW``.
 
         >>> os.listdir(pseudo_dir)
         ['H_sv_GW', 'C', 'C_GW', 'H_sv', 'H_GW', 'C_sv_GW', 'C_sv', 'H']
@@ -843,19 +840,19 @@ class PseudoSet(DevBase):
 
         Returns
         -------
-        pseudos : dict of str: PseudoSet/None
+        pseudos : dict of str: PseudoSet
             A map from the labels provided to the function to the
-            ``PseudoSet`` objects that were created from the pseudos in
-            the directory.
+            :class:`PseudoSet` objects that were created from the pseudos in the
+            directory.
 
         Notes
         -----
-        This function is the most generous in terms of what it is able
-        to parse and separate, however it can result in errors if you
-        have multiple pseudos with the same file extension for the same
-        element. If you have a lot of pseudos with the same extension,
-        you should use ``PseudoSet.from_dir()`` and provide a pattern to
-        separate the pseudos.
+        This function is the most generous in terms of what it is able to parse
+        and separate, however it can result in errors if you have multiple
+        pseudos with the same file extension for the same element. If you have a
+        lot of pseudos with the same extension, you should use
+        :meth:`PseudoSet.from_dir()` and provide a pattern to separate the
+        pseudos.
 
         See Also
         --------
@@ -1028,6 +1025,7 @@ class PseudoSet(DevBase):
         return pseudos
     #end def from_mixed_dir
 
+
     def _get_pseudos(
         self,
         system: PhysicalSystem | Collection[str],
@@ -1133,6 +1131,54 @@ class PseudoSet(DevBase):
         ...     )
         {'C.ccECP.xml': '/path/to/pseudo_dir/C.ccECP.xml',
          'H.ccECP.xml': '/path/to/pseudo_dir/H.ccECP.xml'}
+
+        Most commonly this would be called with a :class:`PhysicalSystem` object,
+        created here with :func:`~.physical_system.generate_physical_system`.
+
+        >>> sys = generate_physical_system(
+        ...     elem = ['C','H'],
+        ...     pos  = np.empty((2,3)),
+        ...     C    = 4,
+        ...     H    = 1,
+        ...     )
+        >>> PseudoSet.get_pseudos(
+        ...     pseudos=["C.ccECP.xml", "H.ccECP.xml"],
+        ...     system=sys,
+        ...     code="qmcpack",
+        ...     )
+        {'C.ccECP.xml': '/path/to/pseudo_dir/C.ccECP.xml',
+         'H.ccECP.xml': '/path/to/pseudo_dir/H.ccECP.xml'}
+
+        Calling with a dict of :class:`PseudoSet`.
+
+        >>> psps = PseudoSet.from_mixed_dir(
+        ...     pseudo_dir="/path/to/pseudo_dir",
+        ...     codes={"espresso", "qmcpack"},
+        ... )
+        >>> for code, ps_set in psps.items():
+        ...     print(f"{code} pseudos:")
+        ...     for lbl, psp in ps_set.pseudos.items():
+        ...         print(f"  {lbl}: {psp}")
+        espresso pseudos:
+        H: /path/to/pseudo_dir/H.ccECP.upf
+        C: /path/to/pseudo_dir/C.ccECP.upf
+        qmcpack pseudos:
+        C: /path/to/pseudo_dir/C.ccECP.xml
+        H: /path/to/pseudo_dir/H.ccECP.xml
+        >>> PseudoSet.get_pseudos(
+        ...     pseudos=psps,
+        ...     system=["C", "H"],
+        ...     code="qmcpack",
+        ...     )
+        {'C.ccECP.xml': '/path/to/pseudo_dir/C.ccECP.xml',
+         'H.ccECP.xml': '/path/to/pseudo_dir/H.ccECP.xml'}
+        >>> PseudoSet.get_pseudos(
+        ...     pseudos=psps,
+        ...     system=["C", "H"],
+        ...     code="espresso",
+        ...     )
+        {'C.ccECP.upf': '/path/to/pseudo_dir/C.ccECP.upf',
+         'H.ccECP.upf': '/path/to/pseudo_dir/H.ccECP.upf'}
         """
         if pseudos is None:
             return {}
@@ -1211,23 +1257,22 @@ class PseudoSet(DevBase):
         elem_labels : list of Elements or list of str or PhysicalSystem
             The elements or system to get Z-valences for.
         missing_as_ae : bool, default=False (keyword-only)
-            Assume any elements for which a pseudopotential can not be
-            found are all-electron, and use their atomic number as the
-            value for the Z-valence. If this is not supplied, and if the
-            Z-valence for an element is not in ``self.Zeff``, this will
-            attempt to extract the Z-valence from the pseudopotential
-            file.
+            Assume any elements for which a pseudopotential can not be found are
+            all-electron, and use their atomic number as the value for the
+            Z-valence. If this is not supplied, and if the Z-valence for an
+            element is not in ``self.Zeff``, this will attempt to extract the
+            Z-valence from the pseudopotential file.
 
         Returns
         -------
         elem_Zeff : dict of str: int
-            A dictionary mapping element labels to their effective
-            nuclear charges.
+            A dictionary mapping element labels to their effective nuclear
+            charges.
 
         See Also
         --------
         read_upf_z_valence : Used to extract Z-valences from UPF files.
-        read_xml_z_valence : Used to extract Z-valences from XML files.
+        read_qmcpack_xml_z_valence : Used to extract Z-valences from XML files.
         read_potcar_z_valence : Used to extract Z-valences from POTCAR files.
         """
         if isinstance(elem_labels, PhysicalSystem):
