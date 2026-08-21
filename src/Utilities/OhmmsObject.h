@@ -53,8 +53,6 @@ public:
   ///overwrite ObjectID
   void setID(int i) { ObjectID = i; }
 
-  ///returns the byte size of the object
-  int elementByteSize() const { return ElementByteSize; }
 
   ///set the type name
   void setTypeName(const std::string& tname) { TypeName = tname; }
@@ -62,8 +60,6 @@ public:
   ///set the object name
   void setObjName(const std::string& oname) { myName = oname; }
 
-  ///return the type name
-  const std::string& typeName() const { return TypeName; }
 
   ///return the object name
   const std::string& objName() const { return myName; }

@@ -155,43 +155,6 @@ void ProjectData::reset()
     xmlSetProp(cur_, (const xmlChar*)"series", (const xmlChar*)(s.str().c_str()));
 }
 
-bool ProjectData::previousRoot(std::string& oldroot) const
-{
-  oldroot.clear();
-  if (series_)
-  {
-    //int nproc_g = OHMMS::Controller->size();
-    int nproc    = my_comm_->size();
-    int nodeid   = my_comm_->rank();
-    int groupid  = my_comm_->getGroupID();
-    bool no_gtag = (qmc_common.mpi_groups == 1);
-    std::array<char, 128> fileroot;
-    int file_len{0};
-    if (no_gtag)
-    {
-      if (nproc > 1)
-        file_len = std::snprintf(fileroot.data(), fileroot.size(), ".s%03d.p%03d", series_ - 1, nodeid);
-      else
-        file_len = std::snprintf(fileroot.data(), fileroot.size(), ".s%03d", series_ - 1);
-    }
-    else
-    {
-      if (nproc > 1)
-        file_len = std::snprintf(fileroot.data(), fileroot.size(), ".g%03d.s%03d.p%03d", groupid, series_ - 1, nodeid);
-      else
-        file_len = std::snprintf(fileroot.data(), fileroot.size(), ".g%03d.s%03d", groupid, series_ - 1);
-    }
-    if (file_len < 0)
-      throw std::runtime_error("Error generating olfroot");
-    oldroot = title_;
-    oldroot.append(fileroot.data(), file_len);
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
 
 bool ProjectData::put(xmlNodePtr cur)
 {
