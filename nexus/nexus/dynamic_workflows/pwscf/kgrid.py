@@ -5,14 +5,14 @@
 
 #====================================================================#
 #  kgrid.py                                                          #
-#    Walk-mode PWscf k-point mesh (example 02 policy).               #
+#    Chain-mode PWscf k-point mesh (example 02).                     #
 #                                                                    #
 #    increment  add to the integer Monkhorst-Pack grid each step.    #
 #    spacing    initial mesh from Structure.kgrid_from_kspacing.     #
 #====================================================================#
 
 
-from ..walk import DynamicWalk, SuccessiveChange
+from ..chain import DynamicChain, SuccessiveChange
 from ...developer import error
 
 
@@ -94,8 +94,8 @@ def next_kgrid(kgrid, increment=1):
 #end def next_kgrid
 
 
-class Kgrid(DynamicWalk):
-    """Walk ``kgrid`` until a successive-change target is reached.
+class Kgrid(DynamicChain):
+    """Chain ``kgrid`` until a successive-change target is reached.
 
     Parameter dict: ``{'kgrid': (nx, ny, nz)}``.  Default stepping
     matches ``examples/dynamic_workflows/02_energy_convergence``
@@ -147,7 +147,7 @@ class Kgrid(DynamicWalk):
         elif not hasattr(target, 'reached'):
             self.error(f'invalid target: {target}')
         #end if
-        DynamicWalk.__init__(self, target=target, max_runs=max_runs)
+        DynamicChain.__init__(self, target=target, max_runs=max_runs)
         self.start     = start
         self.end       = end
         self.increment = increment

@@ -1,13 +1,7 @@
 #! /usr/bin/env python3
 
 '''
-Planewave cutoff walk using ``Ecut`` (walk mode).
-
-Same diamond / BFD setup and stepping as the ecut half of
-``02_energy_convergence`` (start 50 Ry, ×1.5 rounded to 10 Ry,
-successive |ΔE| ≤ 1e-4 Ry).  ``drive`` owns the poll loop;
-``Ecut`` only decides the next ``ecutwfc`` and when the target
-is reached.  ``generate_pwscf`` stays in this script.
+Same diamond / BFD setup and stepping as the ecut part of example 02. 
 '''
 
 import sys
@@ -32,7 +26,7 @@ system = generate_physical_system(
     C         = 4,
     )
 
-walk = Ecut(start=50, tol=1e-4, max_runs=10)
+chain = Ecut(start=50, tol=1e-4, max_runs=10)
 
 
 def make_scf(params):
@@ -52,7 +46,7 @@ def make_scf(params):
 #end def make_scf
 
 wm = workflow_manager()
-decision = walk.drive(make_scf, wm, products='energy')
+decision = chain.drive(make_scf, wm, products='energy')
 print()
 print('status :', decision.status)
 print('ecut   :', decision.params['ecutwfc'])

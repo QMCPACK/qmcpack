@@ -5,15 +5,15 @@
 
 #====================================================================#
 #  base.py                                                           #
-#    Shared types for dynamic-workflow modes (walk, later spawn).    #
+#    Shared types for dynamic-workflow modes (chain, later spawn).   #
 #                                                                    #
 #  Content summary:                                                  #
 #    Target                                                          #
-#      Sequential stop rule: reached(history).  Used by walk.        #
+#      Sequential stop rule: reached(history).  Used by chain.       #
 #      Spawn pick-rules should not inherit Target.                   #
 #    DynamicDecision                                                 #
-#      status / products / completed / max_runs.                     #
-#      WalkDecision and spawn decisions subclass this.               #
+#      status / products / completed / max_runs / failed.            #
+#      ChainDecision and spawn decisions subclass this.              #
 #    DynamicMode                                                     #
 #      Shared protocol: initial / propose / stop / observe / drive.  #
 #      history, max_runs.                                            #
@@ -24,7 +24,7 @@ from ..developer import DevBase
 
 
 def _iter_work(params):
-    """Yield parameter dicts.  Walk: one dict.  Spawn: a sequence of dicts."""
+    """Yield parameter dicts.  Chain: one dict.  Spawn: a sequence of dicts."""
     if params is None:
         return
     #end if
@@ -73,8 +73,9 @@ class DynamicDecision(DevBase):
 
     status
       ``continue``   keep polling this step
-      ``completed``  finished successfully (walk: target reached)
+      ``completed``  finished successfully (chain: target reached)
       ``max_runs``   stopped without completing (cap, or propose() is None)
+      ``failed``     a simulation failed (chain: stop; spawn can ignore)
     """
 
     def __init__(self, status, products=None):
@@ -91,6 +92,11 @@ class DynamicDecision(DevBase):
     def max_runs(self):
         return self.status == 'max_runs'
     #end def max_runs
+
+    @property
+    def failed(self):
+        return self.status == 'failed'
+    #end def failed
 #end class DynamicDecision
 
 
@@ -99,7 +105,7 @@ class DynamicMode(DevBase):
 
     initial: First work to launch.
     propose(history): Next work(s) to launch, or None if there is no further work.
-    drive(make, wm, products): Poll until observe is not continue.
+    drive(sim_generator, wm, products): Implemented by chain / spawn.
     observe(params, products): Record a finished job and return a ``DynamicDecision``.
     stop(history): True when the mode has finished successfully.  Default is False.
     """
@@ -113,6 +119,10 @@ class DynamicMode(DevBase):
         self.history  = []
     #end def __init__
 
+    def reset(self):
+        self.history = []
+    #end def reset
+
     def initial(self):
         self.error('initial() must be implemented in a subclass')
     #end def initial
@@ -121,40 +131,8 @@ class DynamicMode(DevBase):
         self.error('propose() must be implemented in a subclass')
     #end def propose
 
-    def drive(self, make, wm, products, poll=1):
-        """Return a DynamicDecision after polling until the mode is finished."""
-        jobs = []
-        for params in _iter_work(self.initial()):
-            jobs.append([params, make(params)])
-        #end for
-        if len(jobs) == 0:
-            self.error('initial() produced no work to launch')
-        #end if
-        while True:
-            for job in list(jobs):
-                params, sim = job
-                if sim.succ:
-                    decision = self.observe(params, _as_products(products, sim))
-                    jobs.remove(job)
-                    if decision.status != 'continue':
-                        return decision
-                    #end if
-                    nxt = list(_iter_work(decision.next_params))
-                    if len(nxt) == 0:
-                        self.error('continue decision has no next_params')
-                    #end if
-                    for p in nxt:
-                        jobs.append([p, make(p)])
-                    #end for
-                elif sim.fail:
-                    self.error('simulation failed')
-                #end if
-            #end for
-            if len(jobs) == 0:
-                self.error('no remaining jobs')
-            #end if
-            wm.poll(poll)
-        #end while
+    def drive(self, sim_generator, wm, products, poll=1):
+        self.error('drive() must be implemented in a subclass')
     #end def drive
 
     def observe(self, params, products):

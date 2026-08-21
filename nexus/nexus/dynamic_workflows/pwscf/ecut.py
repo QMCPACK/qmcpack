@@ -5,19 +5,17 @@
 
 #====================================================================#
 #  ecut.py                                                           #
-#    Walk-mode PWscf planewave-cutoff (example 02 repeat).           #
+#    Chain-mode PWscf planewave-cutoff (example 02 repeat).          #
 #====================================================================#
 
 
-from ..walk import DynamicWalk, SuccessiveChange
+from ..chain import DynamicChain, SuccessiveChange
 from ...developer import error
 
 
 def next_ecutwfc(ecut, factor=1.5, round_ry=10):
-    """Increase cutoff as in the diamond energy-convergence example.
-
-    ``int(((factor * ecut) // round_ry) * round_ry)``, then bump by
-    ``round_ry`` if the rounded value did not increase.
+    """Increase cutoff for convergence example. 
+    Uses ecut_nxt = factor * ecut, but rounded using round_ry.
     """
     ecut     = float(ecut)
     factor   = float(factor)
@@ -48,18 +46,8 @@ def next_ecutwfc(ecut, factor=1.5, round_ry=10):
 #end def next_ecutwfc
 
 
-class Ecut(DynamicWalk):
-    """Walk ``ecutwfc`` until a successive-change target is reached.
-
-    Parameter dict: ``{'ecutwfc': int}``.  Default stepping matches
-    ``examples/dynamic_workflows/02_energy_convergence`` (×1.5, rounded
-    down to 10 Ry).  The poll loop and ``generate_pwscf`` stay in the
-    user script.
-
-    ``target`` may be a target object (``reached(history)``), or the
-    name ``'consecutive'`` (default), which builds
-    ``SuccessiveChange('energy', atol=1e-4, ...)``.  ``tol=`` is accepted
-    as an alias for ``atol=``.
+class Ecut(DynamicChain):
+    """1D Ecut parameter scan until target is reached. 
     """
 
     def __init__(
@@ -93,7 +81,7 @@ class Ecut(DynamicWalk):
         elif not hasattr(target, 'reached'):
             self.error(f'invalid target: {target}')
         #end if
-        DynamicWalk.__init__(self, target=target, max_runs=max_runs)
+        DynamicChain.__init__(self, target=target, max_runs=max_runs)
         self.start    = start
         self.end      = end
         self.factor   = float(factor)

@@ -4,42 +4,44 @@
 
 
 #====================================================================#
-#  walk.py                                                           #
-#    Walk mode: sequential parameter walk (initial / propose / stop).#
+#  chain.py                                                          #
+#    Chain mode: sequential parameter chain (initial / propose / stop).#
 #                                                                    #
 #  Content summary:                                                  #
 #    SuccessiveChange(Target)                                        #
 #      Successive |Δ| of one or more products within atol/rtol.      #
-#    WalkDecision(DynamicDecision)                                   #
-#      Outcome of one walk observation.                              #
-#    DynamicWalk(DynamicMode)                                        #
-#      Sequential walk.  stop is Target.reached; observe returns     #
-#      WalkDecision.  Subclasses implement initial / propose.        #
+#    ChainDecision(DynamicDecision)                                  #
+#      Outcome of one chain observation.                             #
+#    DynamicChain(DynamicMode)                                       #
+#      Sequential chain.  stop is Target.reached; observe returns    #
+#      ChainDecision.  drive polls until completed / max_runs /      #
+#      failed.  Subclasses implement initial / propose.              #
 #====================================================================#
 
 
 from ..developer import error
-from .base import DynamicDecision, DynamicMode, Target
+from .base import DynamicDecision, DynamicMode, Target, _as_products, _iter_work
 
 
 def _as_params(params):
     if not isinstance(params, dict) or len(params) == 0:
         error(
-            f'walk parameters must be a non-empty dict, received {params}',
-            header='DynamicWalk',
+            f'chain parameters must be a non-empty dict, received {params}',
+            header='DynamicChain',
             )
     #end if
     return dict(params)
 #end def _as_params
 
 
-class WalkDecision(DynamicDecision):
-    """Outcome of ``DynamicWalk.observe``.
+class ChainDecision(DynamicDecision):
+    """Outcome of ``DynamicChain.observe`` or ``drive``.
 
     status
       ``continue``   propose a new parameter point
       ``completed``  target reached
-      ``max_runs``   history length reached max_runs, or propose() returned None
+      ``max_runs``   history length reached max_runs
+      ``failed``     no next work (propose returned None), or a sim failed
     """
 
     def __init__(self, status, params, next_params=None, products=None):
@@ -47,7 +49,7 @@ class WalkDecision(DynamicDecision):
         self.params      = None if params is None else dict(params)
         self.next_params = None if next_params is None else dict(next_params)
     #end def __init__
-#end class WalkDecision
+#end class ChainDecision
 
 
 class SuccessiveChange(Target):
@@ -93,7 +95,7 @@ class SuccessiveChange(Target):
             self.error('SuccessiveChange requires at least one product key')
         #end if
         if atol is None and rtol is None:
-            self.error('SuccessiveChange requires atol and/or rtol')
+            self.error('SuccessiveChange requires atol or rtol')
         #end if
         consecutive = int(consecutive)
         if consecutive < 1:
@@ -115,7 +117,9 @@ class SuccessiveChange(Target):
     #end def _value
 
     def _within(self, key, old, new):
-        return abs(new - old) <= self.atol[key] + self.rtol[key] * abs(old)
+        cond_atol = abs(new - old) <= self.atol[key]
+        cond_rtol = abs(new - old) <= self.rtol[key] * abs(old)
+        return cond_atol and cond_rtol
     #end def _within
 
     def reached(self, history):
@@ -161,11 +165,11 @@ def _tol_map(spec, keys, default):
 #end def _tol_map
 
 
-class DynamicWalk(DynamicMode):
-    """Sequential parameter walk (walk mode).
+class DynamicChain(DynamicMode):
+    """Sequential parameter chain (chain mode).
 
     ``stop`` is ``self.target.reached(history)``.  ``observe`` returns
-    ``WalkDecision``.
+    ``ChainDecision``.  ``drive`` polls until the chain is not continue.
     """
 
     def __init__(self, target=None, max_runs=10):
@@ -179,6 +183,45 @@ class DynamicWalk(DynamicMode):
         self.target = target
     #end def __init__
 
+    def drive(self, sim_generator, wm, products, poll=1):
+        """Poll until the chain completes, hits max_runs, or a sim fails."""
+        sims = []
+        for params in _iter_work(self.initial()):
+            sims.append([params, sim_generator(params)])
+        #end for
+        if len(sims) == 0:
+            self.error('initial() produced no work to launch')
+        #end if
+        while True:
+            for sim_info in list(sims):
+                params, sim = sim_info
+                if sim.succ:
+                    decision = self.observe(params, _as_products(products, sim))
+                    sims.remove(sim_info)
+                    if decision.status != 'continue':
+                        return decision
+                    #end if
+                    nxt = list(_iter_work(decision.next_params))
+                    if len(nxt) == 0:
+                        self.error('continue decision has no next_params')
+                    #end if
+                    for p in nxt:
+                        sims.append([p, sim_generator(p)])
+                    #end for
+                elif sim.fail:
+                    return ChainDecision(
+                        'failed',
+                        params = params,
+                        )
+                #end if
+            #end for
+            if len(sims) == 0:
+                self.error('no remaining jobs')
+            #end if
+            wm.poll(poll)
+        #end while
+    #end def drive
+
     def stop(self, history):
         if self.target is None:
             return DynamicMode.stop(self, history)
@@ -191,7 +234,7 @@ class DynamicWalk(DynamicMode):
         products = dict(products)
         self.history.append(dict(params=params, products=products))
         if self.stop(self.history):
-            return WalkDecision(
+            return ChainDecision(
                 'completed',
                 params   = params,
                 products = products,
@@ -202,17 +245,22 @@ class DynamicWalk(DynamicMode):
             nxt = self.propose(self.history)
         #end if
         if nxt is None:
-            return WalkDecision(
-                'max_runs',
+            if len(self.history) >= self.max_runs:
+                status = 'max_runs'
+            else:
+                status = 'failed'
+            #end if
+            return ChainDecision(
+                status,
                 params   = params,
                 products = products,
                 )
         #end if
-        return WalkDecision(
+        return ChainDecision(
             'continue',
             params      = params,
             next_params = _as_params(nxt),
             products    = products,
             )
     #end def observe
-#end class DynamicWalk
+#end class DynamicChain

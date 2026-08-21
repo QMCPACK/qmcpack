@@ -1,19 +1,7 @@
 #! /usr/bin/env python3
 
 '''
-k-point mesh walk using ``Kgrid`` (walk mode).
-
-Same diamond / BFD setup and stepping as the k-grid half of
-``02_energy_convergence`` (start 1x1x1, +1 per axis, successive
-|ΔE| ≤ 1e-3 Ry).  ``drive`` owns the poll loop; ``Kgrid`` only
-decides the next ``kgrid`` and when the target is reached.
-``generate_pwscf`` stays in this script.
-
-Set ``ecutwfc`` to the cutoff from ``ecut_walk.py`` (example 02
-uses 330 Ry).  50 Ry is used here so this script can run on its
-own.  For a spacing-based start instead of ``start=1``::
-
-    walk = Kgrid(spacing=0.5, structure=system, increment=1, tol=1e-3)
+Same diamond / BFD setup and stepping as the k-grid part of example 02. 
 '''
 
 import sys
@@ -39,7 +27,7 @@ system = generate_physical_system(
     )
 
 ecutwfc = 50
-walk    = Kgrid(start=1, increment=1, tol=1e-3, max_runs=10)
+chain   = Kgrid(start=1, increment=1, tol=1e-3, max_runs=10)
 
 
 def make_scf(params):
@@ -60,7 +48,7 @@ def make_scf(params):
 #end def make_scf
 
 wm = workflow_manager()
-decision = walk.drive(make_scf, wm, products='energy')
+decision = chain.drive(make_scf, wm, products='energy')
 print()
 print('status :', decision.status)
 print('kgrid  :', decision.params['kgrid'])

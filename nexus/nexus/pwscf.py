@@ -120,7 +120,9 @@ class Pwscf(Simulation):
     def __init__(self,**sim_args):
         group_atoms   = sim_args.pop('group_atoms',False)
         sync_from_scf = sim_args.pop('sync_from_scf',True)
+        error_handling  = sim_args.pop('error_handling',False)
         Simulation.__init__(self,**sim_args)
+        self.error_handler = self._make_error_handler(error_handling)
         self.sync_from_scf = False
         calc = None
         cont = self.input.control
@@ -134,6 +136,24 @@ class Pwscf(Simulation):
             #self.system.structure.group_atoms()
         #end if
     #end def __init__
+
+    def _make_error_handler(self, error_handling):
+        from .dynamic_workflows.pwscf.error_handler import PwscfErrorHandler
+        from .dynamic_workflows.chain_error_handler import ChainErrorHandler
+        if error_handling is True:
+            return PwscfErrorHandler()
+        #end if
+        if isinstance(error_handling, int):
+            return PwscfErrorHandler(max_runs=int(error_handling))
+        #end if
+        if isinstance(error_handling, ChainErrorHandler):
+            return error_handling
+        #end if
+        tname = type(error_handling).__name__
+        self.error(
+            f'error_handling must be True, False, an int (max_runs), or a ChainErrorHandler, received {tname}'
+            )
+    #end def _make_error_handler
 
 
     def write_prep(self):
@@ -342,20 +362,50 @@ class Pwscf(Simulation):
         time_exceeded = 'Maximum CPU time exceeded' in output
         user_stop     = 'Program stopped by user request' in output
         run_finished  = 'JOB DONE' in output
-        restartable = not_converged or time_exceeded or user_stop
-        restart = run_finished and self.restartable and restartable
-        if restart:
+        error_in_routine = 'Error in routine' in output
+        failed = (
+            not run_finished
+            or not_converged
+            or time_exceeded
+            or user_stop
+            or error_in_routine
+            )
+
+        if not failed:
+            self.finished = True
+            self.failed   = False
+            return
+        #end if
+
+        if self.restartable and run_finished and (not_converged or time_exceeded or user_stop):
             self.save_attempt()
             self.input.control.restart_mode = 'restart'
             self.reset_indicators()
-        else:
-            error_in_routine = 'Error in routine' in output
-            failed = not_converged or time_exceeded or user_stop
-            failed |= error_in_routine
-            self.finished = run_finished
-            self.failed   = failed
+            return
         #end if
+
+        # Error handler works last 
+        if self.error_handler is not None:
+            if self._recover_failed_run():
+                return
+            #end if
+            self.finished = run_finished
+            self.failed   = True
+            return
+        #end if
+
+        self.finished = run_finished
+        self.failed   = True
     #end def check_sim_status
+
+
+    def _recover_failed_run(self):
+        handler = getattr(self, 'error_handler', None)
+        if handler is None:
+            return False
+        #end if
+        return handler.recover_failed(self)
+    #end def _recover_failed_run
 
 
     def get_output_files(self):
@@ -502,7 +552,7 @@ def generate_pwscf(**kwargs):
         kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
     #end if
 
-    sim_args,inp_args = Pwscf.separate_inputs(kwargs)
+    sim_args,inp_args = Pwscf.separate_inputs(kwargs, sim_kw={'error_handling'})
 
     if 'input' not in sim_args:
         input_type = inp_args.pop('input_type','generic')
