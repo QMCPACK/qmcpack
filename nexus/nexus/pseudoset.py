@@ -1237,7 +1237,7 @@ class PseudoSet(DevBase):
 
             psps = PseudoSet.labeled_pseudosets[label][code]
             return psps._get_pseudos(system=system, code=code)
-        elif isinstance(pseudos, list):
+        elif isinstance(pseudos, Collection):
             if len(pseudos) == 0:
                 return {}
             else:
@@ -1362,13 +1362,13 @@ def generate_pseudoset(
     pseudo_dir: PathLike | None = None,
     *,
     code       : str | Collection[str] | None = None,
-    extension  : Mapping[str, set[str]] | str | set[str] | None = None,
+    extension  : Mapping[str, str | Collection[str]] | None = None,
     pattern    : Mapping[str, str | Pattern] | str | None = None,
     Zeff_map   : Mapping[str, Mapping[str, int]] | Mapping[str, int] | None = None,
     **codes_psps: Collection[PathLike] | PathLike,
     ) -> dict[str, PseudoSet]:
     """Generate a dictionary of :class:`PseudoSet`.
-    
+
     The ideal use of this function is to create a single collection of
     :class:`PseudoSet`'s that represent a single kind or type of pseudopotential.
     See the Notes and Examples for more information.
@@ -1383,10 +1383,9 @@ def generate_pseudoset(
         The code(s) to use to separate the files in the directory
         into their respective groups.
         Incompatible with ``codes_psps``.
-    extension : Map of codes to set of str or a set of str or a str, optional
-        A dictionary mapping codes to the file extensions corresponding to
-        those labels, or a single string (or set of strings) that will be
-        applied to all codes. If this is not provided, then the filters are
+    extension : Map of codes to a str/set of str, optional
+        A dictionary mapping codes to the file extension(s) corresponding to
+        those labels. If this is not provided, then the filters are
         automatically populated by the codes in ``code``.
         Incompatible with ``codes_psps``.
     pattern : Map of codes to str/Pattern or str/Pattern, optional
@@ -1401,7 +1400,7 @@ def generate_pseudoset(
     **codes_psps
         A mapping of code names to either a collection of pseudopotential file
         names/paths or a path to a directory with pseudopotential files in it.
-    
+
     Notes
     -----
     This function is designed around the idea that the returned dict represents
@@ -1505,8 +1504,11 @@ def generate_pseudoset(
             elif psp_path.is_dir():
                 if isinstance(extension, Mapping):
                     code_ext = extension.get(code)
-                else:
+                elif extension is None:
                     code_ext = extension
+                else:
+                    msg = f"`extension` must be either a mapping or None, but is {type(extension).__name__}!"
+                    raise TypeError(msg)
 
                 if isinstance(pattern, Mapping):
                     code_pat = pattern.get(code)
@@ -1529,8 +1531,11 @@ def generate_pseudoset(
                         Zeff_map   = code_zeff_map,
                         )
                 except Exception as exc:
-                    exc.add_note(f"Error when processing pseudo directory for code '{code}'")
-                    raise
+                    msg = (
+                        str(exc) + "\n\n"
+                        f"Error when processing pseudo directory for code '{code}'"
+                        )
+                    raise type(exc)(msg)
             else:
                 msg = "If you are providing a single path it must be to a directory!"
                 raise NotADirectoryError(msg)
