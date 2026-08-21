@@ -440,16 +440,18 @@ public:
 
   /** accept or reject an all particle move for every walker in a crowd
    *
-   * @param[in,out] p_list ParticleSets containing the attempted moves
-   * @param[in] walkers walker positions and spins used to restore rejected moves
-   * @param[in] accepted one acceptance decision for each ParticleSet
-   * @param[in] skipSK if true, do not update structure factors
+   * @param[in,out] p_list   ParticleSets transformed by attempted moves
+   * @param[in] walkers      walker to provide positions and spins used to restore rejected moves
+   * @param[in] accepted     one acceptance decision for each ParticleSet
+   * @param[in] skipSK       if true, do not update structure factors
    *
    * Accepted moves remain in the ParticleSets. Rejected moves restore positions and spins
    * from the corresponding walker and update the distance tables and structure factors.
    * The caller must provide a nonempty, resource-acquired crowd with the same number of
-   * ParticleSets, walkers, and decisions, matching particle counts, and no active particles.
-   * These requirements are checked in Debug and assumed in Release.
+   * ParticleSets, walkers, and decisions, matching particle counts,
+   * and no active particles. These requirements are checked in Debug
+   * and assumed in Release. In simulation context this necessarily
+   * follows a mw_makeMoveAllParticles* call.
    */
   static void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
                                                const RefVector<Walker_t>& walkers,
