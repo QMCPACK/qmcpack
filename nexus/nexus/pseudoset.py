@@ -619,9 +619,9 @@ class PseudoSet(DevBase):
         cls,
         pseudo_dir: PathLike,
         code      : str = "detect",
-        Zeff_map  : Mapping[PathLike, int] | None = None,
         extension : str | Collection[str] | None = None,
         pattern   : str | Pattern | None = None,
+        Zeff_map  : Mapping[PathLike, int] | None = None,
         *,
         skip_invalid: bool = False,
         ) -> PseudoSet:
@@ -636,10 +636,6 @@ class PseudoSet(DevBase):
             The name of the code that the pseudos are formatted for, or if
             ``"detect"``, will auto-detect the code name from the file
             extensions.
-        Zeff_map : Map of str/Elements to int, optional
-            A mapping of elements to their effective nuclear charges
-            (Z-valences). If this is supplied, it will override any parts of the
-            code that may try to parse the pseudopotential to get the Z-valence.
         extension : str or list of str, optional
             Optionally filter the files in the directory by their extension.
 
@@ -652,6 +648,10 @@ class PseudoSet(DevBase):
             leading ``.``, e.g. ``.xml``, not ``xml``.
         pattern : str or Pattern, optional
             A string or regex pattern to use to filter files by name.
+        Zeff_map : Map of str/Elements to int, optional
+            A mapping of elements to their effective nuclear charges
+            (Z-valences). If this is supplied, it will override any parts of the
+            code that may try to parse the pseudopotential to get the Z-valence.
         skip_invalid : bool, default=False (keyword-only)
             If ``True``, then this will emit a warning rather than raise an
             error if a file is not found or if the file does not have a valid
@@ -801,7 +801,7 @@ class PseudoSet(DevBase):
     def from_mixed_dir(
         cls,
         pseudo_dir   : PathLike,
-        codes        : str | list[str] | None = None,
+        codes        : str | Collection[str] | None = None,
         extensions   : Mapping[str, set[str]] | str | None = None,
         patterns     : Mapping[str, str | Pattern] | str | None = None,
         code_Zeff_map: Mapping[str, Mapping[str, int]] | Mapping[str, int] | None = None,
@@ -950,7 +950,18 @@ class PseudoSet(DevBase):
                 checked_filters = {}
                 for code, suffixes in extensions.items():
                     code = PseudoSet._check_code_str(code)
-                    checked_filters[code] = set(suffixes) if suffixes is not None else None
+                    if isinstance(suffixes, str):
+                        suffixes = {suffixes}
+                    elif isinstance(suffixes, Collection):
+                        suffixes = set(suffixes)
+                    elif suffixes is not None:
+                        msg = (
+                            f"File extensions must be a str, a collection of str, or None!\n"
+                            f"Received: {type(suffixes).__name__}"
+                            )
+                        raise TypeError(msg)
+
+                    checked_filters[code] = suffixes
 
                 extensions = checked_filters
             else:
@@ -1345,3 +1356,185 @@ class PseudoSet(DevBase):
         return rep
     #end def __repr__
 #end class PseudoSet
+
+
+def generate_pseudoset(
+    pseudo_dir: PathLike | None = None,
+    *,
+    code       : str | Collection[str] | None = None,
+    extension  : Mapping[str, set[str]] | str | set[str] | None = None,
+    pattern    : Mapping[str, str | Pattern] | str | None = None,
+    Zeff_map   : Mapping[str, Mapping[str, int]] | Mapping[str, int] | None = None,
+    **codes_psps: Collection[PathLike] | PathLike,
+    ) -> dict[str, PseudoSet]:
+    """Generate a dictionary of :class:`PseudoSet`.
+    
+    The ideal use of this function is to create a single collection of
+    :class:`PseudoSet`'s that represent a single kind or type of pseudopotential.
+    See the Notes and Examples for more information.
+
+    Parameters
+    ----------
+    pseudo_dir : PathLike
+        The directory from which to read pseudopotentials. Does not support
+        nested directories, except for those that contain a POTCAR file.
+        You must provide either this or ``codes_psps``.
+    code : one or more of {"espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"}, optional
+        The code(s) to use to separate the files in the directory
+        into their respective groups.
+        Incompatible with ``codes_psps``.
+    extension : Map of codes to set of str or a set of str or a str, optional
+        A dictionary mapping codes to the file extensions corresponding to
+        those labels, or a single string (or set of strings) that will be
+        applied to all codes. If this is not provided, then the filters are
+        automatically populated by the codes in ``code``.
+        Incompatible with ``codes_psps``.
+    pattern : Map of codes to str/Pattern or str/Pattern, optional
+        A dictionary mapping codes to strings or regex patterns, or a single
+        pattern for all codes. Used to filter out files.
+        Incompatible with ``codes_psps``.
+    Zeff_map : Map of codes to Map of str/Elements to int or Map of str/Elements to int, optional
+        A mapping for each code that maps elements to their effective nuclear
+        charges (Z-valences), or a single mapping that will be applied to all
+        codes. If this is supplied, it will override any parts of the code that
+        may try to parse the pseudopotential to get the Z-valence.
+    **codes_psps
+        A mapping of code names to either a collection of pseudopotential file
+        names/paths or a path to a directory with pseudopotential files in it.
+    
+    Notes
+    -----
+    This function is designed around the idea that the returned dict represents
+    a single type of pseudos, e.g. ccECPs, USPPs, NCPPs, PAWs, with the same
+    kind of pseudopotential for each code. That means that, for the same
+    element, all of the Z-valences in the pseudos should match, all of the
+    radial grids are the same, all pseudos are made with the same functional,
+    and so on. Then, the object returned can be passed freely to any function
+    that may accept it, e.g. as the ``pseudos`` keyword in
+    :func:`~.pwscf.generate_pwscf` or :func:`~.qmcpack.generate_qmcpack`.
+
+    If you are only working with one code, or prefer a class-based interface,
+    you may want to use :class:`PseudoSet` directly, along with its methods
+    :meth:`PseudoSet.from_dir` and/or :meth:`PseudoSet.from_mixed_dir`.
+
+    Examples
+    --------
+    Basic usage, all files in one directory.
+
+    >>> print(contents_of_pseudo_dir)
+    pseudo_dir
+    ├── C.ccECP.gamess
+    ├── C.ccECP.nwchem
+    ├── C.ccECP.upf
+    ├── C.ccECP.xml
+    ├── H.ccECP.gamess
+    ├── H.ccECP.nwchem
+    ├── H.ccECP.upf
+    └── H.ccECP.xml
+    >>> psps = generate_pseudoset(
+    ...     pseudo_dir=pseudo_dir,
+    ...     code={"qmcpack", "espresso", "rmg", "pyscf", "gamess"},
+    ...     extension={"rmg": ".xml"},
+    ... )
+    >>> for code, ps_set in psps.items():
+    ...     print(f"{code} pseudos:")
+    ...     for lbl, psp in ps_set.pseudos.items():
+    ...         print(f"  {lbl}: {psp}")
+    espresso pseudos:
+        C: /path/to/pseudo_dir/C.ccECP.upf
+        H: /path/to/pseudo_dir/H.ccECP.upf
+    pyscf pseudos:
+        H: /path/to/pseudo_dir/H.ccECP.nwchem
+        C: /path/to/pseudo_dir/C.ccECP.nwchem
+    rmg pseudos:
+        H: /path/to/pseudo_dir/H.ccECP.xml
+        C: /path/to/pseudo_dir/C.ccECP.xml
+    qmcpack pseudos:
+        H: /path/to/pseudo_dir/H.ccECP.xml
+        C: /path/to/pseudo_dir/C.ccECP.xml
+    gamess pseudos:
+        C: /path/to/pseudo_dir/C.ccECP.gamess
+        H: /path/to/pseudo_dir/H.ccECP.gamess
+    """
+    if pseudo_dir is None and len(codes_psps) == 0:
+        msg = "Must supply `pseudo_dir` and/or `codes_psps`!"
+        raise ValueError(msg)
+
+    if pseudo_dir is not None:
+        pseudo_dir = Path(pseudo_dir).resolve()
+        if not pseudo_dir.exists():
+            msg = "`pseudo_dir` must exist!"
+            raise FileNotFoundError(msg)
+        elif not pseudo_dir.is_dir():
+            msg = "`pseudo_dir` must be a directory!"
+            raise NotADirectoryError(msg)
+
+    if len(codes_psps) == 0:
+        return PseudoSet.from_mixed_dir(
+            pseudo_dir    = pseudo_dir,
+            codes         = code,
+            extensions    = extension,
+            patterns      = pattern,
+            code_Zeff_map = Zeff_map,
+            )
+
+    # codes_psps was supplied
+    if code is not None:
+        msg = "When supplying a direct map of codes to pseudos you cannot pass `code`!"
+        raise ValueError(msg)
+
+    if not all([isinstance(psps, Collection | Path) for psps in codes_psps.values()]):
+        msg = "Must supply a directory or collection of file paths for direct map!"
+        raise TypeError(msg)
+
+    codes_psps = PseudoSet._normalize_code_map_keys(codes_psps)
+    pseudosets = {}
+    for code, psps in codes_psps.items():
+        if pseudo_dir is not None:
+            # Can make supplied values relative to the directory for direct mapping
+            if isinstance(psps, str | Path):
+                psps = (pseudo_dir / psps).resolve()
+            elif isinstance(psps, Collection):
+                psps = [(pseudo_dir / psp).resolve() for psp in psps]
+
+        if isinstance(psps, str | Path):
+            psp_path = Path(psps).resolve()
+            if not psp_path.exists():
+                msg = f"The path for code {code} does not exist!"
+                raise FileNotFoundError(msg)
+            elif psp_path.is_dir():
+                if isinstance(extension, Mapping):
+                    code_ext = extension.get(code)
+                else:
+                    code_ext = extension
+
+                if isinstance(pattern, Mapping):
+                    code_pat = pattern.get(code)
+                else:
+                    code_pat = pattern
+
+                if (
+                    isinstance(Zeff_map, Mapping)
+                    and isinstance(next(iter(Zeff_map.values())), Mapping)
+                    ):
+                    code_zeff_map = Zeff_map.get(code)
+                else:
+                    code_zeff_map = Zeff_map
+
+                try:
+                    pseudosets[code] = PseudoSet.from_dir(
+                        pseudo_dir = psp_path,
+                        extension  = code_ext,
+                        pattern    = code_pat,
+                        Zeff_map   = code_zeff_map,
+                        )
+                except Exception as exc:
+                    exc.add_note(f"Error when processing pseudo directory for code '{code}'")
+                    raise
+            else:
+                msg = "If you are providing a single path it must be to a directory!"
+                raise NotADirectoryError(msg)
+        else:
+            pseudosets[code] = PseudoSet(pseudos=psps)
+    return pseudosets
+#end def generate_pseudoset

@@ -14,7 +14,7 @@ import numpy as np
 
 from nexus.nexus_base import nexus_core
 from nexus.physical_system import generate_physical_system
-from nexus.pseudoset import PseudoSet, ppset
+from nexus.pseudoset import PseudoSet, ppset, generate_pseudoset
 from nexus.pseudoset import read_potcar_z_valence, read_qmcpack_xml_z_valence, read_upf_z_valence
 
 from ..generic import NexusUserWarning
@@ -291,11 +291,11 @@ SLA  PZ   NOGX NOGC    PZ   Exchange-Correlation functional
 
     # Strangely formatted header
     upf_v_201_text_strange = """
-<PP_HEADER generated="Generated using &quot;atomic&quot; code by A. Dal Corso  v.6.2.2" author="ADC" 
+<PP_HEADER generated="Generated using &quot;atomic&quot; code by A. Dal Corso  v.6.2.2" author="ADC"
 
-date=" 2May2018" comment="" element="Zn" pseudo_type="PAW" relativistic="scalar" is_ultrasoft="true" is_paw="true" is_coulomb="false" has_so="false" has_wfc="true" has_gipaw="true" 
+date=" 2May2018" comment="" element="Zn" pseudo_type="PAW" relativistic="scalar" is_ultrasoft="true" is_paw="true" is_coulomb="false" has_so="false" has_wfc="true" has_gipaw="true"
 
-paw_as_gipaw="true" core_correction="true" functional=" SLA  PW   PBX  PBC" z_valence = "1.200000000000e1" total_psenergy="-2.434243516297e2" 
+paw_as_gipaw="true" core_correction="true" functional=" SLA  PW   PBX  PBC" z_valence = "1.200000000000e1" total_psenergy="-2.434243516297e2"
 
 wfc_cutoff="4.363174091908e1" rho_cutoff="2.755329390766e2" l_max="2" l_max_rho="4" l_local="-1" mesh_size="1201" number_of_wfc="3" number_of_proj="6"/>
 """
@@ -320,15 +320,15 @@ def test_read_qmcpack_xml_z_valence(tmp_path):
     xml_with_float = """
 <?xml version="1.0" encoding="UTF-8"?>
 <pseudo version="0.5">
-  <header symbol="C" atomic-number="6" zval="4.5" relativistic="no" 
-   polarized="no" creator="ppconvert" flavor="Troullier-Martins" 
-   core-corrections="no" xc-functional-type="GGA" 
+  <header symbol="C" atomic-number="6" zval="4.5" relativistic="no"
+   polarized="no" creator="ppconvert" flavor="Troullier-Martins"
+   core-corrections="no" xc-functional-type="GGA"
    xc-functional-parametrization="Perdew-Burke-Ernzerhof"/>
-  <grid type="linear" units="bohr" ri="0" rf="1.00000000000000e+01" 
+  <grid type="linear" units="bohr" ri="0" rf="1.00000000000000e+01"
    npts="10001"/>
-  <semilocal units="hartree" format="r*V" npots-down="2" npots-up="0" 
+  <semilocal units="hartree" format="r*V" npots-down="2" npots-up="0"
   </semilocal>
-  <pseudowave-functions units="electrons/bohr^(-3/2)" 
+  <pseudowave-functions units="electrons/bohr^(-3/2)"
   </pseudowave-functions>
 </pseudo>
 """
@@ -338,7 +338,7 @@ def test_read_qmcpack_xml_z_valence(tmp_path):
 
     z_valence_float = read_qmcpack_xml_z_valence(xml_file_float)
 
-    assert(z_valence_float == 4.5)    
+    assert(z_valence_float == 4.5)
 #end def test_read_xml_z_valence
 
 
@@ -1466,7 +1466,7 @@ def test_from_mixed_dir_vasp_collision(tmp_path):
                 codes      = {"vasp"},
                 extensions = None,
                 )
-    
+
     # Filter by pattern
     _ = PseudoSet.from_mixed_dir(
         pseudo_dir = psp_dir,
@@ -1544,7 +1544,7 @@ def test_from_mixed_dir_gamess_collision(tmp_path):
                 codes      = {"gamess"},
                 extensions = None,
                 )
-    
+
     # Filter by pattern
     _ = PseudoSet.from_mixed_dir(
         pseudo_dir = psp_dir,
@@ -1616,7 +1616,7 @@ def test_from_mixed_dir_pyscf_collision(tmp_path):
                 codes      = {"pyscf"},
                 extensions = None,
                 )
-    
+
     # Filter by pattern
     _ = PseudoSet.from_mixed_dir(
         pseudo_dir = psp_dir,
@@ -2347,3 +2347,212 @@ def test_from_dir_ignores_potcar_directories(tmp_path):
             code       = "vasp",
             )
 #end def test_from_dir_ignores_potcar_directories
+
+
+@isolate_nexus_core
+def test_generate_pseudoset(tmp_path):
+    pseudo_names = (
+        "C.ccECP.gamess",
+        "C.ccECP.nwchem",
+        "C.ccECP.upf",
+        "C.ccECP.xml",
+        "H.ccECP.gamess",
+        "H.ccECP.nwchem",
+        "H.ccECP.upf",
+        "H.ccECP.xml",
+        "O.ccECP.gamess",
+        "O.ccECP.nwchem",
+        "O.ccECP.upf",
+        "O.ccECP.xml",
+        )
+
+    psp_dir = tmp_path / "mixed_pseudos"
+    psp_dir.mkdir()
+    assert psp_dir.exists(), "Failed to create pseudo directory!"
+
+    pseudo_list = []
+    for psp in pseudo_names:
+        pseudo = (psp_dir / psp).resolve()
+        pseudo.touch()
+        assert pseudo.exists(), "Failed to create pseudo file!"
+        pseudo_list.append(pseudo)
+
+    ref_pseudos = {
+        'espresso': PseudoSet(
+            codes = {'espresso'},
+            pseudos = {
+                'C': (psp_dir / 'C.ccECP.upf').resolve(),
+                'H': (psp_dir / 'H.ccECP.upf').resolve(),
+                'O': (psp_dir / 'O.ccECP.upf').resolve(),
+            },
+            Zeff_map = {},
+            ),
+        'gamess': PseudoSet(
+            codes = {'gamess'},
+            pseudos = {
+                'C': (psp_dir / 'C.ccECP.gamess').resolve(),
+                'H': (psp_dir / 'H.ccECP.gamess').resolve(),
+                'O': (psp_dir / 'O.ccECP.gamess').resolve(),
+            },
+            Zeff_map = {},
+            ),
+        'qmcpack': PseudoSet(
+            codes = {'qmcpack'},
+            pseudos = {
+                'C': (psp_dir / 'C.ccECP.xml').resolve(),
+                'H': (psp_dir / 'H.ccECP.xml').resolve(),
+                'O': (psp_dir / 'O.ccECP.xml').resolve(),
+            },
+            Zeff_map = {},
+            ),
+        'pyscf': PseudoSet(
+            codes = {'pyscf'},
+            pseudos = {
+                'C': (psp_dir / 'C.ccECP.nwchem').resolve(),
+                'H': (psp_dir / 'H.ccECP.nwchem').resolve(),
+                'O': (psp_dir / 'O.ccECP.nwchem').resolve(),
+            },
+            Zeff_map = {},
+            ),
+        'rmg': PseudoSet(
+            codes = {'rmg'},
+            pseudos = {
+                'C': (psp_dir / 'C.ccECP.xml').resolve(),
+                'H': (psp_dir / 'H.ccECP.xml').resolve(),
+                'O': (psp_dir / 'O.ccECP.xml').resolve(),
+            },
+            Zeff_map = {},
+            )
+        }
+
+    psps = generate_pseudoset(
+        pseudo_dir=psp_dir,
+        code={"qmcpack", "espresso", "rmg", "pyscf", "gamess"},
+        extension={"rmg": ".xml"},
+        )
+
+    assert(psps.keys() == ref_pseudos.keys())
+    for code, ref_psp_set in ref_pseudos.items():
+        gen_psp_set = psps[code]
+        assert(gen_psp_set.pseudos == ref_psp_set.pseudos)
+        assert(gen_psp_set.codes == ref_psp_set.codes)
+        assert(gen_psp_set.Zeff_map == ref_psp_set.Zeff_map)
+        assert(gen_psp_set.pseudo_dirs == ref_psp_set.pseudo_dirs)
+
+    # Test ppset-like interface
+    psps = generate_pseudoset(
+        pseudo_dir=psp_dir,
+        qmcpack  = ["C.ccECP.xml",    "H.ccECP.xml",    "O.ccECP.xml"],
+        espresso = ["C.ccECP.upf",    "H.ccECP.upf",    "O.ccECP.upf"],
+        rmg      = ["C.ccECP.xml",    "H.ccECP.xml",    "O.ccECP.xml"],
+        pyscf    = ["C.ccECP.nwchem", "H.ccECP.nwchem", "O.ccECP.nwchem"],
+        gamess   = ["C.ccECP.gamess", "H.ccECP.gamess", "O.ccECP.gamess"],
+        )
+
+    assert(psps.keys() == ref_pseudos.keys())
+    for code, ref_psp_set in ref_pseudos.items():
+        gen_psp_set = psps[code]
+        assert(gen_psp_set.pseudos == ref_psp_set.pseudos)
+        assert(gen_psp_set.Zeff_map == ref_psp_set.Zeff_map)
+        assert(gen_psp_set.pseudo_dirs == ref_psp_set.pseudo_dirs)
+        # Switch to superset because codes are detected dynamically, not set statically
+        assert(gen_psp_set.codes >= ref_psp_set.codes)
+
+    # Test ppset-like interface, but with directories
+
+    qmcpack_dir,  _, ref_qmcpack_pseudos  = setup_psps(test_dir=tmp_path, code="qmcpack")
+    espresso_dir, _, ref_espresso_pseudos = setup_psps(test_dir=tmp_path, code="espresso")
+    gamess_dir,   _, ref_gamess_pseudos   = setup_psps(test_dir=tmp_path, code="gamess")
+    rmg_dir,      _, ref_rmg_pseudos      = setup_psps(test_dir=tmp_path, code="rmg")
+    pyscf_dir,    _, ref_pyscf_pseudos    = setup_psps(test_dir=tmp_path, code="pyscf")
+
+    ref_pseudos = {
+        "qmcpack" : PseudoSet(ref_qmcpack_pseudos),
+        "espresso": PseudoSet(ref_espresso_pseudos),
+        "gamess"  : PseudoSet(ref_gamess_pseudos),
+        "rmg"     : PseudoSet(ref_rmg_pseudos),
+        "pyscf"   : PseudoSet(ref_pyscf_pseudos),
+        }
+
+    psps = generate_pseudoset(
+        qmcpack  = qmcpack_dir,
+        espresso = espresso_dir,
+        rmg      = rmg_dir,
+        pyscf    = pyscf_dir,
+        gamess   = gamess_dir,
+        )
+
+    assert(psps.keys() == ref_pseudos.keys())
+    for code, ref_psp_set in ref_pseudos.items():
+        gen_psp_set = psps[code]
+        assert(gen_psp_set.pseudos == ref_psp_set.pseudos)
+        assert(gen_psp_set.codes == ref_psp_set.codes)
+        assert(gen_psp_set.Zeff_map == ref_psp_set.Zeff_map)
+        assert(gen_psp_set.pseudo_dirs == ref_psp_set.pseudo_dirs)
+
+    # Test pseudo dirs relative to a path
+    psps = generate_pseudoset(
+        pseudo_dir = tmp_path,
+        qmcpack  = qmcpack_dir.name,
+        espresso = espresso_dir.name,
+        rmg      = rmg_dir.name,
+        pyscf    = pyscf_dir.name,
+        gamess   = gamess_dir.name,
+        )
+
+    assert(psps.keys() == ref_pseudos.keys())
+    for code, ref_psp_set in ref_pseudos.items():
+        gen_psp_set = psps[code]
+        assert(gen_psp_set.pseudos == ref_psp_set.pseudos)
+        assert(gen_psp_set.codes == ref_psp_set.codes)
+        assert(gen_psp_set.Zeff_map == ref_psp_set.Zeff_map)
+        assert(gen_psp_set.pseudo_dirs == ref_psp_set.pseudo_dirs)
+
+    with pytest.raises(
+        ValueError,
+        match="Must supply `pseudo_dir` and/or `codes_psps`!",
+        ):
+        generate_pseudoset()
+
+    with pytest.raises(
+        FileNotFoundError,
+        match="`pseudo_dir` must exist!" ,
+        ):
+        generate_pseudoset(pseudo_dir="/path/to/nowhere")
+
+    with pytest.raises(
+        NotADirectoryError,
+        match="`pseudo_dir` must be a directory!" ,
+        ):
+        generate_pseudoset(pseudo_dir=ref_qmcpack_pseudos["C"])
+
+    with pytest.raises(
+        ValueError,
+        match="When supplying a direct map of codes to pseudos you cannot pass `code`!",
+        ):
+        generate_pseudoset(qmcpack=[ref_qmcpack_pseudos["C"]], code="qmcpack")
+
+    with pytest.raises(
+        TypeError,
+        match="Must supply a directory or collection of file paths for direct map!",
+        ):
+        generate_pseudoset(qmcpack=1234)
+
+    with pytest.raises(
+        FileNotFoundError,
+        match="The path for code qmcpack does not exist!",
+        ):
+        generate_pseudoset(qmcpack="/path/to/nowhere")
+
+    with pytest.raises(
+        RuntimeError,
+        match="Error when processing pseudo directory for code 'qmcpack'",
+        ):
+        generate_pseudoset(qmcpack=psp_dir)
+
+    with pytest.raises(
+        NotADirectoryError,
+        match="If you are providing a single path it must be to a directory!",
+        ):
+        generate_pseudoset(qmcpack=ref_qmcpack_pseudos["C"])
+#end def test_generate_pseudoset
