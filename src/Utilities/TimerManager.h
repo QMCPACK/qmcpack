@@ -102,7 +102,6 @@ public:
   void set_timer_threshold(const std::string& threshold);
   std::string get_timer_threshold_string() const;
 
-  bool maximum_number_of_timers_exceeded() const { return max_timers_exceeded; }
 
   void reset();
   void print(Communicate* comm);
