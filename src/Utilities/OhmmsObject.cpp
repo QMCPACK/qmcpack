@@ -25,7 +25,7 @@
  *Assign meaningless object and type names. Not givng a name to an object
  *is OKAY as far as the object is not requested from a pool.
  */
-OhmmsObject::OhmmsObject() : OhmmsElementBase("none"), TypeName("none"), ElementByteSize(0)
+OhmmsObject::OhmmsObject() : OhmmsElementBase("none")
 {
   //  #pragma omp critical
   //  {
@@ -39,8 +39,7 @@ OhmmsObject::OhmmsObject() : OhmmsElementBase("none"), TypeName("none"), Element
  *@param oname the name of the object
  *@brief Assign a unique ObjectID using the static data member ObjectCounter
  */
-OhmmsObject::OhmmsObject(const std::string& tname, const std::string& oname)
-    : OhmmsElementBase(oname.c_str()), TypeName(tname.c_str()), ElementByteSize(0)
+OhmmsObject::OhmmsObject(const std::string& tname, const std::string& oname) : OhmmsElementBase(oname.c_str())
 {
   //  #pragma omp critical
   //  {

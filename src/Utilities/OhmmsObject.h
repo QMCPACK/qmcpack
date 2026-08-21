@@ -54,9 +54,6 @@ public:
   void setID(int i) { ObjectID = i; }
 
 
-  ///set the type name
-  void setTypeName(const std::string& tname) { TypeName = tname; }
-
   ///set the object name
   void setObjName(const std::string& oname) { myName = oname; }
 
@@ -67,14 +64,8 @@ public:
   virtual OhmmsObject* makeClone() const = 0;
 
 protected:
-  ///the type name of this object
-  std::string TypeName;
-
   ///the unique ID of this object
   int ObjectID;
-
-  ///the byte size of this object
-  int ElementByteSize;
 
 private:
   //static int ObjectCounter;
