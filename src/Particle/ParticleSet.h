@@ -528,20 +528,16 @@ public:
   template<typename ATList>
   inline void createAttributeList(ATList& AttribList)
   {
-    R.setTypeName(ParticleTags::postype_tag);
-    R.setObjName(ParticleTags::position_tag);
-    spins.setTypeName(ParticleTags::scalartype_tag);
-    spins.setObjName(ParticleTags::spins_tag);
-    GroupID.setTypeName(ParticleTags::indextype_tag);
-    GroupID.setObjName(ParticleTags::ionid_tag);
+    R.setName(ParticleTags::position_tag);
+    spins.setName(ParticleTags::spins_tag);
+    GroupID.setName(ParticleTags::ionid_tag);
     //add basic attributes
     AttribList.add(R);
     AttribList.add(spins);
     AttribList.add(GroupID);
 
     //more particle attributes
-    Z.setTypeName(ParticleTags::scalartype_tag);
-    Z.setObjName("charge");
+    Z.setName("charge");
     AttribList.add(Z);
   }
 
