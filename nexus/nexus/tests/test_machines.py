@@ -125,7 +125,7 @@ def test_job_init():
 
     # empty init should fail w/o implicit or explicit machine
     with pytest.raises(
-        NexusError,
+        TypeError,
         match="machine name must be a string, you provided",
         ):
         job()
@@ -348,13 +348,13 @@ def test_machine_add():
     mtest = first(Machine.machines)
     assert(isinstance(mtest,Machine))
     with pytest.raises(
-        NexusError,
+        RuntimeError,
         match="attempted to create machine"
         ):
         Machine.add(mtest)
 
     with pytest.raises(
-        NexusError,
+        TypeError,
         match="attempted to add non-machine instance"
         ):
         Machine.add('my_machine')
@@ -371,13 +371,13 @@ def test_machine_get():
     assert(isinstance(m,Machine))
     assert(id(m)==id(mtest))
     with pytest.raises(
-        NexusError,
+        TypeError,
         match="machine name must be a string, you provided a ",
         ):
         Machine.get(m)
 
     with pytest.raises(
-        NexusError,
+        KeyError,
         match="attempted to get machine some_nonexistant_machine, but it is unknown",
         ):
         Machine.get('some_nonexistant_machine')
@@ -395,7 +395,7 @@ def test_machine_instantiation():
         Machine()
 
     with pytest.raises(
-        NexusError,
+        TypeError,
         match="machine name must be a string",
         ):
         Machine(123)
@@ -411,7 +411,7 @@ def test_machine_instantiation():
 
     # test guards against multiple instantiation
     with pytest.raises(
-        NexusError,
+        RuntimeError,
         match="attempted to create machine test_machine, but it already exists",
         ):
         Machine(name=test_name)
