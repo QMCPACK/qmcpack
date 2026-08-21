@@ -312,7 +312,7 @@ public:
   /** Install a crowd of complete all-particle proposals relative to current ParticleSet state.
    *
    * Displacements and are_valid use particle-major flattened storage:
-   * iat * number_of_walkers + iw. The caller must supply a nonempty, resource-acquired
+   * ip * number_of_walkers + iw. The caller must supply a nonempty, resource-acquired
    * clone crowd with matching topology and particle counts, exact input and output sizes,
    * and no active particles. These caller invariants are checked in Debug and assumed in
    * Release. Each proposal receives the same lattice-validity check as mw_makeMove.

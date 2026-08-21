@@ -533,27 +533,27 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
   for (size_t iw = 0; iw < num_walkers; ++iw)
   {
     const auto& lattice = p_list[iw].simulation_cell_.getLattice();
-    for (size_t iat = 0; iat < num_particles; ++iat)
+    for (size_t ip = 0; ip < num_particles; ++ip)
     {
-      const size_t flat_index        = iat * num_walkers + iw;
-      proposed_positions[flat_index] = p_list[iw].R[iat] + displacements.positions[flat_index];
+      const size_t flat_index        = ip * num_walkers + iw;
+      proposed_positions[flat_index] = p_list[iw].R[ip] + displacements.positions[flat_index];
       are_valid[flat_index] =
           !lattice.explicitly_defined || lattice.isValid(lattice.toUnit(proposed_positions[flat_index]));
 
       if constexpr (CT == CoordsType::POS_SPIN)
-        mw_mem.proposed_spins[flat_index] = p_list[iw].spins[iat] + displacements.spins[flat_index];
+        mw_mem.proposed_spins[flat_index] = p_list[iw].spins[ip] + displacements.spins[flat_index];
     }
   }
 
   for (size_t iw = 0; iw < num_walkers; ++iw)
-    for (size_t iat = 0; iat < num_particles; ++iat)
+    for (size_t ip = 0; ip < num_particles; ++ip)
     {
-      const size_t flat_index = iat * num_walkers + iw;
+      const size_t flat_index = ip * num_walkers + iw;
       if (are_valid[flat_index])
       {
-        p_list[iw].R[iat] = proposed_positions[flat_index];
+        p_list[iw].R[ip] = proposed_positions[flat_index];
         if constexpr (CT == CoordsType::POS_SPIN)
-          p_list[iw].spins[iat] = mw_mem.proposed_spins[flat_index];
+          p_list[iw].spins[ip] = mw_mem.proposed_spins[flat_index];
       }
     }
 

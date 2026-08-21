@@ -32,12 +32,12 @@ SimulationCell makeOpenCell()
   return SimulationCell(lattice);
 }
 
-void checkPosition(const ParticleSet& pset, int iat, const ParticleSet::PosType& expected)
+void checkPosition(const ParticleSet& pset, int ip, const ParticleSet::PosType& expected)
 {
   for (int idim = 0; idim < OHMMS_DIM; ++idim)
   {
-    CHECK(pset.R[iat][idim] == Approx(expected[idim]));
-    CHECK(pset.getCoordinates().getAllParticlePos()[iat][idim] == Approx(expected[idim]));
+    CHECK(pset.R[ip][idim] == Approx(expected[idim]));
+    CHECK(pset.getCoordinates().getAllParticlePos()[ip][idim] == Approx(expected[idim]));
   }
 }
 
@@ -49,12 +49,12 @@ void checkDistances(const ParticleSet& elecs, int aa_id, int ab_id, const Partic
   };
   const auto& aa = elecs.getDistTableAA(aa_id).getDistances();
   const auto& ab = elecs.getDistTableAB(ab_id).getDistances();
-  for (int iat = 0; iat < elecs.getTotalNum(); ++iat)
+  for (int ip = 0; ip < elecs.getTotalNum(); ++ip)
   {
-    for (int jat = 0; jat < iat; ++jat)
-      CHECK(aa[iat][jat] == Approx(distance(elecs.R[iat], elecs.R[jat])));
+    for (int jp = 0; jp < ip; ++jp)
+      CHECK(aa[ip][jp] == Approx(distance(elecs.R[ip], elecs.R[jp])));
     for (int ion = 0; ion < ions.getTotalNum(); ++ion)
-      CHECK(ab[iat][ion] == Approx(distance(elecs.R[iat], ions.R[ion])));
+      CHECK(ab[ip][ion] == Approx(distance(elecs.R[ip], ions.R[ion])));
   }
 }
 
@@ -125,7 +125,7 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind)
   p0.createResource(resources);
   ResourceCollectionTeamLock<ParticleSet> lock(resources, p_list);
 
-  // The flattened storage is particle-major: iat * nw + iw.
+  // The flattened storage is particle-major: ip * nw + iw.
   MCCoords<CoordsType::POS> displacements(4);
   displacements.positions = {{0.2, 0.0, 0.0}, {0.1, 0.0, 0.0}, {0.0, 0.3, 0.0}, {0.0, -2.0, 0.0}};
   std::vector<bool> valid(4);
@@ -169,28 +169,28 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind)
   // Exercise all-accept and all-reject resolution, and walker synchronization.
   dispatcher.flex_saveWalker(p_list, walkers);
   for (size_t iw = 0; iw < p_list.size(); ++iw)
-    for (int iat = 0; iat < p_list[iw].getTotalNum(); ++iat)
-      CHECK(walkers[iw].get().R[iat] == p_list[iw].R[iat]);
+    for (int ip = 0; ip < p_list[iw].getTotalNum(); ++ip)
+      CHECK(walkers[iw].get().R[ip] == p_list[iw].R[ip]);
 
   dispatcher.flex_makeMoveAllParticles(p_list, next_displacements, valid);
   REQUIRE(valid == std::vector<bool>{true, true, true, true});
   const ParticleSet::ParticlePos accepted_r0(p0.R);
   const ParticleSet::ParticlePos accepted_r1(p1.R);
   dispatcher.flex_accept_rejectMoveAllParticles(p_list, walkers, {true, true});
-  for (int iat = 0; iat < p0.getTotalNum(); ++iat)
+  for (int ip = 0; ip < p0.getTotalNum(); ++ip)
   {
-    checkPosition(p0, iat, accepted_r0[iat]);
-    checkPosition(p1, iat, accepted_r1[iat]);
+    checkPosition(p0, ip, accepted_r0[ip]);
+    checkPosition(p1, ip, accepted_r1[ip]);
   }
 
   dispatcher.flex_saveWalker(p_list, walkers);
   dispatcher.flex_makeMoveAllParticles(p_list, next_displacements, valid);
   REQUIRE(valid == std::vector<bool>{true, true, true, true});
   dispatcher.flex_accept_rejectMoveAllParticles(p_list, walkers, {false, false});
-  for (int iat = 0; iat < p0.getTotalNum(); ++iat)
+  for (int ip = 0; ip < p0.getTotalNum(); ++ip)
   {
-    checkPosition(p0, iat, w0.R[iat]);
-    checkPosition(p1, iat, w1.R[iat]);
+    checkPosition(p0, ip, w0.R[ip]);
+    checkPosition(p1, ip, w1.R[ip]);
   }
   checkDistances(p0, aa_id, ab_id, ions);
   checkDistances(p1, aa_id, ab_id, ions);
@@ -335,8 +335,8 @@ TEST_CASE("ParticleSet all-particle move honors structure-factor skipping", "[pa
   CHECK(any_rhok_changed);
 
   transaction.resolve(false);
-  for (int iat = 0; iat < pset.getTotalNum(); ++iat)
-    checkPosition(pset, iat, walker.R[iat]);
+  for (int ip = 0; ip < pset.getTotalNum(); ++ip)
+    checkPosition(pset, ip, walker.R[ip]);
   for (size_t i = 0; i < resolved_rhok_r.size(); ++i)
   {
     CHECK(pset.getSK().rhok_r.data()[i] == Approx(resolved_rhok_r.data()[i]));
