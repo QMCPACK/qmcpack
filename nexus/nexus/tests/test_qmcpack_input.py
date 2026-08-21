@@ -515,6 +515,7 @@ def test_qixml_class_init():
         elements       = tuple,
         text           = str,
         parameters     = tuple,
+        parents        = tuple,
         attribs        = tuple,
         costs          = tuple,
         h5tags         = tuple,
@@ -525,6 +526,7 @@ def test_qixml_class_init():
         defaults       = obj,
         collection_id  = str,
         exp_names      = obj,
+        attribute_aliases = obj,
         element_aliases = obj,
         unsupported    = tuple,
         params         = tuple,
@@ -534,7 +536,7 @@ def test_qixml_class_init():
         afqmc_order    = tuple,
         )
     optional = set(['expanded_names','afqmc_order'])
-    assert(len(attr_types)==23)
+    assert(len(attr_types)==25)
 
     def valid_name(s):
         v = True
@@ -580,27 +582,30 @@ def test_qixml_class_init():
 def test_qixml_live_and_unsupported_parameters(tmp_path):
     from ..qmcpack_input import QIxml
     from ..qmcpack_input import QmcpackInput
-    from ..qmcpack_input import atomicbasisset,bspline_builder,coefs_mem,dmc,group,init
+    from ..qmcpack_input import atomicbasisset,bspline_builder,checkpoint_element,coefs_mem,dmc,group,init
     from ..qmcpack_input import force,hamiltonian,harmonic_extpot,hybrid_optimizer
     from ..qmcpack_input import linear,linear_batch,mpc,multideterminant,onebodydensitymatrices,optimize
     from ..qmcpack_input import mcwalkerset,paircorrelation,particleset,pseudo,pseudopotential
     from ..qmcpack_input import qmc_system_selector,qmcsystem,rpa_jastrow,simulation,simulationcell
-    from ..qmcpack_input import sposet,structurefactor,walkerlogs
+    from ..qmcpack_input import sposet,sposet_builder,sposet_collection,structurefactor,vmc,walkerlogs
 
     assert(QIxml.unsupported==())
-    assert(multideterminant.unsupported==())
+    assert(multideterminant.unsupported==('spo_down','fast'))
     assert(pseudo.unsupported==('cutoff',))
-    assert(mpc.unsupported==('ecut',))
-    assert(force.unsupported==('addionion','weightexp'))
+    assert(mpc.unsupported==('ecut','source','target'))
+    assert(force.unsupported==('addionion','weightexp','lrmethod'))
     assert(structurefactor.unsupported==('report','hdf5','writerho','writeionion'))
     assert(paircorrelation.unsupported==('debug','sources'))
-    assert(linear.unsupported==('max_relative_change',))
-    assert(onebodydensitymatrices.unsupported==('reuse','basis_size'))
+    assert('max_relative_change' in linear.unsupported)
+    assert(onebodydensitymatrices.unsupported==('reuse','basis_size','warmup','warmup_samples'))
     assert(mcwalkerset.unsupported==('target','walkers'))
     assert(qmcsystem.unsupported==('dim',))
     assert(simulationcell.unsupported==('name','tilematrix','reciprocal','uc_grid'))
     assert(particleset.unsupported==('charge','source','role','simulationcell'))
     assert(group.unsupported==('id','mass'))
+    assert(simulation.parents==())
+    assert(group.parents==('particleset',))
+    assert(force.parents==('hamiltonian',))
 
     obdm = onebodydensitymatrices(
         type = 'OneBodyDensityMatrices',
@@ -654,6 +659,27 @@ def test_qixml_live_and_unsupported_parameters(tmp_path):
     assert('check_orb_norm="no"' in builder_xml)
     assert('save_coefs="yes"' in builder_xml)
     assert('<coefs_mem distributed_ranks="2" shared_ranks="4"/>' in builder_xml)
+
+    pw_xml = sposet_builder(
+        type = 'pw',
+        twistindex = 2,
+        bufferlayer = 1,
+        expand = 3,
+        ).write()
+    assert('<sposet_builder type="pw">' in pw_xml)
+    assert('<parameter name="twistIndex"' in pw_xml)
+    assert('<parameter name="bufferLayer"' in pw_xml)
+
+    collection_xml = sposet_collection(type='heg',source='ion0').write()
+    assert(collection_xml.startswith('<sposet_collection type="heg"'))
+
+    checkpoint_xml = vmc(
+        method = 'vmc',
+        checkpoint = -1,
+        checkpoint_element = checkpoint_element(stride=20),
+        ).write()
+    assert('<qmc method="vmc" checkpoint="-1">' in checkpoint_xml)
+    assert('<checkpoint stride="20"/>' in checkpoint_xml)
 
     rpa = rpa_jastrow(
         type = 'rpa',
