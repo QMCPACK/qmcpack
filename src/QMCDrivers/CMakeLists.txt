@@ -48,8 +48,6 @@ set(QMCDRIVERS
     WFOpt/HamiltonianRef.cpp
     WFOpt/CostFunctionCrowdData.cpp
     WaveFunctionTester.cpp
-    WaveFunctionTesterBatched.cpp
-    WaveFunctionTesterBatchedInput.cpp
     WalkerControlBase.cpp
     CloneManager.cpp
     Crowd.cpp

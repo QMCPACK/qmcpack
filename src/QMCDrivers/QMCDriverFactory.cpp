@@ -41,7 +41,6 @@
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimizeBatched.h"
 #include "QMCDrivers/WaveFunctionTester.h"
-#include "QMCDrivers/WaveFunctionTesterBatched.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Estimators/EstimatorInputDelegates.h"
@@ -108,8 +107,6 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
       das.new_run_type = QMCRunType::DMC_BATCH;
     else if (qmc_mode.find("linear") < nchars)
       das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
-    else if (qmc_mode == "wftest")
-      das.new_run_type = QMCRunType::WF_TEST_BATCH;
     else
       throw UniformCommunicateError("QMC mode unknown. Valid modes for batched drivers are : vmc, dmc, linear.");
     break;
@@ -344,30 +341,6 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
       QMCDriverInterface* temp_ptr =
           new WaveFunctionTester(project_data_, qmc_system, primaryPsi, primaryH, particle_pool, comm);
       new_driver.reset(temp_ptr);
-    }
-    else if (das.new_run_type == QMCRunType::WF_TEST_BATCH)
-    {
-      app_log() << "Testing wavefunctions with batched driver." << std::endl;
-      QMCDriverInput qmcdriver_input;
-      WaveFunctionTesterBatchedInput tester_input;
-      try
-      {
-        qmcdriver_input.readXML(cur);
-        tester_input.readXML(cur);
-      }
-      catch (const std::exception& e)
-      {
-        throw UniformCommunicateError(e.what());
-      }
-
-      const auto estimator_input = qmcdriver_input.get_estimator_manager_input();
-      new_driver = std::make_unique<WaveFunctionTesterBatched>(project_data_, std::move(qmcdriver_input),
-                                                               makeEstimatorManager(emi, estimator_input),
-                                                               std::move(tester_input), qmc_system,
-                                                               MCPopulation(comm->size(), comm->rank(), qmc_system,
-                                                                            primaryPsi, primaryH),
-                                                               RandomNumberControl::getChildrenRefs(), comm);
-      new_driver->setUpdateMode(1);
     }
     else
     {
