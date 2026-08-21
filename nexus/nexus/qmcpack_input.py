@@ -2434,9 +2434,8 @@ class determinant(QIxml):
                    'detsize','cutoff','radius','smallnumber','eps','primary')
     elements    = ('occupation','coefficient')
     parents     = ('slaterdeterminant',)
-    unsupported = ('ref','basisset','detsize','cutoff','radius','smallnumber',
-                   'eps','primary','name','spin','size','href','spindataset',
-                   'orbitals','cuspinfo','debug')
+    unsupported = ('ref','detsize','cutoff','radius','smallnumber','eps',
+                   'primary','spin','href','orbitals')
     exp_names   = obj(detsize='DetSize',cutoff='Cutoff',radius='Radius')
     identifier  = 'id'
     write_types = obj(debug=yesno)
@@ -2463,7 +2462,6 @@ class detlist(QIxml):
                    'zerocutoff','sortby','opt_coeffs')
     elements    = ('ci','csf')
     parents     = ('multideterminant',)
-    unsupported = ('sortby','zero_cutoff')
 #end class detlist
 
 class ci(QIxml):
@@ -3153,7 +3151,7 @@ class onebodydensitymatrices(QIxml): # batched
                    'check_derivatives','acceptance_ratio','rstats',
                    'normalized','volume_normed','samples','warmup',
                    'warmup_samples','timestep','use_drift')
-    unsupported = ('reuse','basis_size','warmup','warmup_samples')
+    unsupported = ('reuse','basis_size','warmup')
     parents     = ('estimators','qmc')
     write_types = obj(energy_matrix=yesno,use_drift=yesno,check_overlap=yesno,check_derivatives=yesno,
                       acceptance_ratio=yesno,rstats=yesno,normalized=yesno,volume_normed=yesno)
@@ -3438,9 +3436,10 @@ qmc_common_elements = (
     'random',
     'qmc_system_selector','optimize','optimizer')
 qmc_common_unsupported = (
-    'gpu','multiple','warp','target','id','continue','completed','trace',
-    'kdelay',
-    'walkers','stepsbetweensamples','samplesperthread','rewind')
+    'multiple','warp','id','continue','completed','kdelay',
+    'rewind')
+qmc_batched_unsupported = (
+    'trace','walkers','stepsbetweensamples','samplesperthread')
 qmc_legacy_attributes = ('profiling','trace','completed','gpu')
 qmc_legacy_parameters = (
     'walkers','stepsbetweensamples','samplesperthread','dmcwalkersperthread',
@@ -3449,7 +3448,7 @@ qmc_legacy_parameters = (
     'check_properties',
     'current','storeconfigs')
 qmc_legacy_elements = ('estimator','record','traces')
-qmc_legacy_unsupported = ('completed','gpu')
+qmc_legacy_unsupported = ('completed',)
 
 
 
@@ -3580,7 +3579,7 @@ class vmc(QIxml):
     attributes     += qmc_legacy_attributes
     parameters     += qmc_legacy_parameters
     elements       += qmc_common_elements + qmc_legacy_elements
-    unsupported     = qmc_common_unsupported + qmc_legacy_unsupported
+    unsupported     = qmc_common_unsupported + qmc_legacy_unsupported + ('gpu',)
     parents         = ('simulation','loop')
     element_aliases = obj(qmcsystem='qmc_system_selector')
     write_types     = obj(usedrift=yesno,profiling=yesno,append=yesno,walkerlog=yesno,
@@ -3629,9 +3628,8 @@ class dmc(QIxml):
     parameters     += qmc_legacy_parameters
     elements       += qmc_common_elements + qmc_legacy_elements
     unsupported     = qmc_common_unsupported + qmc_legacy_unsupported + (
-        'reconfiguration','killnode','swap_walkers','swap_trigger','fastgrad',
-        'recordwalkers','popcontrol','pop_control','max_branch','l2_diffusion',
-        'energybound','minimumtargetwalkers','usebaretau','maxcopy')
+        'gpu','killnode','swap_walkers','swap_trigger','fastgrad',
+        'popcontrol','pop_control','max_branch','energybound')
     parents         = ('simulation','loop')
     element_aliases = obj(qmcsystem='qmc_system_selector')
     write_types     = obj(usedrift=yesno,profiling=yesno,append=yesno,walkerlog=yesno,
@@ -3660,7 +3658,7 @@ class rmc(QIxml):
     attributes     += qmc_legacy_attributes
     parameters     += qmc_legacy_parameters
     elements       += qmc_legacy_elements
-    unsupported    += qmc_legacy_unsupported
+    unsupported    += qmc_legacy_unsupported + ('gpu',)
     parents         = ('simulation','loop')
     element_aliases = obj(qmcsystem='qmc_system_selector')
     write_types     = obj(collect=yesno,append=yesno,profiling=yesno,walkerlog=yesno,
@@ -3689,7 +3687,8 @@ class vmc_batch(QIxml):
     attributes     += qmc_common_attributes
     parameters     += qmc_common_parameters + ('use_drift',)
     elements       += qmc_common_elements
-    unsupported     = qmc_common_unsupported
+    unsupported     = qmc_common_unsupported + qmc_batched_unsupported + (
+        'gpu',)
     parents         = ('simulation','loop')
     write_types     = obj(usedrift=yesno,profiling=yesno,append=yesno,walkerlog=yesno,
                       measure_imbalance=yesno,crowd_serialize_walkers=yesno)
@@ -3729,8 +3728,9 @@ class dmc_batch(QIxml):
         'max_branch','l2_diffusion','energybound','minimumtargetwalkers',
         'nonlocalmove')
     elements       += qmc_common_elements
-    unsupported     = qmc_common_unsupported + (
-        'reconfiguration','killnode','swap_walkers','swap_trigger','fastgrad',
+    unsupported     = qmc_common_unsupported + qmc_batched_unsupported + (
+        'gpu','reconfiguration','killnode','swap_walkers','swap_trigger',
+        'fastgrad',
         'recordwalkers','popcontrol','pop_control','max_branch','l2_diffusion',
         'energybound','minimumtargetwalkers','usebaretau','maxcopy')
     parents         = ('simulation','loop')
@@ -3785,7 +3785,7 @@ class linear_batch(QIxml):
         'gevsplit','sr_tau','sr_regularization','sr_tolerance',
         'output_param_file','finite_diff_delta')
     elements       += qmc_common_elements
-    unsupported     = qmc_common_unsupported + (
+    unsupported     = qmc_common_unsupported + qmc_batched_unsupported + (
         'options_lmy_.nsamp_comp','max_relative_change','renew','useweight',
         'min_walkers','minweight','warmupblocks','usebuffer','cgsteps','eigcg',
         'stabilizermethod','rnwarmupsteps','gradtol','cswarmupsteps',

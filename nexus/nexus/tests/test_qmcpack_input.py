@@ -582,22 +582,39 @@ def test_qixml_class_init():
 def test_qixml_live_and_unsupported_parameters(tmp_path):
     from ..qmcpack_input import QIxml
     from ..qmcpack_input import QmcpackInput
-    from ..qmcpack_input import atomicbasisset,bspline_builder,checkpoint_element,coefs_mem,dmc,group,init
+    from ..qmcpack_input import atomicbasisset,bspline_builder,checkpoint_element,coefs_mem,determinant,detlist
+    from ..qmcpack_input import dmc,dmc_batch,group,init
     from ..qmcpack_input import force,hamiltonian,harmonic_extpot,hybrid_optimizer
     from ..qmcpack_input import linear,linear_batch,mpc,multideterminant,onebodydensitymatrices,optimize
     from ..qmcpack_input import mcwalkerset,paircorrelation,particleset,pseudo,pseudopotential
     from ..qmcpack_input import qmc_system_selector,qmcsystem,rpa_jastrow,simulation,simulationcell
-    from ..qmcpack_input import sposet,sposet_builder,sposet_collection,structurefactor,vmc,walkerlogs
+    from ..qmcpack_input import sposet,sposet_builder,sposet_collection,structurefactor,vmc,vmc_batch,walkerlogs
 
     assert(QIxml.unsupported==())
     assert(multideterminant.unsupported==('spo_down','fast'))
+    assert(detlist.unsupported==())
+    assert('basisset' not in determinant.unsupported)
+    assert('size' not in determinant.unsupported)
+    assert('cuspinfo' not in determinant.unsupported)
     assert(pseudo.unsupported==('cutoff',))
     assert(mpc.unsupported==('ecut','source','target'))
     assert(force.unsupported==('addionion','weightexp','lrmethod'))
     assert(structurefactor.unsupported==('report','hdf5','writerho','writeionion'))
     assert(paircorrelation.unsupported==('debug','sources'))
     assert('max_relative_change' in linear.unsupported)
-    assert(onebodydensitymatrices.unsupported==('reuse','basis_size','warmup','warmup_samples'))
+    assert('gpu' not in linear.unsupported)
+    assert('gpu' in vmc.unsupported)
+    assert('target' not in vmc.unsupported)
+    assert('trace' not in vmc.unsupported)
+    assert('trace' in vmc_batch.unsupported)
+    assert('walkers' not in vmc.unsupported)
+    assert('walkers' in vmc_batch.unsupported)
+    assert('walkers' in dmc_batch.unsupported)
+    assert('l2_diffusion' not in dmc.unsupported)
+    assert('reconfiguration' not in dmc.unsupported)
+    assert('reconfiguration' in dmc_batch.unsupported)
+    assert('l2_diffusion' in dmc_batch.unsupported)
+    assert(onebodydensitymatrices.unsupported==('reuse','basis_size','warmup'))
     assert(mcwalkerset.unsupported==('target','walkers'))
     assert(qmcsystem.unsupported==('dim',))
     assert(simulationcell.unsupported==('name','tilematrix','reciprocal','uc_grid'))
@@ -612,10 +629,31 @@ def test_qixml_live_and_unsupported_parameters(tmp_path):
         name = 'OneBodyDensityMatrices',
         basis = 'spo_ud',
         volume_normed = False,
+        warmup_samples = 17,
         )
     obdm_xml = obdm.write()
     assert('<parameter name="volume_normed"' in obdm_xml)
+    assert('<parameter name="warmup_samples"' in obdm_xml)
     assert('>    no' in obdm_xml)
+
+    det_xml = determinant(
+        id = 'updet',
+        size = 2,
+        basisset = 'LCAOBSet',
+        cuspinfo = 'updet.cuspInfo.xml',
+        ).write()
+    assert('size="2"' in det_xml)
+    assert('basisset="LCAOBSet"' in det_xml)
+    assert('cuspInfo="updet.cuspInfo.xml"' in det_xml)
+
+    detlist_xml = detlist(
+        type = 'CSF',
+        size = 2,
+        sortby = 'qchem_coeff',
+        zero_cutoff = 1e-8,
+        ).write()
+    assert('sortby="qchem_coeff"' in detlist_xml)
+    assert('zero_cutoff="1e-08"' in detlist_xml)
 
     cell = simulationcell(
         vacuum = 1.5,
