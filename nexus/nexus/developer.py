@@ -9,8 +9,8 @@
 #    development (Nexus or beyond)                                   #
 #                                                                    #
 #  Content summary:                                                  #
-#    log, warn, error                                                #
-#      Function interface to logging and error handling.             #
+#    log, warn,                                                      #
+#      Function interface to logging and warning handling.           #
 #                                                                    #
 #    DevBase                                                         #
 #      Base class inheriting generic abilities for obj, etc.         #
@@ -25,7 +25,7 @@ from .developer_tools import save,load,_pp_repr,_pp_str,dotdict,obj,DevBase  # n
 from .debug import ci, interact  # noqa: F401
 
 
-from .generic import NexusError, log, error, warn, message  # noqa: F401
+from .generic import NexusError, FileFormatError, NotAnElementError, error, log, warn, message  # noqa: F401
 from .generic import unavailable, available, Void  # noqa: F401
 from .generic import obj_deprecated, DevBaseDeprecated  # noqa: F401
 

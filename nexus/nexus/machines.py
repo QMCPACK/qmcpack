@@ -53,7 +53,7 @@ from socket import gethostname
 import subprocess
 from subprocess import Popen, CalledProcessError
 import numpy as np
-from .developer import DevBase, obj, error, warn
+from .developer import DevBase, obj, warn, NexusError
 from .nexus_base import NexusCore, nexus_core
 from .execute import execute
 from .utilities import path_string
@@ -134,14 +134,16 @@ class Options(DevBase):
         elif isinstance(options,list):
             for o in options:
                 if not isinstance(o,str):
-                    self.error('each option must be a string')
+                    msg = 'each option must be a string'
+                    raise TypeError(msg)
                 #end if
                 self[str(len(self))] = o
             #end for
         elif isinstance(options,str):
             self[str(len(self))] = options
         else:
-            self.error('invalid type provided to Options')
+            msg = 'invalid type provided to Options'
+            raise TypeError(msg)
         #end if
     #end def read
 
@@ -454,12 +456,14 @@ class Job(NexusCore):
         # guard against invalid keys
         invalid = set(kwargs.keys())-set(job_defaults.keys())
         if len(invalid)>0:
-            self.error('Invalid job arguments provided.\n'
-                       'Invalid arguments: {}\n'
-                       'Valid options are: {}'.format(
-                           sorted(invalid),list(job_defaults.keys())
-                           )
-                       )
+            msg = (
+                'Invalid job arguments provided.\n'
+                'Invalid arguments: {}\n'
+                'Valid options are: {}'.format(
+                    sorted(invalid),list(job_defaults.keys())
+                    )
+                )
+            raise ValueError(msg)
         # rewrap keyword arguments
         kw = obj(**kwargs)
         # Ensure no pathlib.Path objects are stored
@@ -480,7 +484,8 @@ class Job(NexusCore):
             if isinstance(kw.app_name, Path):
                 kw.app_name = path_string(kw.app_name)
             elif not isinstance(kw.app_name, str):
-                self.error("app_name must be a str or Path object!")
+                msg = "app_name must be a str or Path object!"
+                raise TypeError(msg)
 
         # save information used to initialize job object
         self.init_info = deepcopy(kw)
@@ -510,7 +515,13 @@ class Job(NexusCore):
 
         # check template
         if self.template is not None and not isinstance(self.template,str):
-            self.error('template must be a string\nReceived type: {}'.format(self.template.__class__.__name__))
+            msg = (
+                'template must be a string\n'
+                'Received type: {}'.format(
+                    self.template.__class__.__name__
+                    )
+                )
+            raise TypeError(msg)
         #end if
 
         # initialize other internal variables
@@ -575,7 +586,8 @@ class Job(NexusCore):
             self.batch_mode = machine.in_batch_mode()
 
             if self.bundled_jobs is not None and not machine.batch_capable:
-                self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name))
+                msg = 'running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name)
+                raise NotImplementedError(msg)
             #end if
         #end if
 
@@ -688,7 +700,8 @@ class Job(NexusCore):
     # remove?
     def set_processes(self):
         if self.processes is None:
-            self.error('processes should have been set before now\ncontact the developers and have them fix this','Developer')
+            msg = 'processes should have been set before now\ncontact the developers and have them fix this'
+            raise NexusError(msg)
             self.processes = int(np.ceil(float(self.cores)/self.threads))
         #end if
     #end def set_processes
@@ -792,7 +805,8 @@ class Job(NexusCore):
                 c = self.full_command
             else:
                 if self.app_command is None:
-                    self.error('app_command has not been provided')
+                    msg = 'app_command has not been provided'
+                    raise ValueError(msg)
                 #end if
                 if launcher=='runjob':
                     separator = ' : '
@@ -929,13 +943,25 @@ class Job(NexusCore):
     def split_nodes(self,n):
         run_options = self.run_options
         if not isinstance(n,int):
-            self.error('cannot split job by nodes\nrequested split value must be an integer\nreceived type: {0}\nwith value: {1}'.format(n.__class__.__name__,n))
+            msg = (
+                'cannot split job by nodes\n'
+                'requested split value must be an integer\n'
+                'received type: {0}\n'
+                'with value: {1}'.format(n.__class__.__name__,n)
+                )
+            raise TypeError(msg)
         elif n<1 or n>=self.nodes:
-            self.error('cannot split job by nodes\nrequested split must be in the range [1,{0})\nrequested split: {1}'.format(self.nodes,n))
+            msg = (
+                'cannot split job by nodes\n'
+                'requested split must be in the range [1,{0})\n'
+                'requested split: {1}'.format(self.nodes,n)
+                )
+            raise ValueError(msg)
         #end if
         m = self.get_machine()
         if m.app_launcher=='srun':
-            self.error('splitting jobs by nodes is not currently supported on machine "{0}" (SLURM)'.format(m.name))
+            msg = 'splitting jobs by nodes is not currently supported on machine "{0}" (SLURM)'.format(m.name)
+            raise NotImplementedError(msg)
         #end if
         job1 = self.clone()
         job2 = self.clone()
@@ -1002,16 +1028,19 @@ class Machine(NexusCore):
     @staticmethod
     def add(machine):
         if not isinstance(machine,Machine):
-            error('attempted to add non-machine instance')
+            msg = 'attempted to add non-machine instance'
+            raise TypeError(msg)
         #end if
         if 'name' not in machine:
-            error('attempted to add a machine without a name')
+            msg = 'attempted to add a machine without a name'
+            raise ValueError(msg)
         #end if
         name = machine.name
         if name not in Machine.machines:
             Machine.machines[name] = machine
         else:
-            error('attempted to create machine {0}, but it already exists'.format(name))
+            msg = 'attempted to create machine {0}, but it already exists'.format(name)
+            raise RuntimeError(msg)
         #end if
     #end def add
 
@@ -1021,13 +1050,18 @@ class Machine(NexusCore):
         if isinstance(machine_name,str):
             machine_name = machine_name.lower()
         else:
-            error('machine name must be a string, you provided a '+machine_name.__class__.__name__)
+            msg = 'machine name must be a string, you provided a '+machine_name.__class__.__name__
+            raise TypeError(msg)
         #end if
         if Machine.exists(machine_name):
             machine = Machine.machines[machine_name]
         else:
             machs = sorted(Machine.machines.keys())
-            error('attempted to get machine '+machine_name+', but it is unknown\nknown options are '+str(machs))
+            msg = (
+                'attempted to get machine '+machine_name+', but it is unknown\n'
+                'known options are '+str(machs)
+                )
+            raise KeyError(msg)
         #end if
         return machine
     #end def get
@@ -1043,10 +1077,15 @@ class Machine(NexusCore):
     def validate(self):
         if Machine.exists(self.name):
             if not Machine.is_unique(self):
-                self.error('duplicate instance of machine '+self.name+' encountered\n  this is either a developer error, or you have created a duplicate machine')
+                msg = (
+                    'duplicate instance of machine '+self.name+' encountered\n'
+                    '  this is either a developer error, or you have created a duplicate machine'
+                    )
+                raise NexusError(msg)
             #end if
         else:
-            self.error('machine {0} id {1} was created without calling Machine.__init__() and is therefore invalid'.format(self.name,id(self)))
+            msg = 'machine {0} id {1} was created without calling Machine.__init__() and is therefore invalid'.format(self.name,id(self))
+            raise NexusError(msg)
         #end if
     #end def validate
 
@@ -1106,7 +1145,11 @@ class Machine(NexusCore):
         self.app_directories = None
 
         if not isinstance(name,str):
-            self.error('machine name must be a string\nyou provided '+str(name))
+            msg = (
+                'machine name must be a string\n'
+                'you provided '+str(name)
+                )
+            raise TypeError(msg)
         #end if
 
         Machine.add(self)
@@ -1134,7 +1177,8 @@ class Machine(NexusCore):
             self.waiting.add(jid)
             #self.write_job_states('add_job')
         else:
-            self.error('add_job received non-Job instance '+job.__class__.__name__)
+            msg = 'add_job received non-Job instance '+job.__class__.__name__
+            raise TypeError(msg)
         #end if
     #end def add_job
 
@@ -1150,12 +1194,23 @@ class Machine(NexusCore):
         vars = set(info.keys())
         invalid = vars-self.allowed_user_info
         if len(invalid)>0:
-            self.error('invalid inputs encountered in incorporate_user_info\nallowed inputs: {0}\n  invalid inputs: {1}'.format(list(self.allowed_user_info),list(invalid)))
+            msg = (
+                'invalid inputs encountered in incorporate_user_info\n'
+                'allowed inputs: {0}\n'
+                '  invalid inputs: {1}'.format(
+                    list(self.allowed_user_info),list(invalid)
+                    )
+                )
+            raise ValueError(msg)
         #end if
         if 'app_directories' in info:
             ad = info.app_directories
             if not isinstance(ad,dict) and not isinstance(ad,obj):
-                self.error('app_directories must be of type dict or obj\nyou provided '+ad.__class__.__name__)
+                msg = (
+                    'app_directories must be of type dict or obj\n'
+                    'you provided '+ad.__class__.__name__
+                    )
+                raise TypeError(msg)
             #end if
         #end if
         for k,v in info.items():
@@ -1321,7 +1376,12 @@ class Workstation(Machine):
 
         for job in job_req:
             if job.cores>self.cores and not nexus_core.generate_only:
-                self.error('job '+str(job.internal_id)+' is too large to run on this machine\ncores requested: '+str(job.cores)+'\nmachine cores: '+str(self.cores))
+                msg = (
+                    'job '+str(job.internal_id)+' is too large to run on this machine\n'
+                    'cores requested: '+str(job.cores)+'\n'
+                    'machine cores: '+str(self.cores)
+                    )
+                raise ValueError(msg)
             #end if
             if job.cores<=cores_available:
                 iid = job.internal_id
@@ -1330,7 +1390,12 @@ class Workstation(Machine):
                 self.submit_job(job)
                 cores_available-=job.cores
             elif job.cores>self.cores:
-                self.error('job requested more cores than are present on '+self.name+'\ncores requested: {0}\ncores present: {1}'.format(job.cores,self.cores))
+                msg = (
+                    'job requested more cores than are present on '+self.name+'\n'
+                    'cores requested: {0}\n'
+                    'cores present: {1}'.format(job.cores,self.cores)
+                    )
+                raise ValueError(msg)
             else:
                 break
             #end if
@@ -1372,7 +1437,8 @@ class Workstation(Machine):
             job.status = job.states.waiting
             self.waiting.add(jid)
         else:
-            self.error('requeue_job received non-Job instance '+type(job).__name__)
+            msg = 'requeue_job received non-Job instance '+type(job).__name__
+            raise TypeError(msg)
         #end if
     #end def requeue_job
 
@@ -1457,7 +1523,12 @@ class InteractiveCluster(Workstation):
     def init_from_supercomputer(self,super,cores):
         nodes = cores//super.cores_per_node
         if cores-nodes*super.cores_per_node!=0:
-            self.error('interactive cores corresponds to a fractional number of nodes\n  cores '+str(cores)+'\n  cores per node '+str(super.cores_per_node))
+            msg = (
+                'interactive cores corresponds to a fractional number of nodes\n'
+                '  cores '+str(cores)+'\n'
+                '  cores per node '+str(super.cores_per_node)
+                )
+            raise ValueError(msg)
         #end if
         self.init_from_args(super.name+'_interactive',nodes,super.procs_per_node,
                             super.cores_per_proc,super.cores_per_node,
@@ -1542,7 +1613,8 @@ class Supercomputer(Machine):
 
         for var in Supercomputer.required_inputs:
             if self[var] is None:
-                self.error('input variable '+var+' is required to initialize Supercomputer object.')
+                msg = 'input variable '+var+' is required to initialize Supercomputer object.'
+                raise NexusError(msg)
             #end if
         #end for
 
@@ -1657,7 +1729,8 @@ class Supercomputer(Machine):
         elif self.queue_querier=='test_query':
             None
         else:
-            self.error('ability to query queue with '+self.queue_querier+' has not yet been implemented')
+            msg = 'ability to query queue with '+self.queue_querier+' has not yet been implemented'
+            raise NotImplementedError(msg)
         #end if
 
     #end def __init__
@@ -1675,7 +1748,8 @@ class Supercomputer(Machine):
             jid = job.internal_id
             pid = job.system_id
             if pid is None:
-                self.error('job {0} does not have a process id issued by the scheduler'.format(jid))
+                msg = 'job {0} does not have a process id issued by the scheduler'.format(jid)
+                raise ProcessLookupError(msg)
             #end if
             self.process_job(job)
             self.jobs[jid] = job
@@ -1691,7 +1765,8 @@ class Supercomputer(Machine):
                 job.status = job.states.waiting
                 self.waiting.add(jid)
         else:
-            self.error('requeue_job received non-Job instance '+job.__class__.__name__)
+            msg = 'requeue_job received non-Job instance '+job.__class__.__name__
+            raise TypeError(msg)
         #end if
     #end def requeue_job
 
@@ -1707,7 +1782,11 @@ class Supercomputer(Machine):
         no_cores = job.cores is None
         no_nodes = job.nodes is None
         if no_cores and no_nodes:
-            self.error('job did not specify cores or nodes\nAt least one must be provided')
+            msg = (
+                'job did not specify cores or nodes\n'
+                'At least one must be provided'
+                )
+            raise ValueError(msg)
         elif no_cores:
             job.cores = self.cores_per_node*job.nodes
         elif no_nodes:
@@ -1746,7 +1825,8 @@ class Supercomputer(Machine):
             if self.account is not None:
                 job.account = self.account
             elif self.requires_account:
-                self.error('account not specified for job on '+self.name)
+                msg = 'account not specified for job on '+self.name
+                raise ValueError(msg)
             #end if
         #end if
         self.post_process_job(job)
@@ -1787,7 +1867,8 @@ class Supercomputer(Machine):
             elif 'envs' in job.run_options:
                 envs = job.run_options.envs
             else:
-                self.error('failed to set env options for runjob')
+                msg = 'failed to set env options for runjob'
+                raise RuntimeError(msg)
             #end if
             job.run_options.add(
                 np       = '--np '+str(job.processes),
@@ -1808,7 +1889,8 @@ class Supercomputer(Machine):
         elif launcher=='lrun': # Lassen
             None # Lassen class takes care of this in post_process_job
         else:
-            self.error(launcher+' is not yet implemented as an application launcher')
+            msg = launcher+' is not yet implemented as an application launcher'
+            raise NotImplementedError(msg)
         #end if
     #end def process_job_options
 
@@ -1826,7 +1908,11 @@ class Supercomputer(Machine):
     def query_queue(self,out=None):
         self.system_queue.clear()
         if self.query_with_username and self.user is None:
-            self.error('querying queue on machine "{}" requires user name\nplease provide username via the "user" keyword in settings'.format(self.name))
+            msg = (
+                'querying queue on machine "{}" requires user name\n'
+                'please provide username via the "user" keyword in settings'.format(self.name)
+                )
+            raise RuntimeError(msg)
         #end if
         if self.queue_querier=='qstat':
             if out is None:
@@ -1847,7 +1933,8 @@ class Supercomputer(Machine):
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
-                            self.error('job state '+status+' is unrecognized')
+                            msg = 'job state '+status+' is unrecognized'
+                            raise RuntimeError(msg)
                         #end if
                     #end if
                 #end if
@@ -1900,7 +1987,8 @@ class Supercomputer(Machine):
                             if status in self.job_states:
                                 self.system_queue[pid] = self.job_states[status]
                             else:
-                                self.error('job state '+status+' is unrecognized')
+                                msg = 'job state '+status+' is unrecognized'
+                                raise RuntimeError(msg)
                             #end if
                         #end if
                     #end if
@@ -1927,7 +2015,8 @@ class Supercomputer(Machine):
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
-                            self.error('job state '+status+' is unrecognized')
+                            msg = 'job state '+status+' is unrecognized'
+                            raise RuntimeError(msg)
                         #end if
                     elif spid.isdigit() and len(tokens)==7:
 
@@ -1937,7 +2026,8 @@ class Supercomputer(Machine):
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
-                            self.error('job state '+status+' is unrecognized')
+                            msg = 'job state '+status+' is unrecognized'
+                            raise RuntimeError(msg)
                         #end if
                     #end if
                 #end if
@@ -1965,7 +2055,8 @@ class Supercomputer(Machine):
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
-                            self.error('job state '+status+' is unrecognized')
+                            msg = 'job state '+status+' is unrecognized'
+                            raise RuntimeError(msg)
                         #end if
                     #end if
                 #end if
@@ -1985,7 +2076,8 @@ class Supercomputer(Machine):
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
-                            self.error('job state '+status+' is unrecognized')
+                            msg = 'job state '+status+' is unrecognized'
+                            raise RuntimeError(msg)
                         #end if
                     #end if
                 #end if
@@ -1996,7 +2088,8 @@ class Supercomputer(Machine):
                 self.system_queue[pid] = 'complete'
             #end for
         else:
-            self.error('ability to query queue with '+self.queue_querier+' has not yet been implemented')
+            msg = 'ability to query queue with '+self.queue_querier+' has not yet been implemented'
+            raise NotImplementedError(msg)
         #end if
         done = []
         for pid,process in self.processes.items():
@@ -2041,9 +2134,14 @@ class Supercomputer(Machine):
     def submit_job(self,job):
         pad = self.enter(job.directory,msg=job.internal_id)
         if job.subfile is None:
-            self.error('submission file not specified for job')
+            msg = 'submission file not specified for job'
+            raise AttributeError(msg, name="subfile", obj=job)
         elif not os.path.exists(job.subfile):
-            self.error('job submission file was not written prior to submission\n  submission file: '+os.path.join(job.directory,job.subfile))
+            msg = (
+                'job submission file was not written prior to submission\n'
+                '  submission file: '+os.path.join(job.directory,job.subfile)
+                )
+            raise FileNotFoundError(msg)
         #end if
         command = self.sub_command(job)
         if nexus_core.generate_only:
@@ -2061,7 +2159,11 @@ class Supercomputer(Machine):
             output=out+'\n'+err
             pid = self.read_process_id(output)
             if pid is None:
-                self.error('process id could not be determined from submission output\n  output:\n'+output)
+                msg = (
+                    'process id could not be determined from submission output\n'
+                    '  output:\n'+output
+                    )
+                raise RuntimeError(msg)
             else:
                 self.log(pad+'  pid: {0}'.format(pid))
             #end if
@@ -2084,7 +2186,8 @@ class Supercomputer(Machine):
         elif self.job_remover=='scancel':
             command = 'scancel '+str(job.system_id)
         else:
-            self.error('ability to remove job using '+self.job_remover+' has not yet been implemented')
+            msg = 'ability to remove job using '+self.job_remover+' has not yet been implemented'
+            raise NotImplementedError(msg)
         #endif
         os.system(command)
     #end def remove_job
@@ -2304,9 +2407,13 @@ class Supercomputer(Machine):
 
         # Report all validation errors
         if errors:
-            self.error('Queue validation failed for queue {}:\n  {}'.format(
-                job.queue, '\n  '.join(errors)))
-            return False
+            msg = (
+                'Queue validation failed for queue {}:\n'
+                '  {}'.format(
+                    job.queue, '\n  '.join(errors)
+                    )
+                )
+            raise NexusError(msg)
         #end if
 
         return True
@@ -2594,7 +2701,11 @@ class Cori(NerscMachine):
             self.cores_per_node = 32
             self.ram_per_node   = 2048
         else:
-            self.error('SLURM input "constraint" must contain either "knl", "haswell", or "amd" on Cori\nyou provided: {0}'.format(job.constraint))
+            msg = (
+                'SLURM input "constraint" must contain either "knl", "haswell", or "amd" on Cori\n'
+                'you provided: {0}'.format(job.constraint)
+                )
+            raise ValueError(msg)
         #end if
         if job.core_spec is not None:
             self.cores_per_node -= job.core_spec
@@ -2610,7 +2721,11 @@ class Cori(NerscMachine):
         elif 'amd' in job.constraint:
             hyperthreads   = 2
         else:
-            self.error('SLURM input "constraint" must contain either "knl", "haswell" or "amd" on Cori\nyou provided: {0}'.format(job.constraint))
+            msg = (
+                'SLURM input "constraint" must contain either "knl", "haswell" or "amd" on Cori\n'
+                'you provided: {0}'.format(job.constraint)
+                )
+            raise ValueError(msg)
         #end if
         cpus_per_task = int(np.floor(float(self.cores_per_node)/job.processes_per_node))*hyperthreads
         c='#!/bin/bash\n'
@@ -2672,7 +2787,11 @@ class Perlmutter(NerscMachine):
             self.ram_per_node   = 256
             self.gpus_per_node  = 4
         else:
-            self.error('SLURM input "constraint" must contain either "cpu" or "gpu" on Perlmutter\nyou provided: {0}'.format(job.constraint))
+            msg = (
+                'SLURM input "constraint" must contain either "cpu" or "gpu" on Perlmutter\n'
+                'you provided: {0}'.format(job.constraint)
+                )
+            raise ValueError(msg)
         #end if
     #end def pre_process_job
 
@@ -2682,11 +2801,19 @@ class Perlmutter(NerscMachine):
         # Check if the user gave reasonable processes_per_node
         if 'cpu' in job.constraint:
             if job.processes_per_node > self.cores_per_node:
-                self.error('processes_per_node can not be greater than logical CPUs per node (256)\nyou provided: {0}'.format(job.processes_per_node))
+                msg = (
+                    'processes_per_node can not be greater than logical CPUs per node (256)\n'
+                    'you provided: {0}'.format(job.processes_per_node)
+                    )
+                raise ValueError(msg)
             #end if
         elif 'gpu' in job.constraint:
             if job.processes_per_node > self.gpus_per_node:
-                self.error('processes_per_node can not be greater than GPUs per node (4)\nyou provided: {0}'.format(job.processes_per_node))
+                msg = (
+                    'processes_per_node can not be greater than GPUs per node (4)\n'
+                    'you provided: {0}'.format(job.processes_per_node)
+                    )
+                raise ValueError(msg)
             #end if
             # Also check if the user forgot to include '_g' in the account name for GPU jobs
             if '_g' not in job.account:
@@ -2712,16 +2839,29 @@ class Perlmutter(NerscMachine):
             max_partition = self.nodes
             max_time = 12
         else:
-            self.error('The requested queue is not implemented.')
+            msg = 'The requested queue is not implemented.'
+            raise NotImplementedError(msg)
         #end if
         job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
         if job.total_hours > max_time:
-            self.error('The maximum runtime on {0} queue should not be more than {1} hours\n  you requested: {2} hours'.format(job.queue,max_time,job.total_hours))
+            msg = (
+                'The maximum runtime on {0} queue should not be more than {1} hours\n'
+                '  you requested: {2} hours'.format(job.queue,max_time,job.total_hours)
+                )
+            raise ValueError(msg)
         #end if
         if job.nodes<base_partition:
-            self.error('The number of nodes on {0} queue should not be less than {1}\n  you requested: {2}'.format(job.queue,base_partition,job.nodes))
+            msg = (
+                'The number of nodes on {0} queue should not be less than {1}\n'
+                '  you requested: {2}'.format(job.queue,base_partition,job.nodes)
+                )
+            raise ValueError(msg)
         elif job.nodes>max_partition:
-            self.error('The number of nodes on {0} queue should not be more than {1}\n  you requested: {2}'.format(job.queue,max_partition,job.nodes))
+            msg = (
+                'The number of nodes on {0} queue should not be more than {1}\n'
+                '  you requested: {2}'.format(job.queue,max_partition,job.nodes)
+                )
+            raise ValueError(msg)
         #end if
 
         # Use the user cpus_per_task if specified. If not specified, then use available cpus for each process
@@ -3346,7 +3486,11 @@ class SuperMUC(Supercomputer):
         intel = job.type=='MPICH'
         omp   = isinstance(job.threads,int) and job.threads>1
         if not ibm and not intel:
-            self.error('the only types of MPI supported are "parallel" and "MPICH"\nreceived MPI with type: {0}'.format(job.type))
+            msg = (
+                'the only types of MPI supported are "parallel" and "MPICH"\n'
+                'received MPI with type: {0}'.format(job.type)
+                )
+            raise ValueError(msg)
         #end if
         c ='#!/bin/bash\n'
         c+='#@ job_name         = {0}\n'.format(job.name)
@@ -3749,7 +3893,11 @@ class Frontier(Supercomputer):
             self.cores_per_node = 56
             self.gpus_per_node  = 4
         else:
-            self.error('SLURM input "constraint" must contain either "cpu" or "gpu" on Frontier\nyou provided: {0}'.format(job.constraint))
+            msg = (
+                'SLURM input "constraint" must contain either "cpu" or "gpu" on Frontier\n'
+                'you provided: {0}'.format(job.constraint)
+                )
+            raise ValueError(msg)
         #end if
     #end def pre_process_job
     
@@ -4554,7 +4702,8 @@ class Aurora(Supercomputer):
             self.ram_per_node   = 768
             self.gpus_per_node  = 6
         else:
-            self.error('CPU or GPU constraint must be specified for Aurora')
+            msg = 'CPU or GPU constraint must be specified for Aurora'
+            raise ValueError(msg)
         #end if
     #end def pre_process_job
 
@@ -4576,7 +4725,8 @@ class Aurora(Supercomputer):
                 # end for
 
             else:
-                self.error('CPU or GPU constraint must be specified for Aurora')
+                msg = 'CPU or GPU constraint must be specified for Aurora'
+                raise ValueError(msg)
             #end if
 
             opt = obj(
