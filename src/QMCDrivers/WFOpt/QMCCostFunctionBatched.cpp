@@ -412,7 +412,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 
   app_log().flush();
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
+
 
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
@@ -606,7 +606,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
 
   app_log().flush();
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
+
 
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];

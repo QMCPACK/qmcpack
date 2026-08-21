@@ -147,6 +147,7 @@ from .generic import sorted_generic
 from .periodic_table import Elements
 from .structure import Structure, Jellium, get_kpath
 from .physical_system import PhysicalSystem
+from .pseudoset import pp_elem_label, PseudoSet
 from .simulation import SimulationInput, SimulationInputTemplate
 from .pwscf_input import array_to_string as pwscf_array_string
 from .utilities import path_string
@@ -2105,8 +2106,8 @@ param = Param()
 class simulation(QIxml):
     attributes = ('method',) # afqmc
     elements   = ('project','random','include','qmcsystem','particleset', # rsqmc
-                  'wavefunction','hamiltonian','init','traces',           # rsqmc
-                  'mcwalkerset','qmc','loop','cmc',                       # rsqmc
+                  'wavefunction','hamiltonian','init','traces','estimators', # rsqmc
+                  'mcwalkerset','qmc','loop','cmc',                          # rsqmc
                   'afqmcinfo','walkerset','propagator','execute')         # afqmc
     afqmc_order = ('project','random','afqmcinfo','hamiltonian',
                    'wavefunction','walkerset','propagator','execute')
@@ -2919,8 +2920,8 @@ class vmc(QIxml):
     attributes = ('method','move','profiling','kdelay',         # batched
                   'multiple','warp','gpu','checkpoint','trace', # legacy - batched
                   'target','completed','id')
-    elements   = ('estimator', # batched
-                  'record')    # legacy - batched
+    elements   = ('estimator','estimators', # batched
+                  'record')                 # legacy - batched
     parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps',         # batched
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
                   'storeconfigs','checkproperties','recordconfigs','current',
@@ -2940,7 +2941,7 @@ class dmc(QIxml):
     attributes = ('method','move','profiling','kdelay',         # batched
                   'gpu','multiple','warp','checkpoint','trace', # legacy - batched
                   'target','completed','id','continue')
-    elements   = ('estimator',)
+    elements   = ('estimator','estimators')
     parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps',
                   'crowd_serialize_walkers',            # batched
                   'blocks','steps','substeps','timestep','maxcpusecs','rewind',
@@ -2978,7 +2979,7 @@ class vmc_batch(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ('method','move','profiling','kdelay','checkpoint')
-    elements   = ('estimator',)
+    elements   = ('estimator','estimators')
     parameters = ('total_walkers','walkers_per_rank','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','usedrift')
     write_types = obj(usedrift=yesno,profiling=yesno)
 #end class vmc_batch
@@ -2990,7 +2991,7 @@ class dmc_batch(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ('method','move','profiling','kdelay','checkpoint')
-    elements   = ('estimator',)
+    elements   = ('estimator','estimators')
     parameters = ('total_walkers','walkers_per_rank','crowd_serialize_walkers','crowds','warmupsteps','blocks','steps','substeps','timestep','maxcpusecs','rewind','storeconfigs','checkproperties','recordconfigs','current','stepsbetweensamples','samplesperthread','samples','reconfiguration','nonlocalmoves','maxage','alpha','gamma','reserve','use_nonblocking','branching_cutoff_scheme','feedback','sigmabound')
     write_types = obj(usedrift=yesno,profiling=yesno,reconfiguration=yesno,nonlocalmoves=yesnostr,use_nonblocking=yesno, crowd_serialize_walkers=yesno)
 #end class dmc_batch
@@ -3672,6 +3673,53 @@ class QmcpackInput(SimulationInput,Names):
         #end if
         return qmc
     #end def unroll_calculations
+
+    def get_qmc_estimator_inputs(self):
+        """Return global and section-local estimator containers by output series.
+
+        QMCPACK permits at most one global ``<estimators>`` container, either
+        below ``<simulation>`` or below ``<qmcsystem>``, and a local container
+        below each VMC or DMC ``<qmc>`` section.  The returned containers are
+        deliberately not merged: QMCPACK combines their children when
+        constructing each driver, and callers that need semantic estimator
+        metadata must retain the QMC-section scope. Series assignments follow
+        Nexus's existing output-info convention.
+        """
+        sim = self.simulation
+        global_estimators = []
+        if 'estimators' in sim:
+            global_estimators.append(sim.estimators)
+        #end if
+        if 'qmcsystem' in sim:
+            qmcsystems = [sim.qmcsystem]
+        elif 'qmcsystems' in sim:
+            qmcsystems = list(sim.qmcsystems)
+        else:
+            qmcsystems = []
+        #end if
+        for qs in qmcsystems:
+            if 'estimators' in qs:
+                global_estimators.append(qs.estimators)
+            #end if
+        #end for
+        if len(global_estimators)>1:
+            self.error('only one global <estimators> node is permitted')
+        #end if
+        if len(global_estimators)==1:
+            global_estimators = global_estimators[0]
+        else:
+            global_estimators = None
+        #end if
+
+        qmc_inputs = []
+        series = sim.project.series
+        for qmc in self.unroll_calculations(modify=False):
+            local_estimators = qmc.estimators if 'estimators' in qmc else None
+            qmc_inputs.append(obj(qmc=qmc,series=series,estimators=local_estimators))
+            series += 1
+        #end for
+        return obj(global_estimators=global_estimators,qmc=qmc_inputs)
+    #end def get_qmc_estimator_inputs
 
     def get(self,*names):
         base = self.get_base()
@@ -5607,9 +5655,8 @@ class BundledQmcpackInput(SimulationInput):
                 bfilepath = os.path.join(path,bfile)
                 inp.write(bfilepath)
             #end for
-            fobj = open(filepath,'w')
-            fobj.write(c)
-            fobj.close()
+            with open(filepath,'w') as fobj:
+                fobj.write(c)
         #end if
     #end def write
 #end class BundledQmcpackInput
@@ -6708,6 +6755,8 @@ def generate_hamiltonian(name         = 'h0',
     iname   = ions
     wfname  = wavefunction
     ppfiles = pseudos
+    ppfiles = PseudoSet.pseudo_remap('qmcpack',ppfiles,system)
+    ppfiles = obj((pp_elem_label(f,guard=True)[1],f) for f in ppfiles)
     del electrons
     del ions
     del pseudos

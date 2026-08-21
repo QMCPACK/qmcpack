@@ -226,7 +226,7 @@ void DMC::resetUpdateEngines()
   app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs" << std::endl;
 }
 
-bool DMC::run()
+void DMC::run()
 {
   LoopTimer<> dmc_loop;
 
@@ -317,7 +317,7 @@ bool DMC::run()
   Traces->stopRun();
 #endif
   wlog_manager_->stopRun();
-  return finalize(nBlocks);
+  finalize(nBlocks);
 }
 
 

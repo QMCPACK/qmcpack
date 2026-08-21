@@ -314,7 +314,7 @@ size_t VMCBatched::compute_samples_per_rank(const size_t num_blocks,
  *  If does consider giving more to the thread by value that should
  *  end up thread local. (I think)
  */
-bool VMCBatched::run()
+void VMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
@@ -469,7 +469,7 @@ bool VMCBatched::run()
   wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
 
-  return finalize(num_blocks, true);
+  finalize(num_blocks, true);
 }
 
 RefVector<QMCDriverNew::ContextForSteps> VMCBatched::getContextForStepsRefs() const

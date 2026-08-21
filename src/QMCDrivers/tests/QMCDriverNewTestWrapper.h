@@ -175,7 +175,7 @@ public:
     CHECK(determineNumCrowds(4, 2) == 2);
   }
 
-  bool run() override { return false; }
+  void run() override { return; }
 
   int get_num_crowds() { return crowds_.size(); }
 

@@ -51,8 +51,18 @@ class generic_settings:
 
 
 class NexusError(Exception):
-    None
+    """Exception for errors that are caused by a bug in Nexus."""
 #end class NexusError
+
+
+class FileFormatError(Exception):
+    """Exception raised when a file is not formatted as expected."""
+#end class FileFormatError
+
+
+class NotAnElementError(ValueError):
+    """Exception raised when a value can not be interpreted as an element."""
+#end class FileFormatError
 
 
 class NexusDevWarning(Warning):
@@ -64,7 +74,7 @@ class NexusDevWarning(Warning):
 
 
 class NexusUserWarning(NexusDevWarning):
-    None
+    pass
 #end class NexusUserWarning
 
 
@@ -576,12 +586,9 @@ class object_interface(object):
         if fpath is None:
             fpath='./'+self.__class__.__name__+'.p'
         #end if
-        fobj = open(fpath,'wb')
-        binary = pickle.HIGHEST_PROTOCOL
-        pickle.dump(self,fobj,binary)
-        fobj.close()
-        del fobj
-        del binary
+        with open(fpath,'wb') as fobj:
+            pickle.dump(self,fobj,pickle.HIGHEST_PROTOCOL)
+
         return
     #end def save
 
@@ -589,41 +596,28 @@ class object_interface(object):
         if fpath is None:
             fpath='./'+self.__class__.__name__+'.p'
         #end if
-        fobj = open(fpath,'rb')
-
-        try:
-            tmp = pickle.load(fobj)
-        except (ImportError,ModuleNotFoundError):
-            fobj.seek(0)
+        with open(fpath,'rb') as fobj:
             try:
-                # Old pickles from before Nexus was packaged (PR #5700, December 20 2025)
-                # won't have the correct module path. The custom unpickler will handle this by 
-                # prepending "nexus." to the module path
-                tmp = NexusUnpickler(fobj).load()
-            except UnpicklingError:
+                tmp = pickle.load(fobj)
+            except (ImportError,ModuleNotFoundError):
+                fobj.seek(0)
                 try:
+                    # Old pickles from before Nexus was packaged (PR #5700, December 20 2025)
+                    # won't have the correct module path. The custom unpickler will handle this by 
+                    # prepending "nexus." to the module path
+                    tmp = NexusUnpickler(fobj).load()
+                except UnpicklingError:
                     # NumPy pickles can use latin1 encoding
                     # They will likely still fail from an underflow since they are not pickle-compliant
                     tmp = NexusUnpickler(fobj).load(encoding='latin1')
-                except UnpicklingError:
-                    # fallback for files created with protocol 5
-                    # in environments that only support up to protocol 4
-                    try:
-                        import pickle5
-                        tmp = pickle5.load(fobj)
-                    except ImportError:
-                        have_pickle5 = False
-                        error("Highest pickle protocol in current python version is {}, but {} is written using a higher protocol. Install pickle5, e.g. via pip, to enable protocol 5 in python <= 3.7.x".format(pickle.HIGHEST_PROTOCOL, fpath))
                 #end try
             #end try
-        #end try
-        fobj.close()
+        #end with
         d = self.__dict__
         d.clear()
         for k,v in tmp.__dict__.items():
             d[k] = v
         #end for
-        del fobj
         del tmp
         return
     #end def load
@@ -1414,20 +1408,25 @@ class Void(object):
         elif module is None:
             msg = 'item '+str(item)+' is from an unavailable module'
         elif item is None:
-            msg = 'encountered a void item from unavailable module '+str(module)+'  \nthis python module must be installed on your system to use this feature'
+            msg = (
+                'encountered a void item from unavailable module '+str(module)+'  \n'
+                'this python module must be installed on your system to use this feature'
+                )
         else:
-            msg = 'item '+str(item)+' is from unavailable module '+str(module)+'  \nthis python module must be installed on your system to use this feature'
+            msg = (
+                'item '+str(item)+' is from unavailable module '+str(module)+'  \n'
+                'this python module must be installed on your system to use this feature'
+                )
         #end if
-        error(msg,'import')
+        raise ImportError(msg)
     #end def _unavailable
 
-        
+
     @classmethod
     def _class_unavailable(cls):
         msg = 'encountered a void item from an unavailable module'
-        error(msg,'import')
+        raise ImportError(msg)
     #end def _class_unavailable
-        
 
 
     def __init__(self,module=None,item=None):

@@ -166,9 +166,8 @@ class ScalarsDatAnalyzer(DatAnalyzer):
 
         data = lt[:,1:].transpose()
 
-        fobj = open(filepath,'r')
-        variables = fobj.readline().split()[2:]
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            variables = fobj.readline().split()[2:]
 
         self.data = QAdata()
         for i in range(len(variables)):
@@ -220,9 +219,8 @@ class DmcDatAnalyzer(DatAnalyzer):
 
         data = lt[:,1:].transpose()
 
-        fobj = open(filepath,'r')
-        variables = fobj.readline().split()[2:]
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            variables = fobj.readline().split()[2:]
 
         self.data = QAdata()
         for i in range(len(variables)):

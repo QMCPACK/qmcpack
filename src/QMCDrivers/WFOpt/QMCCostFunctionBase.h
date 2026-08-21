@@ -123,15 +123,12 @@ public:
 
   inline void getParameterTypes(std::vector<int>& types) const { return opt_vars.getParameterTypeList(types); }
 
-  ///dump the current parameters and other report
-  void Report();
+
   ///report  parameters at the end
   void reportParameters();
 
   ///report  parameters in HDF5 at the end
   void reportParametersH5();
-  ///return the counter which keeps track of optimization steps
-  inline int getReportCounter() const { return ReportCounter; }
 
   void setWaveFunctionNode(xmlNodePtr cur) { m_wfPtr = cur; }
 
@@ -198,8 +195,6 @@ protected:
   ///Hamiltonian
   QMCHamiltonian& H;
 
-  ///if true, do not write the *.opt.#.xml
-  bool Write2OneXml;
   /** |E-E_T|^PowerE is used for the cost function
    *
    * default PowerE=1
@@ -207,8 +202,6 @@ protected:
   int PowerE;
   /// global number of samples to use in correlated sampling
   int NumSamples;
-  ///counter for output
-  int ReportCounter;
   ///weights for energy and variance in the cost function
   Return_rt w_en, w_var, w_abs, w_w;
   ///value of the cost function
@@ -246,13 +239,7 @@ protected:
   OptVariables opt_vars;
   // unchanged initial checked-in variables
   OptVariables InitVariables;
-  /** index mapping for <negate> constraints
-   *
-   * - negateVarMap[i][0] : index in opt_vars
-   * - negateVarMap[i][1] : index in opt_vars
-   */
-  ///index mapping for <negative> constraints
-  std::vector<TinyVector<int, 2>> negateVarMap;
+
   ///stream to which progress is sent
   std::ostream* msg_stream;
   ///xml node to be dumped
@@ -297,8 +284,6 @@ protected:
   std::vector<ParticleGradient*> dLogPsi;
   ///** Fixed  Laplacian , \f$\nabla^2\ln\Psi\f$, components */
   std::vector<ParticleLaplacian*> d2LogPsi;
-  ///stream for debug
-  std::unique_ptr<std::ostream> debug_stream;
 
 
   void updateXmlNodes();

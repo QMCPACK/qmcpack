@@ -34,15 +34,18 @@ public:
   bool empty() const { return collection_.size() == 0; }
 
   size_t addResource(std::unique_ptr<Resource>&& res, bool noprint = false);
-  void printResources() const;
+  void printResources(std::ostream& os) const;
 
   template<class RS>
-  ResourceHandle<RS> lendResource() { return dynamic_cast<RS&>(lendResourceImpl()); }
+  ResourceHandle<RS> lendResource()
+  { return dynamic_cast<RS&>(lendResourceImpl()); }
 
   template<class RS>
-  void takebackResource(ResourceHandle<RS>& res_handle) { takebackResourceImpl(res_handle.release()); }
+  void takebackResource(ResourceHandle<RS>& res_handle)
+  { takebackResourceImpl(res_handle.release()); }
 
   void rewind(size_t cursor = 0) { cursor_index_ = cursor; }
+
 private:
   Resource& lendResourceImpl();
   void takebackResourceImpl(Resource& res);

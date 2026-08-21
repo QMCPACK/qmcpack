@@ -23,14 +23,14 @@ ResourceCollection::ResourceCollection(const ResourceCollection& ref) : name_(re
     addResource(std::unique_ptr<Resource>(res->makeClone()), true);
 }
 
-void ResourceCollection::printResources() const
+void ResourceCollection::printResources(std::ostream& os) const
 {
-  std::cout << "list resources in " << getName() << std::endl;
-  std::cout << "-------------------------------" << std::endl;
+  os << "list resources in " << getName() << std::endl;
+  os << "-------------------------------" << std::endl;
   for (int i = 0; i < collection_.size(); i++)
-    std::cout << "resource " << i << "    name: " << collection_[i]->getName()
-              << "    address: " << collection_[i].get() << std::endl;
-  std::cout << "-------------------------------" << std::endl << std::endl;
+    os << "resource " << i << "    name: " << collection_[i]->getName() << "    address: " << collection_[i].get()
+       << std::endl;
+  os << "-------------------------------" << std::endl << std::endl;
 }
 
 size_t ResourceCollection::addResource(std::unique_ptr<Resource>&& res, bool noprint)

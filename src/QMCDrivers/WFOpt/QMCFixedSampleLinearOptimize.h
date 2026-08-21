@@ -56,7 +56,7 @@ public:
   ~QMCFixedSampleLinearOptimize() override;
 
   ///Run the Optimization algorithm.
-  bool run() override;
+  void run() override;
   ///preprocess xml node
   bool put(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
@@ -83,21 +83,21 @@ private:
                     const RealType ic) const;
 
   // perform the adaptive three-shift update
-  bool adaptive_three_shift_run();
+  void adaptive_three_shift_run();
 
   // perform the single-shift update, no sample regeneration
-  bool one_shift_run();
+  void one_shift_run();
 
   // perform optimization using a gradient descent algorithm
-  bool descent_run();
+  void descent_run();
 
 #ifdef HAVE_LMY_ENGINE
   // use hybrid approach of descent and blocked linear method for optimization
-  bool hybrid_run();
+  void hybrid_run();
 #endif
 
   // Perform test of parameter gradients
-  bool test_run();
+  void test_run();
 
   std::unique_ptr<GradientTest> testEngineObj;
 

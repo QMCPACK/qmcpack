@@ -79,7 +79,8 @@ class Gamess(Simulation):
         # nearly all of these are names of output/work files
         # setup the environment to run gamess
         if not isinstance(self.ericfmt,str):
-            self.error('you must set ericfmt with settings() or Gamess.settings()')
+            msg = 'you must set ericfmt with settings() or Gamess.settings()'
+            raise RuntimeError(msg)
         #end if
         env = obj()
         for file,unit in GamessInput.file_units.items():
@@ -125,7 +126,8 @@ class Gamess(Simulation):
                 result.orbitals = analyzer.orbitals
             #end if
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result
@@ -135,7 +137,8 @@ class Gamess(Simulation):
         input = self.input
         if result_name=='orbitals':
             if result.vec is None or result.norbitals<1:
-                self.error('could not obtain orbitals from previous GAMESS run')
+                msg = 'could not obtain orbitals from previous GAMESS run'
+                raise RuntimeError(msg)
             #end if
             if 'guess' not in input:
                 input.guess = GuessGroup()
@@ -150,7 +153,8 @@ class Gamess(Simulation):
             #end if
             if self.mo_reorder is not None:
                 if 'orbitals' not in result:
-                    self.error('Orbital information from prior calculation "{}" located at {} cannot be found. You requested orbital reordering via the  "mo_reorder" input keyword.  Due to missing information, this operation cannot be performed.  The current simulation "{}" is located at {}.'.format(sim.identifier,sim.locdir,self.identifier,self.locdir))
+                    msg = 'Orbital information from prior calculation "{}" located at {} cannot be found. You requested orbital reordering via the  "mo_reorder" input keyword.  Due to missing information, this operation cannot be performed.  The current simulation "{}" is located at {}.'.format(sim.identifier,sim.locdir,self.identifier,self.locdir)
+                    raise RuntimeError(msg)
                     self.block()
                 #end if
                 guess_inputs = obj()
@@ -161,12 +165,32 @@ class Gamess(Simulation):
                 for spin,vname in order_map.items():
                     nelec = nelec_map[spin]
                     if len(self.mo_reorder)<nelec:
-                        self.error('Too few symmetries provided in "mo_reorder" for spin "{0}".\nNumber of electrons with spin "{0}": {1}\nNumber of entries in "mo_reorder": {2}\nContents of "mo_reorder": {3}\nSimulation identifier: {4}\nSimulation location: {5}'.format(spin,nelec,len(self.mo_reorder),self.mo_reorder,self.identifier,self.locdir))
+                        msg = (
+                            'Too few symmetries provided in "mo_reorder" for spin "{0}".\n'
+                            'Number of electrons with spin "{0}": {1}\n'
+                            'Number of entries in "mo_reorder": {2}\n'
+                            'Contents of "mo_reorder": {3}\n'
+                            'Simulation identifier: {4}\n'
+                            'Simulation location: {5}'.format(
+                                spin,nelec,len(self.mo_reorder),self.mo_reorder,self.identifier,self.locdir
+                                )
+                            )
+                        raise RuntimeError(msg)
                     #end if
                     symmetries = [s.lower() for s in orbs[spin].symmetry]
                     missing = set(self.mo_reorder)-set(symmetries)
                     if len(missing)>0:
-                        self.error('Symmetries provided by "mo_reorder" keyword are not found in the outputted MOs.\nSet of symmetries provided in "mo_reorder": {}\nSet of symmetries present in MOs: {}\nContents of "mo_reorder": {}\nSimulation identifier: {}\nSimulation location: {}'.format(sorted(set(self.mo_reorder)),sorted(set(symmetries)),self.mo_reorder,self.identifier,self.locdir))
+                        msg = (
+                            'Symmetries provided by "mo_reorder" keyword are not found in the outputted MOs.\n'
+                            'Set of symmetries provided in "mo_reorder": {}\n'
+                            'Set of symmetries present in MOs: {}\n'
+                            'Contents of "mo_reorder": {}\n'
+                            'Simulation identifier: {}\n'
+                            'Simulation location: {}'.format(
+                                sorted(set(self.mo_reorder)),sorted(set(symmetries)),self.mo_reorder,self.identifier,self.locdir
+                                )
+                            )
+                        raise RuntimeError(msg)
                     #end if
                     occ  = np.zeros(len(symmetries),dtype=bool)
                     for symm in self.mo_reorder[:nelec]:
@@ -178,7 +202,17 @@ class Gamess(Simulation):
                         #end for
                     #end for
                     if occ.sum()<nelec:
-                        self.error('Too few orbitals occupied based on "mo_reorder" request.\nNumber of orbitals occupied: {}\nNumber of spin "{}" electrons: {}\nContents of "mo_reorder": {}\nSimulation identifier: {}\nSimulation location: {}'.format(occ.sum(),spin,nelec,self.mo_reorder,self.identifier,self.locdir))
+                        msg = (
+                            'Too few orbitals occupied based on "mo_reorder" request.\n'
+                            'Number of orbitals occupied: {}\n'
+                            'Number of spin "{}" electrons: {}\n'
+                            'Contents of "mo_reorder": {}\n'
+                            'Simulation identifier: {}\n'
+                            'Simulation location: {}'.format(
+                                occ.sum(),spin,nelec,self.mo_reorder,self.identifier,self.locdir
+                                )
+                            )
+                        raise RuntimeError(msg)
                     #end if
                     indices = np.arange(len(symmetries),dtype=int)[occ]+1
                     start = 0
@@ -210,7 +244,8 @@ class Gamess(Simulation):
                 )
             input.vec = FormattedGroup(result.vec)
         else:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
+            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
     #end def incorporate_result
 
@@ -243,7 +278,8 @@ class Gamess(Simulation):
     def output_filename(self,name):
         name = name.upper()
         if name not in GamessInput.file_units:
-            self.error('gamess does not produce a file matching the requested description: {0}'.format(name))
+            msg = 'gamess does not produce a file matching the requested description: {0}'.format(name)
+            raise ValueError(msg)
         #end if
         unit = GamessInput.file_units[name]
         filename = '{0}.F{1}'.format(self.identifier,str(unit).zfill(2))
@@ -261,7 +297,7 @@ class Gamess(Simulation):
 
 
 def generate_gamess(**kwargs):
-    sim_args,inp_args = Gamess.separate_inputs(kwargs,copy_pseudos=False,sim_kw=['mo_reorder'])
+    sim_args,inp_args = Gamess.separate_inputs(kwargs,sim_kw=['mo_reorder'])
 
     if 'input' not in sim_args:
         sim_args.input = generate_gamess_input(**inp_args)
@@ -270,7 +306,6 @@ def generate_gamess(**kwargs):
 
     return gamess
 #end def generate_gamess
-
 
 
 
