@@ -218,9 +218,6 @@ public:
    */
   void turnOnPerParticleSK();
 
-  /** Get state (on/off) of per particle storage in Structure Factor
-   */
-  bool getPerParticleSKState() const;
 
   ///retrun the SpeciesSet of this particle set
   inline SpeciesSet& getSpeciesSet() { return my_species_; }
@@ -423,7 +420,7 @@ public:
   void convert2Unit(ParticlePos& pout);
   void convert2Cart(ParticlePos& pout);
   void convert2UnitInBox(const ParticlePos& pint, ParticlePos& pout);
-  void convert2CartInBox(const ParticlePos& pint, ParticlePos& pout);
+
 
   void applyBC(const ParticlePos& pin, ParticlePos& pout);
   void applyBC(ParticlePos& pos);

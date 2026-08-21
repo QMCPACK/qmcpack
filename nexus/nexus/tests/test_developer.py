@@ -76,16 +76,11 @@ def test_unavailable():
         ]
     for op in operations:
         for v in void_imports:
-            try:
+            with pytest.raises(
+                ImportError,
+                match="this python module must be installed on your system to use this feature",
+                ):
                 op(v)
-                raise FailedTest
-            except NexusError:
-                None
-            except FailedTest:
-                failed()
-            except Exception as e:
-                failed(str(e))
-            #end try
         #end for
     #end for
 #end def test_unavailable
