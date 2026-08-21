@@ -37,14 +37,27 @@ public:
 
   void flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false) const;
 
-  /// Pass a complete all-particle proposal directly to the multiwalker implementation.
+  /** Pass an all particle move directly to the multiwalker implementation.
+   *
+   * @tparam CT coordinate type, either POS or POS_SPIN
+   * @param[in,out] p_list ParticleSets to move
+   * @param[in] displacements particle displacements in particle-major order
+   * @param[out] are_valid lattice-validity result for each particle move, in particle-major order
+   * @param[in] skipSK if true, do not update structure factors
+   */
   template<CoordsType CT>
   void flex_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
                                  const MCCoords<CT>& displacements,
                                  std::vector<bool>& are_valid,
                                  bool skipSK = false) const;
 
-  /// Pass mixed all-particle proposal resolution directly to the multiwalker implementation.
+  /** Pass all particle move decisions directly to the multiwalker implementation.
+   *
+   * @param[in,out] p_list ParticleSets containing the attempted moves
+   * @param[in] walkers walker positions and spins used to restore rejected moves
+   * @param[in] accepted one acceptance decision for each ParticleSet
+   * @param[in] skipSK if true, do not update structure factors
+   */
   void flex_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
                                           const RefVector<Walker_t>& walkers,
                                           const std::vector<bool>& accepted,
