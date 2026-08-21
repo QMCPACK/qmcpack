@@ -30,7 +30,7 @@ char* readLine(char* s, int max, std::istream& fp)
   // not initializing this risks in undefined behavior in the case of empty input since
   // anything including \n or ; could be in this.
   char ch = '\0';
-  int i = 0;
+  int i   = 0;
   while (fp.get(ch) && !(ch == '\n' || ch == ';'))
   {
     if (ch == '\\') // line continuation character
@@ -152,23 +152,6 @@ int getwordsWithMergedNumbers(std::vector<std::string>& slist,
   }
 }
 
-void readXmol(std::istream& fxmol, double* data, int numvar)
-{
-  std::vector<std::string> slist;
-  getwords(slist, fxmol);
-  unsigned natom = atoi(slist.front().c_str());
-  getwords(slist, fxmol);
-  int ii         = 0;
-  for (int i = 0; i < natom; i++)
-  {
-    getwords(slist, fxmol);
-    for (int ivar = 1; ivar <= numvar; ivar++)
-    {
-      data[ii++] = atof(slist[ivar].c_str());
-    }
-  }
-}
-
 
 /* \fn
 int getwords(std::vector<std::string>& slist,std::istream& fpos, const char* field, const char* terminate)
@@ -195,34 +178,4 @@ int getwords(std::vector<std::string>& slist, std::istream& fpos, const char* fi
     slist.insert(slist.end(), std::make_move_iterator(vlist.begin()), std::make_move_iterator(vlist.end()));
   };
   return slist.size();
-}
-
-////////////////////////////////////////////////////////
-// simple parser to get around XML parser problem
-////////////////////////////////////////////////////////
-unsigned parseXwords(const char* inbuf, std::vector<std::string>& slist)
-{
-  slist.clear();
-
-  const char* token = "=, <>\"\t\n";
-  std::string tmpstr(inbuf);
-  unsigned num = 0;
-  char* tokenp = strtok(tmpstr.data(), token);
-  while (tokenp && tokenp[0] != '#')
-  {
-    num++;
-    slist.push_back(std::string(tokenp));
-    tokenp = strtok(nullptr, token);
-  }
-  return num;
-}
-
-int getXwords(std::vector<std::string>& slist, std::istream& fp)
-{
-  const int max = 1024;
-  char s[max];
-  if (readLine(s, max, fp))
-    return parseXwords(s, slist);
-  else
-    return -1;
 }
