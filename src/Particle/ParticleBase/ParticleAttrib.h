@@ -20,7 +20,7 @@
 
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsVector.h"
-#include "Utilities/OhmmsObject.h"
+#include "OhmmsData/OhmmsElementBase.h"
 #include "PosUnit.h"
 
 namespace qmcplusplus
@@ -30,7 +30,7 @@ namespace qmcplusplus
  *  Makes Vect
  */
 template<class T, typename Alloc = std::allocator<T>>
-class ParticleAttrib : public Vector<T, Alloc>, public OhmmsObject
+class ParticleAttrib : public Vector<T, Alloc>, public OhmmsElementBase
 {
   using __my_base = Vector<T, Alloc>;
 
@@ -63,7 +63,7 @@ public:
   inline PosUnit getUnit() const { return InUnit; }
   //@}
 
-  OhmmsObject* makeClone() const override { return new ParticleAttrib<T, Alloc>(*this); }
+
 
   /** Specialized to write the unit
    *\return true, if the attribute is relative to a unit
