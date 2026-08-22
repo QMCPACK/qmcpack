@@ -1,7 +1,8 @@
 <simulation>
-<project id="vmc_sho" series="0">
+<project id="det_vmc_sho_allp" series="0">
   <parameter name="driver_version">legacy</parameter>
 </project>
+  <random seed="1776"/>
   <qmcsystem>
     <simulationcell>
       <parameter name="lattice" units="bohr">
@@ -10,7 +11,7 @@
         0 0 10
       </parameter>
       <parameter name="bconds">
-        p p p 
+        p p p
       </parameter>
     </simulationcell>
 
@@ -41,11 +42,10 @@
     </hamiltonian>
   </qmcsystem>
 
-  <qmc method="vmc" move="pbyp">
-    <parameter name="blocks">   256  </parameter>
+  <qmc method="vmc" move="allp">
+    <parameter name="blocks">     3  </parameter>
     <parameter name="steps">      2  </parameter>
     <parameter name="substeps">   2  </parameter>
     <parameter name="timestep"> 2.0  </parameter>
-    <parameter name="usedrift">  yes </parameter>
   </qmc>
 </simulation>
