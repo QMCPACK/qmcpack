@@ -17,6 +17,7 @@
 #include "Concurrency/OpenMP.h"
 #include "spline2/MultiBspline.hpp"
 #include "spline2/MultiBsplineOffload.hpp"
+#include "spline2/MultiBsplineOffloadMapper.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 #include "spline2/MultiBsplineEval_OMPoffload.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
@@ -35,12 +36,12 @@ SplineR2R<ST>::SplineR2R(const std::string& my_name,
                          std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
                          bool use_offload)
     : BsplineSet(my_name, size, prim_lattice),
-      use_offload_(use_offload),
       offload_timer_(createGlobalTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
       GGt(dot(transpose(prim_lattice.G), prim_lattice.G)),
       GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
       prim_lattice_G_offload(std::make_shared<OffloadVector<ST>>(9)),
-      SplineInst(std::move(multi_spline))
+      SplineInst(std::move(multi_spline)),
+      offload_mapper_(use_offload ? std::make_shared<MultiBsplineOffloadMapper<ST>>(*SplineInst) : nullptr)
 {
   for (std::uint32_t i = 0; i < 9; i++)
   {
@@ -57,8 +58,11 @@ SplineR2R<ST>::SplineR2R(const SplineR2R& in) = default;
 template<typename ST>
 void SplineR2R<ST>::finalizeConstruction()
 {
-  if (use_offload_)
+  if (offload_mapper_)
+  {
     SplineInst->finalize();
+    offload_mapper_->updateToDevice();
+  }
 }
 
 template<typename ST>
@@ -155,6 +159,8 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   }
   // update coefficients on GPU from host
   SplineInst->finalize();
+  if (offload_mapper_)
+    offload_mapper_->updateToDevice();
 }
 
 
@@ -207,7 +213,7 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
                                          const std::vector<const ValueType*>& invRow_ptr_list,
                                          std::vector<std::vector<ValueType>>& ratios_list) const
 {
-  if (!use_offload_)
+  if (!offload_mapper_)
   {
     BsplineSet::mw_evaluateDetRatios(spo_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
     return;
@@ -273,27 +279,12 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
 
   {
     ScopedTimer offload(offload_timer_);
-    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
-                    map(always, to: buffer_H2D_ptr[0:det_ratios_buffer_H2D.size()])")
-    for (int iat = 0; iat < mw_nVP; iat++)
-      for (int team_id = 0; team_id < NumTeams; team_id++)
-      {
-        const size_t first = ChunkSizePerTeam * team_id;
-        const size_t last  = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
+    det_ratios_buffer_H2D.updateTo();
 
-        auto* restrict offload_scratch_iat_ptr = offload_scratch_ptr + spline_padded_size * iat;
-        auto* restrict pos_scratch             = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
-
-        int ix, iy, iz;
-        ST a[4], b[4], c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos_scratch[iat * 4 + 1], pos_scratch[iat * 4 + 2],
-                                              pos_scratch[iat * 4 + 3], ix, iy, iz, a, b, c);
-
-        PRAGMA_OFFLOAD("omp parallel for")
-        for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c,
-                                             offload_scratch_iat_ptr + first + index);
-      }
+    {
+      auto* pos_scratch = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
+      offload_mapper_->mw_evaluate_v(mw_nVP, pos_scratch + 1, 4, offload_scratch_ptr, spline_padded_size);
+    }
 
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*mw_nVP) \
                     map(always, from: ratios_private_ptr[0:NumTeams*mw_nVP])")
@@ -419,7 +410,7 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
                                                    std::vector<ValueType>& ratios,
                                                    std::vector<GradType>& grads) const
 {
-  if (!use_offload_)
+  if (!offload_mapper_)
   {
     BsplineSet::mw_evaluateVGLandDetRatioGrads(spo_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads);
     return;
@@ -474,29 +465,15 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
 
   {
     ScopedTimer offload(offload_timer_);
-    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
-                    map(always, to: buffer_H2D_ptr[:buffer_H2D.size()])")
-    for (int iw = 0; iw < num_pos; iw++)
-      for (int team_id = 0; team_id < NumTeams; team_id++)
-      {
-        const size_t first = ChunkSizePerTeam * team_id;
-        const size_t last  = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
+    buffer_H2D.updateTo();
 
-        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + spline_padded_size * iw * SoAFields3D::NUM_FIELDS;
-        const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);
-        int ix, iy, iz;
-        ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos_iw_ptr[1], pos_iw_ptr[2], pos_iw_ptr[3], ix, iy, iz, a, b,
-                                              c, da, db, dc, d2a, d2b, d2c);
-
-        PRAGMA_OFFLOAD("omp parallel for")
-        for (int index = 0; index < last - first; index++)
-        {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c, da,
-                                               db, dc, d2a, d2b, d2c, offload_scratch_iw_ptr + first + index,
-                                               spline_padded_size);
-        }
-      }
+    {
+      assert(buffer_H2D.cols() % sizeof(ST) == 0 && "Bug! buffer_H2D.cols() not divisible by sizeof(ST)");
+      const int pos_stride = buffer_H2D.cols() / sizeof(ST);
+      offload_mapper_->mw_evaluate_vgh(num_pos, reinterpret_cast<ST*>(buffer_H2D.data()) + 1, pos_stride,
+                                      offload_scratch_ptr, spline_padded_size * SoAFields3D::NUM_FIELDS,
+                                      spline_padded_size);
+    }
 
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
                     map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
