@@ -322,7 +322,7 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     auto num_splines_padded = bs.num_splines_padded();
 
     Vector<T, OffloadAllocator<T>> spline_v_vals(num_pos * num_splines_padded);
-    mapped_bs.mw_evaluate_v(num_pos, pos_arr.data(), spline_v_vals.data(), num_splines_padded);
+    mapped_bs.mw_evaluate_v(num_pos, pos_arr.data(), 3, spline_v_vals.data(), num_splines_padded);
     spline_v_vals.updateFrom();
 
     CHECK(spline_v_vals[0] == Approx(-0.9476393279));
@@ -330,7 +330,7 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
 
     Vector<T, OffloadAllocator<T>> spline_vgh_vals(num_pos * SoAFields3D::NUM_FIELDS * num_splines_padded);
     // case 1, choose num_pos, SoAFields3D::NUM_FIELDS, num_splines_padded layout
-    mapped_bs.mw_evaluate_vgh(num_pos, pos_arr.data(), spline_vgh_vals.data(),
+    mapped_bs.mw_evaluate_vgh(num_pos, pos_arr.data(), 3, spline_vgh_vals.data(),
                               num_splines_padded * SoAFields3D::NUM_FIELDS, num_splines_padded);
     spline_vgh_vals.updateFrom();
     {
@@ -347,7 +347,7 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     }
 
     // case 2, choose SoAFields3D::NUM_FIELDS, num_pos, num_splines_padded layout
-    mapped_bs.mw_evaluate_vgh(num_pos, pos_arr.data(), spline_vgh_vals.data(), num_splines_padded,
+    mapped_bs.mw_evaluate_vgh(num_pos, pos_arr.data(), 3, spline_vgh_vals.data(), num_splines_padded,
                               num_splines_padded * num_pos);
     spline_vgh_vals.updateFrom();
     {

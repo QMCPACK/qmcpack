@@ -275,14 +275,14 @@ struct test_splines<T, 5> : public test_splines_base<T, 5>
     auto num_splines_padded = bs.num_splines_padded();
 
     Vector<T, OffloadAllocator<T>> spline_v_vals(num_pos * num_splines_padded);
-    mapped_bs.mw_evaluate_v(num_pos, pos_arr.data(), spline_v_vals.data(), num_splines_padded);
+    mapped_bs.mw_evaluate_v(num_pos, pos_arr.data(), 3, spline_v_vals.data(), num_splines_padded);
     spline_v_vals.updateFrom();
 
     CHECK(spline_v_vals[0] == Approx(-0.9476393279));
     CHECK(spline_v_vals[num_splines_padded * 2] == Approx(-0.9476393279));
 
     Vector<T, OffloadAllocator<T>> spline_vgh_vals(num_pos * num_splines_padded * SoAFields3D::NUM_FIELDS);
-    mapped_bs.mw_evaluate_vgh(num_pos, pos_arr.data(), spline_vgh_vals.data(),
+    mapped_bs.mw_evaluate_vgh(num_pos, pos_arr.data(), 3, spline_vgh_vals.data(),
                               num_splines_padded * SoAFields3D::NUM_FIELDS, num_splines_padded);
     spline_vgh_vals.updateFrom();
 
