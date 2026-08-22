@@ -54,7 +54,10 @@ public:
    * @param pos_arr, array of electron positions [num_pos, 3]
    * @param spline_vgh, result pointer
    * @param walker_stride, result distance between two positions
-   * @param filed_stride, result distance of value, gradients and hessian fields for a given electron position.
+   * @param field_stride, result distance of value, gradients and hessian fields for a given electron position.
+   * The layout of spline_vgh is described by walker_stride and field_stride. For example,
+   * [nw, nf, nb], walker_stride = na * nb, field_stride = nb
+   * [nf, nw, nb], walker_stride = nb, field_stride = nw * nb
    */
   void mw_evaluate_vgh(int num_pos, T* pos_arr, T* spline_vgh, size_t walker_stride, size_t field_stride);
 };
