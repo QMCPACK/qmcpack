@@ -26,6 +26,7 @@ MultiBsplineOffloadMapper<T>::MultiBsplineOffloadMapper(const HostBspline& host_
     auto* coefs = host_bsplines_.getBlock(ib).coefs;
     block_coefs_.push_back(coefs);
   }
+  mapToDevice();
 }
 
 template<typename T>

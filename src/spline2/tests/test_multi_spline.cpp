@@ -313,7 +313,6 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     CHECK(ghess[0][9] == Approx(-81.53283531));
 
     MultiBsplineOffloadMapper<T> mapped_bs(bs);
-    mapped_bs.mapToDevice();
     mapped_bs.updateToDevice();
 
     const int num_pos = 3;

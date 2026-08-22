@@ -31,13 +31,13 @@ class MultiBsplineOffloadMapper
   /// array of host coefficient pointers for all the blocks.
   std::vector<const T*> block_coefs_;
 
+  /// map host coefficients to devices
+  void mapToDevice();
+
 public:
   MultiBsplineOffloadMapper(const HostBspline& host_bsplines);
 
   ~MultiBsplineOffloadMapper();
-
-  /// map host coefficients to devices
-  virtual void mapToDevice();
 
   /// update device coeficients
   void updateToDevice();
