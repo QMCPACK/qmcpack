@@ -313,7 +313,6 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     CHECK(ghess[0][9] == Approx(-81.53283531));
 
     MultiBsplineOffloadMapper<T> mapped_bs(bs);
-    mapped_bs.mapToDevice();
     mapped_bs.updateToDevice();
 
     const int num_pos = 3;
@@ -323,27 +322,45 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     auto num_splines_padded = bs.num_splines_padded();
 
     Vector<T, OffloadAllocator<T>> spline_v_vals(num_pos * num_splines_padded);
-    mapped_bs.mw_evaluate_v(num_pos, pos_arr.data(), spline_v_vals.data(), num_splines_padded);
+    mapped_bs.mw_evaluate_v(num_pos, pos_arr.data(), 3, spline_v_vals.data(), num_splines_padded);
     spline_v_vals.updateFrom();
 
     CHECK(spline_v_vals[0] == Approx(-0.9476393279));
     CHECK(spline_v_vals[num_splines_padded * 2] == Approx(-0.9476393279));
 
-    Vector<T, OffloadAllocator<T>> spline_vgh_vals(num_pos * num_splines_padded * SoAFields3D::NUM_FIELDS);
-    mapped_bs.mw_evaluate_vgh(num_pos, pos_arr.data(), spline_vgh_vals.data(),
+    Vector<T, OffloadAllocator<T>> spline_vgh_vals(num_pos * SoAFields3D::NUM_FIELDS * num_splines_padded);
+    // case 1, choose num_pos, SoAFields3D::NUM_FIELDS, num_splines_padded layout
+    mapped_bs.mw_evaluate_vgh(num_pos, pos_arr.data(), 3, spline_vgh_vals.data(),
                               num_splines_padded * SoAFields3D::NUM_FIELDS, num_splines_padded);
     spline_vgh_vals.updateFrom();
+    {
+      CHECK(spline_vgh_vals[0] == Approx(-0.9476393279));
+      CHECK(spline_vgh_vals[num_splines_padded * SoAFields3D::GRAD1] == Approx(5.989106342));
+      CHECK(spline_vgh_vals[num_splines_padded * SoAFields3D::HESS22] == Approx(34.53786329));
 
-    CHECK(spline_vgh_vals[0] == Approx(-0.9476393279));
-    CHECK(spline_vgh_vals[num_splines_padded * SoAFields3D::GRAD1] == Approx(5.989106342));
-    CHECK(spline_vgh_vals[num_splines_padded * SoAFields3D::HESS22] == Approx(34.53786329));
+      Vector<T, OffloadAllocator<T>>
+          spline_vgh_vals_w2(spline_vgh_vals, &spline_vgh_vals[num_splines_padded * SoAFields3D::NUM_FIELDS * 2],
+                             num_splines_padded * SoAFields3D::NUM_FIELDS);
+      CHECK(spline_vgh_vals_w2[0] == Approx(-0.9476393279));
+      CHECK(spline_vgh_vals_w2[num_splines_padded * SoAFields3D::GRAD1] == Approx(5.989106342));
+      CHECK(spline_vgh_vals_w2[num_splines_padded * SoAFields3D::HESS22] == Approx(34.53786329));
+    }
 
-    Vector<T, OffloadAllocator<T>>
-        spline_vgh_vals_w2(spline_vgh_vals, &spline_vgh_vals[num_splines_padded * SoAFields3D::NUM_FIELDS * 2],
-                           num_splines_padded * SoAFields3D::NUM_FIELDS);
-    CHECK(spline_vgh_vals_w2[0] == Approx(-0.9476393279));
-    CHECK(spline_vgh_vals_w2[num_splines_padded * SoAFields3D::GRAD1] == Approx(5.989106342));
-    CHECK(spline_vgh_vals_w2[num_splines_padded * SoAFields3D::HESS22] == Approx(34.53786329));
+    // case 2, choose SoAFields3D::NUM_FIELDS, num_pos, num_splines_padded layout
+    mapped_bs.mw_evaluate_vgh(num_pos, pos_arr.data(), 3, spline_vgh_vals.data(), num_splines_padded,
+                              num_splines_padded * num_pos);
+    spline_vgh_vals.updateFrom();
+    {
+      CHECK(spline_vgh_vals[0] == Approx(-0.9476393279));
+      CHECK(spline_vgh_vals[num_splines_padded * num_pos * SoAFields3D::GRAD1] == Approx(5.989106342));
+      CHECK(spline_vgh_vals[num_splines_padded * num_pos * SoAFields3D::HESS22] == Approx(34.53786329));
+
+      Vector<T, OffloadAllocator<T>> spline_vgh_vals_w2(spline_vgh_vals, &spline_vgh_vals[num_splines_padded * 2],
+                                                        num_splines_padded * SoAFields3D::NUM_FIELDS * num_pos);
+      CHECK(spline_vgh_vals_w2[0] == Approx(-0.9476393279));
+      CHECK(spline_vgh_vals_w2[num_splines_padded * num_pos * SoAFields3D::GRAD1] == Approx(5.989106342));
+      CHECK(spline_vgh_vals_w2[num_splines_padded * num_pos * SoAFields3D::HESS22] == Approx(34.53786329));
+    }
   }
 };
 
