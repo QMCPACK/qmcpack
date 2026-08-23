@@ -2,7 +2,7 @@
 
 Notable changes to QMCPACK and NEXUS are documented in this file.
 
-# Unreleased Changes
+## Unreleased Changes
 
 ### QMCPACK
 
@@ -12,6 +12,7 @@ Notable changes to QMCPACK and NEXUS are documented in this file.
 * CTest can distribute test jobs to GPUs with `QMC_CTEST_NUM_GPUS`, speeding up testing on multi-GPU nodes. [#6112](https://github.com/QMCPACK/qmcpack/pull/6112)
 * Builds automatically select C++20 when the compiler defaults to that standard. [#6075](https://github.com/QMCPACK/qmcpack/pull/6075)
 * Batched GEMV, GER, and copy operations use rocBLAS on AMD GPUs. [#6109](https://github.com/QMCPACK/qmcpack/pull/6109)
+* Backflow wavefunctions for ab initio Hamiltonians supported in the batched drivers. Optimization is not yet supported. [#6149](https://github.com/QMCPACK/qmcpack/pull/6149)
 * QMCPACK tests upgraded to use Catch2 v3.15.2. [#6053](https://github.com/QMCPACK/qmcpack/pull/6053)
 * GCC 15 workaround prevents incorrect LCAO results in complex builds. [#6139](https://github.com/QMCPACK/qmcpack/pull/6139)
 * macOS bus error fix in unit tests. [#6031](https://github.com/QMCPACK/qmcpack/pull/6031)
