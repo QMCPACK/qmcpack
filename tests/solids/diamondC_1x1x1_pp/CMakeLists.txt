@@ -960,7 +960,7 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-vmc-estimator-density
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_dens_short_mw.in.xml
+    det_qmc_dens_mw.in.xml
     4
     4
     check_stats.py
@@ -980,7 +980,7 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-dmc-estimator-density
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_dens_short_vmc_dmc.in.xml
+    det_qmc_dens_vmc_dmc.in.xml
     1
     1
     check_stats.py
@@ -1000,7 +1000,7 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-dmc-estimator-density
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_dens_short_vmc_dmc.in.xml
+    det_qmc_dens_vmc_dmc.in.xml
     4
     4
     check_stats.py
@@ -1020,7 +1020,7 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-rmc-estimator-density
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_dens_short_vmc_rmc.in.xml
+    det_qmc_dens_vmc_rmc.in.xml
     1
     1
     check_stats.py
@@ -1061,7 +1061,7 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-vmc-estimator-spindensity
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_spindens_short_mw.in.xml
+    det_qmc_spindens_mw.in.xml
     4
     4
     check_stats.py
@@ -1081,14 +1081,14 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   # SIMPLE_RUN_AND_CHECK(
   # deterministic-diamondC_1x1x1_pp-vmcbatch-estimator-spindensity
   # "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  # det_qmc_spindens_short_vmcbatched.in.xml 1 1 check_stats.py -s 0 -q
+  # det_qmc_spindens_vmcbatched.in.xml 1 1 check_stats.py -s 0 -q
   # spindensity -e 0 -c 8 -p det_qmc_spindens_short -r
   # qmc-ref/det_qmc_vmcbatch_spindens_short.s000.stat_ref_spindensity_1_1.dat )
 
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-dmc-estimator-spindensity
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_spindens_short_vmc_dmc.in.xml
+    det_qmc_spindens_vmc_dmc.in.xml
     1
     1
     check_stats.py
@@ -1108,7 +1108,7 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-dmc-estimator-spindensity
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_spindens_short_vmc_dmc.in.xml
+    det_qmc_spindens_vmc_dmc.in.xml
     4
     4
     check_stats.py
@@ -1128,7 +1128,7 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-rmc-estimator-spindensity
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_spindens_short_vmc_rmc.in.xml
+    det_qmc_spindens_vmc_rmc.in.xml
     1
     1
     check_stats.py
@@ -1188,7 +1188,7 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-dmc-estimator-1rdm
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_1rdm_short_vmc_dmc.in.xml
+    det_qmc_1rdm_vmc_dmc.in.xml
     1
     1
     check_stats.py
@@ -1208,7 +1208,7 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-dmc-estimator-1rdm
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_1rdm_short_vmc_dmc.in.xml
+    det_qmc_1rdm_vmc_dmc.in.xml
     4
     4
     check_stats.py
@@ -1249,7 +1249,7 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_momentum_short_vmc_dmc.in.xml
+    det_qmc_momentum_vmc_dmc.in.xml
     1
     1
     check_stats.py
@@ -1269,7 +1269,7 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_momentum_short_vmc_dmc.in.xml
+    det_qmc_momentum_vmc_dmc.in.xml
     4
     4
     check_stats.py
@@ -1354,7 +1354,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj_excited
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short_excited
-  det_qmc_short_excited.in.xml
+  det_qmc_excited.in.xml
   1
   1
   TRUE
@@ -1390,7 +1390,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj-meshf
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short-meshf
-  det_qmc_short-meshf.in.xml
+  det_qmc_meshf.in.xml
   1
   1
   TRUE
@@ -1426,7 +1426,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj_kspace
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short_kspace
-  det_qmc_short_kspace.in.xml
+  det_qmc_kspace.in.xml
   1
   1
   TRUE
@@ -1460,7 +1460,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-dmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short_vmc_dmc
-  det_qmc_short_vmc_dmc.in.xml
+  det_qmc_vmc_dmc.in.xml
   1
   1
   TRUE
@@ -1494,7 +1494,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-dmc_sdj_excited
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short_vmc_dmc_excited
-  det_qmc_short_vmc_dmc_excited.in.xml
+  det_qmc_vmc_dmc_excited.in.xml
   1
   1
   TRUE
@@ -1570,7 +1570,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-multi_dmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short_vmc_multi_dmc
-  det_qmc_short_vmc_multi_dmc.in.xml
+  det_qmc_vmc_multi_dmc.in.xml
   1
   1
   TRUE
@@ -1670,7 +1670,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short_vmc_dmc_mwalkers
-  det_qmc_short_vmc_dmc_mwalkers.in.xml
+  det_qmc_vmc_dmc_mwalkers.in.xml
   1
   1
   TRUE
@@ -1688,7 +1688,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers-checks_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short_vmc_dmc_mwalkers
-  det_qmc_short_vmc_dmc_mwalkers_with_checks.in.xml
+  det_qmc_vmc_dmc_mwalkers_with_checks.in.xml
   1
   1
   TRUE
@@ -1728,7 +1728,7 @@ if((NOT QMC_MIXED_PRECISION) AND (NOT QMC_COMPLEX))
     deterministic-diamondC_1x1x1_pp-vmc-dmc-multi_ts_sdj
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     det_qmc_short_vmc_dmc_lg_ts
-    det_qmc_short_vmc_dmc_lg_ts.in.xml
+    det_qmc_vmc_dmc_lg_ts.in.xml
     1
     1
     TRUE
@@ -2297,7 +2297,7 @@ run_qmc_app(
   1
   TEST_ADDED
   TEST_LABELS
-  det_qmc_short_orbital_images.in.xml)
+  det_qmc_orbital_images.in.xml)
 # Override the default check for "QMCPACK execution completed successfully"
 set_tests_properties(deterministic-diamondC_1x1x1_pp-orbital_images-1-1
                      PROPERTIES PASS_REGULAR_EXPRESSION
@@ -2326,7 +2326,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj-estimator-energydensity-cell
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short_edens_cell
-  det_qmc_short_edens_cell.in.xml
+  det_qmc_edens_cell.in.xml
   1
   1
   TRUE
@@ -2338,7 +2338,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmc_sdj-estimator-energydensity-voronoi
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short_edens_voronoi
-  det_qmc_short_edens_voronoi.in.xml
+  det_qmc_edens_voronoi.in.xml
   1
   1
   TRUE
@@ -2350,7 +2350,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmcbatch_sdj-estimator-energydensity-cell
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short_vmcbatch_edens_cell
-  det_qmc_short_vmcbatch_edens_cell.in.xml
+  det_qmc_vmcbatch_edens_cell.in.xml
   1
   1
   TRUE
@@ -2362,7 +2362,7 @@ qmc_run_and_check(
   deterministic-diamondC_1x1x1_pp-vmcbatch_sdj-estimator-energydensity-voronoi
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
   det_qmc_short_vmcbatch_edens_voronoi
-  det_qmc_short_vmcbatch_edens_voronoi.in.xml
+  det_qmc_vmcbatch_edens_voronoi.in.xml
   1
   1
   TRUE

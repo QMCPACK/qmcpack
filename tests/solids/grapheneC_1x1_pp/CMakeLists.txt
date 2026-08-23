@@ -7,7 +7,7 @@ qmc_run_and_check(
   deterministic-grapheneC_1x1_pp-vmcbatch_sdj_z10
   "${qmcpack_SOURCE_DIR}/tests/solids/grapheneC_1x1_pp"
   det_qmc_short_z10
-  det_qmc_short_z10.in.xml
+  det_qmc_z10.in.xml
   1
   1
   TRUE
@@ -24,7 +24,7 @@ qmc_run_and_check(
   deterministic-grapheneC_1x1_pp-vmcbatch_sdj_z30
   "${qmcpack_SOURCE_DIR}/tests/solids/grapheneC_1x1_pp"
   det_qmc_short_z30
-  det_qmc_short_z30.in.xml
+  det_qmc_z30.in.xml
   1
   1
   TRUE

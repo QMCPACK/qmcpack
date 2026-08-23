@@ -446,7 +446,7 @@ qmc_run_and_check(
   deterministic-heg_14_gamma-sjb
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
   det_heg_short_SJB
-  det_heg-short-SJB.xml
+  det_heg-SJB.xml
   1
   1
   TRUE
@@ -458,7 +458,7 @@ if(NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-heg_14_gamma-sjb-opt
     "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-    det_heg-short-SJB_opt.xml
+    det_heg-SJB_opt.xml
     1
     1
     check_opt.py
@@ -475,12 +475,27 @@ if(NOT QMC_MIXED_PRECISION)
     deterministic-heg_14_gamma-sjb-opt_vmc
     "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
     det_heg_short_SJB
-    det_heg-short-SJB_opt.xml
+    det_heg-SJB_opt.xml
     1
     1
     TRUE
     2
     DET_HEG14GSSJB_OPT_SCALARS # VMC
   )
+
+  simple_run_and_check(
+    deterministic-heg_14_gamma-sjb-optbatch
+    "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
+    deter-heg-SJB-batch_opt.xml
+    1
+    1
+    check_opt.py
+    -s
+    1
+    -p
+    deter_heg_SJB_batch
+    -r
+    ./qmc-ref/ref_det_heg_short_SJB.s001.opt.xml)
+
 
 endif()

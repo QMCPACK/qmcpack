@@ -90,7 +90,7 @@ qmc_run_and_check(
   deterministic-bccH_1x1x1_ae-csvmc-all_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
   det_qmc_short_csvmc_all
-  det_qmc_short_csvmc_all.in.xml
+  det_qmc_csvmc_all.in.xml
   1
   1
   TRUE

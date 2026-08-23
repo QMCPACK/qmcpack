@@ -111,7 +111,7 @@ if(NOT QMC_COMPLEX)
   #  QMC_RUN_AND_CHECK(deterministic-C4_sd-ae-qp-vmc
   #                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
   #                    det_qmc_short-SD-C4_AE_Mol_QP
-  #                    det_qmc_short-SD-C4_AE_Mol_QP.in.xml
+  #                    det_qmc_SD-C4_AE_Mol_QP.in.xml
   #                    1 1
   #                    TRUE
   #                    0 DET_C4_SD_AE_QP # VMC
@@ -127,7 +127,7 @@ if(NOT QMC_COMPLEX)
   #  QMC_RUN_AND_CHECK(deterministic-C4_md-ae-ground-qp-vmc
   #                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
   #                    det_qmc_short-MD-C4_AE_Mol_Ground_QP
-  #                    det_qmc_short-MD-C4_AE_Mol_Ground_QP.in.xml
+  #                    det_qmc_MD-C4_AE_Mol_Ground_QP.in.xml
   #                    1 1
   #                    TRUE
   #                    0 DET_C4_MD_AE_GROUND_QP # VMC
@@ -143,7 +143,7 @@ if(NOT QMC_COMPLEX)
   #  QMC_RUN_AND_CHECK(deterministic-C4_md-ae-excited-qp-vmc
   #                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
   #                    det_qmc_short-MD-C4_AE_Mol_Excited_QP
-  #                    det_qmc_short-MD-C4_AE_Mol_Excited_QP.in.xml
+  #                    det_qmc_MD-C4_AE_Mol_Excited_QP.in.xml
   #                    1 1
   #                    TRUE
   #                    0 DET_C4_MD_AE_EXCITED_QP # VMC

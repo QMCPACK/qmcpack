@@ -56,7 +56,7 @@ qmc_run_and_check(
   deterministic-bccH_3x3x3_ae-vmc_bf
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_3x3x3_ae"
   det-qmc-short-bf
-  det-qmc-short-bf.in.xml
+  det-qmc-bf.in.xml
   1
   1
   TRUE
@@ -68,7 +68,7 @@ qmc_run_and_check(
   deterministic-bccH_3x3x3_ae-vmcbatch_bf
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_3x3x3_ae"
   det-qmc-short-bf-batch
-  det-qmc-short-bf-batch.in.xml
+  det-qmc-bf-batch.in.xml
   1
   1
   TRUE
