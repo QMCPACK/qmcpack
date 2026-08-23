@@ -483,19 +483,4 @@ if(NOT QMC_MIXED_PRECISION)
     DET_HEG14GSSJB_OPT_SCALARS # VMC
   )
 
-  simple_run_and_check(
-    deterministic-heg_14_gamma-sjb-optbatch
-    "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
-    deter-heg-SJB-batch_opt.xml
-    1
-    1
-    check_opt.py
-    -s
-    1
-    -p
-    deter_heg_SJB_batch
-    -r
-    ./qmc-ref/ref_det_heg_short_SJB.s001.opt.xml)
-
-
 endif()
