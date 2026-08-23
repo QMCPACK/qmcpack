@@ -435,10 +435,16 @@ the path to the source directory.
 
   ::
 
-    MPIEXEC_EXECUTABLE     Specify the mpi wrapper, e.g. srun, aprun, mpirun, etc.
-    MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
-                           e.g. "-n", "-np", etc.
-    MPIEXEC_PREFLAGS       Flags to pass to MPIEXEC_EXECUTABLE directly before the executable to run.
+    MPIEXEC_EXECUTABLE           Specify the mpi wrapper, e.g. srun, aprun, mpirun, etc.
+    MPIEXEC_NUMPROC_FLAG         Specify the number of mpi processes flag,
+                                 e.g. "-n", "-np", etc.
+    MPIEXEC_PREFLAGS             Flags to pass to MPIEXEC_EXECUTABLE directly before the executable to run.
+    QMC_CTEST_NUM_GPUS           Number of GPUs available to CTest on the local node (default: 1).
+                                 CTest uses this value to run independent GPU tests simultaneously,
+                                 assigning one GPU to each test. With default value, GPU tests
+                                 are serialized and only used 1 GPU. Must be a positive integer.
+    QMC_GPU_VISIBILITY_VARIABLE  Optionally specify the environment variable to control GPU visibility for CTest.
+                                 By default, "CUDA_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES", and "ZE_AFFINITY_MASK" are used. 
 
 - Sanitizers Developer Options
 
