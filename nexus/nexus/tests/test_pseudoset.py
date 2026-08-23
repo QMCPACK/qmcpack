@@ -451,12 +451,6 @@ def test_pseudoset_check_code_str():
         assert(code == PseudoSet._check_code_str(code.upper())) # All Uppercase
         assert(code == PseudoSet._check_code_str(code.title())) # Uppercase first letter
 
-    with pytest.warns(
-        NexusUserWarning,
-        match="Automatically switching code 'pwscf' to 'espresso'"
-        ):
-        PseudoSet._check_code_str("pwscf")
-
     with pytest.raises(
         ValueError,
         match="Code 'bean' is not known by Nexus!"
@@ -825,7 +819,7 @@ def test_from_dir_filter(tmp_path):
 #end def test_from_dir_filter
 
 
-def test_from_dir_pattern(tmp_path):
+def test_from_dir_include(tmp_path):
     pseudo_names = (
         "C.BFD.xml",
         "C.BFD.upf",
@@ -889,7 +883,7 @@ def test_from_dir_pattern(tmp_path):
         pseudo_dir = psp_dir,
         code       = "espresso",
         extension  = None,
-        pattern    = r"\.BFD\.",
+        include    = "*BFD*",
         )
 
     assert(espresso_bfd_pseudoset.pseudos     == ref_espresso_bfd_pseudos)
@@ -900,16 +894,16 @@ def test_from_dir_pattern(tmp_path):
         pseudo_dir = psp_dir,
         code       = "espresso",
         extension  = None,
-        pattern    = r"_ONCV_PBE-1\.2",
+        include    = "*_ONCV_PBE-1.2*",
         )
 
     assert(espresso_oncv_pseudoset.pseudos     == ref_espresso_oncv_pseudos)
     assert(espresso_oncv_pseudoset.pseudo_dirs == {psp_dir})
     assert(espresso_oncv_pseudoset.codes       == {"espresso"})
-#end def test_from_dir_pattern
+#end def test_from_dir_include
 
 
-def test_vasp_pattern_exclude(tmp_path):
+def test_vasp_exclude(tmp_path):
     pseudo_names = (
         "C/POTCAR",
         "H/POTCAR",
@@ -964,7 +958,7 @@ def test_vasp_pattern_exclude(tmp_path):
     reg_pseudoset = PseudoSet.from_dir(
         pseudo_dir = psp_dir,
         code       = "vasp",
-        pattern    = r"^((?!_).)*$",
+        exclude    = "*_*",
     )
 
     assert(reg_pseudoset.pseudos == ref_reg_pseudos)
@@ -972,7 +966,7 @@ def test_vasp_pattern_exclude(tmp_path):
     sv_pseudoset = PseudoSet.from_dir(
         pseudo_dir = psp_dir,
         code       = "vasp",
-        pattern    = r"_sv$",
+        include    = "*_sv",
     )
 
     assert(sv_pseudoset.pseudos == ref_sv_pseudos)
@@ -980,7 +974,8 @@ def test_vasp_pattern_exclude(tmp_path):
     gw_pseudoset = PseudoSet.from_dir(
         pseudo_dir = psp_dir,
         code       = "vasp",
-        pattern    = r"(?<!sv)_GW",
+        include    = "*_GW",
+        exclude    = "*sv*",
     )
 
     assert(gw_pseudoset.pseudos == ref_gw_pseudos)
@@ -988,11 +983,11 @@ def test_vasp_pattern_exclude(tmp_path):
     sv_gw_pseudoset = PseudoSet.from_dir(
         pseudo_dir = psp_dir,
         code       = "vasp",
-        pattern    = r"_sv_GW",
+        include    = "*_sv_GW",
     )
 
     assert(sv_gw_pseudoset.pseudos == ref_sv_gw_pseudos)
-#end def test_vasp_pattern_exclude
+#end def test_vasp_exclude
 
 
 def test_from_mixed_dir(tmp_path):
@@ -1322,53 +1317,6 @@ def test_from_mixed_dir_rmg_collision(tmp_path):
     assert(pyscf_calc.pseudos     == pyscf_ref.pseudos)
     assert(pyscf_calc.codes       == pyscf_ref.codes)
     assert(pyscf_calc.pseudo_dirs == pyscf_ref.pseudo_dirs)
-
-    # Pattern for rmg, leave codes as None
-    pseudoset = PseudoSet.from_mixed_dir(
-        pseudo_dir = psp_dir,
-        codes      = None,
-        patterns   = {
-            "rmg": "upf",
-            },
-        )
-
-    assert(set(pseudoset.keys()) == {"espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"})
-
-    qmcpack_calc = pseudoset["qmcpack"]
-    qmcpack_ref = ref_pseudos["qmcpack"]
-    assert(qmcpack_calc.pseudos     == qmcpack_ref.pseudos)
-    assert(qmcpack_calc.codes       == qmcpack_ref.codes)
-    assert(qmcpack_calc.pseudo_dirs == qmcpack_ref.pseudo_dirs)
-
-    espresso_calc = pseudoset["espresso"]
-    espresso_ref = ref_pseudos["espresso"]
-    assert(espresso_calc.pseudos     == espresso_ref.pseudos)
-    assert(espresso_calc.codes       == espresso_ref.codes)
-    assert(espresso_calc.pseudo_dirs == espresso_ref.pseudo_dirs)
-
-    gamess_calc = pseudoset["gamess"]
-    gamess_ref = ref_pseudos["gamess"]
-    assert(gamess_calc.pseudos     == gamess_ref.pseudos)
-    assert(gamess_calc.codes       == gamess_ref.codes)
-    assert(gamess_calc.pseudo_dirs == gamess_ref.pseudo_dirs)
-
-    vasp_calc = pseudoset["vasp"]
-    vasp_ref = ref_pseudos["vasp"]
-    assert(vasp_calc.pseudos     == vasp_ref.pseudos)
-    assert(vasp_calc.codes       == vasp_ref.codes)
-    assert(vasp_calc.pseudo_dirs == vasp_ref.pseudo_dirs)
-
-    rmg_calc = pseudoset["rmg"]
-    rmg_ref = ref_pseudos["rmg"]
-    assert(rmg_calc.pseudos     == rmg_ref.pseudos)
-    assert(rmg_calc.codes       == rmg_ref.codes)
-    assert(rmg_calc.pseudo_dirs == rmg_ref.pseudo_dirs)
-
-    pyscf_calc = pseudoset["pyscf"]
-    pyscf_ref = ref_pseudos["pyscf"]
-    assert(pyscf_calc.pseudos     == pyscf_ref.pseudos)
-    assert(pyscf_calc.codes       == pyscf_ref.codes)
-    assert(pyscf_calc.pseudo_dirs == pyscf_ref.pseudo_dirs)
 #end def test_from_mixed_dir_rmg_collision
 
 
@@ -1406,17 +1354,17 @@ def test_from_mixed_dir_espresso_collision(tmp_path):
             extensions = None, # Default values
             )
 
-    # Filter by pattern
+    # Use include to only select some
     _ = PseudoSet.from_mixed_dir(
         pseudo_dir = psp_dir,
         codes      = {"espresso"},
-        patterns   = {"espresso": "BFD"},
+        include    = {"espresso": "*BFD*"},
         )
 
     _ = PseudoSet.from_mixed_dir(
         pseudo_dir = psp_dir,
         codes      = {"espresso"},
-        patterns   = {"espresso": "uspp"},
+        include    = {"espresso": "*uspp*"},
         )
 
     # Filter by extension
@@ -1467,11 +1415,11 @@ def test_from_mixed_dir_vasp_collision(tmp_path):
                 extensions = None,
                 )
 
-    # Filter by pattern
+    # Filter by include
     _ = PseudoSet.from_mixed_dir(
         pseudo_dir = psp_dir,
         codes      = {"vasp"},
-        patterns   = {"vasp": "special"},
+        include    = {"vasp": "special"},
         )
 
     # Filter by extension
@@ -1545,11 +1493,11 @@ def test_from_mixed_dir_gamess_collision(tmp_path):
                 extensions = None,
                 )
 
-    # Filter by pattern
+    # Filter by include
     _ = PseudoSet.from_mixed_dir(
         pseudo_dir = psp_dir,
         codes      = {"gamess"},
-        patterns   = {"gamess": "special"},
+        include    = {"gamess": "special"},
         )
 
     # Filter by extension
@@ -1617,11 +1565,11 @@ def test_from_mixed_dir_pyscf_collision(tmp_path):
                 extensions = None,
                 )
 
-    # Filter by pattern
+    # Filter by include
     _ = PseudoSet.from_mixed_dir(
         pseudo_dir = psp_dir,
         codes      = {"pyscf"},
-        patterns   = {"pyscf": "special"},
+        include    = {"pyscf": "special"},
         )
 
     # Filter by extension
@@ -1683,14 +1631,27 @@ def test_from_mixed_dir_mismatches(tmp_path):
 
     with pytest.raises(
         ValueError,
-        match="Mismatch between provided patterns and codes!",
+        match="Mismatch between provided include patterns and codes!",
         ):
         PseudoSet.from_mixed_dir(
             pseudo_dir = tmp_path,
             codes      = {"espresso"},
-            patterns   = {
-                "espresso": r"BFD",
-                "rmg": r"BFD", # Not in the specified codes
+            include    = {
+                "espresso": "*BFD*",
+                "rmg": "*BFD*", # Not in the specified codes
+                },
+            )
+
+    with pytest.raises(
+        ValueError,
+        match="Mismatch between provided exclude patterns and codes!",
+        ):
+        PseudoSet.from_mixed_dir(
+            pseudo_dir = tmp_path,
+            codes      = {"espresso"},
+            exclude    = {
+                "espresso": "*BFD*",
+                "rmg": "*BFD*", # Not in the specified codes
                 },
             )
 #end def test_from_mixed_dir_mismatches
@@ -1776,7 +1737,7 @@ def test_from_mixed_dir_arg_for_all(tmp_path):
     pseudoset = PseudoSet.from_mixed_dir(
         pseudo_dir = psp_dir,
         codes      = {"qmcpack", "espresso"},
-        patterns   = "ccECP",
+        include    = "*ccECP*",
         )
 
     assert(set(pseudoset.keys()) == {"qmcpack", "espresso"})
@@ -1802,7 +1763,7 @@ def test_from_mixed_dir_arg_for_all(tmp_path):
     pseudoset = PseudoSet.from_mixed_dir(
         pseudo_dir    = psp_dir,
         codes         = {"qmcpack", "espresso"},
-        patterns      = "ccECP",
+        include       = "*ccECP*",
         code_Zeff_map = ref_Zeff_map,
         )
 
@@ -1860,7 +1821,7 @@ def test_priv_get_pseudos(tmp_path):
         match=r"Pseudopotential set does not contain the following species:\n.*Fe"
         ):
         qmcpack_pseudoset._get_pseudos(system=["C", "H", "Fe"], code="qmcpack")
-#end def test_get_pseudos
+#end def test_priv_get_pseudos
 
 
 def test_get_Zeff():
@@ -2283,7 +2244,7 @@ def test_from_mixed_dir_normalizes_code_alias_maps(tmp_path):
     pseudosets = PseudoSet.from_mixed_dir(
         pseudo_dir    = tmp_path,
         codes         = "pwscf",
-        patterns      = {"pwscf": "ONCV"},
+        include       = {"pwscf": "*ONCV*"},
         code_Zeff_map = {"pwscf": {"C": 4}},
         )
 
