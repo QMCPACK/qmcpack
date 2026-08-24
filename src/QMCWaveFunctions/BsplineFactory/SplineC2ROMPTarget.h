@@ -25,7 +25,6 @@
 #include "spline2/MultiBsplineOffload.hpp"
 #include "spline2/MultiBsplineOffloadMapper.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
-#include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
 #include <ResourceHandle.h>
 #include "SplineOMPTargetMultiWalkerMem.h"

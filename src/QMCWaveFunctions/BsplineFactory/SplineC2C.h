@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBsplineBase.hpp"
-#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {

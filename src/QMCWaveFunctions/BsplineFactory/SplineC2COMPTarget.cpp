@@ -16,7 +16,6 @@
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "Platforms/OMPTarget/ompReductionComplex.hpp"
 #include "ApplyPhaseC2C.hpp"
-#include "Concurrency/OpenMP.h"
 #include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
@@ -146,15 +145,8 @@ void SplineC2COMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
   const PointType& r = P.activeR(iat);
   PointType ru(prim_lattice_.toUnit_floor(r));
 
-#pragma omp parallel
-  {
-    int first, last;
-    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
-    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
-
-    spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
-    assign_v(r, myV, psi, first / 2, last / 2);
-  }
+  SplineInst->evaluate_v(ru, myV);
+  assign_v(r, myV, psi, 0, psi.size());
 }
 
 template<typename ST>
@@ -951,15 +943,8 @@ void SplineC2COMPTarget<ST>::evaluateVGH(const ParticleSet& P,
   const PointType& r = P.activeR(iat);
   PointType ru(prim_lattice_.toUnit_floor(r));
 
-#pragma omp parallel
-  {
-    int first, last;
-    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
-    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
-
-    spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
-    assign_vgh(r, psi, dpsi, grad_grad_psi, first / 2, last / 2);
-  }
+  SplineInst->evaluate_vgh(ru, myV, myG, myH);
+  assign_vgh(r, psi, dpsi, grad_grad_psi, 0, psi.size());
 }
 
 template<typename ST>
@@ -1207,14 +1192,8 @@ void SplineC2COMPTarget<ST>::evaluateVGHGH(const ParticleSet& P,
 {
   const PointType& r = P.activeR(iat);
   PointType ru(prim_lattice_.toUnit_floor(r));
-#pragma omp parallel
-  {
-    int first, last;
-    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
-
-    spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
-    assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first / 2, last / 2);
-  }
+  SplineInst->evaluate_vghgh(ru, myV, myG, myH, mygH);
+  assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, 0, psi.size());
 }
 
 template<typename ST>

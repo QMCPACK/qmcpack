@@ -15,7 +15,6 @@
 #include "spline2/MultiBsplineEval_OMPoffload.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "ApplyPhaseC2R.hpp"
-#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -101,14 +100,8 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
 
   if (true)
   {
-#pragma omp parallel
-    {
-      int first, last;
-      FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
-
-      spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
-      assign_v(r, myV, psi, first / 2, last / 2);
-    }
+    SplineInst->evaluate_v(ru, myV);
+    assign_v(r, myV, psi, 0, psi.size());
   }
   else
   {
@@ -1160,14 +1153,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGH(const ParticleSet& P,
 {
   const PointType& r = P.activeR(iat);
   PointType ru(prim_lattice_.toUnit_floor(r));
-#pragma omp parallel
-  {
-    int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
-
-    spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
-    assign_vgh(r, psi, dpsi, grad_grad_psi, first / 2, last / 2);
-  }
+  SplineInst->evaluate_vgh(ru, myV, myG, myH);
+  assign_vgh(r, psi, dpsi, grad_grad_psi, 0, psi.size());
 }
 
 template<typename ST>
@@ -1668,14 +1655,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGHGH(const ParticleSet& P,
 {
   const PointType& r = P.activeR(iat);
   PointType ru(prim_lattice_.toUnit_floor(r));
-#pragma omp parallel
-  {
-    int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
-
-    spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
-    assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first / 2, last / 2);
-  }
+  SplineInst->evaluate_vghgh(ru, myV, myG, myH, mygH);
+  assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, 0, psi.size());
 }
 
 template<typename ST>

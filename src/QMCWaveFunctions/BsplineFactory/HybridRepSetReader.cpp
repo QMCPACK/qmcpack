@@ -37,6 +37,7 @@
 #include "Message/CommOperators.h"
 #include "spline2/MultiBspline.hpp"
 #include "spline2/MultiBsplineOffload.hpp"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
