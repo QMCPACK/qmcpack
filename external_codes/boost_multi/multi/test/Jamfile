@@ -1,0 +1,128 @@
+# Copyright 2024 Matt Borland
+# Distributed under the Boost Software License, Version 1.0.
+# https://www.boost.org/LICENSE_1_0.txt
+
+import testing ;
+import ../../config/checks/config : requires ;
+
+project : requirements
+
+  # <library>/boost/test//boost_unit_test_framework
+
+  <toolset>gcc:<cxxflags>-Wall
+  <toolset>gcc:<cxxflags>-Wextra
+
+  <toolset>clang:<cxxflags>-Wall
+  <toolset>clang:<cxxflags>-Wextra
+
+  <toolset>msvc:<warnings>all
+
+  # Additional flags by request
+  <toolset>gcc:<cxxflags>-Wsign-conversion
+  <toolset>gcc:<cxxflags>-Wconversion
+  #<toolset>gcc:<cxxflags>-Wundef # Fix pending in Boost.Test
+  <toolset>gcc:<cxxflags>-Wold-style-cast
+  #<toolset>gcc:<cxxflags>-Wduplicated-branches
+  <toolset>gcc:<cxxflags>-Wfloat-equal
+
+  <toolset>clang:<cxxflags>-Wsign-conversion
+  <toolset>clang:<cxxflags>-Wconversion
+  <toolset>clang:<cxxflags>-Wundef
+  <toolset>clang:<cxxflags>-Wold-style-cast
+  <toolset>clang:<cxxflags>-Wfloat-equal
+
+  # Clang-Cl likes to blow up builds with these compatibility checks
+  <toolset>clang:<cxxflags>-Wno-c++98-compat
+  <toolset>clang:<cxxflags>-Wno-c++98-compat-pedantic
+  <toolset>clang:<cxxflags>-Wno-c++17-compat
+  <toolset>clang:<cxxflags>-Wno-c++14-compat
+  <toolset>clang:<define>"_CRT_SECURE_NO_WARNINGS"
+
+  <toolset>msvc:<warnings-as-errors>on
+  #<toolset>clang:<warnings-as-errors>on
+  <toolset>gcc:<warnings-as-errors>on
+
+  # Permissive- mode is only enabled by default from C++20 so we mianually add it
+  <toolset>msvc:<cxxflags>/permissive-
+
+  [ requires cxx17_if_constexpr cxx17_structured_bindings cxx17_std_apply ]
+  ;
+
+run allocator.cpp ;
+run array_cref.cpp ;
+run array_fancyref.cpp ;
+run array_legacy_c.cpp ;
+run array_ptr.cpp ;
+run array_ref.cpp ;
+run assignments.cpp ;
+#run boost_array_concept.cpp ;
+run broadcast.cpp ;
+run broadcast_multiplication.cpp ;
+run broadcast_softmax.cpp ;
+run broadcast_transposed.cpp ;
+run coelements.cpp ;
+run comparisons.cpp ;
+run concepts.cpp ;
+run conor.cpp ;
+run constructors.cpp ;
+run conversions.cpp ;
+run cursor.cpp ;
+run diagonal.cpp ;
+run drop.cpp ;
+run element_access.cpp ;
+run element_moved.cpp ;
+run element_transformed.cpp ;
+run elementwise_expr.cpp ;
+run extents.cpp ;
+#run execution_policy.cpp ;
+run fill.cpp ;
+run fill_segmented.cpp ;
+run fix_complex.cpp ;
+run flatted.cpp ;
+run flattened.cpp ;
+run for_each.cpp ;
+run for_each_segmented.cpp ;
+run index_range.cpp ;
+run initializer_list.cpp ;
+run inplace_array.cpp ;
+run interpolator.cpp ;
+run io.cpp ;
+run iterator.cpp ;
+run layout.cpp ;
+run main.cpp ;
+run mdspan.cpp ;
+run member_array_cast.cpp ;
+run minimalistic_ptr.cpp ;
+run move.cpp ;
+run nico_const_correctness.cpp ;
+run nonmovable.cpp ;
+run one_based.cpp ;
+run outer.cpp ;
+run overload.cpp ;
+run partitioned.cpp ;
+run pmr.cpp ;
+run ranges.cpp ;
+run ranges_zip.cpp ;
+run reextent.cpp ;
+run reinterpret_array_cast.cpp ;
+run restrict.cpp ;
+run restrictions.cpp ;
+run reversed.cpp ;
+run rotated.cpp ;
+run scoped_allocator.cpp ;
+run sean.cpp ;
+run sedenion.cpp ;
+run select_column.cpp ;
+run sliced.cpp ;
+run sort.cpp ;
+run static_array_cast.cpp ;
+run std_vector_substitutability.cpp ;
+run strided_ub_demo.cpp ;
+run subarray.cpp ;
+run subrange.cpp ;
+run sum_of_squares.cpp ;
+run swap.cpp ;
+run transform.cpp ;
+run tuple_conversion.cpp ;
+run utility.cpp ;
+run zero_dimensionality.cpp ;
