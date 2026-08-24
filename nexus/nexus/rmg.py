@@ -27,13 +27,15 @@ class Rmg(Simulation):
 
     def get_result(self,result_name,sim):
         result = None
-        self.error('Ability to get result '+result_name+' has not been implemented.')
+        msg = 'Ability to get result '+result_name+' has not been implemented.'
+        raise NotImplementedError(msg)
         return result
     #end def get_result
 
 
     def incorporate_result(self,result_name,result,sim):
-        self.error('ability to incorporate result '+result_name+' has not been implemented')
+        msg = 'ability to incorporate result '+result_name+' has not been implemented'
+        raise NotImplementedError(msg)
     #end def incorporate_result
 
 
