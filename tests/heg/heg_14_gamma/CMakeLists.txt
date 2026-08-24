@@ -445,7 +445,7 @@ endif()
 qmc_run_and_check(
   deterministic-heg_14_gamma-sjb
   "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-  det_heg_short_SJB
+  det_heg_SJB
   det_heg-SJB.xml
   1
   1
@@ -465,16 +465,16 @@ if(NOT QMC_MIXED_PRECISION)
     -s
     1
     -p
-    det_heg_short_SJB
+    det_heg_SJB
     -r
-    ./qmc-ref/ref_det_heg_short_SJB.s001.opt.xml)
+    ./qmc-ref/ref_det_heg_SJB.s001.opt.xml)
 
   list(APPEND DET_HEG14GSSJB_OPT_SCALARS "totenergy" "-0.93078813 0.000001")
 
   qmc_run_and_check(
     deterministic-heg_14_gamma-sjb-opt_vmc
     "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
-    det_heg_short_SJB
+    det_heg_SJB
     det_heg-SJB_opt.xml
     1
     1

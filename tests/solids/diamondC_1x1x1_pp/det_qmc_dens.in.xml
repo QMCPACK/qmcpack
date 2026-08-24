@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="qmc_short" series="0">
+   <project id="det_qmc_dens" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
     <parameter name="driver_version">legacy</parameter>
    </project>
-   <random seed="49154"/>
+   <random seed="71"/>
    <qmcsystem>
       <simulationcell>
          <parameter name="lattice" units="bohr">
@@ -40,14 +40,14 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <sposet_collection type="bspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+         <sposet_collection type="bspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
             <sposet type="bspline" name="spo_ud" size="4" spindataset="0"/>
-         </sposet_collection>
+         </sposet_collection>    
          <determinantset>
-	    <slaterdeterminant>
-	       <determinant id="updet" group="u" sposet="spo_ud" size="4"/>
-	       <determinant id="downdet" group="d" sposet="spo_ud" size="4"/>
-            </slaterdeterminant>
+	   <slaterdeterminant>
+	       <determinant sposet="spo_ud"/>
+	       <determinant sposet="spo_ud"/>
+           </slaterdeterminant>
          </determinantset>
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
             <correlation elementType="C" size="8" cusp="0.0">
@@ -79,22 +79,16 @@
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
          <estimator type="flux" name="Flux"/>
+         <estimator name="Density" type="density" delta="0.1 0.1 0.1"/>
       </hamiltonian>
    </qmcsystem>
-   <qmc method="vmc" move="pbyp" checkpoint="0">
-      <parameter name="walkers"             >    16              </parameter>
-      <parameter name="blocks"              >    2               </parameter>
-      <parameter name="steps"               >    2               </parameter>
+   <qmc method="vmc" move="pbyp">
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="walkers"             >    1               </parameter>
+      <parameter name="blocks"              >    3               </parameter>
+      <parameter name="steps"               >    3               </parameter>
       <parameter name="subSteps"            >    2               </parameter>
       <parameter name="timestep"            >    0.3             </parameter>
-      <parameter name="warmupSteps"         >    2              </parameter>
-   </qmc>
-   <qmc method="vmc" move="pbyp" checkpoint="-1">
-      <parameter name="walkers"             >    16              </parameter>
-      <parameter name="blocks"              >    1               </parameter>
-      <parameter name="steps"               >    1               </parameter>
-      <parameter name="subSteps"            >    1               </parameter>
-      <parameter name="timestep"            >    0.0             </parameter>
-      <parameter name="warmupSteps"         >    0               </parameter>
+      <parameter name="warmupSteps"         >    3               </parameter>
    </qmc>
 </simulation>

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-<project id="det_qmc_short-MD-C4_AE_Mol_Ground_QP" series="0">
+<project id="det_qmc-MD-C4_AE_Mol_Ground_QP" series="0">
   <parameter name="driver_version">legacy</parameter>
 </project>
     <random seed="19"/>

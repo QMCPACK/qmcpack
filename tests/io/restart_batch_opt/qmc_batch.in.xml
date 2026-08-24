@@ -1,10 +1,9 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="det_qmc_momentum_short" series="0">
+   <project id="qmc_batch" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
-    <parameter name="driver_version">legacy</parameter>
    </project>
-   <random seed="71"/>
+   <random seed="49154"/>
    <qmcsystem>
       <simulationcell>
          <parameter name="lattice" units="bohr">
@@ -40,15 +39,15 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <sposet_collection type="bspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+         <sposet_collection type="bspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
             <sposet type="bspline" name="spo_ud" size="4" spindataset="0"/>
          </sposet_collection>
          <determinantset>
-           <slaterdeterminant>
-	       <determinant sposet="spo_ud"/>
-               <determinant sposet="spo_ud"/>
-           </slaterdeterminant>
-         </determinantset>	      
+            <slaterdeterminant>
+               <determinant id="updet" group="u" sposet="spo_ud" size="4"/>
+               <determinant id="downdet" group="d" sposet="spo_ud" size="4"/>
+            </slaterdeterminant>
+         </determinantset>
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
             <correlation elementType="C" size="8" cusp="0.0">
                <coefficients id="eC" type="Array">                  
@@ -79,16 +78,35 @@
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
          <estimator type="flux" name="Flux"/>
-      <estimator type="momentum" name="momentum" samples="20" hdf5="yes" kmax="4"/>
       </hamiltonian>
    </qmcsystem>
-   <qmc method="vmc" move="pbyp">
+  <loop max="1">
+    <qmc method="linear_batch" move="pbyp" checkpoint="0">
+      <parameter name="total_walkers"       >    16              </parameter>   
+      <parameter name="blocks">     8  </parameter>
+      <parameter name="warmupsteps"> 64 </parameter>
+      <parameter name="samples"> 128  </parameter>
+      <cost name="energy">                   0.0 </cost>
+      <cost name="unreweightedvariance">     1.0 </cost>
+      <cost name="reweightedvariance">       0.0 </cost>
+      <parameter name="useDrift">  yes </parameter>
+      <parameter name="bigchange">10.0</parameter>
       <estimator name="LocalEnergy" hdf5="no"/>
-      <parameter name="walkers"             >    1               </parameter>
-      <parameter name="blocks"              >    3               </parameter>
-      <parameter name="steps"               >    3               </parameter>
-      <parameter name="subSteps"            >    2               </parameter>
-      <parameter name="timestep"            >    0.3             </parameter>
-      <parameter name="warmupSteps"         >    3               </parameter>
+      <parameter name="MinMethod">quartic</parameter>
+      <parameter name="exp0">-6</parameter>
+      <parameter name="alloweddifference"> 1.0e-5 </parameter>
+      <parameter name="stepsize">  0.15 </parameter>
+      <parameter name="nstabilizers"> 1 </parameter>
+      <parameter name="variational_subset"> eC ud </parameter>
+      <parameter name="output_vp_override">yes</parameter>
+    </qmc>
+  </loop>
+   <qmc method="vmc_batch" move="pbyp" checkpoint="-1">
+      <parameter name="total_walkers"       >    16              </parameter>
+      <parameter name="blocks"              >    1               </parameter>
+      <parameter name="steps"               >    1               </parameter>
+      <parameter name="subSteps"            >    1               </parameter>
+      <parameter name="timestep"            >    0.0             </parameter>
+      <parameter name="warmupSteps"         >    0               </parameter>
    </qmc>
 </simulation>

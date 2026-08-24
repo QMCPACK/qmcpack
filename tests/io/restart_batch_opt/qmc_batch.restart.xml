@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="qmc_short_batch" series="2">
+   <project id="qmc_batch" series="2">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <random seed="49154"/>
@@ -70,7 +70,7 @@
                </coefficients>
             </correlation>
          </jastrow>
-      <override_variational_parameters href="qmc_short_batch.s000.vp.h5"/>
+      <override_variational_parameters href="qmc_batch.s000.vp.h5"/>
       </wavefunction>
       <hamiltonian name="h0" type="generic" target="e">
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
@@ -82,7 +82,7 @@
       </hamiltonian>
    </qmcsystem>
 
-   <mcwalkerset fileroot="qmc_short_batch.s000" node="-1" nprocs="1" version="0 4" collected="yes"/>
+   <mcwalkerset fileroot="qmc_batch.s000" node="-1" nprocs="1" version="0 4" collected="yes"/>
    
    <qmc method="vmc_batch" move="pbyp" checkpoint="-1">
       <parameter name="total_walkers">    16            </parameter>

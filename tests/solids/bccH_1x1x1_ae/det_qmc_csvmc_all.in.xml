@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
-  <project id="det_qmc_short_csvmc_all" series="0">
+  <project id="det_qmc_csvmc_all" series="0">
     <driver_version>legacy</driver_version>
     <application name="qmcapp" role="molecu" class="serial" version="0.2">
       Correlated Sampling VMC on BCCH. Perturb ion 2 by (0.2,0.2,0.2)

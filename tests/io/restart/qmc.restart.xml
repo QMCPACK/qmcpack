@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="qmc_short" series="2">
+   <project id="qmc" series="2">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
     <parameter name="driver_version">legacy</parameter>
    </project>
@@ -48,7 +48,7 @@
                <determinant id="updet" group="u" sposet="spo_ud" size="4"/>
                <determinant id="downdet" group="d" sposet="spo_ud" size="4"/>
             </slaterdeterminant>
-         </determinantset>
+         </determinantset>	      
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
             <correlation elementType="C" size="8" cusp="0.0">
                <coefficients id="eC" type="Array">                  
@@ -82,12 +82,14 @@
       </hamiltonian>
    </qmcsystem>
 
-   <qmc method="vmc" move="pbyp">
-      <parameter name="walkers"             >    16              </parameter>
-      <parameter name="blocks"              >    3               </parameter>
-      <parameter name="steps"               >    2               </parameter>
-      <parameter name="subSteps"            >    2               </parameter>
-      <parameter name="timestep"            >    0.3             </parameter>
-      <parameter name="warmupSteps"         >    10              </parameter>
+   <mcwalkerset fileroot="qmc.s000" node="-1" nprocs="4" version="0 4" collected="yes"/>
+
+   <qmc method="vmc" move="pbyp" checkpoint="-1">
+      <parameter name="walkers">        16              </parameter>
+      <parameter name="blocks">         1               </parameter>
+      <parameter name="steps">          1               </parameter>
+      <parameter name="subSteps">       1               </parameter>
+      <parameter name="timestep">       0.0             </parameter>
+      <parameter name="warmupSteps">    0               </parameter>
    </qmc>
 </simulation>

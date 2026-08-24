@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-<project id="det_heg_short_SJB" series="0">
+<project id="det_heg_SJB" series="0">
 <application name="qmcapp" class="serial">
 Sample qmc run for Slater-Jastrow-Backflow HEG.
 </application>

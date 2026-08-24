@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="det-qmc-short-bf" series="0">
+   <project id="det-qmc-bf" series="0">
       <parameter name="driver_version">legacy</parameter>
    </project>
    <qmcsystem>

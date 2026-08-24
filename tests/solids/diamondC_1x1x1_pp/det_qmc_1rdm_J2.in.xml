@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="qmc_short" series="0">
-      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+   <project id="det_qmc_1rdm_J2" series="0">
+      <application name="qmcpack" role="molecu" class="serial" version="1.0"/>
     <parameter name="driver_version">legacy</parameter>
    </project>
-   <random seed="49154"/>
+   <random seed="22"/>
    <qmcsystem>
       <simulationcell>
          <parameter name="lattice" units="bohr">
@@ -40,13 +40,14 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <sposet_collection type="bspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float" save_coefs="yes">
+         <sposet_collection type="bspline" href="./pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0" precision="float" truncate="no">
             <sposet type="bspline" name="spo_ud" size="4" spindataset="0"/>
+            <sposet type="bspline" name="spo_dm" index_min="4" index_max="8" spindataset="0"/>
          </sposet_collection>
          <determinantset>
             <slaterdeterminant>
-               <determinant id="updet" group="u" sposet="spo_ud" size="4"/>
-               <determinant id="downdet" group="d" sposet="spo_ud" size="4"/>
+               <determinant sposet="spo_ud"/>
+               <determinant sposet="spo_ud"/>
             </slaterdeterminant>
          </determinantset>
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
@@ -78,7 +79,25 @@
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
-         <estimator type="flux" name="Flux"/>
+         <estimator type="dm1b" name="DensityMatrices">
+            <parameter name="energy_matrix"       >    no                    </parameter>
+            <parameter name="integrator"          >    uniform_grid          </parameter>
+            <parameter name="points"              >    6                     </parameter>
+            <parameter name="scale"               >    1.0                   </parameter>
+            <parameter name="basis"               >    spo_ud spo_dm         </parameter>
+            <parameter name="evaluator"           >    matrix                </parameter>
+            <parameter name="center"              >    0 0 0                 </parameter>
+            <parameter name="check_overlap"       >    no                    </parameter>
+         </estimator>
       </hamiltonian>
    </qmcsystem>
+   <qmc method="vmc" move="pbyp">
+      <parameter name="walkers"             >    1               </parameter>
+      <parameter name="blocks"              >    3             </parameter>
+      <parameter name="steps"               >    3               </parameter>
+      <parameter name="substeps"            >    2               </parameter>
+      <parameter name="warmupsteps"         >    3               </parameter>
+      <parameter name="timestep"            >    0.3             </parameter>
+      <estimator name="LocalEnergy" hdf5="yes"/>
+   </qmc>
 </simulation>
