@@ -2236,6 +2236,21 @@ def test_from_mixed_dir_all_codes_partial_extensions(tmp_path):
 
 
 @pytest.mark.filterwarnings(r"ignore:.*Automatically switching code 'pwscf' to 'espresso'.*")
+def test_normalize_code_map_keys():
+    with pytest.raises(
+        ValueError,
+        match="Dictionary supplied two aliases for the same code, found duplicate:"
+        ):
+        PseudoSet._normalize_code_map_keys(
+            {
+                "pwscf": ("C.first.upf",),
+                "espresso": ("C.second.upf",),
+            }
+        )
+#end def test_normalize_code_map_keys
+
+
+@pytest.mark.filterwarnings(r"ignore:.*Automatically switching code 'pwscf' to 'espresso'.*")
 def test_from_mixed_dir_normalizes_code_alias_maps(tmp_path):
     """Aliases must be normalized consistently across all code-keyed inputs."""
     (tmp_path / "C.BFD.upf").touch()

@@ -17,6 +17,7 @@ from .generic import nxs_deprecate
 from .periodic_table import Elements
 from .physical_system import PhysicalSystem
 from .utilities import is_valid_filename
+from .nexus_base import nexus_core
 
 
 def pp_elem_label(
@@ -301,10 +302,9 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
 def ppset(label: str, **codes_pps: Collection[str]):
     """Register pseudopotentials for codes with a label.
 
-    This is intended as a backwards-compatible interface to not break
-    existing user code. Users are suggested to migrate to
-    :func:`generate_pseudoset` or calling :class:`PseudoSet` and its methods for
-    pseudopotential handling.
+    This is intended as a backwards-compatible interface to not break existing
+    user code. Users are suggested to migrate to :func:`generate_pseudoset` or
+    calling :class:`PseudoSet` and its methods for pseudopotential handling.
 
     Parameters
     ----------
@@ -315,10 +315,10 @@ def ppset(label: str, **codes_pps: Collection[str]):
 
     Notes
     -----
-    Using this function is generally discouraged for users as the use of
-    a string label for identifying pseudopotentials prevents Python from
-    raising a :exc:`SyntaxError` when the label supplied to later
-    functions does not match the label used when calling this function.
+    Using this function is generally discouraged for users as the use of a
+    string label for identifying pseudopotentials prevents Python from raising a
+    :exc:`NameError` when the label supplied to later functions does not match
+    the label used when calling this function.
 
     For this reason, it is strongly encouraged to use :func:`generate_pseudoset`
     or :class:`PseudoSet` and/or its member functions :meth:`PseudoSet.from_dir`
@@ -423,6 +423,8 @@ class PseudoSet(DevBase):
     known_codes = frozenset(file_exts.keys())
 
     code_aliases = MappingProxyType({
+        "quantum_espresso": "espresso",
+        "quantum espresso": "espresso",
         "pwscf": "espresso",
         "qe": "espresso",
         "gms": "gamess",
@@ -608,13 +610,17 @@ class PseudoSet(DevBase):
         match those in :attr:`PseudoSet.file_exts`.
         """
         mapping = deepcopy(dict(mapping))
-        for code in list(mapping):
+        normalized_mapping = {}
+        for code in mapping:
             # Normalize all codes in extensions
             checked_code = PseudoSet._check_code_str(code)
-            if code != checked_code:
-                mapping[checked_code] = mapping[code]
-                del mapping[code]
-        return mapping
+            if checked_code in normalized_mapping:
+                msg = f"Dictionary supplied two aliases for the same code, found duplicate: '{code}'"
+                raise ValueError(msg)
+
+            normalized_mapping[checked_code] = mapping[code]
+
+        return normalized_mapping
     #end def _normalize_code_map_keys
 
 
@@ -1128,7 +1134,7 @@ class PseudoSet(DevBase):
     @staticmethod
     def get_pseudos(
         pseudos: PseudoSet | str | Collection[str] | dict[str, Path] | None,
-        system: PhysicalSystem | Collection[str] | None,
+        system: PhysicalSystem | Collection[str],
         code: Literal["espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"],
         ) -> dict[str, str]:
         """Get the pseudopotential files for the elements in a physical system.
@@ -1240,6 +1246,7 @@ class PseudoSet(DevBase):
         """
         if pseudos is None:
             return {}
+
         elif isinstance(pseudos, PseudoSet):
             return pseudos._get_pseudos(system=system, code=code)
         elif isinstance(pseudos, Mapping) and len(pseudos) > 0:
@@ -1257,7 +1264,7 @@ class PseudoSet(DevBase):
                     raise ValueError(msg)
 
                 if system is None:
-                    msg = "A system must be provided with a pseudopotential-set mapping"
+                    msg = "A system must be provided with a PseudoSet mapping"
                     raise ValueError(msg)
 
                 psps = pseudos[code]
@@ -1273,6 +1280,10 @@ class PseudoSet(DevBase):
                     f'Registered labels are {[*PseudoSet.labeled_pseudosets]}'
                     )
                 raise KeyError(msg)
+
+            if system is None:
+                msg = "A system must be provided with a ppset label!"
+                raise ValueError(msg)
 
             code = PseudoSet._check_code_str(code)
             if code not in PseudoSet.labeled_pseudosets[label]:
@@ -1426,7 +1437,8 @@ def generate_pseudoset(
     pseudo_dir : PathLike
         The directory from which to read pseudopotentials. Does not support
         nested directories, except for those that contain a POTCAR file.
-        You must provide either this or ``codes_psps``.
+        If you do not provide this or ``codes_psps`` it will try to use the
+        ``pseudo_dir`` supplied in :data:`~nexus.settings`.
     code : one or more of {"espresso", "gamess", "vasp", "qmcpack", "rmg", "pyscf"}, optional
         The code(s) to use to separate the files in the directory
         into their respective groups.
@@ -1507,8 +1519,11 @@ def generate_pseudoset(
         H: /path/to/pseudo_dir/H.ccECP.gamess
     """
     if pseudo_dir is None and len(codes_psps) == 0:
-        msg = "Must supply `pseudo_dir` and/or `codes_psps`!"
-        raise ValueError(msg)
+        if nexus_core.pseudo_dir is not None:
+            pseudo_dir = Path(nexus_core.pseudo_dir).resolve()
+        else:
+            msg = "Must supply `pseudo_dir` and/or `codes_psps`!"
+            raise ValueError(msg)
 
     if pseudo_dir is not None:
         pseudo_dir = Path(pseudo_dir).resolve()
