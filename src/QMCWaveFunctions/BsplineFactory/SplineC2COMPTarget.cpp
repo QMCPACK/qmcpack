@@ -22,6 +22,29 @@
 namespace qmcplusplus
 {
 template<typename ST>
+SplineC2COMPTarget<ST>::SplineC2COMPTarget(const std::string& my_name,
+                                           size_t size,
+                                           const Lattice& prim_lattice,
+                                           std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
+                                           bool use_offload)
+    : BsplineSet(my_name, size, prim_lattice),
+      offload_timer_(createGlobalTimer("SplineC2COMPTarget::offload", timer_level_fine)),
+      GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
+      prim_lattice_G_offload(std::make_shared<OffloadVector<ST>>(9)),
+      SplineInst(std::move(multi_spline)),
+                 offload_mapper_(use_offload ? std::make_shared<MultiBsplineOffloadMapper<ST>>(*SplineInst) : nullptr)
+{
+  auto GGt(dot(transpose(prim_lattice.G), prim_lattice.G));
+  for (std::uint32_t i = 0; i < 9; i++)
+  {
+    (*GGt_offload)[i]            = GGt[i];
+    (*prim_lattice_G_offload)[i] = prim_lattice_.G[i];
+  }
+  prim_lattice_G_offload->updateTo();
+  GGt_offload->updateTo();
+}
+
+template<typename ST>
 SplineC2COMPTarget<ST>::SplineC2COMPTarget(const SplineC2COMPTarget& in) = default;
 
 template<typename ST>

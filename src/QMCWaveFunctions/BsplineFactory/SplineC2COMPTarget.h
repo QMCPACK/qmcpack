@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "spline2/MultiBsplineOffload.hpp"
+#include "spline2/MultiBsplineOffloadMapper.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
@@ -31,6 +32,9 @@
 
 namespace qmcplusplus
 {
+template<typename T>
+class MultiBsplineOffloadMapper;
+
 /** class to match std::complex<ST> spline with BsplineSet::ValueType (complex) SPOs with OpenMP offload
  * @tparam ST precision of spline
  *
@@ -98,6 +102,8 @@ private:
 protected:
   ///multi bspline set
   const std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
+  /// multi bspline set offload mapper
+  const std::shared_ptr<MultiBsplineOffloadMapper<ST>> offload_mapper_;
   /// intermediate result vectors
   vContainer_type myV;
   vContainer_type myL;
@@ -110,22 +116,7 @@ public:
                      size_t size,
                      const Lattice& prim_lattice,
                      std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
-                     bool use_offload = true)
-      : BsplineSet(my_name, size, prim_lattice),
-        offload_timer_(createGlobalTimer("SplineC2COMPTarget::offload", timer_level_fine)),
-        GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
-        prim_lattice_G_offload(std::make_shared<OffloadVector<ST>>(9)),
-        SplineInst(std::move(multi_spline))
-  {
-    auto GGt(dot(transpose(prim_lattice.G), prim_lattice.G));
-    for (std::uint32_t i = 0; i < 9; i++)
-    {
-      (*GGt_offload)[i]            = GGt[i];
-      (*prim_lattice_G_offload)[i] = prim_lattice_.G[i];
-    }
-    prim_lattice_G_offload->updateTo();
-    GGt_offload->updateTo();
-  }
+                     bool use_offload = true);
 
   SplineC2COMPTarget(const SplineC2COMPTarget& in);
 
