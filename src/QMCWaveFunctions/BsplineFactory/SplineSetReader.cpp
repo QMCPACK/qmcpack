@@ -97,12 +97,8 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
 
   std::unique_ptr<BsplineSet> bspline;
 #if defined(QMC_COMPLEX)
-  if (use_offload)
-    bspline = std::make_unique<SplineC2COMPTarget<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                       std::move(multi_splines_ptr), use_offload);
-  else
-    bspline = std::make_unique<SplineC2C<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                              std::move(multi_splines_ptr), use_offload);
+  bspline = std::make_unique<SplineC2COMPTarget<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                                     std::move(multi_splines_ptr), use_offload);
 #else
   if (use_duplex_splines_)
   {
