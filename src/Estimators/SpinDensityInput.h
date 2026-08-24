@@ -46,10 +46,9 @@ public:
       // clang-format off
       section_name = type_tag;
       attributes   = {"name", "type", "report", "save_memory"};
-      parameters   = {"dr", "grid", "corner", "center", "cell", "test_moves"};
+      parameters   = {"dr", "grid", "corner", "center", "cell"};
       strings      = {"name", "type"};
       bools        = {"report", "save_memory"};
-      integers     = {"test_moves"};
       positions    = {"dr", "grid", "corner", "center"};
       multi_reals  = {"cell"};
       // clang-format on
