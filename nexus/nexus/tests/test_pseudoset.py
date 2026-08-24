@@ -1943,16 +1943,12 @@ def test_legacy_ppset(tmp_path):
             }
         }
 
-    with pytest.warns(
-        NexusUserWarning,
-        match="Automatically switching code 'pwscf' to 'espresso'",
-        ):
-        ppset(
-            label   = 'bfd',
-            pwscf   = ["C.BFD.upf", "H.BFD.upf", "O.BFD.upf"],
-            qmcpack = ["C.BFD.xml", "H.BFD.xml", "O.BFD.xml"],
-            gamess  = ["C.BFD.gms", "H.BFD.gms", "O.BFD.gms"],
-            )
+    ppset(
+        label   = 'bfd',
+        pwscf   = ["C.BFD.upf", "H.BFD.upf", "O.BFD.upf"],
+        qmcpack = ["C.BFD.xml", "H.BFD.xml", "O.BFD.xml"],
+        gamess  = ["C.BFD.gms", "H.BFD.gms", "O.BFD.gms"],
+        )
 
     assert set(PseudoSet.labeled_pseudosets) == {'bfd'}
     assert set(PseudoSet.labeled_pseudosets['bfd']) == {
@@ -1966,15 +1962,11 @@ def test_legacy_ppset(tmp_path):
         assert pseudoset.pseudo_dirs == ref_pseudoset.pseudo_dirs
     #end for
 
-    with pytest.warns(
-        NexusUserWarning,
-        match="Automatically switching code 'pwscf' to 'espresso'",
-        ):
-        ppset(
-            label = 'shared_upf',
-            pwscf = ['C.BFD.upf','H.BFD.upf','O.BFD.upf'],
-            rmg   = ['C.BFD.upf','H.BFD.upf','O.BFD.upf'],
-            )
+    ppset(
+        label = 'shared_upf',
+        pwscf = ['C.BFD.upf','H.BFD.upf','O.BFD.upf'],
+        rmg   = ['C.BFD.upf','H.BFD.upf','O.BFD.upf'],
+        )
     shared = PseudoSet.labeled_pseudosets['shared_upf']
     assert set(shared) == {'espresso','rmg'}
     assert shared['espresso'] is not shared['rmg']
@@ -2128,7 +2120,7 @@ def test_get_pseudos(tmp_path):
 
     with pytest.raises(
         ValueError,
-        match='A system must be provided',
+        match='Either provide a list of pseudo names or use a `PhysicalSystem` object',
         ):
         PseudoSet.get_pseudos(
             pseudos = generated,
@@ -2235,7 +2227,6 @@ def test_from_mixed_dir_all_codes_partial_extensions(tmp_path):
 #end def test_from_mixed_dir_all_codes_partial_extensions
 
 
-@pytest.mark.filterwarnings(r"ignore:.*Automatically switching code 'pwscf' to 'espresso'.*")
 def test_normalize_code_map_keys():
     with pytest.raises(
         ValueError,
@@ -2250,7 +2241,6 @@ def test_normalize_code_map_keys():
 #end def test_normalize_code_map_keys
 
 
-@pytest.mark.filterwarnings(r"ignore:.*Automatically switching code 'pwscf' to 'espresso'.*")
 def test_from_mixed_dir_normalizes_code_alias_maps(tmp_path):
     """Aliases must be normalized consistently across all code-keyed inputs."""
     (tmp_path / "C.BFD.upf").touch()

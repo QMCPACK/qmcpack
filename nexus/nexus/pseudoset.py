@@ -587,9 +587,11 @@ class PseudoSet(DevBase):
         """
         clow = code.lower()
         if clow in PseudoSet.code_aliases:
-            new_code = PseudoSet.code_aliases[clow]
-            warn(f"Automatically switching code '{clow}' to '{new_code}'.")
-            clow = new_code
+            # TODO: Make this a logging call in the future.
+            # new_code = PseudoSet.code_aliases[clow]
+            # warn(f"Automatically switching code '{clow}' to '{new_code}'.")
+            # clow = new_code
+            clow = PseudoSet.code_aliases[clow]
 
         if clow not in PseudoSet.known_codes:
             msg = (
@@ -1264,7 +1266,7 @@ class PseudoSet(DevBase):
                     raise ValueError(msg)
 
                 if system is None:
-                    msg = "A system must be provided with a PseudoSet mapping"
+                    msg = "Either provide a list of pseudo names or use a `PhysicalSystem` object for PseudoSet mapping"
                     raise ValueError(msg)
 
                 psps = pseudos[code]
@@ -1282,7 +1284,7 @@ class PseudoSet(DevBase):
                 raise KeyError(msg)
 
             if system is None:
-                msg = "A system must be provided with a ppset label!"
+                msg = "Either provide a list of pseudo names or use a `PhysicalSystem` object for a ppset label!"
                 raise ValueError(msg)
 
             code = PseudoSet._check_code_str(code)
