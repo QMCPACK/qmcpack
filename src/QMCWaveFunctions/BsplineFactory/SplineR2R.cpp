@@ -16,7 +16,6 @@
 #include "SplineR2R.h"
 #include "Concurrency/OpenMP.h"
 #include "spline2/MultiBspline.hpp"
-#include "spline2/MultiBsplineOffload.hpp"
 #include "spline2/MultiBsplineOffloadMapper.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 #include "spline2/MultiBsplineEval_OMPoffload.hpp"

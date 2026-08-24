@@ -19,17 +19,14 @@
 #include "Utilities/FairDivide.h"
 #include <Timer.h>
 #if defined(QMC_COMPLEX)
-#include "SplineC2C.h"
 #include "SplineC2COMPTarget.h"
 #else
 #include "SplineR2R.h"
-#include "SplineC2R.h"
 #include "SplineC2ROMPTarget.h"
 #endif
 #include "Message/CommOperators.h"
 #include "spline2/SplineUtils.h"
 #include "spline2/MultiBspline.hpp"
-#include "spline2/MultiBsplineOffload.hpp"
 #if defined(HAVE_MPI)
 #include "spline2/MultiBsplineMPIShared.hpp"
 #endif
@@ -81,14 +78,12 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
 
   const size_t num_splines = getAlignedSize<ST>(use_duplex_splines_ ? N * 2 : N);
   std::unique_ptr<MultiBsplineBase<ST>> multi_splines_ptr;
-  if (use_offload)
-    multi_splines_ptr = std::make_unique<MultiBsplineOffload<ST>>(xyz_grid, xyz_bc, num_splines);
 #if defined(HAVE_MPI)
-  else if (distributed_ranks * shared_ranks > 1)
+  if (distributed_ranks * shared_ranks > 1)
     multi_splines_ptr = std::make_unique<MultiBsplineMPIShared<ST>>(xyz_grid, xyz_bc, num_splines,
                                                                     std::move(dist_comm_ptr), distributed_ranks);
-#endif
   else
+#endif
     multi_splines_ptr = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
 
   auto& multi_splines(*multi_splines_ptr);

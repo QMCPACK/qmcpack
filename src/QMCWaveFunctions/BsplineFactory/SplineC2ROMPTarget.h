@@ -22,7 +22,6 @@
 #include <memory>
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include "spline2/MultiBsplineOffload.hpp"
 #include "spline2/MultiBsplineOffloadMapper.hpp"
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "Utilities/TimerManager.h"
@@ -119,7 +118,7 @@ public:
                      size_t size,
                      const Lattice& prim_lattice,
                      std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
-                     bool use_offload = true);
+                     bool use_offload = false);
 
   SplineC2ROMPTarget(const SplineC2ROMPTarget& in);
 
