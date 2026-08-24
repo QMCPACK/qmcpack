@@ -1,12 +1,11 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2017-2023 Alfredo A. Correa
+// Copyright 2017-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_ERROR_HANDLER_HPP
 #define BOOST_MPI3_ERROR_HANDLER_HPP
 
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
-#include "../mpi3/communicator.hpp"
+#include <mpi3/communicator.hpp>
 
 namespace boost {
 namespace mpi3 {
@@ -20,7 +19,7 @@ class code {
 };
 
 struct error_handler {
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	MPI_Errhandler impl_ = MPI_ERRORS_ARE_FATAL;  // NOLINT(misc-non-private-member-variables-in-classes) TODO(correaa)
 #else
 	MPI_Errhandler impl_ = MPI_ERRORS_RETURN;  // NOLINT(misc-non-private-member-variables-in-classes) TODO(correaa)
@@ -43,7 +42,7 @@ struct error_handler {
 //  }
 //  void operator()(communicator& comm, int error) const{comm.call_error_handler(error);}
 	~error_handler() {
-	#if not defined(EXAMPI)
+	#ifndef EXAMPI
 		if(impl_ != MPI_ERRORS_ARE_FATAL and impl_ != MPI_ERRORS_RETURN) {
 			MPI_Errhandler_free(&impl_);
 		}
@@ -68,7 +67,7 @@ struct error_handler {
 	static error_handler const code;
 };
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 error_handler const error_handler::fatal{MPI_ERRORS_ARE_FATAL};  // NOLINT(misc-definitions-in-headers,fuchsia-statically-constructed-objects) TODO(correaa)
 #endif
 error_handler const error_handler::code{MPI_ERRORS_RETURN};  // NOLINT(misc-definitions-in-headers,fuchsia-statically-constructed-objects) TODO(correaa)
@@ -77,7 +76,7 @@ inline void communicator::set_error_handler(error_handler const& eh) {
 	MPI_(Comm_set_errhandler)(impl_, eh.impl_);
 }
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 inline error_handler communicator::get_error_handler() const {
 	error_handler ret;
 	MPI_(Comm_get_errhandler)(impl_, &ret.impl_);
