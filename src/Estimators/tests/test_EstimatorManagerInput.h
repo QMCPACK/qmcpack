@@ -19,38 +19,34 @@ namespace qmcplusplus::testing
 {
 
 template<typename T>
-struct ExpectedEstimatorInputNameType;
+struct ExpectedEstimatorInputName;
 
 template<>
-struct ExpectedEstimatorInputNameType<EnergyDensityInput>
+struct ExpectedEstimatorInputName<EnergyDensityInput>
 {
   using Type = EnergyDensityInput;
   std::string name{"EDcell"};
-  std::string type{"EnergyDensity"};
 };
 
 template<>
-struct ExpectedEstimatorInputNameType<OneBodyDensityMatricesInput>
+struct ExpectedEstimatorInputName<OneBodyDensityMatricesInput>
 {
   using Type = OneBodyDensityMatricesInput;
   std::string name{"OneBodyDensityMatrices"};
-  std::string type{"OneBodyDensityMatrices"};
 };
 
 template<>
-struct ExpectedEstimatorInputNameType<MomentumDistributionInput>
+struct ExpectedEstimatorInputName<MomentumDistributionInput>
 {
   using Type = MomentumDistributionInput;
   std::string name{"nofk"};
-  std::string type{"MomentumDistribution"};
 };
 
 template<>
-struct ExpectedEstimatorInputNameType<StructureFactorInput>
+struct ExpectedEstimatorInputName<StructureFactorInput>
 {
   using Type = StructureFactorInput;
   std::string name{"sk1"};
-  std::string type{"StructureFactor"};
 };
 
 } // namespace qmcplusplus::testing

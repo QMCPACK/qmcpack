@@ -35,8 +35,8 @@ public:
     MomentumDistributionInputSection()
     {
       section_name = type_tag;
-      attributes   = {"type", "name", "samples", "kmax", "kmax0", "kmax1", "kmax2"};
-      strings      = {"type", "name"};
+      attributes   = {"name", "samples", "kmax", "kmax0", "kmax1", "kmax2"};
+      strings      = {"name"};
       integers     = {"samples"};
       reals        = {"kmax", "kmax0", "kmax1", "kmax2"};
       // default_values = {{"name", std::string("nofk")}, {"samples", int(40)}, {"kmax", Real(0.0)},
@@ -55,7 +55,6 @@ private:
   MomentumDistributionInputSection input_section_;
 
   std::string name_{type_tag};
-  std::string type_{type_tag};
   ///number of samples
   int samples_ = 40;
   //maximum k-value in the k-grid in cartesian coordinates
@@ -67,7 +66,6 @@ private:
 
 public:
   const std::string& get_name() const { return name_; }
-  const std::string& get_type() const { return type_; }
   const int& get_samples() const { return samples_; }
   const Real& get_kmax() const { return kmax_; }
   const Real& get_kmax0() const { return kmax0_; }
