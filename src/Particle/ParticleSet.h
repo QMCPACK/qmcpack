@@ -312,22 +312,18 @@ public:
    * @param[in,out] p_list ParticleSets to move; positions, distance tables, and structure factors are updated in place
    * @param[in] displacements particle displacements in particle-major order
    * @param[out] are_valid lattice-validity result for each particle move, in particle-major order
-   * @param[in] skipSK if true, do not update structure factors
-   *
    * Displacements and are_valid use particle-major flattened storage:
    * ip * number_of_walkers + iw. The caller must supply a nonempty, resource-acquired
    * crowd with matching topology and particle counts, exact input and output sizes,
    * and no active particles. These caller invariants are checked in Debug and assumed in
    * Release. Each move proposal receives the same lattice-validity check as mw_makeMove.
    * Individual invalid particle proposals leave that particle unchanged; they do not reject the full
-   * configuration. Distance tables and, unless skipped, structure factors are fully
-   * updated. No particle is left active.
+   * configuration. Distance tables and structure factors are fully updated. No particle is left active.
    */
   template<CoordsType CT>
   static void mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
                                       const MCCoords<CT>& displacements,
-                                      std::vector<bool>& are_valid,
-                                      bool skipSK = false);
+                                      std::vector<bool>& are_valid);
 
   /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
@@ -438,22 +434,18 @@ public:
   /** accept or reject an all particle move for every walker in a crowd
    *
    * @param[in,out] p_list   ParticleSets transformed by attempted moves
-   * @param[in] walkers      walker to provide positions and spins used to restore rejected moves
    * @param[in] accepted     one acceptance decision for each ParticleSet
-   * @param[in] skipSK       if true, do not update structure factors
-   *
    * Accepted moves remain in the ParticleSets. Rejected moves restore positions and spins
-   * from the corresponding walker and update the distance tables and structure factors.
+   * from the pre-proposal snapshot retained in the acquired multiwalker resource, then update
+   * the distance tables and structure factors. Walker_t state is not part of this transaction.
    * The caller must provide a nonempty, resource-acquired crowd with the same number of
-   * ParticleSets, walkers, and decisions, matching particle counts,
+   * ParticleSets and decisions, matching particle counts,
    * and no active particles. These requirements are checked in Debug
    * and assumed in Release. In simulation context this necessarily
    * follows a mw_makeMoveAllParticles* call.
    */
   static void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
-                                               const RefVector<Walker_t>& walkers,
-                                               const std::vector<bool>& accepted,
-                                               bool skipSK = false);
+                                               const std::vector<bool>& accepted);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }

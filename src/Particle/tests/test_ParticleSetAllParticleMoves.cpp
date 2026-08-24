@@ -61,35 +61,31 @@ void checkDistances(const ParticleSet& elecs, int aa_id, int ab_id, const Partic
 class SingleWalkerAllParticleContext
 {
 public:
-  SingleWalkerAllParticleContext(ParticleSet& pset, ParticleSet::Walker_t& walker)
-      : p_list_(pset, {pset}), walkers_{walker}, resources_("single_walker_all_particle_resources")
+  explicit SingleWalkerAllParticleContext(ParticleSet& pset)
+      : p_list_(pset, {pset}), resources_("single_walker_all_particle_resources")
   {
     pset.createResource(resources_);
     lock_ = std::make_unique<ResourceCollectionTeamLock<ParticleSet>>(resources_, p_list_);
   }
 
   template<CoordsType CT>
-  void makeMove(const MCCoords<CT>& displacements, std::vector<bool>& valid, bool skipSK = false)
+  void makeMove(const MCCoords<CT>& displacements, std::vector<bool>& valid)
   {
-    ParticleSet::mw_makeMoveAllParticles(p_list_, displacements, valid, skipSK);
+    ParticleSet::mw_makeMoveAllParticles(p_list_, displacements, valid);
   }
 
   template<CoordsType CT>
-  std::vector<bool> makeMove(const MCCoords<CT>& displacements, bool skipSK = false)
+  std::vector<bool> makeMove(const MCCoords<CT>& displacements)
   {
     std::vector<bool> valid(displacements.positions.size());
-    makeMove(displacements, valid, skipSK);
+    makeMove(displacements, valid);
     return valid;
   }
 
-  void resolve(bool accepted, bool skipSK = false)
-  {
-    ParticleSet::mw_accept_rejectMoveAllParticles(p_list_, walkers_, {accepted}, skipSK);
-  }
+  void resolve(bool accepted) { ParticleSet::mw_accept_rejectMoveAllParticles(p_list_, {accepted}); }
 
 private:
   RefVectorWithLeader<ParticleSet> p_list_;
-  RefVector<ParticleSet::Walker_t> walkers_;
   ResourceCollection resources_;
   std::unique_ptr<ResourceCollectionTeamLock<ParticleSet>> lock_;
 };
@@ -142,20 +138,20 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind)
   checkDistances(p0, aa_id, ab_id, ions);
   checkDistances(p1, aa_id, ab_id, ions);
 
-  dispatcher.flex_accept_rejectMoveAllParticles(p_list, walkers, {true, false});
+  dispatcher.flex_accept_rejectMoveAllParticles(p_list, {true, false});
   checkPosition(p0, 0, {0.7, 0.5, 0.5});
   checkPosition(p1, 0, w1.R[0]);
   checkPosition(p1, 1, w1.R[1]);
   checkDistances(p0, aa_id, ab_id, ions);
   checkDistances(p1, aa_id, ab_id, ions);
 
-  // Saving the accepted transaction is required before a later rejection.
-  dispatcher.flex_saveWalker(p_list, walkers);
+  // Walker_t remains unchanged until the driver's explicit step-boundary save.
   MCCoords<CoordsType::POS> next_displacements(4);
   next_displacements.positions = {{0.1, 0.0, 0.0}, {0.0, 0.0, 0.2}, {0.0, 0.1, 0.0}, {0.1, 0.0, 0.0}};
   dispatcher.flex_makeMoveAllParticles(p_list, next_displacements, valid);
   REQUIRE(valid == std::vector<bool>{true, true, true, true});
-  dispatcher.flex_accept_rejectMoveAllParticles(p_list, walkers, {false, true});
+  CHECK(w0.R[0][0] == Approx(0.5)); // The prior accepted substep has not been saved to Walker_t.
+  dispatcher.flex_accept_rejectMoveAllParticles(p_list, {false, true});
 
   checkPosition(p0, 0, {0.7, 0.5, 0.5});
   checkPosition(p0, 1, {1.5, 1.3, 0.5});
@@ -176,7 +172,7 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind)
   REQUIRE(valid == std::vector<bool>{true, true, true, true});
   const ParticleSet::ParticlePos accepted_r0(p0.R);
   const ParticleSet::ParticlePos accepted_r1(p1.R);
-  dispatcher.flex_accept_rejectMoveAllParticles(p_list, walkers, {true, true});
+  dispatcher.flex_accept_rejectMoveAllParticles(p_list, {true, true});
   for (int ip = 0; ip < p0.getTotalNum(); ++ip)
   {
     checkPosition(p0, ip, accepted_r0[ip]);
@@ -186,7 +182,7 @@ void exerciseDispatcherAllParticleMove(DynamicCoordinateKind kind)
   dispatcher.flex_saveWalker(p_list, walkers);
   dispatcher.flex_makeMoveAllParticles(p_list, next_displacements, valid);
   REQUIRE(valid == std::vector<bool>{true, true, true, true});
-  dispatcher.flex_accept_rejectMoveAllParticles(p_list, walkers, {false, false});
+  dispatcher.flex_accept_rejectMoveAllParticles(p_list, {false, false});
   for (int ip = 0; ip < p0.getTotalNum(); ++ip)
   {
     checkPosition(p0, ip, w0.R[ip]);
@@ -203,7 +199,7 @@ TEST_CASE("ParticleSet all-particle moves through the multiwalker dispatcher pas
     exerciseDispatcherAllParticleMove(kind);
 }
 
-TEST_CASE("ParticleSet all-particle POS_SPIN rejection restores the resolved walker", "[particle]")
+TEST_CASE("ParticleSet all-particle POS_SPIN rejection restores the pre-proposal state", "[particle]")
 {
   const SimulationCell cell = makeOpenCell();
   ParticleSet pset(cell);
@@ -219,7 +215,7 @@ TEST_CASE("ParticleSet all-particle POS_SPIN rejection restores the resolved wal
   MCCoords<CoordsType::POS_SPIN> displacements(2);
   displacements.positions = {{0.1, 0.0, 0.0}, {0.0, 0.2, 0.0}};
   displacements.spins     = {0.5, -0.25};
-  SingleWalkerAllParticleContext transaction(pset, walker);
+  SingleWalkerAllParticleContext transaction(pset);
 
   REQUIRE(transaction.makeMove(displacements) == std::vector<bool>{true, true});
   CHECK(pset.spins[0] == Approx(0.75));
@@ -249,7 +245,6 @@ TEST_CASE("ParticleSet batched all-particle POS_SPIN resolves mixed outcomes", "
   p0.saveWalker(w0);
   p1.saveWalker(w1);
   RefVectorWithLeader<ParticleSet> p_list(p0, {p0, p1});
-  RefVector<ParticleSet::Walker_t> walkers{w0, w1};
   ResourceCollection resources("all_particle_spin_move_resources");
   p0.createResource(resources);
   ResourceCollectionTeamLock<ParticleSet> lock(resources, p_list);
@@ -267,7 +262,7 @@ TEST_CASE("ParticleSet batched all-particle POS_SPIN resolves mixed outcomes", "
   checkPosition(p1, 0, {0.7, 0.5, 0.5});
   checkPosition(p1, 1, w1.R[1]);
 
-  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, walkers, {true, false});
+  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, {true, false});
   CHECK(p0.spins[0] == Approx(0.75));
   CHECK(p0.spins[1] == Approx(-0.75));
   CHECK(p1.spins[0] == Approx(w1.spins[0]));
@@ -294,54 +289,11 @@ TEST_CASE("ParticleSet all-particle periodic proposal remains unwrapped and supp
   pset.saveWalker(walker);
   MCCoords<CoordsType::POS> displacement(1);
   displacement.positions = {{0.5, 0.0, 0.0}};
-  SingleWalkerAllParticleContext transaction(pset, walker);
-  REQUIRE(transaction.makeMove(displacement, true) == std::vector<bool>{true});
+  SingleWalkerAllParticleContext transaction(pset);
+  REQUIRE(transaction.makeMove(displacement) == std::vector<bool>{true});
   checkPosition(pset, 0, {2.3, 0.5, 0.5});
-  transaction.resolve(false, true);
-  checkPosition(pset, 0, walker.R[0]);
-}
-
-TEST_CASE("ParticleSet all-particle move honors structure-factor skipping", "[particle]")
-{
-  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(OHMMS::Controller);
-  ParticleSet& pset  = *particle_pool.getParticleSet("e");
-  REQUIRE(pset.hasSK());
-  pset.update();
-
-  ParticleSet::Walker_t walker(pset.getTotalNum());
-  pset.saveWalker(walker);
-  const auto resolved_rhok_r = pset.getSK().rhok_r;
-  const auto resolved_rhok_i = pset.getSK().rhok_i;
-
-  MCCoords<CoordsType::POS> displacement(pset.getTotalNum());
-  std::fill(displacement.positions.begin(), displacement.positions.end(), ParticleSet::PosType{});
-  displacement.positions[0] = {0.2, 0.1, 0.0};
-  SingleWalkerAllParticleContext transaction(pset, walker);
-  const std::vector<bool> skip_sk_valid = transaction.makeMove(displacement, true);
-  REQUIRE(std::all_of(skip_sk_valid.begin(), skip_sk_valid.end(), [](bool valid) { return valid; }));
-  for (size_t i = 0; i < resolved_rhok_r.size(); ++i)
-  {
-    CHECK(pset.getSK().rhok_r.data()[i] == Approx(resolved_rhok_r.data()[i]));
-    CHECK(pset.getSK().rhok_i.data()[i] == Approx(resolved_rhok_i.data()[i]));
-  }
-
-  transaction.resolve(false, true);
-  const std::vector<bool> update_sk_valid = transaction.makeMove(displacement);
-  REQUIRE(std::all_of(update_sk_valid.begin(), update_sk_valid.end(), [](bool valid) { return valid; }));
-  bool any_rhok_changed = false;
-  for (size_t i = 0; i < resolved_rhok_r.size(); ++i)
-    any_rhok_changed = any_rhok_changed || pset.getSK().rhok_r.data()[i] != Approx(resolved_rhok_r.data()[i]) ||
-        pset.getSK().rhok_i.data()[i] != Approx(resolved_rhok_i.data()[i]);
-  CHECK(any_rhok_changed);
-
   transaction.resolve(false);
-  for (int ip = 0; ip < pset.getTotalNum(); ++ip)
-    checkPosition(pset, ip, walker.R[ip]);
-  for (size_t i = 0; i < resolved_rhok_r.size(); ++i)
-  {
-    CHECK(pset.getSK().rhok_r.data()[i] == Approx(resolved_rhok_r.data()[i]));
-    CHECK(pset.getSK().rhok_i.data()[i] == Approx(resolved_rhok_i.data()[i]));
-  }
+  checkPosition(pset, 0, walker.R[0]);
 }
 
 TEST_CASE("ParticleSet batched all-particle move updates and restores structure factors", "[particle]")
@@ -360,7 +312,6 @@ TEST_CASE("ParticleSet batched all-particle move updates and restores structure 
   const auto resolved_rhok_i = p1.getSK().rhok_i;
 
   RefVectorWithLeader<ParticleSet> p_list(p0, {p0, p1});
-  RefVector<ParticleSet::Walker_t> walkers{w0, w1};
   ResourceCollection resources("all_particle_sk_move_resources");
   p0.createResource(resources);
   ResourceCollectionTeamLock<ParticleSet> lock(resources, p_list);
@@ -377,7 +328,7 @@ TEST_CASE("ParticleSet batched all-particle move updates and restores structure 
   const auto proposed_rhok_r = p0.getSK().rhok_r;
   const auto proposed_rhok_i = p0.getSK().rhok_i;
 
-  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, walkers, {true, false});
+  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, {true, false});
   for (size_t i = 0; i < resolved_rhok_r.size(); ++i)
   {
     CHECK(p0.getSK().rhok_r.data()[i] == Approx(proposed_rhok_r.data()[i]));
@@ -400,7 +351,7 @@ TEST_CASE("ParticleSet all-particle moves filter boundary-invalid particles inde
 
   MCCoords<CoordsType::POS> displacements(2);
   displacements.positions = {{0.2, 0.0, 0.0}, {0.0, -1.0, 0.0}};
-  SingleWalkerAllParticleContext transaction(pset, walker);
+  SingleWalkerAllParticleContext transaction(pset);
   REQUIRE(transaction.makeMove(displacements) == std::vector<bool>{true, false});
   checkPosition(pset, 0, {0.7, 0.5, 0.5});
   checkPosition(pset, 1, walker.R[1]);
@@ -430,7 +381,7 @@ TEST_CASE("ParticleSet all-particle moves reject malformed and active transactio
   pset.update();
   ParticleSet::Walker_t walker(2);
   pset.saveWalker(walker);
-  SingleWalkerAllParticleContext transaction(pset, walker);
+  SingleWalkerAllParticleContext transaction(pset);
 
   MCCoords<CoordsType::POS> malformed(1);
   malformed.positions = {{0.1, 0.0, 0.0}};
@@ -446,8 +397,7 @@ TEST_CASE("ParticleSet all-particle moves reject malformed and active transactio
 
   ParticleSet malformed_pset(cell);
   malformed_pset.create({1});
-  ParticleSet::Walker_t malformed_walker(2);
-  SingleWalkerAllParticleContext malformed_transaction(malformed_pset, malformed_walker);
+  SingleWalkerAllParticleContext malformed_transaction(malformed_pset);
   REQUIRE_THROWS_AS(malformed_transaction.resolve(false), std::runtime_error);
 }
 

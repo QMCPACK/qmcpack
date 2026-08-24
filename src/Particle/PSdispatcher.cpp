@@ -45,18 +45,15 @@ void PSdispatcher::flex_update(const RefVectorWithLeader<ParticleSet>& p_list, b
 template<CoordsType CT>
 void PSdispatcher::flex_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
                                              const MCCoords<CT>& displacements,
-                                             std::vector<bool>& are_valid,
-                                             bool skipSK) const
+                                             std::vector<bool>& are_valid) const
 {
-  ParticleSet::mw_makeMoveAllParticles(p_list, displacements, are_valid, skipSK);
+  ParticleSet::mw_makeMoveAllParticles(p_list, displacements, are_valid);
 }
 
 void PSdispatcher::flex_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
-                                                      const RefVector<Walker_t>& walkers,
-                                                      const std::vector<bool>& accepted,
-                                                      bool skipSK) const
+                                                      const std::vector<bool>& accepted) const
 {
-  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, walkers, accepted, skipSK);
+  ParticleSet::mw_accept_rejectMoveAllParticles(p_list, accepted);
 }
 
 template<CoordsType CT>
@@ -109,13 +106,11 @@ void PSdispatcher::flex_saveWalker(const RefVectorWithLeader<ParticleSet>& p_lis
 
 template void PSdispatcher::flex_makeMoveAllParticles<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                                        const MCCoords<CoordsType::POS>& displacements,
-                                                                       std::vector<bool>& are_valid,
-                                                                       bool skipSK) const;
+                                                                       std::vector<bool>& are_valid) const;
 template void PSdispatcher::flex_makeMoveAllParticles<CoordsType::POS_SPIN>(
     const RefVectorWithLeader<ParticleSet>& p_list,
     const MCCoords<CoordsType::POS_SPIN>& displacements,
-    std::vector<bool>& are_valid,
-    bool skipSK) const;
+    std::vector<bool>& are_valid) const;
 template void PSdispatcher::flex_makeMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
                                                            int iat,
                                                            const MCCoords<CoordsType::POS>& displs,
