@@ -14,6 +14,7 @@
 #include "SpinDensityInput.h"
 #include "ValidSpinDensityInput.h"
 #include "EstimatorTesting.h"
+#include "Message/UniformCommunicateError.h"
 #include "ParticleSet.h"
 #include "OhmmsData/Libxml2Doc.h"
 
@@ -24,8 +25,9 @@ namespace qmcplusplus
 {
 TEST_CASE("SpinDensityInput::readXML", "[estimators]")
 {
-  using input = testing::ValidSpinDensityInput;
-  for (auto input_xml : input::xml)
+  using Input = testing::SpinDensityInputs;
+  Input input;
+  for (auto input_xml : input)
   {
     Libxml2Document doc;
     REQUIRE(doc.parseFromString(input_xml));
@@ -46,6 +48,17 @@ TEST_CASE("SpinDensityInput::readXML", "[estimators]")
     CHECK(dev_par.grid == grid);
     TinyVector<int, SpinDensityInput::DIM> gdims(100, 10, 1);
     CHECK(dev_par.gdims == gdims);
+  }
+}
+
+TEST_CASE("SpinDensityInput invalid input", "[estimators]")
+{
+  testing::InvalidSpinDensityInput input;
+  for (const auto input_xml : input)
+  {
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(input_xml));
+    CHECK_THROWS_AS(SpinDensityInput(doc.getRoot()), UniformCommunicateError);
   }
 }
 
