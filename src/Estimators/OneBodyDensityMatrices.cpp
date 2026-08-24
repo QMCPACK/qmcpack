@@ -47,7 +47,7 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
                                                const SpeciesSet& species,
                                                const SPOMap& spomap,
                                                const ParticleSet& pset_target)
-    : OperatorEstBase(DataLocality::crowd, obdmi.get_name(), obdmi.get_type()),
+    : OperatorEstBase(DataLocality::crowd, obdmi.get_name(), std::string{OneBodyDensityMatricesInput::type_tag}),
       input_(obdmi),
       lattice_(std::move(lattice)),
       species_(species),

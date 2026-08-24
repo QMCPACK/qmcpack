@@ -21,7 +21,7 @@ PairCorrelationEstimator::PairCorrelationEstimator(const PairCorrelationInput& p
                                                    const PSPool& pset_pool,
                                                    ParticleSet& elecs,
                                                    DataLocality data_locality)
-    : OperatorEstBase(data_locality, pci.get_name(), pci.get_type()), input_(pci)
+    : OperatorEstBase(data_locality, pci.get_name(), std::string{PairCorrelationInput::type_tag}), input_(pci)
 {
   num_species_ = elecs.groups();
   n_vec_.resize(num_species_, 0);
