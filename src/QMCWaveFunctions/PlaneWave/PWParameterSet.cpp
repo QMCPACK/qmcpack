@@ -43,6 +43,7 @@ PWParameterSet::PWParameterSet(Communicate* comm)
 {
   m_param.setName("h5tag");
   m_param.add(twistIndex, "twistIndex");
+  m_param.add(twistIndex, "twistnum");
   m_param.add(Rcut, "rcut");
   m_param.add(BufferRadius, "bufferLayer");
   m_param.add(BoxDup, "expand");

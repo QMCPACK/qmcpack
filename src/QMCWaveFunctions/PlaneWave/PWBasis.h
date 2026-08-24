@@ -139,7 +139,8 @@ public:
                 const ParticleLayout& lat,
                 const std::string& pwname     = "planewaves",
                 const std::string& pwmultname = "multipliers",
-                bool resizeContainer          = true);
+                bool resizeContainer          = true,
+                int kpoint_index              = 0);
 
   /** Remove basis elements if kinetic energy > ecut.
    *

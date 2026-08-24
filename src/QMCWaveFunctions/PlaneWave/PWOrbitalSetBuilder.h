@@ -49,6 +49,12 @@ private:
   xmlNodePtr rootNode{nullptr};
   ///input twist angle
   PosType TwistAngle;
+  ///primitive-to-supercell tiling matrix
+  Tensor<int, OHMMS_DIM> tileMatrix;
+  ///primitive-cell k-points contributing to the selected supercell twist
+  std::vector<int> includedKPoints;
+  ///primitive-cell twist angles read from the HDF file
+  std::vector<PosType> twistAngles;
   ///parameter set
   std::unique_ptr<PWParameterSet> myParam;
   //will do something for twist
