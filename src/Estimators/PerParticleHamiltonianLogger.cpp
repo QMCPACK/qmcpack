@@ -36,7 +36,7 @@ PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonia
 }
 
 PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLogger& pphl, DataLocality dl)
-    : OperatorEstBase(dl, pphl.getMyName(), pphl.getMyType()),
+    : OperatorEstBase(dl, pphl.getMyName(), std::string{PerParticleHamiltonianLoggerInput::type_tag}),
       rank_estimator_(makeOptionalRef(pphl)),
       input_(pphl.input_)
 {
