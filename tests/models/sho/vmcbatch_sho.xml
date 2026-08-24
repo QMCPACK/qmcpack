@@ -1,6 +1,6 @@
 <simulation>
-<project id="vmc_sho" series="0">
-  <parameter name="driver_version">legacy</parameter>
+<project id="vmcbatch_sho" series="0">
+  <parameter name="driver_version">batched</parameter>
 </project>
   <qmcsystem>
     <simulationcell>
