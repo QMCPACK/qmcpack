@@ -19,6 +19,7 @@
 
 
 #include <stdio.h>
+#include <cmath>
 #include <string>
 
 using std::string;
@@ -123,6 +124,52 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   }
   fclose(fspo);
 #endif
+}
+
+TEST_CASE("PlaneWave tiled SPO from HDF for diamond C", "[wavefunction]")
+{
+  Communicate* c = OHMMS::Controller;
+
+  Lattice lattice;
+  lattice.R = {6.74632230, 6.74632230, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
+  lattice.reset();
+
+  ParticleSetPool ptcl(c);
+  ptcl.createSimulationCellByLattice(lattice);
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  ParticleSet& elec(*elec_uptr);
+  elec.create({8, 8});
+  elec.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
+  elec.R[0] = {0.25, 0.5, 0.75};
+  elec.update();
+
+  const char* particles = R"(
+<sposet_collection type="PW" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0">
+  <sposet name="updet" size="8" spindataset="0"/>
+</sposet_collection>
+)";
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(particles));
+
+  xmlNodePtr root = doc.getRoot();
+  PWOrbitalSetBuilder pw_builder(elec, c, root);
+  auto spo = pw_builder.createSPOSet(xmlFirstElementChild(root));
+  REQUIRE(spo);
+  CHECK(spo->getClassName() == "CompositeSPOSet");
+  REQUIRE(spo->getOrbitalSetSize() == 8);
+
+  SPOSet::ValueVector values(8);
+  SPOSet::GradVector gradients(8);
+  SPOSet::ValueVector laplacians(8);
+  spo->evaluateVGL(elec, 0, values, gradients, laplacians);
+  for (int orbital_index = 0; orbital_index < 8; ++orbital_index)
+  {
+    CHECK(std::isfinite(std::abs(values[orbital_index])));
+    CHECK(std::isfinite(std::abs(laplacians[orbital_index])));
+    CHECK(std::isfinite(std::abs(gradients[orbital_index][0])));
+  }
 }
 
 
