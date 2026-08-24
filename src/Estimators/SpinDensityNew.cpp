@@ -21,7 +21,7 @@
 namespace qmcplusplus
 {
 SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& species, DataLocality dl)
-    : OperatorEstBase(dl, input.get_name(), input.get_type()),
+    : OperatorEstBase(dl, input.get_name(), std::string{SpinDensityInput::type_tag}),
       input_(std::move(input)),
       species_(species),
       species_size_(getSpeciesSize(species))
@@ -48,7 +48,7 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
                                const Lattice& lattice,
                                const SpeciesSet& species,
                                const DataLocality dl)
-    : OperatorEstBase(dl, input.get_name(), input.get_type()),
+    : OperatorEstBase(dl, input.get_name(), std::string{SpinDensityInput::type_tag}),
       input_(std::move(input)),
       species_(species),
       species_size_(getSpeciesSize(species)),

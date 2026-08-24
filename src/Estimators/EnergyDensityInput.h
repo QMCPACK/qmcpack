@@ -44,9 +44,9 @@ public:
     EnergyDensityInputSection()
     {
       section_name = type_tag;
-      attributes   = {"name", "dynamic", "static", "ion_points", "type"};
+      attributes   = {"name", "dynamic", "static", "ion_points"};
       parameters   = {"reference_points", "spacegrid"};
-      strings      = {"name", "type", "dynamic", "static"};
+      strings      = {"name", "dynamic", "static"};
       bools        = {"ion_points"};
       delegates    = {"reference_points", "spacegrid"};
       multiple     = {"spacegrid"};
@@ -64,7 +64,6 @@ public:
   EnergyDensityInput(xmlNodePtr cur);
 
   const std::string& get_name() const { return name_; }
-  const std::string& get_type() const { return type_; }
   const std::string& get_dynamic() const { return dynamic_; }
   const std::string& get_static() const { return static_; }
   ReferencePointsInput get_ref_points_input() const { return ref_points_input_; }
@@ -73,7 +72,6 @@ public:
 
 private:
   std::string name_{type_tag};
-  std::string type_{type_tag};
   std::string dynamic_{"e"};
   std::string static_{}; // There can't be a default for this since
                          // some systems, heg namely don't

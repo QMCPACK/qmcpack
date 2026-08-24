@@ -33,9 +33,9 @@ public:
     PerParticleHamiltonianLoggerInputSection()
     {
       section_name = type_tag;
-      attributes   = {"to_stdout", "validate_per_particle_sum", "type", "name"};
+      attributes   = {"to_stdout", "validate_per_particle_sum", "name"};
       bools        = {"to_stdout", "validate_per_particle_sum"};
-      strings      = {"type", "name"};
+      strings      = {"name"};
     }
     PerParticleHamiltonianLoggerInputSection(const PerParticleHamiltonianLoggerInputSection& other) = default;
   };
@@ -47,13 +47,11 @@ public:
   PerParticleHamiltonianLoggerInput() = default;
 
   const std::string& get_name() const { return name_; }
-  const std::string& get_type() const { return type_; }
   bool get_to_stdout() const { return to_stdout_; }
 
 private:
   PerParticleHamiltonianLoggerInputSection input_section_;
   std::string name_{type_tag};
-  std::string type_{type_tag};
   bool to_stdout_ = false;
 };
 } // namespace qmcplusplus
