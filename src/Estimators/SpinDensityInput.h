@@ -12,7 +12,7 @@
 #define QMCPLUSPLUS_SPINDENSITYINPUT_H
 
 #include "Configuration.h"
-#include "OhmmsData/ParameterSet.h"
+#include "InputSection.h"
 #include "Containers/OhmmsPETE/TinyVector.h"
 
 namespace qmcplusplus
@@ -33,10 +33,30 @@ class SpinDensityInput
 {
 public:
   static constexpr std::string_view type_tag{"SpinDensity"};
-  using Real               = QMCTraits::RealType;
-  using PosType            = QMCTraits::PosType;
+  using Real               = QMCTraits::FullPrecRealType;
+  using PosType            = TinyVector<Real, QMCTraits::DIM>;
   using Consumer           = SpinDensityNew;
   static constexpr int DIM = QMCTraits::DIM;
+
+  class SpinDensityInputSection : public InputSection
+  {
+  public:
+    SpinDensityInputSection()
+    {
+      // clang-format off
+      section_name = type_tag;
+      attributes   = {"name", "type", "report", "save_memory"};
+      parameters   = {"dr", "grid", "corner", "center", "cell", "test_moves"};
+      strings      = {"name", "type"};
+      bools        = {"report", "save_memory"};
+      integers     = {"test_moves"};
+      positions    = {"dr", "grid", "corner", "center"};
+      multi_reals  = {"cell"};
+      // clang-format on
+    }
+
+    void checkParticularValidity() override;
+  };
 
   SpinDensityInput(xmlNodePtr node);
   /** default copy constructor
@@ -70,7 +90,7 @@ public:
   DerivedParameters calculateDerivedParameters(const Lattice& lattice) const;
 
 private:
-  void readXML(xmlNodePtr cur);
+  SpinDensityInputSection input_section_;
 
   ///name of this Estimator
   std::string name_{type_tag};
@@ -81,9 +101,9 @@ private:
   PosType dr_;
   PosType center_;
   TinyVector<int, DIM> grid_;
-  int npoints_;
-  bool write_report_;
-  bool save_memory_;
+  int npoints_{0};
+  bool write_report_{false};
+  bool save_memory_{false};
   /** these are necessary for calculateDerivedParameters
    *
    *  If we are going to later write out a canonical input for
