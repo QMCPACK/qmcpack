@@ -20,7 +20,9 @@ namespace qmcplusplus
 using namespace std::string_literals;
 
 PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonianLoggerInput&& input, int rank)
-    : OperatorEstBase(DataLocality::crowd, input.get_name(), input.get_type()), input_(input), rank_(rank)
+    : OperatorEstBase(DataLocality::crowd, input.get_name(), std::string{PerParticleHamiltonianLoggerInput::type_tag}),
+      input_(input),
+      rank_(rank)
 {
   labeled_crowd_log_values_ = {{"local_potential"s, local_potential_values_},
                                {"local_energy"s, local_energy_values_},
