@@ -77,8 +77,8 @@ private:
   ///number of complex bands
   int nComplexBands;
 
-  std::shared_ptr<OffloadVector<ST>> mKK;
-  std::shared_ptr<OffloadPosVector<ST>> myKcart;
+  std::shared_ptr<OffloadVector<ST>> mKK_offload;
+  std::shared_ptr<OffloadPosVector<ST>> myKcart_offload;
   const std::shared_ptr<OffloadVector<ST>> GGt_offload;
   const std::shared_ptr<OffloadVector<ST>> prim_lattice_G_offload;
 
@@ -125,7 +125,7 @@ public:
 
   virtual std::string getClassName() const override { return "SplineC2ROMPTarget"; }
   virtual std::string getKeyword() const override { return "SplineC2R"; }
-  virtual bool isOMPoffload() const override { return true; }
+  virtual bool isOMPoffload() const override { return bool(offload_mapper_); }
 
   void createResource(ResourceCollection& collection) const override
   { auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>()); }
@@ -162,21 +162,21 @@ public:
   {
     SplineInst->finalize();
     // transfer static data to GPU
-    mKK->updateTo();
-    myKcart->updateTo();
+    mKK_offload->updateTo();
+    myKcart_offload->updateTo();
   }
 
   /** remap kPoints to pack the double copy */
   inline void resize_kpoints() override
   {
-    nComplexBands = this->remap_kpoints();
-    const int nk  = kPoints.size();
-    mKK           = std::make_shared<OffloadVector<ST>>(nk);
-    myKcart       = std::make_shared<OffloadPosVector<ST>>(nk);
+    nComplexBands   = this->remap_kpoints();
+    const int nk    = kPoints.size();
+    mKK_offload     = std::make_shared<OffloadVector<ST>>(nk);
+    myKcart_offload = std::make_shared<OffloadPosVector<ST>>(nk);
     for (size_t i = 0; i < nk; ++i)
     {
-      (*mKK)[i]     = -dot(kPoints[i], kPoints[i]);
-      (*myKcart)(i) = kPoints[i];
+      (*mKK_offload)[i]     = -dot(kPoints[i], kPoints[i]);
+      (*myKcart_offload)(i) = kPoints[i];
     }
   }
 
@@ -194,6 +194,11 @@ public:
                                     const RefVector<ValueVector>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) const override;
+
+  /** assign_vgl
+   */
+  void assign_vgl(const PointType& r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi, int first, int last)
+      const;
 
   /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */

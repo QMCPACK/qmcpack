@@ -15,6 +15,7 @@
 #include "spline2/MultiBsplineEval_OMPoffload.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "ApplyPhaseC2R.hpp"
+#include "CPU/SIMD/inner_product.hpp"
 
 namespace qmcplusplus
 {
@@ -58,9 +59,9 @@ inline void SplineC2ROMPTarget<ST>::assign_v(const PointType& r,
   last = last > kPoints.size() ? kPoints.size() : last;
 
   const ST x = r[0], y = r[1], z = r[2];
-  const ST* restrict kx = myKcart->data(0);
-  const ST* restrict ky = myKcart->data(1);
-  const ST* restrict kz = myKcart->data(2);
+  const ST* restrict kx = myKcart_offload->data(0);
+  const ST* restrict ky = myKcart_offload->data(1);
+  const ST* restrict kz = myKcart_offload->data(2);
 
   TT* restrict psi_s              = psi.data();
   const size_t requested_orb_size = psi.size();
@@ -120,8 +121,8 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
     auto* psi_ptr             = psi.data();
     const auto x = r[0], y = r[1], z = r[2];
     const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
-    const auto myKcart_padded_size   = myKcart->capacity();
-    auto* myKcart_ptr                = myKcart->data();
+    const auto myKcart_padded_size   = myKcart_offload->capacity();
+    auto* myKcart_ptr                = myKcart_offload->data();
     const size_t nComplexBands_local = nComplexBands;
     const auto requested_orb_size    = psi.size();
     const auto num_complex_splines   = kPoints.size();
@@ -163,6 +164,19 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
                                                const ValueVector& psiinv,
                                                std::vector<ValueType>& ratios)
 {
+  if (!offload_mapper_)
+  {
+    for (int iat = 0; iat < VP.getTotalNum(); ++iat)
+    {
+      const PointType& r = VP.activeR(iat);
+      PointType ru(prim_lattice_.toUnit_floor(r));
+      SplineInst->evaluate_v(ru, myV);
+      assign_v(r, myV, psi, 0, psi.size());
+      ratios[iat] = simd::dot(psi.data(), psiinv.data(), psi.size());
+    }
+    return;
+  }
+
   const int nVP = VP.getTotalNum();
   psiinv_pos_copy.resize(psiinv.size() + nVP * 6);
 
@@ -195,8 +209,8 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   const auto* spline_ptr           = SplineInst->getSplinePtr();
   auto* offload_scratch_ptr        = offload_scratch.data();
   auto* results_scratch_ptr        = results_scratch.data();
-  const auto myKcart_padded_size   = myKcart->capacity();
-  auto* myKcart_ptr                = myKcart->data();
+  const auto myKcart_padded_size   = myKcart_offload->capacity();
+  auto* myKcart_ptr                = myKcart_offload->data();
   auto* psiinv_ptr                 = psiinv_pos_copy.data();
   auto* ratios_private_ptr         = ratios_private.data();
   const size_t nComplexBands_local = nComplexBands;
@@ -262,6 +276,12 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
                                                   const std::vector<const ValueType*>& invRow_ptr_list,
                                                   std::vector<std::vector<ValueType>>& ratios_list) const
 {
+  if (!offload_mapper_)
+  {
+    BsplineSet::mw_evaluateDetRatios(spo_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
+    return;
+  }
+
   assert(this == &spo_list.getLeader());
   auto& phi_leader                = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
   auto& mw_mem                    = phi_leader.mw_mem_handle_.getResource();
@@ -320,8 +340,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
   const auto* spline_ptr           = SplineInst->getSplinePtr();
   auto* offload_scratch_ptr        = mw_offload_scratch.data();
   auto* results_scratch_ptr        = mw_results_scratch.data();
-  const auto myKcart_padded_size   = myKcart->capacity();
-  auto* myKcart_ptr                = myKcart->data();
+  const auto myKcart_padded_size   = myKcart_offload->capacity();
+  auto* myKcart_ptr                = myKcart_offload->data();
   auto* buffer_H2D_ptr             = det_ratios_buffer_H2D.data();
   auto* ratios_private_ptr         = mw_ratios_private.data();
   const size_t nComplexBands_local = nComplexBands;
@@ -385,8 +405,158 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
   }
 }
 
-/** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
-   */
+template<typename ST>
+inline void SplineC2ROMPTarget<ST>::assign_vgl(const PointType& r,
+                                               ValueVector& psi,
+                                               GradVector& dpsi,
+                                               ValueVector& d2psi,
+                                               int first,
+                                               int last) const
+{
+  // protect last
+  last = last > kPoints.size() ? kPoints.size() : last;
+
+  constexpr ST two(2);
+  const ST g00 = prim_lattice_.G(0), g01 = prim_lattice_.G(1), g02 = prim_lattice_.G(2), g10 = prim_lattice_.G(3),
+           g11 = prim_lattice_.G(4), g12 = prim_lattice_.G(5), g20 = prim_lattice_.G(6), g21 = prim_lattice_.G(7),
+           g22 = prim_lattice_.G(8);
+  const ST x = r[0], y = r[1], z = r[2];
+  const auto& GGt(*GGt_offload);
+  const ST symGG[6] = {GGt[0], GGt[1] + GGt[3], GGt[2] + GGt[6], GGt[4], GGt[5] + GGt[7], GGt[8]};
+
+  const ST* restrict k0 = myKcart_offload->data(0);
+  ASSUME_ALIGNED(k0);
+  const ST* restrict k1 = myKcart_offload->data(1);
+  ASSUME_ALIGNED(k1);
+  const ST* restrict k2 = myKcart_offload->data(2);
+  ASSUME_ALIGNED(k2);
+
+  const ST* restrict g0 = myG.data(0);
+  ASSUME_ALIGNED(g0);
+  const ST* restrict g1 = myG.data(1);
+  ASSUME_ALIGNED(g1);
+  const ST* restrict g2 = myG.data(2);
+  ASSUME_ALIGNED(g2);
+  const ST* restrict h00 = myH.data(0);
+  ASSUME_ALIGNED(h00);
+  const ST* restrict h01 = myH.data(1);
+  ASSUME_ALIGNED(h01);
+  const ST* restrict h02 = myH.data(2);
+  ASSUME_ALIGNED(h02);
+  const ST* restrict h11 = myH.data(3);
+  ASSUME_ALIGNED(h11);
+  const ST* restrict h12 = myH.data(4);
+  ASSUME_ALIGNED(h12);
+  const ST* restrict h22 = myH.data(5);
+  ASSUME_ALIGNED(h22);
+
+  const auto& mKK(*mKK_offload);
+  const size_t requested_orb_size = psi.size();
+#pragma omp simd
+  for (size_t j = first; j < std::min(nComplexBands, last); j++)
+  {
+    const size_t jr = j << 1;
+    const size_t ji = jr + 1;
+
+    const ST kX    = k0[j];
+    const ST kY    = k1[j];
+    const ST kZ    = k2[j];
+    const ST val_r = myV[jr];
+    const ST val_i = myV[ji];
+
+    //phase
+    ST s, c;
+    omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+
+    //dot(prim_lattice_.G,myG[j])
+    const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
+    const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
+    const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
+
+    const ST dX_i = g00 * g0[ji] + g01 * g1[ji] + g02 * g2[ji];
+    const ST dY_i = g10 * g0[ji] + g11 * g1[ji] + g12 * g2[ji];
+    const ST dZ_i = g20 * g0[ji] + g21 * g1[ji] + g22 * g2[ji];
+
+    // \f$\nabla \psi_r + {\bf k}\psi_i\f$
+    const ST gX_r = dX_r + val_i * kX;
+    const ST gY_r = dY_r + val_i * kY;
+    const ST gZ_r = dZ_r + val_i * kZ;
+    const ST gX_i = dX_i - val_r * kX;
+    const ST gY_i = dY_i - val_r * kY;
+    const ST gZ_i = dZ_i - val_r * kZ;
+
+    const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGG);
+    const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGG);
+    const ST lap_r   = lcart_r + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
+    const ST lap_i   = lcart_i + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
+
+    if (jr < requested_orb_size)
+    {
+      psi[jr]     = c * val_r - s * val_i;
+      dpsi[jr][0] = c * gX_r - s * gX_i;
+      dpsi[jr][1] = c * gY_r - s * gY_i;
+      dpsi[jr][2] = c * gZ_r - s * gZ_i;
+      d2psi[jr]   = c * lap_r - s * lap_i;
+    }
+    if (ji < requested_orb_size)
+    {
+      psi[ji]     = c * val_i + s * val_r;
+      dpsi[ji][0] = c * gX_i + s * gX_r;
+      dpsi[ji][1] = c * gY_i + s * gY_r;
+      dpsi[ji][2] = c * gZ_i + s * gZ_r;
+      d2psi[ji]   = c * lap_i + s * lap_r;
+    }
+  }
+
+#pragma omp simd
+  for (size_t j = std::max(nComplexBands, first); j < last; j++)
+  {
+    const size_t jr = j << 1;
+    const size_t ji = jr + 1;
+
+    const ST kX    = k0[j];
+    const ST kY    = k1[j];
+    const ST kZ    = k2[j];
+    const ST val_r = myV[jr];
+    const ST val_i = myV[ji];
+
+    //phase
+    ST s, c;
+    omptarget::sincos(-(x * kX + y * kY + z * kZ), &s, &c);
+
+    //dot(prim_lattice_.G,myG[j])
+    const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
+    const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
+    const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
+
+    const ST dX_i = g00 * g0[ji] + g01 * g1[ji] + g02 * g2[ji];
+    const ST dY_i = g10 * g0[ji] + g11 * g1[ji] + g12 * g2[ji];
+    const ST dZ_i = g20 * g0[ji] + g21 * g1[ji] + g22 * g2[ji];
+
+    // \f$\nabla \psi_r + {\bf k}\psi_i\f$
+    const ST gX_r = dX_r + val_i * kX;
+    const ST gY_r = dY_r + val_i * kY;
+    const ST gZ_r = dZ_r + val_i * kZ;
+    const ST gX_i = dX_i - val_r * kX;
+    const ST gY_i = dY_i - val_r * kY;
+    const ST gZ_i = dZ_i - val_r * kZ;
+
+    if (const size_t psiIndex = nComplexBands + j; psiIndex < requested_orb_size)
+    {
+      psi[psiIndex]     = c * val_r - s * val_i;
+      dpsi[psiIndex][0] = c * gX_r - s * gX_i;
+      dpsi[psiIndex][1] = c * gY_r - s * gY_i;
+      dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
+
+      const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGG);
+      const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGG);
+      const ST lap_r   = lcart_r + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
+      const ST lap_i   = lcart_i + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
+      d2psi[psiIndex]  = c * lap_r - s * lap_i;
+    }
+  }
+}
+
 template<typename ST>
 inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
                                                       ValueVector& psi,
@@ -396,11 +566,11 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
   constexpr ST two(2);
   const ST x = r[0], y = r[1], z = r[2];
 
-  const ST* restrict k0 = myKcart->data(0);
+  const ST* restrict k0 = myKcart_offload->data(0);
   ASSUME_ALIGNED(k0);
-  const ST* restrict k1 = myKcart->data(1);
+  const ST* restrict k1 = myKcart_offload->data(1);
   ASSUME_ALIGNED(k1);
-  const ST* restrict k2 = myKcart->data(2);
+  const ST* restrict k2 = myKcart_offload->data(2);
   ASSUME_ALIGNED(k2);
 
   const ST* restrict g0 = myG.data(0);
@@ -446,8 +616,8 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
     const ST gY_i = dY_i - val_r * kY;
     const ST gZ_i = dZ_i - val_r * kZ;
 
-    const ST lap_r = myL[jr] + (*mKK)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
-    const ST lap_i = myL[ji] + (*mKK)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
+    const ST lap_r = myL[jr] + (*mKK_offload)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
+    const ST lap_i = myL[ji] + (*mKK_offload)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
     if (jr < requested_orb_size)
     {
@@ -506,8 +676,8 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
       dpsi[psiIndex][1] = c * gY_r - s * gY_i;
       dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
 
-      const ST lap_r  = myL[jr] + (*mKK)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
-      const ST lap_i  = myL[ji] + (*mKK)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
+      const ST lap_r  = myL[jr] + (*mKK_offload)[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
+      const ST lap_i  = myL[ji] + (*mKK_offload)[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
       d2psi[psiIndex] = c * lap_r - s * lap_i;
     }
   }
@@ -520,6 +690,16 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
                                          GradVector& dpsi,
                                          ValueVector& d2psi)
 {
+  if (!offload_mapper_)
+  {
+    const PointType& r = P.activeR(iat);
+    PointType ru(prim_lattice_.toUnit_floor(r));
+
+    SplineInst->evaluate_vgh(ru, myV, myG, myH);
+    assign_vgl(r, psi, dpsi, d2psi, 0, psi.size());
+    return;
+  }
+
   const PointType& r = P.activeR(iat);
   PointType ru(prim_lattice_.toUnit_floor(r));
 
@@ -539,11 +719,11 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   auto* results_scratch_ptr = results_scratch.data();
   const auto x = r[0], y = r[1], z = r[2];
   const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
-  const auto myKcart_padded_size   = myKcart->capacity();
-  auto* mKK_ptr                    = mKK->data();
+  const auto myKcart_padded_size   = myKcart_offload->capacity();
+  auto* mKK_ptr                    = mKK_offload->data();
   auto* GGt_ptr                    = GGt_offload->data();
   auto* prim_lattice_G_ptr         = prim_lattice_G_offload->data();
-  auto* myKcart_ptr                = myKcart->data();
+  auto* myKcart_ptr                = myKcart_offload->data();
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psi.size();
   const auto num_complex_splines   = kPoints.size();
@@ -624,11 +804,11 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   auto* pos_copy_ptr               = multi_pos.data();
   auto* offload_scratch_ptr        = offload_scratch.data();
   auto* results_scratch_ptr        = results_scratch.data();
-  const auto myKcart_padded_size   = myKcart->capacity();
-  auto* mKK_ptr                    = mKK->data();
+  const auto myKcart_padded_size   = myKcart_offload->capacity();
+  auto* mKK_ptr                    = mKK_offload->data();
   auto* GGt_ptr                    = GGt_offload->data();
   auto* prim_lattice_G_ptr         = prim_lattice_G_offload->data();
-  auto* myKcart_ptr                = myKcart->data();
+  auto* myKcart_ptr                = myKcart_offload->data();
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psi_v_list[0].get().size();
   const auto num_complex_splines   = kPoints.size();
@@ -708,6 +888,12 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
                                             const RefVector<GradVector>& dpsi_v_list,
                                             const RefVector<ValueVector>& d2psi_v_list) const
 {
+  if (!offload_mapper_)
+  {
+    BsplineSet::mw_evaluateVGL(sa_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+    return;
+  }
+
   assert(this == &sa_list.getLeader());
   auto& phi_leader         = sa_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
   auto& mw_mem             = phi_leader.mw_mem_handle_.getResource();
@@ -743,6 +929,12 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
                                                             std::vector<ValueType>& ratios,
                                                             std::vector<GradType>& grads) const
 {
+  if (!offload_mapper_)
+  {
+    BsplineSet::mw_evaluateVGLandDetRatioGrads(spo_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads);
+    return;
+  }
+
   assert(this == &spo_list.getLeader());
   auto& phi_leader         = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
   auto& mw_mem             = phi_leader.mw_mem_handle_.getResource();
@@ -788,11 +980,11 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   auto* buffer_H2D_ptr             = buffer_H2D.data();
   auto* offload_scratch_ptr        = mw_offload_scratch.data();
   auto* results_scratch_ptr        = mw_results_scratch.data();
-  const auto myKcart_padded_size   = myKcart->capacity();
-  auto* mKK_ptr                    = mKK->data();
+  const auto myKcart_padded_size   = myKcart_offload->capacity();
+  auto* mKK_ptr                    = mKK_offload->data();
   auto* GGt_ptr                    = GGt_offload->data();
   auto* prim_lattice_G_ptr         = prim_lattice_G_offload->data();
-  auto* myKcart_ptr                = myKcart->data();
+  auto* myKcart_ptr                = myKcart_offload->data();
   auto* phi_vgl_ptr                = phi_vgl_v.data();
   auto* rg_private_ptr             = rg_private.data();
   const size_t buffer_H2D_stride   = buffer_H2D.cols();
@@ -924,9 +1116,9 @@ void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
            g22 = prim_lattice_.G(8);
   const ST x = r[0], y = r[1], z = r[2];
 
-  const ST* restrict k0 = myKcart->data(0);
-  const ST* restrict k1 = myKcart->data(1);
-  const ST* restrict k2 = myKcart->data(2);
+  const ST* restrict k0 = myKcart_offload->data(0);
+  const ST* restrict k1 = myKcart_offload->data(1);
+  const ST* restrict k2 = myKcart_offload->data(2);
 
   const ST* restrict g0  = myG.data(0);
   const ST* restrict g1  = myG.data(1);
@@ -1174,9 +1366,9 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
            g22 = prim_lattice_.G(8);
   const ST x = r[0], y = r[1], z = r[2];
 
-  const ST* restrict k0 = myKcart->data(0);
-  const ST* restrict k1 = myKcart->data(1);
-  const ST* restrict k2 = myKcart->data(2);
+  const ST* restrict k0 = myKcart_offload->data(0);
+  const ST* restrict k1 = myKcart_offload->data(1);
+  const ST* restrict k2 = myKcart_offload->data(2);
 
   const ST* restrict g0  = myG.data(0);
   const ST* restrict g1  = myG.data(1);
@@ -1667,6 +1859,12 @@ void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
                                                   GradMatrix& dlogdet,
                                                   ValueMatrix& d2logdet)
 {
+  if (!offload_mapper_)
+  {
+    BsplineSet::evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
+    return;
+  }
+
   // chunk the [first, last) loop into blocks to save temporary memory usage
   const int block_size = 16;
 

@@ -101,14 +101,8 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
                                                      std::move(multi_splines_ptr), use_offload);
 #else
   if (use_duplex_splines_)
-  {
-    if (use_offload)
-      bspline = std::make_unique<SplineC2ROMPTarget<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                         std::move(multi_splines_ptr), use_offload);
-    else
-      bspline = std::make_unique<SplineC2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                std::move(multi_splines_ptr), use_offload);
-  }
+    bspline = std::make_unique<SplineC2ROMPTarget<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                                       std::move(multi_splines_ptr), use_offload);
   else
     bspline = std::make_unique<SplineR2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
                                               std::move(multi_splines_ptr), use_offload);
