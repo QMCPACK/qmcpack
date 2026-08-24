@@ -144,7 +144,7 @@ class PhysicalSystem(DevBase):
         #end if
         consistent = len(msg)==0
         if not consistent and exit:
-            self.error(msg)
+            raise RuntimeError(msg)
         #end if
         if not message:
             return consistent
