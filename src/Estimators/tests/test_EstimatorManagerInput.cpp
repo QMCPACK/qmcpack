@@ -55,8 +55,8 @@ TEST_CASE("EstimatorManagerInput::testInserts", "[estimators]")
   }
   {
     Libxml2Document doc;
-    using spin_input = testing::ValidSpinDensityInput;
-    REQUIRE(doc.parseFromString(spin_input::xml[spin_input::GRID]));
+    using spin_input = testing::SpinDensityInputs;
+    REQUIRE(doc.parseFromString(spin_input::getXml(spin_input::valid::GRID)));
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<SpinDensityInput>(emi, node);
   }
@@ -108,8 +108,8 @@ TEST_CASE("EstimatorManagerInput::moveFromEstimatorInputs", "[estimators]")
   }
   {
     Libxml2Document doc;
-    using spin_input = testing::ValidSpinDensityInput;
-    REQUIRE(doc.parseFromString(spin_input::xml[spin_input::GRID]));
+    using spin_input = testing::SpinDensityInputs;
+    REQUIRE(doc.parseFromString(spin_input::getXml(spin_input::valid::GRID)));
     xmlNodePtr node = doc.getRoot();
     emit.testAppendFromXML<SpinDensityInput>(emi, node);
   }

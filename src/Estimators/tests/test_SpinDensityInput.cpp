@@ -25,8 +25,9 @@ namespace qmcplusplus
 {
 TEST_CASE("SpinDensityInput::readXML", "[estimators]")
 {
-  using input = testing::ValidSpinDensityInput;
-  for (auto input_xml : input::xml)
+  using Input = testing::SpinDensityInputs;
+  Input input;
+  for (auto input_xml : input)
   {
     Libxml2Document doc;
     REQUIRE(doc.parseFromString(input_xml));
@@ -52,13 +53,8 @@ TEST_CASE("SpinDensityInput::readXML", "[estimators]")
 
 TEST_CASE("SpinDensityInput invalid input", "[estimators]")
 {
-  constexpr std::array<std::string_view, 4> invalid_xml{
-      R"XML(<estimator type="spindensity"><parameter name="dr">1 1 1</parameter><parameter name="grid">1 1 1</parameter></estimator>)XML",
-      R"XML(<estimator type="spindensity"><parameter name="grid">1 1 1</parameter><parameter name="corner">0 0 0</parameter><parameter name="center">0 0 0</parameter></estimator>)XML",
-      R"XML(<estimator type="spindensity"><parameter name="grid">1 1 1</parameter><parameter name="cell">1 0 0 0 1 0 0 0 1</parameter></estimator>)XML",
-      R"XML(<estimator type="spindensity"><parameter name="grid">1 1 1</parameter><parameter name="center">0 0 0</parameter><parameter name="cell">1 0 0 0 1 0 0 0</parameter></estimator>)XML"};
-
-  for (const auto input_xml : invalid_xml)
+  testing::InvalidSpinDensityInput input;
+  for (const auto input_xml : input)
   {
     Libxml2Document doc;
     REQUIRE(doc.parseFromString(input_xml));
