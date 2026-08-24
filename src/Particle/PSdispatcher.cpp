@@ -12,6 +12,8 @@
 
 #include "PSdispatcher.h"
 
+#include <stdexcept>
+
 namespace qmcplusplus
 {
 PSdispatcher::PSdispatcher(bool use_batch) : use_batch_(use_batch) {}
@@ -47,12 +49,16 @@ void PSdispatcher::flex_makeMoveAllParticles(const RefVectorWithLeader<ParticleS
                                              const MCCoords<CT>& displacements,
                                              std::vector<bool>& are_valid) const
 {
+  if (!use_batch_)
+    throw std::runtime_error("All-particle ParticleSet transactions require batched dispatch.");
   ParticleSet::mw_makeMoveAllParticles(p_list, displacements, are_valid);
 }
 
 void PSdispatcher::flex_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
                                                       const std::vector<bool>& accepted) const
 {
+  if (!use_batch_)
+    throw std::runtime_error("All-particle ParticleSet transactions require batched dispatch.");
   ParticleSet::mw_accept_rejectMoveAllParticles(p_list, accepted);
 }
 

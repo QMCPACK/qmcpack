@@ -199,6 +199,22 @@ TEST_CASE("ParticleSet all-particle moves through the multiwalker dispatcher pas
     exerciseDispatcherAllParticleMove(kind);
 }
 
+TEST_CASE("ParticleSet all-particle dispatcher rejects unbatched execution", "[particle]")
+{
+  const SimulationCell cell = makeOpenCell();
+  ParticleSet pset(cell);
+  pset.create({1});
+  pset.R[0] = {0.5, 0.5, 0.5};
+  pset.update();
+  RefVectorWithLeader<ParticleSet> p_list(pset, {pset});
+  MCCoords<CoordsType::POS> displacements(1);
+  std::vector<bool> valid(1);
+  PSdispatcher dispatcher(/*use_batch=*/false);
+
+  REQUIRE_THROWS_AS(dispatcher.flex_makeMoveAllParticles(p_list, displacements, valid), std::runtime_error);
+  REQUIRE_THROWS_AS(dispatcher.flex_accept_rejectMoveAllParticles(p_list, {true}), std::runtime_error);
+}
+
 TEST_CASE("ParticleSet all-particle POS_SPIN rejection restores the pre-proposal state", "[particle]")
 {
   const SimulationCell cell = makeOpenCell();
