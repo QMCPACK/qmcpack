@@ -1184,7 +1184,7 @@ class hubbard(Card):
         contents = ''
         for param, interaction in self.hubbard.items():
             valid_format = True
-            assert(param in {'U', 'J', 'V'})
+            assert(param in {'U', 'J', 'B', 'V'})
             assert(isinstance(interaction, dict))
             for label_manifold, value in interaction.items():
                 if isinstance(label_manifold, str):
@@ -2144,7 +2144,9 @@ def generate_any_pwscf_input(**kwargs):
             if card_name not in pw:
                 error('Card option provided for card "{}" but card is not present\noption provided: {}'.format(card_name,option))
             #end if
-            pw[card_name].change_option(option,pw)
+            if pw[card_name].specifier != option:
+                pw[card_name].change_option(option,pw)
+            #end if
         #end if
     #end for
 
