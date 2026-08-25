@@ -550,6 +550,7 @@ class SemilocalPP(Pseudopotential):
                 'cannot evaluate local potential\n'
                 'local potential is not present'
                 )
+            raise KeyError(msg)
             
         #end if
         vcomp = self.get_component(l)
