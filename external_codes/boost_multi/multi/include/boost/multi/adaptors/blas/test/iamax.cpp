@@ -2,7 +2,7 @@
 
 // #define BOOST_TEST_MODULE "C++ Unit Tests for Multi BLAS/cuBLAS iamax"
 
-#include <boost/test/unit_test.hpp>
+// #include <boost/test/unit_test.hpp>
 
 #include "../../blas/iamax.hpp"
 

@@ -1947,7 +1947,11 @@ def generate_any_pwscf_input(**kwargs):
     pseudopotentials = obj()
     atom_species = []
     if system is not None:
-        pseudos = PseudoSet.pseudo_remap('pwscf',pseudos,system)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
     for ppname in pseudos:
         #element = ppname[0:2].strip('.')
         label,element = pp_elem_label(ppname,guard=True)
@@ -2207,7 +2211,11 @@ def generate_scf_input(*,
         pseudos = []
     #end if
     if system is not None:
-        pseudos = PseudoSet.pseudo_remap('pwscf',pseudos,system)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
     #end if
     pseudopotentials = obj()
     atoms = []
@@ -2445,7 +2453,11 @@ def generate_relax_input(*,
         pseudos = []
     #end if
     if system is not None:
-        pseudos = PseudoSet.pseudo_remap('pwscf',pseudos,system)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
     #end if
     
     pseudopotentials = obj()

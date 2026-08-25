@@ -94,16 +94,11 @@ def test_get_result(tmp_path):
         template   = template_filepath,
         )
     
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented"
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = sim.get_result('orbitals',None)
 
