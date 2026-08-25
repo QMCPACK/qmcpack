@@ -52,11 +52,17 @@ enum PSetTimers
  */
 struct ParticleSetMultiWalkerMem : public Resource
 {
+  /// Proposed positions, flattened in particle-major order as particle * number of walkers + walker.
   ParticleSet::ParticlePos proposed_positions;
+  /// Proposed spins, flattened in the same particle-major order as proposed_positions.
   ParticleSet::ParticleScalar proposed_spins;
+  /// Positions to restore for rejected walkers, flattened in the same particle-major order.
   ParticleSet::ParticlePos saved_positions;
+  /// Spins to restore for rejected walkers, flattened in the same particle-major order.
   ParticleSet::ParticleScalar saved_spins;
+  /// Per-walker mask identifying walkers whose all-particle proposals were rejected.
   std::vector<bool> rejected;
+  /// Whether an all-particle proposal is pending acceptance or rejection.
   bool all_particle_move_active = false;
 
   ParticleSetMultiWalkerMem() : Resource("ParticleSetMultiWalkerMem") {}
