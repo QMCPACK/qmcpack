@@ -32,7 +32,7 @@ Notable changes to QMCPACK and NEXUS are documented in this file.
 * `nrule` support to control non-local pseudopotential evaluation grids in QMCPACK. [#6059](https://github.com/QMCPACK/qmcpack/pull/6059)
 * PySCF simulation failures are better detected and reported. [#6023](https://github.com/QMCPACK/qmcpack/pull/6023)
 * Python errors in one simulation do not terminate an entire workflow. [#6124](https://github.com/QMCPACK/qmcpack/pull/6124)
-* Fixed reading of QMCPACK input files with <include/> elements. [#6160](https://github.com/QMCPACK/qmcpack/pull/6160)
+* Fixed reading of QMCPACK input files with `<include/>` elements. [#6160](https://github.com/QMCPACK/qmcpack/pull/6160)
 * Significant rework of Nexus error handling to use standard Python exceptions e.g. [#6114](https://github.com/QMCPACK/qmcpack/pull/6114), 
   [#6140](https://github.com/QMCPACK/qmcpack/pull/6140)
 * Significant update of Nexus pseudopotential handling, including to user-facing `PseudoSet` API. e.g.
