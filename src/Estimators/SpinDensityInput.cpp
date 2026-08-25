@@ -23,7 +23,6 @@ SpinDensityInput::SpinDensityInput(xmlNodePtr cur)
   auto setIfInInput = LAMBDA_setIfInInput;
 
   setIfInInput(name_, "name");
-  setIfInInput(type_, "type");
   setIfInInput(write_report_, "report");
   setIfInInput(save_memory_, "save_memory");
   have_dr_     = setIfInInput(dr_, "dr");
