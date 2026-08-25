@@ -1286,6 +1286,105 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
     -r
     qmc-ref/det_qmc_momentum_short_vmc_dmc.s001.stat_ref_momentum_4_4${OFEXT}.dat)
 
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-estimator-spindensity-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_spindens_short_batched
+    det_qmc_spindens_short_batched.in.xml
+    1
+    1
+    TRUE)
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-estimator-spindensity-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_spindens_short_mw_batched
+    det_qmc_spindens_short_mw_batched.in.xml
+    4
+    4
+    TRUE)
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-spindensity-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_spindens_short_vmc_dmc_batched
+    det_qmc_spindens_short_vmc_dmc_batched.in.xml
+    1
+    1
+    TRUE)
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-spindensity-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_spindens_short_vmc_dmc_batched
+    det_qmc_spindens_short_vmc_dmc_batched.in.xml
+    4
+    4
+    TRUE)
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-noJ-estimator-onebodydensitymatrices-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_1rdm_noJ_short_batched
+    det_qmc_1rdm_noJ_short_batched.in.xml
+    1
+    1
+    TRUE)
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-J2-estimator-onebodydensitymatrices-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_1rdm_J2_short_batched
+    det_qmc_1rdm_J2_short_batched.in.xml
+    1
+    1
+    TRUE)
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-onebodydensitymatrices-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_1rdm_short_vmc_dmc_batched
+    det_qmc_1rdm_short_vmc_dmc_batched.in.xml
+    1
+    1
+    TRUE)
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-onebodydensitymatrices-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_1rdm_short_vmc_dmc_batched
+    det_qmc_1rdm_short_vmc_dmc_batched.in.xml
+    4
+    4
+    TRUE)
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-estimator-momentum-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_momentum_short_batched
+    det_qmc_momentum_short_batched.in.xml
+    1
+    1
+    TRUE)
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_momentum_short_vmc_dmc_batched
+    det_qmc_momentum_short_vmc_dmc_batched.in.xml
+    1
+    1
+    TRUE)
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_momentum_short_vmc_dmc_batched
+    det_qmc_momentum_short_vmc_dmc_batched.in.xml
+    4
+    4
+    TRUE)
+
 endif()
 
 # deterministic scalar tests
@@ -1737,6 +1836,15 @@ if((NOT QMC_MIXED_PRECISION) AND (NOT QMC_COMPLEX))
     2
     DET_DIAMOND_DMC_LGTS2_SCALARS # DMC cycle 2
   )
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-dmc-multi_ts_sdj-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_short_vmc_dmc_lg_ts_batched
+    det_qmc_short_vmc_dmc_lg_ts_batched.in.xml
+    1
+    1
+    TRUE)
 endif()
 
 if(QMC_MIXED_PRECISION)
@@ -1886,6 +1994,87 @@ qmc_run_and_check(
   3
   DET_DIAMOND_DMC_TM3_BATCH_SCALARS # DMC v3
 )
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc_sdj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_batched
+  det_qmc_short_batched.in.xml
+  1
+  1
+  TRUE)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc_sdj_excited-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_excited_batched
+  det_qmc_short_excited_batched.in.xml
+  1
+  1
+  TRUE)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc_sdj-meshf-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short-meshf_batched
+  det_qmc_short-meshf_batched.in.xml
+  1
+  1
+  TRUE)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc_sdj_kspace-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_kspace_batched
+  det_qmc_short_kspace_batched.in.xml
+  1
+  1
+  TRUE)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-dmc_sdj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_vmc_dmc_batched
+  det_qmc_short_vmc_dmc_batched.in.xml
+  1
+  1
+  TRUE)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-dmc_sdj_excited-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_vmc_dmc_excited_batched
+  det_qmc_short_vmc_dmc_excited_batched.in.xml
+  1
+  1
+  TRUE)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-multi_dmc_sdj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_vmc_multi_dmc_batched
+  det_qmc_short_vmc_multi_dmc_batched.in.xml
+  1
+  1
+  TRUE)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers_sdj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_vmc_dmc_mwalkers_batched
+  det_qmc_short_vmc_dmc_mwalkers_batched.in.xml
+  1
+  1
+  TRUE)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers-checks_sdj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_short_vmc_dmc_mwalkers_with_checks_batched
+  det_qmc_short_vmc_dmc_mwalkers_with_checks_batched.in.xml
+  1
+  1
+  TRUE)
 
 # traces tests
 check_python_reqs("numpy;h5py" diamond-traces add_traces_tests)

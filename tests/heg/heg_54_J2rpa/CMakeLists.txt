@@ -44,6 +44,15 @@ if(QMC_COMPLEX)
     TRUE
     1
     DET_HEG54J2RPA_SCALARS)
+
+  qmc_run_and_check(
+    deterministic-heg_54_J2rpa-batched
+    "${qmcpack_SOURCE_DIR}/tests/heg/heg_54_J2rpa"
+    det_HEG.rs5.rpa_batched
+    det_heg.rpa.rs5_batched.xml
+    1
+    1
+    TRUE)
 else()
   ## real code should not be ran with a twist
   ##if(QMC_MIXED_PRECISION)

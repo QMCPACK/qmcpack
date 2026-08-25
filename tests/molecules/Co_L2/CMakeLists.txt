@@ -34,6 +34,15 @@ if(NOT QMC_COMPLEX)
       DET_CO_L2_STD_DMC_1_1_SCALARS # DMC
     )
 
+    qmc_run_and_check(
+      deterministic-Co_L2_std-vmc_dmc-batched
+      "${qmcpack_SOURCE_DIR}/tests/molecules/Co_L2"
+      det_dmc_std_diff_batched
+      det_dmc_std_diff_batched.in.xml
+      1
+      1
+      TRUE)
+
     list(APPEND DET_CO_L2_L2_VMC_1_1_SCALARS "totenergy" "-144.46113333 0.000001")
     list(APPEND DET_CO_L2_L2_VMC_1_1_SCALARS "kinetic" "  52.20699764 0.000001")
     list(APPEND DET_CO_L2_L2_VMC_1_1_SCALARS "potential" "-196.66813096 0.000001")

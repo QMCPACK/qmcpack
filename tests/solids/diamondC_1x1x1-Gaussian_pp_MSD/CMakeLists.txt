@@ -114,3 +114,12 @@ qmc_run_and_check(
   1
   det_diamondC_1x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS #DMC
 )
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1-Gaussian_pp_MSD-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_MSD"
+  det_vmc_dmc_batched
+  det_vmc_dmc_batched.in.xml
+  1
+  1
+  TRUE)

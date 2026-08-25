@@ -1738,3 +1738,12 @@ qmc_run_and_check(
   1
   DET_DIAMOND2_DMC_PW_SCALARS # dMC
 )
+
+qmc_run_and_check(
+  deterministic-diamondC_2x1x1_pp-dmc_pw_sdj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+  det_qmc_vmc_dmc_pw_batched
+  det_qmc_vmc_dmc_pw_batched.in.xml
+  1
+  1
+  TRUE)

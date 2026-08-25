@@ -162,6 +162,15 @@ if(NOT QMC_COMPLEX)
     DET_LIH_PP_SCALARS # VMC
   )
 
+  qmc_run_and_check(
+    deterministic-LiH_pp-vmc_hf_noj-batched
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+    det_vmc_hf_noj_batched
+    det_vmc_hf_noj_batched.in.xml
+    1
+    1
+    TRUE)
+
   #  LiH molecule pseudopotential tests with Jastrow from XML
   if(QMC_MIXED_PRECISION)
     list(APPEND DET_LIH_PP_XML_SCALARS "kinetic" "0.82744207 0.00027385")
@@ -197,6 +206,15 @@ if(NOT QMC_COMPLEX)
     DET_LIH_PP_XML_SCALARS # VMC
   )
 
+  qmc_run_and_check(
+    deterministic-LiH_pp-vmc_hf_sdj_xml-batched
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+    det_vmc_hf_sdj_xml_batched
+    det_vmc_hf_sdj_xml_batched.xml
+    1
+    1
+    TRUE)
+
   # LiH molecule pseudopotential tests with Jastrow from HDF5
   if(QMC_MIXED_PRECISION)
     list(APPEND DET_LIH_PP_HDF5_SCALARS "kinetic" "0.77796918 0.00031073")
@@ -231,6 +249,15 @@ if(NOT QMC_COMPLEX)
     0
     DET_LIH_PP_HDF5_SCALARS # VMC
   )
+
+  qmc_run_and_check(
+    deterministic-LiH_pp-vmc_hf_sdj_hdf5-batched
+    "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_pp"
+    det_vmc_hf_sdj_hdf5_batched
+    det_vmc_hf_sdj_hdf5_batched.xml
+    1
+    1
+    TRUE)
 
   # estimator tests
   include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")

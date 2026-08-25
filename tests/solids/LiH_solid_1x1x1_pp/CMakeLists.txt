@@ -287,6 +287,15 @@ qmc_run_and_check(
   DET_LIH_GAMMA_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  deterministic-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  det_hf_vmc_LiH-gamma_batched
+  det_hf_vmc_LiH-gamma_batched.xml
+  1
+  1
+  TRUE)
+
 # Minimal test of ensemble run
 # No check on results
 # Arrange for "imbalanced" ensemble and assume will crash or hang/timeout on major error
