@@ -20,7 +20,6 @@ PairCorrelationInput::PairCorrelationInput(xmlNodePtr cur)
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(name_, "name");
-  setIfInInput(type_, "type");
   explicit_set_nbins_ = setIfInInput(nbins_, "num_bin");
   explicit_set_rmax_  = setIfInInput(rmax_, "rmax");
   explicit_set_delta_ = setIfInInput(delta_, "dr");
