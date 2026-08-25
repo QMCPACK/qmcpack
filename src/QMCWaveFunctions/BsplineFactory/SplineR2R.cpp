@@ -35,7 +35,7 @@ SplineR2R<ST>::SplineR2R(const std::string& my_name,
                          std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
                          bool use_offload)
     : BsplineSet(my_name, size, prim_lattice),
-      offload_timer_(createGlobalTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
+      offload_timer_(createGlobalTimer("SplineC2R::offload", timer_level_fine)),
       GGt(dot(transpose(prim_lattice.G), prim_lattice.G)),
       GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
       prim_lattice_G_offload(std::make_shared<OffloadVector<ST>>(9)),

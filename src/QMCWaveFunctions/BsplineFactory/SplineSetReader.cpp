@@ -19,10 +19,10 @@
 #include "Utilities/FairDivide.h"
 #include <Timer.h>
 #if defined(QMC_COMPLEX)
-#include "SplineC2COMPTarget.h"
+#include "SplineC2C.h"
 #else
 #include "SplineR2R.h"
-#include "SplineC2ROMPTarget.h"
+#include "SplineC2R.h"
 #endif
 #include "Message/CommOperators.h"
 #include "spline2/SplineUtils.h"
@@ -92,11 +92,11 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
 
   std::unique_ptr<BsplineSet> bspline;
 #if defined(QMC_COMPLEX)
-  bspline = std::make_unique<SplineC2COMPTarget<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+  bspline = std::make_unique<SplineC2C<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
                                                      std::move(multi_splines_ptr), use_offload);
 #else
   if (use_duplex_splines_)
-    bspline = std::make_unique<SplineC2ROMPTarget<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+    bspline = std::make_unique<SplineC2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
                                                        std::move(multi_splines_ptr), use_offload);
   else
     bspline = std::make_unique<SplineR2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,

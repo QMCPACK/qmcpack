@@ -23,11 +23,11 @@
 #include "Concurrency/OpenMP.h"
 #include <Timer.h>
 #if defined(QMC_COMPLEX)
-#include "SplineC2COMPTarget.h"
+#include "SplineC2C.h"
 #else
 #include "SplineR2R.h"
 #include "HybridRepReal.h"
-#include "SplineC2ROMPTarget.h"
+#include "SplineC2R.h"
 #endif
 #include "HybridRepCplx.h"
 #include "OneSplineOrbData.hpp"
@@ -181,7 +181,7 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   OptionalRef<HybridBase> hybridrep_ref;
 #if defined(QMC_COMPLEX)
   auto ptr =
-     std::make_unique<HybridRepCplx<SplineC2COMPTarget<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+     std::make_unique<HybridRepCplx<SplineC2C<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
                                                               std::move(multi_splines_ptr));
   hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
   bspline       = std::move(ptr);
@@ -189,7 +189,7 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   if (use_duplex_splines_)
   {
     auto ptr =
-       std::make_unique<HybridRepCplx<SplineC2ROMPTarget<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+       std::make_unique<HybridRepCplx<SplineC2R<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
                                                                   std::move(multi_splines_ptr));
       hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
       bspline       = std::move(ptr);

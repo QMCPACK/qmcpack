@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "SplineC2ROMPTarget.h"
+#include "SplineC2R.h"
 #include "spline2/MultiBsplineEval.hpp"
 #include "spline2/MultiBsplineEval_OMPoffload.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
@@ -21,13 +21,13 @@ namespace qmcplusplus
 {
 
 template<typename ST>
-SplineC2ROMPTarget<ST>::SplineC2ROMPTarget(const std::string& my_name,
+SplineC2R<ST>::SplineC2R(const std::string& my_name,
                                            size_t size,
                                            const Lattice& prim_lattice,
                                            std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
                                            bool use_offload)
     : BsplineSet(my_name, size, prim_lattice),
-      offload_timer_(createGlobalTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
+      offload_timer_(createGlobalTimer("SplineC2R::offload", timer_level_fine)),
       nComplexBands(0),
       GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
       prim_lattice_G_offload(std::make_shared<OffloadVector<ST>>(9)),
@@ -46,26 +46,26 @@ SplineC2ROMPTarget<ST>::SplineC2ROMPTarget(const std::string& my_name,
 }
 
 template<typename ST>
-SplineC2ROMPTarget<ST>::SplineC2ROMPTarget(const SplineC2ROMPTarget& in) = default;
+SplineC2R<ST>::SplineC2R(const SplineC2R& in) = default;
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+void SplineC2R<ST>::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
 {
   assert(this == &spo_list.getLeader());
-  auto& phi_leader          = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+  auto& phi_leader          = spo_list.getCastedLeader<SplineC2R<ST>>();
   phi_leader.mw_mem_handle_ = collection.lendResource<SplineOMPTargetMultiWalkerMem<ST, TT>>();
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+void SplineC2R<ST>::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
 {
   assert(this == &spo_list.getLeader());
-  auto& phi_leader = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+  auto& phi_leader = spo_list.getCastedLeader<SplineC2R<ST>>();
   collection.takebackResource(phi_leader.mw_mem_handle_);
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::resizeStorage(size_t n)
+void SplineC2R<ST>::resizeStorage(size_t n)
 {
   init_base(n);
   size_t npad = getAlignedSize<ST>(2 * n);
@@ -77,7 +77,7 @@ void SplineC2ROMPTarget<ST>::resizeStorage(size_t n)
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::finalizeConstruction()
+void SplineC2R<ST>::finalizeConstruction()
 {
 
   // transfer static data to GPU
@@ -88,7 +88,7 @@ void SplineC2ROMPTarget<ST>::finalizeConstruction()
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::resize_kpoints()
+void SplineC2R<ST>::resize_kpoints()
 {
   nComplexBands   = this->remap_kpoints();
   const int nk    = kPoints.size();
@@ -102,7 +102,7 @@ void SplineC2ROMPTarget<ST>::resize_kpoints()
 }
 
 template<typename ST>
-inline void SplineC2ROMPTarget<ST>::assign_v(const PointType& r,
+inline void SplineC2R<ST>::assign_v(const PointType& r,
                                              const vContainer_type& myV,
                                              ValueVector& psi,
                                              int first,
@@ -147,7 +147,7 @@ inline void SplineC2ROMPTarget<ST>::assign_v(const PointType& r,
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi)
+void SplineC2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(prim_lattice_.toUnit_floor(r));
@@ -213,7 +213,7 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
+void SplineC2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
                                                ValueVector& psi,
                                                const ValueVector& psiinv,
                                                std::vector<ValueType>& ratios)
@@ -325,7 +325,7 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+void SplineC2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
                                                   const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                                   const RefVector<ValueVector>& psi_list,
                                                   const std::vector<const ValueType*>& invRow_ptr_list,
@@ -338,7 +338,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
   }
 
   assert(this == &spo_list.getLeader());
-  auto& phi_leader                = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+  auto& phi_leader                = spo_list.getCastedLeader<SplineC2R<ST>>();
   auto& mw_mem                    = phi_leader.mw_mem_handle_.getResource();
   auto& det_ratios_buffer_H2D     = mw_mem.det_ratios_buffer_H2D;
   auto& mw_ratios_private         = mw_mem.mw_ratios_private;
@@ -462,7 +462,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
 }
 
 template<typename ST>
-inline void SplineC2ROMPTarget<ST>::assign_vgl(const PointType& r,
+inline void SplineC2R<ST>::assign_vgl(const PointType& r,
                                                ValueVector& psi,
                                                GradVector& dpsi,
                                                ValueVector& d2psi,
@@ -614,7 +614,7 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl(const PointType& r,
 }
 
 template<typename ST>
-inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
+inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
                                                       ValueVector& psi,
                                                       GradVector& dpsi,
                                                       ValueVector& d2psi)
@@ -740,7 +740,7 @@ inline void SplineC2ROMPTarget<ST>::assign_vgl_from_l(const PointType& r,
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
+void SplineC2R<ST>::evaluateVGL(const ParticleSet& P,
                                          const int iat,
                                          ValueVector& psi,
                                          GradVector& dpsi,
@@ -839,7 +839,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
+void SplineC2R<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
                                                  Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
                                                  Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
                                                  const RefVector<ValueVector>& psi_v_list,
@@ -939,7 +939,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
+void SplineC2R<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
                                             const RefVectorWithLeader<ParticleSet>& P_list,
                                             int iat,
                                             const RefVector<ValueVector>& psi_v_list,
@@ -953,7 +953,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
   }
 
   assert(this == &sa_list.getLeader());
-  auto& phi_leader         = sa_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+  auto& phi_leader         = sa_list.getCastedLeader<SplineC2R<ST>>();
   auto& mw_mem             = phi_leader.mw_mem_handle_.getResource();
   auto& mw_pos_copy        = mw_mem.mw_pos_copy;
   auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
@@ -979,7 +979,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+void SplineC2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
                                                             const RefVectorWithLeader<ParticleSet>& P_list,
                                                             int iat,
                                                             const std::vector<const ValueType*>& invRow_ptr_list,
@@ -994,7 +994,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   }
 
   assert(this == &spo_list.getLeader());
-  auto& phi_leader         = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+  auto& phi_leader         = spo_list.getCastedLeader<SplineC2R<ST>>();
   auto& mw_mem             = phi_leader.mw_mem_handle_.getResource();
   auto& buffer_H2D         = mw_mem.buffer_H2D;
   auto& rg_private         = mw_mem.rg_private;
@@ -1160,7 +1160,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
+void SplineC2R<ST>::assign_vgh(const PointType& r,
                                         ValueVector& psi,
                                         GradVector& dpsi,
                                         HessVector& grad_grad_psi,
@@ -1396,7 +1396,7 @@ void SplineC2ROMPTarget<ST>::assign_vgh(const PointType& r,
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::evaluateVGH(const ParticleSet& P,
+void SplineC2R<ST>::evaluateVGH(const ParticleSet& P,
                                          const int iat,
                                          ValueVector& psi,
                                          GradVector& dpsi,
@@ -1409,7 +1409,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGH(const ParticleSet& P,
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
+void SplineC2R<ST>::assign_vghgh(const PointType& r,
                                           ValueVector& psi,
                                           GradVector& dpsi,
                                           HessVector& grad_grad_psi,
@@ -1897,7 +1897,7 @@ void SplineC2ROMPTarget<ST>::assign_vghgh(const PointType& r,
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::evaluateVGHGH(const ParticleSet& P,
+void SplineC2R<ST>::evaluateVGHGH(const ParticleSet& P,
                                            const int iat,
                                            ValueVector& psi,
                                            GradVector& dpsi,
@@ -1911,7 +1911,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGHGH(const ParticleSet& P,
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
+void SplineC2R<ST>::evaluate_notranspose(const ParticleSet& P,
                                                   int first,
                                                   int last,
                                                   ValueMatrix& logdet,
@@ -1978,7 +1978,7 @@ void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
   }
 }
 
-template class SplineC2ROMPTarget<float>;
-template class SplineC2ROMPTarget<double>;
+template class SplineC2R<float>;
+template class SplineC2R<double>;
 
 } // namespace qmcplusplus
