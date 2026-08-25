@@ -6755,7 +6755,11 @@ def generate_hamiltonian(name         = 'h0',
     iname   = ions
     wfname  = wavefunction
     ppfiles = pseudos
-    ppfiles = PseudoSet.pseudo_remap('qmcpack',ppfiles,system)
+    ppfiles = PseudoSet.get_pseudos(
+        pseudos = ppfiles,
+        system = system,
+        code = 'qmcpack',
+        )
     ppfiles = obj((pp_elem_label(f,guard=True)[1],f) for f in ppfiles)
     del electrons
     del ions
