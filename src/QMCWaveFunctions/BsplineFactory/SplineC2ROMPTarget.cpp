@@ -49,6 +49,57 @@ template<typename ST>
 SplineC2ROMPTarget<ST>::SplineC2ROMPTarget(const SplineC2ROMPTarget& in) = default;
 
 template<typename ST>
+void SplineC2ROMPTarget<ST>::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& phi_leader          = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+  phi_leader.mw_mem_handle_ = collection.lendResource<SplineOMPTargetMultiWalkerMem<ST, TT>>();
+}
+
+template<typename ST>
+void SplineC2ROMPTarget<ST>::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  assert(this == &spo_list.getLeader());
+  auto& phi_leader = spo_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
+  collection.takebackResource(phi_leader.mw_mem_handle_);
+}
+
+template<typename ST>
+void SplineC2ROMPTarget<ST>::resizeStorage(size_t n)
+{
+  init_base(n);
+  size_t npad = getAlignedSize<ST>(2 * n);
+  myV.resize(npad);
+  myG.resize(npad);
+  myL.resize(npad);
+  myH.resize(npad);
+  mygH.resize(npad);
+}
+
+template<typename ST>
+void SplineC2ROMPTarget<ST>::finalizeConstruction()
+{
+  SplineInst->finalize();
+  // transfer static data to GPU
+  mKK_offload->updateTo();
+  myKcart_offload->updateTo();
+}
+
+template<typename ST>
+void SplineC2ROMPTarget<ST>::resize_kpoints()
+{
+  nComplexBands   = this->remap_kpoints();
+  const int nk    = kPoints.size();
+  mKK_offload     = std::make_shared<OffloadVector<ST>>(nk);
+  myKcart_offload = std::make_shared<OffloadPosVector<ST>>(nk);
+  for (size_t i = 0; i < nk; ++i)
+  {
+    (*mKK_offload)[i]     = -dot(kPoints[i], kPoints[i]);
+    (*myKcart_offload)(i) = kPoints[i];
+  }
+}
+
+template<typename ST>
 inline void SplineC2ROMPTarget<ST>::assign_v(const PointType& r,
                                              const vContainer_type& myV,
                                              ValueVector& psi,

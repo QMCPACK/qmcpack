@@ -126,19 +126,9 @@ public:
   void createResource(ResourceCollection& collection) const override
   { auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, ComplexT>>()); }
 
-  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
-  {
-    assert(this == &spo_list.getLeader());
-    auto& phi_leader          = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
-    phi_leader.mw_mem_handle_ = collection.lendResource<SplineOMPTargetMultiWalkerMem<ST, ComplexT>>();
-  }
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
 
-  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override
-  {
-    assert(this == &spo_list.getLeader());
-    auto& phi_leader = spo_list.getCastedLeader<SplineC2COMPTarget<ST>>();
-    collection.takebackResource(phi_leader.mw_mem_handle_);
-  }
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2COMPTarget>(*this); }
 
@@ -149,38 +139,13 @@ public:
 
   void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
-  inline void resizeStorage(size_t n) override
-  {
-    init_base(n);
-    size_t npad = getAlignedSize<ST>(2 * n);
-    myV.resize(npad);
-    myG.resize(npad);
-    myL.resize(npad);
-    myH.resize(npad);
-    mygH.resize(npad);
-  }
+  void resizeStorage(size_t n) override;
 
   /// this routine can not be called from threaded region
-  void finalizeConstruction() override
-  {
-    SplineInst->finalize();
-    // transfer static data to GPU
-    mKK_offload->updateTo();
-    myKcart_offload->updateTo();
-  }
+  void finalizeConstruction() override;
 
   /** remap kPoints to pack the double copy */
-  inline void resize_kpoints() override
-  {
-    const size_t nk = kPoints.size();
-    mKK_offload     = std::make_shared<OffloadVector<ST>>(nk);
-    myKcart_offload = std::make_shared<OffloadPosVector<ST>>(nk);
-    for (size_t i = 0; i < nk; ++i)
-    {
-      (*mKK_offload)[i]     = -dot(kPoints[i], kPoints[i]);
-      (*myKcart_offload)(i) = kPoints[i];
-    }
-  }
+  void resize_kpoints() override;
 
   void assign_v(const PointType& r, const vContainer_type& myV, ValueVector& psi, int first, int last) const;
 
