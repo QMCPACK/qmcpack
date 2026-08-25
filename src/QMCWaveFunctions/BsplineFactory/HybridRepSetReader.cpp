@@ -155,7 +155,8 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
     const std::pair<int, int>& distributed_and_shared_ranks,
     const BandInfoGroup& bandgroup)
 {
-  const int N = bandgroup.getNumDistinctOrbitals();
+  if (use_offload)
+    app_summary() << "    Hybrid representation doesn't support OpenMP offload. Request ignored." << std::endl;
 
   if (use_duplex_splines_)
     app_log() << "  Using complex einspline table" << std::endl;
@@ -170,6 +171,7 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   typename bspline_traits<ST, 3>::BCType xyz_bc[3];
   set_grid(mybuilder->MeshSize, half_g, xyz_grid, xyz_bc);
 
+  const int N = bandgroup.getNumDistinctOrbitals();
   const size_t num_splines = getAlignedSize<ST>(use_duplex_splines_ ? N * 2 : N);
   auto multi_splines_ptr   = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
 

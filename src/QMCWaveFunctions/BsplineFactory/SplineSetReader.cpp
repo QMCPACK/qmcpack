@@ -45,7 +45,10 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
                                                                const std::pair<int, int>& distributed_and_shared_ranks,
                                                                const BandInfoGroup& bandgroup)
 {
-  const int N = bandgroup.getNumDistinctOrbitals();
+  if (use_offload)
+    app_summary() << "    Running OpenMP offload code path." << std::endl;
+  else
+    app_summary() << "    Running on CPU." << std::endl;
 
   auto [distributed_ranks, shared_ranks] = distributed_and_shared_ranks;
 
@@ -76,6 +79,7 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   typename bspline_traits<ST, 3>::BCType xyz_bc[3];
   set_grid(mybuilder->MeshSize, half_g, xyz_grid, xyz_bc);
 
+  const int N = bandgroup.getNumDistinctOrbitals();
   const size_t num_splines = getAlignedSize<ST>(use_duplex_splines_ ? N * 2 : N);
   std::unique_ptr<MultiBsplineBase<ST>> multi_splines_ptr;
 #if defined(HAVE_MPI)
