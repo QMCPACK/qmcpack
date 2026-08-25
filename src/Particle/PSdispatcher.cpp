@@ -50,7 +50,7 @@ void PSdispatcher::flex_makeMoveAllParticles(const RefVectorWithLeader<ParticleS
                                              std::vector<bool>& are_valid) const
 {
   if (!use_batch_)
-    throw std::runtime_error("All-particle ParticleSet transactions require batched dispatch.");
+    throw std::runtime_error("All-particle ParticleSet transactions do not support walker serialization with in a crowd.");
   ParticleSet::mw_makeMoveAllParticles(p_list, displacements, are_valid);
 }
 
@@ -58,7 +58,7 @@ void PSdispatcher::flex_accept_rejectMoveAllParticles(const RefVectorWithLeader<
                                                       const std::vector<bool>& accepted) const
 {
   if (!use_batch_)
-    throw std::runtime_error("All-particle ParticleSet transactions require batched dispatch.");
+    throw std::runtime_error("All-particle ParticleSet transactions do not support walker serialization with in a crowd.");
   ParticleSet::mw_accept_rejectMoveAllParticles(p_list, accepted);
 }
 

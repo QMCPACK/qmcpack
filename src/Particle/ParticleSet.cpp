@@ -465,13 +465,14 @@ namespace
 void validateAllParticleCrowdTopology(const RefVectorWithLeader<ParticleSet>& p_list)
 {
   const ParticleSet& leader        = p_list.getLeader();
+  const size_t num_particles       = leader.getTotalNum();
   const size_t num_distance_tables = leader.getNumDistTables();
   const auto coordinate_kind       = leader.getCoordinates().getKind();
   const bool has_structure_factor  = leader.hasSK();
   for (const ParticleSet& pset : p_list)
   {
     if (pset.getCoordinates().getKind() != coordinate_kind || pset.hasSK() != has_structure_factor ||
-        pset.getNumDistTables() != num_distance_tables)
+        pset.getNumDistTables() != num_distance_tables || pset.getTotalNum() != num_particles)
       throw std::runtime_error("All-particle transaction crowd topology does not match the resource leader.");
     for (size_t idt = 0; idt < num_distance_tables; ++idt)
     {
@@ -495,14 +496,12 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
                                           std::vector<bool>& are_valid)
 {
   const size_t num_walkers = p_list.size();
+  assert(num_walkers > 0 && "All-particle transaction crowd must not be empty.");
+  ParticleSet& p_leader      = p_list.getLeader();
+  const size_t num_particles = p_leader.getTotalNum();
 #ifndef NDEBUG
-  if (num_walkers == 0)
-    throw std::runtime_error("All-particle transaction crowd must not be empty.");
-
   validateAllParticleCrowdTopology(p_list);
-#endif
-  const size_t num_particles = p_list[0].getTotalNum();
-#ifndef NDEBUG
+
   if (displacements.positions.size() != num_particles * num_walkers)
     throw std::runtime_error("Flattened all-particle displacement count does not match the crowd.");
   if (are_valid.size() != num_particles * num_walkers)
@@ -515,15 +514,13 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
   {
     if (p_list[iw].getActivePtcl() != -1)
       throw std::runtime_error("Cannot start an all-particle transaction with an active particle.");
-    if (p_list[iw].getTotalNum() != num_particles || p_list[iw].R.size() != num_particles)
-      throw std::runtime_error("All-particle transaction particle counts do not match.");
     if constexpr (CT == CoordsType::POS_SPIN)
       if (p_list[iw].spins.size() != num_particles)
         throw std::runtime_error("All-particle transaction spin counts do not match.");
   }
 #endif
 
-  ParticleSetMultiWalkerMem& mw_mem = p_list.getLeader().mw_mem_handle_.getResource();
+  ParticleSetMultiWalkerMem& mw_mem = p_leader.mw_mem_handle_.getResource();
   if (mw_mem.all_particle_move_active)
     throw std::runtime_error("Cannot start an all-particle transaction before resolving the previous one.");
 
@@ -568,10 +565,10 @@ void ParticleSet::mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>
   // Keep the all-particle path multiwalker throughout. mw_update's current structure-factor
   // implementation is scalar, so update coordinates and distance tables there and handle SK here.
   mw_update(p_list, true);
-  if (p_list.getLeader().structure_factor_)
+  if (p_leader.structure_factor_)
   {
     auto sk_list = extractSKRefList(p_list);
-    StructFact::mw_updateAllPart(sk_list, p_list, p_list.getLeader().mw_structure_factor_data_handle_);
+    StructFact::mw_updateAllPart(sk_list, p_list, p_leader.mw_structure_factor_data_handle_);
   }
   for (ParticleSet& pset : p_list)
     pset.active_ptcl_ = -1;
@@ -917,19 +914,16 @@ void ParticleSet::mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<Par
                                                    const std::vector<bool>& accepted)
 {
   const size_t num_walkers = p_list.size();
-#ifndef NDEBUG
-  if (num_walkers == 0 || accepted.size() != num_walkers)
-    throw std::runtime_error("All-particle transaction crowd and acceptance counts do not match.");
-#endif
-  const size_t num_particles = p_list[0].getTotalNum();
+  assert(num_walkers > 0 && "All-particle transaction crowd must not be empty.");
+  const ParticleSet& p_leader = p_list.getLeader();
+  const size_t num_particles  = p_leader.getTotalNum();
 #ifndef NDEBUG
   validateAllParticleCrowdTopology(p_list);
   for (size_t iw = 0; iw < num_walkers; ++iw)
   {
     if (p_list[iw].active_ptcl_ != -1)
       throw std::runtime_error("Cannot resolve an all-particle transaction with an active particle.");
-    if (p_list[iw].getTotalNum() != num_particles || p_list[iw].R.size() != num_particles ||
-        p_list[iw].spins.size() != num_particles)
+    if (p_list[iw].spins.size() != num_particles)
       throw std::runtime_error("All-particle transaction particle counts do not match.");
   }
 #endif
