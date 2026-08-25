@@ -79,7 +79,7 @@ void SplineC2ROMPTarget<ST>::resizeStorage(size_t n)
 template<typename ST>
 void SplineC2ROMPTarget<ST>::finalizeConstruction()
 {
-  SplineInst->finalize();
+
   // transfer static data to GPU
   mKK_offload->updateTo();
   myKcart_offload->updateTo();

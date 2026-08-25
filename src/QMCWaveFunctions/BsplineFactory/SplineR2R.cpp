@@ -58,10 +58,7 @@ template<typename ST>
 void SplineR2R<ST>::finalizeConstruction()
 {
   if (offload_mapper_)
-  {
-    SplineInst->finalize();
     offload_mapper_->updateToDevice();
-  }
 }
 
 template<typename ST>
@@ -157,7 +154,7 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
       }
   }
   // update coefficients on GPU from host
-  SplineInst->finalize();
+
   if (offload_mapper_)
     offload_mapper_->updateToDevice();
 }

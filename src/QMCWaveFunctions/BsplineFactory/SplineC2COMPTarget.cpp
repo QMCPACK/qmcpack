@@ -78,7 +78,7 @@ void SplineC2COMPTarget<ST>::resizeStorage(size_t n)
 template<typename ST>
 void SplineC2COMPTarget<ST>::finalizeConstruction()
 {
-  SplineInst->finalize();
+
   // transfer static data to GPU
   mKK_offload->updateTo();
   myKcart_offload->updateTo();
@@ -201,7 +201,7 @@ void SplineC2COMPTarget<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_
       }
   }
   // update coefficients on GPU from host
-  SplineInst->finalize();
+
   if (offload_mapper_)
     offload_mapper_->updateToDevice();
 }
