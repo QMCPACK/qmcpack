@@ -22,10 +22,10 @@ namespace qmcplusplus
 
 template<typename ST>
 SplineC2R<ST>::SplineC2R(const std::string& my_name,
-                                           size_t size,
-                                           const Lattice& prim_lattice,
-                                           std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
-                                           bool use_offload)
+                         size_t size,
+                         const Lattice& prim_lattice,
+                         std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
+                         bool use_offload)
     : BsplineSet(my_name, size, prim_lattice),
       offload_timer_(createGlobalTimer("SplineC2R::offload", timer_level_fine)),
       nComplexBands(0),
@@ -79,7 +79,6 @@ void SplineC2R<ST>::resizeStorage(size_t n)
 template<typename ST>
 void SplineC2R<ST>::finalizeConstruction()
 {
-
   // transfer static data to GPU
   mKK_offload->updateTo();
   myKcart_offload->updateTo();
@@ -103,10 +102,10 @@ void SplineC2R<ST>::resize_kpoints()
 
 template<typename ST>
 inline void SplineC2R<ST>::assign_v(const PointType& r,
-                                             const vContainer_type& myV,
-                                             ValueVector& psi,
-                                             int first,
-                                             int last) const
+                                    const vContainer_type& myV,
+                                    ValueVector& psi,
+                                    int first,
+                                    int last) const
 {
   // protect last
   last = last > kPoints.size() ? kPoints.size() : last;
@@ -179,7 +178,7 @@ void SplineC2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
     const size_t nComplexBands_local = nComplexBands;
     const auto requested_orb_size    = psi.size();
     const auto num_complex_splines   = kPoints.size();
-    const auto* spline_coefs       = spline_ptr->coefs;
+    const auto* spline_coefs         = spline_ptr->coefs;
 
     {
       ScopedTimer offload(offload_timer_);
@@ -214,9 +213,9 @@ void SplineC2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
 
 template<typename ST>
 void SplineC2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
-                                               ValueVector& psi,
-                                               const ValueVector& psiinv,
-                                               std::vector<ValueType>& ratios)
+                                      ValueVector& psi,
+                                      const ValueVector& psiinv,
+                                      std::vector<ValueType>& ratios)
 {
   if (!offload_mapper_)
   {
@@ -270,7 +269,7 @@ void SplineC2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psiinv.size();
   const auto num_complex_splines   = kPoints.size();
-  const auto* spline_coefs       = spline_ptr->coefs;
+  const auto* spline_coefs         = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -326,10 +325,10 @@ void SplineC2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 
 template<typename ST>
 void SplineC2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
-                                                  const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                                  const RefVector<ValueVector>& psi_list,
-                                                  const std::vector<const ValueType*>& invRow_ptr_list,
-                                                  std::vector<std::vector<ValueType>>& ratios_list) const
+                                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                         const RefVector<ValueVector>& psi_list,
+                                         const std::vector<const ValueType*>& invRow_ptr_list,
+                                         std::vector<std::vector<ValueType>>& ratios_list) const
 {
   if (!offload_mapper_)
   {
@@ -401,7 +400,7 @@ void SplineC2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
   auto* ratios_private_ptr         = mw_ratios_private.data();
   const size_t nComplexBands_local = nComplexBands;
   const auto num_complex_splines   = kPoints.size();
-  const auto* spline_coefs       = spline_ptr->coefs;
+  const auto* spline_coefs         = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -463,11 +462,11 @@ void SplineC2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
 
 template<typename ST>
 inline void SplineC2R<ST>::assign_vgl(const PointType& r,
-                                               ValueVector& psi,
-                                               GradVector& dpsi,
-                                               ValueVector& d2psi,
-                                               int first,
-                                               int last) const
+                                      ValueVector& psi,
+                                      GradVector& dpsi,
+                                      ValueVector& d2psi,
+                                      int first,
+                                      int last) const
 {
   // protect last
   last = last > kPoints.size() ? kPoints.size() : last;
@@ -614,10 +613,7 @@ inline void SplineC2R<ST>::assign_vgl(const PointType& r,
 }
 
 template<typename ST>
-inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
-                                                      ValueVector& psi,
-                                                      GradVector& dpsi,
-                                                      ValueVector& d2psi)
+inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   constexpr ST two(2);
   const ST x = r[0], y = r[1], z = r[2];
@@ -741,10 +737,10 @@ inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
 
 template<typename ST>
 void SplineC2R<ST>::evaluateVGL(const ParticleSet& P,
-                                         const int iat,
-                                         ValueVector& psi,
-                                         GradVector& dpsi,
-                                         ValueVector& d2psi)
+                                const int iat,
+                                ValueVector& psi,
+                                GradVector& dpsi,
+                                ValueVector& d2psi)
 {
   if (!offload_mapper_)
   {
@@ -783,7 +779,7 @@ void SplineC2R<ST>::evaluateVGL(const ParticleSet& P,
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psi.size();
   const auto num_complex_splines   = kPoints.size();
-  const auto* spline_coefs       = spline_ptr->coefs;
+  const auto* spline_coefs         = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -807,9 +803,8 @@ void SplineC2R<ST>::evaluateVGL(const ParticleSet& P,
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = 0; index < last - first; index++)
       {
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da, db,
-                                             dc, d2a, d2b, d2c, offload_scratch_ptr + first + index,
-                                             spline_padded_size);
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da, db, dc,
+                                             d2a, d2b, d2c, offload_scratch_ptr + first + index, spline_padded_size);
         const int output_index = first + index;
         offload_scratch_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
             SymTrace(offload_scratch_ptr[spline_padded_size * SoAFields3D::HESS00 + output_index],
@@ -840,11 +835,11 @@ void SplineC2R<ST>::evaluateVGL(const ParticleSet& P,
 
 template<typename ST>
 void SplineC2R<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
-                                                 Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
-                                                 Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
-                                                 const RefVector<ValueVector>& psi_v_list,
-                                                 const RefVector<GradVector>& dpsi_v_list,
-                                                 const RefVector<ValueVector>& d2psi_v_list) const
+                                        Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
+                                        Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
+                                        const RefVector<ValueVector>& psi_v_list,
+                                        const RefVector<GradVector>& dpsi_v_list,
+                                        const RefVector<ValueVector>& d2psi_v_list) const
 {
   const size_t num_pos          = psi_v_list.size();
   const size_t ChunkSizePerTeam = 512;
@@ -869,7 +864,7 @@ void SplineC2R<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<
   const size_t nComplexBands_local = nComplexBands;
   const auto requested_orb_size    = psi_v_list[0].get().size();
   const auto num_complex_splines   = kPoints.size();
-  const auto* spline_coefs       = spline_ptr->coefs;
+  const auto* spline_coefs         = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -899,8 +894,8 @@ void SplineC2R<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da,
-                                               db, dc, d2a, d2b, d2c, offload_scratch_iw_ptr + first + index,
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da, db, dc,
+                                               d2a, d2b, d2c, offload_scratch_iw_ptr + first + index,
                                                spline_padded_size);
           const int output_index = first + index;
           offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
@@ -940,11 +935,11 @@ void SplineC2R<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<
 
 template<typename ST>
 void SplineC2R<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
-                                            const RefVectorWithLeader<ParticleSet>& P_list,
-                                            int iat,
-                                            const RefVector<ValueVector>& psi_v_list,
-                                            const RefVector<GradVector>& dpsi_v_list,
-                                            const RefVector<ValueVector>& d2psi_v_list) const
+                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                   int iat,
+                                   const RefVector<ValueVector>& psi_v_list,
+                                   const RefVector<GradVector>& dpsi_v_list,
+                                   const RefVector<ValueVector>& d2psi_v_list) const
 {
   if (!offload_mapper_)
   {
@@ -980,12 +975,12 @@ void SplineC2R<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
 
 template<typename ST>
 void SplineC2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
-                                                            const RefVectorWithLeader<ParticleSet>& P_list,
-                                                            int iat,
-                                                            const std::vector<const ValueType*>& invRow_ptr_list,
-                                                            OffloadMWVGLArray& phi_vgl_v,
-                                                            std::vector<ValueType>& ratios,
-                                                            std::vector<GradType>& grads) const
+                                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                                   int iat,
+                                                   const std::vector<const ValueType*>& invRow_ptr_list,
+                                                   OffloadMWVGLArray& phi_vgl_v,
+                                                   std::vector<ValueType>& ratios,
+                                                   std::vector<GradType>& grads) const
 {
   if (!offload_mapper_)
   {
@@ -1050,7 +1045,7 @@ void SplineC2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   const size_t phi_vgl_stride      = num_pos * requested_orb_size;
   const size_t nComplexBands_local = nComplexBands;
   const auto num_complex_splines   = kPoints.size();
-  const auto* spline_coefs       = spline_ptr->coefs;
+  const auto* spline_coefs         = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -1083,8 +1078,8 @@ void SplineC2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da,
-                                               db, dc, d2a, d2b, d2c, offload_scratch_iw_ptr + first + index,
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da, db, dc,
+                                               d2a, d2b, d2c, offload_scratch_iw_ptr + first + index,
                                                spline_padded_size);
           const int output_index = first + index;
           offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
@@ -1161,11 +1156,11 @@ void SplineC2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
 
 template<typename ST>
 void SplineC2R<ST>::assign_vgh(const PointType& r,
-                                        ValueVector& psi,
-                                        GradVector& dpsi,
-                                        HessVector& grad_grad_psi,
-                                        int first,
-                                        int last) const
+                               ValueVector& psi,
+                               GradVector& dpsi,
+                               HessVector& grad_grad_psi,
+                               int first,
+                               int last) const
 {
   // protect last
   last = last > kPoints.size() ? kPoints.size() : last;
@@ -1397,10 +1392,10 @@ void SplineC2R<ST>::assign_vgh(const PointType& r,
 
 template<typename ST>
 void SplineC2R<ST>::evaluateVGH(const ParticleSet& P,
-                                         const int iat,
-                                         ValueVector& psi,
-                                         GradVector& dpsi,
-                                         HessVector& grad_grad_psi)
+                                const int iat,
+                                ValueVector& psi,
+                                GradVector& dpsi,
+                                HessVector& grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(prim_lattice_.toUnit_floor(r));
@@ -1410,12 +1405,12 @@ void SplineC2R<ST>::evaluateVGH(const ParticleSet& P,
 
 template<typename ST>
 void SplineC2R<ST>::assign_vghgh(const PointType& r,
-                                          ValueVector& psi,
-                                          GradVector& dpsi,
-                                          HessVector& grad_grad_psi,
-                                          GGGVector& grad_grad_grad_psi,
-                                          int first,
-                                          int last) const
+                                 ValueVector& psi,
+                                 GradVector& dpsi,
+                                 HessVector& grad_grad_psi,
+                                 GGGVector& grad_grad_grad_psi,
+                                 int first,
+                                 int last) const
 {
   // protect last
   last = last < 0 ? kPoints.size() : (last > kPoints.size() ? kPoints.size() : last);
@@ -1898,11 +1893,11 @@ void SplineC2R<ST>::assign_vghgh(const PointType& r,
 
 template<typename ST>
 void SplineC2R<ST>::evaluateVGHGH(const ParticleSet& P,
-                                           const int iat,
-                                           ValueVector& psi,
-                                           GradVector& dpsi,
-                                           HessVector& grad_grad_psi,
-                                           GGGVector& grad_grad_grad_psi)
+                                  const int iat,
+                                  ValueVector& psi,
+                                  GradVector& dpsi,
+                                  HessVector& grad_grad_psi,
+                                  GGGVector& grad_grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(prim_lattice_.toUnit_floor(r));
@@ -1912,11 +1907,11 @@ void SplineC2R<ST>::evaluateVGHGH(const ParticleSet& P,
 
 template<typename ST>
 void SplineC2R<ST>::evaluate_notranspose(const ParticleSet& P,
-                                                  int first,
-                                                  int last,
-                                                  ValueMatrix& logdet,
-                                                  GradMatrix& dlogdet,
-                                                  ValueMatrix& d2logdet)
+                                         int first,
+                                         int last,
+                                         ValueMatrix& logdet,
+                                         GradMatrix& dlogdet,
+                                         ValueMatrix& d2logdet)
 {
   if (!offload_mapper_)
   {

@@ -467,8 +467,8 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
       assert(buffer_H2D.cols() % sizeof(ST) == 0 && "Bug! buffer_H2D.cols() not divisible by sizeof(ST)");
       const int pos_stride = buffer_H2D.cols() / sizeof(ST);
       offload_mapper_->mw_evaluate_vgh(num_pos, reinterpret_cast<ST*>(buffer_H2D.data()) + 1, pos_stride,
-                                      offload_scratch_ptr, spline_padded_size * SoAFields3D::NUM_FIELDS,
-                                      spline_padded_size);
+                                       offload_scratch_ptr, spline_padded_size * SoAFields3D::NUM_FIELDS,
+                                       spline_padded_size);
     }
 
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \

@@ -115,10 +115,10 @@ protected:
 
 public:
   SplineC2R(const std::string& my_name,
-                     size_t size,
-                     const Lattice& prim_lattice,
-                     std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
-                     bool use_offload = false);
+            size_t size,
+            const Lattice& prim_lattice,
+            std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
+            bool use_offload = false);
 
   SplineC2R(const SplineC2R& in);
 

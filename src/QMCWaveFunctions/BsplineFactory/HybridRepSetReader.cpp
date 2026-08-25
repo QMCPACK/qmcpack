@@ -180,19 +180,17 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   std::unique_ptr<BsplineSet> bspline;
   OptionalRef<HybridBase> hybridrep_ref;
 #if defined(QMC_COMPLEX)
-  auto ptr =
-     std::make_unique<HybridRepCplx<SplineC2C<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                              std::move(multi_splines_ptr));
+  auto ptr      = std::make_unique<HybridRepCplx<SplineC2C<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                                                 std::move(multi_splines_ptr));
   hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
   bspline       = std::move(ptr);
 #else
   if (use_duplex_splines_)
   {
-    auto ptr =
-       std::make_unique<HybridRepCplx<SplineC2R<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                                  std::move(multi_splines_ptr));
-      hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
-      bspline       = std::move(ptr);
+    auto ptr      = std::make_unique<HybridRepCplx<SplineC2R<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                                                   std::move(multi_splines_ptr));
+    hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
+    bspline       = std::move(ptr);
   }
   else
   {
