@@ -164,11 +164,30 @@ TEST_CASE("PlaneWave tiled SPO from HDF for diamond C", "[wavefunction]")
   SPOSet::GradVector gradients(8);
   SPOSet::ValueVector laplacians(8);
   spo->evaluateVGL(elec, 0, values, gradients, laplacians);
+
+  SPOSet::ValueMatrix value_matrix(1, 8);
+  SPOSet::GradMatrix gradient_matrix(1, 8);
+  SPOSet::HessMatrix hessian_matrix(1, 8);
+  spo->evaluate_notranspose(elec, 0, 1, value_matrix, gradient_matrix, hessian_matrix);
+#if defined(MIXED_PRECISION)
+  constexpr double hessian_tolerance = 1e-4;
+#else
+  constexpr double hessian_tolerance = 1e-10;
+#endif
   for (int orbital_index = 0; orbital_index < 8; ++orbital_index)
   {
     CHECK(std::isfinite(std::abs(values[orbital_index])));
     CHECK(std::isfinite(std::abs(laplacians[orbital_index])));
     CHECK(std::isfinite(std::abs(gradients[orbital_index][0])));
+    CHECK(std::abs(value_matrix(0, orbital_index) - values[orbital_index]) == Approx(0.0).margin(1e-12));
+    SPOSet::ValueType hessian_trace = 0;
+    for (int row = 0; row < OHMMS_DIM; ++row)
+    {
+      hessian_trace += hessian_matrix(0, orbital_index)(row, row);
+      for (int column = 0; column < OHMMS_DIM; ++column)
+        CHECK(std::isfinite(std::abs(hessian_matrix(0, orbital_index)(row, column))));
+    }
+    CHECK(std::abs(hessian_trace - laplacians[orbital_index]) == Approx(0.0).margin(hessian_tolerance));
   }
 }
 

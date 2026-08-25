@@ -25,8 +25,7 @@ int PWBasis::readbasis(hdf_archive& h5basisgroup,
                        const ParticleLayout& lat,
                        const std::string& pwname,
                        const std::string& pwmultname,
-                       bool resizeContainer,
-                       int kpoint_index)
+                       bool resizeContainer)
 {
   Lattice = lat;
   if (h5basisgroup.is_dataset("/supercell/primitive_vectors"))
@@ -36,7 +35,7 @@ int PWBasis::readbasis(hdf_archive& h5basisgroup,
   }
   ecut = ecutoff;
   app_log() << "  PWBasis::" << pwmultname << " is found " << std::endl;
-  h5basisgroup.read(gvecs, "/electrons/kpoint_" + std::to_string(kpoint_index) + "/gvectors");
+  h5basisgroup.read(gvecs, "/electrons/kpoint_0/gvectors");
   NumPlaneWaves = gvecs.size();
   if (NumPlaneWaves == 0)
     throw std::runtime_error("  PWBasis::readbasis Basis is missing.");
@@ -74,6 +73,7 @@ void PWBasis::reset()
   trimforecut();
   //logC.resize(3,2*maxmaxg+1);
   Z.resize(NumPlaneWaves, 2 + DIM);
+  Zh.resize(NumPlaneWaves, DIM * DIM);
   Zv.resize(NumPlaneWaves);
   phi.resize(NumPlaneWaves);
 }

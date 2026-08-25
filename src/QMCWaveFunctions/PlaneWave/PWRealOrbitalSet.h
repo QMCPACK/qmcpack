@@ -102,8 +102,7 @@ public:
                             int last,
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
-                            HessMatrix& grad_grad_logdet) override
-  { APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n"); }
+                            HessMatrix& grad_grad_logdet) override;
 
 
   /** boolean
@@ -121,6 +120,7 @@ public:
   Matrix<ComplexType> CC;
   /// temporary array to perform gemm operation
   Matrix<ComplexType> Temp;
+  Matrix<ComplexType> TempHess;
   ///temporary complex vector before assigning to a real psi
   Vector<ComplexType> tempPsi;
 };

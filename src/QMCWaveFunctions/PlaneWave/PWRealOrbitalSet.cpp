@@ -45,6 +45,7 @@ void PWRealOrbitalSet::resize(PWBasisPtr bset, bool cleanup)
   BasisSetSize = myBasisSet->NumPlaneWaves;
   CC.resize(OrbitalSetSize, BasisSetSize);
   Temp.resize(OrbitalSetSize, PW_MAXINDEX);
+  TempHess.resize(OrbitalSetSize, OHMMS_DIM * OHMMS_DIM);
   tempPsi.resize(OrbitalSetSize);
   app_log() << "  PWRealOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize
             << std::endl;
@@ -142,6 +143,35 @@ void PWRealOrbitalSet::evaluate_notranspose(const ParticleSet& P,
 #else
 #error "Only physical dimensions 1/2/3 are supported."
 #endif
+    }
+  }
+}
+
+void PWRealOrbitalSet::evaluate_notranspose(const ParticleSet& P,
+                                            int first,
+                                            int last,
+                                            ValueMatrix& logdet,
+                                            GradMatrix& dlogdet,
+                                            HessMatrix& grad_grad_logdet)
+{
+  for (int iat = first, i = 0; iat < last; ++iat, ++i)
+  {
+    myBasisSet->evaluateAll(P, iat);
+    myBasisSet->evaluateHessian();
+    MatrixOperators::product(CC, myBasisSet->Z, Temp);
+    MatrixOperators::product(CC, myBasisSet->Zh, TempHess);
+    const ComplexType* restrict value_ptr   = Temp.data();
+    const ComplexType* restrict hessian_ptr = TempHess.data();
+    for (int orbital_index = 0; orbital_index < OrbitalSetSize;
+         ++orbital_index, value_ptr += PW_MAXINDEX, hessian_ptr += OHMMS_DIM * OHMMS_DIM)
+    {
+      logdet(i, orbital_index)  = value_ptr[PW_VALUE].real();
+      dlogdet(i, orbital_index) =
+          GradType(value_ptr[PW_GRADX].real(), value_ptr[PW_GRADY].real(), value_ptr[PW_GRADZ].real());
+      for (int row = 0; row < OHMMS_DIM; ++row)
+        for (int column = 0; column < OHMMS_DIM; ++column)
+          grad_grad_logdet(i, orbital_index)(row, column) =
+              hessian_ptr[row * OHMMS_DIM + column].real();
     }
   }
 }

@@ -87,6 +87,9 @@ public:
   Matrix<ComplexType> Z;
 
   Vector<ComplexType> Zv;
+
+  Matrix<ComplexType> Zh;
+
   /* inputmap is used for a memory efficient way of
    *
    * importing the basis-set and coefficients when the desired energy cutoff may be
@@ -139,8 +142,7 @@ public:
                 const ParticleLayout& lat,
                 const std::string& pwname     = "planewaves",
                 const std::string& pwmultname = "multipliers",
-                bool resizeContainer          = true,
-                int kpoint_index              = 0);
+                bool resizeContainer          = true);
 
   /** Remove basis elements if kinetic energy > ecut.
    *
@@ -307,6 +309,16 @@ public:
     }
   }
 #endif
+
+  inline void evaluateHessian()
+  {
+    for (int ig = 0; ig < NumPlaneWaves; ++ig)
+      for (int row = 0; row < OHMMS_DIM; ++row)
+        for (int column = 0; column < OHMMS_DIM; ++column)
+          Zh(ig, row * OHMMS_DIM + column) =
+              -kplusgvecs_cart[ig][row] * kplusgvecs_cart[ig][column] * Z(ig, PW_VALUE);
+  }
+
   //    /** Fill the recursion coefficients matrix.
   //     *
   //     * @todo Generalize to non-orthorohmbic cells

@@ -125,7 +125,9 @@ bool PWOrbitalSetBuilder::createPWBasis()
       super_twist[dimension] -= std::floor(super_twist[dimension]);
 
     auto group = std::find_if(super_twists.begin(), super_twists.end(), [&](const PosType& candidate) {
-      const PosType difference = candidate - super_twist;
+      PosType difference = candidate - super_twist;
+      for (int dimension = 0; dimension < OHMMS_DIM; ++dimension)
+        difference[dimension] -= std::nearbyint(difference[dimension]);
       return dot(difference, difference) < 1e-6;
     });
     if (group == super_twists.end())
@@ -160,8 +162,8 @@ bool PWOrbitalSetBuilder::createPWBasis()
   //return the ecut to be used by the basis set
   RealType real_ecut = myParam->getEcut(ecut);
   //create at least one basis set but do resize the containers
-  int nh5gvecs = myBasisSet->readbasis(hfile, real_ecut, targetPtcl.getLattice(), myParam->pwTag, myParam->pwMultTag,
-                                       true, includedKPoints.front());
+  int nh5gvecs =
+      myBasisSet->readbasis(hfile, real_ecut, targetPtcl.getLattice(), myParam->pwTag, myParam->pwMultTag, true);
   app_log() << "  num_twist = " << nkpts << std::endl;
   app_log() << "  included k-points = ";
   std::copy(includedKPoints.begin(), includedKPoints.end(), std::ostream_iterator<int>(app_log(), " "));
@@ -297,8 +299,7 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur, const std:
     else
     {
       basis = std::make_unique<PWBasis>(twistAngles[kpoint_index]);
-      basis->readbasis(hfile, myParam->getEcut(0.0), targetPtcl.getLattice(), myParam->pwTag, myParam->pwMultTag, true,
-                       kpoint_index);
+      basis->readbasis(hfile, myParam->getEcut(0.0), targetPtcl.getLattice(), myParam->pwTag, myParam->pwMultTag, true);
     }
 
     const std::string kpoint_name = "kpoint_" + std::to_string(kpoint_index);
