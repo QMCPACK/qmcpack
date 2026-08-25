@@ -82,6 +82,8 @@ void SplineC2COMPTarget<ST>::finalizeConstruction()
   // transfer static data to GPU
   mKK_offload->updateTo();
   myKcart_offload->updateTo();
+  if (offload_mapper_)
+    offload_mapper_->updateToDevice();
 }
 
 template<typename ST>
@@ -200,6 +202,8 @@ void SplineC2COMPTarget<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_
   }
   // update coefficients on GPU from host
   SplineInst->finalize();
+  if (offload_mapper_)
+    offload_mapper_->updateToDevice();
 }
 
 template<typename ST>
@@ -294,6 +298,7 @@ void SplineC2COMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
   auto* psiinv_ptr               = psiinv_pos_copy.data();
   auto* ratios_private_ptr       = ratios_private.data();
   const auto orb_size            = psiinv.size();
+  const auto* spline_coefs       = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -317,7 +322,7 @@ void SplineC2COMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c,
+          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = omptarget::min(last / 2, orb_size);
@@ -418,6 +423,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
   auto* myKcart_ptr              = myKcart_offload->data();
   auto* buffer_H2D_ptr           = det_ratios_buffer_H2D.data();
   auto* ratios_private_ptr       = mw_ratios_private.data();
+  const auto* spline_coefs       = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -443,7 +449,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c,
+          spline2offload::evaluate_v_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = omptarget::min(last / 2, orb_size);
@@ -659,6 +665,7 @@ void SplineC2COMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   auto* prim_lattice_G_ptr       = prim_lattice_G_offload->data();
   auto* myKcart_ptr              = myKcart_offload->data();
   const auto orb_size            = psi.size();
+  const auto* spline_coefs       = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -682,7 +689,7 @@ void SplineC2COMPTarget<ST>::evaluateVGL(const ParticleSet& P,
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = 0; index < last - first; index++)
       {
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c, da, db,
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da, db,
                                              dc, d2a, d2b, d2c, offload_scratch_ptr + first + index,
                                              spline_padded_size);
         const int output_index = first + index;
@@ -742,6 +749,7 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   auto* GGt_ptr                  = GGt_offload->data();
   auto* prim_lattice_G_ptr       = prim_lattice_G_offload->data();
   auto* myKcart_ptr              = myKcart_offload->data();
+  const auto* spline_coefs       = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -771,7 +779,7 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c, da,
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da,
                                                db, dc, d2a, d2b, d2c, offload_scratch_iw_ptr + first + index,
                                                spline_padded_size);
           const int output_index = first + index;
@@ -920,6 +928,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   auto* rg_private_ptr           = rg_private.data();
   const size_t buffer_H2D_stride = buffer_H2D.cols();
   const size_t phi_vgl_stride    = num_pos * orb_size;
+  const auto* spline_coefs       = spline_ptr->coefs;
 
   {
     ScopedTimer offload(offload_timer_);
@@ -952,7 +961,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_ptr->coefs, ix, iy, iz, first + index, a, b, c, da,
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, spline_coefs, ix, iy, iz, first + index, a, b, c, da,
                                                db, dc, d2a, d2b, d2c, offload_scratch_iw_ptr + first + index,
                                                spline_padded_size);
           const int output_index = first + index;
