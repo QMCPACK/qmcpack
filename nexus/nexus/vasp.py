@@ -186,7 +186,11 @@ def generate_vasp(**kwargs):
     pseudos = kwargs.get('pseudos',None)
     if pseudos is not None:
         system = kwargs.get('system',None)
-        kwargs['pseudos'] = PseudoSet.pseudo_remap('vasp',pseudos,system)
+        kwargs['pseudos'] = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'vasp',
+            )
     #end if
 
     sim_args,inp_args = Vasp.separate_inputs(kwargs)

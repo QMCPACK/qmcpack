@@ -26,6 +26,9 @@
 
 namespace qmcplusplus
 {
+template<typename T>
+class MultiBsplineOffloadMapper;
+
 /** class to match ST real spline with BsplineSet::ValueType (real) SPOs
  * @tparam ST precision of spline
  *
@@ -59,8 +62,6 @@ public:
   using OffloadPosVector = VectorSoaContainer<DT, 3, OffloadAllocator<DT>>;
 
 private:
-  /// if true, use OpenMP offload computation
-  const bool use_offload_;
   /// timer for offload portion
   NewTimer& offload_timer_;
   /// if true, gamma point calculation
@@ -78,8 +79,10 @@ private:
   std::shared_ptr<std::vector<ST>> coef_copy_;
 
 protected:
-  ///multi bspline set
+  /// multi bspline set
   const std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
+  /// multi bspline set offload mapper
+  const std::shared_ptr<MultiBsplineOffloadMapper<ST>> offload_mapper_;
   /// intermediate result vectors
   vContainer_type myV;
   vContainer_type myL;
@@ -97,7 +100,7 @@ public:
   virtual std::string getClassName() const override { return "SplineR2R"; }
   virtual std::string getKeyword() const override { return "SplineR2R"; }
   bool isRotationSupported() const override { return true; }
-  virtual bool isOMPoffload() const override { return use_offload_; }
+  virtual bool isOMPoffload() const override { return bool(offload_mapper_); }
 
   void createResource(ResourceCollection& collection) const override
   { auto resource_index = collection.addResource(std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>()); }

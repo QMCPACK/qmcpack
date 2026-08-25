@@ -1922,7 +1922,11 @@ def generate_qmcpack(**kwargs):
     pseudos = kwargs.get('pseudos',None)
     if pseudos is not None:
         system = kwargs.get('system',None)
-        pseudos = PseudoSet.pseudo_remap('qmcpack',pseudos,system)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'qmcpack',
+            )
         kwargs['pseudos'] = pseudos
         kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
     #end if
@@ -1980,7 +1984,11 @@ def generate_cusp_correction(**kwargs):
     pseudos = kwargs.get('pseudos',None)
     if pseudos is not None:
         system = kwargs.get('system',None)
-        pseudos = PseudoSet.pseudo_remap('qmcpack',pseudos,system)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'qmcpack',
+            )
         kwargs['pseudos'] = pseudos
         kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
     #end if

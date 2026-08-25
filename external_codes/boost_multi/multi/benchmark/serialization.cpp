@@ -1,5 +1,11 @@
+#ifdef COMPILATION_INSTRUCTIONS
+g++-14 -O3 -Ofast -std=c++17 -DNDEBUG -I../include -I/opt/homebrew/Cellar/boost/1.87.0/include -L/opt/homebrew/Cellar/boost/1.87.0/lib -lboost_serialization `pkg-config --cflags --libs benchmark` -Wno-deprecated-declarations $0 -o $0.x && time $0.x $@ && rm -f $0.x; exit
+#endif
+
 #include <benchmark/benchmark.h>
-#include "../array.hpp"
+#include <boost/multi/array.hpp>
+
+#include <iostream>
 
 //#include <cereal/archives/json.hpp>
 //#include <cereal/archives/xml.hpp>
@@ -22,6 +28,8 @@
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+
+#include <boost/serialization/vector.hpp>
 
 #include<fstream>
 #include<sstream>
@@ -67,7 +75,9 @@ void BM_iserialization(benchmark::State& st) {
 	for(auto _  : st) {
 		std::ifstream fs{"file"};
 		Ar xa{fs};
-		xa>> multi::archive_traits<Ar>::make_nvp("A", A);
+		// auto&& Ap = A();
+		// xa >> boost::serialization::make_nvp("A", Ap);
+		xa>> multi::archive_traits<Ar>::make_nvp("A", A());
 		benchmark::DoNotOptimize(A);
 	    benchmark::ClobberMemory();
 	}
@@ -149,7 +159,7 @@ void BM_gzip_iserialization(benchmark::State& st) {
 //BENCHMARK_TEMPLATE(BM_gzip_oserialization, cereal::XMLOutputArchive);
 //BENCHMARK_TEMPLATE(BM_gzip_iserialization, cereal::XMLInputArchive);
 
-BENCHMARK_TEMPLATE(BM_gzip_oserialization, boost::archive::xml_oarchive);
-BENCHMARK_TEMPLATE(BM_gzip_iserialization, boost::archive::xml_iarchive);
+// BENCHMARK_TEMPLATE(BM_gzip_oserialization, boost::archive::xml_oarchive);
+// BENCHMARK_TEMPLATE(BM_gzip_iserialization, boost::archive::xml_iarchive);
 
 BENCHMARK_MAIN();

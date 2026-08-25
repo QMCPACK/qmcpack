@@ -94,11 +94,6 @@ public:
    */
   const std::string& nextRoot() const noexcept;
 
-  /** 
-   * @brief return the root of the previous sequence
-   * @param oldroot is composed by the title_ and series_
-   */
-  bool previousRoot(std::string& oldroot) const;
 
   int getSeriesIndex() const noexcept;
 

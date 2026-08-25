@@ -71,8 +71,11 @@ def find_pair(s, pairs, start = 0, end = None):
     right_pair  = pairs[1]
 
     start_loc = s.find(left_pair, start, end)
+    if start_loc == -1:
+        return -1, -1
+    #end if
     end_loc   = s.find(right_pair, start_loc + len(left_pair), end)
-    if start_loc == -1 or end_loc == -1:
+    if end_loc == -1:
         return start_loc, end_loc
 
     return start_loc, end_loc+len(right_pair)
