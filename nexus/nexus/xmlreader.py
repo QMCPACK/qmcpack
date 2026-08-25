@@ -28,7 +28,7 @@ import keyword
 import re
 import os
 import numpy as np
-from .developer import DevBase, obj
+from .developer import DevBase, obj, FileFormatError
 from .utilities import path_string, valid_variable_name
 
 
@@ -384,7 +384,8 @@ class XMLreader(DevBase):
         cur = self.cur[self.ilevel]
         if ename in self.element_aliases.keys():
             if self.element_aliases[ename].find('attributes')!=-1:
-                self.error('an alternative to exec is needed')
+                msg = 'an alternative to exec is needed'
+                raise NotImplementedError(msg)
                 #exec('name = '+self.element_aliases[ename])
             else:
                 name = self.element_aliases[ename]
@@ -432,7 +433,11 @@ class XMLreader(DevBase):
                     del  cur._elements[name]
                     del cur[name]
                 else:
-                    self.error('prior unjoinable element is not the first\nthis should be impossible')
+                    msg = (
+                        'prior unjoinable element is not the first\n'
+                        'this should be impossible'
+                        )
+                    raise FileFormatError(msg)
                 #end if
                 #add the joinable element as unnumbered
                 # later joinable elements will be joined to this one
