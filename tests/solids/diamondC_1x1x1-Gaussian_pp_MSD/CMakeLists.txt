@@ -115,6 +115,55 @@ qmc_run_and_check(
   det_diamondC_1x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS #DMC
 )
 
+if(QMC_MIXED_PRECISION)
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "totenergy" "-10.47281521 0.00002")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "kinetic" "11.64925876 0.00002")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "potential" "-22.12207397 0.00001")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "eeenergy" "-2.30029742 0.000002")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "localecp" "-8.06514493 0.00001")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "nonlocalecp" "1.01903583 0.000005")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "ionion" "-12.77566746 0.000001")
+  if(QMC_COMPLEX)
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "totenergy" "-10.48206709 0.00002")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "kinetic" "11.80413119 0.00002")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "potential" "-22.28619828 0.000003")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "eeenergy" "-2.39168593 0.000002")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "localecp" "-7.77724308 0.000002")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "nonlocalecp" "0.65839819 0.000002")
+  else()
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "totenergy" "-10.88250620 0.00002")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "kinetic" "13.16778193 0.00002")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "potential" "-24.05028813 0.00004")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "eeenergy" "-2.53873969 0.000002")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "localecp" "-8.41319765 0.00002")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "nonlocalecp" "-0.32268333 0.00002")
+  endif()
+else()
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "totenergy" "-10.47281521 0.000001")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "kinetic" "11.64925876 0.000001")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "potential" "-22.12207397 0.000001")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "eeenergy" "-2.30029742 0.000001")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "localecp" "-8.06514493 0.000001")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "nonlocalecp" "1.01903583 0.000001")
+  list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS "ionion" "-12.77566746 0.000001")
+  if(QMC_COMPLEX)
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "totenergy" "-10.48206709 0.000001")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "kinetic" "11.80413119 0.000001")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "potential" "-22.28619828 0.000001")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "eeenergy" "-2.39168593 0.000001")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "localecp" "-7.77724308 0.000001")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "nonlocalecp" "0.65839819 0.000001")
+  else()
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "totenergy" "-10.88250620 0.000001")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "kinetic" "13.16778193 0.000001")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "potential" "-24.05028813 0.000001")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "eeenergy" "-2.53873969 0.000001")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "localecp" "-8.41319765 0.000001")
+    list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "nonlocalecp" "-0.32268333 0.000001")
+  endif()
+endif()
+list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS "ionion" "-12.77566746 0.000001")
+
 qmc_run_and_check(
   deterministic-diamondC_1x1x1-Gaussian_pp_MSD-batched
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1-Gaussian_pp_MSD"
@@ -122,4 +171,8 @@ qmc_run_and_check(
   det_vmc_dmc_batched.in.xml
   1
   1
-  TRUE)
+  TRUE
+  0
+  det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS
+  1
+  det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS)
