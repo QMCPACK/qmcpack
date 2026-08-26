@@ -89,7 +89,7 @@ if(NOT MIXED_PRECISION)
     DET_BCCH_SCALARS # VMC
   )
 
-  # Batched backflow is currently expected to fail.
+  # Batched backflow is supported by the batched optimization and VMC drivers.
   qmc_run_and_check(
     deterministic-bccH_2x2x2_ae-vmc_bf-batched
     "${qmcpack_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
@@ -97,7 +97,7 @@ if(NOT MIXED_PRECISION)
     det_qmc-bf-opt_batched.in.xml
     1
     1
-    FALSE)
+    TRUE)
 
 else()
   message(VERBOSE "Skipping bccH_2x2x2_ae derivative and optimization tests in mixed precision (QMC_MIXED_PRECISION=1)")

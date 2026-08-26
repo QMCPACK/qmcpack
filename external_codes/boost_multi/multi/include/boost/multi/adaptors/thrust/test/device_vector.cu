@@ -1,10 +1,10 @@
 #include <thrust/device_vector.h>
 
 int main(){
-//	thrust::device_vector<int> D(5);
-//	assert( D.size() == 5 );
-
-//	cudaDeviceSynchronize();
+//  thrust::device_vector<int> D(5);
+//  assert( D.size() == 5 );
+sasa;
+//  cudaDeviceSynchronize();
 	std::allocator<int> alloc;
 	int* p = alloc.allocate(10);
 	p[0] = 2;

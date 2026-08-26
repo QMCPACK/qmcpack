@@ -4,7 +4,7 @@
 
 
 from .simulation import Simulation
-from .pseudopotential import PseudoSet
+from .pseudoset import PseudoSet
 from .rmg_input import RmgInput, generate_rmg_input
 from .rmg_analyzer import RmgAnalyzer
 
@@ -27,13 +27,15 @@ class Rmg(Simulation):
 
     def get_result(self,result_name,sim):
         result = None
-        self.error('Ability to get result '+result_name+' has not been implemented.')
+        msg = 'Ability to get result '+result_name+' has not been implemented.'
+        raise NotImplementedError(msg)
         return result
     #end def get_result
 
 
     def incorporate_result(self,result_name,result,sim):
-        self.error('ability to incorporate result '+result_name+' has not been implemented')
+        msg = 'ability to incorporate result '+result_name+' has not been implemented'
+        raise NotImplementedError(msg)
     #end def incorporate_result
 
 
@@ -62,7 +64,11 @@ def generate_rmg(**kwargs):
     pseudos = kwargs.get('pseudos',None)
     if pseudos is not None:
         system = kwargs.get('system',None)
-        pseudos = PseudoSet.pseudo_remap('rmg',pseudos,system)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'rmg',
+            )
         kwargs['pseudos'] = pseudos
         kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
     #end if

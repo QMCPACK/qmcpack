@@ -101,7 +101,7 @@ if(NOT QMC_COMPLEX)
   #--- Deterministic
 
   # Deterministic tests for 1 node & 1 thread
-  ## FOR det_qmc_short-SD-C4_AE_Mol_QP.s000.scalar.dat
+  ## FOR det_qmc-SD-C4_AE_Mol_QP.s000.scalar.dat
   #  LIST(APPEND DET_C4_SD_AE_QP "kinetic" "25.57801835 0.00001")
   #  LIST(APPEND DET_C4_SD_AE_QP "totenergy" "-147.14097018 0.00001")
   #  LIST(APPEND DET_C4_SD_AE_QP "potential" "-172.71898854 0.00001")
@@ -110,14 +110,14 @@ if(NOT QMC_COMPLEX)
   #  LIST(APPEND DET_C4_SD_AE_QP "samples" "9 0.0")
   #  QMC_RUN_AND_CHECK(deterministic-C4_sd-ae-qp-vmc
   #                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-  #                    det_qmc_short-SD-C4_AE_Mol_QP
-  #                    det_qmc_short-SD-C4_AE_Mol_QP.in.xml
+  #                    det_qmc-SD-C4_AE_Mol_QP
+  #                    det_qmc_SD-C4_AE_Mol_QP.in.xml
   #                    1 1
   #                    TRUE
   #                    0 DET_C4_SD_AE_QP # VMC
   #                    )
 
-  ## FOR det_qmc_short-MD-C4_AE_Mol_Ground_QP.s000.scalar.dat
+  ## FOR det_qmc-MD-C4_AE_Mol_Ground_QP.s000.scalar.dat
   #  LIST(APPEND DET_C4_MD_AE_GROUND_QP "kinetic" "99.09812052 0.00001")
   #  LIST(APPEND DET_C4_MD_AE_GROUND_QP "totenergy" "-146.85148712 0.00001")
   #  LIST(APPEND DET_C4_MD_AE_GROUND_QP "potential" "-245.94960764 0.00001")
@@ -126,14 +126,14 @@ if(NOT QMC_COMPLEX)
   #  LIST(APPEND DET_C4_MD_AE_GROUND_QP "samples" "9 0.0")
   #  QMC_RUN_AND_CHECK(deterministic-C4_md-ae-ground-qp-vmc
   #                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-  #                    det_qmc_short-MD-C4_AE_Mol_Ground_QP
-  #                    det_qmc_short-MD-C4_AE_Mol_Ground_QP.in.xml
+  #                    det_qmc-MD-C4_AE_Mol_Ground_QP
+  #                    det_qmc_MD-C4_AE_Mol_Ground_QP.in.xml
   #                    1 1
   #                    TRUE
   #                    0 DET_C4_MD_AE_GROUND_QP # VMC
   #                    )
 
-  ## FOR det_qmc_short-MD-C4_AE_Mol_Excited_QP.s000.scalar.dat
+  ## FOR det_qmc-MD-C4_AE_Mol_Excited_QP.s000.scalar.dat
   #  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "kinetic" "25.92674520 0.00001")
   #  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "totenergy" "-145.57864234 0.00001")
   #  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "potential" "-171.50538754 0.00001")
@@ -142,8 +142,8 @@ if(NOT QMC_COMPLEX)
   #  LIST(APPEND DET_C4_MD_AE_EXCITED_QP "samples" "9 0.0")
   #  QMC_RUN_AND_CHECK(deterministic-C4_md-ae-excited-qp-vmc
   #                    "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
-  #                    det_qmc_short-MD-C4_AE_Mol_Excited_QP
-  #                    det_qmc_short-MD-C4_AE_Mol_Excited_QP.in.xml
+  #                    det_qmc-MD-C4_AE_Mol_Excited_QP
+  #                    det_qmc_MD-C4_AE_Mol_Excited_QP.in.xml
   #                    1 1
   #                    TRUE
   #                    0 DET_C4_MD_AE_EXCITED_QP # VMC

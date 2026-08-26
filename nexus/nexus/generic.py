@@ -51,8 +51,18 @@ class generic_settings:
 
 
 class NexusError(Exception):
-    None
+    """Exception for errors that are caused by a bug in Nexus."""
 #end class NexusError
+
+
+class FileFormatError(Exception):
+    """Exception raised when a file is not formatted as expected."""
+#end class FileFormatError
+
+
+class NotAnElementError(ValueError):
+    """Exception raised when a value can not be interpreted as an element."""
+#end class FileFormatError
 
 
 class NexusDevWarning(Warning):
@@ -64,7 +74,7 @@ class NexusDevWarning(Warning):
 
 
 class NexusUserWarning(NexusDevWarning):
-    None
+    pass
 #end class NexusUserWarning
 
 
@@ -1398,20 +1408,25 @@ class Void(object):
         elif module is None:
             msg = 'item '+str(item)+' is from an unavailable module'
         elif item is None:
-            msg = 'encountered a void item from unavailable module '+str(module)+'  \nthis python module must be installed on your system to use this feature'
+            msg = (
+                'encountered a void item from unavailable module '+str(module)+'  \n'
+                'this python module must be installed on your system to use this feature'
+                )
         else:
-            msg = 'item '+str(item)+' is from unavailable module '+str(module)+'  \nthis python module must be installed on your system to use this feature'
+            msg = (
+                'item '+str(item)+' is from unavailable module '+str(module)+'  \n'
+                'this python module must be installed on your system to use this feature'
+                )
         #end if
-        error(msg,'import')
+        raise ImportError(msg)
     #end def _unavailable
 
-        
+
     @classmethod
     def _class_unavailable(cls):
         msg = 'encountered a void item from an unavailable module'
-        error(msg,'import')
+        raise ImportError(msg)
     #end def _class_unavailable
-        
 
 
     def __init__(self,module=None,item=None):

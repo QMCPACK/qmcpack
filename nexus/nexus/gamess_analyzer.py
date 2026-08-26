@@ -17,7 +17,7 @@
 
 import os
 import numpy as np
-from .developer import obj
+from .developer import obj, NexusError, FileFormatError
 from .fileio import TextFile
 from .simulation import SimulationAnalyzer,Simulation
 from .gamess_input import GamessInput
@@ -94,7 +94,8 @@ class GamessAnalyzer(SimulationAnalyzer):
                 if name in files:
                     files[name] = filename
                 else:
-                    self.error('unknown GAMESS file: {0}'.format(name))
+                    msg = 'unknown GAMESS file: {0}'.format(name)
+                    raise NexusError(msg)
                 #end if
             #end for
             info.initialized = True
@@ -107,7 +108,11 @@ class GamessAnalyzer(SimulationAnalyzer):
 
     def analyze(self):
         if not self.info.initialized:
-            self.error('cannot perform analysis\nGamessAnalyzer has not been initialized')
+            msg = (
+                'cannot perform analysis\n'
+                'GamessAnalyzer has not been initialized'
+                )
+            raise RuntimeError(msg)
         #end if
         self.analyze_log()
         self.analyze_punch()
@@ -122,7 +127,12 @@ class GamessAnalyzer(SimulationAnalyzer):
         elif os.path.exists(filename):
             filepath = filename
         elif self.info.exit:
-            self.error('output file does not exist at either of the locations below:\n  {0}\n  {1}'.format(outfile,filename))
+            msg = (
+                'output file does not exist at either of the locations below:\n'
+                '  {0}\n'
+                '  {1}'.format(outfile,filename)
+                )
+            raise FileNotFoundError(msg)
         else:
             return None
         #end if
@@ -144,7 +154,8 @@ class GamessAnalyzer(SimulationAnalyzer):
             self.read_energy_components(log,energy)
         except:
             if self.info.exit:
-                self.error('log file analysis failed (energy components)')
+                msg = 'log file analysis failed (energy components)'
+                raise FileFormatError(msg)
             #end if
         #end try
         if len(energy)>0:
@@ -165,7 +176,8 @@ class GamessAnalyzer(SimulationAnalyzer):
             #end if
         except:
             if self.info.exit:
-                self.error('log file analysis failed (counts)')
+                msg = 'log file analysis failed (counts)'
+                raise FileFormatError(msg)
             #end if
         #end try
         if len(counts)>0:
@@ -180,7 +192,8 @@ class GamessAnalyzer(SimulationAnalyzer):
                 self.read_orbitals(log,orbitals,'down','-- BETA SET --' )
             except:
                 if self.info.exit:
-                    self.error('log file analysis failed (orbitals)')
+                    msg = 'log file analysis failed (orbitals)'
+                    raise FileFormatError(msg)
                 #end if
             #end try
             if len(orbitals)>0:
@@ -195,7 +208,8 @@ class GamessAnalyzer(SimulationAnalyzer):
                 self.read_ao_populations(log,ao_populations)
             except:
                 if self.info.exit:
-                    self.error('log file analysis failed (ao populations)')
+                    msg = 'log file analysis failed (ao populations)'
+                    raise FileFormatError(msg)
                 #end if
             #end try
             if len(ao_populations)>0:
@@ -265,7 +279,14 @@ class GamessAnalyzer(SimulationAnalyzer):
                 if j==jmax:
                     success=False
                     if self.info.exit:
-                        self.error('could not find start of orbitals for {0}\nnumber of orbitals read successfully: {1}\nnumber of orbitals not read: {2}'.format(header,mos_found,mos_tot-mos_found))
+                        msg = (
+                            'could not find start of orbitals for {0}\n'
+                            'number of orbitals read successfully: {1}\n'
+                            'number of orbitals not read: {2}'.format(
+                                header, mos_found, mos_tot-mos_found
+                                )
+                            )
+                        raise FileFormatError(msg)
                     else:
                         break
                     #end if
@@ -300,7 +321,8 @@ class GamessAnalyzer(SimulationAnalyzer):
                         elif a in GamessAnalyzer.ftypes:
                             ftype.append(ia)
                         elif self.info.exit:
-                            self.error('unrecognized angular type: {0}'.format(angular[ia]))
+                            msg = 'unrecognized angular type: {0}'.format(angular[ia])
+                            raise RuntimeError(msg)
                         #end if
                     #end for
                 #end if
@@ -311,7 +333,14 @@ class GamessAnalyzer(SimulationAnalyzer):
             if i==imax:
                 success=False
                 if self.info.exit:
-                    self.error('orbital read failed for {0}\nnumber of orbitals read successfully: {1}\nnumber of orbitals not read: {2}'.format(header,mos_found,mos_tot-mos_found))
+                    msg = (
+                        'orbital read failed for {0}\n'
+                        'number of orbitals read successfully: {1}\n'
+                        'number of orbitals not read: {2}'.format(
+                            header, mos_found, mos_tot-mos_found
+                            )
+                        )
+                    raise FileFormatError(msg)
             #end if
             if success:
                 orbs[spec] = obj(
@@ -373,7 +402,8 @@ class GamessAnalyzer(SimulationAnalyzer):
                     l = GamessAnalyzer.lxyz_reverse[a]
                     linds[l].append(ia)
                 elif self.info.exit:
-                    self.error('unrecognized angular type: {0}'.format(angular[ia]))
+                    msg = 'unrecognized angular type: {0}'.format(angular[ia])
+                    raise RuntimeError(msg)
                 #end if
             #end for
             mulliken = np.array(mulliken,dtype=float)
@@ -498,7 +528,8 @@ class GamessAnalyzer(SimulationAnalyzer):
             #end if
         except:
             if self.info.exit:
-                self.error('punch file analysis failed')
+                msg = 'punch file analysis failed'
+                raise RuntimeError(msg)
             #end if
         #end try
     #end def analyze_punch

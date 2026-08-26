@@ -73,20 +73,15 @@ def test_check_result():
 
 
 def test_get_result():
-    from ..developer import NexusError, obj
+    from ..developer import obj
 
     sim = get_quantum_package_sim()
     
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     sim.input.run_control.save_for_qmcpack = True
 
@@ -121,27 +116,17 @@ def test_incorporate_result():
 
     sim = get_quantum_package_sim()
     
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
-    
-    try:
+
+    with pytest.raises(
+        NexusError,
+        match="cannot get orbitals",
+        ):
         sim.get_result('orbitals',other)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     clear_all_sims()
 #end def test_incorporate_result

@@ -26,6 +26,7 @@ MultiBsplineOffloadMapper<T>::MultiBsplineOffloadMapper(const HostBspline& host_
     auto* coefs = host_bsplines_.getBlock(ib).coefs;
     block_coefs_.push_back(coefs);
   }
+  mapToDevice();
 }
 
 template<typename T>
@@ -62,7 +63,11 @@ void MultiBsplineOffloadMapper<T>::updateToDevice()
 }
 
 template<typename T>
-void MultiBsplineOffloadMapper<T>::mw_evaluate_v(int num_pos, T* pos_arr, T* spline_v, size_t walker_stride)
+void MultiBsplineOffloadMapper<T>::mw_evaluate_v(int num_pos,
+                                                 T* pos_arr,
+                                                 int pos_stride,
+                                                 T* spline_v,
+                                                 size_t walker_stride)
 {
   const auto block_offsets = host_bsplines_.getBlockOffsets();
   for (size_t ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
@@ -87,11 +92,11 @@ void MultiBsplineOffloadMapper<T>::mw_evaluate_v(int num_pos, T* pos_arr, T* spl
         const size_t first = ChunkSizePerTeam * team_id;
         const size_t last  = omptarget::min(first + ChunkSizePerTeam, num_splines);
 
+        auto* pos         = pos_arr + pos_stride * iw;
         auto* spline_v_iw = spline_v + walker_stride * iw;
         int ix, iy, iz;
         T a[4], b[4], c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos_arr[iw * 3], pos_arr[iw * 3 + 1], pos_arr[iw * 3 + 2], ix,
-                                              iy, iz, a, b, c);
+        spline2::computeLocationAndFractional(spline_ptr, pos[0], pos[1], pos[2], ix, iy, iz, a, b, c);
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
@@ -104,6 +109,7 @@ void MultiBsplineOffloadMapper<T>::mw_evaluate_v(int num_pos, T* pos_arr, T* spl
 template<typename T>
 void MultiBsplineOffloadMapper<T>::mw_evaluate_vgh(int num_pos,
                                                    T* pos_arr,
+                                                   int pos_stride,
                                                    T* spline_vgh,
                                                    size_t walker_stride,
                                                    size_t field_stride)
@@ -132,10 +138,11 @@ void MultiBsplineOffloadMapper<T>::mw_evaluate_vgh(int num_pos,
         const size_t last  = omptarget::min(first + ChunkSizePerTeam, num_splines);
 
         auto* spline_vgh_iw = spline_vgh + walker_stride * iw;
+        auto* pos           = pos_arr + pos_stride * iw;
         int ix, iy, iz;
         T a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos_arr[iw * 3], pos_arr[iw * 3 + 1], pos_arr[iw * 3 + 2], ix,
-                                              iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+        spline2::computeLocationAndFractional(spline_ptr, pos[0], pos[1], pos[2], ix, iy, iz, a, b, c, da, db, dc, d2a,
+                                              d2b, d2c);
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
