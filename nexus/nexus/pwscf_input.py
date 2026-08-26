@@ -44,21 +44,57 @@
 #====================================================================#
 
 
+import inspect
 import os
 import sys
-import inspect
 from copy import deepcopy
+from types import MappingProxyType
+from typing import ClassVar, Literal, TypeAlias
+
 import numpy as np
 from numpy import pi
 from numpy.linalg import inv
-from .developer import DevBase, obj, log, warn, error
-from .unit_converter import convert
-from .periodic_table import Elements
-from .structure import Structure, kmesh
-from .physical_system import PhysicalSystem
-from .pseudopotential import pp_elem_label
-from .simulation import SimulationInput
+
 from . import numpy_extensions as npe
+from .developer import DevBase, error, log, obj, warn
+from .periodic_table import Elements
+from .physical_system import PhysicalSystem
+from .pseudoset import pp_elem_label, PseudoSet
+from .pwscf_input_defs import (
+    CellDefinitions,
+    ControlDefinitions,
+    ElectronsDefinitions,
+    FcpDefinitions,
+    IonsDefinitions,
+    PwscfInputType,
+    RismDefinitions,
+    SystemDefinitions,
+)
+from .simulation import SimulationInput
+from .structure import Structure, kmesh
+from .unit_converter import convert
+
+"""Union of the namelist definition enums."""
+NamelistType: TypeAlias = (
+    type[CellDefinitions]
+    | type[ControlDefinitions]
+    | type[ElectronsDefinitions]
+    | type[FcpDefinitions]
+    | type[IonsDefinitions]
+    | type[RismDefinitions]
+    | type[SystemDefinitions]
+)
+
+"""Tuple of all of the namelist definition enums."""
+NAMELIST_DEFINITIONS = (
+    ControlDefinitions,
+    SystemDefinitions,
+    ElectronsDefinitions,
+    IonsDefinitions,
+    CellDefinitions,
+    FcpDefinitions,
+    RismDefinitions,
+    )
 
 def read_str(sv):
     return sv.strip('"').strip("'")
@@ -168,100 +204,110 @@ def array_to_string(a,pad='   ',format=pwscf_array_format,converter=noconv,rowse
 #end def array_to_string
 
 
-            
+def _get_var_types() -> (
+    tuple[
+        frozenset[str], # ints
+        frozenset[str], # floats
+        frozenset[str], # strs
+        frozenset[str], # bools
+        frozenset[str], # real_arrays
+        frozenset[str], # species_arrays
+        frozenset[str], # multidimensional_arrays
+        ]
+    ):
+    """Get all variable types from the namelist definitions.
+
+    Returns
+    -------
+    ints : frozenset of str
+        All integer-type variables. (scalars and arrays)
+    floats : frozenset of str
+        All float-type variables. (scalars and arrays)
+    strs : frozenset of str
+        All string-type variables. (scalars and arrays)
+    bools : frozenset of str
+        All boolean-type variables. (scalars and arrays)
+    real_arrays : frozenset of str
+        All array variables. (all datatypes)
+    species_arrays : frozenset of str
+        All array variables whose size depends on species. (all datatypes)
+    multidimensional_arrays : frozenset of str
+        All multidimensional array variables. (all datatypes, fixed-size and species arrays)
+    """
+    ints = set()
+    floats = set()
+    strs = set()
+    bools = set()
+    real_arrays = set()
+    species_arrays = set()
+    multidimensional_arrays = set()
+
+    for nmlist in NAMELIST_DEFINITIONS:
+        for var in nmlist:
+            if var.shape is not None:
+                real_arrays.add(var.name)
+
+                if isinstance(var.shape[1], str):
+                    species_arrays.add(var.name)
+                elif (
+                    isinstance(var.shape[1], tuple)
+                    and (
+                        isinstance(var.shape[1][0], str)
+                        or isinstance(var.shape[1][1], str)
+                        or isinstance(var.shape[1][-1], str)
+                        )
+                    ):
+                    species_arrays.add(var.name)
+
+                if isinstance(var.shape[0], tuple) and len(var.shape[0]) >= 2:
+                    multidimensional_arrays.add(var.name)
+            #end if var.shape is not None
+
+            if var.datatype is int:
+                ints.add(var.name)
+            elif var.datatype is float:
+                floats.add(var.name)
+            elif var.datatype is str:
+                strs.add(var.name)
+            elif var.datatype is bool:
+                bools.add(var.name)
+            else:
+                msg = f"Variable {var.name} has an invalid datatype `{var.datatype.__name__}`!"
+                raise ValueError(msg)
+
+    return (
+        frozenset(ints),
+        frozenset(floats),
+        frozenset(strs),
+        frozenset(bools),
+        frozenset(real_arrays),
+        frozenset(species_arrays),
+        frozenset(multidimensional_arrays),
+        )
+#end def get_var_types
+
 
 class PwscfInputBase(DevBase):
-    ints=[
-        # pre 5.4
-        'nstep','iprint','gdir','nppstr','nberrycyc','ibrav','nat','ntyp',
-        'nbnd','nr1','nr2','nr3','nr1s','nr2s','nr3s','nspin',
-        'multiplicity','edir','report','electron_maxstep',
-        'mixing_ndim','mixing_fixed_ns','ortho_para','diago_cg_maxiter',
-        'diago_david_ndim','nraise','bfgs_ndim','num_of_images','fe_nstep',
-        'sw_nstep','modenum','n_charge_compensation','nlev','lda_plus_u_kind',
-        # 5.4 additions
-        'nqx1','nqx2','nqx3','esm_nfit','space_group','origin_choice',
-        # 6.3 additions
-        'dftd3_version',
-        ]
-    floats=[
-        # pre 5.4
-        'dt','max_seconds','etot_conv_thr','forc_conv_thr','celldm','A','B','C',
-        'cosAB','cosAC','cosBC','nelec','ecutwfc','ecutrho','degauss',
-        'tot_charge','tot_magnetization','starting_magnetization','nelup',
-        'neldw','ecfixed','qcutz','q2sigma','Hubbard_alpha','Hubbard_U','Hubbard_J',
-        'starting_ns_eigenvalue','emaxpos','eopreg','eamp','angle1','angle2',
-        'fixed_magnetization','lambda','london_s6','london_rcut','conv_thr',
-        'mixing_beta','diago_thr_init','efield','tempw','tolp','delta_t','upscale',
-        'trust_radius_max','trust_radius_min','trust_radius_ini','w_1','w_2',
-        'temp_req','ds','k_max','k_min','path_thr','fe_step','g_amplitude',
-        'press','wmass','cell_factor','press_conv_thr','xqq','ecutcoarse',
-        'mixing_charge_compensation','comp_thr','exx_fraction','ecutfock',
-        # 5.4 additions
-        'conv_thr_init','conv_thr_multi','efield_cart','screening_parameter',
-        'ecutvcut','Hubbard_J0','Hubbard_beta','Hubbard_J','esm_w',
-        'esm_efield','fcp_mu','london_c6','london_rvdw','xdm_a1','xdm_a2',
-        # 6.3 additions
-        'block_1','block_2','block_height','zgate','ts_vdw_econv_thr',
-        'starting_charge'
-        ]
-    strs=[
-        # pre 5.4
-        'calculation','title','verbosity','restart_mode','outdir','wfcdir',
-        'prefix','disk_io','pseudo_dir','occupations','smearing','input_dft',
-        'U_projection_type','constrained_magnetization','mixing_mode',
-        'diagonalization','startingpot','startingwfc','ion_dynamics',
-        'ion_positions','phase_space','pot_extrapolation','wfc_extrapolation',
-        'ion_temperature','opt_scheme','CI_scheme','cell_dynamics',
-        'cell_dofree','which_compensation','assume_isolated','exxdiv_treatment',
-        # 5.4 additions
-        'esm_bc','vdw_corr',
-        # 6.3 additions
-        'efield_phase',
-        ]
-    bools=[
-        # pre 5.4
-        'wf_collect','tstress','tprnfor','lkpoint_dir','tefield','dipfield',
-        'lelfield','lberry','nosym','nosym_evc','noinv','force_symmorphic',
-        'noncolin','lda_plus_u','lspinorb','do_ee','london','diago_full_acc',
-        'tqr','remove_rigid_rot','refold_pos','first_last_opt','use_masses',
-        'use_freezing','la2F',
-        # 5.4 additions
-        'lorbm','lfcpopt','scf_must_converge','adaptive_thr','no_t_rev',
-        'use_all_frac','one_atom_occupations','starting_spin_angle',
-        'x_gamma_extrapolation','xdm','uniqueb','rhombohedral',
-        # 6.3 additions
-        'gate','block','relaxz','dftd3_threebody','ts_vdw_isolated','lforcet',
-        ]
+    (ints, floats, strs, bools, real_arrays,
+     species_arrays, multidimensional_arrays) = _get_var_types()
 
-    real_arrays = [
-        'celldm', 'starting_magnetization', 'hubbard_alpha', 'hubbard_u',
-        'hubbard_j0', 'hubbard_beta', 'hubbard_j',
-        'starting_ns_eigenvalue', 'angle1', 'angle2', 'fixed_magnetization',
-        'fe_step', 'efield_cart', 'london_c6', 'london_rvdw',
-        'starting_charge' ,
-         ]
+    species_array_indices = obj(
+        hubbard_j=1,
+        starting_ns_eigenvalue=2,
+        )
 
-    species_arrays = [
-        'starting_magnetization', 'hubbard_alpha', 'hubbard_u', 'hubbard_j0', 
-        'hubbard_beta', 'hubbard_j', 'angle1', 'angle2', 
-        'london_c6', 'london_rvdw','starting_charge',
-        ]
+    all_variables = ints | floats | strs | bools
 
-    species_array_indices = obj(hubbard_j=1)
+    section_aliases = MappingProxyType(dict(
+        celldm1='celldm(1)',
+        celldm2='celldm(2)',
+        celldm3='celldm(3)',
+        celldm4='celldm(4)',
+        celldm5='celldm(5)',
+        celldm6='celldm(6)'
+        ))
 
-    multidimensional_arrays = ['starting_ns_eigenvalue', 'hubbard_j']
-
-    ints   = [v.lower() for v in ints  ]
-    floats = [v.lower() for v in floats]
-    strs   = [v.lower() for v in strs  ]
-    bools  = [v.lower() for v in bools ]
-
-    all_variables = set(ints+floats+strs+bools)
-
-    section_aliases = dict(celldm1='celldm(1)',celldm2='celldm(2)',celldm3='celldm(3)',celldm4='celldm(4)',celldm5='celldm(5)',celldm6='celldm(6)')
-
-    var_types = dict()
+    var_types = dict()  # noqa: RUF012
     for v in ints:
         var_types[v]=int
     #end for
@@ -274,6 +320,7 @@ class PwscfInputBase(DevBase):
     for v in bools:
         var_types[v]=bool
     #end for
+    var_types: MappingProxyType[str, type] = MappingProxyType(var_types)
 #end class PwscfInputBase
 
 
@@ -299,18 +346,13 @@ class Element(PwscfInputBase):
 #end class Element
 
 
-
-
 class Section(Element):
+    defs: ClassVar[NamelistType]
     @classmethod
     def class_init(cls):
-        cls.varlist   = list(cls.variables)
-        cls.variables = set([v.lower() for v in cls.varlist])
-        cls.case_map = obj()
-        for vname in cls.varlist:
-            cls.case_map[vname.lower()] = vname
-        #end for
-    #end if
+        cls.variables = frozenset(cls.defs.__members__.keys())
+        cls.case_map  = {name: val.input_name for name, val in cls.defs.__members__.items()}
+    #end def class_init
 
     def assign(self,**variables):
         self.update(**variables)
@@ -431,10 +473,10 @@ class Section(Element):
                                 self.error('cannot write pwscf input\ninvalid array species index encountered\nspecies index provided is not in the set of species present\nspecies present: {0}\nspecies used as index: {1}\narray variable: {2}'.format(sorted(atom_index.keys()),index),var)
                             #end if
                         elif isinstance(index,tuple):
-                            if var not in self.species_array_index:
+                            if var not in self.species_array_indices:
                                 self.error('cannot write pwscf input\ninvalid multidimensional array species index encountered\narray variable "{0}" does not support multidimensional species indices\nindex received: {1}'.format(var,index))
                             #end if
-                            indloc = self.species_array_index[var]
+                            indloc = self.species_array_indices[var]
                             atom = index[indloc]
                             if not isinstance(atom,str):
                                 continue
@@ -471,10 +513,7 @@ class Section(Element):
         c+='/'+'\n\n'
         return c
     #end def write
-
 #end class Section
-
-
 
 
 class Card(Element):
@@ -518,134 +557,16 @@ class Card(Element):
 #end class Card
 
 
-
 class control(Section):
     name = 'control'
-
-    # all known keywords
-    variables = [
-        'calculation','title','verbosity','restart_mode','wf_collect','nstep',
-        'iprint','tstress','tprnfor','dt','outdir','wfcdir','prefix',
-        'lkpoint_dir','max_seconds','etot_conv_thr','forc_conv_thr','disk_io',
-        'pseudo_dir','tefield','dipfield','lelfield','nberrycyc','lorbm',
-        'lberry','gdir','nppstr','lfcpopt','gate'
-        ]
-
-    # 6.3 keyword spec
-    new_variables =  [
-        'calculation','title','verbosity','restart_mode','wf_collect','nstep',
-        'iprint','tstress','tprnfor','dt','outdir','wfcdir','prefix',
-        'lkpoint_dir','max_seconds','etot_conv_thr','forc_conv_thr','disk_io',
-        'pseudo_dir','tefield','dipfield','lelfield','nberrycyc','lorbm',
-        'lberry','gdir','nppstr','lfcpopt','gate'
-        ]
-
-    # 5.4 keyword spec
-    #variables = [
-    #    'calculation','title','verbosity','restart_mode','wf_collect','nstep',
-    #    'iprint','tstress','tprnfor','dt','outdir','wfcdir','prefix',
-    #    'lkpoint_dir','max_seconds','etot_conv_thr','forc_conv_thr','disk_io',
-    #    'pseudo_dir','tefield','dipfield','lelfield','nberrycyc','lorbm','lberry',
-    #    'gdir','nppstr','lfcpopt'
-    #    ]
-
-    # sometime prior to 5.4
-    #variables = [
-    #    'calculation','title','verbosity','restart_mode','wf_collect','nstep',
-    #    'iprint','tstress','tprnfor','dt','outdir','wfcdir','prefix',
-    #    'lkpoint_dir','max_seconds','etot_conv_thr','forc_conv_thr','disk_io',
-    #    'pseudo_dir','tefield','dipfield','lelfield','lberry','gdir','nppstr',
-    #    'nberrycyc'
-    #    ]
+    defs = ControlDefinitions
 #end class control
 
 
 
 class system(Section):
     name = 'system'
-
-    # all known keywords
-    variables = [
-        'ibrav','celldm','A','B','C','cosAB','cosAC','cosBC','nat','ntyp',
-        'nbnd','tot_charge','tot_magnetization','starting_magnetization',
-        'ecutwfc','ecutrho','ecutfock','nr1','nr2','nr3','nr1s','nr2s','nr3s',
-        'nosym','nosym_evc','noinv','no_t_rev','force_symmorphic','use_all_frac',
-        'occupations','one_atom_occupations','starting_spin_angle','degauss',
-        'smearing','nspin','noncolin','ecfixed','qcutz','q2sigma','input_dft',
-        'exx_fraction','screening_parameter','exxdiv_treatment',
-        'x_gamma_extrapolation','ecutvcut','nqx1','nqx2','nqx3','lda_plus_u',
-        'lda_plus_u_kind','Hubbard_U','Hubbard_J0','Hubbard_alpha',
-        'Hubbard_beta','Hubbard_J','starting_ns_eigenvalue','U_projection_type',
-        'edir','emaxpos','eopreg','eamp','angle1','angle2',
-        'constrained_magnetization','fixed_magnetization','lambda','report',
-        'lspinorb','assume_isolated','esm_bc','esm_w','esm_efield','esm_nfit',
-        'fcp_mu','vdw_corr','london','london_s6','london_c6','london_rvdw',
-        'london_rcut','xdm','xdm_a1','xdm_a2','space_group','uniqueb',
-        'origin_choice','rhombohedral',
-        'nelec','nelup','neldw','multiplicity','do_ee','la2F',
-        'block','block_1','block_2','block_height','dftd3_threebody',
-        'dftd3_version','lforcet','relaxz','starting_charge','ts_vdw_econv_thr',
-        'ts_vdw_isolated','zgate'
-        ]
-
-    # 6.3 keyword spec
-    new_variables = [
-        'ibrav','celldm','A','B','C','cosAB','cosAC','cosBC','nat','ntyp',
-        'nbnd','tot_charge','starting_charge','tot_magnetization',
-        'starting_magnetization','ecutwfc','ecutrho','ecutfock','nr1','nr2',
-        'nr3','nr1s','nr2s','nr3s','nosym','nosym_evc','noinv','no_t_rev',
-        'force_symmorphic','use_all_frac','occupations','one_atom_occupations',
-        'starting_spin_angle','degauss','smearing','nspin','noncolin','ecfixed',
-        'qcutz','q2sigma','input_dft','exx_fraction','screening_parameter',
-        'exxdiv_treatment','x_gamma_extrapolation','ecutvcut','nqx1','nqx2',
-        'nqx3','lda_plus_u','lda_plus_u_kind','Hubbard_U','Hubbard_J0',
-        'Hubbard_alpha','Hubbard_beta','Hubbard_J','starting_ns_eigenvalue',
-        'U_projection_type','edir','emaxpos','eopreg','eamp','angle1','angle2',
-        'lforcet','constrained_magnetization','fixed_magnetization','lambda',
-        'report','lspinorb','assume_isolated','esm_bc','esm_w','esm_efield',
-        'esm_nfit','fcp_mu','vdw_corr','london','london_s6','london_c6',
-        'london_rvdw','london_rcut','dftd3_version','dftd3_threebody',
-        'ts_vdw_econv_thr','ts_vdw_isolated','xdm','xdm_a1','xdm_a2',
-        'space_group','uniqueb','origin_choice','rhombohedral','zgate','relaxz',
-        'block','block_1','block_2','block_height'
-        ]
-
-    # 5.4 keyword spec
-    #variables = [
-    #    'ibrav','celldm','A','B','C','cosAB','cosAC','cosBC','nat','ntyp',
-    #    'nbnd','tot_charge','tot_magnetization','starting_magnetization',
-    #    'ecutwfc','ecutrho','ecutfock','nr1','nr2','nr3','nr1s','nr2s','nr3s',
-    #    'nosym','nosym_evc','noinv','no_t_rev','force_symmorphic','use_all_frac',
-    #    'occupations','one_atom_occupations','starting_spin_angle','degauss',
-    #    'smearing','nspin','noncolin','ecfixed','qcutz','q2sigma','input_dft',
-    #    'exx_fraction','screening_parameter','exxdiv_treatment',
-    #    'x_gamma_extrapolation','ecutvcut','nqx1','nqx2','nqx3','lda_plus_u',
-    #    'lda_plus_u_kind','Hubbard_U','Hubbard_J0','Hubbard_alpha',
-    #    'Hubbard_beta','Hubbard_J','starting_ns_eigenvalue','U_projection_type',
-    #    'edir','emaxpos','eopreg','eamp','angle1','angle2',
-    #    'constrained_magnetization','fixed_magnetization','lambda','report',
-    #    'lspinorb','assume_isolated','esm_bc','esm_w','esm_efield','esm_nfit',
-    #    'fcp_mu','vdw_corr','london','london_s6','london_c6','london_rvdw',
-    #    'london_rcut','xdm','xdm_a1','xdm_a2','space_group','uniqueb',
-    #    'origin_choice','rhombohedral'
-    #    ]
-
-    # sometime prior to 5.4
-    #variables = [
-    #    'ibrav','celldm','A','B','C','cosAB','cosAC','cosBC','nat','ntyp',
-    #    'nbnd','nelec','tot_charge','ecutwfc','ecutrho','nr1','nr2','nr3',
-    #    'nr1s','nr2s','nr3s','nosym','nosym_evc','noinv','force_symmorphic',
-    #    'occupations','degauss','smearing','nspin','noncolin',
-    #    'starting_magnetization','nelup','neldw','multiplicity',
-    #    'tot_magnetization','ecfixed','qcutz','q2sigma','input_dft',
-    #    'lda_plus_u','Hubbard_alpha','Hubbard_U','starting_ns_eigenvalue',
-    #    'U_projection_type','edir','emaxpos','eopreg','eamp','angle1',
-    #    'angle2','constrained_magnetization','fixed_magnetization','lambda',
-    #    'report','lspinorb','assume_isolated','do_ee','london','london_s6',
-    #    'london_rcut','exx_fraction','ecutfock',
-    #    'lda_plus_u_kind','Hubbard_J','exxdiv_treatment','la2F'
-    #    ]
-
+    defs = SystemDefinitions
     atomic_variables = obj(
         hubbard_u = 'Hubbard_U',
         start_mag = 'starting_magnetization',
@@ -754,184 +675,47 @@ class system(Section):
         c+='/'+'\n\n'
         return c
     #end def write
-
 #end class system
 
 
 class electrons(Section):
     name = 'electrons'
-
-    # all known keywords
-    variables = [
-        'electron_maxstep','scf_must_converge','conv_thr','adaptive_thr',
-        'conv_thr_init','conv_thr_multi','mixing_mode','mixing_beta',
-        'mixing_ndim','mixing_fixed_ns','diagonalization','ortho_para',
-        'diago_thr_init','diago_cg_maxiter','diago_david_ndim','diago_full_acc',
-        'efield','efield_cart','startingpot','startingwfc','tqr',
-        'efield_phase'
-        ]
-
-    # 6.3 keyword spec
-    new_variables = [
-        'electron_maxstep','scf_must_converge','conv_thr','adaptive_thr',
-        'conv_thr_init','conv_thr_multi','mixing_mode','mixing_beta',
-        'mixing_ndim','mixing_fixed_ns','diagonalization','ortho_para',
-        'diago_thr_init','diago_cg_maxiter','diago_david_ndim','diago_full_acc',
-        'efield','efield_cart','efield_phase','startingpot','startingwfc','tqr'
-        ]
-
-    # 5.4 keyword spec
-    #variables = [
-    #    'electron_maxstep','scf_must_converge','conv_thr','adaptive_thr',
-    #    'conv_thr_init','conv_thr_multi','mixing_mode','mixing_beta',
-    #    'mixing_ndim','mixing_fixed_ns','diagonalization','ortho_para',
-    #    'diago_thr_init','diago_cg_maxiter','diago_david_ndim','diago_full_acc',
-    #    'efield','efield_cart','startingpot','startingwfc','tqr'
-    #    ]
-
-    # sometime prior to 5.4
-    #variables =  [
-    #    'electron_maxstep','conv_thr','mixing_mode','mixing_beta','mixing_ndim',
-    #    'mixing_fixed_ns','diagonalization','ortho_para','diago_thr_init',
-    #    'diago_cg_maxiter','diago_david_ndim','diago_full_acc','efield',
-    #    'startingpot','startingwfc','tqr'
-    #    ]
+    defs = ElectronsDefinitions
 #end class electrons
 
 
 class ions(Section):
     name = 'ions'
-
-    # all known keywords
-    variables = [
-        'ion_dynamics','ion_positions','pot_extrapolation','wfc_extrapolation',
-        'remove_rigid_rot','ion_temperature','tempw','tolp','delta_t','nraise',
-        'refold_pos','upscale','bfgs_ndim','trust_radius_max','trust_radius_min',
-        'trust_radius_ini','w_1','w_2',
-        'num_of_images','opt_scheme','CI_scheme','first_last_opt','temp_req',
-        'ds','k_max','k_min','path_thr','use_masses','use_freezing','fe_step',
-        'g_amplitude','fe_nstep','sw_nstep','phase_space',
-        ]
-
-    # 6.3 keyword spec
-    new_variables = [
-        'ion_dynamics','ion_positions','pot_extrapolation','wfc_extrapolation',
-        'remove_rigid_rot','ion_temperature','tempw','tolp','delta_t','nraise',
-        'refold_pos','upscale','bfgs_ndim','trust_radius_max',
-        'trust_radius_min','trust_radius_ini','w_1','w_2'
-        ]
-
-    # 5.4 keyword spec
-    #variables = [
-    #    'ion_dynamics','ion_positions','pot_extrapolation','wfc_extrapolation',
-    #    'remove_rigid_rot','ion_temperature','tempw','tolp','delta_t','nraise',
-    #    'refold_pos','upscale','bfgs_ndim','trust_radius_max','trust_radius_min',
-    #    'trust_radius_ini','w_1','w_2'
-    #    ]
-
-    # sometime prior to 5.4
-    #variables = [
-    #    'ion_dynamics','ion_positions','phase_space','pot_extrapolation',
-    #    'wfc_extrapolation','remove_rigid_rot','ion_temperature','tempw',
-    #    'tolp','delta_t','nraise','refold_pos','upscale','bfgs_ndim',
-    #    'trust_radius_max','trust_radius_min','trust_radius_ini','w_1','w_2',
-    #    'num_of_images','opt_scheme','CI_scheme','first_last_opt','temp_req',
-    #    'ds','k_max','k_min','path_thr','use_masses','use_freezing','fe_step',
-    #    'g_amplitude','fe_nstep','sw_nstep'
-    #    ]
+    defs = IonsDefinitions
 #end class ions
 
 
 class cell(Section):
     name = 'cell'
-
-    # all known keywords
-    variables = [
-        'cell_dynamics','press','wmass','cell_factor','press_conv_thr',
-        'cell_dofree'
-        ]
-
-    # 6.3 keyword spec
-    new_variables = [
-        'cell_dynamics','press','wmass','cell_factor','press_conv_thr',
-        'cell_dofree'
-        ]
-
-    # 5.4 keyword spec
-    #variables = [
-    #    'cell_dynamics','press','wmass','cell_factor','press_conv_thr',
-    #    'cell_dofree'
-    #    ]
-
-    # sometime prior to 5.4
-    #variables =  [
-    #    'cell_dynamics','press','wmass','cell_factor','press_conv_thr',
-    #    'cell_dofree'
-    #    ]
+    defs = CellDefinitions
 #end class cell
 
 
-class phonon(Section):
-    name = 'phonon'
-    # all known keywords
-    variables =  ['modenum','xqq']
-
-    # sometime prior to 5.4
-    #variables =  ['modenum','xqq']
-#end class phonon
+class fcp(Section):
+    name = "fcp"
+    defs = FcpDefinitions
+#end class fcp
 
 
-class ee(Section):
-    name = 'ee'
-    # all known keywords
-    variables = [
-        'which_compensation','ecutcoarse','mixing_charge_compensation',
-        'n_charge_compensation','comp_thr','nlev'
-        ]
-
-    # sometime prior to 5.4
-    #variables = [
-    #    'which_compensation','ecutcoarse','mixing_charge_compensation',
-    #    'n_charge_compensation','comp_thr','nlev'
-    #    ]
-#end class ee
+class rism(Section):
+    name = "rism"
+    defs = RismDefinitions
+#end class rism
 
 
-section_classes = [
-    control,system,electrons,ions,cell,phonon,ee
-    ]
+section_classes = (
+    control, system, electrons, ions, cell, fcp, rism
+    )
 for sec in section_classes:
     sec.class_init()
-#end for
 
 
-def check_new_variables(exit=True):
-    sections = section_classes
-    msg = ''
-    for section in sections:
-        if hasattr(section,'new_variables'):
-            new_vars = set([v.lower() for v in section.new_variables])
-            missing = new_vars-set(section.variables)
-            if len(missing)>0:
-                msg += '\n'+section.__name__+'\n'
-                msg += '{0}\n'.format(sorted(missing))
-            #end if
-        #end if
-    #end for
-    if len(msg)>0:
-        msg = 'some sections are missing variables, see below\n'+msg
-        error(msg)
-    else:
-        log('section checks of new variables passed')
-    #end if
-    if exit:
-        sys.exit()
-    #end if
-#end def check_new_variables
-#check_new_variables()
-
-
-def check_section_classes(exit=True):
+def check_section_classes(*,exit=True):
     sections = section_classes
     all_variables = PwscfInputBase.all_variables
     global_missing = set(all_variables)
@@ -956,7 +740,7 @@ def check_section_classes(exit=True):
                 lmiss = local_missing[name]
                 if len(lmiss)>0:
                     vmiss = []
-                    for vname in secs[name].varlist:
+                    for vname in secs[name].variables:
                         if vname in lmiss:
                             vmiss.append(vname)
                         #end if
@@ -1129,7 +913,7 @@ class k_points(Card):
     name = 'k_points'
 
     def read_text(self,lines):
-        if self.specifier in ['tpiba','crystal','tpiba_b','crystal_b','']:
+        if self.specifier in {'tpiba','crystal','tpiba_b','crystal_b',''}:
             self.nkpoints = int(lines[0])
             a = array_from_lines(lines[1:])
             self.kpoints = a[:,0:3]
@@ -1149,7 +933,7 @@ class k_points(Card):
 
     def write_text(self):
         c = ''        
-        if self.specifier in ('tpiba','crystal','tpiba_b','crystal_b',''):
+        if self.specifier in {'tpiba','crystal','tpiba_b','crystal_b',''}:
             self.nkpoints = len(self.kpoints)
             c+='   '+str(self.nkpoints)+'\n'
             a = np.empty((self.nkpoints,4))
@@ -1362,7 +1146,7 @@ class occupations(Card):
 
 class hubbard(Card):
     name = 'hubbard'
-    available_specifiers = ['atomic', 'ortho-atomic', 'norm-atomic', 'wf', 'pseudo']
+    available_specifiers = ('atomic', 'ortho-atomic', 'norm-atomic', 'wf', 'pseudo')
     default_specifier = 'atomic'
     system = None
     def read_text(self, lines):        
@@ -1400,7 +1184,7 @@ class hubbard(Card):
         contents = ''
         for param, interaction in self.hubbard.items():
             valid_format = True
-            assert(param in ['U', 'J', 'V'])
+            assert(param in {'U', 'J', 'V'})
             assert(isinstance(interaction, dict))
             for label_manifold, value in interaction.items():
                 if isinstance(label_manifold, str):
@@ -1498,37 +1282,37 @@ class hubbard(Card):
 
 class PwscfInput(SimulationInput):
 
-    sections = ['control','system','electrons','ions','cell','phonon','ee']
-    cards    = ['atomic_species','atomic_positions','atomic_forces',
+    sections = ('control','system','electrons','ions','cell','fcp','rism')
+    cards    = ('atomic_species','atomic_positions','atomic_forces',
                 'k_points','cell_parameters','climbing_images','constraints',
-                'collective_vars','occupations', 'hubbard']
+                'collective_vars','occupations', 'hubbard')
 
     section_types = obj(
-        control   = control  ,     
-        system    = system   ,     
-        electrons = electrons,     
-        ions      = ions     ,     
-        cell      = cell     ,     
-        phonon    = phonon   ,     
-        ee        = ee            
+        control   = control,
+        system    = system,
+        electrons = electrons,
+        ions      = ions,
+        cell      = cell,
+        fcp       = fcp,
+        rism      = rism,
         )
     card_types = obj(
-        atomic_species   = atomic_species  ,    
-        atomic_positions = atomic_positions,    
-        atomic_forces    = atomic_forces   ,
-        k_points         = k_points        ,    
-        cell_parameters  = cell_parameters ,    
-        climbing_images  = climbing_images ,    
-        constraints      = constraints     ,    
-        collective_vars  = collective_vars ,    
-        occupations      = occupations     ,
-        hubbard          = hubbard         ,         
+        atomic_species   = atomic_species,
+        atomic_positions = atomic_positions,
+        atomic_forces    = atomic_forces,
+        k_points         = k_points,
+        cell_parameters  = cell_parameters,
+        climbing_images  = climbing_images,
+        constraints      = constraints,
+        collective_vars  = collective_vars,
+        occupations      = occupations,
+        hubbard          = hubbard,
         )
 
     element_types = obj(**section_types)
     element_types.update(**card_types)
 
-    required_elements = ['control','system','electrons','atomic_species','atomic_positions','k_points']
+    required_elements = ('control','system','electrons','atomic_species','atomic_positions','k_points')
     def __init__(self,*elements):
         elements = list(elements)
         if len(elements)==1 and os.path.exists(elements[0]):
@@ -1641,23 +1425,21 @@ class PwscfInput(SimulationInput):
 
         vals = []
         loc = locals()
-        errors = False
+        msg = ""
         for var in vars:
             if var in loc:
                 val = loc[var]
                 if val is None:
-                    self.error('requested variable '+var+' was not found',exit=False)
-                    errors = True
+                    msg += 'requested variable '+var+' was not found\n'
                 #end if
             else:
-                self.error('requested variable '+var+' is not computed by get_common_vars',exit=False)
-                errors = True
+                msg += 'requested variable '+var+' is not computed by get_common_vars\n'
                 val = None
             #end if
             vals.append(val)
         #end for
-        if errors:
-            self.error('could not get requested variables')
+        if len(msg) > 0:
+            self.error(f'could not get requested variables:\n{msg}')
         #end if
         return vals
     #end def get_common_vars
@@ -1857,7 +1639,7 @@ class PwscfInput(SimulationInput):
 
         
     # test needed
-    def return_system(self,structure_only=False,**valency):
+    def return_system(self,*,structure_only=False,**valency):
         ibrav = self.system.ibrav
         if ibrav!=0:
             self.error('ability to handle non-zero ibrav not yet implemented')
@@ -2164,6 +1946,12 @@ def generate_any_pwscf_input(**kwargs):
     #  pseudopotentials
     pseudopotentials = obj()
     atom_species = []
+    if system is not None:
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
     for ppname in pseudos:
         #element = ppname[0:2].strip('.')
         label,element = pp_elem_label(ppname,guard=True)
@@ -2379,7 +2167,8 @@ def generate_any_pwscf_input(**kwargs):
 
 
 
-def generate_scf_input(prefix       = 'pwscf',
+def generate_scf_input(*,
+                       prefix       = 'pwscf',
                        outdir       = 'pwscf_output',
                        input_dft    = None,
                        exx_fraction = None,
@@ -2420,6 +2209,13 @@ def generate_scf_input(prefix       = 'pwscf',
                        ):
     if pseudos is None:
         pseudos = []
+    #end if
+    if system is not None:
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
     #end if
     pseudopotentials = obj()
     atoms = []
@@ -2618,7 +2414,8 @@ def generate_nscf_input(**kwargs):
 
 
 
-def generate_relax_input(prefix       = 'pwscf',
+def generate_relax_input(*,
+                         prefix       = 'pwscf',
                          outdir       = 'pwscf_output',
                          input_dft    = None,
                          exx_fraction = None,
@@ -2628,7 +2425,7 @@ def generate_relax_input(prefix       = 'pwscf',
                          conv_thr     = 1e-6,
                          mixing_mode  = 'plain',
                          mixing_beta  = .7,
-			 diagonalization = 'david',
+                         diagonalization = 'david',
                          occupations  = 'smearing',
                          smearing     = 'fermi-dirac',
                          degauss      = 0.0001,
@@ -2654,6 +2451,13 @@ def generate_relax_input(prefix       = 'pwscf',
                          ):
     if pseudos is None:
         pseudos = []
+    #end if
+    if system is not None:
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
     #end if
     
     pseudopotentials = obj()
@@ -2819,11 +2623,11 @@ def generate_vcrelax_input(
     pw = generate_scf_input(**kwargs)
     pw.control.update(
         calculation = 'vc-relax'
-    )
+        )
     pw['ions'] = pw.element_types['ions']()
     pw['cell'] = pw.element_types['cell'](
         press       = press,
-    )
+        )
 
     # expand this section if you need more control over the input
     if forc_conv_thr is not None:

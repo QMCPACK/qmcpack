@@ -1,12 +1,11 @@
+import numpy as np
 import pytest
 from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
-from . import isolate_nexus_core, TEST_DIR
+from . import isolate_nexus_core, register_pseudo_files, TEST_DIR
 from ..testing import value_eq,object_eq,check_object_eq,dict_serialize
 
 TEST_FILES = {
@@ -513,13 +512,13 @@ def test_qixml_class_init():
     attr_types = obj(
         tag            = str,
         identifier     = (str,tuple),
-        attributes     = list,
-        elements       = list,
+        attributes     = tuple,
+        elements       = tuple,
         text           = str,
-        parameters     = list,
-        attribs        = list,
-        costs          = list,
-        h5tags         = list,
+        parameters     = tuple,
+        attribs        = tuple,
+        costs          = tuple,
+        h5tags         = tuple,
         types          = obj,
         write_types    = obj,
         attr_types     = obj,
@@ -527,11 +526,11 @@ def test_qixml_class_init():
         defaults       = obj,
         collection_id  = str,
         exp_names      = obj,
-        params         = list,
+        params         = tuple,
         plurals_inv    = obj,
         plurals        = obj,
         expanded_names = obj,
-        afqmc_order    = list,
+        afqmc_order    = tuple,
         )
     optional = set(['expanded_names','afqmc_order'])
     assert(len(attr_types)==21)
@@ -1128,8 +1127,12 @@ def test_compose():
 
 
 
+@isolate_nexus_core
 def test_generate():
+    register_pseudo_files(['V.opt.xml','O.opt.xml'])
     import numpy as np
+    from ..developer import NexusError,dotdict,obj
+    from ..generic import obj_deprecated
     from ..physical_system import generate_physical_system
     from ..qmcpack_input import generate_qmcpack_input,spindensity
     from ..qmcpack_input import back_propagation,onerdm
@@ -1264,6 +1267,106 @@ def test_generate():
 
     check_vs_serial_reference(qi,'VO2_M1_afm.in.xml gen')
 
+    # optional pseudopotential integration rule
+    qi_nrule = generate_qmcpack_input(
+        input_type  = 'basic',
+        system      = system,
+        pseudos     = ['V.opt.xml','O.opt.xml'],
+        nrule       = 7,
+        check_paths = False,
+        )
+
+    pseudos = qi_nrule.get('pseudo')
+    assert(len(pseudos)==2)
+    for pseudo in pseudos:
+        assert(pseudo.nrule==7)
+    #end for
+    assert(qi_nrule.write_text().count('nrule="7"')==2)
+
+    for valid_nrule in (1,8):
+        qi_valid_nrule = generate_qmcpack_input(
+            input_type  = 'basic',
+            system      = system,
+            pseudos     = ['V.opt.xml','O.opt.xml'],
+            nrule       = valid_nrule,
+            check_paths = False,
+            )
+        nrule_text = qi_valid_nrule.write_text()
+        assert(nrule_text.count('nrule="{}"'.format(valid_nrule))==2)
+    #end for
+
+    nrule_maps = [
+        {'V':3,'O':5},
+        dotdict(V=3,O=5),
+        obj(V=3,O=5),
+        ]
+    for nrule_map in nrule_maps:
+        qi_nrule_map = generate_qmcpack_input(
+            input_type  = 'basic',
+            system      = system,
+            pseudos     = ['V.opt.xml','O.opt.xml'],
+            nrule       = nrule_map,
+            check_paths = False,
+            )
+        pseudos = qi_nrule_map.get('pseudo')
+        assert(pseudos['V'].nrule==3)
+        assert(pseudos['O'].nrule==5)
+        nrule_text = qi_nrule_map.write_text()
+        assert('<pseudo elementType="V" href="V.opt.xml" nrule="3"/>' in nrule_text)
+        assert('<pseudo elementType="O" href="O.opt.xml" nrule="5"/>' in nrule_text)
+    #end for
+
+    for invalid_nrule in (7.0,'4',True,[('V',3),('O',5)],
+                          obj_deprecated(V=3,O=5)):
+        with pytest.raises(
+            NexusError,
+            match = 'nrule must be an integer, dict, dotdict, obj, or None',
+            ):
+            generate_qmcpack_input(
+                input_type  = 'basic',
+                system      = system,
+                pseudos     = ['V.opt.xml','O.opt.xml'],
+                nrule       = invalid_nrule,
+                check_paths = False,
+                )
+        #end with
+    #end for
+
+    for invalid_nrule in (-1,0,9):
+        with pytest.raises(
+            NexusError,
+            match = 'nrule must be one of the integers 1 through 8',
+            ):
+            generate_qmcpack_input(
+                input_type  = 'basic',
+                system      = system,
+                pseudos     = ['V.opt.xml','O.opt.xml'],
+                nrule       = invalid_nrule,
+                check_paths = False,
+                )
+        #end with
+    #end for
+
+    invalid_nrule_maps = [
+        ({'V':3},'nrule mapping keys must match'),
+        ({'V':3,'O':5,'Fe':4},'nrule mapping keys must match'),
+        ({'V':3,'O':5.0},'nrule mapping values must be integers'),
+        ({'V':3,'O':True},'nrule mapping values must be integers'),
+        ({'V':3,'O':0},'nrule mapping values must be integers from 1 through 8'),
+        ({'V':3,'O':9},'nrule mapping values must be integers from 1 through 8'),
+        ]
+    for invalid_nrule_map,error_message in invalid_nrule_maps:
+        with pytest.raises(NexusError,match=error_message):
+            generate_qmcpack_input(
+                input_type  = 'basic',
+                system      = system,
+                pseudos     = ['V.opt.xml','O.opt.xml'],
+                nrule       = invalid_nrule_map,
+                check_paths = False,
+                )
+        #end with
+    #end for
+
 
     # batched drivers
     qi = generate_qmcpack_input(
@@ -1379,6 +1482,61 @@ def test_read():
     assert value_eq(pos,pos_ref)
 
 #end def test_read
+
+
+@pytest.mark.parametrize(
+    'qmc_method',
+    ('vmc','dmc','vmc_batch','dmc_batch'),
+    )
+def test_qmc_estimator_input_scoping(tmp_path,qmc_method):
+    from ..qmcpack_input import QmcpackInput
+
+    qmc_input = '''\
+<simulation>
+  <project id="case" series="5"/>
+  <estimators>
+    <estimator type="spindensity" name="GlobalSpinDensity">
+      <parameter name="grid">2 3 4</parameter>
+    </estimator>
+  </estimators>
+  <qmc method="{qmc_method}" move="pbyp">
+    <estimators>
+      <estimator type="spindensity" name="SpinDensity">
+        <parameter name="grid">2 3 4</parameter>
+        <parameter name="corner">0 0 0</parameter>
+        <parameter name="cell">2 0 0 0 3 0 0 0 4</parameter>
+      </estimator>
+    </estimators>
+  </qmc>
+  <qmc method="{qmc_method}" move="pbyp">
+    <estimators>
+      <estimator type="spindensity" name="SecondSpinDensity">
+        <parameter name="grid">3 3 4</parameter>
+      </estimator>
+    </estimators>
+  </qmc>
+</simulation>
+'''.format(qmc_method=qmc_method)
+    filepath = tmp_path / 'qmc_estimators.xml'
+    filepath.write_text(qmc_input)
+
+    qi = QmcpackInput(filepath)
+    qi.pluralize()
+    scoped_estimators = qi.get_qmc_estimator_inputs()
+    spin_density = scoped_estimators.qmc[0].estimators.estimators.SpinDensity
+
+    assert 'qmcsystem' not in qi.simulation
+    assert spin_density.grid.dtype == np.dtype(int)
+    assert value_eq(spin_density.grid,np.array([2,3,4],dtype=int))
+    assert value_eq(spin_density.corner,np.array([0,0,0],dtype=int))
+    assert value_eq(
+        spin_density.cell,np.array([[2,0,0],[0,3,0],[0,0,4]],dtype=int))
+    assert list(scoped_estimators.global_estimators.estimators.keys()) == [
+        'GlobalSpinDensity']
+    assert [qmc_input.series for qmc_input in scoped_estimators.qmc] == [5,6]
+    assert [output.series for output in qi.get_output_info('qmc')] == [5,6]
+
+#end def test_qmc_estimator_input_scoping
 
 
 
@@ -1756,6 +1914,7 @@ def test_get():
 
 @isolate_nexus_core
 def test_incorporate_system():
+    register_pseudo_files(['V.opt.xml','O.opt.xml'])
     from ..physical_system import generate_physical_system
     from ..qmcpack_input import generate_qmcpack_input
 
@@ -1847,7 +2006,9 @@ def test_generate_kspace_jastrow():
 
 
 
+@isolate_nexus_core
 def test_excited_state():
+    register_pseudo_files(['C.BFD.xml'])
     from nexus import generate_physical_system
     from nexus import generate_qmcpack_input
 
@@ -1952,12 +2113,12 @@ def test_magnetization_density():
                             corner     = '1 1 1',
                             integrator = 'simpsons',
                             samples    = 9,
-                        ),
-                    ],
+                            ),
+                        ],
+                    ),
                 ),
             ),
-        ),
-    )
+        )
     qi_grid.pluralize()
 
     # Verify XML output structure for grid case
@@ -1972,7 +2133,7 @@ def test_magnetization_density():
         '<parameter name="integrator" > simpsons </parameter>',
         '<parameter name="samples" > 9 </parameter>',
         '</estimator>'
-    ]
+        ]
     for pattern in expected_xml_patterns:
         assert pattern_in_text(pattern, text), f"Missing or incorrect pattern: {pattern}"
     assert 'name="dr"' not in text, "dr parameter should not be present"
@@ -1994,12 +2155,12 @@ def test_magnetization_density():
                             corner     = '1 1 1',
                             integrator = 'simpsons',
                             samples    = 9,
-                        ),
-                    ],
+                            ),
+                        ],
+                    ),
                 ),
             ),
-        ),
-    )
+        )
     qi_dr.pluralize()
 
     # Verify XML output structure for dr case
@@ -2014,7 +2175,7 @@ def test_magnetization_density():
         '<parameter name="integrator" > simpsons </parameter>',
         '<parameter name="samples" > 9 </parameter>',
         '</estimator>'
-    ]
+        ]
     for pattern in expected_xml_patterns:
         assert pattern_in_text(pattern, text), f"Missing or incorrect pattern: {pattern}"
     assert 'name="grid"' not in text, "grid parameter should not be present"
@@ -2024,21 +2185,21 @@ def test_magnetization_density():
         meta(
             lattice  = obj(units='bohr'),
             position = obj(condition='0', datatype='posArray'),
-        ),
+            ),
         simulation(
             project = section(
                 id='qmc',
                 series=0,
-            ),
+                ),
             qmcsystem = section(
                 simulationcell = section(
                     lattice = np.array([
                         [10.0, 0.0, 0.0],
                         [0.0, 10.0, 0.0],
                         [0.0, 0.0, 10.0]
-                    ]),
+                        ]),
                     bconds = np.array(tuple('ppp')),
-                ),
+                    ),
                 hamiltonian = section(
                     name = 'h0',
                     type = 'generic',
@@ -2052,12 +2213,12 @@ def test_magnetization_density():
                             corner     = '1 1 1',
                             integrator = 'simpsons',
                             samples    = 9,
-                        ),
-                    ],
+                            ),
+                        ],
+                    ),
                 ),
             ),
-        ),
-    )
+        )
     qi_full.pluralize()
 
     # Verify full system XML output
@@ -2078,7 +2239,7 @@ def test_magnetization_density():
         '<parameter name="samples" > 9 </parameter>',
         '</estimator>',
         '</hamiltonian>'
-    ]
+        ]
     for pattern in expected_xml_patterns:
         assert pattern_in_text(pattern, text), f"Missing or incorrect pattern: {pattern}"
     assert 'name="dr"' not in text, "dr parameter should not be present"

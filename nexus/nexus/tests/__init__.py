@@ -3,9 +3,9 @@ from enum import IntEnum, auto
 from pathlib import Path
 from copy import deepcopy
 import functools
-from nexus.nexus_base import nexus_core, nexus_noncore, nexus_core_noncore, nexus_noncore_defaults
+from nexus.nexus_base import nexus_core, nexus_noncore, nexus_noncore_defaults
 from nexus.generic import generic_settings, object_interface
-from nexus.pseudopotential import Pseudopotentials
+from nexus.pseudoset import PseudoSet
 from nexus.simulation import Simulation
 
 # qmcpack/nexus/nexus/tests/
@@ -19,15 +19,14 @@ NEXUS_CORE_KEYS = (
     "stages_set",
     "status",
     "sleep",
+    "timeout",
     "file_locations",
     "pseudo_dir",
-    "pseudopotentials",
     "runs",
     "results",
     )
 NEXUS_NONCORE_KEYS = (
     "pseudo_dir",
-    "pseudopotentials",
     )
 
 def divert_nexus_core():
@@ -61,8 +60,6 @@ def restore_nexus_core(nexus_core_storage: dict, nexus_noncore_storage: dict):
     for key in list(nexus_noncore.keys()):
         if key not in nexus_noncore_defaults:
             del nexus_noncore[key]
-
-    nexus_core_noncore.pseudopotentials = None
 
     assert len(nexus_noncore_storage) == 0, "Nexus Core keys have not been properly reset!"
     assert len(nexus_core_storage) == 0,    "Nexus NonCore keys have not been properly reset!"
@@ -111,6 +108,8 @@ def isolate_nexus_core(test_func = None):
     @functools.wraps(test_func)
     def wrap_path(tmp_path):
         nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
+        pseudo_files = deepcopy(PseudoSet.pseudo_files)
+        labeled_pseudosets = deepcopy(PseudoSet.labeled_pseudosets)
         logfile, logging_storage = divert_nexus_log()
         try:
             test_func(tmp_path)
@@ -119,6 +118,8 @@ def isolate_nexus_core(test_func = None):
             test_err = err
 
         restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
+        PseudoSet.pseudo_files = pseudo_files
+        PseudoSet.labeled_pseudosets = labeled_pseudosets
         restore_nexus_log(logging_storage)
         Simulation.clear_all_sims()
         if test_err is not None:
@@ -127,6 +128,8 @@ def isolate_nexus_core(test_func = None):
     @functools.wraps(test_func)
     def wrap():
         nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
+        pseudo_files = deepcopy(PseudoSet.pseudo_files)
+        labeled_pseudosets = deepcopy(PseudoSet.labeled_pseudosets)
         logfile, logging_storage = divert_nexus_log()
         try:
             test_func()
@@ -135,6 +138,8 @@ def isolate_nexus_core(test_func = None):
             test_err = err
 
         restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
+        PseudoSet.pseudo_files = pseudo_files
+        PseudoSet.labeled_pseudosets = labeled_pseudosets
         restore_nexus_log(logging_storage)
         Simulation.clear_all_sims()
         if test_err is not None:
@@ -151,10 +156,10 @@ def create_pseudo_files(
     pseudos: list[str],
     pseudo_strs: list[str | None] | None = None
     ):
-    """Create pseudopotential files and add them to the global pseudopotentials.
+    """Create pseudopotential files and register them with PseudoSet.
 
     This function must be called in a function that has been decorated
-    with ``@isolate_nexus_core(needs_tmp_path=True)``.
+    with ``@isolate_nexus_core``.
 
     Parameters
     ----------
@@ -179,18 +184,26 @@ def create_pseudo_files(
     pseudo_dir = tmp_dir / "pseudopotentials"
     pseudo_dir.mkdir(parents=True)
 
-    new_pseudos = []
     for pseudo, text in zip(pseudos, pseudo_strs):
         pseudo_file = pseudo_dir / pseudo
         pseudo_file.write_text(text)
-        new_pseudos.append(pseudo_file)
 
 
-    pseudopotentials = Pseudopotentials(new_pseudos)
-    nexus_core.pseudopotentials    = pseudopotentials
-    nexus_noncore.pseudopotentials = pseudopotentials
+    PseudoSet.pseudo_files = {
+        pseudo.name:str(pseudo.resolve()) for pseudo in pseudo_dir.iterdir()
+        if pseudo.is_file()
+        }
+    PseudoSet.labeled_pseudosets = {}
     nexus_core.pseudo_dir    = str(pseudo_dir)
     nexus_noncore.pseudo_dir = str(pseudo_dir)
+
+
+def register_pseudo_files(pseudos: list[str]):
+    """Register synthetic pseudopotential paths for input-generation tests."""
+    PseudoSet.pseudo_files.update({
+        pseudo:str(Path(pseudo).resolve()) for pseudo in pseudos
+        })
+#end def register_pseudo_files
 
 
 class NexusTestOrder(IntEnum):
@@ -217,8 +230,10 @@ class NexusTestOrder(IntEnum):
     STRUCTURE                       = auto()
     PHYSICAL_SYSTEM                 = auto()
     BASISSET                        = auto()
+    PSEUDOSET                       = auto()
     PSEUDOPOTENTIAL                 = auto()
     NEXUS_BASE                      = auto()
+    ERROR_KEYS                      = auto()
     MACHINES                        = auto()
     SIMULATION                      = auto()
     BUNDLE                          = auto()

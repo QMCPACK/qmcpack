@@ -495,7 +495,7 @@ def spheroid_grid_points(axes,shape=None,cells=None,centered=False,endpoint=None
         #end if
     #end if
     grid_dim,space_dim = axes.shape
-    if grid_dim not in (2,3):
+    if grid_dim not in {2,3}:
         error('spheroid grid generation only supported in 2 or 3 dimensions','spheriod_grid_points')
     #end if
     ugrid = unit_grid_points(shape,centered=centered,endpoint=endpoint)
@@ -572,7 +572,7 @@ def spheroid_surface_grid_points(axes,shape=None,cells=None,centered=False,endpo
     #end if
     grid_dim,space_dim = axes.shape
     grid_dim-=1
-    if grid_dim not in (1,2):
+    if grid_dim not in {1,2}:
         error('spheroid surface grid generation only supported in 1 or 2 dimensions','spheriod_grid_points')
     #end if
     ugrid = unit_grid_points(shape,centered=centered,endpoint=endpoint)
@@ -756,7 +756,7 @@ class GBase(PlotHandler):
         (`External API`) Reset all attributes to default values.
         """
         cls = self.__class__
-        for name,(dtype,default) in cls.persistent_data_types.items():
+        for name,(dtype,default) in cls.persistent_data_types.items():  # noqa: B007
             self[name] = default
         #end for
     #end def reset
@@ -844,10 +844,10 @@ class GBase(PlotHandler):
         msgs = self.validity_checks()
         valid = len(msgs)==0
         if not valid and exit:
-            for msg in msgs:
-                self.error(msg,exit=False,trace=False)
-            #end for
-            self.error('{} is not valid, see error messages above'.format(cls.descriptor))
+            self.error(
+                '{} is not valid, see error messages:\n'
+                '{}'.format(cls.descriptor, "\n".join(msgs))
+                )
         #end if
         return valid
     #end def check_valid
@@ -1296,7 +1296,7 @@ class StructuredGrid(Grid):
         )
 
     #: (`set`)  Set of valid boundary condition types.
-    valid_bconds = set(['o','p'])
+    valid_bconds = frozenset({'o','p'})
 
     #: (`obj`)  Keyword mapping of boundary condition types.
     bcond_types = obj(
@@ -2534,7 +2534,7 @@ class SpheroidGrid(StructuredGridWithAxes):
         elif cells is not None:
             grid_dim = len(cells)
         #end if
-        if grid_dim not in (2,3):
+        if grid_dim not in {2,3}:
             self.error('only 2 and 3 dimensional spheroids grids are supported\nrequested dimension: {}'.format(grid_dim))
         #end if
 

@@ -2,9 +2,7 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PYSCF_SIMULATION)
 
-from ..generic import generic_settings
 from ..developer import obj
-generic_settings.raise_error = True
 
 from pathlib import Path
 from . import isolate_nexus_core, TEST_DIR
@@ -96,16 +94,11 @@ def test_get_result(tmp_path):
         template   = template_filepath,
         )
     
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented"
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = sim.get_result('orbitals',None)
 

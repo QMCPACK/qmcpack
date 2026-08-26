@@ -35,7 +35,7 @@ def _path_to_str(path: str | bytes | Path) -> str:
         raise TypeError(
             'path must be of type "str", "bytes" or "Path". Type received: {}'
             .format(path.__class__.__name__)
-        )
+            )
     return path
 #end def _path_to_str
 
@@ -85,10 +85,11 @@ def is_relative_path(path: str | bytes | Path):
 
 def path_string(
     path:     str | bytes | Path,
+    *,
     strict:   bool = False,
     relative: bool = False,
     check:    bool = False,
-) -> str:
+    ) -> str:
     """Convert a path to a string.
 
     Parameters

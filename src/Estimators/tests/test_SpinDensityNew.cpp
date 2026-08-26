@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "SpinDensityInput.h"
 #include "ValidSpinDensityInput.h"
@@ -128,8 +127,8 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
 TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, SpeciesSet)", "[estimators]")
 {
   Libxml2Document doc;
-  using input = testing::ValidSpinDensityInput;
-  REQUIRE(doc.parseFromString(input::xml[input::GRID]));
+  using input = testing::SpinDensityInputs;
+  REQUIRE(doc.parseFromString(input::getXml(input::valid::GRID)));
   xmlNodePtr node = doc.getRoot();
   SpinDensityInput sdi(node);
   SpeciesSet species_set;
@@ -144,8 +143,8 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, SpeciesSet)", "[estimators]")
 TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, Lattice, SpeciesSet)", "[estimators]")
 {
   Libxml2Document doc;
-  using input = testing::ValidSpinDensityInput;
-  REQUIRE(doc.parseFromString(input::xml[input::NOCELL]));
+  using input = testing::SpinDensityInputs;
+  REQUIRE(doc.parseFromString(input::getXml(input::valid::NOCELL)));
   xmlNodePtr node = doc.getRoot();
   SpinDensityInput sdi(node);
   SpeciesSet species_set;
@@ -165,8 +164,8 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, Lattice, SpeciesSet)", "[esti
 TEST_CASE("SpinDensityNew::spawnCrowdClone()", "[estimators]")
 {
   Libxml2Document doc;
-  using input = testing::ValidSpinDensityInput;
-  REQUIRE(doc.parseFromString(input::xml[input::NOCELL]));
+  using input = testing::SpinDensityInputs;
+  REQUIRE(doc.parseFromString(input::getXml(input::valid::NOCELL)));
   xmlNodePtr node = doc.getRoot();
   SpinDensityInput sdi(node);
   SpeciesSet species_set;
@@ -187,8 +186,8 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   using QMCT      = QMCTraits;
 
   Libxml2Document doc;
-  using input = testing::ValidSpinDensityInput;
-  REQUIRE(doc.parseFromString(input::xml[input::GRID]));
+  using input = testing::SpinDensityInputs;
+  REQUIRE(doc.parseFromString(input::getXml(input::valid::GRID)));
   xmlNodePtr node = doc.getRoot();
   SpinDensityInput sdi(node);
   SpeciesSet species_set;
@@ -243,8 +242,8 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::crowd)", "[estimators]")
     using QMCT      = QMCTraits;
 
     Libxml2Document doc;
-    using input = testing::ValidSpinDensityInput;
-    REQUIRE(doc.parseFromString(input::xml[input::GRID]));
+    using input = testing::SpinDensityInputs;
+    REQUIRE(doc.parseFromString(input::getXml(input::valid::GRID)));
     xmlNodePtr node = doc.getRoot();
     SpinDensityInput sdi(node);
     SpeciesSet species_set;
@@ -280,8 +279,8 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::rank)", "[estimators]")
     using QMCT      = QMCTraits;
 
     Libxml2Document doc;
-    using input = testing::ValidSpinDensityInput;
-    REQUIRE(doc.parseFromString(input::xml[input::GRID]));
+    using input = testing::SpinDensityInputs;
+    REQUIRE(doc.parseFromString(input::getXml(input::valid::GRID)));
     xmlNodePtr node = doc.getRoot();
     SpinDensityInput sdi(node);
     SpeciesSet species_set;
@@ -318,8 +317,8 @@ TEST_CASE("SpinDensityNew algorithm comparison", "[estimators]")
   using QMCT      = QMCTraits;
 
   Libxml2Document doc;
-  using input = testing::ValidSpinDensityInput;
-  REQUIRE(doc.parseFromString(input::xml[input::GRID]));
+  using input = testing::SpinDensityInputs;
+  REQUIRE(doc.parseFromString(input::getXml(input::valid::GRID)));
   xmlNodePtr node = doc.getRoot();
   SpinDensityInput sdi(node);
   SpeciesSet species_set;

@@ -231,15 +231,15 @@ class QBase(DevBase):
 
 
 class DatAnalyzer(QBase):
-    first = 'LocalEnergy Variance Kinetic LocalPotential ElecElec LocalECP NonLocalECP IonIon'.split()
-    last = 'MPC KEcorr BlockWeight BlockCPU AcceptRatio Efficiency TotalTime TotalSamples TrialEnergy DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers CorrectedEnergy'.split()
+    first = ('LocalEnergy', 'Variance', 'Kinetic', 'LocalPotential', 'ElecElec', 'LocalECP', 'NonLocalECP', 'IonIon')
+    last = ('MPC', 'KEcorr', 'BlockWeight', 'BlockCPU', 'AcceptRatio', 'Efficiency', 'TotalTime', 'TotalSamples', 'TrialEnergy', 'DiffEff', 'Weight', 'NumOfWalkers', 'LivingFraction', 'AvgSentWalkers', 'CorrectedEnergy')
 
-    nonenergy = set('BlockWeight BlockCPU AcceptRatio Efficiency TotalTime TotalSamples DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers'.split())
-    whole_numbers = ['TotalSamples', 'NumOfWalkers']
+    nonenergy = frozenset({'AcceptRatio', 'TotalSamples', 'Weight', 'NumOfWalkers', 'AvgSentWalkers', 'BlockWeight', 'LivingFraction', 'Efficiency', 'TotalTime', 'DiffEff', 'BlockCPU'})
+    whole_numbers = ('TotalSamples', 'NumOfWalkers')
 
-    energy_sq = set(['Variance','LocalEnergy_sq'])
+    energy_sq = frozenset({'Variance','LocalEnergy_sq'})
 
-    non_ee_potentials = ['IonIon','LocalECP','NonLocalECP','ElecIon','IonElec']
+    non_ee_potentials = ('IonIon','LocalECP','NonLocalECP','ElecIon','IonElec')
 
 
     def __init__(self,filepath,index,type='unknown',units='Ha'):
@@ -319,9 +319,9 @@ class DatAnalyzer(QBase):
         #end if
         data = lt[:,1:].transpose()
         self.info.nsamples = data.shape[1]
-        fobj = open(filepath,'r')
-        variables = fobj.readline().split()[2:]
-        # fobj.close()
+        with open(filepath,'r') as fobj:
+            variables = fobj.readline().split()[2:]
+
         Econv  = convert(1.0,'Ha',self.info.units)
         Econv2 = Econv**2
         for i in range(len(variables)):
@@ -582,7 +582,7 @@ class DatAnalyzer(QBase):
                         factor
                         )
                     )
-            exit()
+            sys.exit()
         #end if
 
         if len(quantities)==1 and not opt.all_quantities:
@@ -857,7 +857,7 @@ QMCA examples:
         if self.verbose:
             self.log('\nQMCA finished\n')
         #end if
-        exit()
+        sys.exit()
     #end def exit
 
 
@@ -1215,7 +1215,7 @@ QMCA examples:
             serieslist = sorted(list(seriesset))
             for series in serieslist:
                 filetypes = set()
-                for prefix,pdata in data.items():
+                for pdata in data.values():
                     filetypes.add(pdata[series].info.type)
                 #end for
                 if len(filetypes)>1:
@@ -1258,13 +1258,14 @@ QMCA examples:
                         for prefix in sorted(prefixes):
                             twist_info_file = prefix+'.twist_info.dat'
                             if os.path.exists(twist_info_file):
-                                fobj = open(twist_info_file)
-                                try:
-                                    weight = float(fobj.read().strip().split()[0])
-                                    weights.append(weight)
-                                except:
-                                    None
-                                #end try
+                                with open(twist_info_file) as fobj:
+                                    try:
+                                        weight = float(fobj.read().strip().split()[0])
+                                        weights.append(weight)
+                                    except:
+                                        pass
+                                    #end try
+                                #end with
                             #end if
                         #end for
                         if len(weights)!=len(prefixes):
@@ -1320,13 +1321,14 @@ QMCA examples:
                         for prefix in sorted(prefixes):
                             twist_info_file = prefix+'.twist_info.dat'
                             if os.path.exists(twist_info_file):
-                                fobj = open(twist_info_file)
-                                try:
-                                    weight = float(fobj.read().strip().split()[0])
-                                    weights.append(weight)
-                                except:
-                                    None
-                                #end try
+                                with open(twist_info_file) as fobj:
+                                    try:
+                                        weight = float(fobj.read().strip().split()[0])
+                                        weights.append(weight)
+                                    except:
+                                        pass
+                                    #end try
+                                #end with
                             #end if
                         #end for
                         if len(weights)!=len(prefixes):

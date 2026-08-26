@@ -118,7 +118,9 @@ Module contents
 
 from __future__ import annotations
 import os
+import sys
 from pathlib import Path
+from types import MappingProxyType
 from typing import TypeAlias
 import numpy as np
 from copy import deepcopy
@@ -131,7 +133,7 @@ from .unit_converter import convert
 from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
 from .periodic_table import Elements
 from .fileio import XsfFile, PoscarFile
-from .developer import DevBase, obj, unavailable, error
+from .developer import DevBase, obj, unavailable, FileFormatError, NotAnElementError
 from .utilities import path_string
 from . import numpy_extensions as npe
 
@@ -139,7 +141,7 @@ from . import numpy_extensions as npe
 IdType: TypeAlias = "Structure | npt.NDArray[np.bool_] | int | str | Elements | list[str | Elements | int | float]"
 """Alias for identifiers that can be used to locate specific atoms in a Structure."""
 
-PosType: TypeAlias = list[int | npt.NDArray[np.floating]]
+PosType: TypeAlias = list[int] | npt.NDArray[np.floating]
 """Alias for types that can be used as positions in a ``locate`` call."""
 
 RType: TypeAlias = int | float | list[int | float]
@@ -225,7 +227,7 @@ except:
 cif2cell_unit_dict = dict(angstrom='A',bohr='B',nm='nm')
 
 
-def read_cif_celldata(filepath,block=None,grammar='1.1'):
+def read_cif_celldata(filepath,*,block=None,grammar='1.1'):
     # read cif file with PyCifRW
     path,cif_file = os.path.split(filepath)
     if path!='':
@@ -242,7 +244,8 @@ def read_cif_celldata(filepath,block=None,grammar='1.1'):
     #end if
     cb = cf.get(block)
     if cb is None:
-        error('block {0} was not found in cif file {1}'.format(block,filepath),'read_cif_celldata')
+        msg = 'block {0} was not found in cif file {1}'.format(block,filepath)
+        raise FileFormatError(msg)
     #end if
 
     # repack H-M symbols as normal strings so CellData.getFromCIF won't choke on unicode
@@ -268,15 +271,19 @@ def read_cif_celldata(filepath,block=None,grammar='1.1'):
 
 
 
-def read_cif_cell(filepath,block=None,grammar='1.1',cell='prim'):
-    cd = read_cif_celldata(filepath,block,grammar)
+def read_cif_cell(filepath,*,block=None,grammar='1.1',cell='prim'):
+    cd = read_cif_celldata(filepath,block=block,grammar=grammar)
 
     if cell.startswith('prim'):
         cell = cd.primitive()
     elif cell.startswith('conv'):
         cell = cd.conventional()
     else:
-        error('cell argument must be primitive or conventional\nyou provided: {0}'.format(cell),'read_cif_cell')
+        msg = (
+            'cell argument must be primitive or conventional\n'
+            'you provided: {0}'.format(cell)
+            )
+        raise ValueError(msg)
     #end if
 
     return cell
@@ -284,16 +291,17 @@ def read_cif_cell(filepath,block=None,grammar='1.1',cell='prim'):
 
 
 
-def read_cif(filepath,block=None,grammar='1.1',cell='prim',args_only=False):
+def read_cif(filepath,*,block=None,grammar='1.1',cell='prim',args_only=False):
     if isinstance(filepath,str):
-        cell = read_cif_cell(filepath,block,grammar,cell)
+        cell = read_cif_cell(filepath,block=block,grammar=grammar,cell=cell)
     else:
         cell = filepath
     #end if
 
     # create Structure object from cell
     if cell.alloy:
-        error('cannot handle alloys','read_cif')
+        msg = 'cannot handle alloys'
+        raise NotImplementedError(msg)
     #end if
     units = cif2cell_unit_dict[cell.unit]
     scale = float(cell.lengthscale)
@@ -368,14 +376,22 @@ def reduce_tilematrix(tiling):
     tiling = np.array(tiling)
     t = np.array(tiling,dtype=int)
     if np.abs(tiling-t).sum()>1e-6:
-        error('requested tiling is non-integer\n tiling requested: '+str(tiling))
+        msg = (
+            'requested tiling is non-integer\n'
+            ' tiling requested: '+str(tiling)
+            )
+        raise ValueError(msg)
     #end if
 
     dim = len(t)
     matrix_tiling = t.shape == (dim,dim)
     if matrix_tiling:
         if np.abs(det(t))==0:
-            error('requested tiling matrix is singular\ntiling requested: {0}'.format(t))
+            msg = (
+                'requested tiling matrix is singular\n'
+                'tiling requested: {0}'.format(t)
+                )
+            raise ValueError(msg)
         #end if
         #find a tiling tuple from the tiling matrix
         # do this by shearing the tiling matrix (or equivalently the tiled cell)
@@ -426,7 +442,8 @@ def reduce_tilematrix(tiling):
                 tr = np.diag(Tnew)
                 nondiagonal = np.abs(Tnew-np.diag(tr)).sum()>1e-6
                 if nondiagonal:
-                    error('could not find a diagonal tiling matrix for generating tiled coordinates')
+                    msg = 'could not find a diagonal tiling matrix for generating tiled coordinates'
+                    raise RuntimeError(msg)
                 #end if
                 tvecs.append(np.abs(tr))
             #end if
@@ -456,7 +473,11 @@ def rotate_plane(plane,angle,points,units='degrees'):
     if units=='degrees':
         angle *= pi/180
     elif not units.startswith('rad'):
-        error('angular units must be degrees or radians\nyou provided: {0}'.format(angle),'rotate_plane')
+        msg = (
+            'angular units must be degrees or radians\n'
+            'you provided: {0}'.format(angle)
+            )
+        raise ValueError(msg)
     #end if
     c = cos(angle)
     s = sin(angle)
@@ -485,7 +506,11 @@ def rotate_plane(plane,angle,points,units='degrees'):
              [ 0, 1, 0],
              [ s, 0, c]]
     else:
-        error('plane must be xy/yx/yz/zy/zx/xz\nyou provided: {0}'.format(plane),'rotate_plane')
+        msg = (
+            'plane must be xy/yx/yz/zy/zx/xz\n'
+            'you provided: {0}'.format(plane)
+            )
+        raise ValueError(msg)
     #end if
     R = np.array(R,dtype=float)
     return dot(R,points.T).T
@@ -551,12 +576,14 @@ class MaskFilter(DevBase):
                 i+=1
             #end for
         elif mask.shape!=(dim,dim):
-            error(
+            msg = (
                 "shape of mask array must be {0},{0}\n"
                 "shape received: {1},{2}\n"
                 "mask array received: {3}".format(
-                    dim,mask.shape[0],mask.shape[1],omask),'optimal_tilematrix'
+                    dim,mask.shape[0],mask.shape[1],omask
+                    )
                 )
+            raise ValueError(msg)
         #end if
         self.mask = mask==False
     #end def set
@@ -788,7 +815,7 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
         #end for
     #end if
     if Taxopt is None:
-        error(
+        msg = (
             "optimal tilematrix for volfac={0} not found with tolerance {1}\n"
             "difference range (dn): {2}\n"
             "tiling matrices searched: {3}\n"
@@ -801,8 +828,9 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
             "please try again with dn={10}".format(
                 volfac, tol, dn, ntilings, nequiv_volume, nfilter, nequiv_inscribe,
                 nequiv_wigner, nequiv_cubicity, nequiv_shape, dn+1
+                )
             )
-        )
+        raise RuntimeError(msg)
     #end if
     if det(Taxopt)<0:
         Topt = -Topt
@@ -853,6 +881,8 @@ class Structure(Sobj):
     mag : NDArray of float or None
         Magnetic moments of each atom, or ``None`` if system is not
         magnetized.
+    vel : NDArray of float or None
+        Cartesian velocity vectors for each atom.
     tmatrix : NDArray of int or None
         A vector of ints for tiling the cell in each dimension.
         See :py:meth:`~.Structure.tile()` for more information.
@@ -878,6 +908,8 @@ class Structure(Sobj):
         is an element and its position. Overrides ``elem`` and ``pos``.
     mag : ArrayLike, optional
         Magnetic moments of each atom.
+    vel : ArrayLike, optional
+        Cartesian velocity vectors for each atom.
     center : ArrayLike, optional
         Defined center of the cell, defaults to the ``[0.5, 0.5, 0.5]``
         point of the cell.
@@ -958,12 +990,14 @@ class Structure(Sobj):
 
 
     def __init__(self,
+                 *,
                  axes              = None,
                  scale             = 1.,
                  elem              = None,
                  pos               = None,
                  elem_pos          = None,
                  mag               = None,
+                 vel               = None,
                  center            = None,
                  kpoints           = None,
                  kweights          = None,
@@ -1029,6 +1063,7 @@ class Structure(Sobj):
         self.set_elem(elem)
         self.set_pos(pos)
         self.set_mag(mag)
+        self.set_vel(vel)
         self.set_frozen(frozen)
         self.kpoints  = np.empty((0,dim))            
         self.kweights = np.empty((0,))         
@@ -1072,7 +1107,7 @@ class Structure(Sobj):
     #end def __init__
 
 
-    def check_consistent(self,tol=1e-8,exit=True,message=False):
+    def check_consistent(self,tol=1e-8,*,exit=True,message=False):
         msg = ''
         if self.has_axes():
             kaxes = 2*pi*inv(self.axes).T
@@ -1088,8 +1123,8 @@ class Structure(Sobj):
                     "{2}\n"
                     "Absolute difference: {3}\n".format(
                         self.axes, self.kaxes, kaxes,abs_diff
+                        )
                     )
-                )
             #end if
         #end if
         N = len(self.elem)
@@ -1101,8 +1136,8 @@ class Structure(Sobj):
                 "pos shape: {}\n"
                 "Correct shape: {}\n".format(
                     self.pos.shape, pshape
+                    )
                 )
-            )
         #end if
         if self.mag is not None and len(self.mag)!=N:
             msg += (
@@ -1110,8 +1145,17 @@ class Structure(Sobj):
                 "mag length: {}\n"
                 "Correct length: {}\n".format(
                     self.mag, N
+                    )
                 )
-            )
+        #end if
+        if self.vel is not None and self.vel.shape!=pshape:
+            msg += (
+                "vel does not have the right shape\n"
+                "vel shape: {}\n"
+                "Correct shape: {}\n".format(
+                    self.vel.shape, pshape
+                    )
+                )
         #end if
         if self.frozen is not None and self.frozen.shape!=pshape:
             msg += (
@@ -1119,12 +1163,12 @@ class Structure(Sobj):
                 "frozen shape: {}\n"
                 "Correct shape: {}\n".format(
                     self.frozen.shape, pshape
+                    )
                 )
-            )
         #end if
         consistent = len(msg)==0
         if not consistent and exit:
-            self.error(msg)
+            raise RuntimeError(msg)
         #end if
         if not message:
             return consistent
@@ -1152,13 +1196,14 @@ class Structure(Sobj):
     def set_pos(self,pos):
         self.pos = np.array(pos,dtype=float)
         if len(self.pos)!=len(self.elem):
-            self.error(
+            msg = (
                 "Atomic positions must have same length as elem.\n"
                 "elem length: {}\n"
                 "Atomic positions length: {}\n".format(
                     len(self.elem), len(self.pos)
+                    )
                 )
-            )
+            raise ValueError(msg)
         #end if
     #end def set_pos
 
@@ -1169,16 +1214,36 @@ class Structure(Sobj):
         else:
             self.mag = np.array(mag,dtype=object)
             if len(self.mag)!=len(self.elem):
-                self.error(
+                msg = (
                     "Magnetic moments must have same length as elem.\n"
                     "elem length: {}\n"
                     "Magnetic moments length: {}\n".format(
                         len(self.elem), len(self.mag)
+                        )
                     )
-                )
+                raise ValueError(msg)
             #end if
         #end if
     #end def set_mag
+
+
+    def set_vel(self,vel=None):
+        if vel is None:
+            self.vel = None
+        else:
+            self.vel = np.array(vel,dtype=float)
+            if self.vel.shape!=self.pos.shape:
+                msg = (
+                    "Velocity vectors must have the same shape as positions.\n"
+                    "Positions shape: {0}\n"
+                    "Velocity shape: {1}".format(
+                        self.pos.shape,self.vel.shape
+                        )
+                    )
+                raise ValueError(msg)
+            #end if
+        #end if
+    #end def set_vel
 
 
     def set_frozen(self,frozen=None):
@@ -1187,13 +1252,14 @@ class Structure(Sobj):
         else:
             self.frozen = np.array(frozen,dtype=bool)
             if self.frozen.shape!=self.pos.shape:
-                self.error(
+                msg = (
                     "Frozen directions must have the same shape as positions.\n"
                     "Positions shape: {0}\n"
                     "Frozen directions shape: {1}".format(
                         self.pos.shape, self.frozen.shape
+                        )
                     )
-                )
+                raise ValueError(msg)
             #end if
         #end if
     #end def set_frozen
@@ -1214,13 +1280,14 @@ class Structure(Sobj):
             operations = operations.values()
         for op in operations:
             if op not in self.operations:
-                self.error(
+                msg = (
                     "{0} is not a known operation\n"
                     "valid options are:\n"
                     "  {1}".format(
                         op, list(self.operations.keys())
+                        )
                     )
-                )
+                raise ValueError(msg)
             else:
                 self.operations[op](self)
             #end if
@@ -1255,13 +1322,14 @@ class Structure(Sobj):
 
     def set_folded_structure(self,folded):
         if not isinstance(folded,Structure):
-            self.error(
+            msg = (
                 "cannot set folded structure\n"
                 "folded structure must be an object with type Structure\n"
                 "received type: {0}".format(
                     folded.__class__.__name__
+                    )
                 )
-            )
+            raise TypeError(msg)
         #end if
         self.folded_structure = folded
         if self.has_axes():
@@ -1283,7 +1351,7 @@ class Structure(Sobj):
     #end def has_folded_structure
 
             
-    def group_atoms(self, folded=True) -> None:
+    def group_atoms(self, *, folded=True) -> None:
         """Group the atoms by their element type, sorting in alphabetical order.
 
         Parameters
@@ -1313,17 +1381,16 @@ class Structure(Sobj):
         if len(self.elem)>0:
             order = self.elem.argsort()
             if (self.elem!=self.elem[order]).any():
-                self.elem = self.elem[order]
-                self.pos  = self.pos[order]
+                self.reorder(order)
             #end if
         #end if
         if self.folded_structure is not None and folded:
-            self.folded_structure.group_atoms(folded)
+            self.folded_structure.group_atoms(folded=folded)
         #end if
     #end def group_atoms
 
 
-    def rename(self, folded=True, **name_pairs) -> None:
+    def rename(self, *, folded=True, **name_pairs) -> None:
         """Rename element names in a structure.
 
         Parameters
@@ -1465,14 +1532,15 @@ class Structure(Sobj):
             if np.abs(np.abs(det(R))-1)<1e-6:
                 self.axes = dot(self.axes,R)
             else:
-                self.error(
+                msg = (
                     "reshaping matrix must not change the volume\n"
                     "  reshaping matrix:\n"
                     "  {0}\n"
                     "  volume change ratio: {1}".format(
                         R, np.abs(det(R))
+                        )
                     )
-                )
+                raise ValueError(msg)
             #end if
         #end if
     #end def reshape_axes
@@ -1511,7 +1579,7 @@ class Structure(Sobj):
 
     
     # test needed
-    def miller_direction(self,h,k,l,normalize=False):
+    def miller_direction(self,h,k,l,*,normalize=False):
         d = dot((h,k,l),self.axes)
         if normalize:
             d/=norm(d)
@@ -1521,7 +1589,7 @@ class Structure(Sobj):
 
     
     # test needed
-    def miller_normal(self,h,k,l,normalize=False):
+    def miller_normal(self,h,k,l,*,normalize=False):
         d = dot((h,k,l),self.kaxes)
         if normalize:
             d/=norm(d)
@@ -1552,14 +1620,14 @@ class Structure(Sobj):
     #end def project_plane
 
         
-    def bounding_box(self,scale=1.0,minsize=None,mindist=0,box='tight',recenter=False):
+    def bounding_box(self,scale=1.0,minsize=None,mindist=0,box='tight',*,recenter=False):
         pmin    = self.pos.min(0)-mindist
         pmax    = self.pos.max(0)+mindist
         pcenter = (pmax+pmin)/2
         prange  = pmax-pmin
         if minsize is not None:
             for i,pr in enumerate(prange):
-                prange[i] = max(minsize,prange[i])
+                prange[i] = max(minsize,pr)
             #end for
         #end if
         if box=='tight':
@@ -1570,11 +1638,12 @@ class Structure(Sobj):
         elif isinstance(box,np.ndarray) or isinstance(box,list):
             box = np.array(box)
             if box.shape!=(3,3):
-                self.error(
+                msg = (
                     "requested box must be 3-dimensional (3x3 axes)\n"
                     "  you provided: "+str(box)+"\n"
                     " shape: "+str(box.shape)
-                )
+                    )
+                raise ValueError(msg)
             #end if
             binv = inv(box)
             pu = dot(self.pos,binv)
@@ -1584,14 +1653,15 @@ class Structure(Sobj):
             prange  = pmax-pmin
             axes    = dot(np.diag(prange),box)
         else:
-            self.error(
+            msg = (
                 "invalid request for box\n"
                 "  valid options are 'tight', 'cubic', or axes array (3x3)\n"
                 "  you provided: "+str(box)
-            )
+                )
+            raise ValueError(msg)
         #end if
         self.reset_axes(scale*axes)
-        self.slide(self.center-pcenter,recenter)
+        self.slide(self.center-pcenter,recenter=recenter)
     #end def bounding_box
 
 
@@ -1615,7 +1685,8 @@ class Structure(Sobj):
         if hasattr(rmin_edge, '__len__'):
             rmin_edge = np.abs(np.asarray(rmin_edge, dtype=float).flatten())
             if rmin_edge.shape != (self.dim,):
-                self.error('rmin_edge must have length '+str(self.dim))
+                msg = 'rmin_edge must have length '+str(self.dim)
+                raise ValueError(msg)
         else:
             rmin_edge = abs(float(rmin_edge))
 
@@ -1642,13 +1713,15 @@ class Structure(Sobj):
         lower_out = (upos_min < utol).any()
         upper_out = (upos_max > (1.-utol)).any()
         if lower_out or upper_out:
-            self.error('molecule does not fit in the cell')
+            msg = 'molecule does not fit in the cell'
+            raise ValueError(msg)
 
         # Check that the molecule is far enough from the cell edges
         lower_out = (upos_min < umin).any()
         upper_out = (upos_max > (1.-umin)).any()
         if lower_out or upper_out:
-            self.error('molecule is too close to the cell edges')
+            msg = 'molecule is too close to the cell edges'
+            raise ValueError(msg)
 
         # Transform back into real space coordinates
         self.pos = np.dot(upos, self.axes) + corner
@@ -1668,12 +1741,13 @@ class Structure(Sobj):
         dim = self.dim
         P = np.empty((dim,dim),dtype=int)
         if len(permutation)!=dim:
-            self.error(
+            msg = (
                 " permutation vector must have {0} elements\n"
                 " you provided {1}".format(
                     dim, permutation
+                    )
                 )
-            )
+            raise ValueError(msg)
         #end if
         for i in range(dim):
             p = permutation[i]
@@ -1694,6 +1768,9 @@ class Structure(Sobj):
         if len(self.pos)>0:
             self.pos = dot(self.pos,P)
         #end if
+        if self.vel is not None:
+            self.vel = dot(self.vel,P)
+        #end if
         if len(self.kaxes)>0:
             self.kaxes = dot(self.kaxes,P)
         #end if
@@ -1709,6 +1786,9 @@ class Structure(Sobj):
     # test needed
     def rotate_plane(self,plane,angle,units='degrees'):
         self.pos = rotate_plane(plane,angle,self.pos,units)
+        if self.vel is not None:
+            self.vel = rotate_plane(plane,angle,self.vel,units)
+        #end if
         if self.has_axes():
             axes = rotate_plane(plane,angle,self.axes,units)
             self.reset_axes(axes)
@@ -1719,7 +1799,8 @@ class Structure(Sobj):
     # test needed
     def upcast(self,DerivedStructure):
         if not issubclass(DerivedStructure,Structure):
-            self.error(DerivedStructure.__name__,'is not derived from Structure')
+            msg = DerivedStructure.__name__+' is not derived from Structure'
+            raise TypeError(msg)
         #end if
         ds = DerivedStructure()
         for name,value in self.items():
@@ -1739,13 +1820,14 @@ class Structure(Sobj):
     # test needed
     def clone_from(self,other):
         if not isinstance(other,Structure):
-            self.error(
+            msg = (
                 "cloning failed\n"
                 "can only clone from other Structure objects\n"
                 "received object of type: {0}".format(
                     other.__class__.__name__
+                    )
                 )
-            )
+            raise TypeError(msg)
         #end if
         o = deepcopy(other)
         self.__dict__ = o.__dict__
@@ -1804,19 +1886,20 @@ class Structure(Sobj):
             #end if
         #end if
         if len(pos1)!=len(pos2):
-            self.error('positions arrays are not the same length')
+            msg = 'positions arrays are not the same length'
+            raise ValueError(msg)
         #end if
         return sqrt(((pos1-pos2)**2).sum(1))
     #end def distances
 
 
-    def count_kshells(self, kcut, tilevec=[12, 12, 12], nkdig=10):
+    def count_kshells(self, kcut, tilevec=(12, 12, 12), nkdig=10):
       # check tilevec input
       for nt in tilevec:
         if nt % 2 != 0:
           msg = 'tilevec must contain even integers'
           msg += ' so that kgrid can be zero centered.'
-          error(msg, 'count_kshells')
+          raise ValueError(msg)
         #end if
       #end for
 
@@ -1832,7 +1915,7 @@ class Structure(Sobj):
       if kcut > klimit:
         msg = 'kcut %3.2f > klimit=%3.2f\n' % (kcut, klimit)
         msg += ' please increase tilevec to be safe.\n'
-        error(msg, 'count_kshells')
+        raise ValueError(msg)
       #end if
 
       sel = (0<kmags) & (kmags<kcut)
@@ -1852,7 +1935,8 @@ class Structure(Sobj):
 
     def rwigner(self,nc=5):
         if self.dim!=3:
-            self.error('rwigner is currently only implemented for 3 dimensions')
+            msg = 'rwigner is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         rmin = 1e90
         n=np.empty((1,3))
@@ -1873,7 +1957,8 @@ class Structure(Sobj):
 
     def rinscribe(self):
         if self.dim!=3:
-            self.error('rinscribe is currently only implemented for 3 dimensions')
+            msg = 'rinscribe is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         radius = 1e99
         dim=3
@@ -1938,9 +2023,10 @@ class Structure(Sobj):
     #    while remaining periodically correct
     #   note that the unshearing procedure is not unique
     #   it depends on the order of unshearing operations
-    def unsheared_axes(self,axes=None,distances=False):
+    def unsheared_axes(self,axes=None,*,distances=False):
         if self.dim!=3:
-            self.error('unsheared_axes is currently only implemented for 3 dimensions')
+            msg = 'unsheared_axes is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         if axes is None:
             axes = self.axes
@@ -1971,7 +2057,7 @@ class Structure(Sobj):
     #   note that the product of distances is not the cell volume in general
     #   see "unsheared_axes" function
     #   (e.g. a volume preserving shear may bring two face planes arbitrarily close)
-    def face_vectors(self,axes=None,distances=False):
+    def face_vectors(self,axes=None,*,distances=False):
         if axes is None:
             axes = self.axes
         #end if
@@ -2012,7 +2098,8 @@ class Structure(Sobj):
     # test needed
     def stretch(self,s1,s2,s3):
         if self.dim!=3:
-            self.error('stretch is currently only implemented for 3 dimensions')
+            msg = 'stretch is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         d = np.diag((s1,s2,s3))
         self.skew(d)
@@ -2020,7 +2107,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def rotate(self,r,rp=None,passive=False,units="radians",check=True):
+    def rotate(self,r,rp=None,*,passive=False,units="radians",check=True):
         """Arbitrary rotation of the structure.
 
         Parameters
@@ -2072,7 +2159,8 @@ class Structure(Sobj):
             else:
                 r = np.array(r,dtype=float)
                 if len(r.shape)>1:
-                    self.error('r must be given as a 1-d vector or string, if rp is not None')
+                    msg = 'r must be given as a 1-d vector or string, if rp is not None'
+                    raise ValueError(msg)
                 #end if
             #end if
             if isinstance(rp,(int,float)):
@@ -2116,7 +2204,8 @@ class Structure(Sobj):
         #end if
         if check:
             if not np.allclose(dot(R,R.T),np.identity(len(R))):
-                self.error('the function, rotate, must be given an orthogonal matrix')
+                msg = 'the function, rotate, must be given an orthogonal matrix'
+                raise ValueError(msg)
             #end if
         #end if
         self.matrix_transform(R)
@@ -2141,6 +2230,9 @@ class Structure(Sobj):
         kaxinv = inv(self.kaxes)
         kaxnew = dot(self.kaxes,inv(A).T)
         self.pos     = dot(dot(self.pos,axinv),axnew)
+        if self.vel is not None:
+            self.vel = dot(self.vel,A)
+        #end if
         self.center  = dot(dot(self.center,axinv),axnew)
         self.kpoints = dot(dot(self.kpoints,kaxinv),kaxnew)
         self.axes  = axnew
@@ -2168,12 +2260,15 @@ class Structure(Sobj):
         
     
     # test needed
-    def change_units(self,units,folded=True):
+    def change_units(self,units,*,folded=True):
         if units!=self.units:
             scale = convert(1,self.units,units)
             self.scale  *= scale
             self.axes   *= scale
             self.pos    *= scale
+            if self.vel is not None:
+                self.vel *= scale
+            #end if
             self.center *= scale
             self.kaxes  /= scale
             self.kpoints/= scale
@@ -2188,11 +2283,12 @@ class Structure(Sobj):
     # test needed
     # insert sep space at loc along axis
     #   if sep<0, space is removed instead
-    def cleave(self,axis,loc,sep=None,remove=False,tol=1e-6):
+    def cleave(self,axis,loc,sep=None,*,remove=False,tol=1e-6):
         self.remove_folded_structure()
         if isinstance(axis,int):
             if sep is None:
-                self.error('separation induced by cleave must be provided')
+                msg = 'separation induced by cleave must be provided'
+                raise ValueError(msg)
             #end if
             v = self.face_vectors()[axis]
             if isinstance(loc,float):
@@ -2231,10 +2327,11 @@ class Structure(Sobj):
             #end for
             commensurate = components==1
             if not commensurate:
-                self.error(
+                msg = (
                     "cannot insert vacuum because cleave is incommensurate with the cell\n"
                     "  cleave plane must be parallel to a cell face"
-                )
+                    )
+                raise ValueError(msg)
             #end if
             a = self.axes[iaxis]
             #self.axes[iaxis] = (1.+dot(v,a)/dot(a,a))*a
@@ -2271,7 +2368,7 @@ class Structure(Sobj):
 
                               
     # test needed
-    def slide(self,v,recenter=True):
+    def slide(self,v,*,recenter=True):
         v = np.array(v)
         pos = self.pos
         for i in range(len(pos)):
@@ -2281,7 +2378,7 @@ class Structure(Sobj):
             self.recenter()
         #end if
         if self.folded_structure is not None:
-            self.folded_structure.slide(v,recenter)
+            self.folded_structure.slide(v,recenter=recenter)
         #end if
     #end def slide
 
@@ -2307,6 +2404,7 @@ class Structure(Sobj):
     def locate_by_cell(
         self,
         cell  : Structure | npt.NDArray,
+        *,
         invert: bool = False,
         ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure contained by a crystal cell.
@@ -2324,9 +2422,10 @@ class Structure(Sobj):
         else:
             cell = np.asarray(cell, dtype=float)
             if cell.shape != (self.dim, self.dim):
-                self.error(
+                msg = (
                     f"The cell must have shape ({self.dim}, {self.dim}) but instead has shape {cell.shape}!"
                     )
+                raise ValueError(msg)
             indices = self.inside(self.pos, axes=cell, center=cell.sum(axis=0)/2)
 
         if invert:
@@ -2342,6 +2441,7 @@ class Structure(Sobj):
     def locate_by_mask(
         self,
         mask_array: npt.ArrayLike,
+        *,
         invert    : bool = False,
         ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by a mask array.
@@ -2366,6 +2466,7 @@ class Structure(Sobj):
     def locate_by_indices(
         self,
         indices: int | list[int],
+        *,
         invert : bool = False,
         ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by an index or list of indices.
@@ -2402,6 +2503,7 @@ class Structure(Sobj):
     def locate_by_elements(
         self,
         elements: ElementOrList,
+        *,
         invert  : bool = False,
         ) -> npt.NDArray[np.int64]:
         """Locate the atoms in a structure by their element.
@@ -2417,7 +2519,8 @@ class Structure(Sobj):
         if not isinstance(elements, list | tuple | np.ndarray):
             elements = [elements]
         elif len(elements) == 0:
-            self.error("Can not use an empty list/tuple/array for locating atoms!")
+            msg = "Can not use an empty list/tuple/array for locating atoms!"
+            raise ValueError(msg)
 
         indices = []
         for elem in elements:
@@ -2439,6 +2542,7 @@ class Structure(Sobj):
         self,
         pos   : PosType,
         radii : RType,
+        *,
         invert: bool = False,
         ) -> npt.NDArray[np.int64]:
         """Locate atoms in a structure if they are within a distance from a position.
@@ -2454,7 +2558,8 @@ class Structure(Sobj):
             Optionally invert the indices.
         """
         if len(pos) == 0:
-            self.error("Can not use an empty list/tuple/array for locating atoms!")
+            msg = "Can not use an empty list/tuple/array for locating atoms!"
+            raise ValueError(msg)
 
         if isinstance(pos, list | tuple | np.ndarray) and isinstance(pos[0], int):
             pos = self.pos[pos]
@@ -2464,11 +2569,12 @@ class Structure(Sobj):
         if isinstance(radii, float | int):
             radii = [radii] * len(pos)
         elif len(radii) != len(pos):
-            self.error(
+            msg = (
                 "Lengths of input radii and positions do not match\n"
                f"  len(radii)={len(radii)}\n"
                f"  len(pos)={len(pos)}"
                 )
+            raise ValueError(msg)
 
         dist_table = self.min_image_distances(pos)
         ipos = np.arange(len(self.pos))
@@ -2490,6 +2596,7 @@ class Structure(Sobj):
         self,
         identifiers: IdType,
         radii      : RType = None,
+        *,
         invert     : bool  = False,
         ) -> npt.NDArray[np.int64]:
         """Locate atoms in a structure by some identifier(s).
@@ -2545,13 +2652,14 @@ class Structure(Sobj):
                 )
         elif isinstance(identifiers, list | tuple | np.ndarray):
             if len(identifiers) == 0:
-                self.error("Can not use an empty list/tuple/array for locating atoms!")
+                msg = "Can not use an empty list/tuple/array for locating atoms!"
+                raise ValueError(msg)
 
             if isinstance(identifiers[0], int):
                 indices = self.locate_by_indices(
                     indices = identifiers,
                     invert  = invert,
-                )
+                    )
             elif isinstance(identifiers[0], str | Elements):
                 indices = self.locate_by_elements(
                     elements = identifiers,
@@ -2560,9 +2668,10 @@ class Structure(Sobj):
             elif isinstance(identifiers[0], np.ndarray):
                 identifiers = np.asarray(identifiers, dtype=np.float64)
                 if identifiers.shape[1] != 3:
-                    self.error(
+                    msg = (
                         f"Can not use array with shape {identifiers.shape} to locate atoms!"
                         )
+                    raise ValueError(msg)
                 indices = self.locate_by_neighbors(
                     pos=self.pos[indices],
                     radii=radii,
@@ -2581,7 +2690,7 @@ class Structure(Sobj):
     #end def locate
 
 
-    def freeze(self,identifiers=None,radii=None,exterior=False,negate=False,directions='xyz'):
+    def freeze(self,identifiers=None,radii=None,*,exterior=False,negate=False,directions='xyz'):
         if isinstance(identifiers,np.ndarray) and identifiers.shape==self.pos.shape and identifiers.dtype==bool:
             if negate:
                 self.frozen = ~identifiers
@@ -2593,10 +2702,11 @@ class Structure(Sobj):
         if identifiers is None:
             indices = np.arange(len(self.pos),dtype=int)
         else:
-            indices = self.locate(identifiers,radii,exterior)
+            indices = self.locate(identifiers,radii,invert=exterior)
         #end if
         if len(indices)==0:
-            self.error('failed to select any atoms to freeze')
+            msg = 'failed to select any atoms to freeze'
+            raise RuntimeError(msg)
         #end if
         if isinstance(directions,str):
             d = np.empty((3,),dtype=bool)
@@ -2680,8 +2790,8 @@ class Structure(Sobj):
 
     
     # test needed
-    def replace(self,identifiers,elem=None,pos=None,radii=None,exterior=False):
-        indices = self.locate(identifiers,radii,exterior)
+    def replace(self,identifiers,elem=None,pos=None,radii=None,*,exterior=False):
+        indices = self.locate(identifiers,radii,invert=exterior)
         if isinstance(elem,Structure):
             cell = elem
             elem = cell.elem
@@ -2779,39 +2889,44 @@ class Structure(Sobj):
         if identifiers is None:
             index = ncenters
             if index>=len(self.pos):
-                self.error(
+                msg = (
                     "attempted to add a point defect at index {0}, which does not exist\n"
                     "  for reference there are {1} atoms in the structure".format(
                         index, len(self.pos)
+                        )
                     )
-                )
+                raise ValueError(msg)
             #end if
         else:
             indices = self.locate(identifiers)
             if len(indices)>1:
-                self.error(
+                msg = (
                     "{0} atoms were located by identifiers provided\n"
                     "  a point defect replaces only a single atom\n"
                     "  atom indices located: {1}".format(
                         len(indices), indices
+                        )
                     )
-                )
+                raise RuntimeError(msg)
             #end if
             index = indices[0]
         #end if
         if elem is None:
-            self.error(
+            msg = (
                 "must supply substitutional elements comprising the point defect\n"
                 "  expected a list or similar for input argument elem"
-            )
+                )
+            raise ValueError(msg)
         elif len(elem)>1 and dr is None:
-            self.error(
+            msg = (
                 "must supply displacements (dr) since many atoms comprise the point defect"
-            )
+                )
+            raise ValueError(msg)
         elif dr is not None and len(elem)!=len(dr):
-            self.error(
+            msg = (
                 "elem and dr must have the same length"
-            )
+                )
+            raise ValueError(msg)
         #end if
         r = self.pos[index]
         e = self.elem[index]
@@ -2866,7 +2981,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def species(self,symbol=False):
+    def species(self,*,symbol=False):
         if not symbol:
             return set(self.elem)
         else:
@@ -2882,7 +2997,7 @@ class Structure(Sobj):
 
         
     # test needed
-    def ordered_species(self,symbol=False):
+    def ordered_species(self,*,symbol=False):
         speclab_set    = set()
         species_labels = []
         if not symbol:
@@ -2914,7 +3029,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def order_by_species(self,folded=False):
+    def order_by_species(self,*,folded=False):
         species        = []
         species_counts = []
         elem_indices   = []
@@ -2947,11 +3062,45 @@ class Structure(Sobj):
     #end def order_by_species
 
 
-    # test needed
     def reorder(self,order):
-        order = np.array(order)
-        self.elem = self.elem[order]
-        self.pos  = self.pos[order]
+        """Reorder all atom-sized member arrays."""
+        natoms = len(self.elem)
+        order = np.asarray(order)
+        if order.ndim!=1 or len(order)!=natoms:
+            msg = (
+                'atom reordering must contain one index per atom\n'
+                '  number of atoms: {}\n'
+                '  order shape: {}'.format(natoms,order.shape)
+                )
+            raise ValueError(msg)
+        #end if
+        if not np.issubdtype(order.dtype,np.integer):
+            msg = 'atom reordering indices must be integers'
+            raise TypeError(msg)
+        #end if
+        order = order.astype(int,copy=False)
+        if not np.array_equal(np.sort(order),np.arange(natoms)):
+            msg = (
+                'atom reordering indices must be a permutation of 0 through '
+                '{}'.format(natoms-1)
+                )
+            raise ValueError(msg)
+        #end if
+
+        non_atom_arrays = {
+            'axes', 'bconds', 'center', 'kaxes', 'kpoints', 'kweights',
+            'tmatrix',
+            }
+        for name,value in list(self.items()):
+            if (
+                name not in non_atom_arrays and
+                isinstance(value,np.ndarray) and
+                value.ndim>0 and
+                value.shape[0]==natoms
+                ):
+                self[name] = value[order]
+            #end if
+        #end for
     #end def reorder
 
     
@@ -2971,7 +3120,7 @@ class Structure(Sobj):
     #     3.0 = [ 0, 1, 2, 3 ]
     #     6.0 = [ 4, 5, 6, 7 ]
     #     9.0 = [ 8, 9,10,11 ]
-    def layers(self,axis=0,dtol=0.03,dbin=0.01,plot=False,composition=False):
+    def layers(self,axis=0,dtol=0.03,dbin=0.01,*,plot=False,composition=False):
         nbox = int(dtol/dbin)
         if nbox%2==0:
             nbox+=1
@@ -3076,13 +3225,14 @@ class Structure(Sobj):
 
 
     # test needed
-    def shells(self,identifiers,radii=None,exterior=False,cumshells=False,distances=False,dtol=1e-6):
+    def shells(self,identifiers,radii=None,*,exterior=False,cumshells=False,distances=False,dtol=1e-6):
         # get indices for 'core' and 'bulk'
         #   core is selected by identifiers, forms core for shells to be built around
         #   bulk is all atoms except for core
         if identifiers=='point_defects':
             if 'point_defects' not in self:
-                self.error('requested shells around point defects, but structure has no point defects')
+                msg = 'requested shells around point defects, but structure has no point defects'
+                raise ValueError(msg)
             #end if
             core = []
             for pd in self.point_defects:
@@ -3093,7 +3243,7 @@ class Structure(Sobj):
             core_ind = self.locate(bulk_ind,invert=True)
             bulk = self.pos[bulk_ind]
         else:
-            core_ind = self.locate(identifiers,radii,exterior)
+            core_ind = self.locate(identifiers,radii,invert=exterior)
             bulk_ind = self.locate(core_ind,invert=True)
             core = self.pos[core_ind]
             bulk = self.pos[bulk_ind]
@@ -3181,7 +3331,7 @@ class Structure(Sobj):
     #           6    #   sum of vertex degrees is 6 (each atom is connected to 2 others)
     #             (2,2,2) = [ (0,1,2) ]           # graphs with vertex degree (2,2,2)  
 
-    def connected_graphs(self,order,indices=None,rmax=None,nmax=None,voronoi=False,degree=False,site_maps=False,**spec_max):
+    def connected_graphs(self,order,indices=None,rmax=None,nmax=None,*,voronoi=False,degree=False,site_maps=False,**spec_max):
         if indices is None:
             indices = np.arange(len(self.pos),dtype=int)
             pos = self.pos
@@ -3453,7 +3603,8 @@ class Structure(Sobj):
         if indices is not None:
             points = self.pos[indices]
         elif points is None:
-            self.error('points or images must be provided to min_image_centroid')
+            msg = 'points or images must be provided to min_image_centroid'
+            raise ValueError(msg)
         #end if
         p     = np.array(points,dtype=float)
         cprev = p[0]+1e99
@@ -3480,13 +3631,14 @@ class Structure(Sobj):
                 cents.append(self.min_image_centroid(indices=ind))
             #end for
         else:
-            self.error('points or images must be provided to min_image_centroid')
+            msg = 'points or images must be provided to min_image_centroid'
+            raise ValueError(msg)
         #end if
         return np.array(cents,dtype=float)
     #end def min_image_centroids
     
     
-    def min_image_vectors(self,points=None,points2=None,axes=None,pairs=True):
+    def min_image_vectors(self,points=None,points2=None,axes=None,*,pairs=True):
         if points is None:
             points = self.pos
         elif isinstance(points,Structure):
@@ -3525,13 +3677,14 @@ class Structure(Sobj):
             result = vtable
         else:
             if npoints!=npoints2:
-                self.error(
+                msg = (
                     "cannot create one to one minimum image vectors, point sets differ in length\n"
                     "  npoints1 = {0}\n"
                     "  npoints2 = {1}".format(
                         npoints, npoints2
+                        )
                     )
-                )
+                raise ValueError(msg)
             #end if
             vectors = np.empty((npoints,self.dim),dtype=float)
             n = 0
@@ -3548,7 +3701,7 @@ class Structure(Sobj):
     #end def min_image_vectors
 
 
-    def min_image_distances(self,points=None,points2=None,axes=None,vectors=False,pairs=True):
+    def min_image_distances(self,points=None,points2=None,axes=None,*,vectors=False,pairs=True):
         vtable = self.min_image_vectors(points,points2,axes,pairs=pairs)
         rdim = len(vtable.shape)-1
         dtable = sqrt((vtable**2).sum(rdim))
@@ -3560,8 +3713,8 @@ class Structure(Sobj):
     #end def min_image_distances
 
 
-    def distance_table(self,points=None,points2=None,axes=None,vectors=False):
-        return self.min_image_distances(points,points2,axes,vectors)
+    def distance_table(self,points=None,points2=None,axes=None,*,vectors=False):
+        return self.min_image_distances(points,points2,axes,vectors=vectors)
     #end def distance_table
 
 
@@ -3570,7 +3723,7 @@ class Structure(Sobj):
     #end def vector_table
 
     
-    def neighbor_table(self,points=None,points2=None,axes=None,distances=False,vectors=False):
+    def neighbor_table(self,points=None,points2=None,axes=None,*,distances=False,vectors=False):
         dtable,vtable = self.min_image_distances(points,points2,axes,vectors=True)
         ntable = np.empty(dtable.shape,dtype=int)
         for i in range(len(dtable)):
@@ -3616,7 +3769,7 @@ class Structure(Sobj):
 
     # test needed
     # get all neighbors according to contacting voronoi polyhedra in PBC
-    def voronoi_neighbors(self,indices=None,restrict=False,distance_ordered=True):
+    def voronoi_neighbors(self,indices=None,*,restrict=False,distance_ordered=True):
         if indices is None:
             indices = np.arange(len(self.pos))
         #end if
@@ -3674,7 +3827,7 @@ class Structure(Sobj):
 
 
     def voronoi_vectors(self,indices=None,restrict=None):
-        ni = self.voronoi_neighbors(indices,restrict)
+        ni = self.voronoi_neighbors(indices,restrict=restrict)
         vt = self.vector_table()
         vv = obj()
         for i,vi in ni.items():
@@ -3684,8 +3837,8 @@ class Structure(Sobj):
     #end def voronoi_vectors
 
 
-    def voronoi_distances(self,indices=None,restrict=False):
-        vv = self.voronoi_vectors(indices,restrict)
+    def voronoi_distances(self,indices=None,*,restrict=False):
+        vv = self.voronoi_vectors(indices,restrict=restrict)
         vd = obj()
         for i,vvi in vv.items():
             vd[i] = norm(vvi,axis=1)
@@ -3695,7 +3848,7 @@ class Structure(Sobj):
 
 
     def voronoi_radii(self,indices=None,restrict=None):
-        vd = self.voronoi_distances(indices,restrict)
+        vd = self.voronoi_distances(indices,restrict=restrict)
         vr = obj()
         for i,vdi in vd.items():
             vr[i] = vdi.min()/2
@@ -3721,7 +3874,7 @@ class Structure(Sobj):
 
     # test needed
     # get nearest neighbors according to constraints (voronoi, max distance, coord. number)
-    def nearest_neighbors(self,indices=None,rmax=None,nmax=None,restrict=False,voronoi=False,distances=False,**spec_max):
+    def nearest_neighbors(self,indices=None,rmax=None,nmax=None,*,restrict=False,voronoi=False,distances=False,**spec_max):
         if indices is None:
             indices = np.arange(len(self.pos))
         #end if
@@ -3736,13 +3889,14 @@ class Structure(Sobj):
                 #end if
             #end for
         else:
-            self.error(
+            msg = (
                 "must specify nmax for all species\n"
                 "  species present: {0}\n"
                 "  you only provided nmax for these species: {1}".format(
                     sorted(elem), sorted(spec)
+                    )
                 )
-            )
+            raise ValueError(msg)
         #end if
         pos = self.pos[indices]
         if not restrict:
@@ -3791,7 +3945,7 @@ class Structure(Sobj):
 
     # test needed
     # determine local chemical coordination limited by constraints
-    def chemical_coordination(self,indices=None,nmax=None,rmax=None,restrict=False,voronoi=False,neighbors=False,distances=False,**spec_max):
+    def chemical_coordination(self,indices=None,nmax=None,rmax=None,*,restrict=False,voronoi=False,neighbors=False,distances=False,**spec_max):
         if indices is None:
             indices = np.arange(len(self.pos))
         #end if
@@ -3897,7 +4051,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def recenter_k(self,kpoints=None,kaxes=None,kcenter=None,remove_duplicates=False):
+    def recenter_k(self,kpoints=None,kaxes=None,kcenter=None,*,remove_duplicates=False):
         """Center k-points around the provided center of k-space.
         
         Parameters
@@ -3984,7 +4138,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def inside(self,pos,axes=None,center=None,tol=1e-8,separate=False):
+    def inside(self,pos,axes=None,center=None,tol=1e-8,*,separate=False):
         if axes is None:
             axes=self.axes
         #end if
@@ -4081,9 +4235,13 @@ class Structure(Sobj):
         kpoints  = np.array(self.kpoints)
         kweights = np.array(self.kweights)
         mag      = None
+        vel      = None
         frozen   = None
         if self.mag is not None:
             mag = ncells*list(self.mag)
+        #end if
+        if self.vel is not None:
+            vel = ncells*list(self.vel)
         #end if
         if self.frozen is not None:
             frozen = ncells*list(self.frozen)
@@ -4099,6 +4257,7 @@ class Structure(Sobj):
         ts.kpoints  = kpoints
         ts.kweights = kweights
         ts.set_mag(mag)
+        ts.set_vel(vel)
         ts.set_frozen(frozen)
         ts.background_charge = ncells*self.background_charge
 
@@ -4163,7 +4322,8 @@ class Structure(Sobj):
                 tpoints = self.tile_points_brute(points,axes,tilemat)
                 tpoints,weights,pmap = self.unique_points_fast(tpoints,taxes)
                 if len(tpoints)!=ntpoints:
-                    self.error('brute force tiling failed')
+                    msg = 'brute force tiling failed'
+                    raise RuntimeError(msg)
                 #end if
             #end if
         #end if
@@ -4192,23 +4352,25 @@ class Structure(Sobj):
         if noninteger:
             tp = t.prod()
             if np.abs(tp-int(tp))>1e-6:
-                self.error(
+                msg = (
                     "tiling vector does not correspond to an integer volume change\n"
                     "tiling vector: {0}\n"
                     "volume change: {1}  {2}  {3}".format(
                         tilevec,tilevec.prod(),npoints,int(npoints)
+                        )
                     )
-                )
+                raise ValueError(msg)
             #end if
             t = np.array(np.ceil(t),dtype=int)+1
         else:
             t = ti
         #end if
         if t.min()<0:
-            self.error(
+            msg = (
                 "tiling vector cannot be negative\n"
                 "tiling vector provided: {}".format(t)
-            )
+                )
+            raise ValueError(msg)
         #end if
         ntpoints = npoints*int(np.round( t.prod() ))
         if ntpoints==0:
@@ -4264,7 +4426,7 @@ class Structure(Sobj):
     #end def tile_opt
 
 
-    def check_tiling(self,tol=1e-6,exit=True):
+    def check_tiling(self,tol=1e-6,*,exit=True):
         msg = ''
         if not self.is_tiled():
             return msg
@@ -4294,7 +4456,7 @@ class Structure(Sobj):
                 msg += '\n'+m
             #end for
             if exit:
-                self.error(msg)
+                raise RuntimeError(msg)
             #end if
         #end if
         return msg
@@ -4329,7 +4491,8 @@ class Structure(Sobj):
 
     # test needed
     def fold(self,small,*requests):
-        self.error('fold needs a developers attention to make it equivalent with tile')
+        msg = 'fold needs a developers attention to make it equivalent with tile'
+        raise NotImplementedError(msg)
         if self.dim!=3:
             self.error('fold is currently only implemented for 3 dimensions')
         #end if
@@ -4419,7 +4582,7 @@ class Structure(Sobj):
     #end def fold
 
 
-    def tilematrix(self,small=None,tol=1e-6,status=False):
+    def tilematrix(self,small=None,tol=1e-6,*,status=False):
         if small is None:
             if self.folded_structure is not None:
                 small = self.folded_structure
@@ -4435,7 +4598,7 @@ class Structure(Sobj):
             return tilemat,not non_integer_elements
         else:
             if non_integer_elements:
-                self.error(
+                msg = (
                     "large cell cannot be constructed as an integer tiling of the small cell\n"
                     "large cell axes:\n"
                     +str(self.axes)+"\n"
@@ -4449,27 +4612,29 @@ class Structure(Sobj):
                     +str(tilemat)+"\n"
                     "error: "+str(error)+"\n"
                     "tolerance: "+str(tol)
-                )
+                    )
+                raise RuntimeError(msg)
             #end if
             return tilemat
         #end if
     #end def tilematrix
 
 
-    def primitive(self,source=None,tmatrix=False,add_kpath=False,**kwargs):
+    def primitive(self,source=None,*,tmatrix=False,add_kpath=False,**kwargs):
         res = None
         allowed_sources = set(['seekpath'])
         if source is None or isinstance(source,bool):
             source = 'seekpath'
         #end if
         if source not in allowed_sources:
-            self.error(
+            msg = (
                 "source used to obtain primitive cell is unrecognized\n"
                 "source requested: {0}\n"
                 "allowed sources: {1}".format(
                     source, sorted(allowed_sources)
+                    )
                 )
-            )
+            raise ValueError(msg)
         #end if
         if source=='seekpath':
             res_skp = get_seekpath_full(structure=self,primitive=True,**kwargs)
@@ -4484,10 +4649,11 @@ class Structure(Sobj):
                 res = prim
             #end if
         else:
-            self.error(
+            msg = (
                 'primitive source "{0}" is not implemented\n'
                 'please contact a developer'.format(source)
-            )
+                )
+            raise NotImplementedError(msg)
         #end if
         if prim.units!=self.units:
             prim.change_units(self.units)
@@ -4496,13 +4662,13 @@ class Structure(Sobj):
     #end def primitive
 
 
-    def become_primitive(self,source=None,add_kpath=False,**kwargs):
+    def become_primitive(self,source=None,*,add_kpath=False,**kwargs):
         prim = self.primitive(source=source,add_kpath=add_kpath,**kwargs)
         self.clone_from(prim)
     #end def become_primitive
             
 
-    def add_kpoints(self,kpoints,kweights=None,unique=False,recenter=True,cell_unit=False):
+    def add_kpoints(self,kpoints,kweights=None,*,unique=False,recenter=True,cell_unit=False):
         if kweights is None:
             kweights = np.ones((len(kpoints),))
         #end if
@@ -4545,11 +4711,12 @@ class Structure(Sobj):
     #end def kgrid_from_kspacing
 
 
-    def add_kmesh(self,kgrid=None,kshift=None,unique=False,kspacing=None):
+    def add_kmesh(self,kgrid=None,kshift=None,kspacing=None,*,unique=False):
         if kspacing is not None:
             kgrid = self.kgrid_from_kspacing(kspacing)
         elif kgrid is None:
-            self.error('kgrid input is required by add_kmesh')
+            msg = 'kgrid input is required by add_kmesh'
+            raise ValueError(msg)
         #end if
         self.add_kpoints(kmesh(self.kaxes,kgrid,kshift),unique=unique)
     #end def add_kmesh
@@ -4560,7 +4727,8 @@ class Structure(Sobj):
         if kspacing is not None:
             kgrid = self.kgrid_from_kspacing(kspacing)
         elif kgrid is None:
-            self.error('kgrid input is required by add_kmesh')
+            msg = 'kgrid input is required by add_kmesh'
+            raise ValueError(msg)
         #end if
 
         # get spglib cell data structure
@@ -4632,7 +4800,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def inversion_symmetrize_kpoints(self,tol=1e-10,folded=False):
+    def inversion_symmetrize_kpoints(self,tol=1e-10,*,folded=False):
         kp    = self.kpoints
         kaxes = self.kaxes
         ntable,dtable = self.neighbor_table(kp,-kp,kaxes,distances=True)
@@ -4753,7 +4921,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def unique_positions(self,tol=1e-10,folded=False):
+    def unique_positions(self,tol=1e-10,*,folded=False):
         pos,weights,pmap = self.unique_points(self.pos,self.axes)
         if len(pos)!=len(self.pos):
             self.pos = pos
@@ -4766,7 +4934,7 @@ class Structure(Sobj):
 
         
     # test needed
-    def unique_kpoints(self,tol=1e-10,folded=False):
+    def unique_kpoints(self,tol=1e-10,*,folded=False):
         kmap = obj()
         kp   = self.kpoints
         if len(kp)>0:
@@ -4844,24 +5012,26 @@ class Structure(Sobj):
                 n+=1
             #end for
             if index is None:
-                self.error(
+                msg = (
                     "cannot identify twist number\n"
                     "twist requested: {0}\n"
                     "twists present: {1}".format(
                         ku_sel, sorted([tuple(k) for k in self.kpoints_unit()])
+                        )
                     )
-                )
+                raise KeyError(msg)
             #end if
         else:
             invalid_selector = True
         #end if
         if invalid_selector:
-            self.error(
+            msg = (
                 "cannot identify twist number\n"
                 "invalid selector provided: {0}\n"
                 "valid string inputs for selector: smallest, random\n"
                 "selector can also be a length 3 tuple, list or array (a twist vector)".format(selector)
-            )
+                )
+            raise ValueError(msg)
         #end if
         return index
     #end def select_twist
@@ -4871,19 +5041,21 @@ class Structure(Sobj):
     def fold_pos(self,large,tol=0.001):
         vratio = large.volume()/self.volume()
         if np.abs(vratio-int(np.around(vratio)))>1e-6:
-            self.error(
+            msg = (
                 "cannot fold positions from large cell into current one\n"
                 "large cell volume is not an integer multiple of the current one\n"
                 "large cell volume: {0}\n"
                 "current cell volume: {1}\n"
                 "volume ratio: {2}".format(large.volume(),self.volume(),vratio)
-            )
+                )
+            raise ValueError(msg)
         T,success = large.tilematrix(self,status=True)
         if not success:
-            self.error(
+            msg = (
                 "cannot fold positions from large cell into current one\n"
                 "cells are related by non-integer tilematrix"
-            )
+                )
+            raise RuntimeError(msg)
         #end if
         nnearest = int(np.around(vratio))
         self.elem = large.elem.copy() 
@@ -4893,25 +5065,27 @@ class Structure(Sobj):
         nt = nt[:,:nnearest]
         dt = dt[:,:nnearest]
         if dt.ravel().max()>tol:
-            self.error(
+            msg = (
                 "cannot fold positions from large cell into current one\n"
                 "positions of equivalent atoms are further apart than the tolerance\n"
                 "max distance encountered: {0}\n"
                 "tolerance: {1}".format(dt.ravel().max(),tol)
-            )
+                )
+            raise RuntimeError(msg)
         #end if
         counts = np.zeros((len(self.pos),),dtype=int)
         for n in nt.ravel():
             counts[n] += 1
         #end for
         if (counts!=nnearest).any():
-            self.error(
+            msg = (
                 "cannot fold positions from large cell into current one\n"
                 "each atom must have {0} equivalent positions\n"
                 "some atoms found with the following equivalent position counts: {1}".format(
                     nnearest, counts[counts!=nnearest]
+                    )
                 )
-            )
+            raise RuntimeError(msg)
         #end if
         ind_visited = set()
         neigh_map = obj()
@@ -4928,10 +5102,11 @@ class Structure(Sobj):
             n+=1
         #end for
         if len(ind_visited)!=len(self.pos):
-            self.error(
+            msg = (
                 "cannot fold positions from large cell into current one\n"
                 "some equivalent atoms could not be identified"
-            )
+                )
+            raise RuntimeError(msg)
         #end if
         new_elem = []
         new_pos  = []
@@ -4939,10 +5114,11 @@ class Structure(Sobj):
             nset = neigh_map[n]
             elist = list(set(self.elem[nset]))
             if len(elist)!=1:
-                self.error(
+                msg = (
                     "cannot fold positions from large cell into current one\n"
                     "species of some equivalent atoms do not match"
-                )
+                    )
+                raise RuntimeError(msg)
             #end if
             new_elem.append(elist[0])
             new_pos.append(self.pos[nset].mean(0))
@@ -4989,9 +5165,10 @@ class Structure(Sobj):
 
 
     # test needed
-    def bonds(self,neighbors,vectors=False):
+    def bonds(self,neighbors,*,vectors=False):
         if self.dim!=3:
-            self.error('bonds is currently only implemented for 3 dimensions')
+            msg = 'bonds is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         natoms,dim = self.pos.shape
         centers = np.empty((natoms,neighbors,dim))
@@ -5028,9 +5205,10 @@ class Structure(Sobj):
 
         
     # test needed
-    def displacement(self,reference,map=False):
+    def displacement(self,reference,*,map=False):
         if self.dim!=3:
-            self.error('displacement is currently only implemented for 3 dimensions')
+            msg = 'displacement is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         ref = reference.tile((3,3,3))
         ref.recenter(reference.center)
@@ -5054,7 +5232,8 @@ class Structure(Sobj):
     # test needed
     def distortion(self,reference,neighbors):
         if self.dim!=3:
-            self.error('distortion is currently only implemented for 3 dimensions')
+            msg = 'distortion is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         if reference.volume()/self.volume() < 1.1:
             ref = reference.tile((3,3,3))
@@ -5183,7 +5362,8 @@ class Structure(Sobj):
     # test needed
     def shell(self,cell,neighbors,direction='in'):
         if self.dim!=3:
-            self.error('shell is currently only implemented for 3 dimensions')
+            msg = 'shell is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         dd = {'in':equate,'out':negate}
         dir = dd[direction]
@@ -5238,7 +5418,7 @@ class Structure(Sobj):
     #end def shell
 
 
-    def interpolate(self,other,images,min_image=True,recenter=True,match_com=False,chained=False):
+    def interpolate(self,other,images,*,min_image=True,recenter=True,match_com=False,chained=False):
         s1 = deepcopy(self)
         s2 = deepcopy(other)
         s1.remove_folded()
@@ -5247,13 +5427,14 @@ class Structure(Sobj):
             s2.change_units(s1.units)
         #end if
         if (s1.elem!=s2.elem).any():
-            self.error(
+            msg = (
                 "cannot interpolate structures, atoms do not match\n"
                 "  atoms1: {0}\n"
                 "  atoms2: {1}".format(
                     s1.elem, s2.elem
+                    )
                 )
-            )
+            raise ValueError(msg)
         #end if
         structures = []
         npath = images+2
@@ -5302,7 +5483,8 @@ class Structure(Sobj):
     #   see equation 7 in PRB 78 125106 (2008) 
     def madelung(self,axes=None,tol=1e-10):
         if self.dim!=3:
-            self.error('madelung is currently only implemented for 3 dimensions')
+            msg = 'madelung is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         if axes is None:
             a = self.axes.T.copy()
@@ -5355,7 +5537,8 @@ class Structure(Sobj):
 
     def makov_payne(self,q=1,eps=1.0,units='Ha',order=1):
         if order!=1:
-            self.error('Only first order Makov-Payne correction is currently supported.')
+            msg = 'Only first order Makov-Payne correction is currently supported.'
+            raise NotImplementedError(msg)
         #end if
         if 'Vmadelung' not in self:
             vm = self.madelung()
@@ -5370,7 +5553,7 @@ class Structure(Sobj):
     #end def makov_payne
 
 
-    def read(self,filepath,format=None,elem=None,block=None,grammar='1.1',cell='prim',contents=False):
+    def read(self,filepath,format=None,elem=None,block=None,grammar='1.1',cell='prim',*,contents=False):
         if os.path.exists(filepath):
             filepath = path_string(filepath)
             path,file = os.path.split(filepath)
@@ -5380,17 +5563,20 @@ class Structure(Sobj):
                 elif file.lower().endswith('poscar'):
                     format = 'poscar'
                 else:
-                    self.error(
+                    msg = (
                         "file format could not be determined\n"
                         "unrecognized file: {0}".format(filepath)
-                    )
+                        )
+                    raise ValueError(msg)
                 #end if
             #end if
         elif not contents:
-            self.error('file does not exist: {0}'.format(filepath))
+            msg = 'file does not exist: {0}'.format(filepath)
+            raise FileNotFoundError(msg)
         #end if
         if format is None:
-            self.error('file format must be provided')
+            msg = 'file format must be provided'
+            raise ValueError(msg)
         #end if
         self.mag    = None
         self.frozen = None
@@ -5406,10 +5592,11 @@ class Structure(Sobj):
         elif format=='fhi-aims':
             self.read_fhi_aims(filepath)
         else:
-            self.error(
+            msg = (
                 "cannot read structure from file\n"
                 "unsupported file format: {0}".format(format)
-            )
+                )
+            raise NotImplementedError(msg)
         #end if
         if self.has_axes():
             self.set_bconds('ppp')
@@ -5459,14 +5646,15 @@ class Structure(Sobj):
                 #end for
             #end if
             if natoms!=ntot:
-                self.error(
+                msg = (
                     "xyz file read failed\n"
                     "attempted to read file: {0}\n"
                     "number of atoms expected: {1}\n"
                     "number of atoms found: {2}".format(
                         filepath, ntot, natoms
+                        )
                     )
-                )
+                raise FileFormatError(msg)
             #end if
         #end if
         self.dim   = 3
@@ -5511,10 +5699,11 @@ class Structure(Sobj):
         nlines = len(lines)
         min_lines = 8
         if nlines<min_lines:
-            self.error(
+            msg = (
                 "POSCAR file must have at least {0} lines\n"
                 "  only {1} lines found".format(min_lines, nlines)
-            )
+                )
+            raise FileFormatError(msg)
         #end if
         dim = 3
         scale = float(lines[1].strip())
@@ -5530,17 +5719,19 @@ class Structure(Sobj):
         if tokens[0].isdigit():
             counts = np.array(tokens,dtype=int)
             if elem is None:
-                self.error(
+                msg = (
                     "variable elem must be provided to read_poscar() to assign atomic species to positions for POSCAR format"
-                )
+                    )
+                raise ValueError(msg)
             elif len(elem)!=len(counts):
-                self.error(
+                msg = (
                     "one elem must be given for each element count in the POSCAR file\n"
                     "  number of elem counts: {0}\n"
                     "  number of elem given: {1}".format(
                         len(counts), len(elem)
+                        )
                     )
-                )
+                raise ValueError(msg)
             #end if
             lcur = 6
         else:
@@ -5612,7 +5803,7 @@ class Structure(Sobj):
 
 
     def read_cif(self,filepath,block=None,grammar='1.1',cell='prim'):
-        axes,elem,pos,units = read_cif(filepath,block,grammar,cell,args_only=True)
+        axes,elem,pos,units = read_cif(filepath,block=block,grammar=grammar,cell=cell,args_only=True)
         self.dim = 3
         self.set_axes(axes)
         self.set_elem(elem)
@@ -5654,9 +5845,10 @@ class Structure(Sobj):
                     None
                 else:
                     #None
-                    self.error(
+                    msg = (
                         "unrecogonized or not yet supported token in fhi-aims geometry file: {0}".format(t0)
-                    )
+                        )
+                    raise NotImplementedError(msg)
                 #end if
             #end if
         #end for
@@ -5681,17 +5873,19 @@ class Structure(Sobj):
 
     def write(self,filepath=None,format=None):
         if filepath is None and format is None:
-            self.error('please specify either the filepath or format arguments to write()')
+            msg = 'please specify either the filepath or format arguments to write()'
+            raise ValueError(msg)
         elif format is None:
             if isinstance(filepath, Path):
                 format = filepath.suffix.lstrip(".")
             elif '.' in filepath:
                 format = filepath.split('.')[-1]
             else:
-                self.error(
+                msg = (
                     "file format could not be determined\n"
                     "either request the format directly with the format keyword or add a file format extension to the file name"
-                )
+                    )
+                raise ValueError(msg)
             #end if
         #end if
         format = format.lower()
@@ -5704,13 +5898,14 @@ class Structure(Sobj):
         elif format=='fhi-aims':
             c = self.write_fhi_aims(filepath)
         else:
-            self.error('file format {0} is unrecognized'.format(format))
+            msg = 'file format {0} is unrecognized'.format(format)
+            raise NotImplementedError(msg)
         #end if
         return c
     #end def write
 
 
-    def pos_to_str(self, units: str = "A", with_elem: bool = False):
+    def pos_to_str(self, units: str = "A", *, with_elem: bool = False):
         """Write the positions of a structure to a string, optionally with atomic symbols.
 
         Parameters
@@ -5768,7 +5963,8 @@ class Structure(Sobj):
         To get a string of only the atomic positions, use ``pos_to_str()`` instead.
         """
         if self.dim!=3:
-            self.error('write_xyz is currently only implemented for 3 dimensions')
+            msg = 'write_xyz is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         s = deepcopy(self)
         s.change_units("A")
@@ -5792,7 +5988,8 @@ class Structure(Sobj):
 
     def write_xsf(self,filepath=None):
         if self.dim!=3:
-            self.error('write_xsf is currently only implemented for 3 dimensions')
+            msg = 'write_xsf is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         s = deepcopy(self)
         s.change_units('A')
@@ -5807,10 +6004,11 @@ class Structure(Sobj):
             e = s.elem[i]
             identified, element = Elements.is_element(e, return_element=True)
             if not identified:
-                self.error(
+                msg = (
                     "{0} is not an element\n"
                     "xsf file cannot be written".format(e)
-                )
+                    )
+                raise NotAnElementError(msg)
             #end if
             enum = element.atomic_number
             r = s.pos[i]
@@ -5867,7 +6065,8 @@ class Structure(Sobj):
 
     def plot2d_ax(self,ix=0,iy=1,*args,**kwargs):
         if self.dim!=3:
-            self.error('plot2d_ax is currently only implemented for 3 dimensions')
+            msg = 'plot2d_ax is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         iz = list(set([0,1,2])-set([ix,iy]))[0]
         ax = self.axes.copy()
@@ -5884,7 +6083,8 @@ class Structure(Sobj):
 
     def plot2d_pos(self,ix=0,iy=1,*args,**kwargs):
         if self.dim!=3:
-            self.error('plot2d_pos is currently only implemented for 3 dimensions')
+            msg = 'plot2d_pos is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         iz = list(set([0,1,2])-set([ix,iy]))[0]
         pp = self.pos.copy()
@@ -5898,7 +6098,8 @@ class Structure(Sobj):
 
     def plot2d_points(self,points,ix=0,iy=1,*args,**kwargs):
         if self.dim!=3:
-            self.error('plot2d_points is currently only implemented for 3 dimensions')
+            msg = 'plot2d_points is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         iz = list(set([0,1,2])-set([ix,iy]))[0]
         pp = np.array(points,dtype=float)
@@ -5912,7 +6113,8 @@ class Structure(Sobj):
 
     def plot2d(self,pos_style='b.',ax_style='k-'):
         if self.dim!=3:
-            self.error('plot2d is currently only implemented for 3 dimensions')
+            msg = 'plot2d is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         subplot(1,3,1)
         self.plot2d_ax(0,1,ax_style,lw=2)
@@ -5931,7 +6133,8 @@ class Structure(Sobj):
 
     def plot2d_kax(self,ix,iy,*args,**kwargs):
         if self.dim!=3:
-            self.error('plot2d_ax is currently only implemented for 3 dimensions')
+            msg = 'plot2d_ax is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         iz = list(set([0,1,2])-set([ix,iy]))[0]
         ax = self.kaxes.copy()
@@ -5948,7 +6151,8 @@ class Structure(Sobj):
 
     def plot2d_kp(self,ix,iy,*args,**kwargs):
         if self.dim!=3:
-            self.error('plot2d_kp is currently only implemented for 3 dimensions')
+            msg = 'plot2d_kp is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         iz = list(set([0,1,2])-set([ix,iy]))[0]
         pp = self.kpoints.copy()
@@ -5962,7 +6166,8 @@ class Structure(Sobj):
 
     def show(self,viewer='vmd',filepath='/tmp/tmp.xyz'):
         if self.dim!=3:
-            self.error('show is currently only implemented for 3 dimensions')
+            msg = 'show is currently only implemented for 3 dimensions'
+            raise NotImplementedError(msg)
         #end if
         self.write_xyz(filepath)
         os.system(viewer+' '+filepath)
@@ -5987,7 +6192,8 @@ class Structure(Sobj):
         for e in self.elem:
             iselem, element = Elements.is_element(e, return_element=True)
             if not iselem:
-                self.error('Atomic symbol, {}, not recognized'.format(element))
+                msg = 'Atomic symbol, {}, not recognized'.format(element)
+                raise NotAnElementError(msg)
             else:
                 an.append(element.atomic_number)
             #end if
@@ -5996,7 +6202,8 @@ class Structure(Sobj):
     #end def get_atomic_numbers
 
     def get_magnetic_moments(self):
-        self.error('structure objects do not currently support magnetic moments')
+        msg = 'structure objects do not currently support magnetic moments'
+        raise NotImplementedError(msg)
     #end def get_magnetic_moments
 
 
@@ -6056,10 +6263,12 @@ class Structure(Sobj):
         sg   = symm_data.number
         name = symm_data.international
         if not isinstance(sg,int) or sg<1 or sg>230:
-            self.error('Invalid space group from spglib: {}'.format(sg))
+            msg = 'Invalid space group from spglib: {}'.format(sg)
+            raise ValueError(msg)
         #end if
         if not isinstance(name,str):
-            self.error('Invalid space group name from spglib: {}'.format(name))
+            msg = 'Invalid space group name from spglib: {}'.format(name)
+            raise RuntimeError(msg)
         #end if
         bv = None
         if sg>=1 and sg<=2:
@@ -6078,24 +6287,26 @@ class Structure(Sobj):
             bv = 'cubic_'+name[0]
         #end if
         if bv is None:
-            self.error(
+            msg = (
                 "Bravais lattice could not be determined.\n"
                 "Space group number and name: {} {}".format(sg, name)
-            )
+                )
+            raise RuntimeError(msg)
         #end if
         return bv
     #end def bravais_lattice_name
 
 
     # test needed
-    def space_group_operations(self,tol=1e-5,unit=False):
+    def space_group_operations(self,tol=1e-5,*,unit=False):
         ds = self.get_symmetry(symprec=tol)
         if ds is None:
-            self.error(
+            msg = (
                 "Symmetry search failed.\n"
                 "spglib error message:\n"
                 "{}".format(spglib.get_error_message())
-            )
+                )
+            raise RuntimeError(msg)
         #end if
         ds = obj(ds)
         rotations    = ds.rotations
@@ -6115,14 +6326,16 @@ class Structure(Sobj):
     #end def space_group_operations
 
 
-    def point_group_operations(self,tol=1e-5,unit=False):
+    def point_group_operations(self,tol=1e-5,*,unit=False):
         rotations,translations = self.space_group_operations(tol=tol,unit=unit)
         no_trans = translations.max(axis=1) < tol
         return rotations[no_trans]
     #end def point_group_operations
 
 
-    def check_point_group_operations(self,rotations=None,tol=1e-5,unit=False,dtol=1e-5,ncheck=1,exit=False):
+    def check_point_group_operations(self,rotations=None,tol=1e-5,dtol=1e-5,ncheck=1,*,unit=False,exit=False):
+        msg = "Checking point group operations is not implemented, it requires implementing a 'point' parameter!"
+        raise NotImplementedError(msg)
         if rotations is None:
             rotations = self.point_group_operations(tol=tol,unit=unit)
         #ned if
@@ -6137,8 +6350,8 @@ class Structure(Sobj):
                 rp = np.dot(r-rc,R)+rc
                 dt = self.min_image_distances(r,rp)
                 same = True
-                for d in dt:
-                    same &= dt.min()<dtol
+                for d in dt:  # BUG: unused loop control
+                    same &= dt.min()<dtol  # BUG: dt.min() is zero for any rotation
                 #end for
                 all_same &= same
             #end for
@@ -6164,11 +6377,12 @@ class Structure(Sobj):
         #end for
         for sn,sset in species_by_specnum.items():
             if len(sset)>1:
-                self.error(
+                msg = (
                     "Cannot find equivalent atoms.\n"
                     "Multiple atomic species were marked as being equivalent.\n"
                     "Species marked in this way: {}".format(list(sset))
-                )
+                    )
+                raise RuntimeError(msg)
             #end if
             species_by_specnum[sn] = list(sset)[0]
         #end for
@@ -6223,7 +6437,7 @@ class Structure(Sobj):
         cubic_F        = 'Cubic Face Centered',
         )
 
-    def rmg_lattice(self,allow_tile=False,all_results=False,ret_bravais=False,exit=False,warn=False):
+    def rmg_lattice(self,*,allow_tile=False,all_results=False,ret_bravais=False,exit=False,warn=False):
         # output variables
         rmg_lattice = None
         tmatrix     = None
@@ -6272,10 +6486,10 @@ class Structure(Sobj):
                 "Cell bravais lattice: {}\n"
                 "Lattices supported by RMG: {}".format(
                     bv, list(sorted(rmg_lattices.keys()))
+                    )
                 )
-            )
             if exit:
-                self.error(msg)
+                raise ValueError(msg)
             elif warn:
                 self.warn(msg)
             #end if
@@ -6293,7 +6507,7 @@ class Structure(Sobj):
     #end def rmg_lattice
 
 
-    def rmg_transform(self,allow_tile=False,allow_general=False,all_results=False):
+    def rmg_transform(self,*,allow_tile=False,allow_general=False,all_results=False):
         rmg_lattice,tmatrix,s,sp,bv = self.rmg_lattice(
             allow_tile  = allow_tile,
             exit        = not allow_general,
@@ -6316,7 +6530,8 @@ class Structure(Sobj):
             elif s_trans.units=='B':
                 rmg_units = 'Bohr'
             else:
-                self.error('Unrecognized length units in structure "{}"'.format(s_trans.units))
+                msg = 'Unrecognized length units in structure "{}"'.format(s_trans.units)
+                raise ValueError(msg)
             #end if
             bl_type = self.rmg_lattices[rmg_lattice]
             axes = s_trans.axes
@@ -6345,7 +6560,8 @@ class Structure(Sobj):
                 b = a
                 c = norm(axes[2])
             else:
-                self.error('Unrecognized RMG bravais_lattice_type "{}"'.format(bl_type))
+                msg = 'Unrecognized RMG bravais_lattice_type "{}"'.format(bl_type)
+                raise ValueError(msg)
             #end if
             rmg_inputs = obj(
                 bravais_lattice_type = bl_type,
@@ -6398,18 +6614,19 @@ except:
 
 def _getseekpath(
     structure          = None, 
-    with_time_reversal = False, 
     recipe             = 'hpkot', 
     reference_distance = 0.025, 
     threshold          = 1E-7, 
     symprec            = 1E-5, 
     angle_tolerance    = 1.0,
+    *,
+    with_time_reversal = False,
     ):
     if not isinstance(structure, Structure):
         raise TypeError(
             "structure is not of type Structure\n"
             "type received: {0}".format(structure.__class__.__name__)
-        )
+            )
     #end if
     if structure.has_folded():
         structure = structure.folded_structure
@@ -6476,6 +6693,7 @@ def get_primitive_cell(
 #end def get_primitive_cell
 
 def get_kpath(
+    *,
     structure          = None, 
     check_standard     = True, 
     with_time_reversal = False, 
@@ -6497,9 +6715,10 @@ def get_kpath(
         primlat = seekpathout['primitive_lattice']
         if not np.isclose(primlat, axes).all():
             #print primlat, axes
-            error(
+            msg = (
                 'Input lattice is not the conventional lattice. If you like otherwise, set check_standard=False.'
                 )
+            raise RuntimeError(msg)
         #end if
     #end if
     inverse_A_to_inverse_B = convert(1.0,'A','B')
@@ -6530,6 +6749,7 @@ def get_symmetry(
 #end def get_symmetry
 
 def get_structure_with_bands(
+    *,
     cell               = 0, 
     structure          = None, 
     with_time_reversal = False,
@@ -6548,7 +6768,8 @@ def get_structure_with_bands(
         ''' Use primitive structure '''
         struct_band = get_primitive_cell(structure=structure, symprec=symprec, angle_tolerance=angle_tolerance)['structure']
     else:
-        error('Invalid cell type')
+        msg = 'Invalid cell type'
+        raise ValueError(msg)
     #end if
     kpath = get_kpath(structure=struct_band, check_standard=False, with_time_reversal=with_time_reversal)
     return Structure(axes              = struct_band.axes,
@@ -6561,6 +6782,7 @@ def get_structure_with_bands(
 
 # test needed
 def get_band_tiling(
+    *,
     structure      = None, 
     check_standard = True, 
     use_ktol       = True, 
@@ -6606,7 +6828,8 @@ def get_band_tiling(
                 #end for
             #end for
         else:
-            self.error('Volume multiplier must be integer')
+            msg = 'Volume multiplier must be integer'
+            raise ValueError(msg)
         #end if
         
         return edges
@@ -6633,22 +6856,25 @@ def get_band_tiling(
         if kpoints_label is None:
             kpoints_label = []
             if kpoints_rel is None:
-                error(
+                msg = (
                     "Please define symbolic or crystal coordinates for kpoints. e.g. ['GAMMA', 'K']  or [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]"
-                )
+                    )
+                raise ValueError(msg)
             else:
                 for k in kpoints_rel:
                     kindex = np.isclose(kpath_rel,k, atol=1e-5).all(1)
                     if any(kindex):
                         kpts[kpath_label[kindex][0]] = np.array(k)
                     else:
-                        error('{0} is not found in the kpath'.format(k))
+                        msg = '{0} is not found in the kpath'.format(k)
+                        raise RuntimeError(msg)
                     #end if
                 #end for
             #end if
         else:
             if kpoints_rel is not None:
-                error('Both symbolic and crystal k-points are defined.')
+                msg = 'Both symbolic and crystal k-points are defined.'
+                raise ValueError(msg)
             else:
                 kpoints_rel = []
                 num_kpoints = 0
@@ -6660,7 +6886,8 @@ def get_band_tiling(
                         #end if
                         kpts[k] = np.array(kpath_rel[kindex][0])
                     else:
-                        error('{0} is not found in the kpath'.format(k))
+                        msg = '{0} is not found in the kpath'.format(k)
+                        raise RuntimeError(msg)
                     #end if
                 #end for
             #end if
@@ -6686,8 +6913,8 @@ def get_band_tiling(
                 min_volfac = target_volfac
                 max_volfac = target_volfac
             else:
-                print("target_volfac and {min_volfac, max_volfac} cannot be defined together!")
-                exit()
+                msg = "target_volfac and {min_volfac, max_volfac} cannot be defined together!"
+                raise ValueError(msg)
             #end if
         #end if
         
@@ -6724,8 +6951,8 @@ def get_band_tiling(
             #end for
         #end for
         if vars == []:
-            print('Change ktol')
-            exit()
+            msg = 'Change ktol'
+            raise ValueError(msg)
         else:
             can_be_found = False
             vol_mul = 1
@@ -6733,8 +6960,8 @@ def get_band_tiling(
                 if volfac*vol_mul <= max_volfac and volfac*vol_mul >= min_volfac:
                     can_be_found = True
                 elif volfac*vol_mul > max_volfac:
-                    print('Increase max_volfac or target_volfac!')
-                    exit()
+                    msg = 'Increase max_volfac or target_volfac!'
+                    raise ValueError(msg)
                 else:
                     vol_mul+=1
                 #end if
@@ -6809,7 +7036,7 @@ def get_band_tiling(
     mat_vars, mat_vol_mul   = find_vars(alphas,min_volfac,max_volfac,target_volfac,use_ktol)   # Variables to construct upper triangular matrices
     mats                    = find_mats(mat_vars,alphas)                                       # List of upper triangular matrices that are commensurate with alphas
     final_mat               = find_cubic_mat(mats, structure, mat_vol_mul)                     # Matrix leading to a lattice with highest cubicity, optimized using elementary operations
-    shift                   = find_shift(final_mat, structure, kpts0)                          # Find the grid shift
+    shift                   = find_shift(final_mat, structure, kpt0)                           # Find the grid shift
     o = obj()
     o.mat   = final_mat
     o.shift = shift
@@ -6818,6 +7045,7 @@ def get_band_tiling(
 #end def get_band_tiling
 
 def get_seekpath_full(
+        *,
         structure      = None,
         seekpathout    = None,
         conventional   = False,
@@ -6861,9 +7089,10 @@ skp = obj(
 
 
 
-def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recenter=True,match_com=False,repackage=False,chained=False):
+def interpolate_structures(struct1,struct2=None,*,images=None,min_image=True,recenter=True,match_com=False,repackage=False,chained=False):
     if images is None:
-        error('images must be provided','interpolate_structures')
+        msg = 'images must be provided'
+        raise ValueError(msg)
     #end if
 
     # if a list of structures is provided,
@@ -6874,7 +7103,16 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
         for n in range(len(structures_in)-1):
             struct1 = structures_in[n]
             struct2 = structures_in[n+1]
-            structs = interpolate_structures(struct1,struct2,images,min_image,recenter,match_com,repackage,chained=True)
+            structs = interpolate_structures(
+                struct1   = struct1,
+                struct2   = struct2,
+                images    = images,
+                min_image = min_image,
+                recenter  = recenter,
+                match_com = match_com,
+                repackage = repackage,
+                chained   = True
+                )
             if n==0:
                 structures.append(structs[0])
             #end if
@@ -6901,7 +7139,13 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
     #end if
 
     # perform the interpolation
-    structures = struct1.interpolate(struct2,images,min_image,recenter,match_com)
+    structures = struct1.interpolate(
+        struct2   = struct2,
+        images    = images,
+        min_image = min_image,
+        recenter  = recenter,
+        match_com = match_com,
+        )
 
     # repackage into physical system objects if requested
     if repackage:
@@ -6910,7 +7154,8 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
         elif system2 is not None:
             system = system2
         else:
-            error('cannot repackage into physical systems since no system object was provided in place of a structure','interpolate_structures')
+            msg = 'cannot repackage into physical systems since no system object was provided in place of a structure'
+            raise ValueError(msg)
         #end if
         systems = []
         for s in structures:
@@ -6931,7 +7176,8 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
 def structure_animation(filepath,structures,tiling=None):
     path,file = os.path.split(filepath)
     if not file.endswith('xyz'):
-        error('only xyz files are supported for now','structure_animation')
+        msg = 'only xyz files are supported for now'
+        raise NotImplementedError(msg)
     #end if
     anim = ''
     for s in structures:
@@ -6941,7 +7187,9 @@ def structure_animation(filepath,structures,tiling=None):
             anim += s.tile(tiling).write_xyz()
         #end if
     #end for
-    open(filepath,'w').write(anim)
+    with open(filepath, 'w') as f:
+        f.write(anim)
+
 #end def structure_animation
 
 
@@ -7069,7 +7317,7 @@ class Crystal(Structure):
         )
     """Mapping from a lattice type to the required values to create the cell."""
 
-    lattices = list(lattice_constants.keys())
+    lattices = tuple(lattice_constants.keys())
     """List of lattice systems."""
 
     centering_types = obj(
@@ -7102,7 +7350,7 @@ class Crystal(Structure):
         R = [[2./3, 1./3, 1./3],[1./3, 2./3, 2./3]]
         )
 
-    cell_types = set(['primitive','conventional'])
+    cell_types = frozenset({'primitive','conventional'})
     """Types of cells, currently only ``primitive`` and ``conventional``."""
 
     cell_aliases = obj(
@@ -7131,7 +7379,7 @@ class Crystal(Structure):
     #  springermaterials.com
 
 
-    known_crystals = {
+    known_crystals = {  # noqa: RUF012
         ('diamond','fcc'):obj(
             lattice   = 'cubic',
             cell      = 'primitive',
@@ -7396,8 +7644,7 @@ class Crystal(Structure):
         }
     """Mapping from material names and their cell types to their crystal information."""
 
-    kc_keys = list(known_crystals.keys())
-    for (name,cell) in kc_keys:
+    for (name,cell) in tuple(known_crystals.keys()):
         desc = known_crystals[name,cell]
         if cell=='prim' and (name,'conv') not in known_crystals:
             cdesc = deepcopy(desc)
@@ -7410,10 +7657,10 @@ class Crystal(Structure):
             #end if
         #end if
     #end if
-    del kc_keys
-
+    known_crystals = MappingProxyType(known_crystals)
 
     def __init__(self,
+                 *,
                  lattice        = None,
                  cell           = None,
                  centering      = None,
@@ -7504,10 +7751,11 @@ class Crystal(Structure):
             elif cell in self.cell_classes:
                 lattice = self.cell_classes[cell]
             else:
-                self.error(
+                msg = (
                     "cell shape "+cell+" is not recognized\n"
                     "  the variable cell_classes or cell_aliases must be updated to include "+cell
-                )
+                    )
+                raise ValueError(msg)
             #end if
             if 'lattice' in lattice_info:
                 lattice = lattice_info.lattice
@@ -7535,39 +7783,45 @@ class Crystal(Structure):
         #end if
 
         if constants is None:
-            self.error('the variable constants must be provided')
+            msg = 'the variable constants must be provided'
+            raise ValueError(msg)
         #end if
         if atoms is None:
-            self.error('the variable atoms must be provided')
+            msg = 'the variable atoms must be provided'
+            raise ValueError(msg)
         #end if
 
         if lattice not in self.lattices:
-            self.error(
+            msg = (
                 "lattice type "+str(lattice)+" is not recognized\n"
                 "  valid lattice types are: "+str(list(self.lattices))
-            )
+                )
+            raise ValueError(msg)
         #end if
         if cell=='conventional':
             if centering is None:
-                self.error(
+                msg = (
                     "centering must be provided for a conventional cell\n"
                     "  options for a "+lattice+" lattice are: "+str(self.lattice_centerings[lattice])
-                )
+                    )
+                raise ValueError(msg)
             elif centering not in self.centerings:
-                self.error(
+                msg = (
                     "centering type "+str(centering)+" is not recognized\n"
                     "  options for a "+lattice+" lattice are: "+str(self.lattice_centerings[lattice])
-                )
+                    )
+                raise ValueError(msg)
             #end if
         #end if
         if isinstance(constants,int) or isinstance(constants,float):
             constants=[constants]
         #end if
         if len(constants)!=len(self.lattice_constants[lattice]):
-            self.error(
+            msg = (
                 "the "+lattice+" lattice depends on the constants "+str(self.lattice_constants[lattice])+"\n"
                 " you provided "+str(len(constants))+": "+str(constants)
-            )
+                )
+            raise ValueError(msg)
         #end if
         if isinstance(atoms,str):
             if basis is not None:
@@ -7580,18 +7834,20 @@ class Crystal(Structure):
             if len(atoms)==1:
                 basis = [(0,0,0)]
             else:
-                self.error(
+                msg = (
                     "must provide as many basis coordinates as basis atoms\n"
                     "  atoms provided: "+str(atoms)+"\n"
                     "  basis provided: "+str(basis)
-                )
+                    )
+                raise ValueError(msg)
             #end if
         #end if
         if basis_vectors is not None and not isinstance(basis_vectors,str) and len(basis_vectors)!=3:
-            self.error(
+            msg = (
                 "3 basis vectors must be given, you provided "+str(len(basis))+":\n"
                 "  "+str(basis_vectors)
-            )
+                )
+            raise ValueError(msg)
         #end if
 
         if tiling is None:
@@ -7601,7 +7857,8 @@ class Crystal(Structure):
             cscale = len(constants)*[1]
         #end if
         if len(cscale)!=len(constants):
-            self.error('cscale and constants must be the same length')
+            msg = 'cscale and constants must be the same length'
+            raise ValueError(msg)
         #end if
         basis  = np.array(basis)
         tiling = np.array(tiling,dtype=int)
@@ -7616,10 +7873,11 @@ class Crystal(Structure):
             pi_1o2 = 90.
             pi_2o3 = 120.
         else:
-            self.error(
+            msg = (
                 "angular units must be radians or degrees\n"
                 "  you provided "+str(angular_units)
-            )
+                )
+            raise ValueError(msg)
         #end if
         if lattice=='triclinic':
             a,b,c,alpha,beta,gamma = constants
@@ -7669,10 +7927,11 @@ class Crystal(Structure):
 
         if axes is None:
             if cell not in self.cell_types:
-                self.error(
+                msg = (
                     "cell must be primitive or conventional\n"
                     "  You provided: "+str(cell)
-                )
+                    )
+                raise ValueError(msg)
             #end if
             if cell=='primitive' and centering=='P':
                 cell='conventional'
@@ -7707,10 +7966,11 @@ class Crystal(Structure):
                 a2=[ a/2,   a*sqrt(3.)/2,   0]
                 a3=[-a/6, a/(2*sqrt(3.)), c/3]
             else:
-                self.error(
+                msg = (
                     "the variable centering must be specified\n"
                     "  valid options are: P,A,B,C,I,F,R"
-                )
+                    )
+                raise ValueError(msg)
             #end if
             axes_prim = np.array([a1,a2,a3])
             if cell=='primitive':
@@ -7788,10 +8048,11 @@ class Jellium(Structure):
         del tiling
         if rs is not None:
             if dim not in self.prefactors:
-                self.error(
+                msg = (
                     "only 1,2, or 3 dimensional jellium is currently supported\n"
                     "  you requested one with dimension {0}".format(dim)
-                )
+                    )
+                raise ValueError(msg)
             #end if
             density = 1.0/(self.prefactors[dim]*rs**dim)
         #end if
@@ -7819,7 +8080,7 @@ class Jellium(Structure):
             #end if
         #end if
         if charge is None or cell is None:
-            self.error(
+            msg = (
                 "not enough information to form jellium structure\n"
                 "  information provided:\n"
                 "  charge: {0}\n"
@@ -7828,7 +8089,8 @@ class Jellium(Structure):
                 "  density: {3}\n"
                 "  rs: {4}\n"
                 "  dim: {5}".format(charge, cell, volume, density, rs, dim)
-            )
+                )
+            raise ValueError(msg)
         #end if
         Structure.__init__(self,background_charge=charge,axes=cell,dim=dim,kpoints=kpoints,kweights=kweights,kgrid=kgrid,kshift=kshift,units=units)
     #end def __init__
@@ -7885,16 +8147,18 @@ def generate_structure(type='crystal',*args,**kwargs):
     elif type=='basic':
         s = Structure(*args,**kwargs)
     else:
-        error(
+        msg = (
             str(type)+" is not a valid structure type\n"
             "options are crystal, defect, atom, dimer, trimer, jellium, empty, or basic"
-        )
+            )
+        raise ValueError(msg)
     #end if
     return s
 #end def generate_structure
 
 
 def generate_atom_structure(
+    *,
     atom        = None,
     units       = 'A',
     Lbox        = None,
@@ -7928,7 +8192,8 @@ def generate_atom_structure(
         Boundary conditions for the resulting structure.
     """
     if atom is None:
-        error('atom must be provided','generate_atom_structure')
+        msg = 'atom must be provided'
+        raise ValueError(msg)
     #end if
     if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
@@ -7945,6 +8210,7 @@ def generate_atom_structure(
 
 
 def generate_dimer_structure(
+    *,
     dimer       = None,
     units       = 'A',
     separation  = None,
@@ -7984,10 +8250,12 @@ def generate_dimer_structure(
         The axis that the dimer is aligned on.
     """
     if dimer is None:
-        error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
+        msg = 'dimer atoms must be provided to construct dimer'
+        raise ValueError(msg)
     #end if
     if separation is None:
-        error('separation must be provided to construct dimer','generate_dimer_structure')
+        msg = 'separation must be provided to construct dimer'
+        raise ValueError(msg)
     #end if
     if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
@@ -7999,11 +8267,11 @@ def generate_dimer_structure(
     elif axis=='z':
         p2 = [0,0,separation]
     else:
-        error(
+        msg = (
             "dimer orientation axis must be x,y,z\n"
-            "  you provided: {0}".format(axis),
-            "generate_dimer_structure"
-        )
+            "  you provided: {0}".format(axis)
+            )
+        raise ValueError(msg)
     #end if
     if axes is None:
         s = Structure(elem=dimer,pos=[[0,0,0],p2],units=units,bconds=bconds)
@@ -8016,6 +8284,7 @@ def generate_dimer_structure(
 
 
 def generate_trimer_structure(
+    *,
     trimer        = None,
     units         = 'A',
     separation    = None,
@@ -8064,36 +8333,39 @@ def generate_trimer_structure(
         The units of the supplied angle.
     """
     if trimer is None:
-        error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
+        msg = 'trimer atoms must be provided to construct trimer'
+        raise ValueError(msg)
     #end if
     if separation is None:
-        error('separation must be provided to construct trimer','generate_trimer_structure')
+        msg = 'separation must be provided to construct trimer'
+        raise ValueError(msg)
     #end if
     if len(separation)!=2:
-        error(
+        msg = (
             "two separation distances (atom1-atom2,atom1-atom3) must be provided to construct trimer\n"
-            "you provided {0} separation distances".format(len(separation)),
-            'generate_trimer_structure'
-        )
+            "you provided {0} separation distances".format(len(separation))
+            )
+        raise ValueError(msg)
     #end if
     if angle is None:
-        error('angle must be provided to construct trimer','generate_trimer_structure')
+        msg = 'angle must be provided to construct trimer'
+        raise ValueError(msg)
     #end if
     if angular_units=='degrees':
         angle *= pi/180
     elif not angular_units.startswith('rad'):
-        error(
+        msg = (
             "angular units must be degrees or radians\n"
-            "you provided: {0}".format(angular_units),
-            'generate_trimer_structure'
-        )
+            "you provided: {0}".format(angular_units)
+            )
+        raise ValueError(msg)
     #end if
     if axis==axis2:
-        error(
+        msg = (
             "axis and axis2 must be different to define the trimer plane\n"
-            "you provided {0} for both".format(axis),
-            'generate_trimer_structure'
-        )
+            "you provided {0} for both".format(axis)
+            )
+        raise ValueError(msg)
     #end if
     if Lbox is not None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
@@ -8106,11 +8378,11 @@ def generate_trimer_structure(
     elif axis=='z':
         p2 = [0,0,separation[0]]
     else:
-        error(
+        msg = (
             "trimer bond1 (atom2-atom1) orientation axis must be x,y,z\n"
-            "  you provided: {0}".format(axis),
-            'generate_trimer_structure'
-        )
+            "  you provided: {0}".format(axis)
+            )
+        raise ValueError(msg)
     #end if
     r = separation[1]
     c = cos(angle)
@@ -8129,11 +8401,11 @@ def generate_trimer_structure(
     elif axpair=='xz':
         p3 = [r*c,0,r*s]
     else:
-        error(
+        msg = (
             "trimer bond2 (atom3-atom1) orientation axis must be x,y,z\n"
-            "  you provided: {0}".format(axis2),
-            'generate_trimer_structure'
-        )
+            "  you provided: {0}".format(axis2)
+            )
+        raise ValueError(msg)
     #end if
     if axes is None:
         s = Structure(elem=trimer,pos=[p1,p2,p3],units=units)
@@ -8157,6 +8429,7 @@ def generate_jellium_structure(*args,**kwargs):
 
 
 def generate_crystal_structure(
+    *,
     lattice        = None,
     cell           = None,
     centering      = None,
@@ -8335,18 +8608,20 @@ defects = obj(
     )
 
 
-def generate_defect_structure(defect,structure,shape=None,element=None,
+def generate_defect_structure(*,defect,structure,shape=None,element=None,
                               tiling=None,scale=1.,kgrid=None,kshift=(0,0,0),
                               units=None,struct_type=DefectStructure):
     if structure in defects:
         dstruct = defects[structure]
     else:
-        error('defects for '+structure+' structure have not yet been implemented')
+        msg = 'defects for '+structure+' structure have not yet been implemented'
+        raise NotImplementedError(msg)
     #end if
     if defect in dstruct:
         drep = dstruct[defect]
     else:
-        error(defect+' defect not found for '+structure+' structure')
+        msg = defect+' defect not found for '+structure+' structure'
+        raise RuntimeError(msg)
     #end if
 
     ds = generate_crystal_structure(
@@ -8369,7 +8644,7 @@ def generate_defect_structure(defect,structure,shape=None,element=None,
 #end def generate_defect_structure
 
 
-def read_structure(filepath,elem=None,format=None):
+def read_structure(filepath,*,elem=None,format=None):
     s = generate_structure('empty')
     s.read(filepath,elem=elem,format=format)
     return s

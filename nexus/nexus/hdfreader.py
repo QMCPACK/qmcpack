@@ -72,13 +72,13 @@ class HDFgroup(DevBase):
         s=''
         if len(self._datasets)>0:
             s+='  datasets:\n'
-            for k,v in self._datasets.items():
+            for k in self._datasets.keys():
                 s+= '    '+k+'\n'
             #end for
         #end if
         if len(self._groups)>0:
             s+= '  groups:\n'
-            for k,v in self._groups.items():
+            for k in self._groups.keys():
                 s+= '    '+k+'\n'
             #end for
         #end if
@@ -106,12 +106,12 @@ class HDFgroup(DevBase):
     #end def __init__
 
 
-    def _remove_hidden(self,deep=True):
+    def _remove_hidden(self,*,deep=True):
         if '_parent' in self:
             del self._parent
         #end if
         if deep:
-            for name,value in self.items():
+            for value in self.values():
                 if isinstance(value,HDFgroup):
                     value._remove_hidden()
                 #end if
@@ -175,7 +175,8 @@ class HDFgroup(DevBase):
                 svalue = self[name]
                 ovalue = other[name]
                 if not isinstance(svalue,np.ndarray) or not isinstance(ovalue,np.ndarray):
-                    self.error(name+' is not an array')
+                    msg = name+' is not an array'
+                    raise TypeError(msg)
                 #end if
                 shape  = np.minimum(svalue.shape,ovalue.shape)
                 self[name] = np.resize(svalue,shape)
@@ -187,7 +188,8 @@ class HDFgroup(DevBase):
                 if name in other and isinstance(other[name],HDFgroup):
                     value.minsize(other[name])
                 else:
-                    self.error(name+' not found in minsize partner')
+                    msg = name+' not found in minsize partner'
+                    raise KeyError(msg)
                 #end if
             #end if
         #end for
@@ -204,11 +206,13 @@ class HDFgroup(DevBase):
                 svalue = self[name]
                 ovalue = other[name]
                 if not isinstance(svalue,np.ndarray) or not isinstance(ovalue,np.ndarray):
-                    self.error(name+' is not an array')
+                    msg = name+' is not an array'
+                    raise TypeError(msg)
                 #end if
                 shape  = np.minimum(svalue.shape,ovalue.shape)
                 if np.abs(shape-np.array(svalue.shape)).sum() > 0:
-                    self.error(name+' in partner is too large')
+                    msg = name+' in partner is too large'
+                    raise ValueError(msg)
                 #end if
                 ranges = []
                 for s in shape:
@@ -224,7 +228,8 @@ class HDFgroup(DevBase):
                 if name in other and isinstance(other[name],HDFgroup):
                     value.accumulate(other[name])
                 else:
-                    self.error(name+' not found in accumulate partner')
+                    msg = name+' not found in accumulate partner'
+                    raise KeyError(msg)
                 #end if
             #end if
         #end for
@@ -263,7 +268,7 @@ class HDFgroup(DevBase):
 
 class HDFreader(DevBase):
     
-    def __init__(self,fpath,verbose=False,view=False):
+    def __init__(self,fpath,*,verbose=False,view=False):
         fpath = path_string(fpath)
         HDFglobals.view = view
 
@@ -308,7 +313,8 @@ class HDFreader(DevBase):
                     elif isinstance(v, h5py.Group):
                         self.add_group(hcur,cur,k,v)
                     else:
-                        self.error('encountered invalid type: '+str(type(v)))
+                        msg = 'encountered invalid type: '+str(type(v))
+                        raise TypeError(msg)
                 else:
                     self.warn('attribute '+k+' is not a valid variable name and has been ignored')
                 #end if
@@ -379,6 +385,6 @@ class HDFreader(DevBase):
 
 
 
-def read_hdf(fpath,verbose=False,view=False):
+def read_hdf(fpath,*,verbose=False,view=False):
     return HDFreader(fpath=fpath,verbose=verbose,view=view).obj
 #end def read_hdf

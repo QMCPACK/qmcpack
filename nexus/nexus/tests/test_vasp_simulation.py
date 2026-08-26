@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.VASP_SIMULATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from pathlib import Path
 from . import isolate_nexus_core, create_pseudo_files
@@ -15,7 +13,7 @@ from ..testing import value_eq,object_eq,check_object_eq
 from .test_vasp_input import c_potcar_text, TEST_FILES
 
 
-def setup_vasp_sim(path,identifier='vasp',copy_files=False):
+def setup_vasp_sim(path,identifier='vasp',*,copy_files=False):
     import shutil
     from ..nexus_base import nexus_core
     from ..machines import job
@@ -106,7 +104,7 @@ def test_check_result(tmp_path):
 def test_get_result(tmp_path):
     import shutil
     from numpy import array
-    from ..developer import obj, NexusError
+    from ..developer import obj
 
     create_pseudo_files(
         tmp_dir=tmp_path,
@@ -116,16 +114,12 @@ def test_get_result(tmp_path):
 
     sim = setup_vasp_sim(tmp_path, identifier='diamond', copy_files=True)
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
+
 
     pcfile = tmp_path / 'diamond_POSCAR'
     ccfile = tmp_path / (sim.identifier+'.CONTCAR')
@@ -181,8 +175,9 @@ def test_get_result(tmp_path):
                                  dtype=float),
               scale           = 1.0,
               units           = 'A',
+              vel             = None,
               ),
-        )
+          )
 
     assert(check_object_eq(result,result_ref))
 
@@ -203,7 +198,7 @@ def test_incorporate_result(tmp_path):
         tmp_dir=tmp_path,
         pseudos=["C.POTCAR"],
         pseudo_strs=[c_potcar_text],
-    )
+        )
 
     sim = setup_vasp_sim(tmp_path,identifier='diamond',copy_files=True)
 
@@ -316,14 +311,14 @@ def test_get_output_files(tmp_path):
 
     sim = setup_vasp_sim(tmp_path)
 
-    vfiles = 'INCAR KPOINTS POSCAR CONTCAR OUTCAR'.split()
+    vfiles = {'CONTCAR', 'KPOINTS', 'POSCAR', 'OUTCAR', 'INCAR'}
     for vfile in vfiles:
         (tmp_path / vfile).touch()
     #end for
 
     files = sim.get_output_files()
 
-    assert(value_eq(files,vfiles))
+    assert(set(files) == vfiles)
 
     for vfile in vfiles:
         assert((tmp_path / (sim.identifier+'.'+vfile)))

@@ -21,14 +21,14 @@ import os
 from pathlib import Path
 from copy import deepcopy
 import numpy as np
-from .developer import DevBase, obj, error, warn
+from .developer import DevBase, obj, warn, NexusError
 from .periodic_table import Elements
 from .structure import Structure, generate_structure, read_structure
 
 
 class PhysicalSystem(DevBase):
 
-    ghost_aliases = ["Xx"]
+    ghost_aliases = ("Xx",)
 
     def __init__(self,structure=None,net_charge=0,net_spin=0,**valency):
         self.pseudized = False
@@ -44,15 +44,18 @@ class PhysicalSystem(DevBase):
                 vratio = structure.volume()/structure.folded_structure.volume()
                 ncells = int(round(vratio))
                 if abs(vratio-ncells)>1e-4:
-                    self.error('volume of system does not divide evenly into folded system')
+                    msg = 'volume of system does not divide evenly into folded system'
+                    raise NexusError(msg)
                 #end if
                 if net_charge%ncells!=0:
-                    self.error('net charge of system does not divide evenly into folded system')
+                    msg = 'net charge of system does not divide evenly into folded system'
+                    raise RuntimeError(msg)
                 #end if
                 if isinstance(net_spin,str):
                     net_spin_fold = net_spin
                 elif net_spin%ncells!=0:
-                    self.error('net_spin of system does not divide evenly into folded system')
+                    msg = 'net_spin of system does not divide evenly into folded system'
+                    raise RuntimeError(msg)
                 else:
                     net_spin_fold = net_spin//ncells 
                 #end if
@@ -64,7 +67,11 @@ class PhysicalSystem(DevBase):
                 net_charge_fold = 0
                 net_spin_fold   = 'low'
             else:
-                self.error('folded structure is not correctly integrated with full structure\nfolded physical system cannot be constructed')
+                msg = (
+                    'folded structure is not correctly integrated with full structure\n'
+                    'folded physical system cannot be constructed'
+                    )
+                raise NexusError(msg)
             #end if
                 
             self.folded_system = PhysicalSystem(
@@ -88,26 +95,34 @@ class PhysicalSystem(DevBase):
     def pseudize(self,**valency):
         for ion in valency.keys():
             if ion not in self.ion_labels:
-                self.error(ion+' is not in the physical system',exit=False)
+                msg = ion+' is not in the physical system'
+                raise ValueError(msg)
 
         self.valency = obj(**valency)
         self.pseudized = True
     #end def pseudize
 
         
-    def check_folded_system(self,exit=True,message=False):
+    def check_folded_system(self,*,exit=True,message=False):
         msg = ''
         sys_folded    = self.folded_system is not None
         struct_folded = self.structure.folded_structure is not None
         if sys_folded!=struct_folded:
-            msg+='folding of physical system and structure is not consistent\nsystem folded: {0}\nstructure folded: {1}\n'.format(sys_folded,struct_folded)
+            msg += (
+                'folding of physical system and structure is not consistent\n'
+                'system folded: {0}\n'
+                'structure folded: {1}\n'.format(sys_folded,struct_folded)
+                )
         #end if
         if sys_folded and id(self.structure.folded_structure)!=id(self.folded_system.structure):
-            msg+='structure of folded system and folded structure are distinct\nthis is not allowed and may be a developer error'
+            msg += (
+                'structure of folded system and folded structure are distinct\n'
+                'this is not allowed and may be a developer error'
+                )
         #end if
         success = len(msg)==0
         if not success and exit:
-            self.error(msg)
+            raise NexusError(msg)
         #end if
         if not message:
             return success
@@ -117,7 +132,7 @@ class PhysicalSystem(DevBase):
     #end def check_folded_system
 
 
-    def check_consistent(self,tol=1e-8,exit=True,message=False):
+    def check_consistent(self,tol=1e-8,*,exit=True,message=False):
         fs,fm = self.check_folded_system(exit=False,message=True)
         cs,cm = self.structure.check_consistent(tol,exit=False,message=True)
         msg = ''
@@ -129,7 +144,7 @@ class PhysicalSystem(DevBase):
         #end if
         consistent = len(msg)==0
         if not consistent and exit:
-            self.error(msg)
+            raise RuntimeError(msg)
         #end if
         if not message:
             return consistent
@@ -160,7 +175,7 @@ class PhysicalSystem(DevBase):
     #end def group_atoms
 
 
-    def rename(self,folded=True,**name_pairs):
+    def rename(self,*,folded=True,**name_pairs):
         self.structure.rename(folded=False,**name_pairs)
         if self.pseudized:
             for old,new in name_pairs.items():
@@ -407,7 +422,11 @@ def generate_physical_system(**kwargs):
                 is_path = '/' in s
                 is_file = format in set('xyz xsf poscar cif fhi-aims'.split())
                 if is_path or is_file:
-                    error('user provided structure file does not exist\nstructure file path: '+s,'generate_physical_system')
+                    msg = (
+                        'user provided structure file does not exist\n'
+                        'structure file path: '+s
+                        )
+                    raise FileNotFoundError(msg)
                 #end if
             #end if
         #end if
@@ -448,7 +467,12 @@ def generate_physical_system(**kwargs):
     else:
         for d in range(len(pretile)):
             if tiling[d]%pretile[d]!=0:
-                error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
+                msg = (
+                    'pretile does not divide evenly into tiling\n'
+                    '  tiling provided: {0}\n'
+                    '  pretile provided: {1}'.format(tiling, pretile)
+                    )
+                raise ValueError(msg)
             #end if
         #end for
         tiling = tuple(np.array(tiling)//np.array(pretile))

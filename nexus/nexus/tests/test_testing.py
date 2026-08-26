@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.TESTING)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 
 
@@ -27,7 +25,7 @@ def test_value_checks():
     #end class Special
 
 
-    def deep_dict(use_shift=False,int_as_float=False,overshift=False):
+    def deep_dict(*,use_shift=False,int_as_float=False,overshift=False):
         vals = np.array([1.23,3.14])
         if use_shift:
             vals += shift
@@ -66,8 +64,8 @@ def test_value_checks():
     #end def deep_dict
 
 
-    def deep_list(*args,**kwargs):
-        return list(deep_dict(*args,**kwargs).values())
+    def deep_list(**kwargs):
+        return list(deep_dict(**kwargs).values())
     #end def deep_list
 
 

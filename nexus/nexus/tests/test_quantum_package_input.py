@@ -2,12 +2,9 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from pathlib import Path
 
-from .. import testing
 from ..testing import object_eq, dict_serialize
 
 
@@ -185,6 +182,7 @@ def generate_serial_references():
             [0.0, 0.75716, -0.58626]]),
         'structure/scale' : 1.0,
         'structure/units' : 'A',
+        'structure/vel' : None,
         }
 
     serial_references['o2.ezfio gen'] = {
@@ -215,6 +213,7 @@ def generate_serial_references():
             [1.2074, 0.0, 0.0]]),
         'structure/scale' : 1.0,
         'structure/units' : 'A',
+        'structure/vel' : None,
         }
 
 #end def generate_serial_references
@@ -279,7 +278,6 @@ def test_read():
 
 
 def test_generate(tmp_path):
-    import os
     from ..physical_system import generate_physical_system
     from ..quantum_package_input import generate_quantum_package_input
 

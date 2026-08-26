@@ -104,9 +104,7 @@ public:
                            const RefVector<const OffloadPinnedMatrix<VALUE>>& a_mats,
                            const RefVector<OffloadPinnedMatrix<VALUE>>& inv_a_mats,
                            OffloadPinnedVector<LogValue>& log_values) override
-  {
-    mw_invertTranspose(a_mats, inv_a_mats, log_values);
-  }
+  { mw_invertTranspose(a_mats, inv_a_mats, log_values); }
 };
 
 extern template class DiracMatrixInverterOMPTarget<double, float>;

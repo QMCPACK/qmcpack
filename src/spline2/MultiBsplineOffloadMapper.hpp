@@ -31,32 +31,42 @@ class MultiBsplineOffloadMapper
   /// array of host coefficient pointers for all the blocks.
   std::vector<const T*> block_coefs_;
 
+  /// map host coefficients to devices
+  void mapToDevice();
+
 public:
   MultiBsplineOffloadMapper(const HostBspline& host_bsplines);
 
   ~MultiBsplineOffloadMapper();
-
-  /// map host coefficients to devices
-  virtual void mapToDevice();
 
   /// update device coeficients
   void updateToDevice();
 
   /** evaluate spline values
    * @param num_pos, number of electron positions
-   * @param pos_arr, array of electron positions [num_pos, 3]
+   * @param pos_arr, array of electron positions [num_pos, pos_stride]
+   * @param pos_stride, stride between two positions [num_pos, pos_stride]
    * @param spline_v, result pointer
    * @param walker_stride, result distance between two positions
    */
-  void mw_evaluate_v(int num_pos, T* pos_arr, T* spline_v, size_t walker_stride);
+  void mw_evaluate_v(int num_pos, T* pos_arr, int pos_stride, T* spline_v, size_t walker_stride);
   /** evaluate spline value, gradients and hessian.
    * @param num_pos, number of electron positions
-   * @param pos_arr, array of electron positions [num_pos, 3]
+   * @param pos_arr, array of electron positions [num_pos, pos_stride]
+   * @param pos_stride, stride between two positions [num_pos, pos_stride]
    * @param spline_vgh, result pointer
    * @param walker_stride, result distance between two positions
-   * @param filed_stride, result distance of value, gradients and hessian fields for a given electron position.
+   * @param field_stride, result distance of value, gradients and hessian fields for a given electron position.
+   * The layout of spline_vgh is described by walker_stride and field_stride. For example,
+   * [nw, nf, nb], walker_stride = na * nb, field_stride = nb
+   * [nf, nw, nb], walker_stride = nb, field_stride = nw * nb
    */
-  void mw_evaluate_vgh(int num_pos, T* pos_arr, T* spline_vgh, size_t walker_stride, size_t field_stride);
+  void mw_evaluate_vgh(int num_pos,
+                       T* pos_arr,
+                       int pos_stride,
+                       T* spline_vgh,
+                       size_t walker_stride,
+                       size_t field_stride);
 };
 
 extern template class MultiBsplineOffloadMapper<float>;

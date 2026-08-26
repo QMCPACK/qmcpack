@@ -45,7 +45,7 @@ from .qmcpack_quantity_analyzers import (
     SpinDensityAnalyzer,
     StructureFactorAnalyzer,
     DensityAnalyzer,
-)
+    )
 from .qmcpack_method_analyzers import OptAnalyzer, VmcAnalyzer, DmcAnalyzer
 from .qmcpack_result_analyzers import OptimizationAnalyzer, TimestepStudyAnalyzer
 from .simulation import SimulationAnalyzer,Simulation
@@ -117,9 +117,9 @@ class QmcpackAnalysisRequest(QAobject):
     def __init__(self,source=None,destination=None,savefile='',
                  methods=None,calculations=None,data_sources=None,quantities=None,
                  warmup_calculations=None,
-                 output=set(['averages','samples']),
+                 output=('averages','samples'),
                  ndmc_blocks=1000,equilibration=None,group_num=None,
-                 traces=False,dm_settings=None):
+                 *,traces=False,dm_settings=None):
         self.source          = source if not isinstance(source, Path) else str(source.resolve())
         self.destination     = destination     
         self.savefile        = str(savefile)
@@ -277,8 +277,10 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
     def change_request(self,request):
         if not isinstance(request,QmcpackAnalysisRequest):
-            self.error('input request must be a QmcpackAnalysisRequest',exit=False)
-            self.error('  type provided: '+str(type(request)))
+            self.error(
+                'input request must be a QmcpackAnalysisRequest\n'
+                '  type provided: '+str(type(request))
+                )
         #end if
         request.complete()
         self.info.request = request
@@ -473,7 +475,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     #end def load_data
 
 
-    def analyze(self,force=False):
+    def analyze(self,*,force=False):
         if not self.info.analyzed or force:
             if not self.info.data_loaded:
                 self.load_data()
@@ -513,9 +515,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     def bundle(self,source):
         self.vlog('bundled run detected',n=1)
         if os.path.exists(source):
-            fobj = open(source,'r')
-            lines = fobj.read().split('\n')
-            fobj.close()
+            with open(source,'r') as fobj:
+                lines = fobj.read().split('\n')
         else:
             self.error('source file '+source+' does not exist')
         #end if
@@ -666,7 +667,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
 
 
-    def save(self,filepath=None,overwrite=True):
+    def save(self,filepath=None,*,overwrite=True):
         if filepath is None:
             filepath = self.info.savefilepath
         #end if
@@ -696,7 +697,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
 
 
-    def check_traces(self,verbose=False,pad=None,header=None):
+    def check_traces(self,*,verbose=False,pad=None,header=None):
         if pad is None:
             pad = ''
         #end if
@@ -720,7 +721,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     #end def check_traces
 
 
-    def plot_trace(self,quantity,style='b-',offset=0,source='scalar',mlabels=True,
+    def plot_trace(self,quantity,style='b-',offset=0,source='scalar',*,mlabels=True,
                    mlines=True,show=True,alloff=False):
         mlabels &= not alloff
         mlines  &= not alloff

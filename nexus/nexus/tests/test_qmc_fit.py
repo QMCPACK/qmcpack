@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMC_FIT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from . import TEST_DIR
 from ..testing import execute,text_eq
@@ -12,7 +10,6 @@ from ..testing import execute,text_eq
 
 def test_fit(tmp_path):
     _ = pytest.importorskip("scipy")
-    import os
 
     exe = TEST_DIR.parent / "bin/qmc-fit"        
     dmc_path = TEST_DIR / "test_qmcpack_analyzer_files/diamond_gamma/dmc"

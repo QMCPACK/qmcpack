@@ -45,13 +45,15 @@
 
 import os
 from pathlib import Path
+from types import MappingProxyType
+from typing import ClassVar
 from copy import deepcopy
 import platform
 from socket import gethostname
 import subprocess
 from subprocess import Popen, CalledProcessError
 import numpy as np
-from .developer import DevBase, obj, error, warn
+from .developer import DevBase, obj, warn, NexusError
 from .nexus_base import NexusCore, nexus_core
 from .execute import execute
 from .utilities import path_string
@@ -105,7 +107,7 @@ def get_cpu_cores() -> int:
                 warn(
                    f"Operating system '{sysname}' not recognized by Nexus.\n"
                     "Could not get number of physical CPU cores, defaulting to logical..."
-                    )
+                   )
 
     except CalledProcessError as err:
         warn(
@@ -132,14 +134,16 @@ class Options(DevBase):
         elif isinstance(options,list):
             for o in options:
                 if not isinstance(o,str):
-                    self.error('each option must be a string')
+                    msg = 'each option must be a string'
+                    raise TypeError(msg)
                 #end if
                 self[str(len(self))] = o
             #end for
         elif isinstance(options,str):
             self[str(len(self))] = options
         else:
-            self.error('invalid type provided to Options')
+            msg = 'invalid type provided to Options'
+            raise TypeError(msg)
         #end if
     #end def read
 
@@ -222,6 +226,197 @@ job_defaults_nonassign = obj(
 job_defaults = obj({**job_defaults_assign,**job_defaults_nonassign})
 
 class Job(NexusCore):
+    """Describe the resources and execution settings for a Nexus simulation.
+
+    Jobs are normally supplied through the :func:`job` alias when creating a
+    simulation.  During simulation initialization, Nexus copies the job,
+    assigns simulation-specific paths and output files, supplies an
+    application command when needed, and lets the selected machine complete
+    the resource and scheduler settings.
+
+    Parameters
+    ----------
+    name : str, default='jobname'
+        Scheduler job name.
+    app, app_name : str or pathlib.Path, optional
+        Executable name or path.  ``app`` is the usual user-facing alias for
+        ``app_name``.  If neither an application nor ``app_command`` is
+        supplied, the simulation generator can provide the executable.
+    app_command : str, optional
+        Complete application command.  When provided, it overrides the
+        command normally constructed from the application name and simulation
+        input.
+    machine : str, optional
+        Registered machine name.  If omitted, the machine selected through
+        :func:`settings` is used.
+    cores : int, optional
+        Total CPU cores to request.  On workstations this determines the MPI
+        rank count; on batch machines it is converted to a node request when
+        necessary.
+    nodes : int, optional
+        Number of whole nodes to request on a batch machine.  The machine
+        derives remaining resource quantities from its node definition.
+    threads : int, default=1
+        OpenMP threads per process.  Nexus sets ``OMP_NUM_THREADS`` and,
+        where possible, derives the MPI process count from ``cores`` and this
+        value.
+    processes : int, optional
+        Total MPI process count.  On supercomputers this is normally a
+        derived value: ``nodes * processes_per_node`` when
+        ``processes_per_node`` is supplied, or ``floor(cores / threads)``
+        otherwise.  Prefer ``cores``, ``nodes``, ``threads``, and, when a
+        manual layout is needed, ``processes_per_node`` over setting this
+        field directly.
+    processes_per_node : int, optional
+        MPI processes (ranks) per allocated node.  This is the primary
+        process-layout override for batch machines.  When provided, a
+        supercomputer sets ``processes`` to ``nodes * processes_per_node``;
+        otherwise it derives the per-node rank count from the requested cores
+        and threads.  Choose a value for which
+        ``processes_per_node * threads`` fits the available cores on each
+        node, and follow any machine-specific CPU or GPU limits.  Scheduler
+        headers and launchers commonly use it as ``--ntasks-per-node``,
+        ``-N``, ``--ppn``, or an equivalent option.
+    processes_per_proc : int, optional
+        MPI processes per physical processor package (typically a socket).
+        Nexus derives this as ``processes / (nodes * procs_per_node)`` only
+        when the division is exact; otherwise the value is ``None``.  It is
+        primarily an output describing the finalized layout.  Some ``aprun``
+        machine classes use the derived value for their ``-S`` launcher
+        option, so it should generally not be set directly.
+    ppn : int, optional
+        Machine-specific processes- or cores-per-node setting.  The generic
+        supercomputer path defaults it to the machine's ``cores_per_node``;
+        consult the selected machine class before overriding it.
+    serial : bool, default=False
+        Run without an MPI launcher when there is one process.  Threaded
+        serial jobs can still use ``threads`` greater than one.
+    local : bool, default=False
+        Execute locally instead of submitting to the machine queue.  This is
+        independent of ``serial``.
+    hours, minutes, seconds, days : int, default=0
+        Requested walltime.  Values are normalized before a machine writes
+        its scheduler-specific time format.
+    queue : str, optional
+        Queue or scheduler partition.
+    account : str, optional
+        Allocation or project account.  Required by machines whose
+        ``requires_account`` setting is true.
+    qos, constraint, reservation, filesystems : str, optional
+        Scheduler- or machine-specific resource fields.
+    gpus : int, optional
+        GPU request, interpreted according to the selected machine's
+        conventions.
+    outfile, errfile, subfile : str or pathlib.Path, optional
+        Standard-output, standard-error, and submission-file names.
+    directory, subdir : str or pathlib.Path, optional
+        Local run and submission directories.
+    env : mapping, optional
+        Environment variables for the job.  Supercomputers write these as
+        exports in the submission file; workstations pass them to the local
+        process environment.
+    presub, postsub : str, default=''
+        Shell text placed immediately before or after the run command.
+    app_options, app_flags : str, sequence of str, or mapping, optional
+        Options appended after the application command.  ``app_flags`` is an
+        alias for ``app_options``.
+    run_options, options : str, sequence of str, or mapping, optional
+        Options appended after the machine launcher.  ``options`` is an alias
+        for ``run_options``.
+    sub_options : str, sequence of str, or mapping, optional
+        Options appended after the scheduler submission launcher.
+    full_command : str, optional
+        Complete run command.  When set, Nexus does not construct a launcher
+        and application command.
+    template : str, optional
+        Complete submission-file text.  When set, Nexus writes this text
+        instead of generating a scheduler header and run command.
+    user_env : bool, default=True
+        Request that scheduler submission preserve the user environment when
+        the machine supports that control.
+    skip_machine : bool, default=False
+        Bypass machine processing.  Intended for tests and narrowly scoped
+        debugging rather than normal user scripts.
+
+    Attributes
+    ----------
+    init_info : obj
+        Copy of the keyword arguments supplied at construction, before
+        defaults and aliases are resolved.
+    machine : str or None
+        Name of the selected registered machine.
+    name, app_name, app_command : str or None
+        Scheduler name, application name, and finalized application command.
+    directory, subdir, abs_dir, abs_subdir : str or None
+        Requested and resolved local and submission directories.  The
+        ``abs_*`` attributes are assigned during simulation initialization.
+    outfile, errfile, subfile : str or None
+        Standard-output, standard-error, and submission file names.
+    app_props : list
+        Application properties supplied by the simulation or user.
+    full_command, template : str or None
+        User-provided complete run command or submission-file text.
+    presub, postsub : str
+        Shell text written immediately before or after the run command.
+    bundled_jobs, relative : sequence of Job or None, bool
+        Optional bundled jobs and whether their commands use relative paths.
+    cores, nodes, threads : int or None
+        Requested or finalized total CPU cores, node count, and OpenMP threads
+        per process.
+    processes, processes_per_node, processes_per_proc : int or None
+        Finalized total MPI ranks and their node- and processor-package-level
+        decomposition.
+    procs, grains, tot_cores, ppn : int or None
+        Machine-derived processor-package count, allocation granularity,
+        allocated core capacity, and machine-specific per-node setting.
+    app_options, run_options, sub_options : Options
+        Options appended to the application command, run launcher, and
+        submission launcher, respectively.
+    env : dict or None
+        Final environment variables for the job, including
+        ``OMP_NUM_THREADS`` after machine processing.
+    queue, account, qos, constraint, reservation, filesystems : str or None
+        Scheduler and machine-specific allocation settings.
+    gpus, cpus_per_task, ntasks_per_core : int or None
+        Optional accelerator and scheduler resource settings.
+    days, hours, minutes, seconds : int
+        Normalized walltime components.
+    serial, local, user_env : bool
+        Execution and environment-preservation controls.
+    batch_mode : bool
+        Whether the selected machine is currently running in batch mode.
+    internal_id, system_id : int or str or None
+        Nexus-assigned job identifier and scheduler-assigned identifier.
+    status : int
+        Current lifecycle state, one of the values in ``Job.states``.
+    submitted, finished, successful, crashed, overtime : bool
+        Submission and completion-status flags.
+    fake_job, user_app_command : bool
+        Flags indicating a fake job and whether ``app_command`` was provided
+        directly by the user.
+
+    Notes
+    -----
+    The selected machine validates and finalizes resource layout, launcher
+    options, and scheduler headers.  Machine-specific classes can assign
+    defaults for fields such as ``queue`` or ``constraint`` and can interpret
+    GPU and scheduler options differently.  Reusable ``Job`` objects are
+    safe as simulation templates because Nexus copies them during simulation
+    creation.
+
+    Examples
+    --------
+    A workstation MPI job can specify only the required resources and
+    application.
+
+    >>> job(cores=16, app='pw.x')
+
+    A hybrid MPI/OpenMP batch job can request nodes, threads, walltime, and
+    scheduler metadata.
+
+    >>> job(machine='frontier', account='ABC123', nodes=2, threads=4,
+    ...     hours=1, app='qmcpack')
+    """
 
     machine = None #default machine if none is specified in settings
 
@@ -258,6 +453,17 @@ class Job(NexusCore):
 
 
     def __init__(self,**kwargs):
+        # guard against invalid keys
+        invalid = set(kwargs.keys())-set(job_defaults.keys())
+        if len(invalid)>0:
+            msg = (
+                'Invalid job arguments provided.\n'
+                'Invalid arguments: {}\n'
+                'Valid options are: {}'.format(
+                    sorted(invalid),list(job_defaults.keys())
+                    )
+                )
+            raise ValueError(msg)
         # rewrap keyword arguments
         kw = obj(**kwargs)
         # Ensure no pathlib.Path objects are stored
@@ -278,7 +484,8 @@ class Job(NexusCore):
             if isinstance(kw.app_name, Path):
                 kw.app_name = path_string(kw.app_name)
             elif not isinstance(kw.app_name, str):
-                self.error("app_name must be a str or Path object!")
+                msg = "app_name must be a str or Path object!"
+                raise TypeError(msg)
 
         # save information used to initialize job object
         self.init_info = deepcopy(kw)
@@ -308,7 +515,13 @@ class Job(NexusCore):
 
         # check template
         if self.template is not None and not isinstance(self.template,str):
-            self.error('template must be a string\nReceived type: {}'.format(self.template.__class__.__name__))
+            msg = (
+                'template must be a string\n'
+                'Received type: {}'.format(
+                    self.template.__class__.__name__
+                    )
+                )
+            raise TypeError(msg)
         #end if
 
         # initialize other internal variables
@@ -373,7 +586,8 @@ class Job(NexusCore):
             self.batch_mode = machine.in_batch_mode()
 
             if self.bundled_jobs is not None and not machine.batch_capable:
-                self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name))
+                msg = 'running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name)
+                raise NotImplementedError(msg)
             #end if
         #end if
 
@@ -486,13 +700,14 @@ class Job(NexusCore):
     # remove?
     def set_processes(self):
         if self.processes is None:
-            self.error('processes should have been set before now\ncontact the developers and have them fix this','Developer')
+            msg = 'processes should have been set before now\ncontact the developers and have them fix this'
+            raise NexusError(msg)
             self.processes = int(np.ceil(float(self.cores)/self.threads))
         #end if
     #end def set_processes
 
 
-    def set_environment(self,limited_env=False,clear_env=False,**env):
+    def set_environment(self,*,limited_env=False,clear_env=False,**env):
         machine = self.get_machine()
         if isinstance(machine,Supercomputer):
             limited_env = True
@@ -555,7 +770,7 @@ class Job(NexusCore):
 
 
     # test needed
-    def write(self,file=False):
+    def write(self,*,file=False):
         machine = self.get_machine()
         return machine.write_job(self,file=file)
     #end def write
@@ -576,7 +791,7 @@ class Job(NexusCore):
     #end def reenter_queue
 
 
-    def run_command(self,launcher=None,redirect=False,serial=False):
+    def run_command(self,launcher=None,*,redirect=False,serial=False):
         if self.template is not None:
             return ''
         #end if
@@ -590,7 +805,8 @@ class Job(NexusCore):
                 c = self.full_command
             else:
                 if self.app_command is None:
-                    self.error('app_command has not been provided')
+                    msg = 'app_command has not been provided'
+                    raise ValueError(msg)
                 #end if
                 if launcher=='runjob':
                     separator = ' : '
@@ -727,13 +943,25 @@ class Job(NexusCore):
     def split_nodes(self,n):
         run_options = self.run_options
         if not isinstance(n,int):
-            self.error('cannot split job by nodes\nrequested split value must be an integer\nreceived type: {0}\nwith value: {1}'.format(n.__class__.__name__,n))
+            msg = (
+                'cannot split job by nodes\n'
+                'requested split value must be an integer\n'
+                'received type: {0}\n'
+                'with value: {1}'.format(n.__class__.__name__,n)
+                )
+            raise TypeError(msg)
         elif n<1 or n>=self.nodes:
-            self.error('cannot split job by nodes\nrequested split must be in the range [1,{0})\nrequested split: {1}'.format(self.nodes,n))
+            msg = (
+                'cannot split job by nodes\n'
+                'requested split must be in the range [1,{0})\n'
+                'requested split: {1}'.format(self.nodes,n)
+                )
+            raise ValueError(msg)
         #end if
         m = self.get_machine()
         if m.app_launcher=='srun':
-            self.error('splitting jobs by nodes is not currently supported on machine "{0}" (SLURM)'.format(m.name))
+            msg = 'splitting jobs by nodes is not currently supported on machine "{0}" (SLURM)'.format(m.name)
+            raise NotImplementedError(msg)
         #end if
         job1 = self.clone()
         job2 = self.clone()
@@ -750,7 +978,7 @@ class Job(NexusCore):
 
 class Machine(NexusCore):
 
-    machines = dict()
+    machines: ClassVar[dict] = dict()
 
     modes = obj(
         none        = 0,
@@ -800,16 +1028,19 @@ class Machine(NexusCore):
     @staticmethod
     def add(machine):
         if not isinstance(machine,Machine):
-            error('attempted to add non-machine instance')
+            msg = 'attempted to add non-machine instance'
+            raise TypeError(msg)
         #end if
         if 'name' not in machine:
-            error('attempted to add a machine without a name')
+            msg = 'attempted to add a machine without a name'
+            raise ValueError(msg)
         #end if
         name = machine.name
         if name not in Machine.machines:
             Machine.machines[name] = machine
         else:
-            error('attempted to create machine {0}, but it already exists'.format(name))
+            msg = 'attempted to create machine {0}, but it already exists'.format(name)
+            raise RuntimeError(msg)
         #end if
     #end def add
 
@@ -819,13 +1050,18 @@ class Machine(NexusCore):
         if isinstance(machine_name,str):
             machine_name = machine_name.lower()
         else:
-            error('machine name must be a string, you provided a '+machine_name.__class__.__name__)
+            msg = 'machine name must be a string, you provided a '+machine_name.__class__.__name__
+            raise TypeError(msg)
         #end if
         if Machine.exists(machine_name):
             machine = Machine.machines[machine_name]
         else:
             machs = sorted(Machine.machines.keys())
-            error('attempted to get machine '+machine_name+', but it is unknown\nknown options are '+str(machs))
+            msg = (
+                'attempted to get machine '+machine_name+', but it is unknown\n'
+                'known options are '+str(machs)
+                )
+            raise KeyError(msg)
         #end if
         return machine
     #end def get
@@ -841,10 +1077,15 @@ class Machine(NexusCore):
     def validate(self):
         if Machine.exists(self.name):
             if not Machine.is_unique(self):
-                self.error('duplicate instance of machine '+self.name+' encountered\n  this is either a developer error, or you have created a duplicate machine')
+                msg = (
+                    'duplicate instance of machine '+self.name+' encountered\n'
+                    '  this is either a developer error, or you have created a duplicate machine'
+                    )
+                raise NexusError(msg)
             #end if
         else:
-            self.error('machine {0} id {1} was created without calling Machine.__init__() and is therefore invalid'.format(self.name,id(self)))
+            msg = 'machine {0} id {1} was created without calling Machine.__init__() and is therefore invalid'.format(self.name,id(self))
+            raise NexusError(msg)
         #end if
     #end def validate
 
@@ -871,7 +1112,7 @@ class Machine(NexusCore):
         raise NotImplementedError
     #end def process_job_options
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         raise NotImplementedError
     #end def write_job
 
@@ -904,7 +1145,11 @@ class Machine(NexusCore):
         self.app_directories = None
 
         if not isinstance(name,str):
-            self.error('machine name must be a string\nyou provided '+str(name))
+            msg = (
+                'machine name must be a string\n'
+                'you provided '+str(name)
+                )
+            raise TypeError(msg)
         #end if
 
         Machine.add(self)
@@ -932,7 +1177,8 @@ class Machine(NexusCore):
             self.waiting.add(jid)
             #self.write_job_states('add_job')
         else:
-            self.error('add_job received non-Job instance '+job.__class__.__name__)
+            msg = 'add_job received non-Job instance '+job.__class__.__name__
+            raise TypeError(msg)
         #end if
     #end def add_job
 
@@ -942,18 +1188,29 @@ class Machine(NexusCore):
     #end def requeue_job
 
 
-    allowed_user_info = set(['account','local_directory','app_directory','app_directories'])
+    allowed_user_info = frozenset({'account','local_directory','app_directory','app_directories'})
     def incorporate_user_info(self,infoin):
         info = obj(**infoin)
         vars = set(info.keys())
         invalid = vars-self.allowed_user_info
         if len(invalid)>0:
-            self.error('invalid inputs encountered in incorporate_user_info\nallowed inputs: {0}\n  invalid inputs: {1}'.format(list(self.allowed_user_info),list(invalid)))
+            msg = (
+                'invalid inputs encountered in incorporate_user_info\n'
+                'allowed inputs: {0}\n'
+                '  invalid inputs: {1}'.format(
+                    list(self.allowed_user_info),list(invalid)
+                    )
+                )
+            raise ValueError(msg)
         #end if
         if 'app_directories' in info:
             ad = info.app_directories
             if not isinstance(ad,dict) and not isinstance(ad,obj):
-                self.error('app_directories must be of type dict or obj\nyou provided '+ad.__class__.__name__)
+                msg = (
+                    'app_directories must be of type dict or obj\n'
+                    'you provided '+ad.__class__.__name__
+                    )
+                raise TypeError(msg)
             #end if
         #end if
         for k,v in info.items():
@@ -1119,7 +1376,12 @@ class Workstation(Machine):
 
         for job in job_req:
             if job.cores>self.cores and not nexus_core.generate_only:
-                self.error('job '+str(job.internal_id)+' is too large to run on this machine\ncores requested: '+str(job.cores)+'\nmachine cores: '+str(self.cores))
+                msg = (
+                    'job '+str(job.internal_id)+' is too large to run on this machine\n'
+                    'cores requested: '+str(job.cores)+'\n'
+                    'machine cores: '+str(self.cores)
+                    )
+                raise ValueError(msg)
             #end if
             if job.cores<=cores_available:
                 iid = job.internal_id
@@ -1128,7 +1390,12 @@ class Workstation(Machine):
                 self.submit_job(job)
                 cores_available-=job.cores
             elif job.cores>self.cores:
-                self.error('job requested more cores than are present on '+self.name+'\ncores requested: {0}\ncores present: {1}'.format(job.cores,self.cores))
+                msg = (
+                    'job requested more cores than are present on '+self.name+'\n'
+                    'cores requested: {0}\n'
+                    'cores present: {1}'.format(job.cores,self.cores)
+                    )
+                raise ValueError(msg)
             else:
                 break
             #end if
@@ -1156,10 +1423,24 @@ class Workstation(Machine):
     #end def job_command
 
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         c = self.job_command(job)
         return c
     #end def write_job
+
+
+    def requeue_job(self,job):
+        if isinstance(job,Job):
+            jid = job.internal_id
+            self.process_job(job)
+            self.jobs[jid] = job
+            job.status = job.states.waiting
+            self.waiting.add(jid)
+        else:
+            msg = 'requeue_job received non-Job instance '+type(job).__name__
+            raise TypeError(msg)
+        #end if
+    #end def requeue_job
 
 
     def submit_job(self,job):
@@ -1242,7 +1523,12 @@ class InteractiveCluster(Workstation):
     def init_from_supercomputer(self,super,cores):
         nodes = cores//super.cores_per_node
         if cores-nodes*super.cores_per_node!=0:
-            self.error('interactive cores corresponds to a fractional number of nodes\n  cores '+str(cores)+'\n  cores per node '+str(super.cores_per_node))
+            msg = (
+                'interactive cores corresponds to a fractional number of nodes\n'
+                '  cores '+str(cores)+'\n'
+                '  cores per node '+str(super.cores_per_node)
+                )
+            raise ValueError(msg)
         #end if
         self.init_from_args(super.name+'_interactive',nodes,super.procs_per_node,
                             super.cores_per_proc,super.cores_per_node,
@@ -1281,9 +1567,9 @@ class Supercomputer(Machine):
 
     batch_capable = False #only set to true for specific machines
 
-    aprun_options = set(['n','d'])
+    aprun_options = frozenset({'n','d'})
 
-    required_inputs = [
+    required_inputs = (
         'nodes',
         'procs_per_node',
         'cores_per_proc',
@@ -1293,7 +1579,7 @@ class Supercomputer(Machine):
         'sub_launcher',
         'queue_querier',
         'job_remover'
-        ]
+        )
 
     def __init__(self,
                  nodes          = None,
@@ -1327,7 +1613,8 @@ class Supercomputer(Machine):
 
         for var in Supercomputer.required_inputs:
             if self[var] is None:
-                self.error('input variable '+var+' is required to initialize Supercomputer object.')
+                msg = 'input variable '+var+' is required to initialize Supercomputer object.'
+                raise NexusError(msg)
             #end if
         #end for
 
@@ -1442,7 +1729,8 @@ class Supercomputer(Machine):
         elif self.queue_querier=='test_query':
             None
         else:
-            self.error('ability to query queue with '+self.queue_querier+' has not yet been implemented')
+            msg = 'ability to query queue with '+self.queue_querier+' has not yet been implemented'
+            raise NotImplementedError(msg)
         #end if
 
     #end def __init__
@@ -1460,7 +1748,8 @@ class Supercomputer(Machine):
             jid = job.internal_id
             pid = job.system_id
             if pid is None:
-                self.error('job {0} does not have a process id issued by the scheduler'.format(jid))
+                msg = 'job {0} does not have a process id issued by the scheduler'.format(jid)
+                raise ProcessLookupError(msg)
             #end if
             self.process_job(job)
             self.jobs[jid] = job
@@ -1476,7 +1765,8 @@ class Supercomputer(Machine):
                 job.status = job.states.waiting
                 self.waiting.add(jid)
         else:
-            self.error('requeue_job received non-Job instance '+job.__class__.__name__)
+            msg = 'requeue_job received non-Job instance '+job.__class__.__name__
+            raise TypeError(msg)
         #end if
     #end def requeue_job
 
@@ -1492,7 +1782,11 @@ class Supercomputer(Machine):
         no_cores = job.cores is None
         no_nodes = job.nodes is None
         if no_cores and no_nodes:
-            self.error('job did not specify cores or nodes\nAt least one must be provided')
+            msg = (
+                'job did not specify cores or nodes\n'
+                'At least one must be provided'
+                )
+            raise ValueError(msg)
         elif no_cores:
             job.cores = self.cores_per_node*job.nodes
         elif no_nodes:
@@ -1531,7 +1825,8 @@ class Supercomputer(Machine):
             if self.account is not None:
                 job.account = self.account
             elif self.requires_account:
-                self.error('account not specified for job on '+self.name)
+                msg = 'account not specified for job on '+self.name
+                raise ValueError(msg)
             #end if
         #end if
         self.post_process_job(job)
@@ -1572,7 +1867,8 @@ class Supercomputer(Machine):
             elif 'envs' in job.run_options:
                 envs = job.run_options.envs
             else:
-                self.error('failed to set env options for runjob')
+                msg = 'failed to set env options for runjob'
+                raise RuntimeError(msg)
             #end if
             job.run_options.add(
                 np       = '--np '+str(job.processes),
@@ -1585,15 +1881,16 @@ class Supercomputer(Machine):
             None
         elif launcher=='ibrun': # Lonestar contribution from Paul Young
             job.run_options.add(
-	        np	= '-n '+str(job.processes),
-	        p	= '-o '+str(0),
-	        )
+            np	= '-n '+str(job.processes),
+            p	= '-o '+str(0),
+            )
         elif launcher=='jsrun': # Summit
             None # Summit class takes care of this in post_process_job
         elif launcher=='lrun': # Lassen
             None # Lassen class takes care of this in post_process_job
         else:
-            self.error(launcher+' is not yet implemented as an application launcher')
+            msg = launcher+' is not yet implemented as an application launcher'
+            raise NotImplementedError(msg)
         #end if
     #end def process_job_options
 
@@ -1611,7 +1908,11 @@ class Supercomputer(Machine):
     def query_queue(self,out=None):
         self.system_queue.clear()
         if self.query_with_username and self.user is None:
-            self.error('querying queue on machine "{}" requires user name\nplease provide username via the "user" keyword in settings'.format(self.name))
+            msg = (
+                'querying queue on machine "{}" requires user name\n'
+                'please provide username via the "user" keyword in settings'.format(self.name)
+                )
+            raise RuntimeError(msg)
         #end if
         if self.queue_querier=='qstat':
             if out is None:
@@ -1632,7 +1933,8 @@ class Supercomputer(Machine):
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
-                            self.error('job state '+status+' is unrecognized')
+                            msg = 'job state '+status+' is unrecognized'
+                            raise RuntimeError(msg)
                         #end if
                     #end if
                 #end if
@@ -1685,7 +1987,8 @@ class Supercomputer(Machine):
                             if status in self.job_states:
                                 self.system_queue[pid] = self.job_states[status]
                             else:
-                                self.error('job state '+status+' is unrecognized')
+                                msg = 'job state '+status+' is unrecognized'
+                                raise RuntimeError(msg)
                             #end if
                         #end if
                     #end if
@@ -1712,7 +2015,8 @@ class Supercomputer(Machine):
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
-                            self.error('job state '+status+' is unrecognized')
+                            msg = 'job state '+status+' is unrecognized'
+                            raise RuntimeError(msg)
                         #end if
                     elif spid.isdigit() and len(tokens)==7:
 
@@ -1722,7 +2026,8 @@ class Supercomputer(Machine):
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
-                            self.error('job state '+status+' is unrecognized')
+                            msg = 'job state '+status+' is unrecognized'
+                            raise RuntimeError(msg)
                         #end if
                     #end if
                 #end if
@@ -1750,7 +2055,8 @@ class Supercomputer(Machine):
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
-                            self.error('job state '+status+' is unrecognized')
+                            msg = 'job state '+status+' is unrecognized'
+                            raise RuntimeError(msg)
                         #end if
                     #end if
                 #end if
@@ -1770,7 +2076,8 @@ class Supercomputer(Machine):
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
-                            self.error('job state '+status+' is unrecognized')
+                            msg = 'job state '+status+' is unrecognized'
+                            raise RuntimeError(msg)
                         #end if
                     #end if
                 #end if
@@ -1781,7 +2088,8 @@ class Supercomputer(Machine):
                 self.system_queue[pid] = 'complete'
             #end for
         else:
-            self.error('ability to query queue with '+self.queue_querier+' has not yet been implemented')
+            msg = 'ability to query queue with '+self.queue_querier+' has not yet been implemented'
+            raise NotImplementedError(msg)
         #end if
         done = []
         for pid,process in self.processes.items():
@@ -1826,9 +2134,14 @@ class Supercomputer(Machine):
     def submit_job(self,job):
         pad = self.enter(job.directory,msg=job.internal_id)
         if job.subfile is None:
-            self.error('submission file not specified for job')
+            msg = 'submission file not specified for job'
+            raise AttributeError(msg, name="subfile", obj=job)
         elif not os.path.exists(job.subfile):
-            self.error('job submission file was not written prior to submission\n  submission file: '+os.path.join(job.directory,job.subfile))
+            msg = (
+                'job submission file was not written prior to submission\n'
+                '  submission file: '+os.path.join(job.directory,job.subfile)
+                )
+            raise FileNotFoundError(msg)
         #end if
         command = self.sub_command(job)
         if nexus_core.generate_only:
@@ -1846,7 +2159,11 @@ class Supercomputer(Machine):
             output=out+'\n'+err
             pid = self.read_process_id(output)
             if pid is None:
-                self.error('process id could not be determined from submission output\n  output:\n'+output)
+                msg = (
+                    'process id could not be determined from submission output\n'
+                    '  output:\n'+output
+                    )
+                raise RuntimeError(msg)
             else:
                 self.log(pad+'  pid: {0}'.format(pid))
             #end if
@@ -1869,7 +2186,8 @@ class Supercomputer(Machine):
         elif self.job_remover=='scancel':
             command = 'scancel '+str(job.system_id)
         else:
-            self.error('ability to remove job using '+self.job_remover+' has not yet been implemented')
+            msg = 'ability to remove job using '+self.job_remover+' has not yet been implemented'
+            raise NotImplementedError(msg)
         #endif
         os.system(command)
     #end def remove_job
@@ -1886,7 +2204,7 @@ class Supercomputer(Machine):
     #end def setup_environment
 
 
-    def write_job(self,job,file=False):
+    def write_job(self,job,*,file=False):
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         if job.template is None:
             env = self.setup_environment(job)
@@ -1906,9 +2224,9 @@ class Supercomputer(Machine):
         #end if
         if file:
             filepath = os.path.join(job.directory,job.subfile)
-            fobj = open(filepath,'w')
-            fobj.write(c)
-            fobj.close()
+            with open(filepath,'w') as fobj:
+                fobj.write(c)
+
             if self.executable_subfile:
                 os.system('chmod +x '+filepath)
             #end if
@@ -2089,9 +2407,13 @@ class Supercomputer(Machine):
 
         # Report all validation errors
         if errors:
-            self.error('Queue validation failed for queue {}:\n  {}'.format(
-                job.queue, '\n  '.join(errors)))
-            return False
+            msg = (
+                'Queue validation failed for queue {}:\n'
+                '  {}'.format(
+                    job.queue, '\n  '.join(errors)
+                    )
+                )
+            raise NexusError(msg)
         #end if
 
         return True
@@ -2379,7 +2701,11 @@ class Cori(NerscMachine):
             self.cores_per_node = 32
             self.ram_per_node   = 2048
         else:
-            self.error('SLURM input "constraint" must contain either "knl", "haswell", or "amd" on Cori\nyou provided: {0}'.format(job.constraint))
+            msg = (
+                'SLURM input "constraint" must contain either "knl", "haswell", or "amd" on Cori\n'
+                'you provided: {0}'.format(job.constraint)
+                )
+            raise ValueError(msg)
         #end if
         if job.core_spec is not None:
             self.cores_per_node -= job.core_spec
@@ -2395,7 +2721,11 @@ class Cori(NerscMachine):
         elif 'amd' in job.constraint:
             hyperthreads   = 2
         else:
-            self.error('SLURM input "constraint" must contain either "knl", "haswell" or "amd" on Cori\nyou provided: {0}'.format(job.constraint))
+            msg = (
+                'SLURM input "constraint" must contain either "knl", "haswell" or "amd" on Cori\n'
+                'you provided: {0}'.format(job.constraint)
+                )
+            raise ValueError(msg)
         #end if
         cpus_per_task = int(np.floor(float(self.cores_per_node)/job.processes_per_node))*hyperthreads
         c='#!/bin/bash\n'
@@ -2457,7 +2787,11 @@ class Perlmutter(NerscMachine):
             self.ram_per_node   = 256
             self.gpus_per_node  = 4
         else:
-            self.error('SLURM input "constraint" must contain either "cpu" or "gpu" on Perlmutter\nyou provided: {0}'.format(job.constraint))
+            msg = (
+                'SLURM input "constraint" must contain either "cpu" or "gpu" on Perlmutter\n'
+                'you provided: {0}'.format(job.constraint)
+                )
+            raise ValueError(msg)
         #end if
     #end def pre_process_job
 
@@ -2467,11 +2801,19 @@ class Perlmutter(NerscMachine):
         # Check if the user gave reasonable processes_per_node
         if 'cpu' in job.constraint:
             if job.processes_per_node > self.cores_per_node:
-                self.error('processes_per_node can not be greater than logical CPUs per node (256)\nyou provided: {0}'.format(job.processes_per_node))
+                msg = (
+                    'processes_per_node can not be greater than logical CPUs per node (256)\n'
+                    'you provided: {0}'.format(job.processes_per_node)
+                    )
+                raise ValueError(msg)
             #end if
         elif 'gpu' in job.constraint:
             if job.processes_per_node > self.gpus_per_node:
-                self.error('processes_per_node can not be greater than GPUs per node (4)\nyou provided: {0}'.format(job.processes_per_node))
+                msg = (
+                    'processes_per_node can not be greater than GPUs per node (4)\n'
+                    'you provided: {0}'.format(job.processes_per_node)
+                    )
+                raise ValueError(msg)
             #end if
             # Also check if the user forgot to include '_g' in the account name for GPU jobs
             if '_g' not in job.account:
@@ -2497,16 +2839,29 @@ class Perlmutter(NerscMachine):
             max_partition = self.nodes
             max_time = 12
         else:
-            self.error('The requested queue is not implemented.')
+            msg = 'The requested queue is not implemented.'
+            raise NotImplementedError(msg)
         #end if
         job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
         if job.total_hours > max_time:
-            self.error('The maximum runtime on {0} queue should not be more than {1} hours\n  you requested: {2} hours'.format(job.queue,max_time,job.total_hours))
+            msg = (
+                'The maximum runtime on {0} queue should not be more than {1} hours\n'
+                '  you requested: {2} hours'.format(job.queue,max_time,job.total_hours)
+                )
+            raise ValueError(msg)
         #end if
         if job.nodes<base_partition:
-            self.error('The number of nodes on {0} queue should not be less than {1}\n  you requested: {2}'.format(job.queue,base_partition,job.nodes))
+            msg = (
+                'The number of nodes on {0} queue should not be less than {1}\n'
+                '  you requested: {2}'.format(job.queue,base_partition,job.nodes)
+                )
+            raise ValueError(msg)
         elif job.nodes>max_partition:
-            self.error('The number of nodes on {0} queue should not be more than {1}\n  you requested: {2}'.format(job.queue,max_partition,job.nodes))
+            msg = (
+                'The number of nodes on {0} queue should not be more than {1}\n'
+                '  you requested: {2}'.format(job.queue,max_partition,job.nodes)
+                )
+            raise ValueError(msg)
         #end if
 
         # Use the user cpus_per_task if specified. If not specified, then use available cpus for each process
@@ -3131,7 +3486,11 @@ class SuperMUC(Supercomputer):
         intel = job.type=='MPICH'
         omp   = isinstance(job.threads,int) and job.threads>1
         if not ibm and not intel:
-            self.error('the only types of MPI supported are "parallel" and "MPICH"\nreceived MPI with type: {0}'.format(job.type))
+            msg = (
+                'the only types of MPI supported are "parallel" and "MPICH"\n'
+                'received MPI with type: {0}'.format(job.type)
+                )
+            raise ValueError(msg)
         #end if
         c ='#!/bin/bash\n'
         c+='#@ job_name         = {0}\n'.format(job.name)
@@ -3447,33 +3806,34 @@ class Baseline(Supercomputer):
     name = 'baseline'
     requires_account = True
     batch_capable    = True
-    queue_configs={
+    queue_configs=MappingProxyType({
         'default': 'batch_cnms',
         'batch': {
             'max_nodes': 138,
             'max_walltime': '24:00:00',
-        },
+            },
         'batch_low_memory': {
             'max_nodes': 68,
             'max_walltime': '24:00:00',
-        },
+            },
         'batch_high_memory': {
             'max_nodes': 70,
             'max_walltime': '24:00:00',
-        },
+            },
         'batch_ccsi': {
             'max_nodes': 20,
             'max_walltime': '24:00:00',
-        },
+            },
         'batch_cnms': {
             'max_nodes': 20,
             'max_walltime': '24:00:00',
-        },
+            },
         'gpu_acmhs': {
             'max_nodes': 1,
             'max_walltime': '24:00:00',
-        }
-    }
+            }
+        })
+
     def write_job_header(self,job):
         self.validate_queue_config(job)
 
@@ -3502,21 +3862,21 @@ class Frontier(Supercomputer):
     requires_account = True
     batch_capable    = True
 
-    queue_configs = {
+    queue_configs = MappingProxyType({
         'default': 'batch',
         'batch': {
             'max_nodes': 9664,
             'max_walltime': '12:00:00',
-        },
+            },
         'extended': {
             'max_nodes': 1894,
             'max_walltime': '24:00:00',
-        },
+            },
         'debug': {
             'max_nodes': 1,
             'max_walltime': '01:00:00',
-        }
-    }
+            }
+        })
 
     def pre_process_job(self,job):
         # Set default queue and node type
@@ -3533,7 +3893,11 @@ class Frontier(Supercomputer):
             self.cores_per_node = 56
             self.gpus_per_node  = 4
         else:
-            self.error('SLURM input "constraint" must contain either "cpu" or "gpu" on Frontier\nyou provided: {0}'.format(job.constraint))
+            msg = (
+                'SLURM input "constraint" must contain either "cpu" or "gpu" on Frontier\n'
+                'you provided: {0}'.format(job.constraint)
+                )
+            raise ValueError(msg)
         #end if
     #end def pre_process_job
     
@@ -3543,20 +3907,20 @@ class Frontier(Supercomputer):
             job.run_options.add(
                 cpu_bind='--cpu-bind=threads',
                 threads_per_core='--threads-per-core={0}'.format(job.threads)
-            )            
+                )
         elif 'gpu' in job.constraint:
             gpus_per_task = int(np.floor(float(self.gpus_per_node)/job.processes_per_node))
             job.run_options.add(
                 gpu_bind='--gpu-bind=closest',
                 gpus_per_task='--gpus-per-task={0}'.format(gpus_per_task)
-            )
+                )
         #end if
         job.run_options.add(
             N='-N {}'.format(job.nodes),
             n='-n {}'.format(job.processes),
             c='-c {}'.format(job.threads),
 
-        )
+            )
 
     def write_job_header(self, job):
         self.validate_queue_config(job)
@@ -3589,21 +3953,21 @@ class Besms(Supercomputer):
     requires_account = True
     batch_capable    = True
     # Using sinfo to get the queue configs
-    queue_configs={
+    queue_configs=MappingProxyType({
         'default': 't92',
         't92': {
             'max_nodes': 10,
             'max_walltime': '672:00:00',
-        },
+            },
         't92-burst': {
             'max_nodes': 25,
             'max_walltime': '672:00:00',
-        },
+            },
         'burst': {
             'max_nodes': 166,
             'max_walltime': '48:00:00',
         },
-    }
+    })
     def write_job_header(self,job):
         self.validate_queue_config(job)
 
@@ -3815,28 +4179,28 @@ class Leonardo(Supercomputer):
     # https://docs.hpc.cineca.it/hpc/leonardo.html#file-systems-and-data-managment
     # parallel partition: boost_usr_prod 
     # GPUs: up to 4 gpus per node
-    booster_qos = {
+    booster_qos = MappingProxyType({
         'normal': {
             'max_nodes' : 64,
             'min_nodes' : 1,
             'max_hours' : 24.0,
-        },
+            },
         'boost_qos_dbg': {
             'max_nodes' : 4,
             'min_nodes' : 1,
             'max_hours' : 0.5,   # 30 minuti
-        },
+            },
         'boost_qos_bprod': {
             'min_nodes' : 65,
             'max_nodes' : 256,
             'max_hours' : 24.0,
-        },
+            },
         'boost_qos_lprod': {
             'min_nodes' : 1,
             'max_nodes' : 8,
             'max_hours' : 96.0,  # 4 giorni
         },
-    }
+    })
     # serial partition: lrd_all_serial
     # No GPUs, Hyperthreading x 2, Budget Free, 30800 MB RAM
     serial_partition  = 'lrd_all_serial'
@@ -3853,13 +4217,13 @@ class Leonardo(Supercomputer):
         job.run_options.add(
             N='-N {}'.format(job.nodes),
             n='-n {}'.format(job.processes),
-        )
+            )
 
         # If OpenMP threads are requested, set -c and cpu binding
         if job.threads > 1:
             job.run_options.add(
                 c='-c {}'.format(job.threads),
-            )
+                )
 
             # Only add cpu_bind if not already specified by the user
             if 'cpu_bind' not in job.run_options:
@@ -3894,7 +4258,7 @@ class Leonardo(Supercomputer):
             + job.hours
             + job.minutes / 60.0
             + job.seconds / 3600.0
-        )
+            )
 
         if serial_mode:
             # ===== SERIAL MODE: lrd_all_serial =====
@@ -3905,7 +4269,7 @@ class Leonardo(Supercomputer):
                 raise RuntimeError(
                     f'The serial queue (partition=lrd_all_serial) allows exactly 1 node, '
                     f'but job.nodes={job.nodes}.'
-                )
+                    )
 
             # Check total cores (processes_per_node * threads)
             ppn = getattr(job, 'processes_per_node', None)
@@ -3917,7 +4281,7 @@ class Leonardo(Supercomputer):
                     raise RuntimeError(
                         f'The serial queue (partition=lrd_all_serial) allows at most {self.serial_max_cores} cores, '
                         f'but you requested {total_cores} (ppn={ppn}, threads={threads}).'
-                    )
+                        )
             # end if
 
             # Enforce serial walltime limit
@@ -3925,7 +4289,7 @@ class Leonardo(Supercomputer):
                 raise RuntimeError(
                     f'Requested runtime ({job.total_hours:.2f} h) exceeds '
                     f'lrd_all_serial limit ({self.serial_max_hours:.2f} h).'
-                )
+                    )
 
         else:
             # ===== BOOSTER MODE: boost_usr_prod with QoS table =====
@@ -3941,7 +4305,7 @@ class Leonardo(Supercomputer):
                 raise RuntimeError(
                     f'Unknown QoS "{job.queue}" for machine "leonardo". '
                     f'Valid QoS: {", ".join(self.booster_qos.keys())}.'
-                )
+                    )
             # end if
 
             min_nodes = qos_rules.get('min_nodes', 1)
@@ -3953,14 +4317,14 @@ class Leonardo(Supercomputer):
                 raise RuntimeError(
                     f'Requested nodes ({job.nodes}) < min ({min_nodes}) '
                     f'for QoS {job.queue}.'
-                )
+                    )
             # end if
 
             if max_nodes is not None and job.nodes > max_nodes:
                 raise RuntimeError(
                     f'Requested nodes ({job.nodes}) > max ({max_nodes}) '
                     f'for QoS {job.queue}.'
-                )
+                    )
             # end if
 
             # Enforce walltime limit
@@ -3968,7 +4332,7 @@ class Leonardo(Supercomputer):
                 raise RuntimeError(
                     f'Requested runtime ({job.total_hours:.2f} h) exceeds '
                     f'limit ({max_hours:.2f} h) for QoS {job.queue}.'
-                )
+                    )
             # end if
         # end if serial_mode
 
@@ -3982,7 +4346,7 @@ class Leonardo(Supercomputer):
             job.hours + 24 * job.days,
             job.minutes,
             job.seconds
-        )
+            )
         c += f'#SBATCH --output={job.outfile}\n'
         c += f'#SBATCH --error={job.errfile}\n'
 
@@ -4338,7 +4702,8 @@ class Aurora(Supercomputer):
             self.ram_per_node   = 768
             self.gpus_per_node  = 6
         else:
-            self.error('CPU or GPU constraint must be specified for Aurora')
+            msg = 'CPU or GPU constraint must be specified for Aurora'
+            raise ValueError(msg)
         #end if
     #end def pre_process_job
 
@@ -4360,7 +4725,8 @@ class Aurora(Supercomputer):
                 # end for
 
             else:
-                self.error('CPU or GPU constraint must be specified for Aurora')
+                msg = 'CPU or GPU constraint must be specified for Aurora'
+                raise ValueError(msg)
             #end if
 
             opt = obj(
@@ -4479,7 +4845,7 @@ class Kagayaki(Supercomputer):
         job.run_options.add(**opt)
 
     def write_job_header(self,job):
-        ppn = 16 if job.queue in ['Default', 'SINGLE', 'LONG', 'DEFAULT'] else 128
+        ppn = 16 if job.queue in {'Default', 'SINGLE', 'LONG', 'DEFAULT'} else 128
         c=''
         c+='#!/bin/bash\n'
         if (job.queue is not None):
@@ -4687,7 +5053,7 @@ Ruby(         1480,   2,    28,  192,  100,   'srun',   'sbatch',  'squeue', 'sc
 Kestrel(      2144,   2,    52,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Inti(           13,   2,    64,  256,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Baseline(      128,   2,    64,  512,  100,   'srun',   'sbatch',  'squeue', 'scancel')
-Besms(         166,   1,    96,  768, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Besms(         166,   2,    96,  768, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Frontier(     9856,   4,    14,   64, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Aurora(      10624,   2,   102,  512, 1000,'mpiexec',     'qsub',   'qstat',    'qdel')
 
@@ -4697,4 +5063,3 @@ get_machine      = Machine.get
 
 #rename Job with lowercase
 job=Job
-

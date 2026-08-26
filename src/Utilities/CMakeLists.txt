@@ -15,7 +15,7 @@ add_library(qmcrng ${QMC_RNG})
 
 set(UTILITIES
     qmc_common.cpp
-    OhmmsObject.cpp
+
     SimpleParser.cpp
     Clock.cpp
     NewTimer.cpp

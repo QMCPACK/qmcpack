@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2025 QMCPACK developers.
+// Copyright (c) 2026 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -19,7 +19,6 @@
 #ifndef QMCPLUSPLUS_MEMMANAGE_CUDA_H
 #define QMCPLUSPLUS_MEMMANAGE_CUDA_H
 
-#include <memory>
 #include <cstdlib>
 #include <stdexcept>
 #include <atomic>
@@ -99,8 +98,6 @@ struct CUDAManagedAllocator
 {
   using value_type    = T;
   using size_type     = size_t;
-  using pointer       = T*;
-  using const_pointer = const T*;
 
   CUDAManagedAllocator() = default;
   template<class U>

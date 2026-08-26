@@ -220,8 +220,10 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
 
   if (use_offload_)
   {
+#if !defined(REMOVE_TRACEMANAGER)
     if (o_leader.streaming_particles_)
       throw std::runtime_error("Streaming particles is not supported when offloading in CoulombPBCAA");
+#endif
 
     auto short_range_results = mw_evalSR_offload(o_list, p_list);
 

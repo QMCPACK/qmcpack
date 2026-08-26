@@ -2,12 +2,9 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.NEXUS_BASE)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 from . import isolate_nexus_core
 from ..testing import object_eq
-
+from ..generic import generic_settings
 
 
 def test_namespaces():

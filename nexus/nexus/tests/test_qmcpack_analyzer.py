@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_ANALYZER)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from . import isolate_nexus_core, TEST_DIR
 from ..testing import value_eq,object_eq,text_eq
@@ -408,7 +406,6 @@ def test_twist_average_analysis():
 
 def test_density_analysis():
     _ = pytest.importorskip("h5py")
-    import os
     from numpy import array
     from ..qmcpack_analyzer import QmcpackAnalyzer
 

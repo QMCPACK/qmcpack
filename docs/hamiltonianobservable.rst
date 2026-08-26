@@ -500,9 +500,13 @@ Remarks:
 General estimators
 ------------------
 
-A broad range of estimators for physical observables are available in QMCPACK.
+A broad range of estimators for physical observables are available in
+QMCPACK. At the moment the "legacy" i.e. serial only deprecated
+drivers and batched i.e. currently supported drivers support slightly
+different sets of estimators.
+
 The following sections contain input details for the total number
-density (``density``), number density resolved by particle spin
+density (``density``) (legacy only), number density resolved by particle spin
 (``spindensity``), spherically averaged pair correlation function
 (``gofr``), static structure factor (``sk``), static structure factor
 (``skall``), energy density (``energydensity``), one body reduced
@@ -510,18 +514,27 @@ density matrix (``dm1b``), :math:`S(k)` based kinetic energy correction
 (``chiesa``), and force
 (``Force``) estimators. Other estimators are not yet covered.
 
-When an ``<estimator/>`` element appears in ``<hamiltonian/>``, it is
-evaluated for all applicable chained QMC runs (e.g.,
-VMC\ :math:`\rightarrow`\ DMC\ :math:`\rightarrow`\ DMC). Estimators are
-generally not accumulated during wavefunction optimization sections. If
-an ``<estimator/>`` element is instead provided in a particular
-``<qmc/>`` element, that estimator is only evaluated for that specific
-section (e.g., during VMC only).
+For all batched VMC and DMC ``<qmc>`` sections, place modern
+estimator input in an ``<estimators>`` container.  A single global
+container may appear inside either ``<simulation>`` or ``<qmcsystem>`` and
+supplies estimators to every QMC section.  A container inside a ``<qmc>``
+section supplies estimators only to that section.  QMCPACK combines global
+and local estimators containers for each qmc section at runtimne; a
+local estimator does not override a global estimator
+with the same name.  Such duplicate same-name global and local metadata is
+ambiguous and is not supported by ``qdens``; use distinct estimator names.
+The legacy practice of placing ``<estimator>`` sections in the
+``<hamiltonian>`` node still operates but is deprecated and will not
+be supported indefinitely, new inputs should use an ``<estimators>``
+container at either global or qmc section scope.  Bare ``<estimator>`` children of a
+``<qmc>`` scope are deprecated as well.
+
+Estimators are generally not accumulated during wavefunction optimization sections. If
 
 ``estimator`` factory element:
 
   +------------------+----------------------+
-  | parent elements: | ``hamiltonian, qmc`` |
+  | parent elements: | ``estimators`` |
   +------------------+----------------------+
   | type selector:   | ``type`` attribute   |
   +------------------+----------------------+
@@ -703,10 +716,28 @@ Spin density estimator
 
 The spin density is similar to the total density described previously.  In this case, the sum over particles is performed independently for each spin component.
 
+
+.. code-block:: xml
+
+   <qmcsystem>
+     <estimators>
+       <estimator name="GlobalSpinDensity" type="spindensity">
+         <parameter name="grid">40 40 40</parameter>
+       </estimator>
+     </estimators>
+   </qmcsystem>
+   <qmc method="vmc_batch" move="pbyp">
+     <estimators>
+       <estimator name="SpinDensity" type="spindensity">
+         <parameter name="grid">80 80 80</parameter>
+       </estimator>
+     </estimators>
+   </qmc>
+
 ``estimator type=spindensity`` element:
 
   +------------------+----------------------+
-  | parent elements: | ``hamiltonian, qmc`` |
+  | parent elements: | ``estimators``       |
   +------------------+----------------------+
   | child elements:  | *None*               |
   +------------------+----------------------+

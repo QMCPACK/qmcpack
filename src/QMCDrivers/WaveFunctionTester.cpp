@@ -98,7 +98,7 @@ WaveFunctionTester::~WaveFunctionTester() {}
  small displacement for the ith particle.
 */
 
-bool WaveFunctionTester::run()
+void WaveFunctionTester::run()
 {
   std::array<char, 16> fname;
   if (std::snprintf(fname.data(), fname.size(), "wftest.%03d", OHMMS::Controller->rank()) < 0)
@@ -156,7 +156,7 @@ bool WaveFunctionTester::run()
 
   //RealType ene = H.evaluate(W);
   //app_log() << " Energy " << ene << std::endl;
-  return true;
+  return;
 }
 
 void WaveFunctionTester::runCloneTest()

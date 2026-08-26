@@ -11,7 +11,8 @@
 
 
 #include "MockGoldWalkerElements.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "EnergyDensityEstimator.h"
 #include <iostream>
@@ -53,6 +54,10 @@ TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
   EnergyDensityInput edein{node};
   {
     NEEnergyDensityEstimator e_den_est(edein, particle_pool.getPool());
+    PooledData<QMCTraits::RealType> buffer;
+    e_den_est.packData(buffer);
+    REQUIRE(buffer.size() == e_den_est.getFullDataSize());
+    CHECK(buffer[buffer.size() - 1] == Approx(0.0));
   }
 }
 
@@ -83,7 +88,13 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
     auto clone = original_e_den_est.spawnCrowdClone();
     REQUIRE(clone != nullptr);
     REQUIRE(clone.get() != &original_e_den_est);
-    REQUIRE(dynamic_cast<decltype(&original_e_den_est)>(clone.get()) != nullptr);
+    auto* clone_e_den_est = dynamic_cast<decltype(&original_e_den_est)>(clone.get());
+    REQUIRE(clone_e_den_est != nullptr);
+
+    PooledData<QMCTraits::RealType> buffer;
+    clone_e_den_est->packData(buffer);
+    REQUIRE(buffer.size() == clone_e_den_est->getFullDataSize());
+    CHECK(buffer[buffer.size() - 1] == Approx(0.0));
   }
 }
 
@@ -148,6 +159,16 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   CHECK(summed_grid == Approx(expected_sum));
 
   e_den_est.write(hd);
+
+  PooledData<QMCTraits::RealType> buffer;
+  e_den_est.packData(buffer);
+  REQUIRE(buffer.size() == e_den_est.getFullDataSize());
+  CHECK(buffer[buffer.size() - 1] == Approx(4.0));
+
+  e_den_est.zero();
+  buffer.clear();
+  e_den_est.packData(buffer);
+  CHECK(buffer[buffer.size() - 1] == Approx(0.0));
   std::cout << "wrote success\n";
 }
 

@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QDENS_RADIAL)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from . import TEST_DIR
 from ..testing import execute,text_eq,check_value_eq
@@ -11,7 +9,6 @@ from ..testing import execute,text_eq,check_value_eq
 
 def test_radial_density():
     _ = pytest.importorskip("spglib")
-    import os
 
     exe = TEST_DIR.parent / "bin/qdens-radial"
 

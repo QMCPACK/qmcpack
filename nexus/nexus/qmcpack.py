@@ -28,7 +28,7 @@ import os
 from copy import deepcopy
 import numpy as np
 from .simulation import Simulation, NullSimulationAnalyzer
-from .qmcpack_input import (
+from .qmcpack_input import (  # noqa: F401
     QmcpackInput,
     TracedQmcpackInput,
     loop,
@@ -57,6 +57,7 @@ from .qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToA
 from .pyscf_sim import Pyscf
 from .developer import DevBase, obj, error, unavailable
 from .nexus_base import nexus_core
+from .pseudoset import PseudoSet
 from .hdfreader import read_hdf
 from .unit_converter import convert
 from .pwscf import Pwscf
@@ -104,7 +105,7 @@ class GCTA(DevBase):
             symm_kgrid = self.system.generation_info.symm_kgrid
         except:
             symm_kgrid = False
-        if (self.flavor.lower() in ['safl', 'afl']) and (symm_kgrid == True):
+        if (self.flavor.lower() in {'safl', 'afl'}) and (symm_kgrid == True):
             self.error('''
                 safl and afl are not supported with symm_kgrid = True.
                 It is possible to implement the afl and safl algorithms with k-point symmetries
@@ -307,7 +308,7 @@ class GCTA(DevBase):
             error('Traceback level should be at least one. {} was given.'.format(levels))
         #end if
         current_dep = dependency
-        for level in range(levels):
+        for level in range(levels):  # noqa: B007
             len_dep = 0
             for dep in current_dep.dependencies:
                 if isinstance(dep.sim, cls):
@@ -374,7 +375,7 @@ class GCTA(DevBase):
                 kweight = data[ikpoint,ispin].kweight
                 ksym_range = kweight * norm_factor
                 ksym_range = self.int_kpoint_weight(ksym_range)
-                for ksym in range(ksym_range):
+                for ksym in range(ksym_range):  # noqa: B007
                     combined_eigens.extend(data[ikpoint,ispin].eig)
                 #end for
             #end for
@@ -408,7 +409,7 @@ class GCTA(DevBase):
                 kweight = data[ikpoint,ispin].kweight
                 ksym_range = kweight * norm_factor
                 ksym_range = self.int_kpoint_weight(ksym_range)
-                for ksym in range(ksym_range):
+                for ksym in range(ksym_range):  # noqa: B007
                     combined_eigens[ispin].extend(data[ikpoint,ispin].eig)
                 #end for
             #end for
@@ -508,7 +509,7 @@ class GCTA(DevBase):
         Check the net charge of the twist averaged system
         '''
         q_sum_twists = self.sum_charge_twists()
-        if (self.flavor.lower() in ['safl', 'afl']) and (q_sum_twists != 0):
+        if (self.flavor.lower() in {'safl', 'afl'}) and (q_sum_twists != 0):
             self.error('''
                 The sum of charges over all twists is {} electrons!
                 This is not supposed to happen for afl or safl!
@@ -608,11 +609,11 @@ class Qmcpack(Simulation):
     generic_identifier = 'qmcpack'
     infile_extension   = '.in.xml'
     application   = 'qmcpack'
-    application_properties = set(['serial','omp','mpi'])
-    application_results    = set(['jastrow','cuspcorr','wavefunction'])
+    application_properties = frozenset({'serial','omp','mpi'})
+    application_results    = frozenset({'jastrow','cuspcorr','restart','wavefunction'})
 
     # dynamic workflow support
-    allowed_requirements = ['none','pwscf_orbitals','jastrow','wavefunction']
+    allowed_requirements = ('none','pwscf_orbitals','jastrow','wavefunction')
 
     def has_afqmc_input(self):
         afqmc_input = False
@@ -683,6 +684,79 @@ class Qmcpack(Simulation):
     #end def pre_write_inputs
 
 
+    @staticmethod
+    def restartable_input(input):
+        if isinstance(input,TracedQmcpackInput):
+            inputs = input.inputs.values()
+        else:
+            inputs = (input,)
+        #end if
+        restartable = True
+        for qi in inputs:
+            calculations = qi.unroll_calculations(modify=False)
+            restartable &= len(calculations)>0
+            if len(calculations)>0:
+                final_calculation = calculations[len(calculations)-1]
+                checkpoint = final_calculation.get('checkpoint')
+                restartable &= checkpoint is None or checkpoint>=0
+            #end if
+        #end for
+        return restartable
+    #end def restartable_input
+
+
+    def get_restart_entry(self,input,group=None,twistnum=None):
+        qmc = input.get_output_info('qmc')
+        if len(qmc)==0:
+            self.error('cannot obtain a restart from a QMCPACK input without QMC calculation sections')
+        #end if
+        final = qmc[len(qmc)-1]
+        prefix = final.prefix
+        if group is not None:
+            prefix += '.g'+str(group).zfill(3)
+        #end if
+        fileroot = prefix+'.s'+str(final.series).zfill(3)
+        cont_file = os.path.join(self.locdir,fileroot+'.cont.xml')
+        if not os.path.exists(cont_file):
+            self.error('QMCPACK restart continuation file does not exist\n  file: '+cont_file)
+        #end if
+
+        cont_input = QmcpackInput(cont_file)
+        if 'mcwalkerset' not in cont_input.simulation:
+            self.error('QMCPACK continuation file does not contain an mcwalkerset element\n  file: '+cont_file)
+        #end if
+        walkers = deepcopy(cont_input.simulation.mcwalkerset)
+        source_root = walkers.fileroot
+        if not os.path.isabs(source_root):
+            source_root = os.path.join(os.path.dirname(cont_file),source_root)
+        #end if
+        source_root = os.path.normpath(source_root)
+        config_file = source_root+'.config.h5'
+        random_file = source_root+'.random.h5'
+        missing = [f for f in (config_file,random_file) if not os.path.exists(f)]
+        if len(missing)>0:
+            self.error('QMCPACK restart files do not exist\n  missing files:\n    '+'\n    '.join(missing))
+        #end if
+        return obj(
+            cont_file   = cont_file,
+            config_file = config_file,
+            random_file = random_file,
+            fileroot    = source_root,
+            mcwalkerset = walkers,
+            project_id     = cont_input.simulation.project.id,
+            project_series = int(cont_input.simulation.project.series),
+            twistnum    = twistnum,
+            )
+    #end def get_restart_entry
+
+
+    def incorporate_restart_entry(self,input,restart):
+        walkers = deepcopy(restart.mcwalkerset)
+        walkers.fileroot = os.path.relpath(restart.fileroot,self.locdir)
+        input.simulation.mcwalkerset = walkers
+    #end def incorporate_restart_entry
+
+
     def check_result(self,result_name,sim):
         calculating_result = False
         if result_name=='jastrow' or result_name=='wavefunction':
@@ -690,6 +764,8 @@ class Qmcpack(Simulation):
             calculating_result = 'opt' in calctypes
         elif result_name=='cuspcorr':
             calculating_result = self.input.cusp_correction()
+        elif result_name=='restart':
+            calculating_result = not self.has_afqmc_input() and self.restartable_input(self.input)
         #end if        
         return calculating_result
     #end def check_result
@@ -715,6 +791,17 @@ class Qmcpack(Simulation):
             result.spo_dn_cusps = os.path.join(self.locdir,self.identifier+'.spo-dn.cuspInfo.xml')
             result.updet_cusps = os.path.join(self.locdir,'updet.cuspInfo.xml')
             result.dndet_cusps = os.path.join(self.locdir,'downdet.cuspInfo.xml')
+        elif result_name=='restart':
+            result.restarts = []
+            if isinstance(self.input,TracedQmcpackInput):
+                for group,inp in self.input.inputs.items():
+                    var = self.input.variables[group]
+                    twistnum = var.value if var.quantity=='twistnum' else None
+                    result.restarts.append(self.get_restart_entry(inp,group,twistnum))
+                #end for
+            else:
+                result.restarts.append(self.get_restart_entry(self.input))
+            #end if
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if        
@@ -725,7 +812,37 @@ class Qmcpack(Simulation):
     def incorporate_result(self,result_name,result,sim):
         input = self.input
         system = self.system
-        if result_name=='orbitals':
+        if result_name=='restart':
+            nrestart = len(result.restarts)
+            downstream_bundled = self.should_twist_average
+            upstream_bundled = nrestart>1
+            if upstream_bundled != downstream_bundled:
+                self.error(
+                    'QMCPACK restart dependencies require matching single-twist or twist-averaged simulations\n'
+                    '  upstream restart count: {}\n'
+                    '  downstream twist averaged: {}'.format(nrestart,downstream_bundled)
+                    )
+            #end if
+            if upstream_bundled:
+                self.restart_entries = deepcopy(result.restarts)
+            else:
+                self.incorporate_restart_entry(input,result.restarts[0])
+            #end if
+            same_directory = os.path.abspath(sim.locdir)==os.path.abspath(self.locdir)
+            if same_directory:
+                project_ids = set(r.project_id for r in result.restarts)
+                project_series = set(r.project_series for r in result.restarts)
+                if len(project_ids)!=1 or len(project_series)!=1:
+                    self.error(
+                        'same-directory QMCPACK restart files contain inconsistent project metadata\n'
+                        '  project ids: {}\n'
+                        '  project series: {}'.format(sorted(project_ids),sorted(project_series))
+                        )
+                #end if
+                input.simulation.project.id = project_ids.pop()
+                input.simulation.project.series = project_series.pop()
+            #end if
+        elif result_name=='orbitals':
             gcta_possible = False
             if isinstance(sim,Pw2qmcpack) or isinstance(sim,Convertpw4qmc):
 
@@ -743,7 +860,7 @@ class Qmcpack(Simulation):
                     orb_elem = wf.sposet_builders.bspline
                 elif 'sposet_builders' in wf and 'einspline' in wf.sposet_builders:
                     orb_elem = wf.sposet_builders.einspline
-                elif 'determinantset' in wf and wf.determinantset.type in ('bspline','einspline'):
+                elif 'determinantset' in wf and wf.determinantset.type in {'bspline','einspline'}:
                     orb_elem = wf.determinantset
                 else:
                     self.error('could not incorporate pw2qmcpack orbitals\nbspline sposet_builder and determinantset are both missing')
@@ -845,7 +962,7 @@ class Qmcpack(Simulation):
                     self.error('cannot incorporate orbitals from pyscf\nwrong number k-points are present\nexpected: {}\npresent: {}'.format(nkpoints,len(skpoints)))
                 #end if
                 twist_updates = []
-                for n,(h5file,kp) in enumerate(zip(result.orb_files,result.kpoints)):
+                for h5file,kp in zip(result.orb_files,result.kpoints):
                     filepath = os.path.join(result.location,h5file)
                     tu = obj(
                         twistnum = -1,
@@ -1260,7 +1377,7 @@ class Qmcpack(Simulation):
                     # Check that tw1,band1 is no longer in occupied set
                     tw1,bnd1 = exc2.split()[0:2]
                     tw2,bnd2 = exc2.split()[2:4]
-                    if exc1 in ('up','down'):
+                    if exc1 in {'up','down'}:
                         spin_channel = exc1
                         dsc = edata[spin_channel]
                         for idx,(tw,bnd) in enumerate(zip(dsc.TwistIndex,dsc.BandIndex)):
@@ -1287,7 +1404,7 @@ class Qmcpack(Simulation):
                     else:
                         self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
                     #end if
-                elif exc_type in (exc_types.energy,exc_types.lowest):
+                elif exc_type in {exc_types.energy,exc_types.lowest}:
                     # Lowest or Energy Index '-orbindex1 +orbindex2'. Eg., '-4 +5'
                     if exc_type==exc_types.lowest:
                         if exc_spin==exc_spins.down:
@@ -1300,7 +1417,7 @@ class Qmcpack(Simulation):
                         orb1 = int(exc_input[1].split()[0][1:])
                         orb2 = int(exc_input[1].split()[1][1:])
                     #end if
-                    if exc1 in ('up','down'):
+                    if exc1 in {'up','down'}:
 
                         spin_channel = exc1
                         nelec = elns.groups[spin_channel[0]].size
@@ -1330,7 +1447,7 @@ class Qmcpack(Simulation):
                             exc_failure = True
                         #end if
 
-                    elif exc1 in ('singlet','triplet'):
+                    elif exc1 in {'singlet','triplet'}:
                         wf = self.input.get('wavefunction')
                         occ = wf.determinantset.multideterminant.detlist.csf.occ
                         if occ[int(orb1)-1]!='1':
@@ -1351,7 +1468,7 @@ class Qmcpack(Simulation):
 
                 else:
                     # The format is: 'gamma vb z cb'
-                    if exc1 in ('singlet','triplet'):
+                    if exc1 in {'singlet','triplet'}:
                         self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
                     else:
 
@@ -1466,7 +1583,8 @@ class Qmcpack(Simulation):
                     self.failed = True
                     self.warn(msg)
                     filename = self.identifier+'_errors.txt'
-                    open(os.path.join(self.locdir,filename),'w').write(msg)
+                    with open(os.path.join(self.locdir,filename),'w') as fobj:
+                        fobj.write(msg)
                 #end if
 
             #end if
@@ -1518,9 +1636,8 @@ class Qmcpack(Simulation):
                         kp  = kpoints[twist_index]
                         kpq = kpoints_qmcpack[twist_index]
                         contents = ' {: 16.6f}  {: 16.12f} {: 16.12f} {: 16.12f}  {: 16.12f} {: 16.12f} {: 16.12f}\n'.format(kw,*kp,*kpq)
-                        fobj = open(os.path.join(self.locdir,twist_filename),'w')
-                        fobj.write(contents)
-                        fobj.close()
+                        with open(os.path.join(self.locdir,twist_filename),'w') as fobj:
+                            fobj.write(contents)
                     #end if
                 #end for
                 grand_canonical_twist_average = 'nelecs_at_twist' in self
@@ -1565,6 +1682,37 @@ class Qmcpack(Simulation):
                         #end for
                     #end for
                 #end if
+            #end if
+            if 'restart_entries' in self:
+                if not isinstance(self.input,TracedQmcpackInput):
+                    self.error(
+                        'twist-averaged QMCPACK restart could not be matched to bundled downstream inputs'
+                        )
+                #end if
+                if len(self.restart_entries)!=len(self.input.inputs):
+                    self.error(
+                        'twist-averaged QMCPACK restart count does not match the downstream input count\n'
+                        '  upstream restart count: {}\n'
+                        '  downstream input count: {}'.format(
+                            len(self.restart_entries),len(self.input.inputs)
+                            )
+                        )
+                #end if
+                for group,inp in self.input.inputs.items():
+                    restart = self.restart_entries[group]
+                    var = self.input.variables[group]
+                    if restart.twistnum is None or var.quantity!='twistnum' or restart.twistnum!=var.value:
+                        self.error(
+                            'twist-averaged QMCPACK restart does not match the downstream twist\n'
+                            '  bundle index: {}\n'
+                            '  upstream twist: {}\n'
+                            '  downstream variable: {}={}'.format(
+                                group,restart.twistnum,var.quantity,var.value
+                                )
+                            )
+                    #end if
+                    self.incorporate_restart_entry(inp,restart)
+                #end for
             #end if
         #end if
     #end def write_prep
@@ -1649,7 +1797,7 @@ class Qmcpack(Simulation):
             orb_elem = wf.sposet_builders.bspline
         elif 'sposet_builders' in wf and 'einspline' in wf.sposet_builders:
             orb_elem = wf.sposet_builders.einspline
-        elif 'determinantset' in wf and wf.determinantset.type in ('bspline','einspline'):
+        elif 'determinantset' in wf and wf.determinantset.type in {'bspline','einspline'}:
             orb_elem = wf.determinantset
         else:
             self.error('Could not incorporate pw2qmcpack orbitals.\nbspline sposet_builder and determinantset are both missing.')
@@ -1771,6 +1919,18 @@ class Qmcpack(Simulation):
 
 
 def generate_qmcpack(**kwargs):
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'qmcpack',
+            )
+        kwargs['pseudos'] = pseudos
+        kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
+    #end if
+
     sim_args,inp_args = Qmcpack.separate_inputs(kwargs)
 
     exc = None
@@ -1820,6 +1980,18 @@ def generate_cusp_correction(**kwargs):
     kwargs['jastrows']     = []
     kwargs['corrections']  = []
     kwargs['calculations'] = []
+
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'qmcpack',
+            )
+        kwargs['pseudos'] = pseudos
+        kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
+    #end if
 
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 

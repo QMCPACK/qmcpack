@@ -9,8 +9,8 @@
 #    development (Nexus or beyond)                                   #
 #                                                                    #
 #  Content summary:                                                  #
-#    log, warn, error                                                #
-#      Function interface to logging and error handling.             #
+#    log, warn,                                                      #
+#      Function interface to logging and warning handling.           #
 #                                                                    #
 #    DevBase                                                         #
 #      Base class inheriting generic abilities for obj, etc.         #
@@ -19,18 +19,17 @@
 #====================================================================#
 
 
-from .developer_tools import save,load,_pp_repr,_pp_str,dotdict,obj,DevBase
-from .debug import ci, interact
+from typing import NoReturn
+
+from .developer_tools import save,load,_pp_repr,_pp_str,dotdict,obj,DevBase  # noqa: F401
+from .debug import ci, interact  # noqa: F401
 
 
-from .generic import NexusError, log, error, warn, message 
-from .generic import unavailable, available, Void
-from .generic import obj_deprecated, DevBaseDeprecated
+from .generic import NexusError, FileFormatError, NotAnElementError, error, log, warn, message  # noqa: F401
+from .generic import unavailable, available, Void  # noqa: F401
+from .generic import obj_deprecated, DevBaseDeprecated  # noqa: F401
 
 
-import sys
-import copy
-import pickle
 import traceback
 from .generic import generic_settings
 
@@ -38,7 +37,7 @@ from .generic import generic_settings
 
 
 def deprecation_error():
-    message = (
+    msg = (
         'A now-deprecated member function of obj has been called.\n'
         'Please report this issue to the Nexus developers immediately.\n'
         'To temporarily restore the deprecated implementation, uncomment the\n'
@@ -50,7 +49,7 @@ def deprecation_error():
     report = (
         '\n{0}\n{1}\n{0}\n'
         '{0}\nTraceback (most recent call last):\n{2}{0}\n'
-        '{0}\n{1}\n{0}'.format(highlight,message,stack)
+        '{0}\n{1}\n{0}'.format(highlight,msg,stack)
         )
     raise RuntimeError(report)
 #end def deprecation_error
@@ -172,18 +171,18 @@ class DevBaseNexus(DevBase,obj_defended):
         kw.setdefault('logfile',self._logfile)
         log(*a,**kw)
 
-    def warn(self,message,indent='    '):
+    def warn(self,msg,indent='    '):
         warn(
-            message,
+            msg,
             indent,
             warn_type = 'class',
             cls       = type(self).__qualname__,
             )
 
-    def error(self,message,header=None,exit=True,trace=-2):
+    def error(self, msg: str, *, header: str | None = None) -> NoReturn:
         if header is None:
-            header = self.__class__.__name__
-        error(message,header,exit,trace,logfile=self._logfile)
+            header = type(self).__name__
+        error(msg, header)
 
 #end class DevBaseNexus
 

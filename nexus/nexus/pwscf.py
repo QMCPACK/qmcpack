@@ -24,13 +24,14 @@ import numpy as np
 from .nexus_base import nexus_core
 from .developer import obj
 from .physical_system import PhysicalSystem
+from .pseudoset import PseudoSet
 from .simulation import Simulation, DynamicProcess
 from .pwscf_input import PwscfInput, generate_pwscf_input
 from .pwscf_analyzer import PwscfAnalyzer
 from .execute import execute
 
 
-unique_vdw_functionals = [
+unique_vdw_functionals = (
     'optb86b-vdw',
     'vdw-df3', # optB88+vdW
     'vdw-df',
@@ -39,11 +40,11 @@ unique_vdw_functionals = [
     'vdw-df-c09',
     'vdw-df2-c09',
     'rvv10',
-    ]
-repeat_vdw_functionals = [
+    )
+repeat_vdw_functionals = (
     'vdw-df4', # 'optB86b-vdW'
-    ]
-unique_functionals = [
+    )
+unique_functionals = (
     'revpbe',
     'pw86pbe',
     'b86bpbe',
@@ -70,14 +71,16 @@ unique_functionals = [
     'sogga',
     'm06l',
     'ev93',
-    ]+unique_vdw_functionals
-repeat_functionals = [
+    *unique_vdw_functionals
+    )
+repeat_functionals = (
     'q2d', # pbeq2d
     'pz', # lda
-    ]+repeat_vdw_functionals
+    *repeat_vdw_functionals
+    )
 
-vdw_functionals     = set(unique_vdw_functionals+repeat_vdw_functionals)
-allowed_functionals = set(unique_functionals+repeat_functionals)
+vdw_functionals     = frozenset(unique_vdw_functionals+repeat_vdw_functionals)
+allowed_functionals = frozenset(unique_functionals+repeat_functionals)
 
 
 
@@ -86,15 +89,15 @@ class Pwscf(Simulation):
     analyzer_type = PwscfAnalyzer
     generic_identifier = 'pwscf'
     application = 'pw.x'
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['charge_density','orbitals','structure','restart'])
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'charge_density','orbitals','structure','restart'})
 
     supports_restarts = True # supports restartable, but not force restart yet
 
     vdw_table = None
 
     # dynamic workflow support
-    allowed_requirements = ['none','structure','charge_density','orbitals']
+    allowed_requirements = ('none','structure','charge_density','orbitals')
 
     @staticmethod
     def settings(vdw_table=None):
@@ -252,9 +255,8 @@ class Pwscf(Simulation):
                     print('    Running rsync for the {} directory. This might take a while.'.format(outdir))
                     execute(command)
                     print('    Completed rsync for the {} directory.'.format(outdir))
-                    f = open(sync_record,'w')
-                    f.write('\n')
-                    f.close()
+                    with open(sync_record,'w') as f:
+                        f.write('\n')
                 #end if
             else: # attempt to use symbolic links instead
                 link_loc = os.path.join(self.locdir,c.outdir,c.prefix+'.save')
@@ -318,9 +320,9 @@ class Pwscf(Simulation):
                     print('    Running rsync for the {} directory. This might take a while.'.format(outdir))
                     execute(command)
                     print('    Completed rsync for the {} directory.'.format(outdir))
-                    f = open(sync_record,'w')
-                    f.write('\n')
-                    f.close()
+                    with open(sync_record,'w') as f:
+                        f.write('\n')
+
                 #end if
             #end if
         elif result_name == 'hubbard_parameters':
@@ -333,9 +335,9 @@ class Pwscf(Simulation):
 
     def check_sim_status(self):
         outfile = os.path.join(self.locdir,self.outfile)
-        fobj = open(outfile,'r')
-        output = fobj.read()
-        fobj.close()
+        with open(outfile,'r') as fobj:
+            output = fobj.read()
+
         not_converged = 'convergence NOT achieved'  in output
         time_exceeded = 'Maximum CPU time exceeded' in output
         user_stop     = 'Program stopped by user request' in output
@@ -463,9 +465,8 @@ class Pwscf(Simulation):
             print('      directory copy complete')
             # fix "permission denied" on some systems
             execute('chmod -R a+rw '+outdir)
-            f = open(sync_record,'w')
-            f.write('\n')
-            f.close()
+            with open(sync_record,'w') as f:
+                f.write('\n')
     #end def recieve_charge_density
 
 
@@ -492,6 +493,18 @@ def generate_pwscf(**kwargs):
         dp,dyn_args = DynamicProcess.check_first_gen(kwargs)
         if dp is not None:
             return dp
+
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
+        kwargs['pseudos'] = pseudos
+        kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
+    #end if
 
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 

@@ -21,6 +21,7 @@ and VMC/DMC runs with total energies converged below a specified
 minimum statistical errorbar.
 '''
 
+import sys
 from nexus import settings,job,workflow_manager
 from nexus import generate_physical_system
 from nexus import generate_pwscf
@@ -58,7 +59,7 @@ def gen_qe(run_type   = 'scf',
         path = '01_ecut_conv/ecut_'+str(ecutwfc)
     else:
         path = '02_kgrid_conv/kgrid_{0}{0}{0}'.format(nkgrid)
-    assert run_type in ('scf','nscf')
+    assert run_type in {'scf','nscf'}
     if run_type=='scf':
         kgrid = 3*[nkgrid]
         extra = dict(kgrid=kgrid,requires='none')
@@ -143,7 +144,7 @@ while not converged:
                 print('Convergence level requested: {:6.4e}'.format(tol))
                 print('Convergence level reached  : {:6.4e}'.format(abs(dE)))
                 print(50*'*'+'\n')
-                exit(1)
+                sys.exit(1)
             qe = gen_qe(ecutwfc=ecut)
         else:
             # When converged, report the final energy cutoff
@@ -154,7 +155,7 @@ while not converged:
             converged = True # to exit polling loop
     elif qe.fail:
         print('\nQE run failed!!!')
-        exit(1)
+        sys.exit(1)
 
     # Run simulations actively upon poll
     wm.poll(1)
@@ -208,7 +209,7 @@ while not converged:
                 print('Convergence level requested: {:6.4e}'.format(tol))
                 print('Convergence level reached  : {:6.4e}'.format(abs(dE)))
                 print(50*'*'+'\n')
-                exit(1)
+                sys.exit(1)
             qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
         else:
             print_progress(nkgrid,energies)
@@ -218,7 +219,7 @@ while not converged:
             converged = True # to exit polling loop
     elif qe.fail:
         print('\nQE run failed!!!')
-        exit(1)
+        sys.exit(1)
     wm.poll(1)
 
 

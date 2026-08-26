@@ -33,14 +33,14 @@ import os
 import numpy as np
 from . import numpy_extensions as npe
 from .generic import sorted_generic
-from .developer import DevBase, obj, error
+from .developer import DevBase, obj, FileFormatError, NotAnElementError
 from .simulation import Simulation,SimulationAnalyzer
 from .vasp_input import Incar
 
 # vasp xml reader classes/functions
 
 class VXML(DevBase):
-    basic_types = set('i v dimension field set time'.split())
+    basic_types = frozenset({'dimension', 'field', 'v', 'time', 'i', 'set'})
 
     data_types = obj(int=int,string=str,float=float)
     
@@ -226,7 +226,8 @@ class VXML(DevBase):
                         if t in VXML.data_types:
                             dtype = VXML.data_types[t]
                         else:
-                            self.error('field type {0} is unrecognized: {1}'.format(t,line))
+                            msg = 'field type {0} is unrecognized: {1}'.format(t,line)
+                            raise FileFormatError(msg)
                         #end if
                     else:
                         dtype = float
@@ -248,7 +249,11 @@ class VXML(DevBase):
                         dim_counts[level]+=1
                     #end if
                 else:
-                    self.error('array parsing failed\n unrecognized xml encountered: {0}'.format(line),'read_vxml')
+                    msg = (
+                        'array parsing failed\n'
+                        ' unrecognized xml encountered: {0}'.format(line)
+                        )
+                    raise FileFormatError(msg)
                 #end if
             else:
                 dim_counts[level]+=1
@@ -355,7 +360,8 @@ def readval(val):
         #end try
     #end if
     if fail:
-        error('failed to read value: "{0}"'.format(val),'read_vxml')
+        msg = 'failed to read value: "{0}"'.format(val)
+        raise FileFormatError(msg)
     #end if
     return v
 #end def readval
@@ -364,7 +370,8 @@ def readval(val):
 
 def read_vxml(filepath):
     if not os.path.exists(filepath):
-        error('file {0} does not exist'.format(filepath),'read_vxml')
+        msg = 'file {0} does not exist'.format(filepath)
+        raise FileNotFoundError(msg)
     #end if
     #print 'read'
     with open(filepath, "r") as f:
@@ -424,7 +431,11 @@ def read_vxml(filepath):
     #end for
 
     if len(stack)!=1:
-        error('read failed\nxml tree did not seem to close')
+        msg = (
+            'read failed\n'
+            'xml tree did not seem to close'
+            )
+        raise FileFormatError(msg)
     #end if
 
     #print 'parse'
@@ -557,8 +568,8 @@ def read_outcar_bands(vlines,odata):
         #end for
         vlines.advance(n)
     #end if
-    for ns,spin in bands.items():
-        for nk,kpoint in spin.items():
+    for spin in bands.values():
+        for kpoint in spin.values():
             kpoint.energies    = np.array(kpoint.energies,dtype=float)
             kpoint.occupations = np.array(kpoint.occupations,dtype=float)
         #end for
@@ -693,10 +704,10 @@ def read_outcar_accounting(vlines,odata):
 
 
 class OutcarData(DevBase):
-    any_functions = [
+    any_functions = (
         ('header_values'   , read_outcar_header_values  ),
-        ]
-    elast_functions = [
+        )
+    elast_functions = (
         ('core_potentials' , read_outcar_core_potentials),
         ('fermi_energy'    , read_outcar_fermi_energy   ),
         ('bands'           , read_outcar_bands          ),
@@ -705,27 +716,28 @@ class OutcarData(DevBase):
         ('stress'          , read_outcar_stress         ),
         ('cell'            , read_outcar_cell           ),
         ('position_force'  , read_outcar_position_force ),
-        ]
-    ilast_functions = [
+        )
+    ilast_functions = (
         ('accounting'      , read_outcar_accounting     ),
-        ]
+        )
 
     read_outcar_functions = any_functions + elast_functions + ilast_functions
 
     def __init__(self,filepath=None,lines=None):
         if filepath is not None:
             if not os.path.exists(filepath):
-                self.error('file {0} does not exist'.format(filepath))
+                msg = 'file {0} does not exist'.format(filepath)
+                raise FileNotFoundError(msg)
             #end if
-            f = open(filepath,'r')
-            lines = f.read().splitlines()
-            f.close()
+            with open(filepath,'r') as f:
+                lines = f.read().splitlines()
+
         #end if
         self.vlines   = VaspLines(lines)
     #end def __init__
 
 
-    def read(self,ilast=False,elast=False,all=True):
+    def read(self,*,ilast=False,elast=False,all=True):
         ilast |= all
         elast |= all
         vlines = self.vlines
@@ -738,7 +750,7 @@ class OutcarData(DevBase):
                 read_functions.extend(self.ilast_functions)
             #end if
         #end if
-        for quantity,read_function in read_functions:
+        for quantity,read_function in read_functions:  # noqa: B007
             try:
                 read_function(vlines,self)
             except:
@@ -754,7 +766,7 @@ class OutcarData(DevBase):
 # main analyzer class
 
 class VaspAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,xml=False,analyze=False):
+    def __init__(self,arg0=None,*,xml=False,analyze=False):
         path     = None
         prefix   = None
         incar    = None
@@ -779,7 +791,8 @@ class VaspAnalyzer(SimulationAnalyzer):
             elif file.endswith('OUTCAR'):
                 prefix = file.replace('OUTCAR','').strip()
             else:
-                self.error('please provide the path to an INCAR or OUTCAR file')
+                msg = 'please provide the path to an INCAR or OUTCAR file'
+                raise ValueError(msg)
             #end if
             incar   = prefix+'INCAR'
             outcar  = prefix+'OUTCAR'
@@ -845,12 +858,12 @@ class VaspAnalyzer(SimulationAnalyzer):
 
     def analyze_outcar(self,outcar):
         if not os.path.exists(outcar):
-            self.error('outcar file {0} does not exist'.format(outcar))
+            msg = 'outcar file {0} does not exist'.format(outcar)
+            raise FileNotFoundError(msg)
         #end if
-        oc = open(outcar,'r')
-        lines = oc.read().splitlines()
-        oc.close()
-        del oc
+        with open(outcar,'r') as oc:
+            lines = oc.read().splitlines()
+
         # gather initialization lines
         init = []
         n = 0
@@ -887,7 +900,7 @@ class VaspAnalyzer(SimulationAnalyzer):
                     emax = np.array(list(ion_step.keys()),dtype=int).max()
                     for enum,elec_step in ion_step.items():
                         elast = enum==emax
-                        elec_step.read(ilast,elast,all=False)
+                        elec_step.read(ilast=ilast,elast=elast,all=False)
                         if ilast and elast:
                             self.update(**elec_step)
                         #end if

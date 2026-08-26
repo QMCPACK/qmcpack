@@ -60,60 +60,61 @@ class PyscfInput(SimulationInputTemplateDev):
 
     allowed_types = basic_types+(np.ndarray,)
 
-    mole_order = '''
-        dump_input
-        parse_arg
-        verbose
-        output
-        max_memory
-        atom
-        basis
-        unit
-        nucmod
-        ecp
-        charge
-        spin
-        symmetry
-        symmetry_subgroup
-        cart
-        nelec
-        nelectron
-        multiplicity
-        ms
-        '''.split()
+    mole_order = (
+        'dump_input',
+        'parse_arg',
+        'verbose',
+        'output',
+        'max_memory',
+        'atom',
+        'basis',
+        'unit',
+        'nucmod',
+        'ecp',
+        'charge',
+        'spin',
+        'symmetry',
+        'symmetry_subgroup',
+        'cart',
+        'nelec',
+        'nelectron',
+        'multiplicity',
+        'ms',
+        )
 
-    cell_order = '''
-        dump_input
-        parse_arg
-        a
-        mesh
-        ke_cutoff
-        precision
-        nimgs
-        ew_eta
-        ew_cut
-        pseudo
-        basis
-        h
-        dimension
-        rcut
-        ecp
-        low_dim_ft_type
-        unit
-        atom
-        gs
-        h
-        drop_exponent
-        nimgs
-        '''.split()
+    cell_order = [  # noqa: RUF012
+        'dump_input',
+        'parse_arg',
+        'a',
+        'mesh',
+        'ke_cutoff',
+        'precision',
+        'nimgs',
+        'ew_eta',
+        'ew_cut',
+        'pseudo',
+        'basis',
+        'h',
+        'dimension',
+        'rcut',
+        'ecp',
+        'low_dim_ft_type',
+        'unit',
+        'atom',
+        'gs',
+        'h',
+        'drop_exponent',
+        'nimgs',
+        ]
+
     for k in mole_order:
         if k not in cell_order:
             cell_order.append(k)
         #end if
     #end for
-
-    mole_allowed = set(mole_order)
-    cell_allowed = set(cell_order)
+    cell_order: tuple[str] = tuple(cell_order)
+    mole_allowed = frozenset(mole_order)
+    cell_allowed = frozenset(cell_order)
     
 
     def __init__(self,
@@ -122,6 +123,7 @@ class PyscfInput(SimulationInputTemplateDev):
                  custom      = None,     # obj w/ $ prefixed vars in template
                  system      = None,     # physical system object
                  units       = None,     # input units desired
+                 *,
                  use_folded  = True,     # use folded system/primitive cell
                  mole        = None,     # obj w/ Mole variables
                  cell        = None,     # obj w/ Cell variables

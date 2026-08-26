@@ -2,9 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.OBSERVABLES)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 from ..testing import check_object_eq
 from ..testing import FailedTest,failed
 
@@ -237,30 +234,20 @@ def test_defined_attribute_base():
     assert('b' in da)
     assert(da.b==5)
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match='Cannot set unrecognized attribute "unknown"',
+        ):
         da.set_attribute('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     da.set_attribute('b',3)
     assert(da.b==3)
 
-    try:
+    with pytest.raises(
+        TypeError,
+        match='Cannot set attribute "b"',
+        ):
         da.set_attribute('b',3.5)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
 
     # get_attribute
@@ -274,38 +261,23 @@ def test_defined_attribute_base():
     assert(da.get_attribute('a',None) is None)
     assert(da.get_attribute('c',None) is None)
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match='Cannot get unrecognized attribute "unknown"',
+        ):
         da.get_attribute('unknown')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match='Cannot get attribute "a"',
+        ):
         da.get_attribute('a')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match='Cannot get attribute "c" at location "nest"',
+        ):
         da.get_attribute('c')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
 
     # default values
@@ -333,27 +305,17 @@ def test_defined_attribute_base():
     assert(da.get_attribute('a',None) is None)
     assert(da.get_attribute('c',None) is None)
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match='Cannot get attribute "a"',
+        ):
         da.get_attribute('a')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match='Cannot get attribute "c" at location "nest"',
+        ):
         da.get_attribute('c')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     da.set_default_attributes()
 
@@ -375,26 +337,16 @@ def test_defined_attribute_base():
     assert(da.get_attribute('a',2)==1)
     assert(da.get_attribute('a',assigned=False)==1)
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match='Cannot get attribute "b"',
+        ):
         da.get_attribute('b')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match='Cannot get attribute "c" at location "nest',
+        ):
         da.get_attribute('c')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
 #end def test_defined_attribute_base

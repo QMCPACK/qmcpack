@@ -18,24 +18,14 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-//#include "catch.hpp"
 
-#include "catch.hpp"
-#include "Configuration.h"
+#include <catch2/catch_test_macros.hpp>
 
 // Always test the fallback code, regardless of MKL definition
 //#undef HAVE_MKL
 #define MKL_INT int
 #define MKL_Complex8 std::complex<float>
 #define MKL_Complex16 std::complex<double>
-
-// Avoid the need to link with other libraries just to get APP_ABORT
-#undef APP_ABORT
-#define APP_ABORT(x) \
-  {                  \
-    std::cout << x;  \
-    throw;           \
-  }
 
 #include <stdio.h>
 #include <string>

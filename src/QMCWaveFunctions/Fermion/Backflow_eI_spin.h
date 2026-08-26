@@ -348,9 +348,7 @@ public:
   inline void evaluatePbyP(const ParticleSet& P,
                            ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index) override
-  {
-    evaluatePbyP(P, index[0], newQP);
-  }
+  { evaluatePbyP(P, index[0], newQP); }
 
 
   /** calculate quasi-particle coordinates after pbyp move
@@ -380,9 +378,7 @@ public:
                            ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
                            HessMatrix& Amat) override
-  {
-    evaluatePbyP(P, index[0], newQP, Amat);
-  }
+  { evaluatePbyP(P, index[0], newQP, Amat); }
 
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP, HessMatrix& Amat) override
   {
@@ -417,9 +413,7 @@ public:
                            const std::vector<int>& index,
                            GradMatrix& Bmat_full,
                            HessMatrix& Amat) override
-  {
-    evaluatePbyP(P, index[0], newQP, Bmat_full, Amat);
-  }
+  { evaluatePbyP(P, index[0], newQP, Bmat_full, Amat); }
 
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,

@@ -113,9 +113,7 @@ struct OptimizableFunctorBase : public OptimizableObject
   virtual void setPeriodic(bool periodic) {}
 
   virtual inline bool evaluateDerivatives(real_type r, std::vector<qmcplusplus::TinyVector<real_type, 3>>& derivs)
-  {
-    return false;
-  }
+  { return false; }
 
   virtual inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) { return false; }
 

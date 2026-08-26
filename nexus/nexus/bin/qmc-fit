@@ -22,7 +22,7 @@ except:
 #end try
 
 try:
-    from scipy.optimize import fmin
+    from scipy.optimize import fmin  # noqa: F401
 except ImportError:
     print('qmc-fit error: scipy is not present on your machine.\n  Please install scipy and retry.')
 #end try
@@ -85,12 +85,11 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj,log,warn,error
+from nexus.developer import obj,log,error
 from nexus.numerics import jackknife,jackknife_aux
 from nexus.numerics import simstats,equilibration_length
 from nexus.numerics import curve_fit,least_squares
-from nexus.numerics import eos_fit as num_eos_fit
+from nexus.numerics import eos_fit as num_eos_fit  # noqa: F401
 from nexus.numerics import morse_fit,morse,morse_re,morse_De
 from nexus.numerics import morse_Einf as morse_einf
 from nexus.numerics import morse_a,morse_width,morse_depth,morse_Ee,morse_k
@@ -304,9 +303,9 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
     Ekap  = []
     n = 0
     for scalar_file in scalar_files:
-        fobj = open(scalar_file,'r')
-        quantities = fobj.readline().split()[2:]
-        fobj.close()
+        with open(scalar_file,'r') as fobj:
+            quantities = fobj.readline().split()[2:]
+
         rawdata = np.loadtxt(scalar_file)[:,1:].transpose()
         qdata = obj()
         for i in range(len(quantities)):
@@ -401,7 +400,7 @@ def timestep_fit(args):
 
     if len(scalar_files)==0:
         log('\n'+parser.format_help().strip()+'\n')
-        exit()
+        sys.exit()
     #end if
 
     if opt.fit_function not in fit_functions:
@@ -439,7 +438,7 @@ def timestep_fit(args):
 
     log('\nfit function  : '+opt.fit_function)
     log('fitted formula: '+func_info.format.format(*pvals))
-    for pname,pfunc in func_info.params:
+    for pname,pfunc in func_info.params:  # noqa: B007
         pm,pe = stat_strings(*auxres[pname])
         log('{0:<14}: {1} +/- {2}  Ha\n'.format(pname,pm,pe))
     #end for
@@ -523,7 +522,7 @@ def hubbard_u_fit(args):
 
     log('\nfit function  : '+opt.fit_function)
     log('fitted formula: '+func_info.format.format(*pvals))
-    for pname,pfunc in func_info.params:
+    for pname,pfunc in func_info.params:  # noqa: B007
         for i in range(len(auxres[pname][0])):
             pm,pe = stat_strings(*np.array(auxres[pname])[:,i])
             unit = ""
@@ -616,7 +615,7 @@ def eos_fit(args):
     log('fitted formula: '+func_info.format.format(*pvals))
 
     if 'params' in func_info.keys():
-        for pname,pfunc in func_info.params:
+        for pname,pfunc in func_info.params:  # noqa: B007
             pm,pe = stat_strings(*np.array(auxres[pname]))
             log('{0}: {1} +/- {2} '.format(pname,pm,pe))
         #end for
@@ -708,7 +707,7 @@ if __name__=='__main__':
     if len(args.scalar_files) == 0:
         log('\n'+'Please provide scalar files'+'\n')
         parser.print_help()
-        exit()
+        sys.exit()
     #end if
     fit_type = args.fit_type
     if fit_type in fit_types:

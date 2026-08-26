@@ -68,9 +68,11 @@
 
 
 import os
+import sys
 import re
 import copy
 from copy import deepcopy
+from types import MappingProxyType
 import numpy as np
 from numpy import pi,sin,cos,sqrt
 from numpy.linalg import LinAlgError, inv, det, eig
@@ -164,9 +166,8 @@ class ScalarsDatAnalyzer(DatAnalyzer):
 
         data = lt[:,1:].transpose()
 
-        fobj = open(filepath,'r')
-        variables = fobj.readline().split()[2:]
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            variables = fobj.readline().split()[2:]
 
         self.data = QAdata()
         for i in range(len(variables)):
@@ -218,9 +219,8 @@ class DmcDatAnalyzer(DatAnalyzer):
 
         data = lt[:,1:].transpose()
 
-        fobj = open(filepath,'r')
-        variables = fobj.readline().split()[2:]
-        fobj.close()
+        with open(filepath,'r') as fobj:
+            variables = fobj.readline().split()[2:]
 
         self.data = QAdata()
         for i in range(len(variables)):
@@ -250,7 +250,7 @@ class DmcDatAnalyzer(DatAnalyzer):
         ld = []
         for k in sorted_generic(data.keys()):
             ld.append(data[k])
-        nsteps = len(ld)[0]-nse
+        nsteps = len(ld[0])-nse
 
         #nsteps = blocks*steps-nse
         block_avg = nsteps > 2*ndmc_blocks
@@ -955,7 +955,7 @@ class TracesFileHDF(QAobject):
         return self.accumulated_scalars() and self.checked_particle_sums()
     #end def formed_diagnostic_data
 
-    def load(self,filepath=None,force=False):
+    def load(self,filepath=None,*,force=False):
         if not self.loaded() or force:
             if filepath is None:
                 if self.info.filepath is None:
@@ -1020,7 +1020,7 @@ class TracesFileHDF(QAobject):
     #end def init_trace
 
 
-    def check_particle_sums(self,tol=1e-8,force=False):
+    def check_particle_sums(self,tol=1e-8,*,force=False):
         if not self.checked_particle_sums() or force:
             self.load()
             t = self.real_traces
@@ -1055,7 +1055,7 @@ class TracesFileHDF(QAobject):
     #end def check_particle_sums
 
     
-    def accumulate_scalars(self,force=False):
+    def accumulate_scalars(self,*,force=False):
         if not self.accumulated_scalars() or force:
             # get block and step information for the qmc method
             blocks = self.info.blocks
@@ -1510,7 +1510,7 @@ class DMSettings(QAobject):
 
 class DensityMatricesAnalyzer(HDFAnalyzer):
 
-    allowed_settings = ['save_data','jackknife','diagonal','occ_tol','coup_tol','stat_tol']
+    allowed_settings = ('save_data','jackknife','diagonal','occ_tol','coup_tol','stat_tol')
 
     def __init__(self,name,nindent=0):
         HDFAnalyzer.__init__(self)
@@ -2142,32 +2142,31 @@ class SpaceGridInitializer(QAobject):
         return
     #end def __init__
 
-    def check_complete(self,exit_on_fail=True):
-        succeeded = True
+    def check_complete(self,*,exit_on_fail=True):
+        msg = ""
         for k,v in self.items():
             if v is None:
-                succeeded=False
                 if exit_on_fail:
-                    self.error('  SpaceGridInitializer.'+k+' must be provided',exit=False)
+                    msg += '  SpaceGridInitializer.'+k+' must be provided\n'
                 #end if
             #end if
         #end if
-        if not succeeded and exit_on_fail:
-            self.error('  SpaceGridInitializer is incomplete')
+        if len(msg) > 0 and exit_on_fail:
+            self.error(f'  SpaceGridInitializer is incomplete:\n{msg}')
         #end if
-        return succeeded
+        return len(msg) == 0
     #end def check_complete
 #end class SpaceGridInitializer
 
 
 class SpaceGridBase(QAobject):
-    cnames=['cartesian','cylindrical','spherical','voronoi']
-    coord_s2n = dict()
-    coord_n2s = dict()
-    for i,name in enumerate(cnames):
-        coord_s2n[name]=i
-        coord_n2s[i]=name
-    #end for
+    coord_s2n = MappingProxyType({
+        'cartesian':   0,
+        'cylindrical': 1,
+        'spherical':   2,
+        'voronoi':     3,
+        })
+    coord_n2s = MappingProxyType({n: s for s, n in coord_s2n.items()})
 
     cartesian   = coord_s2n['cartesian']
     cylindrical = coord_s2n['cylindrical']
@@ -2180,12 +2179,19 @@ class SpaceGridBase(QAobject):
     rlabel = 3
     plabel = 4
     tlabel = 5
-    axlabel_s2n = {'x':xlabel,'y':ylabel,'z':zlabel,'r':rlabel,'phi':plabel,'theta':tlabel}
-    axlabel_n2s = {xlabel:'x',ylabel:'y',zlabel:'z',rlabel:'r',plabel:'phi',tlabel:'theta'}
+    axlabel_s2n = MappingProxyType({
+        'x'    : xlabel,
+        'y'    : ylabel,
+        'z'    : zlabel,
+        'r'    : rlabel,
+        'phi'  : plabel,
+        'theta': tlabel,
+        })
+    axlabel_n2s = MappingProxyType({n: s for s, n in axlabel_s2n.items()})
 
-    axindex = {'x':0,'y':1,'z':2,'r':0,'phi':1,'theta':2}
+    axindex = MappingProxyType({'x':0,'y':1,'z':2,'r':0,'phi':1,'theta':2})
 
-    quantities=['D','T','V','E','P']
+    quantities=('D','T','V','E','P')
 
     def __init__(self,initobj,options):
         if options is None:
@@ -2385,24 +2391,24 @@ class SpaceGridBase(QAobject):
         None
     #end def init_from_xmlelement
 
-    def check_complete(self,exit_on_fail=True):
-        succeeded = True
+    def check_complete(self,*,exit_on_fail=True):
+        msg = ""
         for k,v in self.items():
             if k[0]!='_' and v is None:
-                succeeded=False
                 if exit_on_fail:
-                    self.error('SpaceGridBase.'+k+' must be provided',exit=False)
+                    msg += 'SpaceGridBase.'+k+' must be provided'
                 #end if
             #end if
         #end if
-        if not succeeded:
-            self.error('SpaceGrid attempted initialization from '+self.iname,exit=False)
-            self.error('SpaceGrid is incomplete',exit=False)
-            if exit_on_fail:
-                exit()
+        if len(msg) > 0 and exit_on_fail:
+            self.error(
+                'SpaceGrid attempted initialization from '+self.iname+'\n'
+                'SpaceGrid is incomplete:\n'
+                f'{msg}'
+                )
             #end if
         #end if
-        return succeeded
+        return len(msg) == 0
     #end def check_complete
 
     def _reset_dynamic_methods(self):
@@ -2666,7 +2672,7 @@ class RectilinearGrid(SpaceGridBase):
 
     def initialize(self): #like qmcpack SpaceGridBase.initialize
         write=False
-        succeeded=True
+        msg = ""
     
         ndomains=-1
     
@@ -2702,8 +2708,10 @@ class RectilinearGrid(SpaceGridBase):
                 axlabel[d]=ax_spherical[d]
             #end 
         else:
-            self.error("  Coordinate supplied to spacegrid must be cartesian, cylindrical, or spherical\n  You provided "+coord,exit=False)
-            succeeded=False
+            msg += (
+                "  Coordinate supplied to spacegrid must be cartesian, cylindrical, or spherical\n"
+                "  You provided "+coord+"\n"
+                )
         #end 
         self.coordinate = SpaceGridBase.coord_s2n[self.coord]
         coordinate = self.coordinate    
@@ -2764,8 +2772,10 @@ class RectilinearGrid(SpaceGridBase):
             u1=1.0*eval(tokens[0])
             umin[iaxis]=u1
             if(abs(u1)>1.0000001):
-                self.error("  interval endpoints cannot be greater than 1\n  endpoint provided: "+str(u1),exit=False)
-                succeeded=False
+                msg += (
+                    "  interval endpoints cannot be greater than 1\n"
+                    "  endpoint provided: "+str(u1)+"\n"
+                    )
             #end 
             is_int=False
             has_paren_val=False
@@ -2784,12 +2794,13 @@ class RectilinearGrid(SpaceGridBase):
                         print("      u1,u2 = ",u1,",",u2)
                     #end 
                     if(u2<u1):
-                        self.error("  interval ("+str(u1)+","+str(u2)+") is negative",exit=False)
-                        succeeded=False
+                        msg += "  interval ("+str(u1)+","+str(u2)+") is negative\n"
                     #end 
                     if(abs(u2)>1.0000001):
-                        self.error("  interval endpoints cannot be greater than 1\n  endpoint provided: "+str(u2),exit=False)
-                        succeeded=False
+                        msg += (
+                            "  interval endpoints cannot be greater than 1\n"
+                            "  endpoint provided: "+str(u2)+"\n"
+                            )
                     #end 
                     if(is_int):
                         du_int[interval]=(u2-u1)/ndom_i
@@ -2798,8 +2809,7 @@ class RectilinearGrid(SpaceGridBase):
                         du_int[interval]=du_i
                         ndom_int[interval]=np.floor((u2-u1)/du_i+.5)
                         if(abs(u2-u1-du_i*ndom_int[interval])>utol):
-                            self.error("  interval ("+str(u1)+","+str(u2)+") not divisible by du="+str(du_i),exit=False)
-                            succeeded=False
+                            msg += "  interval ("+str(u1)+","+str(u2)+") not divisible by du="+str(du_i)+"\n"
                         #end 
                     #end 
                     u1=u2
@@ -2826,8 +2836,7 @@ class RectilinearGrid(SpaceGridBase):
             for i in range(len(du_int)):
                 ndu_int[i]=np.floor(du_int[i]/du_min+.5)
                 if(abs(du_int[i]-ndu_int[i]*du_min)>utol):
-                    self.error("interval {0} of axis {1} is not divisible by smallest subinterval {2}".format(i+1,iaxis+1,du_min),exit=False)
-                    succeeded=False
+                    msg += "interval {0} of axis {1} is not divisible by smallest subinterval {2}\n".format(i+1,iaxis+1,du_min)
                 #end 
             #end      
     
@@ -2866,7 +2875,7 @@ class RectilinearGrid(SpaceGridBase):
             ndu_per_interval[iaxis] = np.zeros((ndom_tot,),dtype=int)
             idom=0
             for i in range(len(ndom_int)):
-                for ii in range(ndom_int[i]):
+                for ii in range(ndom_int[i]):  # noqa: B007
                     ndu_per_interval[iaxis][idom] = ndu_int[i]
                     idom+=1
                 #end 
@@ -2883,18 +2892,24 @@ class RectilinearGrid(SpaceGridBase):
         for d in range(DIM):
             if axlabel[d] in cartmap:
                 if(umin[d]<-1.0 or umax[d]>1.0):
-                    self.error("  grid values for {0} must fall in [-1,1]\n".format(axlabel[d])+"  interval provided: [{0},{1}]".format(umin[d],umax[d]),exit=False)
-                    succeeded=False
+                    msg += (
+                        "  grid values for {0} must fall in [-1,1]\n"
+                        "  interval provided: [{1},{2}]\n".format(axlabel[d],umin[d],umax[d])
+                        )
                 #end if
             elif(axlabel[d]=="phi"):
                 if(abs(umin[d])+abs(umax[d])>1.0):
-                    self.error("  phi interval cannot be longer than 1\n  interval length provided: {0}".format(abs(umin[d])+abs(umax[d])),exit=False)
-                    succeeded=False
+                    msg += (
+                        "  phi interval cannot be longer than 1\n"
+                        "  interval length provided: {0}\n".format(abs(umin[d])+abs(umax[d]))
+                        )
                 #end if
             else:
                 if(umin[d]<0.0 or umax[d]>1.0):
-                    self.error("  grid values for {0} must fall in [0,1]\n".format(axlabel[d])+"  interval provided: [{0},{1}]".format(umin[d],umax[d]),exit=False)
-                    succeeded=False
+                    msg += (
+                        "  grid values for {0} must fall in [0,1]\n"
+                        "  interval provided: [{1},{2}]\n".format(axlabel[d],umin[d],umax[d])
+                        )
                 #end if
             #end if
         #end for
@@ -3022,11 +3037,11 @@ class RectilinearGrid(SpaceGridBase):
 
         #succeeded = succeeded and check_grid()
     
-        if(self.init_exit_fail and not succeeded):
-            self.error(" in def initialize")
+        if self.init_exit_fail and len(msg) > 0:
+            self.error(f" in def initialize:\n{msg}")
         #end 
 
-        return succeeded
+        return len(msg) == 0
     #end def initialize
 
     def point2unit_cartesian(self,point):
@@ -3140,7 +3155,7 @@ class RectilinearGrid(SpaceGridBase):
     #end def set_origin
 
 
-    def interpolate_across(self,quantities,spacegrids,outside,integration=False,warn=False):
+    def interpolate_across(self,quantities,spacegrids,outside,*,integration=False,warn=False):
         #if the grid is to be used for integration confirm that domains 
         #  of this spacegrid subdivide source spacegrid domains
         if integration:
@@ -3433,7 +3448,7 @@ def SpaceGrid(init,opts=None):
         return VoronoiGrid(init,opts)
     else:
         print('SpaceGrid '+coord+' has not been implemented, exiting...')
-        exit()
+        sys.exit()
     #end if
 
 #end def SpaceGrid

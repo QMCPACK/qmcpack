@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.XMLREADER)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from . import TEST_DIR
 from ..testing import object_eq
@@ -334,6 +332,11 @@ def test_find_pair():
     assert(s[i1:i2]=='</qmc>')
     i1,i2 = find_pair(s,['</','>'],i2)
     assert(s[i1:i2]=='</simulation>')
+
+    # A right delimiter can remain after the final left delimiter.  In this
+    # case, no pair is present and both locations should report not found.
+    i1,i2 = find_pair('<simulation><project/></simulation>',['<include','/>'])
+    assert((i1,i2)==(-1,-1))
 #end def test_find_pair
 
 
