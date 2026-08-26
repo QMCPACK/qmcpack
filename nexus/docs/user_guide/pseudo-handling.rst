@@ -729,3 +729,115 @@ A more specialized case involving VASP pseudopotentials requires the use of both
 
 It is important to note that the function-style interface does not support code autodetect, and if no codes are provided will create empty :py:class:`~.PseudoSet` objects for all non-VASP codes (in this case).
 
+
+.. _legacy-ppset:
+
+Migrating from :py:func:`~.ppset`
+---------------------------------
+
+The existing :py:func:`~.ppset` function is being deprecated for reasons described in its documentation.
+Users are encouraged to switch to :py:func:`~.generate_pseudoset`, and try the features described above.
+For those wishing for a path of least resistance migration, a short example is provided below.
+
+.. tab-set::
+
+    .. tab-item:: Legacy ``ppset``
+
+        .. code-block:: python
+
+            from nexus import settings, job, run_project, ppset
+            from nexus import generate_physical_system, generate_structure
+            from nexus import generate_pwscf
+            from nexus import generate_pw2qmcpack, generate_qmcpack
+
+            settings(
+                pseudo_dir = "/path/to/pseudo_dir",
+                ...
+            )
+            # Use a label
+            ppset(
+                label   = "ccECP",
+                pwscf   = ["C.ccECP.upf", "H.ccECP.upf", "O.ccECP.upf"],
+                qmcpack = ["C.ccECP.xml", "H.ccECP.xml", "O.ccECP.xml"],
+            )
+
+            system = generate_physical_system(...)
+
+            scf = generate_pwscf(
+                system  = system,
+                pseudos = "ccECP",
+                ...
+            )
+
+            nscf = generate_pwscf(
+                system  = system,
+                pseudos = "ccECP",
+                ...
+            )
+
+            conv = generate_pw2qmcpack(...)
+
+            opt = generate_qmcpack(
+                system  = system,
+                pseudos = "ccECP",
+                ...
+            )
+
+            qmc = generate_qmcpack(
+                system  = system,
+                pseudos = "ccECP",
+                ...
+            )
+
+            run_project()
+
+
+    .. tab-item:: New ``generate_pseudoset``
+
+        .. code-block:: python
+
+            from nexus import settings, job, run_project, generate_pseudoset
+            from nexus import generate_physical_system, generate_structure
+            from nexus import generate_pwscf
+            from nexus import generate_pw2qmcpack, generate_qmcpack
+
+            settings(
+                pseudo_dir = "/path/to/pseudo_dir",
+                ...
+            )
+            # Assign to variable
+            ccECP = generate_pseudoset(
+                # You can also supply `pseudo_dir` here instead of in `settings`
+                pwscf   = ["C.ccECP.upf", "H.ccECP.upf", "O.ccECP.upf"],
+                qmcpack = ["C.ccECP.xml", "H.ccECP.xml", "O.ccECP.xml"],
+            )
+
+            system = generate_physical_system(...)
+
+            scf = generate_pwscf(
+                system  = system,
+                pseudos = ccECP, # Pass variable instead of string
+                ...
+            )
+
+            nscf = generate_pwscf(
+                system  = system,
+                pseudos = ccECP, # Pass variable instead of string
+                ...
+            )
+
+            conv = generate_pw2qmcpack(...)
+
+            opt = generate_qmcpack(
+                system  = system,
+                pseudos = ccECP, # Pass variable instead of string
+                ...
+            )
+
+            qmc = generate_qmcpack(
+                system  = system,
+                pseudos = ccECP, # Pass variable instead of string
+                ...
+            )
+
+            run_project()
