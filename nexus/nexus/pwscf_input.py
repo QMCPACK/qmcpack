@@ -1159,7 +1159,10 @@ class hubbard(Card):
                 if len(line) == 3:
                     specie = line[1]
                     val = float(line[2])
-                    self.hubbard[intrxn] = {specie:val}
+                    if intrxn not in self.hubbard:
+                        self.hubbard[intrxn] = {}
+                    #end if
+                    self.hubbard[intrxn][specie] = val
                 elif len(line) == 6:
                     specie1 = line[1]
                     specie2 = line[2]
@@ -1184,7 +1187,7 @@ class hubbard(Card):
         contents = ''
         for param, interaction in self.hubbard.items():
             valid_format = True
-            assert(param in {'U', 'J', 'B', 'V'})
+            assert(param in {'U', 'J', 'B', 'E2', 'E3', 'V'})
             assert(isinstance(interaction, dict))
             for label_manifold, value in interaction.items():
                 if isinstance(label_manifold, str):
