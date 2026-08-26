@@ -10,7 +10,7 @@ All objects returned by the methods described here can be passed into a generate
 
 .. _pseudoset-usage:
 
-Using :py:class:`~.PseudoSet` and :py:func:`~.generate_pseudoset`
+Using :py:func:`~.generate_pseudoset` and :py:class:`~.PseudoSet`
 -----------------------------------------------------------------
 
 The following sections provide examples for how to use :py:class:`~.PseudoSet` for a variety of situations, primarily focused on the layout of a user's pseudopotential files.
@@ -43,27 +43,6 @@ If you are using Nexus for just one code, e.g. driving high-throughput Quantum E
 .. tab-set::
     :sync-group: func-class-interface
 
-    .. tab-item:: Class Interface
-        :sync: class
-
-        .. code-block:: python
-
-            >>> from nexus import PseudoSet
-            >>> pseudos = PseudoSet.from_dir(
-            ...     pseudo_dir="/tmp/ccECP",
-            ...     code="espresso",
-            ... )
-            >>> print(repr(pseudos)) # A single PseudoSet object
-            PseudoSet(
-                codes = {'espresso'},
-                pseudos = {
-                    'C': PosixPath('/tmp/ccECP/C.ccECP.upf'),
-                    'H': PosixPath('/tmp/ccECP/H.ccECP.upf'),
-                    'O': PosixPath('/tmp/ccECP/O.ccECP.upf'),
-                },
-                Zeff_map = {},
-            )
-
     .. tab-item:: Function Interface
         :sync: func
 
@@ -85,27 +64,17 @@ If you are using Nexus for just one code, e.g. driving high-throughput Quantum E
                 Zeff_map = {},
             )}
 
-If you are driving multiple codes with Nexus, e.g. running a Quantum ESPRESSO calculation to generate orbitals and then using them in a QMCPACK calculation, you can just grab all of the pseudos in the directory.
-
-.. tab-set::
-    :sync-group: func-class-interface
-
     .. tab-item:: Class Interface
         :sync: class
 
         .. code-block:: python
 
             >>> from nexus import PseudoSet
-            >>> pseudos = PseudoSet.from_mixed_dir(
+            >>> pseudos = PseudoSet.from_dir(
             ...     pseudo_dir="/tmp/ccECP",
-            ...     extensions={"rmg": ".xml"}
+            ...     code="espresso",
             ... )
-            >>> for code, ps_set in pseudos.items():
-            ...     print("-"*40)
-            ...     print(f"Code: {code}")
-            ...     print(f"{ps_set!r}")
-            ----------------------------------------
-            Code: espresso
+            >>> print(repr(pseudos)) # A single PseudoSet object
             PseudoSet(
                 codes = {'espresso'},
                 pseudos = {
@@ -115,57 +84,12 @@ If you are driving multiple codes with Nexus, e.g. running a Quantum ESPRESSO ca
                 },
                 Zeff_map = {},
             )
-            ----------------------------------------
-            Code: gamess
-            PseudoSet(
-                codes = {'gamess'},
-                pseudos = {
-                    'C': PosixPath('/tmp/ccECP/C.ccECP.gamess'),
-                    'H': PosixPath('/tmp/ccECP/H.ccECP.gamess'),
-                    'O': PosixPath('/tmp/ccECP/O.ccECP.gamess'),
-                },
-                Zeff_map = {},
-            )
-            ----------------------------------------
-            Code: pyscf
-            PseudoSet(
-                codes = {'pyscf'},
-                pseudos = {
-                    'C': PosixPath('/tmp/ccECP/C.ccECP.nwchem'),
-                    'H': PosixPath('/tmp/ccECP/H.ccECP.nwchem'),
-                    'O': PosixPath('/tmp/ccECP/O.ccECP.nwchem'),
-                },
-                Zeff_map = {},
-            )
-            ----------------------------------------
-            Code: qmcpack
-            PseudoSet(
-                codes = {'qmcpack'},
-                pseudos = {
-                    'C': PosixPath('/tmp/ccECP/C.ccECP.xml'),
-                    'H': PosixPath('/tmp/ccECP/H.ccECP.xml'),
-                    'O': PosixPath('/tmp/ccECP/O.ccECP.xml'),
-                },
-                Zeff_map = {},
-            )
-            ----------------------------------------
-            Code: rmg
-            PseudoSet(
-                codes = {'rmg'},
-                pseudos = {
-                    'C': PosixPath('/tmp/ccECP/C.ccECP.xml'),
-                    'H': PosixPath('/tmp/ccECP/H.ccECP.xml'),
-                    'O': PosixPath('/tmp/ccECP/O.ccECP.xml'),
-                },
-                Zeff_map = {},
-            )
-            ----------------------------------------
-            Code: vasp
-            PseudoSet(
-                codes = {'vasp'},
-                pseudos = {},
-                Zeff_map = {},
-            )
+
+
+If you are driving multiple codes with Nexus, e.g. running a Quantum ESPRESSO calculation to generate orbitals and then using them in a QMCPACK calculation, you can just grab all of the pseudos in the directory.
+
+.. tab-set::
+    :sync-group: func-class-interface
 
     .. tab-item:: Function Interface
         :sync: func
@@ -244,6 +168,84 @@ If you are driving multiple codes with Nexus, e.g. running a Quantum ESPRESSO ca
                 Zeff_map = {},
             )
 
+    .. tab-item:: Class Interface
+        :sync: class
+
+        .. code-block:: python
+
+            >>> from nexus import PseudoSet
+            >>> pseudos = PseudoSet.from_mixed_dir(
+            ...     pseudo_dir="/tmp/ccECP",
+            ...     extensions={"rmg": ".xml"}
+            ... )
+            >>> for code, ps_set in pseudos.items():
+            ...     print("-"*40)
+            ...     print(f"Code: {code}")
+            ...     print(f"{ps_set!r}")
+            ----------------------------------------
+            Code: espresso
+            PseudoSet(
+                codes = {'espresso'},
+                pseudos = {
+                    'C': PosixPath('/tmp/ccECP/C.ccECP.upf'),
+                    'H': PosixPath('/tmp/ccECP/H.ccECP.upf'),
+                    'O': PosixPath('/tmp/ccECP/O.ccECP.upf'),
+                },
+                Zeff_map = {},
+            )
+            ----------------------------------------
+            Code: gamess
+            PseudoSet(
+                codes = {'gamess'},
+                pseudos = {
+                    'C': PosixPath('/tmp/ccECP/C.ccECP.gamess'),
+                    'H': PosixPath('/tmp/ccECP/H.ccECP.gamess'),
+                    'O': PosixPath('/tmp/ccECP/O.ccECP.gamess'),
+                },
+                Zeff_map = {},
+            )
+            ----------------------------------------
+            Code: pyscf
+            PseudoSet(
+                codes = {'pyscf'},
+                pseudos = {
+                    'C': PosixPath('/tmp/ccECP/C.ccECP.nwchem'),
+                    'H': PosixPath('/tmp/ccECP/H.ccECP.nwchem'),
+                    'O': PosixPath('/tmp/ccECP/O.ccECP.nwchem'),
+                },
+                Zeff_map = {},
+            )
+            ----------------------------------------
+            Code: qmcpack
+            PseudoSet(
+                codes = {'qmcpack'},
+                pseudos = {
+                    'C': PosixPath('/tmp/ccECP/C.ccECP.xml'),
+                    'H': PosixPath('/tmp/ccECP/H.ccECP.xml'),
+                    'O': PosixPath('/tmp/ccECP/O.ccECP.xml'),
+                },
+                Zeff_map = {},
+            )
+            ----------------------------------------
+            Code: rmg
+            PseudoSet(
+                codes = {'rmg'},
+                pseudos = {
+                    'C': PosixPath('/tmp/ccECP/C.ccECP.xml'),
+                    'H': PosixPath('/tmp/ccECP/H.ccECP.xml'),
+                    'O': PosixPath('/tmp/ccECP/O.ccECP.xml'),
+                },
+                Zeff_map = {},
+            )
+            ----------------------------------------
+            Code: vasp
+            PseudoSet(
+                codes = {'vasp'},
+                pseudos = {},
+                Zeff_map = {},
+            )
+
+
 There are some important things to note here:
 
 #. The extension must be specified for RMG.
@@ -251,6 +253,7 @@ There are some important things to note here:
 #. The VASP entry in the outputted dictionary has an empty :py:class:`~.PseudoSet`.
     - This is because there were no VASP-compatible pseudopotentials in the provided directory.
 #. Unlike the single-code example which used :py:meth:`~.PseudoSet.from_dir`, the multi-code example uses :py:meth:`~.PseudoSet.from_mixed_dir`, which can automatically filter pseudos for specific codes.
+    - The function :py:meth:`~.PseudoSet.from_dir` works well with directories containing pseudopotentials only for one code, e.g. if you have only a single set of ``.upf`` pseudopotentials. It can auto-detect the codes that *could* use those pseudopotentials (it can be more than one since, for example, both QE and RMG can also read UPF-formatted pseudopotentials)
 
 Example 2 - Unstructured Directory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -289,58 +292,6 @@ Like in the previous example, we start with single-code workflows.
 
 .. tab-set::
     :sync-group: func-class-interface
-
-    .. tab-item:: Class Interface
-        :sync: class
-
-        .. code-block:: python
-
-            >>> from nexus import PseudoSet
-            >>> uspp = PseudoSet.from_dir(
-            ...     pseudo_dir="/tmp/pseudo_dir",
-            ...     code="espresso",
-            ...     include="*USPP*",
-            ... )
-            >>> print(repr(uspp)) # A single PseudoSet object
-            PseudoSet(
-                codes = {'espresso'},
-                pseudos = {
-                    'C': PosixPath('/tmp/pseudo_dir/C.USPP.upf'),
-                    'H': PosixPath('/tmp/pseudo_dir/H.USPP.upf'),
-                    'O': PosixPath('/tmp/pseudo_dir/O.USPP.upf'),
-                },
-                Zeff_map = {},
-            )
-            >>> ncpp = PseudoSet.from_dir(
-            ...     pseudo_dir="/tmp/pseudo_dir",
-            ...     code="espresso",
-            ...     include="*NCPP*",
-            ... )
-            >>> print(repr(ncpp)) # A single PseudoSet object
-            PseudoSet(
-                codes = {'espresso'},
-                pseudos = {
-                    'C': PosixPath('/tmp/pseudo_dir/C.NCPP.upf'),
-                    'H': PosixPath('/tmp/pseudo_dir/H.NCPP.upf'),
-                    'O': PosixPath('/tmp/pseudo_dir/O.NCPP.upf'),
-                },
-                Zeff_map = {},
-            )
-            >>> ccECP = PseudoSet.from_dir(
-            ...     pseudo_dir="/tmp/pseudo_dir",
-            ...     code="espresso",
-            ...     include="*ccECP*",
-            ... )
-            >>> print(repr(ncpp)) # A single PseudoSet object
-            PseudoSet(
-                codes = {'espresso'},
-                pseudos = {
-                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.upf'),
-                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.upf'),
-                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.upf'),
-                },
-                Zeff_map = {},
-            )
 
     .. tab-item:: Function Interface
         :sync: func
@@ -394,11 +345,141 @@ Like in the previous example, we start with single-code workflows.
                 Zeff_map = {},
             )}
 
+    .. tab-item:: Class Interface
+        :sync: class
+
+        .. code-block:: python
+
+            >>> from nexus import PseudoSet
+            >>> uspp = PseudoSet.from_dir(
+            ...     pseudo_dir="/tmp/pseudo_dir",
+            ...     code="espresso",
+            ...     include="*USPP*",
+            ... )
+            >>> print(repr(uspp)) # A single PseudoSet object
+            PseudoSet(
+                codes = {'espresso'},
+                pseudos = {
+                    'C': PosixPath('/tmp/pseudo_dir/C.USPP.upf'),
+                    'H': PosixPath('/tmp/pseudo_dir/H.USPP.upf'),
+                    'O': PosixPath('/tmp/pseudo_dir/O.USPP.upf'),
+                },
+                Zeff_map = {},
+            )
+            >>> ncpp = PseudoSet.from_dir(
+            ...     pseudo_dir="/tmp/pseudo_dir",
+            ...     code="espresso",
+            ...     include="*NCPP*",
+            ... )
+            >>> print(repr(ncpp)) # A single PseudoSet object
+            PseudoSet(
+                codes = {'espresso'},
+                pseudos = {
+                    'C': PosixPath('/tmp/pseudo_dir/C.NCPP.upf'),
+                    'H': PosixPath('/tmp/pseudo_dir/H.NCPP.upf'),
+                    'O': PosixPath('/tmp/pseudo_dir/O.NCPP.upf'),
+                },
+                Zeff_map = {},
+            )
+            >>> ccECP = PseudoSet.from_dir(
+            ...     pseudo_dir="/tmp/pseudo_dir",
+            ...     code="espresso",
+            ...     include="*ccECP*",
+            ... )
+            >>> print(repr(ncpp)) # A single PseudoSet object
+            PseudoSet(
+                codes = {'espresso'},
+                pseudos = {
+                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.upf'),
+                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.upf'),
+                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.upf'),
+                },
+                Zeff_map = {},
+            )
+
+
 Multi-code workflows become more complex since we need to specify which files to include.
 Conveniently, this is made trivial with the ``include`` parameter.
 
 .. tab-set::
     :sync-group: func-class-interface
+
+    .. tab-item:: Function Interface
+        :sync: func
+
+        .. code-block:: python
+
+            >>> from nexus import generate_pseudoset
+            >>> ccECP = generate_pseudoset(
+            ...     pseudo_dir="/tmp/ccECP",
+            ...     extension={"rmg": ".xml"}
+            ... )
+            >>> for code, ps_set in ccECP.items():
+            ...     print("-"*40)
+            ...     print(f"Code: {code}")
+            ...     print(f"{ps_set!r}", end="")
+            ------------------------------------------------------------
+            Code: espresso
+            PseudoSet(
+                codes = {'espresso'},
+                pseudos = {
+                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.upf'),
+                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.upf'),
+                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.upf'),
+                },
+                Zeff_map = {},
+            )
+            ------------------------------------------------------------
+            Code: gamess
+            PseudoSet(
+                codes = {'gamess'},
+                pseudos = {
+                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.gamess'),
+                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.gamess'),
+                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.gamess'),
+                },
+                Zeff_map = {},
+            )
+            ------------------------------------------------------------
+            Code: pyscf
+            PseudoSet(
+                codes = {'pyscf'},
+                pseudos = {
+                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.nwchem'),
+                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.nwchem'),
+                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.nwchem'),
+                },
+                Zeff_map = {},
+            )
+            ------------------------------------------------------------
+            Code: qmcpack
+            PseudoSet(
+                codes = {'qmcpack'},
+                pseudos = {
+                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.xml'),
+                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.xml'),
+                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.xml'),
+                },
+                Zeff_map = {},
+            )
+            ------------------------------------------------------------
+            Code: rmg
+            PseudoSet(
+                codes = {'rmg'},
+                pseudos = {
+                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.xml'),
+                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.xml'),
+                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.xml'),
+                },
+                Zeff_map = {},
+            )
+            ------------------------------------------------------------
+            Code: vasp
+            PseudoSet(
+                codes = {'vasp'},
+                pseudos = {},
+                Zeff_map = {},
+            )
 
     .. tab-item:: Class Interface
         :sync: class
@@ -478,82 +559,6 @@ Conveniently, this is made trivial with the ``include`` parameter.
                 Zeff_map = {},
             )
 
-    .. tab-item:: Function Interface
-        :sync: func
-
-        .. code-block:: python
-
-            >>> from nexus import generate_pseudoset
-            >>> ccECP = generate_pseudoset(
-            ...     pseudo_dir="/tmp/ccECP",
-            ...     extension={"rmg": ".xml"}
-            ... )
-            >>> for code, ps_set in ccECP.items():
-            ...     print("-"*40)
-            ...     print(f"Code: {code}")
-            ...     print(f"{ps_set!r}", end="")
-            ------------------------------------------------------------
-            Code: espresso
-            PseudoSet(
-                codes = {'espresso'},
-                pseudos = {
-                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.upf'),
-                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.upf'),
-                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.upf'),
-                },
-                Zeff_map = {},
-            )
-            ------------------------------------------------------------
-            Code: gamess
-            PseudoSet(
-                codes = {'gamess'},
-                pseudos = {
-                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.gamess'),
-                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.gamess'),
-                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.gamess'),
-                },
-                Zeff_map = {},
-            )
-            ------------------------------------------------------------
-            Code: pyscf
-            PseudoSet(
-                codes = {'pyscf'},
-                pseudos = {
-                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.nwchem'),
-                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.nwchem'),
-                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.nwchem'),
-                },
-                Zeff_map = {},
-            )
-            ------------------------------------------------------------
-            Code: qmcpack
-            PseudoSet(
-                codes = {'qmcpack'},
-                pseudos = {
-                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.xml'),
-                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.xml'),
-                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.xml'),
-                },
-                Zeff_map = {},
-            )
-            ------------------------------------------------------------
-            Code: rmg
-            PseudoSet(
-                codes = {'rmg'},
-                pseudos = {
-                    'C': PosixPath('/tmp/pseudo_dir/C.ccECP.xml'),
-                    'H': PosixPath('/tmp/pseudo_dir/H.ccECP.xml'),
-                    'O': PosixPath('/tmp/pseudo_dir/O.ccECP.xml'),
-                },
-                Zeff_map = {},
-            )
-            ------------------------------------------------------------
-            Code: vasp
-            PseudoSet(
-                codes = {'vasp'},
-                pseudos = {},
-                Zeff_map = {},
-            )
 
 As with the single-code example, you can change out ``include`` to match different pseudopotential sets.
 
@@ -594,70 +599,6 @@ A more specialized case involving VASP pseudopotentials requires the use of both
 
 .. tab-set::
     :sync-group: func-class-interface
-
-    .. tab-item:: Class Interface
-        :sync: class
-
-        .. code-block:: python
-
-            >>> from nexus import PseudoSet
-            >>> pseudos = PseudoSet.from_dir( # No `code` specified, uses auto-detect
-            ...     pseudo_dir="/tmp/vasp_pseudos",
-            ...     exclude="*_*",
-            ... )
-            >>> print(repr(pseudos)) # All non-sv and non-GW pseudos
-            PseudoSet(
-                codes = {'vasp'},
-                pseudos = {
-                    'C': PosixPath('/tmp/vasp_pseudos/C/POTCAR'),
-                    'H': PosixPath('/tmp/vasp_pseudos/H/POTCAR'),
-                    'O': PosixPath('/tmp/vasp_pseudos/O/POTCAR'),
-                },
-                Zeff_map = {},
-            )
-            >>> sv_pseudos = PseudoSet.from_dir(
-            ...     pseudo_dir="/tmp/vasp_pseudos",
-            ...     include="*_sv", # Leave out trailing asterisk to not match after 'sv'
-            ... )
-            >>> print(repr(sv_pseudos))
-            PseudoSet(
-                codes = {'vasp'},
-                pseudos = {
-                    'C': PosixPath('/tmp/vasp_pseudos/C_sv/POTCAR'),
-                    'H': PosixPath('/tmp/vasp_pseudos/H_sv/POTCAR'),
-                    'O': PosixPath('/tmp/vasp_pseudos/O_sv/POTCAR'),
-                },
-                Zeff_map = {},
-            )
-            >>> sv_gw_pseudos = PseudoSet.from_dir(
-            ...     pseudo_dir="/tmp/vasp_pseudos",
-            ...     include="*_sv_GW",
-            ... )
-            >>> print(repr(sv_gw_pseudos))
-            PseudoSet(
-                codes = {'vasp'},
-                pseudos = {
-                    'C': PosixPath('/tmp/vasp_pseudos/C_sv_GW/POTCAR'),
-                    'H': PosixPath('/tmp/vasp_pseudos/H_sv_GW/POTCAR'),
-                    'O': PosixPath('/tmp/vasp_pseudos/O_sv_GW/POTCAR'),
-                },
-                Zeff_map = {},
-            )
-            >>> gw_pseudos = PseudoSet.from_dir(
-            ...     pseudo_dir="/tmp/vasp_pseudos",
-            ...     include="*_GW", # Include those ending with '_GW'
-            ...     exclude="*sv*", # But not those containing 'sv'
-            ... )
-            >>> print(repr(gw_pseudos))
-            PseudoSet(
-                codes = {'vasp'},
-                pseudos = {
-                    'C': PosixPath('/tmp/vasp_pseudos/C_GW/POTCAR'),
-                    'H': PosixPath('/tmp/vasp_pseudos/H_GW/POTCAR'),
-                    'O': PosixPath('/tmp/vasp_pseudos/O_GW/POTCAR'),
-                },
-                Zeff_map = {},
-            )
 
     .. tab-item:: Function Interface
         :sync: func
@@ -726,6 +667,71 @@ A more specialized case involving VASP pseudopotentials requires the use of both
                 },
                 Zeff_map = {},
             )}
+
+    .. tab-item:: Class Interface
+        :sync: class
+
+        .. code-block:: python
+
+            >>> from nexus import PseudoSet
+            >>> pseudos = PseudoSet.from_dir( # No `code` specified, uses auto-detect
+            ...     pseudo_dir="/tmp/vasp_pseudos",
+            ...     exclude="*_*",
+            ... )
+            >>> print(repr(pseudos)) # All non-sv and non-GW pseudos
+            PseudoSet(
+                codes = {'vasp'},
+                pseudos = {
+                    'C': PosixPath('/tmp/vasp_pseudos/C/POTCAR'),
+                    'H': PosixPath('/tmp/vasp_pseudos/H/POTCAR'),
+                    'O': PosixPath('/tmp/vasp_pseudos/O/POTCAR'),
+                },
+                Zeff_map = {},
+            )
+            >>> sv_pseudos = PseudoSet.from_dir(
+            ...     pseudo_dir="/tmp/vasp_pseudos",
+            ...     include="*_sv", # Leave out trailing asterisk to not match after 'sv'
+            ... )
+            >>> print(repr(sv_pseudos))
+            PseudoSet(
+                codes = {'vasp'},
+                pseudos = {
+                    'C': PosixPath('/tmp/vasp_pseudos/C_sv/POTCAR'),
+                    'H': PosixPath('/tmp/vasp_pseudos/H_sv/POTCAR'),
+                    'O': PosixPath('/tmp/vasp_pseudos/O_sv/POTCAR'),
+                },
+                Zeff_map = {},
+            )
+            >>> sv_gw_pseudos = PseudoSet.from_dir(
+            ...     pseudo_dir="/tmp/vasp_pseudos",
+            ...     include="*_sv_GW",
+            ... )
+            >>> print(repr(sv_gw_pseudos))
+            PseudoSet(
+                codes = {'vasp'},
+                pseudos = {
+                    'C': PosixPath('/tmp/vasp_pseudos/C_sv_GW/POTCAR'),
+                    'H': PosixPath('/tmp/vasp_pseudos/H_sv_GW/POTCAR'),
+                    'O': PosixPath('/tmp/vasp_pseudos/O_sv_GW/POTCAR'),
+                },
+                Zeff_map = {},
+            )
+            >>> gw_pseudos = PseudoSet.from_dir(
+            ...     pseudo_dir="/tmp/vasp_pseudos",
+            ...     include="*_GW", # Include those ending with '_GW'
+            ...     exclude="*sv*", # But not those containing 'sv'
+            ... )
+            >>> print(repr(gw_pseudos))
+            PseudoSet(
+                codes = {'vasp'},
+                pseudos = {
+                    'C': PosixPath('/tmp/vasp_pseudos/C_GW/POTCAR'),
+                    'H': PosixPath('/tmp/vasp_pseudos/H_GW/POTCAR'),
+                    'O': PosixPath('/tmp/vasp_pseudos/O_GW/POTCAR'),
+                },
+                Zeff_map = {},
+            )
+
 
 It is important to note that the function-style interface does not support code autodetect, and if no codes are provided will create empty :py:class:`~.PseudoSet` objects for all non-VASP codes (in this case).
 
