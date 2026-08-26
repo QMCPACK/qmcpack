@@ -16,7 +16,7 @@ TEST_FILES = {
     "Ni_surface.in":          TEST_DIR / "test_pwscf_input_files/Ni_surface.in",
     "nexus_argon_scf.in":     TEST_DIR / "test_pwscf_input_files/nexus_argon_scf.in",
     "nexus_h2_relax.in":      TEST_DIR / "test_pwscf_input_files/nexus_h2_relax.in",
-    "nexus_argon_bands.in":  TEST_DIR / "test_pwscf_input_files/nexus_argon_bands.in",
+    "nexus_argon_bands.in":   TEST_DIR / "test_pwscf_input_files/nexus_argon_bands.in",
     "TiO2_band_structure.in": TEST_DIR / "test_pwscf_input_files/TiO2_band_structure.in",
     "TiO2_relax_freeze.in":   TEST_DIR / "test_pwscf_input_files/TiO2_relax_freeze.in",
     "VO2_M1_afm.in":          TEST_DIR / "test_pwscf_input_files/VO2_M1_afm.in",
