@@ -30,7 +30,7 @@ StructureFactorEstimator::StructureFactorEstimator(const StructureFactorInput& s
                                                    const ParticleSet& pset_ions,
                                                    const ParticleSet& pset_elec,
                                                    DataLocality data_locality)
-    : OperatorEstBase(data_locality, sfi.get_name(), sfi.get_type()),
+    : OperatorEstBase(data_locality, sfi.get_name(), std::string{StructureFactorInput::type_tag}),
       input_(sfi),
       elns_(pset_elec),
       elec_num_species_(elns_.getSpeciesSet().getTotalNum()),

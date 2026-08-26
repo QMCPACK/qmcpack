@@ -1,0 +1,8 @@
+#!/bin/bash
+export REMOTE=correaa@cybertruck.local
+export REMOTE_DIR=$(ssh $REMOTE "mktemp -d")
+
+[[ -z "$REMOTE_DIR" ]] && { echo "REMOTE_DIR is empty"; exit 1; }
+
+rsync -az --exclude='.git' --exclude='.build*' ./ $REMOTE:$REMOTE_DIR
+ssh $REMOTE "cd $REMOTE_DIR && pwd && ./pre-push $@ && rm -rf $REMOTE_DIR"

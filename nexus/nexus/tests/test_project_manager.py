@@ -168,16 +168,11 @@ def test_resolve_file_collisions():
     s2.locdir  = s1.locdir
     s2.outfile = s1.outfile
 
-    try:
+    with pytest.raises(
+        FileExistsError,
+        match="file collisions found in directory",
+        ):
         pm.resolve_file_collisions()
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     Simulation.clear_all_sims()
 #end def test_resolve_file_collisions

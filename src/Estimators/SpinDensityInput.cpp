@@ -12,97 +12,61 @@
 
 #include <cmath>
 
-#include "OhmmsData/AttributeSet.h"
-#include "Message/UniformCommunicateError.h"
+#include "EstimatorInput.h"
 
 namespace qmcplusplus
 {
 
-SpinDensityInput::SpinDensityInput(xmlNodePtr node) { readXML(node); }
-
-void SpinDensityInput::readXML(xmlNodePtr cur)
+SpinDensityInput::SpinDensityInput(xmlNodePtr cur)
 {
-  std::string write_report;
-  std::string save_memory;
-  OhmmsAttributeSet attrib;
-  attrib.add(name_, "name");
-  attrib.add(type_, "type");
-  attrib.add(write_report, "report");
-  attrib.add(save_memory, "save_memory");
-  attrib.put(cur);
+  input_section_.readXML(cur);
+  auto setIfInInput = LAMBDA_setIfInInput;
 
-  Tensor<Real, DIM> axes;
+  setIfInInput(name_, "name");
+  setIfInInput(write_report_, "report");
+  setIfInInput(save_memory_, "save_memory");
+  have_dr_     = setIfInInput(dr_, "dr");
+  have_corner_ = setIfInInput(corner_, "corner");
+  have_center_ = setIfInInput(center_, "center");
 
-  int test_moves = 0;
+  PosType input_grid;
+  have_grid_ = setIfInInput(input_grid, "grid");
+  if (have_grid_)
+    for (int d = 0; d < DIM; ++d)
+      grid_[d] = static_cast<int>(input_grid[d]);
 
-  xmlNodePtr element = cur->xmlChildrenNode;
-  while (element != NULL)
-  {
-    std::string ename((const char*)element->name);
-    if (ename == "parameter")
-    {
-      const std::string name(getXMLAttributeValue(element, "name"));
-      if (name == "dr")
-      {
-        have_dr_ = true;
-        putContent(dr_, element);
-      }
-      else if (name == "grid")
-      {
-        have_grid_ = true;
-        putContent(grid_, element);
-      }
-      else if (name == "corner")
-      {
-        have_corner_ = true;
-        putContent(corner_, element);
-      }
-      else if (name == "center")
-      {
-        have_center_ = true;
-        putContent(center_, element);
-      }
-      else if (name == "cell")
-      {
-        have_cell_ = true;
-        putContent(axes, element);
-      }
-      else if (name == "test_moves")
-        putContent(test_moves, element);
-    }
-    element = element->next;
-  }
-
-  if (have_dr_ && have_grid_)
-    throw UniformCommunicateError("SpinDensity input dr and grid are provided, this is ambiguous");
-  else if (!have_dr_ && !have_grid_)
-    throw UniformCommunicateError("SpinDensity input must provide dr or grid");
-
-  if (have_corner_ && have_center_)
-    throw UniformCommunicateError("SpinDensity input corner and center are provided, this is ambiguous");
-
+  have_cell_ = input_section_.has("cell");
   if (have_cell_)
   {
+    const std::vector<Real> cell_values = input_section_.get<std::vector<Real>>("cell");
+    Tensor<Real, DIM> axes;
+    for (int i = 0; i < DIM; ++i)
+      for (int j = 0; j < DIM; ++j)
+        axes(i, j) = cell_values[i * DIM + j];
     cell_.set(axes);
-    if (!have_corner_ && !have_center_)
-      throw UniformCommunicateError("SpinDensity input must provide corner or center with explicitly defined cell");
   }
+}
 
-  if (write_report == "yes")
-    write_report_ = true;
-  else
-    write_report_ = false;
+void SpinDensityInput::SpinDensityInputSection::checkParticularValidity()
+{
+  using namespace estimatorinput;
+  const std::string error_tag{"SpinDensity input: "};
 
-  if (save_memory == "yes")
-    save_memory_ = true;
-  else
-    save_memory_ = false;
+  checkCenterCorner(*this, error_tag);
 
-  // weird legacy stuff
-  // if (write_report == "yes")
-  //   report("  ");
-  // if (test_moves > 0)
-  //   test(test_moves, *Ptmp);
+  if (has("dr") && has("grid"))
+    throw UniformCommunicateError(error_tag + "dr and grid are provided, this is ambiguous");
+  if (!has("dr") && !has("grid"))
+    throw UniformCommunicateError(error_tag + "must provide dr or grid");
+
+  if (has("cell"))
+  {
+    if (get<std::vector<Real>>("cell").size() != DIM * DIM)
+      throw UniformCommunicateError(error_tag + "cell must contain a " + std::to_string(DIM) + " by " +
+                                    std::to_string(DIM) + " matrix");
+    if (!has("corner") && !has("center"))
+      throw UniformCommunicateError(error_tag + "must provide corner or center with explicitly defined cell");
+  }
 }
 
 SpinDensityInput::DerivedParameters SpinDensityInput::calculateDerivedParameters(const Lattice& lattice) const
