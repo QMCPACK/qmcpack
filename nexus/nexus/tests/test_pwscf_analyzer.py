@@ -115,13 +115,19 @@ def test_analyze():
     pa = PwscfAnalyzer(scf_path,'scf.in','scf.out',analyze=True)
 
     assert(object_eq(pa.input,input_read))
+    assert('md_data' not in pa)
+    assert(len(pa.bands.up)==3)
+    assert(len(pa.bands.down)==0)
+    for band in pa.bands.up.values():
+        assert(band.eigs.shape==(30,))
+        assert(band.occs.shape==(30,))
+    #end for
 
     del pa.input
     del pa.abspath
     del pa.path
+    del pa.bands
 
-    # Note: band read is failing for spin unpolarized case.
-    # Test needed for spin polarized case w/ bands, then fix unpolarized.
     pa_ref = obj(
         E               = -170.11048381,
         Ef              = 0.0,
@@ -168,22 +174,6 @@ def test_analyze():
             warn            = False,
             xml             = False,
             ),
-        md_data = obj(
-            kinetic_energy   = array([-170.96],dtype=float),
-            potential_energy = array([0.84951619],dtype=float),
-            pressure         = array([-170.96],dtype=float),
-            temperature      = array([0.],dtype=float),
-            time             = array([0.],dtype=float),
-            total_energy     = array([-170.11048381],dtype=float),
-            ),
-        md_stats = obj(
-            kinetic_energy   = (-170.96, 0.0),
-            potential_energy = (0.8495161900000028, 0.0),
-            pressure         = (-170.96, 0.0),
-            temperature      = (0.0, 0.0),
-            time             = (0.0, 0.0),
-            total_energy     = (-170.11048381, 0.0),
-            ),
         )
 
     assert(object_eq(to_obj(pa),pa_ref))
@@ -192,9 +182,18 @@ def test_analyze():
     # relax w/ full analysis
     pa = PwscfAnalyzer(relax_path,'relax.in','relax.out',analyze=True)
 
+    assert('md_data' not in pa)
+    assert(len(pa.bands.up)==3)
+    assert(len(pa.bands.down)==0)
+    for band in pa.bands.up.values():
+        assert(band.eigs.shape==(30,))
+        assert(band.occs.shape==(0,))
+    #end for
+
     del pa.input
     del pa.abspath
     del pa.path
+    del pa.bands
 
     pa_ref = obj(
         E               = -168.41267772,
@@ -269,7 +268,7 @@ def test_analyze():
         pressure        = 0.0,
         pw2c_outfile_name = None,
         stress          = [],
-        tot_forces      = array([],dtype=float),
+        tot_forces      = array([0.173046,0.081060,0.011505,0.003093],dtype=float),
         volume          = 614.0889,
         walltime        = 0.00251388888889,
         info = obj(
@@ -678,3 +677,99 @@ def test_analyze():
     assert(object_eq(to_obj(pa),pa_ref))
 
 #end def test_analyze
+
+
+def test_modern_output(tmp_path):
+    import numpy as np
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    infile = """&CONTROL
+  calculation = 'vc-md'
+  prefix = 'test'
+  outdir = './tmp'
+/
+&SYSTEM
+  ibrav = 1
+  celldm(1) = 5.0
+  nat = 1
+  ntyp = 1
+  ecutwfc = 10.0
+/
+ATOMIC_SPECIES
+H 1.0 H.UPF
+ATOMIC_POSITIONS crystal
+H 0.0 0.0 0.0
+K_POINTS gamma
+"""
+    outfile = """     unit-cell volume          =      125.0000 (a.u.)^3
+     number of k points=   1
+
+          k = 0.0000 0.0000 0.0000 (    10 PWs)   bands (ev):
+
+    -1.0000  1.0000
+
+!    total energy              =      -1.10000000 Ry
+     Forces acting on atoms (cartesian axes, Ry/au):
+
+     atom    1 type  1   force =     0.01000000    0.02000000    0.03000000
+
+     Total force =     0.037417     Total SCF correction =     0.000000
+          total   stress  (Ry/bohr**3)                   (kbar)     P=       10.00
+   0.00100000   0.00000000   0.00000000          10.00        0.00        0.00
+   0.00000000   0.00100000   0.00000000           0.00       10.00        0.00
+   0.00000000   0.00000000   0.00100000           0.00        0.00       10.00
+     Entering Dynamics;  it =     1   time =  0.00000 pico-seconds
+     Ekin =     0.10000000 Ry    T =  100.0 K  Etot =       -1.00000000
+     new unit-cell volume =     124.00000 a.u.^3 (    18.00000 Ang^3 )
+CELL_PARAMETERS (alat=  5.00000000)
+   1.000000000   0.000000000   0.000000000
+   0.000000000   1.000000000   0.000000000
+   0.000000000   0.000000000   1.000000000
+ATOMIC_POSITIONS (crystal)
+H  0.100000000  0.200000000  0.300000000
+
+     PWSCF        :      0.10s CPU      0.20s WALL
+"""
+    schema = """<?xml version="1.0"?>
+<qes:espresso xmlns:qes="http://www.quantum-espresso.org/ns/qes/qes-1.0">
+  <output>
+    <band_structure>
+      <lsda>false</lsda>
+      <nks>2</nks>
+      <ks_energies>
+        <k_point weight="0.5">0.0 0.0 0.0</k_point>
+        <eigenvalues size="2">-0.5 0.5</eigenvalues>
+        <occupations size="2">1.0 0.0</occupations>
+      </ks_energies>
+      <ks_energies>
+        <k_point weight="0.5">0.0 0.0 0.0</k_point>
+        <eigenvalues size="2">-0.4 0.6</eigenvalues>
+        <occupations size="2">1.0 0.0</occupations>
+      </ks_energies>
+    </band_structure>
+  </output>
+</qes:espresso>
+"""
+    (tmp_path/'pwscf.in').write_text(infile)
+    (tmp_path/'pwscf.out').write_text(outfile)
+    savedir = tmp_path/'tmp'/'test.save'
+    savedir.mkdir(parents=True)
+    (savedir/'data-file-schema.xml').write_text(schema)
+
+    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
+
+    assert(np.allclose(pa.md_data.total_energy,[-1.1]))
+    assert(np.allclose(pa.md_data.time,[0.0]))
+    assert(np.allclose(pa.md_data.kinetic_energy,[0.1]))
+    assert(np.allclose(pa.md_data.temperature,[100.0]))
+    assert(np.allclose(pa.tot_forces,[0.037417]))
+    assert(pa.volume==124.0)
+    assert(len(pa.bands.up)==1)
+    assert(pa.bands.up[0].occs.shape==(0,))
+    assert(np.allclose(pa.structures[0].axes,5*np.eye(3)))
+    assert(np.allclose(pa.structures[0].positions,[[0.5,1.0,1.5]]))
+    assert(not pa.xmldata.failed)
+    assert(len(pa.xmldata.kpoints)==2)
+    assert(np.allclose(pa.xmldata.kpoints[1].up.eigenvalues,[-0.5,0.5]))
+    assert(np.allclose(pa.xmldata.kpoints[2].up.eigenvalues,[-0.4,0.6]))
+#end def test_modern_output
