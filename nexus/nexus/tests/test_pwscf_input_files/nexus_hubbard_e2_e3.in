@@ -1,0 +1,35 @@
+! Original Nexus regression input; not derived from Quantum ESPRESSO examples.
+&CONTROL
+  calculation = 'scf'
+  prefix = 'nexus_hubbard'
+  outdir = './nexus_test_tmp'
+  pseudo_dir = './pseudo'
+/
+&SYSTEM
+  ibrav = 1
+  celldm(1) = 10.5
+  nat = 2
+  ntyp = 2
+  nspin = 1
+  ecutwfc = 36.0
+  occupations = 'fixed'
+/
+&ELECTRONS
+  conv_thr = 3.0d-9
+  diagonalization = 'david'
+/
+ATOMIC_SPECIES
+  Ce 140.116 Ce.nexus-test.UPF
+  Fe 55.845 Fe.nexus-test.UPF
+ATOMIC_POSITIONS crystal
+  Ce 0.0 0.0 0.0
+  Fe 0.5 0.5 0.5
+K_POINTS automatic
+  4 4 4 0 0 0
+HUBBARD atomic
+  U  Ce-4f 5.8
+  J  Ce-4f 0.65
+  E2 Ce-4f 0.12
+  E3 Ce-4f 0.04
+  U  Fe-3d 3.7
+  B  Fe-3d 0.09

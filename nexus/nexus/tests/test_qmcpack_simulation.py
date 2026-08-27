@@ -145,16 +145,11 @@ def test_get_result(tmp_path):
 
     assert(Path(sim.locdir).resolve() == tmp_path)
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = sim.get_result('cuspcorr',None)
 
@@ -207,7 +202,10 @@ def test_get_result(tmp_path):
     assert(restart.project_series==1)
 
     random_file.unlink()
-    with pytest.raises(NexusError,match='restart files do not exist'):
+    with pytest.raises(
+        FileNotFoundError,
+        match='restart files do not exist'
+        ):
         restart_sim.get_result('restart',None)
     #end with
     random_file.touch()
