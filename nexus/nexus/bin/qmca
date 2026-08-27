@@ -65,7 +65,7 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj,error,unavailable
+from nexus.developer import DevBase,obj,unavailable
 from nexus.unit_converter import convert
 from nexus.numerics import simstats,simplestats,equilibration_length
 import nexus.numpy_extensions as npe
@@ -101,7 +101,11 @@ def sigfig_round(some_float, nsigfig):
     if nsigfig >= 1 and nsigfig == int(nsigfig):
         return round(some_float, nsigfig - int(np.floor(np.log10(abs(some_float))))-1) 
     else:
-        error("Number of significant figures must be a whole number\nreceived {0}".format(nsigfig),'QMCA')
+        msg = (
+            "Number of significant figures must be a whole number\n'"
+            "'received {0}".format(nsigfig)
+            )
+        raise ValueError(msg)
     #end if
 #end sigfig_round
 
@@ -272,7 +276,8 @@ class DatAnalyzer(QBase):
             #end if
         #end for
         if series is None:
-            self.error('unable to read series number for file '+filepath,'QMCA')
+            msg = 'unable to read series number for file '+filepath
+            raise RuntimeError(msg)
         #end if
         prefix = filepath.split('.s'+str(series).zfill(3))[0]
         self.info.update(
@@ -295,12 +300,22 @@ class DatAnalyzer(QBase):
         elif isinstance(eq,(int,np.int_)):
             nbe = eq
         elif not self.info.series in eq:
-            self.error('equilibration length was not provided for series {0}\nplease use the -e option to provide an equilibration length'.format(self.info.series),'QMCA')
+            msg = (
+                'equilibration length was not provided for series {0}\n'
+                'please use the -e option to provide an equilibration length'.format(self.info.series)
+                )
+            raise ValueError(msg)
         else:
             nbe = eq[self.info.series]
         #end if
         if nbe<0:
-            self.error('equilibration length cannot be negative\nyou requested an equilibration length of {0} for series {1}'.format(nbe,self.info.series),'QMCA')
+            msg = (
+                'equilibration length cannot be negative\n'
+                'you requested an equilibration length of {0} for series {1}'.format(
+                    nbe, self.info.series
+                    )
+                )
+            raise ValueError(msg)
         #end if
         return nbe
     #end def get_equilibration
@@ -360,7 +375,13 @@ class DatAnalyzer(QBase):
         stats = self.stats
         for varname,samples in data.items():
             if nbe>=len(samples):
-                self.error('equilibration length for series {0} is greater than the amount of data in the file ({1} elements)\nyou requested an equilibration length of {2}'.format(self.info.series,len(samples),nbe),'QMCA')
+                msg = (
+                    'equilibration length for series {0} is greater than the amount of data in the file ({1} elements)\n'
+                    'you requested an equilibration length of {2}'.format(
+                        self.info.series, len(samples), nbe
+                        )
+                    )
+                raise ValueError(msg)
             #end if
             stats[varname] = self.stat_value(samples[nbe:])
         #end for
@@ -692,7 +713,8 @@ class DatAnalyzer(QBase):
 
     def plot_series(self,quantity,style,prefix):
         if not quantity in self.stats:
-            self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
+            msg = 'quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath)
+            raise KeyError(msg)
         #end if
         s = self.info.series
         q = self.stats[quantity]
@@ -704,7 +726,8 @@ class DatAnalyzer(QBase):
     def plot_trace(self,quantity,style,prefix,shift):
         self.check_matplotlib_import()
         if not quantity in self.data:
-            self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
+            msg = 'quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath)
+            raise KeyError(msg)
         #end if
         nbe = self.get_equilibration()
         q = self.data[quantity]
@@ -1029,7 +1052,11 @@ QMCA examples:
         #end if
         u = opt.units.lower()
         if not u in units:
-            self.error('unrecognized unit system requested: {0}\nvalid units are: {1}'.format(u, sorted(units.keys())))
+            msg = (
+                'unrecognized unit system requested: {0}\n'
+                'valid units are: {1}'.format(u, sorted(units.keys()))
+                )
+            raise ValueError(msg)
         else:
             opt.units = units[u]
         #end if
@@ -1047,7 +1074,12 @@ QMCA examples:
                 #end if
                 opt.equilibration = e
             except:
-                self.error('cannot process equilibration option\nvalue must be an integer or list of integers\nyou provided: '+str(opt.equilibration))
+                msg = (
+                    'cannot process equilibration option\n'
+                    'value must be an integer or list of integers\n'
+                    'you provided: '+str(opt.equilibration)
+                    )
+                raise ValueError(msg)
             #end if
         #end if
         if opt.average:
@@ -1064,7 +1096,12 @@ QMCA examples:
                     opt.weights = w
                     weight_failed = len(w.shape)!=1
                 except:
-                    self.error('cannot process weights option\nweights must be a list of real values\nyou provided: {0}'.format(ws))
+                    msg = (
+                        'cannot process weights option\n'
+                        'weights must be a list of real values\n'
+                        'you provided: {0}'.format(ws)
+                        )
+                    raise ValueError(msg)
                 #end try
             #end if
         #end if
@@ -1079,7 +1116,12 @@ QMCA examples:
                 join_failed = True
             #end try
             if join_failed or len(j)!=2:
-                self.error('cannot process join option\njoin must be a pair of integers\nyou provided: {0}'.format(ws))
+                msg = (
+                    'cannot process join option\n'
+                    'join must be a pair of integers\n'
+                    'you provided: {0}'.format(ws)
+                    )
+                raise ValueError(msg)
             #end if
             opt.join = j
         #end if
@@ -1093,12 +1135,22 @@ QMCA examples:
         image_formats = ('png','pdf','svg','eps')
         fmt = opt.image_format.lower().lstrip('.')
         if fmt not in image_formats:
-            self.error('image_format option is invalid\nimage_format must be one of: {}\nyou provided: {}'.format(image_formats,opt.image_format))
+            msg = (
+                'image_format option is invalid\n'
+                'image_format must be one of: {}\n'
+                'you provided: {}'.format(image_formats, opt.image_format)
+                )
+            raise ValueError(msg)
         #end if
         opt.image_format = fmt
         twist_info_options = ('use','ignore','require')
         if opt.twist_info not in twist_info_options:
-            self.error('twist_info option is invalid\ntwist_info must be one of: {}\nyou provided: {}'.format(twist_info_options,opt.twist_info))
+            msg = (
+                'twist_info option is invalid\n'
+                'twist_info must be one of: {}\n'
+                'you provided: {}'.format(twist_info_options, opt.twist_info)
+                )
+            raise ValueError(msg)
         #end if
         opt.all_quantities = False
         qabbr = self.quantity_abbreviations
@@ -1131,7 +1183,12 @@ QMCA examples:
                     if match and q=='':
                         remove.append(qo)
                     else:
-                        self.error('{0} is not a valid quantity\nplease choose quantities from the following list:\n{1}'.format(qo,str(qabbr)))
+                        msg = (
+                            '{0} is not a valid quantity\n'
+                            'please choose quantities from the following list:\n'
+                            '{1}'.format(qo, str(qabbr))
+                            )
+                        raise ValueError(msg)
                     #end if
                 #end if
             #end if
@@ -1141,7 +1198,12 @@ QMCA examples:
             try:
                 fp = ('{0: '+opt.precision+'}').format(1.234567)
             except:
-                self.error('floating point format is not a proper format\nformat provided via --fp: {0}\nplease use a standard floating point format statement like 16.8f, 8.6e, or similar'.format(opt.precision))
+                msg = (
+                    'floating point format is not a proper format\n'
+                    'format provided via --fp: {0}\n'
+                    'please use a standard floating point format statement like 16.8f, 8.6e, or similar'.format(opt.precision)
+                    )
+                raise ValueError(msg)
             #end try
         #end if
         if opt.show_options or self.verbose:
@@ -1165,7 +1227,8 @@ QMCA examples:
         seriesset = set()
         for file in self.file_list:
             if not os.path.exists(file):
-                self.error('file {0} does not exist'.format(file))
+                msg = 'file {0} does not exist'.format(file)
+                raise FileNotFoundError(msg)
             #end if
             isdat = False
             for filetype,ext in allowed_extensions.items():
@@ -1200,7 +1263,13 @@ QMCA examples:
                 #end if
             #end for
             if not isdat:
-                self.error('{0} is not a valid source of input\nplease aim qmca at files with the following extensions: {1}'.format(file,[v for v in allowed_extensions.values()]))
+                msg = (
+                    '{0} is not a valid source of input\n'
+                    'please aim qmca at files with the following extensions: {1}'.format(
+                        file, [v for v in allowed_extensions.values()]
+                        )
+                    )
+                raise ValueError(msg)
             #end if
             ifile+=1
         #end for
@@ -1209,7 +1278,14 @@ QMCA examples:
                 pset = set(pdata.keys())
                 missing = seriesset-pset
                 if len(missing)>1:
-                    self.error('files with prefix {0} are missing series provided for other prefixes\nseries provided for prefix {0}: {1}\nseries missing: {2}'.format(prefix,sorted(list(pset)),sorted(list(missing))))
+                    msg = (
+                        'files with prefix {0} are missing series provided for other prefixes\n'
+                        'series provided for prefix {0}: {1}\n'
+                        'series missing: {2}'.format(
+                            prefix, sorted(list(pset)), sorted(list(missing))
+                            )
+                        )
+                    raise ValueError(msg)
                 #end if
             #end for
             serieslist = sorted(list(seriesset))
@@ -1219,7 +1295,14 @@ QMCA examples:
                     filetypes.add(pdata[series].info.type)
                 #end for
                 if len(filetypes)>1:
-                    self.error('files with mixed extensions encountered for series {0}\nextensions encountered: {1}\nplease provide files with only one of the following extensions: {2}'.format(series,sorted(list(filetypes)),[v for v in allowed_extensions.values()]))
+                    msg = (
+                        'files with mixed extensions encountered for series {0}\n'
+                        'extensions encountered: {1}\n'
+                        'please provide files with only one of the following extensions: {2}'.format(
+                            series, sorted(list(filetypes)), [v for v in allowed_extensions.values()]
+                            )
+                        )
+                    raise ValueError(msg)
                 #end if
             #end for
             
@@ -1247,7 +1330,15 @@ QMCA examples:
                 # average all data together
                 if weights is not None:
                     if len(weights)!=len(prefixes):
-                        self.error('one weight must be provided per file prefix for averaging\nyou provided {0} weights for {1} prefixes\nweights provided: {2}\nprefixes provided: {3}'.format(len(weights),len(prefixes),weights,prefixes))
+                        msg = (
+                            'one weight must be provided per file prefix for averaging\n'
+                            'you provided {0} weights for {1} prefixes\n'
+                            'weights provided: {2}\n'
+                            'prefixes provided: {3}'.format(
+                                len(weights), len(prefixes), weights, prefixes
+                                )
+                            )
+                        raise ValueError(msg)
                     #end if
                 else:
                     uniform_weights = len(prefixes)*[1.0]
@@ -1270,7 +1361,10 @@ QMCA examples:
                         #end for
                         if len(weights)!=len(prefixes):
                             if opt.twist_info=='require':
-                                self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                                msg = (
+                                    'twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix)
+                                    )
+                                raise ValueError(msg)
                             else:
                                 weights = uniform_weights
                             #end if
@@ -1333,7 +1427,10 @@ QMCA examples:
                         #end for
                         if len(weights)!=len(prefixes):
                             if opt.twist_info=='require':
-                                self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                                msg = (
+                                    'twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix)
+                                    )
+                                raise ValueError(msg)
                             else:
                                 weights = uniform_weights
                             #end if
@@ -1383,7 +1480,13 @@ QMCA examples:
                 for prefix,pdata in self.data.items():
                     for s in series_join:
                         if s not in pdata:
-                            self.error('cannot join series {0}\ndata for this series is missing for {1}'.format(s,prefix))
+                            msg = (
+                                'cannot join series {0}\n'
+                                'data for this series is missing for {1}'.format(
+                                    s, prefix
+                                    )
+                                )
+                            raise ValueError(msg)
                         #end if
                     #end for
                     d = pdata[series_join[0]]

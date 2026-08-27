@@ -67,7 +67,7 @@ def find_nexus_modules():
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
 import nexus.numpy_extensions as npe
-from nexus.developer import DevBase,obj,error,unavailable
+from nexus.developer import DevBase,obj,unavailable
 import nexus.memory as memory
 from nexus.hdfreader import HDFreader
 from nexus.fileio import XsfFile,ChgcarFile
@@ -203,7 +203,13 @@ def reblock(data,eq,rb=None,filepath=None):
         if filepath is not None:
             msg = '\nfor file: {0}'.format(filepath)
         #end if
-        error('reblocking data results in too few points{0}\npoint in file: {1}\npoints after equilibration: {2}\npoints after reblocking: {3}'.format(msg,nd,nd-eq,len(d)//rb),'reblock')
+        msg = (
+            'reblocking data results in too few points{0}\n'
+            'point in file: {1}\n'
+            'points after equilibration: {2}\n'
+            'points after reblocking: {3}'.format(msg, nd, nd-eq, len(d)//rb)
+            )
+        raise ValueError(msg)
     #end if
     # reblock the data
     s = list(d.shape)
@@ -234,18 +240,6 @@ class QDBase(DevBase):
     def help(self):
         self.log('\n'+self.parser.format_help().strip()+'\n')
     #end def help
-
-    def exit(self):
-        self.vlog('\n{0} finished\n'.format(self.name))
-        sys.exit()
-    #end def exit
-
-    def error(self,msg,loc=None):
-        if loc is None:
-            loc = self.name
-        #end if
-        error(msg,loc)
-    #end def error
 
     # options accessor functions
     def get_cell(self):
@@ -302,7 +296,8 @@ class SingleDensity(QDBase):
         #end if
         if grid is not None:
             if len(grid)!=3:
-                QDBase.error(self,'inputted grid must have length 3, received {0}'.format(grid))
+                msg = 'inputted grid must have length 3, received {0}'.format(grid)
+                raise ValueError(msg)
             #end if
             self.grid = np.array(grid,dtype=int)
         #end if
@@ -314,13 +309,15 @@ class SingleDensity(QDBase):
         #end if
         if density_corner is not None:
             if len(density_corner)!=3:
-                QDBase.error(self,'inputted density_corner must have length 3, received {0}'.format(density_corner))
+                msg = 'inputted density_corner must have length 3, received {0}'.format(density_corner)
+                raise ValueError(msg)
             #end if
             self.density_corner = np.array(density_corner,dtype=float)
         #end if
         if density_cell is not None:
             if len(np.array(density_cell).ravel())!=9:
-                QDBase.error(self,'inputted density_cell must have length 9, received {0}'.format(density_cell))
+                msg = 'inputted density_cell must have length 9, received {0}'.format(density_cell)
+                raise ValueError(msg)
             #end if
             self.density_cell = np.array(density_cell,dtype=float)
         #end if
@@ -335,7 +332,10 @@ class SingleDensity(QDBase):
             return
         #end if
         if not isinstance(value,types):
-            QDBase.error(self,'expected {0} for {1}, but received type "{2}"'.format(stypes,name,value.__class__.__name__))
+            msg = 'expected {0} for {1}, but received type "{2}"'.format(
+                stypes, name, value.__class__.__name__
+                )
+            raise TypeError(msg)
         #end if
     #end def check_type
 
@@ -347,7 +347,8 @@ class SingleDensity(QDBase):
 
     def require(self,name,action):
         if self[name] is None:
-            QDBase.error(self,'cannot {0}, {1} is not present'.format(action,name))
+            msg = 'cannot {0}, {1} is not present'.format(action,name)
+            raise RuntimeError(msg)
         #end if
     #end def require
 
@@ -367,7 +368,12 @@ class SingleDensity(QDBase):
         elif format=='chgcar':
             self.write_chgcar(prefix)
         else:
-            QDBase.error(self,'invalid density format requested\nformat requested: {0}\nallowed options: xsf, dat'.format(format))
+            msg = (
+                'invalid density format requested\n'
+                'format requested: {0}\n'
+                'allowed options: xsf, dat'.format(format)
+                )
+            raise ValueError(msg)
         #end if
     #end def write
 
@@ -393,10 +399,12 @@ class SingleDensity(QDBase):
         density_corner = self.density_corner
         # data needs to be laid out in i,j,k order for xsf
         if g is None:
-            QDBase.error(self,'grid must be specified (via --grid or --input) for output format xsf')
+            msg = 'grid must be specified (via --grid or --input) for output format xsf'
+            raise ValueError(msg)
         #end if
         if s is None:
-            QDBase.error(self,'structure must be specified (via --structure) for output format xsf')
+            msg = 'structure must be specified (via --structure) for output format xsf'
+            raise ValueError(msg)
         #end if
         s = deepcopy(s)
         p = s.pos.ravel()
@@ -445,10 +453,12 @@ class SingleDensity(QDBase):
         s           = self.structure
         # data needs to be laid out in i,j,k order for xsf
         if g is None:
-            QDBase.error(self,'grid must be specified (via --grid or --input) for output format xsf')
+            msg = 'grid must be specified (via --grid or --input) for output format xsf'
+            raise ValueError(msg)
         #end if
         if s is None:
-            QDBase.error(self,'structure must be specified (via --structure) for output format xsf')
+            msg = 'structure must be specified (via --structure) for output format xsf'
+            raise ValueError(msg)
         #end if
         s = deepcopy(s)
         p = s.pos.ravel()
@@ -458,10 +468,12 @@ class SingleDensity(QDBase):
         s.change_units('A')
         cell   = s.axes
         if self.density_cell is not None and not np.allclose(self.density_cell,cell):
-            QDBase.error(self,'cannot write CHGCAR with a density cell different from the simulation cell; use XSF output instead')
+            msg = 'cannot write CHGCAR with a density cell different from the simulation cell; use XSF output instead'
+            raise ValueError(msg)
         #end if
         if self.density_corner is not None and not np.allclose(self.density_corner,np.zeros(3)):
-            QDBase.error(self,'cannot write CHGCAR with a nonzero density corner; use XSF output instead')
+            msg = 'cannot write CHGCAR with a nonzero density corner; use XSF output instead'
+            raise ValueError(msg)
         #end if
 
         f = XsfFile()
@@ -535,11 +547,19 @@ class StatFile(QDBase):
     def read(self,filepath):
         opt = self.options
         if not os.path.exists(filepath):
-            self.error('attempted to read stat.h5 file that does not exist\nfile path: {0}'.format(filepath))
+            msg = (
+                'attempted to read stat.h5 file that does not exist\n'
+                'file path: {0}'.format(filepath)
+                )
+            raise FileNotFoundError(msg)
         #end if
         hdf = HDFreader(filepath)
         if not hdf._success:
-            self.error('read failed for stat.h5 file\nfile path: {0}'.format(filepath))
+            msg = (
+                'read failed for stat.h5 file\n'
+                'file path: {0}'.format(filepath)
+                )
+            raise RuntimeError(msg)
         #end if
         h5 = hdf.obj
         h5._remove_hidden()
@@ -556,7 +576,11 @@ class StatFile(QDBase):
         #end for
         self.use_dens = False
         if len(self.spin_density_data)==0 and len(self.density_data)==0:
-            self.error('spin density is not present in stat.h5 file\nfile path: {0}'.format(filepath))
+            msg = (
+                'spin density is not present in stat.h5 file\n'
+                'file path: {0}'.format(filepath)
+                )
+            raise ValueError(msg)
         elif len(self.density_data)>0:
             self.use_dens=True
         #end if
@@ -661,13 +685,14 @@ class StatFile(QDBase):
                     source='command line',
                     )
             else:
-                self.error(
+                msg = (
                     'could not find input metadata for density estimator "{0}" in series {1}\n'
                     'file path: {2}\n'
                     'provide --grid only when this file contains one density estimator'.format(
                         name,self.series,self.filepath
                         )
                     )
+                raise ValueError(msg)
             #end if
         else:
             ignored = []
@@ -691,22 +716,26 @@ class StatFile(QDBase):
     def check_grid(self,name,grid,data_cells):
         ncells = int(grid[0]*grid[1]*grid[2])
         if ncells!=data_cells:
-            self.error(
+            msg = (
                 'density grid does not match number of HDF5 data cells\n'
                 'file path: {0}\n'
                 'series: {1}\n'
                 'estimator: {2}\n'
                 'grid: {3}\n'
                 'grid cells: {4}\n'
-                'HDF5 data cells: {5}'
-                .format(self.filepath,self.series,name,grid,ncells,data_cells))
+                'HDF5 data cells: {5}'.format(
+                    self.filepath, self.series, name, grid, ncells, data_cells
+                    )
+                )
+            raise ValueError(msg)
         #end if
     #end def check_grid
 
 
     def analyze(self,equilibration=0,reblock_factor=None):
         if not self.has_data():
-            self.error('cannot analyze results, data is not present')
+            msg = 'cannot analyze results, data is not present'
+            raise ValueError(msg)
         #end if
         opt = self.options
         if not self.use_dens:
@@ -951,9 +980,12 @@ class QMCDensityProcessor(QDBase):
         for name,xml in self.estimator_children(estimators):
             if isinstance(xml,spindensity_xml):
                 if name in metadata:
-                    self.error(
-                        'ambiguous density estimator metadata for "{0}" in {1}'
-                        .format(name,metadata_scope))
+                    msg = (
+                        'ambiguous density estimator metadata for "{0}" in {1}'.format(
+                            name, metadata_scope
+                            )
+                        )
+                    raise ValueError(msg)
                 #end if
                 if 'cell' in xml:
                     density_cell_b = np.array(xml.cell,dtype=float).reshape(3,3)
@@ -970,9 +1002,13 @@ class QMCDensityProcessor(QDBase):
                          for axis,dr in zip(density_cell_b,xml.dr,strict=True)],
                         dtype=int)
                 else:
-                    self.error(
+                    msg = (
                         'could not identify grid data for spin density named "{0}" '
-                        'in QMCPACK input file: {1}'.format(name,self.options.input))
+                        'in QMCPACK input file: {1}'.format(
+                            name, self.options.input
+                            )
+                        )
+                    raise ValueError(msg)
                 #end if
                 if 'corner' in xml:
                     density_corner_b = xml.corner.copy()
@@ -987,31 +1023,41 @@ class QMCDensityProcessor(QDBase):
             elif isinstance(xml,density_xml):
                 name = 'Density'
                 if name in metadata:
-                    self.error(
-                        'ambiguous density estimator metadata for "{0}" in {1}'
-                        .format(name,metadata_scope))
+                    msg = (
+                        'ambiguous density estimator metadata for "{0}" in {1}'.format(
+                            name, metadata_scope
+                            )
+                        )
+                    raise ValueError(msg)
                 #end if
                 bound_names = ('x_min','x_max','y_min','y_max','z_min','z_max')
                 have_bounds = [bound in xml for bound in bound_names]
                 if any(have_bounds) and not all(have_bounds):
-                    self.error(
+                    msg = (
                         'density estimator "{0}" must provide all x_min/x_max, '
                         'y_min/y_max, and z_min/z_max bounds in QMCPACK input '
-                        'file: {1}'.format(name,self.options.input))
+                        'file: {1}'.format(name, self.options.input)
+                        )
+                    raise ValueError(msg)
                 #end if
                 if all(have_bounds):
                     if not _has_orthorhombic_axes(structure):
-                        self.error(
+                        msg = (
                             'bounded density estimator "{0}" requires an '
                             'orthorhombic simulation cell in QMCPACK input file: '
-                            '{1}'.format(name,self.options.input))
+                            '{1}'.format(name, self.options.input)
+                            )
+                        raise ValueError(msg)
                     #end if
                     if bconds is not None and not all(
                             bcond in ('n','o') for bcond in bconds):
-                        self.error(
+                        msg = (
                             'bounded density estimator "{0}" requires open '
-                            'boundary conditions in QMCPACK input file: {1}'
-                            .format(name,self.options.input))
+                            'boundary conditions in QMCPACK input file: {1}'.format(
+                                name, self.options.input
+                                )
+                            )
+                        raise ValueError(msg)
                     #end if
                     density_corner_b = np.array(
                         (xml.x_min,xml.y_min,xml.z_min),dtype=float)
@@ -1019,10 +1065,13 @@ class QMCDensityProcessor(QDBase):
                         (xml.x_max-xml.x_min,xml.y_max-xml.y_min,
                          xml.z_max-xml.z_min),dtype=float)
                     if np.any(density_extent_b<=0):
-                        self.error(
+                        msg = (
                             'density estimator "{0}" has non-positive bounded '
-                            'density-cell dimensions in QMCPACK input file: {1}'
-                            .format(name,self.options.input))
+                            'density-cell dimensions in QMCPACK input file: {1}'.format(
+                                name, self.options.input
+                                )
+                            )
+                        raise ValueError(msg)
                     #end if
                     density_cell_b = np.diag(density_extent_b)
                 else:
@@ -1037,16 +1086,20 @@ class QMCDensityProcessor(QDBase):
                     delta = np.array(xml.delta,dtype=float)
                     if (delta.shape!=(3,) or not np.all(np.isfinite(delta))
                             or np.any(delta<=0) or np.any(delta>=1)):
-                        self.error(
+                        msg = (
                             'density estimator "{0}" must provide three positive '
                             'delta values less than one in QMCPACK input file: {1}'
-                            .format(name,self.options.input))
+                            .format(name, self.options.input)
+                            )
+                        raise ValueError(msg)
                     #end if
                     grid = np.ceil(1.0/delta).astype(int)
                 else:
-                    self.error(
+                    msg = (
                         'could not identify grid data for density named "{0}" '
-                        'in QMCPACK input file: {1}'.format(name,self.options.input))
+                        'in QMCPACK input file: {1}'.format(name, self.options.input)
+                        )
+                    raise RuntimeError(msg)
                 #end if
                 density_cell   = convert(density_cell_b,'B','A')
                 density_corner = convert(density_corner_b,'B','A')
@@ -1185,7 +1238,7 @@ class QMCDensityProcessor(QDBase):
 
         if opt.help or len(files_in)==0:
             self.help()
-            self.exit()
+            sys.exit(1)
         #end if
 
         self.vlog('\n{0} initializing'.format(self.name))
@@ -1210,7 +1263,14 @@ class QMCDensityProcessor(QDBase):
             allowed_formats = set(['dat','xsf','chgcar'])
             invalid = set(opt.formats)-allowed_formats
             if len(invalid)>0:
-                error('invalid output file format(s) requested\ninvalid requests: {0}\nallowed options: {1}'.format(sorted(invalid),sorted(allowed_formats)))
+                msg = (
+                    'invalid output file format(s) requested\n'
+                    'invalid requests: {0}\n'
+                    'allowed options: {1}'.format(
+                        sorted(invalid), sorted(allowed_formats)
+                        )
+                    )
+                raise ValueError(msg)
             #end if
         #end if
 
@@ -1241,7 +1301,12 @@ class QMCDensityProcessor(QDBase):
             #end try
         #end try
         if equil_failed:
-            self.error('cannot process equilibration option\nvalue must be an integer, list, or dict\nyou provided: '+str(opt.equilibration))
+            msg = (
+                'cannot process equilibration option\n'
+                'value must be an integer, list, or dict\n'
+                'you provided: '+str(opt.equilibration)
+                )
+            raise TypeError(msg)
         #end if
 
         #   --reblock option
@@ -1272,7 +1337,12 @@ class QMCDensityProcessor(QDBase):
                 #end try
             #end try
             if reblock_failed:
-                self.error('cannot process reblock option\nvalue must be an integer, list, or dict\nyou provided: '+str(opt.reblock))
+                msg = (
+                    'cannot process reblock option\n'
+                    'value must be an integer, list, or dict\n'
+                    'you provided: '+str(opt.reblock)
+                    )
+                raise TypeError(msg)
             #end if
         #end if
 
@@ -1289,7 +1359,11 @@ class QMCDensityProcessor(QDBase):
                     weight_failed = True
                 #end try
                 if weight_failed:
-                    self.error('weights must be a list of values\nyou provided: {0}'.format(ws))
+                    msg = (
+                        'weights must be a list of values\n'
+                        'you provided: {0}'.format(opt.weights)
+                        )
+                    raise ValueError(msg)
                 #end if
             #end if
         #end if
@@ -1302,7 +1376,8 @@ class QMCDensityProcessor(QDBase):
         opt.input_metadata = None
         if opt.input is not None:
             if not os.path.exists(opt.input):
-                self.error('qmcpack input file does not exist: {0}'.format(opt.input))
+                msg = 'qmcpack input file does not exist: {0}'.format(opt.input)
+                raise FileNotFoundError(msg)
             #end if
             qi = QmcpackInput(opt.input)
             ps = qi.return_system()
@@ -1314,7 +1389,8 @@ class QMCDensityProcessor(QDBase):
         #   --structure option
         if opt.structure is not None:
             if not os.path.exists(opt.structure):
-                self.error('structure file does not exist: {0}'.format(opt.structure))
+                msg = 'structure file does not exist: {0}'.format(opt.structure)
+                raise FileNotFoundError(msg)
             #end if
             opt.structure = read_structure(opt.structure)
         else:
@@ -1327,10 +1403,20 @@ class QMCDensityProcessor(QDBase):
             try:
                 cell = np.array(cell,dtype=float)
             except:
-                self.error('--cell input misformatted\nexpected a list of real values\nreceived: {0}'.format(cell))
+                msg = (
+                    '--cell input misformatted\n'
+                    'expected a list of real values\n'
+                    'received: {0}'.format(cell)
+                    )
+                raise ValueError(msg)
             #end try
             if len(cell)!=9:
-                self.error('--cell input misformatted\nexpected 9 elements for 3x3 matrix\nreceived {0} elements with values: {1}'.format(len(cell),cell))
+                msg = (
+                    '--cell input misformatted\n'
+                    'expected 9 elements for 3x3 matrix\n'
+                    'received {0} elements with values: {1}'.format(len(cell), cell)
+                    )
+                raise ValueError(msg)
             #end if
             npe.reshape_inplace(cell, (3, 3))
             opt.cell = cell
@@ -1347,10 +1433,22 @@ class QMCDensityProcessor(QDBase):
             try:
                 density_cell = np.array(density_cell,dtype=float)
             except:
-                self.error('--density_cell input misformatted\nexpected a list of real values\nreceived: {0}'.format(density_cell))
+                msg = (
+                    '--density_cell input misformatted\n'
+                    'expected a list of real values\n'
+                    'received: {0}'.format(density_cell)
+                    )
+                raise ValueError(msg)
             #end try
             if len(np.array(density_cell).ravel())!=9:
-                self.error('--density_cell input misformatted\nexpected 9 elements for 3x3 matrix\nreceived {0} elements with values: {1}'.format(len(density_cell),density_cell))
+                msg = (
+                    '--density_cell input misformatted\n'
+                    'expected 9 elements for 3x3 matrix\n'
+                    'received {0} elements with values: {1}'.format(
+                        len(density_cell), density_cell
+                        )
+                    )
+                raise ValueError(msg)
             #end if
             npe.reshape_inplace(density_cell, (3, 3))
             opt.density_cell = density_cell
@@ -1364,10 +1462,22 @@ class QMCDensityProcessor(QDBase):
             try:
                 density_corner = np.array(density_corner,dtype=float)
             except:
-                self.error('--density_corner input misformatted\nexpected a list of floats\nreceived: {0}'.format(density_corner))
+                msg = (
+                    '--density_corner input misformatted\n'
+                    'expected a list of floats\n'
+                    'received: {0}'.format(density_corner)
+                    )
+                raise ValueError(msg)
             #end try
             if len(density_corner)!=3:
-                self.error('--density_corner input misformatted\nexpected 3 elements\nreceived {0} elements with values: {1}'.format(len(density_corner),density_corner))
+                msg = (
+                    '--density_corner input misformatted\n'
+                    'expected 3 elements\n'
+                    'received {0} elements with values: {1}'.format(
+                        len(density_corner), density_corner
+                        )
+                    )
+                raise ValueError(msg)
             #end if
             opt.density_corner = density_corner
         else:
@@ -1380,10 +1490,20 @@ class QMCDensityProcessor(QDBase):
             try:
                 grid = np.array(grid,dtype=int)
             except:
-                self.error('--grid input misformatted\nexpected a list of integers\nreceived: {0}'.format(grid))
+                msg = (
+                    '--grid input misformatted\n'
+                    'expected a list of integers\n'
+                    'received: {0}'.format(grid)
+                    )
+                raise ValueError(msg)
             #end try
             if len(grid)!=3:
-                self.error('--grid input misformatted\nexpected 3 elements\nreceived {0} elements with values: {1}'.format(len(grid),grid))
+                msg = (
+                    '--grid input misformatted\n'
+                    'expected 3 elements\n'
+                    'received {0} elements with values: {1}'.format(len(grid), grid)
+                    )
+                raise ValueError(msg)
             #end if
             opt.grid = grid
         #end if
@@ -1391,7 +1511,12 @@ class QMCDensityProcessor(QDBase):
         #   --lineplot option
         if opt.lineplot is not None:
             if opt.lineplot not in tuple('012'):
-                self.error('--lineplot input misformatted\nexpected 0, 1, or 2\nreceived: {0}'.format(opt.lineplot))
+                msg = (
+                    '--lineplot input misformatted\n'
+                    'expected 0, 1, or 2\n'
+                    'received: {0}'.format(opt.lineplot)
+                    )
+                raise ValueError(msg)
             #end if
             opt.lineplot = int(opt.lineplot)
         #end if
@@ -1399,7 +1524,12 @@ class QMCDensityProcessor(QDBase):
         #   --twist_info option
         twist_info_options = ('use','ignore','require')
         if opt.twist_info not in twist_info_options:
-            self.error('twist_info option is invalid\ntwist_info must be one of: {}\nyou provided: {}'.format(twist_info_options,opt.twist_info))
+            msg = (
+                'twist_info option is invalid\n'
+                'twist_info must be one of: {}\n'
+                'you provided: {}'.format(twist_info_options, opt.twist_info)
+                )
+            raise ValueError(msg)
         #end if
 
         if opt.verbose and opt.input_metadata is not None:
@@ -1408,10 +1538,15 @@ class QMCDensityProcessor(QDBase):
 
         for file in files_in:
             if not os.path.exists(file):
-                self.error('file does not exist: {0}'.format(file))
+                msg = 'file does not exist: {0}'.format(file)
+                raise FileNotFoundError(msg)
             #end if
             if not file.endswith('.stat.h5'):
-                self.error('only stat.h5 files are allowed as inputs\nreceived file: {0}'.format(file))
+                msg = (
+                    'only stat.h5 files are allowed as inputs\n'
+                    'received file: {0}'.format(file)
+                    )
+                raise ValueError(msg)
             #end if
         #end for
 
@@ -1500,7 +1635,10 @@ class QMCDensityProcessor(QDBase):
                                 #end for
                                 if len(weights)!=len(sfiles):
                                     if opt.twist_info=='require':
-                                        self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                                        msg = (
+                                            'twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix)
+                                            )
+                                        raise ValueError(msg)
                                     else:
                                         weights = uniform_weights
                                     #end if
@@ -1508,7 +1646,16 @@ class QMCDensityProcessor(QDBase):
                             #end if
                         else:
                             if len(sfiles)!=len(opt.weights):
-                                self.error('weights provided do not match number of files in series {0}\nnumber of weights provided: {1}\nnumber of files in series {0}: {2}\nfiles in series {0}:\n{3}'.format(series,len(opt.weights),len(sfiles),sfiles))
+                                msg = (
+                                    'weights provided do not match number of files in series {0}\n'
+                                    'number of weights provided: {1}\n'
+                                    'number of files in series {0}: {2}\n'
+                                    'files in series {0}:\n'
+                                    '{3}'.format(
+                                        series, len(opt.weights), len(sfiles), sfiles
+                                        )
+                                    )
+                                raise ValueError(msg)
                             #end if
                             weights = opt.weights
                         #end if
@@ -1585,5 +1732,5 @@ if __name__=='__main__':
 
     qdens.process()
 
-    qdens.exit()
+    qdens.vlog('\n{0} finished\n'.format(qdens.name))
 #end if
