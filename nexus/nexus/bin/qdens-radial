@@ -193,7 +193,10 @@ class QMCDensityRadialProcessor(QDRBase):
 
         if opt.help or len(file_in)!=1:
             self.help()
-            sys.exit(1)
+            if opt.help:
+                sys.exit()
+            else:
+                sys.exit(1)
         #end if
 
         self.vlog('\n{0} initializing'.format(self.name))
