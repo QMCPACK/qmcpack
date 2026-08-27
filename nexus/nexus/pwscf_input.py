@@ -1159,7 +1159,10 @@ class hubbard(Card):
                 if len(line) == 3:
                     specie = line[1]
                     val = float(line[2])
-                    self.hubbard[intrxn] = {specie:val}
+                    if intrxn not in self.hubbard:
+                        self.hubbard[intrxn] = {}
+                    #end if
+                    self.hubbard[intrxn][specie] = val
                 elif len(line) == 6:
                     specie1 = line[1]
                     specie2 = line[2]
@@ -1184,7 +1187,7 @@ class hubbard(Card):
         contents = ''
         for param, interaction in self.hubbard.items():
             valid_format = True
-            assert(param in {'U', 'J', 'V'})
+            assert(param in {'U', 'J', 'B', 'E2', 'E3', 'V'})
             assert(isinstance(interaction, dict))
             for label_manifold, value in interaction.items():
                 if isinstance(label_manifold, str):
@@ -2148,7 +2151,9 @@ def generate_any_pwscf_input(**kwargs):
             if card_name not in pw:
                 error('Card option provided for card "{}" but card is not present\noption provided: {}'.format(card_name,option))
             #end if
-            pw[card_name].change_option(option,pw)
+            if pw[card_name].specifier != option:
+                pw[card_name].change_option(option,pw)
+            #end if
         #end if
     #end for
 

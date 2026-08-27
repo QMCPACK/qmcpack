@@ -20,16 +20,13 @@
 #include <Timer.h>
 #if defined(QMC_COMPLEX)
 #include "SplineC2C.h"
-#include "SplineC2COMPTarget.h"
 #else
 #include "SplineR2R.h"
 #include "SplineC2R.h"
-#include "SplineC2ROMPTarget.h"
 #endif
 #include "Message/CommOperators.h"
 #include "spline2/SplineUtils.h"
 #include "spline2/MultiBspline.hpp"
-#include "spline2/MultiBsplineOffload.hpp"
 #if defined(HAVE_MPI)
 #include "spline2/MultiBsplineMPIShared.hpp"
 #endif
@@ -48,7 +45,10 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
                                                                const std::pair<int, int>& distributed_and_shared_ranks,
                                                                const BandInfoGroup& bandgroup)
 {
-  const int N = bandgroup.getNumDistinctOrbitals();
+  if (use_offload)
+    app_summary() << "    Running OpenMP offload code path." << std::endl;
+  else
+    app_summary() << "    Running on CPU." << std::endl;
 
   auto [distributed_ranks, shared_ranks] = distributed_and_shared_ranks;
 
@@ -79,16 +79,15 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   typename bspline_traits<ST, 3>::BCType xyz_bc[3];
   set_grid(mybuilder->MeshSize, half_g, xyz_grid, xyz_bc);
 
+  const int N = bandgroup.getNumDistinctOrbitals();
   const size_t num_splines = getAlignedSize<ST>(use_duplex_splines_ ? N * 2 : N);
   std::unique_ptr<MultiBsplineBase<ST>> multi_splines_ptr;
-  if (use_offload)
-    multi_splines_ptr = std::make_unique<MultiBsplineOffload<ST>>(xyz_grid, xyz_bc, num_splines);
 #if defined(HAVE_MPI)
-  else if (distributed_ranks * shared_ranks > 1)
+  if (distributed_ranks * shared_ranks > 1)
     multi_splines_ptr = std::make_unique<MultiBsplineMPIShared<ST>>(xyz_grid, xyz_bc, num_splines,
                                                                     std::move(dist_comm_ptr), distributed_ranks);
-#endif
   else
+#endif
     multi_splines_ptr = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
 
   auto& multi_splines(*multi_splines_ptr);
@@ -97,22 +96,12 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
 
   std::unique_ptr<BsplineSet> bspline;
 #if defined(QMC_COMPLEX)
-  if (use_offload)
-    bspline = std::make_unique<SplineC2COMPTarget<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                       std::move(multi_splines_ptr), use_offload);
-  else
-    bspline = std::make_unique<SplineC2C<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                              std::move(multi_splines_ptr), use_offload);
+  bspline = std::make_unique<SplineC2C<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                            std::move(multi_splines_ptr), use_offload);
 #else
   if (use_duplex_splines_)
-  {
-    if (use_offload)
-      bspline = std::make_unique<SplineC2ROMPTarget<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                         std::move(multi_splines_ptr), use_offload);
-    else
-      bspline = std::make_unique<SplineC2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                std::move(multi_splines_ptr), use_offload);
-  }
+    bspline = std::make_unique<SplineC2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                              std::move(multi_splines_ptr), use_offload);
   else
     bspline = std::make_unique<SplineR2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
                                               std::move(multi_splines_ptr), use_offload);

@@ -277,10 +277,11 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
     def change_request(self,request):
         if not isinstance(request,QmcpackAnalysisRequest):
-            self.error(
+            msg = (
                 'input request must be a QmcpackAnalysisRequest\n'
                 '  type provided: '+str(type(request))
                 )
+            raise TypeError(msg)
         #end if
         request.complete()
         self.info.request = request
@@ -385,7 +386,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             if method in method_aliases:
                 method_type = method_aliases[method]
             else:
-                self.error('method '+method+' is unrecognized')
+                msg = 'method '+method+' is unrecognized'
+                raise ValueError(msg)
             #end if
             if method_type in request.methods:
                 series = series_start + index
@@ -460,7 +462,13 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
     def load_data(self):
         request = self.info.request
         if not os.path.exists(request.source):
-            self.error('path to source\n  '+request.source+'\n  does not exist\n ensure that request.source points to a valid qmcpack input file')
+            msg = (
+                'path to source\n'
+                '  '+request.source+'\n'
+                '  does not exist\n'
+                ' ensure that request.source points to a valid qmcpack input file'
+                )
+            raise FileNotFoundError(msg)
         #end if
         self.set_global_info()
         self.propagate_indicators(data_loaded=False)
@@ -518,7 +526,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             with open(source,'r') as fobj:
                 lines = fobj.read().split('\n')
         else:
-            self.error('source file '+source+' does not exist')
+            msg = 'source file '+source+' does not exist'
+            raise FileNotFoundError(msg)
         #end if
         infiles = []
         for line in lines:
@@ -741,7 +750,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             elif source=='dmc':
                 src = qmc.dmc.data
             else:
-                self.error('invalid source: '+source)
+                msg = 'invalid source: '+source
+                raise ValueError(msg)
             #end if
             if quantity in src:
                 qn = list(src[quantity])

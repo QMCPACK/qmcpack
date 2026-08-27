@@ -3344,7 +3344,7 @@ class KpointsBandstructureKeyword(FormattedTableRmgKeyword):
 
     def read(self,value):
         d = np.array(value.split(),dtype=str)
-        npe.reshape_inplace(d, (len(d)//4, 5))
+        npe.reshape_inplace(d, (len(d)//5, 5))
         kpoints = np.array(d[:,:3],dtype=float)
         counts  = np.array(d[:,3],dtype=int).flatten()
         labels  = d[:,-1].flatten()
@@ -3494,8 +3494,8 @@ class AtomsKeyword(FormattedTableRmgKeyword):
                 s += '{:<4} {: 16.12f} {: 16.12f} {: 16.12f}  {}  {: 6.4f}\n'.format(a,p[0],p[1],p[2],int(mv),mo)
             #end for
         elif v.format=='spin_ratio':
-            for (a,p,m,s) in zip(v.atoms,v.positions,v.movable,v.spin_ratio):
-                s += '{:<4} {: 16.12f} {: 16.12f} {: 16.12f} {} {} {} {: 6.4f}\n'.format(a,p[0],p[1],p[2],int(m[0]),int(m[1]),int(m[2]),s)
+            for (a,p,m,sr) in zip(v.atoms,v.positions,v.movable,v.spin_ratio):
+                s += '{:<4} {: 16.12f} {: 16.12f} {: 16.12f} {} {} {} {: 6.4f}\n'.format(a,p[0],p[1],p[2],int(m[0]),int(m[1]),int(m[2]),sr)
             #end for
         elif v.format=='full_spin':
             for (a,p,m,sr,st,sp) in zip(v.atoms,v.positions,v.movable,v.spin_ratio,v.spin_theta,v.spin_phi):
