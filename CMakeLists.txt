@@ -2,13 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 project(
   bmpi3
-  VERSION 0.79.0)
-  # bmpi3
-  # VERSION 0.79.0
+  VERSION 0.79.0
   # DESCRIPTION
   #   "B-MPI3 is a C++ library wrapper for version 3.1 of the MPI standard interface that simplifies the utilization and maintenance of MPI code."
   # HOMEPAGE_URL "https://gitlab.com/correaa/boost-mpi3"
-  # LANGUAGES CXX)
+  LANGUAGES CXX)
 
 include(GNUInstallDirs)
 

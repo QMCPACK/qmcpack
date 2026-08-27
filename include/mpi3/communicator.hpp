@@ -392,7 +392,7 @@ public:
 			case MPI_ERR_INFO : throw std::runtime_error("cannot window_create: MPI_ERR_INFO. Invalid Info");
 			case MPI_ERR_SIZE : throw std::runtime_error("cannot window_create: MPI_ERR_SIZE.");
 			case MPI_ERR_OTHER: throw std::runtime_error("cannot window_create: MPI_ERR_OTHER.");
-			default           : throw std::runtime_error("cannot window_create: error unknown code");
+			default           : throw std::runtime_error("cannot window_create: " + mpi3::string(static_cast<enum mpi3::error>(s)));
 			}
 		}
 		std::cerr << "window successfully created" << '\n';
