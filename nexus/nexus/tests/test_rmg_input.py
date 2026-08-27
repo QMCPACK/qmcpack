@@ -1,11 +1,16 @@
 import pytest
+import numpy as np
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
 
 
 from importlib.util import find_spec
 from . import isolate_nexus_core, register_pseudo_files, TEST_DIR
+from ..developer import obj
+from ..physical_system import generate_physical_system
+from ..rmg_input import RmgInput,generate_rmg_input,input_spec,rmg_modes
 from ..testing import value_eq,check_object_eq,dict_serialize
+from ..unit_converter import convert
 
 TEST_FILES = {
     "AlN32_input":                                                 TEST_DIR / "test_rmg_input_files/AlN32_input",
@@ -48,8 +53,6 @@ for file in TEST_FILES.values():
 
 
 def make_serial_reference(ri):
-    import numpy as np
-    from ..developer import obj
     s = dict_serialize(ri,dict_type=obj)
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
@@ -82,8 +85,6 @@ serial_references = dict()
 
 
 def generate_serial_references():
-    import numpy as np
-
     serial_references['BlackPhosphorus_input'] = {
         'a_length' : 3.3136,
         'atomic_coordinate_type' : 'Absolute',
@@ -835,7 +836,6 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(gi,name):
-    from ..developer import obj
     sr = obj(get_serial_references()[name])
     sg = dict_serialize(gi,dict_type=obj)
     assert(check_object_eq(sg,sr))
@@ -843,14 +843,11 @@ def check_vs_serial_reference(gi,name):
 
 
 def test_empty_init():
-    from ..rmg_input import RmgInput
     ri = RmgInput()
 #end test_empty_init
 
 
 def test_input_spec():
-    from ..rmg_input import input_spec, rmg_modes
-
     documented_sections = input_spec.section_order[:15]
     documented_count = sum(len(input_spec.section_contents[s]) for s in documented_sections)
     assert(documented_count==271)
@@ -930,10 +927,6 @@ def test_input_spec():
 
 
 def test_hubbard_u_records():
-    import numpy as np
-    from ..developer import obj
-    from ..rmg_input import RmgInput
-
     text = '''
         Hubbard_U = "
         Ni 6.5 3d 0.1 0.2 0.3
@@ -962,9 +955,6 @@ def test_hubbard_u_records():
 
 
 def test_kpoints_bandstructure_records():
-    import numpy as np
-    from ..rmg_input import RmgInput
-
     text = '''
         kpoints_bandstructure = "
         0.00 0.00 0.00  0 G
@@ -987,9 +977,6 @@ def test_kpoints_bandstructure_records():
 
 
 def test_atoms_spin_ratio_records():
-    import numpy as np
-    from ..rmg_input import RmgInput
-
     text = '''
         atoms = "
         H 0.0 0.0 0.0 1 1 1  0.5
@@ -1009,8 +996,6 @@ def test_atoms_spin_ratio_records():
 
 
 def test_read():
-    from ..rmg_input import RmgInput
-
     infiles_read = {}
     for infile in TEST_FILES:
         ri_read = RmgInput(TEST_FILES[infile])
@@ -1054,8 +1039,6 @@ def test_read():
 
 
 def test_run_mode_input_coverage():
-    from ..rmg_input import RmgInput
-
     mode_inputs = {
         'BlackPhosphorus_input'          : 'Quench Electrons',
         'BlackPhosphorus_input_band'     : 'Band Structure Only',
@@ -1092,8 +1075,6 @@ def test_run_mode_input_coverage():
 
 
 def test_write(tmp_path):
-    from ..rmg_input import RmgInput
-
     new_input_files = {
         'CO_qmcpack_semilocal_xml_input',
         'H2O_tddft_electric_field_input',
@@ -1125,11 +1106,6 @@ def test_generate():
     register_pseudo_files([
         'Ni_oncv.UPF','O_oncv.UPF','Pt.rel-pbe-n-rrkjus.UPF'
         ])
-    import numpy as np
-    from ..developer import obj
-    from ..unit_converter import convert
-    from ..physical_system import generate_physical_system
-    from ..rmg_input import RmgInput,generate_rmg_input
 
     # recreate 'BlackPhosphorus_input'
     infile = 'BlackPhosphorus_input'
