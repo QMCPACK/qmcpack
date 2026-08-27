@@ -21,16 +21,16 @@
 
 
 import os
-from os import PathLike
 from pathlib import Path
 import mmap
+from copy import deepcopy
 import numpy as np
 from numpy.linalg import det, norm
-from .developer import DevBase, obj, error, to_str
+from .developer import DevBase, obj, FileFormatError, NotAnElementError
 from .periodic_table import Elements
 from .unit_converter import convert
 from . import numpy_extensions as npe
-from .utilities import path_string
+from .utilities import path_string, to_str
 
 class TextFile(DevBase):
     # interface to mmap files
@@ -48,7 +48,8 @@ class TextFile(DevBase):
     def open(self,filepath):
         filepath = path_string(filepath)
         if not os.path.exists(filepath):
-            self.error('cannot open non-existent file: {0}'.format(filepath))
+            msg = 'cannot open non-existent file: {0}'.format(filepath)
+            raise FileNotFoundError(msg)
         #end if
         f = open(filepath,'r')
         fno = f.fileno()
@@ -91,15 +92,16 @@ class TextFile(DevBase):
             format = formats[0]
             all_same = True
         elif len(formats)>len(stokens):
-            self.error(
+            msg = (
                 'formatted line read failed\n'
                 'number of tokens and provided number of formats do not match\n'
                 'line: {0}\n'
                 'number of tokens: {1}\n'
                 'number of formats provided: {2}'.format(
                     line,len(stokens),len(formats)
+                    )
                 )
-            )
+            raise FileFormatError(msg)
         #end if
         tokens = []
         if all_same:
@@ -134,10 +136,11 @@ class TextFile(DevBase):
                 elif whence==1:
                     start = self.mm.tell()
                 else:
-                    self.error(
+                    msg = (
                         'relative positioning must be either 0 (begin), 1 (current), or 2 (end)\n'
                         'you provided: {0}'.format(whence)
-                    )
+                        )
+                    raise ValueError(msg)
                 #end if
             #end if
             if whence!=2:
@@ -250,14 +253,19 @@ class StandardFile(DevBase):
             filepath = path_string(filepath)
             self.read(filepath)
         else:
-            self.error('unsupported input: {0}'.format(filepath))
+            msg = 'unsupported input: {0}'.format(filepath)
+            raise ValueError(msg)
         #end if
     #end def __init__
 
 
     def read(self,filepath):
         if not os.path.exists(filepath):
-            self.error('read failed\nfile does not exist: {0}'.format(filepath))
+            msg = (
+                'read failed\n'
+                'file does not exist: {0}'.format(filepath)
+                )
+            raise FileNotFoundError(msg)
         #end if
         with open(filepath, "r") as f:
             self.read_text(f.read())
@@ -293,7 +301,7 @@ class StandardFile(DevBase):
             for m in messages:
                 msg+=m+'\n'
             #end for
-            self.error(msg)
+            raise FileFormatError(msg)
         #end if
     #end def check_valid
 
@@ -305,12 +313,12 @@ class StandardFile(DevBase):
 
 
     def read_text(self,text):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
 
     def write_text(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
 #end class StandardFile
@@ -321,8 +329,8 @@ class XsfFile(StandardFile):
 
     sftype = 'xsf'
 
-    filetypes     = set(['xsf','axsf','bxsf'])
-    periodicities = set(['molecule','polymer','slab','crystal']) 
+    filetypes     = frozenset({'xsf','axsf','bxsf'})
+    periodicities = frozenset({'molecule','polymer','slab','crystal'})
     dimensions    = obj(molecule=0,polymer=1,slab=2,crystal=3)
 
     # ATOMS  are in units of Angstrom, only provided for 'molecule'
@@ -335,7 +343,11 @@ class XsfFile(StandardFile):
         self.order       = None
         if order is not None:
             if order!='F' and order!='C':
-                self.error('order must by C or F\nyou provided: {}'.format(order))
+                msg = (
+                    'order must by C or F\n'
+                    'you provided: {}'.format(order)
+                    )
+                raise ValueError(msg)
             #end if
             self.order = order
         #end if
@@ -362,7 +374,11 @@ class XsfFile(StandardFile):
     def read_text(self,text,order=None):
         if order is not None:
             if order!='F' and order!='C':
-                self.error('order must by C or F\nyou provided: {}'.format(order))
+                msg = (
+                    'order must by C or F\n'
+                    'you provided: {}'.format(order)
+                    )
+                raise ValueError(msg)
             #end if
             self.order = order
         elif self.order is not None:
@@ -466,7 +482,8 @@ class XsfFile(StandardFile):
                     elif keyword.endswith('3d'):
                         d=3
                     else:
-                        self.error('dimension of datagrid could not be identified: '+line)
+                        msg = 'dimension of datagrid could not be identified: '+line
+                        raise FileFormatError(msg)
                     #end if
                     i+=1
                     block_identifier = lines[i].strip().lower()
@@ -534,7 +551,8 @@ class XsfFile(StandardFile):
                     elif keyword.endswith('3d'):
                         d=3
                     else:
-                        self.error('dimension of bandgrid could not be identified: '+line)
+                        msg = 'dimension of bandgrid could not be identified: '+line
+                        raise FileFormatError(msg)
                     #end if
                     i+=1
                     block_identifier = lines[i].strip().lower()
@@ -594,7 +612,8 @@ class XsfFile(StandardFile):
                         i+=1
                     #end while
                 else:
-                    self.error('invalid keyword encountered: {0}'.format(keyword))
+                    msg = 'invalid keyword encountered: {0}'.format(keyword)
+                    raise FileFormatError(msg)
                 #end if
             #end if
             i+=1
@@ -821,14 +840,14 @@ class XsfFile(StandardFile):
             return [(
                 'xsf file must have animation, bands, structure, or data\n'
                 'the current file is missing all of these'
-            )]
+                )]
         #end if
     #end def validity_checks
 
 
     # test needed
     def incorporate_structure(self,structure):
-        s = structure.copy()
+        s = deepcopy(structure)
         s.change_units('A')
         s.recenter()
         elem = []
@@ -848,7 +867,7 @@ class XsfFile(StandardFile):
     #end def incorporate_structure
 
 
-    def add_density(self,cell,density,name='density',corner=None,grid=None,centered=False,add_ghost=False):
+    def add_density(self,cell,density,name='density',corner=None,grid=None,*,centered=False,add_ghost=False):
         if corner is None:
             corner = np.zeros((3,),dtype=float)
         #end if
@@ -896,7 +915,9 @@ class XsfFile(StandardFile):
 
 
     def get_density(self):
-        return self.data.first().first().first()
+        def first(d):
+            return d[min(d.keys())]
+        return first(first(first(self.data)))
     #end def get_density
 
 
@@ -932,7 +953,7 @@ class XsfFile(StandardFile):
 
     
     # test needed
-    def norm(self,density=None,vnorm=True):
+    def norm(self,density=None,*,vnorm=True):
         if density is None:
             density = self.get_density()
         #end if
@@ -1202,7 +1223,8 @@ class PoscarFile(StandardFile):
             for e in self.elem:
                 iselem, e = Elements.is_element(e, return_element=True)
                 if not iselem:
-                    self.error('{0} is not an element'.format(e))
+                    msg = '{0} is not an element'.format(e)
+                    raise NotAnElementError(msg)
                 #end if
                 text += e.symbol+' '
             #end for
@@ -1389,7 +1411,7 @@ class ChgcarFile(StandardFile):
     def incorporate_xsf(self,xsf):
         poscar = PoscarFile()
         poscar.incorporate_xsf(xsf)
-        density = xsf.remove_ghost().copy()
+        density = deepcopy(xsf.remove_ghost())
         self.poscar         = poscar
         self.grid           = np.array(density.shape,dtype=int)
         self.charge_density = density.ravel(order='F')
@@ -1403,10 +1425,11 @@ def read_poscar_chgcar(host,text):
     is_poscar = isinstance(host,PoscarFile)
     is_chgcar = isinstance(host,ChgcarFile)
     if not is_poscar and not is_chgcar:
-        error(
+        msg = (
             'read_poscar_chgcar must be used in conjunction with PoscarFile or ChgcarFile objects only\n'
             'encountered object of type: {0}'.format(host.__class__.__name__)
-        )
+            )
+        raise TypeError(msg)
     #end if
 
     # read lines and remove fortran comments
@@ -1435,12 +1458,13 @@ def read_poscar_chgcar(host,text):
     nlines = len(lines)
     min_lines = 8
     if nlines<min_lines:
-        host.error(
+        msg = (
             'file {0} must have at least {1} lines\n'
             'only {2} lines found'.format(
                 host.filepath, min_lines, nlines
+                )
             )
-        )
+        raise FileFormatError(msg)
     #end if
     description = lines[0]
     dim = 3
@@ -1464,7 +1488,8 @@ def read_poscar_chgcar(host,text):
         c = lines[lcur].lower()[0]
         lcur+=1
     else:
-        host.error('file {0} is incomplete (missing positions)'.format(host.filepath))
+        msg = 'file {0} is incomplete (missing positions)'.format(host.filepath)
+        raise FileFormatError(msg)
     #end if
     selective_dynamics = c=='s'
     if selective_dynamics: # Selective dynamics
@@ -1472,7 +1497,8 @@ def read_poscar_chgcar(host,text):
             c = lines[lcur].lower()[0]
             lcur+=1
         else:
-            host.error('file {0} is incomplete (missing positions)'.format(host.filepath))
+            msg = 'file {0} is incomplete (missing positions)'.format(host.filepath)
+            raise FileFormatError(msg)
         #end if
     #end if
     cartesian = c=='c' or c=='k'
@@ -1483,7 +1509,8 @@ def read_poscar_chgcar(host,text):
     #end if
     npos = counts.sum()
     if lcur+npos>len(lines):
-        host.error('file {0} is incomplete (missing positions)'.format(host.filepath))
+        msg = 'file {0} is incomplete (missing positions)'.format(host.filepath)
+        raise FileFormatError(msg)
     #end if
     spos = []
     for i in range(npos):
@@ -1519,7 +1546,8 @@ def read_poscar_chgcar(host,text):
         cline = lines[lcur].lower()
         lcur+=1
         if lcur+npos>len(lines):
-            host.error('file {0} is incomplete (missing velocities)'.format(host.filepath))
+            msg = 'file {0} is incomplete (missing velocities)'.format(host.filepath)
+            raise FileFormatError(msg)
         #end if
         cartesian = len(cline)>0 and (cline[0]=='c' or cline[0]=='k')
         if cartesian:
@@ -1545,7 +1573,8 @@ def read_poscar_chgcar(host,text):
             grid = np.array(lines[lcur].split(),dtype=int)
             lcur+=1
         else:
-            host.error('file {0} is incomplete (missing grid)'.format(host.filepath))
+            msg = 'file {0} is incomplete (missing grid)'.format(host.filepath)
+            raise FileFormatError(msg)
         #end if
         if lcur<len(lines):
             ng = grid.prod()
@@ -1572,17 +1601,19 @@ def read_poscar_chgcar(host,text):
                 #end while
                 density = np.array(density[:n],dtype=float)
             else:
-                host.error('file {0} is incomplete (missing density)'.format(host.filepath))
+                msg = 'file {0} is incomplete (missing density)'.format(host.filepath)
+                raise FileFormatError(msg)
             #end if
             if density.size%ng!=0:
-                host.error(
+                msg = (
                     'number of density data entries is not a multiple of the grid\n'
                     'grid shape: {0}\n'
                     'grid size: {1}\n'
                     'density size: {2}'.format(
                         grid, ng, density.size
+                        )
                     )
-                )
+                raise FileFormatError(msg)
             #end if
             ndens = density.size//ng
             if ndens==1:
@@ -1598,16 +1629,18 @@ def read_poscar_chgcar(host,text):
                     spin_density[:,i] = density[(i+1)*ng:(i+2)*ng]
                 #end for
             else:
-                host.error(
+                msg = (
                     'density data must be present for one of the following situations\n'
                     '  1) charge density only (1 density)\n'
                     '  2) charge and collinear spin densities (2 densities)\n'
                     '  3) charge and non-collinear spin densities (4 densities)\n'
                     'number of densities found: {0}'.format(ndens)
-                )
+                    )
+                raise FileFormatError(msg)
             #end if
         else:
-            host.error('file {0} is incomplete (missing density)'.format(host.filepath))
+            msg = 'file {0} is incomplete (missing density)'.format(host.filepath)
+            raise FileFormatError(msg)
         #end if
     #end if
 
@@ -1617,7 +1650,7 @@ def read_poscar_chgcar(host,text):
         poscar = PoscarFile()
     #end if
 
-    poscar.set(
+    poscar.update(
         description = description,
         scale       = scale,
         axes        = axes,
@@ -1631,7 +1664,7 @@ def read_poscar_chgcar(host,text):
         )
 
     if is_chgcar:
-        host.set(
+        host.update(
             poscar         = poscar,
             grid           = grid,
             charge_density = charge_density,

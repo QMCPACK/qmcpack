@@ -55,6 +55,17 @@ endif()
 
 if(QMC_GPU)
   message(STATUS "Enable GPU features QMC_GPU=${QMC_GPU}")
+
+  # Determine environment variable to set GPU visibility based on the GPU architecture
+  if("hip" IN_LIST QMC_GPU OR QMC_GPU_ARCHS MATCHES "(^|;)gfx")
+    set(QMC_GPU_VISIBILITY_VARIABLE_DEFAULT ROCR_VISIBLE_DEVICES)
+  elseif("sycl" IN_LIST QMC_GPU OR QMC_GPU_ARCHS MATCHES "(^|;)intel_gpu_")
+    set(QMC_GPU_VISIBILITY_VARIABLE_DEFAULT ZE_AFFINITY_MASK)
+  elseif("cuda" IN_LIST QMC_GPU OR QMC_GPU_ARCHS MATCHES "(^|;)sm_")
+    set(QMC_GPU_VISIBILITY_VARIABLE_DEFAULT CUDA_VISIBLE_DEVICES)
+  else()
+    set(QMC_GPU_VISIBILITY_VARIABLE_DEFAULT "")
+  endif()
 endif()
 
 if(QMC_CUDA2HIP)

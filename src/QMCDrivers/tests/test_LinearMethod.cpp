@@ -8,8 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "QMCDrivers/WFOpt/LinearMethod.h"
 #include "Utilities/RuntimeOptions.h"
 #include <random>
@@ -22,7 +22,6 @@ using Real = QMCTraits::RealType;
 
 TEST_CASE("selectEigenvalues", "[drivers]")
 {
-  LinearMethod lm;
   const int Ne = 4; // Number of eigenvalues
   const int Nv = 4; // Size of eigenvectors
 
@@ -35,7 +34,7 @@ TEST_CASE("selectEigenvalues", "[drivers]")
   std::vector<Real> evals{-1.2, -1.5}; // size Ne
   std::vector<Real> selected_evec(Nv);
   Real zerozero      = -1.0;
-  Real selected_eval = lm.selectEigenvalue(evals, evecs, zerozero, selected_evec);
+  Real selected_eval = LinearMethod::selectEigenvalue(evals, evecs, zerozero, selected_evec);
 
   // Selects the closest to zerozero - 2.0
   CHECK(selected_eval == Approx(-1.5));

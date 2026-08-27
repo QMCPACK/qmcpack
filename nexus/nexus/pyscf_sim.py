@@ -30,8 +30,8 @@ class Pyscf(Simulation):
     generic_identifier = 'pyscf'
     infile_extension   = '.py'
     application        = 'python3'
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['orbitals','wavefunction'])
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'orbitals','wavefunction'})
 
 
     def check_result(self,result_name,sim):
@@ -68,7 +68,8 @@ class Pyscf(Simulation):
         elif result_name=='wavefunction':
             result.chkfile = os.path.join(self.locdir,self.input.chkfile)
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result
@@ -77,7 +78,8 @@ class Pyscf(Simulation):
     def incorporate_result(self,result_name,result,sim):
         not_implemented = False
         if not_implemented:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
+            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
     #end def incorporate_result
 

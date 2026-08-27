@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.FILEIO)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from . import TEST_DIR
 from ..testing import value_eq, object_eq
@@ -60,7 +58,7 @@ def test_xsffile(tmp_path):
 
     # populate reference object
     ref = XsfFile()
-    ref.set(
+    ref.update(
         elem = np.array([8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
                          8,8,8,8,8,8,8,8,8,8,8,8,23,23,23,23,23,
                          23,23,23,23,23,23,23,23,23,23,23],dtype=int),
@@ -178,7 +176,7 @@ def test_poscar_file(tmp_path):
 
     # populate reference object
     ref = PoscarFile()
-    ref.set(
+    ref.update(
         axes        = np.array([
                 [  4.5546,  -4.5546,   0.    ],
                 [  4.5546,   4.5546,   0.    ],

@@ -10,10 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 //#undef NDEBUG
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "ProjectData.h"
@@ -21,13 +20,6 @@
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
 #include "Platforms/Host/OutputManager.h"
-
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
 
 #include <string>
 #include <vector>

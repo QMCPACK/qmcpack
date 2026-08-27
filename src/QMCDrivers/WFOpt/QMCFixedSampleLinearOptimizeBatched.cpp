@@ -31,6 +31,8 @@
 #include "Numerics/MatrixOperators.h"
 #include "EstimatorInputDelegates.h"
 #include "Message/UniformCommunicateError.h"
+#include "Numerics/DeterminantOperators.h"
+#include "LinearMethod.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -66,7 +68,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
           "QMCLinearOptimizeBatched::",
           comm,
           "QMCLinearOptimizeBatched"),
-      objFuncWrapper_(*this),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
@@ -139,17 +140,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
 
 /** Clean up the vector */
 QMCFixedSampleLinearOptimizeBatched::~QMCFixedSampleLinearOptimizeBatched() = default;
-
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::costFunc(RealType dl)
-{
-  for (int i = 0; i < optparam.size(); i++)
-    optTarget->Params(i) = optparam[i] + dl * optdir[i];
-  QMCFixedSampleLinearOptimizeBatched::RealType c = optTarget->Cost(false);
-  //only allow this to go false if it was true. If false, stay false
-  //    if (validFuncVal)
-  objFuncWrapper_.validFuncVal = optTarget->IsValid;
-  return c;
-}
 
 void QMCFixedSampleLinearOptimizeBatched::start()
 {
@@ -245,7 +235,7 @@ void QMCFixedSampleLinearOptimizeBatched::generateSamples()
   optTarget->setRootName(get_root_name());
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::run()
+void QMCFixedSampleLinearOptimizeBatched::run()
 {
   if (do_output_matrices_csv_ && !output_matrices_initialized_)
   {
@@ -259,34 +249,28 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
   if (doGradientTest)
   {
     app_log() << "Doing gradient test run" << std::endl;
-    return test_run();
+    test_run();
   }
 #ifdef HAVE_LMY_ENGINE
-  if (options_LMY_.doHybrid)
+  else if (options_LMY_.doHybrid)
   {
     app_log() << "Doing hybrid run" << std::endl;
-    return hybrid_run();
+    hybrid_run();
   }
-
-  // if requested, perform the update via the adaptive three-shift or single-shift method
-  if (options_LMY_.current_optimizer_type == OptimizerType::ADAPTIVE)
-    return adaptive_three_shift_run();
-
-  if (options_LMY_.current_optimizer_type == OptimizerType::DESCENT)
-    return descent_run();
-
+  else if (options_LMY_.current_optimizer_type == OptimizerType::ADAPTIVE)
+    adaptive_three_shift_run();
+  else if (options_LMY_.current_optimizer_type == OptimizerType::DESCENT)
+    descent_run();
 #endif
-
-  if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
-    return one_shift_run();
-
-  if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
-    return stochastic_reconfiguration_conjugate_gradient();
-
-  return previous_linear_methods_run();
+  else if (options_LMY_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
+    one_shift_run();
+  else if (options_LMY_.current_optimizer_type == OptimizerType::STOCHASTIC_RECONFIGURATION_CG)
+    stochastic_reconfiguration_conjugate_gradient();
+  else
+    previous_linear_methods_run();
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::test_run()
+void QMCFixedSampleLinearOptimizeBatched::test_run()
 {
   // generate samples and compute weights, local energies, and derivative vectors
   start();
@@ -294,11 +278,9 @@ bool QMCFixedSampleLinearOptimizeBatched::test_run()
   testEngineObj->run(*optTarget, get_root_name());
 
   finish();
-
-  return true;
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
+void QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
 {
   start();
   bool Valid(true);
@@ -316,6 +298,14 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
   optdir.resize(numParams, 0);
   optparam.resize(numParams, 0);
 
+  auto costfunc_evaluator = [this](RealType dl) {
+    for (int i = 0; i < optparam.size(); i++)
+      optTarget->Params(i) = optparam[i] + dl * optdir[i];
+    auto effective_weight = optTarget->correlatedSampling(false);
+    nrc_opt_.validFuncVal = optTarget->isEffectiveWeightValid(effective_weight);
+    return optTarget->computedCost();
+  };
+
   while (Total_iterations < Max_iterations)
   {
     Total_iterations += 1;
@@ -328,10 +318,11 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currentParameters[i];
     cost_function_timer_.start();
-    RealType lastCost(optTarget->Cost(true));
+    auto effective_weight = optTarget->correlatedSampling(true);
+    RealType lastCost(optTarget->computedCost());
     cost_function_timer_.stop();
     //     if cost function is currently invalid continue
-    Valid = optTarget->IsValid;
+    Valid = optTarget->isEffectiveWeightValid(effective_weight);
     if (!ValidCostFunction(Valid))
       continue;
     RealType newCost(lastCost);
@@ -384,8 +375,8 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       {
         ScopedTimer local(eigenvalue_timer_);
-        getLowestEigenvector(Right, currentParameterDirections);
-        objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
+        LinearMethod::getLowestEigenvector(Right, currentParameterDirections);
+        nrc_opt_.Lambda = LinearMethod::getNonLinearRescale(currentParameterDirections, S, *optTarget);
       }
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -395,11 +386,11 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       RealType evaluated_cost(startCost);
       if (MinMethod == "rescale")
       {
-        if (std::abs(objFuncWrapper_.Lambda * bigVec) > bigChange)
+        if (std::abs(nrc_opt_.Lambda * bigVec) > bigChange)
         {
           goodStep = false;
-          app_log() << "  Failed Step. Magnitude of largest parameter change: "
-                    << std::abs(objFuncWrapper_.Lambda * bigVec) << std::endl;
+          app_log() << "  Failed Step. Magnitude of largest parameter change: " << std::abs(nrc_opt_.Lambda * bigVec)
+                    << std::endl;
           if (stability == 0)
           {
             failedTries++;
@@ -409,8 +400,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
             stability = nstabilizers;
         }
         for (int i = 0; i < numParams; i++)
-          optTarget->Params(i) = currentParameters[i] + objFuncWrapper_.Lambda * currentParameterDirections[i + 1];
-        optTarget->IsValid = true;
+          optTarget->Params(i) = currentParameters[i] + nrc_opt_.Lambda * currentParameterDirections[i + 1];
       }
       else
       {
@@ -418,22 +408,22 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
           optparam[i] = currentParameters[i];
         for (int i = 0; i < numParams; i++)
           optdir[i] = currentParameterDirections[i + 1];
-        objFuncWrapper_.TOL              = param_tol / bigVec;
-        objFuncWrapper_.AbsFuncTol       = true;
-        objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
-        objFuncWrapper_.LambdaMax        = 0.5 * objFuncWrapper_.Lambda;
+        nrc_opt_.TOL              = param_tol / bigVec;
+        nrc_opt_.AbsFuncTol       = true;
+        nrc_opt_.largeQuarticStep = bigChange / bigVec;
+        nrc_opt_.LambdaMax        = 0.5 * nrc_opt_.Lambda;
         line_min_timer_.start();
         if (MinMethod == "quartic")
         {
           int npts(7);
-          objFuncWrapper_.quadstep         = objFuncWrapper_.stepsize * objFuncWrapper_.Lambda;
-          objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
-          Valid                            = objFuncWrapper_.lineoptimization3(npts, evaluated_cost);
+          nrc_opt_.quadstep         = nrc_opt_.stepsize * nrc_opt_.Lambda;
+          nrc_opt_.largeQuarticStep = bigChange / bigVec;
+          Valid                     = nrc_opt_.lineoptimization3(costfunc_evaluator, npts, evaluated_cost);
         }
         else
-          Valid = objFuncWrapper_.lineoptimization2();
+          Valid = nrc_opt_.lineoptimization2(costfunc_evaluator);
         line_min_timer_.stop();
-        RealType biggestParameterChange = bigVec * std::abs(objFuncWrapper_.Lambda);
+        RealType biggestParameterChange = bigVec * std::abs(nrc_opt_.Lambda);
         if (biggestParameterChange > bigChange)
         {
           goodStep = false;
@@ -447,7 +437,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
         else
         {
           for (int i = 0; i < numParams; i++)
-            optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
+            optTarget->Params(i) = optparam[i] + nrc_opt_.Lambda * optdir[i];
           app_log() << "  Good Step. Largest LM parameter change:" << biggestParameterChange << std::endl;
         }
       }
@@ -457,13 +447,14 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
         // 	this may have been evaluated already
         // 	newCost=evaluated_cost;
         //get cost at new minimum
-        newCost = optTarget->Cost(false);
+        auto effective_weight = optTarget->correlatedSampling(false);
+        newCost               = optTarget->computedCost();
         app_log() << " OldCost: " << lastCost << " NewCost: " << newCost << " Delta Cost:" << (newCost - lastCost)
                   << std::endl;
         optTarget->printEstimates();
         //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
         // mmorales
-        Valid = optTarget->IsValid;
+        Valid = optTarget->isEffectiveWeightValid(effective_weight);
         //if (MinMethod!="rescale" && !ValidCostFunction(Valid))
         if (!ValidCostFunction(Valid))
         {
@@ -518,7 +509,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
   }
 
   finish();
-  return (optTarget->getReportCounter() > 0);
+
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction
@@ -1056,14 +1047,14 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
         std::swap(prdMat(i, j), prdMat(j, i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
+    LinearMethod::getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
+    auto lambda = LinearMethod::getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(shift_index).at(i + 1) *= objFuncWrapper_.Lambda;
+      parameterDirections.at(shift_index).at(i + 1) *= lambda;
   }
 }
 
@@ -1080,7 +1071,7 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
-bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
+void QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 {
   EngineObj->setStoringSamples(options_LMY_.store_samples);
 
@@ -1474,7 +1465,6 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
   for (int i = 0; i < numParams; i++)
     optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i + 1);
-  optTarget->IsValid      = true;
   const RealType initCost = optTarget->LMYEngineCost(false, *EngineObj);
 
   // compute the update directions for the smaller and larger shifts relative to that of the middle shift
@@ -1495,10 +1485,9 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   {
     for (int i = 0; i < numParams; i++)
       optTarget->Params(i) = currParams.at(i) + (k == central_index ? 0.0 : parameterDirections.at(k).at(i + 1));
-    optTarget->IsValid = true;
-    costValues.at(k)   = optTarget->LMYEngineCost(false, *EngineObj);
-    good_update.at(k)  = (good_update.at(k) &&
-                          std::abs((initCost - costValues.at(k)) / initCost) < options_LMY_.max_relative_cost_change);
+    costValues.at(k)  = optTarget->LMYEngineCost(false, *EngineObj);
+    good_update.at(k) = (good_update.at(k) &&
+                         std::abs((initCost - costValues.at(k)) / initCost) < options_LMY_.max_relative_cost_change);
     if (!good_update.at(k))
       costValues.at(k) = std::abs(1.5 * initCost) + 1.0;
   }
@@ -1577,12 +1566,11 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   optTarget->setNumSamples(init_num_samp);
 
   //app_log() << "block first second third end " << options_LMY_.block_first << options_LMY_.block_second << options_LMY_.block_third << endl;
-  // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+
 }
 #endif
 
-bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
+void QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 {
   // ensure the cost function is set to compute derivative vectors
   optTarget->setneedGrads(true);
@@ -1683,12 +1671,12 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     if (eigensolver_ == "general")
     {
       app_log() << "  Using generalized eigenvalue solver (ggev)" << std::endl;
-      lowestEV = getLowestEigenvector_Gen(hamMat, invMat, parameterDirections);
+      lowestEV = LinearMethod::getLowestEigenvector_Gen(hamMat, invMat, parameterDirections);
     }
     else if (eigensolver_ == "inverse")
     {
       app_log() << "  Using inverse + regular eigenvalue solver (geev)" << std::endl;
-      lowestEV = getLowestEigenvector_Inv(hamMat, invMat, parameterDirections);
+      lowestEV = LinearMethod::getLowestEigenvector_Inv(hamMat, invMat, parameterDirections);
     }
     else if (eigensolver_ == "arpack")
     {
@@ -1703,19 +1691,19 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
     app_log() << "  Execution time (eigenvalue) = " << std::setprecision(4) << t_eigen.elapsed() << std::endl;
 
     // compute the scaling constant to apply to the update
-    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
+    auto lambda = LinearMethod::getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
     if (do_output_matrices_hdf_)
     {
       hout.write(lowestEV, "lowest_eigenvalue");
       hout.write(parameterDirections, "scaled_eigenvector");
-      hout.write(objFuncWrapper_.Lambda, "non_linear_rescale");
+      hout.write(lambda, "non_linear_rescale");
       hout.close();
     }
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
-      parameterDirections.at(i + 1) *= objFuncWrapper_.Lambda;
+      parameterDirections.at(i + 1) *= lambda;
   }
   myComm->bcast(parameterDirections);
 
@@ -1742,8 +1730,9 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
             << "largest LM parameter change : " << largestChange << " at parameter " << max_element << std::endl;
 
   // compute the new cost
-  optTarget->IsValid     = true;
-  const RealType newCost = optTarget->Cost(false);
+  auto effective_weight  = optTarget->correlatedSampling(false);
+  const RealType newCost = optTarget->computedCost();
+
 
   app_log() << std::endl
             << "******************************************************************************" << std::endl
@@ -1753,7 +1742,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
             << newCost - initCost << std::endl
             << "******************************************************************************" << std::endl;
 
-  if (!optTarget->IsValid || qmcplusplus::isnan(newCost))
+  if (!optTarget->isEffectiveWeightValid(effective_weight) || qmcplusplus::isnan(newCost))
   {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i = 0; i < numParams; i++)
@@ -1786,11 +1775,10 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   // perform some finishing touches for this linear method iteration
   finish();
 
-  // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+
 }
 
-bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_gradient()
+void QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_gradient()
 {
   app_log() << std::endl
             << "*****************************************************************************" << std::endl
@@ -1860,7 +1848,7 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
       // compute the scaling constant to apply to the update
       for (int i = 0; i < numParams; i++)
         parameterDirections[i + 1] = param_update[i];
-      objFuncWrapper_.Lambda = cg.getNonLinearRescale(*optTarget);
+      nrc_opt_.Lambda = cg.getNonLinearRescale(*optTarget);
     }
   }
 
@@ -1878,6 +1866,14 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
     optdir.resize(numParams, 0);
     optparam.resize(numParams, 0);
 
+    auto costfunc_evaluator = [this](RealType dl) {
+      for (int i = 0; i < optparam.size(); i++)
+        optTarget->Params(i) = optparam[i] + dl * optdir[i];
+      auto effective_weight = optTarget->correlatedSampling(false);
+      nrc_opt_.validFuncVal = optTarget->isEffectiveWeightValid(effective_weight);
+      return optTarget->computedCost();
+    };
+
     //set up line search stuff
     for (int i = 0; i < numParams; i++)
       optparam[i] = currentParameters[i];
@@ -1889,31 +1885,31 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
       bigVec = std::max(bigVec, std::abs(parameterDirections[i + 1]));
 
     //Settings for line search, taken from previous_linear_methods_run
-    objFuncWrapper_.TOL              = param_tol / bigVec;
-    objFuncWrapper_.AbsFuncTol       = true;
-    objFuncWrapper_.largeQuarticStep = bigChange / bigVec;
-    objFuncWrapper_.LambdaMax        = 0.5 * objFuncWrapper_.Lambda;
-    bool Valid                       = true;
+    nrc_opt_.TOL              = param_tol / bigVec;
+    nrc_opt_.AbsFuncTol       = true;
+    nrc_opt_.largeQuarticStep = bigChange / bigVec;
+    nrc_opt_.LambdaMax        = 0.5 * nrc_opt_.Lambda;
+    bool Valid                = true;
     {
       ScopedTimer local(line_min_timer_);
-      Valid = objFuncWrapper_.lineoptimization2();
+      Valid = nrc_opt_.lineoptimization2(costfunc_evaluator);
     }
 
-    if (Valid || (!Valid && std::abs(objFuncWrapper_.Lambda) > 0.0))
+    if (Valid || (!Valid && std::abs(nrc_opt_.Lambda) > 0.0))
     {
       for (int i = 0; i < numParams; i++)
-        optTarget->Params(i) = optparam[i] + objFuncWrapper_.Lambda * optdir[i];
+        optTarget->Params(i) = optparam[i] + nrc_opt_.Lambda * optdir[i];
     }
     else
     {
       for (int i = 0; i < numParams; i++)
-        optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
+        optTarget->Params(i) = currentParameters.at(i) + nrc_opt_.Lambda * parameterDirections.at(i + 1);
     }
   }
   else
   {
     for (int i = 0; i < numParams; i++)
-      optTarget->Params(i) = currentParameters.at(i) + objFuncWrapper_.Lambda * parameterDirections.at(i + 1);
+      optTarget->Params(i) = currentParameters.at(i) + nrc_opt_.Lambda * parameterDirections.at(i + 1);
   }
 
   // say what we are doing
@@ -1932,12 +1928,12 @@ bool QMCFixedSampleLinearOptimizeBatched::stochastic_reconfiguration_conjugate_g
   finish();
 
   // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+
 }
 
 #ifdef HAVE_LMY_ENGINE
 //Function for optimizing using gradient descent
-bool QMCFixedSampleLinearOptimizeBatched::descent_run()
+void QMCFixedSampleLinearOptimizeBatched::descent_run()
 {
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
   engine_start();
@@ -1973,14 +1969,14 @@ bool QMCFixedSampleLinearOptimizeBatched::descent_run()
   }
 
   finish();
-  return (optTarget->getReportCounter() > 0);
+
 }
 #endif
 
 
 //Function for controlling the alternation between sections of descent optimization and BLM optimization.
 #ifdef HAVE_LMY_ENGINE
-bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
+void QMCFixedSampleLinearOptimizeBatched::hybrid_run()
 {
   app_log() << "This method name is: " << MinMethod << std::endl;
 
@@ -2009,7 +2005,7 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
     descent_run();
 
   app_log() << "Finished a hybrid step" << std::endl;
-  return (optTarget->getReportCounter() > 0);
+
 }
 #endif
 

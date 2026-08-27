@@ -39,10 +39,8 @@ template<typename T, PlatformKind PL>
 class DeviceAllocatorImpl
 {
 public:
-  using value_type    = T;
-  using size_type     = size_t;
-  using pointer       = T*;
-  using const_pointer = const T*;
+  using value_type = T;
+  using size_type  = size_t;
 
   DeviceAllocatorImpl() = default;
   template<class U>
@@ -106,10 +104,8 @@ public:
 template<typename T, PlatformKind PL>
 struct HostAllocatorImpl
 {
-  using value_type    = T;
-  using size_type     = size_t;
-  using pointer       = T*;
-  using const_pointer = const T*;
+  using value_type = T;
+  using size_type  = size_t;
 
   HostAllocatorImpl() = default;
   template<class U>
@@ -141,10 +137,8 @@ struct HostAllocatorImpl
 template<typename T, PlatformKind PL, class ULPHA = std::allocator<T>>
 struct PageLockedAllocatorImpl : public ULPHA
 {
-  using value_type    = typename ULPHA::value_type;
-  using size_type     = typename ULPHA::size_type;
-  using pointer       = typename ULPHA::pointer;
-  using const_pointer = typename ULPHA::const_pointer;
+  using value_type = typename ULPHA::value_type;
+  using size_type  = typename ULPHA::size_type;
 
   PageLockedAllocatorImpl() = default;
   template<class U, class V>

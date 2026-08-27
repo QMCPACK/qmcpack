@@ -12,8 +12,10 @@
 #ifndef QMCPLUSPLUS_QMC_WAVEFUNCTION_TYPES_HPP
 #define QMCPLUSPLUS_QMC_WAVEFUNCTION_TYPES_HPP
 
+#include "config.h"
 #include "type_traits/complex_help.hpp"
-#include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/Tensor.h"
 
 namespace qmcplusplus
 {

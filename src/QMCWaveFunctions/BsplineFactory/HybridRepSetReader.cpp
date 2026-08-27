@@ -24,19 +24,17 @@
 #include <Timer.h>
 #if defined(QMC_COMPLEX)
 #include "SplineC2C.h"
-#include "SplineC2COMPTarget.h"
 #else
 #include "SplineR2R.h"
 #include "HybridRepReal.h"
 #include "SplineC2R.h"
-#include "SplineC2ROMPTarget.h"
 #endif
 #include "HybridRepCplx.h"
 #include "OneSplineOrbData.hpp"
 #include "spline2/SplineUtils.h"
 #include "Message/CommOperators.h"
 #include "spline2/MultiBspline.hpp"
-#include "spline2/MultiBsplineOffload.hpp"
+#include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
 {
@@ -157,7 +155,8 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
     const std::pair<int, int>& distributed_and_shared_ranks,
     const BandInfoGroup& bandgroup)
 {
-  const int N = bandgroup.getNumDistinctOrbitals();
+  if (use_offload)
+    app_summary() << "    Hybrid representation doesn't support OpenMP offload. Request ignored." << std::endl;
 
   if (use_duplex_splines_)
     app_log() << "  Using complex einspline table" << std::endl;
@@ -172,12 +171,9 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   typename bspline_traits<ST, 3>::BCType xyz_bc[3];
   set_grid(mybuilder->MeshSize, half_g, xyz_grid, xyz_bc);
 
+  const int N = bandgroup.getNumDistinctOrbitals();
   const size_t num_splines = getAlignedSize<ST>(use_duplex_splines_ ? N * 2 : N);
-  std::unique_ptr<MultiBsplineBase<ST>> multi_splines_ptr;
-  if (use_offload)
-    multi_splines_ptr = std::make_unique<MultiBsplineOffload<ST>>(xyz_grid, xyz_bc, num_splines);
-  else
-    multi_splines_ptr = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
+  auto multi_splines_ptr   = std::make_unique<MultiBspline<ST>>(xyz_grid, xyz_bc, num_splines);
 
   auto& multi_splines(*multi_splines_ptr);
   app_log() << "MEMORY " << multi_splines.sizeInByte() / (1 << 20) << " MB allocated "
@@ -186,39 +182,17 @@ std::unique_ptr<SPOSet> HybridRepSetReader<ST>::create_spline_set(
   std::unique_ptr<BsplineSet> bspline;
   OptionalRef<HybridBase> hybridrep_ref;
 #if defined(QMC_COMPLEX)
-  if (use_offload)
-  {
-    auto ptr =
-        std::make_unique<HybridRepCplx<SplineC2COMPTarget<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                                std::move(multi_splines_ptr));
-    hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
-    bspline       = std::move(ptr);
-  }
-  else
-  {
-    auto ptr      = std::make_unique<HybridRepCplx<SplineC2C<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                                   std::move(multi_splines_ptr));
-    hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
-    bspline       = std::move(ptr);
-  }
+  auto ptr      = std::make_unique<HybridRepCplx<SplineC2C<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                                                 std::move(multi_splines_ptr));
+  hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
+  bspline       = std::move(ptr);
 #else
   if (use_duplex_splines_)
   {
-    if (use_offload)
-    {
-      auto ptr =
-          std::make_unique<HybridRepCplx<SplineC2ROMPTarget<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                                  std::move(multi_splines_ptr));
-      hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
-      bspline       = std::move(ptr);
-    }
-    else
-    {
-      auto ptr = std::make_unique<HybridRepCplx<SplineC2R<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                                                std::move(multi_splines_ptr));
-      hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
-      bspline       = std::move(ptr);
-    }
+    auto ptr      = std::make_unique<HybridRepCplx<SplineC2R<ST>>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
+                                                                   std::move(multi_splines_ptr));
+    hybridrep_ref = makeOptionalRef<HybridBase>(ptr->getHybridRepCenterOrbitals());
+    bspline       = std::move(ptr);
   }
   else
   {
@@ -682,8 +656,8 @@ void HybridRepSetReader<ST>::create_atomic_centers_Gspace(const Vector<std::comp
         UBspline_1d_d* atomic_spline_r = nullptr;
         for (size_t ip = 0; ip < spline_npoints; ip++)
           splineData_r[ip] = all_vals[idx][ip][lm];
-        atomic_spline_r = einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, splineData_r.data(),
-                                            ((lm == 0) || (lm > 3)));
+        atomic_spline_r = einspline::create_UBspline_1d_d(0.0, spline_radius, spline_npoints, splineData_r.data(),
+                                                          ((lm == 0) || (lm > 3)));
         if (!use_duplex_splines_)
         {
           mycenter.set_spline(atomic_spline_r, lm, iorb);
@@ -695,8 +669,8 @@ void HybridRepSetReader<ST>::create_atomic_centers_Gspace(const Vector<std::comp
           UBspline_1d_d* atomic_spline_i = nullptr;
           for (size_t ip = 0; ip < spline_npoints; ip++)
             splineData_i[ip] = all_vals[idx][ip][lm + lm_tot];
-          atomic_spline_i = einspline::create(atomic_spline_i, 0.0, spline_radius, spline_npoints, splineData_i.data(),
-                                              ((lm == 0) || (lm > 3)));
+          atomic_spline_i = einspline::create_UBspline_1d_d(0.0, spline_radius, spline_npoints, splineData_i.data(),
+                                                            ((lm == 0) || (lm > 3)));
           mycenter.set_spline(atomic_spline_r, lm, iorb * 2);
           mycenter.set_spline(atomic_spline_i, lm, iorb * 2 + 1);
           einspline::destroy(atomic_spline_r);

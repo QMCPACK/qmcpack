@@ -2,12 +2,10 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from importlib.util import find_spec
-from . import TEST_DIR
-from ..testing import value_eq,check_object_eq
+from . import isolate_nexus_core, register_pseudo_files, TEST_DIR
+from ..testing import value_eq,check_object_eq,dict_serialize
 
 TEST_FILES = {
     "AlN32_input":                                                 TEST_DIR / "test_rmg_input_files/AlN32_input",
@@ -46,7 +44,8 @@ for file in TEST_FILES.values():
 
 def make_serial_reference(ri):
     import numpy as np
-    s = ri.serial()
+    from ..developer import obj
+    s = dict_serialize(ri,dict_type=obj)
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
         v = s[k]
@@ -658,7 +657,7 @@ def get_serial_references():
 def check_vs_serial_reference(gi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    sg = gi.serial()
+    sg = dict_serialize(gi,dict_type=obj)
     assert(check_object_eq(sg,sr))
 #end def check_vs_serial_reference
 
@@ -667,6 +666,119 @@ def test_empty_init():
     from ..rmg_input import RmgInput
     ri = RmgInput()
 #end test_empty_init
+
+
+def test_input_spec():
+    from ..rmg_input import input_spec, rmg_modes
+
+    documented_sections = input_spec.section_order[:15]
+    documented_count = sum(len(input_spec.section_contents[s]) for s in documented_sections)
+    assert(documented_count==271)
+    assert(len(input_spec.keywords)==284)
+
+    added_keywords = set([
+        'AFM',
+        'BerryPhase',
+        'BerryPhaseCycle',
+        'BerryPhaseDirection',
+        'STM_bias',
+        'STM_height',
+        'adaptive_cmix',
+        'adaptive_convergence',
+        'afd_cfac',
+        'all_electron_parm',
+        'davidson_1stage_ortho',
+        'davidson_2stage_ortho',
+        'davidson_premg',
+        'drho_precond',
+        'drho_precond_q0',
+        'drho_precond_type',
+        'electric_field',
+        'electric_field_tddft',
+        'epsg_guard',
+        'freeze_ldaU_steps',
+        'gpu_managed_memory',
+        'internal_pseudo_type',
+        'kpoint_units',
+        'kpoints',
+        'kpoints_bandstructure',
+        'lambda_max',
+        'lambda_min',
+        'ldau_mixing',
+        'ldau_mixing_type',
+        'ldau_pulay_order',
+        'ldau_pulay_refresh',
+        'ldau_pulay_scale',
+        'ldos_end_grid',
+        'ldos_start_grid',
+        'prolong_order',
+        'qmc_nband',
+        'resta_beta',
+        'semilocal_projectors',
+        'sts_end_grid',
+        'sts_start_grid',
+        'subdiag_groups',
+        'tddft_frequency',
+        'tddft_gpu',
+        'tddft_noscf',
+        'tddft_start_state',
+        'test_bond_length',
+        'test_bond_length_tolerance',
+        'test_steps',
+        'test_steps_tolerance',
+        'tetra_method',
+        'use_bessel_projectors',
+        'use_block_diag',
+        'use_cmix',
+        'use_energy_correction',
+        'use_gpu_fd',
+        'use_rmm_diis',
+        ])
+    assert(added_keywords <= set(input_spec.keywords.keys()))
+
+    assert(input_spec.keywords.AFM.key_type=='boolean')
+    assert(input_spec.keywords.adaptive_cmix.max_value==10.0)
+    assert(input_spec.keywords.electric_field.key_type=='double array')
+    assert(input_spec.keywords.tddft_mode.allowed==set(
+        ['electric field','point charge','vector potential']))
+    assert('Example: 2 means system is missing two electrons' in
+           input_spec.keywords.system_charge.description)
+    assert(rmg_modes.full_mode('nscf')=='NSCF')
+    assert(rmg_modes.full_mode('stm')=='STM')
+
+#end def test_input_spec
+
+
+def test_hubbard_u_records():
+    import numpy as np
+    from ..developer import obj
+    from ..rmg_input import RmgInput
+
+    text = '''
+        Hubbard_U = "
+        Ni 6.5 3d 0.1 0.2 0.3
+        Mn 4.0 3d
+        "
+        '''
+    ri = RmgInput()
+    ri.read_text(text)
+    assert(ri.Hubbard_U.Ni.U==6.5)
+    assert(ri.Hubbard_U.Ni.orbital=='3d')
+    assert(value_eq(ri.Hubbard_U.Ni.J,np.array([0.1,0.2,0.3])))
+    assert(ri.Hubbard_U.Mn.U==4.0)
+    assert(ri.Hubbard_U.Mn.orbital=='3d')
+
+    ri_roundtrip = RmgInput()
+    ri_roundtrip.read_text(ri.write_text())
+    assert(check_object_eq(ri_roundtrip,ri))
+
+    ri_generated = RmgInput()
+    ri_generated.assign(Hubbard_U=obj(Ni=(6.5,'3d',0.1,0.2,0.3)))
+    assert(ri_generated.Hubbard_U.Ni.U==6.5)
+    assert(ri_generated.Hubbard_U.Ni.orbital=='3d')
+    assert(value_eq(ri_generated.Hubbard_U.Ni.J,np.array([0.1,0.2,0.3])))
+
+#end def test_hubbard_u_records
 
 
 def test_read():
@@ -729,7 +841,11 @@ def test_write(tmp_path):
 
 
 
+@isolate_nexus_core
 def test_generate():
+    register_pseudo_files([
+        'Ni_oncv.UPF','O_oncv.UPF','Pt.rel-pbe-n-rrkjus.UPF'
+        ])
     import numpy as np
     from ..developer import obj
     from ..unit_converter import convert
@@ -909,14 +1025,18 @@ def test_generate():
         nio8.structure = s_trans
         assert(value_eq(R,np.eye(3,dtype=float)))
         assert(tmatrix is None)
-        shared_inputs.delete('bravais_lattice_type','a_length','b_length','c_length','wavefunction_grid')
+        keys = 'bravais_lattice_type','a_length','b_length','c_length','wavefunction_grid'
+        for k in keys:
+            del shared_inputs[k]
+        d = dict(**rmg_inputs)
+        d.update(**shared_inputs)
         ri = generate_rmg_input(
             Hubbard_U       = obj(Ni=6.5),
             virtual_frac    = 1./6,
             wf_grid_spacing = 0.22,
             pseudos         = ['Ni_oncv.UPF','O_oncv.UPF'],
             system          = nio8,
-            **obj(rmg_inputs,shared_inputs)
+            **d
             )
         assert(value_eq(ri.length_units,'Bohr'))
         del ri.length_units

@@ -1,5 +1,6 @@
 # Python standard library imports
 import os
+import sys
 import inspect
 from time import process_time
 from copy import deepcopy
@@ -10,10 +11,10 @@ import numpy as np
 # Nexus imports
 from . import memory
 from .unit_converter import convert
-from .developer import DevBase, obj, log, error, unavailable
+from .developer import DevBase, obj, log, unavailable, NexusError, FileFormatError
 from .numerics import simstats
 from .grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
-from .grid_functions import SpheroidGrid
+from .grid_functions import SpheroidGrid,ParallelotopeGridFunction
 from .structure import Structure, get_seekpath_full
 from .fileio import XsfFile
 from .hdfreader import read_hdf
@@ -34,6 +35,15 @@ except:
 #end try
 
 
+def get_path(o, path, value=None):
+    """Retrieve a value from a nested dict-like object by slash-delimited path."""
+    for key in path.split('/'):
+        if key not in o:
+            return value
+        o = o[key]
+    return o
+
+
 class VLog(DevBase):
 
     verbosity_levels = obj(
@@ -52,7 +62,7 @@ class VLog(DevBase):
     #end def __init__
 
 
-    def __call__(self,msg,level='low',n=0,time=False,mem=False,width=75):
+    def __call__(self,msg,level='low',n=0,*,time=False,mem=False,width=75):
         if self.verbosity==self.verbosity_levels.none:
             return
         elif self.verbosity >= self.verbosity_levels[level]:
@@ -99,8 +109,14 @@ class VLog(DevBase):
 
     def set_verbosity(self,level):
         if level not in self.verbosity_levels:
-            vlinv = self.verbosity_levels.inverse()
-            error('Cannot set verbosity level to "{}".\nValid options are: {}'.format(level,[vlinv[i] for i in sorted(vlinv.keys())]))
+            vlinv = {v:k for k,v in self.verbosity_levels.items()}
+            msg = (
+                'Cannot set verbosity level to "{}".\n'
+                'Valid options are: {}'.format(
+                    level, [vlinv[i] for i in sorted(vlinv.keys())]
+                    )
+                )
+            raise ValueError(msg)
         #end if
         self.verbosity = self.verbosity_levels[level]
     #end def set_verbosity
@@ -134,7 +150,13 @@ class AttributeProperties(DevBase):
         self.deepcopy   = kwargs.pop('deepcopy'  , False)
         self.required   = kwargs.pop('required'  , False)
         if len(kwargs)>0:
-            self.error('Invalid init variable attributes received.\nInvalid attributes:\n{}\nThis is a developer error.'.format(obj(kwargs)))
+            msg = (
+                'Invalid init variable attributes received.\n'
+                'Invalid attributes:\n'
+                '{}\n'
+                'This is a developer error.'.format(obj(kwargs))
+                )
+            raise NexusError(msg)
         #end if
     #end def __init__
 #end class AttributeProperties
@@ -153,13 +175,11 @@ class DefinedAttributeBase(DevBase):
         if len(other_cls)==1 and issubclass(other_cls[0],DefinedAttributeBase):
             cls.obtain_attributes(other_cls[0])
         #end if
-        if cls.class_has('attribute_definitions'):
+        if hasattr(cls,'attribute_definitions'):
             attr_defs = cls.attribute_definitions
         else:
             attr_defs = obj()
-            cls.class_set(
-                attribute_definitions = attr_defs
-                )
+            setattr(cls,'attribute_definitions',attr_defs)
         #end if
         for name,attr_props in attribute_properties.items():
             attr_props = AttributeProperties(**attr_props)
@@ -173,8 +193,8 @@ class DefinedAttributeBase(DevBase):
                 #end for
             #end if
         #end for
-        if cls.class_has('unassigned_default'):
-            for p in attr_defs:
+        if hasattr(cls,'unassigned_default'):
+            for p in attr_defs.values():
                 if 'default' not in p.assigned:
                     p.default = cls.unassigned_default
                 #end if
@@ -201,21 +221,21 @@ class DefinedAttributeBase(DevBase):
                 sublevel_attributes.add(name)
             #end if
         #end for
-        cls.class_set(
+        d = dict(
             required_attributes = required_attributes,
             deepcopy_attributes = deepcopy_attributes,
             typed_attributes    = typed_attributes,
             toplevel_attributes = toplevel_attributes,
             sublevel_attributes = sublevel_attributes,
             )
+        for k,v in d.items():
+            setattr(cls,k,v)
     #end def define_attributes
 
 
     @classmethod
     def obtain_attributes(cls,super_cls):
-        cls.class_set(
-            attribute_definitions = super_cls.attribute_definitions.copy()
-            )
+        setattr(cls,'attribute_definitions',deepcopy(super_cls.attribute_definitions))
     #end def obtain_attributes
 
 
@@ -254,8 +274,15 @@ class DefinedAttributeBase(DevBase):
         invalid     = value_names - attr_names
         if len(invalid)>0:
             v = obj()
-            v.transfer_from(values,invalid)
-            self.error('Attempted to set unrecognized attributes\nUnrecognized attributes:\n{}'.format(v))
+            for k in invalid:
+                if k in values:
+                    v[k] = values[k]
+            msg = (
+                'Attempted to set unrecognized attributes\n'
+                'Unrecognized attributes:\n'
+                '{}'.format(v)
+                )
+            raise ValueError(msg)
         #end if
         missing = set(cls.required_attributes) - value_names
         if len(missing)>0:
@@ -263,7 +290,11 @@ class DefinedAttributeBase(DevBase):
             for n in sorted(missing):
                 msg += '\n  '+n
             #end for
-            self.error('Required attributes are missing.\nPlease provide the following attributes during initialization:{}'.format(msg))
+            msg = (
+                'Required attributes are missing.\n'
+                'Please provide the following attributes during initialization:{}'.format(msg)
+                )
+            raise ValueError(msg)
         #end if
         props = cls.attribute_definitions
         toplevel_names = value_names & cls.toplevel_attributes
@@ -274,14 +305,18 @@ class DefinedAttributeBase(DevBase):
         for name in sublevel_names:
             p = props[name]
             if p.dest not in self:
-                self.error('Attribute destination "{}" does not exist at the top level.\nThis is a developer error.'.format(p.dest))
+                msg = (
+                    'Attribute destination "{}" does not exist at the top level.\n'
+                    'This is a developer error.'.format(p.dest)
+                    )
+                raise NexusError(msg)
             #end if
             self._set_attribute(self[p.dest],name,values[name],p)
         #end for
     #end def set_attributes
 
 
-    def check_attributes(self,exit=False):
+    def check_attributes(self,*,exit=False):
         msg = ''
         cls = self.__class__
         a = obj()
@@ -320,7 +355,7 @@ class DefinedAttributeBase(DevBase):
         #end for
         valid = len(msg)==0
         if not valid and exit:
-            self.error(msg)
+            raise ValueError(msg)
         #end if
         return valid
     #end def check_attributes
@@ -328,7 +363,7 @@ class DefinedAttributeBase(DevBase):
 
     def check_unassigned(self,value):
         cls = self.__class__
-        unassigned = cls.class_has('unassigned_default') and value is cls.unassigned_default
+        unassigned = hasattr(cls,'unassigned_default') and value is cls.unassigned_default
         return unassigned
     #end def check_unassigned
 
@@ -337,11 +372,22 @@ class DefinedAttributeBase(DevBase):
         cls = self.__class__
         props = cls.attribute_definitions
         if name not in props:
-            self.error('Cannot set unrecognized attribute "{}".\nValid options are: {}'.format(name,sorted(props.keys())))
+            msg = (
+                'Cannot set unrecognized attribute "{}".\n'
+                'Valid options are: {}'.format(name,sorted(props.keys()))
+                )
+            raise ValueError(msg)
         #end if
         p = props[name]
         if p.type is not None and not isinstance(value,p.type):
-            self.error('Cannot set attribute "{}".\nExpected value with type: {}\nReceived value with type: {}'.format(name,p.type.__name__,value.__class__.__name__))
+            msg = (
+                'Cannot set attribute "{}".\n'
+                'Expected value with type: {}\n'
+                'Received value with type: {}'.format(
+                    name,p.type.__name__,value.__class__.__name__
+                    )
+                )
+            raise TypeError(msg)
         #end if
         if p.deepcopy:
             value = deepcopy(value)
@@ -349,21 +395,29 @@ class DefinedAttributeBase(DevBase):
         if p.dest is None:
             self[name] = value
         elif p.dest not in self:
-            self.error('Cannot set attribute "{}".\nAttribute destination "{}" does not exist.'.format(name,p.dest))
+            msg = (
+                'Cannot set attribute "{}".\n'
+                'Attribute destination "{}" does not exist.'.format(name,p.dest)
+                )
+            raise ValueError(msg)
         else:
             self[p.dest][name] = value
         #end if
     #end def set_attribute
 
 
-    def get_attribute(self,name,value=missing,assigned=True):
+    def get_attribute(self,name,value=missing,*,assigned=True):
         default_value    = value
         default_provided = not missing(default_value)
         require_assigned = assigned and not default_provided
         cls = self.__class__
         props = cls.attribute_definitions
         if name not in props:
-            self.error('Cannot get unrecognized attribute "{}".\nValid options are: {}'.format(name,sorted(props.keys())))
+            msg = (
+                'Cannot get unrecognized attribute "{}".\n'
+                'Valid options are: {}'.format(name,sorted(props.keys()))
+                )
+            raise ValueError(msg)
         #end if
         p = props[name]
         value = missing
@@ -388,11 +442,17 @@ class DefinedAttributeBase(DevBase):
                     extra = ' at location "{}"'.format(p.dest)
                 #end if
                 if not present:
-                    msg = 'Cannot get attribute "{}"{}.\nAttribute does not exist.'.format(name,extra)
+                    msg = (
+                        'Cannot get attribute "{}"{}.\n'
+                        'Attribute does not exist.'.format(name,extra)
+                        )
                 else:
-                    msg = 'Cannot get attribute "{}"{}.\nAttribute has not been assigned.'.format(name,extra)
+                    msg = (
+                        'Cannot get attribute "{}"{}.\n'
+                        'Attribute has not been assigned.'.format(name,extra)
+                        )
                 #end if
-                self.error(msg)
+                raise ValueError(msg)
             #end if
         #end if
         return value
@@ -416,7 +476,11 @@ class DefinedAttributeBase(DevBase):
         if p.dest is None:
             self[name] = value
         elif p.dest not in self:
-            self.error('Attribute destination "{}" does not exist at the top level.\nThis is a developer error.'.format(p.dest))
+            msg = (
+                'Attribute destination "{}" does not exist at the top level.\n'
+                'This is a developer error.'.format(p.dest)
+                )
+            raise NexusError(msg)
         else:
             self[p.dest][name] = value
         #end if
@@ -426,7 +490,14 @@ class DefinedAttributeBase(DevBase):
     def _set_attribute(self,container,name,value,props):
         p = props
         if p.type is not None and not isinstance(value,p.type):
-            self.error('Cannot set attribute "{}".\nExpected value with type: {}\nReceived value with type: {}'.format(name,p.type.__name__,value.__class__.__name__))
+            msg = (
+                'Cannot set attribute "{}".\n'
+                'Expected value with type: {}\n'
+                'Received value with type: {}'.format(
+                    name,p.type.__name__,value.__class__.__name__
+                    )
+                )
+            raise TypeError(msg)
         #end if
         if p.deepcopy:
             value = deepcopy(value)
@@ -483,7 +554,11 @@ class ObservableWithComponents(Observable):
         if name is None:
             name = self.default_component_name
         elif name not in self.components:
-            self.error('"{}" is not a known component.\nValid options are: {}'.format(name,self.component_names))
+            msg = (
+                '"{}" is not a known component.\n'
+                'Valid options are: {}'.format(name,self.component_names)
+                )
+            raise ValueError(msg)
         #end if
         return name
     #end def process_component_name
@@ -499,9 +574,14 @@ class ObservableWithComponents(Observable):
             return self.default_component()
         #end if
         if name not in self.component_names:
-            self.error('"{}" is not a known component.\nValid options are: {}'.format(name,self.component_names))
+            msg = (
+                '"{}" is not a known component.\n'
+                'Valid options are: {}'.format(name,self.component_names)
+                )
+            raise ValueError(msg)
         elif name not in self:
-            self.error('Component "{}" not found.'.format(name))
+            msg = 'Component "{}" not found.'.format(name)
+            raise AttributeError(msg, name=name, obj=self)
         #end if
         comp = self.get_attribute(name)
         return comp
@@ -517,7 +597,8 @@ class ObservableWithComponents(Observable):
                 #end if
             #end for
             if len(comps)==0:
-                self.error('No components found.')
+                msg = 'No components found.'
+                raise ValueError(msg)
             #end if
         else:
             if isinstance(names,str):
@@ -525,9 +606,14 @@ class ObservableWithComponents(Observable):
             #end if
             for name in names:
                 if name not in self.component_names:
-                    self.error('"{}" is not a known component.\nValid options are: {}'.format(name,self.component_names))
+                    msg = (
+                        '"{}" is not a known component.\n'
+                        'Valid options are: {}'.format(name,self.component_names)
+                        )
+                    raise ValueError(msg)
                 elif name not in self:
-                    self.error('Component "{}" not found.'.format(name))
+                    msg = 'Component "{}" not found.'.format(name)
+                    raise AttributeError(msg, name=name, obj=self)
                 #end if
                 comps[name] = self[name]
             #end for
@@ -593,14 +679,14 @@ def read_eshdf_nofk_data(filename,Ef):
             nk_s    = np.zeros((ngvecs,),dtype=float)
             nelec_s = 0
             path    = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
-            spin    = h.get_path(path)
+            spin    = get_path(h,path)
             eigs    = convert(np.array(spin.eigenvalues),'Ha','eV')
             nstates = h5int(spin.number_of_states)
             for st in range(nstates):
                 eig = eigs[st]
                 if eig<E_fermi:
                     stpath   = path+'/state_{0}/psi_g'.format(st)
-                    psi      = np.array(h.get_path(stpath))
+                    psi      = np.array(get_path(h,stpath))
                     nk_orb   = (psi**2).sum(1)
                     kin_orb  = (kinetic*nk_orb).sum()
                     nelec_s += nk_orb.sum()
@@ -642,13 +728,14 @@ class MomentumDistribution(ObservableWithComponents):
     def get_raw_data(self):
         data = self.get_attribute('raw')
         if len(data)==0:
-            self.error('Raw n(k) data is not present.')
+            msg = 'Raw n(k) data is not present.'
+            raise RuntimeError(msg)
         #end if
         return data
     #end def get_raw_data
 
 
-    def filter_raw_data(self,filter_tol=1e-5,store=True):
+    def filter_raw_data(self,filter_tol=1e-5,*,store=True):
         vlog('Filtering raw n(k) data with tolerance {:6.4e}'.format(filter_tol))
         prior_tol = self.get_attribute('raw_filter_tol',assigned=False)
         data  = self.get_raw_data()
@@ -656,7 +743,7 @@ class MomentumDistribution(ObservableWithComponents):
             vlog('Filtering applied previously with tolerance {:6.4e}, skipping.'.format(prior_tol))
             return data
         #end if
-        k     = data.first().k
+        k     = data[min(data.keys())].k
         km    = np.linalg.norm(k,axis=1)
         kmax  = 0.
         order = km.argsort()
@@ -700,7 +787,7 @@ class MomentumDistribution(ObservableWithComponents):
     #end def filter_raw_data
 
 
-    def map_raw_data_onto_grid(self,unfold=False,filter_tol=1e-5):
+    def map_raw_data_onto_grid(self,*,unfold=False,filter_tol=1e-5):
         vlog('\nMapping raw n(k) data onto regular grid')
         data = self.get_raw_data()
         structure = self.get_attribute('structure',assigned=unfold)
@@ -773,7 +860,7 @@ class MomentumDistribution(ObservableWithComponents):
         print(c.grid.cell_grid_shape)
         print("ci called from MomentumDistribution.backfold()")
         ci()
-        exit()
+        sys.exit()
     #end def backfold
 
 
@@ -785,6 +872,7 @@ class MomentumDistribution(ObservableWithComponents):
                             a1_range     = (0,1),
                             a2_range     = (0,1),
                             grid_spacing = 0.3,
+                            *,
                             unit_in      = False,
                             unit_out     = False,
                             boundary     = True,
@@ -821,7 +909,7 @@ class MomentumDistribution(ObservableWithComponents):
     #end def plot_plane_contours
 
 
-    def plot_radial_raw(self,quants='all',kmax=None,fmt='b.',fig=True,show=True):
+    def plot_radial_raw(self,quants='all',kmax=None,fmt='b.',*,fig=True,show=True):
         data = self.get_raw_data()
         if quants=='all':
             quants = list(data.keys())
@@ -859,7 +947,7 @@ class MomentumDistribution(ObservableWithComponents):
     #end def plot_radial_raw
 
 
-    def plot_directional_raw(self,kdir,quants='all',kmax=None,fmt='b.',fig=True,show=True,reflect=False):
+    def plot_directional_raw(self,kdir,quants='all',kmax=None,fmt='b.',*,fig=True,show=True,reflect=False):
         data = self.get_raw_data()
         kdir = np.array(kdir,dtype=float)
         kdir /= np.linalg.norm(kdir)
@@ -949,7 +1037,7 @@ MomentumDistribution.define_attributes(
 
 class MomentumDistributionDFT(MomentumDistribution):
 
-    def read_eshdf(self,filepath,E_fermi=None,savefile=None,unfold=False,grid=True):
+    def read_eshdf(self,filepath,E_fermi=None,savefile=None,*,unfold=False,grid=True):
 
         save = False
         if savefile is not None:
@@ -971,7 +1059,11 @@ class MomentumDistributionDFT(MomentumDistribution):
             self.info.E_fermi = E_fermi
         #end if
         if E_fermi is None:
-            self.error('Cannot read n(k) from ESHDF file.  Fermi energy (eV) is required to populate n(k) from ESHDF data.\nFile being read: {}'.format(filepath))
+            msg = (
+                'Cannot read n(k) from ESHDF file.  Fermi energy (eV) is required to populate n(k) from ESHDF data.\n'
+                'File being read: {}'.format(filepath)
+                )
+            raise FileFormatError(msg)
         #end if
 
         vlog.increment()
@@ -992,7 +1084,7 @@ class MomentumDistributionDFT(MomentumDistribution):
             sdata.k.extend(data.k)
             sdata.nk.extend(data.nk)
         #end for
-        for sdata in spin_data:
+        for sdata in spin_data.values():
             sdata.k  = np.array(sdata.k)
             sdata.nk = np.array(sdata.nk)
         #end for
@@ -1163,7 +1255,7 @@ class Density(ObservableWithComponents):
     def volume_normalize(self):
         g = self.get_attribute('grid')
         dV = g.volume()/g.ncells
-        for c in self.components():
+        for c in self.components().values():
             c.values /= dV
         #end for
     #end def volume_normalize
@@ -1197,14 +1289,14 @@ class Density(ObservableWithComponents):
     def change_density_units(self,units):
         units_old = self.get_attribute('density_units')
         dscale    = 1.0/convert(1.0,units_old,units)
-        for c in self.components():
+        for c in self.components().values():
             c.values *= dscale**3
         #end for
         self.set_attribute('density_units',units) # Update the object info to reflect the conversion
     #end def change_density_units
 
 
-    def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,single=False,interp_kwargs=None,comps_return=False,species=None):
+    def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,*,single=False,interp_kwargs=None,comps_return=False,species=None):
         
         vlog('Computing radial density',time=True)
         vlog('Current memory:',n=1,mem=True)
@@ -1239,14 +1331,19 @@ class Density(ObservableWithComponents):
             #end for
         else:
             species = list(rmax.keys())
-            species_rmax.transfer_from(rmax)
+            species_rmax.update(**rmax)
         #end if
         vlog('Constructing spherical grid for each species',n=1,time=True)
         species_grids = obj()
         for s in species:
             srmax = species_rmax[s]
             if srmax<1e-3:
-                self.error('Cannot compute radial density.\n"rmax" must be set to a finite value.\nrmax provided for species "{}": {}'.format(s,srmax))
+                msg = (
+                    'Cannot compute radial density.\n'
+                    '"rmax" must be set to a finite value.\n'
+                    'rmax provided for species "{}": {}'.format(s,srmax)
+                    )
+                raise ValueError(msg)
             #end if
             nr = int(np.ceil(srmax/dr))
             species_grids[s] = SpheroidGrid(
@@ -1299,16 +1396,16 @@ class Density(ObservableWithComponents):
     #end def radial_density
 
 
-    def cumulative_radial_density(self,rdfs=None,comps_return=False,**kwargs):
+    def cumulative_radial_density(self,rdfs=None,*,comps_return=False,**kwargs):
         component = kwargs.get('component',None)
         if rdfs is None:
             kwargs['comps_return'] = True
             crdfs = self.radial_density(**kwargs)
         else:
-            crdfs = rdfs.copy()
+            crdfs = deepcopy(rdfs)
         #end if
-        for crdf in crdfs:
-            for d in crdf:
+        for crdf in crdfs.values():
+            for d in crdf.values():
                 dr = d.radius[1]-d.radius[0]
                 d.density = d.density.cumsum()*dr
             #end for
@@ -1321,7 +1418,7 @@ class Density(ObservableWithComponents):
     #end def cumulative_radial_density
 
 
-    def plot_radial_density(self,component=None,show=True,cumulative=False,**kwargs):
+    def plot_radial_density(self,component=None,*,show=True,cumulative=False,**kwargs):
         vlog('Plotting radial density')
         kwargs['comps_return'] = True
         if not cumulative:
@@ -1329,7 +1426,7 @@ class Density(ObservableWithComponents):
         else:
             rdfs = self.cumulative_radial_density(component=component,**kwargs)
         #end if
-        rdf = rdfs.first()
+        rdf = rdfs[min(rdfs.keys())]
         species = list(rdf.keys())
 
         dist_units = self.get_attribute('distance_units',None)
@@ -1389,11 +1486,11 @@ class Density(ObservableWithComponents):
                     filename = '{}.{}.{}_{}.dat'.format(prefix,gname,sname,cname)
                     filepath = os.path.join(path,filename)
                     vlog('Saving file '+filepath,n=1)
-                    f = open(filepath,'w')
-                    for r,d in zip(srdf.radius,srdf.density):
-                        f.write('{: 16.8e} {: 16.8e}\n'.format(r,d))
-                    #end for
-                    f.close()
+                    with open(filepath,'w') as f:
+                        for r,d in zip(srdf.radius,srdf.density):
+                            f.write('{: 16.8e} {: 16.8e}\n'.format(r,d))
+                        #end for
+                    #end with
                 #end for
             #end for
         #end for
@@ -1403,23 +1500,23 @@ class Density(ObservableWithComponents):
 Density.define_attributes(
     Observable,
     raw = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     u = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     d = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     tot = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     pol = obj(
-        type       = obj,
+        type       = ParallelotopeGridFunction,
         no_default = True,
         ),
     grid = obj(
@@ -1452,18 +1549,11 @@ class EnergyDensity(Density):
 
 class StatFile(DevBase):
 
-    scalars = set('''
-        LocalEnergy   
-        LocalEnergy_sq
-        Kinetic       
-        LocalPotential
-        ElecElec      
-        IonIon        
-        LocalECP      
-        NonLocalECP   
-        KEcorr        
-        MPC           
-        '''.split())
+    scalars = frozenset({
+        'LocalEnergy', 'ElecElec', 'Kinetic', 'NonLocalECP','LocalPotential',
+        'KEcorr', 'LocalECP', 'IonIon', 'MPC', 'LocalEnergy_sq'
+        })
+
 
     observable_aliases = obj(
         momentum_distribution = ['nofk'],
@@ -1497,7 +1587,11 @@ class StatFile(DevBase):
             
     def read(self,filepath,observables='all'):
         if not os.path.exists(filepath):
-            self.error('Cannot read file.\nFile path does not exist: {}'.format(filepath))
+            msg = (
+                'Cannot read file.\n'
+                'File path does not exist: {}'.format(filepath)
+                )
+            raise FileNotFoundError(msg)
         #end if
         h5 = h5py.File(filepath,'r')
         observable_groups = obj()
@@ -1520,7 +1614,7 @@ class StatFile(DevBase):
         #end for
         if isinstance(observables,str):
             if observables=='all':
-                self.transfer_from(observable_groups)
+                self.update(**observable_groups)
             #end if
         else:
             for obs in observables:
@@ -1537,7 +1631,7 @@ class StatFile(DevBase):
     #end def condenst_name
 
 
-    def observable_groups(self,observable,single=False):
+    def observable_groups(self,observable,*,single=False):
         if inspect.isclass(observable):
             observable = observable.__name__
         elif isinstance(observable,Observable):
@@ -1554,9 +1648,13 @@ class StatFile(DevBase):
         #end if
         if single and groups is not None:
             if len(groups)==1:
-                return groups.first()
+                return groups[min(groups.keys())]
             else:
-                self.error('Single stat.h5 observable group requested, but multiple are present.\nGroups present: {}'.format(sorted(groups.keys())))
+                msg = (
+                    'Single stat.h5 observable group requested, but multiple are present.\n'
+                    'Groups present: {}'.format(sorted(groups.keys()))
+                    )
+                raise ValueError(msg)
             #end if
         else:
             return groups

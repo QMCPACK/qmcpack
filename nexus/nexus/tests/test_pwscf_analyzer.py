@@ -1,9 +1,7 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_ANALYZER)
-
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 
 from . import TEST_DIR
@@ -19,7 +17,7 @@ def test_empty_init():
 
 def test_analyze():
     from numpy import array
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..pwscf_analyzer import PwscfAnalyzer
 
     scf_path = TEST_DIR / "test_pwscf_analyzer_files/scf_output"
@@ -108,9 +106,10 @@ def test_analyze():
             ),
         )
 
-    assert(object_eq(pa.to_obj(),pa_ref))
+    assert(object_eq(to_obj(pa),pa_ref))
 
-    input_read = pa.input.copy()
+    input_read = deepcopy(pa.input)
+
 
     # scf w/ full analysis
     pa = PwscfAnalyzer(scf_path,'scf.in','scf.out',analyze=True)
@@ -187,7 +186,7 @@ def test_analyze():
             ),
         )
 
-    assert(object_eq(pa.to_obj(),pa_ref))
+    assert(object_eq(to_obj(pa),pa_ref))
 
 
     # relax w/ full analysis
@@ -362,7 +361,7 @@ def test_analyze():
             }),
         )
 
-    assert(object_eq(pa.to_obj(),pa_ref))
+    assert(object_eq(to_obj(pa),pa_ref))
 
 
     # nscf w/o actual analysis
@@ -465,10 +464,10 @@ def test_analyze():
                 ),
             ),
         )
-    
-    assert(object_eq(pa.to_obj(),pa_ref))
 
-    input_read = pa.input.copy()
+    assert(object_eq(to_obj(pa),pa_ref))
+
+    input_read = deepcopy(pa.input)
 
     # nscf w/ analysis
     pa = PwscfAnalyzer(nscf_path,'nscf.in','nscf.out',analyze=True)
@@ -676,9 +675,6 @@ def test_analyze():
             ),
         )
 
-    assert(object_eq(pa.to_obj(),pa_ref))
+    assert(object_eq(to_obj(pa),pa_ref))
 
 #end def test_analyze
-
-
-

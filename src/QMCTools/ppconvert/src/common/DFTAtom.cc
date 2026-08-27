@@ -119,6 +119,7 @@ void DFTAtom::SetGrid(std::shared_ptr<Grid>& newgrid)
 
 void DFTAtom::SetBarePot(Potential *newPot)
 {
+  assert(newPot != nullptr);
   BarePot = newPot;
   V.BarePot = BarePot;
   for (int i=0; i<RadialWFs.size(); i++)
@@ -292,4 +293,3 @@ void DFTAtom::Read(IOSectionClass &in)
   V.Charge = charge;
   assert (in.ReadVar("NewMix", NewMix));
 }
-

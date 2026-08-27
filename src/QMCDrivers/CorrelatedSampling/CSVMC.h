@@ -41,7 +41,7 @@ public:
         std::vector<QMCHamiltonian*>&& multi_ham,
         Communicate* comm);
 
-  bool run() override;
+  void run() override;
   bool put(xmlNodePtr cur) override;
   QMCRunType getRunType() override { return QMCRunType::CSVMC; }
 

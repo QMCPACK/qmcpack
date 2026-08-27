@@ -10,16 +10,7 @@
 // Fionn D. Malone, malone14@llnl.gov
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
-#include "Configuration.h"
-
-#undef APP_ABORT
-#define APP_ABORT(x) \
-  {                  \
-    std::cout << x;  \
-    exit(0);         \
-  }
+#include <catch2/catch_test_macros.hpp>
 
 #include <vector>
 
@@ -39,7 +30,6 @@
 
 #include "multi/array.hpp"
 #include "multi/array_ref.hpp"
-
 
 using boost::multi::array;
 using boost::multi::array_ref;

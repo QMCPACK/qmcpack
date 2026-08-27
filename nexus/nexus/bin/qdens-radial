@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 from pathlib import Path
+from copy import deepcopy
 from optparse import OptionParser
 import sys
 
@@ -63,7 +64,7 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj,error,ci,unavailable
+from nexus.developer import DevBase,obj,error,unavailable
 import nexus.memory as memory
 from nexus.observables import ChargeDensity, vlog
 from nexus.fileio import XsfFile
@@ -116,7 +117,7 @@ class QDRBase(DevBase):
 
     def exit(self):
         self.vlog('\n{0} finished\n'.format(self.name))
-        exit()
+        sys.exit()
     #end def exit
 
     def error(self,msg,loc=None):
@@ -194,7 +195,7 @@ class QMCDensityRadialProcessor(QDRBase):
         options,file_in = parser.parse_args()
 
         QDRBase.parser = parser
-        QDRBase.options.transfer_from(options.__dict__)
+        QDRBase.options.update(**options.__dict__)
 
         # Command line options as Nexus obj() data structure
         opt = self.options
@@ -261,6 +262,8 @@ class QMCDensityRadialProcessor(QDRBase):
             if opt_failed:
                 self.error('radii must be a list of values and must be the same length as species list\nyou provided: {0}'.format(rad))
             #end if
+        else:
+            self.error('radii (-r option) must be provided.')
         #end if
 
         #   --seed option
@@ -304,15 +307,15 @@ class QMCDensityRadialProcessor(QDRBase):
             vmc_xsf_data = XsfFile(filepath=opt.vmc_file)
             dmc_xsf_data = XsfFile(filepath=file)
             # Initialize extrapolated XsfFile object
-            extrap_xsf_data = dmc_xsf_data.copy()
+            extrap_xsf_data = deepcopy(dmc_xsf_data)
             extrap_xsf_data.data[3]['density']['density'].values = 2.*dmc_xsf_data.data[3]['density']['density'].values-vmc_xsf_data.data[3]['density']['density'].values
-            file = extrap_xsf_data.copy()
+            file = deepcopy(extrap_xsf_data)
             if opt.write_extrap:
                 file.write('qmc-extrap.xsf')
             #end if
         else:
             dmc_xsf_data = XsfFile(filepath=file)
-            file = dmc_xsf_data.copy()
+            file = deepcopy(dmc_xsf_data)
             if opt.write_extrap:
                 self.log('\nWARNING: You provided --write, however, extrapolated density will not be written since a VMC file was not provided (via --vmc=VMC_FILE).\n')
             #end if
@@ -330,10 +333,10 @@ class QMCDensityRadialProcessor(QDRBase):
                 vmc_plus_err_xsf_data = XsfFile(filepath=opt.vmc_err_file)
                 dmc_plus_err_xsf_data = XsfFile(filepath=opt.dmc_err_file)
                 # Errors only
-                vmc_err_xsf_data = vmc_plus_err_xsf_data.copy() 
+                vmc_err_xsf_data = deepcopy(vmc_plus_err_xsf_data)
                 vmc_err_xsf_data.data[3]['density']['density'].values = vmc_plus_err_xsf_data.data[3]['density']['density'].values \
                                    - vmc_xsf_data.data[3]['density']['density'].values
-                dmc_err_xsf_data = dmc_plus_err_xsf_data.copy() 
+                dmc_err_xsf_data = deepcopy(dmc_plus_err_xsf_data)
                 dmc_err_xsf_data.data[3]['density']['density'].values = dmc_plus_err_xsf_data.data[3]['density']['density'].values \
                                    - dmc_xsf_data.data[3]['density']['density'].values
 
@@ -341,19 +344,19 @@ class QMCDensityRadialProcessor(QDRBase):
                 #   
                 # std_dev = sqrt(4*sigma_dmc**2+sigma_vmc**2)
                 #
-                extrap_err_xsf_data = dmc_err_xsf_data.copy()
+                extrap_err_xsf_data = deepcopy(dmc_err_xsf_data)
                 extrap_err_xsf_data.data[3]['density']['density'].values = np.sqrt(4.0*dmc_err_xsf_data.data[3]['density']['density'].values**2+vmc_err_xsf_data.data[3]['density']['density'].values**2)
-                err_data = extrap_err_xsf_data.copy()
+                err_data = deepcopy(extrap_err_xsf_data)
             elif opt.vmc_file is None:
                 # Data without errors
                 dmc_xsf_data = XsfFile(filepath=self.file_in)
                 # Data with errors
                 dmc_plus_err_xsf_data = XsfFile(filepath=opt.dmc_err_file)
                 # Errors only
-                dmc_err_xsf_data = dmc_plus_err_xsf_data.copy() 
+                dmc_err_xsf_data = deepcopy(dmc_plus_err_xsf_data)
                 dmc_err_xsf_data.data[3]['density']['density'].values = dmc_plus_err_xsf_data.data[3]['density']['density'].values \
                                    - dmc_xsf_data.data[3]['density']['density'].values
-                err_data = dmc_err_xsf_data.copy()
+                err_data = deepcopy(dmc_err_xsf_data)
 
             else:
                 self.error('VMC and DMC densities provided but only one +err file was given.\nPlease either provide no +err file (which avoids resampling) or\nprovide a +err file for both VMC and DMC with --vmcerr and --dmcerr arguments.')
@@ -374,10 +377,10 @@ class QMCDensityRadialProcessor(QDRBase):
             self.log('Will compute {} samples...'.format(nsamples))
             for i in range(nsamples):
                 self.log('sample: {}'.format(i))
-                resample_xsf_data = file.copy()
+                resample_xsf_data = deepcopy(file)
                 for d1_idx, d1 in enumerate(file.data[3]['density']['density'].values):
                     for d2_idx, d2 in enumerate(d1):
-                        for d3_idx, d3 in enumerate(d2):
+                        for d3_idx in range(len(d2)):
                             mu = file.data[3]['density']['density'].values[d1_idx][d2_idx][d3_idx]
                             sgma = err_data.data[3]['density']['density'].values[d1_idx][d2_idx][d3_idx]
                             sample = np.random.normal(mu,sgma)
@@ -413,29 +416,29 @@ class QMCDensityRadialProcessor(QDRBase):
                 #end if
 
                 if opt.species is not None and not set(opt.species).issubset(equiv_atoms):
-                    self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,opt.species.tolist()))
+                    self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,list(opt.species)))
                 #end if
                 if opt.cumulative:
                     if opt.species is None:
-                        rdens_samp = cds.cumulative_radial_density(rmax=opt.radii.tolist())
+                        rdens_samp = cds.cumulative_radial_density(rmax=list(opt.radii))
                     else:
-                        rdens_samp = cds.cumulative_radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+                        rdens_samp = cds.cumulative_radial_density(rmax=list(opt.radii),species=list(opt.species))
                     #end if
                 else:
                     if opt.species is None:
-                        rdens_samp = cds.radial_density(rmax=opt.radii.tolist())
+                        rdens_samp = cds.radial_density(rmax=list(opt.radii))
                     else:
-                        rdens_samp = cds.radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+                        rdens_samp = cds.radial_density(rmax=list(opt.radii),species=list(opt.species))
                     #end if
                 #end if
 
                 if opt.species is not None:
-                    for ati,at in enumerate(opt.species):
+                    for at in opt.species:
                         sum_dict[at] += rdens_samp.tot[at].density[-1]
                         sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2
                     #end for
                 else:
-                    for ati,at in enumerate(equiv_atoms):
+                    for at in equiv_atoms:
                         sum_dict[at] += rdens_samp.tot[at].density[-1]
                         sum_sq_dict[at] += rdens_samp.tot[at].density[-1]**2
                     #end for
@@ -443,11 +446,11 @@ class QMCDensityRadialProcessor(QDRBase):
 
             #end for
             if opt.species is not None:
-                for ati,at in enumerate(opt.species):
+                for at in opt.species:
                     std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2)
                 #end for
             else:
-                for ati,at in enumerate(equiv_atoms):
+                for at in equiv_atoms:
                     std_dict[at] = np.sqrt(sum_sq_dict[at]/nsamples-(sum_dict[at]/nsamples)**2)
                 #end for
             #end if
@@ -464,7 +467,7 @@ class QMCDensityRadialProcessor(QDRBase):
         equiv_atoms = list(cd.info.structure.equivalent_atoms().keys())
 
         if opt.species is not None and not set(opt.species).issubset(equiv_atoms):
-            self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,opt.species.tolist()))
+            self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,list(opt.species)))
         #end if
 
         if opt.app=='pwscf':
@@ -479,24 +482,24 @@ class QMCDensityRadialProcessor(QDRBase):
 
         if opt.plot:
             if opt.species is None:
-                cd.plot_radial_density(rmax=opt.radii.tolist(),cumulative=opt.cumulative)
+                cd.plot_radial_density(rmax=list(opt.radii),cumulative=opt.cumulative)
             else: 
-                cd.plot_radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist(),cumulative=opt.cumulative)
+                cd.plot_radial_density(rmax=list(opt.radii),species=list(opt.species),cumulative=opt.cumulative)
             #end if
         #end if
 
         if opt.cumulative:
             cstr = 'Cumulative'
             if opt.species is None:
-                rdens = cd.cumulative_radial_density(rmax=opt.radii.tolist())
+                rdens = cd.cumulative_radial_density(rmax=list(opt.radii))
             else:
-                rdens = cd.cumulative_radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+                rdens = cd.cumulative_radial_density(rmax=list(opt.radii),species=list(opt.species))
         else:
             cstr = 'Non-Cumulative'
             if opt.species is None:
-                rdens = cd.radial_density(rmax=opt.radii.tolist())
+                rdens = cd.radial_density(rmax=list(opt.radii))
             else:
-                rdens = cd.radial_density(rmax=opt.radii.tolist(),species=opt.species.tolist())
+                rdens = cd.radial_density(rmax=list(opt.radii),species=list(opt.species))
         #end if
 
         if opt.species is not None:
@@ -545,6 +548,3 @@ if __name__=='__main__':
 
     qdensradial.exit()
 #end if
-
-
-

@@ -7,20 +7,34 @@
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
-//////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_VALIDSPINDENSITYINPUT_H
 #define QMCPLUSPLUS_VALIDSPINDENSITYINPUT_H
 
 #include <array>
+#include <string_view>
 
 namespace qmcplusplus
 {
 namespace testing
 {
 
-struct ValidSpinDensityInput
+class SpinDensityInputs
 {
+public:
+  enum class valid
+  {
+    GRID = 0,
+    DR,
+    NOCELL
+  };
+
+  static std::string_view getXml(valid val) { return xml[static_cast<std::size_t>(val)]; }
+  auto begin() { return xml.begin(); }
+  auto end() { return xml.end(); }
+
+private:
   static constexpr std::array<std::string_view, 3> xml{
       R"XML(
 <estimator name="spindensity_new" type="spindensity" report="yes">
@@ -62,16 +76,32 @@ struct ValidSpinDensityInput
   </parameter>
 </estimator>
 )XML"};
+};
 
-  enum valid
+class InvalidSpinDensityInput
+{
+public:
+  enum class invalid
   {
-    GRID = 0,
-    DR,
-    NOCELL
+    GRID_AND_DR = 0,
+    CORNER_AND_CENTER,
+    CELL_WITHOUT_CENTER_OR_CORNER,
+    MALFORMED_CELL
   };
+
+  static std::string_view getXml(invalid val) { return xml[static_cast<std::size_t>(val)]; }
+  auto begin() { return xml.begin(); }
+  auto end() { return xml.end(); }
+
+private:
+  static constexpr std::array<std::string_view, 4> xml{
+      R"XML(<estimator type="spindensity"><parameter name="dr">1 1 1</parameter><parameter name="grid">1 1 1</parameter></estimator>)XML",
+      R"XML(<estimator type="spindensity"><parameter name="grid">1 1 1</parameter><parameter name="corner">0 0 0</parameter><parameter name="center">0 0 0</parameter></estimator>)XML",
+      R"XML(<estimator type="spindensity"><parameter name="grid">1 1 1</parameter><parameter name="cell">1 0 0 0 1 0 0 0 1</parameter></estimator>)XML",
+      R"XML(<estimator type="spindensity"><parameter name="grid">1 1 1</parameter><parameter name="center">0 0 0</parameter><parameter name="cell">1 0 0 0 1 0 0 0</parameter></estimator>)XML"};
 };
 
 } // namespace testing
 } // namespace qmcplusplus
 
-#endif /* QMCPLUSPLUS_VALIDSPINDENSITYINPUT_H */
+#endif

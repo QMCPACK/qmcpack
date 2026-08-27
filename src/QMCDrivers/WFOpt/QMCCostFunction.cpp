@@ -29,7 +29,7 @@ QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& ps
     : QMCCostFunctionBase(w, psi, h, comm),
       fill_timer_(createGlobalTimer("QMCCostFunction::fillOverlapHamiltonianMatrices", timer_level_medium))
 {
-  CSWeight = 1.0;
+
   app_log() << " Using QMCCostFunction::QMCCostFunction" << std::endl;
 }
 
@@ -56,12 +56,10 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
     {
       // + FiniteDiff
       opt_vars[i] = PM[i] + FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostPlus = computedCost();
       // - FiniteDiff
       opt_vars[i] = PM[i] - FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostMinus = computedCost();
       // calculate gradient
@@ -71,7 +69,6 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
   }
   else
   {
-    resetPsi();
     //evaluate new local energies and derivatives
     EffectiveWeight effective_weight = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
@@ -168,8 +165,6 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
       if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs * EDtotals[j];
     }
-
-    IsValid = isEffectiveWeightValid(effective_weight);
   }
 }
 
@@ -329,8 +324,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
   app_log() << "  Total weights = " << etemp[1] << std::endl;
   app_log().flush();
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
-  IsValid       = true;
+
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
   SumValue[SUM_WGTSQ]     = etemp[1];
@@ -487,7 +481,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
   app_log().flush();
 
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
+
 }
 #endif
 
@@ -501,6 +495,8 @@ void QMCCostFunction::resetPsi(bool final_reset)
 
 QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGrad)
 {
+  resetPsi();
+
   const auto num_opt_vars = opt_vars.size();
   for (int ip = 0; ip < NumThreads; ++ip)
   {
@@ -595,7 +591,7 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
   //    app_log()<<"After Purge"<<wgt_tot<<" "<< std::endl;
   for (int i = 0; i < SumValue.size(); i++)
     SumValue[i] = 0.0;
-  CSWeight = wgt_tot = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
+  wgt_tot = (wgt_tot == 0) ? 1 : 1.0 / wgt_tot;
   for (int ip = 0; ip < NumThreads; ip++)
   {
     int nw = wClones[ip]->numSamples();
@@ -631,7 +627,6 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
   Right = 0.0;
   Left  = 0.0;
 
-  //     resetPsi();
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
   RealType V_avg      = curAvg2_w - curAvg_w * curAvg_w;

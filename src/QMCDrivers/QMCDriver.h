@@ -94,7 +94,7 @@ public:
   /// whether to allow traces
   bool allow_traces;
   /// traces xml
-  xmlNodePtr traces_xml;
+  xmlNodePtr traces_xml{nullptr};
 
   /// whether to allow traces
   bool allow_walker_logs;
@@ -179,8 +179,10 @@ public:
   ///Observables manager
   EstimatorManagerBase* Estimators;
 
+#if !defined(REMOVE_TRACEMANAGER)
   ///Traces manager
   std::unique_ptr<TraceManager> Traces;
+#endif
 
   ///Traces manager
   std::unique_ptr<WalkerLogManager> wlog_manager_;
@@ -335,7 +337,7 @@ protected:
    * Accumulate energy and weight is written to a hdf5 file.
    * Finialize the estimators
    */
-  bool finalize(int block, bool dumpwalkers = true);
+  void finalize(int block, bool dumpwalkers = true);
 
   int rotation;
   std::string getRotationName(std::string RootName);

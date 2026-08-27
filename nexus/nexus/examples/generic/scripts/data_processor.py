@@ -44,21 +44,21 @@ try:
                 'std': np.std(x),
                 'min': np.min(x),
                 'max': np.max(x)
-            }
+                }
             
             y_stats = {
                 'mean': np.mean(y),
                 'std': np.std(y),
                 'min': np.min(y),
                 'max': np.max(y)
-            }
+                }
             
             matrix_stats = {
                 'mean': np.mean(matrix),
                 'std': np.std(matrix),
                 'min': np.min(matrix),
                 'max': np.max(matrix)
-            }
+                }
             
             # 2. Simple calculations
             correlation = np.corrcoef(x, y)[0, 1]

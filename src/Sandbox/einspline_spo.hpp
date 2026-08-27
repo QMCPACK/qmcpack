@@ -14,13 +14,13 @@
  */
 #ifndef QMCPLUSPLUS_EINSPLINE_SPO_HPP
 #define QMCPLUSPLUS_EINSPLINE_SPO_HPP
+
 #include <Configuration.h>
 #include "Particle/ParticleSet.h"
 #include "spline2/MultiBspline.hpp"
-#include "spline2/SingleBsplineAllocator.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 #include "CPU/SIMD/aligned_allocator.hpp"
-#include <iostream>
+#include "einspline/bspline_create.h"
 
 namespace qmcplusplus
 {
@@ -162,12 +162,14 @@ struct einspline_spo
       grid[1].num                             = ny;
       grid[2].num                             = nz;
       typename bspline_traits<double, 3>::BCType BC[3];
+      BC[0].lVal = BC[0].rVal = 0.0;
+      BC[1].lVal = BC[1].rVal = 0.0;
+      BC[2].lVal = BC[2].rVal = 0.0;
       BC[0].lCode = BC[0].rCode = PERIODIC;
       BC[1].lCode = BC[1].rCode = PERIODIC;
       BC[2].lCode = BC[2].rCode = PERIODIC;
 
-      SingleBsplineAllocator<double> mAllocator;
-      UBspline_3d_d* aspline = mAllocator.allocateUBspline(grid[0], grid[1], grid[2], BC[0], BC[1], BC[2], data.data());
+      UBspline_3d_d* aspline = create_UBspline_3d_d(grid[0], grid[1], grid[2], BC[0], BC[1], BC[2], data.data());
       for (int i = 0; i < nBlocks; ++i)
       {
         einsplines[i] = new spline_type(grid, BC, nSplinesPerBlock);
@@ -175,7 +177,7 @@ struct einspline_spo
           for (int j = 0; j < nSplinesPerBlock; ++j)
             einsplines[i]->set_spline(*aspline, j);
       }
-      mAllocator.destroy(aspline);
+      destroy_Bspline(aspline);
     }
     resize();
   }

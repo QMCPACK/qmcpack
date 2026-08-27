@@ -22,9 +22,9 @@
 class ScreenedPot : public Potential
 {
 public:
-  double Charge;
+  double Charge{0.0};
   CubicSplineCommon HXC;
-  Potential* BarePot;
+  Potential* BarePot{nullptr};
 
   bool IsPH() override;
   bool NeedsRel() override;

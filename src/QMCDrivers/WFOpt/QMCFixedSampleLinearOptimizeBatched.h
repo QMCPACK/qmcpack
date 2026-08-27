@@ -21,7 +21,7 @@
 #include "QMCDrivers/QMCDriverNew.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
-#include "NRCOptimizationFunctionWrapper.h"
+#include "NRCOptimization.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
@@ -29,7 +29,6 @@
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
 #include "OutputMatrix.h"
-#include "LinearMethod.h"
 
 namespace qmcplusplus
 {
@@ -47,7 +46,7 @@ class VMCBatched;
 class GradientTest;
 
 
-class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew, LinearMethod
+class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew
 {
 public:
   ///Constructor.
@@ -68,13 +67,11 @@ public:
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
 
   ///Run the Optimization algorithm.
-  bool run() override;
+  void run() override;
   ///preprocess xml node
   void process(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
-
-  RealType costFunc(RealType dl);
 
   ///common operation to start optimization
   void start();
@@ -92,7 +89,7 @@ public:
 
 
 private:
-  NRCOptimizationFunctionWrapper<QMCFixedSampleLinearOptimizeBatched> objFuncWrapper_;
+  NRCOptimization<RealType> nrc_opt_;
 
   inline bool ValidCostFunction(bool valid)
   {
@@ -110,28 +107,28 @@ private:
                     const RealType ic) const;
 
   // perform the adaptive three-shift update
-  bool adaptive_three_shift_run();
+  void adaptive_three_shift_run();
 
   // perform the single-shift update, no sample regeneration
-  bool one_shift_run();
+  void one_shift_run();
 
   // simple stochastic reconfig
-  bool stochastic_reconfiguration_conjugate_gradient();
+  void stochastic_reconfiguration_conjugate_gradient();
 
   // perform optimization using a gradient descent algorithm
-  bool descent_run();
+  void descent_run();
 
   // Previous linear optimizers ("quartic" and "rescale")
-  bool previous_linear_methods_run();
+  void previous_linear_methods_run();
 
 
 #ifdef HAVE_LMY_ENGINE
   // use hybrid approach of descent and blocked linear method for optimization
-  bool hybrid_run();
+  void hybrid_run();
 #endif
 
   // Perform test of gradients
-  bool test_run();
+  void test_run();
 
   std::unique_ptr<GradientTest> testEngineObj;
 

@@ -60,12 +60,10 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
     {
       // + FiniteDiff
       opt_vars[i] = PM[i] + FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostPlus = computedCost();
       // - FiniteDiff
       opt_vars[i] = PM[i] - FiniteDiff;
-      resetPsi();
       correlatedSampling(false);
       auto CostMinus = computedCost();
       // calculate gradient
@@ -75,7 +73,6 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
   }
   else
   {
-    resetPsi();
     //evaluate new local energies and derivatives
     EffectiveWeight effective_weight = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
@@ -168,8 +165,6 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
       if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs * EDtotals[j];
     }
-
-    IsValid = isEffectiveWeightValid(effective_weight);
   }
 }
 
@@ -417,8 +412,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 
   app_log().flush();
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
-  IsValid       = true;
+
 
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
@@ -612,8 +606,7 @@ void QMCCostFunctionBatched::checkConfigurationsSR(EngineHandle& handle)
 
   app_log().flush();
   setTargetEnergy(Etarget);
-  ReportCounter = 0;
-  IsValid       = true;
+
 
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
@@ -638,8 +631,10 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
 {
   ScopedTimer tmp_timer(corr_sampling_timer_);
 
+  resetPsi();
+
   {
-    //    synchronize the random number generator with the node
+    // synchronize the random number generator with the node
     (*MoverRng[0]) = (*RngSaved[0]);
     H.setRandomGenerator(MoverRng[0]);
   }

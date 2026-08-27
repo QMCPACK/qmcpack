@@ -2,55 +2,25 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
-
-#====================================================================#
-#  pseudopotential.py                                                #
-#    Classes for reading pseudopotential data and converting         #
-#    pseudopotentials between file formats.                          #
-#                                                                    #
-#  Content summary:                                                  #
-#    Pseudopotentials                                                #
-#      Class contains a list of all pseudopotentials available if    #
-#      user provides pseudo_dir in settings.                         #
-#                                                                    #
-#    PseudoFile                                                      #
-#      Represents a single pseudopotential file.  No functionality.  #
-#                                                                    #
-#    gamessPPFile                                                    #
-#      Represents a pseudopotential file for GAMESS.                 #
-#      Used during Nexus execution to separate basis and channel     #
-#      information to fill in the input file.                        #
-#                                                                    #
-#    Classes below are user-facing, but are not used by Nexus itself.#
-#                                                                    #
-#    Pseudopotential                                                 #
-#      Represents a generic pseudopotential.                         #
-#                                                                    #
-#    SemilocalPP                                                     #
-#      Represents a semi-local pseudopotential.                      #
-#      Contains data for each non-local channel.                     #
-#      Supports plotting, gaussian fitting, and writing to QMCPACK's #
-#        grid-based file format.                                     #
-#      GaussianPP and QmcpackPP are derived classes to read/write    #
-#        GAMESS/Gaussian and QMCPACK pseudopotential files.          #
-#                                                                    #
-#====================================================================#
-
+"""Classes for reading pseudopotential data and converting pseudopotentials between file formats."""
+from __future__ import annotations
+from copy import deepcopy
 import os
-from os import PathLike
-from pathlib import Path
+from types import MappingProxyType
 import re
+
 import numpy as np
+
 from .execute import execute
 from .fileio import TextFile
 from .xmlreader import readxml
 from .periodic_table import Elements
 from .unit_converter import convert
-from .developer import DevBase, obj, unavailable, error
+from .developer import DevBase, obj, unavailable, FileFormatError, NotAnElementError
 from .basisset import process_gaussian_text, GaussianBasisSet
-from .physical_system import PhysicalSystem
 from .testing import object_eq
-from .utilities import path_string, is_valid_filename
+from .pseudoset import pp_elem_label
+from .utilities import path_string
 
 try:
     import matplotlib.pyplot as plt
@@ -59,491 +29,6 @@ except:
 #end try
 
 
-def pp_elem_label(filename,guard=False):
-    if guard and not is_valid_filename(filename):
-        error(f"Pseudopotential file name {filename} is invalid!")
-
-    el = ''
-    for c in filename:
-        if c=='.' or c=='_' or c=='-':
-            break
-        #end if
-        el+=c
-    #end for
-    elem_label = el
-    is_elem, element = Elements.is_element(el, return_element=True)
-    if guard: 
-        if not is_elem:
-            error(
-                'cannot determine element for pseudopotential file: {0}\n'
-                'pseudopotential file names must be prefixed by an atomic symbol or label\n'
-                '(e.g. Si, Si1, etc)'.format(filename)
-            )
-        #end if
-        return elem_label, element.symbol
-    else:
-        if isinstance(element, Elements):
-            return elem_label, element.symbol, is_elem
-        else:
-            return elem_label, element, is_elem
-    #end if
-#end def pp_elem_label
-
-
-def read_upf_z_valence(file: PathLike) -> int | float:
-    """Read Z-valence from a UPF-compliant pseudopotential file."""
-    # Bind these to the function so we only compile them once.
-    if not (
-        hasattr(read_upf_z_valence, "zval_xml_like_pattern")
-        and hasattr(read_upf_z_valence, "zval_old_pattern")
-        ):
-        # Regex:
-        # `z[_ ]?valence` -> "z_valence" or "z valence"
-        # ` *=? *`        -> "=" or " =" or " = " or " " (whitespace optional)
-        # `([\d\.eEdD]+)` -> Capturing group gets any numbers in scientific notation.
-        # `\"? *() *\"?`  -> Anything between quotes or not, with optional whitespace around it too.
-        # Note: Both of these are similar, but the first is key then value and the second is value then key.
-        zval_xml_like_pattern = re.compile(
-            pattern = r'z[_ ]?valence *=? *\"? *([\d\.eEdD]+) *\"?',
-            flags   = re.IGNORECASE,
-            )
-        zval_old_pattern = re.compile(
-            pattern = r'\"? *([ \d\.eEdD]+) *\"? *=? *z[_ ]?valence',
-            flags   = re.IGNORECASE,
-            )
-        read_upf_z_valence.zval_xml_like_pattern = zval_xml_like_pattern
-        read_upf_z_valence.zval_old_pattern = zval_old_pattern
-    #end if
-
-    zval = None
-    with open(file, "r") as pseudo:
-        found_header_start = False
-        while not found_header_start:
-            line = pseudo.readline()
-            if "<PP_HEADER" in line:
-                found_header_start = True
-
-        if "/>" in line or "</PP_HEADER>" in line: # One-line header
-            zval = re.search(
-                pattern = read_upf_z_valence.zval_xml_like_pattern,
-                string  = line,
-                )
-        else:
-            # We're at the header, but we don't know where the Z-valence is.
-            # Search until we hit a line with a proper end token, or until we hit 200 lines.
-            i = 0
-            while i < 200:
-                i += 1
-                line = pseudo.readline().lower()
-                if "valence" in line:
-                    zval = re.search(
-                        pattern = read_upf_z_valence.zval_xml_like_pattern,
-                        string  = line,
-                        )
-                    if zval is None:
-                        zval = re.search(
-                            pattern = read_upf_z_valence.zval_old_pattern,
-                            string  = line,
-                            )
-                    break
-                elif "/>" in line or "</PP_HEADER>" in line:
-                    break
-                #end if
-            #end while
-        #end if
-
-    if zval is None:
-        error(
-           f"Could not find Z valence in file: {file!s}\n"
-            "You may need to provide the Z valence manually!"
-            )
-    else:
-        zval = float(zval.group(1).lower().replace("d", "e"))
-
-    if zval <= 0 or zval > 118:
-        error(
-            f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
-            )
-    # Round to 8 digits
-    if round(zval, 8).is_integer():
-        return int(zval)
-    else:
-        return zval
-#end def read_upf_z_valence
-
-
-def read_xml_z_valence(file: PathLike) -> int | float:
-    """Read the Z-valence from a QMCPACK-compatible XML pseudopotential file."""
-        # Bind these to the function so we only compile them once.
-    if not hasattr(read_xml_z_valence, "zval_pattern"):
-        # Regex:
-        # `zval  *= *`    -> "zval=" or "zval = " or "zval =" or "zval= "
-        # `([\d\.eEdD]+)` -> Capturing group gets any numbers in scientific notation.
-        # `\"? *() *\"?`  -> Anything between quotes or not, with optional whitespace around it too.
-        read_xml_z_valence.zval_pattern = re.compile(r'zval *= *\" *([\d\.eEdD]+) *\"')
-
-    header_lines = []
-    with open(file, "r") as xml:
-        header_started = False
-        for line in xml:
-            if "<header" in line:
-                header_started = True
-
-            if header_started:
-                header_lines.append(line)
-
-            if "/>" in line or "</header>" in line:
-                if line not in header_lines:
-                    header_lines.append(line)
-                break
-
-    header = " ".join(header_lines)
-    zval = re.search(read_xml_z_valence.zval_pattern, header)
-
-    if zval is None:
-        error(
-           f"Could not find Z valence in file: {file!s}\n"
-            "You may need to provide the Z valence manually!"
-            )
-    else:
-        zval = float(zval.group(1).lower().replace("d", "e"))
-
-    if zval <= 0 or zval > 118:
-        error(
-            f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
-            )
-    # Round to 8 digits
-    if round(zval, 8).is_integer():
-        return int(zval)
-    else:
-        return zval
-#end def read_xml_z_valence
-
-
-def read_potcar_z_valence(file: PathLike) -> int | float:
-    """Read the Z-valence from a POTCAR file.
-
-    This function uses the format specifications from the VASP wiki, and
-    assumes that the file is a valid POTCAR, so the second line should
-    be the Z-valence [1]_.
-
-    References
-    ----------
-    .. [1] https://vasp.at/wiki/POTCAR#File_format
-    """
-    if not hasattr(read_potcar_z_valence, "zval_pattern"):
-        # Regex:
-        # `ZVAL ?= ?`     -> "ZVAL=" or "ZVAL = " or "ZVAL =" or "ZVAL= "
-        # `([\d\.eEdD]+)` -> Capturing group gets any numbers in scientific notation.
-        read_potcar_z_valence.zval_pattern = re.compile(r"ZVAL ?= ?([\d\.eEdD]+)")
-    file = Path(file).resolve()
-    with open(file, "r") as potcar:
-        potcar.readline() # Skip first line
-        z_valence = potcar.readline().strip()
-        try:
-            zval = float(z_valence)
-        except ValueError: # Improperly formatted POTCAR, but try alternative location
-            for line in potcar:
-                if "ZVAL" in line:
-                    zval = re.search(
-                        pattern = read_potcar_z_valence.zval_pattern,
-                        string  = line
-                        )
-                    break
-
-            if zval is None:
-                error(
-                   f"Could not find Z valence in file: {file!s}\n"
-                    "You may need to provide the Z valence manually!"
-                    )
-            else:
-                zval = float(zval.group(1).lower().replace("d", "e"))
-
-    if zval <= 0 or zval > 118:
-        error(
-            f"Invalid Z-valence found in file, must be in range (0, 118], but is {zval}!"
-            )
-    # Round to 8 digits
-    if round(zval, 8).is_integer():
-        return int(zval)
-    else:
-        return zval
-#end def read_potcar_z_valence
-
-
-# basic interface for nexus, only gamess really needs this for now
-class PseudoFile(DevBase):
-    def __init__(self,filepath=None):
-        self.element       = None
-        self.element_label = None
-        self.filename      = None
-        self.location      = None
-        if filepath is not None:
-            self.filename = os.path.basename(filepath)
-            self.location = os.path.abspath(filepath)
-            elem_label,symbol,is_elem = pp_elem_label(self.filename)
-            if not is_elem:
-                self.error('cannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filepath))
-            #end if
-            self.element = symbol
-            self.element_label = elem_label
-            self.read(filepath)
-        #end if
-    #end def __init__
-
-    def read(self,filepath):
-        None
-    #end def read
-#end class PseudoFile
-
-
-
-class gamessPPFile(PseudoFile):
-    def __init__(self,filepath=None):
-        self.pp_text    = None
-        self.pp_name    = None
-        self.basis_text = None
-        PseudoFile.__init__(self,filepath)
-    #end def __init__
-
-    def read(self,filepath):
-        with open(filepath, "r") as f:
-            lines = f.read().splitlines()
-        new_block  = True
-        tokens     = []
-        block      = ''
-        nline = 0
-        for line in lines:
-            nline+=1
-            ls = line.strip()
-            if len(ls)>0 and ls[0]!='!' and ls[0]!='#':
-                if new_block:
-                    tokens = ls.split()
-                    new_block = False
-                    if len(tokens)!=5:
-                        block+=line+'\n'
-                    #end if
-                else:
-                    block+=line+'\n'
-                #end if
-            #end if
-            if (len(ls)==0 or nline==len(lines)) and len(block)>0:
-                block = block.rstrip()
-                if len(tokens)==4:
-                    self.pp_text = block
-                    self.pp_name = tokens[0]
-                elif len(tokens)==5:
-                    self.basis_text = block
-                else:
-                    self.error('could not identify text block in {0} as pseudopotential or basis text\btext block:\n{1}'.format(self.filename,block))
-                #end if
-                new_block = True
-                tokens    = []
-                block     = ''
-            #end if
-        #end for
-        if self.pp_text is None:
-            self.error('could not find pseudopotential text in '+self.filename)
-        #end if
-        if self.basis_text is None:
-            self.error('could not find basis text in '+self.filename)
-        #end if
-    #end def read
-#end class gamessPPFile
-
-
-
-class Pseudopotentials(DevBase):
-    def __init__(self,*pseudopotentials):
-        if len(pseudopotentials)==1 and isinstance(pseudopotentials[0],list):
-            pseudopotentials = pseudopotentials[0]
-        #end if
-        ppfiles = []
-        pps     = []
-        errors = False
-        for pp in pseudopotentials:
-            if isinstance(pp,PseudoFile):
-                pps.append(pp)
-            elif isinstance(pp, str | Path):
-                ppfiles.append(path_string(pp))
-            else:
-                self.error('expected PseudoFile type or filepath, got '+str(type(pp)),exit=False)
-                errors = True
-            #end if
-        #end for
-        if errors:
-            self.error('cannot create Pseudopotentials object')
-        #end if
-        if len(pps)>0:
-            self.addpp(pps)
-        #end if
-        if len(ppfiles)>0:
-            self.readpp(ppfiles)
-        #end if
-    #end def __init__
-
-
-    def addpp(self,*pseudopotentials):
-        if len(pseudopotentials)==1 and isinstance(pseudopotentials[0],list):
-            pseudopotentials = pseudopotentials[0]
-        #end if
-        for pp in pseudopotentials:
-            self[pp.filename] = pp
-        #end for
-    #end def addpp
-
-        
-    def readpp(self,*ppfiles):
-        if len(ppfiles)==1 and isinstance(ppfiles[0],list):
-            ppfiles = ppfiles[0]
-        #end if
-        pps = []
-        self.log('\n  Pseudopotentials')
-        for filepath in ppfiles:
-            filename = os.path.basename(filepath)
-            elem_label,symbol,is_elem = pp_elem_label(filename)
-            is_file = os.path.isfile(filepath)
-            if is_elem and is_file:
-                self.log('    reading pp: ',filepath)
-                ext = filepath.split('.')[-1].lower()
-                if ext=='gms':
-                    pp = gamessPPFile(filepath)
-                else:
-                    pp = PseudoFile(filepath)
-                #end if
-                pps.append(pp)
-            elif not is_file:
-                self.log('    ignoring directory: ',filepath)
-            elif not is_elem:
-                self.log('    ignoring file w/o atomic symbol: ',filepath)
-            #end if
-        #end for
-        self.log(' ')
-        self.addpp(pps)
-    #end def readpp
-
-
-    def pseudos_by_atom(self,*ppfiles):
-        pps = obj()
-        for ppfile in ppfiles:
-            if ppfile in self:
-                pp = self[ppfile]
-                pps[pp.element_label] = pp
-            else:
-                self.error('pseudopotential file not found\nmissing file: {0}'.format(ppfile))
-            #end if
-        #end for
-        return pps
-    #end def pseudos_by_atom
-#end class Pseudopotentials
-
-
-
-# user interface to group sets of pseudopotentials together and refer to them by labels
-#   labeling should eliminate the need to provide lists of pseudopotential files to each 
-#   simulation object (e.g. via a generate_* call) separately
-class PPset(DevBase):
-    instance_counter = 0
-
-    known_codes = set('pwscf gamess vasp qmcpack'.split())
-
-    default_extensions = obj(
-        pwscf   = ['ncpp','upf'],
-        gamess  = ['gms'],
-        vasp    = ['potcar'],
-        qmcpack = ['xml'],
-        )
-
-    def __init__(self):
-        if PPset.instance_counter!=0:
-            self.error('cannot instantiate more than one PPset object\nintended use follows a singleton pattern')
-        #end if
-        PPset.instance_counter+=1
-        self.pseudos = obj()
-    #end def __init__
-
-    def supports_code(self,code):
-        return code in PPset.known_codes
-    #end def supports_code
-
-    def __call__(self,label,**code_pps):
-        if not isinstance(label,str):
-            self.error('incorrect use of ppset\nlabel provided must be a string\nreceived type instead: {0}\nwith value: {1}'.format(label.__class__.__name__,label))
-        #end if
-        if label in self.pseudos:
-            self.error('incorrect use of ppset\npseudopotentials with label "{0}" have already been added to ppset'.format(label))
-        #end if
-        pseudos = obj()
-        self.pseudos[label]=pseudos
-        for code,pps in code_pps.items():
-            clow = code.lower()
-            if clow not in self.known_codes:
-                self.error('incorrect use of ppset\ninvalid simulation code "{0}" provided with set labeled "{1}"\nknown simulation codes are: {2}'.format(code,label,sorted(self.known_codes)))
-            #end if
-            if not isinstance(pps,(list,tuple)):
-                self.error('incorrect use of ppset\nmust provide a list of pseudopotentials for code "{0}" in set labeled "{1}"\ntype provided instead of list: {2}'.format(code,label,pps.__class__.__name__))
-            #end if
-            ppcoll = obj()
-            for pp in pps:
-                if not isinstance(pp, (str, Path)):
-                    self.error('incorrect use of ppset\nnon-filename provided with set labeled "{0}" for simulation code "{1}"\neach pseudopential file name must be a string\nreceived type: {2}\nwith value: {3}'.format(label,code,pp.__class__.__name__,pp))
-                else:
-                    pp = path_string(pp)
-                    elem_label, symbol, is_elem = pp_elem_label(pp)
-
-                if not is_elem:
-                    self.error('invalid filename provided to ppset\ncannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(pp))
-                elif symbol in ppcoll:
-                    self.error('incorrect use of ppset\nmore than one pseudopotential file provided for element "{0}" for code "{1}" in set labeled "{2}"\nfirst file: {3}\nsecond file: {4}'.format(symbol,code,label,ppcoll[symbol],pp))
-                #end if
-                ppcoll[symbol] = path_string(pp)
-            #end for
-            pseudos[clow] = ppcoll
-        #end for
-    #end def __call__
-
-    def has_set(self,label):
-        return label in self.pseudos
-    #end def has_set
-
-
-    # test needed
-    def get(self,label,code,system):
-        if system is None or not system.pseudized:
-            return []
-        #end if
-        if not isinstance(system,PhysicalSystem):
-            self.error('system object must be of type PhysicalSystem')
-        #end if
-        species_labels,species = system.structure.species(symbol=True)
-        if not isinstance(label,str):
-            self.error('incorrect use of ppset\nlabel provided must be a string\nreceived type instead: {0}\nwith value: {1}'.format(label.__class__.__name__,label))
-        #end if
-        if not self.has_set(label):
-            self.error('incorrect use of ppset\npseudopotential set labeled "{0}" is not present in ppset\nset labels present: {1}\nplease either provide pseudopotentials with label "{0}" or correct the provided label'.format(label,sorted(self.pseudos.keys())))
-        #end if
-        pseudos = self.pseudos[label]
-        clow = code.lower()
-        if clow not in self.known_codes:
-            self.error('simulation code "{0}" is not known to ppset\nknown codes are: {1}'.format(code,sorted(self.known_codes)))
-        elif clow not in pseudos:
-            self.error('incorrect use of ppset\npseudopotentials were not provided for simulation code "{0}" in set labeled "{1}"\npseudopotentials are required for physical system with pseudo-elements: {2}\nplease add these pseudopotentials for code "{0}" in set "{1}"'.format(code,label,sorted(species)))
-        #end if
-        ppcoll = pseudos[clow]
-        pps = []
-        for symbol in species:
-            if symbol not in ppcoll:
-                self.error('incorrect use of ppset\npseudopotentials were not provided for element "{0}" code "{1}" in set labeled "{2}"\nphysical system encountered with pseudo-elements: {3}\nplease ensure that pseudopotentials are provided for these elements in set "{2}" for code "{1}"'.format(symbol,code,label,sorted(species)))
-            #end if
-            pps.append(ppcoll[symbol])
-        #end for
-        return pps
-    #end def get
-#end class PPset
-ppset = PPset()
-
-
-# real pseudopotentials
 
 class Pseudopotential(DevBase):
 
@@ -573,13 +58,22 @@ class Pseudopotential(DevBase):
         filepath = path_string(filepath)
         if self.requires_format:
             if format is None:
-                self.error('format keyword must be specified to read file {0}\nvalid options are: {1}'.format(filepath,self.formats))
+                msg = (
+                    'format keyword must be specified to read file {0}\n'
+                    'valid options are: {1}'.format(filepath,self.formats)
+                    )
+                raise ValueError(msg)
             elif format not in self.formats:
-                self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
+                msg = (
+                    'incorrect format requested: {0}\n'
+                    'valid options are: {1}'.format(format,self.formats)
+                    )
+                raise ValueError(msg)
             #end if
         #end if
         if not os.path.exists(filepath):
-            self.error('cannot read {0}, file does not exist'.format(filepath))
+            msg = 'cannot read {0}, file does not exist'.format(filepath)
+            raise FileNotFoundError(msg)
         #end if
         self.element = pp_elem_label(os.path.split(filepath)[1])[0]
         with open(filepath, "r") as f:
@@ -591,9 +85,17 @@ class Pseudopotential(DevBase):
     def write(self,filepath=None,format=None):
         if self.requires_format:
             if format is None:
-                self.error('format keyword must be specified to write file {0}\nvalid options are: {1}'.format(filepath,self.formats))
+                msg = (
+                    'format keyword must be specified to write file {0}\n'
+                    'valid options are: {1}'.format(filepath,self.formats)
+                    )
+                raise ValueError(msg)
             elif format not in self.formats:
-                self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
+                msg = (
+                    'incorrect format requested: {0}\n'
+                    'valid options are: {1}'.format(format,self.formats)
+                    )
+                raise ValueError(msg)
             #end if
         #end if
         text = self.write_text(format)
@@ -606,19 +108,19 @@ class Pseudopotential(DevBase):
 
 
     def read_text(self,text,format=None,filepath=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
     def write_text(self,format=None):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
     def convert(self,format):
-        self.not_implemented()
+        raise NotImplementedError
     #end def convert
 
-    def plot(self,r=None,show=True):
-        self.not_implemented()
+    def plot(self,r=None,*,show=True):
+        raise NotImplementedError
     #end def plot
 #end class Pseudopotential
 
@@ -626,12 +128,17 @@ class Pseudopotential(DevBase):
 
 class SemilocalPP(Pseudopotential):
     l_channels   = tuple('spdfghiklmnoqrtuvwxyz')
-    channel_colors = obj(s='g',p='r',d='b',f='m',g='c',h='k',i='g',L2='k')
+    channel_colors = obj(s='g',p='r',d='b',f='m',g='c',
+                         h='g',i='r',j='b',k='m',l='c',
+                         m='g',n='r',o='b',q='m',r='c',
+                         t='g',u='r',v='b',w='m',x='c',
+                         y='g',z='r',
+                         L2='k')
 
     numeric        = False
     interpolatable = True
 
-    formats = ['qmcpack','casino']
+    formats = ('qmcpack','casino')
 
     channel_indices = obj()
     for i,c in enumerate(l_channels):
@@ -683,31 +190,48 @@ class SemilocalPP(Pseudopotential):
 
 
     # test needed
-    def set_component(self,l,v,guard=False):
+    def set_component(self,l,v,*,guard=False):
         if guard and l in self.components:
-            self.error('cannot set requested component potential\nrequested potential is already present\nrequested potential: {0}'.format(l))
+            msg = (
+                'cannot set requested component potential\n'
+                'requested potential is already present\n'
+                'requested potential: {0}'.format(l)
+                )
+            raise ValueError(msg)
         #end if
         self.components[l] = v
     #end def set_component
 
 
-    def get_component(self,l,guard=False):
+    def get_component(self,l,*,guard=False):
         v = None
         if l in self.components:
             v = self.components[l]
         elif guard:
-            self.error('cannot get requested component potential\nrequested potential is not present\nrequested potential: {0}\npotentials present: {1}'.format(l,list(self.components.keys())))
+            msg = (
+                'cannot get requested component potential\n'
+                'requested potential is not present\n'
+                'requested potential: {0}\n'
+                'potentials present: {1}'.format(l,list(self.components.keys()))
+                )
+            raise KeyError(msg)
         #end if
         return v
     #end def get_component
 
 
     # test needed
-    def remove_component(self,l,guard=False):
+    def remove_component(self,l,*,guard=False):
         if l in self.components:
             del self.components[l]
         elif guard:
-            self.error('cannot remove requested component potential\nrequested potential is not present\nrequested potential: {0}\npotentials present: {1}'.format(l,list(self.components.keys())))
+            msg = (
+                'cannot remove requested component potential\n'
+                'requested potential is not present\n'
+                'requested potential: {0}\n'
+                'potentials present: {1}'.format(l,list(self.components.keys()))
+                )
+            raise KeyError(msg)
         #end if
     #end def remove_component
 
@@ -749,7 +273,13 @@ class SemilocalPP(Pseudopotential):
         elif l in vnl:
             return vnl[l]
         else:
-            self.error('cannot get nonlocal potential\nrequested potential is not nonlocal\nrequested potential: {0}\nnonlocal potentials present: {1}'.format(l,list(vnl.keys())))
+            msg = (
+                'cannot get nonlocal potential\n'
+                'requested potential is not nonlocal\n'
+                'requested potential: {0}\n'
+                'nonlocal potentials present: {1}'.format(l,list(vnl.keys()))
+                )
+            raise KeyError(msg)
         #end if
     #end def get_nonlocal
 
@@ -799,7 +329,13 @@ class SemilocalPP(Pseudopotential):
         elif l in vnl:
             self.remove_component(l,guard=True)
         else:
-            self.error('cannot remove nonlocal potential\nrequested potential is not present\nrequested potential: {0}\nnonlocal potentials present: {1}'.format(l,list(vnl.keys())))
+            msg = (
+                'cannot remove nonlocal potential\n'
+                'requested potential is not present\n'
+                'requested potential: {0}\n'
+                'nonlocal potentials present: {1}'.format(l,list(vnl.keys()))
+                )
+            raise KeyError(msg)
         #end if
     #end def remove_nonlocal
 
@@ -812,7 +348,11 @@ class SemilocalPP(Pseudopotential):
 
     def assert_numeric(self,loc):
         if not self.numeric:
-            self.error('failing at {0}\n{0} is only supported for numerical pseudopotential formats'.format(loc))
+            msg = (
+                'failing at {0}\n'
+                '{0} is only supported for numerical pseudopotential formats'.format(loc)
+                )
+            raise AssertionError(msg)
         #end if
     #end def assert_numeric
 
@@ -824,11 +364,31 @@ class SemilocalPP(Pseudopotential):
             return
         #end if
         if self.has_component('L2'):
-            self.error('cannot change local channel\nL2 potential is present')
+            msg = (
+                'cannot change local channel\n'
+                'L2 potential is present'
+                )
+            raise ValueError(msg)
         elif not self.has_component(self.local):
-            self.error('cannot change local potential\ncurrent local potential is not present\ncurrent local potential: {0}\npotentials present: {1}'.format(self.local,list(self.components.keys())))
+            msg = (
+                'cannot change local potential\n'
+                'current local potential is not present\n'
+                'current local potential: {0}\n'
+                'potentials present: {1}'.format(
+                    self.local,list(self.components.keys())
+                    )
+                )
+            raise KeyError(msg)
         elif not self.has_component(local):
-            self.error('cannot change local potential\nrequested local potential is not present\nrequested local potential: {0}\npotentials present: {1}'.format(local,list(self.components.keys())))
+            msg = (
+                'cannot change local potential\n'
+                'requested local potential is not present\n'
+                'requested local potential: {0}\n'
+                'potentials present: {1}'.format(
+                    local,list(self.components.keys())
+                    )
+                )
+            raise KeyError(msg)
         #end if
         vcs = self.components
         vloc = vcs[self.local]
@@ -844,7 +404,7 @@ class SemilocalPP(Pseudopotential):
         # from l channels, reconstruct nonlocal components
         vcs.clear()
         vloc = vls[local]
-        for l,vl in vls.items():
+        for l in vls.keys():
             if l==local:
                 vcs[l] = vloc
             else:
@@ -865,7 +425,8 @@ class SemilocalPP(Pseudopotential):
             #end if
         #end for
         if not found:
-            self.error('could not promote local channel')
+            msg = 'could not promote local channel'
+            raise ValueError(msg)
         #end if
         vloc = self.components[self.local]
         del self.components[self.local]
@@ -879,7 +440,12 @@ class SemilocalPP(Pseudopotential):
     def set_channel(self,l,v):
         self.assert_numeric('set_channel')
         if not self.has_local():
-            self.error('cannot enforce channel matching via set_channel\nthe local potential is missing and must be present\nrequested channel: {0}'.format(l))
+            msg = (
+                'cannot enforce channel matching via set_channel\n'
+                'the local potential is missing and must be present\n'
+                'requested channel: {0}'.format(l)
+                )
+            raise KeyError(msg)
         #end if
         if l==self.local:
             self.promote_local()
@@ -901,7 +467,11 @@ class SemilocalPP(Pseudopotential):
     def expand_L2(self,lmax):
         self.assert_numeric('expand_L2')
         if lmax not in self.channel_indices:
-            self.error('cannot expand L2 up to angular momentum "{0}"\nvalid options for lmax are: {1}'.format(lmax,self.l_channels))
+            msg = (
+                'cannot expand L2 up to angular momentum "{0}"\n'
+                'valid options for lmax are: {1}'.format(lmax,self.l_channels)
+                )
+            raise KeyError(msg)
         #end if
         limax = self.channel_indices[lmax]
         vps = obj()
@@ -936,7 +506,7 @@ class SemilocalPP(Pseudopotential):
     # evaluate r*potential based on a potential component object
     #  component representation is specific to each derived class
     def evaluate_comp_rV(self,r,l,vcomp):
-        self.not_implemented()
+        raise NotImplementedError
     #end def evaluate_comp_rV
 
 
@@ -955,7 +525,7 @@ class SemilocalPP(Pseudopotential):
 
     # evaluate potential based on a potential component object
     #  local, nonlocal, and L2 are all represented by separate component objects
-    def evaluate_comp(self,r,l,vcomp,rpow=0,rmin=0,rret=True):
+    def evaluate_comp(self,r,l,vcomp,rpow=0,rmin=0,*,rret=True):
         v = self.evaluate_comp_rV(r,l,vcomp)
         r,rng = self.find_r_rng(r,rmin)
         if rng is not None:
@@ -973,40 +543,74 @@ class SemilocalPP(Pseudopotential):
 
 
     # evaluate the local component potential only
-    def evaluate_local(self,r=None,rpow=0,rmin=0,rret=False):
+    def evaluate_local(self,r=None,rpow=0,rmin=0,*,rret=False):
         l = self.local
         if not self.has_component(l):
-            self.error('cannot evaluate local potential\nlocal potential is not present')
+            msg = (
+                'cannot evaluate local potential\n'
+                'local potential is not present'
+                )
+            raise KeyError(msg)
+            
         #end if
         vcomp = self.get_component(l)
-        ret = self.evaluate_comp(r,l,vcomp,rpow,rmin,rret)
+        ret = self.evaluate_comp(
+            r     = r,
+            l     = l,
+            vcomp = vcomp,
+            rpow  = rpow,
+            rmin  = rmin,
+            rret  = rret,
+            )
         return ret
     #end def evaluate_local
 
 
     # evaluate a nonlocal component potential
-    def evaluate_nonlocal(self,r=None,l=None,rpow=0,rmin=0,rret=False):
+    def evaluate_nonlocal(self,r=None,l=None,rpow=0,rmin=0,*,rret=False):
         if l==self.local:
-            self.error('called evaluate_nonlocal requesting local potential\nthe l index of the local potential is: {0}'.format(self.local))
+            msg = (
+                'called evaluate_nonlocal requesting local potential\n'
+                'the l index of the local potential is: {0}'.format(self.local)
+                )
+            raise ValueError(msg)
         elif l=='L2':
-            self.error('called evaluate_nonlocal requesting L2 potential')
+            msg = 'called evaluate_nonlocal requesting L2 potential'
+            raise ValueError(msg)
         elif l is None:
-            self.error('called evaluate_nonlocal without specifying the angular channel')
+            msg = 'called evaluate_nonlocal without specifying the angular channel'
+            raise ValueError(msg)
         elif not self.has_component(l):
-            self.error('cannot evaluate non-local potential\nlocal potential is not present\nrequested potential: {0}'.format(l))
+            msg = (
+                'cannot evaluate non-local potential\n'
+                'local potential is not present\n'
+                'requested potential: {0}'.format(l)
+                )
+            raise KeyError(msg)
         #end if
         vcomp = self.get_component(l)
-        ret = self.evaluate_comp(r,l,vcomp,rpow,rmin,rret)
+        ret = self.evaluate_comp(
+            r     = r,
+            l     = l,
+            vcomp = vcomp,
+            rpow  = rpow,
+            rmin  = rmin,
+            rret  = rret,
+            )
         return ret
     #end def evaluate_nonlocal
 
 
     # test needed
     # evaluate the L2 component potential
-    def evaluate_L2(self,r=None,rpow=0,rmin=0,rret=False):
+    def evaluate_L2(self,r=None,rpow=0,rmin=0,*,rret=False):
         l = 'L2'
         if not self.has_component(l):
-            self.error('cannot evaluate L2 potential\nL2 potential is not present')
+            msg = (
+                'cannot evaluate L2 potential\n'
+                'L2 potential is not present'
+                )
+            raise KeyError(msg)
         #end if
         vcomp = self.get_component(l)
         ret = self.evaluate_comp(r,l,vcomp,rpow,rmin,rret)
@@ -1015,7 +619,7 @@ class SemilocalPP(Pseudopotential):
 
 
     # evaluate semilocal potential components in isolation
-    def evaluate_component(self,r=None,l=None,rpow=0,rmin=0,rret=False,optional=False):
+    def evaluate_component(self,r=None,l=None,rpow=0,rmin=0,*,rret=False,optional=False):
         vcomp = self.get_component(l)
         if vcomp is not None:
             return self.evaluate_comp(r,l,vcomp,rpow,rmin,rret)
@@ -1027,15 +631,24 @@ class SemilocalPP(Pseudopotential):
                 return z
             #end if
         else:
-            self.error('requested evaluation of non-existent component\ncomponent requested: {0}'.format(l))
+            msg = (
+                'requested evaluation of non-existent component\n'
+                'component requested: {0}'.format(l)
+                )
+            raise KeyError(msg)
         #end if
     #end def evaluate_component
 
 
     # evaluate angular momentum channel of full potential
-    def evaluate_channel(self,r=None,l=None,rpow=0,rmin=0,rret=False,with_local=True,with_L2=True):
+    def evaluate_channel(self,r=None,l=None,rpow=0,rmin=0,*,rret=False,with_local=True,with_L2=True):
         if l not in self.l_channels:
-            self.error('evaluate_channel must be called with a valid angular momentum label\nvalid options are l=s,p,d,f,...\nyou provided: l={0}'.format(l))
+            msg = (
+                'evaluate_channel must be called with a valid angular momentum label\n'
+                'valid options are l=s,p,d,f,...\n'
+                'you provided: l={0}'.format(l)
+                )
+            raise KeyError(msg)
         #end if
         eval_any = False
         loc_present = self.has_component(self.local)
@@ -1077,7 +690,7 @@ class SemilocalPP(Pseudopotential):
 
 
     # similar to evaluate_channel but with defaults appropriate for QMCPACK
-    def numeric_channel(self,l=None,rmin=0.,rmax=10.,npts=10001,rpow=0,with_local=True,with_L2=True):
+    def numeric_channel(self,l=None,rmin=0.,rmax=10.,npts=10001,rpow=0,*,with_local=True,with_L2=True):
         if self.numeric and not self.interpolatable:
             r = None
         else:
@@ -1092,7 +705,7 @@ class SemilocalPP(Pseudopotential):
     #end def numeric_channel
 
 
-    def update_rcut(self,tol=1e-5,optional=False):
+    def update_rcut(self,tol=1e-5,*,optional=False):
         if not optional or self.rcut is None:
             self.rcut = self.find_rcut(tol=tol,with_L2=False)
         #end if
@@ -1104,7 +717,7 @@ class SemilocalPP(Pseudopotential):
     #end def update_rcut
 
 
-    def find_rcut(self,tol=1e-5,with_L2=False):
+    def find_rcut(self,tol=1e-5,*,with_L2=False):
         vnl = self.get_nonlocal()
         if with_L2 and self.has_L2():
             vnl.L2 = self.get_L2()
@@ -1126,13 +739,14 @@ class SemilocalPP(Pseudopotential):
         r    = None
         vmin = None
         vmax = None
-        for l,(rc,vc) in rv.items():
+        for rc, vc in rv.values():
             if r is None:
                 r = rc
                 vmin = np.array(vc)
                 vmax = np.array(vc)
             elif len(rc)!=len(r):
-                self.error('numeric representation of channels do not match in length')
+                msg = 'numeric representation of channels do not match in length'
+                raise RuntimeError(msg)
             else:
                 vmin = np.minimum(vmin,vc)
                 vmax = np.maximum(vmax,vc)
@@ -1159,7 +773,7 @@ class SemilocalPP(Pseudopotential):
     #end def find_rcut
 
 
-    def plot(self,r=None,show=True,fig=True,linestyle='-',channels=None,with_local=False,rmin=0.01,rmax=5.0,title=None,metric=None,color=None):
+    def plot(self,r=None,*,show=True,fig=True,linestyle='-',channels=None,with_local=False,rmin=0.01,rmax=5.0,title=None,metric=None,color=None):
         if channels is None:
             channels = self.l_channels
         #end if
@@ -1196,7 +810,11 @@ class SemilocalPP(Pseudopotential):
                         v += self.Zval*r
                     #end if
                 elif metric is not None:
-                    self.error('invalid metric for plotting: {0}\nvalid options are: r2'.format(metric))
+                    msg = (
+                        'invalid metric for plotting: {0}\n'
+                        'valid options are: r2'.format(metric)
+                        )
+                    raise ValueError(msg)
                 #end if
                 plt.plot(r,v,color+linestyle,label=lab)
             #end for
@@ -1216,7 +834,7 @@ class SemilocalPP(Pseudopotential):
     #end def plot
 
 
-    def plot_components(self,r=None,show=True,fig=True,linestyle='-',rmin=0.01,rmax=5.0,title=None,metric=None,color=None,rpow=0):
+    def plot_components(self,r=None,*,show=True,fig=True,linestyle='-',rmin=0.01,rmax=5.0,title=None,metric=None,color=None,rpow=0):
         channels = list(self.l_channels)+['L2']
         if fig:
             plt.figure(tight_layout=True)
@@ -1255,7 +873,11 @@ class SemilocalPP(Pseudopotential):
                         v += self.Zval*r
                     #end if
                 elif metric is not None:
-                    self.error('invalid metric for plotting: {0}\nvalid options are: r2'.format(metric))
+                    msg = (
+                        'invalid metric for plotting: {0}\n'
+                        'valid options are: r2'.format(metric)
+                        )
+                    raise ValueError(msg)
                 #end if
                 plt.plot(r,v,color+linestyle,label=lab)
             #end for
@@ -1275,7 +897,7 @@ class SemilocalPP(Pseudopotential):
     #end def plot_components
 
 
-    def plot_channels(self,r=None,channels=None,show=True,fig=True,linestyle='-',rmin=0.01,rmax=5.0,title=None,metric=None,color=None,rpow=0,with_local=True,with_L2=True):
+    def plot_channels(self,r=None,channels=None,*,show=True,fig=True,linestyle='-',rmin=0.01,rmax=5.0,title=None,metric=None,color=None,rpow=0,with_local=True,with_L2=True):
         if channels is None:
             channels = list(self.l_channels)
         #end if
@@ -1311,13 +933,25 @@ class SemilocalPP(Pseudopotential):
                     if self.name is not None:
                         lab = self.name+' '+lab
                     #end if
-                    v = self.evaluate_channel(r,c,rpow,rmin-1e-12,False,with_local,with_L2)
+                    v = self.evaluate_channel(
+                        r          = r,
+                        l          = c,
+                        rpow       = rpow,
+                        rmin       = rmin-1e-12,
+                        rret       = False,
+                        with_local = with_local,
+                        with_L2    = with_L2,
+                        )
                     rng = r>rmin-1e-12
                     r = r[rng]
                     if metric=='r2':
                         v = r**2*v
                     elif metric is not None:
-                        self.error('invalid metric for plotting: {0}\nvalid options are: r2'.format(metric))
+                        msg = (
+                            'invalid metric for plotting: {0}\n'
+                            'valid options are: r2'.format(metric)
+                            )
+                        raise ValueError(msg)
                     #end if
                     plt.plot(r,v,color+linestyle,label=lab)
                 #end for
@@ -1333,13 +967,25 @@ class SemilocalPP(Pseudopotential):
                 if self.name is not None:
                     lab = self.name+' '+lab
                 #end if
-                v = self.evaluate_channel(r,c,rpow,rmin-1e-12,False,with_local,with_L2)
+                v = self.evaluate_channel(
+                    r          = r,
+                    l          = c,
+                    rpow       = rpow,
+                    rmin       = rmin-1e-12,
+                    rret       = False,
+                    with_local = with_local,
+                    with_L2    = with_L2,
+                    )
                 rng = r>rmin-1e-12
                 r = r[rng]
                 if metric=='r2':
                     v = r**2*v
                 elif metric is not None:
-                    self.error('invalid metric for plotting: {0}\nvalid options are: r2'.format(metric))
+                    msg = (
+                        'invalid metric for plotting: {0}\n'
+                        'valid options are: r2'.format(metric)
+                        )
+                    raise ValueError(msg)
                 #end if
                 plt.plot(r,v,color+linestyle,label=lab)
             #end for
@@ -1359,9 +1005,10 @@ class SemilocalPP(Pseudopotential):
     #end def plot_channels
 
 
-    def plot_positive_definite(self,r=None,show=True,fig=True,linestyle='-',rmin=0.01,rmax=5.0,title=None,color='k'):
+    def plot_positive_definite(self,r=None,*,show=True,fig=True,linestyle='-',rmin=0.01,rmax=5.0,title=None,color='k'):
         if not self.has_L2():
-            self.error('positive definite condition only applies to L2 potentials')
+            msg = 'positive definite condition only applies to L2 potentials'
+            raise RuntimeError(msg)
         #end if
         if fig:
             plt.figure(tight_layout=True)
@@ -1392,7 +1039,8 @@ class SemilocalPP(Pseudopotential):
     #end def plot_positive_definite
 
                 
-    def plot_L2(self,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None,color=None):
+    def plot_L2(self,*,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None,color=None):
+        color_in = color
         if fig:
             plt.figure(tight_layout=True)
         #end if
@@ -1401,10 +1049,12 @@ class SemilocalPP(Pseudopotential):
         elif r is None:
             r = np.linspace(rmin,rmax,1000)
         #end if
+        rin=r
         vs = self.evaluate_channel(r,'s',with_local=True,rmin=rmin-1e-12)
         for c in self.l_channels[1:]:
+            r = rin
             if c in self.components:
-                if color is None:
+                if color_in is None:
                     color = self.channel_colors[c]
                 #end if
                 v = self.evaluate_channel(r,c,with_L2=False,rmin=rmin-1e-12)
@@ -1431,7 +1081,7 @@ class SemilocalPP(Pseudopotential):
     #end def plot_L2
 
 
-    def plot_nonlocal_polar(self,show=True,lmax=10,rmin=0.01,rmax=2.0,nr=100,nt=100,levels=100,label=''):
+    def plot_nonlocal_polar(self,*,show=True,lmax=10,rmin=0.01,rmax=2.0,nr=100,nt=100,levels=100,label=''):
         from scipy.special import eval_legendre as legendre
 
         tlabel = label
@@ -1461,7 +1111,7 @@ class SemilocalPP(Pseudopotential):
         # set the colormap and centre the colorbar
         import matplotlib.colors as colors
         class MidNorm(colors.Normalize):
-            def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+            def __init__(self, vmin=None, vmax=None, midpoint=None, *, clip=False):
                 self.midpoint = midpoint
                 colors.Normalize.__init__(self, vmin, vmax, clip)
             #end def __init__
@@ -1490,7 +1140,8 @@ class SemilocalPP(Pseudopotential):
                 vl[l] = vf[rng][::ndrf]
             #end for
         else:
-            self.error('plot_polar does not yet support non-numeric potentials')
+            msg = 'plot_polar does not yet support non-numeric potentials'
+            raise NotImplementedError(msg)
         #end if
 
         # plot the radial potentials
@@ -1536,7 +1187,9 @@ class SemilocalPP(Pseudopotential):
 
             mid_norm = MidNorm(vmin,vmax,0.0)
 
-            cs = ax.contourf(X,Z,V,levels=lev,cmap=cmap,clim=(vmin,vmax),norm=mid_norm)
+            cs = ax.contourf(X,Z,V,levels=lev,cmap=cmap,
+                             norm=mid_norm)
+            cs.set_clim(vmin,vmax)
             plt.plot(rc*cos,rc*sin,'k--',lw=2)
 
             fig.colorbar(cs, ax=ax, shrink=0.9)
@@ -1608,7 +1261,8 @@ class SemilocalPP(Pseudopotential):
         npots_down    = len(channels)
         l_local       = self.channel_indices[self.local]
         if l_local == -1:
-            self.error('Local channel, {}, not coded.'.format(self.local))
+            msg = 'Local channel, {}, not coded.'.format(self.local)
+            raise RuntimeError(msg)
         #end if
 
 
@@ -1646,7 +1300,7 @@ class SemilocalPP(Pseudopotential):
                 if n%3==0:
                     L2 += dpad
                 #end if
-                L2 += '{0:22.14e}'.format(d)
+                L2 += ' {0:22.14e}'.format(d)
                 n+=1
             #end for
             L2 = L2.rstrip()+'\n'
@@ -1668,7 +1322,7 @@ class SemilocalPP(Pseudopotential):
                     if n%3==0:
                         semilocal+=dpad
                     #end if
-                    semilocal+='{0:22.14e}'.format(d)
+                    semilocal+=' {0:22.14e}'.format(d)
                     n+=1
                 #end for
                 semilocal = semilocal.rstrip()+'\n'
@@ -1692,7 +1346,11 @@ class SemilocalPP(Pseudopotential):
 
     def write_casino(self,filepath=None):
         if self.has_component('L2'):
-            self.error('cannot write potential in CASINO format\nan L2 term is present, but this is not supported by CASINO')
+            msg = (
+                'cannot write potential in CASINO format\n'
+                'an L2 term is present, but this is not supported by CASINO'
+                )
+            raise RuntimeError(msg)
         #end if
 
         channels = self.angular_channels()
@@ -1750,7 +1408,8 @@ Number of grid points
         text = header+grid+channels
 
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath,'w') as fobj:
+                fobj.write(text)
         #end if
         return text
     #end def write_casino
@@ -1763,7 +1422,7 @@ Number of grid points
 
 class GaussianPP(SemilocalPP):
     requires_format = True
-    formats = SemilocalPP.formats + 'gaussian gamess crystal numhf'.split()
+    formats = SemilocalPP.formats + ('gaussian','gamess','crystal','numhf')
 
     @staticmethod
     def process_float(s):
@@ -1793,7 +1452,7 @@ class GaussianPP(SemilocalPP):
             while i<len(lines):
                 n = int(lines[i]); i+=1
                 terms = []
-                for j in range(n):
+                for j in range(n):  # noqa: B007
                     coeff,rpow,expon = lines[i].split(); i+=1
                     terms.append((float(coeff),int(rpow),float(expon)))
                 #end for
@@ -1809,7 +1468,7 @@ class GaussianPP(SemilocalPP):
                 i+=1 # skip comment line
                 n = int(lines[i]); i+=1
                 terms = []
-                for j in range(n):
+                for j in range(n):  # noqa: B007
                     rpow,expon,coeff = lines[i].split(); i+=1
                     terms.append((float(coeff),int(rpow),float(expon)))
                 #end for
@@ -1825,7 +1484,8 @@ class GaussianPP(SemilocalPP):
             #end if
             element = Elements(atomic_number).symbol
             if 'input' not in lines[i].lower():
-                self.error('INPUT must be present for crystal pseudpotential read')
+                msg = 'INPUT must be present for crystal pseudpotential read'
+                raise FileFormatError(msg)
             #end if
             i+=1
             tokens = lines[i].split()
@@ -1841,7 +1501,7 @@ class GaussianPP(SemilocalPP):
             for nt in nterms:
                 lmax += 1
                 terms = []
-                for n in range(nt):
+                for n in range(nt):  # noqa: B007
                     expon,coeff,rpow = lines[i].split(); i+=1
                     terms.append((float(coeff),int(rpow)+2,float(expon)))
                 #end for
@@ -1858,7 +1518,7 @@ class GaussianPP(SemilocalPP):
             while i<len(lines):
                 n = int(lines[i]); i+=1
                 terms = []
-                for j in range(n):
+                for j in range(n):  # noqa: B007
                     rpow,expon,coeff = lines[i].split(); i+=1
                     terms.append((float(coeff),int(rpow),float(expon)))
                 #end for
@@ -1886,7 +1546,7 @@ class GaussianPP(SemilocalPP):
             while i<len(lines):
                 for n in ns:
                     terms = []
-                    for j in range(n):
+                    for j in range(n):  # noqa: B007
                         rpow,expon,coeff = lines[i].split(); i+=1
                         terms.append((float(coeff),int(rpow),float(expon)))
                     #end for
@@ -1896,7 +1556,8 @@ class GaussianPP(SemilocalPP):
             # Bring local channel to front
             channels.insert(0,channels.pop())
         else:
-            self.error('ability to read file format {0} has not been implemented'.format(format))
+            msg = 'ability to read file format {0} has not been implemented'.format(format)
+            raise NotImplementedError(msg)
         #end if
 
         if basis_lines is not None:
@@ -1907,7 +1568,8 @@ class GaussianPP(SemilocalPP):
 
         if not Elements.is_element(element):
             if not Elements.is_element(self.element):
-                self.error('cannot identify element for pseudopotential file '+path_string(filepath))
+                msg = 'cannot identify element for pseudopotential file '+path_string(filepath)
+                raise NotAnElementError(msg)
             #end if
         else:
             self.element = element
@@ -1919,7 +1581,7 @@ class GaussianPP(SemilocalPP):
         else:
             core = Elements(Zcore).symbol
         #end if
-        self.set(
+        self.update(
             core    = core,
             Zval    = Zval,
             Zcore   = Zcore,
@@ -1943,7 +1605,8 @@ class GaussianPP(SemilocalPP):
         #end for
         self.basis = basis
         if len(self.components)!=self.lmax+1:
-            self.error('number of channels is not lmax+1!')
+            msg = 'number of channels is not lmax+1!'
+            raise RuntimeError(msg)
         #end if
     #end def read_text
 
@@ -2028,7 +1691,7 @@ class GaussianPP(SemilocalPP):
                 channels.append(channel)
                 ccount += 1
             #end for
-            for i in range(6-ccount): # crystal14 goes up to g (hence the 6)
+            for i in range(6-ccount): # crystal14 goes up to g (hence the 6)  # noqa: B007
                 tline += ' 0'
             #end for
             text += tline+'\n'
@@ -2080,7 +1743,8 @@ class GaussianPP(SemilocalPP):
                 #end for
             #end for
         else:
-            self.error('ability to write file format {0} has not been implemented'.format(format))
+            msg = 'ability to write file format {0} has not been implemented'.format(format)
+            raise NotImplementedError(msg)
         #end if
         return text
     #end def write_text
@@ -2091,7 +1755,7 @@ class GaussianPP(SemilocalPP):
         bs = None
         if self.basis is not None:
             bs = GaussianBasisSet()
-            bs.basis = self.basis.copy()
+            bs.basis = deepcopy(self.basis)
         #end if
         return bs
     #end def get_basis
@@ -2106,7 +1770,7 @@ class GaussianPP(SemilocalPP):
     def uncontract(self):
         if self.basis is not None:
             bs = GaussianBasisSet()
-            bs.basis = self.basis.copy()
+            bs.basis = deepcopy(self.basis)
             bs.uncontract()
             self.basis = bs.basis
         #end if
@@ -2127,13 +1791,13 @@ class GaussianPP(SemilocalPP):
                 text += basis.write_text(format)
                 text += '\n'
             else:
-                self.error('ability to write basis for file format {0} has not been implemented'.format(format))
+                msg = 'ability to write basis for file format {0} has not been implemented'.format(format)
+                raise NotImplementedError(msg)
             #end if
         #end if
         if filepath is not None:
-            fobj = open(filepath,'w')
-            fobj.write(text)
-            fobj.close()
+            with open(filepath,'w') as fobj:
+                fobj.write(text)
         #end if
         return text
     #end def write_basis
@@ -2145,7 +1809,7 @@ class GaussianPP(SemilocalPP):
         if l==self.local or l is None:
             v += -self.Zval
         #end if
-        for g in vcomp:
+        for g in vcomp.values():
             if g.rpow==1:
                 v += g.coeff * np.exp(-g.expon*r**2)
             else:
@@ -2164,7 +1828,11 @@ class GaussianPP(SemilocalPP):
         elif of.endswith('.upf'):
             opts = '--log_grid --upf'
         else:
-            self.error('output file format unrecognized for {0}\nvalid extensions are .xml and .upf'.format(outfile))
+            msg = (
+                'output file format unrecognized for {0}\n'
+                'valid extensions are .xml and .upf'.format(outfile)
+                )
+            raise ValueError(msg)
         #end if
         tmpfile = 'tmp.gamess'
         self.write(tmpfile,'gamess')
@@ -2185,10 +1853,12 @@ class GaussianPP(SemilocalPP):
         coeff, expon, rpow: the coefficient, exponent, and r-power of the Gaussian term
         '''
         if l>self.lmax:
-            self.error('component {} not present in PP.'.format(l))
+            msg = 'component {} not present in PP.'.format(l)
+            raise KeyError(msg)
         #end if
         chan_labels = ['s','p','d','f','g','h','i','j']
-        self.components[chan_labels[l]].append(obj(coeff=coeff,expon=expon,rpow=rpow))
+        comp = self.components[chan_labels[l]]
+        comp[len(comp)] = obj(coeff=coeff,expon=expon,rpow=rpow)
     #end def append_to_component
 
 
@@ -2200,10 +1870,11 @@ class GaussianPP(SemilocalPP):
         scale: the scaling factor
         '''
         if l>self.lmax:
-            self.error('component {} not present in PP.'.format(l))
+            msg = 'component {} not present in PP.'.format(l)
+            raise KeyError(msg)
         #end if
         chan_labels = ['s','p','d','f','g','h','i','j']
-        for term in self.components[chan_labels[l]]:
+        for term in self.components[chan_labels[l]].values():
             term.coeff*=scale
         #end for
     #end def scale_component
@@ -2226,29 +1897,35 @@ class GaussianPP(SemilocalPP):
         chan_labels = list(self.l_channels)
         remove = []
         for l in np.arange(self.lmax+1):
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                if abs(term.coeff)<1e-12 and len(self.components[chan_labels[l]])>1:
+            comp_l = self.components[chan_labels[l]]
+            for term_idx,k in enumerate(comp_l.keys()): # TODO: Is this enumerate needed?
+                term = comp_l[term_idx]
+                if abs(term.coeff)<1e-12 and len(comp_l)>1:
                     remove.append((chan_labels[l],term_idx))
                 #end if
             #end for
         #end for
         for r in remove:
-            self.components[r[0]].delete(r[1])
+            self.components[r[0]].pop(r[1])
         #end for
-        comps = self.components.copy()
+        comps = deepcopy(self.components)
         for l in np.arange(self.lmax+1):
             comps[chan_labels[l]] = obj()
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                comps[chan_labels[l]].append(term)
+            cl = self.components[chan_labels[l]]
+            for k in cl.keys():
+                comp_l = comps[chan_labels[l]]
+                comp_l[len(comp_l)] = cl[k]
             #end for
         #end for
-        self.components = comps.copy()
-        comps = self.components.copy()
+        self.components = deepcopy(comps)
+        comps = deepcopy(self.components)
         for l in np.arange(self.lmax+1):
             terms = []
             comps[chan_labels[l]] = obj()
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
-                terms.append(term.list())
+            cl = self.components[chan_labels[l]]
+            for k in cl.keys():
+                term = cl[k]
+                terms.append([term[k] for k in sorted(term.keys())])
             #end for
             terms = np.array(terms)
             like_terms = []
@@ -2285,7 +1962,9 @@ class GaussianPP(SemilocalPP):
             # update comps
             comps[chan_labels[l]] = obj()
             added = []
-            for term_idx,term in enumerate(self.components[chan_labels[l]]):
+            comp_l = self.components[chan_labels[l]]
+            for term_idx,k in enumerate(comp_l.keys()):
+                term = comp_l[k]
                 if any(term_idx in subl for subl in like_terms):
                     if term_idx in added:
                         continue
@@ -2293,32 +1972,35 @@ class GaussianPP(SemilocalPP):
                         for mlist in like_terms:
                             if term_idx in mlist and term_idx not in added:
                                 coeff = 0.0
-                                mod_term = term.copy()
+                                mod_term = deepcopy(term)
                                 for ti in mlist: 
                                     coeff += self.components[chan_labels[l]][ti].coeff
                                 #end for
                                 if abs(coeff)>1e-12:
                                     mod_term.coeff = coeff
-                                    comps[chan_labels[l]].append(mod_term)
+                                    cl = comps[chan_labels[l]]
+                                    cl[len(cl)] = mod_term
                                 #end if
                                 added.extend(mlist)
                             #end if
                         #end for
                     #end if
                 else:
-                    comps[chan_labels[l]].append(term)
+                    cl = comps[chan_labels[l]]
+                    cl[len(cl)] = term
                     added.append(term_idx)
                 #end if
             #end for
             if len(comps[chan_labels[l]])==0:
                 # All terms cancelled. Add placeholder
-                plcehldr = self.components['s'][0].copy()
+                plcehldr = deepcopy(self.components['s'][0])
                 plcehldr.coeff = 0.0
                 plcehldr.rpow = 2
                 plcehldr.expon = 1.0
-                comps[chan_labels[l]].append(plcehldr)
+                cl = comps[chan_labels[l]]
+                cl[len(cl)] = plcehldr
         #end for
-        self.components = comps.copy()
+        self.components = deepcopy(comps)
     #end def simplify
 
 
@@ -2329,9 +2011,9 @@ class GaussianPP(SemilocalPP):
         '''
         # CHECK IF THIS WORKS FOR lmax=1 !!!!!!
         # Only checked for lmax=2 and higher
-        p1 = self.copy()
+        p1 = deepcopy(self)
         p1.simplify()
-        p2 = self.copy()
+        p2 = deepcopy(self)
         p2.transform_to_truncated_L2(keep='s p',lmax=p2.lmax)
         p2.simplify()
         return object_eq(p2,p1)
@@ -2346,7 +2028,8 @@ class GaussianPP(SemilocalPP):
         Then integrating the difference between VL2 and the correcting function.
         '''
         if not self.is_truncated_L2():
-            self.error('The PP must be in the truncated L2 form.')
+            msg = 'The PP must be in the truncated L2 form.'
+            raise RuntimeError(msg)
         #end if
         import math
         def poly(x,c):
@@ -2418,7 +2101,8 @@ class GaussianPP(SemilocalPP):
         elif self.lmax==1:
             f = -r*r*v[0]
         else:
-            self.error('Not sure what to do with fully local potential.')
+            msg = 'Not sure what to do with fully local potential.'
+            raise RuntimeError(msg)
         #end if
             
         # 2*r^2*V'L2 
@@ -2434,17 +2118,19 @@ class GaussianPP(SemilocalPP):
 
 
     # test needed
-    def make_L2_bounded(self,db,dbs,exps0=None,plot=False):
+    def make_L2_bounded(self,db,dbs,exps0=None,*,plot=False):
         '''
         For a truncated L2 potential, this function constructs a correction to VL2 in the unbounded region.
         Then the correction is fit to a set of Gaussian primitives that are provided in the array 'exps0'.
         The fitted Gaussian primitives are then appended to the ECP, resulting in a bounded truncated L2 potential.
         '''
         if not self.is_truncated_L2():
-            self.error('The PP must be in the truncated L2 form.')
+            msg = 'The PP must be in the truncated L2 form.'
+            raise RuntimeError(msg)
         #end if
         if exps0 is None:
-            self.error('Please provide a aet of exponents to be used for correction.')
+            msg = 'Please provide a set of exponents to be used for correction.'
+            raise ValueError(msg)
         import math
         def poly(x,c):
             val=0
@@ -2546,7 +2232,8 @@ class GaussianPP(SemilocalPP):
         elif self.lmax==1:
             f = -r*r*v[0]
         else:
-            self.error('Not sure what to do with fully local potential.')
+            msg = 'Not sure what to do with fully local potential.'
+            raise RuntimeError(msg)
         #end if
             
         # 2*r^2*V'L2 
@@ -2568,7 +2255,8 @@ class GaussianPP(SemilocalPP):
         elif len(exps0)==3:
             popt, pcov = curve_fit(fit_instance.gauss_correction, r, f-fp)
         else:
-            self.error('Number of correction primitives not coded.')
+            msg = 'Number of correction primitives not coded.'
+            raise NotImplementedError(msg)
         #end if
 
         if plot:
@@ -2593,7 +2281,8 @@ class GaussianPP(SemilocalPP):
             plt.show()
         #end if
         for expon_idx,expon in enumerate(exps0):
-            self.components['s'].append(obj(coeff=1.0*popt[expon_idx],expon=expon,rpow=2))
+            cs = self.components.s
+            cs[len(cs)] = obj(coeff=1.0*popt[expon_idx],expon=expon,rpow=2)
         #end if
         self.transform_to_truncated_L2(keep='s p',lmax=self.lmax)
         self.simplify()
@@ -2602,7 +2291,7 @@ class GaussianPP(SemilocalPP):
 
 
     # test needed
-    def transform_to_truncated_L2(self,keep=None,lmax=None,outfile=None,inplace=True):
+    def transform_to_truncated_L2(self,keep=None,lmax=None,outfile=None,*,inplace=True):
         '''
         This function transforms a Gaussian ECP into a truncated L2 form, i.e., a form
         for which all channels follow an L2 relationship. For a semi-local ECP, this 
@@ -2615,21 +2304,25 @@ class GaussianPP(SemilocalPP):
         ##############################################################################
         comps = list(self.components.keys())
         if keep is None or lmax is None:
-            self.error('parameters \'keep\' and \'lmax\' must be specified.')
+            msg = "parameters 'keep' and 'lmax' must be specified."
+            raise ValueError(msg)
         #end if
         chan_labels = ['s','p','d','f','g','h','i','j']
         keep_chans = keep.split()
         # Are the labels recognized?
         if keep_chans[0] not in chan_labels or keep_chans[1] not in chan_labels:
-            self.error('Requested channel to keep is not recognized')
+            msg = 'Requested channel to keep is not recognized'
+            raise ValueError(msg)
         #end if
         # Does the original potential contain the requested channels?
         if keep_chans[0] not in comps or keep_chans[1] not in comps:
-            self.error('Cannot keep channel that is not already present')
+            msg = 'Cannot keep channel that is not already present'
+            raise ValueError(msg)
         #end if
         ## Are the requested 'keep' channels different?
         if chan_labels.index(keep_chans[0]) == chan_labels.index(keep_chans[1]):
-            self.error('The two channels must be different.')
+            msg = 'The two channels must be different.'
+            raise ValueError(msg)
         #end if
         keep_l_vals = []
         keep_l_vals.append(chan_labels.index(keep_chans[0]))
@@ -2662,16 +2355,16 @@ class GaussianPP(SemilocalPP):
                 self.append_to_component(lmax,fctr*term.coeff,term.expon,term.rpow)
             #end for
 
-            vm_comp = self.components[chan_labels[lm]].copy()
-            vn_comp = self.components[chan_labels[ln]].copy()
+            vm_comp = deepcopy(self.components[chan_labels[lm]])
+            vn_comp = deepcopy(self.components[chan_labels[ln]])
             for l in np.arange(lmax):
                 fctr = l*(l+1)-lmax*(lmax+1)
                 fctr = float(fctr)/(lm*(lm+1)-ln*(ln+1))
                 self.components[chan_labels[l]] = obj()
-                for term_idx,term in enumerate(vm_comp):
+                for term in vm_comp:
                     self.append_to_component(l,coeff=fctr*term.coeff,expon=term.expon,rpow=term.rpow)
                 #end for
-                for term_idx,term in enumerate(vn_comp):
+                for term in vn_comp:
                     self.append_to_component(l,coeff=-fctr*term.coeff,expon=term.expon,rpow=term.rpow)
                 #end for
             #end for
@@ -2688,12 +2381,13 @@ class GaussianPP(SemilocalPP):
                 self.append_to_component(lmax,fctr*term.coeff,term.expon,term.rpow)
             #end for
 
-            vm_comp = self.components[chan_labels[lm]].copy()
+            vm_comp = deepcopy(self.components[chan_labels[lm]])
             for l in np.arange(lmax):
                 fctr = l*(l+1)-lmax*(lmax+1)
                 fctr = float(fctr)/(lm*(lm+1)-lloc*(lloc+1))
                 self.components[chan_labels[l]] = obj()
-                for term_idx,term in enumerate(vm_comp):
+                for k in vm_comp.keys():
+                    term = vm_comp[k]
                     self.append_to_component(l,coeff=fctr*term.coeff,expon=term.expon,rpow=term.rpow)
                 #end for
             #end for
@@ -2716,7 +2410,8 @@ class QmcpackPP(SemilocalPP):
 
     def read(self,filepath,format=None):
         if not os.path.exists(filepath):
-            self.error('cannot read {0}, file does not exist'.format(filepath))
+            msg = 'cannot read {0}, file does not exist'.format(filepath)
+            raise FileNotFoundError(msg)
         #end if
         
         x = readxml(filepath,contract_names=True)
@@ -2741,18 +2436,32 @@ class QmcpackPP(SemilocalPP):
             self.rmax = g.rf
             self.r = np.linspace(g.ri,g.rf,g.npts)
         else:
-            self.error('functionality for '+g.type+' grids has not yet been implemented')
+            msg = 'functionality for '+g.type+' grids has not yet been implemented'
+            raise NotImplementedError(msg)
         #end if
         if 'l2' in pp:
             l2 = pp.l2
             if l2.format!='r*V':
-                self.error('unrecognized potential format: {0}\nthe only supported format is r*V'.format(l2.format))
+                msg = (
+                    'unrecognized potential format: {0}\n'
+                    'the only supported format is r*V'.format(l2.format)
+                    )
+                raise ValueError(msg)
             #end if
+            if isinstance(l2.radfunc.data,str):
+                # fix edge case: no spaces between written floats
+                text = l2.radfunc.data
+                text = re.sub(r'(?<!e)-', ' -', text)
+                l2.radfunc.data = np.array(text.split(),dtype=float)
             self.components.L2 = l2.radfunc.data.copy()
         #end if
         sl = pp.semilocal
         if sl.format!='r*V':
-            self.error('unrecognized potential format: {0}\nthe only supported format is r*V'.format(sl.format))
+            msg = (
+                'unrecognized potential format: {0}\n'
+                'the only supported format is r*V'.format(l2.format)
+                )
+            raise ValueError(msg)
         #end if
         lloc = self.l_channels[sl.l_local]
         self.local = lloc
@@ -2777,7 +2486,11 @@ class QmcpackPP(SemilocalPP):
             if len(r)==len(self.r) and abs( (r[1:]-self.r[1:])/self.r[1:] ).max()<1e-6:
                 r = self.r
             else:
-                self.error('ability to interpolate at arbitrary r has not been implemented\ncalling evaluate_channel() without specifying r will return the potential on a default grid')
+                msg = (
+                    'ability to interpolate at arbitrary r has not been implemented\n'
+                    'calling evaluate_channel() without specifying r will return the potential on a default grid'
+                    )
+                raise ValueError(msg)
             #end if
         else:
             r = self.r
@@ -2806,24 +2519,27 @@ class CasinoPP(SemilocalPP):
     numeric         = True
     interpolatable  = False
 
-    unitmap = dict(rydberg='Ry',hartree='Ha',ev='eV')
+    unitmap = MappingProxyType(dict(rydberg='Ry',hartree='Ha',ev='eV'))
 
     def read(self,filepath,format=None):
         filepath = path_string(filepath)
         if not os.path.exists(filepath):
-            self.error('cannot read {0}, file does not exist'.format(filepath))
+            msg = 'cannot read {0}, file does not exist'.format(filepath)
+            raise FileNotFoundError(msg)
         #end if
         # open the file
         file = TextFile(filepath)
         # read scalar values at the top
         Zatom,Z = file.readtokensf('Atomic number and pseudo-charge',int,float)
         if Zatom > Elements.num_elements():
-            self.error('element {0} is not in the periodic table')
+            msg = 'element {0} is not in the periodic table'
+            raise NotAnElementError(msg)
         #end if
         element = Elements(Zatom).symbol
         units = file.readtokensf('Energy units',str)
         if units not in self.unitmap:
-            self.error('units {0} unrecognized from casino PP file {1}'.format(units,filepath))
+            msg = 'units {0} unrecognized from casino PP file {1}'.format(units,filepath)
+            raise FileFormatError(msg)
         #end if
         lloc = file.readtokensf('Angular momentum of local component',int)
         lloc = self.l_channels[lloc]
@@ -2844,7 +2560,8 @@ class CasinoPP(SemilocalPP):
             potline = file.readline() # read the r*potential line
             eqloc = potline.find('=')
             if eqloc==-1:
-                self.error('"=" not found in potential line\nline: {0}'.format(potline))
+                msg = '"=" not found in potential line\nline: {0}'.format(potline)
+                raise FileFormatError(msg)
             #end if
             l = self.l_channels[int(potline[eqloc+1])] # get the l value
             lvals.append(l)
@@ -2883,7 +2600,11 @@ class CasinoPP(SemilocalPP):
             if len(r)==len(self.r) and abs( (r[1:]-self.r[1:])/self.r[1:] ).max()<1e-6:
                 r = self.r
             else:
-                self.error('ability to interpolate at arbitrary r has not been implemented\ncalling evaluate_channel() without specifying r will return the potential on a default grid')
+                msg = (
+                    'ability to interpolate at arbitrary r has not been implemented\n'
+                    'calling evaluate_channel() without specifying r will return the potential on a default grid'
+                    )
+                raise NotAnElementError(msg)
             #end if
         else:
             r = self.r
@@ -2893,4 +2614,3 @@ class CasinoPP(SemilocalPP):
     #end def evaluate_comp_rV
 
 #end class CasinoPP
-
