@@ -196,7 +196,12 @@ class OptimizationAnalyzer(ResultAnalyzer):
         elif isinstance(optimize,(tuple,list)) and len(optimize)==2:
             ew,vw = optimize
         else:
-            self.error('selection for optimization is invalid\noptimize setting: {0}\nvalid options are: energy, variance, energy_within_variance_tol, or a length 2 tuple containing the cost of energy and variance, e.g. (.5,.5)'.format(optimize))
+            msg = (
+                'selection for optimization is invalid\n'
+                'optimize setting: {0}\n'
+                'valid options are: energy, variance, energy_within_variance_tol, or a length 2 tuple containing the cost of energy and variance, e.g. (.5,.5)'.format(optimize)
+                )
+            raise ValueError(msg)
         #end if
 
         self.failed = True
@@ -237,7 +242,11 @@ class OptimizationAnalyzer(ResultAnalyzer):
             if norm=='per atom':
                 norm = len(self.info.system.structure.elem)
             else:
-                self.error('norm must be a number or "per atom"\n you provided '+norm)
+                msg = (
+                    'norm must be a number or "per atom"\n'
+                    ' you provided '+norm
+                    )
+                raise ValueError(msg)
             #end if
         #end if
         econv = convert(1.0,'Ha',units)/norm
