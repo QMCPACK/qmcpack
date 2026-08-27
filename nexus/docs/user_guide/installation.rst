@@ -161,6 +161,31 @@ optional.
 .. tip::
     As with ``pip``, you can use ``uv`` to add any additional dependencies or packages you desire.
 
+Installing a Specific Version of Nexus
+--------------------------------------
+
+If you want to install the latest development version of Nexus, or a specific release, commit, or pull request, you can switch the link used accordingly:
+
+Latest Development Version
+    .. code-block:: none
+        
+        nexus@git+https://github.com/QMCPACK/qmcpack.git@develop#subdirectory=nexus
+
+Specific Release (only works as far back as QMCPACK v4.3.0)
+    .. code-block:: none
+        
+        nexus@git+https://github.com/QMCPACK/qmcpack.git@<TAG>#subdirectory=nexus
+
+Specific Commit (e.g. ``dfc4c2e890c2bc83b4d0aa9922b77fa055c5d259``)
+    .. code-block:: none
+        
+        nexus@git+https://github.com/QMCPACK/qmcpack.git@<COMMIT-HASH>#subdirectory=nexus
+
+Specific Pull Request (Without a preceding ``#``)
+    .. code-block:: none
+        
+        nexus@git+https://github.com/QMCPACK/qmcpack.git@refs/pull/<PR-NUMBER>/head#subdirectory=nexus
+
 .. _manual_install:
 
 Manual Installation of Nexus
