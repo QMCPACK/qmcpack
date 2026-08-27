@@ -171,7 +171,7 @@ Latest Development Version
         
         nexus@git+https://github.com/QMCPACK/qmcpack.git@develop#subdirectory=nexus
 
-Specific Release (only works as far back as QMCPACK v4.3.0)
+Specific Release (only works as far back as QMCPACK v4.3.0). Replace `<TAG>` with e.g. `v4.3.0`
     .. code-block:: none
         
         nexus@git+https://github.com/QMCPACK/qmcpack.git@<TAG>#subdirectory=nexus
