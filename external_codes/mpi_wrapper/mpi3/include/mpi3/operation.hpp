@@ -1,5 +1,4 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_OPERATION_HPP
 #define BOOST_MPI3_OPERATION_HPP
@@ -63,8 +62,8 @@ struct operation : detail::nondefault_handle<operation<T>, MPI_Op, MPI_Op_free> 
 		MPI_Op_create(reinterpret_cast<MPI_User_function*>(&combine<F>), /*commutative*/ true, &(this->impl_));  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	}
 
-	template<class F, typename = std::enable_if_t<not std::is_same<std::decay_t<F>, operation>{}> >
-	operation(F&& f, bool commutative) : base(detail::uninitialized{}) {
+	template<class F, typename = std::enable_if_t<!std::is_same_v<std::decay_t<F>, operation>> >  // NOLINT(modernize-use-constraints) for C++20
+	operation(F&& f, bool commutative) : base(detail::uninitialized{}) {  // NOLINT(cppcoreguidelines-missing-std-forward)
 		MPI_Op_create(
 			&f,
 		//  reinterpret_cast<void (*)(void*, void*, int*, int*)>(&f),
@@ -83,17 +82,16 @@ struct operation : detail::nondefault_handle<operation<T>, MPI_Op, MPI_Op_free> 
 
 	MPI_Op operator&() const {return this->impl_;}  // NOLINT(google-runtime-operator)
 
-#if 0
-	enum struct code : MPI_Op{
-		maximum = MPI_MAX, minimum = MPI_MIN,
-		sum = MPI_SUM, product = MPI_PROD,
-		logical_and = MPI_LAND, bitwise_and = MPI_BAND,
-		logical_or  = MPI_LOR,   bitwise_or = MPI_BOR,
-		logical_xor = MPI_LXOR, bitwise_xor = MPI_BXOR,
-		max_value_location = MPI_MAXLOC,
-		min_value_location = MPI_MINLOC
-	};
-#endif
+	// enum struct code : MPI_Op{
+	//  maximum = MPI_MAX, minimum = MPI_MIN,
+	//  sum = MPI_SUM, product = MPI_PROD,
+	//  logical_and = MPI_LAND, bitwise_and = MPI_BAND,
+	//  logical_or  = MPI_LOR,   bitwise_or = MPI_BOR,
+	//  logical_xor = MPI_LXOR, bitwise_xor = MPI_BXOR,
+	//  max_value_location = MPI_MAXLOC,
+	//  min_value_location = MPI_MINLOC
+	// };
+
 //  operation(operation::code c) : base((MPI_Op)c){}
 
 //  static operation const sum;//(operation::code::sum);
@@ -116,29 +114,31 @@ template<class T = void>
 using multiplies = std::multiplies<T>;
 
 template<class T = void> struct min {
-	constexpr T const& operator()(T const& t1, T const& t2) const {return std::min(t1, t2);}
+	constexpr T const& operator()(T const& t1, T const& t2) const { return std::min(t1, t2); }
 };
 template<> struct min<void>{
 	template<class T1, class T2> constexpr decltype(auto) operator()(T1&& t1, T2&& t2) const {return std::min(std::forward<T1>(t1), std::forward<T2>(t2));}
 };
 
 template<class T = void> struct max {
-	constexpr T const& operator()(T const& t1, T const& t2) const {return std::max(t1, t2);}
+	constexpr T const& operator()(T const& t1, T const& t2) const { return std::max(t1, t2); }
 };
 template<> struct max<void> {
 	template<class T1, class T2> constexpr decltype(auto) operator()(T1&& t1, T2&& t2) const {return std::max(std::forward<T1>(t1), std::forward<T2>(t2));}
 };
 
 template<class T = void> struct max_loc {  // the only differences is that argument is assumed to be a pair, and second element is int
-	constexpr T const& operator()(T const& t1, T const& t2) const {std::max(t1, t2);}
+	constexpr T const& operator()(T const& t1, T const& t2) const { return std::max(t1, t2); }
 };
+
 template<> struct max_loc<void> {
 	template<class T1, class T2> constexpr decltype(auto) operator()(T1&& t1, T2&& t2) const {return std::max(std::forward<T1>(t1), std::forward<T2>(t2));}
 };
 
 template<class T = void> struct min_loc {  // the only differences is that argument is assumed to be a pair, and second element is int
-	constexpr T const& operator()(T const& t1, T const& t2) const {std::min(t1, t2);}
+	constexpr T const& operator()(T const& t1, T const& t2) const { return std::min(t1, t2); }
 };
+
 template<> struct min_loc<void> {
 	template<class T1, class T2> constexpr decltype(auto) operator()(T1&& t1, T2&& t2) const {return std::min(std::forward<T1>(t1), std::forward<T2>(t2));}
 };
@@ -151,6 +151,9 @@ struct operation<double> {
  public:
 	explicit operation(std::plus<> /*op*/) : impl_{MPI_SUM} {}
 	explicit operation(std::plus<double> /*op*/) : impl_{MPI_SUM} {}
+
+	explicit operation(std::multiplies<> /*op*/) : impl_{MPI_PROD} {}
+	explicit operation(std::multiplies<double> /*op*/) : impl_{MPI_PROD} {}
 
 	explicit operation(mpi3::min<> /*op*/) : impl_{MPI_MIN} {}
 	explicit operation(mpi3::min<double> /*op*/) : impl_{MPI_MIN} {}
@@ -207,13 +210,13 @@ BOOST_MPI3_DECLARE_PREDEFINED_OPERATION(min_loc<>, MPI_MINLOC, minimum_location)
 
 template<class T>
 struct commutative_operation : operation<T> {
-	template<class F,  typename = std::enable_if_t<not std::is_same<std::decay_t<F>, operation<T> >{}> >
+	template<class F,  typename = std::enable_if_t<!std::is_same_v<std::decay_t<F>, operation<T> > > >  // NOLINT(modernize-use-constraints) for C++20
 	explicit commutative_operation(F&& f) : operation<T>(std::forward<F>(f), true){}
 };
 
 template<class T>
 struct non_commutative_operation : operation<T> {
-	template<class F,  typename = std::enable_if_t<not std::is_same<std::decay_t<F>, operation<T> >{}>>
+	template<class F,  typename = std::enable_if_t<!std::is_same_v<std::decay_t<F>, operation<T> > > >  // NOLINT(modernize-use-constraints) for C++20
 	explicit non_commutative_operation(F&& f) : operation<T>(std::forward<F>(f), false){}
 };
 

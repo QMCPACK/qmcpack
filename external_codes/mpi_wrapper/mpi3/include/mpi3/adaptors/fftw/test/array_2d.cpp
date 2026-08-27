@@ -1,10 +1,20 @@
 // Copyright 2019-2024 Alfredo A. Correa
 
+#include <multi/array.hpp>
+
+#include <multi/adaptors/fftw.hpp>
+
 #include <mpi3/adaptors/fftw.hpp>
+
+#include <mpi3/communicator.hpp>
 #include <mpi3/main_environment.hpp>
 #include <mpi3/ostream.hpp>
 
+#include <cassert>
 #include <complex>  // for std::norm
+#include <iostream>
+#include <string>
+#include <type_traits>
 
 template<class M> auto power(M const& elem) -> decltype(std::norm(elem)) { return std::norm(elem); }
 
@@ -28,13 +38,14 @@ struct sum_power {
 // }
 
 template<class Array>
-void mpi_fill(Array&& arr) {
+auto mpi_fill(Array&& arr) -> Array&& {
 	auto [is, js] = arr.local_cutout().extensions();
 	std::for_each(is.begin(), is.end(), [&, js = js](auto i) {
 		std::for_each(js.begin(), js.end(), [&](auto j) {
 			arr.local_cutout()[i][j] = std::complex<double>{static_cast<double>(i + j), static_cast<double>(i + 2 * j)};
 		});
 	});
+	return std::forward<Array>(arr);
 }
 
 template<class Array>
