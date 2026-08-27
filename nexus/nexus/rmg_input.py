@@ -4178,7 +4178,7 @@ def generate_any_rmg_input(**kwargs):
             msg = (
                 'Invalid atomic_coordinate_type.\n'
                 'Expected "Absolute" or "Cell Relative".\n'
-                'Received: {}'.format(cu)
+                'Received: {}'.format(act)
                 )
             raise ValueError(msg)
             
