@@ -104,7 +104,7 @@ def test_check_result(tmp_path):
 def test_get_result(tmp_path):
     import shutil
     from numpy import array
-    from ..developer import obj, NexusError
+    from ..developer import obj
 
     create_pseudo_files(
         tmp_dir=tmp_path,
@@ -114,16 +114,12 @@ def test_get_result(tmp_path):
 
     sim = setup_vasp_sim(tmp_path, identifier='diamond', copy_files=True)
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
+
 
     pcfile = tmp_path / 'diamond_POSCAR'
     ccfile = tmp_path / (sim.identifier+'.CONTCAR')

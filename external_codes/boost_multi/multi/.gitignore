@@ -1,6 +1,8 @@
 build*
 .build*
 .vscode
+.devcontainer/*
+.cache/clangd/*
 
 # Prerequisites
 *.d
@@ -40,3 +42,6 @@ cmake-build-debug
 
 # Clion
 .idea
+
+multi-documentation.pdf
+multi-documentation.html
