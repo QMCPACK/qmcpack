@@ -58,8 +58,6 @@ protected:
 
   /// if true, batched operations are serialized over walkers
   bool crowd_serialize_walkers_ = false;
-  /// period to recalculate the walker properties from scratch.
-  int recalculate_properties_period_ = 100;
   /// period of recording walker positions and IDs for forward walking afterwards
   input::PeriodStride config_dump_period_;
   IndexType starting_step_ = 0;
@@ -107,7 +105,6 @@ protected:
    */
 
 public:
-  int get_recalculate_properties_period() const { return recalculate_properties_period_; }
   input::PeriodStride get_config_dump_period() const { return config_dump_period_; }
   IndexType get_starting_step() const { return starting_step_; }
   IndexType get_num_crowds() const { return num_crowds_; }

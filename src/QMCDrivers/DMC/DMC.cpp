@@ -241,9 +241,8 @@ void DMC::run()
   Traces->startRun(nBlocks, traceClones);
 #endif
   wlog_manager_->startRun(getWalkerLogCollectorRefs());
-  IndexType block        = 0;
-  IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
-  int sample             = 0;
+  IndexType block = 0;
+  int sample      = 0;
 
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
 

@@ -84,8 +84,7 @@ void RMC::run()
     rmc_loop.start();
 #pragma omp parallel
     {
-      int ip                 = omp_get_thread_num();
-      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
+      int ip = omp_get_thread_num();
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       Movers[ip]->startBlock(nSteps);

@@ -49,6 +49,22 @@ public:
   HamiltonianPool hamiltonian;
 };
 
+class QMCDriverInputTestWrapper : public QMCDriver
+{
+public:
+  QMCDriverInputTestWrapper(const ProjectData& project_data, QMCDriverPools& pools, Communicate* comm)
+      : QMCDriver(project_data, *pools.particle.getWalkerSet("e"), pools.wavefunction.getWaveFunction().value(),
+                  pools.hamiltonian.getHamiltonian().value(), comm, "QMCDriverInputTestWrapper")
+  {}
+
+  bool readXML(xmlNodePtr node) { return putQMCInfo(node); }
+  IndexType getBlocksBetweenRecompute() const { return nBlocksBetweenRecompute; }
+
+  void run() override {}
+  bool put(xmlNodePtr) override { return true; }
+  QMCRunType getRunType() override { return QMCRunType::VMC; }
+};
+
 auto createDriver(const RuntimeOptions& runtime_options,
                   Communicate* comm,
                   QMCDriverFactory& driver_factory,
@@ -63,6 +79,46 @@ auto createDriver(const RuntimeOptions& runtime_options,
 }
 
 } // namespace testing
+
+TEST_CASE("QMCDriver retired check-properties parameters", "[qmcapp]")
+{
+  using namespace testing;
+  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project("testing", ProjectData::DriverVersion::LEGACY);
+  QMCDriverPools pools(test_project.getRuntimeOptions(), comm);
+
+#ifdef MIXED_PRECISION
+  constexpr int default_blocks_between_recompute = 1;
+#else
+  constexpr int default_blocks_between_recompute = 10;
+#endif
+
+  SECTION("omitted")
+  {
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(R"(<qmc method="vmc" move="pbyp"/>)"));
+    QMCDriverInputTestWrapper driver(test_project, pools, comm);
+    REQUIRE(driver.readXML(doc.getRoot()));
+    CHECK(driver.getBlocksBetweenRecompute() == default_blocks_between_recompute);
+  }
+
+  for (const std::string& alias : {"checkProperties", "checkproperties", "check_properties"})
+  {
+    CAPTURE(alias);
+    const std::string input =
+        "<qmc method=\"vmc\" move=\"pbyp\">"
+        "<parameter name=\"" +
+        alias +
+        "\">not-an-integer</parameter>"
+        "<parameter name=\"blocks_between_recompute\">3</parameter>"
+        "</qmc>";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(input));
+    QMCDriverInputTestWrapper driver(test_project, pools, comm);
+    REQUIRE(driver.readXML(doc.getRoot()));
+    CHECK(driver.getBlocksBetweenRecompute() == 3);
+  }
+}
 
 TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
 {

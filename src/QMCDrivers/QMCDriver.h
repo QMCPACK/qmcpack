@@ -221,9 +221,6 @@ protected:
   * The unit is in steps.
   */
 
-  ///Period to recalculate the walker properties from scratch.
-  int Period4CheckProperties;
-
   /** period of recording walker configurations
    *
    * Default is 0 indicating that only the last configuration will be saved.

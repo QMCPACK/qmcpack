@@ -71,11 +71,7 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  Period4CheckPoint      = 0;
-  Period4CheckProperties = 100;
-  m_param.add(Period4CheckProperties, "checkProperties");
-  m_param.add(Period4CheckProperties, "checkproperties");
-  m_param.add(Period4CheckProperties, "check_properties");
+  Period4CheckPoint = 0;
   Period4WalkerDump = 0;
   //m_param.add(Period4WalkerDump,"recordWalkers");
   m_param.add(Period4WalkerDump, "record_walkers");

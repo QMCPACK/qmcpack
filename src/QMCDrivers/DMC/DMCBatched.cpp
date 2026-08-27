@@ -487,12 +487,9 @@ void DMCBatched::run()
       ScopeGuard<LoopTimer<>> dmc_local_timer(dmc_loop);
       estimator_manager_->startBlock(steps_per_block_);
 
-      dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
-          ? qmcdriver_input_.get_recalculate_properties_period()
-          : (qmcdriver_input_.get_max_blocks() + 1) * steps_per_block_;
-      dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
-                   ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
-                   : false;
+      dmc_state.is_recomputing_block = qmcdriver_input_.get_blocks_between_recompute()
+          ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
+          : false;
 
       for (UPtr<Crowd>& crowd : crowds_)
         crowd->startBlock(steps_per_block_);

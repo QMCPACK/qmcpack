@@ -37,4 +37,39 @@ TEST_CASE("QMCDriverInput readXML", "[drivers]")
   std::for_each(testing::valid_dmc_input_sections.begin() + testing::valid_dmc_input_dmc_batch_index,
                 testing::valid_dmc_input_sections.end(), xml_test);
 }
+
+TEST_CASE("QMCDriverInput retired check-properties parameters", "[drivers]")
+{
+  const int default_blocks_between_recompute =
+      std::is_same<QMCTraits::RealType, QMCTraits::FullPrecRealType>::value ? 10 : 1;
+
+  SECTION("omitted")
+  {
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(R"(<qmc method="vmc" move="pbyp"/>)"));
+    QMCDriverInput qmcdriver_input;
+    qmcdriver_input.readXML(doc.getRoot());
+    CHECK(qmcdriver_input.get_blocks_between_recompute() == default_blocks_between_recompute);
+    CHECK(qmcdriver_input.get_debug_checks() == DriverDebugChecks::ALL_OFF);
+  }
+
+  for (const std::string& alias : {"checkProperties", "checkproperties", "check_properties"})
+  {
+    CAPTURE(alias);
+    const std::string input =
+        "<qmc method=\"vmc\" move=\"pbyp\">"
+        "<parameter name=\"" +
+        alias +
+        "\">not-an-integer</parameter>"
+        "<parameter name=\"blocks_between_recompute\">3</parameter>"
+        "<parameter name=\"debug_checks\">checkGL_after_moves</parameter>"
+        "</qmc>";
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(input));
+    QMCDriverInput qmcdriver_input;
+    qmcdriver_input.readXML(doc.getRoot());
+    CHECK(qmcdriver_input.get_blocks_between_recompute() == 3);
+    CHECK(qmcdriver_input.get_debug_checks() == DriverDebugChecks::CHECKGL_AFTER_MOVES);
+  }
+}
 } // namespace qmcplusplus
