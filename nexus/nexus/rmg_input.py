@@ -4008,7 +4008,11 @@ def generate_any_rmg_input(**kwargs):
 
     # incorporate pseudopotentials details provided via "pseudos"
     if pseudos is not None:
-        pseudos = PseudoSet.pseudo_remap('rmg',pseudos,system)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'rmg',
+            )
         species = []
         pps     = []
         for ppname in pseudos:

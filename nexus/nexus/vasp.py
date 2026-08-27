@@ -75,7 +75,8 @@ class Vasp(Simulation):
             # get structure from CONTCAR
             ccfile = os.path.join(self.locdir,self.identifier+'.CONTCAR')
             if not os.path.exists(ccfile):
-                self.error('CONTCAR file does not exist for relax simulation at '+self.locdir)
+                msg = 'CONTCAR file does not exist for relax simulation at '+self.locdir
+                raise FileNotFoundError(msg)
             #end if
             contcar = Poscar(ccfile)
             structure = Structure()
@@ -93,7 +94,8 @@ class Vasp(Simulation):
             #end if
             result.structure = structure
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result
@@ -108,7 +110,11 @@ class Vasp(Simulation):
                 #end if
                 neb_structures = self.neb_structures
                 if len(neb_structures)>1:
-                    self.error('NEB simulation at {0} depends on more than two structures\n  please check your inputs'.format(self.locdir))
+                    msg = (
+                        'NEB simulation at {0} depends on more than two structures\n'
+                        '  please check your inputs'.format(self.locdir)
+                        )
+                    raise RuntimeError(msg)
                 #end if
                 neb_structures.append(deepcopy(result.structure))
                 if len(neb_structures)==2:
@@ -118,7 +124,8 @@ class Vasp(Simulation):
                 input.poscar = generate_poscar(result.structure)
             #end if
         else:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
+            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if  
     #end def incorporate_result
 
@@ -179,7 +186,11 @@ def generate_vasp(**kwargs):
     pseudos = kwargs.get('pseudos',None)
     if pseudos is not None:
         system = kwargs.get('system',None)
-        kwargs['pseudos'] = PseudoSet.pseudo_remap('vasp',pseudos,system)
+        kwargs['pseudos'] = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'vasp',
+            )
     #end if
 
     sim_args,inp_args = Vasp.separate_inputs(kwargs)

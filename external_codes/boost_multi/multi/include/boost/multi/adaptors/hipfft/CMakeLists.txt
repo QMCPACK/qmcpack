@@ -7,7 +7,10 @@ project(
 )
 
 enable_language(HIP)
-find_package(hipFFT REQUIRED)
+find_package(hipFFT)
+if(NOT hipFFT_FOUND)
+	message(FATAL_ERROR "Could not find hipFFT (and its rocFFT backend). On Ubuntu/Debian with the ROCm apt repo configured, install the development packages with:\n  sudo apt-get install hipfft-dev rocfft-dev\nor point CMake at an existing install via -DhipFFT_DIR=<prefix>/lib/cmake/hipfft .")
+endif()
 # find_package(rocthrust REQUIRED)
 
 # if(ENABLE_CUDA OR DEFINED CXXCUDA)
