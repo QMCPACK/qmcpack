@@ -19,7 +19,7 @@
 
 import os
 import numpy as np
-from .developer import obj
+from .developer import obj, FileFormatError
 from .unit_converter import convert
 from .periodic_table import Elements
 from .numerics import simstats, simplestats
@@ -91,7 +91,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
         elif arg0 is not None:
             path = path_string(arg0)
             if not os.path.exists(path):
-                self.error('path to QE data does not exist\npath provided: {}'.format(path))
+                msg = (
+                    'path to QE data does not exist\n'
+                    'path provided: {}'.format(path)
+                    )
+                raise FileNotFoundError(msg)
             #end if
             if os.path.isfile(path):
                 filepath = path
@@ -101,7 +105,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 elif filename.endswith('.out'):
                     outfile_name = filename
                 else:
-                    self.error('could not determine whether file is QE input or output\nfile provided: {}'.format(filepath))
+                    msg = (
+                        'could not determine whether file is QE input or output\n'
+                        'file provided: {}'.format(filepath)
+                        )
+                    raise RuntimeError(msg)
                 #end if
             #end if
             if outfile_name is None:
@@ -719,9 +727,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def write_electron_counts(self,filepath=None,*,return_flag=False):
         if not return_flag:
             if not self.info.xml:
-                self.error('xml data has not been processed\ncannot write electron counts')
+                msg = (
+                    'xml data has not been processed\n'
+                    'cannot write electron counts'
+                    )
+                raise RuntimeError(msg)
             elif self.xmldata.failed:
-                self.error('xml data processing failed\ncannot write electron counts')
+                msg = (
+                    'xml data processing failed\n'
+                    'cannot write electron counts'
+                    )
+                raise FileFormatError(msg)
             #end if
         elif not self.info.xml or self.xmldata.failed:
             return False

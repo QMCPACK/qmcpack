@@ -33,7 +33,7 @@ import os
 import numpy as np
 from . import numpy_extensions as npe
 from .generic import sorted_generic
-from .developer import DevBase, obj, error
+from .developer import DevBase, obj, FileFormatError, NotAnElementError
 from .simulation import Simulation,SimulationAnalyzer
 from .vasp_input import Incar
 
@@ -226,7 +226,8 @@ class VXML(DevBase):
                         if t in VXML.data_types:
                             dtype = VXML.data_types[t]
                         else:
-                            self.error('field type {0} is unrecognized: {1}'.format(t,line))
+                            msg = 'field type {0} is unrecognized: {1}'.format(t,line)
+                            raise FileFormatError(msg)
                         #end if
                     else:
                         dtype = float
@@ -248,7 +249,11 @@ class VXML(DevBase):
                         dim_counts[level]+=1
                     #end if
                 else:
-                    self.error('array parsing failed\n unrecognized xml encountered: {0}'.format(line),'read_vxml')
+                    msg = (
+                        'array parsing failed\n'
+                        ' unrecognized xml encountered: {0}'.format(line)
+                        )
+                    raise FileFormatError(msg)
                 #end if
             else:
                 dim_counts[level]+=1
@@ -355,7 +360,8 @@ def readval(val):
         #end try
     #end if
     if fail:
-        error('failed to read value: "{0}"'.format(val),'read_vxml')
+        msg = 'failed to read value: "{0}"'.format(val)
+        raise FileFormatError(msg)
     #end if
     return v
 #end def readval
@@ -364,7 +370,8 @@ def readval(val):
 
 def read_vxml(filepath):
     if not os.path.exists(filepath):
-        error('file {0} does not exist'.format(filepath),'read_vxml')
+        msg = 'file {0} does not exist'.format(filepath)
+        raise FileNotFoundError(msg)
     #end if
     #print 'read'
     with open(filepath, "r") as f:
@@ -424,7 +431,11 @@ def read_vxml(filepath):
     #end for
 
     if len(stack)!=1:
-        error('read failed\nxml tree did not seem to close')
+        msg = (
+            'read failed\n'
+            'xml tree did not seem to close'
+            )
+        raise FileFormatError(msg)
     #end if
 
     #print 'parse'
@@ -715,7 +726,8 @@ class OutcarData(DevBase):
     def __init__(self,filepath=None,lines=None):
         if filepath is not None:
             if not os.path.exists(filepath):
-                self.error('file {0} does not exist'.format(filepath))
+                msg = 'file {0} does not exist'.format(filepath)
+                raise FileNotFoundError(msg)
             #end if
             with open(filepath,'r') as f:
                 lines = f.read().splitlines()
@@ -779,7 +791,8 @@ class VaspAnalyzer(SimulationAnalyzer):
             elif file.endswith('OUTCAR'):
                 prefix = file.replace('OUTCAR','').strip()
             else:
-                self.error('please provide the path to an INCAR or OUTCAR file')
+                msg = 'please provide the path to an INCAR or OUTCAR file'
+                raise ValueError(msg)
             #end if
             incar   = prefix+'INCAR'
             outcar  = prefix+'OUTCAR'
@@ -845,7 +858,8 @@ class VaspAnalyzer(SimulationAnalyzer):
 
     def analyze_outcar(self,outcar):
         if not os.path.exists(outcar):
-            self.error('outcar file {0} does not exist'.format(outcar))
+            msg = 'outcar file {0} does not exist'.format(outcar)
+            raise FileNotFoundError(msg)
         #end if
         with open(outcar,'r') as oc:
             lines = oc.read().splitlines()

@@ -43,6 +43,7 @@ class DistanceTableAA;
 class DistanceTableAB;
 class ResourceCollection;
 class StructFact;
+struct ParticleSetMultiWalkerMem;
 struct SKMultiWalkerMem;
 
 /** Specialized paritlce class for atomistic simulations
@@ -305,6 +306,25 @@ public:
                               int iat,
                               const std::vector<Scalar_t>& sdispls);
 
+  /** attempt to make an all particle move on every walker in a crowd
+   *
+   * @tparam CT coordinate type, either POS or POS_SPIN
+   * @param[in,out] p_list ParticleSets to move; positions, distance tables, and structure factors are updated in place
+   * @param[in] displacements particle displacements in particle-major order
+   * @param[out] are_valid lattice-validity result for each particle move, in particle-major order
+   * Displacements and are_valid use particle-major flattened storage:
+   * ip * number_of_walkers + iw. The caller must supply a nonempty, resource-acquired
+   * crowd with matching topology and particle counts, exact input and output sizes,
+   * and no active particles. These caller invariants are checked in Debug and assumed in
+   * Release. Each move proposal receives the same lattice-validity check as mw_makeMove.
+   * Individual invalid particle proposals leave that particle unchanged; they do not reject the full
+   * configuration. Distance tables and structure factors are fully updated. No particle is left active.
+   */
+  template<CoordsType CT>
+  static void mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
+                                      const MCCoords<CT>& displacements,
+                                      std::vector<bool>& are_valid);
+
   /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
    * @param displ random displacement of the iat-th particle
@@ -410,6 +430,22 @@ public:
   static void mw_accept_rejectSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                        Index_t iat,
                                        const std::vector<bool>& isAccepted);
+
+  /** accept or reject an all particle move for every walker in a crowd
+   *
+   * @param[in,out] p_list   ParticleSets transformed by attempted moves
+   * @param[in] accepted     one acceptance decision for each ParticleSet
+   * Accepted moves remain in the ParticleSets. Rejected moves restore positions and spins
+   * from the pre-proposal snapshot retained in the acquired multiwalker resource, then update
+   * the distance tables and structure factors. Walker_t state is not part of this transaction.
+   * The caller must provide a nonempty, resource-acquired crowd with the same number of
+   * ParticleSets and decisions, matching particle counts,
+   * and no active particles. These requirements are checked in Debug
+   * and assumed in Release. In simulation context this necessarily
+   * follows a mw_makeMoveAllParticles* call.
+   */
+  static void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
+                                               const std::vector<bool>& accepted);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
@@ -596,6 +632,9 @@ protected:
 
   ///Structure factor
   std::unique_ptr<StructFact> structure_factor_;
+
+  /// multiwalker operation data
+  ResourceHandle<ParticleSetMultiWalkerMem> mw_mem_handle_;
 
   ///multi walker structure factor data
   ResourceHandle<SKMultiWalkerMem> mw_structure_factor_data_handle_;
