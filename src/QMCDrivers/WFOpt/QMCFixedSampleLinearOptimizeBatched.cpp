@@ -125,7 +125,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
   m_param.add(options_LMY_.nblocks, "options_LMY_.nblocks");
   m_param.add(options_LMY_.nolds, "options_LMY_.nolds");
   m_param.add(options_LMY_.nkept, "options_LMY_.nkept");
-  m_param.add(options_LMY_.nsamp_comp, "options_LMY_.nsamp_comp");
   m_param.add(options_LMY_.omega_shift, "omega");
   m_param.add(options_LMY_.max_relative_cost_change, "options_LMY_.max_relative_cost_change");
   m_param.add(options_LMY_.max_param_change, "options_LMY_.max_param_change");

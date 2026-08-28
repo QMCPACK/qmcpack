@@ -44,6 +44,10 @@ namespace qmcplusplus
 class QMCCostFunctionBase;
 class VMCBatched;
 class GradientTest;
+namespace testing
+{
+class QMCFixedSampleLinearOptimizeInputTest;
+}
 
 
 class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew
@@ -89,6 +93,8 @@ public:
 
 
 private:
+  friend class testing::QMCFixedSampleLinearOptimizeInputTest;
+
   NRCOptimization<RealType> nrc_opt_;
 
   inline bool ValidCostFunction(bool valid)
@@ -229,8 +235,6 @@ private:
     int nolds = 1;
     ///number of directions kept
     int nkept = 1;
-    ///number of samples to do in correlated sampling part
-    int nsamp_comp = 0;
     ///the shift to use when targeting an excited state
     RealType omega_shift = 0.0;
     ///whether to do the first part of block lm

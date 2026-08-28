@@ -34,6 +34,10 @@ namespace qmcplusplus
 class QMCCostFunctionBase;
 class GradientTest;
 class VMC;
+namespace testing
+{
+class QMCFixedSampleLinearOptimizeInputTest;
+}
 
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
@@ -67,6 +71,8 @@ public:
   QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
 
 private:
+  friend class testing::QMCFixedSampleLinearOptimizeInputTest;
+
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
@@ -176,8 +182,6 @@ private:
   int nolds;
   ///number of directions kept
   int nkept;
-  ///number of samples to do in correlated sampling part
-  int nsamp_comp;
   ///the shift to use when targeting an excited state
   RealType omega_shift;
   ///whether to do the first part of block lm
