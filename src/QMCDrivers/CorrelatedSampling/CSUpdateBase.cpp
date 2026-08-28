@@ -74,7 +74,6 @@ void CSUpdateBase::updateNorms()
 {
   //for(int ipsi=0; ipsi< nPsi; ipsi++)
   //   cumNorm[ipsi]+=multiEstimator->getUmbrellaWeight(ipsi);
-  //if(block==(equilBlocks-1) || block==(nBlocks-1)){
   //	  app_log()<<"Inside UpdateNorm\n";
   RealType winv = 1.0 / double(std::accumulate(cumNorm.begin(), cumNorm.end(), 0.0));
   for (int ipsi = 0; ipsi < nPsi; ipsi++)

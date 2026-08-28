@@ -30,6 +30,9 @@
 #include "QMCDrivers/DMC/DMC.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/DMC/DMCBatched.h"
+#include "QMCDrivers/RMC/RMC.h"
+#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
+#include "QMCDrivers/WaveFunctionTester.h"
 #include "EstimatorInputDelegates.h"
 
 namespace qmcplusplus
@@ -134,6 +137,65 @@ TEST_CASE("QMCDriverFactory retired mode attributes", "[qmcapp]")
   CHECK(das.what_to_do[UPDATE_MODE]);
   CHECK(das.append_run);
   CHECK(das.enable_profiling);
+}
+
+TEST_CASE("legacy auxiliary driver retired controls", "[qmcapp]")
+{
+  using namespace testing;
+  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project("testing", ProjectData::DriverVersion::LEGACY);
+  QMCDriverFactory driver_factory(test_project);
+  QMCDriverPools pools(test_project.getRuntimeOptions(), comm);
+  auto& qmc_system = *pools.particle.getWalkerSet("e");
+
+  SECTION("RMC")
+  {
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(R"(
+      <qmc method="rmc" move="pbyp">
+        <parameter name="drift">not-a-mode</parameter>
+        <parameter name="resize">not-an-integer</parameter>
+        <parameter name="beta">0.4</parameter>
+      </qmc>)"));
+    auto das    = driver_factory.readSection(doc.getRoot());
+    auto driver = driver_factory.createQMCDriver(doc.getRoot(), das, std::nullopt, qmc_system, pools.particle,
+                                                 pools.wavefunction, pools.hamiltonian, comm);
+    auto& rmc = dynamic_cast<RMC&>(*driver);
+    CHECK(rmc.put(doc.getRoot()));
+  }
+
+  SECTION("CSVMC")
+  {
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(R"(
+      <qmc method="csvmc" move="pbyp">
+        <qmcsystem wavefunction="psi0" hamiltonian="h0"/>
+        <qmcsystem wavefunction="psi0" hamiltonian="h0"/>
+        <parameter name="equilBlocks">not-an-integer</parameter>
+        <parameter name="useDrift">no</parameter>
+      </qmc>)"));
+    auto das    = driver_factory.readSection(doc.getRoot());
+    auto driver = driver_factory.createQMCDriver(doc.getRoot(), das, std::nullopt, qmc_system, pools.particle,
+                                                 pools.wavefunction, pools.hamiltonian, comm);
+    auto& csvmc = dynamic_cast<CSVMC&>(*driver);
+    CHECK(csvmc.put(doc.getRoot()));
+  }
+
+  SECTION("wavefunction tester")
+  {
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(R"(
+      <qmc method="wftest">
+        <parameter name="hamiltonianpbyp">yes</parameter>
+        <parameter name="energy">not-a-boolean</parameter>
+        <parameter name="basic">yes</parameter>
+      </qmc>)"));
+    auto das    = driver_factory.readSection(doc.getRoot());
+    auto driver = driver_factory.createQMCDriver(doc.getRoot(), das, std::nullopt, qmc_system, pools.particle,
+                                                 pools.wavefunction, pools.hamiltonian, comm);
+    auto& wftest = dynamic_cast<WaveFunctionTester&>(*driver);
+    CHECK(wftest.put(doc.getRoot()));
+  }
 }
 
 TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")

@@ -50,8 +50,6 @@ CSVMC::CSVMC(const ProjectData& project_data,
   m_param.add(UseDrift, "useDrift");
   m_param.add(UseDrift, "usedrift");
   m_param.add(UseDrift, "use_drift");
-  equilBlocks = -1;
-  m_param.add(equilBlocks, "equilBlocks");
   qmc_driver_mode.set(QMC_MULTIPLE, 1);
 }
 
