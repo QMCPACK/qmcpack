@@ -28,7 +28,6 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Numerics/DeterminantOperators.h"
-#include "Numerics/SymmetryOperations.h"
 #include <array>
 #include <sstream>
 
