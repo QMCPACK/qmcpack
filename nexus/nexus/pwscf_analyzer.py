@@ -131,33 +131,36 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def analyze(self):
+        parse_status = obj(log=False)
+        self.info.parse_status = parse_status
         outfile = os.path.join(self.path,self.outfile_name)
         try:
             with open(outfile,'r') as fobj:
                 lines = fobj.read().splitlines()
-        except OSError as e:
+        except (OSError,UnicodeError) as e:
             if self.info.warn:
                 self.warn('file read failed\nexception encountered: '+str(e))
             #end if
             return
         #end try
 
-        self.analyze_md(lines)
+        parse_status.log = True
+        parse_status.md = self.analyze_md(lines)
         if self.info.md_only:
             return
         #end if
-        self.analyze_fermi_energies(lines)
-        self.analyze_energies(lines)
-        self.analyze_bands(lines)
-        self.analyze_structures(lines)
-        self.analyze_pressure_volume(lines)
-        self.analyze_stress(lines)
-        self.analyze_forces(lines)
-        self.analyze_timing(lines)
-        self.analyze_kpoints(lines)
-        self.analyze_pw2casino()
+        parse_status.fermi_energies = self.analyze_fermi_energies(lines)
+        parse_status.energies = self.analyze_energies(lines)
+        parse_status.bands = self.analyze_bands(lines)
+        parse_status.structures = self.analyze_structures(lines)
+        parse_status.pressure_volume = self.analyze_pressure_volume(lines)
+        parse_status.stress = self.analyze_stress(lines)
+        parse_status.forces = self.analyze_forces(lines)
+        parse_status.timing = self.analyze_timing(lines)
+        parse_status.kpoints = self.analyze_kpoints(lines)
+        parse_status.pw2casino = self.analyze_pw2casino()
         if self.info.xml:
-            self.analyze_xml()
+            parse_status.xml = self.analyze_xml()
         #end if
     #end def analyze
 
@@ -168,6 +171,39 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def line_numbers
 
 
+    def first_numbers(self,line,count):
+        values = self.line_numbers(line)
+        if len(values)<count:
+            return None
+        #end if
+        return values[:count]
+    #end def first_numbers
+
+
+    def leading_numbers(self,line):
+        pattern = r'^\s*((?:'+self.number_pattern+r')(?:\s*(?:'+self.number_pattern+r'))*)'
+        match = re.match(pattern,line)
+        if match is None:
+            return np.array([],dtype=float)
+        #end if
+        return self.line_numbers(match.group(1))
+    #end def leading_numbers
+
+
+    def match_float(self,pattern,line):
+        match = re.search(pattern,line)
+        if match is None:
+            return None
+        #end if
+        return float(match.group(1).replace('D','E').replace('d','e'))
+    #end def match_float
+
+
+    def number_float(self,value):
+        return float(value.replace('D','E').replace('d','e'))
+    #end def number_float
+
+
     def analyze_md(self,lines):
         calculation = ''
         if self.input is not None and 'control' in self.input:
@@ -175,57 +211,76 @@ class PwscfAnalyzer(SimulationAnalyzer):
             calculation = calculation.lower()
         #end if
         if calculation not in ('md','vc-md'):
-            return
+            return 0
         #end if
 
-        energies = []
-        pressures = []
-        times = []
-        kinetic_energies = []
-        temperatures = []
+        records = []
+        record = obj()
+        required = ('total_energy','pressure','time','kinetic_energy','temperature')
         for l in lines:
             if l.lstrip().startswith('!') and 'total energy' in l:
-                energies.append(float(l.split('=',1)[1].split()[0]))
+                energy = self.match_float(r'total energy\s*=\s*('+self.number_pattern+r')',l)
+                record = obj()
+                if energy is not None:
+                    record.total_energy = energy
+                #end if
             elif 'total   stress' in l and 'P=' in l:
-                pressures.append(float(l.rsplit('P=',1)[1].split()[0]))
+                pressure = self.match_float(r'P=\s*('+self.number_pattern+r')',l)
+                if pressure is not None and 'total_energy' in record:
+                    record.pressure = pressure
+                #end if
             #end if
             if calculation=='md':
                 if 'time      =' in l:
-                    times.append(float(l.split('=',1)[1].split()[0]))
+                    time = self.match_float(r'time\s*=\s*('+self.number_pattern+r')',l)
+                    if time is not None and 'total_energy' in record:
+                        record.time = time
+                    #end if
                 elif 'kinetic energy' in l and '=' in l:
-                    kinetic_energies.append(float(l.split('=',1)[1].split()[0]))
+                    kinetic = self.match_float(r'kinetic energy.*?=\s*('+self.number_pattern+r')',l)
+                    if kinetic is not None and 'total_energy' in record:
+                        record.kinetic_energy = kinetic
+                    #end if
                 elif l.strip().startswith('temperature') and '=' in l:
-                    temperatures.append(float(l.split('=',1)[1].split()[0]))
+                    temperature = self.match_float(r'temperature\s*=\s*('+self.number_pattern+r')',l)
+                    if temperature is not None and 'total_energy' in record:
+                        record.temperature = temperature
+                    #end if
                 #end if
             else:
                 if 'Entering Dynamics;' in l and 'time' in l:
-                    times.append(float(l.rsplit('=',1)[1].split()[0]))
+                    time = self.match_float(r'time\s*=\s*('+self.number_pattern+r')',l)
+                    if time is not None and 'total_energy' in record:
+                        record.time = time
+                    #end if
                 elif l.strip().startswith('Ekin'):
                     match = re.search(r'Ekin\s*=\s*('+self.number_pattern+r')\s+Ry\s+T\s*=\s*('+self.number_pattern+r')',l)
-                    kinetic_energies.append(float(match.group(1)))
-                    temperatures.append(float(match.group(2)))
+                    if match is not None and 'total_energy' in record:
+                        record.kinetic_energy = self.number_float(match.group(1))
+                        record.temperature = self.number_float(match.group(2))
+                    #end if
                 #end if
             #end if
+            if all(name in record for name in required):
+                records.append(record)
+                record = obj()
+            #end if
         #end for
-        nsteps = len(times)
+        nsteps = len(records)
         if nsteps==0:
-            return
-        #end if
-        quantities = (energies,pressures,times,kinetic_energies,temperatures)
-        if not all(len(q)==nsteps for q in quantities):
-            self.error('inconsistent MD record lengths\ncalculation: {0}\nrecord lengths: {1}'.format(
-                calculation,[len(q) for q in quantities]))
+            return 0
         #end if
         md = obj(
-            total_energy   = np.array(energies,dtype=float),
-            pressure       = np.array(pressures,dtype=float),
-            time           = np.array(times,dtype=float),
-            kinetic_energy = np.array(kinetic_energies,dtype=float),
-            temperature    = np.array(temperatures,dtype=float),
+            total_energy   = np.array([r.total_energy for r in records],dtype=float),
+            pressure       = np.array([r.pressure for r in records],dtype=float),
+            time           = np.array([r.time for r in records],dtype=float),
+            kinetic_energy = np.array([r.kinetic_energy for r in records],dtype=float),
+            temperature    = np.array([r.temperature for r in records],dtype=float),
             )
         md.potential_energy = md.total_energy - md.kinetic_energy
         self.md_data = md
         self.md_stats = self.md_statistics()
+        return nsteps
     #end def analyze_md
 
 
@@ -233,20 +288,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
         fermi_energies = []
         for l in lines:
             if 'Fermi energ' in l:
-                tokens = l.lower().replace('ev','').split()
-                values = []
-                for token in tokens[::-1]:
-                    if is_number(token):
-                        values.append(float(token))
-                    elif len(values)>0:
-                        break
-                    #end if
-                #end for
-                fermi_energies.extend(values[::-1])
+                ev_index = l.lower().rfind('ev')
+                segment = l[:ev_index] if ev_index!=-1 else l
+                fermi_energies.extend(self.line_numbers(segment))
             #end if
         #end for
         self.Ef = fermi_energies[-1] if len(fermi_energies)>0 else 0.0
         self.fermi_energies = np.array(fermi_energies)
+        return len(fermi_energies)
     #end def analyze_fermi_energies
 
 
@@ -254,11 +303,15 @@ class PwscfAnalyzer(SimulationAnalyzer):
         energies = []
         for l in lines:
             if l.lstrip().startswith('!') and 'total energy' in l:
-                energies.append(float(l.split('=',1)[1].split()[0]))
+                energy = self.match_float(r'total energy\s*=\s*('+self.number_pattern+r')',l)
+                if energy is not None:
+                    energies.append(energy)
+                #end if
             #end if
         #end for
         self.E = energies[-1] if len(energies)>0 else 0.0
         self.energies = np.array(energies)
+        return len(energies)
     #end def analyze_energies
 
 
@@ -271,17 +324,33 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 continue
             #end if
             match = re.search(r'number of k points=\s*(\d+)',l)
+            if match is None:
+                continue
+            #end if
             nkpoints = int(match.group(1))
             if i+1>=len(lines) or 'cart. coord.' not in lines[i+1]:
                 continue
             #end if
             cart = []
             weights = []
+            valid = len(lines[i+2:i+2+nkpoints])==nkpoints
             for kl in lines[i+2:i+2+nkpoints]:
                 match = re.search(r'=\s*\((.*?)\),\s*wk\s*=\s*('+self.number_pattern+r')',kl)
-                cart.append(self.line_numbers(match.group(1)))
-                weights.append(float(match.group(2)))
+                if match is None:
+                    valid = False
+                    break
+                #end if
+                coordinates = self.first_numbers(match.group(1),3)
+                if coordinates is None:
+                    valid = False
+                    break
+                #end if
+                cart.append(coordinates)
+                weights.append(self.number_float(match.group(2)))
             #end for
+            if not valid:
+                continue
+            #end if
             j = i+2+nkpoints
             while j<len(lines) and 'cryst. coord.' not in lines[j]:
                 j+=1
@@ -290,10 +359,23 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 continue
             #end if
             unit = []
+            valid = len(lines[j+1:j+1+nkpoints])==nkpoints
             for kl in lines[j+1:j+1+nkpoints]:
                 match = re.search(r'=\s*\((.*?)\),\s*wk\s*=',kl)
-                unit.append(self.line_numbers(match.group(1)))
+                if match is None:
+                    valid = False
+                    break
+                #end if
+                coordinates = self.first_numbers(match.group(1),3)
+                if coordinates is None:
+                    valid = False
+                    break
+                #end if
+                unit.append(coordinates)
             #end for
+            if not valid:
+                continue
+            #end if
             kpoints_cart = np.array(cart,dtype=float)
             kpoints_unit = np.array(unit,dtype=float)
             kweights = np.array(weights,dtype=float)
@@ -305,7 +387,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def analyze_bands(self,lines):
         table_cart,table_unit,_ = self.read_kpoint_tables(lines)
-        nspin = self.input.system.nspin if self.input is not None and 'nspin' in self.input.system else 1
+        nspin = 1
+        if self.input is not None and 'system' in self.input and 'nspin' in self.input.system:
+            nspin = self.input.system.nspin
+        #end if
         polarized = nspin>1
         bands = obj(up=obj(),down=obj())
         band_channel = bands.up
@@ -341,9 +426,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 elif 'occupation numbers' in ls or 'bands (ev)' in ls:
                     break
                 else:
-                    values = self.line_numbers(ls)
-                    remainder = re.sub(self.number_pattern,'',ls)
-                    if len(values)==0 or len(remainder.strip())>0:
+                    values = self.leading_numbers(ls)
+                    if len(values)==0:
                         break
                     #end if
                     eigs.extend(values)
@@ -363,9 +447,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                             break
                         #end if
                     else:
-                        values = self.line_numbers(ls)
-                        remainder = re.sub(self.number_pattern,'',ls)
-                        if len(values)==0 or len(remainder.strip())>0:
+                        values = self.leading_numbers(ls)
+                        if len(values)==0:
                             break
                         #end if
                         occs.extend(values)
@@ -375,11 +458,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
 
             match = re.search(r'k\s*=\s*(.*?)\s*\(',l)
-            kpoint_cart = self.line_numbers(match.group(1))
+            kpoint_cart = None
+            if match is not None:
+                kpoint_cart = self.first_numbers(match.group(1),3)
+            #end if
             index = len(band_channel)
-            kpoint_rel = table_unit[index] if table_unit is not None and index<len(table_unit) else kpoint_cart.copy()
+            kpoint_rel = table_unit[index] if table_unit is not None and index<len(table_unit) else kpoint_cart
             if table_cart is not None and index<len(table_cart):
                 kpoint_cart = table_cart[index]
+            #end if
+            if len(eigs)==0:
+                continue
             #end if
             pol = 'none'
             if polarized:
@@ -396,10 +485,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
             nfound+=1
         #end for
         if nfound==0:
-            return
+            return 0
         #end if
         self.analyze_band_edges(bands)
         self.bands = bands
+        return nfound
     #end def analyze_bands
 
 
@@ -442,7 +532,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             electronic_structure = 'metallic' if vbm.band_number==cbm.band_number else 'semi-metal'
         else:
             electronic_structure = 'insulating'
-            if not np.equal(vbm.kpoint_rel,cbm.kpoint_rel).all():
+            if vbm.kpoint_rel is not None and cbm.kpoint_rel is not None and not np.equal(vbm.kpoint_rel,cbm.kpoint_rel).all():
                 bands.indirect_gap = obj(energy=round(cbm.energy-vbm.energy,3),kpoints=obj(vbm=vbm,cbm=cbm))
             #end if
         #end if
@@ -460,14 +550,29 @@ class PwscfAnalyzer(SimulationAnalyzer):
         while i<len(lines):
             l = lines[i]
             if l.strip().startswith('CELL_PARAMETERS'):
-                conf = obj()
-                axes = np.array([lines[i+d+1].split() for d in range(3)],dtype=float)
-                match = re.search(r'alat\s*=\s*('+self.number_pattern+r')',l)
-                if match is not None:
-                    axes *= float(match.group(1))
+                axes = []
+                if i+3<len(lines):
+                    for d in range(3):
+                        row = self.first_numbers(lines[i+d+1],3)
+                        if row is None:
+                            axes = []
+                            break
+                        #end if
+                        axes.append(row)
+                    #end for
                 #end if
-                conf.axes = axes
-                i+=3
+                if len(axes)==3:
+                    conf = obj()
+                    axes = np.array(axes,dtype=float)
+                    alat = self.match_float(r'alat\s*=\s*('+self.number_pattern+r')',l)
+                    if alat is not None:
+                        axes *= alat
+                    #end if
+                    conf.axes = axes
+                    i+=3
+                else:
+                    conf = None
+                #end if
             elif 'ATOMIC_POSITIONS' in l:
                 if conf is None:
                     conf = obj()
@@ -477,13 +582,21 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 i+=1
                 while i<len(lines):
                     tokens = lines[i].split()
-                    if len(tokens) not in (4,7) or len(tokens)==0 or tokens[0].lower()=='end':
+                    if len(tokens)<4 or tokens[0].lower()=='end':
+                        break
+                    #end if
+                    coordinates = tokens[1:4]
+                    if not all(is_number(value) for value in coordinates):
                         break
                     #end if
                     atoms.append(tokens[0])
-                    positions.append(np.array(tokens[1:4],dtype=float))
+                    positions.append(np.array(coordinates,dtype=float))
                     i+=1
                 #end while
+                if len(positions)==0:
+                    conf = None
+                    continue
+                #end if
                 conf.atoms = atoms
                 conf.positions = np.array(positions)
                 if 'crystal' in l.lower() and 'axes' in conf:
@@ -498,58 +611,97 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if len(structures)>0:
             self.structures = structures
         #end if
+        return len(structures)
     #end def analyze_structures
 
 
     def analyze_pressure_volume(self,lines):
         press = 0.
         vol = 0.
+        pressure_found = False
+        volume_found = False
         for l in lines:
             if 'unit-cell volume' in l:
-                match = re.search(r'unit-cell volume\s*=\s*('+self.number_pattern+r')',l)
-                vol = float(match.group(1))
+                value = self.match_float(r'unit-cell volume\s*=\s*('+self.number_pattern+r')',l)
+                if value is not None:
+                    vol = value
+                    volume_found = True
+                #end if
             #end if
             if 'total' in l and 'stress' in l and 'P=' in l:
-                press = float(l.rsplit('P=',1)[1].split()[0])
+                value = self.match_float(r'P=\s*('+self.number_pattern+r')',l)
+                if value is not None:
+                    press = value
+                    pressure_found = True
+                #end if
             #end if
         #end for
         self.pressure = press
         self.volume = vol
+        return obj(pressure=pressure_found,volume=volume_found)
     #end def analyze_pressure_volume
 
 
     def analyze_stress(self,lines):
         stress = []
+        ntensors = 0
         for i,l in enumerate(lines):
             if 'total   stress' in l:
-                stress.extend([list(np.array(sl.split(),dtype=float)) for sl in lines[i+1:i+4]])
+                rows = []
+                if i+3<len(lines):
+                    for sl in lines[i+1:i+4]:
+                        row = self.first_numbers(sl,6)
+                        if row is None:
+                            rows = []
+                            break
+                        #end if
+                        rows.append(list(row))
+                    #end for
+                #end if
+                if len(rows)==3:
+                    stress.extend(rows)
+                    ntensors+=1
+                #end if
             #end if
         #end for
         self.stress = stress
+        return ntensors
     #end def analyze_stress
 
 
     def analyze_forces(self,lines):
         forces = []
         tot_forces = []
+        nat = None
+        if self.input is not None and 'system' in self.input and 'nat' in self.input.system:
+            nat = self.input.system.nat
+        #end if
         for i,l in enumerate(lines):
             if 'Forces acting on atoms' in l:
                 aforces = []
                 j = i+1
                 while j<len(lines):
-                    match = re.search(r'atom\s+\d+\s+type\s+\d+\s+force\s*=\s*(.*)',lines[j])
+                    match = re.search(
+                        r'atom\s+\d+\s+type\s+\d+\s+force\s*=\s*'
+                        r'('+self.number_pattern+r')\s+('+self.number_pattern+r')\s+('+self.number_pattern+r')',
+                        lines[j])
                     if match is not None:
-                        aforces.append(self.line_numbers(match.group(1)))
+                        values = [self.number_float(value) for value in match.groups()]
+                        aforces.append(np.array(values,dtype=float))
                     elif len(aforces)>0:
                         break
                     #end if
                     j+=1
                 #end while
-                forces.append(aforces)
+                if len(aforces)>0 and (nat is None or len(aforces)==nat):
+                    forces.append(aforces)
+                #end if
             #end if
             if 'Total force' in l:
                 match = re.search(r'Total force\s*=\s*('+self.number_pattern+r')',l)
-                tot_forces.append(float(match.group(1)))
+                if match is not None:
+                    tot_forces.append(self.number_float(match.group(1)))
+                #end if
             #end if
         #end for
         if len(forces)>0:
@@ -557,22 +709,28 @@ class PwscfAnalyzer(SimulationAnalyzer):
             self.tot_forces = np.array(tot_forces)
             self.max_forces = np.array([(np.sqrt((f**2).sum(1))).max() for f in self.forces])
         #end if
+        return obj(forces=len(forces),total_forces=len(tot_forces))
     #end def analyze_forces
 
 
     def analyze_timing(self,lines):
         tc = 0.
         tw = 0.
+        found = False
         for l in lines:
             if 'PWSCF        :' in l:
-                times = l.split(':',1)[1].split('CPU')
-                tc = pwscf_time(times[0])
-                tw = pwscf_time(times[1].replace('WALL',''))
-                break
+                match = re.search(r'PWSCF\s*:\s*(.*?)\s+CPU\s+(.*?)\s+WALL',l)
+                if match is not None:
+                    tc = pwscf_time(match.group(1))
+                    tw = pwscf_time(match.group(2))
+                    found = True
+                    break
+                #end if
             #end if
         #end for
         self.cputime = tc
         self.walltime = tw
+        return found
     #end def analyze_timing
 
 
@@ -582,36 +740,50 @@ class PwscfAnalyzer(SimulationAnalyzer):
             self.kpoints_cart = kpoints_cart
             self.kpoints_unit = kpoints_unit
             self.kweights = kweights
+            return len(kpoints_cart)
         #end if
+        return 0
     #end def analyze_kpoints
 
 
     def analyze_pw2casino(self):
         if self.pw2c_outfile_name is None:
-            return
+            return False
         #end if
         filepath = os.path.join(self.path,self.pw2c_outfile_name)
         try:
             with open(filepath,'r') as fobj:
                 lines = fobj.readlines()
-        except OSError as e:
+        except (OSError,UnicodeError) as e:
             if self.info.warn:
                 self.warn('pw2casino file read failed\nexception encountered: '+str(e))
             #end if
-            return
+            return False
         #end try
         for l in lines:
             if 'Kinetic' in l:
-                self.K = float(l.split()[5])
-                break
+                tokens = l.split()
+                if len(tokens)>5 and is_number(tokens[5]):
+                    self.K = self.number_float(tokens[5])
+                    return True
+                #end if
             #end if
         #end for
+        return False
     #end def analyze_pw2casino
 
 
     def analyze_xml(self):
         self.xmldata = obj(data=None,kpoints=None,failed=False)
+        if self.input is None or 'control' not in self.input:
+            self.xml_unavailable('input control section is not available')
+            return 0
+        #end if
         cont = self.input.control
+        if 'outdir' not in cont or 'prefix' not in cont:
+            self.xml_unavailable('input outdir/prefix is not available')
+            return 0
+        #end if
         savedir = os.path.join(self.path,cont.outdir,cont.prefix+'.save')
         schema_file = os.path.join(savedir,'data-file-schema.xml')
         legacy_file = os.path.join(savedir,'data-file.xml')
@@ -621,9 +793,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 root = ET.parse(schema_file).getroot()
             except (OSError,ET.ParseError) as e:
                 self.xml_read_failed(e)
-                return
+                return 0
             #end try
-            self.analyze_schema_xml(root)
+            return self.analyze_schema_xml(root)
         else:
             if not os.path.exists(legacy_file):
                 legacy_dir = os.path.join(self.path,cont.outdir)
@@ -631,11 +803,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
             try:
                 data = read_qexml(legacy_file)
-            except OSError as e:
+            except Exception as e:
                 self.xml_read_failed(e)
-                return
+                return 0
             #end try
-            self.analyze_legacy_xml(data,legacy_dir)
+            return self.analyze_legacy_xml(data,legacy_dir)
         #end if
     #end def analyze_xml
 
@@ -648,10 +820,38 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def xml_read_failed
 
 
+    def xml_unavailable(self,message):
+        self.xmldata.failed = True
+        if self.info.warn:
+            self.warn('xml data is incomplete, some data will not be available\nreason: '+message)
+        #end if
+    #end def xml_unavailable
+
+
+    def object_path(self,value,*names):
+        for name in names:
+            if value is None or name not in value:
+                return None
+            #end if
+            value = value[name]
+        #end for
+        return value
+    #end def object_path
+
+
     def analyze_legacy_xml(self,data,datadir):
-        kpdata = data.root.eigenvalues.k_point
+        kpdata = self.object_path(data,'root','eigenvalues','k_point')
+        if kpdata is None:
+            self.xmldata.update(data=data,kpoints=obj())
+            self.xml_unavailable('legacy eigenvalue k-points are not available')
+            return 0
+        #end if
         kpoints = obj()
         for ki,kpd in kpdata.items():
+            if 'k_point_coords' not in kpd or 'weight' not in kpd or 'datafile' not in kpd:
+                self.xmldata.failed = True
+                continue
+            #end if
             kp = obj(kpoint=kpd.k_point_coords,weight=kpd.weight)
             kpoints[ki] = kp
             for si,dfile in kpd.datafile.items():
@@ -662,11 +862,18 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
                 try:
                     edata = read_qexml(efilepath)
-                except OSError as e:
+                except Exception as e:
                     self.xml_read_failed(e)
                     continue
                 #end try
-                eunits = edata.root.units_for_energies.units.lower()
+                eunits = self.object_path(edata,'root','units_for_energies','units')
+                eigenvalues = self.object_path(edata,'root','eigenvalues')
+                occupations = self.object_path(edata,'root','occupations')
+                if eunits is None or eigenvalues is None or occupations is None:
+                    self.xmldata.failed = True
+                    continue
+                #end if
+                eunits = eunits.lower()
                 if eunits.startswith('ha'):
                     units = 'Ha'
                 elif eunits.startswith('ry'):
@@ -676,7 +883,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 else:
                     units = 'Ha'
                 #end if
-                spin = obj(units=units,eigenvalues=edata.root.eigenvalues,occupations=edata.root.occupations)
+                spin = obj(units=units,eigenvalues=eigenvalues,occupations=occupations)
                 if si==1:
                     kp.up = spin
                 elif si==2:
@@ -685,6 +892,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end for
         #end for
         self.xmldata.update(data=data,kpoints=kpoints)
+        return len(kpoints)
     #end def analyze_legacy_xml
 
 
@@ -751,6 +959,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def xml_child(self,element,name):
         name = name.lower()
+        if element is None:
+            return None
+        #end if
         for child in element:
             if self.xml_local_name(child)==name:
                 return child
@@ -764,17 +975,42 @@ class PwscfAnalyzer(SimulationAnalyzer):
         data = obj(root=self.xml_element(root))
         output = self.xml_child(root,'output')
         band_structure = self.xml_child(output,'band_structure')
+        kpoints = obj()
+        if output is None or band_structure is None:
+            self.xmldata.update(data=data,kpoints=kpoints)
+            self.xml_unavailable('output band_structure is not available')
+            return 0
+        #end if
         lsda_element = self.xml_child(band_structure,'lsda')
         lsda = self.xml_value(lsda_element.text) if lsda_element is not None else False
         records = [child for child in band_structure if self.xml_local_name(child)=='ks_energies']
-        kpoints = obj()
+        if len(records)==0:
+            self.xmldata.update(data=data,kpoints=kpoints)
+            self.xml_unavailable('ks_energies records are not available')
+            return 0
+        #end if
         coordinate_map = dict()
         for record in records:
             k_element = self.xml_child(record,'k_point')
             e_element = self.xml_child(record,'eigenvalues')
             o_element = self.xml_child(record,'occupations')
-            coordinates = np.array(self.xml_value(k_element.text),ndmin=1,dtype=float)
-            weight = float(k_element.attrib.get('weight',0.0))
+            if k_element is None or e_element is None or o_element is None:
+                self.xmldata.failed = True
+                continue
+            #end if
+            coordinates = self.first_numbers(k_element.text or '',3)
+            eigenvalues = self.line_numbers(e_element.text or '')
+            occupations = self.line_numbers(o_element.text or '')
+            if coordinates is None or len(eigenvalues)==0 or len(occupations)==0 or len(eigenvalues)!=len(occupations):
+                self.xmldata.failed = True
+                continue
+            #end if
+            weight_text = k_element.attrib.get('weight','')
+            if not is_number(weight_text):
+                self.xmldata.failed = True
+                continue
+            #end if
+            weight = self.number_float(weight_text)
             key = tuple(np.round(coordinates,12))
             if not lsda or key not in coordinate_map:
                 ki = len(kpoints)+1
@@ -786,8 +1022,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             kp = kpoints[ki]
             spin = obj(
                 units       = 'Ha',
-                eigenvalues = np.array(self.xml_value(e_element.text),ndmin=1,dtype=float),
-                occupations = np.array(self.xml_value(o_element.text),ndmin=1,dtype=float),
+                eigenvalues = eigenvalues,
+                occupations = occupations,
                 )
             if not lsda or 'up' not in kp:
                 kp.up = spin
@@ -796,6 +1032,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         self.xmldata.update(data=data,kpoints=kpoints)
+        if lsda and any('down' not in kp for kp in kpoints.values()):
+            self.xmldata.failed = True
+        #end if
+        if len(records)>0 and len(kpoints)==0:
+            self.xml_unavailable('no complete ks_energies records are available')
+        #end if
+        return len(kpoints)
     #end def analyze_schema_xml
 
 
