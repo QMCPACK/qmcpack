@@ -20,7 +20,7 @@ import os
 import time
 from typing import ClassVar,Literal,TextIO
 from . import memory
-from .developer import obj, error
+from .developer import obj, NexusError
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
 from .simulation import Simulation, sim_err_handler
 from .machines import Machine,Job
@@ -167,11 +167,15 @@ class ProjectManager(NexusCore):
         fake = []
         self.traverse_cascades(collect_fake,fake)
         if len(fake)>0:
-            msg = 'fake/temporary simulation objects detected in cascade\nthis is a developer error\nlist of fake sims and directories:\n'
+            msg = (
+                'fake/temporary simulation objects detected in cascade\n'
+                'this is a developer error\n'
+                'list of fake sims and directories:\n'
+                )
             for sim in fake:
                 msg +='  {0:>8}  {1}\n'.format(sim.simid,sim.locdir)
             #end for
-            self.error(msg)
+            raise NexusError(msg)
         #end if
     #end def screen_fake_sims
 
@@ -220,7 +224,12 @@ class ProjectManager(NexusCore):
             #end if
         #end for
         if any_collisions:
-            self.error('file collisions found in directory\n  '+path+'\n  set a unique identifier for each simulation')
+            msg = (
+                'file collisions found in directory\n'
+                '  '+path+'\n'
+                '  set a unique identifier for each simulation'
+                )
+            raise FileExistsError(msg)
         #end if
     #end def resolve_file_collisions
 
@@ -260,7 +269,8 @@ class ProjectManager(NexusCore):
         if result.dependencies_satisfied:
             self.log('all simulation dependencies satisfied',n=2)
         else:
-            self.error('some simulation dependecies are not satisfied')
+            msg = 'some simulation dependecies are not satisfied'
+            raise RuntimeError(msg)
         #end if
     #end def check_dependencies
 
@@ -446,17 +456,29 @@ class DynamicWorkflowManager(NexusCore):
                 sim = dp.sim
                 self.all_sims.add(sim.simid)
                 if len(sim.dependencies)>0 or len(sim.dependents)>0:
-                    self.error('encountered simulation with explicit dependencies, but these are not allowed in dynamic workflows.\nSimulation id: {}\nSimulation directory: {}'.format(sim.simid,sim.locdir))
+                    msg = (
+                        'encountered simulation with explicit dependencies, but these are not allowed in dynamic workflows.\n'
+                        'Simulation id: {}\n'
+                        'Simulation directory: {}'.format(sim.simid,sim.locdir)
+                        )
+                    raise ValueError(msg)
         # screen for simulations not associated with dyn process
         all_sims = dynamic_storage.simulation_ids
         rogue_sims = all_sims-self.all_sims
         if len(rogue_sims)>0:
-            msg = 'encountered simulations not associated with any dynamic process.\nSimulation ids: {}\nSimulation directories:'
+            msg = (
+                'encountered simulations not associated with any dynamic process.\n'
+                'Simulation ids: {}\n'
+                'Simulation directories:'
+                )
             paths = [all_sims[simid].locdir for simid in rogue_sims]
             for p in sorted(paths):
                 msg += '\n'+p
-            msg += '\nThis is likely a developer error.\nPlease contact the developers.'
-            self.error(msg)
+            msg += (
+                '\nThis is likely a developer error.\n'
+                'Please contact the developers.'
+                )
+            raise NexusError(msg)
     #end def add_new_dyn_procs
 
 
@@ -537,9 +559,14 @@ def workflow_manager(**kw):
     else:
         workflow_manager.first = False
     if not nexus_core.dynamic:
-        error('workflow_manager is only compatible with dynamic workflows.\nIf you intend to use dynamic workflows, please set dynamic=True in settings.')
+        msg = (
+            'workflow_manager is only compatible with dynamic workflows.\n'
+            'If you intend to use dynamic workflows, please set dynamic=True in settings.'
+            )
+        raise RuntimeError(msg)
     elif not workflow_manager.first:
-        error('function "workflow_manager" should only be called once')
+        msg = 'function "workflow_manager" should only be called once'
+        raise NexusError(msg)
     wm = DynamicWorkflowManager(**kw)
     return wm
 #end def workflow_manager

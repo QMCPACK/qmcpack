@@ -20,7 +20,7 @@
 import os
 import re
 import numpy as np
-from .developer import obj,dotdict
+from .developer import obj,dotdict,FileFormatError
 from .unit_converter import convert
 from .numerics import simstats, simplestats
 from .simulation import SimulationAnalyzer, Simulation
@@ -170,10 +170,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
         elif arg0 is not None:
             path = path_string(arg0)
             if not os.path.exists(path):
-                self.error(
+                msg = (
                     'path to QE data does not exist\n'
                     f'path provided: {path}'
                     )
+                raise FileNotFoundError(msg)
             if os.path.isfile(path):
                 filepath = path
                 path,filename = os.path.split(filepath)
@@ -182,10 +183,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 elif filename.endswith('.out'):
                     outfile_name = filename
                 else:
-                    self.error(
+                    msg = (
                         'could not determine whether file is QE input or output\n'
                         f'file provided: {filepath}'
                         )
+                    raise RuntimeError(msg)
             if outfile_name is None:
                 outfile_name = f"{infile_name.rsplit('.',1)[0]}.out"
         else:
@@ -1075,9 +1077,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
         results_xml = self.results_xml
         if not return_flag:
             if results_xml is None:
-                self.error('xml data has not been processed\ncannot write electron counts')
+                msg = 'xml data has not been processed\ncannot write electron counts'
+                raise RuntimeError(msg)
             elif results_xml.failed:
-                self.error('xml data processing failed\ncannot write electron counts')
+                msg = 'xml data processing failed\ncannot write electron counts'
+                raise FileFormatError(msg)
         elif results_xml is None or results_xml.failed:
             return False
         kpoints      = results_xml.kpoints

@@ -1,7 +1,7 @@
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi TotalView adaptor"
 #define BOOST_TEST_DYN_LINK
 
-#include <boost/test/unit_test.hpp>
+// #include <boost/test/unit_test.hpp>
 
 #include "multi/array.hpp"
 #include "multi/utility.hpp"

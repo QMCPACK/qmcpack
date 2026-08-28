@@ -315,6 +315,38 @@ Additional information:
     of pw2qmcpack, there is missing ionic information. This flag bypasses the requirement
     that the ionic information in the eshdf.h5 file match the input XML. 
 
+B-spline sposet sub-options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The exact behavior of the memory allocations of B-spline orbital coefficients can be managed by ``coefs_mem`` XML node
+when there is more than one MPI rank within each compute node. The B-spline coefficients are by default replicated identically
+by every MPI rank. The ``coefs_mem`` sub-options reduce memory pressure by sharing and/or distributing B-spline coefficients
+over multiple ranks. 
+
+``coefs_mem`` element:
+
+.. table::
+
+  +-----------------+------------+
+  | Parent elements | ``sposet`` |
+  +-----------------+------------+
+  | Child elements  |            |
+  +-----------------+------------+
+
+attribute:
+
++-----------------------+------------+---------------+---------+----------------------------------------------------------+
+| Name                  | Datatype   | Values        | Default | Description                                              |
++=======================+============+===============+=========+==========================================================+
+| ``shared_ranks``      | Integer    | :math:`\gt 0` | 1       | The number of MPI ranks sharing the same allocation      |
++-----------------------+------------+---------------+---------+----------------------------------------------------------+
+| ``distributed_ranks`` | Integer    | :math:`\gt 0` | 1       | The number of MPI ranks that allocations are distributed |
++-----------------------+------------+---------------+---------+----------------------------------------------------------+
+
+The product of ``shared_ranks`` and ``distributed_ranks`` may not execeed the total number of MPI ranks within a compute node.
+Sharing and/or distributing memory only affect the memory allocation on the host. Distributing memory cannot be enabled when
+using GPUs. Sharing memory can be used with GPUs enabled to reduce host memory footprint within the compute node. When evaluations
+of B-spline orbitals happen on the host, sharing and/or distributing memory across NUMA domains may cause performance penalty.
+
 .. _spo-lcao:
 
 Linear combination of atomic orbitals (LCAO) with Gaussian and/or Slater-type basis sets
@@ -613,7 +645,7 @@ To enable hybrid orbital representation, the input XML needs to see the tag ``hy
   :name: Listing 6
 
   <sposet_collection type="bspline" source="i" href="pwscf.h5"
-                tilematrix="1 1 3 1 2 -1 -2 1 0" gpu="yes" meshfactor="0.8"
+                tilematrix="1 1 3 1 2 -1 -2 1 0" meshfactor="0.8"
                 twist="0  0  0" precision="single" hybridrep="yes">
     ...
   </sposet_collection>
