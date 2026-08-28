@@ -75,14 +75,6 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   drift_modifier_.reset(
       createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));
 
-  // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
-  max_disp_sq_ = input.get_max_disp_sq();
-  if (max_disp_sq_ < 0)
-  {
-    auto& lattice = population.get_golden_electrons().getLattice();
-    max_disp_sq_  = lattice.LR_rc * lattice.LR_rc;
-  }
-
   wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons().getTotalNum(), get_root_name(), myComm);
 }
 

@@ -518,7 +518,6 @@ void QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
 */
 void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
 {
-  std::string useGPU("yes");
   std::string vmcMove("pbyp");
   std::string ReportToH5("no");
   std::string OutputMatrices("no");
@@ -526,7 +525,6 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   std::string FreezeParameters("no");
   std::string UseLineSearch("no");
   OhmmsAttributeSet oAttrib;
-  oAttrib.add(useGPU, "gpu");
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
 
@@ -595,18 +593,17 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
 
     hybridEngineObj->incrementStepCounter();
 
-    processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
+    processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes");
   }
   else
   {
-    processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
+    processOptXML(q, vmcMove, ReportToH5 == "yes");
   }
 }
 
 bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
                                                         const std::string& vmcMove,
-                                                        bool reportH5,
-                                                        bool useGPU)
+                                                        bool reportH5)
 {
   m_param.put(opt_xml);
 

@@ -88,9 +88,6 @@ protected:
   IndexType check_point_period_ = 0;
   bool dump_config_             = false;
 
-  // from QMCUpdateBase
-  RealType max_disp_sq_ = -1.0;
-
   // for drift modifer
   std::string drift_modifier_{"UNR"};
   RealType drift_modifier_unr_a_ = 1.0;
@@ -104,7 +101,6 @@ public:
   IndexType get_total_walkers() const { return total_walkers_; }
   IndexType get_requested_samples() const { return requested_samples_; }
   IndexType get_sub_steps() const { return sub_steps_; }
-  RealType get_max_disp_sq() const { return max_disp_sq_; }
   IndexType get_max_blocks() const { return max_blocks_; }
   IndexType get_requested_steps() const { return requested_steps_; }
   IndexType get_warmup_steps() const { return warmup_steps_; }

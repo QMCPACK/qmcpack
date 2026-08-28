@@ -78,6 +78,7 @@ TEST_CASE("QMCDriverInput retired modern state", "[drivers]")
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(R"(<qmc method="vmc" move="pbyp">
       <parameter name="current">not-an-integer</parameter>
+      <parameter name="maxDisplSq">not-a-real</parameter>
       <parameter name="blocks_between_recompute">3</parameter>
       <random seed="retired-qmc-child"/>
     </qmc>)"));

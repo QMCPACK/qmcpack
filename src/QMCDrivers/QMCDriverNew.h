@@ -393,7 +393,6 @@ protected:
    *  or are live state.
    *  @{
    */
-  RealType max_disp_sq_;
   ///the number of saved samples
   IndexType target_samples_;
 
