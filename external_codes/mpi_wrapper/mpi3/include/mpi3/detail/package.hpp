@@ -59,11 +59,11 @@ struct package : buffer {
 		return *this;
 	}
 	auto send(int dest, int tag = 0) {
-		return bcomm_.send(static_cast<buffer&>(*this), dest, tag);
+		return bcomm_.send(static_cast<buffer&>(*this), dest, tag);  // NOLINT(readability-avoid-return-with-void-value)
 	}
-	#if not defined(EXAMPI)
+	#ifndef EXAMPI
 	auto receive(int dest, int tag = 0) {
-		return bcomm_.receive(static_cast<buffer&>(*this), dest, tag);
+		return bcomm_.receive(static_cast<buffer&>(*this), dest, tag);  // NOLINT(readability-avoid-return-with-void-value)
 	}
 	#endif
 };

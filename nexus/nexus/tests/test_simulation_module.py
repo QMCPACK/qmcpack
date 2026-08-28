@@ -12,6 +12,7 @@ from nexus.nexus_base import nexus_core
 from ..testing import value_eq,object_eq
 from ..testing import FailedTest,failed
 
+from ..generic import NexusUserWarning
 from ..developer import obj
 from ..machines import Job
 from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
@@ -493,28 +494,18 @@ file2 = "$file.$ext2"
 
     # assign
     si_assign = input_template()
-    try:
+    with pytest.raises(
+        ValueError,
+        match="cannot assign values prior to reading template"
+        ):
         si_assign.assign(b=1)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     si_assign = input_template(template_filepath)
-    try:
+    with pytest.raises(
+        ValueError,
+        match="attempted to assign invalid keywords"
+        ):
         si_assign.assign(c=1)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     values = obj(
         a    = 'name',
@@ -528,29 +519,26 @@ file2 = "$file.$ext2"
 
     assert(object_eq(si_assign.values,values))
 
-
-    # write
-    def try_write(si):
-        try:
-            si.write()
-            raise FailedTest
-        except NexusError:
-            None
-        except FailedTest:
-            failed()
-        except Exception as e:
-            failed(str(e))
-        #end try
-    #end def try_write
-
     si_write = input_template()
-    try_write(si_write)
+    with pytest.raises(
+        AttributeError,
+        match="'NoneType' object has no attribute 'substitute'"
+        ):
+        si_write.write()
 
     si_write = input_template(template_filepath)
-    try_write(si_write)
+    with pytest.raises(
+        ValueError,
+        match="not all keywords for this template have been assigned"
+        ):
+        si_write.write()
 
     si_write.assign(b=1)
-    try_write(si_write)
+    with pytest.raises(
+        ValueError,
+        match="not all keywords for this template have been assigned"
+        ):
+        si_write.write()
 
 
     text_ref = '''
@@ -1326,41 +1314,32 @@ def test_depends():
 
 
     # fail when dependency does not exist
-    try:
+    with pytest.raises(
+        ValueError,
+        match="quant1 is not known to be a result of Simulation"
+        ):
         s1 = get_sim()
         s2 = get_sim(
             dependencies = [(s1,'quant1')],
             )
-        raise FailedTest
-    except NexusError:
-        None
-    except:
-        failed()
-    #end try
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match="quant2 is not known to be a result of Simulation"
+        ):
         s1 = get_sim()
         s2 = get_sim(
             dependencies = [(s1,'other','quant2')],
             )
-        raise FailedTest
-    except NexusError:
-        None
-    except:
-        failed()
-    #end try
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match="apple is not known to be a result of SimulationForTests"
+        ):
         s1 = get_test_sim()
         s2 = get_test_sim(
             dependencies = [(s1,'quant1','apple')],
             )
-        raise FailedTest
-    except NexusError:
-        None
-    except:
-        failed()
-    #end try
 
     Simulation.clear_all_sims()
 #end def test_depends
@@ -1474,17 +1453,13 @@ def test_check_dependencies():
 
 
     # non-existent dependency
-    try:
+    with pytest.raises(
+        ValueError,
+        match="nonexistent is not known to be a result of SimulationForTests"
+        ):
         s  = get_test_sim()
         s2 = get_test_sim(dependencies=((s,'nonexistent')))
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
+
 
 
     # existent dependency but generic input
@@ -1505,15 +1480,11 @@ def test_check_dependencies():
     s.check_dependencies(result)
     assert(result.dependencies_satisfied)
 
-    try:
+    with pytest.warns(
+        NexusUserWarning,
+        match="a simulation result cannot be inferred from generic formatted or template input"
+        ):
         s2.check_dependencies(result)
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     Simulation.clear_all_sims()
 #end def test_check_dependencies
@@ -2852,20 +2823,14 @@ def test_write_dependents():
 
 
 def test_generate_simulation():
-    from ..developer import NexusError
     from ..simulation import Simulation,GenericSimulation
     from ..simulation import generate_simulation
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match="sim_type unknown is unrecognized"
+        ):
         sim = generate_simulation(sim_type='unknown')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     sim = generate_simulation()
     assert(isinstance(sim,Simulation))

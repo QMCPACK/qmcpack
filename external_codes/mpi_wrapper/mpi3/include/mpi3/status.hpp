@@ -1,22 +1,22 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_STATUS_HPP
 #define BOOST_MPI3_STATUS_HPP
 
-//#define OMPI_SKIP_MPICXX 1  // https://github.com/open-mpi/ompi/issues/5157
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
-#include "../mpi3/detail/datatype.hpp"
+#include <mpi3/detail/datatype.hpp>
 
-#include<stdexcept>
+#include <stdexcept>
 
 namespace boost {
 namespace mpi3 {
 
 struct [[nodiscard]] status {
+	// cppcheck-suppress [uninitMemberVar]
 	MPI_Status impl_;  // NOLINT(misc-non-private-member-variables-in-classes) TODO(correaa)
 
-	status() = default;
+	status() = default;  // cppcheck-suppress [uninitMemberVar]
 	status(status const&) = default; //  TODO(correaa) check
 	status(status     &&) = default; //  TODO(correaa) check
 
@@ -40,7 +40,7 @@ struct [[nodiscard]] status {
 		return ret;
 	}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	template<class T>
 	void set_elements(int count) {
 		MPI_Status_set_elements(&impl_, datatype<T>{}(), count);  // can't use MPI_(Get_count) because it is used for call

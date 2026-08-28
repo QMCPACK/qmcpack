@@ -14,6 +14,10 @@ TEST_FILES = {
     "Fe_start_ns_eig.in":     TEST_DIR / "test_pwscf_input_files/Fe_start_ns_eig.in",
     "LiI_vc_relax.in":        TEST_DIR / "test_pwscf_input_files/LiI_vc_relax.in",
     "Ni_surface.in":          TEST_DIR / "test_pwscf_input_files/Ni_surface.in",
+    "nexus_argon_scf.in":     TEST_DIR / "test_pwscf_input_files/nexus_argon_scf.in",
+    "nexus_h2_relax.in":      TEST_DIR / "test_pwscf_input_files/nexus_h2_relax.in",
+    "nexus_argon_bands.in":   TEST_DIR / "test_pwscf_input_files/nexus_argon_bands.in",
+    "nexus_hubbard_e2_e3.in": TEST_DIR / "test_pwscf_input_files/nexus_hubbard_e2_e3.in",
     "TiO2_band_structure.in": TEST_DIR / "test_pwscf_input_files/TiO2_band_structure.in",
     "TiO2_relax_freeze.in":   TEST_DIR / "test_pwscf_input_files/TiO2_relax_freeze.in",
     "VO2_M1_afm.in":          TEST_DIR / "test_pwscf_input_files/VO2_M1_afm.in",
@@ -122,20 +126,206 @@ def test_input(tmp_path):
 
     compositions['Fe_start_ns_eig.in'] = pw
 
+    # Nexus-authored representative scf input
+    pw = PwscfInput()
+    pw.control.update(
+        calculation = 'scf',
+        prefix       = 'nexus_argon',
+        outdir       = './nexus_test_tmp',
+        pseudo_dir   = './pseudo',
+        )
+    pw.system.update(
+        ibrav       = 1,
+        nat         = 1,
+        ntyp        = 1,
+        nspin       = 1,
+        ecutwfc     = 32.0,
+        occupations = 'fixed',
+        )
+    pw.system['celldm(1)'] = 9.25
+    pw.electrons.update(
+        conv_thr        = 2.0e-9,
+        diagonalization = 'david',
+        )
+    pw.atomic_species.update(
+        atoms            = ['Ar'],
+        masses           = obj(Ar=39.948),
+        pseudopotentials = obj(Ar='Ar.nexus-test.UPF'),
+        )
+    pw.atomic_positions.update(
+        specifier = 'crystal',
+        atoms     = ['Ar'],
+        positions = np.array([[0.0,0.0,0.0]]),
+        )
+    pw.k_points.update(
+        specifier = 'automatic',
+        grid      = np.array((5,5,5)),
+        shift     = np.array((1,1,1)),
+        )
+    compositions['nexus_argon_scf.in'] = pw
+
+    # Nexus-authored representative relax input
+    pw = PwscfInput('ions')
+    pw.control.update(
+        calculation   = 'relax',
+        prefix        = 'nexus_h2',
+        outdir        = './nexus_test_tmp',
+        pseudo_dir    = './pseudo',
+        forc_conv_thr = 3.0e-5,
+        nstep         = 40,
+        )
+    pw.system.update(
+        ibrav           = 1,
+        nat             = 2,
+        ntyp            = 1,
+        nspin           = 1,
+        ecutwfc         = 28.0,
+        assume_isolated = 'martyna-tuckerman',
+        )
+    pw.system['celldm(1)'] = 18.0
+    pw.electrons.update(
+        conv_thr    = 4.0e-10,
+        mixing_beta = 0.55,
+        )
+    pw.ions.ion_dynamics = 'bfgs'
+    pw.atomic_species.update(
+        atoms            = ['H'],
+        masses           = obj(H=1.00794),
+        pseudopotentials = obj(H='H.nexus-test.UPF'),
+        )
+    pw.atomic_positions.update(
+        specifier        = 'angstrom',
+        atoms            = ['H','H'],
+        positions        = np.array([
+            [4.50,4.50,4.09],
+            [4.50,4.50,4.91],
+            ]),
+        relax_directions = np.array([
+            [0,0,1],
+            [0,0,1],
+            ]),
+        )
+    pw.k_points.specifier = 'gamma'
+    compositions['nexus_h2_relax.in'] = pw
+
+    # Nexus-authored representative bands input
+    pw = PwscfInput()
+    pw.control.update(
+        calculation = 'bands',
+        prefix       = 'nexus_argon',
+        outdir       = './nexus_test_tmp',
+        pseudo_dir   = './pseudo',
+        )
+    pw.system.update(
+        ibrav       = 1,
+        nat         = 1,
+        ntyp        = 1,
+        nspin       = 1,
+        ecutwfc     = 32.0,
+        nbnd        = 8,
+        occupations = 'fixed',
+        )
+    pw.system['celldm(1)'] = 9.25
+    pw.electrons.update(
+        conv_thr        = 2.0e-9,
+        diagonalization = 'david',
+        )
+    pw.atomic_species.update(
+        atoms            = ['Ar'],
+        masses           = obj(Ar=39.948),
+        pseudopotentials = obj(Ar='Ar.nexus-test.UPF'),
+        )
+    pw.atomic_positions.update(
+        specifier = 'crystal',
+        atoms     = ['Ar'],
+        positions = np.array([[0.0,0.0,0.0]]),
+        )
+    pw.k_points.update(
+        specifier = 'crystal_b',
+        nkpoints  = 4,
+        kpoints   = np.array([
+            [0.0,0.0,0.0],
+            [0.5,0.0,0.0],
+            [0.5,0.5,0.0],
+            [0.0,0.0,0.0],
+            ]),
+        weights   = np.array((16,16,16,1)),
+        )
+    compositions['nexus_argon_bands.in'] = pw
+
+    # Nexus-authored representative Hubbard B/E2/E3 input
+    pw = PwscfInput('hubbard')
+    pw.control.update(
+        calculation = 'scf',
+        prefix       = 'nexus_hubbard',
+        outdir       = './nexus_test_tmp',
+        pseudo_dir   = './pseudo',
+        )
+    pw.system.update(
+        ibrav       = 1,
+        nat         = 2,
+        ntyp        = 2,
+        nspin       = 1,
+        ecutwfc     = 36.0,
+        occupations = 'fixed',
+        )
+    pw.system['celldm(1)'] = 10.5
+    pw.electrons.update(
+        conv_thr        = 3.0e-9,
+        diagonalization = 'david',
+        )
+    pw.atomic_species.update(
+        atoms            = ['Ce','Fe'],
+        masses           = obj(Ce=140.116,Fe=55.845),
+        pseudopotentials = obj(
+            Ce = 'Ce.nexus-test.UPF',
+            Fe = 'Fe.nexus-test.UPF',
+            ),
+        )
+    pw.atomic_positions.update(
+        specifier = 'crystal',
+        atoms     = ['Ce','Fe'],
+        positions = np.array([
+            [0.0,0.0,0.0],
+            [0.5,0.5,0.5],
+            ]),
+        )
+    pw.k_points.update(
+        specifier = 'automatic',
+        grid      = np.array((4,4,4)),
+        shift     = np.array((0,0,0)),
+        )
+    pw.hubbard.update(
+        specifier = 'atomic',
+        hubbard   = {
+            'U' : {'Ce-4f':5.8,'Fe-3d':3.7},
+            'J' : {'Ce-4f':0.65},
+            'B' : {'Fe-3d':0.09},
+            'E2': {'Ce-4f':0.12},
+            'E3': {'Ce-4f':0.04},
+            },
+        )
+    compositions['nexus_hubbard_e2_e3.in'] = pw
+
 
     # test read
-    pwr = PwscfInput(TEST_FILES['Fe_start_ns_eig.in'])
-    pwc = deepcopy(pw)
-    pwc.standardize_types()
-    check_pw_same(pwc,pwr,'compose','read')
+    for input_file,pw in compositions.items():
+        pwr = PwscfInput(TEST_FILES[input_file])
+        pwc = deepcopy(pw)
+        pwc.standardize_types()
+        check_pw_same(pwc,pwr,'compose','read')
+    #end for
 
 
     # test write
-    infile = tmp_path / 'pwscf.in'
-    pw.write(infile)
-    pw2 = PwscfInput()
-    pw2.read(infile)
-    check_pw_same(pw2,pwr)
+    for input_file,pw in compositions.items():
+        write_path = tmp_path / ('composed_'+input_file)
+        pw.write(write_path)
+        pw2 = PwscfInput()
+        pw2.read(write_path)
+        pwr = PwscfInput(TEST_FILES[input_file])
+        check_pw_same(pw2,pwr,'write/read','read')
+    #end for
 
 
     # test read/write/read
@@ -336,4 +526,159 @@ def test_input(tmp_path):
     pw.write(write_path)
     pw4 = PwscfInput(write_path)
     check_pw_same(pwg,pw3,'generate','write')
+
+    # Nexus-authored representative scf input
+    infile     = 'nexus_argon_scf.in'
+    write_path = tmp_path / infile
+    pw = generate_pwscf_input(
+        selector        = 'generic',
+        calculation     = 'scf',
+        prefix          = 'nexus_argon',
+        outdir          = './nexus_test_tmp',
+        pseudo_dir      = './pseudo',
+        ibrav           = 1,
+        celldm          = {1:9.25},
+        nat             = 1,
+        ntyp            = 1,
+        nspin           = 1,
+        ecutwfc         = 32.0,
+        occupations     = 'fixed',
+        conv_thr        = 2.0e-9,
+        diagonalization = 'david',
+        mass            = obj(Ar=39.948),
+        pseudos         = ['Ar.nexus-test.UPF'],
+        elem            = ['Ar'],
+        pos             = [[0.0,0.0,0.0]],
+        pos_specifier   = 'crystal',
+        kgrid           = (5,5,5),
+        kshift          = (1,1,1),
+        )
+    generations[infile] = pw
+    pw.write(write_path)
+    pw2 = PwscfInput(write_path)
+    check_pw_same(pw2,reads[infile],'generate','read')
+
+    # Nexus-authored representative relax input
+    infile     = 'nexus_h2_relax.in'
+    write_path = tmp_path / infile
+    pw = generate_pwscf_input(
+        selector        = 'generic',
+        calculation     = 'relax',
+        prefix          = 'nexus_h2',
+        outdir          = './nexus_test_tmp',
+        pseudo_dir      = './pseudo',
+        forc_conv_thr   = 3.0e-5,
+        nstep           = 40,
+        ibrav           = 1,
+        celldm          = {1:18.0},
+        nat             = 2,
+        ntyp            = 1,
+        nspin           = 1,
+        ecutwfc         = 28.0,
+        assume_isolated = 'martyna-tuckerman',
+        conv_thr        = 4.0e-10,
+        mixing_beta     = 0.55,
+        ion_dynamics    = 'bfgs',
+        mass            = obj(H=1.00794),
+        pseudos         = ['H.nexus-test.UPF'],
+        elem            = ['H','H'],
+        pos             = [[4.50,4.50,4.09],
+                           [4.50,4.50,4.91]],
+        pos_specifier   = 'angstrom',
+        kgrid           = (1,1,1),
+        kshift          = (0,0,0),
+        )
+    pw.atomic_positions.relax_directions = np.array([
+        [0,0,1],
+        [0,0,1],
+        ])
+    generations[infile] = pw
+    pw.write(write_path)
+    pw2 = PwscfInput(write_path)
+    check_pw_same(pw2,reads[infile],'generate','read')
+
+    # Nexus-authored representative bands input.  The explicit path is set on
+    # the generated input because the generic interface only accepts regular
+    # k-point grids directly.
+    infile     = 'nexus_argon_bands.in'
+    write_path = tmp_path / infile
+    pw = generate_pwscf_input(
+        selector        = 'generic',
+        calculation     = 'bands',
+        prefix          = 'nexus_argon',
+        outdir          = './nexus_test_tmp',
+        pseudo_dir      = './pseudo',
+        ibrav           = 1,
+        celldm          = {1:9.25},
+        nat             = 1,
+        ntyp            = 1,
+        nspin           = 1,
+        ecutwfc         = 32.0,
+        nbnd            = 8,
+        occupations     = 'fixed',
+        conv_thr        = 2.0e-9,
+        diagonalization = 'david',
+        mass            = obj(Ar=39.948),
+        pseudos         = ['Ar.nexus-test.UPF'],
+        elem            = ['Ar'],
+        pos             = [[0.0,0.0,0.0]],
+        pos_specifier   = 'crystal',
+        kgrid           = (1,1,1),
+        kshift          = (0,0,0),
+        )
+    pw.k_points.update(
+        specifier = 'crystal_b',
+        nkpoints  = 4,
+        kpoints   = np.array([
+            [0.0,0.0,0.0],
+            [0.5,0.0,0.0],
+            [0.5,0.5,0.0],
+            [0.0,0.0,0.0],
+            ]),
+        weights   = np.array((16,16,16,1)),
+        )
+    generations[infile] = pw
+    pw.write(write_path)
+    pw2 = PwscfInput(write_path)
+    check_pw_same(pw2,reads[infile],'generate','read')
+
+    # Nexus-authored representative Hubbard B/E2/E3 input
+    infile     = 'nexus_hubbard_e2_e3.in'
+    write_path = tmp_path / infile
+    pw = generate_pwscf_input(
+        selector        = 'generic',
+        calculation     = 'scf',
+        prefix          = 'nexus_hubbard',
+        outdir          = './nexus_test_tmp',
+        pseudo_dir      = './pseudo',
+        ibrav           = 1,
+        celldm          = {1:10.5},
+        nat             = 2,
+        ntyp            = 2,
+        nspin           = 1,
+        ecutwfc         = 36.0,
+        occupations     = 'fixed',
+        conv_thr        = 3.0e-9,
+        diagonalization = 'david',
+        mass            = obj(Ce=140.116,Fe=55.845),
+        pseudos         = ['Ce.nexus-test.UPF','Fe.nexus-test.UPF'],
+        elem            = ['Ce','Fe'],
+        pos             = [[0.0,0.0,0.0],
+                           [0.5,0.5,0.5]],
+        pos_specifier   = 'crystal',
+        kgrid           = (4,4,4),
+        kshift          = (0,0,0),
+        hubbard         = {
+            'U' : {'Ce-4f':5.8,'Fe-3d':3.7},
+            'J' : {'Ce-4f':0.65},
+            'B' : {'Fe-3d':0.09},
+            'E2': {'Ce-4f':0.12},
+            'E3': {'Ce-4f':0.04},
+            },
+        hubbard_proj    = 'atomic',
+        )
+    generations[infile] = pw
+    pw.write(write_path)
+    pw2 = PwscfInput(write_path)
+    check_pw_same(pw2,reads[infile],'generate','read')
 #end def test_input

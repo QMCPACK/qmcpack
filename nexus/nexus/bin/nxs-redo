@@ -129,8 +129,8 @@ if len(paths)>0:
         print('redo: backing up attempted sim runs')
     #end if
 else:
-    print('redo: no simulation directories found')
-    sys.exit()
+    msg = 'redo: no simulation directories found'
+    raise RuntimeError(msg)
 #end if
 cwd = os.getcwd()
 for path in sorted(paths.keys()):

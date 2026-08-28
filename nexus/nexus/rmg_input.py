@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
 
-from .developer import DevBase, obj, error
+from .developer import DevBase, obj, FileFormatError, NexusError
 from .unit_converter import convert
 from .pseudoset import pp_elem_label, PseudoSet
 from .structure import generate_structure
@@ -3036,7 +3036,12 @@ class RmgKeyword(DevBase):
         if name is not None:
             spec[name] = value
         else:
-            self.error('Invalid keyword specification text received.\nNo field names are present.\nInvalid spec: {}'.format(key_spec))
+            msg = (
+                'Invalid keyword specification text received.\n'
+                'No field names are present.\n'
+                'Invalid spec: {}'.format(key_spec)
+                )
+            raise ValueError(msg)
         #end if
 
         for name,value in spec.items():
@@ -3045,16 +3050,32 @@ class RmgKeyword(DevBase):
                 if 'key_name' in spec:
                     kname = spec.key_name
                 #end if
-                self.error('Unrecognized keyword specification field.\nKeyword: {}\nField name: {}\nField value: {}'.format(kname,name,value))
+                msg = (
+                    'Unrecognized keyword specification field.\n'
+                    'Keyword: {}\n'
+                    'Field name: {}\n'
+                    'Field value: {}'.format(kname, name, value)
+                    )
+                raise ValueError(msg)
             #end if
             self[name] = value
         #end for
 
         if self.key_name is None:
-            self.error('Invalid keyword specification received.\nKey name must be defined.\nInvalid spec: {}'.format(key_spec))
+            msg = (
+                'Invalid keyword specification received.\n'
+                'Key name must be defined.\n'
+                'Invalid spec: {}'.format(key_spec)
+                )
+            raise ValueError(msg)
         #end if
         if self.key_type is None:
-            self.error('Invalid keyword specification received.\nKey type must be defined.\nInvalid spec: {}'.format(key_spec))
+            msg = (
+                'Invalid keyword specification received.\n'
+                'Key type must be defined.\n'
+                'Invalid spec: {}'.format(key_spec)
+                )
+            raise ValueError(msg)
         #end if
 
         if self.key_type=='formatted':
@@ -3062,10 +3083,12 @@ class RmgKeyword(DevBase):
         #end if
 
         if self.key_type not in read_functions:
-            self.error('Read function has not been implemented for key type "{}".'.format(self.key_type))
+            msg = 'Read function has not been implemented for key type "{}".'.format(self.key_type)
+            raise NotImplementedError(msg)
         #end if
         if self.key_type not in write_functions:
-            self.error('Write function has not been implemented for key type "{}".'.format(self.key_type))
+            msg = 'Write function has not been implemented for key type "{}".'.format(self.key_type)
+            raise NotImplementedError(msg)
         #end if
 
         read_function = read_functions[self.key_type]
@@ -3145,7 +3168,15 @@ class RmgKeyword(DevBase):
 
     def assign(self,value):
         if not isinstance(value,self.value_type):
-            self.error('cannot assign RMG keyword "{}".\nInvalid type encountered.\nType encoutered: {}\nType(s) expected: {}'.format(self.key_name,value.__class__.__name__,self.value_type))
+            msg = (
+                'cannot assign RMG keyword "{}".\n'
+                'Invalid type encountered.\n'
+                'Type encoutered: {}\n'
+                'Type(s) expected: {}'.format(
+                    self.key_name, value.__class__.__name__, self.value_type
+                    )
+                )
+            raise TypeError(msg)
         #end if
         if self.array_dtype is not None:
             return np.array(value,dtype=self.array_dtype)
@@ -3231,7 +3262,15 @@ class FormattedTableRmgKeyword(FormattedRmgKeyword):
             #end for
             return value
         else:
-            self.error('cannot assign RMG keyword "{}".\nInvalid type encountered.\nType encoutered: {}\nType(s) expected: str,dict,obj'.format(self.key_name,value.__class__.__name__))
+            msg = (
+                'cannot assign RMG keyword "{}".\n'
+                'Invalid type encountered.\n'
+                'Type encoutered: {}\n'
+                'Type(s) expected: str,dict,obj'.format(
+                    self.key_name, value.__class__.__name__
+                    )
+                )
+            raise TypeError(msg)
         #end if
     #end def assign
 
@@ -3344,7 +3383,7 @@ class KpointsBandstructureKeyword(FormattedTableRmgKeyword):
 
     def read(self,value):
         d = np.array(value.split(),dtype=str)
-        npe.reshape_inplace(d, (len(d)//4, 5))
+        npe.reshape_inplace(d, (len(d)//5, 5))
         kpoints = np.array(d[:,:3],dtype=float)
         counts  = np.array(d[:,3],dtype=int).flatten()
         labels  = d[:,-1].flatten()
@@ -3392,7 +3431,8 @@ class AtomsKeyword(FormattedTableRmgKeyword):
         # check if input data is empty
         value = value.strip()
         if len(value)==0:
-            self.error('No data provided for "atoms".')
+            msg = 'No data provided for "atoms".'
+            raise FileFormatError(msg)
         #end if
 
         # determine the number of values per line
@@ -3466,9 +3506,19 @@ class AtomsKeyword(FormattedTableRmgKeyword):
         #end if
 
         if invalid_format:
-            self.error('Failed to read atoms data.\nPlease check the formatting:\n{}'.format(value))
+            msg = (
+                'Failed to read atoms data.\n'
+                'Please check the formatting:\n'
+                '{}'.format(value)
+                )
+            raise FileFormatError(msg)
         elif v.format is None or v.format not in AtomsKeyword.formats:
-            self.error('Failed to read atoms data.\nThis is a developer error.\nPlease contact the developers.')
+            msg = (
+                'Failed to read atoms data.\n'
+                'This is a developer error.\n'
+                'Please contact the developers.'
+                )
+            raise NexusError(msg)
         #end if
 
         return v
@@ -3494,15 +3544,20 @@ class AtomsKeyword(FormattedTableRmgKeyword):
                 s += '{:<4} {: 16.12f} {: 16.12f} {: 16.12f}  {}  {: 6.4f}\n'.format(a,p[0],p[1],p[2],int(mv),mo)
             #end for
         elif v.format=='spin_ratio':
-            for (a,p,m,s) in zip(v.atoms,v.positions,v.movable,v.spin_ratio):
-                s += '{:<4} {: 16.12f} {: 16.12f} {: 16.12f} {} {} {} {: 6.4f}\n'.format(a,p[0],p[1],p[2],int(m[0]),int(m[1]),int(m[2]),s)
+            for (a,p,m,sr) in zip(v.atoms,v.positions,v.movable,v.spin_ratio):
+                s += '{:<4} {: 16.12f} {: 16.12f} {: 16.12f} {} {} {} {: 6.4f}\n'.format(a,p[0],p[1],p[2],int(m[0]),int(m[1]),int(m[2]),sr)
             #end for
         elif v.format=='full_spin':
             for (a,p,m,sr,st,sp) in zip(v.atoms,v.positions,v.movable,v.spin_ratio,v.spin_theta,v.spin_phi):
                 s += '{:<4} {: 16.12f} {: 16.12f} {: 16.12f} {} {} {} {: 6.4f} {: 6.2f} {: 6.2f}\n'.format(a,p[0],p[1],p[2],int(m[0]),int(m[1]),int(m[2]),sr,st,sp)
             #end for
         else:
-            self.error('Invalid atoms format encountered on write.\nInvalid format: {}\nValid options are: {}'.format(v.format,self.formats))
+            msg = (
+                'Invalid atoms format encountered on write.\n'
+                'Invalid format: {}\n'
+                'Valid options are: {}'.format(v.format, self.formats)
+                )
+            raise ValueError(msg)
         #end if
         s += '"'
         return s
@@ -3532,7 +3587,12 @@ class HubbardUKeyword(RmgKeyword):
                 #end if
                 v[species] = record
             else:
-                self.error('Invalid Hubbard_U record encountered.\nExpected: species U orbital [J0 [J1 [J2]]]\nInvalid record: {}'.format(line))
+                msg = (
+                    'Invalid Hubbard_U record encountered.\n'
+                    'Expected: species U orbital [J0 [J1 [J2]]]\n'
+                    'Invalid record: {}'.format(line)
+                    )
+                raise ValueError(msg)
             #end if
         #end for
         return v
@@ -3569,7 +3629,12 @@ class HubbardUKeyword(RmgKeyword):
                     assigned[species] = record
                 elif isinstance(record,(tuple,list)):
                     if not 2<=len(record)<=5:
-                        self.error('Invalid Hubbard_U record for species "{}".\nExpected: (U, orbital[, J0[, J1[, J2]]])\nInvalid record: {}'.format(species,record))
+                        msg = (
+                            'Invalid Hubbard_U record for species "{}".\n'
+                            'Expected: (U, orbital[, J0[, J1[, J2]]])\n'
+                            'Invalid record: {}'.format(species, record)
+                            )
+                        raise ValueError(msg)
                     #end if
                     assigned[species] = obj(U=record[0],orbital=record[1])
                     if len(record)>2:
@@ -3581,12 +3646,24 @@ class HubbardUKeyword(RmgKeyword):
                         assigned[species].J = np.array(assigned[species].J,dtype=float)
                     #end if
                 else:
-                    self.error('Invalid Hubbard_U record for species "{}".\nInvalid record: {}'.format(species,record))
+                    msg = (
+                        'Invalid Hubbard_U record for species "{}".\n'
+                        'Invalid record: {}'.format(species, record)
+                        )
+                    raise ValueError(msg)
                 #end if
             #end for
             return assigned
         else:
-            self.error('cannot assign RMG keyword "{}".\nInvalid type encountered.\nType encoutered: {}\nType(s) expected: str,dict,obj'.format(self.key_name,value.__class__.__name__))
+            msg = (
+                'cannot assign RMG keyword "{}".\n'
+                'Invalid type encountered.\n'
+                'Type encoutered: {}\n'
+                'Type(s) expected: str,dict,obj'.format(
+                    self.key_name, value.__class__.__name__
+                    )
+                )
+            raise TypeError(msg)
         #end if
     #end def assign
 
@@ -3657,7 +3734,8 @@ class RmgInputSpec(DevBase):
                 k = RmgKeyword(b,section)
                 if k.key_type=='formatted':
                     if k.key_name not in formatted_keywords:
-                        self.error('unrecognized formatted keyword: "{}"'.format(k.key_name))
+                        msg = 'unrecognized formatted keyword: "{}"'.format(k.key_name)
+                        raise KeyError(msg)
                     #end if
                     k = formatted_keywords[k.key_name](b,section)
                 #end if
@@ -3771,7 +3849,13 @@ class RmgInput(SimulationInput):
         #end for
         if len(unrecognized)>0:
             unrec = obj({k:values[k] for k in unrecognized})
-            self.error('Unrecognized keywords encountered during assignment.\nUnrecognized keywords: {}\nCorresponding values:\n{}'.format(list(sorted(unrecognized)),unrec))
+            msg = (
+                'Unrecognized keywords encountered during assignment.\n'
+                'Unrecognized keywords: {}\n'
+                'Corresponding values:\n'
+                '{}'.format(list(sorted(unrecognized)), unrec)
+                )
+            raise KeyError(msg)
         #end if
     #end def assign
 
@@ -3846,7 +3930,13 @@ class RmgInput(SimulationInput):
         present = set(self.keys())
         unrecognized = present-allowed
         if len(unrecognized)>0:
-            msg += 'Unrecognized keywords encountered.\n  Unrecognized keywords: {}\n  Valid keywords are: {}\n'.format(list(sorted(unrecognized)),list(sorted(allowed)))
+            msg += (
+                'Unrecognized keywords encountered.\n'
+                '  Unrecognized keywords: {}\n'
+                '  Valid keywords are: {}\n'.format(
+                    list(sorted(unrecognized)), list(sorted(allowed))
+                    )
+                )
         #end if
         recognized = present-unrecognized
         for k in sorted(recognized):
@@ -3856,8 +3946,13 @@ class RmgInput(SimulationInput):
             #end if
         #end if
         if len(msg)>0 and exit:
-            self.log(msg)
-            self.error('Input is invalid.\nPlease see messages above for specific issues.')
+            msg = (
+                'Input is invalid.\n'
+                'Please see messages below for specific issues.\n'
+                +msg
+                )
+            raise ValueError(msg)
+            
         #end if
         return len(msg)==0
     #end def check_valid
@@ -3911,13 +4006,21 @@ class RmgInput(SimulationInput):
                                  [   0,              0, c]],dtype=float)
             else:
                 # cubic body centered, hexagonal primitive not yet supported
-                self.error('Structure extraction failed.\nLattice type "{}" is currently unsupported.'.format(lattice_orig))
+                msg = (
+                    'Structure extraction failed.\n'
+                    'Lattice type "{}" is currently unsupported.'.format(lattice_orig)
+                    )
+                raise NotImplementedError(msg)
             #end if
         #end if
         axes = convert(axes,axes_unit,units)
 
         if atoms is None or positions is None:
-            self.error('Structure extraction failed.\nEither atoms or positions could not be obtained.')
+            msg = (
+                'Structure extraction failed.\n'
+                'Either atoms or positions could not be obtained.'
+                )
+            raise RuntimeError(msg)
         #end if
         atoms     = np.array(atoms,dtype=object)
         positions = np.array(positions,dtype=float)
@@ -3946,7 +4049,8 @@ def generate_rmg_input(**kwargs):
     if selector=='generic':
         return generate_any_rmg_input(**kwargs)
     else:
-        error('Input type "{}" has not been implemented for RMG input generation.'.format(selector))
+        msg = 'Input type "{}" has not been implemented for RMG input generation.'.format(selector)
+        raise NotImplementedError(msg)
     #end if
 #end def generate_rmg_input
 
@@ -3964,7 +4068,6 @@ generate_any_defaults = obj(
     )
 
 def generate_any_rmg_input(**kwargs):
-    loc = 'generate_rmg_input'
 
     # set default values
     defaults = kwargs.pop('defaults','basic')
@@ -4053,7 +4156,12 @@ def generate_any_rmg_input(**kwargs):
         elif cu=='bohr':
             system.change_units('B')
         else:
-            error('Invalid crds_units.\nExpected "Angstrom" or "Bohr".\nReceived: {}'.format(cu),loc)
+            msg = (
+                'Invalid crds_units.\n'
+                'Expected "Angstrom" or "Bohr".\n'
+                'Received: {}'.format(cu)
+                )
+            raise ValueError(msg)
         #end if
         rmg_length_units = rmg_units_map[cu]
         if 'crd_units' not in ri and 'atomic_coordinate_type' in ri and ri.atomic_coordinate_type=='Absolute':
@@ -4067,7 +4175,13 @@ def generate_any_rmg_input(**kwargs):
         elif act=='cell relative':
             pos = s.pos_unit().copy()
         else:
-            error('Invalid atomic_coordinate_type.\nExpected "Absolute" or "Cell Relative".\nReceived: {}'.format(cu),loc)
+            msg = (
+                'Invalid atomic_coordinate_type.\n'
+                'Expected "Absolute" or "Cell Relative".\n'
+                'Received: {}'.format(act)
+                )
+            raise ValueError(msg)
+            
         #end if
         movable = None
         if s.frozen is not None:
@@ -4171,7 +4285,8 @@ def generate_any_rmg_input(**kwargs):
 
     if spin_polarized is not None and spin_polarized:
         if 'states_count_and_occupation_spin_up' not in ri:
-            error('System is spin polarized, but occupations not provided for up and down spins.',loc)
+            msg = 'System is spin polarized, but occupations not provided for up and down spins.'
+            raise ValueError(msg)
         #end if
     #end if
 
