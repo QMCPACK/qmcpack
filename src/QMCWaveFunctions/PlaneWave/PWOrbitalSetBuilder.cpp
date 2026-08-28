@@ -100,7 +100,6 @@ bool PWOrbitalSetBuilder::createPWBasis()
     app_error() << "Not enough bands in h5 file" << std::endl;
     OHMMS::Controller->abort();
   }
-  std::string tname = myParam->getTwistAngleName();
   TinyVector<double, OHMMS_DIM> TwistAngle_DP;
   hfile.read(TwistAngle_DP, "/electrons/kpoint_0/reduced_k");
   TwistAngle = TwistAngle_DP;

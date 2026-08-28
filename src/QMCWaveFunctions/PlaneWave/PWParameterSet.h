@@ -37,8 +37,6 @@ struct PWParameterSet : public MPIObjectBase
   int twistIndex;
   ///number of input bands
   int numBands;
-  ///tag for eigentstates
-  std::string eigTag;
   ///tag for twist angles
   std::string twistTag;
   ///tag for the band
@@ -56,15 +54,7 @@ struct PWParameterSet : public MPIObjectBase
 
   void checkVersion(hdf_archive& h);
 
-  /** get the dimensions of the eigenvectors
-   * @param h fileid
-   * @return true, if the data is complex
-   */
-  bool getEigVectorType(hid_t h);
-
   bool hasComplexData(hdf_archive& h);
-
-  std::string getTwistAngleName();
 
   std::string getTwistName();
 
@@ -77,7 +67,6 @@ struct PWParameterSet : public MPIObjectBase
   std::string getSpinName(int ispin);
 
   std::string getEigVectorName(const std::string& hg, int ib, int ispin);
-  std::string getEigVectorName(int ib, int ispin);
   std::string getCenterName(const std::string& hg, int ib);
   std::string getOriginName(const std::string& hg, int ib);
 };

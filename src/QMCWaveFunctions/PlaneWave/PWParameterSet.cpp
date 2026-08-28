@@ -27,7 +27,6 @@ PWParameterSet::PWParameterSet(Communicate* comm)
       hasSpin(true),
       twistIndex(0),
       numBands(0),
-      eigTag("eigenstates"),
       twistTag("twist"),
       bandTag("band"),
       spinTag("spin"),
@@ -35,32 +34,10 @@ PWParameterSet::PWParameterSet(Communicate* comm)
 {
   m_param.setName("h5tag");
   m_param.add(twistIndex, "twistIndex");
-  m_param.add(eigTag, "eigenstates");
   m_param.add(twistTag, "twist");
   m_param.add(bandTag, "band");
   m_param.add(spinTag, "spin");
   m_param.add(eigvecTag, "eigenvector");
-}
-
-bool PWParameterSet::getEigVectorType(hid_t h)
-{
-  int rank = 0;
-  if (is_manager())
-  {
-    std::ostringstream oss;
-    oss << "/" << eigTag << "/" << twistTag << twistIndex << "/" << bandTag << 0;
-    //if(version[1]==10)
-    if (hasSpin)
-      oss << "/" << spinTag << 0;
-    oss << "/eigenvector";
-    hsize_t dimTot[4];
-    hid_t dataset   = H5Dopen(h, oss.str().c_str(), H5P_DEFAULT);
-    hid_t dataspace = H5Dget_space(dataset);
-    rank            = H5Sget_simple_extent_ndims(dataspace);
-    int status_n    = H5Sget_simple_extent_dims(dataspace, dimTot, NULL);
-  }
-  myComm->bcast(rank);
-  return rank == 4;
 }
 
 bool PWParameterSet::hasComplexData(hdf_archive& h_file)
@@ -70,13 +47,6 @@ bool PWParameterSet::hasComplexData(hdf_archive& h_file)
   //  don't have this set
   myComm->bcast(iscomplex);
   return iscomplex;
-}
-
-std::string PWParameterSet::getTwistAngleName()
-{
-  std::ostringstream oss;
-  oss << eigTag << "/" << twistTag << twistIndex << "/twist_angle";
-  return oss.str();
 }
 
 std::string PWParameterSet::getTwistName() { return getTwistName(twistIndex); }
@@ -120,19 +90,6 @@ std::string PWParameterSet::getOriginName(const std::string& hg, int ib)
 {
   std::ostringstream oss;
   oss << hg << "/" << bandTag << ib << "/origin";
-  return oss.str();
-}
-
-std::string PWParameterSet::getEigVectorName(int ib, int ispin)
-{
-  std::ostringstream oss;
-  oss << "/" << eigTag << "/" << twistTag << twistIndex << "/" << bandTag << ib;
-  //if(version[1]==10)
-  if (hasSpin)
-  {
-    oss << "/" << spinTag << ispin;
-  }
-  oss << "/eigenvector";
   return oss.str();
 }
 
@@ -182,7 +139,6 @@ void PWParameterSet::checkVersion(hdf_archive& h)
     if (version[1] == 11)
     {
       hasSpin   = false;
-      eigTag    = "eigenstates_3";
       twistTag  = "twist_";
       bandTag   = "band_";
     }

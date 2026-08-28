@@ -77,6 +77,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   <parameter name="basis">missing_basis</parameter>
   <parameter name="planewaves">missing_planewaves</parameter>
   <parameter name="multiplers">missing_multipliers</parameter>
+  <parameter name="eigenstates">missing_eigenstates</parameter>
   <basisset ecut="not-a-real"/>
 </sposet_collection>
 )";
