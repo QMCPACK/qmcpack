@@ -318,7 +318,9 @@ Additional information:
 B-spline sposet sub-options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The exact behavior of the memory allocations of B-spline orbital coefficients can be managed by ``coefs_mem`` XML node
-when there are more than one MPI rank within each compute node.
+when there is more than one MPI rank within each compute node. The B-spline coefficients are by default replicated identically
+by every MPI rank. The ``coefs_mem`` sub-options reduce memory pressure by sharing and/or distributing B-spline coefficients
+over multiple ranks. 
 
 ``coefs_mem`` element:
 
