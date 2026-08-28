@@ -79,6 +79,7 @@ def pwscf_time(tsin):
 
 class PwscfAnalyzer(SimulationAnalyzer):
     def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,*,analyze=False,xml=False,warn=False,md_only=False):
+        self.results = obj()
         if isinstance(arg0,Simulation):
             sim = arg0
             path = sim.locdir
@@ -121,10 +122,41 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if self.infile_name is not None:
             self.input = PwscfInput(os.path.join(self.path,self.infile_name))
         #end if
+        self.initialize_results()
         if analyze:
             self.analyze()
         #end if
     #end def __init__
+
+
+    def initialize_results(self):
+        calculation = 'scf'
+        if self.input is not None and 'control' in self.input and 'calculation' in self.input.control:
+            calculation = self.input.control.calculation.lower()
+        #end if
+
+        result_names = [
+            'Ef','fermi_energies','bands',
+            'volume',
+            'cputime','walltime','kpoints_cart','kpoints_unit','kweights',
+            'K','xmldata',
+            ]
+        if calculation not in ('nscf','bands'):
+            result_names.extend((
+                'E','energies','pressure','stress',
+                'forces','tot_forces','max_forces',
+                ))
+        #end if
+        if calculation in ('relax','vc-relax','md','vc-md'):
+            result_names.append('structures')
+        #end if
+        if calculation in ('md','vc-md'):
+            result_names.extend(('md_data','md_stats'))
+        #end if
+        for name in result_names:
+            self.results[name] = None
+        #end for
+    #end def initialize_results
 
     
     number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
@@ -278,8 +310,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             temperature    = np.array([r.temperature for r in records],dtype=float),
             )
         md.potential_energy = md.total_energy - md.kinetic_energy
-        self.md_data = md
-        self.md_stats = self.md_statistics()
+        self.results.md_data = md
+        self.results.md_stats = self.md_statistics()
         return nsteps
     #end def analyze_md
 
@@ -293,8 +325,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 fermi_energies.extend(self.line_numbers(segment))
             #end if
         #end for
-        self.Ef = fermi_energies[-1] if len(fermi_energies)>0 else 0.0
-        self.fermi_energies = np.array(fermi_energies)
+        if len(fermi_energies)>0:
+            self.results.Ef = fermi_energies[-1]
+            self.results.fermi_energies = np.array(fermi_energies)
+        #end if
         return len(fermi_energies)
     #end def analyze_fermi_energies
 
@@ -309,8 +343,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end if
         #end for
-        self.E = energies[-1] if len(energies)>0 else 0.0
-        self.energies = np.array(energies)
+        if len(energies)>0:
+            self.results.E = energies[-1]
+            self.results.energies = np.array(energies)
+        #end if
         return len(energies)
     #end def analyze_energies
 
@@ -488,7 +524,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             return 0
         #end if
         self.analyze_band_edges(bands)
-        self.bands = bands
+        self.results.bands = bands
         return nfound
     #end def analyze_bands
 
@@ -609,7 +645,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             i+=1
         #end while
         if len(structures)>0:
-            self.structures = structures
+            self.results.structures = structures
         #end if
         return len(structures)
     #end def analyze_structures
@@ -636,8 +672,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end if
         #end for
-        self.pressure = press
-        self.volume = vol
+        if pressure_found:
+            self.results.pressure = press
+        #end if
+        if volume_found:
+            self.results.volume = vol
+        #end if
         return obj(pressure=pressure_found,volume=volume_found)
     #end def analyze_pressure_volume
 
@@ -664,7 +704,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end if
         #end for
-        self.stress = stress
+        if ntensors>0:
+            self.results.stress = stress
+        #end if
         return ntensors
     #end def analyze_stress
 
@@ -705,9 +747,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if len(forces)>0:
-            self.forces = np.array(forces,dtype=float)
-            self.tot_forces = np.array(tot_forces)
-            self.max_forces = np.array([(np.sqrt((f**2).sum(1))).max() for f in self.forces])
+            self.results.forces = np.array(forces,dtype=float)
+            self.results.tot_forces = np.array(tot_forces)
+            self.results.max_forces = np.array([(np.sqrt((f**2).sum(1))).max() for f in self.results.forces])
         #end if
         return obj(forces=len(forces),total_forces=len(tot_forces))
     #end def analyze_forces
@@ -728,8 +770,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end if
         #end for
-        self.cputime = tc
-        self.walltime = tw
+        if found:
+            self.results.cputime = tc
+            self.results.walltime = tw
+        #end if
         return found
     #end def analyze_timing
 
@@ -737,9 +781,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def analyze_kpoints(self,lines):
         kpoints_cart,kpoints_unit,kweights = self.read_kpoint_tables(lines)
         if kpoints_cart is not None:
-            self.kpoints_cart = kpoints_cart
-            self.kpoints_unit = kpoints_unit
-            self.kweights = kweights
+            self.results.kpoints_cart = kpoints_cart
+            self.results.kpoints_unit = kpoints_unit
+            self.results.kweights = kweights
             return len(kpoints_cart)
         #end if
         return 0
@@ -764,7 +808,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if 'Kinetic' in l:
                 tokens = l.split()
                 if len(tokens)>5 and is_number(tokens[5]):
-                    self.K = self.number_float(tokens[5])
+                    self.results.K = self.number_float(tokens[5])
                     return True
                 #end if
             #end if
@@ -774,7 +818,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def analyze_xml(self):
-        self.xmldata = obj(data=None,kpoints=None,failed=False)
+        self.results.xmldata = obj(data=None,kpoints=None,failed=False)
         if self.input is None or 'control' not in self.input:
             self.xml_unavailable('input control section is not available')
             return 0
@@ -813,7 +857,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def xml_read_failed(self,exception):
-        self.xmldata.failed = True
+        self.results.xmldata.failed = True
         if self.info.warn:
             self.warn('encountered an exception during xml read, this data will not be available\nexception encountered: '+str(exception))
         #end if
@@ -821,7 +865,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def xml_unavailable(self,message):
-        self.xmldata.failed = True
+        self.results.xmldata.failed = True
         if self.info.warn:
             self.warn('xml data is incomplete, some data will not be available\nreason: '+message)
         #end if
@@ -842,14 +886,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def analyze_legacy_xml(self,data,datadir):
         kpdata = self.object_path(data,'root','eigenvalues','k_point')
         if kpdata is None:
-            self.xmldata.update(data=data,kpoints=obj())
+            self.results.xmldata.update(data=data,kpoints=obj())
             self.xml_unavailable('legacy eigenvalue k-points are not available')
             return 0
         #end if
         kpoints = obj()
         for ki,kpd in kpdata.items():
             if 'k_point_coords' not in kpd or 'weight' not in kpd or 'datafile' not in kpd:
-                self.xmldata.failed = True
+                self.results.xmldata.failed = True
                 continue
             #end if
             kp = obj(kpoint=kpd.k_point_coords,weight=kpd.weight)
@@ -857,7 +901,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             for si,dfile in kpd.datafile.items():
                 efilepath = os.path.join(datadir,dfile.iotk_link)
                 if not os.path.exists(efilepath):
-                    self.xmldata.failed = True
+                    self.results.xmldata.failed = True
                     continue
                 #end if
                 try:
@@ -870,7 +914,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 eigenvalues = self.object_path(edata,'root','eigenvalues')
                 occupations = self.object_path(edata,'root','occupations')
                 if eunits is None or eigenvalues is None or occupations is None:
-                    self.xmldata.failed = True
+                    self.results.xmldata.failed = True
                     continue
                 #end if
                 eunits = eunits.lower()
@@ -891,7 +935,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end for
         #end for
-        self.xmldata.update(data=data,kpoints=kpoints)
+        self.results.xmldata.update(data=data,kpoints=kpoints)
         return len(kpoints)
     #end def analyze_legacy_xml
 
@@ -977,7 +1021,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         band_structure = self.xml_child(output,'band_structure')
         kpoints = obj()
         if output is None or band_structure is None:
-            self.xmldata.update(data=data,kpoints=kpoints)
+            self.results.xmldata.update(data=data,kpoints=kpoints)
             self.xml_unavailable('output band_structure is not available')
             return 0
         #end if
@@ -985,7 +1029,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         lsda = self.xml_value(lsda_element.text) if lsda_element is not None else False
         records = [child for child in band_structure if self.xml_local_name(child)=='ks_energies']
         if len(records)==0:
-            self.xmldata.update(data=data,kpoints=kpoints)
+            self.results.xmldata.update(data=data,kpoints=kpoints)
             self.xml_unavailable('ks_energies records are not available')
             return 0
         #end if
@@ -995,19 +1039,19 @@ class PwscfAnalyzer(SimulationAnalyzer):
             e_element = self.xml_child(record,'eigenvalues')
             o_element = self.xml_child(record,'occupations')
             if k_element is None or e_element is None or o_element is None:
-                self.xmldata.failed = True
+                self.results.xmldata.failed = True
                 continue
             #end if
             coordinates = self.first_numbers(k_element.text or '',3)
             eigenvalues = self.line_numbers(e_element.text or '')
             occupations = self.line_numbers(o_element.text or '')
             if coordinates is None or len(eigenvalues)==0 or len(occupations)==0 or len(eigenvalues)!=len(occupations):
-                self.xmldata.failed = True
+                self.results.xmldata.failed = True
                 continue
             #end if
             weight_text = k_element.attrib.get('weight','')
             if not is_number(weight_text):
-                self.xmldata.failed = True
+                self.results.xmldata.failed = True
                 continue
             #end if
             weight = self.number_float(weight_text)
@@ -1031,9 +1075,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 kp.down = spin
             #end if
         #end for
-        self.xmldata.update(data=data,kpoints=kpoints)
+        self.results.xmldata.update(data=data,kpoints=kpoints)
         if lsda and any('down' not in kp for kp in kpoints.values()):
-            self.xmldata.failed = True
+            self.results.xmldata.failed = True
         #end if
         if len(records)>0 and len(kpoints)==0:
             self.xml_unavailable('no complete ks_energies records are available')
@@ -1043,16 +1087,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def write_electron_counts(self,filepath=None,*,return_flag=False):
+        xmldata = self.results.xmldata
         if not return_flag:
             if not self.info.xml:
                 self.error('xml data has not been processed\ncannot write electron counts')
-            elif self.xmldata.failed:
+            elif xmldata is None or xmldata.failed:
                 self.error('xml data processing failed\ncannot write electron counts')
             #end if
-        elif not self.info.xml or self.xmldata.failed:
+        elif not self.info.xml or xmldata is None or xmldata.failed:
             return False
         #end if
-        kpoints = self.xmldata.kpoints
+        kpoints = xmldata.kpoints
         if 'down' in kpoints[1]:
             spins = obj(up='up',down='down')
         else:
@@ -1097,7 +1142,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def md_statistics(self,equil=None,autocorr=None):
         mds = obj()
-        for q,v in self.md_data.items():
+        for q,v in self.results.md_data.items():
             if equil is not None:
                 v = v[equil:]
             #end if
@@ -1119,7 +1164,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def md_plots(self,*,show=True):
 
-        md = self.md_data
+        md = self.results.md_data
 
         import matplotlib.pyplot as plt
         fig = plt.figure()
@@ -1149,14 +1194,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def make_movie(self,filename,filepath=None):
-        if 'structures' in self:
+        if 'structures' in self.results and self.results.structures is not None:
             if filepath is None:
                 filepath = os.path.join(self.abspath,filename)
             else:
                 filepath = os.path.join(filepath,filename)
             #end if
             movie = ''
-            structures = self.structures
+            structures = self.results.structures
 
             aA = convert(self.input.system['celldm(1)'],'B','A')
             cell = self.input.cell_parameters.vectors
@@ -1184,7 +1229,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             'ytick.labelsize'      : 14,
             }
         plt.rcParams.update(params)
-        if 'bands' in self:
+        if 'bands' in self.results and self.results.bands is not None:
             success = True
             if filename is None:
                 filename = 'band_structure.pdf'
@@ -1204,12 +1249,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 labels = kpath['explicit_kpoints_labels']
             else:
                 labels = k_labels
-                # Calculate linear coordinates from self.kpoints_cart
+                # Calculate linear coordinates from self.results.kpoints_cart
                 x = []
                 prev_label = ''
-                ref_kpt = self.kpoints_cart[0]
+                ref_kpt = self.results.kpoints_cart[0]
                 lincoord = 0.0
-                for kpt_idx,kpt in enumerate(self.kpoints_cart):
+                for kpt_idx,kpt in enumerate(self.results.kpoints_cart):
                     curr_label = labels[kpt_idx]
                     if (curr_label != '' and prev_label == '') or curr_label == '':
                         lincoord+=np.linalg.norm(kpt-ref_kpt)
@@ -1224,17 +1269,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
             for nb in range(nbands):
                 y = []
-                for bi in self.bands.up:
+                for bi in self.results.bands.up:
                     y.append(bi['eigs'][nb])
                 #end for
-                y = np.array(y) - self.bands.vbm.energy
+                y = np.array(y) - self.results.bands.vbm.energy
                 plt.plot(x, y, 'k')
-                if len(self.bands.down) > 0:
+                if len(self.results.bands.down) > 0:
                     y = []
-                    for bi in self.bands.down:
+                    for bi in self.results.bands.down:
                         y.append(bi['eigs'][nb])
                     #end for
-                    y = np.array(y) - self.bands.vbm.energy
+                    y = np.array(y) - self.results.bands.vbm.energy
                     plt.plot(x, y, 'r')
                 #end if              
             #end for
@@ -1264,10 +1309,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
             ax.tick_params(axis='x', which='both', length=0)
             ax.tick_params(axis='x', which='both', pad=10)
         #end if
-        if show_vbm_cbm:
-            vbm = self.bands.vbm
-            cbm = self.bands.cbm
-            for kn, ki in enumerate(self.bands.up):
+        if show_vbm_cbm and self.results.bands is not None:
+            vbm = self.results.bands.vbm
+            cbm = self.results.bands.cbm
+            for kn, ki in enumerate(self.results.bands.up):
                 if (vbm.kpoint_rel == ki['kpoint_rel']).all():
                     plt.scatter(x[kn], 0, c='green', s=100)
                 #end if

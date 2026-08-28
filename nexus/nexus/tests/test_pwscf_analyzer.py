@@ -11,14 +11,87 @@ from ..testing import object_eq
 def test_empty_init():
     from ..pwscf_analyzer import PwscfAnalyzer
 
-    PwscfAnalyzer()
+    pa = PwscfAnalyzer()
+    assert('results' in pa)
+    assert(len(pa.results)==0)
 #end def test_empty_init
+
+
+@pytest.mark.parametrize('calculation',('scf','nscf','bands','relax','vc-relax','md','vc-md'))
+def test_result_initialization(tmp_path,calculation):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    infile = tmp_path / '{}.in'.format(calculation)
+    infile.write_text(
+        "&CONTROL\n  calculation = '{}'\n  verbosity = 'low'\n/\n".format(calculation)
+        )
+    pa = PwscfAnalyzer(infile)
+
+    expected = {
+        'Ef','fermi_energies','bands',
+        'volume',
+        'cputime','walltime','kpoints_cart','kpoints_unit','kweights',
+        'K','xmldata',
+        }
+    if calculation not in ('nscf','bands'):
+        expected.update((
+            'E','energies','pressure','stress',
+            'forces','tot_forces','max_forces',
+            ))
+    #end if
+    if calculation in ('relax','vc-relax','md','vc-md'):
+        expected.add('structures')
+    #end if
+    if calculation in ('md','vc-md'):
+        expected.update(('md_data','md_stats'))
+    #end if
+
+    assert(set(pa.results.keys())==expected)
+    assert(all(value is None for value in pa.results.values()))
+#end def test_result_initialization
 
 
 def test_analyze():
     from numpy import array
     from ..developer import obj, to_obj
     from ..pwscf_analyzer import PwscfAnalyzer
+
+    all_result_names = (
+        'E','Ef','K','bands','cputime','energies','fermi_energies','forces',
+        'kpoints_cart','kpoints_unit','kweights','max_forces','md_data',
+        'md_stats','pressure','stress','structures','tot_forces','volume',
+        'walltime','xmldata',
+        )
+
+    def nest_results(reference,calculation):
+        result_names = [
+            'Ef','fermi_energies','bands',
+            'volume',
+            'cputime','walltime','kpoints_cart','kpoints_unit','kweights',
+            'K','xmldata',
+            ]
+        if calculation not in ('nscf','bands'):
+            result_names.extend((
+                'E','energies','pressure','stress',
+                'forces','tot_forces','max_forces',
+                ))
+        #end if
+        if calculation in ('relax','vc-relax','md','vc-md'):
+            result_names.append('structures')
+        #end if
+        if calculation in ('md','vc-md'):
+            result_names.extend(('md_data','md_stats'))
+        #end if
+        results = obj({name:None for name in result_names})
+        for name in all_result_names:
+            if name in reference:
+                results[name] = reference[name]
+                del reference[name]
+            #end if
+        #end for
+        reference.results = results
+        return reference
+    #end def nest_results
 
     scf_path = TEST_DIR / "test_pwscf_analyzer_files/scf_output"
     relax_path = TEST_DIR / "test_pwscf_analyzer_files/relax_output"
@@ -106,7 +179,7 @@ def test_analyze():
             ),
         )
 
-    assert(object_eq(to_obj(pa),pa_ref))
+    assert(object_eq(to_obj(pa),nest_results(pa_ref,'scf')))
 
     input_read = deepcopy(pa.input)
 
@@ -115,10 +188,10 @@ def test_analyze():
     pa = PwscfAnalyzer(scf_path,'scf.in','scf.out',analyze=True)
 
     assert(object_eq(pa.input,input_read))
-    assert('md_data' not in pa)
-    assert(len(pa.bands.up)==3)
-    assert(len(pa.bands.down)==0)
-    for band in pa.bands.up.values():
+    assert('md_data' not in pa.results)
+    assert(len(pa.results.bands.up)==3)
+    assert(len(pa.results.bands.down)==0)
+    for band in pa.results.bands.up.values():
         assert(band.eigs.shape==(30,))
         assert(band.occs.shape==(30,))
     #end for
@@ -131,14 +204,14 @@ def test_analyze():
     del pa.input
     del pa.abspath
     del pa.path
-    del pa.bands
+    pa.results.bands = None
 
     pa_ref = obj(
         E               = -170.11048381,
-        Ef              = 0.0,
+        Ef              = None,
         cputime         = 0.001175,
         energies        = array([-170.11048381],dtype=float),
-        fermi_energies  = array([],dtype=float),
+        fermi_energies  = None,
         forces          = array(
                           [[[-0.01852018, -0.01852018, -0.01852018],
                             [ 0.01852018,  0.01852018, -0.01852018],
@@ -181,16 +254,16 @@ def test_analyze():
             ),
         )
 
-    assert(object_eq(to_obj(pa),pa_ref))
+    assert(object_eq(to_obj(pa),nest_results(pa_ref,'scf')))
 
 
     # relax w/ full analysis
     pa = PwscfAnalyzer(relax_path,'relax.in','relax.out',analyze=True)
 
-    assert('md_data' not in pa)
-    assert(len(pa.bands.up)==3)
-    assert(len(pa.bands.down)==0)
-    for band in pa.bands.up.values():
+    assert('md_data' not in pa.results)
+    assert(len(pa.results.bands.up)==3)
+    assert(len(pa.results.bands.down)==0)
+    for band in pa.results.bands.up.values():
         assert(band.eigs.shape==(30,))
         assert(band.occs.shape==(0,))
     #end for
@@ -202,14 +275,14 @@ def test_analyze():
     del pa.input
     del pa.abspath
     del pa.path
-    del pa.bands
+    pa.results.bands = None
 
     pa_ref = obj(
         E               = -168.41267772,
-        Ef              = 0.0,
+        Ef              = None,
         cputime         = 0.00186111111111,
         energies        = array([-168.38623938,-168.40640935,-168.41263281,-168.41267772],dtype=float),
-        fermi_energies  = array([],dtype=float),
+        fermi_energies  = None,
         forces          = array(
                           [[[-4.625982e-02, -4.625982e-02, -4.625982e-02],
                             [ 4.625982e-02,  4.625982e-02, -4.625982e-02],
@@ -274,9 +347,9 @@ def test_analyze():
         infile_name     = 'relax.in',
         max_forces      = array([0.08012436,0.03797366,0.00542347,0.00143672],dtype=float),
         outfile_name    = 'relax.out',
-        pressure        = 0.0,
+        pressure        = None,
         pw2c_outfile_name = None,
-        stress          = [],
+        stress          = None,
         tot_forces      = array([0.173046,0.081060,0.011505,0.003093],dtype=float),
         volume          = 614.0889,
         walltime        = 0.00251388888889,
@@ -369,7 +442,7 @@ def test_analyze():
             }),
         )
 
-    assert(object_eq(to_obj(pa),pa_ref))
+    assert(object_eq(to_obj(pa),nest_results(pa_ref,'relax')))
 
 
     # nscf w/o actual analysis
@@ -473,7 +546,7 @@ def test_analyze():
             ),
         )
 
-    assert(object_eq(to_obj(pa),pa_ref))
+    assert(object_eq(to_obj(pa),nest_results(pa_ref,'nscf')))
 
     input_read = deepcopy(pa.input)
 
@@ -491,10 +564,8 @@ def test_analyze():
     del pa.path
 
     pa_ref = obj(
-        E               = 0.0,
         Ef              = 10.1198,
         cputime         = 0.076025,
-        energies        = array([],dtype=float),
         fermi_energies  = array([10.1198],dtype=float),
         infile_name     = 'nscf.in',
         kpoints_cart    = array(
@@ -509,9 +580,7 @@ def test_analyze():
              [0.5, 0.5, 0.5]],dtype=float),
         kweights        = array([0.0041667, 0.0041667, 0.0041667, 0.0041667],dtype=float),
         outfile_name    = 'nscf.out',
-        pressure        = 0.0,
         pw2c_outfile_name = None,
-        stress          = [],
         volume          = 380.621,
         walltime        = 0.09731666666666666,
         info = obj(
@@ -687,7 +756,7 @@ def test_analyze():
             ),
         )
 
-    assert(object_eq(to_obj(pa),pa_ref))
+    assert(object_eq(to_obj(pa),nest_results(pa_ref,'nscf')))
 
 #end def test_analyze
 
@@ -771,20 +840,20 @@ H  0.100000000  0.200000000  0.300000000  1 1 1  trailing text
 
     pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
 
-    assert(np.allclose(pa.md_data.total_energy,[-1.1]))
-    assert(np.allclose(pa.md_data.time,[0.0]))
-    assert(np.allclose(pa.md_data.kinetic_energy,[0.1]))
-    assert(np.allclose(pa.md_data.temperature,[100.0]))
-    assert(np.allclose(pa.tot_forces,[0.037417]))
-    assert(pa.volume==124.0)
-    assert(len(pa.bands.up)==1)
-    assert(pa.bands.up[0].occs.shape==(0,))
-    assert(np.allclose(pa.structures[0].axes,5*np.eye(3)))
-    assert(np.allclose(pa.structures[0].positions,[[0.5,1.0,1.5]]))
-    assert(not pa.xmldata.failed)
-    assert(len(pa.xmldata.kpoints)==2)
-    assert(np.allclose(pa.xmldata.kpoints[1].up.eigenvalues,[-0.5,0.5]))
-    assert(np.allclose(pa.xmldata.kpoints[2].up.eigenvalues,[-0.4,0.6]))
+    assert(np.allclose(pa.results.md_data.total_energy,[-1.1]))
+    assert(np.allclose(pa.results.md_data.time,[0.0]))
+    assert(np.allclose(pa.results.md_data.kinetic_energy,[0.1]))
+    assert(np.allclose(pa.results.md_data.temperature,[100.0]))
+    assert(np.allclose(pa.results.tot_forces,[0.037417]))
+    assert(pa.results.volume==124.0)
+    assert(len(pa.results.bands.up)==1)
+    assert(pa.results.bands.up[0].occs.shape==(0,))
+    assert(np.allclose(pa.results.structures[0].axes,5*np.eye(3)))
+    assert(np.allclose(pa.results.structures[0].positions,[[0.5,1.0,1.5]]))
+    assert(not pa.results.xmldata.failed)
+    assert(len(pa.results.xmldata.kpoints)==2)
+    assert(np.allclose(pa.results.xmldata.kpoints[1].up.eigenvalues,[-0.5,0.5]))
+    assert(np.allclose(pa.results.xmldata.kpoints[2].up.eigenvalues,[-0.4,0.6]))
     assert(pa.info.parse_status.md==1)
     assert(pa.info.parse_status.bands==1)
     assert(pa.info.parse_status.xml==2)
@@ -810,20 +879,20 @@ CELL_PARAMETERS (alat= 5.0)
 
     pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
 
-    assert(np.allclose(pa.md_data.total_energy,[-1.1]))
-    assert(np.allclose(pa.energies,[-1.1]))
+    assert(np.allclose(pa.results.md_data.total_energy,[-1.1]))
+    assert(np.allclose(pa.results.energies,[-1.1]))
     assert(pa.info.parse_status.md==1)
     assert(pa.info.parse_status.stress==1)
     assert(pa.info.parse_status.forces.forces==1)
     assert(pa.info.parse_status.structures==1)
-    assert(pa.xmldata.failed)
+    assert(pa.results.xmldata.failed)
     assert(pa.info.parse_status.xml==1)
-    assert(len(pa.xmldata.kpoints)==1)
+    assert(len(pa.results.xmldata.kpoints)==1)
 
     # XML syntax errors are localized and do not discard parsed log data.
     (savedir/'data-file-schema.xml').write_text('<qes:espresso>')
     pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
-    assert(np.allclose(pa.energies,[-1.1]))
-    assert(pa.xmldata.failed)
+    assert(np.allclose(pa.results.energies,[-1.1]))
+    assert(pa.results.xmldata.failed)
     assert(pa.info.parse_status.xml==0)
 #end def test_modern_output
