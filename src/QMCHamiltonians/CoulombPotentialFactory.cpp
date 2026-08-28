@@ -81,8 +81,6 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   std::string targetInp(targetPtcl.getName());
   std::string sourceInp(targetPtcl.getName());
   std::string title("ElecElec"), pbc("yes");
-  std::string forces("no");
-  std::string use_gpu;
   bool physical = true;
   OhmmsAttributeSet hAttrib;
   hAttrib.add(title, "id");
@@ -91,11 +89,8 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   hAttrib.add(sourceInp, "source");
   hAttrib.add(pbc, "pbc");
   hAttrib.add(physical, "physical");
-  hAttrib.add(forces, "forces");
-  hAttrib.add(use_gpu, "gpu", CPUOMPTargetSelector::candidate_values);
   hAttrib.put(cur);
   const bool applyPBC = (PBCType && pbc == "yes");
-  const bool doForces = (forces == "yes") || (forces == "true");
 
   app_summary() << std::endl;
   app_summary() << "   Coulomb Potential" << std::endl;
@@ -119,6 +114,14 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 
   if (sourceInp == targetInp) // AA type
   {
+    std::string forces("no");
+    std::string use_gpu;
+    OhmmsAttributeSet aaAttrib;
+    aaAttrib.add(forces, "forces");
+    aaAttrib.add(use_gpu, "gpu", CPUOMPTargetSelector::candidate_values);
+    aaAttrib.put(cur);
+    const bool doForces = (forces == "yes") || (forces == "true");
+
     if (!applyPBC && ptclA->getTotalNum() == 1)
     {
       app_log() << "  CoulombAA for " << sourceInp << " is not created.  Number of particles == 1 and nonPeriodic"

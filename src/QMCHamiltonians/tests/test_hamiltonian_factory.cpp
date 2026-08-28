@@ -61,9 +61,12 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
-         <pairpot type="coulomb" name="ElecElec" source="e" target="e" units="not-a-unit"/>
-         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0" units="not-a-unit"/>
-         <pairpot type="coulomb" name="ElecIon" source="ion0" target="e" units="not-a-unit"/>
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"
+                  forces="yes" gpu="no" units="not-a-unit"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"
+                  forces="no" gpu="no" units="not-a-unit"/>
+         <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"
+                  forces="retired-value" gpu="not-a-platform" units="not-a-unit"/>
          <estimator type="Pressure" name="pressure" potential="coulomb"
                     etype="retired-value" functor="retired-value"
                     truncateSum="not-an-integer" units="not-a-unit">
