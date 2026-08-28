@@ -93,6 +93,8 @@ TEST_CASE("DMC", "[drivers][dmc]")
    <parameter name="steps">1</parameter>
    <parameter name="blocks">1</parameter>
    <parameter name="timestep">0.1</parameter>
+   <parameter name="branchInterval">3</parameter>
+   <parameter name="MaxAge">0</parameter>
   </qmc>
   )";
   Libxml2Document doc;
@@ -102,6 +104,9 @@ TEST_CASE("DMC", "[drivers][dmc]")
   dmc_omp.process(root); // need to call 'process' for QMCDriver, which in turn calls 'put'
 
   dmc_omp.run();
+
+  // The legacy DMC driver still uses branchInterval as its CurrentStep cadence.
+  CHECK(dmc_omp.current() == 3);
 
   // With the constant wavefunction, no moves should be rejected
   double ar = dmc_omp.acceptRatio();

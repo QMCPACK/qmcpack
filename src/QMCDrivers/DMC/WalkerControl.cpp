@@ -58,9 +58,6 @@ WalkerControl::WalkerControl(Communicate* c, RandomBase<FullPrecRealType>& rng, 
     : MPIObjectBase(c),
       rng_(rng),
       use_fixed_pop_(use_fixed_pop),
-      n_min_(1),
-      n_max_(10),
-      max_copy_(2),
       rank_num_(c->rank()),
       num_ranks_(c->size()),
       SwapMode(0),
@@ -563,11 +560,7 @@ std::vector<WalkerControl::IndexType> WalkerControl::syncFutureWalkersPerRank(Co
 
 bool WalkerControl::put(xmlNodePtr cur)
 {
-  int nw_target = 0, nw_max = 0;
   ParameterSet params;
-  params.add(max_copy_, "maxCopy");
-  params.add(nw_target, "targetwalkers");
-  params.add(nw_max, "max_walkers");
   params.add(use_nonblocking_, "use_nonblocking", {true});
   params.add(debug_disable_branching_, "debug_disable_branching", {false});
 
@@ -580,38 +573,11 @@ bool WalkerControl::put(xmlNodePtr cur)
     myComm->barrier_and_abort("WalkerControl::put parsing error. " + std::string(re.what()));
   }
 
-  setMinMax(nw_target, nw_max);
-
   app_log() << "  WalkerControl parameters " << std::endl;
-  //app_log() << "    energyBound = " << targetEnergyBound << std::endl;
-  //app_log() << "    sigmaBound = " << targetSigma << std::endl;
-  app_log() << "    maxCopy = " << max_copy_ << std::endl;
-  app_log() << "    Max Walkers per MPI rank " << n_max_ << std::endl;
-  app_log() << "    Min Walkers per MPI rank " << n_min_ << std::endl;
   app_log() << "    Using " << (use_nonblocking_ ? "non-" : "") << "blocking send/recv" << std::endl;
   if (debug_disable_branching_)
     app_log() << "    Disable branching for debugging as the user input request." << std::endl;
   return true;
-}
-
-void WalkerControl::setMinMax(int nw_in, int nmax_in)
-{
-  if (nw_in > 0)
-  {
-    int npernode = nw_in / num_ranks_;
-    if (use_fixed_pop_)
-    {
-      n_max_ = npernode;
-      n_min_ = npernode;
-    }
-    else
-    {
-      n_max_ = max_copy_ * npernode + 1;
-      n_min_ = npernode / 5 + 1;
-      if (nmax_in > 0)
-        n_max_ = nmax_in;
-    }
-  }
 }
 
 } // namespace qmcplusplus

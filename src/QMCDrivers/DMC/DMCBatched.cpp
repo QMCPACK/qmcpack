@@ -414,7 +414,6 @@ void DMCBatched::process(xmlNodePtr node)
     branch_engine_->put(node);
 
     walker_controller_ = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
-    walker_controller_->setMinMax(population_.get_num_global_walkers(), 0);
     walker_controller_->start();
     walker_controller_->put(node);
 
@@ -424,8 +423,6 @@ void DMCBatched::process(xmlNodePtr node)
     else
       o << "  Fluctuating population\n";
 
-    o << "  Persistent walkers are killed after " << dmcdriver_input_.get_max_age() << " MC sweeps\n";
-    o << "  BranchInterval = " << dmcdriver_input_.get_branch_interval() << "\n";
     o << "  Steps per block = " << steps_per_block_ << "\n";
     o << "  Number of blocks = " << qmcdriver_input_.get_max_blocks() << "\n";
     app_log() << o.str() << std::endl;

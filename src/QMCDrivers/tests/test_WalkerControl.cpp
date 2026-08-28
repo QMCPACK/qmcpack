@@ -68,7 +68,36 @@ void UnifiedDriverWalkerControlMPITest::testNewDistribution(std::vector<int>& in
   wc_.determineNewWalkerPopulation(num_per_rank, fair_offset, minus, plus);
 }
 
+void UnifiedDriverWalkerControlMPITest::testInput()
+{
+  Libxml2Document omitted_doc;
+  REQUIRE(omitted_doc.parseFromString(R"(<qmc method="dmc_batch"/>)"));
+  REQUIRE(wc_.put(omitted_doc.getRoot()));
+  CHECK(wc_.use_nonblocking_);
+  CHECK_FALSE(wc_.debug_disable_branching_);
+
+  const char* const retired_input = R"(
+  <qmc method="dmc_batch">
+    <parameter name="maxCopy">not-an-integer</parameter>
+    <parameter name="targetwalkers">not-an-integer</parameter>
+    <parameter name="max_walkers">not-an-integer</parameter>
+    <parameter name="use_nonblocking">false</parameter>
+    <parameter name="debug_disable_branching">true</parameter>
+  </qmc>)";
+  Libxml2Document retired_doc;
+  REQUIRE(retired_doc.parseFromString(retired_input));
+  REQUIRE(wc_.put(retired_doc.getRoot()));
+  CHECK_FALSE(wc_.use_nonblocking_);
+  CHECK(wc_.debug_disable_branching_);
+}
+
 } // namespace testing
+
+TEST_CASE("WalkerControl input", "[drivers][walker_control][input]")
+{
+  testing::UnifiedDriverWalkerControlMPITest test;
+  test.testInput();
+}
 
 TEST_CASE("WalkerControl::determineNewWalkerPopulation", "[drivers][walker_control]")
 {
