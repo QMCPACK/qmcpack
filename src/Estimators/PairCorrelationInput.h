@@ -32,12 +32,11 @@ public:
     {
       section_name            = type_tag;
       section_name_alternates = {"gofr"};
-      attributes              = {"name", "num_bin", "rmax", "dr", "debug", "sources"};
+      attributes              = {"name", "num_bin", "rmax", "dr", "sources"};
       strings                 = {"name"};
       multi_strings           = {"sources"};
       reals                   = {"dr", "rmax"};
       integers                = {"num_bin"};
-      bools                   = {"debug"};
     }
   };
 
@@ -54,7 +53,6 @@ private:
   bool explicit_set_delta_{false};
   int nbins_{20};
   bool explicit_set_nbins_{false};
-  bool debug_{false};
 
 public:
   std::string get_name() const { return name_; }
@@ -62,7 +60,6 @@ public:
   Real get_rmax() const { return rmax_; }
   Real get_delta() const { return delta_; }
   int get_nbins() const { return nbins_; }
-  bool get_debug() const { return debug_; }
   bool get_explicit_set_rmax() const { return explicit_set_rmax_; }
   bool get_explicit_set_delta() const { return explicit_set_delta_; };
   bool get_explicit_set_nbins() const { return explicit_set_nbins_; };

@@ -16,6 +16,7 @@
 #include "ValidSpinDensityInput.h"
 #include "ValidStructureFactorInput.h"
 #include "test_EstimatorManagerInput.h"
+#include "PairCorrelationInput.h"
 
 namespace qmcplusplus
 {
@@ -170,6 +171,22 @@ TEST_CASE("EstimatorManagerInput::Name")
   checkName(emi_local, ExpectedEstimatorInputName<OneBodyDensityMatricesInput>{});
   checkName(emi_local, ExpectedEstimatorInputName<MomentumDistributionInput>{});
   checkName(emi_local, ExpectedEstimatorInputName<StructureFactorInput>{});
+}
+
+TEST_CASE("PairCorrelationInput retired debug attribute", "[estimators]")
+{
+  Libxml2Document valid_doc;
+  REQUIRE(valid_doc.parseFromString(
+      R"(<estimator type="PairCorrelation" name="pc" num_bin="8" rmax="4.0" dr="0.5"/>)"));
+  PairCorrelationInput valid_input(valid_doc.getRoot());
+  CHECK(valid_input.get_name() == "pc");
+  CHECK(valid_input.get_nbins() == 8);
+  CHECK(valid_input.get_rmax() == 4.0);
+  CHECK(valid_input.get_delta() == 0.5);
+
+  Libxml2Document retired_doc;
+  REQUIRE(retired_doc.parseFromString(R"(<estimator type="PairCorrelation" debug="true"/>)"));
+  CHECK_THROWS_AS(PairCorrelationInput(retired_doc.getRoot()), UniformCommunicateError);
 }
 
 } // namespace qmcplusplus
