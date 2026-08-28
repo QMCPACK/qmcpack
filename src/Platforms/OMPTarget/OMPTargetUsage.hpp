@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "MemoryUsageAccount.hpp"
+#include "Common/MemoryUsageAccount.hpp"
 
 namespace qmcplusplus
 {

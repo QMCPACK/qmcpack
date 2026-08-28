@@ -10,6 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#ifndef QMCPLUSPLUS_MEMORYUSAGEACCOUNT_H
+#define QMCPLUSPLUS_MEMORYUSAGEACCOUNT_H
+
 #include <cstddef>
 #include <atomic>
 
@@ -26,3 +29,4 @@ public:
   size_t getBalance() const { return mem_allocated; }
 };
 } // namespace qmcplusplus
+#endif
