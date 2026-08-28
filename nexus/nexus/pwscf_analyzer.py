@@ -19,7 +19,6 @@
 
 import os
 import re
-import xml.etree.ElementTree as ET
 import numpy as np
 from .developer import obj
 from .unit_converter import convert
@@ -33,7 +32,7 @@ from .utilities import path_string
 from . import numpy_extensions as npe
 
 
-elements = set([e.symbol for e in Elements])
+elements = {e.symbol for e in Elements}
 
 
 def is_number(s):
@@ -278,7 +277,18 @@ def xml_child(element,name):
 
 
 class PwscfAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,*,analyze=False,xml=False,warn=False,md_only=False):
+    def __init__(
+        self,
+        arg0              = None,
+        infile_name       = None,
+        outfile_name      = None,
+        pw2c_outfile_name = None,
+        *,
+        analyze           = False,
+        xml               = False,
+        warn              = False,
+        md_only           = False,
+        ):
         self.results_out = None
         self.results_xml = None
         self.info = obj(
@@ -313,7 +323,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
         elif arg0 is not None:
             path = path_string(arg0)
             if not os.path.exists(path):
-                self.error('path to QE data does not exist\npath provided: {}'.format(path))
+                self.error(
+                    'path to QE data does not exist\n'
+                    f'path provided: {path}'
+                    )
             #end if
             if os.path.isfile(path):
                 filepath = path
@@ -323,11 +336,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 elif filename.endswith('.out'):
                     outfile_name = filename
                 else:
-                    self.error('could not determine whether file is QE input or output\nfile provided: {}'.format(filepath))
+                    self.error(
+                        'could not determine whether file is QE input or output\n'
+                        f'file provided: {filepath}'
+                        )
                 #end if
             #end if
             if outfile_name is None:
-                outfile_name = infile_name.rsplit('.',1)[0]+'.out'
+                outfile_name = f"{infile_name.rsplit('.',1)[0]}.out"
             #end if
         else:
             return
@@ -390,7 +406,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 lines = fobj.read().splitlines()
         except (OSError,UnicodeError) as e:
             if self.info.warn:
-                self.warn('file read failed\nexception encountered: '+str(e))
+                self.warn(
+                    'file read failed\n'
+                    f'exception encountered: {e}'
+                    )
             #end if
             return
         #end try
@@ -483,7 +502,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         record.time = time
                     #end if
                 elif l.strip().startswith('Ekin'):
-                    match = re.search(r'Ekin\s*=\s*('+number_pattern+r')\s+Ry\s+T\s*=\s*('+number_pattern+r')',l)
+                    match = re.search(
+                        r'Ekin\s*=\s*('+number_pattern+r')\s+Ry\s+T\s*=\s*('+number_pattern+r')',
+                        l,
+                        )
                     if match is not None and 'total_energy' in record:
                         record.kinetic_energy = number_float(match.group(1))
                         record.temperature = number_float(match.group(2))
@@ -713,16 +735,33 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 e_val = np.max(b.eigs[occ])
                 e_cond = np.min(b.eigs[unocc])
                 if e_val > vbm.energy:
-                    vbm = obj(energy=e_val,kpoint_rel=b.kpoint_rel,kpoint_2pi_alat=b.kpoint_2pi_alat,
-                              index=b.index,pol=b.pol,band_number=np.max(np.where(occ)))
+                    vbm = obj(
+                        energy          = e_val,
+                        kpoint_rel      = b.kpoint_rel,
+                        kpoint_2pi_alat = b.kpoint_2pi_alat,
+                        index           = b.index,
+                        pol             = b.pol,
+                        band_number     = np.max(np.where(occ)),
+                        )
                 #end if
                 if e_cond < cbm.energy:
-                    cbm = obj(energy=e_cond,kpoint_rel=b.kpoint_rel,kpoint_2pi_alat=b.kpoint_2pi_alat,
-                              index=b.index,pol=b.pol,band_number=np.min(np.where(unocc)))
+                    cbm = obj(
+                        energy          = e_cond,
+                        kpoint_rel      = b.kpoint_rel,
+                        kpoint_2pi_alat = b.kpoint_2pi_alat,
+                        index           = b.index,
+                        pol             = b.pol,
+                        band_number     = np.min(np.where(unocc)),
+                        )
                 #end if
                 if e_cond-e_val < direct_gap.energy:
-                    direct_gap = obj(energy=e_cond-e_val,kpoint_rel=b.kpoint_rel,kpoint_2pi_alat=b.kpoint_2pi_alat,
-                                     index=b.index,pol=[vbm.pol,cbm.pol])
+                    direct_gap = obj(
+                        energy          = e_cond-e_val,
+                        kpoint_rel      = b.kpoint_rel,
+                        kpoint_2pi_alat = b.kpoint_2pi_alat,
+                        index           = b.index,
+                        pol             = [vbm.pol,cbm.pol],
+                        )
                 #end if
             #end for
         #end for
@@ -733,8 +772,15 @@ class PwscfAnalyzer(SimulationAnalyzer):
             electronic_structure = 'metallic' if vbm.band_number==cbm.band_number else 'semi-metal'
         else:
             electronic_structure = 'insulating'
-            if vbm.kpoint_rel is not None and cbm.kpoint_rel is not None and not np.equal(vbm.kpoint_rel,cbm.kpoint_rel).all():
-                bands.indirect_gap = obj(energy=round(cbm.energy-vbm.energy,3),kpoints=obj(vbm=vbm,cbm=cbm))
+            if (
+                vbm.kpoint_rel is not None
+                and cbm.kpoint_rel is not None
+                and not np.equal(vbm.kpoint_rel,cbm.kpoint_rel).all()
+                ):
+                bands.indirect_gap = obj(
+                    energy  = round(cbm.energy-vbm.energy,3),
+                    kpoints = obj(vbm=vbm,cbm=cbm),
+                    )
             #end if
         #end if
         bands.electronic_structure = electronic_structure
@@ -895,7 +941,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     match = re.search(
                         r'atom\s+\d+\s+type\s+\d+\s+force\s*=\s*'
                         r'('+number_pattern+r')\s+('+number_pattern+r')\s+('+number_pattern+r')',
-                        lines[j])
+                        lines[j],
+                        )
                     if match is not None:
                         values = [number_float(value) for value in match.groups()]
                         aforces.append(np.array(values,dtype=float))
@@ -919,7 +966,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
             self.info.data_status.forces = True
             self.results_out.forces = np.array(forces,dtype=float)
             self.results_out.tot_forces = np.array(tot_forces)
-            self.results_out.max_forces = np.array([(np.sqrt((f**2).sum(1))).max() for f in self.results_out.forces])
+            self.results_out.max_forces = np.array([
+                (np.sqrt((force**2).sum(1))).max()
+                for force in self.results_out.forces
+                ])
         #end if
         if len(tot_forces)>0:
             self.info.data_status.total_forces = True
@@ -975,7 +1025,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 lines = fobj.readlines()
         except (OSError,UnicodeError) as e:
             if self.info.warn:
-                self.warn('pw2casino file read failed\nexception encountered: '+str(e))
+                self.warn(
+                    'pw2casino file read failed\n'
+                    f'exception encountered: {e}'
+                    )
             #end if
             return False
         #end try
@@ -994,6 +1047,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def analyze_xml(self):
+        import xml.etree.ElementTree as ET
+
         self.results_xml = None
         if 'xml_status_failed' in self.info:
             del self.info.xml_status_failed
@@ -1011,7 +1066,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
             return 0
         #end if
-        savedir = os.path.join(self.path,cont.outdir,cont.prefix+'.save')
+        savedir = os.path.join(self.path,cont.outdir,f'{cont.prefix}.save')
         schema_file = os.path.join(savedir,'data-file-schema.xml')
         legacy_file = os.path.join(savedir,'data-file.xml')
         legacy_dir = savedir
@@ -1031,11 +1086,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
         else:
             if not os.path.exists(legacy_file):
                 legacy_dir = os.path.join(self.path,cont.outdir)
-                legacy_file = os.path.join(legacy_dir,cont.prefix+'.xml')
+                legacy_file = os.path.join(legacy_dir,f'{cont.prefix}.xml')
             #end if
             if not os.path.exists(legacy_file):
                 if self.info.warn:
-                    self.warn('xml data is not available\nfile not found: '+legacy_file)
+                    self.warn(
+                        'xml data is not available\n'
+                        f'file not found: {legacy_file}'
+                        )
                 #end if
                 return 0
             #end if
@@ -1058,7 +1116,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def xml_read_failed(self,exception):
         self.results_xml.failed = True
         if self.info.warn:
-            self.warn('encountered an exception during xml read, this data will not be available\nexception encountered: '+str(exception))
+            self.warn(
+                'encountered an exception during xml read, this data will not be available\n'
+                f'exception encountered: {exception}'
+                )
         #end if
     #end def xml_read_failed
 
@@ -1066,7 +1127,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def xml_unavailable(self,message):
         self.results_xml.failed = True
         if self.info.warn:
-            self.warn('xml data is incomplete, some data will not be available\nreason: '+message)
+            self.warn(
+                'xml data is incomplete, some data will not be available\n'
+                f'reason: {message}'
+                )
         #end if
     #end def xml_unavailable
 
@@ -1146,7 +1210,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             self.xml_unavailable('ks_energies records are not available')
             return 0
         #end if
-        coordinate_map = dict()
+        coordinate_map = {}
         for record in records:
             k_element = xml_child(record,'k_point')
             e_element = xml_child(record,'eigenvalues')
@@ -1158,7 +1222,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
             coordinates = first_numbers(k_element.text or '',3)
             eigenvalues = line_numbers(e_element.text or '')
             occupations = line_numbers(o_element.text or '')
-            if coordinates is None or len(eigenvalues)==0 or len(occupations)==0 or len(eigenvalues)!=len(occupations):
+            if (
+                coordinates is None
+                or len(eigenvalues)==0
+                or len(occupations)==0
+                or len(eigenvalues)!=len(occupations)
+                ):
                 self.results_xml.failed = True
                 continue
             #end if
@@ -1199,7 +1268,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def analyze_schema_xml
 
 
-    def write_electron_counts(self,filepath=None,*,return_flag=False):
+    def write_electron_counts(
+        self,
+        filepath = None,
+        *,
+        return_flag = False,
+        ):
         results_xml = self.results_xml
         if not return_flag:
             if results_xml is None:
@@ -1224,7 +1298,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end for
         #end for
         text = 'total electron counts\n'
-        text += '  {0: 3.2f}  {1: 3.2f}  {2: 3.2f}  {3: 3.2f}\n'.format(tot.up+tot.down,tot.up-tot.down,tot.up,tot.down)
+        total_count = tot.up+tot.down
+        spin_count = tot.up-tot.down
+        text += f'  {total_count: 3.2f}  {spin_count: 3.2f}  {tot.up: 3.2f}  {tot.down: 3.2f}\n'
         text += '\nkpoint electron counts\n'
         weights = []
         for kp in kpoints.values():
@@ -1238,8 +1314,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
             for s,sl in spins.items():
                 kpt[s] = w*kp[sl].occupations.sum()*mult
             #end for
-            #text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}    {5}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up,kpt.down,kp.kpoint[0])
-            text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}  {5: 3.2f}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up-kpt.down,kpt.up,kpt.down)
+            total_count = kpt.up+kpt.down
+            spin_count = kpt.up-kpt.down
+            text += (
+                f'  {ik:>3}  {kp.weight: 8.6f}    {total_count: 3.2f}  '
+                f'{spin_count: 3.2f}  {kpt.up: 3.2f}  {kpt.down: 3.2f}\n'
+                )
         #end for
         if filepath is not None:
             with open(filepath,'w') as fobj:
@@ -1316,22 +1396,38 @@ class PwscfAnalyzer(SimulationAnalyzer):
             movie = ''
             structures = self.results_out.relax_structures
 
-            aA = convert(self.input.system['celldm(1)'],'B','A')
+            alat_angstrom = convert(self.input.system['celldm(1)'],'B','A')
             cell = self.input.cell_parameters.vectors
             for i in range(len(structures)):
                 s = structures[i]
-                struct = Structure(elem=s.atoms,pos=s.positions,axes=cell,scale=aA,units='A')
-                struct=struct.tile(2,2,2)
-                ss=struct.write_xyz()
-                movie += ss
+                struct = Structure(
+                    elem  = s.atoms,
+                    pos   = s.positions,
+                    axes  = cell,
+                    scale = alat_angstrom,
+                    units = 'A',
+                    )
+                struct = struct.tile(2,2,2)
+                xyz_text = struct.write_xyz()
+                movie += xyz_text
                 with open(filepath,'w') as fobj:
                     fobj.write(movie)
             #end for
-        #end for
+        #end if
     #end def make_movie
 
 
-    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, *, show=False, save=True, show_vbm_cbm=True,k_labels=None):
+    def plot_bandstructure(
+        self,
+        filename      = None,
+        filepath      = None,
+        max_min_e     = None,
+        *,
+        show          = False,
+        save          = True,
+        show_vbm_cbm = True,
+        k_labels      = None,
+        ):
         import matplotlib.pyplot as plt
         params = {
             'legend.fontsize'      : 14,
@@ -1343,7 +1439,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
             }
         plt.rcParams.update(params)
         if 'bands' in self.results_out and self.results_out.bands is not None:
-            success = True
             if filename is None:
                 filename = 'band_structure.pdf'
             if filepath is None:
@@ -1383,14 +1478,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
             for nb in range(nbands):
                 y = []
                 for bi in self.results_out.bands.up:
-                    y.append(bi['eigs'][nb])
+                    y.append(bi.eigs[nb])
                 #end for
                 y = np.array(y) - self.results_out.bands.vbm.energy
                 plt.plot(x, y, 'k')
                 if len(self.results_out.bands.down) > 0:
                     y = []
                     for bi in self.results_out.bands.down:
-                        y.append(bi['eigs'][nb])
+                        y.append(bi.eigs[nb])
                     #end for
                     y = np.array(y) - self.results_out.bands.vbm.energy
                     plt.plot(x, y, 'r')
@@ -1402,10 +1497,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     if li == 'GAMMA':
                         labels[ln] = r'$\Gamma$'
                     elif li != '':
-                        labels[ln] = '${0}$'.format(li)
+                        labels[ln] = f'${li}$'
                     #end if
                     if labels[ln-1] != '' and ln > 0:
-                        labels[ln] = labels[ln-1]+'|'+labels[ln]
+                        labels[ln] = f'{labels[ln-1]}|{labels[ln]}'
                         labels[ln-1] = ''
                     #end if
                 #end if
@@ -1426,10 +1521,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
             vbm = self.results_out.bands.vbm
             cbm = self.results_out.bands.cbm
             for kn, ki in enumerate(self.results_out.bands.up):
-                if (vbm.kpoint_rel == ki['kpoint_rel']).all():
+                if (vbm.kpoint_rel == ki.kpoint_rel).all():
                     plt.scatter(x[kn], 0, c='green', s=100)
                 #end if
-                if (cbm.kpoint_rel == ki['kpoint_rel']).all():
+                if (cbm.kpoint_rel == ki.kpoint_rel).all():
                     plt.scatter(x[kn], cbm.energy-vbm.energy, c='r', s=100)
                 #end if
             #end for
