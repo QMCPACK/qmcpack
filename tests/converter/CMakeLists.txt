@@ -25,6 +25,31 @@ function(ADD_CONVERTER_TEST test_name)
                "converter;deterministic")
 endfunction()
 
+function(ADD_CONVERTER_JASTROW_TEST test_name)
+  set(test_instance "${test_name}_jastrow")
+  execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/${test_name}"
+                          "${CMAKE_CURRENT_BINARY_DIR}/${test_instance}")
+  set(EXE_NAME $<TARGET_FILE:convert4qmc>)
+  if(HAVE_MPI)
+    set(EXE_NAME ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:convert4qmc>)
+    string(REPLACE ";" " " EXE_NAME "${EXE_NAME}")
+  endif()
+  add_test(NAME converter_${test_instance}
+           COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/converter_test.py"
+                   "${CMAKE_CURRENT_BINARY_DIR}/${test_instance}" --exe "${EXE_NAME}"
+                   --h5diff "${HDF5_DIFF_EXECUTABLE}" --jastrow)
+  set_tests_properties(
+    converter_${test_instance}
+    PROPERTIES FAIL_REGULAR_EXPRESSION
+               "  FAIL"
+               PASS_REGULAR_EXPRESSION
+               "  pass"
+               TIMEOUT
+               120
+               LABELS
+               "converter;deterministic")
+endfunction()
+
 function(ADD_PWCONVERTER_TEST test_name)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/${test_name}"
                           "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
@@ -47,6 +72,7 @@ endfunction()
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/converter_test.py"
                         "${CMAKE_CURRENT_BINARY_DIR}")
 add_converter_test(test_He_sto3g)
+add_converter_jastrow_test(test_He_sto3g)
 add_converter_test(test_Be_sto3g)
 add_converter_test(test_Be_ccd)
 add_converter_test(test_O_ext)
