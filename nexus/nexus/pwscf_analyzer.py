@@ -222,7 +222,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def leading_numbers
 
 
-    def match_float(self,pattern,line):
+    @staticmethod
+    def match_float(pattern,line):
         match = re.search(pattern,line)
         if match is None:
             return None
@@ -231,7 +232,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def match_float
 
 
-    def number_float(self,value):
+    @staticmethod
+    def number_float(value):
         return float(value.replace('D','E').replace('d','e'))
     #end def number_float
 
@@ -872,7 +874,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def xml_unavailable
 
 
-    def object_path(self,value,*names):
+    @staticmethod
+    def object_path(value,*names):
         for name in names:
             if value is None or name not in value:
                 return None
@@ -940,12 +943,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def analyze_legacy_xml
 
 
-    def xml_local_name(self,element):
+    @staticmethod
+    def xml_local_name(element):
         return element.tag.rsplit('}',1)[-1].lower()
     #end def xml_local_name
 
 
-    def xml_value(self,text):
+    @staticmethod
+    def xml_value(text):
         text = text.strip()
         if len(text)==0:
             return ''

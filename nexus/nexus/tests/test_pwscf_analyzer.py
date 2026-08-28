@@ -9,11 +9,16 @@ from ..testing import object_eq
 
 
 def test_empty_init():
+    from inspect import getattr_static
     from ..pwscf_analyzer import PwscfAnalyzer
 
     pa = PwscfAnalyzer()
     assert('results' in pa)
     assert(len(pa.results)==0)
+    static_helpers = ('match_float','number_float','object_path','xml_local_name','xml_value')
+    for name in static_helpers:
+        assert(isinstance(getattr_static(PwscfAnalyzer,name),staticmethod))
+    #end for
 #end def test_empty_init
 
 
