@@ -66,7 +66,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
     vector<double> b = {1., 2., 1., 5., 2., 5., 8., 7., 1., 8., 9., 9., 4., 1., 2., 3.};
     array<double, 2, Allocator> B({4, 4}, alloc);
     using std::copy_n;
-    copy_n(b.data(), b.size(), B.origin());
+    copy_n(b.data(), b.size(), B.base());
     REQUIRE(B.num_elements() == b.size());
 
     array<double, 2, Allocator> C({4, 4}, 0.0, alloc);
@@ -93,7 +93,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
     vector<double> b = {1., 2., 1., 4.};
     array<double, 1, Allocator> B(iextensions<1u>{4}, alloc);
     using std::copy_n;
-    copy_n(b.data(), b.size(), B.origin());
+    copy_n(b.data(), b.size(), B.base());
     REQUIRE(B.num_elements() == b.size());
 
     array<double, 1, Allocator> C(iextensions<1u>{4}, alloc);
@@ -125,7 +125,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
     vector<double> b = {1., 2., 1., 5., 2., 5., 8., 7., 1., 8., 9., 9., 4., 1., 2., 3.};
     array<double, 2, Allocator> B({4, 4}, alloc);
     using std::copy_n;
-    copy_n(b.data(), b.size(), B.origin());
+    copy_n(b.data(), b.size(), B.base());
     REQUIRE(B.num_elements() == b.size());
 
     array<double, 2, Allocator> C({4, 4}, alloc);
@@ -151,7 +151,7 @@ void test_sparse_matrix_mult(Allocator const& alloc = {})
     vector<double> b = {1., 2., 1., 4.};
     array<double, 1, Allocator> B(iextensions<1u>{4}, alloc);
     using std::copy_n;
-    copy_n(b.data(), b.size(), B.origin());
+    copy_n(b.data(), b.size(), B.base());
     REQUIRE(B.num_elements() == b.size());
 
     array<double, 1, Allocator> C(iextensions<1u>{4}, alloc);
