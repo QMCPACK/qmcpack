@@ -9,7 +9,7 @@ Notable changes to QMCPACK and NEXUS are documented in this file.
 * DeepQMC neural-network wavefunctions are integrated with QMCPACK on an exploratory/developmental basis. [#6061](https://github.com/QMCPACK/qmcpack/pull/6061)
 * Significant speedup of v1 T-move nonlocal pseudopotential evaluation on GPUs via batched algorithm, thanks to @HaoZeke. [#6079](https://github.com/QMCPACK/qmcpack/pull/6079)
 * NERSC Perlmutter build recipe updated. [#6026](https://github.com/QMCPACK/qmcpack/pull/6026)
-* Shared_ranks supported in GPU runs, reducing memory pressure from the large spline data buffers. [#6173](https://github.com/QMCPACK/qmcpack/pull/6173)
+* Shared_ranks supported in GPU runs, reducing host-side memory pressure from the large memory footprint of spline coefficients. [#6173](https://github.com/QMCPACK/qmcpack/pull/6173)
 * CTest can distribute test jobs to GPUs with `QMC_CTEST_NUM_GPUS`, speeding up testing on multi-GPU nodes. [#6112](https://github.com/QMCPACK/qmcpack/pull/6112)
 * Builds automatically select C++20 when the compiler defaults to that standard. [#6075](https://github.com/QMCPACK/qmcpack/pull/6075)
 * Batched GEMV, GER, and copy operations use rocBLAS on AMD GPUs. [#6109](https://github.com/QMCPACK/qmcpack/pull/6109)
