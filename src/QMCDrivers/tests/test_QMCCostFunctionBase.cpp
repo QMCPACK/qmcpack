@@ -13,6 +13,7 @@
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
+#include "Message/UniformCommunicateError.h"
 #include "Platforms/Host/OutputManager.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "Utilities/RuntimeOptions.h"

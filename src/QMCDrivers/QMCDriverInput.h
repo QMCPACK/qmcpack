@@ -16,7 +16,6 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "InputTypes.hpp"
 #include "DriverDebugChecks.h"
 #include "EstimatorManagerInput.h"
 #include "type_traits/template_types.hpp"
@@ -86,9 +85,8 @@ protected:
   std::optional<EstimatorManagerInput> estimator_manager_input_;
 
   // from putQMCInfo
-  input::PeriodStride walker_dump_period_{0, 0};
-  input::PeriodStride check_point_period_{0, 0};
-  bool dump_config_  = false;
+  IndexType check_point_period_ = 0;
+  bool dump_config_             = false;
 
   // from QMCUpdateBase
   RealType max_disp_sq_ = -1.0;
@@ -115,8 +113,7 @@ public:
   IndexType get_blocks_between_recompute() const { return blocks_between_recompute_; }
   bool get_append_run() const { return append_run_; }
   IndexType get_estimator_measurement_period() const { return estimator_measurement_period_; }
-  input::PeriodStride get_walker_dump_period() const { return walker_dump_period_; }
-  input::PeriodStride get_check_point_period() const { return check_point_period_; }
+  IndexType get_check_point_period() const { return check_point_period_; }
   bool get_dump_config() const { return dump_config_; }
 
   const std::string& get_qmc_method() const { return qmc_method_; }

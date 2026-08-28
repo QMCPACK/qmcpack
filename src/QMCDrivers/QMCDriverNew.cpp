@@ -205,7 +205,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
 
 void QMCDriverNew::recordBlock(int block)
 {
-  if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
+  if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period() == 0)
   {
     ScopedTimer local_timer(timers_.checkpoint_timer);
     population_.saveWalkerConfigurations(walker_configs_ref_);

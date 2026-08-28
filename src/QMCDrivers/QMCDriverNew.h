@@ -409,12 +409,6 @@ protected:
   ///drift modifer
   std::unique_ptr<DriftModifierBase> drift_modifier_;
 
-  /** period of recording walker configurations
-   *
-   * Default is 0 indicating that only the last configuration will be saved.
-   */
-  int walker_dump_period;
-
   IndexType current_step_;
   /// actual number of steps per block
   size_t steps_per_block_ = 0;

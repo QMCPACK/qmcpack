@@ -79,8 +79,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   aAttrib.put(cur);
 
   //set default to match legacy QMCDriver
-  check_point_period_.stride = Period4CheckPoint;
-  check_point_period_.period = Period4CheckPoint;
+  check_point_period_ = Period4CheckPoint;
 
   if (cur != NULL)
   {
@@ -92,19 +91,10 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
     while (tcur != NULL)
     {
       std::string cname{lowerCase(castXMLCharToChar(tcur->name))};
-      if (cname == "record")
-      {
-        //dump walkers for optimization
-        OhmmsAttributeSet rAttrib;
-        rAttrib.add(walker_dump_period_.stride, "stride");
-        rAttrib.add(walker_dump_period_.period, "period");
-        rAttrib.put(tcur);
-      }
-      else if (cname == "checkpoint")
+      if (cname == "checkpoint")
       {
         OhmmsAttributeSet rAttrib;
-        rAttrib.add(check_point_period_.stride, "stride");
-        rAttrib.add(check_point_period_.period, "period");
+        rAttrib.add(check_point_period_, "period");
         rAttrib.put(tcur);
       }
       // These complications are due to the need to support bare <esimator> nodes
@@ -136,8 +126,8 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
       debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_TMOVE;
   }
 
-  if (check_point_period_.period < 1)
-    check_point_period_.period = max_blocks_;
+  if (check_point_period_ < 1)
+    check_point_period_ = max_blocks_;
 
   // \todo this should be moved to a checkParticularValidity override
   // when QMCDriverInput is modernized.
