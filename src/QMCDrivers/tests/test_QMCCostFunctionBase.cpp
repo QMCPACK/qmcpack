@@ -9,9 +9,11 @@
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <sstream>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
+#include "Platforms/Host/OutputManager.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "Utilities/RuntimeOptions.h"
 
@@ -125,6 +127,36 @@ TEST_CASE("updateXmlNodes with existing element", "[drivers]")
   REQUIRE(href == "tmp2.vp.h5");
 
   xmlXPathFreeContext(acontext);
+}
+
+TEST_CASE("QMCCostFunctionBase ignores retired cost inputs", "[drivers]")
+{
+  const SimulationCell simulation_cell;
+  MCWalkerConfiguration w(simulation_cell);
+  QMCHamiltonian h;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  QMCCostFunctionTest cost(w, psi, h, OHMMS::Controller);
+
+  const char* input_xml = R"(
+<optimize>
+  <parameter name="nonlocalpp">yes</parameter>
+  <parameter name="use_nonlocalpp_deriv">yes</parameter>
+  <parameter name="GEVMethod">mixed</parameter>
+</optimize>
+    )";
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(input_xml));
+
+  std::ostringstream log;
+  infoLog.setStream(&log);
+  CHECK_THROWS_AS(cost.put(doc.getRoot()), UniformCommunicateError);
+  infoLog.setStream(&std::cout);
+
+  CHECK(log.str().find("nonlocalpp") == std::string::npos);
+  CHECK(log.str().find("use_nonlocalpp_deriv") == std::string::npos);
+  CHECK(log.str().find("GEVMethod") == std::string::npos);
 }
 
 
