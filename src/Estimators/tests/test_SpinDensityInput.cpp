@@ -62,4 +62,13 @@ TEST_CASE("SpinDensityInput invalid input", "[estimators]")
   }
 }
 
+TEST_CASE("SpinDensityInput retired save_memory", "[estimators]")
+{
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<estimator name="spindensity" type="spindensity" save_memory="yes">
+      <parameter name="grid">10 10 10</parameter>
+    </estimator>)"));
+  CHECK_THROWS_AS(SpinDensityInput(doc.getRoot()), UniformCommunicateError);
+}
+
 } // namespace qmcplusplus

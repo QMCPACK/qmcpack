@@ -45,10 +45,10 @@ public:
     {
       // clang-format off
       section_name = type_tag;
-      attributes   = {"name", "report", "save_memory"};
+      attributes   = {"name", "report"};
       parameters   = {"dr", "grid", "corner", "center", "cell"};
       strings      = {"name"};
-      bools        = {"report", "save_memory"};
+      bools        = {"report"};
       positions    = {"dr", "grid", "corner", "center"};
       multi_reals  = {"cell"};
       // clang-format on
@@ -67,7 +67,6 @@ public:
   TinyVector<int, DIM> get_grid() const { return grid_; }
   int get_npoints() const { return npoints_; }
   bool get_write_report() const { return write_report_; }
-  bool get_save_memory() const { return save_memory_; }
   const std::string& get_name() const { return name_; }
 
   struct DerivedParameters
@@ -100,7 +99,6 @@ private:
   TinyVector<int, DIM> grid_;
   int npoints_{0};
   bool write_report_{false};
-  bool save_memory_{false};
   /** these are necessary for calculateDerivedParameters
    *
    *  If we are going to later write out a canonical input for

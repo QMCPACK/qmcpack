@@ -80,12 +80,12 @@
          </pairpot>
          <estimator type="flux" name="Flux"/>
       </hamiltonian>
+      <!-- SpinDensity corner below is the legacy implementation default. -->
       <estimators>
-	<estimator name="spindensity" type="spindensity" report="yes" save_memory="no">
+	<estimator name="spindensity" type="spindensity" report="yes">
 	  <parameter name="grid">
             10 10 10
 	  </parameter>
-	  <!-- this is the default in the legacy implementation -->
 	  <parameter name="corner">
             0.0 0.0 0.0
 	  </parameter>

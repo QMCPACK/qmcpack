@@ -27,8 +27,6 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& speci
       species_size_(getSpeciesSize(species))
 {
   data_locality_ = DataLocality::crowd;
-  if (input_.get_save_memory())
-    dl = DataLocality::rank;
 
   if (input_.get_cell().explicitly_defined == true)
     lattice_ = input_.get_cell();
