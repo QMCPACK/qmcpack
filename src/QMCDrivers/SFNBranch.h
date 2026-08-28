@@ -131,8 +131,7 @@ public:
     SIGMA2,
     SIGMA_BOUND,
     FEEDBACK,
-    FILTERSCALE,
-    VPARAM_MAX = 17 // four extra, why? Sloppy or undocumented hack?
+    VPARAM_MAX
   };
   using SBVP = SimpleBranchVectorParameter;
 

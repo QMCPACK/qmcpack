@@ -44,7 +44,6 @@ SFNBranch::SFNBranch(RealType tau, RealType feedback, DMCRefEnergyScheme refener
   vParam[SBVP::TAU]         = tau;
   vParam[SBVP::TAUEFF]      = tau;
   vParam[SBVP::FEEDBACK]    = feedback;
-  vParam[SBVP::FILTERSCALE] = 10;
   vParam[SBVP::SIGMA_BOUND] = 10;
   R2Accepted(1.0e-10);
   R2Proposed(1.0e-10);
@@ -78,8 +77,6 @@ void SFNBranch::registerParameters()
   m_param.add(vParam[SBVP::TAU], "timestep");
   m_param.add(vParam[SBVP::TAU], "timeStep");
   m_param.add(vParam[SBVP::TAU], "TimeStep");
-  //filterscale:  sets the filtercutoff to sigma*filterscale
-  m_param.add(vParam[SBVP::FILTERSCALE], "filterscale");
   m_param.add(vParam[SBVP::SIGMA_BOUND], "sigmaBound");
   m_param.add(sParam[MIXDMCOPT], "warmupByReconfiguration");
   m_param.add(branching_cutoff_scheme, "branching_cutoff_scheme");

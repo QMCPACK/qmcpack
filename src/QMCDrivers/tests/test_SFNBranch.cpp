@@ -100,6 +100,7 @@ TEST_CASE("SFNBranch retired modern options", "[drivers]")
   <parameter name="warmupSteps">17</parameter>
   <parameter name="energyUpdateInterval">3</parameter>
   <parameter name="warmupByReconfiguration">yes</parameter>
+  <parameter name="filterscale">not-a-real</parameter>
 </qmc>)"));
   REQUIRE(sfnb.put(doc.getRoot()));
   CHECK(sfnb.getWarmupToDoSteps() == 17);
