@@ -54,6 +54,7 @@ using namespace afqmc;
 template<class Alloc>
 void ham_ops_basic_serial(boost::mpi3::communicator& world)
 {
+  using std::get;
   using pointer = device_ptr<ComplexType>;
 
   if (check_hamil_wfn_for_utest("ham_ops_basic_serial", UTEST_WFN, UTEST_HAMIL))
