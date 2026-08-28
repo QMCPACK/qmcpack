@@ -189,7 +189,7 @@ def test_mode_specific_results(tmp_path):
     exx_log.write_text(rmg_log("calculate Exx integral's from saved wave functions"))
     (tmp_path/'exx_integrals.h5').touch()
     exx = RmgAnalyzer(str(exx_log),analyze=True)
-    assert len(exx.results.artifacts.exx_integrals)==1
+    assert len(exx.results.produced_files.exx_integrals)==1
 
     stm_dir = tmp_path/'STM'
     stm_dir.mkdir()
@@ -198,8 +198,8 @@ def test_mode_specific_results(tmp_path):
     stm_log = tmp_path/'stm.log'
     stm_log.write_text(rmg_log('calculate STM charge density'))
     stm = RmgAnalyzer(str(stm_log),analyze=True)
-    assert len(stm.results.artifacts.stm)==1
-    assert len(stm.results.artifacts.stm_cube)==1
+    assert len(stm.results.produced_files.stm)==1
+    assert len(stm.results.produced_files.stm_cube)==1
 #end def test_mode_specific_results
 
 
@@ -274,17 +274,4 @@ final total energy from eig sum = malformed Ha
     assert analyzer.results.positions.shape==(1,1,3)
     assert analyzer.results.scf is None
     assert len(analyzer.info.parse_status.errors)==0
-
-    def broken_parser(lines):
-        raise ValueError('deliberately malformed section')
-    #end def broken_parser
-
-    analyzer = RmgAnalyzer(str(logfile))
-    analyzer.analyze_ions = broken_parser
-    analyzer.analyze(guard=False)
-
-    assert analyzer.run_completed
-    assert analyzer.info.parse_status.ions is False
-    assert 'ValueError' in analyzer.info.parse_status.errors.ions
-    assert analyzer.info.parse_status.timing is True
 #end def test_malformed_sections_do_not_stop_analysis

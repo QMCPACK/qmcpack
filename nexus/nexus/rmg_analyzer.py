@@ -9,6 +9,7 @@ from glob import glob
 from copy import deepcopy
 import numpy as np
 from .developer import obj
+from .generic import NexusError
 from .utilities import to_str
 from .fileio import TextFile
 from .unit_converter import convert
@@ -55,7 +56,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     result_fields_by_mode = dict(
         scf = common_result_fields+electronic_result_fields+ionic_result_fields+(
-            'artifacts',
+            'produced_files',
             ),
         nscf = common_result_fields+electronic_result_fields+ionic_result_fields,
         band = common_result_fields+(
@@ -63,7 +64,7 @@ class RmgAnalyzer(SimulationAnalyzer):
             'bands',
             ),
         exx = common_result_fields+(
-            'artifacts',
+            'produced_files',
             ),
         relax = common_result_fields+electronic_result_fields+ionic_result_fields,
         md_VE = common_result_fields+electronic_result_fields+ionic_result_fields+(
@@ -78,7 +79,7 @@ class RmgAnalyzer(SimulationAnalyzer):
             'tddft',
             ),
         stm = common_result_fields+(
-            'artifacts',
+            'produced_files',
             ),
         neb = common_result_fields+electronic_result_fields+ionic_result_fields,
         )
@@ -129,6 +130,97 @@ class RmgAnalyzer(SimulationAnalyzer):
         #end if
         return mode
     #end def calculation_shortmode
+
+
+    @staticmethod
+    def normalize_line(line):
+        return ' '.join(line.expandtabs().strip().split()).lower()
+    #end def normalize_line
+
+
+    @staticmethod
+    def identify_mode(text):
+        text = RmgAnalyzer.normalize_line(text)
+        mode_patterns = (
+            # Match the self-consistent electronic-quench calculation label.
+            # Example: Quench electrons
+            (r'quench\s+electrons','scf'),
+            # Match the standalone abbreviation for a non-self-consistent run.
+            # Example: NSCF
+            (r'\bnscf\b','nscf'),
+            # Match the band-structure calculation label.
+            # Example: Band structure
+            (r'band\s+structure','band'),
+            # Match a calculation of exact-exchange integrals.
+            # Example: Calculate Exx integral's from saved wave functions
+            (r'exx\s+integral','exx'),
+            # Match either supported structural-relaxation label.
+            # Example: Structure optimization
+            (r'(?:structure\s+optimization|relax\s+structure)','relax'),
+            # Match constant-volume, constant-energy molecular dynamics.
+            # Example: Molecular dynamics - CVE
+            (r'(?:molecular\s+dynamics\s*[-:]?\s*cve|constant\s+volume\s+and\s+energy)','md_VE'),
+            # Match constant-volume, constant-temperature molecular dynamics.
+            # Example: Molecular dynamics - CVT
+            (r'(?:molecular\s+dynamics\s*[-:]?\s*cvt|constant\s+temperature\s+and\s+energy)','md_TE'),
+            # Match either supported nudged-elastic-band label.
+            # Example: Molecular dynamics using Nudged Elastic Band.
+            (r'(?:nudged\s+elastic\s+band|neb\s+relax)','neb'),
+            # Match either full or abbreviated time-dependent DFT labels.
+            # Example: Time dependent DFT
+            (r'(?:time\s+dependent\s+dft|\btddft\b)','tddft'),
+            # Match either full or abbreviated scanning-tunneling labels.
+            # Example: Calculate STM charge density
+            (r'stm\s+charge\s+density|\bstm\b','stm'),
+            )
+        for pattern,mode in mode_patterns:
+            if re.search(pattern,text,re.I):
+                return mode
+            #end if
+        #end for
+        return rmg_modes.mode_match(text,short=True)
+    #end def identify_mode
+
+
+    # Match a signed integer or decimal with an optional E- or D-exponent.
+    # Example: -1.2345D+02
+    number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
+
+
+    @staticmethod
+    def line_numbers(line):
+        # Find every RMG-formatted number occurring anywhere in a line.
+        # Example: SUM FORCE = 0.1 0.2 0.3
+        values = re.findall(
+            RmgAnalyzer.number_pattern,line.replace('D','E').replace('d','e'))
+        return np.array(values,dtype=float)
+    #end def line_numbers
+
+
+    @staticmethod
+    def leading_numbers(line):
+        # Match a whitespace-separated numeric sequence at the start of a line.
+        # Example: 1 1.0 0.1 0.2 trailing
+        npat = RmgAnalyzer.number_pattern
+        pattern = r'^\s*((?:'+npat+r')(?:\s+(?:'+npat+r'))*)'
+        match = re.match(pattern,line)
+        if match is None:
+            return np.array([],dtype=float)
+        #end if
+        return RmgAnalyzer.line_numbers(match.group(1))
+    #end def leading_numbers
+
+
+    @staticmethod
+    def match_float(pattern,line):
+        # Apply a caller-provided expression that captures one physical value.
+        # Example: FERMI ENERGY : 5.25 eV
+        match = re.search(pattern,line,re.I)
+        if match is None:
+            return None
+        #end if
+        return float(match.group(1).replace('D','E').replace('d','e'))
+    #end def match_float
 
 
     def __init__(self,arg0=None,*,analyze=False):
@@ -221,22 +313,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         logfile = TextFile(log_filepath)
         parse_status = obj(log=True,errors=obj())
         self.info.parse_status = parse_status
-
-        def parse(name,method,*args):
-            try:
-                status = method(*args)
-                parse_status[name] = True if status is None else status
-            except Exception as e:
-                parse_status[name] = False
-                parse_status.errors[name] = '{}: {}'.format(e.__class__.__name__,e)
-                if not guard:
-                    raise
-                #end if
-            #end try
-        #end def parse
-
-        parse('setup',self.read_setup_info,logfile)
-        parse('results',self.read_results,logfile,lines)
+        parse_status.setup = self.read_setup_info(logfile)
+        parse_status.results = self.read_results(logfile,lines)
     #end def analyze
 
 
@@ -248,6 +326,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         mode = None
         for line in log_lines:
             normalized = self.normalize_line(line)
+            # Match the calculation-type heading and capture its value.
+            # Example: Calculation type: Quench electrons
             match = re.match(r'^calculation\s*type\s*[:=]\s*(.*)$',normalized)
             if match is not None:
                 mode = self.identify_mode(match.group(1))
@@ -268,6 +348,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         unit_set = set(['a0'])
         on_off = dict(ON=True,OFF=False)
         def process_name(s):
+            # Match parenthetical annotations so they can be removed from names.
+            # Example: Grid spacing (a0)
             s = re.sub(r'\([^)]*\)','',s)
             tokens = s.strip().lower().split()
             name = ''
@@ -314,9 +396,13 @@ class RmgAnalyzer(SimulationAnalyzer):
             return v,units
         #end def process_value
         if setup_start is not None:
+            # Match the standalone Files setup-section heading.
+            # Example: Files:
             start_match = re.search(r'(?im)^\s*files\s*(?::\s*)?$',log_text)
             istart = start_match.start() if start_match is not None else -1
             if istart!=-1:
+                # Match the normal heading that terminates the setup section.
+                # Example: Initial Ionic Positions And Displacements (Angstrom)
                 end_pattern = (
                     r'(?im)^\s*initial\s+ionic\s+positions\s+and\s+'
                     r'displacements\s*\(\s*angstroms?\s*\)'
@@ -325,6 +411,8 @@ class RmgAnalyzer(SimulationAnalyzer):
                 if end_match is not None:
                     iend = istart+end_match.start()
                 else:
+                    # Match alternate post-setup headings when ionic positions are absent.
+                    # Example: Davidson converged
                     fallback_pattern = (
                         r'(?im)^\s*(?:diagonalization\s+using|davidson\s+'
                         r'(?:converged|incomplete)|-+\s*timing\s+information)'
@@ -391,92 +479,103 @@ class RmgAnalyzer(SimulationAnalyzer):
                     # additional processing for specific blocks
                     if 'grid_points' in setup_info:
                         b = setup_info.grid_points
-                        try:
-                            grid = []
-                            grid_pe = []
-                            spacing = []
-                            grid_units = None
-                            for c in 'xyz':
-                                if c in b:
-                                    s = str(b[c])
-                                    total = self.match_float(
-                                        r'\btotal\s*:\s*('+self.number_pattern+r')',s)
-                                    per_pe = self.match_float(
-                                        r'\bper\s*pe\s*:\s*('+self.number_pattern+r')',s)
-                                    space = self.match_float(
-                                        r'\bspacing\s*:\s*('+self.number_pattern+r')',s)
-                                    if total is None or per_pe is None or space is None:
-                                        continue
-                                    #end if
-                                    unit_match = re.search(
-                                        r'\bspacing\s*:\s*'+self.number_pattern+r'\s*([^\s,;]+)',s,re.I)
-                                    if unit_match is not None:
-                                        grid_units = unit_match.group(1)
-                                    #end if
-                                    grid.append(total)
-                                    grid_pe.append(per_pe)
-                                    spacing.append(space)
-                                #end if
-                            #end for
-                            if len(grid)!=3:
-                                raise ValueError('incomplete grid dimensions')
+                        grid = []
+                        grid_pe = []
+                        spacing = []
+                        grid_units = None
+                        for c in 'xyz':
+                            if c not in b:
+                                continue
                             #end if
+                            s = str(b[c])
+                            # Match and capture the total grid-point count.
+                            # Example: Total: 48 Per PE: 12 Spacing: 0.30 a0
+                            total = self.match_float(
+                                r'\btotal\s*:\s*('+self.number_pattern+r')',s)
+                            # Match and capture the per-process grid-point count.
+                            # Example: Total: 48 Per PE: 12 Spacing: 0.30 a0
+                            per_pe = self.match_float(
+                                r'\bper\s*pe\s*:\s*('+self.number_pattern+r')',s)
+                            # Match and capture the real-space grid spacing.
+                            # Example: Total: 48 Per PE: 12 Spacing: 0.30 a0
+                            space = self.match_float(
+                                r'\bspacing\s*:\s*('+self.number_pattern+r')',s)
+                            if total is None or per_pe is None or space is None:
+                                continue
+                            #end if
+                            # Match the unit following a grid-spacing value.
+                            # Example: Spacing: 0.30 a0
+                            unit_match = re.search(
+                                r'\bspacing\s*:\s*'+self.number_pattern+
+                                r'\s*([^\s,;]+)',s,re.I)
+                            if unit_match is not None:
+                                grid_units = unit_match.group(1)
+                            #end if
+                            grid.append(total)
+                            grid_pe.append(per_pe)
+                            spacing.append(space)
+                        #end for
+                        if len(grid)==3:
                             grid = np.array(grid,dtype=int)
                             grid_pe = np.array(grid_pe,dtype=int)
                             spacing = np.array(spacing,dtype=float)
-                            cutoff_text = str(b.equivalent_energy_cutoffs)
-                            cutoff_values = self.line_numbers(cutoff_text)
-                            if len(cutoff_values)<2:
-                                raise ValueError('incomplete energy cutoffs')
-                            #end if
-                            unit_match = re.search(
-                                self.number_pattern+r'\s+'+self.number_pattern+
-                                r'\s*([^\s,;]+)',cutoff_text)
-                            ecut_units = unit_match.group(1) if unit_match is not None else None
                             b.update(
                                 grid         = grid,
                                 grid_pe      = grid_pe,
                                 grid_spacing = spacing,
                                 grid_units   = grid_units,
-                                ecut         = cutoff_values[0],
-                                ecut_charge  = cutoff_values[1],
-                                ecut_units   = ecut_units,
                                 )
-                        except (ValueError,TypeError,OverflowError,AttributeError,IndexError,KeyError):
-                            pass
-                        #end try
+                        #end if
+                        if 'equivalent_energy_cutoffs' in b:
+                            cutoff_text = str(b.equivalent_energy_cutoffs)
+                            cutoff_values = self.line_numbers(cutoff_text)
+                            if len(cutoff_values)>=2:
+                                # Match the unit following the two equivalent cutoffs.
+                                # Example: 60.0 240.0 Ry
+                                unit_match = re.search(
+                                    self.number_pattern+r'\s+'+self.number_pattern+
+                                    r'\s*([^\s,;]+)',cutoff_text)
+                                ecut_units = (
+                                    unit_match.group(1) if unit_match is not None else None)
+                                b.update(
+                                    ecut         = cutoff_values[0],
+                                    ecut_charge  = cutoff_values[1],
+                                    ecut_units   = ecut_units,
+                                    )
+                            #end if
+                        #end if
                     #end if
                     if 'lattice_setup' in setup_info:
                         b = setup_info.lattice_setup
-                        try:
-                            axes = []
-                            for name in ('x_basis_vector','y_basis_vector','z_basis_vector'):
-                                values = self.line_numbers(str(b[name]))
-                                if len(values)<3:
-                                    raise ValueError('incomplete lattice vector')
-                                #end if
-                                axes.append(values[:3])
-                            #end for
+                        axes = []
+                        for name in ('x_basis_vector','y_basis_vector','z_basis_vector'):
+                            if name not in b:
+                                axes = []
+                                break
+                            #end if
+                            values = self.line_numbers(str(b[name]))
+                            if len(values)<3:
+                                axes = []
+                                break
+                            #end if
+                            axes.append(values[:3])
+                        #end for
+                        if len(axes)==3:
                             b.axes = np.array(axes,dtype=float)
-                        except (ValueError,TypeError,OverflowError,AttributeError,IndexError,KeyError):
-                            pass
-                        #end try
+                        #end if
                     #end if
                     if 'k_points' in other_blocks:
-                        try:
-                            header,body,lines = other_blocks.k_points
-                            del other_blocks.k_points
-                            first_row = None
-                            for i,line in enumerate(lines):
-                                normalized = self.normalize_line(line)
-                                if 'weight' in normalized and 'crystal' in normalized:
-                                    first_row = i+1
-                                    break
-                                #end if
-                            #end for
-                            if first_row is None:
-                                raise ValueError('k-point table heading not found')
+                        header,body,lines = other_blocks.k_points
+                        del other_blocks.k_points
+                        first_row = None
+                        for i,line in enumerate(lines):
+                            normalized = self.normalize_line(line)
+                            if 'weight' in normalized and 'crystal' in normalized:
+                                first_row = i+1
+                                break
                             #end if
+                        #end for
+                        if first_row is not None:
                             kp = []
                             kw = []
                             for line in lines[first_row:]:
@@ -491,42 +590,42 @@ class RmgAnalyzer(SimulationAnalyzer):
                                 kp.append(values[:3])
                                 kw.append(values[3])
                             #end for
-                            setup_info.k_points = obj(
-                                kpoints_crystal = np.array(kp,dtype=float),
-                                kweights        = np.array(kw,dtype=float),
-                                )
-                        except (ValueError,TypeError,OverflowError,AttributeError,IndexError,KeyError):
-                            pass
-                        #end try
+                            if len(kp)>0:
+                                setup_info.k_points = obj(
+                                    kpoints_crystal = np.array(kp,dtype=float),
+                                    kweights        = np.array(kw,dtype=float),
+                                    )
+                            #end if
+                        #end if
                     #end if
                     k = 'initial_ionic_positions_and_displacements'
                     if k in other_blocks:
-                        try:
-                            header,body,lines = other_blocks[k]
-                            del other_blocks[k]
-                            h = header.lower()
-                            punits = None
-                            if 'bohr' in h:
-                                punits = 'B'
-                            elif 'angstrom' in h:
-                                punits = 'A'
+                        header,body,lines = other_blocks[k]
+                        del other_blocks[k]
+                        h = header.lower()
+                        punits = None
+                        if 'bohr' in h:
+                            punits = 'B'
+                        elif 'angstrom' in h:
+                            punits = 'A'
+                        #end if
+                        pos = []
+                        spec = []
+                        first_row = None
+                        for i,line in enumerate(lines):
+                            if 'species' in self.normalize_line(line):
+                                first_row = i+1
+                                break
                             #end if
-                            pos = []
-                            spec = []
-                            first_row = None
-                            for i,line in enumerate(lines):
-                                if 'species' in self.normalize_line(line):
-                                    first_row = i+1
-                                    break
-                                #end if
-                            #end for
-                            if first_row is None:
-                                raise ValueError('ionic-position table heading not found')
-                            #end if
+                        #end for
+                        if first_row is not None:
                             for line in lines[first_row:]:
                                 ls = line.strip()
                                 if len(ls)>0:
                                     t = line.split()
+                                    if len(t)<4:
+                                        continue
+                                    #end if
                                     values = self.line_numbers(' '.join(t[1:]))
                                     if len(values)<3:
                                         continue
@@ -535,30 +634,39 @@ class RmgAnalyzer(SimulationAnalyzer):
                                     pos.append(values[:3])
                                 #end if
                             #end for
-                            setup_info.ion_positions = obj(
-                                units     = punits,
-                                atoms     = np.array(spec,dtype=object),
-                                positions = np.array(pos,dtype=float),
-                                )
-                        except (ValueError,TypeError,OverflowError,AttributeError,IndexError,KeyError):
-                            pass
-                        #end try
+                            if len(pos)>0:
+                                setup_info.ion_positions = obj(
+                                    units     = punits,
+                                    atoms     = np.array(spec,dtype=object),
+                                    positions = np.array(pos,dtype=float),
+                                    )
+                            #end if
+                        #end if
                     #end if
                 #end if
             #end if
         #end if
-        if 'lattice_setup' in setup_info and 'ion_positions' in setup_info:
-            try:
-                aunits = setup_info.lattice_setup.get('units','B')
-                axes   = setup_info.lattice_setup.axes
-                elem   = setup_info.ion_positions.atoms
-                pos    = setup_info.ion_positions.positions
-                punits = setup_info.ion_positions.units
-                kpu    = None
-                kw     = None
-                if aunits=='a0':
+        have_structure_data = (
+            'lattice_setup' in setup_info and
+            'axes' in setup_info.lattice_setup and
+            'ion_positions' in setup_info and
+            setup_info.ion_positions.get('units',None) in ('A','B')
+            )
+        if have_structure_data:
+            aunits = setup_info.lattice_setup.get('units','B')
+            axes   = np.asarray(setup_info.lattice_setup.axes)
+            elem   = np.asarray(setup_info.ion_positions.atoms)
+            pos    = np.asarray(setup_info.ion_positions.positions)
+            punits = setup_info.ion_positions.units
+            valid_shapes = (
+                axes.shape==(3,3) and
+                pos.ndim==2 and pos.shape[1:]==(3,) and
+                len(elem)==len(pos) and len(elem)>0
+                )
+            if valid_shapes:
+                if aunits in ('a0','B'):
                     aunits = 'B'
-                elif aunits!='B':
+                else:
                     aunits = 'A' # assume for now
                 #end if
                 units = 'B'
@@ -579,9 +687,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                     #end if
                 #end if
                 setup_info.structure = s
-            except Exception:
-                pass
-            #end try
+            #end if
         #end if
         if 'files' in setup_info and 'control_input_file' in setup_info.files:
             control_file = setup_info.files.control_input_file
@@ -598,7 +704,7 @@ class RmgAnalyzer(SimulationAnalyzer):
             if os.path.isfile(filepath):
                 try:
                     self.input = RmgInput(filepath)
-                except Exception:
+                except (NexusError,OSError,TypeError,ValueError):
                     pass
                 #end try
             #end if
@@ -606,62 +712,6 @@ class RmgAnalyzer(SimulationAnalyzer):
         self.setup_info = setup_info
         return len(setup_info)>0
     #end def read_setup_info
-
-
-    def normalize_line(self,line):
-        return ' '.join(line.expandtabs().strip().split()).lower()
-    #end def normalize_line
-
-
-    def identify_mode(self,text):
-        text = self.normalize_line(text)
-        mode_patterns = (
-            (r'quench\s+electrons','scf'),
-            (r'\bnscf\b','nscf'),
-            (r'band\s+structure','band'),
-            (r'exx\s+integral','exx'),
-            (r'(?:structure\s+optimization|relax\s+structure)','relax'),
-            (r'(?:molecular\s+dynamics\s*[-:]?\s*cve|constant\s+volume\s+and\s+energy)','md_VE'),
-            (r'(?:molecular\s+dynamics\s*[-:]?\s*cvt|constant\s+temperature\s+and\s+energy)','md_TE'),
-            (r'(?:nudged\s+elastic\s+band|neb\s+relax)','neb'),
-            (r'(?:time\s+dependent\s+dft|\btddft\b)','tddft'),
-            (r'stm\s+charge\s+density|\bstm\b','stm'),
-            )
-        for pattern,mode in mode_patterns:
-            if re.search(pattern,text,re.I):
-                return mode
-            #end if
-        #end for
-        return rmg_modes.mode_match(text,short=True)
-    #end def identify_mode
-
-
-    number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
-
-
-    def line_numbers(self,line):
-        values = re.findall(self.number_pattern,line.replace('D','E').replace('d','e'))
-        return np.array(values,dtype=float)
-    #end def line_numbers
-
-
-    def leading_numbers(self,line):
-        pattern = r'^\s*((?:'+self.number_pattern+r')(?:\s+(?:'+self.number_pattern+r'))*)'
-        match = re.match(pattern,line)
-        if match is None:
-            return np.array([],dtype=float)
-        #end if
-        return self.line_numbers(match.group(1))
-    #end def leading_numbers
-
-
-    def match_float(self,pattern,line):
-        match = re.search(pattern,line,re.I)
-        if match is None:
-            return None
-        #end if
-        return float(match.group(1).replace('D','E').replace('d','e'))
-    #end def match_float
 
 
     def read_results(self,logfile,lines=None):
@@ -683,16 +733,11 @@ class RmgAnalyzer(SimulationAnalyzer):
             ('timing',self.analyze_timing),
             ('band',self.analyze_band),
             ('tddft',self.analyze_tddft),
-            ('artifacts',self.analyze_artifacts),
+            ('produced_files',self.analyze_produced_files),
             )
         parse_status = self.info.parse_status
         for name,parser in parsers:
-            try:
-                parse_status[name] = parser(lines)
-            except Exception as e:
-                parse_status[name] = False
-                parse_status.errors[name] = '{}: {}'.format(e.__class__.__name__,e)
-            #end try
+            parse_status[name] = parser(lines)
         #end for
         return any(value is not None for value in self.results.values())
     #end def read_results
@@ -703,9 +748,13 @@ class RmgAnalyzer(SimulationAnalyzer):
         direct_energies = []
         energy_units = []
         direct_energy_units = []
+        # Match the final total energy obtained from the eigenvalue sum.
+        # Example: final total energy from eigenvalue sum : -1.2345 Ha
         epat = re.compile(
             r'final\s+total\s+energy\s+from\s+eig(?:envalue)?\s+sum\s*[:=]\s*'
             r'('+self.number_pattern+r')(?:\s+([^\s,;]+))?',re.I)
+        # Match the final total energy reported by the direct calculation.
+        # Example: final total energy from direct = -1.2300 Ha
         dpat = re.compile(
             r'final\s+total\s+energy\s+from\s+direct\s*[:=]\s*'
             r'('+self.number_pattern+r')(?:\s+([^\s,;]+))?',re.I)
@@ -753,14 +802,20 @@ class RmgAnalyzer(SimulationAnalyzer):
         for line in lines:
             lower = self.normalize_line(line)
             if 'fermi energy' in lower:
+                # Match and capture the Fermi energy.
+                # Example: FERMI ENERGY : 5.25 eV
                 value = self.match_float(
                     r'fermi\s+energy\s*[:=]\s*('+self.number_pattern+r')',line)
                 if value is not None:
                     data.fermi_energies.append(value)
                 #end if
             elif 'valence band maximum' in lower and 'conduction band' in lower:
+                # Match and capture the valence-band maximum.
+                # Example: spin0: valence band maximum = 4.0 eV
                 vbm = self.match_float(
                     r'valence\s+band\s+maximum\s*[:=]\s*('+self.number_pattern+r')',line)
+                # Match and capture the conduction-band minimum.
+                # Example: conduction band minimum = 6.0 eV
                 cbm = self.match_float(
                     r'conduction\s+band\s+(?:minimum|minumm)\s*[:=]\s*'
                     r'('+self.number_pattern+r')',line)
@@ -769,12 +824,16 @@ class RmgAnalyzer(SimulationAnalyzer):
                     data.conduction_band_minima.append(cbm)
                 #end if
             elif 'band gap' in lower:
+                # Match and capture the electronic band gap.
+                # Example: spin0: Band gap : 2.0 eV
                 value = self.match_float(
                     r'band\s+gap\s*[:=]\s*('+self.number_pattern+r')',line)
                 if value is not None:
                     data.band_gaps.append(value)
                 #end if
             elif 'total charge in supercell' in lower:
+                # Match and capture the total charge in the simulation cell.
+                # Example: Total charge in supercell = 0.0
                 value = self.match_float(
                     r'total\s+charge\s+in\s+supercell\s*[:=]\s*'
                     r'('+self.number_pattern+r')',line)
@@ -782,12 +841,16 @@ class RmgAnalyzer(SimulationAnalyzer):
                     data.total_charges.append(value)
                 #end if
             elif '@@ total magnetization' in lower:
+                # Match and capture the signed total magnetization.
+                # Example: @@ TOTAL MAGNETIZATION = 1.0
                 value = self.match_float(
                     r'total\s+magnetization\s*[:=]\s*('+self.number_pattern+r')',line)
                 if value is not None:
                     data.total_magnetizations.append(value)
                 #end if
             elif '@@ absolute magnetization' in lower:
+                # Match and capture the absolute total magnetization.
+                # Example: @@ ABSOLUTE MAGNETIZATION = 1.5
                 value = self.match_float(
                     r'absolute\s+magnetization\s*[:=]\s*('+self.number_pattern+r')',line)
                 if value is not None:
@@ -845,6 +908,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         rms_dv = []
         for line in lines:
             for name,label in component_names.items():
+                # Match an @@ energy component and capture its value or overflow stars.
+                # Example: @@ TOTAL ENERGY : -1.250000
                 pattern = (
                     r'^\s*@@\s*'+re.escape(label)+r'\s*[:=]\s*'
                     r'('+self.number_pattern+r'|\*+)'
@@ -861,13 +926,25 @@ class RmgAnalyzer(SimulationAnalyzer):
                     break
                 #end if
             #end for
+            # Match the detailed SCF-iteration summary line.
+            # Example: quench: [ RMS [ dV ] : 2.0D-5 scf: 3/20 ]
             if re.search(r'\bquench\s*:',line,re.I):
+                # Match and capture the current molecular-dynamics step.
+                # Example: md: 0/2
                 md_match = re.search(r'\bmd\s*:\s*(\d+)\s*/',line,re.I)
+                # Match and capture the current SCF iteration.
+                # Example: scf: 3/20
                 scf_match = re.search(r'\bscf\s*:\s*(\d+)\s*/',line,re.I)
+                # Match and capture the elapsed time for the current step.
+                # Example: step time: 0.20
                 step_match = re.search(
                     r'\bstep\s+time\s*:\s*('+self.number_pattern+r')',line,re.I)
+                # Match and capture the elapsed SCF time.
+                # Example: scf time: 0.80
                 time_match = re.search(
                     r'\bscf\s+time\s*:\s*('+self.number_pattern+r')',line,re.I)
+                # Match and capture the RMS potential change inside brackets.
+                # Example: RMS [ dV ] : 2.0D-5
                 rms_match = re.search(r'\brms\s*\[\s*dv\s*\]\s*:\s*([^\]\s]+)',line,re.I)
                 md_steps.append(int(md_match.group(1)) if md_match is not None else -1)
                 scf_steps.append(int(scf_match.group(1)) if scf_match is not None else -1)
@@ -935,18 +1012,28 @@ class RmgAnalyzer(SimulationAnalyzer):
                 if len(tokens)<14:
                     continue
                 #end if
-                try:
-                    atom = tokens[2]
-                    position = [
-                        float(v.replace('D','E').replace('d','e')) for v in tokens[3:6]]
-                    charge = float(tokens[6].replace('D','E').replace('d','e'))
-                    magnetization = float(tokens[7].replace('D','E').replace('d','e'))
-                    force = [
-                        float(v.replace('D','E').replace('d','e')) for v in tokens[8:11]]
-                    move = [int(float(v)) for v in tokens[11:14]]
-                except (ValueError,IndexError,OverflowError):
+                numeric_tokens = tokens[3:14]
+                # Match a complete numeric token before converting an ionic row.
+                # Example: 2.1
+                valid = all(
+                    re.fullmatch(self.number_pattern,v) is not None
+                    for v in numeric_tokens)
+                if not valid:
                     continue
-                #end try
+                #end if
+                values = [
+                    float(v.replace('D','E').replace('d','e'))
+                    for v in numeric_tokens]
+                move_values = values[8:11]
+                if not all(np.isfinite(v) and v.is_integer() for v in move_values):
+                    continue
+                #end if
+                atom = tokens[2]
+                position = values[:3]
+                charge = values[3]
+                magnetization = values[4]
+                force = values[5:8]
+                move = [int(v) for v in move_values]
                 atoms.append(atom)
                 positions.append(position)
                 charges.append(charge)
@@ -1012,6 +1099,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         records = []
         for line in lines:
             stripped = line.strip()
+            # Match constant-energy or constant-temperature MD record markers.
+            # Example: @CVE 1 -1.0 0.1 -0.9 300.0 2.5e-4
             marker_match = re.match(r'^@(CVE|CVT)(?:\b|-)',stripped,re.I)
             if marker_match is None:
                 continue
@@ -1098,6 +1187,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         tensors = []
         for i,line in enumerate(lines):
             normalized = self.normalize_line(line)
+            # Match the heading for a total stress tensor reported in kbar.
+            # Example: stress total in unit of kbar
             if not re.search(r'\bstress\s+total\b',normalized) or 'kbar' not in normalized:
                 continue
             #end if
@@ -1144,14 +1235,24 @@ class RmgAnalyzer(SimulationAnalyzer):
         ionic_converged = None
         for line in lines:
             lower = self.normalize_line(line)
+            # Match an explicit electronic-convergence failure message.
+            # Example: Potential convergence has not been achieved
             if re.search(r'potential\s+convergence.*\bnot\s+(?:been\s+)?achieved\b',lower):
                 electronic_failures += 1
+            # Match an explicit electronic-convergence success message.
+            # Example: Potential convergence has been achieved. stopping ...
             elif re.search(r'potential\s+convergence.*\b(?:has\s+been\s+)?achieved\b',lower):
                 electronic_successes += 1
+            # Match the alternate electronic-convergence failure wording.
+            # Example: Convergence criterion not met
             elif re.search(r'convergence\s+criterion.*\bnot\s+met\b',lower):
                 electronic_failures += 1
+            # Match an explicit ionic force-convergence failure message.
+            # Example: Force convergence has not been achieved
             elif re.search(r'force\s+convergence.*\bnot\s+(?:been\s+)?achieved\b',lower):
                 ionic_converged = False
+            # Match an explicit ionic force-convergence success message.
+            # Example: Force convergence has been achieved
             elif re.search(r'force\s+convergence.*\b(?:has\s+been\s+)?achieved\b',lower):
                 ionic_converged = True
             #end if
@@ -1177,7 +1278,11 @@ class RmgAnalyzer(SimulationAnalyzer):
     def analyze_timing(self,lines):
         timing = None
         sections = obj()
+        # Match a finite, infinite, or NaN numeric token in the timing table.
+        # Example: 3.00
         time_value = r'(?:'+self.number_pattern+r'|inf|nan)'
+        # Match a numbered timing section followed by total and per-step times.
+        # Example: 1-TOTAL 3.00 0.50
         pattern = re.compile(
             r'^\s*(\d+\s*-\s*.*?)\s+('+time_value+r')\s+('+time_value+r')'
             r'(?:\s+.*)?$',re.I)
@@ -1186,13 +1291,13 @@ class RmgAnalyzer(SimulationAnalyzer):
             if match is None:
                 continue
             #end if
+            # Match spacing around the first dash so the section name can be normalized.
+            # Example: 1 - TOTAL
             name = re.sub(r'\s*-\s*','-',match.group(1).strip(),count=1)
-            try:
-                total = float(match.group(2))
-                per_step = float(match.group(3))
-            except ValueError:
-                continue
-            #end try
+            total = float(match.group(2))
+            per_step = float(match.group(3))
+            # Match non-alphanumeric runs so a timing name can become an object key.
+            # Example: 1-TOTAL
             key = re.sub(r'[^a-z0-9]+','_',name.lower()).strip('_')
             sections[key] = obj(total=total,per_step=per_step)
             if self.normalize_line(name)=='1-total':
@@ -1213,6 +1318,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         files = sorted(glob(os.path.join(self.path,prefix+'_spin*.bandstructure.dat')))
         bands = obj()
         for filepath in files:
+            # Match and capture the spin index in a band-structure filename.
+            # Example: input_spin0.bandstructure.dat
             match = re.search(r'_spin(\d+)\.bandstructure\.dat$',filepath)
             if match is None:
                 continue
@@ -1313,6 +1420,8 @@ class RmgAnalyzer(SimulationAnalyzer):
                 #end for
             #end with
             if len(rows)>0:
+                # Match and capture the spin index in a dipole filename.
+                # Example: input_spin0_dipole.dat
                 match = re.search(r'_spin(\d+)_dipole\.dat$',filepath)
                 spin = int(match.group(1)) if match is not None else len(dipoles)
                 values = np.array(rows,dtype=float)
@@ -1335,38 +1444,38 @@ class RmgAnalyzer(SimulationAnalyzer):
     #end def analyze_tddft
 
 
-    def analyze_artifacts(self,lines):
-        artifacts = obj()
+    def analyze_produced_files(self,lines):
+        produced_files = obj()
         mode = self.calculation_shortmode
         if mode=='exx':
             exx_files = sorted(glob(os.path.join(self.path,'*exx*integral*.h5')))
             if len(exx_files)>0:
-                artifacts.exx_integrals = exx_files
+                produced_files.exx_integrals = exx_files
             #end if
         #end if
         if mode=='stm':
             stm_files = sorted(glob(os.path.join(self.path,'STM','*.stm')))
             stm_cube_files = sorted(glob(os.path.join(self.path,'STM','*.cube')))
             if len(stm_files)>0:
-                artifacts.stm = stm_files
+                produced_files.stm = stm_files
             #end if
             if len(stm_cube_files)>0:
-                artifacts.stm_cube = stm_cube_files
+                produced_files.stm_cube = stm_cube_files
             #end if
         elif mode=='scf' and 'files' in self.setup_info:
             data_output = self.setup_info.files.get('data_output_file',None)
             if data_output is not None:
                 qmcpack_file = os.path.join(self.path,data_output+'.h5')
                 if os.path.isfile(qmcpack_file):
-                    artifacts.qmcpack_restart = qmcpack_file
+                    produced_files.qmcpack_restart = qmcpack_file
                 #end if
             #end if
         #end if
-        if len(artifacts)>0:
-            self.results.artifacts = artifacts
+        if len(produced_files)>0:
+            self.results.produced_files = produced_files
         #end if
-        return sum(len(v) for v in artifacts.values())
-    #end def analyze_artifacts
+        return sum(len(v) for v in produced_files.values())
+    #end def analyze_produced_files
 
 
     def return_initial_structure(self):
