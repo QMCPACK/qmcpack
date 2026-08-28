@@ -78,7 +78,8 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
         </atomicBasisSet>
       </basisset>
       <slaterdeterminant>
-        <determinant id="updet" spin="1" size="1">
+        <determinant id="updet" spin="1" size="1"
+                     smallnumber="not-an-integer" eps="not-an-integer">
           <coefficient id="updetC" type="Array" size="1">
             1.0
           </coefficient>

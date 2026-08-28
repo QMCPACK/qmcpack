@@ -27,7 +27,6 @@ std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNo
   RealType astep  = 1.25e-2;
   IndexType npts  = 1001;
   std::string gridType("log");
-  std::string gridID("invalid");
   OhmmsAttributeSet radAttrib;
   radAttrib.add(gridType, "type");
   radAttrib.add(npts, "npts");
@@ -37,9 +36,6 @@ std::unique_ptr<OneDimGridFactory::GridType> OneDimGridFactory::createGrid(xmlNo
   radAttrib.add(astep, "astep");
   radAttrib.add(ascale, "scale");
   radAttrib.add(astep, "step");
-  radAttrib.add(gridID, "id");
-  radAttrib.add(gridID, "name");
-  radAttrib.add(gridID, "ref");
   if (cur != NULL)
     radAttrib.put(cur);
   if (gridType == "log")

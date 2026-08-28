@@ -294,12 +294,9 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 
   std::string s_cutoff("0.0");
   std::string s_radius("0.0");
-  int s_smallnumber(-999999);
   int rntype(0);
   aAttrib.add(s_cutoff, "Cutoff");
   aAttrib.add(s_radius, "Radius");
-  aAttrib.add(s_smallnumber, "smallnumber");
-  aAttrib.add(s_smallnumber, "eps");
   aAttrib.add(rntype, "primary");
   aAttrib.add(spin_name, "group");
   aAttrib.put(cur);
