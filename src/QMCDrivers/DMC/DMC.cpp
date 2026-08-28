@@ -58,7 +58,6 @@ DMC::DMC(const ProjectData& project_data,
 {
   RootName = "dmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
-  m_param.add(KillWalker, "killnode");
   m_param.add(Reconfiguration, "reconfiguration");
   //m_param.add(BranchInterval,"branchInterval");
   m_param.add(NonLocalMove, "nonlocalmove");
@@ -112,7 +111,6 @@ void DMC::resetUpdateEngines()
       }
       else
         o << "  Updates by walker moves";
-      // Appears to be set in constructor reported here and used nowhere
       if (KillNodeCrossing)
         o << "\n  Walkers are killed when a node crossing is detected";
       else

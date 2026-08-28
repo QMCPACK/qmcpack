@@ -28,6 +28,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/DMC/DMC.h"
+#include "QMCDrivers/DMC/DMCUpdateAll.h"
 
 
 #include <stdio.h>
@@ -38,6 +39,20 @@ using std::string;
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class DMCTests
+{
+public:
+  static int getKillNodeCrossing(const DMC& driver) { return driver.KillNodeCrossing; }
+  static void setKillNodeCrossing(DMC& driver, int value) { driver.KillNodeCrossing = value; }
+  static const QMCUpdateBase* getFirstMover(const DMC& driver)
+  {
+    return driver.Movers.empty() ? nullptr : driver.Movers.front();
+  }
+};
+} // namespace testing
+
 TEST_CASE("DMC", "[drivers][dmc]")
 {
   ProjectData project_data;
@@ -205,5 +220,85 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   CHECK(elec.R[0][2] == Approx(-0.372329741105903));
 
   CHECK(elec.spins[0] == Approx(-0.74465948215809097));
+}
+
+TEST_CASE("DMC move-all node-crossing mover selection", "[drivers][dmc]")
+{
+  ProjectData project_data;
+  Communicate* c = OHMMS::Controller;
+
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
+
+  ions.setName("ion");
+  ions.create({1});
+  ions.R[0] = {0.0, 0.0, 0.0};
+  elec.setName("elec");
+  elec.create({1});
+  elec.R[0] = {1.0, 0.0, 0.0};
+  elec.createWalkers(1);
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+
+  elec.addTable(ions);
+  elec.update();
+
+  CloneManager::clearClones();
+
+  TrialWaveFunction psi(project_data.getRuntimeOptions());
+  psi.addComponent(std::make_unique<ConstantOrbital>());
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
+
+  using RNG = RandomBase<QMCTraits::FullPrecRealType>;
+  UPtrVector<RNG> rngs(omp_get_max_threads());
+  for (std::unique_ptr<RNG>& rng : rngs)
+    rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
+
+  QMCHamiltonian h;
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
+  h.addObservables(elec);
+  elec.resetWalkerProperty();
+
+  DMC dmc(project_data, elec, psi, h, rngs, c, false);
+  dmc.setUpdateMode(false);
+
+  const char* dmc_input = R"(<qmc method="dmc" checkpoint="-1">
+    <parameter name="steps">1</parameter>
+    <parameter name="blocks">1</parameter>
+    <parameter name="timestep">0.1</parameter>
+    <parameter name="killnode">yes</parameter>
+  </qmc>)";
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(dmc_input));
+  dmc.process(doc.getRoot());
+
+  // The retired killnode string never controlled this separate internal policy.
+  CHECK(testing::DMCTests::getKillNodeCrossing(dmc) == 0);
+
+  SECTION("default rejection policy")
+  {
+    dmc.run();
+    const QMCUpdateBase* mover = testing::DMCTests::getFirstMover(dmc);
+    REQUIRE(mover != nullptr);
+    CHECK(dynamic_cast<const DMCUpdateAllWithRejection*>(mover) != nullptr);
+    CHECK(dynamic_cast<const DMCUpdateAllWithKill*>(mover) == nullptr);
+  }
+
+  SECTION("internal kill policy remains selectable")
+  {
+    testing::DMCTests::setKillNodeCrossing(dmc, 1);
+    dmc.run();
+    const QMCUpdateBase* mover = testing::DMCTests::getFirstMover(dmc);
+    REQUIRE(mover != nullptr);
+    CHECK(dynamic_cast<const DMCUpdateAllWithKill*>(mover) != nullptr);
+    CHECK(dynamic_cast<const DMCUpdateAllWithRejection*>(mover) == nullptr);
+  }
 }
 } // namespace qmcplusplus

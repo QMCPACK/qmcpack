@@ -33,12 +33,6 @@ public:
                          std::vector<int> tp);
   ~RMCUpdatePbyPWithDrift() override;
 
-  enum
-  {
-    SYM_ACTION,
-    DMC_ACTION
-  };
-
   void advanceWalkersVMC();
   void advanceWalkersRMC();
   void advanceWalker(Walker_t& thisWalker, bool recompute) override;
@@ -47,8 +41,6 @@ public:
   void initWalkers(WalkerIter_t it, WalkerIter_t it_end) override;
   void accumulate(WalkerIter_t it, WalkerIter_t it_end);
 
-  bool put(xmlNodePtr cur) override;
-
 private:
   /// Copy Constructor (disabled)
   RMCUpdatePbyPWithDrift(const RMCUpdatePbyPWithDrift&) = delete;
@@ -56,18 +48,12 @@ private:
   RMCUpdatePbyPWithDrift& operator=(const RMCUpdatePbyPWithDrift&) = delete;
 
   std::vector<int> Action, TransProb;
-  bool scaleDrift;
-  IndexType actionType;
 
   NewTimer& advance_timer_;
   NewTimer& movepbyp_timer_;
   NewTimer& update_mbo_timer_;
   NewTimer& energy_timer_;
 
-  IndexType vmcSteps;
-  IndexType equilSteps;
-  IndexType vmcToDoSteps;
-  IndexType equilToDoSteps;
 };
 
 
