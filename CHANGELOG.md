@@ -9,6 +9,7 @@ Notable changes to QMCPACK and NEXUS are documented in this file.
 * DeepQMC neural-network wavefunctions are integrated with QMCPACK on an exploratory/developmental basis. [#6061](https://github.com/QMCPACK/qmcpack/pull/6061)
 * Significant speedup of v1 T-move nonlocal pseudopotential evaluation on GPUs via batched algorithm, thanks to @HaoZeke. [#6079](https://github.com/QMCPACK/qmcpack/pull/6079)
 * NERSC Perlmutter build recipe updated. [#6026](https://github.com/QMCPACK/qmcpack/pull/6026)
+* Shared_ranks supported in GPU runs, reducing memory pressure from the large spline data buffers. [#6173](https://github.com/QMCPACK/qmcpack/pull/6173)
 * CTest can distribute test jobs to GPUs with `QMC_CTEST_NUM_GPUS`, speeding up testing on multi-GPU nodes. [#6112](https://github.com/QMCPACK/qmcpack/pull/6112)
 * Builds automatically select C++20 when the compiler defaults to that standard. [#6075](https://github.com/QMCPACK/qmcpack/pull/6075)
 * Batched GEMV, GER, and copy operations use rocBLAS on AMD GPUs. [#6109](https://github.com/QMCPACK/qmcpack/pull/6109)
@@ -57,7 +58,7 @@ message is printed and the tests are skipped. Feedback is welcomed.
   drivers. We recommend that all new projects should only use the batched drivers. For compatibility with future QMCPACK versions,
   verify that all new QMCPACK input XML and Nexus scripts explicitly request batched drivers.
 * Energy density supported in batched code (CPU only) [#5865](https://github.com/QMCPACK/qmcpack/pull/5865)
-* New developmental features to share splines between processes to reduce memory usage. This feature (spline distributed_ranks,
+* New developmental feature to share splines between processes to reduce memory usage. This feature (spline distributed_ranks,
   shared_ranks) allows the large spline data buffers to be shared between MPI processes within a node, potentially significantly
   reducing overall CPU memory usage. This CPU feature will be expanded in future versions to support more complex sharing
   arrangements. Shared splines between GPUs is also under development. While these features are being enhanced, please contact
