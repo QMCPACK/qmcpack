@@ -211,7 +211,7 @@ class Pwscf(Simulation):
             result.location = os.path.join(self.locdir,outdir,prefix+'.wfc1')
         elif result_name=='structure':
             pa = self.load_analyzer_image()
-            structs = pa.results.structures
+            structs = pa.results_out.relax_structures
             struct  = structs[len(structs)-1]
             pos   = struct.positions
             atoms = struct.atoms
@@ -414,7 +414,7 @@ class Pwscf(Simulation):
         analyzer = self.load_analyzer_image()
         input    = analyzer.input
         if 'energy' in self.produces:
-            self.products.energy = analyzer.results.E
+            self.products.energy = analyzer.results_out.E
         if 'charge_density' in self.produces:
             outdir = input.control.outdir
             path   = os.path.join(self.locdir,outdir)
@@ -425,7 +425,7 @@ class Pwscf(Simulation):
             self.products.orbitals = path
         if 'structure' in self.produces:
             pa = analyzer
-            structs = pa.results.structures
+            structs = pa.results_out.relax_structures
             struct  = deepcopy(structs[len(structs)-1])
             pos     = struct.positions
             atoms   = struct.atoms

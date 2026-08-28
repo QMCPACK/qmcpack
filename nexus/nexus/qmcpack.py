@@ -1230,7 +1230,7 @@ class Qmcpack(Simulation):
                 self.error(msg)
             #end if
             na = nscf.load_analyzer_image()
-            Ef_list = na.results.fermi_energies
+            Ef_list = na.results_out.fermi_energies
             # step 2: analyze ESHDF file for states below Fermi energy
             pa = sim.load_analyzer_image()
             if 'wfh5' not in pa:

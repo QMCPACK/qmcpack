@@ -74,15 +74,14 @@ if performed_runs:
         kgrid = supercell_kgrids[ik]
         relax = relaxations[ik]
         pa = relax.load_analyzer_image()
-        start_force = pa.results.tot_forces[0]
-        max_force   = pa.results.tot_forces.max()
-        ncycles     = len(pa.results.tot_forces)
+        start_force = pa.results_out.tot_forces[0]
+        max_force   = pa.results_out.tot_forces.max()
+        ncycles     = len(pa.results_out.tot_forces)
         print('  {0:10}  {1:10}     {2:10}  {3:8}'.format(kgrid,start_force,max_force,ncycles))
     #end for
     print()
     print()
     print('The final structure is:')
     print()
-    print(list(pa.results.structures.values())[-1].positions)
+    print(list(pa.results_out.relax_structures.values())[-1].positions)
 #end if
-

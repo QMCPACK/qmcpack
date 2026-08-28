@@ -77,9 +77,210 @@ def pwscf_time(tsin):
 #end def pwscf_time
 
 
+number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
+
+
+def line_numbers(line):
+    values = re.findall(number_pattern,line.replace('D','E').replace('d','e'))
+    return np.array(values,dtype=float)
+#end def line_numbers
+
+
+def first_numbers(line,count):
+    values = line_numbers(line)
+    if len(values)<count:
+        return None
+    #end if
+    return values[:count]
+#end def first_numbers
+
+
+def leading_numbers(line):
+    pattern = r'^\s*((?:'+number_pattern+r')(?:\s*(?:'+number_pattern+r'))*)'
+    match = re.match(pattern,line)
+    if match is None:
+        return np.array([],dtype=float)
+    #end if
+    return line_numbers(match.group(1))
+#end def leading_numbers
+
+
+def match_float(pattern,line):
+    match = re.search(pattern,line)
+    if match is None:
+        return None
+    #end if
+    return float(match.group(1).replace('D','E').replace('d','e'))
+#end def match_float
+
+
+def number_float(value):
+    return float(value.replace('D','E').replace('d','e'))
+#end def number_float
+
+
+def read_kpoint_tables(lines):
+    kpoints_cart = None
+    kpoints_unit = None
+    kweights = None
+    for i,l in enumerate(lines):
+        if 'number of k points=' not in l:
+            continue
+        #end if
+        match = re.search(r'number of k points=\s*(\d+)',l)
+        if match is None:
+            continue
+        #end if
+        nkpoints = int(match.group(1))
+        if i+1>=len(lines) or 'cart. coord.' not in lines[i+1]:
+            continue
+        #end if
+        cart = []
+        weights = []
+        valid = len(lines[i+2:i+2+nkpoints])==nkpoints
+        for kl in lines[i+2:i+2+nkpoints]:
+            match = re.search(r'=\s*\((.*?)\),\s*wk\s*=\s*('+number_pattern+r')',kl)
+            if match is None:
+                valid = False
+                break
+            #end if
+            coordinates = first_numbers(match.group(1),3)
+            if coordinates is None:
+                valid = False
+                break
+            #end if
+            cart.append(coordinates)
+            weights.append(number_float(match.group(2)))
+        #end for
+        if not valid:
+            continue
+        #end if
+        j = i+2+nkpoints
+        while j<len(lines) and 'cryst. coord.' not in lines[j]:
+            j+=1
+        #end while
+        if j>=len(lines):
+            continue
+        #end if
+        unit = []
+        valid = len(lines[j+1:j+1+nkpoints])==nkpoints
+        for kl in lines[j+1:j+1+nkpoints]:
+            match = re.search(r'=\s*\((.*?)\),\s*wk\s*=',kl)
+            if match is None:
+                valid = False
+                break
+            #end if
+            coordinates = first_numbers(match.group(1),3)
+            if coordinates is None:
+                valid = False
+                break
+            #end if
+            unit.append(coordinates)
+        #end for
+        if not valid:
+            continue
+        #end if
+        kpoints_cart = np.array(cart,dtype=float)
+        kpoints_unit = np.array(unit,dtype=float)
+        kweights = np.array(weights,dtype=float)
+        break
+    #end for
+    return kpoints_cart,kpoints_unit,kweights
+#end def read_kpoint_tables
+
+
+def object_path(value,*names):
+    for name in names:
+        if value is None or name not in value:
+            return None
+        #end if
+        value = value[name]
+    #end for
+    return value
+#end def object_path
+
+
+def xml_local_name(element):
+    return element.tag.rsplit('}',1)[-1].lower()
+#end def xml_local_name
+
+
+def xml_value(text):
+    text = text.strip()
+    if len(text)==0:
+        return ''
+    elif text.lower() in ('true','false'):
+        return text.lower()=='true'
+    #end if
+    tokens = text.replace('D','E').replace('d','e').split()
+    if all(is_number(token) for token in tokens):
+        values = np.array(tokens,dtype=float)
+        if len(values)==1:
+            value = values[0]
+            if value.is_integer() and all(c not in text.lower() for c in ('.','e')):
+                return int(value)
+            #end if
+            return value
+        #end if
+        return values
+    #end if
+    return text
+#end def xml_value
+
+
+def xml_element(element):
+    node = obj()
+    for name,value in element.attrib.items():
+        node[name.lower()] = xml_value(value)
+    #end for
+    children = list(element)
+    groups = obj()
+    for child in children:
+        name = xml_local_name(child)
+        if name not in groups:
+            groups[name] = []
+        #end if
+        groups[name].append(child)
+    #end for
+    for name,group in groups.items():
+        if len(group)==1:
+            node[name] = xml_element(group[0])
+        else:
+            node[name] = obj({i+1:xml_element(child) for i,child in enumerate(group)})
+        #end if
+    #end for
+    text = (element.text or '').strip()
+    if len(text)>0:
+        value = xml_value(text)
+        if len(node)==0:
+            return value
+        #end if
+        node.value = value
+    #end if
+    return node
+#end def xml_element
+
+
+def xml_child(element,name):
+    name = name.lower()
+    if element is None:
+        return None
+    #end if
+    for child in element:
+        if xml_local_name(child)==name:
+            return child
+        #end if
+    #end for
+    return None
+#end def xml_child
+
+
+
+
 class PwscfAnalyzer(SimulationAnalyzer):
     def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,*,analyze=False,xml=False,warn=False,md_only=False):
-        self.results = obj()
+        self.results_out = None
+        self.results_xml = None
         if isinstance(arg0,Simulation):
             sim = arg0
             path = sim.locdir
@@ -116,7 +317,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.abspath = os.path.abspath(path)
         self.pw2c_outfile_name = pw2c_outfile_name
 
-        self.info = obj(xml=xml,warn=warn,md_only=md_only)
+        self.info = obj(warn=warn,md_only=md_only)
 
         self.input = None
         if self.infile_name is not None:
@@ -124,12 +325,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end if
         self.initialize_results()
         if analyze:
-            self.analyze()
+            self.analyze(xml=xml)
         #end if
     #end def __init__
 
 
     def initialize_results(self):
+        self.results_out = obj()
         calculation = 'scf'
         if self.input is not None and 'control' in self.input and 'calculation' in self.input.control:
             calculation = self.input.control.calculation.lower()
@@ -139,30 +341,28 @@ class PwscfAnalyzer(SimulationAnalyzer):
             'Ef','fermi_energies','bands',
             'volume',
             'cputime','walltime','kpoints_cart','kpoints_unit','kweights',
-            'K','xmldata',
+            'K',
             ]
         if calculation not in ('nscf','bands'):
             result_names.extend((
-                'E','energies','pressure','stress',
+                'E','relax_energies','scf_conv_energy','scf_conv_accuracy',
+                'pressure','stress',
                 'forces','tot_forces','max_forces',
                 ))
         #end if
         if calculation in ('relax','vc-relax','md','vc-md'):
-            result_names.append('structures')
+            result_names.append('relax_structures')
         #end if
         if calculation in ('md','vc-md'):
             result_names.extend(('md_data','md_stats'))
         #end if
         for name in result_names:
-            self.results[name] = None
+            self.results_out[name] = None
         #end for
     #end def initialize_results
 
     
-    number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
-
-
-    def analyze(self):
+    def analyze(self,*,xml=False):
         parse_status = obj(log=False)
         self.info.parse_status = parse_status
         outfile = os.path.join(self.path,self.outfile_name)
@@ -177,65 +377,54 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end try
 
         parse_status.log = True
-        parse_status.md = self.analyze_md(lines)
+        parse_status.md = False
+        self.analyze_md(lines)
+        parse_status.md = True
         if self.info.md_only:
             return
         #end if
-        parse_status.fermi_energies = self.analyze_fermi_energies(lines)
-        parse_status.energies = self.analyze_energies(lines)
-        parse_status.bands = self.analyze_bands(lines)
-        parse_status.structures = self.analyze_structures(lines)
-        parse_status.pressure_volume = self.analyze_pressure_volume(lines)
-        parse_status.stress = self.analyze_stress(lines)
-        parse_status.forces = self.analyze_forces(lines)
-        parse_status.timing = self.analyze_timing(lines)
-        parse_status.kpoints = self.analyze_kpoints(lines)
-        parse_status.pw2casino = self.analyze_pw2casino()
-        if self.info.xml:
-            parse_status.xml = self.analyze_xml()
+        parse_status.fermi_energies = False
+        self.analyze_fermi_energies(lines)
+        parse_status.fermi_energies = True
+        parse_status.update(scf_conv_energy=False,scf_conv_accuracy=False)
+        self.analyze_scf_convergence(lines)
+        parse_status.update(scf_conv_energy=True,scf_conv_accuracy=True)
+        parse_status.relax_energies = False
+        self.analyze_energies(lines)
+        parse_status.relax_energies = True
+        parse_status.bands = False
+        self.analyze_bands(lines)
+        parse_status.bands = True
+        parse_status.relax_structures = False
+        self.analyze_structures(lines)
+        parse_status.relax_structures = True
+        parse_status.update(pressure=False,volume=False)
+        self.analyze_pressure_volume(lines)
+        parse_status.update(pressure=True,volume=True)
+        parse_status.stress = False
+        self.analyze_stress(lines)
+        parse_status.stress = True
+        parse_status.update(forces=False,total_forces=False)
+        self.analyze_forces(lines)
+        parse_status.update(forces=True,total_forces=True)
+        parse_status.timing = False
+        self.analyze_timing(lines)
+        parse_status.timing = True
+        parse_status.kpoints = False
+        self.analyze_kpoints(lines)
+        parse_status.kpoints = True
+        parse_status.pw2casino = False
+        self.analyze_pw2casino()
+        parse_status.pw2casino = True
+        if xml:
+            parse_status.xml = False
+            self.analyze_xml()
+            parse_status.xml = True
+            if self.results_xml is not None:
+                self.info.xml_status_failed = bool(self.results_xml.failed)
+            #end if
         #end if
     #end def analyze
-
-
-    def line_numbers(self,line):
-        values = re.findall(self.number_pattern,line.replace('D','E').replace('d','e'))
-        return np.array(values,dtype=float)
-    #end def line_numbers
-
-
-    def first_numbers(self,line,count):
-        values = self.line_numbers(line)
-        if len(values)<count:
-            return None
-        #end if
-        return values[:count]
-    #end def first_numbers
-
-
-    def leading_numbers(self,line):
-        pattern = r'^\s*((?:'+self.number_pattern+r')(?:\s*(?:'+self.number_pattern+r'))*)'
-        match = re.match(pattern,line)
-        if match is None:
-            return np.array([],dtype=float)
-        #end if
-        return self.line_numbers(match.group(1))
-    #end def leading_numbers
-
-
-    @staticmethod
-    def match_float(pattern,line):
-        match = re.search(pattern,line)
-        if match is None:
-            return None
-        #end if
-        return float(match.group(1).replace('D','E').replace('d','e'))
-    #end def match_float
-
-
-    @staticmethod
-    def number_float(value):
-        return float(value.replace('D','E').replace('d','e'))
-    #end def number_float
 
 
     def analyze_md(self,lines):
@@ -253,45 +442,45 @@ class PwscfAnalyzer(SimulationAnalyzer):
         required = ('total_energy','pressure','time','kinetic_energy','temperature')
         for l in lines:
             if l.lstrip().startswith('!') and 'total energy' in l:
-                energy = self.match_float(r'total energy\s*=\s*('+self.number_pattern+r')',l)
+                energy = match_float(r'total energy\s*=\s*('+number_pattern+r')',l)
                 record = obj()
                 if energy is not None:
                     record.total_energy = energy
                 #end if
             elif 'total   stress' in l and 'P=' in l:
-                pressure = self.match_float(r'P=\s*('+self.number_pattern+r')',l)
+                pressure = match_float(r'P=\s*('+number_pattern+r')',l)
                 if pressure is not None and 'total_energy' in record:
                     record.pressure = pressure
                 #end if
             #end if
             if calculation=='md':
                 if 'time      =' in l:
-                    time = self.match_float(r'time\s*=\s*('+self.number_pattern+r')',l)
+                    time = match_float(r'time\s*=\s*('+number_pattern+r')',l)
                     if time is not None and 'total_energy' in record:
                         record.time = time
                     #end if
                 elif 'kinetic energy' in l and '=' in l:
-                    kinetic = self.match_float(r'kinetic energy.*?=\s*('+self.number_pattern+r')',l)
+                    kinetic = match_float(r'kinetic energy.*?=\s*('+number_pattern+r')',l)
                     if kinetic is not None and 'total_energy' in record:
                         record.kinetic_energy = kinetic
                     #end if
                 elif l.strip().startswith('temperature') and '=' in l:
-                    temperature = self.match_float(r'temperature\s*=\s*('+self.number_pattern+r')',l)
+                    temperature = match_float(r'temperature\s*=\s*('+number_pattern+r')',l)
                     if temperature is not None and 'total_energy' in record:
                         record.temperature = temperature
                     #end if
                 #end if
             else:
                 if 'Entering Dynamics;' in l and 'time' in l:
-                    time = self.match_float(r'time\s*=\s*('+self.number_pattern+r')',l)
+                    time = match_float(r'time\s*=\s*('+number_pattern+r')',l)
                     if time is not None and 'total_energy' in record:
                         record.time = time
                     #end if
                 elif l.strip().startswith('Ekin'):
-                    match = re.search(r'Ekin\s*=\s*('+self.number_pattern+r')\s+Ry\s+T\s*=\s*('+self.number_pattern+r')',l)
+                    match = re.search(r'Ekin\s*=\s*('+number_pattern+r')\s+Ry\s+T\s*=\s*('+number_pattern+r')',l)
                     if match is not None and 'total_energy' in record:
-                        record.kinetic_energy = self.number_float(match.group(1))
-                        record.temperature = self.number_float(match.group(2))
+                        record.kinetic_energy = number_float(match.group(1))
+                        record.temperature = number_float(match.group(2))
                     #end if
                 #end if
             #end if
@@ -312,8 +501,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             temperature    = np.array([r.temperature for r in records],dtype=float),
             )
         md.potential_energy = md.total_energy - md.kinetic_energy
-        self.results.md_data = md
-        self.results.md_stats = self.md_statistics()
+        self.results_out.md_data = md
+        self.results_out.md_stats = self.md_statistics()
         return nsteps
     #end def analyze_md
 
@@ -324,107 +513,69 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if 'Fermi energ' in l:
                 ev_index = l.lower().rfind('ev')
                 segment = l[:ev_index] if ev_index!=-1 else l
-                fermi_energies.extend(self.line_numbers(segment))
+                fermi_energies.extend(line_numbers(segment))
             #end if
         #end for
         if len(fermi_energies)>0:
-            self.results.Ef = fermi_energies[-1]
-            self.results.fermi_energies = np.array(fermi_energies)
+            self.results_out.Ef = fermi_energies[-1]
+            self.results_out.fermi_energies = np.array(fermi_energies)
         #end if
         return len(fermi_energies)
     #end def analyze_fermi_energies
 
 
     def analyze_energies(self,lines):
-        energies = []
+        relax_energies = []
         for l in lines:
             if l.lstrip().startswith('!') and 'total energy' in l:
-                energy = self.match_float(r'total energy\s*=\s*('+self.number_pattern+r')',l)
+                energy = match_float(r'total energy\s*=\s*('+number_pattern+r')',l)
                 if energy is not None:
-                    energies.append(energy)
+                    relax_energies.append(energy)
                 #end if
             #end if
         #end for
-        if len(energies)>0:
-            self.results.E = energies[-1]
-            self.results.energies = np.array(energies)
+        if len(relax_energies)>0:
+            self.results_out.E = relax_energies[-1]
+            self.results_out.relax_energies = np.array(relax_energies)
         #end if
-        return len(energies)
+        return len(relax_energies)
     #end def analyze_energies
 
 
-    def read_kpoint_tables(self,lines):
-        kpoints_cart = None
-        kpoints_unit = None
-        kweights = None
-        for i,l in enumerate(lines):
-            if 'number of k points=' not in l:
-                continue
-            #end if
-            match = re.search(r'number of k points=\s*(\d+)',l)
-            if match is None:
-                continue
-            #end if
-            nkpoints = int(match.group(1))
-            if i+1>=len(lines) or 'cart. coord.' not in lines[i+1]:
-                continue
-            #end if
-            cart = []
-            weights = []
-            valid = len(lines[i+2:i+2+nkpoints])==nkpoints
-            for kl in lines[i+2:i+2+nkpoints]:
-                match = re.search(r'=\s*\((.*?)\),\s*wk\s*=\s*('+self.number_pattern+r')',kl)
-                if match is None:
-                    valid = False
-                    break
+    def analyze_scf_convergence(self,lines):
+        scf_conv_energy = []
+        scf_conv_accuracy = []
+        capture_accuracy = False
+        for l in lines:
+            if 'total energy' in l and '=' in l:
+                capture_accuracy = False
+                if not l.lstrip().startswith('!'):
+                    energy = match_float(r'total energy\s*=\s*('+number_pattern+r')',l)
+                    if energy is not None:
+                        scf_conv_energy.append(energy)
+                        capture_accuracy = True
+                    #end if
                 #end if
-                coordinates = self.first_numbers(match.group(1),3)
-                if coordinates is None:
-                    valid = False
-                    break
+            elif capture_accuracy and 'estimated scf accuracy' in l:
+                accuracy = match_float(r'estimated scf accuracy\s*[<=>]\s*('+number_pattern+r')',l)
+                if accuracy is not None:
+                    scf_conv_accuracy.append(accuracy)
                 #end if
-                cart.append(coordinates)
-                weights.append(self.number_float(match.group(2)))
-            #end for
-            if not valid:
-                continue
+                capture_accuracy = False
             #end if
-            j = i+2+nkpoints
-            while j<len(lines) and 'cryst. coord.' not in lines[j]:
-                j+=1
-            #end while
-            if j>=len(lines):
-                continue
-            #end if
-            unit = []
-            valid = len(lines[j+1:j+1+nkpoints])==nkpoints
-            for kl in lines[j+1:j+1+nkpoints]:
-                match = re.search(r'=\s*\((.*?)\),\s*wk\s*=',kl)
-                if match is None:
-                    valid = False
-                    break
-                #end if
-                coordinates = self.first_numbers(match.group(1),3)
-                if coordinates is None:
-                    valid = False
-                    break
-                #end if
-                unit.append(coordinates)
-            #end for
-            if not valid:
-                continue
-            #end if
-            kpoints_cart = np.array(cart,dtype=float)
-            kpoints_unit = np.array(unit,dtype=float)
-            kweights = np.array(weights,dtype=float)
-            break
         #end for
-        return kpoints_cart,kpoints_unit,kweights
-    #end def read_kpoint_tables
+        if len(scf_conv_energy)>0:
+            self.results_out.scf_conv_energy = np.array(scf_conv_energy)
+        #end if
+        if len(scf_conv_accuracy)>0:
+            self.results_out.scf_conv_accuracy = np.array(scf_conv_accuracy)
+        #end if
+        return obj(energy=len(scf_conv_energy),accuracy=len(scf_conv_accuracy))
+    #end def analyze_scf_convergence
 
 
     def analyze_bands(self,lines):
-        table_cart,table_unit,_ = self.read_kpoint_tables(lines)
+        table_cart,table_unit,_ = read_kpoint_tables(lines)
         nspin = 1
         if self.input is not None and 'system' in self.input and 'nspin' in self.input.system:
             nspin = self.input.system.nspin
@@ -464,7 +615,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 elif 'occupation numbers' in ls or 'bands (ev)' in ls:
                     break
                 else:
-                    values = self.leading_numbers(ls)
+                    values = leading_numbers(ls)
                     if len(values)==0:
                         break
                     #end if
@@ -485,7 +636,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                             break
                         #end if
                     else:
-                        values = self.leading_numbers(ls)
+                        values = leading_numbers(ls)
                         if len(values)==0:
                             break
                         #end if
@@ -498,7 +649,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             match = re.search(r'k\s*=\s*(.*?)\s*\(',l)
             kpoint_cart = None
             if match is not None:
-                kpoint_cart = self.first_numbers(match.group(1),3)
+                kpoint_cart = first_numbers(match.group(1),3)
             #end if
             index = len(band_channel)
             kpoint_rel = table_unit[index] if table_unit is not None and index<len(table_unit) else kpoint_cart
@@ -526,7 +677,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             return 0
         #end if
         self.analyze_band_edges(bands)
-        self.results.bands = bands
+        self.results_out.bands = bands
         return nfound
     #end def analyze_bands
 
@@ -591,7 +742,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 axes = []
                 if i+3<len(lines):
                     for d in range(3):
-                        row = self.first_numbers(lines[i+d+1],3)
+                        row = first_numbers(lines[i+d+1],3)
                         if row is None:
                             axes = []
                             break
@@ -602,7 +753,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 if len(axes)==3:
                     conf = obj()
                     axes = np.array(axes,dtype=float)
-                    alat = self.match_float(r'alat\s*=\s*('+self.number_pattern+r')',l)
+                    alat = match_float(r'alat\s*=\s*('+number_pattern+r')',l)
                     if alat is not None:
                         axes *= alat
                     #end if
@@ -647,7 +798,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             i+=1
         #end while
         if len(structures)>0:
-            self.results.structures = structures
+            self.results_out.relax_structures = structures
         #end if
         return len(structures)
     #end def analyze_structures
@@ -660,14 +811,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
         volume_found = False
         for l in lines:
             if 'unit-cell volume' in l:
-                value = self.match_float(r'unit-cell volume\s*=\s*('+self.number_pattern+r')',l)
+                value = match_float(r'unit-cell volume\s*=\s*('+number_pattern+r')',l)
                 if value is not None:
                     vol = value
                     volume_found = True
                 #end if
             #end if
             if 'total' in l and 'stress' in l and 'P=' in l:
-                value = self.match_float(r'P=\s*('+self.number_pattern+r')',l)
+                value = match_float(r'P=\s*('+number_pattern+r')',l)
                 if value is not None:
                     press = value
                     pressure_found = True
@@ -675,10 +826,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if pressure_found:
-            self.results.pressure = press
+            self.results_out.pressure = press
         #end if
         if volume_found:
-            self.results.volume = vol
+            self.results_out.volume = vol
         #end if
         return obj(pressure=pressure_found,volume=volume_found)
     #end def analyze_pressure_volume
@@ -692,7 +843,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 rows = []
                 if i+3<len(lines):
                     for sl in lines[i+1:i+4]:
-                        row = self.first_numbers(sl,6)
+                        row = first_numbers(sl,6)
                         if row is None:
                             rows = []
                             break
@@ -707,7 +858,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if ntensors>0:
-            self.results.stress = stress
+            self.results_out.stress = stress
         #end if
         return ntensors
     #end def analyze_stress
@@ -727,10 +878,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 while j<len(lines):
                     match = re.search(
                         r'atom\s+\d+\s+type\s+\d+\s+force\s*=\s*'
-                        r'('+self.number_pattern+r')\s+('+self.number_pattern+r')\s+('+self.number_pattern+r')',
+                        r'('+number_pattern+r')\s+('+number_pattern+r')\s+('+number_pattern+r')',
                         lines[j])
                     if match is not None:
-                        values = [self.number_float(value) for value in match.groups()]
+                        values = [number_float(value) for value in match.groups()]
                         aforces.append(np.array(values,dtype=float))
                     elif len(aforces)>0:
                         break
@@ -742,16 +893,16 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end if
             if 'Total force' in l:
-                match = re.search(r'Total force\s*=\s*('+self.number_pattern+r')',l)
+                match = re.search(r'Total force\s*=\s*('+number_pattern+r')',l)
                 if match is not None:
-                    tot_forces.append(self.number_float(match.group(1)))
+                    tot_forces.append(number_float(match.group(1)))
                 #end if
             #end if
         #end for
         if len(forces)>0:
-            self.results.forces = np.array(forces,dtype=float)
-            self.results.tot_forces = np.array(tot_forces)
-            self.results.max_forces = np.array([(np.sqrt((f**2).sum(1))).max() for f in self.results.forces])
+            self.results_out.forces = np.array(forces,dtype=float)
+            self.results_out.tot_forces = np.array(tot_forces)
+            self.results_out.max_forces = np.array([(np.sqrt((f**2).sum(1))).max() for f in self.results_out.forces])
         #end if
         return obj(forces=len(forces),total_forces=len(tot_forces))
     #end def analyze_forces
@@ -773,19 +924,19 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if found:
-            self.results.cputime = tc
-            self.results.walltime = tw
+            self.results_out.cputime = tc
+            self.results_out.walltime = tw
         #end if
         return found
     #end def analyze_timing
 
 
     def analyze_kpoints(self,lines):
-        kpoints_cart,kpoints_unit,kweights = self.read_kpoint_tables(lines)
+        kpoints_cart,kpoints_unit,kweights = read_kpoint_tables(lines)
         if kpoints_cart is not None:
-            self.results.kpoints_cart = kpoints_cart
-            self.results.kpoints_unit = kpoints_unit
-            self.results.kweights = kweights
+            self.results_out.kpoints_cart = kpoints_cart
+            self.results_out.kpoints_unit = kpoints_unit
+            self.results_out.kweights = kweights
             return len(kpoints_cart)
         #end if
         return 0
@@ -810,7 +961,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if 'Kinetic' in l:
                 tokens = l.split()
                 if len(tokens)>5 and is_number(tokens[5]):
-                    self.results.K = self.number_float(tokens[5])
+                    self.results_out.K = number_float(tokens[5])
                     return True
                 #end if
             #end if
@@ -820,14 +971,21 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def analyze_xml(self):
-        self.results.xmldata = obj(data=None,kpoints=None,failed=False)
+        self.results_xml = None
+        if 'xml_status_failed' in self.info:
+            del self.info.xml_status_failed
+        #end if
         if self.input is None or 'control' not in self.input:
-            self.xml_unavailable('input control section is not available')
+            if self.info.warn:
+                self.warn('xml data is not available\nreason: input control section is not available')
+            #end if
             return 0
         #end if
         cont = self.input.control
         if 'outdir' not in cont or 'prefix' not in cont:
-            self.xml_unavailable('input outdir/prefix is not available')
+            if self.info.warn:
+                self.warn('xml data is not available\nreason: input outdir/prefix is not available')
+            #end if
             return 0
         #end if
         savedir = os.path.join(self.path,cont.outdir,cont.prefix+'.save')
@@ -835,6 +993,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         legacy_file = os.path.join(savedir,'data-file.xml')
         legacy_dir = savedir
         if os.path.exists(schema_file):
+            self.results_xml = obj(data=None,kpoints=None,failed=False)
             try:
                 root = ET.parse(schema_file).getroot()
             except (OSError,ET.ParseError) as e:
@@ -847,6 +1006,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 legacy_dir = os.path.join(self.path,cont.outdir)
                 legacy_file = os.path.join(legacy_dir,cont.prefix+'.xml')
             #end if
+            if not os.path.exists(legacy_file):
+                if self.info.warn:
+                    self.warn('xml data is not available\nfile not found: '+legacy_file)
+                #end if
+                return 0
+            #end if
+            self.results_xml = obj(data=None,kpoints=None,failed=False)
             try:
                 data = read_qexml(legacy_file)
             except Exception as e:
@@ -859,7 +1025,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def xml_read_failed(self,exception):
-        self.results.xmldata.failed = True
+        self.results_xml.failed = True
         if self.info.warn:
             self.warn('encountered an exception during xml read, this data will not be available\nexception encountered: '+str(exception))
         #end if
@@ -867,36 +1033,24 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def xml_unavailable(self,message):
-        self.results.xmldata.failed = True
+        self.results_xml.failed = True
         if self.info.warn:
             self.warn('xml data is incomplete, some data will not be available\nreason: '+message)
         #end if
     #end def xml_unavailable
 
 
-    @staticmethod
-    def object_path(value,*names):
-        for name in names:
-            if value is None or name not in value:
-                return None
-            #end if
-            value = value[name]
-        #end for
-        return value
-    #end def object_path
-
-
     def analyze_legacy_xml(self,data,datadir):
-        kpdata = self.object_path(data,'root','eigenvalues','k_point')
+        kpdata = object_path(data,'root','eigenvalues','k_point')
         if kpdata is None:
-            self.results.xmldata.update(data=data,kpoints=obj())
+            self.results_xml.update(data=data,kpoints=obj())
             self.xml_unavailable('legacy eigenvalue k-points are not available')
             return 0
         #end if
         kpoints = obj()
         for ki,kpd in kpdata.items():
             if 'k_point_coords' not in kpd or 'weight' not in kpd or 'datafile' not in kpd:
-                self.results.xmldata.failed = True
+                self.results_xml.failed = True
                 continue
             #end if
             kp = obj(kpoint=kpd.k_point_coords,weight=kpd.weight)
@@ -904,7 +1058,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             for si,dfile in kpd.datafile.items():
                 efilepath = os.path.join(datadir,dfile.iotk_link)
                 if not os.path.exists(efilepath):
-                    self.results.xmldata.failed = True
+                    self.results_xml.failed = True
                     continue
                 #end if
                 try:
@@ -913,11 +1067,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     self.xml_read_failed(e)
                     continue
                 #end try
-                eunits = self.object_path(edata,'root','units_for_energies','units')
-                eigenvalues = self.object_path(edata,'root','eigenvalues')
-                occupations = self.object_path(edata,'root','occupations')
+                eunits = object_path(edata,'root','units_for_energies','units')
+                eigenvalues = object_path(edata,'root','eigenvalues')
+                occupations = object_path(edata,'root','occupations')
                 if eunits is None or eigenvalues is None or occupations is None:
-                    self.results.xmldata.failed = True
+                    self.results_xml.failed = True
                     continue
                 #end if
                 eunits = eunits.lower()
@@ -938,128 +1092,51 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end for
         #end for
-        self.results.xmldata.update(data=data,kpoints=kpoints)
+        self.results_xml.update(data=data,kpoints=kpoints)
         return len(kpoints)
     #end def analyze_legacy_xml
 
 
-    @staticmethod
-    def xml_local_name(element):
-        return element.tag.rsplit('}',1)[-1].lower()
-    #end def xml_local_name
-
-
-    @staticmethod
-    def xml_value(text):
-        text = text.strip()
-        if len(text)==0:
-            return ''
-        elif text.lower() in ('true','false'):
-            return text.lower()=='true'
-        #end if
-        tokens = text.replace('D','E').replace('d','e').split()
-        if all(is_number(token) for token in tokens):
-            values = np.array(tokens,dtype=float)
-            if len(values)==1:
-                value = values[0]
-                if value.is_integer() and all(c not in text.lower() for c in ('.','e')):
-                    return int(value)
-                #end if
-                return value
-            #end if
-            return values
-        #end if
-        return text
-    #end def xml_value
-
-
-    def xml_element(self,element):
-        node = obj()
-        for name,value in element.attrib.items():
-            node[name.lower()] = self.xml_value(value)
-        #end for
-        children = list(element)
-        groups = obj()
-        for child in children:
-            name = self.xml_local_name(child)
-            if name not in groups:
-                groups[name] = []
-            #end if
-            groups[name].append(child)
-        #end for
-        for name,group in groups.items():
-            if len(group)==1:
-                node[name] = self.xml_element(group[0])
-            else:
-                node[name] = obj({i+1:self.xml_element(child) for i,child in enumerate(group)})
-            #end if
-        #end for
-        text = (element.text or '').strip()
-        if len(text)>0:
-            value = self.xml_value(text)
-            if len(node)==0:
-                return value
-            #end if
-            node.value = value
-        #end if
-        return node
-    #end def xml_element
-
-
-    def xml_child(self,element,name):
-        name = name.lower()
-        if element is None:
-            return None
-        #end if
-        for child in element:
-            if self.xml_local_name(child)==name:
-                return child
-            #end if
-        #end for
-        return None
-    #end def xml_child
-
-
     def analyze_schema_xml(self,root):
-        data = obj(root=self.xml_element(root))
-        output = self.xml_child(root,'output')
-        band_structure = self.xml_child(output,'band_structure')
+        data = obj(root=xml_element(root))
+        output = xml_child(root,'output')
+        band_structure = xml_child(output,'band_structure')
         kpoints = obj()
         if output is None or band_structure is None:
-            self.results.xmldata.update(data=data,kpoints=kpoints)
+            self.results_xml.update(data=data,kpoints=kpoints)
             self.xml_unavailable('output band_structure is not available')
             return 0
         #end if
-        lsda_element = self.xml_child(band_structure,'lsda')
-        lsda = self.xml_value(lsda_element.text) if lsda_element is not None else False
-        records = [child for child in band_structure if self.xml_local_name(child)=='ks_energies']
+        lsda_element = xml_child(band_structure,'lsda')
+        lsda = xml_value(lsda_element.text) if lsda_element is not None else False
+        records = [child for child in band_structure if xml_local_name(child)=='ks_energies']
         if len(records)==0:
-            self.results.xmldata.update(data=data,kpoints=kpoints)
+            self.results_xml.update(data=data,kpoints=kpoints)
             self.xml_unavailable('ks_energies records are not available')
             return 0
         #end if
         coordinate_map = dict()
         for record in records:
-            k_element = self.xml_child(record,'k_point')
-            e_element = self.xml_child(record,'eigenvalues')
-            o_element = self.xml_child(record,'occupations')
+            k_element = xml_child(record,'k_point')
+            e_element = xml_child(record,'eigenvalues')
+            o_element = xml_child(record,'occupations')
             if k_element is None or e_element is None or o_element is None:
-                self.results.xmldata.failed = True
+                self.results_xml.failed = True
                 continue
             #end if
-            coordinates = self.first_numbers(k_element.text or '',3)
-            eigenvalues = self.line_numbers(e_element.text or '')
-            occupations = self.line_numbers(o_element.text or '')
+            coordinates = first_numbers(k_element.text or '',3)
+            eigenvalues = line_numbers(e_element.text or '')
+            occupations = line_numbers(o_element.text or '')
             if coordinates is None or len(eigenvalues)==0 or len(occupations)==0 or len(eigenvalues)!=len(occupations):
-                self.results.xmldata.failed = True
+                self.results_xml.failed = True
                 continue
             #end if
             weight_text = k_element.attrib.get('weight','')
             if not is_number(weight_text):
-                self.results.xmldata.failed = True
+                self.results_xml.failed = True
                 continue
             #end if
-            weight = self.number_float(weight_text)
+            weight = number_float(weight_text)
             key = tuple(np.round(coordinates,12))
             if not lsda or key not in coordinate_map:
                 ki = len(kpoints)+1
@@ -1080,9 +1157,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 kp.down = spin
             #end if
         #end for
-        self.results.xmldata.update(data=data,kpoints=kpoints)
+        self.results_xml.update(data=data,kpoints=kpoints)
         if lsda and any('down' not in kp for kp in kpoints.values()):
-            self.results.xmldata.failed = True
+            self.results_xml.failed = True
         #end if
         if len(records)>0 and len(kpoints)==0:
             self.xml_unavailable('no complete ks_energies records are available')
@@ -1092,17 +1169,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def write_electron_counts(self,filepath=None,*,return_flag=False):
-        xmldata = self.results.xmldata
+        results_xml = self.results_xml
         if not return_flag:
-            if not self.info.xml:
+            if results_xml is None:
                 self.error('xml data has not been processed\ncannot write electron counts')
-            elif xmldata is None or xmldata.failed:
+            elif results_xml.failed:
                 self.error('xml data processing failed\ncannot write electron counts')
             #end if
-        elif not self.info.xml or xmldata is None or xmldata.failed:
+        elif results_xml is None or results_xml.failed:
             return False
         #end if
-        kpoints = xmldata.kpoints
+        kpoints = results_xml.kpoints
         if 'down' in kpoints[1]:
             spins = obj(up='up',down='down')
         else:
@@ -1147,7 +1224,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def md_statistics(self,equil=None,autocorr=None):
         mds = obj()
-        for q,v in self.results.md_data.items():
+        for q,v in self.results_out.md_data.items():
             if equil is not None:
                 v = v[equil:]
             #end if
@@ -1169,7 +1246,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def md_plots(self,*,show=True):
 
-        md = self.results.md_data
+        md = self.results_out.md_data
 
         import matplotlib.pyplot as plt
         fig = plt.figure()
@@ -1199,14 +1276,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def make_movie(self,filename,filepath=None):
-        if 'structures' in self.results and self.results.structures is not None:
+        if 'relax_structures' in self.results_out and self.results_out.relax_structures is not None:
             if filepath is None:
                 filepath = os.path.join(self.abspath,filename)
             else:
                 filepath = os.path.join(filepath,filename)
             #end if
             movie = ''
-            structures = self.results.structures
+            structures = self.results_out.relax_structures
 
             aA = convert(self.input.system['celldm(1)'],'B','A')
             cell = self.input.cell_parameters.vectors
@@ -1234,7 +1311,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             'ytick.labelsize'      : 14,
             }
         plt.rcParams.update(params)
-        if 'bands' in self.results and self.results.bands is not None:
+        if 'bands' in self.results_out and self.results_out.bands is not None:
             success = True
             if filename is None:
                 filename = 'band_structure.pdf'
@@ -1254,12 +1331,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 labels = kpath['explicit_kpoints_labels']
             else:
                 labels = k_labels
-                # Calculate linear coordinates from self.results.kpoints_cart
+                # Calculate linear coordinates from self.results_out.kpoints_cart
                 x = []
                 prev_label = ''
-                ref_kpt = self.results.kpoints_cart[0]
+                ref_kpt = self.results_out.kpoints_cart[0]
                 lincoord = 0.0
-                for kpt_idx,kpt in enumerate(self.results.kpoints_cart):
+                for kpt_idx,kpt in enumerate(self.results_out.kpoints_cart):
                     curr_label = labels[kpt_idx]
                     if (curr_label != '' and prev_label == '') or curr_label == '':
                         lincoord+=np.linalg.norm(kpt-ref_kpt)
@@ -1274,17 +1351,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
             for nb in range(nbands):
                 y = []
-                for bi in self.results.bands.up:
+                for bi in self.results_out.bands.up:
                     y.append(bi['eigs'][nb])
                 #end for
-                y = np.array(y) - self.results.bands.vbm.energy
+                y = np.array(y) - self.results_out.bands.vbm.energy
                 plt.plot(x, y, 'k')
-                if len(self.results.bands.down) > 0:
+                if len(self.results_out.bands.down) > 0:
                     y = []
-                    for bi in self.results.bands.down:
+                    for bi in self.results_out.bands.down:
                         y.append(bi['eigs'][nb])
                     #end for
-                    y = np.array(y) - self.results.bands.vbm.energy
+                    y = np.array(y) - self.results_out.bands.vbm.energy
                     plt.plot(x, y, 'r')
                 #end if              
             #end for
@@ -1314,10 +1391,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
             ax.tick_params(axis='x', which='both', length=0)
             ax.tick_params(axis='x', which='both', pad=10)
         #end if
-        if show_vbm_cbm and self.results.bands is not None:
-            vbm = self.results.bands.vbm
-            cbm = self.results.bands.cbm
-            for kn, ki in enumerate(self.results.bands.up):
+        if show_vbm_cbm and self.results_out.bands is not None:
+            vbm = self.results_out.bands.vbm
+            cbm = self.results_out.bands.cbm
+            for kn, ki in enumerate(self.results_out.bands.up):
                 if (vbm.kpoint_rel == ki['kpoint_rel']).all():
                     plt.scatter(x[kn], 0, c='green', s=100)
                 #end if
