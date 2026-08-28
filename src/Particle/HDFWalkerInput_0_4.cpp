@@ -44,9 +44,7 @@ void HDFWalkerInput_0_4::checkOptions(xmlNodePtr cur)
   std::string collected("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(i_info.nprocs, "nprocs");
-  pAttrib.add(i_info.rank, "node");
   pAttrib.add(cfile, "href");
-  pAttrib.add(cfile, "file");
   pAttrib.add(froot, "fileroot");
   pAttrib.add(collected, "collected");
   pAttrib.put(cur);

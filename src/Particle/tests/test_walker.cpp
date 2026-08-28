@@ -18,6 +18,7 @@
 #include "Particle/HDFWalkerOutput.h"
 #include "Particle/HDFWalkerInput_0_4.h"
 #include "QMCDrivers/WalkerProperties.h"
+#include "OhmmsData/Libxml2Doc.h"
 #include "type_traits/template_types.hpp"
 
 #include <stdio.h>
@@ -115,6 +116,22 @@ TEST_CASE("walker HDF read and write", "[particle]")
     REQUIRE(wc_list2[0]->R[0][i] == w1.R[0][i]);
     REQUIRE(wc_list2[1]->R[0][i] == w2.R[0][i]);
   }
+}
+
+TEST_CASE("walker HDF restart input ignores retired attributes", "[particle]")
+{
+  Communicate* c = OHMMS::Controller;
+  WalkerConfigurations wc_list;
+  HDFWalkerInput_0_4 hinp(wc_list, 1, c, HDFVersion(0, 4));
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<mcwalkerset fileroot="restart"
+                                     file="unused" node="717"
+                                     nprocs="1" collected="yes"/>)"));
+
+  hinp.checkOptions(doc.getRoot());
+  REQUIRE(hinp.FileStack.size() == 1);
+  CHECK(hinp.FileStack.top() == std::filesystem::path("restart"));
 }
 
 TEST_CASE("walker buffer add, update, restore", "[particle]")

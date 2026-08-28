@@ -31,7 +31,6 @@ struct HDFWalkerInput_0_4
   {
     bool parallel;
     bool collected;
-    int rank;
     int nprocs;
     hid_t h_plist;
     HDFVersion version;
@@ -40,7 +39,6 @@ struct HDFWalkerInput_0_4
     {
       parallel  = false;
       collected = false;
-      rank      = 0;
       nprocs    = 1;
     }
   };
