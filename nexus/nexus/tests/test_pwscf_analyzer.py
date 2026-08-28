@@ -16,6 +16,7 @@ def test_empty_init():
     assert('results_out' in pa)
     assert(pa.results_out is None)
     assert(pa.results_xml is None)
+    assert(all(value is False for value in pa.info.data_status.values()))
     free_helpers = (
         'line_numbers','first_numbers','leading_numbers','match_float',
         'number_float','read_kpoint_tables','object_path','xml_local_name',
@@ -61,6 +62,7 @@ def test_result_initialization(tmp_path,calculation):
     assert(set(pa.results_out.keys())==expected)
     assert(all(value is None for value in pa.results_out.values()))
     assert(pa.results_xml is None)
+    assert(all(value is False for value in pa.info.data_status.values()))
 #end def test_result_initialization
 
 
@@ -76,6 +78,15 @@ def test_analyze():
         'md_stats','pressure','stress','relax_structures','tot_forces','volume',
         'walltime',
         )
+    data_status_names = (
+        'log','md','fermi_energies','scf_conv_energy','scf_conv_accuracy',
+        'relax_energies','bands','relax_structures','pressure','volume',
+        'stress','forces','total_forces','timing','kpoints','pw2casino','xml',
+        )
+
+    def empty_data_status():
+        return obj({name:False for name in data_status_names})
+    #end def empty_data_status
 
     def nest_results(reference,calculation):
         result_names = [
@@ -194,6 +205,7 @@ def test_analyze():
             ),
         )
 
+    pa_ref.info.data_status = empty_data_status()
     assert(object_eq(to_obj(pa),nest_results(pa_ref,'scf')))
 
     input_read = deepcopy(pa.input)
@@ -210,18 +222,17 @@ def test_analyze():
         assert(band.eigs.shape==(30,))
         assert(band.occs.shape==(30,))
     #end for
-    assert(pa.info.parse_status.relax_energies)
-    assert(pa.info.parse_status.scf_conv_energy)
-    assert(pa.info.parse_status.scf_conv_accuracy)
-    assert(pa.info.parse_status.bands)
-    assert(pa.info.parse_status.forces)
-    assert(pa.info.parse_status.total_forces)
-    assert(pa.info.parse_status.stress)
-    assert('xml' not in pa.info.parse_status)
-    assert('xml_status_failed' not in pa.info.parse_status)
+    assert(pa.info.data_status.relax_energies)
+    assert(pa.info.data_status.scf_conv_energy)
+    assert(pa.info.data_status.scf_conv_accuracy)
+    assert(pa.info.data_status.bands)
+    assert(pa.info.data_status.forces)
+    assert(pa.info.data_status.total_forces)
+    assert(pa.info.data_status.stress)
+    assert(not pa.info.data_status.xml)
     assert('xml_status_failed' not in pa.info)
-    assert(all(isinstance(value,bool) for value in pa.info.parse_status.values()))
-    del pa.info.parse_status
+    assert(all(isinstance(value,bool) for value in pa.info.data_status.values()))
+    del pa.info.data_status
 
     del pa.input
     del pa.abspath
@@ -294,14 +305,14 @@ def test_analyze():
         assert(band.eigs.shape==(30,))
         assert(band.occs.shape==(0,))
     #end for
-    assert(pa.info.parse_status.relax_energies)
-    assert(pa.info.parse_status.scf_conv_energy)
-    assert(pa.info.parse_status.scf_conv_accuracy)
-    assert(pa.info.parse_status.relax_structures)
-    assert(pa.info.parse_status.forces)
-    assert(pa.info.parse_status.total_forces)
-    assert(all(isinstance(value,bool) for value in pa.info.parse_status.values()))
-    del pa.info.parse_status
+    assert(pa.info.data_status.relax_energies)
+    assert(pa.info.data_status.scf_conv_energy)
+    assert(pa.info.data_status.scf_conv_accuracy)
+    assert(pa.info.data_status.relax_structures)
+    assert(pa.info.data_status.forces)
+    assert(pa.info.data_status.total_forces)
+    assert(all(isinstance(value,bool) for value in pa.info.data_status.values()))
+    del pa.info.data_status
 
     del pa.input
     del pa.abspath
@@ -589,6 +600,7 @@ def test_analyze():
             ),
         )
 
+    pa_ref.info.data_status = empty_data_status()
     assert(object_eq(to_obj(pa),nest_results(pa_ref,'nscf')))
 
     input_read = deepcopy(pa.input)
@@ -597,11 +609,11 @@ def test_analyze():
     pa = PwscfAnalyzer(nscf_path,'nscf.in','nscf.out',analyze=True)
 
     assert(object_eq(pa.input,input_read))
-    assert(pa.info.parse_status.fermi_energies)
-    assert(pa.info.parse_status.bands)
-    assert(pa.info.parse_status.kpoints)
-    assert(all(isinstance(value,bool) for value in pa.info.parse_status.values()))
-    del pa.info.parse_status
+    assert(pa.info.data_status.fermi_energies)
+    assert(pa.info.data_status.bands)
+    assert(pa.info.data_status.kpoints)
+    assert(all(isinstance(value,bool) for value in pa.info.data_status.values()))
+    del pa.info.data_status
 
     del pa.input
     del pa.abspath
@@ -899,13 +911,13 @@ H  0.100000000  0.200000000  0.300000000  1 1 1  trailing text
     assert(len(pa.results_xml.kpoints)==2)
     assert(np.allclose(pa.results_xml.kpoints[1].up.eigenvalues,[-0.5,0.5]))
     assert(np.allclose(pa.results_xml.kpoints[2].up.eigenvalues,[-0.4,0.6]))
-    assert(pa.info.parse_status.md)
-    assert(pa.info.parse_status.scf_conv_energy)
-    assert(pa.info.parse_status.scf_conv_accuracy)
-    assert(pa.info.parse_status.bands)
-    assert(pa.info.parse_status.xml)
+    assert(pa.info.data_status.md)
+    assert(not pa.info.data_status.scf_conv_energy)
+    assert(not pa.info.data_status.scf_conv_accuracy)
+    assert(pa.info.data_status.bands)
+    assert(pa.info.data_status.xml)
     assert(not pa.info.xml_status_failed)
-    assert(all(isinstance(value,bool) for value in pa.info.parse_status.values()))
+    assert(all(isinstance(value,bool) for value in pa.info.data_status.values()))
 
     # Recognized but incomplete records are skipped without stopping analysis.
     malformed_tail = """
@@ -930,13 +942,13 @@ CELL_PARAMETERS (alat= 5.0)
 
     assert(np.allclose(pa.results_out.md_data.total_energy,[-1.1]))
     assert(np.allclose(pa.results_out.relax_energies,[-1.1]))
-    assert(pa.info.parse_status.md)
-    assert(pa.info.parse_status.stress)
-    assert(pa.info.parse_status.forces)
-    assert(pa.info.parse_status.total_forces)
-    assert(pa.info.parse_status.relax_structures)
+    assert(pa.info.data_status.md)
+    assert(pa.info.data_status.stress)
+    assert(pa.info.data_status.forces)
+    assert(pa.info.data_status.total_forces)
+    assert(pa.info.data_status.relax_structures)
     assert(pa.results_xml.failed)
-    assert(pa.info.parse_status.xml)
+    assert(pa.info.data_status.xml)
     assert(pa.info.xml_status_failed)
     assert(len(pa.results_xml.kpoints)==1)
 
@@ -946,13 +958,13 @@ CELL_PARAMETERS (alat= 5.0)
     assert(np.allclose(pa.results_out.relax_energies,[-1.1]))
     assert(pa.results_xml.failed)
     assert(pa.results_xml.data is None)
-    assert(pa.info.parse_status.xml)
+    assert(not pa.info.data_status.xml)
     assert(pa.info.xml_status_failed)
 
     # Missing XML is represented by None rather than an empty XML result.
     (savedir/'data-file-schema.xml').unlink()
     pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
     assert(pa.results_xml is None)
-    assert(pa.info.parse_status.xml)
+    assert(not pa.info.data_status.xml)
     assert('xml_status_failed' not in pa.info)
 #end def test_modern_output

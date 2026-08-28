@@ -281,6 +281,29 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,*,analyze=False,xml=False,warn=False,md_only=False):
         self.results_out = None
         self.results_xml = None
+        self.info = obj(
+            warn        = warn,
+            md_only     = md_only,
+            data_status = obj(
+                log                 = False,
+                md                  = False,
+                fermi_energies      = False,
+                scf_conv_energy     = False,
+                scf_conv_accuracy   = False,
+                relax_energies      = False,
+                bands               = False,
+                relax_structures    = False,
+                pressure            = False,
+                volume              = False,
+                stress              = False,
+                forces              = False,
+                total_forces        = False,
+                timing              = False,
+                kpoints             = False,
+                pw2casino           = False,
+                xml                 = False,
+                ),
+            )
         if isinstance(arg0,Simulation):
             sim = arg0
             path = sim.locdir
@@ -316,8 +339,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.path = path
         self.abspath = os.path.abspath(path)
         self.pw2c_outfile_name = pw2c_outfile_name
-
-        self.info = obj(warn=warn,md_only=md_only)
 
         self.input = None
         if self.infile_name is not None:
@@ -363,8 +384,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     
     def analyze(self,*,xml=False):
-        parse_status = obj(log=False)
-        self.info.parse_status = parse_status
         outfile = os.path.join(self.path,self.outfile_name)
         try:
             with open(outfile,'r') as fobj:
@@ -376,50 +395,37 @@ class PwscfAnalyzer(SimulationAnalyzer):
             return
         #end try
 
-        parse_status.log = True
-        parse_status.md = False
+        self.info.data_status.log = True
+
         self.analyze_md(lines)
-        parse_status.md = True
+
         if self.info.md_only:
             return
-        #end if
-        parse_status.fermi_energies = False
+
         self.analyze_fermi_energies(lines)
-        parse_status.fermi_energies = True
-        parse_status.update(scf_conv_energy=False,scf_conv_accuracy=False)
+
         self.analyze_scf_convergence(lines)
-        parse_status.update(scf_conv_energy=True,scf_conv_accuracy=True)
-        parse_status.relax_energies = False
+
         self.analyze_energies(lines)
-        parse_status.relax_energies = True
-        parse_status.bands = False
+
         self.analyze_bands(lines)
-        parse_status.bands = True
-        parse_status.relax_structures = False
+
         self.analyze_structures(lines)
-        parse_status.relax_structures = True
-        parse_status.update(pressure=False,volume=False)
+
         self.analyze_pressure_volume(lines)
-        parse_status.update(pressure=True,volume=True)
-        parse_status.stress = False
+
         self.analyze_stress(lines)
-        parse_status.stress = True
-        parse_status.update(forces=False,total_forces=False)
+
         self.analyze_forces(lines)
-        parse_status.update(forces=True,total_forces=True)
-        parse_status.timing = False
+
         self.analyze_timing(lines)
-        parse_status.timing = True
-        parse_status.kpoints = False
+
         self.analyze_kpoints(lines)
-        parse_status.kpoints = True
-        parse_status.pw2casino = False
+
         self.analyze_pw2casino()
-        parse_status.pw2casino = True
+
         if xml:
-            parse_status.xml = False
             self.analyze_xml()
-            parse_status.xml = True
             if self.results_xml is not None:
                 self.info.xml_status_failed = bool(self.results_xml.failed)
             #end if
@@ -493,6 +499,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if nsteps==0:
             return 0
         #end if
+        self.info.data_status.md = True
         md = obj(
             total_energy   = np.array([r.total_energy for r in records],dtype=float),
             pressure       = np.array([r.pressure for r in records],dtype=float),
@@ -517,6 +524,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if len(fermi_energies)>0:
+            self.info.data_status.fermi_energies = True
             self.results_out.Ef = fermi_energies[-1]
             self.results_out.fermi_energies = np.array(fermi_energies)
         #end if
@@ -535,6 +543,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if len(relax_energies)>0:
+            self.info.data_status.relax_energies = True
             self.results_out.E = relax_energies[-1]
             self.results_out.relax_energies = np.array(relax_energies)
         #end if
@@ -565,9 +574,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if len(scf_conv_energy)>0:
+            self.info.data_status.scf_conv_energy = True
             self.results_out.scf_conv_energy = np.array(scf_conv_energy)
         #end if
         if len(scf_conv_accuracy)>0:
+            self.info.data_status.scf_conv_accuracy = True
             self.results_out.scf_conv_accuracy = np.array(scf_conv_accuracy)
         #end if
         return obj(energy=len(scf_conv_energy),accuracy=len(scf_conv_accuracy))
@@ -676,6 +687,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if nfound==0:
             return 0
         #end if
+        self.info.data_status.bands = True
         self.analyze_band_edges(bands)
         self.results_out.bands = bands
         return nfound
@@ -798,6 +810,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             i+=1
         #end while
         if len(structures)>0:
+            self.info.data_status.relax_structures = True
             self.results_out.relax_structures = structures
         #end if
         return len(structures)
@@ -826,9 +839,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if pressure_found:
+            self.info.data_status.pressure = True
             self.results_out.pressure = press
         #end if
         if volume_found:
+            self.info.data_status.volume = True
             self.results_out.volume = vol
         #end if
         return obj(pressure=pressure_found,volume=volume_found)
@@ -858,6 +873,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if ntensors>0:
+            self.info.data_status.stress = True
             self.results_out.stress = stress
         #end if
         return ntensors
@@ -900,9 +916,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if len(forces)>0:
+            self.info.data_status.forces = True
             self.results_out.forces = np.array(forces,dtype=float)
             self.results_out.tot_forces = np.array(tot_forces)
             self.results_out.max_forces = np.array([(np.sqrt((f**2).sum(1))).max() for f in self.results_out.forces])
+        #end if
+        if len(tot_forces)>0:
+            self.info.data_status.total_forces = True
         #end if
         return obj(forces=len(forces),total_forces=len(tot_forces))
     #end def analyze_forces
@@ -924,6 +944,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if found:
+            self.info.data_status.timing = True
             self.results_out.cputime = tc
             self.results_out.walltime = tw
         #end if
@@ -934,6 +955,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def analyze_kpoints(self,lines):
         kpoints_cart,kpoints_unit,kweights = read_kpoint_tables(lines)
         if kpoints_cart is not None:
+            self.info.data_status.kpoints = True
             self.results_out.kpoints_cart = kpoints_cart
             self.results_out.kpoints_unit = kpoints_unit
             self.results_out.kweights = kweights
@@ -961,6 +983,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if 'Kinetic' in l:
                 tokens = l.split()
                 if len(tokens)>5 and is_number(tokens[5]):
+                    self.info.data_status.pw2casino = True
                     self.results_out.K = number_float(tokens[5])
                     return True
                 #end if
@@ -1000,7 +1023,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 self.xml_read_failed(e)
                 return 0
             #end try
-            return self.analyze_schema_xml(root)
+            npoints = self.analyze_schema_xml(root)
+            if self.results_xml.data is not None:
+                self.info.data_status.xml = True
+            #end if
+            return npoints
         else:
             if not os.path.exists(legacy_file):
                 legacy_dir = os.path.join(self.path,cont.outdir)
@@ -1019,7 +1046,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 self.xml_read_failed(e)
                 return 0
             #end try
-            return self.analyze_legacy_xml(data,legacy_dir)
+            npoints = self.analyze_legacy_xml(data,legacy_dir)
+            if self.results_xml.data is not None:
+                self.info.data_status.xml = True
+            #end if
+            return npoints
         #end if
     #end def analyze_xml
 
