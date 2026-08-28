@@ -103,7 +103,6 @@ public:
     B_ENERGYUPDATEINTERVAL, /**< frequency of the trial energy updates, default 1 */
     B_COUNTER,              /**< counter for tracking object state */
     B_TARGETWALKERS,        /**< target total number of walkers per mpi group */
-    B_BRANCHINTERVAL,       /**< interval between branch, see population control */
     B_IPARAM_MAX            /**< size of iParam */
   };
 

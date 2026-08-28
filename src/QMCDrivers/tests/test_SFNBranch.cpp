@@ -88,5 +88,22 @@ TEST_CASE("SFNBranch::branch(MCPopulation...)", "[drivers]")
                  pools.hamiltonian_pool->getHamiltonian().value());
 }
 
+TEST_CASE("SFNBranch retired modern options", "[drivers]")
+{
+  SFNBranch sfnb(0.5, 1.0, DMCRefEnergyScheme::LIMITED_HISTORY);
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(
+<qmc>
+  <parameter name="branchInterval">not-an-integer</parameter>
+  <parameter name="useBareTau">retired-value</parameter>
+  <parameter name="warmupSteps">17</parameter>
+  <parameter name="energyUpdateInterval">3</parameter>
+  <parameter name="warmupByReconfiguration">yes</parameter>
+</qmc>)"));
+  REQUIRE(sfnb.put(doc.getRoot()));
+  CHECK(sfnb.getWarmupToDoSteps() == 17);
+}
+
 
 } // namespace qmcplusplus
