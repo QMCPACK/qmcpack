@@ -80,8 +80,8 @@ public:
     int NAEA = (herm ? get<0>(hermA.sizes()) : get<1>(hermA.sizes()));
     set_shm_buffer(comm, NAEA * (NAEA + NMO));
     assert(SM_TMats->num_elements() >= NAEA * (NAEA + NMO));
-    boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NAEA, NAEA});
-    boost::multi::array_ref<T, 2> TNM(to_address(SM_TMats->origin()) + NAEA * NAEA, {NAEA, NMO});
+    boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->base()), {NAEA, NAEA});
+    boost::multi::array_ref<T, 2> TNM(to_address(SM_TMats->base()) + NAEA * NAEA, {NAEA, NMO});
     TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NMO + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::MixedDensityMatrix<T>(hermA, B, std::forward<MatC>(C), LogOverlapFactor,
@@ -110,11 +110,11 @@ public:
     set_shm_buffer(comm, NEL * (NEL + Nact + NMO));
     assert(SM_TMats->num_elements() >= NEL * (NEL + Nact + NMO));
     size_t cnt = 0;
-    boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NEL, NEL});
+    boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->base()), {NEL, NEL});
     cnt += TNN.num_elements();
-    boost::multi::array_ref<T, 2> TAB(to_address(SM_TMats->origin()) + cnt, {Nact, NEL});
+    boost::multi::array_ref<T, 2> TAB(to_address(SM_TMats->base()) + cnt, {Nact, NEL});
     cnt += TAB.num_elements();
-    boost::multi::array_ref<T, 2> TNM(to_address(SM_TMats->origin()) + cnt, {NEL, NMO});
+    boost::multi::array_ref<T, 2> TNM(to_address(SM_TMats->base()) + cnt, {NEL, NMO});
     TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NMO + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::MixedDensityMatrixForWoodbury<T>(hermA, B, std::forward<MatC>(C),
@@ -130,8 +130,8 @@ public:
     int NAEA = (herm ? get<0>(hermA.sizes()) : get<1>(hermA.sizes()));
     set_shm_buffer(comm, 2 * NAEA * NAEA);
     assert(SM_TMats->num_elements() >= 2 * NAEA * NAEA);
-    boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NAEA, NAEA});
-    boost::multi::array_ref<T, 2> TNN2(to_address(SM_TMats->origin()) + NAEA * NAEA, {NAEA, NAEA});
+    boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->base()), {NAEA, NAEA});
+    boost::multi::array_ref<T, 2> TNN2(to_address(SM_TMats->base()) + NAEA * NAEA, {NAEA, NAEA});
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::Overlap<T>(hermA, B, LogOverlapFactor, TNN, IWORK, TNN2.elements(), comm, herm);
   }
@@ -153,8 +153,8 @@ public:
     assert(get<1>(QQ0.sizes()) == NEL);
     set_shm_buffer(comm, NEL * (Nact + NEL));
     assert(SM_TMats->num_elements() >= NEL * (Nact + NEL));
-    boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NEL, NEL});
-    boost::multi::array_ref<T, 2> TMN(to_address(SM_TMats->origin()) + NEL * NEL, {Nact, NEL});
+    boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->base()), {NEL, NEL});
+    boost::multi::array_ref<T, 2> TMN(to_address(SM_TMats->base()) + NEL * NEL, {Nact, NEL});
     TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{Nact + 1}, buffer_manager.get_generator().template get_allocator<int>());
     return SlaterDeterminantOperations::shm::OverlapForWoodbury<T>(hermA, B, LogOverlapFactor, std::forward<MatC>(QQ0),
@@ -183,9 +183,9 @@ public:
     assert(get<1>(V.sizes()) == M);
     set_shm_buffer(comm, NAEA * (NMO + 2 * M));
     assert(SM_TMats->num_elements() >= NAEA * (NMO + 2 * M));
-    boost::multi::array_ref<T, 2> T0(to_address(SM_TMats->origin()), {NMO, NAEA});
-    boost::multi::array_ref<T, 2> T1(to_address(T0.origin()) + T0.num_elements(), {M, NAEA});
-    boost::multi::array_ref<T, 2> T2(to_address(T1.origin()) + T1.num_elements(), {M, NAEA});
+    boost::multi::array_ref<T, 2> T0(to_address(SM_TMats->base()), {NMO, NAEA});
+    boost::multi::array_ref<T, 2> T1(to_address(T0.base()) + T0.num_elements(), {M, NAEA});
+    boost::multi::array_ref<T, 2> T2(to_address(T1.base()) + T1.num_elements(), {M, NAEA});
     using ma::H;
     using ma::T;
     if (comm.root())

@@ -46,13 +46,15 @@ class process {
 };
 
 template<class T>
-auto operator<<(process&& p, const T& value) -> decltype(std::move(p << value)) {
-	return std::move(p << value);
+// NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
+auto operator<<(process&& p, const T& value) -> decltype(std::move(p << value)) {  // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
+	return std::move(p << value);  // NOLINT(hicpp-move-const-arg,performance-move-const-arg)
 }
 
 template<class T>
-auto operator>>(process&& p, T&& value) -> decltype(std::declval<process&>() >> value) {
-	return p >> value;
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
+auto operator>>(process&& p, T&& value) -> decltype(std::declval<process&>() >> std::forward<T>(value)) {
+	return p >> std::forward<T>(value);
 }
 
 template<class T> 
@@ -87,6 +89,7 @@ auto operator&(communicator& comm, T const& t)
 }
 
 template<class T>
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 auto operator||(process&& self, T& t) {self.comm().broadcast_value(t, self.rank());}
 
 template<class T>
@@ -101,7 +104,7 @@ std::vector<T> operator|=(communicator& comm, T const& t) {
 }
 
 template<class T>
-std::vector<T> operator|=(process&& self, T const& t) {
+std::vector<T> operator|=(process&& self, T const& t) {  // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 	return self.comm().gather_value(t, self.rank());
 }
 

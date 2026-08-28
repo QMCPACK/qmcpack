@@ -69,7 +69,7 @@ class NOMSD : public AFQMCInfo
   using CTensor      = boost::multi::array<ComplexType, 3, Allocator>;
   using CVector_ref  = boost::multi::array_ref<ComplexType, 1, pointer>;
   using CMatrix_ref  = boost::multi::array_ref<ComplexType, 2, pointer>;
-  using CMatrix_ptr  = boost::multi::array_ptr<ComplexType, 2, pointer>;
+  using CMatrix_ptr  = boost::multi::detail::array_ptr<ComplexType, 2, pointer>;
   using CMatrix_cref = boost::multi::array_ref<const ComplexType, 2, const_pointer>;
   using CTensor_ref  = boost::multi::array_ref<ComplexType, 3, pointer>;
   using CTensor_cref = boost::multi::array_ref<const ComplexType, 3, const_pointer>;
@@ -311,9 +311,9 @@ public:
     if (TG.getLocalTGRank() == 0)
     {
       wset.setProperty(OVLP, ovlp);
-      wset.setProperty(E1_, eloc(eloc.extension(), 0));
-      wset.setProperty(EXX_, eloc(eloc.extension(), 1));
-      wset.setProperty(EJ_, eloc(eloc.extension(), 2));
+      wset.setProperty(E1_, eloc(eloc.extent(), 0));
+      wset.setProperty(EXX_, eloc(eloc.extent(), 1));
+      wset.setProperty(EJ_, eloc(eloc.extent(), 2));
     }
     TG.local_barrier();
   }
@@ -523,7 +523,7 @@ public:
         {
           for (int i = 0; i < ndet; ++i)
           {
-            boost::multi::array_ref<ComplexType, 2> A_(to_address(RefOrbMats[i].origin()), {nrow, ncol});
+            boost::multi::array_ref<ComplexType, 2> A_(to_address(RefOrbMats[i].base()), {nrow, ncol});
             ma::Matrix2MAREF('H', OrbMats[i], A_);
           }
         }
@@ -531,9 +531,9 @@ public:
         {
           for (int i = 0; i < ndet; ++i)
           {
-            boost::multi::array_ref<ComplexType, 2> A_(to_address(RefOrbMats[i].origin()), {NMO, NAEA});
+            boost::multi::array_ref<ComplexType, 2> A_(to_address(RefOrbMats[i].base()), {NMO, NAEA});
             ma::Matrix2MAREF('H', OrbMats[2 * i], A_);
-            boost::multi::array_ref<ComplexType, 2> B_(A_.origin() + A_.num_elements(), {NMO, NAEB});
+            boost::multi::array_ref<ComplexType, 2> B_(A_.base() + A_.num_elements(), {NMO, NAEB});
             ma::Matrix2MAREF('H', OrbMats[2 * i + 1], B_);
           }
         }
@@ -549,7 +549,7 @@ public:
     int n0, n1;
     std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(get<1>(A.sizes())), TG.getNCoresPerTG());
     for (int i = 0; i < ndet; i++)
-      copy_n(RefOrbMats_[i].origin() + n0, n1 - n0, A_[i].origin() + n0);
+      copy_n(RefOrbMats_[i].base() + n0, n1 - n0, A_[i].base() + n0);
     TG.TG_local().barrier();
   }
 

@@ -77,7 +77,7 @@ import numpy as np
 from numpy import pi,sin,cos,sqrt
 from numpy.linalg import LinAlgError, inv, det, eig
 from .generic import sorted_generic
-from .developer import obj
+from .developer import obj, FileFormatError, NexusError
 from .fileio import XsfFile
 from .hdfreader import HDFreader, HDFgroup
 from .numerics import ndgrid, simstats, simplestats, equilibration_length
@@ -102,7 +102,8 @@ class QuantityAnalyzer(QAanalyzer):
         from matplotlib.pyplot import plot, xlabel, ylabel, title, ylim
         if 'data' in self:
             if quantity not in self.data:
-                self.error('quantity '+quantity+' is not present in the data')
+                msg = 'quantity '+quantity+' is not present in the data'
+                raise KeyError(msg)
             #end if
             nbe = self.get_nblocks_exclude()
             q = self.data[quantity]
@@ -306,7 +307,8 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
 
     def load_data_local(self,data=None):
         if data is None:
-            self.error('attempted load without data')
+            msg = 'attempted load without data'
+            raise ValueError(msg)
         #end if
         exclude = self.info.exclude
         self.data = QAHDFdata()
@@ -434,7 +436,8 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
 
     def load_data_local(self,data=None):
         if data is None:
-            self.error('attempted load without data')
+            msg = 'attempted load without data'
+            raise ValueError(msg)
         #end if
         name = self.info.name
         self.data = QAHDFdata()
@@ -592,7 +595,8 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
                     #end if
                 #end for
                 if psx is None:
-                    self.error('ion0 particleset not found in qmcpack xml file for atomic reordering of Voronoi energy density')
+                    msg = 'ion0 particleset not found in qmcpack xml file for atomic reordering of Voronoi energy density'
+                    raise FileFormatError(msg)
                 #end if
             #end if
 
@@ -772,7 +776,8 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         n=10
         n2=2*n
         s = '-'+str(n)+':'+str(n)+':'+str(n2)+'j'
-        self.error('alternative to exec needed')
+        msg = 'alternative to exec needed'
+        raise NexusError(msg)
         #exec('x, y, z = ogrid['+s+','+s+','+s+']')
         del s
 
@@ -959,14 +964,19 @@ class TracesFileHDF(QAobject):
         if not self.loaded() or force:
             if filepath is None:
                 if self.info.filepath is None:
-                    self.error('cannot load traces data, filepath has not been defined')
+                    msg = 'cannot load traces data, filepath has not been defined'
+                    raise ValueError(msg)
                 else:
                     filepath = self.info.filepath
                 #end if
             #end if
             hr = HDFreader(filepath)
             if not hr._success:
-                self.warn('  hdf file seems to be corrupted, skipping contents:\n    '+filepath)
+                msg = (
+                    '  hdf file seems to be corrupted, skipping contents:\n'
+                    '    '+filepath
+                    )
+                raise FileFormatError(msg)
             #end if
             hdf = hr.obj
             hdf._remove_hidden()
@@ -1075,7 +1085,8 @@ class TracesFileHDF(QAobject):
             st = ti.scalars.step
             wt = tr.scalars.weight
             if len(st)!=len(wt):
-                self.error('weight and steps traces have different lengths')
+                msg = 'weight and steps traces have different lengths'
+                raise ValueError(msg)
             #end if
             #recompute steps (can vary for vmc w/ samples/samples_per_thread)
             steps = st.max()+1
@@ -1106,7 +1117,8 @@ class TracesFileHDF(QAobject):
             for qname in quantities:
                 qt = tr.scalars[qname]
                 if len(qt)!=len(wt):
-                    self.error('quantity {0} trace is not commensurate with weight and steps traces'.format(qname))
+                    msg = 'quantity {0} trace is not commensurate with weight and steps traces'.format(qname)
+                    raise ValueError(msg)
                 #end if
                 qs[:] = 0
                 for t in range(len(wt)):
@@ -1325,7 +1337,8 @@ class TracesAnalyzer(QAanalyzer):
         st = ti.scalars.step
         wt = tr.scalars.weight
         if len(st)!=len(wt):
-            self.error('weight and steps traces have different lengths')
+            msg = 'weight and steps traces have different lengths'
+            raise ValueError(msg)
         #end if
         #recompute steps (can vary for vmc w/ samples/samples_per_thread)
         steps = st.max()+1
@@ -1354,7 +1367,8 @@ class TracesAnalyzer(QAanalyzer):
             for qname in dat_names:
                 qt = tr.scalars[qname]
                 if len(qt)!=len(wt):
-                    self.error('quantity {0} trace is not commensurate with weight and steps traces'.format(qname))
+                    msg = 'quantity {0} trace is not commensurate with weight and steps traces'.format(qname)
+                    raise ValueError(msg)
                 #end if
                 qs[:] = 0
                 for t in range(len(qt)):
@@ -1388,7 +1402,8 @@ class TracesAnalyzer(QAanalyzer):
             for qname in hdf_names:
                 qt = tr.scalars[qname]
                 if len(qt)!=len(wt):
-                    self.error('quantity {0} trace is not commensurate with weight and steps traces'.format(qname))
+                    msg = 'quantity {0} trace is not commensurate with weight and steps traces'.format(qname)
+                    raise ValueError(msg)
                 #end if
                 qs[:] = 0
                 q2s[:] = 0
@@ -1446,7 +1461,8 @@ class TracesAnalyzer(QAanalyzer):
             wt = tr.scalars.weight
             et = tr.scalars.LocalEnergy
             if len(st)!=len(wt):
-                self.error('weight and steps traces have different lengths')
+                msg = 'weight and steps traces have different lengths'
+                raise ValueError(msg)
             #end if
             #recompute steps (can vary for vmc w/ samples/samples_per_thread)
             steps = st.max()+1
@@ -1498,7 +1514,13 @@ class DMSettings(QAobject):
         if ds is not None:
             for name,value in ds.items():
                 if name not in self:
-                    self.error('{0} is an invalid setting for DensityMatricesAnalyzer\n  valid options are: {1}'.format(name,sorted(self.keys())))
+                    msg = (
+                        '{0} is an invalid setting for DensityMatricesAnalyzer\n'
+                        '  valid options are: {1}'.format(
+                            name, sorted(self.keys())
+                            )
+                        )
+                    raise ValueError(msg)
                 else:
                     self[name] = value
                 #end if
@@ -1520,7 +1542,8 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
 
     def load_data_local(self,data=None):
         if data is None:
-            self.error('attempted load without data')
+            msg = 'attempted load without data'
+            raise ValueError(msg)
         #end if
         i = complex(0,1)
         loc_data = QAdata()
@@ -1904,7 +1927,11 @@ class DensityAnalyzerBase(HDFAnalyzer):
             
     def write_single_density(self,name,density,density_err,format='xsf'):
         if format!='xsf':
-            self.error('sorry, the density can only be written in xsf format for now\n  you requested: {0}'.format(format))
+            msg = (
+                'sorry, the density can only be written in xsf format for now\n'
+                '  you requested: {0}'.format(format)
+                )
+            raise NotImplementedError(msg)
         #end if
 
         s = deepcopy(self.info.structure)
@@ -1950,7 +1977,8 @@ class DensityAnalyzerBase(HDFAnalyzer):
 class SpinDensityAnalyzer(DensityAnalyzerBase):
     def load_data_local(self,data=None):
         if data is None:
-            self.error('attempted load without data')
+            msg = 'attempted load without data'
+            raise ValueError(msg)
         #end if
         name = self.info.name
         if name in data:
@@ -2040,7 +2068,8 @@ class StructureFactorAnalyzer(HDFAnalyzer):
 
     def load_data_local(self,data=None):
         if data is None:
-            self.error('attempted load without data')
+            msg = 'attempted load without data'
+            raise ValueError(msg)
         #end if
         name = self.info.name
         if name in data:
@@ -2090,7 +2119,8 @@ class DensityAnalyzer(DensityAnalyzerBase):
 
     def load_data_local(self,data=None):
         if data is None:
-            self.error('attempted load without data')
+            msg = 'attempted load without data'
+            raise ValueError(msg)
         #end if
         name = self.info.name
         if name in data:
@@ -2152,7 +2182,11 @@ class SpaceGridInitializer(QAobject):
             #end if
         #end if
         if len(msg) > 0 and exit_on_fail:
-            self.error(f'  SpaceGridInitializer is incomplete:\n{msg}')
+            msg = (
+                '  SpaceGridInitializer is incomplete:\n'
+                f'{msg}'
+                )
+            raise RuntimeError(msg)
         #end if
         return len(msg) == 0
     #end def check_complete
@@ -2248,7 +2282,8 @@ class SpaceGridBase(QAobject):
         elif iname=='XMLelement':
             self.init_from_xmlelement(initobj)
         else:
-            self.error('Spacegrid cannot be initialized from '+iname)
+            msg = 'Spacegrid cannot be initialized from '+iname
+            raise ValueError(msg)
         #end if
         delvars.append('iname')
 
@@ -2350,7 +2385,8 @@ class SpaceGridBase(QAobject):
             elif q=='V':
                 iV = i
             else:
-                self.error('quantity "{}" not recognized'.format(q))
+                msg = 'quantity "{}" not recognized'.format(q)
+                raise ValueError(msg)
             #end if
         #end for
         
@@ -2401,11 +2437,12 @@ class SpaceGridBase(QAobject):
             #end if
         #end if
         if len(msg) > 0 and exit_on_fail:
-            self.error(
+            msg = (
                 'SpaceGrid attempted initialization from '+self.iname+'\n'
                 'SpaceGrid is incomplete:\n'
                 f'{msg}'
                 )
+            raise RuntimeError(msg)
             #end if
         #end if
         return len(msg) == 0
@@ -2437,11 +2474,13 @@ class SpaceGridBase(QAobject):
 
     def integrate(self,quantity,domain=None):
         if quantity not in SpaceGridBase.quantities:
-            msg = 'requested integration of quantity '+quantity+'\n'
-            msg +='  '+quantity+' is not a valid SpaceGrid quantity\n'
-            msg +='  valid quantities are:\n'
-            msg +='  '+str(SpaceGridBase.quantities)
-            self.error(msg)
+            msg = (
+                'requested integration of quantity '+quantity+'\n'
+                '  '+quantity+' is not a valid SpaceGrid quantity\n'
+                '  valid quantities are:\n'
+                '  '+str(SpaceGridBase.quantities)
+                )
+            raise ValueError(msg)
         #end if
         dv = self.domain_volumes
         if domain is None:
@@ -2464,11 +2503,13 @@ class SpaceGridBase(QAobject):
             return_list = kwargs['return_list']
         #end if
         if quantity not in SpaceGridBase.quantities:
-            msg = 'requested integration of quantity '+quantity+'\n'
-            msg +='  '+quantity+' is not a valid SpaceGrid quantity\n'
-            msg +='  valid quantities are:\n'
-            msg +='  '+str(SpaceGridBase.quantities)
-            self.error(msg)
+            msg = (
+                'requested integration of quantity '+quantity+'\n'
+                '  '+quantity+' is not a valid SpaceGrid quantity\n'
+                '  valid quantities are:\n'
+                '  '+str(SpaceGridBase.quantities)
+                )
+            raise ValueError(msg)
         #end if
         q = self.data[quantity]
         results = list()
@@ -2647,7 +2688,8 @@ class RectilinearGrid(SpaceGridBase):
         #axes
         self.axes = np.zeros((DIM,DIM))
         for d in range(DIM):
-            self.error('alternative to exec needed')
+            msg = 'alternative to exec needed'
+            raise NexusError(msg)
             #exec('axis=init.axis'+str(d+1))
             p1 = self.points[axis.p1]
             if 'p2' in axis:
@@ -3038,7 +3080,11 @@ class RectilinearGrid(SpaceGridBase):
         #succeeded = succeeded and check_grid()
     
         if self.init_exit_fail and len(msg) > 0:
-            self.error(f" in def initialize:\n{msg}")
+            msg = (
+                " in def initialize:\n"
+                f"{msg}"
+                )
+            raise RuntimeError(msg)
         #end 
 
         return len(msg) == 0
@@ -3168,7 +3214,8 @@ class RectilinearGrid(SpaceGridBase):
             for d in range(self.DIM):
                 ndu = round( (self.umax[d]-self.umin[d])*self.odu[d] )
                 if len(self.gmap[d])!=ndu:
-                    self.error('ndu is different than len(gmap)')
+                    msg = 'ndu is different than len(gmap)'
+                    raise ValueError(msg)
                 #end if
                 du = 1./self.odu[d]
                 fine_interval_centers[d] = self.umin + .5*du + du*np.array(list(range(ndu)))
@@ -3316,7 +3363,7 @@ class RectilinearGrid(SpaceGridBase):
 
     def isosurface(self,quantity,contours=5,origin=None):
         if quantity not in SpaceGridBase.quantities:
-            self.error()
+            raise ValueError()
         #end if
         dimensions = self.dimensions
         if origin is None:
@@ -3337,7 +3384,7 @@ class RectilinearGrid(SpaceGridBase):
     
     def surface_slice(self,quantity,x,y,z,options=None):
         if quantity not in SpaceGridBase.quantities:
-            self.error()
+            raise ValueError()
         #end if
         points = np.empty( (x.size,self.DIM) )
         points[:,0] = x.ravel()

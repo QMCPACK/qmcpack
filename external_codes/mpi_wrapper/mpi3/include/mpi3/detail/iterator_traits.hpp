@@ -3,7 +3,6 @@
 
 #ifndef MPI3_DETAIL_ITERATOR_TRAITS_HPP
 #define MPI3_DETAIL_ITERATOR_TRAITS_HPP
-#pragma once
 
 #include "./iterator.hpp"
 
@@ -49,7 +48,7 @@ std::false_type is_contiguous_aux(...);
 template<class T> struct is_contiguous
 : decltype(is_contiguous_aux(std::declval<T>())){};
 
-template<class T, typename = decltype(detail::data(T{}))> 
+template<class T, typename = decltype(detail::data(std::declval<T>()))> 
 std::true_type  has_data_aux(T  );
 std::false_type has_data_aux(...);
 

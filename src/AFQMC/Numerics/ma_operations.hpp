@@ -18,6 +18,15 @@
 #ifndef MA_OPERATIONS_HPP
 #define MA_OPERATIONS_HPP
 
+// multi::array_ref::origin() is deprecated in favor of .base(), but .base() (const&) miscomputes
+// element_const_ptr when ElementPtr's pointee type differs from T (as with the real/complex
+// reinterpret views used throughout this file for BLAS calls) in boost-multi 0.91.1. Keep .origin()
+// here and suppress the warning until that library issue is fixed.
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include "ma_blas.hpp"
 #include "ma_lapack.hpp"
 #include "AFQMC/Numerics/detail/sparse.hpp"
@@ -591,7 +600,7 @@ T invert(MultiArray2D&& m, T LogOverlapFactor)
   using element         = typename std::decay<MultiArray2D>::type::element;
   using allocator_type  = typename std::decay<MultiArray2D>::type::allocator_type;
   using iallocator_type = typename allocator_type::template rebind<int>::other;
-  using extensions      = typename boost::multi::layout_t<1u>::extensions_type;
+  using extensions      = typename boost::multi::layout_t<1u>::extents_type;
   using qmcplusplus::afqmc::fill2D;
   auto bufferSize(invert_optimal_workspace_size(std::forward<MultiArray2D>(m)));
   boost::multi::array<element, 1, allocator_type> WORK(extensions{bufferSize}, m.get_allocator());
@@ -890,6 +899,10 @@ int main()
 
   cout << "test ended" << std::endl;
 }
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
 #endif
 
 #endif

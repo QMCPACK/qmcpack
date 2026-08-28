@@ -45,12 +45,12 @@ struct h5data_proxy<boost::multi::array<T, 1, Alloc>> : public h5_space_type<T, 
     using iextensions = typename boost::multi::iextensions<1u>;
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref.reextent(iextensions{static_cast<boost::multi::size_t>(dims[0])});
-    return h5d_read(grp, aname, get_address(std::addressof(*ref.origin())), xfer_plist);
+    return h5d_read(grp, aname, get_address(std::addressof(*ref.base())), xfer_plist);
   }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.base())), xfer_plist);
   }
 };
 
@@ -73,12 +73,12 @@ struct h5data_proxy<boost::multi::array<T, 2, Alloc>> : public h5_space_type<T, 
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref.reextent({static_cast<boost::multi::size_t>(dims[0]), static_cast<boost::multi::size_t>(dims[1])});
-    return h5d_read(grp, aname, get_address(std::addressof(*ref.origin())), xfer_plist);
+    return h5d_read(grp, aname, get_address(std::addressof(*ref.base())), xfer_plist);
   }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.base())), xfer_plist);
   }
 };
 
@@ -104,12 +104,12 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, Ptr>> : public h5_space_type<T
       }
       return false;
     }
-    return h5d_read(grp, aname, get_address(std::addressof(*ref.origin())), xfer_plist);
+    return h5d_read(grp, aname, get_address(std::addressof(*ref.base())), xfer_plist);
   }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.base())), xfer_plist);
   }
 };
 
@@ -141,12 +141,12 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
       }
       return false;
     }
-    return h5d_read(grp, aname, get_address(std::addressof(*ref.origin())), xfer_plist);
+    return h5d_read(grp, aname, get_address(std::addressof(*ref.base())), xfer_plist);
   }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.base())), xfer_plist);
   }
 };
 
@@ -173,14 +173,14 @@ struct h5data_proxy<boost::multi::array<T, 1, device::device_allocator<T>>> : pu
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    device::copy_n(buf.data(), sz, ref.origin());
+    device::copy_n(buf.data(), sz, ref.base());
     return ret;
   }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.base())), xfer_plist);
   }
 };
 
@@ -206,14 +206,14 @@ struct h5data_proxy<boost::multi::array<T, 2, device::device_allocator<T>>> : pu
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    device::copy_n(buf.data(), sz, ref.origin());
+    device::copy_n(buf.data(), sz, ref.base());
     return ret;
   }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.base())), xfer_plist);
   }
 };
 
@@ -242,14 +242,14 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, device::device_pointer<T>>> : 
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    device::copy_n(buf.data(), sz, ref.origin());
+    device::copy_n(buf.data(), sz, ref.base());
     return ret;
   }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.base())), xfer_plist);
   }
 };
 
@@ -284,14 +284,14 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, device::device_pointer<T>>> : 
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    device::copy_n(buf.data(), sz, ref.origin());
+    device::copy_n(buf.data(), sz, ref.base());
     return ret;
   }
 
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.base())), xfer_plist);
   }
 };
 
@@ -311,8 +311,8 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, device::device_all
       auto sz = ref.ref.num_elements();
       boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
       auto ret = h5d_read(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
-                          ref.slab_offset.data(), buf.origin(), xfer_plist);
-      device::copy_n(buf.data(), sz, ref.ref.origin());
+                          ref.slab_offset.data(), buf.base(), xfer_plist);
+      device::copy_n(buf.data(), sz, ref.ref.base());
       return ret;
     }
     else
@@ -350,8 +350,8 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, device::device
       auto sz = ref.ref.num_elements();
       boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
       auto ret = h5d_read(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
-                          ref.slab_offset.data(), buf.origin(), xfer_plist);
-      device::copy_n(buf.data(), sz, ref.ref.origin());
+                          ref.slab_offset.data(), buf.base(), xfer_plist);
+      device::copy_n(buf.data(), sz, ref.ref.base());
       return ret;
     }
     else

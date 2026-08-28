@@ -156,7 +156,7 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
   TGwfn.Global().broadcast_n(kminus.data(), kminus.size(), 0);
   TGwfn.Global().broadcast_n(gQ.data(), gQ.size(), 0);
   if (TGwfn.Node().root())
-    TGwfn.Cores().broadcast_n(std::addressof(*QKtok2.origin()), QKtok2.num_elements(), 0);
+    TGwfn.Cores().broadcast_n(std::addressof(*QKtok2.base()), QKtok2.num_elements(), 0);
 
   int Q0 = -1; // stores the index of the Q=(0,0,0) Q-point
                // this must always exist
@@ -209,7 +209,7 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
   if (TGwfn.Global().root())
   {
     {
-      boost::multi::array_ref<ComplexType, 2> H1_(std::addressof(*H1.origin()),
+      boost::multi::array_ref<ComplexType, 2> H1_(std::addressof(*H1.base()),
                                                   {H1.shape()[0], H1.shape()[1] * H1.shape()[2]});
       if (!dump.read(H1_, "KPH1"))
       {
@@ -218,7 +218,7 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
       }
     }
     {
-      boost::multi::array_ref<ComplexType, 2> vn0_(std::addressof(*vn0.origin()),
+      boost::multi::array_ref<ComplexType, 2> vn0_(std::addressof(*vn0.base()),
                                                    {vn0.shape()[0], vn0.shape()[1] * vn0.shape()[2]});
       if (!dump.read(vn0_, "KPv0"))
       {
@@ -231,7 +231,7 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
       if (Q > kminus[Q])
         continue;
       // to avoid reallocation, will abort if sizes don't match
-      boost::multi::array_ref<SPComplexType, 2> LQ(std::addressof(*LQKikn[Q].origin()),
+      boost::multi::array_ref<SPComplexType, 2> LQ(std::addressof(*LQKikn[Q].base()),
                                                    {LQKikn[Q].shape()[0], LQKikn[Q].shape()[1]});
       if (!dump.read(LQ, std::string("L") + std::to_string(Q)))
       {
@@ -242,13 +242,13 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
   }
   if (TGwfn.Node().root())
   {
-    TGwfn.Cores().broadcast_n(std::addressof(*H1.origin()), H1.num_elements(), 0);
-    TGwfn.Cores().broadcast_n(std::addressof(*vn0.origin()), vn0.num_elements(), 0);
+    TGwfn.Cores().broadcast_n(std::addressof(*H1.base()), H1.num_elements(), 0);
+    TGwfn.Cores().broadcast_n(std::addressof(*vn0.base()), vn0.num_elements(), 0);
     for (int Q = 0; Q < nkpts; Q++)
     {
       if (Q > kminus[Q])
         continue;
-      TGwfn.Cores().broadcast_n(std::addressof(*LQKikn[Q].origin()), LQKikn[Q].num_elements(), 0);
+      TGwfn.Cores().broadcast_n(std::addressof(*LQKikn[Q].base()), LQKikn[Q].num_elements(), 0);
     }
   }
 
@@ -286,8 +286,8 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
     }
   }
   TGwfn.Node().barrier();
-  int nocc_max = *std::max_element(std::addressof(*nocc_per_kp.origin()),
-                                   std::addressof(*nocc_per_kp.origin()) + nocc_per_kp.num_elements());
+  int nocc_max = *std::max_element(std::addressof(*nocc_per_kp.base()),
+                                   std::addressof(*nocc_per_kp.base()) + nocc_per_kp.num_elements());
 
 
   std::vector<shmSpMatrix> LQKank;
@@ -295,7 +295,7 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
   shmCMatrix haj({ndet * nkpts, (type == COLLINEAR ? 2 : 1) * nocc_max * nmo_max},
                  shared_allocator<ComplexType>{TGwfn.Node()});
   if (TGwfn.Node().root())
-    std::fill_n(haj.origin(), haj.num_elements(), ComplexType(0.0));
+    std::fill_n(haj.base(), haj.num_elements(), ComplexType(0.0));
   int ank_max = nocc_max * nchol_max * nmo_max;
   for (int nd = 0; nd < ndet; nd++)
   {
@@ -319,11 +319,11 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
       {
         if (nt % TGwfn.Node().size() == TGwfn.Node().rank())
         {
-          std::fill_n(std::addressof(*LQKank[nq0 + Q][K].origin()), LQKank[nq0 + Q][K].num_elements(),
+          std::fill_n(std::addressof(*LQKank[nq0 + Q][K].base()), LQKank[nq0 + Q][K].num_elements(),
                       SPComplexType(0.0));
           if (type == COLLINEAR)
           {
-            std::fill_n(std::addressof(*LQKank[nq0 + nkpts + 1 + Q][K].origin()),
+            std::fill_n(std::addressof(*LQKank[nq0 + nkpts + 1 + Q][K].base()),
                         LQKank[nq0 + nkpts + 1 + Q][K].num_elements(), SPComplexType(0.0));
           }
         }
@@ -355,13 +355,13 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
               { // Alpha
                 auto Psi = get_PsiK<boost::multi::array<ComplexType, 2>>(nmo_per_kp, PsiT[2 * nd], K);
                 assert(Psi.shape()[0] == na);
-                boost::multi::array_ref<ComplexType, 2> haj_r(std::addressof(*haj[nd * nkpts + K].origin()), {na, ni});
+                boost::multi::array_ref<ComplexType, 2> haj_r(std::addressof(*haj[nd * nkpts + K].base()), {na, ni});
                 ma::product(Psi, H1[K]({0, ni}, {0, ni}), haj_r);
               }
               { // Beta
                 auto Psi = get_PsiK<boost::multi::array<ComplexType, 2>>(nmo_per_kp, PsiT[2 * nd + 1], K);
                 assert(Psi.shape()[0] == nb);
-                boost::multi::array_ref<ComplexType, 2> haj_r(std::addressof(*haj[nd * nkpts + K].origin()) + na * ni,
+                boost::multi::array_ref<ComplexType, 2> haj_r(std::addressof(*haj[nd * nkpts + K].base()) + na * ni,
                                                               {nb, ni});
                 ma::product(Psi, H1[K]({0, ni}, {0, ni}), haj_r);
               }
@@ -370,7 +370,7 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
             {
               auto Psi = get_PsiK<boost::multi::array<ComplexType, 2>>(nmo_per_kp, PsiT[nd], K);
               assert(Psi.shape()[0] == na);
-              boost::multi::array_ref<ComplexType, 2> haj_r(std::addressof(*haj[nd * nkpts + K].origin()), {na, ni});
+              boost::multi::array_ref<ComplexType, 2> haj_r(std::addressof(*haj[nd * nkpts + K].base()), {na, ni});
               ma::product(ComplexType(2.0), Psi, H1[K]({0, ni}, {0, ni}), ComplexType(0.0), haj_r);
             }
           }
@@ -390,13 +390,13 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
                     if (K_ < QKtok2[Q][K_])
                       kpos++;
                 }
-                Sp3Tensor_ref Likn(std::addressof(*LQKikn[Q][kpos].origin()), {ni, nk, nchol});
-                Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + Q][K].origin()), {na, nchol, nk});
+                Sp3Tensor_ref Likn(std::addressof(*LQKikn[Q][kpos].base()), {ni, nk, nchol});
+                Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + Q][K].base()), {na, nchol, nk});
                 ma_rotate::getLank(Psi, Likn, Lank, buff);
                 if (Q == Q0)
                 {
                   assert(K == QK);
-                  Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + nkpts][K].origin()), {na, nchol, nk});
+                  Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + nkpts][K].base()), {na, nchol, nk});
                   ma_rotate::getLank_from_Lkin(Psi, Likn, Lank, buff);
                 }
               }
@@ -410,8 +410,8 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
                     if (K_ < QKtok2[Q][K_])
                       kpos++;
                 }
-                Sp3Tensor_ref Lkin(std::addressof(*LQKikn[Qm][QK].origin()), {nk, ni, nchol});
-                Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + Q][K].origin()), {na, nchol, nk});
+                Sp3Tensor_ref Lkin(std::addressof(*LQKikn[Qm][QK].base()), {nk, ni, nchol});
+                Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + Q][K].base()), {na, nchol, nk});
                 ma_rotate::getLank_from_Lkin(Psi, Lkin, Lank, buff);
               }
             }
@@ -429,13 +429,13 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
                     if (K_ < QKtok2[Q][K_])
                       kpos++;
                 }
-                Sp3Tensor_ref Likn(std::addressof(*LQKikn[Q][kpos].origin()), {ni, nk, nchol});
-                Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + nkpts + 1 + Q][K].origin()), {nb, nchol, nk});
+                Sp3Tensor_ref Likn(std::addressof(*LQKikn[Q][kpos].base()), {ni, nk, nchol});
+                Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + nkpts + 1 + Q][K].base()), {nb, nchol, nk});
                 ma_rotate::getLank(Psi, Likn, Lank, buff);
                 if (Q == Q0)
                 {
                   assert(K == QK);
-                  Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + nkpts + 1 + nkpts][K].origin()), {nb, nchol, nk});
+                  Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + nkpts + 1 + nkpts][K].base()), {nb, nchol, nk});
                   ma_rotate::getLank_from_Lkin(Psi, Likn, Lank, buff);
                 }
               }
@@ -449,8 +449,8 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
                     if (K_ < QKtok2[Q][K_])
                       kpos++;
                 }
-                Sp3Tensor_ref Lkin(std::addressof(*LQKikn[Qm][QK].origin()), {nk, ni, nchol});
-                Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + nkpts + 1 + Q][K].origin()), {nb, nchol, nk});
+                Sp3Tensor_ref Lkin(std::addressof(*LQKikn[Qm][QK].base()), {nk, ni, nchol});
+                Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + nkpts + 1 + Q][K].base()), {nb, nchol, nk});
                 ma_rotate::getLank_from_Lkin(Psi, Lkin, Lank, buff);
               }
             }
@@ -470,13 +470,13 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
                   if (K_ < QKtok2[Q][K_])
                     kpos++;
               }
-              Sp3Tensor_ref Likn(std::addressof(*LQKikn[Q][kpos].origin()), {ni, nk, nchol});
-              Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + Q][K].origin()), {na, nchol, nk});
+              Sp3Tensor_ref Likn(std::addressof(*LQKikn[Q][kpos].base()), {ni, nk, nchol});
+              Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + Q][K].base()), {na, nchol, nk});
               ma_rotate::getLank(Psi, Likn, Lank, buff);
               if (Q == Q0)
               {
                 assert(K == QK);
-                Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + nkpts][K].origin()), {na, nchol, nk});
+                Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + nkpts][K].base()), {na, nchol, nk});
                 ma_rotate::getLank_from_Lkin(Psi, Likn, Lank, buff);
               }
             }
@@ -490,8 +490,8 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
                   if (K_ < QKtok2[Q][K_])
                     kpos++;
               }
-              Sp3Tensor_ref Lkin(std::addressof(*LQKikn[Qm][kpos].origin()), {nk, ni, nchol});
-              Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + Q][K].origin()), {na, nchol, nk});
+              Sp3Tensor_ref Lkin(std::addressof(*LQKikn[Qm][kpos].base()), {nk, ni, nchol});
+              Sp3Tensor_ref Lank(std::addressof(*LQKank[nq0 + Q][K].base()), {na, nchol, nk});
               ma_rotate::getLank_from_Lkin(Psi, Lkin, Lank, buff);
             }
           }
@@ -502,9 +502,9 @@ inline HamiltonianOperations loadKP3IndexFactorization(hdf_archive& dump,
   TGwfn.Global().barrier();
   if (TGwfn.Node().root())
   {
-    TGwfn.Cores().all_reduce_in_place_n(std::addressof(*haj.origin()), haj.num_elements(), std::plus<>());
+    TGwfn.Cores().all_reduce_in_place_n(std::addressof(*haj.base()), haj.num_elements(), std::plus<>());
     for (int Q = 0; Q < LQKank.size(); Q++)
-      TGwfn.Cores().all_reduce_in_place_n(std::addressof(*LQKank[Q].origin()), LQKank[Q].num_elements(), std::plus<>());
+      TGwfn.Cores().all_reduce_in_place_n(std::addressof(*LQKank[Q].base()), LQKank[Q].num_elements(), std::plus<>());
   }
   TGwfn.Node().barrier();
 
@@ -562,12 +562,12 @@ inline void writeKP3IndexFactorization(hdf_archive& dump,
     dump.write(QKToK2, "QKTok2");
     dump.write(gQ, "gQ");
     {
-      boost::multi::array_ref<ComplexType, 2> H1_(std::addressof(*H1.origin()),
+      boost::multi::array_ref<ComplexType, 2> H1_(std::addressof(*H1.base()),
                                                   {H1.shape()[0], H1.shape()[1] * H1.shape()[2]});
       dump.write(H1_, "KPH1");
     }
     {
-      boost::multi::array_ref<ComplexType, 2> vn0_(std::addressof(*vn0.origin()),
+      boost::multi::array_ref<ComplexType, 2> vn0_(std::addressof(*vn0.base()),
                                                    {vn0.shape()[0], vn0.shape()[1] * vn0.shape()[2]});
       dump.write(vn0_, "KPv0");
     }

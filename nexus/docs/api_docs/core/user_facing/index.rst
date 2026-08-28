@@ -10,6 +10,7 @@ Nexus's User-Facing Modules
 * :py:mod:`.machines`
 * :py:mod:`.physical_system`
 * :py:mod:`.pseudopotential`
+* :py:mod:`.pseudoset`
 * :py:mod:`.structure`
 
 
@@ -21,4 +22,5 @@ Nexus's User-Facing Modules
     machines
     physical_system
     pseudopotential
+    pseudoset
     structure

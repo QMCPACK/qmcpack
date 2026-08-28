@@ -1,19 +1,16 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_MAIN_ENVIRONMENT_HPP
 #define BOOST_MPI3_MAIN_ENVIRONMENT_HPP
-
-#pragma once
 
 #ifdef BOOST_MPI3_MAIN_HPP
 #error Include either "mpi3/main.hpp" or "mpi3/main_environment.hpp"
 #endif
 
-#include <mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
 #include "../mpi3/communicator.hpp"
-#include "../mpi3/environment.hpp"
+#include "../mpi3/environment.hpp"  // IWYU pragma: export
 #include "../mpi3/exception.hpp"
 
 namespace boost {

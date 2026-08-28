@@ -22,7 +22,7 @@ from copy import deepcopy
 import shutil
 import numpy as np
 from .nexus_base import nexus_core
-from .developer import obj
+from .developer import obj, NexusError
 from .physical_system import PhysicalSystem
 from .pseudoset import PseudoSet
 from .simulation import Simulation, DynamicProcess
@@ -150,7 +150,11 @@ class Pwscf(Simulation):
             #end if
             if functional in vdw_functionals:
                 if self.vdw_table is None:
-                    self.error('attempting to run vdW functional "{0}", but vdw_table is missing\nplease provide path to table file via "vdw_table" parameter in settings'.format(functional))
+                    msg = (
+                        'attempting to run vdW functional "{0}", but vdw_table is missing\n'
+                        'please provide path to table file via "vdw_table" parameter in settings'.format(functional)
+                        )
+                    raise ValueError(msg)
                 #end if
                 cd_rel = os.path.relpath(self.vdw_table,self.locdir)
                 # copy instead of link to vdw_table to avoid file-lock from multiple pw.x instances
@@ -231,7 +235,8 @@ class Pwscf(Simulation):
             #end if
             result.structure = structure
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result
@@ -299,10 +304,20 @@ class Pwscf(Simulation):
         elif result_name=='restart':
             c = self.input.control
             if('startingwfc' in self.input.electrons and self.input.electrons.startingwfc != 'file'):
-                self.error('Exiting. User has specified startingwfc=\''+self.input.electrons.startingwfc+'\'.\nThis value will be overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
+                msg = (
+                    "Exiting. User has specified startingwfc='"+self.input.electrons.startingwfc+"'.\n"
+                    "This value will be overwritten when incorporating result 'restart'.\n"
+                    "Please fix conflict."
+                    )
+                raise ValueError(msg)
             #end if
             if('startingpot' in self.input.electrons and self.input.electrons.startingpot != 'file'):
-                self.error('Exiting. User has specified startingpot=\''+self.input.electrons.startingpot+'\'.\nThis value will be overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
+                msg = (
+                    "Exiting. User has specified startingpot='"+self.input.electrons.startingpot+"'.\n"
+                    "This value will be overwritten when incorporating result 'restart'.\n"
+                    "Please fix conflict."
+                    )
+                raise ValueError(msg)
             #end if
             c.restart_mode='restart'
             res_path = os.path.abspath(result.locdir)
@@ -328,7 +343,8 @@ class Pwscf(Simulation):
         elif result_name == 'hubbard_parameters':
             self.input.incorporate_hubbard(result)
         else:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
+            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if        
     #end def incorporate_result
 
@@ -408,7 +424,11 @@ class Pwscf(Simulation):
         if not self.filled_products:
             self.filled_products = True
         else:
-            self.error('fill_products must be called only once.\nThis is likely a developer error.')
+            msg = (
+                'fill_products must be called only once.\n'
+                'This is likely a developer error.'
+                )
+            raise NexusError(msg)
         if len(self.produces)==0:
             return
         analyzer = self.load_analyzer_image()
@@ -446,7 +466,11 @@ class Pwscf(Simulation):
 
     def receive_charge_density(self,charge_density_path):
         if not os.path.isdir(charge_density_path):
-            self.error('charge density path is not a directory.\nPath provided: {}'.format(charge_density_path))
+            msg = (
+                'charge density path is not a directory.\n'
+                'Path provided: {}'.format(charge_density_path)
+                )
+            raise NotADirectoryError(msg)
         c = self.input.control
         res_path = os.path.realpath(charge_density_path)
         loc_path = os.path.realpath(self.locdir)
@@ -497,7 +521,11 @@ def generate_pwscf(**kwargs):
     pseudos = kwargs.get('pseudos',None)
     if pseudos is not None:
         system = kwargs.get('system',None)
-        pseudos = PseudoSet.pseudo_remap('pwscf',pseudos,system)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
         kwargs['pseudos'] = pseudos
         kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
     #end if

@@ -107,7 +107,7 @@
 import os
 from .fileio import TextFile
 from .simulation import Simulation,SimulationInput,SimulationAnalyzer,NullSimulationAnalyzer
-from .developer import DevBase, obj
+from .developer import DevBase, obj, FileFormatError, NexusError
 
 
 booldict = {'.true.':True,'.false.':False}
@@ -180,7 +180,15 @@ class Namelist(DevBase):
         if len(cls.name_set)>0:
             invalid = set(names)-cls.name_set
             if len(invalid)>0:
-                self.error('invalid names encountered in namelist during {0}\nnamelist name: {1}\ninvalid names: {2}\nvalid options are: {3}'.format(label,self.namelist,sorted(invalid),cls.names))
+                msg = (
+                    'invalid names encountered in namelist during {0}\n'
+                    'namelist name: {1}\n'
+                    'invalid names: {2}\n'
+                    'valid options are: {3}'.format(
+                        label, self.namelist, sorted(invalid), cls.names
+                        )
+                    )
+                raise FileFormatError(msg)
             #end if
         #end if
     #end def check_names
@@ -201,7 +209,11 @@ class Namelist(DevBase):
         elif isinstance(text,list):
             lines = text
         else:
-            self.error('read_text only accepts string or list inputs for text\nencountered invalid type for text: {0}'.format(text.__class__.__name__))
+            msg = (
+                'read_text only accepts string or list inputs for text\n'
+                'encountered invalid type for text: {0}'.format(text.__class__.__name__)
+                )
+            raise TypeError(msg)
         #end if
         if len(lines)>0:
             if lines[0].strip().startswith('&'):
@@ -226,7 +238,13 @@ class Namelist(DevBase):
                 if v is not None:
                     vals[name] = v
                 else:
-                    self.error('namelist read failed\nnamelist name: {0}\nvariable name: {1}\nvariable value: {2}'.format(self.namelist,name,value))
+                    msg = (
+                        'namelist read failed\n'
+                        'namelist name: {0}\n'
+                        'variable name: {1}\n'
+                        'variable value: {2}'.format(self.namelist,name,value)
+                        )
+                    raise FileFormatError(msg)
                 #end if
             #end for
         #end for
@@ -250,7 +268,13 @@ class Namelist(DevBase):
             if v is not None:
                 text += '  {0} = {1}\n'.format(name,v)
             else:
-                self.error('namelist write failed\nnamelist name: {0}\nvariable name: {1}\nvariable value: {2}'.format(namelist,name,value))
+                msg = (
+                    'namelist write failed\n'
+                    'namelist name: {0}\n'
+                    'variable name: {1}\n'
+                    'variable value: {2}'.format(namelist,name,value)
+                    )
+                raise RuntimeError(msg)
             #end if
         #end for
         text += '/\n'
@@ -287,7 +311,8 @@ class NamelistInput(SimulationInput):
         #end if
         cls = self.__class__
         if len(cls.namelists)==0:
-            self.error('cannot initialize this input class as no namelists have been assigned it')
+            msg = 'cannot initialize this input class as no namelists have been assigned it'
+            raise NexusError(msg)
         #end if
         for name,value in vals.items():
             if name in cls.name_map:
@@ -300,7 +325,14 @@ class NamelistInput(SimulationInput):
                 #end if
                 namelist[name] = value
             else:
-                self.error('encountered invalid variable name during initialization\ninvalid variable name: {0}\nthis variable does not belong to any of the following namelists: {1}'.format(name,cls.namelists))
+                msg = (
+                    'encountered invalid variable name during initialization\n'
+                    'invalid variable name: {0}\n'
+                    'this variable does not belong to any of the following namelists: {1}'.format(
+                        name, cls.namelists
+                        )
+                    )
+                raise ValueError(msg)
             #end if
         #end for
     #end def __init__
@@ -327,11 +359,15 @@ class NamelistInput(SimulationInput):
                 elif name in cls.namelist_classes:
                     self[name] = cls.namelist_classes[name](nl_lines)
                 else:
-                    msg = 'encountered invalid namelist during read\ninvalid namelist: {0}\nvalid namelists are: {1}'.format(name,cls.namelists)
+                    msg = (
+                        'encountered invalid namelist during read\n'
+                        'invalid namelist: {0}\n'
+                        'valid namelists are: {1}'.format(name,cls.namelists)
+                        )
                     if filepath is not None:
                         msg += '\nfilepath: {0}'.format(filepath)
                     #end if
-                    self.error(msg)
+                    raise FileFormatError(msg)
                 #end if
             #end if
         #end for
@@ -343,11 +379,15 @@ class NamelistInput(SimulationInput):
         text = ''
         for name in self.keys():
             if name not in cls.namelist_set:
-                msg = 'encountered invalid namelist during write\ninvalid namelist: {0}\nvalid namelists are: {1}'.format(name,cls.namelists)
+                msg = (
+                    'encountered invalid namelist during write\n'
+                    'invalid namelist: {0}\n'
+                    'valid namelists are: {1}'.format(name,cls.namelists)
+                    )
                 if filepath is not None:
                     msg += '\nfilepath: {0}'.format(filepath)
                 #end if
-                self.error(msg)
+                raise RuntimeError(msg)
             #end if
         #end for
         for name in cls.namelists:
@@ -1017,7 +1057,8 @@ class Hp(PostProcessSimulation):
             pa = self.load_analyzer_image()
             result = pa.hubbard_parameters
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result

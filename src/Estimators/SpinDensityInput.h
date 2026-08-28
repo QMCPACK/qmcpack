@@ -45,9 +45,9 @@ public:
     {
       // clang-format off
       section_name = type_tag;
-      attributes   = {"name", "type", "report", "save_memory"};
+      attributes   = {"name", "report", "save_memory"};
       parameters   = {"dr", "grid", "corner", "center", "cell"};
-      strings      = {"name", "type"};
+      strings      = {"name"};
       bools        = {"report", "save_memory"};
       positions    = {"dr", "grid", "corner", "center"};
       multi_reals  = {"cell"};
@@ -69,7 +69,6 @@ public:
   bool get_write_report() const { return write_report_; }
   bool get_save_memory() const { return save_memory_; }
   const std::string& get_name() const { return name_; }
-  const std::string& get_type() const { return type_; }
 
   struct DerivedParameters
   {
@@ -93,7 +92,6 @@ private:
 
   ///name of this Estimator
   std::string name_{type_tag};
-  std::string type_{type_tag};
 
   Lattice cell_;
   PosType corner_;

@@ -70,8 +70,8 @@ protected:
   using BPCMatrix_ref = boost::multi::array_ref<bp_element, 2, bp_pointer>;
   using BPCTensor_ref = boost::multi::array_ref<bp_element, 3, bp_pointer>;
 
-  using stdCMatrix_ptr = boost::multi::array_ptr<bp_element, 2>;
-  using stdCTensor_ptr = boost::multi::array_ptr<bp_element, 3>;
+  using stdCMatrix_ptr = boost::multi::detail::array_ptr<bp_element, 2>;
+  using stdCTensor_ptr = boost::multi::detail::array_ptr<bp_element, 3>;
 
 public:
   // contiguous_walker = true means that all the data of a walker is continguous in memory
@@ -262,7 +262,7 @@ public:
         while (pos < n)
         {
           using std::fill_n;
-          fill_n(W[pos].origin(), W[pos].size(), ComplexType(0, 0));
+          fill_n(W[pos].base(), W[pos].size(), ComplexType(0, 0));
           reference w0(W[pos], data_displ, wlk_desc);
           //w0.SlaterMatrix(Alpha) = A;
           auto&& SM_(*w0.SlaterMatrix(Alpha));
@@ -338,7 +338,7 @@ public:
     {
       bp_buffer.reextent({bp_walker_size, get<0>(walker_buffer.sizes())});
       using std::fill_n;
-      fill_n(bp_buffer.origin() + data_displ[WEIGHT_FAC] * get<1>(bp_buffer.sizes()),
+      fill_n(bp_buffer.base() + data_displ[WEIGHT_FAC] * get<1>(bp_buffer.sizes()),
              wlk_desc[6] * get<1>(bp_buffer.sizes()), bp_element(1.0));
     }
     if (nbp > 0 && (data_displ[SMN] < 0 || data_displ[SM_AUX] < 0))
@@ -349,7 +349,7 @@ public:
       data_displ[SM_AUX] = walker_size;
       walker_size += nrow * ncol;
       CMatrix wb({get<0>(walker_buffer.sizes()), walker_size}, walker_buffer.get_allocator());
-      ma::copy(walker_buffer, wb(get<0>(wb.extensions()), {0, sz}));
+      ma::copy(walker_buffer, wb(get<0>(wb.extents()), {0, sz}));
       walker_buffer = std::move(wb);
     }
   }
@@ -412,7 +412,7 @@ public:
     {
       W[tot_num_walkers] = M[i].sliced(0, walker_size);
       if (wlk_desc[3] > 0)
-        BPW(get<0>(BPW.extensions()), tot_num_walkers) = M[i].sliced(walker_size, walker_size + bp_walker_size);
+        BPW(get<0>(BPW.extents()), tot_num_walkers) = M[i].sliced(walker_size, walker_size + bp_walker_size);
       tot_num_walkers++;
     }
   }
@@ -447,7 +447,7 @@ public:
     {
       M[i].sliced(0, walker_size) = W[tot_num_walkers - 1];
       if (wlk_desc[3] > 0)
-        M[i].sliced(walker_size, walker_size + bp_walker_size) = BPW(BPW.extension(0), tot_num_walkers - 1);
+        M[i].sliced(walker_size, walker_size + bp_walker_size) = BPW(get<0>(BPW.extents()), tot_num_walkers - 1);
       tot_num_walkers--;
     }
   }
@@ -511,7 +511,7 @@ public:
         std::swap(*kill, *keep);
         W[std::distance(itbegin, kill)] = W[tot_num_walkers - 1];
         if (wlk_desc[3] > 0)
-          BPW(get<0>(BPW.extensions()), std::distance(itbegin, kill)) = BPW(get<0>(BPW.extensions()), tot_num_walkers - 1);
+          BPW(get<0>(BPW.extents()), std::distance(itbegin, kill)) = BPW(get<0>(BPW.extents()), tot_num_walkers - 1);
         --tot_num_walkers;
         --keep;
       }
@@ -545,9 +545,9 @@ public:
         //walker_buffer[pos][data_displ[WEIGHT]] = ComplexType(itbegin->first,0.0);
         // need synthetic references to make this easier!!!
         using std::fill_n;
-        fill_n(W[pos].origin() + data_displ[WEIGHT], 1, ComplexType(itbegin->first, 0.0));
+        fill_n(W[pos].base() + data_displ[WEIGHT], 1, ComplexType(itbegin->first, 0.0));
         if (wlk_desc[6] > 0 && his_pos >= 0 && his_pos < wlk_desc[6])
-          fill_n(BPW[data_displ[WEIGHT_HISTORY] + his_pos].origin() + pos, 1, ComplexType(itbegin->first, 0.0));
+          fill_n(BPW[data_displ[WEIGHT_HISTORY] + his_pos].base() + pos, 1, ComplexType(itbegin->first, 0.0));
       }
       else
       {
@@ -557,21 +557,21 @@ public:
         //walker_buffer[pos][data_displ[WEIGHT]] = ComplexType(itbegin->first,0.0);
         // need synthetic references to make this easier!!!
         using std::fill_n;
-        fill_n(W[pos].origin() + data_displ[WEIGHT], 1, ComplexType(itbegin->first, 0.0));
+        fill_n(W[pos].base() + data_displ[WEIGHT], 1, ComplexType(itbegin->first, 0.0));
         if (wlk_desc[6] > 0 && his_pos >= 0 && his_pos < wlk_desc[6])
-          fill_n(BPW[data_displ[WEIGHT_HISTORY] + his_pos].origin() + pos, 1, ComplexType(itbegin->first, 0.0));
+          fill_n(BPW[data_displ[WEIGHT_HISTORY] + his_pos].base() + pos, 1, ComplexType(itbegin->first, 0.0));
         for (int i = 0; i < n; i++)
         {
           W[tot_num_walkers] = W[pos];
           if (wlk_desc[3] > 0)
-            BPW(get<0>(BPW.extensions()), tot_num_walkers) = BPW(get<0>(BPW.extensions()), pos);
+            BPW(get<0>(BPW.extents()), tot_num_walkers) = BPW(get<0>(BPW.extents()), pos);
           tot_num_walkers++;
         }
         for (int i = 0, in = itbegin->second - 1 - n; i < in; i++, cnt++)
         {
           M[cnt].sliced(0, walker_size) = W[pos];
           if (wlk_desc[3] > 0)
-            M[cnt].sliced(walker_size, walker_size + bp_walker_size) = BPW(get<0>(BPW.extensions()), pos);
+            M[cnt].sliced(walker_size, walker_size + bp_walker_size) = BPW(get<0>(BPW.extents()), pos);
         }
       }
     }
@@ -643,7 +643,7 @@ public:
     assert(get<1>(walker_buffer.sizes()) == walker_size);
     auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
     using std::copy_n;
-    copy_n(W[n].origin(), walkerSizeIO(), x.origin());
+    copy_n(W[n].base(), walkerSizeIO(), x.base());
   }
 
   template<class Vec>
@@ -655,7 +655,7 @@ public:
     assert(get<1>(walker_buffer.sizes()) == walker_size);
     auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
     using std::copy_n;
-    copy_n(x.origin(), walkerSizeIO(), W[n].origin());
+    copy_n(x.base(), walkerSizeIO(), W[n].base());
   }
 
   template<class TVec>
@@ -696,12 +696,12 @@ public:
       APP_ABORT(" Error: index out of bounds in getFields. \n");
 
     int skip = (data_displ[FIELDS] + ip * wlk_desc[4]) * get<1>(bp_buffer.sizes());
-    return stdCMatrix_ptr(to_address(bp_buffer.origin()) + skip, {wlk_desc[4], get<1>(bp_buffer.sizes())});
+    return stdCMatrix_ptr(to_address(bp_buffer.base()) + skip, {wlk_desc[4], get<1>(bp_buffer.sizes())});
   }
 
   stdCTensor_ptr getFields()
   {
-    return stdCTensor_ptr(to_address(bp_buffer.origin()) + data_displ[FIELDS] * get<1>(bp_buffer.sizes()),
+    return stdCTensor_ptr(to_address(bp_buffer.base()) + data_displ[FIELDS] * get<1>(bp_buffer.sizes()),
                           {wlk_desc[3], wlk_desc[4], get<1>(bp_buffer.sizes())});
   }
 
@@ -713,7 +713,7 @@ public:
     if (V.stride() == get<1>(V.sizes()))
     {
       using std::copy_n;
-      copy_n(V.origin(), F.num_elements(), F.origin());
+      copy_n(V.base(), F.num_elements(), F.base());
     }
     else
       F = V;
@@ -721,13 +721,13 @@ public:
 
   stdCMatrix_ptr getWeightFactors()
   {
-    return stdCMatrix_ptr(to_address(bp_buffer.origin()) + data_displ[WEIGHT_FAC] * get<1>(bp_buffer.sizes()),
+    return stdCMatrix_ptr(to_address(bp_buffer.base()) + data_displ[WEIGHT_FAC] * get<1>(bp_buffer.sizes()),
                           {wlk_desc[6], get<1>(bp_buffer.sizes())});
   }
 
   stdCMatrix_ptr getWeightHistory()
   {
-    return stdCMatrix_ptr(to_address(bp_buffer.origin()) + data_displ[WEIGHT_HISTORY] * get<1>(bp_buffer.sizes()),
+    return stdCMatrix_ptr(to_address(bp_buffer.base()) + data_displ[WEIGHT_HISTORY] * get<1>(bp_buffer.sizes()),
                           {wlk_desc[6], get<1>(bp_buffer.sizes())});
   }
 
