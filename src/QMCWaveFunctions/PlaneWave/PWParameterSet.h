@@ -37,12 +37,6 @@ struct PWParameterSet : public MPIObjectBase
   int twistIndex;
   ///number of input bands
   int numBands;
-  ///energy cutoff for QMC wavefunction
-  double Ecut;
-  ///tag for the planewaves
-  std::string pwTag;
-  ///tag for the multipliers of the planewaves
-  std::string pwMultTag;
   ///tag for eigentstates
   std::string eigTag;
   ///tag for twist angles
@@ -61,8 +55,6 @@ struct PWParameterSet : public MPIObjectBase
   bool put(xmlNodePtr cur) { return m_param.put(cur); }
 
   void checkVersion(hdf_archive& h);
-
-  double getEcut(double ecut);
 
   /** get the dimensions of the eigenvectors
    * @param h fileid

@@ -27,9 +27,6 @@ PWParameterSet::PWParameterSet(Communicate* comm)
       hasSpin(true),
       twistIndex(0),
       numBands(0),
-      Ecut(-1),
-      pwTag("planewaves"),
-      pwMultTag("multipliers"),
       eigTag("eigenstates"),
       twistTag("twist"),
       bandTag("band"),
@@ -38,20 +35,11 @@ PWParameterSet::PWParameterSet(Communicate* comm)
 {
   m_param.setName("h5tag");
   m_param.add(twistIndex, "twistIndex");
-  m_param.add(pwTag, "planewaves");
-  m_param.add(pwMultTag, "multiplers");
   m_param.add(eigTag, "eigenstates");
   m_param.add(twistTag, "twist");
   m_param.add(bandTag, "band");
   m_param.add(spinTag, "spin");
   m_param.add(eigvecTag, "eigenvector");
-}
-
-double PWParameterSet::getEcut(double ecut)
-{
-  if (Ecut < 0 || Ecut >= ecut)
-    Ecut = ecut;
-  return Ecut;
 }
 
 bool PWParameterSet::getEigVectorType(hid_t h)
@@ -194,16 +182,9 @@ void PWParameterSet::checkVersion(hdf_archive& h)
     if (version[1] == 11)
     {
       hasSpin   = false;
-      pwTag     = "planewaves";
-      pwMultTag = "multipliers";
       eigTag    = "eigenstates_3";
       twistTag  = "twist_";
       bandTag   = "band_";
-    }
-    else if (version[1] == 10)
-    {
-      pwMultTag = "planewaves";
-      pwTag     = "0";
     }
   }
 }

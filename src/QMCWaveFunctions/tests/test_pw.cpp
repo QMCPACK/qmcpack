@@ -75,6 +75,9 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   <parameter name="expand">not-an-integer-vector</parameter>
   <parameter name="parameters">missing_parameters</parameter>
   <parameter name="basis">missing_basis</parameter>
+  <parameter name="planewaves">missing_planewaves</parameter>
+  <parameter name="multiplers">missing_multipliers</parameter>
+  <basisset ecut="not-a-real"/>
 </sposet_collection>
 )";
 

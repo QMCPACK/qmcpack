@@ -41,13 +41,7 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm
   bool success = getH5(cur, "href");
   //Move through the XML tree and read basis information
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
-    if (cname == "basisset")
-    {
-      const std::string a(getXMLAttributeValue(element, "ecut"));
-      if (!a.empty())
-        myParam->Ecut = std::stod(a);
-    }
-    else if (cname == "coefficients")
+    if (cname == "coefficients")
     {
       //close
       if (success)
@@ -97,8 +91,6 @@ bool PWOrbitalSetBuilder::createPWBasis()
   int nbands        = idata;
   myParam->numBands = nbands;
   app_log() << "Number of bands = " << nbands << std::endl;
-  // Cutoff no longer present in the HDF file
-  RealType ecut = 0.0;
   //end of parameters
   //check if input parameters are valid
   int nup   = targetPtcl.last(0);
@@ -118,15 +110,11 @@ bool PWOrbitalSetBuilder::createPWBasis()
   //Read the planewave basisset.
   //Note that the same data is opened here for each twist angle-avoids duplication in the
   //h5 file (which may become very large).
-  //return the ecut to be used by the basis set
-  RealType real_ecut = myParam->getEcut(ecut);
   //create at least one basis set but do resize the containers
-  int nh5gvecs = myBasisSet->readbasis(hfile, real_ecut, targetPtcl.getLattice(), myParam->pwTag, myParam->pwMultTag);
+  int nh5gvecs = myBasisSet->readbasis(hfile, targetPtcl.getLattice());
   app_log() << "  num_twist = " << nkpts << std::endl;
   app_log() << "  twist angle = " << TwistAngle << std::endl;
   app_log() << "  num_bands = " << nbands << std::endl;
-  app_log() << "  input maximum_ecut = " << ecut << std::endl;
-  app_log() << "  current maximum_ecut = " << real_ecut << std::endl;
   app_log() << "  num_planewaves = " << nh5gvecs << std::endl;
   return true;
 }
