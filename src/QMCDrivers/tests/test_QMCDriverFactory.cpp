@@ -62,6 +62,9 @@ public:
 
   bool readXML(xmlNodePtr node) { return putQMCInfo(node); }
   IndexType getBlocksBetweenRecompute() const { return nBlocksBetweenRecompute; }
+  int getWalkerDumpPeriod() const { return Period4WalkerDump; }
+  int getCheckPointPeriod() const { return Period4CheckPoint; }
+  bool getDumpConfig() const { return DumpConfig; }
 
   void run() override {}
   bool put(xmlNodePtr) override { return true; }
@@ -121,6 +124,29 @@ TEST_CASE("QMCDriver retired check-properties parameters", "[qmcapp]")
     REQUIRE(driver.readXML(doc.getRoot()));
     CHECK(driver.getBlocksBetweenRecompute() == 3);
   }
+}
+
+TEST_CASE("QMCDriver retired configuration dump controls", "[qmcapp]")
+{
+  using namespace testing;
+  Communicate* comm = OHMMS::Controller;
+  ProjectData test_project("testing", ProjectData::DriverVersion::LEGACY);
+  QMCDriverPools pools(test_project.getRuntimeOptions(), comm);
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<qmc method="vmc" move="pbyp" checkpoint="3">
+      <parameter name="recordconfigs">not-an-integer</parameter>
+      <parameter name="record_configs">also-not-an-integer</parameter>
+      <record stride="2" period="2"/>
+      <checkpoint stride="4" period="4"/>
+      <dumpconfig stride="not-an-integer" period="also-not-an-integer"/>
+    </qmc>)"));
+
+  QMCDriverInputTestWrapper driver(test_project, pools, comm);
+  REQUIRE(driver.readXML(doc.getRoot()));
+  CHECK(driver.getWalkerDumpPeriod() == 2);
+  CHECK(driver.getCheckPointPeriod() == 4);
+  CHECK(driver.getDumpConfig());
 }
 
 TEST_CASE("QMCDriverFactory retired mode attributes", "[qmcapp]")

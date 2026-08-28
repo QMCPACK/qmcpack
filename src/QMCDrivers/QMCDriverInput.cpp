@@ -42,8 +42,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   int dummy_int = 0;
 
   ParameterSet parameter_set;
-  parameter_set.add(config_dump_period_.period, "recordconfigs");
-  parameter_set.add(config_dump_period_.period, "record_configs");
   parameter_set.add(max_blocks_, "blocks");
   parameter_set.add(requested_steps_, "steps");
   parameter_set.add(sub_steps_, "substeps");
@@ -107,13 +105,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
         OhmmsAttributeSet rAttrib;
         rAttrib.add(check_point_period_.stride, "stride");
         rAttrib.add(check_point_period_.period, "period");
-        rAttrib.put(tcur);
-      }
-      else if (cname == "dumpconfig")
-      {
-        OhmmsAttributeSet rAttrib;
-        rAttrib.add(config_dump_period_.stride, "stride");
-        rAttrib.add(config_dump_period_.period, "period");
         rAttrib.put(tcur);
       }
       // These complications are due to the need to support bare <esimator> nodes

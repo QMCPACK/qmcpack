@@ -58,8 +58,6 @@ protected:
 
   /// if true, batched operations are serialized over walkers
   bool crowd_serialize_walkers_ = false;
-  /// period of recording walker positions and IDs for forward walking afterwards
-  input::PeriodStride config_dump_period_;
   IndexType num_crowds_    = 0;
   // This is the global walkers it is a hard limit for VMC and the target for DMC
   IndexType total_walkers_     = 0;
@@ -103,7 +101,6 @@ protected:
    */
 
 public:
-  input::PeriodStride get_config_dump_period() const { return config_dump_period_; }
   IndexType get_num_crowds() const { return num_crowds_; }
   IndexType get_walkers_per_rank() const { return walkers_per_rank_; }
   IndexType get_total_walkers() const { return total_walkers_; }

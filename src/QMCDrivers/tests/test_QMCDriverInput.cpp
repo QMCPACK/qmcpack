@@ -87,4 +87,24 @@ TEST_CASE("QMCDriverInput retired modern state", "[drivers]")
   CHECK(qmcdriver_input.get_blocks_between_recompute() == 3);
   CHECK(qmcdriver_input.get_qmc_method() == "vmc");
 }
+
+TEST_CASE("QMCDriverInput retired configuration dump controls", "[drivers]")
+{
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<qmc method="vmc" move="pbyp" checkpoint="3">
+      <parameter name="recordconfigs">not-an-integer</parameter>
+      <parameter name="record_configs">also-not-an-integer</parameter>
+      <record stride="2" period="2"/>
+      <checkpoint stride="4" period="4"/>
+      <dumpconfig stride="not-an-integer" period="also-not-an-integer"/>
+    </qmc>)"));
+
+  QMCDriverInput qmcdriver_input;
+  qmcdriver_input.readXML(doc.getRoot());
+  CHECK(qmcdriver_input.get_walker_dump_period().stride == 2);
+  CHECK(qmcdriver_input.get_walker_dump_period().period == 2);
+  CHECK(qmcdriver_input.get_check_point_period().stride == 4);
+  CHECK(qmcdriver_input.get_check_point_period().period == 4);
+  CHECK(qmcdriver_input.get_dump_config());
+}
 } // namespace qmcplusplus
