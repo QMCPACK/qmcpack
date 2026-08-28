@@ -61,9 +61,11 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
-         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
-         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
-         <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e" units="not-a-unit"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0" units="not-a-unit"/>
+         <pairpot type="coulomb" name="ElecIon" source="ion0" target="e" units="not-a-unit"/>
+         <estimator type="Pressure" name="pressure" potential="coulomb"
+                    truncateSum="not-an-integer" units="not-a-unit"/>
 </hamiltonian>)";
 
   Libxml2Document doc;
@@ -76,10 +78,11 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 
   REQUIRE(ham);
   REQUIRE(ham->size() == 3);
-  REQUIRE(ham->total_size() == 3);
+  REQUIRE(ham->total_size() == 4);
 
   REQUIRE(ham->getOperatorType("ElecElec") == "coulomb");
   REQUIRE(ham->getOperatorType("ElecIon") == "coulomb");
+  REQUIRE(ham->getOperatorType("pressure") == "Pressure");
 }
 
 TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")

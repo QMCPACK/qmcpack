@@ -114,7 +114,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
     std::string noname = "any";
     std::string potType(notype);
     std::string potName(noname);
-    std::string potUnit("hartree");
     std::string estType("coulomb");
     std::string sourceInp(targetPtcl.getName());
     std::string targetInp(targetPtcl.getName());
@@ -124,7 +123,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
     attrib.add(targetInp, "target");
     attrib.add(potType, "type");
     attrib.add(potName, "name");
-    attrib.add(potUnit, "units");
     attrib.add(estType, "potential");
     attrib.put(element);
 
@@ -361,11 +359,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
           std::unique_ptr<Pressure> BP = std::make_unique<Pressure>();
           BP->put(element);
           targetH->addOperator(std::move(BP), "Pressure", false);
-          int nlen(100);
-          attrib.add(nlen, "truncateSum");
-          attrib.put(element);
-          //             DMCPressureCorr* DMCP = new DMCPressureCorr(targetPtcl,nlen);
-          //             targetH->addOperator(DMCP,"PressureSum",false);
         }
       }
       else if (potType == "momentum")
