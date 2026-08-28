@@ -68,6 +68,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
          <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"
                   forces="retired-value" gpu="not-a-platform" units="not-a-unit"/>
          <estimator type="Pressure" name="pressure" potential="coulomb"
+                    source="retired-value" sources="retired-value" target="retired-value"
                     etype="retired-value" functor="retired-value"
                     truncateSum="not-an-integer" units="not-a-unit">
            <parameter name="kc">not-a-real</parameter>
