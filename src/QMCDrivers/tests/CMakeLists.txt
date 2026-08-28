@@ -88,8 +88,7 @@ set(DRIVER_TEST_SRC
     test_LinearMethod.cpp
     test_ConjugateGradient.cpp
     test_Eigensolver.cpp
-    test_QMCFixedSampleLinearOptimizeInput.cpp
-    test_WFOptDriverInput.cpp)
+    test_QMCFixedSampleLinearOptimizeInput.cpp)
 if(BUILD_LMYENGINE_INTERFACE)
   set_property(SOURCE test_QMCFixedSampleLinearOptimizeInput.cpp APPEND PROPERTY COMPILE_DEFINITIONS HAVE_LMY_ENGINE)
 endif()
