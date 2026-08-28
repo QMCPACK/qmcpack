@@ -113,9 +113,10 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamilonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
-    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="not-a-wavefunction" format="xml">
         <pseudo elementType="C" href="C.BFD.xml"/>
      </pairpot>
+    <estimator type="Force" name="force" mode="bare" source="ion0" target="e" psi="not-a-wavefunction"/>
 </hamiltonian>)";
 
   Libxml2Document doc;
@@ -123,6 +124,12 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
 
   xmlNodePtr root = doc.getRoot();
   hf.put(root);
+
+  auto ham = hf.releaseHamiltonian();
+  REQUIRE(ham);
+  CHECK(ham->size() == 3);
+  CHECK(ham->total_size() == 4);
+  CHECK(ham->getOperatorType("force") == "Force");
 }
 
 } // namespace qmcplusplus

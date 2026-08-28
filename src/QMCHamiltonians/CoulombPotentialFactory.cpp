@@ -164,7 +164,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 void HamiltonianFactory::addForceHam(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
-  std::string a("ion0"), targetName("e"), title("ForceBase"), pbc("yes"), PsiName = "psi0";
+  std::string a("ion0"), targetName("e"), title("ForceBase"), pbc("yes");
   OhmmsAttributeSet hAttrib;
   std::string mode("bare");
   //hAttrib.add(title,"id");
@@ -173,7 +173,6 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   hAttrib.add(targetName, "target");
   hAttrib.add(pbc, "pbc");
   hAttrib.add(mode, "mode");
-  hAttrib.add(PsiName, "psi");
   hAttrib.put(cur);
   app_log() << "HamFac forceBase mode " << mode << std::endl;
   bool applyPBC = (PBCType && pbc == "yes");
@@ -240,11 +239,10 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
 void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
-  std::string src("i"), title("PseudoPot"), wfname("invalid"), format("xml");
+  std::string src("i"), title("PseudoPot"), format("xml");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(title, "name");
   pAttrib.add(src, "source");
-  pAttrib.add(wfname, "wavefunction");
   pAttrib.add(format, "format"); //temperary tag to switch between format
   pAttrib.put(cur);
   if (format == "old")
