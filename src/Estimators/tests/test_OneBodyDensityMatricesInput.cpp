@@ -9,6 +9,7 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OneBodyDensityMatricesInput.h"
@@ -19,7 +20,9 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "Message/UniformCommunicateError.h"
 
+#include <array>
 #include <iostream>
+#include <string>
 #include <string_view>
 
 namespace qmcplusplus
@@ -71,6 +74,32 @@ TEST_CASE("OneBodyDensityMatricesInput::volume_normed", "[estimators]")
   REQUIRE(doc.parseFromString(input_xml));
   OneBodyDensityMatricesInput obdmi(doc.getRoot());
   CHECK_FALSE(obdmi.get_volume_normalized());
+}
+
+TEST_CASE("OneBodyDensityMatricesInput rejects legacy-only diagnostics", "[estimators]")
+{
+  constexpr std::array<std::string_view, 3> legacy_only_diagnostics{
+      "energy_matrix", "check_overlap", "check_derivatives"};
+
+  for (const std::string_view diagnostic : legacy_only_diagnostics)
+  {
+    DYNAMIC_SECTION("reject " << diagnostic)
+    {
+      const std::string input_xml =
+          "<estimator type=\"OneBodyDensityMatrices\" name=\"OneBodyDensityMatrices\">"
+          "<parameter name=\"basis\">spo_ud</parameter>"
+          "<parameter name=\"integrator\">uniform</parameter>"
+          "<parameter name=\"" +
+          std::string(diagnostic) +
+          "\">yes</parameter>"
+          "</estimator>";
+
+      Libxml2Document doc;
+      REQUIRE(doc.parseFromString(input_xml));
+      CHECK_THROWS_WITH(OneBodyDensityMatricesInput(doc.getRoot()),
+                        Catch::Matchers::ContainsSubstring("name " + std::string(diagnostic) + " is not a parameter"));
+    }
+  }
 }
 
 } // namespace qmcplusplus
