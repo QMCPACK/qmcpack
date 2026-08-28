@@ -63,4 +63,17 @@ TEST_CASE("Density Estimator evaluate exception", "[hamiltonian]")
   CHECK_THROWS_AS(density_estimator.evaluate(elec), std::invalid_argument);
 }
 
+TEST_CASE("Density Estimator retired attributes", "[hamiltonian]")
+{
+  const SimulationCell simulation_cell;
+  ParticleSet elec(simulation_cell);
+  DensityEstimator density_estimator(elec);
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<estimator debug="retired-value" potential="retired-value"
+      x_min="-1" x_max="1" y_min="-1" y_max="1" z_min="-1" z_max="1"
+      delta="0.25 0.25 0.25"/>)"));
+  CHECK(density_estimator.put(doc.getRoot()));
+}
+
 } // namespace qmcplusplus

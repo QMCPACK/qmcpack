@@ -34,7 +34,7 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
 
   // See ParticleIO/tests/test_xml_io.cpp for particle parsing
   const char* particles = R"(
-<particleset name="ion0" size="1">
+<particleset name="ion0" size="1" role="retired-value">
   <group name="He">
     <parameter name="charge">2</parameter>
   </group>
