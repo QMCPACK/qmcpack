@@ -54,15 +54,9 @@ std::unique_ptr<BackflowTransformation> BackflowBuilder::buildBackflowTransforma
     if (cname == "transf" || cname == "transformation")
     {
       OhmmsAttributeSet spoAttrib;
-      std::string source("none");
-      std::string name("bf0");
       std::string type("none");
-      spoAttrib.add(name, "name");
       spoAttrib.add(type, "type");
-      spoAttrib.add(source, "source");
       spoAttrib.put(cur);
-      BFTrans->sources[source] = BFTrans->names.size();
-      BFTrans->names.push_back(name);
       if (type == "e-e")
       {
         BFTrans->bfFuns.push_back(addTwoBody(cur));
@@ -95,12 +89,10 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
 {
   OhmmsAttributeSet spoAttrib;
   std::string source("none");
-  std::string name("bf0");
   std::string type("none");
   std::string funct("Gaussian");
   std::string unique("no");
   std::string spin("no"); //add spin attribute, with default spin="no"
-  spoAttrib.add(name, "name");
   spoAttrib.add(type, "type");
   spoAttrib.add(source, "source");
   spoAttrib.add(funct, "function");
@@ -286,11 +278,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addTwoBody(xmlNodePtr cur
 {
   app_log() << "Adding electron-electron backflow. \n";
   OhmmsAttributeSet trAttrib;
-  std::string source("none");
-  std::string name("bf0");
-  std::string type("none");
   std::string funct("Bspline");
-  trAttrib.add(name, "name");
   trAttrib.add(funct, "function");
   trAttrib.put(cur);
   xmlNodePtr curRoot = cur;

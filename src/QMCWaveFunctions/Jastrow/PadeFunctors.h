@@ -813,13 +813,6 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
    */
   bool put(xmlNodePtr cur) override
   {
-    std::string fcup("yes");
-    OhmmsAttributeSet p;
-    p.add(fcup, "fixcusp");
-    p.put(cur);
-    if (fcup == "true")
-      fcup = "yes";
-    // if (fcup=="yes") app_log()<<" fixing cusp conditions"<< std::endl;
     real_type Atemp = A, Btemp = B, Ctemp = C, Dtemp = D;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
@@ -890,7 +883,6 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
         myVars.insert(ID_C, C, true, optimize::OTHER_P);
       if (Opt_D)
         myVars.insert(ID_D, D, true, optimize::OTHER_P);
-      //myVars.insert(ID_A,A,fcup!="yes");
     }
     int left_pad_space = 5;
     app_log() << std::endl;

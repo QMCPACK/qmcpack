@@ -156,8 +156,8 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   elec_.update();
 
   const char* jasxml = R"(<wavefunction name="psi0" target="e">
-  <jastrow name="J1" type="One-Body" function="pade2" print="yes" source="ion0">
-    <correlation elementType="H">
+  <jastrow name="J1" type="One-Body" function="pade2" print="yes" source="ion0" transform="retired-value">
+    <correlation elementType="H" fixcusp="retired-value">
         <var id="J1H_A" name="A">0.8</var>
         <var id="J1H_B" name="B">5.0</var>
         <var id="J1H_C" name="C">-0.1</var>
