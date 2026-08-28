@@ -13,9 +13,12 @@
 #include "MultiBsplineOffloadMapper.hpp"
 #include "MultiBsplineEval_OMPoffload.hpp"
 #include "OMPTarget/OMPTargetMath.hpp"
+#include "OMPTarget/OMPallocator.hpp"
 
 namespace qmcplusplus
 {
+extern std::atomic<size_t> OMPallocator_device_mem_allocated;
+
 template<typename T>
 MultiBsplineOffloadMapper<T>::MultiBsplineOffloadMapper(const HostBspline& host_bsplines)
     : host_bsplines_(host_bsplines)
@@ -37,6 +40,7 @@ void MultiBsplineOffloadMapper<T>::mapToDevice()
     auto* spline_m = &host_bsplines_.getBlock(ib);
     auto* coefs    = block_coefs_[ib];
     PRAGMA_OFFLOAD("omp target enter data map(to: spline_m[:1]) map(alloc: coefs[:spline_m->coefs_size])")
+    OMPallocator_device_mem_allocated += sizeof(decltype(*spline_m)) + spline_m->coefs_size * sizeof(T);
   }
 }
 
@@ -48,6 +52,7 @@ MultiBsplineOffloadMapper<T>::~MultiBsplineOffloadMapper()
     auto* spline_m = &host_bsplines_.getBlock(ib);
     auto* coefs    = block_coefs_[ib];
     PRAGMA_OFFLOAD("omp target exit data map(delete: spline_m[:1]) map(delete: coefs[:spline_m->coefs_size])")
+    OMPallocator_device_mem_allocated -= sizeof(decltype(*spline_m)) + spline_m->coefs_size * sizeof(T);
   }
 }
 
