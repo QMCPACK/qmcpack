@@ -94,11 +94,11 @@ class SimTool(obj):
         #end if
         forbidden = set(fields)-set(self.fields)
         if len(forbidden)>0:
-            print('unrecognized fields encountered:')
+            msg = 'unrecognized fields encountered:\n'
             for f in forbidden:
-                print('  ',f)
+                msg += f'  {f}\n'
             #end for
-            sys.exit()
+            raise ValueError(msg)
         #end if
         for i in range(len(self.paths)):
             path = self.paths[i]
@@ -117,11 +117,11 @@ class SimTool(obj):
         #end if
         forbidden = set(fields)-set(self.fields)
         if len(forbidden)>0:
-            print('unrecognized fields encountered:')
+            msg = 'unrecognized fields encountered:\n'
             for f in forbidden:
-                print('  ',f)
+                msg += f'  {f}\n'
             #end for
-            sys.exit()
+            raise ValueError(msg)
         #end if
         for i in range(len(self.paths)):
             path = self.paths[i]
@@ -152,17 +152,19 @@ class SimTool(obj):
 
     def set_indicators(self,inds,val=1):
         if len(inds)==0:
-            print('no indicators specified')
-            print('  options are: '+self.indicators)
-            sys.exit()
+            msg = (
+                'no indicators specified\n'
+                '  options are: '+self.indicators
+                )
+            raise ValueError(msg)
         #end if
         forbidden = set(inds)-set(self.indicators)
         if len(forbidden)>0:
-            print('unrecognized indicators encountered:')
+            msg = 'unrecognized indicators encountered:\n'
             for f in forbidden:
-                print('  ',f)
+                msg += f'  {f}\n'
             #end for
-            sys.exit()
+            raise ValueError(msg)
         #end if
         for i in range(len(self.paths)):
             path = self.paths[i]
@@ -211,16 +213,16 @@ if __name__=='__main__':
 
 
     if command not in allowed_commands:
-        print('command '+command+' not recognized')
-        sys.exit()
+        msg = 'command '+command+' not recognized'
+        raise ValueError(msg)
     #end if
 
     if len(paths)==0:
         if os.path.exists('./sim.p'):
             paths = ['./sim.p']
         else:
-            print('no simulation images found')
-            sys.exit()
+            msg = 'no simulation images found'
+            raise FileNotFoundError(msg)
         #end if
     #end if
 

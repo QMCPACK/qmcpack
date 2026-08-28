@@ -1569,7 +1569,7 @@ def test_generate():
     for invalid_nrule in (7.0,'4',True,[('V',3),('O',5)],
                           obj_deprecated(V=3,O=5)):
         with pytest.raises(
-            NexusError,
+            TypeError,
             match = 'nrule must be an integer, dict, dotdict, obj, or None',
             ):
             generate_qmcpack_input(
@@ -1584,7 +1584,7 @@ def test_generate():
 
     for invalid_nrule in (-1,0,9):
         with pytest.raises(
-            NexusError,
+            ValueError,
             match = 'nrule must be one of the integers 1 through 8',
             ):
             generate_qmcpack_input(
@@ -1598,15 +1598,15 @@ def test_generate():
     #end for
 
     invalid_nrule_maps = [
-        ({'V':3},'nrule mapping keys must match'),
-        ({'V':3,'O':5,'Fe':4},'nrule mapping keys must match'),
-        ({'V':3,'O':5.0},'nrule mapping values must be integers'),
-        ({'V':3,'O':True},'nrule mapping values must be integers'),
-        ({'V':3,'O':0},'nrule mapping values must be integers from 1 through 8'),
-        ({'V':3,'O':9},'nrule mapping values must be integers from 1 through 8'),
+        ({'V':3},'nrule mapping keys must match', ValueError),
+        ({'V':3,'O':5,'Fe':4},'nrule mapping keys must match', ValueError),
+        ({'V':3,'O':5.0},'nrule mapping values must be integers', TypeError),
+        ({'V':3,'O':True},'nrule mapping values must be integers', TypeError),
+        ({'V':3,'O':0},'nrule mapping values must be integers from 1 through 8', ValueError),
+        ({'V':3,'O':9},'nrule mapping values must be integers from 1 through 8', ValueError),
         ]
-    for invalid_nrule_map,error_message in invalid_nrule_maps:
-        with pytest.raises(NexusError,match=error_message):
+    for invalid_nrule_map, error_message, error_type in invalid_nrule_maps:
+        with pytest.raises(error_type, match=error_message):
             generate_qmcpack_input(
                 input_type  = 'basic',
                 system      = system,

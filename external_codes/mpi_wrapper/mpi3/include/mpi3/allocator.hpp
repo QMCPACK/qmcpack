@@ -1,11 +1,11 @@
-// Copyright 2018-2024 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_ALLOCATOR_HPP
 #define BOOST_MPI3_ALLOCATOR_HPP
 
-#include "../mpi3/address.hpp"
+#include <mpi3/address.hpp>
 
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
 #include<limits>
 #include<vector>
@@ -17,8 +17,8 @@ struct /*__attribute__((aligned(0)))*/ bad_alloc : std::bad_alloc{using std::bad
 
 inline void* malloc(mpi3::size_t size) {
 	void* ret;  // NOLINT(cppcoreguidelines-init-variables) delayed init
-#if not defined(EXAMPI)
-	int const s = MPI_Alloc_mem(size, MPI_INFO_NULL, &ret);
+#ifndef EXAMPI
+	int const s = MPI_Alloc_mem(size, MPI_INFO_NULL, &ret);  // NOLINT(bugprone-multi-level-implicit-pointer-conversion)
 	if(s != MPI_SUCCESS) {return nullptr;}  //s throw bad_alloc();//"cannot allocate " + std::to_string(size) + " bytes");
 #else
 	ret = std::malloc(size);
@@ -27,8 +27,12 @@ inline void* malloc(mpi3::size_t size) {
 }
 
 inline void free(void* ptr){
-#if not defined(EXAMPI)
-	MPI_(Free_mem)(ptr);
+#ifndef EXAMPI
+	try {
+		MPI_(Free_mem)(ptr);
+	} catch(...) {
+		assert(0);
+	}
 #else
 	std::free(ptr);
 #endif
@@ -45,14 +49,14 @@ struct /*__attribute__((aligned(0)))*/ allocator{
 	// cppcheck-suppress noExplicitConstructor
 	template<class U> allocator(allocator<U> const&/*other*/) {}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) : allocator convention
 
-	inline auto allocate(size_type n) {
+	auto allocate(size_type n) {
 		if(void* ptr = mpi3::malloc(n * static_cast<size_type>(sizeof(T)))) {
 			return static_cast<pointer>(ptr);
 		}
 		throw bad_alloc();
 	}
 	void             deallocate(pointer p, std::size_t /*size*/) { mpi3::free(p); }
-	static inline size_type max_size() { return std::numeric_limits<size_type>::max(); }
+	static size_type max_size() { return std::numeric_limits<size_type>::max(); }
 };
 
 template<typename T>
