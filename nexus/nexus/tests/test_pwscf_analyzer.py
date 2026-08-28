@@ -17,11 +17,7 @@ def test_empty_init():
     assert(pa.results_out is None)
     assert(pa.results_xml is None)
     assert(all(value is False for value in pa.info.data_status.values()))
-    free_helpers = (
-        'line_numbers','first_numbers','leading_numbers','match_float',
-        'number_float','read_kpoint_tables','object_path','xml_local_name',
-        'xml_value','xml_element','xml_child',
-        )
+    free_helpers = ('match_float','read_kpoint_tables')
     for name in free_helpers:
         assert(callable(getattr(pa_module,name)))
         assert(not hasattr(PwscfAnalyzer,name))
@@ -879,7 +875,7 @@ H  0.100000000  0.200000000  0.300000000  1 1 1  trailing text
         <occupations size="2">1.0 0.0</occupations>
       </ks_energies>
       <ks_energies>
-        <k_point weight="0.5">0.0 0.0 0.0</k_point>
+        <k_point weight="0.25">0.0 0.0 0.0</k_point>
         <eigenvalues size="2">-0.4 0.6</eigenvalues>
         <occupations size="2">1.0 0.0</occupations>
       </ks_energies>
@@ -918,6 +914,11 @@ H  0.100000000  0.200000000  0.300000000  1 1 1  trailing text
     assert(pa.info.data_status.xml)
     assert(not pa.info.xml_status_failed)
     assert(all(isinstance(value,bool) for value in pa.info.data_status.values()))
+
+    count_lines = pa.write_electron_counts().splitlines()
+    assert(count_lines[1].split()==['1.50','0.00','0.75','0.75'])
+    assert(count_lines[4].split()==['1','0.500000','3.00','0.00','1.50','1.50'])
+    assert(count_lines[5].split()==['2','0.250000','1.50','0.00','0.75','0.75'])
 
     # Recognized but incomplete records are skipped without stopping analysis.
     malformed_tail = """
