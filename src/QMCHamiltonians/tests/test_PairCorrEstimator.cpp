@@ -58,7 +58,8 @@ const char* pset_xml = R"(<particleset name="e" random="yes">
                         </particleset>)";
 
 // PairCorrEstimator block
-const char* gofr_xml = R"(<estimator type="gofr" name="gofr" rmax="2.0" num_bin="99" />)";
+const char* gofr_xml =
+    R"(<estimator type="gofr" name="gofr" rmax="2.0" num_bin="99" debug="retired-value" />)";
 
 
 namespace qmcplusplus

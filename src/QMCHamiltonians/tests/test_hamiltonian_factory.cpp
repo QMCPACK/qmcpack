@@ -65,7 +65,10 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
          <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0" units="not-a-unit"/>
          <pairpot type="coulomb" name="ElecIon" source="ion0" target="e" units="not-a-unit"/>
          <estimator type="Pressure" name="pressure" potential="coulomb"
-                    truncateSum="not-an-integer" units="not-a-unit"/>
+                    etype="retired-value" functor="retired-value"
+                    truncateSum="not-an-integer" units="not-a-unit">
+           <parameter name="kc">not-a-real</parameter>
+         </estimator>
 </hamiltonian>)";
 
   Libxml2Document doc;
