@@ -44,7 +44,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   ParameterSet parameter_set;
   parameter_set.add(config_dump_period_.period, "recordconfigs");
   parameter_set.add(config_dump_period_.period, "record_configs");
-  parameter_set.add(starting_step_, "current");
   parameter_set.add(max_blocks_, "blocks");
   parameter_set.add(requested_steps_, "steps");
   parameter_set.add(sub_steps_, "substeps");
@@ -116,10 +115,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
         rAttrib.add(config_dump_period_.stride, "stride");
         rAttrib.add(config_dump_period_.period, "period");
         rAttrib.put(tcur);
-      }
-      else if (cname == "random")
-      {
-        reset_random_ = true;
       }
       // These complications are due to the need to support bare <esimator> nodes
       else if (cname == "estimators" || cname == "estimator")

@@ -60,7 +60,6 @@ protected:
   bool crowd_serialize_walkers_ = false;
   /// period of recording walker positions and IDs for forward walking afterwards
   input::PeriodStride config_dump_period_;
-  IndexType starting_step_ = 0;
   IndexType num_crowds_    = 0;
   // This is the global walkers it is a hard limit for VMC and the target for DMC
   IndexType total_walkers_     = 0;
@@ -92,7 +91,6 @@ protected:
   input::PeriodStride walker_dump_period_{0, 0};
   input::PeriodStride check_point_period_{0, 0};
   bool dump_config_  = false;
-  bool reset_random_ = false;
 
   // from QMCUpdateBase
   RealType max_disp_sq_ = -1.0;
@@ -106,7 +104,6 @@ protected:
 
 public:
   input::PeriodStride get_config_dump_period() const { return config_dump_period_; }
-  IndexType get_starting_step() const { return starting_step_; }
   IndexType get_num_crowds() const { return num_crowds_; }
   IndexType get_walkers_per_rank() const { return walkers_per_rank_; }
   IndexType get_total_walkers() const { return total_walkers_; }
@@ -123,7 +120,6 @@ public:
   IndexType get_estimator_measurement_period() const { return estimator_measurement_period_; }
   input::PeriodStride get_walker_dump_period() const { return walker_dump_period_; }
   input::PeriodStride get_check_point_period() const { return check_point_period_; }
-  bool get_reset_random() const { return reset_random_; }
   bool get_dump_config() const { return dump_config_; }
 
   const std::string& get_qmc_method() const { return qmc_method_; }

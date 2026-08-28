@@ -72,4 +72,19 @@ TEST_CASE("QMCDriverInput retired check-properties parameters", "[drivers]")
     CHECK(qmcdriver_input.get_debug_checks() == DriverDebugChecks::CHECKGL_AFTER_MOVES);
   }
 }
+
+TEST_CASE("QMCDriverInput retired modern state", "[drivers]")
+{
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"(<qmc method="vmc" move="pbyp">
+      <parameter name="current">not-an-integer</parameter>
+      <parameter name="blocks_between_recompute">3</parameter>
+      <random seed="retired-qmc-child"/>
+    </qmc>)"));
+
+  QMCDriverInput qmcdriver_input;
+  qmcdriver_input.readXML(doc.getRoot());
+  CHECK(qmcdriver_input.get_blocks_between_recompute() == 3);
+  CHECK(qmcdriver_input.get_qmc_method() == "vmc");
+}
 } // namespace qmcplusplus
