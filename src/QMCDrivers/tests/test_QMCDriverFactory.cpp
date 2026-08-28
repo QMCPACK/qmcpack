@@ -120,6 +120,22 @@ TEST_CASE("QMCDriver retired check-properties parameters", "[qmcapp]")
   }
 }
 
+TEST_CASE("QMCDriverFactory retired mode attributes", "[qmcapp]")
+{
+  ProjectData test_project("testing", ProjectData::DriverVersion::LEGACY);
+  QMCDriverFactory driver_factory(test_project);
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(
+      R"(<qmc method="vmc" move="pbyp" multiple="yes" warp="yes" append="yes" profiling="yes"/>)"));
+  const auto das = driver_factory.readSection(doc.getRoot());
+
+  CHECK(das.new_run_type == QMCRunType::VMC);
+  CHECK(das.what_to_do[UPDATE_MODE]);
+  CHECK(das.append_run);
+  CHECK(das.enable_profiling);
+}
+
 TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
 {
   using namespace testing;
