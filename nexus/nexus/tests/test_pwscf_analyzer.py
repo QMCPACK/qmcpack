@@ -122,6 +122,7 @@ def test_analyze():
 
     # scf w/o actual analysis
     pa = PwscfAnalyzer(scf_path,'scf.in','scf.out')
+    assert(pa.make_movie('unused.xyz') is None)
 
     del pa.abspath
     del pa.path
@@ -968,4 +969,12 @@ CELL_PARAMETERS (alat= 5.0)
     assert(pa.results_xml is None)
     assert(not pa.info.data_status.xml)
     assert('xml_status_failed' not in pa.info)
+
+    # A total force is retained even when no atomic-force block is present.
+    (tmp_path/'pwscf.out').write_text('     Total force = 0.125 Ry/au\n')
+    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True)
+    assert(pa.results_out.forces is None)
+    assert(np.allclose(pa.results_out.tot_forces,[0.125]))
+    assert(not pa.info.data_status.forces)
+    assert(pa.info.data_status.total_forces)
 #end def test_modern_output
