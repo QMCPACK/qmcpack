@@ -28,11 +28,6 @@ PWParameterSet::PWParameterSet(Communicate* comm)
       twistIndex(0),
       numBands(0),
       Ecut(-1),
-      Rcut(-1),
-      BufferRadius(-1),
-      BoxDup(1),
-      paramTag("parameters"),
-      basisTag("basis"),
       pwTag("planewaves"),
       pwMultTag("multipliers"),
       eigTag("eigenstates"),
@@ -43,11 +38,6 @@ PWParameterSet::PWParameterSet(Communicate* comm)
 {
   m_param.setName("h5tag");
   m_param.add(twistIndex, "twistIndex");
-  m_param.add(Rcut, "rcut");
-  m_param.add(BufferRadius, "bufferLayer");
-  m_param.add(BoxDup, "expand");
-  m_param.add(paramTag, "parameters");
-  m_param.add(basisTag, "basis");
   m_param.add(pwTag, "planewaves");
   m_param.add(pwMultTag, "multiplers");
   m_param.add(eigTag, "eigenstates");
@@ -90,14 +80,6 @@ bool PWParameterSet::hasComplexData(hdf_archive& h_file)
   int iscomplex = 0;
   // Should be the tag "/electrons/psi_r_is_complex", but the test HDF files
   //  don't have this set
-#if 0
-  if(is_manager())
-  {
-    std::ostringstream oss;
-    oss << paramTag << "/complex_coefficients";
-    h_file.read(iscomplex, oss.str());
-  }
-#endif
   myComm->bcast(iscomplex);
   return iscomplex;
 }
@@ -212,8 +194,6 @@ void PWParameterSet::checkVersion(hdf_archive& h)
     if (version[1] == 11)
     {
       hasSpin   = false;
-      paramTag  = "parameters_0";
-      basisTag  = "basis_1";
       pwTag     = "planewaves";
       pwMultTag = "multipliers";
       eigTag    = "eigenstates_3";

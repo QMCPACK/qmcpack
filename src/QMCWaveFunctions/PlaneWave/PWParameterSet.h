@@ -39,16 +39,6 @@ struct PWParameterSet : public MPIObjectBase
   int numBands;
   ///energy cutoff for QMC wavefunction
   double Ecut;
-  ///cutoff radius for truncated orbitals
-  double Rcut;
-  ///radius of buffer layer for truncated orbitals
-  double BufferRadius;
-  ///cell multiplications
-  TinyVector<int, OHMMS_DIM> BoxDup;
-  ///tag for the parameters
-  std::string paramTag;
-  ///tag for the basis
-  std::string basisTag;
   ///tag for the planewaves
   std::string pwTag;
   ///tag for the multipliers of the planewaves
