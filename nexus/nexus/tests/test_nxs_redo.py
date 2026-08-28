@@ -16,17 +16,21 @@ def test_redo(tmp_path):
     # empty directory
     assert(list(tmp_path.iterdir())==[])
 
-    out,err,rc = execute(command)
-
-    assert('no simulation directories found' in out)
+    with pytest.raises(
+        AssertionError,
+        match="no simulation directories found",
+        ):
+        out,err,rc = execute(command)
 
 
     # directory w/ files, but not nexus simulation directory
     (tmp_path / "qmc.in.xml").touch()
 
-    out,err,rc = execute(command)
-
-    assert('no simulation directories found' in out)
+    with pytest.raises(
+        AssertionError,
+        match="no simulation directories found",
+        ):
+        out,err,rc = execute(command)
 
     assert(set(tmp_path.iterdir())==set([tmp_path / 'qmc.in.xml']))
 
