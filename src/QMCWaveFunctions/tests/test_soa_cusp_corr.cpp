@@ -36,7 +36,6 @@ TEST_CASE("readCuspInfo", "[wavefunction]")
   REQUIRE(okay);
 
   // N
-  CHECK(info(0, 0).redo == Approx(0.0));                   // redo
   CHECK(info(0, 0).C == Approx(0.0));                      // C
   CHECK(info(0, 0).sg == Approx(1.0));                     // sg
   CHECK(info(0, 0).Rc == Approx(0.0769130700800000));      // rc
@@ -544,7 +543,6 @@ TEST_CASE("broadcastCuspInfo", "[wavefunction]")
     cp.alpha[2] = 1.3;
     cp.alpha[3] = 1.4;
     cp.alpha[4] = 1.5;
-    cp.redo     = 1;
   }
 
   broadcastCuspInfo(cp, *c, root);
@@ -557,7 +555,6 @@ TEST_CASE("broadcastCuspInfo", "[wavefunction]")
   CHECK(cp.alpha[2] == Approx(1.3));
   CHECK(cp.alpha[3] == Approx(1.4));
   CHECK(cp.alpha[4] == Approx(1.5));
-  REQUIRE(cp.redo == 1);
 }
 
 
