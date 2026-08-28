@@ -138,10 +138,10 @@ public:
     CMatrix H1({NMO, NMO});
 
     // add sum_n vMF*Spvn, vMF has local contribution only!
-    boost::multi::array_ref<ComplexType, 1> H1D(H1.origin(), {NMO * NMO});
-    std::fill_n(H1D.origin(), H1D.num_elements(), ComplexType(0));
+    boost::multi::array_ref<ComplexType, 1> H1D(H1.base(), {NMO * NMO});
+    std::fill_n(H1D.base(), H1D.num_elements(), ComplexType(0));
     vHS(vMF, H1D);
-    TG.TG().all_reduce_in_place_n(H1D.origin(), H1D.num_elements(), std::plus<>());
+    TG.TG().all_reduce_in_place_n(H1D.base(), H1D.num_elements(), std::plus<>());
 
     // add hij + vn0 and symmetrize
     using ma::conj;
@@ -204,7 +204,7 @@ public:
       APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix "
                 "dimensions \n");
     for (int n = 0; n < nwalk; n++)
-      std::fill_n(E[n].origin(), 3, ComplexType(0.));
+      std::fill_n(E[n].base(), 3, ComplexType(0.));
     if (addEJ and getKl)
       assert(get<0>(Kl->sizes()) == nwalk && get<1>(Kl->sizes()) == get<0>(SpvnT[k].sizes()));
     if (addEJ and getKr)
@@ -213,10 +213,10 @@ public:
 #if defined(MIXED_PRECISION)
     size_t mem_needs = Gc.num_elements();
     set_buffer(mem_needs);
-    boost::multi::array_ref<SPComplexType, 2> Gsp(to_address(SM_TMats.origin()), Gc.extensions());
+    boost::multi::array_ref<SPComplexType, 2> Gsp(to_address(SM_TMats.base()), Gc.extents());
     size_t i0, iN;
     std::tie(i0, iN) = FairDivideBoundary(size_t(comm->rank()), size_t(Gc.num_elements()), size_t(comm->size()));
-    copy_n_cast(to_address(Gc.origin()) + i0, iN - i0, to_address(Gsp.origin()) + i0);
+    copy_n_cast(to_address(Gc.base()) + i0, iN - i0, to_address(Gsp.base()) + i0);
     comm->barrier();
 #else
     auto& Gsp(Gc);
@@ -225,9 +225,9 @@ public:
     // one-body contribution
     if (addH1)
     {
-      boost::multi::array_cref<ComplexType, 1> haj_ref(to_address(haj[k].origin()),
+      boost::multi::array_cref<ComplexType, 1> haj_ref(to_address(haj[k].base()),
                                                        iextensions<1u>{haj[k].num_elements()});
-      ma::product(ComplexType(1.), ma::T(Gc), haj_ref, ComplexType(1.), E(E.extension(0), 0));
+      ma::product(ComplexType(1.), ma::T(Gc), haj_ref, ComplexType(1.), E(get<0>(E.extents()), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;
     }
@@ -249,14 +249,14 @@ public:
 
       using std::get;
       // SpvnT*G
-      boost::multi::array_ref<SPComplexType, 2> v_(Gcloc.origin() + SpvnT_view[k].local_origin()[0] * get<1>(Gc.sizes()),
+      boost::multi::array_ref<SPComplexType, 2> v_(Gcloc.base() + SpvnT_view[k].local_origin()[0] * get<1>(Gc.sizes()),
                                                    {long(get<0>(SpvnT_view[k].sizes())), long(get<1>(Gc.sizes()))});
       ma::product(SpvnT_view[k], Gsp, v_);
       if (getKl || getKr)
       {
         for (int wi = 0; wi < get<1>(Gc.sizes()); wi++)
         {
-          auto _v_ = v_(v_.extension(0), wi);
+          auto _v_ = v_(get<0>(v_.extents()), wi);
           if (getKl)
           {
             auto Kli = (*Kl)[wi];
@@ -272,7 +272,7 @@ public:
         }
       }
       for (int wi = 0; wi < get<1>(Gc.sizes()); wi++)
-        E[wi][2] = 0.5 * scl * static_cast<ComplexType>(ma::dot(v_(v_.extension(0), wi), v_(v_.extension(0), wi)));
+        E[wi][2] = 0.5 * scl * static_cast<ComplexType>(ma::dot(v_(get<0>(v_.extents()), wi), v_(get<0>(v_.extents()), wi)));
     }
 #if defined(MIXED_PRECISION)
 #endif
@@ -293,8 +293,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(), 1});
-    boost::multi::array_ref<AType, 2, decltype(X.origin())> X_(X.origin(), {X.size(), 1});
+    boost::multi::array_ref<BType, 2, decltype(v.base())> v_(v.base(), {v.size(), 1});
+    boost::multi::array_ref<AType, 2, decltype(X.base())> X_(X.base(), {X.size(), 1});
     return vHS(X_, v_, a, c);
   }
 
@@ -324,42 +324,42 @@ public:
     // setup origin of Xsp and copy_n_cast if necessary
     if (std::is_same<XType, SPComplexType>::value)
     {
-      Xptr = reinterpret_cast<const_sp_pointer>(to_address(X.origin()));
+      Xptr = reinterpret_cast<const_sp_pointer>(to_address(X.base()));
     }
     else
     {
       long i0, iN;
       std::tie(i0, iN) = FairDivideBoundary(long(comm->rank()), long(X.num_elements()), long(comm->size()));
-      copy_n_cast(to_address(X.origin()) + i0, iN - i0, to_address(SM_TMats.origin()) + i0);
-      Xptr = to_address(SM_TMats.origin());
+      copy_n_cast(to_address(X.base()) + i0, iN - i0, to_address(SM_TMats.base()) + i0);
+      Xptr = to_address(SM_TMats.base());
     }
     // setup origin of vsp and copy_n_cast if necessary
     if (std::is_same<vType, SPComplexType>::value)
     {
-      vptr = reinterpret_cast<sp_pointer>(to_address(v.origin()));
+      vptr = reinterpret_cast<sp_pointer>(to_address(v.base()));
     }
     else
     {
       long i0, iN;
       std::tie(i0, iN) = FairDivideBoundary(long(comm->rank()), long(v.num_elements()), long(comm->size()));
-      vptr             = to_address(SM_TMats.origin()) + Xmem;
+      vptr             = to_address(SM_TMats.base()) + Xmem;
       if (std::abs(c) > 1e-12)
-        copy_n_cast(to_address(v.origin()) + i0, iN - i0, vptr + i0);
+        copy_n_cast(to_address(v.base()) + i0, iN - i0, vptr + i0);
     }
     // setup array references
-    boost::multi::array_cref<SPComplexType, 2> Xsp(Xptr, X.extensions());
-    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extensions());
+    boost::multi::array_cref<SPComplexType, 2> Xsp(Xptr, X.extents());
+    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extents());
     comm->barrier();
 
     using std::get;
-    boost::multi::array_ref<SPComplexType, 2> v_(to_address(vsp[Spvn_view.local_origin()[0]].origin()),
+    boost::multi::array_ref<SPComplexType, 2> v_(to_address(vsp[Spvn_view.local_origin()[0]].base()),
                                                  {long(get<0>(Spvn_view.sizes())), long(get<1>(vsp.sizes()))});
     ma::product(SPValueType(a), Spvn_view, Xsp, SPValueType(c), v_);
 
     // copy data back if changing precision
     if (not std::is_same<vType, SPComplexType>::value)
     {
-      copy_n(to_address(v_.origin()), v_.num_elements(), to_address(v[Spvn_view.local_origin()[0]].origin()));
+      copy_n(to_address(v_.base()), v_.num_elements(), to_address(v[Spvn_view.local_origin()[0]].base()));
     }
     comm->barrier();
   }
@@ -375,8 +375,8 @@ public:
 
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {get<0>(v.sizes()), 1});
-    boost::multi::array_cref<AType, 2, decltype(G.origin())> G_(G.origin(), {get<0>(G.sizes()), 1});
+    boost::multi::array_ref<BType, 2, decltype(v.base())> v_(v.base(), {get<0>(v.sizes()), 1});
+    boost::multi::array_cref<AType, 2, decltype(G.base())> G_(G.base(), {get<0>(G.sizes()), 1});
     return vbias(G_, v_, a, c, k);
   }
 
@@ -410,42 +410,42 @@ public:
     // setup origin of Gsp and copy_n_cast if necessary
     if (std::is_same<GType, SPComplexType>::value)
     {
-      Gptr = reinterpret_cast<const_sp_pointer>(to_address(G.origin()));
+      Gptr = reinterpret_cast<const_sp_pointer>(to_address(G.base()));
     }
     else
     {
       long i0, iN;
       std::tie(i0, iN) = FairDivideBoundary(long(comm->rank()), long(G.num_elements()), long(comm->size()));
-      copy_n_cast(to_address(G.origin()) + i0, iN - i0, to_address(SM_TMats.origin()) + i0);
-      Gptr = to_address(SM_TMats.origin());
+      copy_n_cast(to_address(G.base()) + i0, iN - i0, to_address(SM_TMats.base()) + i0);
+      Gptr = to_address(SM_TMats.base());
     }
     // setup origin of vsp and copy_n_cast if necessary
     if (std::is_same<vType, SPComplexType>::value)
     {
-      vptr = reinterpret_cast<sp_pointer>(to_address(v.origin()));
+      vptr = reinterpret_cast<sp_pointer>(to_address(v.base()));
     }
     else
     {
       long i0, iN;
       std::tie(i0, iN) = FairDivideBoundary(long(comm->rank()), long(v.num_elements()), long(comm->size()));
-      vptr             = to_address(SM_TMats.origin()) + Gmem;
+      vptr             = to_address(SM_TMats.base()) + Gmem;
       if (std::abs(c) > 1e-12)
-        copy_n_cast(to_address(v.origin()) + i0, iN - i0, vptr + i0);
+        copy_n_cast(to_address(v.base()) + i0, iN - i0, vptr + i0);
     }
     // setup array references
-    boost::multi::array_cref<SPComplexType, 2> Gsp(Gptr, G.extensions());
-    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extensions());
+    boost::multi::array_cref<SPComplexType, 2> Gsp(Gptr, G.extents());
+    boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extents());
     comm->barrier();
 
     using std::get;
-    boost::multi::array_ref<SPComplexType, 2> v_(to_address(vsp[SpvnT_view[k].local_origin()[0]].origin()),
+    boost::multi::array_ref<SPComplexType, 2> v_(to_address(vsp[SpvnT_view[k].local_origin()[0]].base()),
                                                  {long(get<0>(SpvnT_view[k].sizes())), long(get<1>(vsp.sizes()))});
     ma::product(SpT2(a), SpvnT_view[k], Gsp, SpT2(c), v_);
 
     // copy data back if changing precision
     if (not std::is_same<vType, SPComplexType>::value)
     {
-      copy_n(to_address(v_.origin()), v_.num_elements(), to_address(v[SpvnT_view[k].local_origin()[0]].origin()));
+      copy_n(to_address(v_.base()), v_.num_elements(), to_address(v[SpvnT_view[k].local_origin()[0]].base()));
     }
     comm->barrier();
   }
@@ -527,7 +527,7 @@ private:
     {
       SM_TMats.reextent(iextensions<1u>(N));
       using std::fill_n;
-      fill_n(SM_TMats.origin(), N, SPComplexType(0.0));
+      fill_n(SM_TMats.base(), N, SPComplexType(0.0));
       comm->barrier();
     }
   }

@@ -76,7 +76,7 @@ protected:
   using stdCMatrix_ref   = boost::multi::array_ref<ComplexType, 2>;
   using stdSPCMatrix_ref = boost::multi::array_ref<SPComplexType, 2>;
   using stdC3Tensor_ref  = boost::multi::array_ref<ComplexType, 3>;
-  using CMatrix_ptr      = boost::multi::array_ptr<ComplexType, 2, pointer>;
+  using CMatrix_ptr      = boost::multi::detail::array_ptr<ComplexType, 2, pointer>;
 
   using mpi3CVector   = boost::multi::array<ComplexType, 1, shared_allocator<ComplexType>>;
   using mpi3SPCVector = boost::multi::array<SPComplexType, 1, shared_allocator<SPComplexType>>;
