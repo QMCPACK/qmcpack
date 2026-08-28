@@ -385,6 +385,7 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
   using array_ref = boost::multi::array_ref<Type, 2, typename Allocator::pointer>;
   using array_ptr = boost::multi::detail::array_ptr<Type, 2, typename Allocator::pointer>;
   using namespace std::complex_literals;
+  using std::get;
 
   const Type ov  = -7.62332599999999 + 22.20453200000000i;
   const Type ov2 = -10.37150000000000 - 7.15750000000000i;
