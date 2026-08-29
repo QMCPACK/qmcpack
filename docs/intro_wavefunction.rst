@@ -342,7 +342,7 @@ attribute:
 | ``distributed_ranks`` | Integer    | :math:`\gt 0` | 1       | The number of MPI ranks that allocations are distributed |
 +-----------------------+------------+---------------+---------+----------------------------------------------------------+
 
-The product of ``shared_ranks`` and ``distributed_ranks`` may not execeed the total number of MPI ranks within a compute node.
+The product of ``shared_ranks`` and ``distributed_ranks`` may not exceed the total number of MPI ranks within a compute node.
 Sharing and/or distributing memory only affect the memory allocation on the host. Distributing memory cannot be enabled when
 using GPUs. Sharing memory can be used with GPUs enabled to reduce host memory footprint within the compute node. When evaluations
 of B-spline orbitals happen on the host, sharing and/or distributing memory across NUMA domains may cause performance penalty.
@@ -1916,7 +1916,7 @@ Here :math:`\rho_G` is the Fourier transform of the instantaneous electron densi
 
 and :math:`\rho_G^I` has the same form, but for the fixed ions. In both cases the coefficients are restricted to be real, though in general the coefficients for the one-body term need not be.  See :ref:`feature-kspace-jastrow` for more detail.
 
-Input for the k-space Jastrow follows the familar nesting of ``jastrow-correlation-coefficients`` elements, with attributes unique to the k-space Jastrow at the ``correlation`` input level.
+Input for the k-space Jastrow follows the familiar nesting of ``jastrow-correlation-coefficients`` elements, with attributes unique to the k-space Jastrow at the ``correlation`` input level.
 
 ``jastrow type=kSpace`` element:
 
