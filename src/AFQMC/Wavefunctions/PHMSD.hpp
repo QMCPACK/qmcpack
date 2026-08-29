@@ -136,12 +136,12 @@ public:
         QQ0inv1({1, 1}, shared_allocator<ComplexType>{TG.TG_local()}),
         GA2D0_shm({1, 1}, shared_allocator<ComplexType>{TG.TG_local()}),
         GB2D0_shm({1, 1}, shared_allocator<ComplexType>{TG.TG_local()}),
-        local_ov  ({2, static_cast<boost::multi::size_t>(maxn_unique_confg)}),
-        local_etot({2, static_cast<boost::multi::size_t>(maxn_unique_confg)}),
-        local_QQ0inv0({static_cast<boost::multi::size_t>(OrbMats[0].size()), NAEA}),
-        local_QQ0inv1({static_cast<boost::multi::size_t>(OrbMats.back().size()), NAEB}),
-        Qwork({2 * static_cast<boost::multi::size_t>(max_exct_n), static_cast<boost::multi::size_t>(max_exct_n)}),
-        Gwork({NAEA, static_cast<boost::multi::size_t>(maxnactive)}),
+        local_ov  ({2, static_cast<boost::multi::ssize_t>(maxn_unique_confg)}),
+        local_etot({2, static_cast<boost::multi::ssize_t>(maxn_unique_confg)}),
+        local_QQ0inv0({static_cast<boost::multi::ssize_t>(OrbMats[0].size()), NAEA}),
+        local_QQ0inv1({static_cast<boost::multi::ssize_t>(OrbMats.back().size()), NAEB}),
+        Qwork({2 * static_cast<boost::multi::ssize_t>(max_exct_n), static_cast<boost::multi::ssize_t>(max_exct_n)}),
+        Gwork({NAEA, static_cast<boost::multi::ssize_t>(maxnactive)}),
         Ovmsd({1, 1, 1}, shared_allocator<ComplexType>{TG.TG_local()}),
         Emsd({1, 1, 1, 1}, shared_allocator<ComplexType>{TG.TG_local()}),
         QQ0A({1, 1, 1}, shared_allocator<ComplexType>{TG.TG_local()}),
@@ -502,14 +502,14 @@ public:
       if (TG.Node().root())
       {
         boost::multi::array<ComplexType, 2> OA_({
-			static_cast<boost::multi::size_t>(get<1>(OrbMats[0].sizes())),
-			static_cast<boost::multi::size_t>(get<0>(OrbMats[0].sizes()))
+			static_cast<boost::multi::ssize_t>(get<1>(OrbMats[0].sizes())),
+			static_cast<boost::multi::ssize_t>(get<0>(OrbMats[0].sizes()))
 		});
         boost::multi::array<ComplexType, 2> OB_({0, 0});
         if (OrbMats.size() > 1)
           OB_.reextent({
-            static_cast<boost::multi::size_t>(get<1>(OrbMats[1].sizes())),
-            static_cast<boost::multi::size_t>(get<0>(OrbMats[1].sizes()))
+            static_cast<boost::multi::ssize_t>(get<1>(OrbMats[1].sizes())),
+            static_cast<boost::multi::ssize_t>(get<0>(OrbMats[1].sizes()))
           });
         ma::Matrix2MAREF('H', OrbMats[0], OA_);
         if (OrbMats.size() > 1)

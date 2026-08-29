@@ -72,8 +72,8 @@ class atomcentered_correlators : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix         = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
-  using Static3Tensor        = boost::multi::static_array<ComplexType, 3, shm_stack_alloc_type>;
+  using StaticMatrix         = boost::multi::dynamic_array<ComplexType, 2, shm_stack_alloc_type>;
+  using Static3Tensor        = boost::multi::dynamic_array<ComplexType, 3, shm_stack_alloc_type>;
 
   // MAM: Note -
   // This class uses lots of memory, but can be safely moved to single precision.

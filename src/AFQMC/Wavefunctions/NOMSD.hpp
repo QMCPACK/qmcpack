@@ -86,12 +86,12 @@ class NOMSD : public AFQMCInfo
 
   using stdCMatrix_ref = boost::multi::array_ref<ComplexType, 2>;
 
-  using StaticVector  = boost::multi::static_array<ComplexType, 1, buffer_alloc_type>;
-  using StaticMatrix  = boost::multi::static_array<ComplexType, 2, buffer_alloc_type>;
-  using Static3Tensor = boost::multi::static_array<ComplexType, 3, buffer_alloc_type>;
+  using StaticVector  = boost::multi::dynamic_array<ComplexType, 1, buffer_alloc_type>;
+  using StaticMatrix  = boost::multi::dynamic_array<ComplexType, 2, buffer_alloc_type>;
+  using Static3Tensor = boost::multi::dynamic_array<ComplexType, 3, buffer_alloc_type>;
 
-  using StaticSHMVector = boost::multi::static_array<ComplexType, 1, shm_buffer_alloc_type>;
-  using StaticSHMMatrix = boost::multi::static_array<ComplexType, 2, shm_buffer_alloc_type>;
+  using StaticSHMVector = boost::multi::dynamic_array<ComplexType, 1, shm_buffer_alloc_type>;
+  using StaticSHMMatrix = boost::multi::dynamic_array<ComplexType, 2, shm_buffer_alloc_type>;
 
 public:
   template<class MType>

@@ -357,11 +357,11 @@ void NOMSD<devPsiT>::MixedDensityMatrix_for_E_from_SM(const MatSM& SM,
 
   if (transposed_G_for_E_)
   {
-    assert((G.extents() == boost::multi::extensions_t<2>{nw, static_cast<boost::multi::size_t>(dm_size(false))}));
+    assert((G.extents() == boost::multi::extensions_t<2>{nw, static_cast<boost::multi::ssize_t>(dm_size(false))}));
   }
   else
   {
-    assert((G.extents() == boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(false)), nw}));
+    assert((G.extents() == boost::multi::extensions_t<2>{static_cast<boost::multi::ssize_t>(dm_size(false)), nw}));
   }
   assert(Ov.size() >= nw);
 
@@ -467,12 +467,12 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
   if (transposed)
   {
     assert((G.extents() ==
-            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::ssize_t>(dm_size(not compact))}));
   }
   else
   {
     assert((G.extents() ==
-            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
+            boost::multi::extensions_t<2>{static_cast<boost::multi::ssize_t>(dm_size(not compact)), wset.size()}));
   }
   const int nw = wset.size();
   assert(Ov.size() >= nw);
@@ -613,12 +613,12 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
   if (transposed)
   {
     assert((G.extents() ==
-            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::ssize_t>(dm_size(not compact))}));
   }
   else
   {
     assert((G.extents() ==
-            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
+            boost::multi::extensions_t<2>{static_cast<boost::multi::ssize_t>(dm_size(not compact)), wset.size()}));
   }
 
   const int nw = wset.size();
@@ -879,12 +879,12 @@ void NOMSD<devPsiT>::MixedDensityMatrix_shared(const WlkSet& wset, MatG&& G, TVe
   if (transpose)
   {
     assert((G.extents() ==
-            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::ssize_t>(dm_size(not compact))}));
   }
   else
   {
     assert((G.extents() ==
-            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
+            boost::multi::extensions_t<2>{static_cast<boost::multi::ssize_t>(dm_size(not compact)), wset.size()}));
   }
   const int nw   = wset.size();
   const int ndet = ci.size();
@@ -1149,12 +1149,12 @@ void NOMSD<devPsiT>::MixedDensityMatrix_batched(const WlkSet& wset, MatG&& G, TV
   if (transpose)
   {
     assert((G.extents() ==
-            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::size_t>(dm_size(not compact))}));
+            boost::multi::extensions_t<2>{wset.size(), static_cast<boost::multi::ssize_t>(dm_size(not compact))}));
   }
   else
   {
     assert((G.extents() ==
-            boost::multi::extensions_t<2>{static_cast<boost::multi::size_t>(dm_size(not compact)), wset.size()}));
+            boost::multi::extensions_t<2>{static_cast<boost::multi::ssize_t>(dm_size(not compact)), wset.size()}));
   }
   const int nw   = wset.size();
   const int ndet = ci.size();

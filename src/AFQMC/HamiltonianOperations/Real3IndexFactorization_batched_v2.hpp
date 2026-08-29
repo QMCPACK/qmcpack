@@ -73,14 +73,14 @@ class Real3IndexFactorization_batched_v2
   using SpC4Tensor_ref = boost::multi::array_ref<SPComplexType, 4, sp_pointer>;
   using C4Tensor_ref   = boost::multi::array_ref<ComplexType, 4, pointer>;
 
-  using StaticVector   = boost::multi::static_array<SPComplexType, 1, device_alloc_type>;
-  using StaticMatrix   = boost::multi::static_array<SPComplexType, 2, device_alloc_type>;
-  using Static3Tensor  = boost::multi::static_array<SPComplexType, 3, device_alloc_type>;
-  using Static4Tensor  = boost::multi::static_array<SPComplexType, 4, device_alloc_type>;
-  using StaticRVector  = boost::multi::static_array<SPRealType, 1, device_alloc_Rtype>;
-  using StaticRMatrix  = boost::multi::static_array<SPRealType, 2, device_alloc_Rtype>;
-  using Static3RTensor = boost::multi::static_array<SPRealType, 3, device_alloc_Rtype>;
-  using Static4RTensor = boost::multi::static_array<SPRealType, 4, device_alloc_Rtype>;
+  using StaticVector   = boost::multi::dynamic_array<SPComplexType, 1, device_alloc_type>;
+  using StaticMatrix   = boost::multi::dynamic_array<SPComplexType, 2, device_alloc_type>;
+  using Static3Tensor  = boost::multi::dynamic_array<SPComplexType, 3, device_alloc_type>;
+  using Static4Tensor  = boost::multi::dynamic_array<SPComplexType, 4, device_alloc_type>;
+  using StaticRVector  = boost::multi::dynamic_array<SPRealType, 1, device_alloc_Rtype>;
+  using StaticRMatrix  = boost::multi::dynamic_array<SPRealType, 2, device_alloc_Rtype>;
+  using Static3RTensor = boost::multi::dynamic_array<SPRealType, 3, device_alloc_Rtype>;
+  using Static4RTensor = boost::multi::dynamic_array<SPRealType, 4, device_alloc_Rtype>;
 
   using shmCMatrix    = ComplexMatrix<Allocator_shared>;
   using shmSpC3Tensor = SPComplex3Tensor<SpAllocator_shared>;

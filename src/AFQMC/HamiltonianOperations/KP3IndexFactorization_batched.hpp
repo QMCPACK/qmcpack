@@ -94,11 +94,11 @@ class KP3IndexFactorization_batched
   using Sp4Tensor_ref = SPComplexArray_ref<4, sp_pointer>;
   using Sp5Tensor_ref = SPComplexArray_ref<5, sp_pointer>;
 
-  using StaticIVector = boost::multi::static_array<int, 1, device_alloc_Itype>;
-  using StaticVector  = boost::multi::static_array<SPComplexType, 1, device_alloc_type>;
-  using StaticMatrix  = boost::multi::static_array<SPComplexType, 2, device_alloc_type>;
-  using Static3Tensor = boost::multi::static_array<SPComplexType, 3, device_alloc_type>;
-  using Static4Tensor = boost::multi::static_array<SPComplexType, 4, device_alloc_type>;
+  using StaticIVector = boost::multi::dynamic_array<int, 1, device_alloc_Itype>;
+  using StaticVector  = boost::multi::dynamic_array<SPComplexType, 1, device_alloc_type>;
+  using StaticMatrix  = boost::multi::dynamic_array<SPComplexType, 2, device_alloc_type>;
+  using Static3Tensor = boost::multi::dynamic_array<SPComplexType, 3, device_alloc_type>;
+  using Static4Tensor = boost::multi::dynamic_array<SPComplexType, 4, device_alloc_type>;
 
   using shmCVector  = ComplexVector<Allocator_shared>;
   using shmCMatrix  = ComplexMatrix<Allocator_shared>;

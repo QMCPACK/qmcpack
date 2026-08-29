@@ -54,12 +54,12 @@ protected:
   using stack_alloc_type   = LocalTGBufferManager::template allocator_t<ComplexType>;
   using stack_alloc_SPtype = LocalTGBufferManager::template allocator_t<SPComplexType>;
 
-  using StaticVector    = boost::multi::static_array<ComplexType, 1, stack_alloc_type>;
-  using StaticMatrix    = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
-  using Static3Tensor   = boost::multi::static_array<ComplexType, 3, stack_alloc_type>;
-  using StaticSPVector  = boost::multi::static_array<SPComplexType, 1, stack_alloc_SPtype>;
-  using StaticSPMatrix  = boost::multi::static_array<SPComplexType, 2, stack_alloc_SPtype>;
-  using StaticSP3Tensor = boost::multi::static_array<SPComplexType, 3, stack_alloc_SPtype>;
+  using StaticVector    = boost::multi::dynamic_array<ComplexType, 1, stack_alloc_type>;
+  using StaticMatrix    = boost::multi::dynamic_array<ComplexType, 2, stack_alloc_type>;
+  using Static3Tensor   = boost::multi::dynamic_array<ComplexType, 3, stack_alloc_type>;
+  using StaticSPVector  = boost::multi::dynamic_array<SPComplexType, 1, stack_alloc_SPtype>;
+  using StaticSPMatrix  = boost::multi::dynamic_array<SPComplexType, 2, stack_alloc_SPtype>;
+  using StaticSP3Tensor = boost::multi::dynamic_array<SPComplexType, 3, stack_alloc_SPtype>;
 
   using CVector          = boost::multi::array<ComplexType, 1, allocator>;
   using CMatrix          = boost::multi::array<ComplexType, 2, allocator>;
