@@ -157,7 +157,7 @@ inline THCOps loadTHCOps(hdf_archive& dump,
       app_error() << " Error in loadTHCOps: Problems reading dataset. \n";
       APP_ABORT("");
     }
-    copy_n_cast(H1_.origin(), NMO * NMO, to_address(H1.origin()));
+    copy_n_cast(H1_.base(), NMO * NMO, to_address(H1.base()));
     if (!dump.readEntry(vn0, "v0"))
     {
       app_error() << " Error in loadTHCOps: Problems reading dataset. \n";
@@ -226,6 +226,7 @@ inline THCOps loadTHCOps(hdf_archive& dump,
   {
     // simple
     using ma::H;
+    using std::get;
     if (type == COLLINEAR)
     {
       boost::multi::array<SPComplexType, 2> A({NMO, NAEA});
@@ -234,11 +235,11 @@ inline THCOps loadTHCOps(hdf_archive& dump,
       {
         // cPua = H(Piu) * conj(A)
         ma::Matrix2MA('T', PsiT[2 * i], A);
-        ma::product(H(Piu), A, cPua[i](cPua[i].extension(0), {0, NAEA}));
-        ma::product(H(rotPiu), A, rotcPua[i](cPua[i].extension(0), {0, NAEA}));
+        ma::product(H(Piu), A, cPua[i](get<0>(cPua[i].extents()), {0, NAEA}));
+        ma::product(H(rotPiu), A, rotcPua[i](get<0>(cPua[i].extents()), {0, NAEA}));
         ma::Matrix2MA('T', PsiT[2 * i + 1], B);
-        ma::product(H(Piu), B, cPua[i](cPua[i].extension(0), {NAEA, NAEA + NAEB}));
-        ma::product(H(rotPiu), B, rotcPua[i](cPua[i].extension(0), {NAEA, NAEA + NAEB}));
+        ma::product(H(Piu), B, cPua[i](get<0>(cPua[i].extents()), {NAEA, NAEA + NAEB}));
+        ma::product(H(rotPiu), B, rotcPua[i](get<0>(cPua[i].extents()), {NAEA, NAEA + NAEB}));
       }
     }
     else
@@ -264,7 +265,7 @@ inline THCOps loadTHCOps(hdf_archive& dump,
     {
       check_wavefunction_consistency(type, &PsiT[nd], &PsiT[nd + skp], NMO, NAEA, NAEB);
       auto hij_(rotateHij(type, &PsiT[nd], &PsiT[nd + skp], H1));
-      std::copy_n(hij_.origin(), hij_.num_elements(), to_address(hij[n].origin()));
+      std::copy_n(hij_.base(), hij_.num_elements(), to_address(hij[n].base()));
     }
   }
   TGwfn.Node().barrier();
