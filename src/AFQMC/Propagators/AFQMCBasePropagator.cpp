@@ -196,8 +196,8 @@ void AFQMCBasePropagator::reset_nextra(int nextra)
 
 /*
 void AFQMCBasePropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqrtdt, 
-                          StaticMatrix& X, StaticMatrix & vbias, StaticMatrix& MF, 
-                          StaticMatrix& HWs, bool addRAND) 
+                          DynamicMatrix& X, DynamicMatrix & vbias, DynamicMatrix& MF, 
+                          DynamicMatrix& HWs, bool addRAND) 
 {
   // remember to call vbi = apply_bound_vbias(*vb);
   // X[m,ni,iw] = rand[m,ni,iw] + im * ( vbias[m,iw] - vMF[m]  )

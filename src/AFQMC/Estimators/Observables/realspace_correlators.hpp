@@ -66,7 +66,7 @@ class realspace_correlators : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix         = boost::multi::dynamic_array<ComplexType, 2, shm_stack_alloc_type>;
+  using DynamicMatrix        = boost::multi::dynamic_array<ComplexType, 2, shm_stack_alloc_type>;
 
 public:
   realspace_correlators(afqmc::TaskGroup_& tg_,
@@ -251,7 +251,8 @@ public:
       {
         DMWork = mpi3CTensor({nw, 3, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (get<0>(Gr_host.sizes()) != nw || get<1>(Gr_host.sizes()) != nsp || get<2>(Gr_host.sizes()) != npts || get<3>(Gr_host.sizes()) != npts)
+      if (get<0>(Gr_host.sizes()) != nw || get<1>(Gr_host.sizes()) != nsp || get<2>(Gr_host.sizes()) != npts ||
+          get<3>(Gr_host.sizes()) != npts)
       {
         Gr_host = mpi3C4Tensor({nw, nsp, npts, npts}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -260,9 +261,10 @@ public:
     }
     else
     {
-      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != 3 || get<2>(DMWork.sizes()) != dm_size ||
-          get<0>(Gr_host.sizes()) != nw || get<1>(Gr_host.sizes()) != nsp || get<2>(Gr_host.sizes()) != npts || get<3>(Gr_host.sizes()) != npts ||
-          get<0>(DMAverage.sizes()) != nave || get<1>(DMAverage.sizes()) != 3 || get<2>(DMAverage.sizes()) != dm_size)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != 3 ||
+          get<2>(DMWork.sizes()) != dm_size || get<0>(Gr_host.sizes()) != nw || get<1>(Gr_host.sizes()) != nsp ||
+          get<2>(Gr_host.sizes()) != npts || get<3>(Gr_host.sizes()) != npts || get<0>(DMAverage.sizes()) != nave ||
+          get<1>(DMAverage.sizes()) != 3 || get<2>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -271,8 +273,8 @@ public:
     // if memory becomes a problem, then batch over walkers
     {
       LocalTGBufferManager buffer_manager;
-      StaticMatrix T({nw * nsp * NMO, npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-      StaticMatrix Gr({nsp * nw, npts * npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      DynamicMatrix T({nw * nsp * NMO, npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      DynamicMatrix Gr({nsp * nw, npts * npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
       CTensor_ref Gr3D(make_device_ptr(Gr.base()), {nw, nsp, npts * npts});
       CTensor_ref T3D(make_device_ptr(T.base()), {nw, nsp, NMO * npts});
       CMatrix_ref G2D(make_device_ptr(G.base()), {nw * nsp * NMO, NMO});

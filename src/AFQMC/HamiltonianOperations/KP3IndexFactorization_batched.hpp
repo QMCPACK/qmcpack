@@ -40,7 +40,7 @@ namespace afqmc
 // testing the use of dynamic data transfer during execution to reduce memory in GPU
 // when an approach is found, integrate in original class through additional template parameter
 
-using std::get;  // for C++17 compatibility
+using std::get; // for C++17 compatibility
 
 template<class LQKankMatrix>
 class KP3IndexFactorization_batched
@@ -94,11 +94,11 @@ class KP3IndexFactorization_batched
   using Sp4Tensor_ref = SPComplexArray_ref<4, sp_pointer>;
   using Sp5Tensor_ref = SPComplexArray_ref<5, sp_pointer>;
 
-  using StaticIVector = boost::multi::dynamic_array<int, 1, device_alloc_Itype>;
-  using StaticVector  = boost::multi::dynamic_array<SPComplexType, 1, device_alloc_type>;
-  using StaticMatrix  = boost::multi::dynamic_array<SPComplexType, 2, device_alloc_type>;
-  using Static3Tensor = boost::multi::dynamic_array<SPComplexType, 3, device_alloc_type>;
-  using Static4Tensor = boost::multi::dynamic_array<SPComplexType, 4, device_alloc_type>;
+  using DynamicIVector = boost::multi::dynamic_array<int, 1, device_alloc_Itype>;
+  using DynamicVector  = boost::multi::dynamic_array<SPComplexType, 1, device_alloc_type>;
+  using DynamicMatrix  = boost::multi::dynamic_array<SPComplexType, 2, device_alloc_type>;
+  using Dynamic3Tensor = boost::multi::dynamic_array<SPComplexType, 3, device_alloc_type>;
+  using Dynamic4Tensor = boost::multi::dynamic_array<SPComplexType, 4, device_alloc_type>;
 
   using shmCVector  = ComplexVector<Allocator_shared>;
   using shmCMatrix  = ComplexMatrix<Allocator_shared>;
@@ -187,9 +187,9 @@ public:
         dev_QKToK2(QKToK2),
         EQ(nopk.size() + 2)
   {
-    using std::get;
     using std::copy_n;
     using std::fill_n;
+    using std::get;
     nocc_max = *std::max_element(nelpk.base(), nelpk.base() + nelpk.num_elements());
     fill_n(EQ.data(), EQ.size(), 0);
     int nkpts = nopk.size();
@@ -330,10 +330,10 @@ public:
 
   ~KP3IndexFactorization_batched() {}
 
-  KP3IndexFactorization_batched(const KP3IndexFactorization_batched& other) = delete;
+  KP3IndexFactorization_batched(const KP3IndexFactorization_batched& other)            = delete;
   KP3IndexFactorization_batched& operator=(const KP3IndexFactorization_batched& other) = delete;
   KP3IndexFactorization_batched(KP3IndexFactorization_batched&& other)                 = default;
-  KP3IndexFactorization_batched& operator=(KP3IndexFactorization_batched&& other) = default;
+  KP3IndexFactorization_batched& operator=(KP3IndexFactorization_batched&& other)      = default;
 
   // must have the same signature as shared classes, so keeping it with std::allocator
   // NOTE: THIS SHOULD USE mpi3::shm!!!
@@ -481,7 +481,7 @@ public:
                     bool addEJ  = true,
                     bool addEXX = true)
   {
-    using std::get;  // for C++17 compatibility
+    using std::get; // for C++17 compatibility
 
     using std::copy_n;
     using std::fill_n;
@@ -541,8 +541,8 @@ public:
     {
       APP_ABORT(" Error: Kr and/or Kl can only be calculated with addEJ=true.\n");
     }
-    StaticMatrix Kl({Knr, Knc}, device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticMatrix Kr({Knr, Knc}, device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicMatrix Kl({Knr, Knc}, device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicMatrix Kr({Knr, Knc}, device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     fill_n(Kr.base(), Knr * Knc, SPComplexType(0.0));
     fill_n(Kl.base(), Knr * Knc, SPComplexType(0.0));
 
@@ -555,8 +555,8 @@ public:
 
     // later on, rewrite routine to loop over spins, to avoid storage of both spin
     // components simultaneously
-    Static4Tensor GKK({nspin, nkpts, nkpts, nwalk * npol * nmo_max * nocc_max},
-                      device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    Dynamic4Tensor GKK({nspin, nkpts, nkpts, nwalk * npol * nmo_max * nocc_max},
+                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     GKaKjw_to_GKKwaj(G3Da, GKK[0], nelpk[nd].sliced(0, nkpts), dev_nelpk[nd], dev_a0pk[nd]);
     if (walker_type == COLLINEAR)
       GKaKjw_to_GKKwaj(G3Db, GKK[1], nelpk[nd].sliced(nkpts, 2 * nkpts), dev_nelpk[nd].sliced(nkpts, 2 * nkpts),
@@ -627,21 +627,21 @@ public:
       std::vector<int> kdiag;
       kdiag.reserve(batch_size);
 
-      StaticIVector IMats(iextensions<1u>{batch_size},
-                          device_buffer_manager.get_generator().template get_allocator<int>());
+      DynamicIVector IMats(iextensions<1u>{batch_size},
+                           device_buffer_manager.get_generator().template get_allocator<int>());
       fill_n(IMats.base(), IMats.num_elements(), 0);
-      StaticVector dev_scl_factors(iextensions<1u>{batch_size},
-                                   device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
-      Static3Tensor T1({batch_size, nwalk * nocc_max, nocc_max * nchol_max},
-                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicVector dev_scl_factors(iextensions<1u>{batch_size},
+                                    device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      Dynamic3Tensor T1({batch_size, nwalk * nocc_max, nocc_max * nchol_max},
+                        device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       SPRealType scl = (walker_type == CLOSED ? 2.0 : 1.0);
 
       // I WANT C++17!!!!!!
       long mem_ank(0);
       if (needs_copy)
         mem_ank = nkpts * nocc_max * nchol_max * npol * nmo_max;
-      StaticVector LBuff(iextensions<1u>{2 * mem_ank},
-                         device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicVector LBuff(iextensions<1u>{2 * mem_ank},
+                          device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       sp_pointer LQptr(nullptr), LQmptr(nullptr);
       if (needs_copy)
       {
@@ -682,8 +682,7 @@ public:
           {
             copy_n(to_address(LQKank[nd * nspin * nkpts + spin * nkpts + Q].base()), LQ.num_elements(), LQ.base());
             if (Q != Qm)
-              copy_n(to_address(LQKank[nd * nspin * nkpts + spin * nkpts + Qm].base()), LQm.num_elements(),
-                     LQm.base());
+              copy_n(to_address(LQKank[nd * nspin * nkpts + spin * nkpts + Qm].base()), LQm.num_elements(), LQm.base());
           }
 
           for (int Ka = 0; Ka < nkpts; ++Ka)
@@ -723,16 +722,16 @@ public:
 
                 copy_n(scl_factors.data(), scl_factors.size(), dev_scl_factors.base());
                 using ma::batched_dot_wabn_wban;
-                batched_dot_wabn_wban(scl_factors.size(), nwalk, nocc_max, nchol_max, dev_scl_factors.base(),
-                                      T1.base(), to_address(E[0].base()) + 1, E.stride());
+                batched_dot_wabn_wban(scl_factors.size(), nwalk, nocc_max, nchol_max, dev_scl_factors.base(), T1.base(),
+                                      to_address(E[0].base()) + 1, E.stride());
 
                 if (addEJ)
                 {
                   int nc0 = Q2vbias[Q] / 2; //std::accumulate(ncholpQ.begin(),ncholpQ.begin()+Q,0);
                   copy_n(kdiag.data(), kdiag.size(), IMats.base());
                   using ma::batched_Tab_to_Klr;
-                  batched_Tab_to_Klr(kdiag.size(), nwalk, nocc_max, nchol_max, local_nCV, ncholpQ[Q], nc0,
-                                     IMats.base(), T1.base(), Kl.base(), Kr.base());
+                  batched_Tab_to_Klr(kdiag.size(), nwalk, nocc_max, nchol_max, local_nCV, ncholpQ[Q], nc0, IMats.base(),
+                                     T1.base(), Kl.base(), Kr.base());
                 }
 
                 // reset
@@ -767,7 +766,7 @@ public:
             }
           }
         } // Q
-      }   // COLLINEAR
+      } // COLLINEAR
     }
 
     if (addEJ)
@@ -1172,9 +1171,7 @@ public:
 
   template<class... Args>
   void fast_energy(Args&&... args)
-  {
-    APP_ABORT(" Error: fast_energy not implemented in KP3IndexFactorization_batched. \n");
-  }
+  { APP_ABORT(" Error: fast_energy not implemented in KP3IndexFactorization_batched. \n"); }
 
   template<
       class MatA,
@@ -1203,7 +1200,7 @@ public:
       >
   void vHS(MatA& X, MatB&& v, double a = 1., double c = 0.)
   {
-    using std::get;  // for C++17 compatibility
+    using std::get; // for C++17 compatibility
     int nkpts = nopk.size();
     int nwalk = get<1>(X.sizes());
     assert(v.size() == nwalk);
@@ -1219,17 +1216,17 @@ public:
     SPComplexType minusimhalfa(0.0, -0.5 * a);
     SPComplexType imhalfa(0.0, 0.5 * a);
 
-    Static3Tensor vKK({nkpts + number_of_symmetric_Q, nkpts, nwalk * nmo_max * nmo_max},
-                      device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    fill_n(vKK.base(), vKK.num_elements(), SPComplexType(0.0));
-    Static4Tensor XQnw({nkpts, 2, nchol_max, nwalk},
+    Dynamic3Tensor vKK({nkpts + number_of_symmetric_Q, nkpts, nwalk * nmo_max * nmo_max},
                        device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    fill_n(vKK.base(), vKK.num_elements(), SPComplexType(0.0));
+    Dynamic4Tensor XQnw({nkpts, 2, nchol_max, nwalk},
+                        device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     fill_n(XQnw.base(), XQnw.num_elements(), SPComplexType(0.0));
 
     // "rotate" X
     //  XIJ = 0.5*a*(Xn+ -i*Xn-), XJI = 0.5*a*(Xn+ +i*Xn-)
 #if defined(MIXED_PRECISION)
-    StaticMatrix Xdev(X.extents(), device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicMatrix Xdev(X.extents(), device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     copy_n_cast(make_device_ptr(X.base()), X.num_elements(), Xdev.base());
 #else
     SpMatrix_ref Xdev(make_device_ptr(X.base()), X.extents());
@@ -1325,7 +1322,7 @@ public:
 
     using vType = typename std::decay<MatB>::type::element;
     boost::multi::array_ref<vType, 3, decltype(make_device_ptr(v.base()))> v3D(make_device_ptr(v.base()),
-                                                                                 {nwalk, nmo_tot, nmo_tot});
+                                                                               {nwalk, nmo_tot, nmo_tot});
     vKKwij_to_vwKiKj(vKK, v3D);
     // do I need to "rotate" back, can be done if necessary
   }
@@ -1373,8 +1370,8 @@ public:
       >
   void vbias(const MatA& G, MatB&& v, double a = 1., double c = 0., int nd = 0)
   {
-    using std::get;  // for C++17 compatibility
     using ma::gemmBatched;
+    using std::get; // for C++17 compatibility
 
     int nkpts = nopk.size();
     assert(nd >= 0 && nd < nelpk.size());
@@ -1403,12 +1400,12 @@ public:
     // MAM: use reshape when available, then no need to deal with types
     using GType = typename std::decay<MatA>::type::element;
     boost::multi::array_ref<GType const, 3, decltype(make_device_ptr(G.base()))> G3Da(make_device_ptr(G.base()),
-                                                                                        {nocca_tot * npol, nmo_tot,
-                                                                                         nwalk});
+                                                                                      {nocca_tot * npol, nmo_tot,
+                                                                                       nwalk});
     boost::multi::array_ref<GType const, 3, decltype(make_device_ptr(G.base()))> G3Db(make_device_ptr(G.base()) +
-                                                                                            G3Da.num_elements() *
-                                                                                                (nspin - 1),
-                                                                                        {noccb_tot, nmo_tot, nwalk});
+                                                                                          G3Da.num_elements() *
+                                                                                              (nspin - 1),
+                                                                                      {noccb_tot, nmo_tot, nwalk});
 
     // assuming contiguous
     ma::scal(c, v);
@@ -1416,10 +1413,10 @@ public:
     for (int spin = 0; spin < nspin; spin++)
     {
       size_t cnt(0);
-      Static3Tensor v1({nkpts + number_of_symmetric_Q, nchol_max, nwalk},
-                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
-      Static3Tensor GQ({nkpts, nkpts * nocc_max * npol * nmo_max, nwalk},
-                       device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      Dynamic3Tensor v1({nkpts + number_of_symmetric_Q, nchol_max, nwalk},
+                        device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      Dynamic3Tensor GQ({nkpts, nkpts * nocc_max * npol * nmo_max, nwalk},
+                        device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       fill_n(v1.base(), v1.num_elements(), SPComplexType(0.0));
       fill_n(GQ.base(), GQ.num_elements(), SPComplexType(0.0));
 
@@ -1463,9 +1460,7 @@ public:
 
   template<class Mat, class MatB>
   void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
-  {
-    APP_ABORT(" Error: generalizedFockMatrix not implemented for this hamiltonian.\n");
-  }
+  { APP_ABORT(" Error: generalizedFockMatrix not implemented for this hamiltonian.\n"); }
 
   bool distribution_over_cholesky_vectors() const { return true; }
   int number_of_ke_vectors() const { return local_nCV; }
@@ -1590,7 +1585,7 @@ private:
   template<class MatA, class MatB, class IVec, class IVec2>
   void GKaKjw_to_GKKwaj(MatA const& GKaKj, MatB&& GKKaj, IVec&& nocc, IVec2&& dev_no, IVec2&& dev_a0)
   {
-    using std::get;  // for C++17 compatibility
+    using std::get; // for C++17 compatibility
 
     int npol    = (walker_type == NONCOLLINEAR) ? 2 : 1;
     int nmo_max = *std::max_element(nopk.begin(), nopk.end());
@@ -1601,8 +1596,8 @@ private:
     assert(GKKaj.num_elements() >= nkpts * nkpts * nwalk * nocc_max * npol * nmo_max);
 
     using ma::KaKjw_to_KKwaj;
-    KaKjw_to_KKwaj(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, dev_nopk.base(), dev_i0pk.base(),
-                   dev_no.base(), dev_a0.base(), GKaKj.base(), GKKaj.base());
+    KaKjw_to_KKwaj(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, dev_nopk.base(), dev_i0pk.base(), dev_no.base(),
+                   dev_a0.base(), GKaKj.base(), GKKaj.base());
   }
 
   template<class MatA, class MatB, class IVec, class IVec2>
@@ -1612,15 +1607,15 @@ private:
     int nmo_max = *std::max_element(nopk.begin(), nopk.end());
     //      int nocc_max = *std::max_element(nocc.begin(),nocc.end());
 
-    using std::get;  // for C++17 compatibility
+    using std::get; // for C++17 compatibility
     int nmo_tot = get<1>(GKaKj.sizes());
     int nwalk   = get<2>(GKaKj.sizes());
     int nkpts   = nopk.size();
     assert(GQKaj.num_elements() >= nkpts * nkpts * nwalk * nocc_max * npol * nmo_max);
 
     using ma::KaKjw_to_QKajw;
-    KaKjw_to_QKajw(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, dev_nopk.base(), dev_i0pk.base(),
-                   dev_no.base(), dev_a0.base(), dev_QKToK2.base(), GKaKj.base(), GQKaj.base());
+    KaKjw_to_QKajw(nwalk, nkpts, npol, nmo_max, nmo_tot, nocc_max, dev_nopk.base(), dev_i0pk.base(), dev_no.base(),
+                   dev_a0.base(), dev_QKToK2.base(), GKaKj.base(), GQKaj.base());
   }
 
 
@@ -1639,8 +1634,8 @@ private:
     int nkpts   = nopk.size();
 
     using ma::vKKwij_to_vwKiKj;
-    vKKwij_to_vwKiKj(nwalk, nkpts, nmo_max, nmo_tot, KKTransID.base(), dev_nopk.base(), dev_i0pk.base(),
-                     vKK.base(), vKiKj.base());
+    vKKwij_to_vwKiKj(nwalk, nkpts, nmo_max, nmo_tot, KKTransID.base(), dev_nopk.base(), dev_i0pk.base(), vKK.base(),
+                     vKiKj.base());
   }
 
   template<class MatA, class MatB>
@@ -1655,9 +1650,8 @@ private:
 
     using ma::vbias_from_v1;
     // using make_device_ptr(vbias.base()) to catch errors here
-    vbias_from_v1(nwalk, nkpts, nchol_max, dev_Qmap.base(), dev_kminus.base(), dev_ncholpQ.base(),
-                  dev_Q2vbias.base(), static_cast<BType>(a), v1.base(),
-                  to_address(make_device_ptr(vbias.base())));
+    vbias_from_v1(nwalk, nkpts, nchol_max, dev_Qmap.base(), dev_kminus.base(), dev_ncholpQ.base(), dev_Q2vbias.base(),
+                  static_cast<BType>(a), v1.base(), to_address(make_device_ptr(vbias.base())));
   }
 };
 

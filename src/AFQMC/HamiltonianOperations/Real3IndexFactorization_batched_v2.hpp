@@ -73,14 +73,14 @@ class Real3IndexFactorization_batched_v2
   using SpC4Tensor_ref = boost::multi::array_ref<SPComplexType, 4, sp_pointer>;
   using C4Tensor_ref   = boost::multi::array_ref<ComplexType, 4, pointer>;
 
-  using StaticVector   = boost::multi::dynamic_array<SPComplexType, 1, device_alloc_type>;
-  using StaticMatrix   = boost::multi::dynamic_array<SPComplexType, 2, device_alloc_type>;
-  using Static3Tensor  = boost::multi::dynamic_array<SPComplexType, 3, device_alloc_type>;
-  using Static4Tensor  = boost::multi::dynamic_array<SPComplexType, 4, device_alloc_type>;
-  using StaticRVector  = boost::multi::dynamic_array<SPRealType, 1, device_alloc_Rtype>;
-  using StaticRMatrix  = boost::multi::dynamic_array<SPRealType, 2, device_alloc_Rtype>;
-  using Static3RTensor = boost::multi::dynamic_array<SPRealType, 3, device_alloc_Rtype>;
-  using Static4RTensor = boost::multi::dynamic_array<SPRealType, 4, device_alloc_Rtype>;
+  using DynamicVector   = boost::multi::dynamic_array<SPComplexType, 1, device_alloc_type>;
+  using DynamicMatrix   = boost::multi::dynamic_array<SPComplexType, 2, device_alloc_type>;
+  using Dynamic3Tensor  = boost::multi::dynamic_array<SPComplexType, 3, device_alloc_type>;
+  using Dynamic4Tensor  = boost::multi::dynamic_array<SPComplexType, 4, device_alloc_type>;
+  using DynamicRVector  = boost::multi::dynamic_array<SPRealType, 1, device_alloc_Rtype>;
+  using DynamicRMatrix  = boost::multi::dynamic_array<SPRealType, 2, device_alloc_Rtype>;
+  using Dynamic3RTensor = boost::multi::dynamic_array<SPRealType, 3, device_alloc_Rtype>;
+  using Dynamic4RTensor = boost::multi::dynamic_array<SPRealType, 4, device_alloc_Rtype>;
 
   using shmCMatrix    = ComplexMatrix<Allocator_shared>;
   using shmSpC3Tensor = SPComplex3Tensor<SpAllocator_shared>;
@@ -145,10 +145,10 @@ public:
 
   ~Real3IndexFactorization_batched_v2() {}
 
-  Real3IndexFactorization_batched_v2(const Real3IndexFactorization_batched_v2& other) = delete;
+  Real3IndexFactorization_batched_v2(const Real3IndexFactorization_batched_v2& other)            = delete;
   Real3IndexFactorization_batched_v2& operator=(const Real3IndexFactorization_batched_v2& other) = delete;
   Real3IndexFactorization_batched_v2(Real3IndexFactorization_batched_v2&& other)                 = default;
-  Real3IndexFactorization_batched_v2& operator=(Real3IndexFactorization_batched_v2&& other) = delete;
+  Real3IndexFactorization_batched_v2& operator=(Real3IndexFactorization_batched_v2&& other)      = delete;
 
   boost::multi::array<ComplexType, 2> getOneBodyPropagatorMatrix(TaskGroup_& TG,
                                                                  boost::multi::array<ComplexType, 1> const& vMF)
@@ -271,7 +271,7 @@ public:
     {
       APP_ABORT(" Error: Kr and/or Kl can only be calculated with addEJ=true.\n");
     }
-    StaticMatrix Kl({Knr, Knc}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicMatrix Kl({Knr, Knc}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
     fill_n(Kl.base(), Kl.num_elements(), SPComplexType(0.0));
 
     for (int n = 0; n < nwalk; n++)
@@ -302,8 +302,8 @@ public:
       if (nspin > 1)
         mem_needs = nwalk * std::max(nel[0], nel[1]) * NMO;
 #endif
-      StaticVector T1(iextensions<1u>{mem_needs},
-                      buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicVector T1(iextensions<1u>{mem_needs},
+                       buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
       for (int ispin = 0, is0 = 0; ispin < nspin; ispin++)
       {
@@ -335,8 +335,8 @@ public:
         {
           int nvecs = std::min(local_nCV - nCV, max_nCV);
           SpCMatrix_ref Lna(make_device_ptr(Lnak[nd * nspin + ispin][nCV].base()), {nvecs * nel[ispin], NMO});
-          StaticMatrix Twbna({nwalk * nel[ispin], nvecs * nel[ispin]},
-                             buffer_manager.get_generator().template get_allocator<SPComplexType>());
+          DynamicMatrix Twbna({nwalk * nel[ispin], nvecs * nel[ispin]},
+                              buffer_manager.get_generator().template get_allocator<SPComplexType>());
           SpC4Tensor_ref T4Dwbna(Twbna.base(), {nwalk, nel[ispin], nvecs, nel[ispin]});
 
           ma::product(GF, ma::T(Lna), Twbna);
@@ -377,9 +377,7 @@ public:
 
   template<class... Args>
   void fast_energy(Args&&... args)
-  {
-    APP_ABORT(" Error: fast_energy not implemented in Real3IndexFactorization_batched_v2. \n");
-  }
+  { APP_ABORT(" Error: fast_energy not implemented in Real3IndexFactorization_batched_v2. \n"); }
 
   template<class MatA,
            class MatB,
@@ -416,8 +414,8 @@ public:
       Xmem = X.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       vmem = v.num_elements();
-    StaticVector SPBuff(iextensions<1u>(Xmem + vmem),
-                        buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicVector SPBuff(iextensions<1u>(Xmem + vmem),
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
     sp_pointer vptr(nullptr);
     const_sp_pointer Xptr(nullptr);
     // setup origin of Gsp and copy_n_cast if necessary
@@ -483,8 +481,8 @@ public:
       Gmem = G.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       vmem = v.num_elements();
-    StaticVector SPBuff(iextensions<1u>(Gmem + vmem),
-                        buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicVector SPBuff(iextensions<1u>(Gmem + vmem),
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
     sp_pointer vptr(nullptr);
     const_sp_pointer Gptr(nullptr);
     // setup origin of Gsp and copy_n_cast if necessary
@@ -530,7 +528,7 @@ public:
         c_[1] = c;
         if (std::abs(c) < 1e-8)
           c_[1] = 1.0;
-        assert((nel[0]+nel[1])*NMO == get<0>(G.sizes()));
+        assert((nel[0] + nel[1]) * NMO == get<0>(G.sizes()));
         for (int ispin = 0, is0 = 0; ispin < 2; ispin++)
         {
           assert(get<0>(Lnak[ispin].sizes()) == get<0>(v.sizes()));
@@ -544,7 +542,8 @@ public:
         assert(get<1>(G.sizes()) == get<1>(v.sizes()));
         assert(get<1>(Lnak[0].sizes()) * get<2>(Lnak[0].sizes()) == get<0>(G.sizes()));
         assert(get<0>(Lnak[0].sizes()) == get<0>(v.sizes()));
-        SpCMatrix_ref Ln(make_device_ptr(Lnak[0].base()), {local_nCV, get<1>(Lnak[0].sizes()) * get<2>(Lnak[0].sizes())});
+        SpCMatrix_ref Ln(make_device_ptr(Lnak[0].base()),
+                         {local_nCV, get<1>(Lnak[0].sizes()) * get<2>(Lnak[0].sizes())});
         ma::product(SPComplexType(a), Ln, Gsp, SPComplexType(c), vsp);
       }
     }
@@ -593,10 +592,10 @@ public:
     assert(nwmax >= 1 && nwmax <= nwmax);
 
 #if defined(MIXED_PRECISION)
-    StaticMatrix Fp_({nwalk, nspin * NMO * NMO},
-                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticMatrix Fm_({nwalk, nspin * NMO * NMO},
-                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicMatrix Fp_({nwalk, nspin * NMO * NMO},
+                      buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicMatrix Fm_({nwalk, nspin * NMO * NMO},
+                      buffer_manager.get_generator().template get_allocator<SPComplexType>());
 #else
     SpCMatrix_ref Fp_(make_device_ptr(Fp.base()), {nwalk, nspin * NMO * NMO});
     SpCMatrix_ref Fm_(make_device_ptr(Fm.base()), {nwalk, nspin * NMO * NMO});
@@ -619,7 +618,7 @@ public:
     if (nspin > 1)
       gsz = nspin * nwmax * NMO * NMO;
 #endif
-    StaticVector GBuff(iextensions<1u>{gsz}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicVector GBuff(iextensions<1u>{gsz}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     int nw0(0);
     while (nw0 < nwalk)
@@ -648,10 +647,10 @@ public:
       }
 #endif
       SpCTensor_ref GF(ptr, {nspin, nw * NMO, NMO}); // now contains G in the correct structure [spin][w][i][j]
-      StaticMatrix Gt({NMO * NMO, nw}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicMatrix Gt({NMO * NMO, nw}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
       fill_n(Gt.base(), Gt.num_elements(), SPComplexType(0.0));
 
-      StaticMatrix Rnw({local_nCV, nw}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicMatrix Rnw({local_nCV, nw}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
       // calculate Rwn
       for (int ispin = 0; ispin < nspin; ispin++)
       {
@@ -660,7 +659,7 @@ public:
       }
       // R[n,w] = \sum_ik L[n,ik] G[ik,w]
       ma::product(SPValueType(1.0), ma::T(Likn), Gt, SPValueType(0.0), Rnw);
-      StaticMatrix Rwn({nw, local_nCV}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicMatrix Rwn({nw, local_nCV}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
       ma::transpose(Rnw, Rwn);
 
       // add coulomb contribution of <pr||qs>Grs term to Fp, reuse Gt for temporary storage
@@ -676,11 +675,11 @@ public:
       // L[i,kn]
       SpRMatrix_ref Ln(make_device_ptr(Likn.base()), {NMO, NMO * local_nCV});
       // T[w,p,t,n] = \sum_{l} L[l,t,n] P[w,l,p]
-      StaticMatrix Twptn({nw * NMO, NMO * local_nCV},
-                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicMatrix Twptn({nw * NMO, NMO * local_nCV},
+                          buffer_manager.get_generator().template get_allocator<SPComplexType>());
       // transpose for faster contraction
-      StaticMatrix Taux({nw * NMO, NMO * local_nCV},
-                        buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicMatrix Taux({nw * NMO, NMO * local_nCV},
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
       SpCTensor_ref Taux3D(Taux.base(), {nw, NMO, NMO * local_nCV});
       SpCTensor_ref Twptn3D(Twptn.base(), {nw, NMO, NMO * local_nCV});
       SpCTensor_ref Twptn3D_(Twptn.base(), {nw, NMO * NMO, local_nCV});
@@ -852,7 +851,7 @@ public:
   int global_origin_cholesky_vector() const { return global_origin; }
 
   // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
-  bool transposed_G_for_vbias() const { return false; } 
+  bool transposed_G_for_vbias() const { return false; }
   bool transposed_G_for_E() const { return true; }
   // transpose=true means vHS[nwalk][ik], false means vHS[ik][nwalk]
   bool transposed_vHS() const { return false; }

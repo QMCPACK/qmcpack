@@ -69,8 +69,8 @@ class full2rdm : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using StaticVector     = boost::multi::dynamic_array<ComplexType, 1, stack_alloc_type>;
-  using StaticMatrix     = boost::multi::dynamic_array<ComplexType, 2, stack_alloc_type>;
+  using DynamicVector    = boost::multi::dynamic_array<ComplexType, 1, stack_alloc_type>;
+  using DynamicMatrix    = boost::multi::dynamic_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   full2rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, int nave_ = 1, int bsize = 1)
@@ -131,8 +131,7 @@ public:
         dim[0] = R.size();
         dim[1] = 0;
         // conjugate rotation matrix
-        std::transform(R.base(), R.base() + R.num_elements(), R.base(),
-                       [](const auto& c) { return std::conj(c); });
+        std::transform(R.base(), R.base() + R.num_elements(), R.base(), [](const auto& c) { return std::conj(c); });
         TG.Node().broadcast_n(dim, 2, 0);
         XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
         copy_n(R.base(), R.num_elements(), make_device_ptr(XRot.base()));
@@ -215,8 +214,8 @@ public:
     }
     else
     {
-      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size || get<0>(DMAverage.sizes()) != nave ||
-          get<1>(DMAverage.sizes()) != dm_size)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size ||
+          get<0>(DMAverage.sizes()) != nave || get<1>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -319,13 +318,13 @@ private:
     size_t M4(M2 * M2);
     size_t N = size_t(dN) * M2;
     DeviceBufferManager buffer_manager;
-    StaticMatrix R({dN, NMO * NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicMatrix R({dN, NMO * NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref Q(R.base(), {NMO * NMO, NMO});
     CVector_ref R1D(R.base(), R.num_elements());
     CVector_ref Q1D(Q.base(), Q.num_elements());
 
     // put this in shared memory!!!
-    StaticMatrix Gt({NMO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicMatrix Gt({NMO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     CMatrix_ref GtC(Gt.base(), {NMO * NMO, 1});
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     if (Grot.size() < R.num_elements())
