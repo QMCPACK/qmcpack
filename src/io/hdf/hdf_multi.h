@@ -309,7 +309,7 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, device::device_all
     {
       // later on specialize h5d_read for fancy pointers
       auto sz = ref.ref.num_elements();
-      boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
+      boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extents_type{sz});
       auto ret = h5d_read(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
                           ref.slab_offset.data(), buf.base(), xfer_plist);
       device::copy_n(buf.data(), sz, ref.ref.base());
@@ -348,7 +348,7 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, device::device
     {
       // later on specialize h5d_read for fancy pointers
       auto sz = ref.ref.num_elements();
-      boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
+      boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extents_type{sz});
       auto ret = h5d_read(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
                           ref.slab_offset.data(), buf.base(), xfer_plist);
       device::copy_n(buf.data(), sz, ref.ref.base());
