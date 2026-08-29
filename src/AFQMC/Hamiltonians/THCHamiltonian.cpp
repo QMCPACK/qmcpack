@@ -229,8 +229,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     //         = -0.5 sum_u,v ma::conj(Piu(i,u)) W(u,v) Piu(l,u), where
     // W(u,v) = Muv(u,v) * sum_j Piu(j,u) ma::conj(Piu(j,v))
     ma::product(H(Piu__), Piu__({0, long(NMO)}, {long(c0), long(cN)}), Tuv);
-    auto itM = Muv.origin();
-    auto itT = Tuv.origin();
+    auto itM = Muv.base();
+    auto itT = Tuv.base();
     for (size_t i = 0; i < Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = ma::conj(*itT) * (*itM);
 
@@ -240,10 +240,10 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     ma::product(SPValueType(-0.5), T(T_), T(Piu__({0, long(NMO)}, {long(c0), long(cN)})), SPValueType(0.0), v0_);
 
     // reduce over Global
-    TG.Global().all_reduce_in_place_n(v0_.origin(), v0_.num_elements(), std::plus<>());
+    TG.Global().all_reduce_in_place_n(v0_.base(), v0_.num_elements(), std::plus<>());
     if (TG.Node().root())
     {
-      copy_n_cast(v0_.origin(), NMO * NMO, to_address(v0.origin()));
+      copy_n_cast(v0_.base(), NMO * NMO, to_address(v0.base()));
 #if defined(MIXED_PRECISION)
       // MAM: Since Muv gets large, might have problems with the check for hermicity below
       // fixing here
@@ -282,8 +282,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     //         = -0.5 sum_u,v ma::conj(Piu(i,u)) W(u,v) Piu(l,v), where
     // W(u,v) = Muv(u,v) * sum_j Piu(j,u) ma::conj(Piu(j,v))
     ma::product(H(Piu), Piu({0, long(NMO)}, {long(c0), long(cN)}), Tuv);
-    auto itM = Muv.origin();
-    auto itT = Tuv.origin();
+    auto itM = Muv.base();
+    auto itT = Tuv.base();
     for (size_t i = 0; i < Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = ma::conj(*itT) * (*itM);
 
@@ -293,10 +293,10 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     ma::product(SPValueType(-0.5), T(T_), T(Piu({0, long(NMO)}, {long(c0), long(cN)})), SPValueType(0.0), v0_);
 
     // reduce over Global
-    TG.Global().all_reduce_in_place_n(v0_.origin(), v0_.num_elements(), std::plus<>());
+    TG.Global().all_reduce_in_place_n(v0_.base(), v0_.num_elements(), std::plus<>());
     if (TG.Node().root())
     {
-      copy_n_cast(v0_.origin(), NMO * NMO, to_address(v0.origin()));
+      copy_n_cast(v0_.base(), NMO * NMO, to_address(v0.base()));
 #if defined(MIXED_PRECISION)
       // MAM: Since Muv gets large, might have problems with the check for hermicity below
       // fixing here
@@ -360,13 +360,13 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
   if (TG.Node().root())
   {
     // dense one body hamiltonian
-    copy_n_cast((OneBodyHamiltonian::H1).origin(), NMO * NMO, to_address(H1_.origin()));
+    copy_n_cast((OneBodyHamiltonian::H1).base(), NMO * NMO, to_address(H1_.base()));
     int skp = ((type == COLLINEAR) ? 1 : 0);
     for (int n = 0, nd = 0; n < ndet; ++n, nd += (skp + 1))
     {
       check_wavefunction_consistency(type, &PsiT[nd], &PsiT[nd + skp], NMO, naea_, naeb_);
       auto hij_(rotateHij(type, &PsiT[nd], &PsiT[nd + skp], H1_));
-      std::copy_n(hij_.origin(), hij_.num_elements(), to_address(hij[n].origin()));
+      std::copy_n(hij_.base(), hij_.num_elements(), to_address(hij[n].base()));
     }
   }
   TG.Node().barrier();

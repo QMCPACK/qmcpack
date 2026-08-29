@@ -18,6 +18,15 @@
 #ifndef MA_BLAS_HPP
 #define MA_BLAS_HPP
 
+// multi::array_ref::origin() is deprecated in favor of .base(), but .base() (const&) miscomputes
+// element_const_ptr when ElementPtr's pointee type differs from T (as with the real/complex
+// reinterpret views used throughout this file for BLAS calls) in boost-multi 0.91.1. Keep .origin()
+// here and suppress the warning until that library issue is fixed.
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include "AFQMC/Numerics/detail/blas.hpp"
 #include <utility> //std::enable_if
 #include <cassert>
@@ -423,5 +432,9 @@ MultiArray2DC&& geam(T alpha, MultiArray2DA const& a, MultiArray2DC&& c)
 }
 
 } // namespace ma
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 #endif

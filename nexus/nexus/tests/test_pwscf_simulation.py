@@ -119,16 +119,12 @@ def test_get_result(tmp_path):
 
     sim = get_pwscf_sim('scf')
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented"
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
+
 
     result  = sim.get_result('charge_density',None)
     result2 = sim.get_result('restart',None)

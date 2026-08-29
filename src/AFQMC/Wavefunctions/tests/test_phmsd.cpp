@@ -154,7 +154,7 @@ void getBasicWavefunction(std::vector<int>& occs, std::vector<ComplexType>& coef
 void getSlaterMatrix(boost::multi::array<ComplexType, 2>& SM, boost::multi::array_ref<int, 1>& occs, int NEL)
 {
   using std::fill_n;
-  fill_n(SM.origin(), SM.num_elements(), ComplexType(0.0));
+  fill_n(SM.base(), SM.num_elements(), ComplexType(0.0));
   for (int i = 0; i < NEL; i++)
     SM[i][occs[i]] = ComplexType(1.0);
 }
@@ -228,7 +228,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     REQUIRE(get<1>(initial_guess.sizes()) == NMO);
     REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
-    wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+    wset.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
     // 1. Test Overlap Explicitly
     // 1.a Get raw occupancies and coefficients from file.
     std::vector<ComplexType> coeffs;
@@ -250,18 +250,18 @@ void test_phmsd(boost::mpi3::communicator& world)
     for (int idet = 0; idet < coeffs.size(); idet++)
     {
       // Construct slater matrix from given set of occupied orbitals.
-      boost::multi::array_ref<int, 1> oa(occs[idet].origin(), {NAEA});
+      boost::multi::array_ref<int, 1> oa(occs[idet].base(), {NAEA});
       getSlaterMatrix(TrialA, oa, NAEA);
-      boost::multi::array_ref<int, 1> ob(occs[idet].origin() + NAEA, {NAEB});
+      boost::multi::array_ref<int, 1> ob(occs[idet].base() + NAEA, {NAEB});
       for (int i = 0; i < NAEB; i++)
         ob[i] -= NMO;
       getSlaterMatrix(TrialB, ob, NAEB);
       ComplexType ovlpa = sdet->Overlap(TrialA, *wset[0].SlaterMatrix(Alpha), logovlp);
       ComplexType ovlpb = sdet->Overlap(TrialB, *wset[0].SlaterMatrix(Beta), logovlp);
       ovlp_sum += ma::conj(coeffs[idet]) * ovlpa * ovlpb;
-      //boost::multi::array_ref<ComplexType,2> GB(to_address(GBuff.origin()), {NAEA,NMO});
+      //boost::multi::array_ref<ComplexType,2> GB(to_address(GBuff.base()), {NAEA,NMO});
       //sdet->MixedDensityMatrix(TrialB, wset[0].SlaterMatrix(Alpha), GA, logovlp, true);
-      //boost::multi::array_ref<ComplexType,2> GA(to_address(GBuff.origin()+NAEA*NMO), {NAEA,NMO});
+      //boost::multi::array_ref<ComplexType,2> GA(to_address(GBuff.base()+NAEA*NMO), {NAEA,NMO});
       //sdet->MixedDensityMatrix(TrialA, wset[0].SlaterMatrix(Alpha), GB, logovlp, true);
     }
     wfn.Overlap(wset);

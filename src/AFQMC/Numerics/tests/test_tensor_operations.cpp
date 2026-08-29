@@ -87,12 +87,12 @@ TEST_CASE("KaKjw_to_KKwaj", "[Numerics][tensor_operations]")
   Tensor1D<int> nel_pk  = {occ_k, occ_k, occ_k};
   Tensor1D<int> nmo_pk0 = {0, nmo_k, 2 * nmo_k};
   Tensor1D<int> nel_pk0 = {0, occ_k, 2 * occ_k};
-  copy_n(buffer.data(), buffer.size(), KaKjw.origin());
+  copy_n(buffer.data(), buffer.size(), KaKjw.base());
   // KaKjw = numpy.arange(nk*na*nk*nj*nw).reshape((nk,na,nk,nj,nw))
   // KKwaj = numpy.transpose(KaKjw, (0,2,1,3,4))
   using ma::KaKjw_to_KKwaj;
-  KaKjw_to_KKwaj(nwalk, nk, 1, nmo_k, nk * nmo_k, occ_k, nmo_pk.origin(), nmo_pk0.origin(), nel_pk.origin(),
-                 nel_pk0.origin(), KaKjw.origin(), KKwaj.origin());
+  KaKjw_to_KKwaj(nwalk, nk, 1, nmo_k, nk * nmo_k, occ_k, nmo_pk.base(), nmo_pk0.base(), nel_pk.base(),
+                 nel_pk0.base(), KaKjw.base(), KKwaj.base());
   // Reference values from python
   CHECK(KKwaj[1][2][3][4][4] == Approx(1473.0));
   CHECK(KKwaj[2][1][3][4][4] == Approx(2173.0));
@@ -116,10 +116,10 @@ TEST_CASE("KaKjw_to_QKwaj", "[Numerics][tensor_operations]")
   Tensor1D<int> nel_pk0 = {0, occ_k, 2 * occ_k, 3 * occ_k};
   // From 221 k-point grid
   Tensor2D<int> qk_to_k2 = {{0, 1, 2, 3}, {1, 0, 3, 2}, {2, 3, 0, 1}, {3, 2, 1, 0}};
-  copy_n(buffer.data(), buffer.size(), KaKjw.origin());
+  copy_n(buffer.data(), buffer.size(), KaKjw.base());
   using ma::KaKjw_to_QKajw;
-  KaKjw_to_QKajw(nwalk, nk, 1, nmo_k, nk * nmo_k, occ_k, nmo_pk.origin(), nmo_pk0.origin(), nel_pk.origin(),
-                 nel_pk0.origin(), qk_to_k2.origin(), KaKjw.origin(), QKajw.origin());
+  KaKjw_to_QKajw(nwalk, nk, 1, nmo_k, nk * nmo_k, occ_k, nmo_pk.base(), nmo_pk0.base(), nel_pk.base(),
+                 nel_pk0.base(), qk_to_k2.base(), KaKjw.base(), QKajw.base());
   // Just captured from output.
   CHECK(QKajw[1][2][3][4][4] == Approx(1904.0));
   CHECK(QKajw[2][1][3][4][4] == Approx(1264.0));
@@ -153,44 +153,44 @@ TEST_CASE("term_by_term_matrix_vector", "[Numerics][tensor_operations]")
   Tensor1D<ComplexType> x(iextensions<1u>{ncol}, alloc);
   std::vector<ComplexType> buffer(nrow * ncol);
   create_data(buffer, ComplexType(1.0));
-  copy_n(buffer.data(), buffer.size(), A.origin());
-  copy_n(buffer.data(), x.size(), x.origin());
+  copy_n(buffer.data(), buffer.size(), A.base());
+  copy_n(buffer.data(), x.size(), x.base());
   using ma::term_by_term_matrix_vector;
   Tensor2D<ComplexType> ref = {{0, 1, 2}, {4, 5, 6}, {8, 9, 10}};
-  term_by_term_matrix_vector(ma::TOp_PLUS, 0, nrow, ncol, A.origin(), ncol, x.origin(), 1);
+  term_by_term_matrix_vector(ma::TOp_PLUS, 0, nrow, ncol, A.base(), ncol, x.base(), 1);
   verify_approx(ref, A);
-  copy_n(buffer.data(), buffer.size(), A.origin());
-  term_by_term_matrix_vector(ma::TOp_PLUS, 1, nrow, ncol, A.origin(), ncol, x.origin(), 1);
+  copy_n(buffer.data(), buffer.size(), A.base());
+  term_by_term_matrix_vector(ma::TOp_PLUS, 1, nrow, ncol, A.base(), ncol, x.base(), 1);
   // MAM: operator asignment from initializer lists is not working on Multi
   //      on some compilers( nvcc, intel19 )
   //      It does work on construction, so a temporary fix
   ref = Tensor2D<ComplexType>{{0, 2, 4}, {3, 5, 7}, {6, 8, 10}};
   verify_approx(ref, A);
-  copy_n(buffer.data(), buffer.size(), A.origin());
-  term_by_term_matrix_vector(ma::TOp_MINUS, 0, nrow, ncol, A.origin(), ncol, x.origin(), 1);
+  copy_n(buffer.data(), buffer.size(), A.base());
+  term_by_term_matrix_vector(ma::TOp_MINUS, 0, nrow, ncol, A.base(), ncol, x.base(), 1);
   ref = Tensor2D<ComplexType>{{0, 1, 2}, {2, 3, 4}, {4, 5, 6}};
   verify_approx(ref, A);
-  copy_n(buffer.data(), buffer.size(), A.origin());
-  term_by_term_matrix_vector(ma::TOp_MINUS, 1, nrow, ncol, A.origin(), ncol, x.origin(), 1);
+  copy_n(buffer.data(), buffer.size(), A.base());
+  term_by_term_matrix_vector(ma::TOp_MINUS, 1, nrow, ncol, A.base(), ncol, x.base(), 1);
   ref = Tensor2D<ComplexType>{{0, 0, 0}, {3, 3, 3}, {6, 6, 6}};
   verify_approx(ref, A);
-  copy_n(buffer.data(), buffer.size(), A.origin());
-  term_by_term_matrix_vector(ma::TOp_MUL, 0, nrow, ncol, A.origin(), ncol, x.origin(), 1);
+  copy_n(buffer.data(), buffer.size(), A.base());
+  term_by_term_matrix_vector(ma::TOp_MUL, 0, nrow, ncol, A.base(), ncol, x.base(), 1);
   ref = Tensor2D<ComplexType>{{0, 0, 0}, {3, 4, 5}, {12, 14, 16}};
   verify_approx(ref, A);
-  copy_n(buffer.data(), buffer.size(), A.origin());
-  term_by_term_matrix_vector(ma::TOp_MUL, 1, nrow, ncol, A.origin(), ncol, x.origin(), 1);
+  copy_n(buffer.data(), buffer.size(), A.base());
+  term_by_term_matrix_vector(ma::TOp_MUL, 1, nrow, ncol, A.base(), ncol, x.base(), 1);
   ref = Tensor2D<ComplexType>{{0, 1, 4}, {0, 4, 10}, {0, 7, 16}};
   verify_approx(ref, A);
   // Avoid dividing by zero
-  copy_n(buffer.data() + 1, x.size(), x.origin());
-  copy_n(buffer.data(), buffer.size(), A.origin());
-  term_by_term_matrix_vector(ma::TOp_DIV, 0, nrow, ncol, A.origin(), ncol, x.origin(), 1);
+  copy_n(buffer.data() + 1, x.size(), x.base());
+  copy_n(buffer.data(), buffer.size(), A.base());
+  term_by_term_matrix_vector(ma::TOp_DIV, 0, nrow, ncol, A.base(), ncol, x.base(), 1);
   ref = Tensor2D<ComplexType>{{0, 1, 2}, {1.5, 2.0, 2.5}, {2, 2.333333333333, 2.666666666667}};
   verify_approx(ref, A);
-  copy_n(buffer.data() + 1, x.size(), x.origin());
-  copy_n(buffer.data(), buffer.size(), A.origin());
-  term_by_term_matrix_vector(ma::TOp_DIV, 1, nrow, ncol, A.origin(), ncol, x.origin(), 1);
+  copy_n(buffer.data() + 1, x.size(), x.base());
+  copy_n(buffer.data(), buffer.size(), A.base());
+  term_by_term_matrix_vector(ma::TOp_DIV, 1, nrow, ncol, A.base(), ncol, x.base(), 1);
   ref = Tensor2D<ComplexType>{{0.0, 0.5, 0.666666666667}, {3.0, 2.0, 1.666666666667}, {6.0, 3.5, 2.666666666667}};
   verify_approx(ref, A);
 }
@@ -206,12 +206,12 @@ TEST_CASE("transpose_wabn_to_wban", "[Numerics][tensor_operations]")
   create_data(buffer, ComplexType(1.0));
   Tensor4D<ComplexType> Twabn({nwalk, na, nb, nchol}, alloc);
   Tensor4D<ComplexType> Twban({nwalk, na, nb, nchol}, 0.0, alloc);
-  copy_n(buffer.data(), buffer.size(), Twabn.origin());
+  copy_n(buffer.data(), buffer.size(), Twabn.base());
   // Twabn = numpy.arange(nw*na*nb*nc).reshape((nw,na,nb,nc))
   // Twban = numpy.transpose(Twabn, (0,2,1,3))
   using ma::transpose_wabn_to_wban;
-  transpose_wabn_to_wban(nwalk, na, nb, nchol, Twabn.origin(), Twban.origin());
-  Tensor1D_ref<ComplexType> chunk(Twban.origin() + 10, iextensions<1u>{10});
+  transpose_wabn_to_wban(nwalk, na, nb, nchol, Twabn.base(), Twban.base());
+  Tensor1D_ref<ComplexType> chunk(Twban.base() + 10, iextensions<1u>{10});
   // From Twban.copy().ravel()[10:20].
   Tensor1D<ComplexType> ref = {10, 55, 56, 57, 58, 59, 60, 61, 62, 63};
   verify_approx(chunk, ref);
@@ -233,11 +233,11 @@ TEST_CASE("vKKwij_tovwKiKj", "[Numerics][tensor_operations]")
   Tensor3D<ComplexType> vKK({nk, nk, nwalk * nmo_k * nmo_k}, 0.0, alloc);
   std::vector<ComplexType> buffer(nk * nk * nwalk * nmo_k * nmo_k, 0.0);
   create_data(buffer, ComplexType(1.0));
-  copy_n(buffer.data(), buffer.size(), vKK.origin());
+  copy_n(buffer.data(), buffer.size(), vKK.base());
   using ma::vKKwij_to_vwKiKj;
-  vKKwij_to_vwKiKj(nwalk, nk, nmo_k, nk * nmo_k, KKTransID.origin(), nmo_pk.origin(), nmo_pk0.origin(), vKK.origin(),
-                   vKiKj.origin());
-  copy_n(vKiKj.origin(), vKiKj.num_elements(), buffer.data());
+  vKKwij_to_vwKiKj(nwalk, nk, nmo_k, nk * nmo_k, KKTransID.base(), nmo_pk.base(), nmo_pk0.base(), vKK.base(),
+                   vKiKj.base());
+  copy_n(vKiKj.base(), vKiKj.num_elements(), buffer.data());
   // Just captured from output.
   CHECK(real(buffer[17]) == Approx(507.0));
   CHECK(real(buffer[0]) == Approx(0.0));

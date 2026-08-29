@@ -46,7 +46,7 @@ struct container_traits<boost::multi::array<T, D, Alloc>>
 
   inline static size_t getSize(const CT& ref) { return ref.num_elements(); }
 
-  inline static auto getElementPtr(CT& ref) { return std::addressof(*ref.origin()); }
+  inline static auto getElementPtr(CT& ref) { return std::addressof(*ref.base()); }
 };
 
 template<typename T, boost::multi::dimensionality_type D>
@@ -63,7 +63,7 @@ struct container_traits<boost::multi::array_ref<T, D>>
 
   inline static size_t getSize(const CT& ref) { return ref.num_elements(); }
 
-  inline static auto getElementPtr(CT& ref) { return std::addressof(*ref.origin()); }
+  inline static auto getElementPtr(CT& ref) { return std::addressof(*ref.base()); }
 };
 
 } // namespace qmcplusplus

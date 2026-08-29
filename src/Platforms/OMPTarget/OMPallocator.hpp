@@ -17,12 +17,12 @@
 
 #include <memory>
 #include <type_traits>
-#include <atomic>
 #include "config.h"
 #include "Common/allocator_traits.hpp"
 #if defined(ENABLE_OFFLOAD)
 #include <omp.h>
 #endif
+#include "OMPTargetUsage.hpp"
 
 #if defined(QMC_OFFLOAD_MEM_ASSOCIATED)
 #include <VendorKind.hpp>
@@ -31,9 +31,6 @@
 
 namespace qmcplusplus
 {
-extern std::atomic<size_t> OMPallocator_device_mem_allocated;
-
-inline size_t getOMPdeviceMemAllocated() { return OMPallocator_device_mem_allocated; }
 
 template<typename T>
 T* getOffloadDevicePtr(T* host_ptr)
@@ -93,13 +90,13 @@ struct OMPallocator : public HostAllocator
     PRAGMA_OFFLOAD("omp target enter data map(alloc:pt[0:n])")
     device_ptr_ = getOffloadDevicePtr(pt);
 #endif
-    OMPallocator_device_mem_allocated += n * sizeof(T);
+    omptarget_mem_usage.creditUsage(n * sizeof(T));
     return pt;
   }
 
   void deallocate(value_type* pt, std::size_t n)
   {
-    OMPallocator_device_mem_allocated -= n * sizeof(T);
+    omptarget_mem_usage.debitUsage(n * sizeof(T));
 #if defined(QMC_OFFLOAD_MEM_ASSOCIATED)
     T* device_ptr_from_omp = getOffloadDevicePtr(pt);
     const int status       = omp_target_disassociate_ptr(pt, omp_get_default_device());
@@ -203,14 +200,14 @@ public:
     void* pt = omp_target_alloc(n * sizeof(T), omp_get_default_device());
     if (!pt)
       throw std::runtime_error("Allocation failed in OMPTargetAllocator!");
-    OMPallocator_device_mem_allocated += n * sizeof(T);
+    omptarget_mem_usage.creditUsage(n * sizeof(T));
     return static_cast<T*>(pt);
   }
 
   void deallocate(T* p, std::size_t n)
   {
     omp_target_free(p, omp_get_default_device());
-    OMPallocator_device_mem_allocated -= n * sizeof(T);
+    omptarget_mem_usage.debitUsage(n * sizeof(T));
   }
 
   /** Provide a construct for std::allocator_traits::contruct to call.
