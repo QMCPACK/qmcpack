@@ -23,7 +23,7 @@ using std::vector;
 using namespace qmcplusplus;
 
 template<std::ptrdiff_t D>
-using extensions = typename boost::multi::layout_t<D>::extensions_type;
+using extensions = typename boost::multi::layout_t<D>::extents_type;
 
 TEST_CASE("hdf_multiarray_one_dim", "[hdf]")
 {
