@@ -19,14 +19,16 @@
  */
 #include "PWOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/CompositeSPOSet.h"
+#include "QMCWaveFunctions/PlaneWave/PWBandInfo.h"
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
+#include "QMCWaveFunctions/PlaneWave/PWTiling.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
 {
-PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm, xmlNodePtr cur)
+PWOrbitalSetBuilder::PWOrbitalSetBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)
     : SPOSetBuilder("Planewave", comm),
       targetPtcl(p),
       rootNode(cur),
@@ -38,6 +40,7 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm
       tileMatrix(i, j) = i == j ? 1 : 0;
   OhmmsAttributeSet attributes;
   attributes.add(tileMatrix, "tilematrix");
+  attributes.add(sortBands, "sort");
   attributes.put(cur);
 
   //
@@ -45,6 +48,21 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm
   //
   //catch parameters
   myParam->put(cur);
+  const std::string twist_attribute(getXMLAttributeValue(cur, "twist"));
+  if (!twist_attribute.empty())
+  {
+    std::istringstream twist_stream(twist_attribute);
+    std::string trailing_value;
+    if (twist_stream >> requestedTwist[0] >> requestedTwist[1] >> requestedTwist[2] &&
+        !(twist_stream >> trailing_value))
+      hasRequestedTwist = true;
+    else
+    {
+      app_warning() << "Using the twist attribute as an HDF group tag is deprecated; use twist_tag instead.\n";
+    }
+  }
+  if (sortBands < 0 || sortBands > 2)
+    throw std::runtime_error("Plane-wave sort must be 0, 1, or 2");
   //check the current href
   bool success = getH5(cur, "href");
   //Move through the XML tree and read basis information
@@ -66,6 +84,8 @@ PWOrbitalSetBuilder::PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm
 
   if (!success)
     throw std::runtime_error("h5 cannot be open for creating PW basis!");
+  if (!twist_attribute.empty() && !hasRequestedTwist)
+    myParam->twistTag = twist_attribute;
   //create PW Basis
   createPWBasis();
 }
@@ -74,14 +94,18 @@ PWOrbitalSetBuilder::~PWOrbitalSetBuilder() = default;
 
 std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  int spin_group = 0;
+  int spin_group    = 0;
+  int orbital_count = 0;
   std::string spo_object_name;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(spin_group, "spindataset");
+  aAttrib.add(orbital_count, "size");
   aAttrib.add(spo_object_name, "name");
   aAttrib.add(spo_object_name, "id");
   aAttrib.put(cur);
-  return createPW(cur, spo_object_name, spin_group);
+  if (orbital_count < 1)
+    throw std::runtime_error("Plane-wave SPO size must be positive");
+  return createPW(cur, spo_object_name, spin_group, orbital_count);
 }
 
 /** The read routine - get data from XML and H5. Process it and build orbitals.
@@ -108,50 +132,46 @@ bool PWOrbitalSetBuilder::createPWBasis()
   // Cutoff no longer present in the HDF file
   RealType ecut = 0.0;
   twistAngles.resize(nkpts);
-  Tensor<RealType, OHMMS_DIM> tiling;
-  for (int i = 0; i < OHMMS_DIM; ++i)
-    for (int j = 0; j < OHMMS_DIM; ++j)
-      tiling(i, j) = tileMatrix(i, j);
-
-  std::vector<PosType> super_twists;
-  std::vector<std::vector<int>> super_twist_groups;
   for (int kpoint_index = 0; kpoint_index < nkpts; ++kpoint_index)
   {
     TinyVector<double, OHMMS_DIM> twist_angle_dp;
     hfile.read(twist_angle_dp, "/electrons/kpoint_" + std::to_string(kpoint_index) + "/reduced_k");
     twistAngles[kpoint_index] = twist_angle_dp;
-    PosType super_twist       = dot(tiling, twistAngles[kpoint_index]);
-    for (int dimension = 0; dimension < OHMMS_DIM; ++dimension)
-      super_twist[dimension] -= std::floor(super_twist[dimension]);
-
-    auto group = std::find_if(super_twists.begin(), super_twists.end(), [&](const PosType& candidate) {
-      PosType difference = candidate - super_twist;
-      for (int dimension = 0; dimension < OHMMS_DIM; ++dimension)
-        difference[dimension] -= std::nearbyint(difference[dimension]);
-      return dot(difference, difference) < 1e-6;
-    });
-    if (group == super_twists.end())
-    {
-      super_twists.push_back(super_twist);
-      super_twist_groups.push_back({kpoint_index});
-    }
-    else
-      super_twist_groups[std::distance(super_twists.begin(), group)].push_back(kpoint_index);
   }
+  const pw::TwistGroups twist_groups = pw::groupPrimitiveTwists(tileMatrix, twistAngles);
 
-  if (myParam->twistIndex < 0 || myParam->twistIndex >= super_twist_groups.size())
-    throw std::runtime_error("Requested plane-wave supercell twist is not present in the HDF file");
-  includedKPoints = super_twist_groups[myParam->twistIndex];
+  const pw::Lattice target_lattice = targetPtcl.getLattice().R;
+  pw::Lattice primitive_lattice    = target_lattice;
+  if (hfile.is_dataset("/supercell/primitive_vectors"))
+    hfile.read(primitive_lattice, "/supercell/primitive_vectors");
+  pw::validateLattice(tileMatrix, primitive_lattice, target_lattice);
 
-  //end of parameters
-  //check if input parameters are valid
-  int nup   = targetPtcl.last(0);
-  int ndown = targetPtcl.getTotalNum() - nup;
-  if (nbands * includedKPoints.size() < nup || nbands * includedKPoints.size() < ndown)
+  int selected_twist_index;
+  if (hasRequestedTwist)
   {
-    app_error() << "Not enough bands in h5 file" << std::endl;
-    OHMMS::Controller->abort();
+    if (myParam->twistIndex >= 0)
+      app_warning() << "twist attribute exists; twistnum/twistIndex is ignored.\n";
+    selected_twist_index = pw::findTwistGroup(twist_groups, requestedTwist);
   }
+  else if (myParam->twistIndex >= 0)
+  {
+    if (myParam->twistIndex >= twist_groups.primitive_indices.size())
+      throw std::runtime_error("Requested plane-wave supercell twist index is outside the available range");
+    selected_twist_index = myParam->twistIndex;
+  }
+  else
+    selected_twist_index = pw::findTwistGroup(twist_groups, PosType(0));
+
+  pw::validateTwistGroup(tileMatrix, twistAngles, twist_groups, selected_twist_index);
+  superTwist          = twist_groups.super_twists[selected_twist_index];
+  includedKPoints     = twist_groups.primitive_indices[selected_twist_index];
+  myParam->twistIndex = selected_twist_index;
+#if !defined(QMC_COMPLEX)
+  if (!pw::isRealCompatible(superTwist))
+    throw std::runtime_error("Requested plane-wave supercell twist requires a complex QMCPACK build");
+#endif
+  targetPtcl.setTwist(superTwist);
+
   TwistAngle = twistAngles[includedKPoints.front()];
   if (!myBasisSet)
     myBasisSet = std::make_unique<PWBasis>(TwistAngle);
@@ -176,9 +196,11 @@ bool PWOrbitalSetBuilder::createPWBasis()
   return true;
 }
 
-std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur, const std::string& objname, int spinIndex)
+std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur,
+                                                      const std::string& objname,
+                                                      int spinIndex,
+                                                      int orbital_count)
 {
-  int orbital_count = targetPtcl.last(spinIndex) - targetPtcl.first(spinIndex);
   std::vector<int> occBand(orbital_count);
   for (int i = 0; i < orbital_count; i++)
     occBand[i] = i;
@@ -247,54 +269,79 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur, const std:
   if (includedKPoints.empty())
     throw std::runtime_error("No primitive k-points contribute to the requested plane-wave supercell twist");
 
-  std::vector<std::vector<int>> selected_bands(includedKPoints.size());
-  if (includedKPoints.size() == 1)
-    selected_bands.front() = occBand;
-  else
+  std::vector<pw::BandInfo> bands;
+#if defined(QMC_COMPLEX)
+  for (const int kpoint_index : includedKPoints)
+#else
+  for (const pw::DistinctTwist& distinct_twist : pw::findDistinctRealTwists(includedKPoints, twistAngles))
+#endif
   {
-    struct Band
-    {
-      double energy;
-      int component_index;
-      int band_index;
-    };
+#if defined(QMC_COMPLEX)
+    constexpr bool make_two_copies = false;
+#else
+    const int kpoint_index     = distinct_twist.twist_index;
+    const bool make_two_copies = distinct_twist.make_two_copies;
+#endif
+    std::vector<double> eigenvalues;
+    hfile.read(eigenvalues,
+               "/electrons/kpoint_" + std::to_string(kpoint_index) + "/spin_" + std::to_string(spinIndex) +
+                   "/eigenvalues");
+    for (int band_index = 0; band_index < eigenvalues.size(); ++band_index)
+      bands.push_back({eigenvalues[band_index], kpoint_index, band_index, false, make_two_copies});
+  }
+  pw::sortBands(bands, sortBands);
 
-    std::vector<Band> bands;
-    for (int component_index = 0; component_index < includedKPoints.size(); ++component_index)
+  std::vector<pw::BandInfo> expanded_bands;
+  for (const pw::BandInfo& band : bands)
+  {
+    expanded_bands.push_back(band);
+    if (band.make_two_copies)
     {
-      const int kpoint_index = includedKPoints[component_index];
-      std::vector<double> eigenvalues;
-      hfile.read(eigenvalues,
-                 "/electrons/kpoint_" + std::to_string(kpoint_index) + "/spin_" + std::to_string(spinIndex) +
-                     "/eigenvalues");
-      for (int band_index = 0; band_index < eigenvalues.size(); ++band_index)
-        bands.push_back({eigenvalues[band_index], component_index, band_index});
+      pw::BandInfo imaginary_band       = band;
+      imaginary_band.use_imaginary_part = true;
+      expanded_bands.push_back(imaginary_band);
     }
-    if (bands.size() < orbital_count)
-      throw std::runtime_error("Not enough plane-wave bands for the requested tiled SPO");
+  }
 
-    std::sort(bands.begin(), bands.end(), [](const Band& left, const Band& right) {
-      if (left.energy != right.energy)
-        return left.energy < right.energy;
-      if (left.component_index != right.component_index)
-        return left.component_index < right.component_index;
-      return left.band_index < right.band_index;
-    });
-    for (int orbital_index = 0; orbital_index < orbital_count; ++orbital_index)
-      selected_bands[bands[orbital_index].component_index].push_back(bands[orbital_index].band_index);
+  if (expanded_bands.size() < orbital_count)
+    throw std::runtime_error("Not enough plane-wave bands for the requested tiled SPO");
+
+  std::vector<pw::BandInfo> selected_bands;
+  selected_bands.reserve(orbital_count);
+  if (excited_occupation)
+  {
+    for (const int occupied_index : occBand)
+    {
+      if (occupied_index < 0 || occupied_index >= expanded_bands.size())
+        throw std::runtime_error("Plane-wave excited occupation index is outside the available band range");
+      selected_bands.push_back(expanded_bands[occupied_index]);
+    }
+  }
+  else
+    selected_bands.assign(expanded_bands.begin(), expanded_bands.begin() + orbital_count);
+
+  struct BandRun
+  {
+    int kpoint_index;
+    std::vector<pw::BandInfo> bands;
+  };
+  std::vector<BandRun> band_runs;
+  for (const pw::BandInfo& band : selected_bands)
+  {
+    if (band_runs.empty() || band_runs.back().kpoint_index != band.twist_index)
+      band_runs.push_back({band.twist_index, {}});
+    band_runs.back().bands.push_back(band);
   }
 
   std::vector<std::unique_ptr<SPOSet>> components;
-  components.reserve(includedKPoints.size());
-  for (int component_index = 0; component_index < includedKPoints.size(); ++component_index)
+  components.reserve(band_runs.size());
+  for (int run_index = 0; run_index < band_runs.size(); ++run_index)
   {
-    const int kpoint_index                  = includedKPoints[component_index];
-    const std::vector<int>& component_bands = selected_bands[component_index];
-    if (component_bands.empty())
-      continue;
+    const int kpoint_index                           = band_runs[run_index].kpoint_index;
+    const std::vector<pw::BandInfo>& component_bands = band_runs[run_index].bands;
 
     std::unique_ptr<PWBasis> basis;
-    if (component_index == 0)
+    if (kpoint_index == includedKPoints.front())
       basis = std::make_unique<PWBasis>(*myBasisSet);
     else
     {
@@ -307,13 +354,14 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur, const std:
     hfile.push(kpoint_name, false);
     int available_bands = 0;
     hfile.read(available_bands, "spin_" + std::to_string(spinIndex) + "/number_of_states");
-    if (*std::max_element(component_bands.begin(), component_bands.end()) >= available_bands)
+    if (std::find_if(component_bands.begin(), component_bands.end(), [&](const pw::BandInfo& band) {
+          return band.band_index >= available_bands;
+        }) != component_bands.end())
       throw std::runtime_error("Not enough plane-wave bands for a folded primitive k-point");
 
-    const std::string component_name =
-        includedKPoints.size() == 1 ? objname : objname + "_k" + std::to_string(kpoint_index);
-    auto psi                       = std::make_unique<SPOSetType>(component_name, component_bands.size());
-    const size_t coefficient_count = basis->inputmap.size();
+    const std::string component_name = band_runs.size() == 1 ? objname : objname + "_run" + std::to_string(run_index);
+    auto psi                         = std::make_unique<SPOSetType>(component_name, component_bands.size());
+    const size_t coefficient_count   = basis->inputmap.size();
     psi->resize(basis.release(), true);
 
     using TempVecType    = std::vector<std::complex<RealType>>;
@@ -321,13 +369,17 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur, const std:
     TempVecType_DP coefs_DP(coefficient_count);
     for (int orbital_index = 0; orbital_index < component_bands.size(); ++orbital_index)
     {
-      const int band_index = component_bands[orbital_index];
+      const int band_index = component_bands[orbital_index].band_index;
       std::string bname(myParam->getBandName(band_index, spinIndex));
       app_log() << "  Reading " << kpoint_name << "/" << bname << std::endl;
       hfile.push(bname, false);
       hfile.read(coefs_DP, "psi_g");
       TempVecType coefs(coefs_DP.begin(), coefs_DP.end());
+#if defined(QMC_COMPLEX)
       psi->addVector(coefs, orbital_index);
+#else
+      psi->addVector(coefs, orbital_index, component_bands[orbital_index].use_imaginary_part);
+#endif
       hfile.pop();
     }
     hfile.pop();

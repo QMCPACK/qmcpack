@@ -25,7 +25,7 @@ namespace qmcplusplus
 PWParameterSet::PWParameterSet(Communicate* comm)
     : MPIObjectBase(comm),
       hasSpin(true),
-      twistIndex(0),
+      twistIndex(-1),
       numBands(0),
       Ecut(-1),
       Rcut(-1),
@@ -52,7 +52,7 @@ PWParameterSet::PWParameterSet(Communicate* comm)
   m_param.add(pwTag, "planewaves");
   m_param.add(pwMultTag, "multiplers");
   m_param.add(eigTag, "eigenstates");
-  m_param.add(twistTag, "twist");
+  m_param.add(twistTag, "twist_tag");
   m_param.add(bandTag, "band");
   m_param.add(spinTag, "spin");
   m_param.add(eigvecTag, "eigenvector");
@@ -122,8 +122,7 @@ std::string PWParameterSet::getTwistName(int i)
 std::string PWParameterSet::getBandName(int ib, int ispin)
 {
   std::ostringstream oss;
-  oss << "spin_" << ispin << "/"
-      << "state_" << ib;
+  oss << "spin_" << ispin << "/" << "state_" << ib;
   return oss.str();
 }
 
