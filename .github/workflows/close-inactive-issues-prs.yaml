@@ -1,7 +1,7 @@
 name: Close inactive issues
 on:
   schedule:
-    - cron: "45 13 * * 3"
+    - cron: "45 13 * * 1-5"
       timezone: "America/New_York"
 jobs:
   close-issues:
