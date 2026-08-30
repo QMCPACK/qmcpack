@@ -54,9 +54,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   double LogOverlapFactor(wset.getLogOverlapFactor());
   // resize shm structures if needed
 
-  Ovmsd.reextent({nspins, static_cast<boost::multi::size_t>(maxn_unique_confg), nwalk});
+  Ovmsd.reextent({nspins, static_cast<boost::multi::ssize_t>(maxn_unique_confg), nwalk});
 
-  Emsd.reextent({nspins, static_cast<boost::multi::size_t>(maxn_unique_confg), nwalk, 3});
+  Emsd.reextent({nspins, static_cast<boost::multi::ssize_t>(maxn_unique_confg), nwalk, 3});
 
   // resize Alpha here, if beta is needed resize below
 
@@ -96,9 +96,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
 
     GrefB.reextent({nwalk, dm_dims(false, Beta).first, dm_dims(false, Beta).second});
 
-    QQ0A .reextent({nwalk, static_cast<boost::multi::size_t>(OrbMats[0].size(0)), NAEA});
+    QQ0A .reextent({nwalk, static_cast<boost::multi::ssize_t>(OrbMats[0].size(0)), NAEA});
 
-    QQ0B .reextent({nwalk, static_cast<boost::multi::size_t>(OrbMats.back().size(0)), NAEB});
+    QQ0B .reextent({nwalk, static_cast<boost::multi::ssize_t>(OrbMats.back().size(0)), NAEB});
 
     for (int iw = 0, nc = 0; iw < nwalk; iw++)
     {
@@ -141,9 +141,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
     ComplexType ov0;
 
-    KEright.reextent({static_cast<boost::multi::size_t>(abij.number_of_unique_excitations()[0]), nwalk, static_cast<boost::multi::size_t>(nkev)});
+    KEright.reextent({static_cast<boost::multi::ssize_t>(abij.number_of_unique_excitations()[0]), nwalk, static_cast<boost::multi::ssize_t>(nkev)});
 
-    KEleft.reextent({nwalk, static_cast<boost::multi::size_t>(nkev)});
+    KEleft.reextent({nwalk, static_cast<boost::multi::ssize_t>(nkev)});
 
     for (int spin = 0; spin < nspins; ++spin)
     {
@@ -1273,7 +1273,7 @@ void PHMSD::vMF(Vec&& v)
 
   //shmCMatrix ovlps({2,maxn_unique_confg},shared_allocator<ComplexType>{TG.Node()});
   //boost::multi::array<ComplexType,2> ovlps({2,maxn_unique_confg});
-  boost::multi::array<ComplexType, 2> ovlps({2, static_cast<boost::multi::size_t>(maxn_unique_confg)});
+  boost::multi::array<ComplexType, 2> ovlps({2, static_cast<boost::multi::ssize_t>(maxn_unique_confg)});
   //if(TG.Node().root())
   std::fill_n(to_address(ovlps.base()), 2 * maxn_unique_confg, ComplexType(0.0));
 

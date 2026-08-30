@@ -244,7 +244,7 @@ inline THCOps loadTHCOps(hdf_archive& dump,
     }
     else
     {
-      boost::multi::array<SPComplexType, 2> A({static_cast<boost::multi::size_t>(PsiT[0].size(1)), static_cast<boost::multi::size_t>(PsiT[0].size(0))});
+      boost::multi::array<SPComplexType, 2> A({static_cast<boost::multi::ssize_t>(PsiT[0].size(1)), static_cast<boost::multi::ssize_t>(PsiT[0].size(0))});
       for (int i = 0; i < ndet; i++)
       {
         ma::Matrix2MA('T', PsiT[i], A);

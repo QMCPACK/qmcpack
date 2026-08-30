@@ -64,7 +64,7 @@ class THCOps
   using const_sp_pointer = typename device_allocator<SPComplexType>::const_pointer;
 
   template<class U, int N>
-  using Array = boost::multi::static_array<U, N, device_alloc_type<U>>;
+  using Array = boost::multi::dynamic_array<U, N, device_alloc_type<U>>;
   template<class U, int N>
   using Array_ref = boost::multi::array_ref<U, N, typename device_alloc_type<U>::pointer>;
   template<class U, int N>
@@ -72,7 +72,7 @@ class THCOps
   // arrays on shared work space
   // remember that this is device memory when built with accelerator support
   template<class U, int N>
-  using ShmArray = boost::multi::static_array<U, N, shm_alloc_type<U>>;
+  using ShmArray = boost::multi::dynamic_array<U, N, shm_alloc_type<U>>;
 
   // arrays on node allocator, for fixed arrays, e.g. Luv, Piu, ...
   // remember that this is device memory when built with accelerator support
@@ -543,7 +543,7 @@ public:
       boost::multi::array_ref<ComplexType,2> Tub(to_address(SM_TMats.base())+cnt,{nu,nel_});
       cnt+=Tub.num_elements();
       assert(cnt <= memory_needs);
-      boost::multi::static_array<ComplexType,3,dev_buffer_type> eloc({2,nwalk,3}
+      boost::multi::dynamic_array<ComplexType,3,dev_buffer_type> eloc({2,nwalk,3}
                         device_buffer_manager.get_generator().template get_allocator<ComplexType>());
       std::fill_n(eloc.base(),eloc.num_elements(),ComplexType(0.0));
 

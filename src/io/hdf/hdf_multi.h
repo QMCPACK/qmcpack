@@ -44,7 +44,7 @@ struct h5data_proxy<boost::multi::array<T, 1, Alloc>> : public h5_space_type<T, 
   {
     using iextensions = typename boost::multi::iextensions<1u>;
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref.reextent(iextensions{static_cast<boost::multi::size_t>(dims[0])});
+      ref.reextent(iextensions{static_cast<boost::multi::ssize_t>(dims[0])});
     return h5d_read(grp, aname, get_address(std::addressof(*ref.base())), xfer_plist);
   }
 
@@ -72,7 +72,7 @@ struct h5data_proxy<boost::multi::array<T, 2, Alloc>> : public h5_space_type<T, 
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref.reextent({static_cast<boost::multi::size_t>(dims[0]), static_cast<boost::multi::size_t>(dims[1])});
+      ref.reextent({static_cast<boost::multi::ssize_t>(dims[0]), static_cast<boost::multi::ssize_t>(dims[1])});
     return h5d_read(grp, aname, get_address(std::addressof(*ref.base())), xfer_plist);
   }
 

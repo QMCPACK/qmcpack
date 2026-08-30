@@ -82,11 +82,11 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     generateP1(dt, walker_type);
   AFQMCTimers[setup_timer].get().stop();
 
-  StaticMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+  DynamicMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
   { // using scope to control lifetime of StaticArrays, avoiding unnecessary buffer space
 
-    StaticSPMatrix G(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix G(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     // 1. Calculate Green function for all walkers
     AFQMCTimers[G_for_vbias_timer].get().start();
@@ -94,7 +94,7 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     {
       int Gak0, GakN;
       std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(G.num_elements()), TG.getNCoresPerTG());
-      StaticMatrix Gc(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      DynamicMatrix Gc(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
       wfn.MixedDensityMatrix_for_vbias(wset, Gc);
       copy_n_cast(make_device_ptr(Gc.base()) + Gak0, GakN - Gak0, make_device_ptr(G.base()) + Gak0);
     }
@@ -105,8 +105,8 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     AFQMCTimers[G_for_vbias_timer].get().stop();
     //std::cout<<" G: " <<ma::dot(G(get<0>(G.extents()),0),G(get<0>(G.extents()),0)) <<std::endl;
 
-    StaticSPMatrix vbias({long(localnCV), long(nwalk)},
-                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix vbias({long(localnCV), long(nwalk)},
+                          buffer_manager.get_generator().template get_allocator<SPComplexType>());
     // 2. Calculate vbias for initial configuration
     AFQMCTimers[vbias_timer].get().start();
     if (free_projection)
@@ -120,8 +120,8 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
     AFQMCTimers[vbias_timer].get().stop();
     //std::cout<<" vbias: " <<ma::sum(vbias) <<std::endl;
 
-    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)},
-                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix X({long(localnCV), long(nwalk * nsteps)},
+                      buffer_manager.get_generator().template get_allocator<SPComplexType>());
     // 3. Assemble X(nCV,nsteps,nwalk)
     AFQMCTimers[assemble_X_timer].get().start();
     assemble_X(nsteps, nwalk, sqrtdt, X, vbias, MFfactor, hybrid_weight);
@@ -275,9 +275,9 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
     vhs3d_ext = iextensions<3u>{nwalk, NMO, NMO};
   }
 
-  StaticMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
-  StaticSPMatrix X({long(globalnCV), long(nwalk)},
-                   buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  DynamicMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+  DynamicSPMatrix X({long(globalnCV), long(nwalk)},
+                    buffer_manager.get_generator().template get_allocator<SPComplexType>());
   C3Tensor_ref vHS3D(make_device_ptr(vHS.base()), vhs3d_ext);
 
   using std::get;
@@ -736,8 +736,7 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps,
 // TODO: Move this
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
   kernels::construct_X(nCV, nsteps, nwalk, free_projection, sqrtdt, vbias_bound, to_address(vMF.base()),
-                       to_address(vbias.base()), to_address(HWs.base()), to_address(MF.base()),
-                       to_address(X.base()));
+                       to_address(vbias.base()), to_address(HWs.base()), to_address(MF.base()), to_address(X.base()));
 #else
   boost::multi::array_ref<XType, 3> X3D(to_address(X.base()), {long(X.size()), long(nsteps), long(nwalk)});
   int m0, mN;
@@ -745,18 +744,18 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps,
   TG.local_barrier();
   for (int m = m0; m < mN; ++m)
   {
-    auto X_m = X3D[m];
-    auto vb_ = to_address(vbias[m].base());
+    auto X_m   = X3D[m];
+    auto vb_   = to_address(vbias[m].base());
     auto vmf_t = sqrtdt * apply_bound_vbias(vMF[m], 1.0);
-    auto vmf_ = sqrtdt * vMF[m];
+    auto vmf_  = sqrtdt * vMF[m];
     // apply bounds to vbias
     for (int iw = 0; iw < nwalk; iw++)
       vb_[iw] = apply_bound_vbias(vb_[iw], sqrtdt);
     for (int ni = 0; ni < nsteps; ni++)
     {
-      auto X_ = X3D[m][ni].base();
+      auto X_   = X3D[m][ni].base();
       auto hws_ = to_address(HWs[ni].base());
-      auto mf_ = to_address(MF[ni].base());
+      auto mf_  = to_address(MF[ni].base());
       for (int iw = 0; iw < nwalk; iw++)
       {
         // No force bias term when doing free projection.

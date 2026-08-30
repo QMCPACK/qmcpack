@@ -55,7 +55,7 @@ class BackPropagatedEstimator : public EstimatorBase
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
+  using DynamicMatrix    = boost::multi::dynamic_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   BackPropagatedEstimator(afqmc::TaskGroup_& tg_,
@@ -192,8 +192,8 @@ public:
       if (get<0>(Refs.sizes()) != wset.size() || get<1>(Refs.sizes()) != nrefs || get<2>(Refs.sizes()) != nrow * ncol)
         Refs = mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator());
       DeviceBufferManager buffer_manager;
-      StaticMatrix detR({wset.size(), nrefs * nx},
-                        buffer_manager.get_generator().template get_allocator<ComplexType>());
+      DynamicMatrix detR({wset.size(), nrefs * nx},
+                         buffer_manager.get_generator().template get_allocator<ComplexType>());
 
       int n0, n1;
       std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(get<2>(Refs.sizes())), TG.getNCoresPerTG());

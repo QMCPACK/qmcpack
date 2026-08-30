@@ -66,8 +66,8 @@ class FullObsHandler : public AFQMCInfo
   using stdCVector_ref = boost::multi::array_ref<ComplexType, 1>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticSHMVector      = boost::multi::static_array<ComplexType, 1, shm_stack_alloc_type>;
-  using StaticSHM4Tensor     = boost::multi::static_array<ComplexType, 4, shm_stack_alloc_type>;
+  using DynamicSHMVector     = boost::multi::dynamic_array<ComplexType, 1, shm_stack_alloc_type>;
+  using DynamicSHM4Tensor    = boost::multi::dynamic_array<ComplexType, 4, shm_stack_alloc_type>;
 
 public:
   FullObsHandler(afqmc::TaskGroup_& tg_,
@@ -198,10 +198,10 @@ public:
     int nrefs(get<1>(Refs.sizes()));
     double LogOverlapFactor(wset.getLogOverlapFactor());
     LocalTGBufferManager shm_buffer_manager;
-    StaticSHM4Tensor G4D({nw, nspins, get<0>(Gdims), get<1>(Gdims)},
-                         shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticSHMVector DevOv(iextensions<1u>{2 * nw},
+    DynamicSHM4Tensor G4D({nw, nspins, get<0>(Gdims), get<1>(Gdims)},
                           shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicSHMVector DevOv(iextensions<1u>{2 * nw},
+                           shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
     sharedCMatrix_ref G2D(G4D.base(), {nw, dm_size});
 
     if (G4D_host.num_elements() != G4D.num_elements())

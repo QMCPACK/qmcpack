@@ -68,7 +68,7 @@ class full1rdm : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
+  using DynamicMatrix    = boost::multi::dynamic_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   full1rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, int nave_ = 1, int bsize = 1)
@@ -137,8 +137,7 @@ public:
         dim[0] = R.size();
         dim[1] = 0;
         // conjugate rotation matrix
-        std::transform(R.base(), R.base() + R.num_elements(), R.base(),
-                       [](const auto& c) { return std::conj(c); });
+        std::transform(R.base(), R.base() + R.num_elements(), R.base(), [](const auto& c) { return std::conj(c); });
         stdIMatrix I;
         if (print_from_list)
         {
@@ -263,8 +262,8 @@ public:
     }
     else
     {
-      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size || get<0>(DMAverage.sizes()) != nave ||
-          get<1>(DMAverage.sizes()) != dm_size)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size ||
+          get<0>(DMAverage.sizes()) != nave || get<1>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -447,8 +446,8 @@ private:
     int nX   = XRot.size();
     int npts = (iN - i0) * nX;
     DeviceBufferManager buffer_manager;
-    StaticMatrix T1({(iN - i0), NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticMatrix T2({(iN - i0), nX}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicMatrix T1({(iN - i0), NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicMatrix T2({(iN - i0), nX}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     if (Grot.size() != npts)
       Grot = stdCVector(iextensions<1u>(npts));
 
