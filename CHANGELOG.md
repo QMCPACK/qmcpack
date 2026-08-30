@@ -5,13 +5,13 @@ Notable changes to QMCPACK and NEXUS are documented in this file.
 ## [4.4.0] - 2026-08-31
 
 This QMCPACK release contains numerous feature improvements, bug fixes, and optimizations. An experimental interface to neural
-network wavefunctions is added, provides full support for CASSCF wavefunctions from PySCF, and introduces a new option that can reduce
-memory pressure in GPU runs. Nexus has been significantly enhanced with thoroughly revised documentation
-(https://nexus-workflows.readthedocs.io/en/latest/ ), QMCPACK restart support, and a complete update of common electronic
-structure code inputs. Error handling has been expanded, improving the robustness of higher-throughput workflows. These updates are
-therefore recommended for all users. As first noted in the v4.2.0 release we plan to remove the legacy QMC drivers in an upcoming
-release: users should transition to batched drivers. To make best use of limited development resources, we are also considering
-removing AFQMC support and the LMY optimization engine. Feedback is welcome.
+network wavefunctions is added, full support for CASSCF wavefunctions from PySCF is provided, and we introduce a new option that can
+reduce memory pressure in GPU runs. Nexus has been significantly enhanced with thoroughly revised documentation
+(https://nexus-workflows.readthedocs.io/en/latest/), QMCPACK restart support, and a complete update of common electronic structure
+code inputs. Error handling has been expanded, improving the robustness of higher-throughput workflows. These updates are therefore
+recommended for all users. As first noted in the v4.2.0 release we plan to remove the legacy QMC drivers in an upcoming release:
+users should transition to batched drivers. To make best use of limited development resources, we are also considering removing
+AFQMC support and the LMY optimization engine. Feedback is welcome.
 
 * DeepQMC neural-network wavefunctions are integrated with QMCPACK on an exploratory/developmental basis. [#6061](https://github.com/QMCPACK/qmcpack/pull/6061)
 * Significant speedup of v1 T-move nonlocal pseudopotential evaluation on GPUs via batched algorithm, thanks to @HaoZeke. [#6079](https://github.com/QMCPACK/qmcpack/pull/6079)
