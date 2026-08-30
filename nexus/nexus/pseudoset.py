@@ -298,7 +298,7 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
 
 
 
-@nxs_deprecate(since="2.4.0", replacement="generate_pseudoset")
+@nxs_deprecate(since="2.4.0", replacement="generate_pseudoset (https://nexus-workflows.readthedocs.io/en/latest/user_guide/pseudo-handling.html#migrating-from-ppset)")
 def ppset(label: str, **codes_pps: Collection[str]):
     """Register pseudopotentials for codes with a label.
 
