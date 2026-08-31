@@ -15,6 +15,11 @@
 
 #include <boost/archive/detail/basic_iserializer.hpp>
 
+#ifdef BOOST_MSVC
+#undef BOOST_ARCHIVE_DECL
+#define BOOST_ARCHIVE_DECL /*comment*/  // for MSVC
+#endif
+
 namespace boost {
 namespace archive {
 namespace detail {

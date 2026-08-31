@@ -21,8 +21,7 @@
 
 #include <cstdlib>
 #include <stdexcept>
-#include <atomic>
-#include <limits>
+#include "Common/MemoryUsageAccount.hpp"
 #include "Common/MemManage.hpp"
 #include "Common/allocator_traits.hpp"
 #include "QueueCUDA.hpp"
@@ -39,9 +38,9 @@ template<>
 class MemManage<PlatformKind::CUDA>
 {
 public:
-  static std::atomic<size_t> device_mem_allocated_;
+  static MemoryUsageAccount device_mem_usage_;
 
-  static size_t getDeviceMemAllocated() { return device_mem_allocated_; }
+  static size_t getDeviceMemAllocated() { return device_mem_usage_.getBalance(); }
 
   static size_t getDeviceFreeMem()
   {

@@ -84,10 +84,10 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   TG.local_barrier();
   AFQMCTimers[setup_timer].get().stop();
 
-  StaticMatrix vHS_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
-  SPCMatrix_ref vHS(sp_pointer(make_device_ptr(vHS_buff.origin())), vhs_ext);
+  DynamicMatrix vHS_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+  SPCMatrix_ref vHS(sp_pointer(make_device_ptr(vHS_buff.base())), vhs_ext);
   {
-    StaticSPMatrix G(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix G(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     // 1. Calculate Green function for all (local) walkers
     AFQMCTimers[G_for_vbias_timer].get().start();
@@ -95,10 +95,10 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     { // control scope of Gc
       int Gak0, GakN;
       std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(G.num_elements()), TG.getNCoresPerTG());
-      StaticMatrix Gc(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      DynamicMatrix Gc(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
       wfn.MixedDensityMatrix_for_vbias(wset, Gc);
       TG.local_barrier();
-      copy_n_cast(make_device_ptr(Gc.origin()) + Gak0, GakN - Gak0, make_device_ptr(G.origin()) + Gak0);
+      copy_n_cast(make_device_ptr(Gc.base()) + Gak0, GakN - Gak0, make_device_ptr(G.base()) + Gak0);
     }
     TG.local_barrier();
 #else
@@ -106,14 +106,14 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
 #endif
     AFQMCTimers[G_for_vbias_timer].get().stop();
 
-    StaticSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix X({long(nCV), long(nwalk * nsteps)},
-                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix vbias({long(nCV), long(nwalk)},
-                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix RNG({long(nCV), long(nwalk * nsteps)},
-                       buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix vHSwork(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix X({long(nCV), long(nwalk * nsteps)},
+                      buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix vbias({long(nCV), long(nwalk)},
+                          buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix RNG({long(nCV), long(nwalk * nsteps)},
+                        buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix vHSwork(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     // partition G and v for communications: all cores communicate a piece of the matrix
     long vak0, vakN;
@@ -129,7 +129,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
     {
       int i0, iN;
       std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(RNG.num_elements()), TG.TG_local().size());
-      sampleGaussianFields_n(make_device_ptr(RNG.origin()) + i0, iN - i0, rng);
+      sampleGaussianFields_n(make_device_ptr(RNG.base()) + i0, iN - i0, rng);
     }
 
     for (int k = 0; k < nnodes; ++k)
@@ -141,13 +141,13 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
         int i0, iN, Gak0, GakN;
         std::tie(i0, iN)     = FairDivideBoundary(TG.TG_local().rank(), int(RNG.num_elements()), TG.TG_local().size());
         std::tie(Gak0, GakN) = FairDivideBoundary(TG.TG_local().rank(), int(G.num_elements()), TG.TG_local().size());
-        copy_n(make_device_ptr(RNG.origin()) + i0, iN - i0, make_device_ptr(X.origin()) + i0);
+        copy_n(make_device_ptr(RNG.base()) + i0, iN - i0, make_device_ptr(X.base()) + i0);
         // can I do this in a way I don't need the barrier???
-        copy_n(make_device_ptr(G.origin()) + Gak0, GakN - Gak0, make_device_ptr(Gwork.origin()) + Gak0);
+        copy_n(make_device_ptr(G.base()) + Gak0, GakN - Gak0, make_device_ptr(Gwork.base()) + Gak0);
         TG.local_barrier();
       }
-      core_comm.broadcast_n(to_address(Gwork.origin()) + G0, GN - G0, k);
-      core_comm.broadcast_n(to_address(X.origin()) + X0, XN - X0, k);
+      core_comm.broadcast_n(to_address(Gwork.base()) + G0, GN - G0, k);
+      core_comm.broadcast_n(to_address(X.base()) + X0, XN - X0, k);
       TG.local_barrier();
       AFQMCTimers[vHS_comm_overhead_timer].get().stop();
 
@@ -159,7 +159,7 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
 
       // all_reduce vbias
       AFQMCTimers[vHS_comm_overhead_timer].get().start();
-      core_comm.all_reduce_in_place_n(to_address(vbias.origin()) + vb0, vbN - vb0, std::plus<>());
+      core_comm.all_reduce_in_place_n(to_address(vbias.base()) + vb0, vbN - vb0, std::plus<>());
       TG.local_barrier();
       AFQMCTimers[vHS_comm_overhead_timer].get().stop();
 
@@ -167,10 +167,10 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
       assemble_X(nsteps, nwalk, sqrtdt, X, vbias, MFfactor[1], hybrid_weight[1], false);
       if (k == node_number)
       {
-        TG.TG_local().all_reduce_n(to_address(MFfactor[1].origin()), MFfactor[1].num_elements(),
-                                   to_address(MFfactor[0].origin()), std::plus<>());
-        TG.TG_local().all_reduce_n(to_address(hybrid_weight[1].origin()), hybrid_weight[1].num_elements(),
-                                   to_address(hybrid_weight[0].origin()), std::plus<>());
+        TG.TG_local().all_reduce_n(to_address(MFfactor[1].base()), MFfactor[1].num_elements(),
+                                   to_address(MFfactor[0].base()), std::plus<>());
+        TG.TG_local().all_reduce_n(to_address(hybrid_weight[1].base()), hybrid_weight[1].num_elements(),
+                                   to_address(hybrid_weight[0].base()), std::plus<>());
       }
 
       // 4c. Calculate vHS(M*M,nsteps,nwalk)
@@ -180,8 +180,8 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
       AFQMCTimers[vHS_timer].get().stop();
 
       AFQMCTimers[vHS_comm_overhead_timer].get().start();
-      core_comm.reduce_n(to_address(vHSwork.origin()) + vak0, vakN - vak0, to_address(vHS.origin()) + vak0,
-                         std::plus<>(), k);
+      core_comm.reduce_n(to_address(vHSwork.base()) + vak0, vakN - vak0, to_address(vHS.base()) + vak0, std::plus<>(),
+                         k);
       TG.local_barrier();
       AFQMCTimers[vHS_comm_overhead_timer].get().stop();
     }
@@ -192,10 +192,10 @@ void AFQMCDistributedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift
   TG.local_barrier();
   using qmcplusplus::afqmc::inplace_cast;
   if (TG.TG_local().root())
-    inplace_cast<SPComplexType, ComplexType>(vHS.origin(), vHS.num_elements());
+    inplace_cast<SPComplexType, ComplexType>(vHS.base(), vHS.num_elements());
   TG.local_barrier();
 #endif
-  C3Tensor_ref vHS3D(make_device_ptr(vHS_buff.origin()), vhs3d_ext);
+  C3Tensor_ref vHS3D(make_device_ptr(vHS_buff.base()), vhs3d_ext);
 
   // From here on is similar to Shared
   int nx = 1;

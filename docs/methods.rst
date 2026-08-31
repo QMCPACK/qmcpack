@@ -293,7 +293,7 @@ Additional information:
   simulation.
 
 - ``estimator_period`` The period with which estimators are evaluated, measured in steps. If measurements have a significant
-    correlation time, this can reduce the computational cost of unnecesarily frequent estimator evaluations.
+    correlation time, this can reduce the computational cost of unnecessarily frequent estimator evaluations.
 
 - ``samples`` The intended total number of samples that will be made in the QMC section. This is primarily intended for VMC
   wavefunction optimization. The implementation always obtains at least the requested number but may obtain slightly more samples
@@ -1239,7 +1239,7 @@ counts, e.g. in orbital optimization. The SR method determines the parameter cha
 
 :math:`-\tau \mathbf{g} = \mathbf{S} \Delta \mathbf{p}`
 
-where :math:`\mathbf{S}` is given by :math:`\langle \Psi_i | \Psi_j\rangle`, :math:`\mathbf{g}` is given by :math:`\langle \Psi_i | H | \Psi_0\rangle`, :math:`\Delta \mathbf{p}` is the parameter update, and :math:`\tau` is an effective timestep since the SR method can be interpretted as an imaginary time projection expanded in the parameter derivative basis. 
+where :math:`\mathbf{S}` is given by :math:`\langle \Psi_i | \Psi_j\rangle`, :math:`\mathbf{g}` is given by :math:`\langle \Psi_i | H | \Psi_0\rangle`, :math:`\Delta \mathbf{p}` is the parameter update, and :math:`\tau` is an effective timestep since the SR method can be interpreted as an imaginary time projection expanded in the parameter derivative basis. 
 The solution could be found by directly inverting the overlap matrix :math:`\mathbf{S}`, but this becomes prohibitive for large parameter counts. Therefore, we have implemented the conjugate gradient iterative scheme to solve the linear equation :cite:`Neuscamman2012`. This avoids having to directly invert the overlap matrix and significantly reduces the cost for large parameter counts.
 
 Since we are using finite samples to represent the overlap matrix, it can become ill-conditioned. We choose to use a simple regularization scheme to improve the optimization, described in :cite:`Sorella2007`. The overlap matrix is scaled via :math:`\mathbf{S} \rightarrow \mathbf{S} + \epsilon \mathbf{I}`, where :math:`\epsilon` is a small scalar. This can be controlled through ``sr_regularization``. 
@@ -1526,7 +1526,7 @@ Parameters:
 
 - ``target_walkers`` The target population size. Population control algorithms work towards this target. Do not confuse it with the actual walker count during random walking. The default will be the number of walkers when a DMC calculation starts, namely ``total_walkers``.
 
-- ``estimator_period`` The period with which estimators are evaluated, measured in steps. If measurements have a significant correlation time, as is typical in DMC, this can reduce the computational cost of unnecesarily frequent estimator evaluations.
+- ``estimator_period`` The period with which estimators are evaluated, measured in steps. If measurements have a significant correlation time, as is typical in DMC, this can reduce the computational cost of unnecessarily frequent estimator evaluations.
 
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
