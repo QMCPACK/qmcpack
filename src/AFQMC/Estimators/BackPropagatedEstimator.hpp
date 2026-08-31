@@ -55,7 +55,7 @@ class BackPropagatedEstimator : public EstimatorBase
   using mpi3CTensor    = boost::multi::array<ComplexType, 3, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
+  using DynamicMatrix    = boost::multi::dynamic_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   BackPropagatedEstimator(afqmc::TaskGroup_& tg_,
@@ -192,18 +192,18 @@ public:
       if (get<0>(Refs.sizes()) != wset.size() || get<1>(Refs.sizes()) != nrefs || get<2>(Refs.sizes()) != nrow * ncol)
         Refs = mpi3CTensor({wset.size(), nrefs, nrow * ncol}, Refs.get_allocator());
       DeviceBufferManager buffer_manager;
-      StaticMatrix detR({wset.size(), nrefs * nx},
-                        buffer_manager.get_generator().template get_allocator<ComplexType>());
+      DynamicMatrix detR({wset.size(), nrefs * nx},
+                         buffer_manager.get_generator().template get_allocator<ComplexType>());
 
       int n0, n1;
       std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(get<2>(Refs.sizes())), TG.getNCoresPerTG());
-      boost::multi::array_ref<ComplexType, 3> Refs_(to_address(Refs.origin()), Refs.extensions());
+      boost::multi::array_ref<ComplexType, 3> Refs_(to_address(Refs.base()), Refs.extents());
 
       // 2. setup back propagated references
       wfn0.getReferencesForBackPropagation(Refs_[0]);
       for (int iw = 1; iw < wset.size(); ++iw)
         for (int ref = 0; ref < nrefs; ++ref)
-          copy_n(Refs_[0][ref].origin() + n0, n1 - n0, Refs_[iw][ref].origin() + n0);
+          copy_n(Refs_[0][ref].base() + n0, n1 - n0, Refs_[iw][ref].base() + n0);
       TG.TG_local().barrier();
 
       //3. propagate backwards the references

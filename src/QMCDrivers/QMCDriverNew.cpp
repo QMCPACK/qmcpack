@@ -19,6 +19,7 @@
 #include "Concurrency/ParallelExecutor.hpp"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "TrialWaveFunction.h"
 #include "Utilities/FairDivide.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
@@ -213,7 +214,7 @@ void QMCDriverNew::recordBlock(int block)
   }
 }
 
-bool QMCDriverNew::finalize(int block, bool dumpwalkers)
+void QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   population_.saveWalkerConfigurations(walker_configs_ref_);
   setWalkerOffsets(walker_configs_ref_, myComm);
@@ -229,8 +230,6 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 
   if (DumpConfig)
     RandomNumberControl::write(rngs_, get_root_name(), myComm);
-
-  return true;
 }
 
 void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
@@ -300,11 +299,10 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   for (int iw = 0; iw < crowd.size(); ++iw)
     resetSigNLocalEnergy(walkers[iw], walker_twfs[iw], local_energies[iw]);
 
-  auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker) {
-    ham.auxHevaluate(pset, walker);
-  };
+  auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, TrialWaveFunction& psi, ParticleSet& pset,
+                                                   MCPWalker& walker) { ham.auxHevaluate(psi, pset, walker); };
   for (int iw = 0; iw < crowd.size(); ++iw)
-    evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_elecs[iw], walkers[iw]);
+    evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_twfs[iw], walker_elecs[iw], walkers[iw]);
 
   auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker) {
     ham.saveProperty(walker.getPropertyBase());

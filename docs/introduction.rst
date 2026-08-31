@@ -91,7 +91,7 @@ analyzing QMCPACK data.
 ::
 
    export PATH=$PATH:location-of-qmcpack/nexus/bin
-   export PYTHONPATH=$PYTHONPATH:location-of-qmcpack/nexus/library
+   export PYTHONPATH=$PYTHONPATH:location-of-qmcpack/nexus
    qmca H2O.s002.scalar.dat         # For statistical analysis of the DMC data
    qmca -t -q e H2O.s002.scalar.dat # Graphical plot of DMC energy
 

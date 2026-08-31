@@ -99,9 +99,9 @@ public:
   bool isMultiDet() const final { return true; }
   bool isOptimizable() const override { return true; }
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
-  void checkOutVariables(const opt_variables_type& active) override;
-  void checkInVariablesExclusive(opt_variables_type& active) override;
-  void resetParametersExclusive(const opt_variables_type& active) override;
+  void checkOutVariables(const OptVariables& active) override;
+  void checkInVariablesExclusive(OptVariables& active) override;
+  void resetParametersExclusive(const OptVariables& active) override;
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
@@ -151,9 +151,7 @@ public:
                            int iat,
                            std::vector<GradType>& grad_now,
                            std::vector<ComplexType>& spingrad_now) const override
-  {
-    mw_evalGradWithSpin_serialized(wfc_list, p_list, iat, grad_now, spingrad_now);
-  }
+  { mw_evalGradWithSpin_serialized(wfc_list, p_list, iat, grad_now, spingrad_now); }
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
@@ -167,9 +165,7 @@ public:
                             std::vector<PsiValue>& ratios,
                             std::vector<GradType>& grad_new,
                             std::vector<ComplexType>& spingrad_new) const override
-  {
-    mw_ratioGradWithSpin_serialized(wfc_list, p_list, iat, ratios, grad_new, spingrad_new);
-  }
+  { mw_ratioGradWithSpin_serialized(wfc_list, p_list, iat, ratios, grad_new, spingrad_new); }
 
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,
                     const RefVectorWithLeader<ParticleSet>& P_list,
@@ -191,9 +187,7 @@ public:
                                       const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                       const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
                                       std::vector<std::vector<ValueType>>& ratios) const override
-  {
-    mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios);
-  }
+  { mw_evaluateSpinorRatios_serialized(wfc_list, vp_list, spinor_multiplier_list, ratios); }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
@@ -223,14 +217,14 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi) override;
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
 
@@ -244,7 +238,7 @@ public:
    */
   void initialize(std::unique_ptr<std::vector<std::vector<size_t>>> C2node_in,
                   std::unique_ptr<std::vector<ValueType>> C_in,
-                  std::unique_ptr<opt_variables_type> myVars_in,
+                  std::unique_ptr<OptVariables> myVars_in,
                   std::unique_ptr<CSFData> csf_data_in,
                   bool optimizable,
                   bool CI_optimizable);
@@ -295,12 +289,12 @@ private:
   void precomputeC_otherDs(const ParticleSet& P, int ig);
 
   void evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
-                                                const opt_variables_type& optvars,
+                                                const OptVariables& optvars,
                                                 Vector<ValueType>& dlogpsi,
                                                 Vector<ValueType>& dhpsioverpsi);
 
   void evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
-                                                  const opt_variables_type& optvars,
+                                                  const OptVariables& optvars,
                                                   Vector<ValueType>& dlogpsi);
 
   /** compute parameter derivatives of CI/CSF coefficients
@@ -323,7 +317,7 @@ private:
   /// if true, the CI coefficients are optimized
   bool CI_Optimizable;
   //optimizable variable is shared with the clones
-  std::shared_ptr<opt_variables_type> myVars;
+  std::shared_ptr<OptVariables> myVars;
 
   /// CSF data set. If nullptr, not using CSF
   std::shared_ptr<CSFData> csf_data_;

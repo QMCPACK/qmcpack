@@ -135,11 +135,11 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   buffer_timer_.stop();
   // end PbyP moves
   hamiltonian_timer_.start();
-  FullPrecRealType eloc = H.evaluate(W);
+  FullPrecRealType eloc = H.evaluate(Psi, W);
   thisWalker.resetProperty(logpsi, Psi.getPhase(), eloc);
   hamiltonian_timer_.stop();
   collectables_timer_.start();
-  H.auxHevaluate(W, thisWalker);
+  H.auxHevaluate(Psi, W, thisWalker);
   H.saveProperty(thisWalker.getPropertyBase());
   collectables_timer_.stop();
 #if !defined(REMOVE_TRACEMANAGER)

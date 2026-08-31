@@ -30,7 +30,6 @@ namespace qmcplusplus
  *   -- 1 = do not write anything
  *   -- 0 = dump after the completion of a qmc section
  *   -- n = dump after n blocks
- * - kdelay = "0|1|n" default=0
  */
 void QMCDriverInput::readXML(xmlNodePtr cur)
 {
@@ -82,7 +81,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   aAttrib.add(update_mode_, "move");
   aAttrib.add(scoped_profiling_, "profiling");
   aAttrib.add(Period4CheckPoint, "checkpoint");
-  aAttrib.add(k_delay_, "kdelay");
   // This does all the parameter parsing setup in the constructor
   aAttrib.put(cur);
 

@@ -23,7 +23,6 @@
 #include "QMCDrivers/WalkerElementsRef.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
-// #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
 
 #include <filesystem>
 

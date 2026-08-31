@@ -15,7 +15,7 @@
 
 
 #include "OneSplineOrbData.hpp"
-#include <spline/einspline_engine.hpp>
+#include "spline2/einspline_impl.hpp"
 #include "einspline_helper.hpp"
 
 namespace qmcplusplus
@@ -35,18 +35,16 @@ void OneSplineOrbData::create(const TinyVector<int, 3>& halfG)
 
   TinyVector<double, 3> start(0.0);
   TinyVector<double, 3> end(1.0);
-  spline_r = einspline::create(spline_r, start, end, mesh_size_, halfG);
+  spline_r = einspline::create_UBspline_3d_d(start, end, mesh_size_, halfG);
   if (isComplex_)
-    spline_i = einspline::create(spline_i, start, end, mesh_size_, halfG);
+    spline_i = einspline::create_UBspline_3d_d(start, end, mesh_size_, halfG);
 }
 
 OneSplineOrbData::OneSplineOrbData(const TinyVector<int, 3>& mesh_size,
                                    const TinyVector<int, 3>& halfG,
                                    const bool isComplex)
     : mesh_size_(mesh_size), isComplex_(isComplex)
-{
-  create(halfG);
-}
+{ create(halfG); }
 
 OneSplineOrbData::~OneSplineOrbData() { clear(); }
 
@@ -83,13 +81,13 @@ void OneSplineOrbData::fft_spline(const Vector<std::complex<double>>& cG,
       rotate_phase_r = 1.0;
       rotate_phase_i = 0.0;
     }
-    einspline::set(spline_r, splineData_r.data());
-    einspline::set(spline_i, splineData_i.data());
+    einspline::recompute(spline_r, splineData_r.data());
+    einspline::recompute(spline_i, splineData_i.data());
   }
   else
   {
     fix_phase_rotate_c2r(FFTbox, splineData_r, primcell_kpoint, rotate_phase_r, rotate_phase_i);
-    einspline::set(spline_r, splineData_r.data());
+    einspline::recompute(spline_r, splineData_r.data());
   }
 }
 } // namespace qmcplusplus

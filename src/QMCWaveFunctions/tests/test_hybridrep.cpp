@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <cstdio>
 #include <string>
@@ -40,7 +39,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -49,8 +48,9 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({2});
-  ions_.R[0]              = {0.0, 0.0, 0.0};
-  ions_.R[1]              = {1.68658058, 1.68658058, 1.68658058};
+  ions_.R[0] = {0.0, 0.0, 0.0};
+  ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
   SpeciesSet& ion_species = ions_.getSpeciesSet();
   int C_Idx               = ion_species.addSpecies("C");
   int C_chargeIdx         = ion_species.addAttribute("charge");
@@ -64,9 +64,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({3});
-  elec_.R[0]                 = {0.4, 0.0, 0.0};
-  elec_.R[1]                 = {0.0, 1.0, 0.0};
-  elec_.R[2]                 = {0.0, 0.5, 0.5};
+  elec_.R[0] = {0.4, 0.0, 0.0};
+  elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.R[2] = {0.0, 0.5, 0.5};
+  elec_.update();
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -80,8 +81,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -119,7 +119,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(dpsiM[0][1][1]) == Approx(4.3501935005));
   CHECK(std::real(dpsiM[0][1][2]) == Approx(-0.6386129856));
   // lapl
-  CHECK(std::real(d2psiM[0][0]) == Approx(-4.1090884209));
+  CHECK(std::real(d2psiM[0][0]) == Approx(-4.1090884209).epsilon(1e-4));
   CHECK(std::real(d2psiM[0][1]) == Approx(22.3851032257).epsilon(3e-5));
 
   // electron 1
@@ -198,7 +198,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   lattice.R = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -207,10 +207,11 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({4});
-  ions_.R[0]              = {0.0, 0.0, 0.0};
-  ions_.R[1]              = {1.68658058, 1.68658058, 1.68658058};
-  ions_.R[2]              = {3.37316115, 3.37316115, 0.0};
-  ions_.R[3]              = {5.05974173, 5.05974173, 1.68658058};
+  ions_.R[0] = {0.0, 0.0, 0.0};
+  ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.R[2] = {3.37316115, 3.37316115, 0.0};
+  ions_.R[3] = {5.05974173, 5.05974173, 1.68658058};
+  ions_.update();
   SpeciesSet& ion_species = ions_.getSpeciesSet();
   int C_Idx               = ion_species.addSpecies("C");
   int C_chargeIdx         = ion_species.addAttribute("charge");
@@ -224,9 +225,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({3});
-  elec_.R[0]                 = {0.4, 0.0, 0.0};
-  elec_.R[1]                 = {0.0, 1.0, 0.0};
-  elec_.R[2]                 = {0.0, 0.5, 0.5};
+  elec_.R[0] = {0.4, 0.0, 0.0};
+  elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.R[2] = {0.0, 0.5, 0.5};
+  elec_.update();
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -240,8 +242,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 

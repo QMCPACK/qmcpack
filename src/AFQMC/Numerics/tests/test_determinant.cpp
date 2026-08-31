@@ -10,17 +10,8 @@
 // Fionn D. Malone, malone14@llnl.gov
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
-#include "complex_approx.hpp"
-#include "Configuration.h"
-
-#undef APP_ABORT
-#define APP_ABORT(x) \
-  {                  \
-    std::cout << x;  \
-    exit(0);         \
-  }
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <vector>
 
@@ -80,7 +71,7 @@ TEST_CASE("determinant_from_getrf", "[Numerics][determinant]")
   double detx         = 0.06317052169675352;
   using ma::determinant_from_getrf;
   using std::get;
-  double ovlp = determinant_from_getrf(get<0>(x.sizes()), lu.origin(), get<1>(lu.sizes()), pivot.origin(), log_factor);
+  double ovlp = determinant_from_getrf(get<0>(x.sizes()), lu.base(), get<1>(lu.sizes()), pivot.base(), log_factor);
   CHECK(ovlp == Approx(detx));
 }
 
@@ -99,15 +90,15 @@ TEST_CASE("strided_determinant_from_getrf", "[Numerics][determinant]")
   Tensor3D<double> lus({3, 3, 3}, 0.0, alloc);
   using std::copy_n;
   for (int i = 0; i < 3; i++)
-    copy_n(lu.origin(), lu.num_elements(), lus[i].origin());
+    copy_n(lu.base(), lu.num_elements(), lus[i].base());
   Tensor2D<int> pivot    = {{1, 1, 2}, {1, 1, 2}, {1, 1, 2}};
   Tensor1D<double> ovlps = {0, 0, 0};
   double log_factor      = 0.0;
   double detx            = 0.06317052169675352;
   using ma::strided_determinant_from_getrf;
   using std::get;
-  strided_determinant_from_getrf(get<0>(x.sizes()), lus.origin(), get<1>(lu.sizes()), lu.num_elements(), pivot.origin(), get<1>(pivot.sizes()),
-                                 log_factor, to_address(ovlps.origin()), get<0>(lus.sizes()));
+  strided_determinant_from_getrf(get<0>(x.sizes()), lus.base(), get<1>(lu.sizes()), lu.num_elements(), pivot.base(), get<1>(pivot.sizes()),
+                                 log_factor, to_address(ovlps.base()), get<0>(lus.sizes()));
   CHECK(ovlps[0] == Approx(detx));
   CHECK(ovlps[1] == Approx(detx));
   CHECK(ovlps[2] == Approx(detx));
@@ -128,15 +119,15 @@ TEST_CASE("batched_determinant_from_getrf", "[Numerics][determinant]")
   std::vector<pointer<double>> lu_array;
   using std::copy_n;
   for (int i = 0; i < 3; i++)
-    lu_array.emplace_back(lu.origin());
+    lu_array.emplace_back(lu.base());
   Tensor2D<int> pivot    = {{1, 1, 2}, {1, 1, 2}, {1, 1, 2}};
   Tensor1D<double> ovlps = {0, 0, 0};
   double log_factor      = 0.0;
   double detx            = 0.06317052169675352;
   using ma::batched_determinant_from_getrf;
   using std::get;
-  batched_determinant_from_getrf(get<0>(x.sizes()), lu_array.data(), get<1>(lu.sizes()), pivot.origin(), get<1>(pivot.sizes()), log_factor,
-                                 to_address(ovlps.origin()), lu_array.size());
+  batched_determinant_from_getrf(get<0>(x.sizes()), lu_array.data(), get<1>(lu.sizes()), pivot.base(), get<1>(pivot.sizes()), log_factor,
+                                 to_address(ovlps.base()), lu_array.size());
   CHECK(ovlps[0] == Approx(detx));
   CHECK(ovlps[1] == Approx(detx));
   CHECK(ovlps[2] == Approx(detx));
@@ -157,15 +148,15 @@ TEST_CASE("batched_determinant_from_getrf_complex", "[Numerics][determinant]")
   std::vector<pointer<std::complex<double>>> lu_array;
   using std::copy_n;
   for (int i = 0; i < 3; i++)
-    lu_array.emplace_back(lu.origin());
+    lu_array.emplace_back(lu.base());
   Tensor2D<int> pivot                  = {{1, 1, 2}, {1, 1, 2}, {1, 1, 2}};
   Tensor1D<std::complex<double>> ovlps = {0, 0, 0};
   std::complex<double> log_factor      = 0.0;
   std::complex<double> detx            = 0.06317052169675352;
   using ma::batched_determinant_from_getrf;
   using std::get;
-  batched_determinant_from_getrf(get<0>(x.sizes()), lu_array.data(), get<1>(lu.sizes()), pivot.origin(), get<1>(pivot.sizes()), log_factor,
-                                 to_address(ovlps.origin()), lu_array.size());
+  batched_determinant_from_getrf(get<0>(x.sizes()), lu_array.data(), get<1>(lu.sizes()), pivot.base(), get<1>(pivot.sizes()), log_factor,
+                                 to_address(ovlps.base()), lu_array.size());
   CHECK(ovlps[0] == ComplexApprox(detx));
   CHECK(ovlps[1] == ComplexApprox(detx));
   CHECK(ovlps[2] == ComplexApprox(detx));

@@ -8,8 +8,8 @@
 //
 // File created by: Joshua Townsend, jptowns@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "type_traits/template_types.hpp"
 #include "type_traits/ConvertToReal.h"
@@ -54,7 +54,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   // LAttice seems fine after this point...
 
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
@@ -67,11 +67,14 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
+
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
-  elec_.R[0]                 = {0.0, 0.0, 0.0};
-  elec_.R[1]                 = {0.0, 1.0, 0.0};
+  elec_.R[0] = {0.0, 0.0, 0.0};
+  elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
@@ -85,8 +88,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -571,7 +573,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
                0.00000000, 0.00000000, 0.00000000, 6.78114995};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions(*ions_uptr);
@@ -581,11 +583,13 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   ptcl.addParticleSet(std::move(ions_uptr));
   ions.create({1});
   ions.R[0] = {0.0, 0.0, 0.0};
+  ions.update();
 
   elec.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec.create({1});
   elec.R[0] = {0.0, 0.0, 0.0};
+  elec.update();
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -602,8 +606,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
 </tmp>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -634,7 +637,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
 
   CHECK(std::real(d2psiM_bare[0][0]) == Approx(5.303848362116568));
 
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   rot_spo->checkInVariablesExclusive(opt_vars);
   opt_vars.resetIndex();
   rot_spo->checkOutVariables(opt_vars);
@@ -730,17 +733,20 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 
 namespace testing
 {
-const opt_variables_type& getMyVars(RotatedSPOs& rot) { return rot.myVars; }
+const OptVariables& getMyVars(RotatedSPOs& rot) { return rot.myVars; }
 const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot) { return rot.myVarsFull_; }
 } // namespace testing
 
 // Test using global rotation
 TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
 {
+  // only run with comm size 1.
+  if (OHMMS::Controller->size() > 1)
+    return;
+
   //There is an issue with the real<->complex parameter parsing to h5 in QMC_COMPLEX.
   //This needs to be fixed in a future PR.
-  auto fake_spo = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
-  fake_spo->setOrbitalSetSize(4);
+  auto fake_spo = std::make_unique<FakeSPO<QMCTraits::ValueType>>(4);
   RotatedSPOs rot("fake_rot", std::move(fake_spo));
   int nel = 2;
   rot.buildOptVariables(nel);
@@ -761,8 +767,7 @@ TEST_CASE("RotatedSPOs read and write parameters", "[wavefunction]")
     rot.writeVariationalParameters(hout);
   }
 
-  auto fake_spo2 = std::make_unique<FakeSPO<QMCTraits::ValueType>>();
-  fake_spo2->setOrbitalSetSize(4);
+  auto fake_spo2 = std::make_unique<FakeSPO<QMCTraits::ValueType>>(4);
 
   RotatedSPOs rot2("fake_rot", std::move(fake_spo2));
   rot2.buildOptVariables(nel);
@@ -790,17 +795,16 @@ template<typename T>
 class DummySPOSetWithoutMW : public SPOSetT<T>
 {
 public:
-  using SPOSet = SPOSetT<T>;
-  using ValueVector   = typename SPOSet::ValueVector;
-  using ValueMatrix   = typename SPOSet::ValueMatrix;
-  using GradVector    = typename SPOSet::GradVector;
-  using GradMatrix    = typename SPOSet::GradMatrix;
-  using ComplexType   = typename SPOSet::ComplexType;
+  using SPOSet      = SPOSetT<T>;
+  using ValueVector = typename SPOSet::ValueVector;
+  using ValueMatrix = typename SPOSet::ValueMatrix;
+  using GradVector  = typename SPOSet::GradVector;
+  using GradMatrix  = typename SPOSet::GradMatrix;
+  using ComplexType = typename SPOSet::ComplexType;
   template<typename DT>
   using OffloadMatrix = typename SPOSet::template OffloadMatrix<DT>;
 
-  DummySPOSetWithoutMW(const std::string& my_name) : SPOSet(my_name) {}
-  void setOrbitalSetSize(int norbs) override {}
+  DummySPOSetWithoutMW(const std::string& my_name) : SPOSet(my_name, 3) {}
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override
   {
     assert(psi.size() == 3);
@@ -863,9 +867,9 @@ template<typename T>
 class DummySPOSetWithMW : public DummySPOSetWithoutMW<T>
 {
 public:
-  using ValueVector   = typename DummySPOSetWithoutMW<T>::ValueVector;
-  using GradVector    = typename DummySPOSetWithoutMW<T>::GradVector;
-  using ComplexType   = typename DummySPOSetWithoutMW<T>::ComplexType;
+  using ValueVector = typename DummySPOSetWithoutMW<T>::ValueVector;
+  using GradVector  = typename DummySPOSetWithoutMW<T>::GradVector;
+  using ComplexType = typename DummySPOSetWithoutMW<T>::ComplexType;
   template<typename DT>
   using OffloadMatrix = typename DummySPOSetWithoutMW<T>::template OffloadMatrix<DT>;
   DummySPOSetWithMW(const std::string& my_name) : DummySPOSetWithoutMW<T>(my_name) {}

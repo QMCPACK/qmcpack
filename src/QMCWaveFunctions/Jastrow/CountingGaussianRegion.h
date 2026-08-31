@@ -23,14 +23,13 @@ namespace qmcplusplus
 class CountingGaussianRegion
 {
 public:
-
   using RealType = QMCTraits::RealType;
   //using ValueType = QMCTraits::ValueType;
-  using PosType = QMCTraits::PosType;
+  using PosType    = QMCTraits::PosType;
   using TensorType = QMCTraits::TensorType;
 
-  using real_type = optimize::VariableSet::real_type;
-  using opt_variables_type = optimize::VariableSet;
+  using real_type    = optimize::VariableSet::real_type;
+  using OptVariables = optimize::VariableSet;
 
   // counting function pointers
   std::vector<std::unique_ptr<CountingGaussian>> C;
@@ -78,16 +77,16 @@ public:
 
 public:
   CountingGaussianRegion(ParticleSet& P) { num_els = P.getTotalNum(); }
-  CountingGaussianRegion(int n) : num_els(n) { }
+  CountingGaussianRegion(int n) : num_els(n) {}
 
   int size() const { return num_regions; }
 
-  const opt_variables_type& getVars(int I) { return C[I]->myVars; }
+  const OptVariables& getVars(int I) { return C[I]->myVars; }
 
   int total_num_derivs()
   {
     int tnd = 0;
-    for(int I = 0; I < C.size(); ++I)
+    for (int I = 0; I < C.size(); ++I)
       tnd += getVars(I).size_of_active();
     return tnd;
   }
@@ -100,9 +99,7 @@ public:
   }
 
   inline RealType& dLval_saved(int I, int p, int i)
-  {
-    return _dLval_saved[I * max_num_derivs() * num_els + p * num_els + i];
-  }
+  { return _dLval_saved[I * max_num_derivs() * num_els + p * num_els + i]; }
 
   void addFunc(std::unique_ptr<CountingGaussian> func, std::string fid)
   {
@@ -137,21 +134,21 @@ public:
 
     // store log derivative values for single particle moves
     _dLval_saved.resize(max_num_derivs() * num_regions * num_els);
-    for(int I = 0; I < C.size(); ++I)
+    for (int I = 0; I < C.size(); ++I)
       C[I]->myVars.resetIndex();
   }
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(OptVariables& active)
   {
     for (auto it = C.begin(); it != C.end(); ++it)
       (*it)->checkInVariables(active);
   }
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const OptVariables& active)
   {
     for (auto it = C.begin(); it != C.end(); ++it)
       (*it)->checkOutVariables(active);
   }
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const OptVariables& active)
   {
     for (auto it = C.begin(); it != C.end(); ++it)
       (*it)->resetParameters(active);
@@ -180,11 +177,11 @@ public:
       C[I]->restore(iat);
   }
 
-  void reportStatus(std::ostream& os) 
+  void reportStatus(std::ostream& os)
   {
     // print some class variables:
     os << "    Region type: CountingGaussianRegion" << std::endl;
-    os << "    Region optimizable parameters: " << total_num_derivs()  << std::endl << std::endl;
+    os << "    Region optimizable parameters: " << total_num_derivs() << std::endl << std::endl;
     os << "    Counting Functions: " << std::endl;
     for (int I = 0; I < C.size(); ++I)
       C[I]->reportStatus(os);
@@ -200,12 +197,12 @@ public:
       cr->addFunc(std::move(Ci), C_id[i]);
     }
     // get the index of the reference gaussian
-    cr->Cref_id = Cref_id;
+    cr->Cref_id   = Cref_id;
     auto C_id_it  = std::find(C_id.begin(), C_id.end(), Cref_id);
     int ref_index = std::distance(C_id.begin(), C_id_it);
     // initialize each of the counting functions using the reference gaussian
     cr->Cref = cr->C[ref_index]->makeClone(Cref_id + "_ref");
-    for(auto& ptr : cr->C)
+    for (auto& ptr : cr->C)
       ptr->initialize(cr->Cref.get());
     cr->initialize();
     return cr;
@@ -227,7 +224,7 @@ public:
     // make a copy of the reference gaussian
     Cref = C[ref_index]->makeClone(Cref_id + "_ref");
     // initialize with reference gaussian
-    for(auto& ptr : C)
+    for (auto& ptr : C)
       ptr->initialize(Cref.get());
     initialize();
     return true;
@@ -267,7 +264,7 @@ public:
       for (int I = 0; I < num_regions; ++I)
       {
         val(I, i) = val(I, i) / Nval[i];
-        sum[I]  += val(I, i);
+        sum[I] += val(I, i);
         gLN_sum += Lgrad(I, i) * val(I, i);
         lLN_sum += Llap(I, i) * val(I, i);
       }
@@ -436,11 +433,11 @@ public:
               2 * val(J, i) * dot(dLgrad[p], grad(I, i)) - val(J, i) * dLval[p] * lap(I, i);
           // accumulate
           dLval_saved(I, p, i) = dLval[p];
-          PosType grad_i( std::real(P.G[i][0]), std::real(P.G[i][1]), std::real(P.G[i][2]) );
-          dNsum(J, p)    += dNval;
-          dNggsum(J, p)  += dot(dNgrad, grad_i);
+          PosType grad_i(std::real(P.G[i][0]), std::real(P.G[i][1]), std::real(P.G[i][2]));
+          dNsum(J, p) += dNval;
+          dNggsum(J, p) += dot(dNgrad, grad_i);
           dNlapsum(J, p) += dNlap;
-          dNFNggsum[p]   += dot(dNgrad, FCgrad(J, i));
+          dNFNggsum[p] += dot(dNgrad, FCgrad(J, i));
         }
       }
     }

@@ -41,7 +41,7 @@ public:
   NewTimer &offload_timer, &transferH2D_timer, &transferD2H_timer;
 
   // Optimizable parameter
-  opt_variables_type myVars;
+  OptVariables myVars;
 
   template<typename DT>
   using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
@@ -61,9 +61,7 @@ public:
     MultiDiracDetMultiWalkerResource(const MultiDiracDetMultiWalkerResource&) : MultiDiracDetMultiWalkerResource() {}
 
     std::unique_ptr<Resource> makeClone() const override
-    {
-      return std::make_unique<MultiDiracDetMultiWalkerResource>(*this);
-    }
+    { return std::make_unique<MultiDiracDetMultiWalkerResource>(*this); }
 
     void resizeConstants(size_t nw)
     {
@@ -151,11 +149,9 @@ public:
   inline bool isOptimizable() const final { return Phi->isOptimizable(); }
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
-  {
-    Phi->extractOptimizableObjectRefs(opt_obj_refs);
-  }
+  { Phi->extractOptimizableObjectRefs(opt_obj_refs); }
 
-  inline void checkOutVariables(const opt_variables_type& active) override
+  inline void checkOutVariables(const OptVariables& active) override
   {
     if (Phi->isOptimizable())
       Phi->checkOutVariables(active);
@@ -167,13 +163,13 @@ public:
   int build_occ_vec(const OffloadVector<int>& data, const size_t nel, const size_t nmo, std::vector<int>& occ_vec);
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override
   {}
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi,
                            const MultiDiracDeterminant& pseudo_dn,
@@ -183,7 +179,7 @@ public:
                            const std::vector<size_t>& C2node_dn);
 
   void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& optvars,
+                             const OptVariables& optvars,
                              Vector<ValueType>& dlogpsi,
                              const MultiDiracDeterminant& pseudo_dn,
                              const PsiValue& psiCurrent,

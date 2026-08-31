@@ -387,7 +387,7 @@ def gen_xml_input(param_list, input_param_list=None):
 # Code for resetting the parameters
 def gen_reset_parameters(param_list):
   out_str = """
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const OptVariables& active)
   {
     if (myVars.size())
     {

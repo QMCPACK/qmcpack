@@ -23,6 +23,7 @@
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/DistanceTable.h"
+#include "Particle/createDistanceTable.h"
 #include "ParticleBase/RandomSeqGeneratorGlobal.h"
 
 namespace qmcplusplus
@@ -44,13 +45,13 @@ bool InitMolecularSystem::put(xmlNodePtr cur)
   ParticleSet* els = ptclPool.getParticleSet(target);
   if (els == 0)
   {
-    ERRORMSG("No target particle " << target << " exists.")
+    app_error() << "No target particle " << target << " exists." << std::endl;
     return false;
   }
   ParticleSet* ions = ptclPool.getParticleSet(source);
   if (ions == 0)
   {
-    ERRORMSG("No source particle " << source << " exists.")
+    app_error() << "No source particle " << source << " exists." << std::endl;
     return false;
   }
 
@@ -97,8 +98,10 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   if (ions->getTotalNum() == 1)
     return initAtom(ions, els);
 
-  const int d_ii_ID = ions->addTable(*ions);
-  ions->update();
+  std::ostream null_out(nullptr);
+  auto ii_dt = createDistanceTableAA(*ions, null_out);
+  ii_dt->evaluate(*ions);
+
   const ParticleSet::ParticleIndex& grID(ions->GroupID);
   SpeciesSet& Species(ions->getSpeciesSet());
   int Centers = ions->getTotalNum();
@@ -124,7 +127,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   RealType rmin = cutoff;
   ParticleSet::SingleParticlePos cm;
 
-  const auto& dist = ions->getDistTableAA(d_ii_ID).getDistances();
+  const auto& dist = ii_dt->getDistances();
   // Step 1. Distribute even Q[iat] of atomic center iat. If Q[iat] is odd, put Q[iat]-1 and save the lone electron.
   for (size_t iat = 0; iat < Centers; iat++)
   {
@@ -199,16 +202,12 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
 ///helper function to determine the lower bound of a domain (need to move up)
 template<typename T>
 inline TinyVector<T, 3> lower_bound(const TinyVector<T, 3>& a, const TinyVector<T, 3>& b)
-{
-  return TinyVector<T, 3>(std::min(a[0], b[0]), std::min(a[1], b[1]), std::min(a[2], b[2]));
-}
+{ return TinyVector<T, 3>(std::min(a[0], b[0]), std::min(a[1], b[1]), std::min(a[2], b[2])); }
 
 ///helper function to determine the upper bound of a domain (need to move up)
 template<typename T>
 inline TinyVector<T, 3> upper_bound(const TinyVector<T, 3>& a, const TinyVector<T, 3>& b)
-{
-  return TinyVector<T, 3>(std::max(a[0], b[0]), std::max(a[1], b[1]), std::max(a[2], b[2]));
-}
+{ return TinyVector<T, 3>(std::max(a[0], b[0]), std::max(a[1], b[1]), std::max(a[2], b[2])); }
 
 void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
 {

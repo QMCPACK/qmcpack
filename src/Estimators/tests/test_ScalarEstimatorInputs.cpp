@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "ScalarEstimatorInputs.h"
@@ -27,8 +26,7 @@ TEST_CASE("Scalar Estimator Input", "[estimators]")
   for (auto input_xml : scalar_input)
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
     std::string atype(lowerCase(getXMLAttributeValue(node, "type")));
     std::string aname(lowerCase(getXMLAttributeValue(node, "name")));

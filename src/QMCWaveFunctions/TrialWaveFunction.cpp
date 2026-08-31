@@ -12,6 +12,7 @@
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Anouar Benali, abenali.sci@gmail.com, Qubit Pharmaceuticals
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -26,6 +27,7 @@
 #include "NaNguard.h"
 #include "Fermion/SlaterDet.h"
 #include "Fermion/MultiSlaterDetTableMethod.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 
 namespace qmcplusplus
 {
@@ -64,7 +66,6 @@ TrialWaveFunction::TrialWaveFunction(const RuntimeOptions& runtime_options, cons
       PhaseValue(0.0),
       PhaseDiff(0.0),
       log_real_(0.0),
-      OneOverM(1.0),
       use_tasking_(tasking),
       TWF_timers_(getGlobalTimerManager(), create_names(aname), timer_level_medium)
 {
@@ -173,7 +174,7 @@ void TrialWaveFunction::mw_evaluateLog(const RefVectorWithLeader<TrialWaveFuncti
   // to be compatible with legacy use pattern.
   const int num_particles = p_leader.getTotalNum();
   auto initGandL          = [num_particles, czero](TrialWaveFunction& twf, ParticleSet::ParticleGradient& grad,
-                                          ParticleSet::ParticleLaplacian& lapl) {
+                                                   ParticleSet::ParticleLaplacian& lapl) {
     grad.resize(num_particles);
     lapl.resize(num_particles);
     grad           = czero;
@@ -924,21 +925,21 @@ UniqueOptObjRefs TrialWaveFunction::extractOptimizableObjectRefs()
   return opt_obj_refs;
 }
 
-void TrialWaveFunction::checkInVariables(opt_variables_type& active)
+void TrialWaveFunction::checkInVariables(OptVariables& active)
 {
   auto opt_obj_refs = extractOptimizableObjectRefs();
   for (OptimizableObject& obj : opt_obj_refs)
     obj.checkInVariablesExclusive(active);
 }
 
-void TrialWaveFunction::checkOutVariables(const opt_variables_type& active)
+void TrialWaveFunction::checkOutVariables(const OptVariables& active)
 {
   for (int i = 0; i < Z.size(); i++)
     if (Z[i]->isOptimizable())
       Z[i]->checkOutVariables(active);
 }
 
-void TrialWaveFunction::resetParameters(const opt_variables_type& active)
+void TrialWaveFunction::resetParameters(const OptVariables& active)
 {
   auto opt_obj_refs = extractOptimizableObjectRefs();
   for (OptimizableObject& obj : opt_obj_refs)
@@ -1141,7 +1142,7 @@ void TrialWaveFunction::mw_evaluateSpinorRatios(
 }
 
 void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                            const opt_variables_type& optvars,
+                                            const OptVariables& optvars,
                                             std::vector<ValueType>& ratios,
                                             Matrix<ValueType>& dratio)
 {
@@ -1159,7 +1160,7 @@ void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
 
 void TrialWaveFunction::evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                                   const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                                  const opt_variables_type& optvars,
+                                                  const OptVariables& optvars,
                                                   std::vector<ValueType>& ratios,
                                                   Matrix<ValueType>& dratio)
 {
@@ -1184,7 +1185,6 @@ std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)
     myclone->addComponent(Z[i]->makeClone(tqp));
-  myclone->OneOverM = OneOverM;
   return myclone;
 }
 
@@ -1193,7 +1193,7 @@ std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp
  * @todo WaveFunctionComponent objects should take the mass into account.
  */
 void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
-                                            const opt_variables_type& optvars,
+                                            const OptVariables& optvars,
                                             Vector<ValueType>& dlogpsi,
                                             Vector<ValueType>& dhpsioverpsi)
 {
@@ -1206,14 +1206,11 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
     ScopedTimer z_timer(WFC_timers_[DERIVS_TIMER + TIMER_SKIP * i]);
     Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
   }
-  //orbitals do not know about mass of particle.
-  for (int i = 0; i < dhpsioverpsi.size(); i++)
-    dhpsioverpsi[i] *= OneOverM;
 }
 
 void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                         const RefVectorWithLeader<ParticleSet>& p_list,
-                                                        const opt_variables_type& optvars,
+                                                        const OptVariables& optvars,
                                                         RecordArray<ValueType>& dlogpsi,
                                                         RecordArray<ValueType>& dhpsioverpsi)
 {
@@ -1228,9 +1225,7 @@ void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeade
 }
 
 
-void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
-                                              const opt_variables_type& optvars,
-                                              Vector<ValueType>& dlogpsi)
+void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi)
 {
   for (int i = 0; i < Z.size(); i++)
   {
@@ -1241,7 +1236,7 @@ void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
 
 void TrialWaveFunction::mw_evaluateParameterDerivativesWF(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                           const RefVectorWithLeader<ParticleSet>& p_list,
-                                                          const opt_variables_type& optvars,
+                                                          const OptVariables& optvars,
                                                           RecordArray<ValueType>& dlogpsi)
 {
   const int nparam = dlogpsi.getNumOfParams();
@@ -1278,33 +1273,59 @@ void TrialWaveFunction::createResource(ResourceCollection& collection) const
 {
   for (int i = 0; i < Z.size(); ++i)
     Z[i]->createResource(collection);
+
+  // Delegate to TWFFastDerivWrapper where the definition is visible
+  if (twf_fastderiv_)
+    TWFFastDerivWrapper::createResource(collection);
 }
 
 void TrialWaveFunction::acquireResource(ResourceCollection& collection,
                                         const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  auto& wf_leader               = wf_list.getLeader();
-  auto& wavefunction_components = wf_leader.Z;
-  const int num_wfc             = wf_leader.Z.size();
-  for (int i = 0; i < num_wfc; ++i)
+  auto& wf_leader = wf_list.getLeader();
+
+  // First handle WFC resources
+  for (int i = 0; i < wf_leader.Z.size(); ++i)
   {
     const auto wfc_list(extractWFCRefList(wf_list, i));
-    wavefunction_components[i]->acquireResource(collection, wfc_list);
+    wf_leader.Z[i]->acquireResource(collection, wfc_list);
+  }
+
+  // Handle wrapper resources if they exist
+  if (wf_leader.twf_fastderiv_)
+  {
+    RefVectorWithLeader<TWFFastDerivWrapper> wrapper_list(*wf_leader.twf_fastderiv_);
+    for (int iw = 0; iw < wf_list.size(); ++iw)
+      wrapper_list.push_back(*wf_list[iw].twf_fastderiv_);
+    wf_leader.twf_fastderiv_->acquireResource(collection, wrapper_list);
   }
 }
 
 void TrialWaveFunction::releaseResource(ResourceCollection& collection,
                                         const RefVectorWithLeader<TrialWaveFunction>& wf_list)
 {
-  auto& wf_leader               = wf_list.getLeader();
-  auto& wavefunction_components = wf_leader.Z;
-  const int num_wfc             = wf_leader.Z.size();
-  for (int i = 0; i < num_wfc; ++i)
+  auto& wf_leader = wf_list.getLeader();
+
+  // Release WFC resources
+  for (int i = 0; i < wf_leader.Z.size(); ++i)
   {
     const auto wfc_list(extractWFCRefList(wf_list, i));
-    wavefunction_components[i]->releaseResource(collection, wfc_list);
+    wf_leader.Z[i]->releaseResource(collection, wfc_list);
+  }
+
+  // Release wrapper resources if they exist
+  if (wf_leader.twf_fastderiv_)
+  {
+    RefVectorWithLeader<TWFFastDerivWrapper> wrapper_list(*wf_leader.twf_fastderiv_);
+    for (int iw = 0; iw < wf_list.size(); ++iw)
+    {
+      if (wf_list[iw].twf_fastderiv_)
+        wrapper_list.push_back(*wf_list[iw].twf_fastderiv_);
+    }
+    wf_leader.twf_fastderiv_->releaseResource(collection, wrapper_list);
   }
 }
+
 
 RefVectorWithLeader<WaveFunctionComponent> TrialWaveFunction::extractWFCRefList(
     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -1350,16 +1371,25 @@ void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFF
   {
     if (Z[i]->isFermionic())
     {
-      //OK, so this is a hack only for SlaterDeterminant objects.
-      //Needs a bit of logic and protection before this reaches production.
-      //SlaterDet* det = dynamic_cast<SlaterDet*>(Z[i].get());
-      //det->registerTWFFastDerivWrapper(P, twf);
       Z[i]->registerTWFFastDerivWrapper(P, twf);
     }
     else
       twf.addJastrow(Z[i].get());
   }
 }
+
+
+// Add debug checks in getOrCreateTWFFastDerivWrapper
+TWFFastDerivWrapper& TrialWaveFunction::getOrCreateTWFFastDerivWrapper(const ParticleSet& P)
+{
+  if (!twf_fastderiv_)
+  {
+    twf_fastderiv_ = std::make_unique<TWFFastDerivWrapper>();
+    initializeTWFFastDerivWrapper(P, *twf_fastderiv_);
+  }
+  return *twf_fastderiv_;
+}
+
 
 //explicit instantiations
 template void TrialWaveFunction::mw_evalGrad<CoordsType::POS>(const RefVectorWithLeader<TrialWaveFunction>& wf_list,

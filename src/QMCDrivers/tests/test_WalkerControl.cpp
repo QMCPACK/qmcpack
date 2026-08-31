@@ -11,7 +11,8 @@
 
 
 #include <functional>
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "test_WalkerControl.h"
 #include "Message/Communicate.h"
@@ -34,9 +35,9 @@ namespace testing
 UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpools_.comm, Random)
 {
   int num_ranks = dpools_.comm->size();
-  pop_ =
-      std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), dpools_.particle_pool->getParticleSet("e"),
-                                     dpools_.wavefunction_pool->getPrimary(), dpools_.hamiltonian_pool->getPrimary());
+  pop_ = std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), *dpools_.particle_pool->getParticleSet("e"),
+                                        dpools_.wavefunction_pool->getWaveFunction().value(),
+                                        dpools_.hamiltonian_pool->getHamiltonian().value());
 
   pop_->createWalkers(1, walker_confs);
 }
@@ -61,8 +62,7 @@ void UnifiedDriverWalkerControlMPITest::testNewDistribution(std::vector<int>& in
                                                             std::vector<int>& minus,
                                                             std::vector<int>& plus)
 {
-  int num_ranks = dpools_.comm->size();
-  assert(initial_num_per_rank.size() == num_ranks);
+  assert(initial_num_per_rank.size() == dpools_.comm->size());
   std::vector<int> num_per_rank = initial_num_per_rank;
   std::vector<int> fair_offset;
   wc_.determineNewWalkerPopulation(num_per_rank, fair_offset, minus, plus);

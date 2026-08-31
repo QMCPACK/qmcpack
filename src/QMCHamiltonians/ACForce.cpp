@@ -22,8 +22,6 @@ namespace qmcplusplus
 ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi_in, QMCHamiltonian& H)
     : delta_(1e-4),
       ions_(source),
-      elns_(target),
-      psi_(psi_in),
       ham_(H),
       first_force_index_(-1),
       useSpaceWarp_(false),
@@ -40,16 +38,16 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
   wf_grad_.resize(nIons);
   sw_pulay_.resize(nIons);
   sw_grad_.resize(nIons);
-  psi_in.initializeTWFFastDerivWrapper(elns_, psi_wrapper_);
+  psi_in.getOrCreateTWFFastDerivWrapper(target);
 };
 
-std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
   APP_ABORT("ACForce::makeClone(ParticleSet&,TrialWaveFunction&) shouldn't be called");
   return nullptr;
 }
 
-std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
+std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in) const
 {
   std::unique_ptr<ACForce> myclone = std::make_unique<ACForce>(ions_, qp, psi_in, ham_in);
   myclone->fastDerivatives_        = fastDerivatives_;
@@ -89,7 +87,7 @@ bool ACForce::put(xmlNodePtr cur)
 
 bool ACForce::get(std::ostream& os) const { return true; }
 
-void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& ham_in)
+void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& ham_in) const
 {
   //The following line is modified
   std::unique_ptr<OperatorBase> myclone = makeClone(qp, psi, ham_in);
@@ -98,7 +96,7 @@ void ACForce::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamilt
     ham_in.addOperator(std::move(myclone), name_, update_mode_[PHYSICAL]);
   }
 }
-ACForce::Return_t ACForce::evaluate(ParticleSet& P)
+ACForce::Return_t ACForce::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
   hf_force_    = 0;
   pulay_force_ = 0;
@@ -106,13 +104,15 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   sw_pulay_    = 0;
   sw_grad_     = 0;
 
-
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
   if (fastDerivatives_)
-    ham_.evaluateIonDerivsFast(P, ions_, psi_, psi_wrapper_, hf_force_, wf_grad_);
+  {
+    TWFFastDerivWrapper& psiwrapper_ = psi.getOrCreateTWFFastDerivWrapper(P);
+    ham_.evaluateIonDerivsFast(P, ions_, psi, psiwrapper_, hf_force_, wf_grad_);
+  }
   else
-    ham_.evaluateIonDerivs(P, ions_, psi_, hf_force_, pulay_force_, wf_grad_);
+    ham_.evaluateIonDerivs(P, ions_, psi, hf_force_, pulay_force_, wf_grad_);
 
   if (useSpaceWarp_)
   {
@@ -120,20 +120,18 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
     el_grad.resize(P.getTotalNum());
     el_grad = 0;
 
-    ham_.evaluateElecGrad(P, psi_, el_grad, delta_);
+    ham_.evaluateElecGrad(psi, P, el_grad, delta_);
     swt_.computeSWT(P, ions_, el_grad, P.G, sw_pulay_, sw_grad_);
   }
 
   //Now we compute the regularizer.
-  //WE ASSUME THAT psi_.evaluateLog(P) HAS ALREADY BEEN CALLED AND Grad(logPsi)
+  //WE ASSUME THAT psi.evaluateLog(P) HAS ALREADY BEEN CALLED AND Grad(logPsi)
   //IS ALREADY UP TO DATE FOR THIS CONFIGURATION.
 
-  f_epsilon_ = compute_regularizer_f(psi_.G, reg_epsilon_);
+  f_epsilon_ = compute_regularizer_f(psi.G, reg_epsilon_);
 
   return 0.0;
 };
-
-void ACForce::resetTargetParticleSet(ParticleSet& P) {}
 
 void ACForce::addObservables(PropertySetType& plist, BufferType& collectables)
 {

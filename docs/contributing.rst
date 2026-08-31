@@ -3,29 +3,40 @@
 Contributing to the Manual
 ==========================
 
-This section briefly describes how to contribute to the manual and is primarily "by developers, for developers."   This section should iterate until a consistent view on style/contents is reached.
+This section briefly describes how to contribute to the manual. All levels of contribution are welcome. The manual is designed to be
+accessible to readers who have some familiarity with Quantum Monte Carlo, with citations given to accessible review articles for
+standard topics and with more detailed explanations provided for features that are QMCPACK specific.
+
+The manual is produced using the Sphinx documentation system and written in the markup format ReStructuredText
+(https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html#restructuredtext-primer). It is located in the ``docs/``
+directory. The online version is hosted at https://qmcpack.readthedocs.io/
+
+Changes to the manual can be tested by simply making a pull request and relying on the integration with readthedocs. A build of
+documentation in a pull request is usually available within a few minutes as one of the checks on GitHub. Alternatively, the
+documentation can be built locally: ``make html`` builds the HTML documentation, ``make clean`` removes prior builds, and ``make``
+gives help and lists additional build options.
+
+Building the documentation requires sphinx, BibTeX support, and the readthedocs theme. If using pypi (pip) for python package
+management, these are available via the ``sphinx``, ``sphinxcontrib-bibtex``, and ``sphinx-rtd-theme`` packages. If using the spack
+package manager, these are available via the ``py-sphinx``, ``py-sphinxcontrib-bibtex``, and ``py-sphinx-rtd-theme`` packages.
 
 **Desirable:**
 
--  Use the following table templates when describing XML input.
+-  Use math mode for equations.
 
--  Unicode rules
+-  Avoid use of unnecessarily large image files. These quickly expand the git repository. 
 
-   -  Do not use characters for which well-established idioms
-      exists, especially dashes, quotes, and apostrophes.
+-  The documentation should be buildable without additional sphinx extensions.
 
-   -  Use math mode markup instead of unicode characters for equations.
+-  Use the table templates given below when describing XML input.
 
-   -  Be cautious of WYSIWYG word processors; cutting and pasting can
-      pickup characters promoted to unicode by the program.
+-  Do not use unicode characters for which well-established idioms exist, especially dashes, quotes, and apostrophes. Be
+   particularly cautious if cutting and pasting from a WYSIWYG word processors, since this will pickup characters automatically
+   promoted to unicode. If necessary, use an editor that can highlight unicode or take a look at your text multibyte expanded; that
+   is open it in, e.g., emacs and 'esc-x toggle-enable-multibyte-characters' - do you see any unicode you did not intend?
 
-   -  Take a look at your text multibyte expanded; that is open it in
-      (emacs and ‘esc-x toggle-enable-multibyte-characters’)—see any
-      unicode you did not intend?
-
--  Newly added entries to a Bib file should be as complete as possible.
-   Use a tool such as JabRef or Zotero that can automate creation of
-   these entries from just a DOI.
+-  Newly added entries to a bibliography (.bib) file should be as complete as possible. Use a tool such as JabRef or Zotero to
+   automate creation of these entries from just a DOI.
 
 **Forbidden:**
 
@@ -42,14 +53,13 @@ This section briefly describes how to contribute to the manual and is primarily 
    unrecognized XML elements are encountered (they are generally ignored
    without notification).
 
--  Overview of the input file in general, broad structure, and at least
-   one full example that works in isolation.
+-  Overview of the input file in general, broad structure, and full examples that work in isolation.
 
 **Information currently missing for a complete reference
 specification:**
 
 -  Noting how many instances of each child element are allowed.
-   Examples: ``simulation``–1 only, ``method``–1 or more, ``jastrow``–0
+   Examples: ``simulation``-1 only, ``method``-1 or more, ``jastrow``-0
    or more.
 
 Table templates follow for describing XML elements in reference fashion.

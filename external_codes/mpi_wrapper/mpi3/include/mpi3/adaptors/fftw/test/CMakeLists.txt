@@ -26,17 +26,23 @@ else()
 					"\n    sudo dnf install fftw-devel  # in Fedora")
 endif()
 
-include(FetchContent)
-FetchContent_Declare(multi GIT_REPOSITORY https://gitlab.com/correaa/boost-multi.git)
-FetchContent_MakeAvailable(multi)
+set(FETCHCONTENT_UPDATES_DISCONNECTED TRUE)
 
-set(TEST_SRCS
-  array_2d.cpp
-)
+# include(FetchContent)
+# FetchContent_Declare(multi GIT_REPOSITORY https://gitlab.com/correaa/boost-multi.git)
+# FetchContent_MakeAvailable(multi)
+
+# set(TEST_SRCS
+#   array_2d.cpp
+# )
   
 foreach(TEST_FILE ${TEST_SRCS})
-  set(TEST_EXE "${TEST_FILE}.x")
-  add_executable(${TEST_EXE} ${TEST_FILE})
-  target_link_libraries(${TEST_EXE} PRIVATE bmpi3 multi PkgConfig::FFTW fftw3_mpi)
-  add_test(NAME ${TEST_EXE} COMMAND ./${TEST_EXE})
+	set(TEST_EXE "${TEST_FILE}.x")
+	add_executable(${TEST_EXE} ${TEST_FILE})
+	target_link_libraries(${TEST_EXE} PRIVATE bmpi3 multi PkgConfig::FFTW)
+	#if(APPLE)
+		target_link_directories(${TEST_EXE} PRIVATE /opt/homebrew/Cellar/fftw/3.3.10_1/lib/)
+	#endif()
+	target_link_libraries(${TEST_EXE} PRIVATE -lfftw3_mpi)
+	add_test(NAME ${TEST_EXE} COMMAND ./${TEST_EXE})
 endforeach()

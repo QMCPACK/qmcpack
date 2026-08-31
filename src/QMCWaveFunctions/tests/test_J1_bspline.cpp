@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
@@ -109,9 +108,8 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 </tmp>)XML";
 
   Libxml2Document doc;
-  bool okay =
-      doc.parseFromString(kind_selected == DynamicCoordinateKind::DC_POS_OFFLOAD ? j1_omptarget_xml_char : j1_xml_char);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(kind_selected == DynamicCoordinateKind::DC_POS_OFFLOAD ? j1_omptarget_xml_char
+                                                                                     : j1_xml_char));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -324,9 +322,8 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 </tmp>)XML";
 
   Libxml2Document doc2;
-  bool okay2 = doc2.parseFromString(kind_selected == DynamicCoordinateKind::DC_POS_OFFLOAD ? j1_omptarget_xml_char_2
-                                                                                           : j1_xml_char_2);
-  REQUIRE(okay2);
+  REQUIRE(doc2.parseFromString(kind_selected == DynamicCoordinateKind::DC_POS_OFFLOAD ? j1_omptarget_xml_char_2
+                                                                                      : j1_xml_char_2));
 
   xmlNodePtr root2 = doc2.getRoot();
 
@@ -402,7 +399,7 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 
   // test NLPP related APIs
   const int nknot = 3;
-  VirtualParticleSet vp(elec_, nknot), vp_clone(elec_clone, nknot);
+  VirtualParticleSet vp(elec_), vp_clone(elec_clone);
   RefVectorWithLeader<VirtualParticleSet> vp_list(vp, {vp, vp_clone});
   ResourceCollection vp_res("test_vp_res");
   vp.createResource(vp_res);

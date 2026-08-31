@@ -40,9 +40,7 @@ public:
   //@{save/load/clear function for optimization
   inline size_t getNumSamples() const { return current_sample_count_; }
   ///set the number of max samples per rank.
-  void setMaxSamples(size_t n, size_t number_of_ranks = 1);
-  /// Global number of samples is number of samples per rank * number of ranks
-  size_t getGlobalNumSamples() const { return global_num_samples_; }
+  void setMaxSamples(size_t n);
   /// load a single sample from SampleStack
   void loadSample(ParticleSet& pset, size_t iw) const;
 
@@ -57,7 +55,6 @@ public:
 private:
   size_t max_samples_{10};
   size_t current_sample_count_{0};
-  size_t global_num_samples_{max_samples_};
 
   std::vector<MCSample> sample_vector_;
 };

@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 
 #include "Utilities/ProjectData.h"
@@ -81,7 +80,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
     rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -97,8 +96,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   </qmc>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(vmc_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(vmc_input));
   xmlNodePtr root = doc.getRoot();
 
   vmc_omp.process(root); // need to call 'process' for QMCDriver, which in turn calls 'put'
@@ -166,7 +164,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
     rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -183,8 +181,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   </qmc>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(vmc_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(vmc_input));
   xmlNodePtr root = doc.getRoot();
 
   vmc_omp.process(root); // need to call 'process' for QMCDriver, which in turn calls 'put'
@@ -256,7 +253,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
     rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -274,8 +271,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(vmc_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(vmc_input));
   xmlNodePtr root = doc.getRoot();
 
   vmc_omp.process(root); // need to call 'process' for QMCDriver, which in turn calls 'put'

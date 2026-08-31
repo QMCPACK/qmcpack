@@ -9,9 +9,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsData/ParameterSet.h"
@@ -25,8 +24,7 @@ TEST_CASE("ParameterSet", "[xml]")
    <p2>2</p2>
 </simulation>)";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(content);
-  REQUIRE(okay == true);
+  REQUIRE(doc.parseFromString(content));
 
   xmlNodePtr root = doc.getRoot();
   ParameterSet param;
@@ -59,8 +57,7 @@ TEST_CASE("ParameterSet_bool", "[xml]")
        <parameter name="p2"> no </parameter>
       </simulation>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     ParameterSet param;
     bool p1_val = false;
@@ -83,8 +80,7 @@ TEST_CASE("ParameterSet_bool", "[xml]")
         <parameter name="p1">  </parameter>
       </simulation>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     ParameterSet param;
     bool p1_val = false;
@@ -99,8 +95,7 @@ TEST_CASE("ParameterSet_bool", "[xml]")
         <parameter name="p1"> yes no </parameter>
       </simulation>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     ParameterSet param;
     bool p1_val = false;
@@ -115,8 +110,7 @@ TEST_CASE("ParameterSet_bool", "[xml]")
         <parameter name="p1"> here </parameter>
       </simulation>)";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(content);
-    REQUIRE(okay == true);
+    REQUIRE(doc.parseFromString(content));
 
     ParameterSet param;
     bool p1_val = false;

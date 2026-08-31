@@ -8,13 +8,12 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include <iostream>
 #include "Message/Communicate.h"
 #include "Utilities/PrimeNumberSet.h"
+#include <cstdint>
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -25,12 +24,12 @@ namespace qmcplusplus
 {
 TEST_CASE("prime number set 32 bit", "[utilities]")
 {
-  PrimeNumberSet<uint32_t> pns;
+  PrimeNumberSet<std::uint32_t> pns;
   //std::cout << "32 bit size = "<< pns.size() << std::endl;
   REQUIRE(pns.size() == 4097);
   REQUIRE(pns[0] == 3);
 
-  std::vector<uint32_t> more_primes;
+  std::vector<std::uint32_t> more_primes;
   // get prime numbers already in the list
   pns.get(1, 2, more_primes);
   REQUIRE(more_primes.size() == 2);

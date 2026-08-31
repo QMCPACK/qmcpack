@@ -8,11 +8,9 @@
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
@@ -73,8 +71,7 @@ void test_lcao_spinor()
    </tmp>)XML";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -404,8 +401,7 @@ void test_lcao_spinor_excited()
    </tmp>)XML";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -724,8 +720,7 @@ void test_lcao_spinor_ion_derivs()
    </tmp>)XML";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 

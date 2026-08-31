@@ -46,7 +46,7 @@ public:
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
 
-  void checkOutVariables(const opt_variables_type& active) override;
+  void checkOutVariables(const OptVariables& active) override;
 
   void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
@@ -93,25 +93,21 @@ public:
                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
-  {
-    return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios);
-  }
+  { return Dets[getDetID(VP.refPtcl)]->evaluateRatios(VP, ratios); }
 
   inline void evaluateSpinorRatios(const VirtualParticleSet& VP,
                                    const std::pair<ValueVector, ValueVector>& spinor_multiplier,
                                    std::vector<ValueType>& ratios) override
-  {
-    return Dets[getDetID(VP.refPtcl)]->evaluateSpinorRatios(VP, spinor_multiplier, ratios);
-  }
+  { return Dets[getDetID(VP.refPtcl)]->evaluateSpinorRatios(VP, spinor_multiplier, ratios); }
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
 
   void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                  const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                 const opt_variables_type& optvars,
+                                 const OptVariables& optvars,
                                  std::vector<ValueType>& ratios,
                                  Matrix<ValueType>& dratios) override;
 
@@ -161,9 +157,7 @@ public:
   GradType evalGrad(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->evalGrad(P, iat); }
 
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
-  {
-    return Dets[getDetID(iat)]->evalGradWithSpin(P, iat, spingrad);
-  }
+  { return Dets[getDetID(iat)]->evalGradWithSpin(P, iat, spingrad); }
 
   void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                    const RefVectorWithLeader<ParticleSet>& p_list,
@@ -267,7 +261,7 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& active,
+                           const OptVariables& active,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override
   {
@@ -276,7 +270,7 @@ public:
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
   }
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& active, Vector<ValueType>& dlogpsi) override
   {
     // Now add on contribution from each determinant to the derivatives
     for (int i = 0; i < Dets.size(); i++)

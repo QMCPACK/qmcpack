@@ -54,7 +54,7 @@ LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name,
                              size_t norbs,
                              bool identity,
                              bool use_offload)
-    : SPOSet(my_name),
+    : SPOSet(my_name, norbs),
       BasisSetSize(bs ? bs->getBasisSetSize() : 0),
       Identity(identity),
       useOMPoffload_(use_offload),
@@ -63,12 +63,10 @@ LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name,
 {
   if (!bs)
     throw std::runtime_error("LCAOrbitalSet cannot take nullptr as its  basis set!");
-  myBasisSet     = std::move(bs);
-  OrbitalSetSize = norbs;
+  myBasisSet = std::move(bs);
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
   Tempgh.resize(BasisSetSize);
-  OrbitalSetSize = norbs;
   if (!Identity)
   {
     Tempv.resize(OrbitalSetSize);
@@ -100,11 +98,6 @@ LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
     Tempghv.resize(OrbitalSetSize);
   }
   LCAOrbitalSet::checkObject();
-}
-
-void LCAOrbitalSet::setOrbitalSetSize(int norbs)
-{
-  throw std::runtime_error("LCAOrbitalSet::setOrbitalSetSize should not be called");
 }
 
 void LCAOrbitalSet::checkObject() const

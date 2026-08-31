@@ -100,11 +100,11 @@ public:
   std::string getClassName() const override { return "DiracDeterminant"; }
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& active,
+                           const OptVariables& active,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -138,18 +138,14 @@ public:
                             const std::pair<ValueVector, ValueVector>& spinor_multipler,
                             std::vector<ValueType>& ratios) override;
 
-  void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                         std::vector<std::vector<ValueType>>& ratios) const override;
-
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
 
   void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                  const std::pair<ValueVector, ValueVector>& spinor_multipler,
-                                 const opt_variables_type& optvars,
+                                 const OptVariables& optvars,
                                  std::vector<ValueType>& ratios,
                                  Matrix<ValueType>& dratios) override;
 
@@ -169,9 +165,7 @@ public:
                             std::vector<PsiValue>& ratios,
                             std::vector<GradType>& grad_new,
                             std::vector<ComplexType>& spingrad_new) const override
-  {
-    mw_ratioGradWithSpin_serialized(wfc_list, p_list, iat, ratios, grad_new, spingrad_new);
-  }
+  { mw_ratioGradWithSpin_serialized(wfc_list, p_list, iat, ratios, grad_new, spingrad_new); }
 
   GradType evalGrad(ParticleSet& P, int iat) override;
 
@@ -182,9 +176,7 @@ public:
                            int iat,
                            std::vector<GradType>& grad_now,
                            std::vector<ComplexType>& spingrad_now) const override
-  {
-    mw_evalGradWithSpin_serialized(wfc_list, p_list, iat, grad_now, spingrad_now);
-  }
+  { mw_evalGradWithSpin_serialized(wfc_list, p_list, iat, grad_now, spingrad_now); }
 
   GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat) override;
 

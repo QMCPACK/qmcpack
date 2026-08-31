@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -95,8 +94,7 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
 </tmp>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -168,8 +166,7 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 </wavefunction>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(jasxml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(jasxml));
 
   xmlNodePtr jas1 = doc.getRoot();
 
@@ -179,13 +176,12 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
-  twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
   twf.prepareGroup(elec_, 0);
 
   auto& twf_component_list = twf.getOrbitals();
 
-  opt_variables_type active;
+  OptVariables active;
   twf.checkInVariables(active);
   active.resetIndex();
   int nparam = active.size_of_active();

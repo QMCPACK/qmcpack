@@ -8,22 +8,14 @@
 //
 // File created by: Fionn Malone, malone14@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "ProjectData.h"
 #include "Utilities/TimerManager.h"
 #include "hdf/hdf_archive.h"
-
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
 
 #include <stdio.h>
 #include <string>
@@ -83,8 +75,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ham_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ham_xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
@@ -109,8 +100,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     const char* wlk_xml_block =
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
     Libxml2Document doc3;
-    okay = doc3.parseFromString(wlk_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc3.parseFromString(wlk_xml_block));
 
     std::string wfn_xml = R"(<Wavefunction name="wfn0" info="info0">
       <parameter name="filetype">ascii</parameter>
@@ -126,8 +116,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator rng;
     Libxml2Document doc2;
-    okay = doc2.parseFromString(wfn_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc2.parseFromString(wfn_xml_block));
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name, doc2.getRoot());
@@ -135,8 +124,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
 
     const char* propg_xml_block = R"(<Propagator name="prop0"></Propagator>)";
     Libxml2Document doc5;
-    okay = doc5.parseFromString(propg_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc5.parseFromString(propg_xml_block));
     std::string prop_name("prop0");
     PropagatorFactory PropgFac(InfoMap);
     PropgFac.push(prop_name, doc5.getRoot());
@@ -160,8 +148,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     </Estimator>
     )";
     Libxml2Document doc4;
-    okay = doc4.parseFromString(est_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc4.parseFromString(est_xml_block));
     bool impsamp = true;
     estimators.push_back(std::make_shared<BackPropagatedEstimator>(TG, InfoMap["info0"], "none", doc4.getRoot(), type,
                                                                    wset, wfn, prop, impsamp));
@@ -209,7 +196,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     if (type == CLOSED)
     {
       REQUIRE(read_data.num_elements() >= NMO * NMO);
-      boost::multi::array_ref<ComplexType, 2> BPRDM(read_data.origin(), {NMO, NMO});
+      boost::multi::array_ref<ComplexType, 2> BPRDM(read_data.base(), {NMO, NMO});
       ma::scal(1.0 / denom, BPRDM);
       ComplexType trace = ComplexType(0.0);
       for (int i = 0; i < NMO; i++)
@@ -217,13 +204,13 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
       CHECK(trace.real() == Approx(NAEA));
       boost::multi::array<ComplexType, 2, Allocator> Gw({1, NMO * NMO}, alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
-      boost::multi::array_ref<ComplexType, 2, pointer> G(Gw.origin(), {NMO, NMO});
+      boost::multi::array_ref<ComplexType, 2, pointer> G(Gw.base(), {NMO, NMO});
       verify_approx(G, BPRDM);
     }
     else if (type == COLLINEAR)
     {
       REQUIRE(read_data.num_elements() >= 2 * NMO * NMO);
-      boost::multi::array_ref<ComplexType, 3> BPRDM(read_data.origin(), {2, NMO, NMO});
+      boost::multi::array_ref<ComplexType, 3> BPRDM(read_data.base(), {2, NMO, NMO});
       ma::scal(1.0 / denom, BPRDM[0]);
       ma::scal(1.0 / denom, BPRDM[1]);
       ComplexType trace = ComplexType(0.0);
@@ -232,7 +219,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
       CHECK(trace.real() == Approx(NAEA + NAEB));
       boost::multi::array<ComplexType, 2, Allocator> Gw({1, 2 * NMO * NMO}, alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
-      boost::multi::array_ref<ComplexType, 3, pointer> G(Gw.origin(), {2, NMO, NMO});
+      boost::multi::array_ref<ComplexType, 3, pointer> G(Gw.base(), {2, NMO, NMO});
       verify_approx(G, BPRDM);
     }
     else

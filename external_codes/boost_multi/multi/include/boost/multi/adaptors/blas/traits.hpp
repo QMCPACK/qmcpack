@@ -4,22 +4,22 @@
 
 #ifndef BOOST_MULTI_ADAPTORS_BLAS_TRAITS_HPP
 #define BOOST_MULTI_ADAPTORS_BLAS_TRAITS_HPP
-#pragma once
 
-#include<complex>
-#include<type_traits>
+#include <complex>
+#include <type_traits>  // for enable_if_t, false_type, is_convertible, true...
+#include <utility>      // for declval  // IWYU pragma: keep
 
-namespace boost::multi::blas {
+namespace boost::multi::blas {  // TODO(correaa) include in blas/detail?
 
 // TODO(correaa) : create a BinaryDouble concept?
 
-	template<class F, class=std::enable_if_t<sizeof(F)==sizeof(float ) && std::is_convertible<decltype(std::declval<F&&>()/std::declval<F&&>()), float>{}  >>
+	template<class F, class=std::enable_if_t<sizeof(F)==sizeof(float ) && std::is_convertible<decltype(std::declval<F&&>()/std::declval<F&&>()), float>{} > >
 	auto is_s_aux(F&&) -> std::true_type ;
 	auto is_s_aux(...) -> std::false_type;
 
 	template<class T> struct is_s : decltype(is_s_aux(std::declval<T>())) {using archetype = float;};  // NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
 
-	template<class D, class=std::enable_if_t<sizeof(D)==sizeof(double) && std::is_convertible<decltype(std::declval<D&&>()/std::declval<D&&>()), double>{}>>
+	template<class D, class=std::enable_if_t<sizeof(D)==sizeof(double) && std::is_convertible<decltype(std::declval<D&&>()/std::declval<D&&>()), double>{}> >
 	auto is_d_aux(D&&) -> std::true_type ;
 	auto is_d_aux(...) -> std::false_type;
 

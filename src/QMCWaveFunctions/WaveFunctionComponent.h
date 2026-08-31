@@ -132,7 +132,7 @@ public:
   /** check out variational optimizable variables
    * @param active a super set of optimizable variables
    */
-  virtual void checkOutVariables(const opt_variables_type& active);
+  virtual void checkOutVariables(const OptVariables& active);
 
   /** Register the component with the TWFFastDerivWrapper wrapper.  
    */
@@ -178,9 +178,7 @@ public:
   // }
 
   virtual void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi_all)
-  {
-    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + getClassName() + " class.");
-  }
+  { APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + getClassName() + " class."); }
 
   /** Prepare internal data for updating WFC correspond to a particle group
    * It should be called before moving particles of a given group.
@@ -264,9 +262,7 @@ public:
                                   int iat,
                                   TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
                                   TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
-  {
-    return GradType();
-  }
+  { return GradType(); }
 
 
   /** evaluate the ratio of the new to old WaveFunctionComponent value and the new gradient
@@ -284,9 +280,7 @@ public:
    * @param spingrad_iat spin gradient for the active particle
    */
   virtual PsiValue ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat)
-  {
-    return ratioGrad(P, iat, grad_iat);
-  }
+  { return ratioGrad(P, iat, grad_iat); }
 
   template<CoordsType CT>
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -470,7 +464,7 @@ public:
    *         This is a bug when the particle set doesn't hold equal mass particles.
    */
   virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& optvars,
+                                   const OptVariables& optvars,
                                    Vector<ValueType>& dlogpsi,
                                    Vector<ValueType>& dhpsioverpsi) = 0;
 
@@ -482,7 +476,7 @@ public:
    *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
    *        the derivative of the log of the wavefunction.
   */
-  virtual void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
+  virtual void evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi);
 
   virtual void finalizeOptimization() {}
 
@@ -525,7 +519,7 @@ public:
    * @param dratios Nq x Num_param matrix. \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
    */
   virtual void evaluateDerivRatios(const VirtualParticleSet& VP,
-                                   const opt_variables_type& optvars,
+                                   const OptVariables& optvars,
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);
 
@@ -537,7 +531,7 @@ public:
    */
   virtual void evaluateSpinorDerivRatios(const VirtualParticleSet& VP,
                                          const std::pair<ValueVector, ValueVector>& spinor_multiplier,
-                                         const opt_variables_type& optvars,
+                                         const OptVariables& optvars,
                                          std::vector<ValueType>& ratios,
                                          Matrix<ValueType>& dratios);
 

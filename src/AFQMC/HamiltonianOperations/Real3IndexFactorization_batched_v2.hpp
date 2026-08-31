@@ -73,14 +73,14 @@ class Real3IndexFactorization_batched_v2
   using SpC4Tensor_ref = boost::multi::array_ref<SPComplexType, 4, sp_pointer>;
   using C4Tensor_ref   = boost::multi::array_ref<ComplexType, 4, pointer>;
 
-  using StaticVector   = boost::multi::static_array<SPComplexType, 1, device_alloc_type>;
-  using StaticMatrix   = boost::multi::static_array<SPComplexType, 2, device_alloc_type>;
-  using Static3Tensor  = boost::multi::static_array<SPComplexType, 3, device_alloc_type>;
-  using Static4Tensor  = boost::multi::static_array<SPComplexType, 4, device_alloc_type>;
-  using StaticRVector  = boost::multi::static_array<SPRealType, 1, device_alloc_Rtype>;
-  using StaticRMatrix  = boost::multi::static_array<SPRealType, 2, device_alloc_Rtype>;
-  using Static3RTensor = boost::multi::static_array<SPRealType, 3, device_alloc_Rtype>;
-  using Static4RTensor = boost::multi::static_array<SPRealType, 4, device_alloc_Rtype>;
+  using DynamicVector   = boost::multi::dynamic_array<SPComplexType, 1, device_alloc_type>;
+  using DynamicMatrix   = boost::multi::dynamic_array<SPComplexType, 2, device_alloc_type>;
+  using Dynamic3Tensor  = boost::multi::dynamic_array<SPComplexType, 3, device_alloc_type>;
+  using Dynamic4Tensor  = boost::multi::dynamic_array<SPComplexType, 4, device_alloc_type>;
+  using DynamicRVector  = boost::multi::dynamic_array<SPRealType, 1, device_alloc_Rtype>;
+  using DynamicRMatrix  = boost::multi::dynamic_array<SPRealType, 2, device_alloc_Rtype>;
+  using Dynamic3RTensor = boost::multi::dynamic_array<SPRealType, 3, device_alloc_Rtype>;
+  using Dynamic4RTensor = boost::multi::dynamic_array<SPRealType, 4, device_alloc_Rtype>;
 
   using shmCMatrix    = ComplexMatrix<Allocator_shared>;
   using shmSpC3Tensor = SPComplex3Tensor<SpAllocator_shared>;
@@ -117,7 +117,7 @@ public:
         local_nCV(0),
         E0(e0_),
         hij(std::move(hij_)),
-        hij_dev(hij.extensions(), make_node_allocator<ComplexType>(TG)),
+        hij_dev(hij.extents(), make_node_allocator<ComplexType>(TG)),
         haj(std::move(haj_)),
         Likn(std::move(vik)),
         Lnak(std::move(move_vector<shmSpC3Tensor>(std::move(vnak)))),
@@ -145,10 +145,10 @@ public:
 
   ~Real3IndexFactorization_batched_v2() {}
 
-  Real3IndexFactorization_batched_v2(const Real3IndexFactorization_batched_v2& other) = delete;
+  Real3IndexFactorization_batched_v2(const Real3IndexFactorization_batched_v2& other)            = delete;
   Real3IndexFactorization_batched_v2& operator=(const Real3IndexFactorization_batched_v2& other) = delete;
   Real3IndexFactorization_batched_v2(Real3IndexFactorization_batched_v2&& other)                 = default;
-  Real3IndexFactorization_batched_v2& operator=(Real3IndexFactorization_batched_v2&& other) = delete;
+  Real3IndexFactorization_batched_v2& operator=(Real3IndexFactorization_batched_v2&& other)      = delete;
 
   boost::multi::array<ComplexType, 2> getOneBodyPropagatorMatrix(TaskGroup_& TG,
                                                                  boost::multi::array<ComplexType, 1> const& vMF)
@@ -159,13 +159,13 @@ public:
 
     CVector vMF_(vMF);
     CVector P1D(iextensions<1u>{NMO * NMO});
-    fill_n(P1D.origin(), P1D.num_elements(), ComplexType(0));
+    fill_n(P1D.base(), P1D.num_elements(), ComplexType(0));
     vHS(vMF_, P1D);
     if (TG.TG().size() > 1)
-      TG.TG().all_reduce_in_place_n(to_address(P1D.origin()), P1D.num_elements(), std::plus<>());
+      TG.TG().all_reduce_in_place_n(to_address(P1D.base()), P1D.num_elements(), std::plus<>());
 
     boost::multi::array<ComplexType, 2> P1({NMO, NMO});
-    copy_n(P1D.origin(), NMO * NMO, P1.origin());
+    copy_n(P1D.base(), NMO * NMO, P1.base());
 
     using ma::conj;
 
@@ -259,31 +259,31 @@ public:
       if (getKr)
       {
         assert(get<0>(KEright->sizes()) == nwalk && get<1>(KEright->sizes()) == local_nCV);
-        assert(KEright->stride(0) == get<1>(KEright->sizes()));
+        assert(KEright->stride() == get<1>(KEright->sizes()));
       }
       if (getKl)
       {
         assert(get<0>(KEleft->sizes()) == nwalk && get<1>(KEleft->sizes()) == local_nCV);
-        assert(KEleft->stride(0) == get<1>(KEleft->sizes()));
+        assert(KEleft->stride() == get<1>(KEleft->sizes()));
       }
     }
     else if (getKr or getKl)
     {
       APP_ABORT(" Error: Kr and/or Kl can only be calculated with addEJ=true.\n");
     }
-    StaticMatrix Kl({Knr, Knc}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    fill_n(Kl.origin(), Kl.num_elements(), SPComplexType(0.0));
+    DynamicMatrix Kl({Knr, Knc}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    fill_n(Kl.base(), Kl.num_elements(), SPComplexType(0.0));
 
     for (int n = 0; n < nwalk; n++)
-      std::fill_n(E[n].origin(), 3, ComplexType(0.));
+      std::fill_n(E[n].base(), 3, ComplexType(0.));
 
     // one-body contribution
     // haj[ndet][nocc*nmo]
     // not parallelized for now, since it would require customization of Wfn
     if (addH1)
     {
-      CVector_ref haj_ref(make_device_ptr(haj[nd].origin()), iextensions<1u>{haj[nd].num_elements()});
-      ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(E.extension(0), 0));
+      CVector_ref haj_ref(make_device_ptr(haj[nd].base()), iextensions<1u>{haj[nd].num_elements()});
+      ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(get<0>(E.extents()), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;
     }
@@ -302,28 +302,28 @@ public:
       if (nspin > 1)
         mem_needs = nwalk * std::max(nel[0], nel[1]) * NMO;
 #endif
-      StaticVector T1(iextensions<1u>{mem_needs},
-                      buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicVector T1(iextensions<1u>{mem_needs},
+                       buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
       for (int ispin = 0, is0 = 0; ispin < nspin; ispin++)
       {
         sp_pointer ptr(nullptr);
 #if defined(MIXED_PRECISION)
-        ptr = T1.origin();
+        ptr = T1.base();
         for (int n = 0; n < nwalk; ++n)
-          copy_n_cast(make_device_ptr(Gc[n].origin()) + is0, nel[ispin] * NMO, ptr + n * nel[ispin] * NMO);
+          copy_n_cast(make_device_ptr(Gc[n].base()) + is0, nel[ispin] * NMO, ptr + n * nel[ispin] * NMO);
 #else
         if (nspin == 1)
         {
-          ptr = make_device_ptr(Gc.origin());
+          ptr = make_device_ptr(const_cast<MatB&>(Gc).base());
         }
         else
         {
-          ptr = T1.origin();
+          ptr = T1.base();
           for (int n = 0; n < nwalk; ++n)
           {
             using std::copy_n;
-            copy_n(make_device_ptr(Gc[n].origin()) + is0, nel[ispin] * NMO, ptr + n * nel[ispin] * NMO);
+            copy_n(make_device_ptr(Gc[n].base()) + is0, nel[ispin] * NMO, ptr + n * nel[ispin] * NMO);
           }
         }
 #endif
@@ -334,21 +334,21 @@ public:
         while (nCV < local_nCV)
         {
           int nvecs = std::min(local_nCV - nCV, max_nCV);
-          SpCMatrix_ref Lna(make_device_ptr(Lnak[nd * nspin + ispin][nCV].origin()), {nvecs * nel[ispin], NMO});
-          StaticMatrix Twbna({nwalk * nel[ispin], nvecs * nel[ispin]},
-                             buffer_manager.get_generator().template get_allocator<SPComplexType>());
-          SpC4Tensor_ref T4Dwbna(Twbna.origin(), {nwalk, nel[ispin], nvecs, nel[ispin]});
+          SpCMatrix_ref Lna(make_device_ptr(Lnak[nd * nspin + ispin][nCV].base()), {nvecs * nel[ispin], NMO});
+          DynamicMatrix Twbna({nwalk * nel[ispin], nvecs * nel[ispin]},
+                              buffer_manager.get_generator().template get_allocator<SPComplexType>());
+          SpC4Tensor_ref T4Dwbna(Twbna.base(), {nwalk, nel[ispin], nvecs, nel[ispin]});
 
           ma::product(GF, ma::T(Lna), Twbna);
 
           using ma::dot_wanb;
-          dot_wanb(nwalk, nel[ispin], nvecs, SPComplexType(-0.5 * scl), Twbna.origin(), to_address(E[0].origin()) + 1,
-                   E.stride(0));
+          dot_wanb(nwalk, nel[ispin], nvecs, SPComplexType(-0.5 * scl), Twbna.base(), to_address(E[0].base()) + 1,
+                   E.stride());
 
           if (addEJ)
           {
             using ma::Tanb_to_Kl;
-            Tanb_to_Kl(nwalk, nel[ispin], nvecs, local_nCV, Twbna.origin(), Kl.origin() + nCV);
+            Tanb_to_Kl(nwalk, nel[ispin], nvecs, local_nCV, Twbna.base(), Kl.base() + nCV);
           }
 
           nCV += max_nCV;
@@ -369,17 +369,15 @@ public:
       for (int n = 0; n < nwalk; ++n)
         E[n][2] += 0.5 * static_cast<ComplexType>(scl * scl * ma::dot(Kl[n], Kl[n]));
       if (getKl)
-        copy_n_cast(Kl.origin(), KEleft->num_elements(), make_device_ptr(KEleft->origin()));
+        copy_n_cast(Kl.base(), KEleft->num_elements(), make_device_ptr(KEleft->base()));
       if (getKr)
-        copy_n_cast(Kl.origin(), KEright->num_elements(), make_device_ptr(KEright->origin()));
+        copy_n_cast(Kl.base(), KEright->num_elements(), make_device_ptr(KEright->base()));
     }
   }
 
   template<class... Args>
   void fast_energy(Args&&... args)
-  {
-    APP_ABORT(" Error: fast_energy not implemented in Real3IndexFactorization_batched_v2. \n");
-  }
+  { APP_ABORT(" Error: fast_energy not implemented in Real3IndexFactorization_batched_v2. \n"); }
 
   template<class MatA,
            class MatB,
@@ -392,8 +390,8 @@ public:
     using AType = typename std::decay<MatA>::type::element;
 
     using std::get;
-    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {get<0>(v.sizes()), 1});
-    boost::multi::array_ref<AType, 2, decltype(X.origin())> X_(X.origin(), {get<0>(X.sizes()), 1});
+    boost::multi::array_ref<BType, 2, decltype(v.base())> v_(v.base(), {get<0>(v.sizes()), 1});
+    boost::multi::array_ref<AType, 2, decltype(X.base())> X_(X.base(), {get<0>(X.sizes()), 1});
     return vHS(X_, v_, a, c);
   }
 
@@ -416,39 +414,39 @@ public:
       Xmem = X.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       vmem = v.num_elements();
-    StaticVector SPBuff(iextensions<1u>(Xmem + vmem),
-                        buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicVector SPBuff(iextensions<1u>(Xmem + vmem),
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
     sp_pointer vptr(nullptr);
     const_sp_pointer Xptr(nullptr);
     // setup origin of Gsp and copy_n_cast if necessary
     using qmcplusplus::afqmc::pointer_cast;
     if (std::is_same<XType, SPComplexType>::value)
     {
-      Xptr = pointer_cast<SPComplexType const>(make_device_ptr(X.origin()));
+      Xptr = pointer_cast<SPComplexType const>(make_device_ptr(X.base()));
     }
     else
     {
-      copy_n_cast(make_device_ptr(X.origin()), X.num_elements(), make_device_ptr(SPBuff.origin()));
-      Xptr = make_device_ptr(SPBuff.origin());
+      copy_n_cast(make_device_ptr(X.base()), X.num_elements(), make_device_ptr(SPBuff.base()));
+      Xptr = make_device_ptr(SPBuff.base());
     }
     // setup origin of vsp and copy_n_cast if necessary
     if (std::is_same<vType, SPComplexType>::value)
     {
-      vptr = pointer_cast<SPComplexType>(make_device_ptr(v.origin()));
+      vptr = pointer_cast<SPComplexType>(make_device_ptr(v.base()));
     }
     else
     {
-      vptr = make_device_ptr(SPBuff.origin()) + Xmem;
+      vptr = make_device_ptr(SPBuff.base()) + Xmem;
       if (std::abs(c) > 1e-12)
-        copy_n_cast(make_device_ptr(v.origin()), v.num_elements(), vptr);
+        copy_n_cast(make_device_ptr(v.base()), v.num_elements(), vptr);
     }
     // work
-    boost::multi::array_cref<SPComplexType const, 2, const_sp_pointer> Xsp(Xptr, X.extensions());
-    boost::multi::array_ref<SPComplexType, 2, sp_pointer> vsp(vptr, v.extensions());
+    boost::multi::array_cref<SPComplexType const, 2, const_sp_pointer> Xsp(Xptr, X.extents());
+    boost::multi::array_ref<SPComplexType, 2, sp_pointer> vsp(vptr, v.extents());
     ma::product(SPValueType(a), Likn, Xsp, SPValueType(c), vsp);
     if (not std::is_same<vType, SPComplexType>::value)
     {
-      copy_n_cast(make_device_ptr(vsp.origin()), v.num_elements(), make_device_ptr(v.origin()));
+      copy_n_cast(make_device_ptr(vsp.base()), v.num_elements(), make_device_ptr(v.base()));
     }
   }
 
@@ -461,8 +459,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(), 1});
-    boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(), 1});
+    boost::multi::array_ref<BType, 2, decltype(v.base())> v_(v.base(), {v.size(), 1});
+    boost::multi::array_ref<AType const, 2, decltype(G.base())> G_(G.base(), {G.size(), 1});
     return vbias(G_, v_, a, c, k);
   }
 
@@ -483,35 +481,35 @@ public:
       Gmem = G.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       vmem = v.num_elements();
-    StaticVector SPBuff(iextensions<1u>(Gmem + vmem),
-                        buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicVector SPBuff(iextensions<1u>(Gmem + vmem),
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
     sp_pointer vptr(nullptr);
     const_sp_pointer Gptr(nullptr);
     // setup origin of Gsp and copy_n_cast if necessary
     using qmcplusplus::afqmc::pointer_cast;
     if (std::is_same<GType, SPComplexType>::value)
     {
-      Gptr = pointer_cast<SPComplexType const>(make_device_ptr(G.origin()));
+      Gptr = pointer_cast<SPComplexType const>(make_device_ptr(G.base()));
     }
     else
     {
-      copy_n_cast(make_device_ptr(G.origin()), G.num_elements(), make_device_ptr(SPBuff.origin()));
-      Gptr = make_device_ptr(SPBuff.origin());
+      copy_n_cast(make_device_ptr(G.base()), G.num_elements(), make_device_ptr(SPBuff.base()));
+      Gptr = make_device_ptr(SPBuff.base());
     }
     // setup origin of vsp and copy_n_cast if necessary
     if (std::is_same<vType, SPComplexType>::value)
     {
-      vptr = pointer_cast<SPComplexType>(make_device_ptr(v.origin()));
+      vptr = pointer_cast<SPComplexType>(make_device_ptr(v.base()));
     }
     else
     {
-      vptr = make_device_ptr(SPBuff.origin()) + Gmem;
+      vptr = make_device_ptr(SPBuff.base()) + Gmem;
       if (std::abs(c) > 1e-12)
-        copy_n_cast(make_device_ptr(v.origin()), v.num_elements(), vptr);
+        copy_n_cast(make_device_ptr(v.base()), v.num_elements(), vptr);
     }
     // setup array references
-    boost::multi::array_cref<SPComplexType const, 2, const_sp_pointer> Gsp(Gptr, G.extensions());
-    boost::multi::array_ref<SPComplexType, 2, sp_pointer> vsp(vptr, v.extensions());
+    boost::multi::array_cref<SPComplexType const, 2, const_sp_pointer> Gsp(Gptr, G.extents());
+    boost::multi::array_ref<SPComplexType, 2, sp_pointer> vsp(vptr, v.extents());
 
     using std::get;
 
@@ -530,11 +528,11 @@ public:
         c_[1] = c;
         if (std::abs(c) < 1e-8)
           c_[1] = 1.0;
-        assert((nel[0]+nel[1])*NMO == get<0>(G.sizes()));
+        assert((nel[0] + nel[1]) * NMO == get<0>(G.sizes()));
         for (int ispin = 0, is0 = 0; ispin < 2; ispin++)
         {
           assert(get<0>(Lnak[ispin].sizes()) == get<0>(v.sizes()));
-          SpCMatrix_ref Ln(make_device_ptr(Lnak[ispin].origin()), {local_nCV, nel[ispin] * NMO});
+          SpCMatrix_ref Ln(make_device_ptr(Lnak[ispin].base()), {local_nCV, nel[ispin] * NMO});
           ma::product(SPComplexType(a), Ln, Gsp.sliced(is0, is0 + nel[ispin] * NMO), SPComplexType(c_[ispin]), vsp);
           is0 += nel[ispin] * NMO;
         }
@@ -544,7 +542,8 @@ public:
         assert(get<1>(G.sizes()) == get<1>(v.sizes()));
         assert(get<1>(Lnak[0].sizes()) * get<2>(Lnak[0].sizes()) == get<0>(G.sizes()));
         assert(get<0>(Lnak[0].sizes()) == get<0>(v.sizes()));
-        SpCMatrix_ref Ln(make_device_ptr(Lnak[0].origin()), {local_nCV, get<1>(Lnak[0].sizes()) * get<2>(Lnak[0].sizes())});
+        SpCMatrix_ref Ln(make_device_ptr(Lnak[0].base()),
+                         {local_nCV, get<1>(Lnak[0].sizes()) * get<2>(Lnak[0].sizes())});
         ma::product(SPComplexType(a), Ln, Gsp, SPComplexType(c), vsp);
       }
     }
@@ -559,7 +558,7 @@ public:
     }
     if (not std::is_same<vType, SPComplexType>::value)
     {
-      copy_n_cast(make_device_ptr(vsp.origin()), v.num_elements(), make_device_ptr(v.origin()));
+      copy_n_cast(make_device_ptr(vsp.base()), v.num_elements(), make_device_ptr(v.base()));
     }
   }
 
@@ -593,16 +592,16 @@ public:
     assert(nwmax >= 1 && nwmax <= nwmax);
 
 #if defined(MIXED_PRECISION)
-    StaticMatrix Fp_({nwalk, nspin * NMO * NMO},
-                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticMatrix Fm_({nwalk, nspin * NMO * NMO},
-                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicMatrix Fp_({nwalk, nspin * NMO * NMO},
+                      buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicMatrix Fm_({nwalk, nspin * NMO * NMO},
+                      buffer_manager.get_generator().template get_allocator<SPComplexType>());
 #else
-    SpCMatrix_ref Fp_(make_device_ptr(Fp.origin()), {nwalk, nspin * NMO * NMO});
-    SpCMatrix_ref Fm_(make_device_ptr(Fm.origin()), {nwalk, nspin * NMO * NMO});
+    SpCMatrix_ref Fp_(make_device_ptr(Fp.base()), {nwalk, nspin * NMO * NMO});
+    SpCMatrix_ref Fm_(make_device_ptr(Fm.base()), {nwalk, nspin * NMO * NMO});
 #endif
-    fill_n(Fp_.origin(), Fp_.num_elements(), SPComplexType(0.0));
-    fill_n(Fm_.origin(), Fm_.num_elements(), SPComplexType(0.0));
+    fill_n(Fp_.base(), Fp_.num_elements(), SPComplexType(0.0));
+    fill_n(Fm_.base(), Fm_.num_elements(), SPComplexType(0.0));
 
     SPComplexType scl = (walker_type == CLOSED ? 2.0 : 1.0);
     std::vector<sp_pointer> Aarray;
@@ -619,7 +618,7 @@ public:
     if (nspin > 1)
       gsz = nspin * nwmax * NMO * NMO;
 #endif
-    StaticVector GBuff(iextensions<1u>{gsz}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicVector GBuff(iextensions<1u>{gsz}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     int nw0(0);
     while (nw0 < nwalk)
@@ -629,38 +628,38 @@ public:
       sp_pointer ptr(nullptr);
       // transpose/cast G
 #if defined(MIXED_PRECISION)
-      ptr = GBuff.origin();
+      ptr = GBuff.base();
       for (int ispin = 0, is0 = 0, ip = 0; ispin < nspin; ispin++, is0 += NMO * NMO)
         for (int n = 0; n < nw; ++n, ip += NMO * NMO)
-          copy_n_cast(make_device_ptr(G[nw0 + n].origin()) + is0, NMO * NMO, ptr + ip);
+          copy_n_cast(make_device_ptr(G[nw0 + n].base()) + is0, NMO * NMO, ptr + ip);
 #else
       if (nspin == 1)
       {
-        ptr = make_device_ptr(G[nw0].origin());
+        ptr = make_device_ptr(G[nw0].base());
       }
       else
       {
-        ptr = GBuff.origin();
+        ptr = GBuff.base();
         using std::copy_n;
         for (int ispin = 0, is0 = 0, ip = 0; ispin < nspin; ispin++, is0 += NMO * NMO)
           for (int n = 0; n < nw; ++n, ip += NMO * NMO)
-            copy_n(make_device_ptr(G[nw0 + n].origin()) + is0, NMO * NMO, ptr + ip);
+            copy_n(make_device_ptr(G[nw0 + n].base()) + is0, NMO * NMO, ptr + ip);
       }
 #endif
       SpCTensor_ref GF(ptr, {nspin, nw * NMO, NMO}); // now contains G in the correct structure [spin][w][i][j]
-      StaticMatrix Gt({NMO * NMO, nw}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-      fill_n(Gt.origin(), Gt.num_elements(), SPComplexType(0.0));
+      DynamicMatrix Gt({NMO * NMO, nw}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      fill_n(Gt.base(), Gt.num_elements(), SPComplexType(0.0));
 
-      StaticMatrix Rnw({local_nCV, nw}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicMatrix Rnw({local_nCV, nw}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
       // calculate Rwn
       for (int ispin = 0; ispin < nspin; ispin++)
       {
-        SpCMatrix_ref G_(GF[ispin].origin(), {nw, NMO * NMO});
+        SpCMatrix_ref G_(GF[ispin].base(), {nw, NMO * NMO});
         ma::add(SPComplexType(1.0), Gt, SPComplexType(1.0), ma::T(G_), Gt);
       }
       // R[n,w] = \sum_ik L[n,ik] G[ik,w]
       ma::product(SPValueType(1.0), ma::T(Likn), Gt, SPValueType(0.0), Rnw);
-      StaticMatrix Rwn({nw, local_nCV}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicMatrix Rwn({nw, local_nCV}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
       ma::transpose(Rnw, Rwn);
 
       // add coulomb contribution of <pr||qs>Grs term to Fp, reuse Gt for temporary storage
@@ -674,22 +673,22 @@ public:
       }
 
       // L[i,kn]
-      SpRMatrix_ref Ln(make_device_ptr(Likn.origin()), {NMO, NMO * local_nCV});
+      SpRMatrix_ref Ln(make_device_ptr(Likn.base()), {NMO, NMO * local_nCV});
       // T[w,p,t,n] = \sum_{l} L[l,t,n] P[w,l,p]
-      StaticMatrix Twptn({nw * NMO, NMO * local_nCV},
-                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      DynamicMatrix Twptn({nw * NMO, NMO * local_nCV},
+                          buffer_manager.get_generator().template get_allocator<SPComplexType>());
       // transpose for faster contraction
-      StaticMatrix Taux({nw * NMO, NMO * local_nCV},
-                        buffer_manager.get_generator().template get_allocator<SPComplexType>());
-      SpCTensor_ref Taux3D(Taux.origin(), {nw, NMO, NMO * local_nCV});
-      SpCTensor_ref Twptn3D(Twptn.origin(), {nw, NMO, NMO * local_nCV});
-      SpCTensor_ref Twptn3D_(Twptn.origin(), {nw, NMO * NMO, local_nCV});
-      SpCMatrix_ref Ttnwp(Taux.origin(), {NMO * local_nCV, nw * NMO});
-      SpCMatrix_ref Gt_(Gt.origin(), {NMO, nw * NMO});
+      DynamicMatrix Taux({nw * NMO, NMO * local_nCV},
+                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
+      SpCTensor_ref Taux3D(Taux.base(), {nw, NMO, NMO * local_nCV});
+      SpCTensor_ref Twptn3D(Twptn.base(), {nw, NMO, NMO * local_nCV});
+      SpCTensor_ref Twptn3D_(Twptn.base(), {nw, NMO * NMO, local_nCV});
+      SpCMatrix_ref Ttnwp(Taux.base(), {NMO * local_nCV, nw * NMO});
+      SpCMatrix_ref Gt_(Gt.base(), {NMO, nw * NMO});
 
       for (int ispin = 0, is0 = 0; ispin < nspin; ispin++, is0 += NMO * NMO)
       {
-        SpCMatrix_ref G_(GF[ispin].origin(), {nw * NMO, NMO});
+        SpCMatrix_ref G_(GF[ispin].base(), {nw * NMO, NMO});
         ma::transpose(G_, Gt_);
 
         // J = \sum_{iklr} L[i,k,n] L[q,l,n] P[s,p,l] P[r,i,k]
@@ -703,7 +702,7 @@ public:
         // transpose Twptn -> Twtpn=Taux
         using ma::transpose_wabn_to_wban;
         // T[wt,pn]
-        transpose_wabn_to_wban(nw, NMO, NMO, local_nCV, Twptn.origin(), Taux.origin());
+        transpose_wabn_to_wban(nw, NMO, NMO, local_nCV, Twptn.base(), Taux.base());
 
         // add exchange component to Fm_
         Aarray.clear();
@@ -711,9 +710,9 @@ public:
         Carray.clear();
         for (int w = 0; w < nw; w++)
         {
-          Aarray.push_back(Taux3D[w].origin());
-          Barray.push_back(Twptn3D[w].origin());
-          Carray.push_back(Fm_[w].origin() + is0);
+          Aarray.push_back(Taux3D[w].base());
+          Barray.push_back(Twptn3D[w].base());
+          Carray.push_back(Fm_[w].base() + is0);
         }
         using ma::gemmBatched;
         // careful with expected Fortran ordering here!!!
@@ -728,9 +727,9 @@ public:
         Carray.clear();
         for (int w = 0; w < nw; w++)
         {
-          Aarray.push_back(Twptn3D_[w].origin());
-          Barray.push_back(Rwn[w].origin());
-          Carray.push_back(Fm_[w].origin() + is0);
+          Aarray.push_back(Twptn3D_[w].base());
+          Barray.push_back(Rwn[w].base());
+          Carray.push_back(Fm_[w].base() + is0);
         }
         using ma::gemmBatched;
         // careful with expected Fortran ordering here!!!
@@ -740,19 +739,19 @@ public:
 
         // Fp
         // Need Gt_[i][wj]
-        transpose_wabn_to_wban(1, nw, NMO, NMO, G_.origin(), Gt_.origin());
+        transpose_wabn_to_wban(1, nw, NMO, NMO, G_.base(), Gt_.base());
         ma::product(SPValueType(1.0), ma::T(Ln), Gt_, SPValueType(0.0), Ttnwp);
         ma::transpose(Ttnwp, Twptn);
-        transpose_wabn_to_wban(nw, NMO, NMO, local_nCV, Twptn.origin(), Taux.origin());
+        transpose_wabn_to_wban(nw, NMO, NMO, local_nCV, Twptn.base(), Taux.base());
         // add coulomb component to Fp_, same as Fm_ above
         Aarray.clear();
         Barray.clear();
         Carray.clear();
         for (int w = 0; w < nw; w++)
         {
-          Aarray.push_back(Twptn3D_[w].origin());
-          Barray.push_back(Rwn[w].origin());
-          Carray.push_back(Fp_[w].origin() + is0);
+          Aarray.push_back(Twptn3D_[w].base());
+          Barray.push_back(Rwn[w].base());
+          Carray.push_back(Fp_[w].base() + is0);
         }
         using ma::gemmBatched;
         // careful with expected Fortran ordering here!!!
@@ -766,16 +765,16 @@ public:
         Carray.clear();
         for (int w = 0; w < nw; w++)
         {
-          Aarray.push_back(Taux3D[w].origin());
-          Barray.push_back(Twptn3D[w].origin());
-          Carray.push_back(Fp_[w].origin() + is0);
+          Aarray.push_back(Taux3D[w].base());
+          Barray.push_back(Twptn3D[w].base());
+          Carray.push_back(Fp_[w].base() + is0);
 
           // add exchange contribution of <pr||qs>Grs term by adding Lptn to Twptn
           // dispatch directly from here to be able to add to the real part only
           // K1B[p,q] = -\sum_{jl} L[jt,n] L[pl,n] P[jl]
           using ma::axpy;
-          axpy(Likn.num_elements(), SPRealType(-1.0), ma::pointer_dispatch(Likn.origin()), 1,
-               pointer_cast<SPRealType>(ma::pointer_dispatch(Twptn3D_[w].origin())), 2);
+          axpy(Likn.num_elements(), SPRealType(-1.0), ma::pointer_dispatch(Likn.base()), 1,
+               pointer_cast<SPRealType>(ma::pointer_dispatch(Twptn3D_[w].base())), 2);
         }
         using ma::gemmBatched;
         // careful with expected Fortran ordering here!!!
@@ -788,12 +787,12 @@ public:
     }
 
 #if defined(MIXED_PRECISION)
-    copy_n_cast(Fp_.origin(), Fp_.num_elements(), make_device_ptr(Fp.origin()));
-    copy_n_cast(Fm_.origin(), Fm_.num_elements(), make_device_ptr(Fm.origin()));
+    copy_n_cast(Fp_.base(), Fp_.num_elements(), make_device_ptr(Fp.base()));
+    copy_n_cast(Fm_.base(), Fm_.num_elements(), make_device_ptr(Fm.base()));
 #endif
 
-    //fill_n(Fp.origin(),Fp.num_elements(),SPComplexType(0.0));
-    //fill_n(Fm.origin(),Fm.num_elements(),SPComplexType(0.0));
+    //fill_n(Fp.base(),Fp.num_elements(),SPComplexType(0.0));
+    //fill_n(Fm.base(),Fm.num_elements(),SPComplexType(0.0));
     // add one body terms now
     {
       std::vector<pointer> Aarr;
@@ -810,9 +809,9 @@ public:
       {
         for (int w = 0; w < nwalk; w++)
         {
-          Aarr.push_back(make_device_ptr(hij_dev.origin()));
-          Barr.push_back(make_device_ptr(G[w].origin()) + is0);
-          Carr.push_back(make_device_ptr(Fm[w].origin()) + is0);
+          Aarr.push_back(make_device_ptr(hij_dev.base()));
+          Barr.push_back(make_device_ptr(G[w].base()) + is0);
+          Carr.push_back(make_device_ptr(Fm[w].base()) + is0);
         }
       }
       using ma::gemmBatched;
@@ -825,14 +824,14 @@ public:
       Aarr.clear();
       Barr.clear();
       Carr.clear();
-      C4Tensor_ref Fp4D(make_device_ptr(Fp.origin()), {nwalk, nspin, NMO, NMO});
+      C4Tensor_ref Fp4D(make_device_ptr(Fp.base()), {nwalk, nspin, NMO, NMO});
       for (int ispin = 0, is0 = 0; ispin < nspin; ispin++, is0 += NMO * NMO)
       {
         for (int w = 0; w < nwalk; w++)
         {
-          Aarr.push_back(make_device_ptr(hij_dev.origin()));
-          Barr.push_back(make_device_ptr(G[w].origin()) + is0);
-          Carr.push_back(make_device_ptr(Fp[w].origin()) + is0);
+          Aarr.push_back(make_device_ptr(hij_dev.base()));
+          Barr.push_back(make_device_ptr(G[w].base()) + is0);
+          Carr.push_back(make_device_ptr(Fp[w].base()) + is0);
 
           // add diagonal contribution to Fp
           ma::add(ComplexType(1.0), Fp4D[w][ispin], ComplexType(1.0), ma::T(hij_dev), Fp4D[w][ispin]);
@@ -852,7 +851,7 @@ public:
   int global_origin_cholesky_vector() const { return global_origin; }
 
   // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
-  bool transposed_G_for_vbias() const { return false; } 
+  bool transposed_G_for_vbias() const { return false; }
   bool transposed_G_for_E() const { return true; }
   // transpose=true means vHS[nwalk][ik], false means vHS[ik][nwalk]
   bool transposed_vHS() const { return false; }

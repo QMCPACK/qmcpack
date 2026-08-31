@@ -15,6 +15,10 @@
 #include "CUDA/QueueCUDA.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/cuBLAS_missing_functions.hpp"
+#include "config.h"
+#ifdef QMC_CUDA2HIP
+#include "Platforms/ROCm/rocBLAS.hpp"
+#endif
 
 #ifndef QMC_CUDA2HIP
 #define castNativeType castCUDAType
@@ -101,9 +105,11 @@ inline void gemm(BLASHandle<PlatformKind::CUDA>& handle,
                  std::complex<float>* C,
                  int ldc)
 {
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
   cublasErrorCheck(cublasCgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
-                               n, k, castNativeType(&alpha), castNativeType(A), lda, castNativeType(B), ldb,
-                               castNativeType(&beta), castNativeType(C), ldc),
+                               n, k, &alpha_cu, castNativeType(A), lda, castNativeType(B), ldb, &beta_cu,
+                               castNativeType(C), ldc),
                    "cublasCgemm failed!");
 }
 
@@ -122,9 +128,11 @@ inline void gemm(BLASHandle<PlatformKind::CUDA>& handle,
                  std::complex<double>* C,
                  int ldc)
 {
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
   cublasErrorCheck(cublasZgemm(handle.h_cublas, cuBLAS::convertOperation(transa), cuBLAS::convertOperation(transb), m,
-                               n, k, castNativeType(&alpha), castNativeType(A), lda, castNativeType(B), ldb,
-                               castNativeType(&beta), castNativeType(C), ldc),
+                               n, k, &alpha_cu, castNativeType(A), lda, castNativeType(B), ldb, &beta_cu,
+                               castNativeType(C), ldc),
                    "cublasZgemm failed!");
 }
 
@@ -177,9 +185,10 @@ inline void gemv(BLASHandle<PlatformKind::CUDA>& handle,
                  std::complex<float>* y,
                  const int incy)
 {
-  cublasErrorCheck(cublasCgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, castNativeType(&alpha),
-                               castNativeType(A), lda, castNativeType(x), incx, castNativeType(&beta),
-                               castNativeType(y), incy),
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
+  cublasErrorCheck(cublasCgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, &alpha_cu, castNativeType(A),
+                               lda, castNativeType(x), incx, &beta_cu, castNativeType(y), incy),
                    "cublasCgemv failed!");
 }
 
@@ -196,9 +205,10 @@ inline void gemv(BLASHandle<PlatformKind::CUDA>& handle,
                  std::complex<double>* y,
                  const int incy)
 {
-  cublasErrorCheck(cublasZgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, castNativeType(&alpha),
-                               castNativeType(A), lda, castNativeType(x), incx, castNativeType(&beta),
-                               castNativeType(y), incy),
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
+  cublasErrorCheck(cublasZgemv(handle.h_cublas, cuBLAS::convertOperation(trans), m, n, &alpha_cu, castNativeType(A),
+                               lda, castNativeType(x), incx, &beta_cu, castNativeType(y), incy),
                    "cublasZgemv failed!");
 }
 
@@ -217,9 +227,17 @@ inline void gemv_batched(BLASHandle<PlatformKind::CUDA>& handle,
                          const int incy,
                          const int batch_count)
 {
+#ifdef QMC_ROCBLAS_ALPHA_BETA_ARRAYS
+  // hipBLAS's AMD backend stores the rocBLAS handle verbatim, so the cast is sound and the
+  // call inherits the stream cublasSetStream already bound. Same idiom as hipBLAS.cpp.
+  rocblasErrorCheck(rocBLAS::gemv_batched(reinterpret_cast<rocblas_handle>(handle.h_cublas), trans, m, n, alpha, A, lda,
+                                          x, incx, beta, y, incy, batch_count),
+                    "rocBLAS::gemv_batched failed!");
+#else
   cudaErrorCheck(cuBLAS_MFs::gemv_batched(handle.h_stream, trans, m, n, alpha, A, lda, x, incx, beta, y, incy,
                                           batch_count),
                  "cuBLAS_MFs::gemv_batched failed!");
+#endif
 }
 
 inline void ger(BLASHandle<PlatformKind::CUDA>& handle,
@@ -261,8 +279,9 @@ inline void ger(BLASHandle<PlatformKind::CUDA>& handle,
                 std::complex<float>* A,
                 const int lda)
 {
-  cublasErrorCheck(cublasCgeru(handle.h_cublas, m, n, castNativeType(&alpha), castNativeType(x), incx,
-                               castNativeType(y), incy, castNativeType(A), lda),
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  cublasErrorCheck(cublasCgeru(handle.h_cublas, m, n, &alpha_cu, castNativeType(x), incx, castNativeType(y), incy,
+                               castNativeType(A), lda),
                    "cublasCger failed!");
 }
 
@@ -277,8 +296,9 @@ inline void ger(BLASHandle<PlatformKind::CUDA>& handle,
                 std::complex<double>* A,
                 const int lda)
 {
-  cublasErrorCheck(cublasZgeru(handle.h_cublas, m, n, castNativeType(&alpha), castNativeType(x), incx,
-                               castNativeType(y), incy, castNativeType(A), lda),
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  cublasErrorCheck(cublasZgeru(handle.h_cublas, m, n, &alpha_cu, castNativeType(x), incx, castNativeType(y), incy,
+                               castNativeType(A), lda),
                    "cublasZger failed!");
 }
 
@@ -295,8 +315,15 @@ inline void ger_batched(BLASHandle<PlatformKind::CUDA>& handle,
                         const int lda,
                         const int batch_count)
 {
+#ifdef QMC_ROCBLAS_ALPHA_BETA_ARRAYS
+  // Complex dispatches to geru, not gerc: the kernel this replaces does not conjugate y.
+  rocblasErrorCheck(rocBLAS::ger_batched(reinterpret_cast<rocblas_handle>(handle.h_cublas), m, n, alpha, x, incx, y,
+                                         incy, A, lda, batch_count),
+                    "rocBLAS::ger_batched failed!");
+#else
   cudaErrorCheck(cuBLAS_MFs::ger_batched(handle.h_stream, m, n, alpha, x, incx, y, incy, A, lda, batch_count),
                  "cuBLAS_MFs::ger_batched failed!");
+#endif
 }
 
 template<typename T>
@@ -308,8 +335,15 @@ inline void copy_batched(BLASHandle<PlatformKind::CUDA>& handle,
                          const int incy,
                          const int batch_count)
 {
+#ifdef QMC_CUDA2HIP
+  // no alpha, so nothing to version-gate: rocblas_Xcopy_batched predates the ROCm 6.0 floor
+  rocblasErrorCheck(rocBLAS::copy_batched(reinterpret_cast<rocblas_handle>(handle.h_cublas), n, in, incx, out, incy,
+                                          batch_count),
+                    "rocBLAS::copy_batched failed!");
+#else
   cudaErrorCheck(cuBLAS_MFs::copy_batched(handle.h_stream, n, in, incx, out, incy, batch_count),
                  "cuBLAS_MFs::copy_batched failed!");
+#endif
 }
 
 inline void gemm_batched(BLASHandle<PlatformKind::CUDA>& handle,
@@ -358,10 +392,13 @@ inline void gemm_batched(BLASHandle<PlatformKind::CUDA>& handle,
   auto non_const_B = const_cast<BottomConstRemoved<decltype(B)>::type>(B);
   auto non_const_C = const_cast<BottomConstRemoved<decltype(C)>::type>(C);
 
+  const cuComplex alpha_cu = make_cuComplex(alpha.real(), alpha.imag());
+  const cuComplex beta_cu  = make_cuComplex(beta.real(), beta.imag());
+
   cublasErrorCheck(cublasCgemmBatched(handle.h_cublas, cuBLAS::convertOperation(transa),
-                                      cuBLAS::convertOperation(transb), m, n, k, castNativeType(&alpha),
-                                      castNativeType(non_const_A), lda, castNativeType(non_const_B), ldb,
-                                      castNativeType(&beta), castNativeType(non_const_C), ldc, batchCount),
+                                      cuBLAS::convertOperation(transb), m, n, k, &alpha_cu, castNativeType(non_const_A),
+                                      lda, castNativeType(non_const_B), ldb, &beta_cu, castNativeType(non_const_C), ldc,
+                                      batchCount),
                    "cublasCgemmBatched failed!");
 }
 
@@ -407,10 +444,13 @@ inline void gemm_batched(BLASHandle<PlatformKind::CUDA>& handle,
   auto non_const_B = const_cast<BottomConstRemoved<decltype(B)>::type>(B);
   auto non_const_C = const_cast<BottomConstRemoved<decltype(C)>::type>(C);
 
+  const cuDoubleComplex alpha_cu = make_cuDoubleComplex(alpha.real(), alpha.imag());
+  const cuDoubleComplex beta_cu  = make_cuDoubleComplex(beta.real(), beta.imag());
+
   cublasErrorCheck(cublasZgemmBatched(handle.h_cublas, cuBLAS::convertOperation(transa),
-                                      cuBLAS::convertOperation(transb), m, n, k, castNativeType(&alpha),
-                                      castNativeType(non_const_A), lda, castNativeType(non_const_B), ldb,
-                                      castNativeType(&beta), castNativeType(non_const_C), ldc, batchCount),
+                                      cuBLAS::convertOperation(transb), m, n, k, &alpha_cu, castNativeType(non_const_A),
+                                      lda, castNativeType(non_const_B), ldb, &beta_cu, castNativeType(non_const_C), ldc,
+                                      batchCount),
                    "cublasZgemmBatched failed!");
 }
 

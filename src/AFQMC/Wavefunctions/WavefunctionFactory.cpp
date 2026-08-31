@@ -264,7 +264,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
       if (!newg.second)
         APP_ABORT(" Error: Problems adding new initial guess. \n");
       using ma::conj;
-      std::fill_n((newg.first)->second.origin(), 2 * NPOL * NMO * NAEA, ComplexType(0.0, 0.0));
+      std::fill_n((newg.first)->second.base(), 2 * NPOL * NMO * NAEA, ComplexType(0.0, 0.0));
       {
         auto pbegin = PsiT[iC].pointers_begin();
         auto pend   = PsiT[iC].pointers_end();
@@ -486,7 +486,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop,
       if (iC >= abij.number_of_configurations())
         APP_ABORT(" Error: initial_configuration > ndets \n");
       using ma::conj;
-      std::fill_n((newg.first)->second.origin(), 2 * NMO * NAEA, ComplexType(0.0, 0.0));
+      std::fill_n((newg.first)->second.base(), 2 * NMO * NAEA, ComplexType(0.0, 0.0));
       //auto refc = abij.reference_configuration();
       {
         std::vector<int> alphaC(NAEA);
@@ -1018,7 +1018,7 @@ void WavefunctionFactory::getInitialGuess(hdf_archive& dump,
     if (!newg.second)
       APP_ABORT(" Error: Problems adding new initial guess. \n");
     using ma::conj;
-    std::fill_n((newg.first)->second.origin(), 2 * NPOL * NMO * NAEA, ComplexType(0.0, 0.0));
+    std::fill_n((newg.first)->second.base(), 2 * NPOL * NMO * NAEA, ComplexType(0.0, 0.0));
     {
       boost::multi::array<ComplexType, 2> Psi0Alpha({NPOL * NMO, NAEA});
       if (!dump.readEntry(Psi0Alpha, "Psi0_alpha"))
@@ -1083,13 +1083,13 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG,
   boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> H({dim, dim}, TG.Node());
   boost::multi::array<ComplexType, 1> energy(iextensions<1u>{2});
   using std::fill_n;
-  fill_n(H.origin(), H.num_elements(), ComplexType(0.0));           // this call synchronizes
-  fill_n(energy.origin(), energy.num_elements(), ComplexType(0.0)); // this call synchronizes
+  fill_n(H.base(), H.num_elements(), ComplexType(0.0));           // this call synchronizes
+  fill_n(energy.base(), energy.num_elements(), ComplexType(0.0)); // this call synchronizes
   ValueType enuc = ham.getNuclearCoulombEnergy();
   for (int idet = 0; idet < ndets; idet++)
   {
     // These should already be sorted.
-    boost::multi::array_ref<int, 1> deti(occs[idet].origin(), {NAEA + NAEB});
+    boost::multi::array_ref<int, 1> deti(occs[idet].base(), {NAEA + NAEB});
     ComplexType cidet = coeff[idet];
     for (int jdet = idet; jdet < ndets; jdet++)
     {
@@ -1108,7 +1108,7 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG,
         else
         {
           ComplexType Hij(0.0);
-          boost::multi::array_ref<int, 1> detj(occs[jdet].origin(), {NAEA + NAEB});
+          boost::multi::array_ref<int, 1> detj(occs[jdet].base(), {NAEA + NAEB});
           ComplexType cjdet = coeff[jdet];
           int perm          = 1;
           std::vector<int> excit;
@@ -1133,8 +1133,8 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG,
   }
   TG.Node().barrier();
   if (TG.Node().root() && recompute_ci)
-    TG.Cores().all_reduce_in_place_n(to_address(H.origin()), H.num_elements(), std::plus<>());
-  TG.Global().all_reduce_in_place_n(energy.origin(), 2, std::plus<>());
+    TG.Cores().all_reduce_in_place_n(to_address(H.base()), H.num_elements(), std::plus<>());
+  TG.Global().all_reduce_in_place_n(energy.base(), 2, std::plus<>());
   app_log() << " - Variational energy of trial wavefunction: " << std::setprecision(16) << energy[0] / energy[1]
             << "\n";
   if (recompute_ci)

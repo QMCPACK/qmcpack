@@ -51,13 +51,12 @@ public:
   UPtrVector<RandomBase<FullPrecRealType>>& get_rng_ptr_list() { return rng_ptr_list_; }
   RandomBase<FullPrecRealType>& get_rng_save() { return *rng_save_ptr_; }
 
-  UPtrVector<TrialWaveFunction>& get_wf_ptr_list() { return wf_ptr_list_; }
+
 
   Return_rt& get_e0() { return e0_; }
   Return_rt& get_e2() { return e2_; }
 
   Return_rt& get_wgt() { return wgt_; }
-  Return_rt& get_wgt2() { return wgt2_; }
 
   DriverWalkerResourceCollection& getSharedResource() { return driverwalker_resource_collection_; }
   ResourceCollection& get_h0_res() { return h0_res_; }
@@ -88,7 +87,6 @@ private:
   Return_rt e2_;
 
   Return_rt wgt_;
-  Return_rt wgt2_;
 };
 
 

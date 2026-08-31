@@ -8,9 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OptimizableObject.h"
 #include "VariableSet.h"
@@ -27,9 +26,9 @@ public:
     myVars.insert("var1", var1);
     myVars.insert("var2", var2);
   }
-  void checkInVariablesExclusive(opt_variables_type& active) override { active.insertFrom(myVars); }
+  void checkInVariablesExclusive(OptVariables& active) override { active.insertFrom(myVars); }
 
-  void resetParametersExclusive(const opt_variables_type& active) override {}
+  void resetParametersExclusive(const OptVariables& active) override {}
 
   void writeVariationalParameters(hdf_archive& hout) override
   {
@@ -63,7 +62,7 @@ public:
   }
 
   double extra_data;
-  opt_variables_type myVars;
+  OptVariables myVars;
 };
 
 TEST_CASE("Test OptimizableObject", "[wavefunction]")
@@ -90,7 +89,7 @@ TEST_CASE("OptimizableObject HDF output and input", "[wavefunction]")
   fake_a.extra_data = 3.4;
 
   hdf_archive hout;
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
   fake_a.checkInVariablesExclusive(opt_vars);
   opt_vars.writeToHDF("opt_obj.h5", hout);
 
@@ -98,7 +97,7 @@ TEST_CASE("OptimizableObject HDF output and input", "[wavefunction]")
 
   FakeOptimizableObject fake_2a("functor_a");
   hdf_archive hin;
-  opt_variables_type opt_vars2;
+  OptVariables opt_vars2;
   fake_2a.checkInVariablesExclusive(opt_vars2);
 
   opt_vars2.readFromHDF("opt_obj.h5", hin);
@@ -107,7 +106,7 @@ TEST_CASE("OptimizableObject HDF output and input", "[wavefunction]")
 
   fake_2a.readVariationalParameters(hin);
 
-  opt_variables_type opt_vars3;
+  OptVariables opt_vars3;
   fake_2a.checkInVariablesExclusive(opt_vars3);
   CHECK(std::real(opt_vars3["var1"]) == Approx(1.1));
   CHECK(std::real(opt_vars3["var2"]) == Approx(2.3));

@@ -8,9 +8,8 @@
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Message/Communicate.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -42,8 +41,8 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   // This is where the pset properties "properies" gain the different hamiltonian operator values.
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
-  auto& twf = *(wavefunction_pool.getWaveFunction("wavefunction"));
-  auto& ham = *(hamiltonian_pool.getPrimary());
+  TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
+  QMCHamiltonian& ham(hamiltonian_pool.getHamiltonian().value());
 
   // setup data structures for multiple walkers
 
@@ -51,16 +50,14 @@ TEST_CASE("WalkerLogCollector::collect", "[estimators]")
   UPtrVector<TrialWaveFunction> twfs;
   std::vector<ParticleSet> psets;
 
-  int num_walkers   = 4;
-  int num_electrons = particle_pool.getParticleSet("e")->getTotalNum();
-  int num_ions      = particle_pool.getParticleSet("ion")->getTotalNum();
+  int num_walkers = 4;
 
   for (int iw = 0; iw < num_walkers; ++iw)
   {
     psets.emplace_back(pset);
     psets.back().randomizeFromSource(*particle_pool.getParticleSet("ion"));
     twfs.emplace_back(twf.makeClone(psets.back()));
-    hams.emplace_back(hamiltonian_pool.getPrimary()->makeClone(psets.back(), *twfs.back()));
+    hams.emplace_back(ham.makeClone(psets.back(), *twfs.back()));
   }
 
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;

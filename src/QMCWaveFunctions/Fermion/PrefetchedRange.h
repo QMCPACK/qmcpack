@@ -21,7 +21,7 @@ class PrefetchedRange
   int first, last;
 
 public:
-  PrefetchedRange() : first(0), last(0){};
+  PrefetchedRange() : first(0), last(0) {};
   void setRange(int first_in, int last_in)
   {
     first = first_in;

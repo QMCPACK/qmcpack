@@ -92,7 +92,7 @@ public:
   RealType *FirstOfB, *LastOfB;
 
   bool uniqueFunctions;
-  opt_variables_type myVars;
+  OptVariables myVars;
 
   BackflowFunctionBase(ParticleSet& ions, ParticleSet& els)
       : CenterSys(ions), numParams(0), indexOfFirstParam(-1), uniqueFunctions(false)
@@ -121,7 +121,7 @@ public:
 
   virtual std::unique_ptr<BackflowFunctionBase> makeClone(ParticleSet& tqp) const = 0;
 
-  virtual ~BackflowFunctionBase(){};
+  virtual ~BackflowFunctionBase() {};
 
   virtual void acceptMove(int iat, int UpdateType) = 0;
 
@@ -129,11 +129,11 @@ public:
 
   virtual void reportStatus(std::ostream& os) = 0;
 
-  virtual void resetParameters(const opt_variables_type& active) = 0;
+  virtual void resetParameters(const OptVariables& active) = 0;
 
-  virtual void checkInVariables(opt_variables_type& active) = 0;
+  virtual void checkInVariables(OptVariables& active) = 0;
 
-  virtual void checkOutVariables(const opt_variables_type& active) = 0;
+  virtual void checkOutVariables(const OptVariables& active) = 0;
 
   virtual bool isOptimizable() = 0;
 

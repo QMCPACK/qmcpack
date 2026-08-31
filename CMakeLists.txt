@@ -18,7 +18,7 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 4.1.9
+  VERSION 4.4.9
   LANGUAGES C CXX)
 
 #--------------------------------------------------------------------
@@ -38,15 +38,26 @@ include(AddRPATH)
 ######################################################################
 
 #--------------------------------------------------------------------
-# Set C++ standard
+# Set C++ standard and run basic checks
 #--------------------------------------------------------------------
+include(InspectCompilerCXXDefaultSTD)
 set(QMC_CXX_STANDARD
-    17
+    ${COMPILER_CXX_STANDARD_DEFAULT}
     CACHE STRING "QMCPACK C++ language standard")
-if(NOT QMC_CXX_STANDARD EQUAL 17)
-  message(WARNING "C++17 is the only language standard officially supported by this QMCPACK version. "
+message(STATUS "Compiling with C++${QMC_CXX_STANDARD} language standard")
+if(NOT (QMC_CXX_STANDARD EQUAL 17 OR QMC_CXX_STANDARD EQUAL 20))
+  message(WARNING "C++17 and C++20 are the only versions of language standard officially supported by this QMCPACK version. "
                   "Using other versions of the C++ standard is unsupported and done entirely at user's own risk.")
 endif()
+
+set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Check that a C++ compiler is compatible with the underlying libstdc++
+include(Testlibstdc++)
+# Check that a C++ standard library is configured properly
+include(TestCxx17Library)
 
 #--------------------------------------------------------------------
 # Programmind model related build options
@@ -131,6 +142,7 @@ message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 
 option(QMC_BUILD_SANDBOX_ONLY "Build only applications in Sandbox directory" OFF)
 option(ENABLE_GCOV "Enable code coverage" OFF)
+option(ENABLE_PYCOV "Enable python code coverage" OFF)
 option(BUILD_UNIT_TESTS "Build unit tests" ON)
 option(BUILD_MICRO_BENCHMARKS "Build micro benchmarks" ON)
 option(BUILD_LMYENGINE_INTERFACE "Build LMY engine" ON)
@@ -141,6 +153,10 @@ else()
   message(STATUS "LMY engine enabled for widest range of wavefunction optimization methods.")
 endif()
 option(BUILD_AFQMC "Build with AFQMC" OFF)
+option(ENABLE_DEEPQMC_INFERENCE "Enable experimental DeepQMC wavefunction inference support" OFF)
+if(ENABLE_DEEPQMC_INFERENCE)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+endif()
 # explicit HIP source codes only exist in AFQMC.
 cmake_dependent_option(BUILD_AFQMC_HIP "Build with with GPU support in AFQMC through explicit HIP source code" OFF "BUILD_AFQMC" OFF)
 if(BUILD_AFQMC_HIP)
@@ -162,15 +178,8 @@ mark_as_advanced(QMC_EXP_THREADING)
 set(VALID_SANITIZERS "asan" "ubsan" "tsan" "msan" "typesan")
 set(ENABLE_SANITIZER "" CACHE STRING "Valid input: ${VALID_SANITIZERS} or left empty")
 
-#--------------------------------------------------------------------
-# INSTALL_NEXUS install Nexus alongside QMCPACK
-#--------------------------------------------------------------------
-option(INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
-if(INSTALL_NEXUS)
-  install(
-    CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin)"
-  )
-endif()
+option(QMC_INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
+option(QMC_DOXYGEN "Enable use of Doxygen documentation generator tool" ON)
 
 ######################################################################
 # Set compiler specific options/flags
@@ -222,19 +231,6 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
   message(FATAL_ERROR "Mixing C and C++ compilers from different vendors is not permitted. Current "
                       "C compiler is ${CMAKE_C_COMPILER_ID} but C++ compiler is ${CMAKE_CXX_COMPILER_ID}.")
 endif()
-
-#-----------------------------------------------------------------------
-# Set C++ minimum standard and run basic checks
-#-----------------------------------------------------------------------
-set(CMAKE_CXX_STANDARD ${QMC_CXX_STANDARD})
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Check that a C++ compiler is compatible with the underlying libstdc++
-include(Testlibstdc++)
-
-# Check that a C++ standard library is configured properly
-include(TestCxx17Library)
 
 #-----------------------------------------------------------------------
 # SETUP SANITIZERS FLAGS
@@ -296,6 +292,11 @@ if(ENABLE_GCOV)
     message(FATAL_ERROR "ENABLE_GCOV was specified but compiler does not support GCC coverage flag")
   endif()
 endif(ENABLE_GCOV)
+
+if(ENABLE_PYCOV)
+  find_program(PYTHON_COVERAGE_EXECUTABLE NAMES python3-coverage coverage.py coverage3 coverage REQUIRED)
+  message(STATUS "Python coverage is enabled. Using ${PYTHON_COVERAGE_EXECUTABLE}")
+endif(ENABLE_PYCOV)
 
 #-------------------------------------------------------------------------------
 # Check SIMD alignment for CPU only
@@ -677,16 +678,11 @@ if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
   endif()
 
-  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    string(REPLACE "sm_" "" CUDA_ARCH_NUMBERS "${QMC_GPU_ARCHS}")
-    set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_NUMBERS})
-  endif()
-
   enable_language(CUDA)
   if(ENABLE_CUDA)
     include(TestCUDAHostCompatibility)
   endif()
-  find_package(CUDAToolkit 11.0 REQUIRED)
+  find_package(CUDAToolkit 12.3 REQUIRED)
   if(NOT TARGET CUDA::cublas)
     message(
       FATAL_ERROR
@@ -731,6 +727,33 @@ if(ENABLE_ROCM)
   # Check for minimum required rocBLAS version
   if(hipblas_VERSION VERSION_LESS "2.0.0")
     message(FATAL_ERROR "QMCPACK requires hipBLAS minimum version 2.0.0 from ROCm 6.0. Detected ${hipblas_VERSION}.")
+  endif()
+
+  # rocBLAS is used directly, not through hipBLAS, for the batched BLAS1/2 calls in
+  # Platforms/ROCm/rocBLAS.cpp that hipBLAS does not re-export. rocSOLVER pulls rocBLAS
+  # in as a PUBLIC dependency, which links the library but leaves rocblas_VERSION unset,
+  # so this call is what makes the version check below possible.
+  find_package(rocblas CONFIG REQUIRED)
+
+  # Opt-in. QMCPACK's own batched gemv and ger kernels remain the default.
+  # (copy_batched needs no alpha and is used unconditionally.)
+  option(QMC_ROCBLAS_ALPHA_BETA_ARRAYS "Use rocBLAS batched gemv/ger with alpha/beta arrays" OFF)
+
+  if(QMC_ROCBLAS_ALPHA_BETA_ARRAYS)
+    # rocBLAS 5.5.0 added alpha/beta arrays via rocblas_set_batch_alpha_stride and
+    # rocblas_set_batch_beta_stride, absent from rocBLAS 5.2 (ROCm 7.2) and earlier.
+    # 5.3 and 5.4 were never publicly released.
+    if(rocblas_VERSION VERSION_LESS "5.5.0")
+      message(FATAL_ERROR "QMC_ROCBLAS_ALPHA_BETA_ARRAYS=ON requires rocBLAS 5.5.0 or newer, "
+                          "found ${rocblas_VERSION}. rocblas_set_batch_alpha_stride is absent, "
+                          "so the build would fail to link.")
+    endif()
+    message(STATUS "Using rocBLAS batched gemv and ger with alpha/beta arrays "
+                   "(rocBLAS ${rocblas_VERSION})")
+  else()
+    message(STATUS "Using QMCPACK's own batched gemv and ger kernels. Set "
+                   "QMC_ROCBLAS_ALPHA_BETA_ARRAYS=ON for the rocBLAS implementations "
+                   "(requires rocBLAS 5.5.0 or newer, found ${rocblas_VERSION}).")
   endif()
 
   find_package(rocsolver CONFIG REQUIRED)
@@ -962,6 +985,16 @@ if(QMC_DATA)
 endif()
 
 #-------------------------------------------------------------------
+# Verify Python3 available
+#-------------------------------------------------------------------
+find_package(Python3)
+if(NOT Python3_FOUND)
+  message(FATAL_ERROR "Could not find required python3")
+endif(NOT Python3_FOUND)
+
+include(python)
+
+#-------------------------------------------------------------------
 # CTest
 #-------------------------------------------------------------------
 set(DROP_METHOD "http")
@@ -974,16 +1007,45 @@ set(DART_TESTING_TIMEOUT
     3600
     CACHE STRING "Maximum time for one test")
 enable_testing()
-include(CTest)
 
-#-------------------------------------------------------------------
-# Verify Python3 available
-#-------------------------------------------------------------------
-find_package(Python3)
-if(NOT Python3_FOUND)
-  message(FATAL_ERROR "Could not find required python3")
-endif(NOT Python3_FOUND)
-include(python)
+set(QMC_CTEST_NUM_GPUS 1 CACHE STRING "Number of GPUs available to CTest on the local node")
+if(NOT QMC_CTEST_NUM_GPUS MATCHES "^[1-9][0-9]*$")
+  message(FATAL_ERROR "QMC_CTEST_NUM_GPUS must be a positive integer, but is \"${QMC_CTEST_NUM_GPUS}\"")
+endif()
+
+set(VALID_GPU_VISIBILITY_VARIABLES "CUDA_VISIBLE_DEVICES" "ROCR_VISIBLE_DEVICES" "ZE_AFFINITY_MASK")
+set(QMC_GPU_VISIBILITY_VARIABLE ${QMC_GPU_VISIBILITY_VARIABLE_DEFAULT} CACHE STRING "GPU visibility environment variable name. Valid input ${VALID_GPU_VISIBILITY_VARIABLES}")
+if(QMC_GPU_VISIBILITY_VARIABLE)
+  if(NOT QMC_GPU_VISIBILITY_VARIABLE IN_LIST VALID_GPU_VISIBILITY_VARIABLES)
+    message(FATAL_ERROR "Invalid QMC_GPU_VISIBILITY_VARIABLE input, value must be one of ${VALID_GPU_VISIBILITY_VARIABLES}")
+  endif()
+  math(EXPR QMC_LAST_GPU_ID "${QMC_CTEST_NUM_GPUS} - 1")
+  set(QMC_CTEST_GPU_RESOURCES "")
+  foreach(QMC_GPU_ID RANGE 0 ${QMC_LAST_GPU_ID})
+    if(QMC_CTEST_GPU_RESOURCES)
+      string(APPEND QMC_CTEST_GPU_RESOURCES ",\n")
+    endif()
+    string(APPEND QMC_CTEST_GPU_RESOURCES "        { \"id\": \"${QMC_GPU_ID}\", \"slots\": 1 }")
+  endforeach()
+
+  set(CTEST_RESOURCE_SPEC_FILE "${qmcpack_BINARY_DIR}/CTestGPUResourceSpec.json")
+  file(
+    GENERATE
+    OUTPUT "${CTEST_RESOURCE_SPEC_FILE}"
+    CONTENT
+      "{\n  \"version\": { \"major\": 1, \"minor\": 0 },\n  \"local\": [\n    {\n      \"gpus\": [\n${QMC_CTEST_GPU_RESOURCES}\n      ]\n    }\n  ]\n}\n"
+  )
+  message(STATUS "CTest GPU resources: ${QMC_CTEST_NUM_GPUS}")
+  message(STATUS "CTest GPU visibility environment variable: ${QMC_GPU_VISIBILITY_VARIABLE}")
+  set(QMC_GPU_TEST_LAUNCHER ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/scripts/gpu_test_resource_launcher.py
+                            ${QMC_GPU_VISIBILITY_VARIABLE})
+elseif(QMC_GPU)
+  message(WARNING "QMC_GPU_VISIBILITY_VARIABLE is empty. CTest GPU resource management feature cannot be used. "
+                  "CTest may show slow or failing tests due to GPU oversubscription when running concurrent tests. "
+                  "Set QMC_GPU_VISIBILITY_VARIABLE to the GPU visibility environment variable name based on your GPU. "
+                  "Candidates are ${VALID_GPU_VISIBILITY_VARIABLES}.")
+endif()
+include(CTest)
 
 #-------------------------------------------------------------------
 # Check if PySCF is available
@@ -1061,14 +1123,25 @@ message(STATUS "Ready to parse QMCPACK source tree")
 
 add_subdirectory(external_codes)
 add_subdirectory(src)
-add_subdirectory(doxygen)
+if(QMC_DOXYGEN)
+  add_subdirectory(doxygen)
+endif(QMC_DOXYGEN)
 
 if(NOT QMC_BUILD_SANDBOX_ONLY)
   if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     add_subdirectory(tests)
     add_subdirectory(examples)
   endif()
-  if(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus" AND INSTALL_NEXUS)
-    add_subdirectory(nexus/tests)
+  #--------------------------------------------------------------------
+  # INSTALL_NEXUS install Nexus alongside QMCPACK
+  #--------------------------------------------------------------------
+  if(QMC_INSTALL_NEXUS)
+    add_subdirectory(nexus/nexus/tests)
+    install(DIRECTORY ${qmcpack_SOURCE_DIR}/nexus/nexus DESTINATION ${CMAKE_INSTALL_PREFIX}/lib USE_SOURCE_PERMISSIONS PATTERN "__pycache__" EXCLUDE)
+    set(QMCPACK_NEXUS_SCRIPTS qmca qmc-fit qdens qdens-radial)
+    foreach(NEXUS_SCRIPT IN LISTS QMCPACK_NEXUS_SCRIPTS)
+      install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ../lib/nexus/bin/${NEXUS_SCRIPT} ${CMAKE_INSTALL_PREFIX}/bin/${NEXUS_SCRIPT})")
+    endforeach()
+    install(PROGRAMS ${qmcpack_SOURCE_DIR}/nexus/manual_install DESTINATION ${CMAKE_INSTALL_PREFIX}/lib RENAME nexus-setup-env)
   endif()
 endif()

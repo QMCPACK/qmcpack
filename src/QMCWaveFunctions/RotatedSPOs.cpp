@@ -20,15 +20,13 @@
 namespace qmcplusplus
 {
 RotatedSPOs::RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos)
-    : SPOSet(my_name),
+    : SPOSet(my_name, spos->getOrbitalSetSize()),
       OptimizableObject(my_name),
       Phi_(std::move(spos)),
       nel_major_(0),
       params_supplied_(false),
       apply_rotation_timer_(createGlobalTimer("RotatedSPOs::apply_rotation", timer_level_fine))
-{
-  OrbitalSetSize = Phi_->getOrbitalSetSize();
-}
+{}
 
 RotatedSPOs::~RotatedSPOs() {}
 
@@ -109,7 +107,7 @@ void RotatedSPOs::extractParamsFromAntiSymmetricMatrix(const RotationIndices& ro
   }
 }
 
-void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
+void RotatedSPOs::resetParametersExclusive(const OptVariables& active)
 {
   const size_t nact_rot = m_act_rot_inds_.size();
   std::vector<ValueType> delta_param(nact_rot);
@@ -140,7 +138,7 @@ void RotatedSPOs::writeVariationalParameters(hdf_archive& hout)
 
   hout.write(myVarsFull_, rot_global_name);
   hout.pop();
-  
+
   // Save myVars in order to restore object state exactly
   //  The values aren't meaningful, but they need to match those saved in VariableSet
   hout.push("rotation_params");
@@ -185,7 +183,7 @@ void RotatedSPOs::readVariationalParameters(hdf_archive& hin)
 
     applyFullRotation(myVarsFull_, true);
   }
-  else 
+  else
   {
     throw std::runtime_error("Error.  No global rotation group in h5.  Abort.");
   }
@@ -269,7 +267,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
           "expansion. \n");
 
 
-  auto registerParameter = [this](const int i, const int p, const int q, opt_variables_type& optvars,
+  auto registerParameter = [this](const int i, const int p, const int q, OptVariables& optvars,
                                   std::vector<ValueType>& params, bool real_part) {
     std::stringstream sstr;
     std::string label = real_part ? "_r" : "_i";
@@ -539,7 +537,7 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
         mat_cl[i + j * n] = std::complex<RealType>(mat_l[i + j * n], 0.0);
       }
 #else
-      auto tmp     = (i == j) ? std::log(eval[i]) : ValueType(0.0);
+      auto tmp = (i == j) ? std::log(eval[i]) : ValueType(0.0);
 #endif
       mat_cd[i + j * n] = tmp;
     }
@@ -568,7 +566,7 @@ void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output
 }
 
 void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                      const opt_variables_type& optvars,
+                                      const OptVariables& optvars,
                                       ValueVector& psi,
                                       const ValueVector& psiinv,
                                       std::vector<ValueType>& ratios,
@@ -655,7 +653,7 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
 }
 
 void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
-                                        const opt_variables_type& optvars,
+                                        const OptVariables& optvars,
                                         Vector<ValueType>& dlogpsi,
                                         int FirstIndex,
                                         int LastIndex)
@@ -709,7 +707,7 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
-                                      const opt_variables_type& optvars,
+                                      const OptVariables& optvars,
                                       Vector<ValueType>& dlogpsi,
                                       Vector<ValueType>& dhpsioverpsi,
                                       const int& FirstIndex,
@@ -827,7 +825,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
-                                      const opt_variables_type& optvars,
+                                      const OptVariables& optvars,
                                       Vector<ValueType>& dlogpsi,
                                       Vector<ValueType>& dhpsioverpsi,
                                       const ValueType& psiCurrent,
@@ -919,7 +917,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 
 
 void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
-                                        const opt_variables_type& optvars,
+                                        const OptVariables& optvars,
                                         Vector<ValueType>& dlogpsi,
                                         const FullPrecValue& psiCurrent,
                                         const std::vector<ValueType>& Coeff,

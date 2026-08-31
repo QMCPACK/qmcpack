@@ -1,0 +1,2509 @@
+##################################################################
+##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
+##################################################################
+
+
+#====================================================================#
+#  simulation.py                                                     #
+#    Provides base classes for simulation objects, including input   #
+#    and analysis.  The Simulation base class enables a large amount #
+#    of the functionality of Nexus, including workflow construction  #
+#    and monitoring, in tandem with the ProjectManager class.        #
+#                                                                    #
+#  Content summary:                                                  #
+#    SimulationInput                                                 #
+#      Abstract base class for simulation input.                     #
+#                                                                    #
+#    SimulationAnalyzer                                              #
+#      Abstract base class for simulation data analysis.             #
+#                                                                    #
+#    Simulation                                                      #
+#      Major Nexus class representing a simulation prior to, during, #
+#      and after execution.  Checks dependencies between simulations #
+#      connected in workflows, manages input file writing,           #
+#      participates in job submission, checks for successful         #
+#      simulation completion, and analyzes output data.  Saves state #
+#      image of simulation progress regularly.  Contains             #
+#      SimulationInput, SimulationAnalyzer, and Job objects (also    #
+#      optionally contains a PhysicalSystem object).  Derived        #
+#      classes tailor specific functions such as passing dependency  #
+#      data and checking simulation state to a target simulation     #
+#      code.  Derived classes include Qmcpack, Pwscf, Vasp, Gamess,  #
+#      Convert4qmc, Pw2qmcpack, SimulationBundle, and                #
+#      TemplateSimulation.                                           #
+#                                                                    #
+#    NullSimulationInput                                             #
+#      Simulation input class intended for codes that do not use an  #
+#      input file.                                                   #
+#                                                                    #
+#    NullSimulationAnalyzer                                          #
+#      Simulation input class intended for codes that do not produce #
+#      or need to analyze output data.                               #
+#                                                                    #
+#    SimulationInputTemplate                                         #
+#      Supports template input files.  A template input file is a    #
+#      standard text input file provided by the user that optionally #
+#      has specially marked keywords.  Using find and replace        #
+#      operations, Nexus can produce variations on the template      #
+#      input file (e.g. to scan over a parameter).  In this way      #
+#      Nexus can drive codes that do not have specialized classes    #
+#      derived from Simulation, SimulationInput, or                  #
+#      SimulationAnalyzer.                                           #
+#                                                                    #
+#    SimulationInputMultiTemplate                                    #
+#      Supports templated input files for codes that take many       #
+#      different files as input (VASP is an example of this).  The   #
+#      multi-template is essentially a collection of individual      #
+#      template input files.                                         #
+#                                                                    #
+#    input_template                                                  #
+#      User-facing function to create SimulationInputTemplate's.     #
+#                                                                    #
+#    multi_input_template                                            #
+#      User-facing function to create SimulationInputMultiTemplate's.#
+#                                                                    #
+#====================================================================#
+
+
+import contextlib
+import os
+import sys
+import shutil
+import tempfile
+import traceback
+from functools import partial
+from copy import deepcopy
+from datetime import datetime
+from pathlib import Path
+from string import Template
+from subprocess import Popen
+from typing import ClassVar
+from .developer import DevBase, obj, unavailable, FileFormatError, NexusError
+from .structure import Structure, read_structure
+from .physical_system import PhysicalSystem
+from .machines import Job, Workstation, get_machine
+from .nexus_base import NexusCore, nexus_core, dynamic_storage
+from .utilities import path_string
+
+ 
+class SimulationInput(NexusCore):
+    def is_valid(self):
+        raise NotImplementedError
+    #end def is_valid
+
+    def read_file_text(self,filepath):
+        if not os.path.exists(filepath):
+            msg = 'file does not exist:  '+filepath
+            raise FileNotFoundError(msg)
+        #end if
+        with open(filepath,'r') as fobj:
+            text = fobj.read()
+
+        return text
+    #end def read_file_text
+
+    def write_file_text(self,filepath,text):
+        with open(filepath,'w') as fobj:
+            fobj.write(text)
+            fobj.flush()
+    #end def write_file_text
+
+    def read(self,filepath):
+        filepath = path_string(filepath)
+        tokens = filepath.split(None,1)
+        if len(tokens)>1:
+            text = filepath
+            self.read_text(text)
+        else:
+            text = self.read_file_text(filepath)
+            self.read_text(text,filepath)
+        #end if
+    #end def read
+
+    def write(self,filepath=None):
+        text = self.write_text(filepath)
+        if filepath is not None:
+            filepath = path_string(filepath)
+            self.write_file_text(filepath,text)
+        #end if
+        return text
+    #end def write
+
+    def return_structure(self):
+        return self.return_system(structure_only=True)
+    #end def return_structure
+
+    def read_text(self,text,filepath=None):
+        raise NotImplementedError
+    #end def read_text
+
+    def write_text(self,filepath=None):
+        raise NotImplementedError
+    #end def write_text
+
+    def incorporate_system(self,system):
+        #take information from a physical system object and fill in input file
+        raise NotImplementedError
+    #end def incorporate_system
+
+    def return_system(self,*,structure_only=False):
+        #create a physical system object from input file information
+        raise NotImplementedError
+    #end def return_system
+#end class SimulationInput
+
+
+
+
+class SimulationAnalyzer(NexusCore):
+    def __init__(self,sim):
+        raise NotImplementedError
+    #end def __init__
+
+    def analyze(self):
+        raise NotImplementedError
+    #end def analyze
+#end class SimulationAnalyzer
+
+
+
+
+class SimulationEmulator(NexusCore):
+    def run(self):
+        raise NotImplementedError
+    #end def run
+#end class SimulationEmulator
+
+
+
+class SimulationImage(NexusCore):
+    save_only_fields = frozenset({
+            # user block (temporary) of (sim+) subcascade
+            'block',
+            'block_subcascade',
+            # local/remote/results directories
+            'locdir',
+            'remdir',
+            'resdir',
+            # image directories
+            'imlocdir',
+            'imremdir',
+            'imresdir',
+            })
+
+    load_fields = frozenset({
+            # important sim variables
+            'identifier',
+            'path',
+            'process_id',
+            # properties of the executable
+            'app_name',
+            'app_props',
+            # names of in/out/err files
+            'infile',
+            'outfile',
+            'errfile',
+            # directory and image file names for sim/input/analyzer
+            'image_dir',
+            'sim_image',
+            'input_image',
+            'analyzer_image',
+            # files copied in/out before/after run
+            'files',
+            'outputs',
+            # simulation status flags
+            'setup',
+            'sent_files',
+            'submitted',
+            'finished',
+            'failed',
+            'got_output',
+            'analyzed',
+            # event timestamps
+            'timestamps',
+            # cascade status flag
+            'subcascade_finished',
+            })
+
+    save_fields = load_fields | save_only_fields
+
+    def __init__(self):
+        None
+    #end def __init__
+
+    def save_image(self,sim,imagefile):
+        self.clear()
+        for k in SimulationImage.save_fields:
+            if k=='timestamps':
+                self[k] = dict(sim[k])
+            else:
+                self[k] = sim[k]
+            #end if
+        self.save(imagefile)
+        self.clear()
+    #end def save_image
+
+    def load_image(self,sim,imagefile):
+        self.clear()
+        self.load(imagefile)
+        for k in SimulationImage.save_fields:
+            if k=='timestamps':
+                if k in self:
+                    sim[k] = obj(self[k])
+                else:
+                    # support images written before timestamps were added
+                    sim[k] = obj()
+                #end if
+            else:
+                sim[k] = self[k]
+            #end if
+        self.clear()
+    #end def load_image
+
+#end class SimulationImage
+
+
+
+class Simulation(NexusCore):
+    input_type    = SimulationInput
+    analyzer_type = SimulationAnalyzer
+    generic_identifier = 'sim'
+    infile_extension   = '.in'
+    outfile_extension  = '.out'
+    errfile_extension  = '.err'
+    application   = 'simapp'
+    application_properties = frozenset({'serial'})
+    application_results    = frozenset()
+    allow_overlapping_files = False
+    allowed_inputs = frozenset({
+        'identifier','path','infile','outfile','errfile','imagefile',
+        'input','job','files','dependencies','analysis_request',
+        'block','block_subcascade','app_name','app_props','system',
+        'skip_submit','force_write','simlabel','fake_sim',
+        'restartable','force_restart'
+        })
+    sim_imagefile      = 'sim.p'
+    input_imagefile    = 'input.p'
+    analyzer_imagefile = 'analyzer.p'
+    image_directory    = 'sim'
+    supports_restarts  = False
+    renew_app_command  = False
+
+    is_bundle = False
+
+    sim_count = 0
+    creating_fake_sims = False
+
+    sim_directories: ClassVar[dict] = dict()
+    all_sims: ClassVar[list] = []
+
+    @classmethod
+    def clear_all_sims(cls):
+        cls.sim_directories.clear()
+        cls.all_sims = []
+        cls.sim_count = 0
+    #end def clear_all_sims
+
+    @classmethod
+    def code_name(cls):
+        return cls.generic_identifier
+    #end def code_name
+
+    # test needed
+    @classmethod
+    def separate_inputs(cls,kwargs,overlapping_kw=-1,sim_kw=None):
+        if overlapping_kw==-1:
+            overlapping_kw = set(['system'])
+        elif overlapping_kw is None:
+            overlapping_kw = set()
+        #end if
+        if sim_kw is None:
+            sim_kw = set()
+        else:
+            sim_kw = set(sim_kw)
+        #end if
+        kw       = set(kwargs.keys())
+        sim_kw   = kw & (Simulation.allowed_inputs | sim_kw)
+        inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)    
+        sim_args = obj()
+        inp_args = obj()
+        for k in sim_kw:
+            sim_args[k] = kwargs[k]
+        for k in inp_kw:
+            inp_args[k] = kwargs[k]
+        system = inp_args.get('system',None)
+        if system is not None:
+            if not isinstance(system,PhysicalSystem):
+                extra=''
+                if not isinstance(extra,obj):
+                    extra = '\nwith value: {0}'.format(system)
+                #end if
+                msg = (
+                    'invalid input for variable "system"\n'
+                    'system object must be of type PhysicalSystem\n'
+                    'you provided type: {0}'.format(system.__class__.__name__)
+                    +extra
+                    )
+                raise TypeError(msg)
+            #end if
+        #end if
+        return sim_args,inp_args
+    #end def separate_inputs
+
+
+    def __init__(self,**kwargs):
+        #user specified variables
+        self.path          = ''     #directory where sim will be run
+        self.job           = None   #Job object for machine
+        self.dependencies  = obj()  #Simulation results on which sim serially depends
+        self.restartable   = False  #if True, job can be automatically restarted as deemed appropriate
+        self.force_restart = False  #force a restart of the run
+
+        #variables determined by self
+        self.identifier     = self.generic_identifier
+        self.simid          = Simulation.sim_count
+        self.simlabel       = None
+        Simulation.sim_count+=1
+        self.files          = set()
+        self.app_name       = self.application
+        self.app_props      = list(self.application_properties)
+        self.sim_image      = self.sim_imagefile
+        self.input_image    = self.input_imagefile
+        self.analyzer_image = self.analyzer_imagefile
+        self.image_dir      = self.image_directory
+        self.input          = self.input_type() 
+        self.system         = None
+        self.dependents     = obj()
+        self.created_directories = False
+        self.got_dependencies = False
+        self.setup          = False
+        self.sent_files     = False
+        self.submitted      = False
+        self.finished       = False
+        self.failed         = False
+        self.got_output     = False
+        self.analyzed       = False
+        self.timestamps     = obj()
+        self.subcascade_finished = False
+        self.dependency_ids = set()
+        self.wait_ids       = set()
+        self.block          = False
+        self.block_subcascade = False
+        self.skip_submit    = nexus_core.skip_submit
+        self.force_write    = False
+        self.loaded         = False
+        self.ordered_dependencies = []
+        self.process_id     = None
+        self.infile         = None
+        self.outfile        = None
+        self.errfile        = None
+        self.nexus_logfile  = None
+        self.bundleable     = True
+        self.bundled        = False
+        self.bundler        = None
+        self.fake_sim       = Simulation.creating_fake_sims
+
+        #variables determined by derived classes
+        self.outputs = None  #object representing output data 
+                             # accessed by dependents when calling get_dependencies
+
+        self.set(**kwargs)
+        self.pre_init()
+        self.set_directories()
+        self.set_files()
+        self.propagate_identifier()
+        if len(kwargs)>0:
+            self.init_job()
+        #end if
+        self.post_init()
+
+        Simulation.all_sims.append(self)
+
+        # dynamic workflow support
+        if nexus_core.dynamic:
+            assert self.simid not in dynamic_storage.simulation_ids
+            self.produces = set()
+            self.products = obj()
+            self.filled_products = False
+            self.fill_produces()
+            for prod in self.produces:
+                self.products[prod] = None
+            dynamic_storage.simulations[self.simid] = self
+            dynamic_storage.simulation_ids.add(self.simid)
+            # instantly restore image/state data from disk
+            self.reconstruct_cascade()
+            if self.finished:
+                self.fill_products()
+    #end def __init__
+
+
+    def fake(self):
+        return self.fake_sim
+    #end def fake
+
+
+    def init_job(self):
+        if self.job is None:
+            msg = 'job not provided.  Input field job must be set to a Job object.'
+            raise ValueError(msg)
+        elif not isinstance(self.job,Job):
+            msg = (
+                'Input field job must be set to a Job object\n'
+                'you provided an object of type: {0}\n'
+                'with value: {1}'.format(self.job.__class__.__name__, self.job)
+                )
+            raise TypeError(msg)
+        #end if
+        self.job = deepcopy(self.job)
+        self.init_job_extra()
+        self.job.initialize(self)
+    #end def init_job
+
+
+    def init_job_extra(self):
+        None
+    #end def init_job_extra
+
+
+    def set_app_name(self,app_name):
+        self.app_name = app_name
+    #end def set_app_name
+
+
+    def set(self,**kw):
+        cls = self.__class__
+        if 'dependencies' in kw:
+            self.depends(*kw['dependencies'])
+            del kw['dependencies']
+        #end if
+        kwset = set(kw.keys())
+        invalid = kwset - self.allowed_inputs
+        if len(invalid)>0:
+            msg = (
+                'received invalid inputs\n'
+                'invalid inputs: {0}\n'
+                'allowed inputs are: {1}'.format(
+                    sorted(invalid), sorted(self.allowed_inputs)
+                    )
+                )
+            raise ValueError(msg)
+        #end if
+        allowed =  kwset & self.allowed_inputs
+        for name in allowed:
+            self[name] = kw[name]
+        #end for
+        if 'path' in allowed:
+            if not isinstance(self.path, str | Path):
+                msg = (
+                    'path must be a string or Path, you provided {0} (type {1})'.format(
+                        self.path, self.path.__class__.__name__
+                        )
+                    )
+                raise TypeError(msg)
+            else:
+                self.path = path_string(self.path)
+                p = self.path
+
+            #end if
+            if p.startswith('./'):
+                p = p[2:]
+            #end if
+            ld = nexus_core.local_directory
+
+            if p.startswith(ld):
+                p = p.split(ld)[1].lstrip('/')
+            #end if
+            self.path = p
+        #end if
+        if 'files' in allowed:
+            self.files = set([path_string(f) for f in self.files])
+        #end if
+        if not isinstance(self.input,(self.input_type,GenericSimulationInput)):
+            msg = (
+                'input must be of type {0}\n'
+                'received {1}\n'
+                'please provide input appropriate to {2}'.format(
+                    self.input_type.__name__, type(self.input).__name__, type(self).__name__
+                    )
+                )
+            raise TypeError(msg)
+        #end if
+        if isinstance(self.system,PhysicalSystem):
+            self.system = deepcopy(self.system)
+            consistent,msg = self.system.check_consistent(exit=False,message=True)
+            if not consistent:
+                locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
+                msg = (
+                    'user provided physical system is not internally consistent\n'
+                    'simulation identifier: {0}\n'
+                    'local directory: {1}\n'
+                    'more details on the user error are given below\n\n'
+                    '{2}'.format(self.identifier, locdir, msg)
+                    )
+                raise ValueError(msg)
+            #end if
+        elif self.system is not None:
+            msg = (
+                'system must be a PhysicalSystem object\n'
+                'you provided an object of type: {0}'.format(
+                    type(self.system).__name__
+                    )
+                )
+            raise TypeError(msg)
+        #end if
+        if self.restartable or self.force_restart:
+            if not cls.supports_restarts:
+                self.warn('restarts are not supported by {0}, request ignored'.format(cls.__name__))
+            #end if
+        #end if
+    #end def set
+
+
+    def set_directories(self):
+        self.locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
+        self.remdir = os.path.join(nexus_core.remote_directory,nexus_core.runs,self.path)
+        self.resdir = os.path.join(nexus_core.local_directory,nexus_core.results,nexus_core.runs,self.path)
+        
+        if not self.fake():
+            #print '  creating sim {0} in {1}'.format(self.simid,self.locdir)
+
+            if self.locdir not in self.sim_directories:
+                self.sim_directories[self.locdir] = set([self.identifier])
+            else:
+                idset = self.sim_directories[self.locdir]
+                if self.identifier not in idset:
+                    idset.add(self.identifier)
+                else:
+                    msg = (
+                        'multiple simulations in a single directory have the same identifier\n'
+                        'please assign unique identifiers to each simulation\n'
+                        'simulation directory: {0}\n'
+                        'repeated identifier: {1}\n'
+                        'other identifiers: {2}\n'
+                        'between the directory shown and the identifiers listed, it should be clear which simulations are involved\n'
+                        'most likely, you described two simulations with identifier {3}'.format(
+                            self.locdir, self.identifier, sorted(idset), self.identifier
+                            )
+                        )
+                    raise ValueError(msg)
+                #end if
+            #end if
+        #end if
+
+        self.image_dir = self.image_dir+'_'+self.identifier
+        self.imlocdir = os.path.join(self.locdir,self.image_dir) 
+        self.imremdir = os.path.join(self.remdir,self.image_dir) 
+        self.imresdir = os.path.join(self.resdir,self.image_dir) 
+    #end def set_directories
+
+
+    def set_files(self):
+        if self.infile is None:
+            self.infile  = self.identifier + self.infile_extension
+        #end if
+        if self.outfile is None:
+            self.outfile = self.identifier + self.outfile_extension
+        #end if
+        if self.errfile is None:
+            self.errfile = self.identifier + self.errfile_extension
+        #end if
+        if self.nexus_logfile is None:
+            self.nexus_logfile = self.identifier + ".nexus.log"
+    #end def set_files
+
+
+    def reset_indicators(self):
+        #this is needed to support restarts
+        self.got_dependencies = False
+        self.setup          = False
+        self.sent_files     = False
+        self.submitted      = False
+        self.finished       = False
+        self.failed         = False
+        self.got_output     = False
+        self.analyzed       = False
+    #end def reset_indicators
+
+
+    def record_timestamp(self,event):
+        if event not in self.timestamps:
+            self.timestamps[event] = datetime.now().astimezone().isoformat()
+        #end if
+    #end def record_timestamp
+
+
+    def completed(self):
+        completed  = self.setup
+        completed &= self.sent_files 
+        completed &= self.submitted  
+        completed &= self.finished   
+        completed &= self.got_output 
+        completed &= self.analyzed   
+        completed &= not self.failed
+        return completed
+    #end def completed
+
+
+    def active(self):
+        deps_completed = True
+        for dep in self.dependencies.values():
+            deps_completed &= dep.sim.completed()
+        #end for
+        active = deps_completed and not self.completed()
+        return active
+    #end def active
+
+
+    def ready(self):
+        ready = self.active()
+        ready &= not self.submitted
+        ready &= not self.finished
+        ready &= not self.got_output
+        ready &= not self.analyzed
+        ready &= not self.failed
+        return ready
+    #end def ready
+
+
+    def check_result(self,result_name,sim):
+        raise NotImplementedError
+    #end def check_result
+
+    def get_result(self,result_name,sim):
+        raise NotImplementedError
+    #end def get_result
+
+    def incorporate_result(self,result_name,result,sim):
+        raise NotImplementedError
+    #end def incorporate_result
+
+    def app_command(self):
+        raise NotImplementedError
+    #end def app_command
+
+    def check_sim_status(self):
+        raise NotImplementedError
+    #end def check_sim_status
+
+    def get_output_files(self): # returns list of output files to save
+        raise NotImplementedError
+    #end def get_output_files
+
+
+    def propagate_identifier(self):
+        None
+    #end def propagate_identifier
+
+    def pre_init(self):
+        None
+    #end def pre_init
+
+    def post_init(self):
+        None
+    #end def post_init
+
+    def pre_create_directories(self):
+        None
+    #end def pre_create_directories
+
+    def write_prep(self):
+        None
+    #end def write_prep
+
+    def pre_write_inputs(self,save_image):
+        None
+    #end def pre_write_inputs
+
+    def pre_send_files(self,enter):
+        None
+    #end def pre_send_files
+
+    def post_submit(self):
+        None
+    #end def post_submit
+
+    def pre_check_status(self):
+        None
+    #end def pre_check_status
+
+    def post_analyze(self,analyzer):
+        None
+    #end def post_analyze
+
+
+    def condense_name(self,name):
+        return name.strip().lower().replace('-','_').replace(' ','_')
+    #end def condense_name
+
+
+    def has_generic_input(self):
+        return isinstance(self.input,GenericSimulationInput)
+    #end def has_generic_input
+
+    def outfile_text(self):
+        return self._file_text('outfile')
+    #end def outfile_text
+
+    def errfile_text(self):
+        return self._file_text('errfile')
+    #end def errfile_text
+
+    def _file_text(self,filename):
+        filepath = os.path.join(self.locdir,self[filename])
+        with open(filepath,'r') as fobj:
+            text = fobj.read()
+
+        return text
+    #end def _file_text
+
+
+    def _create_dir(self,dir):
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        elif os.path.isfile(dir):
+            msg = (
+                'cannot create directory {0}\n'
+                'a file exists at this location'.format(dir)
+                )
+            raise FileExistsError(msg)
+        #end if
+    #end def _create_dir
+
+    def create_directories(self):
+        self.pre_create_directories()
+        self._create_dir(self.locdir)
+        self._create_dir(self.imlocdir)
+        self.created_directories = True
+    #end def create_directories
+            
+
+    def depends(self,*dependencies):
+        if nexus_core.dynamic:
+            msg = 'dynamic workflows do not allow explicit dependencies between simulations'
+            raise ValueError(msg)
+        if len(dependencies)==0:
+            return
+        #end if
+        if isinstance(dependencies[0],Simulation):
+            dependencies = [dependencies]
+        #end if
+        for d in dependencies:
+            sim = d[0]
+            if not isinstance(sim,Simulation):
+                msg = (
+                    'first element in a dependency tuple must be a Simulation object\n'
+                    'you provided a '+sim.__class__.__name__
+                    )
+                raise TypeError(msg)
+            #end if
+            dep = obj()
+            dep.sim = sim
+            rn = []
+            msg = ""
+            app_results = sim.application_results | set(['other'])
+            for name in d[1:]:
+                result_name = self.condense_name(name)
+                if result_name in app_results:
+                    rn.append(result_name)
+                else:
+                    msg += name+' is not known to be a result of '+sim.__class__.__name__+"\n"
+                #end if
+            #end for
+            if len(msg) > 0:
+                msg = (
+                    'unrecognized dependencies specified for simulation '+self.identifier+":\n"
+                    f"{msg}"
+                    )
+                raise ValueError(msg)
+            #end if
+            dep.result_names = rn
+            dep.results = obj()
+            if sim.simid not in self.dependencies:
+                self.ordered_dependencies.append(dep)
+                self.dependencies[sim.simid]=dep
+                sim.dependents[self.simid]=self
+                self.dependency_ids.add(sim.simid)
+                self.wait_ids.add(sim.simid)
+            else:
+                self.dependencies[sim.simid].result_names.extend(dep.result_names)
+            #end if
+        #end for
+    #end def depends
+
+
+    def undo_depends(self,sim):
+        i=0
+        for dep in self.ordered_dependencies:
+            if dep.sim.simid==sim.simid:
+                break
+            #end if
+            i+=1
+        #end for
+        self.ordered_dependencies.pop(i)
+        del self.dependencies[sim.simid]
+        del sim.dependents[self.simid]
+        self.dependency_ids.remove(sim.simid)
+        if sim.simid in self.wait_ids:
+            self.wait_ids.remove(sim.simid)
+        #end if
+    #end def undo_depends
+
+
+    # remove?
+    def acquire_dependents(self,sim):
+        # acquire the dependents from the other simulation
+        dsims = obj(sim.dependents)
+        for dsim in dsims.values():
+            dep = dsim.dependencies[sim.simid]
+            dsim.depends(self,*dep.result_names)
+        #end for
+        # eliminate the other simulation
+        #   this renders it void (fake) and removes all dependency relationships
+        sim.eliminate()
+    #end def acquire_dependents
+
+
+    # remove?
+    def eliminate(self):
+        # reverse relationship of dependents (downstream)
+        dsims = obj(self.dependents)
+        for dsim in dsims.values():
+            dsim.undo_depends(self)
+        #end for
+        # reverse relationship of dependencies (upstream)
+        deps = obj(self.dependencies)
+        for dep in deps.values():
+            self.undo_depends(dep.sim)
+        #end for
+        # mark sim to be ignored in all future interactions
+        self.fake_sim = True
+    #end def eliminate
+
+
+    def check_dependencies(self,result):
+        dep_satisfied = result.dependencies_satisfied
+        for dep in self.dependencies.values():
+            sim = dep.sim
+            for result_name in dep.result_names:
+                if result_name!='other':
+                    if sim.has_generic_input():
+                        calculating_result = False
+                        cls = self.__class__
+                        self.warn(
+                            'a simulation result cannot be inferred from generic formatted or template input\n'
+                            'please use {0} instead of {1}\n'
+                            'see error below for information identifying this simulation instance'.format(
+                                type(cls.input_type).__name__, type(sim.input).__name__
+                                )
+                            )
+                    else:
+                        calculating_result = sim.check_result(result_name,self)
+                    #end if
+                    if not calculating_result:
+                        self.warn(
+                            'simulation {0} id {1} is not calculating result {2}\n'
+                            'required by simulation {3} id {4}\n'
+                            '{5} {6} directory: {7}\n'
+                            '{8} {9} directory: {10}'.format(
+                                sim.identifier, sim.simid, result_name,   # {0}, {1}, {2}
+                                self.identifier, self.simid,              # {3}, {4}
+                                sim.identifier, sim.simid, sim.locdir,    # {5}, {6}, {7}
+                                self.identifier, self.simid, self.locdir, # {8}, {9}, {10}
+                                )
+                            )
+                    #end if
+                else:
+                    calculating_result = True
+                #end if
+                dep_satisfied = dep_satisfied and calculating_result
+            #end for
+        #end for
+        result.dependencies_satisfied = dep_satisfied
+    #end def check_dependencies
+
+
+    def get_dependencies(self):
+        if nexus_core.generate_only or self.finished:
+            for dep in self.dependencies.values():
+                for result_name in dep.result_names:
+                    dep.results[result_name] = result_name
+                #end for
+            #end for
+        else:
+            for dep in self.dependencies.values():
+                sim = dep.sim
+                for result_name in dep.result_names:
+                    if result_name!='other':
+                        if sim.has_generic_input():
+                            msg = (
+                                'a simulation result cannot be inferred from generic formatted or template input\n'
+                                'please use {0} instead of {1}\n'
+                                'sim id: {2}\n'
+                                'directory: {3}\n'
+                                'result: {4}'.format(
+                                    type(self.input_type).__name__,
+                                    type(sim.input).__name__,
+                                    sim.id,
+                                    sim.locdir,
+                                    result_name
+                                    )
+                                )
+                            raise ValueError(msg)
+                        #end if
+                        dep.results[result_name] = sim.get_result(result_name,sim)
+                    else:
+                        dep.results['other'] = obj()
+                    #end if
+                #end for
+            #end for
+            if not self.got_dependencies:
+                for dep in self.ordered_dependencies:
+                    sim = dep.sim
+                    for result_name,result in dep.results.items():
+                        if result_name!='other':
+                            if self.has_generic_input():
+                                msg = (
+                                    'a simulation result cannot be incorporated into generic formatted or template input\n'
+                                    'please use {0} instead of {1}\n'
+                                    'sim id: {2}\n'
+                                    'directory: {3}\n'
+                                    'result: {4}'.format(
+                                        type(self.input_type).__name__,
+                                        type(sim.input).__name__,
+                                        sim.id,
+                                        sim.locdir,
+                                        result_name
+                                        )
+                                    )
+                                raise ValueError(msg)
+                            #end if
+                            self.incorporate_result(result_name,result,sim)
+                        #end if
+                    #end for
+                #end for
+            #end if
+        #end if
+        if self.renew_app_command:
+            self.job.renew_app_command(self)
+        #end if
+        self.got_dependencies = True
+    #end def get_dependencies
+        
+
+    def downstream_simids(self,simids=None):
+        if simids is None:
+            simids = set()
+        #end if
+        for sim in self.dependents.values():
+            simids.add(sim.simid)
+            sim.downstream_simids(simids)
+        #end for
+        return simids
+    #end def downstream_simids
+
+
+    def copy_file(self,sourcefile,dest):
+        src = os.path.dirname(os.path.abspath(sourcefile))
+        dst = os.path.abspath(dest)
+        if src!=dst:
+            shutil.copy2(sourcefile,dest)
+        #end if
+    #end def copy_file
+
+
+    def save_image(self,*,all=False):
+        imagefile = os.path.join(self.imlocdir,self.sim_image)
+        if os.path.exists(imagefile):
+            os.system('rm '+imagefile)
+        #end if
+        if not all:
+            sim_image = SimulationImage()
+            sim_image.save_image(self,imagefile)
+        else:
+            self.warn('attempting to save full object!')
+            self.save(imagefile)
+        #end if
+    #end def save_image
+
+
+    def load_image(self,imagepath=None,*,all=False):
+        if imagepath is None:
+            imagepath=os.path.join(self.imlocdir,self.sim_image)
+        #end if
+        if not all:
+            sim_image = SimulationImage()
+            sim_image.load_image(self,imagepath)
+        else:
+            self.load(imagepath)
+        #end if
+        # update process id for backwards compatibility
+        if 'process_id' not in self:
+            self.process_id = self.job.system_id
+        #end if
+    #end def load_image
+
+
+    def load_analyzer_image(self,imagepath=None):
+        if imagepath is None:
+            imagepath = os.path.join(self.imresdir,self.analyzer_image)
+        #end if
+        analyzer = self.analyzer_type(self)
+        analyzer.load(imagepath)
+        return analyzer
+    #end def load_analyzer_image
+
+
+    def save_analyzer_image(self,analyzer):
+        analyzer.save(os.path.join(self.imresdir,self.analyzer_image))
+    #end def save_analyzer_image
+
+
+    def attempt_files(self):
+        return (self.infile,self.outfile,self.errfile)
+    #end def attempt_files
+
+
+    def save_attempt(self):
+        local = self.attempt_files()
+        filepaths = []
+        for file in local:
+            filepath = os.path.join(self.locdir,file)
+            if os.path.exists(filepath):
+                filepaths.append(filepath)
+            #end if
+        #end for
+        if len(filepaths)>0:
+            prefix = self.identifier+'_attempt'
+            n=0
+            for dir in os.listdir(self.locdir):
+                if dir.startswith(prefix):
+                    n=max(n,int(dir.replace(prefix,'')))
+                #end if
+            #end for
+            n+=1
+            attempt_dir = os.path.join(self.locdir,prefix+str(n))
+            os.makedirs(attempt_dir)
+            for filepath in filepaths:
+                os.system('mv {0} {1}'.format(filepath,attempt_dir))
+            #end for
+        #end if
+    #end def save_attempt
+
+
+    def idstr(self):
+        return '  '+str(self.simid)+' '+str(self.identifier)
+    #end def idstr
+
+
+    def write_inputs(self,*,save_image=True):
+        self.pre_write_inputs(save_image)
+        self.enter(self.locdir,changedir=False,msg=self.simid)
+        self.log('writing input files'+self.idstr(),n=3)
+        self.write_prep()
+        if self.infile is not None:
+            infile = os.path.join(self.locdir,self.infile)
+            self.input.write(infile)
+        #end if
+        self.job.write(file=True)
+        self.setup = True
+        self.record_timestamp('setup')
+        if save_image:
+            self.save_image()
+            self.input.save(os.path.join(self.imlocdir,self.input_image))
+        #end if
+        #try to also write structure information
+        if self.system is not None:
+            filebase = os.path.join(self.locdir,self.identifier+'.struct')
+            try:
+                self.system.structure.write(filebase+'.xyz')
+            except:
+                pass
+            #end try
+            try:
+                if self.system.structure.has_axes():
+                    self.system.structure.write(filebase+'.xsf')
+                #end if
+            except:
+                pass
+            #end try
+        #end if
+    #end def write_inputs
+
+
+    def send_files(self,*,enter=True):
+        self.pre_send_files(enter)
+        if enter:
+            self.enter(self.locdir,changedir=False,msg=self.simid)
+        #end if
+        self.log('sending required files'+self.idstr(),n=3)
+        if not os.path.exists(self.remdir):
+            os.makedirs(self.remdir)
+        #end if
+        if not os.path.exists(self.imremdir):
+            os.makedirs(self.imremdir)
+        #end if
+        if self.infile is not None:
+            self.files.add(self.infile)
+        #end if
+        send_files = self.files
+        file_locations = [self.locdir]+nexus_core.file_locations
+        remote = self.remdir
+        for file in send_files:
+            found_file = False
+            for location in file_locations:                
+                local = os.path.join(location,file)
+                found_file = os.path.exists(local)
+                if found_file:
+                    break
+                #end if
+            #end if
+            if found_file:
+                self.copy_file(local,remote)
+            else:
+                msg = (
+                    'file {0} not found\n'
+                    'locations checked: {1}'.format(file, file_locations)
+                    )
+                raise FileNotFoundError(msg)
+            #end if
+        #end for
+        self.sent_files = True
+        self.record_timestamp('sent_files')
+        self.save_image()
+        send_imfiles=[self.sim_image,self.input_image]
+        remote = self.imremdir
+        for imfile in send_imfiles:
+            local = os.path.join(self.imlocdir,imfile)
+            if os.path.exists(local):
+                self.copy_file(local,remote)
+            #end if
+        #end for
+    #end def send_files
+
+
+    def submit(self):
+        if not self.submitted:
+            if self.skip_submit and not self.bundled:
+                self.block_dependents(block_self=True)
+                return
+            #end if
+            self.log('submitting job'+self.idstr(),n=3)
+            if not self.skip_submit:
+                if not self.job.local:
+                    self.job.submit()
+                else:
+                    self.execute() # execute local job immediately
+                #end if
+            #end if
+            self.submitted = True
+            self.record_timestamp('submitted')
+            if (self.job.batch_mode or not nexus_core.monitor) and not nexus_core.generate_only:
+                self.save_image()
+            #end if
+        elif not self.finished:
+            self.check_status()
+        #end if
+        self.post_submit()
+    #end def submit
+
+
+    def update_process_id(self):
+        if self.process_id is None and self.job.system_id is not None:
+            self.process_id = self.job.system_id
+            self.save_image()
+        #end if
+    #end def update_process_id
+
+
+    def check_status(self):
+        self.pre_check_status()
+        newly_exited_queue = False
+        if self.job.finished:
+            newly_exited_queue = 'exited_queue' not in self.timestamps
+            self.record_timestamp('exited_queue')
+        #end if
+        if nexus_core.generate_only: 
+            self.finished = self.job.finished
+        elif self.job.finished:
+            should_check = True
+            if self.outfile is not None:
+                outfile = os.path.join(self.locdir,self.outfile)
+                should_check &= os.path.exists(outfile)
+            #end if
+            if self.errfile is not None:
+                errfile = os.path.join(self.locdir,self.errfile)
+                should_check &= os.path.exists(errfile)
+            #end if
+            if not self.finished and should_check:
+                self.check_sim_status()
+            elif not self.finished:
+                exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
+                elapsed = datetime.now().astimezone() - exited_queue
+                if elapsed.total_seconds()>nexus_core.timeout:
+                    self.record_timestamp('timed_out')
+                    self.failed = True
+                #end if
+            #end if
+            if self.failed:
+                self.finished = True
+            #end if
+        #end if
+        if self.failed:
+            self.record_timestamp('failed')
+        #end if
+        if self.finished:
+            self.record_timestamp('finished')
+            self.save_image()
+        elif newly_exited_queue:
+            self.save_image()
+        #end if
+    #end def check_status
+
+
+    def get_output(self):
+        if not os.path.exists(self.resdir):
+            os.makedirs(self.resdir)
+        #end if
+        if not os.path.exists(self.imresdir):
+            os.makedirs(self.imresdir)
+        #end if
+        images = [self.sim_image,self.input_image]
+        for image in images:
+            remote_image = os.path.join(self.imremdir,image)
+            if os.path.exists(remote_image):
+                self.copy_file(remote_image,self.imresdir)
+            #end if
+        #end for
+        results_image = os.path.join(self.imresdir,self.sim_image)
+        if os.path.exists(results_image):
+            self.load_image(results_image)
+        #end if
+        if self.finished:
+            self.enter(self.locdir,changedir=False,msg=self.simid)
+            self.log('copying results'+self.idstr(),n=3)
+            if not nexus_core.generate_only:
+                output_files = self.get_output_files()
+                if self.infile is not None:
+                    output_files.append(self.infile)
+                #end if
+                if self.outfile is not None:
+                    output_files.append(self.outfile)
+                #end if
+                if self.errfile is not None:
+                    output_files.append(self.errfile)
+                #end if
+                files_missing = []
+                for file in output_files:
+                    remfile = os.path.join(self.remdir,file)
+                    if os.path.exists(remfile):
+                        self.copy_file(remfile,self.resdir)
+                    else:
+                        files_missing.append(file)
+                    #end if
+                #end for
+                if len(files_missing)>0:
+                    self.log('warning: the following files were missing',n=4)
+                    for file in files_missing:
+                        self.log(file,n=5)
+                    #end for
+                #end if
+            #end if
+            self.got_output = True
+            self.record_timestamp('got_output')
+            self.save_image()
+        #end if
+    #end def get_output
+
+        
+    def analyze(self):
+        if not os.path.exists(self.imresdir):
+            os.makedirs(self.imresdir)
+        #end if
+        if self.finished:
+            self.enter(self.locdir,changedir=False,msg=self.simid)
+            self.log('analyzing'+self.idstr(),n=3)
+            if not nexus_core.generate_only:
+                analyzer = self.analyzer_type(self)
+                analyzer.analyze()
+                self.post_analyze(analyzer)
+                analyzer.save(os.path.join(self.imresdir,self.analyzer_image))
+                del analyzer
+            #end if
+            self.analyzed = True
+            self.record_timestamp('analyzed')
+            self.save_image()
+
+            # support dynamic workflows
+            if nexus_core.dynamic:
+                self.fill_products()
+        #end if
+    #end def analyze
+
+
+    def reset_wait_ids(self):
+        self.wait_ids = set(self.dependency_ids)
+        for sim in self.dependents.values():
+            sim.reset_wait_ids()
+        #end for
+    #end def reset_wait_ids
+
+
+    def check_subcascade(self):
+        finished = self.finished or self.block
+        if not self.block and not self.block_subcascade and not self.failed:
+            for sim in self.dependents.values():
+                finished &= sim.check_subcascade()
+            #end for
+        #end if
+        self.subcascade_finished = finished
+        return finished
+    #end def check_subcascade
+
+
+    def block_dependents(self,*,block_self=True):
+        if block_self:
+            self.block = True
+        #end if
+        self.block_subcascade = True
+        for sim in self.dependents.values():
+            sim.block_dependents()
+        #end for
+    #end def block_dependents
+
+
+    def progress(self,dependency_id=None):
+        if dependency_id is not None:
+            self.wait_ids.remove(dependency_id)
+        #end if
+        if len(self.wait_ids)==0 and not self.block and not self.failed:
+            modes = nexus_core.modes
+            mode  = nexus_core.mode
+            progress = True
+            if mode==modes.none:
+                return
+            elif mode==modes.setup:
+                self.write_inputs()
+            elif mode==modes.send_files:
+                self.send_files()
+            elif mode==modes.submit:
+                self.submit()
+                progress = self.finished
+            elif mode==modes.get_output:
+                self.get_output()
+                progress = self.finished
+            elif mode==modes.analyze:
+                self.analyze()
+                progress = self.finished
+            elif mode==modes.stages:
+                if not self.created_directories:
+                    self.create_directories()
+                #end if
+                if not self.got_dependencies:
+                    self.get_dependencies()
+                #end if
+                if not self.setup and 'setup' in nexus_core.stages:
+                    self.write_inputs()
+                #end if
+                if not self.sent_files and 'send_files' in nexus_core.stages:
+                    self.send_files()
+                #end if
+                if not self.finished and 'submit' in nexus_core.stages:
+                    self.submit()
+                #end if
+                if nexus_core.dependent_modes <= nexus_core.stages_set:
+                    progress_post = self.finished
+                    progress = self.finished and self.analyzed
+                else:
+                    progress_post = progress
+                #end if
+                if progress_post:
+                    if not self.got_output and 'get_output' in nexus_core.stages:
+                        self.get_output()
+                    #end if
+                    if not self.analyzed and 'analyze' in nexus_core.stages:
+                        self.analyze()
+                    #end if
+                #end if
+            elif mode==modes.all:
+                if not self.setup:
+                    self.write_inputs()
+                    self.send_files(enter=False)
+                #end if
+                if not self.finished:
+                    self.submit()
+                #end if
+                if self.finished:
+                    if not self.got_output:
+                        self.get_output()
+                    #end if
+                    if not self.analyzed:
+                        self.analyze()
+                    #end if
+                #end if
+                progress = self.finished
+            #end if
+            if progress and not self.block_subcascade and not self.failed:
+                for sim in self.dependents.values():
+                    if not sim.bundled:
+                        sim.progress(self.simid)
+                    #end if
+                #end for
+            #end if
+        elif len(self.wait_ids)==0 and self.force_write:
+            modes = nexus_core.modes
+            mode  = nexus_core.mode
+            if mode==modes.stages:
+                if not self.got_dependencies:
+                    self.get_dependencies()
+                #end if
+                if 'setup' in nexus_core.stages:
+                    self.write_inputs()
+                #end if
+                if not self.sent_files and 'send_files' in nexus_core.stages:
+                    self.send_files()
+                #end if
+            #end if
+        #end if
+    #end def progress
+
+
+    def reconstruct_cascade(self):
+        imagefile = os.path.join(self.imlocdir,self.sim_image)
+        if os.path.exists(imagefile) and not self.loaded:
+            self.load_image()
+            # continue from interruption
+            if self.submitted and not self.finished and self.process_id is not None:
+                if nexus_core.dynamic:
+                    machine = get_machine(Job.machine)
+                    if isinstance(machine,Workstation):
+                        # fully rerun following interrupt
+                        self.save_attempt()
+                        self.reset_indicators()
+                
+                self.job.system_id = self.process_id # load process id of job
+                self.job.reenter_queue()
+            #end if
+            self.loaded = True
+        #end if
+        for sim in self.dependents.values():
+            sim.reconstruct_cascade()
+        #end for
+        return self
+    #end def reconstruct_cascade
+
+
+    def traverse_cascade(self,operation,*args,**kwargs):
+        if 'dependency_id' in kwargs:
+            self.wait_ids.remove(kwargs['dependency_id'])
+            del kwargs['dependency_id']
+        #end if
+        if len(self.wait_ids)==0:
+            operation(self,*args,**kwargs)
+            for sim in self.dependents.values():
+                kwargs['dependency_id'] = self.simid
+                sim.traverse_cascade(operation,*args,**kwargs)
+            #end for
+        #end if
+    #end def traverse_cascade
+
+
+    # used only in tests
+    def traverse_full_cascade(self,operation,*args,**kwargs):
+        operation(self,*args,**kwargs)
+        for sim in self.dependents.values():
+            sim.traverse_full_cascade(operation,*args,**kwargs)
+        #end for
+    #end def traverse_full_cascade
+
+
+    def write_dependents(self,n=0,*,location=False,block_status=False):
+        outs = [self.__class__.__name__,self.identifier,self.simid]
+        if location:
+            outs.append(self.locdir)
+        #end if
+        if block_status:
+            if self.block:
+                outs.append('blocked')
+            else:
+                outs.append('unblocked')
+            #end if
+        #end if
+        outs.append(list(self.dependency_ids))
+        self.log(*outs,n=n)
+        n+=1
+        for sim in self.dependents.values():
+            sim.write_dependents(n=n,location=location,block_status=block_status)
+        #end for
+    #end def write_dependents
+
+
+    def execute(self,run_command=None):
+        pad = self.enter(self.locdir)
+        if run_command is None:
+            job = self.job
+            command = 'export OMP_NUM_THREADS='+str(job.threads)+'\n'
+            if len(job.presub)>0:
+                command += job.presub+'\n'
+            #end if
+            machine = job.get_machine()
+            command += job.run_command(machine.app_launcher)
+            if len(job.postsub)>0:
+                command += job.postsub+'\n'
+            #end if
+            command = ('\n'+command).replace('\n','\n  '+pad)
+            run_command = command
+        #end if
+        if self.job is None or self.job.env is None:
+            env = os.environ.copy()
+        else:
+            env = job.env
+        #end if
+        if nexus_core.generate_only:
+            self.log(pad+'Would have executed:  '+command)
+        else:
+            self.log(pad+'Executing:  '+command)
+            with open(self.outfile,'w') as fout, open(self.errfile,'w') as ferr:
+                out,err = Popen(command,env=env,stdout=fout,stderr=ferr,shell=True,close_fds=True).communicate()
+        #end if
+        self.leave()
+        self.submitted = True
+        self.record_timestamp('submitted')
+        if self.job is not None:
+            job.status = job.states.finished
+            self.job.finished = True
+        #end if
+    #end def execute
+
+
+    def show_input(self,*,exit=True):
+        print()
+        print(80*'=')
+        print('Input file for simulation "{}"\nDirectory: {}'.format(self.identifier,self.locdir))
+        print(80*'-')
+        print(self.input.write())
+        print(80*'=')
+        if exit:
+            exit_call()
+        #end if
+    #end def show_input
+
+
+    # dynamic workflow support
+    
+    def fill_produces(self):
+        raise NotImplementedError('fill_produces')
+    #end def fill_produces
+
+    def fill_products(self):
+        raise NotImplementedError('fill_products')
+    #end def fill_products
+#end class Simulation
+
+
+
+
+
+
+
+
+
+
+ 
+class NullSimulationInput(SimulationInput):
+    def is_valid(self):
+        return True
+    #end def is_valid
+
+    def read(self,filepath):
+        None
+    #end def read
+
+    def write(self,filepath=None):
+        None
+    #end def write
+
+    def read_text(self,text,filepath=None):
+        None
+    #end def read_text
+
+    def write_text(self,filepath=None):
+        None
+    #end def write_text
+
+    def incorporate_system(self,system):
+        None
+    #end def incorporate_system
+
+    def return_system(self):
+        raise NotImplementedError
+    #end def return_system
+#end class NullSimulationInput
+
+
+
+
+class NullSimulationAnalyzer(SimulationAnalyzer):
+    def __init__(self,sim):
+        None
+    #end def __init__
+
+    def analyze(self):
+        None
+    #end def analyze
+#end class NullSimulationAnalyzer
+
+
+class GenericSimulationInput: # marker class for generic user input
+    None
+#end class GenericSimulationInput
+
+
+class GenericSimulation(Simulation):
+    allowed_inputs = Simulation.allowed_inputs | set(['outfiles'])
+
+    def __init__(self,**kwargs):
+        import os
+        self.outfiles = kwargs.pop('outfiles',[])
+        if 'input' in kwargs:
+            input = kwargs['input']
+            if isinstance(input,str):
+                if os.path.exists(input):
+                    self.infile = input
+                    kwargs['input'] = input_template(filepath=self.infile)
+                else:
+                    text = input
+                    kwargs['input'] = input_template(text=text)
+            #end if
+        #end if
+        self.input_type    = NullSimulationInput
+        self.analyzer_type = NullSimulationAnalyzer
+        if 'input_type' in kwargs:
+            self.input_type = kwargs['input_type']
+            del kwargs['input_type']
+        #end if
+        if 'analyzer_type' in kwargs:
+            self.analyzer_type = kwargs['analyzer_type']
+            del kwargs['analyzer_type']
+        #end if
+        if 'input' in kwargs:
+            self.input_type = kwargs['input'].__class__
+        #end if
+        if 'analyzer' in kwargs:
+            self.analyzer_type = kwargs['analyzer'].__class__
+        #end if
+        Simulation.__init__(self,**kwargs)
+    #end def __init__
+
+    def check_sim_status(self):
+        import os
+        outfiles = self.get_output_files()
+        files_exist = True
+        for f in outfiles:
+            fp = os.path.join(self.locdir,f)
+            fp_exists = os.path.exists(fp)
+            files_exist &= fp_exists
+        #end for
+        self.failed = not files_exist
+        self.finished = not self.failed
+    #end def check_sim_status
+
+    def get_output_files(self):
+        return self.outfiles
+    #end def get_output_files
+
+    def app_command(self):
+        if self.job.app_name is not None:
+            return self.job.app_name+' '+self.infile
+        else:
+            return self.job.app_command
+        #end if
+    #end def app_command
+#end class GenericSimulation
+
+
+class SimulationInputTemplateDev(SimulationInput):
+    def __init__(self,filepath=None,text=None):
+        self.reset()
+        if filepath is not None:
+            self.read(filepath)
+        elif text is not None:
+            self.read_text(text)
+        #end if
+    #end def __init__
+            
+    def reset(self):
+        self.template = None
+        self.keywords = set()
+        self.values   = obj()
+        self.allow_not_set = set()
+    #end def reset
+        
+    def clear(self):
+        self.values.clear()
+    #end def clear
+
+    def allow_no_assign(self,*keys):
+        for k in keys:
+            self.allow_not_set.add(k)
+        #end for
+    #end def allow_no_assign
+
+    def assign(self,**values):
+        if self.template is None:
+            msg = 'cannot assign values prior to reading template'
+            raise ValueError(msg)
+        #end if
+        invalid = set(values.keys()) - self.keywords - self.allow_not_set
+        if len(invalid)>0:
+            msg = (
+                'attempted to assign invalid keywords\n'
+                'invalid keywords: {0}\n'
+                'valid options are: {1}'.format(
+                    sorted(invalid), sorted(self.keywords)
+                    )
+                )
+            raise ValueError(msg)
+        #end if
+        self.values.update(**values)
+    #end def assign
+
+    def read_text(self,text,filepath=None):
+        text = self.preprocess(text,filepath) # for derived class intervention
+        try:
+            template   = Template(text)
+            key_tuples = Template.pattern.findall(text)
+        except Exception as e:
+            msg = (
+                'exception encountered during read\n'
+                'file: {0}\n'
+                'exception: {1}'.format(filepath,e)
+                )
+            raise FileFormatError(msg)
+        #end try
+        for ktup in key_tuples:
+            if len(ktup[1])>0:   # normal keyword, e.g. $key
+                self.keywords.add(ktup[1])
+            elif len(ktup[2])>0: # braced keyword, e.g. ${key}
+                self.keywords.add(ktup[2])
+            #end if
+        #end for
+        self.template = template
+    #end def read_text
+
+    def write_text(self,filepath=None):
+        kw_rem = self.keywords-set(self.values.keys())
+        if len(kw_rem)>0:
+            msg = (
+                'not all keywords for this template have been assigned\n'
+                'keywords remaining: {0}'.format(sorted(kw_rem))
+                )
+            raise ValueError(msg)
+        #end if
+        try:
+            text = self.template.substitute(**self.values)
+        except Exception as e:
+            msg = (
+                'exception encountered during write:\n'
+                +str(e)
+                )
+            raise type(e)(msg)
+        #end try
+        return text
+    #end def write_text
+
+    def preprocess(self,text,filepath):
+        return text # derived classes can modify text prior to template creation
+    #end def preprocess
+#end class SimulationInputTemplateDev
+
+
+
+
+class SimulationInputMultiTemplateDev(SimulationInput):
+    def __init__(self,**file_templates):
+        self.filenames = obj()
+        if len(file_templates)>0:
+            self.set_templates(**file_templates)
+        #end if
+    #end def __init__
+        
+
+    def set_templates(self,**file_templates):
+        for name,val in file_templates.items():
+            if isinstance(val,str):
+                if ' ' in val:
+                    msg = (
+                        'filename cannot have any spaces\n'
+                        'bad filename provided with keyword '+name
+                        )
+                    raise ValueError(msg)
+                #end if
+                self.filenames[name] = val
+            elif isinstance(val,tuple) and len(val)==2:
+                filename,template_path = val
+                self[name] = SimulationInputTemplate(template_path)
+                self.filenames[name] = filename
+            else:
+                msg = 'keyword inputs must either be all filenames or all filename/filepath pairs'
+                raise TypeError(msg)
+            #end if
+        #end for
+    #end def set_templates
+
+
+    def read(self,filepath):
+        if len(self.filenames)==0:
+            msg = 'cannot perform read, filenames are not set'
+            raise RuntimeError(msg)
+        #end if
+        base,filename = os.path.split(filepath)
+        filenames = self.filenames
+        self.clear()
+        self.filenames = filenames
+        templates = dict()
+        for name,filename in filenames.items():
+            templates[name] = filename, os.path.join(base,filename)
+        #end for
+        self.set_templates(**templates)
+    #end def read
+
+
+    def write(self,filepath=None):
+        if filepath is None:
+            contents = obj()
+            for name in self.filenames.keys():
+                contents[name] = self[name].write()
+            #end for
+            return contents
+        else:
+            base,filename = os.path.split(filepath)
+            for name,filename in self.filenames.items():
+                self[name].write(os.path.join(base,filename))
+            #end for
+        #end if
+    #end def write
+#end class SimulationInputMultiTemplateDev
+
+
+
+# these are for user access, *Dev are for development
+class SimulationInputTemplate(SimulationInputTemplateDev,GenericSimulationInput):
+    None
+#end class SimulationInputTemplate
+
+class SimulationInputMultiTemplate(SimulationInputMultiTemplateDev,GenericSimulationInput):
+    None
+#end class SimulationInputMultiTemplate
+
+
+
+# developer functions
+
+def input_template_dev(*args,**kwargs):
+    return SimulationInputTemplateDev(*args,**kwargs)
+#end def input_template_dev
+
+
+def multi_input_template_dev(*args,**kwargs):
+    return SimulationInputMultiTemplateDev(*args,**kwargs)
+#end def multi_input_template_dev
+
+
+
+
+
+
+# user functions
+
+def input_template(*args,**kwargs):
+    return SimulationInputTemplate(*args,**kwargs)
+#end def input_template
+
+
+def multi_input_template(*args,**kwargs):
+    return SimulationInputMultiTemplate(*args,**kwargs)
+#end def multi_input_template
+
+
+def generate_template_input(*args,**kwargs):
+    return SimulationInputTemplate(*args,**kwargs)
+#end def generate_template_input
+
+
+def generate_multi_template_input(*args,**kwargs):
+    return SimulationInputMultiTemplate(*args,**kwargs)
+#end def generate_multi_template_input
+
+
+def generate_simulation(**kwargs):
+    sim_type='generic'
+    if 'sim_type' in kwargs:
+        sim_type = kwargs['sim_type']
+        del kwargs['sim_type']
+    #end if
+    if sim_type=='generic':
+        return GenericSimulation(**kwargs)
+    else:
+        msg = 'sim_type {0} is unrecognized'.format(sim_type)
+        raise ValueError(msg)
+    #end if
+#end def generate_simulation
+
+
+
+# ability to graph simulation workflows
+try:
+    from pydot import Dot,Node,Edge
+except:
+    Dot,Node,Edge = unavailable('pydot','Dot','Node','Edge')
+#end try
+try:
+    from matplotlib.image import imread
+    from matplotlib.pyplot import imshow,show,xticks,yticks
+except:
+    imread = unavailable('matplotlib.image','imread')
+    imshow,show,xticks,yticks = unavailable('matplotlib.pyplot','imshow','show','xticks','yticks')
+#end try
+
+exit_call = sys.exit
+def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,display=True):
+    if sims is None:
+        sims = Simulation.all_sims
+    #end if
+    graph = Dot(graph_type='digraph',dpi=300)
+    graph.set_label('simulation workflows')
+    graph.set_labelloc('t')
+    nodes = obj()
+    for sim in sims:
+        if 'fake_sim' in sim and sim.fake_sim:
+            continue
+        #end if
+        if sim.simlabel is not None and not useid:
+            nlabel = sim.simlabel+' '+str(sim.simid)
+        else:
+            nlabel = sim.identifier+' '+str(sim.simid)
+        #end if
+        nopts = obj()
+        if 'block' in sim and sim.block:
+            nopts.color     = 'black'
+            nopts.fontcolor = 'white'
+        #end if
+        node = obj(
+            id    = sim.simid,
+            sim   = sim,
+            node  = Node(nlabel,style='filled',shape='Mrecord',**nopts),
+            edges = obj(),
+            )
+        nodes[node.id] = node
+        graph.add_node(node.node)
+    #end for
+    for node in nodes.values():
+        for simid,dep in node.sim.dependencies.items():
+            other = nodes[simid].node
+            if quants:
+                for quantity in dep.result_names:
+                    edge = Edge(other,node.node,label=quantity,fontsize='10.0')
+                    graph.add_edge(edge)
+                #end for
+            else:
+                edge = Edge(other,node.node)
+                graph.add_edge(edge)
+            #end if
+        #end for
+    #end for
+
+    if savefile is None:
+        with tempfile.NamedTemporaryFile(suffix='.png') as fout:
+            savefile = fout.name
+        #savefile = './sims.png'
+    #end if
+    fmt = savefile.rsplit('.',1)[1]
+    graph.write(savefile,format=fmt,prog='dot')
+
+    # display the image
+    if fmt=='png' and display:
+        imshow(imread(savefile))
+        xticks([])
+        yticks([])
+        show()
+    #end if
+
+    if exit:
+        exit_call()
+    #end if
+#end def graph_sims
+
+
+
+
+class DynamicProcess(DevBase):
+    '''Enables dynamic workflows execution
+
+    Basic DP contains a single simulation.
+    Derived classes may perform more elaborate processes, 
+    i.e. recovery for failed jobs, resetting the primary
+    simulation object (sim data member) to point at the 
+    final sim in the process.
+
+    Takes the place of Simulation in user scripts. All
+    generate_* simulation functions return DP's when 
+    executing dynamic workflows.
+    '''
+
+    all_dynamic_processes = obj()
+
+    allowed_requirements = frozenset({
+        'none',
+        'structure',
+        'charge_density',
+        'orbitals',
+        'jastrow',
+        'wavefunction',
+        'pwscf_orbitals', # explicit QE
+        })
+
+    @classmethod
+    def check_first_gen(cls,kw):
+        nc_loc     = nexus_core.local_directory
+        runs       = nexus_core.runs
+        path       = kw['path']
+        identifier = kw['identifier']
+        locdir = os.path.join(nc_loc,runs,path)
+        if 'dynamic_id' not in kw:
+            msg = (
+                'dynamic_id is required for dynamic workflows in a generate_* function.\n'
+                'Simulation run location: {}\n'
+                'Simulation identifier  : {}'.format(locdir, identifier)
+                )
+            raise ValueError(msg)
+        dynamic_id = kw.pop('dynamic_id')
+        dpid = (locdir,identifier,dynamic_id)
+        if dpid in DynamicProcess.all_dynamic_processes:
+            dp = DynamicProcess.all_dynamic_processes[dpid]
+            return dp,None
+        else:
+            dp = None
+        if 'requires' not in kw:
+            msg = 'dependency requirements must be given via the "requires" keyword for dynamic workflows'
+            raise ValueError(msg)
+        requires = kw.pop('requires')
+        dyn_args = obj(dpid=dpid,requires=requires)
+        return dp,dyn_args
+    #end def check_first_gen
+
+
+    def __init__(self,dpid,sim,requires):
+        # check dynamic id
+        if dpid in self.all_dynamic_processes:
+            msg = 'dynamic process created with overlapping id.  Provided id: {}'.format(dpid)
+            raise ValueError(msg)
+
+        # check simulation type
+        if not isinstance(sim,Simulation):
+            msg = 'expected Simulation type but received type {}'.format(type(sim).__name__)
+            raise TypeError(msg)
+
+        # check requires
+        if isinstance(requires,str):
+            requires = [requires]
+        elif not isinstance(requires,(tuple,list,set)):
+            msg = 'keyword "requires" must be a tuple, list or set of requirements'
+            raise TypeError(msg)
+        for req in requires:
+            if not isinstance(req,str):
+                msg = (
+                    'each requirement in "requires" must be given as a string.\n'
+                    'Type received: {}\n'
+                    'Value received: {}'.format(type(req).__name__, req)
+                    )
+                raise TypeError(msg)
+        requires = set(requires)
+        invalid_reqs = requires-self.allowed_requirements
+        if len(invalid_reqs)>0:
+            msg = (
+                'invalid requirements provided.\n'
+                'Allowed requirements: {}\n'
+                'Requirements provided: {}'.format(
+                    list(self.allowed_requirements), list(invalid_reqs)
+                    )
+                )
+            raise ValueError(msg)
+        if len(requires)==0:
+            msg = (
+                "every simulation dynamic process must specify least one dependency requirement.\n"
+                "If there are no dependencies/requirements, set requires='none'"
+                )
+            raise ValueError(msg)
+        if 'none' in requires:
+            requires.remove('none')
+
+        # check produces
+        produces = sim.produces
+        if isinstance(produces,str):
+            produces = [produces]
+        if not isinstance(produces,(tuple,list,set)):
+            msg = 'keyword "requires" must be a tuple, list or set of products'
+            raise TypeError(msg)
+        for prod in produces:
+            if not isinstance(prod,str):
+                msg = (
+                    'each product in "produces" must be given as a string.\n'
+                    'Type received: {}\n'
+                    'Value received: {}'.format(type(prod).__name__, prod)
+                    )
+                raise TypeError(msg)
+        produces = set(produces)
+
+        # initial values
+        self.dpid       = dpid     # unique identifier, str
+        self.sim        = sim      # wrapped Simulation object
+        self.requires   = requires # replaces dependencies
+        self.unmet_reqs = set(requires)
+        self.req_values = obj()
+        self.reqs_met   = False
+        self.produces   = produces
+
+        # store references in global registries
+        self.all_dynamic_processes[dpid]        = self
+        dynamic_storage.dynamic_processes[dpid] = self
+        dynamic_storage.dynamic_process_ids.add(dpid)
+    #end def __init__
+
+
+    def requirements_met(self):
+        '''Check if all input/dependency requirements are met'''
+        if self.reqs_met:
+            return True
+        reqs_met  = True
+        reqs_met &= len(self.unmet_reqs)==0
+        reqs_met &= len(self.requires-set(self.req_values))==0
+        if reqs_met:
+            self.reqs_met = reqs_met
+        return reqs_met
+    #end def requirements_met
+
+    def _check_get_product(self,prod_name):
+        '''Support product getter functions
+        
+        Note that requirements are a subset of products
+        '''
+        sim = self.sim
+        msg = None
+        if prod_name not in sim.produces:
+            msg = 'simulation does not produce "{}"'.format(prod_name)
+        elif not sim.finished:
+            msg = (
+                'Simulation is not finished\n'
+                'Product "{}" not yet computed'.format(prod_name)
+                )
+        elif not sim.analyzed:
+            msg = 'simulation has not been analyzed, requested prod_name "{}" has not been computed yet'.format(prod_name)
+        elif prod_name not in sim.products:
+            msg = 'simulation products have not been handled correctly.  This is a developer error'
+        if msg is not None:
+            msg = (
+                msg+'\n'
+                'Simulation type     : {}\n'
+                'Simulation id       : {}\n'
+                'Simulation directory: {}\n'
+                'Dynamic process id  : {}'.format(
+                    type(sim).__name__, sim.simid, sim.locdir, self.dpid
+                    )
+                )
+            raise NexusError(msg)
+        return sim.products[prod_name]
+    #end def _check_get_product
+
+
+    def _check_set_requirement(self,
+                               req_name,
+                               req_value = None,
+                               req_type  = str,
+                               *,
+                               is_path   = False,
+                               ):
+        '''Support requirement setter functions'''
+        # check supported requirement value types
+        if not isinstance(req_value,req_type):
+            if not isinstance(req_type,tuple):
+                ts = req_type.__name__
+            else:
+                ts = [t.__name__ for t in req_type]
+            msg = (
+                'product "{}" must be of type "{}".\n'
+                'Received type: {}'.format(
+                    req_name, ts, type(req_value).__name__
+                    )
+                )
+            raise TypeError(msg)
+        # check if requirement value has already been set
+        if req_name not in self.req_values:
+            self.req_values[req_name] = req_value
+            already_set = False
+        elif isinstance(req_value,(str,int)) and req_value!=self.req_values[req_name]:
+            msg = (
+                'attempted assignment of required parameter "{}" with value differing from the original.\n'
+                'Original value: {}\n'
+                'Value received: {}'.format(
+                    req_name, self.req_values[req_name], req_value
+                    )
+                )
+            raise ValueError(msg)
+        elif id(req_value)!=id(self.req_values[req_name]):
+            msg = (
+                'attempted assignment of required parameter "{}" with python id differing from the original.\n'
+                'Original id: {}\n'
+                'id received: {}'.format(
+                    req_name, id(self.req_values[req_name]), id(req_value)
+                    )
+                )
+            raise ValueError(msg)            
+        else:
+            already_set = True
+        # if already set, return
+        if already_set:
+            return already_set
+        # proceed with incorporation
+        # ensure requirement is one of the supported options in general
+        if req_name not in self.sim.allowed_requirements:
+            msg = (
+                'incorporating "{}" into simulation type {} is not supported.'.format(
+                    req_name, self.sim.__class__.__name__
+                    )
+                )
+            raise NotImplementedError(msg)
+        elif is_path and isinstance(req_value,str) and not os.path.exists(req_value):
+            msg = (
+                '"{}" path does not exist.\n'
+                'Path provided: {}'.format(req_name, req_value)
+                )
+            raise FileNotFoundError(msg)
+        # mark the requirement as fulfilled
+        self.unmet_reqs.remove(req_name)
+        return already_set
+    #end def _check_set_requirement
+
+
+    # general access to product info
+    #@property
+    #def produces(self):
+    #    return self.sim.produces
+
+    @property
+    def products(self):
+        return self.sim.products
+
+    # getters for all possible requirements (subset of products)
+    @property
+    def structure(self):
+        return self._check_get_product('structure')
+
+    @property
+    def charge_density(self):
+        return self._check_get_product('charge_density')
+
+    @property
+    def orbitals(self):
+        return self._check_get_product('orbitals')
+
+    @property
+    def jastrow(self):
+        return self._check_get_product('jastrow')
+
+    @property
+    def wavefunction(self):
+        return self._check_get_product('wavefunction')
+
+    @property
+    def pwscf_orbitals(self):
+        return self._check_get_product('pwscf_orbitals')
+ 
+
+    # setters for all possible requirements
+    @structure.setter
+    def structure(self,struct):
+        already_set = self._check_set_requirement(
+            'structure',struct,req_type=(str,Structure),is_path=True)
+        if already_set:
+            return
+        if isinstance(struct,str):
+            struct = read_structure(struct)
+        else:
+            struct = deepcopy(struct)
+        self.sim.receive_structure(struct)
+    #end def structure
+
+    @charge_density.setter
+    def charge_density(self,charge_density):
+        already_set = self._check_set_requirement(
+            'charge_density',charge_density,is_path=True)
+        if already_set:
+            return
+        self.sim.receive_charge_density(charge_density)
+    #end def charge_density
+
+    @orbitals.setter
+    def orbitals(self,orbitals):
+        already_set = self._check_set_requirement(
+            'orbitals',orbitals,is_path=True)
+        if already_set:
+            return
+        self.sim.receive_orbitals(orbitals)
+    #end def orbitals
+
+    @jastrow.setter
+    def jastrow(self,jastrow):
+        already_set = self._check_set_requirement(
+            'jastrow',jastrow,is_path=True)
+        if already_set:
+            return
+        self.sim.receive_jastrow(jastrow)
+    #end def jastrow
+
+    @wavefunction.setter
+    def wavefunction(self,wavefunction):
+        already_set = self._check_set_requirement(
+            'wavefunction',wavefunction,is_path=True)
+        if already_set:
+            return
+        self.sim.receive_wavefunction(wavefunction)
+    #end def wavefunction
+
+    @pwscf_orbitals.setter
+    def pwscf_orbitals(self,pwscf_orbitals):
+        already_set = self._check_set_requirement(
+            'pwscf_orbitals',pwscf_orbitals,is_path=True)
+        if already_set:
+            return
+        self.sim.receive_pwscf_orbitals(pwscf_orbitals)
+    #end def pwscf_orbitals
+
+
+    # preserve Simulation UI
+    #   data fields and functions
+    @property
+    def simid(self):
+        return self.sim.simid
+
+    @property
+    def identifier(self):
+        return self.sim.identifier
+
+    @property
+    def job(self):
+        return self.sim.job
+     
+    @property
+    def input(self):
+        return self.sim.input
+
+    @input.setter
+    def input(self,input):
+        self.sim.input = input
+
+    def show_input(self):
+        self.sim.show_input()
+
+    @property
+    def system(self):
+        return self.sim.system
+
+    @property
+    def analyzer_image(self):
+        return self.sim.analyzer_image
+
+    #   status_flags
+    @property
+    def setup(self):
+        return self.sim.setup
+
+    @property
+    def sent_files(self):
+        return self.sim.sent_files
+
+    @property
+    def submitted(self):
+        return self.sim.submitted
+
+    @property
+    def finished(self):
+        return self.sim.finished
+
+    @property
+    def got_output(self):
+        return self.sim.got_output
+
+    @property
+    def analyzed(self):
+        return self.sim.analyzed
+
+    @property
+    def failed(self):
+        return self.sim.failed
+
+    # execution modification
+    @property
+    def skip_submit(self):
+        return self.sim.skip_submit
+
+    @property
+    def block(self):
+        return self.sim.block
+
+
+    # try on new user-facing status properties
+    @property
+    def done(self):
+        return self.sim.finished
+
+    @property
+    def succ(self):
+        return self.sim.finished and not self.sim.failed
+
+    @property
+    def fail(self):
+        return self.sim.failed
+        #return self.sim.finished and self.sim.failed
+#end class DynamicProcess
+
+
+class sim_err_handler:
+    """Context manager for simulation-specific error handling/logging."""
+    def __init__(self, sim: Simulation):
+        self.sim = sim
+        self.logfile = Path(sim.remdir).resolve() / sim.nexus_logfile
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        if exc_type is None:
+            return True
+
+        if issubclass(exc_type, KeyboardInterrupt):
+            # KeyboardInterrupt means full stop, the user has cancelled the run
+            sys.__excepthook__(exc_type, exc_value, exc_tb)
+            return False
+
+        # Check for these first. If they are both true, then we have likely already reported an error.
+        if not (self.sim.failed and self.sim.finished):
+            self.sim.failed = True
+            self.sim.finished = True
+
+            exc_msg = traceback.format_exception(exc_type, exc_value, exc_tb)
+            with open(self.logfile, "a") as errf:
+                errf.write("".join(exc_msg))
+                errf.flush()
+
+            err = f"Error occurred in simulation '{self.sim.identifier}'."
+            loc = f"See the simulation log file at '{self.sim.locdir}/{self.sim.nexus_logfile}'"
+            lenloc = len(loc) + 4 # Padding around error message
+            print(
+                f"\n{'':!^{lenloc}}\n"
+                f"{err:^{lenloc}}\n"
+                f"{loc:^{lenloc}}\n"
+                f"{'':!^{lenloc}}\n"
+                )
+
+        return True
+#end class sim_err_handler

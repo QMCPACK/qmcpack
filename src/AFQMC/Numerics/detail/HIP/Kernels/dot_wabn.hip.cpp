@@ -12,12 +12,13 @@
 #include <complex>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
-#include "uninitialized_array.hpp"
+#include "Platforms/CUDA/uninitialized_array.cuh"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
+using qmcplusplus::device::uninitialized_array;
 // Tab nwalk][nocc][nocc][nchol]
 template<typename T, typename T2>
 __global__ void kernel_dot_wabn(int nwalk,

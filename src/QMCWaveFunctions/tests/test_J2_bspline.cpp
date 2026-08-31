@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -67,8 +66,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 </tmp>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -94,21 +92,21 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   j2->extractOptimizableObjectRefs(opt_obj_refs);
   REQUIRE(opt_obj_refs.size() == 1);
 
-  opt_variables_type optvars;
+  OptVariables optvars;
   Vector<WaveFunctionComponent::ValueType> dlogpsi;
   Vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
 
   for (OptimizableObject& obj : opt_obj_refs)
     obj.checkInVariablesExclusive(optvars);
   optvars.resetIndex();
-  const int NumOptimizables(optvars.size());
+  const int num_opt_vars(optvars.size());
   j2->checkOutVariables(optvars);
-  dlogpsi.resize(NumOptimizables);
-  dhpsioverpsi.resize(NumOptimizables);
+  dlogpsi.resize(num_opt_vars);
+  dhpsioverpsi.resize(num_opt_vars);
   j2->evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
 
   app_log() << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
-  for (int iparam = 0; iparam < NumOptimizables; iparam++)
+  for (int iparam = 0; iparam < num_opt_vars; iparam++)
     app_log() << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
   app_log() << std::endl;
 
@@ -226,7 +224,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   CHECK(std::real(ratio_0) == Approx(0.9522052017));
 
-  VirtualParticleSet VP(elec_, 2);
+  VirtualParticleSet VP(elec_);
   std::vector<PosType> newpos2(2);
   std::vector<ValueType> ratios2(2);
   newpos2[0] = newpos - elec_.R[1];

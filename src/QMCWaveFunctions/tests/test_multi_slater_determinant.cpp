@@ -8,9 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <cstdio>
 #include <string>
@@ -79,8 +78,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   elec_.resetGroups();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml_string);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml_string));
 
   xmlNodePtr ein_xml = doc.getRoot();
 
@@ -100,7 +98,6 @@ void test_LiH_msd(const std::string& spo_xml_string,
   CHECK(msd_refvec.size() == 1);
   MultiSlaterDetTableMethod& msd = msd_refvec[0];
 
-  twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 
   app_log() << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
@@ -141,7 +138,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   CHECK(ratio == ValueApprox(1.374307585));
 
 
-  opt_variables_type active;
+  OptVariables active;
   twf.checkInVariables(active);
 
   const int nparam = active.size_of_active();
@@ -180,7 +177,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
 
     CHECK(std::real(ratio_0) == Approx(2.350046921));
 
-    VirtualParticleSet VP(elec_, 2);
+    VirtualParticleSet VP(elec_);
     std::vector<PosType> newpos2(2);
     std::vector<ValueType> ratios2(2);
     newpos2[0] = newpos - elec_.R[1];
@@ -440,8 +437,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
   elec_.resetGroups();
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml_string);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml_string));
 
   xmlNodePtr ein_xml = doc.getRoot();
 
@@ -456,7 +452,6 @@ void test_Bi_msd(const std::string& spo_xml_string,
   elec_.update();
 
   auto& twf(*twf_ptr);
-  twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 
   //Reference values from QWalk with SOC

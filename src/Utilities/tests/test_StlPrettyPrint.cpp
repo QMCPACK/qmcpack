@@ -8,14 +8,13 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include <sstream>
 #include "StlPrettyPrint.hpp"
 
 namespace qmcplusplus
 {
-TEST_CASE("StlPrettyPrint", "[utilities]")
+TEST_CASE("StlVectorPrettyPrint", "[utilities]")
 {
   std::ostringstream msg;
   std::vector<int> vec;
@@ -42,5 +41,24 @@ TEST_CASE("StlPrettyPrint", "[utilities]")
   vec = {4, 3, 2};
   msg << vec;
   CHECK(msg.str() == "[4, 3, 2]");
+}
+
+TEST_CASE("StlMapNamePrettyPrint", "[utilities]")
+{
+  std::ostringstream msg;
+  std::map<std::string, int> amap;
+
+  msg << amap;
+  CHECK(msg.str() == "");
+
+  msg.str(std::string());
+  amap.emplace("psi", 1);
+  msg << amap;
+  CHECK(msg.str() == "\"psi\"");
+
+  msg.str(std::string());
+  amap.emplace("psi2", 1);
+  msg << amap;
+  CHECK(msg.str() == "\"psi\" \"psi2\"");
 }
 } // namespace qmcplusplus

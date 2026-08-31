@@ -8,11 +8,11 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include <filesystem>
 #include "PerParticleHamiltonianLogger.h"
+#include <filesystem>
 #include "Utilities/StdRandom.h"
 #include "OhmmsData/Libxml2Doc.h"
 
@@ -30,7 +30,7 @@ private:
   int walkers_;
 
 public:
-  MultiWalkerTalker(const std::string& name, int walkers) : name_(name), walkers_(walkers) {};
+  MultiWalkerTalker(const std::string& name, int walkers) : name_(name), walkers_(walkers){};
   void registerVector(ListenerVector<Real>& listener_vector) { listener_vectors_.push_back(listener_vector); }
   void reportVector()
   {
@@ -54,8 +54,7 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
 )XML"};
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xml));
   xmlNodePtr node = doc.getRoot();
   PerParticleHamiltonianLoggerInput pphli(node);
 
@@ -125,7 +124,6 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
 
     FakeRandom<OHMMS_PRECISION_FULL> rng;
 
-    int crowd_id   = 0;
     long walker_id = 0;
     for (auto& crowd_oeb : crowd_loggers)
     {

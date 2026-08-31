@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -38,7 +37,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   lattice.R = {3.94055, 3.94055, 7.8811, 3.94055, 3.94055, -7.8811, -7.8811, 7.8811, 0};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -63,6 +62,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   ions_.R[13] = {0.5, 0, 0.25};
   ions_.R[14] = {0.5, 0.5, 0.5};
   ions_.R[15] = {0.5, 0, 0.75};
+  ions_.update();
 
   // convert to cartesian
   ions_.R.setUnit(PosUnit::Lattice);
@@ -82,6 +82,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   elec_.R[2] = {0.0, 1.1, 0.0};
   elec_.R[3] = {0.0, 1.2, 0.0};
   elec_.R[4] = {0.0, 1.3, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -96,8 +97,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root = doc.getRoot();
 

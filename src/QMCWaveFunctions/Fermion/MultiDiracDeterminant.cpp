@@ -918,9 +918,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       uniquePairs(s.uniquePairs),
       DetSigns(s.DetSigns),
       ndets_per_excitation_level_(s.ndets_per_excitation_level_)
-{
-  resize();
-}
+{ resize(); }
 
 std::unique_ptr<SPOSet> MultiDiracDeterminant::clonePhi() const { return Phi->makeClone(); }
 
@@ -997,9 +995,7 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 void MultiDiracDeterminant::createResource(ResourceCollection& collection) const
-{
-  collection.addResource(std::make_unique<MultiDiracDetMultiWalkerResource>());
-}
+{ collection.addResource(std::make_unique<MultiDiracDetMultiWalkerResource>()); }
 
 void MultiDiracDeterminant::acquireResource(ResourceCollection& collection,
                                             const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const
@@ -1212,7 +1208,7 @@ int MultiDiracDeterminant::build_occ_vec(const OffloadVector<int>& data,
 
 
 void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
-                                                const opt_variables_type& optvars,
+                                                const OptVariables& optvars,
                                                 Vector<ValueType>& dlogpsi,
                                                 Vector<ValueType>& dhpsioverpsi,
                                                 const MultiDiracDeterminant& pseudo_dn,
@@ -1261,7 +1257,7 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
 
 
 void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
-                                                  const opt_variables_type& optvars,
+                                                  const OptVariables& optvars,
                                                   Vector<ValueType>& dlogpsi,
                                                   const MultiDiracDeterminant& pseudo_dn,
                                                   const PsiValue& psiCurrent,
@@ -1294,8 +1290,6 @@ void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
 }
 
 void MultiDiracDeterminant::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
-{
-  twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
-}
+{ twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get()); }
 
 } // namespace qmcplusplus

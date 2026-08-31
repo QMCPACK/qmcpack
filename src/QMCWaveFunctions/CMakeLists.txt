@@ -43,6 +43,14 @@ set(WFBASE_SRCS
 if(QMC_COMPLEX)
   set(WFBASE_SRCS ${WFBASE_SRCS} SpinorSet.cpp)
 endif(QMC_COMPLEX)
+
+if(ENABLE_DEEPQMC_INFERENCE)
+  set(WFBASE_SRCS
+      ${WFBASE_SRCS}
+      DeepQMC/DeepQMCBridge.cpp
+      DeepQMC/DeepQMCWaveFunctionBuilder.cpp
+      DeepQMC/DeepQMCWF.cpp)
+endif()
 ########################
 # build jastrows
 ########################
@@ -83,7 +91,6 @@ if(OHMMS_DIM MATCHES 3)
         BsplineFactory/EinsplineSetBuilderCommon.cpp
         BsplineFactory/EinsplineSetBuilderESHDF.fft.cpp
         BsplineFactory/EinsplineSetBuilder_createSPOs.cpp
-        BsplineFactory/createBsplineComplex.cpp
         BsplineFactory/HybridRepCenterOrbitals.cpp
         BsplineFactory/SplineSetReader.cpp
         BsplineFactory/HybridRepSetReader.cpp
@@ -92,12 +99,10 @@ if(OHMMS_DIM MATCHES 3)
         BsplineFactory/BsplineReader.cpp)
     set(FERMION_OMPTARGET_SRCS Fermion/DiracDeterminantBatched.cpp Fermion/MultiDiracDeterminant.2.cpp)
     if(QMC_COMPLEX)
-      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
-      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
+      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/EinsplineSpinorSetBuilder.cpp)
+      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2C.cpp)
     else(QMC_COMPLEX)
-      set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createBsplineReal.cpp
-        BsplineFactory/SplineC2R.cpp BsplineFactory/SplineR2R.cpp)
-      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2ROMPTarget.cpp)
+      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2R.cpp BsplineFactory/SplineR2R.cpp)
     endif(QMC_COMPLEX)
 
   endif(HAVE_EINSPLINE)
@@ -109,10 +114,6 @@ if(OHMMS_DIM MATCHES 3)
   else()
     set(FERMION_SRCS ${FERMION_SRCS} PlaneWave/PWRealOrbitalSet.cpp)
   endif(QMC_COMPLEX)
-
-  if(NOT QMC_COMPLEX)
-    set(FERMION_SRCS ${FERMION_SRCS} AGPDeterminant.cpp AGPDeterminantBuilder.cpp)
-  endif(NOT QMC_COMPLEX)
 
 endif(OHMMS_DIM MATCHES 3)
 
@@ -149,8 +150,15 @@ else(USE_OBJECT_TARGET)
 endif(USE_OBJECT_TARGET)
 
 target_include_directories(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+if(ENABLE_DEEPQMC_INFERENCE)
+  target_compile_definitions(qmcwfs PUBLIC ENABLE_DEEPQMC_INFERENCE)
+  target_compile_definitions(qmcwfs PRIVATE DEEPQMC_INFER_BRIDGE_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/DeepQMC")
+endif()
 target_link_libraries(qmcwfs PUBLIC spline2 qmcutil qmcparticle
 platform_runtime platform_LA containers)
+if(ENABLE_DEEPQMC_INFERENCE)
+  target_link_libraries(qmcwfs PRIVATE Python3::Python)
+endif()
 target_link_libraries(qmcwfs PRIVATE einspline Math::FFTW3)
 
 add_library(qmcwfs_omptarget OBJECT ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})

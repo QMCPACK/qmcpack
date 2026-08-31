@@ -8,9 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -43,7 +42,7 @@ void test_einset_LiH_x(bool use_offload)
   lattice.R = {-3.55, 0.0, 3.55, 0.0, 3.55, 3.55, -3.55, 3.55, 0.0};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -54,6 +53,7 @@ void test_einset_LiH_x(bool use_offload)
   ions_.create({1, 1});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {3.55, 3.55, 3.55};
+  ions_.update();
 
   elec_.create({1, 1});
   elec_.setName("elec");
@@ -62,6 +62,7 @@ void test_einset_LiH_x(bool use_offload)
   elec_.R[0]                = {0.0, 0.0, 0.0};
   elec_.R[1]                = {0.0, 1.0, 0.0};
   const auto ei_table_index = elec_.addTable(ions_);
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -79,8 +80,7 @@ void test_einset_LiH_x(bool use_offload)
     spo_xml = std::regex_replace(spo_xml, std::regex("omptarget"), "no");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -89,6 +89,7 @@ void test_einset_LiH_x(bool use_offload)
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
+  REQUIRE(spo->isOMPoffload() == use_offload);
 
   // Test the case where the number of psi values is not the orbital set size
   // or the number of electrons/2
@@ -229,8 +230,8 @@ void test_einset_LiH_x(bool use_offload)
     const size_t nvp_                  = 4;
     const size_t nvp_2                 = 3;
     const std::vector<size_t> nvp_list = {nvp_, nvp_2};
-    VirtualParticleSet VP_(elec_, nvp_);
-    VirtualParticleSet VP_2(elec_2, nvp_2);
+    VirtualParticleSet VP_(elec_);
+    VirtualParticleSet VP_2(elec_2);
 
     // move VPs
     std::vector<ParticleSet::SingleParticlePos> newpos_vp_(nvp_);

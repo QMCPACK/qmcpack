@@ -35,15 +35,12 @@ std::unique_ptr<SPOSet> PWOrbitalSet::makeClone() const
   return myclone;
 }
 
-void PWOrbitalSet::setOrbitalSetSize(int norbs) {}
-
-void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
+void PWOrbitalSet::resize(PWBasisPtr bset, bool cleanup)
 {
-  myBasisSet     = bset;
-  OrbitalSetSize = nbands;
-  OwnBasisSet    = cleanup;
-  BasisSetSize   = myBasisSet->NumPlaneWaves;
-  C              = new ValueMatrix(OrbitalSetSize, BasisSetSize);
+  myBasisSet   = bset;
+  OwnBasisSet  = cleanup;
+  BasisSetSize = myBasisSet->NumPlaneWaves;
+  C            = new ValueMatrix(OrbitalSetSize, BasisSetSize);
   Temp.resize(OrbitalSetSize, PW_MAXINDEX);
   app_log() << "  PWOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize
             << std::endl;

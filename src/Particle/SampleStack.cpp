@@ -20,10 +20,9 @@ namespace qmcplusplus
  * @param n number of samples per rank
  * @param num_ranks number of ranks. Used to set global number of samples.
  */
-void SampleStack::setMaxSamples(size_t n, size_t num_ranks)
+void SampleStack::setMaxSamples(size_t n)
 {
   max_samples_        = n;
-  global_num_samples_ = n * num_ranks;
   current_sample_count_ = std::min(current_sample_count_, max_samples_);
   sample_vector_.resize(n, MCSample(0));
 }

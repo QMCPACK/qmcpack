@@ -14,11 +14,12 @@
 #include <complex>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
-#include "uninitialized_array.hpp"
+#include "Platforms/CUDA/uninitialized_array.cuh"
 #include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
+using qmcplusplus::device::uninitialized_array;
 // Meant to be run with 1 block
 /*
 template<typename T>

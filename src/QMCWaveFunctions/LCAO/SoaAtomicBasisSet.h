@@ -60,19 +60,19 @@ public:
         psi_timer_(createGlobalTimer("SoaAtomicBasisSet::psi", timer_level_fine))
   {}
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(OptVariables& active)
   {
     //for(size_t nl=0; nl<Rnl.size(); nl++)
     //  Rnl[nl]->checkInVariables(active);
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const OptVariables& active)
   {
     //for(size_t nl=0; nl<Rnl.size(); nl++)
     //  Rnl[nl]->checkOutVariables(active);
   }
 
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const OptVariables& active)
   {
     //for(size_t nl=0; nl<Rnl.size(); nl++)
     //  Rnl[nl]->resetParameters(active);
@@ -120,9 +120,7 @@ public:
   /** Set Rmax */
   template<typename T>
   inline void setRmax(T rmax)
-  {
-    Rmax = (rmax > 0) ? rmax : MultiRnl.rmax();
-  }
+  { Rmax = (rmax > 0) ? rmax : MultiRnl.rmax(); }
 
   ///set the current offset
   inline void setCenter(int c, int offset) {}
@@ -710,6 +708,10 @@ public:
           MultiRnl.evaluate(r_new, phi_r);
           ///Phase for PBC containing the phase for the nearest image displacement and the correction due to the Distance table.
           const ValueType Phase = periodic_image_phase_factors_[iter] * correctphase;
+#if defined(QMC_COMPLEX) && defined(__GNUC__) && (__GNUC__ >= 15)
+          //workaround GCC 15 incorrect results in "LCAOrbitalSet batched PBC DiamondC" test on Intel SPR and GNR when built as complex.
+          #pragma GCC novector
+#endif
           for (size_t ib = 0; ib < BasisSetSize; ++ib)
             psi[ib] += ylm_v[LM[ib]] * phi_r[NL[ib]] * Phase;
         }
@@ -739,15 +741,15 @@ public:
  */
   template<typename LAT, typename VT>
   inline void mw_evaluateVGL_multiCenter(const RefVectorWithLeader<SoaAtomicBasisSet>& atom_bs_list,
-                                   const LAT& lattice,
-                                   Array<VT, 3, OffloadPinnedAllocator<VT>>& psi_vgl,
-                                   const Vector<RealType, OffloadPinnedAllocator<RealType>>& displ_list,
-                                   const Vector<RealType, OffloadPinnedAllocator<RealType>>& Tv_list,
-                                   const size_t nElec,
-                                   const size_t nBasTot,
-                                   const Vector<size_t, OffloadPinnedAllocator<size_t>>& c_list,
-                                   const Vector<size_t, OffloadPinnedAllocator<size_t>>& basis_offsets,
-                                   const size_t NumCenters)
+                                         const LAT& lattice,
+                                         Array<VT, 3, OffloadPinnedAllocator<VT>>& psi_vgl,
+                                         const Vector<RealType, OffloadPinnedAllocator<RealType>>& displ_list,
+                                         const Vector<RealType, OffloadPinnedAllocator<RealType>>& Tv_list,
+                                         const size_t nElec,
+                                         const size_t nBasTot,
+                                         const Vector<size_t, OffloadPinnedAllocator<size_t>>& c_list,
+                                         const Vector<size_t, OffloadPinnedAllocator<size_t>>& basis_offsets,
+                                         const size_t NumCenters)
   {
     assert(this == &atom_bs_list.getLeader());
     auto& atom_bs_leader = atom_bs_list.template getCastedLeader<SoaAtomicBasisSet>();
@@ -1472,9 +1474,7 @@ public:
   }
 
   void createResource(ResourceCollection& collection) const
-  {
-    collection.addResource(std::make_unique<SoaAtomicBSetMultiWalkerMem>());
-  }
+  { collection.addResource(std::make_unique<SoaAtomicBSetMultiWalkerMem>()); }
 
   void acquireResource(ResourceCollection& collection,
                        const RefVectorWithLeader<SoaAtomicBasisSet>& atom_basis_list) const
@@ -1500,9 +1500,7 @@ private:
     SoaAtomicBSetMultiWalkerMem(const SoaAtomicBSetMultiWalkerMem&) : SoaAtomicBSetMultiWalkerMem() {}
 
     std::unique_ptr<Resource> makeClone() const override
-    {
-      return std::make_unique<SoaAtomicBSetMultiWalkerMem>(*this);
-    }
+    { return std::make_unique<SoaAtomicBSetMultiWalkerMem>(*this); }
 
     OffloadArray4D ylm_vgl;     // [5][Nelec][PBC][NYlm]
     OffloadArray4D rnl_vgl;     // [5][Nelec][PBC][NRnl]

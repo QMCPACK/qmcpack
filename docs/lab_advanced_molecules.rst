@@ -147,7 +147,7 @@ favorite text editor and modify the name of the files that contain the
 ``wavefunction`` and ``particleset`` XML blocks. These files are
 included with the commands:
 
-::
+.. code-block:: xml
 
   <include href=ptcl.xml/>
   <include href=wfs.xml/>
@@ -861,7 +861,7 @@ Useful notes
 Appendix C: Wavefunction optimization XML block
 -----------------------------------------------
 
-.. code-block::
+.. code-block:: xml
   :caption: Sample XML optimization block.
   :name: Listing 60
 
@@ -943,7 +943,7 @@ Recommendations:
 Appendix D: VMC and DMC XML block
 ---------------------------------
 
-.. code-block::
+.. code-block:: xml
   :caption: Sample XML blocks for VMC and DMC calculations.
   :name: Listing 61
 
@@ -1018,7 +1018,7 @@ Options unique to DMC:
 Appendix E: Wavefunction XML block
 ----------------------------------
 
-.. code-block::
+.. code-block:: xml
   :caption: Basic framework for a single-determinant determinantset XML block.
   :name: Listing 62
 
@@ -1076,7 +1076,7 @@ in the determinant block refers to the number of SPOs present while the
 “size” parameter in the coefficient block refers to the number of atomic
 basis functions per SPO.
 
-.. code-block::
+.. code-block:: xml
   :caption: Sample XML block for the single Slater determinant case.
   :name: Listing 63
 
@@ -1109,7 +1109,7 @@ that two sposet sets must be defined, one for each electron spin. The name of ea
 is required in the definition of the multideterminant block. The determinants are defined in
 terms of occupation numbers based on these orbitals.
 
-.. code-block::
+.. code-block:: xml
   :caption: Basic framework for a multideterminant determinantset XML block.
   :name: Listing 64
 
@@ -1184,7 +1184,7 @@ Optimization of individual radial functions can be turned on/off using the “op
 parameter. It can be added to any coefficients block, even though it is currently not
 present in the J1 and J2 blocks.
 
-.. code-block::
+.. code-block:: xml
   :caption: Sample Jastrow XML block.
   :name: Listing 65
 

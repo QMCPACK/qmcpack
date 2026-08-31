@@ -8,9 +8,9 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 
 #include "OhmmsData/Libxml2Doc.h"
@@ -44,8 +44,7 @@ TEST_CASE("read_lattice_xml", "[particle_io][xml]")
     )";
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(particles);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(particles));
 
     xmlNodePtr root = doc.getRoot();
 
@@ -76,8 +75,7 @@ TEST_CASE("read_lattice_xml", "[particle_io][xml]")
     )";
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(particles);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(particles));
 
     xmlNodePtr root = doc.getRoot();
 
@@ -105,8 +103,7 @@ TEST_CASE("read_lattice_xml", "[particle_io][xml]")
     )";
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(particles);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(particles));
 
     xmlNodePtr root = doc.getRoot();
 
@@ -138,8 +135,7 @@ TEST_CASE("read_lattice_xml_lrhandle", "[particle_io][xml]")
     )";
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(particles);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(particles));
 
     xmlNodePtr root = doc.getRoot();
 
@@ -169,8 +165,7 @@ TEST_CASE("read_lattice_xml_lrhandle", "[particle_io][xml]")
     )";
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(particles);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(particles));
 
     xmlNodePtr root = doc.getRoot();
 
@@ -197,8 +192,7 @@ TEST_CASE("read_lattice_xml_lrhandle", "[particle_io][xml]")
     )";
 
     Libxml2Document doc;
-    bool okay = doc.parseFromString(particles);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(particles));
 
     xmlNodePtr root = doc.getRoot();
 

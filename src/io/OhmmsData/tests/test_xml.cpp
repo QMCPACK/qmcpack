@@ -8,9 +8,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include <string>
@@ -36,8 +35,7 @@ TEST_CASE("parseString", "[xml]")
     )");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(s1);
-  REQUIRE(okay == true);
+  REQUIRE(doc.parseFromString(s1));
 
   xmlNodePtr root = doc.getRoot();
   REQUIRE(root != NULL);
@@ -56,8 +54,7 @@ TEST_CASE("XMLParsingString", "[xml]")
     )");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(s1);
-  REQUIRE(okay == true);
+  REQUIRE(doc.parseFromString(s1));
 
   xmlNodePtr root = doc.getRoot();
   REQUIRE(root != NULL);
@@ -85,8 +82,7 @@ TEST_CASE("putContent", "[xml]")
     )");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(s1);
-  REQUIRE(okay == true);
+  REQUIRE(doc.parseFromString(s1));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -117,7 +113,6 @@ TEST_CASE("putContent", "[xml]")
   putContent(e, item);
   REQUIRE(e.size() == 2);
 
-  vector<double> f;
   item = xmlNextElementSibling(item);
   REQUIRE(string((char*)item->name) == "item5");
   // Will hang, don't test for now
@@ -147,8 +142,7 @@ TEST_CASE("XPathObject", "[xml]")
     </simulation>
     )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(content);
-  REQUIRE(okay == true);
+  REQUIRE(doc.parseFromString(content));
 
   xmlXPathContextPtr path_ctx = doc.getXPathContext();
   OhmmsXPathObject xpath("//parameter", path_ctx);

@@ -54,9 +54,8 @@ public:
   void checkConfigurations(EngineHandle& handle) override;
   void checkConfigurationsSR(EngineHandle& handle) override;
 #ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
-                                  DescentEngine& descentEngineObj,
-                                  const std::string& MinMethod) override;
+  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
+                                  OptionalRef<DescentEngine> descentEngineObj) override;
 #endif
 
 
@@ -64,11 +63,10 @@ public:
   void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override;
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override;
   Return_rt fillHamVec(std::vector<Return_rt>& ham) override;
-  void calcOvlParmVec(const std::vector<Return_rt>& parm, std::vector<Return_rt>& ovlParmVec) override;
+  void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec) override;
 
 protected:
-  /// H components used in correlated sampling. It can be KE or KE+NLPP
-  std::vector<std::string> H_KE_node_names_;
+
 
   Matrix<Return_rt> RecordsOnNode_;
 
@@ -94,7 +92,7 @@ protected:
 
 #ifdef HAVE_LMY_ENGINE
   size_t total_samples();
-  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj) override;
+  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>& EngineObj) override;
 #endif
 
   friend testing::LinearMethodTestSupport;

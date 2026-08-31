@@ -16,10 +16,9 @@
  *  real-space path that spans regions both inside and outside of the cell are required to agree with
  *  the reference values obtained from PySCF. The reference values were generated from Carbon1x1x1-tw1_gen_mos.py.   
 */
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
 #include "ParticleIO/XMLParticleIO.h"
@@ -40,8 +39,7 @@ void test_C_diamond()
     Communicate* c = OHMMS::Controller;
 
     Libxml2Document doc;
-    bool okay = doc.parse("C_diamond-twist-third.structure.xml");
-    REQUIRE(okay);
+    REQUIRE(doc.parse("C_diamond-twist-third.structure.xml"));
     xmlNodePtr root = doc.getRoot();
 
     Lattice lattice;
@@ -78,8 +76,7 @@ void test_C_diamond()
 
     Libxml2Document doc2;
 
-    okay = doc2.parse("C_diamond-twist-third.wfj.xml");
-    REQUIRE(okay);
+    REQUIRE(doc2.parse("C_diamond-twist-third.wfj.xml"));
     xmlNodePtr root2 = doc2.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;

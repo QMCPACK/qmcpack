@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -76,7 +75,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -161,7 +160,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this

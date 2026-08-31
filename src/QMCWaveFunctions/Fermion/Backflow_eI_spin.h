@@ -133,14 +133,14 @@ public:
     std::cerr << offsetPrms << std::endl;
   }
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParameters(const OptVariables& active) override
   {
     for (int i = 0; i < RadFunc.size(); ++i)
       if (Fmask(i) == i)
         RadFunc(i)->resetParameters(active);
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariables(OptVariables& active) override
   {
     //myVars.clear();
     for (int i = 0; i < RadFunc.size(); ++i)
@@ -148,7 +148,7 @@ public:
         RadFunc(i)->checkInVariables(active);
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
+  void checkOutVariables(const OptVariables& active) override
   {
     for (int i = 0; i < RadFunc.size(); ++i)
       if (Fmask(i) == i)
@@ -348,9 +348,7 @@ public:
   inline void evaluatePbyP(const ParticleSet& P,
                            ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index) override
-  {
-    evaluatePbyP(P, index[0], newQP);
-  }
+  { evaluatePbyP(P, index[0], newQP); }
 
 
   /** calculate quasi-particle coordinates after pbyp move
@@ -380,9 +378,7 @@ public:
                            ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
                            HessMatrix& Amat) override
-  {
-    evaluatePbyP(P, index[0], newQP, Amat);
-  }
+  { evaluatePbyP(P, index[0], newQP, Amat); }
 
   inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP, HessMatrix& Amat) override
   {
@@ -417,9 +413,7 @@ public:
                            const std::vector<int>& index,
                            GradMatrix& Bmat_full,
                            HessMatrix& Amat) override
-  {
-    evaluatePbyP(P, index[0], newQP, Bmat_full, Amat);
-  }
+  { evaluatePbyP(P, index[0], newQP, Bmat_full, Amat); }
 
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,

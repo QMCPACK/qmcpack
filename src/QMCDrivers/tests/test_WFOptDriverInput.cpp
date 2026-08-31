@@ -9,9 +9,7 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "QMCDrivers/WFOpt/WFOptDriverInput.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
@@ -25,8 +23,7 @@ TEST_CASE("WFOptDriverInput readXML", "[drivers]")
 {
   auto xml_test = [](const char* driver_xml) {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(driver_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(driver_xml));
     xmlNodePtr node = doc.getRoot();
     WFOptDriverInput wfoptdriver_input;
     wfoptdriver_input.readXML(node);

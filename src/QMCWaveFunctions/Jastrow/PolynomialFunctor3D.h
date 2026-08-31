@@ -499,8 +499,8 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
 
     const real_type L = chalf * cutoff_radius;
 #pragma omp simd aligned(r_12_array, r_1I_array, r_2I_array, val_array, grad0_array, grad1_array, grad2_array, \
-                         hess00_array, hess11_array, hess22_array, hess01_array, hess02_array                  \
-                         : QMC_SIMD_ALIGNMENT)
+                             hess00_array, hess11_array, hess22_array, hess01_array,                           \
+                             hess02_array : QMC_SIMD_ALIGNMENT)
     for (int ptcl = 0; ptcl < Nptcl; ptcl++)
     {
       const real_type r_12 = r_12_array[ptcl];
@@ -749,7 +749,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     real_type dval_dgamma;
 
     for (int i = 0; i < dval_Vec.size(); i++)
-      dval_Vec[i]  = czero;
+      dval_Vec[i] = czero;
 
     const real_type r_2I_minus_L = r_2I - L;
     const real_type r_1I_minus_L = r_1I - L;
@@ -769,7 +769,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
         real_type r2n(cone);
         for (int n = 0; n <= N_ee; n++, num++)
         {
-          dval_dgamma        = r2l * r2m * r2n;
+          dval_dgamma = r2l * r2m * r2n;
           for (int i = 0; i < C; i++)
             dval_dgamma *= both_minus_L;
 
@@ -791,7 +791,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     for (int i = 0; i < NumGamma; i++)
       if (IndepVar[i])
       {
-        d_vals[var]  = dval_Vec[i];
+        d_vals[var] = dval_Vec[i];
         var++;
       }
     int constraint = 0;
@@ -1050,7 +1050,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     return true;
   }
 
-  void resetParametersExclusive(const opt_variables_type& active) override
+  void resetParametersExclusive(const OptVariables& active) override
   {
     if (notOpt)
       return;
@@ -1070,7 +1070,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     reset_gamma();
   }
 
-  void checkInVariablesExclusive(opt_variables_type& active) override
+  void checkInVariablesExclusive(OptVariables& active) override
   {
     if (notOpt)
       return;
@@ -1079,7 +1079,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     active.insertFrom(myVars);
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
+  void checkOutVariables(const OptVariables& active) override
   {
     if (notOpt)
       return;

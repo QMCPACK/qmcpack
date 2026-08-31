@@ -29,33 +29,19 @@ class HamiltonianFactory : public MPIObjectBase
 {
 public:
   using PSetMap     = std::map<std::string, const std::unique_ptr<ParticleSet>>;
-  using PsiPoolType = std::map<std::string, const std::unique_ptr<TrialWaveFunction>>;
 
   ///constructor
   HamiltonianFactory(const std::string& hName,
                      ParticleSet& qp,
                      const PSetMap& pset,
-                     const PsiPoolType& oset,
+                     OptionalRef<TrialWaveFunction>&& psi_optional,
                      Communicate* c);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
 
-  /** add a property whose name will be renamed by b
-   * @param a target property whose name should be replaced by b
-   * @param b new property name
-   */
-  void renameProperty(const std::string& a, const std::string& b);
-
-  /** renamd a property
-   * @param a current name
-   *
-   * If a is found among the RenamedProperty, a is replaced,
-   */
-  void renameProperty(std::string& a);
-
   ///get targetH
-  QMCHamiltonian* getH() const { return targetH.get(); }
+  std::unique_ptr<QMCHamiltonian> releaseHamiltonian() { return std::move(targetH); }
 
 private:
   /** process xmlNode to populate targetPsi
@@ -75,14 +61,8 @@ private:
   ParticleSet& targetPtcl;
   ///reference to the PSetMap
   const PSetMap& ptclPool;
-  ///reference to the TrialWaveFunction Pool
-  const PsiPoolType& psiPool;
-
-  ///name of the TrialWaveFunction
-  std::string psiName;
-
-  ///list of the old to new name
-  std::map<std::string, std::string> RenamedProperty;
+  ///optional reference to a TrialWaveFunction object
+  const OptionalRef<TrialWaveFunction> psi_optional_;
 };
 } // namespace qmcplusplus
 #endif

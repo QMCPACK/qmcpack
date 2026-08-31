@@ -182,7 +182,7 @@ protected:
    */
   using DelegateHandler = std::function<std::any(xmlNodePtr cur, std::string& value_name)>;
   /** register factory function for delegate input
-   *   \param[in]   tag                parmater name or node ename delgation is controlled by
+   *   \param[in]   tag                paramater name or node ename delgation is controlled by
    *   \param[in]   delegate_handler   factory function for delegated input function.
    */
   void registerDelegate(const std::string& tag, DelegateHandler delegate_handler);

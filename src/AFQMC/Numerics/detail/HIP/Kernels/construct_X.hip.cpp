@@ -14,12 +14,13 @@
 #include <complex>
 #include <thrust/complex.h>
 #include <hip/hip_runtime.h>
-#include "uninitialized_array.hpp"
+#include "Platforms/CUDA/uninitialized_array.cuh"
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
+using qmcplusplus::device::uninitialized_array;
 // X[m,ni,iw] = rand[m,ni,iw] + im * ( vbias[m,iw] - vMF[m]  )
 // HW[ni,iw] = sum_m [ im * ( vMF[m] - vbias[m,iw] ) *
 //                     ( rand[m,ni,iw] + halfim * ( vbias[m,iw] - vMF[m] ) ) ]

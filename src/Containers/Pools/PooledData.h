@@ -55,7 +55,6 @@ struct PooledData
   ///return the size of the data
   inline size_type size() const { return myData.size(); }
 
-  //inline void clear() { std::vector<T>::clear(); Current=0;}
   inline size_type current() const { return Current; }
 
   /** set the Current to a cursor
@@ -129,10 +128,15 @@ struct PooledData
   template<typename T1>
   void add(std::complex<T1>* first, std::complex<T1>* last);
 
-  inline void get(T& x) { x = myData[Current++]; }
+  inline void get(T& x)
+  {
+    assert(Current < myData.size());
+    x = myData[Current++];
+  }
 
   inline void get(std::complex<T>& x)
   {
+    assert(Current + 1 < myData.size());
     x = std::complex<T>(myData[Current], myData[Current + 1]);
     Current += 2;
   }
@@ -148,6 +152,7 @@ struct PooledData
   {
     size_type now = Current;
     Current += last - first;
+    assert(Current <= myData.size());
     copy(myData.begin() + now, myData.begin() + Current, first);
   }
 
@@ -161,6 +166,7 @@ struct PooledData
   {
     size_type now = Current;
     Current += last - first;
+    assert(Current <= myData.size());
     std::copy(myData.begin() + now, myData.begin() + Current, first);
   }
 

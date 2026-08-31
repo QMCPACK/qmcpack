@@ -9,13 +9,12 @@
 //
 // File created by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "VariableSet.h"
-#include "Configuration.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -34,8 +33,7 @@ TEST_CASE("DescentEngine RMSprop update", "[drivers][descent]")
   const std::string engine_input("<tmp> </tmp>");
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(engine_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(engine_input));
 
   xmlNodePtr fakeXML = doc.getRoot();
 

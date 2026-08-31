@@ -9,9 +9,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
@@ -95,8 +94,7 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
 
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wavefunction_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(wavefunction_xml));
 
   xmlNodePtr root = doc.getRoot();
   RuntimeOptions runtime_options;

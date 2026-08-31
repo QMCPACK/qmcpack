@@ -17,6 +17,8 @@ namespace qmcplusplus
 template<typename T>
 void combinePerParticleEnergies(const CrowdEnergyValues<T>& cev_in, std::vector<Vector<T>>& values_out)
 {
+  if (cev_in.begin() == cev_in.end())
+    return;
   const auto num_walkers   = cev_in.begin()->second.size();
   const auto num_particles = cev_in.begin()->second[0].size();
 
@@ -50,5 +52,5 @@ template void combinePerParticleEnergies<std::complex<double>>(const CrowdEnergy
 template void combinePerParticleEnergies<std::complex<float>>(const CrowdEnergyValues<std::complex<float>>& cev_in,
                                                               std::vector<Vector<std::complex<float>>>& values_out);
 
-  
+
 } // namespace qmcplusplus

@@ -6,8 +6,8 @@
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "NEReferencePoints.h"
 #include "ReferencePointsInput.h"
@@ -71,7 +71,7 @@ ReferencePointsInput makeTestRPI()
 {
   using Input = testing::ValidReferencePointsInputs;
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::xml[Input::valid::CELL]);
+  REQUIRE(doc.parseFromString(Input::xml[Input::valid::CELL]));
   xmlNodePtr node = doc.getRoot();
   return {node};
 }
@@ -336,7 +336,7 @@ TEST_CASE("ReferencePoints::Description", "[estimators]")
  {"zero", {               0,0,0}},
 };
 )";
- }
+  }
   CHECK(ostr_testing_stream.str() == expected_testable_description);
 }
 
@@ -355,8 +355,7 @@ TEST_CASE("ReferencePoints::HDF5", "[estimators]")
 
   hd.close();
 
-  hdf_archive hd_read;
-  bool okay_read = hd.open(test_file);
+  REQUIRE(hd.open(test_file));
 
   hd.push("reference_points");
 

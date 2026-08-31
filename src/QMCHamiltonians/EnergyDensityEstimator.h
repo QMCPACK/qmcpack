@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-class EnergyDensityEstimator : public OperatorBase, public PtclOnLatticeTraits
+class EnergyDensityEstimator : public OperatorDependsOnlyOnParticleSet, public PtclOnLatticeTraits
 {
 public:
   using Point  = ReferencePoints::Point;
@@ -32,7 +32,6 @@ public:
   ~EnergyDensityEstimator() override;
 
   std::string getClassName() const override { return "EnergyDensityEstimator"; }
-  void resetTargetParticleSet(ParticleSet& P) override;
   Return_t evaluate(ParticleSet& P) override;
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& olist) override;
@@ -42,7 +41,7 @@ public:
   bool put(xmlNodePtr cur) override;
   bool put(xmlNodePtr cur, ParticleSet& P);
   bool get(std::ostream& os) const override;
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp) const final;
 
   void write_description(std::ostream& os);
 
@@ -96,17 +95,18 @@ private:
   void set_ptcl(void);
   void unset_ptcl(void);
 
+#if !defined(REMOVE_TRACEMANAGER)
   TraceSample<TraceReal>* w_trace;
   TraceSample<TraceReal>* Td_trace;
   CombinedTraceSample<TraceReal>* Vd_trace;
   CombinedTraceSample<TraceReal>* Vs_trace;
 
   void getRequiredTraces(TraceManager& tm) override;
-
   void contributeScalarQuantities() override {}
   void checkoutScalarQuantities(TraceManager& tm) override {}
   void collectScalarQuantities() override {}
   void deleteScalarQuantities() override {}
+#endif
 };
 
 

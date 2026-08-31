@@ -10,10 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 //#undef NDEBUG
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "ProjectData.h"
@@ -21,13 +20,6 @@
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
 #include "Platforms/Host/OutputManager.h"
-
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
 
 #include <string>
 #include <vector>
@@ -162,7 +154,7 @@ void getBasicWavefunction(std::vector<int>& occs, std::vector<ComplexType>& coef
 void getSlaterMatrix(boost::multi::array<ComplexType, 2>& SM, boost::multi::array_ref<int, 1>& occs, int NEL)
 {
   using std::fill_n;
-  fill_n(SM.origin(), SM.num_elements(), ComplexType(0.0));
+  fill_n(SM.base(), SM.num_elements(), ComplexType(0.0));
   for (int i = 0; i < NEL; i++)
     SM[i][occs[i]] = ComplexType(1.0);
 }
@@ -200,8 +192,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ham_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ham_xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
@@ -216,8 +207,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
-    okay = doc2.parseFromString(wfn_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc2.parseFromString(wfn_xml_block));
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name, doc2.getRoot());
@@ -228,8 +218,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     </WalkerSet>
     )";
     Libxml2Document doc3;
-    okay = doc3.parseFromString(wlk_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc3.parseFromString(wlk_xml_block));
     RandomGenerator rng;
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
@@ -239,7 +228,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     REQUIRE(get<1>(initial_guess.sizes()) == NMO);
     REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
-    wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+    wset.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
     // 1. Test Overlap Explicitly
     // 1.a Get raw occupancies and coefficients from file.
     std::vector<ComplexType> coeffs;
@@ -261,18 +250,18 @@ void test_phmsd(boost::mpi3::communicator& world)
     for (int idet = 0; idet < coeffs.size(); idet++)
     {
       // Construct slater matrix from given set of occupied orbitals.
-      boost::multi::array_ref<int, 1> oa(occs[idet].origin(), {NAEA});
+      boost::multi::array_ref<int, 1> oa(occs[idet].base(), {NAEA});
       getSlaterMatrix(TrialA, oa, NAEA);
-      boost::multi::array_ref<int, 1> ob(occs[idet].origin() + NAEA, {NAEB});
+      boost::multi::array_ref<int, 1> ob(occs[idet].base() + NAEA, {NAEB});
       for (int i = 0; i < NAEB; i++)
         ob[i] -= NMO;
       getSlaterMatrix(TrialB, ob, NAEB);
       ComplexType ovlpa = sdet->Overlap(TrialA, *wset[0].SlaterMatrix(Alpha), logovlp);
       ComplexType ovlpb = sdet->Overlap(TrialB, *wset[0].SlaterMatrix(Beta), logovlp);
       ovlp_sum += ma::conj(coeffs[idet]) * ovlpa * ovlpb;
-      //boost::multi::array_ref<ComplexType,2> GB(to_address(GBuff.origin()), {NAEA,NMO});
+      //boost::multi::array_ref<ComplexType,2> GB(to_address(GBuff.base()), {NAEA,NMO});
       //sdet->MixedDensityMatrix(TrialB, wset[0].SlaterMatrix(Alpha), GA, logovlp, true);
-      //boost::multi::array_ref<ComplexType,2> GA(to_address(GBuff.origin()+NAEA*NMO), {NAEA,NMO});
+      //boost::multi::array_ref<ComplexType,2> GA(to_address(GBuff.base()+NAEA*NMO), {NAEA,NMO});
       //sdet->MixedDensityMatrix(TrialA, wset[0].SlaterMatrix(Alpha), GB, logovlp, true);
     }
     wfn.Overlap(wset);

@@ -37,7 +37,7 @@ public:
   using GGGMatrix   = typename SPOSet::GGGMatrix;
 
   ///component SPOSets
-  std::vector<std::unique_ptr<SPOSet>> components;
+  const std::vector<std::unique_ptr<SPOSet>> components;
   ///temporary storage for values
   std::vector<ValueVector> component_values;
   ///temporary storage for gradients
@@ -49,21 +49,17 @@ public:
   ///store the precomputed offsets
   std::vector<int> component_offsets;
 
-  CompositeSPOSet(const std::string& my_name);
+  CompositeSPOSet(const std::string& my_name, std::vector<std::unique_ptr<SPOSet>>&& components);
   CompositeSPOSet(const CompositeSPOSet& other);
   ~CompositeSPOSet() override;
 
   std::string getClassName() const override { return "CompositeSPOSet"; }
-
-  ///add a sposet component to this composite sposet
-  void add(std::unique_ptr<SPOSet> component);
 
   ///print out component info
   void report();
 
   //SPOSet interface methods
   ///size is determined by component sposets and nothing else
-  inline void setOrbitalSetSize(int norbs) override {}
 
   std::unique_ptr<SPOSet> makeClone() const override;
 
@@ -80,9 +76,7 @@ public:
 
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)
-  {
-    APP_ABORT("CompositeSPOSet::" + method + " has not been implemented");
-  }
+  { APP_ABORT("CompositeSPOSet::" + method + " has not been implemented"); }
 
   //methods to be implemented in the future (possibly)
   void evaluate_notranspose(const ParticleSet& P,

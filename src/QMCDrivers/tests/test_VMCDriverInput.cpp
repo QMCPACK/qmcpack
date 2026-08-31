@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
@@ -22,8 +21,7 @@ TEST_CASE("VMCDriverInput readXML", "[drivers]")
 {
   auto xml_test = [](const char* driver_xml) {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(driver_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(driver_xml));
     xmlNodePtr node = doc.getRoot();
     VMCDriverInput vmcdriver_input;
     vmcdriver_input.readXML(node);

@@ -4,7 +4,6 @@
 
 #ifndef BOOST_MULTI_ADAPTORS_BLAS_NUMERIC_IS_COMPLEX_HPP
 #define BOOST_MULTI_ADAPTORS_BLAS_NUMERIC_IS_COMPLEX_HPP
-#pragma once
 
 #include<complex>
 #include<type_traits>

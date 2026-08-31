@@ -8,9 +8,8 @@
 //
 // File created by: Yubo "Paul Yang", yubo.paul.yang@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -52,8 +51,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   </simulationcell>
 </tmp>)";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xmltext);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xmltext));
 
   // read lattice
   xmlNodePtr root  = doc.getRoot();
@@ -93,8 +91,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   <ionwf name="ionwf" source="ion" width="0.5 0.5"/>
 </tmp>
 )";
-  okay                  = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   root = doc.getRoot();
 

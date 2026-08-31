@@ -8,8 +8,8 @@
 //
 // File created by: Joshua Townsend, jptowns@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -18,7 +18,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "BsplineFactory/EinsplineSetBuilder.h"
 #include "BsplineFactory/EinsplineSpinorSetBuilder.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineC2C.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
 
 #include <stdio.h>
@@ -39,7 +38,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -50,12 +49,14 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -70,8 +71,7 @@ TEST_CASE("Spline applyRotation zero rotation", "[wavefunction]")
 </sposet_collection>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
@@ -175,7 +175,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -186,12 +186,14 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -206,8 +208,7 @@ TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
 </sposet_collection>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
@@ -384,7 +385,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -395,12 +396,14 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -415,8 +418,7 @@ TEST_CASE("Spline applyRotation two rotations", "[wavefunction]")
 </sposet_collection>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
@@ -688,7 +690,7 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -699,12 +701,14 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -719,8 +723,7 @@ TEST_CASE("Spline applyRotation complex rotation", "[wavefunction]")
 </sposet_collection>)";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr ein1 = xmlFirstElementChild(root);
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);

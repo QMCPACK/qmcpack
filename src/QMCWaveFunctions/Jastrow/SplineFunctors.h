@@ -146,9 +146,7 @@ struct CubicSplineSingle : public OptimizableFunctorBase
                            const int dist_stride,
                            RT* mw_vals,
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
-  {
-    throw std::runtime_error("mw_evaluateV not implemented!");
-  }
+  { throw std::runtime_error("mw_evaluateV not implemented!"); }
 
   inline void evaluateVGL(const int iat,
                           const int iStart,
@@ -171,20 +169,20 @@ struct CubicSplineSingle : public OptimizableFunctorBase
     return s;
   }
 
-  void checkInVariablesExclusive(opt_variables_type& active) override
+  void checkInVariablesExclusive(OptVariables& active) override
   {
     if (InFunc)
       InFunc->checkInVariablesExclusive(active);
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
+  void checkOutVariables(const OptVariables& active) override
   {
     if (InFunc)
       InFunc->checkOutVariables(active);
   }
 
   ///reset the input/output function
-  void resetParametersExclusive(const opt_variables_type& active) override
+  void resetParametersExclusive(const OptVariables& active) override
   {
     if (InFunc)
     {
@@ -257,7 +255,7 @@ struct CubicSplineBasisSet : public OptimizableFunctorBase
   ///set the output numerical function
   void setOutFunc(FNOUT* out_) { OutFunc = out_; }
   ///reset the input/output function
-  void resetParametersExclusive(const opt_variables_type& active) override
+  void resetParametersExclusive(const OptVariables& active) override
   {
     if (!InFunc)
       APP_ABORT("CubicSplineBasisSet::resetParameters failed due to null input function ");
@@ -279,9 +277,7 @@ struct CubicSplineBasisSet : public OptimizableFunctorBase
   /** evaluate everything: value, first and second derivatives
   */
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2)
-  {
-    return OutFunc->splint(r, dudr, d2udr2);
-  }
+  { return OutFunc->splint(r, dudr, d2udr2); }
 
   /** evaluate value only
   */

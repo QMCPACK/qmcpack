@@ -24,7 +24,6 @@ inline void assign_v(ST x,
                      const ST* restrict offload_scratch_ptr,
                      const ST* restrict myKcart_ptr,
                      size_t myKcart_padded_size,
-                     size_t first_spo,
                      int index)
 {
   const ST* restrict kx = myKcart_ptr;
@@ -38,9 +37,9 @@ inline void assign_v(ST x,
   ST s, c, p = -(x * kx[index] + y * ky[index] + z * kz[index]);
   omptarget::sincos(p, &s, &c);
 
-  const ST val_r         = val[index * 2];
-  const ST val_i         = val[index * 2 + 1];
-  psi[first_spo + index] = TT(val_r * c - val_i * s, val_i * c + val_r * s);
+  const ST val_r = val[index * 2];
+  const ST val_i = val[index * 2 + 1];
+  psi[index]     = TT(val_r * c - val_i * s, val_i * c + val_r * s);
 }
 
 /** assign_vgl
@@ -57,7 +56,6 @@ inline void assign_vgl(ST x,
                        const ST G[9],
                        const ST* myKcart_ptr,
                        size_t myKcart_padded_size,
-                       size_t first_spo,
                        int index)
 {
   constexpr ST two(2);
@@ -113,12 +111,11 @@ inline void assign_vgl(ST x,
   TT* restrict dpsi_z = results_scratch_ptr + orb_padded_size * 3;
   TT* restrict d2psi  = results_scratch_ptr + orb_padded_size * 4;
 
-  const size_t psiIndex = first_spo + index;
-  psi[psiIndex]         = TT(c * val_r - s * val_i, c * val_i + s * val_r);
-  d2psi[psiIndex]       = TT(c * lap_r - s * lap_i, c * lap_i + s * lap_r);
-  dpsi_x[psiIndex]      = TT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
-  dpsi_y[psiIndex]      = TT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
-  dpsi_z[psiIndex]      = TT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
+  psi[index]    = TT(c * val_r - s * val_i, c * val_i + s * val_r);
+  d2psi[index]  = TT(c * lap_r - s * lap_i, c * lap_i + s * lap_r);
+  dpsi_x[index] = TT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
+  dpsi_y[index] = TT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
+  dpsi_z[index] = TT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
 }
 } // namespace C2C
 } // namespace qmcplusplus

@@ -9,12 +9,10 @@
 //
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "Estimators/MagnetizationDensityInput.h"
 #include "ValidMagnetizationDensityInput.h"
-#include "Configuration.h"
 //#include "QMCHamiltonians/MagDensityEstimator.h"
 //for wavefunction
 #include "OhmmsData/Libxml2Doc.h"
@@ -108,9 +106,7 @@ public:
     }
   }
   int computeBinAccessor(const MagnetizationDensity& magdens, const Position& r, const int spin_index)
-  {
-    return magdens.computeBin(r, spin_index);
-  }
+  { return magdens.computeBin(r, spin_index); }
 };
 } //namespace testing
 
@@ -121,8 +117,7 @@ TEST_CASE("MagnetizationDensity::MagnetizationDensity(SPInput, Lattice, SpeciesS
   using namespace testing;
   Libxml2Document doc;
   auto input_xml = magdensity::valid_mag_density_input_sections[magdensity::Inputs::valid_magdensity_input];
-  bool okay      = doc.parseFromString(input_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(input_xml));
   xmlNodePtr node = doc.getRoot();
   MagnetizationDensityInput mdi(node);
 
@@ -138,8 +133,7 @@ TEST_CASE("MagnetizationDensity::spawnCrowdClone()", "[estimators]")
   using namespace testing;
   Libxml2Document doc;
   auto input_xml = magdensity::valid_mag_density_input_sections[magdensity::Inputs::valid_magdensity_input];
-  bool okay      = doc.parseFromString(input_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(input_xml));
   xmlNodePtr node = doc.getRoot();
   MagnetizationDensityInput mdi(node);
 
@@ -156,8 +150,7 @@ TEST_CASE("MagnetizationDensity::integrals", "[estimators]")
   using namespace testing;
   Libxml2Document doc;
   auto input_xml = magdensity::valid_mag_density_input_sections[magdensity::Inputs::valid_magdensity_input];
-  bool okay      = doc.parseFromString(input_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(input_xml));
   xmlNodePtr node = doc.getRoot();
   MagnetizationDensityInput mdi(node);
 
@@ -203,8 +196,7 @@ TEST_CASE("MagnetizationDensity::gridAssignment", "[estimators]")
   auto mag_input_xml = testing::magdensity::valid_mag_density_input_sections
       [testing::magdensity::Inputs::valid_magdensity_input_unittest];
   Libxml2Document doc;
-  bool okay = doc.parseFromString(mag_input_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(mag_input_xml));
   xmlNodePtr node = doc.getRoot();
 
   MagnetizationDensityInput maginput(node);
@@ -242,10 +234,8 @@ TEST_CASE("MagnetizationDensity::integralAPI", "[estimators]")
   Libxml2Document doc_mc;
   auto input_xml_simpsons = magdensity::valid_mag_density_input_sections[magdensity::Inputs::valid_magdensity_input];
   auto input_xml_mc       = magdensity::valid_mag_density_input_sections[magdensity::Inputs::valid_magdensity_input_dr];
-  bool okay_simpsons      = doc_simpsons.parseFromString(input_xml_simpsons);
-  bool okay_mc            = doc_mc.parseFromString(input_xml_mc);
-  REQUIRE(okay_simpsons);
-  REQUIRE(okay_mc);
+  REQUIRE(doc_simpsons.parseFromString(input_xml_simpsons));
+  REQUIRE(doc_mc.parseFromString(input_xml_mc));
   xmlNodePtr node_simpsons = doc_simpsons.getRoot();
   xmlNodePtr node_mc       = doc_mc.getRoot();
   MagnetizationDensityInput mdi_simpsons(node_simpsons);
@@ -315,8 +305,7 @@ TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
   auto mag_input_xml = testing::magdensity::valid_mag_density_input_sections
       [testing::magdensity::Inputs::valid_magdensity_input_unittest];
   Libxml2Document doc;
-  bool okay = doc.parseFromString(mag_input_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(mag_input_xml));
   xmlNodePtr node = doc.getRoot();
 
   MagnetizationDensityInput maginput(node);
@@ -373,8 +362,7 @@ TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
 
   spo_up->setRefVals(mup);
   spo_dn->setRefVals(mdn);
-  auto spinor_set = std::make_unique<SpinorSet>("ConstSpinorSet");
-  spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
+  auto spinor_set = std::make_unique<SpinorSet>("ConstSpinorSet", std::move(spo_up), std::move(spo_dn));
 
   auto dd = std::make_unique<DiracDeterminant<>>(*spinor_set, 0, nelec);
 

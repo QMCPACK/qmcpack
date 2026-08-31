@@ -76,7 +76,7 @@ inline void FairDivide(int ntot, int npart, IV& adist)
 template<class IV>
 std::vector<IV> fairDivide(IV ntot, IV npart)
 {
-  IV bat = ntot / npart;
+  IV bat     = ntot / npart;
   IV residue = ntot % npart;
   std::vector<IV> partitions(npart, 0);
   std::fill_n(partitions.begin(), residue, bat + 1);
@@ -100,6 +100,21 @@ inline void FairDivideAligned(const int ntot, const int base, const int npart, c
   last                = std::min((me + 1) * blocksize, ntot);
   if (first > last)
     first = last;
+}
+
+template<class IV>
+inline IV FairDivideAligned(const int ntot, const int base, const int npart)
+{
+  IV adist(npart + 1, 0);
+  const size_t nblocks_total((ntot + base - 1)/ base);
+  const size_t residue = nblocks_total % npart;
+  const size_t nblocks = (nblocks_total - residue ) / npart;
+  for (size_t i = 0; i < npart; i++)
+  {
+    adist[i + 1] = adist[i] + (nblocks + (i < residue ? 1 : 0)) * base;
+    adist[i + 1] = adist[i + 1] > ntot ? ntot : adist[i + 1];
+  }
+  return adist;
 }
 
 /** partition ntot elements among npart

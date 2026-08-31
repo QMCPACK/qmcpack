@@ -49,9 +49,7 @@ struct TwoBodyJastrowMultiWalkerMem : public Resource
 
 template<typename FT>
 void TwoBodyJastrow<FT>::createResource(ResourceCollection& collection) const
-{
-  collection.addResource(std::make_unique<TwoBodyJastrowMultiWalkerMem<RealType>>());
-}
+{ collection.addResource(std::make_unique<TwoBodyJastrowMultiWalkerMem<RealType>>()); }
 
 template<typename FT>
 void TwoBodyJastrow<FT>::acquireResource(ResourceCollection& collection,
@@ -127,7 +125,7 @@ void TwoBodyJastrow<FT>::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_
 }
 
 template<typename FT>
-void TwoBodyJastrow<FT>::checkOutVariables(const opt_variables_type& active)
+void TwoBodyJastrow<FT>::checkOutVariables(const OptVariables& active)
 {
   myVars.clear();
   for (auto& [key, functor] : J2Unique)
@@ -294,7 +292,8 @@ TwoBodyJastrow<FT>::TwoBodyJastrow(const std::string& obj_name, ParticleSet& p, 
       lapfac(ndim - RealType(1)),
       use_offload_(use_offload),
       N_padded(getAlignedSize<valT>(N)),
-      my_table_ID_(p.addTable(p, use_offload && FT::isOMPoffload() ? DTModes::ALL_OFF : DTModes::NEED_TEMP_DATA_ON_HOST)),
+      my_table_ID_(
+          p.addTable(p, use_offload && FT::isOMPoffload() ? DTModes::ALL_OFF : DTModes::NEED_TEMP_DATA_ON_HOST)),
       j2_ke_corr_helper(p, F)
 {
   if (my_name_.empty())
@@ -521,9 +520,7 @@ void TwoBodyJastrow<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Valu
 
 template<typename FT>
 typename TwoBodyJastrow<FT>::GradType TwoBodyJastrow<FT>::evalGrad(ParticleSet& P, int iat)
-{
-  return GradType(dUat[iat]);
-}
+{ return GradType(dUat[iat]); }
 
 template<typename FT>
 typename TwoBodyJastrow<FT>::PsiValue TwoBodyJastrow<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
@@ -781,9 +778,7 @@ WaveFunctionComponent::LogValue TwoBodyJastrow<FT>::evaluateGL(const ParticleSet
                                                                ParticleSet::ParticleGradient& G,
                                                                ParticleSet::ParticleLaplacian& L,
                                                                bool fromscratch)
-{
-  return log_value_ = computeGL(G, L);
-}
+{ return log_value_ = computeGL(G, L); }
 
 template<typename FT>
 void TwoBodyJastrow<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -842,7 +837,7 @@ void TwoBodyJastrow<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_p
 
 template<typename FT>
 void TwoBodyJastrow<FT>::evaluateDerivatives(ParticleSet& P,
-                                             const opt_variables_type& active,
+                                             const OptVariables& active,
                                              Vector<ValueType>& dlogpsi,
                                              Vector<ValueType>& dhpsioverpsi)
 {
@@ -857,7 +852,7 @@ void TwoBodyJastrow<FT>::evaluateDerivatives(ParticleSet& P,
     int kk = myVars.where(k);
     if (kk < 0)
       continue;
-    recalculate = true;
+    recalculate  = true;
     rcsingles[k] = true;
   }
   if (recalculate)
@@ -876,9 +871,7 @@ void TwoBodyJastrow<FT>::evaluateDerivatives(ParticleSet& P,
 }
 
 template<typename FT>
-void TwoBodyJastrow<FT>::evaluateDerivativesWF(ParticleSet& P,
-                                               const opt_variables_type& active,
-                                               Vector<ValueType>& dlogpsi)
+void TwoBodyJastrow<FT>::evaluateDerivativesWF(ParticleSet& P, const OptVariables& active, Vector<ValueType>& dlogpsi)
 {
   if (myVars.size() == 0)
     return;
@@ -892,7 +885,7 @@ void TwoBodyJastrow<FT>::evaluateDerivativesWF(ParticleSet& P,
     int kk = myVars.where(k);
     if (kk < 0)
       continue;
-    recalculate = true;
+    recalculate  = true;
     rcsingles[k] = true;
   }
   if (recalculate)
@@ -974,7 +967,7 @@ void TwoBodyJastrow<FT>::evaluateDerivativesWF(ParticleSet& P,
 
 template<typename FT>
 void TwoBodyJastrow<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                             const opt_variables_type& optvars,
+                                             const OptVariables& optvars,
                                              std::vector<ValueType>& ratios,
                                              Matrix<ValueType>& dratios)
 {
@@ -989,7 +982,7 @@ void TwoBodyJastrow<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
     int kk = myVars.where(k);
     if (kk < 0)
       continue;
-    recalculate = true;
+    recalculate  = true;
     rcsingles[k] = true;
   }
 

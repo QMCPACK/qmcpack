@@ -15,6 +15,7 @@
 #include <variant>
 #include "MagnetizationDensityInput.h"
 #include "ModernStringUtils.hpp"
+#include "PairCorrelationInput.h"
 
 namespace qmcplusplus
 {
@@ -94,6 +95,8 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         appendEstimatorInput<EnergyDensityInput>(child);
       else if (atype == "structurefactor")
         appendEstimatorInput<StructureFactorInput>(child);
+      else if (atype == lowerCase(PairCorrelationInput::type_tag))
+        appendEstimatorInput<PairCorrelationInput>(child);
       else
         throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
                                       " in Estimators input.");
@@ -140,6 +143,7 @@ template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<SelfHea
 template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<MagnetizationDensityInput>() const;
 template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<PerParticleHamiltonianLoggerInput>() const;
 template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<StructureFactorInput>() const;
+template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<PairCorrelationInput>() const;
 
 
 } // namespace qmcplusplus

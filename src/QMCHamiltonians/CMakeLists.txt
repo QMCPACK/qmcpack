@@ -27,8 +27,8 @@ set(HAMSRCS
     CoulombPBCAA.cpp
     CoulombPBCAB.cpp
     EwaldRef.cpp
+    NeighborListsForPseudo.cpp
     NonLocalTOperator.cpp
-    ForwardWalking.cpp
     PairCorrEstimator.cpp
     DensityEstimator.cpp
     SkPot.cpp

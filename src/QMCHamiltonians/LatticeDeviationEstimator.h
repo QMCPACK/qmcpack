@@ -36,10 +36,10 @@ namespace qmcplusplus
 particles, whereas the stat.h5 entries are particle-resolved. The two sets of outputs can be compared
 as a consistency check for the estimator.
  */
-class LatticeDeviationEstimator : public OperatorBase
+class LatticeDeviationEstimator : public OperatorDependsOnlyOnParticleSet
 {
 public:
-  LatticeDeviationEstimator(ParticleSet& P, ParticleSet& sP, const std::string& tgroup, const std::string& sgroup);
+  LatticeDeviationEstimator(ParticleSet& P, const ParticleSet& sP, const std::string& tgroup, const std::string& sgroup);
   ~LatticeDeviationEstimator() override {}
 
   std::string getClassName() const override { return "LatticeDeviationEstimator"; }
@@ -58,13 +58,12 @@ public:
   //void addObservables(PropertySetType& plist, BufferType& collectables); // also used for multiple scalars
 
   // pure virtual functions require overrider
-  void resetTargetParticleSet(ParticleSet& P) override;                                   // required
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final; // required
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& P) const final; // required
 
 private:
-  SpeciesSet& tspecies;       // species table of target particle set
-  SpeciesSet& sspecies;       // species table of source particle set
-  ParticleSet &tpset, spset;  // save references to source and target particle sets
+  const SpeciesSet& tspecies;       // species table of target particle set
+  const SpeciesSet& sspecies;       // species table of source particle set
+  const ParticleSet& spset;  // save references to source and target particle sets
   std::string tgroup, sgroup; // name of species to track
   int num_sites;              // number of lattice sites (i.e. number of source particles)
   bool hdf5_out;              // use .h5 file for data (follow SkEstimator)

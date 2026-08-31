@@ -672,7 +672,7 @@ void kSpaceJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   }
 }
 
-void kSpaceJastrow::checkInVariablesExclusive(opt_variables_type& active)
+void kSpaceJastrow::checkInVariablesExclusive(OptVariables& active)
 {
   active.insertFrom(myVars);
   int nOne = OneBodyGvecs.size();
@@ -700,9 +700,9 @@ void kSpaceJastrow::checkInVariablesExclusive(opt_variables_type& active)
   }
 }
 
-void kSpaceJastrow::checkOutVariables(const opt_variables_type& active) { myVars.getIndex(active); }
+void kSpaceJastrow::checkOutVariables(const OptVariables& active) { myVars.getIndex(active); }
 
-void kSpaceJastrow::resetParametersExclusive(const opt_variables_type& active)
+void kSpaceJastrow::resetParametersExclusive(const OptVariables& active)
 {
   int ii = 0;
 
@@ -826,7 +826,7 @@ void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
   //}
 }
 
-void kSpaceJastrow::evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi)
+void kSpaceJastrow::evaluateDerivativesWF(ParticleSet& P, const OptVariables& active, Vector<ValueType>& dlogpsi)
 {
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)
@@ -886,7 +886,7 @@ void kSpaceJastrow::evaluateDerivativesWF(ParticleSet& P, const opt_variables_ty
 }
 
 void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
-                                        const opt_variables_type& active,
+                                        const OptVariables& active,
                                         Vector<ValueType>& dlogpsi,
                                         Vector<ValueType>& dhpsioverpsi)
 {

@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "SpaceGridInput.h"
 #include "ValidSpaceGridInput.h"
@@ -24,7 +23,7 @@ TEST_CASE("SpaceGridInputs::parseXML::valid", "[estimators]")
   for (auto input_xml : input::xml)
   {
     Libxml2Document doc;
-    bool okay       = doc.parseFromString(input_xml);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
 
     // Will throw if input is invalid.
@@ -40,8 +39,7 @@ TEST_CASE("SpaceGridInputs::parseXML::invalid", "[estimators]")
   for (auto input_xml : input::xml)
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
 
     auto constructBadSpaceGrid = [](xmlNodePtr cur) { SpaceGridInput spi(cur); };
@@ -61,8 +59,7 @@ TEST_CASE("SpaceGridInputs::parseXML::axes", "[estimators]")
   auto& input_xml = input::xml[input::WITH_STEP];
   Libxml2Document doc;
 
-  bool okay = doc.parseFromString(input_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(input_xml));
   xmlNodePtr node = doc.getRoot();
 
   SpaceGridInput sgi(node);

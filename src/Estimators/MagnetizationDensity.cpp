@@ -14,7 +14,9 @@
 namespace qmcplusplus
 {
 MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput, const Lattice& lat)
-    : OperatorEstBase(DataLocality::crowd, minput.get_name(), minput.get_type()), input_(minput), lattice_(lat)
+    : OperatorEstBase(DataLocality::crowd, minput.get_name(), std::string{MagnetizationDensityInput::type_tag}),
+      input_(minput),
+      lattice_(lat)
 {
   //Pull consistent corner, grids, etc., from already inititalized input.
   //DerivedParameters does the sanity checks and consistent initialization of these variables.
@@ -146,7 +148,7 @@ void MagnetizationDensity::generateSpinIntegrand(ParticleSet& pset_target,
   for (int samp = 0; samp < nsamples_; samp++)
     ds[samp] = sgrid[samp] - pset_target.spins[iat];
 
-  VirtualParticleSet vp(pset_target, nsamples_);
+  VirtualParticleSet vp(pset_target);
   std::vector<Position> dV(nsamples_, 0);
   vp.makeMovesWithSpin(pset_target, iat, dV, ds);
   psi_target.evaluateRatios(vp, ratios);

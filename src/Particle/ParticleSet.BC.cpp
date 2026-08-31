@@ -51,8 +51,6 @@ void ParticleSet::createSK()
     for (int ig = 0; ig < my_species_.getTotalNum(); ++ig)
       my_species_(massind, ig) = 1.0;
   }
-  for (int iat = 0; iat < GroupID.size(); iat++)
-    Mass[iat] = my_species_(massind, GroupID[iat]);
 
   coordinates_->setAllParticlePos(R);
 }
@@ -66,13 +64,6 @@ void ParticleSet::turnOnPerParticleSK()
                              "structure_factor_ but structure_factor_ has not been created.");
 }
 
-bool ParticleSet::getPerParticleSKState() const
-{
-  bool isPerParticleOn = false;
-  if (structure_factor_)
-    isPerParticleOn = structure_factor_->isStorePerParticle();
-  return isPerParticleOn;
-}
 
 void ParticleSet::convert(const ParticlePos& pin, ParticlePos& pout)
 {
@@ -186,9 +177,5 @@ void ParticleSet::convert2UnitInBox(const ParticlePos& pin, ParticlePos& pout)
   put2box(pout);
 }
 
-void ParticleSet::convert2CartInBox(const ParticlePos& pin, ParticlePos& pout)
-{
-  convert2UnitInBox(pin, pout); // convert to crystalline unit
-  convert2Cart(pout);
-}
+
 } // namespace qmcplusplus

@@ -11,10 +11,10 @@ When possible, fixes for specific bugs should also include a unit test that woul
 Unit testing framework
 ----------------------
 
-The Catch framework is used for unit testing.
-See the project site for a tutorial and documentation: https://github.com/philsquared/Catch.
+The Catch2 framework is used for unit testing.
+See the project site for a tutorial and documentation: https://github.com/catchorg/Catch2.
 
-Catch consists solely of header files. It is distributed as a single include file about 400 KB in size.  In QMCPACK, it is stored in ``external_codes/catch``.
+QMCPACK vendors the unmodified Catch2 v3 source code in ``external_codes/Catch2``.
 
 Unit test organization
 ----------------------
@@ -48,7 +48,7 @@ Example
 
 The first example is one test from ``src/Numerics/tests/test_grid_functor.cpp``.
 
-.. code-block::
+.. code-block:: cpp
   :caption: Unit test example using Catch.
   :name: Listing 75
 
@@ -125,9 +125,7 @@ When adding a new test file,
 create a file in the test directory, or copy from an existing file.  Add the file name to the ``ADD_EXECUTABLE`` in the ``CMakeLists.txt`` file in that directory.
 The pattern for the test file name is ``test_<ClassName>.cpp``.  Many older tests do not follow this pattern, but new tests should.
 
-One (and only one) file must define the ``main`` function for the test executable by defining ``CATCH_CONFIG_MAIN`` before including the Catch header.  If more than one file defines this value, there will be linking errors about multiply defined values.
-
-Some of the tests need to shut down MPI properly to avoid extraneous error messages. Those tests include ``Message/catch_mpi_main.hpp`` instead of defining ``CATCH_CONFIG_MAIN``.
+Unit test executables link QMCPACK's shared ``catch_main`` target, which supplies the Catch2 runner and performs the required MPI and device setup and teardown.
 
 Adding a test directory
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -169,7 +167,7 @@ The ``Libxml2Document`` class has a ``parseFromString`` function to parse XML in
 
 The following code fragment to read the xml is common
 
-.. code-block::
+.. code-block:: cpp
 
   const char* xml_str = R"(<tmp><wavefunction></wavefunction></tmp>)";
   Libxml2Document doc;

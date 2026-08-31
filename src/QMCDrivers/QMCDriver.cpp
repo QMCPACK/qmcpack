@@ -17,6 +17,8 @@
 
 
 #include "QMCDriver.h"
+#include <limits>
+#include <typeinfo>
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -27,8 +29,7 @@
 #include "RandomNumberControl.h"
 #include "hdf/HDFVersion.h"
 #include "Utilities/qmc_common.h"
-#include <limits>
-#include <typeinfo>
+#include "Concurrency/OpenMP.h"
 
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #if !defined(REMOVE_TRACEMANAGER)
@@ -59,18 +60,18 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
       checkpoint_timer_(createGlobalTimer("checkpoint::recordBlock", timer_level_medium)),
       driver_scope_profiler_(enable_profiling)
 {
-  ResetRandom  = false;
-  AppendRun    = false;
-  DumpConfig   = false;
-  IsQMCDriver  = true;
-  allow_traces = false;
+  ResetRandom       = false;
+  AppendRun         = false;
+  DumpConfig        = false;
+  IsQMCDriver       = true;
+  allow_traces      = false;
   allow_walker_logs = false;
   walker_logs_xml   = NULL;
-  MyCounter    = 0;
+  MyCounter         = 0;
   //<parameter name=" "> value </parameter>
   //accept multiple names for the same value
   //recommend using all lower cases for a new parameter
-  Period4CheckPoint = 0;
+  Period4CheckPoint      = 0;
   Period4CheckProperties = 100;
   m_param.add(Period4CheckProperties, "checkProperties");
   m_param.add(Period4CheckProperties, "checkproperties");
@@ -138,7 +139,6 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute");
   ////add each OperatorBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
-  //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
   rotation = 0;
 }
 
@@ -146,12 +146,6 @@ QMCDriver::~QMCDriver()
 {
   if (DriftModifier)
     delete DriftModifier;
-}
-
-void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
-{
-  H1.push_back(h);
-  Psi1.push_back(psi);
 }
 
 /** process a <qmc/> element
@@ -178,9 +172,6 @@ void QMCDriver::process(xmlNodePtr cur)
   putQMCInfo(cur);
   ////set the Tau parameter inside the Hamiltonian
   //H.setTau(Tau);
-  //need to initialize properties
-  int numCopies = (H1.empty()) ? 1 : H1.size();
-  W.resetWalkerProperty(numCopies);
   //create branchEngine first
   if (!branchEngine)
   {
@@ -315,7 +306,7 @@ void QMCDriver::recordBlock(int block)
   }
 }
 
-bool QMCDriver::finalize(int block, bool dumpwalkers)
+void QMCDriver::finalize(int block, bool dumpwalkers)
 {
   if (DumpConfig && dumpwalkers)
     wOut->dump(W, block);
@@ -328,8 +319,6 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
 
   if (DumpConfig)
     RandomNumberControl::write(RootName, myComm);
-
-  return true;
 }
 
 /** Add walkers to the end of the ensemble of walkers.
@@ -381,8 +370,14 @@ void QMCDriver::setWalkerOffsets()
     W[iw]->setWalkerID(id);
     W[iw]->setParentID(id);
   }
-  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
-  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
+  // Compute total walker weights and counts. W.EnsembleProperty.NumSamples and W.EnsembleProperty.Weight are only set during branching / measureProperties.
+  QMCTraits::FullPrecRealType total_weight = 0;
+  for (int iw = 0; iw < nw[myComm->rank()]; ++iw)
+    total_weight += W[iw]->Weight;
+  myComm->allreduce(total_weight);
+
+  app_log() << "  Total number of walkers: " << nwoff.back() << std::endl;
+  app_log() << "  Total weight: " << total_weight << std::endl;
 }
 
 
@@ -394,13 +389,12 @@ void QMCDriver::setWalkerOffsets()
  *   -- 1 = do not write anything
  *   -- 0 = dump after the completion of a qmc section
  *   -- n = dump after n blocks
- * - kdelay = "0|1|n" default=0
  */
 bool QMCDriver::putQMCInfo(xmlNodePtr cur)
 {
   if (!IsQMCDriver)
   {
-    app_log() << getName() << "  Skip QMCDriver::putQMCInfo " << std::endl;
+    app_log() << "  Skip QMCDriver::putQMCInfo " << std::endl;
     return true;
   }
 
@@ -413,7 +407,6 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   int defaultw      = omp_get_max_threads();
   OhmmsAttributeSet aAttrib;
   aAttrib.add(Period4CheckPoint, "checkpoint");
-  aAttrib.add(kDelay, "kdelay");
   aAttrib.put(cur);
   if (cur != NULL)
   {

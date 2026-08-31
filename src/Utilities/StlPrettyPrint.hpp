@@ -14,6 +14,8 @@
 
 #include <iostream>
 #include <vector>
+#include <map>
+#include <string>
 
 namespace qmcplusplus
 {
@@ -42,6 +44,21 @@ std::ostream& operator<<(std::ostream& out, const std::vector<T>& rhs)
       out << ", ";
   }
   out << "]";
+  return out;
+}
+
+/// map name printout with double quotes
+template<typename T>
+std::ostream& operator<<(std::ostream& out, const std::map<std::string, T>& rhs)
+{
+  auto cursor = rhs.begin();
+  while (cursor != rhs.end())
+  {
+    out << "\"" <<  cursor->first << "\"";
+    // if not the last element, add a separator
+    if (++cursor != rhs.end())
+      out << " ";
+  }
   return out;
 }
 

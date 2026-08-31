@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -30,7 +29,7 @@ using std::string;
 
 namespace qmcplusplus
 {
-void test_einset_diamond_1x1x1(bool use_offload)
+void test_einset_diamond_1x1x1(bool use_offload, int distributed_ranks = 1, int shared_ranks = 1)
 {
   Communicate* c = OHMMS::Controller;
 
@@ -42,7 +41,7 @@ void test_einset_diamond_1x1x1(bool use_offload)
   lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -53,13 +52,14 @@ void test_einset_diamond_1x1x1(bool use_offload)
   ions_.create({2});
   ions_.R[0] = {0.0, 0.0, 0.0};
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
-
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -70,15 +70,19 @@ void test_einset_diamond_1x1x1(bool use_offload)
   // add save_coefs="yes" to create an HDF file of spline coefficients for the eval_bspline_spo.py script
   std::string spo_xml = R"XML(
 <sposet_collection type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" gpu="omptarget">
-  <sposet name="updet" size="8"/>
+    <sposet name="updet" size="8">
+        <coefs_mem distributed_ranks="DISTRIBUTED_RANKS" shared_ranks="SHARED_RANKS"/>
+    </sposet>
 </sposet_collection>)XML";
 
   if (!use_offload)
     spo_xml = std::regex_replace(spo_xml, std::regex("omptarget"), "no");
 
+  spo_xml = std::regex_replace(spo_xml, std::regex("DISTRIBUTED_RANKS"), std::to_string(distributed_ranks));
+  spo_xml = std::regex_replace(spo_xml, std::regex("SHARED_RANKS"), std::to_string(shared_ranks));
+
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml));
 
   xmlNodePtr root = doc.getRoot();
 
@@ -87,6 +91,7 @@ void test_einset_diamond_1x1x1(bool use_offload)
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, root);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
+  REQUIRE(spo->isOMPoffload() == use_offload);
 
   // Test the case where the number of psi values is not the orbital set size
   // or the number of electrons/2
@@ -299,6 +304,21 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   test_einset_diamond_1x1x1(true);
   test_einset_diamond_1x1x1(false);
+  Communicate* c = OHMMS::Controller;
+  if (c->size() % 2 == 0)
+  {
+    test_einset_diamond_1x1x1(true, 2, 1);
+    test_einset_diamond_1x1x1(false, 2, 1);
+    test_einset_diamond_1x1x1(true, 1, 2);
+    test_einset_diamond_1x1x1(false, 1, 2);
+  }
+  if (c->size() % 6 == 0)
+  {
+    test_einset_diamond_1x1x1(true, 2, 3);
+    test_einset_diamond_1x1x1(false, 2, 3);
+    test_einset_diamond_1x1x1(true, 3, 2);
+    test_einset_diamond_1x1x1(false, 3, 2);
+  }
 }
 
 TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
@@ -310,7 +330,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   lattice.R = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -323,7 +343,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
   ions_.R[2] = {3.37316115, 3.37316115, 0.0};
   ions_.R[3] = {5.05974173, 5.05974173, 1.68658058};
-
+  ions_.update();
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
@@ -333,6 +353,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   elec_.R[2] = {0.0, 1.1, 0.0};
   elec_.R[3] = {0.0, 1.2, 0.0};
   elec_.R[4] = {0.0, 1.3, 0.0};
+  elec_.update();
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -347,8 +368,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml));
 
   xmlNodePtr root = doc.getRoot();
 

@@ -8,11 +8,9 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "CPU/VectorOps.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -74,8 +72,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   </example_he>
 </wavefunction>)";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wavefunction_xml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(wavefunction_xml));
 
   xmlNodePtr root = doc.getRoot();
   RuntimeOptions runtime_options;

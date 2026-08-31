@@ -100,6 +100,7 @@ public:
    *  There could be concurrent operations inside the scope of the collect call.
    */
   virtual void collect(const RefVector<OperatorEstBase>& oebs);
+  virtual void zero(RefVector<OperatorEstBase>& oebs);
 
   virtual void normalize(QMCT::RealType invToWgt);
 

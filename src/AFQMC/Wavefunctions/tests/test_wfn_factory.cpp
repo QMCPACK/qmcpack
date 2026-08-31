@@ -10,10 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 //#undef NDEBUG
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "ProjectData.h"
@@ -21,13 +20,6 @@
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
 #include "Platforms/Host/OutputManager.h"
-
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
 
 #include <string>
 #include <vector>
@@ -95,8 +87,7 @@ void wfn_fac(boost::mpi3::communicator& world)
     )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ham_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ham_xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
@@ -126,8 +117,7 @@ void wfn_fac(boost::mpi3::communicator& world)
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
 
     Libxml2Document doc3;
-    okay = doc3.parseFromString(wlk_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc3.parseFromString(wlk_xml_block));
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
     app_log() << " wfn_fac destroy restart_file " << restart_file << "\n";
     if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
@@ -142,8 +132,7 @@ void wfn_fac(boost::mpi3::communicator& world)
     )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
-    okay = doc2.parseFromString(wfn_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc2.parseFromString(wfn_xml_block));
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name, doc2.getRoot());
@@ -161,7 +150,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
       if (type == COLLINEAR)
-        wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+        wset.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
       else
         wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -286,8 +275,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       </Wavefunction>
       )";
       Libxml2Document doc4;
-      okay = doc4.parseFromString(wfn_xml_block_restart);
-      REQUIRE(okay);
+      REQUIRE(doc4.parseFromString(wfn_xml_block_restart));
       wfn_name = "wfn1";
       WfnFac.push(wfn_name, doc4.getRoot());
       Wavefunction& wfn2 = WfnFac.getWavefunction(TG, TG, wfn_name, type, nullptr, 1e-6, nwalk);
@@ -300,7 +288,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
       if (type == COLLINEAR)
-        wset2.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+        wset2.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
       else
         wset2.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -434,8 +422,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ham_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ham_xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
@@ -465,8 +452,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
 
     Libxml2Document doc3;
-    okay = doc3.parseFromString(wlk_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc3.parseFromString(wlk_xml_block));
 
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
     app_log() << " wfn_fac_distributed destroy restart_file " << restart_file << "\n";
@@ -482,8 +468,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
-    okay = doc2.parseFromString(wfn_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc2.parseFromString(wfn_xml_block));
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name, doc2.getRoot());
@@ -498,7 +483,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
     if (type == COLLINEAR)
-      wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+      wset.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
     else
       wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -574,12 +559,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     {
       boost::multi::array<ComplexType, 2> T({nCV, nwalk});
       if (TGwfn.TG_local().root())
-        std::copy_n(X.origin(), X.num_elements(), T.origin());
+        std::copy_n(X.base(), X.num_elements(), T.base());
       else
-        std::fill_n(T.origin(), T.num_elements(), ComplexType(0.0, 0.0));
-      TGwfn.TG().all_reduce_in_place_n(to_address(T.origin()), T.num_elements(), std::plus<>());
+        std::fill_n(T.base(), T.num_elements(), ComplexType(0.0, 0.0));
+      TGwfn.TG().all_reduce_in_place_n(to_address(T.base()), T.num_elements(), std::plus<>());
       if (TGwfn.TG_local().root())
-        std::copy_n(T.origin(), T.num_elements(), X.origin());
+        std::copy_n(T.base(), T.num_elements(), X.base());
       TGwfn.TG_local().barrier();
     }
 
@@ -644,8 +629,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     </Wavefunction>
     )";
     Libxml2Document doc4;
-    okay = doc4.parseFromString(wfn_xml_block_restart);
-    REQUIRE(okay);
+    REQUIRE(doc4.parseFromString(wfn_xml_block_restart));
     wfn_name = "wfn1";
     WfnFac.push(wfn_name, doc4.getRoot());
     Wavefunction& wfn2 = WfnFac.getWavefunction(TGwfn, TGwfn, wfn_name, type, nullptr, 1e-8, nwalk);
@@ -658,7 +642,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
     if (type == COLLINEAR)
-      wset2.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+      wset2.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
     else
       wset2.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -690,7 +674,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     wfn2.MixedDensityMatrix_for_vbias(wset2, G);
 
     nCV = wfn2.local_number_of_cholesky_vectors();
-    boost::multi::array_ref<ComplexType, 2> X2(to_address(X.origin()), {nCV, nwalk});
+    boost::multi::array_ref<ComplexType, 2> X2(to_address(X.base()), {nCV, nwalk});
     wfn2.vbias(G, X2, sqrtdt);
     Xsum = 0;
     if (std::abs(file_data.Xsum) > 1e-8)
@@ -720,12 +704,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     {
       boost::multi::array<ComplexType, 2> T({nCV, nwalk});
       if (TGwfn.TG_local().root())
-        std::copy_n(X2.origin(), X2.num_elements(), T.origin());
+        std::copy_n(X2.base(), X2.num_elements(), T.base());
       else
-        std::fill_n(T.origin(), T.num_elements(), ComplexType(0.0, 0.0));
-      TGwfn.TG().all_reduce_in_place_n(to_address(T.origin()), T.num_elements(), std::plus<>());
+        std::fill_n(T.base(), T.num_elements(), ComplexType(0.0, 0.0));
+      TGwfn.TG().all_reduce_in_place_n(to_address(T.base()), T.num_elements(), std::plus<>());
       if (TGwfn.TG_local().root())
-        std::copy_n(T.origin(), T.num_elements(), X.origin());
+        std::copy_n(T.base(), T.num_elements(), X.base());
       TGwfn.TG_local().barrier();
     }
 
@@ -814,8 +798,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     </Hamiltonian>
     )";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(ham_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(ham_xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name,doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
@@ -833,8 +816,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     </WalkerSet>
     )";
     Libxml2Document doc3;
-    okay = doc3.parseFromString(wlk_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc3.parseFromString(wlk_xml_block));
 
     const char *wfn_xml_block =
     R"(<Wavefunction name="wfn0" type="phmsd" info="info0">
@@ -845,8 +827,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     )";
 
     Libxml2Document doc2;
-    okay = doc2.parseFromString(wfn_xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc2.parseFromString(wfn_xml_block));
     std::string wfn_name("wfn0");
     WavefunctionFactory WfnFac(InfoMap);
     WfnFac.push(wfn_name,doc2.getRoot());
@@ -863,8 +844,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
 #define __compare__
 #ifdef __compare__
     Libxml2Document doc2_;
-    okay = doc2_.parseFromString(wfn_xml_block2);
-    REQUIRE(okay);
+    REQUIRE(doc2_.parseFromString(wfn_xml_block2));
     std::string wfn2_name("wfn1");
     WfnFac.push(wfn2_name,doc2_.getRoot());
     Wavefunction& nomsd = WfnFac.getWavefunction(TG,TG,wfn2_name,COLLINEAR,&ham,1e-6,nwalk);
@@ -888,7 +868,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
         //initial_guess[1][i][j] += distribution(generator);
     }
     wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
+                         initial_guess[1](get<1>(initial_guess.extents()),{0,NAEB}));
     qmcplusplus::Timer Time;
     // no guarantee that overlap is 1.0
     double t1;
@@ -1042,7 +1022,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
       shmCMatrix G_({Gdim1_,Gdim2_},alloc_);
       nomsd.MixedDensityMatrix_for_vbias(wset,G_);
 
-      boost::multi::array_ref<ComplexType,2> X2(to_address(X.origin())+nCV*nwalk,{nCV,nwalk});
+      boost::multi::array_ref<ComplexType,2> X2(to_address(X.base())+nCV*nwalk,{nCV,nwalk});
       nomsd.vbias(G_,X2,sqrtdt);
       Xsum=0;
       ComplexType Xsum2(0.0);

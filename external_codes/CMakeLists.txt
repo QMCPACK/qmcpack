@@ -17,8 +17,28 @@ target_link_libraries(qmc_external_mpi_wrapper INTERFACE MPI::MPI_CXX Boost::boo
 add_library(qmc_external_multi INTERFACE)
 target_include_directories(qmc_external_multi INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/boost_multi/multi/include)
 
-add_library(qmc_external_thrust INTERFACE)
-target_include_directories(qmc_external_thrust INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thrust)
+# Hide potentially lengthy initial Catch2 output such as
+# -- Performing Test HAVE_FLAG__ffile_prefix_map__workspaces_qmcpack_external_codes_Catch2__
+# Avoid changing CMAKE_REQUIRED_QUIET defined status or value
+if(DEFINED CMAKE_REQUIRED_QUIET)
+  set(QMC_CMAKE_REQUIRED_QUIET_SAVED "${CMAKE_REQUIRED_QUIET}")
+  set(QMC_CMAKE_REQUIRED_QUIET_WAS_DEFINED TRUE)
+endif()
+set(CMAKE_REQUIRED_QUIET TRUE)
+# Catch2 is not validated with fast-math. Conservatively avoid warnings and potential problems.
+set(QMC_CXX_FLAGS_SAVED "${CMAKE_CXX_FLAGS}")
+if(CMAKE_CXX_FLAGS MATCHES " -ffast-math")
+  string(REPLACE " -ffast-math" " -fno-fast-math" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+endif()
+add_subdirectory(Catch2 EXCLUDE_FROM_ALL)
+set(CMAKE_CXX_FLAGS "${QMC_CXX_FLAGS_SAVED}")
+if(QMC_CMAKE_REQUIRED_QUIET_WAS_DEFINED)
+  set(CMAKE_REQUIRED_QUIET "${QMC_CMAKE_REQUIRED_QUIET_SAVED}")
+else()
+  unset(CMAKE_REQUIRED_QUIET)
+endif()
+unset(QMC_CMAKE_REQUIRED_QUIET_SAVED)
+unset(QMC_CMAKE_REQUIRED_QUIET_WAS_DEFINED)
 
 add_library(qmc_external_catch2 INTERFACE)
-target_include_directories(qmc_external_catch2 INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/catch)
+target_link_libraries(qmc_external_catch2 INTERFACE Catch2::Catch2)

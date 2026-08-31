@@ -8,10 +8,9 @@
 //
 // File created by: Brett Van Der Goetz, bvdg@berkeley.edu, University of California at Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSet.h"
 #include "VariableSet.h"
@@ -64,7 +63,7 @@ TEST_CASE("Gaussian Functor", "[wavefunction]")
   // return variables
   RealType fval, lval, llap, flap;
   PosType fgrad, lgrad;
-  opt_variables_type opt_vars;
+  OptVariables opt_vars;
 
   std::vector<RealType> dfval;
   std::vector<PosType> dfgrad;

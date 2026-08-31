@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -22,9 +22,9 @@ namespace qmcplusplus
 {
 namespace testing
 {
-std::vector<ParticleSet> generateRandomParticleSets(ParticleSet& pset_target,
-                                                    ParticleSet& pset_source,
-                                                    std::vector<ParticleSet::ParticlePos>& deterministic_rs,
+std::vector<ParticleSet> generateRandomParticleSets(const ParticleSet& pset_target,
+                                                    const ParticleSet& pset_source,
+                                                    const std::vector<ParticleSet::ParticlePos>& deterministic_rs,
                                                     int num_psets,
                                                     bool generate_test_data)
 {
@@ -32,7 +32,7 @@ std::vector<ParticleSet> generateRandomParticleSets(ParticleSet& pset_target,
   std::vector<ParticleSet> psets(num_psets, pset_target);
   if (generate_test_data)
   {
-    std::cout << "Initialize OneBodyDensityMatrices::accumulate psets with:\n{";
+    std::cout << "Initialize Particle sets with:\n{";
     std::vector<ParticleSet> psets;
     for (int iw = 0; iw < nwalkers; ++iw)
     {
@@ -48,12 +48,42 @@ std::vector<ParticleSet> generateRandomParticleSets(ParticleSet& pset_target,
   }
   else
   {
-    for (int iw = 0; iw < nwalkers; ++iw) {
+    for (int iw = 0; iw < nwalkers; ++iw)
+    {
       psets[iw].R = deterministic_rs[iw];
       psets[iw].update();
     }
   }
   return psets;
+}
+
+void particleSetsToRandomPositions(RefVector<ParticleSet> pset_targets,
+                                   const ParticleSet& pset_source,
+                                   const std::vector<ParticleSet::ParticlePos>& deterministic_rs,
+                                   bool generate_test_data)
+{
+  if (generate_test_data)
+  {
+    std::cout << "Initialize Particle sets with:\n";
+    std::vector<ParticleSet> psets;
+    for (ParticleSet& pset : pset_targets)
+    {
+      pset.randomizeFromSource(pset_source);
+      std::cout << "{";
+      for (auto r : pset.R)
+        std::cout << NativePrint(r) << ",";
+      std::cout << "},\n";
+    }
+    std::cout << "}\n";
+  }
+  else
+  {
+    for (int iw = 0; iw < pset_targets.size(); ++iw)
+    {
+      ParticleSet& pset = pset_targets[iw];
+      pset.R            = deterministic_rs[iw];
+    }
+  }
 }
 
 } // namespace testing

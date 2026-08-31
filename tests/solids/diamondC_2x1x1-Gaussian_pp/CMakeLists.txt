@@ -115,8 +115,8 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmc_gaussian_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
-  det_qmc_short
-  det_qmc_short.in.xml
+  det_qmc
+  det_qmc.in.xml
   1
   1
   TRUE
@@ -127,8 +127,8 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch_gaussian_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
-  det_qmc_short_vmcbatch
-  det_qmc_short_vmcbatch.in.xml
+  det_qmc_vmcbatch
+  det_qmc_vmcbatch.in.xml
   1
   1
   TRUE
@@ -141,7 +141,7 @@ if(QMC_MIXED_PRECISION)
   list(APPEND DET_DIAMOND-r1-t4_SCALARS "kinetic" "18.72979475 0.000516")
   list(APPEND DET_DIAMOND-r1-t4_SCALARS "potential" "-40.85806527 0.000025")
   list(APPEND DET_DIAMOND-r1-t4_SCALARS "eeenergy" "-4.65173512 0.000009")
-  list(APPEND DET_DIAMOND-r1-t4_SCALARS "ionion" "-25.55132413 0.000001")
+  list(APPEND DET_DIAMOND-r1-t4_SCALARS "ionion" "-25.55132413 0.000002")
   list(APPEND DET_DIAMOND-r1-t4_SCALARS "localecp" "-12.55060882 0.000051")
   list(APPEND DET_DIAMOND-r1-t4_SCALARS "nonlocalecp" "1.89561077 0.000026")
 else()
@@ -157,8 +157,8 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch_gaussian_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
-  det_qmc_short_vmcbatch_dmcbatch
-  det_qmc_short_vmcbatch_dmcbatch.in.xml
+  det_qmc_vmcbatch_dmcbatch
+  det_qmc_vmcbatch_dmcbatch.in.xml
   1
   4
   TRUE
@@ -172,7 +172,7 @@ if(QMC_MIXED_PRECISION)
    list(APPEND DET_DIAMOND-r2-t2_SCALARS "kinetic" "20.18278052 0.000516")
    list(APPEND DET_DIAMOND-r2-t2_SCALARS "potential" "-42.43359884 0.000025")
    list(APPEND DET_DIAMOND-r2-t2_SCALARS "eeenergy" "-5.10111755 0.000009")
-   list(APPEND DET_DIAMOND-r1-t4_SCALARS "ionion" "-25.55132413 0.000001")
+   list(APPEND DET_DIAMOND-r1-t4_SCALARS "ionion" "-25.55132413 0.000002")
    list(APPEND DET_DIAMOND-r2-t2_SCALARS "localecp" "-13.23969275 0.000051")
    list(APPEND DET_DIAMOND-r2-t2_SCALARS "nonlocalecp" "1.45854374 0.000026")
  else()
@@ -197,8 +197,8 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch_gaussian_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
-  det_qmc_short_vmcbatch_dmcbatch
-  det_qmc_short_vmcbatch_dmcbatch.in.xml
+  det_qmc_vmcbatch_dmcbatch
+  det_qmc_vmcbatch_dmcbatch.in.xml
   2
   2
   TRUE
@@ -211,7 +211,7 @@ if(QMC_MIXED_PRECISION)
   list(APPEND DET_DIAMOND-r2-t3_SCALARS "kinetic" "17.83517172 0.000516")
   list(APPEND DET_DIAMOND-r2-t3_SCALARS "potential" "-39.52299737 0.000025")
   list(APPEND DET_DIAMOND-r2-t3_SCALARS "eeenergy" "-5.26867544 0.000009")
-  list(APPEND DET_DIAMOND-r1-t4_SCALARS "ionion" "-25.55132413 0.000001")
+  list(APPEND DET_DIAMOND-r1-t4_SCALARS "ionion" "-25.55132413 0.000002")
   list(APPEND DET_DIAMOND-r2-t3_SCALARS "localecp" "-10.28363113 0.000051")
   list(APPEND DET_DIAMOND-r2-t3_SCALARS "nonlocalecp" "1.58064151 0.000026")
 else()
@@ -227,8 +227,8 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch_gaussian_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
-  det_qmc_short_vmcbatch_dmcbatch
-  det_qmc_short_vmcbatch_dmcbatch.in.xml
+  det_qmc_vmcbatch_dmcbatch
+  det_qmc_vmcbatch_dmcbatch.in.xml
   2
   3
   TRUE

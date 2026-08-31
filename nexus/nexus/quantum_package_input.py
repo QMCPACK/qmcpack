@@ -1,0 +1,932 @@
+##################################################################
+##  (c) Copyright 2018-  by Jaron T. Krogel                     ##
+##################################################################
+
+
+#====================================================================#
+#  quantum_package_input.py                                          #
+#    Supports I/O for Quantum Package input data.                    #
+#                                                                    #
+#  Content summary:                                                  #
+#    QuantumPackageInput                                             #
+#      SimulationInput class for Quantum Package.                    #
+#                                                                    #
+#    generate_quantum_package_input                                  #
+#      User-facing function to create arbitrary input.               #
+#====================================================================#
+
+
+import os
+from copy import deepcopy
+from .developer import DevBase, obj, log, NexusError
+from .structure import Structure
+from .physical_system import PhysicalSystem
+from .simulation import SimulationInput
+from .execute import execute
+
+
+bool_values = dict(T=True,F=False)
+bool_values_inv = {True:'T',False:'F'}
+
+def read_qp_value_type(value_filepath):
+    with open(value_filepath,'r') as f:
+        svalue = f.read().strip()
+
+    if svalue in bool_values:
+        return 'bool'
+    else:
+        try:
+            _ = int(svalue)
+            return 'int'
+        except:
+            try:
+                _ = float(svalue)
+                return 'float'
+            except:
+                return 'str'
+            #end try
+        #end try
+    #end try
+#end def read_qp_value_type
+
+
+def read_qp_value(value_filepath):
+    with open(value_filepath,'r') as f:
+        svalue = f.read().strip()
+
+    if svalue in bool_values:
+        v = bool_values[svalue]
+    else:
+        try:
+            v = int(svalue)
+        except:
+            try:
+                v = float(svalue)
+            except:
+                v = svalue
+            #end try
+        #end try
+    #end try
+    return v
+#end def read_qp_value
+
+
+def write_qp_value(value_filepath,value):
+    if isinstance(value,bool):
+        svalue = bool_values_inv[value]
+    elif isinstance(value,int):
+        svalue = str(value)
+    elif isinstance(value,float):
+        svalue = '{0: 24.15e}'.format(value)
+    elif isinstance(value,str):
+        svalue = value
+    else:
+        msg = (
+            'invalid type encountered on write\n'
+            'attempted to write variable: {0}\n'
+            'with type: {1}\n'
+            'valid type options: bool,int,float,str'.format(
+                value_filepath, value.__class__.__name__
+                )
+            )
+        raise TypeError(msg)
+    #end if
+    with open(value_filepath,'w') as f:
+        f.write(svalue+'\n')
+
+#end def write_qp_value
+
+
+
+# quantum package path input specification
+#   The spec below was obtained by using the extract_input_specification
+#   function.  Run this function again with ezfio directory paths as 
+#   arguments to further augment the specification over time.
+#
+#   An ezfio directory containing all possible variables can be created
+#   in the following way:
+#     qp_create_ezfio -b cc-pvtz h2o.xyz
+#     qp_edit -c h2o.ezfio
+#
+input_specification = obj({
+    'ao_basis/ao_basis' : str,
+    'ao_basis/ao_cartesian' : bool,
+    'ao_basis/ao_md5' : str,
+    'ao_basis/ao_num' : int,
+    'ao_one_e_ints/io_ao_integrals_e_n' : str,
+    'ao_one_e_ints/io_ao_integrals_kinetic' : str,
+    'ao_one_e_ints/io_ao_integrals_overlap' : str,
+    'ao_one_e_ints/io_ao_integrals_pseudo' : str,
+    'ao_one_e_ints/io_ao_one_e_integrals' : str,
+    'ao_two_e_erf_ints/io_ao_two_e_integrals_erf' : str,
+    'ao_two_e_erf_ints/mu_erf' : float,
+    'ao_two_e_ints/direct' : bool,
+    'ao_two_e_ints/io_ao_two_e_integrals' : str,
+    'ao_two_e_ints/threshold_ao' : float,
+    'becke_numerical_grid/grid_type_sgn' : int,
+    'davidson/davidson_sze_max' : int,
+    'davidson/disk_based_davidson' : bool,
+    'davidson/distributed_davidson' : bool,
+    'davidson/n_det_max_full' : int,
+    'davidson/n_states_diag' : int,
+    'davidson/only_expected_s2' : bool,
+    'davidson/state_following' : bool,
+    'davidson/threshold_davidson' : float,
+    'density_for_dft/damping_for_rs_dft' : float,
+    'density_for_dft/density_for_dft' : str,
+    'density_for_dft/no_core_density' : str,
+    'determinants/n_det' : int,
+    'determinants/n_det_max' : int,
+    'determinants/n_det_print_wf' : int,
+    'determinants/n_states' : int,
+    'determinants/read_wf' : bool,
+    'determinants/s2_eig' : bool,
+    'determinants/target_energy' : float,
+    'determinants/threshold_generators' : float,
+    'determinants/used_weight' : int,
+    'dft_keywords/correlation_functional' : str,
+    'dft_keywords/exchange_functional' : str,
+    'dft_keywords/hf_exchange' : float,
+    'dressing/dress_relative_error' : float,
+    'dressing/n_it_max_dressed_ci' : int,
+    'dressing/thresh_dressed_ci' : float,
+    'electrons/elec_alpha_num' : int,
+    'electrons/elec_beta_num' : int,
+    'ezfio/creation' : str,
+    'ezfio/library' : str,
+    'ezfio/user' : str,
+    'ijkl_ints_in_r3/disk_access_ao_ijkl_r3' : str,
+    'ijkl_ints_in_r3/disk_access_mo_ijkl_r3' : str,
+    'mo_one_e_ints/io_mo_integrals_e_n' : str,
+    'mo_one_e_ints/io_mo_integrals_kinetic' : str,
+    'mo_one_e_ints/io_mo_integrals_pseudo' : str,
+    'mo_one_e_ints/io_mo_one_e_integrals' : str,
+    'mo_two_e_erf_ints/io_mo_two_e_integrals_erf' : str,
+    'mo_two_e_ints/io_mo_two_e_integrals' : str,
+    'mo_two_e_ints/no_ivvv_integrals' : bool,
+    'mo_two_e_ints/no_vvv_integrals' : bool,
+    'mo_two_e_ints/no_vvvv_integrals' : bool,
+    'mo_two_e_ints/threshold_mo' : float,
+    'nuclei/disk_access_nuclear_repulsion' : str,
+    'nuclei/nucl_num' : int,
+    'perturbation/correlation_energy_ratio_max' : float,
+    'perturbation/do_pt2' : bool,
+    'perturbation/h0_type' : str,
+    'perturbation/pt2_max' : float,
+    'perturbation/pt2_relative_error' : float,
+    'perturbation/variance_max' : float,
+    'pseudo/do_pseudo' : bool,
+    'pseudo/pseudo_grid_rmax' : float,
+    'pseudo/pseudo_grid_size' : int,
+    'pseudo/pseudo_klocmax' : int,
+    'pseudo/pseudo_kmax' : int,
+    'pseudo/pseudo_lmax' : int,
+    'qmcpack/ci_threshold' : float,
+    'rsdft_ecmd/ecmd_functional' : str,
+    'scf_utils/frozen_orb_scf' : bool,
+    'scf_utils/level_shift' : float,
+    'scf_utils/max_dim_diis' : int,
+    'scf_utils/mo_guess_type' : str,
+    'scf_utils/n_it_scf_max' : int,
+    'scf_utils/scf_algorithm' : str,
+    'scf_utils/thresh_scf' : float,
+    'scf_utils/threshold_diis' : float,
+    'two_body_dm/ci_threshold' : float,
+    'two_body_dm/mat_mul_svd_vectors' : bool,
+    'two_body_dm/ontop_approx' : bool,
+    'two_body_dm/thr_ontop_approx' : float,
+    })
+
+
+# create mapping from variable name to section (directory) name
+known_sections = set()
+known_variables = set()
+variable_section = obj()
+section_variables = obj()
+for vpath in input_specification.keys():
+    secname,varname = vpath.split('/')
+    known_sections.add(secname)
+    known_variables.add(varname)
+    if varname not in variable_section:
+        variable_section[varname] = secname
+    else:
+        vsec = variable_section[varname]
+        if isinstance(vsec,str):
+            vsec = [vsec,secname]
+        else:
+            vsec.append(secname)
+        #end if
+    #end if
+    if secname not in section_variables:
+        section_variables[secname] = set()
+    #end if
+    section_variables[secname].add(varname)
+#end for
+for varname in variable_section.keys():
+    vsec = variable_section[varname]
+    if isinstance(vsec,list):
+        variable_section[varname] = tuple(vsec)
+    #end if
+#end for
+
+
+# function to extract and print an updated input_specification based on a list of ezfio directories
+def extract_input_specification(*ezfio_paths):
+    if len(ezfio_paths)==1 and isinstance(ezfio_paths[0],(list,tuple)):
+        ezfio_paths = ezfio_paths[0]
+    #end if
+    log('\nextracting Quantum Package input specification from ezfio directories')
+    typedict = {bool:'bool',int:'int',float:'float',str:'str'}
+    new_input_spec = obj()
+    for vpath,vtype in input_specification.items():
+        new_input_spec[vpath] = typedict[vtype]
+    #end for
+    for epath in ezfio_paths:
+        epath = epath.rstrip('/')
+        if not epath.endswith('.ezfio'):
+            msg = (
+                'cannot extract input spec from path\n'
+                'input path provided is not an ezfio directory\n'
+                'input path provided: {0}'.format(epath)
+                )
+            raise ValueError(msg)
+        elif not os.path.exists(epath):
+            msg = (
+                'cannot extract input spec from path\n'
+                'input path provided does not exist\n'
+                'input path provided: {0}'.format(epath)
+                )
+            raise FileNotFoundError(msg)
+        #end if
+        log('  extracting from: {0}'.format(epath))
+        for path,dirs,files in os.walk(epath):  # noqa: B007
+            for file in files:
+                if 'save' not in path and 'work' not in path:
+                    if not file.startswith('.') and not file.endswith('.gz'):
+                        filepath = os.path.join(path,file)
+                        vtype = read_qp_value_type(filepath)
+                        vpath = filepath.replace(epath,'').strip('/')
+                        if vpath not in new_input_spec:
+                            new_input_spec[vpath] = vtype
+                        #end if
+                    #end if
+                #end if
+            #end for
+        #end for
+    #end for
+    log('  extraction complete')
+
+    old_vpaths = set(input_specification.keys())
+    new_vpaths = set(new_input_spec.keys())
+    if new_vpaths==old_vpaths:
+        log('\ninput specification in quantum_package_input.py needs no changes\n')
+    else:
+        log('\nplease replace input_specification in quantum_package_input.py with the following:\n')
+        log('input_specification = obj({')
+        s = ''
+        for vpath in sorted(new_input_spec.keys()):
+            vtype = new_input_spec[vpath]
+            s += "    '{0}' : {1},\n".format(vpath,vtype)
+        #end for
+        s += '    })\n'
+        log(s)
+    #end if
+#end def extract_input_specification
+
+
+
+class Section(DevBase):
+    None
+#end class Section
+
+
+
+class QuantumPackageInput(SimulationInput):
+
+    added_keys = frozenset({'structure', 'run_control'})
+
+    # get these by running
+    #   qp_run -h
+    run_types = frozenset({
+        'scf', 'write_2_body_dm_fci_dump', 'truncate_wf_spin', 'cis',
+        'qp_ao_ijkl_r3_ints', 'print_ci_vectors', 'write_erf_and_regular_ints', 'pt2',
+        'write_rsdft_h_read_ints', 'qmc_e_curve', 'fcidump', 'save_natorb',
+        'qp_convert_qmcpack_to_ezfio.py', 'print_e_conv', 'reorder_dets', 'fci',
+        'print_h0j', 'write_effective_rsdft_hamiltonian', 'write_integrals_erf',
+        'install', 'target_pt2_qmc', 'diagonalize_h', 'qmc_create_wf', 'molden',
+        'two_body_dm.main', 'uninstall', 'qp_cipsi_rsh', 'print_wf',
+        'four_idx_transform', 'save_ortho_mos', 'cisd', 'print_ecmd_pbe_ontop', 'ks_scf',
+        'print_pgm', 'save_one_e_dm', 'truncate_wf_spin_no_H', 'save_for_qmcpack',
+        'rs_ks_scf', 'print_rsdft_variational_energy'
+        })
+
+
+    def __init__(self,filepath=None):
+        self.structure   = None
+        self.run_control = obj()
+        if filepath is not None:
+            self.read(filepath)
+        #end if
+    #end def __init__
+
+
+    def present(self,name):
+        if name not in known_variables:
+            msg = (
+                'attempted to check presence of unknown variable "{0}"\n'
+                'valid options are: {1}'.format(name, sorted(known_variables))
+                )
+            raise ValueError(msg)
+        #end if
+        secname = variable_section[name]
+        return secname in self and name in self[secname]
+    #end def present
+
+
+    def set(self,**kwargs):
+        for name,value in kwargs.items():
+            if name not in known_variables:
+                msg = (
+                    'cannot set variable\n'
+                    'attempted to set unknown variable "{0}"\n'
+                    'with value: {1}\n'
+                    'valid options are: {2}'.format(
+                        name, value, sorted(known_variables)
+                        )
+                    )
+                raise ValueError(msg)
+            #end if
+            secname = variable_section[name]
+            if secname not in self:
+                self[secname] = Section()
+            #end if
+            self[secname][name] = value
+        #end for
+    #end def set
+
+
+    def get(self,name):
+        if name not in known_variables:
+            msg = (
+                'cannot get variable\n'
+                'attempted to get unknown variable "{0}"\n'
+                'valid options are: {1}'.format(name, sorted(known_variables))
+                )
+            raise ValueError(msg)
+        #end if
+        value = None
+        secname = variable_section[name]
+        if secname in self and name in self[secname]:
+            value = self[secname][name]
+        #end if
+        return value
+    #end def get
+
+
+    def delete(self,name):
+        if name not in known_variables:
+            msg = (
+                'cannot get variable\n'
+                'attempted to get unknown variable "{0}"\n'
+                'valid options are: {1}'.format(name, sorted(known_variables))
+                )
+            raise ValueError(msg)
+        #end if
+        value = None
+        secname = variable_section[name]
+        if secname in self and name in self[secname]:
+            value = self[secname][name]
+            del self[secname][name]
+        #end if
+        return value
+    #end def delete
+
+
+    def extract_added_keys(self):
+        extra = obj()
+        added_keys = QuantumPackageInput.added_keys
+        for k in added_keys:
+            extra[k] = self[k]
+            del self[k]
+        return extra
+    #end def extract_added_keys
+
+
+    def restore_added_keys(self,extra):
+        for k in QuantumPackageInput.added_keys:
+            self[k] = extra[k]
+            del extra[k]
+    #end def restore_added_keys
+
+
+    def read(self,filepath):
+        epath = str(filepath).rstrip('/')
+        if not os.path.exists(epath):
+            msg = (
+                'cannot read input\n'
+                'provided ezfio directory does not exist\n'
+                'directory provided:  {0}'.format(epath)
+                )
+            raise FileNotFoundError(msg)
+        elif not os.path.isdir(epath):
+            msg = (
+                'cannot read input\n'
+                'provided ezfio path is not a directory\n'
+                'path provided:  {0}'.format(epath)
+                )
+            raise NotADirectoryError(msg)
+        elif not epath.endswith('.ezfio'):
+            msg = (
+                'cannot read input\n'
+                'provided path does not end in an ezfio directory\n'
+                'directory must end with .ezfio\n'
+                'path provided:  {0}'.format(epath)
+                )
+            raise ValueError(msg)
+        #end if
+        for path,dirs,files in os.walk(epath):  # noqa: B007
+            for file in files:
+                if 'save' not in path:
+                    if not file.startswith('.') and not file.endswith('.gz'):
+                        filepath = os.path.join(path,file)
+                        v = read_qp_value(filepath)
+                        vpath = filepath.replace(epath,'').strip('/')
+                        secname,varname = vpath.split('/')
+                        if secname not in self:
+                            self[secname] = Section()
+                        #end if
+                        self[secname][varname] = v
+                    #end if
+                #end if
+            #end for
+        #end for
+    #end def read
+
+
+    def write(self,filepath=None):
+        if filepath is None:
+            return str(self)
+        #end if
+
+        # get the ezfio path
+        epath = str(filepath).rstrip('/')
+
+        # check that write can occur
+        if not epath.endswith('.ezfio'):
+            msg = (
+                'cannot write input\n'
+                'provided path does not end in an ezfio directory\n'
+                'directory must end with .ezfio\n'
+                'path provided:  {0}'.format(epath)
+                )
+            raise ValueError(msg)
+        #end if
+        path,edir = os.path.split(epath)
+        if path=='':
+            path = './'
+        #end if
+        if not os.path.exists(path):
+            msg = (
+                'cannot write input\n'
+                'attempted to write ezfio directory "{0}" at non-existent destination path\n'
+                'destination path: {1}'.format(edir, path)
+                )
+            raise FileNotFoundError(msg)
+        #end if
+
+        # if there is no ezfio directory, initialize one
+        if not os.path.exists(epath):
+            if self.structure is None:
+                msg = (
+                    'cannot write input\n'
+                    'structure is missing\n'
+                    'input path provided: {0}'.format(epath)
+                    )
+                raise FileNotFoundError(msg)
+            elif not isinstance(self.structure,Structure):
+                msg = (
+                    'cannot write input\n'
+                    'structure must be of type: Structure\n'
+                    'type provided: {0}\n'
+                    'input path provided: {1}'.format(
+                        type(self.structure).__name__, epath
+                        )
+                    )
+                raise TypeError(msg)
+            #end if
+            cwd = os.getcwd()
+            os.chdir(path)
+            prefix = edir.rsplit('.',1)[0]
+            struct_file = prefix+'.xyz'
+            self.structure.write_xyz(struct_file)
+            command = 'qp_create_ezfio'
+            if 'ao_basis' in self and 'ao_basis' in self.ao_basis:
+                command += ' -b '+self.ao_basis.ao_basis
+            #end if
+            command += ' '+struct_file
+            execute(command)
+            if not os.path.exists(edir):
+                msg = (
+                    'cannot write input\n'
+                    'ezfio creation command failed: {0}\n'
+                    'executed at path: {1}\n'
+                    'directory {2} not created\n'
+                    'please source your quantum_package.rc file before running the current script'.format(
+                        command, path, edir
+                        )
+                    )
+                raise RuntimeError(msg)
+            #end if
+            execute('qp_edit -c '+edir)
+            os.chdir(cwd)
+        #end if
+
+        # write inputs into the ezfio directory/file tree
+        extra = self.extract_added_keys()
+        for secname,sec in self.items():
+            secpath = os.path.join(epath,secname)
+            if not os.path.exists(secpath):
+                msg = (
+                    'cannot write input\n'
+                    'input section path does not exist\n'
+                    'section path: {0}\n'
+                    'please ensure that all variables were created previously for this ezfio directory\n'
+                    '(to create all variables, run "qp_edit -c {1}")'.format(secpath, edir)
+                    )
+                raise FileNotFoundError(msg)
+            #end if
+            for varname,val in sec.items():
+                vpath = os.path.join(secpath,varname)
+                write_qp_value(vpath,val)
+            #end for
+        #end for
+        self.restore_added_keys(extra)
+
+        # take other steps that modify the input, as requested
+        if 'run_control' in self:
+            rc = self.run_control
+            if 'frozen_core' in rc and rc.frozen_core:
+                cwd = os.getcwd()
+                os.chdir(path)
+                execute('qp_set_frozen_core '+edir)
+                os.chdir(cwd)
+            #end if
+        #end if
+
+        return ''
+    #end def write
+
+
+    def read_text(self,text,filepath=None):
+        raise NotImplementedError
+    #end def read_text
+
+
+    def write_text(self,filepath=None):
+        raise NotImplementedError
+    #end def write_text
+
+
+    def incorporate_system(self,system):
+        raise NotImplementedError
+    #end def incorporate_system
+
+
+    def check_valid(self,*,sections=True,variables=True,types=True,run_type=True,exit=True):
+        msg = ''
+
+        extra = self.extract_added_keys()
+
+        valid_types = {float:(int,float)}
+        if sections:
+            for secname,sec in self.items():
+                if secname not in known_sections:
+                    msg = (
+                        'input is invalid\n'
+                        'unknown section encountered\n'
+                        'unknown section provided: {0}\n'
+                        'valid options are: {1}'.format(
+                            secname, sorted(known_sections)
+                            )
+                        )
+                elif not isinstance(sec,Section):
+                    msg = (
+                        'input is invalid\n'
+                        'invalid section type encountered\n'
+                        'section must be of type: Section\n'
+                        'section name: {0}\n'
+                        'section type: {1}\n'
+                        'section contents: {2}'.format(
+                            secname, sec.__class__.__name__, sec
+                            )
+                        )
+                #end if
+                if len(msg)>0:
+                    break
+                #end if
+                if variables:
+                    for varname,var in sec.items():
+                        if varname not in known_variables:
+                            msg = (
+                                'input is invalid\n'
+                                'unknown variable encountered in section "{0}"\n'
+                                'unknown variable: {1}\n'
+                                'valid options are: {2}'.format(
+                                    secname, varname, sorted(section_variables[secname])
+                                    )
+                                )
+                        elif types:
+                            vpath = secname+'/'+varname
+                            if vpath not in input_specification:
+                                msg = (
+                                    'variable is known but variable path not found in input_specification\n'
+                                    'variable name: {0}\n'
+                                    'variable path: {1}\n'
+                                    'this is a developer error\n'
+                                    'please contact the developers'.format(varname, vpath)
+                                    )
+                            else:
+                                vtype = input_specification[vpath]
+                                if vtype in valid_types:
+                                    vtype = valid_types[vtype]
+                                #end if
+                                if not isinstance(var,vtype):
+                                    type_map = {bool:'bool',int:'int',float:'float',str:'str'}
+                                    msg = (
+                                        'input is invalid\n'
+                                        'variable "{0}" in section "{1}" must be of type {2}\n'
+                                        'type provided: {3}\n'
+                                        'value provided: {4}'.format(
+                                            varname, secname, type_map[vtype], type(var).__name__, var
+                                            )
+                                        )
+                                #end if
+                            #end if
+                        #end if
+                        if len(msg)>0:
+                            break
+                        #end if
+                    #end for
+                    if len(msg)>0:
+                        break
+                    #end if
+                #end if
+            #end for
+        #end if
+        self.restore_added_keys(extra)
+        if run_type:
+            if 'run_control' not in self:
+                msg = (
+                    'input is invalid\n'
+                    'input must have section "run_control"'
+                    )
+            else:
+                rc = self.run_control
+                if 'run_type' not in rc:
+                    msg = (
+                        'input is invalid\n'
+                        'section "run_control" must have variable "run_type"'
+                        )
+                elif rc.run_type not in QuantumPackageInput.run_types:
+                    msg = (
+                        'input is invalid\n'
+                        'variable "run_type" in section "run_control" has an invalid value\n'
+                        'value provided: {}\n'
+                        'valid options are: {}'.format(
+                            rc.run_type, sorted(QuantumPackageInput.run_types)
+                        )
+                    )
+                #end if
+            #end if
+        is_valid = len(msg)==0
+        if not is_valid and exit:
+            raise ValueError(msg)
+        #end if
+
+        return is_valid
+    #end check_valid
+
+
+    def is_valid(self):
+        return self.check_valid(exit=False)
+    #end def is_valid
+                
+#end class QuantumPackageInput
+
+
+
+run_inputs = frozenset({
+    'sleep', 'frozen_core', 'run_type', 'save_natorb', 'prefix', 'cis_loop',
+    'postprocess', 'save_for_qmcpack', 'slave', 'converge_dets', 'four_idx_transform'
+    })
+gen_inputs = frozenset({'system', 'defaults', 'validate'})
+
+added_inputs = run_inputs | gen_inputs
+added_types = obj(
+    # run inputs
+    prefix             = str,
+    run_type           = str,
+    frozen_core        = bool,
+    cis_loop           = (bool,int),
+    converge_dets      = bool,
+    sleep              = (int,float),
+    slave              = str,
+    postprocess        = (tuple,list),
+    four_idx_transform = bool,
+    save_natorb        = bool,
+    save_for_qmcpack   = bool,
+    # gen inputs
+    system             = PhysicalSystem,
+    defaults           = str,
+    validate           = bool,
+    )
+added_required = frozenset({'system', 'sleep', 'run_type', 'prefix'})
+qp_defaults_version = 'v1'
+shared_defaults = obj(
+    # run inputs
+    postprocess        = [],
+    four_idx_transform = False,
+    save_natorb        = False,
+    save_for_qmcpack   = False,
+    # gen inputs
+    validate           = True,
+    )
+qp_defaults = obj(
+    none = obj(
+        **shared_defaults
+        ),
+    v1 = obj(
+        # run inputs
+        sleep          = 30,
+        # qp inputs
+        n_det_max      = 5000,
+        **shared_defaults
+        ),
+    )
+
+def generate_quantum_package_input(**kwargs):
+
+    # make empty input
+    qpi = QuantumPackageInput()
+
+    # rewrap keywords and apply defaults
+    kw  = obj(**kwargs)
+    if 'defaults' not in kw:
+        kw.defaults = qp_defaults_version
+    if kw.defaults not in qp_defaults:
+        msg = (
+            'cannot generate input\n'
+            'requested invalid default set\n'
+            'default set requested: {0}\n'
+            'valid options are: {1}'.format(
+                kw.defaults, sorted(qp_defaults.keys())
+                )
+            )
+        raise ValueError(msg)
+    #end if
+    for k,v in qp_defaults[kw.defaults].items():
+        if k not in kw:
+            kw[k] = v
+
+    # check for required variables
+    req_missing = set(added_required)-set(kw.keys())
+    if len(req_missing)>0:
+        msg = (
+            'cannot generate input\n'
+            'required variables are missing\n'
+            'missing variables: {0}\n'
+            'please supply values for these variables via generate_quantum_package'.format(sorted(req_missing))
+            )
+        raise ValueError(msg)
+    #end if
+
+    # check types of added variables
+    name,vtype = None,None
+    for k,t in added_types.items():
+        if k in kw and not isinstance(kw[k],t):
+            name = k
+            vtype = t
+            break
+    if name is not None:
+        msg = (
+            'cannot generate input\n'
+            'variable "{0}" has the wrong type\n'
+            'type required: {1}\n'
+            'type provided: {2}'.format(
+                name, vtype.__name__, type(kw[name]).__name__
+                )
+            )
+        raise TypeError(msg)
+    #end if
+
+    # separate run inputs from input file variables
+    run_kw = obj()
+    for k in run_inputs:
+        if k in kw:
+            run_kw[k] = kw.pop(k)
+    if run_kw.run_type not in QuantumPackageInput.run_types:
+        valid = ''
+        for rt in sorted(QuantumPackageInput.run_types):
+            valid += '  '+rt+'\n'
+        #end for
+        msg = (
+            'cannot generate input\n'
+            'invalid run_type requested\n'
+            'run_type provided: {0}\n'
+            'valid options are:\n'
+            '{1}'.format(run_kw.run_type, valid)
+            )
+        raise ValueError(msg)
+    #end if
+    qpi.run_control.update(**run_kw)
+
+    # separate generation inputs from input file variables
+    gen_kw = obj()
+    for k in gen_inputs:
+        if k in kw:
+            gen_kw[k] = kw.pop(k)
+
+    # partition inputs into sections and variables
+    sections = obj()
+    variables = obj()
+    for name,value in kw.items():
+        is_sec = name in known_sections
+        is_var = name in known_variables
+        if is_sec and is_var:
+            if isinstance(value,(obj,dict)):
+                sections[name] = value
+            else:
+                variables[name] = value
+            #end if
+        elif is_sec:
+            sections[name] = value
+        elif is_var:
+            variables[name] = value
+        else:
+            msg = (
+                'cannot generate input\n'
+                'encountered name that is not known as a section or variable\n'
+                'unrecognized name provided: {0}\n'
+                'valid sections: {1}\n'
+                'valid variables: {2}'.format(
+                    name, sorted(known_sections), sorted(known_variables)
+                    )
+                )
+            raise ValueError(msg)
+        #end if
+    #end for
+
+    # assign sections
+    for secname,sec in sections.items():
+        if isinstance(sec,(obj,dict)):
+            sec = Section(sec) # defer checking to check_valid
+        #end if
+        qpi[secname] = sec
+    #end for
+
+    # assign variables to sections
+    for varname,var in variables.items():
+        if varname not in variable_section:
+            msg = (
+                'cannot generate input\n'
+                'section cannot be fond for variable provided\n'
+                'unrecognized variable: {0}'.format(varname)
+                )
+            raise ValueError(msg)
+        #end if
+        secname = variable_section[varname]
+        if isinstance(secname,tuple):
+            msg = (
+                'cannot generate input\n'
+                'section cannot be uniquely determined from variable name\n'
+                'variable name provided: {0}\n'
+                'possible sections: {1}\n'
+                'please provide this variable directly within on of the input sections listed and try again'.format(
+                    varname, secname
+                    )
+                )
+            raise ValueError(msg)
+        #end if
+        if secname not in qpi:
+            qpi[secname] = Section()
+        #end if
+        sec = qpi[secname][varname] = var
+    #end for
+
+    # incorporate atomic and electronic structure
+    system = gen_kw.system
+    qpi.structure = deepcopy(system.structure)
+    if 'electrons' not in qpi:
+        qpi.electrons = Section()
+    #end if
+    nup,ndn = system.n_up, system.n_down
+    qpi.electrons.elec_alpha_num = nup
+    qpi.electrons.elec_beta_num  = ndn
+
+    # validate the input
+    if gen_kw.validate:
+        qpi.check_valid()
+    #end if
+
+    return qpi
+#end def generate_quantum_package_input

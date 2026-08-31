@@ -9,9 +9,8 @@
 //
 // File created by:  Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "MagnetizationDensityInput.h"
 #include "ValidMagnetizationDensityInput.h"
@@ -35,8 +34,7 @@ TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
   for (auto input_xml : valid_mag_density_input_sections)
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
     MagnetizationDensityInput magdens(node);
     MagnetizationDensityInput::DerivedParameters dev_par = magdens.calculateDerivedParameters(lattice);
@@ -45,8 +43,7 @@ TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
   for (auto input_xml : testing::invalid_mag_density_input_sections)
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
 
     CHECK_THROWS(MagnetizationDensityInput(node));
@@ -58,8 +55,7 @@ TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
   {
     Libxml2Document doc;
     auto input_xml = valid_mag_density_input_sections[Inputs::valid_magdensity_input];
-    bool okay      = doc.parseFromString(input_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
     MagnetizationDensityInput magdens(node);
     int nsamples   = magdens.get_nsamples();

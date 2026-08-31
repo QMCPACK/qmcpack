@@ -3,7 +3,6 @@ import os
 import sys
 import h5py
 import numpy as np
-import pandas as pd
 
 
 def read(fdat):
@@ -12,16 +11,33 @@ def read(fdat):
    The header line should start with '#' and contain column labels.
 
   Args:
-    dat_fname (str): name of input file
+    fdat (str): name of input file
   Return:
-    pd.DataFrame: df containing the table of data
+    dict: dict containing data from fdat
   """
   with open(fdat, 'r') as fp:
-    header = fp.readline()
+    file = fp.readlines()
   # end with
-  cols = header.replace('#', '').split()
-  df = pd.read_table(fdat, sep='\s+', comment='#', header=None, names=cols)
-  return df
+
+  # Initialize empty dict
+  data = {}
+
+  # Grab columns from first line of file
+  cols = file[0].replace('#', '').strip().split()
+
+  # Initialize dict entries for each column
+  for col in cols:
+    data[col] = []
+
+  # Iterate over the rows (skipping the header row with [1:])
+  for row in file[1:]:
+    row_data = row.strip().split()
+
+    # Add the data from each row to their respective column
+    for col, datum in zip(cols, row_data):
+      data[col] += [float(datum)]
+
+  return data
 # end def read
 
 
@@ -36,8 +52,9 @@ def compare_columns_dat_h5(fdat, fh5):
   """
 
   # open database
-  df = read(fdat)
-  dat_cols = df.columns
+  data = read(fdat)
+  # get "columns" (holdover naming from when this was done with pandas)
+  dat_cols = data.keys()
 
   fp = h5py.File(fh5,'r')
   h5_cols = fp.keys()
@@ -54,8 +71,8 @@ def compare_columns_dat_h5(fdat, fh5):
     h5_loc = os.path.join(col, 'value')
     h5y  = fp[h5_loc][:][:,-1]
 
-    # get .dat values
-    daty = df.loc[:,col].values
+    # get .dat values and put them into a numpy array
+    daty = np.array(data[col], dtype=np.float64)
     agree_map[col] = np.allclose(h5y,daty)
   # end for col
    

@@ -8,8 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "QMCDrivers/WFOpt/QMCCostFunctionBatched.h"
 #include "FillData.h"
 // Input data and gold data for fillFromText test
@@ -81,10 +81,8 @@ public:
     for (int i = 0; i < nparam; i++)
     {
       std::string varname = "var" + std::to_string(i);
-      costFn.OptVariables.insert(varname, 1.0);
+      costFn.opt_vars.insert(varname, 1.0);
     }
-
-    costFn.NumOptimizables = numParam;
 
     getRecordsOnNode().resize(numSamples, QMCCostFunctionBase::SUM_INDEX_SIZE);
     getDerivRecords().resize(numSamples, numParam);

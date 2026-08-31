@@ -24,16 +24,21 @@
 namespace qmcplusplus
 {
 EnergyDensityEstimator::EnergyDensityEstimator(const PSPool& PSP, const std::string& defaultKE)
-    : psetpool(PSP), Pdynamic(0), Pstatic(0), w_trace(0), Td_trace(0), Vd_trace(0), Vs_trace(0)
+    : psetpool(PSP), Pdynamic(0), Pstatic(0)
+#if !defined(REMOVE_TRACEMANAGER)
+, w_trace(0), Td_trace(0), Vd_trace(0), Vs_trace(0)
+#endif
 {
   update_mode_.set(COLLECTABLE, 1);
   defKE      = defaultKE;
   nsamples   = 0;
   ion_points = false;
   nions      = -1;
+#if !defined(REMOVE_TRACEMANAGER)
   request_.request_scalar("weight");
   request_.request_array("Kinetic");
   request_.request_array("LocalPotential");
+#endif
 }
 
 
@@ -202,6 +207,7 @@ ParticleSet* EnergyDensityEstimator::get_particleset(std::string& psname)
 }
 
 
+#if !defined(REMOVE_TRACEMANAGER)
 void EnergyDensityEstimator::getRequiredTraces(TraceManager& tm)
 {
   bool write = omp_get_thread_num() == 0;
@@ -212,7 +218,7 @@ void EnergyDensityEstimator::getRequiredTraces(TraceManager& tm)
     Vs_trace = tm.get_real_combined_trace(*Pstatic, "LocalPotential");
   have_required_traces_ = true;
 }
-
+#endif
 
 void EnergyDensityEstimator::write_description(std::ostream& os)
 {
@@ -246,16 +252,11 @@ bool EnergyDensityEstimator::get(std::ostream& os) const
 }
 
 
-void EnergyDensityEstimator::resetTargetParticleSet(ParticleSet& P)
-{
-  //remains empty
-}
-
-
 //#define ENERGYDENSITY_CHECK
 
 EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P)
 {
+#if !defined(REMOVE_TRACEMANAGER)
   if (have_required_traces_)
   {
     Pdynamic = &P;
@@ -407,6 +408,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
 #endif
     //APP_ABORT("EnergyDensityEstimator::evaluate");
   }
+#endif
 
   return 0.0;
 }
@@ -526,9 +528,16 @@ void EnergyDensityEstimator::setParticlePropertyList(PropertySetType& plist, int
 }
 
 
-std::unique_ptr<OperatorBase> EnergyDensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> EnergyDensityEstimator::makeClone(ParticleSet& qp) const
 {
-  bool write = omp_get_thread_num() == 0;
+  bool write = false;
+#if _OPENMP >= 202011
+  #pragma omp masked
+#else
+  #pragma omp master
+#endif
+  write = true;
+
   if (write)
     app_log() << "EnergyDensityEstimator::makeClone" << std::endl;
 

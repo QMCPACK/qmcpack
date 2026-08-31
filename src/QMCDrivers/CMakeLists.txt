@@ -28,6 +28,7 @@ set(QMCDRIVERS
     SFNBranch.cpp
     BranchIO.cpp
     MCPopulation.cpp
+    PsiHamNamePairReader.cpp
     QMCDriver.cpp
     QMCDriverInput.cpp
     QMCDriverNew.cpp
@@ -36,6 +37,7 @@ set(QMCDRIVERS
     WFOpt/Eigensolver.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
+    WFOpt/NRCOptimization.cpp
     WFOpt/OutputMatrix.cpp
     WFOpt/WFOptDriverInput.cpp
     WFOpt/GradientTestInput.cpp
@@ -54,7 +56,6 @@ set(QMCDRIVERS
     GreenFunctionModifiers/DriftModifierUNR.cpp
     VMC/VMCUpdatePbyP.cpp
     VMC/VMCUpdateAll.cpp
-    VMC/VMCFactory.cpp
     VMC/VMCDriverInput.cpp
     VMC/SOVMCUpdatePbyP.cpp
     VMC/SOVMCUpdateAll.cpp

@@ -8,10 +8,9 @@
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia Nationaln Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "QMCHamiltonians/SOECPotential.h"
 #include "QMCWaveFunctions/ElectronGas/FreeOrbital.h"
 #include "QMCWaveFunctions/SpinorSet.h"
@@ -35,23 +34,11 @@ class TestSOECPotential
 
 public:
   static void copyGridUnrotatedForTest(SOECPotential& so_ecp)
-  {
-    so_ecp.ppset_[0]->rrotsgrid_m_ = so_ecp.ppset_[0]->sgridxyz_m_;
-  }
+  { so_ecp.ppset_[0]->rrotsgrid_m_ = so_ecp.ppset_[0]->sgridxyz_m_; }
+
   static bool didGridChange(SOECPotential& so_ecp)
-  {
-    return so_ecp.ppset_[0]->rrotsgrid_m_ != so_ecp.ppset_[0]->sgridxyz_m_;
-  }
-  static void addVPs(const RefVectorWithLeader<OperatorBase>& o_list, const RefVectorWithLeader<ParticleSet>& p_list)
-  {
-    for (size_t iw = 0; iw < o_list.size(); iw++)
-    {
-      auto& sopp = o_list.getCastedElement<SOECPotential>(iw);
-      auto& pset = p_list[iw];
-      for (auto& uptr_comp : sopp.ppset_)
-        uptr_comp.get()->initVirtualParticle(pset);
-    }
-  }
+  { return so_ecp.ppset_[0]->rrotsgrid_m_ != so_ecp.ppset_[0]->sgridxyz_m_; }
+
   static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& twf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
@@ -62,10 +49,10 @@ public:
     o_leader.mw_evaluateImpl(o_list, twf_list, p_list, listener_opt, keep_grid);
   }
 
-  static void evalFast(SOECPotential& so_ecp, ParticleSet& elec, OperatorBase::Return_t& value)
+  static void evalFast(SOECPotential& so_ecp, TrialWaveFunction& psi, ParticleSet& elec, OperatorBase::Return_t& value)
   {
     copyGridUnrotatedForTest(so_ecp);
-    so_ecp.evaluateImpl(elec, true);
+    so_ecp.evaluateImpl(psi, elec, true);
     value = so_ecp.getValue();
   }
 };
@@ -152,13 +139,13 @@ void doSOECPotentialTest(bool use_VPs)
   auto spo_up = std::make_unique<FreeOrbital>("free_orb_up", kup);
   auto spo_dn = std::make_unique<FreeOrbital>("free_orb_dn", kdn);
 
-  auto spinor_set = std::make_unique<SpinorSet>("free_orsposetsb_spinor");
-  spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
+  auto spinor_set = std::make_unique<SpinorSet>("free_orsposetsb_spinor", std::move(spo_up), std::move(spo_dn));
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 2);
 
-  auto dd = std::make_unique<DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType,
-                                                     QMCTraits::QTFull::ValueType>>(*spinor_set, 0, nelec);
+  auto dd = std::make_unique<
+      DiracDeterminantBatched<PlatformKind::OMPTARGET, QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>(*spinor_set,
+                                                                                                            0, nelec);
   std::vector<std::unique_ptr<SPOSet>> sposets;
   sposets.push_back(std::move(spinor_set));
   std::vector<std::unique_ptr<DiracDeterminantBase>> dirac_dets;
@@ -178,8 +165,7 @@ void doSOECPotentialTest(bool use_VPs)
   </tmp>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr jas2 = xmlFirstElementChild(root);
   RadialJastrowBuilder jastrow(c, elec);
@@ -192,10 +178,9 @@ void doSOECPotentialTest(bool use_VPs)
   ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, twf_list);
 
   //Now we set up the SO ECP component.
-  SOECPotential so_ecp(ions, elec, psi, false);
+  SOECPotential so_ecp(ions, elec, false, use_VPs);
   ECPComponentBuilder ecp_comp_builder("test_read_soecp", c);
-  okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");
-  REQUIRE(okay);
+  REQUIRE(ecp_comp_builder.read_pp_file("so_ecp_test.xml"));
   UPtr<SOECPComponent> so_ecp_comp = std::move(ecp_comp_builder.pp_so);
   so_ecp.addComponent(0, std::move(so_ecp_comp));
   UPtr<OperatorBase> so_ecp2_ptr = so_ecp.makeClone(elec2, *psi_clone);
@@ -208,8 +193,6 @@ void doSOECPotentialTest(bool use_VPs)
 
   RefVector<OperatorBase> so_ecps{so_ecp, so_ecp2};
   RefVectorWithLeader<OperatorBase> o_list(so_ecp, so_ecps);
-  if (use_VPs)
-    testing::TestSOECPotential::addVPs(o_list, p_list);
   ResourceCollection so_ecp_res("test_so_ecp_res");
   so_ecp.createResource(so_ecp_res);
   ResourceCollectionTeamLock<OperatorBase> so_ecp_lock(so_ecp_res, o_list);
@@ -241,7 +224,7 @@ void doSOECPotentialTest(bool use_VPs)
   testing::TestSOECPotential::mw_evaluateImpl(o_list, twf_list, p_list, listener_opt, true);
 
   //use single walker API to get reference value
-  auto value = o_list[0].evaluateDeterministic(p_list[0]);
+  auto value = o_list[0].evaluateDeterministic(twf_list[0], p_list[0]);
 
   //also check whether or not reference value from single_walker API is actually correct
   //this value comes directly from the reference code soecp_eval_reference.cpp
@@ -256,11 +239,10 @@ void doSOECPotentialTest(bool use_VPs)
   if (use_VPs)
   {
     value = 0.0;
-    SOECPotential so_ecp_exact(ions, elec, psi, true);
+    SOECPotential so_ecp_exact(ions, elec, true, true);
     //srule is 0 for exact evaluation
     ECPComponentBuilder ecp_comp_builder("test_read_soecp", c, -1, -1, 0);
-    okay = ecp_comp_builder.read_pp_file("so_ecp_test.xml");
-    REQUIRE(okay);
+    REQUIRE(ecp_comp_builder.read_pp_file("so_ecp_test.xml"));
     UPtr<SOECPComponent> so_ecp_comp = std::move(ecp_comp_builder.pp_so);
     so_ecp_exact.addComponent(0, std::move(so_ecp_comp));
 
@@ -274,12 +256,11 @@ void doSOECPotentialTest(bool use_VPs)
     so_ecp_exact.setRandomGenerator(&rng);
     so_ecp2_exact.setRandomGenerator(&rng2);
 
-    testing::TestSOECPotential::addVPs(o_exact_list, p_list);
     ResourceCollection so_ecp_res("test_so_ecp_res");
     so_ecp_exact.createResource(so_ecp_res);
     ResourceCollectionTeamLock<OperatorBase> so_ecp_lock(so_ecp_res, o_exact_list);
 
-    testing::TestSOECPotential::evalFast(so_ecp_exact, elec, value);
+    testing::TestSOECPotential::evalFast(so_ecp_exact, psi, elec, value);
     CHECK(value == Approx(-3.530511241));
 
 
@@ -301,7 +282,7 @@ void doSOECPotentialTest(bool use_VPs)
 
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp));
   CHECK(!testing::TestSOECPotential::didGridChange(so_ecp2));
-  auto value2 = o_list[0].evaluateDeterministic(elec);
+  auto value2 = o_list[0].evaluateDeterministic(psi, elec);
 
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
   // check the second walker which will be unchanged.

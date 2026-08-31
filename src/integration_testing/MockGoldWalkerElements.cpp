@@ -24,8 +24,8 @@ MockGoldWalkerElements::MockGoldWalkerElements(Communicate* comm,
       pset_ions(*(particle_pool.getParticleSet("ion"))),
       wavefunction_pool(wavefunction_pool_fac_func(runtime_opt, comm, particle_pool)),
       hamiltonian_pool(ham_pool_fac_func(comm, particle_pool, wavefunction_pool)),
-      twf(*(wavefunction_pool.getPrimary())),
-      ham(*(hamiltonian_pool.getPrimary()))
+      twf(wavefunction_pool.getWaveFunction().value()),
+      ham(hamiltonian_pool.getHamiltonian().value())
 {}
 
 MockGoldWalkerElements makeGoldWalkerElementsWithEE(Communicate* comm, RuntimeOptions runtime_opt)
@@ -37,6 +37,15 @@ MockGoldWalkerElements makeGoldWalkerElementsWithEE(Communicate* comm, RuntimeOp
   return MockGoldWalkerElements(comm, runtime_opt, wfp_diamondC, hamp_ee);
 }
 
+MockGoldWalkerElements makeGoldWalkerElementsWithEI(Communicate* comm, RuntimeOptions runtime_opt)
+{
+  using namespace std::placeholders;
+  MockGoldWalkerElements::WaveFunctionPoolFactoryFunc wfp_diamondC =
+      std::bind(MinimalWaveFunctionPool::make_diamondC_1x1x1, _1, _2, _3);
+  MockGoldWalkerElements::HamPoolFactoryFunc hamp_ei = std::bind(MinimalHamiltonianPool::makeHamWithEI, _1, _2, _3);
+  return MockGoldWalkerElements(comm, runtime_opt, wfp_diamondC, hamp_ei);
+}
+
 MockGoldWalkerElements makeGoldWalkerElementsWithEEEI(Communicate* comm, RuntimeOptions runtime_opt)
 {
   using namespace std::placeholders;
@@ -44,6 +53,16 @@ MockGoldWalkerElements makeGoldWalkerElementsWithEEEI(Communicate* comm, Runtime
       std::bind(MinimalWaveFunctionPool::make_diamondC_1x1x1, _1, _2, _3);
   MockGoldWalkerElements::HamPoolFactoryFunc hamp_ee = std::bind(MinimalHamiltonianPool::makeHamWithEEEI, _1, _2, _3);
   return MockGoldWalkerElements(comm, runtime_opt, wfp_diamondC, hamp_ee);
+}
+
+MockGoldWalkerElements makeGoldWalkerElementsWithEEEIPS(Communicate* comm, RuntimeOptions runtime_opt)
+{
+  using namespace std::placeholders;
+  MockGoldWalkerElements::WaveFunctionPoolFactoryFunc wfp_diamondC =
+      std::bind(MinimalWaveFunctionPool::make_diamondC_1x1x1, _1, _2, _3);
+  MockGoldWalkerElements::HamPoolFactoryFunc hamp_ee_ips =
+      std::bind(MinimalHamiltonianPool::makeHamWithEEEIPS, _1, _2, _3);
+  return MockGoldWalkerElements(comm, runtime_opt, wfp_diamondC, hamp_ee_ips);
 }
 
 } // namespace testing

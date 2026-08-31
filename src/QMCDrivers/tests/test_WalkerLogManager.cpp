@@ -10,7 +10,8 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/WalkerLogManager.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Message/Communicate.h"
 #include "ValidWalkerLogInput.h"
@@ -40,8 +41,7 @@ TEST_CASE("WalkerLogManager::move", "[drivers]")
 
   using WLInput = testing::WalkerLogInputSections;
   Libxml2Document doc;
-  bool okay = doc.parseFromString(WLInput::getXml(WLInput::valid::DEFAULT));
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(WLInput::getXml(WLInput::valid::DEFAULT)));
   xmlNodePtr node = doc.getRoot();
   WalkerLogInput walker_log_input{node};
   auto make_stuff = [comm](WalkerLogInput& walker_log_input) -> LogAndStuff {

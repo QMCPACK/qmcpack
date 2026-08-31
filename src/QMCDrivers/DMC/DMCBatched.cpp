@@ -142,7 +142,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
     for (int ig = 0; ig < pset_leader.groups(); ++ig)
     {
-      TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
+      TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), 1.0 / pset_leader.get_mass_by_group()[ig],
                                    sft.qmcdrv_input.get_spin_mass());
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
@@ -280,7 +280,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
     // evaluate non-physical hamiltonian elements
     for (int iw = 0; iw < walkers.size(); ++iw)
-      walker_hamiltonians[iw].auxHevaluate(walker_elecs[iw], walkers[iw]);
+      walker_hamiltonians[iw].auxHevaluate(walker_twfs[iw], walker_elecs[iw], walkers[iw]);
 
     // save properties into walker
     for (int iw = 0; iw < walkers.size(); ++iw)
@@ -308,11 +308,10 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
     moved_nonlocal_walker_elecs.reserve(num_walkers);
     moved_nonlocal_walker_twfs.reserve(num_walkers);
 
-    for (int iw = 0; iw < walkers.size(); ++iw)
-    {
-      walker_non_local_moves_accepted[iw] =
-          walker_hamiltonians[iw].makeNonLocalMoves(walker_elecs[iw], step_context.non_local_ops);
+    walker_non_local_moves_accepted = ham_dispatcher.flex_makeNonLocalMoves(walker_hamiltonians, walker_twfs,
+                                                                            walker_elecs, step_context.non_local_ops);
 
+    for (int iw = 0; iw < walkers.size(); ++iw)
       if (walker_non_local_moves_accepted[iw] > 0)
       {
         crowd.incNonlocalAccept(walker_non_local_moves_accepted[iw]);
@@ -320,7 +319,6 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         moved_nonlocal_walker_elecs.push_back(walker_elecs[iw]);
         moved_nonlocal_walker_twfs.push_back(walker_twfs[iw]);
       }
-    }
 
     if (moved_nonlocal_walkers.size())
     {
@@ -439,7 +437,7 @@ void DMCBatched::process(xmlNodePtr node)
     measureImbalance("Startup");
 }
 
-bool DMCBatched::run()
+void DMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
 
@@ -549,7 +547,7 @@ bool DMCBatched::run()
   wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
 
-  return finalize(num_blocks, true);
+  finalize(num_blocks, true);
 }
 
 RefVector<QMCDriverNew::ContextForSteps> DMCBatched::getContextForStepsRefs() const

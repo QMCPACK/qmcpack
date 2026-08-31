@@ -55,7 +55,7 @@ public:
 
   ~WaveFunctionTester() override;
 
-  bool run() override;
+  void run() override;
   bool put(xmlNodePtr q) override;
 
 private:

@@ -21,7 +21,7 @@ namespace qmcplusplus
 class RotatedSPOs;
 namespace testing
 {
-const opt_variables_type& getMyVars(RotatedSPOs& rot);
+const OptVariables& getMyVars(RotatedSPOs& rot);
 const std::vector<QMCTraits::ValueType>& getMyVarsFull(RotatedSPOs& rot);
 } // namespace testing
 
@@ -147,20 +147,20 @@ public:
 
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi,
                            const int& FirstIndex,
                            const int& LastIndex) override;
 
   void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& optvars,
+                             const OptVariables& optvars,
                              Vector<ValueType>& dlogpsi,
                              int FirstIndex,
                              int LastIndex) override;
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi,
                            const ValueType& psiCurrent,
@@ -187,7 +187,7 @@ public:
                            const std::vector<std::vector<int>>& lookup_tbl) override;
 
   void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& optvars,
+                             const OptVariables& optvars,
                              Vector<ValueType>& dlogpsi,
                              const FullPrecValue& psiCurrent,
                              const std::vector<ValueType>& Coeff,
@@ -250,16 +250,16 @@ public:
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
 
-  void checkInVariablesExclusive(opt_variables_type& active) override
+  void checkInVariablesExclusive(OptVariables& active) override
   {
     if (myVars.size())
       active.insertFrom(myVars);
   }
 
-  void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
+  void checkOutVariables(const OptVariables& active) override { myVars.getIndex(active); }
 
   ///reset
-  void resetParametersExclusive(const opt_variables_type& active) override;
+  void resetParametersExclusive(const OptVariables& active) override;
 
   void writeVariationalParameters(hdf_archive& hout) override;
 
@@ -267,7 +267,6 @@ public:
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
-  void setOrbitalSetSize(int norbs) override { Phi_->setOrbitalSetSize(norbs); }
 
   void checkObject() const override { Phi_->checkObject(); }
 
@@ -299,12 +298,10 @@ public:
                          ValueVector& psi,
                          const ValueVector& psiinv,
                          std::vector<ValueType>& ratios) override
-  {
-    Phi_->evaluateDetRatios(VP, psi, psiinv, ratios);
-  }
+  { Phi_->evaluateDetRatios(VP, psi, psiinv, ratios); }
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            ValueVector& psi,
                            const ValueVector& psiinv,
                            std::vector<ValueType>& ratios,
@@ -329,9 +326,7 @@ public:
                      GradVector& dpsi,
                      HessVector& grad_grad_psi,
                      GGGVector& grad_grad_grad_psi) override
-  {
-    Phi_->evaluateVGHGH(P, iat, psi, dpsi, grad_grad_psi, grad_grad_grad_psi);
-  }
+  { Phi_->evaluateVGHGH(P, iat, psi, dpsi, grad_grad_psi, grad_grad_grad_psi); }
 
 
   void evaluate_notranspose(const ParticleSet& P,
@@ -340,14 +335,10 @@ public:
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override
-  {
-    Phi_->evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
-  }
+  { Phi_->evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet); }
 
   void evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dspin_psi) override
-  {
-    Phi_->evaluate_spin(P, iat, psi, dspin_psi);
-  }
+  { Phi_->evaluate_spin(P, iat, psi, dspin_psi); }
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
@@ -355,9 +346,7 @@ public:
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
                             HessMatrix& grad_grad_logdet) override
-  {
-    Phi_->evaluate_notranspose(P, first, last, logdet, dlogdet, grad_grad_logdet);
-  }
+  { Phi_->evaluate_notranspose(P, first, last, logdet, dlogdet, grad_grad_logdet); }
 
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
@@ -366,9 +355,7 @@ public:
                             GradMatrix& dlogdet,
                             HessMatrix& grad_grad_logdet,
                             GGGMatrix& grad_grad_grad_logdet) override
-  {
-    Phi_->evaluate_notranspose(P, first, last, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet);
-  }
+  { Phi_->evaluate_notranspose(P, first, last, logdet, dlogdet, grad_grad_logdet, grad_grad_grad_logdet); }
 
   void evaluateGradSource(const ParticleSet& P,
                           int first,
@@ -376,9 +363,7 @@ public:
                           const ParticleSet& source,
                           int iat_src,
                           GradMatrix& grad_phi) override
-  {
-    Phi_->evaluateGradSource(P, first, last, source, iat_src, grad_phi);
-  }
+  { Phi_->evaluateGradSource(P, first, last, source, iat_src, grad_phi); }
 
   void evaluateGradSource(const ParticleSet& P,
                           int first,
@@ -388,9 +373,7 @@ public:
                           GradMatrix& grad_phi,
                           HessMatrix& grad_grad_phi,
                           GradMatrix& grad_lapl_phi) override
-  {
-    Phi_->evaluateGradSource(P, first, last, source, iat_src, grad_phi, grad_grad_phi, grad_lapl_phi);
-  }
+  { Phi_->evaluateGradSource(P, first, last, source, iat_src, grad_phi, grad_grad_phi, grad_lapl_phi); }
 
   //  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
   //  {Phi->evaluateThridDeriv(P, first, last, grad_grad_grad_logdet); }
@@ -466,7 +449,7 @@ private:
 
   static RefVectorWithLeader<SPOSet> extractPhiRefList(const RefVectorWithLeader<SPOSet>& spo_list);
 
-  friend const opt_variables_type& testing::getMyVars(RotatedSPOs& rot);
+  friend const OptVariables& testing::getMyVars(RotatedSPOs& rot);
   friend const std::vector<ValueType>& testing::getMyVarsFull(RotatedSPOs& rot);
 };
 

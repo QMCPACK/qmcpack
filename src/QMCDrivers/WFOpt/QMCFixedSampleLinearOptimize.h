@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_VMCSINGLE_H
 #define QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_VMCSINGLE_H
 
-#include "Optimize/NRCOptimization.h"
+#include "NRCOptimization.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
@@ -26,11 +26,12 @@
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
 #include "OutputMatrix.h"
-#include "LinearMethod.h"
 
 namespace qmcplusplus
 {
 
+///forward declaration of a cost function
+class QMCCostFunctionBase;
 class GradientTest;
 class VMC;
 
@@ -41,7 +42,7 @@ class VMC;
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimize : public QMCDriver, public LinearMethod, private NRCOptimization<QMCTraits::RealType>
+class QMCFixedSampleLinearOptimize : public QMCDriver, private NRCOptimization<QMCTraits::RealType>
 {
 public:
   ///Constructor.
@@ -55,13 +56,11 @@ public:
   ~QMCFixedSampleLinearOptimize() override;
 
   ///Run the Optimization algorithm.
-  bool run() override;
+  void run() override;
   ///preprocess xml node
   bool put(xmlNodePtr cur) override;
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5);
-
-  RealType Func(RealType dl) override;
 
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
 
@@ -84,21 +83,21 @@ private:
                     const RealType ic) const;
 
   // perform the adaptive three-shift update
-  bool adaptive_three_shift_run();
+  void adaptive_three_shift_run();
 
   // perform the single-shift update, no sample regeneration
-  bool one_shift_run();
+  void one_shift_run();
 
   // perform optimization using a gradient descent algorithm
-  bool descent_run();
+  void descent_run();
 
 #ifdef HAVE_LMY_ENGINE
   // use hybrid approach of descent and blocked linear method for optimization
-  bool hybrid_run();
+  void hybrid_run();
 #endif
 
   // Perform test of parameter gradients
-  bool test_run();
+  void test_run();
 
   std::unique_ptr<GradientTest> testEngineObj;
 
@@ -109,7 +108,7 @@ private:
 
 #ifdef HAVE_LMY_ENGINE
   formic::VarDeps vdeps;
-  cqmc::engine::LMYEngine<ValueType>* EngineObj;
+  std::unique_ptr<cqmc::engine::LMYEngine<ValueType>> EngineObj;
 #endif
 
   //engine for running various gradient descent based algorithms for optimization
@@ -233,9 +232,7 @@ private:
   ///common operation to start optimization, used by the derived classes
   void start();
 #ifdef HAVE_LMY_ENGINE
-  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
-                    DescentEngine& descentEngineObj,
-                    std::string MinMethod);
+  void engine_start();
 #endif
   ///common operation to finish optimization, used by the derived classes
   void finish();

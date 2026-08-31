@@ -188,8 +188,6 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur, const std:
   std::string tname = "kpoint_0";
   hfile.push("electrons", false);
   hfile.push("kpoint_0", false);
-  //create a single-particle orbital set
-  auto psi = std::make_unique<SPOSetType>(objname);
   if (transform2grid)
   {
     nb = myParam->numBands;
@@ -197,8 +195,10 @@ std::unique_ptr<SPOSet> PWOrbitalSetBuilder::createPW(xmlNodePtr cur, const std:
     for (int i = 0; i < nb; i++)
       occBand[i] = i;
   }
+  //create a single-particle orbital set
+  auto psi = std::make_unique<SPOSetType>(objname, nb);
   //going to take care of occ
-  psi->resize(new PWBasis(*myBasisSet), nb, true);
+  psi->resize(new PWBasis(*myBasisSet), true);
   if (myParam->hasComplexData(hfile)) //input is complex
   {
     //app_log() << "  PW coefficients are complex." << std::endl;

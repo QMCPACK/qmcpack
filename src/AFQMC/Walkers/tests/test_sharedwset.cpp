@@ -11,18 +11,9 @@
 
 
 #undef NDEBUG
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
-
-// Avoid the need to link with other libraries just to get APP_ABORT
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Utilities/RandomGenerator.h"
@@ -127,8 +118,7 @@ void test_basic_walker_features(bool serial, std::string wtype)
 </WalkerSet> \
 ";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml_block.c_str());
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xml_block.c_str()));
 
   WalkerSet wset(TG, doc.getRoot(), info, rng);
   wset.resize(nwalkers, initA, initB);
@@ -426,8 +416,7 @@ void test_walker_io(std::string wtype)
 </WalkerSet> \
 ";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml_block.c_str());
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(xml_block.c_str()));
 
   WalkerSet wset(TG, doc.getRoot(), info, rng);
   wset.resize(nwalkers, initA, initB);

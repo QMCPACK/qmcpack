@@ -10,21 +10,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 //#undef NDEBUG
+#include <catch2/catch_test_macros.hpp>
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "ProjectData.h"
 #include "hdf/hdf_archive.h"
-
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
 
 #include <string>
 #include <vector>
@@ -85,8 +76,7 @@ void ham_factory(boost::mpi3::communicator& world)
     )";
     const char* xml_block = hamil_xml.c_str();
     Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
 
@@ -120,8 +110,7 @@ void ham_generation_timing(boost::mpi3::communicator& world)
     </Hamiltonian>
     )";
     Libxml2Document doc;
-    bool okay = doc.parseFromString(xml_block);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(xml_block));
     std::string ham_name("ham0");
     HamFac.push(ham_name, doc.getRoot());
 

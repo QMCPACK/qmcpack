@@ -18,9 +18,8 @@
 namespace qmcplusplus
 {
 CountingJastrowBuilder::CountingJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
-    : WaveFunctionComponentBuilder(comm, target), SourcePtcl(&source)
+    : WaveFunctionComponentBuilder(comm, target, "CountingJastrowBuilder"), SourcePtcl(&source)
 {
-  ClassName = "CountingJastrowBuilder";
   NameOpt   = "0";
   TypeOpt   = "Counting";
   RegionOpt = "voronoi";
@@ -28,9 +27,8 @@ CountingJastrowBuilder::CountingJastrowBuilder(Communicate* comm, ParticleSet& t
 }
 
 CountingJastrowBuilder::CountingJastrowBuilder(Communicate* comm, ParticleSet& target)
-    : WaveFunctionComponentBuilder(comm, target)
+    : WaveFunctionComponentBuilder(comm, target, "CountingJastrowBuilder")
 {
-  ClassName  = "CountingJastrowBuilder";
   NameOpt    = "0";
   TypeOpt    = "Counting";
   RegionOpt  = "normalized_gaussian";
@@ -40,7 +38,7 @@ CountingJastrowBuilder::CountingJastrowBuilder(Communicate* comm, ParticleSet& t
 
 std::unique_ptr<WaveFunctionComponent> CountingJastrowBuilder::createCJ(xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "createCJ(xmlNodePtr)");
+  ReportEngine PRE(class_name_, "createCJ(xmlNodePtr)");
   using RegionType    = CountingGaussianRegion;
   using FunctorType   = CountingGaussian;
   using CJOrbitalType = CountingJastrow<RegionType>;

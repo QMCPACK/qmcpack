@@ -92,22 +92,14 @@ public:
 
   ///clean up the walker list
   using WalkerConfigurations::clear;
-  ///resize Walker::PropertyHistory and Walker::PHindex:
-  void resizeWalkerHistories();
 
   ///make random moves for all the walkers
   //void sample(iterator first, iterator last, value_type tauinv);
   ///make a random move for a walker
   void sample(iterator it, RealType tauinv);
 
-  ///return the number of particles per walker
-  inline int getParticleNum() const { return R.size(); }
   /**@}*/
 
-  /** set LocalEnergy
-   * @param e current average Local Energy
-   */
-  inline void setLocalEnergy(RealType e) { LocalEnergy = e; }
 
   /** return LocalEnergy
    */
@@ -115,11 +107,11 @@ public:
 
   inline MultiChain* getPolymer() { return Polymer; }
 
-  inline void setPolymer(MultiChain* chain) { Polymer = chain; }
+
 
   void resetWalkerProperty(int ncopy = 1);
 
-  inline bool updatePbyP() const { return ReadyForPbyP; }
+
 
   //@{save/load/clear function for optimization
   //

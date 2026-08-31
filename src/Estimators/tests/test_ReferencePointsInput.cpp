@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <stdio.h>
 #include <sstream>
@@ -28,7 +27,7 @@ TEST_CASE("ReferencePointsInput::parseXML::valid", "[estimators]")
   for (auto input_xml : Input::xml)
   {
     Libxml2Document doc;
-    bool okay       = doc.parseFromString(input_xml);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
 
     // Will throw if input is invalid.
@@ -42,8 +41,7 @@ TEST_CASE("ReferencePointsInput::parseXML::invalid", "[estimators]")
   for (auto input_xml : Input::xml)
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
 
     auto constructBadRefPoints = [](xmlNodePtr cur) { ReferencePointsInput rpi(cur); };
@@ -56,7 +54,7 @@ TEST_CASE("ReferencePointsInput::makeReferencePointsInput", "[estimators]")
   using Input = testing::ValidReferencePointsInputs;
   std::string value_label;
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::xml[0]);
+  REQUIRE(doc.parseFromString(Input::xml[0]));
   xmlNodePtr node = doc.getRoot();
   makeReferencePointsInput(node, value_label);
   CHECK(value_label == "referencepoints");

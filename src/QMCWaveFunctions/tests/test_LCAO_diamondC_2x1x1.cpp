@@ -8,9 +8,8 @@
 //
 // File created by: Kevin Gasperich, kgasperich@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "ParticleIO/LatticeIO.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -70,7 +69,7 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
   ions_.R[2]           = {3.37316115, 3.37316115, 0.0};
   ions_.R[3]           = {5.059741726, 5.059741726, 1.686580575};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
-  const int Cidx       = ispecies.addSpecies("C");
+  ispecies.addSpecies("C");
 
   ions_.print(app_log());
   ions_.update(); // propagate SoA.
@@ -116,8 +115,7 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
     </sposet_collection>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str));
 
   xmlNodePtr root       = doc.getRoot();
   xmlNodePtr bset_xml   = xmlFirstElementChild(root);
@@ -334,8 +332,8 @@ void test_LCAO_DiamondC_2x1x1_real(const bool useOffload)
     const size_t nvp_                  = 4;
     const size_t nvp_2                 = 3;
     const std::vector<size_t> nvp_list = {nvp_, nvp_2};
-    VirtualParticleSet VP_(elec_, nvp_);
-    VirtualParticleSet VP_2(elec_2, nvp_2);
+    VirtualParticleSet VP_(elec_);
+    VirtualParticleSet VP_2(elec_2);
 
     // move VPs
     std::vector<ParticleSet::SingleParticlePos> newpos_vp_(nvp_);
@@ -487,7 +485,7 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
   ions_.R[2]           = {3.37316115, 3.37316115, 0.0};
   ions_.R[3]           = {5.059741726, 5.059741726, 1.686580575};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
-  const int Cidx       = ispecies.addSpecies("C");
+  ispecies.addSpecies("C");
 
   ions_.print(app_log());
   ions_.update(); // propagate SoA.
@@ -533,8 +531,7 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
     </sposet_collection>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(useOffload ? wf_omp_xml_str : wf_xml_str));
 
   xmlNodePtr root       = doc.getRoot();
   xmlNodePtr bset_xml   = xmlFirstElementChild(root);
@@ -783,8 +780,8 @@ void test_LCAO_DiamondC_2x1x1_cplx(const bool useOffload)
     const size_t nvp_                  = 4;
     const size_t nvp_2                 = 3;
     const std::vector<size_t> nvp_list = {nvp_, nvp_2};
-    VirtualParticleSet VP_(elec_, nvp_);
-    VirtualParticleSet VP_2(elec_2, nvp_2);
+    VirtualParticleSet VP_(elec_);
+    VirtualParticleSet VP_2(elec_2);
 
     // move VPs
     std::vector<ParticleSet::SingleParticlePos> newpos_vp_(nvp_);

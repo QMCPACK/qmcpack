@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2024 QMCPACK developers.
+// Copyright (c) 2025 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -10,7 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "catch.hpp"
+#include "MockGoldWalkerElements.h"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "EnergyDensityEstimator.h"
 #include <iostream>
@@ -46,12 +48,16 @@ TEST_CASE("NEEnergyDensityEstimator::Constructor", "[estimators]")
                                {1.657151589, 0.883870516, 1.201243939}, {0.97317591, 1.245644974, 0.284564732}};
 
   Libxml2Document doc;
-  using Input     = testing::EnergyDensityInputs;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
+  using Input = testing::EnergyDensityInputs;
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::CELL)));
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edein{node};
   {
     NEEnergyDensityEstimator e_den_est(edein, particle_pool.getPool());
+    PooledData<QMCTraits::RealType> buffer;
+    e_den_est.packData(buffer);
+    REQUIRE(buffer.size() == e_den_est.getFullDataSize());
+    CHECK(buffer[buffer.size() - 1] == Approx(0.0));
   }
 }
 
@@ -72,8 +78,8 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
                                {1.657151589, 0.883870516, 1.201243939}, {0.97317591, 1.245644974, 0.284564732}};
 
   Libxml2Document doc;
-  using Input     = testing::EnergyDensityInputs;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::CELL));
+  using Input = testing::EnergyDensityInputs;
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::CELL)));
   xmlNodePtr node = doc.getRoot();
   EnergyDensityInput edein{node};
   {
@@ -82,7 +88,13 @@ TEST_CASE("NEEnergyDensityEstimator::spawnCrowdClone", "[estimators]")
     auto clone = original_e_den_est.spawnCrowdClone();
     REQUIRE(clone != nullptr);
     REQUIRE(clone.get() != &original_e_den_est);
-    REQUIRE(dynamic_cast<decltype(&original_e_den_est)>(clone.get()) != nullptr);
+    auto* clone_e_den_est = dynamic_cast<decltype(&original_e_den_est)>(clone.get());
+    REQUIRE(clone_e_den_est != nullptr);
+
+    PooledData<QMCTraits::RealType> buffer;
+    clone_e_den_est->packData(buffer);
+    REQUIRE(buffer.size() == clone_e_den_est->getFullDataSize());
+    CHECK(buffer[buffer.size() - 1] == Approx(0.0));
   }
 }
 
@@ -90,7 +102,86 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
 {
   Communicate* comm = OHMMS::Controller;
 
+#ifndef ENABLE_OFFLOAD
   testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
+#else
+  testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, &testing::makeGoldWalkerElementsWithEI,
+                                       generate_test_data);
+#endif
+  auto ham_list    = eden_test.getHamList();
+  auto& ham_leader = ham_list.getLeader();
+  auto ham_lock    = ResourceCollectionTeamLock(eden_test.getHamRes(), ham_list);
+  eden_test.getEnergyDensityEstimator().registerListeners(ham_leader);
+
+  PerParticleHamiltonianLogger pph_logger({}, 0);
+  pph_logger.registerListeners(ham_leader);
+
+  auto pset_list = eden_test.getPSetList();
+  auto pset_lock = ResourceCollectionTeamLock(eden_test.getPSetRes(), pset_list);
+
+  pset_list[0].L[0] = 1.0;
+  pset_list[1].L[1] = 1.0;
+  pset_list[2].L[2] = 1.0;
+  pset_list[3].L[3] = 1.0;
+
+  ParticleSet::mw_update(pset_list);
+
+  auto twf_list = eden_test.getTwfList();
+  auto twf_lock = ResourceCollectionTeamLock(eden_test.getTwfRes(), twf_list);
+  TrialWaveFunction::mw_evaluateLog(twf_list, pset_list);
+  QMCHamiltonian::mw_evaluate(ham_list, twf_list, pset_list);
+
+  hdf_archive hd;
+  std::string test_file{"ede_test.hdf"};
+  bool okay = hd.create(test_file);
+  REQUIRE(okay);
+  std::vector<ObservableHelper> h5desc;
+
+  auto& e_den_est = eden_test.getEnergyDensityEstimator();
+  e_den_est.registerOperatorEstimator(hd);
+
+  StdRandom<double> rng;
+  rng.init(101);
+
+  e_den_est.accumulate(eden_test.getWalkerList(), pset_list, twf_list, ham_list, rng);
+  auto spacegrids = e_den_est.getSpaceGrids();
+
+  decltype(spacegrids)::value_type::type& grid = spacegrids[0];
+
+  double summed_grid = 0;
+  // grid memory layout is (W)eight (T) Kinetic (V) potential
+  for (int i = 0; i < 16000; i++)
+    summed_grid += *(grid.getDataVector().begin() + i * 3 + 2) + *(grid.getDataVector().begin() + i * 3 + 1);
+
+  using namespace std::string_literals;
+  auto expected_sum = pph_logger.sumOverSome({"local_potential"s, "kinetic_energy"s, "ion_potential"s});
+  //Here we check the sum of logged energies against the total energy in the grid.
+  CHECK(summed_grid == Approx(expected_sum));
+
+  e_den_est.write(hd);
+
+  PooledData<QMCTraits::RealType> buffer;
+  e_den_est.packData(buffer);
+  REQUIRE(buffer.size() == e_den_est.getFullDataSize());
+  CHECK(buffer[buffer.size() - 1] == Approx(4.0));
+
+  e_den_est.zero();
+  buffer.clear();
+  e_den_est.packData(buffer);
+  CHECK(buffer[buffer.size() - 1] == Approx(0.0));
+  std::cout << "wrote success\n";
+}
+
+TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]")
+{
+  Communicate* comm = OHMMS::Controller;
+
+#ifndef ENABLE_OFFLOAD
+  testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, generate_test_data);
+#else
+  testing::EnergyDensityTest eden_test(comm, 4 /*num_walkers*/, &testing::makeGoldWalkerElementsWithEI,
+                                       generate_test_data);
+#endif
 
   auto ham_list    = eden_test.getHamList();
   auto& ham_leader = ham_list.getLeader();
@@ -137,14 +228,13 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   for (int i = 0; i < 16000; i++)
     summed_grid += *(grid.getDataVector().begin() + i * 3 + 2) + *(grid.getDataVector().begin() + i * 3 + 1);
 
-  auto expected_sum = pph_logger.sumOverAll();
+  using namespace std::string_literals;
+  auto expected_sum = pph_logger.sumOverSome({"local_potential"s, "kinetic_energy"s, "ion_potential"s});
   //Here we check the sum of logged energies against the total energy in the grid.
   CHECK(summed_grid == Approx(expected_sum));
 
   e_den_est.write(hd);
   std::cout << "wrote success\n";
 }
-
-TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]") {}
 
 } // namespace qmcplusplus

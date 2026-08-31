@@ -29,9 +29,9 @@ namespace qmcplusplus
 class ResourceCollection;
 
 /** @ingroup nnlist
- * @brief Abstract class to manage operations on pair data between two ParticleSets.
- *
- * Each DistanceTable object is defined by Source and Target of ParticleSet types.
+ * @brief Abstract class to manage operations on pair data between two sets of particles
+ * 'target' always refers to the set of particles being moved during random walking.
+ * 'source' can be the same set of particles as 'target' or a different set of stationary particles.
  * This base class doesn't contain storage. It is intended for update/compute invoked by ParticleSet.
  * Derived AA/AB classes handle the actual storage and data access.
  */
@@ -46,12 +46,16 @@ public:
   using DistRow   = Vector<RealType, aligned_allocator<RealType>>;
   using DisplRow  = VectorSoaContainer<RealType, DIM>;
 
+private:
+  /// resize based on number of target particles
+  virtual void resize(const size_t num_targets) = 0;
+
 protected:
-  // FIXME. once DT takes only DynamicCoordinates, change this type as well.
+  /// source particleset
   const ParticleSet& origin_;
 
   const size_t num_sources_;
-  const size_t num_targets_;
+  size_t num_targets_ = 0;
 
   ///name of the table
   const std::string name_;
@@ -61,12 +65,8 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTable(const ParticleSet& source, const ParticleSet& target, DTModes modes)
-      : origin_(source),
-        num_sources_(source.getTotalNum()),
-        num_targets_(target.getTotalNum()),
-        name_(source.getName() + "_" + target.getName()),
-        modes_(modes)
+  DistanceTable(const ParticleSet& source, const std::string& target_name, DTModes modes)
+      : origin_(source), num_sources_(source.getTotalNum()), name_(source.getName() + "_" + target_name), modes_(modes)
   {}
 
   /// copy constructor. deleted
@@ -96,15 +96,28 @@ public:
   ///returns the number of source particles
   inline size_t sources() const { return num_sources_; }
 
-  /** evaluate the full Distance Table
+  /** evaluate the full Distance Table. Legacy API
    * @param P the target particle set
    */
-  virtual void evaluate(ParticleSet& P) = 0;
+  void evaluate(ParticleSet& P) { evaluate(P.getCoordinates()); }
+  void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list) const
+  {
+    RefVectorWithLeader<const DynamicCoordinates> coords_list(p_list.getLeader().getCoordinates());
+    for (int iw = 0; iw < dt_list.size(); iw++)
+      coords_list.push_back(p_list[iw].getCoordinates());
+    mw_evaluate(dt_list, coords_list);
+  }
+
+  /** evaluate the full Distance Table.
+   * @param coords the coordinates of target particles
+   */
+  virtual void evaluate(const DynamicCoordinates& coords) = 0;
   virtual void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
-                           const RefVectorWithLeader<ParticleSet>& p_list) const
+                           const RefVectorWithLeader<const DynamicCoordinates>& coords_list) const
   {
     for (int iw = 0; iw < dt_list.size(); iw++)
-      dt_list[iw].evaluate(p_list[iw]);
+      dt_list[iw].evaluate(coords_list[iw]);
   }
 
   /** recompute multi walker internal data, recompute
@@ -219,7 +232,7 @@ public:
   {}
 };
 
-/** AA type of DistanceTable containing storage */
+/** AA type of DistanceTable containing storage. 'source' and 'target' are the same set of particles.*/
 class DistanceTableAA : public DistanceTable
 {
 protected:
@@ -253,7 +266,7 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTableAA(const ParticleSet& target, DTModes modes) : DistanceTable(target, target, modes) {}
+  DistanceTableAA(const ParticleSet& target, DTModes modes) : DistanceTable(target, target.getName(), modes) {}
 
   /** return full table distances
    */
@@ -302,9 +315,50 @@ public:
   {
     return nullptr;
   }
+
+  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const final
+  {
+    //ensure there are neighbors
+    assert(num_targets_ > 1);
+    RealType min_dist = std::numeric_limits<RealType>::max();
+    int index         = -1;
+    if (newpos)
+    {
+      for (int jat = 0; jat < num_targets_; ++jat)
+        if (temp_r_[jat] < min_dist && jat != iat)
+        {
+          min_dist = temp_r_[jat];
+          index    = jat;
+        }
+      assert(index >= 0);
+      dr = temp_dr_[index];
+    }
+    else
+    {
+      for (int jat = 0; jat < iat; ++jat)
+        if (distances_[iat][jat] < min_dist)
+        {
+          min_dist = distances_[iat][jat];
+          index    = jat;
+        }
+      for (int jat = iat + 1; jat < num_targets_; ++jat)
+        if (distances_[jat][iat] < min_dist)
+        {
+          min_dist = distances_[jat][iat];
+          index    = jat;
+        }
+      assert(index != iat && index >= 0);
+      if (index < iat)
+        dr = displacements_[iat][index];
+      else
+        dr = displacements_[index][iat];
+    }
+    r = min_dist;
+    return index;
+  }
 };
 
-/** AB type of DistanceTable containing storage */
+/** AB type of DistanceTable containing storage. 'source' and 'target' are different sets of particles. */
 class DistanceTableAB : public DistanceTable
 {
 protected:
@@ -326,8 +380,8 @@ protected:
 
 public:
   ///constructor using source and target ParticleSet
-  DistanceTableAB(const ParticleSet& source, const ParticleSet& target, DTModes modes)
-      : DistanceTable(source, target, modes)
+  DistanceTableAB(const ParticleSet& source, const std::string& target_name, DTModes modes)
+      : DistanceTable(source, target_name, modes)
   {}
 
   /** return full table distances
@@ -353,6 +407,42 @@ public:
   /** return the temporary displacements when a move is proposed
    */
   const DisplRow& getTempDispls() const { return temp_dr_; }
+
+  int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const final
+  {
+    RealType min_dist = std::numeric_limits<RealType>::max();
+    int index         = -1;
+    if (newpos)
+    {
+      for (int jat = 0; jat < num_sources_; ++jat)
+        if (temp_r_[jat] < min_dist)
+        {
+          min_dist = temp_r_[jat];
+          index    = jat;
+        }
+      if (index >= 0)
+      {
+        r  = min_dist;
+        dr = temp_dr_[index];
+      }
+    }
+    else
+    {
+      for (int jat = 0; jat < num_sources_; ++jat)
+        if (distances_[iat][jat] < min_dist)
+        {
+          min_dist = distances_[iat][jat];
+          index    = jat;
+        }
+      if (index >= 0)
+      {
+        r  = min_dist;
+        dr = displacements_[iat][index];
+      }
+    }
+    assert(index >= 0 && index < num_sources_);
+    return index;
+  }
 
   /// return multi-walker full (all pairs) distance table data pointer
   [[noreturn]] virtual const RealType* getMultiWalkerDataPtr() const

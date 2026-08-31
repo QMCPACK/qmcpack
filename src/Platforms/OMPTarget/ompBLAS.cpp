@@ -18,6 +18,8 @@
 #include "ompReductionComplex.hpp"
 #endif
 
+using uint32_t = std::uint32_t;
+
 namespace qmcplusplus
 {
 namespace ompBLAS

@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 
 #include "Utilities/RandomGenerator.h"
@@ -74,7 +73,7 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this

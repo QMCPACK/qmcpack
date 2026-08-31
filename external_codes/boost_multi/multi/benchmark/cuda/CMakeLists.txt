@@ -6,7 +6,6 @@ project(
 	LANGUAGES CXX CUDA
 )
 
-find_package(Boost REQUIRED COMPONENTS serialization unit_test_framework)
 find_package(benchmark REQUIRED)
 
 set(BLA_VENDOR Intel10_64lp)

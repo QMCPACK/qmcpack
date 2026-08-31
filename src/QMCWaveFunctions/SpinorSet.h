@@ -25,7 +25,7 @@ class SpinorSet : public SPOSet
 {
 public:
   /** constructor */
-  SpinorSet(const std::string& my_name);
+  SpinorSet(const std::string& my_name, std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&& dn);
   ~SpinorSet() override;
 
   std::string getClassName() const override { return "SpinorSet"; }
@@ -38,14 +38,9 @@ public:
 
   void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
-  //This class is initialized by separately building the up and down channels of the spinor set and
-  //then registering them.
-  void set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&& dn);
-
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals
    */
-  void setOrbitalSetSize(int norbs) override;
 
   /** evaluate the values of this spinor set
    * @param P current ParticleSet
@@ -71,11 +66,11 @@ public:
                                const ValueVector& invrow,
                                std::vector<ValueType>& ratios) override;
 
-  void mw_evaluateDetSpinorRatios(const RefVectorWithLeader<SPOSet>& spo_list, 
-                                  const RefVectorWithLeader<const VirtualParticleSet>& vp_list, 
-                                  const RefVector<ValueVector>& psi_list, 
-                                  const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list, 
-                                  const std::vector<const ValueType*>& invRow_ptr_list, 
+  void mw_evaluateDetSpinorRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                                  const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                  const RefVector<ValueVector>& psi_list,
+                                  const RefVector<std::pair<ValueVector, ValueVector>>& spinor_multiplier_list,
+                                  const std::vector<const ValueType*>& invRow_ptr_list,
                                   std::vector<std::vector<ValueType>>& ratios_list) const override;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
@@ -215,8 +210,8 @@ private:
       const RefVectorWithLeader<SPOSet>& spo_list) const;
 
   //Sposet for the up and down channels of our spinors.
-  std::unique_ptr<SPOSet> spo_up;
-  std::unique_ptr<SPOSet> spo_dn;
+  const std::unique_ptr<SPOSet> spo_up;
+  const std::unique_ptr<SPOSet> spo_dn;
 
   //temporary arrays for holding the values of the up and down channels respectively.
   ValueVector psi_work_up;

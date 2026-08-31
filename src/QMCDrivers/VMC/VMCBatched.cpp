@@ -15,6 +15,7 @@
 #include "Concurrency/Info.hpp"
 #include "Message/UniformCommunicateError.h"
 #include "Message/CommOperators.h"
+#include "TrialWaveFunction.h"
 #include "Utilities/RunTimeManager.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/MCSample.h"
@@ -110,7 +111,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       // up and down electrons are "species" within qmpack
       for (int ig = 0; ig < walker_leader.groups(); ++ig) //loop over species
       {
-        TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
+        TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), 1.0 / walker_leader.get_mass_by_group()[ig],
                                      sft.qmcdrv_input.get_spin_mass());
 
         twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
@@ -201,11 +202,10 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   {
     ScopedTimer collectables_local_timer(timers.collectables_timer);
-    auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, ParticleSet& pset, MCPWalker& walker) {
-      ham.auxHevaluate(pset, walker);
-    };
+    auto evaluateNonPhysicalHamiltonianElements = [](QMCHamiltonian& ham, TrialWaveFunction& psi, ParticleSet& pset,
+                                                     MCPWalker& walker) { ham.auxHevaluate(psi, pset, walker); };
     for (int iw = 0; iw < crowd.size(); ++iw)
-      evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_elecs[iw], walkers[iw]);
+      evaluateNonPhysicalHamiltonianElements(walker_hamiltonians[iw], walker_twfs[iw], walker_elecs[iw], walkers[iw]);
 
     auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker) {
       ham.saveProperty(walker.getPropertyBase());
@@ -314,7 +314,7 @@ size_t VMCBatched::compute_samples_per_rank(const size_t num_blocks,
  *  If does consider giving more to the thread by value that should
  *  end up thread local. (I think)
  */
-bool VMCBatched::run()
+void VMCBatched::run()
 {
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
@@ -469,7 +469,7 @@ bool VMCBatched::run()
   wlog_manager.stopRun();
   estimator_manager_->stopDriverRun();
 
-  return finalize(num_blocks, true);
+  finalize(num_blocks, true);
 }
 
 RefVector<QMCDriverNew::ContextForSteps> VMCBatched::getContextForStepsRefs() const
@@ -494,7 +494,7 @@ void VMCBatched::enable_sample_collection()
   assert(steps_per_block_ > 0 && "VMCBatched::enable_sample_collection steps_per_block_ must be positive!");
   auto samples = compute_samples_per_rank(qmcdriver_input_.get_max_blocks(), steps_per_block_,
                                           population_.get_num_local_walkers());
-  samples_.setMaxSamples(samples, population_.get_num_ranks());
+  samples_.setMaxSamples(samples);
   collect_samples_ = true;
 
   auto total_samples = samples * population_.get_num_ranks();

@@ -36,14 +36,10 @@ public:
   RealType myfabs(RealType s) { return std::fabs(s); }
   template<typename T>
   std::complex<T> myfabs(std::complex<T>& s)
-  {
-    return std::complex<T>(myfabs(s.real()), myfabs(s.imag()));
-  }
+  { return std::complex<T>(myfabs(s.real()), myfabs(s.imag())); }
   template<typename T>
   TinyVector<T, OHMMS_DIM> myfabs(TinyVector<T, OHMMS_DIM>& s)
-  {
-    return TinyVector<T, OHMMS_DIM>(myfabs(s[0]), myfabs(s[1]), myfabs(s[2]));
-  }
+  { return TinyVector<T, OHMMS_DIM>(myfabs(s[0]), myfabs(s[1]), myfabs(s[2])); }
 
   const SPOSetMap& sposets;
   ParticleSet& target;
@@ -52,7 +48,7 @@ public:
 
   // construction/destruction
   SPOSetScanner(const SPOSetMap& sposets_in, ParticleSet& targetPtcl, const PtclPool& psets)
-      : sposets(sposets_in), target(targetPtcl), ptcl_pool_(psets), ions(0){};
+      : sposets(sposets_in), target(targetPtcl), ptcl_pool_(psets), ions(0) {};
   //~SPOSetScanner(){};
 
   // processing scanning

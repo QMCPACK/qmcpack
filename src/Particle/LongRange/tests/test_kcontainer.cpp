@@ -9,7 +9,8 @@
 //
 // File created by: Yubo "Paul" Yang, yubo.paul.yang@gmail.com, CCQ @ Flatiron
 //////////////////////////////////////////////////////////////////////////////////////
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Particle/LongRange/KContainer.h"
 #include "Particle/Lattice/CrystalLattice.h"
@@ -169,8 +170,6 @@ TEST_CASE("kcontainer at twist in 2D", "[longrange]")
 
 TEST_CASE("kcontainer for diamond", "[longrange]")
 {
-  int ndim = 3;
-
   using Real         = QMCTraits::RealType;
   using FullPrecReal = QMCTraits::FullPrecRealType;
 

@@ -44,7 +44,7 @@ struct BareKineticEnergy::MultiWalkerResource : public Resource
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-BareKineticEnergy::BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi) : ps_(p), psi_(psi)
+BareKineticEnergy::BareKineticEnergy(ParticleSet& p) : ps_(p)
 {
   setEnergyDomain(KINETIC);
   oneBodyQuantumDomain(p);
@@ -65,11 +65,7 @@ BareKineticEnergy::BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi) : p
 ///destructor
 BareKineticEnergy::~BareKineticEnergy() = default;
 
-bool BareKineticEnergy::dependsOnWaveFunction() const { return true; }
-
 std::string BareKineticEnergy::getClassName() const { return "BareKineticEnergy"; }
-
-void BareKineticEnergy::resetTargetParticleSet(ParticleSet& p) {}
 
 #if !defined(REMOVE_TRACEMANAGER)
 void BareKineticEnergy::contributeParticleQuantities()
@@ -103,7 +99,7 @@ void BareKineticEnergy::deleteParticleQuantities()
 #endif
 
 
-Return_t BareKineticEnergy::evaluate(ParticleSet& P)
+Return_t BareKineticEnergy::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
 #if !defined(REMOVE_TRACEMANAGER)
   if (streaming_particles_)
@@ -136,31 +132,52 @@ Return_t BareKineticEnergy::evaluate(ParticleSet& P)
   return value_;
 }
 
-Return_t BareKineticEnergy::evaluateValueAndDerivatives(ParticleSet& P,
-                                                        const opt_variables_type& optvars,
+Return_t BareKineticEnergy::evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                                        ParticleSet& P,
+                                                        const OptVariables& optvars,
                                                         const Vector<ValueType>& dlogpsi,
                                                         Vector<ValueType>& dhpsioverpsi)
 {
   // const_cast is needed because TWF::evaluateDerivatives calculates dlogpsi.
   // KineticEnergy must be the first element in the hamiltonian array.
-  psi_.evaluateDerivatives(P, optvars, const_cast<Vector<ValueType>&>(dlogpsi), dhpsioverpsi);
-  return evaluate(P);
+  psi.evaluateDerivatives(P, optvars, const_cast<Vector<ValueType>&>(dlogpsi), dhpsioverpsi);
+  auto& mass = P.get_mass_by_group();
+  for (int ig = 0; ig < mass.size(); ++ig)
+  {
+    auto mass_inv = 1.0 / mass[ig];
+    for (int j = P.first(ig); j < P.last(ig); ++j)
+      dhpsioverpsi *= mass_inv;
+  }
+  return evaluate(psi, P);
 }
 
 void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                            const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                             const RefVectorWithLeader<ParticleSet>& p_list,
-                                                            const opt_variables_type& optvars,
+                                                            const OptVariables& optvars,
                                                             const RecordArray<ValueType>& dlogpsi,
                                                             RecordArray<ValueType>& dhpsioverpsi) const
 {
-  RefVectorWithLeader<TrialWaveFunction> wf_list(o_list.getCastedLeader<BareKineticEnergy>().psi_);
-  for (int i = 0; i < o_list.size(); i++)
-    wf_list.push_back(o_list.getCastedElement<BareKineticEnergy>(i).psi_);
   mw_evaluate(o_list, wf_list, p_list);
   // const_cast is needed because TWF::evaluateDerivatives calculates dlogpsi.
   // KineticEnergy must be the first element in the hamiltonian array.
   TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optvars,
                                                      const_cast<RecordArray<ValueType>&>(dlogpsi), dhpsioverpsi);
+
+  const int nparam = dlogpsi.getNumOfParams();
+
+  auto& p_leader = p_list.getLeader();
+  auto& mass     = p_leader.get_mass_by_group();
+  for (int iw = 0; iw < wf_list.size(); iw++)
+  {
+    Vector<ValueType> dhpsioverpsi_record_view(dhpsioverpsi[iw], nparam);
+    for (int ig = 0; ig < mass.size(); ++ig)
+    {
+      auto mass_inv = 1.0 / mass[ig];
+      for (int j = p_leader.first(ig); j < p_leader.last(ig); ++j)
+        dhpsioverpsi_record_view *= mass_inv;
+    }
+  }
 }
 
 /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
@@ -526,9 +543,7 @@ void BareKineticEnergy::mw_evaluatePerParticleWithToperator(
     const RefVectorWithLeader<ParticleSet>& p_list,
     const std::vector<ListenerVector<RealType>>& listeners,
     const std::vector<ListenerVector<RealType>>& ion_listeners) const
-{
-  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
-}
+{ mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners); }
 
 #if !defined(REMOVE_TRACEMANAGER)
 Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)
@@ -626,9 +641,7 @@ bool BareKineticEnergy::get(std::ostream& os) const
   return true;
 }
 
-std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
-{
-  return std::make_unique<BareKineticEnergy>(qp, psi);
-}
+std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
+{ return std::make_unique<BareKineticEnergy>(qp); }
 
 } // namespace qmcplusplus

@@ -21,7 +21,7 @@
  */
 namespace qmcplusplus
 {
-using opt_variables_type = optimize::VariableSet;
+using OptVariables = optimize::VariableSet;
 
 class OptimizableObject
 {
@@ -35,7 +35,7 @@ private:
 
 protected:
   ///optimizable variables in use
-  opt_variables_type myVars;
+  OptVariables myVars;
 
 public:
   OptimizableObject(const std::string& name) : name_(name) {}
@@ -65,11 +65,11 @@ public:
    * All the checkInVariablesExclusive() will be called through this vector and thus
    * checkInVariablesExclusive implementation should only handle non-OptimizableObject members.
    */
-  virtual void checkInVariablesExclusive(opt_variables_type& active) = 0;
+  virtual void checkInVariablesExclusive(OptVariables& active) = 0;
 
   /** reset the parameters during optimizations. Exclusive, see checkInVariablesExclusive
    */
-  virtual void resetParametersExclusive(const opt_variables_type& active) = 0;
+  virtual void resetParametersExclusive(const OptVariables& active) = 0;
 
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) {}
@@ -86,7 +86,7 @@ public:
    * do not need to implement this function (yet).
    *
    */
-  virtual void writeVariationalParameters(hdf_archive& hout){};
+  virtual void writeVariationalParameters(hdf_archive& hout) {};
 
   /** Read the variational parameters for this object from the VP HDF file
    *
@@ -95,7 +95,7 @@ public:
    * By default the parameters are read in VariableSet::readFromHDF, and objects
    * do not need to implement this function (yet).
    */
-  virtual void readVariationalParameters(hdf_archive& hin){};
+  virtual void readVariationalParameters(hdf_archive& hin) {};
 };
 
 class UniqueOptObjRefs : public RefVector<OptimizableObject>

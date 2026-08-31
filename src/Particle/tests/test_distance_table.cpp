@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <stdio.h>
 #include <string>
@@ -65,8 +64,7 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -159,8 +157,7 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -250,8 +247,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -331,8 +327,7 @@ SimulationCell parse_pbc_fcc_lattice()
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -364,8 +359,7 @@ SimulationCell parse_pbc_lattice()
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -421,8 +415,7 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
 )";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(particles));
 
   xmlNodePtr root  = doc.getRoot();
   xmlNodePtr part1 = xmlFirstElementChild(root);
@@ -597,6 +590,7 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
 
   std::vector<ParticleSet::SingleParticlePos> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
+  ParticleSet::mw_update(p_list);
   ParticleSet::mw_makeMove(p_list, 0, disp);
   ParticleSet::mw_accept_rejectMove(p_list, 0, {true, true}, true);
   ParticleSet::mw_makeMove(p_list, 1, disp);
@@ -643,6 +637,7 @@ void test_distance_fcc_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
 
   std::vector<ParticleSet::SingleParticlePos> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
+  ParticleSet::mw_update(p_list);
   ParticleSet::mw_makeMove(p_list, 0, disp);
   ParticleSet::mw_accept_rejectMove(p_list, 0, {true, true}, true);
   ParticleSet::mw_makeMove(p_list, 1, disp);
@@ -697,6 +692,7 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
 
   std::vector<ParticleSet::SingleParticlePos> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
 
+  ParticleSet::mw_update(p_list);
   ParticleSet::mw_makeMove(p_list, 0, disp);
   CHECK(ee_dtable.getTempDists()[1] == Approx(2.7239676944));
   CHECK(ee_dtable.getTempDispls()[1][0] == Approx(2.7));

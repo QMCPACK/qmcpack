@@ -35,9 +35,7 @@ public:
   std::vector<int> offsetPrms;
 
   Backflow_eI(ParticleSet& ions, ParticleSet& els) : BackflowFunctionBase(ions, els), myTableIndex_(els.addTable(ions))
-  {
-    resize(NumTargets, NumCenters);
-  }
+  { resize(NumTargets, NumCenters); }
 
   //  build RadFun manually from builder class
   Backflow_eI(ParticleSet& ions, ParticleSet& els, FT* RF)
@@ -90,19 +88,19 @@ public:
       uniqueRadFun[i]->reportStatus(os);
   }
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParameters(const OptVariables& active) override
   {
     for (int i = 0; i < uniqueRadFun.size(); i++)
       uniqueRadFun[i]->resetParametersExclusive(active);
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariables(OptVariables& active) override
   {
     for (int i = 0; i < uniqueRadFun.size(); i++)
       uniqueRadFun[i]->checkInVariablesExclusive(active);
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
+  void checkOutVariables(const OptVariables& active) override
   {
     for (int i = 0; i < uniqueRadFun.size(); i++)
       uniqueRadFun[i]->checkOutVariables(active);

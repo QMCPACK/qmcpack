@@ -78,7 +78,7 @@ inline void eval_e2iphi(int n, const T* restrict phi, std::complex<T>* restrict 
 template<typename T>
 inline void eval_e2iphi(std::vector<T>& phi, std::vector<std::complex<T>>& z)
 {
-  eval_e2iphi(phi.size(), &phi[0], &z[0]);
+  eval_e2iphi(phi.size(), phi.data(), z.data());
 }
 
 #endif

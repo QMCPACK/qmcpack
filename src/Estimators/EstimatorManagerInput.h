@@ -16,6 +16,7 @@
 #ifndef QMCPLUSPLUS_ESIMATORMANAGERINPUT_H
 #define QMCPLUSPLUS_ESIMATORMANAGERINPUT_H
 
+#include "PairCorrelationInput.h"
 #include <vector>
 #include <variant>
 #include <libxml/tree.h>
@@ -42,6 +43,8 @@ class SelfHealingOverlapInput;
 class MagnetizationDensityInput;
 class PerParticleHamiltonianLoggerInput;
 class StructureFactorInput;
+class PairCorrelationInput;
+
 using EstimatorInput = std::variant<std::monostate,
                                     MomentumDistributionInput,
                                     SpinDensityInput,
@@ -50,7 +53,8 @@ using EstimatorInput = std::variant<std::monostate,
                                     MagnetizationDensityInput,
                                     PerParticleHamiltonianLoggerInput,
                                     EnergyDensityInput,
-                                    StructureFactorInput>;
+                                    StructureFactorInput,
+                                    PairCorrelationInput>;
 
 using EstimatorInputs = std::vector<EstimatorInput>;
 
@@ -136,6 +140,7 @@ extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<
 extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<PerParticleHamiltonianLoggerInput>()
     const;
 extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<StructureFactorInput>() const;
+extern template std::vector<int> EstimatorManagerInput::getEstimatorTypeIndexes<PairCorrelationInput>() const;
 
 } // namespace qmcplusplus
 

@@ -61,8 +61,6 @@ public:
 
   void Breakup(ParticleSet& ref, mRealType rs_in) override { initBreakup(ref); }
 
-  void resetTargetParticleSet(ParticleSet& ref) override {}
-
   inline mRealType evaluate(mRealType r, mRealType rinv) const override { return erfc(r * Sigma) * rinv; }
 
   /** evaluate the contribution from the long-range part for for spline

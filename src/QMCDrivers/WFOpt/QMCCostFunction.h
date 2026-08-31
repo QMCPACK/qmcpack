@@ -40,9 +40,8 @@ public:
   void getConfigurations(const std::string& aroot) override;
   void checkConfigurations(EngineHandle& handle) override;
 #ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
-                                  DescentEngine& descentEngineObj,
-                                  const std::string& MinMethod) override;
+  void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
+                                  OptionalRef<DescentEngine> descentEngineObj) override;
 #endif
 
 
@@ -58,13 +57,12 @@ protected:
   */
   std::vector<Matrix<Return_t>*> DerivRecords;
   std::vector<Matrix<Return_rt>*> HDerivRecords;
-  Return_rt CSWeight;
 
   EffectiveWeight correlatedSampling(bool needGrad = true) override;
 
 #ifdef HAVE_LMY_ENGINE
   size_t total_samples();
-  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj) override;
+  Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>& EngineObj) override;
 #endif
 
   NewTimer& fill_timer_;

@@ -8,9 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -36,7 +35,7 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   lattice.R = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
@@ -49,19 +48,22 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
   ions_.R[2] = {3.37316115, 3.37316115, 0.0};
   ions_.R[3] = {5.05974173, 5.05974173, 1.68658058};
+  ions_.update();
+
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
-  elec_.R[0]                 = {0.0, 0.0, 0.0};
-  elec_.R[1]                 = {0.0, 1.0, 0.0};
+  elec_.R[0] = {0.0, 0.0, 0.0};
+  elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.update();
+
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml_string);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(spo_xml_string));
 
   xmlNodePtr ein_xml = doc.getRoot();
 

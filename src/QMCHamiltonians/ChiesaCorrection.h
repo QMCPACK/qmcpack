@@ -26,15 +26,13 @@ public:
 
   std::string getClassName() const override;
 
-  void resetTargetParticleSet(ParticleSet& P) override;
-
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
   bool put(xmlNodePtr cur) override;
 
   bool get(std::ostream& os) const override;
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const final;
 
 private:
   const TrialWaveFunction& psi_ref_;

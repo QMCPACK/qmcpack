@@ -74,7 +74,7 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   //YYYY
   std::map<FT*, int> J3UniqueIndex;
   ///optimizable variables extracted from functors
-  opt_variables_type myVars;
+  OptVariables myVars;
 
   /// the cutoff for e-I pairs
   std::vector<valT> Ion_cutoff;
@@ -324,7 +324,7 @@ public:
 
   /** check out optimizable variables
    */
-  void checkOutVariables(const opt_variables_type& active) override
+  void checkOutVariables(const OptVariables& active) override
   {
     myVars.clear();
 
@@ -841,12 +841,10 @@ public:
                       ParticleSet::ParticleGradient& G,
                       ParticleSet::ParticleLaplacian& L,
                       bool fromscratch = false) override
-  {
-    return log_value_ = computeGL(G, L);
-  }
+  { return log_value_ = computeGL(G, L); }
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override
   {
@@ -964,7 +962,7 @@ public:
     }
   }
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override
+  void evaluateDerivativesWF(ParticleSet& P, const OptVariables& optvars, Vector<ValueType>& dlogpsi) override
   {
     resizeWFOptVectors();
 
@@ -1048,7 +1046,7 @@ public:
   }
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override
   {

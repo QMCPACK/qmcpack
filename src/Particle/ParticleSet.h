@@ -43,6 +43,7 @@ class DistanceTableAA;
 class DistanceTableAB;
 class ResourceCollection;
 class StructFact;
+struct ParticleSetMultiWalkerMem;
 struct SKMultiWalkerMem;
 
 /** Specialized paritlce class for atomistic simulations
@@ -83,8 +84,6 @@ public:
   ParticleGradient G;
   ///laplacians of the particles
   ParticleLaplacian L;
-  ///mass of each particle
-  ParticleScalar Mass;
   ///charge of each particle
   ParticleScalar Z;
 
@@ -125,13 +124,10 @@ public:
    */
   Buffer_t Collectables;
 
-  ///Property history vector
-  std::vector<std::vector<FullPrecRealType>> PropertyHistory;
-  std::vector<int> PHindex;
   ///@}
 
   ///current MC step
-  int current_step;
+  int current_step{0};
 
   ///default constructor
   ParticleSet(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
@@ -223,9 +219,6 @@ public:
    */
   void turnOnPerParticleSK();
 
-  /** Get state (on/off) of per particle storage in Structure Factor
-   */
-  bool getPerParticleSKState() const;
 
   ///retrun the SpeciesSet of this particle set
   inline SpeciesSet& getSpeciesSet() { return my_species_; }
@@ -242,6 +235,8 @@ public:
       ParentName = aname;
     }
   }
+
+  inline const auto& get_mass_by_group() const { return mass_by_group_; }
 
   inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
 
@@ -310,6 +305,25 @@ public:
   static void mw_makeSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
                               int iat,
                               const std::vector<Scalar_t>& sdispls);
+
+  /** attempt to make an all particle move on every walker in a crowd
+   *
+   * @tparam CT coordinate type, either POS or POS_SPIN
+   * @param[in,out] p_list ParticleSets to move; positions, distance tables, and structure factors are updated in place
+   * @param[in] displacements particle displacements in particle-major order
+   * @param[out] are_valid lattice-validity result for each particle move, in particle-major order
+   * Displacements and are_valid use particle-major flattened storage:
+   * ip * number_of_walkers + iw. The caller must supply a nonempty, resource-acquired
+   * crowd with matching topology and particle counts, exact input and output sizes,
+   * and no active particles. These caller invariants are checked in Debug and assumed in
+   * Release. Each move proposal receives the same lattice-validity check as mw_makeMove.
+   * Individual invalid particle proposals leave that particle unchanged; they do not reject the full
+   * configuration. Distance tables and structure factors are fully updated. No particle is left active.
+   */
+  template<CoordsType CT>
+  static void mw_makeMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
+                                      const MCCoords<CT>& displacements,
+                                      std::vector<bool>& are_valid);
 
   /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
@@ -410,20 +424,31 @@ public:
   /** batched version  of acceptMove and reject Move fused, but only for spins
    *
    * note: should be called BEFORE mw_accept_rejectMove since the active_ptcl_ gets reset to -1
-   * This would cause the assertion that we have the right particle index to fail if done in the 
+   * This would cause the assertion that we have the right particle index to fail if done in the
    * wrong order
    */
   static void mw_accept_rejectSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                        Index_t iat,
                                        const std::vector<bool>& isAccepted);
 
+  /** accept or reject an all particle move for every walker in a crowd
+   *
+   * @param[in,out] p_list   ParticleSets transformed by attempted moves
+   * @param[in] accepted     one acceptance decision for each ParticleSet
+   * Accepted moves remain in the ParticleSets. Rejected moves restore positions and spins
+   * from the pre-proposal snapshot retained in the acquired multiwalker resource, then update
+   * the distance tables and structure factors. Walker_t state is not part of this transaction.
+   * The caller must provide a nonempty, resource-acquired crowd with the same number of
+   * ParticleSets and decisions, matching particle counts,
+   * and no active particles. These requirements are checked in Debug
+   * and assumed in Release. In simulation context this necessarily
+   * follows a mw_makeMoveAllParticles* call.
+   */
+  static void mw_accept_rejectMoveAllParticles(const RefVectorWithLeader<ParticleSet>& p_list,
+                                               const std::vector<bool>& accepted);
+
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
-
-  int addPropertyHistory(int leng);
-  //        void rejectedMove();
-  //        void resetPropertyHistory( );
-  //        void addPropertyHistoryPoint(int index, RealType data);
 
   void convert(const ParticlePos& pin, ParticlePos& pout);
   void convert2Unit(const ParticlePos& pin, ParticlePos& pout);
@@ -431,7 +456,7 @@ public:
   void convert2Unit(ParticlePos& pout);
   void convert2Cart(ParticlePos& pout);
   void convert2UnitInBox(const ParticlePos& pint, ParticlePos& pout);
-  void convert2CartInBox(const ParticlePos& pint, ParticlePos& pout);
+
 
   void applyBC(const ParticlePos& pin, ParticlePos& pout);
   void applyBC(ParticlePos& pos);
@@ -511,7 +536,6 @@ public:
     GroupID.clear();
     G.clear();
     L.clear();
-    Mass.clear();
     Z.clear();
 
     coordinates_->resize(0);
@@ -540,24 +564,16 @@ public:
   template<typename ATList>
   inline void createAttributeList(ATList& AttribList)
   {
-    R.setTypeName(ParticleTags::postype_tag);
-    R.setObjName(ParticleTags::position_tag);
-    spins.setTypeName(ParticleTags::scalartype_tag);
-    spins.setObjName(ParticleTags::spins_tag);
-    GroupID.setTypeName(ParticleTags::indextype_tag);
-    GroupID.setObjName(ParticleTags::ionid_tag);
+    R.setName(ParticleTags::position_tag);
+    spins.setName(ParticleTags::spins_tag);
+    GroupID.setName(ParticleTags::ionid_tag);
     //add basic attributes
     AttribList.add(R);
     AttribList.add(spins);
     AttribList.add(GroupID);
 
     //more particle attributes
-    Mass.setTypeName(ParticleTags::scalartype_tag);
-    Mass.setObjName("mass");
-    AttribList.add(Mass);
-
-    Z.setTypeName(ParticleTags::scalartype_tag);
-    Z.setObjName("charge");
+    Z.setName("charge");
     AttribList.add(Z);
   }
 
@@ -617,6 +633,9 @@ protected:
   ///Structure factor
   std::unique_ptr<StructFact> structure_factor_;
 
+  /// multiwalker operation data
+  ResourceHandle<ParticleSetMultiWalkerMem> mw_mem_handle_;
+
   ///multi walker structure factor data
   ResourceHandle<SKMultiWalkerMem> mw_structure_factor_data_handle_;
 
@@ -644,6 +663,9 @@ protected:
 
   ///array to handle a group of distinct particles per species
   std::shared_ptr<Vector<int, OMPallocator<int>>> group_offsets_;
+
+  /// mass by specie
+  Vector<Scalar_t> mass_by_group_;
 
   ///internal representation of R. It can be an SoA copy of R
   std::unique_ptr<DynamicCoordinates> coordinates_;
@@ -690,7 +712,6 @@ protected:
     GroupID.resize(numPtcl);
     G.resize(numPtcl);
     L.resize(numPtcl);
-    Mass.resize(numPtcl);
     Z.resize(numPtcl);
 
     coordinates_->resize(numPtcl);

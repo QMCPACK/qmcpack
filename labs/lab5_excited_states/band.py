@@ -72,10 +72,10 @@ run_project()
 
 p = band.load_analyzer_image()
 p.plot_bandstructure()
-print "VBM:\n{0}".format(p.bands.vbm) 
-print "CBM:\n{0}".format(p.bands.cbm)
+print("VBM:\n{0}".format(p.bands.vbm)) 
+print("CBM:\n{0}".format(p.bands.cbm))
 
-#print 'CBM, Delta'
-#print p.bands.up[51]
-#print 'Delta prime'
-#print p.bands.up[46]
+#print("CBM, Delta")
+#print(p.bands.up[51])
+#print("Delta prime")
+#print(p.bands.up[46])

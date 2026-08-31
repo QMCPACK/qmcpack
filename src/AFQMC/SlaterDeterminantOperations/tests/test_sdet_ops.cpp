@@ -10,21 +10,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #undef NDEBUG
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
 
-//#include "catch.hpp"
-#include "Configuration.h"
 
 #include "ProjectData.h"
-
-// Avoid the need to link with other libraries just to get APP_ABORT
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
 
 #include <stdio.h>
 #include <string>
@@ -129,8 +120,8 @@ TEST_CASE("SDetOps_double_serial", "[sdet_ops]")
   CHECK(SDet.Overlap(Aref,Bref) == Approx(ov));
 
   // Test array_view
-  CHECK(SDet.Overlap(A(A.extension(0),A.extension(1)),B) == Approx(ov));
-  CHECK(SDet.Overlap(A,B(B.extension(0),B.extension(1))) == Approx(ov));
+  CHECK(SDet.Overlap(A(get<0>(A.extents()),get<1>(A.extents())),B) == Approx(ov));
+  CHECK(SDet.Overlap(A,B(get<0>(B.extents()),get<1>(B.extents()))) == Approx(ov));
 
   array A_ = A({0,2},{0,3});
   array B_ = B({0,3},{0,2});
@@ -274,8 +265,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   CHECK(SDet.Overlap(Aref,Bref,node) == Approx(ov));
 
   // Test array_view
-  CHECK(SDet.Overlap(A(A.extension(0),A.extension(1)),B,node) == Approx(ov));
-  CHECK(SDet.Overlap(A,B(B.extension(0),B.extension(1)),node) == Approx(ov));
+  CHECK(SDet.Overlap(A(get<0>(A.extents()),get<1>(A.extents())),B,node) == Approx(ov));
+  CHECK(SDet.Overlap(A,B(get<0>(B.extents()),get<1>(B.extents())),node) == Approx(ov));
 
   array A_ = A({0,2},{0,3});
   array B_ = B({0,3},{0,2});
@@ -320,8 +311,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   boost::multi::array<Type,1,shared_allocator<Type>> SMbuff(iextensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node});  
 
-  array_ref G(to_address(SMbuff.origin()),{NMO,NMO});
-  array_ref Gc(to_address(SMbuff.origin())+NMO*NMO,{NEL,NMO});
+  array_ref G(to_address(SMbuff.base()),{NMO,NMO});
+  array_ref Gc(to_address(SMbuff.base())+NMO*NMO,{NEL,NMO});
 
   ov_=SDet.MixedDensityMatrix(A,B,G,node,false); check(G,g_ref);
   ov_=SDet.MixedDensityMatrix(Aref,B,G,node,false); check(G,g_ref);
@@ -362,8 +353,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   boost::multi::array<Type,1,shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO*(NMO+NEL)},
                                                             shared_allocator<Type>{node_});
 
-  array_ref G2(to_address(SMbuff2.origin()),{NMO,NMO});
-  array_ref Gc2(to_address(SMbuff2.origin())+NMO*NMO,{NEL,NMO});
+  array_ref G2(to_address(SMbuff2.base()),{NMO,NMO});
+  array_ref Gc2(to_address(SMbuff2.base())+NMO*NMO,{NEL,NMO});
 
   // switch comm
   ov_=SDet.MixedDensityMatrix(A,B,G2,node_,false); check(G2,g_ref);
@@ -392,8 +383,9 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
   using vector    = std::vector<Type>;
   using array     = boost::multi::array<Type, 2, Allocator>;
   using array_ref = boost::multi::array_ref<Type, 2, typename Allocator::pointer>;
-  using array_ptr = boost::multi::array_ptr<Type, 2, typename Allocator::pointer>;
+  using array_ptr = boost::multi::detail::array_ptr<Type, 2, typename Allocator::pointer>;
   using namespace std::complex_literals;
+  using std::get;
 
   const Type ov  = -7.62332599999999 + 22.20453200000000i;
   const Type ov2 = -10.37150000000000 - 7.15750000000000i;
@@ -407,12 +399,12 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
                 0.60000 + 0.90000i, 1.10000 + 0.50000i, 0.30000 + 0.60000i, 0.90000 + 0.70000i};
 
   array A({NEL, NMO}, alloc);
-  copy_n(m_a.data(), m_a.size(), A.origin());
+  copy_n(m_a.data(), m_a.size(), A.base());
   array B({NMO, NEL}, alloc);
-  copy_n(m_b.data(), m_b.size(), B.origin());
+  copy_n(m_b.data(), m_b.size(), B.base());
 
-  array_ref Aref(A.origin(), {NEL, NMO});
-  array_ref Bref(B.origin(), {NMO, NEL});
+  array_ref Aref(A.base(), {NEL, NMO});
+  array_ref Bref(B.base(), {NMO, NEL});
 
   SlaterDetOperations SDet(SlaterDetOperations_serial<Type, BufferManager>(NMO, NEL, b));
 
@@ -434,9 +426,9 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
   //SECTION("array_view")
   {
     Type ov_;
-    ov_ = SDet.Overlap(A(A.extension(0), A.extension(1)), B, 0.0);
+    ov_ = SDet.Overlap(A(get<0>(A.extents()), get<1>(A.extents())), B, 0.0);
     myCHECK(ov_, ov);
-    ov_ = SDet.Overlap(A, B(B.extension(0), B.extension(1)), 0.0);
+    ov_ = SDet.Overlap(A, B(get<0>(B.extents()), get<1>(B.extents())), 0.0);
     myCHECK(ov_, ov);
   }
 
@@ -456,32 +448,32 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
 
   /**** Density Matrices *****/
   vector v_ref    = {1.17573619385025996 - 0.01580426445014660i,  -0.25295981756593167 + 0.28594469607401085i,
-                  -0.07724502823533341 - 0.09687959052155870i, 0.30512858581808422 - 0.04506898328729603i,
+                     -0.07724502823533341 - 0.09687959052155870i, 0.30512858581808422 - 0.04506898328729603i,
 
-                  0.17912592806889663 + 0.08374315906672802i,  0.59381451118048767 + 0.13438888951771200i,
-                  -0.02021475320201610 - 0.13737561982083193i, 0.32095003919745313 + 0.12832750636154097i,
+                     0.17912592806889663 + 0.08374315906672802i,  0.59381451118048767 + 0.13438888951771200i,
+                     -0.02021475320201610 - 0.13737561982083193i, 0.32095003919745313 + 0.12832750636154097i,
 
-                  -0.04919549564646425 + 0.05402065222741825i, -0.00286990878355775 - 0.15806420733175885i,
-                  1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
+                     -0.04919549564646425 + 0.05402065222741825i, -0.00286990878355775 - 0.15806420733175885i,
+                     1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
 
-                  -0.46434598219794548 - 0.09896890422706731i, 0.87746748807670427 - 0.53417787485950319i,
-                  0.12162735438647077 + 0.31042401735800573i,  0.17975848308289613 - 0.12651892495668898i};
+                     -0.46434598219794548 - 0.09896890422706731i, 0.87746748807670427 - 0.53417787485950319i,
+                     0.12162735438647077 + 0.31042401735800573i,  0.17975848308289613 - 0.12651892495668898i};
   vector vc_ref   = {-0.8721879971495297 + 0.6787593377585239i, 0.3244278932250768 - 1.8083537898275881i,
-                   0.6130713546530860 + 0.0399736955598931i,  0.0132562806444336 - 0.2882495766584950i,
+                     0.6130713546530860 + 0.0399736955598931i,  0.0132562806444336 - 0.2882495766584950i,
 
-                   0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
-                   -0.7392693424168300 - 0.0715317395994149i, 0.3721269544963505 - 0.1797896522886788i,
+                     0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
+                     -0.7392693424168300 - 0.0715317395994149i, 0.3721269544963505 - 0.1797896522886788i,
 
-                   -0.0567190307022984 - 0.3114847157576828i, -0.1290126440468128 + 0.6815705660308808i,
-                   0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i};
+                     -0.0567190307022984 - 0.3114847157576828i, -0.1290126440468128 + 0.6815705660308808i,
+                     0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i};
   vector v_ref_2  = {0.7361983496013835 - 0.0956505507662245i, 0.6467449689807925 + 0.2297471806893873i,
-                    0.0189270005620390 - 0.1727975708935829i,
+                     0.0189270005620390 - 0.1727975708935829i,
 
-                    0.2986893588843604 - 0.0099955730815030i, 0.2696068479051557 + 0.0292039710860386i,
-                    0.0497734835066391 + 0.1783200397050796i,
+                     0.2986893588843604 - 0.0099955730815030i, 0.2696068479051557 + 0.0292039710860386i,
+                     0.0497734835066391 + 0.1783200397050796i,
 
-                    0.1020030246826092 + 0.0344707468383766i, -0.2500340021988402 - 0.0826863644855427i,
-                    0.9941948024934623 + 0.0664465796801866i};
+                     0.1020030246826092 + 0.0344707468383766i, -0.2500340021988402 - 0.0826863644855427i,
+                     0.9941948024934623 + 0.0664465796801866i};
   vector vc_ref_2 = {-0.489369975192701 + 0.103038673040713i, -0.858850485405126 - 0.275734238124941i,
                      1.219791948842170 + 0.118626922447301i,  0.486337033653898 - 0.098631569047656i,
                      0.595497821653010 + 0.185288949671560i,  -0.455373025165330 - 0.129360996228044i};
@@ -630,8 +622,6 @@ void SDetOps_complex_serial(Allocator alloc, BufferManager b)
 
 TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
 {
-  Communicate* c = OHMMS::Controller;
-
   using boost::mpi3::shared_communicator;
   auto world               = boost::mpi3::environment::get_world_instance();
   shared_communicator node = world.split_shared(world.rank());
@@ -691,9 +681,9 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   myCHECK(ov_, ov);
 
   // Test array_view
-  ov_ = SDet.Overlap(A(A.extension(0), A.extension(1)), B, 0.0, node);
+  ov_ = SDet.Overlap(A(get<0>(A.extents()), get<1>(A.extents())), B, 0.0, node);
   myCHECK(ov_, ov);
-  ov_ = SDet.Overlap(A, B(B.extension(0), B.extension(1)), 0.0, node);
+  ov_ = SDet.Overlap(A, B(get<0>(B.extents()), get<1>(B.extents())), 0.0, node);
   myCHECK(ov_, ov);
 
   array A_ = A({0, 2}, {0, 3});
@@ -713,32 +703,32 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
 
   /**** Density Matrices *****/
   vector v_ref    = {1.17573619385025996 - 0.01580426445014660i,  -0.25295981756593167 + 0.28594469607401085i,
-                  -0.07724502823533341 - 0.09687959052155870i, 0.30512858581808422 - 0.04506898328729603i,
+                     -0.07724502823533341 - 0.09687959052155870i, 0.30512858581808422 - 0.04506898328729603i,
 
-                  0.17912592806889663 + 0.08374315906672802i,  0.59381451118048767 + 0.13438888951771200i,
-                  -0.02021475320201610 - 0.13737561982083193i, 0.32095003919745313 + 0.12832750636154097i,
+                     0.17912592806889663 + 0.08374315906672802i,  0.59381451118048767 + 0.13438888951771200i,
+                     -0.02021475320201610 - 0.13737561982083193i, 0.32095003919745313 + 0.12832750636154097i,
 
-                  -0.04919549564646425 + 0.05402065222741825i, -0.00286990878355775 - 0.15806420733175885i,
-                  1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
+                     -0.04919549564646425 + 0.05402065222741825i, -0.00286990878355775 - 0.15806420733175885i,
+                     1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
 
-                  -0.46434598219794548 - 0.09896890422706731i, 0.87746748807670427 - 0.53417787485950319i,
-                  0.12162735438647077 + 0.31042401735800573i,  0.17975848308289613 - 0.12651892495668898i};
+                     -0.46434598219794548 - 0.09896890422706731i, 0.87746748807670427 - 0.53417787485950319i,
+                     0.12162735438647077 + 0.31042401735800573i,  0.17975848308289613 - 0.12651892495668898i};
   vector vc_ref   = {-0.8721879971495297 + 0.6787593377585239i, 0.3244278932250768 - 1.8083537898275881i,
-                   0.6130713546530860 + 0.0399736955598931i,  0.0132562806444336 - 0.2882495766584950i,
+                     0.6130713546530860 + 0.0399736955598931i,  0.0132562806444336 - 0.2882495766584950i,
 
-                   0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
-                   -0.7392693424168300 - 0.0715317395994149i, 0.3721269544963505 - 0.1797896522886788i,
+                     0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
+                     -0.7392693424168300 - 0.0715317395994149i, 0.3721269544963505 - 0.1797896522886788i,
 
-                   -0.0567190307022984 - 0.3114847157576828i, -0.1290126440468128 + 0.6815705660308808i,
-                   0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i};
+                     -0.0567190307022984 - 0.3114847157576828i, -0.1290126440468128 + 0.6815705660308808i,
+                     0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i};
   vector v_ref_2  = {0.7361983496013835 - 0.0956505507662245i, 0.6467449689807925 + 0.2297471806893873i,
-                    0.0189270005620390 - 0.1727975708935829i,
+                     0.0189270005620390 - 0.1727975708935829i,
 
-                    0.2986893588843604 - 0.0099955730815030i, 0.2696068479051557 + 0.0292039710860386i,
-                    0.0497734835066391 + 0.1783200397050796i,
+                     0.2986893588843604 - 0.0099955730815030i, 0.2696068479051557 + 0.0292039710860386i,
+                     0.0497734835066391 + 0.1783200397050796i,
 
-                    0.1020030246826092 + 0.0344707468383766i, -0.2500340021988402 - 0.0826863644855427i,
-                    0.9941948024934623 + 0.0664465796801866i};
+                     0.1020030246826092 + 0.0344707468383766i, -0.2500340021988402 - 0.0826863644855427i,
+                     0.9941948024934623 + 0.0664465796801866i};
   vector vc_ref_2 = {-0.489369975192701 + 0.103038673040713i, -0.858850485405126 - 0.275734238124941i,
                      1.219791948842170 + 0.118626922447301i,  0.486337033653898 - 0.098631569047656i,
                      0.595497821653010 + 0.185288949671560i,  -0.455373025165330 - 0.129360996228044i};
@@ -751,8 +741,8 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff(iextensions<1u>{NMO * (NMO + NEL)},
                                                               shared_allocator<Type>{node});
 
-  array_ref G(to_address(SMbuff.origin()), {NMO, NMO});
-  array_ref Gc(to_address(SMbuff.origin()) + NMO * NMO, {NEL, NMO});
+  array_ref G(to_address(SMbuff.base()), {NMO, NMO});
+  array_ref Gc(to_address(SMbuff.base()) + NMO * NMO, {NEL, NMO});
 
   ov_ = SDet.MixedDensityMatrix(A, B, G, 0.0, node, false);
   check(G, g_ref);
@@ -789,8 +779,8 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO * (NMO + NEL)},
                                                                shared_allocator<Type>{node_});
 
-  array_ref G2(to_address(SMbuff2.origin()), {NMO, NMO});
-  array_ref Gc2(to_address(SMbuff2.origin()) + NMO * NMO, {NEL, NMO});
+  array_ref G2(to_address(SMbuff2.base()), {NMO, NMO});
+  array_ref Gc2(to_address(SMbuff2.base()) + NMO * NMO, {NEL, NMO});
 
   // switch comm
   ov_ = SDet.MixedDensityMatrix(A, B, G2, 0.0, node_, false);
@@ -806,8 +796,6 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
 
 TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 {
-  Communicate* c = OHMMS::Controller;
-
   using boost::mpi3::shared_communicator;
 
   auto world               = boost::mpi3::environment::get_world_instance();
@@ -867,9 +855,9 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   myCHECK(ov_, ov);
 
   // Test array_view
-  ov_ = SDet.Overlap(Acsr, B(B.extension(0), B.extension(1)), 0.0, node);
+  ov_ = SDet.Overlap(Acsr, B(get<0>(B.extents()), get<1>(B.extents())), 0.0, node);
   myCHECK(ov_, ov);
-  ov_ = SDet.Overlap(Acsr, B(B.extension(0), B.extension(1)), 0.0);
+  ov_ = SDet.Overlap(Acsr, B(get<0>(B.extents()), get<1>(B.extents())), 0.0);
   myCHECK(ov_, ov);
 
   shared_communicator node_ = node.split(node.rank() % 2, node.rank());
@@ -883,32 +871,32 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
 
   /**** Density Matrices *****/
   vector v_ref    = {1.17573619385025996 - 0.01580426445014660i,  -0.25295981756593167 + 0.28594469607401085i,
-                  -0.07724502823533341 - 0.09687959052155870i, 0.30512858581808422 - 0.04506898328729603i,
+                     -0.07724502823533341 - 0.09687959052155870i, 0.30512858581808422 - 0.04506898328729603i,
 
-                  0.17912592806889663 + 0.08374315906672802i,  0.59381451118048767 + 0.13438888951771200i,
-                  -0.02021475320201610 - 0.13737561982083193i, 0.32095003919745313 + 0.12832750636154097i,
+                     0.17912592806889663 + 0.08374315906672802i,  0.59381451118048767 + 0.13438888951771200i,
+                     -0.02021475320201610 - 0.13737561982083193i, 0.32095003919745313 + 0.12832750636154097i,
 
-                  -0.04919549564646425 + 0.05402065222741825i, -0.00286990878355775 - 0.15806420733175885i,
-                  1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
+                     -0.04919549564646425 + 0.05402065222741825i, -0.00286990878355775 - 0.15806420733175885i,
+                     1.05069081188635494 + 0.00793429988912356i,  -0.08048239150997794 + 0.09917405634760490i,
 
-                  -0.46434598219794548 - 0.09896890422706731i, 0.87746748807670427 - 0.53417787485950319i,
-                  0.12162735438647077 + 0.31042401735800573i,  0.17975848308289613 - 0.12651892495668898i};
+                     -0.46434598219794548 - 0.09896890422706731i, 0.87746748807670427 - 0.53417787485950319i,
+                     0.12162735438647077 + 0.31042401735800573i,  0.17975848308289613 - 0.12651892495668898i};
   vector vc_ref   = {-0.8721879971495297 + 0.6787593377585239i, 0.3244278932250768 - 1.8083537898275881i,
-                   0.6130713546530860 + 0.0399736955598931i,  0.0132562806444336 - 0.2882495766584950i,
+                     0.6130713546530860 + 0.0399736955598931i,  0.0132562806444336 - 0.2882495766584950i,
 
-                   0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
-                   -0.7392693424168300 - 0.0715317395994149i, 0.3721269544963505 - 0.1797896522886788i,
+                     0.8853626557603183 + 0.0978868569224204i,  -0.0598704127345155 - 0.0470889603064014i,
+                     -0.7392693424168300 - 0.0715317395994149i, 0.3721269544963505 - 0.1797896522886788i,
 
-                   -0.0567190307022984 - 0.3114847157576828i, -0.1290126440468128 + 0.6815705660308808i,
-                   0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i};
+                     -0.0567190307022984 - 0.3114847157576828i, -0.1290126440468128 + 0.6815705660308808i,
+                     0.3787012855335005 + 0.0039188686237135i,  -0.2005543456941538 + 0.2100886953142371i};
   vector v_ref_2  = {0.7361983496013835 - 0.0956505507662245i, 0.6467449689807925 + 0.2297471806893873i,
-                    0.0189270005620390 - 0.1727975708935829i,
+                     0.0189270005620390 - 0.1727975708935829i,
 
-                    0.2986893588843604 - 0.0099955730815030i, 0.2696068479051557 + 0.0292039710860386i,
-                    0.0497734835066391 + 0.1783200397050796i,
+                     0.2986893588843604 - 0.0099955730815030i, 0.2696068479051557 + 0.0292039710860386i,
+                     0.0497734835066391 + 0.1783200397050796i,
 
-                    0.1020030246826092 + 0.0344707468383766i, -0.2500340021988402 - 0.0826863644855427i,
-                    0.9941948024934623 + 0.0664465796801866i};
+                     0.1020030246826092 + 0.0344707468383766i, -0.2500340021988402 - 0.0826863644855427i,
+                     0.9941948024934623 + 0.0664465796801866i};
   vector vc_ref_2 = {-0.489369975192701 + 0.103038673040713i, -0.858850485405126 - 0.275734238124941i,
                      1.219791948842170 + 0.118626922447301i,  0.486337033653898 - 0.098631569047656i,
                      0.595497821653010 + 0.185288949671560i,  -0.455373025165330 - 0.129360996228044i};
@@ -921,8 +909,8 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff(iextensions<1u>{NMO * (NMO + NEL)},
                                                               shared_allocator<Type>{node});
 
-  array_ref G(to_address(SMbuff.origin()), {NMO, NMO});
-  array_ref Gc(to_address(SMbuff.origin()) + NMO * NMO, {NEL, NMO});
+  array_ref G(to_address(SMbuff.base()), {NMO, NMO});
+  array_ref Gc(to_address(SMbuff.base()) + NMO * NMO, {NEL, NMO});
 
   ov_ = SDet.MixedDensityMatrix(Acsr, B, G, 0.0, node, false);
   check(G, g_ref);
@@ -947,8 +935,8 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   boost::multi::array<Type, 1, shared_allocator<Type>> SMbuff2(iextensions<1u>{NMO * (NMO + NEL)},
                                                                shared_allocator<Type>{node_});
 
-  array_ref G2(to_address(SMbuff2.origin()), {NMO, NMO});
-  array_ref Gc2(to_address(SMbuff2.origin()) + NMO * NMO, {NEL, NMO});
+  array_ref G2(to_address(SMbuff2.base()), {NMO, NMO});
+  array_ref Gc2(to_address(SMbuff2.base()) + NMO * NMO, {NEL, NMO});
 
   // switch comm
 

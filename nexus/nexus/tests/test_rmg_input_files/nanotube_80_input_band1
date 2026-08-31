@@ -1,0 +1,135 @@
+description="Carbon Nanotube"
+
+wavefunction_grid="72 72 20"
+
+subdiag_driver = "lapack"
+kohn_sham_mg_levels = "2"
+potential_grid_refinement="2"
+
+localize_localpp = "false"
+localize_projectors = "false"
+
+
+
+occupations_type=
+"Fixed" 
+#"Fermi Dirac"
+
+#potential_acceleration_constant_step = "1.0"
+unoccupied_states_per_kpoint="64"
+system_charge="0"
+
+occupation_electron_temperature_eV="0.025"
+occupation_number_mixing="1.00"
+
+kpoint_mesh="-1 1 8"
+kpoint_is_shift="0 0 0"
+
+kpoints_bandstructure = "
+  0.0   0.0   0.0  1 G
+  0.0   0.0   0.5    25   X
+"
+
+
+
+length_units=
+"Bohr"
+#"Angstrom"
+
+bravais_lattice_type=
+"Orthorhombic Primitive"
+
+# Lattice constants 
+
+# Lattice constants 
+a_length="28.93846312"
+b_length="28.93846312"
+c_length="8.038461979"
+
+atomic_coordinate_type=
+"Absolute"
+#"Cell Relative"
+
+#pseudopotential="
+#	C   ./C.UPF
+#"
+
+start_mode=
+#"Random Start"
+#"Restart From File"
+"LCAO Start"
+
+calculation_mode=
+#"Quench Electrons"
+"Band Structure Only"
+
+
+exchange_correlation_type=
+"LDA"
+
+rms_convergence_criterion="1e-7"
+
+charge_density_mixing="0.2"
+projector_mixing="0.4"
+
+charge_mixing_type=
+"Linear"
+#"Pulay"
+
+charge_pulay_order="5"
+charge_pulay_scale="0.2"
+
+max_scf_steps="10"
+
+
+#freeze_occupied="true"
+#gw_residual_convergence_criterion="1e-6"
+
+##RMG2BGW options
+
+#wfng_flag="true"
+#wfng_file="wfn.complex"
+
+#rhog_flag="true"
+#rhog_file="rho.complex"
+
+#vxc_flag="true"
+#vxc_file="vxc.dat"
+
+#vxc_diag_nmin="1"
+#vxc_diag_nmax="47"
+atoms =
+"
+ C 2.12913387e+01 1.53699890e+01 5.37007735e+00  1
+ C 2.08405984e+01 1.76359865e+01 6.71259065e+00  1
+ C 2.12913387e+01 1.53699890e+01 2.68503465e+00  1
+ C 1.95570199e+01 1.95570199e+01 5.37007735e+00  1
+ C 1.76359865e+01 2.08405984e+01 6.71259065e+00  1
+ C 2.08405984e+01 1.76359865e+01 1.34252135e+00  1
+ C 1.95570199e+01 1.95570199e+01 2.68503465e+00  1
+ C 1.53699890e+01 2.12913387e+01 5.37007735e+00  1
+ C 1.31039915e+01 2.08405984e+01 6.71259065e+00  1
+ C 1.76359865e+01 2.08405984e+01 1.34252135e+00  1
+ C 1.53699890e+01 2.12913387e+01 2.68503465e+00  1
+ C 1.11829581e+01 1.95570199e+01 5.37007735e+00  1
+ C 9.89937956e+00 1.76359865e+01 6.71259065e+00  1
+ C 1.31039915e+01 2.08405984e+01 1.34252135e+00  1
+ C 1.11829581e+01 1.95570199e+01 2.68503465e+00  1
+ C 9.44863926e+00 1.53699890e+01 5.37007735e+00  1
+ C 9.89937956e+00 1.31039915e+01 6.71259065e+00  1
+ C 9.89937956e+00 1.76359865e+01 1.34252135e+00  1
+ C 9.44863926e+00 1.53699890e+01 2.68503465e+00  1
+ C 1.11829581e+01 1.11829581e+01 5.37007735e+00  1
+ C 1.31039915e+01 9.89937956e+00 6.71259065e+00  1
+ C 9.89937956e+00 1.31039915e+01 1.34252135e+00  1
+ C 1.11829581e+01 1.11829581e+01 2.68503465e+00  1
+ C 1.53699890e+01 9.44863926e+00 5.37007735e+00  1
+ C 1.76359865e+01 9.89937956e+00 6.71259065e+00  1
+ C 1.31039915e+01 9.89937956e+00 1.34252135e+00  1
+ C 1.53699890e+01 9.44863926e+00 2.68503465e+00  1
+ C 1.95570199e+01 1.11829581e+01 5.37007735e+00  1
+ C 2.08405984e+01 1.31039915e+01 6.71259065e+00  1
+ C 1.76359865e+01 9.89937956e+00 1.34252135e+00  1
+ C 1.95570199e+01 1.11829581e+01 2.68503465e+00  1
+ C 2.08405984e+01 1.31039915e+01 1.34252135e+00  1
+"

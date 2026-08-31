@@ -39,7 +39,7 @@ namespace qmcplusplus
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
 EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder("spline", comm),
+    : SPOSetBuilder("spline", comm, "EinsplineSetBuilder"),
       ParticleSets(psets),
       TargetPtcl(p),
       XMLRoot(cur),
@@ -54,8 +54,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, C
       NumOrbitalsRead(-1),
       makeRotations(false)
 {
-  ClassName = "EinsplineSetBuilder";
-
   MatchingTol = 10 * std::numeric_limits<float>::epsilon();
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
@@ -71,15 +69,11 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, C
 
 template<typename T>
 inline TinyVector<T, 3> IntPart(const TinyVector<T, 3>& twist)
-{
-  return TinyVector<T, 3>(round(twist[0] - 1.0e-6), round(twist[1] - 1.0e-6), round(twist[2] - 1.0e-6));
-}
+{ return TinyVector<T, 3>(round(twist[0] - 1.0e-6), round(twist[1] - 1.0e-6), round(twist[2] - 1.0e-6)); }
 
 template<typename T>
 inline TinyVector<T, 3> FracPart(const TinyVector<T, 3>& twist)
-{
-  return twist - IntPart(twist);
-}
+{ return twist - IntPart(twist); }
 
 
 EinsplineSetBuilder::~EinsplineSetBuilder() { DEBUG_MEMORY("EinsplineSetBuilder::~EinsplineSetBuilder"); }
@@ -174,9 +168,16 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
   if (primcell_kpoints.size() != NumTwists)
     primcell_kpoints.resize(NumTwists);
   bbuffer.add(&primcell_kpoints[0][0], &primcell_kpoints[0][0] + OHMMS_DIM * NumTwists);
-  bibuffer.add(&(TargetPtcl.DensityReducedGvecs[0][0]),
-               &(TargetPtcl.DensityReducedGvecs[0][0]) + numDensityGvecs * OHMMS_DIM);
-  bbuffer.add(&(TargetPtcl.Density_G[0]), &(TargetPtcl.Density_G[0]) + numDensityGvecs);
+
+  // sizes of arrays to be transferred via buffers must agree with pre-arranged sizes
+  assert(numDensityGvecs == TargetPtcl.DensityReducedGvecs.size());
+  assert(numDensityGvecs == TargetPtcl.Density_G.size());
+  if (numDensityGvecs > 0)
+  {
+    bibuffer.add(&(TargetPtcl.DensityReducedGvecs[0][0]),
+                 &(TargetPtcl.DensityReducedGvecs[0][0]) + numDensityGvecs * OHMMS_DIM);
+    bbuffer.add(&(TargetPtcl.Density_G[0]), &(TargetPtcl.Density_G[0]) + numDensityGvecs);
+  }
   myComm->bcast(bbuffer);
   myComm->bcast(bibuffer);
   if (myComm->rank())
@@ -187,9 +188,12 @@ void EinsplineSetBuilder::BroadcastOrbitalInfo()
       bibuffer.get(IonTypes[i]);
     bbuffer.get(&IonPos[0][0], &IonPos[0][0] + OHMMS_DIM * numIons);
     bbuffer.get(&primcell_kpoints[0][0], &primcell_kpoints[0][0] + OHMMS_DIM * NumTwists);
-    bibuffer.get(&(TargetPtcl.DensityReducedGvecs[0][0]),
-                 &(TargetPtcl.DensityReducedGvecs[0][0]) + numDensityGvecs * OHMMS_DIM);
-    bbuffer.get(&(TargetPtcl.Density_G[0]), &(TargetPtcl.Density_G[0]) + numDensityGvecs);
+    if (numDensityGvecs > 0)
+    {
+      bibuffer.get(&(TargetPtcl.DensityReducedGvecs[0][0]),
+                   &(TargetPtcl.DensityReducedGvecs[0][0]) + numDensityGvecs * OHMMS_DIM);
+      bbuffer.get(&(TargetPtcl.Density_G[0]), &(TargetPtcl.Density_G[0]) + numDensityGvecs);
+    }
   }
   //buffer to bcast hybrid representation atomic orbital info
   PooledData<double> cbuffer;

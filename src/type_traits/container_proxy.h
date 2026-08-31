@@ -101,7 +101,7 @@ struct container_proxy<std::vector<T>>
   std::vector<T>& ref;
   inline container_proxy(std::vector<T>& a) : ref(a) {}
   inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
-  inline pointer data() { return scalar_traits<T>::get_address(&ref[0]); }
+  inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
 
   inline void resize(size_t n) { ref.resize(n); }
 

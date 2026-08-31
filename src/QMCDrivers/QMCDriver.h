@@ -94,7 +94,7 @@ public:
   /// whether to allow traces
   bool allow_traces;
   /// traces xml
-  xmlNodePtr traces_xml;
+  xmlNodePtr traces_xml{nullptr};
 
   /// whether to allow traces
   bool allow_walker_logs;
@@ -132,15 +132,6 @@ public:
    */
   void setStatus(const std::string& aname, const std::string& h5name, bool append) override;
 
-  /** add QMCHamiltonian/TrialWaveFunction pair for multiple
-   * @param h QMCHamiltonian
-   * @param psi TrialWaveFunction
-   *
-   * *Multiple* drivers use multiple H/Psi pairs to perform correlated sampling
-   * for energy difference evaluations.
-   */
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) override;
-
   /** initialize with xmlNode
    */
   void process(xmlNodePtr cur) override;
@@ -162,9 +153,7 @@ public:
 
   template<class PDT>
   void setValue(const std::string& aname, PDT x)
-  {
-    m_param.setValue(aname, x);
-  }
+  { m_param.setValue(aname, x); }
 
   ///set the BranchEngineType
   void setBranchEngine(std::unique_ptr<BranchEngineType>&& be) override { branchEngine = std::move(be); }
@@ -190,8 +179,10 @@ public:
   ///Observables manager
   EstimatorManagerBase* Estimators;
 
+#if !defined(REMOVE_TRACEMANAGER)
   ///Traces manager
   std::unique_ptr<TraceManager> Traces;
+#endif
 
   ///Traces manager
   std::unique_ptr<WalkerLogManager> wlog_manager_;
@@ -220,8 +211,6 @@ protected:
    * using MyCounter++ as in RQMC.
    */
   int MyCounter;
-  ///the number to delay updates by
-  int kDelay;
   /** period of dumping walker configurations and everything else for restart
    *
    * The unit is a block.
@@ -318,12 +307,6 @@ protected:
   ///record engine for walkers
   std::unique_ptr<HDFWalkerOutput> wOut;
 
-  ///a list of TrialWaveFunctions for multiple method
-  std::vector<TrialWaveFunction*> Psi1;
-
-  ///a list of QMCHamiltonians for multiple method
-  std::vector<QMCHamiltonian*> H1;
-
   ///a list of mcwalkerset element
   std::vector<xmlNodePtr> mcwalkerNodePtr;
 
@@ -354,7 +337,7 @@ protected:
    * Accumulate energy and weight is written to a hdf5 file.
    * Finialize the estimators
    */
-  bool finalize(int block, bool dumpwalkers = true);
+  void finalize(int block, bool dumpwalkers = true);
 
   int rotation;
   std::string getRotationName(std::string RootName);

@@ -36,10 +36,15 @@ namespace qmcplusplus
 /// Constructor.
 CSVMC::CSVMC(const ProjectData& project_data,
              MCWalkerConfiguration& w,
-             TrialWaveFunction& psi,
-             QMCHamiltonian& h,
+             std::vector<TrialWaveFunction*>&& multi_psi,
+             std::vector<QMCHamiltonian*>&& multi_ham,
              Communicate* comm)
-    : QMCDriver(project_data, w, psi, h, comm, "CSVMC"), UseDrift("yes"), multiEstimator(0), Mover(0)
+    : QMCDriver(project_data, w, *multi_psi[0], *multi_ham[0], comm, "CSVMC"),
+      UseDrift("yes"),
+      Psi1(std::move(multi_psi)),
+      H1(std::move(multi_ham)),
+      multiEstimator(0),
+      Mover(0)
 {
   RootName = "csvmc";
   m_param.add(UseDrift, "useDrift");
@@ -140,7 +145,7 @@ bool CSVMC::put(xmlNodePtr q)
  *
  * Similar to VMC::run
  */
-bool CSVMC::run()
+void CSVMC::run()
 {
   resetRun();
   //start the main estimator
@@ -204,7 +209,7 @@ bool CSVMC::run()
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
   //finalize a qmc section
-  return finalize(nBlocks, !wrotesamples);
+  finalize(nBlocks, !wrotesamples);
 }
 
 void CSVMC::resetRun()
@@ -214,6 +219,7 @@ void CSVMC::resetRun()
   for (int ipsi = 1; ipsi < nPsi; ipsi++)
     H1[ipsi]->setPrimary(false);
 
+  W.resetWalkerProperty(H1.size());
 
   makeClones(W, Psi1, H1);
   FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
@@ -241,7 +247,6 @@ void CSVMC::resetRun()
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
@@ -252,7 +257,8 @@ void CSVMC::resetRun()
         if (UseDrift == "yes")
         {
           os << "  Using particle-by-particle update with drift " << std::endl;
-          CSMovers[ip] = std::make_unique<CSVMCUpdatePbyPWithDriftFast>(*wClones[ip], PsiPoolClones[ip], HPoolClones[ip], *Rng[ip]);
+          CSMovers[ip] = std::make_unique<CSVMCUpdatePbyPWithDriftFast>(*wClones[ip], PsiPoolClones[ip],
+                                                                        HPoolClones[ip], *Rng[ip]);
         }
         else
         {
@@ -265,7 +271,8 @@ void CSVMC::resetRun()
         if (UseDrift == "yes")
         {
           os << "  Using walker-by-walker update with Drift " << std::endl;
-          CSMovers[ip] = std::make_unique<CSVMCUpdateAllWithDrift>(*wClones[ip], PsiPoolClones[ip], HPoolClones[ip], *Rng[ip]);
+          CSMovers[ip] =
+              std::make_unique<CSVMCUpdateAllWithDrift>(*wClones[ip], PsiPoolClones[ip], HPoolClones[ip], *Rng[ip]);
         }
         else
         {

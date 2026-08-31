@@ -20,15 +20,15 @@ namespace qmcplusplus
 {
 
 // doesn't inherit from OptimizableFunctorBase since this is a function of the entire position vector
-class CountingGaussian 
+class CountingGaussian
 {
-  using RealType = QMCTraits::RealType;
-  using PosType = QMCTraits::PosType;
-  using GradType = QMCTraits::PosType; // complex not implemented
+  using RealType   = QMCTraits::RealType;
+  using PosType    = QMCTraits::PosType;
+  using GradType   = QMCTraits::PosType; // complex not implemented
   using TensorType = QMCTraits::TensorType;
 
-  using real_type = optimize::VariableSet::real_type;
-  using opt_variables_type = optimize::VariableSet;
+  using real_type    = optimize::VariableSet::real_type;
+  using OptVariables = optimize::VariableSet;
 
   // enumerations for axis parameters
   enum A_vars
@@ -57,7 +57,7 @@ class CountingGaussian
 
   // id string
   std::string id;
-  
+
   // reference gaussian
   CountingGaussian* gref = NULL;
 
@@ -72,31 +72,31 @@ public:
   RealType C;
 
   // optimizable variables
-  opt_variables_type myVars;
+  OptVariables myVars;
 
   CountingGaussian(std::string fid) { id = fid; }
 
   // constructor for voronoi region
   CountingGaussian(std::string fid, RealType alpha, PosType r, bool opt)
-  { 
+  {
     id = fid;
     // set opt flags
     opt_A.resize(6);
     opt_B.resize(3);
-    for(auto it = opt_A.begin(); it != opt_A.end(); ++it)
+    for (auto it = opt_A.begin(); it != opt_A.end(); ++it)
       *it = opt;
-    for(auto it = opt_B.begin(); it != opt_B.end(); ++it)
+    for (auto it = opt_B.begin(); it != opt_B.end(); ++it)
       *it = opt;
     opt_C = opt;
     // set A
-    A(0,0) = A(1,1) = A(2,2) = -1.0*alpha;
-    A(0,1) = A(1,0) = A(0,2) = A(2,0) = A(1,2) = A(2,1) = 0;
+    A(0, 0) = A(1, 1) = A(2, 2) = -1.0 * alpha;
+    A(0, 1) = A(1, 0) = A(0, 2) = A(2, 0) = A(1, 2) = A(2, 1) = 0;
     // set B
     d_to_b(r, A, B);
     // set C
     k_to_c(0, A, r, C);
   }
-  
+
   // initialize with another gaussian reference
   void initialize(CountingGaussian* ref)
   {
@@ -122,94 +122,94 @@ public:
     myVars.insert(id + "_C", C, opt_C, optimize::OTHER_P);
     myVars[id + "_C"] = C;
     // transform according to reference
-    if(gref != NULL)
+    if (gref != NULL)
       this->divide_eq(gref);
   }
 
   void restore(int iat) {}
 
-  void checkInVariables(opt_variables_type& active) { active.insertFrom(myVars); }
+  void checkInVariables(OptVariables& active) { active.insertFrom(myVars); }
 
 
-  void checkOutVariables(const opt_variables_type& active) { myVars.getIndex(active); }
+  void checkOutVariables(const OptVariables& active) { myVars.getIndex(active); }
 
 
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const OptVariables& active)
   {
     int ia;
     std::string vid;
     if (opt_A[XX])
     {
-      vid = id + "_A_xx";
-      ia = active.getLoc(vid);
+      vid         = id + "_A_xx";
+      ia          = active.getLoc(vid);
       myVars[vid] = active[ia];
-      A(0, 0) = std::real(myVars[vid]);
+      A(0, 0)     = std::real(myVars[vid]);
     }
     if (opt_A[YY])
     {
-      vid = id + "_A_yy";
-      ia = active.getLoc(vid);
+      vid         = id + "_A_yy";
+      ia          = active.getLoc(vid);
       myVars[vid] = active[ia];
-      A(1, 1) = std::real(myVars[vid]);
+      A(1, 1)     = std::real(myVars[vid]);
     }
     if (opt_A[ZZ])
     {
-      vid = id + "_A_zz";
-      ia = active.getLoc(vid);
+      vid         = id + "_A_zz";
+      ia          = active.getLoc(vid);
       myVars[vid] = active[ia];
-      A(2, 2) = std::real(myVars[vid]);
+      A(2, 2)     = std::real(myVars[vid]);
     }
     if (opt_A[XY])
     {
-      vid = id + "_A_xy";
-      ia = active.getLoc(vid);
+      vid         = id + "_A_xy";
+      ia          = active.getLoc(vid);
       myVars[vid] = active[ia];
       A(1, 0) = A(0, 1) = std::real(myVars[vid]);
     }
     if (opt_A[XZ])
     {
-      vid = id + "_A_xz";
-      ia = active.getLoc(vid);
+      vid         = id + "_A_xz";
+      ia          = active.getLoc(vid);
       myVars[vid] = active[ia];
       A(2, 0) = A(0, 2) = std::real(myVars[vid]);
     }
     if (opt_A[YZ])
     {
-      vid = id + "_A_yz";
-      ia = active.getLoc(vid);
+      vid         = id + "_A_yz";
+      ia          = active.getLoc(vid);
       myVars[vid] = active[ia];
       A(2, 1) = A(1, 2) = std::real(myVars[vid]);
     }
     if (opt_B[X])
     {
-      vid = id + "_B_x";
-      ia = active.getLoc(vid);
+      vid         = id + "_B_x";
+      ia          = active.getLoc(vid);
       myVars[vid] = active[ia];
-      B[X] = std::real(myVars[vid]);
+      B[X]        = std::real(myVars[vid]);
     }
     if (opt_B[Y])
     {
-      vid = id + "_B_y";
-      ia = active.getLoc(vid);
+      vid         = id + "_B_y";
+      ia          = active.getLoc(vid);
       myVars[vid] = active[ia];
-      B[Y] = std::real(myVars[vid]);
+      B[Y]        = std::real(myVars[vid]);
     }
     if (opt_B[Z])
     {
-      vid = id + "_B_z";
-      ia = active.getLoc(vid);
+      vid         = id + "_B_z";
+      ia          = active.getLoc(vid);
       myVars[vid] = active[ia];
-      B[Z] = std::real(myVars[vid]);
+      B[Z]        = std::real(myVars[vid]);
     }
     if (opt_C)
     {
-      vid = id + "_C";
-      ia = active.getLoc(vid);
+      vid         = id + "_C";
+      ia          = active.getLoc(vid);
       myVars[vid] = active[ia];
-      C = std::real(myVars[vid]);
+      C           = std::real(myVars[vid]);
     }
     // transform according to reference
-    if(gref != NULL)
+    if (gref != NULL)
       this->divide_eq(gref);
   }
 

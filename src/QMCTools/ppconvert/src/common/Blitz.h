@@ -105,7 +105,7 @@ struct Array : base_type
     // explicit conversion due to failure with libc++ type automatic conversion
     base_type::reextent(std::apply(
         [](auto... ss) {
-          return typename base_type::extensions_type{static_cast<typename base_type::size_type>(ss)...};
+          return typename base_type::extents_type{static_cast<typename base_type::size_type>(ss)...};
         },
         sizes));
   }
@@ -136,8 +136,8 @@ struct Array<T, 1, base_type> : base_type
   }
   friend Array operator+(Array const& a, Array const& b)
   {
-    assert(a.extensions() == b.extensions());
-    Array ret(a.extensions());
+    assert(a.extents() == b.extents());
+    Array ret(a.extents());
     std::transform(a.begin(), a.end(), b.begin(), ret.begin(), [](auto a, auto b) { return a + b; });
     return ret;
   }
@@ -145,7 +145,7 @@ struct Array<T, 1, base_type> : base_type
   using sizes_type = decltype(std::declval<base_type const&>().sizes());
   sizes_type shape() const { return base_type::sizes(); }
   void resize(sizes_type sizes) { resizeAndPreserve(sizes); }
-  void resizeAndPreserve(sizes_type sizes) { base_type::reextent(sizes); }
+  void resizeAndPreserve(sizes_type sizes) { using std::get; base_type::reextent({get<0>(sizes)}); }
   std::ptrdiff_t extent(int d) const
   {
     switch (d)
@@ -160,11 +160,11 @@ struct Array<T, 1, base_type> : base_type
   template<class... Ints>
   void resize(Ints... ns)
   {
-    base_type::reextent(typename base_type::extensions_type({static_cast<typename base_type::size_type>(ns)...}));  // std::make_tuple(ns...));
+    base_type::reextent(typename base_type::extents_type({static_cast<typename base_type::size_type>(ns)...}));  // std::make_tuple(ns...));
   }
   friend Array operator*(T const& t, Array const& a)
   {
-    Array ret(a.extensions());
+    Array ret(a.extents());
     std::transform(a.begin(), a.end(), ret.begin(), [&](auto const& e) { return t * e; });
     return ret;
   }
@@ -523,17 +523,17 @@ public:
 
   inline T& operator()(int i, int j) { return (A(index(i, j))); }
 
-  inline SymmArray<T>(const SymmArray<T>& B)
+  inline SymmArray(const SymmArray& B)
   {
     resize(B.N);
     A = B.A;
   }
-  inline SymmArray<T>& operator=(const SymmArray<T>& B)
+  inline SymmArray& operator=(const SymmArray& B)
   {
     A = B.A;
     return *this;
   }
-  inline SymmArray<T>() { N = 0; }
+  inline SymmArray() { N = 0; }
 };
 
 

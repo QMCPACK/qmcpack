@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2026 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -19,11 +19,9 @@
 #ifndef QMCPLUSPLUS_MEMMANAGE_SYCL_H
 #define QMCPLUSPLUS_MEMMANAGE_SYCL_H
 
-#include <memory>
 #include <cstdlib>
 #include <stdexcept>
-#include <atomic>
-#include <limits>
+#include "Common/MemoryUsageAccount.hpp"
 #include "Common/MemManage.hpp"
 #include "Common/allocator_traits.hpp"
 #include "QueueSYCL.hpp"
@@ -38,15 +36,15 @@ template<>
 class MemManage<PlatformKind::SYCL>
 {
 public:
-  static std::atomic<size_t> device_mem_allocated_;
+  static MemoryUsageAccount device_mem_usage_;
 
-  static size_t getDeviceMemAllocated() { return device_mem_allocated_; }
+  static size_t getDeviceMemAllocated() { return device_mem_usage_.getBalance(); }
 
   static size_t getDeviceFreeMem()
   {
     auto device = getSYCLDefaultDeviceDefaultQueue().get_device();
     if (device.has(sycl::aspect::ext_intel_free_memory))
-      return getSYCLDefaultDeviceDefaultQueue().get_device().get_info<sycl::ext::intel::info::device::free_memory>();
+      return device.get_info<sycl::ext::intel::info::device::free_memory>();
     else
       return 0;
   }
@@ -98,7 +96,7 @@ extern template class MemManage<PlatformKind::SYCL>;
 }; // namespace compute
 
 /** allocator for SYCL shared memory
- * @tparm T data type
+ * @tparam T data type
  */
 template<typename T>
 struct SYCLSharedAllocator

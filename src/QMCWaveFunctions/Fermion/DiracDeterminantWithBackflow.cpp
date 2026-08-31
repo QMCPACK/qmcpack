@@ -32,7 +32,16 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(SPOSet& phi, Backflow
     : DiracDeterminantBase(getClassName(), phi, first, last), BFTrans_(BF)
 {
   NumParticles = BFTrans_.QP.getTotalNum();
-  NP           = 0;
+  NP           = NumParticles;
+  int norb     = NumOrbitals;
+  dpsiM_temp.resize(NumPtcls, norb);
+  grad_grad_psiM_temp.resize(NumPtcls, norb);
+  dpsiV.resize(norb);
+  d2psiV.resize(norb);
+  grad_gradV.resize(norb);
+  Fmatdiag_temp.resize(norb);
+  myG_temp.resize(NP);
+  myL_temp.resize(NP);
   resize(NumPtcls, NumPtcls);
 }
 
@@ -94,30 +103,15 @@ void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix& logdet,
 
 void DiracDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  if (NP == 0)
-  //first time, allocate once
-  {
-    int norb     = NumOrbitals;
-    NP           = P.getTotalNum();
-    NumParticles = P.getTotalNum();
-    dpsiM_temp.resize(NumPtcls, norb);
-    grad_grad_psiM_temp.resize(NumPtcls, norb);
-    dpsiV.resize(norb);
-    d2psiV.resize(norb);
-    grad_gradV.resize(norb);
-    Fmatdiag_temp.resize(norb);
-    myG_temp.resize(NP);
-    myL_temp.resize(NP);
-    resize(NumPtcls, NumOrbitals);
-    FirstAddressOfG   = &myG[0][0];
-    LastAddressOfG    = FirstAddressOfG + NP * DIM;
-    FirstAddressOfdV  = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
-    LastAddressOfdV   = FirstAddressOfdV + NumPtcls * NumOrbitals * DIM;
-    FirstAddressOfGGG = grad_grad_psiM(0, 0).begin(); //[0];
-    LastAddressOfGGG  = FirstAddressOfGGG + NumPtcls * norb * DIM * DIM;
-    FirstAddressOfFm  = &(Fmatdiag[0][0]); //[0];
-    LastAddressOfFm   = FirstAddressOfFm + NumOrbitals * DIM;
-  }
+  int norb           = NumOrbitals;
+  FirstAddressOfG   = &myG[0][0];
+  LastAddressOfG    = FirstAddressOfG + NP * DIM;
+  FirstAddressOfdV  = &(dpsiM(0, 0)[0]); //(*dpsiM.begin())[0]);
+  LastAddressOfdV   = FirstAddressOfdV + NumPtcls * NumOrbitals * DIM;
+  FirstAddressOfGGG = grad_grad_psiM(0, 0).begin(); //[0];
+  LastAddressOfGGG  = FirstAddressOfGGG + NumPtcls * norb * DIM * DIM;
+  FirstAddressOfFm  = &(Fmatdiag[0][0]); //[0];
+  LastAddressOfFm   = FirstAddressOfFm + NumOrbitals * DIM;
   myG_temp = 0.0;
   myL_temp = 0.0;
   //ValueType x=evaluate(P,myG,myL);
@@ -219,9 +213,7 @@ DiracDeterminantWithBackflow::PsiValue DiracDeterminantWithBackflow::ratio(Parti
 }
 
 void DiracDeterminantWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
-{
-  APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evaluateRatiosAlltoOne. \n");
-}
+{ APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evaluateRatiosAlltoOne. \n"); }
 
 DiracDeterminantWithBackflow::GradType DiracDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
 {
@@ -591,7 +583,7 @@ void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, bool safe
 void DiracDeterminantWithBackflow::restore(int iat) { curRatio = 1.0; }
 
 void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
-                                                       const opt_variables_type& active,
+                                                       const OptVariables& active,
                                                        Vector<ValueType>& dlogpsi,
                                                        Vector<ValueType>& dhpsioverpsi)
 {
@@ -733,7 +725,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 
 /* Used in MultiSlaterDeterminantWithBackflow::evaluateDerivatives */
 void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
-                                                       const opt_variables_type& active,
+                                                       const OptVariables& active,
                                                        int offset,
                                                        Matrix<RealType>& dlogpsi,
                                                        Array<GradType, OHMMS_DIM>& dG,
@@ -868,7 +860,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 }
 
 void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
-                                                       const opt_variables_type& active,
+                                                       const OptVariables& active,
                                                        std::vector<RealType>& dlogpsi,
                                                        std::vector<RealType>& dhpsioverpsi,
                                                        ParticleSet::ParticleGradient* G0,
@@ -990,9 +982,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 std::unique_ptr<DiracDeterminantWithBackflow> DiracDeterminantWithBackflow::makeCopyWithBF(
     SPOSet& phi,
     BackflowTransformation& BF) const
-{
-  return std::make_unique<DiracDeterminantWithBackflow>(phi, BF, FirstIndex, LastIndex);
-}
+{ return std::make_unique<DiracDeterminantWithBackflow>(phi, BF, FirstIndex, LastIndex); }
 
 void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
 {
@@ -1168,7 +1158,7 @@ void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
 void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
 {
   app_log() << " Testing derivatives of the F matrix, prm: " << pa << std::endl;
-  opt_variables_type wfVars, wfvar_prime;
+  OptVariables wfVars, wfvar_prime;
   BFTrans_.checkInVariables(wfVars);
   BFTrans_.checkOutVariables(wfVars);
   int Nvars   = wfVars.size();
@@ -1267,7 +1257,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
 void DiracDeterminantWithBackflow::testDerivLi(ParticleSet& P, int pa)
 {
   //app_log() <<"Testing new L[i]: \n";
-  opt_variables_type wfVars, wfvar_prime;
+  OptVariables wfVars, wfvar_prime;
   BFTrans_.checkInVariables(wfVars);
   BFTrans_.checkOutVariables(wfVars);
   int Nvars   = wfVars.size();

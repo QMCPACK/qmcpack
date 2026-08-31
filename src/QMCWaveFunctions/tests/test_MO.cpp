@@ -8,11 +8,9 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
 #include "ParticleIO/XMLParticleIO.h"
@@ -56,16 +54,14 @@ void test_He(bool transform)
     ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
-    int heIdx            = ispecies.addSpecies("He");
+    ispecies.addSpecies("He");
     ions.update();
 
     elec.addTable(ions);
     elec.update();
 
     Libxml2Document doc;
-    bool okay = doc.parse("he_sto3g.wfj.xml");
-    REQUIRE(okay);
-    xmlNodePtr root = doc.getRoot();
+    REQUIRE(doc.parse("he_sto3g.wfj.xml"));
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -162,16 +158,14 @@ void test_He_mw(bool transform)
   ions.create({1});
   ions.R[0]            = 0.0;
   SpeciesSet& ispecies = ions.getSpeciesSet();
-  int heIdx            = ispecies.addSpecies("He");
+  ispecies.addSpecies("He");
   ions.update();
 
   elec.addTable(ions);
   elec.update();
 
   Libxml2Document doc;
-  bool okay = doc.parse("he_sto3g.wfj.xml");
-  REQUIRE(okay);
-  xmlNodePtr root = doc.getRoot();
+  REQUIRE(doc.parse("he_sto3g.wfj.xml"));
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -289,9 +283,7 @@ void test_EtOH_mw(bool transform)
   Communicate* c = OHMMS::Controller;
 
   Libxml2Document doc;
-  bool okay = doc.parse("ethanol.structure.xml");
-  REQUIRE(okay);
-  xmlNodePtr root = doc.getRoot();
+  REQUIRE(doc.parse("ethanol.structure.xml"));
 
   const SimulationCell simulation_cell;
   auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -321,9 +313,7 @@ void test_EtOH_mw(bool transform)
   elec.update();
 
   Libxml2Document doc2;
-  okay = doc2.parse("ethanol.wfnoj.xml");
-  REQUIRE(okay);
-  xmlNodePtr root2 = doc2.getRoot();
+  REQUIRE(doc2.parse("ethanol.wfnoj.xml"));
 
   WaveFunctionComponentBuilder::PSetMap particle_set_map;
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -496,7 +486,7 @@ void test_Ne(bool transform)
     ions.create({1});
     ions.R[0]            = {0.0, 0.0, 0.0};
     SpeciesSet& ispecies = ions.getSpeciesSet();
-    int heIdx            = ispecies.addSpecies("Ne");
+    ispecies.addSpecies("Ne");
     ions.update();
 
 
@@ -504,9 +494,7 @@ void test_Ne(bool transform)
     elec.update();
 
     Libxml2Document doc;
-    bool okay = doc.parse("ne_def2_svp.wfnoj.xml");
-    REQUIRE(okay);
-    xmlNodePtr root = doc.getRoot();
+    REQUIRE(doc.parse("ne_def2_svp.wfnoj.xml"));
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -575,7 +563,7 @@ void test_Ne(bool transform)
     // when a determinant only contains a single particle.
     SPOSet::ValueVector phi(1), phiinv(1);
     phiinv[0] = 100;
-    VirtualParticleSet VP(elec, 2);
+    VirtualParticleSet VP(elec);
     std::vector<ParticleSet::SingleParticlePos> newpos2(2);
     std::vector<SPOSet::ValueType> ratios2(2);
     newpos2[0] = disp;
@@ -603,9 +591,7 @@ void test_HCN(bool transform)
     Communicate* c = OHMMS::Controller;
 
     Libxml2Document doc;
-    bool okay = doc.parse("hcn.structure.xml");
-    REQUIRE(okay);
-    xmlNodePtr root = doc.getRoot();
+    REQUIRE(doc.parse("hcn.structure.xml"));
 
     const SimulationCell simulation_cell;
     auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
@@ -635,9 +621,7 @@ void test_HCN(bool transform)
     elec.update();
 
     Libxml2Document doc2;
-    okay = doc2.parse("hcn.wfnoj.xml");
-    REQUIRE(okay);
-    xmlNodePtr root2 = doc2.getRoot();
+    REQUIRE(doc2.parse("hcn.wfnoj.xml"));
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));

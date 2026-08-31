@@ -65,7 +65,7 @@ RMC::RMC(const ProjectData& project_data,
   TransProb[1] = w.addProperty("TransProbForward");
 }
 
-bool RMC::run()
+void RMC::run()
 {
   resetRun();
   //start the main estimator
@@ -137,7 +137,7 @@ bool RMC::run()
     RandomNumberControl::Children[ip] = Rng[ip]->makeClone();
   //return nbeads and stuff to its original unset state;
   resetVars();
-  return finalize(nBlocks);
+  finalize(nBlocks);
 }
 
 void RMC::resetRun()
@@ -221,7 +221,6 @@ void RMC::resetRun()
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
       Rng[ip] = RandomNumberControl::Children[ip]->makeClone();
 #if !defined(REMOVE_TRACEMANAGER)

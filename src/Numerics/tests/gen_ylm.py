@@ -4,7 +4,7 @@
 # Redirect output to ylm.inc ("python gen_ylm.py > ylm.inc") and adjust
 # the #ifdef in test_ylm.cpp
 
-from sympy import mpmath
+import mpmath
 import math
 
 def gen_spherical_harmonics():
@@ -59,7 +59,7 @@ def gen_spherical_harmonics():
 """
   fmt_values = ',\n  '.join(["{ {%g, %g, %g}, %d, %d, %g, %g}"%(p[0],p[1],p[2],l,m,y.real,y.imag) for (p,l,m,y) in vals])
   s = tmpl.format(N=len(vals), values=fmt_values)
-  print s
+  print(s)
 
 if __name__ == '__main__':
   gen_spherical_harmonics()

@@ -20,21 +20,11 @@ LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(const std::string& my_n
                                                          bool identity,
                                                          ParticleSet& ions,
                                                          ParticleSet& els)
-    : SPOSet(my_name), lcao(my_name + "_modified", std::move(bs), norbs, identity, false), cusp(ions, els, norbs)
-{
-  OrbitalSetSize = norbs;
-}
-
-void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
-{
-  throw std::runtime_error("LCAOrbitalSetWithCorrection::setOrbitalSetSize should not be called");
-}
-
+    : SPOSet(my_name, norbs), lcao(my_name + "_modified", std::move(bs), norbs, identity, false), cusp(ions, els, norbs)
+{}
 
 std::unique_ptr<SPOSet> LCAOrbitalSetWithCorrection::makeClone() const
-{
-  return std::make_unique<LCAOrbitalSetWithCorrection>(*this);
-}
+{ return std::make_unique<LCAOrbitalSetWithCorrection>(*this); }
 
 void LCAOrbitalSetWithCorrection::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {

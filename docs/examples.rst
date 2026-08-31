@@ -36,11 +36,11 @@ and (3) use of different estimators and analysis of the samples results.
 
 For information about using Nexus, see the User Guide in ``nexus/docs`` or at https://nexus-workflows.readthedocs.io/ .
 
-For Python to find the Nexus library, the PYTHONPATH environment variable should be set to ``<QMCPACK source>/nexus/lib``.
+For Python to find the Nexus library, the PYTHONPATH environment variable should be set to ``<QMCPACK source>/nexus``.
 The executables for both QMCPACK and Quantum ESPRESSO (or relevant density functional or quantum chemical code) should be
 on the PATH, or the paths in the script should be adjusted.
 
-These QMCPACK Nexus examples can be found under the ``nexus/examples/qmcpack`` directory.
+These QMCPACK Nexus examples can be found under the ``nexus/nexus/examples/qmcpack`` directory.
 
 ======================================================= =================================================================================================================================================================
 Directory                                               Description
@@ -66,3 +66,11 @@ Directory                                               Description
 ``rsqmc_misc/graphene``                                 Graphene sheet DMC example including use of Nexus analyzer to obtain total energy.
 ``rsqmc_misc/c20``                                      C\ :math:`_{20}` fullerene molecule using pseudopotentials and spline orbitals from Quantum ESPRESSO.
 ======================================================= =================================================================================================================================================================
+
+Beyond orchestrating QMCPACK calculations, Nexus can launch arbitrary Python or shell scripts. Therefore, custom preparation and analysis steps remain integrated in the workflow; for example, this feature can be used to post-process QMCPACK charge densities via command-line executables such as ``qdens``.
+
+============================================= =================================================================================================
+Directory                                     Description
+``nexus/nexus/examples/generic/python_demo``  Generates an example data file and processes the dependent data file as Nexus simulation objects.
+``nexus/nexus/examples/generic/bash_demo``    Simple bash command that lists the contents of a directory as a Nexus simulation object.
+============================================= =================================================================================================

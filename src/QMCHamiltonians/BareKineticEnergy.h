@@ -49,13 +49,11 @@ public:
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-  BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi);
+  BareKineticEnergy(ParticleSet& p);
   ///destructor
   ~BareKineticEnergy() override;
 
-  bool dependsOnWaveFunction() const override;
   std::string getClassName() const override;
-  void resetTargetParticleSet(ParticleSet& p) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
   void contributeParticleQuantities() override;
@@ -63,16 +61,18 @@ public:
   void deleteParticleQuantities() override;
 #endif
 
-  Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluate(TrialWaveFunction& psi, ParticleSet& P) override;
 
-  Return_t evaluateValueAndDerivatives(ParticleSet& P,
-                                       const opt_variables_type& optvars,
+  Return_t evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                       ParticleSet& P,
+                                       const OptVariables& optvars,
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi) override;
 
   void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                            const RefVectorWithLeader<ParticleSet>& p_list,
-                                           const opt_variables_type& optvars,
+                                           const OptVariables& optvars,
                                            const RecordArray<ValueType>& dlogpsi,
                                            RecordArray<ValueType>& dhpsioverpsi) const override;
 
@@ -140,7 +140,7 @@ public:
 
   bool get(std::ostream& os) const override;
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const final;
 
   /** initialize a shared resource and hand it to a collection
    */
@@ -176,8 +176,6 @@ private:
 
   struct MultiWalkerResource;
   ResourceHandle<MultiWalkerResource> mw_res_;
-
-  TrialWaveFunction& psi_;
 };
 
 } // namespace qmcplusplus

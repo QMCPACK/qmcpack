@@ -22,6 +22,7 @@
 #include "QMCHamiltonians/L2Potential.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -30,11 +31,7 @@ namespace qmcplusplus
  *\param els the positions of the electrons
  *\param psi trial wavefunction
  */
-ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
-                                       ParticleSet& ions,
-                                       ParticleSet& els,
-                                       TrialWaveFunction& psi,
-                                       Communicate* c)
+ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h, ParticleSet& ions, ParticleSet& els, Communicate* c)
     : MPIObjectBase(c),
       hasLocalPot(false),
       hasNonLocalPot(false),
@@ -42,8 +39,7 @@ ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
       hasL2Pot(false),
       targetH(h),
       IonConfig(ions),
-      targetPtcl(els),
-      targetPsi(psi)
+      targetPtcl(els)
 {}
 
 ECPotentialBuilder::~ECPotentialBuilder() = default;
@@ -111,30 +107,25 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
         app_log() << "  Will compute forces in CoulombPBCAB.\n" << std::endl;
       std::unique_ptr<CoulombPBCAB> apot = std::make_unique<CoulombPBCAB>(IonConfig, targetPtcl, doForces);
       for (int i = 0; i < localPot.size(); i++)
-      {
         if (localPot[i])
           apot->add(i, std::move(localPot[i]));
-      }
       targetH.addOperator(std::move(apot), "LocalECP");
     }
   }
   if (hasNonLocalPot)
   {
     std::unique_ptr<NonLocalECPotential> apot =
-        std::make_unique<NonLocalECPotential>(IonConfig, targetPtcl, targetPsi, use_DLA == "yes");
+        std::make_unique<NonLocalECPotential>(IonConfig, targetPtcl, use_DLA == "yes", NLPP_algo == "batched");
 
     int nknot_max = 0;
     // These are actually NonLocalECPComponents
     for (int i = 0; i < nonLocalPot.size(); i++)
-    {
       if (nonLocalPot[i])
       {
         nknot_max = std::max(nknot_max, nonLocalPot[i]->getNknot());
-        if (NLPP_algo == "batched")
-          nonLocalPot[i]->initVirtualParticle(targetPtcl);
         apot->addComponent(i, std::move(nonLocalPot[i]));
       }
-    }
+
     app_log() << "\n  Using NonLocalECP potential \n"
               << "    Maximum grid on a sphere for NonLocalECPotential: " << nknot_max << std::endl;
     if (NLPP_algo == "batched")
@@ -145,29 +136,30 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   if (hasSOPot)
   {
 #ifndef QMC_COMPLEX
-    APP_ABORT("SOECPotential evaluations require complex build. Rebuild with -D QMC_COMPLEX=1\n");
+    throw UniformCommunicateError("SOECPotential evaluations require complex build. Rebuild with -D QMC_COMPLEX=1\n");
 #endif
     if (physicalSO == "yes")
       app_log() << "    Spin-Orbit potential included in local energy" << std::endl;
     else if (physicalSO == "no")
       app_log() << "    Spin-Orbit potential is not included in local energy" << std::endl;
     else
-      APP_ABORT("physicalSO must be set to yes/no. Unknown option given\n");
+      throw UniformCommunicateError("physicalSO must be set to yes/no. Unknown option given\n");
 
-    std::unique_ptr<SOECPotential> apot = std::make_unique<SOECPotential>(IonConfig, targetPtcl, targetPsi, use_exact_spin);
-    int nknot_max                       = 0;
-    int sknot_max                       = 0;
+    if (use_exact_spin && NLPP_algo != "batched")
+      throw UniformCommunicateError("spin_integrator=\"exact\" requires algorithm=\"batched\".\n");
+
+    std::unique_ptr<SOECPotential> apot =
+        std::make_unique<SOECPotential>(IonConfig, targetPtcl, use_exact_spin, NLPP_algo == "batched");
+    int nknot_max = 0;
+    int sknot_max = 0;
     for (int i = 0; i < soPot.size(); i++)
-    {
       if (soPot[i])
       {
         nknot_max = std::max(nknot_max, soPot[i]->getNknot());
         sknot_max = std::max(sknot_max, soPot[i]->getSknot());
-        if (NLPP_algo == "batched")
-          soPot[i]->initVirtualParticle(targetPtcl);
         apot->addComponent(i, std::move(soPot[i]));
       }
-    }
+
     app_log() << "\n  Using SOECP potential \n"
               << "    Maximum grid on a sphere for SOECPotential: " << nknot_max << std::endl;
     if (use_exact_spin)
@@ -183,7 +175,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   if (hasL2Pot)
   {
-    std::unique_ptr<L2Potential> apot = std::make_unique<L2Potential>(IonConfig, targetPtcl, targetPsi);
+    std::unique_ptr<L2Potential> apot = std::make_unique<L2Potential>(IonConfig, targetPtcl);
     for (int i = 0; i < L2Pot.size(); i++)
       if (L2Pot[i])
         apot->add(i, std::move(L2Pot[i]));
@@ -340,7 +332,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
     std::ifstream fin(fname.c_str(), std::ios_base::in);
     if (!fin)
     {
-      ERRORMSG("Could not open file " << fname)
+      app_error() << "Could not open file " << fname << std::endl;
       exit(-1);
     }
     // Read Number of potentials (local and non) for this atom

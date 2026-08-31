@@ -45,7 +45,7 @@ def sanitize(det_spin, bit_kind_size):
      >>> sanitize([np.int8(-1)], 8)
      [255]
      '''
-     return [ (s + (1 << bit_kind_size)) if s < 0 else int(s) for s in det_spin]
+     return [ (int(s) + (1 << bit_kind_size)) if s < 0 else int(s) for s in det_spin]
 
 def int_to_bitmask(s, bit_kind_size):
     '''

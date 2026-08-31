@@ -41,22 +41,16 @@ namespace spline2
 /// evaluate values optionally in the range [first,last)
 template<typename SPLINET, typename PT, typename VT>
 inline void evaluate3d(const SPLINET& spline, const PT& r, VT& psi)
-{
-  evaluate_v_impl(spline, r[0], r[1], r[2], psi.data(), 0, psi.size());
-}
+{ evaluate_v_impl(spline, r[0], r[1], r[2], psi.data(), 0, psi.size()); }
 
 template<typename SPLINET, typename PT, typename VT>
 inline void evaluate3d(const SPLINET& spline, const PT& r, VT& psi, int first, int last)
-{
-  evaluate_v_impl(spline, r[0], r[1], r[2], psi.data() + first, first, last);
-}
+{ evaluate_v_impl(spline, r[0], r[1], r[2], psi.data() + first, first, last); }
 
 /// evaluate values, gradients, laplacians optionally in the range [first,last)
 template<typename SPLINET, typename PT, typename VT, typename GT, typename LT>
 inline void evaluate3d_vgl(const SPLINET& spline, const PT& r, VT& psi, GT& grad, LT& lap)
-{
-  evaluate_vgl_impl(spline, r[0], r[1], r[2], psi.data(), grad.data(), lap.data(), psi.size(), 0, psi.size());
-}
+{ evaluate_vgl_impl(spline, r[0], r[1], r[2], psi.data(), grad.data(), lap.data(), psi.size(), 0, psi.size()); }
 
 template<typename SPLINET, typename PT, typename VT, typename GT, typename LT>
 inline void evaluate3d_vgl(const SPLINET& spline, const PT& r, VT& psi, GT& grad, LT& lap, int first, int last)
@@ -68,9 +62,7 @@ inline void evaluate3d_vgl(const SPLINET& spline, const PT& r, VT& psi, GT& grad
 /// evaluate values, gradients, hessians optionally in the range [first,last)
 template<typename SPLINET, typename PT, typename VT, typename GT, typename HT>
 inline void evaluate3d_vgh(const SPLINET& spline, const PT& r, VT& psi, GT& grad, HT& hess)
-{
-  evaluate_vgh_impl(spline, r[0], r[1], r[2], psi.data(), grad.data(), hess.data(), psi.size(), 0, psi.size());
-}
+{ evaluate_vgh_impl(spline, r[0], r[1], r[2], psi.data(), grad.data(), hess.data(), psi.size(), 0, psi.size()); }
 
 template<typename SPLINET, typename PT, typename VT, typename GT, typename HT>
 inline void evaluate3d_vgh(const SPLINET& spline, const PT& r, VT& psi, GT& grad, HT& hess, int first, int last)
@@ -88,13 +80,13 @@ inline void evaluate3d_vghgh(const SPLINET& spline, const PT& r, VT& psi, GT& gr
 
 template<typename SPLINET, typename PT, typename VT, typename GT, typename HT, typename GHT>
 inline void evaluate3d_vghgh(const SPLINET& spline,
-                                    const PT& r,
-                                    VT& psi,
-                                    GT& grad,
-                                    HT& hess,
-                                    GHT& ghess,
-                                    int first,
-                                    int last)
+                             const PT& r,
+                             VT& psi,
+                             GT& grad,
+                             HT& hess,
+                             GHT& ghess,
+                             int first,
+                             int last)
 {
   evaluate_vghgh_impl(spline, r[0], r[1], r[2], psi.data() + first, grad.data() + first, hess.data() + first,
                       ghess.data() + first, psi.size(), first, last);

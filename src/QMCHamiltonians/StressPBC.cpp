@@ -25,9 +25,8 @@
 
 namespace qmcplusplus
 {
-StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi0)
+StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns)
     : ForceBase(ions, elns),
-      Psi(Psi0),
       PtclTarg(elns),
       PtclA(ions),
       ei_table_index(elns.addTable(ions)),
@@ -36,7 +35,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
       firstTimeStress(true)
 {
   ReportEngine PRE("StressPBC", "StressPBC");
-  name_  = "StressPBC";
+  name_   = "StressPBC";
   prefix_ = "StressPBC";
   //This sets up the long range breakups.
   initBreakup(PtclTarg);
@@ -44,6 +43,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
   stress_ee_const = 0.0;
   if (firstTimeStress)
   { // calculate constants
+    ions.update();
     CalculateIonIonStress();
     firstTimeStress = false;
   }
@@ -173,13 +173,13 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
     for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
     {
       SymTensor<RealType, OHMMS_DIM> temp =
-          AA->evaluateStress(P.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
-                             PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
+          AA->evaluateStress(P.getSimulationCell().getKLists().getKShell(), PtclRhoK.rhok_r[spec1],
+                             PtclRhoK.rhok_i[spec1], PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
       if (spec2 == spec1)
         temp *= 0.5;
       stress_aa += Z1 * Zmyspec[spec2] * temp;
     } //spec2
-  }   //spec1
+  } //spec1
 
   return stress_aa;
 }
@@ -259,7 +259,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AA(ParticleSet& 
   return tmpconsts;
 }
 
-StressPBC::Return_t StressPBC::evaluate(ParticleSet& P)
+StressPBC::Return_t StressPBC::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
   const RealType vinv(-1.0 / P.getLattice().Volume);
   stress_     = 0.0;
@@ -276,7 +276,7 @@ StressPBC::Return_t StressPBC::evaluate(ParticleSet& P)
   stress_ee_ += vinv * stress_ee_const;
 
 
-  stress_kin_ += vinv * evaluateKineticSymTensor(P);
+  stress_kin_ += vinv * evaluateKineticSymTensor(psi, P);
 
   stress_ = stress_ee_ + stress_ei_ + stress_kin_;
   if (add_ion_ion_)
@@ -285,18 +285,22 @@ StressPBC::Return_t StressPBC::evaluate(ParticleSet& P)
   return 0.0;
 }
 
-SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateKineticSymTensor(ParticleSet& P)
+SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateKineticSymTensor(TrialWaveFunction& psi, ParticleSet& P)
 {
   WaveFunctionComponent::HessVector grad_grad_psi;
-  Psi.evaluateHessian(P, grad_grad_psi);
+  psi.evaluateHessian(P, grad_grad_psi);
   SymTensor<RealType, OHMMS_DIM> kinetic_tensor;
   Tensor<ComplexType, OHMMS_DIM> complex_ktensor;
 
-  for (int iat = 0; iat < P.getTotalNum(); iat++)
+  auto& mass = P.get_mass_by_group();
+  for (int ig = 0; ig < mass.size(); ++ig)
   {
-    const RealType minv(1.0 / P.Mass[iat]);
-    complex_ktensor += outerProduct(P.G[iat], P.G[iat]) * static_cast<ParticleSet::SingleParticleValue>(minv);
-    complex_ktensor += grad_grad_psi[iat] * minv;
+    const RealType minv = 1.0 / mass[ig];
+    for (int iat = P.first(ig); iat < P.last(ig); ++iat)
+    {
+      complex_ktensor += outerProduct(P.G[iat], P.G[iat]) * static_cast<ParticleSet::SingleParticleValue>(minv);
+      complex_ktensor += grad_grad_psi[iat] * minv;
+    }
   }
 
   for (int i = 0; i < OHMMS_DIM; i++)
@@ -319,9 +323,9 @@ bool StressPBC::put(xmlNodePtr cur)
   return true;
 }
 
-std::unique_ptr<OperatorBase> StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
-  std::unique_ptr<StressPBC> tmp = std::make_unique<StressPBC>(PtclA, qp, psi);
+  std::unique_ptr<StressPBC> tmp = std::make_unique<StressPBC>(PtclA, qp);
   tmp->firstTimeStress           = firstTimeStress;
   tmp->stress_ion_ion_           = stress_ion_ion_;
   tmp->stress_ee_const           = stress_ee_const;

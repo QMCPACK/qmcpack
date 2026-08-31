@@ -53,8 +53,11 @@ typing ``qmca`` at the command line with no other inputs (also try
       -e EQUILIBRATION, --equilibration=EQUILIBRATION
                             Equilibration length in blocks (default=auto).
       -a, --average         Average over files in each series (default=False).
+      --save_average        Save averaged data into scalar.dat files.
+                            (default=False).
       -w WEIGHTS, --weights=WEIGHTS
                             List of weights for averaging (default=None).
+      -j JOIN, --join=JOIN  Join data for a range of series (default=None).
       -b, --reblock         (pending) Use reblocking to calculate statistics
                             (default=False).
       -p, --plot            Plot quantities vs. series (default=False).
@@ -69,7 +72,14 @@ typing ``qmca`` at the command line with no other inputs (also try
       --noac                Alias for --noautocorr (default=False).
       --sac                 Show autocorrelation of sample data (default=False).
       --sv                  Show variance of sample data (default=False).
-      -i, --image           (pending) Save image files (default=False).
+      --sort                Display output data sorted alphabetically by file name
+                            (default=False).
+      -i, --image           Save plot files (default prefix: qmca_plot).
+      --image-prefix=BASENAME
+                            Save plot files with basename prefix
+                            (default=None).
+      --image-format=FORMAT Output format for saved plots: png, pdf, svg, or eps
+                            (default=png).
       -r, --report          (pending) Write a report (default=False).
       -s, --show_options    Print user provided options (default=False).
       -x, --examples        Print examples and exit (default=False).
@@ -81,6 +91,17 @@ typing ``qmca`` at the command line with no other inputs (also try
                             Show number of samples needed to maintain error bar on
                             larger system: desired particle number first, current
                             particle number second (default=none)
+      --fp=PRECISION        Sets the floating point precision of displayed
+                            statistical results.  Must be a floating point format
+                            string such as 16.8f, 8.6e, or similar (default=none).
+      --nowarn              Suppress warning messages (default=False).
+      --average_all         Average over all files, ignoring differences in path
+                            (default=False).
+      --twist_info=TWIST_INFO
+                            Use twist weights in twist_info.dat files or not.
+                            Options: "use", "ignore", "require".  "use" means use
+                            when present, "ignore" means do not use, "require"
+                            means must be used (default=use).
 
 .. _qmca-mean-error:
 
@@ -170,7 +191,7 @@ can get an estimate of the autocorrelation time in the following way:
   >qmca -q e -e 100 qmc.s000.scalar.dat --sac
   qmc  series 0  LocalEnergy           =  -45.877363 +/- 0.017432    4.8
 
-The flag ``–sac`` stands for (s)how (a)uto(c)orrelation. In this case,
+The flag ``–sac`` stands for show autocorrelation. In this case,
 the autocorrelation estimate is :math:`4.8\approx 5` samples. Since the
 total run contained 800 samples and we have excluded 100 of them, we can
 estimate the number of independent samples as :math:`(800-100)/5=140`.
@@ -566,29 +587,59 @@ command line with no other input. This following is a current list:
 ::
 
   Abbreviations and full names for quantities:
-      ar              = AcceptRatio
-      bc              = BlockCPU
-      bw              = BlockWeight
-      ce              = CorrectedEnergy
-      de              = DiffEff
-      e               = LocalEnergy
-      ee              = ElecElec
-      eff             = Efficiency
-      ii              = IonIon
-      k               = Kinetic
-      kc              = KEcorr
-      l               = LocalECP
-      le2             = LocalEnergy_sq
-      mpc             = MPC
-      n               = NonLocalECP
-      nw              = NumOfWalkers
-      p               = LocalPotential
-      sw              = AvgSentWalkers
-      te              = TrialEnergy
-      ts              = TotalSamples
-      tt              = TotalTime
-      v               = Variance
-      w               = Weight
+    ar              = AcceptRatio
+    bc              = BlockCPU
+    bw              = BlockWeight
+    ce              = CorrectedEnergy
+    de              = DiffEff
+    de_AB           = dLocEne_0_1
+    dee_AB          = dElecElec_0_1
+    dii_AB          = dIonIon_0_1
+    e               = LocalEnergy
+    e_A             = LocEne_0
+    e_B             = LocEne_1
+    ee              = ElecElec
+    ee_A            = ElecElec_0
+    ee_B            = ElecElec_1
+    ee_m            = ElecElec_m
+    ee_p            = ElecElec_p
+    eff             = Efficiency
+    ei_A            = ElecIon_0
+    ei_AB           = dElecIon_0_1
+    ei_B            = ElecIon_1
+    el              = EnergyEstim__nume_real
+    fl              = Flux
+    fl_A            = Flux_0
+    fl_AB           = dFlux_0_1
+    fl_B            = Flux_1
+    ii              = IonIon
+    ii_A            = IonIon_0
+    ii_B            = IonIon_1
+    k               = Kinetic
+    k_A             = Kinetic_0
+    k_AB            = dKinetic_0_1
+    k_B             = Kinetic_1
+    k_m             = Kinetic_m
+    k_p             = Kinetic_p
+    kc              = KEcorr
+    l               = LocalECP
+    le2             = LocalEnergy_sq
+    mpc             = MPC
+    n               = NonLocalECP
+    nw              = NumOfWalkers
+    p               = LocalPotential
+    p_A             = LocPot_0
+    p_AB            = dLocPot_0_1
+    p_B             = LocPot_1
+    p_p             = LocalPotential_pure
+    sw              = AvgSentWalkers
+    te              = TrialEnergy
+    ts              = TotalSamples
+    tt              = TotalTime
+    v               = Variance
+    w               = Weight
+    wp_A            = wpsi_0
+    wp_B            = wpsi_1
 
 See the output overview for ``scalar.dat``
 (:ref:`scalardat-file`) and ``dmc.dat``
@@ -876,6 +927,27 @@ Plotting a trace of the local energy:
 ::
 
   >qmca -t -q e *scalar*
+
+Saving a trace plot of the local energy to a PNG file (default prefix: qmca_plot):
+
+::
+
+  >qmca -t -q e --image *scalar*
+
+Saving a trace plot of the local energy to a PNG file with a custom prefix:
+
+::
+
+  >qmca -t -q e --image-prefix myrun *scalar*
+
+Saving a trace plot to a PDF file for publication (vector format):
+
+::
+
+  >qmca -t -q e --image-format pdf --image-prefix myrun *scalar*
+
+PDF, SVG, and EPS output are resolution-independent and better suited to journal
+submission than PNG.
 
 Applying an equilibration cutoff to VMC data (series 0):
 
@@ -1355,7 +1427,8 @@ Using the qdens tool to obtain electron densities
 The ``qdens`` tool is provided to post-process the heavy density data
 produced by QMCPACK and output the mean density (with and without
 errorbars) in file formats viewable with, e.g., XCrysDen or VESTA. The
-tool currently works only with the ``SpinDensity`` estimator in QMCPACK.
+tool supports the ``SpinDensity`` in for both batched and legacy
+drivers and the legacy ``Density`` estimator for legacy drivers in QMCPACK.
 
 Note: this tool is provisional and may be changed or replaced at any
 time. The planned successor to this tool (``qstat``) will expand access
@@ -1363,10 +1436,26 @@ to other observables and will retain at least the non-plotting
 capabilities of ``qdens``.
 
 To use ``qdens``, Nexus must be installed along with NumPy and H5Py. A
-short list of example use cases are covered in the next section. Current
-input flags are:
+short list of example use cases are covered in the next section. When ``-i``
+is provided, qdens obtains each density estimator's grid and sampling geometry
+from the QMCPACK input section that produced the ``sNNN`` output file.  This
+input metadata is authoritative: matching ``--grid``, ``--density_cell``, and
+``--density_corner`` options are ignored with a warning.  Without matching
+input metadata, these options retain their legacy role as fallback metadata
+for a single unambiguous density group.
 
-.. code-block:: 
+The grid dimensions must describe the stored HDF5 data exactly; qdens checks
+that their product equals the number of stored bins.  ``--reblock`` performs
+statistical block coarsening only.  qdens does not resample a spatial density
+grid.  The fallback ``--density_cell`` and ``--density_corner`` options set
+the geometry written to output files but do not move or resample the stored
+density values, so they should describe the data's actual sampling geometry.
+CHGCAR output is available only when the density sampling cell is the
+simulation cell with a zero corner; use XSF for a subcell or shifted density.
+
+Current input flags are:
+
+.. code-block::
 
   >qdens
 
@@ -1388,16 +1477,20 @@ input flags are:
     -w WEIGHTS, --weights=WEIGHTS
                           List of weights for averaging (default=None).
     -i INPUT, --input=INPUT
-                          QMCPACK input file containing structure and grid
-                          information (default=None).
+                          QMCPACK input file; matching estimator metadata is
+                          used per output series (default=None).
     -s STRUCTURE, --structure=STRUCTURE
                           File containing atomic structure (default=None).
-    -g GRID, --grid=GRID  Density grid dimensions (default=None).
+    -g GRID, --grid=GRID  Fallback density grid dimensions; must match stored
+                          bins and is ignored when input metadata matches
+                          (default=None).
     -c CELL, --cell=CELL  Simulation cell axes (default=None).
     --density_cell=DENSITY_CELL
-                          Density cell axes (default=None).
+                          Fallback density cell axes; ignored when input
+                          metadata matches (default=None).
     --density_corner=DENSITY_CORNER
-                          Density cell corner (default=None).
+                          Fallback density cell corner; ignored when input
+                          metadata matches (default=None).
     --lineplot=LINEPLOT   Produce a line plot along the selected dimension: 0,
                           1, or 2 (default=None).
     --noplot              Do not show plots interactively (default=False).
@@ -1446,6 +1539,18 @@ Produce twist averaged densities (also works with multiple series and reblocking
 Twist averaging with arbitrary weights can be performed via the ``-w``
 option in a fashion identical to ``qmca``.
 
+Generate line plots of the spin-resolved twist averaged densities along the first lattice
+direction:
+
+::
+
+  qdens -v --lineplot 0 -e 40 -a --noplot -i qmc.g000.twistnum_0.in.xml qmc.g*.s000.stat.h5
+
+The integer supplied to ``--lineplot`` selects the axis (``0`` for x,
+``1`` for y, ``2`` for z).  Combine it with ``--noplot`` when running on
+systems without a display to skip interactive windows; the plot data is
+still written to disk.
+
 Files produced
 ~~~~~~~~~~~~~~
 
@@ -1483,6 +1588,17 @@ sufficient number of blocks remaining following any reblocking.
 When twist averaging, the group tag (e.g. ``g000`` or similar) will be
 replaced with ``avg`` in the names of the outputted files.
 
+When ``--lineplot`` is requested, ``qdens`` additionally produces
+``.pdf`` and ``.dat`` files for each spin channel and derived total or
+difference density.  For a spin-density estimate named ``SpinDensity``
+an input file such as ``qmc.s000.stat.h5`` yields files of the form
+``qmc.s000.SpinDensity_lineplot_x_u.pdf`` and
+``qmc.s000.SpinDensity_lineplot_x_u.dat`` (and similarly for ``_d``,
+``_u+d``, and ``_u-d``).  The ``.pdf`` files contain the plotted mean
+densities with error bars along the chosen direction, while the matching
+``.dat`` files store the numeric coordinates and error estimates used to
+create the plots.
+
 .. _qdens-radial:
 
 Using the qdens-radial tool to estimate atomic occupations
@@ -1497,7 +1613,7 @@ The radial density can be chosen to be non-cumulative or cumulative (integrated)
   >qdens-radial
 
   Usage: qdens-radial [options] xsf_file
-  
+
   Options:
     --version             show program's version number and exit
     -h, --help            Print help information and exit (default=False).
@@ -1565,7 +1681,7 @@ Estimate of the extrapolated atomic occupation:
 ::
 
   qdens-radial -p -s O -r 1.1 -c --vmc=dmc.s000.Density_q.xsf dmc.s002.Density_q.xsf
-  
+
 Output:
 
 ::
@@ -1599,4 +1715,3 @@ Output:
   Will compute 20 samples...
   ...
   Cumulative Value of O Species at Cutoff 1.1 is: 6.55517033828574+/-0.001558553749396279
-

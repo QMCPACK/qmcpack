@@ -8,8 +8,8 @@
 //
 // File created by: Shiv Upadhyay, shivnupadhyay@gmail.com, University of Pittsburgh
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/Jastrow/J1Spin.h"
@@ -79,18 +79,16 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 </wavefunction>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(jasxml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(jasxml));
   xmlNodePtr jas1 = doc.getRoot();
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
-  twf.setMassTerm(elec_);
   auto& twf_component_list = twf.getOrbitals();
   auto cloned_j1spin       = twf_component_list[0]->makeClone(elec_);
 
-  opt_variables_type active;
+  OptVariables active;
   twf.checkInVariables(active);
   active.resetIndex();
   int nparam = active.size_of_active();
@@ -198,18 +196,16 @@ TEST_CASE("J1 spin evaluate derivatives multiparticle Jastrow", "[wavefunction]"
 </wavefunction>
 )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(jasxml);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(jasxml));
   xmlNodePtr jas1 = doc.getRoot();
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   RuntimeOptions runtime_options;
   auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
-  twf.setMassTerm(elec_);
   auto& twf_component_list = twf.getOrbitals();
   auto cloned_j1spin       = twf_component_list[0]->makeClone(elec_);
 
-  opt_variables_type active;
+  OptVariables active;
   twf.checkInVariables(active);
   active.resetIndex();
   int nparam = active.size_of_active();

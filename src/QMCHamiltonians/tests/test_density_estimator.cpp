@@ -7,8 +7,8 @@
 // File developed by: William F Godoy, godoywf@ornl.gov, Oak Ridge National Laboratory
 // File created by: William F Godoy, godoywf@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -59,8 +59,6 @@ TEST_CASE("Density Estimator evaluate exception", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
   DensityEstimator density_estimator(elec);
   REQUIRE(density_estimator.getClassName() == "DensityEstimator");
-  // empty function
-  density_estimator.resetTargetParticleSet(elec);
   // check exception is thrown when weights are not defined
   CHECK_THROWS_AS(density_estimator.evaluate(elec), std::invalid_argument);
 }

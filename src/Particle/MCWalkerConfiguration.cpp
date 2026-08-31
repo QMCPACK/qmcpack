@@ -58,7 +58,6 @@ void MCWalkerConfiguration::createWalkers(int n)
       awalker->R     = R;
       awalker->spins = spins;
     }
-  resizeWalkerHistories();
 }
 
 
@@ -116,21 +115,6 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy)
     walker->resizeProperty(ncopy, m);
     walker->Weight = 1.0;
   }
-  resizeWalkerHistories();
-}
-
-void MCWalkerConfiguration::resizeWalkerHistories()
-{
-  //using std::vector<std::vector<RealType> > is too costly.
-  int np = PropertyHistory.size();
-  if (np)
-    for (int iw = 0; iw < walker_list_.size(); ++iw)
-      walker_list_[iw]->PropertyHistory = PropertyHistory;
-  np = PHindex.size();
-  if (np)
-    for (int iw = 0; iw < walker_list_.size(); ++iw)
-      walker_list_[iw]->PHindex = PHindex;
-  ;
 }
 
 /** allocate the SampleStack
@@ -176,7 +160,6 @@ void MCWalkerConfiguration::loadEnsemble()
     samples.getSample(i).convertToWalker(*awalker);
     walker_list_[i] = std::move(awalker);
   }
-  resizeWalkerHistories();
   samples.clearEnsemble();
 }
 
@@ -243,8 +226,6 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
         others[i]->clearEnsemble();
     }
   }
-  if (doclean)
-    resizeWalkerHistories();
 }
 
 void MCWalkerConfiguration::clearEnsemble() { samples.clearEnsemble(); }

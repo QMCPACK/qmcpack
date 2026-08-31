@@ -28,7 +28,13 @@ struct SpinorSet::SpinorSetMultiWalkerResource : public Resource
   std::vector<RealType> spins;
 };
 
-SpinorSet::SpinorSet(const std::string& my_name) : SPOSet(my_name), spo_up(nullptr), spo_dn(nullptr) {}
+SpinorSet::SpinorSet(const std::string& my_name, std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&& dn)
+    : SPOSet(my_name, up->size()), spo_up(std::move(up)), spo_dn(std::move(dn))
+{
+  if (spo_up->size() != spo_dn->size())
+    throw std::runtime_error("SpinorSet::SpinorSet(...):  up and down SPO components have different sizes.");
+}
+
 SpinorSet::~SpinorSet() = default;
 
 void SpinorSet::storeParamsBeforeRotation()
@@ -42,24 +48,6 @@ void SpinorSet::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
   spo_up->applyRotation(rot_mat, use_stored_copy);
   spo_dn->applyRotation(rot_mat, use_stored_copy);
 }
-
-void SpinorSet::set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&& dn)
-{
-  //Sanity check for input SPO's.  They need to be the same size or
-  IndexType spo_size_up   = up->getOrbitalSetSize();
-  IndexType spo_size_down = dn->getOrbitalSetSize();
-
-  if (spo_size_up != spo_size_down)
-    throw std::runtime_error("SpinorSet::set_spos(...):  up and down SPO components have different sizes.");
-
-  setOrbitalSetSize(spo_size_up);
-
-  spo_up = std::move(up);
-  spo_dn = std::move(dn);
-}
-
-void SpinorSet::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; };
-
 
 void SpinorSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
@@ -712,10 +700,7 @@ void SpinorSet::evaluateGradSource(const ParticleSet& P,
 
 std::unique_ptr<SPOSet> SpinorSet::makeClone() const
 {
-  auto myclone = std::make_unique<SpinorSet>(my_name_);
-  std::unique_ptr<SPOSet> cloneup(spo_up->makeClone());
-  std::unique_ptr<SPOSet> clonedn(spo_dn->makeClone());
-  myclone->set_spos(std::move(cloneup), std::move(clonedn));
+  auto myclone = std::make_unique<SpinorSet>(my_name_, spo_up->makeClone(), spo_dn->makeClone());
   return myclone;
 }
 

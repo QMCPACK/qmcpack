@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OneBodyDensityMatricesInput.h"
 #include "ValidOneBodyDensityMatricesInput.h"
@@ -31,8 +30,7 @@ TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
   for (auto input_xml : valid_input)
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
     OneBodyDensityMatricesInput obdmi(node);
   }
@@ -41,8 +39,7 @@ TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
   for (auto input_xml : invalid_input::xml)
   {
     Libxml2Document doc;
-    bool okay = doc.parseFromString(input_xml);
-    REQUIRE(okay);
+    REQUIRE(doc.parseFromString(input_xml));
     xmlNodePtr node = doc.getRoot();
 
     CHECK_THROWS_AS(OneBodyDensityMatricesInput(node), UniformCommunicateError);
@@ -53,7 +50,7 @@ TEST_CASE("OneBodyDensityMatricesInput::copy_construction", "[estimators]")
 {
   using Input = testing::ValidOneBodyDensityMatricesInput;
   Libxml2Document doc;
-  bool okay       = doc.parseFromString(Input::getXml(Input::valid::SCALE));
+  REQUIRE(doc.parseFromString(Input::getXml(Input::valid::SCALE)));
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
   static_assert(std::is_copy_constructible_v<OneBodyDensityMatricesInput>);

@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 
 #include "Utilities/ProjectData.h"
@@ -82,7 +81,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
     rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
-  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec, psi);
+  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec);
   h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
@@ -97,8 +96,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
   </qmc>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(dmc_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(dmc_input));
   xmlNodePtr root = doc.getRoot();
 
   dmc_omp.process(root); // need to call 'process' for QMCDriver, which in turn calls 'put'
@@ -166,7 +164,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
     rng = std::make_unique<FakeRandom<QMCTraits::FullPrecRealType>>();
 
   QMCHamiltonian h;
-  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec, psi);
+  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec);
   h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
@@ -182,8 +180,7 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   </qmc>
   )";
   Libxml2Document doc;
-  bool okay = doc.parseFromString(dmc_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(dmc_input));
   xmlNodePtr root = doc.getRoot();
 
   dmc_omp.process(root); // need to call 'process' for QMCDriver, which in turn calls 'put'

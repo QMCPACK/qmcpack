@@ -19,8 +19,9 @@
 
 namespace qmcplusplus
 {
-NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(ParticleSet& P,
-                                                                               const opt_variables_type& optvars,
+NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(TrialWaveFunction& psi,
+                                                                               ParticleSet& P,
+                                                                               const OptVariables& optvars,
                                                                                const Vector<ValueType>& dlogpsi,
                                                                                Vector<ValueType>& dhpsioverpsi)
 {
@@ -38,10 +39,12 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
   {
     const auto& dist  = myTable.getDistRow(jel);
     const auto& displ = myTable.getDisplRow(jel);
-    for (int iat = 0; iat < NumIons; iat++)
+    for (int iat = 0; iat < PP.size(); iat++)
       if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-        value_ += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                       dhpsioverpsi);
+        value_ +=
+            PP[iat]->evaluateValueAndDerivatives(P, vp_ ? makeOptionalRef<VirtualParticleSet>(*vp_) : std::nullopt,
+
+                                                 iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi, dhpsioverpsi);
   }
   return value_;
 }
@@ -58,38 +61,36 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
    * This is a temporary solution which uses TrialWaveFunction::evaluateDerivatives
    * assuming that the distance tables are fully updated for each ratio computation.
    */
-NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives(ParticleSet& W,
-                                                                                 int iat,
-                                                                                 TrialWaveFunction& psi,
-                                                                                 int iel,
-                                                                                 RealType r,
-                                                                                 const PosType& dr,
-                                                                                 const opt_variables_type& optvars,
-                                                                                 const Vector<ValueType>& dlogpsi,
-                                                                                 Vector<ValueType>& dhpsioverpsi)
+NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives(
+    ParticleSet& W,
+    const OptionalRef<VirtualParticleSet> vp,
+    int iat,
+    TrialWaveFunction& psi,
+    int iel,
+    RealType r,
+    const PosType& dr,
+    const OptVariables& optvars,
+    const Vector<ValueType>& dlogpsi,
+    Vector<ValueType>& dhpsioverpsi)
 {
   const size_t num_vars = optvars.size_of_active();
   dratio.resize(nknot, num_vars);
   dlogpsi_vp.resize(dlogpsi.size());
 
-  deltaV.resize(nknot);
+  buildQuadraturePointDeltaPosAndPartialPotential(r, dr, deltaV_, knot_pots_);
 
-  //displacements wrt W.R[iel]
-  for (int j = 0; j < nknot; j++)
-    deltaV[j] = r * rrotsgrid_m[j] - dr;
-
-  if (VP)
+  if (vp)
   {
+    VirtualParticleSet& vp_set(*vp);
     // Compute ratios with VP
-    VP->makeMoves(W, iel, deltaV, true, iat);
-    psi.evaluateDerivRatios(*VP, optvars, psiratio, dratio);
+    vp_set.makeMoves(W, iel, deltaV_, true, iat);
+    psi.evaluateDerivRatios(vp_set, optvars, psiratio, dratio);
   }
   else
   {
     for (int j = 0; j < nknot; j++)
     {
-      PosType pos_now = W.R[iel];
-      W.makeMove(iel, deltaV[j]);
+      W.makeMove(iel, deltaV_[j]);
       psiratio[j] = psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
       W.acceptMove(iel);
@@ -100,39 +101,17 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
       for (int v = 0; v < dlogpsi_vp.size(); ++v)
         dratio(j, v) = dlogpsi_vp[v] - dlogpsi[v];
 
-      W.makeMove(iel, -deltaV[j]);
+      W.makeMove(iel, -deltaV_[j]);
       psi.calcRatio(W, iel);
       psi.acceptMove(W, iel);
       W.acceptMove(iel);
     }
   }
 
-  for (int j = 0; j < nknot; ++j)
-    psiratio[j] *= sgridweight_m[j];
-
-  for (int ip = 0; ip < nchannel; ip++)
-    vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
-
   RealType pairpot(0);
-  const RealType rinv = RealType(1) / r;
-  // Compute spherical harmonics on grid
-  for (int j = 0, jl = 0; j < nknot; j++)
+  for (int j = 0; j < nknot; j++)
   {
-    RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
-    // Forming the Legendre polynomials
-    lpol[0]           = 1.0;
-    RealType lpolprev = 0.0;
-    for (int l = 0; l < lmax; l++)
-    {
-      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
-      lpolprev    = lpol[l];
-    }
-
-    RealType lsum = 0.0;
-    for (int l = 0; l < nchannel; l++)
-      lsum += vrad[l] * lpol[angpp_m[l]];
-
-    wvec[j] = lsum * psiratio[j];
+    wvec[j] = knot_pots_[j] * psiratio[j];
     pairpot += std::real(wvec[j]);
   }
 

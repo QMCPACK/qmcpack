@@ -40,40 +40,54 @@ inline void insert_columns(const MAT1& small, MAT2& big, int offset_c)
 } // namespace MatrixOperators
 
 template<typename T>
-CompositeSPOSet<T>::CompositeSPOSet(const std::string& my_name) : SPOSetT<T>(my_name)
+static auto countOrbitals(const std::vector<std::unique_ptr<SPOSetT<T>>>& components)
 {
-  SPOSet::OrbitalSetSize = 0;
-  component_offsets.reserve(4);
+  size_t counts = 0;
+  for (const std::unique_ptr<SPOSetT<T>>& spo : components)
+    counts += spo->size();
+  return counts;
 }
 
 template<typename T>
-CompositeSPOSet<T>::CompositeSPOSet(const CompositeSPOSet& other) : SPOSet(other)
+static auto cloneComponents(const std::vector<std::unique_ptr<SPOSetT<T>>>& components)
 {
-  for (auto& element : other.components)
+  std::vector<std::unique_ptr<SPOSetT<T>>> spos;
+  spos.reserve(components.size());
+  for (const std::unique_ptr<SPOSetT<T>>& spo : components)
+    spos.emplace_back(spo->makeClone());
+  return spos;
+}
+
+template<typename T>
+CompositeSPOSet<T>::CompositeSPOSet(const std::string& my_name, std::vector<std::unique_ptr<SPOSet>>&& spos)
+    : SPOSet(my_name, countOrbitals(spos)), components(std::move(spos))
+{
+  component_offsets.push_back(0); //add 0
+  size_t count = 0;
+  for (const std::unique_ptr<SPOSetT<T>>& component : components)
   {
-    this->add(element->makeClone());
+    const int norbs = component->size();
+    component_values.emplace_back(norbs);
+    component_gradients.emplace_back(norbs);
+    component_laplacians.emplace_back(norbs);
+    component_spin_gradients.emplace_back(norbs);
+    component_offsets.push_back(count += norbs);
   }
 }
 
 template<typename T>
-CompositeSPOSet<T>::~CompositeSPOSet() = default;
+CompositeSPOSet<T>::CompositeSPOSet(const CompositeSPOSet& other)
+    : SPOSet(other),
+      components(cloneComponents(other.components)),
+      component_values(other.component_values),
+      component_gradients(other.component_gradients),
+      component_laplacians(other.component_laplacians),
+      component_spin_gradients(other.component_spin_gradients),
+      component_offsets(other.component_offsets)
+{}
 
 template<typename T>
-void CompositeSPOSet<T>::add(std::unique_ptr<SPOSet> component)
-{
-  if (components.empty())
-    component_offsets.push_back(0); //add 0
-
-  int norbs = component->size();
-  components.push_back(std::move(component));
-  component_values.emplace_back(norbs);
-  component_gradients.emplace_back(norbs);
-  component_laplacians.emplace_back(norbs);
-  component_spin_gradients.emplace_back(norbs);
-
-  SPOSet::OrbitalSetSize += norbs;
-  component_offsets.push_back(SPOSet::OrbitalSetSize);
-}
+CompositeSPOSet<T>::~CompositeSPOSet() = default;
 
 template<typename T>
 void CompositeSPOSet<T>::report()
@@ -89,7 +103,8 @@ void CompositeSPOSet<T>::report()
 }
 
 template<typename T>
-std::unique_ptr<SPOSetT<T>> CompositeSPOSet<T>::makeClone() const { return std::make_unique<CompositeSPOSet>(*this); }
+std::unique_ptr<SPOSetT<T>> CompositeSPOSet<T>::makeClone() const
+{ return std::make_unique<CompositeSPOSet>(*this); }
 
 template<typename T>
 void CompositeSPOSet<T>::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
@@ -106,7 +121,11 @@ void CompositeSPOSet<T>::evaluateValue(const ParticleSet& P, int iat, ValueVecto
 }
 
 template<typename T>
-void CompositeSPOSet<T>::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
+void CompositeSPOSet<T>::evaluateVGL(const ParticleSet& P,
+                                     int iat,
+                                     ValueVector& psi,
+                                     GradVector& dpsi,
+                                     ValueVector& d2psi)
 {
   int n = 0;
   for (int c = 0; c < components.size(); ++c)
@@ -202,9 +221,7 @@ void CompositeSPOSet<T>::evaluate_notranspose(const ParticleSet& P,
                                               GradMatrix& dlogdet,
                                               HessMatrix& grad_grad_logdet,
                                               GGGMatrix& grad_grad_grad_logdet)
-{
-  not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet,dddlogdet)");
-}
+{ not_implemented("evaluate_notranspose(P,first,last,logdet,dlogdet,ddlogdet,dddlogdet)"); }
 
 
 std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
@@ -216,20 +233,20 @@ std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr c
     return nullptr;
   }
 
-  auto spo_now = std::make_unique<CompositeSPOSet<ValueType>>(getXMLAttributeValue(cur, "name"));
+  std::vector<std::unique_ptr<SPOSet>> spos;
+  spos.reserve(spolist.size());
   for (int i = 0; i < spolist.size(); ++i)
   {
     const SPOSet* spo = sposet_builder_factory_.getSPOSet(spolist[i]);
     if (spo)
-      spo_now->add(spo->makeClone());
+      spos.emplace_back(spo->makeClone());
   }
-  return (spo_now->size()) ? std::unique_ptr<SPOSet>{std::move(spo_now)} : nullptr;
+  return spos.size() ? std::make_unique<CompositeSPOSet<ValueType>>(getXMLAttributeValue(cur, "name"), std::move(spos))
+                     : nullptr;
 }
 
 std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input)
-{
-  return createSPOSetFromXML(cur);
-}
+{ return createSPOSetFromXML(cur); }
 
 #if !defined(MIXED_PRECISION)
 template class CompositeSPOSet<double>;

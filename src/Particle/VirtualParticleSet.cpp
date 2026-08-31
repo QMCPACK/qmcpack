@@ -15,8 +15,9 @@
  * A proxy class to the quantum ParticleSet
  */
 
-#include "Configuration.h"
 #include "VirtualParticleSet.h"
+#include <numeric>
+#include "Configuration.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/createDistanceTable.h"
 #include "QMCHamiltonians/NLPPJob.h"
@@ -37,28 +38,37 @@ struct VPMultiWalkerMem : public Resource
   std::unique_ptr<Resource> makeClone() const override { return std::make_unique<VPMultiWalkerMem>(*this); }
 };
 
-VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl, size_t dt_count_limit)
-    : ParticleSet(p.getSimulationCell())
+VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, size_t dt_count_limit) : ParticleSet(p.getSimulationCell())
 {
   setName("virtual");
 
-  //initialize local data structure
   setSpinor(p.isSpinor());
-  TotalNum = nptcl;
-  R.resize(nptcl);
-  if (isSpinor())
-    spins.resize(nptcl);
-  coordinates_->resize(nptcl);
 
   //create distancetables
   assert(dt_count_limit <= p.getNumDistTables());
   if (dt_count_limit == 0)
     dt_count_limit = p.getNumDistTables();
+
+  std::ostream null_out(nullptr);
   for (int i = 0; i < dt_count_limit; ++i)
-    if (p.getDistTable(i).getModes() & DTModes::NEED_VP_FULL_TABLE_ON_HOST)
-      addTable(p.getDistTable(i).get_origin());
-    else
-      addTable(p.getDistTable(i).get_origin(), DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST);
+  {
+    size_t tid = DistTables.size();
+    auto& dt   = p.getDistTable(i);
+    DistTables.push_back(createDistanceTable(dt.get_origin(), myName, null_out));
+    if (!(dt.getModes() & DTModes::NEED_VP_FULL_TABLE_ON_HOST))
+      DistTables[tid]->setModes(DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST);
+    app_debug() << "  ... VirtualParticleSet::VirtualParticleSet Create Table #" << tid << " "
+                << DistTables[tid]->getName() << std::endl;
+  }
+}
+
+void VirtualParticleSet::resize(const size_t nptcl)
+{
+  TotalNum = nptcl;
+  R.resize(nptcl);
+  if (isSpinor())
+    spins.resize(nptcl);
+  coordinates_->resize(nptcl);
 }
 
 VirtualParticleSet::~VirtualParticleSet() = default;
@@ -139,7 +149,8 @@ void VirtualParticleSet::makeMoves(const ParticleSet& refp,
   refPS         = refp;
   refPtcl       = jel;
   refSourcePtcl = iat;
-  assert(R.size() == deltaV.size());
+
+  resize(deltaV.size());
   for (size_t ivp = 0; ivp < R.size(); ivp++)
     R[ivp] = refp.R[jel] + deltaV[ivp];
   if (refp.isSpinor())
@@ -164,8 +175,9 @@ void VirtualParticleSet::makeMovesWithSpin(const ParticleSet& refp,
   refPS         = refp;
   refPtcl       = jel;
   refSourcePtcl = iat;
-  assert(R.size() == deltaV.size());
-  assert(spins.size() == deltaS.size());
+
+  resize(deltaV.size());
+  assert(deltaV.size() == deltaS.size());
   for (size_t ivp = 0; ivp < R.size(); ivp++)
   {
     R[ivp]     = refp.R[jel] + deltaV[ivp];
@@ -184,7 +196,9 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
   vp_leader.onSphere = sphere;
   vp_leader.refPS    = refp_list.getLeader();
 
-  const size_t nVPs = countVPs(vp_list);
+  const size_t nVPs =
+      std::accumulate(deltaV_list.begin(), deltaV_list.end(), 0,
+                      [](size_t sum, const std::vector<PosType>& deltaV) { return sum + deltaV.size(); });
   auto& mw_refPctls = vp_leader.getMultiWalkerRefPctls();
   mw_refPctls.resize(nVPs);
 
@@ -202,7 +216,8 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
     vp.refPS         = refp_list[iw];
     vp.refPtcl       = job.electron_id;
     vp.refSourcePtcl = job.ion_id;
-    assert(vp.R.size() == deltaV.size());
+
+    vp.resize(deltaV.size());
     for (size_t k = 0; k < vp.R.size(); k++, ivp++)
     {
       vp.R[k] = refp_list[iw].R[vp.refPtcl] + deltaV[k];
@@ -232,7 +247,9 @@ void VirtualParticleSet::mw_makeMovesWithSpin(const RefVectorWithLeader<VirtualP
   vp_leader.onSphere = sphere;
   vp_leader.refPS    = refp_list.getLeader();
 
-  const size_t nVPs = countVPs(vp_list);
+  const size_t nVPs =
+      std::accumulate(deltaV_list.begin(), deltaV_list.end(), 0,
+                      [](size_t sum, const std::vector<PosType>& deltaV) { return sum + deltaV.size(); });
   auto& mw_refPctls = vp_leader.getMultiWalkerRefPctls();
   mw_refPctls.resize(nVPs);
 
@@ -251,9 +268,9 @@ void VirtualParticleSet::mw_makeMovesWithSpin(const RefVectorWithLeader<VirtualP
     vp.refPS         = refp_list[iw];
     vp.refPtcl       = job.electron_id;
     vp.refSourcePtcl = job.ion_id;
-    assert(vp.R.size() == deltaV.size());
-    assert(vp.spins.size() == deltaS.size());
-    assert(vp.R.size() == vp.spins.size());
+
+    vp.resize(deltaV.size());
+    assert(deltaV.size() == deltaS.size());
     for (size_t k = 0; k < vp.R.size(); k++, ivp++)
     {
       vp.R[k]          = refp_list[iw].R[vp.refPtcl] + deltaV[k];

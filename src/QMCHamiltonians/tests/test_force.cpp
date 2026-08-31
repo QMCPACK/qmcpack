@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -34,8 +33,6 @@ namespace qmcplusplus
 {
 TEST_CASE("Bare Force", "[hamiltonian]")
 {
-  Communicate* c = OHMMS::Controller;
-
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
   ParticleSet elec(simulation_cell);
@@ -244,7 +241,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // copied.  Would be nice if there were a better way than inspection
   // to ensure all the members are copied/set up/tested.
 
-  std::unique_ptr<OperatorBase> base_force2 = force.makeClone(elec, psi);
+  std::unique_ptr<OperatorBase> base_force2 = force.makeClone(elec);
   ForceChiesaPBCAA* force2                  = dynamic_cast<ForceChiesaPBCAA*>(base_force2.get());
   REQUIRE(force2 != nullptr);
 
@@ -466,9 +463,8 @@ TEST_CASE("AC Force", "[hamiltonian]")
 
   force_old.put(oldh1);
   force_new.put(newh1);
-  const auto vold = force_old.evaluate(elec);
-  const auto vnew = force_new.evaluate(elec);
-  force_old.resetTargetParticleSet(elec); // does nothing?
+  const auto vold = force_old.evaluate(psi, elec);
+  const auto vnew = force_new.evaluate(psi, elec);
 
   CHECK(vold == Approx(0));
   CHECK(vnew == Approx(0));

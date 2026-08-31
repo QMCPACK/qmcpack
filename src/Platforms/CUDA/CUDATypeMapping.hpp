@@ -35,8 +35,10 @@ using CUDATypeMap =
                               OnTypesEqual<T, double*, double*>,
                               OnTypesEqual<T, float**, float**>,
                               OnTypesEqual<T, double**, double**>,
-                              OnTypesEqual<T, std::complex<double>, cuDoubleComplex>,
-                              OnTypesEqual<T, std::complex<float>, cuComplex>,
+                              // NOTE: host scalar std::complex<T> mappings are intentionally NOT provided,
+                              //       as std::complex<T> host scalars are not ABI/alignment
+                              //       compatible with cu[Double]Complex.
+                              // Pointer mappings remain supported for device buffers.
                               OnTypesEqual<T, std::complex<double>*, cuDoubleComplex*>,
                               OnTypesEqual<T, std::complex<float>**, cuComplex**>,
                               OnTypesEqual<T, std::complex<double>**, cuDoubleComplex**>,
@@ -48,6 +50,16 @@ using CUDATypeMap =
                               OnTypesEqual<T, const std::complex<float>* const*, const cuComplex* const*>,
                               OnTypesEqual<T, const std::complex<double>* const*, const cuDoubleComplex* const*>,
                               default_type<void>>::type;
+
+// Poison-pill overloads for host scalar complex.
+// These prevent accidental misuse of castCUDAType with host std::complex<T> types,
+// which are not aligned with cu[Double]Complex.
+// Those host scalars should be explicitly converted by `make_cu[Double]Complex`.
+inline cuComplex castCUDAType(std::complex<float>&)       = delete;
+inline cuComplex castCUDAType(const std::complex<float>&) = delete;
+
+inline cuDoubleComplex castCUDAType(std::complex<double>&)       = delete;
+inline cuDoubleComplex castCUDAType(const std::complex<double>&) = delete;
 
 template<typename T>
 CUDATypeMap<T> castCUDAType(T var)

@@ -44,7 +44,7 @@ public:
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
 
-  void checkOutVariables(const opt_variables_type& active) override
+  void checkOutVariables(const OptVariables& active) override
   {
     //if(Optimizable) {
     if (BFTrans->isOptimizable())
@@ -129,7 +129,7 @@ public:
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
   void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
+                           const OptVariables& optvars,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 

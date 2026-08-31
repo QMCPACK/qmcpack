@@ -18,11 +18,12 @@
 #include <thrust/device_ptr.h>
 #include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
-#include "uninitialized_array.hpp"
+#include "Platforms/CUDA/uninitialized_array.cuh"
 #include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"
 
 namespace kernels
 {
+using qmcplusplus::device::uninitialized_array;
 // Meant to be run with 1 block
 template<class T>
 __global__ void kernel_determinant_from_getrf(int N, T const* m, int lda, int const* piv, T LogOverlapFactor, T* det)

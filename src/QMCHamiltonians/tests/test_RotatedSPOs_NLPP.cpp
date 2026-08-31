@@ -9,8 +9,9 @@
 //
 // File created by: Joshua Townsend, jptowns@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "type_traits/template_types.hpp"
 #include "type_traits/ConvertToReal.h"
@@ -59,8 +60,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   lattice.R(2, 2) = 6.78114995;
 
 
-  const SimulationCell simulation_cell(lattice);
-  pp.setSimulationCell(simulation_cell);
+  pp.createSimulationCellByLattice(lattice);
   auto elec_ptr = std::make_unique<ParticleSet>(pp.getSimulationCell());
   auto& elec(*elec_ptr);
   auto ions_uptr = std::make_unique<ParticleSet>(pp.getSimulationCell());
@@ -81,7 +81,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   especies(chargeIdx, dnIdx) = -1;
   especies(massIdx, dnIdx)   = 1.0;
   elec.resetGroups(); // need to set Mass so
-
+  elec.update();
 
   pp.addParticleSet(std::move(elec_ptr));
 
@@ -94,7 +94,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   int CatomicnumberIdx             = tspecies.addAttribute("atomicnumber");
   tspecies(CchargeIdx, CIdx)       = 2;
   tspecies(CatomicnumberIdx, CIdx) = 4;
-
+  ions.update();
 
   pp.addParticleSet(std::move(ions_uptr));
 
@@ -143,15 +143,13 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
     wf_input = wf_input_single_det;
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_input);
-  REQUIRE(okay);
+  REQUIRE(doc.parseFromString(wf_input));
 
   xmlNodePtr root = doc.getRoot();
 
   wp.put(root);
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
+  TrialWaveFunction& psi(wp.getWaveFunction().value());
+  REQUIRE(psi.getOrbitals().size() == 1);
 
 
   // Note the pbc="no" setting to turn off long-range summation.
@@ -173,24 +171,23 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   if (use_nlpp_batched)
     ham_input = ham_input_nlpp_batched;
 
-  HamiltonianFactory hf("h0", elec, pp.getPool(), wp.getPool(), c);
+  HamiltonianFactory hf("h0", elec, pp.getPool(), wp.getWaveFunction(), c);
 
   Libxml2Document doc2;
-  bool okay2 = doc2.parseFromString(ham_input);
-  REQUIRE(okay2);
+  REQUIRE(doc2.parseFromString(ham_input));
 
   xmlNodePtr root2 = doc2.getRoot();
   hf.put(root2);
 
-  opt_variables_type opt_vars;
-  psi->checkInVariables(opt_vars);
+  OptVariables opt_vars;
+  psi.checkInVariables(opt_vars);
   opt_vars.resetIndex();
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
+  psi.checkOutVariables(opt_vars);
+  psi.resetParameters(opt_vars);
 
   elec.update();
 
-  double logval = psi->evaluateLog(elec);
+  double logval = psi.evaluateLog(elec);
   CHECK(logval == Approx(-1.2865633501081344));
 
   CHECK(elec.G[0][0] == ValueApprox(0.54752651));
@@ -206,14 +203,14 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   using ValueType = QMCTraits::ValueType;
   Vector<ValueType> dlogpsi(2);
   Vector<ValueType> dhpsioverpsi(2);
-  psi->evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi);
+  psi.evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(-2.97750823));
   CHECK(dlogpsi[1] == ValueApprox(-1.06146356));
   CHECK(dhpsioverpsi[0] == ValueApprox(-36.71707483));
   CHECK(dhpsioverpsi[1] == ValueApprox(-0.35274333));
 
-  RefVectorWithLeader<TrialWaveFunction> wf_list(*psi, {*psi});
+  RefVectorWithLeader<TrialWaveFunction> wf_list(psi, {psi});
   RefVectorWithLeader<ParticleSet> p_list(elec, {elec});
 
   // Test list with one wavefunction
@@ -231,23 +228,30 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   CHECK(dhpsi_over_psi_list[0][1] == Approx(dhpsioverpsi[1]));
 
 
-  QMCHamiltonian* h = hf.getH();
+  auto h = hf.releaseHamiltonian();
   RandomGenerator myrng;
   h->setRandomGenerator(&myrng);
 
-  h->evaluate(elec);
+  h->evaluate(psi, elec);
   double loc_e = h->getLocalEnergy();
   double ke    = h->getKineticEnergy();
   CHECK(ke == Approx(-6.818620576308302));
   CHECK(loc_e == Approx(-3.562354739253797));
 
-  auto* localECP_H = h->getHamiltonian("LocalECP");
-  double local_pp  = localECP_H->evaluate(elec);
+  //Enum to give human readable indexing into QMCHamiltonian.
+  enum observ_id
+  {
+    KINETIC = 0,
+    LOCALECP,
+    NONLOCALECP
+  };
+
+  h->getComponent(LOCALECP)->evaluate(psi, elec);
 
   Vector<ValueType> dlogpsi2(2);
   Vector<ValueType> dhpsioverpsi2(2);
 
-  h->evaluateValueAndDerivatives(elec, opt_vars, dlogpsi2, dhpsioverpsi2);
+  h->evaluateValueAndDerivatives(psi, elec, opt_vars, dlogpsi2, dhpsioverpsi2);
   // Derivative the wavefunction is unchanged by NLPP
   CHECK(dlogpsi2[0] == Approx(dlogpsi[0]));
   CHECK(dlogpsi2[1] == Approx(dlogpsi[1]));

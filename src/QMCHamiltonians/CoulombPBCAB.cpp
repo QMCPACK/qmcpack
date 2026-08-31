@@ -60,22 +60,9 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
   app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
 }
 
-std::unique_ptr<OperatorBase> CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
-{
-  return std::make_unique<CoulombPBCAB>(*this);
-}
+std::unique_ptr<OperatorBase> CoulombPBCAB::makeClone(ParticleSet& qp) const { return std::make_unique<CoulombPBCAB>(*this); }
 
 CoulombPBCAB::~CoulombPBCAB() = default;
-
-void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
-{
-  int tid = P.addTable(pset_ions_);
-  if (tid != myTableIndex)
-  {
-    APP_ABORT("CoulombPBCAB::resetTargetParticleSet found inconsistent table index");
-  }
-  AB->resetTargetParticleSet(P);
-}
 
 void CoulombPBCAB::addObservables(PropertySetType& plist, BufferType& collectables)
 {
@@ -100,14 +87,6 @@ void CoulombPBCAB::checkoutParticleQuantities(TraceManager& tm)
   }
 }
 
-void CoulombPBCAB::informOfPerParticleListener()
-{
-  // This is written so it can be called again and again.
-  pset_ions_.turnOnPerParticleSK();
-  Peln.turnOnPerParticleSK();
-  OperatorBase::informOfPerParticleListener();
-}
-
 void CoulombPBCAB::deleteParticleQuantities()
 {
   if (streaming_particles_)
@@ -118,6 +97,13 @@ void CoulombPBCAB::deleteParticleQuantities()
 }
 #endif
 
+void CoulombPBCAB::informOfPerParticleListener()
+{
+  // This is written so it can be called again and again.
+  pset_ions_.turnOnPerParticleSK();
+  Peln.turnOnPerParticleSK();
+  OperatorBase::informOfPerParticleListener();
+}
 
 CoulombPBCAB::Return_t CoulombPBCAB::evaluate(ParticleSet& P)
 {
@@ -212,8 +198,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         v1 = 0.0;
         for (int s = 0; s < NumSpeciesB; s++)
           v1 += Qspec[s] * q *
-              AB->evaluate(P.getSimulationCell().getKLists().getKShell(), RhoKB.rhok_r[s], RhoKB.rhok_i[s], RhoKA.eikr_r[i],
-                           RhoKA.eikr_i[i]);
+              AB->evaluate(P.getSimulationCell().getKLists().getKShell(), RhoKB.rhok_r[s], RhoKB.rhok_i[s],
+                           RhoKA.eikr_r[i], RhoKA.eikr_i[i]);
         Vi_samp(i) += v1;
         Vlr += v1;
       }
@@ -268,7 +254,6 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
 #endif
 
 void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
-                                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                           const RefVectorWithLeader<ParticleSet>& p_list,
                                           const std::vector<ListenerVector<RealType>>& listeners,
                                           const std::vector<ListenerVector<RealType>>& ion_listeners) const
@@ -377,16 +362,6 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
     auto& coulomb_ab  = o_list.getCastedElement<CoulombPBCAB>(iw);
     coulomb_ab.value_ = evaluate_walker(iw, coulomb_ab, p_list[iw], listeners, ion_listeners);
   }
-}
-
-void CoulombPBCAB::mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
-                                                       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                       const RefVectorWithLeader<ParticleSet>& p_list,
-                                                       const std::vector<ListenerVector<RealType>>& listeners,
-                                                       const std::vector<ListenerVector<RealType>>& ion_listeners) const
-
-{
-  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
 }
 
 /** Evaluate the background term. Other constants are handled by AA potentials.
@@ -512,11 +487,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
     Zat[iat] = Zspec[pset_ions_.GroupID[iat]];
   for (int iat = 0; iat < NptclB; iat++)
     Qat[iat] = Qspec[P.GroupID[iat]];
-  //    if(totQ>std::numeric_limits<RealType>::epsilon())
-  //    {
-  //      LOGMSG("PBCs not yet finished for non-neutral cells");
-  //      OHMMS::Controller->abort();
-  //    }
+
   ////Test if the box sizes are same (=> kcut same for fixed dimcut)
   kcdifferent =
       (std::abs(pset_ions_.getLattice().LR_kc - P.getLattice().LR_kc) > std::numeric_limits<RealType>::epsilon());

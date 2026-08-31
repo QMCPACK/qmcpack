@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi) : IonConfig(ions)
+L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els) : IonConfig(ions)
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ions, els);
@@ -26,18 +26,7 @@ L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFun
   size_t ns    = ions.getSpeciesSet().getTotalNum();
   PPset.resize(ns);
   PP.resize(NumIons, nullptr);
-  psi_ref = &psi;
 }
-
-void L2Potential::resetTargetParticleSet(ParticleSet& P)
-{
-  int tid = P.addTable(IonConfig);
-  if (tid != myTableIndex)
-  {
-    APP_ABORT("  L2Potential::resetTargetParticleSet found a different distance table index.");
-  }
-}
-
 
 void L2Potential::add(int groupID, std::unique_ptr<L2RadialPotential>&& ppot)
 {
@@ -48,12 +37,12 @@ void L2Potential::add(int groupID, std::unique_ptr<L2RadialPotential>&& ppot)
 }
 
 
-L2Potential::Return_t L2Potential::evaluate(ParticleSet& P)
+L2Potential::Return_t L2Potential::evaluate(TrialWaveFunction& psi, ParticleSet& P)
 {
   // compute the Hessian
   TrialWaveFunction::HessVector D2;
   // evaluateHessian gives the Hessian(log(Psi))
-  psi_ref->evaluateHessian(P, D2);
+  psi.evaluateHessian(P, D2);
   // add gradient terms to get (Hessian(Psi))/Psi instead
   const size_t N = P.getTotalNum();
   for (size_t n = 0; n < N; n++)
@@ -150,9 +139,9 @@ void L2Potential::evaluateD(ParticleSet& P, int iel, TensorType& D)
 }
 
 
-std::unique_ptr<OperatorBase> L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+std::unique_ptr<OperatorBase> L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi) const
 {
-  std::unique_ptr<L2Potential> myclone = std::make_unique<L2Potential>(IonConfig, qp, psi);
+  std::unique_ptr<L2Potential> myclone = std::make_unique<L2Potential>(IonConfig, qp);
   for (int ig = 0; ig < PPset.size(); ++ig)
   {
     if (PPset[ig])

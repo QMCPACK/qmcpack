@@ -136,8 +136,6 @@ void EstimatorManagerBase::reset()
     Collectables->add2Record(BlockAverages);
 }
 
-void EstimatorManagerBase::resetTargetParticleSet(ParticleSet& p) {}
-
 void EstimatorManagerBase::addHeader(std::ostream& o)
 {
   o.setf(std::ios::scientific, std::ios::floatfield);

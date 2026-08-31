@@ -203,7 +203,7 @@ In the ``band.py`` script, identification of high-symmetry k-points and band str
 In the script, where the ``dia`` PhysicalSystem object is used as the input structure, ``dia2_structure`` is the standardized primitive cell and ``dia2_kpath`` is the respective k-path around the iBZ.
 ``dia2_kpath`` has a dictionary of the k-path in various coordinate systems; please make sure you are using the right one.
 
-::
+.. code-block:: python
 
   from structure import get_primitive_cell, get_kpath
   dia2_structure   = get_primitive_cell(structure=dia.structure)['structure']
@@ -235,11 +235,11 @@ denote the CBM wavevector in the rest of this document. In ``band.py``
 script, once the band structure calculation is finished, you can use the
 following lines to get the exact location of VBM and CBM using
 
-::
+.. code-block:: python
 
   p = band.load_analyzer_image()
-  print "VBM:\n{0}".format(p.bands.vbm)
-  print "CBM:\n{0}".format(p.bands.cbm)
+  print("VBM:\n{0}".format(p.bands.vbm))
+  print("CBM:\n{0}".format(p.bands.cbm))
 
 Output must be the following:
 
@@ -300,11 +300,11 @@ denote the CBM wavevector in the rest of this document. In script, once
 the band structure calculation is finished, you can use the following
 lines to get the exact location of VBM and CBM using
 
-::
+.. code-block:: python
 
   p = band.load_analyzer_image()
-  print "VBM:\n{0}".format(p.bands.vbm)
-  print "CBM:\n{0}".format(p.bands.cbm)
+  print("VBM:\n{0}".format(p.bands.vbm))
+  print("CBM:\n{0}".format(p.bands.cbm))
 
 Output must be the following:
 
@@ -382,7 +382,7 @@ we use :math:`\Delta'=[1/3, 0., 1/3]`, we could use a
 :math:`\Delta'` can be a good approximation. We can compare the
 eigenvalues using their index numbers:
 
-::
+.. code-block:: python
 
   >>> print p.bands.up[51] ## CBM, $\Delta$ ##
     eigs            = [-3.2076  4.9221  7.5433  7.5433 17.1545 19.7598 28.3242 28.3242]
@@ -417,12 +417,12 @@ neutral DFT calculations; therefore, we need to explicitly define the
 band and twist indexes of the excitations in QMCPACK (e.g., to define
 electron promotion). In C-diamond, we can give an example by finding the
 band and twist indexes of :math:`\Gamma` and :math:`\Delta'`. For this
-end, a mock VMC calculation can be run and the ``einspline.tile_300010003`` ``.spin_0.tw_0.g0.bandinfo.dat`` file read. The Einspline
-file prints out the eigenstates information from DFT calculations.
+end, a mock VMC calculation can be run and the ``updet.tile_300010003.spin_0.tw_0.g0.bandinfo.dat`` file read. The bandinfo
+file includes the eigenstates information from the underlying DFT calculation.
 Therefore, we can obtain the band and the state index from this file,
 which can later be used to define the electron promotion. You can see in
 the following an explanation of how the band and twist indexes are
-defined using a portion of the ``einspline.tile_300010003.spin_0.tw_0.g0.bandinfo.dat`` file. Spin_0 in the file name suggests
+defined using a portion of the ``updet.tile_300010003.spin_0.tw_0.g0.bandinfo.dat`` file. Spin_0 in the file name suggests
 that we are reading the spin-up eigenstates. Band, state, twistindex,
 and bandindex numbers all start from zero. We know we have 72 electrons
 in the simulation cell, with 36 of them spin-up polarized. Since the
@@ -454,15 +454,15 @@ transition can be defined as from (0,3) to (4,4).
 
 Alternatively, we can also read the band and twist indexes using PwscfAnalyzer and determine the band/twist indexes on the go:
 
-::
+.. code-block:: python
 
   p = nscf.load_analyzer_image()
-  print 'band information'
-  print p.bands.up
-  print 'twist 0 k-point:',p.bands.up[0].kpoint_rel
-  print 'twist 4 k-point:',p.bands.up[4].kpoint_rel
-  print 'twist 0 band 3 eigenvalue:',p.bands.up[0].eigs[3]
-  print 'twist 4 band 4 eigenvalue:',p.bands.up[4].eigs[4]
+  print('band information')
+  print(p.bands.up)
+  print('twist 0 k-point:',p.bands.up[0].kpoint_rel)
+  print('twist 4 k-point:',p.bands.up[4].kpoint_rel)
+  print('twist 0 band 3 eigenvalue:',p.bands.up[0].eigs[3])
+  print('twist 4 band 4 eigenvalue:',p.bands.up[4].eigs[4])
 
 Giving output:
 
@@ -560,7 +560,7 @@ A typical workflow for a quasiparticle calculation includes the following:
 #. Check the convergence of the quasiparticle gap with respect to the
    simulation cell size.
 
-::
+.. code-block:: xml
 
   <particleset name="e" random="yes">
     <group name="u" size="36" mass="1.0"> ##Change size to 35
@@ -584,7 +584,7 @@ Going back to :eq:`eq77`, we can see that it is essential to include VBM and CBM
 Therefore, the added electron will sit at CBM while the subtracted electron will be removed from VBM.
 However, for the charged cell calculations, we may need to make changes in the input files for the fourth step.  Alternatively, in the quasiparticle.py file, the changes in the QMC input are shown for a negatively charged system:
 
-::
+.. code-block:: python
 
   qmc.input.simulation.qmcsystem.particlesets.e.groups.u.size +=1
   (qmc.input.simulation.qmcsystem.wavefunction.determinantset
@@ -594,7 +594,7 @@ Here, the number of up electrons are increased by one (negatively charged system
 
 QE uses symmetry to reduce the number of k-points required for the calculation.
 Therefore, all symmetry tags in QE (``nosym``, ``noinv``, and ``nosym_evc``) must be set to false.
-An easy way to check whether this is the case is to see that all KmK values ``einspline`` files are equal to 1.
+An easy way to check whether this is the case is to see that all KmK values ``bandinfo`` files are equal to 1.
 Previously, the input for the neutral cell is given, while the changes are denoted as comments for the positively charged cell.
 Note that we have used ``det_format      = "old"`` in the ``vmc_+/-e.py`` files.
 
@@ -611,7 +611,7 @@ gap calculations. Here, the modified input file is given for the
 :math:`\Gamma\rightarrow\Delta'` transition, which can be compared with
 the ground state input file in the previous section.
 
-::
+.. code-block:: xml
 
   <determinantset>
     <slaterdeterminant>
@@ -638,7 +638,7 @@ After resubmitting the batch job, in the output, you should be able to see the f
   We will read 36 distinct orbitals.
   There are 0 core states and 36 valence states.
 
-And the ``einspline.tile_300010003.spin_0.tw_0.g0.bandinfo.dat`` file must be changed in the following way:
+And the ``updet.tile_300010003.spin_0.tw_0.g0.bandinfo.dat`` file must be changed in the following way:
 
 ::
 
@@ -652,7 +652,7 @@ And the ``einspline.tile_300010003.spin_0.tw_0.g0.bandinfo.dat`` file must be ch
 
 Alternatively, the excitations within Nexus can be defined as shown in the ``optical.py`` file:
 
-::
+.. code-block:: python
 
   qmc = generate_qmcpack(
       ...

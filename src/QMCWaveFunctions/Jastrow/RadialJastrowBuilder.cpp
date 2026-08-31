@@ -55,9 +55,8 @@ public:
 };
 
 RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
-    : WaveFunctionComponentBuilder(comm, target), SourcePtcl(&source)
+    : WaveFunctionComponentBuilder(comm, target, "RadialJastrowBuilder"), SourcePtcl(&source)
 {
-  ClassName    = "RadialJastrowBuilder";
   NameOpt      = "0";
   TypeOpt      = "unknown";
   Jastfunction = "unknown";
@@ -65,9 +64,8 @@ RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& targe
 }
 
 RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& target)
-    : WaveFunctionComponentBuilder(comm, target), SourcePtcl(NULL)
+    : WaveFunctionComponentBuilder(comm, target, "RadialJastrowBuilder"), SourcePtcl(NULL)
 {
-  ClassName    = "RadialJastrowBuilder";
   NameOpt      = "0";
   TypeOpt      = "unknown";
   Jastfunction = "unknown";
@@ -132,7 +130,7 @@ void RadialJastrowBuilder::initTwoBodyFunctor(BsplineFunctor<RealType>& bfunc, d
 template<class RadFuncType, unsigned Implementation>
 std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "createJ2(xmlNodePtr)");
+  ReportEngine PRE(class_name_, "createJ2(xmlNodePtr)");
   using Real   = typename RadFuncType::real_type;
   using J2Type = typename JastrowTypeHelper<RadFuncType, Implementation>::J2Type;
 
@@ -316,7 +314,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2<RPAFunctor
 template<class RadFuncType, bool SPIN, unsigned Implementation>
 std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "createJ1(xmlNodePtr)");
+  ReportEngine PRE(class_name_, "createJ1(xmlNodePtr)");
   using Real   = typename RadFuncType::real_type;
   using TH     = JastrowTypeHelper<RadFuncType, Implementation>;
   using J1Type = typename std::conditional<SPIN, typename TH::J1SpinType, typename TH::J1Type>::type;
@@ -507,7 +505,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
 
 std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlNodePtr cur)
 {
-  ReportEngine PRE(ClassName, "put(xmlNodePtr)");
+  ReportEngine PRE(class_name_, "put(xmlNodePtr)");
   std::string useGPU;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(NameOpt, "name");

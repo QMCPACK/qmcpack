@@ -82,7 +82,8 @@ WaveFunctionPool MinimalWaveFunctionPool::make_diamondC_1x1x1(const RuntimeOptio
   WaveFunctionPool wp(runtime_options, particle_pool, comm);
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_input);
+  if (!doc.parseFromString(wf_input))
+    throw std::runtime_error("make_diamondC_1x1x1 invalid xml");
 
   xmlNodePtr root = doc.getRoot();
 
@@ -98,7 +99,8 @@ WaveFunctionPool MinimalWaveFunctionPool::make_O2_spinor(const RuntimeOptions& r
   WaveFunctionPool wp(runtime_options, particle_pool, comm);
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_input_spinor);
+  if (!doc.parseFromString(wf_input_spinor))
+    throw std::runtime_error("make_O2_spinor invalid xml");
 
   xmlNodePtr root = doc.getRoot();
 
@@ -114,7 +116,8 @@ WaveFunctionPool MinimalWaveFunctionPool::make_O2_spinor_J12(const RuntimeOption
   WaveFunctionPool wp(runtime_options, particle_pool, comm);
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_input_spinor_J12);
+  if (!doc.parseFromString(wf_input_spinor_J12))
+    throw std::runtime_error("make_O2_spinor_J12 invalid xml");
 
   xmlNodePtr root = doc.getRoot();
 

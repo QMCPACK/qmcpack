@@ -99,10 +99,6 @@ struct LRRPAHandlerTemp : public LRHandlerBase
     LR_rc = Basis.get_rc();
   }
 
-  void resetTargetParticleSet(ParticleSet& ref) override { myFunc.reset(ref); }
-
-  void resetTargetParticleSet(ParticleSet& ref, mRealType rs) { myFunc.reset(ref, rs); }
-
   inline mRealType evaluate(mRealType r, mRealType rinv) const override
   {
     mRealType v = 0.0;

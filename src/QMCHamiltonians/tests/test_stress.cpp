@@ -8,9 +8,8 @@
 //
 // File created by: Yubo "Paul" Yang, yyang173@illinois.edu, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -76,10 +75,10 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   LRCoulombSingleton::CoulombDerivHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombDerivHandler->initBreakup(ions);
 
-  StressPBC est(ions, elec, psi);
+  StressPBC est(ions, elec);
 
   elec.update();
-  est.evaluate(elec);
+  est.evaluate(psi, elec);
 
   // i-i = e-e stress is validated against Quantum Espresso's ewald method
   //  they are also double checked using finite-difference

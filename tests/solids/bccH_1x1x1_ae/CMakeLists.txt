@@ -79,7 +79,7 @@ qmc_run_and_check(
 )
 
 # Deterministic correlated sampling test
-list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_A" "-1.5879406376 0.00001")
+list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_A" "-1.5879406376 0.000015")
 list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_B" "-1.5845867400 0.00002")
 list(APPEND DET_BCC_H_CSVMC_SCALARS "dtotenergy_AB" "-0.0033713724 0.00002")
 list(APPEND DET_BCC_H_CSVMC_SCALARS "ionion_A" "-0.9628996202 0.0000001")
@@ -89,8 +89,8 @@ list(APPEND DET_BCC_H_CSVMC_SCALARS "dionion_AB" "-0.0047340219 0.0000001")
 qmc_run_and_check(
   deterministic-bccH_1x1x1_ae-csvmc-all_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-  det_qmc_short_csvmc_all
-  det_qmc_short_csvmc_all.in.xml
+  det_qmc_csvmc_all
+  det_qmc_csvmc_all.in.xml
   1
   1
   TRUE

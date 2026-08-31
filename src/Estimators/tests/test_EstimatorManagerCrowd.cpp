@@ -8,9 +8,8 @@
 //
 // File refactored from: Refactored from test_manager.cpp
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -38,14 +37,13 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
-
   auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset            = *(particle_pool.getParticleSet("e"));
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
-  auto& ham             = *(hamiltonian_pool.getPrimary());
+  TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
+  QMCHamiltonian& ham(hamiltonian_pool.getHamiltonian().value());
 
   EstimatorManagerNew emn(ham, comm);
   emn.constructEstimators(std::move(emi), pset, twf, ham, particle_pool.getPool());
@@ -71,10 +69,10 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto& pset = *(particle_pool.getParticleSet("e"));
   // This is where the pset properties "properies" gain the different hamiltonian operator values.
-  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::makeHamWithEI(comm, particle_pool, wavefunction_pool);
 
-  auto& twf = *(wavefunction_pool.getWaveFunction("wavefunction"));
-  auto& ham = *(hamiltonian_pool.getPrimary());
+  TrialWaveFunction& twf(wavefunction_pool.getWaveFunction().value());
+  QMCHamiltonian& ham(hamiltonian_pool.getHamiltonian().value());
 
   ham.informOperatorsOfListener();
 
@@ -93,16 +91,14 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   UPtrVector<TrialWaveFunction> twfs;
   std::vector<ParticleSet> psets;
 
-  int num_walkers   = 4;
-  int num_electrons = particle_pool.getParticleSet("e")->getTotalNum();
-  int num_ions      = particle_pool.getParticleSet("ion")->getTotalNum();
+  int num_walkers = 4;
 
   for (int iw = 0; iw < num_walkers; ++iw)
   {
     psets.emplace_back(pset);
     psets.back().randomizeFromSource(*particle_pool.getParticleSet("ion"));
     twfs.emplace_back(twf.makeClone(psets.back()));
-    hams.emplace_back(hamiltonian_pool.getPrimary()->makeClone(psets.back(), *twfs.back()));
+    hams.emplace_back(ham.makeClone(psets.back(), *twfs.back()));
   }
 
   EstimatorManagerCrowd emc(emn);
@@ -132,7 +128,6 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
 
   auto twf_refs = convertUPtrToRefVector(twfs);
   RefVectorWithLeader<TrialWaveFunction> twf_list{twf_refs[0], twf_refs};
-
   ResourceCollection wfc_res("test_wfc_res");
   twf_list.getLeader().createResource(wfc_res);
   ResourceCollectionTeamLock<TrialWaveFunction> mw_wfc_lock(wfc_res, twf_list);
@@ -152,7 +147,7 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   // Without this QMCHamiltonian::mw_evaluate segfaults
   // Because the CoulombPBCAA hamiltonian component has PtclRhoK (StructFact) that is invalid.
   ParticleSet::mw_update(p_list);
-
+  TrialWaveFunction::mw_evaluateLog(twf_list, p_list);
   QMCHamiltonian::mw_evaluate(ham_list, twf_list, p_list);
 
   auto savePropertiesIntoWalker = [](QMCHamiltonian& ham, MCPWalker& walker) {

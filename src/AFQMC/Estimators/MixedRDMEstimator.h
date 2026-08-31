@@ -130,8 +130,8 @@ public:
         std::string padded_iblock = std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
 
         using std::get;
-        boost::multi::array_ref<ComplexType, 1> wOvlp_(wOvlp.origin(), {get<0>(wOvlp.sizes()) * get<1>(wOvlp.sizes())});
-        boost::multi::array_ref<ComplexType, 1> wDMsum_(wDMsum.origin(), {get<0>(wDMsum.sizes()) * get<1>(wDMsum.sizes())});
+        boost::multi::array_ref<ComplexType, 1> wOvlp_(wOvlp.base(), {get<0>(wOvlp.sizes()) * get<1>(wOvlp.sizes())});
+        boost::multi::array_ref<ComplexType, 1> wDMsum_(wDMsum.base(), {get<0>(wDMsum.sizes()) * get<1>(wDMsum.sizes())});
         dump.write(DMAverage, "one_rdm_" + padded_iblock);
         dump.write(denom_average, "one_rdm_denom_" + padded_iblock);
         dump.write(wOvlp_, "one_rdm_walker_overlaps_" + padded_iblock);
