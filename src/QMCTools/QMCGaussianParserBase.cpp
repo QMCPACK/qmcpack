@@ -70,6 +70,7 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       FixValence(false),
       singledetH5(false),
       optDetCoeffs(false),
+      degenerated(false),
       usingCSF(false),
       isSpinor(false),
       NumberOfAtoms(0),
@@ -135,6 +136,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       FixValence(false),
       singledetH5(false),
       optDetCoeffs(false),
+      degenerated(false),
       usingCSF(false),
       isSpinor(false),
       NumberOfAtoms(0),
@@ -1041,17 +1043,25 @@ void QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
 xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL, (const xmlChar*)"multideterminant");
-  if (optDetCoeffs)
+  if (optDetCoeffs) {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
-  else
+  } else {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
-  if (isSpinor)
+  }
+
+  if (isSpinor) {
     xmlNewProp(multislaterdet, (const xmlChar*)"spo_0", (const xmlChar*)"spo-up");
-  else
-  {
+  } else {
     xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
     xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
   }
+
+  if (degenerated) {
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"yes");
+  } else {
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"no");
+  }
+
   xmlNodePtr detlist = xmlNewNode(NULL, (const xmlChar*)"detlist");
   std::ostringstream nstates, cisize, cinca, cincb, cinea, cineb, ci_thr;
   cisize << ci_size;
@@ -1170,10 +1180,19 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
 xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL, (const xmlChar*)"multideterminant");
-  if (optDetCoeffs)
+  if (optDetCoeffs) {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
-  else
+  } else {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
+  }
+
+  if (degenerated) {
+    std::cout << "The degeneracy of the CI coefficients will be kept during optimization. " << std::endl;
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"yes");
+  } else {
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"no");
+  }
+
   xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
   xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
   if (usingCSF)
@@ -1241,6 +1260,7 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
     std::vector<std::pair<double, int>>::reverse_iterator it(order.rbegin());
     std::vector<std::pair<double, int>>::reverse_iterator last(order.rend());
     int iv = 0;
+    int csf_id = 0;
     while (it != last)
     {
       int nq         = (*it).second;
@@ -1262,31 +1282,100 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
       {
         coeff << coeff2csf[nq].second;
       }
-      std::ostringstream tag;
-      tag << "CSFcoeff_" << iv;
-      xmlNewProp(csf, (const xmlChar*)"id", (const xmlChar*)tag.str().c_str());
-      xmlNewProp(csf, (const xmlChar*)"exctLvl", (const xmlChar*)exct.str().c_str());
-      xmlNewProp(csf, (const xmlChar*)"coeff", (const xmlChar*)coeff.str().c_str());
-      xmlNewProp(csf, (const xmlChar*)"qchem_coeff", (const xmlChar*)qc_coeff.str().c_str());
-      xmlNewProp(csf, (const xmlChar*)"occ", (const xmlChar*)CSFocc[nq].substr(0, ci_nstates).c_str());
-      for (int i = 0; i < CSFexpansion[nq].size(); i++)
+
+      static std::string last_written_value;
+      static xmlNodePtr last_csf_node = nullptr;
+      static int last_csf_index = -1;
+      static int last_csf_next_det = 0;
+      
+      bool skip_csf_header = false;
+      int start_det_index = 0;
+      int csf_index_for_dets = iv;
+      
+      if (degenerated)
       {
-        xmlNodePtr ci = xmlNewNode(NULL, (const xmlChar*)"det");
-        std::ostringstream coeff0;
-        coeff0 << CSFexpansion[nq][i];
-        std::ostringstream tag0;
-        tag0 << "csf_" << iv << "-" << i;
-        xmlNewProp(ci, (const xmlChar*)"id", (const xmlChar*)tag0.str().c_str());
-        xmlNewProp(ci, (const xmlChar*)"coeff", (const xmlChar*)coeff0.str().c_str());
-        xmlNewProp(ci, (const xmlChar*)"alpha", (const xmlChar*)CSFalpha[nq][i].substr(0, ci_nstates).c_str());
-        xmlNewProp(ci, (const xmlChar*)"beta", (const xmlChar*)CSFbeta[nq][i].substr(0, ci_nstates).c_str());
-        xmlAddChild(csf, ci);
+        double current_val = std::stod(qc_coeff.str());
+        double last_val = last_written_value.empty() ? 0.0 : std::stod(last_written_value);
+        if (std::abs(current_val) == std::abs(last_val))
+        {
+          skip_csf_header = true;
+          csf_index_for_dets = last_csf_index;
+          start_det_index = last_csf_next_det;
+        }
+        else
+        {
+          last_written_value = qc_coeff.str();
+        }
       }
-      xmlAddChild(detlist, csf);
-      it++;
-      iv++;
+      
+      xmlNodePtr csf_node = nullptr;
+      
+      if (!skip_csf_header)
+      {
+        csf_node = xmlNewNode(NULL, (const xmlChar*)"csf");
+      
+        std::string id_str = "CSFcoeff_" + std::to_string(csf_id);
+      
+        xmlNewProp(csf_node, (const xmlChar*)"id", (const xmlChar*)id_str.c_str());
+        xmlNewProp(csf_node, (const xmlChar*)"exctLvl", (const xmlChar*)exct.str().c_str());
+        xmlNewProp(csf_node, (const xmlChar*)"coeff", (const xmlChar*)coeff.str().c_str());
+        xmlNewProp(csf_node, (const xmlChar*)"qchem_coeff", (const xmlChar*)(degenerated ? last_written_value.c_str() : qc_coeff.str().c_str()));
+        xmlNewProp(csf_node, (const xmlChar*)"occ", (const xmlChar*)CSFocc[nq].substr(0, ci_nstates).c_str());
+      
+        xmlAddChild(detlist, csf_node);
+      
+        last_csf_node = csf_node;
+        last_csf_index = csf_id;
+        last_csf_next_det = 0;
+        start_det_index = 0;
+      
+        csf_index_for_dets = csf_id;
+        ++csf_id;
+      }
+      else
+      {
+        csf_node = last_csf_node;
+      }
+
+      std::string parent_qchem_coeff_str = degenerated ? last_written_value : qc_coeff.str();
+      double parent_qchem_coeff_val = std::stod(parent_qchem_coeff_str);
+      
+      int det_index = start_det_index;
+      for (int i = 0; i < (int)CSFexpansion[nq].size(); ++i)
+      {
+          xmlNodePtr ci = xmlNewNode(NULL, (const xmlChar*)"det");
+      
+          std::string det_id_str = "csf_" + std::to_string(csf_index_for_dets) + "-" + std::to_string(det_index);
+          double det_coeff_val = CSFexpansion[nq][i];
+          std::string coeff_str = std::to_string(det_coeff_val);
+      
+          xmlNewProp(ci, (const xmlChar*)"id", (const xmlChar*)det_id_str.c_str());
+          if (parent_qchem_coeff_str != qc_coeff.str())
+          {
+            std::string neg_qc = std::to_string(-std::stod(coeff_str.c_str()));
+            xmlNewProp(ci, (const xmlChar*)"coeff", (const xmlChar*)neg_qc.c_str());
+          }
+          else
+          {
+          xmlNewProp(ci, (const xmlChar*)"coeff", (const xmlChar*)coeff_str.c_str());
+          }
+          xmlNewProp(ci, (const xmlChar*)"alpha", (const xmlChar*)CSFalpha[nq][i].substr(0, ci_nstates).c_str());
+          xmlNewProp(ci, (const xmlChar*)"beta", (const xmlChar*)CSFbeta[nq][i].substr(0, ci_nstates).c_str());
+      
+          if (csf_node) xmlAddChild(csf_node, ci);
+          ++det_index;
+      }
+      
+      if (csf_node == last_csf_node)
+        last_csf_next_det = det_index;
+      
+      ++it;
+      ++iv;
     }
+   
     xmlAddChild(multislaterdet, detlist);
+
+    xmlSetProp(detlist, BAD_CAST "size", BAD_CAST std::to_string(csf_id).c_str());
   }
   else
   // usingCSF
@@ -1343,18 +1432,43 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSet()
         {
           coeff << CIcoeff[i];
         }
-        std::ostringstream tag;
-        tag << "CIcoeff_" << iv++;
-        xmlNewProp(ci, (const xmlChar*)"id", (const xmlChar*)tag.str().c_str());
-        xmlNewProp(ci, (const xmlChar*)"coeff", (const xmlChar*)coeff.str().c_str());
-        xmlNewProp(ci, (const xmlChar*)"qc_coeff", (const xmlChar*)qc_coeff.str().c_str());
-        xmlNewProp(ci, (const xmlChar*)"alpha", (const xmlChar*)CIalpha[i].substr(0, ci_nstates).c_str());
-        xmlNewProp(ci, (const xmlChar*)"beta", (const xmlChar*)CIbeta[i].substr(0, ci_nstates).c_str());
-        xmlAddChild(detlist, ci);
-      }
-    }
+
+        static std::string last_written_value;
+        bool should_write = true;
+  
+        if(degenerated)
+        {
+          double current_val = std::stod(qc_coeff.str());
+          double last_val = last_written_value.empty() ? 0.0 : std::stod(last_written_value);
+          if (std::abs(current_val) == std::abs(last_val))
+          {
+            should_write = false;
+          }
+          else
+          {
+            should_write = true;
+          }
+        }
+  
+        if (should_write)
+        {
+          xmlNodePtr ci = xmlNewNode(NULL, (const xmlChar*)"ci");
+          std::ostringstream tag;
+          tag << "CIcoeff_" << iv++;
+          xmlNewProp(ci, (const xmlChar*)"id", (const xmlChar*)tag.str().c_str());
+          xmlNewProp(ci, (const xmlChar*)"coeff", (const xmlChar*)coeff.str().c_str());
+          xmlNewProp(ci, (const xmlChar*)"qc_coeff", (const xmlChar*)qc_coeff.str().c_str());
+          xmlNewProp(ci, (const xmlChar*)"alpha", (const xmlChar*)CIalpha[i].substr(0, ci_nstates).c_str());
+          xmlNewProp(ci, (const xmlChar*)"beta", (const xmlChar*)CIbeta[i].substr(0, ci_nstates).c_str());
+          xmlAddChild(detlist, ci);
+
+          last_written_value = qc_coeff.str();
+       }
+     }
     xmlAddChild(multislaterdet, detlist);
-  } //usingCSF
+    xmlSetProp(detlist, BAD_CAST "size", BAD_CAST std::to_string(iv).c_str());
+    }
+  }
   return multislaterdet;
 }
 
@@ -2603,10 +2717,18 @@ void QMCGaussianParserBase::PrepareSPOSetsFromH5(xmlNodePtr spoUP, xmlNodePtr sp
 xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetFromH5()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL, (const xmlChar*)"multideterminant");
-  if (optDetCoeffs)
+  if (optDetCoeffs) {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"yes");
-  else
+  } else {
     xmlNewProp(multislaterdet, (const xmlChar*)"optimize", (const xmlChar*)"no");
+  }
+
+  if (degenerated) {
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"yes");
+  } else {
+    xmlNewProp(multislaterdet, (const xmlChar*)"degenerated", (const xmlChar*)"no");
+  }
+  
   xmlNewProp(multislaterdet, (const xmlChar*)"spo_up", (const xmlChar*)"spo-up");
   xmlNewProp(multislaterdet, (const xmlChar*)"spo_dn", (const xmlChar*)"spo-dn");
   xmlNodePtr detlist = xmlNewNode(NULL, (const xmlChar*)"detlist");
