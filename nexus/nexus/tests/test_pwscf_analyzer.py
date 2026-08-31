@@ -1,3 +1,4 @@
+import re
 import pytest
 from copy import deepcopy
 from . import NexusTestOrder
@@ -8,44 +9,366 @@ from . import TEST_DIR
 from ..testing import object_eq
 
 
+@pytest.mark.parametrize('text',(
+    '0','+7','-12','1.0','3.','.5','-.75','1e3','-2.5E-4',
+    '+6D+02','7d-1',
+    ))
+def test_number_pattern_matches(text):
+    from ..pwscf_analyzer import number_pattern
+
+    assert(re.fullmatch(number_pattern,text) is not None)
+#end def test_number_pattern_matches
+
+
+@pytest.mark.parametrize('text',(
+    '','.','+','1e','1.2.3','abc123','NaN','Inf','--1','1_000',
+    ))
+def test_number_pattern_rejects(text):
+    from ..pwscf_analyzer import number_pattern
+
+    assert(re.fullmatch(number_pattern,text) is None)
+#end def test_number_pattern_rejects
+
+
+@pytest.mark.parametrize('pattern_name,text,expected',(
+    (
+        'leading_number_list_pattern',
+        '  -5.3120  1.2470  4.9810',
+        dict(values='-5.3120  1.2470  4.9810'),
+        ),
+    (
+        'leading_number_list_pattern',
+        '0.0488-0.0345 0.0345  convergence achieved',
+        dict(values='0.0488-0.0345 0.0345'),
+        ),
+    (
+        'numeric_text_pattern',
+        ' 0.0 0.5 -0.5 ',
+        dict(values='0.0 0.5 -0.5'),
+        ),
+    (
+        'numeric_text_pattern',
+        '1.0D+00\n 0.0D+00',
+        dict(values='1.0D+00\n 0.0D+00'),
+        ),
+    (
+        'vector3_pattern',
+        '  1.0 0.0 0.0',
+        dict(x='1.0',y='0.0',z='0.0'),
+        ),
+    (
+        'vector3_pattern',
+        '-2.5D-01  .500000  0.  fourth-column',
+        dict(x='-2.5D-01',y='.500000',z='0.'),
+        ),
+    (
+        'kpoint_table_pattern',
+        '     k( 1) = ( 0.0000000 0.0000000 0.0000000), wk = 0.2500000',
+        dict(kx='0.0000000',ky='0.0000000',kz='0.0000000',weight='0.2500000'),
+        ),
+    (
+        'kpoint_table_pattern',
+        'k(12)=(.5 -.5 5.0D-1), wk=1.0D+00',
+        dict(kx='.5',ky='-.5',kz='5.0D-1',weight='1.0D+00'),
+        ),
+    (
+        'band_kpoint_pattern',
+        '     k = 0.0000 0.0000 -0.7071 ( 2138 PWs) bands (ev):',
+        dict(kx='0.0000',ky='0.0000',kz='-0.7071'),
+        ),
+    (
+        'band_kpoint_pattern',
+        'k = 0.0488-0.0345 0.0345 ( 42052 PWs) bands (ev):',
+        dict(kx='0.0488',ky='-0.0345',kz='0.0345'),
+        ),
+    (
+        'band_kpoint_pattern',
+        'k =-0.3536 0.3536-0.3536 ( 2138 PWs) bands (ev):',
+        dict(kx='-0.3536',ky='0.3536',kz='-0.3536'),
+        ),
+    (
+        'total_energy_pattern',
+        '     total energy              =    -168.12345678 Ry',
+        dict(energy='-168.12345678'),
+        ),
+    (
+        'total_energy_pattern',
+        '!    total energy = -1.0D+02 Ry',
+        dict(energy='-1.0D+02'),
+        ),
+    (
+        'scf_accuracy_pattern',
+        '     estimated scf accuracy    <       6.3E-09 Ry',
+        dict(accuracy='6.3E-09'),
+        ),
+    (
+        'scf_accuracy_pattern',
+        'estimated scf accuracy = 1.2D-10 Ry',
+        dict(accuracy='1.2D-10'),
+        ),
+    (
+        'kinetic_energy_pattern',
+        '     kinetic energy (Ekin) =           0.00285013 Ry',
+        dict(kinetic_energy='0.00285013'),
+        ),
+    (
+        'kinetic_energy_pattern',
+        'kinetic energy=2.85D-03 Ry',
+        dict(kinetic_energy='2.85D-03'),
+        ),
+    (
+        'temperature_pattern',
+        '     temperature           =         300.00000000 K ',
+        dict(temperature='300.00000000'),
+        ),
+    (
+        'temperature_pattern',
+        'temperature=2.5D+02 K',
+        dict(temperature='2.5D+02'),
+        ),
+    (
+        'ekin_temperature_pattern',
+        'Ekin = .00285 Ry T = 300.0 K Etot = -15.0 Ry',
+        dict(kinetic_energy='.00285',temperature='300.0'),
+        ),
+    (
+        'ekin_temperature_pattern',
+        '  Ekin=2.8D-03 Ry  T=0.0 K',
+        dict(kinetic_energy='2.8D-03',temperature='0.0'),
+        ),
+    (
+        'md_time_pattern',
+        '                           time      =   0.0002 pico-seconds',
+        dict(time='0.0002'),
+        ),
+    (
+        'md_time_pattern',
+        'Entering Dynamics; it = 1 time = 0.00000 ps',
+        dict(time='0.00000'),
+        ),
+    (
+        'pressure_pattern',
+        'total stress (Ry/bohr**3) (kbar) P= -170.96',
+        dict(pressure='-170.96'),
+        ),
+    (
+        'pressure_pattern',
+        'total   stress  (Ry/bohr**3) (kbar) P = 1.2D+03 ',
+        dict(pressure='1.2D+03'),
+        ),
+    (
+        'volume_pattern',
+        '     unit-cell volume          =     380.6210 (a.u.)^3',
+        dict(volume='380.6210'),
+        ),
+    (
+        'volume_pattern',
+        'unit-cell volume=3.806210D+02 a.u.^3',
+        dict(volume='3.806210D+02'),
+        ),
+    (
+        'alat_pattern',
+        'CELL_PARAMETERS (alat= 10.20)',
+        dict(alat='10.20'),
+        ),
+    (
+        'alat_pattern',
+        'CELL_PARAMETERS (alat = 1.0D+01)',
+        dict(alat='1.0D+01'),
+        ),
+    (
+        'atomic_force_pattern',
+        'atom 1 type 2 force = -0.001 0.002 0.000',
+        dict(atom='1',type='2',fx='-0.001',fy='0.002',fz='0.000'),
+        ),
+    (
+        'atomic_force_pattern',
+        'atom 12 type 1 force=1.0D-03 -2.0D-03 .0',
+        dict(atom='12',type='1',fx='1.0D-03',fy='-2.0D-03',fz='.0'),
+        ),
+    (
+        'total_force_pattern',
+        'Total force = 0.173046 Total SCF correction = 0.001',
+        dict(total_force='0.173046'),
+        ),
+    (
+        'total_force_pattern',
+        'Total force=1.25D-04',
+        dict(total_force='1.25D-04'),
+        ),
+    (
+        'stress_row_pattern',
+        ' -.001 0.0 .001 -147.1 0.0 147.1',
+        dict(sxx='-.001',sxy='0.0',sxz='.001',kxx='-147.1',kxy='0.0',kxz='147.1'),
+        ),
+    (
+        'stress_row_pattern',
+        '1D-3 2D-3 3D-3 1E+2 2E+2 3E+2 trailing',
+        dict(sxx='1D-3',sxy='2D-3',sxz='3D-3',kxx='1E+2',kxy='2E+2',kxz='3E+2'),
+        ),
+    (
+        'timing_value_pattern',
+        '4m33.69s',
+        dict(value='4',unit='m'),
+        ),
+    (
+        'timing_value_pattern',
+        '1h 2m 3.5s',
+        dict(value='1',unit='h'),
+        ),
+    (
+        'fermi_energies_pattern',
+        '     the Fermi energy is    10.1198 ev',
+        dict(values='10.1198'),
+        ),
+    (
+        'fermi_energies_pattern',
+        'the Fermi energy          =      -3.22772442 eV',
+        dict(values='-3.22772442'),
+        ),
+    (
+        'fermi_energies_pattern',
+        'the spin up/dw Fermi energies are 5.1 5.2 EV',
+        dict(values='5.1 5.2'),
+        ),
+    ))
+def test_tailored_pattern_matches(pattern_name,text,expected):
+    from .. import pwscf_analyzer as pa_module
+
+    pattern = getattr(pa_module,pattern_name)
+    match   = re.search(pattern,text)
+    assert(match is not None)
+    for name,value in expected.items():
+        assert(match.group(name)==value)
+    #end for
+#end def test_tailored_pattern_matches
+
+
+@pytest.mark.parametrize('pattern_name,text',(
+    ('leading_number_list_pattern','bands: 1.0 2.0'),
+    ('leading_number_list_pattern','occupation numbers'),
+    ('numeric_text_pattern','0.5-0.5'),
+    ('numeric_text_pattern','1.0 Ry'),
+    ('numeric_text_pattern','weight=1.0'),
+    ('vector3_pattern','1.0 0.0'),
+    ('vector3_pattern','1.0-0.5 0.0'),
+    ('kpoint_table_pattern','k(1) = (0.0 0.0), wk = 1.0'),
+    ('kpoint_table_pattern','k(1) = (0.0 0.0 0.0) weight = 1.0'),
+    ('kpoint_table_pattern','k(1) = (0.0 0.0 0.0), wk = missing'),
+    ('band_kpoint_pattern','k = 0.0 0.0 (2138 PWs) bands (ev):'),
+    ('band_kpoint_pattern','k-point = 0.0 0.0 0.0 (2138 PWs)'),
+    ('band_kpoint_pattern','k = 0.0 0.0 0.0 bands (ev):'),
+    ('total_energy_pattern','total energy = -168.1 eV'),
+    ('total_energy_pattern','total energy is -168.1 Ry'),
+    ('scf_accuracy_pattern','estimated scf accuracy 6.3E-09 Ry'),
+    ('scf_accuracy_pattern','estimated accuracy < 6.3E-09 Ry'),
+    ('kinetic_energy_pattern','kinetic energy = 0.00285 eV'),
+    ('kinetic_energy_pattern','Ekin = 0.00285 Ry'),
+    ('temperature_pattern','Starting temperature = 300.0 K'),
+    ('temperature_pattern','temperature = 300.0'),
+    ('ekin_temperature_pattern','Ekin = .00285 Ry'),
+    ('ekin_temperature_pattern','T = 300.0 K Ekin = .00285 Ry'),
+    ('ekin_temperature_pattern','Ekin = .00285 Ry T = 300.0'),
+    ('md_time_pattern','Entering Dynamics: iteration = 1'),
+    ('md_time_pattern','time = 0.0002'),
+    ('pressure_pattern','total stress pressure = -170.96'),
+    ('pressure_pattern','total stress p = -170.96'),
+    ('volume_pattern','new unit-cell volume: 380.6210'),
+    ('volume_pattern','cell volume = 380.6210'),
+    ('alat_pattern','CELL_PARAMETERS (alat: 10.20)'),
+    ('alat_pattern','CELL_PARAMETERS (celldm(1)=10.20)'),
+    ('atomic_force_pattern','atom 1 type 2 force = -0.001 0.002'),
+    ('atomic_force_pattern','Total force = 0.173046'),
+    ('atomic_force_pattern','atom 1 force = -0.001 0.002 0.000'),
+    ('total_force_pattern','atom 1 type 2 force = 0.1 0.2 0.3'),
+    ('total_force_pattern','total force = 0.173046'),
+    ('stress_row_pattern','-.001 0.0 .001 -147.1 0.0'),
+    ('stress_row_pattern','stress: -.001 0.0 .001 -147.1 0.0 147.1'),
+    ('stress_row_pattern','-.001 0.0.001 -147.1 0.0 147.1'),
+    ('timing_value_pattern','CPU time = 12'),
+    ('timing_value_pattern','12ms'),
+    ('fermi_energies_pattern','the Fermi energy is 10.1198'),
+    ('fermi_energies_pattern','the Fermi energies are 5.1 5.2 5.3 eV'),
+    ('fermi_energies_pattern','highest occupied level is 10.1198 eV'),
+    ('fermi_energies_pattern','Fermi energy convergence was reached'),
+    ))
+def test_tailored_pattern_rejects(pattern_name,text):
+    from .. import pwscf_analyzer as pa_module
+
+    pattern = getattr(pa_module,pattern_name)
+    assert(re.search(pattern,text) is None)
+#end def test_tailored_pattern_rejects
+
+
+@pytest.mark.parametrize('text,expected',(
+    ('4m33.69s',(('4','m'),('33.69','s'))),
+    ('1h 2m 3.5s',(('1','h'),('2','m'),('3.5','s'))),
+    ('0.10s',(('0.10','s'),)),
+    ))
+def test_timing_value_sequence(text,expected):
+    from ..pwscf_analyzer import timing_value_pattern
+
+    values = tuple(
+        (match.group('value'),match.group('unit'))
+        for match in re.finditer(timing_value_pattern,text)
+        )
+    assert(values==expected)
+#end def test_timing_value_sequence
+
+
 def test_empty_init():
     from .. import pwscf_analyzer as pa_module
-    from ..pwscf_analyzer import PwscfAnalyzer
+    from ..pwscf_analyzer import Pw2CasinoAnalyzer, PwscfAnalyzer, PwscfOutData
 
     pa = PwscfAnalyzer()
-    assert('results_out' in pa)
-    assert(pa.results_out is None)
-    assert(pa.results_xml is None)
-    assert(all(value is False for value in pa.info.data_status.values()))
-    free_helpers = ('match_float','read_kpoint_tables')
+    assert(len(pa)==0)
+    free_helpers = ('match_float',)
     for name in free_helpers:
         assert(callable(getattr(pa_module,name)))
         assert(not hasattr(PwscfAnalyzer,name))
     #end for
+    assert(not hasattr(pa_module,'read_kpoint_tables'))
+    reader_names = (
+        'read_calculation','read_md','read_fermi_energies',
+        'read_energies','read_scf_convergence','read_bands',
+        'read_band_edges','read_structures','read_pressure_volume',
+        'read_stress','read_forces','read_timing','read_kpoints',
+        )
+    assert(all(callable(getattr(PwscfOutData,name)) for name in reader_names))
+    assert(not hasattr(PwscfOutData,'read'))
+    assert(not any(hasattr(PwscfAnalyzer,'analyze_'+name[5:]) for name in reader_names))
+    assert(not hasattr(PwscfOutData,'read_pw2casino'))
+    assert(not hasattr(PwscfAnalyzer,'analyze_pw2casino'))
+    assert(not hasattr(Pw2CasinoAnalyzer,'read'))
 #end def test_empty_init
 
 
-@pytest.mark.parametrize('calculation',('scf','nscf','bands','relax','vc-relax','md','vc-md'))
-def test_result_initialization(tmp_path,calculation):
-    from ..pwscf_analyzer import PwscfAnalyzer
+@pytest.mark.parametrize('calculation,log_text',(
+    ('scf',     'Self-consistent Calculation\n'),
+    ('nscf',    'Band Structure Calculation\nhighest occupied level (ev): 1.0\n'),
+    ('bands',   'Band Structure Calculation\n'),
+    ('relax',   'BFGS Geometry Optimization\n'),
+    ('vc-relax','BFGS Geometry Optimization\nCELL_PARAMETERS (alat= 1.0)\n'),
+    ('md',      'Molecular Dynamics Calculation\nEntering Dynamics: iteration = 1\n'),
+    ('vc-md',   'Entering Dynamics; it = 1 time = 0.0 pico-seconds\n'),
+    ))
+def test_result_initialization(tmp_path,calculation,log_text):
+    from ..pwscf_analyzer import PwscfOutData
 
-    infile = tmp_path / '{}.in'.format(calculation)
-    infile.write_text(
-        "&CONTROL\n  calculation = '{}'\n  verbosity = 'low'\n/\n".format(calculation)
-        )
-    pa = PwscfAnalyzer(infile)
+    outfile = tmp_path / '{}.out'.format(calculation)
+    outfile.write_text(log_text)
+    out = PwscfOutData(outfile)
 
     expected = {
+        'calculation',
         'Ef','fermi_energies','bands',
         'volume',
         'cputime','walltime','kpoints_cart','kpoints_unit','kweights',
-        'K',
         }
-    if calculation not in ('nscf','bands'):
+    if calculation in ('scf','relax','vc-relax','md','vc-md'):
         expected.update((
             'E','relax_energies','scf_conv_energy','scf_conv_accuracy',
-            'pressure','stress',
-            'forces','tot_forces','max_forces',
+            'pressure','stress','forces','tot_forces','max_forces',
             ))
     #end if
     if calculation in ('relax','vc-relax','md','vc-md'):
@@ -55,47 +378,73 @@ def test_result_initialization(tmp_path,calculation):
         expected.update(('md_data','md_stats'))
     #end if
 
-    assert(set(pa.results_out.keys())==expected)
-    assert(all(value is None for value in pa.results_out.values()))
-    assert(pa.results_xml is None)
-    assert(all(value is False for value in pa.info.data_status.values()))
+    assert(set(out.keys())==expected)
+    assert(out.calculation==calculation)
+    assert(all(value is None for name,value in out.items() if name!='calculation'))
 #end def test_result_initialization
+
+
+def test_pw2casino_analyzer_read(tmp_path):
+    from ..pwscf_analyzer import Pw2CasinoAnalyzer, PwscfAnalyzer, PwscfOutData
+
+    (tmp_path/'pwscf.in').write_text("&CONTROL\n  calculation = 'scf'\n/\n")
+    (tmp_path/'pwscf.out').write_text('Self-consistent Calculation\n')
+    (tmp_path/'pw2casino.out').write_text(
+        'Kinetic energy from orbitals = 1.25D+01\n'
+        )
+    pw2casino = Pw2CasinoAnalyzer(tmp_path/'pw2casino.out')
+    assert(pw2casino.K==12.5)
+
+    pa = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        'pwscf.out',
+        'pw2casino.out',
+        analyze = True,
+        )
+
+    assert(isinstance(pa.results_out,PwscfOutData))
+    assert('K' not in pa.results_out)
+    assert(isinstance(pa.pw2casino,Pw2CasinoAnalyzer))
+    assert(pa.pw2casino.K==12.5)
+    assert('data_status' not in pa.info)
+
+    (tmp_path/'pw2casino.out').write_text('Kinetic energy is unavailable\n')
+    pw2casino = Pw2CasinoAnalyzer(tmp_path/'pw2casino.out')
+    assert(pw2casino.K is None)
+
+    pw2casino = Pw2CasinoAnalyzer(tmp_path/'missing.out')
+    assert(pw2casino.K is None)
+#end def test_pw2casino_analyzer_read
 
 
 def test_analyze():
     from numpy import array
     from ..developer import obj, to_obj
-    from ..pwscf_analyzer import PwscfAnalyzer
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfOutData
 
     all_result_names = (
-        'E','Ef','K','bands','cputime','relax_energies','scf_conv_energy',
+        'E','Ef','bands','cputime','relax_energies','scf_conv_energy',
         'scf_conv_accuracy','fermi_energies','forces',
         'kpoints_cart','kpoints_unit','kweights','max_forces','md_data',
         'md_stats','pressure','stress','relax_structures','tot_forces','volume',
         'walltime',
         )
-    data_status_names = (
-        'log','md','fermi_energies','scf_conv_energy','scf_conv_accuracy',
-        'relax_energies','bands','relax_structures','pressure','volume',
-        'stress','forces','total_forces','timing','kpoints','pw2casino','xml',
-        )
-
-    def empty_data_status():
-        return obj({name:False for name in data_status_names})
-    #end def empty_data_status
-
     def nest_results(reference,calculation):
+        reference.pw2casino = None
+        if calculation is None:
+            reference.results_out = None
+            reference.results_xml = None
+            return reference
+        #end if
         result_names = [
-            'Ef','fermi_energies','bands',
-            'volume',
-            'cputime','walltime','kpoints_cart','kpoints_unit','kweights',
-            'K',
+            'Ef','fermi_energies','bands','volume','cputime','walltime',
+            'kpoints_cart','kpoints_unit','kweights',
             ]
-        if calculation not in ('nscf','bands'):
+        if calculation in ('scf','relax','vc-relax','md','vc-md'):
             result_names.extend((
                 'E','relax_energies','scf_conv_energy','scf_conv_accuracy',
-                'pressure','stress',
-                'forces','tot_forces','max_forces',
+                'pressure','stress','forces','tot_forces','max_forces',
                 ))
         #end if
         if calculation in ('relax','vc-relax','md','vc-md'):
@@ -105,6 +454,7 @@ def test_analyze():
             result_names.extend(('md_data','md_stats'))
         #end if
         results = obj({name:None for name in result_names})
+        results.calculation = calculation
         for name in all_result_names:
             if name in reference:
                 results[name] = reference[name]
@@ -202,8 +552,7 @@ def test_analyze():
             ),
         )
 
-    pa_ref.info.data_status = empty_data_status()
-    assert(object_eq(to_obj(pa),nest_results(pa_ref,'scf')))
+    assert(object_eq(to_obj(pa),nest_results(pa_ref,None)))
 
     input_read = deepcopy(pa.input)
 
@@ -212,6 +561,7 @@ def test_analyze():
     pa = PwscfAnalyzer(scf_path,'scf.in','scf.out',analyze=True)
 
     assert(object_eq(pa.input,input_read))
+    assert(isinstance(pa.results_out,PwscfOutData))
     assert('md_data' not in pa.results_out)
     assert(len(pa.results_out.bands.up)==3)
     assert(len(pa.results_out.bands.down)==0)
@@ -219,17 +569,14 @@ def test_analyze():
         assert(band.eigs.shape==(30,))
         assert(band.occs.shape==(30,))
     #end for
-    assert(pa.info.data_status.relax_energies)
-    assert(pa.info.data_status.scf_conv_energy)
-    assert(pa.info.data_status.scf_conv_accuracy)
-    assert(pa.info.data_status.bands)
-    assert(pa.info.data_status.forces)
-    assert(pa.info.data_status.total_forces)
-    assert(pa.info.data_status.stress)
-    assert(not pa.info.data_status.xml)
+    assert(pa.results_out.relax_energies is not None)
+    assert(pa.results_out.scf_conv_energy is not None)
+    assert(pa.results_out.scf_conv_accuracy is not None)
+    assert(pa.results_out.bands is not None)
+    assert(pa.results_out.forces is not None)
+    assert(pa.results_out.tot_forces is not None)
+    assert(pa.results_out.stress is not None)
     assert('xml_status_failed' not in pa.info)
-    assert(all(isinstance(value,bool) for value in pa.info.data_status.values()))
-    del pa.info.data_status
 
     del pa.input
     del pa.abspath
@@ -302,14 +649,12 @@ def test_analyze():
         assert(band.eigs.shape==(30,))
         assert(band.occs.shape==(0,))
     #end for
-    assert(pa.info.data_status.relax_energies)
-    assert(pa.info.data_status.scf_conv_energy)
-    assert(pa.info.data_status.scf_conv_accuracy)
-    assert(pa.info.data_status.relax_structures)
-    assert(pa.info.data_status.forces)
-    assert(pa.info.data_status.total_forces)
-    assert(all(isinstance(value,bool) for value in pa.info.data_status.values()))
-    del pa.info.data_status
+    assert(pa.results_out.relax_energies is not None)
+    assert(pa.results_out.scf_conv_energy is not None)
+    assert(pa.results_out.scf_conv_accuracy is not None)
+    assert(pa.results_out.relax_structures is not None)
+    assert(pa.results_out.forces is not None)
+    assert(pa.results_out.tot_forces is not None)
 
     del pa.input
     del pa.abspath
@@ -597,8 +942,7 @@ def test_analyze():
             ),
         )
 
-    pa_ref.info.data_status = empty_data_status()
-    assert(object_eq(to_obj(pa),nest_results(pa_ref,'nscf')))
+    assert(object_eq(to_obj(pa),nest_results(pa_ref,None)))
 
     input_read = deepcopy(pa.input)
 
@@ -606,11 +950,9 @@ def test_analyze():
     pa = PwscfAnalyzer(nscf_path,'nscf.in','nscf.out',analyze=True)
 
     assert(object_eq(pa.input,input_read))
-    assert(pa.info.data_status.fermi_energies)
-    assert(pa.info.data_status.bands)
-    assert(pa.info.data_status.kpoints)
-    assert(all(isinstance(value,bool) for value in pa.info.data_status.values()))
-    del pa.info.data_status
+    assert(pa.results_out.fermi_energies is not None)
+    assert(pa.results_out.bands is not None)
+    assert(pa.results_out.kpoints_cart is not None)
 
     del pa.input
     del pa.abspath
@@ -908,13 +1250,13 @@ H  0.100000000  0.200000000  0.300000000  1 1 1  trailing text
     assert(len(pa.results_xml.kpoints)==2)
     assert(np.allclose(pa.results_xml.kpoints[1].up.eigenvalues,[-0.5,0.5]))
     assert(np.allclose(pa.results_xml.kpoints[2].up.eigenvalues,[-0.4,0.6]))
-    assert(pa.info.data_status.md)
-    assert(not pa.info.data_status.scf_conv_energy)
-    assert(not pa.info.data_status.scf_conv_accuracy)
-    assert(pa.info.data_status.bands)
-    assert(pa.info.data_status.xml)
+    assert(pa.results_out.md_data is not None)
+    assert(pa.results_out.scf_conv_energy is None)
+    assert(pa.results_out.scf_conv_accuracy is None)
+    assert(pa.results_out.bands is not None)
+    assert(pa.results_xml is not None)
     assert(not pa.info.xml_status_failed)
-    assert(all(isinstance(value,bool) for value in pa.info.data_status.values()))
+    assert('data_status' not in pa.info)
 
     count_lines = pa.write_electron_counts().splitlines()
     assert(count_lines[1].split()==['1.50','0.00','0.75','0.75'])
@@ -944,13 +1286,12 @@ CELL_PARAMETERS (alat= 5.0)
 
     assert(np.allclose(pa.results_out.md_data.total_energy,[-1.1]))
     assert(np.allclose(pa.results_out.relax_energies,[-1.1]))
-    assert(pa.info.data_status.md)
-    assert(pa.info.data_status.stress)
-    assert(pa.info.data_status.forces)
-    assert(pa.info.data_status.total_forces)
-    assert(pa.info.data_status.relax_structures)
+    assert(pa.results_out.md_data is not None)
+    assert(pa.results_out.stress is not None)
+    assert(pa.results_out.forces is not None)
+    assert(pa.results_out.tot_forces is not None)
+    assert(pa.results_out.relax_structures is not None)
     assert(pa.results_xml.failed)
-    assert(pa.info.data_status.xml)
     assert(pa.info.xml_status_failed)
     assert(len(pa.results_xml.kpoints)==1)
 
@@ -960,14 +1301,12 @@ CELL_PARAMETERS (alat= 5.0)
     assert(np.allclose(pa.results_out.relax_energies,[-1.1]))
     assert(pa.results_xml.failed)
     assert(pa.results_xml.data is None)
-    assert(not pa.info.data_status.xml)
     assert(pa.info.xml_status_failed)
 
     # Missing XML is represented by None rather than an empty XML result.
     (savedir/'data-file-schema.xml').unlink()
     pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
     assert(pa.results_xml is None)
-    assert(not pa.info.data_status.xml)
     assert('xml_status_failed' not in pa.info)
 
     # A total force is retained even when no atomic-force block is present.
@@ -975,6 +1314,5 @@ CELL_PARAMETERS (alat= 5.0)
     pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True)
     assert(pa.results_out.forces is None)
     assert(np.allclose(pa.results_out.tot_forces,[0.125]))
-    assert(not pa.info.data_status.forces)
-    assert(pa.info.data_status.total_forces)
+    assert('data_status' not in pa.info)
 #end def test_modern_output
