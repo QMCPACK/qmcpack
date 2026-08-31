@@ -64,6 +64,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=1000 -fstrict-aliasing -f
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
+# Debug checks of standard library https://gcc.gnu.org/onlinedocs/libstdc++/manual/debug_mode_semantics.html
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC")
 
 # Suppress compile warnings
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-deprecated")
