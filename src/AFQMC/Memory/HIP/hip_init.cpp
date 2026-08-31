@@ -106,7 +106,7 @@ void HIP_INIT(boost::mpi3::shared_communicator& node, unsigned long long int ise
   /*
     device::cusparse_buffer = new boost::multi::array<std::complex<double>,1,
                                  device::device_allocator<std::complex<double>>>(
-                                 (typename boost::multi::layout_t<1u>::extensions_type{1},
+                                 (typename boost::multi::layout_t<1u>::extents_type{1},
                                  device::device_allocator<std::complex<double>>{}));
 */
 }

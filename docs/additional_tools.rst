@@ -185,7 +185,7 @@ prefix ``Mysim`` and output files will be
 
     Example QMCPACK input file produced by convert4qmc
 
-    It is recommend to start with only the initial VMC block and adjust
+    It is recommended to start with only the initial VMC block and adjust
     parameters based on the measured energies, variance, and statistics.
 
     -->
@@ -920,7 +920,7 @@ application.
 Opium
 ~~~~~
 
-Opium is a pseudopotential generation code available from the website http://opium.sourceforge.net/.  Opium can generate pseudopotentials with either Hartree-Fock or DFT methods.  Once you have a useable pseudopotential param file (for example, Li.param), generate pseudopotentials for use in Quantum ESPRESSO with the upf format as follows:
+Opium is a pseudopotential generation code available from the website http://opium.sourceforge.net/.  Opium can generate pseudopotentials with either Hartree-Fock or DFT methods.  Once you have a usable pseudopotential param file (for example, Li.param), generate pseudopotentials for use in Quantum ESPRESSO with the upf format as follows:
 
 .. code-block:
   :caption: Generate UPF-formatted pseudopotential with Opium

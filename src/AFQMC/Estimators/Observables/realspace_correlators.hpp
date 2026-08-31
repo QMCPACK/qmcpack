@@ -66,7 +66,7 @@ class realspace_correlators : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticMatrix         = boost::multi::static_array<ComplexType, 2, shm_stack_alloc_type>;
+  using DynamicMatrix        = boost::multi::dynamic_array<ComplexType, 2, shm_stack_alloc_type>;
 
 public:
   realspace_correlators(afqmc::TaskGroup_& tg_,
@@ -171,8 +171,8 @@ public:
             APP_ABORT("");
           }
           using std::copy_n;
-          copy_n(orb.origin(), npoints, ma::pointer_dispatch(Orbitals[kn].origin()));
-          copy_n(orb.origin(), npoints, host_orb[kn].origin());
+          copy_n(orb.base(), npoints, ma::pointer_dispatch(Orbitals[kn].base()));
+          copy_n(orb.base(), npoints, host_orb[kn].base());
         }
       }
       dump.pop();
@@ -204,7 +204,7 @@ public:
     }
 
     DMAverage = mpi3CTensor({nave, 3, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
   template<class MatG, class MatG_host, class HostCVec1, class HostCVec2, class HostCVec3>
@@ -232,7 +232,7 @@ public:
     assert(Xw.size() == nw);
     assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
-    assert(G.extensions() == G_host.extensions());
+    assert(G.extents() == G_host.extents());
 
     int nsp;
     if (walker_type == CLOSED)
@@ -251,18 +251,20 @@ public:
       {
         DMWork = mpi3CTensor({nw, 3, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (get<0>(Gr_host.sizes()) != nw || get<1>(Gr_host.sizes()) != nsp || get<2>(Gr_host.sizes()) != npts || get<3>(Gr_host.sizes()) != npts)
+      if (get<0>(Gr_host.sizes()) != nw || get<1>(Gr_host.sizes()) != nsp || get<2>(Gr_host.sizes()) != npts ||
+          get<3>(Gr_host.sizes()) != npts)
       {
         Gr_host = mpi3C4Tensor({nw, nsp, npts, npts}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
-      fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(denom.base(), denom.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(DMWork.base(), DMWork.num_elements(), ComplexType(0.0, 0.0));
     }
     else
     {
-      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != 3 || get<2>(DMWork.sizes()) != dm_size ||
-          get<0>(Gr_host.sizes()) != nw || get<1>(Gr_host.sizes()) != nsp || get<2>(Gr_host.sizes()) != npts || get<3>(Gr_host.sizes()) != npts ||
-          get<0>(DMAverage.sizes()) != nave || get<1>(DMAverage.sizes()) != 3 || get<2>(DMAverage.sizes()) != dm_size)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != 3 ||
+          get<2>(DMWork.sizes()) != dm_size || get<0>(Gr_host.sizes()) != nw || get<1>(Gr_host.sizes()) != nsp ||
+          get<2>(Gr_host.sizes()) != npts || get<3>(Gr_host.sizes()) != npts || get<0>(DMAverage.sizes()) != nave ||
+          get<1>(DMAverage.sizes()) != 3 || get<2>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -271,11 +273,11 @@ public:
     // if memory becomes a problem, then batch over walkers
     {
       LocalTGBufferManager buffer_manager;
-      StaticMatrix T({nw * nsp * NMO, npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-      StaticMatrix Gr({nsp * nw, npts * npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-      CTensor_ref Gr3D(make_device_ptr(Gr.origin()), {nw, nsp, npts * npts});
-      CTensor_ref T3D(make_device_ptr(T.origin()), {nw, nsp, NMO * npts});
-      CMatrix_ref G2D(make_device_ptr(G.origin()), {nw * nsp * NMO, NMO});
+      DynamicMatrix T({nw * nsp * NMO, npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      DynamicMatrix Gr({nsp * nw, npts * npts}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      CTensor_ref Gr3D(make_device_ptr(Gr.base()), {nw, nsp, npts * npts});
+      CTensor_ref T3D(make_device_ptr(T.base()), {nw, nsp, NMO * npts});
+      CMatrix_ref G2D(make_device_ptr(G.base()), {nw * nsp * NMO, NMO});
 
       // T1[iw][ispin][i][r] = sum_j G[iw][ispin][i][j] * Psi(j,r)
       int i0, iN;
@@ -285,26 +287,26 @@ public:
 
       // G[iw][ispin][r][r'] = sum_ij conj( Psi(i,r) ) * G[iw][ispin][i][j] * Psi(j,r')
       //                     = sum_i conj( Psi(i,r) ) T1[iw][ispin][i][r'] = H(Psi) * T1
-      std::vector<decltype(ma::pointer_dispatch(Orbitals.origin()))> Aarray;
+      std::vector<decltype(ma::pointer_dispatch(Orbitals.base()))> Aarray;
       Aarray.reserve(nw * nsp);
-      std::vector<decltype(ma::pointer_dispatch(Orbitals.origin()))> Barray;
+      std::vector<decltype(ma::pointer_dispatch(Orbitals.base()))> Barray;
       Barray.reserve(nw * nsp);
-      std::vector<decltype(ma::pointer_dispatch(Orbitals.origin()))> Carray;
+      std::vector<decltype(ma::pointer_dispatch(Orbitals.base()))> Carray;
       Carray.reserve(nw * nsp);
       for (int iw = 0, p = 0; iw < nw; ++iw)
         for (int ispin = 0; ispin < nsp; ++ispin, ++p)
           if (p % TG.TG_local().size() == TG.TG_local().rank())
           {
-            Aarray.emplace_back(ma::pointer_dispatch(Orbitals.origin()));
-            Barray.emplace_back(ma::pointer_dispatch(T3D[iw][ispin].origin()));
-            Carray.emplace_back(ma::pointer_dispatch(Gr3D[iw][ispin].origin()));
+            Aarray.emplace_back(ma::pointer_dispatch(Orbitals.base()));
+            Barray.emplace_back(ma::pointer_dispatch(T3D[iw][ispin].base()));
+            Carray.emplace_back(ma::pointer_dispatch(Gr3D[iw][ispin].base()));
           }
       // careful with fortran ordering
       gemmBatched('N', 'C', npts, npts, NMO, ComplexType(1.0), Barray.data(), npts, Aarray.data(), npts,
                   ComplexType(0.0), Carray.data(), npts, int(Aarray.size()));
       TG.TG_local().barrier();
       std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(Gr.num_elements()), TG.TG_local().size());
-      copy_n(Gr.origin() + i0, (iN - i0), Gr_host.origin() + i0);
+      copy_n(Gr.base() + i0, (iN - i0), Gr_host.base() + i0);
     }
     TG.TG_local().barrier();
 
@@ -322,9 +324,9 @@ public:
       if (walker_type == CLOSED)
       {
         auto&& Gur(Gr_host[iw][0]);
-        stdCMatrix_ref DMcc(to_address(DMWork[iw][0].origin()), {npts, npts});
-        stdCMatrix_ref DMss(to_address(DMWork[iw][1].origin()), {npts, npts});
-        stdCMatrix_ref DMcs(to_address(DMWork[iw][2].origin()), {npts, npts});
+        stdCMatrix_ref DMcc(to_address(DMWork[iw][0].base()), {npts, npts});
+        stdCMatrix_ref DMss(to_address(DMWork[iw][1].base()), {npts, npts});
+        stdCMatrix_ref DMcs(to_address(DMWork[iw][2].base()), {npts, npts});
         auto X_(2.0 * Xw[iw]);
         for (int i = 0; i < npts; i++)
           for (int j = 0; j < npts; j++)
@@ -341,9 +343,9 @@ public:
       {
         auto&& Gur(Gr_host[iw][0]);
         auto&& Gdr(Gr_host[iw][1]);
-        stdCMatrix_ref DMcc(to_address(DMWork[iw][0].origin()), {npts, npts});
-        stdCMatrix_ref DMss(to_address(DMWork[iw][1].origin()), {npts, npts});
-        stdCMatrix_ref DMcs(to_address(DMWork[iw][2].origin()), {npts, npts});
+        stdCMatrix_ref DMcc(to_address(DMWork[iw][0].base()), {npts, npts});
+        stdCMatrix_ref DMss(to_address(DMWork[iw][1].base()), {npts, npts});
+        stdCMatrix_ref DMcs(to_address(DMWork[iw][2].base()), {npts, npts});
         auto X_(Xw[iw]);
         for (int i = 0; i < npts; i++)
           for (int j = 0; j < npts; j++)
@@ -362,9 +364,9 @@ public:
         APP_ABORT(" Noncollinear not implemented \n\n\n");
         auto&& Gur(Gr_host[iw][0]);
         auto&& Gdr(Gr_host[iw][1]);
-        stdCMatrix_ref DMcc(to_address(DMWork[iw][0].origin()), {npts, npts});
-        stdCMatrix_ref DMss(to_address(DMWork[iw][1].origin()), {npts, npts});
-        stdCMatrix_ref DMcs(to_address(DMWork[iw][2].origin()), {npts, npts});
+        stdCMatrix_ref DMcc(to_address(DMWork[iw][0].base()), {npts, npts});
+        stdCMatrix_ref DMss(to_address(DMWork[iw][1].base()), {npts, npts});
+        stdCMatrix_ref DMcs(to_address(DMWork[iw][2].base()), {npts, npts});
         auto X_(Xw[iw]);
         for (int i = 0; i < npts; i++)
           for (int j = 0; j < npts; j++)
@@ -392,8 +394,8 @@ public:
     {
       for (int iw = 0; iw < nw; iw++)
         denom[iw] = wgt[iw] / denom[iw];
-      stdCVector_ref DMAv1D(to_address(DMAverage[iav].origin()), {3 * dm_size});
-      stdCMatrix_ref DMWork2D(to_address(DMWork.origin()), {nw, 3 * dm_size});
+      stdCVector_ref DMAv1D(to_address(DMAverage[iav].base()), {3 * dm_size});
+      stdCMatrix_ref DMWork2D(to_address(DMWork.base()), {nw, 3 * dm_size});
       // DMAverage[iav][t][ij] += sum_iw DMWork[iw][t][ij] * denom[iw] = T( DMWork ) * denom
       ma::product(ComplexType(1.0, 0.0), ma::T(DMWork2D), denom, ComplexType(1.0, 0.0), DMAv1D);
     }
@@ -409,7 +411,7 @@ public:
     if (TG.TG_local().root())
     {
       ma::scal(ComplexType(1.0 / block_size), DMAverage);
-      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.origin()), DMAverage.num_elements(), std::plus<>(), 0);
+      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.base()), DMAverage.num_elements(), std::plus<>(), 0);
       if (writer)
       {
         dump.push(std::string("OD2RDM"));
@@ -421,7 +423,7 @@ public:
             dump.push(std::string("Average_") + std::to_string(i));
             std::string padded_iblock =
                 std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-            stdCVector_ref DMAverage_(to_address(DMAverage[i][t].origin()), {dm_size});
+            stdCVector_ref DMAverage_(to_address(DMAverage[i][t].base()), {dm_size});
             dump.write(DMAverage_, "od2rdm_" + type_id[t] + padded_iblock);
             dump.write(Wsum[i], "denominator_" + padded_iblock);
             dump.pop();
@@ -432,7 +434,7 @@ public:
       }
     }
     TG.TG_local().barrier();
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
 private:

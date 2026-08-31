@@ -655,8 +655,8 @@ namespace boost
 namespace multi
 {
 template<typename T, typename Size, typename Q>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> fill_n(
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> fill_n(
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
     Size n,
     Q const& val)
 {
@@ -683,9 +683,9 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> fill_n(
 }
 
 template<typename T, typename Q>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> fill_n(
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> fill_n(
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
     Q const& val)
 {
   assert(stride(first) == stride(last));
@@ -694,9 +694,9 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> fill_n(
 
 
 template<class Alloc, typename T, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_fill_n(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_fill_n(
     Alloc& a,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
     Size n,
     T const& val)
 {
@@ -723,10 +723,10 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
 }
 
 template<class Alloc, typename T, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_fill(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_fill(
     Alloc& a,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
     T const& val)
 {
   assert(stride(first) == stride(last));
@@ -734,9 +734,9 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
 }
 
 template<class Alloc, typename T, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_fill_n(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_fill_n(
     Alloc& a,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
     Size n,
     T const& val)
 {
@@ -744,10 +744,10 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uniniti
 }
 
 template<class Alloc, typename T, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_fill(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_fill(
     Alloc& a,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> first,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
     T const& val)
 {
   assert(stride(first) == stride(last));
@@ -755,10 +755,10 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uniniti
 }
 
 template<class T, class Q1, class Q2, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
-    multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
+    multi::detail::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
     Size n,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
@@ -780,10 +780,10 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
 }
 
 template<class T, class ForwardIt, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
     ForwardIt first,
     Size n,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
   if (n == 0)
     return dest;
@@ -802,9 +802,9 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy_n(
 }
 
 template<class T, class Q1, class Q2, typename Size>
-multi::array_iterator<T, 1, T*> copy_n(multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
+multi::detail::array_iterator<T, 1, T*> copy_n(multi::detail::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
                                        Size n,
-                                       multi::array_iterator<T, 1, T*> dest)
+                                       multi::detail::array_iterator<T, 1, T*> dest)
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
@@ -821,10 +821,10 @@ multi::array_iterator<T, 1, T*> copy_n(multi::array_iterator<Q1, 1, shm::shm_ptr
 }
 
 template<class T, class Q1, class Q2>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
-    multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
-    multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> last,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
+    multi::detail::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
+    multi::detail::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> last,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
@@ -833,19 +833,19 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
 }
 
 template<class T, class ForwardIt>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
     ForwardIt first,
     ForwardIt last,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
   assert(stride(first) == stride(last));
   return copy_n(first, std::distance(first, last), dest);
 }
 
 template<class T, class Q1, class Q2>
-multi::array_iterator<T, 1, T*> copy(multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
-                                     multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> last,
-                                     multi::array_iterator<T, 1, T*> dest)
+multi::detail::array_iterator<T, 1, T*> copy(multi::detail::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
+                                     multi::detail::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> last,
+                                     multi::detail::array_iterator<T, 1, T*> dest)
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
@@ -854,11 +854,11 @@ multi::array_iterator<T, 1, T*> copy(multi::array_iterator<Q1, 1, shm::shm_ptr_w
 }
 
 template<class Alloc, class T, class Q, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy_n(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy_n(
     Alloc& a,
-    multi::array_iterator<Q, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q>> first,
+    multi::detail::array_iterator<Q, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q>> first,
     Size n,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
   static_assert(std::is_same<typename std::decay<Q>::type, T>::value, "Wrong dispatch.\n");
   if (n == 0)
@@ -886,53 +886,53 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
 }
 
 template<class Alloc, class T, class Q, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_copy_n(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_copy_n(
     Alloc& a,
-    multi::array_iterator<Q, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q>> first,
+    multi::detail::array_iterator<Q, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q>> first,
     Size n,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
   return uninitialized_copy_n(a, first, n, dest);
 }
 
 
 template<class Alloc, class T, class ForwardIt, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy_n(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy_n(
     Alloc& a,
     ForwardIt first,
     Size n,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
   return copy_n(first, n, dest);
 }
 
 template<class Alloc, class T, class ForwardIt, typename Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_copy_n(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_copy_n(
     Alloc& a,
     ForwardIt first,
     Size n,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
   return copy_n(first, n, dest);
 }
 
 template<class Alloc, class T, class ForwardIt>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_copy(
     Alloc& a,
     ForwardIt first,
     ForwardIt last,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
   assert(stride(first) == stride(last));
   return uninitialized_copy_n(a, first, std::distance(first, last), dest);
 }
 
 template<class Alloc, class T, class Q1, class Q2>
-multi::array_iterator<T, 1, T*> uninitialized_copy(
+multi::detail::array_iterator<T, 1, T*> uninitialized_copy(
     Alloc& a,
-    multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
-    multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> last,
-    multi::array_iterator<T, 1, T*> dest)
+    multi::detail::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
+    multi::detail::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> last,
+    multi::detail::array_iterator<T, 1, T*> dest)
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
@@ -957,30 +957,30 @@ multi::array_iterator<T, 1, T*> uninitialized_copy(
 }
 
 template<class Alloc, class T, class ForwardIt>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_copy(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_copy(
     Alloc& a,
     ForwardIt first,
     ForwardIt last,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
   assert(stride(first) == stride(last));
   return uninitialized_copy_n(a, first, std::distance(first, last), dest);
 }
 
 template<class Alloc, class T, class Q1, class Q2>
-multi::array_iterator<T, 1, T*> alloc_uninitialized_copy(
+multi::detail::array_iterator<T, 1, T*> alloc_uninitialized_copy(
     Alloc& a,
-    multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
-    multi::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> last,
-    multi::array_iterator<T, 1, T*> dest)
+    multi::detail::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> first,
+    multi::detail::array_iterator<Q1, 1, shm::shm_ptr_with_raw_ptr_dispatch<Q2>> last,
+    multi::detail::array_iterator<T, 1, T*> dest)
 {
   return uninitialized_copy(a, first, last, dest);
 }
 
 template<class Alloc, class T, class Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_default_construct_n(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_default_construct_n(
     Alloc& a,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f,
     Size n)
 {
   if (n == 0)
@@ -1006,27 +1006,27 @@ multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized
 }
 
 template<class Alloc, class T, class Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_value_construct_n(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> uninitialized_value_construct_n(
     Alloc& a,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f,
     Size n)
 {
   return uninitialized_default_construct_n(a, f, n);
 }
 
 template<class Alloc, class T, class Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_default_construct_n(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_default_construct_n(
     Alloc& a,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f,
     Size n)
 {
   return uninitialized_default_construct_n(a, f, n);
 }
 
 template<class Alloc, class T, class Size>
-multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_value_construct_n(
+multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc_uninitialized_value_construct_n(
     Alloc& a,
-    multi::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f,
+    multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> f,
     Size n)
 {
   return uninitialized_default_construct_n(a, f, n);

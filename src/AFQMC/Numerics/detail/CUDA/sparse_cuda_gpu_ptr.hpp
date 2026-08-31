@@ -158,12 +158,12 @@ void csrmm(const char transa,
     {
       cusparse_buffer = new boost::multi::array<
           std::complex<double>, 1,
-          device::device_allocator<std::complex<double>>>(typename boost::multi::layout_t<1u>::extensions_type{M * M},
+          device::device_allocator<std::complex<double>>>(typename boost::multi::layout_t<1u>::extents_type{M * M},
                                                           device::device_allocator<std::complex<double>>{});
     }
     else if (cusparse_buffer->num_elements() < M * N)
-      cusparse_buffer->reextent(typename boost::multi::layout_t<1u>::extensions_type{M * N});
-    device_pointer<T> C_(cusparse_buffer->origin().pointer_cast<T>());
+      cusparse_buffer->reextent(typename boost::multi::layout_t<1u>::extents_type{M * N});
+    device_pointer<T> C_(cusparse_buffer->base().pointer_cast<T>());
 
     // if beta != 0, transpose C into C_
     if (std::abs(beta) > 1e-12)
@@ -195,15 +195,15 @@ void csrmm(const char transa,
     {
       cusparse_buffer = new boost::multi::array<
           std::complex<double>, 1,
-          device::device_allocator<std::complex<double>>>(typename boost::multi::layout_t<1u>::extensions_type{(M + K) *
+          device::device_allocator<std::complex<double>>>(typename boost::multi::layout_t<1u>::extents_type{(M + K) *
                                                                                                                N},
                                                           device::device_allocator<std::complex<double>>{});
     }
     else if (cusparse_buffer->num_elements() < (M + K) * N)
-      cusparse_buffer->reextent(typename boost::multi::layout_t<1u>::extensions_type{(M + K) * N});
+      cusparse_buffer->reextent(typename boost::multi::layout_t<1u>::extents_type{(M + K) * N});
     // A is MxK
     // B should be MxN
-    device_pointer<T> B_(cusparse_buffer->origin().pointer_cast<T>());
+    device_pointer<T> B_(cusparse_buffer->base().pointer_cast<T>());
     // C should be KxN
     device_pointer<T> C_(B_ + M * N);
 

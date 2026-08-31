@@ -54,9 +54,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   double LogOverlapFactor(wset.getLogOverlapFactor());
   // resize shm structures if needed
 
-  Ovmsd.reextent({nspins, static_cast<boost::multi::size_t>(maxn_unique_confg), nwalk});
+  Ovmsd.reextent({nspins, static_cast<boost::multi::ssize_t>(maxn_unique_confg), nwalk});
 
-  Emsd.reextent({nspins, static_cast<boost::multi::size_t>(maxn_unique_confg), nwalk, 3});
+  Emsd.reextent({nspins, static_cast<boost::multi::ssize_t>(maxn_unique_confg), nwalk, 3});
 
   // resize Alpha here, if beta is needed resize below
 
@@ -72,9 +72,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   if (get<0>(eloc2.sizes()) != nwalk || get<1>(eloc2.sizes()) != 3)
     eloc2.reextent({nwalk, 3});
 
-  std::fill_n(Ov.origin(), nwalk, zero);
-  std::fill_n(E.origin(), 3 * nwalk, zero);
-  std::fill_n(opSpinEJ.origin(), nwalk, ComplexType(0.0));
+  std::fill_n(Ov.base(), nwalk, zero);
+  std::fill_n(E.base(), 3 * nwalk, zero);
+  std::fill_n(opSpinEJ.base(), nwalk, ComplexType(0.0));
 
   // dummy: ugly but not sure how to do it better
   SPCMatrix* dummyMatPtr(nullptr);
@@ -96,15 +96,15 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
 
     GrefB.reextent({nwalk, dm_dims(false, Beta).first, dm_dims(false, Beta).second});
 
-    QQ0A .reextent({nwalk, static_cast<boost::multi::size_t>(OrbMats[0].size(0)), NAEA});
+    QQ0A .reextent({nwalk, static_cast<boost::multi::ssize_t>(OrbMats[0].size(0)), NAEA});
 
-    QQ0B .reextent({nwalk, static_cast<boost::multi::size_t>(OrbMats.back().size(0)), NAEB});
+    QQ0B .reextent({nwalk, static_cast<boost::multi::ssize_t>(OrbMats.back().size(0)), NAEB});
 
     for (int iw = 0, nc = 0; iw < nwalk; iw++)
     {
       if (nc % TG.TG_local().size() == TG.TG_local().rank())
       {
-        boost::multi::array_ref<ComplexType, 2> G2D_(localGbuff.origin(),
+        boost::multi::array_ref<ComplexType, 2> G2D_(localGbuff.base(),
                                                      {dm_dims_ref(false, Alpha).first,
                                                       dm_dims_ref(false, Alpha).second});
         Ovmsd[0][0][iw] = SDetOp.MixedDensityMatrixForWoodbury(OrbMats[0], *wset[iw].SlaterMatrix(Alpha), G2D_,
@@ -112,14 +112,14 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
         confg.resize(NAEA);
         abij.get_configuration(0, 0, confg);
         auto Gr = GrefA[iw];
-        std::fill_n(Gr.origin(), Gr.num_elements(), ComplexType(0.0));
+        std::fill_n(Gr.base(), Gr.num_elements(), ComplexType(0.0));
         for (int k = 0; k < confg.size(); ++k)
           Gr[confg[k]] = G2D_[k];
       }
       ++nc;
       if (nc % TG.TG_local().size() == TG.TG_local().rank())
       {
-        boost::multi::array_ref<ComplexType, 2> G2D_(localGbuff.origin(),
+        boost::multi::array_ref<ComplexType, 2> G2D_(localGbuff.base(),
                                                      {dm_dims_ref(false, Beta).first, dm_dims_ref(false, Beta).second});
         Ovmsd[1][0][iw] =
             SDetOp.MixedDensityMatrixForWoodbury(OrbMats.back(),
@@ -128,7 +128,7 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
         confg.resize(NAEB);
         abij.get_configuration(1, 0, confg);
         auto Gr = GrefB[iw];
-        std::fill_n(Gr.origin(), Gr.num_elements(), ComplexType(0.0));
+        std::fill_n(Gr.base(), Gr.num_elements(), ComplexType(0.0));
         for (int k = 0; k < confg.size(); ++k)
           Gr[confg[k]] = G2D_[k];
       }
@@ -141,9 +141,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
     ComplexType ov0;
 
-    KEright.reextent({static_cast<boost::multi::size_t>(abij.number_of_unique_excitations()[0]), nwalk, static_cast<boost::multi::size_t>(nkev)});
+    KEright.reextent({static_cast<boost::multi::ssize_t>(abij.number_of_unique_excitations()[0]), nwalk, static_cast<boost::multi::ssize_t>(nkev)});
 
-    KEleft.reextent({nwalk, static_cast<boost::multi::size_t>(nkev)});
+    KEleft.reextent({nwalk, static_cast<boost::multi::ssize_t>(nkev)});
 
     for (int spin = 0; spin < nspins; ++spin)
     {
@@ -152,12 +152,12 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
       confg.resize((spin == 0) ? NAEA : NAEB);
       auto Gdims     = dm_dims(false, SpinTypes(spin));
       auto Gdims_ref = dm_dims_ref(false, SpinTypes(spin));
-      boost::multi::array_ref<ComplexType, 2> G2D_(localGbuff.origin(), {Gdims_ref.first, Gdims_ref.second});
+      boost::multi::array_ref<ComplexType, 2> G2D_(localGbuff.base(), {Gdims_ref.first, Gdims_ref.second});
       int nr = Gdims.first * Gdims.second, nc = nwalk;
       if (transposed_G_for_E_)
         std::swap(nr, nc);
       // GrefA is guaranteed to have enough space
-      boost::multi::array_ref<ComplexType, 2> G(to_address(GrefA.origin()), {nr, nc});
+      boost::multi::array_ref<ComplexType, 2> G(to_address(GrefA.base()), {nr, nc});
       for (int nd = 0; nd < det_couplings[spin].size(); ++nd)
       {
         abij.get_configuration(spin, nd, confg);
@@ -172,14 +172,14 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
                                                            LogOverlapFactor, confg.data(), true);
             if (transposed_G_for_E_)
             {
-              boost::multi::array_ref<ComplexType, 3> G3D(to_address(G.origin()), {nwalk, Gdims.first, Gdims.second});
-              std::fill_n(G[iw].origin(), Gdims.first * Gdims.second, ComplexType(0.0));
+              boost::multi::array_ref<ComplexType, 3> G3D(to_address(G.base()), {nwalk, Gdims.first, Gdims.second});
+              std::fill_n(G[iw].base(), Gdims.first * Gdims.second, ComplexType(0.0));
               for (int k = 0; k < confg.size(); ++k)
                 G3D[iw][confg[k]] = G2D_[k];
             }
             else
             {
-              boost::multi::array_ref<ComplexType, 3> G3D(to_address(G.origin()), {Gdims.first, Gdims.second, nwalk});
+              boost::multi::array_ref<ComplexType, 3> G3D(to_address(G.base()), {Gdims.first, Gdims.second, nwalk});
               for (int k = 0; k < Gdims.first; ++k)
                 for (int j = 0; j < Gdims.second; ++j)
                   G3D[k][j][iw] = ComplexType(0.0);
@@ -194,7 +194,7 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
           auto KEr = KEright[nd];
           HamOp.energy(eloc2, G, orb_spin_indx, dummyMatPtr, std::addressof(KEr), TG.TG_local().root(), true, true);
           // reduce_n since Emsd is in shared memory (doing this instead of copy with mutex)
-          TG.TG_local().reduce_n(to_address(eloc2.origin()), 3 * nwalk, to_address(Emsd[spin][nd].origin()),
+          TG.TG_local().reduce_n(to_address(eloc2.base()), 3 * nwalk, to_address(Emsd[spin][nd].base()),
                                  std::plus<>(), 0);
           //std::cout<<" E: " <<spin <<" " <<nd <<" " <<Ovmsd[spin][nd][0] <<" "
           //<<eloc2[0][0] <<" "
@@ -210,7 +210,7 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
           //<<eloc2[0][1] <<" "
           //<<eloc2[0][2] <<std::endl;
           // reduce_n since Emsd is in shared memory (doing this instead of copy with mutex)
-          TG.TG_local().reduce_n(to_address(eloc2.origin()), 3 * nwalk, to_address(Emsd[spin][nd].origin()),
+          TG.TG_local().reduce_n(to_address(eloc2.base()), 3 * nwalk, to_address(Emsd[spin][nd].base()),
                                  std::plus<>(), 0);
           TG.local_barrier();
           // round-robin KE contributions
@@ -246,7 +246,7 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
       {
         auto it  = to_address(det_couplings[spin].values()) + (*det_couplings[spin].pointers_begin(nd));
         auto ite = to_address(det_couplings[spin].values()) + (*det_couplings[spin].pointers_end(nd));
-        std::fill_n(wgt.origin(), nwalk, ComplexType(0.0));
+        std::fill_n(wgt.base(), nwalk, ComplexType(0.0));
         if (spin == 0)
         {
           for (; it < ite; ++it)
@@ -288,9 +288,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   }     // spin
 
   // 3. reduce over TG_local
-  TG.TG_local().all_reduce_in_place_n(to_address(opSpinEJ.origin()), nwalk, std::plus<>());
-  TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()), nwalk, std::plus<>());
-  TG.TG_local().all_reduce_in_place_n(to_address(E.origin()), 3 * nwalk, std::plus<>());
+  TG.TG_local().all_reduce_in_place_n(to_address(opSpinEJ.base()), nwalk, std::plus<>());
+  TG.TG_local().all_reduce_in_place_n(to_address(Ov.base()), nwalk, std::plus<>());
+  TG.TG_local().all_reduce_in_place_n(to_address(E.base()), 3 * nwalk, std::plus<>());
   for (int i = 0; i < nwalk; ++i)
   {
     E[i][0] /= Ov[i];
@@ -347,13 +347,13 @@ void PHMSD::Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov)
     int nr=Gsize,nc=nwalk;
     if(transposed_G_for_E_) std::swap(nr,nc);
     int displ=0;
-    boost::multi::array_ref<ComplexType,2> Gwork(to_address(shmbuff_for_E->origin()),
+    boost::multi::array_ref<ComplexType,2> Gwork(to_address(shmbuff_for_E->base()),
                                                 {nr,nc});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,2> Grecv(to_address(shmbuff_for_E->origin())+displ,
+    boost::multi::array_ref<ComplexType,2> Grecv(to_address(shmbuff_for_E->base())+displ,
                                                 {nr,nc});
       displ += Gsize*nwalk;
-    boost::multi::array_ref<ComplexType,1> overlaps(to_address(shmbuff_for_E->origin())+displ,
+    boost::multi::array_ref<ComplexType,1> overlaps(to_address(shmbuff_for_E->base())+displ,
                                                    iextensions<1u>{nwalk});
     if(eloc2.size(0) != nnodes*nwalk || eloc2.size(1) != 3) 
         eloc2.resize({nnodes*nwalk,3});
@@ -367,13 +367,13 @@ void PHMSD::Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov)
           MPI_Request_free(&req_Grecv);
       if(req_Gsend!=MPI_REQUEST_NULL)
           MPI_Request_free(&req_Gsend);
-      MPI_Send_init(Gwork.origin()+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
+      MPI_Send_init(Gwork.base()+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
                     TG.prev_core(),1234,TG.TG().impl_,&req_Gsend);
-      MPI_Recv_init(Grecv.origin()+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
+      MPI_Recv_init(Grecv.base()+nak0,(nak1-nak0)*sizeof(ComplexType),MPI_CHAR,
                     TG.next_core(),1234,TG.TG().impl_,&req_Grecv);
     }
    
-    std::fill_n(eloc2.origin(),3*nnodes*nwalk,ComplexType(0.0)); 
+    std::fill_n(eloc2.base(),3*nnodes*nwalk,ComplexType(0.0)); 
     TG.local_barrier();
 
     MPI_Status st;
@@ -387,7 +387,7 @@ void PHMSD::Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov)
       if(k>0) {
         MPI_Wait(&req_Grecv,&st);
         MPI_Wait(&req_Gsend,&st);     // need to wait for Gsend in order to overwrite Gwork  
-        std::copy_n(Grecv.origin()+nak0,(nak1-nak0),Gwork.origin()+nak0);
+        std::copy_n(Grecv.base()+nak0,(nak1-nak0),Gwork.base()+nak0);
         TG.local_barrier();
       }
 
@@ -404,10 +404,10 @@ void PHMSD::Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov)
       TG.local_barrier();
 
     }
-    TG.TG().all_reduce_in_place_n(eloc2.origin(),3*nnodes*nwalk,std::plus<>());
+    TG.TG().all_reduce_in_place_n(eloc2.base(),3*nnodes*nwalk,std::plus<>());
     TG.local_barrier();    
-    std::copy_n(elocal.origin(),3*nwalk,E.origin());
-    std::copy_n(overlaps.origin(),nwalk,Ov.origin());
+    std::copy_n(elocal.base(),3*nwalk,E.base());
+    std::copy_n(overlaps.base(),nwalk,Ov.base());
     TG.local_barrier();    
 */
 }
@@ -438,7 +438,7 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
   std::fill_n(Ov.begin(), nw, 0);
   for (int i = 0; i < get<0>(G.sizes()); i++)
     if (i % TG.TG_local().size() == TG.TG_local().rank())
-      std::fill_n(G[i].origin(), get<1>(G.sizes()), ComplexType(0.0));
+      std::fill_n(G[i].base(), get<1>(G.sizes()), ComplexType(0.0));
   TG.local_barrier();
   auto Gsize = dm_size(not compact);
   if (compact)
@@ -473,21 +473,21 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
     size_t cnt   = 0;
     // REDUCE ALL THIS TEMPORARY STORAGE!!!
     // storage for reference Green functions
-    boost::multi::array_ref<ComplexType, 2> GA2D0_(localGbuff.origin(), {GAdims0.first, GAdims0.second});
+    boost::multi::array_ref<ComplexType, 2> GA2D0_(localGbuff.base(), {GAdims0.first, GAdims0.second});
     cnt += GA2D0_.num_elements();
-    boost::multi::array_ref<ComplexType, 2> GB2D0_(localGbuff.origin() + cnt, {GBdims0.first, GBdims0.second});
+    boost::multi::array_ref<ComplexType, 2> GB2D0_(localGbuff.base() + cnt, {GBdims0.first, GBdims0.second});
     cnt += GB2D0_.num_elements();
     // storage for Gw in case need to transpose result at the end
-    boost::multi::array_ref<ComplexType, 2> GA2D_(localGbuff.origin() + cnt, {GAdims.first, GAdims.second});
+    boost::multi::array_ref<ComplexType, 2> GA2D_(localGbuff.base() + cnt, {GAdims.first, GAdims.second});
     cnt += GA2D_.num_elements();
-    boost::multi::array_ref<ComplexType, 2> GB2D_(localGbuff.origin() + cnt, {GBdims.first, GBdims.second});
+    boost::multi::array_ref<ComplexType, 2> GB2D_(localGbuff.base() + cnt, {GBdims.first, GBdims.second});
     cnt += GB2D_.num_elements();
-    boost::multi::array_ref<ComplexType, 1> GA1D_(GA2D_.origin(), iextensions<1u>{GAdims.first * GAdims.second});
-    boost::multi::array_ref<ComplexType, 1> GB1D_(GB2D_.origin(), iextensions<1u>{GBdims.first * GBdims.second});
+    boost::multi::array_ref<ComplexType, 1> GA1D_(GA2D_.base(), iextensions<1u>{GAdims.first * GAdims.second});
+    boost::multi::array_ref<ComplexType, 1> GB1D_(GB2D_.base(), iextensions<1u>{GBdims.first * GBdims.second});
     // storage for full G in case compact=false
-    boost::multi::array_ref<ComplexType, 2> Gfulla(localGbuff.origin() + cnt, {GAdims_full.first, GAdims_full.second});
+    boost::multi::array_ref<ComplexType, 2> Gfulla(localGbuff.base() + cnt, {GAdims_full.first, GAdims_full.second});
     cnt += Gfulla.num_elements();
-    boost::multi::array_ref<ComplexType, 2> Gfullb(localGbuff.origin() + cnt, {GBdims_full.first, GBdims_full.second});
+    boost::multi::array_ref<ComplexType, 2> Gfullb(localGbuff.base() + cnt, {GBdims_full.first, GBdims_full.second});
     cnt += Gfullb.num_elements();
 
     const int ntasks_percore      = nw / TG.getNCoresPerTG();
@@ -514,18 +514,18 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
         Ov[iw] += ma::conj(std::get<2>(*it)) * ov0 * local_ov[0][std::get<0>(*it)] * local_ov[1][std::get<1>(*it)];
 
       // 2. generate R[Nact,Nel] and generate G
-      boost::multi::array_ref<ComplexType, 2> Ra(Gwork.origin(), {NAEA, long(OrbMats[0].size(0))});
+      boost::multi::array_ref<ComplexType, 2> Ra(Gwork.base(), {NAEA, long(OrbMats[0].size(0))});
       calculate_R(0, 1, 0, abij, det_couplings[0], local_QQ0inv0, Qwork, local_ov[1], ov0, Ra);
       if (transpose)
       {
         if (compact)
         {
-          boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()), {GAdims.first, GAdims.second});
+          boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].base()), {GAdims.first, GAdims.second});
           ma::product(T(Ra), GA2D0_, Gw);
         }
         else
         {
-          boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()),
+          boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].base()),
                                                      {GAdims_full.first, GAdims_full.second});
           ma::product(T(Ra), GA2D0_, GA2D_);
           ma::product(T(OrbMats[0]), GA2D_, Gw);
@@ -541,7 +541,7 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
         }
         else
         {
-          boost::multi::array_ref<ComplexType, 1> G1D(Gfulla.origin(), iextensions<1u>{long(Gfulla.num_elements())});
+          boost::multi::array_ref<ComplexType, 1> G1D(Gfulla.base(), iextensions<1u>{long(Gfulla.num_elements())});
           ma::product(T(Ra), GA2D0_, GA2D_);
           ma::product(T(OrbMats[0]), GA2D_, Gfulla);
           ma::copy(G1D, G({0, Gfulla.num_elements()}, iw));
@@ -549,19 +549,19 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
         }
       }
 
-      boost::multi::array_ref<ComplexType, 2> Rb(Gwork.origin(), {NAEB, long(OrbMats.back().size(0))});
+      boost::multi::array_ref<ComplexType, 2> Rb(Gwork.base(), {NAEB, long(OrbMats.back().size(0))});
       calculate_R(0, 1, 1, abij, det_couplings[1], local_QQ0inv1, Qwork, local_ov[0], ov0, Rb);
       if (transpose)
       {
         if (compact)
         {
-          boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()) + GAdims.first * GAdims.second,
+          boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].base()) + GAdims.first * GAdims.second,
                                                      {GBdims.first, GBdims.second});
           ma::product(T(Rb), GB2D0_, Gw);
         }
         else
         {
-          boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()) +
+          boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].base()) +
                                                          GAdims_full.first * GAdims_full.second,
                                                      {GBdims_full.first, GBdims_full.second});
           ma::product(T(Rb), GB2D0_, GB2D_);
@@ -578,7 +578,7 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
         }
         else
         {
-          boost::multi::array_ref<ComplexType, 1> G1D(Gfullb.origin(), iextensions<1u>{Gfullb.num_elements()});
+          boost::multi::array_ref<ComplexType, 1> G1D(Gfullb.base(), iextensions<1u>{Gfullb.num_elements()});
           ma::product(T(Rb), GB2D0_, GB2D_);
           ma::product(T(OrbMats.back()), GB2D_, Gfullb);
           //G({Gfulla.num_elements(),G.size(0)},iw) = G1D;
@@ -657,34 +657,34 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
                 unique_overlaps[1][std::get<1>(*it)];
 
         // 2. generate R[Nact,Nel] and generate G
-        boost::multi::array_ref<ComplexType, 2> Ra(Gwork.origin(), {NAEA, long(OrbMats[0].size(0))});
+        boost::multi::array_ref<ComplexType, 2> Ra(Gwork.base(), {NAEA, long(OrbMats[0].size(0))});
         calculate_R(local_group_comm.rank(), local_group_comm.size(), 0, abij, det_couplings[0], QQ0inv0, Qwork,
                     unique_overlaps[1], ov0, Ra);
-        local_group_comm.all_reduce_in_place_n(to_address(Ra.origin()), Ra.num_elements(), std::plus<>());
+        local_group_comm.all_reduce_in_place_n(to_address(Ra.base()), Ra.num_elements(), std::plus<>());
         if (transpose)
         {
           if (compact)
           {
-            boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()), {GAdims.first, GAdims.second});
-            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extension(0), {M0, Mn}), Gw(Gw.extension(0), {M0, Mn}));
+            boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].base()), {GAdims.first, GAdims.second});
+            ma::product(T(Ra), GA2D0_shm(get<0>(GA2D0_shm.extents()), {M0, Mn}), Gw(get<0>(Gw.extents()), {M0, Mn}));
           }
           else
           {
-            boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()),
+            boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].base()),
                                                        {GAdims_full.first, GAdims_full.second});
-            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extension(0), {M0, Mn}),
-                        GA2D_(GA2D_.extension(0), {M0, Mn}));               // can be local
-            ma::product(T(OrbMats[0]), GA2D_(GA2D_.extension(0), {M0, Mn}), // can be local
-                        Gw(Gw.extension(0), {M0, Mn}));
+            ma::product(T(Ra), GA2D0_shm(get<0>(GA2D0_shm.extents()), {M0, Mn}),
+                        GA2D_(get<0>(GA2D_.extents()), {M0, Mn}));               // can be local
+            ma::product(T(OrbMats[0]), GA2D_(get<0>(GA2D_.extents()), {M0, Mn}), // can be local
+                        Gw(get<0>(Gw.extents()), {M0, Mn}));
           }
         }
         else
         {
           if (compact)
           {
-            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extension(0), {M0, Mn}),
-                        GA2D_(GA2D_.extension(0), {M0, Mn})); // can be local
-            boost::multi::array_ref<ComplexType, 3> Gw(to_address(G.origin()),
+            ma::product(T(Ra), GA2D0_shm(get<0>(GA2D0_shm.extents()), {M0, Mn}),
+                        GA2D_(get<0>(GA2D_.extents()), {M0, Mn})); // can be local
+            boost::multi::array_ref<ComplexType, 3> Gw(to_address(G.base()),
                                                        {GAdims.first, GAdims.second, long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
             for (size_t k = 0; k < get<0>(GA2D_.sizes()); ++k)
@@ -693,11 +693,11 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
           }
           else
           {
-            ma::product(T(Ra), GA2D0_shm(GA2D0_shm.extension(0), {M0, Mn}),
-                        GA2D_(GA2D_.extension(0), {M0, Mn})); // can be local
-            ma::product(T(OrbMats[0]), GA2D_(GA2D_.extension(0), {M0, Mn}),
-                        Gfulla(Gfulla.extension(0), {M0, Mn})); // can be local
-            boost::multi::array_ref<ComplexType, 3> Gw(to_address(G.origin()),
+            ma::product(T(Ra), GA2D0_shm(get<0>(GA2D0_shm.extents()), {M0, Mn}),
+                        GA2D_(get<0>(GA2D_.extents()), {M0, Mn})); // can be local
+            ma::product(T(OrbMats[0]), GA2D_(get<0>(GA2D_.extents()), {M0, Mn}),
+                        Gfulla(get<0>(Gfulla.extents()), {M0, Mn})); // can be local
+            boost::multi::array_ref<ComplexType, 3> Gw(to_address(G.base()),
                                                        {long(get<0>(Gfulla.sizes())), long(get<1>(Gfulla.sizes())), long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
             for (size_t k = 0; k < get<0>(Gfulla.sizes()); ++k)
@@ -706,36 +706,36 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
           }
         }
 
-        boost::multi::array_ref<ComplexType, 2> Rb(Gwork.origin(), {NAEB, long(OrbMats.back().size(0))});
+        boost::multi::array_ref<ComplexType, 2> Rb(Gwork.base(), {NAEB, long(OrbMats.back().size(0))});
         calculate_R(local_group_comm.rank(), local_group_comm.size(), 1, abij, det_couplings[1], QQ0inv1, Qwork,
                     unique_overlaps[0], ov0, Rb);
-        local_group_comm.all_reduce_in_place_n(to_address(Rb.origin()), Rb.num_elements(), std::plus<>());
+        local_group_comm.all_reduce_in_place_n(to_address(Rb.base()), Rb.num_elements(), std::plus<>());
         if (transpose)
         {
           if (compact)
           {
-            boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()) + GAdims.first * GAdims.second,
+            boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].base()) + GAdims.first * GAdims.second,
                                                        {GBdims.first, GBdims.second});
-            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extension(0), {M0, Mn}), Gw(Gw.extension(0), {M0, Mn}));
+            ma::product(T(Rb), GB2D0_shm(get<0>(GB2D0_shm.extents()), {M0, Mn}), Gw(get<0>(Gw.extents()), {M0, Mn}));
           }
           else
           {
-            boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].origin()) +
+            boost::multi::array_ref<ComplexType, 2> Gw(to_address(G[iw].base()) +
                                                            GAdims_full.first * GAdims_full.second,
                                                        {GBdims_full.first, GBdims_full.second});
-            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extension(0), {M0, Mn}),
-                        GB2D_(GB2D_.extension(0), {M0, Mn}));                   // can be local
-            ma::product(T(OrbMats.back()), GB2D_(GB2D_.extension(0), {M0, Mn}), // can be local
-                        Gw(Gw.extension(0), {M0, Mn}));
+            ma::product(T(Rb), GB2D0_shm(get<0>(GB2D0_shm.extents()), {M0, Mn}),
+                        GB2D_(get<0>(GB2D_.extents()), {M0, Mn}));                   // can be local
+            ma::product(T(OrbMats.back()), GB2D_(get<0>(GB2D_.extents()), {M0, Mn}), // can be local
+                        Gw(get<0>(Gw.extents()), {M0, Mn}));
           }
         }
         else
         {
           if (compact)
           {
-            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extension(0), {M0, Mn}),
-                        GB2D_(GB2D_.extension(0), {M0, Mn})); // can be local
-            boost::multi::array_ref<ComplexType, 3> Gw(to_address(G[GAdims.first * GAdims.second].origin()),
+            ma::product(T(Rb), GB2D0_shm(get<0>(GB2D0_shm.extents()), {M0, Mn}),
+                        GB2D_(get<0>(GB2D_.extents()), {M0, Mn})); // can be local
+            boost::multi::array_ref<ComplexType, 3> Gw(to_address(G[GAdims.first * GAdims.second].base()),
                                                        {GBdims.first, GBdims.second, long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
             for (size_t k = 0; k < get<0>(GB2D_.sizes()); ++k)
@@ -744,11 +744,11 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
           }
           else
           {
-            ma::product(T(Rb), GB2D0_shm(GB2D0_shm.extension(0), {M0, Mn}),
-                        GB2D_(GB2D_.extension(0), {M0, Mn})); // can be local
-            ma::product(T(OrbMats[0]), GB2D_(GB2D_.extension(0), {M0, Mn}),
-                        Gfullb(Gfullb.extension(0), {M0, Mn})); // can be local
-            boost::multi::array_ref<ComplexType, 3> Gw(to_address(G[Gfulla.num_elements()].origin()),
+            ma::product(T(Rb), GB2D0_shm(get<0>(GB2D0_shm.extents()), {M0, Mn}),
+                        GB2D_(get<0>(GB2D_.extents()), {M0, Mn})); // can be local
+            ma::product(T(OrbMats[0]), GB2D_(get<0>(GB2D_.extents()), {M0, Mn}),
+                        Gfullb(get<0>(Gfullb.extents()), {M0, Mn})); // can be local
+            boost::multi::array_ref<ComplexType, 3> Gw(to_address(G[Gfulla.num_elements()].base()),
                                                        {long(get<0>(Gfullb.sizes())), long(get<1>(Gfullb.sizes())), long(get<1>(G.sizes()))});
             // copying by hand for now, implement strided copy in ma_blas
             for (size_t k = 0; k < get<0>(Gfullb.sizes()); ++k)
@@ -760,7 +760,7 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
     }
   }
   // normalize G
-  TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()), nw, std::plus<>());
+  TG.TG_local().all_reduce_in_place_n(to_address(Ov.base()), nw, std::plus<>());
   if (transpose)
   {
     for (size_t iw = 0; iw < G.size(); ++iw)
@@ -772,12 +772,12 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
   }
   else
   {
-    auto Ov_         = Ov.origin();
+    auto Ov_         = Ov.base();
     const size_t nw_ = get<1>(G.sizes());
     for (int ik = 0; ik < get<0>(G.sizes()); ++ik)
       if (ik % TG.TG_local().size() == TG.TG_local().rank())
       {
-        auto Gik = to_address(G[ik].origin());
+        auto Gik = to_address(G[ik].base());
         for (size_t iw = 0; iw < nw_; ++iw)
           Gik[iw] /= Ov_[iw];
       }
@@ -811,8 +811,8 @@ void PHMSD::DensityMatrix_shared(const WlkSet& wset,
   assert(Ov.size() >= nw);
   // to force synchronization before modifying structures in SHM
   TG.local_barrier();
-  fill_n(Ov.origin(), Ov.num_elements(), 0);
-  fill_n(G.origin(), G.num_elements(), ComplexType(0.0));
+  fill_n(Ov.base(), Ov.num_elements(), 0);
+  fill_n(G.base(), G.num_elements(), ComplexType(0.0));
   TG.local_barrier();
   double LogOverlapFactor(wset.getLogOverlapFactor());
   auto Gsize = dm_size(not compact);
@@ -827,8 +827,8 @@ void PHMSD::DensityMatrix_shared(const WlkSet& wset,
       assert(RefA.size(1) == dm_dims(false, Alpha).first && RefA.size(0) == dm_dims(false, Alpha).second);
 
     auto Gdims = dm_dims(not compact, Alpha);
-    CMatrix_ref G2D_(localGbuff.origin(), {Gdims.first, Gdims.second});
-    CVector_ref G1D_(G2D_.origin(), iextensions<1u>{G2D_.num_elements()});
+    CMatrix_ref G2D_(localGbuff.base(), {Gdims.first, Gdims.second});
+    CVector_ref G1D_(G2D_.base(), iextensions<1u>{G2D_.num_elements()});
 
     for (int iw = 0; iw < nw; ++iw)
     {
@@ -840,7 +840,7 @@ void PHMSD::DensityMatrix_shared(const WlkSet& wset,
       if (transposed)
         G[iw] = G1D_;
       else
-        G(G.extension(0), iw) = G1D_;
+        G(get<0>(G.extents()), iw) = G1D_;
     }
   }
   else
@@ -856,13 +856,13 @@ void PHMSD::DensityMatrix_shared(const WlkSet& wset,
 
     if (get<0>(ovlp2.sizes()) < 2 * nw)
       ovlp2.reextent(iextensions<1u>{2 * nw});
-    fill_n(ovlp2.origin(), 2 * nw, ComplexType(0.0));
+    fill_n(ovlp2.base(), 2 * nw, ComplexType(0.0));
     auto GAdims = dm_dims(not compact, Alpha);
     auto GBdims = dm_dims(not compact, Beta);
-    CMatrix_ref GA2D_(localGbuff.origin(), {GAdims.first, GAdims.second});
-    CMatrix_ref GB2D_(GA2D_.origin() + GA2D_.num_elements(), {GBdims.first, GBdims.second});
-    CVector_ref GA1D_(GA2D_.origin(), iextensions<1u>{GA2D_.num_elements()});
-    CVector_ref GB1D_(GB2D_.origin(), iextensions<1u>{GB2D_.num_elements()});
+    CMatrix_ref GA2D_(localGbuff.base(), {GAdims.first, GAdims.second});
+    CMatrix_ref GB2D_(GA2D_.base() + GA2D_.num_elements(), {GBdims.first, GBdims.second});
+    CVector_ref GA1D_(GA2D_.base(), iextensions<1u>{GA2D_.num_elements()});
+    CVector_ref GB1D_(GB2D_.base(), iextensions<1u>{GB2D_.num_elements()});
 
     for (int iw = 0; iw < 2 * nw; ++iw)
     {
@@ -889,7 +889,7 @@ void PHMSD::DensityMatrix_shared(const WlkSet& wset,
       }
     }
     if (TG.TG_local().size() > 1)
-      TG.TG_local().all_reduce_in_place_n(to_address(ovlp2.origin()), 2 * nw, std::plus<>());
+      TG.TG_local().all_reduce_in_place_n(to_address(ovlp2.base()), 2 * nw, std::plus<>());
     if (TG.TG_local().root())
       for (int iw = 0; iw < nw; ++iw)
         Ov[iw] = ovlp2[2 * iw] * ovlp2[2 * iw + 1];
@@ -1122,7 +1122,7 @@ void PHMSD::Overlap(const WlkSet& wset, TVec&& Ov)
       }
     }
   }
-  TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()), nw, std::plus<>());
+  TG.TG_local().all_reduce_in_place_n(to_address(Ov.base()), nw, std::plus<>());
 }
 
 /*
@@ -1208,45 +1208,45 @@ void PHMSD::OrthogonalizeExcited(Mat&& A, SpinTypes spin, double LogOverlapFacto
     using std::get;
     if (get<0>(extendedMatAlpha.sizes()) != NMO || get<1>(extendedMatAlpha.sizes()) != maxOccupExtendedMat.first)
       extendedMatAlpha.reextent({NMO, maxOccupExtendedMat.first});
-    extendedMatAlpha(extendedMatAlpha.extension(0), {0, NAEA}) = A;
-    extendedMatAlpha(extendedMatAlpha.extension(0), {NAEA + 1, maxOccupExtendedMat.first}) =
-        excitedOrbMat[0](excitedOrbMat.extension(1), {NAEA + 1, maxOccupExtendedMat.first});
+    extendedMatAlpha(get<0>(extendedMatAlpha.extents()), {0, NAEA}) = A;
+    extendedMatAlpha(get<0>(extendedMatAlpha.extents()), {NAEA + 1, maxOccupExtendedMat.first}) =
+        excitedOrbMat[0](get<1>(excitedOrbMat.extents()), {NAEA + 1, maxOccupExtendedMat.first});
     // move i->a, copy trial orb i
     for (auto& i : excitations)
       if (i.first < NMO && i.second < NMO)
       {
-        extendedMatAlpha(extendedMatAlpha.extension(0), i.second) =
-            extendedMatAlpha(extendedMatAlpha.extension(0), i.first);
-        extendedMatAlpha(extendedMatAlpha.extension(0), i.first) =
-            excitedOrbMat[0](excitedOrbMat.extension(1), i.first);
+        extendedMatAlpha(get<0>(extendedMatAlpha.extents()), i.second) =
+            extendedMatAlpha(get<0>(extendedMatAlpha.extents()), i.first);
+        extendedMatAlpha(get<0>(extendedMatAlpha.extents()), i.first) =
+            excitedOrbMat[0](get<1>(excitedOrbMat.extents()), i.first);
       }
     ComplexType det              = SDetOp.Orthogonalize(extendedMatAlpha, LogOverlapFactor);
-    A(A.extension(0), {0, NAEA}) = extendedMatAlpha(extendedMatAlpha.extension(0), {0, NAEA});
+    A(get<0>(A.extents()), {0, NAEA}) = extendedMatAlpha(get<0>(extendedMatAlpha.extents()), {0, NAEA});
     for (auto& i : excitations)
       if (i.first < NMO && i.second < NMO)
-        A(A.extension(0), i.first) = extendedMatAlpha(extendedMatAlpha.extension(0), i.second);
+        A(get<0>(A.extents()), i.first) = extendedMatAlpha(get<0>(extendedMatAlpha.extents()), i.second);
   }
   else
   {
     using std::get;
     if (get<0>(extendedMatBeta.sizes()) != NMO || get<1>(extendedMatBeta.sizes()) != maxOccupExtendedMat.second)
       extendedMatBeta.reextent({NMO, maxOccupExtendedMat.second});
-    extendedMatBeta(extendedMatBeta.extension(0), {0, NAEB}) = A;
-    extendedMatBeta(extendedMatBeta.extension(0), {NAEB + 1, maxOccupExtendedMat.second}) =
-        excitedOrbMat[1](excitedOrbMat.extension(1), {NAEB + 1, maxOccupExtendedMat.second});
+    extendedMatBeta(get<0>(extendedMatBeta.extents()), {0, NAEB}) = A;
+    extendedMatBeta(get<0>(extendedMatBeta.extents()), {NAEB + 1, maxOccupExtendedMat.second}) =
+        excitedOrbMat[1](get<1>(excitedOrbMat.extents()), {NAEB + 1, maxOccupExtendedMat.second});
     // move i->a, copy trial orb i
     for (auto& i : excitations)
       if (i.first >= NMO && i.second >= NMO)
       {
-        extendedMatBeta(extendedMatBeta.extension(0), i.second) =
-            extendedMatBeta(extendedMatBeta.extension(0), i.first);
-        extendedMatBeta(extendedMatBeta.extension(0), i.first) = excitedOrbMat[1](excitedOrbMat.extension(1), i.first);
+        extendedMatBeta(get<0>(extendedMatBeta.extents()), i.second) =
+            extendedMatBeta(get<0>(extendedMatBeta.extents()), i.first);
+        extendedMatBeta(get<0>(extendedMatBeta.extents()), i.first) = excitedOrbMat[1](get<1>(excitedOrbMat.extents()), i.first);
       }
     ComplexType detR             = SDetOp.Orthogonalize(extendedMatBeta, LogOverlapFactor);
-    A(A.extension(0), {0, NAEB}) = extendedMatBeta(extendedMatBeta.extension(0), {0, NAEB});
+    A(get<0>(A.extents()), {0, NAEB}) = extendedMatBeta(get<0>(extendedMatBeta.extents()), {0, NAEB});
     for (auto& i : excitations)
       if (i.first >= NMO && i.second >= NMO)
-        A(A.extension(0), i.first) = extendedMatBeta(extendedMatBeta.extension(0), i.second);
+        A(get<0>(A.extents()), i.first) = extendedMatBeta(get<0>(extendedMatBeta.extents()), i.second);
   }
 }
 
@@ -1266,16 +1266,16 @@ void PHMSD::vMF(Vec&& v)
   using std::get;
   using std::norm;
   assert(v.num_elements() == local_number_of_cholesky_vectors());
-  std::fill_n(v.origin(), v.num_elements(), ComplexType(0));
+  std::fill_n(v.base(), v.num_elements(), ComplexType(0));
   auto Gsize = dm_size(false);
   if (localGbuff.size() < Gsize)
     localGbuff.reextent(iextensions<1u>{Gsize});
 
   //shmCMatrix ovlps({2,maxn_unique_confg},shared_allocator<ComplexType>{TG.Node()});
   //boost::multi::array<ComplexType,2> ovlps({2,maxn_unique_confg});
-  boost::multi::array<ComplexType, 2> ovlps({2, static_cast<boost::multi::size_t>(maxn_unique_confg)});
+  boost::multi::array<ComplexType, 2> ovlps({2, static_cast<boost::multi::ssize_t>(maxn_unique_confg)});
   //if(TG.Node().root())
-  std::fill_n(to_address(ovlps.origin()), 2 * maxn_unique_confg, ComplexType(0.0));
+  std::fill_n(to_address(ovlps.base()), 2 * maxn_unique_confg, ComplexType(0.0));
 
   auto refc   = abij.reference_configuration();
   auto confgs = abij.configurations_begin();
@@ -1306,8 +1306,8 @@ void PHMSD::vMF(Vec&& v)
   }
   TG.Node().barrier();
   //if(TG.Node().root())
-  //  TG.Cores().all_reduce_in_place_n(to_address(ovlps.origin()),ovlps.num_elements(),std::plus<>());
-  TG.Global().all_reduce_in_place_n(to_address(ovlps.origin()), ovlps.num_elements(), std::plus<>());
+  //  TG.Cores().all_reduce_in_place_n(to_address(ovlps.base()),ovlps.num_elements(),std::plus<>());
+  TG.Global().all_reduce_in_place_n(to_address(ovlps.base()), ovlps.num_elements(), std::plus<>());
   TG.Node().barrier();
 
   ComplexType ov(0.0);
@@ -1323,12 +1323,12 @@ void PHMSD::vMF(Vec&& v)
     confg.resize((spin == 0) ? NAEA : NAEB);
     auto Gdims     = dm_dims(false, SpinTypes(spin));
     auto Gdims_ref = dm_dims_ref(false, SpinTypes(spin));
-    boost::multi::array_ref<ComplexType, 2> G2D_(localGbuff.origin(), {Gdims_ref.first, Gdims_ref.second});
-    boost::multi::array_ref<ComplexType, 1> G1D_(G2D_.origin(), iextensions<1u>{G2D_.num_elements()});
+    boost::multi::array_ref<ComplexType, 2> G2D_(localGbuff.base(), {Gdims_ref.first, Gdims_ref.second});
+    boost::multi::array_ref<ComplexType, 1> G1D_(G2D_.base(), iextensions<1u>{G2D_.num_elements()});
     boost::multi::array<ComplexType, 2> SM_({Gdims_ref.second, Gdims_ref.first});
     // store mean field G
     boost::multi::array<ComplexType, 2> G({Gdims.first, Gdims.second});
-    std::fill_n(G.origin(), G.num_elements(), ComplexType(0.0));
+    std::fill_n(G.base(), G.num_elements(), ComplexType(0.0));
 
     // diagonal contribution
     for (int nd = 0; nd < det_couplings[spin].size(); ++nd)
@@ -1389,15 +1389,15 @@ void PHMSD::vMF(Vec&& v)
         }
       }
     }
-    boost::multi::array_ref<ComplexType, 1> G1D(G.origin(), iextensions<1u>{G.num_elements()});
-    TG.Global().all_reduce_in_place_n(to_address(G1D.origin()), G1D.num_elements(), std::plus<>());
+    boost::multi::array_ref<ComplexType, 1> G1D(G.base(), iextensions<1u>{G.num_elements()});
+    TG.Global().all_reduce_in_place_n(to_address(G1D.base()), G1D.num_elements(), std::plus<>());
     ma::scal(ComplexType(1.0 / ov), G1D);
     HamOp.vbias(G1D, std::forward<Vec>(v), 0.5, 1.0);
   }
   TG.Node().barrier();
 
   // since v is not in shared memory, we need to reduce
-  TG.TG_local().all_reduce_in_place_n(to_address(v.origin()), v.num_elements(), std::plus<>());
+  TG.TG_local().all_reduce_in_place_n(to_address(v.base()), v.num_elements(), std::plus<>());
   // NOTE: since SpvnT is a truncated structure the complex part of vMF,
   //       which should be exactly zero, suffers from truncation errors.
   //       Set it to zero.
