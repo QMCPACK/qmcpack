@@ -29,7 +29,7 @@ class QEXML(DevBase):
         self._value = []
     #end def __init__
 
-    array_keys = set('type size columns len _value'.split())
+    array_keys = frozenset({'size', 'type', 'columns', '_value', 'len'})
     def finalize(self):
         keys = list(self.keys())
         enums = obj()

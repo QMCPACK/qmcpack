@@ -2,6 +2,7 @@
 <project id="m5" series="0">
   <parameter name="driver_version">legacy</parameter>
 </project>
+  <random seed="1776"/>
 
   <qmcsystem>
     <simulationcell>

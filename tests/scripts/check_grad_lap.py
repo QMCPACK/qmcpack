@@ -39,12 +39,12 @@ Laplacian     = -93.12287222
   grad_line = mm.readline().decode()
   grad_xyz  = grad_line.split('=')[-1]
   try: # real values
-    grad_val = map(float,grad_xyz.split())
-  except: # complex values
-    xyzl = re.split(r'[(,)]',grad_xyz.strip('\n'))
-    grad_real = map(float,xyzl[1::3])
-    grad_imag = map(float,xyzl[2::3])
-    grad_val  = [grad_real[i] + 1j*grad_imag[i] for i in range(3)]
+    grad_val = [float(value) for value in grad_xyz.split()]
+  except ValueError: # complex values
+    components = re.findall(r'\(\s*([^,]+)\s*,\s*([^)]+)\)', grad_xyz)
+    if len(components) != 3:
+      raise RuntimeError('failed to parse complex gradient: %s' % grad_xyz.strip())
+    grad_val = [complex(float(real), float(imag)) for real, imag in components]
   # end try
   idx = mm.find('Relative Error'.encode())
   mm.seek(idx)

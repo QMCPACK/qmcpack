@@ -37,8 +37,8 @@ public:
     StructureFactorInputSection()
     {
       section_name = type_tag;
-      attributes   = {"type", "name", "source", "target", "hdf5", "writerho", "writeionion"};
-      strings      = {"type", "name", "source", "target"};
+      attributes   = {"name", "source", "target", "hdf5", "writerho", "writeionion"};
+      strings      = {"name", "source", "target"};
       bools        = {"hdf5", "writerho", "writeionion"};
     }
     // clang-format: on
@@ -55,7 +55,6 @@ private:
   StructureFactorInputSection input_section_;
 
   std::string name_{type_tag};
-  std::string type_{type_tag};
   std::string source_;
   std::string target_;
   bool write_hdf5_{false};
@@ -64,7 +63,6 @@ private:
 
 public:
   std::string get_name() const { return name_; }
-  std::string get_type() const { return type_; }
   std::string get_source() const { return source_; }
   std::string get_target() const { return target_; }
   bool get_write_hdf5() const { return write_hdf5_; }

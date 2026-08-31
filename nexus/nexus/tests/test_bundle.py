@@ -2,8 +2,7 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.BUNDLE)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
+
 
 from .. import testing
 from ..testing import failed,FailedTest
@@ -20,28 +19,18 @@ def test_bundle():
     from .test_simulation_module import get_test_workflow
 
     # empty init
-    try:
+    with pytest.raises(
+        ValueError,
+        match="attempted to bundle 0 simulations",
+        ):
         bundle()
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     # init with wrong types
-    try:
+    with pytest.raises(
+        TypeError,
+        match="attempted to bundle non-simulation object"
+        ):
         bundle([1,2,3])
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     def get_workflow():
         machine = get_machine('theta')
@@ -61,26 +50,17 @@ def test_bundle():
     sims,levels = get_workflow()
 
     # attempt to bundle sims that depend on each other
-    try:
+    with pytest.raises(
+        ValueError,
+        match="attempted to bundle simulations that depend on each other",
+        ):
         bundle(levels[1]+[sims.s8])
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
-    try:
+
+    with pytest.raises(
+        ValueError,
+        match="multiple simulations in a single directory have the same identifier"
+        ):
         bundle(levels[1]+[sims.s9])
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     sims,levels = get_workflow()
 

@@ -115,8 +115,8 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmc_gaussian_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
-  det_qmc_short
-  det_qmc_short.in.xml
+  det_qmc
+  det_qmc.in.xml
   1
   1
   TRUE
@@ -127,8 +127,8 @@ qmc_run_and_check(
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch_gaussian_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
-  det_qmc_short_vmcbatch
-  det_qmc_short_vmcbatch.in.xml
+  det_qmc_vmcbatch
+  det_qmc_vmcbatch.in.xml
   1
   1
   TRUE
@@ -157,8 +157,8 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch_gaussian_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
-  det_qmc_short_vmcbatch_dmcbatch
-  det_qmc_short_vmcbatch_dmcbatch.in.xml
+  det_qmc_vmcbatch_dmcbatch
+  det_qmc_vmcbatch_dmcbatch.in.xml
   1
   4
   TRUE
@@ -197,8 +197,8 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch_gaussian_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
-  det_qmc_short_vmcbatch_dmcbatch
-  det_qmc_short_vmcbatch_dmcbatch.in.xml
+  det_qmc_vmcbatch_dmcbatch
+  det_qmc_vmcbatch_dmcbatch.in.xml
   2
   2
   TRUE
@@ -227,8 +227,8 @@ endif()
 qmc_run_and_check(
   deterministic-diamondC_2x1x1_pp-vmcbatch-dmcbatch_gaussian_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
-  det_qmc_short_vmcbatch_dmcbatch
-  det_qmc_short_vmcbatch_dmcbatch.in.xml
+  det_qmc_vmcbatch_dmcbatch
+  det_qmc_vmcbatch_dmcbatch.in.xml
   2
   3
   TRUE

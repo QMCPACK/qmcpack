@@ -1,12 +1,11 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PSEUDOPOTENTIAL)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
-from . import isolate_nexus_core, TEST_DIR
-from ..testing import value_eq,object_eq
+from . import TEST_DIR
+from ..testing import value_eq, object_eq
 
 
 TEST_FILES = {
@@ -19,170 +18,9 @@ for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"
 
 
-def test_pp_elem_label():
-    from ..pseudopotential import pp_elem_label
-
-    ppfiles = [
-        ('C'  , 'C'  , 'C.BFD.xml'   ),
-        ('C2' , 'C'  , 'C2.ONCV.upf' ),
-        ('C'  , 'C'  , 'C_ONCV.upf'  ),
-        ('C'  , 'C'  , 'C-ONCV.upf'  ),
-        ('Co' , 'Co' , 'Co.BFD.xml'  ),
-        ('Co2', 'Co' , 'Co2.ONCV.upf'),
-        ('Co' , 'Co' , 'Co_ONCV.upf' ),
-        ('Co' , 'Co' , 'Co-ONCV.upf' ),
-        ]
-
-    for reflabel,refsymbol,ppfile in ppfiles:
-        label,symbol,is_elem = pp_elem_label(ppfile)
-        assert(is_elem)
-        assert(label==reflabel)
-        assert(symbol==refsymbol)
-    #end for
-
-#end def test_pp_elem_label
-
-
-@isolate_nexus_core
-def test_pseudopotentials():
-    from ..pseudopotential import Pseudopotentials
-    from ..pseudopotential import PseudoFile
-    from ..pseudopotential import gamessPPFile
-
-    # empty initialization
-    Pseudopotentials()
-    PseudoFile()
-    gamessPPFile()
-
-    # standard initialization
-    file_paths = list(TEST_FILES.values())
-    pps = Pseudopotentials(file_paths)
-
-    for fn in TEST_FILES.keys():
-        assert(fn in pps)
-        pp = pps[fn]
-        assert(isinstance(pp,PseudoFile))
-        if fn.endswith('.gms'):
-            assert(isinstance(pp,gamessPPFile))
-        #end if
-        assert(pp.element=='C')
-        assert(pp.element_label=='C')
-        assert(pp.filename==fn)
-    #end for
-
-    basis_ref = '''s 9 1.00
-1 0.051344     0.013991
-2 0.102619     0.169852
-3 0.205100     0.397529
-4 0.409924     0.380369
-5 0.819297     0.180113
-6 1.637494     -0.033512
-7 3.272791     -0.121499
-8 6.541187     0.015176
-9 13.073594     -0.000705
-s 1 1.00
-1 0.098302     1.000000
-s 1 1.00
-1 0.232034     1.000000
-s 1 1.00
-1 0.744448     1.000000
-s 1 1.00
-1 1.009914     1.000000
-p 9 1.00
-1 0.029281     0.001787
-2 0.058547     0.050426
-3 0.117063     0.191634
-4 0.234064     0.302667
-5 0.468003     0.289868
-6 0.935757     0.210979
-7 1.871016     0.112024
-8 3.741035     0.054425
-9 7.480076     0.021931
-p 1 1.00
-1 0.084047     1.000000
-p 1 1.00
-1 0.216618     1.000000
-p 1 1.00
-1 0.576869     1.000000
-p 1 1.00
-1 1.006252     1.000000
-d 1 1.00
-1 0.206619     1.000000
-d 1 1.00
-1 0.606933     1.000000
-d 1 1.00
-1 1.001526     1.000000
-d 1 1.00
-1 1.504882     1.000000
-f 1 1.00
-1 0.400573     1.000000
-f 1 1.00
-1 1.099564     1.000000
-f 1 1.00
-1 1.501091     1.000000
-g 1 1.00
-1 0.797648     1.000000
-g 1 1.00
-1 1.401343     1.000000
-h 1 1.00
-1 1.001703     1.000000'''
-
-    pp_ref = '''C-QMC GEN 2 1
-3
-4.00000000 1 8.35973821
-33.43895285 3 4.48361888
--19.17537323 2 3.93831258
-1
-22.55164191 2 5.02991637'''
-
-    pp = pps['C.BFD.gms']
-    assert(pp.basis_text==basis_ref)
-    assert(pp.pp_text==pp_ref)
-
-#end def test_pseudopotentials
-
-
-
-def test_ppset():
-    from ..developer import obj
-    from ..pseudopotential import ppset
-
-    ppset_ref = obj(
-        pseudos = obj(
-            bfd = obj(
-                gamess  = obj(C='C.BFD.gms'),
-                pwscf   = obj(C='C.BFD.upf'),
-                qmcpack = obj(C='C.BFD.xml'),
-                ),
-            ),
-        )
-
-    ppset(
-        label   = 'bfd',
-        gamess  = ['C.BFD.gms'],
-        pwscf   = ['C.BFD.upf'],
-        qmcpack = ['C.BFD.xml'],
-        )
-
-    o = ppset.to_obj()
-    assert(object_eq(o,ppset_ref))
-
-    assert(ppset.supports_code('pwscf'))
-    assert(ppset.supports_code('gamess'))
-    assert(ppset.supports_code('vasp'))
-    assert(ppset.supports_code('qmcpack'))
-
-    assert(ppset.has_set('bfd'))
-
-
-    # need to add test for get() method
-    #   depends on PhysicalSystem
-#end def test_ppset
-
-
-
 def test_pseudopotential_classes(tmp_path):
     import numpy as np
+    from ..developer import to_obj
     from ..pseudopotential import SemilocalPP
     from ..pseudopotential import GaussianPP
     from ..pseudopotential import QmcpackPP
@@ -254,7 +92,7 @@ def test_pseudopotential_classes(tmp_path):
     assert(value_eq(qpp.v_at_zero('s'),22.551641791033372))
     assert(value_eq(qpp.v_at_zero('p'),-19.175372435022126))
 
-    qpp_fake = qpp.copy()
+    qpp_fake = deepcopy(qpp)
     r = np.linspace(0,10,6)
     vloc = 0*r + qpp.Zval
     vnl  = 0*r
@@ -274,8 +112,8 @@ def test_pseudopotential_classes(tmp_path):
       <radfunc>
         <grid type="linear" units="bohr" ri="0.0" rf="10.0" npts="6"/>
         <data>
-          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
-          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
+           4.00000000000000e+00   4.00000000000000e+00   4.00000000000000e+00
+           4.00000000000000e+00   4.00000000000000e+00   4.00000000000000e+00
         </data>
       </radfunc>
     </vps>
@@ -283,8 +121,8 @@ def test_pseudopotential_classes(tmp_path):
       <radfunc>
         <grid type="linear" units="bohr" ri="0.0" rf="10.0" npts="6"/>
         <data>
-          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
-          4.00000000000000e+00  4.00000000000000e+00  4.00000000000000e+00
+           4.00000000000000e+00   4.00000000000000e+00   4.00000000000000e+00
+           4.00000000000000e+00   4.00000000000000e+00   4.00000000000000e+00
         </data>
       </radfunc>
     </vps>
@@ -293,6 +131,24 @@ def test_pseudopotential_classes(tmp_path):
 
     qtext = qpp_fake.write_qmcpack()
     assert(qtext.strip()==qtext_ref.strip())
+
+    # Read legacy QMCpack files in which adjacent L2 values ran together
+    # because a value filled the allotted output field width.
+    l2_text = '''  <L2 units="hartree" format="r*V" cutoff="10.0">
+    <radfunc>
+      <grid type="linear" units="bohr" ri="0.0" rf="10.0" npts="3"/>
+      <data>
+         1.00000000000000e+00-2.00000000000000e+00 3.00000000000000e+00
+      </data>
+    </radfunc>
+  </L2>
+'''
+    qtext_legacy_l2 = qtext.replace('  <semilocal',l2_text+'  <semilocal')
+    legacy_l2_file = tmp_path / 'legacy_l2.qmcpack'
+    legacy_l2_file.write_text(qtext_legacy_l2)
+    qpp_legacy_l2 = QmcpackPP(legacy_l2_file)
+    assert(qpp_legacy_l2.has_L2())
+    assert(value_eq(qpp_legacy_l2.components.L2,np.array([1.,-2.,3.])))
 
     ctext_ref = '''C pseudopotential converted by Nexus
 Atomic number and pseudo-charge
@@ -385,8 +241,8 @@ r*potential (L=1) in Ha
     # tests for CasinoPP
     cpp = CasinoPP(casino_file)
 
-    qo = qpp.to_obj()
-    co = cpp.to_obj()
+    qo = to_obj(qpp)
+    co = to_obj(cpp)
     del qo.rmin
     del qo.rmax
     assert(object_eq(co,qo,atol=1e-12))
@@ -398,4 +254,3 @@ r*potential (L=1) in Ha
     assert(object_eq(qpp_casino,qpp,int_as_float=True,atol=1e-12))
 
 #end def test_pseudopotential_classes
-

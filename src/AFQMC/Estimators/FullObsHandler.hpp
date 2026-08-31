@@ -52,7 +52,7 @@ class FullObsHandler : public AFQMCInfo
   using shared_pointer       = typename sharedAllocator::pointer;
   using const_shared_pointer = typename sharedAllocator::const_pointer;
 
-  using devCMatrix_ptr = boost::multi::array_ptr<ComplexType, 2, device_ptr<ComplexType>>;
+  using devCMatrix_ptr = boost::multi::detail::array_ptr<ComplexType, 2, device_ptr<ComplexType>>;
 
   using sharedCVector      = boost::multi::array<ComplexType, 1, sharedAllocator>;
   using sharedCVector_ref  = boost::multi::array_ref<ComplexType, 1, shared_pointer>;
@@ -66,8 +66,8 @@ class FullObsHandler : public AFQMCInfo
   using stdCVector_ref = boost::multi::array_ref<ComplexType, 1>;
 
   using shm_stack_alloc_type = LocalTGBufferManager::template allocator_t<ComplexType>;
-  using StaticSHMVector      = boost::multi::static_array<ComplexType, 1, shm_stack_alloc_type>;
-  using StaticSHM4Tensor     = boost::multi::static_array<ComplexType, 4, shm_stack_alloc_type>;
+  using DynamicSHMVector     = boost::multi::dynamic_array<ComplexType, 1, shm_stack_alloc_type>;
+  using DynamicSHM4Tensor    = boost::multi::dynamic_array<ComplexType, 4, shm_stack_alloc_type>;
 
 public:
   FullObsHandler(afqmc::TaskGroup_& tg_,
@@ -178,12 +178,12 @@ public:
     if (TG.TG_local().root())
     {
       ma::scal(ComplexType(1.0 / block_size), denominator);
-      TG.TG_heads().reduce_in_place_n(to_address(denominator.origin()), denominator.num_elements(), std::plus<>(), 0);
+      TG.TG_heads().reduce_in_place_n(to_address(denominator.base()), denominator.num_elements(), std::plus<>(), 0);
     }
 
     for (auto& v : properties)
       v.print(iblock, dump, denominator);
-    fill_n(denominator.origin(), denominator.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(denominator.base(), denominator.num_elements(), ComplexType(0.0, 0.0));
   }
 
   template<class WlkSet, class MatR, class CVec, class MatD>
@@ -198,20 +198,20 @@ public:
     int nrefs(get<1>(Refs.sizes()));
     double LogOverlapFactor(wset.getLogOverlapFactor());
     LocalTGBufferManager shm_buffer_manager;
-    StaticSHM4Tensor G4D({nw, nspins, get<0>(Gdims), get<1>(Gdims)},
-                         shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticSHMVector DevOv(iextensions<1u>{2 * nw},
+    DynamicSHM4Tensor G4D({nw, nspins, get<0>(Gdims), get<1>(Gdims)},
                           shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
-    sharedCMatrix_ref G2D(G4D.origin(), {nw, dm_size});
+    DynamicSHMVector DevOv(iextensions<1u>{2 * nw},
+                           shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
+    sharedCMatrix_ref G2D(G4D.base(), {nw, dm_size});
 
     if (G4D_host.num_elements() != G4D.num_elements())
     {
-      G4D_host = mpi3C4Tensor(G4D.extensions(), shared_allocator<ComplexType>{TG.TG_local()});
+      G4D_host = mpi3C4Tensor(G4D.extents(), shared_allocator<ComplexType>{TG.TG_local()});
       TG.TG_local().barrier();
     }
 
     stdCVector Xw(iextensions<1u>{nw});
-    std::fill_n(Xw.origin(), Xw.num_elements(), ComplexType(1.0, 0.0));
+    std::fill_n(Xw.base(), Xw.num_elements(), ComplexType(1.0, 0.0));
     stdCVector Ov(iextensions<1u>{2 * nw});
     stdCMatrix detR(DevdetR);
 
@@ -262,13 +262,13 @@ public:
         {
           SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
           SMB.emplace_back(wset[iw].SlaterMatrixN(Beta));
-          GA.emplace_back(make_device_ptr(G2D[iw].origin()), iextensions<2u>{NMO, NMO});
-          GB.emplace_back(make_device_ptr(G2D[iw].origin()) + NMO * NMO, iextensions<2u>{NMO, NMO});
+          GA.emplace_back(make_device_ptr(G2D[iw].base()), iextensions<2u>{NMO, NMO});
+          GB.emplace_back(make_device_ptr(G2D[iw].base()) + NMO * NMO, iextensions<2u>{NMO, NMO});
           RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
           RefsB.emplace_back(wset[iw].SlaterMatrixAux(Beta));
-          copy_n(Refs[iw][iref].origin(), (*RefsA.back()).num_elements(), (*RefsA.back()).origin());
-          copy_n(Refs[iw][iref].origin() + (*RefsA.back()).num_elements(), (*RefsB.back()).num_elements(),
-                 (*RefsB.back()).origin());
+          copy_n(Refs[iw][iref].base(), (*RefsA.back()).num_elements(), (*RefsA.back()).base());
+          copy_n(Refs[iw][iref].base() + (*RefsA.back()).num_elements(), (*RefsB.back()).num_elements(),
+                 (*RefsB.back()).base());
         }
         wfn0.DensityMatrix(RefsA, SMA, GA, DevOv.sliced(0, nw), LogOverlapFactor, false, false);
         wfn0.DensityMatrix(RefsB, SMB, GB, DevOv.sliced(nw, 2 * nw), LogOverlapFactor, false, false);
@@ -278,15 +278,15 @@ public:
         for (int iw = 0; iw < nw; iw++)
         {
           SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
-          GA.emplace_back(make_device_ptr(G2D[iw].origin()), iextensions<2u>{NMO, NMO});
+          GA.emplace_back(make_device_ptr(G2D[iw].base()), iextensions<2u>{NMO, NMO});
           RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
-          copy_n(Refs[iw][iref].origin(), (*RefsA.back()).num_elements(), (*RefsA.back()).origin());
+          copy_n(Refs[iw][iref].base(), (*RefsA.back()).num_elements(), (*RefsA.back()).base());
         }
         wfn0.DensityMatrix(RefsA, SMA, GA, DevOv.sliced(0, nw), LogOverlapFactor, false, false);
       }
 
       //2. calculate and accumulate appropriate weights
-      copy_n(DevOv.origin(), 2 * nw, Ov.origin());
+      copy_n(DevOv.base(), 2 * nw, Ov.base());
       if (nrefs > 1)
       {
         if (walker_type == CLOSED)
@@ -314,7 +314,7 @@ public:
       TG.TG_local().barrier();
       int i0, iN;
       std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(G4D_host.num_elements()), TG.TG_local().size());
-      copy_n(make_device_ptr(G4D.origin()) + i0, iN - i0, to_address(G4D_host.origin()) + i0);
+      copy_n(make_device_ptr(G4D.base()) + i0, iN - i0, to_address(G4D_host.base()) + i0);
       TG.TG_local().barrier();
 
       //3. accumulate references

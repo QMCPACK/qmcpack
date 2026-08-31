@@ -4,8 +4,10 @@
 
 
 import os
+from copy import deepcopy
 import numpy as np
-from .developer import obj, to_str
+from .developer import obj
+from .utilities import to_str
 from .fileio import TextFile
 from .unit_converter import convert
 from .simulation import SimulationAnalyzer, Simulation
@@ -48,7 +50,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     #end def calculation_shortmode
 
 
-    def __init__(self,arg0=None,analyze=False):
+    def __init__(self,arg0=None,*,analyze=False):
         if arg0 is None:
             return
         elif isinstance(arg0,Simulation):
@@ -58,11 +60,24 @@ class RmgAnalyzer(SimulationAnalyzer):
         else:
             log_file = arg0
             if not isinstance(log_file,str):
-                self.error('invalid type provided for log_file\nType expected: str\nType provided: {}'.format(log_file.__class__.__name__))
+                msg = (
+                    'invalid type provided for log_file\n'
+                    'Type expected: str\n'
+                    'Type provided: {}'.format(log_file.__class__.__name__)
+                    )
+                raise TypeError(msg)
             elif not os.path.exists(log_file):
-                self.error('RMG log output file does not exist.\nPath provided: {}'.format(log_file))
+                msg = (
+                    'RMG log output file does not exist.\n'
+                    'Path provided: {}'.format(log_file)
+                    )
+                raise FileNotFoundError(msg)
             elif not os.path.isfile(log_file):
-                self.error('Path provided for RMG log output is not a file.\nPath provided: {}'.format(log_file))
+                msg = (
+                    'Path provided for RMG log output is not a file.\n'
+                    'Path provided: {}'.format(log_file)
+                    )
+                raise IsADirectoryError(msg)
             #end if
             path,filename = os.path.split(log_file)
         #end if
@@ -77,13 +92,18 @@ class RmgAnalyzer(SimulationAnalyzer):
     #end def __init__
 
 
-    def analyze(self,guard=True):
+    def analyze(self,*,guard=True):
         if not self.initialized:
             return
         #end if
         log_filepath = os.path.join(self.path,self.outfile_name)
         if not os.path.exists(log_filepath):
-            self.error('RMG analysis cannot be completed.\nLog file does not exist at path provided.\nPath provided: {}'.format(log_filepath))
+            msg = (
+                'RMG analysis cannot be completed.\n'
+                'Log file does not exist at path provided.\n'
+                'Path provided: {}'.format(log_filepath)
+                )
+            raise FileNotFoundError(msg)
         #end if
         logfile = TextFile(log_filepath)
         self.setup_info = obj()
@@ -146,7 +166,7 @@ class RmgAnalyzer(SimulationAnalyzer):
             name = name[:-1].replace('/','_').replace('-','_')
             return name
         #end def process_name
-        def process_value(v,list=False):
+        def process_value(v,*,list=False):
             v = v.strip()
             units = None
             try:
@@ -258,7 +278,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                             grid_pe = np.array(grid_pe,dtype=int)
                             spacing = np.array(spacing,dtype=float)
                             ecut,ecut_charge,ecut_units = b.equivalent_energy_cutoffs.split()
-                            b.set(
+                            b.update(
                                 grid         = grid,
                                 grid_pe      = grid_pe,
                                 grid_spacing = spacing,
@@ -283,7 +303,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                         try:
                             header,body,lines = other_blocks.k_points
                             del other_blocks.k_points
-                            for i,line in enumerate(lines):
+                            for i,line in enumerate(lines):  # noqa: B007
                                 if 'Weight in crystal unit' in line:
                                     break
                                 #end if
@@ -320,7 +340,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                             #end if
                             pos = []
                             spec = []
-                            for i,line in enumerate(lines):
+                            for i,line in enumerate(lines):  # noqa: B007
                                 if 'Species' in line:
                                     break
                                 #end if
@@ -420,7 +440,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     def return_initial_structure(self):
         s = None
         if 'setup_info' in self and 'structure' in self.setup_info:
-            s = self.setup_info.structure.copy()
+            s = deepcopy(self.setup_info.structure)
         #end if
         return s
     #end def return_initial_structure

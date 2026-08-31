@@ -1,12 +1,9 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2023 Alfredo A. Correa
+// Copyright 2023-2025 Alfredo A. Correa
 
 #include <mpi3/communicator.hpp>
-#include <mpi3/main.hpp>
+#include <mpi3/environment.hpp>
 
-#include <complex>
-#include <list>
-#include <string>
+#include <boost/core/lightweight_test.hpp>
 
 namespace mpi3 = boost::mpi3;
 
@@ -21,8 +18,12 @@ struct my_complex {
 
 };
 
-auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int try {
-	assert(world.size() > 1);
+auto main(int argc, char** argv) -> int try {
+	mpi3::environment env(argc, argv);
+
+	auto world = env.world();
+
+	BOOST_TEST(world.size() > 1);
 
 	using complex = my_complex<double>;
 
@@ -35,11 +36,13 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	case 1: {
 		complex c;
 		world.receive_n(&c, 1);
-		assert((c == complex{1.0, 2.0}));
+		BOOST_TEST((c == complex{1.0, 2.0}));
 		break;
 	};
+	default: {}
 	}
-	return 0;
+
+	return boost::report_errors();
 } catch(...) {
 	return 1;
 }

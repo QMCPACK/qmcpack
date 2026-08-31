@@ -8,9 +8,8 @@
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "type_traits/template_types.hpp"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -111,7 +110,7 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   RefVectorWithLeader<QMCHamiltonian> shadow_ham_list{shadow_ham_refs[0], shadow_ham_refs};
 
   ResourceCollection shadow_ham_res("shadow_ham_res");
-  ham_list.getLeader().createResource(shadow_ham_res);
+  shadow_ham_list.getLeader().createResource(shadow_ham_res);
   ResourceCollectionTeamLock<QMCHamiltonian> shadow_ham_lock(shadow_ham_res, shadow_ham_list);
 
 
@@ -354,6 +353,7 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   sum_local_nrg += std::accumulate(ion_pots.begin(), ion_pots.end(), 0.0);
   CHECK(sum_local_nrg == Approx(hamiltonian_local_nrg_sum));
   CHECK(sum_local_nrg == Approx(energies_sum));
+  CHECK(sum_local_nrg == Approx(shadow_energies_sum));
   //}
 }
 #endif

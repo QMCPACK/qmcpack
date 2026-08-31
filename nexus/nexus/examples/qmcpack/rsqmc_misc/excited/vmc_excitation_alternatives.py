@@ -5,7 +5,6 @@ from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack,vmc
-from nexus.structure import *
 
 '''
 This nexus example shows a variety of ways that excitations can be specified.
@@ -13,7 +12,7 @@ This nexus example shows a variety of ways that excitations can be specified.
 
 settings(
     pseudo_dir    = '../../pseudopotentials',
-    runs          = './runs_excitation_alternatives'
+    runs          = './runs_excitation_alternatives',
     status_only   = 0,
     generate_only = 0,
     sleep         = 3,

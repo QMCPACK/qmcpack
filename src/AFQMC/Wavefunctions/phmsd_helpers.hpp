@@ -90,8 +90,8 @@ inline void calculate_overlaps(int rank, int ngrp, int spin, PH_EXCT const& abij
     }
     else
     {
-      boost::multi::array_ref<ComplexType, 2> Qwork_(Qwork.origin(), {nex, nex});
-      boost::multi::array_ref<ComplexType, 1> Qwork2_(Qwork.origin() + Qwork_.num_elements(),
+      boost::multi::array_ref<ComplexType, 2> Qwork_(Qwork.base(), {nex, nex});
+      boost::multi::array_ref<ComplexType, 1> Qwork2_(Qwork.base() + Qwork_.num_elements(),
                                                       iextensions<1u>{nex * nex});
       for (auto it = abij.unique_begin(nex)[spin]; it < abij.unique_end(nex)[spin]; ++it, ++nd)
         if (nd % ngrp == rank)
@@ -129,7 +129,7 @@ inline void calculate_R(int rank,
 
   using std::get;
   for (int i = 0; i < get<0>(R.sizes()); i++)
-    std::fill_n(R[i].origin(), get<1>(R.sizes()), ComplexType(0));
+    std::fill_n(R[i].base(), get<1>(R.sizes()), ComplexType(0));
   int NEL = get<1>(T.sizes());
   std::vector<int> orbs(NEL);
   ComplexType ov_a;
@@ -152,7 +152,7 @@ inline void calculate_R(int rank,
   }
   for (int nex = 1, nd = 1; nex < abij.maximum_excitation_number()[spin]; nex++)
   {
-    boost::multi::array_ref<ComplexType, 2> Q(Qwork.origin(), {nex, nex});
+    boost::multi::array_ref<ComplexType, 2> Q(Qwork.base(), {nex, nex});
     for (auto it = abij.unique_begin(nex)[spin]; it < abij.unique_end(nex)[spin]; ++it, ++nd)
     {
       if (nd % ngrp == rank)
@@ -244,7 +244,7 @@ void calculate_ph_energies_v1(int spin,
   auto confgs = abij.configurations_begin();
   auto refc = abij.reference_configuration(spin);
   for(int i=0; i<R.size(0); i++)
-    std::fill_n(R[i].origin(),R.size(1),ComplexType(0));
+    std::fill_n(R[i].base(),R.size(1),ComplexType(0));
   int NEL = T.size(1);
   std::vector<int> orbs(NEL);
   ComplexType ov_a;
@@ -265,7 +265,7 @@ void calculate_ph_energies_v1(int spin,
       R[i][refc[i]] += w;
   }
   for(int nex = 1, nd=1 ; nex<abij.maximum_excitation_number()[spin]; nex++) {
-    boost::multi::array_ref<ComplexType,2> Q(Qwork.origin(),{nex,nex});
+    boost::multi::array_ref<ComplexType,2> Q(Qwork.base(),{nex,nex});
     for(auto it = abij.unique_begin(nex)[spin]; it<abij.unique_end(nex)[spin]; ++it, ++nd) {
       if(nd%ngrp==rank) {
         auto e = *it;

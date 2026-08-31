@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import os
+from copy import deepcopy
 from pathlib import Path
 import sys
 from optparse import OptionParser
@@ -92,12 +93,19 @@ except (ImportError,RuntimeError):
 #end try
 
 
+def first(d):
+    return d[min(d.keys())]
+
 
 def sigfig_round(some_float, nsigfig):
     if nsigfig >= 1 and nsigfig == int(nsigfig):
         return round(some_float, nsigfig - int(np.floor(np.log10(abs(some_float))))-1) 
     else:
-        QMCA.class_error("Number of significant figures must be a whole number\nreceived {0}".format(nsigfig))
+        msg = (
+            "Number of significant figures must be a whole number\n'"
+            "'received {0}".format(nsigfig)
+            )
+        raise ValueError(msg)
     #end if
 #end sigfig_round
 
@@ -227,15 +235,15 @@ class QBase(DevBase):
 
 
 class DatAnalyzer(QBase):
-    first = 'LocalEnergy Variance Kinetic LocalPotential ElecElec LocalECP NonLocalECP IonIon'.split()
-    last = 'MPC KEcorr BlockWeight BlockCPU AcceptRatio Efficiency TotalTime TotalSamples TrialEnergy DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers CorrectedEnergy'.split()
+    first = ('LocalEnergy', 'Variance', 'Kinetic', 'LocalPotential', 'ElecElec', 'LocalECP', 'NonLocalECP', 'IonIon')
+    last = ('MPC', 'KEcorr', 'BlockWeight', 'BlockCPU', 'AcceptRatio', 'Efficiency', 'TotalTime', 'TotalSamples', 'TrialEnergy', 'DiffEff', 'Weight', 'NumOfWalkers', 'LivingFraction', 'AvgSentWalkers', 'CorrectedEnergy')
 
-    nonenergy = set('BlockWeight BlockCPU AcceptRatio Efficiency TotalTime TotalSamples DiffEff Weight NumOfWalkers LivingFraction AvgSentWalkers'.split())
-    whole_numbers = ['TotalSamples', 'NumOfWalkers']
+    nonenergy = frozenset({'AcceptRatio', 'TotalSamples', 'Weight', 'NumOfWalkers', 'AvgSentWalkers', 'BlockWeight', 'LivingFraction', 'Efficiency', 'TotalTime', 'DiffEff', 'BlockCPU'})
+    whole_numbers = ('TotalSamples', 'NumOfWalkers')
 
-    energy_sq = set(['Variance','LocalEnergy_sq'])
+    energy_sq = frozenset({'Variance','LocalEnergy_sq'})
 
-    non_ee_potentials = ['IonIon','LocalECP','NonLocalECP','ElecIon','IonElec']
+    non_ee_potentials = ('IonIon','LocalECP','NonLocalECP','ElecIon','IonElec')
 
 
     def __init__(self,filepath,index,type='unknown',units='Ha'):
@@ -268,10 +276,11 @@ class DatAnalyzer(QBase):
             #end if
         #end for
         if series is None:
-            self.error('unable to read series number for file '+filepath,'QMCA')
+            msg = 'unable to read series number for file '+filepath
+            raise RuntimeError(msg)
         #end if
         prefix = filepath.split('.s'+str(series).zfill(3))[0]
-        self.info.set(
+        self.info.update(
             series   = series,
             filepath = filepath,
             filename = filename,
@@ -291,12 +300,22 @@ class DatAnalyzer(QBase):
         elif isinstance(eq,(int,np.int_)):
             nbe = eq
         elif not self.info.series in eq:
-            self.error('equilibration length was not provided for series {0}\nplease use the -e option to provide an equilibration length'.format(self.info.series),'QMCA')
+            msg = (
+                'equilibration length was not provided for series {0}\n'
+                'please use the -e option to provide an equilibration length'.format(self.info.series)
+                )
+            raise ValueError(msg)
         else:
             nbe = eq[self.info.series]
         #end if
         if nbe<0:
-            self.error('equilibration length cannot be negative\nyou requested an equilibration length of {0} for series {1}'.format(nbe,self.info.series),'QMCA')
+            msg = (
+                'equilibration length cannot be negative\n'
+                'you requested an equilibration length of {0} for series {1}'.format(
+                    nbe, self.info.series
+                    )
+                )
+            raise ValueError(msg)
         #end if
         return nbe
     #end def get_equilibration
@@ -315,9 +334,9 @@ class DatAnalyzer(QBase):
         #end if
         data = lt[:,1:].transpose()
         self.info.nsamples = data.shape[1]
-        fobj = open(filepath,'r')
-        variables = fobj.readline().split()[2:]
-        # fobj.close()
+        with open(filepath,'r') as fobj:
+            variables = fobj.readline().split()[2:]
+
         Econv  = convert(1.0,'Ha',self.info.units)
         Econv2 = Econv**2
         for i in range(len(variables)):
@@ -356,7 +375,13 @@ class DatAnalyzer(QBase):
         stats = self.stats
         for varname,samples in data.items():
             if nbe>=len(samples):
-                self.error('equilibration length for series {0} is greater than the amount of data in the file ({1} elements)\nyou requested an equilibration length of {2}'.format(self.info.series,len(samples),nbe),'QMCA')
+                msg = (
+                    'equilibration length for series {0} is greater than the amount of data in the file ({1} elements)\n'
+                    'you requested an equilibration length of {2}'.format(
+                        self.info.series, len(samples), nbe
+                        )
+                    )
+                raise ValueError(msg)
             #end if
             stats[varname] = self.stat_value(samples[nbe:])
         #end for
@@ -426,7 +451,7 @@ class DatAnalyzer(QBase):
         #end if
 
         if len(data)>0:
-            example = data.first()
+            example = first(data)
             if 'NumOfWalkers' in data:
                 ts = data.NumOfWalkers.sum()
                 stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0)
@@ -467,11 +492,11 @@ class DatAnalyzer(QBase):
 
     def zero(self):
         self.info.weight = 0.0
-        for d in self.data:
+        for d in self.data.values():
             d[:] = 0.0
         #end for
-        for s in self.stats:
-            s.set(
+        for s in self.stats.values():
+            s.update(
                 mean  = 0.0,
                 error = 0.0,
                 kappa = 0.0,
@@ -493,7 +518,7 @@ class DatAnalyzer(QBase):
 
     def normalize(self):
         w = self.info.weight
-        for d in self.data:
+        for d in self.data.values():
             d[:] /= w
         #end for
     #end def normalize
@@ -578,7 +603,7 @@ class DatAnalyzer(QBase):
                         factor
                         )
                     )
-            exit()
+            sys.exit()
         #end if
 
         if len(quantities)==1 and not opt.all_quantities:
@@ -688,7 +713,8 @@ class DatAnalyzer(QBase):
 
     def plot_series(self,quantity,style,prefix):
         if not quantity in self.stats:
-            self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
+            msg = 'quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath)
+            raise KeyError(msg)
         #end if
         s = self.info.series
         q = self.stats[quantity]
@@ -700,7 +726,8 @@ class DatAnalyzer(QBase):
     def plot_trace(self,quantity,style,prefix,shift):
         self.check_matplotlib_import()
         if not quantity in self.data:
-            self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
+            msg = 'quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath)
+            raise KeyError(msg)
         #end if
         nbe = self.get_equilibration()
         q = self.data[quantity]
@@ -709,7 +736,8 @@ class DatAnalyzer(QBase):
         qmax = q[middle:].max()
         qmin = q[middle:].min()
         ylims = (qmean-2*(qmean-qmin),qmean+2*(qmax-qmean))
-        smean,svar = self.stats[quantity].tuple('mean','var')
+        qtmp = self.stats[quantity]
+        smean,svar = qtmp.mean,qtmp.var
         sstd = np.sqrt(svar)
         s = np.arange(len(q))+shift
         xlims = min(s),max(s)
@@ -723,7 +751,7 @@ class DatAnalyzer(QBase):
 
 
     def plot_histogram(self,quantity,style,prefix):
-        self.not_implemented()
+        raise NotImplementedError
         #if not quantity in self.data:
         #    self.error('quantity '+quantity+' is not present in the data for {0}'.format(self.info.filepath),'QMCA')
         ##end if
@@ -835,6 +863,12 @@ QMCA examples:
    qmca -pa -q e -e 10 qmc.g*.s*.scalar.dat
    qmca -ta -q e -e 10 qmc.g*.s*.scalar.dat
 
+ saving plots to files (-i/--image uses prefix qmca_plot; --image-prefix sets a custom prefix)
+   qmca -t -q e -i qmc.s*.scalar.dat
+   qmca -ta -q ev --image-prefix myrun qmc.g*.s*.scalar.dat
+ saving plots to PDF files (--image-format pdf for vector output suited to publication)
+   qmca -t -q e --image-format pdf --image-prefix myrun qmc.s*.scalar.dat
+
  multiple quantities and prefixes can be used for plots as well
 '''
         self.log(examples)
@@ -846,7 +880,7 @@ QMCA examples:
         if self.verbose:
             self.log('\nQMCA finished\n')
         #end if
-        exit()
+        sys.exit()
     #end def exit
 
 
@@ -931,9 +965,17 @@ QMCA examples:
                           action='store_true',default=False,
                           help='Display output data sorted alphabetically by file name (default=%default).'
                           )
-        parser.add_option('-i','--image',dest='image',
+        parser.add_option('-i','--image', dest='save_image',
                           action='store_true',default=False,
-                          help='(pending) Save image files (default=%default).'
+                          help='Save plot files (default prefix: qmca_plot).'
+                          )
+        parser.add_option('--image-prefix',dest='image_prefix',
+                          default='None',metavar='BASENAME',
+                          help='Save plot files with basename prefix (default=%default).'
+                          )
+        parser.add_option('--image-format',dest='image_format',
+                          default='png',metavar='FORMAT',
+                          help='Output format for saved plots: png, pdf, svg, or eps (default=%default).'
                           )
         parser.add_option('-r','--report',dest='report',
                           action='store_true',default=False,
@@ -979,7 +1021,7 @@ QMCA examples:
                           help='Use twist weights in twist_info.dat files or not.  Options: "use", "ignore", "require".  "use" means use when present, "ignore" means do not use, "require" means must be used (default=%default).'
                           )
 
-        unsupported = set('histogram image reblock report'.split())
+        unsupported = set('histogram reblock report'.split())
 
         units = obj(hartree='Ha',ha='Ha',ev='eV',rydberg='Ry',ry='Ry',kelvin='K',kj_mol='kJ_mol',joules='J')
 
@@ -989,7 +1031,7 @@ QMCA examples:
         if len(files_in)>0:
             files_in = list(files_tmp[file_order])
         #end if
-        QBase.options.transfer_from(options.__dict__)
+        QBase.options.update(**options.__dict__)
         self.verbose = self.options.verbose
         if self.verbose:
             self.log('\nQMCA: Qmcpack Analysis Tool')
@@ -1010,7 +1052,11 @@ QMCA examples:
         #end if
         u = opt.units.lower()
         if not u in units:
-            self.error('unrecognized unit system requested: {0}\nvalid units are: {1}'.format(u, sorted(units.keys())))
+            msg = (
+                'unrecognized unit system requested: {0}\n'
+                'valid units are: {1}'.format(u, sorted(units.keys()))
+                )
+            raise ValueError(msg)
         else:
             opt.units = units[u]
         #end if
@@ -1028,7 +1074,12 @@ QMCA examples:
                 #end if
                 opt.equilibration = e
             except:
-                self.error('cannot process equilibration option\nvalue must be an integer or list of integers\nyou provided: '+str(opt.equilibration))
+                msg = (
+                    'cannot process equilibration option\n'
+                    'value must be an integer or list of integers\n'
+                    'you provided: '+str(opt.equilibration)
+                    )
+                raise ValueError(msg)
             #end if
         #end if
         if opt.average:
@@ -1045,7 +1096,12 @@ QMCA examples:
                     opt.weights = w
                     weight_failed = len(w.shape)!=1
                 except:
-                    self.error('cannot process weights option\nweights must be a list of real values\nyou provided: {0}'.format(ws))
+                    msg = (
+                        'cannot process weights option\n'
+                        'weights must be a list of real values\n'
+                        'you provided: {0}'.format(ws)
+                        )
+                    raise ValueError(msg)
                 #end try
             #end if
         #end if
@@ -1060,16 +1116,41 @@ QMCA examples:
                 join_failed = True
             #end try
             if join_failed or len(j)!=2:
-                self.error('cannot process join option\njoin must be a pair of integers\nyou provided: {0}'.format(ws))
+                msg = (
+                    'cannot process join option\n'
+                    'join must be a pair of integers\n'
+                    'you provided: {0}'.format(ws)
+                    )
+                raise ValueError(msg)
             #end if
             opt.join = j
         #end if
-        if opt.image=='None':
-            opt.image=None
+        if opt.image_prefix!='None':
+            opt.image = opt.image_prefix
+        elif opt.save_image:
+            opt.image = 'qmca_plot'
+        else:
+            opt.image = None
         #end if
+        image_formats = ('png','pdf','svg','eps')
+        fmt = opt.image_format.lower().lstrip('.')
+        if fmt not in image_formats:
+            msg = (
+                'image_format option is invalid\n'
+                'image_format must be one of: {}\n'
+                'you provided: {}'.format(image_formats, opt.image_format)
+                )
+            raise ValueError(msg)
+        #end if
+        opt.image_format = fmt
         twist_info_options = ('use','ignore','require')
         if opt.twist_info not in twist_info_options:
-            self.error('twist_info option is invalid\ntwist_info must be one of: {}\nyou provided: {}'.format(twist_info_options,opt.twist_info))
+            msg = (
+                'twist_info option is invalid\n'
+                'twist_info must be one of: {}\n'
+                'you provided: {}'.format(twist_info_options, opt.twist_info)
+                )
+            raise ValueError(msg)
         #end if
         opt.all_quantities = False
         qabbr = self.quantity_abbreviations
@@ -1102,7 +1183,12 @@ QMCA examples:
                     if match and q=='':
                         remove.append(qo)
                     else:
-                        self.error('{0} is not a valid quantity\nplease choose quantities from the following list:\n{1}'.format(qo,str(qabbr)))
+                        msg = (
+                            '{0} is not a valid quantity\n'
+                            'please choose quantities from the following list:\n'
+                            '{1}'.format(qo, str(qabbr))
+                            )
+                        raise ValueError(msg)
                     #end if
                 #end if
             #end if
@@ -1112,7 +1198,12 @@ QMCA examples:
             try:
                 fp = ('{0: '+opt.precision+'}').format(1.234567)
             except:
-                self.error('floating point format is not a proper format\nformat provided via --fp: {0}\nplease use a standard floating point format statement like 16.8f, 8.6e, or similar'.format(opt.precision))
+                msg = (
+                    'floating point format is not a proper format\n'
+                    'format provided via --fp: {0}\n'
+                    'please use a standard floating point format statement like 16.8f, 8.6e, or similar'.format(opt.precision)
+                    )
+                raise ValueError(msg)
             #end try
         #end if
         if opt.show_options or self.verbose:
@@ -1136,7 +1227,8 @@ QMCA examples:
         seriesset = set()
         for file in self.file_list:
             if not os.path.exists(file):
-                self.error('file {0} does not exist'.format(file))
+                msg = 'file {0} does not exist'.format(file)
+                raise FileNotFoundError(msg)
             #end if
             isdat = False
             for filetype,ext in allowed_extensions.items():
@@ -1171,7 +1263,13 @@ QMCA examples:
                 #end if
             #end for
             if not isdat:
-                self.error('{0} is not a valid source of input\nplease aim qmca at files with the following extensions: {1}'.format(file,allowed_extensions.list()))
+                msg = (
+                    '{0} is not a valid source of input\n'
+                    'please aim qmca at files with the following extensions: {1}'.format(
+                        file, [v for v in allowed_extensions.values()]
+                        )
+                    )
+                raise ValueError(msg)
             #end if
             ifile+=1
         #end for
@@ -1180,17 +1278,31 @@ QMCA examples:
                 pset = set(pdata.keys())
                 missing = seriesset-pset
                 if len(missing)>1:
-                    self.error('files with prefix {0} are missing series provided for other prefixes\nseries provided for prefix {0}: {1}\nseries missing: {2}'.format(prefix,sorted(list(pset)),sorted(list(missing))))
+                    msg = (
+                        'files with prefix {0} are missing series provided for other prefixes\n'
+                        'series provided for prefix {0}: {1}\n'
+                        'series missing: {2}'.format(
+                            prefix, sorted(list(pset)), sorted(list(missing))
+                            )
+                        )
+                    raise ValueError(msg)
                 #end if
             #end for
             serieslist = sorted(list(seriesset))
             for series in serieslist:
                 filetypes = set()
-                for prefix,pdata in data.items():
+                for pdata in data.values():
                     filetypes.add(pdata[series].info.type)
                 #end for
                 if len(filetypes)>1:
-                    self.error('files with mixed extensions encountered for series {0}\nextensions encountered: {1}\nplease provide files with only one of the following extensions: {2}'.format(series,sorted(list(filetypes)),allowed_extensions.list()))
+                    msg = (
+                        'files with mixed extensions encountered for series {0}\n'
+                        'extensions encountered: {1}\n'
+                        'please provide files with only one of the following extensions: {2}'.format(
+                            series, sorted(list(filetypes)), [v for v in allowed_extensions.values()]
+                            )
+                        )
+                    raise ValueError(msg)
                 #end if
             #end for
             
@@ -1218,7 +1330,15 @@ QMCA examples:
                 # average all data together
                 if weights is not None:
                     if len(weights)!=len(prefixes):
-                        self.error('one weight must be provided per file prefix for averaging\nyou provided {0} weights for {1} prefixes\nweights provided: {2}\nprefixes provided: {3}'.format(len(weights),len(prefixes),weights,prefixes))
+                        msg = (
+                            'one weight must be provided per file prefix for averaging\n'
+                            'you provided {0} weights for {1} prefixes\n'
+                            'weights provided: {2}\n'
+                            'prefixes provided: {3}'.format(
+                                len(weights), len(prefixes), weights, prefixes
+                                )
+                            )
+                        raise ValueError(msg)
                     #end if
                 else:
                     uniform_weights = len(prefixes)*[1.0]
@@ -1229,18 +1349,22 @@ QMCA examples:
                         for prefix in sorted(prefixes):
                             twist_info_file = prefix+'.twist_info.dat'
                             if os.path.exists(twist_info_file):
-                                fobj = open(twist_info_file)
-                                try:
-                                    weight = float(fobj.read().strip().split()[0])
-                                    weights.append(weight)
-                                except:
-                                    None
-                                #end try
+                                with open(twist_info_file) as fobj:
+                                    try:
+                                        weight = float(fobj.read().strip().split()[0])
+                                        weights.append(weight)
+                                    except:
+                                        pass
+                                    #end try
+                                #end with
                             #end if
                         #end for
                         if len(weights)!=len(prefixes):
                             if opt.twist_info=='require':
-                                self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                                msg = (
+                                    'twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix)
+                                    )
+                                raise ValueError(msg)
                             else:
                                 weights = uniform_weights
                             #end if
@@ -1256,9 +1380,9 @@ QMCA examples:
                         w = weights[npf]
                         d = pdata[series]
                         if npf==0:
-                            avg = d.copy()
+                            avg = deepcopy(d)
                             di = d.info
-                            avg.info.set(
+                            avg.info.update(
                                 filename = di.filename.replace(di.prefix,'avg'),
                                 filepath = di.filepath.replace(di.prefix,'avg'),
                                 index    = ns,
@@ -1291,18 +1415,22 @@ QMCA examples:
                         for prefix in sorted(prefixes):
                             twist_info_file = prefix+'.twist_info.dat'
                             if os.path.exists(twist_info_file):
-                                fobj = open(twist_info_file)
-                                try:
-                                    weight = float(fobj.read().strip().split()[0])
-                                    weights.append(weight)
-                                except:
-                                    None
-                                #end try
+                                with open(twist_info_file) as fobj:
+                                    try:
+                                        weight = float(fobj.read().strip().split()[0])
+                                        weights.append(weight)
+                                    except:
+                                        pass
+                                    #end try
+                                #end with
                             #end if
                         #end for
                         if len(weights)!=len(prefixes):
                             if opt.twist_info=='require':
-                                self.error('twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix))
+                                msg = (
+                                    'twist_info files are either missing or mis-formatted for batch prefix {}'.format(batch_prefix)
+                                    )
+                                raise ValueError(msg)
                             else:
                                 weights = uniform_weights
                             #end if
@@ -1315,9 +1443,9 @@ QMCA examples:
                             w = weights[npf]
                             d = pdata[series]
                             if npf==0:
-                                avg = d.copy()
+                                avg = deepcopy(d)
                                 di = d.info
-                                avg.info.set(
+                                avg.info.update(
                                     filename = di.filename.replace(di.prefix,batch_prefix),
                                     filepath = di.filepath.replace(di.prefix,batch_prefix),
                                     index    = ns,
@@ -1352,7 +1480,13 @@ QMCA examples:
                 for prefix,pdata in self.data.items():
                     for s in series_join:
                         if s not in pdata:
-                            self.error('cannot join series {0}\ndata for this series is missing for {1}'.format(s,prefix))
+                            msg = (
+                                'cannot join series {0}\n'
+                                'data for this series is missing for {1}'.format(
+                                    s, prefix
+                                    )
+                                )
+                            raise ValueError(msg)
                         #end if
                     #end for
                     d = pdata[series_join[0]]
@@ -1405,8 +1539,8 @@ QMCA examples:
         #end for
         opt = self.options
         if opt.average and opt.save_average:
-            for fmap in self.file_map:
-                ndata = len(fmap.data.first())
+            for fmap in self.file_map.values():
+                ndata = len(first(fmap.data))
                 data = [np.arange(ndata)]
                 keys = 'index'
                 fmt = ['%i']
@@ -1449,12 +1583,14 @@ QMCA examples:
             tracestyle  = color+line
             histstyle   = color+line
             iplot,itrace,ihist = list(range(3))
+            mode_names = ['series','trace','histogram']
             modes = [opt.plot,opt.trace,opt.histogram]
+            save_plots = opt.image is not None
             quantities = []
             for q in opt.quantities:
                 all_present = True
-                for pdata in self.data:
-                    for d in pdata:
+                for pdata in self.data.values():
+                    for d in pdata.values():
                         all_present &= q in d.data
                     #end for
                 #end for
@@ -1562,12 +1698,28 @@ QMCA examples:
                                         ax.legend(loc=2,bbox_to_anchor=(1.0,1.0),borderaxespad=0.)
                                     #end if
                                 #end if
+                                if save_plots:
+                                    safe_prefix = prefix.replace('/','_').replace(os.sep,'_')
+                                    fmt = opt.image_format
+                                    fname = '{0}_{1}_{2}_{3}.{4}'.format(
+                                        opt.image,safe_prefix,quantity,mode_names[mode],fmt)
+                                    save_kwargs = dict(format=fmt,bbox_inches='tight')
+                                    if fmt=='png':
+                                        save_kwargs['dpi'] = 150
+                                    #end if
+                                    fig.savefig(fname,**save_kwargs)
+                                    if self.verbose:
+                                        self.log('saved plot to {0}'.format(fname),n=1)
+                                    #end if
+                                    plt.close(fig)
+                                #end if
                             #end if
                         #end for
                     #end if
                 #end for
             #end for
-            plt.show()
+            if not save_plots:
+                plt.show()
         #end if
     #end def analyze_data
 #end class QMCA

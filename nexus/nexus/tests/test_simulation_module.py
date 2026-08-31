@@ -2,18 +2,19 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.SIMULATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 
 from pathlib import Path
+from copy import deepcopy
 from . import isolate_nexus_core
 from nexus.nexus_base import nexus_core
 
 from ..testing import value_eq,object_eq
 from ..testing import FailedTest,failed
 
+from ..generic import NexusUserWarning
 from ..developer import obj
+from ..machines import Job
 from ..simulation import Simulation,SimulationInput,SimulationAnalyzer
 
 
@@ -49,7 +50,7 @@ class SimulationInputForTests(SimulationInput):
     #end def incorporate_system
 
     def return_system(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def return_system
 #end class SimulationInputForTests
 
@@ -69,7 +70,7 @@ class SimulationForTests(Simulation):
     input_type    = SimulationInputForTests
     analyzer_type = SimulationAnalyzerForTests
 
-    application_results = set(['quant1','quant2','quant3'])
+    application_results = frozenset({'quant1','quant2','quant3'})
 
     def check_sim_status(self):
         self.finished = True
@@ -152,13 +153,13 @@ def generate_network():
 
     sims = []
 
-    for n in range(randint(nheads)+1):
+    for n in range(randint(nheads)+1):  # noqa: B007
         sims.append([])
     #end for
 
-    for isim in range(nsims):
+    for isim in range(nsims):  # noqa: B007
         deps = []
-        for idep in range(randint(nconnections)+1):
+        for idep in range(randint(nconnections)+1):  # noqa: B007
             if len(sims)>0:
                 i = randint(len(sims))
                 deps.append(i)
@@ -375,7 +376,6 @@ def get_test_workflow(index,**kwargs):
 
 
 def test_simulation_input(tmp_path):
-    from ..developer import NexusError
     from ..simulation import SimulationInput
 
     # empty init
@@ -408,7 +408,7 @@ def test_simulation_input(tmp_path):
         try:
             v(*args)
             raise FailedTest
-        except NexusError:
+        except NotImplementedError:
             None
         except FailedTest:
             failed(str(v))
@@ -421,7 +421,6 @@ def test_simulation_input(tmp_path):
 
 
 def test_simulation_analyzer():
-    from ..developer import NexusError
     from ..simulation import SimulationAnalyzer
 
     # empty init
@@ -438,7 +437,7 @@ def test_simulation_analyzer():
     try:
         SimulationAnalyzer(None)
         raise FailedTest
-    except NexusError:
+    except NotImplementedError:
         None
     except FailedTest:
         failed()
@@ -451,7 +450,7 @@ def test_simulation_analyzer():
 
 def test_simulation_input_template(tmp_path):
     from string import Template
-    from ..developer import obj, NexusError
+    from ..developer import obj, to_obj, NexusError
     from ..simulation import SimulationInput
     from ..simulation import GenericSimulationInput
     from ..simulation import SimulationInputTemplate
@@ -471,7 +470,7 @@ def test_simulation_input_template(tmp_path):
         )
 
     assert(len(si_empty)==4)
-    assert(object_eq(si_empty.to_obj(),si_empty_ref))
+    assert(object_eq(to_obj(si_empty),si_empty_ref))
 
 
     # template reference data
@@ -495,28 +494,18 @@ file2 = "$file.$ext2"
 
     # assign
     si_assign = input_template()
-    try:
+    with pytest.raises(
+        ValueError,
+        match="cannot assign values prior to reading template"
+        ):
         si_assign.assign(b=1)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     si_assign = input_template(template_filepath)
-    try:
+    with pytest.raises(
+        ValueError,
+        match="attempted to assign invalid keywords"
+        ):
         si_assign.assign(c=1)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     values = obj(
         a    = 'name',
@@ -530,29 +519,26 @@ file2 = "$file.$ext2"
 
     assert(object_eq(si_assign.values,values))
 
-
-    # write
-    def try_write(si):
-        try:
-            si.write()
-            raise FailedTest
-        except NexusError:
-            None
-        except FailedTest:
-            failed()
-        except Exception as e:
-            failed(str(e))
-        #end try
-    #end def try_write
-
     si_write = input_template()
-    try_write(si_write)
+    with pytest.raises(
+        AttributeError,
+        match="'NoneType' object has no attribute 'substitute'"
+        ):
+        si_write.write()
 
     si_write = input_template(template_filepath)
-    try_write(si_write)
+    with pytest.raises(
+        ValueError,
+        match="not all keywords for this template have been assigned"
+        ):
+        si_write.write()
 
     si_write.assign(b=1)
-    try_write(si_write)
+    with pytest.raises(
+        ValueError,
+        match="not all keywords for this template have been assigned"
+        ):
+        si_write.write()
 
 
     text_ref = '''
@@ -575,7 +561,7 @@ file2 = "my_file.dat"
 
 def test_simulation_input_multi_template(tmp_path):
     from string import Template
-    from ..developer import obj
+    from ..developer import obj, to_obj
     from ..simulation import SimulationInput
     from ..simulation import GenericSimulationInput
     from ..simulation import SimulationInputMultiTemplate
@@ -616,7 +602,7 @@ c    = $c
         )
 
     assert(len(si_empty)==1)
-    assert(object_eq(si_empty.to_obj(),si_empty_ref))
+    assert(object_eq(to_obj(si_empty),si_empty_ref))
 
 
     # filename init
@@ -708,7 +694,7 @@ c    = 3
     assert(len(si)==4)
     assert(len(si.filenames)==3)
     assert(object_eq(si.filenames,filenames))
-    for name,keyword_set in keywords_ref.items():
+    for name in keywords_ref:
         assert(name in si)
         sit = si[name]
         assert(sit.keywords==set())
@@ -792,10 +778,15 @@ def test_init():
         input                = SimulationInput(),
         )
 
-    assert(object_eq(se.obj(list(se_ref.keys())),se_ref))
+    seo = obj()
+    for k in se_ref.keys():
+        seo[k] = se[k]
+    assert(object_eq(seo,se_ref))
     assert(isinstance(se.simid,int))
     assert(se.simid>=0)
     assert(se.simid<Simulation.sim_count)
+    assert(isinstance(se.timestamps,obj))
+    assert(len(se.timestamps)==0)
 
     Simulation.clear_all_sims()
     assert(len(Simulation.all_sims)==0)
@@ -810,9 +801,12 @@ def test_init():
     # minimal non-empty init, tests init_job()
     sm = Simulation(job=test_job)
 
-    sm_ref = se_ref.copy()
+    sm_ref = deepcopy(se_ref)
     del sm_ref.job
-    assert(object_eq(sm.obj(list(sm_ref.keys())),sm_ref))
+    smo = obj()
+    for k in sm_ref.keys():
+        smo[k] = sm[k]
+    assert(object_eq(smo,sm_ref))
     assert(isinstance(se.simid,int))
     assert(se.simid>=0)
     assert(se.simid<Simulation.sim_count)
@@ -871,7 +865,6 @@ def test_init():
 
 
 def test_virtuals():
-    from ..developer import NexusError
     from ..simulation import Simulation
 
     s = Simulation()
@@ -892,7 +885,7 @@ def test_virtuals():
         try:
             v(*args)
             raise FailedTest
-        except NexusError:
+        except NotImplementedError:
             None
         except FailedTest:
             failed(str(v))
@@ -1124,7 +1117,7 @@ def check_dependency_objects(*sims,**kwargs):
 
 
 
-def check_dependency(sim2,sim1,quants=['other'],only=False,objects=False):
+def check_dependency(sim2,sim1,quants=('other',),*,only=False,objects=False):
     # sim2 depends on sim1 for all quantities
     if objects:
         check_dependency_objects(sim1)
@@ -1321,41 +1314,32 @@ def test_depends():
 
 
     # fail when dependency does not exist
-    try:
+    with pytest.raises(
+        ValueError,
+        match="quant1 is not known to be a result of Simulation"
+        ):
         s1 = get_sim()
         s2 = get_sim(
             dependencies = [(s1,'quant1')],
             )
-        raise FailedTest
-    except NexusError:
-        None
-    except:
-        failed()
-    #end try
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match="quant2 is not known to be a result of Simulation"
+        ):
         s1 = get_sim()
         s2 = get_sim(
             dependencies = [(s1,'other','quant2')],
             )
-        raise FailedTest
-    except NexusError:
-        None
-    except:
-        failed()
-    #end try
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match="apple is not known to be a result of SimulationForTests"
+        ):
         s1 = get_test_sim()
         s2 = get_test_sim(
             dependencies = [(s1,'quant1','apple')],
             )
-        raise FailedTest
-    except NexusError:
-        None
-    except:
-        failed()
-    #end try
 
     Simulation.clear_all_sims()
 #end def test_depends
@@ -1469,17 +1453,13 @@ def test_check_dependencies():
 
 
     # non-existent dependency
-    try:
+    with pytest.raises(
+        ValueError,
+        match="nonexistent is not known to be a result of SimulationForTests"
+        ):
         s  = get_test_sim()
         s2 = get_test_sim(dependencies=((s,'nonexistent')))
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
+
 
 
     # existent dependency but generic input
@@ -1500,15 +1480,11 @@ def test_check_dependencies():
     s.check_dependencies(result)
     assert(result.dependencies_satisfied)
 
-    try:
+    with pytest.warns(
+        NexusUserWarning,
+        match="a simulation result cannot be inferred from generic formatted or template input"
+        ):
         s2.check_dependencies(result)
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     Simulation.clear_all_sims()
 #end def test_check_dependencies
@@ -1708,21 +1684,22 @@ def test_copy_file(tmp_path):
 
 @isolate_nexus_core
 def test_save_load_image(tmp_path):
-    from ..developer import obj
+    from ..developer import obj, load
     from ..simulation import Simulation,SimulationImage
 
     nexus_core.local_directory  = str(tmp_path)
     nexus_core.remote_directory = str(tmp_path)
     nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
-    nsave = 30
-    nload = 22
+    nsave = 31
+    nload = 23
 
     assert(len(SimulationImage.save_fields)==nsave)
     assert(len(SimulationImage.load_fields)==nload)
     assert(len(SimulationImage.save_only_fields&SimulationImage.load_fields)==0)
 
     sim = get_sim()
+    sim.record_timestamp('setup')
 
     sim.create_directories()
 
@@ -1731,13 +1708,18 @@ def test_save_load_image(tmp_path):
     imagefile = Path(sim.imlocdir) / sim.sim_image
     assert(imagefile.exists())
 
-    image = obj()
-    image.load(imagefile)
+    image = load(imagefile)
     assert(len(image)==nsave)
+    assert(isinstance(sim.timestamps,obj))
+    assert(type(image.timestamps) is dict)
     for field in SimulationImage.save_fields:
         assert(field in image)
         assert(field in sim)
-        assert(value_eq(image[field],sim[field]))
+        if field=='timestamps':
+            assert(image[field]==dict(sim[field]))
+        else:
+            assert(value_eq(image[field],sim[field]))
+        #end if
     #end for
 
     orig = obj()
@@ -1749,8 +1731,13 @@ def test_save_load_image(tmp_path):
     sim.load_image()
     for field in SimulationImage.load_fields:
         assert(field in sim)
-        assert(value_eq(sim[field],orig[field]))
+        if field=='timestamps':
+            assert(dict(sim[field])==dict(orig[field]))
+        else:
+            assert(value_eq(sim[field],orig[field]))
+        #end if
     #end for
+    assert(isinstance(sim.timestamps,obj))
     Simulation.clear_all_sims()
 #end def test_save_load_image
 
@@ -1857,6 +1844,7 @@ a    = 1
     s.write_inputs()
 
     assert(s.setup)
+    assert(set(s.timestamps.keys())=={'setup'})
     assert(input_file.exists())
     assert(image_file.exists())
     assert(input_image_file.exists())
@@ -1909,6 +1897,7 @@ def test_send_files(tmp_path):
     s.send_files()
 
     assert(s.sent_files)
+    assert(set(s.timestamps.keys())=={'sent_files'})
     assert(loc_data_file1.exists())
     assert(loc_data_file2.exists())
 
@@ -1949,6 +1938,7 @@ def test_submit(tmp_path):
     s.submit()
 
     assert(s.submitted)
+    assert('submitted' in s.timestamps)
     assert(s.job.submitted)
     assert(j.internal_id in m.jobs)
     assert(j.internal_id in m.waiting)
@@ -1991,6 +1981,7 @@ def test_update_process_id(tmp_path):
 
 @isolate_nexus_core
 def test_check_status(tmp_path):
+    from datetime import datetime
     from ..simulation import Simulation
 
     nexus_core.local_directory  = str(tmp_path)
@@ -2015,6 +2006,14 @@ def test_check_status(tmp_path):
     s.check_status()
 
     assert(s.finished)
+    assert(set(s.timestamps.keys())=={'exited_queue','finished'})
+    for timestamp in s.timestamps.values():
+        assert(datetime.fromisoformat(timestamp).tzinfo is not None)
+    #end for
+
+    timestamps = dict(s.timestamps)
+    s.check_status()
+    assert(dict(s.timestamps)==timestamps)
 
     s.finished = False
     s.load_image()
@@ -2022,6 +2021,64 @@ def test_check_status(tmp_path):
 
     Simulation.clear_all_sims()
 #end def test_check_status
+
+
+@isolate_nexus_core
+def test_check_status_timeout(tmp_path):
+    from datetime import datetime,timedelta
+    from ..simulation import Simulation
+
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    nexus_core.timeout = 10
+
+    # output files that arrive before the timeout are checked normally
+    s = get_test_sim()
+    s.create_directories()
+    s.job.finished = True
+
+    s.check_status()
+
+    assert(not s.failed)
+    assert(not s.finished)
+    assert(set(s.timestamps.keys())=={'exited_queue'})
+    image_file = Path(s.imlocdir).resolve() / s.sim_image
+    assert(image_file.exists())
+
+    exited_queue = s.timestamps.exited_queue
+    s.timestamps = obj()
+    s.load_image()
+    assert(s.timestamps.exited_queue==exited_queue)
+
+    (Path(s.locdir).resolve() / s.outfile).write_text('out')
+    (Path(s.locdir).resolve() / s.errfile).write_text('err')
+    s.check_status()
+
+    assert(not s.failed)
+    assert(s.finished)
+    assert('timed_out' not in s.timestamps)
+
+    # missing output files beyond the timeout mark the simulation failed
+    s = get_test_sim()
+    s.create_directories()
+    s.job.finished = True
+    nexus_core.timeout = 1
+    exited_queue = (datetime.now().astimezone()-timedelta(seconds=2)).isoformat()
+    s.timestamps.exited_queue = exited_queue
+
+    s.check_status()
+
+    assert(s.failed)
+    assert(s.finished)
+    assert(s.timestamps.exited_queue==exited_queue)
+    assert(set(s.timestamps.keys())=={
+        'exited_queue','timed_out','failed','finished'
+        })
+    assert(datetime.fromisoformat(s.timestamps.timed_out).tzinfo is not None)
+
+    Simulation.clear_all_sims()
+#end def test_check_status_timeout
 
 
 @isolate_nexus_core
@@ -2073,6 +2130,7 @@ def test_get_output(tmp_path):
     s.get_output()
 
     assert(s.got_output)
+    assert(set(s.timestamps.keys())=={'got_output'})
     for loc_file,res_file in zip(loc_files,res_files):
         assert(loc_file.exists())
         assert(res_file.exists())
@@ -2109,6 +2167,7 @@ def test_analyze(tmp_path):
     s.analyze()
 
     assert(s.analyzed)
+    assert(set(s.timestamps.keys())=={'analyzed'})
     assert(analyzer_image.exists())
 
     s.analyzed = False
@@ -2216,7 +2275,8 @@ a    = $a
     #end if
     
     # check image
-    inds.transfer_from(s,indicators)
+    for k in indicators:
+        inds[k] = s[k]
     s.reset_indicators()
     s.load_image()
     assert(s.setup)
@@ -2225,7 +2285,8 @@ a    = $a
     assert(not s.finished)
     assert(not s.got_output)
     assert(not s.analyzed)
-    s.transfer_from(inds,indicators)
+    for k in indicators:
+        s[k] = inds[k]
 
 
     # simulate job completion
@@ -2277,7 +2338,8 @@ a    = $a
     #end if
 
     # check image
-    inds.transfer_from(s,indicators)
+    for k in indicators:
+        inds[k] = s[k]
     s.reset_indicators()
     s.load_image()
     assert(s.setup)
@@ -2286,12 +2348,13 @@ a    = $a
     assert(s.finished)
     assert(s.got_output)
     assert(s.analyzed)
-    s.transfer_from(inds,indicators)
+    for k in indicators:
+        s[k] = inds[k]
 
     
     # attempt third progression
     #   nothing should happen
-    sbef = s.copy()
+    sbef = deepcopy(s)
     sbef.input.template = s.input.template
 
     s.progress()
@@ -2332,6 +2395,7 @@ def test_execute(tmp_path):
     s.execute()
 
     assert(s.submitted)
+    assert('submitted' in s.timestamps)
     assert(s.job.finished)
     assert(s.job.status==4)
     assert(outfile.exists())
@@ -2353,15 +2417,15 @@ def test_reset_wait_ids():
 
     for i in range(n_test_workflows):
         sims = get_test_workflow(i)
-        for s in sims:
+        for s in sims.values():
             s.wait_ids = None
         #end for
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 s.reset_wait_ids()
             #end if
         #end for
-        for s in sims:
+        for s in sims.values():
             assert(isinstance(s.wait_ids,set))
             assert(s.wait_ids==s.dependency_ids)
         #end for
@@ -2383,10 +2447,10 @@ def test_check_subcascade():
         sims = get_test_workflow(i)
 
         # no cascades are finished
-        for s in sims:
+        for s in sims.values():
             assert(not s.finished)
         #end for
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 finished = s.check_subcascade()
                 assert(isinstance(finished,bool))
@@ -2395,21 +2459,21 @@ def test_check_subcascade():
         #end for
 
         # all cascades are finished
-        for s in sims:
+        for s in sims.values():
             s.finished = True
         #end for
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 finished = s.check_subcascade()
             #end if
         #end for
 
         # only a single cascade is finished
-        for s in sims:
+        for s in sims.values():
             s.finished = False
         #end for
         single = None
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 if single is None:
                     single = s
@@ -2417,18 +2481,18 @@ def test_check_subcascade():
             #end if
         #end for
         single.traverse_full_cascade(finish)
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 finished = s.check_subcascade()
                 if id(s)==id(single):
                     if not finished:
                         from ..simulation import graph_sims
-                        for sim in sims:
+                        for sim in sims.values():
                             if sim.finished:
                                 sim.block = True
                             #end if
                         #end for
-                        graph_sims(sims.list())
+                        graph_sims(list(sims.values()))
                     #end if
                     assert(finished)
                 else:
@@ -2439,7 +2503,7 @@ def test_check_subcascade():
 
         # all simulations are finished except one
         # not all cascades are finished
-        for s in sims:
+        for s in sims.values():
             s.finished = True
         #end for
         n = 0
@@ -2450,7 +2514,7 @@ def test_check_subcascade():
             #end if
         #end for
         finished = True
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 finished &= s.check_subcascade()
             #end if
@@ -2473,7 +2537,7 @@ def test_block_dependents():
 
     for i in range(n_test_workflows):
         sims = get_test_workflow(i)
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 s.block_dependents()
                 s.traverse_full_cascade(assert_blocked)
@@ -2496,7 +2560,11 @@ def test_reconstruct_cascade(tmp_path):
     sims = get_test_workflow(2)
     assert(len(sims)==7)
 
-    for s in sims:
+    machine_in = Job.machine
+    Job.machine = sims.s1.job.machine
+
+
+    for s in sims.values():
         imagefile = Path(s.imlocdir) / s.sim_image
         assert(not imagefile.exists())
         assert(not s.loaded)
@@ -2506,12 +2574,12 @@ def test_reconstruct_cascade(tmp_path):
         assert(s.job.system_id is None)
     #end for
 
-    for s in sims:
+    for s in sims.values():
         s.create_directories()
         s.save_image()
     #end for
 
-    for s in sims:
+    for s in sims.values():
         imagefile = Path(s.imlocdir) / s.sim_image
         assert(imagefile.exists())
         assert(not s.loaded)
@@ -2523,7 +2591,7 @@ def test_reconstruct_cascade(tmp_path):
 
     sims.s1.reconstruct_cascade()
 
-    for s in sims:
+    for s in sims.values():
         imagefile = Path(s.imlocdir) / s.sim_image
         assert(imagefile.exists())
         assert(s.loaded)
@@ -2599,7 +2667,7 @@ def test_reconstruct_cascade(tmp_path):
         return empty(s) and not s.loaded
     #end def cleared
 
-    for s in sims:
+    for s in sims.values():
         assert(cleared(s))
     #end for
 
@@ -2622,19 +2690,19 @@ def test_reconstruct_cascade(tmp_path):
     s.submitted        = True
     s.process_id       = get_process_id()
     
-    for s in sims:
+    for s in sims.values():
         s.create_directories()
         s.save_image()
         clear(s)
     #end for
 
-    for s in sims:
+    for s in sims.values():
         assert(cleared(s))
     #end for
 
     sims.s1.reconstruct_cascade()
 
-    for s in sims:
+    for s in sims.values():
         assert(s.loaded)
     #end for
 
@@ -2671,6 +2739,8 @@ def test_reconstruct_cascade(tmp_path):
     assert(empty(sims.s51))
     assert(empty(sims.s52))
 
+
+    Job.machine = machine_in
     Simulation.clear_all_sims()
 #end def test_reconstruct_cascade
 
@@ -2691,13 +2761,13 @@ def test_traverse_cascade():
     for i in range(n_test_workflows):
         sims = get_test_workflow(i)
         counts = dict()
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 s.traverse_cascade(count_visits,counts)
             #end if
         #end for
         assert(len(counts)==len(sims))
-        for s in sims:
+        for s in sims.values():
             assert(s.simid in counts)
             assert(counts[s.simid]==1)
         #end for
@@ -2717,15 +2787,15 @@ def test_traverse_full_cascade():
 
     for i in range(n_test_workflows):
         sims = get_test_workflow(i)
-        for s in sims:
+        for s in sims.values():
             assert(not s.finished)
         #end for
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 s.traverse_full_cascade(finish)
             #end if
         #end for
-        for s in sims:
+        for s in sims.values():
             assert(s.finished)
         #end for
     #end for
@@ -2740,7 +2810,7 @@ def test_write_dependents():
 
     for i in range(n_test_workflows):
         sims = get_test_workflow(i)
-        for s in sims:
+        for s in sims.values():
             if len(s.dependencies)==0:
                 s.write_dependents()
             #end if
@@ -2753,20 +2823,14 @@ def test_write_dependents():
 
 
 def test_generate_simulation():
-    from ..developer import NexusError
     from ..simulation import Simulation,GenericSimulation
     from ..simulation import generate_simulation
 
-    try:
+    with pytest.raises(
+        ValueError,
+        match="sim_type unknown is unrecognized"
+        ):
         sim = generate_simulation(sim_type='unknown')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     sim = generate_simulation()
     assert(isinstance(sim,Simulation))
@@ -2841,7 +2905,7 @@ def test_graph_sims():
 
     sims = get_test_workflow(3)
 
-    graph_sims(sims.list(),display=False,exit=False)
+    graph_sims(list(sims.values()),display=False,exit=False)
 
     Simulation.clear_all_sims()
 #end def test_graph_sims

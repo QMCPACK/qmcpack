@@ -40,9 +40,8 @@ def _VmB(VmKey, pid=None):
         pid = os.getpid()
     proc_status = '/proc/%d/status' % pid
     try:
-        t = open(proc_status)
-        v = t.read()
-        t.close()
+        with open(proc_status) as t:
+            v = t.read()
     except:
         return 0.0  # non-Linux?
      # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
@@ -60,9 +59,8 @@ def _VmB(VmKey, pid=None):
 def get_children(pid):
     proc_children = '/proc/%d/task/%d/children'%(pid,pid)
     try:
-        t = open(proc_children,'r')
-        v = t.read()
-        t.close()
+        with open(proc_children,'r') as t:
+            v = t.read()
     except:
         return []
 
@@ -82,7 +80,7 @@ def all_children(pid=None):
     return all_list
 
 
-def memory(since=0.0, children=False):
+def memory(since=0.0, *, children=False):
     '''Return memory usage in bytes.
     '''
     mem = 0.0
@@ -93,7 +91,7 @@ def memory(since=0.0, children=False):
     return mem
 
 
-def resident(since=0.0, children=False):
+def resident(since=0.0, *, children=False):
     '''Return resident memory usage in bytes.
     '''
     mem = 0.0
@@ -106,7 +104,7 @@ def resident(since=0.0, children=False):
     #return _VmB('VmRSS:') - since
 
 
-def stacksize(since=0.0, children=False):
+def stacksize(since=0.0, *, children=False):
     '''Return stack size in bytes.
     '''
     mem = 0.0

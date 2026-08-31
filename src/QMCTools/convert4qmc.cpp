@@ -220,18 +220,18 @@ int main(int argc, char** argv)
       {
         if (ext == "Fchk")
         {
-          WARNMSG("Creating GaussianFCHKParser")
+          app_warning() << "Creating GaussianFCHKParser" << std::endl;
           parser = std::make_unique<GaussianFCHKParser>(argc, argv);
         }
         else if (ext == "h5")
         {
-          WARNMSG("Creating LCAOHDFParser")
+          app_warning() << "Creating LCAOHDFParser" << std::endl;
           parser = std::make_unique<LCAOHDFParser>(argc, argv);
-          h5      = true;
+          h5     = true;
         }
         else if (ext == "out")
         {
-          WARNMSG("Creating GamesAsciiParser")
+          app_warning() << "Creating GamesAsciiParser" << std::endl;
           parser = std::make_unique<GamesAsciiParser>(argc, argv);
         }
         else
@@ -250,8 +250,8 @@ int main(int argc, char** argv)
           delimiter = ".out";
         int pos = 0;
         std::string token;
-        pos   = prefix.find(delimiter);
-        token = prefix.substr(0, pos);
+        pos    = prefix.find(delimiter);
+        token  = prefix.substr(0, pos);
         prefix = token;
       }
       std::cout << "Using " << prefix << " to name output files" << std::endl;

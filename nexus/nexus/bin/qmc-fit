@@ -22,7 +22,7 @@ except:
 #end try
 
 try:
-    from scipy.optimize import fmin
+    from scipy.optimize import fmin  # noqa: F401
 except ImportError:
     print('qmc-fit error: scipy is not present on your machine.\n  Please install scipy and retry.')
 #end try
@@ -85,12 +85,11 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj,log,warn,error
+from nexus.developer import obj,log
 from nexus.numerics import jackknife,jackknife_aux
 from nexus.numerics import simstats,equilibration_length
 from nexus.numerics import curve_fit,least_squares
-from nexus.numerics import eos_fit as num_eos_fit
+from nexus.numerics import eos_fit as num_eos_fit  # noqa: F401
 from nexus.numerics import morse_fit,morse,morse_re,morse_De
 from nexus.numerics import morse_Einf as morse_einf
 from nexus.numerics import morse_a,morse_width,morse_depth,morse_Ee,morse_k
@@ -262,14 +261,17 @@ def qmcfit(q,E,fname='linear',minimizer=least_squares):
 # Reads scalar.dat files and extracts energy series
 def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_start=None):
     if len(scalar_files)==0:
-        error('must provide at least one scalar file')
+        msg = 'must provide at least one scalar file'
+        raise ValueError(msg)
     #end if
     for scalar_file in scalar_files:
         if not os.path.exists(scalar_file):
-            error('scalar file does not exist: {0}'.format(scalar_file))
+            msg = 'scalar file does not exist: {0}'.format(scalar_file)
+            raise FileNotFoundError(msg)
         #end if
         if not scalar_file.endswith('.scalar.dat'):
-            error('file must be of type scalar.dat: {0}'.format(scalar_file))
+            msg = 'file must be of type scalar.dat: {0}'.format(scalar_file)
+            raise ValueError(msg)
         #end if
     #end for
     if series_start!=None:
@@ -288,13 +290,31 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
     if isinstance(equils,(int,np.int_)):
         equils = len(scalar_files)*[equils]
     elif equils is not None and len(equils)!=len(scalar_files):
-        error('must provide one equilibration length per scalar file\nnumber of equils provided: {0}\nnumber of scalar files provided: {1}\nequils provided: {2}\nscalar files provided: {3}'.format(len(equils),len(scalar_files),equils,scalar_files))
+        msg = (
+            'must provide one equilibration length per scalar file\n'
+            'number of equils provided: {0}\n'
+            'number of scalar files provided: {1}\n'
+            'equils provided: {2}\n'
+            'scalar files provided: {3}'.format(
+                len(equils), len(scalar_files), equils, scalar_files
+                )
+            )
+        raise ValueError(msg)
     #end if
 
     if isinstance(reblock_factors,(int,np.int_)):
         reblock_factors = len(scalar_files)*[reblock_factors]
     elif reblock_factors is not None and len(reblock_factors)!=len(scalar_files):
-        error('must provide one reblocking factor per scalar file\nnumber of reblock_factors provided: {0}\nnumber of scalar files provided: {1}\nreblock_factors provided: {2}\nscalar files provided: {3}'.format(len(reblock_factors),len(scalar_files),reblock_factors,scalar_files))
+        msg = (
+            'must provide one reblocking factor per scalar file\n'
+            'number of reblock_factors provided: {0}\n'
+            'number of scalar files provided: {1}\n'
+            'reblock_factors provided: {2}\n'
+            'scalar files provided: {3}'.format(
+                len(reblock_factors), len(scalar_files), reblock_factors, scalar_files
+                )
+            )
+        raise ValueError(msg)
     #end if
 
     # extract energy data from scalar files
@@ -304,9 +324,9 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
     Ekap  = []
     n = 0
     for scalar_file in scalar_files:
-        fobj = open(scalar_file,'r')
-        quantities = fobj.readline().split()[2:]
-        fobj.close()
+        with open(scalar_file,'r') as fobj:
+            quantities = fobj.readline().split()[2:]
+
         rawdata = np.loadtxt(scalar_file)[:,1:].transpose()
         qdata = obj()
         for i in range(len(quantities)):
@@ -323,7 +343,16 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
             nbe = equilibration_length(E)
         #end if
         if nbe>len(E):
-            error('equilibration cannot be applied\nequilibration length given is greater than the number of blocks in the file\nfile name: {0}\n# blocks present: {1}\nequilibration length given: {2}'.format(scalar_file,len(E),nbe))
+            msg = (
+                'equilibration cannot be applied\n'
+                'equilibration length given is greater than the number of blocks in the file\n'
+                'file name: {0}\n'
+                '# blocks present: {1}\n'
+                'equilibration length given: {2}'.format(
+                    scalar_file, len(E), nbe
+                    )
+                )
+            raise ValueError(msg)
         #end if
         E = E[nbe:]
 
@@ -358,7 +387,7 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
         nbe = len(E)%bt
         E = E[nbe:]
         reblock = len(E)//bt
-        E.shape = (bt,reblock)
+        npe.reshape_inplace(E, (bt,reblock))
         if reblock>1:
             E = E.sum(1)/reblock
         #end if
@@ -390,7 +419,8 @@ def parse_list(opt,name,dtype,len1=False):
             #end if
         #end if
     except:
-        error('{0} list misformatted: {1}'.format(name,opt[name]))
+        msg = '{0} list misformatted: {1}'.format(name, opt[name])
+        raise ValueError(msg)
     #end try
 #end def parse_list
 
@@ -401,11 +431,17 @@ def timestep_fit(args):
 
     if len(scalar_files)==0:
         log('\n'+parser.format_help().strip()+'\n')
-        exit()
+        sys.exit()
     #end if
 
     if opt.fit_function not in fit_functions:
-        error('invalid fitting function: {0}\nvalid options are: {1}'.format(opt.fit_function,sorted(fit_functions.keys())))
+        msg = (
+            'invalid fitting function: {0}\n'
+            'valid options are: {1}'.format(
+                opt.fit_function, sorted(fit_functions.keys())
+                )
+            )
+        raise ValueError(msg)
     #end if
 
     if opt.timesteps is None:
@@ -424,7 +460,16 @@ def timestep_fit(args):
         )
 
     if len(Edata)!=len(opt.timesteps):
-        error('must provide one timestep per scalar file\nnumber of timesteps provided: {0}\nnumber of scalar files provided: {1}\ntimeteps provided: {2}\nscalar files provided: {3}'.format(len(opt.timesteps),len(scalar_files),opt.timesteps,scalar_files))
+        msg = (
+            'must provide one timestep per scalar file\n'
+            'number of timesteps provided: {0}\n'
+            'number of scalar files provided: {1}\n'
+            'timeteps provided: {2}\n'
+            'scalar files provided: {3}'.format(
+                len(opt.timesteps), len(scalar_files), opt.timesteps, scalar_files
+                )
+            )
+        raise ValueError(msg)
     #end if
 
     # perform jackknife analysis of the fit
@@ -439,7 +484,7 @@ def timestep_fit(args):
 
     log('\nfit function  : '+opt.fit_function)
     log('fitted formula: '+func_info.format.format(*pvals))
-    for pname,pfunc in func_info.params:
+    for pname,pfunc in func_info.params:  # noqa: B007
         pm,pe = stat_strings(*auxres[pname])
         log('{0:<14}: {1} +/- {2}  Ha\n'.format(pname,pm,pe))
     #end for
@@ -469,7 +514,13 @@ def hubbard_u_fit(args):
     opt = obj(**args.__dict__)
     scalar_files = sorted(opt.scalar_files)
     if opt.fit_function not in fit_functions:
-        error('invalid fitting function: {0}\nvalid options are: {1}'.format(opt.fit_function,sorted(fit_functions.keys())))
+        msg = (
+            'invalid fitting function: {0}\n'
+            'valid options are: {1}'.format(
+                opt.fit_function, sorted(fit_functions.keys())
+                )
+            )
+        raise ValueError(msg)
     #end if
     # read in scalar energy data
     Edata,Emean,Eerror,scalar_files = process_scalar_files(
@@ -482,26 +533,32 @@ def hubbard_u_fit(args):
     if opt.hubbards is not None:
         parse_list(opt,'hubbards',float)
         if len(Edata)!=len(opt.hubbards):
-            error(
+            msg = (
                 "must provide one hubbard_u value per scalar file\n"
                 "number of hubbard_u provided: {0}\n"
                 "number of scalar files provided: {1}\n"
                 "hubbards provided: {2}\n"
-                "scalar files provided: {3}".format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files)
+                "scalar files provided: {3}".format(
+                    len(opt.hubbards), len(scalar_files), opt.hubbards, scalar_files
+                    )
                 )
+            raise ValueError(msg)
         #end if
         x = opt.hubbards
     elif opt.exx is not None:
         hubbard_u = False
         parse_list(opt,'exx',float)
         if len(Edata)!=len(opt.exx):
-            error(
+            msg = (
                 "must provide one hubbard_u value per scalar file\n"
                 "number of hubbard_u provided: {0}\n"
                 "number of scalar files provided: {1}\n"
                 "hubbards provided: {2}\n"
-                "scalar files provided: {3}".format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files)
+                "scalar files provided: {3}".format(
+                    len(opt.hubbards), len(scalar_files), opt.hubbards, scalar_files
+                    )
                 )
+            raise ValueError(msg)
         #end if
         x = opt.exx
     else:
@@ -523,7 +580,7 @@ def hubbard_u_fit(args):
 
     log('\nfit function  : '+opt.fit_function)
     log('fitted formula: '+func_info.format.format(*pvals))
-    for pname,pfunc in func_info.params:
+    for pname,pfunc in func_info.params:  # noqa: B007
         for i in range(len(auxres[pname][0])):
             pm,pe = stat_strings(*np.array(auxres[pname])[:,i])
             unit = ""
@@ -578,7 +635,13 @@ def eos_fit(args):
     opt = obj(**args.__dict__)
     scalar_files = sorted(opt.scalar_files)
     if opt.fit_function not in fit_functions:
-        error('invalid fitting function: {0}\nvalid options are: {1}'.format(opt.fit_function,sorted(fit_functions.keys())))
+        msg = (
+            'invalid fitting function: {0}\n'
+            'valid options are: {1}'.format(
+                opt.fit_function, sorted(fit_functions.keys())
+                )
+            )
+        raise ValueError(msg)
     #end if
     Edata,Emean,Eerror,scalar_files = process_scalar_files(
         scalar_files    = scalar_files,
@@ -616,7 +679,7 @@ def eos_fit(args):
     log('fitted formula: '+func_info.format.format(*pvals))
 
     if 'params' in func_info.keys():
-        for pname,pfunc in func_info.params:
+        for pname,pfunc in func_info.params:  # noqa: B007
             pm,pe = stat_strings(*np.array(auxres[pname]))
             log('{0}: {1} +/- {2} '.format(pname,pm,pe))
         #end for
@@ -708,14 +771,18 @@ if __name__=='__main__':
     if len(args.scalar_files) == 0:
         log('\n'+'Please provide scalar files'+'\n')
         parser.print_help()
-        exit()
+        sys.exit()
     #end if
     fit_type = args.fit_type
     if fit_type in fit_types:
         fit_functions.clear()
-        fit_functions.transfer_from(all_fit_functions[fit_type])
+        fit_functions.update(**all_fit_functions[fit_type])
     else:
-        error('unknown fit type: {0}\nvalid options are: {1}'.format(fit_type,fit_types))
+        msg = (
+            'unknown fit type: {0}\n'
+            'valid options are: {1}'.format(fit_type, fit_types)
+            )
+        raise ValueError(msg)
     #end if
         
     if fit_type=='ts':
@@ -725,6 +792,7 @@ if __name__=='__main__':
     elif fit_type == 'eos':
         eos_fit(args)
     else:
-        error('unsupported fit type: {0}'.format(fit_type))
+        msg = 'unsupported fit type: {0}'.format(fit_type)
+        raise ValueError(msg)
     #end if
 #end if

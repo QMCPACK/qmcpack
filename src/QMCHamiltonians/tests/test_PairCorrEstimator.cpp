@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Lattice/CrystalLattice.h"
 #include "Particle/ParticleSet.h"
@@ -130,9 +129,8 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   elec->get(std::cout); // print particleset info to stdout
 
   // Set up the distance table, match expected layout
-  const int ee_table_id = elec->addTable(*elec);
+  elec->addTable(*elec);
 
-  const auto& dii(elec->getDistTable(ee_table_id));
   elec->update(); // distance table evaluation here
 
   // Make a PairCorrEstimator, call put() to set up internals
@@ -183,13 +181,13 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
 
   // Nearest neighbor peak (ud) | Distance = 1
   const int bin_nn = 49;
-  REQUIRE(std::fabs(gofr[49] - 0.00000000) < eps);
+  REQUIRE(std::fabs(gofr[bin_nn] - 0.00000000) < eps);
   REQUIRE(std::fabs(gofr[148] - 23.6361163) < eps);
   REQUIRE(std::fabs(gofr[247] - 0.00000000) < eps);
 
   // 2nd-nearest neighbor peak (uu/dd) | Distance = sqrt(2)
   const int bin_2n = 70;
-  REQUIRE(std::fabs(gofr[70] - 15.536547) < eps);
+  REQUIRE(std::fabs(gofr[bin_2n] - 15.536547) < eps);
   REQUIRE(std::fabs(gofr[169] - 0.0000000) < eps);
   REQUIRE(std::fabs(gofr[268] - 15.536547) < eps);
 

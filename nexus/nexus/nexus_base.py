@@ -28,6 +28,7 @@
 import os
 import gc as garbage_collector
 from os import PathLike
+from copy import deepcopy
 from .utilities import path_string
 from .nexus_version import nexus_version
 from .memory import resident
@@ -70,14 +71,14 @@ nexus_noncore_defaults = obj(
 
 # core namespace elements that can be accessed by noncore classes
 nexus_core_noncore_defaults = obj(
-    pseudo_dir        = None,              # used by: Settings, VaspInput
-    pseudopotentials  = None,              # used by: Simulation, GamessInput
+    pseudo_dir = None, # used by: Settings, VaspInput
     )
 
 nexus_core_defaults = obj(
     status_only       = False,             # used by: ProjectManager
     generate_only     = False,             # used by: Simulation,Machine
     sleep             = 3,                 # used by: ProjectManager
+    timeout           = 5*60,              # used by: Simulation
     runs              = 'runs',            # used by: Simulation,Machine
     results           = '',                # used by: Simulation
     local_directory   = './',              # used by: Simulation,Machine
@@ -102,6 +103,8 @@ nexus_core_defaults = obj(
     progress_tty      = False,             # used by: ProjectManager
     graph_sims        = False,             # used by: ProjectManager
     command_line      = True,              # used by: Settings
+    dynamic           = False,             # used by: DynamicWorkflowManager
+                                           #          Simulation
     **nexus_core_noncore_defaults
     )
 
@@ -110,17 +113,16 @@ def restore_nexus_core_defaults():
     nexus_noncore.clear()
     nexus_core_noncore.clear()
 
-    nexus_core.set(**nexus_core_defaults.copy())
-    nexus_noncore.set(**nexus_noncore_defaults.copy())
-    nexus_core_noncore.transfer_from(nexus_core,keys=list(nexus_core_noncore_defaults.keys()))
+    nexus_core.update(**deepcopy(nexus_core_defaults))
+    nexus_noncore.update(**deepcopy(nexus_noncore_defaults))
+    for k in nexus_core_noncore_defaults.keys():
+        nexus_core_noncore[k] = nexus_core[k]
 #end def restore_nexus_core_defaults
 
 restore_nexus_core_defaults()
 
 
-nexus_core_no_process = set('''
-  status_only  generate_only  sleep
-  '''.split())
+nexus_core_no_process = {'status_only', 'generate_only', 'sleep', 'timeout'}
 
 
 class NexusCore(DevBase):
@@ -170,10 +172,16 @@ _____________________________________________________
 
     def log(self,*texts,**kwargs):
         """Write output to log file.
-           Keyword arguments
-            n - spaces to indent
-            progress - if True and output is to a terminal, overwrite and
-                       update the last line, rather than scrolling.
+
+        Parameters
+        ----------
+        *texts
+            Strings that will be joined by newlines
+        n : int, kwargs
+            Spaces to indent
+        progress : bool, kwargs
+            If ``True`` and output is to a terminal, overwrite and update the
+            last line, rather than scrolling.
         """
         if nexus_core.verbose:
             if len(kwargs)>0:
@@ -215,7 +223,7 @@ _____________________________________________________
         #end if
     #end def tlog
 
-    def enter(self, directory: PathLike, changedir: bool = True, msg: str = ''):
+    def enter(self, directory: PathLike, *, changedir: bool = True, msg: str = ''):
         """Have Nexus enter a directory and change its current working directory.
         
         Parameters
@@ -243,4 +251,14 @@ _____________________________________________________
     def leave(self):
         os.chdir(NexusCore.working_directory)
     #end def leave
+
 #end class NexusCore
+
+
+# support dynamic workflows
+dynamic_storage = obj(
+    simulations         = obj(), # all sims, in dyn proc or not
+    simulation_ids      = set(),
+    dynamic_processes   = obj(),
+    dynamic_process_ids = set(),
+    )

@@ -328,9 +328,9 @@ the path to the source directory.
     QMC_GPU_ARCHS         Specify GPU architectures. For example, "gfx90a" targets AMD MI200 series GPUs.
                           "intel_gpu_pvc" targets Intel Data Center GPU Max 1xxx.
                           "sm_80;sm_70" creates a single executable running on both NVIDIA A100 and V100 GPUs.
-                          Mixing vendor "gfx90a;sm_70" is not supported. If not set, atempt to derive it
+                          Mixing vendor "gfx90a;sm_70" is not supported. If not set, attempt to derive it
                           from CMAKE_CUDA_ARCHITECTURES or CMAKE_HIP_ARCHITECTURES if available and then
-                          atempt to auto-detect existing GPUs.
+                          attempt to auto-detect existing GPUs.
 
 - General build options
 
@@ -338,7 +338,7 @@ the path to the source directory.
 
     CMAKE_BUILD_TYPE     A variable which controls the type of build
                          (defaults to Release). Possible values are:
-                         None (Do not set debug/optmize flags, use
+                         None (Do not set debug/optimize flags, use
                          CMAKE_C_FLAGS or CMAKE_CXX_FLAGS)
                          Debug (create a debug build)
                          Release (create a release/optimized build)
@@ -435,10 +435,16 @@ the path to the source directory.
 
   ::
 
-    MPIEXEC_EXECUTABLE     Specify the mpi wrapper, e.g. srun, aprun, mpirun, etc.
-    MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag,
-                           e.g. "-n", "-np", etc.
-    MPIEXEC_PREFLAGS       Flags to pass to MPIEXEC_EXECUTABLE directly before the executable to run.
+    MPIEXEC_EXECUTABLE           Specify the mpi wrapper, e.g. srun, aprun, mpirun, etc.
+    MPIEXEC_NUMPROC_FLAG         Specify the number of mpi processes flag,
+                                 e.g. "-n", "-np", etc.
+    MPIEXEC_PREFLAGS             Flags to pass to MPIEXEC_EXECUTABLE directly before the executable to run.
+    QMC_CTEST_NUM_GPUS           Number of GPUs available to CTest on the local node (default: 1).
+                                 CTest uses this value to run independent GPU tests simultaneously,
+                                 assigning one GPU to each test. With default value, GPU tests
+                                 are serialized and only used 1 GPU. Must be a positive integer.
+    QMC_GPU_VISIBILITY_VARIABLE  Optionally specify the environment variable to control GPU visibility for CTest.
+                                 By default, "CUDA_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES", and "ZE_AFFINITY_MASK" are used. 
 
 - Sanitizers Developer Options
 
@@ -975,7 +981,7 @@ Then using the following command:
       ..
   make -j 56
 
-Note that armclang is recognized as an 'unknown' compiler by CMake v3.13* and below. In this case, we need to force it as clang to apply necessary flags. To do so, pass the following additionals option to CMake:
+Note that armclang is recognized as an 'unknown' compiler by CMake v3.13* and below. In this case, we need to force it as clang to apply necessary flags. To do so, pass the following additional option to CMake:
 
 ::
 
@@ -1749,7 +1755,7 @@ expected to work with any recent version.
 Quantum ESPRESSO converter support for old versions via source code patches
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For QE 6.3-7.0, the pw2qmcpack converter can be addded via a source code patch specific to the specific version of QE. **Note that
+For QE 6.3-7.0, the pw2qmcpack converter can be added via a source code patch specific to the specific version of QE. **Note that
 this route is no longer recommended. Unless a specific old version of QE is required, users should use the latest version of QE and
 the cmake route described above.**
 

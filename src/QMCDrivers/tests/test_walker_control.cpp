@@ -9,8 +9,8 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -326,7 +326,7 @@ struct WalkerControlMPITest
         wc.good_w.push_back(std::make_unique<Walker_t>());
         // wc.good_w.push_back(new Walker_t());
         // wc.good_w.push_back(new Walker_t());
-        int nwalkers_rank                = wc.good_w.size();
+        int nwalkers_rank = wc.good_w.size();
         wc.good_w[nwalkers_rank - 1]->setWalkerID(c->size() + 5);
         wc.good_w[nwalkers_rank - 2]->setWalkerID(c->size() + 4);
         // wc.good_w[nwalkers_rank - 3]->setWalkerID(c->size() + 3);
@@ -341,7 +341,6 @@ struct WalkerControlMPITest
       {
         //wc.bad_w.push_back(wc.good_w[0]);
         //wc.bad_w.push_back(wc.good_w[1]);
-        int nwalkers_rank = wc.good_w.size();
         //wc.good_w.pop_back();
         //wc.good_w.pop_back();
         //wc.ncopy_w.pop_back();

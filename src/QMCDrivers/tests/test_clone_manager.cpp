@@ -8,12 +8,9 @@
 //
 // File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
 
 
-#include "catch.hpp"
-
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/RuntimeOptions.h"
@@ -50,8 +47,6 @@ public:
 
 TEST_CASE("QMCUpdate", "[drivers]")
 {
-  Communicate* c = OHMMS::Controller;
-
   const SimulationCell simulation_cell;
   MCWalkerConfiguration elec(simulation_cell);
   elec.setName("e");
@@ -78,11 +73,6 @@ TEST_CASE("QMCUpdate", "[drivers]")
 }
 
 
-TEST_CASE("CloneManager", "[drivers]")
-{
-  Communicate* c = OHMMS::Controller;
-
-  CloneManager cm;
-}
+TEST_CASE("CloneManager", "[drivers]") { CloneManager cm; }
 
 } // namespace qmcplusplus

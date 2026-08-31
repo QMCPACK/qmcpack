@@ -2,9 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 from . import isolate_nexus_core
 from ..testing import value_eq
 from ..testing import failed,FailedTest
@@ -19,9 +16,12 @@ def test_init():
 
     modes = nexus_core.modes
     assert(pm.persistent_modes==set([modes.submit,modes.all]))
-    assert(pm.simulations==obj())
-    assert(pm.cascades==obj())
-    assert(pm.progressing_cascades==obj())
+    def check(v):
+        assert isinstance(v,obj)
+        assert len(v)==0
+    check(pm.simulations)
+    check(pm.cascades)
+    check(pm.progressing_cascades)
 #end def test_init
 
 
@@ -34,7 +34,7 @@ def test_add_simulations():
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
-    pm.add_simulations(sims.list())
+    pm.add_simulations(list(sims.values()))
 
     assert(list(pm.cascades.keys())==[sims.s1.simid])
     assert(list(pm.progressing_cascades.keys())==[sims.s1.simid])
@@ -43,7 +43,7 @@ def test_add_simulations():
 
     assert(len(pm.simulations)==3)
     n = 0
-    for s in sims:
+    for s in sims.values():
         assert(s.simid in pm.simulations)
         assert(id(pm.simulations[s.simid])==id(s))
         n+=1
@@ -74,7 +74,8 @@ def test_traverse_cascades():
 
     sims = []
     for n in range(n_test_workflows):
-        sims.extend(get_test_workflow(n).list())
+        wf = get_test_workflow(n)
+        sims.extend(list(wf.values()))
     #end for
 
     pm = ProjectManager()
@@ -115,7 +116,8 @@ def test_screen_fake_sims():
 
     sims = []
     for n in range(n_test_workflows):
-        sims.extend(get_test_workflow(n).list())
+        wf = get_test_workflow(n)
+        sims.extend(list(wf.values()))
     #end for
 
     pm = ProjectManager()
@@ -151,7 +153,8 @@ def test_resolve_file_collisions():
 
     sims = []
     for n in range(n_test_workflows):
-        sims.extend(get_test_workflow(n).list())
+        wf = get_test_workflow(n)
+        sims.extend(list(wf.values()))
     #end for
 
     pm = ProjectManager()
@@ -165,16 +168,11 @@ def test_resolve_file_collisions():
     s2.locdir  = s1.locdir
     s2.outfile = s1.outfile
 
-    try:
+    with pytest.raises(
+        FileExistsError,
+        match="file collisions found in directory",
+        ):
         pm.resolve_file_collisions()
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     Simulation.clear_all_sims()
 #end def test_resolve_file_collisions
@@ -189,7 +187,8 @@ def test_propagate_blockages():
 
     sims = []
     for n in range(n_test_workflows):
-        sims.extend(get_test_workflow(n).list())
+        wf = get_test_workflow(n)
+        sims.extend(list(wf.values()))
     #end for
 
     for s in sims:
@@ -235,7 +234,7 @@ def test_load_cascades():
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
-    pm.add_simulations(sims.list())
+    pm.add_simulations(list(sims.values()))
 
     idc = id(pm.cascades)
     idp = id(pm.progressing_cascades)
@@ -264,7 +263,7 @@ def test_check_dependencies():
     sims = get_test_workflow(1)
 
     pm = ProjectManager()
-    pm.add_simulations(sims.list())
+    pm.add_simulations(list(sims.values()))
 
     idc = id(pm.cascades)
     idp = id(pm.progressing_cascades)
@@ -292,7 +291,7 @@ def test_write_simulation_status():
     #end for
 
     pm = ProjectManager()
-    pm.add_simulations(sims.list())
+    pm.add_simulations(list(sims.values()))
 
     status_modes = nexus_core.status_modes
 
@@ -300,21 +299,21 @@ def test_write_simulation_status():
         log.reset()
         pm.write_simulation_status()
         s = log.contents()
-        return s
+        return '\n'.join(line.rstrip() for line in s.splitlines())
     #end def status_log
 
     assert(nexus_core.status==status_modes.none)
     status_ref = '''
-  cascade status 
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
-    000000  0  ------    test_sim_s11  ./runs/  
-    000000  0  ------    test_sim_s21  ./runs/  
-    000000  0  ------    test_sim_s12  ./runs/  
-    000000  0  ------    test_sim_s22  ./runs/  
-    000000  0  ------    test_sim_s3  ./runs/  
-    000000  0  ------    test_sim_s4  ./runs/  
-    000000  0  ------    test_sim_s5  ./runs/  
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+  cascade status
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    000000           ------    test_sim_s11  ./runs/
+    000000           ------    test_sim_s21  ./runs/
+    000000           ------    test_sim_s12  ./runs/
+    000000           ------    test_sim_s22  ./runs/
+    000000           ------    test_sim_s3  ./runs/
+    000000           ------    test_sim_s4  ./runs/
+    000000           ------    test_sim_s5  ./runs/
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
     '''
     assert(status_log().strip()==status_ref.strip())
 
@@ -323,11 +322,11 @@ def test_write_simulation_status():
 
     nexus_core.status = status_modes.active
     status_ref = '''
-  cascade status 
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
-    000000  0  ------    test_sim_s11  ./runs/  
-    000000  0  ------    test_sim_s12  ./runs/  
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+  cascade status
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    000000           ------    test_sim_s11  ./runs/
+    000000           ------    test_sim_s12  ./runs/
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
     '''
     assert(status_log().strip()==status_ref.strip())
 
@@ -336,14 +335,68 @@ def test_write_simulation_status():
 
     nexus_core.status = status_modes.failed
     status_ref = '''
-  cascade status 
-    setup, sent_files, submitted, finished, got_output, analyzed, failed 
+  cascade status
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    (No simulations present)
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     '''
     assert(status_log().strip()==status_ref.strip())
 
+    sim = sims.s11
+    sim.setup      = True
+    sim.sent_files = True
+    sim.submitted  = True
+
+    log.reset()
+    pm.status_line(sim)
+    assert(log.contents().strip()=='111000           ------    test_sim_s11  ./runs/')
+
+    sim.finished  = True
+    sim.got_output = True
+    sim.analyzed   = True
+
+    log.reset()
+    pm.status_line(sim)
+    assert(log.contents().strip()=='111111  SUCCESS  ------    test_sim_s11  ./runs/')
+
+    sim.failed = True
+
+    log.reset()
+    pm.status_line(sim)
+    assert(log.contents().strip()=='111111  FAILURE  ------    test_sim_s11  ./runs/')
+
     Simulation.clear_all_sims()
 #end def test_write_simulation_status
+
+
+def test_color_status_result(monkeypatch):
+    from ..project_manager import color_status_result
+
+    class TestLog:
+        def __init__(self,is_tty):
+            self.is_tty = is_tty
+        #end def __init__
+
+        def isatty(self):
+            return self.is_tty
+        #end def isatty
+    #end class TestLog
+
+    tty_log = TestLog(is_tty=True)
+    file_log = TestLog(is_tty=False)
+
+    monkeypatch.delenv('NO_COLOR',raising=False)
+    assert(color_status_result('SUCCESS',tty_log)=='\033[42mSUCCESS\033[0m')
+    assert(color_status_result('FAILURE',tty_log)=='\033[41mFAILURE\033[0m')
+    assert(color_status_result('',tty_log)=='')
+    assert(color_status_result('SUCCESS',file_log)=='SUCCESS')
+    assert(color_status_result('FAILURE',file_log)=='FAILURE')
+
+    monkeypatch.setenv('NO_COLOR','1')
+    assert(color_status_result('SUCCESS',tty_log)=='SUCCESS')
+    assert(color_status_result('FAILURE',tty_log)=='FAILURE')
+
+#end def test_color_status_result
 
 
 @isolate_nexus_core
@@ -397,8 +450,8 @@ def test_run_project(tmp_path):
 
     sims = []
     for n in range(n_test_workflows):
-    #for n in range(1):
-        sims.extend(get_test_workflow(n).list())
+        wf = get_test_workflow(n)
+        sims.extend(list(wf.values()))
     #end for
 
     template = '''

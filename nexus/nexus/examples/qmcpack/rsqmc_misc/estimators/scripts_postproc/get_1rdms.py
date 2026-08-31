@@ -79,29 +79,27 @@ class OneReducedDensityMatrix:
 
     # Write the array and errors
     def write(self, channel):
-        if channel == "up":
-            fa  = open("1rdm_"+channel+".dat", mode="w")
-            fe  = open("1rdm_"+channel+"_err.dat", mode="w")
-            arr = np.copy(self.rdm_u)
-            err = np.copy(self.rdm_u_err)
-        else:
-            fa  = open("1rdm_"+channel+".dat", mode="w")
-            fe  = open("1rdm_"+channel+"_err.dat", mode="w")
-            arr = np.copy(self.rdm_d)
-            err = np.copy(self.rdm_d_err)
-            
-        print("Writing file: ", fa)
-        print("Writing file: ", fe)
-        for i in range(self.rdm_u.shape[0]):
-            txta = ""
-            txte = ""
-            for j in range(self.rdm_u.shape[1]):
-                txta += "{:12.8e} ".format(arr[i,j])
-                txte += "{:12.8e} ".format(err[i,j])
-            fa.write(txta + "\n")
-            fe.write(txte + "\n")
-        fa.close()
-        fe.close()
+        with (
+            open("1rdm_"+channel+".dat", mode="w")     as fa,
+            open("1rdm_"+channel+"_err.dat", mode="w") as fe,
+            ):
+            if channel == "up":
+                arr = np.copy(self.rdm_u)
+                err = np.copy(self.rdm_u_err)
+            else:
+                arr = np.copy(self.rdm_d)
+                err = np.copy(self.rdm_d_err)
+                
+            print("Writing file: ", fa)
+            print("Writing file: ", fe)
+            for i in range(self.rdm_u.shape[0]):
+                txta = ""
+                txte = ""
+                for j in range(self.rdm_u.shape[1]):
+                    txta += "{:12.8e} ".format(arr[i,j])
+                    txte += "{:12.8e} ".format(err[i,j])
+                fa.write(txta + "\n")
+                fe.write(txte + "\n")
     # End function
 # End class
         

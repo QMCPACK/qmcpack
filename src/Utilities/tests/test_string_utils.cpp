@@ -8,8 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include "string_utils.h"
 
 /** \file
@@ -41,7 +41,7 @@ TEST_CASE("string_utils_streamToVec", "[utilities]")
 
     // won't work with int
     CHECK_THROWS_WITH(convertStrToVec<int>(test_string),
-                      Catch::Matchers::Contains("Error parsing string 'abc def 123' for type (type_info::name) i."));
+                      Catch::Matchers::ContainsSubstring("Error parsing string 'abc def 123' for type (type_info::name) i."));
   }
 }
 } // namespace qmcplusplus

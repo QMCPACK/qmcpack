@@ -20,7 +20,9 @@
 #====================================================================#
 
 
-from .developer import DevBase, obj, error
+from .developer import error
+from .developer import obj
+from .developer import DevBase
 
 
 class Unit(DevBase):
@@ -165,7 +167,8 @@ class UnitConverter(DevBase):
 
 
     def __init__(self):
-        self.error('UnitConverter should not be instantiated')
+        msg = 'UnitConverter should not be instantiated'
+        raise RuntimeError(msg)
     #def __init__
 
     @staticmethod
@@ -174,7 +177,11 @@ class UnitConverter(DevBase):
         uo = UnitConverter.unit_dict[target_unit]
 
         if(ui.type != uo.type):
-            error('in UnitConverter.convert()\ntype conversion attempted between '+ui.type+' and '+uo.type)
+            msg = (
+                'in UnitConverter.convert()\n'
+                'type conversion attempted between '+ui.type+' and '+uo.type
+                )
+            raise ValueError(msg)
         else:
             value_out = (value-ui.shift)*ui.value/uo.value+uo.shift
         #end if
@@ -203,4 +210,3 @@ class UnitConverter(DevBase):
 def convert(value,source_unit,target_unit):
     return UnitConverter.convert(value,source_unit,target_unit)[0]
 #end def convert
-

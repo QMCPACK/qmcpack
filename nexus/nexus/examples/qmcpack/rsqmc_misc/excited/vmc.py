@@ -5,7 +5,8 @@ from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack,vmc
-from nexus.structure import *
+
+from nexus.structure import get_primitive_cell
 
 settings(
     pseudo_dir    = '../../pseudopotentials',
@@ -73,7 +74,7 @@ nscf = generate_pwscf(
     verbosity    = 'high', #verbosity must be set to high
     pseudos      = ['C.BFD.upf'], 
     dependencies = (scf, 'charge_density'),
-)
+    )
 
 conv = generate_pw2qmcpack(
     identifier   = 'conv',

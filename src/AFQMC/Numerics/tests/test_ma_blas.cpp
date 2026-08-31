@@ -14,16 +14,7 @@
 // Alfredo Correa, correaa@llnl.gov
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
-#include "Configuration.h"
-
-#undef APP_ABORT
-#define APP_ABORT(x) \
-  {                  \
-    std::cout << x;  \
-    throw;           \
-  }
+#include <catch2/catch_test_macros.hpp>
 
 #include <vector>
 #include <iostream>

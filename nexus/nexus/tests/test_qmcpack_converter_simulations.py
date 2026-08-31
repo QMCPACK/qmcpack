@@ -1,9 +1,8 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_SIMULATIONS)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from pathlib import Path
 
@@ -61,20 +60,15 @@ def test_pw2qmcpack_check_result():
 
 
 def test_pw2qmcpack_get_result():
-    from ..developer import NexusError, obj
+    from ..developer import obj
 
     sim = get_pw2qmcpack_sim()
     
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = sim.get_result('orbitals',None)
 
@@ -108,16 +102,11 @@ def test_pw2qmcpack_incorporate_result(tmp_path):
 
     sim = get_pw2qmcpack_sim(path='scf')
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match='ability to incorporate result "unknown" from Simulation has not been implemented',
+        ):
         sim.incorporate_result('unknown',None,other)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     sim.incorporate_result('orbitals',None,scf)
 
@@ -225,20 +214,15 @@ def test_convert4qmc_check_result():
 
 
 def test_convert4qmc_get_result():
-    from ..developer import NexusError, obj
+    from ..developer import obj
 
     sim = get_convert4qmc_sim()
     
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = sim.get_result('orbitals',None)
 
@@ -297,20 +281,15 @@ def test_convert4qmc_incorporate_result():
 
     sim_start = get_convert4qmc_sim()
 
-    sim = sim_start.copy()
-    try:
+    sim = deepcopy(sim_start)
+    with pytest.raises(
+        NotImplementedError,
+        match='ability to incorporate result "unknown" from Simulation has not been implemented',
+        ):
         sim.incorporate_result('unknown',None,other)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     # incorporate orbitals from gamess
-    sim = sim_start.copy()
+    sim = deepcopy(sim_start)
 
     assert(sim.input_code is None)
     assert(sim.input.gamess_ascii is None)
@@ -323,7 +302,7 @@ def test_convert4qmc_incorporate_result():
     assert(sim.job.app_command=='convert4qmc -gamess ../rhf/rhf.out')
 
     # incorporate orbitals from pyscf
-    sim = sim_start.copy()
+    sim = deepcopy(sim_start)
 
     assert(sim.input_code is None)
     assert(sim.input.pyscf is None)
@@ -334,7 +313,7 @@ def test_convert4qmc_incorporate_result():
     assert(sim.input.orbitals=='../scf.h5')
     
     # incorporate orbitals from quantum package
-    sim = sim_start.copy()
+    sim = deepcopy(sim_start)
 
     assert(sim.input_code is None)
     assert(sim.input.qp is None)
@@ -380,7 +359,7 @@ def test_convert4qmc_check_sim_status(tmp_path):
     outfile_text = 'QMCGaussianParserBase::dump'
     outfile.write_text(outfile_text)
 
-    assert(outfile_text in open(outfile,'r').read())
+    assert(outfile_text in outfile.read_text())
     for filename in sim.list_output_files():
         filepath = Path(sim.locdir).resolve() / filename
         filepath.touch()
@@ -457,16 +436,11 @@ def test_pyscf_to_afqmc_get_result():
     
     sim.input.output = 'afqmc.h5'
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result_ref = obj(
         h5_file = './runs/afqmc.h5',
@@ -497,16 +471,11 @@ def test_pyscf_to_afqmc_incorporate_result():
 
     sim = get_pyscf_to_afqmc_sim()
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match='ability to incorporate result "unknown" from Simulation has not been implemented',
+        ):
         sim.incorporate_result('unknown',None,other)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = obj(
         chkfile = os.path.join(scf.locdir,'scf.chk'),

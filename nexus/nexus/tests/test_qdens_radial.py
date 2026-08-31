@@ -2,8 +2,6 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QDENS_RADIAL)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
 from . import TEST_DIR
 from ..testing import execute,text_eq,check_value_eq
@@ -11,7 +9,6 @@ from ..testing import execute,text_eq,check_value_eq
 
 def test_radial_density():
     _ = pytest.importorskip("spglib")
-    import os
 
     exe = TEST_DIR.parent / "bin/qdens-radial"
 
@@ -36,7 +33,7 @@ def test_radial_density():
         vmc_path / "vmc.in",
         vmc_path / "vmc.out",
         vmc_path / "vmc.info.xml",
-    )
+        )
 
     assert(check_value_eq(set(vmc_path.iterdir()),set(vmc_files_bef)))
 
@@ -64,7 +61,7 @@ def test_radial_density():
         dmc_path / "dmc.g003.twistnum_3.in.xml",
         dmc_path / "dmc.in",
         dmc_path / "dmc.out",
-    )
+        )
 
     assert(check_value_eq(set(dmc_path.iterdir()),set(dmc_files_bef)))
 

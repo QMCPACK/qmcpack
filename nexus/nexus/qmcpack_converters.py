@@ -44,9 +44,12 @@
 
 
 import os
+from types import MappingProxyType
 import numpy as np
-from .developer import obj, error
+from .developer import obj, FileFormatError
+from .nexus_base import nexus_core
 from .simulation import Simulation, SimulationInput, SimulationAnalyzer
+from .simulation import DynamicProcess
 from .pwscf import Pwscf
 from .gamess import Gamess
 from .pyscf_sim import Pyscf
@@ -93,13 +96,23 @@ readval={str:read_str,int:read_int,float:read_float,bool:read_bool}
 writeval={str:write_str,int:write_int,float:write_float,bool:write_bool}
 
 
-class Pw2qmcpackInput(SimulationInput):
-    ints   = []
-    floats = []
-    strs   = ['outdir','prefix']
-    bools  = ['write_psir']
+def get_path(o, path, value=None):
+    """Retrieve a value from a nested dict-like object by slash-delimited path."""
+    for key in path.split('/'):
+        if key not in o:
+            return value
+        o = o[key]
+    return o
 
-    var_types = dict()
+
+
+class Pw2qmcpackInput(SimulationInput):
+    ints   = ()
+    floats = ()
+    strs   = ('outdir','prefix')
+    bools  = ('write_psir',)
+
+    var_types = dict()  # noqa: RUF012
     for v in ints:
         var_types[v]=int
     #end for
@@ -112,8 +125,8 @@ class Pw2qmcpackInput(SimulationInput):
     for v in bools:
         var_types[v]=bool
     #end for
-
-    allowed = set(ints+floats+strs+bools)
+    var_types: MappingProxyType[str, type] = MappingProxyType(var_types)
+    allowed = frozenset(ints+floats+strs+bools)
 
     def read_text(self,contents,filepath=None):
         lines = contents.split('\n')
@@ -132,7 +145,8 @@ class Pw2qmcpackInput(SimulationInput):
                             value = readval[vtype](value)
                             sobj[name]=value
                         else:
-                            self.error('encountered unknown variable: '+name)
+                            msg = 'encountered unknown variable: '+name
+                            raise FileFormatError(msg)
                         #end if
                     #end if
                 #end for
@@ -177,7 +191,7 @@ class Pw2qmcpackInput(SimulationInput):
 #end class Pw2qmcpackInput
 
 
-def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',write_psir=False):
+def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',*,write_psir=False):
     pw = Pw2qmcpackInput(
         prefix     = prefix,
         outdir     = outdir,
@@ -203,7 +217,7 @@ def read_eshdf_eig_data(filename, Ef_list):
         Ef_list = np.array([E_fermi, E_fermi])
     elif len(Ef_list) != ns:
         msg = 'Ef "%s" must have same length as nspin=%d' % (str(Ef_list), ns)
-        error(msg)
+        raise ValueError(msg)
     data     = obj()
     for k in range(nk):
         kp = h.electrons['kpoint_'+str(k)]
@@ -211,7 +225,7 @@ def read_eshdf_eig_data(filename, Ef_list):
             E_fermi = Ef+1e-8
             eig_s = []
             path = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
-            spin = h.get_path(path)
+            spin = get_path(h,path)
             eig = convert(np.array(spin.eigenvalues),'Ha','eV')
             nst = h5int(spin.number_of_states)
             for st in range(nst):
@@ -264,7 +278,8 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
         if isinstance(arg0,Simulation):
             sim = arg0
             self.infile = sim.infile
-            prefix,outdir = sim.input.inputpp.tuple('prefix','outdir')
+            prefix = sim.input.inputpp.prefix
+            outdir = sim.input.inputpp.outdir
             self.dir = sim.locdir
             self.h5file = os.path.join(sim.locdir,outdir,prefix+'.pwscf.h5')
         else:
@@ -279,7 +294,7 @@ class Pw2qmcpackAnalyzer(SimulationAnalyzer):
     #end def analyze
 
     def get_result(self,result_name):
-        self.not_implemented()
+        raise NotImplementedError
     #end def get_result
 #end class Pw2qmcpackAnalyzer
 
@@ -289,8 +304,11 @@ class Pw2qmcpack(Simulation):
     analyzer_type = Pw2qmcpackAnalyzer
     generic_identifier = 'pw2qmcpack'
     application = 'pw2qmcpack.x'
-    application_properties = set(['serial'])
-    application_results    = set(['orbitals','gc_occupation'])
+    application_properties = frozenset({'serial'})
+    application_results    = frozenset({'orbitals','gc_occupation'})
+
+    # dynamic workflow support
+    allowed_requirements = ('orbitals',)
 
     def check_result(self,result_name,sim):
         calculating_result = False
@@ -324,7 +342,8 @@ class Pw2qmcpack(Simulation):
         elif result_name=='gc_occupation':
             pass  # defer to Qmcpack.incorporate_result
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if        
         return result
     #end def get_result
@@ -360,17 +379,27 @@ class Pw2qmcpack(Simulation):
                 #end if
                 pwdir = os.path.abspath(os.path.join(sim.locdir ,pwoutdir))
                 p2dir = os.path.abspath(os.path.join(self.locdir,p2outdir))
-                errors = False
+                msg = ""
                 if pwdir!=p2dir:
-                    self.error('to use orbitals, '+self.generic_identifier+' must have the same outdir as pwscf\n  pwscf outdir: '+pwdir+'\n  '+self.generic_identifier+' outdir: '+p2dir,exit=False)
-                    errors = True
+                    msg += (
+                        'to use orbitals, '+self.generic_identifier+' must have the same outdir as pwscf\n'
+                        '  pwscf outdir: '+pwdir+'\n'
+                        '  '+self.generic_identifier+' outdir: '+p2dir+'\n'
+                        )
                 #end if
                 if pwprefix!=p2prefix:
-                    self.error('to use orbitals, '+self.generic_identifier+' must have the same prefix as pwscf\n  pwscf prefix: '+pwprefix+'\n  '+self.generic_identifier+' prefix: '+p2prefix,exit=False)
-                    errors = True
+                    msg += (
+                        'to use orbitals, '+self.generic_identifier+' must have the same prefix as pwscf\n'
+                        '  pwscf prefix: '+pwprefix+'\n'
+                        '  '+self.generic_identifier+' prefix: '+p2prefix+"\n"
+                        )
                 #end if
-                if errors:
-                    self.error(self.generic_identifier+' cannot use orbitals from pwscf')
+                if len(msg) > 0:
+                    msg = (
+                        self.generic_identifier+' cannot use orbitals from pwscf:\n'
+                        f'{msg}'
+                        )
+                    raise RuntimeError(msg)
                 #end if
             else:
                 implemented = False
@@ -379,7 +408,10 @@ class Pw2qmcpack(Simulation):
             implemented = False
         #end if
         if not implemented:
-            self.error('ability to incorporate result "{0}" from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
+            msg = 'ability to incorporate result "{0}" from {1} has not been implemented'.format(
+                result_name, type(sim).__name__
+                )
+            raise NotImplementedError(msg)
         #end if                
     #end def incorporate_result
 
@@ -436,18 +468,91 @@ class Pw2qmcpack(Simulation):
     def app_command(self):
         return self.app_name+'<'+self.infile
     #end def app_command
+
+
+    # dynamic workflow support
+
+    def fill_produces(self):
+        self.produces.add('orbitals')
+    #end def fill_produces
+
+
+    def fill_products(self):
+        inputpp = self.input.inputpp
+        prefix = 'pwscf'
+        outdir = './'
+        if 'prefix' in inputpp:
+            prefix = inputpp.prefix
+        if 'outdir' in inputpp:
+            outdir = inputpp.outdir
+        if outdir.startswith('./'):
+            outdir = outdir[2:]
+        orb_file = os.path.join(self.locdir,outdir,prefix+'.pwscf.h5')
+        self.products.orbitals = orb_file
+    #end def fill_products
+
+
+    def receive_orbitals(self,orb_path):
+        # This just checks if output paths match.
+        # Otherwise running pw2qmcpack will fail.
+        orbdir = os.path.realpath(orb_path)
+        if not os.path.isdir(orb_path):
+            msg = (
+                'orbitals path is not a directory.\n'
+                'Path provided: {}'.format(orb_path)
+                )
+            raise NotADirectoryError(msg)
+        savedir = None
+        for d in os.listdir(orbdir):
+            if d.endswith('.save'):
+                savedir = d
+                break
+        if savedir is None or not os.path.exists(os.path.join(orbdir,savedir)):
+            msg = (
+                '.save directory does not exist at provided orbitals path.\n'
+                'Path provided: {}'.format(orb_path)
+                )
+            raise FileNotFoundError(msg)
+        prefix = savedir.rsplit('.',1)
+        p2in   = self.input.inputpp
+        if prefix!=p2in.prefix:
+            msg = (
+                'pw2qmcpack must have same prefix as pwscf run\n'
+                'pwscf prefix: {}\n'
+                'pw2qmcpack prefix: {}'.format(prefix, p2in.prefix)
+                )
+            raise ValueError(msg)
+        p2dir = os.path.realpath(os.path.join(self.locdir,p2in.outdir))
+        if p2dir!=orbdir:
+            msg = (
+                'pwscf orbital location does not match pw2qmcpack.\n'
+                'pwscf location: {}\n'
+                'pw2qmcpack location: {}'.format(orbdir, p2dir)
+                )
+            raise RuntimeError(msg)
+    #end def receive_orbitals
+
 #end class Pw2qmcpack
 
 
 
 
 def generate_pw2qmcpack(**kwargs):
+
+    if nexus_core.dynamic:
+        dp,dyn_args = DynamicProcess.check_first_gen(kwargs)
+        if dp is not None:
+            return dp
+
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
 
     if 'input' not in sim_args:
         sim_args.input = generate_pw2qmcpack_input(**inp_args)
     #end if
     pw2qmcpack = Pw2qmcpack(**sim_args)
+
+    if nexus_core.dynamic:
+        pw2qmcpack = DynamicProcess(sim=pw2qmcpack,**dyn_args)
 
     return pw2qmcpack
 #end def generate_pw2qmcpack
@@ -463,41 +568,42 @@ def generate_pw2qmcpack(**kwargs):
 
 class Convert4qmcInput(SimulationInput):
 
-    input_codes = '''
-        pyscf              
-        qp                 
-        gaussian           
-        casino             
-        vsvb               
-        gamess             
-        gamess_ascii       
-        gamess_fmo         
-        gamess_xml         
-        '''.split()
+    input_codes = (
+        'pyscf',
+        'qp',
+        'gaussian',
+        'casino',
+        'vsvb',
+        'gamess',
+        'gamess_ascii',
+        'gamess_fmo',
+        'gamess_xml'
+        )
 
-    input_order = input_codes + '''
-        prefix             
-        hdf5               
-        add_cusp           
-        psi_tag            
-        ion_tag            
-        no_jastrow         
-        production         
-        orbitals
-        multidet
-        gridtype
-        first
-        last
-        size
-        ci                 
-        read_initial_guess 
-        target_state       
-        natural_orbitals   
-        threshold          
-        opt_det_coeffs
-        zero_ci            
-        add_3body_J
-        '''.split()
+    input_order = (
+        *input_codes,
+        'prefix',
+        'hdf5',
+        'add_cusp',
+        'psi_tag',
+        'ion_tag',
+        'no_jastrow',
+        'production',
+        'orbitals',
+        'multidet',
+        'gridtype',
+        'first',
+        'last',
+        'size',
+        'ci',
+        'read_initial_guess',
+        'target_state',
+        'natural_orbitals',
+        'threshold',
+        'opt_det_coeffs',
+        'zero_ci',
+        'add_3body_J'
+        )
 
     input_aliases = obj(
         pyscf              = 'pyscf',
@@ -605,28 +711,44 @@ class Convert4qmcInput(SimulationInput):
         # check that only allowed keyword inputs are provided
         invalid = set(kwargs.keys())-set(self.input_types.keys())
         if len(invalid)>0:
-            self.error('invalid inputs encountered\ninvalid keywords: {0}\nvalid keyword inputs are: {1}'.format(sorted(invalid),sorted(self.input_types.keys())))
+            msg = (
+                'invalid inputs encountered\n'
+                'invalid keywords: {0}\n'
+                'valid keyword inputs are: {1}'.format(
+                    sorted(invalid), sorted(self.input_types.keys())
+                    )
+                )
+            raise ValueError(msg)
         #end if
 
         # assign inputs
-        self.set(**kwargs)
+        self.update(**kwargs)
 
         # assign default values
-        self.set_optional(**self.input_defaults)
+        for k,v in self.input_defaults.items():
+            if k not in self:
+                self[k] = v
 
         # check that all keyword inputs are valid
         self.check_valid()
     #end def __init__
 
 
-    def check_valid(self,exit=True):
+    def check_valid(self,*,exit=True):
         valid = True
         # check that all inputs have valid types and assign them
         for k,v in self.items():
             if v is not None and not isinstance(v,self.input_types[k]):
                 valid = False
                 if exit:
-                    self.error('keyword input {0} must be of type {1}\nyou provided a value of type {2}\nplease revise your input and try again'.format(k,self.input_types[k].__name__,v.__class__.__name__))
+                    msg = (
+                        'keyword input {0} must be of type {1}\n'
+                        'you provided a value of type {2}\n'
+                        'please revise your input and try again'.format(
+                            k, self.input_types[k].__name__, type(v).__name__
+                            )
+                        )
+                    raise TypeError(msg)
                 #end if
                 break
             #end if
@@ -731,8 +853,8 @@ class Convert4qmc(Simulation):
     analyzer_type          = Convert4qmcAnalyzer
     generic_identifier     = 'convert4qmc'
     application            = 'convert4qmc'
-    application_properties = set(['serial'])
-    application_results    = set(['orbitals','particles','determinantset'])
+    application_properties = frozenset({'serial'})
+    application_results    = frozenset({'orbitals','particles','determinantset'})
     renew_app_command      = True
 
     def __init__(self,*args,**kwargs):
@@ -798,7 +920,8 @@ class Convert4qmc(Simulation):
         elif result_name=='determinantset':
             result.location = os.path.join(self.locdir,wfn_file)            
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if        
         return result
     #end def get_result
@@ -849,7 +972,10 @@ class Convert4qmc(Simulation):
             implemented = False
         #end if
         if not implemented:
-            self.error('ability to incorporate result "{0}" from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
+            msg = 'ability to incorporate result "{0}" from {1} has not been implemented'.format(
+                result_name, type(sim).__name__
+                )
+            raise NotImplementedError(msg)
         #end if
     #end def incorporate_result
 
@@ -956,8 +1082,8 @@ class Convertpw4qmc(Simulation):
     analyzer_type          = Convertpw4qmcAnalyzer
     generic_identifier     = 'convertpw4qmc'
     application            = 'convertpw4qmc'
-    application_properties = set(['serial'])
-    application_results    = set(['orbitals'])
+    application_properties = frozenset({'serial'})
+    application_results    = frozenset({'orbitals'})
     renew_app_command      = True
 
     def set_app_name(self,app_name):
@@ -992,7 +1118,8 @@ class Convertpw4qmc(Simulation):
             result.location = orbfile
             result.h5file = orbfile
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if        
         return result
     #end def get_result
@@ -1030,17 +1157,22 @@ class Convertpw4qmc(Simulation):
                 pwsdir = os.path.abspath(os.path.join(sim.locdir ,pwoutdir, pwprefix+'.save'))
                 charge_density_h5 = os.path.join(pwsdir, 'charge-density.hdf5')
                 data_file_schema  = os.path.join(pwsdir, 'data-file-schema.xml')
-                errors = False
+                msg = ""
                 if not os.path.exists(data_file_schema):
-                    self.error('to use orbitals, '+self.generic_identifier+' must have data-file-schema.xml file', exit=False)
-                    errors = True
+                    msg += 'to use orbitals, '+self.generic_identifier+' must have data-file-schema.xml file'
                 #end if
                 if not os.path.exists(charge_density_h5):
-                    self.error('to use orbitals, '+self.generic_identifier+' must have charge-density.h5 file.\nNeed to rebuild QE with hdf5 support', exit=False)
-                    errors = True
+                    msg += (
+                        'to use orbitals, '+self.generic_identifier+' must have charge-density.h5 file.\n'
+                        'Need to rebuild QE with hdf5 support'
+                        )
                 #end if
-                if errors:
-                    self.error(self.generic_identifier+' cannot use orbitals from pwscf')
+                if len(msg) > 0:
+                    msg = (
+                        self.generic_identifier+' cannot use orbitals from pwscf:\n'
+                        f'{msg}'
+                        )
+                    raise RuntimeError(msg)
                 #end if
                 if self.input.data_file is None:
                     self.input.data_file = data_file_schema
@@ -1051,7 +1183,10 @@ class Convertpw4qmc(Simulation):
             implemented = False
         #end if
         if not implemented:
-            self.error('ability to incorporate result "{0}" from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
+            msg = 'ability to incorporate result "{0}" from {1} has not been implemented'.format(
+                result_name, type(sim).__name__
+                )
+            raise NotImplementedError(msg)
         #end if                
     #end def incorporate_result
 
@@ -1086,22 +1221,22 @@ def generate_convertpw4qmc(**kwargs):
 
 class PyscfToAfqmcInput(SimulationInput):
 
-    input_order = '''
-        help
-        input
-        output
-        wavefunction
-        qmcpack_input
-        cholesky_threshold
-        kpoint
-        gdf
-        ao
-        cas
-        disable_ham
-        num_dets
-        real_ham
-        verbose
-        '''.split()
+    input_order = (
+        'help',
+        'input',
+        'output',
+        'wavefunction',
+        'qmcpack_input',
+        'cholesky_threshold',
+        'kpoint',
+        'gdf',
+        'ao',
+        'cas',
+        'disable_ham',
+        'num_dets',
+        'real_ham',
+        'verbose'
+        )
 
     input_flags = obj(
         help               = 'h',
@@ -1168,28 +1303,44 @@ class PyscfToAfqmcInput(SimulationInput):
         # check that only allowed keyword inputs are provided
         invalid = set(kwargs.keys())-set(self.input_types.keys())
         if len(invalid)>0:
-            self.error('invalid inputs encountered\ninvalid keywords: {0}\nvalid keyword inputs are: {1}'.format(sorted(invalid),sorted(self.input_types.keys())))
+            msg = (
+                'invalid inputs encountered\n'
+                'invalid keywords: {0}\n'
+                'valid keyword inputs are: {1}'.format(
+                    sorted(invalid), sorted(self.input_types.keys())
+                    )
+                )
+            raise ValueError(msg)
         #end if
 
         # assign inputs
-        self.set(**kwargs)
+        self.update(**kwargs)
 
         # assign default values
-        self.set_optional(**self.input_defaults)
+        for k,v in self.input_defaults.items():
+            if k not in self:
+                self[k] = v
 
         # check that all keyword inputs are valid
         self.check_valid()
     #end def __init__
 
 
-    def check_valid(self,exit=True):
+    def check_valid(self,*,exit=True):
         valid = True
         # check that all inputs have valid types and assign them
         for k,v in self.items():
             if v is not None and not isinstance(v,self.input_types[k]):
                 valid = False
                 if exit:
-                    self.error('keyword input "{0}" must be of type "{1}"\nyou provided a value of type "{2}"\nplease revise your input and try again'.format(k,self.input_types[k].__name__),v.__class__.__name__)
+                    msg = (
+                        'keyword input "{0}" must be of type "{1}"\n'
+                        'you provided a value of type "{2}"\n'
+                        'please revise your input and try again'.format(
+                            k, self.input_types[k].__name__, type(v).__name__
+                            )
+                        )
+                    raise TypeError(msg)
                 #end if
                 break
             #end if
@@ -1198,7 +1349,12 @@ class PyscfToAfqmcInput(SimulationInput):
             if len(self.cas)!=2:
                 valid = False
                 if exit:
-                    self.error('keyword input "cas" must contain only two elements\nnumber of elements provided: {}\nvalue provided: {}'.format(len(self.cas),self.cas))
+                    msg = (
+                        'keyword input "cas" must contain only two elements\n'
+                        'number of elements provided: {}\n'
+                        'value provided: {}'.format(len(self.cas), self.cas)
+                        )
+                    raise ValueError(msg)
                 #end if
             #end if
             noninteger = False
@@ -1208,7 +1364,11 @@ class PyscfToAfqmcInput(SimulationInput):
             if noninteger:
                 valid = False
                 if exit:
-                    self.error('keyword input "cas" must contain two integers\nvalue provided: {}'.format(self.cas))
+                    msg = (
+                        'keyword input "cas" must contain two integers\n'
+                        'value provided: {}'.format(self.cas)
+                        )
+                    raise TypeError(msg)
                 #end if
             #end if
         #end if
@@ -1291,8 +1451,8 @@ class PyscfToAfqmc(Simulation):
     analyzer_type          = PyscfToAfqmcAnalyzer
     generic_identifier     = 'pyscf2afqmc'
     application            = 'pyscf_to_afqmc.py'
-    application_properties = set(['serial'])
-    application_results    = set(['wavefunction','hamiltonian'])
+    application_properties = frozenset({'serial'})
+    application_results    = frozenset({'wavefunction','hamiltonian'})
     renew_app_command      = True
 
 
@@ -1316,13 +1476,14 @@ class PyscfToAfqmc(Simulation):
     def get_result(self,result_name,sim):
         result = obj()
         input = self.input
-        if result_name in ('wavefunction','hamiltonian'):
+        if result_name in {'wavefunction','hamiltonian'}:
             result.h5_file = os.path.join(self.locdir,input.output)
             if input.qmcpack_input is not None:
                 result.xml = os.path.join(self.locdir,input.qmcpack_input)
             #end if
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if        
         return result
     #end def get_result
@@ -1342,7 +1503,10 @@ class PyscfToAfqmc(Simulation):
             implemented = False
         #end if
         if not implemented:
-            self.error('ability to incorporate result "{0}" from {1} has not been implemented'.format(result_name,sim.__class__.__name__))
+            msg = 'ability to incorporate result "{0}" from {1} has not been implemented'.format(
+                result_name, type(sim).__name__
+                )
+            raise NotImplementedError(msg)
         #end if
     #end def incorporate_result       
 

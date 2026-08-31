@@ -8,11 +8,9 @@
 //
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-
-#include "catch.hpp"
-
-#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Numerics/OneDimGridBase.h"
 #include "ParticleIO/XMLParticleIO.h"
@@ -52,7 +50,7 @@ void test_cartesian_ao()
     ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
-    int hIdx             = ispecies.addSpecies("H");
+    ispecies.addSpecies("H");
     ions.update();
 
     elec.addTable(ions);
@@ -60,7 +58,6 @@ void test_cartesian_ao()
 
     Libxml2Document doc;
     REQUIRE(doc.parse("cartesian_order.wfnoj.xml"));
-    xmlNodePtr root = doc.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
@@ -120,7 +117,7 @@ void test_dirac_ao()
     ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
-    int hIdx             = ispecies.addSpecies("H");
+    ispecies.addSpecies("H");
     ions.update();
 
     elec.addTable(ions);
@@ -128,7 +125,6 @@ void test_dirac_ao()
 
     Libxml2Document doc;
     REQUIRE(doc.parse("dirac_order.wfnoj.xml"));
-    xmlNodePtr root = doc.getRoot();
 
     WaveFunctionComponentBuilder::PSetMap particle_set_map;
     particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));

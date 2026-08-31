@@ -104,7 +104,7 @@ public:
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
   /// whether to allow walker logs
-  bool allow_walker_logs;
+  bool allow_walker_logs{false};
   /// walker logs input
   WalkerLogInput walker_logs_input;
   //xmlNodePtr walker_logs_xml;
@@ -199,7 +199,7 @@ public:
    * Accumulate energy and weight is written to a hdf5 file.
    * Finialize the estimators
    */
-  bool finalize(int block, bool dumpwalkers = true);
+  void finalize(int block, bool dumpwalkers = true);
 
   ///return current step
   inline IndexType current() const { return current_step_; }

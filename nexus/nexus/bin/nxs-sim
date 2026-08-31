@@ -63,15 +63,14 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.nexus_version import nexus_version
-from nexus.developer import obj
+from nexus.developer import obj,save,load
 
 
 class SimTool(obj):
     
-    indicators = ['setup','sent_files','submitted','finished','failed','got_output','analyzed']
+    indicators = ('setup','sent_files','submitted','finished','failed','got_output','analyzed')
 
-    fields = set(indicators)
+    fields = frozenset(indicators)
 
 
     def __init__(self):
@@ -82,25 +81,24 @@ class SimTool(obj):
 
     def load(self,paths):
         for path in paths:
-            sim = obj()
-            sim.load(path)
+            sim = load(path)
             self.sims.append(sim)
             self.paths.append(path)
         #end for
     #end def load
 
 
-    def write_state(self,fields=[]):
+    def write_state(self,fields=()):
         if len(fields)==0:
             fields = self.indicators
         #end if
         forbidden = set(fields)-set(self.fields)
         if len(forbidden)>0:
-            print('unrecognized fields encountered:')
+            msg = 'unrecognized fields encountered:\n'
             for f in forbidden:
-                print('  ',f)
+                msg += f'  {f}\n'
             #end for
-            exit()
+            raise ValueError(msg)
         #end if
         for i in range(len(self.paths)):
             path = self.paths[i]
@@ -113,17 +111,17 @@ class SimTool(obj):
     #end def write_state
 
 
-    def write_state_all(self,fields=[]):
+    def write_state_all(self,fields=()):
         if len(fields)==0:
             fields = self.indicators
         #end if
         forbidden = set(fields)-set(self.fields)
         if len(forbidden)>0:
-            print('unrecognized fields encountered:')
+            msg = 'unrecognized fields encountered:\n'
             for f in forbidden:
-                print('  ',f)
+                msg += f'  {f}\n'
             #end for
-            exit()
+            raise ValueError(msg)
         #end if
         for i in range(len(self.paths)):
             path = self.paths[i]
@@ -154,17 +152,19 @@ class SimTool(obj):
 
     def set_indicators(self,inds,val=1):
         if len(inds)==0:
-            print('no indicators specified')
-            print('  options are: '+self.indicators)
-            exit()
+            msg = (
+                'no indicators specified\n'
+                '  options are: '+self.indicators
+                )
+            raise ValueError(msg)
         #end if
         forbidden = set(inds)-set(self.indicators)
         if len(forbidden)>0:
-            print('unrecognized indicators encountered:')
+            msg = 'unrecognized indicators encountered:\n'
             for f in forbidden:
-                print('  ',f)
+                msg += f'  {f}\n'
             #end for
-            exit()
+            raise ValueError(msg)
         #end if
         for i in range(len(self.paths)):
             path = self.paths[i]
@@ -175,7 +175,7 @@ class SimTool(obj):
                     sim.process_id = None
                 #end if
             #end for
-            sim.save(path)
+            save(sim,path)
         #end for
     #end def set_indicators
                 
@@ -193,7 +193,7 @@ if __name__=='__main__':
         for comm in allowed_commands:
             print('   ',comm)
         #end for
-        exit()
+        sys.exit()
     #end if
 
     paths = []
@@ -212,17 +212,17 @@ if __name__=='__main__':
     #end for
 
 
-    if not command in allowed_commands:
-        print('command '+command+' not recognized')
-        exit()
+    if command not in allowed_commands:
+        msg = 'command '+command+' not recognized'
+        raise ValueError(msg)
     #end if
 
     if len(paths)==0:
         if os.path.exists('./sim.p'):
             paths = ['./sim.p']
         else:
-            print('no simulation images found')
-            exit()
+            msg = 'no simulation images found'
+            raise FileNotFoundError(msg)
         #end if
     #end if
 

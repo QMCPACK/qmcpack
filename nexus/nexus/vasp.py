@@ -25,7 +25,9 @@
 
 
 import os
+from copy import deepcopy
 from .developer import obj
+from .pseudoset import PseudoSet
 from .simulation import Simulation
 from .vasp_input import VaspInput,generate_vasp_input,generate_poscar,Poscar
 from .vasp_analyzer import VaspAnalyzer
@@ -37,12 +39,16 @@ class Vasp(Simulation):
     analyzer_type      = VaspAnalyzer
     generic_identifier = 'vasp'
     application        = 'vasp' 
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['structure']) 
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'structure'})
 
     allow_overlapping_files = True
 
-    vasp_save_files = 'INCAR KPOINTS POSCAR CONTCAR DOSCAR EIGENVAL IBZKPT OSZICAR OUTCAR PCDAT XDATCAR vasprun.xml'.split()
+    vasp_save_files = (
+        'DOSCAR', 'IBZKPT', 'CONTCAR', 'KPOINTS', 'PCDAT', 'POSCAR',
+        'OUTCAR', 'vasprun.xml', 'EIGENVAL', 'INCAR', 'XDATCAR', 'OSZICAR'
+        )
+
 
     def set_files(self):
         self.infile  = 'INCAR'
@@ -69,7 +75,8 @@ class Vasp(Simulation):
             # get structure from CONTCAR
             ccfile = os.path.join(self.locdir,self.identifier+'.CONTCAR')
             if not os.path.exists(ccfile):
-                self.error('CONTCAR file does not exist for relax simulation at '+self.locdir)
+                msg = 'CONTCAR file does not exist for relax simulation at '+self.locdir
+                raise FileNotFoundError(msg)
             #end if
             contcar = Poscar(ccfile)
             structure = Structure()
@@ -87,7 +94,8 @@ class Vasp(Simulation):
             #end if
             result.structure = structure
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result
@@ -102,9 +110,13 @@ class Vasp(Simulation):
                 #end if
                 neb_structures = self.neb_structures
                 if len(neb_structures)>1:
-                    self.error('NEB simulation at {0} depends on more than two structures\n  please check your inputs'.format(self.locdir))
+                    msg = (
+                        'NEB simulation at {0} depends on more than two structures\n'
+                        '  please check your inputs'.format(self.locdir)
+                        )
+                    raise RuntimeError(msg)
                 #end if
-                neb_structures.append(result.structure.copy())
+                neb_structures.append(deepcopy(result.structure))
                 if len(neb_structures)==2:
                     input.setup_neb(*neb_structures,images=input.incar.images)
                 #end if
@@ -112,7 +124,8 @@ class Vasp(Simulation):
                 input.poscar = generate_poscar(result.structure)
             #end if
         else:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
+            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if  
     #end def incorporate_result
 
@@ -170,12 +183,20 @@ class Vasp(Simulation):
 
 
 def generate_vasp(**kwargs):
-    sim_args,inp_args = Vasp.separate_inputs(kwargs,copy_pseudos=False)
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        kwargs['pseudos'] = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'vasp',
+            )
+    #end if
+
+    sim_args,inp_args = Vasp.separate_inputs(kwargs)
 
     sim_args.input = generate_vasp_input(**inp_args)
     vasp = Vasp(**sim_args)
 
     return vasp
 #end def generate_vasp
-
-
