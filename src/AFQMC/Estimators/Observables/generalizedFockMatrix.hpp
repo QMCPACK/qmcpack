@@ -70,7 +70,7 @@ class generalizedFockMatrix : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using Static3Tensor    = boost::multi::static_array<ComplexType, 3, stack_alloc_type>;
+  using Dynamic3Tensor   = boost::multi::dynamic_array<ComplexType, 3, stack_alloc_type>;
 
 public:
   generalizedFockMatrix(afqmc::TaskGroup_& tg_,
@@ -107,7 +107,7 @@ public:
     writer = (TG.getGlobalRank() == 0);
 
     DMAverage = mpi3CTensor({2, nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
   template<class MatG, class MatG_host, class HostCVec1, class HostCVec2, class HostCVec3>
@@ -130,7 +130,7 @@ public:
     assert(Xw.size() == nw);
     assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
-    assert(G.extensions() == G_host.extensions());
+    assert(G.extents() == G_host.extents());
     assert(G[0].num_elements() == dm_size);
 
     using std::get;
@@ -145,18 +145,19 @@ public:
       {
         DMWork = mpi3CTensor({3, nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
-      fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(denom.base(), denom.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(DMWork.base(), DMWork.num_elements(), ComplexType(0.0, 0.0));
     }
     else
     {
-      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != 2 || get<1>(DMWork.sizes()) != nw || get<2>(DMWork.sizes()) != dm_size ||
-          get<0>(DMAverage.sizes()) != 2 || get<1>(DMAverage.sizes()) != nave || get<2>(DMAverage.sizes()) != dm_size)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != 2 || get<1>(DMWork.sizes()) != nw ||
+          get<2>(DMWork.sizes()) != dm_size || get<0>(DMAverage.sizes()) != 2 || get<1>(DMAverage.sizes()) != nave ||
+          get<2>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
     DeviceBufferManager buffer_manager;
-    Static3Tensor gFock({2, nw, dm_size}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Dynamic3Tensor gFock({2, nw, dm_size}, buffer_manager.get_generator().template get_allocator<ComplexType>());
 
     HamOp->generalizedFockMatrix(G, gFock[0], gFock[1]);
 
@@ -170,7 +171,7 @@ public:
     {
       for (int iw = 0; iw < nw; iw++)
       {
-        copy_n(make_device_ptr(gFock[ic][iw].origin()) + i0, (iN - i0), to_address(DMWork[2][iw].origin()) + i0);
+        copy_n(make_device_ptr(gFock[ic][iw].base()) + i0, (iN - i0), to_address(DMWork[2][iw].base()) + i0);
         ma::axpy(Xw[iw], DMWork[2][iw].sliced(i0, iN), DMWork[ic][iw].sliced(i0, iN));
       }
     }
@@ -206,7 +207,7 @@ public:
     if (TG.TG_local().root())
     {
       ma::scal(ComplexType(1.0 / block_size), DMAverage);
-      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.origin()), DMAverage.num_elements(), std::plus<>(), 0);
+      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.base()), DMAverage.num_elements(), std::plus<>(), 0);
       if (writer)
       {
         dump.push(std::string("GenFockPlus"));
@@ -215,7 +216,7 @@ public:
           dump.push(std::string("Average_") + std::to_string(i));
           std::string padded_iblock =
               std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-          stdCVector_ref DMAverage_(to_address(DMAverage[0][i].origin()), {dm_size});
+          stdCVector_ref DMAverage_(to_address(DMAverage[0][i].base()), {dm_size});
           dump.write(DMAverage_, "gfockp_" + padded_iblock);
           dump.write(Wsum[i], "denominator_" + padded_iblock);
           dump.pop();
@@ -227,7 +228,7 @@ public:
           dump.push(std::string("Average_") + std::to_string(i));
           std::string padded_iblock =
               std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-          stdCVector_ref DMAverage_(to_address(DMAverage[1][i].origin()), {dm_size});
+          stdCVector_ref DMAverage_(to_address(DMAverage[1][i].base()), {dm_size});
           dump.write(DMAverage_, "gfockm_" + padded_iblock);
           dump.write(Wsum[i], "denominator_" + padded_iblock);
           dump.pop();
@@ -236,7 +237,7 @@ public:
       }
     }
     TG.TG_local().barrier();
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
 private:

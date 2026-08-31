@@ -94,7 +94,7 @@ http://www.burkatzki.com/pseudos/index.2.html
 and click on the "Select Pseudopotential" button.  Next click on oxygen in the
 periodic table.  Click on the empty circle next to "V5Z" (a large Gaussian
 basis set) and click on "Next."  Select the Gamess format and click on
-"Retrive Potential."  Helpful information about the pseudopotential will be
+"Retrieve Potential."  Helpful information about the pseudopotential will be
 displayed.  The desired portion is at the bottom (the last 7 lines).  Copy
 this text into the editor of your choice (e.g., ``emacs`` or ``vi``)
 and save it as ``O.BFD.gamess``

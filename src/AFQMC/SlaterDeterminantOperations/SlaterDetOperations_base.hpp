@@ -39,10 +39,10 @@ public:
   using buffer_type_R = typename BufferManager::template allocator_t<R>;
   using buffer_type_T = typename BufferManager::template allocator_t<T>;
 
-  using IVector = boost::multi::static_array<int, 1, buffer_type_I>;
-  using RVector = boost::multi::static_array<R, 1, buffer_type_R>;
-  using TVector = boost::multi::static_array<T, 1, buffer_type_T>;
-  using TMatrix = boost::multi::static_array<T, 2, buffer_type_T>;
+  using IVector = boost::multi::dynamic_array<int, 1, buffer_type_I>;
+  using RVector = boost::multi::dynamic_array<R, 1, buffer_type_R>;
+  using TVector = boost::multi::dynamic_array<T, 1, buffer_type_T>;
+  using TMatrix = boost::multi::dynamic_array<T, 2, buffer_type_T>;
 
   SlaterDetOperations_base(BufferManager b) : buffer_manager(b) {}
 
@@ -307,10 +307,10 @@ public:
     ma::geqrf(AT, TAU, WORK);
     using ma::determinant_from_geqrf;
     using ma::scale_columns;
-    T res = determinant_from_geqrf(get<0>(AT.sizes()), AT.origin(), AT.stride(), scl.origin(), LogOverlapFactor);
+    T res = determinant_from_geqrf(get<0>(AT.sizes()), AT.base(), AT.stride(), scl.base(), LogOverlapFactor);
     ma::gqr(AT, TAU, WORK);
     ma::transpose(AT, A);
-    scale_columns(get<0>(A.sizes()), get<1>(A.sizes()), A.origin(), A.stride(), scl.origin());
+    scale_columns(get<0>(A.sizes()), get<1>(A.sizes()), A.base(), A.stride(), scl.base());
 #else
     int NMO = A.size();
     TVector TAU(iextensions<1u>{NMO}, buffer_manager.get_generator().template get_allocator<T>());

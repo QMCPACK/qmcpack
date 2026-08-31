@@ -54,12 +54,11 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
 
   if (use_offload)
   {
-    if (distributed_ranks > 1 || shared_ranks > 1)
-      app_warning() << "Offload implemenation doesn't support distributing or sharing the memory of spline "
-                       "coefficients. Overriding distributed_ranks and shared_ranks to 1."
+    if (distributed_ranks > 1)
+      app_warning() << "Offload implemenation doesn't support distributing the memory of spline "
+                       "coefficients. Overriding distributed_ranks to 1."
                     << std::endl;
     distributed_ranks = 1;
-    shared_ranks      = 1;
   }
 
   auto dist_comm_ptr = std::make_unique<Communicate>(*myComm, myComm->size() / (distributed_ranks * shared_ranks));

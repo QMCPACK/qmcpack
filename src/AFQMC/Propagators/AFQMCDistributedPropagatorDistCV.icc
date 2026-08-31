@@ -88,16 +88,16 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     generateP1(dt, walker_type);
   TG.local_barrier();
 
-  StaticMatrix vrecv_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
-  SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.origin())), vhs_ext);
+  DynamicMatrix vrecv_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+  SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.base())), vhs_ext);
 
   { // using scope to control lifetime of StaticArrays, avoiding unnecessary buffer space
 
-    Static3Tensor globalMFfactor({nnodes, nsteps, nwalk},
-                                 buffer_manager.get_generator().template get_allocator<ComplexType>());
-    Static3Tensor globalhybrid_weight({nnodes, nsteps, nwalk},
-                                      buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    Dynamic3Tensor globalMFfactor({nnodes, nsteps, nwalk},
+                                  buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Dynamic3Tensor globalhybrid_weight({nnodes, nsteps, nwalk},
+                                       buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     // 1. Calculate Green function for all (local) walkers
     AFQMCTimers[G_for_vbias_timer].get().start();
@@ -105,9 +105,9 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     { // control scope of Gc
       int Gak0, GakN;
       std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(Gwork.num_elements()), TG.getNCoresPerTG());
-      StaticMatrix Gc(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      DynamicMatrix Gc(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
       wfn.MixedDensityMatrix_for_vbias(wset, Gc);
-      copy_n_cast(make_device_ptr(Gc.origin()) + Gak0, GakN - Gak0, make_device_ptr(Gwork.origin()) + Gak0);
+      copy_n_cast(make_device_ptr(Gc.base()) + Gak0, GakN - Gak0, make_device_ptr(Gwork.base()) + Gak0);
     }
     TG.local_barrier();
 #else
@@ -116,34 +116,34 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     AFQMCTimers[G_for_vbias_timer].get().stop();
 
 
-    StaticSPMatrix Grecv(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix vbias({long(localnCV), long(nwalk)},
-                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)},
-                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix Grecv(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix vbias({long(localnCV), long(nwalk)},
+                          buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix X({long(localnCV), long(nwalk * nsteps)},
+                      buffer_manager.get_generator().template get_allocator<SPComplexType>());
 #if defined(MIXED_PRECISION)
     // in MIXED_PRECISION, use second half of vrecv_buff for vsend
-    SPCMatrix_ref vsend(sp_pointer(make_device_ptr(vrecv_buff.origin())) + vrecv_buff.num_elements(), vhs_ext);
+    SPCMatrix_ref vsend(sp_pointer(make_device_ptr(vrecv_buff.base())) + vrecv_buff.num_elements(), vhs_ext);
 #else
-    StaticSPMatrix vsend(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix vsend(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 #endif
-    StaticSPMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     // partition G and v for communications: all cores communicate a piece of the matrix
     int vak0, vakN;
     int Gak0, GakN;
     std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(Gwork.num_elements()), TG.getNCoresPerTG());
     std::tie(vak0, vakN) = FairDivideBoundary(TG.getLocalTGRank(), int(vHS.num_elements()), TG.getNCoresPerTG());
-    MPI_Send_init(to_address(Gwork.origin()) + Gak0, (GakN - Gak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(),
+    MPI_Send_init(to_address(Gwork.base()) + Gak0, (GakN - Gak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(),
                   3456, TG.TG().get(), &req_Gsend);
-    MPI_Recv_init(to_address(Grecv.origin()) + Gak0, (GakN - Gak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(),
+    MPI_Recv_init(to_address(Grecv.base()) + Gak0, (GakN - Gak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(),
                   3456, TG.TG().get(), &req_Grecv);
-    MPI_Send_init(to_address(vsend.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(),
+    MPI_Send_init(to_address(vsend.base()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(),
                   5678, TG.TG().get(), &req_vsend);
-    MPI_Recv_init(to_address(vrecv.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(),
+    MPI_Recv_init(to_address(vrecv.base()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(),
                   5678, TG.TG().get(), &req_vrecv);
 
-    fill_n(make_device_ptr(vsend.origin()) + vak0, (vakN - vak0), zero);
+    fill_n(make_device_ptr(vsend.base()) + vak0, (vakN - vak0), zero);
 
     // are we back propagating?
     int bp_step = wset.getBPPos(), bp_max = wset.NumBackProp();
@@ -154,13 +154,13 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       size_t m_(globalnCV * nwalk * nsteps * 2);
       if (bpX.num_elements() < m_)
       {
-        bpX     = mpi3SPCVector(iextensions<1u>(m_), shared_allocator<SPComplexType>{TG.TG_local()});
+        bpX = mpi3SPCVector(iextensions<1u>(m_), shared_allocator<SPComplexType>{TG.TG_local()});
         if (TG.TG_local().root())
-          fill_n(bpX.origin(), bpX.num_elements(), SPComplexType(0.0));
+          fill_n(bpX.base(), bpX.num_elements(), SPComplexType(0.0));
       }
     }
-    stdSPCMatrix_ref Xsend(to_address(bpX.origin()), {long(globalnCV * xx), nwalk * nsteps});
-    stdSPCMatrix_ref Xrecv(Xsend.origin() + Xsend.num_elements(), {long(globalnCV * xx), nwalk * nsteps});
+    stdSPCMatrix_ref Xsend(to_address(bpX.base()), {long(globalnCV * xx), nwalk * nsteps});
+    stdSPCMatrix_ref Xrecv(Xsend.base() + Xsend.num_elements(), {long(globalnCV * xx), nwalk * nsteps});
     int Xg0, XgN;
     std::tie(Xg0, XgN) = FairDivideBoundary(TG.getLocalTGRank(), globalnCV * nwalk * nsteps, TG.getNCoresPerTG());
     int Xl0, XlN;
@@ -170,10 +170,10 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
     if (bp_step >= 0 && bp_step < bp_max)
     {
-      MPI_Send_init(Xsend.origin() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(), 3456, TG.TG().get(),
-                    &req_X2send);
-      MPI_Recv_init(Xrecv.origin() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(), 3456, TG.TG().get(),
-                    &req_X2recv);
+      MPI_Send_init(Xsend.base() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(), 3456,
+                    TG.TG().get(), &req_X2send);
+      MPI_Recv_init(Xrecv.base() + Xg0, (XgN - Xg0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(), 3456,
+                    TG.TG().get(), &req_X2recv);
     }
 
     TG.local_barrier();
@@ -189,7 +189,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       {
         MPI_Wait(&req_Grecv, &st);
         MPI_Wait(&req_Gsend, &st); // need to wait for Gsend in order to overwrite Gwork
-        copy_n(make_device_ptr(Grecv.origin()) + Gak0, GakN - Gak0, make_device_ptr(Gwork.origin()) + Gak0);
+        copy_n(make_device_ptr(Grecv.base()) + Gak0, GakN - Gak0, make_device_ptr(Gwork.base()) + Gak0);
         TG.local_barrier();
       }
 
@@ -211,9 +211,9 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       AFQMCTimers[assemble_X_timer].get().start();
       int q = (node_number + k) % nnodes;
       assemble_X(nsteps, nwalk, sqrtdt, X, vbias, MFfactor, hybrid_weight);
-      copy_n(make_device_ptr(MFfactor.origin()), MFfactor.num_elements(), make_device_ptr(globalMFfactor[q].origin()));
-      copy_n(make_device_ptr(hybrid_weight.origin()), hybrid_weight.num_elements(),
-             make_device_ptr(globalhybrid_weight[q].origin()));
+      copy_n(make_device_ptr(MFfactor.base()), MFfactor.num_elements(), make_device_ptr(globalMFfactor[q].base()));
+      copy_n(make_device_ptr(hybrid_weight.base()), hybrid_weight.num_elements(),
+             make_device_ptr(globalhybrid_weight[q].base()));
       TG.local_barrier();
       AFQMCTimers[assemble_X_timer].get().stop();
       if (bp_step >= 0 && bp_step < bp_max)
@@ -223,11 +223,11 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
         {
           MPI_Wait(&req_X2recv, &st);
           MPI_Wait(&req_X2send, &st);
-          copy_n(Xrecv.origin() + Xg0, XgN - Xg0, Xsend.origin() + Xg0);
+          copy_n(Xrecv.base() + Xg0, XgN - Xg0, Xsend.base() + Xg0);
           TG.local_barrier();
         }
         // accumulate
-        copy_n(make_device_ptr(X[cv0].origin()), nwalk * nsteps * (cvN - cv0), Xsend[global_origin + cv0].origin());
+        copy_n(make_device_ptr(X[cv0].base()), nwalk * nsteps * (cvN - cv0), Xsend[global_origin + cv0].base());
         TG.local_barrier();
         // start X communication
         MPI_Start(&req_X2send);
@@ -246,11 +246,11 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       {
         MPI_Wait(&req_vrecv, &st);
         MPI_Wait(&req_vsend, &st);
-        copy_n(make_device_ptr(vrecv.origin()) + vak0, vakN - vak0, make_device_ptr(vsend.origin()) + vak0);
+        copy_n(make_device_ptr(vrecv.base()) + vak0, vakN - vak0, make_device_ptr(vsend.base()) + vak0);
       }
 
       // 6. add local contribution to vsend
-      axpy(vakN - vak0, one, make_device_ptr(vHS.origin()) + vak0, 1, make_device_ptr(vsend.origin()) + vak0, 1);
+      axpy(vakN - vak0, one, make_device_ptr(vHS.base()) + vak0, 1, make_device_ptr(vsend.base()) + vak0, 1);
 
       // 7. start v communication
       MPI_Start(&req_vsend);
@@ -286,7 +286,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
           auto&& V(*wset.getFields(bp_step));
           if (nsteps == 1)
           {
-            copy_n(Xrecv[cvg0].origin(), nwalk * (cvgN - cvg0), V[cvg0].origin());
+            copy_n(Xrecv[cvg0].base(), nwalk * (cvgN - cvg0), V[cvg0].base());
             ma::scal(SPComplexType(sqrtdt), V.sliced(cvg0, cvgN));
           }
           else
@@ -302,16 +302,16 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
     // reduce MF and HWs
     if (TG.TG().size() > 1)
     {
-      TG.TG().all_reduce_in_place_n(to_address(globalMFfactor.origin()), globalMFfactor.num_elements(), std::plus<>());
-      TG.TG().all_reduce_in_place_n(to_address(globalhybrid_weight.origin()), globalhybrid_weight.num_elements(),
+      TG.TG().all_reduce_in_place_n(to_address(globalMFfactor.base()), globalMFfactor.num_elements(), std::plus<>());
+      TG.TG().all_reduce_in_place_n(to_address(globalhybrid_weight.base()), globalhybrid_weight.num_elements(),
                                     std::plus<>());
     }
 
     // copy from global to local array
-    copy_n(make_device_ptr(globalMFfactor[node_number].origin()), MFfactor.num_elements(),
-           make_device_ptr(MFfactor.origin()));
-    copy_n(make_device_ptr(globalhybrid_weight[node_number].origin()), hybrid_weight.num_elements(),
-           make_device_ptr(hybrid_weight.origin()));
+    copy_n(make_device_ptr(globalMFfactor[node_number].base()), MFfactor.num_elements(),
+           make_device_ptr(MFfactor.base()));
+    copy_n(make_device_ptr(globalhybrid_weight[node_number].base()), hybrid_weight.num_elements(),
+           make_device_ptr(hybrid_weight.base()));
 
     TG.local_barrier();
     AFQMCTimers[vHS_comm_overhead_timer].get().stop();
@@ -322,10 +322,10 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   TG.local_barrier();
   using qmcplusplus::afqmc::inplace_cast;
   if (TG.TG_local().root())
-    inplace_cast<SPComplexType, ComplexType>(vrecv.origin(), vrecv.num_elements());
+    inplace_cast<SPComplexType, ComplexType>(vrecv.base(), vrecv.num_elements());
   TG.local_barrier();
 #endif
-  C3Tensor_ref vHS3D(make_device_ptr(vrecv_buff.origin()), vhs3d_ext);
+  C3Tensor_ref vHS3D(make_device_ptr(vrecv_buff.base()), vhs3d_ext);
 
   // From here on is similar to Shared
   int nx = 1;
@@ -458,17 +458,17 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     generateP1(dt, walker_type);
   TG.local_barrier();
 
-  StaticMatrix vrecv_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
-  C3Tensor_ref vHS3D(make_device_ptr(vrecv_buff.origin()), vhs3d_ext);
-  SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.origin())), vhs_ext);
+  DynamicMatrix vrecv_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+  C3Tensor_ref vHS3D(make_device_ptr(vrecv_buff.base()), vhs3d_ext);
+  SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.base())), vhs_ext);
 
   // scope controlling lifetime of temporary arrays
   {
-    Static3Tensor globalMFfactor({nnodes, nsteps, nwalk},
-                                 buffer_manager.get_generator().template get_allocator<ComplexType>());
-    Static3Tensor globalhybrid_weight({nnodes, nsteps, nwalk},
-                                      buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticSPMatrix Gstore(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    Dynamic3Tensor globalMFfactor({nnodes, nsteps, nwalk},
+                                  buffer_manager.get_generator().template get_allocator<ComplexType>());
+    Dynamic3Tensor globalhybrid_weight({nnodes, nsteps, nwalk},
+                                       buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicSPMatrix Gstore(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     int Gak0, GakN;
     std::tie(Gak0, GakN) = FairDivideBoundary(TG.getLocalTGRank(), int(Gstore.num_elements()), TG.getNCoresPerTG());
@@ -477,9 +477,9 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     AFQMCTimers[G_for_vbias_timer].get().start();
 #if defined(MIXED_PRECISION)
     {
-      StaticMatrix Gstore_(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+      DynamicMatrix Gstore_(G_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
       wfn.MixedDensityMatrix_for_vbias(wset, Gstore_);
-      copy_n_cast(make_device_ptr(Gstore_.origin()) + Gak0, GakN - Gak0, make_device_ptr(Gstore.origin()) + Gak0);
+      copy_n_cast(make_device_ptr(Gstore_.base()) + Gak0, GakN - Gak0, make_device_ptr(Gstore.base()) + Gak0);
     }
 #else
     wfn.MixedDensityMatrix_for_vbias(wset, Gstore);
@@ -487,16 +487,16 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     TG.local_barrier();
     AFQMCTimers[G_for_vbias_timer].get().stop();
 
-    StaticSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix vbias({long(localnCV), long(nwalk)},
-                         buffer_manager.get_generator().template get_allocator<SPComplexType>());
-    StaticSPMatrix X({long(localnCV), long(nwalk * nsteps)},
-                     buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix Gwork(G_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix vbias({long(localnCV), long(nwalk)},
+                          buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicSPMatrix X({long(localnCV), long(nwalk * nsteps)},
+                      buffer_manager.get_generator().template get_allocator<SPComplexType>());
 // reusing second half of vrecv buffer reinterpreted as a SPComplex Array
 #if defined(MIXED_PRECISION)
-    SPCMatrix_ref vHS(sp_pointer(make_device_ptr(vrecv_buff.origin())) + vrecv_buff.num_elements(), vhs_ext);
+    SPCMatrix_ref vHS(sp_pointer(make_device_ptr(vrecv_buff.base())) + vrecv_buff.num_elements(), vhs_ext);
 #else
-    StaticMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
 #endif
 
     // partition G and v for communications: all cores communicate a piece of the matrix
@@ -512,12 +512,12 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       size_t m_(globalnCV * nwalk * nsteps);
       if (bpX.num_elements() < m_)
       {
-        bpX     = mpi3SPCVector(iextensions<1u>(m_), shared_allocator<SPComplexType>{TG.TG_local()});
+        bpX = mpi3SPCVector(iextensions<1u>(m_), shared_allocator<SPComplexType>{TG.TG_local()});
         if (TG.TG_local().root())
-          fill_n(bpX.origin(), bpX.num_elements(), SPComplexType(0.0));
+          fill_n(bpX.base(), bpX.num_elements(), SPComplexType(0.0));
       }
     }
-    stdSPCMatrix_ref Xrecv(to_address(bpX.origin()), {long(globalnCV * xx), nwalk * nsteps});
+    stdSPCMatrix_ref Xrecv(to_address(bpX.base()), {long(globalnCV * xx), nwalk * nsteps});
     int Xg0, XgN;
     std::tie(Xg0, XgN) = FairDivideBoundary(TG.getLocalTGRank(), globalnCV * nwalk * nsteps, TG.getNCoresPerTG());
     int Xl0, XlN;
@@ -552,22 +552,22 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       // 2. bcast G
       AFQMCTimers[vHS_comm_overhead_timer].get().start();
       if (k == node_number)
-        copy_n(make_device_ptr(Gstore.origin()) + Gak0, GakN - Gak0, make_device_ptr(Gwork.origin()) + Gak0);
+        copy_n(make_device_ptr(Gstore.base()) + Gak0, GakN - Gak0, make_device_ptr(Gwork.base()) + Gak0);
 #ifdef BUILD_AFQMC_WITH_NCCL
 #ifdef ENABLE_CUDA
 #if defined(MIXED_PRECISION)
       NCCLCHECK(
-          ncclBcast(to_address(Gwork.origin() + Gak0), 2 * (GakN - Gak0), ncclFloat, k, TG.ncclTG(), TG.ncclStream()));
+          ncclBcast(to_address(Gwork.base() + Gak0), 2 * (GakN - Gak0), ncclFloat, k, TG.ncclTG(), TG.ncclStream()));
 #else
       NCCLCHECK(
-          ncclBcast(to_address(Gwork.origin() + Gak0), 2 * (GakN - Gak0), ncclDouble, k, TG.ncclTG(), TG.ncclStream()));
+          ncclBcast(to_address(Gwork.base() + Gak0), 2 * (GakN - Gak0), ncclDouble, k, TG.ncclTG(), TG.ncclStream()));
 #endif
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()), "cudaStreamSynchronize(s)");
 #else
 #error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
 #endif
 #else
-      TG.TG_Cores().broadcast_n(to_address(Gwork.origin()) + Gak0, GakN - Gak0, k);
+      TG.TG_Cores().broadcast_n(to_address(Gwork.base()) + Gak0, GakN - Gak0, k);
 #endif
       TG.local_barrier();
       AFQMCTimers[vHS_comm_overhead_timer].get().stop();
@@ -581,20 +581,20 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       // 3b. Assemble X(nCV,nsteps,nwalk)
       AFQMCTimers[assemble_X_timer].get().start();
       assemble_X(nsteps, nwalk, sqrtdt, X, vbias, MFfactor, hybrid_weight);
-      copy_n(make_device_ptr(MFfactor.origin()), MFfactor.num_elements(), make_device_ptr(globalMFfactor[k].origin()));
-      copy_n(make_device_ptr(hybrid_weight.origin()), hybrid_weight.num_elements(),
-             make_device_ptr(globalhybrid_weight[k].origin()));
+      copy_n(make_device_ptr(MFfactor.base()), MFfactor.num_elements(), make_device_ptr(globalMFfactor[k].base()));
+      copy_n(make_device_ptr(hybrid_weight.base()), hybrid_weight.num_elements(),
+             make_device_ptr(globalhybrid_weight[k].base()));
       TG.local_barrier();
       AFQMCTimers[assemble_X_timer].get().stop();
       if (bp_step >= 0 && bp_step < bp_max)
       {
         APP_ABORT("Finish");
         // accumulate
-        //copy_n(X[cv0].origin(),nwalk*nsteps*(cvN-cv0),Xsend[global_origin+cv0].origin());
+        //copy_n(X[cv0].base(),nwalk*nsteps*(cvN-cv0),Xsend[global_origin+cv0].base());
         // how do I know if these change???
         // possible if 2 execute blocks use different ncores
         // maybe store last ncores and change if this number changes!!!
-        TG.TG().gatherv_n(to_address(X[cv0].origin()), nwalk * nsteps * (cvN - cv0), to_address(Xrecv.origin()),
+        TG.TG().gatherv_n(to_address(X[cv0].base()), nwalk * nsteps * (cvN - cv0), to_address(Xrecv.base()),
                           bpx_counts.begin(), bpx_displ.begin(), k * ncores);
         TG.local_barrier();
       }
@@ -610,10 +610,10 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 #ifdef BUILD_AFQMC_WITH_NCCL
 #ifdef ENABLE_CUDA
 #if defined(MIXED_PRECISION)
-      NCCLCHECK(ncclReduce((const void*)to_address(vHS.origin() + vak0), (void*)to_address(vrecv.origin() + vak0),
+      NCCLCHECK(ncclReduce((const void*)to_address(vHS.base() + vak0), (void*)to_address(vrecv.base() + vak0),
                            2 * (vakN - vak0), ncclFloat, ncclSum, k, TG.ncclTG(), TG.ncclStream()));
 #else
-      NCCLCHECK(ncclReduce((const void*)to_address(vHS.origin() + vak0), (void*)to_address(vrecv.origin() + vak0),
+      NCCLCHECK(ncclReduce((const void*)to_address(vHS.base() + vak0), (void*)to_address(vrecv.base() + vak0),
                            2 * (vakN - vak0), ncclDouble, ncclSum, k, TG.ncclTG(), TG.ncclStream()));
 #endif
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()), "cudaStreamSynchronize(s)");
@@ -621,8 +621,8 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 #error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
 #endif
 #else
-      TG.TG_Cores().reduce_n(to_address(vHS.origin()) + vak0, vakN - vak0, to_address(vrecv.origin()) + vak0,
-                             std::plus<>(), k);
+      TG.TG_Cores().reduce_n(to_address(vHS.base()) + vak0, vakN - vak0, to_address(vrecv.base()) + vak0, std::plus<>(),
+                             k);
 #endif
 
       TG.local_barrier();
@@ -644,7 +644,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
           auto&& V(*wset.getFields(bp_step));
           if (nsteps == 1)
           {
-            copy_n(Xrecv[cvg0].origin(), nwalk * (cvgN - cvg0), V[cvg0].origin());
+            copy_n(Xrecv[cvg0].base(), nwalk * (cvgN - cvg0), V[cvg0].base());
             ma::scal(sqrtdt, V.sliced(cvg0, cvgN));
           }
           else
@@ -662,29 +662,28 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
     {
 #ifdef BUILD_AFQMC_WITH_NCCL
 #ifdef ENABLE_CUDA
-      NCCLCHECK(ncclAllReduce((const void*)to_address(globalMFfactor.origin()),
-                              (void*)to_address(globalMFfactor.origin()), 2 * globalMFfactor.num_elements(), ncclDouble,
-                              ncclSum, TG.ncclTG(), TG.ncclStream()));
-      NCCLCHECK(ncclAllReduce((const void*)to_address(globalhybrid_weight.origin()),
-                              (void*)to_address(globalhybrid_weight.origin()), 2 * globalhybrid_weight.num_elements(),
+      NCCLCHECK(ncclAllReduce((const void*)to_address(globalMFfactor.base()), (void*)to_address(globalMFfactor.base()),
+                              2 * globalMFfactor.num_elements(), ncclDouble, ncclSum, TG.ncclTG(), TG.ncclStream()));
+      NCCLCHECK(ncclAllReduce((const void*)to_address(globalhybrid_weight.base()),
+                              (void*)to_address(globalhybrid_weight.base()), 2 * globalhybrid_weight.num_elements(),
                               ncclDouble, ncclSum, TG.ncclTG(), TG.ncclStream()));
       qmc_cuda::cuda_check(cudaStreamSynchronize(TG.ncclStream()), "cudaStreamSynchronize(s)");
 #else
 #error "BUILD_AFQMC_WITH_NCCL only with ENABLE_CUDA"
 #endif
 #else
-      TG.TG().all_reduce_in_place_n(to_address(globalMFfactor.origin()), globalMFfactor.num_elements(), std::plus<>());
-      TG.TG().all_reduce_in_place_n(to_address(globalhybrid_weight.origin()), globalhybrid_weight.num_elements(),
+      TG.TG().all_reduce_in_place_n(to_address(globalMFfactor.base()), globalMFfactor.num_elements(), std::plus<>());
+      TG.TG().all_reduce_in_place_n(to_address(globalhybrid_weight.base()), globalhybrid_weight.num_elements(),
                                     std::plus<>());
 #endif
     }
     TG.local_barrier();
 
     // copy from global to local array
-    copy_n(make_device_ptr(globalMFfactor[node_number].origin()), MFfactor.num_elements(),
-           make_device_ptr(MFfactor.origin()));
-    copy_n(make_device_ptr(globalhybrid_weight[node_number].origin()), hybrid_weight.num_elements(),
-           make_device_ptr(hybrid_weight.origin()));
+    copy_n(make_device_ptr(globalMFfactor[node_number].base()), MFfactor.num_elements(),
+           make_device_ptr(MFfactor.base()));
+    copy_n(make_device_ptr(globalhybrid_weight[node_number].base()), hybrid_weight.num_elements(),
+           make_device_ptr(hybrid_weight.base()));
 
     AFQMCTimers[vHS_comm_overhead_timer].get().stop();
   } // scope controlling lifetime of temporary arrays
@@ -693,7 +692,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
   TG.local_barrier();
   using qmcplusplus::afqmc::inplace_cast;
   if (TG.TG_local().root())
-    inplace_cast<SPComplexType, ComplexType>(make_device_ptr(vrecv.origin()), vrecv.num_elements());
+    inplace_cast<SPComplexType, ComplexType>(make_device_ptr(vrecv.base()), vrecv.num_elements());
   TG.local_barrier();
 #endif
 
@@ -802,34 +801,34 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
   //  vHS:             [ NMO*NMO * nwalk ] (3 copies)
   // memory_needs: nwalk * ( localnCV + NMO*NMO )
 
-  StaticSPMatrix X({long(localnCV), long(nwalk)},
-                   buffer_manager.get_generator().template get_allocator<SPComplexType>());
-  StaticSPMatrix Xsend({long(globalnCV), long(nwalk)},
-                       buffer_manager.get_generator().template get_allocator<SPComplexType>());
-  StaticSPMatrix Xrecv({long(globalnCV), long(nwalk)},
-                       buffer_manager.get_generator().template get_allocator<SPComplexType>());
-  StaticMatrix vrecv_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
-  SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.origin())), vhs_ext);
+  DynamicSPMatrix X({long(localnCV), long(nwalk)},
+                    buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  DynamicSPMatrix Xsend({long(globalnCV), long(nwalk)},
+                        buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  DynamicSPMatrix Xrecv({long(globalnCV), long(nwalk)},
+                        buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  DynamicMatrix vrecv_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
+  SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.base())), vhs_ext);
 #if defined(MIXED_PRECISION)
-  SPCMatrix_ref vsend(sp_pointer(make_device_ptr(vrecv_buff.origin())) + vrecv_buff.num_elements(), vhs_ext);
+  SPCMatrix_ref vsend(sp_pointer(make_device_ptr(vrecv_buff.base())) + vrecv_buff.num_elements(), vhs_ext);
 #else
-  StaticSPMatrix vsend(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  DynamicSPMatrix vsend(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 #endif
-  StaticSPMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+  DynamicSPMatrix vHS(vhs_ext, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
   // partition G and v for communications: all cores communicate a piece of the matrix
   int vak0, vakN;
   int X0, XN;
   std::tie(X0, XN)     = FairDivideBoundary(TG.getLocalTGRank(), int(Xsend.num_elements()), TG.getNCoresPerTG());
   std::tie(vak0, vakN) = FairDivideBoundary(TG.getLocalTGRank(), int(vHS.num_elements()), TG.getNCoresPerTG());
-  MPI_Send_init(to_address(Xsend.origin()) + X0, (XN - X0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(), 2345,
+  MPI_Send_init(to_address(Xsend.base()) + X0, (XN - X0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(), 2345,
                 TG.TG().get(), &req_Xsend);
-  MPI_Recv_init(to_address(Xrecv.origin()) + X0, (XN - X0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(), 2345,
+  MPI_Recv_init(to_address(Xrecv.base()) + X0, (XN - X0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(), 2345,
                 TG.TG().get(), &req_Xrecv);
-  MPI_Send_init(to_address(vsend.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(),
-                6789, TG.TG().get(), &req_bpvsend);
-  MPI_Recv_init(to_address(vrecv.origin()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(),
-                6789, TG.TG().get(), &req_bpvrecv);
+  MPI_Send_init(to_address(vsend.base()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.prev_core(), 6789,
+                TG.TG().get(), &req_bpvsend);
+  MPI_Recv_init(to_address(vrecv.base()) + vak0, (vakN - vak0) * sizeof(SPComplexType), MPI_CHAR, TG.next_core(), 6789,
+                TG.TG().get(), &req_bpvrecv);
   TG.local_barrier();
 
   auto&& Fields(*wset.getFields());
@@ -860,7 +859,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
 
   assert(get<0>(detR.sizes()) == nwalk);
   assert(get<1>(detR.sizes()) == nrefs * nx);
-  std::fill_n(detR.origin(), detR.num_elements(), SPComplexType(1.0, 0.0));
+  std::fill_n(detR.base(), detR.num_elements(), SPComplexType(1.0, 0.0));
 
   // from now on, individual work on each walker/step
   const int ntasks_per_core     = int(nx * nwalk) / TG.getNCoresPerTG();
@@ -880,20 +879,20 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
   // 0. copy SlaterMatrix to SlaterMatrixAux
   for (int i = 0; i < nwalk; i++)
   {
-    copy_n((*wset[i].SlaterMatrix(Alpha)).origin() + r0, rN - r0, (*wset[i].SlaterMatrixAux(Alpha)).origin() + r0);
+    copy_n((*wset[i].SlaterMatrix(Alpha)).base() + r0, rN - r0, (*wset[i].SlaterMatrixAux(Alpha)).base() + r0);
     // optimize for the single reference case
     if (nrefs == 1)
-      copy_n(Refs[i][0].origin() + r0, rN - r0, (*wset[i].SlaterMatrix(Alpha)).origin() + r0);
+      copy_n(Refs[i][0].base() + r0, rN - r0, (*wset[i].SlaterMatrix(Alpha)).base() + r0);
   }
   TG.TG_local().barrier();
 
   for (int ni = nbpsteps - 1; ni >= 0; --ni)
   {
     // 1. Get X(nCV,nwalk) from wset
-    fill_n(make_device_ptr(vsend.origin()) + vak0, (vakN - vak0), zero);
-    copy_n(Fields[ni].origin() + X0, (XN - X0), make_device_ptr(Xsend.origin()) + X0);
+    fill_n(make_device_ptr(vsend.base()) + vak0, (vakN - vak0), zero);
+    copy_n(Fields[ni].base() + X0, (XN - X0), make_device_ptr(Xsend.base()) + X0);
     TG.TG_local().barrier();
-    copy_n(make_device_ptr(Xsend[global_origin + cv0].origin()), nwalk * (cvN - cv0), make_device_ptr(X[cv0].origin()));
+    copy_n(make_device_ptr(Xsend[global_origin + cv0].base()), nwalk * (cvN - cv0), make_device_ptr(X[cv0].base()));
     TG.TG_local().barrier();
     // 2. Calculate vHS(M*M,nwalk)/vHS(nwalk,M*M) using distributed algorithm
     for (int k = 0; k < nnodes; ++k)
@@ -903,10 +902,9 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
       {
         MPI_Wait(&req_Xrecv, &st);
         MPI_Wait(&req_Xsend, &st); // need to wait for Gsend in order to overwrite Gwork
-        copy_n(make_device_ptr(Xrecv.origin()) + X0, XN - X0, make_device_ptr(Xsend.origin()) + X0);
+        copy_n(make_device_ptr(Xrecv.base()) + X0, XN - X0, make_device_ptr(Xsend.base()) + X0);
         TG.local_barrier();
-        copy_n(make_device_ptr(Xsend[global_origin + cv0].origin()), nwalk * (cvN - cv0),
-               make_device_ptr(X[cv0].origin()));
+        copy_n(make_device_ptr(Xsend[global_origin + cv0].base()), nwalk * (cvN - cv0), make_device_ptr(X[cv0].base()));
         TG.local_barrier();
       }
 
@@ -918,7 +916,7 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
       }
 
       // 2.3 Calculate vHS
-      //std::cout<<" k, X: " <<TG.Global().rank() <<" " <<k <<" " <<ma::dot(X(X.extension(0),0),X(X.extension(0),0)) <<"\n\n" <<std::endl;
+      //std::cout<<" k, X: " <<TG.Global().rank() <<" " <<k <<" " <<ma::dot(X(get<0>(X.extents()),0),X(get<0>(X.extents()),0)) <<"\n\n" <<std::endl;
       wfn.vHS(X, vHS);
       //std::cout<<" k, vHS: " <<TG.Global().rank() <<" " <<k <<" " <<ma::dot(vHS[0],vHS[0]) <<"\n\n" <<std::endl;
 
@@ -927,13 +925,13 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
       {
         MPI_Wait(&req_bpvrecv, &st);
         MPI_Wait(&req_bpvsend, &st);
-        copy_n(make_device_ptr(vrecv.origin()) + vak0, vakN - vak0, make_device_ptr(vsend.origin()) + vak0);
+        copy_n(make_device_ptr(vrecv.base()) + vak0, vakN - vak0, make_device_ptr(vsend.base()) + vak0);
       }
       TG.local_barrier();
 
       // 2.5 add local contribution to vsend
       using ma::axpy;
-      axpy(vakN - vak0, one, make_device_ptr(vHS.origin()) + vak0, 1, make_device_ptr(vsend.origin()) + vak0, 1);
+      axpy(vakN - vak0, one, make_device_ptr(vHS.base()) + vak0, 1, make_device_ptr(vsend.base()) + vak0, 1);
       //std::cout<<" k vsend: " <<TG.Global().rank() <<" " <<k <<" " <<ma::dot(vsend[0],vsend[0]) <<"\n\n" <<std::endl;
 
       // 2.6 start v communication
@@ -950,17 +948,17 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
 #if defined(MIXED_PRECISION)
     TG.local_barrier();
     if (TG.TG_local().root())
-      inplace_cast<SPComplexType, ComplexType>(vrecv.origin(), vrecv.num_elements());
+      inplace_cast<SPComplexType, ComplexType>(vrecv.base(), vrecv.num_elements());
     TG.local_barrier();
 #endif
-    C3Tensor_ref vHS3D(make_device_ptr(vrecv_buff.origin()), vhs3d_ext);
+    C3Tensor_ref vHS3D(make_device_ptr(vrecv_buff.base()), vhs3d_ext);
 
     for (int nr = 0; nr < nrefs; ++nr)
     {
       // 3. copy reference to SlaterMatrix
       if (nrefs > 1)
         for (int i = 0; i < nwalk; i++)
-          copy_n(Refs[i][nr].origin() + r0, rN - r0, (*wset[i].SlaterMatrix(Alpha)).origin() + r0);
+          copy_n(Refs[i][nr].base() + r0, rN - r0, (*wset[i].SlaterMatrix(Alpha)).base() + r0);
       TG.TG_local().barrier();
 
       // 4. Propagate walkers
@@ -977,23 +975,23 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
         if (nbatched_qr != 0)
         {
           if (walker_type != COLLINEAR)
-            Orthogonalize_batched(wset, detR(detR.extension(0), {nr, nr + 1}));
+            Orthogonalize_batched(wset, detR(get<0>(detR.extents()), {nr, nr + 1}));
           else
-            Orthogonalize_batched(wset, detR(detR.extension(0), {2 * nr, 2 * nr + 2}));
+            Orthogonalize_batched(wset, detR(get<0>(detR.extents()), {2 * nr, 2 * nr + 2}));
         }
         else
         {
           if (walker_type != COLLINEAR)
-            Orthogonalize_shared(wset, detR(detR.extension(0), {nr, nr + 1}));
+            Orthogonalize_shared(wset, detR(get<0>(detR.extents()), {nr, nr + 1}));
           else
-            Orthogonalize_shared(wset, detR(detR.extension(0), {2 * nr, 2 * nr + 2}));
+            Orthogonalize_shared(wset, detR(get<0>(detR.extents()), {2 * nr, 2 * nr + 2}));
         }
       }
 
       // 5. copy reference to back
       if (nrefs > 1)
         for (int i = 0; i < nwalk; i++)
-          copy_n((*wset[i].SlaterMatrix(Alpha)).origin() + r0, rN - r0, Refs[i][nr].origin() + r0);
+          copy_n((*wset[i].SlaterMatrix(Alpha)).base() + r0, rN - r0, Refs[i][nr].base() + r0);
       TG.TG_local().barrier();
     }
   }
@@ -1002,8 +1000,8 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
   for (int i = 0; i < nwalk; i++)
   {
     if (nrefs == 1)
-      copy_n((*wset[i].SlaterMatrix(Alpha)).origin() + r0, rN - r0, Refs[i][0].origin() + r0);
-    copy_n((*wset[i].SlaterMatrixAux(Alpha)).origin() + r0, rN - r0, (*wset[i].SlaterMatrix(Alpha)).origin() + r0);
+      copy_n((*wset[i].SlaterMatrix(Alpha)).base() + r0, rN - r0, Refs[i][0].base() + r0);
+    copy_n((*wset[i].SlaterMatrixAux(Alpha)).base() + r0, rN - r0, (*wset[i].SlaterMatrix(Alpha)).base() + r0);
   }
   MPI_Request_free(&req_Xrecv);
   MPI_Request_free(&req_Xsend);

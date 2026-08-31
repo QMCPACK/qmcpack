@@ -69,7 +69,7 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG,
   // buld mean field expectation value of the Cholesky matrix
   CVector vMF(iextensions<1u>{wfn.local_number_of_cholesky_vectors()}, allocator{});
   using std::fill_n;
-  fill_n(vMF.origin(), vMF.num_elements(), ComplexType(0));
+  fill_n(vMF.base(), vMF.num_elements(), ComplexType(0));
   if (substractMF)
   {
     wfn.vMF(vMF);
@@ -77,14 +77,14 @@ Propagator PropagatorFactory::buildAFQMCPropagator(TaskGroup_& TG,
     if (not wfn.distribution_over_cholesky_vectors())
     {
       if (not TG.TG_local().root())
-        fill_n(vMF.origin(), vMF.num_elements(), ComplexType(0));
-      TG.TG().all_reduce_in_place_n(to_address(vMF.origin()), vMF.num_elements(), std::plus<>());
+        fill_n(vMF.base(), vMF.num_elements(), ComplexType(0));
+      TG.TG().all_reduce_in_place_n(to_address(vMF.base()), vMF.num_elements(), std::plus<>());
     }
   }
 
-  boost::multi::array<ComplexType, 1> vMF_(vMF.extensions());
+  boost::multi::array<ComplexType, 1> vMF_(vMF.extents());
   using std::copy_n;
-  copy_n(vMF.origin(), vMF.num_elements(), vMF_.origin());
+  copy_n(vMF.base(), vMF.num_elements(), vMF_.base());
   RealType vmax = 0, v_ = 0;
   for (int i = 0; i < vMF_.size(); i++)
     v_ = std::max(v_, std::abs(vMF_[i]));
