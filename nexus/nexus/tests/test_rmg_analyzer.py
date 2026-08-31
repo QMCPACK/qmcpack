@@ -13,21 +13,17 @@ def test_empty_init():
     analyzer = RmgAnalyzer()
 
     expected_members = set([
-        'abspath','info','input','outfile_name','path','results','setup_info',
+        'abspath','info','input','outfile_name','path','results','run_mode',
         ])
     assert set(analyzer.keys())==expected_members
-    assert not analyzer.initialized
-    assert not analyzer.analyzed
-    assert not analyzer.analysis_succeeded
-    assert not analyzer.run_completed
     assert analyzer.path is None
     assert analyzer.abspath is None
     assert analyzer.outfile_name is None
     assert analyzer.input is None
-    for name in ('info','results','setup_info'):
-        assert isinstance(analyzer[name],obj)
-        assert len(analyzer[name])==0
-    #end for
+    assert analyzer.run_mode is None
+    assert analyzer.results is None
+    assert isinstance(analyzer.info,obj)
+    assert len(analyzer.info)==0
 #end def test_empty_init
 
 
@@ -79,26 +75,28 @@ Initial Ionic Positions And Displacements (Angstrom)
     ('Molecular dynamics using Nudged Elastic Band.','neb'),
     ])
 def test_run_modes(tmp_path,calculation_type,short_mode):
-    from ..fileio import TextFile
-    from ..rmg_analyzer import RmgAnalyzer
+    from ..rmg_analyzer import RmgAnalyzer, RmgOutData
 
     logfile = tmp_path/'rmg.log'
     logfile.write_text(rmg_log(calculation_type))
-    unanalyzed = RmgAnalyzer(str(logfile))
-    unanalyzed.read_setup_info(TextFile(str(logfile)))
-    expected_fields = set(unanalyzed.result_fields_by_mode[short_mode])
+    outdata = RmgOutData(str(logfile))
+    expected_fields = set(outdata.result_fields_by_mode[short_mode])
+    metadata_fields = set([
+        'abspath','input','outfile_name','path','run_mode','setup_info',
+        ])
 
-    assert set(unanalyzed.results.keys())==expected_fields
-    assert all(value is None for value in unanalyzed.results.values())
+    assert outdata.run_mode==short_mode
+    assert outdata.setup_info.run_mode==short_mode
+    assert set(outdata.keys())==expected_fields|metadata_fields
 
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
-    assert analyzer.calculation_shortmode==short_mode
-    assert set(analyzer.results.keys())==expected_fields
-    assert analyzer.run_completed
+    assert analyzer.results.run_mode==short_mode
+    assert set(analyzer.results.keys())==expected_fields|metadata_fields
+    assert analyzer.results.timing is not None
     assert analyzer.results.timing.total==3.0
-    assert analyzer.setup_info.grid_points.grid.tolist()==[8,8,8]
-    assert len(analyzer.setup_info.structure.elem)==1
+    assert analyzer.results.setup_info.grid_points.grid.tolist()==[8,8,8]
+    assert len(analyzer.results.setup_info.structure.elem)==1
 #end def test_run_modes
 
 
@@ -136,8 +134,7 @@ potential convergence has been achieved. stopping ...
     logfile.write_text(rmg_log('Quench electrons',body))
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
-    assert analyzer.analysis_succeeded
-    assert analyzer.run_completed
+    assert analyzer.results.timing is not None
     assert analyzer.results.energy==-1.2345
     assert analyzer.results.electronic.fermi_energies[-1]==5.25
     assert analyzer.results.energy_units=='Ha'
@@ -238,8 +235,8 @@ potential   convergence has been achieved trailing status
 
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
-    assert analyzer.calculation_shortmode=='scf'
-    assert analyzer.run_completed
+    assert analyzer.results.run_mode=='scf'
+    assert analyzer.results.timing is not None
     assert analyzer.results.energy_units=='Ry'
     assert analyzer.results.energy==-1.2345
     assert analyzer.results.electronic.fermi_energies[-1]==5.25
@@ -269,9 +266,9 @@ final total energy from eig sum = malformed Ha
 
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
-    assert analyzer.run_completed
+    assert analyzer.results.timing is not None
     assert len(analyzer.results.ionic_steps)==1
     assert analyzer.results.positions.shape==(1,1,3)
     assert analyzer.results.scf is None
-    assert len(analyzer.info.parse_status.errors)==0
+    assert len(analyzer.info)==0
 #end def test_malformed_sections_do_not_stop_analysis
