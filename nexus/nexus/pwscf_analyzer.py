@@ -1853,6 +1853,88 @@ class PwscfAnalyzer(SimulationAnalyzer):
     The analyzer coordinates PWSCF text, auxiliary, and XML readers across
     common run modes. It also provides summaries and visualizations useful
     for inspecting molecular dynamics and electronic structure.
+
+    Attributes
+    ----------
+    path : str
+        Directory containing the PWSCF input and output files.
+    abspath : str
+        Absolute path to the calculation directory.
+    infile_name, outfile_name : str or None
+        Names of the PWSCF input and text-output files.
+    pw2c_outfile_name : str or None
+        Name of the optional PW2CASINO output file.
+    info : obj
+        General analyzer metadata, including the ``md_only`` setting.
+    input : PwscfInput or None
+        Parsed PWSCF input when an input file is available.
+    simulation_structure : Structure
+        Input structure supplied by a ``Simulation``. This member is bound
+        only when the analyzer is constructed from a simulation.
+    results_out : PwscfOutData or None
+        Parsed PWSCF text-output data. It is ``None`` until analysis is
+        performed.
+    results_xml : PwscfXmlData or obj or None
+        Parsed schema or legacy XML data. It remains ``None`` when XML output
+        is absent or cannot be read.
+    pw2casino : Pw2CasinoAnalyzer or None
+        Parsed PW2CASINO data when an auxiliary output file is requested.
+
+    Methods
+    -------
+    initial_structure(units='A') : Structure or None
+        Initial structure in Angstrom (``'A'``) or bohr (``'B'``).
+    energy(units='Ha') : float or numpy.floating or None
+        Final total energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
+    kpoints(units='B') : numpy.ndarray or None
+        Cartesian k-points in inverse Angstrom or inverse bohr with shape
+        ``(nkpoints, 3)``. The unit argument is ``'A'`` or ``'B'``.
+    kweights() : numpy.ndarray or None
+        Dimensionless k-point weights with shape ``(nkpoints,)``.
+    eigenvalues(units='eV') : numpy.ndarray or None
+        Kohn--Sham eigenvalues in ``'eV'``, ``'Ha'``, or ``'Ry'``. The leading
+        dimension has length ``nkpoints``; remaining dimensions represent
+        spin, when present, and bands.
+    occupations() : numpy.ndarray or None
+        Dimensionless Kohn--Sham occupations with the same layout as the
+        eigenvalue array.
+    Ef(units='eV') : float or numpy.floating or None
+        Final Fermi energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
+    Evbm(units='eV') : float or numpy.floating or None
+        Final valence-band maximum in selected energy units.
+    Ecbm(units='eV') : float or numpy.floating or None
+        Final conduction-band minimum in selected energy units.
+    band_gap(units='eV') : float or numpy.floating or None
+        Fundamental electronic band gap in selected energy units.
+    fractional_occs() : bool or None
+        Whether any occupation differs from both empty and full by more than
+        ``1e-3``.
+    relaxed_structure(units='A') : Structure or None
+        Final relaxed structure in Angstrom (``'A'``) or bohr (``'B'``).
+    forces(units='eV/A') : numpy.ndarray or None
+        Ionic-force history with shape ``(nsteps, natoms, 3)``. Available
+        units are ``'eV/A'``, ``'Ry/B'``, and ``'Ha/B'``.
+    stress(units='GPa') : numpy.ndarray or None
+        Stress-tensor history with shape ``(nsteps, 3, 3)``. Available units
+        are ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``, and
+        ``'atm'``.
+    pressure(units='GPa') : float or numpy.floating or None
+        Final hydrostatic pressure in the units accepted by ``stress``.
+
+    Notes
+    -----
+    Log and XML output are both parsed automatically when present. Query
+    methods prefer schema XML data and fall back to text-output data. A query
+    returns ``None`` when its quantity applies to the detected calculation but
+    was not parsed. Calling a query before analysis or for an unsupported
+    calculation raises ``RuntimeError``. Supplying unsupported units raises
+    ``ValueError``.
+
+    Initial structure, k-point, and electronic quantities apply to all
+    supported calculation modes. Energy applies to all modes except
+    ``bands``; relaxed structures apply only to ``relax`` and ``vc-relax``;
+    forces, stress, and pressure apply to ``scf``, ``relax``, ``vc-relax``,
+    ``md``, and ``vc-md``.
     """
 
     all_modes        = {'scf','nscf','bands','relax','vc-relax','md','vc-md'}
@@ -2274,82 +2356,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         md_only : bool, optional
             Limit text-output analysis to molecular-dynamics data.  Available
             XML output is still parsed.
-
-        Attributes
-        ----------
-        path : str
-            Directory containing the PWSCF input and output files.
-        abspath : str
-            Absolute path to the calculation directory.
-        infile_name, outfile_name : str or None
-            Names of the PWSCF input and text-output files.
-        pw2c_outfile_name : str or None
-            Name of the optional PW2CASINO output file.
-        info : obj
-            General analyzer metadata, including the ``md_only`` setting.
-        input : PwscfInput or None
-            Parsed PWSCF input when an input file is available.
-        simulation_structure : Structure
-            Input structure supplied by a ``Simulation``.  This member is
-            bound only when the analyzer is constructed from a simulation.
-        results_out : PwscfOutData or None
-            Parsed PWSCF text-output data.  It is ``None`` until analysis is
-            performed.
-        results_xml : PwscfXmlData or obj or None
-            Parsed schema or legacy XML data.  It remains ``None`` when XML
-            output is absent or cannot be read.
-        pw2casino : Pw2CasinoAnalyzer or None
-            Parsed PW2CASINO data when an auxiliary output file is requested.
-
-        Methods
-        -------
-        initial_structure(units='A') : Structure or None
-            Initial structure in Angstrom (``'A'``) or bohr (``'B'``).
-        energy(units='Ha') : float or numpy.floating or None
-            Final total energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
-        kpoints(units='B') : numpy.ndarray or None
-            Cartesian k-points in inverse Angstrom or inverse bohr with shape
-            ``(nkpoints, 3)``.  The unit argument is ``'A'`` or ``'B'``.
-        kweights() : numpy.ndarray or None
-            Dimensionless k-point weights with shape ``(nkpoints,)``.
-        eigenvalues(units='eV') : numpy.ndarray or None
-            Kohn--Sham eigenvalues in ``'eV'``, ``'Ha'``, or ``'Ry'``.  The
-            leading dimension has length ``nkpoints``; remaining dimensions
-            represent spin, when present, and bands.
-        occupations() : numpy.ndarray or None
-            Dimensionless Kohn--Sham occupations with the same layout as the
-            eigenvalue array.
-        Ef(units='eV') : float or numpy.floating or None
-            Final Fermi energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
-        Evbm(units='eV') : float or numpy.floating or None
-            Final valence-band maximum in selected energy units.
-        Ecbm(units='eV') : float or numpy.floating or None
-            Final conduction-band minimum in selected energy units.
-        band_gap(units='eV') : float or numpy.floating or None
-            Fundamental electronic band gap in selected energy units.
-        fractional_occs() : bool or None
-            Whether any occupation differs from both empty and full by more
-            than ``1e-3``.
-        relaxed_structure(units='A') : Structure or None
-            Final relaxed structure in Angstrom (``'A'``) or bohr (``'B'``).
-        forces(units='eV/A') : numpy.ndarray or None
-            Ionic-force history with shape ``(nsteps, natoms, 3)``.  Available
-            units are ``'eV/A'``, ``'Ry/B'``, and ``'Ha/B'``.
-        stress(units='GPa') : numpy.ndarray or None
-            Stress-tensor history with shape ``(nsteps, 3, 3)``.  Available
-            units are ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``,
-            and ``'atm'``.
-        pressure(units='GPa') : float or numpy.floating or None
-            Final hydrostatic pressure in the units accepted by ``stress``.
-
-        Notes
-        -----
-        Log and XML output are both parsed automatically when present.  Query
-        methods prefer schema XML data and fall back to text-output data.  A
-        query returns ``None`` when its quantity applies to the detected
-        calculation but was not parsed.  Calling a query before analysis or
-        for an unsupported calculation raises ``RuntimeError``.  Supplying
-        unsupported units raises ``ValueError``.
 
         Raises
         ------
