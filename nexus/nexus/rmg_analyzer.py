@@ -11,7 +11,7 @@ from types import MappingProxyType
 
 import numpy as np
 
-from .developer import DevBase,obj
+from .developer import DevBase,dotdict,obj
 from .generic import NexusError
 from .unit_converter import convert
 from .numerics import simstats
@@ -459,7 +459,7 @@ class RmgOutData(DevBase):
                                 last_header = False
                     if len(b)>0:
                         blocks.append(b)
-                    other_blocks = obj()
+                    other_blocks = dotdict()
                     for b in blocks:
                         if '\n' not in b:
                             continue
@@ -879,7 +879,7 @@ class RmgOutData(DevBase):
                 if spins==['none']:
                     eigenvalues = eigenvalues[:,0,:]
                     occupations = occupations[:,0,:]
-                return obj(
+                return dotdict(
                     kpoints_crystal = kpoints,
                     eigenvalues     = eigenvalues,
                     occupations     = occupations,
@@ -988,17 +988,17 @@ class RmgOutData(DevBase):
         Binds ``scf`` to an ``obj`` whose numerical members are NumPy arrays.
         Energy-component arrays use Hartree and timing arrays use seconds.
         """
-        component_names = obj(
-            eigenvalue_sum  = 'EIGENVALUE SUM',
-            ion_ion         = 'ION_ION',
-            electrostatic   = 'ELECTROSTATIC',
-            vxc             = 'VXC',
-            exc             = 'EXC',
-            total_energy    = 'TOTAL ENERGY',
-            estimated_error = 'estimated error',
-            )
+        component_names = {
+            'eigenvalue_sum'  : 'EIGENVALUE SUM',
+            'ion_ion'         : 'ION_ION',
+            'electrostatic'   : 'ELECTROSTATIC',
+            'vxc'             : 'VXC',
+            'exc'             : 'EXC',
+            'total_energy'    : 'TOTAL ENERGY',
+            'estimated_error' : 'estimated error',
+            }
 
-        values = obj()
+        values = {}
         for name in component_names.keys():
             values[name] = []
         md_steps   = []
@@ -1236,7 +1236,7 @@ class RmgOutData(DevBase):
                 value_match.group(1).replace('D','E').replace('d','e'))
             values = np.array(values,dtype=float)
             if len(values)>=6:
-                records.append(obj(
+                records.append(dict(
                     step             = int(values[0]),
                     potential_energy = values[1],
                     kinetic_energy   = values[2],
@@ -2009,14 +2009,6 @@ class RmgOutData(DevBase):
     #end def read_produced_files
 
 
-    def return_initial_structure(self):
-        """Return a detached copy of the initial structure, when available."""
-        s = None
-        if 'setup_info' in self and 'structure' in self.setup_info:
-            s = deepcopy(self.setup_info.structure)
-        return s
-    #end def return_initial_structure
-
 #end class RmgOutData
 
 
@@ -2146,7 +2138,9 @@ class RmgAnalyzer(SimulationAnalyzer):
         self._require_supported('initial_structure',self.all_modes)
         if units not in {'A','B'}:
             raise ValueError('initial_structure units must be one of: A, B')
-        structure = self.results.return_initial_structure()
+        structure = None
+        if 'structure' in self.results.setup_info:
+            structure = deepcopy(self.results.setup_info.structure)
         if structure is not None:
             structure.change_units(units)
         return structure
@@ -2413,11 +2407,5 @@ class RmgAnalyzer(SimulationAnalyzer):
         self.run_mode = results.run_mode
         self.input    = results.input
     #end def analyze
-
-
-    def return_initial_structure(self):
-        """Return the initial structure recovered from the analyzed output."""
-        return self.results.return_initial_structure()
-    #end def return_initial_structure
 
 #end class RmgAnalyzer
