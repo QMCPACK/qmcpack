@@ -12,9 +12,9 @@ def test_empty_init():
 
     analyzer = RmgAnalyzer()
 
-    expected_members = set([
+    expected_members = {
         'abspath','info','input','outfile_name','path','results','run_mode',
-        ])
+        }
     assert set(analyzer.keys())==expected_members
     assert analyzer.path is None
     assert analyzer.abspath is None
@@ -80,19 +80,37 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
     logfile = tmp_path/'rmg.log'
     logfile.write_text(rmg_log(calculation_type))
     outdata = RmgOutData(str(logfile))
-    expected_fields = set(outdata.result_fields_by_mode[short_mode])
-    metadata_fields = set([
+    metadata_fields = {
         'abspath','input','outfile_name','path','run_mode','setup_info',
-        ])
+        }
+    result_fields = set(outdata.keys())
 
     assert outdata.run_mode==short_mode
     assert outdata.setup_info.run_mode==short_mode
-    assert set(outdata.keys())==expected_fields|metadata_fields
+    assert metadata_fields<result_fields
+    assert {'geometry','convergence','timing'}<result_fields
+
+    electronic_run = short_mode in {
+        'scf','nscf','relax','md_VE','md_TE','tddft','neb',
+        }
+    field_applicability = dict(
+        energy         = electronic_run,
+        ionic_steps    = electronic_run,
+        pressure       = electronic_run,
+        electronic     = electronic_run or short_mode=='band',
+        bands          = short_mode=='band',
+        md             = short_mode in {'md_VE','md_TE'},
+        tddft          = short_mode=='tddft',
+        produced_files = short_mode in {'scf','exx','stm'},
+        )
+    for name,applies in field_applicability.items():
+        assert (name in result_fields)==applies
+    #end for
 
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
     assert analyzer.results.run_mode==short_mode
-    assert set(analyzer.results.keys())==expected_fields|metadata_fields
+    assert set(analyzer.results.keys())==result_fields
     assert analyzer.results.timing is not None
     assert analyzer.results.timing.total==3.0
     assert analyzer.results.setup_info.grid_points.grid.tolist()==[8,8,8]

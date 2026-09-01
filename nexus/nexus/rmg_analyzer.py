@@ -18,75 +18,7 @@ from .rmg_input import RmgInput, rmg_modes
 
 
 class RmgOutData(DevBase):
-
-    common_result_fields        = (
-        'geometry',
-        'convergence',
-        'timing',
-        )
-
-    electronic_result_fields    = (
-        'energy',
-        'energy_units',
-        'energies',
-        'energy_units_history',
-        'direct_energies',
-        'direct_energy_units',
-        'electronic',
-        'scf',
-        )
-
-    ionic_result_fields         = (
-        'ionic_steps',
-        'position_units',
-        'force_units',
-        'positions',
-        'forces',
-        'charges',
-        'magnetizations',
-        'max_forces',
-        'structures',
-        'stress',
-        'stress_units',
-        'pressures',
-        'pressure',
-        )
-
-    band_result_fields          = (
-        'bands',
-        )
-
-    md_result_fields            = (
-        'md',
-        'md_stats',
-        )
-
-    tddft_result_fields         = (
-        'tddft',
-        )
-
-    produced_file_result_fields = (
-        'produced_files',
-        )
-
-    result_fields_by_mode       = dict(
-        scf   = common_result_fields+electronic_result_fields+ionic_result_fields+
-            produced_file_result_fields,
-        nscf  = common_result_fields+electronic_result_fields+ionic_result_fields,
-        band  = common_result_fields+(
-            'electronic',
-            )+band_result_fields,
-        exx   = common_result_fields+produced_file_result_fields,
-        relax = common_result_fields+electronic_result_fields+ionic_result_fields,
-        md_VE = common_result_fields+electronic_result_fields+ionic_result_fields+
-            md_result_fields,
-        md_TE = common_result_fields+electronic_result_fields+ionic_result_fields+
-            md_result_fields,
-        tddft = common_result_fields+electronic_result_fields+ionic_result_fields+
-            tddft_result_fields,
-        stm   = common_result_fields+produced_file_result_fields,
-        neb   = common_result_fields+electronic_result_fields+ionic_result_fields,
-        )
+    """Parsed setup, physical results, and produced files from an RMG run."""
 
     # Match a signed integer or decimal with an optional E- or D-exponent.
     # Example: -1.2345D+02
@@ -94,6 +26,119 @@ class RmgOutData(DevBase):
 
 
     def __init__(self,filepath):
+        """Read an RMG output file and collect results appropriate to its run mode.
+
+        Parameters
+        ----------
+        filepath : str
+            Path to the RMG log output file.
+
+        Attributes
+        ----------
+        path : str
+            Directory containing the output file.
+        abspath : str
+            Absolute path to the output directory.
+        outfile_name : str
+            Name of the RMG output file.
+        input : RmgInput or None
+            Parsed control input when the referenced input file can be found and
+            read.
+        setup_info : obj
+            Parsed setup sections, including the run mode and, when available,
+            lattice, ion, k-point, grid, and file information.
+        run_mode : str or None
+            Short RMG calculation mode, such as ``"scf"``, ``"band"``, or
+            ``"md_VE"``.
+        geometry : obj or None
+            Cell volume and k-point arrays.
+        convergence : obj or None
+            Electronic and ionic convergence indicators and event counts.
+        timing : obj or None
+            Total, per-step, and section-resolved timing data in seconds.
+        energy : float or numpy.floating or None
+            Last total energy obtained from the eigenvalue sum.
+        energy_units : str or None
+            Units associated with ``energy``.
+        energies : numpy.ndarray or None
+            History of total energies obtained from eigenvalue sums.
+        energy_units_history : numpy.ndarray or None
+            Unit label corresponding to each entry in ``energies``.
+        direct_energies : numpy.ndarray or None
+            History of directly evaluated total energies.
+        direct_energy_units : numpy.ndarray or None
+            Unit label corresponding to each direct energy.
+        electronic : obj or None
+            Electronic observables represented by NumPy arrays, including Fermi
+            energies, band edges, gaps, charges, magnetizations, forces, volumes,
+            and per-atom energies when reported.
+        scf : obj or None
+            SCF energy components, iteration indices, residuals, and timing data;
+            numerical histories are stored as NumPy arrays.
+        ionic_steps : obj or None
+            Mapping from ionic-step index to an ``obj`` containing atom labels and
+            position, charge, magnetization, force, and movable-flag arrays.
+        position_units : str or None
+            Units associated with ionic positions.
+        force_units : str or None
+            Units associated with ionic forces.
+        positions : numpy.ndarray or None
+            Ionic positions with shape ``(nsteps, natoms, 3)``.
+        forces : numpy.ndarray or None
+            Ionic forces with shape ``(nsteps, natoms, 3)``.
+        charges : numpy.ndarray or None
+            Ionic charges with shape ``(nsteps, natoms)``.
+        magnetizations : numpy.ndarray or None
+            Ionic magnetizations with shape ``(nsteps, natoms)``.
+        max_forces : numpy.ndarray or None
+            Maximum ionic force magnitude at each ionic step.
+        structures : obj or None
+            Mapping from ionic-step index to a ``Structure`` instance.
+        stress : numpy.ndarray or None
+            Stress tensors with shape ``(nsteps, 3, 3)``.
+        stress_units : str or None
+            Units associated with stress and pressure values.
+        pressures : numpy.ndarray or None
+            Hydrostatic pressure at each reported stress step.
+        pressure : float or numpy.floating or None
+            Last hydrostatic pressure.
+        bands : obj or None
+            Mapping from spin index to an ``obj`` containing band-path distances,
+            a two-dimensional energy array, units, and the source file path.
+        md : obj or None
+            Molecular-dynamics step, energy, temperature, and displacement arrays.
+        md_stats : obj or None
+            Mapping from molecular-dynamics quantity to an ``obj`` containing its
+            mean, variance, statistical error, and autocorrelation factor.
+        tddft : obj or None
+            Time-dependent energy and spin-resolved dipole series represented by
+            nested ``obj`` instances and NumPy arrays.
+        produced_files : obj or None
+            Lists or paths for mode-specific output files, such as exact-exchange
+            integrals, STM data, or a QMCPACK restart file.
+
+        Notes
+        -----
+        ``geometry``, ``convergence``, and ``timing`` apply to the supported modes
+        ``scf``, ``nscf``, ``band``, ``exx``, ``relax``, ``md_VE``, ``md_TE``,
+        ``tddft``, ``stm``, and ``neb``. Energy, SCF, ionic, and stress members
+        apply to ``scf``, ``nscf``, ``relax``, ``md_VE``, ``md_TE``, ``tddft``,
+        and ``neb``. ``electronic`` also applies to ``band``. ``bands`` applies
+        only to ``band``; ``md`` and ``md_stats`` apply to ``md_VE`` and
+        ``md_TE``; ``tddft`` applies only to ``tddft``; and ``produced_files``
+        applies to ``scf``, ``exx``, and ``stm``. A mode-applicable member is
+        initialized to ``None`` and remains ``None`` when its data cannot be
+        obtained. Members that do not apply to the detected mode are not bound.
+
+        Raises
+        ------
+        TypeError
+            If ``filepath`` is not a string.
+        FileNotFoundError
+            If ``filepath`` does not exist.
+        IsADirectoryError
+            If ``filepath`` does not identify a regular file.
+        """
         if not isinstance(filepath,str):
             msg = (
                 'invalid type provided for filepath\n'
@@ -113,7 +158,6 @@ class RmgOutData(DevBase):
                 'Path provided: {}'.format(filepath)
                 )
             raise IsADirectoryError(msg)
-        #end if
         path,outfile_name  = os.path.split(filepath)
         self.path          = path
         self.abspath       = os.path.abspath(path)
@@ -121,110 +165,115 @@ class RmgOutData(DevBase):
         self.input         = None
         self.setup_info    = None
 
-        # modes: scf, nscf, band, exx, relax, md_VE, md_TE, tddft, stm, neb
-        self.geometry    = None
-        self.convergence = None
-        self.timing      = None
-
-        # modes: scf, nscf, relax, md_VE, md_TE, tddft, neb
-        self.energy               = None
-        self.energy_units         = None
-        self.energies             = None
-        self.energy_units_history = None
-        self.direct_energies      = None
-        self.direct_energy_units  = None
-        self.scf                  = None
-
-        # modes: scf, nscf, band, relax, md_VE, md_TE, tddft, neb
-        self.electronic = None
-
-        # modes: scf, nscf, relax, md_VE, md_TE, tddft, neb
-        self.ionic_steps    = None
-        self.position_units = None
-        self.force_units    = None
-        self.positions      = None
-        self.forces         = None
-        self.charges        = None
-        self.magnetizations = None
-        self.max_forces     = None
-        self.structures     = None
-        self.stress         = None
-        self.stress_units   = None
-        self.pressures      = None
-        self.pressure       = None
-
-        # modes: band
-        self.bands = None
-
-        # modes: md_VE, md_TE
-        self.md       = None
-        self.md_stats = None
-
-        # modes: tddft
-        self.tddft = None
-
-        # modes: scf, exx, stm
-        self.produced_files = None
-
         with open(filepath,'r') as fobj:
             lines = fobj.read().splitlines()
-        #end with
         self.read_setup_info(lines)
-        electronic_modes = set(['scf','nscf','relax','md_VE','md_TE','tddft','neb'])
+
+        electronic_modes = {'scf','nscf','relax','md_VE','md_TE','tddft','neb'}
+        supported_modes  = electronic_modes | {'band','exx','stm'}
+
+        # modes: scf, nscf, band, exx, relax, md_VE, md_TE, tddft, stm, neb
+        if self.run_mode in supported_modes:
+            self.geometry    = None
+            self.convergence = None
+            self.timing      = None
+
+            self.read_geometry(lines)
+            self.read_convergence(lines)
+            self.read_timing(lines)
+
+        # modes: scf, nscf, relax, md_VE, md_TE, tddft, neb
         if self.run_mode in electronic_modes:
+            self.energy               = None
+            self.energy_units         = None
+            self.energies             = None
+            self.energy_units_history = None
+            self.direct_energies      = None
+            self.direct_energy_units  = None
+            self.scf                  = None
+            self.ionic_steps          = None
+            self.position_units       = None
+            self.force_units          = None
+            self.positions            = None
+            self.forces               = None
+            self.charges              = None
+            self.magnetizations       = None
+            self.max_forces           = None
+            self.structures           = None
+            self.stress               = None
+            self.stress_units         = None
+            self.pressures            = None
+            self.pressure             = None
+
             self.read_energies(lines)
             self.read_scf(lines)
             self.read_ions(lines)
             self.read_stress(lines)
-        #end if
-        if self.run_mode in electronic_modes or self.run_mode=='band':
-            self.read_electronic(lines)
-        #end if
-        if self.run_mode in ('md_VE','md_TE'):
-            self.read_md(lines)
-        #end if
-        if self.run_mode in self.result_fields_by_mode:
-            self.read_geometry(lines)
-            self.read_convergence(lines)
-            self.read_timing(lines)
-        #end if
-        if self.run_mode=='band':
-            self.read_band(lines)
-        elif self.run_mode=='tddft':
-            self.read_tddft(lines)
-        #end if
-        if self.run_mode in ('scf','exx','stm'):
-            self.read_produced_files(lines)
-        #end if
 
-        used_fields   = set(self.result_fields_by_mode.get(self.run_mode,()))
-        result_fields = (
-            self.common_result_fields+
-            self.electronic_result_fields+
-            self.ionic_result_fields+
-            self.band_result_fields+
-            self.md_result_fields+
-            self.tddft_result_fields+
-            self.produced_file_result_fields
-            )
-        for name in result_fields:
-            if name not in used_fields:
-                del self[name]
-            #end if
-        #end for
+        # modes: scf, nscf, band, relax, md_VE, md_TE, tddft, neb
+        if self.run_mode in electronic_modes or self.run_mode=='band':
+            self.electronic = None
+
+            self.read_electronic(lines)
+
+        # modes: md_VE, md_TE
+        if self.run_mode in {'md_VE','md_TE'}:
+            self.md       = None
+            self.md_stats = None
+
+            self.read_md(lines)
+
+        # modes: band
+        if self.run_mode=='band':
+            self.bands = None
+
+            self.read_band(lines)
+
+        # modes: tddft
+        if self.run_mode=='tddft':
+            self.tddft = None
+
+            self.read_tddft(lines)
+
+        # modes: scf, exx, stm
+        if self.run_mode in {'scf','exx','stm'}:
+            self.produced_files = None
+
+            self.read_produced_files(lines)
     #end def __init__
 
 
     def read_setup_info(self,lines):
+        """Parse the RMG setup report and referenced control input.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines without newline characters.
+
+        Returns
+        -------
+        bool
+            Whether any setup information was obtained.
+
+        Notes
+        -----
+        Binds ``setup_info`` as an ``obj`` containing named setup blocks and
+        derived NumPy arrays for grids, lattice vectors, k-points, and ionic
+        positions. It also binds ``run_mode`` and may bind ``input`` to an
+        ``RmgInput`` instance.
+        """
         setup_info = obj()
         log_lines  = lines
         log_text   = '\n'.join(lines)
 
         def normalize_line(line):
+            """Normalize case and whitespace for tolerant text matching."""
             return ' '.join(line.expandtabs().strip().split()).lower()
         #end def normalize_line
 
         def line_numbers(line):
+            """Return all RMG-formatted numbers in a line as a float array."""
             # Find every RMG-formatted number occurring anywhere in a line.
             # Example: SUM FORCE = 0.1 0.2 0.3
             values = re.findall(
@@ -233,6 +282,7 @@ class RmgOutData(DevBase):
         #end def line_numbers
 
         def leading_numbers(line):
+            """Return the leading whitespace-separated numbers as a float array."""
             # Match a whitespace-separated numeric sequence at the start of a line.
             # Example: 1 1.0 0.1 0.2 trailing
             npat    = self.number_pattern
@@ -240,21 +290,21 @@ class RmgOutData(DevBase):
             match   = re.match(pattern,line)
             if match is None:
                 return np.array([],dtype=float)
-            #end if
             return line_numbers(match.group(1))
         #end def leading_numbers
 
         def match_float(pattern,line):
+            """Return the first floating-point value captured by a regex."""
             # Apply a caller-provided expression that captures one physical value.
             # Example: FERMI ENERGY : 5.25 eV
             match = re.search(pattern,line,re.I)
             if match is None:
                 return None
-            #end if
             return float(match.group(1).replace('D','E').replace('d','e'))
         #end def match_float
 
         def identify_mode(text):
+            """Identify the short RMG run-mode name from descriptive text."""
             text          = normalize_line(text)
             mode_patterns = (
                 # Match the self-consistent electronic-quench calculation label.
@@ -291,8 +341,6 @@ class RmgOutData(DevBase):
             for pattern,run_mode in mode_patterns:
                 if re.search(pattern,text,re.I):
                     return run_mode
-                #end if
-            #end for
             return rmg_modes.mode_match(text,short=True)
         #end def identify_mode
 
@@ -305,8 +353,6 @@ class RmgOutData(DevBase):
             if match is not None:
                 mode = identify_mode(match.group(1))
                 break
-            #end if
-        #end if
         self.run_mode       = mode
         setup_info.run_mode = mode
         setup_start         = None
@@ -317,10 +363,10 @@ class RmgOutData(DevBase):
         else:
             # don't know how to handle other cases yet
             None
-        #end if
-        unit_set = set(['a0'])
+        unit_set = {'a0'}
         on_off   = dict(ON=True,OFF=False)
         def process_name(s):
+            """Convert an RMG setup label into a normalized object key."""
             # Match parenthetical annotations so they can be removed from names.
             # Example: Grid spacing (a0)
             s      = re.sub(r'\([^)]*\)','',s)
@@ -329,12 +375,11 @@ class RmgOutData(DevBase):
             for t in tokens:
                 if not t.startswith('('):
                     name += t+'_'
-                #end if
-            #end for
             name = name[:-1].replace('/','_').replace('-','_')
             return name
         #end def process_name
         def process_value(v,*,list=False):
+            """Convert setup text to a scalar, array, list, or string and units."""
             v     = v.strip()
             units = None
             try:
@@ -350,20 +395,16 @@ class RmgOutData(DevBase):
                             if tokens[-1] in unit_set:
                                 units  = tokens[-1]
                                 tokens = tokens[:-1]
-                            #end if
                             try:
                                 if not list:
                                     v = np.array(tokens,dtype=float)
                                 else:
                                     v = [process_value(t,list=True)[0] for t in tokens]
-                                #end if
                             except (ValueError,TypeError,OverflowError):
                                 units = None
                             #end try
-                        #end if
                     elif v in on_off:
                         v = on_off[v]
-                    #end if
                 #end try
             #end try
             return v,units
@@ -392,7 +433,6 @@ class RmgOutData(DevBase):
                         )
                     end_match        = re.search(fallback_pattern,log_text[istart:])
                     iend             = istart+end_match.start() if end_match is not None else len(log_text)
-                #end if
                 if iend!=-1:
                     text        = log_text[istart:iend].expandtabs()
                     blocks      = []
@@ -406,32 +446,25 @@ class RmgOutData(DevBase):
                                 else:
                                     if len(b)>0:
                                         blocks.append(b)
-                                    #end if
                                     b           = line
                                     last_header = True
-                                #end if
                             else:
                                 b += '\n'+line
                                 last_header = False
-                            #end if
-                        #end if
-                    #end for
                     if len(b)>0:
                         blocks.append(b)
-                    #end if
                     other_blocks = obj()
                     for b in blocks:
                         if '\n' not in b:
                             continue
-                        #end if
                         header,body  = b.split('\n',1)
                         bname         = process_name(header)
                         lines         = body.splitlines()
                         value_lines   = [line for line in lines if ':' in line]
-                        table_blocks  = set([
+                        table_blocks  = {
                             'k_points',
                             'initial_ionic_positions_and_displacements',
-                            ])
+                            }
                         simple_values = bname not in table_blocks and len(value_lines)>0
                         if simple_values:
                             bvalues = obj()
@@ -442,13 +475,9 @@ class RmgOutData(DevBase):
                                 bvalues[name] = value
                                 if units is not None:
                                     bvalues.units = units
-                                #end if
-                            #end for
                             setup_info[bname] = bvalues
                         else:
                             other_blocks[bname] = header,body,lines
-                        #end if
-                    #end for
                     # additional processing for specific blocks
                     if 'grid_points' in setup_info:
                         b          = setup_info.grid_points
@@ -456,10 +485,9 @@ class RmgOutData(DevBase):
                         grid_pe    = []
                         spacing    = []
                         grid_units = None
-                        for c in 'xyz':
+                        for c in sorted({'x','y','z'}):
                             if c not in b:
                                 continue
-                            #end if
                             s = str(b[c])
                             # Match and capture the total grid-point count.
                             # Example: Total: 48 Per PE: 12 Spacing: 0.30 a0
@@ -475,7 +503,6 @@ class RmgOutData(DevBase):
                                 r'\bspacing\s*:\s*('+self.number_pattern+r')',s)
                             if total is None or per_pe is None or space is None:
                                 continue
-                            #end if
                             # Match the unit following a grid-spacing value.
                             # Example: Spacing: 0.30 a0
                             unit_match = re.search(
@@ -483,11 +510,9 @@ class RmgOutData(DevBase):
                                 r'\s*([^\s,;]+)',s,re.I)
                             if unit_match is not None:
                                 grid_units = unit_match.group(1)
-                            #end if
                             grid.append(total)
                             grid_pe.append(per_pe)
                             spacing.append(space)
-                        #end for
                         if len(grid)==3:
                             grid    = np.array(grid,dtype=int)
                             grid_pe = np.array(grid_pe,dtype=int)
@@ -498,7 +523,6 @@ class RmgOutData(DevBase):
                                 grid_spacing = spacing,
                                 grid_units   = grid_units,
                                 )
-                        #end if
                         if 'equivalent_energy_cutoffs' in b:
                             cutoff_text   = str(b.equivalent_energy_cutoffs)
                             cutoff_values = line_numbers(cutoff_text)
@@ -515,28 +539,22 @@ class RmgOutData(DevBase):
                                     ecut_charge  = cutoff_values[1],
                                     ecut_units   = ecut_units,
                                     )
-                            #end if
-                        #end if
-                    #end if
                     if 'lattice_setup' in setup_info:
                         b    = setup_info.lattice_setup
                         axes = []
-                        for name in ('x_basis_vector','y_basis_vector','z_basis_vector'):
+                        for name in sorted({
+                            'x_basis_vector','y_basis_vector','z_basis_vector',
+                            }):
                             if name not in b:
                                 axes = []
                                 break
-                            #end if
                             values = line_numbers(str(b[name]))
                             if len(values)<3:
                                 axes = []
                                 break
-                            #end if
                             axes.append(values[:3])
-                        #end for
                         if len(axes)==3:
                             b.axes = np.array(axes,dtype=float)
-                        #end if
-                    #end if
                     if 'k_points' in other_blocks:
                         header,body,lines = other_blocks.k_points
                         del other_blocks.k_points
@@ -546,8 +564,6 @@ class RmgOutData(DevBase):
                             if 'weight' in normalized and 'crystal' in normalized:
                                 first_row = i+1
                                 break
-                            #end if
-                        #end for
                         if first_row is not None:
                             kp = []
                             kw = []
@@ -555,22 +571,16 @@ class RmgOutData(DevBase):
                                 normalized = normalize_line(line)
                                 if 'weight' in normalized and len(kp)>0:
                                     break
-                                #end if
                                 values = leading_numbers(line)
                                 if len(values)<4:
                                     continue
-                                #end if
                                 kp.append(values[:3])
                                 kw.append(values[3])
-                            #end for
                             if len(kp)>0:
                                 setup_info.k_points = obj(
                                     kpoints_crystal = np.array(kp,dtype=float),
                                     kweights        = np.array(kw,dtype=float),
                                     )
-                            #end if
-                        #end if
-                    #end if
                     k = 'initial_ionic_positions_and_displacements'
                     if k in other_blocks:
                         header,body,lines = other_blocks[k]
@@ -581,7 +591,6 @@ class RmgOutData(DevBase):
                             punits = 'B'
                         elif 'angstrom' in h:
                             punits = 'A'
-                        #end if
                         pos       = []
                         spec      = []
                         first_row = None
@@ -589,8 +598,6 @@ class RmgOutData(DevBase):
                             if 'species' in normalize_line(line):
                                 first_row = i+1
                                 break
-                            #end if
-                        #end for
                         if first_row is not None:
                             for line in lines[first_row:]:
                                 ls = line.strip()
@@ -598,32 +605,22 @@ class RmgOutData(DevBase):
                                     t = line.split()
                                     if len(t)<4:
                                         continue
-                                    #end if
                                     values = line_numbers(' '.join(t[1:]))
                                     if len(values)<3:
                                         continue
-                                    #end if
                                     spec.append(t[0])
                                     pos.append(values[:3])
-                                #end if
-                            #end for
                             if len(pos)>0:
                                 setup_info.ion_positions = obj(
                                     units     = punits,
                                     atoms     = np.array(spec,dtype=object),
                                     positions = np.array(pos,dtype=float),
                                     )
-                            #end if
-                        #end if
-                    #end if
-                #end if
-            #end if
-        #end if
         have_structure_data = (
             'lattice_setup' in setup_info and
             'axes' in setup_info.lattice_setup and
             'ion_positions' in setup_info and
-            setup_info.ion_positions.get('units',None) in ('A','B')
+            setup_info.ion_positions.get('units',None) in {'A','B'}
             )
         if have_structure_data:
             aunits       = setup_info.lattice_setup.get('units','B')
@@ -637,11 +634,10 @@ class RmgOutData(DevBase):
                 len(elem)==len(pos) and len(elem)>0
                 )
             if valid_shapes:
-                if aunits in ('a0','B'):
+                if aunits in {'a0','B'}:
                     aunits = 'B'
                 else:
                     aunits = 'A' # assume for now
-                #end if
                 units = 'B'
                 axes  = convert(axes,aunits,units)
                 pos   = convert(pos,punits,units)
@@ -657,11 +653,7 @@ class RmgOutData(DevBase):
                         kw  = setup_info.k_points.kweights
                         kp  = np.dot(kpu,s.kaxes)
                         s.add_kpoints(kpoints=kp,kweights=kw)
-                    #end if
-                #end if
                 setup_info.structure = s
-            #end if
-        #end if
         if 'files' in setup_info and 'control_input_file' in setup_info.files:
             control_file = setup_info.files.control_input_file
             filepaths    = [
@@ -672,21 +664,36 @@ class RmgOutData(DevBase):
             for filepath in filepaths:
                 if os.path.isfile(filepath):
                     break
-                #end if
-            #end for
             if os.path.isfile(filepath):
                 try:
                     self.input = RmgInput(filepath)
                 except (NexusError,OSError,TypeError,ValueError):
                     pass
                 #end try
-            #end if
-        #end if
         self.setup_info = setup_info
         return len(setup_info)>0
     #end def read_setup_info
 
     def read_energies(self,lines):
+        """Parse final total-energy histories from the RMG log.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+
+        Returns
+        -------
+        int
+            Number of eigenvalue-sum energies found.
+
+        Notes
+        -----
+        Binds ``energies`` and ``energy_units_history`` as NumPy arrays and
+        ``energy`` and ``energy_units`` to their final entries. When direct
+        energies are present, ``direct_energies`` and ``direct_energy_units``
+        are also bound as NumPy arrays.
+        """
         energies            = []
         direct_energies     = []
         energy_units        = []
@@ -706,13 +713,10 @@ class RmgOutData(DevBase):
             if match is not None:
                 energies.append(float(match.group(1).replace('D','E').replace('d','e')))
                 energy_units.append(match.group(2))
-            #end if
             match = dpat.search(line)
             if match is not None:
                 direct_energies.append(float(match.group(1).replace('D','E').replace('d','e')))
                 direct_energy_units.append(match.group(2))
-            #end if
-        #end for
         energies        = np.array(energies,dtype=float)
         direct_energies = np.array(direct_energies,dtype=float)
         if len(energies)>0:
@@ -720,17 +724,34 @@ class RmgOutData(DevBase):
             self.energy_units         = energy_units[-1] or 'Ha'
             self.energies             = energies
             self.energy_units_history = np.array(energy_units,dtype=object)
-        #end if
         if len(direct_energies)>0:
             self.direct_energies     = direct_energies
             self.direct_energy_units = np.array(direct_energy_units,dtype=object)
-        #end if
         return len(energies)
     #end def read_energies
 
 
     def read_electronic(self,lines):
+        """Parse general electronic observables from the RMG log.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+
+        Returns
+        -------
+        int
+            Combined number of parsed array entries.
+
+        Notes
+        -----
+        Binds ``electronic`` to an ``obj`` containing NumPy arrays for Fermi
+        energies, band edges, band gaps, total charges, magnetizations, summed
+        forces, volumes, and per-atom energies, together with their unit labels.
+        """
         def line_numbers(line):
+            """Return all RMG-formatted numbers in a line as a float array."""
             # Find every RMG-formatted number occurring anywhere in a line.
             # Example: SUM FORCE = 0.1 0.2 0.3
             values = re.findall(
@@ -739,12 +760,12 @@ class RmgOutData(DevBase):
         #end def line_numbers
 
         def match_float(pattern,line):
+            """Return the first floating-point value captured by a regex."""
             # Apply a caller-provided expression that captures one physical value.
             # Example: FERMI ENERGY : 5.25 eV
             match = re.search(pattern,line,re.I)
             if match is None:
                 return None
-            #end if
             return float(match.group(1).replace('D','E').replace('d','e'))
         #end def match_float
 
@@ -770,7 +791,6 @@ class RmgOutData(DevBase):
                     r'fermi\s+energy\s*[:=]\s*('+self.number_pattern+r')',line)
                 if value is not None:
                     data.fermi_energies.append(value)
-                #end if
             elif 'valence band maximum' in lower and 'conduction band' in lower:
                 # Match and capture the valence-band maximum.
                 # Example: spin0: valence band maximum = 4.0 eV
@@ -784,7 +804,6 @@ class RmgOutData(DevBase):
                 if vbm is not None and cbm is not None:
                     data.valence_band_maxima.append(vbm)
                     data.conduction_band_minima.append(cbm)
-                #end if
             elif 'band gap' in lower:
                 # Match and capture the electronic band gap.
                 # Example: spin0: Band gap : 2.0 eV
@@ -792,7 +811,6 @@ class RmgOutData(DevBase):
                     r'band\s+gap\s*[:=]\s*('+self.number_pattern+r')',line)
                 if value is not None:
                     data.band_gaps.append(value)
-                #end if
             elif 'total charge in supercell' in lower:
                 # Match and capture the total charge in the simulation cell.
                 # Example: Total charge in supercell = 0.0
@@ -801,7 +819,6 @@ class RmgOutData(DevBase):
                     r'('+self.number_pattern+r')',line)
                 if value is not None:
                     data.total_charges.append(value)
-                #end if
             elif '@@ total magnetization' in lower:
                 # Match and capture the signed total magnetization.
                 # Example: @@ TOTAL MAGNETIZATION = 1.0
@@ -809,7 +826,6 @@ class RmgOutData(DevBase):
                     r'total\s+magnetization\s*[:=]\s*('+self.number_pattern+r')',line)
                 if value is not None:
                     data.total_magnetizations.append(value)
-                #end if
             elif '@@ absolute magnetization' in lower:
                 # Match and capture the absolute total magnetization.
                 # Example: @@ ABSOLUTE MAGNETIZATION = 1.5
@@ -817,23 +833,17 @@ class RmgOutData(DevBase):
                     r'absolute\s+magnetization\s*[:=]\s*('+self.number_pattern+r')',line)
                 if value is not None:
                     data.absolute_magnetizations.append(value)
-                #end if
             elif lower.lstrip().startswith('sum force'):
                 values = line_numbers(line.split('=',1)[-1])
                 if len(values)>=3:
                     sum_forces.append(values[:3])
-                #end if
             elif 'volume and energy per atom' in lower:
                 values = line_numbers(line.split('=',1)[-1])
                 if len(values)>=2:
                     volume_per_atom.append(values[0])
                     energy_per_atom.append(values[1])
-                #end if
-            #end if
-        #end for
         for name,values in data.items():
             data[name] = np.array(values,dtype=float)
-        #end for
         data.energy_units          = 'eV'
         data.magnetization_units   = 'Bohr mag/cell'
         data.sum_forces            = np.array(sum_forces,dtype=float)
@@ -846,12 +856,28 @@ class RmgOutData(DevBase):
             len(v) for v in data.values() if isinstance(v,np.ndarray))
         if nfound>0:
             self.electronic = data
-        #end if
         return nfound
     #end def read_electronic
 
 
     def read_scf(self,lines):
+        """Parse SCF energy components, iteration indices, residuals, and times.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+
+        Returns
+        -------
+        int
+            Number of total-energy SCF records found.
+
+        Notes
+        -----
+        Binds ``scf`` to an ``obj`` whose numerical members are NumPy arrays.
+        Energy-component arrays use Hartree and timing arrays use seconds.
+        """
         component_names = obj(
             eigenvalue_sum  = 'EIGENVALUE SUM',
             ion_ion         = 'ION_ION',
@@ -865,7 +891,6 @@ class RmgOutData(DevBase):
         values = obj()
         for name in component_names.keys():
             values[name] = []
-        #end for
         md_steps   = []
         scf_steps  = []
         step_times = []
@@ -886,11 +911,8 @@ class RmgOutData(DevBase):
                         value = np.nan
                     else:
                         value = float(token.replace('D','E').replace('d','e'))
-                    #end if
                     values[name].append(value)
                     break
-                #end if
-            #end for
             # Match the detailed SCF-iteration summary line.
             # Example: quench: [ RMS [ dV ] : 2.0D-5 scf: 3/20 ]
             if re.search(r'\bquench\s*:',line,re.I):
@@ -923,12 +945,9 @@ class RmgOutData(DevBase):
                 except ValueError:
                     rms_dv.append(np.nan)
                 #end try
-            #end if
-        #end for
         scf = obj()
         for name,array in values.items():
             scf[name] = np.array(array,dtype=float)
-        #end for
         scf.update(
             md_steps     = np.array(md_steps,dtype=int),
             scf_steps    = np.array(scf_steps,dtype=int),
@@ -941,12 +960,32 @@ class RmgOutData(DevBase):
         nfound = len(scf.total_energy)
         if nfound>0:
             self.scf = scf
-        #end if
         return nfound
     #end def read_scf
 
 
     def read_ions(self,lines):
+        """Parse ionic-step tables and construct trajectory-level data.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+
+        Returns
+        -------
+        int
+            Number of valid ionic-step tables found.
+
+        Notes
+        -----
+        Binds ``ionic_steps`` to an ``obj`` mapping step indices to records that
+        contain atom-label, position, charge, magnetization, force, and movable-
+        flag arrays. For a consistent atom count, it also binds trajectory NumPy
+        arrays through ``positions``, ``forces``, ``charges``,
+        ``magnetizations``, and ``max_forces`` and maps steps to ``Structure``
+        instances through ``structures``.
+        """
         records = []
         i       = 0
         while i<len(lines):
@@ -960,7 +999,6 @@ class RmgOutData(DevBase):
             if not is_header:
                 i += 1
                 continue
-            #end if
             atoms          = []
             positions      = []
             charges        = []
@@ -972,11 +1010,9 @@ class RmgOutData(DevBase):
                 tokens = lines[i].split()
                 if len(tokens)==0 or tokens[0].upper()!='@ION':
                     break
-                #end if
                 i += 1
                 if len(tokens)<14:
                     continue
-                #end if
                 numeric_tokens = tokens[3:14]
                 # Match a complete numeric token before converting an ionic row.
                 # Example: 2.1
@@ -985,14 +1021,12 @@ class RmgOutData(DevBase):
                     for v in numeric_tokens)
                 if not valid:
                     continue
-                #end if
                 values      = [
                     float(v.replace('D','E').replace('d','e'))
                     for v in numeric_tokens]
                 move_values = values[8:11]
                 if not all(np.isfinite(v) and v.is_integer() for v in move_values):
                     continue
-                #end if
                 atom          = tokens[2]
                 position      = values[:3]
                 charge        = values[3]
@@ -1005,7 +1039,6 @@ class RmgOutData(DevBase):
                 magnetizations.append(magnetization)
                 forces.append(force)
                 movable.append(move)
-            #end while
             if len(atoms)>0:
                 records.append(obj(
                     atoms          = np.array(atoms,dtype=object),
@@ -1017,17 +1050,13 @@ class RmgOutData(DevBase):
                     force_units    = 'Ha/a0',
                     movable        = np.array(movable,dtype=int),
                     ))
-            #end if
-        #end while
         ionic_steps = obj()
         for n,record in enumerate(records):
             ionic_steps[n] = record
-        #end for
         if len(records)>0:
             self.ionic_steps    = ionic_steps
             self.position_units = 'a0'
             self.force_units    = 'Ha/a0'
-        #end if
         if len(records)>0 and len(set(len(r.atoms) for r in records))==1:
             positions           = np.array([r.positions for r in records],dtype=float)
             forces              = np.array([r.forces for r in records],dtype=float)
@@ -1053,15 +1082,31 @@ class RmgOutData(DevBase):
                         pos   = record.positions,
                         )
                     structures[n] = structure
-                #end for
                 self.structures = structures
-            #end if
-        #end if
         return len(records)
     #end def read_ions
 
 
     def read_md(self,lines):
+        """Parse molecular-dynamics records and compute summary statistics.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+
+        Returns
+        -------
+        int
+            Number of molecular-dynamics records found.
+
+        Notes
+        -----
+        Binds ``md`` to an ``obj`` of NumPy arrays for step, energy,
+        temperature, and displacement data. ``md_stats`` is an ``obj`` mapping
+        each numerical quantity to an ``obj`` containing ``mean``, ``var``,
+        ``error``, and ``kappa``.
+        """
         records = []
         for line in lines:
             stripped = line.strip()
@@ -1070,11 +1115,9 @@ class RmgOutData(DevBase):
             marker_match = re.match(r'^@(CVE|CVT)(?:\b|-)',stripped,re.I)
             if marker_match is None:
                 continue
-            #end if
             fields = stripped.split(None,1)
             if len(fields)<2:
                 continue
-            #end if
             # Match a whitespace-separated numeric sequence at the start of a line.
             # Example: 1 -1.0 0.1 -0.9 300.0 2.5e-4
             npat        = self.number_pattern
@@ -1082,7 +1125,6 @@ class RmgOutData(DevBase):
                 r'^\s*((?:'+npat+r')(?:\s+(?:'+npat+r'))*)',fields[1])
             if value_match is None:
                 continue
-            #end if
             # Find every RMG-formatted number in the matched numeric sequence.
             # Example: 1 -1.0 0.1 -0.9 300.0 2.5e-4
             values = re.findall(
@@ -1098,14 +1140,11 @@ class RmgOutData(DevBase):
                     temperature      = values[4],
                     displacement     = values[5],
                     ))
-            #end if
-        #end for
         if len(records)>0:
             md = obj()
             for name in records[0].keys():
                 dtype    = int if name=='step' else float
                 md[name] = np.array([r[name] for r in records],dtype=dtype)
-            #end for
             md.energy_units      = 'Ha'
             md.temperature_units = 'K'
             self.md              = md
@@ -1113,7 +1152,6 @@ class RmgOutData(DevBase):
             for name,values in md.items():
                 if not isinstance(values,np.ndarray):
                     continue
-                #end if
                 mean,var,error,kappa = simstats(values)
                 statistics[name] = obj(
                     mean  = mean,
@@ -1121,20 +1159,35 @@ class RmgOutData(DevBase):
                     error = error,
                     kappa = kappa,
                     )
-            #end for
             self.md_stats = statistics
-        #end if
         return len(records)
     #end def read_md
 
 
     def read_geometry(self,lines):
+        """Collect cell volume and k-point data derived from the setup report.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines. The values are derived from
+            ``setup_info``; the argument maintains the common reader interface.
+
+        Returns
+        -------
+        bool
+            Whether any geometry information was obtained.
+
+        Notes
+        -----
+        Binds ``geometry`` to an ``obj`` containing a scalar volume and NumPy
+        arrays for crystal k-points, Cartesian k-points, and k-point weights.
+        """
         geometry = obj()
         if 'structure' in self.setup_info:
             structure             = self.setup_info.structure
             geometry.volume       = abs(np.linalg.det(structure.axes))
             geometry.volume_units = 'a0^3'
-        #end if
         if 'k_points' in self.setup_info:
             kpoints                  = self.setup_info.k_points
             geometry.kpoints_crystal = kpoints.kpoints_crystal
@@ -1142,17 +1195,33 @@ class RmgOutData(DevBase):
             if 'structure' in self.setup_info and len(kpoints.kpoints_crystal)>0:
                 geometry.kpoints_cart = np.dot(
                     kpoints.kpoints_crystal,self.setup_info.structure.kaxes)
-            #end if
-        #end if
         if len(geometry)>0:
             self.geometry = geometry
-        #end if
         return len(geometry)>0
     #end def read_geometry
 
 
     def read_stress(self,lines):
+        """Parse stress tensors and derive hydrostatic pressures.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+
+        Returns
+        -------
+        int
+            Number of complete stress tensors found.
+
+        Notes
+        -----
+        Binds ``stress`` to a NumPy array of shape ``(nsteps, 3, 3)``,
+        ``pressures`` to a one-dimensional NumPy array, and ``pressure`` to the
+        final pressure. Stress and pressure values are reported in kbar.
+        """
         def leading_numbers(line):
+            """Return the leading whitespace-separated numbers as a float array."""
             # Match a whitespace-separated numeric sequence at the start of a line.
             # Example: 1 1.0 0.1 0.2 trailing
             npat    = self.number_pattern
@@ -1160,7 +1229,6 @@ class RmgOutData(DevBase):
             match   = re.match(pattern,line)
             if match is None:
                 return np.array([],dtype=float)
-            #end if
             # Find every RMG-formatted number in the matched numeric sequence.
             # Example: 1 1.0 0.1 0.2
             values = re.findall(
@@ -1176,7 +1244,6 @@ class RmgOutData(DevBase):
             # Example: stress total in unit of kbar
             if not re.search(r'\bstress\s+total\b',normalized) or 'kbar' not in normalized:
                 continue
-            #end if
             rows = []
             j    = i+1
             while j<len(lines) and len(rows)<3:
@@ -1184,24 +1251,17 @@ class RmgOutData(DevBase):
                 j += 1
                 if len(row_line.strip())==0:
                     continue
-                #end if
                 values = leading_numbers(row_line)
                 if len(values)<3:
                     if len(rows)>0:
                         rows = []
                         break
-                    #end if
                     continue
-                #end if
                 if len(values)>=4 and int(values[0])==len(rows)+1:
                     values = values[1:]
-                #end if
                 rows.append(values[:3])
-            #end while
             if len(rows)==3:
                 tensors.append(np.array(rows,dtype=float))
-            #end if
-        #end for
         if len(tensors)>0:
             stress            = np.array(tensors,dtype=float)
             pressures         = -np.trace(stress,axis1=1,axis2=2)/3.0
@@ -1209,12 +1269,28 @@ class RmgOutData(DevBase):
             self.stress_units = 'kbar'
             self.pressures    = pressures
             self.pressure     = pressures[-1]
-        #end if
         return len(tensors)
     #end def read_stress
 
 
     def read_convergence(self,lines):
+        """Parse electronic and ionic convergence messages.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+
+        Returns
+        -------
+        int
+            Number of convergence indicators found.
+
+        Notes
+        -----
+        Binds ``convergence`` to an ``obj`` containing nullable Boolean
+        convergence indicators and integer success and failure counts.
+        """
         electronic_successes = 0
         electronic_failures  = 0
         ionic_converged      = None
@@ -1240,12 +1316,9 @@ class RmgOutData(DevBase):
             # Example: Force convergence has been achieved
             elif re.search(r'force\s+convergence.*\b(?:has\s+been\s+)?achieved\b',lower):
                 ionic_converged = True
-            #end if
-        #end for
         electronic_converged = None
         if electronic_successes+electronic_failures>0:
             electronic_converged = electronic_successes>0 and electronic_failures==0
-        #end if
         convergence = obj(
             electronic_converged = electronic_converged,
             electronic_successes = electronic_successes,
@@ -1256,12 +1329,29 @@ class RmgOutData(DevBase):
         nfound = electronic_successes+electronic_failures+(ionic_converged is not None)
         if nfound>0:
             self.convergence = convergence
-        #end if
         return nfound
     #end def read_convergence
 
 
     def read_timing(self,lines):
+        """Parse the RMG timing summary and its named sections.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+
+        Returns
+        -------
+        bool
+            Whether a total timing record was found.
+
+        Notes
+        -----
+        Binds ``timing`` to an ``obj`` containing total and per-step seconds.
+        Its ``sections`` member is an ``obj`` mapping normalized section names to
+        nested ``obj`` instances with ``total`` and ``per_step`` values.
+        """
         timing   = None
         sections = obj()
         # Match a finite, infinite, or NaN numeric token in the timing table.
@@ -1276,7 +1366,6 @@ class RmgOutData(DevBase):
             match = pattern.match(line)
             if match is None:
                 continue
-            #end if
             # Match spacing around the first dash so the section name can be normalized.
             # Example: 1 - TOTAL
             name     = re.sub(r'\s*-\s*','-',match.group(1).strip(),count=1)
@@ -1289,19 +1378,36 @@ class RmgOutData(DevBase):
             normalized_name = ' '.join(name.expandtabs().strip().split()).lower()
             if normalized_name=='1-total':
                 timing = obj(total=total,per_step=per_step,units='s')
-            #end if
-        #end for
         if timing is not None:
             timing.sections = sections
             self.timing     = timing
             return True
-        #end if
         return False
     #end def read_timing
 
 
     def read_band(self,lines):
+        """Read spin-resolved band structures from companion data files.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines. Band values are read from files
+            located beside the log; the argument maintains the reader interface.
+
+        Returns
+        -------
+        int
+            Number of spin-resolved band datasets found.
+
+        Notes
+        -----
+        Binds ``bands`` to an ``obj`` mapping integer spin indices to nested
+        ``obj`` instances. Each contains a path-distance array, a two-dimensional
+        band-energy array in eV, and its source filepath.
+        """
         def leading_numbers(line):
+            """Return the leading whitespace-separated numbers as a float array."""
             # Match a whitespace-separated numeric sequence at the start of a line.
             # Example: 0.0 -1.0
             npat    = self.number_pattern
@@ -1309,7 +1415,6 @@ class RmgOutData(DevBase):
             match   = re.match(pattern,line)
             if match is None:
                 return np.array([],dtype=float)
-            #end if
             # Find every RMG-formatted number in the matched numeric sequence.
             # Example: 0.0 -1.0
             values = re.findall(
@@ -1327,7 +1432,6 @@ class RmgOutData(DevBase):
             match = re.search(r'_spin(\d+)\.bandstructure\.dat$',filepath)
             if match is None:
                 continue
-            #end if
             groups = []
             group  = []
             with open(filepath,'r') as fobj:
@@ -1336,18 +1440,12 @@ class RmgOutData(DevBase):
                         if len(group)>0:
                             groups.append(np.array(group,dtype=float))
                             group = []
-                        #end if
                     else:
                         values = leading_numbers(line)
                         if len(values)>=2:
                             group.append(values[:2])
-                        #end if
-                    #end if
-                #end for
-            #end with
             if len(group)>0:
                 groups.append(np.array(group,dtype=float))
-            #end if
             if len(groups)>0 and len(set(len(g) for g in groups))==1:
                 spin = int(match.group(1))
                 bands[spin] = obj(
@@ -1356,17 +1454,36 @@ class RmgOutData(DevBase):
                     energy_units = 'eV',
                     filepath     = filepath,
                     )
-            #end if
-        #end for
         if len(bands)>0:
             self.bands = bands
-        #end if
         return len(bands)
     #end def read_band
 
 
     def read_tddft(self,lines):
+        """Read TDDFT energy and spin-resolved dipole time series.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines. Time series are read from companion
+            files located beside the log.
+
+        Returns
+        -------
+        int
+            Number of populated top-level TDDFT result groups.
+
+        Notes
+        -----
+        Binds ``tddft`` to an ``obj``. Its optional ``energy`` member contains
+        NumPy arrays for time and energy-component changes. Its optional
+        ``dipoles`` member maps spin indices to nested ``obj`` instances holding
+        time and dipole arrays, electric-field and ground-state vectors, and the
+        source filepath.
+        """
         def line_numbers(line):
+            """Return all RMG-formatted numbers in a line as a float array."""
             # Find every RMG-formatted number occurring anywhere in a line.
             # Example: &&electric field: 0.0 0.0 0.1
             values = re.findall(
@@ -1375,6 +1492,7 @@ class RmgOutData(DevBase):
         #end def line_numbers
 
         def leading_numbers(line):
+            """Return the leading whitespace-separated numbers as a float array."""
             # Match a whitespace-separated numeric sequence at the start of a line.
             # Example: 0.0 1.1 2.1 3.1
             npat    = self.number_pattern
@@ -1382,7 +1500,6 @@ class RmgOutData(DevBase):
             match   = re.match(pattern,line)
             if match is None:
                 return np.array([],dtype=float)
-            #end if
             return line_numbers(match.group(1))
         #end def leading_numbers
 
@@ -1396,13 +1513,9 @@ class RmgOutData(DevBase):
                 for line in fobj:
                     if line.lstrip().startswith('&&'):
                         continue
-                    #end if
                     values = leading_numbers(line)
                     if len(values)>=5:
                         rows.append(values[:5])
-                    #end if
-                #end for
-            #end with
             if len(rows)>0:
                 values = np.array(rows,dtype=float)
 
@@ -1415,8 +1528,6 @@ class RmgOutData(DevBase):
                     energy_units          = 'Ha',
                     filepath              = energy_file,
                     )
-            #end if
-        #end if
         dipoles = obj()
         for filepath in dipole_files:
             rows         = []
@@ -1430,20 +1541,14 @@ class RmgOutData(DevBase):
                         values = line_numbers(line.split(':',1)[-1])
                         if len(values)>=3:
                             field = values[:3]
-                        #end if
                     elif 'dipole at' in lower and len(values)>=3:
                         values = line_numbers(line.split(':',1)[-1])
                         if len(values)>=3:
                             ground_state = values[:3]
-                        #end if
                     elif not line.lstrip().startswith('&&'):
                         values = leading_numbers(line)
                         if len(values)>=4:
                             rows.append(values[:4])
-                        #end if
-                    #end if
-                #end for
-            #end with
             if len(rows)>0:
                 # Match and capture the spin index in a dipole filename.
                 # Example: input_spin0_dipole.dat
@@ -1457,57 +1562,63 @@ class RmgOutData(DevBase):
                     ground_state   = ground_state,
                     filepath       = filepath,
                     )
-            #end if
-        #end for
         if len(dipoles)>0:
             tddft.dipoles = dipoles
-        #end if
         if len(tddft)>0:
             self.tddft = tddft
-        #end if
         return len(tddft)
     #end def read_tddft
 
 
     def read_produced_files(self,lines):
+        """Locate files produced by EXX, STM, and QMCPACK-interface runs.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines. File discovery primarily uses the
+            output directory and parsed setup information.
+
+        Returns
+        -------
+        int
+            Combined number of discovered file entries.
+
+        Notes
+        -----
+        Binds ``produced_files`` to an ``obj`` whose members are lists of paths
+        for EXX or STM products or a string path for a QMCPACK restart file.
+        """
         produced_files = obj()
         mode           = self.run_mode
         if mode=='exx':
             exx_files = sorted(glob(os.path.join(self.path,'*exx*integral*.h5')))
             if len(exx_files)>0:
                 produced_files.exx_integrals = exx_files
-            #end if
-        #end if
         if mode=='stm':
             stm_files      = sorted(glob(os.path.join(self.path,'STM','*.stm')))
             stm_cube_files = sorted(glob(os.path.join(self.path,'STM','*.cube')))
             if len(stm_files)>0:
                 produced_files.stm = stm_files
-            #end if
             if len(stm_cube_files)>0:
                 produced_files.stm_cube = stm_cube_files
-            #end if
         elif mode=='scf' and 'files' in self.setup_info:
             data_output = self.setup_info.files.get('data_output_file',None)
             if data_output is not None:
                 qmcpack_file = os.path.join(self.path,data_output+'.h5')
                 if os.path.isfile(qmcpack_file):
                     produced_files.qmcpack_restart = qmcpack_file
-                #end if
-            #end if
-        #end if
         if len(produced_files)>0:
             self.produced_files = produced_files
-        #end if
         return sum(len(v) for v in produced_files.values())
     #end def read_produced_files
 
 
     def return_initial_structure(self):
+        """Return a detached copy of the initial structure, when available."""
         s = None
         if 'setup_info' in self and 'structure' in self.setup_info:
             s = deepcopy(self.setup_info.structure)
-        #end if
         return s
     #end def return_initial_structure
 
@@ -1516,8 +1627,10 @@ class RmgOutData(DevBase):
 
 
 class RmgAnalyzer(SimulationAnalyzer):
+    """Nexus analyzer wrapper for an RMG simulation and its parsed output."""
 
     def __init__(self,arg0=None,*,analyze=False):
+        """Initialize from an RMG simulation or log path and optionally analyze it."""
         self.path         = None
         self.abspath      = None
         self.outfile_name = None
@@ -1554,9 +1667,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                     'Path provided: {}'.format(filepath)
                     )
                 raise IsADirectoryError(msg)
-            #end if
             path,filename = os.path.split(filepath)
-        #end if
 
         self.path         = path
         self.abspath      = os.path.abspath(path)
@@ -1564,11 +1675,11 @@ class RmgAnalyzer(SimulationAnalyzer):
 
         if analyze:
             self.analyze()
-        #end if
     #end def __init__
 
 
     def analyze(self):
+        """Parse the configured RMG output into an ``RmgOutData`` instance."""
         filepath = os.path.join(self.path,self.outfile_name)
         results  = RmgOutData(filepath)
         self.results  = results
@@ -1578,6 +1689,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
 
     def return_initial_structure(self):
+        """Return the initial structure recovered from the analyzed output."""
         return self.results.return_initial_structure()
     #end def return_initial_structure
 
