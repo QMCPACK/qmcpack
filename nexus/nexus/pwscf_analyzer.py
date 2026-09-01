@@ -31,6 +31,7 @@ import re
 import xml.etree.ElementTree as ET
 from copy import deepcopy
 from glob import glob
+from types import MappingProxyType
 import numpy as np
 from .developer import DevBase,obj,dotdict
 from .unit_converter import convert
@@ -814,7 +815,7 @@ class PwscfOutData(DevBase):
                             float(match.group(name).replace('D','E').replace('d','e'))
                             for name in ('x','y','z')
                             ]
-                        axes.append(np.array(values,dtype=float))
+                        axes.append(values)
                 if len(axes)==3:
                     conf = obj()
                     axes = np.array(axes,dtype=float)
@@ -907,7 +908,7 @@ class PwscfOutData(DevBase):
                             float(match.group(name).replace('D','E').replace('d','e'))
                             for name in names
                             ]
-                        rows.append(list(np.array(values,dtype=float)))
+                        rows.append(values)
                 if len(rows)==3:
                     stress.extend(rows)
         if len(stress)>0:
@@ -945,7 +946,7 @@ class PwscfOutData(DevBase):
                             float(match.group(name).replace('D','E').replace('d','e'))
                             for name in ('fx','fy','fz')
                             ]
-                        aforces.append(np.array(values,dtype=float))
+                        aforces.append(values)
                     elif len(aforces)>0:
                         break
                     j+=1
@@ -1018,7 +1019,7 @@ class PwscfOutData(DevBase):
                     float(match.group(name).replace('D','E').replace('d','e'))
                     for name in ('kx','ky','kz')
                     ]
-                cart.append(np.array(coordinates,dtype=float))
+                cart.append(coordinates)
                 weights.append(
                     float(match.group('weight').replace('D','E').replace('d','e'))
                     )
@@ -1040,7 +1041,7 @@ class PwscfOutData(DevBase):
                     float(match.group(name).replace('D','E').replace('d','e'))
                     for name in ('kx','ky','kz')
                     ]
-                unit.append(np.array(coordinates,dtype=float))
+                unit.append(coordinates)
             if not valid:
                 continue
             self.kpoints_cart = np.array(cart,dtype=float)
@@ -1339,7 +1340,7 @@ class PwscfXmlData(DevBase):
                 values = np.array([
                     float(token.replace('D','E').replace('d','e'))
                     for token in tokens
-                    ])
+                    ],dtype=float)
                 if len(values)==1:
                     value = values[0]
                     if value.is_integer() and all(c not in text.lower() for c in ('.','e')):
@@ -1434,7 +1435,7 @@ class PwscfXmlData(DevBase):
             values = np.array([
                 float(token.replace('D','E').replace('d','e'))
                 for token in tokens
-                ])
+                ],dtype=float)
             if len(values)>1:
                 return values
             number = values[0]
@@ -1945,37 +1946,33 @@ class PwscfAnalyzer(SimulationAnalyzer):
     ``md``, and ``vc-md``.
     """
 
-    all_modes        = {'scf','nscf','bands','relax','vc-relax','md','vc-md'}
-    energy_modes     = {'scf','nscf','relax','vc-relax','md','vc-md'}
+    all_modes        = frozenset({'scf','nscf','bands','relax','vc-relax','md','vc-md'})
+    energy_modes     = frozenset({'scf','nscf','relax','vc-relax','md','vc-md'})
     electronic_modes = all_modes
-    relaxation_modes = {'relax','vc-relax'}
-    force_modes      = {'scf','relax','vc-relax','md','vc-md'}
-    pressure_units   = {
+    relaxation_modes = frozenset({'relax','vc-relax'})
+    force_modes      = frozenset({'scf','relax','vc-relax','md','vc-md'})
+    pressure_units   = MappingProxyType({
         'Pa'   : 1.0,
         'bar'  : 1e5,
         'kbar' : 1e8,
         'Mbar' : 1e11,
         'GPa'  : 1e9,
         'atm'  : 1.01325e5,
-        }
+        })
 
 
     def _require_supported(self,quantity,modes):
         """Require analyzed output and a calculation supporting the quantity."""
         if 'results_out' not in self or self.results_out is None:
-            raise RuntimeError(
-                'PWSCF quantity "{}" is unavailable because output has not been analyzed'
-                .format(quantity)
-                )
+            msg = f'PWSCF quantity "{quantity}" is unavailable because output has not been analyzed'
+            raise RuntimeError(msg)
         calculation = self.results_out.calculation
         if isinstance(self.results_xml,PwscfXmlData):
             if self.results_xml.calculation is not None:
                 calculation = self.results_xml.calculation
         if calculation not in modes:
-            raise RuntimeError(
-                'PWSCF quantity "{}" is not supported for calculation "{}"'
-                .format(quantity,calculation)
-                )
+            msg = f'PWSCF quantity "{quantity}" is not supported for calculation "{calculation}"'
+            raise RuntimeError(msg)
     #end def _require_supported
 
 
