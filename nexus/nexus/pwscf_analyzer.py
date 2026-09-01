@@ -6,21 +6,18 @@
 #====================================================================#
 #  pwscf_analyzer.py                                                 #
 #    Supports data analysis for PWSCF output.  Can handle log file   #
-#    and XML output.                                                 #
+#    and legacy XML output.                                          #
 #                                                                    #
 #  Content summary:                                                  #
 #    PwscfOutData                                                    #
 #      Reads and stores physical data from PWSCF log output.         #
-#                                                                    #
-#    PwscfXmlData                                                    #
-#      Reads and stores schema-based PWSCF XML output.               #
 #                                                                    #
 #    Pw2CasinoAnalyzer                                               #
 #      Reads and stores physical data from PW2CASINO output.         #
 #                                                                    #
 #    PwscfAnalyzer                                                   #
 #      SimulationAnalyzer class for PWSCF.                           #
-#      Coordinates text and XML output analysis.                     #
+#      Coordinates text and legacy XML output analysis.              #
 #      Can also read data-file.xml.  See pwscf_data_reader.py.       #
 #                                                                    #
 #====================================================================#
@@ -28,16 +25,13 @@
 
 import os
 import re
-import xml.etree.ElementTree as ET
 from copy import deepcopy
 from glob import glob
 from types import MappingProxyType
 
 import numpy as np
 
-from . import numpy_extensions as npe
-from .developer import DevBase, dotdict, obj
-from .numerics import simplestats, simstats
+from .developer import DevBase, obj
 from .pwscf_data_reader import read_qexml
 from .pwscf_input import PwscfInput
 from .simulation import Simulation, SimulationAnalyzer
@@ -62,15 +56,6 @@ number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
 leading_number_list_pattern = (
     rf'^\s*(?P<values>{number_pattern}'
     rf'(?:(?:\s+|(?=[+-])){number_pattern})*)'
-    )
-
-
-# Match an entire whitespace-separated numeric text field.  This is tailored
-# to schema XML arrays such as ``0.0 0.5 -0.5`` and ``1.0D+00\n0.0D+00``.
-# Unlike the band-line pattern, it rejects adjacent values (``0.5-0.5``),
-# units (``1.0 Ry``), labels (``weight=1.0``), and trailing prose.
-numeric_text_pattern = (
-    rf'^\s*(?P<values>{number_pattern}(?:\s+{number_pattern})*)\s*$'
     )
 
 
@@ -126,44 +111,6 @@ total_energy_pattern = (
 scf_accuracy_pattern = (
     rf'\bestimated\s+scf\s+accuracy\s*[<=>]\s*'
     rf'(?P<accuracy>{number_pattern})\s+Ry\b'
-    )
-
-
-# Match the ionic kinetic energy printed during molecular dynamics.  It
-# accepts ``kinetic energy = 0.00285013 Ry`` and the parenthesized-label form
-# ``kinetic energy (Ekin) = 2.85D-03 Ry``.  Temperature lines, eV values, and
-# a bare ``Ekin =`` summary are intentionally handled by other patterns.
-kinetic_energy_pattern = (
-    rf'\bkinetic\s+energy(?:\s*\(Ekin\))?\s*=\s*'
-    rf'(?P<kinetic_energy>{number_pattern})\s+Ry\b'
-    )
-
-
-# Match the instantaneous ionic temperature, for example
-# ``temperature = 300.00000000 K`` or ``temperature=2.5D+02 K``.
-# It rejects target-temperature prose, a missing Kelvin unit, and the compact
-# ``Ekin ... T =`` summary that is parsed as a coupled record below.
-temperature_pattern = (
-    rf'^\s*temperature\s*=\s*(?P<temperature>{number_pattern})\s+K\b'
-    )
-
-
-# Match the coupled kinetic-energy/temperature record used by variable-cell
-# dynamics.  Examples include ``Ekin = .00285 Ry T = 300.0 K Etot = ...`` and
-# ``Ekin=2.8D-03 Ry  T=0.0 K``.  A missing Ry or K unit, reversed field order,
-# or an isolated Ekin or T value is rejected so partial records are not used.
-ekin_temperature_pattern = (
-    rf'^\s*Ekin\s*=\s*(?P<kinetic_energy>{number_pattern})\s+Ry\s+'
-    rf'T\s*=\s*(?P<temperature>{number_pattern})\s+K\b'
-    )
-
-
-# Match the dynamics time assignment in either standard MD output
-# (``time = 0.50000 pico-seconds``) or the ``Entering Dynamics`` line
-# (``Entering Dynamics; it = 1 time = 0.00000 pico-seconds``).  Requiring a
-# time unit avoids taking the integer from ``it =`` or an unrelated timer.
-md_time_pattern = (
-    rf'\btime\s*=\s*(?P<time>{number_pattern})\s*(?:pico-seconds|ps)\b'
     )
 
 
@@ -258,100 +205,60 @@ def match_float(pattern,line):
 class PwscfOutData(DevBase):
     """Read and store physical data from PWSCF text output.
 
-    The calculation type and available result fields are determined solely
-    from the output log.  Each reader tolerates absent or incomplete records
-    and retains any complete physical data that precedes them.
-
     Parameters
     ----------
     filepath : str or os.PathLike
         Path to the PWSCF text-output file.
-    md_only : bool, default=False
-        For molecular-dynamics calculations, stop after reading the dynamics
-        history and leave the remaining applicable attributes as ``None``.
 
     Attributes
     ----------
-    calculation : {'scf', 'nscf', 'bands', 'relax', 'vc-relax', 'md', 'vc-md'}
-        Calculation type inferred from the output text.  This attribute is
-        present for every calculation type.
+    calculation : {'scf', 'nscf', 'relax', 'vc-relax'}
+        Calculation type inferred from the output text.
     Ef : float or None
-        Final Fermi energy in eV.  Present for every calculation type.
+        Final Fermi energy in eV.
     fermi_energies : numpy.ndarray or None
-        One-dimensional history of Fermi energies in eV.  Present for every
-        calculation type.
+        One-dimensional history of Fermi energies in eV.
     bands : obj or None
         Spin-resolved band records.  The ``up`` and ``down`` members map
         k-point indices to objects containing ``eigs`` and ``occs`` arrays,
         k-point coordinates, polarization, and optional band-edge data.
-        Present for every calculation type.
     volume : float or None
-        Final unit-cell volume in bohr cubed.  Present for every calculation
-        type.
+        Final unit-cell volume in bohr cubed.
     cputime, walltime : float or None
-        Total CPU and wall-clock time in hours.  Present for every calculation
-        type.
+        Total CPU and wall-clock time in hours.
     kpoints_cart, kpoints_unit : numpy.ndarray or None
         Cartesian and crystal k-point arrays with shape ``(nkpoints, 3)``.
-        Present for every calculation type.
     kweights : numpy.ndarray or None
         One-dimensional k-point weight array.  Present for every calculation
         type.
     E : float or None
-        Final total energy in Ry.  Present for ``scf``, ``relax``,
-        ``vc-relax``, ``md``, and ``vc-md`` calculations.
+        Final total energy in Ry for ``scf``, ``relax``, and ``vc-relax``.
     relax_energies : numpy.ndarray or None
         One-dimensional sequence of completed SCF total energies in Ry.
-        Present for ``scf``, ``relax``, ``vc-relax``, ``md``, and ``vc-md``.
     scf_conv_energy, scf_conv_accuracy : numpy.ndarray or None
-        SCF-iteration energies and estimated accuracies in Ry.  Present for
-        ``scf``, ``relax``, ``vc-relax``, ``md``, and ``vc-md``.
+        SCF-iteration energies and estimated accuracies in Ry.
     pressure : float or None
-        Final pressure in kbar.  Present for ``scf``, ``relax``,
-        ``vc-relax``, ``md``, and ``vc-md`` calculations.
+        Final pressure in kbar.
     stress : list of list of float or None
-        Reported stress rows, with three rows per stress tensor.  Present for
-        ``scf``, ``relax``, ``vc-relax``, ``md``, and ``vc-md``.
+        Reported stress rows, with three rows per stress tensor.
     forces : numpy.ndarray or None
         Atomic-force history with shape ``(nsteps, natoms, 3)`` in Ry/bohr.
-        Present for ``scf``, ``relax``, ``vc-relax``, ``md``, and ``vc-md``.
     tot_forces, max_forces : numpy.ndarray or None
         One-dimensional histories of reported total forces and maximum atomic
-        force magnitudes.  Present for ``scf``, ``relax``, ``vc-relax``,
-        ``md``, and ``vc-md``.
+        force magnitudes.
     relax_structures : obj or None
         Integer-indexed structure records containing atom labels, Cartesian
-        positions, and, when reported, cell axes.  Present for ``relax``,
-        ``vc-relax``, ``md``, and ``vc-md`` calculations.
-    md_data : obj or None
-        Molecular-dynamics histories.  Its ``total_energy``, ``pressure``,
-        ``time``, ``kinetic_energy``, ``temperature``, and
-        ``potential_energy`` members are one-dimensional NumPy arrays.
-        Present for ``md`` and ``vc-md`` calculations.
-    md_stats : obj or None
-        Molecular-dynamics summary statistics.  Each member is a
-        ``(mean, error)`` tuple of floats.  Present for ``md`` and ``vc-md``.
+        positions, and, when reported, cell axes.  Present for relaxation
+        calculations.
 
     Notes
     -----
-    The expected attribute groups by calculation type are:
-
-    ``scf``
-        Common attributes plus energy, convergence, pressure, stress, and
-        force attributes.
-    ``nscf`` and ``bands``
-        Common attributes only.
-    ``relax`` and ``vc-relax``
-        The ``scf`` attributes plus ``relax_structures``.
-    ``md`` and ``vc-md``
-        The relaxation attributes plus ``md_data`` and ``md_stats``.
-
     An applicable attribute remains ``None`` when its record is absent or
     cannot be parsed.  Attributes that do not apply to the inferred
     calculation type are removed from the object.
     """
 
-    def __init__(self,filepath,*,md_only=False):
+    def __init__(self,filepath):
         """Read a PWSCF log and initialize its accessible physical data."""
         self.calculation = None
 
@@ -365,7 +272,7 @@ class PwscfOutData(DevBase):
         self.kpoints_cart      = None
         self.kpoints_unit      = None
         self.kweights          = None
-        # scf/relax/vc-relax/md/vc-md
+        # scf/relax/vc-relax
         self.E                 = None
         self.relax_energies    = None
         self.scf_conv_energy   = None
@@ -375,10 +282,7 @@ class PwscfOutData(DevBase):
         self.forces            = None
         self.tot_forces        = None
         self.max_forces        = None
-        # md/vc-md
-        self.md_data           = None
-        self.md_stats          = None
-        # md/vc-md/relax/vc-relax
+        # relax/vc-relax
         self.relax_structures  = None
 
         with open(filepath,'r') as fobj:
@@ -386,36 +290,28 @@ class PwscfOutData(DevBase):
         # read the calculation type
         self.read_calculation(lines)
         # remove unused attributes, depending on the calculation type
-        if self.calculation in {'nscf','bands'}:
+        if self.calculation=='nscf':
             for name in {  # noqa: PLC0208
                 'E','relax_energies','scf_conv_energy','scf_conv_accuracy',
                 'pressure','stress','forces','tot_forces','max_forces',
                 }:
                 del self[name]
             #end for
-        if self.calculation in {'scf','nscf','bands','relax','vc-relax'}:
-            del self.md_data
-            del self.md_stats
-        if self.calculation in {'scf','nscf','bands'}:
+        if self.calculation in {'scf','nscf'}:
             del self.relax_structures
-        # read md
-        if self.calculation in {'md','vc-md'}:
-            self.read_md(lines)
-            if md_only:
-                return
         # all calculations
         self.read_fermi_energies(lines)
         self.read_kpoints(lines)
         self.read_bands(lines)
         self.read_pressure_volume(lines)
-        # all but nscf/bands
-        if self.calculation in {'scf','md','vc-md','relax','vc-relax'}:
+        # all but nscf
+        if self.calculation in {'scf','relax','vc-relax'}:
             self.read_scf_convergence(lines)
             self.read_energies(lines)
             self.read_stress(lines)
             self.read_forces(lines)
-        # all but scf/nscf/bands
-        if self.calculation in {'md','vc-md','relax','vc-relax'}:
+        # relaxation calculations
+        if self.calculation in {'relax','vc-relax'}:
             self.read_structures(lines)
 
         self.read_timing(lines)
@@ -424,16 +320,15 @@ class PwscfOutData(DevBase):
 
     def read_calculation(self,lines):
         """Infer and bind the PWSCF calculation type from log records."""
-        has_cell        = any(line.strip().startswith('CELL_PARAMETERS') for line in lines)
-        has_bfgs        = any('BFGS Geometry Optimization' in line for line in lines)
-        has_band_run    = any('Band Structure Calculation' in line for line in lines)
-        has_vc_dynamics = any('Entering Dynamics;' in line for line in lines)
-        has_dynamics    = has_vc_dynamics or any(
-            'Molecular Dynamics Calculation' in line or 'Entering Dynamics:' in line
+        has_cell     = any(line.strip().startswith('CELL_PARAMETERS') for line in lines)
+        has_bfgs     = any('BFGS Geometry Optimization' in line for line in lines)
+        has_band_run = any('Band Structure Calculation' in line for line in lines)
+        has_dynamics = any(
+            'Entering Dynamics' in line or 'Molecular Dynamics Calculation' in line
             for line in lines
             )
         if has_dynamics:
-            calculation = 'vc-md' if has_vc_dynamics or has_cell else 'md'
+            raise RuntimeError('PWSCF molecular-dynamics calculations are not supported')
         elif has_bfgs:
             calculation = 'vc-relax' if has_cell else 'relax'
         elif has_band_run:
@@ -445,76 +340,14 @@ class PwscfOutData(DevBase):
                 or 'occupation numbers' in line
                 for line in lines
                 )
-            calculation = 'nscf' if has_reference else 'bands'
+            if not has_reference:
+                raise RuntimeError('PWSCF bands calculations are not supported')
+            calculation = 'nscf'
         else:
             calculation = 'scf'
         self.calculation = calculation
     #end def read_calculation
 
-
-    def read_md(self,lines):
-        """Read and bind molecular-dynamics histories.
-
-        Complete ionic steps are stored in ``md_data`` as an ``obj`` of
-        one-dimensional NumPy arrays named ``total_energy``, ``pressure``,
-        ``time``, ``kinetic_energy``, ``temperature``, and
-        ``potential_energy``.  ``md_stats`` contains a ``(mean, error)``
-        tuple for each array.  Fixed-cell ``md`` and variable-cell ``vc-md``
-        outputs provide time, kinetic energy, and temperature in different
-        line formats, but produce the same stored data structure.
-
-        Only steps containing all required quantities are retained.
-        """
-        def record_value(name,pattern,line):
-            """Add a matched value to the current dynamics record."""
-            value = match_float(pattern,line)
-            if value is not None and 'total_energy' in record:
-                record[name] = value
-        #end def record_value
-
-        if self.calculation not in {'md','vc-md'}:
-            return
-
-        records  = []
-        record   = dotdict()
-        required = ('total_energy','pressure','time','kinetic_energy','temperature')
-        for line in lines:
-            if line.lstrip().startswith('!') and 'total energy' in line:
-                energy = match_float(total_energy_pattern,line)
-                record = dotdict()
-                if energy is not None:
-                    record.total_energy = energy
-            elif 'total   stress' in line and 'P=' in line:
-                record_value('pressure',pressure_pattern,line)
-            if self.calculation=='md':
-                if 'time      =' in line:
-                    record_value('time',md_time_pattern,line)
-                elif 'kinetic energy' in line and '=' in line:
-                    record_value('kinetic_energy',kinetic_energy_pattern,line)
-                elif line.strip().startswith('temperature') and '=' in line:
-                    record_value('temperature',temperature_pattern,line)
-            elif 'Entering Dynamics;' in line and 'time' in line:
-                record_value('time',md_time_pattern,line)
-            elif line.strip().startswith('Ekin'):
-                match = re.search(ekin_temperature_pattern,line)
-                if match is not None and 'total_energy' in record:
-                    for name in {'kinetic_energy','temperature'}:  # noqa: PLC0208
-                        record[name] = float(
-                            match.group(name).replace('D','E').replace('d','e')
-                            )
-            if all(name in record for name in required):
-                records.append(record)
-                record = dotdict()
-        if len(records)==0:
-            return
-        md = obj({
-            name:np.array([record[name] for record in records],dtype=float)
-            for name in required
-            })
-        md.potential_energy = md.total_energy - md.kinetic_energy
-        self.md_data        = md
-        self.md_stats       = self.md_statistics()
-    #end def read_md
 
 
     def read_fermi_energies(self,lines):
@@ -792,9 +625,8 @@ class PwscfOutData(DevBase):
         ``CELL_PARAMETERS`` block is available.  Crystal positions are
         converted to Cartesian coordinates when those axes are known.
 
-        The layout is the same for ``relax``, ``vc-relax``, ``md``, and
-        ``vc-md``.  Fixed-cell output can omit cell blocks, while variable-cell
-        output normally supplies new axes with each structure.
+        Fixed-cell output can omit cell blocks, while variable-cell output
+        normally supplies new axes with each structure.
         """
         structures = obj()
         conf       = None
@@ -1049,754 +881,9 @@ class PwscfOutData(DevBase):
     #end def read_kpoints
 
 
-    def md_statistics(self,equil=None,autocorr=None):
-        """Build summary statistics for each molecular-dynamics history.
-
-        The returned ``obj`` has the same quantity names as ``md_data``.  Each
-        value is a ``(mean, error)`` tuple.  ``equil`` discards an initial
-        number of samples; ``autocorr`` optionally groups the remaining data
-        into blocks of that length before estimating the error.  This method
-        is used to bind ``md_stats`` after a complete MD history is read.
-        """
-        mds = obj()
-        for quantity,values in self.md_data.items():
-            if equil is not None:
-                values = values[equil:]
-            if autocorr is None:
-                mean,_,error,_ = simstats(values)
-            else:
-                nvalues = len(values)
-                nblocks = int(np.floor(float(nvalues)/autocorr))
-                values  = values[nvalues-nblocks*autocorr:]
-                npe.reshape_inplace(values,(nblocks,autocorr))
-                mean,error = simplestats(values.mean(axis=1))
-            mds[quantity] = mean,error
-        return mds
-    #end def md_statistics
-
 #end class PwscfOutData
 
 
-
-class PwscfXmlData(DevBase):
-    """Read physical results from schema-based Quantum ESPRESSO XML output.
-
-    The complete converted XML hierarchy is retained while commonly used
-    materials data are exposed directly as scalars and NumPy arrays.  Results
-    that are absent or incomplete remain ``None``.
-
-    Parameters
-    ----------
-    filepath : str or os.PathLike
-        Path to a ``data-file-schema.xml`` file.
-
-    Attributes
-    ----------
-    data : obj or None
-        Complete converted XML hierarchy rooted at ``data.root``.  It is
-        ``None`` only when the XML file cannot be read.
-    parse_failed : bool
-        Whether direct reading or XML syntax parsing failed.
-    version : str or None
-        Quantum ESPRESSO version reported by the XML creator record.
-    calculation : {'scf', 'nscf', 'bands', 'relax', 'vc-relax', 'md', 'vc-md'} or None
-        Calculation type reported in the input section of the XML file.
-    exit_status : int or None
-        Program exit status.
-    total_energy, band_energy, hartree_energy : float or None
-        Final total, band, and Hartree energies.
-    xc_energy, xc_potential_energy, ewald_energy : float or None
-        Final exchange-correlation, exchange-correlation potential, and Ewald
-        energy contributions.
-    scf_converged : bool or None
-        Whether the final self-consistent calculation converged.
-    scf_steps : int or None
-        Number of electronic iterations in the final SCF cycle.
-    scf_error : float or None
-        Estimated error from the final SCF cycle.
-    initial_atoms, atoms : numpy.ndarray or None
-        One-dimensional arrays of initial and final atomic species labels.
-    initial_positions, positions : numpy.ndarray or None
-        Initial and final Cartesian atomic positions with shape ``(natoms, 3)``.
-    initial_axes, axes : numpy.ndarray or None
-        Initial and final cell axes with shape ``(3, 3)``.
-    initial_alat, alat : float or None
-        Initial and final lattice parameters reported by PWSCF.
-    initial_volume, volume : float or None
-        Initial and final cell volumes computed from the cell axes.
-    forces : numpy.ndarray or None
-        Final atomic forces with shape ``(natoms, 3)``.  This attribute is not
-        present for ``nscf`` and ``bands`` calculations.
-    stress : numpy.ndarray or None
-        Final stress tensor with shape ``(3, 3)``.  This attribute is not
-        present for ``nscf`` and ``bands`` calculations.
-    functional : str or None
-        Exchange-correlation functional reported by PWSCF.
-    spin_polarized, noncollinear, spin_orbit : bool or None
-        Collinear spin-polarization, noncollinearity, and spin-orbit flags.
-    absolute_magnetization : float or None
-        Final absolute magnetization.
-    nelectrons : float or None
-        Number of electrons.
-    nbands, nkpoints : int or None
-        Numbers of electronic bands and k-points.
-    kgrid, kshift : numpy.ndarray or None
-        Three-element integer arrays containing the Monkhorst-Pack grid and
-        grid shift.
-    fermi_energy : float or None
-        Final Fermi energy.
-    highest_occupied_level, lowest_unoccupied_level : float or None
-        Highest occupied and lowest unoccupied electronic energy levels.
-    occupations_kind : str or None
-        Occupation method reported in the band-structure record.
-    kpoints_rel : numpy.ndarray or None
-        K-point coordinates in units of ``2 pi/alat`` with shape
-        ``(nkpoints, 3)``.
-    kweights : numpy.ndarray or None
-        K-point weights with shape ``(nkpoints,)``.
-    eigenvalues, occupations : numpy.ndarray or None
-        Electronic eigenvalues and occupations.  The shape is
-        ``(nkpoints, nbands)`` for non-spin-polarized calculations and
-        ``(2, nkpoints, nbands)`` for collinear spin-polarized calculations.
-    plane_waves : numpy.ndarray or None
-        Number of plane waves at each k-point.  The shape is ``(nkpoints,)``
-        for non-spin-polarized calculations and ``(2, nkpoints)`` for
-        collinear spin-polarized calculations.
-    species : numpy.ndarray or None
-        One-dimensional array of unique atomic species labels.
-    atomic_masses : numpy.ndarray or None
-        Atomic mass for each species.
-    pseudopotentials : numpy.ndarray or None
-        Pseudopotential filename for each species.
-    valence_charges : numpy.ndarray or None
-        Pseudopotential valence charge for each species.
-    ecutwfc, ecutrho : float or None
-        Wavefunction and charge-density plane-wave cutoffs.
-    gamma_only : bool or None
-        Whether the plane-wave basis uses gamma-only storage.
-    ngm, ngms, npwx : int or None
-        Plane-wave and smooth-grid vector counts and the maximum number of
-        wavefunction plane waves.
-    fft_grid, fft_smooth, fft_box : numpy.ndarray or None
-        Three-element integer arrays containing FFT-grid dimensions.
-    reciprocal_lattice : numpy.ndarray or None
-        Reciprocal-lattice vectors with shape ``(3, 3)``.
-    nsym, nrot, space_group : int or None
-        Numbers of active symmetries and rotations and the space-group index.
-    symmetry_names, symmetry_classes : numpy.ndarray or None
-        One-dimensional string arrays describing each parsed symmetry.
-    symmetry_rotations : numpy.ndarray or None
-        Symmetry rotation matrices with shape ``(nsym, 3, 3)``.
-    symmetry_translations : numpy.ndarray or None
-        Fractional translations with shape ``(nsym, 3)``.
-    equivalent_atoms : numpy.ndarray or None
-        Equivalent-atom indices with shape ``(nsym, natoms)``.
-    cpu_time, wall_time : float or None
-        Total CPU and wall-clock times reported in the XML timing record.
-    optimization_converged : bool or None
-        Whether ionic optimization converged.  Present only for ``relax`` and
-        ``vc-relax`` calculations.
-    optimization_steps : int or None
-        Number of ionic optimization steps.  Present only for ``relax`` and
-        ``vc-relax`` calculations.
-    gradient_norm : float or None
-        Final ionic gradient norm.  Present only for ``relax`` and
-        ``vc-relax`` calculations.
-    trajectory_energies, trajectory_band_energies : numpy.ndarray or None
-        Total- and band-energy histories over ionic steps.
-    trajectory_hartree_energies, trajectory_xc_energies : numpy.ndarray or None
-        Hartree- and exchange-correlation-energy histories over ionic steps.
-    trajectory_xc_potential_energies, trajectory_ewald_energies : numpy.ndarray or None
-        Exchange-correlation-potential and Ewald-energy histories over ionic
-        steps.
-    trajectory_positions : numpy.ndarray or None
-        Atomic-position history with shape ``(nsteps, natoms, 3)``.
-    trajectory_axes : numpy.ndarray or None
-        Cell-axis history with shape ``(nsteps, 3, 3)``.
-    trajectory_volumes : numpy.ndarray or None
-        Cell-volume history with shape ``(nsteps,)``.
-    trajectory_forces : numpy.ndarray or None
-        Atomic-force history with shape ``(nsteps, natoms, 3)``.
-    trajectory_stress : numpy.ndarray or None
-        Stress-tensor history with shape ``(nsteps, 3, 3)``.
-    trajectory_scf_converged : numpy.ndarray or None
-        Boolean SCF-convergence history over ionic steps.
-    trajectory_scf_steps : numpy.ndarray or None
-        Number of SCF iterations at each ionic step.
-    trajectory_scf_error : numpy.ndarray or None
-        Estimated SCF error at each ionic step.
-
-    Notes
-    -----
-    Trajectory attributes are present only for ``relax``, ``vc-relax``,
-    ``md``, and ``vc-md`` calculations.  Applicable attributes remain
-    ``None`` when their XML records are absent or incomplete; attributes that
-    do not apply to the reported calculation type are removed.  Physical
-    quantities retain the native units of the Quantum ESPRESSO schema,
-    generally atomic units.
-    """
-
-    def __init__(self,filepath):
-        """Read schema XML and initialize extracted PWSCF results."""
-        self.data                         = None
-        self.parse_failed                 = False
-        self.version                      = None
-        self.calculation                  = None
-        self.exit_status                  = None
-        self.total_energy                 = None
-        self.band_energy                  = None
-        self.hartree_energy               = None
-        self.xc_energy                    = None
-        self.xc_potential_energy          = None
-        self.ewald_energy                 = None
-        self.scf_converged                = None
-        self.scf_steps                    = None
-        self.scf_error                    = None
-        self.initial_atoms                = None
-        self.initial_positions            = None
-        self.initial_axes                 = None
-        self.initial_alat                 = None
-        self.initial_volume               = None
-        self.atoms                        = None
-        self.positions                    = None
-        self.axes                         = None
-        self.alat                         = None
-        self.volume                       = None
-        self.forces                       = None
-        self.stress                       = None
-        self.functional                   = None
-        self.spin_polarized               = None
-        self.noncollinear                 = None
-        self.spin_orbit                   = None
-        self.absolute_magnetization       = None
-        self.nelectrons                   = None
-        self.nbands                       = None
-        self.nkpoints                     = None
-        self.kgrid                        = None
-        self.kshift                       = None
-        self.fermi_energy                 = None
-        self.highest_occupied_level       = None
-        self.lowest_unoccupied_level      = None
-        self.occupations_kind             = None
-        self.kpoints_rel                  = None
-        self.kweights                     = None
-        self.eigenvalues                  = None
-        self.occupations                  = None
-        self.plane_waves                  = None
-        self.species                      = None
-        self.atomic_masses                = None
-        self.pseudopotentials             = None
-        self.valence_charges              = None
-        self.ecutwfc                      = None
-        self.ecutrho                      = None
-        self.gamma_only                   = None
-        self.ngm                          = None
-        self.ngms                         = None
-        self.npwx                         = None
-        self.fft_grid                     = None
-        self.fft_smooth                   = None
-        self.fft_box                      = None
-        self.reciprocal_lattice           = None
-        self.nsym                         = None
-        self.nrot                         = None
-        self.space_group                  = None
-        self.symmetry_names               = None
-        self.symmetry_classes             = None
-        self.symmetry_rotations           = None
-        self.symmetry_translations        = None
-        self.equivalent_atoms             = None
-        self.cpu_time                     = None
-        self.wall_time                    = None
-        self.optimization_converged       = None
-        self.optimization_steps           = None
-        self.gradient_norm                = None
-        self.trajectory_energies              = None
-        self.trajectory_band_energies         = None
-        self.trajectory_hartree_energies      = None
-        self.trajectory_xc_energies           = None
-        self.trajectory_xc_potential_energies = None
-        self.trajectory_ewald_energies        = None
-        self.trajectory_positions             = None
-        self.trajectory_axes                  = None
-        self.trajectory_volumes               = None
-        self.trajectory_forces                = None
-        self.trajectory_stress                = None
-        self.trajectory_scf_converged         = None
-        self.trajectory_scf_steps             = None
-        self.trajectory_scf_error             = None
-
-        def xml_value(text):
-            """Convert XML text to its natural scalar or array value."""
-            text = text.strip()
-            if len(text)==0:
-                return ''
-            if text.lower() in {'true','false'}:
-                return text.lower()=='true'
-            match = re.fullmatch(numeric_text_pattern,text)
-            if match is not None:
-                tokens = re.findall(number_pattern,match.group('values'))
-                values = np.array([
-                    float(token.replace('D','E').replace('d','e'))
-                    for token in tokens
-                    ],dtype=float)
-                if len(values)==1:
-                    value = values[0]
-                    if value.is_integer() and all(c not in text.lower() for c in {'.','e'}):  # noqa: PLC0208
-                        return int(value)
-                    return value
-                return values
-            return text
-        #end def xml_value
-
-        def xml_element(element):
-            """Convert an XML element tree to an object hierarchy."""
-            node = obj()
-            for name,value in element.attrib.items():
-                node[name.lower()] = xml_value(value)
-            groups = {}
-            for child in element:
-                name = child.tag.rsplit('}',1)[-1].lower()
-                groups.setdefault(name,[]).append(child)
-            for name,group in groups.items():
-                node[name] = (
-                    xml_element(group[0])
-                    if len(group)==1
-                    else obj({i+1:xml_element(child) for i,child in enumerate(group)})
-                    )
-            text = (element.text or '').strip()
-            if len(text)>0:
-                value = xml_value(text)
-                if len(node)==0:
-                    return value
-                node.value = value
-            return node
-        #end def xml_element
-
-        try:
-            root = ET.parse(filepath).getroot()
-        except (OSError,UnicodeError,ET.ParseError):
-            self.parse_failed = True
-            return
-
-        self.data = obj(root=xml_element(root))
-        self.extract_results(root)
-    #end def __init__
-
-
-    def extract_results(self,root):
-        """Extract user-facing physical quantities from the schema XML tree."""
-        def child(element,name):
-            """Return a named direct child element."""
-            if element is None:
-                return None
-            name = name.lower()
-            return next(
-                (item for item in element
-                 if item.tag.rsplit('}',1)[-1].lower()==name),
-                None,
-                )
-        #end def child
-
-        def children(element,name):
-            """Return all named direct child elements."""
-            if element is None:
-                return []
-            name = name.lower()
-            return [
-                item for item in element
-                if item.tag.rsplit('}',1)[-1].lower()==name
-                ]
-        #end def children
-
-        def path(element,*names):
-            """Follow a direct-child path through the XML tree."""
-            for name in names:
-                element = child(element,name)
-                if element is None:
-                    break
-            return element
-        #end def path
-
-        def value(element):
-            """Convert a scalar or numeric-array element value."""
-            if element is None:
-                return None
-            text = (element.text or '').strip()
-            if len(text)==0:
-                return None
-            if text.lower() in {'true','false'}:
-                return text.lower()=='true'
-            match = re.fullmatch(numeric_text_pattern,text)
-            if match is None:
-                return text
-            tokens = re.findall(number_pattern,match.group('values'))
-            values = np.array([
-                float(token.replace('D','E').replace('d','e'))
-                for token in tokens
-                ],dtype=float)
-            if len(values)>1:
-                return values
-            number = values[0]
-            if number.is_integer() and all(c not in text.lower() for c in {'.','e'}):  # noqa: PLC0208
-                return int(number)
-            return float(number)
-        #end def value
-
-        def array(element,dtype=float):
-            """Return element text as a one-dimensional array."""
-            result = value(element)
-            if result is None or isinstance(result,(str,bool)):
-                return None
-            return np.asarray(result,dtype=dtype).reshape(-1)
-        #end def array
-
-        def matrix(element,ncols):
-            """Return element text as a matrix with a fixed column count."""
-            result = array(element)
-            if result is None or len(result)%ncols!=0:
-                return None
-            return result.reshape(-1,ncols)
-        #end def matrix
-
-        def structure(element):
-            """Return atom labels, positions, and cell axes from a structure."""
-            atoms     = None
-            positions = None
-            axes      = None
-            position_element = child(element,'atomic_positions')
-            atom_elements    = children(position_element,'atom')
-            if len(atom_elements)>0:
-                labels = []
-                rows   = []
-                for atom in atom_elements:
-                    coordinates = array(atom)
-                    if coordinates is None or len(coordinates)<3:
-                        rows = []
-                        break
-                    labels.append(atom.attrib.get('name',''))
-                    rows.append(coordinates[:3])
-                if len(rows)>0:
-                    atoms     = np.array(labels,dtype=str)
-                    positions = np.array(rows,dtype=float)
-            cell = child(element,'cell')
-            rows = [array(child(cell,name)) for name in ('a1','a2','a3')]
-            if all(row is not None and len(row)>=3 for row in rows):
-                axes = np.array([row[:3] for row in rows],dtype=float)
-            return atoms,positions,axes
-        #end def structure
-
-        def complete_array(values,dtype=float):
-            """Stack a sequence only when every entry is available."""
-            if len(values)==0 or any(item is None for item in values):
-                return None
-            try:
-                return np.array(values,dtype=dtype)
-            except ValueError:
-                return None
-        #end def complete_array
-
-        # version and calculation type
-        creator = path(root,'general_info','creator')
-        if creator is not None:
-            self.version = creator.attrib.get('VERSION',creator.attrib.get('version'))
-        self.calculation = value(path(root,'input','control_variables','calculation'))
-
-        # principal XML sections
-        input_element  = child(root,'input')
-        output         = child(root,'output')
-        band_structure = child(output,'band_structure')
-
-        # exit status and total-energy components
-        self.exit_status = value(child(root,'exit_status'))
-        energy = child(output,'total_energy')
-        energy_members = (
-            ('total_energy','etot'),
-            ('band_energy','eband'),
-            ('hartree_energy','ehart'),
-            ('xc_energy','etxc'),
-            ('xc_potential_energy','vtxc'),
-            ('ewald_energy','ewald'),
-            )
-        for member,name in energy_members:
-            self[member] = value(child(energy,name))
-
-        # electronic and structural convergence
-        convergence = child(output,'convergence_info')
-        scf_conv     = child(convergence,'scf_conv')
-        self.scf_converged = value(child(scf_conv,'convergence_achieved'))
-        self.scf_steps     = value(child(scf_conv,'n_scf_steps'))
-        self.scf_error     = value(child(scf_conv,'scf_error'))
-        opt_conv = child(convergence,'opt_conv')
-        self.optimization_converged = value(child(opt_conv,'convergence_achieved'))
-        self.optimization_steps     = value(child(opt_conv,'n_opt_steps'))
-        self.gradient_norm          = value(child(opt_conv,'grad_norm'))
-
-        # initial and final structures, forces, and stress
-        initial_structure = child(input_element,'atomic_structure')
-        final_structure   = child(output,'atomic_structure')
-        self.initial_atoms,self.initial_positions,self.initial_axes = structure(initial_structure)
-        self.atoms,self.positions,self.axes = structure(final_structure)
-        for member,element in {
-            ('initial_alat',initial_structure),
-            ('alat',final_structure),
-            }:
-            text = None if element is None else element.attrib.get('alat')
-            if text is not None and re.fullmatch(number_pattern,text.strip()) is not None:
-                self[member] = float(text.replace('D','E').replace('d','e'))
-        if self.initial_axes is not None:
-            self.initial_volume = abs(np.linalg.det(self.initial_axes))
-        if self.axes is not None:
-            self.volume = abs(np.linalg.det(self.axes))
-        self.forces = matrix(child(output,'forces'),3)
-        self.stress = matrix(child(output,'stress'),3)
-
-        # exchange-correlation functional and magnetization
-        dft = child(output,'dft')
-        self.functional = value(child(dft,'functional'))
-        magnetization = child(output,'magnetization')
-        self.spin_polarized         = value(child(magnetization,'lsda'))
-        self.noncollinear           = value(child(magnetization,'noncolin'))
-        self.spin_orbit             = value(child(magnetization,'spinorbit'))
-        self.absolute_magnetization = value(child(magnetization,'absolute'))
-
-        # electron, band, occupation, and Fermi-level counts and values
-        self.nelectrons              = value(child(band_structure,'nelec'))
-        self.nbands                  = value(child(band_structure,'nbnd'))
-        self.nkpoints                = value(child(band_structure,'nks'))
-        self.fermi_energy            = value(child(band_structure,'fermi_energy'))
-        self.highest_occupied_level  = value(child(band_structure,'highestOccupiedLevel'))
-        self.lowest_unoccupied_level = value(child(band_structure,'lowestUnoccupiedLevel'))
-        self.occupations_kind        = value(child(band_structure,'occupations_kind'))
-        lsda = value(child(band_structure,'lsda'))
-        if lsda is not None:
-            self.spin_polarized = lsda
-
-        # k-points, weights, eigenvalues, occupations, and plane-wave counts
-        records = children(band_structure,'ks_energies')
-        coordinate_map = {}
-        electronic     = []
-        for record in records:
-            k_element  = child(record,'k_point')
-            coordinates = array(k_element)
-            eigenvalues = array(child(record,'eigenvalues'))
-            occupations = array(child(record,'occupations'))
-            weight_text = '' if k_element is None else k_element.attrib.get('weight','')
-            if (coordinates is None
-                or len(coordinates)<3
-                or eigenvalues is None
-                or occupations is None
-                or len(eigenvalues)!=len(occupations)
-                or re.fullmatch(number_pattern,weight_text.strip()) is None
-                ):
-                continue
-            coordinates = coordinates[:3]
-            key = (
-                tuple(np.round(coordinates,12))
-                if self.spin_polarized else len(electronic)
-                )
-            if key not in coordinate_map:
-                coordinate_map[key] = len(electronic)
-                electronic.append(dotdict(
-                    kpoint      = coordinates,
-                    weight      = float(weight_text.replace('D','E').replace('d','e')),
-                    eigenvalues = [],
-                    occupations = [],
-                    plane_waves = [],
-                    ))
-            entry = electronic[coordinate_map[key]]
-            entry.eigenvalues.append(eigenvalues)
-            entry.occupations.append(occupations)
-            entry.plane_waves.append(value(child(record,'npw')))
-        if len(electronic)>0:
-            self.kpoints_rel = np.array([entry.kpoint for entry in electronic],dtype=float)
-            self.kweights    = np.array([entry.weight for entry in electronic],dtype=float)
-            nspin = 2 if self.spin_polarized else 1
-            if all(len(entry.eigenvalues)==nspin for entry in electronic):
-                eigenvalues = complete_array([
-                    [entry.eigenvalues[spin] for entry in electronic]
-                    for spin in range(nspin)
-                    ])
-                occupations = complete_array([
-                    [entry.occupations[spin] for entry in electronic]
-                    for spin in range(nspin)
-                    ])
-                plane_waves = complete_array([
-                    [entry.plane_waves[spin] for entry in electronic]
-                    for spin in range(nspin)
-                    ])
-                if nspin==1:
-                    if eigenvalues is not None:
-                        eigenvalues = eigenvalues[0]
-                    if occupations is not None:
-                        occupations = occupations[0]
-                    if plane_waves is not None:
-                        plane_waves = plane_waves[0]
-                self.eigenvalues = eigenvalues
-                self.occupations = occupations
-                self.plane_waves = plane_waves
-
-        # atomic species, masses, pseudopotentials, and valence charges
-        species_elements = children(child(output,'atomic_species'),'species')
-        if len(species_elements)>0:
-            names       = []
-            masses      = []
-            pseudos     = []
-            charges     = []
-            complete_z  = True
-            for species in species_elements:
-                names.append(species.attrib.get('name',''))
-                masses.append(value(child(species,'mass')))
-                pseudo = child(species,'pseudo_file')
-                pseudos.append(value(pseudo))
-                zval = None if pseudo is None else pseudo.attrib.get('Zval',pseudo.attrib.get('zval'))
-                if zval is None or re.fullmatch(number_pattern,zval.strip()) is None:
-                    complete_z = False
-                else:
-                    charges.append(float(zval.replace('D','E').replace('d','e')))
-            #end for
-            self.species          = np.array(names,dtype=str)
-            self.atomic_masses    = complete_array(masses)
-            self.pseudopotentials = np.array(pseudos,dtype=str)
-            if complete_z:
-                self.valence_charges = np.array(charges,dtype=float)
-
-        # plane-wave cutoffs, FFT grids, and reciprocal lattice
-        basis = child(output,'basis_set')
-        self.ecutwfc    = value(child(basis,'ecutwfc'))
-        self.ecutrho    = value(child(basis,'ecutrho'))
-        self.gamma_only = value(child(basis,'gamma_only'))
-        self.ngm        = value(child(basis,'ngm'))
-        self.ngms       = value(child(basis,'ngms'))
-        self.npwx       = value(child(basis,'npwx'))
-        for member,name in {
-            ('fft_grid','fft_grid'),
-            ('fft_smooth','fft_smooth'),
-            ('fft_box','fft_box'),
-            }:
-            element = child(basis,name)
-            if element is not None:
-                dimensions = [
-                    element.attrib.get(label)
-                    for label in ('nr1','nr2','nr3')
-                    ]
-                if all(item is not None for item in dimensions):
-                    self[member] = np.array(dimensions,dtype=int)
-        reciprocal = child(basis,'reciprocal_lattice')
-        rows = [array(child(reciprocal,name)) for name in ('b1','b2','b3')]
-        if all(row is not None and len(row)>=3 for row in rows):
-            self.reciprocal_lattice = np.array([row[:3] for row in rows],dtype=float)
-
-        # Monkhorst-Pack grid and shift
-        starting_kpoints = child(band_structure,'starting_k_points')
-        if starting_kpoints is None:
-            starting_kpoints = child(basis,'starting_k_points')
-        monkhorst_pack = child(starting_kpoints,'monkhorst_pack')
-        if monkhorst_pack is not None:
-            grid  = [monkhorst_pack.attrib.get(f'nk{i}') for i in range(1,4)]
-            shift = [monkhorst_pack.attrib.get(f'k{i}') for i in range(1,4)]
-            if all(item is not None for item in grid):
-                self.kgrid = np.array(grid,dtype=int)
-            if all(item is not None for item in shift):
-                self.kshift = np.array(shift,dtype=int)
-
-        # crystal symmetry operations and equivalent atoms
-        symmetries         = child(output,'symmetries')
-        self.nsym          = value(child(symmetries,'nsym'))
-        self.nrot          = value(child(symmetries,'nrot'))
-        self.space_group   = value(child(symmetries,'space_group'))
-        symmetry_elements = children(symmetries,'symmetry')
-        names        = []
-        classes      = []
-        rotations    = []
-        translations = []
-        equivalents  = []
-        for symmetry in symmetry_elements:
-            info        = child(symmetry,'info')
-            rotation    = matrix(child(symmetry,'rotation'),3)
-            translation = array(child(symmetry,'fractional_translation'))
-            equivalent  = array(child(symmetry,'equivalent_atoms'),dtype=int)
-            if (info is None
-                or rotation is None
-                or rotation.shape!=(3,3)
-                or translation is None
-                or len(translation)<3
-                or equivalent is None
-                ):
-                continue
-            names.append(info.attrib.get('name',''))
-            classes.append(info.attrib.get('class',''))
-            rotations.append(rotation)
-            translations.append(translation[:3])
-            equivalents.append(equivalent)
-        if len(rotations)>0:
-            self.symmetry_names        = np.array(names,dtype=str)
-            self.symmetry_classes      = np.array(classes,dtype=str)
-            self.symmetry_rotations    = np.array(rotations,dtype=float)
-            self.symmetry_translations = np.array(translations,dtype=float)
-            self.equivalent_atoms      = complete_array(equivalents,dtype=int)
-
-        # total execution timing
-        timing = path(root,'timing_info','total')
-        self.cpu_time  = value(child(timing,'cpu'))
-        self.wall_time = value(child(timing,'wall'))
-
-        # ionic-step energy, structure, force, stress, and convergence histories
-        steps = children(root,'step')
-        if len(steps)>0:
-            trajectory = dotdict(
-                energies              = [],
-                band_energies         = [],
-                hartree_energies      = [],
-                xc_energies           = [],
-                xc_potential_energies = [],
-                ewald_energies        = [],
-                positions             = [],
-                axes                  = [],
-                volumes               = [],
-                forces                = [],
-                stress                = [],
-                scf_converged         = [],
-                scf_steps             = [],
-                scf_error             = [],
-                )
-            for step in steps:
-                step_energy = child(step,'total_energy')
-                trajectory.energies.append(value(child(step_energy,'etot')))
-                trajectory.band_energies.append(value(child(step_energy,'eband')))
-                trajectory.hartree_energies.append(value(child(step_energy,'ehart')))
-                trajectory.xc_energies.append(value(child(step_energy,'etxc')))
-                trajectory.xc_potential_energies.append(value(child(step_energy,'vtxc')))
-                trajectory.ewald_energies.append(value(child(step_energy,'ewald')))
-                _,positions,axes = structure(child(step,'atomic_structure'))
-                trajectory.positions.append(positions)
-                trajectory.axes.append(axes)
-                trajectory.volumes.append(
-                    None if axes is None else abs(np.linalg.det(axes))
-                    )
-                trajectory.forces.append(matrix(child(step,'forces'),3))
-                trajectory.stress.append(matrix(child(step,'stress'),3))
-                step_scf = child(step,'scf_conv')
-                trajectory.scf_converged.append(value(child(step_scf,'convergence_achieved')))
-                trajectory.scf_steps.append(value(child(step_scf,'n_scf_steps')))
-                trajectory.scf_error.append(value(child(step_scf,'scf_error')))
-            for member in trajectory:
-                self['trajectory_'+member] = complete_array(trajectory[member])
-
-        # calculation-specific result membership updates
-        if self.calculation in {'nscf','bands'}:
-            del self.forces
-            del self.stress
-        if self.calculation not in {'relax','vc-relax'}:
-            del self.optimization_converged
-            del self.optimization_steps
-            del self.gradient_norm
-        if self.calculation not in {'relax','vc-relax','md','vc-md'}:
-            for name in tuple(self.keys()):
-                if name.startswith('trajectory_'):
-                    del self[name]
-    #end def extract_results
-
-#end class PwscfXmlData
 
 
 
@@ -1829,9 +916,8 @@ class Pw2CasinoAnalyzer(DevBase):
 class PwscfAnalyzer(SimulationAnalyzer):
     """Analyze output produced by Quantum ESPRESSO PWscf calculations.
 
-    The analyzer coordinates PWSCF text, auxiliary, and XML readers across
-    common run modes. It also provides summaries and visualizations useful
-    for inspecting molecular dynamics and electronic structure.
+    The analyzer coordinates PWSCF text, auxiliary, and legacy XML readers
+    for SCF, NSCF, relaxation, and variable-cell relaxation calculations.
 
     Parameters
     ----------
@@ -1847,11 +933,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
     pw2c_outfile_name : str, optional
         Name of an accompanying PW2CASINO output file.
     analyze : bool, optional
-        If ``True``, parse the available log, XML, and auxiliary output during
-        initialization.
-    md_only : bool, optional
-        Limit text-output analysis to molecular-dynamics data. Available XML
-        output is still parsed.
+        If ``True``, parse the available log, legacy XML, and auxiliary output
+        during initialization.
 
     Attributes
     ----------
@@ -1863,8 +946,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         Names of the PWSCF input and text-output files.
     pw2c_outfile_name : str or None
         Name of the optional PW2CASINO output file.
-    info : obj
-        General analyzer metadata, including the ``md_only`` setting.
     input : PwscfInput or None
         Parsed PWSCF input when an input file is available.
     simulation_structure : Structure
@@ -1873,9 +954,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
     results_out : PwscfOutData or None
         Parsed PWSCF text-output data. It is ``None`` until analysis is
         performed.
-    results_xml : PwscfXmlData or obj or None
-        Parsed schema or legacy XML data. It remains ``None`` when XML output
-        is absent or cannot be read.
+    results_xml : obj or None
+        Parsed legacy XML data. It remains ``None`` when legacy XML output is
+        absent or cannot be read.
     pw2casino : Pw2CasinoAnalyzer or None
         Parsed PW2CASINO data when an auxiliary output file is requested.
 
@@ -1930,25 +1011,24 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     Notes
     -----
-    Log and XML output are both parsed automatically when present. Query
-    methods prefer schema XML data and fall back to text-output data. A query
-    returns ``None`` when its quantity applies to the detected calculation but
-    was not parsed. Calling a query before analysis or for an unsupported
-    calculation raises ``RuntimeError``. Supplying unsupported units raises
-    ``ValueError``.
+    Log output is parsed automatically, and legacy XML is retained when
+    present. Physical quantity methods use only the text-output results. A
+    query returns ``None`` when its quantity applies to the detected
+    calculation but was not parsed. Calling a query before analysis or for an
+    unsupported calculation raises ``RuntimeError``. Supplying unsupported
+    units raises ``ValueError``.
 
     Initial structure, k-point, and electronic quantities apply to all
-    supported calculation modes. Energy applies to all modes except
-    ``bands``; relaxed structures apply only to ``relax`` and ``vc-relax``;
-    forces, stress, and pressure apply to ``scf``, ``relax``, ``vc-relax``,
-    ``md``, and ``vc-md``.
+    supported calculation modes. Relaxed structures apply only to ``relax``
+    and ``vc-relax``; forces, stress, and pressure apply to ``scf``,
+    ``relax``, and ``vc-relax``.
     """
 
-    all_modes        = frozenset({'scf','nscf','bands','relax','vc-relax','md','vc-md'})
-    energy_modes     = frozenset({'scf','nscf','relax','vc-relax','md','vc-md'})
+    all_modes        = frozenset({'scf','nscf','relax','vc-relax'})
+    energy_modes     = all_modes
     electronic_modes = all_modes
     relaxation_modes = frozenset({'relax','vc-relax'})
-    force_modes      = frozenset({'scf','relax','vc-relax','md','vc-md'})
+    force_modes      = frozenset({'scf','relax','vc-relax'})
     pressure_units   = MappingProxyType({
         'Pa'   : 1.0,
         'bar'  : 1e5,
@@ -1965,11 +1045,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
             msg = f'PWSCF quantity "{quantity}" is unavailable because output has not been analyzed'
             raise RuntimeError(msg)
         calculation = self.results_out.calculation
-        if (
-            isinstance(self.results_xml,PwscfXmlData)
-            and self.results_xml.calculation is not None
-            ):
-            calculation = self.results_xml.calculation
         if calculation not in modes:
             msg = f'PWSCF quantity "{quantity}" is not supported for calculation "{calculation}"'
             raise RuntimeError(msg)
@@ -1981,20 +1056,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('initial_structure',self.all_modes)
         if units not in {'A','B'}:
             raise ValueError('initial_structure units must be one of: A, B')
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        if (xml is not None
-            and xml.initial_atoms is not None
-            and xml.initial_positions is not None
-            and xml.initial_axes is not None
-            ):
-            structure = Structure(
-                axes    = xml.initial_axes.copy(),
-                elem    = xml.initial_atoms.copy(),
-                pos     = xml.initial_positions.copy(),
-                units   = 'B',
-                rescale = False,
-                )
-        elif 'simulation_structure' in self and self.simulation_structure is not None:
+        if 'simulation_structure' in self and self.simulation_structure is not None:
             structure = deepcopy(self.simulation_structure)
         elif (self.input is not None
             and 'system' in self.input
@@ -2024,9 +1086,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('energy',self.energy_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('energy units must be one of: eV, Ha, Ry')
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        if xml is not None and xml.total_energy is not None:
-            return convert(xml.total_energy,'Ha',units)
         if 'E' in self.results_out and self.results_out.E is not None:
             return convert(self.results_out.E,'Ry',units)
         return None
@@ -2038,14 +1097,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('kpoints',self.all_modes)
         if units not in {'A','B'}:
             raise ValueError('kpoints units must be one of: A, B')
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
         kpoints = None
-        if xml is not None and xml.kpoints_rel is not None:
-            scale = xml.alat if xml.alat is not None else xml.initial_alat
-            if scale is not None and scale>0:
-                kpoints = xml.kpoints_rel*2*np.pi/scale
-        if (kpoints is None
-            and self.results_out.kpoints_cart is not None
+        if (self.results_out.kpoints_cart is not None
             and self.input is not None
             and 'system' in self.input
             ):
@@ -2070,9 +1123,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def kweights(self):
         """Return dimensionless k-point weights, or ``None`` if unavailable."""
         self._require_supported('kweights',self.all_modes)
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        if xml is not None and xml.kweights is not None:
-            return xml.kweights
         return self.results_out.kweights
     #end def kweights
 
@@ -2111,12 +1161,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('eigenvalues',self.electronic_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('eigenvalues units must be one of: eV, Ha, Ry')
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        if xml is not None and xml.eigenvalues is not None:
-            values = xml.eigenvalues
-            if values.ndim==3:
-                values = np.transpose(values,(1,0,2))
-            return convert(values,'Ha',units)
         values = self._log_band_values('eigs')
         if values is None:
             return None
@@ -2127,12 +1171,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def occupations(self):
         """Return the dimensionless k-point-major occupation array."""
         self._require_supported('occupations',self.electronic_modes)
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        if xml is not None and xml.occupations is not None:
-            values = xml.occupations
-            if values.ndim==3:
-                values = np.transpose(values,(1,0,2))
-            return values
         return self._log_band_values('occs')
     #end def occupations
 
@@ -2142,9 +1180,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('Ef',self.electronic_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('Ef units must be one of: eV, Ha, Ry')
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        if xml is not None and xml.fermi_energy is not None:
-            return convert(xml.fermi_energy,'Ha',units)
         if self.results_out.Ef is not None:
             return convert(self.results_out.Ef,'eV',units)
         return None
@@ -2156,9 +1191,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('Evbm',self.electronic_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('Evbm units must be one of: eV, Ha, Ry')
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        if xml is not None and xml.highest_occupied_level is not None:
-            return convert(xml.highest_occupied_level,'Ha',units)
         bands = self.results_out.bands
         if bands is not None and 'vbm' in bands:
             return convert(bands.vbm.energy,'eV',units)
@@ -2171,9 +1203,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('Ecbm',self.electronic_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('Ecbm units must be one of: eV, Ha, Ry')
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        if xml is not None and xml.lowest_unoccupied_level is not None:
-            return convert(xml.lowest_unoccupied_level,'Ha',units)
         bands = self.results_out.bands
         if bands is not None and 'cbm' in bands:
             return convert(bands.cbm.energy,'eV',units)
@@ -2186,13 +1215,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('band_gap',self.electronic_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('band_gap units must be one of: eV, Ha, Ry')
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        if (xml is not None
-            and xml.highest_occupied_level is not None
-            and xml.lowest_unoccupied_level is not None
-            ):
-            gap = xml.lowest_unoccupied_level-xml.highest_occupied_level
-            return convert(gap,'Ha',units)
         bands = self.results_out.bands
         if bands is not None and 'vbm' in bands and 'cbm' in bands:
             gap = bands.cbm.energy-bands.vbm.energy
@@ -2219,20 +1241,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('relaxed_structure',self.relaxation_modes)
         if units not in {'A','B'}:
             raise ValueError('relaxed_structure units must be one of: A, B')
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        if (xml is not None
-            and xml.atoms is not None
-            and xml.positions is not None
-            and xml.axes is not None
-            ):
-            structure = Structure(
-                axes    = xml.axes.copy(),
-                elem    = xml.atoms.copy(),
-                pos     = xml.positions.copy(),
-                units   = 'B',
-                rescale = False,
-                )
-        elif ('relax_structures' in self.results_out
+        if ('relax_structures' in self.results_out
             and self.results_out.relax_structures is not None
             and len(self.results_out.relax_structures)>0
             ):
@@ -2263,23 +1272,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('forces',self.force_modes)
         if units not in {'eV/A','Ry/B','Ha/B'}:
             raise ValueError('forces units must be one of: eV/A, Ry/B, Ha/B')
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        values        = None
-        source_energy = None
-        if xml is not None:
-            if 'trajectory_forces' in xml and xml.trajectory_forces is not None:
-                values = xml.trajectory_forces
-            elif 'forces' in xml and xml.forces is not None:
-                values = xml.forces[np.newaxis,:,:]
-            if values is not None:
-                source_energy = 'Ha'
-        if values is None and self.results_out.forces is not None:
-            values        = self.results_out.forces
-            source_energy = 'Ry'
+        values = self.results_out.forces
         if values is None:
             return None
         energy_units,length_units = units.split('/')
-        factor = convert(1.0,source_energy,energy_units)/convert(1.0,'B',length_units)
+        factor = convert(1.0,'Ry',energy_units)/convert(1.0,'B',length_units)
         return values*factor
     #end def forces
 
@@ -2290,27 +1287,15 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if units not in self.pressure_units:
             supported = ', '.join(sorted(self.pressure_units))
             raise ValueError('stress units must be one of: '+supported)
-        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
-        values          = None
-        source_pressure = None
-        if xml is not None:
-            if 'trajectory_stress' in xml and xml.trajectory_stress is not None:
-                values = xml.trajectory_stress
-            elif 'stress' in xml and xml.stress is not None:
-                values = xml.stress[np.newaxis,:,:]
-            if values is not None:
-                hartree = convert(1.0,'Ha','J')
-                bohr    = convert(1.0,'B','m')
-                source_pressure = hartree/bohr**3
-        if values is None and self.results_out.stress is not None:
+        values = None
+        if self.results_out.stress is not None:
             rows = np.asarray(self.results_out.stress,dtype=float)
             if rows.ndim!=2 or rows.shape[1]<6 or len(rows)%3!=0:
                 return None
-            values          = rows[:,3:6].reshape(-1,3,3)
-            source_pressure = 1e8
+            values = rows[:,3:6].reshape(-1,3,3)
         if values is None:
             return None
-        return values*source_pressure/self.pressure_units[units]
+        return values*1e8/self.pressure_units[units]
     #end def stress
 
 
@@ -2337,7 +1322,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         pw2c_outfile_name = None,
         *,
         analyze           = False,
-        md_only           = False,
         ):
         """Initialize an analyzer for a PWSCF simulation or output path."""
         if isinstance(arg0,Simulation):
@@ -2381,7 +1365,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 msg = f'PWSCF input file is not available\nfile not found: {infile}'
                 raise FileNotFoundError(msg)
 
-        self.info              = obj(md_only=md_only)
         self.infile_name       = infile_name
         self.outfile_name      = outfile_name
         self.path              = path
@@ -2397,7 +1380,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def analyze(self):
-        """Analyze available PWSCF text, XML, and auxiliary output."""
+        """Analyze available PWSCF text, legacy XML, and auxiliary output."""
         self.results_out = None
         self.results_xml = None
         self.pw2casino   = None
@@ -2410,10 +1393,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if not os.path.isfile(outfile):
             msg = f'PWSCF output file is not available\nfile not found: {outfile}'
             raise FileNotFoundError(msg)
-        self.results_out = PwscfOutData(outfile,md_only=self.info.md_only)
+        self.results_out = PwscfOutData(outfile)
         self.analyze_xml()
-        if self.info.md_only:
-            return
         if self.pw2c_outfile_name is not None:
             filepath = os.path.join(self.path,self.pw2c_outfile_name)
             if os.path.isfile(filepath):
@@ -2425,9 +1406,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
     def analyze_xml(self):
-        """Locate and parse schema or legacy PWscf XML output."""
+        """Locate and parse legacy PWscf XML output."""
         self.results_xml = None
-        schema_file = None
         legacy_file = None
         legacy_dir  = None
         if ('input' in self
@@ -2438,56 +1418,26 @@ class PwscfAnalyzer(SimulationAnalyzer):
             ):
             cont         = self.input.control
             savedir      = os.path.join(self.path,cont.outdir,f'{cont.prefix}.save')
-            schema_path  = os.path.join(savedir,'data-file-schema.xml')
             legacy_path  = os.path.join(savedir,'data-file.xml')
-            fallback_dir = os.path.join(self.path,cont.outdir)
-            fallback     = os.path.join(fallback_dir,f'{cont.prefix}.xml')
-            if os.path.isfile(schema_path):
-                schema_file = schema_path
-            elif os.path.isfile(legacy_path):
+            if os.path.isfile(legacy_path):
                 legacy_file = legacy_path
                 legacy_dir  = savedir
-            elif os.path.isfile(fallback):
-                legacy_file = fallback
-                legacy_dir  = fallback_dir
 
-        if schema_file is None and legacy_file is None:
-            schema_candidates = sorted(set(
-                glob(os.path.join(self.path,'*.save','data-file-schema.xml'))
-                + glob(os.path.join(self.path,'*','*.save','data-file-schema.xml'))
+        if legacy_file is None:
+            legacy_candidates = sorted(set(
+                glob(os.path.join(self.path,'*.save','data-file.xml'))
+                + glob(os.path.join(self.path,'*','*.save','data-file.xml'))
                 ))
-            if len(schema_candidates)==1:
-                schema_file = schema_candidates[0]
-            else:
-                legacy_candidates = sorted(set(
-                    glob(os.path.join(self.path,'*.save','data-file.xml'))
-                    + glob(os.path.join(self.path,'*','*.save','data-file.xml'))
-                    + glob(os.path.join(self.path,'*.xml'))
-                    + glob(os.path.join(self.path,'*','*.xml'))
-                    ))
-                if len(legacy_candidates)==1:
-                    legacy_file = legacy_candidates[0]
-                    legacy_dir  = os.path.dirname(legacy_file)
-
-        if schema_file is not None:
-            results_xml = PwscfXmlData(schema_file)
-            if results_xml.parse_failed:
-                return
-            self.results_xml = results_xml
-        else:
-            if legacy_file is None:
-                return
-            results_xml = PwscfXmlData(legacy_file)
-            if results_xml.parse_failed:
-                return
-            if results_xml.calculation is not None:
-                self.results_xml = results_xml
-                return
-            data = read_qexml(legacy_file)
-            self.results_xml = obj(data=None,kpoints=None,failed=False)
-            self.analyze_legacy_xml(data,legacy_dir)
-            if self.results_xml.failed:
-                self.results_xml = None
+            if len(legacy_candidates)==1:
+                legacy_file = legacy_candidates[0]
+                legacy_dir  = os.path.dirname(legacy_file)
+        if legacy_file is None:
+            return
+        data = read_qexml(legacy_file)
+        self.results_xml = obj(data=None,kpoints=None,failed=False)
+        self.analyze_legacy_xml(data,legacy_dir)
+        if self.results_xml.failed:
+            self.results_xml = None
     #end def analyze_xml
 
 
@@ -2544,56 +1494,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
 
-    def md_statistics(self,equil=None,autocorr=None):
-        """Calculate summary statistics for molecular-dynamics histories."""
-        if ('results_out' not in self
-            or self.results_out is None
-            or 'md_data' not in self.results_out
-            or self.results_out.md_data is None
-            ):
-            return
-        return self.results_out.md_statistics(equil,autocorr)
-    #end def md_statistics
-
-
-    def md_plots(self,*,show=True):
-        """Plot energy, temperature, and pressure histories from dynamics."""
-        if ('results_out' not in self
-            or self.results_out is None
-            or 'md_data' not in self.results_out
-            or self.results_out.md_data is None
-            ):
-            return
-        md = self.results_out.md_data
-
-        import matplotlib.pyplot as plt
-        fig = plt.figure()
-
-        plt.subplot(3,1,1)
-        plt.plot(md.time,md.total_energy-md.total_energy[0],label='Etot')
-        plt.plot(md.time,md.kinetic_energy-md.kinetic_energy[0],label='Ekin')
-        plt.plot(md.time,md.potential_energy-md.potential_energy[0],label='Epot')
-        plt.ylabel('E (Ryd)')
-        plt.legend()
-
-        plt.subplot(3,1,2)
-        plt.plot(md.time,md.temperature)
-        plt.ylabel('T (K)')
-
-        plt.subplot(3,1,3)
-        plt.plot(md.time,md.pressure)
-        plt.ylabel('P (kbar)')
-        plt.xlabel('time (ps)')
-
-        if show:
-            plt.show()
-
-        return fig
-    #end def md_plots
-
 
     def make_movie(self,filename,filepath=None):
-        """Write relaxed or dynamic structures as a tiled XYZ movie."""
+        """Write relaxed structures as a tiled XYZ movie."""
         if ('results_out' not in self
             or self.results_out is None
             or 'relax_structures' not in self.results_out
