@@ -755,7 +755,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return the input ``Structure`` in Angstrom or bohr."""
         self._require_supported('initial_structure',self.all_modes)
         if units not in {'A','B'}:
-            raise ValueError('initial_structure units must be one of: A, B')
+            msg = 'initial_structure units must be one of: A, B'
+            raise ValueError(msg)
         if 'structure' not in self.results.setup_info:
             return None
         structure = deepcopy(self.results.setup_info.structure)
@@ -768,7 +769,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return the final total energy in eV, Hartree, or Rydberg."""
         self._require_supported('energy',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('energy units must be one of: eV, Ha, Ry')
+            msg = 'energy units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         value        = self.results.energy
         source_units = self.results.energy_units
         if value is None or source_units is None:
@@ -784,7 +786,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return Cartesian k-points in inverse Angstrom or inverse bohr."""
         self._require_supported('kpoints',self.all_modes)
         if units not in {'A','B'}:
-            raise ValueError('kpoints units must be one of: A, B')
+            msg = 'kpoints units must be one of: A, B'
+            raise ValueError(msg)
         electronic = self.results.electronic if 'electronic' in self.results else None
         if electronic is not None and 'kpoints' in electronic:
             kpoints = electronic.kpoints
@@ -811,7 +814,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return K-point-major eigenvalues in eV, Hartree, or Rydberg."""
         self._require_supported('eigenvalues',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('eigenvalues units must be one of: eV, Ha, Ry')
+            msg = 'eigenvalues units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         electronic = self.results.electronic
         if electronic is None or 'eigenvalues' not in electronic:
             return None
@@ -833,7 +837,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return the final Fermi energy in eV, Hartree, or Rydberg."""
         self._require_supported('Ef',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('Ef units must be one of: eV, Ha, Ry')
+            msg = 'Ef units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         electronic = self.results.electronic
         if electronic is None or len(electronic.fermi_energies)==0:
             return None
@@ -845,7 +850,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return the final valence-band maximum in selected energy units."""
         self._require_supported('Evbm',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('Evbm units must be one of: eV, Ha, Ry')
+            msg = 'Evbm units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         electronic = self.results.electronic
         if electronic is None or len(electronic.valence_band_maxima)==0:
             return None
@@ -857,7 +863,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return the final conduction-band minimum in selected energy units."""
         self._require_supported('Ecbm',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('Ecbm units must be one of: eV, Ha, Ry')
+            msg = 'Ecbm units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         electronic = self.results.electronic
         if electronic is None or len(electronic.conduction_band_minima)==0:
             return None
@@ -869,7 +876,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return the final band gap in eV, Hartree, or Rydberg."""
         self._require_supported('band_gap',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('band_gap units must be one of: eV, Ha, Ry')
+            msg = 'band_gap units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         electronic = self.results.electronic
         if electronic is None or len(electronic.band_gaps)==0:
             return None
@@ -896,7 +904,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return the final relaxed ``Structure`` in Angstrom or bohr."""
         self._require_supported('relaxed_structure',self.relaxation_modes)
         if units not in {'A','B'}:
-            raise ValueError('relaxed_structure units must be one of: A, B')
+            msg = 'relaxed_structure units must be one of: A, B'
+            raise ValueError(msg)
         structures = self.results.structures
         if structures is None or len(structures)==0:
             return None
@@ -910,7 +919,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return ionic forces in ``eV/A``, ``Ry/B``, or ``Ha/B``."""
         self._require_supported('forces',self.all_modes)
         if units not in {'eV/A','Ry/B','Ha/B'}:
-            raise ValueError('forces units must be one of: eV/A, Ry/B, Ha/B')
+            msg = 'forces units must be one of: eV/A, Ry/B, Ha/B'
+            raise ValueError(msg)
         forces = self.results.forces
         if forces is None:
             return None
