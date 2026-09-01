@@ -12,9 +12,6 @@
 #    PwscfOutData                                                    #
 #      Reads and stores physical data from PWSCF log output.         #
 #                                                                    #
-#    Pw2CasinoAnalyzer                                               #
-#      Reads and stores physical data from PW2CASINO output.         #
-#                                                                    #
 #    PwscfAnalyzer                                                   #
 #      SimulationAnalyzer class for PWSCF.                           #
 #      Coordinates text and legacy XML output analysis.              #
@@ -35,7 +32,7 @@ from .developer import DevBase, obj
 from .pwscf_data_reader import read_qexml
 from .pwscf_input import PwscfInput
 from .simulation import Simulation, SimulationAnalyzer
-from .structure import Structure, get_kpath
+from .structure import Structure
 from .unit_converter import convert
 from .utilities import path_string
 
@@ -83,18 +80,6 @@ kpoint_table_pattern = (
     )
 
 
-# Match the k-vector in a ``bands (ev)`` header.  Normal output such as
-# ``k = 0.0000 0.0000 -0.7071 (2138 PWs)`` and fixed-width output such as
-# ``k = 0.0488-0.0345 0.0345 (42052 PWs)`` are both accepted.  Requiring
-# exactly three coordinates followed by ``(`` rejects truncated vectors and
-# labels such as ``k-point =`` that belong to other output sections.
-band_kpoint_pattern = (
-    rf'\bk\s*=\s*(?P<kx>{number_pattern})(?:\s+|(?=[+-]))'
-    rf'(?P<ky>{number_pattern})(?:\s+|(?=[+-]))'
-    rf'(?P<kz>{number_pattern})\s*\('
-    )
-
-
 # Match a PWSCF total-energy assignment including its Rydberg unit.  Both SCF
 # iteration lines (``total energy = -168.12345678 Ry``) and completed lines
 # (``! total energy = -1.0D+02 Ry``) match.  Lines in eV, missing ``=``, or
@@ -104,30 +89,11 @@ total_energy_pattern = (
     )
 
 
-# Match the accuracy estimate immediately associated with an SCF iteration.
-# Real forms include ``estimated scf accuracy < 6.3E-09 Ry`` and
-# ``estimated scf accuracy = 1.2D-10 Ry``.  A missing comparison operator,
-# another unit, or a shortened ``estimated accuracy`` label is rejected.
-scf_accuracy_pattern = (
-    rf'\bestimated\s+scf\s+accuracy\s*[<=>]\s*'
-    rf'(?P<accuracy>{number_pattern})\s+Ry\b'
-    )
-
-
 # Match pressure from a PWSCF total-stress heading.  It accepts forms such as
 # ``total stress (Ry/bohr**3) (kbar) P= -170.96`` and ``P = 1.2D+03``.
 # Lowercase ``p=``, the word ``pressure``, and a missing assignment operator
 # are rejected because they do not have the exact PWSCF field label.
 pressure_pattern = rf'\bP\s*=\s*(?P<pressure>{number_pattern})(?=\s|$)'
-
-
-# Match the unit-cell volume assignment, including realistic output such as
-# ``unit-cell volume = 380.6210 (a.u.)^3`` and a scientific-notation value.
-# A ``new unit-cell volume:`` message, a missing value, or ``cell volume`` is
-# rejected so only the canonical PWSCF result line updates the volume.
-volume_pattern = (
-    rf'\bunit-cell\s+volume\s*=\s*(?P<volume>{number_pattern})(?=\s|$)'
-    )
 
 
 # Match the optional lattice scale in CELL_PARAMETERS headers.  Examples are
@@ -148,15 +114,6 @@ atomic_force_pattern = (
     )
 
 
-# Match the aggregate force magnitude, for example
-# ``Total force = 0.173046 Total SCF correction = 0.001`` or
-# ``Total force=1.25D-04``.  Atomic ``force =`` rows, lowercase labels, and a
-# value with no assignment operator are rejected.
-total_force_pattern = (
-    rf'\bTotal\s+force\s*=\s*(?P<total_force>{number_pattern})(?=\s|$)'
-    )
-
-
 # Match a complete six-column stress row: three Ry/bohr**3 entries followed by
 # three kbar entries.  Examples include ``-.001 0.0 .001 -147.1 0.0 147.1``
 # and exponent-form rows.  Five-column rows, labeled rows, and concatenated
@@ -165,15 +122,6 @@ stress_row_pattern = (
     rf'^\s*(?P<sxx>{number_pattern})\s+(?P<sxy>{number_pattern})\s+'
     rf'(?P<sxz>{number_pattern})\s+(?P<kxx>{number_pattern})\s+'
     rf'(?P<kxy>{number_pattern})\s+(?P<kxz>{number_pattern})(?=\s|$)'
-    )
-
-
-# Match one component of a PWSCF timing value.  This covers attached forms
-# such as ``4m33.69s`` and spaced forms such as ``1h 2m 3.5s``.  Units other
-# than h/m/s, unitless values, and malformed decimals do not match.  The final
-# lookahead permits the next attached component while rejecting ``ms`` units.
-timing_value_pattern = (
-    rf'(?P<value>{number_pattern})\s*(?P<unit>[hms])(?=\s|[-+.\d]|$)'
     )
 
 
@@ -220,12 +168,9 @@ class PwscfOutData(DevBase):
         One-dimensional history of Fermi energies in eV.
     bands : obj or None
         Spin-resolved band records.  The ``up`` and ``down`` members map
-        k-point indices to objects containing ``eigs`` and ``occs`` arrays,
-        k-point coordinates, polarization, and optional band-edge data.
-    volume : float or None
-        Final unit-cell volume in bohr cubed.
-    cputime, walltime : float or None
-        Total CPU and wall-clock time in hours.
+        k-point indices to objects containing ``eigs`` and ``occs`` arrays.
+        Optional ``vbm`` and ``cbm`` members contain their respective
+        energies.
     kpoints_cart, kpoints_unit : numpy.ndarray or None
         Cartesian and crystal k-point arrays with shape ``(nkpoints, 3)``.
     kweights : numpy.ndarray or None
@@ -233,19 +178,12 @@ class PwscfOutData(DevBase):
         type.
     E : float or None
         Final total energy in Ry for ``scf``, ``relax``, and ``vc-relax``.
-    relax_energies : numpy.ndarray or None
-        One-dimensional sequence of completed SCF total energies in Ry.
-    scf_conv_energy, scf_conv_accuracy : numpy.ndarray or None
-        SCF-iteration energies and estimated accuracies in Ry.
     pressure : float or None
         Final pressure in kbar.
-    stress : list of list of float or None
-        Reported stress rows, with three rows per stress tensor.
+    stress : numpy.ndarray or None
+        Stress-tensor history in kbar with shape ``(nsteps, 3, 3)``.
     forces : numpy.ndarray or None
         Atomic-force history with shape ``(nsteps, natoms, 3)`` in Ry/bohr.
-    tot_forces, max_forces : numpy.ndarray or None
-        One-dimensional histories of reported total forces and maximum atomic
-        force magnitudes.
     relax_structures : obj or None
         Integer-indexed structure records containing atom labels, Cartesian
         positions, and, when reported, cell axes.  Present for relaxation
@@ -266,22 +204,14 @@ class PwscfOutData(DevBase):
         self.Ef                = None
         self.fermi_energies    = None
         self.bands             = None
-        self.volume            = None
-        self.cputime           = None
-        self.walltime          = None
         self.kpoints_cart      = None
         self.kpoints_unit      = None
         self.kweights          = None
         # scf/relax/vc-relax
         self.E                 = None
-        self.relax_energies    = None
-        self.scf_conv_energy   = None
-        self.scf_conv_accuracy = None
         self.pressure          = None
         self.stress            = None
         self.forces            = None
-        self.tot_forces        = None
-        self.max_forces        = None
         # relax/vc-relax
         self.relax_structures  = None
 
@@ -292,8 +222,7 @@ class PwscfOutData(DevBase):
         # remove unused attributes, depending on the calculation type
         if self.calculation=='nscf':
             for name in {  # noqa: PLC0208
-                'E','relax_energies','scf_conv_energy','scf_conv_accuracy',
-                'pressure','stress','forces','tot_forces','max_forces',
+                'E','pressure','stress','forces',
                 }:
                 del self[name]
             #end for
@@ -303,18 +232,16 @@ class PwscfOutData(DevBase):
         self.read_fermi_energies(lines)
         self.read_kpoints(lines)
         self.read_bands(lines)
-        self.read_pressure_volume(lines)
         # all but nscf
         if self.calculation in {'scf','relax','vc-relax'}:
-            self.read_scf_convergence(lines)
             self.read_energies(lines)
+            self.read_pressure(lines)
             self.read_stress(lines)
             self.read_forces(lines)
         # relaxation calculations
         if self.calculation in {'relax','vc-relax'}:
             self.read_structures(lines)
 
-        self.read_timing(lines)
     #end def __init__
 
 
@@ -376,73 +303,33 @@ class PwscfOutData(DevBase):
     def read_energies(self,lines):
         """Read and bind completed SCF total energies.
 
-        ``relax_energies`` is a one-dimensional NumPy array of the total
-        energies marked with ``!`` in the output, in Ry, and ``E`` is its
-        final value.  For relaxation and dynamics calculations the array is
-        the energy history over ionic steps; for ``scf`` it normally contains
-        one entry.
+        ``E`` is the final completed total energy marked with ``!`` in the
+        output, in Ry.
         """
-        relax_energies = []
+        energy = None
         for line in lines:
             if line.lstrip().startswith('!') and 'total energy' in line:
-                energy = match_float(total_energy_pattern,line)
-                if energy is not None:
-                    relax_energies.append(energy)
-        if len(relax_energies)>0:
-            self.E              = relax_energies[-1]
-            self.relax_energies = np.array(relax_energies,dtype=float)
+                value = match_float(total_energy_pattern,line)
+                if value is not None:
+                    energy = value
+        if energy is not None:
+            self.E = energy
     #end def read_energies
 
-
-    def read_scf_convergence(self,lines):
-        """Read and bind electronic SCF convergence histories.
-
-        ``scf_conv_energy`` and ``scf_conv_accuracy`` are one-dimensional
-        NumPy arrays in Ry containing iterative, non-final total energies and
-        their following estimated accuracies.  Relaxation and dynamics runs
-        can contribute multiple SCF cycles to the same flattened histories.
-        Missing accuracy lines are skipped, so the two arrays can have
-        different lengths.
-        """
-        scf_conv_energy   = []
-        scf_conv_accuracy = []
-        capture_accuracy  = False
-        for line in lines:
-            if 'total energy' in line and '=' in line:
-                capture_accuracy = False
-                if not line.lstrip().startswith('!'):
-                    energy = match_float(total_energy_pattern,line)
-                    if energy is not None:
-                        scf_conv_energy.append(energy)
-                        capture_accuracy = True
-            elif capture_accuracy and 'estimated scf accuracy' in line:
-                accuracy = match_float(scf_accuracy_pattern,line)
-                if accuracy is not None:
-                    scf_conv_accuracy.append(accuracy)
-                capture_accuracy = False
-        if len(scf_conv_energy)>0:
-            self.scf_conv_energy = np.array(scf_conv_energy,dtype=float)
-        if len(scf_conv_accuracy)>0:
-            self.scf_conv_accuracy = np.array(scf_conv_accuracy,dtype=float)
-    #end def read_scf_convergence
 
 
     def read_bands(self,lines):
         """Read and bind band data for each reported k-point.
 
         ``bands`` is an ``obj`` with ``up`` and ``down`` members.  Each member
-        maps a zero-based k-point index to an ``obj`` containing ``index``,
-        ``kpoint_2pi_alat``, ``kpoint_rel``, ``eigs``, ``occs``, and ``pol``.
-        Eigenvalues and occupations are one-dimensional NumPy arrays in eV
-        and electrons, respectively; either k-point representation can be
-        ``None`` when its source table was not printed.
+        maps a zero-based k-point index to an ``obj`` containing ``eigs`` and
+        ``occs``.  Eigenvalues and occupations are one-dimensional NumPy
+        arrays in eV and electrons, respectively.
 
-        Non-spin-polarized output places all records in ``bands.up`` and sets
-        ``pol`` to ``'none'``.  Spin-polarized output separates records into
-        ``up`` and ``down`` and labels them accordingly.  For ``bands`` and
-        some ``nscf`` outputs, occupation arrays can be empty.  When complete
-        occupations are present, :meth:`read_band_edges` adds band-edge and
-        gap information to the same object.
+        Non-spin-polarized output places all records in ``bands.up``.
+        Spin-polarized output separates records into ``up`` and ``down``.
+        Occupation arrays can be empty.  When complete occupations are
+        present, :meth:`read_band_edges` adds VBM and CBM energies.
         """
         def leading_numbers(line):
             """Return the leading sequence of numeric values from a line."""
@@ -475,26 +362,19 @@ class PwscfOutData(DevBase):
             return values,i
         #end def read_values
 
-        table_cart  = self.kpoints_cart
-        table_unit  = self.kpoints_unit
-        polarized    = any('- SPIN UP -' in line or '- SPIN DOWN -' in line for line in lines)
         bands        = obj(up=obj(),down=obj())
         band_channel = bands.up
-        up_spin      = True
         for i,line in enumerate(lines):
             if ('End of self-consistent calculation' in line
                 and len(bands.up)+len(bands.down)>0
                 ):
                 bands        = obj(up=obj(),down=obj())
                 band_channel = bands.up
-                up_spin      = True
                 continue
             if '- SPIN UP -' in line:
-                up_spin      = True
                 band_channel = bands.up
                 continue
             if '- SPIN DOWN -' in line:
-                up_spin      = False
                 band_channel = bands.down
                 continue
             if 'bands (ev)' not in line:
@@ -509,28 +389,10 @@ class PwscfOutData(DevBase):
             if j<len(lines) and 'occupation numbers' in lines[j]:
                 occs,_ = read_values(j+1)
 
-            match       = re.search(band_kpoint_pattern,line)
-            kpoint_cart = None
-            if match is not None:
-                values = [
-                    float(match.group(name).replace('D','E').replace('d','e'))
-                    for name in ('kx','ky','kz')
-                    ]
-                kpoint_cart = np.array(values,dtype=float)
-            index      = len(band_channel)
-            kpoint_rel = kpoint_cart
-            if table_unit is not None and index<len(table_unit):
-                kpoint_rel = table_unit[index]
-            if table_cart is not None and index<len(table_cart):
-                kpoint_cart = table_cart[index]
-            pol = ('up' if up_spin else 'down') if polarized else 'none'
+            index = len(band_channel)
             band_channel[index] = obj(
-                index           = index,
-                kpoint_2pi_alat = kpoint_cart,
-                kpoint_rel      = kpoint_rel,
-                eigs            = np.array(eigs,dtype=float),
-                occs            = np.array(occs,dtype=float),
-                pol             = pol,
+                eigs = np.array(eigs,dtype=float),
+                occs = np.array(occs,dtype=float),
                 )
         if len(bands.up)+len(bands.down)==0:
             return
@@ -540,34 +402,10 @@ class PwscfOutData(DevBase):
 
 
     def read_band_edges(self):
-        """Add band-edge and gap records to a parsed bands object.
-
-        Occupied and unoccupied eigenvalues are identified independently at
-        every k-point and spin.  When usable occupations exist, ``bands`` is
-        augmented with ``vbm``, ``cbm``, ``direct_gap``, and
-        ``electronic_structure``.  Edge objects contain the energy, k-point
-        representations, k-point index, polarization, and, for VBM/CBM,
-        band number.  Insulating systems whose extrema occur at different
-        k-points also receive ``indirect_gap``, whose ``kpoints`` member holds
-        the VBM and CBM records.  No members are added when occupations are
-        absent or cannot distinguish occupied and unoccupied states.
-        """
-        def edge_data(band,energy,band_number):
-            """Build a band-edge record for one k-point."""
-            return obj(
-                energy          = energy,
-                kpoint_rel      = band.kpoint_rel,
-                kpoint_2pi_alat = band.kpoint_2pi_alat,
-                index           = band.index,
-                pol             = band.pol,
-                band_number     = band_number,
-                )
-        #end def edge_data
-
-        bands      = self.bands
-        vbm        = None
-        cbm        = None
-        direct_gap = None
+        """Add VBM and CBM energies to a parsed bands object."""
+        bands = self.bands
+        vbm   = None
+        cbm   = None
         for band_channel in (bands.up,bands.down):
             for band in band_channel.values():
                 if len(band.occs)!=len(band.eigs) or len(band.occs)==0:
@@ -578,40 +416,14 @@ class PwscfOutData(DevBase):
                     continue
                 e_val  = np.max(band.eigs[occ])
                 e_cond = np.min(band.eigs[unocc])
-                if vbm is None or e_val>vbm.energy:
-                    vbm = edge_data(band,e_val,np.max(np.where(occ)))
-                if cbm is None or e_cond<cbm.energy:
-                    cbm = edge_data(band,e_cond,np.min(np.where(unocc)))
-                if direct_gap is None or e_cond-e_val<direct_gap.energy:
-                    direct_gap = obj(
-                        energy          = e_cond-e_val,
-                        kpoint_rel      = band.kpoint_rel,
-                        kpoint_2pi_alat = band.kpoint_2pi_alat,
-                        index           = band.index,
-                        pol             = [vbm.pol,cbm.pol],
-                        )
+                if vbm is None or e_val>vbm:
+                    vbm = e_val
+                if cbm is None or e_cond<cbm:
+                    cbm = e_cond
         if vbm is None:
             return
-        if vbm.energy+0.025>=cbm.energy:
-            electronic_structure = (
-                'metallic' if vbm.band_number==cbm.band_number else 'semi-metal'
-                )
-        else:
-            electronic_structure = 'insulating'
-            if (vbm.kpoint_rel is not None
-                and cbm.kpoint_rel is not None
-                and not np.equal(vbm.kpoint_rel,cbm.kpoint_rel).all()
-                ):
-                bands.indirect_gap = obj(
-                    energy  = round(cbm.energy-vbm.energy,3),
-                    kpoints = obj(vbm=vbm,cbm=cbm),
-                    )
-        bands.update(
-            electronic_structure = electronic_structure,
-            vbm                  = vbm,
-            cbm                  = cbm,
-            direct_gap           = direct_gap,
-            )
+        bands.vbm = obj(energy=vbm)
+        bands.cbm = obj(energy=cbm)
     #end def read_band_edges
 
 
@@ -695,33 +507,24 @@ class PwscfOutData(DevBase):
     #end def read_structures
 
 
-    def read_pressure_volume(self,lines):
-        """Read the final reported pressure and unit-cell volume."""
+    def read_pressure(self,lines):
+        """Read the final reported pressure."""
         pressure = None
-        volume   = None
         for line in lines:
-            if 'unit-cell volume' in line:
-                value = match_float(volume_pattern,line)
-                if value is not None:
-                    volume = value
             if 'total' in line and 'stress' in line and 'P=' in line:
                 value = match_float(pressure_pattern,line)
                 if value is not None:
                     pressure = value
         if pressure is not None and 'pressure' in self:
             self.pressure = pressure
-        if volume is not None:
-            self.volume = volume
-    #end def read_pressure_volume
+    #end def read_pressure
 
 
     def read_stress(self,lines):
         """Read and bind the sequence of reported stress tensors.
 
-        ``stress`` is a list of numeric rows, with three consecutive rows per
-        complete tensor.  Each row contains the three stress components in
-        Ry/bohr cubed followed by the three values printed in kbar.  Tensors
-        from successive ionic steps are appended to the same flat list.
+        ``stress`` is a NumPy array containing complete stress tensors in
+        kbar, with shape ``(nsteps, 3, 3)``.
         """
         stress = []
         for i,line in enumerate(lines):
@@ -733,32 +536,28 @@ class PwscfOutData(DevBase):
                         if match is None:
                             rows = []
                             break
-                        names  = ('sxx','sxy','sxz','kxx','kxy','kxz')
+                        names  = ('kxx','kxy','kxz')
                         values = [
                             float(match.group(name).replace('D','E').replace('d','e'))
                             for name in names
                             ]
                         rows.append(values)
                 if len(rows)==3:
-                    stress.extend(rows)
+                    stress.append(rows)
         if len(stress)>0:
-            self.stress = stress
+            self.stress = np.array(stress,dtype=float)
     #end def read_stress
 
 
     def read_forces(self,lines):
-        """Read and bind atomic and total force histories.
+        """Read and bind atomic-force histories.
 
         ``forces`` is a NumPy array with shape ``(nsteps, natoms, 3)`` in
-        Ry/bohr.  ``max_forces`` is the maximum atomic-force norm for each
-        retained step, and ``tot_forces`` is a one-dimensional array of every
-        separately reported total-force value.  Atomic-force blocks with a
-        known atom count are retained only when all atoms are present; total
-        forces remain available even when their atomic block is incomplete.
+        Ry/bohr. Atomic-force blocks with a known atom count are retained only
+        when all atoms are present.
         """
-        forces     = []
-        tot_forces = []
-        nat        = None
+        forces = []
+        nat    = None
         for line in lines:
             if 'number of atoms/cell' in line:
                 match = re.search(r'number of atoms/cell\s*=\s*(\d+)',line)
@@ -782,40 +581,10 @@ class PwscfOutData(DevBase):
                     j+=1
                 if len(aforces)>0 and (nat is None or len(aforces)==nat):
                     forces.append(aforces)
-            if 'Total force' in line:
-                match = re.search(total_force_pattern,line)
-                if match is not None:
-                    value = match.group('total_force').replace('D','E').replace('d','e')
-                    tot_forces.append(float(value))
         if len(forces)>0:
-            forces          = np.array(forces,dtype=float)
-            self.forces     = forces
-            self.max_forces = np.linalg.norm(forces,axis=2).max(axis=1)
-        if len(tot_forces)>0:
-            self.tot_forces = np.array(tot_forces,dtype=float)
+            self.forces = np.array(forces,dtype=float)
     #end def read_forces
 
-
-    def read_timing(self,lines):
-        """Read total CPU and wall-clock times."""
-        def pwscf_time(text):
-            """Convert a PWSCF timing string to hours."""
-            scales = {'h':1.,'m':60.,'s':3600.}
-            return sum(
-                float(match.group('value').replace('D','E').replace('d','e'))
-                / scales[match.group('unit')]
-                for match in re.finditer(timing_value_pattern,text)
-                )
-        #end def pwscf_time
-
-        for line in lines:
-            if 'PWSCF        :' in line:
-                match = re.search(r'PWSCF\s*:\s*(.*?)\s+CPU\s+(.*?)\s+WALL',line)
-                if match is not None:
-                    self.cputime  = pwscf_time(match.group(1))
-                    self.walltime = pwscf_time(match.group(2))
-                    return
-    #end def read_timing
 
 
     def read_kpoints(self,lines):
@@ -887,36 +656,12 @@ class PwscfOutData(DevBase):
 
 
 
-class Pw2CasinoAnalyzer(DevBase):
-    """Read and store physical data from PW2CASINO output.
-
-    The auxiliary analyzer is kept separate from PWSCF text and XML results.
-    Its data members remain ``None`` when the requested information is absent
-    or the output file cannot be read.
-    """
-
-    def __init__(self,filepath):
-        """Initialize empty PW2CASINO results."""
-        self.K = None
-
-        with open(filepath,'r') as fobj:
-            lines = fobj.readlines()
-        for line in lines:
-            if 'Kinetic' in line:
-                tokens = line.split()
-                # Check whether the kinetic energy token is a complete numeric value.
-                if len(tokens)>5 and re.fullmatch(number_pattern,tokens[5].strip()) is not None:
-                    self.K = float(tokens[5].replace('D','E').replace('d','e'))
-    #end def __init__
-
-#end class Pw2CasinoAnalyzer
-
 
 
 class PwscfAnalyzer(SimulationAnalyzer):
     """Analyze output produced by Quantum ESPRESSO PWscf calculations.
 
-    The analyzer coordinates PWSCF text, auxiliary, and legacy XML readers
+    The analyzer coordinates PWSCF text and legacy XML readers
     for SCF, NSCF, relaxation, and variable-cell relaxation calculations.
 
     Parameters
@@ -930,11 +675,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
     outfile_name : str, optional
         Name of the PWSCF output file. It is inferred from ``infile_name``
         when possible.
-    pw2c_outfile_name : str, optional
-        Name of an accompanying PW2CASINO output file.
     analyze : bool, optional
-        If ``True``, parse the available log, legacy XML, and auxiliary output
-        during initialization.
+        If ``True``, parse the available log and legacy XML during
+        initialization.
 
     Attributes
     ----------
@@ -944,8 +687,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
         Absolute path to the calculation directory.
     infile_name, outfile_name : str or None
         Names of the PWSCF input and text-output files.
-    pw2c_outfile_name : str or None
-        Name of the optional PW2CASINO output file.
     input : PwscfInput or None
         Parsed PWSCF input when an input file is available.
     simulation_structure : Structure
@@ -957,8 +698,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
     results_xml : obj or None
         Parsed legacy XML data. It remains ``None`` when legacy XML output is
         absent or cannot be read.
-    pw2casino : Pw2CasinoAnalyzer or None
-        Parsed PW2CASINO data when an auxiliary output file is requested.
 
     Methods
     -------
@@ -1004,8 +743,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     Raises
     ------
     FileNotFoundError
-        If a supplied path, input file, output file, or requested PW2CASINO
-        file does not exist.
+        If a supplied path, input file, or output file does not exist.
     RuntimeError
         If a supplied file cannot be identified as input or output.
 
@@ -1289,10 +1027,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
             raise ValueError('stress units must be one of: '+supported)
         values = None
         if self.results_out.stress is not None:
-            rows = np.asarray(self.results_out.stress,dtype=float)
-            if rows.ndim!=2 or rows.shape[1]<6 or len(rows)%3!=0:
+            values = np.asarray(self.results_out.stress,dtype=float)
+            if values.ndim!=3 or values.shape[1:]!=(3,3):
                 return None
-            values = rows[:,3:6].reshape(-1,3,3)
         if values is None:
             return None
         return values*1e8/self.pressure_units[units]
@@ -1316,10 +1053,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def __init__(
         self,
-        arg0              = None,
-        infile_name       = None,
-        outfile_name      = None,
-        pw2c_outfile_name = None,
+        arg0         = None,
+        infile_name  = None,
+        outfile_name = None,
         *,
         analyze           = False,
         ):
@@ -1365,25 +1101,22 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 msg = f'PWSCF input file is not available\nfile not found: {infile}'
                 raise FileNotFoundError(msg)
 
-        self.infile_name       = infile_name
-        self.outfile_name      = outfile_name
-        self.path              = path
-        self.abspath           = os.path.abspath(path)
-        self.pw2c_outfile_name = pw2c_outfile_name
-        self.input             = inp
-        self.results_out       = None
-        self.results_xml       = None
-        self.pw2casino         = None
+        self.infile_name = infile_name
+        self.outfile_name = outfile_name
+        self.path         = path
+        self.abspath      = os.path.abspath(path)
+        self.input        = inp
+        self.results_out  = None
+        self.results_xml  = None
         if analyze:
             self.analyze()
     #end def __init__
 
 
     def analyze(self):
-        """Analyze available PWSCF text, legacy XML, and auxiliary output."""
+        """Analyze available PWSCF text and legacy XML output."""
         self.results_out = None
         self.results_xml = None
-        self.pw2casino   = None
         if ('path' not in self
             or 'outfile_name' not in self
             or self.outfile_name is None
@@ -1395,13 +1128,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
             raise FileNotFoundError(msg)
         self.results_out = PwscfOutData(outfile)
         self.analyze_xml()
-        if self.pw2c_outfile_name is not None:
-            filepath = os.path.join(self.path,self.pw2c_outfile_name)
-            if os.path.isfile(filepath):
-                self.pw2casino = Pw2CasinoAnalyzer(filepath)
-            else:
-                msg = f'PW2CASINO output file is not available\nfile not found: {filepath}'
-                raise FileNotFoundError(msg)
     #end def analyze
 
 
@@ -1494,135 +1220,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
 
-
-    def make_movie(self,filename,filepath=None):
-        """Write relaxed structures as a tiled XYZ movie."""
-        if ('results_out' not in self
-            or self.results_out is None
-            or 'relax_structures' not in self.results_out
-            or self.results_out.relax_structures is None
-            or 'input' not in self
-            or self.input is None
-            ):
-            return
-        structures = self.results_out.relax_structures
-        filepath = self.abspath if filepath is None else filepath
-        filepath = os.path.join(filepath,filename)
-
-        movie         = ''
-        alat_angstrom = convert(self.input.system['celldm(1)'],'B','A')
-        cell          = self.input.cell_parameters.vectors
-        for structure in structures.values():
-            tiled = Structure(
-                elem  = structure.atoms,
-                pos   = structure.positions,
-                axes  = cell,
-                scale = alat_angstrom,
-                units = 'A',
-                ).tile(2,2,2)
-            movie += tiled.write_xyz()
-        with open(filepath,'w') as fobj:
-            fobj.write(movie)
-    #end def make_movie
-
-
-    def plot_bandstructure(
-        self,
-        filename      = None,
-        filepath      = None,
-        max_min_e     = None,
-        *,
-        show          = False,
-        save          = True,
-        show_vbm_cbm  = True,
-        k_labels      = None,
-        ):
-        """Plot the analyzed band structure along its reciprocal-space path."""
-        import matplotlib.pyplot as plt
-        if ('results_out' not in self
-            or self.results_out is None
-            or 'input' not in self
-            or self.input is None
-            or 'system' not in self.input
-            or 'nbnd' not in self.input.system
-            ):
-            return
-        bands = self.results_out.bands
-        if bands is None:
-            return
-        params = {
-            'legend.fontsize'      : 14,
-            'figure.facecolor'     : 'white',
-            'figure.subplot.hspace': 0.,
-            'axes.labelsize'       : 16,
-            'xtick.labelsize'      : 14,
-            'ytick.labelsize'      : 14,
-            }
-        plt.rcParams.update(params)
-        filename = 'band_structure.pdf' if filename is None else filename
-        filepath = os.path.join(self.abspath if filepath is None else filepath,filename)
-
-        plt.figure()
-        ax     = plt.gca()
-        nbands = self.input.system.nbnd
-
-        if k_labels is None:
-            structure = self.initial_structure()
-            if structure is None:
-                return
-            kpath  = get_kpath(structure=structure,check_standard=False)
-            x      = kpath['explicit_path_linearcoords']
-            labels = list(kpath['explicit_kpoints_labels'])
-        else:
-            if self.results_out.kpoints_cart is None:
-                return
-            labels = list(k_labels)
-            # Calculate linear coordinates from self.results_out.kpoints_cart
-            x          = []
-            prev_label = ''
-            ref_kpt    = self.results_out.kpoints_cart[0]
-            lincoord   = 0.0
-            for kpt_idx,kpt in enumerate(self.results_out.kpoints_cart):
-                curr_label = labels[kpt_idx]
-                if (curr_label != '' and prev_label == '') or curr_label == '':
-                    lincoord += np.linalg.norm(kpt-ref_kpt)
-                ref_kpt = kpt
-                x.append(lincoord)
-                prev_label = curr_label
-        for band_channel,color in ((bands.up,'k'),(bands.down,'r')):
-            if len(band_channel)==0:
-                continue
-            for nb in range(nbands):
-                eigs = np.array([band.eigs[nb] for band in band_channel],dtype=float)
-                y = eigs - bands.vbm.energy
-                plt.plot(x,y,color)
-        for ln,li in enumerate(labels):
-            if li != '':
-                plt.axvline(x[ln],ymin=-100,ymax=100,linewidth=3,color='k')
-                labels[ln] = r'$\Gamma$' if li=='GAMMA' else f'${li}$'
-                if ln>0 and labels[ln-1]!='':
-                    labels[ln] = f'{labels[ln-1]}|{labels[ln]}'
-                    labels[ln-1] = ''
-
-        plt.xlim([np.min(x),np.max(x)])
-        plt.ylim((-5,+5) if max_min_e is None else max_min_e)
-        plt.ylabel('Energy (eV)')
-        plt.xticks(x,labels)
-        ax.tick_params(axis='x',which='both',length=0)
-        ax.tick_params(axis='x',which='both',pad=10)
-        if show_vbm_cbm:
-            vbm = bands.vbm
-            cbm = bands.cbm
-            for kn,ki in enumerate(bands.up):
-                if (vbm.kpoint_rel==ki.kpoint_rel).all():
-                    plt.scatter(x[kn],0,c='green',s=100)
-                if (cbm.kpoint_rel==ki.kpoint_rel).all():
-                    plt.scatter(x[kn],cbm.energy-vbm.energy,c='r',s=100)
-        if save:
-            plt.savefig(filepath,format='pdf',bbox_inches='tight')
-        if show:
-            plt.show()
-    #end def plot_bandstructure
 
 #end class PwscfAnalyzer
         

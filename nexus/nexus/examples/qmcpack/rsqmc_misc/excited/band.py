@@ -1,10 +1,7 @@
 #! /usr/bin/env python3
 
-from nexus import settings,job,run_project
-from nexus import generate_physical_system
-from nexus import generate_pwscf
-
-from nexus.structure import get_primitive_cell, get_kpath
+from nexus import generate_physical_system, generate_pwscf, job, run_project, settings
+from nexus.structure import get_kpath, get_primitive_cell
 
 settings(
     pseudo_dir    = '../../pseudopotentials',
@@ -83,11 +80,11 @@ band = generate_pwscf(
 
 run_project()
 
-if band.finished:
+performed_runs = not settings.generate_only and not settings.status_only
+if performed_runs and band.finished:
     from nexus.pwscf_analyzer import PwscfAnalyzer
     p = PwscfAnalyzer(band)
     p.analyze()
-    p.plot_bandstructure()
-    print("VBM: {0}".format(p.results_out.bands.vbm))
-    print("CBM: {0}".format(p.results_out.bands.cbm))
+    print(f"VBM: {p.Evbm()}")
+    print(f"CBM: {p.Ecbm()}")
 #end if
