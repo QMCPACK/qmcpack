@@ -1,7 +1,28 @@
 import pytest
 import numpy as np
+from shutil import copytree
 from . import NexusTestOrder
+from . import TEST_DIR
 pytestmark = pytest.mark.order(NexusTestOrder.RMG_ANALYZER)
+
+
+representative_root = TEST_DIR/'test_rmg_analyzer_files'
+representative_runs = (
+    ('scf',         'electronic/input.scf.02.log',       'scf',   -10.93257703, (1,2,3)),
+    ('nscf',        'electronic/input.nscf.05.log',      'nscf',    0.0,        (1,2,3)),
+    ('band',        'electronic/input.band.02.log',      'band',    None,       None),
+    ('exx',         'electronic/input.exx.01.log',       'exx',     None,       None),
+    ('relax',       'ionic/relax/input.01.log',          'relax', -10.93250973, (3,2,3)),
+    ('nve',         'ionic/nve/input.01.log',            'md_VE', -10.93251979, (3,2,3)),
+    ('nvt',         'ionic/nvt/input.01.log',            'md_TE', -10.93251979, (3,2,3)),
+    ('tddft',       'tddft/input.00.log',                'tddft', -16.75166816, (1,3,3)),
+    ('stm_scf',     'stm/input.scf.01.log',              'scf',   -11.96999888, (1,2,3)),
+    ('stm',         'stm/input.stm.00.log',              'stm',     None,       None),
+    ('neb_initial', 'neb/image_initial/input.00.log',    'scf',    -1.73498899, (1,3,3)),
+    ('neb_final',   'neb/image_final/input.00.log',      'scf',    -1.73498890, (1,3,3)),
+    ('neb_image01', 'neb/image01/input.02.log',          'neb',    -1.67437690, (1,3,3)),
+    ('neb_image02', 'neb/image02/input.01.log',          'neb',    -1.67437690, (1,3,3)),
+    )
 
 
 
@@ -119,6 +140,134 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
 #end def test_run_modes
 
 
+@pytest.mark.parametrize(
+    'name,relative_path,run_mode,energy,positions_shape',
+    representative_runs,
+    ids=[run[0] for run in representative_runs],
+    )
+def test_representative_outputs(
+    name,relative_path,run_mode,energy,positions_shape,
+    ):
+    from ..rmg_analyzer import RmgAnalyzer, RmgOutData
+    from ..rmg_input import RmgInput
+    from ..structure import Structure
+
+    logfile  = representative_root/relative_path
+    outdata  = RmgOutData(str(logfile))
+    analyzer = RmgAnalyzer(str(logfile),analyze=True)
+
+    assert len(name)>0
+    assert outdata.run_mode==run_mode
+    assert analyzer.run_mode==run_mode
+    assert isinstance(outdata.input,RmgInput)
+    assert isinstance(analyzer.initial_structure(),Structure)
+    assert outdata.timing is not None
+    assert outdata.timing.total>0.0
+    if energy is None:
+        assert 'energy' not in outdata
+    else:
+        assert np.isclose(outdata.energy,energy)
+        assert outdata.energy_units=='Ha'
+    if positions_shape is None:
+        assert 'positions' not in outdata
+    else:
+        assert outdata.positions.shape==positions_shape
+#end def test_representative_outputs
+
+
+def test_representative_physical_results():
+    from ..rmg_analyzer import RmgAnalyzer
+    from ..structure import Structure
+
+    electronic = representative_root/'electronic'
+    scf         = RmgAnalyzer(str(electronic/'input.scf.02.log'),analyze=True)
+    nscf        = RmgAnalyzer(str(electronic/'input.nscf.05.log'),analyze=True)
+    band        = RmgAnalyzer(str(electronic/'input.band.02.log'),analyze=True)
+
+    assert scf.kpoints().shape==(1,3)
+    assert scf.kweights() is None
+    assert scf.eigenvalues().shape==(1,14)
+    assert scf.occupations().shape==(1,14)
+    assert scf.forces().shape==(1,2,3)
+    assert nscf.eigenvalues().shape==(1,14)
+    assert nscf.occupations().shape==(1,14)
+    assert band.kpoints().shape==(13,3)
+    assert band.eigenvalues().shape==(13,14)
+
+    ionic = representative_root/'ionic'
+    relax = RmgAnalyzer(str(ionic/'relax/input.01.log'),analyze=True)
+    nve   = RmgAnalyzer(str(ionic/'nve/input.01.log'),analyze=True)
+    nvt   = RmgAnalyzer(str(ionic/'nvt/input.01.log'),analyze=True)
+
+    assert isinstance(relax.relaxed_structure(),Structure)
+    assert relax.results.positions.shape==(3,2,3)
+    assert nve.results.md.step.tolist()==[1]
+    assert nvt.results.md.step.tolist()==[1]
+    assert np.isclose(nve.results.md.temperature[0],99.9942651269)
+    assert np.isclose(nvt.results.md.temperature[0],99.9942651269)
+    assert np.isclose(nve.results.md_stats.temperature.mean,99.9942651269)
+
+    tddft = RmgAnalyzer(
+        str(representative_root/'tddft/input.00.log'),analyze=True)
+    assert tddft.results.tddft.energy.time.tolist()==[0.0,0.05,0.1,0.15]
+    assert tddft.results.tddft.energy.total_energy_change.shape==(4,)
+    assert tddft.results.tddft.dipoles[0].dipole.shape==(4,3)
+#end def test_representative_physical_results
+
+
+def test_representative_neb_results():
+    from ..rmg_analyzer import RmgAnalyzer
+
+    neb_root = representative_root/'neb'
+    image01  = RmgAnalyzer(
+        str(neb_root/'image01/input.02.log'),analyze=True).results.neb
+    image02  = RmgAnalyzer(
+        str(neb_root/'image02/input.01.log'),analyze=True).results.neb
+
+    expected_energies = [-1.73498899,-1.67437690,-1.67437690,-1.73498890]
+    assert image01.num_images==4
+    assert image01.num_intermediate_images==2
+    assert len(image01.input_structures)==4
+    assert image01.reaction_coordinate.shape==(4,)
+    assert np.allclose(image01.energies,expected_energies)
+    assert np.isclose(image01.forward_barrier,0.06061209)
+    assert np.isclose(image01.reverse_barrier,0.06061200)
+    assert image01.barrier_image_index==1
+    assert image01.local_image.index==1
+    assert image01.local_image.forces.shape==(1,3,3)
+    assert image02.local_image.index==2
+    assert image02.local_image.forces.shape==(1,3,3)
+#end def test_representative_neb_results
+
+
+def test_representative_produced_files(tmp_path):
+    from ..rmg_analyzer import RmgAnalyzer
+
+    electronic = tmp_path/'electronic'
+    copytree(representative_root/'electronic',electronic)
+    waves = electronic/'Waves'
+    waves.mkdir()
+    (waves/'wave.out.h5').touch()
+    (electronic/'exx_integrals.h5').touch()
+
+    scf = RmgAnalyzer(str(electronic/'input.scf.02.log'),analyze=True)
+    exx = RmgAnalyzer(str(electronic/'input.exx.01.log'),analyze=True)
+    assert scf.results.produced_files.qmcpack_restart.endswith('wave.out.h5')
+    assert len(exx.results.produced_files.exx_integrals)==1
+
+    stm_root = tmp_path/'stm'
+    copytree(representative_root/'stm',stm_root)
+    stm_dir = stm_root/'STM'
+    stm_dir.mkdir()
+    (stm_dir/'bias.stm').touch()
+    (stm_dir/'bias.cube').touch()
+
+    stm = RmgAnalyzer(str(stm_root/'input.stm.00.log'),analyze=True)
+    assert len(stm.results.produced_files.stm)==1
+    assert len(stm.results.produced_files.stm_cube)==1
+#end def test_representative_produced_files
+
+
 def test_physical_results(tmp_path):
     from ..rmg_analyzer import RmgAnalyzer
 
@@ -161,9 +310,9 @@ potential convergence has been achieved. stopping ...
     from ..unit_converter import convert
 
     assert analyzer.results.timing is not None
-    assert isinstance(analyzer.input_structure(),Structure)
-    assert analyzer.input_structure().units=='A'
-    assert analyzer.input_structure('B').units=='B'
+    assert isinstance(analyzer.initial_structure(),Structure)
+    assert analyzer.initial_structure().units=='A'
+    assert analyzer.initial_structure('B').units=='B'
     assert analyzer.energy()==-1.2345
     assert np.isclose(analyzer.energy('Ry'),-2.469)
     assert analyzer.kpoints().shape==(2,3)

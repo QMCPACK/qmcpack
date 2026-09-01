@@ -1667,7 +1667,8 @@ class RmgOutData(DevBase):
         def leading_numbers(line):
             """Return the leading whitespace-separated numbers as a float array."""
             # Match a whitespace-separated numeric sequence at the start of a line.
-            # Example: 0.0 1.1 2.1 3.1
+            # Example: 0.0 1.1, 2.1, 3.1
+            line    = line.replace(',',' ')
             npat    = self.number_pattern
             pattern = r'^\s*((?:'+npat+r')(?:\s+(?:'+npat+r'))*)'
             match   = re.match(pattern,line)
@@ -2171,16 +2172,16 @@ class RmgAnalyzer(SimulationAnalyzer):
     #end def _require_supported
 
 
-    def input_structure(self,units='A'):
+    def initial_structure(self,units='A'):
         """Return the input ``Structure`` in Angstrom or bohr."""
-        self._require_supported('input_structure',self.all_modes)
+        self._require_supported('initial_structure',self.all_modes)
         if units not in {'A','B'}:
-            raise ValueError('input_structure units must be one of: A, B')
+            raise ValueError('initial_structure units must be one of: A, B')
         structure = self.results.return_initial_structure()
         if structure is not None:
             structure.change_units(units)
         return structure
-    #end def input_structure
+    #end def initial_structure
 
 
     def energy(self,units='Ha'):
@@ -2385,6 +2386,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         return pressure*1e8/self.pressure_units[units]
     #end def pressure
 
+
     def __init__(self,arg0=None,*,analyze=False):
         """Initialize an analyzer for an RMG simulation or log output file.
 
@@ -2416,7 +2418,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
         Methods
         -------
-        input_structure(units='A') : Structure or None
+        initial_structure(units='A') : Structure or None
             Input atomic structure in Angstrom (``'A'``) or bohr (``'B'``).
         energy(units='Ha') : float or numpy.floating or None
             Final total energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
