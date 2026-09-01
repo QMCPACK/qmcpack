@@ -12,6 +12,9 @@
 #    PwscfOutData                                                    #
 #      Reads and stores physical data from PWSCF log output.         #
 #                                                                    #
+#    PwscfXmlData                                                    #
+#      Reads and stores schema-based PWSCF XML output.               #
+#                                                                    #
 #    Pw2CasinoAnalyzer                                               #
 #      Reads and stores physical data from PW2CASINO output.         #
 #                                                                    #
@@ -25,8 +28,9 @@
 
 import os
 import re
+import xml.etree.ElementTree as ET
 import numpy as np
-from .developer import DevBase,obj,dotdict,FileFormatError
+from .developer import DevBase,obj,dotdict
 from .unit_converter import convert
 from .numerics import simstats, simplestats
 from .simulation import SimulationAnalyzer, Simulation
@@ -253,9 +257,97 @@ class PwscfOutData(DevBase):
     The calculation type and available result fields are determined solely
     from the output log.  Each reader tolerates absent or incomplete records
     and retains any complete physical data that precedes them.
+
+    Parameters
+    ----------
+    filepath : str or os.PathLike
+        Path to the PWSCF text-output file.
+    md_only : bool, default=False
+        For molecular-dynamics calculations, stop after reading the dynamics
+        history and leave the remaining applicable attributes as ``None``.
+
+    Attributes
+    ----------
+    calculation : {'scf', 'nscf', 'bands', 'relax', 'vc-relax', 'md', 'vc-md'}
+        Calculation type inferred from the output text.  This attribute is
+        present for every calculation type.
+    Ef : float or None
+        Final Fermi energy in eV.  Present for every calculation type.
+    fermi_energies : numpy.ndarray or None
+        One-dimensional history of Fermi energies in eV.  Present for every
+        calculation type.
+    bands : obj or None
+        Spin-resolved band records.  The ``up`` and ``down`` members map
+        k-point indices to objects containing ``eigs`` and ``occs`` arrays,
+        k-point coordinates, polarization, and optional band-edge data.
+        Present for every calculation type.
+    volume : float or None
+        Final unit-cell volume in bohr cubed.  Present for every calculation
+        type.
+    cputime, walltime : float or None
+        Total CPU and wall-clock time in hours.  Present for every calculation
+        type.
+    kpoints_cart, kpoints_unit : numpy.ndarray or None
+        Cartesian and crystal k-point arrays with shape ``(nkpoints, 3)``.
+        Present for every calculation type.
+    kweights : numpy.ndarray or None
+        One-dimensional k-point weight array.  Present for every calculation
+        type.
+    E : float or None
+        Final total energy in Ry.  Present for ``scf``, ``relax``,
+        ``vc-relax``, ``md``, and ``vc-md`` calculations.
+    relax_energies : numpy.ndarray or None
+        One-dimensional sequence of completed SCF total energies in Ry.
+        Present for ``scf``, ``relax``, ``vc-relax``, ``md``, and ``vc-md``.
+    scf_conv_energy, scf_conv_accuracy : numpy.ndarray or None
+        SCF-iteration energies and estimated accuracies in Ry.  Present for
+        ``scf``, ``relax``, ``vc-relax``, ``md``, and ``vc-md``.
+    pressure : float or None
+        Final pressure in kbar.  Present for ``scf``, ``relax``,
+        ``vc-relax``, ``md``, and ``vc-md`` calculations.
+    stress : list of list of float or None
+        Reported stress rows, with three rows per stress tensor.  Present for
+        ``scf``, ``relax``, ``vc-relax``, ``md``, and ``vc-md``.
+    forces : numpy.ndarray or None
+        Atomic-force history with shape ``(nsteps, natoms, 3)`` in Ry/bohr.
+        Present for ``scf``, ``relax``, ``vc-relax``, ``md``, and ``vc-md``.
+    tot_forces, max_forces : numpy.ndarray or None
+        One-dimensional histories of reported total forces and maximum atomic
+        force magnitudes.  Present for ``scf``, ``relax``, ``vc-relax``,
+        ``md``, and ``vc-md``.
+    relax_structures : obj or None
+        Integer-indexed structure records containing atom labels, Cartesian
+        positions, and, when reported, cell axes.  Present for ``relax``,
+        ``vc-relax``, ``md``, and ``vc-md`` calculations.
+    md_data : obj or None
+        Molecular-dynamics histories.  Its ``total_energy``, ``pressure``,
+        ``time``, ``kinetic_energy``, ``temperature``, and
+        ``potential_energy`` members are one-dimensional NumPy arrays.
+        Present for ``md`` and ``vc-md`` calculations.
+    md_stats : obj or None
+        Molecular-dynamics summary statistics.  Each member is a
+        ``(mean, error)`` tuple of floats.  Present for ``md`` and ``vc-md``.
+
+    Notes
+    -----
+    The expected attribute groups by calculation type are:
+
+    ``scf``
+        Common attributes plus energy, convergence, pressure, stress, and
+        force attributes.
+    ``nscf`` and ``bands``
+        Common attributes only.
+    ``relax`` and ``vc-relax``
+        The ``scf`` attributes plus ``relax_structures``.
+    ``md`` and ``vc-md``
+        The relaxation attributes plus ``md_data`` and ``md_stats``.
+
+    An applicable attribute remains ``None`` when its record is absent or
+    cannot be parsed.  Attributes that do not apply to the inferred
+    calculation type are removed from the object.
     """
 
-    def __init__(self,filepath,*,warn=None,md_only=False):
+    def __init__(self,filepath,*,md_only=False):
         """Read a PWSCF log and initialize its accessible physical data."""
         self.calculation = None
 
@@ -285,16 +377,8 @@ class PwscfOutData(DevBase):
         # md/vc-md/relax/vc-relax
         self.relax_structures  = None
 
-        try:
-            with open(filepath,'r') as fobj:
-                lines = fobj.read().splitlines()
-        except (OSError,UnicodeError) as e:
-            if warn is not None:
-                warn(
-                    'file read failed\n'
-                    f'exception encountered: {e}'
-                    )
-            return
+        with open(filepath,'r') as fobj:
+            lines = fobj.read().splitlines()
         # read the calculation type
         self.calculation = self.read_calculation(lines)
         # remove unused attributes, depending on the calculation type
@@ -365,7 +449,19 @@ class PwscfOutData(DevBase):
 
 
     def read_md(self,lines):
-        """Read molecular-dynamics histories from output lines."""
+        """Read and bind molecular-dynamics histories.
+
+        Complete ionic steps are stored in ``md_data`` as an ``obj`` of
+        one-dimensional NumPy arrays named ``total_energy``, ``pressure``,
+        ``time``, ``kinetic_energy``, ``temperature``, and
+        ``potential_energy``.  ``md_stats`` contains a ``(mean, error)``
+        tuple for each array.  Fixed-cell ``md`` and variable-cell ``vc-md``
+        outputs provide time, kinetic energy, and temperature in different
+        line formats, but produce the same stored data structure.
+
+        Only steps containing all required quantities are retained.  The
+        return value is the number of retained steps.
+        """
         def record_value(name,pattern,line):
             """Add a matched value to the current dynamics record."""
             value = match_float(pattern,line)
@@ -423,7 +519,13 @@ class PwscfOutData(DevBase):
 
 
     def read_fermi_energies(self,lines):
-        """Read the sequence of reported Fermi energies."""
+        """Read and bind the sequence of reported Fermi energies.
+
+        ``fermi_energies`` is a one-dimensional NumPy array containing every
+        successfully parsed value in eV, and ``Ef`` is its final value.  Both
+        remain ``None`` when no Fermi-energy record is available.  The return
+        value is the number of parsed energies.
+        """
         fermi_energies = []
         for line in lines:
             if 'Fermi energ' in line:
@@ -442,7 +544,14 @@ class PwscfOutData(DevBase):
 
 
     def read_energies(self,lines):
-        """Read total energies reported for completed SCF calculations."""
+        """Read and bind completed SCF total energies.
+
+        ``relax_energies`` is a one-dimensional NumPy array of the total
+        energies marked with ``!`` in the output, in Ry, and ``E`` is its
+        final value.  For relaxation and dynamics calculations the array is
+        the energy history over ionic steps; for ``scf`` it normally contains
+        one entry.  The return value is the number of parsed energies.
+        """
         relax_energies = []
         for line in lines:
             if line.lstrip().startswith('!') and 'total energy' in line:
@@ -457,7 +566,16 @@ class PwscfOutData(DevBase):
 
 
     def read_scf_convergence(self,lines):
-        """Read SCF iteration energies and estimated accuracies."""
+        """Read and bind electronic SCF convergence histories.
+
+        ``scf_conv_energy`` and ``scf_conv_accuracy`` are one-dimensional
+        NumPy arrays in Ry containing iterative, non-final total energies and
+        their following estimated accuracies.  Relaxation and dynamics runs
+        can contribute multiple SCF cycles to the same flattened histories.
+        Missing accuracy lines are skipped, so the two arrays can have
+        different lengths.  The return value reports both parsed counts in a
+        temporary ``dotdict``.
+        """
         scf_conv_energy   = []
         scf_conv_accuracy = []
         capture_accuracy  = False
@@ -483,7 +601,23 @@ class PwscfOutData(DevBase):
 
 
     def read_bands(self,lines):
-        """Read band energies and occupations for each reported k-point."""
+        """Read and bind band data for each reported k-point.
+
+        ``bands`` is an ``obj`` with ``up`` and ``down`` members.  Each member
+        maps a zero-based k-point index to an ``obj`` containing ``index``,
+        ``kpoint_2pi_alat``, ``kpoint_rel``, ``eigs``, ``occs``, and ``pol``.
+        Eigenvalues and occupations are one-dimensional NumPy arrays in eV
+        and electrons, respectively; either k-point representation can be
+        ``None`` when its source table was not printed.
+
+        Non-spin-polarized output places all records in ``bands.up`` and sets
+        ``pol`` to ``'none'``.  Spin-polarized output separates records into
+        ``up`` and ``down`` and labels them accordingly.  For ``bands`` and
+        some ``nscf`` outputs, occupation arrays can be empty.  When complete
+        occupations are present, :meth:`read_band_edges` adds band-edge and
+        gap information to the same object.  The return value is the total
+        number of stored spin/k-point records.
+        """
         def leading_numbers(line):
             """Return the leading sequence of numeric values from a line."""
             match = re.match(leading_number_list_pattern,line)
@@ -582,7 +716,18 @@ class PwscfOutData(DevBase):
 
 
     def read_band_edges(self,bands):
-        """Identify band edges, gaps, and the electronic structure type."""
+        """Add band-edge and gap records to a parsed bands object.
+
+        Occupied and unoccupied eigenvalues are identified independently at
+        every k-point and spin.  When usable occupations exist, ``bands`` is
+        augmented with ``vbm``, ``cbm``, ``direct_gap``, and
+        ``electronic_structure``.  Edge objects contain the energy, k-point
+        representations, k-point index, polarization, and, for VBM/CBM,
+        band number.  Insulating systems whose extrema occur at different
+        k-points also receive ``indirect_gap``, whose ``kpoints`` member holds
+        the VBM and CBM records.  No members are added when occupations are
+        absent or cannot distinguish occupied and unoccupied states.
+        """
         def edge_data(band,energy,band_number):
             """Build a band-edge record for one k-point."""
             return obj(
@@ -646,7 +791,20 @@ class PwscfOutData(DevBase):
 
 
     def read_structures(self,lines):
-        """Read structures reported during relaxation or dynamics."""
+        """Read and bind structures from ionic-step output blocks.
+
+        ``relax_structures`` is an ``obj`` mapping zero-based step indices to
+        configuration objects.  Each configuration contains ``atoms`` as a
+        list of element labels and ``positions`` as an ``(natoms, 3)`` NumPy
+        array.  An ``axes`` ``(3, 3)`` array is included when a preceding
+        ``CELL_PARAMETERS`` block is available.  Crystal positions are
+        converted to Cartesian coordinates when those axes are known.
+
+        The layout is the same for ``relax``, ``vc-relax``, ``md``, and
+        ``vc-md``.  Fixed-cell output can omit cell blocks, while variable-cell
+        output normally supplies new axes with each structure.  The return
+        value is the number of complete configurations retained.
+        """
         structures = obj()
         conf       = None
         i          = 0
@@ -737,7 +895,14 @@ class PwscfOutData(DevBase):
 
 
     def read_stress(self,lines):
-        """Read the sequence of reported stress tensors."""
+        """Read and bind the sequence of reported stress tensors.
+
+        ``stress`` is a list of numeric rows, with three consecutive rows per
+        complete tensor.  Each row contains the three stress components in
+        Ry/bohr cubed followed by the three values printed in kbar.  Tensors
+        from successive ionic steps are appended to the same flat list.  The
+        return value is the number of complete tensors retained.
+        """
         stress = []
         for i,line in enumerate(lines):
             if 'total   stress' in line:
@@ -763,7 +928,17 @@ class PwscfOutData(DevBase):
 
 
     def read_forces(self,lines):
-        """Read atomic and total forces reported during the run."""
+        """Read and bind atomic and total force histories.
+
+        ``forces`` is a NumPy array with shape ``(nsteps, natoms, 3)`` in
+        Ry/bohr.  ``max_forces`` is the maximum atomic-force norm for each
+        retained step, and ``tot_forces`` is a one-dimensional array of every
+        separately reported total-force value.  Atomic-force blocks with a
+        known atom count are retained only when all atoms are present; total
+        forces remain available even when their atomic block is incomplete.
+        The return value is a temporary ``dotdict`` containing the numbers of
+        atomic and total-force records found.
+        """
         forces     = []
         tot_forces = []
         nat        = None
@@ -829,7 +1004,16 @@ class PwscfOutData(DevBase):
 
 
     def read_kpoints(self,lines):
-        """Read Cartesian k-points, crystal k-points, and weights."""
+        """Read and bind paired k-point tables and their weights.
+
+        A complete Cartesian table and its following crystal-coordinate table
+        are required.  ``kpoints_cart`` and ``kpoints_unit`` are NumPy arrays
+        with shape ``(nkpoints, 3)`` in units of ``2 pi/alat`` and crystal
+        reciprocal coordinates, respectively.  ``kweights`` is the matching
+        one-dimensional weight array.  No member is updated when either table
+        is incomplete.  The return value is ``nkpoints`` on success and zero
+        otherwise.
+        """
         for i,line in enumerate(lines):
             if 'number of k points=' not in line:
                 continue
@@ -885,7 +1069,14 @@ class PwscfOutData(DevBase):
 
 
     def md_statistics(self,equil=None,autocorr=None):
-        """Calculate summary statistics for molecular-dynamics histories."""
+        """Build summary statistics for each molecular-dynamics history.
+
+        The returned ``obj`` has the same quantity names as ``md_data``.  Each
+        value is a ``(mean, error)`` tuple.  ``equil`` discards an initial
+        number of samples; ``autocorr`` optionally groups the remaining data
+        into blocks of that length before estimating the error.  This method
+        is used to bind ``md_stats`` after a complete MD history is read.
+        """
         mds = obj()
         for quantity,values in self.md_data.items():
             if equil is not None:
@@ -907,294 +1098,18 @@ class PwscfOutData(DevBase):
 
 
 class PwscfXmlData(DevBase):
+    """Read and store schema-based Quantum ESPRESSO XML output.
+
+    Complete records are retained when other XML records are incomplete.
+    """
+
     def __init__(self,filepath):
-        None
-    #end def __init__
-#end class PwscfXmlData
+        """Read and store data from schema-based PWSCF XML output."""
 
+        self.data    = None
+        self.kpoints = None
+        self.failed  = False
 
-
-class Pw2CasinoAnalyzer(DevBase):
-    """Read and store physical data from PW2CASINO output.
-
-    The auxiliary analyzer is kept separate from PWSCF text and XML results.
-    Its data members remain ``None`` when the requested information is absent
-    or the output file cannot be read.
-    """
-
-    def __init__(self,filepath,*,warn=None):
-        """Initialize empty PW2CASINO results."""
-        self.K = None
-
-        try:
-            with open(filepath,'r') as fobj:
-                lines = fobj.readlines()
-        except (OSError,UnicodeError) as e:
-            if warn is not None:
-                warn(
-                    'pw2casino file read failed\n'
-                    f'exception encountered: {e}'
-                    )
-            return
-        for line in lines:
-            if 'Kinetic' in line:
-                tokens = line.split()
-                # Check whether the kinetic energy token is a complete numeric value.
-                if len(tokens)>5 and re.fullmatch(number_pattern,tokens[5].strip()) is not None:
-                    self.K = float(tokens[5].replace('D','E').replace('d','e'))
-    #end def __init__
-
-#end class Pw2CasinoAnalyzer
-
-
-
-class PwscfAnalyzer(SimulationAnalyzer):
-    """Analyze output produced by Quantum ESPRESSO PWscf calculations.
-
-    The analyzer coordinates PWSCF text, auxiliary, and XML readers across
-    common run modes. It also provides summaries and visualizations useful
-    for inspecting molecular dynamics and electronic structure.
-    """
-
-    def __init__(
-        self,
-        arg0              = None,
-        infile_name       = None,
-        outfile_name      = None,
-        pw2c_outfile_name = None,
-        *,
-        analyze           = False,
-        xml               = False,
-        warn              = False,
-        md_only           = False,
-        ):
-        """Initialize a PWscf output analyzer.
-
-        Parameters
-        ----------
-        arg0 : Simulation or path-like, optional
-            PWscf simulation to analyze, or path to a calculation directory,
-            input file, or output file. If omitted, only the basic analyzer
-            state is initialized.
-        infile_name : str, optional
-            Name of the PWscf input file within the calculation directory.
-        outfile_name : str, optional
-            Name of the PWscf output file. It is inferred from ``infile_name``
-            when possible.
-        pw2c_outfile_name : str, optional
-            Name of an accompanying PW2CASINO output file.
-        analyze : bool, optional
-            Analyze the available output during initialization.
-        xml : bool, optional
-            Include XML output when analysis is requested.
-        warn : bool, optional
-            Issue warnings when output is missing, malformed, or incomplete.
-        md_only : bool, optional
-            Limit analysis to molecular-dynamics data.
-        """
-        if isinstance(arg0,Simulation):
-            sim                  = arg0
-            path                 = sim.locdir
-            infile_name          = sim.infile
-            outfile_name         = sim.outfile
-            self.input_structure = sim.system.structure
-        elif arg0 is not None:
-            path = path_string(arg0)
-            if not os.path.exists(path):
-                msg = (
-                    'path to QE data does not exist\n'
-                    f'path provided: {path}'
-                    )
-                raise FileNotFoundError(msg)
-            if os.path.isfile(path):
-                filepath = path
-                path,filename = os.path.split(filepath)
-                if filename.endswith('.in'):
-                    infile_name = filename
-                elif filename.endswith('.out'):
-                    outfile_name = filename
-                else:
-                    msg = (
-                        'could not determine whether file is QE input or output\n'
-                        f'file provided: {filepath}'
-                        )
-                    raise RuntimeError(msg)
-            if outfile_name is None:
-                outfile_name = f"{infile_name.rsplit('.',1)[0]}.out"
-        else:
-            return
-
-        inp = None
-        if infile_name is not None:
-            inp = PwscfInput(os.path.join(path,infile_name))
-
-        self.info              = obj(warn=warn,md_only=md_only)
-        self.infile_name       = infile_name
-        self.outfile_name      = outfile_name
-        self.path              = path
-        self.abspath           = os.path.abspath(path)
-        self.pw2c_outfile_name = pw2c_outfile_name
-        self.input             = inp
-        self.results_out       = None
-        self.results_xml       = None
-        self.pw2casino         = None
-        if analyze:
-            self.analyze(xml=xml)
-    #end def __init__
-
-
-    def analyze(self,*,xml=False):
-        """Analyze the available PWscf text and optional XML output."""
-        outfile     = os.path.join(self.path,self.outfile_name)
-        warn        = self.warn if self.info.warn else None
-        results_out = PwscfOutData(
-            outfile,
-            warn    = warn,
-            md_only = self.info.md_only,
-            )
-        if results_out.calculation is None:
-            return
-        self.results_out = results_out
-        if self.info.md_only:
-            return
-        if self.pw2c_outfile_name is not None:
-            filepath = os.path.join(self.path,self.pw2c_outfile_name)
-            self.pw2casino = Pw2CasinoAnalyzer(filepath,warn=warn)
-        if xml:
-            self.analyze_xml()
-            if self.results_xml is not None:
-                self.info.xml_status_failed = bool(self.results_xml.failed)
-    #end def analyze
-
-
-    def analyze_xml(self):
-        """Locate and parse schema or legacy PWscf XML output."""
-        import xml.etree.ElementTree as ET
-
-        self.results_xml = None
-        if 'xml_status_failed' in self.info:
-            del self.info.xml_status_failed
-        if self.input is None or 'control' not in self.input:
-            if self.info.warn:
-                self.warn(
-                    'xml data is not available\n'
-                    'reason: input control section is not available'
-                    )
-            return 0
-        cont = self.input.control
-        if 'outdir' not in cont or 'prefix' not in cont:
-            if self.info.warn:
-                self.warn('xml data is not available\nreason: input outdir/prefix is not available')
-            return 0
-        savedir     = os.path.join(self.path,cont.outdir,f'{cont.prefix}.save')
-        schema_file = os.path.join(savedir,'data-file-schema.xml')
-        legacy_file = os.path.join(savedir,'data-file.xml')
-        schema      = os.path.exists(schema_file)
-        if not schema:
-            legacy_dir = savedir
-            if not os.path.exists(legacy_file):
-                legacy_dir  = os.path.join(self.path,cont.outdir)
-                legacy_file = os.path.join(legacy_dir,f'{cont.prefix}.xml')
-            if not os.path.exists(legacy_file):
-                if self.info.warn:
-                    self.warn(
-                        'xml data is not available\n'
-                        f'file not found: {legacy_file}'
-                        )
-                return 0
-
-        self.results_xml = obj(data=None,kpoints=None,failed=False)
-        if schema:
-            try:
-                root = ET.parse(schema_file).getroot()
-            except (OSError,ET.ParseError) as e:
-                self.xml_failed(
-                    'encountered an exception during xml read, this data will not be available\n'
-                    f'exception encountered: {e}'
-                )
-                return 0
-            npoints = self.analyze_schema_xml(root)
-        else:
-            try:
-                data = read_qexml(legacy_file)
-            except Exception as e:
-                self.xml_failed(
-                    'encountered an exception during xml read, this data will not be available\n'
-                    f'exception encountered: {e}'
-                    )
-                return 0
-            npoints = self.analyze_legacy_xml(data,legacy_dir)
-        return npoints
-    #end def analyze_xml
-
-
-    def xml_failed(self,message):
-        """Record an XML parsing failure and optionally issue a warning."""
-        self.results_xml.failed = True
-        if self.info.warn:
-            self.warn(message)
-    #end def xml_failed
-
-
-    def analyze_legacy_xml(self,data,datadir):
-        """Extract k-point and orbital data from legacy PWscf XML."""
-        def object_path(value,*names):
-            """Return a nested value, or None when its path is incomplete."""
-            for name in names:
-                if value is None or name not in value:
-                    return None
-                value = value[name]
-            return value
-        #end def object_path
-
-        kpdata = object_path(data,'root','eigenvalues','k_point')
-        if kpdata is None:
-            self.results_xml.update(data=data,kpoints=obj())
-            self.xml_failed(
-                'xml data is incomplete, some data will not be available\n'
-                'reason: legacy eigenvalue k-points are not available'
-                )
-            return 0
-        kpoints = obj()
-        for ki,kpd in kpdata.items():
-            if 'k_point_coords' not in kpd or 'weight' not in kpd or 'datafile' not in kpd:
-                self.results_xml.failed = True
-                continue
-            kp = obj(kpoint=kpd.k_point_coords,weight=kpd.weight)
-            kpoints[ki] = kp
-            for si,dfile in kpd.datafile.items():
-                efilepath = os.path.join(datadir,dfile.iotk_link)
-                if not os.path.exists(efilepath):
-                    self.results_xml.failed = True
-                    continue
-                try:
-                    edata = read_qexml(efilepath)
-                except Exception as e:
-                    self.xml_failed(
-                        'encountered an exception during xml read, '
-                        'this data will not be available\n'
-                        f'exception encountered: {e}'
-                        )
-                    continue
-                eunits      = object_path(edata,'root','units_for_energies','units')
-                eigenvalues = object_path(edata,'root','eigenvalues')
-                occupations = object_path(edata,'root','occupations')
-                if eunits is None or eigenvalues is None or occupations is None:
-                    self.results_xml.failed = True
-                    continue
-                units = dict(ha='Ha',ry='Ry',ev='eV').get(eunits.lower()[:2],'Ha')
-                spin  = obj(units=units,eigenvalues=eigenvalues,occupations=occupations)
-                if si==1:
-                    kp.up = spin
-                elif si==2:
-                    kp.down = spin
-        self.results_xml.update(data=data,kpoints=kpoints)
-        return len(kpoints)
-    #end def analyze_legacy_xml
-
-
-    def analyze_schema_xml(self,root):
-        """Extract k-point and orbital data from schema-based PWscf XML."""
         def xml_value(text):
             """Convert XML text to its natural scalar or array value."""
             text = text.strip()
@@ -1242,45 +1157,47 @@ class PwscfAnalyzer(SimulationAnalyzer):
             return node
         #end def xml_element
 
-        def xml_child(elem,name):
+        def xml_child(element,name):
             """Return the named direct XML child when present."""
-            if elem is None:
+            if element is None:
                 return None
             name = name.lower()
             return next(
-                (child for child in elem if child.tag.rsplit('}',1)[-1].lower()==name),
+                (child for child in element
+                 if child.tag.rsplit('}',1)[-1].lower()==name),
                 None,
                 )
         #end def xml_child
+
+        try:
+            root = ET.parse(filepath).getroot()
+        except (OSError,UnicodeError,ET.ParseError):
+            self.failed = True
+            return
 
         data           = obj(root=xml_element(root))
         output         = xml_child(root,'output')
         band_structure = xml_child(output,'band_structure')
         kpoints        = obj()
-        self.results_xml.update(data=data,kpoints=kpoints)
+
+        self.data = data
+
         if output is None or band_structure is None:
-            self.xml_failed(
-                'xml data is incomplete, some data will not be available\n'
-                'reason: output band_structure is not available'
-                )
-            return 0
+            return
         lsda_element = xml_child(band_structure,'lsda')
         lsda         = xml_value(lsda_element.text) if lsda_element is not None else False
-        records      = [child for child in band_structure
-                        if child.tag.rsplit('}',1)[-1].lower()=='ks_energies']
+        records      = [
+            child for child in band_structure
+            if child.tag.rsplit('}',1)[-1].lower()=='ks_energies'
+            ]
         if len(records)==0:
-            self.xml_failed(
-                'xml data is incomplete, some data will not be available\n'
-                'reason: ks_energies records are not available'
-                )
-            return 0
+            return
         coordinate_map = {}
         for record in records:
             k_element = xml_child(record,'k_point')
             e_element = xml_child(record,'eigenvalues')
             o_element = xml_child(record,'occupations')
             if k_element is None or e_element is None or o_element is None:
-                self.results_xml.failed = True
                 continue
             coordinate_match = re.fullmatch(numeric_text_pattern,k_element.text or '')
             eigenvalue_match = re.fullmatch(numeric_text_pattern,e_element.text or '')
@@ -1289,7 +1206,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 or eigenvalue_match is None
                 or occupation_match is None
                 ):
-                self.results_xml.failed = True
                 continue
             coordinates = np.array([
                 float(value.replace('D','E').replace('d','e'))
@@ -1308,13 +1224,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 or len(occupations)==0
                 or len(eigenvalues)!=len(occupations)
                 ):
-                self.results_xml.failed = True
                 continue
             coordinates = coordinates[:3]
             weight_text = k_element.attrib.get('weight','')
             # Check whether the weight text is a complete numeric value.
             if re.fullmatch(number_pattern,weight_text.strip()) is None:
-                self.results_xml.failed = True
                 continue
             weight = float(weight_text.replace('D','E').replace('d','e'))
             key    = tuple(np.round(coordinates,12))
@@ -1334,79 +1248,276 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 kp.up = spin
             else:
                 kp.down = spin
-        if lsda and any('down' not in kp for kp in kpoints.values()):
-            self.results_xml.failed = True
-        if len(kpoints)==0:
-            self.xml_failed(
-                'xml data is incomplete, some data will not be available\n'
-                'reason: no complete ks_energies records are available'
-                )
-        return len(kpoints)
-    #end def analyze_schema_xml
+        if len(kpoints)>0:
+            self.kpoints = kpoints
+    #end def __init__
+#end class PwscfXmlData
 
 
-    def write_electron_counts(
+
+class Pw2CasinoAnalyzer(DevBase):
+    """Read and store physical data from PW2CASINO output.
+
+    The auxiliary analyzer is kept separate from PWSCF text and XML results.
+    Its data members remain ``None`` when the requested information is absent
+    or the output file cannot be read.
+    """
+
+    def __init__(self,filepath):
+        """Initialize empty PW2CASINO results."""
+        self.K = None
+
+        with open(filepath,'r') as fobj:
+            lines = fobj.readlines()
+        for line in lines:
+            if 'Kinetic' in line:
+                tokens = line.split()
+                # Check whether the kinetic energy token is a complete numeric value.
+                if len(tokens)>5 and re.fullmatch(number_pattern,tokens[5].strip()) is not None:
+                    self.K = float(tokens[5].replace('D','E').replace('d','e'))
+    #end def __init__
+
+#end class Pw2CasinoAnalyzer
+
+
+
+class PwscfAnalyzer(SimulationAnalyzer):
+    """Analyze output produced by Quantum ESPRESSO PWscf calculations.
+
+    The analyzer coordinates PWSCF text, auxiliary, and XML readers across
+    common run modes. It also provides summaries and visualizations useful
+    for inspecting molecular dynamics and electronic structure.
+    """
+
+    def __init__(
         self,
-        filepath = None,
+        arg0              = None,
+        infile_name       = None,
+        outfile_name      = None,
+        pw2c_outfile_name = None,
         *,
-        return_flag = False,
+        analyze           = False,
+        xml               = False,
+        md_only           = False,
         ):
-        """Write or return spin-resolved electron counts from parsed XML."""
-        results_xml = self.results_xml
-        if not return_flag:
-            if results_xml is None:
-                msg = 'xml data has not been processed\ncannot write electron counts'
-                raise RuntimeError(msg)
-            elif results_xml.failed:
-                msg = 'xml data processing failed\ncannot write electron counts'
-                raise FileFormatError(msg)
-        elif results_xml is None or results_xml.failed:
-            return False
-        kpoints      = results_xml.kpoints
-        first_kpoint = next(iter(kpoints.values()))
-        spins        = dotdict(
-            up   = 'up',
-            down = 'down' if 'down' in first_kpoint else 'up',
-            )
-        tot          = dotdict({
-            spin:sum(kp.weight*kp[label].occupations.sum() for kp in kpoints.values())
-            for spin,label in spins.items()
-            })
-        text        = 'total electron counts\n'
-        total_count = tot.up+tot.down
-        spin_count  = tot.up-tot.down
-        text += f'  {total_count: 3.2f}  {spin_count: 3.2f}  {tot.up: 3.2f}  {tot.down: 3.2f}\n'
-        text += '\nkpoint electron counts\n'
-        weights = np.array([kp.weight for kp in kpoints.values()],dtype=float)
-        mult    = (weights/weights.min()).sum()
-        for ik in sorted(kpoints.keys()):
-            kp  = kpoints[ik]
-            kpt = dotdict({
-                spin:kp.weight*kp[label].occupations.sum()*mult
-                for spin,label in spins.items()
-                })
-            total_count = kpt.up+kpt.down
-            spin_count  = kpt.up-kpt.down
-            text += (
-                f'  {ik:>3}  {kp.weight: 8.6f}    {total_count: 3.2f}  '
-                f'{spin_count: 3.2f}  {kpt.up: 3.2f}  {kpt.down: 3.2f}\n'
-                )
-        if filepath is not None:
-            with open(filepath,'w') as fobj:
-                fobj.write(text)
-        return True if return_flag else text
-    #end def write_electron_counts
+        """Initialize a PWscf output analyzer.
+
+        Parameters
+        ----------
+        arg0 : Simulation or path-like, optional
+            PWscf simulation to analyze, or path to a calculation directory,
+            input file, or output file. If omitted, only the basic analyzer
+            state is initialized.
+        infile_name : str, optional
+            Name of the PWscf input file within the calculation directory.
+        outfile_name : str, optional
+            Name of the PWscf output file. It is inferred from ``infile_name``
+            when possible.
+        pw2c_outfile_name : str, optional
+            Name of an accompanying PW2CASINO output file.
+        analyze : bool, optional
+            Analyze the available output during initialization.
+        xml : bool, optional
+            Include XML output when analysis is requested.
+        md_only : bool, optional
+            Limit analysis to molecular-dynamics data.
+        """
+        if isinstance(arg0,Simulation):
+            sim                  = arg0
+            path                 = sim.locdir
+            infile_name          = sim.infile
+            outfile_name         = sim.outfile
+            self.input_structure = sim.system.structure
+        elif arg0 is not None:
+            path = path_string(arg0)
+            if not os.path.exists(path):
+                msg = (
+                    'path to QE data does not exist\n'
+                    f'path provided: {path}'
+                    )
+                raise FileNotFoundError(msg)
+            if os.path.isfile(path):
+                filepath = path
+                path,filename = os.path.split(filepath)
+                if filename.endswith('.in'):
+                    infile_name = filename
+                elif filename.endswith('.out'):
+                    outfile_name = filename
+                else:
+                    msg = (
+                        'could not determine whether file is QE input or output\n'
+                        f'file provided: {filepath}'
+                        )
+                    raise RuntimeError(msg)
+            if outfile_name is None and infile_name is not None:
+                outfile_name = f"{infile_name.rsplit('.',1)[0]}.out"
+        else:
+            return
+
+        inp = None
+        if infile_name is not None:
+            infile = os.path.join(path,infile_name)
+            if os.path.isfile(infile):
+                inp = PwscfInput(infile)
+            else:
+                msg = f'PWSCF input file is not available\nfile not found: {infile}'
+                raise FileNotFoundError(msg)
+
+        self.info              = obj(md_only=md_only)
+        self.infile_name       = infile_name
+        self.outfile_name      = outfile_name
+        self.path              = path
+        self.abspath           = os.path.abspath(path)
+        self.pw2c_outfile_name = pw2c_outfile_name
+        self.input             = inp
+        self.results_out       = None
+        self.results_xml       = None
+        self.pw2casino         = None
+        if analyze:
+            self.analyze(xml=xml)
+    #end def __init__
+
+
+    def analyze(self,*,xml=False):
+        """Analyze the available PWscf text and optional XML output."""
+        self.results_out = None
+        self.results_xml = None
+        self.pw2casino   = None
+        if ('path' not in self
+            or 'outfile_name' not in self
+            or self.outfile_name is None
+            ):
+            raise RuntimeError('PWSCF output file name is not available')
+        outfile = os.path.join(self.path,self.outfile_name)
+        if not os.path.isfile(outfile):
+            msg = f'PWSCF output file is not available\nfile not found: {outfile}'
+            raise FileNotFoundError(msg)
+        results_out = PwscfOutData(outfile,md_only=self.info.md_only)
+        self.results_out = results_out
+        if self.info.md_only:
+            return
+        if self.pw2c_outfile_name is not None:
+            filepath = os.path.join(self.path,self.pw2c_outfile_name)
+            if os.path.isfile(filepath):
+                self.pw2casino = Pw2CasinoAnalyzer(filepath)
+            else:
+                msg = f'PW2CASINO output file is not available\nfile not found: {filepath}'
+                raise FileNotFoundError(msg)
+        if xml:
+            self.analyze_xml()
+    #end def analyze
+
+
+    def analyze_xml(self):
+        """Locate and parse schema or legacy PWscf XML output."""
+        self.results_xml = None
+        if 'input' not in self or self.input is None or 'control' not in self.input:
+            return 0
+        cont = self.input.control
+        if 'outdir' not in cont or 'prefix' not in cont:
+            return 0
+        savedir     = os.path.join(self.path,cont.outdir,f'{cont.prefix}.save')
+        schema_file = os.path.join(savedir,'data-file-schema.xml')
+        legacy_file = os.path.join(savedir,'data-file.xml')
+        schema      = os.path.isfile(schema_file)
+
+        if schema:
+            results_xml = PwscfXmlData(schema_file)
+            if results_xml.failed:
+                return 0
+            self.results_xml = results_xml
+            npoints = 0 if results_xml.kpoints is None else len(results_xml.kpoints)
+        else:
+            legacy_dir = savedir
+            if not os.path.isfile(legacy_file):
+                legacy_dir  = os.path.join(self.path,cont.outdir)
+                legacy_file = os.path.join(legacy_dir,f'{cont.prefix}.xml')
+            if not os.path.isfile(legacy_file):
+                return 0
+            data = read_qexml(legacy_file)
+            self.results_xml = obj(data=None,kpoints=None,failed=False)
+            npoints = self.analyze_legacy_xml(data,legacy_dir)
+            if self.results_xml.failed:
+                self.results_xml = None
+                return 0
+        return npoints
+    #end def analyze_xml
+
+
+    def analyze_legacy_xml(self,data,datadir):
+        """Extract k-point and orbital data from legacy PWscf XML."""
+        def object_path(value,*names):
+            """Return a nested value, or None when its path is incomplete."""
+            for name in names:
+                if value is None or name not in value:
+                    return None
+                value = value[name]
+            return value
+        #end def object_path
+
+        kpdata = object_path(data,'root','eigenvalues','k_point')
+        if kpdata is None:
+            self.results_xml.update(data=data,kpoints=obj())
+            self.results_xml.failed = True
+            return 0
+        kpoints = obj()
+        for ki,kpd in kpdata.items():
+            if 'k_point_coords' not in kpd or 'weight' not in kpd or 'datafile' not in kpd:
+                self.results_xml.failed = True
+                continue
+            kp = obj(kpoint=kpd.k_point_coords,weight=kpd.weight)
+            kpoints[ki] = kp
+            for si,dfile in kpd.datafile.items():
+                efilepath = os.path.join(datadir,dfile.iotk_link)
+                if not os.path.isfile(efilepath):
+                    self.results_xml.failed = True
+                    continue
+                try:
+                    edata = read_qexml(efilepath)
+                except Exception:
+                    self.results_xml.failed = True
+                    continue
+                eunits      = object_path(edata,'root','units_for_energies','units')
+                eigenvalues = object_path(edata,'root','eigenvalues')
+                occupations = object_path(edata,'root','occupations')
+                if eunits is None or eigenvalues is None or occupations is None:
+                    self.results_xml.failed = True
+                    continue
+                units = dict(ha='Ha',ry='Ry',ev='eV').get(eunits.lower()[:2],'Ha')
+                spin  = obj(units=units,eigenvalues=eigenvalues,occupations=occupations)
+                if si==1:
+                    kp.up = spin
+                elif si==2:
+                    kp.down = spin
+        self.results_xml.update(data=data,kpoints=kpoints)
+        return len(kpoints)
+    #end def analyze_legacy_xml
+
+
+
+
 
 
     def md_statistics(self,equil=None,autocorr=None):
         """Calculate summary statistics for molecular-dynamics histories."""
+        if ('results_out' not in self
+            or self.results_out is None
+            or 'md_data' not in self.results_out
+            or self.results_out.md_data is None
+            ):
+            return
         return self.results_out.md_statistics(equil,autocorr)
     #end def md_statistics
 
 
     def md_plots(self,*,show=True):
         """Plot energy, temperature, and pressure histories from dynamics."""
-
+        if ('results_out' not in self
+            or self.results_out is None
+            or 'md_data' not in self.results_out
+            or self.results_out.md_data is None
+            ):
+            return
         md = self.results_out.md_data
 
         import matplotlib.pyplot as plt
@@ -1437,9 +1548,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def make_movie(self,filename,filepath=None):
         """Write relaxed or dynamic structures as a tiled XYZ movie."""
-        if (self.results_out is None
+        if ('results_out' not in self
+            or self.results_out is None
             or 'relax_structures' not in self.results_out
             or self.results_out.relax_structures is None
+            or 'input' not in self
+            or self.input is None
             ):
             return
         structures = self.results_out.relax_structures
@@ -1476,7 +1590,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
         ):
         """Plot the analyzed band structure along its reciprocal-space path."""
         import matplotlib.pyplot as plt
-        if self.results_out is None:
+        if ('results_out' not in self
+            or self.results_out is None
+            or 'input' not in self
+            or self.input is None
+            or 'system' not in self.input
+            or 'nbnd' not in self.input.system
+            ):
             return
         bands = self.results_out.bands
         if bands is None:
@@ -1502,6 +1622,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             x      = kpath['explicit_path_linearcoords']
             labels = list(kpath['explicit_kpoints_labels'])
         else:
+            if self.results_out.kpoints_cart is None:
+                return
             labels = list(k_labels)
             # Calculate linear coordinates from self.results_out.kpoints_cart
             x          = []

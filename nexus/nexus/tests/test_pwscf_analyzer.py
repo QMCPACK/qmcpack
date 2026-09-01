@@ -318,10 +318,17 @@ def test_timing_value_sequence(text,expected):
 
 def test_empty_init():
     from .. import pwscf_analyzer as pa_module
-    from ..pwscf_analyzer import Pw2CasinoAnalyzer, PwscfAnalyzer, PwscfOutData
+    from ..pwscf_analyzer import (
+        Pw2CasinoAnalyzer,
+        PwscfAnalyzer,
+        PwscfOutData,
+        PwscfXmlData,
+        )
 
     pa = PwscfAnalyzer()
     assert(len(pa)==0)
+    with pytest.raises(RuntimeError):
+        pa.analyze()
     free_helpers = ('match_float',)
     for name in free_helpers:
         assert(callable(getattr(pa_module,name)))
@@ -339,7 +346,9 @@ def test_empty_init():
     assert(not any(hasattr(PwscfAnalyzer,'analyze_'+name[5:]) for name in reader_names))
     assert(not hasattr(PwscfOutData,'read_pw2casino'))
     assert(not hasattr(PwscfAnalyzer,'analyze_pw2casino'))
+    assert(not hasattr(PwscfAnalyzer,'analyze_schema_xml'))
     assert(not hasattr(Pw2CasinoAnalyzer,'read'))
+    assert(callable(PwscfXmlData))
 #end def test_empty_init
 
 
@@ -392,6 +401,8 @@ def test_pw2casino_analyzer_read(tmp_path):
     (tmp_path/'pw2casino.out').write_text(
         'Kinetic energy from orbitals = 1.25D+01\n'
         )
+    with pytest.raises(FileNotFoundError):
+        PwscfAnalyzer(tmp_path,'missing.in','pwscf.out')
     pw2casino = Pw2CasinoAnalyzer(tmp_path/'pw2casino.out')
     assert(pw2casino.K==12.5)
 
@@ -413,8 +424,18 @@ def test_pw2casino_analyzer_read(tmp_path):
     pw2casino = Pw2CasinoAnalyzer(tmp_path/'pw2casino.out')
     assert(pw2casino.K is None)
 
-    pw2casino = Pw2CasinoAnalyzer(tmp_path/'missing.out')
-    assert(pw2casino.K is None)
+    with pytest.raises(FileNotFoundError):
+        Pw2CasinoAnalyzer(tmp_path/'missing.out')
+
+    (tmp_path/'pw2casino.out').unlink()
+    with pytest.raises(FileNotFoundError):
+        PwscfAnalyzer(
+            tmp_path,
+            'pwscf.in',
+            'pwscf.out',
+            'pw2casino.out',
+            analyze = True,
+            )
 #end def test_pw2casino_analyzer_read
 
 
@@ -483,7 +504,6 @@ def test_analyze():
         pw2c_outfile_name = None,
         info = obj(
             md_only         = False,
-            warn            = False,
             ),
         input = obj(
             atomic_positions = obj(
@@ -576,7 +596,6 @@ def test_analyze():
     assert(pa.results_out.forces is not None)
     assert(pa.results_out.tot_forces is not None)
     assert(pa.results_out.stress is not None)
-    assert('xml_status_failed' not in pa.info)
 
     del pa.input
     del pa.abspath
@@ -632,7 +651,6 @@ def test_analyze():
         walltime        = 0.00164444444444,
         info = obj(
             md_only         = False,
-            warn            = False,
             ),
         )
 
@@ -753,7 +771,6 @@ def test_analyze():
         walltime        = 0.00251388888889,
         info = obj(
             md_only         = False,
-            warn            = False,
             ),
         relax_structures = obj({
             0 : obj(
@@ -854,7 +871,6 @@ def test_analyze():
         pw2c_outfile_name = None,
         info = obj(
             md_only         = False,
-            warn            = False,
             ),
         input = obj(
             atomic_positions = obj(
@@ -980,7 +996,6 @@ def test_analyze():
         walltime        = 0.09731666666666666,
         info = obj(
             md_only         = False,
-            warn            = False,
             ),
         bands = obj(
             electronic_structure = 'insulating',
@@ -1157,7 +1172,7 @@ def test_analyze():
 
 def test_modern_output(tmp_path):
     import numpy as np
-    from ..pwscf_analyzer import PwscfAnalyzer
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
 
     infile = """&CONTROL
   calculation = 'vc-md'
@@ -1245,6 +1260,7 @@ H  0.100000000  0.200000000  0.300000000  1 1 1  trailing text
     assert(np.allclose(pa.results_out.relax_structures[0].axes,5*np.eye(3)))
     assert(np.allclose(pa.results_out.relax_structures[0].positions,[[0.5,1.0,1.5]]))
     assert(pa.results_xml is not None)
+    assert(isinstance(pa.results_xml,PwscfXmlData))
     assert(not pa.results_xml.failed)
     assert(pa.results_xml.data.root.output.band_structure.nks==2)
     assert(len(pa.results_xml.kpoints)==2)
@@ -1255,13 +1271,7 @@ H  0.100000000  0.200000000  0.300000000  1 1 1  trailing text
     assert(pa.results_out.scf_conv_accuracy is None)
     assert(pa.results_out.bands is not None)
     assert(pa.results_xml is not None)
-    assert(not pa.info.xml_status_failed)
     assert('data_status' not in pa.info)
-
-    count_lines = pa.write_electron_counts().splitlines()
-    assert(count_lines[1].split()==['1.50','0.00','0.75','0.75'])
-    assert(count_lines[4].split()==['1','0.500000','3.00','0.00','1.50','1.50'])
-    assert(count_lines[5].split()==['2','0.250000','1.50','0.00','0.75','0.75'])
 
     # Recognized but incomplete records are skipped without stopping analysis.
     malformed_tail = """
@@ -1291,23 +1301,30 @@ CELL_PARAMETERS (alat= 5.0)
     assert(pa.results_out.forces is not None)
     assert(pa.results_out.tot_forces is not None)
     assert(pa.results_out.relax_structures is not None)
-    assert(pa.results_xml.failed)
-    assert(pa.info.xml_status_failed)
+    assert(not pa.results_xml.failed)
     assert(len(pa.results_xml.kpoints)==1)
+
+    # Missing electronic records do not indicate an XML read failure.
+    no_kpoints_schema = schema.replace('ks_energies','unused_energies')
+    (savedir/'data-file-schema.xml').write_text(no_kpoints_schema)
+    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
+    assert(not pa.results_xml.failed)
+    assert(pa.results_xml.kpoints is None)
 
     # XML syntax errors are localized and do not discard parsed log data.
     (savedir/'data-file-schema.xml').write_text('<qes:espresso>')
     pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
     assert(np.allclose(pa.results_out.relax_energies,[-1.1]))
-    assert(pa.results_xml.failed)
-    assert(pa.results_xml.data is None)
-    assert(pa.info.xml_status_failed)
+    assert(pa.results_xml is None)
 
     # Missing XML is represented by None rather than an empty XML result.
     (savedir/'data-file-schema.xml').unlink()
     pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
     assert(pa.results_xml is None)
-    assert('xml_status_failed' not in pa.info)
+    xml_data = PwscfXmlData(savedir/'data-file-schema.xml')
+    assert(xml_data.failed)
+    assert(xml_data.data is None)
+    assert(xml_data.kpoints is None)
 
     # A total force is retained even when no atomic-force block is present.
     (tmp_path/'pwscf.out').write_text('     Total force = 0.125 Ry/au\n')
