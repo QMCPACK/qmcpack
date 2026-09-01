@@ -16,6 +16,7 @@
 #====================================================================#
 
 
+import gc
 import os
 import time
 from typing import ClassVar,Literal,TextIO
@@ -102,7 +103,6 @@ class ProjectManager(NexusCore):
         if status:
             self.write_simulation_status()
             if status_only:
-                NexusCore.write_end_splash()
                 return
             #end if
         #end if
@@ -137,7 +137,6 @@ class ProjectManager(NexusCore):
             self.progress_cascades()
         #end if
         self.log('Project finished\n')
-        NexusCore.write_end_splash()
     #end def run_project
 
 
@@ -362,7 +361,7 @@ class ProjectManager(NexusCore):
 
 
     def progress_cascades(self):
-        NexusCore.gc.collect()
+        gc.collect()
         finished = []
         progressing_cascades = self.progressing_cascades
         for cascade in progressing_cascades.values():

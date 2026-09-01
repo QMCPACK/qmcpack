@@ -31,15 +31,15 @@ def test_empty_init():
 
 @isolate_nexus_core
 def test_write_splash():
-    from ..nexus_base import NexusCore
+    from ..nexus_base import write_splash
 
     log = generic_settings.devlog
-    nc = NexusCore()
-    assert(not nc.wrote_splash)
-    nc.write_splash()
+    assert(not hasattr(write_splash, "wrote_splash"))
+    write_splash()
     assert('Nexus' in log.contents())
     assert('Please cite:' in log.contents())
-    assert(nc.wrote_splash)
+    assert(hasattr(write_splash, "wrote_splash"))
+    assert(write_splash.wrote_splash)
 #end def test_write_splash
     
 

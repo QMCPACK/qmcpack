@@ -34,7 +34,7 @@ from .developer     import obj, log, NexusError
 from .debug         import ci
 from .utilities     import path_string
 
-from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
+from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults, write_splash
 from .machines        import Job,                    job,            Machine, Supercomputer, get_machine, get_cpu_cores, Workstation
 from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims, DynamicProcess
 from .project_manager import ProjectManager,     DynamicWorkflowManager,     workflow_manager
@@ -215,7 +215,7 @@ class Settings(NexusCore):
             self.process_command_line_settings(kwargs)
         #end if
 
-        NexusCore.write_splash()
+        write_splash()
 
         # print version information
         self.log("Checking current machine for Nexus dependencies...\n")
