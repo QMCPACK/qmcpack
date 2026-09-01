@@ -26,7 +26,6 @@
 
 
 import os
-import gc as garbage_collector
 from os import PathLike
 from copy import deepcopy
 from .utilities import path_string
@@ -60,9 +59,6 @@ modes = obj(
     stages     = 6,
     all        = 7
     )
-
-garbage_collector.enable()
-
 
 nexus_noncore_defaults = obj(
     basis_dir         = None,
@@ -146,9 +142,6 @@ _____________________________________________________
 
 
 class NexusCore(DevBase):
-
-    # garbage collector
-    gc = garbage_collector
 
     # mutable/dynamic nexus core data
     wrote_something   = False # for pretty printing

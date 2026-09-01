@@ -16,6 +16,7 @@
 #====================================================================#
 
 
+import gc
 import os
 import time
 from typing import ClassVar,Literal,TextIO
@@ -360,7 +361,7 @@ class ProjectManager(NexusCore):
 
 
     def progress_cascades(self):
-        NexusCore.gc.collect()
+        gc.collect()
         finished = []
         progressing_cascades = self.progressing_cascades
         for cascade in progressing_cascades.values():
