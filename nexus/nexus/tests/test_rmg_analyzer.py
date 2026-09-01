@@ -1,6 +1,8 @@
+from shutil import copytree
+
 import pytest
 import numpy as np
-from shutil import copytree
+
 from . import NexusTestOrder
 from . import TEST_DIR
 pytestmark = pytest.mark.order(NexusTestOrder.RMG_ANALYZER)
@@ -8,20 +10,104 @@ pytestmark = pytest.mark.order(NexusTestOrder.RMG_ANALYZER)
 
 representative_root = TEST_DIR/'test_rmg_analyzer_files'
 representative_runs = (
-    ('scf',         'electronic/input.scf.02.log',       'scf',   -10.93257703, (1,2,3)),
-    ('nscf',        'electronic/input.nscf.05.log',      'nscf',    0.0,        (1,2,3)),
-    ('band',        'electronic/input.band.02.log',      'band',    None,       None),
-    ('exx',         'electronic/input.exx.01.log',       'exx',     None,       None),
-    ('relax',       'ionic/relax/input.01.log',          'relax', -10.93250973, (3,2,3)),
-    ('nve',         'ionic/nve/input.01.log',            'md_VE', -10.93251979, (3,2,3)),
-    ('nvt',         'ionic/nvt/input.01.log',            'md_TE', -10.93251979, (3,2,3)),
-    ('tddft',       'tddft/input.00.log',                'tddft', -16.75166816, (1,3,3)),
-    ('stm_scf',     'stm/input.scf.01.log',              'scf',   -11.96999888, (1,2,3)),
-    ('stm',         'stm/input.stm.00.log',              'stm',     None,       None),
-    ('neb_initial', 'neb/image_initial/input.00.log',    'scf',    -1.73498899, (1,3,3)),
-    ('neb_final',   'neb/image_final/input.00.log',      'scf',    -1.73498890, (1,3,3)),
-    ('neb_image01', 'neb/image01/input.02.log',          'neb',    -1.67437690, (1,3,3)),
-    ('neb_image02', 'neb/image02/input.01.log',          'neb',    -1.67437690, (1,3,3)),
+    pytest.param(
+        'electronic/input.scf.02.log',
+        'scf',
+        -10.93257703,
+        (1,2,3),
+        id = 'scf',
+        ),
+    pytest.param(
+        'electronic/input.nscf.05.log',
+        'nscf',
+        0.0,
+        (1,2,3),
+        id = 'nscf',
+        ),
+    pytest.param(
+        'electronic/input.band.02.log',
+        'band',
+        None,
+        None,
+        id = 'band',
+        ),
+    pytest.param(
+        'electronic/input.exx.01.log',
+        'exx',
+        None,
+        None,
+        id = 'exx',
+        ),
+    pytest.param(
+        'ionic/relax/input.01.log',
+        'relax',
+        -10.93250973,
+        (3,2,3),
+        id = 'relax',
+        ),
+    pytest.param(
+        'ionic/nve/input.01.log',
+        'md_VE',
+        -10.93251979,
+        (3,2,3),
+        id = 'nve',
+        ),
+    pytest.param(
+        'ionic/nvt/input.01.log',
+        'md_TE',
+        -10.93251979,
+        (3,2,3),
+        id = 'nvt',
+        ),
+    pytest.param(
+        'tddft/input.00.log',
+        'tddft',
+        -16.75166816,
+        (1,3,3),
+        id = 'tddft',
+        ),
+    pytest.param(
+        'stm/input.scf.01.log',
+        'scf',
+        -11.96999888,
+        (1,2,3),
+        id = 'stm_scf',
+        ),
+    pytest.param(
+        'stm/input.stm.00.log',
+        'stm',
+        None,
+        None,
+        id = 'stm',
+        ),
+    pytest.param(
+        'neb/image_initial/input.00.log',
+        'scf',
+        -1.73498899,
+        (1,3,3),
+        id = 'neb_initial',
+        ),
+    pytest.param(
+        'neb/image_final/input.00.log',
+        'scf',
+        -1.73498890,
+        (1,3,3),
+        id = 'neb_final',
+        ),
+    pytest.param(
+        'neb/image01/input.02.log',
+        'neb',
+        -1.67437690,
+        (1,3,3),
+        id = 'neb_image01',
+        ),
+    pytest.param(
+        'neb/image02/input.01.log',
+        'neb',
+        -1.67437690,
+        (1,3,3),
+        id = 'neb_image02',
+        ),
     )
 
 
@@ -49,7 +135,7 @@ def test_empty_init():
 
 
 def rmg_log(calculation_type,body=''):
-    return '''
+    return f'''
 Files
    Control input file:        input
    Data output file:          Waves/wave.out
@@ -79,22 +165,25 @@ Initial Ionic Positions And Displacements (Angstrom)
 --------TIMING INFORMATION FOR Processor owned the most atoms----------------
                                         Total time               Per SCF/step
 1-TOTAL                                             3.00                0.50
-'''.format(calculation_type=calculation_type,body=body)
+'''
 #end def rmg_log
 
 
-@pytest.mark.parametrize('calculation_type,short_mode',[
-    ('Quench electrons','scf'),
-    ('NSCF calculate','nscf'),
-    ('Band structure calculation.','band'),
-    ("calculate Exx integral's from saved wave functions",'exx'),
-    ('Structure Optimization.','relax'),
-    ('Molecular dynamics - CVE','md_VE'),
-    ('Molecular dynamics - CVT','md_TE'),
-    ('Time dependent DFT (TDDFT) calculation','tddft'),
-    ('calculate STM charge density','stm'),
-    ('Molecular dynamics using Nudged Elastic Band.','neb'),
-    ])
+@pytest.mark.parametrize(
+    argnames='calculation_type,short_mode',
+    argvalues=[
+        ('Quench electrons','scf'),
+        ('NSCF calculate','nscf'),
+        ('Band structure calculation.','band'),
+        ("calculate Exx integral's from saved wave functions",'exx'),
+        ('Structure Optimization.','relax'),
+        ('Molecular dynamics - CVE','md_VE'),
+        ('Molecular dynamics - CVT','md_TE'),
+        ('Time dependent DFT (TDDFT) calculation','tddft'),
+        ('calculate STM charge density','stm'),
+        ('Molecular dynamics using Nudged Elastic Band.','neb'),
+        ],
+    )
 def test_run_modes(tmp_path,calculation_type,short_mode):
     from ..rmg_analyzer import RmgAnalyzer, RmgOutData
 
@@ -141,12 +230,11 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
 
 
 @pytest.mark.parametrize(
-    'name,relative_path,run_mode,energy,positions_shape',
-    representative_runs,
-    ids=[run[0] for run in representative_runs],
+    argnames='relative_path,run_mode,energy,positions_shape',
+    argvalues=representative_runs,
     )
 def test_representative_outputs(
-    name,relative_path,run_mode,energy,positions_shape,
+    relative_path,run_mode,energy,positions_shape,
     ):
     from ..rmg_analyzer import RmgAnalyzer, RmgOutData
     from ..rmg_input import RmgInput
@@ -156,7 +244,6 @@ def test_representative_outputs(
     outdata  = RmgOutData(str(logfile))
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
-    assert len(name)>0
     assert outdata.run_mode==run_mode
     assert analyzer.run_mode==run_mode
     assert isinstance(outdata.input,RmgInput)
@@ -225,8 +312,17 @@ def test_representative_neb_results():
         str(neb_root/'image02/input.01.log'),analyze=True).results.neb
 
     expected_energies = [-1.73498899,-1.67437690,-1.67437690,-1.73498890]
+    assert image01.calculation_mode=='NEB Relax'
+    assert image01.spin_polarized
     assert image01.num_images==4
     assert image01.num_intermediate_images==2
+    assert image01.images_per_node==1
+    assert image01.max_steps==1
+    assert image01.spring_constant==0.05
+    assert image01.spring_constant_units=='Ha/B^2'
+    assert image01.parallel.images_per_node==1
+    assert image01.parallel.mpi_processes_per_image==2
+    assert len(image01.image_input_files)==4
     assert len(image01.input_structures)==4
     assert image01.reaction_coordinate.shape==(4,)
     assert np.allclose(image01.energies,expected_energies)
@@ -234,6 +330,7 @@ def test_representative_neb_results():
     assert np.isclose(image01.reverse_barrier,0.06061200)
     assert image01.barrier_image_index==1
     assert image01.local_image.index==1
+    assert image01.local_image.neb_calls==1
     assert image01.local_image.forces.shape==(1,3,3)
     assert image02.local_image.index==2
     assert image02.local_image.forces.shape==(1,3,3)
@@ -312,17 +409,17 @@ potential convergence has been achieved. stopping ...
     assert analyzer.results.timing is not None
     assert isinstance(analyzer.initial_structure(),Structure)
     assert analyzer.initial_structure().units=='A'
-    assert analyzer.initial_structure('B').units=='B'
+    assert analyzer.initial_structure(units='B').units=='B'
     assert analyzer.energy()==-1.2345
-    assert np.isclose(analyzer.energy('Ry'),-2.469)
+    assert np.isclose(analyzer.energy(units='Ry'),-2.469)
     assert analyzer.kpoints().shape==(2,3)
     assert np.allclose(
-        analyzer.kpoints('A'),analyzer.kpoints()*convert(1.0,'A','B'))
+        analyzer.kpoints(units='A'),analyzer.kpoints()*convert(1.0,'A','B'))
     analyzer.results.geometry.kweights = np.array([0.25,0.75])
     assert np.allclose(analyzer.kweights(),[0.25,0.75])
     assert analyzer.eigenvalues().shape==(2,2)
     assert np.allclose(
-        analyzer.eigenvalues('Ha'),convert(analyzer.eigenvalues(),'eV','Ha'))
+        analyzer.eigenvalues(units='Ha'),convert(analyzer.eigenvalues(),'eV','Ha'))
     assert analyzer.occupations().shape==(2,2)
     assert analyzer.Ef()==5.25
     assert analyzer.Evbm()==4.0
@@ -341,23 +438,24 @@ potential convergence has been achieved. stopping ...
     assert analyzer.results.convergence.electronic_converged
     force_factor = convert(1.0,'Ha','eV')/convert(1.0,'B','A')
     assert np.allclose(analyzer.forces(),analyzer.results.forces*force_factor)
-    assert np.allclose(analyzer.forces('Ha/B'),analyzer.results.forces)
-    assert np.allclose(analyzer.forces('Ry/B'),2*analyzer.results.forces)
+    assert np.allclose(analyzer.forces(units='Ha/B'),analyzer.results.forces)
+    assert np.allclose(analyzer.forces(units='Ry/B'),2*analyzer.results.forces)
     assert np.allclose(analyzer.stress(),analyzer.results.stress*0.1)
-    assert np.allclose(analyzer.stress('kbar'),analyzer.results.stress)
+    assert np.allclose(analyzer.stress(units='kbar'),analyzer.results.stress)
     assert np.isclose(analyzer.pressure(),-0.2)
-    assert np.isclose(analyzer.pressure('kbar'),-2.0)
+    assert np.isclose(analyzer.pressure(units='kbar'),-2.0)
     with pytest.raises(RuntimeError,match='relaxed_structure'):
         analyzer.relaxed_structure()
     with pytest.raises(ValueError,match='energy units'):
-        analyzer.energy('J')
+        analyzer.energy(units='J')
 
     relax_log = tmp_path/'relax.log'
     relax_log.write_text(rmg_log('Structure Optimization.',body))
     relax = RmgAnalyzer(str(relax_log),analyze=True)
     assert isinstance(relax.relaxed_structure(),Structure)
     assert relax.relaxed_structure().units=='A'
-    assert np.allclose(relax.relaxed_structure('B').pos[0],[1.1,1.2,1.3])
+    assert np.allclose(
+        relax.relaxed_structure(units='B').pos[0],[1.1,1.2,1.3])
 #end def test_physical_results
 
 
@@ -436,86 +534,6 @@ def test_mode_specific_results(tmp_path):
     assert len(stm.results.produced_files.stm)==1
     assert len(stm.results.produced_files.stm_cube)==1
 #end def test_mode_specific_results
-
-
-def test_neb_results(tmp_path):
-    from ..rmg_analyzer import RmgAnalyzer
-
-    def neb_input(x):
-        return '''
-calculation_mode = "Quench Electrons"
-bravais_lattice_type = "Cubic Primitive"
-lattice_units = "Bohr"
-a_length = "8.0"
-atomic_coordinate_type = "Absolute"
-atoms = "
-H {x} 0.0 0.0 1 1 1 0.0
-"
-'''.format(x=x)
-    #end def neb_input
-
-    directories = ['image_initial','image01','image02','image_final']
-    for index,directory in enumerate(directories):
-        image_dir = tmp_path/directory
-        image_dir.mkdir()
-        (image_dir/'input').write_text(neb_input(index))
-
-    (tmp_path/'ctrl_init.dat').write_text('''
-calculation_mode = "NEB Relax"
-image_per_node = "1"
-num_images = "2"
-max_neb_steps = "5"
-neb_spring_constant = "0.10"
-input_file_initial_image = "./image_initial/input"
-input_file_final_image = "./image_final/input"
-totale_initial_image = "-2.0"
-totale_final_image = "-1.8"
-image_infos = "
-./image01 input 2
-./image02 input 2
-"
-''')
-    image_body = '''
-RMG initialization ... 2 image(s) total, 1 per node. 2 MPI processes/image.
-NEB call fast relax.
-final total energy from eig sum = {energy} Ha
-Entering constrained forces for image {index}
-@ION Ion Species X Y Z Charge Mag FX FY FZ Movable
-@ION 1 H {index}.0 0.0 0.0 0.0 0.0 0.1 0.0 0.0 1 1 1
-'''
-    image01_log = tmp_path/'image01/input.00.log'
-    image01_log.write_text(rmg_log(
-        'Molecular dynamics using Nudged Elastic Band.',
-        image_body.format(energy=-1.0,index=1)))
-    image02_log = tmp_path/'image02/input.00.log'
-    image02_log.write_text(rmg_log(
-        'Molecular dynamics using Nudged Elastic Band.',
-        image_body.format(energy=-1.5,index=2)))
-
-    analyzer = RmgAnalyzer(str(image01_log),analyze=True)
-    neb      = analyzer.results.neb
-
-    assert neb.num_intermediate_images==2
-    assert neb.num_images==4
-    assert neb.calculation_mode=='NEB Relax'
-    assert neb.images_per_node==1
-    assert neb.max_steps==5
-    assert neb.spring_constant==0.1
-    assert neb.spring_constant_units=='Ha/B^2'
-    assert neb.parallel.images_per_node==1
-    assert neb.parallel.mpi_processes_per_image==2
-    assert len(neb.image_input_files)==4
-    assert len(neb.input_structures)==4
-    assert np.allclose(neb.reaction_coordinate,[0.0,1.0,2.0,3.0])
-    assert np.allclose(neb.energies,[-2.0,-1.0,-1.5,-1.8])
-    assert np.allclose(neb.relative_energies,[0.0,1.0,0.5,0.2])
-    assert neb.forward_barrier==1.0
-    assert np.isclose(neb.reverse_barrier,0.8)
-    assert neb.barrier_image_index==1
-    assert neb.local_image.index==1
-    assert neb.local_image.neb_calls==1
-    assert neb.local_image.forces.shape==(1,1,3)
-#end def test_neb_results
 
 
 def test_whitespace_and_trailing_fields(tmp_path):

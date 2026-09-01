@@ -5,9 +5,12 @@
 
 import os
 import re
-from glob import glob
 from copy import deepcopy
+from glob import glob
+from types import MappingProxyType
+
 import numpy as np
+
 from .developer import DevBase,obj
 from .generic import NexusError
 from .unit_converter import convert
@@ -149,19 +152,19 @@ class RmgOutData(DevBase):
             msg = (
                 'invalid type provided for filepath\n'
                 'Type expected: str\n'
-                'Type provided: {}'.format(filepath.__class__.__name__)
+                f'Type provided: {filepath.__class__.__name__}'
                 )
             raise TypeError(msg)
         elif not os.path.exists(filepath):
             msg = (
                 'RMG log output file does not exist.\n'
-                'Path provided: {}'.format(filepath)
+                f'Path provided: {filepath}'
                 )
             raise FileNotFoundError(msg)
         elif not os.path.isfile(filepath):
             msg = (
                 'Path provided for RMG log output is not a file.\n'
-                'Path provided: {}'.format(filepath)
+                f'Path provided: {filepath}'
                 )
             raise IsADirectoryError(msg)
         path,outfile_name  = os.path.split(filepath)
@@ -1955,20 +1958,15 @@ class RmgOutData(DevBase):
                 control = {}
             controller_path     = os.path.dirname(controller_file)
 
-            def control_value(name):
-                """Return a parsed controller value or ``None``."""
-                return control[name] if name in control else None
-            #end def control_value
-
-            nintermediate               = as_int(control_value('num_images'))
+            nintermediate               = as_int(control.get('num_images'))
             neb.num_intermediate_images = nintermediate
             if nintermediate is not None:
                 neb.num_images = nintermediate+2
-            neb.calculation_mode = control_value('calculation_mode')
-            neb.images_per_node  = as_int(control_value('image_per_node'))
-            neb.max_steps        = as_int(control_value('max_neb_steps'))
-            neb.spring_constant  = as_float(control_value('neb_spring_constant'))
-            spin_polarized       = control_value('spin_polarization')
+            neb.calculation_mode = control.get('calculation_mode')
+            neb.images_per_node  = as_int(control.get('image_per_node'))
+            neb.max_steps        = as_int(control.get('max_neb_steps'))
+            neb.spring_constant  = as_float(control.get('neb_spring_constant'))
+            spin_polarized       = control.get('spin_polarization')
             if spin_polarized is not None:
                 spin_polarized = spin_polarized.strip().lower()
                 if spin_polarized in {'true','yes','1'}:
@@ -1976,8 +1974,8 @@ class RmgOutData(DevBase):
                 elif spin_polarized in {'false','no','0'}:
                     neb.spin_polarized = False
 
-            initial_file = control_value('input_file_initial_image')
-            final_file   = control_value('input_file_final_image')
+            initial_file = control.get('input_file_initial_image')
+            final_file   = control.get('input_file_final_image')
             if initial_file is not None:
                 neb.initial_input_file = os.path.abspath(
                     os.path.join(controller_path,initial_file))
@@ -1988,7 +1986,7 @@ class RmgOutData(DevBase):
             image_directories   = []
             image_input_files   = []
             image_mpi_processes = []
-            image_info          = control_value('image_infos')
+            image_info          = control.get('image_infos')
             if image_info is not None:
                 for line in image_info.splitlines():
                     tokens = line.split()
@@ -2031,7 +2029,7 @@ class RmgOutData(DevBase):
                 coordinate           = [0.0]
                 valid_coordinate     = True
                 for previous,current in zip(
-                    input_structures[:-1],input_structures[1:]):
+                    input_structures[:-1],input_structures[1:],strict=True):
                     if previous.pos.shape!=current.pos.shape:
                         valid_coordinate = False
                         break
@@ -2053,9 +2051,9 @@ class RmgOutData(DevBase):
             energies = np.full(len(ordered_input_files),np.nan,dtype=float)
             if len(energies)>0:
                 endpoint_initial_energy = as_float(
-                    control_value('totale_initial_image'))
+                    control.get('totale_initial_image'))
                 endpoint_final_energy   = as_float(
-                    control_value('totale_final_image'))
+                    control.get('totale_final_image'))
                 if endpoint_initial_energy is not None:
                     energies[0] = endpoint_initial_energy
                 if endpoint_final_energy is not None:
@@ -2139,35 +2137,33 @@ class RmgOutData(DevBase):
 class RmgAnalyzer(SimulationAnalyzer):
     """Nexus analyzer wrapper for an RMG simulation and its parsed output."""
 
-    all_modes         = {
+    all_modes         = frozenset({
         'scf','nscf','band','exx','relax','md_VE','md_TE','tddft','stm','neb',
-        }
-    electronic_modes  = {
+        })
+    electronic_modes  = frozenset({
         'scf','nscf','relax','md_VE','md_TE','tddft','neb',
-        }
-    eigenvalue_modes  = electronic_modes|{'band'}
-    relaxation_modes  = {'relax','neb'}
-    pressure_units    = {
+        })
+    eigenvalue_modes  = electronic_modes|frozenset({'band'})
+    relaxation_modes  = frozenset({'relax','neb'})
+    pressure_units    = MappingProxyType({
         'Pa'   : 1.0,
         'bar'  : 1e5,
         'kbar' : 1e8,
         'Mbar' : 1e11,
         'GPa'  : 1e9,
         'atm'  : 1.01325e5,
-        }
+        })
 
 
     def _require_supported(self,quantity,modes):
         """Require analyzed output and a run mode supporting the quantity."""
         if self.results is None:
             raise RuntimeError(
-                'RMG quantity "{}" is unavailable because output has not been analyzed'
-                .format(quantity)
+                f'RMG quantity "{quantity}" is unavailable because output has not been analyzed'
                 )
         if self.run_mode not in modes:
             raise RuntimeError(
-                'RMG quantity "{}" is not supported for run mode "{}"'
-                .format(quantity,self.run_mode)
+                f'RMG quantity "{quantity}" is not supported for run mode "{self.run_mode}"'
                 )
     #end def _require_supported
 
@@ -2366,7 +2362,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         self._require_supported('stress',self.electronic_modes)
         if units not in self.pressure_units:
             supported = ', '.join(sorted(self.pressure_units))
-            raise ValueError('stress units must be one of: '+supported)
+            raise ValueError(f'stress units must be one of: {supported}')
         stress = self.results.stress
         if stress is None:
             return None
@@ -2379,7 +2375,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         self._require_supported('pressure',self.electronic_modes)
         if units not in self.pressure_units:
             supported = ', '.join(sorted(self.pressure_units))
-            raise ValueError('pressure units must be one of: '+supported)
+            raise ValueError(f'pressure units must be one of: {supported}')
         pressure = self.results.pressure
         if pressure is None:
             return None
@@ -2496,19 +2492,19 @@ class RmgAnalyzer(SimulationAnalyzer):
                 msg = (
                     'invalid type provided for log_file\n'
                     'Type expected: str\n'
-                    'Type provided: {}'.format(filepath.__class__.__name__)
+                    f'Type provided: {filepath.__class__.__name__}'
                     )
                 raise TypeError(msg)
             elif not os.path.exists(filepath):
                 msg = (
                     'RMG log output file does not exist.\n'
-                    'Path provided: {}'.format(filepath)
+                    f'Path provided: {filepath}'
                     )
                 raise FileNotFoundError(msg)
             elif not os.path.isfile(filepath):
                 msg = (
                     'Path provided for RMG log output is not a file.\n'
-                    'Path provided: {}'.format(filepath)
+                    f'Path provided: {filepath}'
                     )
                 raise IsADirectoryError(msg)
             path,filename = os.path.split(filepath)
