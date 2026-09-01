@@ -88,6 +88,6 @@ if band.finished:
     p = PwscfAnalyzer(band)
     p.analyze()
     p.plot_bandstructure()
-    print("VBM: {0}".format(p.bands.vbm))
-    print("CBM: {0}".format(p.bands.cbm))
+    print(f"VBM: {p.bands.vbm}")
+    print(f"CBM: {p.bands.cbm}")
 #end if

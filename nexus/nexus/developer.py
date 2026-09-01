@@ -42,14 +42,14 @@ def deprecation_error():
         'Please report this issue to the Nexus developers immediately.\n'
         'To temporarily restore the deprecated implementation, uncomment the\n'
         'two lines at the bottom of:\n'
-        '  {}'.format(__file__)
+        f'  {__file__}'
         )
     highlight = '='*79
     stack = ''.join(traceback.format_stack()[:-1])
     report = (
-        '\n{0}\n{1}\n{0}\n'
-        '{0}\nTraceback (most recent call last):\n{2}{0}\n'
-        '{0}\n{1}\n{0}'.format(highlight,msg,stack)
+        f'\n{highlight}\n{msg}\n{highlight}\n'
+        f'{highlight}\nTraceback (most recent call last):\n{stack}{highlight}\n'
+        f'{highlight}\n{msg}\n{highlight}'
         )
     raise RuntimeError(report)
 #end def deprecation_error

@@ -63,19 +63,19 @@ class RmgAnalyzer(SimulationAnalyzer):
                 msg = (
                     'invalid type provided for log_file\n'
                     'Type expected: str\n'
-                    'Type provided: {}'.format(log_file.__class__.__name__)
+                    f'Type provided: {log_file.__class__.__name__}'
                     )
                 raise TypeError(msg)
             elif not os.path.exists(log_file):
                 msg = (
                     'RMG log output file does not exist.\n'
-                    'Path provided: {}'.format(log_file)
+                    f'Path provided: {log_file}'
                     )
                 raise FileNotFoundError(msg)
             elif not os.path.isfile(log_file):
                 msg = (
                     'Path provided for RMG log output is not a file.\n'
-                    'Path provided: {}'.format(log_file)
+                    f'Path provided: {log_file}'
                     )
                 raise IsADirectoryError(msg)
             #end if
@@ -101,7 +101,7 @@ class RmgAnalyzer(SimulationAnalyzer):
             msg = (
                 'RMG analysis cannot be completed.\n'
                 'Log file does not exist at path provided.\n'
-                'Path provided: {}'.format(log_filepath)
+                f'Path provided: {log_filepath}'
                 )
             raise FileNotFoundError(msg)
         #end if
@@ -431,7 +431,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         elif mode=='band':
             None
         else:
-            self.warn('Results not read.\nUnrecognized run mode: {}'.format(mode))
+            self.warn(f'Results not read.\nUnrecognized run mode: {mode}')
         #end if
         self.results = results
     #end def read_results

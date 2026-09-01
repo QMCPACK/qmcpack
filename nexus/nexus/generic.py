@@ -338,9 +338,9 @@ class object_interface(object):
             if not isinstance(k,str) or k[0]!='_':
                 v=self.__dict__[k]
                 if hasattr(v,'__class__'):
-                    s+='  {0:<20}  {1:<20}\n'.format(str(k),v.__class__.__name__)
+                    s+=f'  {str(k):<20}  {v.__class__.__name__:<20}\n'
                 else:
-                    s+='  {0:<20}  {1:<20}\n'.format(str(k),type(v))
+                    s+=f'  {str(k):<20}  {type(v):<20}\n'
                 #end if
             #end if
         #end for
@@ -368,7 +368,7 @@ class object_interface(object):
         for k in normal:
             v = self[k]
             vstr = str(v).replace('\n','\n'+indent)
-            s+=npad+'{0:<15} = '.format(str(k))+vstr+'\n'
+            s+=npad+f'{str(k):<15} = '+vstr+'\n'
         #end for
         for k in qable:
             v = self[k]
@@ -436,11 +436,11 @@ class object_interface(object):
             for k in normal:
                 v = self[k]
                 if types:
-                    s+=npad+'{0:<15} = '.format(k)
+                    s+=npad+f'{k:<15} = '
                     if hasattr(v,'__class__'):
-                        s+='{0:<20}'.format(v.__class__.__name__)
+                        s+=f'{v.__class__.__name__:<20}'
                     else:
-                        s+='{0:<20}'.format(type(v))
+                        s+=f'{type(v):<20}'
                     #end if
                 else:
                     s+=npad+str(k)
@@ -461,11 +461,11 @@ class object_interface(object):
             for k in qable:
                 v = self[k]
                 if types:
-                    s+=npad+'{0:<15} = '.format(k)
+                    s+=npad+f'{k:<15} = '
                     if hasattr(v,'__class__'):
-                        s+='{0:<20}'.format(v.__class__.__name__)
+                        s+=f'{v.__class__.__name__:<20}'
                     else:
-                        s+='{0:<20}'.format(type(v))
+                        s+=f'{type(v):<20}'
                     #end if
                 else:
                     s+=npad+str(k)
@@ -540,9 +540,9 @@ class object_interface(object):
                 o_open  = '{'
                 o_close = '}'
             #end if
-            s+=npad+k_func(k)+' {} obj({}\n'.format(k_delim,o_open)
+            s+=npad+k_func(k)+f' {k_delim} obj({o_open}\n'
             s+=sv
-            s+=npad+pad+'{}),\n'.format(o_close)
+            s+=npad+pad+f'{o_close}),\n'
         #end for
         if nindent==1:
             if str_keys:
@@ -963,7 +963,7 @@ class obj_deprecated(object_interface):
         if key in self:
             value = self[key]
         else:
-            obj_deprecated.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,self._sorted_keys()))
+            obj_deprecated.error(self,f'a required key is not present\nkey required: {key}\nkeys present: {self._sorted_keys()}')
         #end if
         return value
     #end def get_required
@@ -1003,7 +1003,7 @@ class obj_deprecated(object_interface):
             value = self[key]
             del self[key]
         else:
-            obj_deprecated.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,self._sorted_keys()))
+            obj_deprecated.error(self,f'a required key is not present\nkey required: {key}\nkeys present: {self._sorted_keys()}')
         #end if
         return value
     #end def delete_required
@@ -1140,7 +1140,7 @@ class obj_deprecated(object_interface):
         #end if
         missing = keys-set(self.keys())
         if exit and len(missing)>0:
-            self._error('required keys are missing\nmissing keys: {0}'.format(sorted_generic(missing)))
+            self._error(f'required keys are missing\nmissing keys: {sorted_generic(missing)}')
         #end if
         return missing
     #end def check_required
@@ -1166,7 +1166,7 @@ class obj_deprecated(object_interface):
             #end for
         #end if
         if exit and kfail is not None:
-            self._error('incorrect type encountered for key value\ntype required: {0}\ntype encountered: {1}\ninvalid key: {2}'.format(tfail.__name__,self[kfail].__class__.__name__,kfail))
+            self._error(f'incorrect type encountered for key value\ntype required: {tfail.__name__}\ntype encountered: {self[kfail].__class__.__name__}\ninvalid key: {kfail}')
         #end if
         return kfail,tfail
     #end def check_types
@@ -1383,9 +1383,9 @@ class obj_deprecated(object_interface):
 class DevBaseDeprecated(obj_deprecated):
     def not_implemented(self,name=None):
         if name is None:
-            msg = 'a member function has not been implemented for class "{}"'.format(self.__class__.__name__)
+            msg = f'a member function has not been implemented for class "{self.__class__.__name__}"'
         else:
-            msg = 'member function "{}" has not been implemented for class "{}"'.format(name,self.__class__.__name__)
+            msg = f'member function "{name}" has not been implemented for class "{self.__class__.__name__}"'
         self.error(msg,trace=True)
     #end def not_implemented
 #end class DevBaseDeprecated

@@ -244,8 +244,8 @@ def render_bool(var,T,F):
     else:
         msg = (
             'Invalid QMCPACK input encountered.\n'
-            'User provided an invalid value of "{}" when yes/no was expected.\n'
-            'Valid options are: "{}", "{}", True, False, 1, 0'.format(var, T, F)
+            f'User provided an invalid value of "{var}" when yes/no was expected.\n'
+            f'Valid options are: "{T}", "{F}", True, False, 1, 0'
             )
         raise ValueError(msg)
 
@@ -387,7 +387,7 @@ class hobj(obj):
                 else:
                     typename = type(value)
                 #end if
-                s += '  {0:<20}  {1:<20}\n'.format(str(name),typename)
+                s += f'  {str(name):<20}  {typename:<20}\n'
             #end if
         #end for
         return s
@@ -413,7 +413,7 @@ class hobj(obj):
         s = ''
         for name in normal:
             value_string = str(self[name]).replace('\n','\n'+indent)
-            s += npad+'{0:<15} = '.format(str(name))+value_string+'\n'
+            s += npad+f'{str(name):<15} = '+value_string+'\n'
         #end for
         for name in nested:
             s += npad+str(name)+'\n'
@@ -557,9 +557,9 @@ class hidden(hobj):
             if not isinstance(k,str) or k[0]!='_':
                 v=self._dict[k]
                 if hasattr(v,'__class__'):
-                    s+='  {0:<20}  {1:<20}\n'.format(k,v.__class__.__name__)
+                    s+=f'  {k:<20}  {v.__class__.__name__:<20}\n'
                 else:
-                    s+='  {0:<20}  {1:<20}\n'.format(k,type(v))
+                    s+=f'  {k:<20}  {type(v):<20}\n'
                 #end if
             #end if
         #end for
@@ -656,7 +656,7 @@ class collection(hidden):
             msg = (
                 'collection cannot be formed\n'
                 'add attempted for non QIxml element\n'
-                'type received: {0}'.format(type(element).__name__)
+                f'type received: {type(element).__name__}'
                 )
             raise TypeError(msg)
         #end if
@@ -669,11 +669,9 @@ class collection(hidden):
             msg = (
                 'collection cannot be formed\n'
                 '  encountered non-plural element\n'
-                '  element class: {0}\n'
-                '  element tag: {1}\n'
-                '  tags allowed in a collection: {2}'.format(
-                    type(element).__name__, element.tag, sorted(plurals_inv.keys())
-                    )
+                f'  element class: {type(element).__name__}\n'
+                f'  element tag: {element.tag}\n'
+                f'  tags allowed in a collection: {sorted(plurals_inv.keys())}'
                 )
             raise ValueError(msg)
         elif identifier is None:
@@ -699,8 +697,8 @@ class collection(hidden):
         if keyin is not None and not isinstance(key,int) and keyin.lower()!=key.lower():
             msg = (
                 'attempted to add key with incorrect name\n'
-                'requested key: {0}\n'
-                'correct key: {1}'.format(keyin, key)
+                f'requested key: {keyin}\n'
+                f'correct key: {key}'
                 )
             raise ValueError(msg)
         #end if
@@ -884,7 +882,7 @@ class Names(QIobj):
         for expanded in keylist: 
             condensed = self.condensed_names[expanded]
             if expanded!=condensed:
-                print("    {0:15} = '{1}'".format(condensed,expanded))
+                print(f"    {condensed:15} = '{expanded}'")
             #end if
         #end for
         print()
@@ -901,7 +899,7 @@ class QIxml(Names):
         print()
         print('In init from args (not implemented).')
         print('Possible reasons for incorrect entry:  ')
-        print('  Is xml element {0} meant to be plural?'.format(self.__class__.__name__))
+        print(f'  Is xml element {self.__class__.__name__} meant to be plural?')
         print('    If so, add it to the plurals object.')
         print()
         print('Arguments received:')
@@ -1054,9 +1052,9 @@ class QIxml(Names):
                     if not isinstance(coll,collection):
                         msg = (
                             'write failed\n'
-                            '  element {0} is not a collection\n'
-                            '  contents of element {0}:\n'
-                            '{1}'.format(plurals_inv[e], str(coll))
+                            f'  element {plurals_inv[e]} is not a collection\n'
+                            f'  contents of element {plurals_inv[e]}:\n'
+                            f'{str(coll)}'
                             )
                         raise TypeError(msg)
                     #end if
@@ -1109,7 +1107,7 @@ class QIxml(Names):
             value = xml._elements[ecap]
             if (isinstance(value,list) or isinstance(value,tuple)) and e in self.plurals_inv.keys():
                 if e not in types:
-                    msg = 'input element "{}" is unknown'.format(e)
+                    msg = f'input element "{e}" is unknown'
                     raise ValueError(msg)
                 #end if
                 p = self.plurals_inv[e]
@@ -1120,7 +1118,7 @@ class QIxml(Names):
                 self[p] = make_collection(plist)
             elif e in self.elements:
                 if e not in types:
-                    msg = 'input element "{}" is unknown'.format(e)
+                    msg = f'input element "{e}" is unknown'
                     raise ValueError(msg)
                 #end if
                 self[e] = types[e](value)
@@ -1161,8 +1159,8 @@ class QIxml(Names):
                     self[a] = boolmap[aval]
                 else:
                     msg = (
-                        '{0} is not a valid value for boolean attribute {1}\n'
-                        '  valid values are: {2}'.format(aval, a, boolmap.keys())
+                        f'{aval} is not a valid value for boolean attribute {a}\n'
+                        f'  valid values are: {boolmap.keys()}'
                         )
                     raise ValueError(msg)
                 #end if
@@ -1329,7 +1327,7 @@ class QIxml(Names):
             if self.tag!=self.__class__.__name__:
                 oname = ' ('+self.__class__.__name__+')'
             #end if
-            msg = '{0}{1} does not have the following attributes/elements:\n'.format(self.tag,oname)
+            msg = f'{self.tag}{oname} does not have the following attributes/elements:\n'
             for jname in junk:
                 msg+='    '+jname+'\n'
             #end for
@@ -1918,13 +1916,11 @@ class QIxmlFactory(Names):
             elif self.typeindex==-1:
                 msg = (
                     'QMCPACK input file is misformatted\n'
-                    'cannot identify type for <{0}/> element\n'
+                    f'cannot identify type for <{self.name}/> element\n'
                     'with contents:\n'
-                    '{1}\n'
+                    f'{str(v).rstrip()}\n'
                     'please find the XML element matching this description in the input file to identify the problem\n'
-                    'most likely, it is missing attributes "{2}" or "{3}"'.format(
-                        self.name, str(v).rstrip(), self.typekey, self.typekey2
-                        )
+                    f'most likely, it is missing attributes "{self.typekey}" or "{self.typekey2}"'
                     )
                 raise FileFormatError(msg)
             else:
@@ -1964,7 +1960,7 @@ class Param(Names):
         if precision is None:
             self.reset_precision()
         elif not isinstance(precision,str):
-            msg = 'attempted to set precision with non-string: {0}'.format(precision)
+            msg = f'attempted to set precision with non-string: {precision}'
             raise TypeError(msg)
         else:
             self.precision   = precision
@@ -2139,7 +2135,7 @@ class Param(Names):
                     val = value
                 #end if
                 #c += '    '+str(val)
-                c += '    {0:<10}'.format(self.write_val(val))
+                c += f'    {self.write_val(val):<10}'
             #end if
             if tag is not None:
                 c+=pad+'</'+tag+'>\n'
@@ -3993,8 +3989,8 @@ class QmcpackInput(SimulationInput,Names):
             )
         if element_type not in elems:
             msg = (
-                'cannot add include for element of type {0}\n'
-                '  valid element types are {1}'.format(element_type, elems)
+                f'cannot add include for element of type {element_type}\n'
+                f'  valid element types are {elems}'
                 )
             raise TypeError(msg)
         #end if
@@ -4002,8 +3998,8 @@ class QmcpackInput(SimulationInput,Names):
         placements = ('before','on','after')
         if placement not in placements:
             msg = (
-                'cannot add include for element with placement {0}\n'
-                '  valid placements are {1}'.format(placement, list(placements))
+                f'cannot add include for element with placement {placement}\n'
+                f'  valid placements are {list(placements)}'
                 )
             raise ValueError(msg)
         #end if
@@ -4012,7 +4008,7 @@ class QmcpackInput(SimulationInput,Names):
         if not isinstance(base,simulation):
             msg = (
                 'an include can only be added to simulation\n'
-                '  attempted to add to {0}'.format(type(base).__name__)
+                f'  attempted to add to {type(base).__name__}'
                 )
             raise TypeError(msg)
         #end if
@@ -4039,8 +4035,8 @@ class QmcpackInput(SimulationInput,Names):
                 ekey = qskey.split('_')[1]
                 if ekey not in elems:
                     msg = (
-                        'encountered invalid element key: {0}\n'
-                        '  valid keys are: {1}'.format(ekey, elems)
+                        f'encountered invalid element key: {ekey}\n'
+                        f'  valid keys are: {elems}'
                         )
                     raise FileFormatError(msg)
                 #end if
@@ -4050,7 +4046,7 @@ class QmcpackInput(SimulationInput,Names):
                     cur_elems[ekey,'after' ] = ekey,inc
                 #end if
             elif not isinstance(qs,qmcsystem):
-                msg = 'expected qmcsystem element, got {0}'.format(type(qs).__name__)
+                msg = f'expected qmcsystem element, got {type(qs).__name__}'
                 raise TypeError(msg)
             else:
                 for elem in qmcsystem.elements:
@@ -4068,7 +4064,7 @@ class QmcpackInput(SimulationInput,Names):
                 #end for
                 residue = list(qs.keys())
                 if len(residue)>0:
-                    msg = 'extra keys found in qmcsystem: {0}'.format(sorted(residue))
+                    msg = f'extra keys found in qmcsystem: {sorted(residue)}'
                     raise ValueError(msg)
                 #end if
             #end if
@@ -4924,10 +4920,8 @@ class QmcpackInput(SimulationInput,Names):
         if len(invalid)>0:
             msg = (
                 'unrecognized multideterminant parameters encountered.\n'
-                '  Allowed params are: {}\n'
-                'You provided:{}'.format(
-                    list(sorted(allowed_names)), list(sorted(invalid))
-                    )
+                f'  Allowed params are: {list(sorted(allowed_names))}\n'
+                f'You provided:{list(sorted(invalid))}'
                 )
             raise ValueError(msg)
         for name in md_names:
@@ -4992,7 +4986,7 @@ class QmcpackInput(SimulationInput,Names):
                     del calcs[series+1]
                     series += 1
             else:
-                msg = 'qmc method with series {} not found'.format(series)
+                msg = f'qmc method with series {series} not found'
                 raise KeyError(msg)
         #return qmc
     #end def remove_qmc
@@ -5015,8 +5009,8 @@ class QmcpackInput(SimulationInput,Names):
                        'dmc','dmc_test','dmc_noJ')
         if qmc not in allowed_qmc:
             msg = (
-                'calculation type "{}" is unrecognized.\n'
-                'Valid options are: {}'.format(qmc, allowed_qmc)
+                f'calculation type "{qmc}" is unrecognized.\n'
+                f'Valid options are: {allowed_qmc}'
                 )
             raise ValueError(msg)
         kw = obj(**kw)
@@ -5710,7 +5704,7 @@ class QmcpackInput(SimulationInput,Names):
         elif len(gen_calcs)>0:
             msg = (
                 'invalid keywords provided to the modify function:\n'
-                '{}\n'.format(sorted(gen_calcs.keys()))
+                f'{sorted(gen_calcs.keys())}\n'
                 +'  Please see the documentation.  If you are trying to generate qmc calculation sections, please provide the "qmc" keyword.'
                 )
             raise ValueError(msg)
@@ -6068,22 +6062,18 @@ def generate_particlesets(*,
             for hvar,hval in hybrid_vars:
                 if not isinstance(hval,obj):
                     msg = (
-                        'generate_particlesets argument "{0}" must be of type obj\n'
-                        'you provided type: {1}\n'
-                        'with value: {2}'.format(
-                            hvar, type(hval).__name__, hval
-                            )
+                        f'generate_particlesets argument "{hvar}" must be of type obj\n'
+                        f'you provided type: {type(hval).__name__}\n'
+                        f'with value: {hval}'
                         )
                     raise TypeError(msg)
                 #end if
                 if set(hval.keys())!=set(ion_species):
                     msg = (
-                        'generate_particsets argument "{0}" is incorrect\n'
+                        f'generate_particsets argument "{hvar}" is incorrect\n'
                         'one entry must be present for each atomic species\n'
-                        'atomic species present in the simulation: {1}\n'
-                        'values provided for the following species: {2}'.format(
-                            hvar, sorted(ion_species), sorted(hval.keys())
-                            )
+                        f'atomic species present in the simulation: {sorted(ion_species)}\n'
+                        f'values provided for the following species: {sorted(hval.keys())}'
                         )
                     raise ValueError(msg)
                 #end if
@@ -6147,8 +6137,8 @@ def generate_sposets(type           = None,
         have_counts = not (nup is None or ndown is None)
         if system is None and not have_counts:
             msg = (
-                'cannot generate sposets in occupation mode {0}\n'
-                '  arguments nup & ndown or system must be given to generate_sposets'.format(occupation)
+                f'cannot generate sposets in occupation mode {occupation}\n'
+                '  arguments nup & ndown or system must be given to generate_sposets'
                 )
             raise ValueError(msg)
         elif not have_counts:
@@ -6186,9 +6176,9 @@ def generate_sposets(type           = None,
         #end if
     else:
         msg = (
-            'cannot generate sposets in occupation mode {0}\n'
+            f'cannot generate sposets in occupation mode {occupation}\n'
             '  generate_sposets currently supports the following occupation modes:\n'
-            '  slater_ground'.format(occupation)
+            '  slater_ground'
             )
         raise ValueError(msg)
     #end if
@@ -6212,7 +6202,7 @@ def generate_sposet_builder(type,*args,**kwargs):
     else:
         msg = (
             'cannot generate sposet_builder\n'
-            '  sposet_builder of type {0} is unrecognized'.format(type)
+            f'  sposet_builder of type {type} is unrecognized'
             )
         raise ValueError(msg)
     #end if
@@ -6564,7 +6554,7 @@ def check_excitation_type(excitation):
             'and the second element must be a band format (e.g. "0 45 3 46"),\n'
             'energy format (e.g. "-215 +216"), kpoint format (e.g. "L vb F cb"),\n'
             'or lowest format (e.g. "lowest").\n'
-            'You Provided: {0}'.format(excitation)
+            f'You Provided: {excitation}'
             )
         raise ValueError(msg)
     #end if
@@ -6684,10 +6674,8 @@ def generate_determinantset_old(type           = 'bspline',
             if system.n_down != system.n_up:
                 msg = (
                     "The 'singlet' and 'triplet' excitation types currently assume number of up and down electrons is the same for the reference ground state. Otherwise, one should use 'up' or 'down' types.\n"
-                    'For your system: Nup={} and Ndown={}.\n'
-                    'We plan to expand to additional cases in the future.'.format(
-                        system.n_up, system.n_down
-                        )
+                    f'For your system: Nup={system.n_up} and Ndown={system.n_down}.\n'
+                    'We plan to expand to additional cases in the future.'
                     )
                 raise NotImplementedError(msg)
             #end if
@@ -6791,10 +6779,10 @@ def generate_determinantset_old(type           = 'bspline',
                 dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nup-exc_orbs[0])+'0'*(exc_orbs[1]-nup-1)+'1'
 
             elif exc_type == exc_types.kpoint: 
-                msg = '{} excitation is not yet available for kpoint type'.format(exc1)
+                msg = f'{exc1} excitation is not yet available for kpoint type'
                 raise NotImplementedError(msg)
             else: 
-                msg = '{} excitation is not yet available for band type'.format(exc1)
+                msg = f'{exc1} excitation is not yet available for band type'
                 raise NotImplementedError(msg)
             #end if
 
@@ -6844,7 +6832,7 @@ def generate_determinantset_old(type           = 'bspline',
                         bands[bnum] = vb
                     #end if
                 else:
-                    msg = '{0} in excitation has the wrong formatting'.format(b)
+                    msg = f'{b} in excitation has the wrong formatting'
                     raise FileFormatError(msg)
                 #end if
             #end for
@@ -6880,21 +6868,17 @@ def generate_determinantset_old(type           = 'bspline',
                 if not found_k1 or not found_k2:
                     msg = (
                         'Requested special kpoint is not in the tiled cell\n'
-                        'Requested "{}", present={}\n'
-                        'Requested "{}", present={}\n'
-                        'Available kpoints: {}'.format(
-                            k1_in, found_k1, k2_in, found_k2,sorted(set(kpath_label))
-                            )
+                        f'Requested "{k1_in}", present={found_k1}\n'
+                        f'Requested "{k2_in}", present={found_k2}\n'
+                        f'Available kpoints: {sorted(set(kpath_label))}'
                         )
                     raise ValueError(msg)
                 #end if
             else:
                 msg = (
                     'Excitation wavevectors are not found in the kpath\n'
-                    'labels requested: {} {}\n'
-                    'labels present: {}'.format(
-                        k_1, k_2, sorted(set(kpath_label))
-                        )
+                    f'labels requested: {k_1} {k_2}\n'
+                    f'labels present: {sorted(set(kpath_label))}'
                     )
                 raise KeyError(msg)
             #end if
@@ -6913,7 +6897,7 @@ def generate_determinantset_old(type           = 'bspline',
             else:
                 nel = system.n_down
             #end if
-            excitation = '-{} +{}'.format(nel,nel+1) 
+            excitation = f'-{nel} +{nel+1}' 
             occ.contents = '\n'+excitation+'\n'
         else: #Type 1
             # assume excitation of form '6 36 6 37'
@@ -6949,17 +6933,15 @@ def generate_hamiltonian(name         = 'h0',
     if nrule is not None and not nrule_is_int and not nrule_is_map:
         msg = (
             'generate_hamiltonian argument nrule must be an integer, dict, dotdict, obj, or None\n'
-            '  nrule provided: {0}\n'
-            '  provided type: {1}'.format(
-                nrule, nrule.__class__.__name__
-                )
+            f'  nrule provided: {nrule}\n'
+            f'  provided type: {nrule.__class__.__name__}'
             )
         raise TypeError(msg)
     #end if
     if nrule_is_int and nrule not in range(1,9):
         msg = (
             'generate_hamiltonian argument nrule must be one of the integers 1 through 8\n'
-            '  nrule provided: {0}'.format(nrule)
+            f'  nrule provided: {nrule}'
             )
         raise ValueError(msg)
     #end if
@@ -6971,15 +6953,10 @@ def generate_hamiltonian(name         = 'h0',
         if len(missing_labels)>0 or len(extra_labels)>0:
             msg = (
                 'generate_hamiltonian nrule mapping keys must match the atomic species labels\n'
-                '  expected labels: {0}\n'
-                '  provided labels: {1}\n'
-                '  missing labels: {2}\n'
-                '  unrecognized labels: {3}'.format(
-                    sorted(ion_labels,key=str),
-                    sorted(nrule_labels,key=str),
-                    sorted(missing_labels,key=str),
-                    sorted(extra_labels,key=str)
-                    )
+                f'  expected labels: {sorted(ion_labels,key=str)}\n'
+                f'  provided labels: {sorted(nrule_labels,key=str)}\n'
+                f'  missing labels: {sorted(missing_labels,key=str)}\n'
+                f'  unrecognized labels: {sorted(extra_labels,key=str)}'
                 )
             raise ValueError(msg)
         #end if
@@ -6987,21 +6964,17 @@ def generate_hamiltonian(name         = 'h0',
             if not isinstance(ion_nrule,int) or isinstance(ion_nrule,bool):
                 msg = (
                     'generate_hamiltonian nrule mapping values must be integers\n'
-                    '  atomic species label: {0}\n'
-                    '  nrule provided: {1}\n'
-                    '  provided type: {2}'.format(
-                        ion_label, ion_nrule, ion_nrule.__class__.__name__
-                        )
+                    f'  atomic species label: {ion_label}\n'
+                    f'  nrule provided: {ion_nrule}\n'
+                    f'  provided type: {ion_nrule.__class__.__name__}'
                     )
                 raise TypeError(msg)
             #end if
             if ion_nrule not in range(1,9):
                 msg = (
                     'generate_hamiltonian nrule mapping values must be integers from 1 through 8\n'
-                    '  atomic species label: {0}\n'
-                    '  nrule provided: {1}'.format(
-                        ion_label, ion_nrule
-                        )
+                    f'  atomic species label: {ion_label}\n'
+                    f'  nrule provided: {ion_nrule}'
                     )
                 raise ValueError(msg)
             #end if
@@ -7071,9 +7044,9 @@ def generate_hamiltonian(name         = 'h0',
                     else:
                         msg = (
                             'pseudos provided to generate_hamiltonian are incomplete\n'
-                            '  a pseudopotential for ion of type {0} is missing\n'
+                            f'  a pseudopotential for ion of type {ion.name} is missing\n'
                             '  pseudos provided:\n'
-                            '{1}'.format(ion.name, str(ppfiles))
+                            f'{str(ppfiles)}'
                             )
                         raise ValueError(msg)
                     #end if
@@ -7130,10 +7103,8 @@ def generate_hamiltonian(name         = 'h0',
                 msg = (
                     'generate_hamiltonian received an invalid estimator\n'
                     '  an estimator must either be a name or a QIxml object\n'
-                    '  inputted estimator type: {0}\n'
-                    '  inputted estimator contents: {1}'.format(
-                        estimator.__class__.__name__, estimator
-                        )
+                    f'  inputted estimator type: {estimator.__class__.__name__}\n'
+                    f'  inputted estimator contents: {estimator}'
                     )
                 raise TypeError(msg)
             elif isinstance(estimator,energydensity):
@@ -7201,10 +7172,8 @@ def generate_estimators_batched(estimators,
             msg = (
                 'generate_estimators received an invalid estimator\n'
                 '  an estimator must either be a name or a QIxml object\n'
-                '  inputted estimator type: {0}\n'
-                '  inputted estimator contents: {1}'.format(
-                    estimator.__class__.__name__, estimator
-                    )
+                f'  inputted estimator type: {estimator.__class__.__name__}\n'
+                f'  inputted estimator contents: {estimator}'
                 )
             raise TypeError(msg)
         elif isinstance(estimator,momentum):
@@ -7276,7 +7245,7 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
         except Exception as e:
             msg = 'cannot generate estimator dm1b\n  '
             if wf is None:
-                msg += 'wavefunction {0} not found'.format(wfname)
+                msg += f'wavefunction {wfname} not found'
                 raise ValueError(msg)
             elif dets is None or det is None:
                 msg += 'determinant not found'
@@ -7285,13 +7254,13 @@ def process_dm1b_estimator(dm,wfname,wf_elem):
                 msg += 'sposet_builders not found'
                 raise ValueError(msg)
             elif rspo is None:
-                msg += 'sposet {0} not found'.format(rsponame)
+                msg += f'sposet {rsponame} not found'
                 raise ValueError(msg)
             else:
                 msg = (
                     msg+'cause of failure could not be determined\n'
                     '  see the following error message:\n'
-                    '{0}'.format(e)
+                    f'{e}'
                     )
                 raise RuntimeError(msg)
             #end if
@@ -7494,7 +7463,7 @@ def generate_jastrows_alt(
             msg = (
                 'Two-body Jastrow (J2) requested, but not enough electrons are present.\n'
                 'Electrons required: 2 or more\n'
-                'Electrons present: {}'.format(nelec)
+                f'Electrons present: {nelec}'
                 )
             raise ValueError(msg)
         #end if
@@ -7523,8 +7492,8 @@ def generate_jastrows_alt(
                 'Three-body Jastrow (J3) requested, but not enough particles are present.\n'
                 'Atoms required: 1 or more\n'
                 'Electrons required: 2 or more\n'
-                'Atoms present: {}\n'
-                'Electrons present: {}'.format(natoms, nelec)
+                f'Atoms present: {natoms}\n'
+                f'Electrons present: {nelec}'
                 )
             raise ValueError(msg)
         #end if
@@ -7593,8 +7562,8 @@ def generate_jastrow(descriptor,*args,**kwargs):
                 kwargs[d] = descriptor[i+1]
             else:
                 msg = (
-                    'keyword {0} is unrecognized\n'
-                    '  valid options are: {1}'.format(d, str(keywords))
+                    f'keyword {d} is unrecognized\n'
+                    f'  valid options are: {str(keywords)}'
                     )
                 raise ValueError(msg)
             #end if
@@ -7694,8 +7663,8 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
             if isperiodic and lrcut>rwigner:
                 msg = (
                     'rcut must not be greater than the simulation cell wigner radius\n'
-                    'you provided: {0}\n'
-                    'wigner radius: {1}'.format(lrcut, rwigner)
+                    f'you provided: {lrcut}\n'
+                    f'wigner radius: {rwigner}'
                     )
                 raise ValueError(msg)
                 
@@ -7798,8 +7767,8 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
         if isperiodic and rcut>rwigner:
             msg = (
                 'rcut must not be greater than the simulation cell wigner radius\n'
-                'you provided: {0}\n'
-                'wigner radius: {1}'.format(rcut, rwigner)
+                f'you provided: {rcut}\n'
+                f'wigner radius: {rwigner}'
                 )
             raise ValueError(msg)
         #end if
@@ -7875,8 +7844,8 @@ def generate_jastrow2(function='bspline',*args,**kwargs):
     else:
         msg = (
             'function is invalid\n'
-            '  you provided: {0}\n'
-            '  valid options are: bspline or pade'.format(function)
+            f'  you provided: {function}\n'
+            '  valid options are: bspline or pade'
             )
         raise ValueError(msg)
     #end if
@@ -7925,8 +7894,8 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
         if rcut>rwigner:
             msg = (
                 'rcut must not be greater than the simulation cell wigner radius\n'
-                'you provided: {0}\n'
-                'wigner radius: {1}'.format(rcut, rwigner)
+                f'you provided: {rcut}\n'
+                f'wigner radius: {rwigner}'
                 )
             raise ValueError(msg)
         #end if
@@ -8154,7 +8123,7 @@ def generate_energydensity(
             ]
         n=0
         for ax in axes:
-           ax.grid = '-1 ({0}) 1'.format(grid[n])
+           ax.grid = f'-1 ({grid[n]}) 1'
            n+=1
         #end for
         sg.append(spacegrid(coord=coord,origin=origin(p1='zero'),axes=axes))
@@ -8178,7 +8147,7 @@ def generate_energydensity(
                     ]
                 n=0
                 for ax in axes:
-                    ax.grid = '0 ({0}) 1'.format(grid[n])
+                    ax.grid = f'0 ({grid[n]}) 1'
                     n+=1
                 #end for
                 sg.append(spacegrid(coord=coord,origin=origin(p1=static+str(i)),axes=axes))
@@ -8202,7 +8171,7 @@ def generate_energydensity(
                         ]
                     n=0
                     for ax in axes:
-                        ax.grid = '0 ({0}) 1'.format(grid[n])
+                        ax.grid = f'0 ({grid[n]}) 1'
                         n+=1
                     #end for
                     sg.append(spacegrid(coord=coord,origin=origin(p1=static+str(i)),axes=axes))
@@ -8215,10 +8184,8 @@ def generate_energydensity(
             if len(missing)>0:
                 msg = (
                     'ion species not found for spherical grid\n'
-                    'species not found: {0}\n'
-                    'species present: {1}'.format(
-                        sorted(missing), sorted(set(list(system.structure.elem)))
-                        )
+                    f'species not found: {sorted(missing)}\n'
+                    f'species present: {sorted(set(list(system.structure.elem)))}'
                     )
                 raise ValueError(msg)
             #end if
@@ -8226,8 +8193,8 @@ def generate_energydensity(
     else:
         msg = (
             'unsupported coord type\n'
-            'coord type provided: {0}\n'
-            'supported coord types: voronoi, cartesian, spherical'.format(coord)
+            f'coord type provided: {coord}\n'
+            'supported coord types: voronoi, cartesian, spherical'
             )
         raise ValueError(msg)
     #end if
@@ -8737,7 +8704,7 @@ def generate_opt_calculations(driver,**kwargs):
     else:
         msg = (
             'Cannot generate calculations for unrecognized driver.\n'
-            'Unrecognized driver: {}'.format(driver)
+            f'Unrecognized driver: {driver}'
             )
         raise ValueError(msg)
     #end if
@@ -8753,7 +8720,7 @@ def generate_vmc_calculations(driver,**kwargs):
     else:
         msg = (
             'Cannot generate calculations for unrecognized driver.\n'
-            'Unrecognized driver: {}'.format(driver)
+            f'Unrecognized driver: {driver}'
             )
         raise ValueError(msg)
     #end if
@@ -8769,7 +8736,7 @@ def generate_dmc_calculations(driver,**kwargs):
     else:
         msg = (
             'Cannot generate calculations for unrecognized driver.\n'
-            'Unrecognized driver: {}'.format(driver)
+            f'Unrecognized driver: {driver}'
             )
         raise ValueError(msg)
     #end if
@@ -8794,10 +8761,8 @@ def generate_legacy_opt_calculations(
     if method not in methods:
         msg = (
             'invalid optimization method requested\n'
-            'invalid method: {0}\n'
-            'valid options are: {1}'.format(
-                method, sorted(methods.keys())
-                )
+            f'invalid method: {method}\n'
+            f'valid options are: {sorted(methods.keys())}'
             )
         raise ValueError(msg)
     #end if
@@ -8809,10 +8774,8 @@ def generate_legacy_opt_calculations(
     if len(invalid)>0:
         msg = (
             'invalid optimization inputs provided\n'
-            'invalid inputs: {}\n'
-            'valid options are: {}'.format(
-                sorted(invalid), sorted(allowed_opt_method_legacy_inputs)
-                )
+            f'invalid inputs: {sorted(invalid)}\n'
+            f'valid options are: {sorted(allowed_opt_method_legacy_inputs)}'
             )
         raise ValueError(msg)
     #end if
@@ -8837,8 +8800,8 @@ def generate_legacy_opt_calculations(
     else:
         msg = (
             'invalid optimization cost function encountered\n'
-            'invalid cost fuction: {0}\n'
-            'valid options are: variance, energy, (0.95,0.05), etc'.format(cost)
+            f'invalid cost fuction: {cost}\n'
+            'valid options are: variance, energy, (0.95,0.05), etc'
             )
         raise ValueError(msg)
     #end if
@@ -9100,10 +9063,8 @@ def generate_batched_opt_calculations(
     if method not in methods:
         msg = (
             'invalid optimization method requested\n'
-            'invalid method: {0}\n'
-            'valid options are: {1}'.format(
-                method, sorted(methods.keys())
-                )
+            f'invalid method: {method}\n'
+            f'valid options are: {sorted(methods.keys())}'
             )
         raise ValueError(msg)
     #end if
@@ -9116,10 +9077,8 @@ def generate_batched_opt_calculations(
     if len(invalid)>0:
         msg = (
             'invalid optimization inputs provided\n'
-            'invalid inputs: {}\n'
-            'valid options are: {}'.format(
-                sorted(invalid), sorted(allowed_opt_method_batched_inputs)
-                )
+            f'invalid inputs: {sorted(invalid)}\n'
+            f'valid options are: {sorted(allowed_opt_method_batched_inputs)}'
             )
         raise ValueError(msg)
     #end if
@@ -9143,8 +9102,8 @@ def generate_batched_opt_calculations(
     else:
         msg = (
             'invalid optimization cost function encountered\n'
-            'invalid cost fuction: {0}\n'
-            'valid options are: variance, energy, (0.95,0.05), etc'.format(cost)
+            f'invalid cost fuction: {cost}\n'
+            'valid options are: variance, energy, (0.95,0.05), etc'
             )
         raise ValueError(msg)
     #end if
@@ -9495,10 +9454,8 @@ def generate_basic_input(**kwargs):
         if kw.driver not in qmc_defaults:
             msg = (
                 'Invalid input for argument "driver".\n'
-                'Invalid input: {}\n'
-                'Valid options are: {}'.format(
-                    kw.driver, sorted(qmc_defaults.keys())
-                    )
+                f'Invalid input: {kw.driver}\n'
+                f'Valid options are: {sorted(qmc_defaults.keys())}'
                 )
             raise ValueError(msg)
         #end if
@@ -9506,10 +9463,8 @@ def generate_basic_input(**kwargs):
         if kw.qmc not in qmc_driver_defaults:
             msg = (
                 'Invalid input for argument "qmc".\n'
-                'Invalid input: {}\n'
-                'Valid options are: {}'.format(
-                    kw.qmc, sorted(qmc_driver_defaults.keys())
-                    )
+                f'Invalid input: {kw.qmc}\n'
+                f'Valid options are: {sorted(qmc_driver_defaults.keys())}'
                 )
             raise ValueError(msg)
         #end if
@@ -9522,10 +9477,8 @@ def generate_basic_input(**kwargs):
             if key not in opt_method_driver_defaults:
                 msg = (
                     'invalid input for arguments "method,minmethod".\n'
-                    'Invalid input: {}\n'
-                    'Valid options are: {}'.format(
-                        key, sorted(opt_method_driver_defaults.keys())
-                        )
+                    f'Invalid input: {key}\n'
+                    f'Valid options are: {sorted(opt_method_driver_defaults.keys())}'
                     )
                 raise ValueError(msg)
             #end if
@@ -9540,10 +9493,8 @@ def generate_basic_input(**kwargs):
     if len(invalid_kwargs)>0:
         msg = (
             'invalid input parameters encountered.\n'
-            'Invalid input parameters: {0}\n'
-            'Valid options are: {1}'.format(
-                sorted(invalid_kwargs), sorted(valid)
-                )
+            f'Invalid input parameters: {sorted(invalid_kwargs)}\n'
+            f'Valid options are: {sorted(valid)}'
             )
         raise ValueError(msg)
     #end if
@@ -9662,8 +9613,8 @@ def generate_basic_input(**kwargs):
                 if kw.check_paths and not orbfile_exists:
                     msg = (
                         'user provided "orbitals_h5" path does not exist\n'
-                        'Path provided: {}\n'
-                        'To disable this check, set check_paths=False'.format(kw.orbitals_h5)
+                        f'Path provided: {kw.orbitals_h5}\n'
+                        'To disable this check, set check_paths=False'
                         )
                     raise FileNotFoundError(msg)
                 #end if
@@ -9730,8 +9681,8 @@ def generate_basic_input(**kwargs):
     else:
         msg = (
             'argument "det_format" is invalid.\n'
-            'Received: {0}\n'
-            'Valid options are: new, old'.format(kw.det_format)
+            f'Received: {kw.det_format}\n'
+            'Valid options are: new, old'
             )
         raise ValueError(msg)
     #end if
@@ -9747,7 +9698,7 @@ def generate_basic_input(**kwargs):
         if not os.path.exists(kw.jastrows):
             msg = (
                 'user provided "jastrows" file path does not exist\n'
-                'File path provided: {}'.format(kw.jastrows)
+                f'File path provided: {kw.jastrows}'
                 )
             raise FileNotFoundError(msg)
         #end if
@@ -9755,7 +9706,7 @@ def generate_basic_input(**kwargs):
         if jastrows is None:
             msg = (
                 'no jastrows found at user provided "jastrows" file.\n'
-                'File path provided: {}'.format(kw.jastrows)
+                f'File path provided: {kw.jastrows}'
                 )
             raise ValueError(msg)
         #end if
@@ -9832,22 +9783,22 @@ def generate_basic_input(**kwargs):
         if not isinstance(kw.opt_params,str):
             msg = (
                 'opt_params must be a file path.\n'
-                'You provided: {}'.format(kw.opt_params)
+                f'You provided: {kw.opt_params}'
                 )
             raise TypeError(msg)
         #end if
         if not kw.opt_params.endswith('vp.h5'):
             msg = (
                 'opt_params must a vp.h5 file.\n'
-                'You provided: {}'.format(kw.opt_params)
+                f'You provided: {kw.opt_params}'
                 )
             raise ValueError(msg)
         #end if
         if kw.check_paths and not os.path.exists(kw.opt_params):
             msg = (
                 'opt_params file does not exist.\n'
-                'File path provided: {}\n'
-                'To disable this check, set check_paths=False'.format(kw.opt_params)
+                f'File path provided: {kw.opt_params}\n'
+                'To disable this check, set check_paths=False'
                 )
             raise FileNotFoundError(msg)
         #end if
@@ -10003,10 +9954,8 @@ def generate_basic_afqmc_input(**kwargs):
     if len(invalid_kwargs)>0:
         msg = (
             'invalid input parameters encountered\n'
-            'invalid input parameters: {0}\n'
-            'valid options are: {1}'.format(
-                sorted(invalid_kwargs), sorted(valid)
-                )
+            f'invalid input parameters: {sorted(invalid_kwargs)}\n'
+            f'valid options are: {sorted(valid)}'
             )
         raise ValueError(msg)
     #end if
@@ -10055,8 +10004,8 @@ def generate_basic_afqmc_input(**kwargs):
             filetype = 'hdf5'
         else:
             msg = (
-                'Type of {} file "{}" is unrecognized.\n'
-                ' The following file extensions are allowed: .h5'.format(loc, filename)
+                f'Type of {loc} file "{filename}" is unrecognized.\n'
+                ' The following file extensions are allowed: .h5'
                 )
             raise ValueError(msg)
         #end if
@@ -10132,11 +10081,9 @@ def generate_basic_afqmc_input(**kwargs):
                 valid_names = [e.__class__.__name__ for e in valid_estimators]
                 msg = (
                     'invalid estimator input encountered\n'
-                    'expected one of the following: {}\n'
-                    'inputted type: {}\n'
-                    'inputted value: {}'.format(
-                        valid_names, est.__class__.__name__, est
-                        )
+                    f'expected one of the following: {valid_names}\n'
+                    f'inputted type: {est.__class__.__name__}\n'
+                    f'inputted value: {est}'
                     )
                 raise TypeError(msg)
             #end if

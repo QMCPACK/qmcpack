@@ -105,7 +105,7 @@ class SimTool(obj):
             sim  = self.sims[i]
             print(path)
             for f in fields:
-                print('   {0:<12} {1}'.format(f,int(sim[f])))
+                print(f'   {f:<12} {int(sim[f])}')
             #end for
         #end for
     #end def write_state
