@@ -393,6 +393,176 @@ def test_result_initialization(tmp_path,calculation,log_text):
 #end def test_result_initialization
 
 
+@pytest.mark.parametrize(
+    'verbosity,calculation',
+    tuple(
+        (verbosity,calculation)
+        for verbosity in ('default','high','low')
+        for calculation in ('scf','nscf','bands','relax','vc-relax','md','vc-md')
+        ),
+    )
+def test_qe_7_0_calculation_modes(verbosity,calculation):
+    import numpy as np
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfOutData, PwscfXmlData
+
+    fixture_path = (
+        TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/verbosity/calculation
+        )
+    analyzer = PwscfAnalyzer(
+        fixture_path,
+        'pwscf.in',
+        'pwscf.out',
+        analyze = True,
+        )
+    out = analyzer.results_out
+    xml = analyzer.results_xml
+
+    kpoint_counts = {
+        'scf'      : 3,
+        'nscf'     : 4,
+        'bands'    : 25,
+        'relax'    : 6,
+        'vc-relax' : 6,
+        'md'       : 8,
+        'vc-md'    : 8,
+        }
+    band_counts = {
+        'scf'      : 4,
+        'nscf'     : 8,
+        'bands'    : 8,
+        'relax'    : 4,
+        'vc-relax' : 4,
+        'md'       : 4,
+        'vc-md'    : 4,
+        }
+    scf_cycle_counts = {
+        'scf'      : 6,
+        'relax'    : 13,
+        'vc-relax' : 23,
+        'md'       : 10,
+        'vc-md'    : 12,
+        }
+    force_modes = {'scf','relax','vc-relax','md','vc-md'}
+    step_modes  = {'relax','vc-relax','md','vc-md'}
+    md_modes    = {'md','vc-md'}
+    npoints     = kpoint_counts[calculation]
+    nbands      = band_counts[calculation]
+
+    # Input and text-output parsing
+    assert(analyzer.input.control.calculation==calculation)
+    assert(isinstance(out,PwscfOutData))
+    assert(out.calculation==calculation)
+    assert(out.bands is not None)
+    assert(out.volume is not None)
+    assert(out.cputime is not None)
+    assert(out.walltime is not None)
+    if verbosity=='high':
+        assert(out.kpoints_cart.shape==(npoints,3))
+        assert(out.kpoints_unit.shape==(npoints,3))
+        assert(out.kweights.shape==(npoints,))
+    else:
+        assert(out.kpoints_cart is None)
+        assert(out.kpoints_unit is None)
+        assert(out.kweights is None)
+    #end if
+    if calculation in force_modes:
+        nsteps = 1 if calculation=='scf' else 3
+        assert(out.E is not None)
+        assert(out.relax_energies.shape==(nsteps,))
+        assert(out.scf_conv_energy.shape==(scf_cycle_counts[calculation],))
+        assert(out.scf_conv_accuracy.shape==(scf_cycle_counts[calculation],))
+        assert(out.forces.shape==(nsteps,2,3))
+        assert(out.tot_forces.shape==(nsteps,))
+        assert(out.max_forces.shape==(nsteps,))
+        assert(out.pressure is not None)
+        assert(out.stress is not None)
+    else:
+        assert('E' not in out)
+        assert('forces' not in out)
+        assert('stress' not in out)
+    #end if
+    if calculation in step_modes:
+        assert(len(out.relax_structures)==3)
+    else:
+        assert('relax_structures' not in out)
+    #end if
+    if calculation in md_modes:
+        assert(out.md_data is not None)
+        assert(out.md_stats is not None)
+    else:
+        assert('md_data' not in out)
+        assert('md_stats' not in out)
+    #end if
+
+    # Schema XML parsing
+    assert(isinstance(xml,PwscfXmlData))
+    assert(not xml.parse_failed)
+    assert(xml.data is not None)
+    assert(xml.version=='7.0')
+    assert(xml.calculation==calculation)
+    assert(xml.exit_status in (0,3))
+    assert(xml.initial_atoms.shape==(2,))
+    assert(xml.initial_positions.shape==(2,3))
+    assert(xml.initial_axes.shape==(3,3))
+    assert(xml.positions.shape==(2,3))
+    assert(xml.axes.shape==(3,3))
+    assert(xml.kpoints_rel.shape==(npoints,3))
+    assert(xml.kweights.shape==(npoints,))
+    assert(xml.eigenvalues.shape==(npoints,nbands))
+    assert(xml.occupations.shape==(npoints,nbands))
+    assert(xml.plane_waves.shape==(npoints,))
+    if calculation in force_modes:
+        assert(xml.forces.shape==(2,3))
+        assert(xml.stress.shape==(3,3))
+        assert(np.isclose(out.E,2*xml.total_energy))
+    else:
+        assert('forces' not in xml)
+        assert('stress' not in xml)
+    #end if
+    if calculation in step_modes:
+        assert(xml.trajectory_positions.shape==(3,2,3))
+        assert(xml.trajectory_axes.shape==(3,3,3))
+        assert(xml.trajectory_energies.shape==(3,))
+        assert(xml.trajectory_forces.shape==(3,2,3))
+    else:
+        assert('trajectory_positions' not in xml)
+        assert('trajectory_energies' not in xml)
+    #end if
+
+    # Combined analyzer access
+    assert(analyzer.initial_structure('B').pos.shape==(2,3))
+    assert(analyzer.kpoints('B').shape==(npoints,3))
+    assert(analyzer.kweights().shape==(npoints,))
+    assert(analyzer.eigenvalues('Ha').shape==(npoints,nbands))
+    assert(analyzer.occupations().shape==(npoints,nbands))
+    if calculation=='bands':
+        with pytest.raises(RuntimeError):
+            analyzer.energy()
+    else:
+        assert(np.isclose(analyzer.energy('Ha'),xml.total_energy))
+    #end if
+    if calculation in force_modes:
+        force_steps = 1 if calculation=='scf' else 3
+        assert(analyzer.forces('Ha/B').shape==(force_steps,2,3))
+        assert(analyzer.stress('kbar').shape==(1,3,3))
+        assert(analyzer.pressure('kbar') is not None)
+    else:
+        with pytest.raises(RuntimeError):
+            analyzer.forces()
+        with pytest.raises(RuntimeError):
+            analyzer.stress()
+        with pytest.raises(RuntimeError):
+            analyzer.pressure()
+    #end if
+    if calculation in ('relax','vc-relax'):
+        assert(analyzer.relaxed_structure('B').pos.shape==(2,3))
+    else:
+        with pytest.raises(RuntimeError):
+            analyzer.relaxed_structure()
+    #end if
+#end def test_qe_7_0_calculation_modes
+
+
 def test_pw2casino_analyzer_read(tmp_path):
     from ..pwscf_analyzer import Pw2CasinoAnalyzer, PwscfAnalyzer, PwscfOutData
 
