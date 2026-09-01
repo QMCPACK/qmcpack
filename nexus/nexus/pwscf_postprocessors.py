@@ -107,7 +107,7 @@
 import os
 from .fileio import TextFile
 from .simulation import Simulation,SimulationInput,SimulationAnalyzer,NullSimulationAnalyzer
-from .developer import DevBase, obj
+from .developer import DevBase, obj, FileFormatError, NexusError
 
 
 booldict = {'.true.':True,'.false.':False}
@@ -157,10 +157,10 @@ def writeval(val):
 class Namelist(DevBase):
     @classmethod
     def class_init(cls):
-        cls.class_set_optional(
-            namelist = 'unknown',
-            names = [],
-            )
+        if not hasattr(cls,'namelist'):
+            cls.namelist = 'unknown'
+        if not hasattr(cls,'names'):
+            cls.names = []
         cls.name_set = set(cls.names)
     #end def class_init
 
@@ -180,7 +180,15 @@ class Namelist(DevBase):
         if len(cls.name_set)>0:
             invalid = set(names)-cls.name_set
             if len(invalid)>0:
-                self.error('invalid names encountered in namelist during {0}\nnamelist name: {1}\ninvalid names: {2}\nvalid options are: {3}'.format(label,self.namelist,sorted(invalid),cls.names))
+                msg = (
+                    'invalid names encountered in namelist during {0}\n'
+                    'namelist name: {1}\n'
+                    'invalid names: {2}\n'
+                    'valid options are: {3}'.format(
+                        label, self.namelist, sorted(invalid), cls.names
+                        )
+                    )
+                raise FileFormatError(msg)
             #end if
         #end if
     #end def check_names
@@ -201,7 +209,11 @@ class Namelist(DevBase):
         elif isinstance(text,list):
             lines = text
         else:
-            self.error('read_text only accepts string or list inputs for text\nencountered invalid type for text: {0}'.format(text.__class__.__name__))
+            msg = (
+                'read_text only accepts string or list inputs for text\n'
+                'encountered invalid type for text: {0}'.format(text.__class__.__name__)
+                )
+            raise TypeError(msg)
         #end if
         if len(lines)>0:
             if lines[0].strip().startswith('&'):
@@ -226,7 +238,13 @@ class Namelist(DevBase):
                 if v is not None:
                     vals[name] = v
                 else:
-                    self.error('namelist read failed\nnamelist name: {0}\nvariable name: {1}\nvariable value: {2}'.format(self.namelist,name,value))
+                    msg = (
+                        'namelist read failed\n'
+                        'namelist name: {0}\n'
+                        'variable name: {1}\n'
+                        'variable value: {2}'.format(self.namelist,name,value)
+                        )
+                    raise FileFormatError(msg)
                 #end if
             #end for
         #end for
@@ -250,7 +268,13 @@ class Namelist(DevBase):
             if v is not None:
                 text += '  {0} = {1}\n'.format(name,v)
             else:
-                self.error('namelist write failed\nnamelist name: {0}\nvariable name: {1}\nvariable value: {2}'.format(namelist,name,value))
+                msg = (
+                    'namelist write failed\n'
+                    'namelist name: {0}\n'
+                    'variable name: {1}\n'
+                    'variable value: {2}'.format(namelist,name,value)
+                    )
+                raise RuntimeError(msg)
             #end if
         #end for
         text += '/\n'
@@ -266,10 +290,10 @@ class Namelist(DevBase):
 class NamelistInput(SimulationInput):
     @classmethod
     def class_init(cls):
-        cls.class_set_optional(
-            namelists = [],
-            namelist_classes = obj(),
-            )
+        if not hasattr(cls,'namelists'):
+            cls.namelists = []
+        if not hasattr(cls,'namelist_classes'):
+            cls.namelist_classes = obj()
         cls.namelist_set = set(cls.namelists)
         cls.name_map     = obj()
         for namelist_name,namelist_cls in cls.namelist_classes.items():
@@ -287,7 +311,8 @@ class NamelistInput(SimulationInput):
         #end if
         cls = self.__class__
         if len(cls.namelists)==0:
-            self.error('cannot initialize this input class as no namelists have been assigned it')
+            msg = 'cannot initialize this input class as no namelists have been assigned it'
+            raise NexusError(msg)
         #end if
         for name,value in vals.items():
             if name in cls.name_map:
@@ -300,7 +325,14 @@ class NamelistInput(SimulationInput):
                 #end if
                 namelist[name] = value
             else:
-                self.error('encountered invalid variable name during initialization\ninvalid variable name: {0}\nthis variable does not belong to any of the following namelists: {1}'.format(name,cls.namelists))
+                msg = (
+                    'encountered invalid variable name during initialization\n'
+                    'invalid variable name: {0}\n'
+                    'this variable does not belong to any of the following namelists: {1}'.format(
+                        name, cls.namelists
+                        )
+                    )
+                raise ValueError(msg)
             #end if
         #end for
     #end def __init__
@@ -327,11 +359,15 @@ class NamelistInput(SimulationInput):
                 elif name in cls.namelist_classes:
                     self[name] = cls.namelist_classes[name](nl_lines)
                 else:
-                    msg = 'encountered invalid namelist during read\ninvalid namelist: {0}\nvalid namelists are: {1}'.format(name,cls.namelists)
+                    msg = (
+                        'encountered invalid namelist during read\n'
+                        'invalid namelist: {0}\n'
+                        'valid namelists are: {1}'.format(name,cls.namelists)
+                        )
                     if filepath is not None:
                         msg += '\nfilepath: {0}'.format(filepath)
                     #end if
-                    self.error(msg)
+                    raise FileFormatError(msg)
                 #end if
             #end if
         #end for
@@ -341,13 +377,17 @@ class NamelistInput(SimulationInput):
     def write_text(self,filepath=None):
         cls = self.__class__
         text = ''
-        for name,namelist in self.items():
+        for name in self.keys():
             if name not in cls.namelist_set:
-                msg = 'encountered invalid namelist during write\ninvalid namelist: {0}\nvalid namelists are: {1}'.format(name,cls.namelists)
+                msg = (
+                    'encountered invalid namelist during write\n'
+                    'invalid namelist: {0}\n'
+                    'valid namelists are: {1}'.format(name,cls.namelists)
+                    )
                 if filepath is not None:
                     msg += '\nfilepath: {0}'.format(filepath)
                 #end if
-                self.error(msg)
+                raise RuntimeError(msg)
             #end if
         #end for
         for name in cls.namelists:
@@ -398,20 +438,20 @@ def generate_ppsim(gen_input=None,Sim=None,**kwargs):
 
 class PPInputppNamelist(Namelist):
     namelist = 'inputpp'
-    names    = ['prefix','outdir','filplot','plot_num','spin_component',
-                'sample_bias','kpoint','kband','lsign','emin','emax']
+    names    = ('prefix','outdir','filplot','plot_num','spin_component',
+                'sample_bias','kpoint','kband','lsign','emin','emax')
 #end class PPInputppNamelist
 
 class PPPlotNamelist(Namelist):
     namelist = 'plot'
-    names    = ['nfile','filepp','weight','iflag','output_format',
+    names    = ('nfile','filepp','weight','iflag','output_format',
                 'fileout','interpolation','e1','e2','e3','x0',
-                'nx','ny','nz','radius']
+                'nx','ny','nz','radius')
 #end class PPPlotNamelist
 
 
 class PPInput(NamelistInput):
-    namelists = ['inputpp','plot']
+    namelists = ('inputpp','plot')
     namelist_classes = obj(
         inputpp = PPInputppNamelist,
         plot    = PPPlotNamelist,
@@ -440,13 +480,13 @@ def generate_pp(**kwargs):
 
 class DosNamelist(Namelist):
     namelist = 'dos'
-    names = ['prefix','outdir','ngauss','degauss',
-             'Emin','Emax','DeltaE','fildos']
+    names = ('prefix','outdir','ngauss','degauss',
+             'Emin','Emax','DeltaE','fildos')
 #end class DosNamelist
 
 
 class DosInput(NamelistInput):
-    namelists = ['dos']
+    namelists = ('dos',)
     namelist_classes = obj(
         dos = DosNamelist,
         )
@@ -474,14 +514,14 @@ def generate_dos(**kwargs):
 
 class BandsNamelist(Namelist):
     namelist = 'bands'
-    names = ['prefix','outdir','filband','spin_component',
+    names = ('prefix','outdir','filband','spin_component',
              'lsigma','lp','filp','lsym','no_overlap','plot_2d',
-             'firstk','lastk']
+             'firstk','lastk')
 #end class BandsNamelist
 
 
 class BandsInput(NamelistInput):
-    namelists = ['bands']
+    namelists = ('bands',)
     namelist_classes = obj(
         bands = BandsNamelist,
         )
@@ -509,14 +549,14 @@ def generate_bands(**kwargs):
 
 class ProjwfcNamelist(Namelist):
     namelist = 'projwfc'
-    names = ['ngauss','degauss','Emin','Emax','deltaE',
+    names = ('ngauss','degauss','Emin','Emax','deltaE',
              'prefix','outdir','fildos','filproj','filpdos',
-             'lsym','pawproj','lwrite_overlaps','lbinary_data']
+             'lsym','pawproj','lwrite_overlaps','lbinary_data')
 #end class ProjwfcNamelist
 
 
 class ProjwfcInput(NamelistInput):
-    namelists = ['projwfc']
+    namelists = ('projwfc',)
     namelist_classes = obj(
         projwfc = ProjwfcNamelist,
         )
@@ -524,7 +564,7 @@ class ProjwfcInput(NamelistInput):
 
 
 class ProjwfcAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,outfile=None,analyze=False,warn=False,strict=False):
+    def __init__(self,arg0=None,outfile=None,*,analyze=False,warn=False,strict=False):
         self.info = obj(
             outfile     = outfile,
             warn        = warn,
@@ -550,7 +590,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
 
         self.input = ProjwfcInput(infile_path)
 
-        self.info.set(
+        self.info.update(
             path        = path,
             infile      = infile,
             outfile     = outfile,
@@ -571,7 +611,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             ('close_log'  ,ProjwfcAnalyzer.close_log),
             ]
         if self.info.strict:
-            for name,op in operations:
+            for name,op in operations:  # noqa: B007
                 op(self)
             #end for
         else:
@@ -659,7 +699,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             #end for
         #end while
         if has_ud:
-            for lc in lowdin:
+            for lc in lowdin.values():
                 u = lc.up
                 d = lc.down
                 lc.pol = obj()
@@ -670,7 +710,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
                 #end for
             #end for
         else:
-            for lc in lowdin:
+            for lc in lowdin.values():
                 del lc.up
                 del lc.down
             #end for
@@ -678,7 +718,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
         self.lowdin = lowdin
     #end def read_lowdin
 
-    def write_lowdin(self,filepath=None,sum=None,tot=None,pol=None,up=None,down=None,all=True,long=False):
+    def write_lowdin(self,filepath=None,sum=None,tot=None,pol=None,up=None,down=None,*,all=True,long=False):
         if tot is None:
             tot = all
         #end if
@@ -707,13 +747,13 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             if len(lowdin)>0:
                 if 'tot' in lowdin[0]:
                     nelec = 0
-                    for lc in lowdin:
+                    for lc in lowdin.values():
                         nelec += lc.tot.charge
                     #end for
                 #end if
                 if 'pol' in lowdin[0]:
                     npol = 0
-                    for lc in lowdin:
+                    for lc in lowdin.values():
                         npol += lc.pol.charge
                     #end for
                 #end if
@@ -760,7 +800,8 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             #end if
         #end for
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath, "w") as f:
+                f.write(text)
         #end if
         return text
     #end def write_lowdin
@@ -813,15 +854,15 @@ def generate_projwfc(**kwargs):
 
 class CpppInputppNamelist(Namelist):
     namelist = 'inputpp'
-    names = ['prefix','fileout','output','outdir','lcharge',
+    names = ('prefix','fileout','output','outdir','lcharge',
              'lforces','ldynamics','lpdb','lrotation',
              'ns1','ns2','ns3','np1','np2','np3','nframes','ndr',
-             'atomic_number','charge_density','state','lbinary']
+             'atomic_number','charge_density','state','lbinary')
 #end class CpppInputppNamelist
 
 
 class CpppInput(NamelistInput):
-    namelists = ['inputpp']
+    namelists = ('inputpp',)
     namelist_classes = obj(
         inputpp = CpppInputppNamelist,
         )
@@ -849,13 +890,13 @@ def generate_cppp(**kwargs):
 
 class PwexportInputppNamelist(Namelist):
     namelist = 'inputpp'
-    names = ['prefix','outdir','pseudo_dir','psfile',
-             'single_file','ascii','pp_file','uspp_spsi']
+    names = ('prefix','outdir','pseudo_dir','psfile',
+             'single_file','ascii','pp_file','uspp_spsi')
 #end class PwexportInputppNamelist
 
 
 class PwexportInput(NamelistInput):
-    namelists = ['inputpp']
+    namelists = ('inputpp',)
     namelist_classes = obj(
         inputpp = PwexportInputppNamelist,
         )
@@ -883,16 +924,16 @@ def generate_pwexport(**kwargs):
 
 class HpNamelist(Namelist):
     namelist = 'inputhp'
-    names = ['prefix', 'outdir', 'max_seconds', 'nq1', 'nq2', 'nq3', 'skip_equivalence_q', 
+    names = ('prefix', 'outdir', 'max_seconds', 'nq1', 'nq2', 'nq3', 'skip_equivalence_q', 
              'determine_num_pert_only', 'find_atpert', 'docc_thr', 'skip_type', 'equiv_type', 
              'perturb_only_atom', 'start_q', 'last_q', 'sum_pertq', 'compute_hp', 'conv_thr_chi', 
              'thresh_init', 'ethr_nscf', 'niter_max', 'alpha_mix(i)', 'nmix', 'num_neigh', 'lmin', 
-             'rmax', 'dist_thr']
+             'rmax', 'dist_thr')
 #end class HpNamelist
 
 
 class HpInput(NamelistInput):
-    namelists = ['inputhp']
+    namelists = ('inputhp',)
     namelist_classes = obj(
         inputhp = HpNamelist,
         )
@@ -900,7 +941,7 @@ class HpInput(NamelistInput):
 
 
 class HpAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,outfile=None,analyze=False,warn=False,strict=False):
+    def __init__(self,arg0=None,outfile=None,*,analyze=False,warn=False,strict=False):
         self.info = obj(
             outfile     = outfile,
             warn        = warn,
@@ -926,7 +967,7 @@ class HpAnalyzer(SimulationAnalyzer):
 
         self.input = HpInput(infile_path)
 
-        self.info.set(
+        self.info.update(
             path        = path,
             infile      = infile,
             outfile     = outfile,
@@ -946,7 +987,7 @@ class HpAnalyzer(SimulationAnalyzer):
             ('close_hubbard_dat'  ,HpAnalyzer.close_hubbard_dat),
             ]
         if self.info.strict:
-            for name,op in operations:
+            for name,op in operations:  # noqa: B007
                 op(self)
             #end for
         else:
@@ -998,7 +1039,7 @@ class Hp(PostProcessSimulation):
     analyzer_type      = HpAnalyzer
     generic_identifier = 'hp'
     application        = 'hp.x'
-    application_results = set(['hubbard_parameters'])
+    application_results = frozenset({'hubbard_parameters'})
 
     def check_result(self,result_name,sim):
         calculating_result = False
@@ -1016,7 +1057,8 @@ class Hp(PostProcessSimulation):
             pa = self.load_analyzer_image()
             result = pa.hubbard_parameters
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result

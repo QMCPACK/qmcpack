@@ -17,6 +17,8 @@
 
 
 #include "QMCDriver.h"
+#include <limits>
+#include <typeinfo>
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -27,8 +29,7 @@
 #include "RandomNumberControl.h"
 #include "hdf/HDFVersion.h"
 #include "Utilities/qmc_common.h"
-#include <limits>
-#include <typeinfo>
+#include "Concurrency/OpenMP.h"
 
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #if !defined(REMOVE_TRACEMANAGER)
@@ -305,7 +306,7 @@ void QMCDriver::recordBlock(int block)
   }
 }
 
-bool QMCDriver::finalize(int block, bool dumpwalkers)
+void QMCDriver::finalize(int block, bool dumpwalkers)
 {
   if (DumpConfig && dumpwalkers)
     wOut->dump(W, block);
@@ -318,8 +319,6 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
 
   if (DumpConfig)
     RandomNumberControl::write(RootName, myComm);
-
-  return true;
 }
 
 /** Add walkers to the end of the ensemble of walkers.
@@ -371,8 +370,14 @@ void QMCDriver::setWalkerOffsets()
     W[iw]->setWalkerID(id);
     W[iw]->setParentID(id);
   }
-  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
-  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
+  // Compute total walker weights and counts. W.EnsembleProperty.NumSamples and W.EnsembleProperty.Weight are only set during branching / measureProperties.
+  QMCTraits::FullPrecRealType total_weight = 0;
+  for (int iw = 0; iw < nw[myComm->rank()]; ++iw)
+    total_weight += W[iw]->Weight;
+  myComm->allreduce(total_weight);
+
+  app_log() << "  Total number of walkers: " << nwoff.back() << std::endl;
+  app_log() << "  Total weight: " << total_weight << std::endl;
 }
 
 

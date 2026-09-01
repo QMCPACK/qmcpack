@@ -29,7 +29,7 @@ class QEXML(DevBase):
         self._value = []
     #end def __init__
 
-    array_keys = set('type size columns len _value'.split())
+    array_keys = frozenset({'size', 'type', 'columns', '_value', 'len'})
     def finalize(self):
         keys = list(self.keys())
         enums = obj()
@@ -124,7 +124,8 @@ def read_qexml(inp):
     if isinstance(inp,list):
         rawlines = inp
     elif isinstance(inp,str):# and os.path.exists(inp):
-        rawlines = open(inp,'r').read().splitlines()
+        with open(inp, "r") as f:
+            rawlines = f.read().splitlines()
     else:
         print('read_qexml error: input can only be filename or list of lines')
         print('  input received: ',inp)

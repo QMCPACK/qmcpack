@@ -8,22 +8,14 @@
 //
 // File created by: Fionn Malone, malone14@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
-#include "catch.hpp"
-
-#include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "ProjectData.h"
 #include "Utilities/TimerManager.h"
 #include "hdf/hdf_archive.h"
-
-#undef APP_ABORT
-#define APP_ABORT(x)             \
-  {                              \
-    std::cout << x << std::endl; \
-    throw;                       \
-  }
 
 #include <stdio.h>
 #include <string>
@@ -204,7 +196,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     if (type == CLOSED)
     {
       REQUIRE(read_data.num_elements() >= NMO * NMO);
-      boost::multi::array_ref<ComplexType, 2> BPRDM(read_data.origin(), {NMO, NMO});
+      boost::multi::array_ref<ComplexType, 2> BPRDM(read_data.base(), {NMO, NMO});
       ma::scal(1.0 / denom, BPRDM);
       ComplexType trace = ComplexType(0.0);
       for (int i = 0; i < NMO; i++)
@@ -212,13 +204,13 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
       CHECK(trace.real() == Approx(NAEA));
       boost::multi::array<ComplexType, 2, Allocator> Gw({1, NMO * NMO}, alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
-      boost::multi::array_ref<ComplexType, 2, pointer> G(Gw.origin(), {NMO, NMO});
+      boost::multi::array_ref<ComplexType, 2, pointer> G(Gw.base(), {NMO, NMO});
       verify_approx(G, BPRDM);
     }
     else if (type == COLLINEAR)
     {
       REQUIRE(read_data.num_elements() >= 2 * NMO * NMO);
-      boost::multi::array_ref<ComplexType, 3> BPRDM(read_data.origin(), {2, NMO, NMO});
+      boost::multi::array_ref<ComplexType, 3> BPRDM(read_data.base(), {2, NMO, NMO});
       ma::scal(1.0 / denom, BPRDM[0]);
       ma::scal(1.0 / denom, BPRDM[1]);
       ComplexType trace = ComplexType(0.0);
@@ -227,7 +219,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
       CHECK(trace.real() == Approx(NAEA + NAEB));
       boost::multi::array<ComplexType, 2, Allocator> Gw({1, 2 * NMO * NMO}, alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
-      boost::multi::array_ref<ComplexType, 3, pointer> G(Gw.origin(), {2, NMO, NMO});
+      boost::multi::array_ref<ComplexType, 3, pointer> G(Gw.base(), {2, NMO, NMO});
       verify_approx(G, BPRDM);
     }
     else

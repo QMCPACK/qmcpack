@@ -170,12 +170,12 @@ template<class VType, class MType,
         >
 void emplace_back_array_ref(VType& V, MType&& M, bool device=true) {
   // noly makes sense for continguous arrays
-  assert(M.stride(0) == M.size(1));
-  assert(M.stride(1) == 1);
+  assert(M.stride() == M.size(1));
+  assert(get<1>(M.strides()) == 1);
   if(device) {  
-    V.emplace_back(make_device_ptr(M.origin()),iextensions<2u>{M.size(0),M.size(1)});
+    V.emplace_back(make_device_ptr(M.base()),iextensions<2u>{M.size(0),M.size(1)});
   } else {
-    V.emplace_back(to_address(M.origin()),iextensions<2u>{M.size(0),M.size(1)});
+    V.emplace_back(to_address(M.base()),iextensions<2u>{M.size(0),M.size(1)});
   }
 } 
 */

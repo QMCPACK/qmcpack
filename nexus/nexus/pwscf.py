@@ -18,16 +18,20 @@
 
 
 import os
+from copy import deepcopy
+import shutil
 import numpy as np
-from .developer import obj
+from .nexus_base import nexus_core
+from .developer import obj, NexusError
 from .physical_system import PhysicalSystem
-from .simulation import Simulation
+from .pseudoset import PseudoSet
+from .simulation import Simulation, DynamicProcess
 from .pwscf_input import PwscfInput, generate_pwscf_input
 from .pwscf_analyzer import PwscfAnalyzer
 from .execute import execute
 
 
-unique_vdw_functionals = [
+unique_vdw_functionals = (
     'optb86b-vdw',
     'vdw-df3', # optB88+vdW
     'vdw-df',
@@ -36,11 +40,11 @@ unique_vdw_functionals = [
     'vdw-df-c09',
     'vdw-df2-c09',
     'rvv10',
-    ]
-repeat_vdw_functionals = [
+    )
+repeat_vdw_functionals = (
     'vdw-df4', # 'optB86b-vdW'
-    ]
-unique_functionals = [
+    )
+unique_functionals = (
     'revpbe',
     'pw86pbe',
     'b86bpbe',
@@ -67,14 +71,16 @@ unique_functionals = [
     'sogga',
     'm06l',
     'ev93',
-    ]+unique_vdw_functionals
-repeat_functionals = [
+    *unique_vdw_functionals
+    )
+repeat_functionals = (
     'q2d', # pbeq2d
     'pz', # lda
-    ]+repeat_vdw_functionals
+    *repeat_vdw_functionals
+    )
 
-vdw_functionals     = set(unique_vdw_functionals+repeat_vdw_functionals)
-allowed_functionals = set(unique_functionals+repeat_functionals)
+vdw_functionals     = frozenset(unique_vdw_functionals+repeat_vdw_functionals)
+allowed_functionals = frozenset(unique_functionals+repeat_functionals)
 
 
 
@@ -83,12 +89,15 @@ class Pwscf(Simulation):
     analyzer_type = PwscfAnalyzer
     generic_identifier = 'pwscf'
     application = 'pw.x'
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['charge_density','orbitals','structure','restart'])
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'charge_density','orbitals','structure','restart'})
 
     supports_restarts = True # supports restartable, but not force restart yet
 
     vdw_table = None
+
+    # dynamic workflow support
+    allowed_requirements = ('none','structure','charge_density','orbitals')
 
     @staticmethod
     def settings(vdw_table=None):
@@ -113,7 +122,10 @@ class Pwscf(Simulation):
         sync_from_scf = sim_args.pop('sync_from_scf',True)
         Simulation.__init__(self,**sim_args)
         self.sync_from_scf = False
-        calc = self.input.control.get('calculation',None)
+        calc = None
+        cont = self.input.control
+        if 'calculation' in cont:
+            calc = cont.calculation
         if calc=='nscf':
             self.sync_from_scf = sync_from_scf
         #end if
@@ -131,14 +143,18 @@ class Pwscf(Simulation):
             os.makedirs(outdir)
         #end if
         #copy over vdw_table for vdW-DF functional
-        if self.path_exists('input/system/input_dft'):
+        if 'input_dft' in self.input.system:
             functional = self.input.system.input_dft.lower()
             if '+' not in functional and functional not in allowed_functionals:
                 self.warn('functional "{0}" is unknown to pwscf'.format(functional))
             #end if
             if functional in vdw_functionals:
                 if self.vdw_table is None:
-                    self.error('attempting to run vdW functional "{0}", but vdw_table is missing\nplease provide path to table file via "vdw_table" parameter in settings'.format(functional))
+                    msg = (
+                        'attempting to run vdW functional "{0}", but vdw_table is missing\n'
+                        'please provide path to table file via "vdw_table" parameter in settings'.format(functional)
+                        )
+                    raise ValueError(msg)
                 #end if
                 cd_rel = os.path.relpath(self.vdw_table,self.locdir)
                 # copy instead of link to vdw_table to avoid file-lock from multiple pw.x instances
@@ -210,7 +226,7 @@ class Pwscf(Simulation):
             #end if
             pos   = scale*np.array(pos)
             
-            structure = self.system.structure.copy()
+            structure = deepcopy(self.system.structure)
             structure.change_units('B')
             structure.pos = pos
             structure.set_elem(atoms)
@@ -219,7 +235,8 @@ class Pwscf(Simulation):
             #end if
             result.structure = structure
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result
@@ -243,9 +260,8 @@ class Pwscf(Simulation):
                     print('    Running rsync for the {} directory. This might take a while.'.format(outdir))
                     execute(command)
                     print('    Completed rsync for the {} directory.'.format(outdir))
-                    f = open(sync_record,'w')
-                    f.write('\n')
-                    f.close()
+                    with open(sync_record,'w') as f:
+                        f.write('\n')
                 #end if
             else: # attempt to use symbolic links instead
                 link_loc = os.path.join(self.locdir,c.outdir,c.prefix+'.save')
@@ -271,7 +287,7 @@ class Pwscf(Simulation):
 
             #end if
         elif result_name=='structure':
-            relstruct = result.structure.copy()
+            relstruct = deepcopy(result.structure)
             relstruct.change_units('B')
             self.system.structure = relstruct
             self.system.remove_folded()
@@ -279,7 +295,7 @@ class Pwscf(Simulation):
             input = self.input
             preserve_kp = 'k_points' in input and 'specifier' in input.k_points and (input.k_points.specifier=='automatic' or input.k_points.specifier=='gamma')
             if preserve_kp:
-                kp = input.k_points.copy()
+                kp = deepcopy(input.k_points)
             #end if
             input.incorporate_system(self.system)
             if preserve_kp:
@@ -288,10 +304,20 @@ class Pwscf(Simulation):
         elif result_name=='restart':
             c = self.input.control
             if('startingwfc' in self.input.electrons and self.input.electrons.startingwfc != 'file'):
-                self.error('Exiting. User has specified startingwfc=\''+self.input.electrons.startingwfc+'\'.\nThis value will be overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
+                msg = (
+                    "Exiting. User has specified startingwfc='"+self.input.electrons.startingwfc+"'.\n"
+                    "This value will be overwritten when incorporating result 'restart'.\n"
+                    "Please fix conflict."
+                    )
+                raise ValueError(msg)
             #end if
             if('startingpot' in self.input.electrons and self.input.electrons.startingpot != 'file'):
-                self.error('Exiting. User has specified startingpot=\''+self.input.electrons.startingpot+'\'.\nThis value will be overwritten when incorporating result \'restart\'.\nPlease fix conflict.')
+                msg = (
+                    "Exiting. User has specified startingpot='"+self.input.electrons.startingpot+"'.\n"
+                    "This value will be overwritten when incorporating result 'restart'.\n"
+                    "Please fix conflict."
+                    )
+                raise ValueError(msg)
             #end if
             c.restart_mode='restart'
             res_path = os.path.abspath(result.locdir)
@@ -309,24 +335,25 @@ class Pwscf(Simulation):
                     print('    Running rsync for the {} directory. This might take a while.'.format(outdir))
                     execute(command)
                     print('    Completed rsync for the {} directory.'.format(outdir))
-                    f = open(sync_record,'w')
-                    f.write('\n')
-                    f.close()
+                    with open(sync_record,'w') as f:
+                        f.write('\n')
+
                 #end if
             #end if
         elif result_name == 'hubbard_parameters':
             self.input.incorporate_hubbard(result)
         else:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
+            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if        
     #end def incorporate_result
 
 
     def check_sim_status(self):
         outfile = os.path.join(self.locdir,self.outfile)
-        fobj = open(outfile,'r')
-        output = fobj.read()
-        fobj.close()
+        with open(outfile,'r') as fobj:
+            output = fobj.read()
+
         not_converged = 'convergence NOT achieved'  in output
         time_exceeded = 'Maximum CPU time exceeded' in output
         user_stop     = 'Program stopped by user request' in output
@@ -356,18 +383,163 @@ class Pwscf(Simulation):
     def app_command(self):
         return self.app_name+' -input '+self.infile
     #end def app_command
+
+
+    # dynamic workflow support
+
+    def fill_produces(self):
+        calc = 'scf'
+        if 'calculation' in self.input.control:
+            calc = self.input.control.calculation.lower()
+
+        # charge density
+        if calc=='scf':
+            self.produces.add('charge_density')
+            self.produces.add('energy')
+
+        # orbitals
+        if calc=='nscf':
+            self.produces.add('orbitals')
+        elif calc=='scf':
+            k_points = self.input.k_points
+            nkpoints = 1
+            if 'grid' in k_points and k_points.grid==(1,1,1):
+                nkpoints = 1
+            elif 'kpoints' in self.input.k_points:
+                nkpoints = len(self.input.k_points.kpoints)
+            nosym = True
+            if 'nosym' in self.input.system:
+                nosym = self.input.system.nosym
+            if nkpoints==1 or not nosym:
+                self.produces.add('orbitals')
+
+        # structure
+        if 'relax' in calc:
+            self.produces.add('structure')
+            self.produces.add('energy')
+    #end def fill_produces
+
+
+    def fill_products(self):
+        if not self.filled_products:
+            self.filled_products = True
+        else:
+            msg = (
+                'fill_products must be called only once.\n'
+                'This is likely a developer error.'
+                )
+            raise NexusError(msg)
+        if len(self.produces)==0:
+            return
+        analyzer = self.load_analyzer_image()
+        input    = analyzer.input
+        if 'energy' in self.produces:
+            self.products.energy = analyzer.E
+        if 'charge_density' in self.produces:
+            outdir = input.control.outdir
+            path   = os.path.join(self.locdir,outdir)
+            self.products.charge_density = path
+        if 'orbitals' in self.produces:
+            outdir = input.control.outdir
+            path   = os.path.join(self.locdir,outdir)
+            self.products.orbitals = path
+        if 'structure' in self.produces:
+            pa = analyzer
+            structs = pa.structures
+            struct  = deepcopy(structs[len(structs)-1])
+            pos     = struct.positions
+            atoms   = struct.atoms
+            if 'celldm(1)' in self.input.system:
+                scale = self.input.system['celldm(1)']
+            else:
+                scale = 1.0
+            pos = scale*np.array(pos)
+            structure = deepcopy(self.system.structure)
+            structure.change_units('B')
+            structure.set_pos(pos)
+            structure.set_elem(atoms)
+            if 'axes' in struct:
+                structure._set_axes(struct.axes)
+            self.products.structure = structure
+    #end def fill_products
+
+
+    def receive_charge_density(self,charge_density_path):
+        if not os.path.isdir(charge_density_path):
+            msg = (
+                'charge density path is not a directory.\n'
+                'Path provided: {}'.format(charge_density_path)
+                )
+            raise NotADirectoryError(msg)
+        c = self.input.control
+        res_path = os.path.realpath(charge_density_path)
+        loc_path = os.path.realpath(self.locdir)
+        if res_path==loc_path:
+            return # don't need to do anything if in same directory
+        outdir = os.path.join(self.locdir,c.outdir)
+        # try shutil copytree, should be ok if never copying over
+        #command = 'rsync -av {0}/* {1}/'.format(res_path,outdir)
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        sync_record = os.path.join(outdir,'nexus_sync_record')
+        if not os.path.exists(sync_record):
+            print('    Copying directory: {}\n      this might take a while'.format(outdir))
+            #execute(command)
+            shutil.copytree(res_path, outdir, dirs_exist_ok=True)
+            print('      directory copy complete')
+            # fix "permission denied" on some systems
+            execute('chmod -R a+rw '+outdir)
+            with open(sync_record,'w') as f:
+                f.write('\n')
+    #end def recieve_charge_density
+
+
+    def receive_structure(self,struct):
+        struct.change_units('B')
+        self.system.structure = struct
+        self.system.remove_folded()
+        input = self.input
+        preserve_kp = 'k_points' in input and 'specifier' in input.k_points and (input.k_points.specifier=='automatic' or input.k_points.specifier=='gamma')
+        if preserve_kp:
+            kp = deepcopy(input.k_points)
+        input.incorporate_system(self.system)
+        if preserve_kp:
+            input.k_points = kp
+    #end def receive_structure
+
 #end class Pwscf
 
 
 
 def generate_pwscf(**kwargs):
+
+    if nexus_core.dynamic:
+        dp,dyn_args = DynamicProcess.check_first_gen(kwargs)
+        if dp is not None:
+            return dp
+
+    pseudos = kwargs.get('pseudos',None)
+    if pseudos is not None:
+        system = kwargs.get('system',None)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
+        kwargs['pseudos'] = pseudos
+        kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
+    #end if
+
     sim_args,inp_args = Pwscf.separate_inputs(kwargs)
 
     if 'input' not in sim_args:
-        input_type = inp_args.delete_optional('input_type','generic')
+        input_type = inp_args.pop('input_type','generic')
         sim_args.input = generate_pwscf_input(input_type,**inp_args)
     #end if
     pwscf = Pwscf(**sim_args)
+
+    if nexus_core.dynamic:
+        pwscf = DynamicProcess(sim=pwscf,**dyn_args)
 
     return pwscf
 #end def generate_pwscf

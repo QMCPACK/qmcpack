@@ -37,7 +37,11 @@ inline int getNextLevelNumThreads()
   int num_threads = 1;
 #pragma omp parallel
   {
+#if _OPENMP >= 202011
+#pragma omp masked
+#else
 #pragma omp master
+#endif
     num_threads = omp_get_num_threads();
   }
   return num_threads;

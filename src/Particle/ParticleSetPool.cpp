@@ -64,7 +64,7 @@ void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)
   if (pit == myPool.end())
   {
     auto& pname = p->getName();
-    LOGMSG("  Adding " << pname << " ParticleSet to the pool")
+    qmcplusplus::app_log() << "  Adding " << pname << " ParticleSet to the pool" << std::endl;
     if (&p->getSimulationCell() != simulation_cell_.get())
       throw std::runtime_error("Bug detected! ParticleSetPool::addParticleSet requires p created with the simulation "
                                "cell from ParticleSetPool.");
@@ -100,6 +100,9 @@ bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
   }
   return lattice_defined;
 }
+
+void ParticleSetPool::createSimulationCellByLattice(const Lattice& lattice)
+{ simulation_cell_ = std::make_unique<SimulationCell>(lattice); }
 
 /** process an xml element
  * @param cur current xmlNodePtr

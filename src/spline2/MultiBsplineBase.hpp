@@ -22,6 +22,7 @@
 #include <array>
 #include <cstddef>
 #include <vector>
+#include <stdexcept>
 #include "spline2/bspline_traits.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 
@@ -177,7 +178,7 @@ public:
    * @param single UBspline_3d_d
    * @param int index of single in multi
    */
-  void set_spline(const typename bspline_traits<double, 3>::SingleSplineType& single, int i)
+  void set_spline(const UBspline_3d_d& single, int i)
   {
     size_t iblock = 0;
     while (iblock < spline_blocks.size() && i >= offsets_[iblock + 1])
@@ -208,7 +209,6 @@ public:
       }
   }
 
-  virtual void finalize() {};
 
   template<typename PT, typename VT>
   inline void evaluate_v(const PT& r, VT& psi)

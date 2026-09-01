@@ -1,9 +1,6 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-$CXX -std=c++17 -O0 -I/home/correaa/include/tblis -I/home/correaa/tblis/src/external/tci -L/home/correaa/lib -Wl,-rpath=/home/correaa/lib -ltblis $0 -o $0x&&$0x&&rm $0x;exit
-#endif
-// Copyright 2021-2024 Alfredo A. Correa
+// Copyright 2021-2026 Alfredo A. Correa
 
-#include "tblis/tblis.h"
+#include <tblis/tblis.h>
 
 #include "../array.hpp"
 
@@ -96,24 +93,25 @@ namespace μνσ{
 
 }
 
+// template<class T> auto const init_matrix = std::enable_if_t<sizeof(T*)==0>{};
+// template<> auto const init_matrix<float               > = ::tblis::tblis_init_matrix_s;
+// template<> auto const init_matrix<double              > = ::tblis::tblis_init_matrix_d;
+// template<> auto const init_matrix<std::complex<float >> = ::tblis::tblis_init_matrix_c;
+// template<> auto const init_matrix<std::complex<double>> = ::tblis::tblis_init_matrix_z;
 
+// template<class T> auto const init_tensor = std::enable_if_t<sizeof(T*)==0>{};
+// template<> auto const init_tensor<float               > = ::tblis::tblis_init_tensor_s;
+// template<> auto const init_tensor<double              > = ::tblis::tblis_init_tensor_d;
+// template<> auto const init_tensor<std::complex<float >> = ::tblis::tblis_init_tensor_c;
+// template<> auto const init_tensor<std::complex<double>> = ::tblis::tblis_init_tensor_z;
 
+template<class T>
+struct datatype;
 
-
-
-
-
-template<class T> auto const init_matrix = std::enable_if_t<sizeof(T*)==0>{};
-template<> auto const init_matrix<float               > = ::tblis::tblis_init_matrix_s;
-template<> auto const init_matrix<double              > = ::tblis::tblis_init_matrix_d;
-template<> auto const init_matrix<std::complex<float >> = ::tblis::tblis_init_matrix_c;
-template<> auto const init_matrix<std::complex<double>> = ::tblis::tblis_init_matrix_z;
-
-template<class T> auto const init_tensor = std::enable_if_t<sizeof(T*)==0>{};
-template<> auto const init_tensor<float               > = ::tblis::tblis_init_tensor_s;
-template<> auto const init_tensor<double              > = ::tblis::tblis_init_tensor_d;
-template<> auto const init_tensor<std::complex<float >> = ::tblis::tblis_init_tensor_c;
-template<> auto const init_tensor<std::complex<double>> = ::tblis::tblis_init_tensor_z;
+template<> struct datatype<float> { static constexpr auto value = TBLIS_TYPE_FLOAT; };
+template<> struct datatype<double> { static constexpr tblis_datatype value = TBLIS_TYPE_DOUBLE; };
+template<> struct datatype<std::complex<float>> { static constexpr tblis_datatype value = TBLIS_TYPE_SCOMPLEX; };
+template<> struct datatype<std::complex<double>> { static constexpr tblis_datatype value = TBLIS_TYPE_DCOMPLEX; };
 
 template<class Element, multi::dimensionality_type D>
 struct indexed_tensor;
@@ -128,7 +126,8 @@ struct tensor : ::tblis::tblis_tensor{
 		lens_   (std::apply([](auto... s){return std::array<::tblis::len_type   , D>{s...};}, sizes  (a))),
 		strides_(std::apply([](auto... s){return std::array<::tblis::stride_type, D>{s...};}, strides(a)))
 	{
-		tblis::init_tensor<std::decay_t<Element>>(this, D, lens_.data(), const_cast<std::decay_t<Element>*>(base(a)), strides_.data());
+		// tblis::init_tensor<std::decay_t<Element>>(this, D, lens_.data(), const_cast<std::decay_t<Element>*>(base(a)), strides_.data());
+		tblis_init_tensor>(this, tblis::datatype<Element>, D, lens_.data(), const_cast<std::decay_t<Element>*>(base(a)), strides_.data());
 	}
 	tensor(tensor const&) = delete;
 	tensor(tensor&& other) noexcept : lens_{other.lens_}, strides_{other.strides_}{

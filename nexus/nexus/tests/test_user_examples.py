@@ -1,55 +1,71 @@
+import os
+import shutil
+import sys
+from pathlib import Path
+from shutil import ignore_patterns
+from subprocess import PIPE, Popen
+
 import pytest
-from . import NexusTestOrder
+
+from ..developer import obj
+from ..testing import object_diff, text_diff
+from ..pwscf_input import PwscfInput
+from ..qmcpack_converters import Pw2qmcpackInput
+from ..gamess_input import GamessInput
+from ..qmcpack_input import QmcpackInput
+from ..rmg_input import RmgInput
+from ..pyscf_input import PyscfInput
+from . import TEST_DIR, NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.USER_EXAMPLES)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
-from pathlib import Path
-import os
-import sys
-import shutil
-from shutil import ignore_patterns
-from subprocess import Popen, PIPE
-
-
-nexus_root = Path(__file__).resolve().parent.parent.parent # qmcpack/nexus
+nexus_root = TEST_DIR.parent.parent # qmcpack/nexus
 example_root  = nexus_root / "nexus/examples"
 test_root     = nexus_root / "nexus/tests"
 reference_dir = test_root / "reference/user_examples"
-output_root   = test_root / "test_user_examples_output"
 
 qmcpack_pseudos  = example_root / "qmcpack/pseudopotentials"
 espresso_pseudos = example_root / "quantum_espresso/pseudopotentials"
 
 
-def copy_pseudos(code: str):
-
+def copy_pseudos(code: str, tmp_dir: Path):
+    """Copy pseudopotential files over to the test directories."""
     if code == "qmcpack":
-        output_path = output_root / "qmcpack/pseudopotentials"
+        output_path = tmp_dir / "qmcpack/pseudopotentials"
         shutil.copytree(qmcpack_pseudos, output_path, dirs_exist_ok=True)
     elif code == "quantum_espresso":
-        output_path = output_root / "quantum_espresso/pseudopotentials"
+        output_path = tmp_dir / "quantum_espresso/pseudopotentials"
         shutil.copytree(espresso_pseudos, output_path, dirs_exist_ok=True)
     else:
         raise ValueError(f"Invalid code for pseudopotential identification: {code}")
+#end def copy_pseudos
 
 
-def copy_example_files(example_dir: str):
+def copy_example_files(
+    example_dir: str,
+    tmp_dir: Path,
+    *,
+    template_file: Path | None = None
+    ):
 
     example_path = example_root / example_dir
-    output_path = output_root / example_dir
+    output_path = tmp_dir / example_dir
+
     test_path = shutil.copytree(
         src           = example_path,
         dst           = output_path,
         dirs_exist_ok = True,
-        ignore        = ignore_patterns("*.py"),
-    )
+        ignore        = ignore_patterns("*.py", "*.rst"),
+        )
+
+    if template_file is not None:
+        shutil.copy(template_file, test_path)
 
     return test_path
+#end def copy_example_files
 
 
-def run_example_script(script: Path, test_path: Path):
+def run_example_script(script: Path, test_path: Path) -> tuple[bool, str]:
 
     script = script.resolve() # Absolute path helps in debugging
     old_cwd = Path.cwd()
@@ -70,58 +86,64 @@ def run_example_script(script: Path, test_path: Path):
             "\n"
             "stdout:\n"
             "=======\n"
-           f"{out}\n"
+           f"{str(out, encoding='utf-8')}\n"
             "\n"
             "stderr:\n"
             "=======\n"
-           f"{err}\n"
+           f"{str(err, encoding='utf-8')}\n"
             "\n"
             "Return code:\n"
             "============\n"
            f"{returncode}\n"
-        )
+            )
         # Return test failure so it can be dealt with in the respective test.
         return False, msg
     else:
         return True, "Success!"
+#end def run_example_script
 
 
 def check_generated_files(
     code: str,
+    tmp_dir: Path,
     example_path: str,
     filepath: str,
-):
-
-    from ..testing import object_diff
-    from nexus.pwscf_input import PwscfInput
-    from nexus.qmcpack_converters import Pw2qmcpackInput
-    from nexus.gamess_input import GamessInput
-    from nexus.qmcpack_input import QmcpackInput
-
+    ) -> tuple[bool, str]:
     input_classes = dict(
         pwscf      = PwscfInput,
         pw2qmcpack = Pw2qmcpackInput,
         gamess     = GamessInput,
         qmcpack    = QmcpackInput,
-    )
+        rmg        = RmgInput,
+        pyscf      = PyscfInput,
+        )
 
     ref_filepath = reference_dir / example_path / filepath
-    gen_filepath = output_root / example_path / filepath
+    gen_filepath = tmp_dir / example_path / filepath
 
     if not ref_filepath.exists():
-        raise FileNotFoundError(
+        msg = (
             "Reference file is missing\n"
             f"File should be located at: {ref_filepath!s}"
-        )
+            )
+        raise FileNotFoundError(msg)
     elif not gen_filepath.exists():
-        raise FileNotFoundError(
-            f"Input file was not generated: {gen_filepath!s}"
-        )
+        msg = f"Input file was not generated: {gen_filepath!s}"
+        raise FileNotFoundError(msg)
 
-    input_class = input_classes[code]
-    ref_input = input_class(str(ref_filepath))
-    gen_input = input_class(str(gen_filepath))
-    diff, dgen, dref = object_diff(gen_input, ref_input, full=True)
+    if code == "pyscf":
+        # PyscfInput does template string things, which we can't really
+        # evaluate, so instead we just do a direct text comparison of the
+        # generated output from the test.
+        ref_input = ref_filepath.read_text()
+        gen_input = gen_filepath.read_text()
+        diff, dgen, dref = text_diff(ref_input, gen_input, full=True)
+    else:
+        input_class = input_classes[code]
+        ref_input = input_class(str(ref_filepath))
+        gen_input = input_class(str(gen_filepath))
+        diff, dgen, dref = object_diff(gen_input, ref_input, full=True)
+
     if diff:
         # assume failure
         failed = True
@@ -146,12 +168,11 @@ def check_generated_files(
                     failed = False
                 #end if
             except:
-                None
+                pass
             #end try
         #end if
         if failed:
             # report on failures
-            from nexus.generic import obj
             dgen = obj(dgen)
             dref = obj(dref)
             msg  = 'reference and generated input files differ\n'
@@ -166,212 +187,269 @@ def check_generated_files(
         #end if
     #end if
     return True, "Success!"
+#end def check_generated_files
 
 
-# Move pseudos
-copy_pseudos("qmcpack")
-copy_pseudos("quantum_espresso")
-
-
-def test_pwscf_relax_Ge_T():
-
+def test_pwscf_relax_Ge_T(tmp_path):
     test_data = dict(
         path = 'quantum_espresso/relax_Ge_T_vs_kpoints', 
         scripts = [
             'relax_vs_kpoints_example.py',
-        ],
+            ],
         files = [
             ('pwscf', 'input', 'runs/relax/kgrid_111/relax.in'),
             ('pwscf', 'input', 'runs/relax/kgrid_222/relax.in'),
             ('pwscf', 'input', 'runs/relax/kgrid_444/relax.in'),
             ('pwscf', 'input', 'runs/relax/kgrid_666/relax.in'),
-        ],
-    )
+            ],
+        )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, _filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
-        )
+            )
         assert(success), message
+#end def test_pwscf_relax_Ge_T
 
 
-def test_gamess_H2O():
-
+def test_gamess_H2O(tmp_path):
     test_data = dict(
         path = 'gamess/H2O',
         scripts = [
             'h2o_pp_hf.py',
             'h2o_pp_cisd.py',
             'h2o_pp_casscf.py',
-        ],
+            ],
         files = [
             ('gamess', 'input', 'runs/pp_hf/rhf.inp'),
             ('gamess', 'input', 'runs/pp_cisd/rhf.inp'),
             ('gamess', 'input', 'runs/pp_cisd/cisd.inp'),
             ('gamess', 'input', 'runs/pp_casscf/rhf.inp'),
             ('gamess', 'input', 'runs/pp_casscf/cas.inp'),
-        ],
-    )
+            ],
+        )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, _filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
-        )
+            )
         assert(success), message
+#end def test_gamess_H2O
 
 
-def test_qmcpack_H2O():
-
+def test_qmcpack_H2O(tmp_path):
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/H2O',
         scripts = [
             'H2O.py',
-        ],
+            ],
         files = [
             ('pwscf',      'input', 'runs/scf.in'),
             ('pw2qmcpack', 'input', 'runs/p2q.in'),
             ('qmcpack',    'input', 'runs/opt.in.xml'),
             ('qmcpack',    'input', 'runs/dmc.in.xml'),
-        ],
-    )
+            ],
+        )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
+
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, _filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
-        )
+            )
         assert(success), message
+#end def test_qmcpack_H2O
 
 
-def test_qmcpack_LiH():
-
+def test_qmcpack_LiH(tmp_path):
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/LiH',
         scripts = [
             'LiH.py',
-        ],
+            ],
         files = [
             ('pwscf',      'input', 'runs/scf.in'),
             ('pwscf',      'input', 'runs/nscf.in'),
             ('pw2qmcpack', 'input', 'runs/p2q.in'),
             ('qmcpack',    'input', 'runs/opt.in.xml'),
             ('qmcpack',    'input', 'runs/dmc.in.xml'),
-        ],
-    )
+            ],
+        )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, _filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
-        )
+            )
         assert(success), message
+#end def test_qmcpack_LiH
 
 
-def test_qmcpack_c20():
-
+def test_qmcpack_c20(tmp_path):
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/c20',
         scripts = [
             'c20.py',
-        ],
+            ],
         files = [
             ('pwscf',      'input', 'runs/c20/scf/scf.in'),
             ('pw2qmcpack', 'input', 'runs/c20/nscf/p2q.in'),
             ('qmcpack',    'input', 'runs/c20/opt/opt.in.xml'),
             ('qmcpack',    'input', 'runs/c20/qmc/qmc.in.xml'),
-        ],
-    )
+            ],
+        )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, _filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
-        )
+            )
         assert(success), message
+#end def test_qmcpack_c20
 
 
-def test_qmcpack_diamond():
-
+def test_qmcpack_diamond(tmp_path):
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/diamond',
         scripts = [
             'diamond.py',
             'diamond_vacancy.py',
-        ],
+            ],
         files = [
             ('pwscf',      'input', 'runs/diamond/scf/scf.in'),
             ('pw2qmcpack', 'input', 'runs/diamond/scf/conv.in'),
             ('qmcpack',    'input', 'runs/diamond/vmc/vmc.in.xml'),
             ('pwscf',      'input', 'runs/diamond_vacancy/relax/relax.in'),
             ('pwscf',      'input', 'runs/diamond_vacancy/scf/scf.in'),
-        ],
-    )
+            ],
+        )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, _filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
-        )
+            )
         assert(success), message
+#end def test_qmcpack_diamond
 
 
-def test_qmcpack_graphene():
+def test_qmcpack_restart_examples(tmp_path):
+    test_cases = [
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/05_diamond_dft_dmc_restart',
+            script = 'diamond_lda_dmc_restart_same_dir.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_restart/dmc.in.xml')],
+            ),
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/05_diamond_dft_dmc_restart',
+            script = 'diamond_lda_dmc_restart_separate_dirs.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_initial/dmc.in.xml')],
+            ),
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/06_diamond_dft_dmc_twistavg_restart',
+            script = 'diamond_lda_dmc_twistavg_restart_same_dir.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_twist_restart/dmc.g000.twistnum_0.in.xml')],
+            ),
+        obj(
+            path   = 'qmcpack/rsqmc_quantum_espresso/06_diamond_dft_dmc_twistavg_restart',
+            script = 'diamond_lda_dmc_twistavg_restart_separate_dirs.py',
+            files  = [('qmcpack','input','runs/diamond/dmc_twist_initial/dmc.g000.twistnum_0.in.xml')],
+            ),
+        ]
 
+    for test_case in test_cases:
+        case_dir = tmp_path / test_case.script.replace('.py','')
+        test_path = copy_example_files(test_case.path,case_dir)
+        copy_pseudos('qmcpack',case_dir)
+
+        script_path = example_root / test_case.path / test_case.script
+        success,message = run_example_script(script_path,test_path)
+        assert(success),message
+
+        for code,_filetype,filepath in test_case.files:
+            success,message = check_generated_files(
+                code,
+                case_dir,
+                test_case.path,
+                filepath,
+                )
+            assert(success),message
+        #end for
+    #end for
+#end def test_qmcpack_restart_examples
+
+
+def test_qmcpack_graphene(tmp_path):
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/graphene',
         scripts = [
             'graphene.py',
-        ],
+            ],
         files = [
             ('pwscf',      'input', 'runs/graphene/scf/scf.in'),
             ('pwscf',      'input', 'runs/graphene/nscf/nscf.in'),
@@ -380,51 +458,122 @@ def test_qmcpack_graphene():
             ('pw2qmcpack', 'input', 'runs/graphene/nscf_opt/p2q.in'),
             ('qmcpack',    'input', 'runs/graphene/opt/opt.in.xml'),
             ('qmcpack',    'input', 'runs/graphene/qmc/qmc.in.xml'),
-        ],
-    )
+            ],
+        )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, _filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
-        )
+            )
         assert(success), message
+#end def test_qmcpack_graphene
 
 
-def test_qmcpack_oxygen_dimer():
-
+def test_qmcpack_oxygen_dimer(tmp_path):
     test_data = dict(
         path = 'qmcpack/rsqmc_misc/oxygen_dimer',
         scripts = [
             'oxygen_dimer.py',
-        ],
+            ],
         files = [
             ('pwscf',      'input', 'scale_1.0/scf.in'),
             ('pw2qmcpack', 'input', 'scale_1.0/p2q.in'),
             ('qmcpack',    'input', 'scale_1.0/opt.in.xml'),
             ('qmcpack',    'input', 'scale_1.0/qmc.in.xml'),
-        ],
-    )
+            ],
+        )
 
-    test_path = copy_example_files(test_data["path"])
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("quantum_espresso", tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
 
     for script in test_data["scripts"]:
         script_path = example_root / test_data["path"] / script
         success, message = run_example_script(script_path, test_path)
         assert(success), message
 
-    for code, filetype, filepath in test_data["files"]:
+    for code, _filetype, filepath in test_data["files"]:
         success, message = check_generated_files(
             code,
+            tmp_path,
             test_data["path"],
             filepath,
-        )
+            )
         assert(success), message
+#end def test_qmcpack_oxygen_dimer
+
+
+def test_rmg_diamond(tmp_path):
+    test_data = dict(
+        path = 'rmg/01_diamond_scf',
+        scripts = [
+            'diamond_scf.py',
+            ],
+        files = [
+            ('rmg', 'input', 'runs/diamond2/scf_gen/scf.in'),
+            ('rmg', 'input', 'runs/diamond2/scf_man/scf.in'),
+            ],
+        )
+
+    test_path = copy_example_files(test_data["path"], tmp_path)
+    copy_pseudos("qmcpack", tmp_path)
+
+    for script in test_data["scripts"]:
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
+        assert(success), message
+
+    for code, _filetype, filepath in test_data["files"]:
+        success, message = check_generated_files(
+            code,
+            tmp_path,
+            test_data["path"],
+            filepath,
+            )
+        assert(success), message
+#end def test_rmg_diamond
+
+
+def test_pyscf_h2o_ae_hf(tmp_path):
+    test_data = dict(
+        path = 'pyscf/01_h2o_hf',
+        scripts = [
+            'h2o_ae_hf.py',
+            ],
+        files = [
+            ('pyscf', 'input', 'runs/h2o_ae_hf/scf.py'),
+            ],
+        )
+
+    test_path = copy_example_files(
+        example_dir   = test_data["path"],
+        tmp_dir       = tmp_path,
+        template_file = example_root / "pyscf/01_h2o_hf/scf_template.py",
+        )
+
+    for script in test_data["scripts"]:
+        script_path = example_root / test_data["path"] / script
+        success, message = run_example_script(script_path, test_path)
+        assert(success), message
+
+    for code, _filetype, filepath in test_data["files"]:
+        success, message = check_generated_files(
+            code,
+            tmp_path,
+            test_data["path"],
+            filepath,
+            )
+        assert(success), message
+#end def test_pyscf_h2o_ae_hf

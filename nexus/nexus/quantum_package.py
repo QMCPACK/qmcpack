@@ -18,7 +18,8 @@
 
 
 import os
-from .developer import obj
+from pathlib import Path
+from .developer import obj, NexusError
 from .execute import execute
 from .nexus_base import nexus_core
 from .simulation import Simulation
@@ -33,8 +34,8 @@ class QuantumPackage(Simulation):
     generic_identifier = 'qp'
     infile_extension   = '.ezfio'
     application        = 'qp_run'
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['orbitals']) 
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'orbitals'})
 
     allow_overlapping_files = True
 
@@ -48,12 +49,26 @@ class QuantumPackage(Simulation):
     @staticmethod
     def settings(qprc=None):
         # path to quantum_package.rc file
-        QuantumPackage.qprc = qprc
+        if isinstance(qprc, Path):
+            QuantumPackage.qprc = str(qprc.resolve())
+        else:
+            QuantumPackage.qprc = qprc
+
         if qprc is not None and not nexus_core.status_only:
             if not isinstance(qprc,str):
-                QuantumPackage.class_error('settings input "qprc" must be a path\nreceived type: {0}\nwith value: {1}'.format(qprc.__class__.__name__,qprc))
+                msg = (
+                    'settings input "qprc" must be a path\n'
+                    'received type: {0}\n'
+                    'with value: {1}'.format(qprc.__class__.__name__,qprc)
+                    )
+                raise TypeError(msg)
             elif not os.path.exists(qprc):
-                QuantumPackage.class_error('quantum_package.rc file does not exist\nfile path provided via "qprc" in settings\nfile path: {0}'.format(qprc))
+                msg = (
+                    'quantum_package.rc file does not exist\n'
+                    'file path provided via "qprc" in settings\n'
+                    'file path: {0}'.format(qprc)
+                    )
+                raise FileNotFoundError(msg)
             #end if
         #end if
     #end def settings
@@ -72,7 +87,11 @@ class QuantumPackage(Simulation):
     def post_init(self):
         qprc = QuantumPackage.qprc
         if qprc is None:
-            self.error('cannot run quantum package\nplease provide path to quantum_package.rc in settings via argument "qprc"')
+            msg = (
+                'cannot run quantum package\n'
+                'please provide path to quantum_package.rc in settings via argument "qprc"'
+                )
+            raise RuntimeError(msg)
         #end if
         self.job.presub += '\nsource {0}\n'.format(os.path.abspath(qprc))
     #end def post_init
@@ -82,13 +101,17 @@ class QuantumPackage(Simulation):
         # write an ascii representation of the input changes
         infile = self.identifier+'.in'
         infile = os.path.join(self.locdir,infile)
-        f = open(infile,'w')
-        s = self.input.delete_optional('structure',None)
-        f.write(str(self.input))
-        if s is not None:
-            self.input.structure = s
-        #end if
-        f.close()
+        with open(infile,'w') as f:
+            s = None
+            if 'structure' in self.input:
+                s = self.input.structure
+                del self.input.structure
+            #end if
+            f.write(str(self.input))
+            if s is not None:
+                self.input.structure = s
+            #end if
+        #end with
 
         # copy ezfio directory from dependencies
         qp_dirs = []
@@ -113,9 +136,9 @@ class QuantumPackage(Simulation):
                             self.failed = True
                             self.block_dependents()
                         else:
-                            f = open(sync_record,'w')
-                            f.write(command+'\n')
-                            f.close()
+                            with open(sync_record,'w') as f:
+                                f.write(command+'\n')
+
                             execute('qp_edit -c {0}'.format(d_ezfio))
                         #end if
                     #end if
@@ -127,7 +150,12 @@ class QuantumPackage(Simulation):
             for d in qp_dirs:
                 qpd += d+'\n'
             #end for
-            self.error('quantum package run depends on multiple others with distinct ezfio directories\ncannot determine which run to copy ezfio directory from\nezfio directories from prior runs:\n{0}'.format(qpd))
+            msg = (
+                'quantum package run depends on multiple others with distinct ezfio directories\n'
+                'cannot determine which run to copy ezfio directory from\n'
+                'ezfio directories from prior runs:\n{0}'.format(qpd)
+                )
+            raise RuntimeError(msg)
         #end if
     #end def write_prep
 
@@ -152,10 +180,16 @@ class QuantumPackage(Simulation):
             elif rc.save_for_qmcpack:
                 result.outfile = os.path.join(self.locdir,'{0}_savewf.out'.format(self.identifier))
             else:
-                self.error("cannot get orbitals\ntracking of save_for_qmcpack is somehow corrupted\nthis is a developer error")
+                msg = (
+                    "cannot get orbitals\n"
+                    "tracking of save_for_qmcpack is somehow corrupted\n"
+                    "this is a developer error"
+                    )
+                raise NexusError(msg)
             #end if
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result
@@ -192,7 +226,9 @@ class QuantumPackage(Simulation):
             not_implemented = True
         #end if
         if not_implemented:
-            self.error('ability to incorporate result "{}" from {} has not been implemented',result_name,sim.__class__.__name__)
+            msg = f'ability to incorporate result "{result_name}" from {sim.__class__.__name__} has not been implemented'
+            raise NotImplementedError(msg)
+
         #end if
     #end def incorporate_result
 
@@ -215,9 +251,9 @@ class QuantumPackage(Simulation):
         failed = False
         if scf:
             outfile = os.path.join(self.locdir,self.outfile)
-            f = open(outfile,'r')
-            output = f.read()
-            f.close()
+            with open(outfile,'r') as f:
+                output = f.read()
+
             hf_not_converged = '* SCF energy' not in output
             failed |= hf_not_converged
         #end if
@@ -234,7 +270,7 @@ class QuantumPackage(Simulation):
                 n_det = read_qp_value(n_det_path)
                 if isinstance(n_det,int) and n_det<n_det_max:
                     self.save_attempt()
-                    input.set(read_wf=True)
+                    input.update(read_wf=True)
                     self.reset_indicators()
                 #end if
             #end if
@@ -352,7 +388,7 @@ class QuantumPackage(Simulation):
             fc += job2.run_command()+' >{0} 2>{1}\n'.format(slave_outfile,slave_errfile)
 
             if 'fci' in slave and not input.present('distributed_davidson'):
-                input.set(distributed_davidson=True)
+                input.update(distributed_davidson=True)
             #end if
         elif len(fc)>0 or jpost is not None:
             job.divert_out_err()

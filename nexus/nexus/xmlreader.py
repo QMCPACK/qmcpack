@@ -28,12 +28,14 @@ import keyword
 import re
 import os
 import numpy as np
-from .developer import DevBase, obj, valid_variable_name
+from .developer import DevBase, obj, FileFormatError
+from .utilities import path_string, valid_variable_name
 
 
 def parse_string(s, delim = None):
     if not isinstance(s, str):
-        raise TypeError("This function only parses strings!")
+        msg = f"This function only parses strings, but was passed {type(s).__name__}!"
+        raise TypeError(msg)
 
     # Check if number
     try:
@@ -46,7 +48,7 @@ def parse_string(s, delim = None):
     #end try
 
     # Check if bool
-    if s.lower() in ["true", "false"]:
+    if s.lower() in {"true", "false"}:
         return s.lower() == "true" # return True if s=="true" else False
     #end if
 
@@ -70,8 +72,11 @@ def find_pair(s, pairs, start = 0, end = None):
     right_pair  = pairs[1]
 
     start_loc = s.find(left_pair, start, end)
+    if start_loc == -1:
+        return -1, -1
+    #end if
     end_loc   = s.find(right_pair, start_loc + len(left_pair), end)
-    if start_loc == -1 or end_loc == -1:
+    if end_loc == -1:
         return start_loc, end_loc
 
     return start_loc, end_loc+len(right_pair)
@@ -111,23 +116,19 @@ class XMLelement(DevBase):
 
     def _set_parent(self,parent):
         self._parent=parent
-        return
     #end def set_parent
 
     def _add_xmlattribute(self,name,attribute):
         self._attributes[name]=attribute
-        return 
     #end def add_attribute
 
     def _add_element(self,name,element):
         element._name=name
         self._elements[name]=element
-        return 
     #end def add_element
 
     def _add_text(self,name,text):
         self._texts[name]=text
-        return 
     #end def add_text
 
     def _to_string(self):
@@ -140,13 +141,13 @@ class XMLelement(DevBase):
         #end if
         if len(self._elements)>0:
             s+= '  elements:\n'
-            for k,v in self._elements.items():
+            for k in self._elements.keys():
                 s+= '    '+k+'\n'
             #end for
         #end if
         if len(self._texts)>0:
             s+= '  texts:\n'
-            for k,v in self._texts.items():
+            for k in self._texts.keys():
                 s+= '    '+k+'\n'
             #end for
         #end if
@@ -173,13 +174,12 @@ class XMLelement(DevBase):
         self._escape_names=None
         #self._escape_names=set(dict(getmembers(self)).keys()) | set(keyword.kwlist)
         self._escape_names=set(keyword.kwlist)
-        return
     #end def __init__
 
 
     # test needed
     def condense(self):
-        for name,elem in self._elements.items():
+        for elem in self._elements.values():
             if isinstance(elem,XMLelement):
                 elem.condense()
             #end if
@@ -192,7 +192,7 @@ class XMLelement(DevBase):
         #end if
         for cname in cnames:
             cmax = 1
-            for name,elem in self._elements.items():
+            for name in self._elements.keys():
                 ns = name.split(cname)
                 if len(ns)==2 and ns[1].isdigit():
                     cmax = max(cmax,int(ns[1]))
@@ -246,7 +246,7 @@ class XMLelement(DevBase):
 
                     
     def remove_hidden(self):
-        for name,elem in self._elements.items():
+        for elem in self._elements.values():
             if isinstance(elem,XMLelement):
                 elem.remove_hidden()
             elif isinstance(elem,list):
@@ -258,7 +258,7 @@ class XMLelement(DevBase):
             #end if
         #end for
         remove = []
-        for name,value in self.items():
+        for name in self.keys():
             if str(name)[0]=='_':
                 remove.append(name)
             #end if
@@ -276,12 +276,13 @@ class XMLelement(DevBase):
     reads an xml file and creates a dynamic object out of its contents
 '''
 class XMLreader(DevBase):
-    def __init__(self,fpath=None,element_joins=None,element_aliases=None,contract_names=False,strip_prefix=None,warn=True,xml=None):
+    def __init__(self,fpath=None,*,element_joins=None,element_aliases=None,strip_prefix=None,xml=None,contract_names=False,warn=True):
         if element_joins is None:
             element_joins = []
         if element_aliases is None:
             element_aliases = {}
 
+        fpath = path_string(fpath)
         #assign values
         self.fpath=fpath
         if fpath is None:
@@ -306,8 +307,8 @@ class XMLreader(DevBase):
 
         #read in xml file
         if xml is None:
-            fobj = open(fpath,'r')
-            self.xml = fobj.read()
+            with open(fpath, "r") as fobj:
+                self.xml = fobj.read()
         else:
             self.xml = xml
         #end if
@@ -329,15 +330,13 @@ class XMLreader(DevBase):
         #  Set the current xml element
         self.obj = XMLelement()
         self.cur=[self.obj]
-        self.parser.Parse(self.xml,True)
+        self.parser.Parse(self.xml,True)  # noqa: FBT003
 
         #the expat parser is troublesome in that it
         # -does not have typical class members
         # -is unpickleable
         # therefore it is removed after the dynamic object is built
         del self.parser
-
-        return
     #end def __init__
 
     # test needed
@@ -350,14 +349,12 @@ class XMLreader(DevBase):
             if ir != -1:
                 cont = self.xml[il:ir].strip(pair[0]).rstrip(pair[1])
                 fname = cont.split('=',1)[1].strip().strip('"')
-                fobj = open(os.path.join(self.base_path,fname),'r')
-                fcont = fobj.read()
+                with open(os.path.join(self.base_path,fname), "r") as fobj:
+                    fcont = fobj.read()
                 fcont = remove_pair_sections(fcont,qpair)
-                fobj.close()
                 self.xml = self.xml.replace(self.xml[il:ir],fcont)
             #end if
         #end while
-        return
     #end def include_files
 
     def increment_level(self):
@@ -367,20 +364,19 @@ class XMLreader(DevBase):
             self.cur.append(None)
         #end if
         self.pad = self.ilevel*'  '
-        return
     #end def increment_level
 
     def decrement_level(self):
         self.ilevel-=1
         self.pad = self.ilevel*'  '
-        return
     #end def decrement_level
 
     def found_element_start(self,ename,attributes):
         cur = self.cur[self.ilevel]
         if ename in self.element_aliases.keys():
             if self.element_aliases[ename].find('attributes')!=-1:
-                self.error('an alternative to exec is needed')
+                msg = 'an alternative to exec is needed'
+                raise NotImplementedError(msg)
                 #exec('name = '+self.element_aliases[ename])
             else:
                 name = self.element_aliases[ename]
@@ -428,7 +424,11 @@ class XMLreader(DevBase):
                     del  cur._elements[name]
                     del cur[name]
                 else:
-                    self.error('prior unjoinable element is not the first\nthis should be impossible')
+                    msg = (
+                        'prior unjoinable element is not the first\n'
+                        'this should be impossible'
+                        )
+                    raise FileFormatError(msg)
                 #end if
                 #add the joinable element as unnumbered
                 # later joinable elements will be joined to this one
@@ -480,13 +480,11 @@ class XMLreader(DevBase):
                 #end if
             #end if
         #end for
-        return
     #end def found_element_start
 
     def found_element_end(self,name):
         self.cur[self.ilevel]=None
         self.decrement_level()
-        return
     #end def found_element_end
 
     def found_text(self,rawtext):
@@ -501,17 +499,24 @@ class XMLreader(DevBase):
                 cur._ntexts+=1
             #end if
         #end if
-        return
     #end def found_text
 
     def found_attribute(self,ename,aname,atype,default,required):
-        return
+        pass
     #end def found_attribute
 #end class XMLreader
 
 
 
-def readxml(fpath=None,element_joins=None,element_aliases=None,contract_names=False,strip_prefix=None,warn=True,xml=None):
-    xr = XMLreader(fpath,element_joins,element_aliases,contract_names,strip_prefix,warn,xml=xml)
+def readxml(fpath=None,*,element_joins=None,element_aliases=None,contract_names=False,strip_prefix=None,warn=True,xml=None):
+    xr = XMLreader(
+        fpath           = fpath,
+        element_joins   = element_joins,
+        element_aliases = element_aliases,
+        strip_prefix    = strip_prefix,
+        xml             = xml,
+        contract_names  = contract_names,
+        warn            = warn,
+        )
     return xr.obj
 #end def readxml

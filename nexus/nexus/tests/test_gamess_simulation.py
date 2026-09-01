@@ -2,11 +2,10 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.GAMESS_SIMULATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
+from pathlib import Path
+from . import isolate_nexus_core
 from .. import testing
-from ..testing import restore_nexus
 from ..testing import failed,FailedTest
 from ..testing import object_eq
 
@@ -23,16 +22,14 @@ def clear_all_sims():
 def get_gamess_sim(type='rhf'):
     from ..machines import job
     from ..gamess import Gamess,generate_gamess,GamessInput
-    from .test_gamess_input import get_files
+    from .test_gamess_input import TEST_FILES
 
     sim = None
 
     Gamess.ericfmt = ''
 
-    files = get_files()
-
     if type=='rhf':
-        gi_input = GamessInput(files['rhf.inp'])
+        gi_input = GamessInput(TEST_FILES['rhf.inp'])
 
         sim = generate_gamess(
             identifier = 'rhf',
@@ -80,38 +77,31 @@ def test_check_result():
 #end def test_check_result
 
 
-
-def test_get_result():
-    import os
+@isolate_nexus_core
+def test_get_result(tmp_path):
     from ..developer import obj, NexusError
     from ..nexus_base import nexus_core
 
-    tpath = testing.setup_unit_test_output_directory('gamess_simulation','test_get_result',divert=True)
-
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
     nexus_core.runs = ''
 
     sim = get_gamess_sim('rhf')
 
-    assert(sim.locdir.rstrip('/')==os.path.join(tpath,'rhf').rstrip('/'))
+    assert(Path(sim.locdir).resolve()==tmp_path / 'rhf')
 
     sim.create_directories()
     sim.write_inputs()
-    if not os.path.exists(sim.imresdir):
-        os.makedirs(sim.imresdir)
-    #end if
+    Path(sim.imresdir).resolve().mkdir(exist_ok=True)
     analyzer = sim.analyzer_type(sim)
-    analyzer.save(os.path.join(sim.imresdir,sim.analyzer_image))
+    analyzer.save(Path(sim.imresdir).resolve() / sim.analyzer_image)
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = sim.get_result('orbitals',None)
 
@@ -124,13 +114,12 @@ def test_get_result():
         vec             = None,
         )
 
-    result.location = result.location.replace(tpath,'').lstrip('/')
-    result.outfile  = result.outfile.replace(tpath,'').lstrip('/')
+    result.location = result.location.replace(str(tmp_path),'').lstrip('/')
+    result.outfile  = result.outfile.replace(str(tmp_path),'').lstrip('/')
 
     assert(object_eq(result,result_ref))
 
     clear_all_sims()
-    restore_nexus()
 #end def test_get_result
 
 
@@ -141,16 +130,11 @@ def test_incorporate_result():
 
     sim = get_gamess_sim('rhf')
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to incorporate result unknown has not been implemented",
+        ):
         sim.incorporate_result('unknown',None,None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = obj(
         vec       = 'vec text',
@@ -174,18 +158,18 @@ def test_incorporate_result():
 #end def test_incorporate_result
 
 
-
-def test_check_sim_status():
-    import os
+@isolate_nexus_core
+def test_check_sim_status(tmp_path):
     from ..nexus_base import nexus_core
 
-    tpath = testing.setup_unit_test_output_directory('gamess_simulation','test_check_sim_status',divert=True)
-
+    nexus_core.local_directory  = str(tmp_path)
+    nexus_core.remote_directory = str(tmp_path)
+    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
     nexus_core.runs = ''
 
     sim = get_gamess_sim('rhf')
 
-    assert(sim.locdir.rstrip('/')==os.path.join(tpath,'rhf').rstrip('/'))
+    assert(Path(sim.locdir).resolve()==tmp_path / 'rhf')
 
     assert(not sim.finished)
     assert(not sim.failed)
@@ -200,12 +184,10 @@ def test_check_sim_status():
     #end try
 
     sim.create_directories()
-    outfile = os.path.join(sim.locdir,sim.outfile)
+    outfile = Path(sim.locdir).resolve() / sim.outfile
     outfile_text = 'EXECUTION OF GAMESS TERMINATED NORMALLY'
-    out = open(outfile,'w')
-    out.write(outfile_text)
-    out.close()
-    assert(outfile_text in open(outfile,'r').read())
+    outfile.write_text(outfile_text)
+    assert(outfile_text in outfile.read_text())
 
     sim.check_sim_status()
 
@@ -213,5 +195,4 @@ def test_check_sim_status():
     assert(not sim.failed)
 
     clear_all_sims()
-    restore_nexus()
 #end def test_check_sim_status

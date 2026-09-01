@@ -1,10 +1,9 @@
-// Copyright 2017-2024 Alfredo A. Correa
+// Copyright 2017-2025 Alfredo A. Correa
 
 #ifndef BOOST_MPI3_DETAIL_DATATYPE_HPP
 #define BOOST_MPI3_DETAIL_DATATYPE_HPP
 
-// #define OMPI_SKIP_MPICXX 1  // https://github.com/open-mpi/ompi/issues/5157
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
 #if defined(__NVCC__) || defined(__HIPCC__)
 #include <thrust/complex.h>
@@ -77,7 +76,7 @@ class packed {
 template<class T> struct basic_datatype;
 
 
-#if defined(MPI_DOUBLE_COMPLEX)
+#ifdef MPI_DOUBLE_COMPLEX
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define MPI3_DECLARE_DATATYPE(TypE, MpiiD) \
 template<> struct basic_datatype<TypE> { \
@@ -90,6 +89,7 @@ template<> struct basic_datatype<TypE> { \
 /*  static constexpr MPI_Datatype value = MpiiD;*/ \
 }
 #else
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define MPI3_DECLARE_DATATYPE(TypE, MpiiD) \
 template<> struct basic_datatype<TypE> { \
 /*  constexpr*/ operator MPI_Datatype() const { \
@@ -120,6 +120,7 @@ MPI3_DECLARE_DATATYPE(float                  , MPI_FLOAT);
 MPI3_DECLARE_DATATYPE(double                 , MPI_DOUBLE);
 MPI3_DECLARE_DATATYPE(long double            , MPI_LONG_DOUBLE);
 MPI3_DECLARE_DATATYPE(long long int          , MPI_LONG_LONG_INT);
+MPI3_DECLARE_DATATYPE(unsigned long long     , MPI_UNSIGNED_LONG_LONG);
 
 MPI3_DECLARE_DATATYPE(bool                   , MPI_C_BOOL);  // C++ binding not used MPI_CXX_BOOL);
 
@@ -132,19 +133,19 @@ MPI3_DECLARE_DATATYPE(bool                   , MPI_C_BOOL);  // C++ binding not 
 // MPI_UINT32_T uint32_t
 // MPI_UINT64_T uint64_t
 
-#if defined(MPI_C_FLOAT_COMPLEX)
+#ifdef MPI_C_FLOAT_COMPLEX
 MPI3_DECLARE_DATATYPE(cxx_float_complex      , MPI_C_FLOAT_COMPLEX);
 #else
 MPI3_DECLARE_DATATYPE(cxx_float_complex      , MPI_CXX_FLOAT_COMPLEX);
 #endif
 
-#if defined(MPI_C_DOUBLE_COMPLEX)
+#ifdef MPI_C_DOUBLE_COMPLEX
 MPI3_DECLARE_DATATYPE(cxx_double_complex     , MPI_C_DOUBLE_COMPLEX);
 #else
 MPI3_DECLARE_DATATYPE(cxx_double_complex     , MPI_CXX_DOUBLE_COMPLEX);
 #endif
 
-#if defined(MPI_C_LONG_DOUBLE_COMPLEX)
+#ifdef MPI_C_LONG_DOUBLE_COMPLEX
 MPI3_DECLARE_DATATYPE(cxx_long_double_complex, MPI_C_LONG_DOUBLE_COMPLEX);
 #else
 MPI3_DECLARE_DATATYPE(cxx_long_double_complex, MPI_CXX_LONG_DOUBLE_COMPLEX);
@@ -154,13 +155,13 @@ MPI3_DECLARE_DATATYPE(cxx_long_double_complex, MPI_CXX_LONG_DOUBLE_COMPLEX);
 
 // TODO(correaa) these types below probably don't behave correctly for reductions with multiplication
 
-#if defined(MPI_COMPLEX)
+#ifdef MPI_COMPLEX
 MPI3_DECLARE_DATATYPE(float_float            , MPI_COMPLEX);  static_assert(sizeof(std::pair<float, float>) == sizeof(std::complex<float>), "checking that complex mem layout maps to pair");
 #else
 MPI3_DECLARE_DATATYPE(float_float            , MPI_CXX_FLOAT_COMPLEX);  static_assert(sizeof(std::pair<float, float>) == sizeof(std::complex<float>), "checking that complex mem layout maps to pair");
 #endif
 
-#if defined(MPI_DOUBLE_COMPLEX)
+#ifdef MPI_DOUBLE_COMPLEX
 MPI3_DECLARE_DATATYPE(double_double          , MPI_DOUBLE_COMPLEX); static_assert(sizeof(std::pair<double, double>) == sizeof(std::complex<double>), "checking that complex mem layout maps to pair");
 MPI3_DECLARE_DATATYPE(decltype(std::tuple<double,double>{}), MPI_DOUBLE_COMPLEX);  // TODO(correaa) is this correct? reduce (specially multiplication) will not give correct result
 MPI3_DECLARE_DATATYPE(long_double_long_double, MPI_DOUBLE_COMPLEX); static_assert(sizeof(std::pair<long double, long double>) == sizeof(std::complex<long double>), "checking that complex mem layout maps to pair");

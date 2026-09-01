@@ -177,7 +177,7 @@ class TemplateSimulationInput(SimulationInput):
         #  only necessary if you want to populate atomic positions, etc
         #  from a PhysicalSystem object
         # if you don't want to implement it, no action is required
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_system
 #end class TemplateSimulationInput
 
@@ -256,8 +256,8 @@ class TemplateSimulation(Simulation):
     analyzer_type      = TemplateSimulationAnalyzer
     generic_identifier = 'template_simulation'
     application        = 'template_simulation_exe' #replace with default name of template_simulation executable
-    application_properties = set(['serial','mpi'])
-    application_results    = set(['orbitals']) #what template_simulation produces that other simulations can use
+    application_properties = frozenset({'serial','mpi'})
+    application_results    = frozenset({'orbitals'}) #what template_simulation produces that other simulations can use
 
     def check_result(self,result_name,sim):
         # optional
@@ -280,7 +280,7 @@ class TemplateSimulation(Simulation):
         #  e.g.
         #  other_sim.depends(template_simulation_sim,'orbitals')  or similar
         # if you don't want to implement it, uncomment the line below
-        #self.not_implemented()
+        #raise NotImplementedError
 
         result = obj()
         input    = self.input
@@ -300,7 +300,7 @@ class TemplateSimulation(Simulation):
         #  e.g.
         #  template_simulation_sim.depends(other_sim,'structure')  or similar
         # if you don't want to implement it no action is required
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_result
 
 
@@ -318,8 +318,11 @@ class TemplateSimulation(Simulation):
         #  read output/error files to check whether simulation has
         #    completed successfully
         #  one could also check whether all output files exist
-        output = open(os.path.join(self.locdir,self.outfile),'r').read()
-        errors = open(os.path.join(self.locdir,self.errfile),'r').read()
+        with open(os.path.join(self.locdir,self.outfile), "r") as out:
+            output = out.read()
+
+        with open(os.path.join(self.locdir,self.errfile), "r") as err:
+            errors = err.read()
         
         success = False
         # check output and errors

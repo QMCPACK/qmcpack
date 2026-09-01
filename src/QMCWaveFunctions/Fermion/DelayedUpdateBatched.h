@@ -343,9 +343,7 @@ public:
   /// default constructor
   DelayedUpdateBatched(size_t norb, size_t max_delay)
       : invRow_id(-1), delay_count(0), no_delayed_update_(max_delay == 1)
-  {
-    resize(norb, max_delay);
-  }
+  { resize(norb, max_delay); }
 
   DelayedUpdateBatched(const DelayedUpdateBatched&) = delete;
 

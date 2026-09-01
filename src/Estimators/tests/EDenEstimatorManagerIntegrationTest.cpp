@@ -27,9 +27,14 @@ using MCPWalker                   = EDenEstimatorManagerIntegrationTest::MCPWalk
 
 EDenEstimatorManagerIntegrationTest::EDenEstimatorManagerIntegrationTest(Communicate* comm, int num_walkers)
 {
+#ifndef ENABLE_OFFLOAD
   eden_test_ = std::make_unique<EnergyDensityTest>(comm, num_walkers, &testing::makeGoldWalkerElementsWithEEEIPS,
                                                    generate_test_data);
-  auto doc   = testing::createEstimatorManagerEnergyDenistyInputXML();
+#else
+  eden_test_ = std::make_unique<EnergyDensityTest>(comm, num_walkers, &testing::makeGoldWalkerElementsWithEI,
+                                                   generate_test_data);
+#endif
+  auto doc = testing::createEstimatorManagerEnergyDenistyInputXML();
   EstimatorManagerInput emi(doc.getRoot());
   auto& gold_elem = eden_test_->getGoldElements();
   auto ham_list   = eden_test_->getHamList();

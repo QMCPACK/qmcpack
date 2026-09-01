@@ -2,11 +2,10 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.QUANTUM_PACKAGE_INPUT)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
-from .. import testing
-from ..testing import object_eq
+from pathlib import Path
+
+from ..testing import object_eq, dict_serialize
 
 
 def format_value(v):
@@ -38,7 +37,8 @@ def format_value(v):
 
 
 def make_serial_reference(qi):
-    s = qi.serial()
+    from ..developer import obj
+    s = dict_serialize(qi,dict_type=obj)
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
         v = s[k]
@@ -182,6 +182,7 @@ def generate_serial_references():
             [0.0, 0.75716, -0.58626]]),
         'structure/scale' : 1.0,
         'structure/units' : 'A',
+        'structure/vel' : None,
         }
 
     serial_references['o2.ezfio gen'] = {
@@ -212,6 +213,7 @@ def generate_serial_references():
             [1.2074, 0.0, 0.0]]),
         'structure/scale' : 1.0,
         'structure/units' : 'A',
+        'structure/vel' : None,
         }
 
 #end def generate_serial_references
@@ -228,7 +230,7 @@ def get_serial_references():
 def check_vs_serial_reference(qi,name):
     from ..developer import obj
     sr = obj(get_serial_references()[name])
-    sg = qi.serial()
+    sg = dict_serialize(qi,dict_type=obj)
     assert(object_eq(sg,sr))
 #end def check_vs_serial_reference
 
@@ -254,17 +256,19 @@ def test_empty_init():
 
     qi = QuantumPackageInput()
 
+    qi.set(elec_alpha_num=2)
+    assert(qi.get('elec_alpha_num')==2)
+    assert(qi.delete('elec_alpha_num')==2)
+    assert(qi.get('elec_alpha_num') is None)
+
 #end def test_empty_init
 
 
 
 def test_read():
-    import os
     from ..quantum_package_input import QuantumPackageInput
 
-    tpath = testing.setup_unit_test_output_directory('quantum_package_input','test_generate',file_sets=['h2o.ezfio'])
-
-    ezfio = os.path.join(tpath,'h2o.ezfio')
+    ezfio = Path(__file__+"/../test_quantum_package_input_files/h2o.ezfio").resolve()
 
     qi = QuantumPackageInput(ezfio)
 
@@ -273,16 +277,13 @@ def test_read():
 
 
 
-def test_generate():
-    import os
+def test_generate(tmp_path):
     from ..physical_system import generate_physical_system
     from ..quantum_package_input import generate_quantum_package_input
 
-    tpath = testing.setup_unit_test_output_directory('quantum_package_input','test_generate')
-
     # water molecule rhf
-    xyz_path = os.path.join(tpath,'H2O.xyz')
-    open(xyz_path,'w').write(h2o_xyz)
+    xyz_path = tmp_path / 'H2O.xyz'
+    xyz_path.write_text(h2o_xyz)
 
     system = generate_physical_system(
         structure = xyz_path,
@@ -301,8 +302,8 @@ def test_generate():
 
 
     # O2 molecule selci
-    xyz_path = os.path.join(tpath,'O2.xyz')
-    open(xyz_path,'w').write(o2_xyz)
+    xyz_path = tmp_path / 'O2.xyz'
+    xyz_path.write_text(o2_xyz)
 
     system = generate_physical_system(
         structure = xyz_path,

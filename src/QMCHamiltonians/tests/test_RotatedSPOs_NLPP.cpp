@@ -9,8 +9,9 @@
 //
 // File created by: Joshua Townsend, jptowns@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "type_traits/template_types.hpp"
 #include "type_traits/ConvertToReal.h"
@@ -59,8 +60,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   lattice.R(2, 2) = 6.78114995;
 
 
-  const SimulationCell simulation_cell(lattice);
-  pp.setSimulationCell(simulation_cell);
+  pp.createSimulationCellByLattice(lattice);
   auto elec_ptr = std::make_unique<ParticleSet>(pp.getSimulationCell());
   auto& elec(*elec_ptr);
   auto ions_uptr = std::make_unique<ParticleSet>(pp.getSimulationCell());
@@ -246,7 +246,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
     NONLOCALECP
   };
 
-  double local_pp = h->getComponent(LOCALECP)->evaluate(psi, elec);
+  h->getComponent(LOCALECP)->evaluate(psi, elec);
 
   Vector<ValueType> dlogpsi2(2);
   Vector<ValueType> dhpsioverpsi2(2);

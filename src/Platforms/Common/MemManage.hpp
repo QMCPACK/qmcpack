@@ -39,10 +39,8 @@ template<typename T, PlatformKind PL>
 class DeviceAllocatorImpl
 {
 public:
-  using value_type    = T;
-  using size_type     = size_t;
-  using pointer       = T*;
-  using const_pointer = const T*;
+  using value_type = T;
+  using size_type  = size_t;
 
   DeviceAllocatorImpl() = default;
   template<class U>
@@ -59,14 +57,14 @@ public:
   {
     void* pt;
     MemManage<PL>::mallocDevice(&pt, n * sizeof(T));
-    MemManage<PL>::device_mem_allocated_ += n * sizeof(T);
+    MemManage<PL>::device_mem_usage_.creditUsage(n * sizeof(T));
     return static_cast<T*>(pt);
   }
 
   void deallocate(T* p, std::size_t n)
   {
     MemManage<PL>::freeDevice(p);
-    MemManage<PL>::device_mem_allocated_ -= n * sizeof(T);
+    MemManage<PL>::device_mem_usage_.debitUsage(n * sizeof(T));
   }
 
   /** Provide a construct for std::allocator_traits::contruct to call.
@@ -106,10 +104,8 @@ public:
 template<typename T, PlatformKind PL>
 struct HostAllocatorImpl
 {
-  using value_type    = T;
-  using size_type     = size_t;
-  using pointer       = T*;
-  using const_pointer = const T*;
+  using value_type = T;
+  using size_type  = size_t;
 
   HostAllocatorImpl() = default;
   template<class U>
@@ -141,10 +137,8 @@ struct HostAllocatorImpl
 template<typename T, PlatformKind PL, class ULPHA = std::allocator<T>>
 struct PageLockedAllocatorImpl : public ULPHA
 {
-  using value_type    = typename ULPHA::value_type;
-  using size_type     = typename ULPHA::size_type;
-  using pointer       = typename ULPHA::pointer;
-  using const_pointer = typename ULPHA::const_pointer;
+  using value_type = typename ULPHA::value_type;
+  using size_type  = typename ULPHA::size_type;
 
   PageLockedAllocatorImpl() = default;
   template<class U, class V>

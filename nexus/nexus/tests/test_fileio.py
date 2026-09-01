@@ -2,45 +2,32 @@ import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.FILEIO)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
-from .. import testing
-from ..testing import value_eq,object_eq
-
-
-associated_files = dict()
-
-def get_files():
-    return testing.collect_unit_test_file_paths('fileio',associated_files)
-#end def get_files
+from . import TEST_DIR
+from ..testing import value_eq, object_eq
+from .. import numpy_extensions as npe
 
 
+TEST_FILES = {
+    "scf.in":               TEST_DIR / "test_fileio_files/scf.in",
+    "VO2_R_48_dens.CHGCAR": TEST_DIR / "test_fileio_files/VO2_R_48_dens.CHGCAR",
+    "VO2_R_48_dens.xsf":    TEST_DIR / "test_fileio_files/VO2_R_48_dens.xsf",
+    "VO2_R_48.POSCAR":      TEST_DIR / "test_fileio_files/VO2_R_48.POSCAR",
+    "VO2_R_48.xsf":         TEST_DIR / "test_fileio_files/VO2_R_48.xsf",
+    }
 
-def test_files():
-    filenames = [
-        'scf.in',
-        'VO2_R_48.xsf',
-        'VO2_R_48.POSCAR',
-        'VO2_R_48_dens.xsf',
-        'VO2_R_48_dens.CHGCAR',
-        ]
-    files = get_files()
-    assert(set(files.keys())==set(filenames))
-#end def test_files
-
+for file in TEST_FILES.values():
+    assert(file.exists()), f"Test file not found! {file}"
 
 
 def test_textfile():
     from ..fileio import TextFile
 
-    files = get_files()
-
     # test empty initialization
     empty = TextFile()
 
     # test read
-    f = TextFile(files['scf.in'])
+    f = TextFile(TEST_FILES["scf.in"])
 
     assert(len(f.read())==1225)
     assert(len(f.lines())==55)
@@ -61,16 +48,9 @@ def test_textfile():
 #end def test_textfile
 
 
-
-
-def test_xsffile():
-    import os
+def test_xsffile(tmp_path):
     import numpy as np
     from ..fileio import XsfFile
-
-    tpath = testing.setup_unit_test_output_directory('fileio','test_xsffile')
-
-    files = get_files()
 
     # test empty initialization
     empty = XsfFile()
@@ -78,7 +58,7 @@ def test_xsffile():
 
     # populate reference object
     ref = XsfFile()
-    ref.set(
+    ref.update(
         elem = np.array([8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
                          8,8,8,8,8,8,8,8,8,8,8,8,23,23,23,23,23,
                          23,23,23,23,23,23,23,23,23,23,23],dtype=int),
@@ -143,40 +123,33 @@ def test_xsffile():
     assert(ref.is_valid())
 
     # test read
-    f = XsfFile(files['VO2_R_48.xsf'])
+    f = XsfFile(TEST_FILES['VO2_R_48.xsf'])
     assert(f.is_valid())
     assert(object_eq(f,ref))
 
     # test write
-    outfile = os.path.join(tpath,'test.xsf')
+    outfile = tmp_path / "test.xsf"
     f.write(outfile)
     f2 = XsfFile(outfile)
     assert(f2.is_valid())
     assert(object_eq(f2,ref))
-
 #end def test_xsffile
 
 
-
-def test_xsffile_density():
-    import os
+def test_xsffile_density(tmp_path):
     import numpy as np
     from ..fileio import XsfFile
 
-    tpath = testing.setup_unit_test_output_directory('fileio','test_xsffile_density')
-
-    files = get_files()
-
-    ref = XsfFile(files['VO2_R_48.xsf'])
+    ref = XsfFile(TEST_FILES['VO2_R_48.xsf'])
 
     grid = 3,5,7
     dens = 0.01*np.arange(np.prod(grid),dtype=float)
-    dens.shape=grid
+    npe.reshape_inplace(dens, grid)
 
     ref.add_density(ref.primvec,dens,add_ghost=True)
     assert(ref.is_valid())
 
-    f = XsfFile(files['VO2_R_48_dens.xsf'])
+    f = XsfFile(TEST_FILES['VO2_R_48_dens.xsf'])
     assert(f.is_valid())
     assert(object_eq(f,ref))
 
@@ -184,7 +157,7 @@ def test_xsffile_density():
     assert(isinstance(d,np.ndarray))
     assert(d.shape==(4,6,8))
 
-    outfile = os.path.join(tpath,'test_density.xsf')
+    outfile = tmp_path / "test_density.xsf"
     f.write(outfile)
     f2 = XsfFile(outfile)
     assert(f2.is_valid())
@@ -193,14 +166,9 @@ def test_xsffile_density():
 
 
 
-def test_poscar_file():
-    import os
+def test_poscar_file(tmp_path):
     import numpy as np
     from ..fileio import PoscarFile
-
-    tpath = testing.setup_unit_test_output_directory('fileio','test_poscarfile')
-
-    files = get_files()
 
     # test empty initialization
     empty = PoscarFile()
@@ -208,7 +176,7 @@ def test_poscar_file():
 
     # populate reference object
     ref = PoscarFile()
-    ref.set(
+    ref.update(
         axes        = np.array([
                 [  4.5546,  -4.5546,   0.    ],
                 [  4.5546,   4.5546,   0.    ],
@@ -275,12 +243,12 @@ def test_poscar_file():
         )
 
     # test read
-    f = PoscarFile(files['VO2_R_48.POSCAR'])
+    f = PoscarFile(TEST_FILES['VO2_R_48.POSCAR'])
     assert(f.is_valid())
     assert(object_eq(f,ref))
 
     # test write
-    outfile = os.path.join(tpath,'test.POSCAR')
+    outfile = tmp_path / "test.POSCAR"
     f.write(outfile)
     f2 = PoscarFile(outfile)
     assert(f2.is_valid())
@@ -288,7 +256,7 @@ def test_poscar_file():
 
     # test incorporate xsf
     from ..fileio import XsfFile
-    x = XsfFile(files['VO2_R_48.xsf'])
+    x = XsfFile(TEST_FILES['VO2_R_48.xsf'])
     f = PoscarFile()
     f.incorporate_xsf(x)
     assert(f.is_valid())
@@ -297,22 +265,17 @@ def test_poscar_file():
 
 
 
-def test_chgcar_file():
-    import os
+def test_chgcar_file(tmp_path):
     from ..fileio import XsfFile
     from ..fileio import PoscarFile
     from ..fileio import ChgcarFile
-
-    tpath = testing.setup_unit_test_output_directory('fileio','test_chgcarfile')
-
-    files = get_files()
 
     empty = ChgcarFile()
     assert(not empty.is_valid())
 
     # get reference poscar and xsf files
-    p = PoscarFile(files['VO2_R_48.POSCAR'])
-    x = XsfFile(files['VO2_R_48_dens.xsf'])
+    p = PoscarFile(TEST_FILES['VO2_R_48.POSCAR'])
+    x = XsfFile(TEST_FILES['VO2_R_48_dens.xsf'])
 
     # create and test reference chgcar file
     ref = ChgcarFile()
@@ -321,12 +284,12 @@ def test_chgcar_file():
     assert(object_eq(ref.poscar,p))
 
     # test read
-    f = ChgcarFile(files['VO2_R_48_dens.CHGCAR'])
+    f = ChgcarFile(TEST_FILES['VO2_R_48_dens.CHGCAR'])
     assert(f.is_valid())
     assert(object_eq(f,ref))
 
     # test write
-    outfile = os.path.join(tpath,'test.CHGCAR')
+    outfile = tmp_path / "test.CHGCAR"
     f.write(outfile)
     f2 = ChgcarFile(outfile)
     assert(f2.is_valid())

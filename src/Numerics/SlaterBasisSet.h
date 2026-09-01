@@ -153,7 +153,7 @@ bool SlaterCombo<T>::putBasisGroup(xmlNodePtr cur)
       {
         //z is not right
         sset.push_back(Component_t(qN - 1, zeta, c));
-        LOGMSG(" Slater Component (n,zeta,c)= " << qN - 1 << " " << zeta << " " << c)
+        qmcplusplus::app_log() << " Slater Component (n,zeta,c)= " << qN - 1 << " " << zeta << " " << c << std::endl;
       }
       else
       {
@@ -162,7 +162,7 @@ bool SlaterCombo<T>::putBasisGroup(xmlNodePtr cur)
         //anorm(n,\zeta) = 1/\sqrt((2n+2)!/(2*\zeta)^{2*n+3))
         c *= anorm(qN - 1, zeta);
         sset.push_back(Component_t(qN - L - 1, zeta, c));
-        LOGMSG(" Slater Component (n,zeta,c)= " << qN << " " << zeta << " " << c)
+        qmcplusplus::app_log() << " Slater Component (n,zeta,c)= " << qN << " " << zeta << " " << c << std::endl;
       }
     }
     cur = cur->next;

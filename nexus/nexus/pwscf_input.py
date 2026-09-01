@@ -44,20 +44,57 @@
 #====================================================================#
 
 
-import os
 import inspect
+import os
+import sys
 from copy import deepcopy
+from types import MappingProxyType
+from typing import ClassVar, Literal, TypeAlias
+
 import numpy as np
 from numpy import pi
 from numpy.linalg import inv
-from .unit_converter import convert
-from .periodic_table import Elements
-from .structure import Structure, kmesh
-from .physical_system import PhysicalSystem
-from .developer import DevBase, obj, log, warn, error
-from .pseudopotential import pp_elem_label
-from .simulation import SimulationInput
+
 from . import numpy_extensions as npe
+from .developer import DevBase, log, obj, warn, NexusError, FileFormatError
+from .periodic_table import Elements
+from .physical_system import PhysicalSystem
+from .pseudoset import pp_elem_label, PseudoSet
+from .pwscf_input_defs import (
+    CellDefinitions,
+    ControlDefinitions,
+    ElectronsDefinitions,
+    FcpDefinitions,
+    IonsDefinitions,
+    PwscfInputType,
+    RismDefinitions,
+    SystemDefinitions,
+)
+from .simulation import SimulationInput
+from .structure import Structure, kmesh
+from .unit_converter import convert
+
+"""Union of the namelist definition enums."""
+NamelistType: TypeAlias = (
+    type[CellDefinitions]
+    | type[ControlDefinitions]
+    | type[ElectronsDefinitions]
+    | type[FcpDefinitions]
+    | type[IonsDefinitions]
+    | type[RismDefinitions]
+    | type[SystemDefinitions]
+)
+
+"""Tuple of all of the namelist definition enums."""
+NAMELIST_DEFINITIONS = (
+    ControlDefinitions,
+    SystemDefinitions,
+    ElectronsDefinitions,
+    IonsDefinitions,
+    CellDefinitions,
+    FcpDefinitions,
+    RismDefinitions,
+    )
 
 def read_str(sv):
     return sv.strip('"').strip("'")
@@ -119,7 +156,13 @@ def write_scalar(var,val):
     elif isinstance(val,int):
         vtype = int
     else:
-        error('cannot write pwscf input file\nattempted to write variable with unknown scalar type\nvariable: {0}\ndata type: {1}'.format(var,val.__class__.__name__))
+        msg = (
+            'cannot write pwscf input file\n'
+            'attempted to write variable with unknown scalar type\n'
+            'variable: {0}\n'
+            'data type: {1}'.format(var,val.__class__.__name__)
+            )
+        raise TypeError(msg)
     #end if
     return writeval[vtype](val)
 #end def write_scalar
@@ -167,100 +210,110 @@ def array_to_string(a,pad='   ',format=pwscf_array_format,converter=noconv,rowse
 #end def array_to_string
 
 
-            
+def _get_var_types() -> (
+    tuple[
+        frozenset[str], # ints
+        frozenset[str], # floats
+        frozenset[str], # strs
+        frozenset[str], # bools
+        frozenset[str], # real_arrays
+        frozenset[str], # species_arrays
+        frozenset[str], # multidimensional_arrays
+        ]
+    ):
+    """Get all variable types from the namelist definitions.
+
+    Returns
+    -------
+    ints : frozenset of str
+        All integer-type variables. (scalars and arrays)
+    floats : frozenset of str
+        All float-type variables. (scalars and arrays)
+    strs : frozenset of str
+        All string-type variables. (scalars and arrays)
+    bools : frozenset of str
+        All boolean-type variables. (scalars and arrays)
+    real_arrays : frozenset of str
+        All array variables. (all datatypes)
+    species_arrays : frozenset of str
+        All array variables whose size depends on species. (all datatypes)
+    multidimensional_arrays : frozenset of str
+        All multidimensional array variables. (all datatypes, fixed-size and species arrays)
+    """
+    ints = set()
+    floats = set()
+    strs = set()
+    bools = set()
+    real_arrays = set()
+    species_arrays = set()
+    multidimensional_arrays = set()
+
+    for nmlist in NAMELIST_DEFINITIONS:
+        for var in nmlist:
+            if var.shape is not None:
+                real_arrays.add(var.name)
+
+                if isinstance(var.shape[1], str):
+                    species_arrays.add(var.name)
+                elif (
+                    isinstance(var.shape[1], tuple)
+                    and (
+                        isinstance(var.shape[1][0], str)
+                        or isinstance(var.shape[1][1], str)
+                        or isinstance(var.shape[1][-1], str)
+                        )
+                    ):
+                    species_arrays.add(var.name)
+
+                if isinstance(var.shape[0], tuple) and len(var.shape[0]) >= 2:
+                    multidimensional_arrays.add(var.name)
+            #end if var.shape is not None
+
+            if var.datatype is int:
+                ints.add(var.name)
+            elif var.datatype is float:
+                floats.add(var.name)
+            elif var.datatype is str:
+                strs.add(var.name)
+            elif var.datatype is bool:
+                bools.add(var.name)
+            else:
+                msg = f"Variable {var.name} has an invalid datatype `{var.datatype.__name__}`!"
+                raise ValueError(msg)
+
+    return (
+        frozenset(ints),
+        frozenset(floats),
+        frozenset(strs),
+        frozenset(bools),
+        frozenset(real_arrays),
+        frozenset(species_arrays),
+        frozenset(multidimensional_arrays),
+        )
+#end def get_var_types
+
 
 class PwscfInputBase(DevBase):
-    ints=[
-        # pre 5.4
-        'nstep','iprint','gdir','nppstr','nberrycyc','ibrav','nat','ntyp',
-        'nbnd','nr1','nr2','nr3','nr1s','nr2s','nr3s','nspin',
-        'multiplicity','edir','report','electron_maxstep',
-        'mixing_ndim','mixing_fixed_ns','ortho_para','diago_cg_maxiter',
-        'diago_david_ndim','nraise','bfgs_ndim','num_of_images','fe_nstep',
-        'sw_nstep','modenum','n_charge_compensation','nlev','lda_plus_u_kind',
-        # 5.4 additions
-        'nqx1','nqx2','nqx3','esm_nfit','space_group','origin_choice',
-        # 6.3 additions
-        'dftd3_version',
-        ]
-    floats=[
-        # pre 5.4
-        'dt','max_seconds','etot_conv_thr','forc_conv_thr','celldm','A','B','C',
-        'cosAB','cosAC','cosBC','nelec','ecutwfc','ecutrho','degauss',
-        'tot_charge','tot_magnetization','starting_magnetization','nelup',
-        'neldw','ecfixed','qcutz','q2sigma','Hubbard_alpha','Hubbard_U','Hubbard_J',
-        'starting_ns_eigenvalue','emaxpos','eopreg','eamp','angle1','angle2',
-        'fixed_magnetization','lambda','london_s6','london_rcut','conv_thr',
-        'mixing_beta','diago_thr_init','efield','tempw','tolp','delta_t','upscale',
-        'trust_radius_max','trust_radius_min','trust_radius_ini','w_1','w_2',
-        'temp_req','ds','k_max','k_min','path_thr','fe_step','g_amplitude',
-        'press','wmass','cell_factor','press_conv_thr','xqq','ecutcoarse',
-        'mixing_charge_compensation','comp_thr','exx_fraction','ecutfock',
-        # 5.4 additions
-        'conv_thr_init','conv_thr_multi','efield_cart','screening_parameter',
-        'ecutvcut','Hubbard_J0','Hubbard_beta','Hubbard_J','esm_w',
-        'esm_efield','fcp_mu','london_c6','london_rvdw','xdm_a1','xdm_a2',
-        # 6.3 additions
-        'block_1','block_2','block_height','zgate','ts_vdw_econv_thr',
-        'starting_charge'
-        ]
-    strs=[
-        # pre 5.4
-        'calculation','title','verbosity','restart_mode','outdir','wfcdir',
-        'prefix','disk_io','pseudo_dir','occupations','smearing','input_dft',
-        'U_projection_type','constrained_magnetization','mixing_mode',
-        'diagonalization','startingpot','startingwfc','ion_dynamics',
-        'ion_positions','phase_space','pot_extrapolation','wfc_extrapolation',
-        'ion_temperature','opt_scheme','CI_scheme','cell_dynamics',
-        'cell_dofree','which_compensation','assume_isolated','exxdiv_treatment',
-        # 5.4 additions
-        'esm_bc','vdw_corr',
-        # 6.3 additions
-        'efield_phase',
-        ]
-    bools=[
-        # pre 5.4
-        'wf_collect','tstress','tprnfor','lkpoint_dir','tefield','dipfield',
-        'lelfield','lberry','nosym','nosym_evc','noinv','force_symmorphic',
-        'noncolin','lda_plus_u','lspinorb','do_ee','london','diago_full_acc',
-        'tqr','remove_rigid_rot','refold_pos','first_last_opt','use_masses',
-        'use_freezing','la2F',
-        # 5.4 additions
-        'lorbm','lfcpopt','scf_must_converge','adaptive_thr','no_t_rev',
-        'use_all_frac','one_atom_occupations','starting_spin_angle',
-        'x_gamma_extrapolation','xdm','uniqueb','rhombohedral',
-        # 6.3 additions
-        'gate','block','relaxz','dftd3_threebody','ts_vdw_isolated','lforcet',
-        ]
+    (ints, floats, strs, bools, real_arrays,
+     species_arrays, multidimensional_arrays) = _get_var_types()
 
-    real_arrays = [
-        'celldm', 'starting_magnetization', 'hubbard_alpha', 'hubbard_u',
-        'hubbard_j0', 'hubbard_beta', 'hubbard_j',
-        'starting_ns_eigenvalue', 'angle1', 'angle2', 'fixed_magnetization',
-        'fe_step', 'efield_cart', 'london_c6', 'london_rvdw',
-        'starting_charge' ,
-         ]
+    species_array_indices = obj(
+        hubbard_j=1,
+        starting_ns_eigenvalue=2,
+        )
 
-    species_arrays = [
-        'starting_magnetization', 'hubbard_alpha', 'hubbard_u', 'hubbard_j0', 
-        'hubbard_beta', 'hubbard_j', 'angle1', 'angle2', 
-        'london_c6', 'london_rvdw','starting_charge',
-        ]
+    all_variables = ints | floats | strs | bools
 
-    species_array_indices = obj(hubbard_j=1)
+    section_aliases = MappingProxyType(dict(
+        celldm1='celldm(1)',
+        celldm2='celldm(2)',
+        celldm3='celldm(3)',
+        celldm4='celldm(4)',
+        celldm5='celldm(5)',
+        celldm6='celldm(6)'
+        ))
 
-    multidimensional_arrays = ['starting_ns_eigenvalue', 'hubbard_j']
-
-    ints   = [v.lower() for v in ints  ]
-    floats = [v.lower() for v in floats]
-    strs   = [v.lower() for v in strs  ]
-    bools  = [v.lower() for v in bools ]
-
-    all_variables = set(ints+floats+strs+bools)
-
-    section_aliases = dict(celldm1='celldm(1)',celldm2='celldm(2)',celldm3='celldm(3)',celldm4='celldm(4)',celldm5='celldm(5)',celldm6='celldm(6)')
-
-    var_types = dict()
+    var_types = dict()  # noqa: RUF012
     for v in ints:
         var_types[v]=int
     #end for
@@ -273,6 +326,7 @@ class PwscfInputBase(DevBase):
     for v in bools:
         var_types[v]=bool
     #end for
+    var_types: MappingProxyType[str, type] = MappingProxyType(var_types)
 #end class PwscfInputBase
 
 
@@ -281,15 +335,15 @@ class PwscfInputBase(DevBase):
 class Element(PwscfInputBase):
     name = None
     def add(self,**variables):
-        self._set(**variables)
+        self.update(**variables)
     #end def add
 
     def read(self,lines):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read
 
     def write(self,parent):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write
 
     def post_process_read(self,parent):
@@ -298,21 +352,16 @@ class Element(PwscfInputBase):
 #end class Element
 
 
-
-
 class Section(Element):
+    defs: ClassVar[NamelistType]
     @classmethod
     def class_init(cls):
-        cls.varlist   = list(cls.variables)
-        cls.variables = set([v.lower() for v in cls.varlist])
-        cls.case_map = obj()
-        for vname in cls.varlist:
-            cls.case_map[vname.lower()] = vname
-        #end for
-    #end if
+        cls.variables = frozenset(cls.defs.__members__.keys())
+        cls.case_map  = {name: val.input_name for name, val in cls.defs.__members__.items()}
+    #end def class_init
 
     def assign(self,**variables):
-        self.transfer_from(variables)
+        self.update(**variables)
     #end def assign
 
 
@@ -349,7 +398,12 @@ class Section(Element):
                 if len(t)>0:
                     tsplt = t.split('=')
                     if len(tsplt)!=2:
-                        self.error('attempted to read misformatted line\nmisformatted line: {0}\ntokens: {1}'.format(l,tsplt))
+                        msg = (
+                            'attempted to read misformatted line\n'
+                            'misformatted line: {0}\n'
+                            'tokens: {1}'.format(l,tsplt)
+                            )
+                        raise FileFormatError(msg)
                     #end if
                     var,val = tsplt
                     var     = var.strip().lower()
@@ -368,10 +422,18 @@ class Section(Element):
                         #end if
                     #end if
                     if varname not in self.variables:
-                        self.error('pwscf input section {0} does not have a variable named "{1}", please check your input\nif correct, please add a new variable ({1}) to the {0} PwscfInput class'.format(self.__class__.__name__,varname),trace=False)
+                        msg = (
+                            'pwscf input section {0} does not have a variable named "{1}", please check your input\n'
+                            'if correct, please add a new variable ({1}) to the {0} PwscfInput class'.format(self.__class__.__name__,varname)
+                            )
+                        raise KeyError(msg)
                     #end if
                     if varname not in self.var_types:
-                        self.error('a type has not been specified for variable "{0}"\nplease add it to PwscfInputBase'.format(varname),trace=False)
+                        msg = (
+                            'a type has not been specified for variable "{0}"\n'
+                            'please add it to PwscfInputBase'.format(varname)
+                            )
+                        raise KeyError(msg)
                     #end if
                     vtype = self.var_types[varname]
                     val = readval[vtype](val)
@@ -427,26 +489,53 @@ class Section(Element):
                             if index in atom_index:
                                 index_map[index] = atom_index[index]
                             else:
-                                self.error('cannot write pwscf input\ninvalid array species index encountered\nspecies index provided is not in the set of species present\nspecies present: {0}\nspecies used as index: {1}\narray variable: {2}'.format(sorted(atom_index.keys()),index),var)
+                                msg = (
+                                    'cannot write pwscf input\n'
+                                    'invalid array species index encountered\n'
+                                    'species index provided is not in the set of species present\n'
+                                    'species present: {0}\n'
+                                    'species used as index: {1}\n'
+                                    'array variable: {2}'.format(
+                                        sorted(atom_index.keys()), index, var
+                                        )
+                                    )
+                                raise IndexError(msg)
                             #end if
                         elif isinstance(index,tuple):
-                            if var not in self.species_array_index:
-                                self.error('cannot write pwscf input\ninvalid multidimensional array species index encountered\narray variable "{0}" does not support multidimensional species indices\nindex received: {1}'.format(var,index))
+                            if var not in self.species_array_indices:
+                                msg = (
+                                    'cannot write pwscf input\n'
+                                    'invalid multidimensional array species index encountered\n'
+                                    'array variable "{0}" does not support multidimensional species indices\n'
+                                    'index received: {1}'.format(var,index)
+                                    )
+                                raise ValueError(msg)
                             #end if
-                            indloc = self.species_array_index[var]
+                            indloc = self.species_array_indices[var]
                             atom = index[indloc]
                             if not isinstance(atom,str):
                                 continue
                             #end if
                             if atom not in atom_index:
-                                self.error('cannot write pwscf input\ninvalid array species index encountered\nspecies index provided is not in the set of species present\nspecies present: {0}\nspecies used as index: {1}\nfull index provided: {2}\narray variable: {3}'.format(sorted(atom_index.keys()),atom,index),var)
+                                msg = (
+                                    'cannot write pwscf input\n'
+                                    'invalid array species index encountered\n'
+                                    'species index provided is not in the set of species present\n'
+                                    'species present: {0}\n'
+                                    'species used as index: {1}\n'
+                                    'full index provided: {2}\n'
+                                    'array variable: {3}'.format(
+                                        sorted(atom_index.keys()), atom, index, var
+                                        )
+                                    )
+                                raise IndexError(msg)
                             #end if
                             indlist = list(index)
                             indlist[indloc] = atom_index[atom]
                             index_map[index] = tuple(indlist)
                         #end if
                     #end for
-                    index_map_inv = index_map.inverse()
+                    index_map_inv = obj({v:k for k,v in index_map.items()})
                 #end if
 
                 for index in sorted(index_map_inv.keys()):
@@ -459,7 +548,14 @@ class Section(Element):
                         #end if
                         sind = str(index).replace(' ','')
                     else:
-                        self.error('cannot write pwscf input\ninvalid array index encountered\nmust be an integer or tuple of integers\nindex received: {0}\narray variable: {1}'.format(str(index)),var)
+                        msg = (
+                            'cannot write pwscf input\n'
+                            'invalid array index encountered\n'
+                            'must be an integer or tuple of integers\n'
+                            'index received: {0}\n'
+                            'array variable: {1}'.format(str(index), var)
+                            )
+                        raise TypeError(msg)
                     #end if
                     svar = vname+sind
                     sval = write_scalar(var,value)
@@ -470,10 +566,7 @@ class Section(Element):
         c+='/'+'\n\n'
         return c
     #end def write
-
 #end class Section
-
-
 
 
 class Card(Element):
@@ -500,15 +593,15 @@ class Card(Element):
     #end def write
 
     def read_text(self,lines):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_text
 
     def write_text(self):
-        self.not_implemented()
+        raise NotImplementedError
     #end def write_text
 
     def change_specifier(self,new_specifier):
-        self.not_implemented()
+        raise NotImplementedError
     #end def change_specifier
 
     def change_option(self,*args,**kwargs):
@@ -517,134 +610,16 @@ class Card(Element):
 #end class Card
 
 
-
 class control(Section):
     name = 'control'
-
-    # all known keywords
-    variables = [
-        'calculation','title','verbosity','restart_mode','wf_collect','nstep',
-        'iprint','tstress','tprnfor','dt','outdir','wfcdir','prefix',
-        'lkpoint_dir','max_seconds','etot_conv_thr','forc_conv_thr','disk_io',
-        'pseudo_dir','tefield','dipfield','lelfield','nberrycyc','lorbm',
-        'lberry','gdir','nppstr','lfcpopt','gate'
-        ]
-
-    # 6.3 keyword spec
-    new_variables =  [
-        'calculation','title','verbosity','restart_mode','wf_collect','nstep',
-        'iprint','tstress','tprnfor','dt','outdir','wfcdir','prefix',
-        'lkpoint_dir','max_seconds','etot_conv_thr','forc_conv_thr','disk_io',
-        'pseudo_dir','tefield','dipfield','lelfield','nberrycyc','lorbm',
-        'lberry','gdir','nppstr','lfcpopt','gate'
-        ]
-
-    # 5.4 keyword spec
-    #variables = [
-    #    'calculation','title','verbosity','restart_mode','wf_collect','nstep',
-    #    'iprint','tstress','tprnfor','dt','outdir','wfcdir','prefix',
-    #    'lkpoint_dir','max_seconds','etot_conv_thr','forc_conv_thr','disk_io',
-    #    'pseudo_dir','tefield','dipfield','lelfield','nberrycyc','lorbm','lberry',
-    #    'gdir','nppstr','lfcpopt'
-    #    ]
-
-    # sometime prior to 5.4
-    #variables = [
-    #    'calculation','title','verbosity','restart_mode','wf_collect','nstep',
-    #    'iprint','tstress','tprnfor','dt','outdir','wfcdir','prefix',
-    #    'lkpoint_dir','max_seconds','etot_conv_thr','forc_conv_thr','disk_io',
-    #    'pseudo_dir','tefield','dipfield','lelfield','lberry','gdir','nppstr',
-    #    'nberrycyc'
-    #    ]
+    defs = ControlDefinitions
 #end class control
 
 
 
 class system(Section):
     name = 'system'
-
-    # all known keywords
-    variables = [
-        'ibrav','celldm','A','B','C','cosAB','cosAC','cosBC','nat','ntyp',
-        'nbnd','tot_charge','tot_magnetization','starting_magnetization',
-        'ecutwfc','ecutrho','ecutfock','nr1','nr2','nr3','nr1s','nr2s','nr3s',
-        'nosym','nosym_evc','noinv','no_t_rev','force_symmorphic','use_all_frac',
-        'occupations','one_atom_occupations','starting_spin_angle','degauss',
-        'smearing','nspin','noncolin','ecfixed','qcutz','q2sigma','input_dft',
-        'exx_fraction','screening_parameter','exxdiv_treatment',
-        'x_gamma_extrapolation','ecutvcut','nqx1','nqx2','nqx3','lda_plus_u',
-        'lda_plus_u_kind','Hubbard_U','Hubbard_J0','Hubbard_alpha',
-        'Hubbard_beta','Hubbard_J','starting_ns_eigenvalue','U_projection_type',
-        'edir','emaxpos','eopreg','eamp','angle1','angle2',
-        'constrained_magnetization','fixed_magnetization','lambda','report',
-        'lspinorb','assume_isolated','esm_bc','esm_w','esm_efield','esm_nfit',
-        'fcp_mu','vdw_corr','london','london_s6','london_c6','london_rvdw',
-        'london_rcut','xdm','xdm_a1','xdm_a2','space_group','uniqueb',
-        'origin_choice','rhombohedral',
-        'nelec','nelup','neldw','multiplicity','do_ee','la2F',
-        'block','block_1','block_2','block_height','dftd3_threebody',
-        'dftd3_version','lforcet','relaxz','starting_charge','ts_vdw_econv_thr',
-        'ts_vdw_isolated','zgate'
-        ]
-
-    # 6.3 keyword spec
-    new_variables = [
-        'ibrav','celldm','A','B','C','cosAB','cosAC','cosBC','nat','ntyp',
-        'nbnd','tot_charge','starting_charge','tot_magnetization',
-        'starting_magnetization','ecutwfc','ecutrho','ecutfock','nr1','nr2',
-        'nr3','nr1s','nr2s','nr3s','nosym','nosym_evc','noinv','no_t_rev',
-        'force_symmorphic','use_all_frac','occupations','one_atom_occupations',
-        'starting_spin_angle','degauss','smearing','nspin','noncolin','ecfixed',
-        'qcutz','q2sigma','input_dft','exx_fraction','screening_parameter',
-        'exxdiv_treatment','x_gamma_extrapolation','ecutvcut','nqx1','nqx2',
-        'nqx3','lda_plus_u','lda_plus_u_kind','Hubbard_U','Hubbard_J0',
-        'Hubbard_alpha','Hubbard_beta','Hubbard_J','starting_ns_eigenvalue',
-        'U_projection_type','edir','emaxpos','eopreg','eamp','angle1','angle2',
-        'lforcet','constrained_magnetization','fixed_magnetization','lambda',
-        'report','lspinorb','assume_isolated','esm_bc','esm_w','esm_efield',
-        'esm_nfit','fcp_mu','vdw_corr','london','london_s6','london_c6',
-        'london_rvdw','london_rcut','dftd3_version','dftd3_threebody',
-        'ts_vdw_econv_thr','ts_vdw_isolated','xdm','xdm_a1','xdm_a2',
-        'space_group','uniqueb','origin_choice','rhombohedral','zgate','relaxz',
-        'block','block_1','block_2','block_height'
-        ]
-
-    # 5.4 keyword spec
-    #variables = [
-    #    'ibrav','celldm','A','B','C','cosAB','cosAC','cosBC','nat','ntyp',
-    #    'nbnd','tot_charge','tot_magnetization','starting_magnetization',
-    #    'ecutwfc','ecutrho','ecutfock','nr1','nr2','nr3','nr1s','nr2s','nr3s',
-    #    'nosym','nosym_evc','noinv','no_t_rev','force_symmorphic','use_all_frac',
-    #    'occupations','one_atom_occupations','starting_spin_angle','degauss',
-    #    'smearing','nspin','noncolin','ecfixed','qcutz','q2sigma','input_dft',
-    #    'exx_fraction','screening_parameter','exxdiv_treatment',
-    #    'x_gamma_extrapolation','ecutvcut','nqx1','nqx2','nqx3','lda_plus_u',
-    #    'lda_plus_u_kind','Hubbard_U','Hubbard_J0','Hubbard_alpha',
-    #    'Hubbard_beta','Hubbard_J','starting_ns_eigenvalue','U_projection_type',
-    #    'edir','emaxpos','eopreg','eamp','angle1','angle2',
-    #    'constrained_magnetization','fixed_magnetization','lambda','report',
-    #    'lspinorb','assume_isolated','esm_bc','esm_w','esm_efield','esm_nfit',
-    #    'fcp_mu','vdw_corr','london','london_s6','london_c6','london_rvdw',
-    #    'london_rcut','xdm','xdm_a1','xdm_a2','space_group','uniqueb',
-    #    'origin_choice','rhombohedral'
-    #    ]
-
-    # sometime prior to 5.4
-    #variables = [
-    #    'ibrav','celldm','A','B','C','cosAB','cosAC','cosBC','nat','ntyp',
-    #    'nbnd','nelec','tot_charge','ecutwfc','ecutrho','nr1','nr2','nr3',
-    #    'nr1s','nr2s','nr3s','nosym','nosym_evc','noinv','force_symmorphic',
-    #    'occupations','degauss','smearing','nspin','noncolin',
-    #    'starting_magnetization','nelup','neldw','multiplicity',
-    #    'tot_magnetization','ecfixed','qcutz','q2sigma','input_dft',
-    #    'lda_plus_u','Hubbard_alpha','Hubbard_U','starting_ns_eigenvalue',
-    #    'U_projection_type','edir','emaxpos','eopreg','eamp','angle1',
-    #    'angle2','constrained_magnetization','fixed_magnetization','lambda',
-    #    'report','lspinorb','assume_isolated','do_ee','london','london_s6',
-    #    'london_rcut','exx_fraction','ecutfock',
-    #    'lda_plus_u_kind','Hubbard_J','exxdiv_treatment','la2F'
-    #    ]
-
+    defs = SystemDefinitions
     atomic_variables = obj(
         hubbard_u = 'Hubbard_U',
         start_mag = 'starting_magnetization',
@@ -716,7 +691,8 @@ class system(Section):
                         #end if
                     #end for
                 else:
-                    self.error('cannot write {0}, atomic_species is not present'.format(var))
+                    msg = 'cannot write {0}, atomic_species is not present'.format(var)
+                    raise KeyError(msg)
                 #end if
             else:
                 #vtype = type(val)
@@ -734,7 +710,14 @@ class system(Section):
                 elif isinstance(val,int):
                     vtype = int
                 else:
-                    self.error('Type "{0}" is not known as a value of variable "{1}".\nThis may reflect a need for added developer attention to support this type.  Please contact a developer.'.format(vtype.__class__.__name__,var))
+                    msg = (
+                        'Type "{0}" is not known as a value of variable "{1}".\n'
+                        'This may reflect a need for added developer attention to support this type.\n'
+                        'Please contact a developer.'.format(
+                            vtype.__class__.__name__, var
+                            )
+                        )
+                    raise NexusError(msg)
                 #end if
                 sval = writeval[vtype](val)
 
@@ -753,185 +736,47 @@ class system(Section):
         c+='/'+'\n\n'
         return c
     #end def write
-
 #end class system
 
 
 class electrons(Section):
     name = 'electrons'
-
-    # all known keywords
-    variables = [
-        'electron_maxstep','scf_must_converge','conv_thr','adaptive_thr',
-        'conv_thr_init','conv_thr_multi','mixing_mode','mixing_beta',
-        'mixing_ndim','mixing_fixed_ns','diagonalization','ortho_para',
-        'diago_thr_init','diago_cg_maxiter','diago_david_ndim','diago_full_acc',
-        'efield','efield_cart','startingpot','startingwfc','tqr',
-        'efield_phase'
-        ]
-
-    # 6.3 keyword spec
-    new_variables = [
-        'electron_maxstep','scf_must_converge','conv_thr','adaptive_thr',
-        'conv_thr_init','conv_thr_multi','mixing_mode','mixing_beta',
-        'mixing_ndim','mixing_fixed_ns','diagonalization','ortho_para',
-        'diago_thr_init','diago_cg_maxiter','diago_david_ndim','diago_full_acc',
-        'efield','efield_cart','efield_phase','startingpot','startingwfc','tqr'
-        ]
-
-    # 5.4 keyword spec
-    #variables = [
-    #    'electron_maxstep','scf_must_converge','conv_thr','adaptive_thr',
-    #    'conv_thr_init','conv_thr_multi','mixing_mode','mixing_beta',
-    #    'mixing_ndim','mixing_fixed_ns','diagonalization','ortho_para',
-    #    'diago_thr_init','diago_cg_maxiter','diago_david_ndim','diago_full_acc',
-    #    'efield','efield_cart','startingpot','startingwfc','tqr'
-    #    ]
-
-    # sometime prior to 5.4
-    #variables =  [
-    #    'electron_maxstep','conv_thr','mixing_mode','mixing_beta','mixing_ndim',
-    #    'mixing_fixed_ns','diagonalization','ortho_para','diago_thr_init',
-    #    'diago_cg_maxiter','diago_david_ndim','diago_full_acc','efield',
-    #    'startingpot','startingwfc','tqr'
-    #    ]
+    defs = ElectronsDefinitions
 #end class electrons
 
 
 class ions(Section):
     name = 'ions'
-
-    # all known keywords
-    variables = [
-        'ion_dynamics','ion_positions','pot_extrapolation','wfc_extrapolation',
-        'remove_rigid_rot','ion_temperature','tempw','tolp','delta_t','nraise',
-        'refold_pos','upscale','bfgs_ndim','trust_radius_max','trust_radius_min',
-        'trust_radius_ini','w_1','w_2',
-        'num_of_images','opt_scheme','CI_scheme','first_last_opt','temp_req',
-        'ds','k_max','k_min','path_thr','use_masses','use_freezing','fe_step',
-        'g_amplitude','fe_nstep','sw_nstep','phase_space',
-        ]
-
-    # 6.3 keyword spec
-    new_variables = [
-        'ion_dynamics','ion_positions','pot_extrapolation','wfc_extrapolation',
-        'remove_rigid_rot','ion_temperature','tempw','tolp','delta_t','nraise',
-        'refold_pos','upscale','bfgs_ndim','trust_radius_max',
-        'trust_radius_min','trust_radius_ini','w_1','w_2'
-        ]
-
-    # 5.4 keyword spec
-    #variables = [
-    #    'ion_dynamics','ion_positions','pot_extrapolation','wfc_extrapolation',
-    #    'remove_rigid_rot','ion_temperature','tempw','tolp','delta_t','nraise',
-    #    'refold_pos','upscale','bfgs_ndim','trust_radius_max','trust_radius_min',
-    #    'trust_radius_ini','w_1','w_2'
-    #    ]
-
-    # sometime prior to 5.4
-    #variables = [
-    #    'ion_dynamics','ion_positions','phase_space','pot_extrapolation',
-    #    'wfc_extrapolation','remove_rigid_rot','ion_temperature','tempw',
-    #    'tolp','delta_t','nraise','refold_pos','upscale','bfgs_ndim',
-    #    'trust_radius_max','trust_radius_min','trust_radius_ini','w_1','w_2',
-    #    'num_of_images','opt_scheme','CI_scheme','first_last_opt','temp_req',
-    #    'ds','k_max','k_min','path_thr','use_masses','use_freezing','fe_step',
-    #    'g_amplitude','fe_nstep','sw_nstep'
-    #    ]
+    defs = IonsDefinitions
 #end class ions
 
 
 class cell(Section):
     name = 'cell'
-
-    # all known keywords
-    variables = [
-        'cell_dynamics','press','wmass','cell_factor','press_conv_thr',
-        'cell_dofree'
-        ]
-
-    # 6.3 keyword spec
-    new_variables = [
-        'cell_dynamics','press','wmass','cell_factor','press_conv_thr',
-        'cell_dofree'
-        ]
-
-    # 5.4 keyword spec
-    #variables = [
-    #    'cell_dynamics','press','wmass','cell_factor','press_conv_thr',
-    #    'cell_dofree'
-    #    ]
-
-    # sometime prior to 5.4
-    #variables =  [
-    #    'cell_dynamics','press','wmass','cell_factor','press_conv_thr',
-    #    'cell_dofree'
-    #    ]
+    defs = CellDefinitions
 #end class cell
 
 
-class phonon(Section):
-    name = 'phonon'
-    # all known keywords
-    variables =  ['modenum','xqq']
-
-    # sometime prior to 5.4
-    #variables =  ['modenum','xqq']
-#end class phonon
+class fcp(Section):
+    name = "fcp"
+    defs = FcpDefinitions
+#end class fcp
 
 
-class ee(Section):
-    name = 'ee'
-    # all known keywords
-    variables = [
-        'which_compensation','ecutcoarse','mixing_charge_compensation',
-        'n_charge_compensation','comp_thr','nlev'
-        ]
-
-    # sometime prior to 5.4
-    #variables = [
-    #    'which_compensation','ecutcoarse','mixing_charge_compensation',
-    #    'n_charge_compensation','comp_thr','nlev'
-    #    ]
-#end class ee
+class rism(Section):
+    name = "rism"
+    defs = RismDefinitions
+#end class rism
 
 
-section_classes = [
-    control,system,electrons,ions,cell,phonon,ee
-    ]
+section_classes = (
+    control, system, electrons, ions, cell, fcp, rism
+    )
 for sec in section_classes:
     sec.class_init()
-#end for
 
 
-exit_ = exit
-def check_new_variables(exit=True):
-    sections = section_classes
-    msg = ''
-    for section in sections:
-        if section.class_has('new_variables'):
-            new_vars = set([v.lower() for v in section.new_variables])
-            missing = new_vars-set(section.variables)
-            if len(missing)>0:
-                msg += '\n'+section.__name__+'\n'
-                msg += '{0}\n'.format(sorted(missing))
-            #end if
-        #end if
-    #end for
-    if len(msg)>0:
-        msg = 'some sections are missing variables, see below\n'+msg
-        error(msg)
-    else:
-        log('section checks of new variables passed')
-    #end if
-    if exit:
-        exit_()
-    #end if
-#end def check_new_variables
-#check_new_variables()
-
-
-def check_section_classes(exit=True):
+def check_section_classes(*,exit=True):
     sections = section_classes
     all_variables = PwscfInputBase.all_variables
     global_missing = set(all_variables)
@@ -949,28 +794,37 @@ def check_section_classes(exit=True):
     if len(global_missing)>0 or locs_missing:
         msg = 'PwscfInput: variable information is not consistent for section classes\n'
         if len(global_missing)>0:
-            msg+='  some typed variables have not been assigned to a section:\n    {0}\n'.format(sorted(global_missing))
+            msg += (
+                '  some typed variables have not been assigned to a section:\n'
+                '    {0}\n'.format(sorted(global_missing))
+                )
         #end if
         if locs_missing:
             for name in sorted(local_missing.keys()):
                 lmiss = local_missing[name]
                 if len(lmiss)>0:
                     vmiss = []
-                    for vname in secs[name].varlist:
+                    for vname in secs[name].variables:
                         if vname in lmiss:
                             vmiss.append(vname)
                         #end if
                     #end for
-                    msg+='  some variables in section {0} have not been assigned a type\n    missing variable counts: {1} {2}\n    missing variables: {3}\n'.format(name,len(lmiss),len(vmiss),vmiss)
+                    msg += (
+                        '  some variables in section {0} have not been assigned a type\n'
+                        '    missing variable counts: {1} {2}\n'
+                        '    missing variables: {3}\n'.format(
+                            name, len(lmiss), len(vmiss), vmiss
+                            )
+                        )
                 #end if
             #end for
         #end if
-        error(msg)
+        raise NexusError(msg)
     else:
         log('pwscf input checks passed')
     #end if
     if exit:
-        exit_()
+        sys.exit()
     #end if
 #end def check_section_classes
 #check_section_classes()
@@ -1068,7 +922,12 @@ class atomic_positions(Card):
             axes = pwi.get_common_vars('axes')
             pos = np.dot(pos,axes)
         else:
-            self.error('old specifier for atomic_positions is invalid\n  old specifier: '+spec+'\n  valid options: alat, bohr, angstrom, crystal')
+            msg = (
+                'old specifier for atomic_positions is invalid\n'
+                '  old specifier: '+spec+'\n'
+                '  valid options: alat, bohr, angstrom, crystal'
+                )
+            raise ValueError(msg)
         #end if
 
         spec = new_specifier
@@ -1082,7 +941,12 @@ class atomic_positions(Card):
             axes = pwi.get_common_vars('axes')
             pos = np.dot(pos,inv(axes))
         else:
-            self.error('new specifier for atomic_positions is invalid\n  new specifier: '+spec+'\n  valid options: alat, bohr, angstrom, crystal')
+            msg = (
+                'new specifier for atomic_positions is invalid\n'
+                '  new specifier: '+spec+'\n'
+                '  valid options: alat, bohr, angstrom, crystal'
+                )
+            raise ValueError(msg)
         #end if
             
         self.positions = pos
@@ -1129,7 +993,7 @@ class k_points(Card):
     name = 'k_points'
 
     def read_text(self,lines):
-        if self.specifier in ['tpiba','crystal','tpiba_b','crystal_b','']:
+        if self.specifier in {'tpiba','crystal','tpiba_b','crystal_b',''}:
             self.nkpoints = int(lines[0])
             a = array_from_lines(lines[1:])
             self.kpoints = a[:,0:3]
@@ -1142,14 +1006,15 @@ class k_points(Card):
         elif self.specifier == 'gamma':
             None
         else:
-            self.error('k_points specifier '+self.specifier+' is unrecognized')
+            msg = 'k_points specifier '+self.specifier+' is unrecognized'
+            raise ValueError(msg)
         #end if
     #end def read_text
 
 
     def write_text(self):
         c = ''        
-        if self.specifier in ('tpiba','crystal','tpiba_b','crystal_b',''):
+        if self.specifier in {'tpiba','crystal','tpiba_b','crystal_b',''}:
             self.nkpoints = len(self.kpoints)
             c+='   '+str(self.nkpoints)+'\n'
             a = np.empty((self.nkpoints,4))
@@ -1163,7 +1028,8 @@ class k_points(Card):
         elif self.specifier == 'gamma':
             None
         else:
-            self.error('k_points specifier '+self.specifier+' is unrecognized')
+            msg = 'k_points specifier '+self.specifier+' is unrecognized'
+            raise ValueError(msg)
         #end if
         return c
     #end def write_text
@@ -1184,9 +1050,15 @@ class k_points(Card):
             shift = .5*np.array(self.shift)
             kpoints = kmesh(kaxes,grid,shift)
         elif spec=='tpiba_b' or spec=='crystal_b':
-            self.error('specifiers tpiba_b and crystal_b have not yet been implemented in change_specifier')
+            msg = 'specifiers tpiba_b and crystal_b have not yet been implemented in change_specifier'
+            raise NotImplementedError(msg)
         else:
-            self.error('old specifier for k_points is invalid\n  old specifier: '+spec+'\n  valid options: tpiba, gamma, crystal, automatic, tpiba_b, crystal_b')
+            msg = (
+                'old specifier for k_points is invalid\n'
+                '  old specifier: '+spec+'\n'
+                '  valid options: tpiba, gamma, crystal, automatic, tpiba_b, crystal_b'
+                )
+            raise ValueError(msg)
         #end if
 
         spec = new_specifier
@@ -1198,12 +1070,19 @@ class k_points(Card):
             kpoints = np.dot(kpoints,inv(kaxes))
         elif spec=='automatic':
             if self.specifier!='automatic':
-                self.error('cannot map arbitrary kpoints into a Monkhorst-Pack mesh')
+                msg = 'cannot map arbitrary kpoints into a Monkhorst-Pack mesh'
+                raise ValueError(msg)
             #end if
         elif spec=='tpiba_b' or spec=='crystal_b':
-            self.error('specifiers tpiba_b and crystal_b have not yet been implemented in change_specifier')
+            msg = 'specifiers tpiba_b and crystal_b have not yet been implemented in change_specifier'
+            raise NotImplementedError(msg)
         else:
-            self.error('new specifier for k_points is invalid\n  new specifier: '+spec+'\n  valid options: tpiba, gamma, crystal, automatic, tpiba_b, crystal_b')
+            msg = (
+                'new specifier for k_points is invalid\n'
+                '  new specifier: '+spec+'\n'
+                '  valid options: tpiba, gamma, crystal, automatic, tpiba_b, crystal_b'
+                )
+            raise ValueError(msg)
         #end if
             
         self.kpoints   = kpoints
@@ -1238,7 +1117,12 @@ class cell_parameters(Card):
         elif spec=='angstrom':
             vec *= convert(1.,'A','B')
         else:
-            self.error('old specifier for cell_parameters is invalid\nold specifier: '+spec+'\nvalid options: alat, bohr, angstrom')
+            msg = (
+                'old specifier for cell_parameters is invalid\n'
+                '  old specifier: '+spec+'\n'
+                '  valid options: alat, bohr, angstrom'
+                )
+            raise ValueError(msg)
         #end if
 
         spec = new_specifier
@@ -1249,7 +1133,12 @@ class cell_parameters(Card):
         elif spec=='angstrom':
             vec /= convert(1.,'A','B')
         else:
-            self.error('new specifier for cell_parameters is invalid\nnew specifier: '+spec+'\nvalid options: alat, bohr, angstrom')
+            msg = (
+                'new specifier for cell_parameters is invalid\n'
+                '  new specifier: '+spec+'\n'
+                '  valid options: alat, bohr, angstrom'
+                )
+            raise ValueError(msg)
         #end if
             
         self.vectors   = vec
@@ -1362,7 +1251,7 @@ class occupations(Card):
 
 class hubbard(Card):
     name = 'hubbard'
-    available_specifiers = ['atomic', 'ortho-atomic', 'norm-atomic', 'wf', 'pseudo']
+    available_specifiers = ('atomic', 'ortho-atomic', 'norm-atomic', 'wf', 'pseudo')
     default_specifier = 'atomic'
     system = None
     def read_text(self, lines):        
@@ -1375,7 +1264,10 @@ class hubbard(Card):
                 if len(line) == 3:
                     specie = line[1]
                     val = float(line[2])
-                    self.hubbard[intrxn] = {specie:val}
+                    if intrxn not in self.hubbard:
+                        self.hubbard[intrxn] = {}
+                    #end if
+                    self.hubbard[intrxn][specie] = val
                 elif len(line) == 6:
                     specie1 = line[1]
                     specie2 = line[2]
@@ -1400,7 +1292,7 @@ class hubbard(Card):
         contents = ''
         for param, interaction in self.hubbard.items():
             valid_format = True
-            assert(param in ['U', 'J', 'V'])
+            assert(param in {'U', 'J', 'B', 'E2', 'E3', 'V'})
             assert(isinstance(interaction, dict))
             for label_manifold, value in interaction.items():
                 if isinstance(label_manifold, str):
@@ -1476,13 +1368,19 @@ class hubbard(Card):
                     valid_format = False
                 #end for
                 if not valid_format:
-                    self.error('Hubbard card unknown input format')
+                    msg = 'Hubbard card unknown input format'
+                    raise ValueError(msg)
             #end for
         #end for
         for key, value in manifold_dict.items():
             if len(value) > 2:
-                self.error('Element "{}" has more than 2 Hubbard manifolds "{}". Up to 3 manifolds are allowed in QE 7.1, but in that case \
-                2nd and 3rd manifolds must be defined as one effective manifold, e.g. "U Mn-3d 5.0" and "U Mn-3p-3s 3.0"'.format(key, value))
+                msg = (
+                    'Element "{}" has more than 2 Hubbard manifolds "{}". '
+                    'Up to 3 manifolds are allowed in QE 7.1, but in that case '
+                    '2nd and 3rd manifolds must be defined as one effective manifold, '
+                    'e.g. "U Mn-3d 5.0" and "U Mn-3p-3s 3.0"'.format(key, value)
+                    )
+                raise ValueError(msg)
             #end if
         #end for
         contents += '\n'
@@ -1498,44 +1396,44 @@ class hubbard(Card):
 
 class PwscfInput(SimulationInput):
 
-    sections = ['control','system','electrons','ions','cell','phonon','ee']
-    cards    = ['atomic_species','atomic_positions','atomic_forces',
+    sections = ('control','system','electrons','ions','cell','fcp','rism')
+    cards    = ('atomic_species','atomic_positions','atomic_forces',
                 'k_points','cell_parameters','climbing_images','constraints',
-                'collective_vars','occupations', 'hubbard']
+                'collective_vars','occupations', 'hubbard')
 
     section_types = obj(
-        control   = control  ,     
-        system    = system   ,     
-        electrons = electrons,     
-        ions      = ions     ,     
-        cell      = cell     ,     
-        phonon    = phonon   ,     
-        ee        = ee            
+        control   = control,
+        system    = system,
+        electrons = electrons,
+        ions      = ions,
+        cell      = cell,
+        fcp       = fcp,
+        rism      = rism,
         )
     card_types = obj(
-        atomic_species   = atomic_species  ,    
-        atomic_positions = atomic_positions,    
-        atomic_forces    = atomic_forces   ,
-        k_points         = k_points        ,    
-        cell_parameters  = cell_parameters ,    
-        climbing_images  = climbing_images ,    
-        constraints      = constraints     ,    
-        collective_vars  = collective_vars ,    
-        occupations      = occupations     ,
-        hubbard          = hubbard         ,         
+        atomic_species   = atomic_species,
+        atomic_positions = atomic_positions,
+        atomic_forces    = atomic_forces,
+        k_points         = k_points,
+        cell_parameters  = cell_parameters,
+        climbing_images  = climbing_images,
+        constraints      = constraints,
+        collective_vars  = collective_vars,
+        occupations      = occupations,
+        hubbard          = hubbard,
         )
 
-    element_types = obj()
-    element_types.transfer_from(section_types)
-    element_types.transfer_from(card_types)
+    element_types = obj(**section_types)
+    element_types.update(**card_types)
 
-    required_elements = ['control','system','electrons','atomic_species','atomic_positions','k_points']
+    required_elements = ('control','system','electrons','atomic_species','atomic_positions','k_points')
     def __init__(self,*elements):
         elements = list(elements)
         if len(elements)==1 and os.path.exists(elements[0]):
             self.read(elements[0])
         elif len(elements)==1 and ('.' in elements[0] or '/' in elements[0]):
-            self.error('input file '+elements[0]+' does not exist')
+            msg = 'input file '+elements[0]+' does not exist'
+            raise ValueError(msg)
         else:
             for element in self.required_elements:
                 if element not in elements:
@@ -1546,7 +1444,11 @@ class PwscfInput(SimulationInput):
                 if element in self.element_types:
                     self[element] = self.element_types[element]()
                 else:
-                    self.error('  Error: '+element+' is not a pwscf element\n  valid options are '+str(list(self.element_types.keys())))
+                    msg = (
+                        '  Error: '+element+' is not a pwscf element\n'
+                        '  valid options are '+str(list(self.element_types.keys()))
+                        )
+                    raise ValueError(msg)
                 #end if
             #end for
         #end if
@@ -1570,7 +1472,12 @@ class PwscfInput(SimulationInput):
                         elem_type = 'section'
                         c=[]
                     else:
-                        self.error('encountered unrecognized input section during read\n{0} is not a recognized pwscf section\nfile read failed'.format(l[1:]))
+                        msg = (
+                            'encountered unrecognized input section during read\n'
+                            '{0} is not a recognized pwscf section\n'
+                            'file read failed'.format(l[1:])
+                            )
+                        raise FileFormatError(msg)
                     #end if
                 elif tokens[0].lower() in self.cards and '=' not in l:
                     if elem_type == 'card':
@@ -1592,7 +1499,11 @@ class PwscfInput(SimulationInput):
                 elif in_element:
                     c.append(l)
                 else:
-                    self.error('invalid line encountered during read\ninvalid line: {0}\nfile read failed'.format(l))
+                    msg = (
+                        'invalid line encountered during read\n'
+                        'invalid line: {0}\nfile read failed'.format(l)
+                        )
+                    raise FileFormatError(msg)
                 #end if
             #end if
         #end for
@@ -1642,23 +1553,25 @@ class PwscfInput(SimulationInput):
 
         vals = []
         loc = locals()
-        errors = False
+        msg = ""
         for var in vars:
             if var in loc:
                 val = loc[var]
                 if val is None:
-                    self.error('requested variable '+var+' was not found',exit=False)
-                    errors = True
+                    msg += 'requested variable '+var+' was not found\n'
                 #end if
             else:
-                self.error('requested variable '+var+' is not computed by get_common_vars',exit=False)
-                errors = True
+                msg += 'requested variable '+var+' is not computed by get_common_vars\n'
                 val = None
             #end if
             vals.append(val)
         #end for
-        if errors:
-            self.error('could not get requested variables')
+        if len(msg) > 0:
+            msg = (
+                'could not get requested variables:\n'
+                f'{msg}'
+                )
+            raise KeyError(msg)
         #end if
         return vals
     #end def get_common_vars
@@ -1673,19 +1586,18 @@ class PwscfInput(SimulationInput):
 
     def incorporate_system(self,system,elem_order=None):
         system.check_folded_system()
-        system.update_particles()
         system.change_units('B')
-        p  = system.particles
         s  = system.structure
         nc = system.net_charge
         ns = system.net_spin
 
-        nup = p.up_electron.count
-        ndn = p.down_electron.count
+        nup = system.n_up
+        ndn = system.n_down
 
         self.system.ibrav        = 0
 #        self.system['celldm(1)'] = 1.0e0
-        nions,nspecies = p.count_ions(species=True)
+        nions = system.n_ions
+        nspecies = system.n_species
         self.system.nat          = nions
         self.system.ntyp         = nspecies
         self.system.tot_charge   = nc
@@ -1702,7 +1614,7 @@ class PwscfInput(SimulationInput):
             if s.at_Gpoint():
                 self.k_points.specifier = 'gamma'
             elif s.at_Lpoint():
-                self.k_points.set(
+                self.k_points.update(
                     specifier = 'automatic',
                     grid  = (1,1,1),
                     shift = (1,1,1)
@@ -1717,20 +1629,31 @@ class PwscfInput(SimulationInput):
             #end if
         #end if
 
-        atoms = p.get_ions()
         if 'masses' not in self.atomic_species:
             self.atomic_species.masses = obj()
         #end if
-        for name,a in atoms.items():
-            self.atomic_species.masses[name] = convert(a.mass,'me','amu')
+        for name in system.ion_labels:
+            is_elem, element = Elements.is_element(name, return_element=True)
+            self.atomic_species.masses[name] = element.atomic_weight
         #end for
         if elem_order is None:
-            self.atomic_species.atoms = list(sorted(atoms.keys()))
+            self.atomic_species.atoms = list(sorted(system.ion_labels))
         else:
-            if set(elem_order)!=set(atoms.keys()):
-                self.error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(atoms.keys()),elem_order))
-            elif len(elem_order)!=len(atoms):
-                self.error('elem_order has repeated elements\nelem_order: {0}'.format(elem_order))
+            if set(elem_order)!=set(system.ion_labels):
+                msg = (
+                    'elem_order is missing some atomic species\n'
+                    'atomic species present: {0}\n'
+                    'elem_order: {1}'.format(
+                        sorted(system.ion_labels), elem_order
+                        )
+                    )
+                raise ValueError(msg)
+            elif len(elem_order)!=system.n_ions:
+                msg = (
+                    'elem_order has repeated elements\n'
+                    'elem_order: {0}'.format(elem_order)
+                    )
+                raise ValueError(msg)
             #end if
             self.atomic_species.atoms = list(elem_order)
         #end if
@@ -1739,7 +1662,8 @@ class PwscfInput(SimulationInput):
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
             if atom not in pp:
-                iselem,symbol = p.is_element(atom,symbol=True)
+                iselem,element = Elements.is_element(atom,return_element=True)
+                symbol = element.symbol
                 if iselem and symbol in pp:
                     pp[atom] = str(pp[symbol])
                 #end if
@@ -1768,19 +1692,18 @@ class PwscfInput(SimulationInput):
 
     def incorporate_system_old(self,system,spin_polarized=None):
         system.check_folded_system()
-        system.update_particles()
         system.change_units('B')
-        p  = system.particles
         s  = system.structure
         nc = system.net_charge
         ns = system.net_spin
 
-        nup = p.up_electron.count
-        ndn = p.down_electron.count
+        nup = system.n_up
+        ndn = system.n_down
 
         self.system.ibrav        = 0
 #        self.system['celldm(1)'] = 1.0e0
-        nions,nspecies = p.count_ions(species=True)
+        nions = system.n_ions
+        nspecies = system.n_species
         self.system.nat          = nions
         self.system.ntyp         = nspecies
         #self.system.nelec        = nup+ndn
@@ -1803,7 +1726,7 @@ class PwscfInput(SimulationInput):
             if s.at_Gpoint():
                 self.k_points.specifier = 'gamma'
             elif s.at_Lpoint():
-                self.k_points.set(
+                self.k_points.update(
                     specifier = 'automatic',
                     grid  = (1,1,1),
                     shift = (1,1,1)
@@ -1819,18 +1742,19 @@ class PwscfInput(SimulationInput):
             #end if
         #end if
 
-        atoms = p.get_ions()
         masses = obj()
-        for name,a in atoms.items():
-            masses[name] = convert(a.mass,'me','amu')
+        for name in system.ion_labels:
+            is_elem, element = Elements.is_element(name, return_element=True)
+            masses[name] = element.atomic_weight
         #end for
-        self.atomic_species.atoms  = list(sorted(atoms.keys()))
+        self.atomic_species.atoms  = list(sorted(system.ion_labels))
         self.atomic_species.masses = masses
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials
         for atom in self.atomic_species.atoms:
             if atom not in pp:
-                iselem,symbol = p.is_element(atom,symbol=True)
+                iselem,element = Elements.is_element(atom,return_element=True)
+                symbol = element.symbol
                 if iselem and symbol in pp:
                     pp[atom] = str(pp[symbol])
                 #end if
@@ -1857,20 +1781,22 @@ class PwscfInput(SimulationInput):
     #end def incorporate_system_old
 
         
-    def return_system(self,structure_only=False,**valency):
+    # test needed
+    def return_system(self,*,structure_only=False,**valency):
         ibrav = self.system.ibrav
         if ibrav!=0:
-            self.error('ability to handle non-zero ibrav not yet implemented')
+            msg = 'ability to handle non-zero ibrav not yet implemented'
+            raise NotImplementedError(msg)
         #end if
 
         scale,axes,kaxes = self.get_common_vars('scale','axes','kaxes')
 
         elem = list(self.atomic_positions.atoms)
-        ap = self.atomic_positions.copy()
+        ap = deepcopy(self.atomic_positions)
         ap.change_specifier('bohr',self)
         pos = ap.positions
 
-        kp = self.k_points.copy()
+        kp = deepcopy(self.k_points)
         kp.change_specifier('tpiba',self)
         kpoints = kp.kpoints*(2*pi)/scale
 
@@ -1896,7 +1822,11 @@ class PwscfInput(SimulationInput):
         atoms   = list(self.atomic_positions.atoms)
         for atom in self.atomic_species.atoms:
             if atom not in valency:
-                self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()'.format(atom))
+                msg = (
+                    'valence charge for atom {0} has not been defined\n'
+                    'please provide the valence charge as an argument to return_system()'.format(atom)
+                    )
+                raise KeyError(msg)
             #end if
             ion_charge += atoms.count(atom)*valency[atom]
         #end for
@@ -1929,7 +1859,7 @@ class PwscfInput(SimulationInput):
 
 
     def standardize_types(self):
-        for s in self:
+        for s in self.values():
             if isinstance(s,Section):
                 array_keys = []
                 for k in s.keys():
@@ -1965,12 +1895,6 @@ class PwscfInput(SimulationInput):
 
 
 def generate_pwscf_input(selector,**kwargs):
-    if 'system' in kwargs:
-        system = kwargs['system']
-        if isinstance(system,PhysicalSystem):
-            system.update_particles()
-        #end if
-    #end if
     if selector=='generic':
         return generate_any_pwscf_input(**kwargs)
     if selector=='scf':
@@ -1982,7 +1906,8 @@ def generate_pwscf_input(selector,**kwargs):
     elif selector=='vc-relax':
         return generate_vcrelax_input(**kwargs)
     else:
-        PwscfInput.class_error('selection '+str(selector)+' has not been implemented for pwscf input generation')
+        msg = 'selection '+str(selector)+' has not been implemented for pwscf input generation'
+        raise NotImplementedError(msg)
     #end if
 #end def generate_pwscf_input
 
@@ -2065,7 +1990,7 @@ def generate_any_pwscf_input(**kwargs):
     # setup for k-point symmetry run
     #   ecutwfc is set to 1 so that pwscf will crash after initialization
     #   symmetrized k-points will still be written to log output
-    ksymm_run = kwargs.delete_optional('ksymm_run',False)
+    ksymm_run = kwargs.pop('ksymm_run',False)
     if ksymm_run:
         kwargs.ecutwfc    = 1
         kwargs.nosym      = False
@@ -2080,7 +2005,13 @@ def generate_any_pwscf_input(**kwargs):
             if defaults in generate_any_defaults:
                 defaults = generate_any_defaults[defaults]
             else:
-                PwscfInput.class_error('invalid default set requested: {0}\n  valid options are {1}'.format(defaults,sorted(generate_any_defaults.keys())))
+                msg = (
+                    'invalid default set requested: {0}\n'
+                    '  valid options are {1}'.format(
+                        defaults, sorted(generate_any_defaults.keys())
+                        )
+                    )
+                raise ValueError(msg)
             #end if
         #end if
     else:
@@ -2098,14 +2029,15 @@ def generate_any_pwscf_input(**kwargs):
     #end for
 
     if ksymm_run and 'calculation' in kwargs and kwargs.calculation!='scf':
-        PwscfInput.class_error('input parameter "calculation" must be set to "scf" when ksymm_run is requested')
+        msg = 'input parameter "calculation" must be set to "scf" when ksymm_run is requested'
+        raise ValueError(msg)
     #end if
 
     #copy certain keywords
-    tot_magnetization = kwargs.get_optional('tot_magnetization',None)
-    nspin             = kwargs.get_optional('nspin',None)
-    nbnd              = kwargs.get_optional('nbnd',None)
-    hubbard_u         = kwargs.get_optional('hubbard_u',None)
+    tot_magnetization = kwargs.get('tot_magnetization',None)
+    nspin             = kwargs.get('nspin',None)
+    nbnd              = kwargs.get('nbnd',None)
+    hubbard_u         = kwargs.get('hubbard_u',None)
     # Pre 7.2 Hubbard tags
     hub_keys_pre72 = 'hubbard_u hubbard_j0 hubbard_j U_projection_type'.lower().split()
     has_pre72_keys = any(([_ in kwargs.keys() for _ in hub_keys_pre72]))
@@ -2113,9 +2045,10 @@ def generate_any_pwscf_input(**kwargs):
     hub_keys_v72 = 'hubbard hubbard_proj'.lower().split()
     has_v72_keys = any(([_ in kwargs.keys() for _ in hub_keys_v72]))
     if has_pre72_keys + has_v72_keys > 1:
-        PwscfInput.class_error('Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72))
+        msg = 'Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72)
+        raise ValueError(msg)
     #end if     
-    occ               = kwargs.get_optional('occupations',None)
+    occ               = kwargs.get('occupations',None)
     
     #make an empty input file
     pw = PwscfInput()
@@ -2126,7 +2059,9 @@ def generate_any_pwscf_input(**kwargs):
         keys = set(kwargs.keys()) & section_type.variables
         if len(keys)>0:
             kw = obj()
-            kw.move_from(kwargs,keys)
+            for k in keys:
+                if k in kwargs:
+                    kw[k] = kwargs.pop(k)
             section = section_type()
             section.assign(**kw)
             pw[section_name] = section
@@ -2134,47 +2069,53 @@ def generate_any_pwscf_input(**kwargs):
     #end for
 
     #process other keywords
-    use_folded       = kwargs.delete_required('use_folded')
-    kgrid            = kwargs.delete_required('kgrid')
-    kshift           = kwargs.delete_required('kshift')
-    system           = kwargs.delete_optional('system',None)
-    pseudos          = kwargs.delete_optional('pseudos',[])
-    elem_order       = kwargs.delete_optional('elem_order',None)
-    mass             = kwargs.delete_optional('mass',None)
-    elem             = kwargs.delete_optional('elem',None)
-    pos              = kwargs.delete_optional('pos',None)
-    totmag_sys       = kwargs.delete_optional('totmag_sys',False)
-    start_mag        = kwargs.delete_optional('start_mag',None)
-    bandfac          = kwargs.delete_optional('bandfac',None)
-    nogamma          = kwargs.delete_optional('nogamma',False)
-    positions_option = kwargs.delete_optional('pos_specifier',None)
+    use_folded       = kwargs.pop('use_folded')
+    kgrid            = kwargs.pop('kgrid')
+    kshift           = kwargs.pop('kshift')
+    system           = kwargs.pop('system',None)
+    pseudos          = kwargs.pop('pseudos',[])
+    elem_order       = kwargs.pop('elem_order',None)
+    mass             = kwargs.pop('mass',None)
+    elem             = kwargs.pop('elem',None)
+    pos              = kwargs.pop('pos',None)
+    totmag_sys       = kwargs.pop('totmag_sys',False)
+    start_mag        = kwargs.pop('start_mag',None)
+    bandfac          = kwargs.pop('bandfac',None)
+    nogamma          = kwargs.pop('nogamma',False)
+    positions_option = kwargs.pop('pos_specifier',None)
     if positions_option is None:
-        positions_option = kwargs.delete_optional('positions_option',None)
+        positions_option = kwargs.pop('positions_option',None)
     #end if
     if positions_option is None:
-        positions_option = kwargs.delete_optional('atomic_positions_option',None)
+        positions_option = kwargs.pop('atomic_positions_option',None)
     #end if
-    kpoints_option   = kwargs.delete_optional('kpoints_option',None)
+    kpoints_option = kwargs.pop('kpoints_option',None)
     if kpoints_option is None:
-        kpoints_option   = kwargs.delete_optional('k_points_option',None)
+        kpoints_option = kwargs.pop('k_points_option',None)
     #end if
-    cell_option      = kwargs.delete_optional('cell_option',None)
+    cell_option = kwargs.pop('cell_option',None)
     if cell_option is None:
-        cell_option      = kwargs.delete_optional('cell_parameters_option',None)
+        cell_option = kwargs.pop('cell_parameters_option',None)
     #end if
-    hubbard_input     = kwargs.delete_optional('hubbard', None)
-    hubbard_option    = kwargs.delete_optional('hubbard_proj',None)
+    hubbard_input  = kwargs.pop('hubbard', None)
+    hubbard_option = kwargs.pop('hubbard_proj',None)
     
     #  pseudopotentials
     pseudopotentials = obj()
     atom_species = []
+    if system is not None:
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
     for ppname in pseudos:
         #element = ppname[0:2].strip('.')
         label,element = pp_elem_label(ppname,guard=True)
         atom_species.append(element)
         pseudopotentials[element] = ppname
     #end for
-    pw.atomic_species.set(
+    pw.atomic_species.update(
         atoms            = list(sorted(atom_species)),
         pseudopotentials = pseudopotentials,
         )
@@ -2182,25 +2123,38 @@ def generate_any_pwscf_input(**kwargs):
     #  physical system information
     if system is None:
         if elem is None:
-            PwscfInput.class_error('system must be provided','generate_pwscf_input')
+            msg = 'system must be provided'
+            raise ValueError(msg)
         else:
             if mass is None:
-                PwscfInput.class_error('"mass" must be provided when "elem" is given','generate_pwscf_input')
+                msg = '"mass" must be provided when "elem" is given'
+                raise ValueError(msg)
             #end if
             if pos is None:
-                PwscfInput.class_error('"pos" must be provided when "elem" is given','generate_pwscf_input')
+                msg = '"pos" must be provided when "elem" is given'
+                raise ValueError(msg)
             #end if
             if positions_option is None:
-                PwscfInput.class_error('"atomic_positions_option" must be provided when "elem" is given','generate_pwscf_input')
+                msg = '"atomic_positions_option" must be provided when "elem" is given'
+                raise ValueError(msg)
             #end if
 
             # fill in atomic_species
             species = set(elem)
             if elem_order is not None:
                 if set(elem_order)!=species:
-                    PwscfInput.class_error('elem_order is missing some atomic species\natomic species present: {0}\nelem_order: {1}'.format(sorted(species),elem_order),'generate_pwscf_input')
+                    msg = (
+                        'elem_order is missing some atomic species\n'
+                        'atomic species present: {0}\n'
+                        'elem_order: {1}'.format(sorted(species), elem_order)
+                        )
+                    raise ValueError(msg)
                 elif len(elem_order)!=len(species):
-                    PwscfInput.class_error('elem_order has repeated elements\nelem_order: {0}'.format(elem_order),'generate_pwscf_input')
+                    msg = (
+                        'elem_order has repeated elements\n'
+                        'elem_order: {0}'.format(elem_order)
+                        )
+                    raise ValueError(msg)
                 #end if
                 pw.atomic_species.atoms = list(elem_order)
             else:
@@ -2235,7 +2189,17 @@ def generate_any_pwscf_input(**kwargs):
             npe.reshape_inplace(axes, fs.axes.shape)
             axes = np.dot(s.tmatrix,axes)
             if abs(axes-s.axes).sum()>1e-5:
-                PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(s.axes)+'\nfolded axes tiled:\n'+str(axes),'generate_pwscf_input')
+                msg = (
+                    'supercell axes do not match tiled version of folded cell axes\n'
+                    'you may have changed one set of axes (super/folded) and not the other\n'
+                    'folded cell axes:\n'
+                    +str(fs.axes)+'\n'
+                    'supercell axes:\n'
+                    +str(s.axes)+'\n'
+                    'folded axes tiled:\n'
+                    +str(axes)
+                    )
+                raise ValueError(msg)
             #end if
         else:
             axes = np.array(array_to_string(s.axes).split(),dtype=float)
@@ -2265,14 +2229,15 @@ def generate_any_pwscf_input(**kwargs):
 
     # set nbnd using bandfac, if provided
     if nbnd is None and bandfac is not None:
-        nocc = max(system.particles.electron_counts())
+        nocc = max(system.n_up, system.n_down)
         pw.system.nbnd = int(np.ceil(nocc*bandfac))
     #end if
 
     #  Hubbard U
     if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
-            PwscfInput.class_error('input hubbard_u must be of type dict or obj','generate_pwscf_input')
+            msg = 'input hubbard_u must be of type dict or obj'
+            raise TypeError(msg)
         #end if
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
@@ -2281,7 +2246,8 @@ def generate_any_pwscf_input(**kwargs):
     #  starting magnetization
     if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
-            PwscfInput.class_error('input start_mag must be of type dict or obj','generate_pwscf_input')
+            msg = 'input start_mag must be of type dict or obj'
+            raise TypeError(msg)
         #end if
         pw.system.starting_magnetization = deepcopy(start_mag)
     #end if
@@ -2305,7 +2271,7 @@ def generate_any_pwscf_input(**kwargs):
         pw.k_points.specifier = 'gamma'
     elif auto:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid      = kgrid,
             shift     = kshift
@@ -2315,7 +2281,7 @@ def generate_any_pwscf_input(**kwargs):
         pw.k_points.specifier = 'gamma'
     elif (at_gamma or sys_gamma) and nogamma:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid      = (1,1,1),
             shift     = (0,0,0)
@@ -2347,7 +2313,12 @@ def generate_any_pwscf_input(**kwargs):
             hubbard_option = hubbard_card.default_specifier
         else:
             if hubbard_option not in hubbard_card.available_specifiers:
-                PwscfInput.class_error('HUBBARD card specifier "{}" is not valid. Available specifiers: {}'.format(hubbard_option, hubbard_card.available_specifiers))                
+                msg = (
+                    'HUBBARD card specifier "{}" is not valid. Available specifiers: {}'.format(
+                        hubbard_option, hubbard_card.available_specifiers
+                        )
+                    )
+                raise ValueError(msg)
             #end if
         #end if
         pw.hubbard.specifier = hubbard_option
@@ -2362,20 +2333,38 @@ def generate_any_pwscf_input(**kwargs):
     for card_name,option in options.items():
         if option is not None:
             if card_name not in pw:
-                PwscfInput.class_error('Card option provided for card "{}" but card is not present\noption provided: {}'.format(card_name,option))
+                msg = (
+                    'Card option provided for card "{}" but card is not present\n'
+                    'option provided: {}'.format(card_name, option)
+                    )
+                raise ValueError(msg)
             #end if
-            pw[card_name].change_option(option,pw)
+            if pw[card_name].specifier != option:
+                pw[card_name].change_option(option,pw)
+            #end if
         #end if
     #end for
 
     # check for misformatted kpoints
     if len(pw.k_points)==0:
-        PwscfInput.class_error('k_points section has not been filled in\nplease provide k-point information in either of\n  1) the kgrid input argument\n  2) in the PhysicalSystem object (system input argument)','generate_pwscf_input')
+        msg = (
+            'k_points section has not been filled in\n'
+            'please provide k-point information in either of\n'
+            '  1) the kgrid input argument\n'
+            '  2) in the PhysicalSystem object (system input argument)'
+            )
+        raise ValueError(msg)
     #end if
 
     # check for leftover keywords
     if len(kwargs)>0:
-        PwscfInput.class_error('unrecognized keywords: {0}\nthese keywords are not known to belong to any namelist for PWSCF'.format(sorted(kwargs.keys())),'generate_pwscf_input')
+        msg = (
+            'unrecognized keywords: {0}\n'
+            'these keywords are not known to belong to any namelist for PWSCF'.format(
+                sorted(kwargs.keys())
+                )
+            )
+        raise ValueError(msg)
     #end if  
     
     return pw
@@ -2383,7 +2372,8 @@ def generate_any_pwscf_input(**kwargs):
 
 
 
-def generate_scf_input(prefix       = 'pwscf',
+def generate_scf_input(*,
+                       prefix       = 'pwscf',
                        outdir       = 'pwscf_output',
                        input_dft    = None,
                        exx_fraction = None,
@@ -2425,6 +2415,13 @@ def generate_scf_input(prefix       = 'pwscf',
     if pseudos is None:
         pseudos = []
     #end if
+    if system is not None:
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
+    #end if
     pseudopotentials = obj()
     atoms = []
     for ppname in pseudos:
@@ -2438,7 +2435,7 @@ def generate_scf_input(prefix       = 'pwscf',
     #end if
 
     pw = PwscfInput()
-    pw.control.set(
+    pw.control.update(
         calculation  = 'scf',
         prefix       = prefix,
         restart_mode = restart_mode,
@@ -2450,7 +2447,7 @@ def generate_scf_input(prefix       = 'pwscf',
         verbosity    = verbosity,
         wf_collect   = wf_collect
         )
-    pw.system.set(
+    pw.system.update(
         ibrav       = ibrav,
         ecutwfc     = ecut,
         ecutrho     = ecutrho,
@@ -2467,7 +2464,7 @@ def generate_scf_input(prefix       = 'pwscf',
     #end if
     if occupations is not None:
         if occupations=='smearing':
-            pw.system.set(
+            pw.system.update(
                 occupations = occupations,
                 smearing    = smearing,
                 degauss     = degauss,
@@ -2476,20 +2473,20 @@ def generate_scf_input(prefix       = 'pwscf',
             pw.system.occupations = occupations
         #end if
     #end if
-    pw.electrons.set(
+    pw.electrons.update(
         electron_maxstep = electron_maxstep,
         conv_thr    = conv_thr,
         mixing_mode = mixing_mode,
         mixing_beta = mixing_beta,
         diagonalization = diagonalization,
         )
-    pw.atomic_species.set(
+    pw.atomic_species.update(
         atoms            = atoms,
         pseudopotentials = pseudopotentials
         )
 
     if noncolin or lspinorb:
-        pw.system.set(
+        pw.system.update(
             noncolin = noncolin or lspinorb,
             lspinorb = lspinorb
             )
@@ -2519,7 +2516,17 @@ def generate_scf_input(prefix       = 'pwscf',
         npe.reshape_inplace(axes, fs.axes.shape)
         axes = np.dot(s.tmatrix,axes)
         if abs(axes-s.axes).sum()>1e-5:
-            PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(s.axes)+'\n  folded axes tiled:\n'+str(axes))
+            msg = (
+                'supercell axes do not match tiled version of folded cell axes\n'
+                '  you may have changed one set of axes (super/folded) and not the other\n'
+                '  folded cell axes:\n'
+                +str(fs.axes)+'\n'
+                '  supercell axes:\n'
+                +str(s.axes)+'\n'
+                '  folded axes tiled:\n'
+                +str(axes)
+                )
+            raise ValueError(msg)
         #end if
     else:
         axes = np.array(array_to_string(s.axes).split(),dtype=float)
@@ -2541,14 +2548,16 @@ def generate_scf_input(prefix       = 'pwscf',
 
     if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
-            PwscfInput.class_error('input hubbard_u must be of type dict or obj')
+            msg = 'input hubbard_u must be of type dict or obj'
+            raise TypeError(msg)
         #end if
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
     #end if
     if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
-            PwscfInput.class_error('input start_mag must be of type dict or obj')
+            msg = 'input start_mag must be of type dict or obj'
+            raise TypeError(msg)
         #end if
         pw.system.starting_magnetization = deepcopy(start_mag)
         #if 'tot_magnetization' in pw.system:
@@ -2566,21 +2575,21 @@ def generate_scf_input(prefix       = 'pwscf',
     if system is not None:
         structure = system.structure
         if group_atoms:
-            PwscfInput.class_warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
+            warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
         #end if
         #if group_atoms:  # disabled, hopefully not needed for qmcpack
         #    structure.group_atoms()
         ##end if
         if structure.at_Gpoint():
             pw.k_points.clear()
-            pw.k_points.set(
+            pw.k_points.update(
                 specifier = 'automatic',
                 grid  = (1,1,1),
                 shift = (0,0,0)
                 )
         elif structure.at_Lpoint():
             pw.k_points.clear()
-            pw.k_points.set(
+            pw.k_points.update(
                 specifier = 'automatic',
                 grid  = (1,1,1),
                 shift = (1,1,1)
@@ -2590,14 +2599,14 @@ def generate_scf_input(prefix       = 'pwscf',
 
     if kgrid is not None:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid     = kgrid,
             shift    = kshift
             )
     elif system is None:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid     = (1,1,1),
             shift    = kshift
@@ -2613,7 +2622,7 @@ def generate_scf_input(prefix       = 'pwscf',
 
 def generate_nscf_input(**kwargs):
     pw = generate_scf_input(**kwargs)
-    pw.control.set(
+    pw.control.update(
         calculation = 'nscf'
         )
     return pw
@@ -2622,7 +2631,8 @@ def generate_nscf_input(**kwargs):
 
 
 
-def generate_relax_input(prefix       = 'pwscf',
+def generate_relax_input(*,
+                         prefix       = 'pwscf',
                          outdir       = 'pwscf_output',
                          input_dft    = None,
                          exx_fraction = None,
@@ -2632,7 +2642,7 @@ def generate_relax_input(prefix       = 'pwscf',
                          conv_thr     = 1e-6,
                          mixing_mode  = 'plain',
                          mixing_beta  = .7,
-			 diagonalization = 'david',
+                         diagonalization = 'david',
                          occupations  = 'smearing',
                          smearing     = 'fermi-dirac',
                          degauss      = 0.0001,
@@ -2659,6 +2669,13 @@ def generate_relax_input(prefix       = 'pwscf',
     if pseudos is None:
         pseudos = []
     #end if
+    if system is not None:
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'pwscf',
+            )
+    #end if
     
     pseudopotentials = obj()
     atoms = []
@@ -2673,7 +2690,7 @@ def generate_relax_input(prefix       = 'pwscf',
     #end if
 
     pw = PwscfInput('ions')
-    pw.control.set(
+    pw.control.update(
         calculation  = 'relax',
         prefix       = prefix,
         restart_mode = 'from_scratch',
@@ -2685,7 +2702,7 @@ def generate_relax_input(prefix       = 'pwscf',
         verbosity    = verbosity,
         wf_collect   = wf_collect
         )
-    pw.system.set(
+    pw.system.update(
         ibrav       = 0,
         ecutwfc     = ecut,
         ecutrho     = ecutrho,
@@ -2696,25 +2713,25 @@ def generate_relax_input(prefix       = 'pwscf',
     #end if
     if occupations is not None:
         if occupations=='smearing':
-            pw.system.set(
+            pw.system.update(
                 occupations = occupations,
                 smearing    = smearing,
                 degauss     = degauss,
                 )
         #end if
     #end if
-    pw.electrons.set(
+    pw.electrons.update(
         electron_maxstep = 1000,
         conv_thr         = conv_thr,
         mixing_beta      = mixing_beta,
         mixing_mode      = mixing_mode,
         diagonalization  = diagonalization
         )
-    pw.atomic_species.set(
+    pw.atomic_species.update(
         atoms            = atoms,
         pseudopotentials = pseudopotentials
         )
-    pw.ions.set(
+    pw.ions.update(
         ion_dynamics      = 'bfgs',
         upscale           = upscale,
         pot_extrapolation = pot_extrapolation,
@@ -2739,14 +2756,16 @@ def generate_relax_input(prefix       = 'pwscf',
 
     if hubbard_u is not None:
         if not isinstance(hubbard_u,(dict,obj)):
-            PwscfInput.class_error('input hubbard_u must be of type dict or obj')
+            msg = 'input hubbard_u must be of type dict or obj'
+            raise TypeError(msg)
         #end if
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
     #end if
     if start_mag is not None:
         if not isinstance(start_mag,(dict,obj)):
-            PwscfInput.class_error('input start_mag must be of type dict or obj')
+            msg = 'input start_mag must be of type dict or obj'
+            raise TypeError(msg)
         #end if
         pw.system.starting_magnetization = deepcopy(start_mag)
         #if 'tot_magnetization' in pw.system:
@@ -2772,14 +2791,14 @@ def generate_relax_input(prefix       = 'pwscf',
         ##end if
         if structure.at_Gpoint():
             pw.k_points.clear()
-            pw.k_points.set(
+            pw.k_points.update(
                 specifier = 'automatic',
                 grid  = (1,1,1),
                 shift = (0,0,0)
                 )
         elif structure.at_Lpoint():
             pw.k_points.clear()
-            pw.k_points.set(
+            pw.k_points.update(
                 specifier = 'automatic',
                 grid  = (1,1,1),
                 shift = (1,1,1)
@@ -2789,14 +2808,14 @@ def generate_relax_input(prefix       = 'pwscf',
 
     if kgrid is not None:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid     = kgrid,
             shift    = kshift
             )
     elif system is None:
         pw.k_points.clear()
-        pw.k_points.set(
+        pw.k_points.update(
             specifier = 'automatic',
             grid     = (1,1,1),
             shift    = kshift
@@ -2821,29 +2840,29 @@ def generate_vcrelax_input(
     **kwargs):
 
     pw = generate_scf_input(**kwargs)
-    pw.control.set(
+    pw.control.update(
         calculation = 'vc-relax'
-    )
+        )
     pw['ions'] = pw.element_types['ions']()
     pw['cell'] = pw.element_types['cell'](
         press       = press,
-    )
+        )
 
     # expand this section if you need more control over the input
     if forc_conv_thr is not None:
         pw.control.forc_conv_thr = forc_conv_thr
     # end if
     if cell_factor is not None:
-        pw.cell.set(cell_factor=cell_factor)
+        pw.cell.update(cell_factor=cell_factor)
     # end if
     if ion_dynamics is not None:
-        pw.ions.set(ion_dynamics=ion_dynamics)
+        pw.ions.update(ion_dynamics=ion_dynamics)
     # end if
     if press_conv_thr is not None:
-        pw.cell.set(press_conv_thr=press_conv_thr)
+        pw.cell.update(press_conv_thr=press_conv_thr)
     # end if
     if cell_dofree is not None:
-        pw.cell.set(cell_dofree=cell_dofree)
+        pw.cell.update(cell_dofree=cell_dofree)
     # end if
 
     return pw
@@ -2864,7 +2883,7 @@ def generate_vcrelax_input(
 #    #end for
 #
 #    pw = PwscfInput()
-#    pw.control.set(
+#    pw.control.update(
 #        calculation  = 'nscf',
 #        prefix       = prefix,
 #        restart_mode = 'from_scratch',
@@ -2875,7 +2894,7 @@ def generate_vcrelax_input(
 #        disk_io      = 'low',
 #        wf_collect   = True
 #        )
-#    pw.system.set(
+#    pw.system.update(
 #        ibrav       = 0,
 #        degauss     = 0.001,
 #        smearing    = 'mp',
@@ -2883,11 +2902,11 @@ def generate_vcrelax_input(
 #        ecutwfc     = ecut,
 #        ecutrho     = 4*ecut
 #        )
-#    pw.electrons.set(
+#    pw.electrons.update(
 #        conv_thr    = 1.e-10,
 #        mixing_beta = 0.7
 #        )
-#    pw.atomic_species.set(
+#    pw.atomic_species.update(
 #        atoms            = atoms,
 #        pseudopotentials = pseudopotentials
 #        )
@@ -2907,7 +2926,7 @@ def generate_vcrelax_input(
 #    #end if
 #    if overwrite_kpoints:
 #        pw.k_points.clear()
-#        pw.k_points.set(
+#        pw.k_points.update(
 #            specifier = 'tpiba',
 #            kpoints   = kpoints,
 #            weights   = weights
@@ -2916,5 +2935,3 @@ def generate_vcrelax_input(
 #
 #    return pw
 ##end def generate_nscf_input
-
-

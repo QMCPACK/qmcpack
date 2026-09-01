@@ -1,26 +1,30 @@
 import pytest
+from copy import deepcopy
+
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PHYSICAL_SYSTEM)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
-
 import numpy as np
-from .. import testing
 from ..testing import value_eq,object_eq
+from nexus.physical_system import generate_physical_system
 
 from .test_structure import structure_same
 
 
-def system_same(s1,s2,pseudized=True,tiled=False):
+def sub_obj(s,keys):
+    from ..developer import obj
+    return obj({k:s[k] for k in keys})
+
+
+def system_same(s1,s2,*,pseudized=True,tiled=False):
     same = True
-    keys = ('net_charge','net_spin','pseudized','particles')
-    o1 = s1.obj(keys)
-    o2 = s2.obj(keys)
+    keys = ('net_charge','net_spin','pseudized')
+    o1 = sub_obj(s1,keys)
+    o2 = sub_obj(s2,keys)
     qsame = object_eq(o1,o2)
     vsame = True
     if pseudized:
-        vsame = s1.valency==s2.valency
+        vsame = dict(**s1.valency)==dict(**s2.valency)
     #end if
     ssame = structure_same(s1.structure,s2.structure)
     fsame = True
@@ -32,94 +36,24 @@ def system_same(s1,s2,pseudized=True,tiled=False):
 #end def system_same
 
 
-def test_particle_initialization():
-    from ..physical_system import Matter,Particle,Ion,PseudoIon,Particles
-
-    # empty initialization
-    Matter()
-    p = Particle()
-    i = Ion()
-    pi = PseudoIon()
-    Particles()
-
-    def check_none(v,vfields):
-        for f in vfields:
-            assert(f in v)
-            assert(v[f] is None)
-        #end for
-    #end def check_none
-
-    pfields  = 'name mass charge spin'.split()
-    ifields  = pfields + 'protons neutrons'.split()
-    pifields = ifields+['core_electrons']
-
-    check_none(p,pfields)
-    check_none(i,ifields)
-    check_none(pi,pifields)
-
-    # matter
-    elements = Matter.elements
-    assert(len(elements)==119)
-    assert('Si' in elements)
-
-    pc = Matter.particle_collection
-    for e in elements:
-        assert(e in pc)
-    #end for
-    assert('up_electron' in pc)
-    assert('down_electron' in pc)
-
-    u = pc.up_electron
-    assert(u.name=='up_electron')
-    assert(value_eq(u.mass,1.0))
-    assert(u.charge==-1)
-    assert(u.spin==1)
-
-    d = pc.down_electron
-    assert(d.name=='down_electron')
-    assert(value_eq(d.mass,1.0))
-    assert(d.charge==-1)
-    assert(d.spin==-1)
-    
-    si = pc.Si
-    assert(si.name=='Si')
-    print(si.mass)
-    assert(value_eq(si.mass,51195.82309476658))
-    assert(si.charge==14)
-    assert(si.protons==14)
-    assert(si.neutrons==14)
-
-    # test get_particle
-    assert(object_eq(pc.get_particle('Si'),si))
-    si1 = si.copy()
-    si1.name = 'Si1'
-    assert(object_eq(pc.get_particle('Si1'),si1))
-
-#end def test_particle_initialization
-
-
-
-def test_physical_system_initialization():
-    import os
+def test_physical_system_initialization(tmp_path):
     from ..developer import obj
     from ..structure import generate_structure
     from ..physical_system import generate_physical_system
     from ..physical_system import PhysicalSystem
-    
-    tpath = testing.setup_unit_test_output_directory('physical_system','test_physical_system_initialization')
 
     d2 = generate_structure(
         structure = 'diamond',
         cell      = 'prim',
         )
-    d2_path = os.path.join(tpath,'diamond2.xsf')
+    d2_path = tmp_path / 'diamond2.xsf'
     d2.write(d2_path)
 
     d8 = generate_structure(
         structure = 'diamond',
         cell      = 'conv',
         )
-    d8_path = os.path.join(tpath,'diamond8.xsf')
+    d8_path = tmp_path / 'diamond8.xsf'
     d8.write(d8_path)
 
 
@@ -241,33 +175,6 @@ def test_physical_system_initialization():
         C         = 4,
         )
 
-    pref = obj(
-        C = obj(
-            charge          = 4,
-            core_electrons  = 2,
-            count           = 8,
-            mass            = 21894.7135906,
-            name            = 'C',
-            neutrons        = 6,
-            protons         = 6,
-            spin            = 0,
-            ),
-        down_electron = obj(
-            charge          = -1,
-            count           = 16,
-            mass            = 1.0,
-            name            = 'down_electron',
-            spin            = -1,
-            ),
-        up_electron = obj(
-            charge          = -1,
-            count           = 16,
-            mass            = 1.0,
-            name            = 'up_electron',
-            spin            = 1,
-            ),
-        )
-
     # check direct system w/o tiling
     ref = direct_notile
     sref = ref.structure
@@ -275,15 +182,12 @@ def test_physical_system_initialization():
     assert(ref.net_spin==0)
     assert(ref.pseudized)
     assert(object_eq(ref.valency,obj(C=4)))
-    assert(object_eq(ref.particles.to_obj(),pref))
     assert(structure_same(sref,d8))
     assert(value_eq(sref.axes,3.57*np.eye(3)))
     assert(tuple(sref.bconds)==tuple('ppp'))
     assert(list(sref.elem)==8*['C'])
     assert(value_eq(tuple(sref.pos[-1]),(2.6775,2.6775,0.8925)))
     assert(sref.units=='A')
-    assert(object_eq(ref.particles.get_ions().to_obj(),obj(C=pref.C)))
-    assert(object_eq(ref.particles.get_electrons().to_obj(),obj(down_electron=pref.down_electron,up_electron=pref.up_electron)))
 
     # check direct system w/ tiling
     ref = direct_tile
@@ -292,7 +196,6 @@ def test_physical_system_initialization():
     assert(ref.net_spin==0)
     assert(ref.pseudized)
     assert(object_eq(ref.valency,obj(C=4)))
-    assert(object_eq(ref.particles.to_obj(),pref))
     assert(structure_same(sref,d8_tile))
     assert(value_eq(sref.axes,3.57*np.eye(3)))
     assert(tuple(sref.bconds)==tuple('ppp'))
@@ -301,14 +204,10 @@ def test_physical_system_initialization():
     assert(sref.units=='A')
     ref = direct_tile.folded_system
     sref = ref.structure
-    pref.C.count = 2
-    pref.down_electron.count = 4
-    pref.up_electron.count = 4
     assert(ref.net_charge==0)
     assert(ref.net_spin==0)
     assert(ref.pseudized)
     assert(object_eq(ref.valency,obj(C=4)))
-    assert(object_eq(ref.particles.to_obj(),pref))
     assert(structure_same(sref,d2))
     assert(value_eq(sref.axes,1.785*np.array([[1.,1,0],[0,1,1],[1,0,1]])))
     assert(tuple(sref.bconds)==tuple('ppp'))
@@ -359,7 +258,7 @@ def test_physical_system_initialization():
 
     # test copy
     for sys in systems:
-        c = sys.copy()
+        c = deepcopy(sys)
         assert(id(c)!=id(sys))
         assert(c.is_valid())
         assert(system_same(c,sys,tiled=sys.has_folded()))
@@ -367,7 +266,7 @@ def test_physical_system_initialization():
 
     # test load
     for i,sys in enumerate(systems):
-        path = os.path.join(tpath,'system_{}'.format(i))
+        path = tmp_path / 'system_{}'.format(i)
         sys.save(path)
         sys2 = PhysicalSystem()
         sys2.load(path)
@@ -376,14 +275,12 @@ def test_physical_system_initialization():
     #end for
 
     # test particle counts
-    p = direct_notile.particles
-    assert(p.count_ions()==8)
-    assert(p.count_ions(species=True)==(8,1))
-    assert(p.count_electrons()==32)
-    assert(p.electron_counts()==[16,16])
-
+    assert(direct_notile.n_ions    ==  8)
+    assert(direct_notile.n_species ==  1)
+    assert(direct_notile.n_elec    == 32)
+    assert(direct_notile.n_up      == 16)
+    assert(direct_notile.n_down    == 16)
 #end def test_physical_system_initialization
-
 
 
 def test_change_units():
@@ -437,26 +334,26 @@ def test_rename():
     ref = sys
     assert(object_eq(ref.valency,obj(C1=4,C2=4)))
     assert(list(ref.structure.elem)==4*['C1','C2'])
-    assert(ref.particles.count_ions()==8)
-    assert(ref.particles.count_ions(species=True)==(8,2))
+    assert(ref.n_ions==8)
+    assert(ref.n_species==2)
     ref = sys.folded_system
     assert(object_eq(ref.valency,obj(C1=4,C2=4)))
     assert(list(ref.structure.elem)==['C1','C2'])
-    assert(ref.particles.count_ions()==2)
-    assert(ref.particles.count_ions(species=True)==(2,2))
+    assert(ref.n_ions==2)
+    assert(ref.n_species==2)
 
     sys.rename(C1='C',C2='C')
 
     ref = sys
     assert(object_eq(ref.valency,obj(C=4)))
     assert(list(ref.structure.elem)==8*['C'])
-    assert(ref.particles.count_ions()==8)
-    assert(ref.particles.count_ions(species=True)==(8,1))
+    assert(ref.n_ions==8)
+    assert(ref.n_species==1)
     ref = sys.folded_system
     assert(object_eq(ref.valency,obj(C=4)))
     assert(list(ref.structure.elem)==2*['C'])
-    assert(ref.particles.count_ions()==2)
-    assert(ref.particles.count_ions(species=True)==(2,1))
+    assert(ref.n_ions==2)
+    assert(ref.n_species==1)
 
 #end def test_rename
 
@@ -501,7 +398,6 @@ def test_tile():
 
 def test_kf_rpa():
     from .test_structure import example_structure_h4
-    from ..physical_system import generate_physical_system
     s1 = example_structure_h4()
     ps = generate_physical_system(
         structure = s1,

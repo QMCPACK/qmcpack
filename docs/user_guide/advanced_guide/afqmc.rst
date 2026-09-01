@@ -28,7 +28,7 @@ For example, in the example, multiple Hamiltonian objects with different
 names can be defined. The one actually used in the calculation is the
 one passed to “execute” as ham.
 
-.. code-block::
+.. code-block:: xml
   :caption: Sample input file for AFQMC.
   :name: Listing 51
 
@@ -820,7 +820,7 @@ The following is a growing list of useful advice for new users, followed by a sa
    parallel implementation. For large calculations, values between 6–12
    for both quantities should be reasonable, depending on architecture.
 
-.. code-block::
+.. code-block:: xml
   :caption: Example of sections of an AFQMC input file for a large calculation.
   :name: Listing 56
 
@@ -1004,9 +1004,9 @@ options are as follows:
       -r, --real-ham        Write integrals as real numbers.
       -p, --phdf            Use parallel hdf5.
       --low LOW_THRESH      Lower threshold for non-integer occupanciesto include
-                            in multi-determinant exansion.
+                            in multi-determinant expansion.
       --high HIGH_THRESH    Upper threshold for non-integer occupanciesto include
-                            in multi-determinant exansion.
+                            in multi-determinant expansion.
       --dense               Write dense Hamiltonian.
       -v, --verbose         Verbose output.
 

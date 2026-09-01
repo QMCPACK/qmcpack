@@ -55,8 +55,7 @@ public:
   void checkConfigurationsSR(EngineHandle& handle) override;
 #ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                  DescentEngine& descentEngineObj,
-                                  const std::string& MinMethod) override;
+                                  OptionalRef<DescentEngine> descentEngineObj) override;
 #endif
 
 
@@ -67,8 +66,7 @@ public:
   void calcOvlParmVec(const std::vector<Return_rt>& param, std::vector<Return_rt>& ovlParmVec) override;
 
 protected:
-  /// H components used in correlated sampling. It can be KE or KE+NLPP
-  std::vector<std::string> H_KE_node_names_;
+
 
   Matrix<Return_rt> RecordsOnNode_;
 

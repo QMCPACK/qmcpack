@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "Lattice/CrystalLattice.h"
 #include "LongRange/StructFact.h"
@@ -179,9 +178,8 @@ TEST_CASE("SkAll", "[hamiltonian]")
 
 
   // Set up the distance table, match expected layout
-  const int ee_table_id = elec->addTable(*elec);
+  elec->addTable(*elec);
 
-  const auto& dii(elec->getDistTable(ee_table_id));
   elec->update(); // distance table evaluation here
 
   // Check that the skall xml block is valid

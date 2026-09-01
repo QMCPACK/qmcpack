@@ -16,11 +16,34 @@
 #====================================================================#
 
 
+import os
 import time
+from typing import ClassVar,Literal,TextIO
 from . import memory
-from .developer import obj
-from .nexus_base import NexusCore, nexus_core
-from .simulation import Simulation
+from .developer import obj, NexusError
+from .nexus_base import NexusCore, nexus_core, dynamic_storage
+from .simulation import Simulation, sim_err_handler
+from .machines import Machine,Job
+
+
+def color_status_result(result: Literal['SUCCESS','FAILURE'] | str,logfile: TextIO) -> str:
+    """Apply a green or red background to terminal status results."""
+    if result not in {'SUCCESS','FAILURE'}:
+        return result
+    #end if
+    if 'NO_COLOR' in os.environ:
+        return result
+    #end if
+    if not hasattr(logfile,'isatty') or not logfile.isatty():
+        return result
+    #end if
+    if result=='SUCCESS':
+        background = '\033[42m' # green background
+    else:
+        background = '\033[41m' # red background
+    #end if
+    return background+result+'\033[0m'
+#end def color_status_result
 
 
 def trivial(sim,*args,**kwargs):
@@ -71,7 +94,7 @@ class ProjectManager(NexusCore):
     #end def add_cascade
 
 
-    def run_project(self,status=False,status_only=False):
+    def run_project(self,*,status=False,status_only=False):
         self.log('\nProject starting',n=0)
         self.init_cascades()
         status_only = status_only or nexus_core.status_only
@@ -128,7 +151,7 @@ class ProjectManager(NexusCore):
         else:
             self.log('cascades',n=1)
         #end if
-        for c in self.progressing_cascades:
+        for c in self.progressing_cascades.values():
             self.log('cascade',c.simid,'checking in',n=2)
         #end for
         self.check_dependencies()
@@ -144,11 +167,15 @@ class ProjectManager(NexusCore):
         fake = []
         self.traverse_cascades(collect_fake,fake)
         if len(fake)>0:
-            msg = 'fake/temporary simulation objects detected in cascade\nthis is a developer error\nlist of fake sims and directories:\n'
+            msg = (
+                'fake/temporary simulation objects detected in cascade\n'
+                'this is a developer error\n'
+                'list of fake sims and directories:\n'
+                )
             for sim in fake:
                 msg +='  {0:>8}  {1}\n'.format(sim.simid,sim.locdir)
             #end for
-            self.error(msg)
+            raise NexusError(msg)
         #end if
     #end def screen_fake_sims
 
@@ -173,7 +200,7 @@ class ProjectManager(NexusCore):
                 filespace = dict()
                 for sim in simlist:
                     if not sim.allow_overlapping_files:
-                        files = sim.list('infile','outfile','errfile')
+                        files = [sim[k] for k in ('infile','outfile','errfile')]
                         for f in files:
                             if f not in filespace:
                                 filespace[f] = [sim]
@@ -197,7 +224,12 @@ class ProjectManager(NexusCore):
             #end if
         #end for
         if any_collisions:
-            self.error('file collisions found in directory\n  '+path+'\n  set a unique identifier for each simulation')
+            msg = (
+                'file collisions found in directory\n'
+                '  '+path+'\n'
+                '  set a unique identifier for each simulation'
+                )
+            raise FileExistsError(msg)
         #end if
     #end def resolve_file_collisions
 
@@ -219,7 +251,7 @@ class ProjectManager(NexusCore):
     def load_cascades(self):
         cascades = obj()
         progressing_cascades = obj()
-        for cid,cascade in self.cascades.items():
+        for cascade in self.cascades.values():
             rc = cascade.reconstruct_cascade()
             cascades[rc.simid] = rc 
             progressing_cascades[rc.simid] = rc
@@ -237,16 +269,17 @@ class ProjectManager(NexusCore):
         if result.dependencies_satisfied:
             self.log('all simulation dependencies satisfied',n=2)
         else:
-            self.error('some simulation dependecies are not satisfied')
+            msg = 'some simulation dependecies are not satisfied'
+            raise RuntimeError(msg)
         #end if
     #end def check_dependencies
 
                     
     def traverse_cascades(self,operation=trivial,*args,**kwargs):
-        for cascade in self.cascades:
+        for cascade in self.cascades.values():
             cascade.reset_wait_ids()
         #end for
-        for cascade in self.cascades:
+        for cascade in self.cascades.values():
             cascade.traverse_cascade(operation,*args,**kwargs)
         #end for
         return
@@ -259,7 +292,7 @@ class ProjectManager(NexusCore):
         self.log('\ncascade status',n=1)
         self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
         all_sids = set()
-        for sim in self.simulations:
+        for sim in self.simulations.values():
             add = False
             if status==status_modes.active:
                 add = sim.active()
@@ -299,13 +332,16 @@ class ProjectManager(NexusCore):
                 self.status_line(sim)
             #end for
         #end if
+        if len(all_sids)==0:
+            self.log('(No simulations present)',n=2)
+        #end if
         self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
     #end def write_simulation_status
 
         
     def status_line(self,sim,extra=''):
         indicators = ('setup','sent_files','submitted','finished','got_output','analyzed')
-        stats = sim.tuple(*indicators)
+        stats = tuple([sim[k] for k in indicators])
         status = ''
         for stat in stats:
             status+=str(int(stat))
@@ -315,7 +351,12 @@ class ProjectManager(NexusCore):
         else:
             pid = sim.process_id
         #end if
-        sline = '{0}  {1}  {2:<8}  {3:<6}  {4}'.format(status,str(int(sim.failed)),pid,sim.identifier,sim.locdir)
+        result = ''
+        if sim.finished:
+            result = 'FAILURE' if sim.failed else 'SUCCESS'
+        #end if
+        result = color_status_result(result,self._logfile)
+        sline = '{}  {:<7}  {:<8}  {:<6}  {}'.format(status,result,pid,sim.identifier,sim.locdir)
         self.log(sline,extra,n=2)
     #end def status_line
 
@@ -324,17 +365,19 @@ class ProjectManager(NexusCore):
         NexusCore.gc.collect()
         finished = []
         progressing_cascades = self.progressing_cascades
-        for cid,cascade in progressing_cascades.items():
-            cascade.reset_wait_ids()
+        for cascade in progressing_cascades.values():
+            with sim_err_handler(sim=cascade): # Wrap execution in sim error handler
+                cascade.reset_wait_ids()
         #end for
         for cid,cascade in progressing_cascades.items():
-            if not cascade.bundled or cascade.bundler.finished:
-                cascade.progress()
-            #end if
-            cascade.check_subcascade()
-            if cascade.subcascade_finished:
-                finished.append(cid)
-            #end if
+            with sim_err_handler(sim=cascade): # Wrap execution in sim error handler
+                
+                if not cascade.bundled or cascade.bundler.finished:
+                    cascade.progress()
+
+                cascade.check_subcascade()
+                if cascade.subcascade_finished:
+                    finished.append(cid)
         #end for
         for cid in finished:
             del progressing_cascades[cid]
@@ -343,7 +386,7 @@ class ProjectManager(NexusCore):
 
 
     def update_process_ids(self):
-        for sim in self.simulations:
+        for sim in self.simulations.values():
             sim.update_process_id()
         #end for
     #end def update_process_ids
@@ -381,3 +424,149 @@ class ProjectManager(NexusCore):
 #end class ProjectManager
 
 
+
+
+class DynamicWorkflowManager(NexusCore):
+    '''Replacement for ProjectManager for dynamic workflows'''
+
+    # all dynamic processes encountered
+    all_dp: ClassVar[set]   = set() # all dp found via add_new_dyn_procs
+    all_sims: ClassVar[set] = set() # all sims associated w/ dp
+
+    def __init__(self):
+        # dynamic processes by status
+        self.untouched_dp = obj() # newly minted, perform initial setup
+        self.blocked_dp   = obj() # blocked by the user, do nothing
+        self.active_dp    = obj() # actively progressing through run stages
+        self.finished_dp  = obj() # system or batch process no longer running
+        self.succeeded_dp = obj() # may have failed if detection is faulty
+        self.failed_dp    = obj() # known to have failed
+        self.machine = Machine.get(Job.machine)
+        self.add_new_dyn_procs()
+    #end def __init__
+
+
+    def add_new_dyn_procs(self):
+        new_dps = dynamic_storage.dynamic_process_ids-self.all_dp
+        if len(new_dps)>0:
+            for dpid in new_dps:
+                dp = dynamic_storage.dynamic_processes[dpid]
+                self.all_dp.add(dpid)
+                self.untouched_dp[dpid] = dp
+                sim = dp.sim
+                self.all_sims.add(sim.simid)
+                if len(sim.dependencies)>0 or len(sim.dependents)>0:
+                    msg = (
+                        'encountered simulation with explicit dependencies, but these are not allowed in dynamic workflows.\n'
+                        'Simulation id: {}\n'
+                        'Simulation directory: {}'.format(sim.simid,sim.locdir)
+                        )
+                    raise ValueError(msg)
+        # screen for simulations not associated with dyn process
+        all_sims = dynamic_storage.simulation_ids
+        rogue_sims = all_sims-self.all_sims
+        if len(rogue_sims)>0:
+            msg = (
+                'encountered simulations not associated with any dynamic process.\n'
+                'Simulation ids: {}\n'
+                'Simulation directories:'
+                )
+            paths = [all_sims[simid].locdir for simid in rogue_sims]
+            for p in sorted(paths):
+                msg += '\n'+p
+            msg += (
+                '\nThis is likely a developer error.\n'
+                'Please contact the developers.'
+                )
+            raise NexusError(msg)
+    #end def add_new_dyn_procs
+
+
+    def poll(self,sleep=None):
+        if sleep is None:
+            sleep = nexus_core.sleep
+
+        # find and add newly created dynamic process objects
+        self.add_new_dyn_procs()
+
+        # update the machine queue for currently running jobs
+        self.machine.query_queue()
+
+        # setup new sims
+        rem = []
+        for dp in self.untouched_dp.values():
+            sim = dp.sim
+            assert len(sim.dependencies)==0
+            assert len(sim.dependents)==0
+            if sim.block:
+                self.blocked_dp[dp.dpid] = dp
+                del self.untouched_dp[dp.dpid]
+                continue
+            if not sim.created_directories:
+                sim.create_directories()
+            if not sim.setup:
+                sim.write_inputs()
+            if not sim.sent_files:
+                sim.send_files()
+            self.active_dp[dp.dpid] = dp
+            rem.append(dp.dpid)
+        for dpid in rem:
+            del self.untouched_dp[dpid]
+
+        # manage active sims
+        rem = []
+        for dp in self.active_dp.values():
+            #if not dp.requirements_met():
+            #    self.error('Requirements not met for simulation execution.\nSimulation type:      {}\nSimulation id:        {}\nSimulation directory: {}\nDynamic process id:   {}\nUnmet requirements:   {}'.format(sim.__class__.__name__,sim.simid,sim.locdir,dp.dpid,dp.unmet_reqs))
+            sim = dp.sim
+            assert len(sim.dependencies)==0
+            assert len(sim.dependents)==0
+            if len(dp.unmet_reqs)>0:
+                continue
+            if not sim.finished:
+                sim.submit()
+            if sim.finished:
+                if not sim.got_output:
+                    sim.get_output()
+                if not sim.analyzed:
+                    sim.analyze()
+                self.finished_dp[dp.dpid] = dp
+                if sim.failed:
+                    self.failed_dp[dp.dpid] = dp
+                else:
+                    self.succeeded_dp[dp.dpid] = dp
+                rem.append(dp.dpid)
+        for dpid in rem:
+            del self.active_dp[dpid]
+
+        # submit jobs on the machine and store machine pid in sim
+        self.machine.submit_jobs()
+        for dp in self.active_dp.values():
+            dp.sim.update_process_id()
+
+        # wait until next poll
+        time.sleep(sleep)
+    #end def poll
+
+#end class DynamicWorkflowManager
+
+
+
+
+def workflow_manager(**kw):
+    if not hasattr(workflow_manager,'first'):
+        workflow_manager.first = True
+    else:
+        workflow_manager.first = False
+    if not nexus_core.dynamic:
+        msg = (
+            'workflow_manager is only compatible with dynamic workflows.\n'
+            'If you intend to use dynamic workflows, please set dynamic=True in settings.'
+            )
+        raise RuntimeError(msg)
+    elif not workflow_manager.first:
+        msg = 'function "workflow_manager" should only be called once'
+        raise NexusError(msg)
+    wm = DynamicWorkflowManager(**kw)
+    return wm
+#end def workflow_manager

@@ -81,6 +81,7 @@ Module contents
 """
 
 import os
+from copy import deepcopy
 from .developer import DevBase, obj, error, unavailable
 from .fileio import StandardFile,XsfFile
 from . import numpy_extensions as npe
@@ -494,7 +495,7 @@ def spheroid_grid_points(axes,shape=None,cells=None,centered=False,endpoint=None
         #end if
     #end if
     grid_dim,space_dim = axes.shape
-    if grid_dim not in (2,3):
+    if grid_dim not in {2,3}:
         error('spheroid grid generation only supported in 2 or 3 dimensions','spheriod_grid_points')
     #end if
     ugrid = unit_grid_points(shape,centered=centered,endpoint=endpoint)
@@ -571,7 +572,7 @@ def spheroid_surface_grid_points(axes,shape=None,cells=None,centered=False,endpo
     #end if
     grid_dim,space_dim = axes.shape
     grid_dim-=1
-    if grid_dim not in (1,2):
+    if grid_dim not in {1,2}:
         error('spheroid surface grid generation only supported in 1 or 2 dimensions','spheriod_grid_points')
     #end if
     ugrid = unit_grid_points(shape,centered=centered,endpoint=endpoint)
@@ -689,7 +690,7 @@ class PlotHandler(DevBase):
                 ax.set_xlabel(ax1)
                 ax.set_ylabel(ax2)
             else:
-                self.not_implemented()
+                raise NotImplementedError
             #end if
             self.set_cur_fig(fig)
             self.set_cur_ax(ax)
@@ -755,7 +756,7 @@ class GBase(PlotHandler):
         (`External API`) Reset all attributes to default values.
         """
         cls = self.__class__
-        for name,(dtype,default) in cls.persistent_data_types.items():
+        for name,(dtype,default) in cls.persistent_data_types.items():  # noqa: B007
             self[name] = default
         #end for
     #end def reset
@@ -843,10 +844,10 @@ class GBase(PlotHandler):
         msgs = self.validity_checks()
         valid = len(msgs)==0
         if not valid and exit:
-            for msg in msgs:
-                self.error(msg,exit=False,trace=False)
-            #end for
-            self.error('{} is not valid, see error messages above'.format(cls.descriptor))
+            self.error(
+                '{} is not valid, see error messages:\n'
+                '{}'.format(cls.descriptor, "\n".join(msgs))
+                )
         #end if
         return valid
     #end def check_valid
@@ -901,7 +902,7 @@ class GBase(PlotHandler):
         (`Internal API`) Virtual function used to assign attributes local 
         to the current derived class.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def initialize_local
 
 
@@ -910,12 +911,12 @@ class GBase(PlotHandler):
         (`Internal API`) Virtual function used to check the validity of 
         attributes local to the current derived class.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def local_validity_checks
 
 
     def read_local(self,filepath,format):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read_local
 
 
@@ -1075,11 +1076,11 @@ class Grid(GBase):
             `points` which is copied shallowly.
         """
         if not shallow:
-            c = DevBase.copy(self)
+            c = deepcopy(self)
         else:
             points = self.points
             del self.points
-            c = DevBase.copy(self)
+            c = deepcopy(self)
             c.points = points
             self.points = points
         #end if
@@ -1295,7 +1296,7 @@ class StructuredGrid(Grid):
         )
 
     #: (`set`)  Set of valid boundary condition types.
-    valid_bconds = set(['o','p'])
+    valid_bconds = frozenset({'o','p'})
 
     #: (`obj`)  Keyword mapping of boundary condition types.
     bcond_types = obj(
@@ -1826,7 +1827,7 @@ class StructuredGrid(Grid):
         (`Internal API`)  Derived class function to map points into the unit 
         cube.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def unit_points_bare
 
 
@@ -1846,7 +1847,7 @@ class StructuredGrid(Grid):
             Array of points in the full coordinate space.  `ds` is the 
             dimension of the full space (`space_dim`).
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def points_from_unit
 
 
@@ -1855,7 +1856,7 @@ class StructuredGrid(Grid):
         (`Internal API`) Derived class function that computes the integration 
         metric in the unit coordinate space for a set of points defined there.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def unit_metric_bare
 
 
@@ -1868,7 +1869,7 @@ class StructuredGrid(Grid):
         volume : `float`
             Volume of the space within the grid boundary.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def volume
 
 
@@ -1882,7 +1883,7 @@ class StructuredGrid(Grid):
             Array containing the volume of each grid cell.  `N` is the number 
             of points in the grid.
         """
-        self.not_implemented()
+        raise NotImplementedError
     #end def cell_volumes
 #end class StructuredGrid
 
@@ -2533,7 +2534,7 @@ class SpheroidGrid(StructuredGridWithAxes):
         elif cells is not None:
             grid_dim = len(cells)
         #end if
-        if grid_dim not in (2,3):
+        if grid_dim not in {2,3}:
             self.error('only 2 and 3 dimensional spheroids grids are supported\nrequested dimension: {}'.format(grid_dim))
         #end if
 
@@ -3313,7 +3314,7 @@ class GridFunction(GBase):
         elif len(kwargs)>0:
             self.error('received both a grid object and parameters intended for grid initialization\nplease remove the following parameters and try again: {}'.format(sorted(kwargs.keys())))
         elif copy_grid:
-            grid = grid.copy()
+            grid = deepcopy(grid)
         #end if
 
         # process values input
@@ -3716,7 +3717,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             return values
         elif grid is not None:
             if copy:
-                grid = grid.copy()
+                grid = deepcopy(grid)
             #end if
             gf = grid.grid_function(
                 grid        = grid,
@@ -4029,7 +4030,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
                     l.nsum += 1
                 #end if
             #end for
-            for l in layers:
+            for l in layers.values():
                 l.xmean = l.xsum/l.nsum
             #end for
             lprev = None

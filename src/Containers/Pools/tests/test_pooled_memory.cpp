@@ -8,9 +8,7 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "Pools/PooledMemory.h"
 #include "Pools/PooledData.h"
@@ -102,9 +100,9 @@ TEST_CASE("pack scalar", "[utilities]")
   REQUIRE(i3 == j3);
   REQUIRE(i4 == j4);
   REQUIRE(i5 == j5);
-  REQUIRE(i6[0] == i6[0]);
-  REQUIRE(i6[1] == i6[1]);
-  REQUIRE(i6[2] == i6[2]);
+  REQUIRE(i6[0] == j6[0]);
+  REQUIRE(i6[1] == j6[1]);
+  REQUIRE(i6[2] == j6[2]);
 
 #ifdef CHECK_ALLOCATION_PERF
   // up to 512 MB.

@@ -145,7 +145,7 @@ bool CSVMC::put(xmlNodePtr q)
  *
  * Similar to VMC::run
  */
-bool CSVMC::run()
+void CSVMC::run()
 {
   resetRun();
   //start the main estimator
@@ -209,7 +209,7 @@ bool CSVMC::run()
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
   //finalize a qmc section
-  return finalize(nBlocks, !wrotesamples);
+  finalize(nBlocks, !wrotesamples);
 }
 
 void CSVMC::resetRun()

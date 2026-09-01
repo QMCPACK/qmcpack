@@ -8,9 +8,8 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -34,8 +33,6 @@ namespace qmcplusplus
 {
 TEST_CASE("Bare Force", "[hamiltonian]")
 {
-  Communicate* c = OHMMS::Controller;
-
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
   ParticleSet elec(simulation_cell);

@@ -86,7 +86,7 @@ import inspect
 import numpy as np
 from numpy import pi, exp, sqrt, sin, cos
 from numpy.linalg import norm
-from .developer import obj, unavailable, error
+from .developer import obj, unavailable
 from .unit_converter import convert
 from .periodic_table import Elements
 
@@ -118,14 +118,19 @@ cost_functions = obj(
 def curve_fit(x,y,f,p0,cost='least_squares',optimizer='fmin'):
     if isinstance(cost,str):
         if cost not in cost_functions:
-            error('"{0}" is an invalid cost function\nvalid options are: {1}'.format(cost,sorted(cost_functions.keys())))
+            msg = (
+                '"{0}" is an invalid cost function\n'
+                'valid options are: {1}'.format(cost,sorted(cost_functions.keys()))
+                )
+            raise ValueError(msg)
         #end if
         cost = cost_functions[cost]
     #end if
     if optimizer=='fmin':
         p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000,disp=0)
     else:
-        error('optimizers other than fmin are not supported yet','curve_fit')
+        msg = 'optimizers other than fmin are not supported yet'
+        raise NotImplementedError(msg)
     #end if
     return p
 #end def curve_fit
@@ -253,7 +258,7 @@ def morse_rDw_fit(re,De,w,m1,m2=None,Einf=0.0,Dunit='eV'):
 #    pf    = morse_fit(r,E)                           returns fitted parameters
 #  jackknife statistical fits, E is two dimensional with blocks as first dimension
 #    pf,pmean,perror = morse_fit(r,E,jackknife=True)  returns jackknife estimates of parameters
-def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxres=None,capture=None):
+def morse_fit(r,E,p0=None,*,jackknife=False,cost=least_squares,auxfuncs=None,auxres=None,capture=None):
     if isinstance(E,(list,tuple)):
         E = np.array(E,dtype=float)
     #end if
@@ -304,7 +309,8 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
     perror = None
     if jackknife:
         if Edata is None:
-            error('cannot perform jackknife fit because blocked data was not provided (only the means are present)','morse_fit')
+            msg = 'cannot perform jackknife fit because blocked data was not provided (only the means are present)'
+            raise ValueError(msg)
         #end if
         pmean,perror = numerics_jackknife(data     = Edata,
                                           function = curve_fit,
@@ -344,7 +350,7 @@ def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxre
 # morse_fit_fine: fit data to a morse potential and interpolate on a fine grid
 #   compute direct jackknife variations in the fitted curves 
 #   by using morse as an auxiliary jackknife function
-def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_squares,capture=None):  
+def morse_fit_fine(r,E,p0=None,rfine=None,*,both=False,jackknife=False,cost=least_squares,capture=None):  
     if rfine is None:
         rfine = np.linspace(r.min(),r.max(),400)
     #end if
@@ -353,7 +359,16 @@ def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_
         )
     auxres = obj()
 
-    res = morse_fit(r,E,p0,jackknife,cost,auxfuncs,auxres,capture)
+    res = morse_fit(
+        r         = r,
+        E         = E,
+        p0        = p0,
+        jackknife = jackknife,
+        cost      = cost,
+        auxfuncs  = auxfuncs,
+        auxres    = auxres,
+        capture   = capture,
+        )
 
     if not jackknife:
         pf = res
@@ -387,14 +402,14 @@ def murnaghan(p, V):
 def birch(p, V):
     return p[0] + 9 * p[1] * p[2] / 16 * ((p[1] / V) ** (2.0 / 3) - 1) ** 2 * (
         2 + (p[3] - 4) * ((p[1] / V) ** (2.0 / 3) - 1)
-    )
+        )
 
 def vinet(p, V):
     return p[0] + 2 * p[1] * p[2] / (p[3] - 1) ** 2 * (
         2
         - (2 + 3 * (p[3] - 1) * ((V / p[1]) ** (1.0 / 3) - 1))
         * exp(-1.5 * (p[3] - 1) * ((V / p[1]) ** (1.0 / 3) - 1))
-    )
+        )
 
 def murnaghan_pressure(p, V):
     return p[1] / p[2] * ((p[0] / V) ** p[2] - 1)
@@ -406,7 +421,7 @@ def birch_pressure(p, V):
         * (p[0] / V) ** (5.0 / 3)
         * ((p[0] / V) ** (2.0 / 3) - 1)
         * (1.0 + 0.75 * (p[2] - 1) * ((p[0] / V) ** (2.0 / 3) - 1))
-    )
+        )
 
 def vinet_pressure(p, V):
     return (
@@ -415,7 +430,7 @@ def vinet_pressure(p, V):
         * (1.0 - (V / p[0]) ** (1.0 / 3))
         * (p[0] / V) ** (2.0 / 3)
         * exp(1.5 * (p[2] - 1) * (1.0 - (V / p[0]) ** (1.0 / 3)))
-    )
+        )
 
 
 eos_funcs = obj(
@@ -443,7 +458,11 @@ eos_param_funcs = obj(
 
 def eos_eval(p,V,type='vinet'):
     if type not in eos_funcs:
-        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
+        msg = (
+            '"{0}" is not a valid EOS type\n'
+            'valid options are: {1}'.format(sorted(eos_funcs.keys()))
+            )
+        raise ValueError(msg)
     #end if
     return eos_funcs[type](p,V)
 #end def eos_eval
@@ -451,17 +470,27 @@ def eos_eval(p,V,type='vinet'):
 
 def eos_param(p,param,type='vinet'):
     if type not in eos_param_funcs:
-        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_param_funcs.keys())))
+        msg = (
+            '"{0}" is not a valid EOS type\n'
+            'valid options are: {1}'.format(sorted(eos_param_funcs.keys()))
+            )
+        raise ValueError(msg)
     #end if
     eos_pfuncs = eos_param_funcs[type]
     if param not in eos_pfuncs:
-        error('"{0}" is not an available parameter for a {1} fit\navailable parameters are: {2}'.format(param,type,sorted(eos_pfuncs.keys())))
+        msg = (
+            '"{0}" is not an available parameter for a {1} fit\n'
+            'available parameters are: {2}'.format(
+                param, type, sorted(eos_pfuncs.keys())
+                )
+            )
+        raise ValueError(msg)
     #end if
     return eos_pfuncs[param](p)
 #end def eos_param
 
 
-def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfuncs=None,auxres=None,capture=None):
+def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',*,jackknife=False,auxfuncs=None,auxres=None,capture=None):
     if isinstance(V,(list,tuple)):
         V = np.array(V,dtype=float)
     #end if
@@ -474,7 +503,11 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
         E     = Edata.mean(axis=0)
     #end if
     if type not in eos_funcs:
-        error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
+        msg = (
+            '"{0}" is not a valid EOS type\n'
+            'valid options are: {1}'.format(sorted(eos_funcs.keys()))
+            )
+        raise ValueError(msg)
     #end if
     eos_func = eos_funcs[type]
 
@@ -513,7 +546,8 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
     perror = None
     if jackknife:
         if Edata is None:
-            error('cannot perform jackknife fit because blocked data was not provided (only the means are present)','morse_fit')
+            msg = 'cannot perform jackknife fit because blocked data was not provided (only the means are present)'
+            raise ValueError(msg)
         #end if
         pmean,perror = numerics_jackknife(data     = Edata,
                                           function = curve_fit,
@@ -535,7 +569,7 @@ def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',jackknife=False,auxfun
             auxfunc = auxfuncs[auxname]
             auxres[auxname] = jackknife_aux(psamples,auxfunc,capture=auxcap)
             eq_vol = auxres[auxname][0]
-            auxfuncs.delete(auxname)
+            auxfuncs.pop(auxname)
             for auxname,auxfunc in auxfuncs.items():
                 num_variables = len(inspect.getargspec(auxfunc).args)
                 if num_variables > 1:
@@ -693,7 +727,8 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
         elif len(auxfunc)==4:
             auxfunc,args,kwargs,position = auxfunc
         else:
-            error('between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {0}'.format(len(auxfunc)))
+            msg = 'between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {0}'.format(len(auxfunc))
+            raise ValueError(msg)
         #end if
     #end if
 
@@ -756,7 +791,8 @@ def check_jackknife_inputs(args,kwargs,position):
         elif isinstance(position,str):
             kwargpos = True
         else:
-            error('position must be an integer or keyword, received: {0}'.format(position),'jackknife')
+            msg = 'position must be an integer or keyword, received: {0}'.format(position)
+            raise TypeError(msg)
         #end if
     elif args is None and kwargs is None:
         args     = [None]
@@ -766,7 +802,8 @@ def check_jackknife_inputs(args,kwargs,position):
         argpos   = True
         position = 0
     else:
-        error('function argument position for input data must be provided','jackknife')
+        msg = 'function argument position for input data must be provided'
+        raise ValueError(msg)
     #end if
     if args is None:
         args = []
@@ -803,25 +840,31 @@ def check_jackknife_inputs(args,kwargs,position):
 #"""
 
 def ndgrid(*args, **kwargs):
-    """
-    n-dimensional gridding like Matlab's NDGRID
-    
-    The input *args are an arbitrary number of numerical sequences, 
-    e.g. lists, arrays, or tuples.
-    The i-th dimension of the i-th output argument 
-    has copies of the i-th input argument.
-    
-    Optional keyword argument:
-    same_dtype : If False (default), the result is an ndarray.
-                 If True, the result is a lists of ndarrays, possibly with 
-                 different dtype. This can save space if some *args 
-                 have a smaller dtype than others.
+    """n-dimensional gridding like Matlab's NDGRID
 
-    Typical usage:
+    Parameters
+    ----------
+    *args
+        An arbitrary number of numerical sequences, e.g. lists, arrays, or tuples.
+
+        The i-th dimension of the i-th output argument has copies of the i-th
+        input argument.
+    same_dtype : bool, default False, kwargs
+        If False (default), the result is an ``ndarray``.
+
+        If True, the result is a lists of ``ndarrays``, possibly with
+        different dtype. This can save space if some ``*args`` have a
+        smaller dtype than others.
+
+    Examples
+    --------
+    Typical usage
+
     >>> x, y, z = [0, 1], [2, 3, 4], [5, 6, 7, 8]
     >>> X, Y, Z = ndgrid(x, y, z) # unpacking the returned ndarray into X, Y, Z
 
     Each of X, Y, Z has shape [len(v) for v in x, y, z].
+
     >>> X.shape == Y.shape == Z.shape == (2, 3, 4)
     True
     >>> X
@@ -847,6 +890,7 @@ def ndgrid(*args, **kwargs):
             [5, 6, 7, 8]]])
     
     With an unpacked argument list:
+
     >>> V = [[0, 1], [2, 3, 4]]
     >>> ndgrid(*V) # an array of two arrays with shape (2, 3)
     array([[[0, 0, 0],
@@ -856,11 +900,13 @@ def ndgrid(*args, **kwargs):
     
     For input vectors of different data types, same_dtype=False makes ndgrid()
     return a list of arrays with the respective dtype.
+
     >>> ndgrid([0, 1], [1.0, 1.1, 1.2], same_dtype=False)
     [array([[0, 0, 0], [1, 1, 1]]), 
      array([[ 1. ,  1.1,  1.2], [ 1. ,  1.1,  1.2]])]
     
     Default is to return a single array.
+
     >>> ndgrid([0, 1], [1.0, 1.1, 1.2])
     array([[[ 0. ,  0. ,  0. ], [ 1. ,  1. ,  1. ]],
            [[ 1. ,  1.1,  1.2], [ 1. ,  1.1,  1.2]]])
@@ -998,7 +1044,7 @@ def simstats(x,dim=None):
 
 
 
-def simplestats(x,dim=None,full=False):
+def simplestats(x,dim=None,*,full=False):
     if dim is None:
         dim=len(x.shape)-1
     #end if
@@ -1014,7 +1060,7 @@ def simplestats(x,dim=None,full=False):
 #end def simplestats
 
 
-def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2,random=True,seed_from_hash=True):
+def equilibration_length(x,tail=.5,*,plot=False,xlim=None,bounces=2,random=True,seed_from_hash=True):
     if seed_from_hash:
         np.random.seed(hash(tuple(x))%(2**32))
     #end if
@@ -1334,7 +1380,11 @@ def distance_table(p1,p2,ordering=0):
             n=n2
             dt=dt.T
         else:
-            error('ordering must be 1 or 2,\nyou provided '+str(ordering),'distance_table')
+            msg = (
+                'ordering must be 1 or 2,\n'
+                'you provided '+str(ordering)
+                )
+            raise ValueError(msg)
         #end if
         order = np.empty(dt.shape,dtype=int)
         for i in range(n):
@@ -1348,7 +1398,7 @@ def distance_table(p1,p2,ordering=0):
 
 
 
-def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
+def nearest_neighbors(n,points,qpoints=None,*,return_distances=False,slow=False):
     extra = 0
     if qpoints is None:
         qpoints=points
@@ -1361,7 +1411,13 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
         #end if
     #end if
     if n>len(qpoints)-extra:
-        error('requested more than the total number of neighbors\nmaximum is: {0}\nyou requested: {1}\nexiting.'.format(len(qpoints)-extra,n),'nearest_neighbors')
+        msg = (
+            'requested more than the total number of neighbors\n'
+            'maximum is: {0}\n'
+            'you requested: {1}\n'
+            'exiting.'.format(len(qpoints)-extra,n)
+            )
+        raise ValueError(msg)
     #end if
     slow = slow or scipy_unavailable
     if not slow:
@@ -1438,12 +1494,13 @@ def convex_hull(points,dimension=None,tol=None):
 
 
 
-def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_return=False):
+def layers_1d(xpoints,tol,xmin=None,xmax=None,*,merge=True,periodic=False,full_return=False):
 
     # Update inputs to be consistent with periodic merge, if requested
     if merge and periodic:
         if xmax is None:
-            error('"xmax" must be provided.','layers_1d')
+            msg = '"xmax" must be provided.'
+            raise ValueError(msg)
         elif xmin is None:
             xmin = 0.0
         #end if
@@ -1474,7 +1531,7 @@ def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_ret
     #end for
 
     # Find the mean of each set of points
-    for l in layers:
+    for l in layers.values():
         l.xmean = l.xsum/l.nsum
     #end for
 
@@ -1522,7 +1579,7 @@ def layers_1d(xpoints,tol,xmin=None,xmax=None,merge=True,periodic=False,full_ret
 
 
 
-def layer_means_1d(xpoints,tol,full_return=False):
+def layer_means_1d(xpoints,tol,*,full_return=False):
     # Get layer data
     layers,xmin,xmax = layers_1d(xpoints,tol,full_return=True)
 
@@ -1545,7 +1602,7 @@ def layer_means_1d(xpoints,tol,full_return=False):
 
 
 
-def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
+def index_by_layer_1d(xpoints,tol,*,uniform=True,check=True,full_return=False):
     # Get layer means
     xlayer,xmin,xmax = layer_means_1d(xpoints,tol,full_return=True)
 
@@ -1557,7 +1614,15 @@ def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
         dxmin   = dxlayer.min()
         dxmax   = dxlayer.max()
         if np.abs(dxmax-dxmin)>2*tol:
-            error('Could not determine layer separation.\nLayers are not evenly spaced.\nMin layer spacing: {}\nMax layer spacing: {}\nSpread   : {}\nTolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol),'index_by_layer_1d')
+            msg = (
+                'Could not determine layer separation.\n'
+                'Layers are not evenly spaced.\n'
+                'Min layer spacing: {}\n'
+                'Max layer spacing: {}\n'
+                'Spread   : {}\n'
+                'Tolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol)
+                )
+            raise RuntimeError(msg)
         #end if
         dx = dxlayer.mean()
     else:
@@ -1570,7 +1635,8 @@ def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
     # Check the layer indices, if requested
     if check:
         if np.abs(ipoints*dx+xmin-xpoints).max()>3*tol: # Tolerance accounts for merge
-            error('Layer indexing failed.','index_by_layer_1d')
+            msg = 'Layer indexing failed.'
+            raise RuntimeError(msg)
         #end if
     #end if
 
@@ -1580,5 +1646,3 @@ def index_by_layer_1d(xpoints,tol,uniform=True,check=True,full_return=False):
         return ipoints,xmin,xmax
     #end if
 #end def index_by_layer
-
-

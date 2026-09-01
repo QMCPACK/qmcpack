@@ -41,8 +41,7 @@ public:
   void checkConfigurations(EngineHandle& handle) override;
 #ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>& EngineObj,
-                                  DescentEngine& descentEngineObj,
-                                  const std::string& MinMethod) override;
+                                  OptionalRef<DescentEngine> descentEngineObj) override;
 #endif
 
 
@@ -58,7 +57,6 @@ protected:
   */
   std::vector<Matrix<Return_t>*> DerivRecords;
   std::vector<Matrix<Return_rt>*> HDerivRecords;
-  Return_rt CSWeight;
 
   EffectiveWeight correlatedSampling(bool needGrad = true) override;
 

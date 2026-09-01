@@ -10,16 +10,8 @@
 // Fionn D. Malone, malone14@llnl.gov
 //    Lawrence Livermore National Laboratory
 ////////////////////////////////////////////////////////////////////////////////
-
-#include "catch.hpp"
-#include "Configuration.h"
-
-#undef APP_ABORT
-#define APP_ABORT(x) \
-  {                  \
-    std::cout << x;  \
-    exit(0);         \
-  }
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <vector>
 
@@ -94,11 +86,11 @@ TEST_CASE("Tab_to_Kl", "[Numerics][batched_operations]")
   std::vector<ComplexType> buffer(nwalk * nel * nel * nchol);
   create_data(buffer, ComplexType(1.0));
   Tensor4D<ComplexType> Twban({nwalk, nel, nel, nchol}, alloc);
-  copy_n(buffer.data(), buffer.size(), Twban.origin());
+  copy_n(buffer.data(), buffer.size(), Twban.base());
   Tensor2D<ComplexType> Kl({nwalk, nchol}, 0.0, alloc);
   using ma::Tab_to_Kl;
-  Tab_to_Kl(nwalk, nel, nchol, Twban.origin(), Kl.origin());
-  array_ref<ComplexType, 1, pointer<ComplexType>> Kl_(Kl.origin(), iextensions<1u>{nwalk * nchol});
+  Tab_to_Kl(nwalk, nel, nchol, Twban.base(), Kl.base());
+  array_ref<ComplexType, 1, pointer<ComplexType>> Kl_(Kl.base(), iextensions<1u>{nwalk * nchol});
   array<ComplexType, 1, Alloc<ComplexType>> ref = {84.0,  87.0,  90.0,  93.0,  96.0,  99.0,  102.0,
                                                    273.0, 276.0, 279.0, 282.0, 285.0, 288.0, 291.0,
                                                    462.0, 465.0, 468.0, 471.0, 474.0, 477.0, 480.0};
@@ -117,17 +109,17 @@ TEST_CASE("batched_Tab_to_Klr", "[batched_operations]")
   int ncholQ0            = 2;
   std::vector<int> kdiag = {0, 1, 2, 3};
   Tensor1D<int> dev_kdiag(iextensions<1u>{nbatch}, alloc);
-  copy_n(kdiag.data(), kdiag.size(), dev_kdiag.origin());
+  copy_n(kdiag.data(), kdiag.size(), dev_kdiag.base());
   std::vector<ComplexType> buffer(2 * nbatch * nwalk * nel * nel * nchol_max);
   create_data(buffer, ComplexType(1.0));
   Tensor5D<ComplexType> Tab({2 * nbatch, nwalk, nel, nel, nchol_max}, alloc);
-  copy_n(buffer.data(), buffer.size(), Tab.origin());
+  copy_n(buffer.data(), buffer.size(), Tab.base());
   Tensor2D<ComplexType> Kl({nwalk, 2 * nchol}, 0.0, alloc);
   Tensor2D<ComplexType> Kr({nwalk, 2 * nchol}, 0.0, alloc);
   using ma::batched_Tab_to_Klr;
-  batched_Tab_to_Klr(nbatch, nwalk, nel, nchol_max, nchol, ncholQ, ncholQ0, dev_kdiag.origin(), Tab.origin(),
-                     Kl.origin(), Kr.origin());
-  copy_n(Kr.origin(), Kr.num_elements(), buffer.data());
+  batched_Tab_to_Klr(nbatch, nwalk, nel, nchol_max, nchol, ncholQ, ncholQ0, dev_kdiag.base(), Tab.base(),
+                     Kl.base(), Kr.base());
+  copy_n(Kr.base(), Kr.num_elements(), buffer.data());
   //std::cout << std::setprecision(16) << Kl[2][3] << " " << Kl[1][4] << " " << Kr[1][3] << " " << Kr[0][1] << std::endl;
   CHECK(real(buffer[2 * nchol + 3]) == Approx(2262));
 }
@@ -144,11 +136,11 @@ TEST_CASE("Tanb_to_Kl", "[batched_operations]")
   std::vector<ComplexType> buffer(nwalk * nel * nel * nchol);
   create_data(buffer, ComplexType(1.0));
   Tensor4D<ComplexType> Twanb({nwalk, nel, nchol, nel}, alloc);
-  copy_n(buffer.data(), buffer.size(), Twanb.origin());
+  copy_n(buffer.data(), buffer.size(), Twanb.base());
   Tensor2D<ComplexType> Kl({nwalk, nchol}, 0.0, alloc);
   using ma::Tanb_to_Kl;
-  Tanb_to_Kl(nwalk, nel, nchol, nchol, Twanb.origin(), Kl.origin());
-  array_ref<ComplexType, 1, pointer<ComplexType>> Kl_(Kl.origin(), iextensions<1u>{nwalk * nchol});
+  Tanb_to_Kl(nwalk, nel, nchol, nchol, Twanb.base(), Kl.base());
+  array_ref<ComplexType, 1, pointer<ComplexType>> Kl_(Kl.base(), iextensions<1u>{nwalk * nchol});
   //std::cout << "{";
   //for (auto i : Kl_)
   //std::cout << "ComplexType(" << real(i) << ")," << std::endl;
@@ -175,13 +167,13 @@ TEST_CASE("batched_dot_wabn_wban", "[Numerics][batched_operations]")
   create_data(buffer, ComplexType(1e4));
   Tensor5D<ComplexType> Twabn({2 * nbatch, nwalk, nocc, nocc, nchol}, alloc);
   Tensor1D<ComplexType> scal({nbatch}, 1.0, alloc);
-  copy_n(buffer.data(), buffer.size(), Twabn.origin());
+  copy_n(buffer.data(), buffer.size(), Twabn.base());
   std::vector<pointer<ComplexType>> Aarray;
   array<ComplexType, 1, Alloc<ComplexType>> out(iextensions<1u>{nwalk}, alloc);
   array<ComplexType, 1, Alloc<ComplexType>> ref = {ComplexType(1693.073254599684), ComplexType(1930.853888599637),
                                                    ComplexType(2189.312510839587)};
   using ma::batched_dot_wabn_wban;
-  batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.origin(), Twabn.origin(), to_address(out.data()), 1);
+  batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.base(), Twabn.base(), to_address(out.data()), 1);
   //std::cout << std::setprecision(16) << "this: " <<  out[0] << " " << out[1] << " " << out[2] << std::endl;
   verify_approx(ref, out);
 }
@@ -199,13 +191,13 @@ TEST_CASE("batched_dot_wanb_wbna", "[Numerics][batched_operations]")
   create_data(buffer, ComplexType(1e4));
   Tensor5D<ComplexType> Twabn({2 * nbatch, nwalk, nocc, nchol, nocc}, alloc);
   Tensor1D<ComplexType> scal({nbatch}, 1.0, alloc);
-  copy_n(buffer.data(), buffer.size(), Twabn.origin());
+  copy_n(buffer.data(), buffer.size(), Twabn.base());
   std::vector<pointer<ComplexType>> Aarray;
   array<ComplexType, 1, Alloc<ComplexType>> out(iextensions<1u>{nwalk}, alloc);
   array<ComplexType, 1, Alloc<ComplexType>> ref = {ComplexType(1692.867783879684), ComplexType(1930.648417879638),
                                                    ComplexType(2189.107040119586)};
   using ma::batched_dot_wanb_wbna;
-  batched_dot_wanb_wbna(nbatch, nwalk, nocc, nchol, scal.origin(), Twabn.origin(), to_address(out.data()), 1);
+  batched_dot_wanb_wbna(nbatch, nwalk, nocc, nchol, scal.base(), Twabn.base(), to_address(out.data()), 1);
   //std::cout << std::setprecision(16) << "this: " <<  out[0] << " " << out[1] << " " << out[2] << std::endl;
   verify_approx(ref, out);
 }
@@ -220,10 +212,10 @@ TEST_CASE("dot_wabn", "[Numerics][batched_operations]")
   std::vector<ComplexType> buffer(nwalk * nocc * nocc * nchol);
   create_data(buffer, ComplexType(100));
   Tensor4D<ComplexType> Twabn({nwalk, nocc, nocc, nchol}, alloc);
-  copy_n(buffer.data(), buffer.size(), Twabn.origin());
+  copy_n(buffer.data(), buffer.size(), Twabn.base());
   array<ComplexType, 1, Alloc<ComplexType>> out(iextensions<1u>{nwalk}, alloc);
   using ma::dot_wabn;
-  dot_wabn(nwalk, nocc, nchol, ComplexType(1.0), Twabn.origin(), to_address(out.origin()), 1);
+  dot_wabn(nwalk, nocc, nchol, ComplexType(1.0), Twabn.base(), to_address(out.base()), 1);
   array<ComplexType, 1, Alloc<ComplexType>> ref = {ComplexType(7045.35), ComplexType(58699.7), ComplexType(162049.0)};
   verify_approx(out, ref);
 }
@@ -238,11 +230,11 @@ TEST_CASE("dot_wanb", "[Numerics][batched_operations]")
   // T = numpy.arange(nw*nocc*nocc*nchol).reshape(nw,nocc,nchol,nocc) / 100.0
   create_data(buffer, ComplexType(100));
   Tensor4D<ComplexType> Twanb({nwalk, nocc, nchol, nocc}, alloc);
-  copy_n(buffer.data(), buffer.size(), Twanb.origin());
+  copy_n(buffer.data(), buffer.size(), Twanb.base());
   array<ComplexType, 1, Alloc<ComplexType>> out(iextensions<1u>{nwalk}, 0.0, alloc);
   using ma::dot_wanb;
   // out = numpy.einsum('wanb,wbna->w', Twanb, Twanb)
-  dot_wanb(nwalk, nocc, nchol, ComplexType(1.0), Twanb.origin(), to_address(out.origin()), 1);
+  dot_wanb(nwalk, nocc, nchol, ComplexType(1.0), Twanb.base(), to_address(out.base()), 1);
   array<ComplexType, 1, Alloc<ComplexType>> ref = {ComplexType(6531.67), ComplexType(58186.1), ComplexType(161535)};
   verify_approx(out, ref);
 }
@@ -259,7 +251,7 @@ TEST_CASE("Auwn_Bun_Cuw", "[Numerics][batched_operations]")
   ComplexType alpha = 0.5;
   // C = alpha * numpy.einsum('uwn,un->uw', A, B)
   using ma::Auwn_Bun_Cuw;
-  Auwn_Bun_Cuw(nu, nw, nn, alpha, A.origin(), B.origin(), C.origin());
+  Auwn_Bun_Cuw(nu, nw, nn, alpha, A.base(), B.base(), C.base());
   Tensor2D<ComplexType> ref({nu, nw}, 4.0, alloc);
   verify_approx(C, ref);
 }
@@ -279,7 +271,7 @@ TEST_CASE("Awiu_Biu_Cuw", "[Numerics][batched_operations]")
   using ma::Awiu_Biu_Cuw;
 
   using std::get;
-  Awiu_Biu_Cuw(nu, nw, nn, alpha, A.origin(), B.origin(), get<1>(B.sizes()), C.origin(), get<1>(C.sizes()));
+  Awiu_Biu_Cuw(nu, nw, nn, alpha, A.base(), B.base(), get<1>(B.sizes()), C.base(), get<1>(C.sizes()));
   Tensor2D<ComplexType> ref({nu, nw}, 4.0, alloc);
   ref[1][0] = 3.0;
   ref[1][1] = 3.0;
@@ -299,7 +291,7 @@ TEST_CASE("Aijk_Bkj_Cik", "[Numerics][batched_operations]")
   // C = alpha * numpy.einsum('wnu,nu->uw', A, B)
   using ma::Aijk_Bkj_Cik;
   using std::get;
-  Aijk_Bkj_Cik(ni, nj, nk, A.origin(), get<1>(A.sizes()), A.stride(0), B.origin(), B.stride(0), C.origin(), C.stride(0));
+  Aijk_Bkj_Cik(ni, nj, nk, A.base(), get<1>(A.sizes()), A.stride(), B.base(), B.stride(), C.base(), C.stride());
   Tensor2D<ComplexType> ref({ni, nk}, 4.0, alloc);
   ref[0][0] = 2.0;
   ref[1][0] = 2.0;
@@ -317,7 +309,7 @@ TEST_CASE("viwj_vwij", "[Numerics][batched_operations]")
   Tensor3D<ComplexType> B({ni, nw, nj}, 0.0, alloc);
   std::vector<ComplexType> buffer(ni * nj * nw);
   create_data(buffer, ComplexType(1.0));
-  copy_n(buffer.data(), buffer.size(), B.origin());
+  copy_n(buffer.data(), buffer.size(), B.base());
   using ma::viwj_vwij;
   //viwj_vwij(nw, ni, 0, nj, B.data(), A.data());
   //std::cout << A[0][1][1] << " " << A[1][2][1] << std::endl;
@@ -335,7 +327,7 @@ TEST_CASE("element_wise_Aij_Bjk_Ckij", "[Numerics][batched_operations]")
     Tensor2D<ComplexType> B({nj, nk}, 2.0, alloc);
     Tensor3D<ComplexType> C({nk, ni, nj}, 0.0, alloc);
     using std::get;
-    element_wise_Aij_Bjk_Ckij('N', ni, nj, nk, A.origin(), A.stride(0), B.origin(), B.stride(0), C.origin(), get<1>(C.sizes()),
+    element_wise_Aij_Bjk_Ckij('N', ni, nj, nk, A.base(), A.stride(), B.base(), B.stride(), C.base(), get<1>(C.sizes()),
                               get<2>(C.sizes()));
     Tensor3D<ComplexType> ref({nk, ni, nj}, 6.0, alloc);
     verify_approx(C, ref);
@@ -346,7 +338,7 @@ TEST_CASE("element_wise_Aij_Bjk_Ckij", "[Numerics][batched_operations]")
     Tensor3D<ComplexType> C({nk, ni, nj}, 0.0, alloc);
 
     using std::get;
-    element_wise_Aij_Bjk_Ckij('C', ni, nj, nk, A.origin(), A.stride(0), B.origin(), B.stride(0), C.origin(), get<1>(C.sizes()),
+    element_wise_Aij_Bjk_Ckij('C', ni, nj, nk, A.base(), A.stride(), B.base(), B.stride(), C.base(), get<1>(C.sizes()),
                               get<2>(C.sizes()));
     Tensor3D<ComplexType> ref({nk, ni, nj}, ComplexType(-6.0, 3.0), alloc);
     verify_approx(C, ref);
@@ -367,8 +359,8 @@ void test_Aij_Bjk_Ckji()
   Tensor3D<T2> C({nk, nj, ni}, 0.0, alloc_b);
 
   using std::get;
-  element_wise_Aij_Bjk_Ckji(ni, nj, nk, A.origin(), A.stride(0), B.origin(), B.stride(0), C.origin(), get<2>(C.sizes()),
-                            C.stride(0));
+  element_wise_Aij_Bjk_Ckji(ni, nj, nk, A.base(), A.stride(), B.base(), B.stride(), C.base(), get<2>(C.sizes()),
+                            C.stride());
   Tensor3D<T2> ref({nk, nj, ni}, T2(-3.0, -6.0), alloc_b);
   verify_approx(C, ref);
 }
@@ -392,7 +384,7 @@ TEST_CASE("inplace_product", "[Numerics][batched_operations]")
   Tensor2D<double> B({ni, nj}, 2.0, dalloc);
   using ma::inplace_product;
   using std::get;
-  inplace_product(nb, ni, nj, B.origin(), get<1>(B.sizes()), A.origin(), get<2>(A.sizes()));
+  inplace_product(nb, ni, nj, B.base(), get<1>(B.sizes()), A.base(), get<2>(A.sizes()));
   Tensor3D<ComplexType> ref({nb, ni, nj}, ComplexType(2.0, -6.0), alloc);
   verify_approx(A, ref);
 }
@@ -408,9 +400,9 @@ TEST_CASE("inplace_product", "[Numerics][batched_operations]")
 //std::vector<int> packed_dims = {7,7,7,7,7,7,7,7};
 //Tensor1D<ComplexType> Buff;
 //Buff = std::move(Tensor1D<ComplexType>(iextensions<1u>{2*nrows*ncols+nbatch}, alloc));
-//Tensor2D_ref<ComplexType> A(make_device_ptr(Buff.origin()), {nrows,ncols});
-//Tensor2D_ref<ComplexType> B(make_device_ptr(Buff.origin()+nrows*ncols), {nrows,ncols});
-//Tensor1D_ref<ComplexType> C(make_device_ptr(Buff.origin()+2*nrows*ncols), iextensions<1u>{nbatch});
+//Tensor2D_ref<ComplexType> A(make_device_ptr(Buff.base()), {nrows,ncols});
+//Tensor2D_ref<ComplexType> B(make_device_ptr(Buff.base()+nrows*ncols), {nrows,ncols});
+//Tensor1D_ref<ComplexType> C(make_device_ptr(Buff.base()+2*nrows*ncols), iextensions<1u>{nbatch});
 
 ////Tensor2D<ComplexType> A({nrows, ncols}, alloc);
 ////Tensor2D<ComplexType> B({ncols, nrows}, alloc);
@@ -419,11 +411,11 @@ TEST_CASE("inplace_product", "[Numerics][batched_operations]")
 ////std::vector<pointer<ComplexType>> y(nbatch);
 //std::vector<ComplexType> buffer(nrows*ncols);
 //create_data(buffer, ComplexType(1.0));
-//copy_n(buffer.data(), buffer.size(), A.origin());
-//copy_n(buffer.data(), buffer.size(), B.origin());
+//copy_n(buffer.data(), buffer.size(), A.base());
+//copy_n(buffer.data(), buffer.size(), B.base());
 //for (int i=0; i < nbatch; i++) {
-//Aarray.emplace_back(ma::pointer_dispatch(A.origin()));
-//Barray.emplace_back(ma::pointer_dispatch(B.origin()));
+//Aarray.emplace_back(ma::pointer_dispatch(A.base()));
+//Barray.emplace_back(ma::pointer_dispatch(B.base()));
 //}
 //using ma::batched_ab_ba;
 //batched_ab_ba(packed_dims.data(), A.data(), ncols, B.data(), nrows,
@@ -445,10 +437,10 @@ TEST_CASE("vbias_from_v1", "[Numerics][batched_operations]")
   Tensor3D<ComplexType> v1({2 * nkpts, nchol_max, nwalk}, ComplexType(1.0, -0.007), alloc);
   Tensor2D<ComplexType> vbias({2 * nchol_tot, nwalk}, 0.0, alloc);
   using ma::vbias_from_v1;
-  vbias_from_v1(nwalk, nkpts, nchol_max, qmap.origin(), kminus.origin(), nchol_pq.origin(), q2vbias.origin(),
-                ComplexType(0.05), v1.origin(), to_address(vbias.origin()));
+  vbias_from_v1(nwalk, nkpts, nchol_max, qmap.base(), kminus.base(), nchol_pq.base(), q2vbias.base(),
+                ComplexType(0.05), v1.base(), to_address(vbias.base()));
   array<ComplexType, 2> vbias_host({2 * nchol_tot, nwalk}, 0.0);
-  copy_n(vbias.origin(), vbias.num_elements(), vbias_host.origin());
+  copy_n(vbias.base(), vbias.num_elements(), vbias_host.base());
   // Captured from stdout
   CHECK(real(vbias_host[0][0]) == Approx(0.1));
   CHECK(imag(vbias_host[10][0]) == Approx(-0.0007));

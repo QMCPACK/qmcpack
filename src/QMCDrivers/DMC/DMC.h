@@ -39,7 +39,7 @@ public:
       Communicate* comm,
       bool enable_profiling);
 
-  bool run() override;
+  void run() override;
   bool put(xmlNodePtr cur) override;
   void setTau(RealType i);
   QMCRunType getRunType() override { return QMCRunType::DMC; }

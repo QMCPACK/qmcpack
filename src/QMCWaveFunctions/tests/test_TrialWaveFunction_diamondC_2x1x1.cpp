@@ -8,9 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-
-
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include "Utilities/for_testing/Catch2Approx.h"
 
 #include <regex>
 #include "OhmmsData/Libxml2Doc.h"
@@ -69,7 +68,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   lattice.reset();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.setSimulationCell(lattice);
+  ptcl.createSimulationCellByLattice(lattice);
   auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
   auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell(), kind_selected);
   ParticleSet& ions_(*ions_uptr);

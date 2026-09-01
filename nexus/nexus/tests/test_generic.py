@@ -1,21 +1,28 @@
 import pytest
+from copy import deepcopy
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.GENERIC_OPERATION)
 
-from ..generic import generic_settings
-generic_settings.raise_error = True
 
-from .. import testing
+from pathlib import Path
+from . import isolate_nexus_core, FakeLog
 from ..testing import failed,FailedTest
-from ..testing import divert_nexus_log,restore_nexus_log,FakeLog
 from ..testing import object_eq,object_neq
+from ..generic import obj_deprecated as obj
+from ..generic import warn, NexusDevWarning, NexusUserWarning, nxs_deprecate
 
+TEST_FILES = {
+    "old_nxs_pwscf_input.p": Path(__file__+"/../test_generic_files/old_nxs_pwscf_input.p").resolve(),
+    "old_nxs_sim.p":         Path(__file__+"/../test_generic_files/old_nxs_sim.p").resolve(),
+    "old_nxs_pwscf_input_numpy_1.p": Path(__file__+"/../test_generic_files/old_nxs_pwscf_input_numpy_1.p").resolve(),
+    "old_nxs_sim_numpy_1.p":         Path(__file__+"/../test_generic_files/old_nxs_sim_numpy_1.p").resolve(),
+    }
+
+@isolate_nexus_core
 def test_logging():
-    from ..generic import log,warn,error
+    from ..generic import log,error
     from ..generic import generic_settings,NexusError
 
-    # send messages to object rather than stdout
-    divert_nexus_log()
     logfile = generic_settings.devlog
 
     # test log
@@ -56,74 +63,24 @@ def test_logging():
     log(s2,logfile=logfile2)
     assert(logfile.s=='')
     assert(logfile2.s==s2+'\n')
-    
-
-    # test warn
-    logfile.reset()
-    s = 'this is a warning'
-    warn(s)
-    so = '''
-  warning:
-    this is a warning
-'''
-    assert(logfile.s==so)
-    logfile.reset()
-    s = 'this is a warning'
-    warn(s,header='Special')
-    so = '''
-  Special warning:
-    this is a warning
-'''
-    assert(logfile.s==so)
 
     # test error
-    #   in testing environment, should raise an error
-    try:
+    with pytest.raises(NexusError, match="testing environment"):
         error('testing environment')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
-    #   in standard/user environment, should print message
-    generic_settings.raise_error = False
-    logfile.reset()
-    error('this is an error',header='User',exit=False)
-    so = '''
-  User error:
-    this is an error
-'''
-    assert(logfile.s==so)
-    generic_settings.raise_error = True
-    #   in testing environment, should raise an error
-    try:
-        error('testing environment')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
-    restore_nexus_log()
-
+    # test error with header
+    with pytest.raises(NexusError, match="header error:\ntesting environment"):
+        error('testing environment', "header")
 #end def test_logging
 
 
-
-def test_intrinsics():
+@isolate_nexus_core
+def test_intrinsics(tmp_path):
     # test object_interface functions
     import os
-    from ..generic import obj,object_interface
-    from ..generic import generic_settings,NexusError
+    from ..generic import obj_deprecated as obj,object_interface
+    from ..generic import NexusError
     from numpy import array,bool_
-
-    tpath = testing.setup_unit_test_output_directory('generic','test_intrinsics')
 
     # test object set/get
     # make a simple object
@@ -225,9 +182,9 @@ def test_intrinsics():
         d = array([3,4,5],dtype=int),
         )
     ro2 = '''
-  a                     obj                 
-  b                     obj                 
-  c                     obj                 
+  a                     obj_deprecated      
+  b                     obj_deprecated      
+  c                     obj_deprecated      
   d                     ndarray             
 '''
     assert(repr(o2)==ro2[1:])
@@ -267,7 +224,7 @@ def test_intrinsics():
     assert(isinstance(o2.tree(nindent=2),str))
 
     # test deepcopy
-    o2 = o.copy()
+    o2 = deepcopy(o)
     assert(id(o)!=id(o2))
     assert(object_eq(o,o2))
     o2.a=1
@@ -275,7 +232,7 @@ def test_intrinsics():
     
     # test eq
     assert(o==o2)
-    o4 = o3.copy()
+    o4 = deepcopy(o3)
     v = o3==o4
     assert(isinstance(v,bool_))
     assert(bool(v))
@@ -287,7 +244,7 @@ def test_intrinsics():
     assert('a' not in o2)
 
     # test save/load
-    save_file = os.path.join(tpath,'o.p')
+    save_file = tmp_path / "o.p"
     o.save(save_file)
     o2 = obj()
     o2.load(save_file)
@@ -352,14 +309,13 @@ def test_intrinsics():
     s = 'log output'
     o.write(s)
     o.close_log()
-    f = open('log.out','r')
-    so = f.read()
-    f.close()
+    with open('log.out','r') as f:
+        so = f.read()
+
     os.remove('log.out')
     assert(so==s)
 
-    # send messages to object rather than stdout
-    divert_nexus_log()
+
     logfile = object_interface._logfile
 
     #   simple message
@@ -403,77 +359,16 @@ def test_intrinsics():
     o.log(s2,logfile=logfile2)
     assert(logfile.s=='')
     assert(logfile2.s==s2+'\n')
-    
-
-    # test warn
-    logfile.reset()
-    s = 'this is a warning'
-    o.warn(s)
-    so = '''
-  DerivedObj warning:
-    this is a warning
-'''
-    assert(logfile.s==so)
-    logfile.reset()
-    s = 'this is a warning'
-    o.warn(s,header='Special')
-    so = '''
-  Special warning:
-    this is a warning
-'''
-    assert(logfile.s==so)
 
     # test error
-    #   in testing environment, should raise an error
-    try:
+    with pytest.raises(NexusError, match="testing environment"):
         o.error('testing environment')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
-    #   in standard/user environment, should print message
-    generic_settings.raise_error = False
-    logfile.reset()
-    o.error('this is an error',exit=False)
-    so = '''
-  DerivedObj error:
-    this is an error
-'''
-    assert(logfile.s==so)
-    logfile.reset()
-    o.error('this is an error',header='User',exit=False)
-    so = '''
-  User error:
-    this is an error
-'''
-    assert(logfile.s==so)
-    generic_settings.raise_error = True
-    #   in testing environment, should raise an error
-    try:
-        o.error('testing environment')
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
-
-    # restore logging function
-    restore_nexus_log()
-
 #end def test_intrinsics
-
 
 
 def test_extensions():
     # test obj functions
-    from ..generic import obj,NexusError
+    from ..generic import obj_deprecated as obj,NexusError
 
     # make a simple object
     o = obj(
@@ -535,7 +430,7 @@ def test_extensions():
     assert(do==d)
     d2 = d.copy()
     d2['d'] = d
-    o2 = o.copy()
+    o2 = deepcopy(o)
     o2.d = o
     d2o = o2.to_dict()
     assert(d2o==d2)
@@ -545,7 +440,7 @@ def test_extensions():
     assert(isinstance(o2,obj))
     assert(id(o2)!=id(o))
     assert(object_eq(o2,o))
-    o2 = o.copy().to_obj()
+    o2 = deepcopy(o).to_obj()
     assert(object_eq(o2,o))
     
     # test list extensions
@@ -568,7 +463,7 @@ def test_extensions():
     assert(o2.random_key() is None)
 
     # test set
-    o2 = o.copy()
+    o2 = deepcopy(o)
     o2.set(
         b = 'b2',
         d = ('a','b','c'),
@@ -587,7 +482,7 @@ def test_extensions():
     #end for
 
     # test set optional
-    o2 = o.copy()
+    o2 = deepcopy(o)
     o2.set_optional(
         b = 'b2',
         d = ('a','b','c'),
@@ -628,24 +523,24 @@ def test_extensions():
     #end try
 
     # test delete
-    o2 = o.copy()
+    o2 = deepcopy(o)
     assert(o2.delete('c')==(1,1,1))
     assert('c' not in o2)
     keys = 'a','b','c',(3,4,5)
     vals = [1,'b',(1,1,1),(5,6,7)]
-    o2 = o.copy()
+    o2 = deepcopy(o)
     assert(o2.delete(*keys)==vals)
     assert(len(o2)==0)
     for k in keys:
         assert(k not in o2)
     #end for
-    o2 = o.copy()
+    o2 = deepcopy(o)
     assert(o2.delete(keys)==vals)
     assert(len(o2)==0)
     for k in keys:
         assert(k not in o2)
     #end for
-    o2 = o.copy()
+    o2 = deepcopy(o)
     try:
         o2.delete('a','d')
         raise FailedTest
@@ -658,7 +553,7 @@ def test_extensions():
     #end try
 
     # test delete optional
-    o2 = o.copy()
+    o2 = deepcopy(o)
     o2.delete_optional('c')
     assert('c' not in o2)
     assert('d' not in o2)
@@ -666,7 +561,7 @@ def test_extensions():
     assert('d' not in o2)
 
     # test delete required
-    o2 = o.copy()
+    o2 = deepcopy(o)
     o2.delete_required('c')
     assert('c' not in o2)
     try:
@@ -788,29 +683,29 @@ def test_extensions():
     assert(len(d2)==0)
     assert(object_eq(o,oref))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o.move_from(o2)
     assert(len(o2)==0)
     assert(object_eq(o,oref))
 
-    osmall2 = oref.copy()
+    osmall2 = deepcopy(oref)
     del osmall2.b
     del osmall2.c
     del osmall2[3,4,5]
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o.move_from(o2,keys=['b','c',(3,4,5)])
     assert(object_eq(o,osmall))
     assert(object_eq(o2,osmall2))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o.move_from_optional(o2,keys=['b','c',(3,4,5),'alpha','beta'])
     assert(object_eq(o,osmall))
     assert(object_eq(o2,osmall2))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     try:
         o.move_from(o2,keys=['a','x'])
@@ -824,31 +719,31 @@ def test_extensions():
     #end try
 
     # test move to
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     d = dict()
     o2.move_to(d)
     assert(len(o2)==0)
     assert(d==dref)
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o2.move_to(o)
     assert(len(o2)==0)
     assert(object_eq(o,oref))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o2.move_to(o,keys=['b','c',(3,4,5)])
     assert(object_eq(o,osmall))
     assert(object_eq(o2,osmall2))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     o2.move_to_optional(o,keys=['b','c',(3,4,5),'alpha','beta'])
     assert(object_eq(o,osmall))
     assert(object_eq(o2,osmall2))
 
-    o2 = oref.copy()
+    o2 = deepcopy(oref)
     o = obj()
     try:
         o2.move_to(o,keys=['a','x'])
@@ -920,17 +815,17 @@ def test_extensions():
     #end try
 
     # test extract
-    o = oref.copy()
+    o = deepcopy(oref)
     o2 = o.extract()
     assert(len(o)==0)
     assert(object_eq(o2,oref))
 
-    o = oref.copy()
+    o = deepcopy(oref)
     o2 = o.extract(['b','c',(3,4,5)])
     assert(object_eq(o2,osmall))
     assert(object_eq(o,osmall2))
 
-    o = oref.copy()
+    o = deepcopy(oref)
     o2 = o.extract_optional(['b','c',(3,4,5),'alpha','beta'])
     assert(object_eq(o2,osmall))
     assert(object_eq(o,osmall2))
@@ -1126,6 +1021,160 @@ def test_extensions():
     #end for
     o2 = o.serial()
     assert(object_eq(o2,oref))
-
 #end def test_extensions
 
+
+def test_old_nexus_unpickle():
+    import numpy as np
+    from ..generic import obj_deprecated as obj
+
+    sim_obj = obj()
+    if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
+        sim_obj.load(TEST_FILES["old_nxs_sim.p"])
+    else:
+        sim_obj.load(TEST_FILES["old_nxs_sim_numpy_1.p"])
+
+    assert(sim_obj.analyzed            is True)
+    assert(sim_obj.analyzer_image      == "analyzer.p")
+    assert(sim_obj.app_name            == "pw.x")
+    assert(set(sim_obj.app_props)      == set(["serial", "mpi"]))
+    assert(sim_obj.block               is False)
+    assert(sim_obj.block_subcascade    is False)
+    assert(sim_obj.errfile             == "relax.err")
+    assert(sim_obj.failed              is False)
+    assert(sim_obj.files               == {"Ge.pbe-kjpaw.UPF", "relax.in"})
+    assert(sim_obj.finished            is True)
+    assert(sim_obj.got_output          is True)
+    assert(sim_obj.identifier          == "relax")
+    assert(sim_obj.image_dir           == "sim_relax")
+    assert(sim_obj.imlocdir            == "./runs/relax/kgrid_111/sim_relax")
+    assert(sim_obj.imremdir            == "./runs/relax/kgrid_111/sim_relax")
+    assert(sim_obj.imresdir            == "./runs/relax/kgrid_111/sim_relax")
+    assert(sim_obj.infile              == "relax.in")
+    assert(sim_obj.input_image         == "input.p")
+    assert(sim_obj.locdir              == "./runs/relax/kgrid_111")
+    assert(sim_obj.outfile             == "relax.out")
+    assert(sim_obj.outputs             is None)
+    assert(sim_obj.path                == "relax/kgrid_111")
+    assert(sim_obj.process_id          == 1)
+    assert(sim_obj.remdir              == "./runs/relax/kgrid_111")
+    assert(sim_obj.resdir              == "./runs/relax/kgrid_111")
+    assert(sim_obj.sent_files          is True)
+    assert(sim_obj.setup               is True)
+    assert(sim_obj.sim_image           == "sim.p")
+    assert(sim_obj.subcascade_finished is False)
+    assert(sim_obj.submitted           is True)
+
+
+    ref_atomic_positions_atoms = [
+        "Ge", "Ge", "Ge", "Ge", "Ge", "Ge", "Ge", "Ge", "Ge",
+        "Ge", "Ge", "Ge", "Ge", "Ge", "Ge", "Ge", "Ge",
+        ]
+
+    ref_atomic_positions_positions = np.array([
+        [ 5.34792496,  5.34792496,  5.34792496],
+        [ 0.        ,  0.        ,  0.        ],
+        [ 2.67396248,  2.67396248,  2.67396248],
+        [ 5.34792496,  5.34792496,  0.        ],
+        [ 8.02188743,  8.02188743,  2.67396248],
+        [ 0.        ,  5.34792496,  5.34792496],
+        [ 2.67396248,  8.02188743,  8.02188743],
+        [ 5.34792496, 10.69584991,  5.34792496],
+        [ 8.02188743, 13.36981239,  8.02188743],
+        [ 5.34792496,  0.        ,  5.34792496],
+        [ 8.02188743,  2.67396248,  8.02188743],
+        [10.69584991,  5.34792496,  5.34792496],
+        [13.36981239,  8.02188743,  8.02188743],
+        [ 5.34792496,  5.34792496, 10.69584991],
+        [ 8.02188743,  8.02188743, 13.36981239],
+        [10.69584991, 10.69584991, 10.69584991],
+        [13.36981239, 13.36981239, 13.36981239],
+        ], dtype=np.float64)
+
+    ref_cell_parameters_vectors = np.array([
+        [10.69584991, 10.69584991,  0.        ],
+        [ 0.        , 10.69584991, 10.69584991],
+        [10.69584991,  0.        , 10.69584991],
+        ], dtype=np.float64)
+
+    inp_obj = obj()
+    if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
+        inp_obj.load(TEST_FILES["old_nxs_pwscf_input.p"])
+    else:
+        inp_obj.load(TEST_FILES["old_nxs_pwscf_input_numpy_1.p"])
+
+    assert(inp_obj.atomic_positions.atoms == ref_atomic_positions_atoms)
+    np.testing.assert_allclose(inp_obj.atomic_positions.positions, ref_atomic_positions_positions, rtol=1e-7)
+    assert(inp_obj.atomic_positions.specifier == "bohr")
+
+    assert(inp_obj.atomic_species.atoms               == ["Ge"])
+    assert(inp_obj.atomic_species.specifier           == "")
+    np.testing.assert_allclose(inp_obj.atomic_species.masses.Ge, 72.61, rtol=1e-7)
+    assert(inp_obj.atomic_species.pseudopotentials.Ge == "Ge.pbe-kjpaw.UPF")
+
+    assert(inp_obj.cell_parameters.specifier == "bohr")
+    np.testing.assert_allclose(inp_obj.cell_parameters.vectors, ref_cell_parameters_vectors, rtol=1e-7)
+
+    assert(inp_obj.control.calculation  == "relax")
+    assert(inp_obj.control.disk_io      == "low")
+    assert(inp_obj.control.outdir       == "pwscf_output")
+    assert(inp_obj.control.prefix       == "pwscf")
+    assert(inp_obj.control.pseudo_dir   == "./")
+    assert(inp_obj.control.restart_mode == "from_scratch")
+    assert(inp_obj.control.verbosity    == "high")
+    assert(inp_obj.control.wf_collect   == False)
+
+    np.testing.assert_allclose(inp_obj.electrons.conv_thr, 1e-06, rtol=1e-7)
+    assert(inp_obj.electrons.diagonalization  == "david")
+    assert(inp_obj.electrons.electron_maxstep == 1000)
+    np.testing.assert_allclose(inp_obj.electrons.mixing_beta, 0.7, rtol=1e-7)
+    assert(inp_obj.electrons.mixing_mode      == "plain")
+
+    assert(inp_obj.ions.ion_dynamics      == "bfgs")
+    assert(inp_obj.ions.pot_extrapolation == "second_order")
+    assert(inp_obj.ions.upscale           == 100)
+    assert(inp_obj.ions.wfc_extrapolation == "second_order")
+
+    assert(inp_obj.k_points.grid      == (1, 1, 1))
+    assert(inp_obj.k_points.shift     == (1, 1, 1))
+    assert(inp_obj.k_points.specifier == "automatic")
+
+    np.testing.assert_allclose(inp_obj.system.degauss, 0.0001, rtol=1e-7)
+    assert(inp_obj.system.ecutrho     == 200)
+    assert(inp_obj.system.ecutwfc     == 50)
+    assert(inp_obj.system.ibrav       == 0)
+    assert(inp_obj.system.input_dft   == "pbe")
+    assert(inp_obj.system.nat         == 17)
+    assert(inp_obj.system.nosym       == True)
+    assert(inp_obj.system.ntyp        == 1)
+    assert(inp_obj.system.occupations == "smearing")
+    assert(inp_obj.system.smearing    == "fermi-dirac")
+    assert(inp_obj.system.tot_charge  == 0)
+#end def test_old_nexus_unpickle
+
+
+@isolate_nexus_core
+def test_warn():
+    with pytest.warns(NexusUserWarning, match="This is a test warning"):
+        warn("This is a test warning", warn_type="user")
+
+    with pytest.warns(NexusDevWarning, match="This is a developer warning"):
+        warn("This is a developer warning", warn_type="dev")
+    
+    with pytest.warns(NexusUserWarning, match="This is a warning from inside obj"):
+        obj().warn("This is a warning from inside obj")
+#end def test_warn
+
+
+@isolate_nexus_core
+def test_nxs_deprecate():
+
+    @nxs_deprecate(since="2.3.9", replacement="Some other function")
+    def deprecated_function():
+        pass
+
+    with pytest.warns(
+        DeprecationWarning,
+        match="deprecated_function is deprecated as of Nexus version 2.3.9, and will be removed in a future update."
+        ):
+        deprecated_function()

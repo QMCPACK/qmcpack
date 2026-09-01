@@ -19,7 +19,7 @@
 
 import os
 import numpy as np
-from .developer import obj, unavailable
+from .developer import obj, FileFormatError
 from .unit_converter import convert
 from .periodic_table import Elements
 from .numerics import simstats, simplestats
@@ -28,6 +28,7 @@ from .structure import Structure, get_kpath
 from .pwscf_input import PwscfInput
 from .pwscf_data_reader import read_qexml
 from .fileio import TextFile
+from .utilities import path_string
 from . import numpy_extensions as npe
 
 
@@ -80,7 +81,7 @@ def pwscf_time(tsin):
 
 
 class PwscfAnalyzer(SimulationAnalyzer):
-    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,analyze=False,xml=False,warn=False,md_only=False):
+    def __init__(self,arg0=None,infile_name=None,outfile_name=None,pw2c_outfile_name=None,*,analyze=False,xml=False,warn=False,md_only=False):
         if isinstance(arg0,Simulation):
             sim = arg0
             path = sim.locdir
@@ -88,9 +89,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
             outfile_name= sim.outfile
             self.input_structure = sim.system.structure
         elif arg0 is not None:
-            path = arg0
+            path = path_string(arg0)
             if not os.path.exists(path):
-                self.error('path to QE data does not exist\npath provided: {}'.format(path))
+                msg = (
+                    'path to QE data does not exist\n'
+                    'path provided: {}'.format(path)
+                    )
+                raise FileNotFoundError(msg)
             #end if
             if os.path.isfile(path):
                 filepath = path
@@ -100,7 +105,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 elif filename.endswith('.out'):
                     outfile_name = filename
                 else:
-                    self.error('could not determine whether file is QE input or output\nfile provided: {}'.format(filepath))
+                    msg = (
+                        'could not determine whether file is QE input or output\n'
+                        'file provided: {}'.format(filepath)
+                        )
+                    raise RuntimeError(msg)
                 #end if
             #end if
             if outfile_name is None:
@@ -170,6 +179,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if self.info.md_only:
                 return
             #end if
+
         except:
             nx+=1
             if self.info.warn:
@@ -178,7 +188,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end try
 
         try:
-            lines = open(outfile,'r').read().splitlines()
+            with open(outfile, "r") as f:
+                lines = f.read().splitlines()
         except:
             nx+=1
             if self.info.warn:
@@ -267,7 +278,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     up_spin   = False
                     index = -1
                 #end if
-                              
+
                 if 'number of k points=' in l:
                     try:
                         num_kpoints      = int(l.strip().split()[4])
@@ -323,7 +334,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     else:
                         index = nfound -1 
                     #end if
-                    band_channel.append(bk)
+                    band_channel[len(band_channel)] = bk
                     #if nfound==1:
                     #    bands.up = obj(
                     #        eigs = eigs,
@@ -340,10 +351,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
             vbm        = obj(energy=-1.0e6)
             cbm        = obj(energy=1.0e6)
             direct_gap = obj(energy=1.0e6)
-            for band_channel in bands:
-                for b in band_channel:
-                    e_val  = np.max(b.eigs[b.occs > 0.5])
-                    e_cond = np.min(b.eigs[b.occs < 0.5])
+            for band_channel in bands.values():
+                for b in band_channel.values():
+                    occ   = b.occs > 0.5
+                    unocc = b.occs < 0.5
+                    e_val  = np.max(b.eigs[occ])
+                    e_cond = np.min(b.eigs[unocc])
 
                     if e_val > vbm.energy:
                         vbm.energy          = e_val
@@ -390,7 +403,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if nfound>0:
                 self.bands = bands
             #end if
-            # Kayahan edited --end
+
+        # Kayahan edited --end
+
         except:
             nx+=1
             if self.info.warn:
@@ -410,7 +425,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     conf = obj()
                     axes = []
                     cont = True
-                    for d in (0,1,2):
+                    for d in range(3):  # noqa: B007
                         i+=1
                         axes.append(np.array(lines[i].split(),dtype=float))
                     #end for
@@ -486,7 +501,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             while i<nlines:
                 l = lines[i]
                 if l.find('total   stress')!=-1:
-                    for j in range(3):
+                    for j in range(3):  # noqa: B007
                         i+=1
                         stress.append(list(np.array(lines[i].split(),dtype=float)))
                     #end for
@@ -515,7 +530,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     conf = obj()
                     aforces = []
                     found_atom = False
-                    for j in range(10):
+                    for j in range(10):  # noqa: B007
                         i+=1
                         if i<nlines and 'atom' in lines[i]:
                             found_atom = True
@@ -622,7 +637,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
         try:
             if pw2c_outfile_name is not None:
-                lines = open(os.path.join(path,pw2c_outfile_name),'r').readlines()
+                with open(os.path.join(path,pw2c_outfile_name), "r") as out:
+                    lines = out.readlines()
                 for l in lines:
                     if l.find('Kinetic')!=-1:
                         tokens = l.split()
@@ -694,7 +710,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         #end if
                     #end for
                 #end for
-                self.xmldata.set(
+                self.xmldata.update(
                     data    = data,
                     kpoints = kpoints
                     )
@@ -708,12 +724,20 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def analyze
 
 
-    def write_electron_counts(self,filepath=None,return_flag=False):
+    def write_electron_counts(self,filepath=None,*,return_flag=False):
         if not return_flag:
             if not self.info.xml:
-                self.error('xml data has not been processed\ncannot write electron counts')
+                msg = (
+                    'xml data has not been processed\n'
+                    'cannot write electron counts'
+                    )
+                raise RuntimeError(msg)
             elif self.xmldata.failed:
-                self.error('xml data processing failed\ncannot write electron counts')
+                msg = (
+                    'xml data processing failed\n'
+                    'cannot write electron counts'
+                    )
+                raise FileFormatError(msg)
             #end if
         elif not self.info.xml or self.xmldata.failed:
             return False
@@ -725,7 +749,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             spins = obj(up='up',down='up')
         #end if
         tot = obj(up=0,down=0)
-        for kp in kpoints:
+        for kp in kpoints.values():
             w = kp.weight
             for s,sl in spins.items():
                 tot[s] += w*kp[sl].occupations.sum()
@@ -735,7 +759,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         text += '  {0: 3.2f}  {1: 3.2f}  {2: 3.2f}  {3: 3.2f}\n'.format(tot.up+tot.down,tot.up-tot.down,tot.up,tot.down)
         text += '\nkpoint electron counts\n'
         weights = []
-        for kp in kpoints:
+        for kp in kpoints.values():
             weights.append(kp.weight)
         #end for
         weights = np.array(weights,dtype=float)
@@ -750,7 +774,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}  {5: 3.2f}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up-kpt.down,kpt.up,kpt.down)
         #end for
         if filepath is not None:
-            open(filepath,'w').write(text)
+            with open(filepath,'w') as fobj:
+                fobj.write(text)
         #end if
         if not return_flag:
             return text
@@ -782,7 +807,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def md_statistics
 
 
-    def md_plots(self,show=True):
+    def md_plots(self,*,show=True):
 
         md = self.md_data
 
@@ -831,13 +856,24 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 struct=struct.tile(2,2,2)
                 ss=struct.write_xyz()
                 movie += ss
-                open(filepath,'w').write(movie)
+                with open(filepath,'w') as fobj:
+                    fobj.write(movie)
             #end for
         #end for
     #end def make_movie
 
 
-    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True,k_labels=None):
+    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, *, show=False, save=True, show_vbm_cbm=True,k_labels=None):
+        import matplotlib.pyplot as plt
+        params = {
+            'legend.fontsize'      : 14,
+            'figure.facecolor'     : 'white',
+            'figure.subplot.hspace': 0.,
+            'axes.labelsize'       : 16,
+            'xtick.labelsize'      : 14,
+            'ytick.labelsize'      : 14,
+            }
+        plt.rcParams.update(params)
         if 'bands' in self:
             success = True
             if filename is None:
@@ -847,30 +883,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
             else:
                 filepath = os.path.join(filepath,filename)
             #end if
-            try:
-                import matplotlib
-                gui_envs = ['GTKAgg','TKAgg','agg','Qt4Agg','WXAgg']
-                for gui in gui_envs:
-                    try:
-                        matplotlib.use(gui, force=True)
-                        from matplotlib import pyplot
-                        success = True
-                        break
-                    except:
-                        continue
-                    #end try
-                #end for
-                from matplotlib.pyplot import figure,plot,ylabel,show,ylim,xlim,rcParams,savefig,gca,xticks,axvline, scatter
-                params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
-                              'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
-                rcParams.update(params)
-            except(ImportError, RuntimeError):
-                success = False
-            if not success:
-                figure,plot,ylabel,show,ylim,xlim,rcParams,savefig,xticks = unavailable('matplotlib.pyplot','figure','plot','ylabel','show','ylim','xlim','rcParams','savefig','xticks')
-            #end if
-            fig    = figure()
-            ax     = gca()
+
+            fig    = plt.figure()
+            ax     = plt.gca()
             nbands = self.input.system.nbnd
 
             if k_labels is None:
@@ -903,19 +918,19 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     y.append(bi['eigs'][nb])
                 #end for
                 y = np.array(y) - self.bands.vbm.energy
-                plot(x, y, 'k')
+                plt.plot(x, y, 'k')
                 if len(self.bands.down) > 0:
                     y = []
                     for bi in self.bands.down:
                         y.append(bi['eigs'][nb])
                     #end for
                     y = np.array(y) - self.bands.vbm.energy
-                    plot(x, y, 'r')
+                    plt.plot(x, y, 'r')
                 #end if              
             #end for
             for ln, li in enumerate(labels):
                 if li != '':
-                    axvline(x[ln], ymin=-100, ymax=100, linewidth=3, color='k')
+                    plt.axvline(x[ln], ymin=-100, ymax=100, linewidth=3, color='k')
                     if li == 'GAMMA':
                         labels[ln] = r'$\Gamma$'
                     elif li != '':
@@ -928,14 +943,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end for
             
-            xlim([np.min(x), np.max(x)])
+            plt.xlim([np.min(x), np.max(x)])
             if max_min_e is None:
-                ylim(-5, +5)
+                plt.ylim(-5, +5)
             else:
-                ylim(max_min_e[0],max_min_e[1])
+                plt.ylim(max_min_e[0],max_min_e[1])
             #end if
-            ylabel('Energy (eV)')
-            xticks(x, labels)
+            plt.ylabel('Energy (eV)')
+            plt.xticks(x, labels)
             ax.tick_params(axis='x', which='both', length=0)
             ax.tick_params(axis='x', which='both', pad=10)
         #end if
@@ -944,18 +959,18 @@ class PwscfAnalyzer(SimulationAnalyzer):
             cbm = self.bands.cbm
             for kn, ki in enumerate(self.bands.up):
                 if (vbm.kpoint_rel == ki['kpoint_rel']).all():
-                    scatter(x[kn], 0, c='green', s=100)
+                    plt.scatter(x[kn], 0, c='green', s=100)
                 #end if
                 if (cbm.kpoint_rel == ki['kpoint_rel']).all():
-                    scatter(x[kn], cbm.energy-vbm.energy, c='r', s=100)
+                    plt.scatter(x[kn], cbm.energy-vbm.energy, c='r', s=100)
                 #end if
             #end for
         #end if
         if save:
-            savefig(filename, format='pdf',bbox_inches='tight')
+            plt.savefig(filename, format='pdf',bbox_inches='tight')
         #end if
         if show:
-            show()
+            plt.show()
         #end if
     #end def plot_bandstructure
 

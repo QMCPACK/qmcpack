@@ -31,25 +31,101 @@
 #====================================================================#
 
 
+import os
+from copy import deepcopy
+from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
-from .developer import DevBase, obj, error, warn
+from .developer import DevBase, obj, warn, FileFormatError
 from .nexus_base import nexus_noncore
+from .pseudoset import pp_elem_label, PseudoSet
 from .simulation import SimulationInput
+from .utilities import path_string
 
 
 class GIbase(DevBase):
-    def message(self,msg,**kwargs):
-        self.error(msg,**kwargs)
-    #end def message
+    pass
 #end class GIbase
+
+
+def _read_gamess_pseudopotential(filepath):
+    filename = os.path.basename(filepath)
+    element_label,element = pp_elem_label(filename,guard=True)
+    pseudo = obj(
+        filename      = filename,
+        element       = element,
+        element_label = element_label,
+        pp_text       = None,
+        pp_name       = None,
+        basis_text    = None,
+        )
+
+    with open(filepath, "r") as f:
+        lines = f.read().splitlines()
+    new_block = True
+    tokens = []
+    block = ''
+    for nline,line in enumerate(lines,1):
+        ls = line.strip()
+        if len(ls)>0 and ls[0]!='!' and ls[0]!='#':
+            if new_block:
+                tokens = ls.split()
+                new_block = False
+                if len(tokens)!=5:
+                    block += line+'\n'
+                #end if
+            else:
+                block += line+'\n'
+            #end if
+        #end if
+        if (len(ls)==0 or nline==len(lines)) and len(block)>0:
+            block = block.rstrip()
+            if len(tokens)==4:
+                pseudo.pp_text = block
+                pseudo.pp_name = tokens[0]
+            elif len(tokens)==5:
+                pseudo.basis_text = block
+            else:
+                msg = (
+                    'could not identify text block in {0} as pseudopotential or basis text\n'
+                    'text block:\n'
+                    '{1}'.format(filename,block)
+                    )
+                raise FileFormatError(msg)
+            #end if
+            new_block = True
+            tokens = []
+            block = ''
+        #end if
+    #end for
+    if pseudo.pp_text is None:
+        msg = 'could not find pseudopotential text in '+filename
+        raise FileFormatError(msg)
+    #end if
+    return pseudo
+#end def _read_gamess_pseudopotential
+
+
+def _read_gamess_pseudopotentials(pseudo_files):
+    pseudos = obj()
+    for filepath in pseudo_files:
+        pseudo = _read_gamess_pseudopotential(filepath)
+        pseudos[pseudo.element_label] = pseudo
+    #end for
+    return pseudos
+#end def _read_gamess_pseudopotentials
 
 
 class GIarray(GIbase):
     def __init__(self,d):
         for n,v in d.items():
             if not isinstance(n,int):
-                self.error("keys must be integers\nattempted to initialize array from input provided: {0}\nnote that dict's are used only for arrays".format(d))
+                msg = (
+                    "keys must be integers\n"
+                    "attempted to initialize array from input provided: {0}\n"
+                    "note that dict's are used only for arrays".format(d)
+                    )
+                raise TypeError(msg)
             #end if
             if isinstance(v,(tuple,list,np.ndarray)):
                 nv = np.array(v,type(v[0]))
@@ -68,15 +144,15 @@ class Group(GIbase):
         if text is not None:
             self.read(text)
         #end if
-        self.set(**kwargs)
+        self.update(**kwargs)
     #end def __init__
 
     def read(self,text):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read
 
     def write(self,text):
-        self.not_implemented()
+        raise NotImplementedError
     #end def read
 #end class Group
 
@@ -88,8 +164,10 @@ class KeywordGroup(Group):
     lineindent = '         '
 
 
-    booldict = {'.true.':True,'.TRUE.':True,'.t.':True,'.T.':True,
-                '.false.':False,'.FALSE.':False,'.f.':False,'.F.':False}
+    booldict = MappingProxyType({
+        '.true.' :True, '.TRUE.' :True, '.t.':True, '.T.':True,
+        '.false.':False,'.FALSE.':False,'.f.':False,'.F.':False
+        })
 
     def readval(self,val):
         fail = False
@@ -125,7 +203,8 @@ class KeywordGroup(Group):
             #end try
         #end if
         if fail:
-            self.error('failed to read value: "{0}"'.format(val))
+            msg = 'failed to read value: "{0}"'.format(val)
+            raise RuntimeError(msg)
         #end if
         return v
     #end def readval
@@ -188,7 +267,8 @@ class KeywordGroup(Group):
             #end for
             sval = sval[0:-1]
         else:
-            self.error('unknown type encountered on write: {0}'.format(val))
+            msg = 'unknown type encountered on write: {0}'.format(val)
+            raise TypeError(msg)
         #end if
         return sval
     #end def writeval
@@ -266,14 +346,14 @@ class CardGroup(Group):
 
     def append_text(self,text):
         for tokens in self.read_line_tokens(text):
-            self.append(tokens)
+            self[len(self)] = tokens
         #end for
     #end def append_text
 
             
     def append_list(self,lst):
         for tokens in lst:
-            self.append(tokens)
+            self[len(self)] = tokens
         #end for
     #end def append_list
 
@@ -345,12 +425,12 @@ class FormattedGroup(Group):
 # detailed keyword specification groups to check names and types of keyword inputs
 
 class KeywordSpecGroup(KeywordGroup):
-    keywords = set()
-    integers = set()
-    reals    = set()
-    bools    = set()
-    strings  = set()
-    arrays   = set()
+    keywords = frozenset()
+    integers = frozenset()
+    reals    = frozenset()
+    bools    = frozenset()
+    strings  = frozenset()
+    arrays   = frozenset()
     allowed_values = obj()
 
     def is_consistent(self):
@@ -374,33 +454,33 @@ class KeywordSpecGroup(KeywordGroup):
 
 
 class ContrlGroup(KeywordSpecGroup):
-    keywords = set([
+    keywords = frozenset({
             'scftyp','dfttyp','tddft' ,'vbtyp' ,'mplevl','cityp' ,'cctyp' ,
             'cimtyp','relwfn','runtyp','numgrd','exetyp','icharg','mult'  ,
             'coord' ,'units' ,'nzvar' ,'pp'    ,'local' ,'ispher','qmttol',
             'maxit' ,'molplt','pltorb','aimpac','friend','nfflvl','nprint',
             'nosym' ,'etollz','inttyp','grdtyp','normf' ,'normp' ,'itol'  ,
             'icut'  ,'iskprp','irest' ,'geom'  ,'ecp'   ,'casino'
-            ])
-    integers = set([
+            })
+    integers = frozenset({
             'mplevl','icharg','mult' ,'nzvar'  ,'ispher','maxit' ,'nfflvl',
             'nprint','nosym' ,'normf','normp'  ,'itol'  ,'icut'  ,'iskprp',
             'irest'
-            ])
-    reals    = set(['qmttol' ,'etollz'])
-    bools    = set(['numgrd' ,'molplt','pltorb','aimpac','casino'])
-    strings  = set([
+            })
+    reals    = frozenset({'qmttol' ,'etollz'})
+    bools    = frozenset({'numgrd' ,'molplt','pltorb','aimpac','casino'})
+    strings  = frozenset({
             'scftyp','dfttyp','tddft' ,'vbtyp' ,'cityp' ,'cctyp' ,'cimtyp',
             'relwfn','runtyp','exetyp','coord' ,'units' ,'pp'    ,'local' ,
             'friend','inttyp','grdtyp','geom'  ,'ecp'
-            ])
+            })
 
     allowed_values = obj(
-        scftyp = set(['rhf','uhf','rohf','gvb','mcscf','none']),
-        dfttyp = set(['none','slater','becke','gill','optx','pw91x','pbex',
+        scftyp = frozenset({'rhf','uhf','rohf','gvb','mcscf','none'}),
+        dfttyp = frozenset({'none','slater','becke','gill','optx','pw91x','pbex',
                       'vwn','vwn3','vwn1rpa','pz81','p86','lyp','pw91c','pbec',
                       'op','svwn','wvwn1rpa','blyp','bop','bp86','gvwn','gpw91',
-                      'pbevwn','pbeop','olyp','pw91','pbe','edf1','pbe','revpbe',
+                      'pbevwn','pbeop','olyp','pw91','pbe','edf1','revpbe',
                       'rpbe','pbesol','hcth93','hcth120','hcth147','hcth407',
                       'sogga','mohlyp','b97-d','sogga11','bhhlyp','b3pw91',
                       'b3lyp','b3lypv1r','b3lypv3','b3p86','b3p86v1r','b3p86v5',
@@ -409,85 +489,84 @@ class ContrlGroup(KeywordSpecGroup):
                       'wb97x-2','wb97x-2l','vs98','pkzb','thcth','thcthhyb','bmk',
                       'tpss','tpssh','tpssm','revtpss','dldf','m05','m05-2x',
                       'm06','m06-l','m06-2x','m06-hf','m08-hx','m08-s0','m11','m11-l',
-                      'none','xalpha','slater','becke','depristo','cama','half',
-                      'vwn','pwloc','lyp','bvwn','blyp','bpwloc','b3lyp','camb',
-                      'xvwn','xpwloc','svwn','spwloc','wigner','ws','wigexp']),
-        tddft  = set(['none','excite','spnflp']),
-        vbtyp  = set(['none','vb2000']),
-        mplevl = set([0,2]),
-        cityp  = set(['none','cis','sfcis','aldet','ormas','fsoci','genci','guga']),
-        cctyp  = set(['none','lccd','ccd','ccsd','ccsd(t)','r-cc','cr-cc','cr-ccl',
+                      'xalpha','depristo','cama','half','pwloc','bvwn','bpwloc','camb',
+                      'xvwn','xpwloc','spwloc','wigner','ws','wigexp'}),
+        tddft  = frozenset({'none','excite','spnflp'}),
+        vbtyp  = frozenset({'none','vb2000'}),
+        mplevl = frozenset({0,2}),
+        cityp  = frozenset({'none','cis','sfcis','aldet','ormas','fsoci','genci','guga'}),
+        cctyp  = frozenset({'none','lccd','ccd','ccsd','ccsd(t)','r-cc','cr-cc','cr-ccl',
                       'ccsd(tq)','cr-cc(q)','eom-ccsd','cr-eom','cr-eoml','ip-eom2',
-                      'ip-eom2','ip-eom3a','ea-eom2','ea-eom3a']),
-        cimtyp = set(['none','secim','decim','gsecim']),
-        relwfn = set(['none','iotc','dk','resc','nesc']),
-        runtyp = set(['energy','gradient','hessian','gamma','optimize','trudge',
+                      'ip-eom3a','ea-eom2','ea-eom3a'}),
+        cimtyp = frozenset({'none','secim','decim','gsecim'}),
+        relwfn = frozenset({'none','iotc','dk','resc','nesc'}),
+        runtyp = frozenset({'energy','gradient','hessian','gamma','optimize','trudge',
                       'sadpoint','mex','conical','irc','vscf','drc','md','globop',
                       'optfmo','gradextr','surface','comp','g3mp2','prop','raman',
                       'nacme','nmr','eda','qmefpea','transitn','ffield','tdhf',
-                      'tdhfx','makefp','fmo0']),
-        exetyp = set(['run','check']),
-        coord  = set(['unique','hint','prinaxis','zmt','zmtmpc','fragonly']),
-        units  = set(['angs','bohr']),
-        pp     = set(['none','read','sbkjc','hw','mcp']),
-        local  = set(['none','boys','ruednbrg','pop','svd']),
-        ispher = set([-1,0,1]),
-        friend = set(['hondo','meldf','gamessuk','gaussian','all']),
-        nfflvl = set([2,3]),
-        nprint = set([-7,-6,-5,-4,-3,-2,1,2,3,4,5,6,7,8,9]),
-        nosym  = set([0,1]),
-        inttyp = set(['best','rotaxis','eric','rysquad']),
-        grdtyp = set(['best rsyquad']),
-        normf  = set([0,1]),
-        normp  = set([0,1]),
-        iskprp = set([0,1]),
-        irest  = set([-1,0,1,2,3,4]),
-        geom   = set(['input','daf']),
+                      'tdhfx','makefp','fmo0'}),
+        exetyp = frozenset({'run','check'}),
+        coord  = frozenset({'unique','hint','prinaxis','zmt','zmtmpc','fragonly'}),
+        units  = frozenset({'angs','bohr'}),
+        pp     = frozenset({'none','read','sbkjc','hw','mcp'}),
+        local  = frozenset({'none','boys','ruednbrg','pop','svd'}),
+        ispher = frozenset({-1,0,1}),
+        friend = frozenset({'hondo','meldf','gamessuk','gaussian','all'}),
+        nfflvl = frozenset({2,3}),
+        nprint = frozenset({-7,-6,-5,-4,-3,-2,1,2,3,4,5,6,7,8,9}),
+        nosym  = frozenset({0,1}),
+        inttyp = frozenset({'best','rotaxis','eric','rysquad'}),
+        grdtyp = frozenset({'best rsyquad'}),
+        normf  = frozenset({0,1}),
+        normp  = frozenset({0,1}),
+        iskprp = frozenset({0,1}),
+        irest  = frozenset({-1,0,1,2,3,4}),
+        geom   = frozenset({'input','daf'}),
         )
 #end class ContrlGroup
 
 
 
 class SystemGroup(KeywordSpecGroup):
-    keywords = set(['mwords','memddi','timlim','parall','kdiag','corefl',
+    keywords = frozenset({'mwords','memddi','timlim','parall','kdiag','corefl',
                     'baltyp','mxseq2','mxseq3','nodext','iosmp','modio' ,
-                    'memory'])
+                    'memory'})
 
-    integers = set(['mwords','memddi','kdiag','mxseq2','mxseq3','modio','memory'])
-    reals    = set(['timlim'])
-    bools    = set(['parall','corefl'])
-    strings  = set(['baltyp'])
-    arrays   = set(['nodext','iosmp'])
+    integers = frozenset({'mwords','memddi','kdiag','mxseq2','mxseq3','modio','memory'})
+    reals    = frozenset({'timlim'})
+    bools    = frozenset({'parall','corefl'})
+    strings  = frozenset({'baltyp'})
+    arrays   = frozenset({'nodext','iosmp'})
 
     allowed_values = obj(
-        kdiag  = set([0,1,2,3]),
-        baltyp = set(['slb','dlb','loop','nxtval']),
-        modio  = set([1,2,4,8,15]),
+        kdiag  = frozenset({0,1,2,3}),
+        baltyp = frozenset({'slb','dlb','loop','nxtval'}),
+        modio  = frozenset({1,2,4,8,15}),
         )
 #end class SystemGroup
 
 
 
 class GuessGroup(KeywordSpecGroup):
-    keywords = set(['guess' ,'prtmo' ,'punmo' ,'mix' ,'norb','norder','iorder',
-                    'jorder','insorb','purify','tolz','tole','symden'])
+    keywords = frozenset({'guess' ,'prtmo' ,'punmo' ,'mix' ,'norb','norder','iorder',
+                    'jorder','insorb','purify','tolz','tole','symden'})
 
-    integers = set(['norb','norder','insorb'])
-    reals    = set(['tolz','tole'])
-    bools    = set(['prtmo','punmo','mix','purify','symden'])
-    strings  = set(['guess'])
-    arrays   = set(['iorder','jorder'])
+    integers = frozenset({'norb','norder','insorb'})
+    reals    = frozenset({'tolz','tole'})
+    bools    = frozenset({'prtmo','punmo','mix','purify','symden'})
+    strings  = frozenset({'guess'})
+    arrays   = frozenset({'iorder','jorder'})
 
     allowed_values = obj(
-        guess  = set(['huckel','hcore','moread','rdmini','mosaved','skip','fmo','hucsub','dmread']),
-        norder = set([0,1]),
+        guess  = frozenset({'huckel','hcore','moread','rdmini','mosaved','skip','fmo','hucsub','dmread'}),
+        norder = frozenset({0,1}),
         )
 #end class GuessGroup
 
 
 
 class ScfGroup(KeywordSpecGroup):
-    keywords = set([
+    keywords = frozenset({
             'dirscf','fdiff' ,'noconv','diis'  ,'soscf' ,'extrap','damp'  ,
             'shift' ,'rstrct','dem'   ,'cuhf'  ,'conv'  ,'sogtol','ethrsh',
             'maxdii','swdiis','locopt','demcut','dmpcut','uhfnos','vvos'  ,
@@ -495,25 +574,25 @@ class ScfGroup(KeywordSpecGroup):
             'kproj' ,'nco'   ,'nseto' ,'no'    ,'npair' ,'cicoef','couple',
             'f'     ,'alpha' ,'beta'  ,'npunch','npreo' ,'vtscal','scalf' ,
             'maxvt' ,'vtconv'
-            ])
-    integers = set([
+            })
+    integers = frozenset({
             'maxdii','mvoq'  ,'nhomo'  ,'nlumo' ,'kproj','nco','nseto',
             'npair' ,'npunch','maxvt'
-            ])
-    reals    = set([
+            })
+    reals    = frozenset({
             'conv'  ,'sogtol','ethrsh' ,'swdiis','demcut','dmpcut',
             'scalf' ,'vtconv'
-            ])
-    bools    = set([
+            })
+    bools    = frozenset({
             'dirscf','fdiff' ,'noconv' ,'diis'  ,'soscf' ,'extrap',
             'damp'  ,'shift' ,'rstrct' ,'dem'   ,'cuhf'  ,'locopt',
             'uhfnos','vvos'  ,'acavo'  ,'uhfchk','mom'   ,'couple',
             'vtscal'
-            ])
-    arrays   = set([
+            })
+    arrays   = frozenset({
             'pacavo','no'    ,'cicoef','f'     ,'alpha' ,'beta'  ,
             'npreo'
-            ])
+            })
 
     allowed_values = obj(
         kproj = set([0,1,2]),
@@ -523,46 +602,46 @@ class ScfGroup(KeywordSpecGroup):
 
 
 class McscfGroup(KeywordSpecGroup):
-    keywords = set([
+    keywords = frozenset({
             'cistep','focas' ,'soscf' ,'fullnr','quad'  ,'jacobi','acurcy',
             'engtol','maxit' ,'micit' ,'nword' ,'fors'  ,'canonc','finci' ,
             'diabat','ekt'   ,'npunch','npflg' ,'nofo'  ,'mcfmo' ,'casdii',
             'cashft','nrmcas','qudthr','damp'  ,'method','linser','fcore' ,
             'mofrz' ,'norb'  ,'norot' ,'dropc'
-            ])
-    integers = set(['maxit','micit','nword','npunch','nofo','mcfmo','nrmcas','norb'])
-    reals    = set(['acurcy','engtol','casdii','cashft','qudthr','damp'])
-    bools    = set(['focas','soscf','fullnr','quad','jacobi','fors','canonc',
-                    'diabat','ekt','linser','fcore','dropc'])
-    strings  = set(['cistep','finci','method'])
-    arrays   = set(['npflg','mofrz','norot'])
+            })
+    integers = frozenset({'maxit','micit','nword','npunch','nofo','mcfmo','nrmcas','norb'})
+    reals    = frozenset({'acurcy','engtol','casdii','cashft','qudthr','damp'})
+    bools    = frozenset({'focas','soscf','fullnr','quad','jacobi','fors','canonc',
+                    'diabat','ekt','linser','fcore','dropc'})
+    strings  = frozenset({'cistep','finci','method'})
+    arrays   = frozenset({'npflg','mofrz','norot'})
 
     allowed_values = obj(
-        cistep = set(['aldet','ormas','guga','genci','gmcci']),
-        finci  = set(['none','mos','nos']),
-        nrmcas = set([0,1]),
-        method = set(['dm2','tei']),
+        cistep = frozenset({'aldet','ormas','guga','genci','gmcci'}),
+        finci  = frozenset({'none','mos','nos'}),
+        nrmcas = frozenset({0,1}),
+        method = frozenset({'dm2','tei'}),
         )
 #end class McscfGroup
 
 
 
 class DftGroup(KeywordSpecGroup):
-    keywords = set([
+    keywords = frozenset({
             'method','dc'    ,'idcver','dcchg' ,'dcabc' ,'dcalp' ,'dcsr'  ,
             'dcs6'  ,'dcs8'  ,'lrdflg','mltint','lambda','kappa' ,'rzero' ,
             'prpol' ,'prcoef','prpair','lc'    ,'mu'    ,'chf'   ,'cmp2'  ,
-            'nrad'  ,'nleb'  ,'sg1'   ,'jans'  ,'nrad'  ,'nthe'  ,'nphi'  ,
-            'swoff' ,'switch','nrad0' ,'nleb0' ,'nthe0'  ,'nphi0' ,'thresh',
-            'gthre' ,'auxfun','three'
-            ])
-    integers = set(['idcver','prcoef','prpair','nrad','nleb','jans','nthe',
-                    'nphi','nrad0','nleb0','nthe0','nphi0','gthre'])
-    reals    = set(['dcalp','dcsr','dcs6','dcs8','lambda','kappa','rzero',
-                    'mu','chf','cmp2','swoff','switch','thresh'])
-    bools    = set(['dc','dcchg','dcabc','lrdflg','mltint','prpol','lc','sg1',
-                    'three'])
-    strings  = set(['method','auxfun'])
+            'nrad'  ,'nleb'  ,'sg1'   ,'jans'  ,'nthe'  ,'nphi'  ,'swoff' ,
+            'switch','nrad0' ,'nleb0' ,'nthe0' ,'nphi0' ,'thresh','gthre' ,
+            'auxfun','three'
+            })
+    integers = frozenset({'idcver','prcoef','prpair','nrad','nleb','jans','nthe',
+                    'nphi','nrad0','nleb0','nthe0','nphi0','gthre'})
+    reals    = frozenset({'dcalp','dcsr','dcs6','dcs8','lambda','kappa','rzero',
+                    'mu','chf','cmp2','swoff','switch','thresh'})
+    bools    = frozenset({'dc','dcchg','dcabc','lrdflg','mltint','prpol','lc','sg1',
+                    'three'})
+    strings  = frozenset({'method','auxfun'})
 
     allowed_values = obj(
         method = set(['grid','gridfree']),
@@ -575,30 +654,30 @@ class DftGroup(KeywordSpecGroup):
 
 
 class GugdiaGroup(KeywordSpecGroup):
-    keywords = set([
+    keywords = frozenset({
             'nstate','prttol','mxxpan','itermx','cvgtol' ,'nword' ,'maxham',
             'maxdia','nimprv','nselct','selthr','nextra','kprint','nref','eref'
-            ])
+            })
 
-    integers = set(['nstate','mxxpan','itermx','nword','maxham','maxdia',
-                    'nimprv','nselct','nextra','nref'])
-    reals    = set(['prttol','cvgtol','selthr','eref'])
-    arrays   = set(['kprint'])
+    integers = frozenset({'nstate','mxxpan','itermx','nword','maxham','maxdia',
+                    'nimprv','nselct','nextra','nref'})
+    reals    = frozenset({'prttol','cvgtol','selthr','eref'})
+    arrays   = frozenset({'kprint'})
 #end class GugdiaGroup
 
 
 
 class DrtGroup(KeywordSpecGroup):
-    keywords = set([
+    keywords = frozenset({
             'group','fors'  ,'foci'  ,'soci','iexcit','intact','nmcc',
             'ndoc' ,'naos'  ,'nbos'  ,'nalp','nval'  ,'next'  ,'nfzv','stsym',
             'noirr','mxnint','mxneme','nprt'
-            ])
+            })
 
-    integers = set(['iexcit','nmcc','ndoc','naos','nbos','nalp','nval',
-                    'next','nfzv','noirr','mxnint','mxneme','nprt'])
-    bools    = set(['fors','foci','soci','intact'])
-    strings  = set(['group','stsym'])
+    integers = frozenset({'iexcit','nmcc','ndoc','naos','nbos','nalp','nval',
+                    'next','nfzv','noirr','mxnint','mxneme','nprt'})
+    bools    = frozenset({'fors','foci','soci','intact'})
+    strings  = frozenset({'group','stsym'})
 
     allowed_values = obj(
         group = set(['c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h']),
@@ -612,16 +691,16 @@ class DrtGroup(KeywordSpecGroup):
 
 
 class CidrtGroup(KeywordSpecGroup):
-    keywords = set([
+    keywords = frozenset({
             'group','fors'  ,'foci'  ,'soci','iexcit','intact','nfzc' ,
             'ndoc' ,'naos'  ,'nbos'  ,'nalp','nval'  ,'next'  ,'nfzv' ,'stsym',
             'noirr','mxnint','mxneme','nprt'
-            ])
+            })
 
-    integers = set(['iexcit','nfzc','ndoc','naos','nbos','nalp','nval',
-                    'next','nfzv','noirr','mxnint','mxneme','nprt'])
-    bools    = set(['fors','foci','soci','intact'])
-    strings  = set(['group','stsym'])
+    integers = frozenset({'iexcit','nfzc','ndoc','naos','nbos','nalp','nval',
+                    'next','nfzv','noirr','mxnint','mxneme','nprt'})
+    bools    = frozenset({'fors','foci','soci','intact'})
+    strings  = frozenset({'group','stsym'})
 
     allowed_values = obj(
         group = set(['c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h']),
@@ -635,19 +714,19 @@ class CidrtGroup(KeywordSpecGroup):
 
 
 class DetGroup(KeywordSpecGroup):
-    keywords = set([
+    keywords = frozenset({
             'ncore' ,'nact'  ,'nels'  ,'sz'    ,'group' ,'stsym' ,'irreps',
             'nstate','prttol','analys','itermx','cvgtol','nhgss' ,'nstgss',
             'mxxpan','clobbr','pures' ,'iroot' ,'nflgdm','saflg' ,'wstate',
             'idwref','dwparm'
-            ])
+            })
 
-    integers = set(['ncore','nact','nels','nstate','itermx','nhgss','nstgss',
-                    'mxxpan','iroot','idwref'])
-    reals    = set(['sz','prttol','cvgtol','dwparm'])
-    bools    = set(['analys','clobbr','pures','saflg'])
-    strings  = set(['group','stsym'])
-    arrays   = set(['irreps','nflgdm','wstate'])
+    integers = frozenset({'ncore','nact','nels','nstate','itermx','nhgss','nstgss',
+                    'mxxpan','iroot','idwref'})
+    reals    = frozenset({'sz','prttol','cvgtol','dwparm'})
+    bools    = frozenset({'analys','clobbr','pures','saflg'})
+    strings  = frozenset({'group','stsym'})
+    arrays   = frozenset({'irreps','nflgdm','wstate'})
 
     allowed_values = obj(
         group = set(['c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h']),
@@ -660,15 +739,15 @@ class DetGroup(KeywordSpecGroup):
 
 
 class BasisGroup(KeywordSpecGroup):
-    keywords = set([
+    keywords = frozenset({
             'gbasis','ngauss','ndfunc','nffunc','npfunc','diffsp','diffs',
             'polar' ,'split2','split3','basnam','extfil'
-            ])
+            })
 
-    integers = set(['ngauss','ndfunc','nffunc','npfunc'])
-    bools    = set(['diffsp','diffs','extfil'])
-    strings  = set(['gbasis','polar'])
-    arrays   = set(['split2','split3','basnam'])
+    integers = frozenset({'ngauss','ndfunc','nffunc','npfunc'})
+    bools    = frozenset({'diffsp','diffs','extfil'})
+    strings  = frozenset({'gbasis','polar'})
+    arrays   = frozenset({'split2','split3','basnam'})
 
     allowed_values = obj(
         #gbasis = set(['sto','n21','n31','n311','g3l','g3lx','mini','midi','dzv',
@@ -699,42 +778,42 @@ class BasisGroup(KeywordSpecGroup):
 
 
 class GamessInput(SimulationInput,GIbase):
-    group_order = '''
-        contrl   system   basis    ecp      data     zmat     libe     
-        scf      scfmi    dft      tddft    cis      cisvec   mp2      
-        rimp2    auxbas   ccinp    eominp   mopac    guess    vec      
-        mofrz    statpt   trudge   trurst   force    cphf     cpmchf   
-        mass     hess     grad     dipdr    vib      vib2     vscf     
-        vibscf   gamma    eqgeom   hlowt    glowt    irc      drc      
-        mex      conicl   md       rdf      globop   gradex   surf     
-        local    truncn   elmom    elpot    eldens   elfldg   points   
-        grid     pdc      mgc      radial   molgrf   stone    raman    
-        alpdr    comp     nmr      morokm   lmoeda   qmefp    ffcalc   
-        tdhf     tdhfx    efrag    fragname frgrpl   ewald    makefp   
-        prtefp   damp     dampgs   pcm      pcmgrd   mcpcav   tescav   
-        newcav   iefpcm   pcmitr   disbs    disrep   svp      svpirf   
-        cosgms   scrf     mcp      relwfn   efield   intgrl   fmm      
-        trans    fmo      fmoprp   fmoxyz   optfmo   fmohyb   fmobnd   
-        fmoenm   fmoend   optrst   gddi     elg      dandc    dccorr   
-        subscf   subcor   mp2res   ccres    ciminp   cimatm   cimfrg   
-        ffdata   ffpdb    ciinp    det      cidet    gen      cigen    
-        ormas    ceeis    cedata   gcilst   gmcpt    pdet     adddet   
-        remdet   sodet    drt      cidrt    mcscf    mrmp     detpt    
-        mcqdpt   excorr   casci    ivoorb   cisort   gugem    gugdia   
-        gugdm    gugdm2   lagran   trfdm2   diabat   transt
-        drt1     drt2     vec1     vec2     det1     det2     hess2
-        '''.split()
+    group_order = (
+        'contrl',   'system',   'basis',    'ecp',      'data',     'zmat',     'libe',
+        'scf',      'scfmi',    'dft',      'tddft',    'cis',      'cisvec',   'mp2',
+        'rimp2',    'auxbas',   'ccinp',    'eominp',   'mopac',    'guess',    'vec',
+        'mofrz',    'statpt',   'trudge',   'trurst',   'force',    'cphf',     'cpmchf',
+        'mass',     'hess',     'grad',     'dipdr',    'vib',      'vib2',     'vscf',
+        'vibscf',   'gamma',    'eqgeom',   'hlowt',    'glowt',    'irc',      'drc',
+        'mex',      'conicl',   'md',       'rdf',      'globop',   'gradex',   'surf',
+        'local',    'truncn',   'elmom',    'elpot',    'eldens',   'elfldg',   'points',
+        'grid',     'pdc',      'mgc',      'radial',   'molgrf',   'stone',    'raman',
+        'alpdr',    'comp',     'nmr',      'morokm',   'lmoeda',   'qmefp',    'ffcalc',
+        'tdhf',     'tdhfx',    'efrag',    'fragname', 'frgrpl',   'ewald',    'makefp',
+        'prtefp',   'damp',     'dampgs',   'pcm',      'pcmgrd',   'mcpcav',   'tescav',
+        'newcav',   'iefpcm',   'pcmitr',   'disbs',    'disrep',   'svp',      'svpirf',
+        'cosgms',   'scrf',     'mcp',      'relwfn',   'efield',   'intgrl',   'fmm',
+        'trans',    'fmo',      'fmoprp',   'fmoxyz',   'optfmo',   'fmohyb',   'fmobnd',
+        'fmoenm',   'fmoend',   'optrst',   'gddi',     'elg',      'dandc',    'dccorr',
+        'subscf',   'subcor',   'mp2res',   'ccres',    'ciminp',   'cimatm',   'cimfrg',
+        'ffdata',   'ffpdb',    'ciinp',    'det',      'cidet',    'gen',      'cigen',
+        'ormas',    'ceeis',    'cedata',   'gcilst',   'gmcpt',    'pdet',     'adddet',
+        'remdet',   'sodet',    'drt',      'cidrt',    'mcscf',    'mrmp',     'detpt',
+        'mcqdpt',   'excorr',   'casci',    'ivoorb',   'cisort',   'gugem',    'gugdia',
+        'gugdm',    'gugdm2',   'lagran',   'trfdm2',   'diabat',   'transt',
+        'drt1',     'drt2',     'vec1',     'vec2',     'det1',     'det2',     'hess2',
+        )
 
-    all_groups = set(group_order)
+    all_groups = frozenset(group_order)
 
-    key_groups  = set(['contrl','system','guess','scf','mcscf','dft',
-                       'gugdia','drt','cidrt','det','basis'])
+    key_groups  = frozenset({'contrl','system','guess','scf','mcscf','dft',
+                       'gugdia','drt','cidrt','det','basis'})
 
-    card_groups = set()
+    card_groups = frozenset()
     #card_groups = set(['ecp','data','mcp','gcilst','points','stone','efrag',
     #                   'fragname','frgrpl','dampgs'])#,'fmoxyz'])
 
-    formatted_groups = set()
+    formatted_groups = frozenset()
 
 
     # detailed specifications for certain groups
@@ -749,18 +828,23 @@ class GamessInput(SimulationInput,GIbase):
         drt    = DrtGroup,
         cidrt  = CidrtGroup,
         det    = DetGroup,
-        basis  = BasisGroup
+        basis  = BasisGroup,
         )
-    keyspec_group_order = []
+
+    keyspec_group_order = []  # noqa: RUF012
     for gname in group_order:
         if gname in keyspec_groups:
             keyspec_group_order.append(gname)
         #end if
     #end for
-    all_keywords = set()
-    for g in keyspec_groups:
+    keyspec_group_order: tuple[str] = tuple(keyspec_group_order)
+
+    all_keywords = set()  # noqa: RUF012
+    for g in keyspec_groups.values():
         all_keywords |= g.keywords
     #end for
+    all_keywords: frozenset[str] = frozenset(all_keywords)
+
     group_keyword_overlap = all_groups & all_keywords
     all_names = all_groups | all_keywords
     
@@ -801,6 +885,7 @@ class GamessInput(SimulationInput,GIbase):
 
     def __init__(self,filepath=None):
         if filepath is not None:
+            filepath = path_string(filepath)
             self.read(filepath)
         #end if
     #end def __init__
@@ -866,12 +951,20 @@ class GamessInput(SimulationInput,GIbase):
                 elif not ingroup:
                     None
                 else:
-                    self.error('invalid text encountered during read of line number {0}:\n{1}'.format(n,line))
+                    msg = (
+                        'invalid text encountered during read of line number {0}:\n'
+                        '{1}'.format(n,line)
+                        )
+                    raise FileFormatError(msg)
                 #end if
             elif ls=='' or line[0]!=' ' or not ingroup:
                 None
             else:
-                self.error('invalid text encountered during read of line number {0}:\n{1}'.format(n,line))
+                msg = (
+                    'invalid text encountered during read of line number {0}:\n'
+                    '{1}'.format(n,line)
+                    )
+                raise FileFormatError(msg)
             #end if                    
             # specialized parsing for unknown card groups
             if ended:
@@ -911,7 +1004,12 @@ class GamessInput(SimulationInput,GIbase):
                 #end try
             #end if
             if failed:
-                self.message('Read failure: group "{0}" does not appear to be a keyword group\nand a generic read of card data failed\ndata for this group will not be available'.format(group_name))
+                msg = (
+                    'Read failure: group "{0}" does not appear to be a keyword group\n'
+                    'and a generic read of card data failed\n'
+                    'data for this group will not be available'.format(group_name)
+                    )
+                raise FileFormatError(msg)
             #end if
         #end for
     #end def read_text
@@ -940,7 +1038,13 @@ class GamessInput(SimulationInput,GIbase):
         contents = ''
         extra_groups = set(self.keys())-set(self.group_order)
         if len(extra_groups)>0:
-            self.error('write failed\nthe following groups are unknown: {0}'.format(sorted(extra_groups)))
+            msg = (
+                'write failed\n'
+                'the following groups are unknown: {0}'.format(
+                    sorted(extra_groups)
+                    )
+                )
+            raise ValueError(msg)
         #end if
         for group in self.group_order:
             if group in self and isinstance(self[group],KeywordGroup):
@@ -957,7 +1061,7 @@ class GamessInput(SimulationInput,GIbase):
 
 
     def incorporate_system(self,system):
-        self.not_implemented()
+        raise NotImplementedError
     #end def incorporate_system
 #end class GamessInput
 
@@ -975,7 +1079,11 @@ def generate_gamess_input(**kwargs):
     if input_type=='general':
         gi = generate_any_gamess_input(**kwargs)
     else:
-        GamessInput.class_error('input_type {0} is unrecognized\nvalid options are: general'.format(input_type))
+        msg = (
+            'input_type {0} is unrecognized\n'
+            'valid options are: general'.format(input_type)
+            )
+        raise ValueError(msg)
     #end if
     return gi
 #end def generate_gamess_input
@@ -987,7 +1095,7 @@ ps_defaults = obj()
 for var in ps_inputs:
     ps_defaults[var]=None
 #end for
-ps_defaults.set(
+ps_defaults.update(
     descriptor = 'A molecule.',
     symmetry   = 'C1'
     )
@@ -999,10 +1107,12 @@ for var in GamessInput.all_keywords:
 
 def generate_any_gamess_input(**kwargs):
     kwset = set(kwargs.keys())
-    pskw = ps_defaults.copy()
+    pskw = deepcopy(ps_defaults)
     ps_overlap = ps_inputs & kwset
     if len(ps_overlap)>0:
-        pskw.move_from(kwargs,ps_overlap)
+        for k in ps_overlap:
+            if k in kwargs:
+                pskw[k] = kwargs.pop(k)
         kwset = set(kwargs.keys())
     #end if
     for name in kwargs.keys():
@@ -1011,13 +1121,24 @@ def generate_any_gamess_input(**kwargs):
             kwargs[name] = GIarray(val)
         #end if
     #end for
-    kw = kw_defaults.copy()
-    kw.set(**kwargs)
+    kw = deepcopy(kw_defaults)
+    kw.update(**kwargs)
     kwrem = obj(**kwargs)
 
     invalid_names = kwset-GamessInput.all_name_aliases
     if len(invalid_names)>0:
-        GamessInput.class_error('invalid group names or keywords encountered\ninvalid names/keywords provided: {0}\nplease check if these group names or keywords are actually valid GAMESS inputs\nif so, unsupported groups can be generated by providing the keywords as a single argument:\ngenerate_gamess_input(\n  ...,\n  group_name = obj(assign keywords),\n  ...,\n  )'.format(sorted(invalid_names)),'generate_gamess_input')
+        msg = (
+            'invalid group names or keywords encountered\n'
+            'invalid names/keywords provided: {0}\n'
+            'please check if these group names or keywords are actually valid GAMESS inputs\n'
+            'if so, unsupported groups can be generated by providing the keywords as a single argument:\n'
+            'generate_gamess_input(\n'
+            '  ...,\n'
+            '  group_name = obj(assign keywords),\n'
+            '  ...,\n'
+            '  )'.format(sorted(invalid_names))
+            )
+        raise ValueError(msg)
     #end if
 
     gi = GamessInput()
@@ -1047,9 +1168,19 @@ def generate_any_gamess_input(**kwargs):
             elif name in GamessInput.key_groups:
                 gi[name] = KeywordGroup(**group_info)
             elif name in GamessInput.card_groups:
-                GamessInput.class_error('card group {0} cannot be generated from a keyword list\nkeyword list provided:\n{1}'.format(name,group_info),'generate_gamess_input')
+                msg = (
+                    'card group {0} cannot be generated from a keyword list\n'
+                    'keyword list provided:\n'
+                    '{1}'.format(name,group_info)
+                    )
+                raise ValueError(msg)
             elif name in GamessInput.formatted_groups:
-                GamessInput.class_error('formatted group {0} cannot be generated from a keyword list\nkeyword list provided:\n{1}'.format(name,group_info),'generate_gamess_input')
+                msg = (
+                    'formatted group {0} cannot be generated from a keyword list\n'
+                    'keyword list provided:\n'
+                    '{1}'.format(name,group_info)
+                    )
+                raise ValueError(msg)
             else:
                 gi[name] = KeywordGroup(**group_info) # assume keyword group
             #end if
@@ -1058,7 +1189,12 @@ def generate_any_gamess_input(**kwargs):
         elif name in GamessInput.group_keyword_overlap:
             None
         else:
-            GamessInput.class_error('invalid information provided to initialize group {0}\nyou must provide a dict, obj, or Group\nyou provided {1}'.format(vname,group_info),'generate_gamess_input')
+            msg = (
+                'invalid information provided to initialize group {0}\n'
+                'you must provide a dict, obj, or Group\n'
+                'you provided {1}'.format(vname,group_info)
+                )
+            raise TypeError(msg)
         #end if
     #end for
 
@@ -1070,12 +1206,23 @@ def generate_any_gamess_input(**kwargs):
         keywords = group_type.keywords & set(kwrem.keys())
         if len(keywords)>0:
             group_info = obj()
-            group_info.move_from(kwrem,keywords)
+            for k in keywords:
+                if k in kwrem:
+                    group_info[k] = kwrem.pop(k)
             gi[name] = group_type(**group_info)
         #end if
     #end for
     if len(kwrem)>0:
-        GamessInput.class_error('encountered unrecognized keywords\nunrecognized keywords: {0}\nthese keywords may belong to groups not fully implemented here\nfully supported groups: {1}\nunsupported groups can be generated by providing the keywords as a single argument: group_name = obj(assign keywords)'.format(sorted(kwrem),GamessInput.keyspec_group_order))
+        msg = (
+            'encountered unrecognized keywords\n'
+            'unrecognized keywords: {0}\n'
+            'these keywords may belong to groups not fully implemented here\n'
+            'fully supported groups: {1}\n'
+            'unsupported groups can be generated by providing the keywords as a single argument: group_name = obj(assign keywords)'.format(
+                sorted(kwrem),GamessInput.keyspec_group_order
+                )
+            )
+        raise ValueError(msg)
     #end if
 
     # handle nexus specific input generation keywords
@@ -1087,10 +1234,13 @@ def generate_any_gamess_input(**kwargs):
             gi.contrl = ContrlGroup()
         #end if
         # allow user override of charge and multiplicity from physical system
-        gi.contrl.set_optional(
+        d = dict(
             icharg = system.net_charge,
             mult   = system.net_spin+1,
             )
+        for k,v in d.items():
+            if k not in gi:
+                gi.contrl[k] = v
         s = system.structure
         if s.has_folded():
             sf = s.folded_structure
@@ -1123,21 +1273,26 @@ def generate_any_gamess_input(**kwargs):
                 #end if
             #end for
         else:
-            gi.contrl.set(
+            gi.contrl.update(
                 coord = 'unique',
                 ecp   = 'read'
+                )   
+            pseudo_files = PseudoSet.get_pseudos(
+                pseudos = pskw.pseudos,
+                system = system,
+                code = 'gamess',
                 )
-            pps = nexus_noncore.pseudopotentials.pseudos_by_atom(*pskw.pseudos)
+            pps = _read_gamess_pseudopotentials(pseudo_files.values())
             for i,a in enumerate(elem):
                 Z = Elements(a).atomic_number
                 data+='{0} {1} {2:16.8f} {3:16.8f} {4:16.8f}\n'.format(a,Z,*pos[i])
-                if a in pps:
+                if a in pps and pps[a].basis_text is not None:
                     data += pps[a].basis_text+'\n\n'
                 #end if
             #end for
             ecp = ''
             atoms = set()
-            for i,a in enumerate(elem_ecp):
+            for a in elem_ecp:
                 if a in pps:
                     pp = pps[a]
                     if a in atoms:
@@ -1209,27 +1364,41 @@ def check_keyspec_groups():
         if len(overlaps)>0:
             msg = '  keyspec group {0} has overlapping keywords'.format(g.__name__)
             for tname1,tname2 in sorted(overlaps.keys()):
-                msg += '    \n {0} {1} overlap: {2}\n'.format(tname1,tname2,overlaps[tname1,tname2])
+                msg += (
+                    '    \n'
+                    ' {0} {1} overlap: {2}\n'.format(
+                        tname1, tname2, overlaps[tname1,tname2]
+                        )
+                    )
             #end for
             err += msg
         #end if
         for tname in sorted(go.keys()):
             extra_keys = go[tname]-g.keywords
             if len(extra_keys)>0:
-                err += '  keyspec group {0} has unrecognized {1} keywords:\n    {2}\n'.format(g.__name__,tname,sorted(extra_keys))
+                err += (
+                    '  keyspec group {0} has unrecognized {1} keywords:\n'
+                    '    {2}\n'.format(g.__name__,tname,sorted(extra_keys))
+                    )
             #end if
         #end for
         extra_keys = set(g.allowed_values.keys())-g.keywords
         if len(extra_keys)>0:
-            err += '  keyspec group {0} has unrecognized allowed_value keywords:\n    {1}\n'.format(g.__name__,sorted(extra_keys))
+            err += (
+                '  keyspec group {0} has unrecognized allowed_value keywords:\n'
+                '    {1}\n'.format(g.__name__,sorted(extra_keys))
+                )
         #end if
         type_keys = set()
-        for keys in go:
+        for keys in go.values():
             type_keys |= keys
         #end for
         undefined = g.keywords-type_keys
         if len(undefined)>0:
-            err += '  keyspec group {0} has keywords w/o type assignment:\n    {1}\n'.format(g.__name__,sorted(undefined))
+            err += (
+                '  keyspec group {0} has keywords w/o type assignment:\n'
+                '    {1}\n'.format(g.__name__,sorted(undefined))
+                )
         #end if
 
         #check that allowed values for each keyword have the right type
@@ -1246,7 +1415,11 @@ def check_keyspec_groups():
                 if kw in g.allowed_values:
                     for val in g.allowed_values[kw]:
                         if not isinstance(val,type):
-                            err += '  allowed values of {0} keyword {1} are not all {2}: {3}\n'.format(g.__name__,kw,tname,sorted(g.allowed_values[kw]))
+                            err += (
+                                '  allowed values of {0} keyword {1} are not all {2}: {3}\n'.format(
+                                    g.__name__, kw, tname, sorted(g.allowed_values[kw])
+                                    )
+                                )
                             break
                         #end if
                     #end for
@@ -1273,18 +1446,25 @@ def check_keyspec_groups():
     if len(overlaps)>0:
         wrn += '\n  Note: some groups have overlapping keywords\n'
         for gname1,gname2 in sorted(overlaps.keys()):
-            wrn += '    groups {0} and {1} have overlapping keywords:\n      {2}\n'.format(gname1,gname2,overlaps[gname1,gname2])
+            wrn += (
+                '    groups {0} and {1} have overlapping keywords:\n'
+                '      {2}\n'.format(gname1, gname2, overlaps[gname1,gname2])
+                )
         #end for
     #end if
 
     #note any overlapping keyword and group names (also a feature)
     overlap = GamessInput.all_keywords & set(GamessInput.group_order)
     if len(overlap)>0:
-        wrn += '\n  Note: some group names overlap with keywords:\n    {0}\n'.format(sorted(overlap))
+        wrn += (
+            '\n'
+            '  Note: some group names overlap with keywords:\n'
+            '    {0}\n'.format(sorted(overlap))
+            )
     #end if
 
     if len(err)>0:
-        error(err)
+        raise RuntimeError(err)
     #end if
     if len(wrn)>0:
         warn(wrn)
@@ -1292,8 +1472,3 @@ def check_keyspec_groups():
 #end def check_keyspec_groups
 
 #check_keyspec_groups()  # uncomment this to check keyword spec group self-consistency
-
-
-
-
-
