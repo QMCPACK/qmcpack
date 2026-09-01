@@ -30,13 +30,19 @@ author = 'QMCPACK Developers'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-import sys
 import os
+import sys
+
 sys.path.append(os.path.abspath('extensions'))
 
-# import sphinx_rtd_theme
-
-extensions = ['sphinxcontrib.bibtex', "pydata_sphinx_theme"]
+extensions = [
+    'sphinxcontrib.bibtex',
+    "pydata_sphinx_theme",
+    "sphinx_copybutton",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.coverage",
+]
 bibtex_bibfiles = [
     'bibs/running.bib',
     'bibs/methods.bib',
@@ -55,7 +61,7 @@ bibtex_bibfiles = [
     'bibs/sCI.bib',
     'bibs/LCAO.bib',
 ]
-
+copybutton_exclude = '.linenos, .gp, .go' # Don't copy line numbers, prompts, or outputs.
 numfig = True
 
 # Add any paths that contain templates here, relative to this directory.
