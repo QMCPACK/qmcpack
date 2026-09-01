@@ -221,9 +221,9 @@ class PwscfOutData(DevBase):
         self.read_calculation(lines)
         # remove unused attributes, depending on the calculation type
         if self.calculation=='nscf':
-            for name in {  # noqa: PLC0208
+            for name in (
                 'E','pressure','stress','forces',
-                }:
+                ):
                 del self[name]
             #end for
         if self.calculation in {'scf','nscf'}:
@@ -241,7 +241,6 @@ class PwscfOutData(DevBase):
         # relaxation calculations
         if self.calculation in {'relax','vc-relax'}:
             self.read_structures(lines)
-
     #end def __init__
 
 
@@ -274,7 +273,6 @@ class PwscfOutData(DevBase):
             calculation = 'scf'
         self.calculation = calculation
     #end def read_calculation
-
 
 
     def read_fermi_energies(self,lines):
@@ -315,7 +313,6 @@ class PwscfOutData(DevBase):
         if energy is not None:
             self.E = energy
     #end def read_energies
-
 
 
     def read_bands(self,lines):
@@ -586,7 +583,6 @@ class PwscfOutData(DevBase):
     #end def read_forces
 
 
-
     def read_kpoints(self,lines):
         """Read and bind paired k-point tables and their weights.
 
@@ -661,8 +657,8 @@ class PwscfOutData(DevBase):
 class PwscfAnalyzer(SimulationAnalyzer):
     """Analyze output produced by Quantum ESPRESSO PWscf calculations.
 
-    The analyzer coordinates PWSCF text and legacy XML readers
-    for SCF, NSCF, relaxation, and variable-cell relaxation calculations.
+    The analyzer coordinates PWSCF text and legacy XML readers for SCF, NSCF,
+    relaxation, and variable-cell relaxation calculations.
 
     Parameters
     ----------
@@ -1014,7 +1010,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if values is None:
             return None
         energy_units,length_units = units.split('/')
-        factor = convert(1.0,'Ry',energy_units)/convert(1.0,'B',length_units)
+        factor                    = convert(1.0,'Ry',energy_units)/convert(1.0,'B',length_units)
         return values*factor
     #end def forces
 
@@ -1057,7 +1053,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         infile_name  = None,
         outfile_name = None,
         *,
-        analyze           = False,
+        analyze      = False,
         ):
         """Initialize an analyzer for a PWSCF simulation or output path."""
         if isinstance(arg0,Simulation):
@@ -1075,7 +1071,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     )
                 raise FileNotFoundError(msg)
             if os.path.isfile(path):
-                filepath = path
+                filepath      = path
                 path,filename = os.path.split(filepath)
                 if filename.endswith('.in'):
                     infile_name = filename
@@ -1098,10 +1094,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if os.path.isfile(infile):
                 inp = PwscfInput(infile)
             else:
-                msg = f'PWSCF input file is not available\nfile not found: {infile}'
+                msg = (
+                    'PWSCF input file is not available\n'
+                    f'file not found: {infile}'
+                    )
                 raise FileNotFoundError(msg)
 
-        self.infile_name = infile_name
+        self.infile_name  = infile_name
         self.outfile_name = outfile_name
         self.path         = path
         self.abspath      = os.path.abspath(path)
@@ -1124,7 +1123,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
             raise RuntimeError('PWSCF output file name is not available')
         outfile = os.path.join(self.path,self.outfile_name)
         if not os.path.isfile(outfile):
-            msg = f'PWSCF output file is not available\nfile not found: {outfile}'
+            msg = (
+                'PWSCF output file is not available\n'
+                f'file not found: {outfile}'
+                )
             raise FileNotFoundError(msg)
         self.results_out = PwscfOutData(outfile)
         self.analyze_xml()
@@ -1134,6 +1136,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def analyze_xml(self):
         """Locate and parse legacy PWscf XML output."""
         self.results_xml = None
+
         legacy_file = None
         legacy_dir  = None
         if ('input' in self
@@ -1222,4 +1225,3 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
 
 #end class PwscfAnalyzer
-        

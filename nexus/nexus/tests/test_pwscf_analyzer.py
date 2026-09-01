@@ -2,12 +2,9 @@ import re
 
 import pytest
 
-from . import NexusTestOrder
+from . import TEST_DIR, NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_ANALYZER)
-
-
-from . import TEST_DIR
 
 
 @pytest.mark.parametrize('text',(
