@@ -18,6 +18,7 @@ add_subdirectory("monoO_1x1x1_pp")
 add_subdirectory("NiO_a4_e48_pp")
 add_subdirectory("grapheneC_1x1_pp")
 add_subdirectory("InSe_a4")
+add_subdirectory("he2_1x1x1_ae")
 
 if(QMC_COMPLEX)
   add_subdirectory("bccMo_2x1x1_SOREP")
