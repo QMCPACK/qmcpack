@@ -36,6 +36,7 @@ using namespace afqmc;
 
 void timing_shm_blas(int c)
 {
+  using std::get;
   using Type         = double;
   using communicator = boost::mpi3::communicator;
   using shm_Alloc    = shared_allocator<Type>;
@@ -83,14 +84,14 @@ void timing_shm_blas(int c)
       std::tie(c0, cN) = FairDivideBoundary(mycol, n, nc);
 
 
-      ma::product(A.sliced(r0, rN), B(B.extension(0), {c0, cN}), C({r0, rN}, {c0, cN}));
+      ma::product(A.sliced(r0, rN), B(get<0>(B.extents()), {c0, cN}), C({r0, rN}, {c0, cN}));
 
       Timer.reset("Gen");
       node.barrier();
       Timer.start("Gen");
       for (int t = 0; t < ntimes; t++)
       {
-        ma::product(A.sliced(r0, rN), B(B.extension(0), {c0, cN}), C({r0, rN}, {c0, cN}));
+        ma::product(A.sliced(r0, rN), B(get<0>(B.extents()), {c0, cN}), C({r0, rN}, {c0, cN}));
         node.barrier();
       }
       Timer.stop("Gen");

@@ -1,0 +1,37 @@
+name: macos
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  macos-14:
+    runs-on: macos-14
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Configure system
+      run: |
+          brew install cmake gcc gfortran open-mpi pkg-config fftw boost
+          gcc --version
+
+    - name: Configure CMake
+      run: FC=gfortran-14 cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} --install-prefix=$HOME
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Install
+      run: make -C ${{github.workspace}}/build install  # run: cmake --install ${{github.workspace}}/build --prefix $HOME/.local
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
