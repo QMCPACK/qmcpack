@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 
 from . import TEST_DIR, NexusTestOrder
@@ -27,7 +26,6 @@ representative_runs = (
         id = 'relax',
         ),
     )
-
 
 
 
@@ -97,13 +95,14 @@ Initial Ionic Positions And Displacements (Angstrom)
     )
 def test_run_modes(tmp_path,calculation_type,short_mode):
     from ..rmg_analyzer import RmgAnalyzer, RmgOutData
+    from ..structure import Structure
 
     logfile = tmp_path/'rmg.log'
     logfile.write_text(rmg_log(calculation_type))
     outdata = RmgOutData(str(logfile))
     assert outdata.run_mode==short_mode
     assert outdata.setup_info.run_mode==short_mode
-    assert isinstance(outdata.setup_info.structure,object)
+    assert isinstance(outdata.setup_info.structure,Structure)
 
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
@@ -117,6 +116,8 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
     argvalues=representative_runs,
     )
 def test_representative_outputs(relative_path,run_mode,energy):
+    import numpy as np
+
     from ..rmg_analyzer import RmgAnalyzer, RmgOutData
     from ..structure import Structure
 
@@ -148,7 +149,9 @@ def test_representative_physical_results():
     assert nscf.occupations().shape==(1,14)
 
     relax = RmgAnalyzer(
-        str(representative_root/'ionic/relax/input.01.log'),analyze=True)
+        str(representative_root/'ionic/relax/input.01.log'),
+        analyze = True,
+        )
 
     assert isinstance(relax.relaxed_structure(),Structure)
     assert relax.forces().shape==(3,2,3)
@@ -156,6 +159,8 @@ def test_representative_physical_results():
 
 
 def test_physical_results(tmp_path):
+    import numpy as np
+
     from ..rmg_analyzer import RmgAnalyzer
 
     body = '''
@@ -236,10 +241,10 @@ def test_missing_property_data(tmp_path):
     logfile.write_text(rmg_log('Quench electrons'))
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
-    for name in {
+    for name in (
         'energy','kpoints','kweights','eigenvalues','occupations','Ef','Evbm','Ecbm',
         'band_gap','fractional_occs','forces','stress','pressure',
-        }:
+        ):
         assert getattr(analyzer,name)() is None
     with pytest.raises(RuntimeError,match='relaxed_structure'):
         analyzer.relaxed_structure()
@@ -249,6 +254,8 @@ def test_missing_property_data(tmp_path):
 
 
 def test_whitespace_and_trailing_fields(tmp_path):
+    import numpy as np
+
     from ..rmg_analyzer import RmgAnalyzer
 
     log = rmg_log('Quench electrons').replace(

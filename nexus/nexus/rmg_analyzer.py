@@ -107,14 +107,14 @@ class RmgOutData(DevBase):
 
         # modes: scf, nscf, relax
         if self.run_mode in supported_modes:
-            self.geometry   = None
-            self.energy     = None
+            self.geometry     = None
+            self.energy       = None
             self.energy_units = None
-            self.electronic = None
-            self.forces     = None
-            self.structures = None
-            self.stress     = None
-            self.pressure   = None
+            self.electronic   = None
+            self.forces       = None
+            self.structures   = None
+            self.stress       = None
+            self.pressure     = None
 
             self.read_geometry()
             self.read_energies(lines)
@@ -136,9 +136,13 @@ class RmgOutData(DevBase):
         mode_patterns = (
             (re.compile(r'\bquench\s+electrons\b',re.IGNORECASE),'scf'),
             (re.compile(r'\bnscf\b',re.IGNORECASE),'nscf'),
-            (re.compile(
-                r'\b(?:structure\s+optimization|relax\s+structure)\b',
-                re.IGNORECASE),'relax'),
+            (
+                re.compile(
+                    r'\b(?:structure\s+optimization|relax\s+structure)\b',
+                    re.IGNORECASE,
+                    ),
+                'relax',
+                ),
             )
         run_mode = None
         for line in lines:
@@ -183,7 +187,7 @@ class RmgOutData(DevBase):
             r'^\s*([A-Za-z][A-Za-z0-9_]*)\s+'
             r'('+npat+r')\s+('+npat+r')\s+('+npat+r')')
         position_tables = []
-        i = 0
+        i               = 0
         while i<len(lines):
             match = position_header.match(lines[i])
             if match is None:
@@ -221,7 +225,7 @@ class RmgOutData(DevBase):
                 )
             aunits = 'B' if axis_unit in {None,'a0','B','bohr'} else 'A'
             axes_array = np.array(
-                [axes[c] for c in sorted({'x','y','z'})],dtype=float)
+                [axes[c] for c in ('x','y','z')],dtype=float)
             axes_array = convert(axes_array,aunits,'B')
             positions  = convert(ion_positions.positions,ion_positions.units,'B')
             valid      = (
@@ -247,7 +251,7 @@ class RmgOutData(DevBase):
         kpoint_row = re.compile(
             r'^\s*('+npat+r')\s+('+npat+r')\s+('+npat+r')\s+'
             r'('+npat+r')(?:\s+.*)?$')
-        kpoints = []
+        kpoints  = []
         kweights = []
         for i,line in enumerate(lines):
             if kpoint_header.search(line) is None:
@@ -501,9 +505,9 @@ class RmgOutData(DevBase):
             if not is_header:
                 i += 1
                 continue
-            atoms          = []
-            positions      = []
-            forces         = []
+            atoms     = []
+            positions = []
+            forces    = []
             i += 1
             while i<len(lines):
                 tokens = lines[i].split()
@@ -520,7 +524,7 @@ class RmgOutData(DevBase):
                     for v in numeric_tokens)
                 if not valid:
                     continue
-                values      = [
+                values = [
                     float(v.replace('D','E').replace('d','e'))
                     for v in numeric_tokens]
                 atoms.append(tokens[2])
@@ -624,10 +628,10 @@ class RmgOutData(DevBase):
             if len(rows)==3:
                 tensors.append(rows)
         if len(tensors)>0:
-            stress            = np.array(tensors,dtype=float)
-            pressures         = -np.trace(stress,axis1=1,axis2=2)/3.0
-            self.stress       = stress
-            self.pressure     = pressures[-1]
+            stress        = np.array(tensors,dtype=float)
+            pressures     = -np.trace(stress,axis1=1,axis2=2)/3.0
+            self.stress   = stress
+            self.pressure = pressures[-1]
     #end def read_stress
 
 
@@ -722,9 +726,9 @@ class RmgAnalyzer(SimulationAnalyzer):
         If a supplied output path does not identify a regular file.
     """
 
-    all_modes         = frozenset({'scf','nscf','relax'})
-    relaxation_modes  = frozenset({'relax'})
-    pressure_units    = MappingProxyType({
+    all_modes        = frozenset({'scf','nscf','relax'})
+    relaxation_modes = frozenset({'relax'})
+    pressure_units   = MappingProxyType({
         'Pa'   : 1.0,
         'bar'  : 1e5,
         'kbar' : 1e8,
@@ -765,7 +769,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         self._require_supported('energy',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('energy units must be one of: eV, Ha, Ry')
-        value = self.results.energy
+        value        = self.results.energy
         source_units = self.results.energy_units
         if value is None or source_units is None:
             return None
