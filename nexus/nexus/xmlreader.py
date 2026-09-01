@@ -34,7 +34,8 @@ from .utilities import path_string, valid_variable_name
 
 def parse_string(s, delim = None):
     if not isinstance(s, str):
-        raise TypeError("This function only parses strings!")
+        msg = f"This function only parses strings, but was passed {type(s).__name__}!"
+        raise TypeError(msg)
 
     # Check if number
     try:
@@ -115,23 +116,19 @@ class XMLelement(DevBase):
 
     def _set_parent(self,parent):
         self._parent=parent
-        return
     #end def set_parent
 
     def _add_xmlattribute(self,name,attribute):
         self._attributes[name]=attribute
-        return 
     #end def add_attribute
 
     def _add_element(self,name,element):
         element._name=name
         self._elements[name]=element
-        return 
     #end def add_element
 
     def _add_text(self,name,text):
         self._texts[name]=text
-        return 
     #end def add_text
 
     def _to_string(self):
@@ -177,7 +174,6 @@ class XMLelement(DevBase):
         self._escape_names=None
         #self._escape_names=set(dict(getmembers(self)).keys()) | set(keyword.kwlist)
         self._escape_names=set(keyword.kwlist)
-        return
     #end def __init__
 
 
@@ -341,8 +337,6 @@ class XMLreader(DevBase):
         # -is unpickleable
         # therefore it is removed after the dynamic object is built
         del self.parser
-
-        return
     #end def __init__
 
     # test needed
@@ -361,7 +355,6 @@ class XMLreader(DevBase):
                 self.xml = self.xml.replace(self.xml[il:ir],fcont)
             #end if
         #end while
-        return
     #end def include_files
 
     def increment_level(self):
@@ -371,13 +364,11 @@ class XMLreader(DevBase):
             self.cur.append(None)
         #end if
         self.pad = self.ilevel*'  '
-        return
     #end def increment_level
 
     def decrement_level(self):
         self.ilevel-=1
         self.pad = self.ilevel*'  '
-        return
     #end def decrement_level
 
     def found_element_start(self,ename,attributes):
@@ -489,13 +480,11 @@ class XMLreader(DevBase):
                 #end if
             #end if
         #end for
-        return
     #end def found_element_start
 
     def found_element_end(self,name):
         self.cur[self.ilevel]=None
         self.decrement_level()
-        return
     #end def found_element_end
 
     def found_text(self,rawtext):
@@ -510,11 +499,10 @@ class XMLreader(DevBase):
                 cur._ntexts+=1
             #end if
         #end if
-        return
     #end def found_text
 
     def found_attribute(self,ename,aname,atype,default,required):
-        return
+        pass
     #end def found_attribute
 #end class XMLreader
 
