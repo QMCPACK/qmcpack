@@ -32,17 +32,18 @@ import xml.etree.ElementTree as ET
 from copy import deepcopy
 from glob import glob
 from types import MappingProxyType
-import numpy as np
-from .developer import DevBase,obj,dotdict
-from .unit_converter import convert
-from .numerics import simstats, simplestats
-from .simulation import SimulationAnalyzer, Simulation
-from .structure import Structure, get_kpath
-from .pwscf_input import PwscfInput
-from .pwscf_data_reader import read_qexml
-from .utilities import path_string
-from . import numpy_extensions as npe
 
+import numpy as np
+
+from . import numpy_extensions as npe
+from .developer import DevBase, dotdict, obj
+from .numerics import simplestats, simstats
+from .pwscf_data_reader import read_qexml
+from .pwscf_input import PwscfInput
+from .simulation import Simulation, SimulationAnalyzer
+from .structure import Structure, get_kpath
+from .unit_converter import convert
+from .utilities import path_string
 
 # Match one complete decimal or scientific-notation number as PWSCF writes it.
 # Examples include ``-168.12345678``, ``.5000000``, ``6.3E-09``, and
@@ -970,7 +971,7 @@ class PwscfOutData(DevBase):
         """Read total CPU and wall-clock times."""
         def pwscf_time(text):
             """Convert a PWSCF timing string to hours."""
-            scales = dict(h=1.,m=60.,s=3600.)
+            scales = {'h':1.,'m':60.,'s':3600.}
             return sum(
                 float(match.group('value').replace('D','E').replace('d','e'))
                 / scales[match.group('unit')]
@@ -1781,7 +1782,7 @@ class PwscfXmlData(DevBase):
                 trajectory.scf_converged.append(value(child(step_scf,'convergence_achieved')))
                 trajectory.scf_steps.append(value(child(step_scf,'n_scf_steps')))
                 trajectory.scf_error.append(value(child(step_scf,'scf_error')))
-            for member in trajectory.keys():
+            for member in trajectory:
                 self['trajectory_'+member] = complete_array(trajectory[member])
 
         # calculation-specific result membership updates
@@ -1967,9 +1968,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
             msg = f'PWSCF quantity "{quantity}" is unavailable because output has not been analyzed'
             raise RuntimeError(msg)
         calculation = self.results_out.calculation
-        if isinstance(self.results_xml,PwscfXmlData):
-            if self.results_xml.calculation is not None:
-                calculation = self.results_xml.calculation
+        if (
+            isinstance(self.results_xml,PwscfXmlData)
+            and self.results_xml.calculation is not None
+            ):
+            calculation = self.results_xml.calculation
         if calculation not in modes:
             msg = f'PWSCF quantity "{quantity}" is not supported for calculation "{calculation}"'
             raise RuntimeError(msg)
@@ -2521,7 +2524,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     continue
                 try:
                     edata = read_qexml(efilepath)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     self.results_xml.failed = True
                     continue
                 eunits      = object_path(edata,'root','units_for_energies','units')
@@ -2530,7 +2533,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 if eunits is None or eigenvalues is None or occupations is None:
                     self.results_xml.failed = True
                     continue
-                units = dict(ha='Ha',ry='Ry',ev='eV').get(eunits.lower()[:2],'Ha')
+                units = {'ha':'Ha','ry':'Ry','ev':'eV'}.get(eunits.lower()[:2],'Ha')
                 spin  = obj(units=units,eigenvalues=eigenvalues,occupations=occupations)
                 if si==1:
                     kp.up = spin
