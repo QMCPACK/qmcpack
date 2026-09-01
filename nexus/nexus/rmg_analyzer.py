@@ -149,24 +149,21 @@ class RmgOutData(DevBase):
     def __init__(self,filepath):
         """Initialize the parsed data by reading an RMG output file."""
         if not isinstance(filepath,str):
-            msg = (
+            raise TypeError(
                 'invalid type provided for filepath\n'
                 'Type expected: str\n'
                 f'Type provided: {filepath.__class__.__name__}'
                 )
-            raise TypeError(msg)
         elif not os.path.exists(filepath):
-            msg = (
+            raise FileNotFoundError(
                 'RMG log output file does not exist.\n'
                 f'Path provided: {filepath}'
                 )
-            raise FileNotFoundError(msg)
         elif not os.path.isfile(filepath):
-            msg = (
+            raise IsADirectoryError(
                 'Path provided for RMG log output is not a file.\n'
                 f'Path provided: {filepath}'
                 )
-            raise IsADirectoryError(msg)
         path,outfile_name  = os.path.split(filepath)
         self.path          = path
         self.abspath       = os.path.abspath(path)
@@ -434,36 +431,27 @@ class RmgOutData(DevBase):
                         fallback_pattern,log_text[istart:],setup_flags)
                     iend             = istart+end_match.start() if end_match is not None else len(log_text)
                 if iend!=-1:
-                    text        = log_text[istart:iend].expandtabs()
-                    blocks      = []
-                    b           = ''
-                    last_header = False
-                    for line in text.splitlines():
-                        if len(line)>0:
-                            if line[0]!=' ':
-                                if last_header:
-                                    b += '\n'+line
-                                else:
-                                    if len(b)>0:
-                                        blocks.append(b)
-                                    b           = line
-                                    last_header = True
-                            else:
-                                b += '\n'+line
-                                last_header = False
-                    if len(b)>0:
-                        blocks.append(b)
+                    blocks       = []
+                    body_started = False
+                    for line in log_text[istart:iend].expandtabs().splitlines():
+                        if len(line)==0:
+                            continue
+                        if line[0]!=' ' and (len(blocks)==0 or body_started):
+                            blocks.append([line])
+                        else:
+                            blocks[-1].append(line)
+                        body_started = line[0]==' '
                     other_blocks = dotdict()
                     table_blocks = {
                         'k_points',
                         'initial_ionic_positions_and_displacements',
                         }
-                    for b in blocks:
-                        if '\n' not in b:
+                    for block in blocks:
+                        if len(block)<2:
                             continue
-                        header,body  = b.split('\n',1)
-                        bname         = process_name(header)
-                        lines         = body.splitlines()
+                        header = block[0]
+                        bname  = process_name(header)
+                        lines  = block[1:]
                         if (
                             bname not in table_blocks and
                             any(':' in line for line in lines)
@@ -601,16 +589,14 @@ class RmgOutData(DevBase):
                                 break
                         if first_row is not None:
                             for line in lines[first_row:]:
-                                ls = line.strip()
-                                if len(ls)>0:
-                                    t = line.split()
-                                    if len(t)<4:
-                                        continue
-                                    values = line_numbers(' '.join(t[1:]))
-                                    if len(values)<3:
-                                        continue
-                                    spec.append(t[0])
-                                    pos.append(values[:3])
+                                t = line.split()
+                                if len(t)<4:
+                                    continue
+                                values = line_numbers(' '.join(t[1:]))
+                                if len(values)<3:
+                                    continue
+                                spec.append(t[0])
+                                pos.append(values[:3])
                             if len(pos)>0:
                                 setup_info.ion_positions = obj(
                                     units     = punits,
@@ -662,10 +648,9 @@ class RmgOutData(DevBase):
                 os.path.join(self.path,os.path.basename(control_file)),
                 os.path.join(os.path.dirname(self.path),control_file),
                 ]
-            for filepath in filepaths:
-                if os.path.isfile(filepath):
-                    break
-            if os.path.isfile(filepath):
+            filepath = next(
+                (path for path in filepaths if os.path.isfile(path)),None)
+            if filepath is not None:
                 try:
                     self.input = RmgInput(filepath)
                 except (NexusError,OSError,TypeError,ValueError):
@@ -692,25 +677,26 @@ class RmgOutData(DevBase):
         direct_energies     = []
         energy_units        = []
         direct_energy_units = []
-        # Match the final total energy obtained from the eigenvalue sum.
+        # Match a final total energy and classify its eigenvalue-sum or direct source.
         # Example: final total energy from eigenvalue sum : -1.2345 Ha
-        epat = re.compile(
-            r'final\s+total\s+energy\s+from\s+eig(?:envalue)?\s+sum\s*[:=]\s*'
-            r'('+self.number_pattern+r')(?:\s+([^\s,;]+))?',re.IGNORECASE)
-        # Match the final total energy reported by the direct calculation.
-        # Example: final total energy from direct = -1.2300 Ha
-        dpat = re.compile(
-            r'final\s+total\s+energy\s+from\s+direct\s*[:=]\s*'
-            r'('+self.number_pattern+r')(?:\s+([^\s,;]+))?',re.IGNORECASE)
+        energy_pattern = re.compile(
+            r'final\s+total\s+energy\s+from\s+'
+            r'(?:(?P<eigenvalue>eig(?:envalue)?\s+sum)|(?P<direct>direct))'
+            r'\s*[:=]\s*(?P<value>'+self.number_pattern+r')'
+            r'(?:\s+(?P<units>[^\s,;]+))?',
+            re.IGNORECASE,
+            )
         for line in lines:
-            match = epat.search(line)
+            match = energy_pattern.search(line)
             if match is not None:
-                energies.append(float(match.group(1).replace('D','E').replace('d','e')))
-                energy_units.append(match.group(2))
-            match = dpat.search(line)
-            if match is not None:
-                direct_energies.append(float(match.group(1).replace('D','E').replace('d','e')))
-                direct_energy_units.append(match.group(2))
+                value = float(
+                    match['value'].replace('D','E').replace('d','e'))
+                if match['eigenvalue'] is not None:
+                    energies.append(value)
+                    energy_units.append(match['units'])
+                else:
+                    direct_energies.append(value)
+                    direct_energy_units.append(match['units'])
         energies        = np.array(energies,dtype=float)
         direct_energies = np.array(direct_energies,dtype=float)
         if len(energies)>0:
@@ -811,14 +797,10 @@ class RmgOutData(DevBase):
                 if len(pairs)==0:
                     continue
                 channels = dataset[kpoint]['channels']
-                if spin not in channels:
-                    channels[spin] = [[],[]]
-                eigs,occs = channels[spin]
+                eigs,occs = channels.setdefault(spin,[[],[]])
                 for eigenvalue,occupation in pairs:
-                    eigs.append(float(
-                        eigenvalue.replace('D','E').replace('d','e')))
-                    occs.append(float(
-                        occupation.replace('D','E').replace('d','e')))
+                    eigs.append(as_float(eigenvalue))
+                    occs.append(as_float(occupation))
             if len(dataset)>0:
                 datasets.append(dataset)
 
@@ -840,26 +822,17 @@ class RmgOutData(DevBase):
                     spins = ['up','down']
                 else:
                     continue
-                nstates = None
-                valid   = True
-                for index in indices:
-                    channels = dataset[index]['channels']
-                    if set(channels)!=set(spins):
-                        valid = False
-                        break
-                    for spin in spins:
-                        eigs,occs = channels[spin]
-                        if len(eigs)==0 or len(eigs)!=len(occs):
-                            valid = False
-                            break
-                        if nstates is None:
-                            nstates = len(eigs)
-                        elif len(eigs)!=nstates:
-                            valid = False
-                            break
-                    if not valid:
-                        break
-                if not valid:
+                channels = [
+                    dataset[index]['channels'].get(spin)
+                    for index in indices for spin in spins
+                    ]
+                if any(
+                    channel is None or len(channel[0])==0 or
+                    len(channel[0])!=len(channel[1])
+                    for channel in channels
+                    ):
+                    continue
+                if len({len(channel[0]) for channel in channels})!=1:
                     continue
                 kpoints     = np.array(
                     [dataset[i]['kpoint'] for i in indices],dtype=float)
@@ -1003,6 +976,16 @@ class RmgOutData(DevBase):
                 )
             for name,label in component_names.items()
             }
+        # Match and classify fields in a detailed SCF-iteration summary.
+        # Example: quench: [ RMS [ dV ] : 2.0D-5 scf: 3/20 ]
+        detail_pattern = re.compile(
+            r'\bmd\s*:\s*(?P<md>\d+)\s*/|'
+            r'\bscf\s*:\s*(?P<scf>\d+)\s*/|'
+            r'\bstep\s+time\s*:\s*(?P<step>'+self.number_pattern+r')|'
+            r'\bscf\s+time\s*:\s*(?P<time>'+self.number_pattern+r')|'
+            r'\brms\s*\[\s*dv\s*\]\s*:\s*(?P<rms>[^\]\s]+)',
+            re.IGNORECASE,
+            )
         values     = {name: [] for name in component_names}
         md_steps   = []
         scf_steps  = []
@@ -1023,36 +1006,17 @@ class RmgOutData(DevBase):
             # Match the detailed SCF-iteration summary line.
             # Example: quench: [ RMS [ dV ] : 2.0D-5 scf: 3/20 ]
             if re.search(r'\bquench\s*:',line,re.IGNORECASE):
-                # Match and capture the current molecular-dynamics step.
-                # Example: md: 0/2
-                md_match   = re.search(
-                    r'\bmd\s*:\s*(\d+)\s*/',line,re.IGNORECASE)
-                # Match and capture the current SCF iteration.
-                # Example: scf: 3/20
-                scf_match  = re.search(
-                    r'\bscf\s*:\s*(\d+)\s*/',line,re.IGNORECASE)
-                # Match and capture the elapsed time for the current step.
-                # Example: step time: 0.20
-                step_match = re.search(
-                    r'\bstep\s+time\s*:\s*('+self.number_pattern+r')',
-                    line,re.IGNORECASE)
-                # Match and capture the elapsed SCF time.
-                # Example: scf time: 0.80
-                time_match = re.search(
-                    r'\bscf\s+time\s*:\s*('+self.number_pattern+r')',
-                    line,re.IGNORECASE)
-                # Match and capture the RMS potential change inside brackets.
-                # Example: RMS [ dV ] : 2.0D-5
-                rms_match  = re.search(
-                    r'\brms\s*\[\s*dv\s*\]\s*:\s*([^\]\s]+)',
-                    line,re.IGNORECASE)
-                md_steps.append(int(md_match.group(1)) if md_match is not None else -1)
-                scf_steps.append(int(scf_match.group(1)) if scf_match is not None else -1)
-                step_times.append(
-                    float(step_match.group(1)) if step_match is not None else np.nan)
-                scf_times.append(
-                    float(time_match.group(1)) if time_match is not None else np.nan)
-                rms = rms_match.group(1) if rms_match is not None else '*'
+                details = {
+                    match.lastgroup : match.group(match.lastgroup)
+                    for match in detail_pattern.finditer(line)
+                    }
+                md_steps.append(int(details.get('md',-1)))
+                scf_steps.append(int(details.get('scf',-1)))
+                step_times.append(float(
+                    details.get('step','nan').replace('D','E').replace('d','e')))
+                scf_times.append(float(
+                    details.get('time','nan').replace('D','E').replace('d','e')))
+                rms = details.get('rms','*')
                 try:
                     rms_dv.append(float(rms.replace('D','E').replace('d','e')))
                 except ValueError:
@@ -1133,18 +1097,12 @@ class RmgOutData(DevBase):
                 move_values = values[8:11]
                 if not all(np.isfinite(v) and v.is_integer() for v in move_values):
                     continue
-                atom          = tokens[2]
-                position      = values[:3]
-                charge        = values[3]
-                magnetization = values[4]
-                force         = values[5:8]
-                move          = [int(v) for v in move_values]
-                atoms.append(atom)
-                positions.append(position)
-                charges.append(charge)
-                magnetizations.append(magnetization)
-                forces.append(force)
-                movable.append(move)
+                atoms.append(tokens[2])
+                positions.append(values[:3])
+                charges.append(values[3])
+                magnetizations.append(values[4])
+                forces.append(values[5:8])
+                movable.append([int(v) for v in move_values])
             if len(atoms)>0:
                 records.append(obj(
                     atoms          = np.array(atoms,dtype=object),
@@ -1156,39 +1114,33 @@ class RmgOutData(DevBase):
                     force_units    = 'Ha/a0',
                     movable        = np.array(movable,dtype=int),
                     ))
-        ionic_steps = obj()
-        for n,record in enumerate(records):
-            ionic_steps[n] = record
         if len(records)>0:
-            self.ionic_steps    = ionic_steps
+            self.ionic_steps    = obj(dict(enumerate(records)))
             self.position_units = 'a0'
             self.force_units    = 'Ha/a0'
-        if len(records)>0 and len(set(len(r.atoms) for r in records))==1:
-            positions           = np.array([r.positions for r in records],dtype=float)
-            forces              = np.array([r.forces for r in records],dtype=float)
-            charges             = np.array([r.charges for r in records],dtype=float)
-            magnetizations      = np.array([r.magnetizations for r in records],dtype=float)
-            max_forces          = np.array([
-                np.sqrt((r.forces**2).sum(axis=1)).max() for r in records
-                ],dtype=float)
-
-            self.positions      = positions
-            self.forces         = forces
-            self.charges        = charges
-            self.magnetizations = magnetizations
-            self.max_forces     = max_forces
-            if 'structure' in self.setup_info:
-                structures = obj()
-                initial    = self.setup_info.structure
-                for n,record in enumerate(records):
-                    structure = generate_structure(
-                        units = 'B',
-                        axes  = initial.axes,
-                        elem  = record.atoms,
-                        pos   = record.positions,
-                        )
-                    structures[n] = structure
-                self.structures = structures
+            if len(set(len(r.atoms) for r in records))==1:
+                self.positions      = np.array(
+                    [r.positions for r in records],dtype=float)
+                self.forces         = np.array(
+                    [r.forces for r in records],dtype=float)
+                self.charges        = np.array(
+                    [r.charges for r in records],dtype=float)
+                self.magnetizations = np.array(
+                    [r.magnetizations for r in records],dtype=float)
+                self.max_forces     = np.array([
+                    np.sqrt((r.forces**2).sum(axis=1)).max() for r in records
+                    ],dtype=float)
+                if 'structure' in self.setup_info:
+                    structures = obj()
+                    initial    = self.setup_info.structure
+                    for n,record in enumerate(records):
+                        structures[n] = generate_structure(
+                            units = 'B',
+                            axes  = initial.axes,
+                            elem  = record.atoms,
+                            pos   = record.positions,
+                            )
+                    self.structures = structures
     #end def read_ions
 
 
@@ -1212,9 +1164,7 @@ class RmgOutData(DevBase):
             stripped = line.strip()
             # Match constant-energy or constant-temperature MD record markers.
             # Example: @CVE 1 -1.0 0.1 -0.9 300.0 2.5e-4
-            marker_match = re.match(
-                r'^@(CVE|CVT)(?:\b|-)',stripped,re.IGNORECASE)
-            if marker_match is None:
+            if re.match(r'^@(CVE|CVT)(?:\b|-)',stripped,re.IGNORECASE) is None:
                 continue
             fields = stripped.split(None,1)
             if len(fields)<2:
@@ -1228,29 +1178,26 @@ class RmgOutData(DevBase):
                 continue
             # Find every RMG-formatted number in the matched numeric sequence.
             # Example: 1 -1.0 0.1 -0.9 300.0 2.5e-4
-            values = re.findall(
+            values = np.array(re.findall(
                 self.number_pattern,
-                value_match.group(1).replace('D','E').replace('d','e'))
-            values = np.array(values,dtype=float)
+                value_match.group(1).replace('D','E').replace('d','e')),
+                dtype=float)
             if len(values)>=6:
-                records.append(dict(
-                    step             = int(values[0]),
-                    potential_energy = values[1],
-                    kinetic_energy   = values[2],
-                    total_energy     = values[3],
-                    temperature      = values[4],
-                    displacement     = values[5],
-                    ))
+                records.append(values[:6])
         if len(records)>0:
-            md = obj()
-            for name in records[0].keys():
-                dtype    = int if name=='step' else float
-                md[name] = np.array([r[name] for r in records],dtype=dtype)
-            md.energy_units      = 'Ha'
-            md.temperature_units = 'K'
-            self.md              = md
-            statistics           = obj()
-            for name,values in md.items():
+            records = np.array(records,dtype=float)
+            self.md = obj(
+                step              = records[:,0].astype(int),
+                potential_energy  = records[:,1],
+                kinetic_energy    = records[:,2],
+                total_energy      = records[:,3],
+                temperature       = records[:,4],
+                displacement      = records[:,5],
+                energy_units      = 'Ha',
+                temperature_units = 'K',
+                )
+            statistics = obj()
+            for name,values in self.md.items():
                 if not isinstance(values,np.ndarray):
                     continue
                 mean,var,error,kappa = simstats(values)
@@ -1304,8 +1251,7 @@ class RmgOutData(DevBase):
                         continue
                     start = endpoints[i-1]
                     stop  = endpoints[i]
-                    for n in range(1,count+1):
-                        kpoints.append(start+(stop-start)*n/count)
+                    kpoints.extend(np.linspace(start,stop,count+1)[1:])
                 geometry.kpoints_crystal = np.array(kpoints,dtype=float)
                 if 'structure' in self.setup_info:
                     geometry.kpoints_cart = np.dot(
@@ -1370,7 +1316,7 @@ class RmgOutData(DevBase):
                     values = values[1:]
                 rows.append(values[:3])
             if len(rows)==3:
-                tensors.append(np.array(rows,dtype=float))
+                tensors.append(rows)
         if len(tensors)>0:
             stress            = np.array(tensors,dtype=float)
             pressures         = -np.trace(stress,axis1=1,axis2=2)/3.0
@@ -1426,16 +1372,13 @@ class RmgOutData(DevBase):
         electronic_converged = None
         if electronic_successes+electronic_failures>0:
             electronic_converged = electronic_successes>0 and electronic_failures==0
-        convergence = obj(
-            electronic_converged = electronic_converged,
-            electronic_successes = electronic_successes,
-            electronic_failures  = electronic_failures,
-            ionic_converged      = ionic_converged,
-            )
-
-        nfound = electronic_successes+electronic_failures+(ionic_converged is not None)
-        if nfound>0:
-            self.convergence = convergence
+        if electronic_successes+electronic_failures+(ionic_converged is not None)>0:
+            self.convergence = obj(
+                electronic_converged = electronic_converged,
+                electronic_successes = electronic_successes,
+                electronic_failures  = electronic_failures,
+                ionic_converged      = ionic_converged,
+                )
     #end def read_convergence
 
 
@@ -1534,8 +1477,7 @@ class RmgOutData(DevBase):
             if len(group)>0:
                 groups.append(np.array(group,dtype=float))
             if len(groups)>0 and len(set(len(g) for g in groups))==1:
-                spin = int(match.group(1))
-                bands[spin] = obj(
+                bands[int(match.group(1))] = obj(
                     distance     = groups[0][:,0],
                     energies     = np.array([g[:,1] for g in groups],dtype=float),
                     energy_units = 'eV',
@@ -1719,6 +1661,15 @@ class RmgOutData(DevBase):
             return result if np.isfinite(result) else None
         #end def as_float
 
+        # Match a final eigenvalue-sum energy and its unit label.
+        # Example: final total energy from eig sum = -1.73498899 Ha
+        energy_pattern = re.compile(
+            r'final\s+total\s+energy\s+from\s+eig(?:envalue)?\s+sum.*?'
+            r'[:=]\s*(?P<value>'+self.number_pattern+r').*?'
+            r'\b(?P<units>eV|Ha|Ry)\b',
+            re.IGNORECASE,
+            )
+
         def final_energy(filepath):
             """Return the last final eigenvalue-sum energy in Hartree."""
             value = None
@@ -1729,26 +1680,13 @@ class RmgOutData(DevBase):
             except (OSError,UnicodeError):
                 return None
             for line in energy_lines:
-                lower = ' '.join(line.split()).lower()
-                if (
-                    'final total energy from eig sum' not in lower and
-                    'final total energy from eigenvalue sum' not in lower
-                    ):
-                    continue
-                # Find the first RMG-formatted number following the energy label.
-                # Example: final total energy from eig sum = -1.73498899 Ha
-                matches = re.findall(
-                    self.number_pattern,line.split('=',1)[-1])
-                if len(matches)==0:
-                    continue
-                candidate = as_float(matches[0])
-                if candidate is None:
-                    continue
-                value = candidate
-                for unit in {'eV','Ha','Ry'}:
-                    if unit.lower() in lower.split():
-                        units = unit
-                        break
+                match = energy_pattern.search(line)
+                if match is not None:
+                    candidate = as_float(match['value'])
+                    if candidate is not None:
+                        value = candidate
+                        units = {'ev':'eV','ha':'Ha','ry':'Ry'}[
+                            match['units'].lower()]
             if value is None or units is None:
                 return None
             try:
@@ -1788,38 +1726,37 @@ class RmgOutData(DevBase):
 
         # Match the NEB image and MPI layout printed at RMG initialization.
         # Example: RMG initialization ... 2 image(s) total, 1 per node. 2 MPI processes/image.
-        layout_pattern = (
+        layout_pattern = re.compile(
             r'RMG\s+initialization.*?(\d+)\s+image\(s\)\s+total\s*,?\s*'
-            r'(\d+)\s+per\s+node\s*\.?\s*(\d+)\s+MPI\s+process(?:es)?/image')
-        layout = None
-        for line in lines:
-            match = re.search(layout_pattern,line,re.IGNORECASE)
-            if match is not None:
-                layout = obj(
-                    num_intermediate_images = int(match.group(1)),
-                    images_per_node         = int(match.group(2)),
-                    mpi_processes_per_image = int(match.group(3)),
-                    )
-                break
-        neb.parallel = layout
-
+            r'(\d+)\s+per\s+node\s*\.?\s*(\d+)\s+MPI\s+process(?:es)?/image',
+            re.IGNORECASE,
+            )
+        # Match the one-based intermediate-image index for constrained forces.
+        # Example: Entering constrained forces for image 2
+        constrained_pattern = re.compile(
+            r'entering\s+constrained\s+forces\s+for\s+image\s+(\d+)',
+            re.IGNORECASE,
+            )
         constrained_images = []
         neb_calls          = 0
         for line in lines:
+            if neb.parallel is None:
+                match = layout_pattern.search(line)
+                if match is not None:
+                    neb.parallel = obj(
+                        num_intermediate_images = int(match.group(1)),
+                        images_per_node         = int(match.group(2)),
+                        mpi_processes_per_image = int(match.group(3)),
+                        )
             lower = ' '.join(line.split()).lower()
             if 'neb call' in lower:
                 neb_calls += 1
-            # Match the one-based intermediate-image index for constrained forces.
-            # Example: Entering constrained forces for image 2
-            match = re.search(
-                r'entering\s+constrained\s+forces\s+for\s+image\s+(\d+)',
-                line,re.IGNORECASE)
+            match = constrained_pattern.search(line)
             if match is not None:
                 constrained_images.append(int(match.group(1)))
 
-        image_index = constrained_images[-1] if len(constrained_images)>0 else None
         neb.local_image = obj(
-            index                   = image_index,
+            index                   = constrained_images[-1] if len(constrained_images)>0 else None,
             neb_calls               = neb_calls,
             constrained_force_calls = np.array(constrained_images,dtype=int),
             energy                  = self.energy,
@@ -1837,18 +1774,17 @@ class RmgOutData(DevBase):
             os.path.join(self.path,'ctrl_init.dat'),
             os.path.join(os.path.dirname(self.path),'ctrl_init.dat'),
             ]
-        controller_file = None
-        for filepath in controller_candidates:
-            if os.path.isfile(filepath):
-                controller_file = os.path.abspath(filepath)
-                break
+        controller_file = next((
+            os.path.abspath(filepath) for filepath in controller_candidates
+            if os.path.isfile(filepath)
+            ),None)
         if controller_file is not None:
             neb.controller_file = controller_file
             try:
                 control = read_assignments(controller_file)
             except (OSError,UnicodeError):
                 control = {}
-            controller_path     = os.path.dirname(controller_file)
+            controller_path = os.path.dirname(controller_file)
 
             nintermediate               = as_int(control.get('num_images'))
             neb.num_intermediate_images = nintermediate
@@ -1861,10 +1797,8 @@ class RmgOutData(DevBase):
             spin_polarized       = control.get('spin_polarization')
             if spin_polarized is not None:
                 spin_polarized = spin_polarized.strip().lower()
-                if spin_polarized in {'true','yes','1'}:
-                    neb.spin_polarized = True
-                elif spin_polarized in {'false','no','0'}:
-                    neb.spin_polarized = False
+                if spin_polarized in {'true','yes','1','false','no','0'}:
+                    neb.spin_polarized = spin_polarized in {'true','yes','1'}
 
             initial_file = control.get('input_file_initial_image')
             final_file   = control.get('input_file_final_image')
@@ -1888,8 +1822,8 @@ class RmgOutData(DevBase):
                         os.path.join(controller_path,tokens[0]))
                     image_directories.append(directory)
                     image_input_files.append(os.path.join(directory,tokens[1]))
-                    processes = as_int(tokens[2]) if len(tokens)>=3 else None
-                    image_mpi_processes.append(processes)
+                    image_mpi_processes.append(
+                        as_int(tokens[2]) if len(tokens)>=3 else None)
             if len(image_directories)>0:
                 neb.image_directories   = image_directories
                 neb.image_mpi_processes = np.array(image_mpi_processes,dtype=object)
@@ -1928,18 +1862,16 @@ class RmgOutData(DevBase):
                     if previous.pos.shape!=current.pos.shape:
                         valid_coordinate = False
                         break
-                    displacement = current.pos-previous.pos
                     coordinate.append(
-                        coordinate[-1]+np.sqrt((displacement**2).sum()))
+                        coordinate[-1]+np.linalg.norm(current.pos-previous.pos))
                 if valid_coordinate:
                     neb.reaction_coordinate = np.array(coordinate,dtype=float)
 
             image_logs = []
             for filepath in ordered_input_files:
-                directory = os.path.dirname(filepath)
-                prefix    = os.path.basename(filepath)
-                logs      = sorted(glob(os.path.join(directory,prefix+'.*.log')))
-                image_logs.append(logs[-1] if len(logs)>0 else None)
+                pattern = os.path.join(
+                    os.path.dirname(filepath),os.path.basename(filepath)+'.*.log')
+                image_logs.append(max(glob(pattern),default=None))
             if len(image_logs)>0:
                 neb.image_log_files = image_logs
 
@@ -1961,9 +1893,8 @@ class RmgOutData(DevBase):
                 if np.any(np.isfinite(energies)):
                     neb.energies = energies
                 if np.all(np.isfinite(energies)):
-                    relative                   = energies-energies[0]
                     barrier_index              = int(np.argmax(energies))
-                    neb.relative_energies      = relative
+                    neb.relative_energies      = energies-energies[0]
                     neb.forward_barrier        = energies[barrier_index]-energies[0]
                     neb.reverse_barrier        = energies[barrier_index]-energies[-1]
                     neb.barrier_image_index    = barrier_index
@@ -2103,7 +2034,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     electronic_modes  = frozenset({
         'scf','nscf','relax','md_VE','md_TE','tddft','neb',
         })
-    eigenvalue_modes  = electronic_modes|frozenset({'band'})
+    eigenvalue_modes  = electronic_modes|{'band'}
     relaxation_modes  = frozenset({'relax','neb'})
     pressure_units    = MappingProxyType({
         'Pa'   : 1.0,
@@ -2360,27 +2291,23 @@ class RmgAnalyzer(SimulationAnalyzer):
             path     = arg0.locdir
             filename = arg0.outfile
         else:
-            filepath = arg0
-            if not isinstance(filepath,str):
-                msg = (
+            if not isinstance(arg0,str):
+                raise TypeError(
                     'invalid type provided for log_file\n'
                     'Type expected: str\n'
-                    f'Type provided: {filepath.__class__.__name__}'
+                    f'Type provided: {arg0.__class__.__name__}'
                     )
-                raise TypeError(msg)
-            elif not os.path.exists(filepath):
-                msg = (
+            elif not os.path.exists(arg0):
+                raise FileNotFoundError(
                     'RMG log output file does not exist.\n'
-                    f'Path provided: {filepath}'
+                    f'Path provided: {arg0}'
                     )
-                raise FileNotFoundError(msg)
-            elif not os.path.isfile(filepath):
-                msg = (
+            elif not os.path.isfile(arg0):
+                raise IsADirectoryError(
                     'Path provided for RMG log output is not a file.\n'
-                    f'Path provided: {filepath}'
+                    f'Path provided: {arg0}'
                     )
-                raise IsADirectoryError(msg)
-            path,filename = os.path.split(filepath)
+            path,filename = os.path.split(arg0)
 
         self.path         = path
         self.abspath      = os.path.abspath(path)
