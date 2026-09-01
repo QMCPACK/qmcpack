@@ -199,9 +199,12 @@ def write_bool_array(a):
 #end def write_bool_array
 
 
-assign_bool_map = {True:True,False:False,1:True,0:False}
 def assign_bool(v):
-    return assign_bool_map[v]
+    if v in {True, False}: # 1 and 0 hash to the same value as True and False
+        return bool(v)
+    else:
+        msg = f"Expected one of `True`, `False`, `1`, or `0` but got {v}!"
+        raise ValueError(msg)
 #end def assign_bool
 
 
@@ -293,7 +296,7 @@ def assign_bool_array(a):
 #nexus objects:
 def vasp_to_nexus_elem(elem,elem_count):
     syselem=[]
-    for x,count in zip(elem,elem_count):
+    for x,count in zip(elem, elem_count, strict=True):
         syselem+=[x for i in range(0,count)]
     #end for
     return np.array(syselem)
@@ -600,16 +603,16 @@ class VKeywordFile(VFile):
         cls.keywords = frozenset(
             cls.scalar_keywords | cls.array_keywords
             )
-        cls.type = obj()
+        cls.dtype = obj()
         cls.read_value   = obj()
         cls.write_value  = obj()
         cls.assign_value = obj()
-        for type in cls.kw_scalars + cls.kw_arrays:
-            for name in getattr(cls,type):
-                cls.type[name] = type
-                cls.read_value[name]   = read_value_functions[type]
-                cls.write_value[name]  = write_value_functions[type]
-                cls.assign_value[name] = assign_value_functions[type]
+        for dtype in cls.kw_scalars + cls.kw_arrays:
+            for name in getattr(cls,dtype):
+                cls.dtype[name] = dtype
+                cls.read_value[name]   = read_value_functions[dtype]
+                cls.write_value[name]  = write_value_functions[dtype]
+                cls.assign_value[name] = assign_value_functions[dtype]
             #end for
         #end for
         for name,types in cls.mixed_types.items():
@@ -617,7 +620,7 @@ class VKeywordFile(VFile):
                 msg = f'mixed-type keyword is not classified: {name}'
                 raise ValueError(msg)
             #end if
-            classified_type = cls.type[name]
+            classified_type = cls.dtype[name]
             if classified_type not in types:
                 msg = (
                     f'classified type {classified_type} is not permitted for keyword {name}'
@@ -631,7 +634,7 @@ class VKeywordFile(VFile):
                     raise ValueError(msg)
                 #end if
             #end for
-            cls.type[name] = types
+            cls.dtype[name] = types
             cls.read_value[name] = partial(read_mixed,types=types)
             cls.write_value[name] = partial(write_mixed,types=types)
             cls.assign_value[name] = partial(assign_mixed,types=types)
@@ -728,7 +731,7 @@ class VKeywordFile(VFile):
                 msg = f'{field.upper()} is not an INCAR keyword'
                 raise ValueError(msg)
             #end if
-            return self.type[field]
+            return self.dtype[field]
         elif field not in schema:
             msg = f'{field.upper()} is not a field of block construct {block_name.upper()}'
             raise ValueError(msg)
@@ -909,7 +912,7 @@ class VKeywordFile(VFile):
                                 except Exception as e:  # noqa: BLE001
                                     self.error(
                                         f'read failed for keyword {name}\n'
-                                        f'keyword type: {self.type[name]}\n'
+                                        f'keyword type: {self.dtype[name]}\n'
                                         f'input text: {token}\n'
                                         'exception:\n'
                                         f'{e}'
@@ -957,7 +960,7 @@ class VKeywordFile(VFile):
             except Exception as e:  # noqa: BLE001
                 self.error(
                     f'write failed for file {filepath} keyword {name}\n'
-                    f'keyword type: {self.type[name]}\n'
+                    f'keyword type: {self.dtype[name]}\n'
                     f'value: {value}\n'
                     'exception:\n'
                     f'{e}'
@@ -985,7 +988,7 @@ class VKeywordFile(VFile):
             except Exception as e:  # noqa: BLE001
                 self.error(
                     f'assign failed for keyword {name}\n'
-                    f'keyword type: {self.type[name]}\n'
+                    f'keyword type: {self.dtype[name]}\n'
                     f'value: {value}\n'
                     'exception:\n'
                     f'{e}'
