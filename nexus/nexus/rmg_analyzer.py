@@ -6,14 +6,12 @@
 import os
 import re
 from copy import deepcopy
-from glob import glob
 from types import MappingProxyType
 
 import numpy as np
 
 from .developer import DevBase, dotdict, obj
 from .generic import NexusError
-from .numerics import simstats
 from .rmg_input import RmgInput, rmg_modes
 from .simulation import Simulation, SimulationAnalyzer
 from .structure import generate_structure
@@ -43,8 +41,7 @@ class RmgOutData(DevBase):
         Parsed setup sections, including the run mode and, when available,
         lattice, ion, k-point, grid, and file information.
     run_mode : str or None
-        Short RMG calculation mode, such as ``"scf"``, ``"band"``, or
-        ``"md_VE"``.
+        Short RMG calculation mode: ``"scf"``, ``"nscf"``, or ``"relax"``.
     geometry : obj or None
         Cell volume and k-point arrays.
     convergence : obj or None
@@ -98,38 +95,15 @@ class RmgOutData(DevBase):
         Hydrostatic pressure at each reported stress step.
     pressure : float or numpy.floating or None
         Last hydrostatic pressure.
-    bands : obj or None
-        Mapping from spin index to an ``obj`` containing band-path distances,
-        a two-dimensional energy array, units, and the source file path.
-    md : obj or None
-        Molecular-dynamics step, energy, temperature, and displacement arrays.
-    md_stats : obj or None
-        Mapping from molecular-dynamics quantity to an ``obj`` containing its
-        mean, variance, statistical error, and autocorrelation factor.
-    tddft : obj or None
-        Time-dependent energy and spin-resolved dipole series represented by
-        nested ``obj`` instances and NumPy arrays.
-    neb : obj or None
-        NEB controller settings, ordered input structures, path energies,
-        relative energies, barriers, and image-local results. Path energies
-        and barriers are in Hartree and the reaction coordinate is in bohr.
     produced_files : obj or None
-        Lists or paths for mode-specific output files, such as exact-exchange
-        integrals, STM data, or a QMCPACK restart file.
+        Paths for SCF output files, such as a QMCPACK restart file.
 
     Notes
     -----
-    ``geometry``, ``convergence``, and ``timing`` apply to the supported modes
-    ``scf``, ``nscf``, ``band``, ``exx``, ``relax``, ``md_VE``, ``md_TE``,
-    ``tddft``, ``stm``, and ``neb``. Energy, SCF, ionic, and stress members
-    apply to ``scf``, ``nscf``, ``relax``, ``md_VE``, ``md_TE``, ``tddft``,
-    and ``neb``. ``electronic`` also applies to ``band``. ``bands`` applies
-    only to ``band``; ``md`` and ``md_stats`` apply to ``md_VE`` and
-    ``md_TE``; ``tddft`` applies only to ``tddft``; ``neb`` applies only to
-    ``neb``; and ``produced_files`` applies to ``scf``, ``exx``, and
-    ``stm``. A mode-applicable member is initialized to ``None`` and remains
-    ``None`` when its data cannot be obtained. Members that do not apply to
-    the detected mode are not bound.
+    The supported modes are ``scf``, ``nscf``, and ``relax``. A
+    mode-applicable member is initialized to ``None`` and remains ``None``
+    when its data cannot be obtained. ``produced_files`` applies only to
+    ``scf``.
 
     Raises
     ------
@@ -175,22 +149,13 @@ class RmgOutData(DevBase):
             lines = fobj.read().splitlines()
         self.read_setup_info(lines)
 
-        electronic_modes = {'scf','nscf','relax','md_VE','md_TE','tddft','neb'}
-        eigenvalue_modes = electronic_modes|{'band'}
-        supported_modes  = eigenvalue_modes|{'exx','stm'}
+        supported_modes = {'scf','nscf','relax'}
 
-        # modes: scf, nscf, band, exx, relax, md_VE, md_TE, tddft, stm, neb
+        # modes: scf, nscf, relax
         if self.run_mode in supported_modes:
             self.geometry    = None
             self.convergence = None
             self.timing      = None
-
-            self.read_geometry()
-            self.read_convergence(lines)
-            self.read_timing(lines)
-
-        # modes: scf, nscf, relax, md_VE, md_TE, tddft, neb
-        if self.run_mode in electronic_modes:
             self.energy               = None
             self.energy_units         = None
             self.energies             = None
@@ -211,45 +176,19 @@ class RmgOutData(DevBase):
             self.stress_units         = None
             self.pressures            = None
             self.pressure             = None
+            self.electronic            = None
 
+            self.read_geometry()
+            self.read_convergence(lines)
+            self.read_timing(lines)
             self.read_energies(lines)
             self.read_scf(lines)
             self.read_ions(lines)
             self.read_stress(lines)
-
-        # modes: scf, nscf, band, relax, md_VE, md_TE, tddft, neb
-        if self.run_mode in eigenvalue_modes:
-            self.electronic = None
-
             self.read_electronic(lines)
 
-        # modes: md_VE, md_TE
-        if self.run_mode in {'md_VE','md_TE'}:
-            self.md       = None
-            self.md_stats = None
-
-            self.read_md(lines)
-
-        # modes: band
-        if self.run_mode=='band':
-            self.bands = None
-
-            self.read_band()
-
-        # modes: tddft
-        if self.run_mode=='tddft':
-            self.tddft = None
-
-            self.read_tddft()
-
-        # modes: neb
-        if self.run_mode=='neb':
-            self.neb = None
-
-            self.read_neb(lines)
-
-        # modes: scf, exx, stm
-        if self.run_mode in {'scf','exx','stm'}:
+        # modes: scf
+        if self.run_mode=='scf':
             self.produced_files = None
 
             self.read_produced_files()
@@ -320,35 +259,15 @@ class RmgOutData(DevBase):
                 # Match the standalone abbreviation for a non-self-consistent run.
                 # Example: NSCF
                 (r'\bnscf\b','nscf'),
-                # Match the band-structure calculation label.
-                # Example: Band structure
-                (r'band\s+structure','band'),
-                # Match a calculation of exact-exchange integrals.
-                # Example: Calculate Exx integral's from saved wave functions
-                (r'exx\s+integral','exx'),
                 # Match either supported structural-relaxation label.
                 # Example: Structure optimization
                 (r'(?:structure\s+optimization|relax\s+structure)','relax'),
-                # Match constant-volume, constant-energy molecular dynamics.
-                # Example: Molecular dynamics - CVE
-                (r'(?:molecular\s+dynamics\s*[-:]?\s*cve|constant\s+volume\s+and\s+energy)','md_VE'),
-                # Match constant-volume, constant-temperature molecular dynamics.
-                # Example: Molecular dynamics - CVT
-                (r'(?:molecular\s+dynamics\s*[-:]?\s*cvt|constant\s+temperature\s+and\s+energy)','md_TE'),
-                # Match either supported nudged-elastic-band label.
-                # Example: Molecular dynamics using Nudged Elastic Band.
-                (r'(?:nudged\s+elastic\s+band|neb\s+relax)','neb'),
-                # Match either full or abbreviated time-dependent DFT labels.
-                # Example: Time dependent DFT
-                (r'(?:time\s+dependent\s+dft|\btddft\b)','tddft'),
-                # Match either full or abbreviated scanning-tunneling labels.
-                # Example: Calculate STM charge density
-                (r'stm\s+charge\s+density|\bstm\b','stm'),
                 )
             for pattern,run_mode in mode_patterns:
                 if re.search(pattern,text,re.IGNORECASE):
                     return run_mode
-            return rmg_modes.mode_match(text,short=True)
+            run_mode = rmg_modes.mode_match(text,short=True)
+            return run_mode if run_mode in {'scf','nscf','relax'} else None
         #end def identify_mode
 
         mode = None
@@ -1144,73 +1063,6 @@ class RmgOutData(DevBase):
     #end def read_ions
 
 
-    def read_md(self,lines):
-        """Parse molecular-dynamics records and compute summary statistics.
-
-        Parameters
-        ----------
-        lines : list of str
-            Complete RMG log split into lines.
-
-        Notes
-        -----
-        Binds ``md`` to an ``obj`` of NumPy arrays for step, energy,
-        temperature, and displacement data. ``md_stats`` is an ``obj`` mapping
-        each numerical quantity to an ``obj`` containing ``mean``, ``var``,
-        ``error``, and ``kappa``.
-        """
-        records = []
-        for line in lines:
-            stripped = line.strip()
-            # Match constant-energy or constant-temperature MD record markers.
-            # Example: @CVE 1 -1.0 0.1 -0.9 300.0 2.5e-4
-            if re.match(r'^@(CVE|CVT)(?:\b|-)',stripped,re.IGNORECASE) is None:
-                continue
-            fields = stripped.split(None,1)
-            if len(fields)<2:
-                continue
-            # Match a whitespace-separated numeric sequence at the start of a line.
-            # Example: 1 -1.0 0.1 -0.9 300.0 2.5e-4
-            npat        = self.number_pattern
-            value_match = re.match(
-                r'^\s*((?:'+npat+r')(?:\s+(?:'+npat+r'))*)',fields[1])
-            if value_match is None:
-                continue
-            # Find every RMG-formatted number in the matched numeric sequence.
-            # Example: 1 -1.0 0.1 -0.9 300.0 2.5e-4
-            values = np.array(re.findall(
-                self.number_pattern,
-                value_match.group(1).replace('D','E').replace('d','e')),
-                dtype=float)
-            if len(values)>=6:
-                records.append(values[:6])
-        if len(records)>0:
-            records = np.array(records,dtype=float)
-            self.md = obj(
-                step              = records[:,0].astype(int),
-                potential_energy  = records[:,1],
-                kinetic_energy    = records[:,2],
-                total_energy      = records[:,3],
-                temperature       = records[:,4],
-                displacement      = records[:,5],
-                energy_units      = 'Ha',
-                temperature_units = 'K',
-                )
-            statistics = obj()
-            for name,values in self.md.items():
-                if not isinstance(values,np.ndarray):
-                    continue
-                mean,var,error,kappa = simstats(values)
-                statistics[name] = obj(
-                    mean  = mean,
-                    var   = var,
-                    error = error,
-                    kappa = kappa,
-                    )
-            self.md_stats = statistics
-    #end def read_md
-
-
     def read_geometry(self):
         """Collect cell volume and k-point data derived from the setup report.
 
@@ -1231,31 +1083,6 @@ class RmgOutData(DevBase):
             if 'structure' in self.setup_info and len(kpoints.kpoints_crystal)>0:
                 geometry.kpoints_cart = np.dot(
                     kpoints.kpoints_crystal,self.setup_info.structure.kaxes)
-        elif (
-            self.run_mode=='band' and
-            isinstance(self.input,RmgInput) and
-            'kpoints_bandstructure' in self.input
-            ):
-            band_path = self.input.kpoints_bandstructure
-            endpoints = np.asarray(band_path.kpoints,dtype=float)
-            counts    = np.asarray(band_path.counts,dtype=int)
-            if (
-                endpoints.ndim==2 and endpoints.shape[1:]==(3,) and
-                len(endpoints)==len(counts) and len(endpoints)>0 and
-                np.all(counts>=0)
-                ):
-                kpoints = [endpoints[0]]
-                for i in range(1,len(endpoints)):
-                    count = counts[i]
-                    if count==0:
-                        continue
-                    start = endpoints[i-1]
-                    stop  = endpoints[i]
-                    kpoints.extend(np.linspace(start,stop,count+1)[1:])
-                geometry.kpoints_crystal = np.array(kpoints,dtype=float)
-                if 'structure' in self.setup_info:
-                    geometry.kpoints_cart = np.dot(
-                        geometry.kpoints_crystal,self.setup_info.structure.kaxes)
         if len(geometry)>0:
             self.geometry = geometry
     #end def read_geometry
@@ -1427,504 +1254,16 @@ class RmgOutData(DevBase):
     #end def read_timing
 
 
-    def read_band(self):
-        """Read spin-resolved band structures from companion data files.
-
-        Notes
-        -----
-        Binds ``bands`` to an ``obj`` mapping integer spin indices to nested
-        ``obj`` instances. Each contains a path-distance array, a two-dimensional
-        band-energy array in eV, and its source filepath.
-        """
-        def leading_numbers(line):
-            """Return the leading whitespace-separated numbers as a float array."""
-            # Match a whitespace-separated numeric sequence at the start of a line.
-            # Example: 0.0 -1.0
-            npat    = self.number_pattern
-            pattern = r'^\s*((?:'+npat+r')(?:\s+(?:'+npat+r'))*)'
-            match   = re.match(pattern,line)
-            if match is None:
-                return np.array([],dtype=float)
-            # Find every RMG-formatted number in the matched numeric sequence.
-            # Example: 0.0 -1.0
-            values = re.findall(
-                self.number_pattern,
-                match.group(1).replace('D','E').replace('d','e'))
-            return np.array(values,dtype=float)
-        #end def leading_numbers
-
-        prefix = self.outfile_name.removesuffix('.log')
-        files  = sorted(glob(os.path.join(self.path,prefix+'_spin*.bandstructure.dat')))
-        bands  = obj()
-        for filepath in files:
-            # Match and capture the spin index in a band-structure filename.
-            # Example: input_spin0.bandstructure.dat
-            match = re.search(r'_spin(\d+)\.bandstructure\.dat$',filepath)
-            if match is None:
-                continue
-            groups = []
-            group  = []
-            with open(filepath,'r') as fobj:
-                for line in fobj:
-                    if '&&' in line:
-                        if len(group)>0:
-                            groups.append(np.array(group,dtype=float))
-                            group = []
-                    else:
-                        values = leading_numbers(line)
-                        if len(values)>=2:
-                            group.append(values[:2])
-            if len(group)>0:
-                groups.append(np.array(group,dtype=float))
-            if len(groups)>0 and len({len(g) for g in groups})==1:
-                bands[int(match.group(1))] = obj(
-                    distance     = groups[0][:,0],
-                    energies     = np.array([g[:,1] for g in groups],dtype=float),
-                    energy_units = 'eV',
-                    filepath     = filepath,
-                    )
-        if len(bands)>0:
-            self.bands = bands
-    #end def read_band
-
-
-    def read_tddft(self):
-        """Read TDDFT energy and spin-resolved dipole time series.
-
-        Notes
-        -----
-        Binds ``tddft`` to an ``obj``. Its optional ``energy`` member contains
-        NumPy arrays for time and energy-component changes. Its optional
-        ``dipoles`` member maps spin indices to nested ``obj`` instances holding
-        time and dipole arrays, electric-field and ground-state vectors, and the
-        source filepath.
-        """
-        def line_numbers(line):
-            """Return all RMG-formatted numbers in a line as a float array."""
-            # Find every RMG-formatted number occurring anywhere in a line.
-            # Example: &&electric field: 0.0 0.0 0.1
-            values = re.findall(
-                self.number_pattern,line.replace('D','E').replace('d','e'))
-            return np.array(values,dtype=float)
-        #end def line_numbers
-
-        def leading_numbers(line):
-            """Return the leading whitespace-separated numbers as a float array."""
-            # Match a whitespace-separated numeric sequence at the start of a line.
-            # Example: 0.0 1.1, 2.1, 3.1
-            line    = line.replace(',',' ')
-            npat    = self.number_pattern
-            pattern = r'^\s*((?:'+npat+r')(?:\s+(?:'+npat+r'))*)'
-            match   = re.match(pattern,line)
-            if match is None:
-                return np.array([],dtype=float)
-            return line_numbers(match.group(1))
-        #end def leading_numbers
-
-        prefix       = self.outfile_name.removesuffix('.log')
-        energy_file  = os.path.join(self.path,prefix+'_totalE')
-        dipole_files = sorted(glob(os.path.join(self.path,prefix+'_spin*_dipole.dat')))
-        tddft        = obj()
-        if os.path.isfile(energy_file):
-            rows = []
-            with open(energy_file,'r') as fobj:
-                for line in fobj:
-                    if line.lstrip().startswith('&&'):
-                        continue
-                    values = leading_numbers(line)
-                    if len(values)>=5:
-                        rows.append(values[:5])
-            if len(rows)>0:
-                values = np.array(rows,dtype=float)
-
-                tddft.energy = obj(
-                    time                  = values[:,0],
-                    kinetic_pseudo_change = values[:,1],
-                    hartree_change        = values[:,2],
-                    xc_change             = values[:,3],
-                    total_energy_change   = values[:,4],
-                    energy_units          = 'Ha',
-                    filepath              = energy_file,
-                    )
-        dipoles = obj()
-        for filepath in dipole_files:
-            rows         = []
-            field        = None
-            ground_state = None
-            with open(filepath,'r') as fobj:
-                for line in fobj:
-                    lower = ' '.join(line.split()).lower()
-                    if 'electric field' in lower:
-                        values = line_numbers(line.split(':',1)[-1])
-                        if len(values)>=3:
-                            field = values[:3]
-                    elif 'dipole at' in lower:
-                        values = line_numbers(line.split(':',1)[-1])
-                        if len(values)>=3:
-                            ground_state = values[:3]
-                    elif not line.lstrip().startswith('&&'):
-                        values = leading_numbers(line)
-                        if len(values)>=4:
-                            rows.append(values[:4])
-            if len(rows)>0:
-                # Match and capture the spin index in a dipole filename.
-                # Example: input_spin0_dipole.dat
-                match  = re.search(r'_spin(\d+)_dipole\.dat$',filepath)
-                spin   = int(match.group(1)) if match is not None else len(dipoles)
-                values = np.array(rows,dtype=float)
-                dipoles[spin] = obj(
-                    time           = values[:,0],
-                    dipole         = values[:,1:4],
-                    electric_field = field,
-                    ground_state   = ground_state,
-                    filepath       = filepath,
-                    )
-        if len(dipoles)>0:
-            tddft.dipoles = dipoles
-        if len(tddft)>0:
-            self.tddft = tddft
-    #end def read_tddft
-
-
-    def read_neb(self,lines):
-        """Read NEB controller, path, energy-profile, and local-image data.
-
-        Parameters
-        ----------
-        lines : list of str
-            Complete RMG log split into lines. The NEB controller and sibling
-            image inputs and logs are read relative to the current image log.
-
-        Notes
-        -----
-        Binds ``neb`` to an ``obj`` containing controller settings and file
-        paths, ordered input ``Structure`` objects, a cumulative input-path
-        reaction coordinate, image energies and relative energies, forward and
-        reverse barriers, the highest-energy image index, parallel-layout data,
-        and an ``obj`` named ``local_image`` containing the current image index,
-        energy histories, positions, structures, and constrained forces. Energy
-        quantities are in Hartree, coordinates are in bohr, forces are in
-        Hartree per bohr, and the spring constant is in Hartree per bohr squared.
-        Missing or malformed companion data leave the affected fields as
-        ``None`` without preventing extraction of the remaining fields.
-        """
-        def read_assignments(filepath):
-            """Read quoted, possibly multiline controller assignments."""
-            values = {}
-            with open(filepath,'r') as fobj:
-                control_lines = fobj.read().splitlines()
-            i = 0
-            while i<len(control_lines):
-                line = control_lines[i]
-                i += 1
-                if '=' not in line:
-                    continue
-                key,value = line.split('=',1)
-                key       = key.strip()
-                value     = value.strip()
-                if len(key)==0 or len(value)==0:
-                    continue
-                quote = value[0] if value[0] in {'"',"'"} else None
-                if quote is None:
-                    values[key] = value
-                    continue
-                value = value[1:]
-                if value.endswith(quote):
-                    values[key] = value[:-1]
-                    continue
-                parts = [value]
-                while i<len(control_lines):
-                    part = control_lines[i]
-                    i += 1
-                    if quote in part:
-                        parts.append(part.split(quote,1)[0])
-                        break
-                    parts.append(part)
-                values[key] = '\n'.join(parts)
-            return values
-        #end def read_assignments
-
-        def as_int(value):
-            """Convert a controller value to an integer when possible."""
-            try:
-                return int(value)
-            except (TypeError,ValueError):
-                return None
-        #end def as_int
-
-        def as_float(value):
-            """Convert a controller value to a finite float when possible."""
-            try:
-                result = float(value.replace('D','E').replace('d','e'))
-            except (AttributeError,TypeError,ValueError):
-                return None
-            return result if np.isfinite(result) else None
-        #end def as_float
-
-        # Match a final eigenvalue-sum energy and its unit label.
-        # Example: final total energy from eig sum = -1.73498899 Ha
-        energy_pattern = re.compile(
-            r'final\s+total\s+energy\s+from\s+eig(?:envalue)?\s+sum.*?'
-            r'[:=]\s*(?P<value>'+self.number_pattern+r').*?'
-            r'\b(?P<units>eV|Ha|Ry)\b',
-            re.IGNORECASE,
-            )
-
-        def final_energy(filepath):
-            """Return the last final eigenvalue-sum energy in Hartree."""
-            value = None
-            units = None
-            try:
-                with open(filepath,'r') as fobj:
-                    energy_lines = fobj.read().splitlines()
-            except (OSError,UnicodeError):
-                return None
-            for line in energy_lines:
-                match = energy_pattern.search(line)
-                if match is not None:
-                    candidate = as_float(match['value'])
-                    if candidate is not None:
-                        value = candidate
-                        units = {'ev':'eV','ha':'Ha','ry':'Ry'}[
-                            match['units'].lower()]
-            if value is None or units is None:
-                return None
-            try:
-                return convert(value,units,'Ha')
-            except (KeyError,TypeError,ValueError):
-                return None
-        #end def final_energy
-
-        neb = obj(
-            controller_file           = None,
-            calculation_mode          = None,
-            spin_polarized            = None,
-            num_intermediate_images   = None,
-            num_images                = None,
-            images_per_node           = None,
-            max_steps                 = None,
-            spring_constant           = None,
-            spring_constant_units     = 'Ha/B^2',
-            initial_input_file        = None,
-            final_input_file          = None,
-            image_directories         = None,
-            image_input_files         = None,
-            image_log_files           = None,
-            image_mpi_processes       = None,
-            input_structures          = None,
-            reaction_coordinate       = None,
-            reaction_coordinate_units = 'B',
-            energies                  = None,
-            relative_energies         = None,
-            energy_units              = 'Ha',
-            forward_barrier           = None,
-            reverse_barrier           = None,
-            barrier_image_index       = None,
-            parallel                  = None,
-            local_image               = None,
-            )
-
-        # Match the NEB image and MPI layout printed at RMG initialization.
-        # Example: RMG initialization ... 2 image(s) total, 1 per node. 2 MPI processes/image.
-        layout_pattern = re.compile(
-            r'RMG\s+initialization.*?(\d+)\s+image\(s\)\s+total\s*,?\s*'
-            r'(\d+)\s+per\s+node\s*\.?\s*(\d+)\s+MPI\s+process(?:es)?/image',
-            re.IGNORECASE,
-            )
-        # Match the one-based intermediate-image index for constrained forces.
-        # Example: Entering constrained forces for image 2
-        constrained_pattern = re.compile(
-            r'entering\s+constrained\s+forces\s+for\s+image\s+(\d+)',
-            re.IGNORECASE,
-            )
-        constrained_images = []
-        neb_calls          = 0
-        for line in lines:
-            if neb.parallel is None:
-                match = layout_pattern.search(line)
-                if match is not None:
-                    neb.parallel = obj(
-                        num_intermediate_images = int(match.group(1)),
-                        images_per_node         = int(match.group(2)),
-                        mpi_processes_per_image = int(match.group(3)),
-                        )
-            lower = ' '.join(line.split()).lower()
-            if 'neb call' in lower:
-                neb_calls += 1
-            match = constrained_pattern.search(line)
-            if match is not None:
-                constrained_images.append(int(match.group(1)))
-
-        neb.local_image = obj(
-            index                   = constrained_images[-1] if len(constrained_images)>0 else None,
-            neb_calls               = neb_calls,
-            constrained_force_calls = np.array(constrained_images,dtype=int),
-            energy                  = self.energy,
-            energy_units            = self.energy_units,
-            energies                = self.energies,
-            positions               = self.positions,
-            position_units          = self.position_units,
-            forces                  = self.forces,
-            force_units             = self.force_units,
-            max_forces              = self.max_forces,
-            structures              = self.structures,
-            )
-
-        controller_candidates = [
-            os.path.join(self.path,'ctrl_init.dat'),
-            os.path.join(os.path.dirname(self.path),'ctrl_init.dat'),
-            ]
-        controller_file = next((
-            os.path.abspath(filepath) for filepath in controller_candidates
-            if os.path.isfile(filepath)
-            ),None)
-        if controller_file is not None:
-            neb.controller_file = controller_file
-            try:
-                control = read_assignments(controller_file)
-            except (OSError,UnicodeError):
-                control = {}
-            controller_path = os.path.dirname(controller_file)
-
-            nintermediate               = as_int(control.get('num_images'))
-            neb.num_intermediate_images = nintermediate
-            if nintermediate is not None:
-                neb.num_images = nintermediate+2
-            neb.calculation_mode = control.get('calculation_mode')
-            neb.images_per_node  = as_int(control.get('image_per_node'))
-            neb.max_steps        = as_int(control.get('max_neb_steps'))
-            neb.spring_constant  = as_float(control.get('neb_spring_constant'))
-            spin_polarized       = control.get('spin_polarization')
-            if spin_polarized is not None:
-                spin_polarized = spin_polarized.strip().lower()
-                if spin_polarized in {'true','yes','1','false','no','0'}:
-                    neb.spin_polarized = spin_polarized in {'true','yes','1'}
-
-            initial_file = control.get('input_file_initial_image')
-            final_file   = control.get('input_file_final_image')
-            if initial_file is not None:
-                neb.initial_input_file = os.path.abspath(
-                    os.path.join(controller_path,initial_file))
-            if final_file is not None:
-                neb.final_input_file = os.path.abspath(
-                    os.path.join(controller_path,final_file))
-
-            image_directories   = []
-            image_input_files   = []
-            image_mpi_processes = []
-            image_info          = control.get('image_infos')
-            if image_info is not None:
-                for line in image_info.splitlines():
-                    tokens = line.split()
-                    if len(tokens)<2:
-                        continue
-                    directory = os.path.abspath(
-                        os.path.join(controller_path,tokens[0]))
-                    image_directories.append(directory)
-                    image_input_files.append(os.path.join(directory,tokens[1]))
-                    image_mpi_processes.append(
-                        as_int(tokens[2]) if len(tokens)>=3 else None)
-            if len(image_directories)>0:
-                neb.image_directories   = image_directories
-                neb.image_mpi_processes = np.array(image_mpi_processes,dtype=object)
-
-            ordered_input_files = []
-            if neb.initial_input_file is not None:
-                ordered_input_files.append(neb.initial_input_file)
-            ordered_input_files.extend(image_input_files)
-            if neb.final_input_file is not None:
-                ordered_input_files.append(neb.final_input_file)
-            if len(ordered_input_files)>0:
-                neb.image_input_files = ordered_input_files
-
-            input_structures = []
-            for filepath in ordered_input_files:
-                structure = None
-                if os.path.isfile(filepath):
-                    try:
-                        structure = RmgInput(filepath).return_structure('B')
-                    except (NexusError,KeyError,TypeError,ValueError):
-                        structure = None
-                input_structures.append(structure)
-            if any(structure is not None for structure in input_structures):
-                neb.input_structures = input_structures
-            if (
-                len(input_structures)>0 and
-                all(structure is not None for structure in input_structures)
-                ):
-                coordinate           = [0.0]
-                valid_coordinate     = True
-                for previous,current in zip(
-                    input_structures[:-1],
-                    input_structures[1:],
-                    strict = True,
-                    ):
-                    if previous.pos.shape!=current.pos.shape:
-                        valid_coordinate = False
-                        break
-                    coordinate.append(
-                        coordinate[-1]+np.linalg.norm(current.pos-previous.pos))
-                if valid_coordinate:
-                    neb.reaction_coordinate = np.array(coordinate,dtype=float)
-
-            image_logs = []
-            for filepath in ordered_input_files:
-                pattern = os.path.join(
-                    os.path.dirname(filepath),os.path.basename(filepath)+'.*.log')
-                image_logs.append(max(glob(pattern),default=None))
-            if len(image_logs)>0:
-                neb.image_log_files = image_logs
-
-            energies = np.full(len(ordered_input_files),np.nan,dtype=float)
-            if len(energies)>0:
-                endpoint_initial_energy = as_float(
-                    control.get('totale_initial_image'))
-                endpoint_final_energy   = as_float(
-                    control.get('totale_final_image'))
-                if endpoint_initial_energy is not None:
-                    energies[0] = endpoint_initial_energy
-                if endpoint_final_energy is not None:
-                    energies[-1] = endpoint_final_energy
-                for i,filepath in enumerate(image_logs[1:-1],start=1):
-                    if filepath is not None:
-                        value = final_energy(filepath)
-                        if value is not None:
-                            energies[i] = value
-                if np.any(np.isfinite(energies)):
-                    neb.energies = energies
-                if np.all(np.isfinite(energies)):
-                    barrier_index              = int(np.argmax(energies))
-                    neb.relative_energies      = energies-energies[0]
-                    neb.forward_barrier        = energies[barrier_index]-energies[0]
-                    neb.reverse_barrier        = energies[barrier_index]-energies[-1]
-                    neb.barrier_image_index    = barrier_index
-
-        self.neb = neb
-    #end def read_neb
-
-
     def read_produced_files(self):
-        """Locate files produced by EXX, STM, and QMCPACK-interface runs.
+        """Locate files produced by QMCPACK-interface SCF runs.
 
         Notes
         -----
-        Binds ``produced_files`` to an ``obj`` whose members are lists of paths
-        for EXX or STM products or a string path for a QMCPACK restart file.
+        Binds ``produced_files`` to an ``obj`` containing the QMCPACK restart
+        filepath when present.
         """
         produced_files = obj()
-        mode           = self.run_mode
-        if mode=='exx':
-            exx_files = sorted(glob(os.path.join(self.path,'*exx*integral*.h5')))
-            if len(exx_files)>0:
-                produced_files.exx_integrals = exx_files
-        elif mode=='stm':
-            stm_files      = sorted(glob(os.path.join(self.path,'STM','*.stm')))
-            stm_cube_files = sorted(glob(os.path.join(self.path,'STM','*.cube')))
-            if len(stm_files)>0:
-                produced_files.stm = stm_files
-            if len(stm_cube_files)>0:
-                produced_files.stm_cube = stm_cube_files
-        elif mode=='scf' and 'files' in self.setup_info:
+        if 'files' in self.setup_info:
             data_output = self.setup_info.files.get('data_output_file',None)
             if data_output is not None:
                 qmcpack_file = os.path.join(self.path,data_output+'.h5')
@@ -1963,8 +1302,8 @@ class RmgAnalyzer(SimulationAnalyzer):
     input : RmgInput or None
         RMG input reconstructed from the output when it can be obtained.
     run_mode : str or None
-        Short RMG calculation mode determined during analysis, such as
-        ``"scf"``, ``"band"``, ``"relax"``, or ``"md_VE"``.
+        Short RMG calculation mode determined during analysis: ``"scf"``,
+        ``"nscf"``, or ``"relax"``.
     results : RmgOutData or None
         Parsed RMG output data. ``None`` until analysis is performed.
 
@@ -2028,14 +1367,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         If a supplied output path does not identify a regular file.
     """
 
-    all_modes         = frozenset({
-        'scf','nscf','band','exx','relax','md_VE','md_TE','tddft','stm','neb',
-        })
-    electronic_modes  = frozenset({
-        'scf','nscf','relax','md_VE','md_TE','tddft','neb',
-        })
-    eigenvalue_modes  = electronic_modes|{'band'}
-    relaxation_modes  = frozenset({'relax','neb'})
+    all_modes         = frozenset({'scf','nscf','relax'})
+    relaxation_modes  = frozenset({'relax'})
     pressure_units    = MappingProxyType({
         'Pa'   : 1.0,
         'bar'  : 1e5,
@@ -2074,7 +1407,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def energy(self,units='Ha'):
         """Return the final total energy in eV, Hartree, or Rydberg."""
-        self._require_supported('energy',self.electronic_modes)
+        self._require_supported('energy',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('energy units must be one of: eV, Ha, Ry')
         value = self.results.energy
@@ -2117,29 +1450,9 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def eigenvalues(self,units='eV'):
         """Return K-point-major eigenvalues in eV, Hartree, or Rydberg."""
-        self._require_supported('eigenvalues',self.eigenvalue_modes)
+        self._require_supported('eigenvalues',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('eigenvalues units must be one of: eV, Ha, Ry')
-        if self.run_mode=='band':
-            bands = self.results.bands
-            if bands is None:
-                return None
-            spin_values = []
-            for spin in sorted(bands.keys()):
-                values = np.asarray(bands[spin].energies,dtype=float).T
-                if values.ndim!=2:
-                    return None
-                spin_values.append(values)
-            if len(spin_values)==0:
-                return None
-            shape = spin_values[0].shape
-            if any(values.shape!=shape for values in spin_values):
-                return None
-            if len(spin_values)==1:
-                eigenvalues = spin_values[0]
-            else:
-                eigenvalues = np.stack(spin_values,axis=1)
-            return convert(eigenvalues,'eV',units)
         electronic = self.results.electronic
         if electronic is None or 'eigenvalues' not in electronic:
             return None
@@ -2149,7 +1462,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def occupations(self):
         """Return the dimensionless K-point-major occupation array."""
-        self._require_supported('occupations',self.electronic_modes)
+        self._require_supported('occupations',self.all_modes)
         electronic = self.results.electronic
         if electronic is None or 'occupations' not in electronic:
             return None
@@ -2159,7 +1472,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def Ef(self,units='eV'):
         """Return the final Fermi energy in eV, Hartree, or Rydberg."""
-        self._require_supported('Ef',self.electronic_modes)
+        self._require_supported('Ef',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('Ef units must be one of: eV, Ha, Ry')
         electronic = self.results.electronic
@@ -2171,7 +1484,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def Evbm(self,units='eV'):
         """Return the final valence-band maximum in selected energy units."""
-        self._require_supported('Evbm',self.electronic_modes)
+        self._require_supported('Evbm',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('Evbm units must be one of: eV, Ha, Ry')
         electronic = self.results.electronic
@@ -2183,7 +1496,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def Ecbm(self,units='eV'):
         """Return the final conduction-band minimum in selected energy units."""
-        self._require_supported('Ecbm',self.electronic_modes)
+        self._require_supported('Ecbm',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('Ecbm units must be one of: eV, Ha, Ry')
         electronic = self.results.electronic
@@ -2195,7 +1508,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def band_gap(self,units='eV'):
         """Return the final band gap in eV, Hartree, or Rydberg."""
-        self._require_supported('band_gap',self.electronic_modes)
+        self._require_supported('band_gap',self.all_modes)
         if units not in {'eV','Ha','Ry'}:
             raise ValueError('band_gap units must be one of: eV, Ha, Ry')
         electronic = self.results.electronic
@@ -2207,7 +1520,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def fractional_occs(self):
         """Whether any occupation differs from empty or full by over ``1e-3``."""
-        self._require_supported('fractional_occs',self.electronic_modes)
+        self._require_supported('fractional_occs',self.all_modes)
         occupations = self.occupations()
         if occupations is None:
             return None
@@ -2236,7 +1549,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def forces(self,units='eV/A'):
         """Return ionic forces in ``eV/A``, ``Ry/B``, or ``Ha/B``."""
-        self._require_supported('forces',self.electronic_modes)
+        self._require_supported('forces',self.all_modes)
         if units not in {'eV/A','Ry/B','Ha/B'}:
             raise ValueError('forces units must be one of: eV/A, Ry/B, Ha/B')
         forces = self.results.forces
@@ -2251,7 +1564,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def stress(self,units='GPa'):
         """Return the stress-tensor history in selected pressure units."""
-        self._require_supported('stress',self.electronic_modes)
+        self._require_supported('stress',self.all_modes)
         if units not in self.pressure_units:
             supported = ', '.join(sorted(self.pressure_units))
             raise ValueError(f'stress units must be one of: {supported}')
@@ -2264,7 +1577,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def pressure(self,units='GPa'):
         """Return the final hydrostatic pressure in selected pressure units."""
-        self._require_supported('pressure',self.electronic_modes)
+        self._require_supported('pressure',self.all_modes)
         if units not in self.pressure_units:
             supported = ', '.join(sorted(self.pressure_units))
             raise ValueError(f'pressure units must be one of: {supported}')
