@@ -386,20 +386,20 @@ class PwscfOutData(DevBase):
         # read the calculation type
         self.read_calculation(lines)
         # remove unused attributes, depending on the calculation type
-        if self.calculation in ('nscf','bands'):
-            for name in (
+        if self.calculation in {'nscf','bands'}:
+            for name in {  # noqa: PLC0208
                 'E','relax_energies','scf_conv_energy','scf_conv_accuracy',
                 'pressure','stress','forces','tot_forces','max_forces',
-                ):
+                }:
                 del self[name]
             #end for
-        if self.calculation in ('scf','nscf','bands','relax','vc-relax'):
+        if self.calculation in {'scf','nscf','bands','relax','vc-relax'}:
             del self.md_data
             del self.md_stats
-        if self.calculation in ('scf','nscf','bands'):
+        if self.calculation in {'scf','nscf','bands'}:
             del self.relax_structures
         # read md
-        if self.calculation in ('md','vc-md'):
+        if self.calculation in {'md','vc-md'}:
             self.read_md(lines)
             if md_only:
                 return
@@ -409,13 +409,13 @@ class PwscfOutData(DevBase):
         self.read_bands(lines)
         self.read_pressure_volume(lines)
         # all but nscf/bands
-        if self.calculation in ('scf','md','vc-md','relax','vc-relax'):
+        if self.calculation in {'scf','md','vc-md','relax','vc-relax'}:
             self.read_scf_convergence(lines)
             self.read_energies(lines)
             self.read_stress(lines)
             self.read_forces(lines)
         # all but scf/nscf/bands
-        if self.calculation in ('md','vc-md','relax','vc-relax'):
+        if self.calculation in {'md','vc-md','relax','vc-relax'}:
             self.read_structures(lines)
 
         self.read_timing(lines)
@@ -472,7 +472,7 @@ class PwscfOutData(DevBase):
                 record[name] = value
         #end def record_value
 
-        if self.calculation not in ('md','vc-md'):
+        if self.calculation not in {'md','vc-md'}:
             return
 
         records  = []
@@ -493,17 +493,14 @@ class PwscfOutData(DevBase):
                     record_value('kinetic_energy',kinetic_energy_pattern,line)
                 elif line.strip().startswith('temperature') and '=' in line:
                     record_value('temperature',temperature_pattern,line)
-            else:
-                if 'Entering Dynamics;' in line and 'time' in line:
-                    record_value('time',md_time_pattern,line)
-                elif line.strip().startswith('Ekin'):
-                    match = re.search(ekin_temperature_pattern,line)
-                    if match is not None and 'total_energy' in record:
-                        record.kinetic_energy = float(
-                            match.group('kinetic_energy').replace('D','E').replace('d','e')
-                            )
-                        record.temperature    = float(
-                            match.group('temperature').replace('D','E').replace('d','e')
+            elif 'Entering Dynamics;' in line and 'time' in line:
+                record_value('time',md_time_pattern,line)
+            elif line.strip().startswith('Ekin'):
+                match = re.search(ekin_temperature_pattern,line)
+                if match is not None and 'total_energy' in record:
+                    for name in {'kinetic_energy','temperature'}:  # noqa: PLC0208
+                        record[name] = float(
+                            match.group(name).replace('D','E').replace('d','e')
                             )
             if all(name in record for name in required):
                 records.append(record)
@@ -659,15 +656,15 @@ class PwscfOutData(DevBase):
                 band_channel = bands.up
                 up_spin      = True
                 continue
-            elif '- SPIN UP -' in line:
+            if '- SPIN UP -' in line:
                 up_spin      = True
                 band_channel = bands.up
                 continue
-            elif '- SPIN DOWN -' in line:
+            if '- SPIN DOWN -' in line:
                 up_spin      = False
                 band_channel = bands.down
                 continue
-            elif 'bands (ev)' not in line:
+            if 'bands (ev)' not in line:
                 continue
 
             eigs,j = read_values(i+1,('occupation numbers','bands (ev)'))
@@ -1333,7 +1330,7 @@ class PwscfXmlData(DevBase):
             text = text.strip()
             if len(text)==0:
                 return ''
-            elif text.lower() in ('true','false'):
+            if text.lower() in {'true','false'}:
                 return text.lower()=='true'
             match = re.fullmatch(numeric_text_pattern,text)
             if match is not None:
@@ -1344,7 +1341,7 @@ class PwscfXmlData(DevBase):
                     ],dtype=float)
                 if len(values)==1:
                     value = values[0]
-                    if value.is_integer() and all(c not in text.lower() for c in ('.','e')):
+                    if value.is_integer() and all(c not in text.lower() for c in {'.','e'}):  # noqa: PLC0208
                         return int(value)
                     return value
                 return values
@@ -1427,7 +1424,7 @@ class PwscfXmlData(DevBase):
             text = (element.text or '').strip()
             if len(text)==0:
                 return None
-            if text.lower() in ('true','false'):
+            if text.lower() in {'true','false'}:
                 return text.lower()=='true'
             match = re.fullmatch(numeric_text_pattern,text)
             if match is None:
@@ -1440,7 +1437,7 @@ class PwscfXmlData(DevBase):
             if len(values)>1:
                 return values
             number = values[0]
-            if number.is_integer() and all(c not in text.lower() for c in ('.','e')):
+            if number.is_integer() and all(c not in text.lower() for c in {'.','e'}):  # noqa: PLC0208
                 return int(number)
             return float(number)
         #end def value
@@ -1539,10 +1536,10 @@ class PwscfXmlData(DevBase):
         final_structure   = child(output,'atomic_structure')
         self.initial_atoms,self.initial_positions,self.initial_axes = structure(initial_structure)
         self.atoms,self.positions,self.axes = structure(final_structure)
-        for member,element in (
+        for member,element in {
             ('initial_alat',initial_structure),
             ('alat',final_structure),
-            ):
+            }:
             text = None if element is None else element.attrib.get('alat')
             if text is not None and re.fullmatch(number_pattern,text.strip()) is not None:
                 self[member] = float(text.replace('D','E').replace('d','e'))
@@ -1671,11 +1668,11 @@ class PwscfXmlData(DevBase):
         self.ngm        = value(child(basis,'ngm'))
         self.ngms       = value(child(basis,'ngms'))
         self.npwx       = value(child(basis,'npwx'))
-        for member,name in (
+        for member,name in {
             ('fft_grid','fft_grid'),
             ('fft_smooth','fft_smooth'),
             ('fft_box','fft_box'),
-            ):
+            }:
             element = child(basis,name)
             if element is not None:
                 dimensions = [
@@ -1786,14 +1783,14 @@ class PwscfXmlData(DevBase):
                 self['trajectory_'+member] = complete_array(trajectory[member])
 
         # calculation-specific result membership updates
-        if self.calculation in ('nscf','bands'):
+        if self.calculation in {'nscf','bands'}:
             del self.forces
             del self.stress
-        if self.calculation not in ('relax','vc-relax'):
+        if self.calculation not in {'relax','vc-relax'}:
             del self.optimization_converged
             del self.optimization_steps
             del self.gradient_norm
-        if self.calculation not in ('relax','vc-relax','md','vc-md'):
+        if self.calculation not in {'relax','vc-relax','md','vc-md'}:
             for name in tuple(self.keys()):
                 if name.startswith('trajectory_'):
                     del self[name]
