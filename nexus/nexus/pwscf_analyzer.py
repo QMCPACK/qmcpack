@@ -1098,17 +1098,246 @@ class PwscfOutData(DevBase):
 
 
 class PwscfXmlData(DevBase):
-    """Read and store schema-based Quantum ESPRESSO XML output.
+    """Read physical results from schema-based Quantum ESPRESSO XML output.
 
-    Complete records are retained when other XML records are incomplete.
+    The complete converted XML hierarchy is retained while commonly used
+    materials data are exposed directly as scalars and NumPy arrays.  Results
+    that are absent or incomplete remain ``None``.
+
+    Parameters
+    ----------
+    filepath : str or os.PathLike
+        Path to a ``data-file-schema.xml`` file.
+
+    Attributes
+    ----------
+    data : obj or None
+        Complete converted XML hierarchy rooted at ``data.root``.  It is
+        ``None`` only when the XML file cannot be read.
+    parse_failed : bool
+        Whether direct reading or XML syntax parsing failed.
+    version : str or None
+        Quantum ESPRESSO version reported by the XML creator record.
+    calculation : {'scf', 'nscf', 'bands', 'relax', 'vc-relax', 'md', 'vc-md'} or None
+        Calculation type reported in the input section of the XML file.
+    exit_status : int or None
+        Program exit status.
+    total_energy, band_energy, hartree_energy : float or None
+        Final total, band, and Hartree energies.
+    xc_energy, xc_potential_energy, ewald_energy : float or None
+        Final exchange-correlation, exchange-correlation potential, and Ewald
+        energy contributions.
+    scf_converged : bool or None
+        Whether the final self-consistent calculation converged.
+    scf_steps : int or None
+        Number of electronic iterations in the final SCF cycle.
+    scf_error : float or None
+        Estimated error from the final SCF cycle.
+    initial_atoms, atoms : numpy.ndarray or None
+        One-dimensional arrays of initial and final atomic species labels.
+    initial_positions, positions : numpy.ndarray or None
+        Initial and final Cartesian atomic positions with shape ``(natoms, 3)``.
+    initial_axes, axes : numpy.ndarray or None
+        Initial and final cell axes with shape ``(3, 3)``.
+    initial_volume, volume : float or None
+        Initial and final cell volumes computed from the cell axes.
+    forces : numpy.ndarray or None
+        Final atomic forces with shape ``(natoms, 3)``.  This attribute is not
+        present for ``nscf`` and ``bands`` calculations.
+    stress : numpy.ndarray or None
+        Final stress tensor with shape ``(3, 3)``.  This attribute is not
+        present for ``nscf`` and ``bands`` calculations.
+    functional : str or None
+        Exchange-correlation functional reported by PWSCF.
+    spin_polarized, noncollinear, spin_orbit : bool or None
+        Collinear spin-polarization, noncollinearity, and spin-orbit flags.
+    absolute_magnetization : float or None
+        Final absolute magnetization.
+    nelectrons : float or None
+        Number of electrons.
+    nbands, nkpoints : int or None
+        Numbers of electronic bands and k-points.
+    kgrid, kshift : numpy.ndarray or None
+        Three-element integer arrays containing the Monkhorst-Pack grid and
+        grid shift.
+    fermi_energy : float or None
+        Final Fermi energy.
+    highest_occupied_level, lowest_unoccupied_level : float or None
+        Highest occupied and lowest unoccupied electronic energy levels.
+    occupations_kind : str or None
+        Occupation method reported in the band-structure record.
+    kpoints_rel : numpy.ndarray or None
+        K-point coordinates with shape ``(nkpoints, 3)``.
+    kweights : numpy.ndarray or None
+        K-point weights with shape ``(nkpoints,)``.
+    eigenvalues, occupations : numpy.ndarray or None
+        Electronic eigenvalues and occupations.  The shape is
+        ``(nkpoints, nbands)`` for non-spin-polarized calculations and
+        ``(2, nkpoints, nbands)`` for collinear spin-polarized calculations.
+    plane_waves : numpy.ndarray or None
+        Number of plane waves at each k-point.  The shape is ``(nkpoints,)``
+        for non-spin-polarized calculations and ``(2, nkpoints)`` for
+        collinear spin-polarized calculations.
+    species : numpy.ndarray or None
+        One-dimensional array of unique atomic species labels.
+    atomic_masses : numpy.ndarray or None
+        Atomic mass for each species.
+    pseudopotentials : numpy.ndarray or None
+        Pseudopotential filename for each species.
+    valence_charges : numpy.ndarray or None
+        Pseudopotential valence charge for each species.
+    ecutwfc, ecutrho : float or None
+        Wavefunction and charge-density plane-wave cutoffs.
+    gamma_only : bool or None
+        Whether the plane-wave basis uses gamma-only storage.
+    ngm, ngms, npwx : int or None
+        Plane-wave and smooth-grid vector counts and the maximum number of
+        wavefunction plane waves.
+    fft_grid, fft_smooth, fft_box : numpy.ndarray or None
+        Three-element integer arrays containing FFT-grid dimensions.
+    reciprocal_lattice : numpy.ndarray or None
+        Reciprocal-lattice vectors with shape ``(3, 3)``.
+    nsym, nrot, space_group : int or None
+        Numbers of active symmetries and rotations and the space-group index.
+    symmetry_names, symmetry_classes : numpy.ndarray or None
+        One-dimensional string arrays describing each parsed symmetry.
+    symmetry_rotations : numpy.ndarray or None
+        Symmetry rotation matrices with shape ``(nsym, 3, 3)``.
+    symmetry_translations : numpy.ndarray or None
+        Fractional translations with shape ``(nsym, 3)``.
+    equivalent_atoms : numpy.ndarray or None
+        Equivalent-atom indices with shape ``(nsym, natoms)``.
+    cpu_time, wall_time : float or None
+        Total CPU and wall-clock times reported in the XML timing record.
+    optimization_converged : bool or None
+        Whether ionic optimization converged.  Present only for ``relax`` and
+        ``vc-relax`` calculations.
+    optimization_steps : int or None
+        Number of ionic optimization steps.  Present only for ``relax`` and
+        ``vc-relax`` calculations.
+    gradient_norm : float or None
+        Final ionic gradient norm.  Present only for ``relax`` and
+        ``vc-relax`` calculations.
+    trajectory_energies, trajectory_band_energies : numpy.ndarray or None
+        Total- and band-energy histories over ionic steps.
+    trajectory_hartree_energies, trajectory_xc_energies : numpy.ndarray or None
+        Hartree- and exchange-correlation-energy histories over ionic steps.
+    trajectory_xc_potential_energies, trajectory_ewald_energies : numpy.ndarray or None
+        Exchange-correlation-potential and Ewald-energy histories over ionic
+        steps.
+    trajectory_positions : numpy.ndarray or None
+        Atomic-position history with shape ``(nsteps, natoms, 3)``.
+    trajectory_axes : numpy.ndarray or None
+        Cell-axis history with shape ``(nsteps, 3, 3)``.
+    trajectory_volumes : numpy.ndarray or None
+        Cell-volume history with shape ``(nsteps,)``.
+    trajectory_forces : numpy.ndarray or None
+        Atomic-force history with shape ``(nsteps, natoms, 3)``.
+    trajectory_stress : numpy.ndarray or None
+        Stress-tensor history with shape ``(nsteps, 3, 3)``.
+    trajectory_scf_converged : numpy.ndarray or None
+        Boolean SCF-convergence history over ionic steps.
+    trajectory_scf_steps : numpy.ndarray or None
+        Number of SCF iterations at each ionic step.
+    trajectory_scf_error : numpy.ndarray or None
+        Estimated SCF error at each ionic step.
+
+    Notes
+    -----
+    Trajectory attributes are present only for ``relax``, ``vc-relax``,
+    ``md``, and ``vc-md`` calculations.  Applicable attributes remain
+    ``None`` when their XML records are absent or incomplete; attributes that
+    do not apply to the reported calculation type are removed.  Physical
+    quantities retain the native units of the Quantum ESPRESSO schema,
+    generally atomic units.
     """
 
     def __init__(self,filepath):
-        """Read and store data from schema-based PWSCF XML output."""
-
-        self.data    = None
-        self.kpoints = None
-        self.failed  = False
+        """Read schema XML and initialize extracted PWSCF results."""
+        self.data                         = None
+        self.parse_failed                 = False
+        self.version                      = None
+        self.calculation                  = None
+        self.exit_status                  = None
+        self.total_energy                 = None
+        self.band_energy                  = None
+        self.hartree_energy               = None
+        self.xc_energy                    = None
+        self.xc_potential_energy          = None
+        self.ewald_energy                 = None
+        self.scf_converged                = None
+        self.scf_steps                    = None
+        self.scf_error                    = None
+        self.initial_atoms                = None
+        self.initial_positions            = None
+        self.initial_axes                 = None
+        self.initial_volume               = None
+        self.atoms                        = None
+        self.positions                    = None
+        self.axes                         = None
+        self.volume                       = None
+        self.forces                       = None
+        self.stress                       = None
+        self.functional                   = None
+        self.spin_polarized               = None
+        self.noncollinear                 = None
+        self.spin_orbit                   = None
+        self.absolute_magnetization       = None
+        self.nelectrons                   = None
+        self.nbands                       = None
+        self.nkpoints                     = None
+        self.kgrid                        = None
+        self.kshift                       = None
+        self.fermi_energy                 = None
+        self.highest_occupied_level       = None
+        self.lowest_unoccupied_level      = None
+        self.occupations_kind             = None
+        self.kpoints_rel                  = None
+        self.kweights                     = None
+        self.eigenvalues                  = None
+        self.occupations                  = None
+        self.plane_waves                  = None
+        self.species                      = None
+        self.atomic_masses                = None
+        self.pseudopotentials             = None
+        self.valence_charges              = None
+        self.ecutwfc                      = None
+        self.ecutrho                      = None
+        self.gamma_only                   = None
+        self.ngm                          = None
+        self.ngms                         = None
+        self.npwx                         = None
+        self.fft_grid                     = None
+        self.fft_smooth                   = None
+        self.fft_box                      = None
+        self.reciprocal_lattice           = None
+        self.nsym                         = None
+        self.nrot                         = None
+        self.space_group                  = None
+        self.symmetry_names               = None
+        self.symmetry_classes             = None
+        self.symmetry_rotations           = None
+        self.symmetry_translations        = None
+        self.equivalent_atoms             = None
+        self.cpu_time                     = None
+        self.wall_time                    = None
+        self.optimization_converged       = None
+        self.optimization_steps           = None
+        self.gradient_norm                = None
+        self.trajectory_energies              = None
+        self.trajectory_band_energies         = None
+        self.trajectory_hartree_energies      = None
+        self.trajectory_xc_energies           = None
+        self.trajectory_xc_potential_energies = None
+        self.trajectory_ewald_energies        = None
+        self.trajectory_positions             = None
+        self.trajectory_axes                  = None
+        self.trajectory_volumes               = None
+        self.trajectory_forces                = None
+        self.trajectory_stress                = None
+        self.trajectory_scf_converged         = None
+        self.trajectory_scf_steps             = None
+        self.trajectory_scf_error             = None
 
         def xml_value(text):
             """Convert XML text to its natural scalar or array value."""
@@ -1157,100 +1386,423 @@ class PwscfXmlData(DevBase):
             return node
         #end def xml_element
 
-        def xml_child(element,name):
-            """Return the named direct XML child when present."""
+        try:
+            root = ET.parse(filepath).getroot()
+        except (OSError,UnicodeError,ET.ParseError):
+            self.parse_failed = True
+            return
+
+        self.data = obj(root=xml_element(root))
+        self.extract_results(root)
+    #end def __init__
+
+
+    def extract_results(self,root):
+        """Extract user-facing physical quantities from the schema XML tree."""
+        def child(element,name):
+            """Return a named direct child element."""
             if element is None:
                 return None
             name = name.lower()
             return next(
-                (child for child in element
-                 if child.tag.rsplit('}',1)[-1].lower()==name),
+                (item for item in element
+                 if item.tag.rsplit('}',1)[-1].lower()==name),
                 None,
                 )
-        #end def xml_child
+        #end def child
 
-        try:
-            root = ET.parse(filepath).getroot()
-        except (OSError,UnicodeError,ET.ParseError):
-            self.failed = True
-            return
+        def children(element,name):
+            """Return all named direct child elements."""
+            if element is None:
+                return []
+            name = name.lower()
+            return [
+                item for item in element
+                if item.tag.rsplit('}',1)[-1].lower()==name
+                ]
+        #end def children
 
-        data           = obj(root=xml_element(root))
-        output         = xml_child(root,'output')
-        band_structure = xml_child(output,'band_structure')
-        kpoints        = obj()
+        def path(element,*names):
+            """Follow a direct-child path through the XML tree."""
+            for name in names:
+                element = child(element,name)
+                if element is None:
+                    break
+            return element
+        #end def path
 
-        self.data = data
+        def value(element):
+            """Convert a scalar or numeric-array element value."""
+            if element is None:
+                return None
+            text = (element.text or '').strip()
+            if len(text)==0:
+                return None
+            if text.lower() in ('true','false'):
+                return text.lower()=='true'
+            match = re.fullmatch(numeric_text_pattern,text)
+            if match is None:
+                return text
+            tokens = re.findall(number_pattern,match.group('values'))
+            values = np.array([
+                float(token.replace('D','E').replace('d','e'))
+                for token in tokens
+                ])
+            if len(values)>1:
+                return values
+            number = values[0]
+            if number.is_integer() and all(c not in text.lower() for c in ('.','e')):
+                return int(number)
+            return float(number)
+        #end def value
 
-        if output is None or band_structure is None:
-            return
-        lsda_element = xml_child(band_structure,'lsda')
-        lsda         = xml_value(lsda_element.text) if lsda_element is not None else False
-        records      = [
-            child for child in band_structure
-            if child.tag.rsplit('}',1)[-1].lower()=='ks_energies'
-            ]
-        if len(records)==0:
-            return
+        def array(element,dtype=float):
+            """Return element text as a one-dimensional array."""
+            result = value(element)
+            if result is None or isinstance(result,(str,bool)):
+                return None
+            return np.asarray(result,dtype=dtype).reshape(-1)
+        #end def array
+
+        def matrix(element,ncols):
+            """Return element text as a matrix with a fixed column count."""
+            result = array(element)
+            if result is None or len(result)%ncols!=0:
+                return None
+            return result.reshape(-1,ncols)
+        #end def matrix
+
+        def structure(element):
+            """Return atom labels, positions, and cell axes from a structure."""
+            atoms     = None
+            positions = None
+            axes      = None
+            position_element = child(element,'atomic_positions')
+            atom_elements    = children(position_element,'atom')
+            if len(atom_elements)>0:
+                labels = []
+                rows   = []
+                for atom in atom_elements:
+                    coordinates = array(atom)
+                    if coordinates is None or len(coordinates)<3:
+                        rows = []
+                        break
+                    labels.append(atom.attrib.get('name',''))
+                    rows.append(coordinates[:3])
+                if len(rows)>0:
+                    atoms     = np.array(labels,dtype=str)
+                    positions = np.array(rows,dtype=float)
+            cell = child(element,'cell')
+            rows = [array(child(cell,name)) for name in ('a1','a2','a3')]
+            if all(row is not None and len(row)>=3 for row in rows):
+                axes = np.array([row[:3] for row in rows],dtype=float)
+            return atoms,positions,axes
+        #end def structure
+
+        def complete_array(values,dtype=float):
+            """Stack a sequence only when every entry is available."""
+            if len(values)==0 or any(item is None for item in values):
+                return None
+            try:
+                return np.array(values,dtype=dtype)
+            except ValueError:
+                return None
+        #end def complete_array
+
+        # version and calculation type
+        creator = path(root,'general_info','creator')
+        if creator is not None:
+            self.version = creator.attrib.get('VERSION',creator.attrib.get('version'))
+        self.calculation = value(path(root,'input','control_variables','calculation'))
+
+        # principal XML sections
+        input_element  = child(root,'input')
+        output         = child(root,'output')
+        band_structure = child(output,'band_structure')
+
+        # exit status and total-energy components
+        self.exit_status = value(child(root,'exit_status'))
+        energy = child(output,'total_energy')
+        energy_members = (
+            ('total_energy','etot'),
+            ('band_energy','eband'),
+            ('hartree_energy','ehart'),
+            ('xc_energy','etxc'),
+            ('xc_potential_energy','vtxc'),
+            ('ewald_energy','ewald'),
+            )
+        for member,name in energy_members:
+            self[member] = value(child(energy,name))
+
+        # electronic and structural convergence
+        convergence = child(output,'convergence_info')
+        scf_conv     = child(convergence,'scf_conv')
+        self.scf_converged = value(child(scf_conv,'convergence_achieved'))
+        self.scf_steps     = value(child(scf_conv,'n_scf_steps'))
+        self.scf_error     = value(child(scf_conv,'scf_error'))
+        opt_conv = child(convergence,'opt_conv')
+        self.optimization_converged = value(child(opt_conv,'convergence_achieved'))
+        self.optimization_steps     = value(child(opt_conv,'n_opt_steps'))
+        self.gradient_norm          = value(child(opt_conv,'grad_norm'))
+
+        # initial and final structures, forces, and stress
+        initial_structure = child(input_element,'atomic_structure')
+        final_structure   = child(output,'atomic_structure')
+        self.initial_atoms,self.initial_positions,self.initial_axes = structure(initial_structure)
+        self.atoms,self.positions,self.axes = structure(final_structure)
+        if self.initial_axes is not None:
+            self.initial_volume = abs(np.linalg.det(self.initial_axes))
+        if self.axes is not None:
+            self.volume = abs(np.linalg.det(self.axes))
+        self.forces = matrix(child(output,'forces'),3)
+        self.stress = matrix(child(output,'stress'),3)
+
+        # exchange-correlation functional and magnetization
+        dft = child(output,'dft')
+        self.functional = value(child(dft,'functional'))
+        magnetization = child(output,'magnetization')
+        self.spin_polarized         = value(child(magnetization,'lsda'))
+        self.noncollinear           = value(child(magnetization,'noncolin'))
+        self.spin_orbit             = value(child(magnetization,'spinorbit'))
+        self.absolute_magnetization = value(child(magnetization,'absolute'))
+
+        # electron, band, occupation, and Fermi-level counts and values
+        self.nelectrons              = value(child(band_structure,'nelec'))
+        self.nbands                  = value(child(band_structure,'nbnd'))
+        self.nkpoints                = value(child(band_structure,'nks'))
+        self.fermi_energy            = value(child(band_structure,'fermi_energy'))
+        self.highest_occupied_level  = value(child(band_structure,'highestOccupiedLevel'))
+        self.lowest_unoccupied_level = value(child(band_structure,'lowestUnoccupiedLevel'))
+        self.occupations_kind        = value(child(band_structure,'occupations_kind'))
+        lsda = value(child(band_structure,'lsda'))
+        if lsda is not None:
+            self.spin_polarized = lsda
+
+        # k-points, weights, eigenvalues, occupations, and plane-wave counts
+        records = children(band_structure,'ks_energies')
         coordinate_map = {}
+        electronic     = []
         for record in records:
-            k_element = xml_child(record,'k_point')
-            e_element = xml_child(record,'eigenvalues')
-            o_element = xml_child(record,'occupations')
-            if k_element is None or e_element is None or o_element is None:
-                continue
-            coordinate_match = re.fullmatch(numeric_text_pattern,k_element.text or '')
-            eigenvalue_match = re.fullmatch(numeric_text_pattern,e_element.text or '')
-            occupation_match = re.fullmatch(numeric_text_pattern,o_element.text or '')
-            if (coordinate_match is None
-                or eigenvalue_match is None
-                or occupation_match is None
-                ):
-                continue
-            coordinates = np.array([
-                float(value.replace('D','E').replace('d','e'))
-                for value in re.findall(number_pattern,coordinate_match.group('values'))
-                ])
-            eigenvalues = np.array([
-                float(value.replace('D','E').replace('d','e'))
-                for value in re.findall(number_pattern,eigenvalue_match.group('values'))
-                ])
-            occupations = np.array([
-                float(value.replace('D','E').replace('d','e'))
-                for value in re.findall(number_pattern,occupation_match.group('values'))
-                ])
-            if (len(coordinates)<3
-                or len(eigenvalues)==0
-                or len(occupations)==0
+            k_element  = child(record,'k_point')
+            coordinates = array(k_element)
+            eigenvalues = array(child(record,'eigenvalues'))
+            occupations = array(child(record,'occupations'))
+            weight_text = '' if k_element is None else k_element.attrib.get('weight','')
+            if (coordinates is None
+                or len(coordinates)<3
+                or eigenvalues is None
+                or occupations is None
                 or len(eigenvalues)!=len(occupations)
+                or re.fullmatch(number_pattern,weight_text.strip()) is None
                 ):
                 continue
             coordinates = coordinates[:3]
-            weight_text = k_element.attrib.get('weight','')
-            # Check whether the weight text is a complete numeric value.
-            if re.fullmatch(number_pattern,weight_text.strip()) is None:
-                continue
-            weight = float(weight_text.replace('D','E').replace('d','e'))
-            key    = tuple(np.round(coordinates,12))
-            if not lsda or key not in coordinate_map:
-                ki = len(kpoints)+1
-                coordinate_map[key] = ki
-                kpoints[ki] = obj(kpoint=coordinates,weight=weight)
-            else:
-                ki = coordinate_map[key]
-            kp   = kpoints[ki]
-            spin = obj(
-                units       = 'Ha',
-                eigenvalues = eigenvalues,
-                occupations = occupations,
+            key = (
+                tuple(np.round(coordinates,12))
+                if self.spin_polarized else len(electronic)
                 )
-            if not lsda or 'up' not in kp:
-                kp.up = spin
-            else:
-                kp.down = spin
-        if len(kpoints)>0:
-            self.kpoints = kpoints
-    #end def __init__
+            if key not in coordinate_map:
+                coordinate_map[key] = len(electronic)
+                electronic.append(obj(
+                    kpoint      = coordinates,
+                    weight      = float(weight_text.replace('D','E').replace('d','e')),
+                    eigenvalues = [],
+                    occupations = [],
+                    plane_waves = [],
+                    ))
+            entry = electronic[coordinate_map[key]]
+            entry.eigenvalues.append(eigenvalues)
+            entry.occupations.append(occupations)
+            entry.plane_waves.append(value(child(record,'npw')))
+        if len(electronic)>0:
+            self.kpoints_rel = np.array([entry.kpoint for entry in electronic],dtype=float)
+            self.kweights    = np.array([entry.weight for entry in electronic],dtype=float)
+            nspin = 2 if self.spin_polarized else 1
+            if all(len(entry.eigenvalues)==nspin for entry in electronic):
+                eigenvalues = complete_array([
+                    [entry.eigenvalues[spin] for entry in electronic]
+                    for spin in range(nspin)
+                    ])
+                occupations = complete_array([
+                    [entry.occupations[spin] for entry in electronic]
+                    for spin in range(nspin)
+                    ])
+                plane_waves = complete_array([
+                    [entry.plane_waves[spin] for entry in electronic]
+                    for spin in range(nspin)
+                    ])
+                if nspin==1:
+                    if eigenvalues is not None:
+                        eigenvalues = eigenvalues[0]
+                    if occupations is not None:
+                        occupations = occupations[0]
+                    if plane_waves is not None:
+                        plane_waves = plane_waves[0]
+                self.eigenvalues = eigenvalues
+                self.occupations = occupations
+                self.plane_waves = plane_waves
+
+        # atomic species, masses, pseudopotentials, and valence charges
+        species_elements = children(child(output,'atomic_species'),'species')
+        if len(species_elements)>0:
+            names       = []
+            masses      = []
+            pseudos     = []
+            charges     = []
+            complete_z  = True
+            for species in species_elements:
+                names.append(species.attrib.get('name',''))
+                masses.append(value(child(species,'mass')))
+                pseudo = child(species,'pseudo_file')
+                pseudos.append(value(pseudo))
+                zval = None if pseudo is None else pseudo.attrib.get('Zval',pseudo.attrib.get('zval'))
+                if zval is None or re.fullmatch(number_pattern,zval.strip()) is None:
+                    complete_z = False
+                else:
+                    charges.append(float(zval.replace('D','E').replace('d','e')))
+            #end for
+            self.species          = np.array(names,dtype=str)
+            self.atomic_masses    = complete_array(masses)
+            self.pseudopotentials = np.array(pseudos,dtype=str)
+            if complete_z:
+                self.valence_charges = np.array(charges,dtype=float)
+
+        # plane-wave cutoffs, FFT grids, and reciprocal lattice
+        basis = child(output,'basis_set')
+        self.ecutwfc    = value(child(basis,'ecutwfc'))
+        self.ecutrho    = value(child(basis,'ecutrho'))
+        self.gamma_only = value(child(basis,'gamma_only'))
+        self.ngm        = value(child(basis,'ngm'))
+        self.ngms       = value(child(basis,'ngms'))
+        self.npwx       = value(child(basis,'npwx'))
+        for member,name in (
+            ('fft_grid','fft_grid'),
+            ('fft_smooth','fft_smooth'),
+            ('fft_box','fft_box'),
+            ):
+            element = child(basis,name)
+            if element is not None:
+                dimensions = [
+                    element.attrib.get(label)
+                    for label in ('nr1','nr2','nr3')
+                    ]
+                if all(item is not None for item in dimensions):
+                    self[member] = np.array(dimensions,dtype=int)
+        reciprocal = child(basis,'reciprocal_lattice')
+        rows = [array(child(reciprocal,name)) for name in ('b1','b2','b3')]
+        if all(row is not None and len(row)>=3 for row in rows):
+            self.reciprocal_lattice = np.array([row[:3] for row in rows],dtype=float)
+
+        # Monkhorst-Pack grid and shift
+        starting_kpoints = child(band_structure,'starting_k_points')
+        if starting_kpoints is None:
+            starting_kpoints = child(basis,'starting_k_points')
+        monkhorst_pack = child(starting_kpoints,'monkhorst_pack')
+        if monkhorst_pack is not None:
+            grid  = [monkhorst_pack.attrib.get(f'nk{i}') for i in range(1,4)]
+            shift = [monkhorst_pack.attrib.get(f'k{i}') for i in range(1,4)]
+            if all(item is not None for item in grid):
+                self.kgrid = np.array(grid,dtype=int)
+            if all(item is not None for item in shift):
+                self.kshift = np.array(shift,dtype=int)
+
+        # crystal symmetry operations and equivalent atoms
+        symmetries         = child(output,'symmetries')
+        self.nsym          = value(child(symmetries,'nsym'))
+        self.nrot          = value(child(symmetries,'nrot'))
+        self.space_group   = value(child(symmetries,'space_group'))
+        symmetry_elements = children(symmetries,'symmetry')
+        names        = []
+        classes      = []
+        rotations    = []
+        translations = []
+        equivalents  = []
+        for symmetry in symmetry_elements:
+            info        = child(symmetry,'info')
+            rotation    = matrix(child(symmetry,'rotation'),3)
+            translation = array(child(symmetry,'fractional_translation'))
+            equivalent  = array(child(symmetry,'equivalent_atoms'),dtype=int)
+            if (info is None
+                or rotation is None
+                or rotation.shape!=(3,3)
+                or translation is None
+                or len(translation)<3
+                or equivalent is None
+                ):
+                continue
+            names.append(info.attrib.get('name',''))
+            classes.append(info.attrib.get('class',''))
+            rotations.append(rotation)
+            translations.append(translation[:3])
+            equivalents.append(equivalent)
+        if len(rotations)>0:
+            self.symmetry_names        = np.array(names,dtype=str)
+            self.symmetry_classes      = np.array(classes,dtype=str)
+            self.symmetry_rotations    = np.array(rotations,dtype=float)
+            self.symmetry_translations = np.array(translations,dtype=float)
+            self.equivalent_atoms      = complete_array(equivalents,dtype=int)
+
+        # total execution timing
+        timing = path(root,'timing_info','total')
+        self.cpu_time  = value(child(timing,'cpu'))
+        self.wall_time = value(child(timing,'wall'))
+
+        # ionic-step energy, structure, force, stress, and convergence histories
+        steps = children(root,'step')
+        if len(steps)>0:
+            trajectory = dotdict(
+                energies              = [],
+                band_energies         = [],
+                hartree_energies      = [],
+                xc_energies           = [],
+                xc_potential_energies = [],
+                ewald_energies        = [],
+                positions             = [],
+                axes                  = [],
+                volumes               = [],
+                forces                = [],
+                stress                = [],
+                scf_converged         = [],
+                scf_steps             = [],
+                scf_error             = [],
+                )
+            for step in steps:
+                step_energy = child(step,'total_energy')
+                trajectory.energies.append(value(child(step_energy,'etot')))
+                trajectory.band_energies.append(value(child(step_energy,'eband')))
+                trajectory.hartree_energies.append(value(child(step_energy,'ehart')))
+                trajectory.xc_energies.append(value(child(step_energy,'etxc')))
+                trajectory.xc_potential_energies.append(value(child(step_energy,'vtxc')))
+                trajectory.ewald_energies.append(value(child(step_energy,'ewald')))
+                _,positions,axes = structure(child(step,'atomic_structure'))
+                trajectory.positions.append(positions)
+                trajectory.axes.append(axes)
+                trajectory.volumes.append(
+                    None if axes is None else abs(np.linalg.det(axes))
+                    )
+                trajectory.forces.append(matrix(child(step,'forces'),3))
+                trajectory.stress.append(matrix(child(step,'stress'),3))
+                step_scf = child(step,'scf_conv')
+                trajectory.scf_converged.append(value(child(step_scf,'convergence_achieved')))
+                trajectory.scf_steps.append(value(child(step_scf,'n_scf_steps')))
+                trajectory.scf_error.append(value(child(step_scf,'scf_error')))
+            for member in trajectory.keys():
+                self['trajectory_'+member] = complete_array(trajectory[member])
+
+        # calculation-specific result membership updates
+        if self.calculation in ('nscf','bands'):
+            del self.forces
+            del self.stress
+        if self.calculation not in ('relax','vc-relax'):
+            del self.optimization_converged
+            del self.optimization_steps
+            del self.gradient_norm
+        if self.calculation not in ('relax','vc-relax','md','vc-md'):
+            for name in tuple(self.keys()):
+                if name.startswith('trajectory_'):
+                    del self[name]
+    #end def extract_results
+
 #end class PwscfXmlData
 
 
@@ -1423,10 +1975,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
         if schema:
             results_xml = PwscfXmlData(schema_file)
-            if results_xml.failed:
+            if results_xml.parse_failed:
                 return 0
             self.results_xml = results_xml
-            npoints = 0 if results_xml.kpoints is None else len(results_xml.kpoints)
+            npoints = 0 if results_xml.kpoints_rel is None else len(results_xml.kpoints_rel)
         else:
             legacy_dir = savedir
             if not os.path.isfile(legacy_file):

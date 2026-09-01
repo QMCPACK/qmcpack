@@ -1223,6 +1223,14 @@ H  0.100000000  0.200000000  0.300000000  1 1 1  trailing text
 """
     schema = """<?xml version="1.0"?>
 <qes:espresso xmlns:qes="http://www.quantum-espresso.org/ns/qes/qes-1.0">
+  <general_info>
+    <creator VERSION="7.6">PWSCF</creator>
+  </general_info>
+  <input>
+    <control_variables>
+      <calculation>vc-md</calculation>
+    </control_variables>
+  </input>
   <output>
     <band_structure>
       <lsda>false</lsda>
@@ -1261,11 +1269,15 @@ H  0.100000000  0.200000000  0.300000000  1 1 1  trailing text
     assert(np.allclose(pa.results_out.relax_structures[0].positions,[[0.5,1.0,1.5]]))
     assert(pa.results_xml is not None)
     assert(isinstance(pa.results_xml,PwscfXmlData))
-    assert(not pa.results_xml.failed)
+    assert(not pa.results_xml.parse_failed)
+    assert(pa.results_xml.version=='7.6')
+    assert(pa.results_xml.calculation=='vc-md')
     assert(pa.results_xml.data.root.output.band_structure.nks==2)
-    assert(len(pa.results_xml.kpoints)==2)
-    assert(np.allclose(pa.results_xml.kpoints[1].up.eigenvalues,[-0.5,0.5]))
-    assert(np.allclose(pa.results_xml.kpoints[2].up.eigenvalues,[-0.4,0.6]))
+    assert(pa.results_xml.kpoints_rel.shape==(2,3))
+    assert(np.allclose(pa.results_xml.kweights,[0.5,0.25]))
+    assert(np.allclose(pa.results_xml.eigenvalues,[[-0.5,0.5],[-0.4,0.6]]))
+    assert(np.allclose(pa.results_xml.occupations,[[1.0,0.0],[1.0,0.0]]))
+    assert('kpoints' not in pa.results_xml)
     assert(pa.results_out.md_data is not None)
     assert(pa.results_out.scf_conv_energy is None)
     assert(pa.results_out.scf_conv_accuracy is None)
@@ -1301,15 +1313,17 @@ CELL_PARAMETERS (alat= 5.0)
     assert(pa.results_out.forces is not None)
     assert(pa.results_out.tot_forces is not None)
     assert(pa.results_out.relax_structures is not None)
-    assert(not pa.results_xml.failed)
-    assert(len(pa.results_xml.kpoints)==1)
+    assert(not pa.results_xml.parse_failed)
+    assert(pa.results_xml.kpoints_rel.shape==(1,3))
+    assert(pa.results_xml.eigenvalues.shape==(1,2))
 
     # Missing electronic records do not indicate an XML read failure.
     no_kpoints_schema = schema.replace('ks_energies','unused_energies')
     (savedir/'data-file-schema.xml').write_text(no_kpoints_schema)
     pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
-    assert(not pa.results_xml.failed)
-    assert(pa.results_xml.kpoints is None)
+    assert(not pa.results_xml.parse_failed)
+    assert(pa.results_xml.kpoints_rel is None)
+    assert(pa.results_xml.eigenvalues is None)
 
     # XML syntax errors are localized and do not discard parsed log data.
     (savedir/'data-file-schema.xml').write_text('<qes:espresso>')
@@ -1322,9 +1336,9 @@ CELL_PARAMETERS (alat= 5.0)
     pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
     assert(pa.results_xml is None)
     xml_data = PwscfXmlData(savedir/'data-file-schema.xml')
-    assert(xml_data.failed)
+    assert(xml_data.parse_failed)
     assert(xml_data.data is None)
-    assert(xml_data.kpoints is None)
+    assert(xml_data.kpoints_rel is None)
 
     # A total force is retained even when no atomic-force block is present.
     (tmp_path/'pwscf.out').write_text('     Total force = 0.125 Ry/au\n')
@@ -1333,3 +1347,117 @@ CELL_PARAMETERS (alat= 5.0)
     assert(np.allclose(pa.results_out.tot_forces,[0.125]))
     assert('data_status' not in pa.info)
 #end def test_modern_output
+
+
+def test_xml_data_results(tmp_path):
+    import numpy as np
+    from ..pwscf_analyzer import PwscfXmlData
+
+    schema = """<espresso>
+  <general_info><creator VERSION="7.6">PWSCF</creator></general_info>
+  <input>
+    <control_variables><calculation>relax</calculation></control_variables>
+    <atomic_structure>
+      <atomic_positions><atom name="C">0 0 0</atom></atomic_positions>
+      <cell><a1>2 0 0</a1><a2>0 2 0</a2><a3>0 0 2</a3></cell>
+    </atomic_structure>
+  </input>
+  <step>
+    <scf_conv><convergence_achieved>true</convergence_achieved><n_scf_steps>3</n_scf_steps><scf_error>1e-8</scf_error></scf_conv>
+    <atomic_structure>
+      <atomic_positions><atom name="C">0.1 0.2 0.3</atom></atomic_positions>
+      <cell><a1>2 0 0</a1><a2>0 2 0</a2><a3>0 0 2</a3></cell>
+    </atomic_structure>
+    <total_energy><etot>-11.0</etot><eband>1.0</eband><ehart>2.0</ehart><vtxc>-4.0</vtxc><etxc>-3.0</etxc><ewald>-12.0</ewald></total_energy>
+    <forces>0.1 0.2 0.3</forces><stress>1 0 0 0 1 0 0 0 1</stress>
+  </step>
+  <output>
+    <convergence_info>
+      <scf_conv><convergence_achieved>true</convergence_achieved><n_scf_steps>4</n_scf_steps><scf_error>1e-10</scf_error></scf_conv>
+      <opt_conv><convergence_achieved>true</convergence_achieved><n_opt_steps>2</n_opt_steps><grad_norm>1e-4</grad_norm></opt_conv>
+    </convergence_info>
+    <atomic_structure>
+      <atomic_positions><atom name="C">0.2 0.3 0.4</atom></atomic_positions>
+      <cell><a1>2.1 0 0</a1><a2>0 2.1 0</a2><a3>0 0 2.1</a3></cell>
+    </atomic_structure>
+    <atomic_species><species name="C"><mass>12.0</mass><pseudo_file Zval="4">C.UPF</pseudo_file></species></atomic_species>
+    <basis_set>
+      <ecutwfc>20</ecutwfc><ecutrho>80</ecutrho><gamma_only>false</gamma_only>
+      <fft_grid nr1="8" nr2="9" nr3="10"/><fft_smooth nr1="6" nr2="7" nr3="8"/><fft_box nr1="10" nr2="11" nr3="12"/>
+      <ngm>100</ngm><ngms>90</ngms><npwx>50</npwx>
+      <reciprocal_lattice><b1>1 0 0</b1><b2>0 1 0</b2><b3>0 0 1</b3></reciprocal_lattice>
+    </basis_set>
+    <dft><functional>PBE</functional></dft>
+    <magnetization><lsda>false</lsda><noncolin>false</noncolin><spinorbit>false</spinorbit><absolute>0</absolute></magnetization>
+    <total_energy><etot>-12.0</etot><eband>0.5</eband><ehart>1.5</ehart><vtxc>-4.5</vtxc><etxc>-3.5</etxc><ewald>-12.5</ewald></total_energy>
+    <band_structure>
+      <nbnd>2</nbnd><nelec>2</nelec><fermi_energy>0.1</fermi_energy><highestOccupiedLevel>0.1</highestOccupiedLevel>
+      <starting_k_points><monkhorst_pack nk1="2" nk2="3" nk3="4" k1="0" k2="1" k3="0"/></starting_k_points><nks>2</nks>
+      <ks_energies><k_point weight="0.25">0 0 0</k_point><npw>10</npw><eigenvalues>-1 1</eigenvalues><occupations>1 0</occupations></ks_energies>
+      <ks_energies><k_point weight="0.75">0.5 0 0</k_point><npw>12</npw><eigenvalues>-0.8 1.2</eigenvalues><occupations>1 0</occupations></ks_energies>
+    </band_structure>
+    <forces>0.2 0.3 0.4</forces><stress>2 0 0 0 2 0 0 0 2</stress>
+    <symmetries><nsym>1</nsym><nrot>2</nrot><space_group>227</space_group><symmetry>
+      <info name="identity" class="identity"/><rotation>1 0 0 0 1 0 0 0 1</rotation>
+      <fractional_translation>0 0 0</fractional_translation><equivalent_atoms>1</equivalent_atoms>
+    </symmetry></symmetries>
+  </output>
+  <timing_info><total><cpu>1.5</cpu><wall>2.5</wall></total></timing_info><exit_status>0</exit_status>
+</espresso>"""
+    filepath = tmp_path/'data-file-schema.xml'
+    filepath.write_text(schema)
+    data = PwscfXmlData(filepath)
+
+    assert(not data.parse_failed)
+    assert(data.version=='7.6')
+    assert(data.calculation=='relax')
+    assert(data.total_energy==-12.0)
+    assert(data.scf_converged)
+    assert(data.optimization_converged)
+    assert(np.array_equal(data.initial_atoms,['C']))
+    assert(np.allclose(data.positions,[[0.2,0.3,0.4]]))
+    assert(np.allclose(data.axes,2.1*np.eye(3)))
+    assert(np.isclose(data.initial_volume,8.0))
+    assert(np.isclose(data.volume,2.1**3))
+    assert(np.allclose(data.forces,[[0.2,0.3,0.4]]))
+    assert(np.allclose(data.stress,2*np.eye(3)))
+    assert(np.array_equal(data.kgrid,[2,3,4]))
+    assert(np.array_equal(data.kshift,[0,1,0]))
+    assert(data.kpoints_rel.shape==(2,3))
+    assert(data.eigenvalues.shape==(2,2))
+    assert(np.array_equal(data.plane_waves,[10,12]))
+    assert(np.array_equal(data.species,['C']))
+    assert(np.allclose(data.valence_charges,[4]))
+    assert(np.array_equal(data.fft_grid,[8,9,10]))
+    assert(data.symmetry_rotations.shape==(1,3,3))
+    assert(data.trajectory_positions.shape==(1,1,3))
+    assert(data.trajectory_stress.shape==(1,3,3))
+    assert(np.allclose(data.trajectory_volumes,[8.0]))
+
+    nscf_schema = schema.replace(
+        '<calculation>relax</calculation>',
+        '<calculation>nscf</calculation>',
+        )
+    filepath.write_text(nscf_schema)
+    data = PwscfXmlData(filepath)
+    assert('forces' not in data)
+    assert('stress' not in data)
+    assert('optimization_converged' not in data)
+    assert('trajectory_energies' not in data)
+
+    spin_schema = """<espresso>
+  <general_info><creator VERSION="7.0">PWSCF</creator></general_info>
+  <input><control_variables><calculation>nscf</calculation></control_variables></input>
+  <output><band_structure><lsda>true</lsda><nks>1</nks>
+    <ks_energies><k_point weight="1">0 0 0</k_point><npw>10</npw><eigenvalues>-1 1</eigenvalues><occupations>1 0</occupations></ks_energies>
+    <ks_energies><k_point weight="1">0 0 0</k_point><npw>11</npw><eigenvalues>-0.9 1.1</eigenvalues><occupations>0.8 0.2</occupations></ks_energies>
+  </band_structure></output>
+</espresso>"""
+    filepath.write_text(spin_schema)
+    data = PwscfXmlData(filepath)
+    assert(data.spin_polarized)
+    assert(data.kpoints_rel.shape==(1,3))
+    assert(data.eigenvalues.shape==(2,1,2))
+    assert(data.occupations.shape==(2,1,2))
+    assert(data.plane_waves.shape==(2,1))
+#end def test_xml_data_results
