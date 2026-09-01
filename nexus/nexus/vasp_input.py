@@ -200,7 +200,7 @@ def write_bool_array(a):
 
 
 def assign_bool(v):
-    if v in {True, False, 1, 0}:
+    if v in {True, False}: # 1 and 0 hash to the same value as True and False
         return bool(v)
     else:
         msg = f"Expected one of `True`, `False`, `1`, or `0` but got {v}!"
