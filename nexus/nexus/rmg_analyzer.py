@@ -187,7 +187,7 @@ class RmgOutData(DevBase):
             self.convergence = None
             self.timing      = None
 
-            self.read_geometry(lines)
+            self.read_geometry()
             self.read_convergence(lines)
             self.read_timing(lines)
 
@@ -236,13 +236,13 @@ class RmgOutData(DevBase):
         if self.run_mode=='band':
             self.bands = None
 
-            self.read_band(lines)
+            self.read_band()
 
         # modes: tddft
         if self.run_mode=='tddft':
             self.tddft = None
 
-            self.read_tddft(lines)
+            self.read_tddft()
 
         # modes: neb
         if self.run_mode=='neb':
@@ -254,7 +254,7 @@ class RmgOutData(DevBase):
         if self.run_mode in {'scf','exx','stm'}:
             self.produced_files = None
 
-            self.read_produced_files(lines)
+            self.read_produced_files()
     #end def __init__
 
 
@@ -265,11 +265,6 @@ class RmgOutData(DevBase):
         ----------
         lines : list of str
             Complete RMG log split into lines without newline characters.
-
-        Returns
-        -------
-        bool
-            Whether any setup information was obtained.
 
         Notes
         -----
@@ -371,10 +366,8 @@ class RmgOutData(DevBase):
         self.run_mode       = mode
         setup_info.run_mode = mode
         setup_start         = None
-        setup_end           = None
         if mode is not None:
             setup_start = 'Files'
-            setup_end   = 'Initial Ionic Positions And Displacements (Angstrom)'
         else:
             # don't know how to handle other cases yet
             None
@@ -686,7 +679,6 @@ class RmgOutData(DevBase):
                     pass
                 #end try
         self.setup_info = setup_info
-        return len(setup_info)>0
     #end def read_setup_info
 
     def read_energies(self,lines):
@@ -696,11 +688,6 @@ class RmgOutData(DevBase):
         ----------
         lines : list of str
             Complete RMG log split into lines.
-
-        Returns
-        -------
-        int
-            Number of eigenvalue-sum energies found.
 
         Notes
         -----
@@ -742,7 +729,6 @@ class RmgOutData(DevBase):
         if len(direct_energies)>0:
             self.direct_energies     = direct_energies
             self.direct_energy_units = np.array(direct_energy_units,dtype=object)
-        return len(energies)
     #end def read_energies
 
 
@@ -753,11 +739,6 @@ class RmgOutData(DevBase):
         ----------
         lines : list of str
             Complete RMG log split into lines.
-
-        Returns
-        -------
-        int
-            Combined number of parsed array entries.
 
         Notes
         -----
@@ -1006,7 +987,6 @@ class RmgOutData(DevBase):
             len(v) for v in data.values() if isinstance(v,np.ndarray))
         if nfound>0:
             self.electronic = data
-        return nfound
     #end def read_electronic
 
 
@@ -1017,11 +997,6 @@ class RmgOutData(DevBase):
         ----------
         lines : list of str
             Complete RMG log split into lines.
-
-        Returns
-        -------
-        int
-            Number of total-energy SCF records found.
 
         Notes
         -----
@@ -1110,7 +1085,6 @@ class RmgOutData(DevBase):
         nfound = len(scf.total_energy)
         if nfound>0:
             self.scf = scf
-        return nfound
     #end def read_scf
 
 
@@ -1121,11 +1095,6 @@ class RmgOutData(DevBase):
         ----------
         lines : list of str
             Complete RMG log split into lines.
-
-        Returns
-        -------
-        int
-            Number of valid ionic-step tables found.
 
         Notes
         -----
@@ -1233,7 +1202,6 @@ class RmgOutData(DevBase):
                         )
                     structures[n] = structure
                 self.structures = structures
-        return len(records)
     #end def read_ions
 
 
@@ -1244,11 +1212,6 @@ class RmgOutData(DevBase):
         ----------
         lines : list of str
             Complete RMG log split into lines.
-
-        Returns
-        -------
-        int
-            Number of molecular-dynamics records found.
 
         Notes
         -----
@@ -1310,23 +1273,11 @@ class RmgOutData(DevBase):
                     kappa = kappa,
                     )
             self.md_stats = statistics
-        return len(records)
     #end def read_md
 
 
-    def read_geometry(self,lines):
+    def read_geometry(self):
         """Collect cell volume and k-point data derived from the setup report.
-
-        Parameters
-        ----------
-        lines : list of str
-            Complete RMG log split into lines. The values are derived from
-            ``setup_info``; the argument maintains the common reader interface.
-
-        Returns
-        -------
-        bool
-            Whether any geometry information was obtained.
 
         Notes
         -----
@@ -1373,7 +1324,6 @@ class RmgOutData(DevBase):
                         geometry.kpoints_crystal,self.setup_info.structure.kaxes)
         if len(geometry)>0:
             self.geometry = geometry
-        return len(geometry)>0
     #end def read_geometry
 
 
@@ -1384,11 +1334,6 @@ class RmgOutData(DevBase):
         ----------
         lines : list of str
             Complete RMG log split into lines.
-
-        Returns
-        -------
-        int
-            Number of complete stress tensors found.
 
         Notes
         -----
@@ -1445,7 +1390,6 @@ class RmgOutData(DevBase):
             self.stress_units = 'kbar'
             self.pressures    = pressures
             self.pressure     = pressures[-1]
-        return len(tensors)
     #end def read_stress
 
 
@@ -1456,11 +1400,6 @@ class RmgOutData(DevBase):
         ----------
         lines : list of str
             Complete RMG log split into lines.
-
-        Returns
-        -------
-        int
-            Number of convergence indicators found.
 
         Notes
         -----
@@ -1505,7 +1444,6 @@ class RmgOutData(DevBase):
         nfound = electronic_successes+electronic_failures+(ionic_converged is not None)
         if nfound>0:
             self.convergence = convergence
-        return nfound
     #end def read_convergence
 
 
@@ -1516,11 +1454,6 @@ class RmgOutData(DevBase):
         ----------
         lines : list of str
             Complete RMG log split into lines.
-
-        Returns
-        -------
-        bool
-            Whether a total timing record was found.
 
         Notes
         -----
@@ -1557,24 +1490,11 @@ class RmgOutData(DevBase):
         if timing is not None:
             timing.sections = sections
             self.timing     = timing
-            return True
-        return False
     #end def read_timing
 
 
-    def read_band(self,lines):
+    def read_band(self):
         """Read spin-resolved band structures from companion data files.
-
-        Parameters
-        ----------
-        lines : list of str
-            Complete RMG log split into lines. Band values are read from files
-            located beside the log; the argument maintains the reader interface.
-
-        Returns
-        -------
-        int
-            Number of spin-resolved band datasets found.
 
         Notes
         -----
@@ -1632,23 +1552,11 @@ class RmgOutData(DevBase):
                     )
         if len(bands)>0:
             self.bands = bands
-        return len(bands)
     #end def read_band
 
 
-    def read_tddft(self,lines):
+    def read_tddft(self):
         """Read TDDFT energy and spin-resolved dipole time series.
-
-        Parameters
-        ----------
-        lines : list of str
-            Complete RMG log split into lines. Time series are read from companion
-            files located beside the log.
-
-        Returns
-        -------
-        int
-            Number of populated top-level TDDFT result groups.
 
         Notes
         -----
@@ -1743,7 +1651,6 @@ class RmgOutData(DevBase):
             tddft.dipoles = dipoles
         if len(tddft)>0:
             self.tddft = tddft
-        return len(tddft)
     #end def read_tddft
 
 
@@ -1755,11 +1662,6 @@ class RmgOutData(DevBase):
         lines : list of str
             Complete RMG log split into lines. The NEB controller and sibling
             image inputs and logs are read relative to the current image log.
-
-        Returns
-        -------
-        int
-            Number of populated top-level NEB fields.
 
         Notes
         -----
@@ -2074,23 +1976,11 @@ class RmgOutData(DevBase):
                     neb.barrier_image_index    = barrier_index
 
         self.neb = neb
-        return sum(value is not None for value in neb.values())
     #end def read_neb
 
 
-    def read_produced_files(self,lines):
+    def read_produced_files(self):
         """Locate files produced by EXX, STM, and QMCPACK-interface runs.
-
-        Parameters
-        ----------
-        lines : list of str
-            Complete RMG log split into lines. File discovery primarily uses the
-            output directory and parsed setup information.
-
-        Returns
-        -------
-        int
-            Combined number of discovered file entries.
 
         Notes
         -----
@@ -2118,7 +2008,6 @@ class RmgOutData(DevBase):
                     produced_files.qmcpack_restart = qmcpack_file
         if len(produced_files)>0:
             self.produced_files = produced_files
-        return sum(len(v) for v in produced_files.values())
     #end def read_produced_files
 
 
