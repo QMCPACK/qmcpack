@@ -21,7 +21,125 @@ from .rmg_input import RmgInput, rmg_modes
 
 
 class RmgOutData(DevBase):
-    """Parsed setup, physical results, and produced files from an RMG run."""
+    """Read an RMG output file and collect results appropriate to its run mode.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the RMG log output file.
+
+    Attributes
+    ----------
+    path : str
+        Directory containing the output file.
+    abspath : str
+        Absolute path to the output directory.
+    outfile_name : str
+        Name of the RMG output file.
+    input : RmgInput or None
+        Parsed control input when the referenced input file can be found and
+        read.
+    setup_info : obj
+        Parsed setup sections, including the run mode and, when available,
+        lattice, ion, k-point, grid, and file information.
+    run_mode : str or None
+        Short RMG calculation mode, such as ``"scf"``, ``"band"``, or
+        ``"md_VE"``.
+    geometry : obj or None
+        Cell volume and k-point arrays.
+    convergence : obj or None
+        Electronic and ionic convergence indicators and event counts.
+    timing : obj or None
+        Total, per-step, and section-resolved timing data in seconds.
+    energy : float or numpy.floating or None
+        Last total energy obtained from the eigenvalue sum.
+    energy_units : str or None
+        Units associated with ``energy``.
+    energies : numpy.ndarray or None
+        History of total energies obtained from eigenvalue sums.
+    energy_units_history : numpy.ndarray or None
+        Unit label corresponding to each entry in ``energies``.
+    direct_energies : numpy.ndarray or None
+        History of directly evaluated total energies.
+    direct_energy_units : numpy.ndarray or None
+        Unit label corresponding to each direct energy.
+    electronic : obj or None
+        Electronic observables represented by NumPy arrays, including Fermi
+        energies, band edges, gaps, charges, magnetizations, forces, volumes,
+        per-atom energies, k-points, Kohn--Sham eigenvalues, and occupations
+        when reported.
+    scf : obj or None
+        SCF energy components, iteration indices, residuals, and timing data;
+        numerical histories are stored as NumPy arrays.
+    ionic_steps : obj or None
+        Mapping from ionic-step index to an ``obj`` containing atom labels and
+        position, charge, magnetization, force, and movable-flag arrays.
+    position_units : str or None
+        Units associated with ionic positions.
+    force_units : str or None
+        Units associated with ionic forces.
+    positions : numpy.ndarray or None
+        Ionic positions with shape ``(nsteps, natoms, 3)``.
+    forces : numpy.ndarray or None
+        Ionic forces with shape ``(nsteps, natoms, 3)``.
+    charges : numpy.ndarray or None
+        Ionic charges with shape ``(nsteps, natoms)``.
+    magnetizations : numpy.ndarray or None
+        Ionic magnetizations with shape ``(nsteps, natoms)``.
+    max_forces : numpy.ndarray or None
+        Maximum ionic force magnitude at each ionic step.
+    structures : obj or None
+        Mapping from ionic-step index to a ``Structure`` instance.
+    stress : numpy.ndarray or None
+        Stress tensors with shape ``(nsteps, 3, 3)``.
+    stress_units : str or None
+        Units associated with stress and pressure values.
+    pressures : numpy.ndarray or None
+        Hydrostatic pressure at each reported stress step.
+    pressure : float or numpy.floating or None
+        Last hydrostatic pressure.
+    bands : obj or None
+        Mapping from spin index to an ``obj`` containing band-path distances,
+        a two-dimensional energy array, units, and the source file path.
+    md : obj or None
+        Molecular-dynamics step, energy, temperature, and displacement arrays.
+    md_stats : obj or None
+        Mapping from molecular-dynamics quantity to an ``obj`` containing its
+        mean, variance, statistical error, and autocorrelation factor.
+    tddft : obj or None
+        Time-dependent energy and spin-resolved dipole series represented by
+        nested ``obj`` instances and NumPy arrays.
+    neb : obj or None
+        NEB controller settings, ordered input structures, path energies,
+        relative energies, barriers, and image-local results. Path energies
+        and barriers are in Hartree and the reaction coordinate is in bohr.
+    produced_files : obj or None
+        Lists or paths for mode-specific output files, such as exact-exchange
+        integrals, STM data, or a QMCPACK restart file.
+
+    Notes
+    -----
+    ``geometry``, ``convergence``, and ``timing`` apply to the supported modes
+    ``scf``, ``nscf``, ``band``, ``exx``, ``relax``, ``md_VE``, ``md_TE``,
+    ``tddft``, ``stm``, and ``neb``. Energy, SCF, ionic, and stress members
+    apply to ``scf``, ``nscf``, ``relax``, ``md_VE``, ``md_TE``, ``tddft``,
+    and ``neb``. ``electronic`` also applies to ``band``. ``bands`` applies
+    only to ``band``; ``md`` and ``md_stats`` apply to ``md_VE`` and
+    ``md_TE``; ``tddft`` applies only to ``tddft``; ``neb`` applies only to
+    ``neb``; and ``produced_files`` applies to ``scf``, ``exx``, and
+    ``stm``. A mode-applicable member is initialized to ``None`` and remains
+    ``None`` when its data cannot be obtained. Members that do not apply to
+    the detected mode are not bound.
+
+    Raises
+    ------
+    TypeError
+        If ``filepath`` is not a string.
+    FileNotFoundError
+        If ``filepath`` does not exist.
+    IsADirectoryError
+        If ``filepath`` does not identify a regular file.
+    """
 
     # Match a signed integer or decimal with an optional E- or D-exponent.
     # Example: -1.2345D+02
@@ -29,125 +147,7 @@ class RmgOutData(DevBase):
 
 
     def __init__(self,filepath):
-        """Read an RMG output file and collect results appropriate to its run mode.
-
-        Parameters
-        ----------
-        filepath : str
-            Path to the RMG log output file.
-
-        Attributes
-        ----------
-        path : str
-            Directory containing the output file.
-        abspath : str
-            Absolute path to the output directory.
-        outfile_name : str
-            Name of the RMG output file.
-        input : RmgInput or None
-            Parsed control input when the referenced input file can be found and
-            read.
-        setup_info : obj
-            Parsed setup sections, including the run mode and, when available,
-            lattice, ion, k-point, grid, and file information.
-        run_mode : str or None
-            Short RMG calculation mode, such as ``"scf"``, ``"band"``, or
-            ``"md_VE"``.
-        geometry : obj or None
-            Cell volume and k-point arrays.
-        convergence : obj or None
-            Electronic and ionic convergence indicators and event counts.
-        timing : obj or None
-            Total, per-step, and section-resolved timing data in seconds.
-        energy : float or numpy.floating or None
-            Last total energy obtained from the eigenvalue sum.
-        energy_units : str or None
-            Units associated with ``energy``.
-        energies : numpy.ndarray or None
-            History of total energies obtained from eigenvalue sums.
-        energy_units_history : numpy.ndarray or None
-            Unit label corresponding to each entry in ``energies``.
-        direct_energies : numpy.ndarray or None
-            History of directly evaluated total energies.
-        direct_energy_units : numpy.ndarray or None
-            Unit label corresponding to each direct energy.
-        electronic : obj or None
-            Electronic observables represented by NumPy arrays, including Fermi
-            energies, band edges, gaps, charges, magnetizations, forces, volumes,
-            per-atom energies, k-points, Kohn--Sham eigenvalues, and occupations
-            when reported.
-        scf : obj or None
-            SCF energy components, iteration indices, residuals, and timing data;
-            numerical histories are stored as NumPy arrays.
-        ionic_steps : obj or None
-            Mapping from ionic-step index to an ``obj`` containing atom labels and
-            position, charge, magnetization, force, and movable-flag arrays.
-        position_units : str or None
-            Units associated with ionic positions.
-        force_units : str or None
-            Units associated with ionic forces.
-        positions : numpy.ndarray or None
-            Ionic positions with shape ``(nsteps, natoms, 3)``.
-        forces : numpy.ndarray or None
-            Ionic forces with shape ``(nsteps, natoms, 3)``.
-        charges : numpy.ndarray or None
-            Ionic charges with shape ``(nsteps, natoms)``.
-        magnetizations : numpy.ndarray or None
-            Ionic magnetizations with shape ``(nsteps, natoms)``.
-        max_forces : numpy.ndarray or None
-            Maximum ionic force magnitude at each ionic step.
-        structures : obj or None
-            Mapping from ionic-step index to a ``Structure`` instance.
-        stress : numpy.ndarray or None
-            Stress tensors with shape ``(nsteps, 3, 3)``.
-        stress_units : str or None
-            Units associated with stress and pressure values.
-        pressures : numpy.ndarray or None
-            Hydrostatic pressure at each reported stress step.
-        pressure : float or numpy.floating or None
-            Last hydrostatic pressure.
-        bands : obj or None
-            Mapping from spin index to an ``obj`` containing band-path distances,
-            a two-dimensional energy array, units, and the source file path.
-        md : obj or None
-            Molecular-dynamics step, energy, temperature, and displacement arrays.
-        md_stats : obj or None
-            Mapping from molecular-dynamics quantity to an ``obj`` containing its
-            mean, variance, statistical error, and autocorrelation factor.
-        tddft : obj or None
-            Time-dependent energy and spin-resolved dipole series represented by
-            nested ``obj`` instances and NumPy arrays.
-        neb : obj or None
-            NEB controller settings, ordered input structures, path energies,
-            relative energies, barriers, and image-local results. Path energies
-            and barriers are in Hartree and the reaction coordinate is in bohr.
-        produced_files : obj or None
-            Lists or paths for mode-specific output files, such as exact-exchange
-            integrals, STM data, or a QMCPACK restart file.
-
-        Notes
-        -----
-        ``geometry``, ``convergence``, and ``timing`` apply to the supported modes
-        ``scf``, ``nscf``, ``band``, ``exx``, ``relax``, ``md_VE``, ``md_TE``,
-        ``tddft``, ``stm``, and ``neb``. Energy, SCF, ionic, and stress members
-        apply to ``scf``, ``nscf``, ``relax``, ``md_VE``, ``md_TE``, ``tddft``,
-        and ``neb``. ``electronic`` also applies to ``band``. ``bands`` applies
-        only to ``band``; ``md`` and ``md_stats`` apply to ``md_VE`` and
-        ``md_TE``; ``tddft`` applies only to ``tddft``; ``neb`` applies only to
-        ``neb``; and ``produced_files`` applies to ``scf``, ``exx``, and
-        ``stm``. A mode-applicable member is initialized to ``None`` and remains
-        ``None`` when its data cannot be obtained. Members that do not apply to
-        the detected mode are not bound.
-
-        Raises
-        ------
-        TypeError
-            If ``filepath`` is not a string.
-        FileNotFoundError
-            If ``filepath`` does not exist.
-        IsADirectoryError
-            If ``filepath`` does not identify a regular file.
-        """
+        """Initialize the parsed data by reading an RMG output file."""
         if not isinstance(filepath,str):
             msg = (
                 'invalid type provided for filepath\n'
@@ -2135,7 +2135,93 @@ class RmgOutData(DevBase):
 
 
 class RmgAnalyzer(SimulationAnalyzer):
-    """Nexus analyzer wrapper for an RMG simulation and its parsed output."""
+    """Analyze an RMG simulation or log output file.
+
+    Parameters
+    ----------
+    arg0 : Simulation or str or None, optional
+        RMG simulation to analyze or path to an RMG log output file. If
+        ``None``, an unconfigured analyzer is created.
+    analyze : bool, optional
+        If ``True``, parse the RMG output during initialization.
+
+    Attributes
+    ----------
+    path : str or None
+        Directory containing the RMG log output file.
+    abspath : str or None
+        Absolute path to the output directory.
+    outfile_name : str or None
+        Name of the RMG log output file.
+    info : obj
+        General analyzer metadata.
+    input : RmgInput or None
+        RMG input reconstructed from the output when it can be obtained.
+    run_mode : str or None
+        Short RMG calculation mode determined during analysis, such as
+        ``"scf"``, ``"band"``, ``"relax"``, or ``"md_VE"``.
+    results : RmgOutData or None
+        Parsed RMG output data. ``None`` until analysis is performed.
+
+    Methods
+    -------
+    initial_structure(units='A') : Structure or None
+        Input atomic structure in Angstrom (``'A'``) or bohr (``'B'``).
+    energy(units='Ha') : float or numpy.floating or None
+        Final total energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
+    kpoints(units='B') : numpy.ndarray or None
+        Cartesian k-points in inverse Angstrom or inverse bohr with shape
+        ``(nkpoints, 3)``. The unit argument is ``'A'`` or ``'B'``.
+    kweights() : numpy.ndarray or None
+        Dimensionless k-point weights with shape ``(nkpoints,)``.
+    eigenvalues(units='eV') : numpy.ndarray or None
+        Kohn--Sham eigenvalues in ``'eV'``, ``'Ha'``, or ``'Ry'``. The
+        leading dimension has length ``nkpoints``; remaining dimensions
+        represent spin, when present, and bands.
+    occupations() : numpy.ndarray or None
+        Dimensionless Kohn--Sham occupations. The leading dimension has
+        length ``nkpoints``; remaining dimensions represent spin, when
+        present, and bands.
+    Ef(units='eV') : float or numpy.floating or None
+        Final Fermi energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
+    Evbm(units='eV') : float or numpy.floating or None
+        Final reported valence-band maximum in selected energy units.
+    Ecbm(units='eV') : float or numpy.floating or None
+        Final reported conduction-band minimum in selected energy units.
+    band_gap(units='eV') : float or numpy.floating or None
+        Final reported electronic band gap in selected energy units.
+    fractional_occs() : bool or None
+        Whether any occupation is farther than ``1e-3`` from both empty
+        and full occupation.
+    relaxed_structure(units='A') : Structure or None
+        Final relaxed structure in Angstrom (``'A'``) or bohr (``'B'``).
+    forces(units='eV/A') : numpy.ndarray or None
+        Ionic-force history with shape ``(nsteps, natoms, 3)``. Available
+        units are ``'eV/A'``, ``'Ry/B'``, and ``'Ha/B'``.
+    stress(units='GPa') : numpy.ndarray or None
+        Stress-tensor history with shape ``(nsteps, 3, 3)``. Available
+        units are ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``,
+        and ``'atm'``.
+    pressure(units='GPa') : float or numpy.floating or None
+        Final hydrostatic pressure in the units accepted by ``stress``.
+
+    Notes
+    -----
+    A physical query method returns ``None`` when its quantity is supported
+    by the detected run mode but was not successfully parsed. Calling a
+    query before analysis, or for a run mode that does not support the
+    quantity, raises ``RuntimeError``. Supplying unsupported units raises
+    ``ValueError``.
+
+    Raises
+    ------
+    TypeError
+        If ``arg0`` is neither a ``Simulation``, a string, nor ``None``.
+    FileNotFoundError
+        If a supplied output path does not exist.
+    IsADirectoryError
+        If a supplied output path does not identify a regular file.
+    """
 
     all_modes         = frozenset({
         'scf','nscf','band','exx','relax','md_VE','md_TE','tddft','stm','neb',
@@ -2384,93 +2470,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
 
     def __init__(self,arg0=None,*,analyze=False):
-        """Initialize an analyzer for an RMG simulation or log output file.
-
-        Parameters
-        ----------
-        arg0 : Simulation or str or None, optional
-            RMG simulation to analyze or path to an RMG log output file. If
-            ``None``, an unconfigured analyzer is created.
-        analyze : bool, optional
-            If ``True``, parse the RMG output during initialization.
-
-        Attributes
-        ----------
-        path : str or None
-            Directory containing the RMG log output file.
-        abspath : str or None
-            Absolute path to the output directory.
-        outfile_name : str or None
-            Name of the RMG log output file.
-        info : obj
-            General analyzer metadata.
-        input : RmgInput or None
-            RMG input reconstructed from the output when it can be obtained.
-        run_mode : str or None
-            Short RMG calculation mode determined during analysis, such as
-            ``"scf"``, ``"band"``, ``"relax"``, or ``"md_VE"``.
-        results : RmgOutData or None
-            Parsed RMG output data. ``None`` until analysis is performed.
-
-        Methods
-        -------
-        initial_structure(units='A') : Structure or None
-            Input atomic structure in Angstrom (``'A'``) or bohr (``'B'``).
-        energy(units='Ha') : float or numpy.floating or None
-            Final total energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
-        kpoints(units='B') : numpy.ndarray or None
-            Cartesian k-points in inverse Angstrom or inverse bohr with shape
-            ``(nkpoints, 3)``. The unit argument is ``'A'`` or ``'B'``.
-        kweights() : numpy.ndarray or None
-            Dimensionless k-point weights with shape ``(nkpoints,)``.
-        eigenvalues(units='eV') : numpy.ndarray or None
-            Kohn--Sham eigenvalues in ``'eV'``, ``'Ha'``, or ``'Ry'``. The
-            leading dimension has length ``nkpoints``; remaining dimensions
-            represent spin, when present, and bands.
-        occupations() : numpy.ndarray or None
-            Dimensionless Kohn--Sham occupations. The leading dimension has
-            length ``nkpoints``; remaining dimensions represent spin, when
-            present, and bands.
-        Ef(units='eV') : float or numpy.floating or None
-            Final Fermi energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
-        Evbm(units='eV') : float or numpy.floating or None
-            Final reported valence-band maximum in selected energy units.
-        Ecbm(units='eV') : float or numpy.floating or None
-            Final reported conduction-band minimum in selected energy units.
-        band_gap(units='eV') : float or numpy.floating or None
-            Final reported electronic band gap in selected energy units.
-        fractional_occs() : bool or None
-            Whether any occupation is farther than ``1e-3`` from both empty
-            and full occupation.
-        relaxed_structure(units='A') : Structure or None
-            Final relaxed structure in Angstrom (``'A'``) or bohr (``'B'``).
-        forces(units='eV/A') : numpy.ndarray or None
-            Ionic-force history with shape ``(nsteps, natoms, 3)``. Available
-            units are ``'eV/A'``, ``'Ry/B'``, and ``'Ha/B'``.
-        stress(units='GPa') : numpy.ndarray or None
-            Stress-tensor history with shape ``(nsteps, 3, 3)``. Available
-            units are ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``,
-            and ``'atm'``.
-        pressure(units='GPa') : float or numpy.floating or None
-            Final hydrostatic pressure in the units accepted by ``stress``.
-
-        Notes
-        -----
-        A physical query method returns ``None`` when its quantity is supported
-        by the detected run mode but was not successfully parsed. Calling a
-        query before analysis, or for a run mode that does not support the
-        quantity, raises ``RuntimeError``. Supplying unsupported units raises
-        ``ValueError``.
-
-        Raises
-        ------
-        TypeError
-            If ``arg0`` is neither a ``Simulation``, a string, nor ``None``.
-        FileNotFoundError
-            If a supplied output path does not exist.
-        IsADirectoryError
-            If a supplied output path does not identify a regular file.
-        """
+        """Initialize analyzer state and optionally parse the RMG output."""
         self.path         = None
         self.abspath      = None
         self.outfile_name = None
