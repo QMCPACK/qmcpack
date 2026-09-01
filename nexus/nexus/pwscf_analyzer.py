@@ -1854,6 +1854,26 @@ class PwscfAnalyzer(SimulationAnalyzer):
     common run modes. It also provides summaries and visualizations useful
     for inspecting molecular dynamics and electronic structure.
 
+    Parameters
+    ----------
+    arg0 : Simulation or str or os.PathLike or None, optional
+        PWSCF simulation to analyze, or path to a calculation directory,
+        input file, or output file. If ``None``, an unconfigured analyzer is
+        created.
+    infile_name : str, optional
+        Name of the PWSCF input file within the calculation directory.
+    outfile_name : str, optional
+        Name of the PWSCF output file. It is inferred from ``infile_name``
+        when possible.
+    pw2c_outfile_name : str, optional
+        Name of an accompanying PW2CASINO output file.
+    analyze : bool, optional
+        If ``True``, parse the available log, XML, and auxiliary output during
+        initialization.
+    md_only : bool, optional
+        Limit text-output analysis to molecular-dynamics data. Available XML
+        output is still parsed.
+
     Attributes
     ----------
     path : str
@@ -1920,6 +1940,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
         ``'atm'``.
     pressure(units='GPa') : float or numpy.floating or None
         Final hydrostatic pressure in the units accepted by ``stress``.
+
+    Raises
+    ------
+    FileNotFoundError
+        If a supplied path, input file, output file, or requested PW2CASINO
+        file does not exist.
+    RuntimeError
+        If a supplied file cannot be identified as input or output.
 
     Notes
     -----
@@ -2335,36 +2363,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         analyze           = False,
         md_only           = False,
         ):
-        """Initialize an analyzer for a PWSCF simulation or output path.
-
-        Parameters
-        ----------
-        arg0 : Simulation or str or os.PathLike or None, optional
-            PWSCF simulation to analyze, or path to a calculation directory,
-            input file, or output file.  If ``None``, an unconfigured analyzer
-            is created.
-        infile_name : str, optional
-            Name of the PWSCF input file within the calculation directory.
-        outfile_name : str, optional
-            Name of the PWSCF output file.  It is inferred from ``infile_name``
-            when possible.
-        pw2c_outfile_name : str, optional
-            Name of an accompanying PW2CASINO output file.
-        analyze : bool, optional
-            If ``True``, parse the available log, XML, and auxiliary output
-            during initialization.
-        md_only : bool, optional
-            Limit text-output analysis to molecular-dynamics data.  Available
-            XML output is still parsed.
-
-        Raises
-        ------
-        FileNotFoundError
-            If a supplied path, input file, output file, or requested
-            PW2CASINO file does not exist.
-        RuntimeError
-            If a supplied file cannot be identified as input or output.
-        """
+        """Initialize an analyzer for a PWSCF simulation or output path."""
         if isinstance(arg0,Simulation):
             sim                       = arg0
             path                      = sim.locdir
