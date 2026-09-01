@@ -1,10 +1,10 @@
 from shutil import copytree
 
-import pytest
 import numpy as np
+import pytest
 
-from . import NexusTestOrder
-from . import TEST_DIR
+from . import TEST_DIR, NexusTestOrder
+
 pytestmark = pytest.mark.order(NexusTestOrder.RMG_ANALYZER)
 
 
@@ -203,17 +203,17 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
     electronic_run = short_mode in {
         'scf','nscf','relax','md_VE','md_TE','tddft','neb',
         }
-    field_applicability = dict(
-        energy         = electronic_run,
-        ionic_steps    = electronic_run,
-        pressure       = electronic_run,
-        electronic     = electronic_run or short_mode=='band',
-        bands          = short_mode=='band',
-        md             = short_mode in {'md_VE','md_TE'},
-        tddft          = short_mode=='tddft',
-        neb            = short_mode=='neb',
-        produced_files = short_mode in {'scf','exx','stm'},
-        )
+    field_applicability = {
+        'energy'         : electronic_run,
+        'ionic_steps'    : electronic_run,
+        'pressure'       : electronic_run,
+        'electronic'     : electronic_run or short_mode=='band',
+        'bands'          : short_mode=='band',
+        'md'             : short_mode in {'md_VE','md_TE'},
+        'tddft'          : short_mode=='tddft',
+        'neb'            : short_mode=='neb',
+        'produced_files' : short_mode in {'scf','exx','stm'},
+        }
     for name,applies in field_applicability.items():
         assert (name in result_fields)==applies
 

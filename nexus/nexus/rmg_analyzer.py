@@ -11,13 +11,13 @@ from types import MappingProxyType
 
 import numpy as np
 
-from .developer import DevBase,dotdict,obj
+from .developer import DevBase, dotdict, obj
 from .generic import NexusError
-from .unit_converter import convert
 from .numerics import simstats
-from .simulation import SimulationAnalyzer, Simulation
-from .structure import generate_structure
 from .rmg_input import RmgInput, rmg_modes
+from .simulation import Simulation, SimulationAnalyzer
+from .structure import generate_structure
+from .unit_converter import convert
 
 
 class RmgOutData(DevBase):
@@ -774,10 +774,10 @@ class RmgOutData(DevBase):
                         float(match.group(i).replace('D','E').replace('d','e'))
                         for i in range(2,5)
                         ],dtype=float)
-                    dataset[index] = dict(
-                        kpoint   = coordinates,
-                        channels = {},
-                        )
+                    dataset[index] = {
+                        'kpoint'   : coordinates,
+                        'channels' : {},
+                        }
                     kpoint = index
                     spin   = 'none'
                     continue
@@ -1118,7 +1118,7 @@ class RmgOutData(DevBase):
             self.ionic_steps    = obj(dict(enumerate(records)))
             self.position_units = 'a0'
             self.force_units    = 'Ha/a0'
-            if len(set(len(r.atoms) for r in records))==1:
+            if len({len(r.atoms) for r in records})==1:
                 self.positions      = np.array(
                     [r.positions for r in records],dtype=float)
                 self.forces         = np.array(
@@ -1453,7 +1453,7 @@ class RmgOutData(DevBase):
             return np.array(values,dtype=float)
         #end def leading_numbers
 
-        prefix = self.outfile_name[:-4] if self.outfile_name.endswith('.log') else self.outfile_name
+        prefix = self.outfile_name.removesuffix('.log')
         files  = sorted(glob(os.path.join(self.path,prefix+'_spin*.bandstructure.dat')))
         bands  = obj()
         for filepath in files:
@@ -1476,7 +1476,7 @@ class RmgOutData(DevBase):
                             group.append(values[:2])
             if len(group)>0:
                 groups.append(np.array(group,dtype=float))
-            if len(groups)>0 and len(set(len(g) for g in groups))==1:
+            if len(groups)>0 and len({len(g) for g in groups})==1:
                 bands[int(match.group(1))] = obj(
                     distance     = groups[0][:,0],
                     energies     = np.array([g[:,1] for g in groups],dtype=float),
@@ -1521,7 +1521,7 @@ class RmgOutData(DevBase):
             return line_numbers(match.group(1))
         #end def leading_numbers
 
-        prefix       = self.outfile_name[:-4] if self.outfile_name.endswith('.log') else self.outfile_name
+        prefix       = self.outfile_name.removesuffix('.log')
         energy_file  = os.path.join(self.path,prefix+'_totalE')
         dipole_files = sorted(glob(os.path.join(self.path,prefix+'_spin*_dipole.dat')))
         tddft        = obj()
