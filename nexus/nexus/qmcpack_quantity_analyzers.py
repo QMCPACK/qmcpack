@@ -76,8 +76,7 @@ from types import MappingProxyType
 import numpy as np
 from numpy import pi,sin,cos,sqrt
 from numpy.linalg import LinAlgError, inv, det, eig
-from .generic import sorted_generic
-from .developer import obj, FileFormatError, NexusError
+from .developer import obj, FileFormatError, NexusError, sorted_generic
 from .fileio import XsfFile
 from .hdfreader import HDFreader, HDFgroup
 from .numerics import ndgrid, simstats, simplestats, equilibration_length
