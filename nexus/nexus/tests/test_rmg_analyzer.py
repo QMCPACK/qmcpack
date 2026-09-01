@@ -216,7 +216,6 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
         )
     for name,applies in field_applicability.items():
         assert (name in result_fields)==applies
-    #end for
 
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
@@ -471,7 +470,6 @@ def test_missing_property_data(tmp_path):
         'band_gap','fractional_occs','forces','stress','pressure',
         }:
         assert getattr(analyzer,name)() is None
-    #end for
     with pytest.raises(RuntimeError,match='relaxed_structure'):
         analyzer.relaxed_structure()
     with pytest.raises(RuntimeError,match='has not been analyzed'):

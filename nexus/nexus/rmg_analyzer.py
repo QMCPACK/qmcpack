@@ -179,7 +179,8 @@ class RmgOutData(DevBase):
         self.read_setup_info(lines)
 
         electronic_modes = {'scf','nscf','relax','md_VE','md_TE','tddft','neb'}
-        supported_modes  = electronic_modes | {'band','exx','stm'}
+        eigenvalue_modes = electronic_modes|{'band'}
+        supported_modes  = eigenvalue_modes|{'exx','stm'}
 
         # modes: scf, nscf, band, exx, relax, md_VE, md_TE, tddft, stm, neb
         if self.run_mode in supported_modes:
@@ -220,7 +221,7 @@ class RmgOutData(DevBase):
             self.read_stress(lines)
 
         # modes: scf, nscf, band, relax, md_VE, md_TE, tddft, neb
-        if self.run_mode in electronic_modes or self.run_mode=='band':
+        if self.run_mode in eigenvalue_modes:
             self.electronic = None
 
             self.read_electronic(lines)
@@ -274,8 +275,7 @@ class RmgOutData(DevBase):
         ``RmgInput`` instance.
         """
         setup_info = obj()
-        log_lines  = lines
-        log_text   = '\n'.join(lines)
+        log_text = '\n'.join(lines)
 
         def normalize_line(line):
             """Normalize case and whitespace for tolerant text matching."""
@@ -355,7 +355,7 @@ class RmgOutData(DevBase):
         #end def identify_mode
 
         mode = None
-        for line in log_lines:
+        for line in lines:
             normalized = normalize_line(line)
             # Match the calculation-type heading and capture its value.
             # Example: Calculation type: Quench electrons
@@ -365,14 +365,11 @@ class RmgOutData(DevBase):
                 break
         self.run_mode       = mode
         setup_info.run_mode = mode
-        setup_start         = None
-        if mode is not None:
-            setup_start = 'Files'
-        else:
-            # don't know how to handle other cases yet
-            None
         unit_set = {'a0'}
-        on_off   = dict(ON=True,OFF=False)
+        on_off   = {
+            'ON'  : True,
+            'OFF' : False,
+            }
         def process_name(s):
             """Convert an RMG setup label into a normalized object key."""
             # Match parenthetical annotations so they can be removed from names.
@@ -410,14 +407,11 @@ class RmgOutData(DevBase):
                                     v = [process_value(t,list=True)[0] for t in tokens]
                             except (ValueError,TypeError,OverflowError):
                                 units = None
-                            #end try
                     elif v in on_off:
                         v = on_off[v]
-                #end try
-            #end try
             return v,units
         #end def process_value
-        if setup_start is not None:
+        if mode is not None:
             # Match the standalone Files setup-section heading.
             # Example: Files:
             start_match = re.search(r'(?im)^\s*files\s*(?::\s*)?$',log_text)
@@ -632,9 +626,9 @@ class RmgOutData(DevBase):
             )
         if have_structure_data:
             aunits       = setup_info.lattice_setup.get('units','B')
-            axes         = np.asarray(setup_info.lattice_setup.axes)
-            elem         = np.asarray(setup_info.ion_positions.atoms)
-            pos          = np.asarray(setup_info.ion_positions.positions)
+            axes         = np.asarray(setup_info.lattice_setup.axes,dtype=float)
+            elem         = np.asarray(setup_info.ion_positions.atoms,dtype=object)
+            pos          = np.asarray(setup_info.ion_positions.positions,dtype=float)
             punits       = setup_info.ion_positions.units
             valid_shapes = (
                 axes.shape==(3,3) and
@@ -677,7 +671,6 @@ class RmgOutData(DevBase):
                     self.input = RmgInput(filepath)
                 except (NexusError,OSError,TypeError,ValueError):
                     pass
-                #end try
         self.setup_info = setup_info
     #end def read_setup_info
 
@@ -826,8 +819,11 @@ class RmgOutData(DevBase):
                 if spin not in channels:
                     channels[spin] = [[],[]]
                 eigs,occs = channels[spin]
-                eigs.extend(float(e.replace('D','E').replace('d','e')) for e,o in pairs)
-                occs.extend(float(o.replace('D','E').replace('d','e')) for e,o in pairs)
+                for eigenvalue,occupation in pairs:
+                    eigs.append(float(
+                        eigenvalue.replace('D','E').replace('d','e')))
+                    occs.append(float(
+                        occupation.replace('D','E').replace('d','e')))
             if len(dataset)>0:
                 datasets.append(dataset)
 
@@ -1069,7 +1065,6 @@ class RmgOutData(DevBase):
                     rms_dv.append(float(rms.replace('D','E').replace('d','e')))
                 except ValueError:
                     rms_dv.append(np.nan)
-                #end try
         scf = obj()
         for name,array in values.items():
             scf[name] = np.array(array,dtype=float)
@@ -1931,7 +1926,10 @@ class RmgOutData(DevBase):
                 coordinate           = [0.0]
                 valid_coordinate     = True
                 for previous,current in zip(
-                    input_structures[:-1],input_structures[1:],strict=True):
+                    input_structures[:-1],
+                    input_structures[1:],
+                    strict = True,
+                    ):
                     if previous.pos.shape!=current.pos.shape:
                         valid_coordinate = False
                         break
