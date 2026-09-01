@@ -102,7 +102,6 @@ class ProjectManager(NexusCore):
         if status:
             self.write_simulation_status()
             if status_only:
-                NexusCore.write_end_splash()
                 return
             #end if
         #end if
@@ -137,7 +136,6 @@ class ProjectManager(NexusCore):
             self.progress_cascades()
         #end if
         self.log('Project finished\n')
-        NexusCore.write_end_splash()
     #end def run_project
 
 

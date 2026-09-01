@@ -124,21 +124,9 @@ restore_nexus_core_defaults()
 
 nexus_core_no_process = {'status_only', 'generate_only', 'sleep', 'timeout'}
 
-
-class NexusCore(DevBase):
-
-    # garbage collector
-    gc = garbage_collector
-
-    # mutable/dynamic nexus core data
-    wrote_something   = False # for pretty printing
-    working_directory = None
-    wrote_splash      = False
-
-    @staticmethod
-    def write_splash():
-        if not NexusCore.wrote_splash:
-            splash_text = '''
+def write_splash():
+    if not hasattr(write_splash, "wrote_splash"):
+        splash_text = '''
 _____________________________________________________
 
                      Nexus {}.{}.{}
@@ -150,21 +138,21 @@ _____________________________________________________
      https://doi.org/10.1016/j.cpc.2015.08.012
 _____________________________________________________
           
-            '''.format(*nexus_version)
-            log(splash_text)
-            NexusCore.wrote_splash = True
-        #end if
-    #end def write_splash
+'''.format(*nexus_version)
+        log(splash_text)
+        write_splash.wrote_splash = True
+    #end if
+#end def write_splash
 
-    @staticmethod
-    def write_end_splash():
-        return # don't do this yet
-        splash_text = '''
-_____________________________________________________
-_____________________________________________________
-            '''
-        print(splash_text)
-    #end def write_end_splash
+
+class NexusCore(DevBase):
+
+    # garbage collector
+    gc = garbage_collector
+
+    # mutable/dynamic nexus core data
+    wrote_something   = False # for pretty printing
+    working_directory = None
 
     def mem_usage(self):
         return int(resident()/1e6)
@@ -206,23 +194,6 @@ _____________________________________________________
         NexusCore.wrote_something = True
     #end def log
 
-    def dlog(self,*texts,**kwargs):
-        if nexus_core.debug:
-            #self.log('mem_usage',self.mem_usage(),n=5)
-            self.log(*texts,**kwargs)
-        #end if
-    #end def dlog
-
-    def tlog(self,*texts,**kwargs):
-        if nexus_core.trace:
-            self.log(*texts,**kwargs)
-            w,s,j,f,g,a=int(self.setup),int(self.submitted),int(self.job.finished),int(self.finished),int(self.got_output),int(self.analyzed)
-            self.log('w,s,j,f,g,a',w,s,j,f,g,a,n=kwargs['n']+1)
-            #self.log('dependencies',self.dependencies.keys(),n=kwargs['n']+1)
-            #self.log('dependents  ',self.dependents.keys(),n=kwargs['n']+1)
-        #end if
-    #end def tlog
-
     def enter(self, directory: PathLike, *, changedir: bool = True, msg: str = ''):
         """Have Nexus enter a directory and change its current working directory.
         
@@ -251,7 +222,6 @@ _____________________________________________________
     def leave(self):
         os.chdir(NexusCore.working_directory)
     #end def leave
-
 #end class NexusCore
 
 
