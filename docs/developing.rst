@@ -928,7 +928,7 @@ simple process should be followed step-by-step to ensure accuracy and avoid need
 
   gh search prs --merged-at 2025-02-05..2025-04-29 -R QMCPACK/qmcpack  --json title,url,repository,number -L 1000 --jq '.[]|("* " + .title + " [#" + (.number|tostring) +"]("+ .url + ")\n")'
 
-4. Update the Nexus version number in nexus/nexus/nexus_versions.py, nexus/pyproject.toml, and run `uv sync` to update the `nexus/uv.lock` file.
+4. Update the Nexus version number in nexus/nexus/nexus_version.py, nexus/pyproject.toml, and run `uv sync` to update the `nexus/uv.lock` file.
 5. Commit and push the changes to GitHub
 
 ::
@@ -949,12 +949,12 @@ simple process should be followed step-by-step to ensure accuracy and avoid need
 15. Create a new release using the release tool on GitHub. Link to the CHANGELOG.md in the release notes. The GitHub link can be copied & updated from previous release. 
 16. Issue a PR back to develop from main to update with the new version number and any other updates made to the rc.
 17. Once the PR is merged to develop, update the QMCPACK_VERSION_PATCH version and Nexus patch version to 9 in CMakeLists.txt,
-    nexus/nexus/nexus_versions.py, nexus/pyproject.toml, and run `uv sync` to update the `nexus/uv.lock` file in the develop branch
+    nexus/nexus/nexus_version.py, nexus/pyproject.toml, and run `uv sync` to update the `nexus/uv.lock` file in the develop branch
     to indicate it is the development version.
 18. Delete the rc branch.
 19. Verify readthedocs is seeing the new release and update readthedocs configuration if needed.
 20. Announce the release on qmcpack.org. Create a new page of type "Release" with title similar to "QMCPACK Release v4.4.0 -
-    2026-07-31" via https://qmcpack.org/user. The page type is required for https://www.qmcpack.org/releases to update
+    2026-08-31" via https://qmcpack.org/user. The page type is required for https://www.qmcpack.org/releases to update
     automatically. Also check the documentation pages.
 21. Announce the release on Google Groups.
 22. Update the spack package https://packages.spack.io/package.html?name=qmcpack
