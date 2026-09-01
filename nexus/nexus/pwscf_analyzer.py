@@ -382,7 +382,7 @@ class PwscfOutData(DevBase):
         with open(filepath,'r') as fobj:
             lines = fobj.read().splitlines()
         # read the calculation type
-        self.calculation = self.read_calculation(lines)
+        self.read_calculation(lines)
         # remove unused attributes, depending on the calculation type
         if self.calculation in ('nscf','bands'):
             for name in (
@@ -421,7 +421,7 @@ class PwscfOutData(DevBase):
 
 
     def read_calculation(self,lines):
-        """Infer the PWSCF calculation type from log records."""
+        """Infer and bind the PWSCF calculation type from log records."""
         has_cell        = any(line.strip().startswith('CELL_PARAMETERS') for line in lines)
         has_bfgs        = any('BFGS Geometry Optimization' in line for line in lines)
         has_band_run    = any('Band Structure Calculation' in line for line in lines)
@@ -446,7 +446,7 @@ class PwscfOutData(DevBase):
             calculation = 'nscf' if has_reference else 'bands'
         else:
             calculation = 'scf'
-        return calculation
+        self.calculation = calculation
     #end def read_calculation
 
 
@@ -461,8 +461,7 @@ class PwscfOutData(DevBase):
         outputs provide time, kinetic energy, and temperature in different
         line formats, but produce the same stored data structure.
 
-        Only steps containing all required quantities are retained.  The
-        return value is the number of retained steps.
+        Only steps containing all required quantities are retained.
         """
         def record_value(name,pattern,line):
             """Add a matched value to the current dynamics record."""
@@ -472,7 +471,7 @@ class PwscfOutData(DevBase):
         #end def record_value
 
         if self.calculation not in ('md','vc-md'):
-            return 0
+            return
 
         records  = []
         record   = dotdict()
@@ -508,7 +507,7 @@ class PwscfOutData(DevBase):
                 records.append(record)
                 record = dotdict()
         if len(records)==0:
-            return 0
+            return
         md = obj({
             name:np.array([record[name] for record in records],dtype=float)
             for name in required
@@ -516,7 +515,6 @@ class PwscfOutData(DevBase):
         md.potential_energy = md.total_energy - md.kinetic_energy
         self.md_data        = md
         self.md_stats       = self.md_statistics()
-        return len(records)
     #end def read_md
 
 
@@ -525,8 +523,7 @@ class PwscfOutData(DevBase):
 
         ``fermi_energies`` is a one-dimensional NumPy array containing every
         successfully parsed value in eV, and ``Ef`` is its final value.  Both
-        remain ``None`` when no Fermi-energy record is available.  The return
-        value is the number of parsed energies.
+        remain ``None`` when no Fermi-energy record is available.
         """
         fermi_energies = []
         for line in lines:
@@ -541,7 +538,6 @@ class PwscfOutData(DevBase):
         if len(fermi_energies)>0:
             self.Ef             = fermi_energies[-1]
             self.fermi_energies = np.array(fermi_energies,dtype=float)
-        return len(fermi_energies)
     #end def read_fermi_energies
 
 
@@ -552,7 +548,7 @@ class PwscfOutData(DevBase):
         energies marked with ``!`` in the output, in Ry, and ``E`` is its
         final value.  For relaxation and dynamics calculations the array is
         the energy history over ionic steps; for ``scf`` it normally contains
-        one entry.  The return value is the number of parsed energies.
+        one entry.
         """
         relax_energies = []
         for line in lines:
@@ -563,7 +559,6 @@ class PwscfOutData(DevBase):
         if len(relax_energies)>0:
             self.E              = relax_energies[-1]
             self.relax_energies = np.array(relax_energies,dtype=float)
-        return len(relax_energies)
     #end def read_energies
 
 
@@ -575,8 +570,7 @@ class PwscfOutData(DevBase):
         their following estimated accuracies.  Relaxation and dynamics runs
         can contribute multiple SCF cycles to the same flattened histories.
         Missing accuracy lines are skipped, so the two arrays can have
-        different lengths.  The return value reports both parsed counts in a
-        temporary ``dotdict``.
+        different lengths.
         """
         scf_conv_energy   = []
         scf_conv_accuracy = []
@@ -598,7 +592,6 @@ class PwscfOutData(DevBase):
             self.scf_conv_energy = np.array(scf_conv_energy,dtype=float)
         if len(scf_conv_accuracy)>0:
             self.scf_conv_accuracy = np.array(scf_conv_accuracy,dtype=float)
-        return dotdict(energy=len(scf_conv_energy),accuracy=len(scf_conv_accuracy))
     #end def read_scf_convergence
 
 
@@ -617,8 +610,7 @@ class PwscfOutData(DevBase):
         ``up`` and ``down`` and labels them accordingly.  For ``bands`` and
         some ``nscf`` outputs, occupation arrays can be empty.  When complete
         occupations are present, :meth:`read_band_edges` adds band-edge and
-        gap information to the same object.  The return value is the total
-        number of stored spin/k-point records.
+        gap information to the same object.
         """
         def leading_numbers(line):
             """Return the leading sequence of numeric values from a line."""
@@ -708,16 +700,14 @@ class PwscfOutData(DevBase):
                 occs            = np.array(occs,dtype=float),
                 pol             = pol,
                 )
-        nfound = len(bands.up)+len(bands.down)
-        if nfound==0:
-            return 0
-        self.read_band_edges(bands)
+        if len(bands.up)+len(bands.down)==0:
+            return
         self.bands = bands
-        return nfound
+        self.read_band_edges()
     #end def read_bands
 
 
-    def read_band_edges(self,bands):
+    def read_band_edges(self):
         """Add band-edge and gap records to a parsed bands object.
 
         Occupied and unoccupied eigenvalues are identified independently at
@@ -742,6 +732,7 @@ class PwscfOutData(DevBase):
                 )
         #end def edge_data
 
+        bands      = self.bands
         vbm        = None
         cbm        = None
         direct_gap = None
@@ -804,8 +795,7 @@ class PwscfOutData(DevBase):
 
         The layout is the same for ``relax``, ``vc-relax``, ``md``, and
         ``vc-md``.  Fixed-cell output can omit cell blocks, while variable-cell
-        output normally supplies new axes with each structure.  The return
-        value is the number of complete configurations retained.
+        output normally supplies new axes with each structure.
         """
         structures = obj()
         conf       = None
@@ -871,7 +861,6 @@ class PwscfOutData(DevBase):
             i+=1
         if len(structures)>0:
             self.relax_structures = structures
-        return len(structures)
     #end def read_structures
 
 
@@ -892,7 +881,6 @@ class PwscfOutData(DevBase):
             self.pressure = pressure
         if volume is not None:
             self.volume = volume
-        return dotdict(pressure=pressure is not None,volume=volume is not None)
     #end def read_pressure_volume
 
 
@@ -902,8 +890,7 @@ class PwscfOutData(DevBase):
         ``stress`` is a list of numeric rows, with three consecutive rows per
         complete tensor.  Each row contains the three stress components in
         Ry/bohr cubed followed by the three values printed in kbar.  Tensors
-        from successive ionic steps are appended to the same flat list.  The
-        return value is the number of complete tensors retained.
+        from successive ionic steps are appended to the same flat list.
         """
         stress = []
         for i,line in enumerate(lines):
@@ -925,7 +912,6 @@ class PwscfOutData(DevBase):
                     stress.extend(rows)
         if len(stress)>0:
             self.stress = stress
-        return len(stress)//3
     #end def read_stress
 
 
@@ -938,8 +924,6 @@ class PwscfOutData(DevBase):
         separately reported total-force value.  Atomic-force blocks with a
         known atom count are retained only when all atoms are present; total
         forces remain available even when their atomic block is incomplete.
-        The return value is a temporary ``dotdict`` containing the numbers of
-        atomic and total-force records found.
         """
         forces     = []
         tot_forces = []
@@ -978,7 +962,6 @@ class PwscfOutData(DevBase):
             self.max_forces = np.linalg.norm(forces,axis=2).max(axis=1)
         if len(tot_forces)>0:
             self.tot_forces = np.array(tot_forces,dtype=float)
-        return dotdict(forces=len(forces),total_forces=len(tot_forces))
     #end def read_forces
 
 
@@ -1000,8 +983,7 @@ class PwscfOutData(DevBase):
                 if match is not None:
                     self.cputime  = pwscf_time(match.group(1))
                     self.walltime = pwscf_time(match.group(2))
-                    return True
-        return False
+                    return
     #end def read_timing
 
 
@@ -1013,8 +995,7 @@ class PwscfOutData(DevBase):
         with shape ``(nkpoints, 3)`` in units of ``2 pi/alat`` and crystal
         reciprocal coordinates, respectively.  ``kweights`` is the matching
         one-dimensional weight array.  No member is updated when either table
-        is incomplete.  The return value is ``nkpoints`` on success and zero
-        otherwise.
+        is incomplete.
         """
         for i,line in enumerate(lines):
             if 'number of k points=' not in line:
@@ -1065,8 +1046,7 @@ class PwscfOutData(DevBase):
             self.kpoints_cart = np.array(cart,dtype=float)
             self.kpoints_unit = np.array(unit,dtype=float)
             self.kweights     = np.array(weights,dtype=float)
-            return nkpoints
-        return 0
+            return
     #end def read_kpoints
 
 
@@ -1374,7 +1354,7 @@ class PwscfXmlData(DevBase):
             node = obj()
             for name,value in element.attrib.items():
                 node[name.lower()] = xml_value(value)
-            groups = dotdict()
+            groups = {}
             for child in element:
                 name = child.tag.rsplit('}',1)[-1].lower()
                 groups.setdefault(name,[]).append(child)
@@ -1617,7 +1597,7 @@ class PwscfXmlData(DevBase):
                 )
             if key not in coordinate_map:
                 coordinate_map[key] = len(electronic)
-                electronic.append(obj(
+                electronic.append(dotdict(
                     kpoint      = coordinates,
                     weight      = float(weight_text.replace('D','E').replace('d','e')),
                     eigenvalues = [],
@@ -1996,7 +1976,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 'PWSCF quantity "{}" is not supported for calculation "{}"'
                 .format(quantity,calculation)
                 )
-        return calculation
     #end def _require_supported
 
 
@@ -2434,8 +2413,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if not os.path.isfile(outfile):
             msg = f'PWSCF output file is not available\nfile not found: {outfile}'
             raise FileNotFoundError(msg)
-        results_out = PwscfOutData(outfile,md_only=self.info.md_only)
-        self.results_out = results_out
+        self.results_out = PwscfOutData(outfile,md_only=self.info.md_only)
         self.analyze_xml()
         if self.info.md_only:
             return
@@ -2497,25 +2475,22 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if schema_file is not None:
             results_xml = PwscfXmlData(schema_file)
             if results_xml.parse_failed:
-                return 0
+                return
             self.results_xml = results_xml
-            npoints = 0 if results_xml.kpoints_rel is None else len(results_xml.kpoints_rel)
         else:
             if legacy_file is None:
-                return 0
+                return
             results_xml = PwscfXmlData(legacy_file)
             if results_xml.parse_failed:
-                return 0
+                return
             if results_xml.calculation is not None:
                 self.results_xml = results_xml
-                return 0 if results_xml.kpoints_rel is None else len(results_xml.kpoints_rel)
+                return
             data = read_qexml(legacy_file)
             self.results_xml = obj(data=None,kpoints=None,failed=False)
-            npoints = self.analyze_legacy_xml(data,legacy_dir)
+            self.analyze_legacy_xml(data,legacy_dir)
             if self.results_xml.failed:
                 self.results_xml = None
-                return 0
-        return npoints
     #end def analyze_xml
 
 
@@ -2534,7 +2509,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if kpdata is None:
             self.results_xml.update(data=data,kpoints=obj())
             self.results_xml.failed = True
-            return 0
+            return
         kpoints = obj()
         for ki,kpd in kpdata.items():
             if 'k_point_coords' not in kpd or 'weight' not in kpd or 'datafile' not in kpd:
@@ -2565,7 +2540,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 elif si==2:
                     kp.down = spin
         self.results_xml.update(data=data,kpoints=kpoints)
-        return len(kpoints)
     #end def analyze_legacy_xml
 
 
