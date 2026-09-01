@@ -29,6 +29,8 @@
 import os
 import re
 import xml.etree.ElementTree as ET
+from copy import deepcopy
+from glob import glob
 import numpy as np
 from .developer import DevBase,obj,dotdict
 from .unit_converter import convert
@@ -1139,6 +1141,8 @@ class PwscfXmlData(DevBase):
         Initial and final Cartesian atomic positions with shape ``(natoms, 3)``.
     initial_axes, axes : numpy.ndarray or None
         Initial and final cell axes with shape ``(3, 3)``.
+    initial_alat, alat : float or None
+        Initial and final lattice parameters reported by PWSCF.
     initial_volume, volume : float or None
         Initial and final cell volumes computed from the cell axes.
     forces : numpy.ndarray or None
@@ -1167,7 +1171,8 @@ class PwscfXmlData(DevBase):
     occupations_kind : str or None
         Occupation method reported in the band-structure record.
     kpoints_rel : numpy.ndarray or None
-        K-point coordinates with shape ``(nkpoints, 3)``.
+        K-point coordinates in units of ``2 pi/alat`` with shape
+        ``(nkpoints, 3)``.
     kweights : numpy.ndarray or None
         K-point weights with shape ``(nkpoints,)``.
     eigenvalues, occupations : numpy.ndarray or None
@@ -1271,10 +1276,12 @@ class PwscfXmlData(DevBase):
         self.initial_atoms                = None
         self.initial_positions            = None
         self.initial_axes                 = None
+        self.initial_alat                 = None
         self.initial_volume               = None
         self.atoms                        = None
         self.positions                    = None
         self.axes                         = None
+        self.alat                         = None
         self.volume                       = None
         self.forces                       = None
         self.stress                       = None
@@ -1550,6 +1557,13 @@ class PwscfXmlData(DevBase):
         final_structure   = child(output,'atomic_structure')
         self.initial_atoms,self.initial_positions,self.initial_axes = structure(initial_structure)
         self.atoms,self.positions,self.axes = structure(final_structure)
+        for member,element in (
+            ('initial_alat',initial_structure),
+            ('alat',final_structure),
+            ):
+            text = None if element is None else element.attrib.get('alat')
+            if text is not None and re.fullmatch(number_pattern,text.strip()) is not None:
+                self[member] = float(text.replace('D','E').replace('d','e'))
         if self.initial_axes is not None:
             self.initial_volume = abs(np.linalg.det(self.initial_axes))
         if self.axes is not None:
@@ -1841,6 +1855,394 @@ class PwscfAnalyzer(SimulationAnalyzer):
     for inspecting molecular dynamics and electronic structure.
     """
 
+    all_modes        = {'scf','nscf','bands','relax','vc-relax','md','vc-md'}
+    energy_modes     = {'scf','nscf','relax','vc-relax','md','vc-md'}
+    electronic_modes = all_modes
+    relaxation_modes = {'relax','vc-relax'}
+    force_modes      = {'scf','relax','vc-relax','md','vc-md'}
+    pressure_units   = {
+        'Pa'   : 1.0,
+        'bar'  : 1e5,
+        'kbar' : 1e8,
+        'Mbar' : 1e11,
+        'GPa'  : 1e9,
+        'atm'  : 1.01325e5,
+        }
+
+
+    def _require_supported(self,quantity,modes):
+        """Require analyzed output and a calculation supporting the quantity."""
+        if 'results_out' not in self or self.results_out is None:
+            raise RuntimeError(
+                'PWSCF quantity "{}" is unavailable because output has not been analyzed'
+                .format(quantity)
+                )
+        calculation = self.results_out.calculation
+        if isinstance(self.results_xml,PwscfXmlData):
+            if self.results_xml.calculation is not None:
+                calculation = self.results_xml.calculation
+        if calculation not in modes:
+            raise RuntimeError(
+                'PWSCF quantity "{}" is not supported for calculation "{}"'
+                .format(quantity,calculation)
+                )
+        return calculation
+    #end def _require_supported
+
+
+    def initial_structure(self,units='A'):
+        """Return the initial ``Structure`` in Angstrom or bohr."""
+        self._require_supported('initial_structure',self.all_modes)
+        if units not in {'A','B'}:
+            raise ValueError('initial_structure units must be one of: A, B')
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        if (xml is not None
+            and xml.initial_atoms is not None
+            and xml.initial_positions is not None
+            and xml.initial_axes is not None
+            ):
+            structure = Structure(
+                axes    = xml.initial_axes.copy(),
+                elem    = xml.initial_atoms.copy(),
+                pos     = xml.initial_positions.copy(),
+                units   = 'B',
+                rescale = False,
+                )
+        elif 'simulation_structure' in self and self.simulation_structure is not None:
+            structure = deepcopy(self.simulation_structure)
+        elif (self.input is not None
+            and 'system' in self.input
+            and 'ibrav' in self.input.system
+            and self.input.system.ibrav==0
+            and 'atomic_positions' in self.input
+            and 'cell_parameters' in self.input
+            and 'k_points' in self.input
+            ):
+            input_data = deepcopy(self.input)
+            system     = input_data.system
+            if ('celldm(1)' not in system
+                and 'celldm' in system
+                and 1 in system.celldm
+                ):
+                system['celldm(1)'] = system.celldm[1]
+            structure = input_data.return_system(structure_only=True)
+        else:
+            return None
+        structure.change_units(units)
+        return structure
+    #end def initial_structure
+
+
+    def energy(self,units='Ha'):
+        """Return the final total energy in eV, Hartree, or Rydberg."""
+        self._require_supported('energy',self.energy_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('energy units must be one of: eV, Ha, Ry')
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        if xml is not None and xml.total_energy is not None:
+            return convert(xml.total_energy,'Ha',units)
+        if 'E' in self.results_out and self.results_out.E is not None:
+            return convert(self.results_out.E,'Ry',units)
+        return None
+    #end def energy
+
+
+    def kpoints(self,units='B'):
+        """Return Cartesian k-points in inverse Angstrom or inverse bohr."""
+        self._require_supported('kpoints',self.all_modes)
+        if units not in {'A','B'}:
+            raise ValueError('kpoints units must be one of: A, B')
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        kpoints = None
+        if xml is not None and xml.kpoints_rel is not None:
+            scale = xml.alat if xml.alat is not None else xml.initial_alat
+            if scale is not None and scale>0:
+                kpoints = xml.kpoints_rel*2*np.pi/scale
+        if (kpoints is None
+            and self.results_out.kpoints_cart is not None
+            and self.input is not None
+            and 'system' in self.input
+            ):
+            system = self.input.system
+            scale  = None
+            if 'celldm(1)' in system:
+                scale = system['celldm(1)']
+            elif 'celldm' in system and 1 in system.celldm:
+                scale = system.celldm[1]
+            if scale is not None:
+                kpoints = self.results_out.kpoints_cart*2*np.pi/scale
+        if kpoints is None and self.results_out.kpoints_unit is not None:
+            structure = self.initial_structure('B')
+            if structure is not None:
+                kpoints = np.dot(self.results_out.kpoints_unit,structure.kaxes)
+        if kpoints is None:
+            return None
+        return kpoints*convert(1.0,units,'B')
+    #end def kpoints
+
+
+    def kweights(self):
+        """Return dimensionless k-point weights, or ``None`` if unavailable."""
+        self._require_supported('kweights',self.all_modes)
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        if xml is not None and xml.kweights is not None:
+            return xml.kweights
+        return self.results_out.kweights
+    #end def kweights
+
+
+    def _log_band_values(self,name):
+        """Return complete k-point-major band values from text output."""
+        bands = self.results_out.bands
+        if bands is None:
+            return None
+        channels = []
+        for channel in (bands.up,bands.down):
+            if len(channel)==0:
+                continue
+            values = [
+                np.asarray(channel[index][name],dtype=float)
+                for index in sorted(channel.keys())
+                ]
+            if len(values)==0 or len(values[0])==0:
+                return None
+            shape = values[0].shape
+            if any(value.shape!=shape for value in values):
+                return None
+            channels.append(np.array(values,dtype=float))
+        if len(channels)==0:
+            return None
+        if len(channels)==1:
+            return channels[0]
+        if channels[0].shape!=channels[1].shape:
+            return None
+        return np.stack(channels,axis=1)
+    #end def _log_band_values
+
+
+    def eigenvalues(self,units='eV'):
+        """Return k-point-major eigenvalues in eV, Hartree, or Rydberg."""
+        self._require_supported('eigenvalues',self.electronic_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('eigenvalues units must be one of: eV, Ha, Ry')
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        if xml is not None and xml.eigenvalues is not None:
+            values = xml.eigenvalues
+            if values.ndim==3:
+                values = np.transpose(values,(1,0,2))
+            return convert(values,'Ha',units)
+        values = self._log_band_values('eigs')
+        if values is None:
+            return None
+        return convert(values,'eV',units)
+    #end def eigenvalues
+
+
+    def occupations(self):
+        """Return the dimensionless k-point-major occupation array."""
+        self._require_supported('occupations',self.electronic_modes)
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        if xml is not None and xml.occupations is not None:
+            values = xml.occupations
+            if values.ndim==3:
+                values = np.transpose(values,(1,0,2))
+            return values
+        return self._log_band_values('occs')
+    #end def occupations
+
+
+    def Ef(self,units='eV'):
+        """Return the final Fermi energy in eV, Hartree, or Rydberg."""
+        self._require_supported('Ef',self.electronic_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('Ef units must be one of: eV, Ha, Ry')
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        if xml is not None and xml.fermi_energy is not None:
+            return convert(xml.fermi_energy,'Ha',units)
+        if self.results_out.Ef is not None:
+            return convert(self.results_out.Ef,'eV',units)
+        return None
+    #end def Ef
+
+
+    def Evbm(self,units='eV'):
+        """Return the final valence-band maximum in selected energy units."""
+        self._require_supported('Evbm',self.electronic_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('Evbm units must be one of: eV, Ha, Ry')
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        if xml is not None and xml.highest_occupied_level is not None:
+            return convert(xml.highest_occupied_level,'Ha',units)
+        bands = self.results_out.bands
+        if bands is not None and 'vbm' in bands:
+            return convert(bands.vbm.energy,'eV',units)
+        return None
+    #end def Evbm
+
+
+    def Ecbm(self,units='eV'):
+        """Return the final conduction-band minimum in selected energy units."""
+        self._require_supported('Ecbm',self.electronic_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('Ecbm units must be one of: eV, Ha, Ry')
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        if xml is not None and xml.lowest_unoccupied_level is not None:
+            return convert(xml.lowest_unoccupied_level,'Ha',units)
+        bands = self.results_out.bands
+        if bands is not None and 'cbm' in bands:
+            return convert(bands.cbm.energy,'eV',units)
+        return None
+    #end def Ecbm
+
+
+    def band_gap(self,units='eV'):
+        """Return the fundamental band gap in eV, Hartree, or Rydberg."""
+        self._require_supported('band_gap',self.electronic_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('band_gap units must be one of: eV, Ha, Ry')
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        if (xml is not None
+            and xml.highest_occupied_level is not None
+            and xml.lowest_unoccupied_level is not None
+            ):
+            gap = xml.lowest_unoccupied_level-xml.highest_occupied_level
+            return convert(gap,'Ha',units)
+        bands = self.results_out.bands
+        if bands is not None and 'vbm' in bands and 'cbm' in bands:
+            gap = bands.cbm.energy-bands.vbm.energy
+            return convert(gap,'eV',units)
+        return None
+    #end def band_gap
+
+
+    def fractional_occs(self):
+        """Whether any occupation differs from empty or full by over ``1e-3``."""
+        self._require_supported('fractional_occs',self.electronic_modes)
+        occupations = self.occupations()
+        if occupations is None:
+            return None
+        tolerance = 1e-3
+        empty     = np.isclose(occupations,0.0,rtol=0.0,atol=tolerance)
+        full      = np.isclose(occupations,1.0,rtol=0.0,atol=tolerance)
+        return bool(np.any(~(empty|full)))
+    #end def fractional_occs
+
+
+    def relaxed_structure(self,units='A'):
+        """Return the final relaxed ``Structure`` in Angstrom or bohr."""
+        self._require_supported('relaxed_structure',self.relaxation_modes)
+        if units not in {'A','B'}:
+            raise ValueError('relaxed_structure units must be one of: A, B')
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        if (xml is not None
+            and xml.atoms is not None
+            and xml.positions is not None
+            and xml.axes is not None
+            ):
+            structure = Structure(
+                axes    = xml.axes.copy(),
+                elem    = xml.atoms.copy(),
+                pos     = xml.positions.copy(),
+                units   = 'B',
+                rescale = False,
+                )
+        elif ('relax_structures' in self.results_out
+            and self.results_out.relax_structures is not None
+            and len(self.results_out.relax_structures)>0
+            ):
+            structures = self.results_out.relax_structures
+            result     = structures[max(structures.keys())]
+            initial    = self.initial_structure('B')
+            axes       = result.axes if 'axes' in result else None
+            if axes is None and initial is not None:
+                axes = initial.axes
+            if axes is None:
+                return None
+            structure = Structure(
+                axes    = np.asarray(axes,dtype=float),
+                elem    = np.asarray(result.atoms,dtype=str),
+                pos     = np.asarray(result.positions,dtype=float),
+                units   = 'B',
+                rescale = False,
+                )
+        else:
+            return None
+        structure.change_units(units)
+        return structure
+    #end def relaxed_structure
+
+
+    def forces(self,units='eV/A'):
+        """Return ionic forces in ``eV/A``, ``Ry/B``, or ``Ha/B``."""
+        self._require_supported('forces',self.force_modes)
+        if units not in {'eV/A','Ry/B','Ha/B'}:
+            raise ValueError('forces units must be one of: eV/A, Ry/B, Ha/B')
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        values        = None
+        source_energy = None
+        if xml is not None:
+            if 'trajectory_forces' in xml and xml.trajectory_forces is not None:
+                values = xml.trajectory_forces
+            elif 'forces' in xml and xml.forces is not None:
+                values = xml.forces[np.newaxis,:,:]
+            if values is not None:
+                source_energy = 'Ha'
+        if values is None and self.results_out.forces is not None:
+            values        = self.results_out.forces
+            source_energy = 'Ry'
+        if values is None:
+            return None
+        energy_units,length_units = units.split('/')
+        factor = convert(1.0,source_energy,energy_units)/convert(1.0,'B',length_units)
+        return values*factor
+    #end def forces
+
+
+    def stress(self,units='GPa'):
+        """Return the stress-tensor history in selected pressure units."""
+        self._require_supported('stress',self.force_modes)
+        if units not in self.pressure_units:
+            supported = ', '.join(sorted(self.pressure_units))
+            raise ValueError('stress units must be one of: '+supported)
+        xml = self.results_xml if isinstance(self.results_xml,PwscfXmlData) else None
+        values          = None
+        source_pressure = None
+        if xml is not None:
+            if 'trajectory_stress' in xml and xml.trajectory_stress is not None:
+                values = xml.trajectory_stress
+            elif 'stress' in xml and xml.stress is not None:
+                values = xml.stress[np.newaxis,:,:]
+            if values is not None:
+                hartree = convert(1.0,'Ha','J')
+                bohr    = convert(1.0,'B','m')
+                source_pressure = hartree/bohr**3
+        if values is None and self.results_out.stress is not None:
+            rows = np.asarray(self.results_out.stress,dtype=float)
+            if rows.ndim!=2 or rows.shape[1]<6 or len(rows)%3!=0:
+                return None
+            values          = rows[:,3:6].reshape(-1,3,3)
+            source_pressure = 1e8
+        if values is None:
+            return None
+        return values*source_pressure/self.pressure_units[units]
+    #end def stress
+
+
+    def pressure(self,units='GPa'):
+        """Return the final hydrostatic pressure in selected pressure units."""
+        self._require_supported('pressure',self.force_modes)
+        if units not in self.pressure_units:
+            supported = ', '.join(sorted(self.pressure_units))
+            raise ValueError('pressure units must be one of: '+supported)
+        stress = self.stress(units)
+        if stress is not None and len(stress)>0:
+            return np.trace(stress[-1])/3.0
+        if self.results_out.pressure is not None:
+            return self.results_out.pressure*1e8/self.pressure_units[units]
+        return None
+    #end def pressure
+
+
     def __init__(
         self,
         arg0              = None,
@@ -1849,37 +2251,120 @@ class PwscfAnalyzer(SimulationAnalyzer):
         pw2c_outfile_name = None,
         *,
         analyze           = False,
-        xml               = False,
         md_only           = False,
         ):
-        """Initialize a PWscf output analyzer.
+        """Initialize an analyzer for a PWSCF simulation or output path.
 
         Parameters
         ----------
-        arg0 : Simulation or path-like, optional
-            PWscf simulation to analyze, or path to a calculation directory,
-            input file, or output file. If omitted, only the basic analyzer
-            state is initialized.
+        arg0 : Simulation or str or os.PathLike or None, optional
+            PWSCF simulation to analyze, or path to a calculation directory,
+            input file, or output file.  If ``None``, an unconfigured analyzer
+            is created.
         infile_name : str, optional
-            Name of the PWscf input file within the calculation directory.
+            Name of the PWSCF input file within the calculation directory.
         outfile_name : str, optional
-            Name of the PWscf output file. It is inferred from ``infile_name``
+            Name of the PWSCF output file.  It is inferred from ``infile_name``
             when possible.
         pw2c_outfile_name : str, optional
             Name of an accompanying PW2CASINO output file.
         analyze : bool, optional
-            Analyze the available output during initialization.
-        xml : bool, optional
-            Include XML output when analysis is requested.
+            If ``True``, parse the available log, XML, and auxiliary output
+            during initialization.
         md_only : bool, optional
-            Limit analysis to molecular-dynamics data.
+            Limit text-output analysis to molecular-dynamics data.  Available
+            XML output is still parsed.
+
+        Attributes
+        ----------
+        path : str
+            Directory containing the PWSCF input and output files.
+        abspath : str
+            Absolute path to the calculation directory.
+        infile_name, outfile_name : str or None
+            Names of the PWSCF input and text-output files.
+        pw2c_outfile_name : str or None
+            Name of the optional PW2CASINO output file.
+        info : obj
+            General analyzer metadata, including the ``md_only`` setting.
+        input : PwscfInput or None
+            Parsed PWSCF input when an input file is available.
+        simulation_structure : Structure
+            Input structure supplied by a ``Simulation``.  This member is
+            bound only when the analyzer is constructed from a simulation.
+        results_out : PwscfOutData or None
+            Parsed PWSCF text-output data.  It is ``None`` until analysis is
+            performed.
+        results_xml : PwscfXmlData or obj or None
+            Parsed schema or legacy XML data.  It remains ``None`` when XML
+            output is absent or cannot be read.
+        pw2casino : Pw2CasinoAnalyzer or None
+            Parsed PW2CASINO data when an auxiliary output file is requested.
+
+        Methods
+        -------
+        initial_structure(units='A') : Structure or None
+            Initial structure in Angstrom (``'A'``) or bohr (``'B'``).
+        energy(units='Ha') : float or numpy.floating or None
+            Final total energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
+        kpoints(units='B') : numpy.ndarray or None
+            Cartesian k-points in inverse Angstrom or inverse bohr with shape
+            ``(nkpoints, 3)``.  The unit argument is ``'A'`` or ``'B'``.
+        kweights() : numpy.ndarray or None
+            Dimensionless k-point weights with shape ``(nkpoints,)``.
+        eigenvalues(units='eV') : numpy.ndarray or None
+            Kohn--Sham eigenvalues in ``'eV'``, ``'Ha'``, or ``'Ry'``.  The
+            leading dimension has length ``nkpoints``; remaining dimensions
+            represent spin, when present, and bands.
+        occupations() : numpy.ndarray or None
+            Dimensionless Kohn--Sham occupations with the same layout as the
+            eigenvalue array.
+        Ef(units='eV') : float or numpy.floating or None
+            Final Fermi energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
+        Evbm(units='eV') : float or numpy.floating or None
+            Final valence-band maximum in selected energy units.
+        Ecbm(units='eV') : float or numpy.floating or None
+            Final conduction-band minimum in selected energy units.
+        band_gap(units='eV') : float or numpy.floating or None
+            Fundamental electronic band gap in selected energy units.
+        fractional_occs() : bool or None
+            Whether any occupation differs from both empty and full by more
+            than ``1e-3``.
+        relaxed_structure(units='A') : Structure or None
+            Final relaxed structure in Angstrom (``'A'``) or bohr (``'B'``).
+        forces(units='eV/A') : numpy.ndarray or None
+            Ionic-force history with shape ``(nsteps, natoms, 3)``.  Available
+            units are ``'eV/A'``, ``'Ry/B'``, and ``'Ha/B'``.
+        stress(units='GPa') : numpy.ndarray or None
+            Stress-tensor history with shape ``(nsteps, 3, 3)``.  Available
+            units are ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``,
+            and ``'atm'``.
+        pressure(units='GPa') : float or numpy.floating or None
+            Final hydrostatic pressure in the units accepted by ``stress``.
+
+        Notes
+        -----
+        Log and XML output are both parsed automatically when present.  Query
+        methods prefer schema XML data and fall back to text-output data.  A
+        query returns ``None`` when its quantity applies to the detected
+        calculation but was not parsed.  Calling a query before analysis or
+        for an unsupported calculation raises ``RuntimeError``.  Supplying
+        unsupported units raises ``ValueError``.
+
+        Raises
+        ------
+        FileNotFoundError
+            If a supplied path, input file, output file, or requested
+            PW2CASINO file does not exist.
+        RuntimeError
+            If a supplied file cannot be identified as input or output.
         """
         if isinstance(arg0,Simulation):
-            sim                  = arg0
-            path                 = sim.locdir
-            infile_name          = sim.infile
-            outfile_name         = sim.outfile
-            self.input_structure = sim.system.structure
+            sim                       = arg0
+            path                      = sim.locdir
+            infile_name               = sim.infile
+            outfile_name              = sim.outfile
+            self.simulation_structure = sim.system.structure
         elif arg0 is not None:
             path = path_string(arg0)
             if not os.path.exists(path):
@@ -1926,12 +2411,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.results_xml       = None
         self.pw2casino         = None
         if analyze:
-            self.analyze(xml=xml)
+            self.analyze()
     #end def __init__
 
 
-    def analyze(self,*,xml=False):
-        """Analyze the available PWscf text and optional XML output."""
+    def analyze(self):
+        """Analyze available PWSCF text, XML, and auxiliary output."""
         self.results_out = None
         self.results_xml = None
         self.pw2casino   = None
@@ -1946,6 +2431,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             raise FileNotFoundError(msg)
         results_out = PwscfOutData(outfile,md_only=self.info.md_only)
         self.results_out = results_out
+        self.analyze_xml()
         if self.info.md_only:
             return
         if self.pw2c_outfile_name is not None:
@@ -1955,37 +2441,69 @@ class PwscfAnalyzer(SimulationAnalyzer):
             else:
                 msg = f'PW2CASINO output file is not available\nfile not found: {filepath}'
                 raise FileNotFoundError(msg)
-        if xml:
-            self.analyze_xml()
     #end def analyze
 
 
     def analyze_xml(self):
         """Locate and parse schema or legacy PWscf XML output."""
         self.results_xml = None
-        if 'input' not in self or self.input is None or 'control' not in self.input:
-            return 0
-        cont = self.input.control
-        if 'outdir' not in cont or 'prefix' not in cont:
-            return 0
-        savedir     = os.path.join(self.path,cont.outdir,f'{cont.prefix}.save')
-        schema_file = os.path.join(savedir,'data-file-schema.xml')
-        legacy_file = os.path.join(savedir,'data-file.xml')
-        schema      = os.path.isfile(schema_file)
+        schema_file = None
+        legacy_file = None
+        legacy_dir  = None
+        if ('input' in self
+            and self.input is not None
+            and 'control' in self.input
+            and 'outdir' in self.input.control
+            and 'prefix' in self.input.control
+            ):
+            cont         = self.input.control
+            savedir      = os.path.join(self.path,cont.outdir,f'{cont.prefix}.save')
+            schema_path  = os.path.join(savedir,'data-file-schema.xml')
+            legacy_path  = os.path.join(savedir,'data-file.xml')
+            fallback_dir = os.path.join(self.path,cont.outdir)
+            fallback     = os.path.join(fallback_dir,f'{cont.prefix}.xml')
+            if os.path.isfile(schema_path):
+                schema_file = schema_path
+            elif os.path.isfile(legacy_path):
+                legacy_file = legacy_path
+                legacy_dir  = savedir
+            elif os.path.isfile(fallback):
+                legacy_file = fallback
+                legacy_dir  = fallback_dir
 
-        if schema:
+        if schema_file is None and legacy_file is None:
+            schema_candidates = sorted(set(
+                glob(os.path.join(self.path,'*.save','data-file-schema.xml'))
+                + glob(os.path.join(self.path,'*','*.save','data-file-schema.xml'))
+                ))
+            if len(schema_candidates)==1:
+                schema_file = schema_candidates[0]
+            else:
+                legacy_candidates = sorted(set(
+                    glob(os.path.join(self.path,'*.save','data-file.xml'))
+                    + glob(os.path.join(self.path,'*','*.save','data-file.xml'))
+                    + glob(os.path.join(self.path,'*.xml'))
+                    + glob(os.path.join(self.path,'*','*.xml'))
+                    ))
+                if len(legacy_candidates)==1:
+                    legacy_file = legacy_candidates[0]
+                    legacy_dir  = os.path.dirname(legacy_file)
+
+        if schema_file is not None:
             results_xml = PwscfXmlData(schema_file)
             if results_xml.parse_failed:
                 return 0
             self.results_xml = results_xml
             npoints = 0 if results_xml.kpoints_rel is None else len(results_xml.kpoints_rel)
         else:
-            legacy_dir = savedir
-            if not os.path.isfile(legacy_file):
-                legacy_dir  = os.path.join(self.path,cont.outdir)
-                legacy_file = os.path.join(legacy_dir,f'{cont.prefix}.xml')
-            if not os.path.isfile(legacy_file):
+            if legacy_file is None:
                 return 0
+            results_xml = PwscfXmlData(legacy_file)
+            if results_xml.parse_failed:
+                return 0
+            if results_xml.calculation is not None:
+                self.results_xml = results_xml
+                return 0 if results_xml.kpoints_rel is None else len(results_xml.kpoints_rel)
             data = read_qexml(legacy_file)
             self.results_xml = obj(data=None,kpoints=None,failed=False)
             npoints = self.analyze_legacy_xml(data,legacy_dir)
@@ -2170,7 +2688,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
         nbands = self.input.system.nbnd
 
         if k_labels is None:
-            kpath  = get_kpath(structure=self.input_structure, check_standard=False)
+            structure = self.initial_structure()
+            if structure is None:
+                return
+            kpath  = get_kpath(structure=structure,check_standard=False)
             x      = kpath['explicit_path_linearcoords']
             labels = list(kpath['explicit_kpoints_labels'])
         else:

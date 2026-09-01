@@ -442,7 +442,7 @@ def test_pw2casino_analyzer_read(tmp_path):
 def test_analyze():
     from numpy import array
     from ..developer import obj, to_obj
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfOutData
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfOutData, PwscfXmlData
 
     all_result_names = (
         'E','Ef','bands','cputime','relax_energies','scf_conv_energy',
@@ -596,11 +596,13 @@ def test_analyze():
     assert(pa.results_out.forces is not None)
     assert(pa.results_out.tot_forces is not None)
     assert(pa.results_out.stress is not None)
+    assert(isinstance(pa.results_xml,PwscfXmlData))
 
     del pa.input
     del pa.abspath
     del pa.path
     pa.results_out.bands = None
+    pa.results_xml       = None
 
     pa_ref = obj(
         E               = -170.11048381,
@@ -673,11 +675,13 @@ def test_analyze():
     assert(pa.results_out.relax_structures is not None)
     assert(pa.results_out.forces is not None)
     assert(pa.results_out.tot_forces is not None)
+    assert(isinstance(pa.results_xml,PwscfXmlData))
 
     del pa.input
     del pa.abspath
     del pa.path
     pa.results_out.bands = None
+    pa.results_xml       = None
 
     pa_ref = obj(
         E               = -168.41267772,
@@ -1170,6 +1174,102 @@ def test_analyze():
 #end def test_analyze
 
 
+def test_quantity_accessors(tmp_path):
+    import numpy as np
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
+
+    scf_path   = TEST_DIR/'test_pwscf_analyzer_files/scf_output'
+    relax_path = TEST_DIR/'test_pwscf_analyzer_files/relax_output'
+    nscf_path  = TEST_DIR/'test_pwscf_analyzer_files/nscf_output'
+
+    unconfigured = PwscfAnalyzer()
+    with pytest.raises(RuntimeError):
+        unconfigured.energy()
+
+    scf = PwscfAnalyzer(scf_path,'scf.in','scf.out',analyze=True)
+    assert(isinstance(scf.results_xml,PwscfXmlData))
+    assert(np.isclose(scf.energy('Ry'),scf.results_out.E))
+    assert(scf.initial_structure('B').units=='B')
+    assert(scf.initial_structure('A').units=='A')
+    assert(scf.kpoints('B').shape==(3,3))
+    assert(scf.kweights().shape==(3,))
+    assert(scf.eigenvalues('eV').shape==(3,30))
+    assert(scf.occupations().shape==(3,30))
+    assert(scf.Ef() is None)
+    assert(scf.Evbm() is not None)
+    assert(scf.Ecbm() is None)
+    assert(scf.band_gap() is None)
+    assert(not scf.fractional_occs())
+    assert(scf.forces('Ry/B').shape==(1,15,3))
+    assert(scf.stress('kbar').shape==(1,3,3))
+    assert(np.isclose(scf.pressure('kbar'),-170.96,atol=0.01))
+    assert(np.allclose(
+        scf.energy('Ha'),
+        scf.energy('Ry')/2,
+        ))
+    assert(np.allclose(
+        scf.forces('Ha/B'),
+        scf.forces('Ry/B')/2,
+        ))
+
+    xml_energy      = scf.energy('Ry')
+    xml_kpoints     = scf.kpoints('B')
+    xml_eigenvalues = scf.eigenvalues('eV')
+    xml_forces      = scf.forces('Ry/B')
+    xml_stress      = scf.stress('kbar')
+    scf.results_xml  = None
+    assert(np.isclose(scf.energy('Ry'),xml_energy,atol=1e-7))
+    assert(np.allclose(scf.kpoints('B'),xml_kpoints,atol=1e-7))
+    assert(np.allclose(scf.eigenvalues('eV'),xml_eigenvalues,atol=1e-4))
+    assert(np.allclose(scf.forces('Ry/B'),xml_forces,atol=1e-7))
+    assert(np.allclose(scf.stress('kbar'),xml_stress,atol=0.01))
+
+    relax = PwscfAnalyzer(relax_path,'relax.in','relax.out',analyze=True)
+    structure = relax.relaxed_structure('B')
+    assert(structure is not None)
+    assert(structure.units=='B')
+    assert(structure.pos.shape==(15,3))
+    assert(structure.axes.shape==(3,3))
+    assert(relax.forces('Ry/B').shape==(4,15,3))
+
+    nscf = PwscfAnalyzer(nscf_path,'nscf.in','nscf.out',analyze=True)
+    assert(nscf.results_xml is None)
+    assert(nscf.energy() is None)
+    assert(nscf.kpoints('B').shape==(4,3))
+    assert(nscf.eigenvalues('eV').shape==(4,2,30))
+    assert(nscf.occupations().shape==(4,2,30))
+    assert(nscf.Ef() is not None)
+    assert(nscf.Evbm() is not None)
+    assert(nscf.Ecbm() is not None)
+    assert(nscf.band_gap() is not None)
+    assert(nscf.fractional_occs())
+    with pytest.raises(RuntimeError):
+        nscf.forces()
+    with pytest.raises(RuntimeError):
+        nscf.stress()
+    with pytest.raises(RuntimeError):
+        nscf.pressure()
+    with pytest.raises(RuntimeError):
+        nscf.relaxed_structure()
+    with pytest.raises(ValueError):
+        nscf.energy('invalid')
+    with pytest.raises(ValueError):
+        nscf.kpoints('invalid')
+    with pytest.raises(ValueError):
+        nscf.eigenvalues('invalid')
+
+    (tmp_path/'bands.in').write_text("&CONTROL\n calculation = 'bands'\n/\n")
+    (tmp_path/'bands.out').write_text('Band Structure Calculation\n')
+    bands = PwscfAnalyzer(tmp_path,'bands.in','bands.out',analyze=True)
+    assert(bands.eigenvalues() is None)
+    assert(bands.occupations() is None)
+    with pytest.raises(RuntimeError):
+        bands.energy()
+    with pytest.raises(RuntimeError):
+        bands.forces()
+#end def test_quantity_accessors
+
+
 def test_modern_output(tmp_path):
     import numpy as np
     from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
@@ -1255,7 +1355,7 @@ H  0.100000000  0.200000000  0.300000000  1 1 1  trailing text
     savedir.mkdir(parents=True)
     (savedir/'data-file-schema.xml').write_text(schema)
 
-    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
+    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True)
 
     assert(np.allclose(pa.results_out.md_data.total_energy,[-1.1]))
     assert(np.allclose(pa.results_out.md_data.time,[0.0]))
@@ -1285,6 +1385,10 @@ H  0.100000000  0.200000000  0.300000000  1 1 1  trailing text
     assert(pa.results_xml is not None)
     assert('data_status' not in pa.info)
 
+    pa_from_output = PwscfAnalyzer(tmp_path/'pwscf.out',analyze=True)
+    assert(isinstance(pa_from_output.results_xml,PwscfXmlData))
+    assert(pa_from_output.results_xml.calculation=='vc-md')
+
     # Recognized but incomplete records are skipped without stopping analysis.
     malformed_tail = """
 !    total energy              =      unavailable Ry
@@ -1304,7 +1408,7 @@ CELL_PARAMETERS (alat= 5.0)
         )
     (savedir/'data-file-schema.xml').write_text(incomplete_schema)
 
-    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
+    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True)
 
     assert(np.allclose(pa.results_out.md_data.total_energy,[-1.1]))
     assert(np.allclose(pa.results_out.relax_energies,[-1.1]))
@@ -1320,20 +1424,20 @@ CELL_PARAMETERS (alat= 5.0)
     # Missing electronic records do not indicate an XML read failure.
     no_kpoints_schema = schema.replace('ks_energies','unused_energies')
     (savedir/'data-file-schema.xml').write_text(no_kpoints_schema)
-    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
+    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True)
     assert(not pa.results_xml.parse_failed)
     assert(pa.results_xml.kpoints_rel is None)
     assert(pa.results_xml.eigenvalues is None)
 
     # XML syntax errors are localized and do not discard parsed log data.
     (savedir/'data-file-schema.xml').write_text('<qes:espresso>')
-    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
+    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True)
     assert(np.allclose(pa.results_out.relax_energies,[-1.1]))
     assert(pa.results_xml is None)
 
     # Missing XML is represented by None rather than an empty XML result.
     (savedir/'data-file-schema.xml').unlink()
-    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True,xml=True)
+    pa = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True)
     assert(pa.results_xml is None)
     xml_data = PwscfXmlData(savedir/'data-file-schema.xml')
     assert(xml_data.parse_failed)
@@ -1351,20 +1455,21 @@ CELL_PARAMETERS (alat= 5.0)
 
 def test_xml_data_results(tmp_path):
     import numpy as np
-    from ..pwscf_analyzer import PwscfXmlData
+    from ..developer import obj
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
 
     schema = """<espresso>
   <general_info><creator VERSION="7.6">PWSCF</creator></general_info>
   <input>
     <control_variables><calculation>relax</calculation></control_variables>
-    <atomic_structure>
+    <atomic_structure alat="2.0">
       <atomic_positions><atom name="C">0 0 0</atom></atomic_positions>
       <cell><a1>2 0 0</a1><a2>0 2 0</a2><a3>0 0 2</a3></cell>
     </atomic_structure>
   </input>
   <step>
     <scf_conv><convergence_achieved>true</convergence_achieved><n_scf_steps>3</n_scf_steps><scf_error>1e-8</scf_error></scf_conv>
-    <atomic_structure>
+    <atomic_structure alat="2.0">
       <atomic_positions><atom name="C">0.1 0.2 0.3</atom></atomic_positions>
       <cell><a1>2 0 0</a1><a2>0 2 0</a2><a3>0 0 2</a3></cell>
     </atomic_structure>
@@ -1376,7 +1481,7 @@ def test_xml_data_results(tmp_path):
       <scf_conv><convergence_achieved>true</convergence_achieved><n_scf_steps>4</n_scf_steps><scf_error>1e-10</scf_error></scf_conv>
       <opt_conv><convergence_achieved>true</convergence_achieved><n_opt_steps>2</n_opt_steps><grad_norm>1e-4</grad_norm></opt_conv>
     </convergence_info>
-    <atomic_structure>
+    <atomic_structure alat="2.1">
       <atomic_positions><atom name="C">0.2 0.3 0.4</atom></atomic_positions>
       <cell><a1>2.1 0 0</a1><a2>0 2.1 0</a2><a3>0 0 2.1</a3></cell>
     </atomic_structure>
@@ -1417,6 +1522,8 @@ def test_xml_data_results(tmp_path):
     assert(np.array_equal(data.initial_atoms,['C']))
     assert(np.allclose(data.positions,[[0.2,0.3,0.4]]))
     assert(np.allclose(data.axes,2.1*np.eye(3)))
+    assert(data.initial_alat==2.0)
+    assert(data.alat==2.1)
     assert(np.isclose(data.initial_volume,8.0))
     assert(np.isclose(data.volume,2.1**3))
     assert(np.allclose(data.forces,[[0.2,0.3,0.4]]))
@@ -1460,4 +1567,9 @@ def test_xml_data_results(tmp_path):
     assert(data.eigenvalues.shape==(2,1,2))
     assert(data.occupations.shape==(2,1,2))
     assert(data.plane_waves.shape==(2,1))
+    analyzer = PwscfAnalyzer()
+    analyzer.results_out = obj(calculation='nscf')
+    analyzer.results_xml = data
+    assert(analyzer.eigenvalues('Ha').shape==(1,2,2))
+    assert(analyzer.occupations().shape==(1,2,2))
 #end def test_xml_data_results
