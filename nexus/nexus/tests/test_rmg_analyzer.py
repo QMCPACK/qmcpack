@@ -101,6 +101,7 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
         bands          = short_mode=='band',
         md             = short_mode in {'md_VE','md_TE'},
         tddft          = short_mode=='tddft',
+        neb            = short_mode=='neb',
         produced_files = short_mode in {'scf','exx','stm'},
         )
     for name,applies in field_applicability.items():
@@ -286,6 +287,86 @@ def test_mode_specific_results(tmp_path):
     assert len(stm.results.produced_files.stm)==1
     assert len(stm.results.produced_files.stm_cube)==1
 #end def test_mode_specific_results
+
+
+def test_neb_results(tmp_path):
+    from ..rmg_analyzer import RmgAnalyzer
+
+    def neb_input(x):
+        return '''
+calculation_mode = "Quench Electrons"
+bravais_lattice_type = "Cubic Primitive"
+lattice_units = "Bohr"
+a_length = "8.0"
+atomic_coordinate_type = "Absolute"
+atoms = "
+H {x} 0.0 0.0 1 1 1 0.0
+"
+'''.format(x=x)
+    #end def neb_input
+
+    directories = ['image_initial','image01','image02','image_final']
+    for index,directory in enumerate(directories):
+        image_dir = tmp_path/directory
+        image_dir.mkdir()
+        (image_dir/'input').write_text(neb_input(index))
+
+    (tmp_path/'ctrl_init.dat').write_text('''
+calculation_mode = "NEB Relax"
+image_per_node = "1"
+num_images = "2"
+max_neb_steps = "5"
+neb_spring_constant = "0.10"
+input_file_initial_image = "./image_initial/input"
+input_file_final_image = "./image_final/input"
+totale_initial_image = "-2.0"
+totale_final_image = "-1.8"
+image_infos = "
+./image01 input 2
+./image02 input 2
+"
+''')
+    image_body = '''
+RMG initialization ... 2 image(s) total, 1 per node. 2 MPI processes/image.
+NEB call fast relax.
+final total energy from eig sum = {energy} Ha
+Entering constrained forces for image {index}
+@ION Ion Species X Y Z Charge Mag FX FY FZ Movable
+@ION 1 H {index}.0 0.0 0.0 0.0 0.0 0.1 0.0 0.0 1 1 1
+'''
+    image01_log = tmp_path/'image01/input.00.log'
+    image01_log.write_text(rmg_log(
+        'Molecular dynamics using Nudged Elastic Band.',
+        image_body.format(energy=-1.0,index=1)))
+    image02_log = tmp_path/'image02/input.00.log'
+    image02_log.write_text(rmg_log(
+        'Molecular dynamics using Nudged Elastic Band.',
+        image_body.format(energy=-1.5,index=2)))
+
+    analyzer = RmgAnalyzer(str(image01_log),analyze=True)
+    neb      = analyzer.results.neb
+
+    assert neb.num_intermediate_images==2
+    assert neb.num_images==4
+    assert neb.calculation_mode=='NEB Relax'
+    assert neb.images_per_node==1
+    assert neb.max_steps==5
+    assert neb.spring_constant==0.1
+    assert neb.spring_constant_units=='Ha/B^2'
+    assert neb.parallel.images_per_node==1
+    assert neb.parallel.mpi_processes_per_image==2
+    assert len(neb.image_input_files)==4
+    assert len(neb.input_structures)==4
+    assert np.allclose(neb.reaction_coordinate,[0.0,1.0,2.0,3.0])
+    assert np.allclose(neb.energies,[-2.0,-1.0,-1.5,-1.8])
+    assert np.allclose(neb.relative_energies,[0.0,1.0,0.5,0.2])
+    assert neb.forward_barrier==1.0
+    assert np.isclose(neb.reverse_barrier,0.8)
+    assert neb.barrier_image_index==1
+    assert neb.local_image.index==1
+    assert neb.local_image.neb_calls==1
+    assert neb.local_image.forces.shape==(1,1,3)
+#end def test_neb_results
 
 
 def test_whitespace_and_trailing_fields(tmp_path):

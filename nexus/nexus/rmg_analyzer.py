@@ -114,6 +114,10 @@ class RmgOutData(DevBase):
         tddft : obj or None
             Time-dependent energy and spin-resolved dipole series represented by
             nested ``obj`` instances and NumPy arrays.
+        neb : obj or None
+            NEB controller settings, ordered input structures, path energies,
+            relative energies, barriers, and image-local results. Path energies
+            and barriers are in Hartree and the reaction coordinate is in bohr.
         produced_files : obj or None
             Lists or paths for mode-specific output files, such as exact-exchange
             integrals, STM data, or a QMCPACK restart file.
@@ -126,10 +130,11 @@ class RmgOutData(DevBase):
         apply to ``scf``, ``nscf``, ``relax``, ``md_VE``, ``md_TE``, ``tddft``,
         and ``neb``. ``electronic`` also applies to ``band``. ``bands`` applies
         only to ``band``; ``md`` and ``md_stats`` apply to ``md_VE`` and
-        ``md_TE``; ``tddft`` applies only to ``tddft``; and ``produced_files``
-        applies to ``scf``, ``exx``, and ``stm``. A mode-applicable member is
-        initialized to ``None`` and remains ``None`` when its data cannot be
-        obtained. Members that do not apply to the detected mode are not bound.
+        ``md_TE``; ``tddft`` applies only to ``tddft``; ``neb`` applies only to
+        ``neb``; and ``produced_files`` applies to ``scf``, ``exx``, and
+        ``stm``. A mode-applicable member is initialized to ``None`` and remains
+        ``None`` when its data cannot be obtained. Members that do not apply to
+        the detected mode are not bound.
 
         Raises
         ------
@@ -235,6 +240,12 @@ class RmgOutData(DevBase):
             self.tddft = None
 
             self.read_tddft(lines)
+
+        # modes: neb
+        if self.run_mode=='neb':
+            self.neb = None
+
+            self.read_neb(lines)
 
         # modes: scf, exx, stm
         if self.run_mode in {'scf','exx','stm'}:
@@ -1730,6 +1741,342 @@ class RmgOutData(DevBase):
             self.tddft = tddft
         return len(tddft)
     #end def read_tddft
+
+
+    def read_neb(self,lines):
+        """Read NEB controller, path, energy-profile, and local-image data.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines. The NEB controller and sibling
+            image inputs and logs are read relative to the current image log.
+
+        Returns
+        -------
+        int
+            Number of populated top-level NEB fields.
+
+        Notes
+        -----
+        Binds ``neb`` to an ``obj`` containing controller settings and file
+        paths, ordered input ``Structure`` objects, a cumulative input-path
+        reaction coordinate, image energies and relative energies, forward and
+        reverse barriers, the highest-energy image index, parallel-layout data,
+        and an ``obj`` named ``local_image`` containing the current image index,
+        energy histories, positions, structures, and constrained forces. Energy
+        quantities are in Hartree, coordinates are in bohr, forces are in
+        Hartree per bohr, and the spring constant is in Hartree per bohr squared.
+        Missing or malformed companion data leave the affected fields as
+        ``None`` without preventing extraction of the remaining fields.
+        """
+        def read_assignments(filepath):
+            """Read quoted, possibly multiline controller assignments."""
+            values = {}
+            with open(filepath,'r') as fobj:
+                control_lines = fobj.read().splitlines()
+            i = 0
+            while i<len(control_lines):
+                line = control_lines[i]
+                i += 1
+                if '=' not in line:
+                    continue
+                key,value = line.split('=',1)
+                key       = key.strip()
+                value     = value.strip()
+                if len(key)==0 or len(value)==0:
+                    continue
+                quote = value[0] if value[0] in {'"',"'"} else None
+                if quote is None:
+                    values[key] = value
+                    continue
+                value = value[1:]
+                if value.endswith(quote):
+                    values[key] = value[:-1]
+                    continue
+                parts = [value]
+                while i<len(control_lines):
+                    part = control_lines[i]
+                    i += 1
+                    if quote in part:
+                        parts.append(part.split(quote,1)[0])
+                        break
+                    parts.append(part)
+                values[key] = '\n'.join(parts)
+            return values
+        #end def read_assignments
+
+        def as_int(value):
+            """Convert a controller value to an integer when possible."""
+            try:
+                return int(value)
+            except (TypeError,ValueError):
+                return None
+        #end def as_int
+
+        def as_float(value):
+            """Convert a controller value to a finite float when possible."""
+            try:
+                result = float(value.replace('D','E').replace('d','e'))
+            except (AttributeError,TypeError,ValueError):
+                return None
+            return result if np.isfinite(result) else None
+        #end def as_float
+
+        def final_energy(filepath):
+            """Return the last final eigenvalue-sum energy in Hartree."""
+            value = None
+            units = None
+            try:
+                with open(filepath,'r') as fobj:
+                    energy_lines = fobj.read().splitlines()
+            except (OSError,UnicodeError):
+                return None
+            for line in energy_lines:
+                lower = ' '.join(line.expandtabs().strip().split()).lower()
+                if (
+                    'final total energy from eig sum' not in lower and
+                    'final total energy from eigenvalue sum' not in lower
+                    ):
+                    continue
+                # Find the first RMG-formatted number following the energy label.
+                # Example: final total energy from eig sum = -1.73498899 Ha
+                matches = re.findall(
+                    self.number_pattern,line.split('=',1)[-1])
+                if len(matches)==0:
+                    continue
+                candidate = as_float(matches[0])
+                if candidate is None:
+                    continue
+                value = candidate
+                for unit in {'eV','Ha','Ry'}:
+                    if unit.lower() in lower.split():
+                        units = unit
+                        break
+            if value is None or units is None:
+                return None
+            try:
+                return convert(value,units,'Ha')
+            except (KeyError,TypeError,ValueError):
+                return None
+        #end def final_energy
+
+        neb = obj(
+            controller_file           = None,
+            calculation_mode          = None,
+            spin_polarized            = None,
+            num_intermediate_images   = None,
+            num_images                = None,
+            images_per_node           = None,
+            max_steps                 = None,
+            spring_constant           = None,
+            spring_constant_units     = 'Ha/B^2',
+            initial_input_file        = None,
+            final_input_file          = None,
+            image_directories         = None,
+            image_input_files         = None,
+            image_log_files           = None,
+            image_mpi_processes       = None,
+            input_structures          = None,
+            reaction_coordinate       = None,
+            reaction_coordinate_units = 'B',
+            energies                  = None,
+            relative_energies         = None,
+            energy_units              = 'Ha',
+            forward_barrier           = None,
+            reverse_barrier           = None,
+            barrier_image_index       = None,
+            parallel                  = None,
+            local_image               = None,
+            )
+
+        # Match the NEB image and MPI layout printed at RMG initialization.
+        # Example: RMG initialization ... 2 image(s) total, 1 per node. 2 MPI processes/image.
+        layout_pattern = (
+            r'RMG\s+initialization.*?(\d+)\s+image\(s\)\s+total\s*,?\s*'
+            r'(\d+)\s+per\s+node\s*\.?\s*(\d+)\s+MPI\s+process(?:es)?/image')
+        layout = None
+        for line in lines:
+            match = re.search(layout_pattern,line,re.IGNORECASE)
+            if match is not None:
+                layout = obj(
+                    num_intermediate_images = int(match.group(1)),
+                    images_per_node         = int(match.group(2)),
+                    mpi_processes_per_image = int(match.group(3)),
+                    )
+                break
+        neb.parallel = layout
+
+        constrained_images = []
+        neb_calls          = 0
+        for line in lines:
+            lower = ' '.join(line.expandtabs().strip().split()).lower()
+            if 'neb call' in lower:
+                neb_calls += 1
+            # Match the one-based intermediate-image index for constrained forces.
+            # Example: Entering constrained forces for image 2
+            match = re.search(
+                r'entering\s+constrained\s+forces\s+for\s+image\s+(\d+)',
+                line,re.IGNORECASE)
+            if match is not None:
+                constrained_images.append(int(match.group(1)))
+
+        image_index = constrained_images[-1] if len(constrained_images)>0 else None
+        neb.local_image = obj(
+            index                   = image_index,
+            neb_calls               = neb_calls,
+            constrained_force_calls = np.array(constrained_images,dtype=int),
+            energy                  = self.energy,
+            energy_units            = self.energy_units,
+            energies                = self.energies,
+            positions               = self.positions,
+            position_units          = self.position_units,
+            forces                  = self.forces,
+            force_units             = self.force_units,
+            max_forces              = self.max_forces,
+            structures              = self.structures,
+            )
+
+        controller_candidates = [
+            os.path.join(self.path,'ctrl_init.dat'),
+            os.path.join(os.path.dirname(self.path),'ctrl_init.dat'),
+            ]
+        controller_file = None
+        for filepath in controller_candidates:
+            if os.path.isfile(filepath):
+                controller_file = os.path.abspath(filepath)
+                break
+        if controller_file is not None:
+            neb.controller_file = controller_file
+            try:
+                control = read_assignments(controller_file)
+            except (OSError,UnicodeError):
+                control = {}
+            controller_path     = os.path.dirname(controller_file)
+
+            def control_value(name):
+                """Return a parsed controller value or ``None``."""
+                return control[name] if name in control else None
+            #end def control_value
+
+            nintermediate               = as_int(control_value('num_images'))
+            neb.num_intermediate_images = nintermediate
+            if nintermediate is not None:
+                neb.num_images = nintermediate+2
+            neb.calculation_mode = control_value('calculation_mode')
+            neb.images_per_node  = as_int(control_value('image_per_node'))
+            neb.max_steps        = as_int(control_value('max_neb_steps'))
+            neb.spring_constant  = as_float(control_value('neb_spring_constant'))
+            spin_polarized       = control_value('spin_polarization')
+            if spin_polarized is not None:
+                spin_polarized = spin_polarized.strip().lower()
+                if spin_polarized in {'true','yes','1'}:
+                    neb.spin_polarized = True
+                elif spin_polarized in {'false','no','0'}:
+                    neb.spin_polarized = False
+
+            initial_file = control_value('input_file_initial_image')
+            final_file   = control_value('input_file_final_image')
+            if initial_file is not None:
+                neb.initial_input_file = os.path.abspath(
+                    os.path.join(controller_path,initial_file))
+            if final_file is not None:
+                neb.final_input_file = os.path.abspath(
+                    os.path.join(controller_path,final_file))
+
+            image_directories   = []
+            image_input_files   = []
+            image_mpi_processes = []
+            image_info          = control_value('image_infos')
+            if image_info is not None:
+                for line in image_info.splitlines():
+                    tokens = line.split()
+                    if len(tokens)<2:
+                        continue
+                    directory = os.path.abspath(
+                        os.path.join(controller_path,tokens[0]))
+                    image_directories.append(directory)
+                    image_input_files.append(os.path.join(directory,tokens[1]))
+                    processes = as_int(tokens[2]) if len(tokens)>=3 else None
+                    image_mpi_processes.append(processes)
+            if len(image_directories)>0:
+                neb.image_directories   = image_directories
+                neb.image_mpi_processes = np.array(image_mpi_processes,dtype=object)
+
+            ordered_input_files = []
+            if neb.initial_input_file is not None:
+                ordered_input_files.append(neb.initial_input_file)
+            ordered_input_files.extend(image_input_files)
+            if neb.final_input_file is not None:
+                ordered_input_files.append(neb.final_input_file)
+            if len(ordered_input_files)>0:
+                neb.image_input_files = ordered_input_files
+
+            input_structures = []
+            for filepath in ordered_input_files:
+                structure = None
+                if os.path.isfile(filepath):
+                    try:
+                        structure = RmgInput(filepath).return_structure('B')
+                    except (NexusError,KeyError,TypeError,ValueError):
+                        structure = None
+                input_structures.append(structure)
+            if any(structure is not None for structure in input_structures):
+                neb.input_structures = input_structures
+            if (
+                len(input_structures)>0 and
+                all(structure is not None for structure in input_structures)
+                ):
+                coordinate           = [0.0]
+                valid_coordinate     = True
+                for previous,current in zip(
+                    input_structures[:-1],input_structures[1:]):
+                    if previous.pos.shape!=current.pos.shape:
+                        valid_coordinate = False
+                        break
+                    displacement = current.pos-previous.pos
+                    coordinate.append(
+                        coordinate[-1]+np.sqrt((displacement**2).sum()))
+                if valid_coordinate:
+                    neb.reaction_coordinate = np.array(coordinate,dtype=float)
+
+            image_logs = []
+            for filepath in ordered_input_files:
+                directory = os.path.dirname(filepath)
+                prefix    = os.path.basename(filepath)
+                logs      = sorted(glob(os.path.join(directory,prefix+'.*.log')))
+                image_logs.append(logs[-1] if len(logs)>0 else None)
+            if len(image_logs)>0:
+                neb.image_log_files = image_logs
+
+            energies = np.full(len(ordered_input_files),np.nan,dtype=float)
+            if len(energies)>0:
+                endpoint_initial_energy = as_float(
+                    control_value('totale_initial_image'))
+                endpoint_final_energy   = as_float(
+                    control_value('totale_final_image'))
+                if endpoint_initial_energy is not None:
+                    energies[0] = endpoint_initial_energy
+                if endpoint_final_energy is not None:
+                    energies[-1] = endpoint_final_energy
+                for i,filepath in enumerate(image_logs[1:-1],start=1):
+                    if filepath is not None:
+                        value = final_energy(filepath)
+                        if value is not None:
+                            energies[i] = value
+                if np.any(np.isfinite(energies)):
+                    neb.energies = energies
+                if np.all(np.isfinite(energies)):
+                    relative                   = energies-energies[0]
+                    barrier_index              = int(np.argmax(energies))
+                    neb.relative_energies      = relative
+                    neb.forward_barrier        = energies[barrier_index]-energies[0]
+                    neb.reverse_barrier        = energies[barrier_index]-energies[-1]
+                    neb.barrier_image_index    = barrier_index
+
+        self.neb = neb
+        return sum(value is not None for value in neb.values())
+    #end def read_neb
 
 
     def read_produced_files(self,lines):
