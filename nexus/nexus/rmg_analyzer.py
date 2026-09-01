@@ -71,7 +71,8 @@ class RmgOutData(DevBase):
         electronic : obj or None
             Electronic observables represented by NumPy arrays, including Fermi
             energies, band edges, gaps, charges, magnetizations, forces, volumes,
-            and per-atom energies when reported.
+            per-atom energies, k-points, Kohn--Sham eigenvalues, and occupations
+            when reported.
         scf : obj or None
             SCF energy components, iteration indices, residuals, and timing data;
             numerical histories are stored as NumPy arrays.
@@ -749,6 +750,8 @@ class RmgOutData(DevBase):
         Binds ``electronic`` to an ``obj`` containing NumPy arrays for Fermi
         energies, band edges, band gaps, total charges, magnetizations, summed
         forces, volumes, and per-atom energies, together with their unit labels.
+        The final complete Kohn--Sham table additionally supplies k-point-major
+        eigenvalue and occupation arrays and crystal and Cartesian k-points.
         """
         def line_numbers(line):
             """Return all RMG-formatted numbers in a line as a float array."""
@@ -768,6 +771,130 @@ class RmgOutData(DevBase):
                 return None
             return float(match.group(1).replace('D','E').replace('d','e'))
         #end def match_float
+
+        def read_eigenvalue_data():
+            """Return the final complete k-point eigenvalue and occupation table."""
+            npat = self.number_pattern
+            # Match an eigenvalue-table heading with its k-point index and coordinates.
+            # Example: KOHN SHAM EIGENVALUES [eV] AT K-POINT [ 1]: 0.0 0.5 0.0
+            header_pattern = re.compile(
+                r'KOHN\s+SHAM\s+EIGENVALUES\s*\[\s*eV\s*\]\s+AT\s+'
+                r'K-POINT\s*\[\s*(\d+)\s*\]\s*:\s*'
+                r'('+npat+r')\s+('+npat+r')\s+('+npat+r')',re.I)
+            # Match an eigenvalue-table row and capture its k-point index and values.
+            # Example: [kpt 1 0 0] -6.4 [2.000] -1.9 [0.000]
+            row_pattern = re.compile(
+                r'^\s*\[\s*kpt\s+(\d+)\s+[-+]?\d+\s+\d+\s*\]\s*(.*)$',re.I)
+            # Match one eigenvalue followed by its bracketed occupation.
+            # Example: -6.4238 [2.000]
+            pair_pattern = re.compile(
+                r'('+npat+r')\s*\[\s*('+npat+r')\s*\]',re.I)
+
+            datasets  = []
+            dataset   = {}
+            kpoint    = None
+            spin      = 'none'
+            for line in lines:
+                match = header_pattern.search(line)
+                if match is not None:
+                    index = int(match.group(1))
+                    if index in dataset:
+                        datasets.append(dataset)
+                        dataset = {}
+                    coordinates = np.array([
+                        float(match.group(i).replace('D','E').replace('d','e'))
+                        for i in sorted({2,3,4})
+                        ],dtype=float)
+                    dataset[index] = dict(
+                        kpoint   = coordinates,
+                        channels = {},
+                        )
+                    kpoint = index
+                    spin   = 'none'
+                    continue
+                if kpoint is None:
+                    continue
+                normalized = ' '.join(line.expandtabs().strip().split()).lower()
+                if 'spin up' in normalized:
+                    spin = 'up'
+                    continue
+                elif 'spin down' in normalized:
+                    spin = 'down'
+                    continue
+                match = row_pattern.match(line)
+                if match is None or int(match.group(1))!=kpoint:
+                    continue
+                pairs = pair_pattern.findall(match.group(2))
+                if len(pairs)==0:
+                    continue
+                channels = dataset[kpoint]['channels']
+                if spin not in channels:
+                    channels[spin] = [[],[]]
+                eigs,occs = channels[spin]
+                eigs.extend(float(e.replace('D','E').replace('d','e')) for e,o in pairs)
+                occs.extend(float(o.replace('D','E').replace('d','e')) for e,o in pairs)
+            if len(dataset)>0:
+                datasets.append(dataset)
+
+            expected_kpoints = None
+            if 'k_points' in self.setup_info:
+                expected_kpoints = len(self.setup_info.k_points.kpoints_crystal)
+            for dataset in reversed(datasets):
+                indices = sorted(dataset)
+                if indices!=list(range(len(indices))):
+                    continue
+                if expected_kpoints is not None and len(indices)!=expected_kpoints:
+                    continue
+                spin_channels = set()
+                for record in dataset.values():
+                    spin_channels.update(record['channels'])
+                if spin_channels=={'none'}:
+                    spins = ['none']
+                elif spin_channels=={'up','down'}:
+                    spins = ['up','down']
+                else:
+                    continue
+                nstates = None
+                valid   = True
+                for index in indices:
+                    channels = dataset[index]['channels']
+                    if set(channels)!=set(spins):
+                        valid = False
+                        break
+                    for spin in spins:
+                        eigs,occs = channels[spin]
+                        if len(eigs)==0 or len(eigs)!=len(occs):
+                            valid = False
+                            break
+                        if nstates is None:
+                            nstates = len(eigs)
+                        elif len(eigs)!=nstates:
+                            valid = False
+                            break
+                    if not valid:
+                        break
+                if not valid:
+                    continue
+                kpoints     = np.array(
+                    [dataset[i]['kpoint'] for i in indices],dtype=float)
+                eigenvalues = np.array([
+                    [dataset[i]['channels'][spin][0] for spin in spins]
+                    for i in indices
+                    ],dtype=float)
+                occupations = np.array([
+                    [dataset[i]['channels'][spin][1] for spin in spins]
+                    for i in indices
+                    ],dtype=float)
+                if spins==['none']:
+                    eigenvalues = eigenvalues[:,0,:]
+                    occupations = occupations[:,0,:]
+                return obj(
+                    kpoints_crystal = kpoints,
+                    eigenvalues     = eigenvalues,
+                    occupations     = occupations,
+                    )
+            return None
+        #end def read_eigenvalue_data
 
         data = obj(
             fermi_energies          = [],
@@ -851,6 +978,15 @@ class RmgOutData(DevBase):
         data.volume_per_atom       = np.array(volume_per_atom,dtype=float)
         data.energy_per_atom       = np.array(energy_per_atom,dtype=float)
         data.energy_per_atom_units = 'eV'
+
+        eigenvalue_data = read_eigenvalue_data()
+        if eigenvalue_data is not None:
+            data.kpoints_crystal = eigenvalue_data.kpoints_crystal
+            data.eigenvalues     = eigenvalue_data.eigenvalues
+            data.occupations     = eigenvalue_data.occupations
+            if 'structure' in self.setup_info:
+                data.kpoints = np.dot(
+                    data.kpoints_crystal,self.setup_info.structure.kaxes)
 
         nfound                     = sum(
             len(v) for v in data.values() if isinstance(v,np.ndarray))
@@ -1195,6 +1331,32 @@ class RmgOutData(DevBase):
             if 'structure' in self.setup_info and len(kpoints.kpoints_crystal)>0:
                 geometry.kpoints_cart = np.dot(
                     kpoints.kpoints_crystal,self.setup_info.structure.kaxes)
+        elif (
+            self.run_mode=='band' and
+            isinstance(self.input,RmgInput) and
+            'kpoints_bandstructure' in self.input
+            ):
+            band_path = self.input.kpoints_bandstructure
+            endpoints = np.asarray(band_path.kpoints,dtype=float)
+            counts    = np.asarray(band_path.counts,dtype=int)
+            if (
+                endpoints.ndim==2 and endpoints.shape[1:]==(3,) and
+                len(endpoints)==len(counts) and len(endpoints)>0 and
+                np.all(counts>=0)
+                ):
+                kpoints = [endpoints[0]]
+                for i in range(1,len(endpoints)):
+                    count = counts[i]
+                    if count==0:
+                        continue
+                    start = endpoints[i-1]
+                    stop  = endpoints[i]
+                    for n in range(1,count+1):
+                        kpoints.append(start+(stop-start)*n/count)
+                geometry.kpoints_crystal = np.array(kpoints,dtype=float)
+                if 'structure' in self.setup_info:
+                    geometry.kpoints_cart = np.dot(
+                        geometry.kpoints_crystal,self.setup_info.structure.kaxes)
         if len(geometry)>0:
             self.geometry = geometry
         return len(geometry)>0
@@ -1629,8 +1791,341 @@ class RmgOutData(DevBase):
 class RmgAnalyzer(SimulationAnalyzer):
     """Nexus analyzer wrapper for an RMG simulation and its parsed output."""
 
+    all_modes         = {
+        'scf','nscf','band','exx','relax','md_VE','md_TE','tddft','stm','neb',
+        }
+    electronic_modes  = {
+        'scf','nscf','relax','md_VE','md_TE','tddft','neb',
+        }
+    eigenvalue_modes  = electronic_modes|{'band'}
+    relaxation_modes  = {'relax','neb'}
+    pressure_units    = {
+        'Pa'   : 1.0,
+        'bar'  : 1e5,
+        'kbar' : 1e8,
+        'Mbar' : 1e11,
+        'GPa'  : 1e9,
+        'atm'  : 1.01325e5,
+        }
+
+
+    def _require_supported(self,quantity,modes):
+        """Require analyzed output and a run mode supporting the quantity."""
+        if self.results is None:
+            raise RuntimeError(
+                'RMG quantity "{}" is unavailable because output has not been analyzed'
+                .format(quantity)
+                )
+        if self.run_mode not in modes:
+            raise RuntimeError(
+                'RMG quantity "{}" is not supported for run mode "{}"'
+                .format(quantity,self.run_mode)
+                )
+    #end def _require_supported
+
+
+    def input_structure(self,units='A'):
+        """Return the input ``Structure`` in Angstrom or bohr."""
+        self._require_supported('input_structure',self.all_modes)
+        if units not in {'A','B'}:
+            raise ValueError('input_structure units must be one of: A, B')
+        structure = self.results.return_initial_structure()
+        if structure is not None:
+            structure.change_units(units)
+        return structure
+    #end def input_structure
+
+
+    def energy(self,units='Ha'):
+        """Return the final total energy in eV, Hartree, or Rydberg."""
+        self._require_supported('energy',self.electronic_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('energy units must be one of: eV, Ha, Ry')
+        value = self.results.energy
+        source_units = self.results.energy_units
+        if value is None or source_units is None:
+            return None
+        try:
+            return convert(value,source_units,units)
+        except (KeyError,TypeError,ValueError):
+            return None
+    #end def energy
+
+
+    def kpoints(self,units='B'):
+        """Return Cartesian k-points in inverse Angstrom or inverse bohr."""
+        self._require_supported('kpoints',self.all_modes)
+        if units not in {'A','B'}:
+            raise ValueError('kpoints units must be one of: A, B')
+        electronic = self.results.electronic if 'electronic' in self.results else None
+        if electronic is not None and 'kpoints' in electronic:
+            kpoints = electronic.kpoints
+        else:
+            geometry = self.results.geometry
+            if geometry is None or 'kpoints_cart' not in geometry:
+                return None
+            kpoints = geometry.kpoints_cart
+        return kpoints*convert(1.0,units,'B')
+    #end def kpoints
+
+
+    def kweights(self):
+        """Return dimensionless k-point weights, or ``None`` if unavailable."""
+        self._require_supported('kweights',self.all_modes)
+        geometry = self.results.geometry
+        if geometry is None or 'kweights' not in geometry:
+            return None
+        return geometry.kweights
+    #end def kweights
+
+
+    def eigenvalues(self,units='eV'):
+        """Return K-point-major eigenvalues in eV, Hartree, or Rydberg."""
+        self._require_supported('eigenvalues',self.eigenvalue_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('eigenvalues units must be one of: eV, Ha, Ry')
+        if self.run_mode=='band':
+            bands = self.results.bands
+            if bands is None:
+                return None
+            spin_values = []
+            for spin in sorted(bands.keys()):
+                values = np.asarray(bands[spin].energies,dtype=float).T
+                if values.ndim!=2:
+                    return None
+                spin_values.append(values)
+            if len(spin_values)==0:
+                return None
+            shape = spin_values[0].shape
+            if any(values.shape!=shape for values in spin_values):
+                return None
+            if len(spin_values)==1:
+                eigenvalues = spin_values[0]
+            else:
+                eigenvalues = np.stack(spin_values,axis=1)
+            return convert(eigenvalues,'eV',units)
+        electronic = self.results.electronic
+        if electronic is None or 'eigenvalues' not in electronic:
+            return None
+        return convert(electronic.eigenvalues,'eV',units)
+    #end def eigenvalues
+
+
+    def occupations(self):
+        """Return the dimensionless K-point-major occupation array."""
+        self._require_supported('occupations',self.electronic_modes)
+        electronic = self.results.electronic
+        if electronic is None or 'occupations' not in electronic:
+            return None
+        return electronic.occupations
+    #end def occupations
+
+
+    def Ef(self,units='eV'):
+        """Return the final Fermi energy in eV, Hartree, or Rydberg."""
+        self._require_supported('Ef',self.electronic_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('Ef units must be one of: eV, Ha, Ry')
+        electronic = self.results.electronic
+        if electronic is None or len(electronic.fermi_energies)==0:
+            return None
+        return convert(electronic.fermi_energies[-1],'eV',units)
+    #end def Ef
+
+
+    def Evbm(self,units='eV'):
+        """Return the final valence-band maximum in selected energy units."""
+        self._require_supported('Evbm',self.electronic_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('Evbm units must be one of: eV, Ha, Ry')
+        electronic = self.results.electronic
+        if electronic is None or len(electronic.valence_band_maxima)==0:
+            return None
+        return convert(electronic.valence_band_maxima[-1],'eV',units)
+    #end def Evbm
+
+
+    def Ecbm(self,units='eV'):
+        """Return the final conduction-band minimum in selected energy units."""
+        self._require_supported('Ecbm',self.electronic_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('Ecbm units must be one of: eV, Ha, Ry')
+        electronic = self.results.electronic
+        if electronic is None or len(electronic.conduction_band_minima)==0:
+            return None
+        return convert(electronic.conduction_band_minima[-1],'eV',units)
+    #end def Ecbm
+
+
+    def band_gap(self,units='eV'):
+        """Return the final band gap in eV, Hartree, or Rydberg."""
+        self._require_supported('band_gap',self.electronic_modes)
+        if units not in {'eV','Ha','Ry'}:
+            raise ValueError('band_gap units must be one of: eV, Ha, Ry')
+        electronic = self.results.electronic
+        if electronic is None or len(electronic.band_gaps)==0:
+            return None
+        return convert(electronic.band_gaps[-1],'eV',units)
+    #end def band_gap
+
+
+    def fractional_occs(self):
+        """Whether any occupation differs from empty or full by over ``1e-3``."""
+        self._require_supported('fractional_occs',self.electronic_modes)
+        occupations = self.occupations()
+        if occupations is None:
+            return None
+        tolerance       = 1e-3
+        full_occupation = 2.0 if occupations.ndim==2 else 1.0
+        empty           = np.isclose(occupations,0.0,rtol=0.0,atol=tolerance)
+        full            = np.isclose(
+            occupations,full_occupation,rtol=0.0,atol=tolerance)
+        return bool(np.any(~(empty|full)))
+    #end def fractional_occs
+
+
+    def relaxed_structure(self,units='A'):
+        """Return the final relaxed ``Structure`` in Angstrom or bohr."""
+        self._require_supported('relaxed_structure',self.relaxation_modes)
+        if units not in {'A','B'}:
+            raise ValueError('relaxed_structure units must be one of: A, B')
+        structures = self.results.structures
+        if structures is None or len(structures)==0:
+            return None
+        structure = deepcopy(structures[max(structures.keys())])
+        structure.change_units(units)
+        return structure
+    #end def relaxed_structure
+
+
+    def forces(self,units='eV/A'):
+        """Return ionic forces in ``eV/A``, ``Ry/B``, or ``Ha/B``."""
+        self._require_supported('forces',self.electronic_modes)
+        if units not in {'eV/A','Ry/B','Ha/B'}:
+            raise ValueError('forces units must be one of: eV/A, Ry/B, Ha/B')
+        forces = self.results.forces
+        if forces is None:
+            return None
+        energy_units,length_units = units.split('/')
+        factor = (
+            convert(1.0,'Ha',energy_units)/convert(1.0,'B',length_units))
+        return forces*factor
+    #end def forces
+
+
+    def stress(self,units='GPa'):
+        """Return the stress-tensor history in selected pressure units."""
+        self._require_supported('stress',self.electronic_modes)
+        if units not in self.pressure_units:
+            supported = ', '.join(sorted(self.pressure_units))
+            raise ValueError('stress units must be one of: '+supported)
+        stress = self.results.stress
+        if stress is None:
+            return None
+        return stress*1e8/self.pressure_units[units]
+    #end def stress
+
+
+    def pressure(self,units='GPa'):
+        """Return the final hydrostatic pressure in selected pressure units."""
+        self._require_supported('pressure',self.electronic_modes)
+        if units not in self.pressure_units:
+            supported = ', '.join(sorted(self.pressure_units))
+            raise ValueError('pressure units must be one of: '+supported)
+        pressure = self.results.pressure
+        if pressure is None:
+            return None
+        return pressure*1e8/self.pressure_units[units]
+    #end def pressure
+
     def __init__(self,arg0=None,*,analyze=False):
-        """Initialize from an RMG simulation or log path and optionally analyze it."""
+        """Initialize an analyzer for an RMG simulation or log output file.
+
+        Parameters
+        ----------
+        arg0 : Simulation or str or None, optional
+            RMG simulation to analyze or path to an RMG log output file. If
+            ``None``, an unconfigured analyzer is created.
+        analyze : bool, optional
+            If ``True``, parse the RMG output during initialization.
+
+        Attributes
+        ----------
+        path : str or None
+            Directory containing the RMG log output file.
+        abspath : str or None
+            Absolute path to the output directory.
+        outfile_name : str or None
+            Name of the RMG log output file.
+        info : obj
+            General analyzer metadata.
+        input : RmgInput or None
+            RMG input reconstructed from the output when it can be obtained.
+        run_mode : str or None
+            Short RMG calculation mode determined during analysis, such as
+            ``"scf"``, ``"band"``, ``"relax"``, or ``"md_VE"``.
+        results : RmgOutData or None
+            Parsed RMG output data. ``None`` until analysis is performed.
+
+        Methods
+        -------
+        input_structure(units='A') : Structure or None
+            Input atomic structure in Angstrom (``'A'``) or bohr (``'B'``).
+        energy(units='Ha') : float or numpy.floating or None
+            Final total energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
+        kpoints(units='B') : numpy.ndarray or None
+            Cartesian k-points in inverse Angstrom or inverse bohr with shape
+            ``(nkpoints, 3)``. The unit argument is ``'A'`` or ``'B'``.
+        kweights() : numpy.ndarray or None
+            Dimensionless k-point weights with shape ``(nkpoints,)``.
+        eigenvalues(units='eV') : numpy.ndarray or None
+            Kohn--Sham eigenvalues in ``'eV'``, ``'Ha'``, or ``'Ry'``. The
+            leading dimension has length ``nkpoints``; remaining dimensions
+            represent spin, when present, and bands.
+        occupations() : numpy.ndarray or None
+            Dimensionless Kohn--Sham occupations. The leading dimension has
+            length ``nkpoints``; remaining dimensions represent spin, when
+            present, and bands.
+        Ef(units='eV') : float or numpy.floating or None
+            Final Fermi energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
+        Evbm(units='eV') : float or numpy.floating or None
+            Final reported valence-band maximum in selected energy units.
+        Ecbm(units='eV') : float or numpy.floating or None
+            Final reported conduction-band minimum in selected energy units.
+        band_gap(units='eV') : float or numpy.floating or None
+            Final reported electronic band gap in selected energy units.
+        fractional_occs() : bool or None
+            Whether any occupation is farther than ``1e-3`` from both empty
+            and full occupation.
+        relaxed_structure(units='A') : Structure or None
+            Final relaxed structure in Angstrom (``'A'``) or bohr (``'B'``).
+        forces(units='eV/A') : numpy.ndarray or None
+            Ionic-force history with shape ``(nsteps, natoms, 3)``. Available
+            units are ``'eV/A'``, ``'Ry/B'``, and ``'Ha/B'``.
+        stress(units='GPa') : numpy.ndarray or None
+            Stress-tensor history with shape ``(nsteps, 3, 3)``. Available
+            units are ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``,
+            and ``'atm'``.
+        pressure(units='GPa') : float or numpy.floating or None
+            Final hydrostatic pressure in the units accepted by ``stress``.
+
+        Notes
+        -----
+        A physical query method returns ``None`` when its quantity is supported
+        by the detected run mode but was not successfully parsed. Calling a
+        query before analysis, or for a run mode that does not support the
+        quantity, raises ``RuntimeError``. Supplying unsupported units raises
+        ``ValueError``.
+
+        Raises
+        ------
+        TypeError
+            If ``arg0`` is neither a ``Simulation``, a string, nor ``None``.
+        FileNotFoundError
+            If a supplied output path does not exist.
+        IsADirectoryError
+            If a supplied output path does not identify a regular file.
+        """
         self.path         = None
         self.abspath      = None
         self.outfile_name = None
@@ -1680,8 +2175,8 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def analyze(self):
         """Parse the configured RMG output into an ``RmgOutData`` instance."""
-        filepath = os.path.join(self.path,self.outfile_name)
-        results  = RmgOutData(filepath)
+        filepath      = os.path.join(self.path,self.outfile_name)
+        results       = RmgOutData(filepath)
         self.results  = results
         self.run_mode = results.run_mode
         self.input    = results.input

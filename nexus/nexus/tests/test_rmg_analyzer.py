@@ -122,6 +122,10 @@ def test_physical_results(tmp_path):
     from ..rmg_analyzer import RmgAnalyzer
 
     body = '''
+KOHN SHAM EIGENVALUES [eV] AT K-POINT [  0]: 0.0 0.0 0.0
+[kpt 0 0 0] -2.0 [2.000] 1.0 [0.000]
+KOHN SHAM EIGENVALUES [eV] AT K-POINT [  1]: 0.5 0.0 0.0
+[kpt 1 0 0] -1.0 [1.500] 2.0 [0.500]
 FERMI ENERGY = 5.25 eV
 spinup: valence band maximum = 4.0 eV, conduction band minumm = 6.0 eV
 spinup: Band gap = 2.0 eV
@@ -152,7 +156,29 @@ potential convergence has been achieved. stopping ...
     logfile.write_text(rmg_log('Quench electrons',body))
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
+    from ..structure import Structure
+    from ..unit_converter import convert
+
     assert analyzer.results.timing is not None
+    assert isinstance(analyzer.input_structure(),Structure)
+    assert analyzer.input_structure().units=='A'
+    assert analyzer.input_structure('B').units=='B'
+    assert analyzer.energy()==-1.2345
+    assert np.isclose(analyzer.energy('Ry'),-2.469)
+    assert analyzer.kpoints().shape==(2,3)
+    assert np.allclose(
+        analyzer.kpoints('A'),analyzer.kpoints()*convert(1.0,'A','B'))
+    analyzer.results.geometry.kweights = np.array([0.25,0.75])
+    assert np.allclose(analyzer.kweights(),[0.25,0.75])
+    assert analyzer.eigenvalues().shape==(2,2)
+    assert np.allclose(
+        analyzer.eigenvalues('Ha'),convert(analyzer.eigenvalues(),'eV','Ha'))
+    assert analyzer.occupations().shape==(2,2)
+    assert analyzer.Ef()==5.25
+    assert analyzer.Evbm()==4.0
+    assert analyzer.Ecbm()==6.0
+    assert analyzer.band_gap()==2.0
+    assert analyzer.fractional_occs()
     assert analyzer.results.energy==-1.2345
     assert analyzer.results.electronic.fermi_energies[-1]==5.25
     assert analyzer.results.energy_units=='Ha'
@@ -163,7 +189,46 @@ potential convergence has been achieved. stopping ...
         analyzer.results.stress[0],[[1.0,0.1,0.2],[0.1,2.0,0.3],[0.2,0.3,3.0]])
     assert analyzer.results.pressure==-2.0
     assert analyzer.results.convergence.electronic_converged
+    force_factor = convert(1.0,'Ha','eV')/convert(1.0,'B','A')
+    assert np.allclose(analyzer.forces(),analyzer.results.forces*force_factor)
+    assert np.allclose(analyzer.forces('Ha/B'),analyzer.results.forces)
+    assert np.allclose(analyzer.forces('Ry/B'),2*analyzer.results.forces)
+    assert np.allclose(analyzer.stress(),analyzer.results.stress*0.1)
+    assert np.allclose(analyzer.stress('kbar'),analyzer.results.stress)
+    assert np.isclose(analyzer.pressure(),-0.2)
+    assert np.isclose(analyzer.pressure('kbar'),-2.0)
+    with pytest.raises(RuntimeError,match='relaxed_structure'):
+        analyzer.relaxed_structure()
+    with pytest.raises(ValueError,match='energy units'):
+        analyzer.energy('J')
+
+    relax_log = tmp_path/'relax.log'
+    relax_log.write_text(rmg_log('Structure Optimization.',body))
+    relax = RmgAnalyzer(str(relax_log),analyze=True)
+    assert isinstance(relax.relaxed_structure(),Structure)
+    assert relax.relaxed_structure().units=='A'
+    assert np.allclose(relax.relaxed_structure('B').pos[0],[1.1,1.2,1.3])
 #end def test_physical_results
+
+
+def test_missing_property_data(tmp_path):
+    from ..rmg_analyzer import RmgAnalyzer
+
+    logfile = tmp_path/'missing.log'
+    logfile.write_text(rmg_log('Quench electrons'))
+    analyzer = RmgAnalyzer(str(logfile),analyze=True)
+
+    for name in {
+        'energy','kpoints','kweights','eigenvalues','occupations','Ef','Evbm','Ecbm',
+        'band_gap','fractional_occs','forces','stress','pressure',
+        }:
+        assert getattr(analyzer,name)() is None
+    #end for
+    with pytest.raises(RuntimeError,match='relaxed_structure'):
+        analyzer.relaxed_structure()
+    with pytest.raises(RuntimeError,match='has not been analyzed'):
+        RmgAnalyzer().energy()
+#end def test_missing_property_data
 
 
 def test_mode_specific_results(tmp_path):
@@ -176,6 +241,11 @@ def test_mode_specific_results(tmp_path):
         '0.0 -1.0\n1.0 -0.5\n&&\n0.0 1.0\n1.0 1.5\n&&\n')
     band = RmgAnalyzer(str(band_log),analyze=True)
     assert band.results.bands[0].energies.shape==(2,2)
+    assert band.eigenvalues().shape==(2,2)
+    with pytest.raises(RuntimeError,match='energy'):
+        band.energy()
+    with pytest.raises(RuntimeError,match='occupations'):
+        band.occupations()
 
     # Molecular dynamics thermodynamic record
     md_log = tmp_path/'md.log'
