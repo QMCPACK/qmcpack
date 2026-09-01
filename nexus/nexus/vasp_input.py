@@ -199,9 +199,12 @@ def write_bool_array(a):
 #end def write_bool_array
 
 
-assign_bool_map = {True:True,False:False,1:True,0:False}
 def assign_bool(v):
-    return assign_bool_map[v]
+    if v in {True, False, 1, 0}:
+        return bool(v)
+    else:
+        msg = f"Expected one of `True`, `False`, `1`, or `0` but got {v}!"
+        raise ValueError(msg)
 #end def assign_bool
 
 
@@ -299,7 +302,7 @@ def assign_bool_array(a):
 #nexus objects:
 def vasp_to_nexus_elem(elem,elem_count):
     syselem=[]
-    for x,count in zip(elem,elem_count):
+    for x,count in zip(elem, elem_count, strict=True):
         syselem+=[x for i in range(0,count)]
     #end for
     return np.array(syselem)
@@ -606,16 +609,16 @@ class VKeywordFile(VFile):
         cls.keywords = frozenset(
             cls.scalar_keywords | cls.array_keywords
             )
-        cls.type = obj()
+        cls.dtype = obj()
         cls.read_value   = obj()
         cls.write_value  = obj()
         cls.assign_value = obj()
-        for type in cls.kw_scalars + cls.kw_arrays:
-            for name in getattr(cls,type):
-                cls.type[name] = type
-                cls.read_value[name]   = read_value_functions[type]
-                cls.write_value[name]  = write_value_functions[type]
-                cls.assign_value[name] = assign_value_functions[type]
+        for dtype in cls.kw_scalars + cls.kw_arrays:
+            for name in getattr(cls,dtype):
+                cls.dtype[name] = dtype
+                cls.read_value[name]   = read_value_functions[dtype]
+                cls.write_value[name]  = write_value_functions[dtype]
+                cls.assign_value[name] = assign_value_functions[dtype]
             #end for
         #end for
         for name,types in cls.mixed_types.items():
@@ -623,7 +626,7 @@ class VKeywordFile(VFile):
                 msg = 'mixed-type keyword is not classified: {}'.format(name)
                 raise ValueError(msg)
             #end if
-            classified_type = cls.type[name]
+            classified_type = cls.dtype[name]
             if classified_type not in types:
                 msg = (
                     'classified type {} is not permitted for keyword {}'
@@ -639,7 +642,7 @@ class VKeywordFile(VFile):
                     raise ValueError(msg)
                 #end if
             #end for
-            cls.type[name] = types
+            cls.dtype[name] = types
             cls.read_value[name] = partial(read_mixed,types=types)
             cls.write_value[name] = partial(write_mixed,types=types)
             cls.assign_value[name] = partial(assign_mixed,types=types)
@@ -738,7 +741,7 @@ class VKeywordFile(VFile):
                 msg = '{} is not an INCAR keyword'.format(field.upper())
                 raise ValueError(msg)
             #end if
-            return self.type[field]
+            return self.dtype[field]
         elif field not in schema:
             msg = '{} is not a field of block construct {}'.format(
                 field.upper(),block_name.upper()
@@ -927,7 +930,7 @@ class VKeywordFile(VFile):
                                         'input text: {}\n'
                                         'exception:\n'
                                         '{}'.format(
-                                            name,self.type[name],token,e
+                                            name,self.dtype[name],token,e
                                             )
                                         )
                                 #end try
@@ -979,7 +982,7 @@ class VKeywordFile(VFile):
                     'keyword type: {}\n'
                     'value: {}\n'
                     'exception:\n'
-                    '{}'.format(filepath,name,self.type[name],value,e)
+                    '{}'.format(filepath,name,self.dtype[name],value,e)
                     )
             #end try
             text += valfmt.format(name.upper(),svalue)
@@ -1007,7 +1010,7 @@ class VKeywordFile(VFile):
                     'keyword type: {}\n'
                     'value: {}\n'
                     'exception:\n'
-                    '{}'.format(name,self.type[name],value,e)
+                    '{}'.format(name,self.dtype[name],value,e)
                     )
             #end try
         #end for
