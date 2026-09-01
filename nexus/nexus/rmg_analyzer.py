@@ -279,7 +279,7 @@ class RmgOutData(DevBase):
 
         def normalize_line(line):
             """Normalize case and whitespace for tolerant text matching."""
-            return ' '.join(line.expandtabs().strip().split()).lower()
+            return ' '.join(line.split()).lower()
         #end def normalize_line
 
         def line_numbers(line):
@@ -306,8 +306,8 @@ class RmgOutData(DevBase):
         def match_float(pattern,line):
             """Return the first floating-point value captured by a regex."""
             # Apply a caller-provided expression that captures one physical value.
-            # Example: FERMI ENERGY : 5.25 eV
-            match = re.search(pattern,line,re.I)
+            # Example: Grid spacing: 0.30 a0
+            match = re.search(pattern,line,re.IGNORECASE)
             if match is None:
                 return None
             return float(match.group(1).replace('D','E').replace('d','e'))
@@ -349,7 +349,7 @@ class RmgOutData(DevBase):
                 (r'stm\s+charge\s+density|\bstm\b','stm'),
                 )
             for pattern,run_mode in mode_patterns:
-                if re.search(pattern,text,re.I):
+                if re.search(pattern,text,re.IGNORECASE):
                     return run_mode
             return rmg_modes.mode_match(text,short=True)
         #end def identify_mode
@@ -414,26 +414,30 @@ class RmgOutData(DevBase):
         if mode is not None:
             # Match the standalone Files setup-section heading.
             # Example: Files:
-            start_match = re.search(r'(?im)^\s*files\s*(?::\s*)?$',log_text)
+            setup_flags = re.IGNORECASE|re.MULTILINE
+            start_match = re.search(
+                r'^\s*files\s*(?::\s*)?$',log_text,setup_flags)
             istart      = start_match.start() if start_match is not None else -1
             if istart!=-1:
                 # Match the normal heading that terminates the setup section.
                 # Example: Initial Ionic Positions And Displacements (Angstrom)
                 end_pattern = (
-                    r'(?im)^\s*initial\s+ionic\s+positions\s+and\s+'
+                    r'^\s*initial\s+ionic\s+positions\s+and\s+'
                     r'displacements\s*\(\s*angstroms?\s*\)'
                     )
-                end_match   = re.search(end_pattern,log_text[istart:])
+                end_match   = re.search(
+                    end_pattern,log_text[istart:],setup_flags)
                 if end_match is not None:
                     iend = istart+end_match.start()
                 else:
                     # Match alternate post-setup headings when ionic positions are absent.
                     # Example: Davidson converged
                     fallback_pattern = (
-                        r'(?im)^\s*(?:diagonalization\s+using|davidson\s+'
+                        r'^\s*(?:diagonalization\s+using|davidson\s+'
                         r'(?:converged|incomplete)|-+\s*timing\s+information)'
                         )
-                    end_match        = re.search(fallback_pattern,log_text[istart:])
+                    end_match        = re.search(
+                        fallback_pattern,log_text[istart:],setup_flags)
                     iend             = istart+end_match.start() if end_match is not None else len(log_text)
                 if iend!=-1:
                     text        = log_text[istart:iend].expandtabs()
@@ -509,7 +513,7 @@ class RmgOutData(DevBase):
                             # Example: Spacing: 0.30 a0
                             unit_match = re.search(
                                 r'\bspacing\s*:\s*'+self.number_pattern+
-                                r'\s*([^\s,;]+)',s,re.I)
+                                r'\s*([^\s,;]+)',s,re.IGNORECASE)
                             if unit_match is not None:
                                 grid_units = unit_match.group(1)
                             grid.append(total)
@@ -697,12 +701,12 @@ class RmgOutData(DevBase):
         # Example: final total energy from eigenvalue sum : -1.2345 Ha
         epat = re.compile(
             r'final\s+total\s+energy\s+from\s+eig(?:envalue)?\s+sum\s*[:=]\s*'
-            r'('+self.number_pattern+r')(?:\s+([^\s,;]+))?',re.I)
+            r'('+self.number_pattern+r')(?:\s+([^\s,;]+))?',re.IGNORECASE)
         # Match the final total energy reported by the direct calculation.
         # Example: final total energy from direct = -1.2300 Ha
         dpat = re.compile(
             r'final\s+total\s+energy\s+from\s+direct\s*[:=]\s*'
-            r'('+self.number_pattern+r')(?:\s+([^\s,;]+))?',re.I)
+            r'('+self.number_pattern+r')(?:\s+([^\s,;]+))?',re.IGNORECASE)
         for line in lines:
             match = epat.search(line)
             if match is not None:
@@ -750,15 +754,10 @@ class RmgOutData(DevBase):
             return np.array(values,dtype=float)
         #end def line_numbers
 
-        def match_float(pattern,line):
-            """Return the first floating-point value captured by a regex."""
-            # Apply a caller-provided expression that captures one physical value.
-            # Example: FERMI ENERGY : 5.25 eV
-            match = re.search(pattern,line,re.I)
-            if match is None:
-                return None
-            return float(match.group(1).replace('D','E').replace('d','e'))
-        #end def match_float
+        def as_float(value):
+            """Convert an RMG-formatted numeric token to a float."""
+            return float(value.replace('D','E').replace('d','e'))
+        #end def as_float
 
         def read_eigenvalue_data():
             """Return the final complete k-point eigenvalue and occupation table."""
@@ -768,15 +767,16 @@ class RmgOutData(DevBase):
             header_pattern = re.compile(
                 r'KOHN\s+SHAM\s+EIGENVALUES\s*\[\s*eV\s*\]\s+AT\s+'
                 r'K-POINT\s*\[\s*(\d+)\s*\]\s*:\s*'
-                r'('+npat+r')\s+('+npat+r')\s+('+npat+r')',re.I)
+                r'('+npat+r')\s+('+npat+r')\s+('+npat+r')',re.IGNORECASE)
             # Match an eigenvalue-table row and capture its k-point index and values.
             # Example: [kpt 1 0 0] -6.4 [2.000] -1.9 [0.000]
             row_pattern = re.compile(
-                r'^\s*\[\s*kpt\s+(\d+)\s+[-+]?\d+\s+\d+\s*\]\s*(.*)$',re.I)
+                r'^\s*\[\s*kpt\s+(\d+)\s+[-+]?\d+\s+\d+\s*\]\s*(.*)$',
+                re.IGNORECASE)
             # Match one eigenvalue followed by its bracketed occupation.
             # Example: -6.4238 [2.000]
             pair_pattern = re.compile(
-                r'('+npat+r')\s*\[\s*('+npat+r')\s*\]',re.I)
+                r'('+npat+r')\s*\[\s*('+npat+r')\s*\]',re.IGNORECASE)
 
             datasets  = []
             dataset   = {}
@@ -802,7 +802,7 @@ class RmgOutData(DevBase):
                     continue
                 if kpoint is None:
                     continue
-                normalized = ' '.join(line.expandtabs().strip().split()).lower()
+                normalized = ' '.join(line.split()).lower()
                 if 'spin up' in normalized:
                     spin = 'up'
                     continue
@@ -900,62 +900,52 @@ class RmgOutData(DevBase):
         sum_forces      = []
         volume_per_atom = []
         energy_per_atom = []
+        npat            = self.number_pattern
+        # Match and classify scalar electronic records, forces, and atom data.
+        # Example: FERMI ENERGY : 5.25 eV
+        electronic_pattern = re.compile(
+            r'(?P<fermi>fermi\s+energy\s*[:=]\s*'
+            r'(?P<fermi_value>'+npat+r'))|'
+            r'(?P<band_edges>^(?=.*valence\s+band\s+maximum\s*[:=]\s*'
+            r'(?P<vbm>'+npat+r'))(?=.*conduction\s+band\s+'
+            r'(?:minimum|minumm)\s*[:=]\s*(?P<cbm>'+npat+r')).*$)|'
+            r'(?P<band_gap>band\s+gap\s*[:=]\s*'
+            r'(?P<band_gap_value>'+npat+r'))|'
+            r'(?P<total_charge>total\s+charge\s+in\s+supercell\s*[:=]\s*'
+            r'(?P<total_charge_value>'+npat+r'))|'
+            r'(?P<total_magnetization>@@\s*total\s+magnetization\s*[:=]\s*'
+            r'(?P<total_magnetization_value>'+npat+r'))|'
+            r'(?P<absolute_magnetization>'
+            r'@@\s*absolute\s+magnetization\s*[:=]\s*'
+            r'(?P<absolute_magnetization_value>'+npat+r'))|'
+            r'(?P<sum_force>^\s*sum\s+force\b.*$)|'
+            r'(?P<atom_data>volume\s+and\s+energy\s+per\s+atom\b.*$)',
+            re.IGNORECASE,
+            )
         for line in lines:
-            lower = ' '.join(line.expandtabs().strip().split()).lower()
-            if 'fermi energy' in lower:
-                # Match and capture the Fermi energy.
-                # Example: FERMI ENERGY : 5.25 eV
-                value = match_float(
-                    r'fermi\s+energy\s*[:=]\s*('+self.number_pattern+r')',line)
-                if value is not None:
-                    data.fermi_energies.append(value)
-            elif 'valence band maximum' in lower and 'conduction band' in lower:
-                # Match and capture the valence-band maximum.
-                # Example: spin0: valence band maximum = 4.0 eV
-                vbm = match_float(
-                    r'valence\s+band\s+maximum\s*[:=]\s*('+self.number_pattern+r')',line)
-                # Match and capture the conduction-band minimum.
-                # Example: conduction band minimum = 6.0 eV
-                cbm = match_float(
-                    r'conduction\s+band\s+(?:minimum|minumm)\s*[:=]\s*'
-                    r'('+self.number_pattern+r')',line)
-                if vbm is not None and cbm is not None:
-                    data.valence_band_maxima.append(vbm)
-                    data.conduction_band_minima.append(cbm)
-            elif 'band gap' in lower:
-                # Match and capture the electronic band gap.
-                # Example: spin0: Band gap : 2.0 eV
-                value = match_float(
-                    r'band\s+gap\s*[:=]\s*('+self.number_pattern+r')',line)
-                if value is not None:
-                    data.band_gaps.append(value)
-            elif 'total charge in supercell' in lower:
-                # Match and capture the total charge in the simulation cell.
-                # Example: Total charge in supercell = 0.0
-                value = match_float(
-                    r'total\s+charge\s+in\s+supercell\s*[:=]\s*'
-                    r'('+self.number_pattern+r')',line)
-                if value is not None:
-                    data.total_charges.append(value)
-            elif '@@ total magnetization' in lower:
-                # Match and capture the signed total magnetization.
-                # Example: @@ TOTAL MAGNETIZATION = 1.0
-                value = match_float(
-                    r'total\s+magnetization\s*[:=]\s*('+self.number_pattern+r')',line)
-                if value is not None:
-                    data.total_magnetizations.append(value)
-            elif '@@ absolute magnetization' in lower:
-                # Match and capture the absolute total magnetization.
-                # Example: @@ ABSOLUTE MAGNETIZATION = 1.5
-                value = match_float(
-                    r'absolute\s+magnetization\s*[:=]\s*('+self.number_pattern+r')',line)
-                if value is not None:
-                    data.absolute_magnetizations.append(value)
-            elif lower.lstrip().startswith('sum force'):
+            match = electronic_pattern.search(line)
+            if match is None:
+                continue
+            if match['fermi'] is not None:
+                data.fermi_energies.append(as_float(match['fermi_value']))
+            elif match['band_edges'] is not None:
+                data.valence_band_maxima.append(as_float(match['vbm']))
+                data.conduction_band_minima.append(as_float(match['cbm']))
+            elif match['band_gap'] is not None:
+                data.band_gaps.append(as_float(match['band_gap_value']))
+            elif match['total_charge'] is not None:
+                data.total_charges.append(as_float(match['total_charge_value']))
+            elif match['total_magnetization'] is not None:
+                data.total_magnetizations.append(
+                    as_float(match['total_magnetization_value']))
+            elif match['absolute_magnetization'] is not None:
+                data.absolute_magnetizations.append(
+                    as_float(match['absolute_magnetization_value']))
+            elif match['sum_force'] is not None:
                 values = line_numbers(line.split('=',1)[-1])
                 if len(values)>=3:
                     sum_forces.append(values[:3])
-            elif 'volume and energy per atom' in lower:
+            elif match['atom_data'] is not None:
                 values = line_numbers(line.split('=',1)[-1])
                 if len(values)>=2:
                     volume_per_atom.append(values[0])
@@ -979,8 +969,7 @@ class RmgOutData(DevBase):
                 data.kpoints = np.dot(
                     data.kpoints_crystal,self.setup_info.structure.kaxes)
 
-        nfound                     = sum(
-            len(v) for v in data.values() if isinstance(v,np.ndarray))
+        nfound = sum(len(v) for v in data.values() if isinstance(v,np.ndarray))
         if nfound>0:
             self.electronic = data
     #end def read_electronic
@@ -1025,7 +1014,7 @@ class RmgOutData(DevBase):
                     r'^\s*@@\s*'+re.escape(label)+r'\s*[:=]\s*'
                     r'('+self.number_pattern+r'|\*+)'
                     )
-                match   = re.search(pattern,line,re.I)
+                match   = re.search(pattern,line,re.IGNORECASE)
                 if match is not None:
                     token = match.group(1)
                     if '*' in token:
@@ -1036,24 +1025,30 @@ class RmgOutData(DevBase):
                     break
             # Match the detailed SCF-iteration summary line.
             # Example: quench: [ RMS [ dV ] : 2.0D-5 scf: 3/20 ]
-            if re.search(r'\bquench\s*:',line,re.I):
+            if re.search(r'\bquench\s*:',line,re.IGNORECASE):
                 # Match and capture the current molecular-dynamics step.
                 # Example: md: 0/2
-                md_match   = re.search(r'\bmd\s*:\s*(\d+)\s*/',line,re.I)
+                md_match   = re.search(
+                    r'\bmd\s*:\s*(\d+)\s*/',line,re.IGNORECASE)
                 # Match and capture the current SCF iteration.
                 # Example: scf: 3/20
-                scf_match  = re.search(r'\bscf\s*:\s*(\d+)\s*/',line,re.I)
+                scf_match  = re.search(
+                    r'\bscf\s*:\s*(\d+)\s*/',line,re.IGNORECASE)
                 # Match and capture the elapsed time for the current step.
                 # Example: step time: 0.20
                 step_match = re.search(
-                    r'\bstep\s+time\s*:\s*('+self.number_pattern+r')',line,re.I)
+                    r'\bstep\s+time\s*:\s*('+self.number_pattern+r')',
+                    line,re.IGNORECASE)
                 # Match and capture the elapsed SCF time.
                 # Example: scf time: 0.80
                 time_match = re.search(
-                    r'\bscf\s+time\s*:\s*('+self.number_pattern+r')',line,re.I)
+                    r'\bscf\s+time\s*:\s*('+self.number_pattern+r')',
+                    line,re.IGNORECASE)
                 # Match and capture the RMS potential change inside brackets.
                 # Example: RMS [ dV ] : 2.0D-5
-                rms_match  = re.search(r'\brms\s*\[\s*dv\s*\]\s*:\s*([^\]\s]+)',line,re.I)
+                rms_match  = re.search(
+                    r'\brms\s*\[\s*dv\s*\]\s*:\s*([^\]\s]+)',
+                    line,re.IGNORECASE)
                 md_steps.append(int(md_match.group(1)) if md_match is not None else -1)
                 scf_steps.append(int(scf_match.group(1)) if scf_match is not None else -1)
                 step_times.append(
@@ -1220,7 +1215,8 @@ class RmgOutData(DevBase):
             stripped = line.strip()
             # Match constant-energy or constant-temperature MD record markers.
             # Example: @CVE 1 -1.0 0.1 -0.9 300.0 2.5e-4
-            marker_match = re.match(r'^@(CVE|CVT)(?:\b|-)',stripped,re.I)
+            marker_match = re.match(
+                r'^@(CVE|CVT)(?:\b|-)',stripped,re.IGNORECASE)
             if marker_match is None:
                 continue
             fields = stripped.split(None,1)
@@ -1355,7 +1351,7 @@ class RmgOutData(DevBase):
 
         tensors = []
         for i,line in enumerate(lines):
-            normalized = ' '.join(line.expandtabs().strip().split()).lower()
+            normalized = ' '.join(line.split()).lower()
             # Match the heading for a total stress tensor reported in kbar.
             # Example: stress total in unit of kbar
             if not re.search(r'\bstress\s+total\b',normalized) or 'kbar' not in normalized:
@@ -1404,27 +1400,31 @@ class RmgOutData(DevBase):
         electronic_successes = 0
         electronic_failures  = 0
         ionic_converged      = None
+        # Match and classify electronic or ionic convergence messages.
+        # Example: Potential convergence has been achieved. stopping ...
+        convergence_pattern = re.compile(
+            r'(?P<electronic_failure>'
+            r'potential\s+convergence.*\bnot\s+(?:been\s+)?achieved\b|'
+            r'convergence\s+criterion.*\bnot\s+met\b)|'
+            r'(?P<electronic_success>'
+            r'potential\s+convergence.*\b(?:has\s+been\s+)?achieved\b)|'
+            r'(?P<ionic_failure>'
+            r'force\s+convergence.*\bnot\s+(?:been\s+)?achieved\b)|'
+            r'(?P<ionic_success>'
+            r'force\s+convergence.*\b(?:has\s+been\s+)?achieved\b)',
+            re.IGNORECASE,
+            )
         for line in lines:
-            lower = ' '.join(line.expandtabs().strip().split()).lower()
-            # Match an explicit electronic-convergence failure message.
-            # Example: Potential convergence has not been achieved
-            if re.search(r'potential\s+convergence.*\bnot\s+(?:been\s+)?achieved\b',lower):
+            match = convergence_pattern.search(line)
+            if match is None:
+                continue
+            if match['electronic_failure'] is not None:
                 electronic_failures += 1
-            # Match an explicit electronic-convergence success message.
-            # Example: Potential convergence has been achieved. stopping ...
-            elif re.search(r'potential\s+convergence.*\b(?:has\s+been\s+)?achieved\b',lower):
+            elif match['electronic_success'] is not None:
                 electronic_successes += 1
-            # Match the alternate electronic-convergence failure wording.
-            # Example: Convergence criterion not met
-            elif re.search(r'convergence\s+criterion.*\bnot\s+met\b',lower):
-                electronic_failures += 1
-            # Match an explicit ionic force-convergence failure message.
-            # Example: Force convergence has not been achieved
-            elif re.search(r'force\s+convergence.*\bnot\s+(?:been\s+)?achieved\b',lower):
+            elif match['ionic_failure'] is not None:
                 ionic_converged = False
-            # Match an explicit ionic force-convergence success message.
-            # Example: Force convergence has been achieved
-            elif re.search(r'force\s+convergence.*\b(?:has\s+been\s+)?achieved\b',lower):
+            elif match['ionic_success'] is not None:
                 ionic_converged = True
         electronic_converged = None
         if electronic_successes+electronic_failures>0:
@@ -1465,7 +1465,7 @@ class RmgOutData(DevBase):
         # Example: 1-TOTAL 3.00 0.50
         pattern    = re.compile(
             r'^\s*(\d+\s*-\s*.*?)\s+('+time_value+r')\s+('+time_value+r')'
-            r'(?:\s+.*)?$',re.I)
+            r'(?:\s+.*)?$',re.IGNORECASE)
         for line in lines:
             match = pattern.match(line)
             if match is None:
@@ -1479,7 +1479,7 @@ class RmgOutData(DevBase):
             # Example: 1-TOTAL
             key             = re.sub(r'[^a-z0-9]+','_',name.lower()).strip('_')
             sections[key]   = obj(total=total,per_step=per_step)
-            normalized_name = ' '.join(name.expandtabs().strip().split()).lower()
+            normalized_name = ' '.join(name.split()).lower()
             if normalized_name=='1-total':
                 timing = obj(total=total,per_step=per_step,units='s')
         if timing is not None:
@@ -1615,7 +1615,7 @@ class RmgOutData(DevBase):
             ground_state = None
             with open(filepath,'r') as fobj:
                 for line in fobj:
-                    lower  = ' '.join(line.expandtabs().strip().split()).lower()
+                    lower  = ' '.join(line.split()).lower()
                     values = line_numbers(line)
                     if 'electric field' in lower and len(values)>=3:
                         values = line_numbers(line.split(':',1)[-1])
@@ -1734,7 +1734,7 @@ class RmgOutData(DevBase):
             except (OSError,UnicodeError):
                 return None
             for line in energy_lines:
-                lower = ' '.join(line.expandtabs().strip().split()).lower()
+                lower = ' '.join(line.split()).lower()
                 if (
                     'final total energy from eig sum' not in lower and
                     'final total energy from eigenvalue sum' not in lower
@@ -1811,7 +1811,7 @@ class RmgOutData(DevBase):
         constrained_images = []
         neb_calls          = 0
         for line in lines:
-            lower = ' '.join(line.expandtabs().strip().split()).lower()
+            lower = ' '.join(line.split()).lower()
             if 'neb call' in lower:
                 neb_calls += 1
             # Match the one-based intermediate-image index for constrained forces.

@@ -386,6 +386,8 @@ spinup: Band gap = 2.0 eV
 final total energy from eig sum = -1.23450000 Ha
 final total energy from direct = -1.23440000 Ha
 Total charge in supercell = 1.0
+@@ TOTAL MAGNETIZATION = 1.0
+@@ ABSOLUTE MAGNETIZATION = 1.5
 SUM FORCE = 0.1 0.2 0.3
  volume and energy per atom = 64.0 -33.0 eV
 
@@ -427,6 +429,12 @@ potential convergence has been achieved. stopping ...
     assert analyzer.fractional_occs()
     assert analyzer.results.energy==-1.2345
     assert analyzer.results.electronic.fermi_energies[-1]==5.25
+    assert analyzer.results.electronic.total_charges.tolist()==[1.0]
+    assert analyzer.results.electronic.total_magnetizations.tolist()==[1.0]
+    assert analyzer.results.electronic.absolute_magnetizations.tolist()==[1.5]
+    assert analyzer.results.electronic.sum_forces.tolist()==[[0.1,0.2,0.3]]
+    assert analyzer.results.electronic.volume_per_atom.tolist()==[64.0]
+    assert analyzer.results.electronic.energy_per_atom.tolist()==[-33.0]
     assert analyzer.results.energy_units=='Ha'
     assert analyzer.results.scf.scf_steps.tolist()==[3]
     assert np.allclose(analyzer.results.forces[0,0],[0.01,0.02,0.03])
@@ -543,7 +551,7 @@ def test_whitespace_and_trailing_fields(tmp_path):
         '1 - TOTAL\t3.00\t0.50\tnew timing annotation')
     body = '''
 FERMI   ENERGY : 5.25 eV trailing diagnostic 77
-spin0: valence band maximum = 4.0 eV, conduction band minimum = 6.0 eV extra 88
+spin0: conduction band minimum = 6.0 eV, valence band maximum = 4.0 eV extra 88
 spin0: Band gap : 2.0 eV extra 99
 @@   TOTAL ENERGY : -1.250000 Ha extra 123
 @@ estimated error = 1.0D-8 Ha extra 456
@@ -583,6 +591,28 @@ potential   convergence has been achieved trailing status
     assert np.allclose(
         analyzer.results.stress[0],[[1.0,0.1,0.2],[0.1,2.0,0.3],[0.2,0.3,3.0]])
 #end def test_whitespace_and_trailing_fields
+
+
+def test_convergence_patterns(tmp_path):
+    from ..rmg_analyzer import RmgAnalyzer
+
+    body = '''
+Potential convergence has not been achieved
+Convergence criterion not met
+Potential convergence has been achieved
+Force convergence has not been achieved
+Force convergence has been achieved
+'''
+    logfile = tmp_path/'convergence.log'
+    logfile.write_text(rmg_log('Quench electrons',body))
+
+    convergence = RmgAnalyzer(str(logfile),analyze=True).results.convergence
+
+    assert not convergence.electronic_converged
+    assert convergence.electronic_successes==1
+    assert convergence.electronic_failures==2
+    assert convergence.ionic_converged
+#end def test_convergence_patterns
 
 
 def test_malformed_sections_do_not_stop_analysis(tmp_path):
