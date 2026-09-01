@@ -374,14 +374,9 @@ class RmgOutData(DevBase):
             """Convert an RMG setup label into a normalized object key."""
             # Match parenthetical annotations so they can be removed from names.
             # Example: Grid spacing (a0)
-            s      = re.sub(r'\([^)]*\)','',s)
-            tokens = s.strip().lower().split()
-            name   = ''
-            for t in tokens:
-                if not t.startswith('('):
-                    name += t+'_'
-            name = name[:-1].replace('/','_').replace('-','_')
-            return name
+            s = re.sub(r'\([^)]*\)','',s)
+            name = '_'.join(s.strip().lower().split())
+            return name.replace('/','_').replace('-','_')
         #end def process_name
         def process_value(v,*,list=False):
             """Convert setup text to a scalar, array, list, or string and units."""
@@ -389,14 +384,13 @@ class RmgOutData(DevBase):
             units = None
             try:
                 v = int(v)
-            except (ValueError,TypeError,OverflowError):
+            except ValueError:
                 try:
                     v = float(v)
-                except (ValueError,TypeError,OverflowError):
+                except ValueError:
                     if ' ' in v or ',' in v:
-                        vt = v.replace(',',' ')
-                        if len(vt)>0:
-                            tokens = vt.split()
+                        tokens = v.replace(',',' ').split()
+                        if len(tokens)>0:
                             if tokens[-1] in unit_set:
                                 units  = tokens[-1]
                                 tokens = tokens[:-1]
@@ -405,7 +399,7 @@ class RmgOutData(DevBase):
                                     v = np.array(tokens,dtype=float)
                                 else:
                                     v = [process_value(t,list=True)[0] for t in tokens]
-                            except (ValueError,TypeError,OverflowError):
+                            except ValueError:
                                 units = None
                     elif v in on_off:
                         v = on_off[v]
@@ -460,21 +454,24 @@ class RmgOutData(DevBase):
                     if len(b)>0:
                         blocks.append(b)
                     other_blocks = dotdict()
+                    table_blocks = {
+                        'k_points',
+                        'initial_ionic_positions_and_displacements',
+                        }
                     for b in blocks:
                         if '\n' not in b:
                             continue
                         header,body  = b.split('\n',1)
                         bname         = process_name(header)
                         lines         = body.splitlines()
-                        value_lines   = [line for line in lines if ':' in line]
-                        table_blocks  = {
-                            'k_points',
-                            'initial_ionic_positions_and_displacements',
-                            }
-                        simple_values = bname not in table_blocks and len(value_lines)>0
-                        if simple_values:
+                        if (
+                            bname not in table_blocks and
+                            any(':' in line for line in lines)
+                            ):
                             bvalues = obj()
-                            for line in value_lines:
+                            for line in lines:
+                                if ':' not in line:
+                                    continue
                                 name,value    = line.split(':',1)
                                 name          = process_name(name)
                                 value,units   = process_value(value)
@@ -482,8 +479,8 @@ class RmgOutData(DevBase):
                                 if units is not None:
                                     bvalues.units = units
                             setup_info[bname] = bvalues
-                        else:
-                            other_blocks[bname] = header,body,lines
+                        elif bname in table_blocks:
+                            other_blocks[bname] = header,lines
                     # additional processing for specific blocks
                     if 'grid_points' in setup_info:
                         b          = setup_info.grid_points
@@ -562,8 +559,7 @@ class RmgOutData(DevBase):
                         if len(axes)==3:
                             b.axes = np.array(axes,dtype=float)
                     if 'k_points' in other_blocks:
-                        header,body,lines = other_blocks.k_points
-                        del other_blocks.k_points
+                        _,lines = other_blocks.k_points
                         first_row = None
                         for i,line in enumerate(lines):
                             normalized = normalize_line(line)
@@ -589,8 +585,7 @@ class RmgOutData(DevBase):
                                     )
                     k = 'initial_ionic_positions_and_displacements'
                     if k in other_blocks:
-                        header,body,lines = other_blocks[k]
-                        del other_blocks[k]
+                        header,lines = other_blocks[k]
                         h      = header.lower()
                         punits = None
                         if 'bohr' in h:
@@ -791,7 +786,7 @@ class RmgOutData(DevBase):
                         dataset = {}
                     coordinates = np.array([
                         float(match.group(i).replace('D','E').replace('d','e'))
-                        for i in sorted({2,3,4})
+                        for i in range(2,5)
                         ],dtype=float)
                     dataset[index] = dict(
                         kpoint   = coordinates,
@@ -998,23 +993,25 @@ class RmgOutData(DevBase):
             'estimated_error' : 'estimated error',
             }
 
-        values = {}
-        for name in component_names.keys():
-            values[name] = []
+        # Match each @@ energy component and capture its value or overflow stars.
+        # Example: @@ TOTAL ENERGY : -1.250000
+        component_patterns = {
+            name : re.compile(
+                r'^\s*@@\s*'+re.escape(label)+r'\s*[:=]\s*'
+                r'('+self.number_pattern+r'|\*+)',
+                re.IGNORECASE,
+                )
+            for name,label in component_names.items()
+            }
+        values     = {name: [] for name in component_names}
         md_steps   = []
         scf_steps  = []
         step_times = []
         scf_times  = []
         rms_dv     = []
         for line in lines:
-            for name,label in component_names.items():
-                # Match an @@ energy component and capture its value or overflow stars.
-                # Example: @@ TOTAL ENERGY : -1.250000
-                pattern = (
-                    r'^\s*@@\s*'+re.escape(label)+r'\s*[:=]\s*'
-                    r'('+self.number_pattern+r'|\*+)'
-                    )
-                match   = re.search(pattern,line,re.IGNORECASE)
+            for name,pattern in component_patterns.items():
+                match = pattern.search(line)
                 if match is not None:
                     token = match.group(1)
                     if '*' in token:
@@ -1354,7 +1351,7 @@ class RmgOutData(DevBase):
             normalized = ' '.join(line.split()).lower()
             # Match the heading for a total stress tensor reported in kbar.
             # Example: stress total in unit of kbar
-            if not re.search(r'\bstress\s+total\b',normalized) or 'kbar' not in normalized:
+            if 'stress total' not in normalized or 'kbar' not in normalized:
                 continue
             rows = []
             j    = i+1
@@ -1479,8 +1476,7 @@ class RmgOutData(DevBase):
             # Example: 1-TOTAL
             key             = re.sub(r'[^a-z0-9]+','_',name.lower()).strip('_')
             sections[key]   = obj(total=total,per_step=per_step)
-            normalized_name = ' '.join(name.split()).lower()
-            if normalized_name=='1-total':
+            if name.lower()=='1-total':
                 timing = obj(total=total,per_step=per_step,units='s')
         if timing is not None:
             timing.sections = sections
@@ -1615,13 +1611,12 @@ class RmgOutData(DevBase):
             ground_state = None
             with open(filepath,'r') as fobj:
                 for line in fobj:
-                    lower  = ' '.join(line.split()).lower()
-                    values = line_numbers(line)
-                    if 'electric field' in lower and len(values)>=3:
+                    lower = ' '.join(line.split()).lower()
+                    if 'electric field' in lower:
                         values = line_numbers(line.split(':',1)[-1])
                         if len(values)>=3:
                             field = values[:3]
-                    elif 'dipole at' in lower and len(values)>=3:
+                    elif 'dipole at' in lower:
                         values = line_numbers(line.split(':',1)[-1])
                         if len(values)>=3:
                             ground_state = values[:3]
@@ -1991,7 +1986,7 @@ class RmgOutData(DevBase):
             exx_files = sorted(glob(os.path.join(self.path,'*exx*integral*.h5')))
             if len(exx_files)>0:
                 produced_files.exx_integrals = exx_files
-        if mode=='stm':
+        elif mode=='stm':
             stm_files      = sorted(glob(os.path.join(self.path,'STM','*.stm')))
             stm_cube_files = sorted(glob(os.path.join(self.path,'STM','*.cube')))
             if len(stm_files)>0:
@@ -2138,11 +2133,10 @@ class RmgAnalyzer(SimulationAnalyzer):
         self._require_supported('initial_structure',self.all_modes)
         if units not in {'A','B'}:
             raise ValueError('initial_structure units must be one of: A, B')
-        structure = None
-        if 'structure' in self.results.setup_info:
-            structure = deepcopy(self.results.setup_info.structure)
-        if structure is not None:
-            structure.change_units(units)
+        if 'structure' not in self.results.setup_info:
+            return None
+        structure = deepcopy(self.results.setup_info.structure)
+        structure.change_units(units)
         return structure
     #end def initial_structure
 
@@ -2362,11 +2356,9 @@ class RmgAnalyzer(SimulationAnalyzer):
 
         if arg0 is None:
             return
-        elif isinstance(arg0,Simulation):
-            sim = arg0
-
-            path     = sim.locdir
-            filename = sim.outfile
+        if isinstance(arg0,Simulation):
+            path     = arg0.locdir
+            filename = arg0.outfile
         else:
             filepath = arg0
             if not isinstance(filepath,str):
