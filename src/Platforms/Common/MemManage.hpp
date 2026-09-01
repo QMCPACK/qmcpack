@@ -57,14 +57,14 @@ public:
   {
     void* pt;
     MemManage<PL>::mallocDevice(&pt, n * sizeof(T));
-    MemManage<PL>::device_mem_allocated_ += n * sizeof(T);
+    MemManage<PL>::device_mem_usage_.creditUsage(n * sizeof(T));
     return static_cast<T*>(pt);
   }
 
   void deallocate(T* p, std::size_t n)
   {
     MemManage<PL>::freeDevice(p);
-    MemManage<PL>::device_mem_allocated_ -= n * sizeof(T);
+    MemManage<PL>::device_mem_usage_.debitUsage(n * sizeof(T));
   }
 
   /** Provide a construct for std::allocator_traits::contruct to call.

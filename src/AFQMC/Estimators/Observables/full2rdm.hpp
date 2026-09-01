@@ -69,8 +69,8 @@ class full2rdm : public AFQMCInfo
   using mpi3C4Tensor   = boost::multi::array<ComplexType, 4, shared_allocator<ComplexType>>;
 
   using stack_alloc_type = DeviceBufferManager::template allocator_t<ComplexType>;
-  using StaticVector     = boost::multi::static_array<ComplexType, 1, stack_alloc_type>;
-  using StaticMatrix     = boost::multi::static_array<ComplexType, 2, stack_alloc_type>;
+  using DynamicVector    = boost::multi::dynamic_array<ComplexType, 1, stack_alloc_type>;
+  using DynamicMatrix    = boost::multi::dynamic_array<ComplexType, 2, stack_alloc_type>;
 
 public:
   full2rdm(afqmc::TaskGroup_& tg_, AFQMCInfo& info, xmlNodePtr cur, WALKER_TYPES wlk, int nave_ = 1, int bsize = 1)
@@ -131,13 +131,12 @@ public:
         dim[0] = R.size();
         dim[1] = 0;
         // conjugate rotation matrix
-        std::transform(R.origin(), R.origin() + R.num_elements(), R.origin(),
-                       [](const auto& c) { return std::conj(c); });
+        std::transform(R.base(), R.base() + R.num_elements(), R.base(), [](const auto& c) { return std::conj(c); });
         TG.Node().broadcast_n(dim, 2, 0);
         XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
-        copy_n(R.origin(), R.num_elements(), make_device_ptr(XRot.origin()));
+        copy_n(R.base(), R.num_elements(), make_device_ptr(XRot.base()));
         if (TG.Node().root())
-          TG.Cores().broadcast_n(to_address(XRot.origin()), XRot.num_elements(), 0);
+          TG.Cores().broadcast_n(to_address(XRot.base()), XRot.num_elements(), 0);
 
         dump.pop();
         dump.close();
@@ -147,7 +146,7 @@ public:
         TG.Node().broadcast_n(dim, 2, 0);
         XRot = sharedCMatrix({dim[0], NMO}, make_node_allocator<ComplexType>(TG));
         if (TG.Node().root())
-          TG.Cores().broadcast_n(to_address(XRot.origin()), XRot.num_elements(), 0);
+          TG.Cores().broadcast_n(to_address(XRot.base()), XRot.num_elements(), 0);
       }
       TG.Node().barrier();
 
@@ -173,7 +172,7 @@ public:
     writer = (TG.getGlobalRank() == 0);
 
     DMAverage = mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
   template<class MatG, class MatG_host, class HostCVec1, class HostCVec2, class HostCVec3>
@@ -196,7 +195,7 @@ public:
     assert(Xw.size() == nw);
     assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
-    assert(G.extensions() == G_host.extensions());
+    assert(G.extents() == G_host.extents());
 
     using std::get;
     // check structure dimensions
@@ -210,13 +209,13 @@ public:
       {
         DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
-      fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(denom.base(), denom.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(DMWork.base(), DMWork.num_elements(), ComplexType(0.0, 0.0));
     }
     else
     {
-      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size || get<0>(DMAverage.sizes()) != nave ||
-          get<1>(DMAverage.sizes()) != dm_size)
+      if (get<0>(denom.sizes()) != nw || get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size ||
+          get<0>(DMAverage.sizes()) != nave || get<1>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -254,7 +253,7 @@ public:
     if (TG.TG_local().root())
     {
       ma::scal(ComplexType(1.0 / block_size), DMAverage);
-      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.origin()), DMAverage.num_elements(), std::plus<>(), 0);
+      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.base()), DMAverage.num_elements(), std::plus<>(), 0);
       if (writer)
       {
         dump.push(std::string("FullTwoRDM"));
@@ -263,7 +262,7 @@ public:
           dump.push(std::string("Average_") + std::to_string(i));
           std::string padded_iblock =
               std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-          stdCVector_ref DMAverage_(to_address(DMAverage[i].origin()), {dm_size});
+          stdCVector_ref DMAverage_(to_address(DMAverage[i].base()), {dm_size});
           dump.write(DMAverage_, "two_rdm_" + padded_iblock);
           dump.write(Wsum[i], "denominator_" + padded_iblock);
           dump.pop();
@@ -272,7 +271,7 @@ public:
       }
     }
     TG.TG_local().barrier();
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
 private:
@@ -319,14 +318,14 @@ private:
     size_t M4(M2 * M2);
     size_t N = size_t(dN) * M2;
     DeviceBufferManager buffer_manager;
-    StaticMatrix R({dN, NMO * NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-    CMatrix_ref Q(R.origin(), {NMO * NMO, NMO});
-    CVector_ref R1D(R.origin(), R.num_elements());
-    CVector_ref Q1D(Q.origin(), Q.num_elements());
+    DynamicMatrix R({dN, NMO * NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    CMatrix_ref Q(R.base(), {NMO * NMO, NMO});
+    CVector_ref R1D(R.base(), R.num_elements());
+    CVector_ref Q1D(Q.base(), Q.num_elements());
 
     // put this in shared memory!!!
-    StaticMatrix Gt({NMO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-    CMatrix_ref GtC(Gt.origin(), {NMO * NMO, 1});
+    DynamicMatrix Gt({NMO, NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    CMatrix_ref GtC(Gt.base(), {NMO * NMO, 1});
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     if (Grot.size() < R.num_elements())
       Grot = stdCVector(iextensions<1u>(R.num_elements()));
@@ -343,15 +342,15 @@ private:
         if (TG.TG_local().root())
           denom[iw] += Xw[iw];
 
-        CMatrix_ref Gup(make_device_ptr(G[iw][0].origin()), {NMO * NMO, 1});
-        CMatrix_ref Gdn(make_device_ptr(G[iw][1].origin()), {NMO * NMO, 1});
+        CMatrix_ref Gup(make_device_ptr(G[iw][0].base()), {NMO * NMO, 1});
+        CMatrix_ref Gdn(make_device_ptr(G[iw][1].base()), {NMO * NMO, 1});
         // use ger !!!!
 
         //  (a,a,a,a)
         ma::product(Gup.sliced(i0, iN), ma::T(Gup), R);
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
         using std::copy_n;
-        copy_n(R.origin(), R.num_elements(), Grot.origin());
+        copy_n(R.base(), R.num_elements(), Grot.base());
         ma::axpy(Xw[iw], Grot, DMWork[iw].sliced(size_t(i0) * M2, size_t(iN) * M2));
 #else
         ma::axpy(Xw[iw], R1D, DMWork[iw].sliced(size_t(i0) * M2, size_t(iN) * M2));
@@ -365,7 +364,7 @@ private:
           ma::product(ComplexType(-1.0), GtC, G[iw][0].sliced(i, i + 1), ComplexType(0.0), Q);
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
           using std::copy_n;
-          copy_n(Q.origin(), Q.num_elements(), Grot.origin());
+          copy_n(Q.base(), Q.num_elements(), Grot.base());
           ma::axpy(Xw[iw], Grot.sliced(0, Q.num_elements()),
                    DMWork[iw].sliced(size_t(i * NMO) * M2, size_t((i + 1) * NMO) * M2));
 #else
@@ -377,7 +376,7 @@ private:
         ma::product(Gup.sliced(i0, iN), ma::T(Gdn), R);
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
         using std::copy_n;
-        copy_n(R.origin(), R.num_elements(), Grot.origin());
+        copy_n(R.base(), R.num_elements(), Grot.base());
         ma::axpy(Xw[iw], Grot, DMWork[iw].sliced(M4 + size_t(i0) * M2, M4 + size_t(iN) * M2));
 #else
         ma::axpy(Xw[iw], R1D, DMWork[iw].sliced(M4 + size_t(i0) * M2, M4 + size_t(iN) * M2));
@@ -387,7 +386,7 @@ private:
         ma::product(Gdn.sliced(i0, iN), ma::T(Gdn), R);
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
         using std::copy_n;
-        copy_n(R.origin(), R.num_elements(), Grot.origin());
+        copy_n(R.base(), R.num_elements(), Grot.base());
         ma::axpy(Xw[iw], Grot, DMWork[iw].sliced(2 * M4 + size_t(i0) * M2, 2 * M4 + size_t(iN) * M2));
 #else
         ma::axpy(Xw[iw], R1D, DMWork[iw].sliced(2 * M4 + size_t(i0) * M2, 2 * M4 + size_t(iN) * M2));
@@ -401,7 +400,7 @@ private:
           ma::product(ComplexType(-1.0), GtC, G[iw][1].sliced(i, i + 1), ComplexType(0.0), Q);
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
           using std::copy_n;
-          copy_n(Q.origin(), Q.num_elements(), Grot.origin());
+          copy_n(Q.base(), Q.num_elements(), Grot.base());
           ma::axpy(Xw[iw], Grot.sliced(0, Q.num_elements()),
                    DMWork[iw].sliced(2 * M4 + size_t(i * NMO) * M2, 2 * M4 + size_t((i + 1) * NMO) * M2));
 #else
@@ -415,8 +414,8 @@ private:
       /*
       int N = dN*NMO*NMO;
       set_buffer(N);
-      CMatrix_ref R( Buff.origin(), {dN,NMO*NMO});
-      CVector_ref R1D( Buff.origin(), {dN*NMO*NMO});
+      CMatrix_ref R( Buff.base(), {dN,NMO*NMO});
+      CVector_ref R1D( Buff.base(), {dN*NMO*NMO});
 #if defined(ENABLE_CUDA)
       if(Grot.size() < R.num_elements()) 
         Grot = stdCVector(iextensions<1u>(R.num_elements()));
@@ -427,13 +426,13 @@ private:
 
         if(TG.TG_local().root()) denom[iw] += Xw[iw];
 
-        CMatrix_ref Gw( to_address(G[iw].origin()), {G[0].num_elements(),1});
+        CMatrix_ref Gw( to_address(G[iw].base()), {G[0].num_elements(),1});
         // use ger later
         ma::product( Gw.sliced(i0,iN), ma::T(Gw), R );
 
 #if defined(ENABLE_CUDA)
         using std::copy_n;
-        copy_n(R.origin(),R.num_elements(),Grot.origin());
+        copy_n(R.base(),R.num_elements(),Grot.base());
         ma::axpy( Xw[iw], Grot, DMWork[iw].sliced(i0*NMO*NMO,iN*NMO*NMO) );
 #else
         ma::axpy( Xw[iw], R.sliced(i0,iN), DMWork[iw].sliced(i0,iN) );
@@ -459,8 +458,8 @@ private:
     int sz = nX * (NMO + (iN-i0)); 
     int npts = (iN-i0)*nX;
     set_buffer(sz);
-    CMatrix_ref T1(Buff.origin(),{(iN-i0),NMO});
-    CMatrix_ref T2(T1.origin()+T1.num_elements(),{(iN-i0),nX});
+    CMatrix_ref T1(Buff.base(),{(iN-i0),NMO});
+    CMatrix_ref T2(T1.base()+T1.num_elements(),{(iN-i0),nX});
     if(Grot.size() != npts) 
       Grot = stdCVector(iextensions<1u>(npts));
 
@@ -471,12 +470,12 @@ private:
       if(TG.TG_local().root()) denom[iw] += Xw[iw];
       ma::product(XRot.sliced(i0,iN),G[iw][0],T1);
       ma::product(T1,ma::H(XRot),T2);
-      copy_n(T2.origin(),T2.num_elements(),Grot.origin());      
+      copy_n(T2.base(),T2.num_elements(),Grot.base());      
       ma::axpy( Xw[iw], Grot, DMWork[iw].sliced(i0*nX,i0*nX+npts) );
       if(walker_type == COLLINEAR) {
         ma::product(XRot.sliced(i0,iN),G[iw][1],T1);
         ma::product(T1,ma::H(XRot),T2);
-        copy_n(T2.origin(),T2.num_elements(),Grot.origin());
+        copy_n(T2.base(),T2.num_elements(),Grot.base());
         ma::axpy( Xw[iw], Grot, DMWork[iw].sliced((nX+i0)*nX,(nX+i0)*nX+npts) );
       }
     }

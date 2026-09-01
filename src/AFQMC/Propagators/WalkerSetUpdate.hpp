@@ -50,9 +50,9 @@ void free_projection_walker_update(Wlk&& w,
   w.getProperty(PSEUDO_ELOC_, work[2]);
   w.getProperty(OVLP, work[3]);
   using std::copy_n;
-  copy_n(overlap.origin(), nwalk, work[4].origin());
-  copy_n(MFfactor.origin(), nwalk, work[5].origin());
-  copy_n(hybrid_weight.origin(), nwalk, work[6].origin());
+  copy_n(overlap.base(), nwalk, work[4].base());
+  copy_n(MFfactor.base(), nwalk, work[5].base());
+  copy_n(hybrid_weight.base(), nwalk, work[6].base());
 
   for (int i = 0; i < nwalk; i++)
   {
@@ -99,9 +99,9 @@ void hybrid_walker_update(Wlk&& w,
   w.getProperty(PSEUDO_ELOC_, work[1]);
   w.getProperty(OVLP, work[2]);
   using std::copy_n;
-  copy_n(overlap.origin(), nwalk, work[4].origin());
-  copy_n(MFfactor.origin(), nwalk, work[5].origin());
-  copy_n(hybrid_weight.origin(), nwalk, work[6].origin());
+  copy_n(overlap.base(), nwalk, work[4].base());
+  copy_n(MFfactor.base(), nwalk, work[5].base());
+  copy_n(hybrid_weight.base(), nwalk, work[6].base());
 
   for (int i = 0; i < nwalk; i++)
   {
@@ -164,9 +164,9 @@ void hybrid_walker_update(Wlk&& w,
   {
     auto&& WFac((*w.getWeightFactors())[w.getHistoryPos()]);
     using std::copy_n;
-    copy_n(work[3].origin(), nwalk, WFac.origin());
+    copy_n(work[3].base(), nwalk, WFac.base());
     auto&& WHis((*w.getWeightHistory())[w.getHistoryPos()]);
-    copy_n(work[0].origin(), nwalk, WHis.origin());
+    copy_n(work[0].base(), nwalk, WHis.base());
   }
 }
 
@@ -198,8 +198,8 @@ void local_energy_walker_update(Wlk&& w,
   w.getProperty(EXX_, work[4]);
   w.getProperty(EJ_, work[5]);
   using std::copy_n;
-  copy_n(overlap.origin(), nwalk, work[7].origin());
-  copy_n(MFfactor.origin(), nwalk, work[8].origin());
+  copy_n(overlap.base(), nwalk, work[7].base());
+  copy_n(MFfactor.base(), nwalk, work[8].base());
   ma::copy(energies({0, nwalk}, 0), work[9]);
   ma::copy(energies({0, nwalk}, 1), work[10]);
   ma::copy(energies({0, nwalk}, 2), work[11]);
@@ -250,9 +250,9 @@ void local_energy_walker_update(Wlk&& w,
   {
     auto&& WFac((*w.getWeightFactors())[w.getHistoryPos()]);
     using std::copy_n;
-    copy_n(work[6].origin(), nwalk, WFac.origin());
+    copy_n(work[6].base(), nwalk, WFac.base());
     auto&& WHis((*w.getWeightHistory())[w.getHistoryPos()]);
-    copy_n(work[0].origin(), nwalk, WHis.origin());
+    copy_n(work[0].base(), nwalk, WHis.base());
   }
 }
 

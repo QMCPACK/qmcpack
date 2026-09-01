@@ -62,11 +62,11 @@ public:
 
     using std::get;
     if (get<0>(eloc.sizes()) != nwalk || get<1>(eloc.sizes()) != 3)
-      eloc.reextent({static_cast<boost::multi::size_t>(nwalk), 3});
+      eloc.reextent({static_cast<boost::multi::ssize_t>(nwalk), 3});
     if (get<0>(ovlp.sizes()) != nwalk)
       ovlp.reextent(iextensions<1u>(nwalk));
     if (get<0>(wprop.sizes()) != 4 || get<1>(wprop.sizes()) != nwalk)
-      wprop.reextent({4, static_cast<boost::multi::size_t>(nwalk)});
+      wprop.reextent({4, static_cast<boost::multi::ssize_t>(nwalk)});
 
     ComplexType dum, et;
     wfn0.Energy(wset, eloc, ovlp);

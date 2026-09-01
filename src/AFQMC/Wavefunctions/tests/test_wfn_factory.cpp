@@ -150,7 +150,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
       if (type == COLLINEAR)
-        wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+        wset.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
       else
         wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -288,7 +288,7 @@ void wfn_fac(boost::mpi3::communicator& world)
       REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
       if (type == COLLINEAR)
-        wset2.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+        wset2.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
       else
         wset2.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -483,7 +483,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
     if (type == COLLINEAR)
-      wset.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+      wset.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
     else
       wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -559,12 +559,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     {
       boost::multi::array<ComplexType, 2> T({nCV, nwalk});
       if (TGwfn.TG_local().root())
-        std::copy_n(X.origin(), X.num_elements(), T.origin());
+        std::copy_n(X.base(), X.num_elements(), T.base());
       else
-        std::fill_n(T.origin(), T.num_elements(), ComplexType(0.0, 0.0));
-      TGwfn.TG().all_reduce_in_place_n(to_address(T.origin()), T.num_elements(), std::plus<>());
+        std::fill_n(T.base(), T.num_elements(), ComplexType(0.0, 0.0));
+      TGwfn.TG().all_reduce_in_place_n(to_address(T.base()), T.num_elements(), std::plus<>());
       if (TGwfn.TG_local().root())
-        std::copy_n(T.origin(), T.num_elements(), X.origin());
+        std::copy_n(T.base(), T.num_elements(), X.base());
       TGwfn.TG_local().barrier();
     }
 
@@ -642,7 +642,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     REQUIRE(get<2>(initial_guess.sizes()) == NAEA);
 
     if (type == COLLINEAR)
-      wset2.resize(nwalk, initial_guess[0], initial_guess[1](initial_guess.extension(1), {0, NAEB}));
+      wset2.resize(nwalk, initial_guess[0], initial_guess[1](get<1>(initial_guess.extents()), {0, NAEB}));
     else
       wset2.resize(nwalk, initial_guess[0], initial_guess[0]);
 
@@ -674,7 +674,7 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     wfn2.MixedDensityMatrix_for_vbias(wset2, G);
 
     nCV = wfn2.local_number_of_cholesky_vectors();
-    boost::multi::array_ref<ComplexType, 2> X2(to_address(X.origin()), {nCV, nwalk});
+    boost::multi::array_ref<ComplexType, 2> X2(to_address(X.base()), {nCV, nwalk});
     wfn2.vbias(G, X2, sqrtdt);
     Xsum = 0;
     if (std::abs(file_data.Xsum) > 1e-8)
@@ -704,12 +704,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     {
       boost::multi::array<ComplexType, 2> T({nCV, nwalk});
       if (TGwfn.TG_local().root())
-        std::copy_n(X2.origin(), X2.num_elements(), T.origin());
+        std::copy_n(X2.base(), X2.num_elements(), T.base());
       else
-        std::fill_n(T.origin(), T.num_elements(), ComplexType(0.0, 0.0));
-      TGwfn.TG().all_reduce_in_place_n(to_address(T.origin()), T.num_elements(), std::plus<>());
+        std::fill_n(T.base(), T.num_elements(), ComplexType(0.0, 0.0));
+      TGwfn.TG().all_reduce_in_place_n(to_address(T.base()), T.num_elements(), std::plus<>());
       if (TGwfn.TG_local().root())
-        std::copy_n(T.origin(), T.num_elements(), X.origin());
+        std::copy_n(T.base(), T.num_elements(), X.base());
       TGwfn.TG_local().barrier();
     }
 
@@ -868,7 +868,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
         //initial_guess[1][i][j] += distribution(generator);
     }
     wset.resize(nwalk,initial_guess[0],
-                         initial_guess[1](initial_guess.extension(1),{0,NAEB}));
+                         initial_guess[1](get<1>(initial_guess.extents()),{0,NAEB}));
     qmcplusplus::Timer Time;
     // no guarantee that overlap is 1.0
     double t1;
@@ -1022,7 +1022,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
       shmCMatrix G_({Gdim1_,Gdim2_},alloc_);
       nomsd.MixedDensityMatrix_for_vbias(wset,G_);
 
-      boost::multi::array_ref<ComplexType,2> X2(to_address(X.origin())+nCV*nwalk,{nCV,nwalk});
+      boost::multi::array_ref<ComplexType,2> X2(to_address(X.base())+nCV*nwalk,{nCV,nwalk});
       nomsd.vbias(G_,X2,sqrtdt);
       Xsum=0;
       ComplexType Xsum2(0.0);

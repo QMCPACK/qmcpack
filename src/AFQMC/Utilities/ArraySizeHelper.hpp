@@ -23,7 +23,7 @@ template<class T> auto generic_sizes(T const& A)
 	return std::array<std::size_t, 2>{A.size(0), A.size(1)}; }
 
 template<typename T, boost::multi::dimensionality_type DIM, class Alloc>
-auto generic_sizes(boost::multi::static_array<T, DIM, Alloc> const& A)
+auto generic_sizes(boost::multi::dynamic_array<T, DIM, Alloc> const& A)
 ->decltype(A.sizes()) {
 	return A.sizes(); }
 

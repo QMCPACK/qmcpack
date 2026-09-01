@@ -1004,9 +1004,9 @@ options are as follows:
       -r, --real-ham        Write integrals as real numbers.
       -p, --phdf            Use parallel hdf5.
       --low LOW_THRESH      Lower threshold for non-integer occupanciesto include
-                            in multi-determinant exansion.
+                            in multi-determinant expansion.
       --high HIGH_THRESH    Upper threshold for non-integer occupanciesto include
-                            in multi-determinant exansion.
+                            in multi-determinant expansion.
       --dense               Write dense Hamiltonian.
       -v, --verbose         Verbose output.
 
