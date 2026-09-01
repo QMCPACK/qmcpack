@@ -19,21 +19,12 @@
 #====================================================================#
 
 
+import functools
 import os
 import sys
 import traceback
-from typing import NoReturn, TextIO, ClassVar
-from copy import deepcopy
-import pickle
-from pickle import UnpicklingError
-from random import randint
-from pathlib import Path
 import warnings
-from typing import TypeAlias
-import functools
-
-from .utilities import path_string
-from .developer_tools import sorted_py2 as sorted_generic
+from typing import NoReturn, TextIO, ClassVar, TypeAlias
 
 VersionStr: TypeAlias = str
 
@@ -123,25 +114,6 @@ exit_call = sys.exit
 def nocopy(value):
     return value
 #end def nocopy
-
-
-
-nexus_modules = [mod.stem for mod in Path(__file__).parent.iterdir() if mod.suffix == ".py"]
-
-class NexusUnpickler(pickle.Unpickler):
-    """This class is designed for backwards compatibility with pickles generated
-    before Nexus was packaged (PR #5700, December 20, 2025). 
-    It shouldn't touch anything but old Nexus pickles.
-    """
-    def find_class(self, module, name):
-        if module in nexus_modules and "nexus." not in module:
-            module = "nexus." + module
-        if module == "nexus.generic":
-            name = {
-                "obj"     : "obj_deprecated",
-                "DevBase" : "DevBaseDeprecated",
-                }.get(name,name)
-        return super().find_class(module, name)
 
 
 def log(

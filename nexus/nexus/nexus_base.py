@@ -29,6 +29,9 @@ import os
 import gc as garbage_collector
 from os import PathLike
 from copy import deepcopy
+import pickle
+from pickle import UnpicklingError
+from pathlib import Path
 from .utilities import path_string
 from .nexus_version import nexus_version
 from .memory import resident
@@ -123,6 +126,24 @@ restore_nexus_core_defaults()
 
 
 nexus_core_no_process = {'status_only', 'generate_only', 'sleep', 'timeout'}
+
+nexus_modules = [mod.stem for mod in Path(__file__).parent.iterdir() if mod.suffix == ".py"]
+
+class NexusUnpickler(pickle.Unpickler):
+    """This class is designed for backwards compatibility with pickles generated
+    before Nexus was packaged (PR #5700, December 20, 2025). 
+    It shouldn't touch anything but old Nexus pickles.
+    """
+    def find_class(self, module, name):
+        if module in nexus_modules and "nexus." not in module:
+            module = "nexus." + module
+        if module == "nexus.generic":
+            if name == "obj":
+                module = "nexus.developer_tools"
+            elif name == "DevBase":
+                module = "nexus.developer"
+
+        return super().find_class(module, name)
 
 
 class NexusCore(DevBase):
@@ -252,6 +273,30 @@ _____________________________________________________
         os.chdir(NexusCore.working_directory)
     #end def leave
 
+    def load(self, fpath: PathLike | None = None):
+        if fpath is None:
+            fpath = f'./{type(self).__name__}.p'
+
+        with open(fpath, 'rb') as fobj:
+            try:
+                tmp = pickle.load(fobj)
+            except (ImportError, ModuleNotFoundError):
+                fobj.seek(0)
+                try:
+                    # Old pickles from before Nexus was packaged (PR #5700, December 20 2025)
+                    # won't have the correct module path. The custom unpickler will handle this by 
+                    # prepending "nexus." to the module path
+                    tmp = NexusUnpickler(fobj).load()
+                except UnpicklingError:
+                    # NumPy pickles can use latin1 encoding
+                    # They will likely still fail from an underflow since they are not pickle-compliant
+                    tmp = NexusUnpickler(fobj).load(encoding='latin1')
+
+        d = self.__dict__
+        d.clear()
+        for k, v in tmp.__dict__.items():
+            d[k] = v
+    #end def load
 #end class NexusCore
 
 
