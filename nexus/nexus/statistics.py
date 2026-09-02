@@ -3,7 +3,24 @@ import numpy as np
 
 
 def theil_sen(x,y):
-    """Return the Theil--Sen slope and intercept for paired observations."""
+    """Return the Theil--Sen slope and intercept for paired observations.
+
+    Parameters
+    ----------
+    x : array_like
+        Independent-variable observations.
+
+    y : array_like
+        Dependent-variable observations paired with ``x``.
+
+    Returns
+    -------
+    slope : scalar
+        Median of all pairwise slopes.
+
+    intercept : scalar
+        Median residual intercept for ``slope``.
+    """
     x = np.asarray(x)
     y = np.asarray(y)
     assert len(x)==x.size
@@ -42,6 +59,22 @@ def theil_sen_stoch(x,y):
     Pairwise slopes are sampled uniformly with replacement.  A fixed local
     random seed makes the estimate reproducible without altering NumPy's
     global random state.
+
+    Parameters
+    ----------
+    x : array_like
+        Independent-variable observations.
+
+    y : array_like
+        Dependent-variable observations paired with ``x``.
+
+    Returns
+    -------
+    slope : scalar
+        Median of the exact or sampled pairwise slopes.
+
+    intercept : scalar
+        Median residual intercept for ``slope``.
     """
     x = np.asarray(x)
     y = np.asarray(y)
@@ -79,6 +112,22 @@ def theil_sen_stoch_reblock(x,y):
     sampled slope angle stayed within one degree of the exact slope angle.  A
     fixed local random seed makes the estimate reproducible without altering
     NumPy's global random state.
+
+    Parameters
+    ----------
+    x : array_like
+        Independent-variable observations.
+
+    y : array_like
+        Dependent-variable observations paired with ``x``.
+
+    Returns
+    -------
+    slope : scalar
+        Median of the exact or sampled pairwise slopes.
+
+    intercept : scalar
+        Median residual intercept for ``slope``.
     """
     x = np.asarray(x)
     y = np.asarray(y)
@@ -425,7 +474,11 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False):
 
 
 def prewhitened_spectral_autocorr_time(
-    x,max_order=10,stability_threshold=2.,reliability=False):
+    x,
+    max_order           = 10,
+    stability_threshold = 2.,
+    reliability         = False,
+    ):
     """Estimate autocorrelation time with a prewhitened QS spectrum.
 
     A low-order autoregressive model is used only as a prewhitening filter;
@@ -486,7 +539,7 @@ def prewhitened_spectral_autocorr_time(
         isinstance(max_order,(bool,np.bool_))
         or not isinstance(max_order,(int,np.integer))
         or max_order<0
-    ):
+        ):
         raise ValueError('maximum order must be a nonnegative integer')
     try:
         stability_threshold = float(stability_threshold)
@@ -510,7 +563,18 @@ def prewhitened_spectral_autocorr_time(
     normal_mad = 0.6744897501960817
 
     def robust_scale(values):
-        """MAD scale with an RMS fallback for discrete/small samples."""
+        """Return a MAD scale with RMS fallbacks.
+
+        Parameters
+        ----------
+        values : numpy.ndarray
+            Values whose scale is estimated.
+
+        Returns
+        -------
+        scale : float
+            Positive scale estimate.
+        """
         residual = values-np.median(values)
         scale = np.median(np.abs(residual))/normal_mad
         if not np.isfinite(scale) or scale<=tiny:
@@ -518,9 +582,24 @@ def prewhitened_spectral_autocorr_time(
         if not np.isfinite(scale) or scale<=tiny:
             scale = np.sqrt(np.mean(values**2))
         return max(float(scale),tiny)
+    #end def robust_scale
 
     def stable_coefficients(coefficients):
-        """Move fitted AR roots just inside the stationary region."""
+        """Move fitted AR roots just inside the stationary region.
+
+        Parameters
+        ----------
+        coefficients : numpy.ndarray
+            Fitted autoregressive coefficients.
+
+        Returns
+        -------
+        coefficients : numpy.ndarray
+            Coefficients with unstable roots clipped to the stationary region.
+
+        clipped : bool
+            Whether any root was clipped.
+        """
         if len(coefficients)==0:
             return coefficients,False
         roots = np.roots(np.r_[1.,-coefficients])
@@ -531,6 +610,7 @@ def prewhitened_spectral_autocorr_time(
             roots[clipped] *= root_limit/root_sizes[clipped]
         polynomial = np.real_if_close(np.poly(roots),tol=1000).real
         return -polynomial[1:],bool(np.any(clipped))
+    #end def stable_coefficients
 
     # Estimate all candidate orders from one winsorized autocovariance
     # sequence.  Levinson recursion makes this O(n*max_order+max_order**2),
@@ -559,6 +639,7 @@ def prewhitened_spectral_autocorr_time(
         else:
             score = np.inf
         return score
+    #end def aicc_score
 
     coefficients = np.empty(0,dtype=float)
     prediction_variance = max(
@@ -638,8 +719,8 @@ def prewhitened_spectral_autocorr_time(
             or abs(filter_gain)<1.e-6
             or coefficients_clipped
             or selected_condition>1.e10
+            )
         )
-    )
     if gain_unresolved:
         # The autoregressive recoloring gain is not reliably resolved; use an
         # unprewhitened spectral estimate.
@@ -713,6 +794,7 @@ def prewhitened_spectral_autocorr_time(
         return float(
             autocovariance[0]
             +2.*np.dot(weights,autocovariance[1:]))
+    #end def quadratic_spectral_lrv
 
     # Search geometrically beyond the plug-in bandwidth.  A low-amplitude
     # slow mode can be nearly irrelevant to one-step AR prediction while still
@@ -777,7 +859,7 @@ def prewhitened_spectral_autocorr_time(
     elif (
         len(positive_lrvs)>1
         and positive_lrvs.max()/positive_lrvs.min()>stability_threshold
-    ):
+        ):
         # The spectral estimate is sensitive to the bandwidth.
         not_reliable = True
 
@@ -798,10 +880,10 @@ def prewhitened_spectral_autocorr_time(
 def autocorr_time(x,reliability=False):
     """Conservatively combine three autocorrelation-time estimates.
 
-    The ACF, Geyer initial-monotone-sequence, and reblocking estimators 
+    The ACF, Geyer initial-monotone-sequence, and reblocking estimators
     probe the correlation structure in different ways.  Since an
     underestimated autocorrelation time leads directly to an underestimated
-    uncertainty, this function returns the largest of their estimates. 
+    uncertainty, this function returns the largest of their estimates.
 
     Parameters
     ----------
