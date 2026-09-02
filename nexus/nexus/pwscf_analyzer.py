@@ -98,7 +98,7 @@ def parse_float(text):
     if '_' in text:
         return None
     try:
-        value = float(text.replace('D','E').replace('d','e'))
+        value = float(text.lower().replace('d','e'))
     except ValueError:
         return None
     if not np.isfinite(value):
@@ -266,7 +266,7 @@ class PwscfOutData(DevBase):
                 if match is not None:
                     values = re.findall(number_pattern,match.group('values'))
                     fermi_energies.extend(
-                        float(value.replace('D','E').replace('d','e'))
+                        float(value.lower().replace('d','e'))
                         for value in values
                         )
         if len(fermi_energies)>0:
@@ -316,7 +316,7 @@ class PwscfOutData(DevBase):
             if match is None:
                 return np.array([],dtype=float)
             return np.array(
-                re.findall(number_pattern,match.group('values').replace('D','E').replace('d','e')),
+                re.findall(number_pattern,match.group('values').lower().replace('d','e')),
                 dtype=float,
                 )
         #end def leading_numbers
@@ -553,7 +553,7 @@ class PwscfOutData(DevBase):
                     match = re.search(atomic_force_pattern,lines[j])
                     if match is not None:
                         values = [
-                            float(match.group(name).replace('D','E').replace('d','e'))
+                            float(match.group(name).lower().replace('d','e'))
                             for name in ('fx','fy','fz')
                             ]
                         aforces.append(values)
@@ -601,12 +601,12 @@ class PwscfOutData(DevBase):
                     valid = False
                     break
                 coordinates = [
-                    float(match.group(name).replace('D','E').replace('d','e'))
+                    float(match.group(name).lower().replace('d','e'))
                     for name in ('kx','ky','kz')
                     ]
                 cart.append(coordinates)
                 weights.append(
-                    float(match.group('weight').replace('D','E').replace('d','e'))
+                    float(match.group('weight').lower().replace('d','e'))
                     )
             if not valid:
                 continue
@@ -623,7 +623,7 @@ class PwscfOutData(DevBase):
                     valid = False
                     break
                 coordinates = [
-                    float(match.group(name).replace('D','E').replace('d','e'))
+                    float(match.group(name).lower().replace('d','e'))
                     for name in ('kx','ky','kz')
                     ]
                 unit.append(coordinates)
