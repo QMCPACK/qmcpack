@@ -33,8 +33,8 @@ def _path_to_str(path: str | bytes | Path) -> str:
         path = str(path)
     else:
         raise TypeError(
-            'path must be of type "str", "bytes" or "Path". Type received: {}'
-            .format(path.__class__.__name__)
+            f'path must be of type "str", "bytes" or "Path". Type received: {path.__class__.__name__}'
+            
             )
     return path
 #end def _path_to_str

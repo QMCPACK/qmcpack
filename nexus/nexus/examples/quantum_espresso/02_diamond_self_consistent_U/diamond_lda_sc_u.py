@@ -41,7 +41,7 @@ for step in range(num_steps):
 
     scf = generate_pwscf(
         identifier   = 'scf',
-        path         = 'diamond/scf_step_{}'.format(step),
+        path         = f'diamond/scf_step_{step}',
         job          = job(cores=16,app='pw.x'),
         input_type   = 'generic',
         calculation  = 'scf',
@@ -65,7 +65,7 @@ for step in range(num_steps):
         nq3          = 2,
         lmin         = 0,
         job          = job(cores=16,app='hp.x'),
-        path         = 'diamond/scf_step_{}'.format(step),
+        path         = f'diamond/scf_step_{step}',
         dependencies = (sims[-1], 'other')
         )
     sims.append(hp)

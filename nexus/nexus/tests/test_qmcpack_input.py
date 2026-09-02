@@ -1291,7 +1291,7 @@ def test_generate():
             check_paths = False,
             )
         nrule_text = qi_valid_nrule.write_text()
-        assert(nrule_text.count('nrule="{}"'.format(valid_nrule))==2)
+        assert(nrule_text.count(f'nrule="{valid_nrule}"')==2)
     #end for
 
     nrule_maps = [
@@ -1489,7 +1489,7 @@ def test_read():
 def test_qmc_estimator_input_scoping(tmp_path,qmc_method):
     from ..qmcpack_input import QmcpackInput
 
-    qmc_input = '''\
+    qmc_input = f'''\
 <simulation>
   <project id="case" series="5"/>
   <estimators>
@@ -1514,7 +1514,7 @@ def test_qmc_estimator_input_scoping(tmp_path,qmc_method):
     </estimators>
   </qmc>
 </simulation>
-'''.format(qmc_method=qmc_method)
+'''
     filepath = tmp_path / 'qmc_estimators.xml'
     filepath.write_text(qmc_input)
 

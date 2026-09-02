@@ -589,7 +589,6 @@ def autocorr_time(x,reliability=False):
 #end def autocorr_time
 
 
-
 def series_stats(x,t_auto=None):
     """Return the mean, autocorrelation-adjusted error, and correlation time.
 

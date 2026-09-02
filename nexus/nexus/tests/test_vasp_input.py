@@ -292,7 +292,7 @@ def test_mixed_keyword_types():
     for keyword,value in invalid:
         with pytest.raises(
             NexusError,
-            match='assign failed for keyword {0}'.format(keyword),
+            match=f'assign failed for keyword {keyword}',
             ):
             Incar().assign(**{keyword:value})
         #end with

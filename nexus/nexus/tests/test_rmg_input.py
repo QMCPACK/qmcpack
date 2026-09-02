@@ -61,9 +61,9 @@ def make_serial_reference(ri):
             v = "'"+v+"'"
         #end if
         if not isinstance(v,np.ndarray) or len(v)!=v.size:
-            ref +="        '{}' : {},\n".format(k,v)
+            ref +=f"        '{k}' : {v},\n"
         else:
-            a = 'np.array({})'.format(v)
+            a = f'np.array({v})'
             a = a.replace('     ','    ,')
             a = a.replace('    ','   ,')
             a = a.replace('   ','  ,')
@@ -73,7 +73,7 @@ def make_serial_reference(ri):
             a = a.replace(',,,,','   ,')
             a = a.replace(',,,','  ,')
             a = a.replace(',,',' ,')
-            ref +="        '{}' : {},\n".format(k,a)
+            ref +=f"        '{k}' : {a},\n"
         #end if
     #end for
     ref += '        }\n'
@@ -1258,7 +1258,11 @@ def test_generate():
         )
     check_vs_serial_reference(ri,infile)
 
-    if find_spec("spglib") is not None and find_spec("seekpath") is not None:
+    if (
+        find_spec("spglib") is not None
+        and find_spec("seekpath") is not None
+        and find_spec("scipy") is not None
+        ):
         nio8 = generate_physical_system(
             units     = 'B',
             axes      = 7.8811*np.identity(3),
