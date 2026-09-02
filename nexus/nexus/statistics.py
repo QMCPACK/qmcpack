@@ -93,8 +93,8 @@ def theil_sen_stoch(x,y):
 
     random_seed = 314159
     rng = np.random.Generator(np.random.PCG64(random_seed))
-    i = rng.integers(0,n,size=nsampled)
-    j = rng.integers(0,n-1,size=nsampled)
+    i   = rng.integers(0,n,size=nsampled)
+    j   = rng.integers(0,n-1,size=nsampled)
     j += j>=i
     slopes = (y[i]-y[j])/(x[i]-x[j])
     m = np.median(slopes,overwrite_input=True)
@@ -146,8 +146,8 @@ def theil_sen_stoch_reblock(x,y):
 
     random_seed = 314159
     rng = np.random.Generator(np.random.PCG64(random_seed))
-    i = rng.integers(0,n,size=nsampled)
-    j = rng.integers(0,n-1,size=nsampled)
+    i   = rng.integers(0,n,size=nsampled)
+    j   = rng.integers(0,n-1,size=nsampled)
     j += j>=i
     slopes = (y[i]-y[j])/(x[i]-x[j])
     m = np.median(slopes,overwrite_input=True)
@@ -205,30 +205,30 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
     t_auto = 1.
     if len(x)==1:
         return t_auto
-    nblocks = len(x)
+    nblocks      = len(x)
     nreblock_max = int(np.floor(nblocks/min_blocks))
     # length 1 "reblocking"
     data_errs1 = x.std()/np.sqrt(nblocks)
     if data_errs1==0:
         return t_auto
 
-    block_lens = np.arange(1,max(1,nreblock_max)+1)
-    data_errs = np.empty(len(block_lens),dtype=np.asarray(data_errs1).dtype)
+    block_lens   = np.arange(1,max(1,nreblock_max)+1)
+    data_errs    = np.empty(len(block_lens),dtype=np.asarray(data_errs1).dtype)
     data_errs[0] = data_errs1
 
     if nreblock_max>=2:
         # A prefix sum gives every contiguous block sum with two indexed
         # reads.  Center first to limit cancellation in the differences.
         work_dtype = np.result_type(x.dtype,np.float64)
-        centered = x.astype(work_dtype,copy=False)
-        centered = centered-centered.mean()
+        centered   = x.astype(work_dtype,copy=False)
+        centered   = centered-centered.mean()
         cumulative = np.empty(nblocks+1,dtype=work_dtype)
         cumulative[0] = 0.
         np.cumsum(centered,out=cumulative[1:])
 
         # Lay out the blocks for all reblocking lengths in one flat array so
         # their means and variances can be evaluated by grouped reductions.
-        block_counts = nblocks//block_lens[1:]
+        block_counts  = nblocks//block_lens[1:]
         group_offsets = np.empty(len(block_counts),dtype=int)
         group_offsets[0] = 0
         np.cumsum(block_counts[:-1],out=group_offsets[1:])
@@ -241,8 +241,8 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
             cumulative[block_starts+repeated_lens]-cumulative[block_starts]
             )/repeated_lens
 
-        group_means = np.add.reduceat(block_means,group_offsets)/block_counts
-        deviations = block_means-np.repeat(group_means,block_counts)
+        group_means     = np.add.reduceat(block_means,group_offsets)/block_counts
+        deviations      = block_means-np.repeat(group_means,block_counts)
         group_variances = np.add.reduceat(
             np.abs(deviations)**2,group_offsets)/block_counts
         data_errs[1:] = np.sqrt(group_variances/block_counts)
@@ -331,22 +331,22 @@ def acf_autocorr_time(x,reliability=False):
     if variance==0.:
         return (1.,not_reliable) if reliability else 1.
 
-    n = len(x)
-    nfft = 1 << (2*n-1).bit_length()
+    n         = len(x)
+    nfft      = 1 << (2*n-1).bit_length()
     transform = np.fft.rfft(x,nfft)
-    acf = np.fft.irfft(transform*np.conjugate(transform),nfft)[:n]
+    acf       = np.fft.irfft(transform*np.conjugate(transform),nfft)[:n]
     acf /= acf[0]
 
     # Locate the noisy tail without treating a physical sign change as the
     # end of the correlation structure.  Bartlett's large-sample expression
     # supplies a lag-dependent noise scale; requiring several quiet lags in a
     # row avoids stopping at an isolated zero crossing.
-    noise_scale = 1.5
+    noise_scale  = 1.5
     quiet_needed = 5
-    max_lag = min(n-1,max(quiet_needed,n//2))
-    rho2_sum = 0.
-    quiet_count = 0
-    quiet_start = None
+    max_lag      = min(n-1,max(quiet_needed,n//2))
+    rho2_sum     = 0.
+    quiet_count  = 0
+    quiet_start  = None
     for lag in range(1,max_lag+1):
         noise = np.sqrt((1.+2.*rho2_sum)/n)
         if np.abs(acf[lag])<=noise_scale*noise:
@@ -362,7 +362,7 @@ def acf_autocorr_time(x,reliability=False):
         # The ACF did not reach a noise-dominated region; the
         # autocorrelation-time estimate may be unreliable.
         not_reliable = True
-        quiet_start = max_lag
+        quiet_start  = max_lag
 
     # If even the first nonzero lags are noise, the IID estimate is exact and
     # avoids adding pure-noise terms.  Otherwise, a flat-top lag window retains
@@ -371,11 +371,11 @@ def acf_autocorr_time(x,reliability=False):
         t_auto = 1.
     else:
         bandwidth = min(max_lag,max(1,2*quiet_start))
-        lags = np.arange(1,bandwidth+1)
-        fraction = lags/bandwidth
-        window = np.where(fraction<=.5,1.,2.*(1.-fraction))
-        t_auto = 1.+2.*np.sum(window*acf[1:bandwidth+1])
-        t_auto = max(float(t_auto),np.finfo(float).eps)
+        lags      = np.arange(1,bandwidth+1)
+        fraction  = lags/bandwidth
+        window    = np.where(fraction<=.5,1.,2.*(1.-fraction))
+        t_auto    = 1.+2.*np.sum(window*acf[1:bandwidth+1])
+        t_auto    = max(float(t_auto),np.finfo(float).eps)
     return (t_auto,not_reliable) if reliability else t_auto
 #end def acf_autocorr_time
 
@@ -454,10 +454,10 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False,acf_fallback=True):
     # Use a common denominator at all lags.  Unlike unbiased lag-by-lag
     # normalization, this produces a positive-semidefinite autocovariance
     # sequence and is more stable in the noisy tail.
-    n = len(x)
-    nfft = 1 << (2*n-1).bit_length()
+    n         = len(x)
+    nfft      = 1 << (2*n-1).bit_length()
     transform = np.fft.rfft(x,nfft)
-    acf = np.fft.irfft(transform*np.conjugate(transform),nfft)[:n]
+    acf       = np.fft.irfft(transform*np.conjugate(transform),nfft)[:n]
     acf /= acf[0]
 
     # Geyer pairs are Gamma_k = rho_(2k) + rho_(2k+1), beginning with
@@ -489,7 +489,7 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False,acf_fallback=True):
                 weights[-2:] = [weight]
 
         gamma_mono = np.repeat(values,weights)
-        tau = max(0.,float(-1.+2.*gamma_mono.sum()))
+        tau        = max(0.,float(-1.+2.*gamma_mono.sum()))
 
     if acf_fallback and tau<1.:
         return acf_autocorr_time(x,reliability=reliability)
@@ -537,7 +537,7 @@ def autocorr_time(x,reliability=False):
     t_auto_acf,nr_acf     = acf_autocorr_time(x,reliability=True)
     t_auto_geyer,nr_geyer = geyer_ims_autocorr_time(x,reliability=True)
 
-    t_auto = max(t_auto_acf,t_auto_geyer)
+    t_auto       =  max(t_auto_acf,t_auto_geyer)
     not_reliable = nr_acf or nr_geyer
 
     return (t_auto,not_reliable) if reliability else t_auto
