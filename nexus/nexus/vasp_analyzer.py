@@ -225,7 +225,7 @@ class VXML(DevBase):
                         if t in VXML.data_types:
                             dtype = VXML.data_types[t]
                         else:
-                            msg = 'field type {0} is unrecognized: {1}'.format(t,line)
+                            msg = f'field type {t} is unrecognized: {line}'
                             raise FileFormatError(msg)
                         #end if
                     else:
@@ -250,7 +250,7 @@ class VXML(DevBase):
                 else:
                     msg = (
                         'array parsing failed\n'
-                        ' unrecognized xml encountered: {0}'.format(line)
+                        f' unrecognized xml encountered: {line}'
                         )
                     raise FileFormatError(msg)
                 #end if
@@ -359,7 +359,7 @@ def readval(val):
         #end try
     #end if
     if fail:
-        msg = 'failed to read value: "{0}"'.format(val)
+        msg = f'failed to read value: "{val}"'
         raise FileFormatError(msg)
     #end if
     return v
@@ -369,7 +369,7 @@ def readval(val):
 
 def read_vxml(filepath):
     if not os.path.exists(filepath):
-        msg = 'file {0} does not exist'.format(filepath)
+        msg = f'file {filepath} does not exist'
         raise FileNotFoundError(msg)
     #end if
     #print 'read'
@@ -409,7 +409,7 @@ def read_vxml(filepath):
                 else:
                     attr = tokens[1].strip()
                 #end if
-                if ls.endswith('</{0}>'.format(tag)):
+                if ls.endswith(f'</{tag}>'):
                     new = VXML(tag,attr)
                     new._lines.append(ls.replace('<','|').replace('>','|').split('|')[2])
                     cur._add(new)
@@ -725,7 +725,7 @@ class OutcarData(DevBase):
     def __init__(self,filepath=None,lines=None):
         if filepath is not None:
             if not os.path.exists(filepath):
-                msg = 'file {0} does not exist'.format(filepath)
+                msg = f'file {filepath} does not exist'
                 raise FileNotFoundError(msg)
             #end if
             with open(filepath,'r') as f:
@@ -857,7 +857,7 @@ class VaspAnalyzer(SimulationAnalyzer):
 
     def analyze_outcar(self,outcar):
         if not os.path.exists(outcar):
-            msg = 'outcar file {0} does not exist'.format(outcar)
+            msg = f'outcar file {outcar} does not exist'
             raise FileNotFoundError(msg)
         #end if
         with open(outcar,'r') as oc:

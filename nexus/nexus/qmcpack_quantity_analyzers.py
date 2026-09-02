@@ -1116,7 +1116,7 @@ class TracesFileHDF(QAobject):
             for qname in quantities:
                 qt = tr.scalars[qname]
                 if len(qt)!=len(wt):
-                    msg = 'quantity {0} trace is not commensurate with weight and steps traces'.format(qname)
+                    msg = f'quantity {qname} trace is not commensurate with weight and steps traces'
                     raise ValueError(msg)
                 #end if
                 qs[:] = 0
@@ -1366,7 +1366,7 @@ class TracesAnalyzer(QAanalyzer):
             for qname in dat_names:
                 qt = tr.scalars[qname]
                 if len(qt)!=len(wt):
-                    msg = 'quantity {0} trace is not commensurate with weight and steps traces'.format(qname)
+                    msg = f'quantity {qname} trace is not commensurate with weight and steps traces'
                     raise ValueError(msg)
                 #end if
                 qs[:] = 0
@@ -1401,7 +1401,7 @@ class TracesAnalyzer(QAanalyzer):
             for qname in hdf_names:
                 qt = tr.scalars[qname]
                 if len(qt)!=len(wt):
-                    msg = 'quantity {0} trace is not commensurate with weight and steps traces'.format(qname)
+                    msg = f'quantity {qname} trace is not commensurate with weight and steps traces'
                     raise ValueError(msg)
                 #end if
                 qs[:] = 0
@@ -1514,10 +1514,8 @@ class DMSettings(QAobject):
             for name,value in ds.items():
                 if name not in self:
                     msg = (
-                        '{0} is an invalid setting for DensityMatricesAnalyzer\n'
-                        '  valid options are: {1}'.format(
-                            name, sorted(self.keys())
-                            )
+                        f'{name} is an invalid setting for DensityMatricesAnalyzer\n'
+                        f'  valid options are: {sorted(self.keys())}'
                         )
                     raise ValueError(msg)
                 else:
@@ -1890,7 +1888,7 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
         prefix = self.method_info.file_prefix
         nm = self.number_matrix
         for gname,g in nm.items():
-            filename =  '{0}.dm1b_{1}.dat'.format(prefix,gname)
+            filename =  f'{prefix}.dm1b_{gname}.dat'
             filepath = os.path.join(path,filename)
             mean  = g.matrix.ravel()
             error = g.matrix_error.ravel()
@@ -1928,7 +1926,7 @@ class DensityAnalyzerBase(HDFAnalyzer):
         if format!='xsf':
             msg = (
                 'sorry, the density can only be written in xsf format for now\n'
-                '  you requested: {0}'.format(format)
+                f'  you requested: {format}'
                 )
             raise NotImplementedError(msg)
         #end if
@@ -1944,7 +1942,7 @@ class DensityAnalyzerBase(HDFAnalyzer):
         f = XsfFile()
         f.incorporate_structure(s)
         
-        prefix = '{0}.s{1}.{2}'.format(self.info.file_prefix,str(self.info.series).zfill(3),name)
+        prefix = f'{self.info.file_prefix}.s{str(self.info.series).zfill(3)}.{name}'
 
         c = 1
         g = 1
@@ -2026,7 +2024,7 @@ class SpinDensityAnalyzer(DensityAnalyzerBase):
     def write_files(self,path='./'):
         prefix = self.method_info.file_prefix
         for gname in self.data.keys():
-            filename =  '{0}.spindensity_{1}.dat'.format(prefix,gname)
+            filename =  f'{prefix}.spindensity_{gname}.dat'
             filepath = os.path.join(path,filename)
             mean  = self[gname].mean.ravel()
             error = self[gname].error.ravel()
@@ -2101,7 +2099,7 @@ class StructureFactorAnalyzer(HDFAnalyzer):
         print('  sf write files')
         prefix = self.method_info.file_prefix
         for gname in self.data.keys():
-            filename =  '{0}.structurefactor_{1}.dat'.format(prefix,gname)
+            filename =  f'{prefix}.structurefactor_{gname}.dat'
             filepath = os.path.join(path,filename)
             mean  = self[gname].mean.ravel()
             error = self[gname].error.ravel()
@@ -2384,7 +2382,7 @@ class SpaceGridBase(QAobject):
             elif q=='V':
                 iV = i
             else:
-                msg = 'quantity "{}" not recognized'.format(q)
+                msg = f'quantity "{q}" not recognized'
                 raise ValueError(msg)
             #end if
         #end for
@@ -2877,7 +2875,7 @@ class RectilinearGrid(SpaceGridBase):
             for i in range(len(du_int)):
                 ndu_int[i]=np.floor(du_int[i]/du_min+.5)
                 if(abs(du_int[i]-ndu_int[i]*du_min)>utol):
-                    msg += "interval {0} of axis {1} is not divisible by smallest subinterval {2}\n".format(i+1,iaxis+1,du_min)
+                    msg += f"interval {i+1} of axis {iaxis+1} is not divisible by smallest subinterval {du_min}\n"
                 #end 
             #end      
     
@@ -2934,22 +2932,22 @@ class RectilinearGrid(SpaceGridBase):
             if axlabel[d] in cartmap:
                 if(umin[d]<-1.0 or umax[d]>1.0):
                     msg += (
-                        "  grid values for {0} must fall in [-1,1]\n"
-                        "  interval provided: [{1},{2}]\n".format(axlabel[d],umin[d],umax[d])
+                        f"  grid values for {axlabel[d]} must fall in [-1,1]\n"
+                        f"  interval provided: [{umin[d]},{umax[d]}]\n"
                         )
                 #end if
             elif(axlabel[d]=="phi"):
                 if(abs(umin[d])+abs(umax[d])>1.0):
                     msg += (
                         "  phi interval cannot be longer than 1\n"
-                        "  interval length provided: {0}\n".format(abs(umin[d])+abs(umax[d]))
+                        f"  interval length provided: {abs(umin[d])+abs(umax[d])}\n"
                         )
                 #end if
             else:
                 if(umin[d]<0.0 or umax[d]>1.0):
                     msg += (
-                        "  grid values for {0} must fall in [0,1]\n"
-                        "  interval provided: [{1},{2}]\n".format(axlabel[d],umin[d],umax[d])
+                        f"  grid values for {axlabel[d]} must fall in [0,1]\n"
+                        f"  interval provided: [{umin[d]},{umax[d]}]\n"
                         )
                 #end if
             #end if

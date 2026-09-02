@@ -67,11 +67,9 @@ class SimulationBundle(Simulation):
             elif not sim.bundleable:
                 msg = (
                     'attempted to bundle simulation that does not support bundling\n'
-                    'sim type: {0}\n'
-                    'sim identifier: {1}\n'
-                    'sim directory: {2}'.format(
-                        sim.__class__.__name__,sim.identifier,sim.locdir
-                        )
+                    f'sim type: {sim.__class__.__name__}\n'
+                    f'sim identifier: {sim.identifier}\n'
+                    f'sim directory: {sim.locdir}'
                     )
                 raise ValueError(msg)
             #end if
@@ -150,19 +148,17 @@ class SimulationBundle(Simulation):
                 'attempted to bundle simulations that depend on each other\n'
                 'simulations can only be bundled if they can be executed simultaneously\n'
                 'bundle identifier, simid, and directory:\n'
-                '  {0:<8} {1:>4} {2}\n'.format(
-                    self.identifier, self.simid, self.locdir
-                    )
+                f'  {self.identifier:<8} {self.simid:>4} {self.locdir}\n'
                 )
             msg+='sims in the bundle that can remain:\n'
             for simid in sorted(sim_ids-internal_deps):
                 sim = sims[simid]
-                msg +='  {0:<8} {1:>4} {2}\n'.format(sim.identifier,sim.simid,sim.locdir)
+                msg +=f'  {sim.identifier:<8} {sim.simid:>4} {sim.locdir}\n'
             #end for
             msg+='sims in the bundle that need to be removed:\n'
             for simid in sorted(internal_deps):
                 sim = sims[simid]
-                msg +='  {0:<8} {1:>4} {2}\n'.format(sim.identifier,sim.simid,sim.locdir)
+                msg +=f'  {sim.identifier:<8} {sim.simid:>4} {sim.locdir}\n'
             #end for
             msg+=(
                 'please remove the necessary sims from the bundle and try again\n'
@@ -206,14 +202,14 @@ class SimulationBundle(Simulation):
         if len(thread_set)>1:
             msg = (
                 'bundling jobs with different numbers of threads is not yet supported\n'
-                'thread inputs provided: {0}'.format(sorted(thread_set))
+                f'thread inputs provided: {sorted(thread_set)}'
                 )
             raise NotImplementedError(msg)
         #end if
         if len(queue_set)>1:
             msg = (
                 'bundling jobs with different queues is not allowed\n'
-                'queue inputs provided: {0}'.format(sorted(queue_set))
+                f'queue inputs provided: {sorted(queue_set)}'
                 )
             raise ValueError(msg)
         #end if
@@ -225,14 +221,14 @@ class SimulationBundle(Simulation):
             msg = (
                 'bundling jobs with different pre-submission commands is not allowed\n'
                 'presub inputs provided: \n'
-                '{0}'.format(ps)
+                f'{ps}'
                 )
             raise ValueError(msg)
         #end if
         if len(machine_set)>1:
             msg = (
-                'attempted to bundle jobs across these machines: {0}\n'
-                '  jobs may only be bundled on the same machine'.format(sorted(machine_set))
+                f'attempted to bundle jobs across these machines: {sorted(machine_set)}\n'
+                '  jobs may only be bundled on the same machine'
                 )
             raise ValueError(msg)
         #end if

@@ -183,8 +183,8 @@ class QAobject(QAobj_base):
             invalid.sort()
             msg = (
                 'attempted to set unknown variables\n'
-                '  unknown variables: {0}\n'
-                '  valid options are: {1}'.format(invalid,allowed)
+                f'  unknown variables: {invalid}\n'
+                f'  valid options are: {allowed}'
                 )
             raise ValueError(msg)
         #end if
@@ -297,7 +297,7 @@ class QAdata(QAobject):
         for value in self.values():
             s+=value.sum()
         #end for
-        print('                sum = {0}'.format(s))
+        print(f'                sum = {s}')
     #end def sum
 #end class QAdata
 
@@ -500,7 +500,7 @@ class QAanalyzer(QAobject):
             #end if
         #end for
         if not self.info.analyzed or force:
-            self.vlog('analyzing {0} data'.format(self.__class__.__name__),n=1)
+            self.vlog(f'analyzing {self.__class__.__name__} data',n=1)
             self.analyze_local()
             self.info.analyzed = True
         #end if

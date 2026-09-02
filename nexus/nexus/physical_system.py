@@ -110,8 +110,8 @@ class PhysicalSystem(DevBase):
         if sys_folded!=struct_folded:
             msg += (
                 'folding of physical system and structure is not consistent\n'
-                'system folded: {0}\n'
-                'structure folded: {1}\n'.format(sys_folded,struct_folded)
+                f'system folded: {sys_folded}\n'
+                f'structure folded: {struct_folded}\n'
                 )
         #end if
         if sys_folded and id(self.structure.folded_structure)!=id(self.folded_system.structure):
@@ -469,8 +469,8 @@ def generate_physical_system(**kwargs):
             if tiling[d]%pretile[d]!=0:
                 msg = (
                     'pretile does not divide evenly into tiling\n'
-                    '  tiling provided: {0}\n'
-                    '  pretile provided: {1}'.format(tiling, pretile)
+                    f'  tiling provided: {tiling}\n'
+                    f'  pretile provided: {pretile}'
                     )
                 raise ValueError(msg)
             #end if
