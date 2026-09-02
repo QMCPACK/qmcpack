@@ -251,4 +251,4 @@ the value of the mesh factor in the input file) can also lower the memory
 usage, at the expense (risk) of obtaining less accurate results. Proceed
 with caution if this option has to be considered.
 
-.. bibliography:: /bibs/running.bib
+.. footbibliography::

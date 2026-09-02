@@ -1524,7 +1524,7 @@ over :math:`M^{-1}dM`:
    \frac{\partial}{\partial p}\log\det M = \text{tr}\left( M^{-1} \frac{\partial M}{\partial p} \right) .\end{aligned}
 
 Following Kwon, Ceperley, and
-Martin :cite:`Kwon1993backflow`, the particle gradient
+Martin :footcite:`Kwon1993backflow`, the particle gradient
 
 .. math::
   :label: eq250
@@ -1557,7 +1557,7 @@ with the SPO derivatives (w.r. to quasi-particle coordinates)
    dM_{ij}^\alpha \equiv \frac{\partial M_{ij}}{\partial x_j^\alpha}\:.\end{aligned}
 
 Notice that we have made the name change of :math:`\phi\rightarrow M`
-from the notations of ref. :cite:`Kwon1993backflow`. This
+from the notations of ref. :footcite:`Kwon1993backflow`. This
 name change is intended to help the reader associate M with the QMCPACK
 variable ``psiM``.
 
@@ -1587,7 +1587,7 @@ Laplacian
 ~~~~~~~~~
 
 The particle Laplacian is given in
-:cite:`Kwon1993backflow` as
+:footcite:`Kwon1993backflow` as
 
 .. math::
   :label: eq254
@@ -1695,7 +1695,7 @@ Wavefunction parameter derivative
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To use the robust linear optimization method of
-:cite:`Toulouse2007linear`, the trial wavefunction
+:footcite:`Toulouse2007linear`, the trial wavefunction
 needs to know its contributions to the overlap and hamiltonian matrices.
 In particular, we need derivatives of these matrices with respect to
 wavefunction parameters. As a consequence, the wavefunction :math:`\psi`
@@ -2717,4 +2717,4 @@ Appendix: dmc.dat
   ``SimpleFixedNodeBranch``
 | ``::branch``, for example.
 
-.. bibliography:: /bibs/developing.bib
+.. footbibliography::

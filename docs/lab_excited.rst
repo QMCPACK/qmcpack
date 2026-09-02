@@ -58,7 +58,7 @@ photoemission experiments. In contrast, the emission energy of a
 negatively charged system (or the energy required to convert a
 negatively charged system to a neutral system), known as electron
 affinity (EA), is available from inverse photoemission experiments.
-Outlines of these experiments are shown in :numref:`fig22`, reproduced from :cite:`Onida2002a`.
+Outlines of these experiments are shown in :numref:`fig22`, reproduced from :footcite:`Onida2002a`.
 
 .. _fig22:
 .. figure:: /figs/lab_excited_experiments.png
@@ -173,7 +173,7 @@ band gap and electronic structure of the material. For more discussion,
 please refer to any solid-state physics textbook.
 
 There are multiple practical ways to find the high-symmetry k-point path.
-For example, pymatgen, :cite:`Ong2013` XCRYSDEN :cite:`Kokalj1999` or SeeK-path :cite:`Hinuma2017` can be used.
+For example, pymatgen, :footcite:`Ong2013` XCRYSDEN :footcite:`Kokalj1999` or SeeK-path :footcite:`Hinuma2017` can be used.
 
 :numref:`fig23` shows the procedure for visualizing the Brillouin Zone using XCRYSDEN after the structure file is loaded.
 However, the primitive cell is not unique, and the actual shape of the BZ can depend on the structure used.
@@ -661,4 +661,4 @@ Alternatively, the excitations within Nexus can be defined as shown in the ``opt
       ...
       )
 
-.. bibliography:: /bibs/lab_excited.bib
+.. footbibliography::

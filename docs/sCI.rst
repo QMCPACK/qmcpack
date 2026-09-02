@@ -16,9 +16,9 @@ provides a direct route to systematically improving the wavefunction.
 Theoretical background
 ----------------------
 
-The principle behind selected CI is rather simple and was first published in 1955 by R. K. Nesbet :cite:`Nesbet1955`. The first calculations on atoms were performed by Diner, Malrieu, and Claverie :cite:`Diner1967` in 1967 and became computationally viable for larger molecules in 2013 by Caffarel et al. :cite:`Caffarel2013`.
+The principle behind selected CI is rather simple and was first published in 1955 by R. K. Nesbet :footcite:`Nesbet1955`. The first calculations on atoms were performed by Diner, Malrieu, and Claverie :footcite:`Diner1967` in 1967 and became computationally viable for larger molecules in 2013 by Caffarel et al. :footcite:`Caffarel2013`.
 
-As described by Caffarel et al. in :cite:`Caffarel2013`,
+As described by Caffarel et al. in :footcite:`Caffarel2013`,
 multideterminantal expansions of the ground-state wavefunction
 :math:`\Psi_T` are written as a linear combination of Slater determinants
 
@@ -62,7 +62,7 @@ wavefunction, usually Hartree-Fock or CASSCF, by adding all single and
 double excitations and then iteratively selecting relevant
 determinants according to some criteria. Detailed iterative steps can
 be found in the reference by Caffarel et al. and references
-within :cite:`Caffarel2013`, :cite:`Scemama2016`, :cite:`Scemama2018` and :cite:`Garniron2017-2` and
+within :footcite:`Caffarel2013`, :footcite:`Scemama2016`, :footcite:`Scemama2018` and :footcite:`Garniron2017-2` and
 are summarized as follows:
 
 - Step 1: Define a reference wavefunction:
@@ -118,7 +118,7 @@ Note the following:
 
 -  In practice, any wavefunction method can be made multireference with
    CIPSI. For instance, a multireference coupled cluster (MRCC) with
-   CIPSI is implemented in QP. :cite:`Garniron2017-1`
+   CIPSI is implemented in QP. :footcite:`Garniron2017-1`
 
 -  At any time, with CIPSI selection,
    :math:`E_{PT_2}=\sum_\alpha \Delta E_\alpha` estimates the distance
@@ -129,7 +129,7 @@ Note the following:
 Installing the QMCPACK plugin to Quantum Package (QP2)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In the following examples of using the CIPSI wavefunction interface, QP2 code :cite:`QP` is used to perform a CIPSI calculation. The
+In the following examples of using the CIPSI wavefunction interface, QP2 code :footcite:`QP` is used to perform a CIPSI calculation. The
 resultant wavefunction is then stored and subsequently converted to standard QMCPACK formats. For this to work, a QMCPACK related
 plugin must be installed in QP2.
 
@@ -162,7 +162,7 @@ The following illustrates one possibility for installing QP2 with the plugin inc
 CIPSI wavefunction interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The CIPSI method is implemented in the QP code :cite:`QP` developed by the Caffarel group. Once the trial wavefunction is generated, QP is able to produce output readable by the QMCPACK converter as described in :ref:`convert4qmc`. QP can be installed with multiple plugins for different levels of theory in quantum chemistry. When installing the "QMC" plugin, QP can save the wavefunction in a format readable by the QMCPACK converter.
+The CIPSI method is implemented in the QP code :footcite:`QP` developed by the Caffarel group. Once the trial wavefunction is generated, QP is able to produce output readable by the QMCPACK converter as described in :ref:`convert4qmc`. QP can be installed with multiple plugins for different levels of theory in quantum chemistry. When installing the "QMC" plugin, QP can save the wavefunction in a format readable by the QMCPACK converter.
 
 In the following we use the :math:`C_2O_2H_3N` molecule
 (:numref:`fig13`) as an example of how to run a multireference
@@ -326,7 +326,7 @@ The following steps show how to run from Hartree-Fock to selected CI using QP2, 
   DMC grows as :math:`\sqrt[]{N_{det}}`, where :math:`N_{det}` is the
   number of determinants in the trial wavefunction. To truncate the number
   of determinants, we follow the method described by Scemama et
-  al. :cite:`Scemama2018` where the wavefunction is truncated
+  al. :footcite:`Scemama2018` where the wavefunction is truncated
   by independently removing spin-up and spin-down determinants whose
   contribution to the norm of the wavefunction is below a user-defined
   threshold, :math:`\epsilon`. For this step, we choose to truncate the
@@ -463,4 +463,4 @@ therefore, it is impossible to assess the correctness of the
 single-determinant-DMC result, making CIPSI-DMC calculations an ideal
 benchmark tool for multireference systems.
 
-.. bibliography:: /bibs/sCI.bib
+.. footbibliography::

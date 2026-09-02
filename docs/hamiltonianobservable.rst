@@ -168,7 +168,7 @@ When periodic boundary conditions are selected, Ewald summation is used automati
 
   V_c^{pbc} = \sum_{i<j}\frac{q_iq_j}{\left|{r_i-r_j}\right|} + \frac{1}{2}\sum_{L\ne0}\sum_{i,j}\frac{q_iq_j}{\left|{r_i-r_j+L}\right|}\:.
 
-The sum indexed by :math:`L` is over all nonzero simulation cell lattice vectors.  In practice, the Ewald sum is broken into short- and long-range parts in a manner optimized for efficiency (see :cite:`Natoli1995`) for details.
+The sum indexed by :math:`L` is over all nonzero simulation cell lattice vectors.  In practice, the Ewald sum is broken into short- and long-range parts in a manner optimized for efficiency (see :footcite:`Natoli1995`) for details.
 
 For information on how to set the boundary conditions, consult :ref:`simulationcell`.
 
@@ -272,7 +272,7 @@ Evaluation of the localized pseudopotential energy
 :math:`\Psi_T^{-1}V^{PP}\Psi_T` requires additional angular integrals.
 These integrals are evaluated on a randomly shifted angular grid. The
 size of this grid is determined by :math:`\ell_{max}`. See
-:cite:`Mitas1991` for further detail.
+:footcite:`Mitas1991` for further detail.
 
 uses the FSAtom pseudopotential file format associated with the “Free
 Software Project for Atomic-scale Simulations” initiated in 2002. See
@@ -367,7 +367,7 @@ Additional information:
    value is ``batched``. Otherwise, ``non-batched`` is the default.
 
 -  **DLA** Determinant localization approximation
-   (DLA) :cite:`Zen2019DLA` uses only the fermionic part of
+   (DLA) :footcite:`Zen2019DLA` uses only the fermionic part of
    the wavefunction when calculating NLPP.
 
 -  **physicalSO** If the spin-orbit components are included in the
@@ -588,7 +588,7 @@ shared attributes:
 Chiesa-Ceperley-Martin-Holzmann kinetic energy correction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This estimator calculates a finite-size correction to the kinetic energy following the formalism laid out in :cite:`Chiesa2006`.  The total energy can be corrected for finite-size effects by using this estimator in conjunction with the MPC correction.
+This estimator calculates a finite-size correction to the kinetic energy following the formalism laid out in :footcite:`Chiesa2006`.  The total energy can be corrected for finite-size effects by using this estimator in conjunction with the MPC correction.
 
 ``estimator type=chiesa`` element:
 
@@ -1438,7 +1438,7 @@ twist-averaged boundary conditions, the energy density is formally
 correct only for either a set of supercell k-points that correspond to
 real-valued wavefunctions or a k-point set that has inversion symmetry
 around a k-point having a real-valued wavefunction. For more information
-about the energy density, see :cite:`Krogel2013`.
+about the energy density, see :footcite:`Krogel2013`.
 
 In QMCPACK, the energy density can be accumulated on piecewise uniform 3D grids in generalized Cartesian, cylindrical, or spherical coordinates.  The energy density integrated within Voronoi volumes centered on ion positions is also available.  The total particle number density is also accumulated on the same grids by the energy density estimator for convenience so that related quantities, such as the regional energy per particle, can be computed easily.
 
@@ -1738,7 +1738,7 @@ expanding in the SPOs obtained from a Hartree-Fock or DFT calculation,
   n_1(i,j) &= \langle{\phi_i}\left|{\hat{n}_1}\right|{\phi_j}\rangle \nonumber \\
            &= \int dR \Psi_{FN}^*(R)\Psi_{T}(R) \sum_n\int dr'_n \frac{\Psi_T(r_n',R_n)}{\Psi_T(r_n,R_n)}\phi_i(r_n')^* \phi_j(r_n)\:.
 
-The integration over :math:`r'` in :eq:`eq43` is inefficient when one is also interested in obtaining matrices involving energetic quantities, such as the energy density matrix of :cite:`Krogel2014` or the related (and more well known) generalized Fock matrix.  For this reason, an approximation is introduced as follows:
+The integration over :math:`r'` in :eq:`eq43` is inefficient when one is also interested in obtaining matrices involving energetic quantities, such as the energy density matrix of :footcite:`Krogel2014` or the related (and more well known) generalized Fock matrix.  For this reason, an approximation is introduced as follows:
 
 .. math::
   :label: eq44
@@ -1748,7 +1748,7 @@ The integration over :math:`r'` in :eq:`eq43` is inefficient when one is also in
 
 For VMC, FN-DMC, FP-DMC, and RN-DMC this formula represents an exact
 sampling of the 1RDM corresponding to :math:`\hat{\rho}_N^\dagger` (see
-appendix A of :cite:`Krogel2014` for more detail).
+appendix A of :footcite:`Krogel2014` for more detail).
 
 ``estimtor type=dm1b`` element:
 
@@ -1884,7 +1884,7 @@ Additional information:
 -  ``energy_matrix:`` Accumulate the one body reduced energy density
    matrix, and write it to ``stat.h5``. This matrix is not covered in
    any detail here; the interested reader is referred to
-   :cite:`Krogel2014`.
+   :footcite:`Krogel2014`.
 
 .. code-block:: xml
   :caption: One body density matrix with uniform grid integration.
@@ -2074,7 +2074,7 @@ to mitigate this in postprocessing or during the run before publishing.***
 
 
 QMCPACK has an implementation of force estimation using the Assaraf-Caffarel
-Zero-Variance Zero-Bias method :cite:`Tiihonen2021`.  This has the desirable
+Zero-Variance Zero-Bias method :footcite:`Tiihonen2021`.  This has the desirable
 property that as the trial wave function and trial wave function derivative
 become exact, the estimator itself becomes an exact estimate of the force
 and the variance of the estimator goes to zero -- much like the local energy.
@@ -2150,7 +2150,7 @@ We use :math:`F(r)=r^{-4}` for the real space damping.
 Finally, the estimator provides two methods to evaluate the necessary derivatives of the wave function and Hamiltonian.
 The first is a straightforward analytic differentiation of all required terms.  While mathematically transparent,
 this algorithm has poor scaling with system size.  The second utilizes the fast-derivative algorithm of Assaraf, Moroni,
-and Filippi :cite:`Filippi2016`, which has a smaller computational prefactor and at least an O(N) speed-up over the legacy implementation.
+and Filippi :footcite:`Filippi2016`, which has a smaller computational prefactor and at least an O(N) speed-up over the legacy implementation.
 Both of these methods are accessible with appropriate flags.
 
 ``estimator type=Force`` element:
@@ -2258,4 +2258,4 @@ The following is an example use case.
     <estimator name="S" type="Force" mode="stress" source="ion0"/>
   </hamiltonian>
 
-.. bibliography:: /bibs/hamiltonianobservable.bib
+.. footbibliography::

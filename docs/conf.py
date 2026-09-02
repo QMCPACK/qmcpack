@@ -36,7 +36,21 @@ sys.path.append(os.path.abspath('extensions'))
 import sphinx_rtd_theme
 
 extensions = ['sphinxcontrib.bibtex', "sphinx_rtd_theme"]
-bibtex_bibfiles = ['bibs/running.bib', 'bibs/methods.bib', 'bibs/introduction.bib', 'bibs/afqmc.bib', 'bibs/intro_wavefunction.bib', 'bibs/spin-orbit.bib', 'bibs/hamiltonianobservable.bib', 'bibs/design_features.bib', 'bibs/lab_excited.bib', 'bibs/additional_tools.bib', 'bibs/developing.bib', 'bibs/labs_qmc_basics.bib', 'bibs/simulationcell.bib', 'bibs/features.bib', 'bibs/sCI.bib', 'bibs/LCAO.bib']
+bibtex_bibfiles = [
+    "bibs/running.bib",
+    "bibs/methods.bib",
+    "bibs/introduction.bib",
+    "bibs/afqmc.bib",
+    "bibs/intro_wavefunction.bib",
+    "bibs/spin-orbit.bib",
+    "bibs/hamiltonianobservable.bib",
+    "bibs/lab_excited.bib",
+    "bibs/additional_tools.bib",
+    "bibs/developing.bib",
+    "bibs/labs_qmc_basics.bib",
+    "bibs/features.bib",
+    "bibs/sCI.bib",
+]
 
 numfig = True
 
