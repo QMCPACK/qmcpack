@@ -166,6 +166,12 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
     for large inputs).  The squared fitted ratio at the largest usable block
     length is used to obtain the auto-correlation time.
 
+    Strengths: Independent block-based cross-check that can expose slow-mode 
+    uncertainty without requiring reversibility.
+
+    Weaknesses: Its estimates have a broad 10--90% spread, and the calculated 
+    autocorrelation times can exhibit larger fluctutations toward overestimation.
+
     Parameters
     ----------
     x: numpy.ndarray
@@ -281,6 +287,12 @@ def acf_autocorr_time(x,reliability=False):
     noisy boundary.  The returned value is the variance-inflation factor
     ``N*Var(mean)/Var(x)``.
 
+    Strengths: Best long-chain accuracy, low variance, fast, and supports 
+    negative or oscillatory correlation.
+
+    Weaknesses: Can truncate before detecting weak slow modes and generally 
+    underestimates the autocorrelation time for short time series.
+
     Parameters
     ----------
     x: array_like
@@ -376,6 +388,11 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False):
     sequence of adjacent autocorrelation pairs is then made non-increasing
     with a linear-time pool-adjacent-violators algorithm.  This estimator is
     intended primarily for stationary, reversible Markov chains.
+
+    Strengths: Fast, stable noisy-tail treatment, and strong theoretical basis 
+    for reversible MCMC.
+
+    Shortcomings: Relatively variable for negative correlation.
 
     Parameters
     ----------
@@ -483,6 +500,11 @@ def autocorr_time(x,reliability=False):
     structure in different ways.  Since an underestimated autocorrelation 
     time leads directly to an underestimated uncertainty, this function 
     returns the largest of their estimates.
+
+    Both ACF and Geyer show rapid convergence toward accurate estimates 
+    with time series lengths and low variability. Taking the max between 
+    them provides demonstrable stability against underestimation while 
+    retaining low bias for longer series.
 
     Parameters
     ----------
