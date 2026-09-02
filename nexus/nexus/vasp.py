@@ -111,8 +111,8 @@ class Vasp(Simulation):
                 neb_structures = self.neb_structures
                 if len(neb_structures)>1:
                     msg = (
-                        'NEB simulation at {0} depends on more than two structures\n'
-                        '  please check your inputs'.format(self.locdir)
+                        f'NEB simulation at {self.locdir} depends on more than two structures\n'
+                        '  please check your inputs'
                         )
                     raise RuntimeError(msg)
                 #end if
@@ -172,7 +172,7 @@ class Vasp(Simulation):
             native_file = os.path.join(self.locdir,file)
             save_file   = os.path.join(self.locdir,self.identifier+'.'+file)
             if os.path.exists(native_file):
-                os.system('cp {0} {1}'.format(native_file,save_file))
+                os.system(f'cp {native_file} {save_file}')
                 output_files.append(file)
             #end if
         #end for

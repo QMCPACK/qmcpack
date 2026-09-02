@@ -43,24 +43,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.coverage",
 ]
-bibtex_bibfiles = [
-    'bibs/running.bib',
-    'bibs/methods.bib',
-    'bibs/introduction.bib',
-    'bibs/afqmc.bib',
-    'bibs/intro_wavefunction.bib',
-    'bibs/spin-orbit.bib',
-    'bibs/hamiltonianobservable.bib',
-    'bibs/design_features.bib',
-    'bibs/lab_excited.bib',
-    'bibs/additional_tools.bib',
-    'bibs/developing.bib',
-    'bibs/labs_qmc_basics.bib',
-    'bibs/simulationcell.bib',
-    'bibs/features.bib',
-    'bibs/sCI.bib',
-    'bibs/LCAO.bib',
-]
+bibtex_bibfiles = ["bibs/all.bib"]
 copybutton_exclude = '.linenos, .gp, .go' # Don't copy line numbers, prompts, or outputs.
 numfig = True
 
@@ -109,5 +92,7 @@ html_theme_options = {
         "navbar-icon-links"
     ],
     "show_toc_level": 3,
+    "show_nav_level": 4,
+    "navigation_depth": 6,
     "secondary_sidebar_items": ["page-toc"],
 }

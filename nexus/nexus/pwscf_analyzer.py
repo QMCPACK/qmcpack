@@ -93,7 +93,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if not os.path.exists(path):
                 msg = (
                     'path to QE data does not exist\n'
-                    'path provided: {}'.format(path)
+                    f'path provided: {path}'
                     )
                 raise FileNotFoundError(msg)
             #end if
@@ -107,7 +107,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 else:
                     msg = (
                         'could not determine whether file is QE input or output\n'
-                        'file provided: {}'.format(filepath)
+                        f'file provided: {filepath}'
                         )
                     raise RuntimeError(msg)
                 #end if
@@ -283,7 +283,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     try:
                         num_kpoints      = int(l.strip().split()[4])
                     except:
-                        print("Number of k-points {0} is not an integer".format(num_kpoints))
+                        print(f"Number of k-points {num_kpoints} is not an integer")
                     #end try
 
                     kpoints_2pi_alat = lines[i+2:i+2+num_kpoints]
@@ -756,7 +756,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end for
         #end for
         text = 'total electron counts\n'
-        text += '  {0: 3.2f}  {1: 3.2f}  {2: 3.2f}  {3: 3.2f}\n'.format(tot.up+tot.down,tot.up-tot.down,tot.up,tot.down)
+        text += f'  {tot.up+tot.down: 3.2f}  {tot.up-tot.down: 3.2f}  {tot.up: 3.2f}  {tot.down: 3.2f}\n'
         text += '\nkpoint electron counts\n'
         weights = []
         for kp in kpoints.values():
@@ -771,7 +771,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 kpt[s] = w*kp[sl].occupations.sum()*mult
             #end for
             #text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}    {5}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up,kpt.down,kp.kpoint[0])
-            text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}  {5: 3.2f}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up-kpt.down,kpt.up,kpt.down)
+            text+=f'  {ik:>3}  {kp.weight: 8.6f}    {kpt.up+kpt.down: 3.2f}  {kpt.up-kpt.down: 3.2f}  {kpt.up: 3.2f}  {kpt.down: 3.2f}\n'
         #end for
         if filepath is not None:
             with open(filepath,'w') as fobj:
@@ -934,7 +934,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     if li == 'GAMMA':
                         labels[ln] = r'$\Gamma$'
                     elif li != '':
-                        labels[ln] = '${0}$'.format(li)
+                        labels[ln] = f'${li}$'
                     #end if
                     if labels[ln-1] != '' and ln > 0:
                         labels[ln] = labels[ln-1]+'|'+labels[ln]

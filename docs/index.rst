@@ -13,14 +13,14 @@ User's Guide and Developer's Manual
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    introduction/index
    user_guide/index
    labs/index
    contributing/index
-   misc/design_features
+   bibliography
    appendices
 
 

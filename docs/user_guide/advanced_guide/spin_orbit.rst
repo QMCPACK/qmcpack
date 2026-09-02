@@ -245,6 +245,3 @@ An example output is shown below
 The ``NonLocalECP`` represents the :math:`W^{\rm ARECP}`, ``SOECP`` represents the :math:`W^{\rm SORECP}`, and the sum is the full :math:`W^{\rm RECP}` contribution.
 
 Note that for now, the default "batched" non-local pseudopotential evaluation is not compatible with dynamical spin QMC calculations.  Therefore, the specification of algorithm="non-batched" in all pseudopotential blocks is required.  
-
-
-.. bibliography:: /bibs/spin-orbit.bib
