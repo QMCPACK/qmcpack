@@ -7,18 +7,18 @@ def theil_sen(x,y):
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         Independent-variable observations.
 
-    y: array_like
+    y : array_like
         Dependent-variable observations paired with ``x``.
 
     Returns
     -------
-    slope: scalar
+    slope : scalar
         Median of all pairwise slopes.
 
-    intercept: scalar
+    intercept : scalar
         Median residual intercept for ``slope``.
     """
     x = np.asarray(x)
@@ -62,18 +62,18 @@ def theil_sen_stoch(x,y):
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         Independent-variable observations.
 
-    y: array_like
+    y : array_like
         Dependent-variable observations paired with ``x``.
 
     Returns
     -------
-    slope: scalar
+    slope : scalar
         Median of the exact or sampled pairwise slopes.
 
-    intercept: scalar
+    intercept : scalar
         Median residual intercept for ``slope``.
     """
     x = np.asarray(x)
@@ -115,18 +115,18 @@ def theil_sen_stoch_reblock(x,y):
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         Independent-variable observations.
 
-    y: array_like
+    y : array_like
         Dependent-variable observations paired with ``x``.
 
     Returns
     -------
-    slope: scalar
+    slope : scalar
         Median of the exact or sampled pairwise slopes.
 
-    intercept: scalar
+    intercept : scalar
         Median residual intercept for ``slope``.
     """
     x = np.asarray(x)
@@ -166,33 +166,33 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
     for large inputs).  The squared fitted ratio at the largest usable block
     length is used to obtain the auto-correlation time.
 
-    Strengths: Independent block-based cross-check that can expose slow-mode 
+    Strengths: Independent block-based cross-check that can expose slow-mode
     uncertainty without requiring reversibility.
 
-    Weaknesses: Its estimates have a broad 10--90% spread, and the calculated 
+    Weaknesses: Its estimates have a broad 10--90% spread, and the calculated
     autocorrelation times can exhibit larger fluctutations toward overestimation.
 
     Parameters
     ----------
-    x: numpy.ndarray
+    x : numpy.ndarray
         Nonempty one-dimensional sample sequence.  Vector-shaped arrays are
         flattened.
 
-    min_blocks: int, optional
+    min_blocks : int, optional
         Minimum number of complete blocks retained at the largest block
         length.  Must be at least one.
 
-    plot: bool, optional
+    plot : bool, optional
         Plot normalized blocked errors, the robust fitted line, and the
         selected error estimate.
 
-    show: bool, optional
+    show : bool, optional
         Display the plot immediately.  This has an effect only when ``plot``
         is true.
 
     Returns
     -------
-    tau: float
+    tau : float
         Estimated integrated autocorrelation time.  Constant and singleton
         sequences return one.
     """
@@ -202,15 +202,15 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
     assert x.ndim==1,'data array must be 1-dimensional'
     assert len(x)>0,'data array must not be empty'
     assert min_blocks>=1,'minimum number of blocks must be at least one'
+    t_auto = 1.
     if len(x)==1:
-        t_auto = 1.
         return t_auto
     nblocks = len(x)
     nreblock_max = int(np.floor(nblocks/min_blocks))
     # length 1 "reblocking"
     data_errs1 = x.std()/np.sqrt(nblocks)
     if data_errs1==0:
-        return 1.
+        return t_auto
 
     block_lens = np.arange(1,max(1,nreblock_max)+1)
     data_errs = np.empty(len(block_lens),dtype=np.asarray(data_errs1).dtype)
@@ -287,24 +287,24 @@ def acf_autocorr_time(x,reliability=False):
     noisy boundary.  The returned value is the variance-inflation factor
     ``N*Var(mean)/Var(x)``.
 
-    Strengths: Best long-chain accuracy, low variance, fast, and supports 
+    Strengths: Best long-chain accuracy, low variance, fast, and supports
     negative or oscillatory correlation.
 
-    Weaknesses: Can truncate before detecting weak slow modes and generally 
+    Weaknesses: Can truncate before detecting weak slow modes and generally
     underestimates the autocorrelation time for short time series.
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         One-dimensional, finite, real-valued sample sequence.  Vector-shaped
         two-dimensional arrays are flattened.
 
-    reliability: bool, optional
+    reliability : bool, optional
         If true, return ``(tau, not_reliable)`` instead of only ``tau``.
 
     Returns
     -------
-    tau: float or (float, bool)
+    tau : float or (float, bool)
         Estimated integrated autocorrelation time.  A value of one denotes
         IID-like sampling; negative correlation can produce a value below
         one.  The optional Boolean is true when the ACF fails its reliability
@@ -389,26 +389,26 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False):
     with a linear-time pool-adjacent-violators algorithm.  This estimator is
     intended primarily for stationary, reversible Markov chains.
 
-    Strengths: Fast, stable noisy-tail treatment, and strong theoretical basis 
+    Strengths: Fast, stable noisy-tail treatment, and strong theoretical basis
     for reversible MCMC.
 
     Shortcomings: Relatively variable for negative correlation.
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         One-dimensional sample sequence.
 
-    c: float, optional
+    c : float, optional
         Minimum number of estimated autocorrelation times that should fit
         in the input series.
 
-    reliability: bool, optional
+    reliability : bool, optional
         If true, return ``(tau, not_reliable)`` instead of only ``tau``.
 
     Returns
     -------
-    tau: float or (float, bool)
+    tau : float or (float, bool)
         Estimated integrated autocorrelation time.  The optional Boolean is
         true when fewer than ``c`` estimated autocorrelation times fit in the
         series.
@@ -496,28 +496,28 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False):
 def autocorr_time(x,reliability=False):
     """Conservatively combine three autocorrelation-time estimates.
 
-    The ACF and Geyer initial-monotone-sequence probe the correlation 
-    structure in different ways.  Since an underestimated autocorrelation 
-    time leads directly to an underestimated uncertainty, this function 
+    The ACF and Geyer initial-monotone-sequence probe the correlation
+    structure in different ways.  Since an underestimated autocorrelation
+    time leads directly to an underestimated uncertainty, this function
     returns the largest of their estimates.
 
-    Both ACF and Geyer show rapid convergence toward accurate estimates 
-    with time series lengths and low variability. Taking the max between 
-    them provides demonstrable stability against underestimation while 
+    Both ACF and Geyer show rapid convergence toward accurate estimates
+    with time series lengths and low variability. Taking the max between
+    them provides demonstrable stability against underestimation while
     retaining low bias for longer series.
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         One-dimensional sample sequence.
 
-    reliability: bool, optional
+    reliability : bool, optional
         If true, return ``(tau, not_reliable)`` instead of only ``tau``.  The
         flag combines the ACF and Geyer IMS reliability assessments.
 
     Returns
     -------
-    tau: float or (float, bool)
+    tau : float or (float, bool)
         Maximum of ACF and Geyer autocorrelation times, optionally
         accompanied by the combined unreliability flag.
     """
