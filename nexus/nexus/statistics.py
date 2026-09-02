@@ -24,27 +24,75 @@ def theil_sen(x,y):
 
 
 def acf_autocorr_time(x):
-    if x.ndim>1:
-        assert np.max(x.shape)==x.size
+    """Estimate IAT from a noise-truncated, flat-top-windowed ACF."""
+    x = np.asarray(x)
+    if np.iscomplexobj(x):
+        raise ValueError('data array must be real-valued')
+    if x.ndim>1 and np.max(x.shape)==x.size:
         x = x.ravel()
-    assert x.ndim==1,'data array must be 1-dimensional'
-    N     = len(x)
-    mean  = x.mean()
-    var   = x.var()
-    i     = 0          
-    tempC = 0.5
-    kappa = 0.0
-    mtmp  = mean
-    if np.abs(var)<1e-15:
-        kappa = 1.0
+    if x.ndim!=1:
+        raise ValueError('data array must be 1-dimensional')
+    if len(x)==0:
+        raise ValueError('data array must not be empty')
+    x = np.asarray(x,dtype=float)
+    if not np.all(np.isfinite(x)):
+        raise ValueError('data array must contain only finite values')
+    if len(x)==1:
+        return 1.
+
+    x = x-x.mean()
+    variance = np.mean(x**2)
+    if variance==0.:
+        return 1.
+
+    n = len(x)
+    nfft = 1 << (2*n-1).bit_length()
+    transform = np.fft.rfft(x,nfft)
+    acf = np.fft.irfft(transform*np.conjugate(transform),nfft)[:n]
+    acf /= acf[0]
+
+    # Locate the noisy tail without treating a physical sign change as the
+    # end of the correlation structure.  Bartlett's large-sample expression
+    # supplies a lag-dependent noise scale; requiring several quiet lags in a
+    # row avoids stopping at an isolated zero crossing.
+    noise_scale = 1.5
+    quiet_needed = 5
+    max_lag = min(n-1,max(quiet_needed,n//2))
+    rho2_sum = 0.
+    quiet_count = 0
+    quiet_start = None
+    for lag in range(1,max_lag+1):
+        noise = np.sqrt((1.+2.*rho2_sum)/n)
+        if np.abs(acf[lag])<=noise_scale*noise:
+            quiet_count += 1
+        else:
+            quiet_count = 0
+        rho2_sum += acf[lag]**2
+        if quiet_count>=quiet_needed:
+            quiet_start = lag-quiet_needed+1
+            break
+
+    if quiet_start is None:
+        import warnings
+        quiet_start = max_lag
+        warnings.warn(
+            'the ACF did not reach a noise-dominated region; '
+            'the autocorrelation-time estimate may be unreliable',
+            RuntimeWarning,
+            stacklevel=2)
+
+    # If even the first nonzero lags are noise, the IID estimate is exact and
+    # avoids adding pure-noise terms.  Otherwise, a flat-top lag window retains
+    # the resolved ACF and smoothly damps the noisy region beyond it.
+    if quiet_start==1:
+        t_auto = 1.
     else:
-        ovar=1.0/var
-        while (tempC>0 and i<(N-1)):
-            kappa=kappa+2.0*tempC
-            i=i+1
-            tempC = ovar/(N-i)*np.sum((x[0:N-i]-mtmp)*(x[i:N]-mtmp))
-        kappa = max(kappa,1.0)
-    t_auto = kappa
+        bandwidth = min(max_lag,max(1,2*quiet_start))
+        lags = np.arange(1,bandwidth+1)
+        fraction = lags/bandwidth
+        window = np.where(fraction<=.5,1.,2.*(1.-fraction))
+        t_auto = 1.+2.*np.sum(window*acf[1:bandwidth+1])
+        t_auto = max(float(t_auto),np.finfo(float).eps)
     return t_auto
 #end def acf_autocorr_time
 
