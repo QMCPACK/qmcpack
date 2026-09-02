@@ -1,5 +1,5 @@
 
-
+import numpy as np
 
 def series_stats(x,t_auto=None):
     if t_auto is None:
