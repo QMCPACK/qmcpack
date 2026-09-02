@@ -191,7 +191,7 @@ final total energy from eig sum = -1.23450000 Ha
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
     from ..structure import Structure
-    from ..unit_converter import convert
+    from ..unit_converter import UnitConverter, convert
 
     assert isinstance(analyzer.initial_structure(),Structure)
     assert analyzer.initial_structure().units=='A'
@@ -219,6 +219,20 @@ final total energy from eig sum = -1.23450000 Ha
     assert np.allclose(analyzer.stress(units='kbar'),analyzer.results.stress)
     assert np.isclose(analyzer.pressure(),-0.2)
     assert np.isclose(analyzer.pressure(units='kbar'),-2.0)
+    energy_density_units = {
+        'eV/A^3'    : UnitConverter.eV/UnitConverter.A**3,
+        'Ha/Bohr^3' : UnitConverter.Ha/UnitConverter.B**3,
+        'Ry/Bohr^3' : UnitConverter.Ry/UnitConverter.B**3,
+        }
+    for units,pascals_per_unit in energy_density_units.items():
+        assert np.allclose(
+            analyzer.stress(units=units)*pascals_per_unit/1e9,
+            analyzer.stress(),
+            )
+        assert np.isclose(
+            analyzer.pressure(units=units)*pascals_per_unit/1e9,
+            analyzer.pressure(),
+            )
     with pytest.raises(RuntimeError,match='relaxed_structure'):
         analyzer.relaxed_structure()
     with pytest.raises(ValueError,match='energy units'):

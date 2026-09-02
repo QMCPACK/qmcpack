@@ -13,7 +13,7 @@ import numpy as np
 from .developer import DevBase, obj
 from .simulation import Simulation, SimulationAnalyzer
 from .structure import generate_structure
-from .unit_converter import convert
+from .unit_converter import UnitConverter, convert
 
 
 class RmgOutData(DevBase):
@@ -750,7 +750,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     stress(units='GPa') : numpy.ndarray or None
         Stress-tensor history with shape ``(nsteps, 3, 3)``. Available
         units are ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``,
-        and ``'atm'``.
+        ``'atm'``, ``'eV/A^3'``, ``'Ha/Bohr^3'``, and ``'Ry/Bohr^3'``.
     pressure(units='GPa') : float or numpy.floating or None
         Final hydrostatic pressure in the units accepted by ``stress``.
 
@@ -775,12 +775,15 @@ class RmgAnalyzer(SimulationAnalyzer):
     all_modes        = frozenset({'scf','nscf','relax'})
     relaxation_modes = frozenset({'relax'})
     pressure_units   = MappingProxyType({
-        'Pa'   : 1.0,
-        'bar'  : 1e5,
-        'kbar' : 1e8,
-        'Mbar' : 1e11,
-        'GPa'  : 1e9,
-        'atm'  : 1.01325e5,
+        'Pa'        : 1e8,
+        'bar'       : 1e3,
+        'kbar'      : 1.0,
+        'Mbar'      : 1e-3,
+        'GPa'       : 1e-1,
+        'atm'       : 1e8/UnitConverter.atm,
+        'eV/A^3'    : 1e8*UnitConverter.A**3/UnitConverter.eV,
+        'Ha/Bohr^3' : 1e8*UnitConverter.B**3/UnitConverter.Ha,
+        'Ry/Bohr^3' : 1e8*UnitConverter.B**3/UnitConverter.Ry,
         })
 
 
@@ -993,7 +996,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         stress = self.results.stress
         if stress is None:
             return None
-        return stress*1e8/self.pressure_units[units]
+        return stress*self.pressure_units[units]
     #end def stress
 
 
@@ -1007,7 +1010,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         pressure = self.results.pressure
         if pressure is None:
             return None
-        return pressure*1e8/self.pressure_units[units]
+        return pressure*self.pressure_units[units]
     #end def pressure
 
 
