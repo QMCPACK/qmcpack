@@ -1026,7 +1026,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('stress',self.force_modes)
         if units not in self.pressure_units:
             supported = ', '.join(sorted(self.pressure_units))
-            raise ValueError('stress units must be one of: '+supported)
+            msg = f'stress units must be one of: {supported}'
+            raise ValueError(msg)
         values = None
         if self.results_out.stress is not None:
             values = np.asarray(self.results_out.stress,dtype=float)
@@ -1043,7 +1044,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('pressure',self.force_modes)
         if units not in self.pressure_units:
             supported = ', '.join(sorted(self.pressure_units))
-            raise ValueError('pressure units must be one of: '+supported)
+            msg = f'pressure units must be one of: {supported}'
+            raise ValueError(msg)
         stress = self.stress(units)
         if stress is not None and len(stress)>0:
             return np.trace(stress[-1])/3.0

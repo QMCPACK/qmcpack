@@ -7,10 +7,13 @@ from . import TEST_DIR, NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_ANALYZER)
 
 
-@pytest.mark.parametrize('text',(
-    '0','+7','-12','1.0','3.','.5','-.75','1e3','-2.5E-4',
-    '+6D+02','7d-1',
-    ))
+@pytest.mark.parametrize(
+    argnames='text',
+    argvalues=(
+        '0','+7','-12','1.0','3.','.5','-.75','1e3','-2.5E-4',
+        '+6D+02','7d-1',
+        ),
+    )
 def test_number_pattern_matches(text):
     from ..pwscf_analyzer import number_pattern
 
@@ -18,9 +21,12 @@ def test_number_pattern_matches(text):
 #end def test_number_pattern_matches
 
 
-@pytest.mark.parametrize('text',(
-    '','.','+','1e','1.2.3','abc123','NaN','Inf','--1','1_000',
-    ))
+@pytest.mark.parametrize(
+    argnames='text',
+    argvalues=(
+        '','.','+','1e','1.2.3','abc123','NaN','Inf','--1','1_000',
+        ),
+    )
 def test_number_pattern_rejects(text):
     from ..pwscf_analyzer import number_pattern
 
@@ -28,103 +34,106 @@ def test_number_pattern_rejects(text):
 #end def test_number_pattern_rejects
 
 
-@pytest.mark.parametrize('pattern_name,text,expected',(
-    (
-        'leading_number_list_pattern',
-        '  -5.3120  1.2470  4.9810',
-        {'values': '-5.3120  1.2470  4.9810'},
+@pytest.mark.parametrize(
+    argnames='pattern_name,text,expected',
+    argvalues=(
+        (
+            'leading_number_list_pattern',
+            '  -5.3120  1.2470  4.9810',
+            {'values': '-5.3120  1.2470  4.9810'},
+            ),
+        (
+            'leading_number_list_pattern',
+            '0.0488-0.0345 0.0345  convergence achieved',
+            {'values': '0.0488-0.0345 0.0345'},
+            ),
+        (
+            'vector3_pattern',
+            '  1.0 0.0 0.0',
+            {'x': '1.0','y': '0.0','z': '0.0'},
+            ),
+        (
+            'vector3_pattern',
+            '-2.5D-01  .500000  0.  fourth-column',
+            {'x': '-2.5D-01','y': '.500000','z': '0.'},
+            ),
+        (
+            'kpoint_table_pattern',
+            '     k( 1) = ( 0.0000000 0.0000000 0.0000000), wk = 0.2500000',
+            {'kx': '0.0000000','ky': '0.0000000','kz': '0.0000000','weight': '0.2500000'},
+            ),
+        (
+            'kpoint_table_pattern',
+            'k(12)=(.5 -.5 5.0D-1), wk=1.0D+00',
+            {'kx': '.5','ky': '-.5','kz': '5.0D-1','weight': '1.0D+00'},
+            ),
+        (
+            'total_energy_pattern',
+            '     total energy              =    -168.12345678 Ry',
+            {'energy': '-168.12345678'},
+            ),
+        (
+            'total_energy_pattern',
+            '!    total energy = -1.0D+02 Ry',
+            {'energy': '-1.0D+02'},
+            ),
+        (
+            'pressure_pattern',
+            'total stress (Ry/bohr**3) (kbar) P= -170.96',
+            {'pressure': '-170.96'},
+            ),
+        (
+            'pressure_pattern',
+            'total   stress  (Ry/bohr**3) (kbar) P = 1.2D+03 ',
+            {'pressure': '1.2D+03'},
+            ),
+        (
+            'alat_pattern',
+            'CELL_PARAMETERS (alat= 10.20)',
+            {'alat': '10.20'},
+            ),
+        (
+            'alat_pattern',
+            'CELL_PARAMETERS (alat = 1.0D+01)',
+            {'alat': '1.0D+01'},
+            ),
+        (
+            'atomic_force_pattern',
+            'atom 1 type 2 force = -0.001 0.002 0.000',
+            {'atom': '1','type': '2','fx': '-0.001','fy': '0.002','fz': '0.000'},
+            ),
+        (
+            'atomic_force_pattern',
+            'atom 12 type 1 force=1.0D-03 -2.0D-03 .0',
+            {'atom': '12','type': '1','fx': '1.0D-03','fy': '-2.0D-03','fz': '.0'},
+            ),
+        (
+            'stress_row_pattern',
+            ' -.001 0.0 .001 -147.1 0.0 147.1',
+            {'sxx': '-.001','sxy': '0.0','sxz': '.001','kxx': '-147.1','kxy': '0.0','kxz': '147.1'},
+            ),
+        (
+            'stress_row_pattern',
+            '1D-3 2D-3 3D-3 1E+2 2E+2 3E+2 trailing',
+            {'sxx': '1D-3','sxy': '2D-3','sxz': '3D-3','kxx': '1E+2','kxy': '2E+2','kxz': '3E+2'},
+            ),
+        (
+            'fermi_energies_pattern',
+            '     the Fermi energy is    10.1198 ev',
+            {'values': '10.1198'},
+            ),
+        (
+            'fermi_energies_pattern',
+            'the Fermi energy          =      -3.22772442 eV',
+            {'values': '-3.22772442'},
+            ),
+        (
+            'fermi_energies_pattern',
+            'the spin up/dw Fermi energies are 5.1 5.2 EV',
+            {'values': '5.1 5.2'},
+            ),
         ),
-    (
-        'leading_number_list_pattern',
-        '0.0488-0.0345 0.0345  convergence achieved',
-        {'values': '0.0488-0.0345 0.0345'},
-        ),
-    (
-        'vector3_pattern',
-        '  1.0 0.0 0.0',
-        {'x': '1.0','y': '0.0','z': '0.0'},
-        ),
-    (
-        'vector3_pattern',
-        '-2.5D-01  .500000  0.  fourth-column',
-        {'x': '-2.5D-01','y': '.500000','z': '0.'},
-        ),
-    (
-        'kpoint_table_pattern',
-        '     k( 1) = ( 0.0000000 0.0000000 0.0000000), wk = 0.2500000',
-        {'kx': '0.0000000','ky': '0.0000000','kz': '0.0000000','weight': '0.2500000'},
-        ),
-    (
-        'kpoint_table_pattern',
-        'k(12)=(.5 -.5 5.0D-1), wk=1.0D+00',
-        {'kx': '.5','ky': '-.5','kz': '5.0D-1','weight': '1.0D+00'},
-        ),
-    (
-        'total_energy_pattern',
-        '     total energy              =    -168.12345678 Ry',
-        {'energy': '-168.12345678'},
-        ),
-    (
-        'total_energy_pattern',
-        '!    total energy = -1.0D+02 Ry',
-        {'energy': '-1.0D+02'},
-        ),
-    (
-        'pressure_pattern',
-        'total stress (Ry/bohr**3) (kbar) P= -170.96',
-        {'pressure': '-170.96'},
-        ),
-    (
-        'pressure_pattern',
-        'total   stress  (Ry/bohr**3) (kbar) P = 1.2D+03 ',
-        {'pressure': '1.2D+03'},
-        ),
-    (
-        'alat_pattern',
-        'CELL_PARAMETERS (alat= 10.20)',
-        {'alat': '10.20'},
-        ),
-    (
-        'alat_pattern',
-        'CELL_PARAMETERS (alat = 1.0D+01)',
-        {'alat': '1.0D+01'},
-        ),
-    (
-        'atomic_force_pattern',
-        'atom 1 type 2 force = -0.001 0.002 0.000',
-        {'atom': '1','type': '2','fx': '-0.001','fy': '0.002','fz': '0.000'},
-        ),
-    (
-        'atomic_force_pattern',
-        'atom 12 type 1 force=1.0D-03 -2.0D-03 .0',
-        {'atom': '12','type': '1','fx': '1.0D-03','fy': '-2.0D-03','fz': '.0'},
-        ),
-    (
-        'stress_row_pattern',
-        ' -.001 0.0 .001 -147.1 0.0 147.1',
-        {'sxx': '-.001','sxy': '0.0','sxz': '.001','kxx': '-147.1','kxy': '0.0','kxz': '147.1'},
-        ),
-    (
-        'stress_row_pattern',
-        '1D-3 2D-3 3D-3 1E+2 2E+2 3E+2 trailing',
-        {'sxx': '1D-3','sxy': '2D-3','sxz': '3D-3','kxx': '1E+2','kxy': '2E+2','kxz': '3E+2'},
-        ),
-    (
-        'fermi_energies_pattern',
-        '     the Fermi energy is    10.1198 ev',
-        {'values': '10.1198'},
-        ),
-    (
-        'fermi_energies_pattern',
-        'the Fermi energy          =      -3.22772442 eV',
-        {'values': '-3.22772442'},
-        ),
-    (
-        'fermi_energies_pattern',
-        'the spin up/dw Fermi energies are 5.1 5.2 EV',
-        {'values': '5.1 5.2'},
-        ),
-    ))
+    )
 def test_tailored_pattern_matches(pattern_name,text,expected):
     from .. import pwscf_analyzer as pa_module
 
@@ -137,31 +146,34 @@ def test_tailored_pattern_matches(pattern_name,text,expected):
 #end def test_tailored_pattern_matches
 
 
-@pytest.mark.parametrize('pattern_name,text',(
-    ('leading_number_list_pattern','bands: 1.0 2.0'),
-    ('leading_number_list_pattern','occupation numbers'),
-    ('vector3_pattern','1.0 0.0'),
-    ('vector3_pattern','1.0-0.5 0.0'),
-    ('kpoint_table_pattern','k(1) = (0.0 0.0), wk = 1.0'),
-    ('kpoint_table_pattern','k(1) = (0.0 0.0 0.0) weight = 1.0'),
-    ('kpoint_table_pattern','k(1) = (0.0 0.0 0.0), wk = missing'),
-    ('total_energy_pattern','total energy = -168.1 eV'),
-    ('total_energy_pattern','total energy is -168.1 Ry'),
-    ('pressure_pattern','total stress pressure = -170.96'),
-    ('pressure_pattern','total stress p = -170.96'),
-    ('alat_pattern','CELL_PARAMETERS (alat: 10.20)'),
-    ('alat_pattern','CELL_PARAMETERS (celldm(1)=10.20)'),
-    ('atomic_force_pattern','atom 1 type 2 force = -0.001 0.002'),
-    ('atomic_force_pattern','Total force = 0.173046'),
-    ('atomic_force_pattern','atom 1 force = -0.001 0.002 0.000'),
-    ('stress_row_pattern','-.001 0.0 .001 -147.1 0.0'),
-    ('stress_row_pattern','stress: -.001 0.0 .001 -147.1 0.0 147.1'),
-    ('stress_row_pattern','-.001 0.0.001 -147.1 0.0 147.1'),
-    ('fermi_energies_pattern','the Fermi energy is 10.1198'),
-    ('fermi_energies_pattern','the Fermi energies are 5.1 5.2 5.3 eV'),
-    ('fermi_energies_pattern','highest occupied level is 10.1198 eV'),
-    ('fermi_energies_pattern','Fermi energy convergence was reached'),
-    ))
+@pytest.mark.parametrize(
+    argnames='pattern_name,text',
+    argvalues=(
+        ('leading_number_list_pattern','bands: 1.0 2.0'),
+        ('leading_number_list_pattern','occupation numbers'),
+        ('vector3_pattern','1.0 0.0'),
+        ('vector3_pattern','1.0-0.5 0.0'),
+        ('kpoint_table_pattern','k(1) = (0.0 0.0), wk = 1.0'),
+        ('kpoint_table_pattern','k(1) = (0.0 0.0 0.0) weight = 1.0'),
+        ('kpoint_table_pattern','k(1) = (0.0 0.0 0.0), wk = missing'),
+        ('total_energy_pattern','total energy = -168.1 eV'),
+        ('total_energy_pattern','total energy is -168.1 Ry'),
+        ('pressure_pattern','total stress pressure = -170.96'),
+        ('pressure_pattern','total stress p = -170.96'),
+        ('alat_pattern','CELL_PARAMETERS (alat: 10.20)'),
+        ('alat_pattern','CELL_PARAMETERS (celldm(1)=10.20)'),
+        ('atomic_force_pattern','atom 1 type 2 force = -0.001 0.002'),
+        ('atomic_force_pattern','Total force = 0.173046'),
+        ('atomic_force_pattern','atom 1 force = -0.001 0.002 0.000'),
+        ('stress_row_pattern','-.001 0.0 .001 -147.1 0.0'),
+        ('stress_row_pattern','stress: -.001 0.0 .001 -147.1 0.0 147.1'),
+        ('stress_row_pattern','-.001 0.0.001 -147.1 0.0 147.1'),
+        ('fermi_energies_pattern','the Fermi energy is 10.1198'),
+        ('fermi_energies_pattern','the Fermi energies are 5.1 5.2 5.3 eV'),
+        ('fermi_energies_pattern','highest occupied level is 10.1198 eV'),
+        ('fermi_energies_pattern','Fermi energy convergence was reached'),
+        ),
+    )
 def test_tailored_pattern_rejects(pattern_name,text):
     from .. import pwscf_analyzer as pa_module
 
@@ -176,7 +188,10 @@ def test_empty_init():
 
     pa = PwscfAnalyzer()
     assert(len(pa)==0)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(
+        RuntimeError,
+        match=r'PWSCF output file name is not available',
+        ):
         pa.analyze()
     free_helpers = ('match_float',)
     for name in free_helpers:
@@ -198,12 +213,15 @@ def test_empty_init():
 #end def test_empty_init
 
 
-@pytest.mark.parametrize('calculation,log_text',(
-    ('scf',     'Self-consistent Calculation\n'),
-    ('nscf',    'Band Structure Calculation\nhighest occupied level (ev): 1.0\n'),
-    ('relax',   'BFGS Geometry Optimization\n'),
-    ('vc-relax','BFGS Geometry Optimization\nCELL_PARAMETERS (alat= 1.0)\n'),
-    ))
+@pytest.mark.parametrize(
+    argnames='calculation,log_text',
+    argvalues=(
+        ('scf',     'Self-consistent Calculation\n'),
+        ('nscf',    'Band Structure Calculation\nhighest occupied level (ev): 1.0\n'),
+        ('relax',   'BFGS Geometry Optimization\n'),
+        ('vc-relax','BFGS Geometry Optimization\nCELL_PARAMETERS (alat= 1.0)\n'),
+        ),
+    )
 def test_result_initialization(tmp_path,calculation,log_text):
     from ..pwscf_analyzer import PwscfOutData
 
@@ -232,8 +250,8 @@ def test_result_initialization(tmp_path,calculation,log_text):
 
 
 @pytest.mark.parametrize(
-    'verbosity,calculation',
-    tuple(
+    argnames='verbosity,calculation',
+    argvalues=tuple(
         (verbosity,calculation)
         for verbosity in ('default','high','low')
         for calculation in ('scf','nscf','relax','vc-relax')
@@ -294,7 +312,10 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
         assert('E' not in out)
         assert('forces' not in out)
         assert('stress' not in out)
-        with pytest.raises(RuntimeError):
+        with pytest.raises(
+            RuntimeError,
+            match=r'not supported for calculation "nscf"',
+            ):
             analyzer.forces()
     else:
         nsteps = 1 if calculation=='scf' else 3
@@ -318,14 +339,20 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
 #end def test_qe_7_0_calculation_modes
 
 
-@pytest.mark.parametrize('calculation',('bands','md','vc-md'))
+@pytest.mark.parametrize(
+    argnames='calculation',
+    argvalues=('bands','md','vc-md'),
+    )
 def test_unsupported_calculation_modes(calculation):
     from ..pwscf_analyzer import PwscfAnalyzer
 
     fixture_path = (
         TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/'default'/calculation
         )
-    with pytest.raises(RuntimeError):
+    with pytest.raises(
+        RuntimeError,
+        match=r'PWSCF .* calculations are not supported',
+        ):
         PwscfAnalyzer(
             fixture_path,
             'pwscf.in',
@@ -341,7 +368,12 @@ def test_quantity_accessors():
     from ..pwscf_analyzer import PwscfAnalyzer
 
     fixture_root = TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/'high'
-    scf = PwscfAnalyzer(fixture_root/'scf','pwscf.in','pwscf.out',analyze=True)
+    scf = PwscfAnalyzer(
+        fixture_root/'scf',
+        'pwscf.in',
+        'pwscf.out',
+        analyze = True,
+        )
     assert(np.isclose(scf.energy('Ha'),scf.energy('Ry')/2))
     assert(scf.kpoints('B').shape==(3,3))
     assert(scf.kweights().shape==(3,))
@@ -353,31 +385,57 @@ def test_quantity_accessors():
 
     input_fixture = TEST_DIR/'test_pwscf_analyzer_files'/'scf_output'
     input_scf = PwscfAnalyzer(
-        input_fixture,'scf.in','scf.out',analyze=True
+        input_fixture,
+        'scf.in',
+        'scf.out',
+        analyze = True,
         )
     assert(input_scf.initial_structure('A').units=='A')
 
-    nscf = PwscfAnalyzer(fixture_root/'nscf','pwscf.in','pwscf.out',analyze=True)
+    nscf = PwscfAnalyzer(
+        fixture_root/'nscf',
+        'pwscf.in',
+        'pwscf.out',
+        analyze = True,
+        )
     assert(nscf.energy() is None)
     assert(nscf.Ef() is None)
     assert(nscf.Evbm() is not None)
     assert(nscf.Ecbm() is not None)
     assert(nscf.band_gap() is not None)
     assert(not nscf.fractional_occs())
-    with pytest.raises(RuntimeError):
+    with pytest.raises(
+        RuntimeError,
+        match=r'not supported for calculation "nscf"',
+        ):
         nscf.forces()
-    with pytest.raises(RuntimeError):
+    with pytest.raises(
+        RuntimeError,
+        match=r'not supported for calculation "nscf"',
+        ):
         nscf.relaxed_structure()
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=r'energy units must be one of',
+        ):
         nscf.energy('invalid')
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=r'kpoints units must be one of',
+        ):
         nscf.kpoints('invalid')
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=r'eigenvalues units must be one of',
+        ):
         nscf.eigenvalues('invalid')
 
     fermi_fixture = TEST_DIR/'test_pwscf_analyzer_files'/'nscf_output'
     fermi_nscf = PwscfAnalyzer(
-        fermi_fixture,'nscf.in','nscf.out',analyze=True
+        fermi_fixture,
+        'nscf.in',
+        'nscf.out',
+        analyze = True,
         )
     assert(fermi_nscf.results_out.fermi_energies.shape==(1,))
 #end def test_quantity_accessors
