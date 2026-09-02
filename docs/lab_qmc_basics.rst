@@ -822,9 +822,9 @@ Production QMC projects are often composed of many similar workflows.  The simpl
 
 Simulation workflows quickly become more complex with increasing costs in terms of human time for the researcher.  Automation tools can decrease both human time and error if used well.
 
-The set of automation tools we will be using is known as Nexus :footcite:`Krogel2016nexus`, which is distributed with QMCPACK.  Nexus is capable of generating input files, submitting and monitoring compute jobs, passing data between simulations (relaxed structures, orbital files, optimized Jastrow parameters, etc.), and data analysis.  The user interface to Nexus is through a set of functions defined in the Python programming language.  User scripts that execute simple workflows resemble input files and do not require programming experience.  More complex workflows require only basic programming constructs (e.g. for loops and if statements).  Nexus input files/scripts should be easier to navigate than QMCPACK input files and more efficient than submitting all the jobs by hand.
+The set of automation tools we will be using is known as Nexus :cite:`Krogel2016nexus`, which is distributed with QMCPACK.  Nexus is capable of generating input files, submitting and monitoring compute jobs, passing data between simulations (relaxed structures, orbital files, optimized Jastrow parameters, etc.), and data analysis.  The user interface to Nexus is through a set of functions defined in the Python programming language.  User scripts that execute simple workflows resemble input files and do not require programming experience.  More complex workflows require only basic programming constructs (e.g. for loops and if statements).  Nexus input files/scripts should be easier to navigate than QMCPACK input files and more efficient than submitting all the jobs by hand.
 
-Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation (with pregenerated orbitals) follows.  Take a moment to read it over and especially note the comments (prefixed with "``\#``") explaining most of the contents.  If the input syntax is unclear you may want to consult portions of :ref:`python-basics`, which gives a condensed summary of Python constructs.  An additional example and details about the inner workings of Nexus can be found in the reference publication :footcite:`Krogel2016nexus`.
+Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation (with pregenerated orbitals) follows.  Take a moment to read it over and especially note the comments (prefixed with "``\#``") explaining most of the contents.  If the input syntax is unclear you may want to consult portions of :ref:`python-basics`, which gives a condensed summary of Python constructs.  An additional example and details about the inner workings of Nexus can be found in the reference publication :cite:`Krogel2016nexus`.
 
 .. code-block:: python
 
@@ -1539,5 +1539,3 @@ Functions: ``def``, argument syntax
   f(**o)                   # kw. args from obj, prints:
                            #   ()
                            #   {'timestep': 0.02, 'blocks': 100, 'steps': 5}
-
-.. footbibliography::

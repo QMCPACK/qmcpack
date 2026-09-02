@@ -63,7 +63,7 @@ feature that you are interested in, check the remainder of this manual or ask if
 
 -  Fully threaded on CPUs using OpenMP.
 
--  Highly efficient vectorized CPU code tailored for modern architectures. :footcite:`IPCC_SC17`
+-  Highly efficient vectorized CPU code tailored for modern architectures. :cite:`IPCC_SC17`
 
 -  OpenMP-offload-based performance portable GPU implementation. Fully supports NVIDIA, AMD, and Intel GPUs.
    GPU and CPU execution can be mixed and matched.
@@ -79,7 +79,7 @@ matrix elements of the Hamiltonian in a given single particle basis set, which m
 as Hartree-Fock or density functional theory. A partial list of the current capabilities of the code follows. For a detailed
 description of the available features, see  :ref:`afqmc`.
 
--  Phaseless AFQMC algorithm of Zhang et al. :footcite:`PhysRevLett.90.136401`.
+-  Phaseless AFQMC algorithm of Zhang et al. :cite:`PhysRevLett.90.136401`.
 
 -  Very efficient GPU implementation for most features. 
 

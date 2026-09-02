@@ -311,7 +311,7 @@ Additional information:
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
 - ``spin_mass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
-  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :footcite:`Melton2016-1` and :footcite:`Melton2016-2`.
+  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 An example VMC section for a simple batched ``vmc`` run:
 
@@ -442,7 +442,7 @@ Additional information:
   the Slater determinants. These have a cubic-scaling cost to recompute.
 
 - ``spinMass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
-  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :footcite:`Melton2016-1` and :footcite:`Melton2016-2`.
+  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_moves'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
@@ -796,7 +796,7 @@ When the trial wavefunction contains more than 10,000 parameters,
 constructing and storing the linear method matrices could become a
 memory bottleneck. To avoid explicit construction of these matrices, the
 adaptive optimizer implements the block linear method (BLM) approach.
-:footcite:`Zhao:2017:blocked_lm` The BLM tries to find an
+:cite:`Zhao:2017:blocked_lm` The BLM tries to find an
 approximate solution :math:`\vec{c}_{opt}` to the standard LM
 generalized eigenvalue problem by dividing the variable space into a
 number of blocks and making intelligent estimates for which directions
@@ -904,7 +904,7 @@ Recommendations:
     number and identity of those parameters will vary from iteration to 
     iteration. Using the hybrid method (see below) is recommended when parameter 
     filtration is on so that accelerated descent can be used to optimize
-    parameters that the LM leaves untouched. :footcite:`Otis2021`
+    parameters that the LM leaves untouched. :cite:`Otis2021`
 
 .. code-block:: xml
 
@@ -941,7 +941,7 @@ Recommendations:
    </qmc>
   </loop>
 
-The adaptive optimizer is also able to optimize individual excited states directly. :footcite:`Zhao:2016:dir_tar`
+The adaptive optimizer is also able to optimize individual excited states directly. :cite:`Zhao:2016:dir_tar`
 In this case, it tries to minimize the following function:
 
 .. math:: \Omega[\Psi]=\frac{\left<\Psi|\omega-H|\Psi\right>}{\left<\Psi|{\left(\omega-H\right)}^2|\Psi\right>}\:.
@@ -994,7 +994,7 @@ Descent Optimizer
 
 Gradient descent algorithms are an alternative set of optimization methods to the OneShiftOnly and adaptive optimizers based on the linear method.
 These methods use only first derivatives to optimize trial wave functions and convergence can be accelerated by retaining a memory of previous derivative values.
-Multiple flavors of accelerated descent methods are available. They differ in details such as the schemes for adaptive adjustment of step sizes. :footcite:`Otis2019`
+Multiple flavors of accelerated descent methods are available. They differ in details such as the schemes for adaptive adjustment of step sizes. :cite:`Otis2019`
 Descent algorithms avoid the construction of matrices that occurs in the linear method and consequently can be applied to larger sets of
 optimizable parameters.
 Parameters for descent are shown in the table below.
@@ -1032,7 +1032,7 @@ Parameters for descent are shown in the table below.
   +---------------------+--------------+--------------------------------+-------------+-----------------------------------------------------------------+
 
 
-These descent algorithms have been extended to the optimization of the same excited state functional as the adaptive LM. :footcite:`Otis2020`
+These descent algorithms have been extended to the optimization of the same excited state functional as the adaptive LM. :cite:`Otis2020`
 This also allows the hybrid optimizer discussed below to be applied to excited states.
 The relevant parameters are the same as for targeting excited states with the adaptive optimizer above.
 
@@ -1058,7 +1058,7 @@ Additional information and recommendations:
    step sizes may be helpful if there is reason to think the descent
    optimization is not reaching the minimum energy. There are also
    additional hyperparameters in the descent algorithms with default
-   values. :footcite:`Otis2019` They seem to have limited
+   values. :cite:`Otis2019` They seem to have limited
    influence on the effectiveness of the optimization compared to step
    sizes, but users can adjust them within the source code of the
    descent engine if they wish.
@@ -1133,7 +1133,7 @@ Hybrid Optimizer
 ^^^^^^^^^^^^^^^^
 
 Another optimization option is to use a hybrid combination of accelerated descent and blocked linear method.
-It provides a means to retain the advantages of both individual methods while scaling to large numbers of parameters beyond the traditional 10,000 parameter limit of the linear method. :footcite:`Otis2019`
+It provides a means to retain the advantages of both individual methods while scaling to large numbers of parameters beyond the traditional 10,000 parameter limit of the linear method. :cite:`Otis2019`
 In a hybrid optimization, alternating sections of descent and BLM optimization are used.
 Gradient descent is used to identify the previous important directions in parameter space used by the BLM, the number of which is set by the ``nold`` input for the BLM.
 Over the course of a section of descent, vectors of parameter differences are stored and then passed to the linear method engine after the optimization changes to the BLM.
@@ -1230,7 +1230,7 @@ Additional information and recommendations:
 
 Stochastic Reconfiguration with Conjugate Gradient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-We have implemented a preliminary version of stochastic reconfiguration (:footcite:`Sorella2001` and :footcite:`Casula2004`),
+We have implemented a preliminary version of stochastic reconfiguration (:cite:`Sorella2001` and :cite:`Casula2004`),
 currently only available in the batched drivers. The SR optimization reduces the
 computational cost over the linear method by avoiding the need to build the 
 Hamiltonian derivative matrix elements, and instead only needs the derivative overlap
@@ -1240,9 +1240,9 @@ counts, e.g. in orbital optimization. The SR method determines the parameter cha
 :math:`-\tau \mathbf{g} = \mathbf{S} \Delta \mathbf{p}`
 
 where :math:`\mathbf{S}` is given by :math:`\langle \Psi_i | \Psi_j\rangle`, :math:`\mathbf{g}` is given by :math:`\langle \Psi_i | H | \Psi_0\rangle`, :math:`\Delta \mathbf{p}` is the parameter update, and :math:`\tau` is an effective timestep since the SR method can be interpreted as an imaginary time projection expanded in the parameter derivative basis. 
-The solution could be found by directly inverting the overlap matrix :math:`\mathbf{S}`, but this becomes prohibitive for large parameter counts. Therefore, we have implemented the conjugate gradient iterative scheme to solve the linear equation :footcite:`Neuscamman2012`. This avoids having to directly invert the overlap matrix and significantly reduces the cost for large parameter counts.
+The solution could be found by directly inverting the overlap matrix :math:`\mathbf{S}`, but this becomes prohibitive for large parameter counts. Therefore, we have implemented the conjugate gradient iterative scheme to solve the linear equation :cite:`Neuscamman2012`. This avoids having to directly invert the overlap matrix and significantly reduces the cost for large parameter counts.
 
-Since we are using finite samples to represent the overlap matrix, it can become ill-conditioned. We choose to use a simple regularization scheme to improve the optimization, described in :footcite:`Sorella2007`. The overlap matrix is scaled via :math:`\mathbf{S} \rightarrow \mathbf{S} + \epsilon \mathbf{I}`, where :math:`\epsilon` is a small scalar. This can be controlled through ``sr_regularization``. 
+Since we are using finite samples to represent the overlap matrix, it can become ill-conditioned. We choose to use a simple regularization scheme to improve the optimization, described in :cite:`Sorella2007`. The overlap matrix is scaled via :math:`\mathbf{S} \rightarrow \mathbf{S} + \epsilon \mathbf{I}`, where :math:`\epsilon` is a small scalar. This can be controlled through ``sr_regularization``. 
 
 By default, the parameter update is accepted as is, and the size of the proposed parameter changes can be controlled by the timestep :math:`\tau`. This parameter can be controlled via ``sr_tau``. If this parameter gets too large, the optimization can become unstable. Therefore, it is recommended to use a small timestep. Small timesteps require many more total optimization steps than is typically required by the linear method, so convergence should be carefully checked. Alternatively, it is possible to use the conjugate gradient step to determine the parameter update direction, and follow up with a line search, triggered via ``line_search``. This can result in much faster convergence at the expense of doing additional correlated sampling steps. 
 
@@ -1531,7 +1531,7 @@ Parameters:
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
 - ``spin_mass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
-  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :footcite:`Melton2016-1` and :footcite:`Melton2016-2`.
+  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 - ``warmupsteps``: These are the steps at the beginning of a DMC run in
   which the instantaneous population average energy is used to update the trial
@@ -1706,7 +1706,7 @@ Additional information:
 
 -  ``spinMass`` This is an optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input, the spin mass determines the rate 
    of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}` where 
-   :math:`\tau` is the normal spatial timestep and :math:`\mu_s` is the value of the spin mass. The algorithm is described in detail in :footcite:`Melton2016-1` and :footcite:`Melton2016-2`.
+   :math:`\tau` is the normal spatial timestep and :math:`\mu_s` is the value of the spin mass. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_moves'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
@@ -1769,14 +1769,14 @@ where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the
    -  no(default): Imposes the locality approximation.
 
    -  yes/v0: Implements the algorithm in the 2006 Casula
-      paper :footcite:`Casula2006`.
+      paper :cite:`Casula2006`.
 
    -  v1: Implements the v1 algorithm in the 2010 Casula
-      paper :footcite:`Casula2010`.
+      paper :cite:`Casula2010`.
 
    -  v2: Is **not implemented** and is **skipped** to avoid any confusion
       with the v2 algorithm in the 2010 Casula
-      paper :footcite:`Casula2010`.
+      paper :cite:`Casula2010`.
 
    -  v3: (Experimental) Implements an algorithm similar to v1 but is much
       faster. v1 computes the transition probability before each single
@@ -1824,18 +1824,18 @@ where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the
       default to 10.
 
    -  DRV: Implements the algorithm of DePasquale et al., Eq. 3 in
-      :footcite:`DePasqualeReliable1988` or Eq. 9 of
-      :footcite:`Umrigar1993`.
+      :cite:`DePasqualeReliable1988` or Eq. 9 of
+      :cite:`Umrigar1993`.
       :math:`E_{\rm cut}=2.0/\sqrt{\tau}`.
 
    -  ZSGMA: Implements the “ZSGMA” algorithm of
-      :footcite:`ZenBoosting2016` with :math:`\alpha=0.2`.
+      :cite:`ZenBoosting2016` with :math:`\alpha=0.2`.
       The cutoff energy is modified by a factor including the electron
       count, :math:`E_{\rm cut}=\alpha \sqrt{N/\tau}`, which greatly
       improves size consistency over Eq. 39 of
-      :footcite:`Umrigar1993`. See Eq. 6 in
-      :footcite:`ZenBoosting2016` and for an application to
-      molecular crystals :footcite:`ZenFast2018`.
+      :cite:`Umrigar1993`. See Eq. 6 in
+      :cite:`ZenBoosting2016` and for an application to
+      molecular crystals :cite:`ZenFast2018`.
 
    -  YL: An unpublished algorithm due to Ye Luo.
       :math:`E_{\rm cut}=\sigma\times\mathrm{min}(\mathrm{sigmaBound},\sqrt{1/\tau})`.
@@ -2258,8 +2258,3 @@ real-valued wavefunction):
     size                8           # array has 8 elements total
     shape               8, 0, 0, 0  # array has linear shape, length 8
     unit_size           1           # data stored as single real values (2 if complex)
-
-
-
-
-.. footbibliography::

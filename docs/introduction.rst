@@ -25,8 +25,8 @@ This manual currently serves as an introduction to the essential features of QMC
 Over time this manual will be expanded to include a fuller introduction to QMC methods in general and to include more of the
 specialized features in QMCPACK.
 
-Besides studying this manual we recommend reading a recent review of QMCPACK developments :footcite:`KentQMCPACKJCP2020` as well as
-the QMCPACK citation paper :footcite:`KimQMCPACKJPCM2018`.
+Besides studying this manual we recommend reading a recent review of QMCPACK developments :cite:`KentQMCPACKJCP2020` as well as
+the QMCPACK citation paper :cite:`KimQMCPACKJPCM2018`.
 
 
 Quickstart and a first QMCPACK calculation
@@ -128,7 +128,7 @@ Argonne National Laboratory, and ORNL.
 Additional developers, contributors, and advisors include Anouar Benali, Mark A. Berrill, David M. Ceperley, Simone Chiesa,
 Raymond C. III Clay, Bryan Clark, Kris T. Delaney, Kenneth P. Esler, Paul R. C. Kent, Jaron T. Krogel, Ying Wai Li, Ye Luo, Jeremy
 McMinis, Miguel A. Morales, William D. Parker, Nichols A. Romero, Luke Shulenburger, Norman M. Tubman, and Jordan E. Vincent. See
-the authors of :footcite:`KentQMCPACKJCP2020` and :footcite:`KimQMCPACKJPCM2018`.
+the authors of :cite:`KentQMCPACKJCP2020` and :cite:`KimQMCPACKJPCM2018`.
 
 If you should be added to these lists, please let us know.
 
@@ -307,5 +307,3 @@ Because of its history as an academically developed research code, QMCPACK also 
 trial wavefunction forms, potentials, etc., that while not mature,  might be useful for specialized calculations on
 particular material or chemical or model systems. If you are interested in these please ask -- we might have historical inputs available.
 For example, if an older/historical Jastrow factor form that was previously used for a single paper is needed for benchmarking, we can look into the status.
-
-.. footbibliography::

@@ -488,7 +488,7 @@ In this section, we undertake the task of choosing a
 long-range/short-range partitioning of the potential, which is optimal
 in that it minimizes the error for given real and :math:`k`-space
 cutoffs :math:`r_c` and :math:`k_c`. Here, we slightly modify the method
-introduced by Natoli and Ceperley :footcite:`Natoli1995`. We
+introduced by Natoli and Ceperley :cite:`Natoli1995`. We
 choose :math:`r_c = \frac{1}{2}\min\{L_i\}` so that we require the nearest image in
 real-space summation. :math:`k_c` is then chosen to satisfy our accuracy
 requirements.
@@ -686,7 +686,7 @@ find the minimum of our error function is given by
   \sum_{|\mathbf{k}|>k_c} x_k c_{mk}\:,
 
 which is equivalent in form to Equation 19 in
-:footcite:`Natoli1995`, where we have :math:`x_k` instead of
+:cite:`Natoli1995`, where we have :math:`x_k` instead of
 :math:`V_k`. Thus, we see that we can optimize the short- or long-range
 potential simply by choosing to use :math:`V_k` or :math:`x_k` in the
 preceding equation. We now define
@@ -904,7 +904,7 @@ It can then be shown that
   E^\pm_{jk(n-1)}  \right] & \text{otherwise}\:.
   \end{cases}
 
-Note that these equations correct typographical errors present in :footcite:`Natoli1995`.
+Note that these equations correct typographical errors present in :cite:`Natoli1995`.
 
 Enumerating :math:`k`-points
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2355,5 +2355,3 @@ The Laplacian is then given by
        2\left(i\mathbf{G}e^{i\mathbf{G}\cdot\mathbf{r}_i}\right) \cdot \left(-i\mathbf{G}e^{-i\mathbf{G}\cdot\mathbf{r}_i}\right)
    \right]\:, \\
    & = & 2 \sum_{\mathbf{G}\neq\mathbf{0}} G^2 a_\mathbf{G}\left[-\mathbf{Re}\left(e^{i\mathbf{G}\cdot\mathbf{r}_i}\rho_{-\mathbf{G}}\right) + 1\right]\:. \end{aligned}
-
-.. footbibliography::

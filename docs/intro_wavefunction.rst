@@ -181,7 +181,7 @@ For this reason, it is efficient to use a localized basis with compact
 support and a good transferability from the plane wave basis.
 
 In particular, 3D tricubic B-splines provide a basis in which only
-64 elements are nonzero at any given point in :footcite:`blips4QMC`.
+64 elements are nonzero at any given point in :cite:`blips4QMC`.
 The 1D cubic B-spline is given by
 
 .. math::
@@ -611,7 +611,7 @@ Attribute:
 Hybrid orbital representation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The hybrid representation of the single particle orbitals combines a localized atomic basis set around atomic cores and B-splines in the interstitial regions to reduce memory use while retaining high evaluation speed and either retaining or increasing overall accuracy. Full details are provided in :footcite:`Luo2018hyb`, and **users of this feature are kindly requested to cite this paper**.
+The hybrid representation of the single particle orbitals combines a localized atomic basis set around atomic cores and B-splines in the interstitial regions to reduce memory use while retaining high evaluation speed and either retaining or increasing overall accuracy. Full details are provided in :cite:`Luo2018hyb`, and **users of this feature are kindly requested to cite this paper**.
 In practice, we have seen that using a meshfactor=0.5 is often possible and achieves huge memory savings.
 :numref:`fig3` illustrates how the regions are assigned.
 
@@ -819,8 +819,8 @@ Additional information:
 
 - ``delay_rank`` This option enables delayed updates of the Slater matrix inverse when particle-by-particle move is used.
   By default or if ``delay_rank=0`` given in the input file, QMCPACK sets 1 for Slater matrices with a leading dimension :math:`<192` and 32 otherwise.
-  ``delay_rank=1`` uses the Fahy's variant :footcite:`Fahy1990` of the Sherman-Morrison rank-1 update, which is mostly using memory bandwidth-bound BLAS-2 calls.
-  With ``delay_rank>1``, the delayed update algorithm :footcite:`Luo2018delayedupdate,McDaniel2017` turns most of the computation to compute bound BLAS-3 calls.
+  ``delay_rank=1`` uses the Fahy's variant :cite:`Fahy1990` of the Sherman-Morrison rank-1 update, which is mostly using memory bandwidth-bound BLAS-2 calls.
+  With ``delay_rank>1``, the delayed update algorithm :cite:`Luo2018delayedupdate,McDaniel2017` turns most of the computation to compute bound BLAS-3 calls.
   Tuning this parameter is highly recommended to gain the best performance on medium-to-large problem sizes (:math:`>200` electrons).
   We have seen up to an order of magnitude speedup on large problem sizes.
   When studying the performance of QMCPACK, a scan of this parameter is required and we recommend starting from 32.
@@ -881,7 +881,7 @@ Attribute:
 
 Additional information:
 
-- ``algorithm`` algorithms used in multi-Slater determinant implementation. ``table_method`` table method of Clark et al. :footcite:`Clark2011` .
+- ``algorithm`` algorithms used in multi-Slater determinant implementation. ``table_method`` table method of Clark et al. :cite:`Clark2011` .
   ``precomputed_table_method`` adds partial sum precomputation on top of ``table_method``.
 
 - When the multideterminant wavefunction is read from an HDF5 file in the ``detlist`` child, the HDF5 dataset must use 64 bit unsigned integers to represent the determinants. The ``utils/determinants_tools.py`` script described in further detail below will check that the determinants are stored using the correct type and correct files that are storing signed 64 bit integers.
@@ -905,8 +905,8 @@ Additional information:
 Multiple schemes to generate a multideterminant wavefunction are
 possible, from CASSF to full CI or selected CI. The QMCPACK converter can
 convert MCSCF multideterminant wavefunctions from
-GAMESS :footcite:`schmidt93` and CIPSI :footcite:`Caffarel2013` wavefunctions from
-Quantum Package :footcite:`QP` (QP). Full details of how to run a CIPSI
+GAMESS :cite:`schmidt93` and CIPSI :cite:`Caffarel2013` wavefunctions from
+Quantum Package :cite:`QP` (QP). Full details of how to run a CIPSI
 calculation and convert the wavefunction for QMCPACK are given in
 :ref:`cipsi`.
 
@@ -1316,7 +1316,7 @@ Spline form
 
 The one-body spline Jastrow function is the most commonly used one-body
 Jastrow for solids. This form was first described and used in
-:footcite:`EslerKimCeperleyShulenburger2012`. Here
+:cite:`EslerKimCeperleyShulenburger2012`. Here
 :math:`u_{ab}` is an interpolating 1D B-spline (tricublc spline on a
 linear grid) between zero distance and :math:`r_{cut}`. In 3D periodic
 systems the default cutoff distance is the Wigner Seitz cell radius. For
@@ -1390,7 +1390,7 @@ Additional information:
 
 - ``cusp``
     The one-body Jastrow factor can be used to make the wavefunction
-    satisfy the electron-ion cusp condition :footcite:``kato``. In this
+    satisfy the electron-ion cusp condition :cite:``kato``. In this
     case, the derivative of the Jastrow factor as the electron approaches
     the nucleus will be given by
 
@@ -1641,7 +1641,7 @@ Two-body Jastrow functions
 The two-body Jastrow factor is a form that allows for the explicit inclusion
 of dynamic correlation between two particles included in the wavefunction.  It
 is almost always given in a spin dependent form so as to satisfy the Kato cusp
-condition between electrons of different spins :footcite:`kato`.
+condition between electrons of different spins :cite:`kato`.
 
 The two body Jastrow function is specified within a ``wavefunction`` element
 and must contain one or more correlation elements specifying additional parameters
@@ -1703,7 +1703,7 @@ Spline form
 
 The two-body spline Jastrow function is the most commonly used two-body
 Jastrow for solids. This form was first described and used in
-:footcite:`EslerKimCeperleyShulenburger2012`. Here
+:cite:`EslerKimCeperleyShulenburger2012`. Here
 :math:`u_{ab}` is an interpolating 1D B-spline (tricublc spline on a
 linear grid) between zero distance and :math:`r_{cut}`. In 3D periodic
 systems, the default cutoff distance is the Wigner Seitz cell radius.
@@ -1887,7 +1887,7 @@ Below two types of long-ranged Jastrow factors are described. The first
 correlation functions in plane waves, with the coefficients comprising
 the optimizable parameters. The second type have few variational
 parameters and use the optimized breakup method of Natoli and
-Ceperley :footcite:`Natoli1995` (the Yukawa and Gaskell RPA
+Ceperley :cite:`Natoli1995` (the Yukawa and Gaskell RPA
 Jastrows).
 
 Long-ranged Jastrow: k-space Jastrow
@@ -2058,13 +2058,13 @@ The exact Jastrow correlation functions contain terms which have a
 form similar to the Coulomb pair potential.  In periodic systems
 the Coulomb potential is replaced by an Ewald summation of the
 bare potential over all periodic image cells.  This sum is often
-handled by the optimized breakup method :footcite:`Natoli1995` and this
+handled by the optimized breakup method :cite:`Natoli1995` and this
 same approach is applied to the long-ranged Jastrow factors in QMCPACK.
 
 There are two main long-ranged Jastrow factors of this type
-implemented in QMCPACK: the Gaskell RPA :footcite:`Gaskell1961,Gaskell1962`
-form and the :footcite:`Ceperley1978` form.  Both of these forms
-were used by Ceperley in early studies of the electron gas :footcite:`Ceperley1978`,
+implemented in QMCPACK: the Gaskell RPA :cite:`Gaskell1961,Gaskell1962`
+form and the :cite:`Ceperley1978` form.  Both of these forms
+were used by Ceperley in early studies of the electron gas :cite:`Ceperley1978`,
 but they are also appropriate starting points for general solids.
 
 The Yukawa form is defined in real space.  It's long-range form is
@@ -2172,7 +2172,7 @@ Three-body Jastrow functions
 Explicit three-body correlations can be included in the wavefunction via
 the three-body Jastrow factor. The three-body electron-electron-ion
 correlation function (:math:`u_{\sigma\sigma'I}`) currently used in is
-identical to the one proposed in :footcite:`Drummond2004`:
+identical to the one proposed in :cite:`Drummond2004`:
 
 .. math::
   :label: eq23
@@ -2313,5 +2313,3 @@ Example Use Case
         source="ion0" sgroup="H"/>
     </hamiltonian>
   </qmcsystem>
-
-.. footbibliography::

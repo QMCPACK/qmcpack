@@ -3,7 +3,7 @@
 Auxiliary-Field Quantum Monte Carlo
 ===================================
 
-The AFQMC method is an orbital-space formulation of the imaginary-time propagation algorithm. We refer the reader to one of the review articles on the method :footcite:`AFQMC_review,PhysRevLett.90.136401,PhysRevE.70.056702` for a detailed description of the algorithm. It uses the Hubbard-Stratonovich transformation to express the imaginary-time propagator, which is inherently a 2-body operator, as an integral over 1-body propagators, which can be efficiently applied to an arbitrary Slater determinant. This transformation allows us to represent the interacting many-body system as an average over a noninteracting system (e.g., Slater determinants) in a time-dependent fluctuating external field (the Auxiliary fields). The walkers in this case represent nonorthogonal Slater determinants, whose time average represents the desired quantum state. QMCPACK currently implements the phaseless AFQMC algorithm of Zhang and Krakauer :footcite:`PhysRevLett.90.136401`, where a trial wavefunction is used to project the simulation to the real axis, controlling the fermionic sign problem at the expense of a bias. This approximation is similar in spirit to the fixed-node approximation in real-space DMC but applied in the Hilbert space where the AFQMC random walk occurs.
+The AFQMC method is an orbital-space formulation of the imaginary-time propagation algorithm. We refer the reader to one of the review articles on the method :cite:`AFQMC_review,PhysRevLett.90.136401,PhysRevE.70.056702` for a detailed description of the algorithm. It uses the Hubbard-Stratonovich transformation to express the imaginary-time propagator, which is inherently a 2-body operator, as an integral over 1-body propagators, which can be efficiently applied to an arbitrary Slater determinant. This transformation allows us to represent the interacting many-body system as an average over a noninteracting system (e.g., Slater determinants) in a time-dependent fluctuating external field (the Auxiliary fields). The walkers in this case represent nonorthogonal Slater determinants, whose time average represents the desired quantum state. QMCPACK currently implements the phaseless AFQMC algorithm of Zhang and Krakauer :cite:`PhysRevLett.90.136401`, where a trial wavefunction is used to project the simulation to the real axis, controlling the fermionic sign problem at the expense of a bias. This approximation is similar in spirit to the fixed-node approximation in real-space DMC but applied in the Hilbert space where the AFQMC random walk occurs.
 
 Input
 -----
@@ -322,7 +322,7 @@ Hamiltonian File formats
 
 QMCPACK offers three factorization approaches which are appropriate in different settings. The most generic approach implemented
 is based on the modified-Cholesky
-factorization :footcite:`BeebeCholesky1977,KochCholesky2003,AquilanteMOLCAS2009,PurwantoCa2011,PurwantoDownfolding2013` of the ERI
+factorization :cite:`BeebeCholesky1977,KochCholesky2003,AquilanteMOLCAS2009,PurwantoCa2011,PurwantoDownfolding2013` of the ERI
 tensor:
 
 .. math::
@@ -441,7 +441,7 @@ file format is given as follows:
    :math:`E_{\mathrm{core}}` is deprecated and not used.
 
 To reduce the memory overhead of storing the three-index tensor we recently adapted the
-tensor-hypercontraction :footcite:`HohensteinTHCI2012,ParrishTHCII2012,HohensteinTHCIII2012` (THC) approach for use in AFQMC\cite{MaloneISDF2019}. Within the THC approach we
+tensor-hypercontraction :cite:`HohensteinTHCI2012,ParrishTHCII2012,HohensteinTHCIII2012` (THC) approach for use in AFQMC\cite{MaloneISDF2019}. Within the THC approach we
 can approximate the orbital products entering the ERIs as
 
 .. math::
@@ -469,7 +469,7 @@ where
 
 We also require the half-rotated versions of these quantities which live
 on a different set of :math:`\tilde{N}_\mu` interpolating points
-:math:`\tilde{\mathbf{r}}_\mu` (see :footcite:`MaloneISDF2019`). The file format for THC
+:math:`\tilde{\mathbf{r}}_\mu` (see :cite:`MaloneISDF2019`). The file format for THC
 factorization is as follows:
 
 .. code-block::
@@ -532,7 +532,7 @@ factorization is as follows:
    :math:`\frac{1}{2} N \xi )`. :math:`E_{\mathrm{core}}` is deprecated
    and not used.
 
-Finally, we have implemented an explicitly :math:`k`-point dependent factorization for periodic systems :footcite:`MottaKPoint2019,MaloneGPU2020`
+Finally, we have implemented an explicitly :math:`k`-point dependent factorization for periodic systems :cite:`MottaKPoint2019,MaloneGPU2020`
 
 .. math::
   :label: eq62
@@ -1183,5 +1183,3 @@ propagation time, and skip 10 blocks as the equilibration phase.
     from afqmctools.analysis.average import average_one_rdm
 
     P, Perr = average_one_rdm('qmc.s000.stat.h5', estimator='back_propagated', eqlb=10)
-
-.. footbibliography::

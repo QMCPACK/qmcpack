@@ -130,7 +130,7 @@ LR_handler
 When using periodic boundary conditions direct calculation of the
 Coulomb energy is conditionally convergent. As a result, QMCPACK uses an
 optimized short-range/long-range breakup technique to compute the Coulomb
-interaction in a rapidly convergent lattice sum. :footcite:`Natoli1995`
+interaction in a rapidly convergent lattice sum. :cite:`Natoli1995`
 
 In this summation, the energy is broken into short- and long-ranged
 terms. The short-ranged term is computed directly in real space, while
@@ -418,5 +418,3 @@ Example use cases
          </attrib>
        </group>
      </particleset>
-
-.. footbibliography::

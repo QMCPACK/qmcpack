@@ -50,6 +50,7 @@ User's Guide and Developer's Manual
    running_docker
    design_features
    developing
+   citations
    appendices
 
 

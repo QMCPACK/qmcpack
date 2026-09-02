@@ -10,11 +10,11 @@ In order to introduce relativistic effects in real materials,
 in principle the full Dirac equation must be solved where the resulting wave function is a four-component spinor. 
 For the valence electrons that participate in chemistry, 
 the single particle spinors can be well approximated by two-component spinors as two of the components are negligible. Note that this is not true for the deeper core electrons, where all four components contribute. 
-In light of this fact, relativistic pseudopotentials have been developed to remove the core electrons while providing an effective potential for the valence electrons :footcite:`Dolg2012`.
+In light of this fact, relativistic pseudopotentials have been developed to remove the core electrons while providing an effective potential for the valence electrons :cite:`Dolg2012`.
 This allows relativistic effects to be studied in QMC methods using two-component spinor wave functions.
 
-In QMCPACK, spin-orbit interactions have been implemented following the methodology described in :footcite:`Melton2016-1`
-and :footcite:`Melton2016-2`.
+In QMCPACK, spin-orbit interactions have been implemented following the methodology described in :cite:`Melton2016-1`
+and :cite:`Melton2016-2`.
 We briefly describe some of the details below.
 
 Single-Particle Spinors
@@ -88,7 +88,7 @@ need a product of up and down determinants.
 In the Jastrow specification, we only need to provide 
 the jastrow terms for the same spin as there is no longer a
 distinction between the up and down spins. 
-The electon-electron cusp in this case should be -1/2, as discussed in :footcite:`Melton2016-2`.
+The electon-electron cusp in this case should be -1/2, as discussed in :cite:`Melton2016-2`.
 
 We also make a small modification in the particleset specification 
 
@@ -163,7 +163,7 @@ Spin-Orbit Effective Core Potentials
 
 The spin-orbit contribution to the Hamiltonian can be introduced 
 through the use of Effective Core Potentials (ECPs). 
-As described in :footcite:`Melton2016-2`, the relativistic (semilocal) ECPs take the general form
+As described in :cite:`Melton2016-2`, the relativistic (semilocal) ECPs take the general form
 
 .. math::
   :label: seqn5
@@ -245,6 +245,3 @@ An example output is shown below
 The ``NonLocalECP`` represents the :math:`W^{\rm ARECP}`, ``SOECP`` represents the :math:`W^{\rm SORECP}`, and the sum is the full :math:`W^{\rm RECP}` contribution.
 
 Note that for now, the default "batched" non-local pseudopotential evaluation is not compatible with dynamical spin QMC calculations.  Therefore, the specification of algorithm="non-batched" in all pseudopotential blocks is required.  
-
-
-.. footbibliography::

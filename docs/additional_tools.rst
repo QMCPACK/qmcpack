@@ -104,7 +104,7 @@ It is a small C++ executable that is built alongside the QMCPACK
 executable and can be found in ``build/bin``.
 
 To date, ``convert4qmc`` supports the following codes:
-GAMESS :footcite:`schmidt93`, PySCF :footcite:`Sun2018` and QP2 :footcite:`QP2` natively, and NWCHEM :footcite:`NWCHEM`, TURBOMOLE :footcite:`TURBOMOLE`, PSI4 :footcite:`PSI4`, CFOUR 2.0beta :footcite:`CFOUR`, ORCA 3.X - 4.X :footcite:`ORCA`, DALTON2016 :footcite:`DALTON2016`, MOLPRO :footcite:`MOLPRO`, DIRAC :footcite:`DIRAC`, RMG :footcite:`RMG`, and QCHEM 4.X :footcite:`QCHEM` through the molden2qmc converter (see :ref:`molden2qmc`).
+GAMESS :cite:`schmidt93`, PySCF :cite:`Sun2018` and QP2 :cite:`QP2` natively, and NWCHEM :cite:`NWCHEM`, TURBOMOLE :cite:`TURBOMOLE`, PSI4 :cite:`PSI4`, CFOUR 2.0beta :cite:`CFOUR`, ORCA 3.X - 4.X :cite:`ORCA`, DALTON2016 :cite:`DALTON2016`, MOLPRO :cite:`MOLPRO`, DIRAC :cite:`DIRAC`, RMG :cite:`RMG`, and QCHEM 4.X :cite:`QCHEM` through the molden2qmc converter (see :ref:`molden2qmc`).
 
 
 
@@ -448,7 +448,7 @@ Command line options
   This option is very important for all-electron (AE) calculations. In
   this case, orbitals have to be corrected for the electron-nuclear
   cusp. The cusp correction scheme follows the algorithm described by Ma
-  et al. :footcite:`Ma2005` When this option is present, the
+  et al. :cite:`Ma2005` When this option is present, the
   wavefunction file has a new set of tags:
 
   .. code-block:: xml
@@ -587,7 +587,7 @@ Supported codes
 
 - **PySCF**
 
-  PySCF :footcite:`Sun2018` is an all-purpose quantum chemistry
+  PySCF :cite:`Sun2018` is an all-purpose quantum chemistry
   code that can run calculations from simple Hartree-Fock to DFT, MCSCF,
   and CCSD, and for both isolated systems and periodic boundary
   conditions. PySCF can be downloaded from https://github.com/sunqm/pyscf.
@@ -687,7 +687,7 @@ Periodic boundary conditions with Gaussian orbitals from PySCF is fully supporte
 
 - **Quantum Package**
 
-  QP2 :footcite:`QP2` is a quantum chemistry code developed by the
+  QP2 :cite:`QP2` is a quantum chemistry code developed by the
   LCPQ laboratory in Toulouse, France, and Argonne National Laboratory for the PBC version.
   It can be downloaded from  https://github.com/QuantumPackage/qp2, and the tutorial within is
   quite extensive. The tutorial section of QP2 can guide you on how to
@@ -739,7 +739,7 @@ Periodic boundary conditions with Gaussian orbitals from PySCF is fully supporte
 
 - **GAMESS**
 
-  QMCPACK can use the output of GAMESS :footcite:`schmidt93` for any type of single determinant calculation (HF or DFT) or multideterminant (MCSCF) calculation. A description with an example can be found in the Advanced Molecular Calculations Lab (:ref:`lab-advanced-molecules`).
+  QMCPACK can use the output of GAMESS :cite:`schmidt93` for any type of single determinant calculation (HF or DFT) or multideterminant (MCSCF) calculation. A description with an example can be found in the Advanced Molecular Calculations Lab (:ref:`lab-advanced-molecules`).
 
 - **DIRAC**
 
@@ -942,7 +942,7 @@ Burkatzki-Filippi-Dolg
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Burkatzki *et al.* developed a set of energy-consistent pseudopotenitals
-for use in QMC :footcite:`Burkatzki07,Burkatzki08`, available at
+for use in QMC :cite:`Burkatzki07,Burkatzki08`, available at
 http://www.burkatzki.com/pseudos/index.2.html. To convert for use in
 QMCPACK, select a pseudopotential (choice of basis set is irrelevant to
 conversion) in GAMESS format and copy the ending (pseudopotential) lines
@@ -1085,5 +1085,3 @@ Here's a summary of some of the tests provided:
    finite-difference and direct computation of wave function values.
 
 The output of the various tests will be to standard out or "wftest.000" after successful execution of qmcpack.
-
-.. footbibliography::
