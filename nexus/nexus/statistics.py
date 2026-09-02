@@ -546,6 +546,11 @@ def autocorr_time(x,reliability=False):
 
 
 def series_stats(x,t_auto=None):
+    """Return the mean, autocorrelation-adjusted error, and correlation time.
+
+    If ``t_auto`` is not supplied, it is estimated with
+    :func:`autocorr_time`.
+    """
     if t_auto is None:
         t_auto = autocorr_time(x)
     N        = len(x)
