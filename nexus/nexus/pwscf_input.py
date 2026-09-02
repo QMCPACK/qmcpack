@@ -159,8 +159,8 @@ def write_scalar(var,val):
         msg = (
             'cannot write pwscf input file\n'
             'attempted to write variable with unknown scalar type\n'
-            'variable: {0}\n'
-            'data type: {1}'.format(var,val.__class__.__name__)
+            f'variable: {var}\n'
+            f'data type: {val.__class__.__name__}'
             )
         raise TypeError(msg)
     #end if
@@ -400,8 +400,8 @@ class Section(Element):
                     if len(tsplt)!=2:
                         msg = (
                             'attempted to read misformatted line\n'
-                            'misformatted line: {0}\n'
-                            'tokens: {1}'.format(l,tsplt)
+                            f'misformatted line: {l}\n'
+                            f'tokens: {tsplt}'
                             )
                         raise FileFormatError(msg)
                     #end if
@@ -423,15 +423,15 @@ class Section(Element):
                     #end if
                     if varname not in self.variables:
                         msg = (
-                            'pwscf input section {0} does not have a variable named "{1}", please check your input\n'
-                            'if correct, please add a new variable ({1}) to the {0} PwscfInput class'.format(self.__class__.__name__,varname)
+                            f'pwscf input section {self.__class__.__name__} does not have a variable named "{varname}", please check your input\n'
+                            f'if correct, please add a new variable ({varname}) to the {self.__class__.__name__} PwscfInput class'
                             )
                         raise KeyError(msg)
                     #end if
                     if varname not in self.var_types:
                         msg = (
-                            'a type has not been specified for variable "{0}"\n'
-                            'please add it to PwscfInputBase'.format(varname)
+                            f'a type has not been specified for variable "{varname}"\n'
+                            'please add it to PwscfInputBase'
                             )
                         raise KeyError(msg)
                     #end if
@@ -474,7 +474,7 @@ class Section(Element):
             if var not in self.real_arrays:
                 # write scalar values
                 sval = write_scalar(var,val)
-                c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
+                c+='   '+f'{vname:<15} = {sval}\n'
             else:
                 # write array values
                 allow_spec = var in self.species_arrays
@@ -493,11 +493,9 @@ class Section(Element):
                                     'cannot write pwscf input\n'
                                     'invalid array species index encountered\n'
                                     'species index provided is not in the set of species present\n'
-                                    'species present: {0}\n'
-                                    'species used as index: {1}\n'
-                                    'array variable: {2}'.format(
-                                        sorted(atom_index.keys()), index, var
-                                        )
+                                    f'species present: {sorted(atom_index.keys())}\n'
+                                    f'species used as index: {index}\n'
+                                    f'array variable: {var}'
                                     )
                                 raise IndexError(msg)
                             #end if
@@ -506,8 +504,8 @@ class Section(Element):
                                 msg = (
                                     'cannot write pwscf input\n'
                                     'invalid multidimensional array species index encountered\n'
-                                    'array variable "{0}" does not support multidimensional species indices\n'
-                                    'index received: {1}'.format(var,index)
+                                    f'array variable "{var}" does not support multidimensional species indices\n'
+                                    f'index received: {index}'
                                     )
                                 raise ValueError(msg)
                             #end if
@@ -521,12 +519,10 @@ class Section(Element):
                                     'cannot write pwscf input\n'
                                     'invalid array species index encountered\n'
                                     'species index provided is not in the set of species present\n'
-                                    'species present: {0}\n'
-                                    'species used as index: {1}\n'
-                                    'full index provided: {2}\n'
-                                    'array variable: {3}'.format(
-                                        sorted(atom_index.keys()), atom, index, var
-                                        )
+                                    f'species present: {sorted(atom_index.keys())}\n'
+                                    f'species used as index: {atom}\n'
+                                    f'full index provided: {index}\n'
+                                    f'array variable: {var}'
                                     )
                                 raise IndexError(msg)
                             #end if
@@ -541,7 +537,7 @@ class Section(Element):
                 for index in sorted(index_map_inv.keys()):
                     value = val[index_map_inv[index]]
                     if isinstance(index,int):
-                        sind = '({0})'.format(index)
+                        sind = f'({index})'
                     elif isinstance(index,tuple):
                         if not allow_spec:
                             None
@@ -552,14 +548,14 @@ class Section(Element):
                             'cannot write pwscf input\n'
                             'invalid array index encountered\n'
                             'must be an integer or tuple of integers\n'
-                            'index received: {0}\n'
-                            'array variable: {1}'.format(str(index), var)
+                            f'index received: {str(index)}\n'
+                            f'array variable: {var}'
                             )
                         raise TypeError(msg)
                     #end if
                     svar = vname+sind
                     sval = write_scalar(var,value)
-                    c+='   '+'{0:<15} = {1}\n'.format(svar,sval)
+                    c+='   '+f'{svar:<15} = {sval}\n'
                 #end for
             #end if
         #end for
@@ -683,15 +679,15 @@ class system(Section):
                     avar = self.atomic_variables[var]
                     for i in range(len(atoms)):
                         index = i+1
-                        vname = '{0}({1})'.format(avar,index)
+                        vname = f'{avar}({index})'
                         atom = atoms[i]
                         if atom in val:
                             sval = writeval[float](val[atom])
-                            c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
+                            c+='   '+f'{vname:<15} = {sval}\n'
                         #end if
                     #end for
                 else:
-                    msg = 'cannot write {0}, atomic_species is not present'.format(var)
+                    msg = f'cannot write {var}, atomic_species is not present'
                     raise KeyError(msg)
                 #end if
             else:
@@ -711,11 +707,9 @@ class system(Section):
                     vtype = int
                 else:
                     msg = (
-                        'Type "{0}" is not known as a value of variable "{1}".\n'
+                        f'Type "{vtype.__class__.__name__}" is not known as a value of variable "{var}".\n'
                         'This may reflect a need for added developer attention to support this type.\n'
-                        'Please contact a developer.'.format(
-                            vtype.__class__.__name__, var
-                            )
+                        'Please contact a developer.'
                         )
                     raise NexusError(msg)
                 #end if
@@ -730,7 +724,7 @@ class system(Section):
                     vname = cls.case_map[vname]
                 #end if
                 #c+='   '+vname+' = '+sval+'\n'
-                c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
+                c+='   '+f'{vname:<15} = {sval}\n'
             #end if
         #end for
         c+='/'+'\n\n'
@@ -796,7 +790,7 @@ def check_section_classes(*,exit=True):
         if len(global_missing)>0:
             msg += (
                 '  some typed variables have not been assigned to a section:\n'
-                '    {0}\n'.format(sorted(global_missing))
+                f'    {sorted(global_missing)}\n'
                 )
         #end if
         if locs_missing:
@@ -810,11 +804,9 @@ def check_section_classes(*,exit=True):
                         #end if
                     #end for
                     msg += (
-                        '  some variables in section {0} have not been assigned a type\n'
-                        '    missing variable counts: {1} {2}\n'
-                        '    missing variables: {3}\n'.format(
-                            name, len(lmiss), len(vmiss), vmiss
-                            )
+                        f'  some variables in section {name} have not been assigned a type\n'
+                        f'    missing variable counts: {len(lmiss)} {len(vmiss)}\n'
+                        f'    missing variables: {vmiss}\n'
                         )
                 #end if
             #end for
@@ -851,7 +843,7 @@ class atomic_species(Card):
     def write_text(self):
         c = ''
         for at in self.atoms:
-            c += '   '+'{0:2}'.format(at)+' '+str(self.masses[at])+' '+self.pseudopotentials[at]+'\n'
+            c += '   '+f'{at:2}'+' '+str(self.masses[at])+' '+self.pseudopotentials[at]+'\n'
         #end for
         return c
     #end def write_text
@@ -896,7 +888,7 @@ class atomic_positions(Card):
             rowsep = '\n'
         #end if
         for i in range(len(self.atoms)):
-            c +='   '+'{0:2}'.format(self.atoms[i])+' '
+            c +='   '+f'{self.atoms[i]:2}'+' '
             c += array_to_string(self.positions[i],pad='',rowsep=rowsep)
             if has_relax_directions:
                 c += array_to_string(self.relax_directions[i],pad='',format='{0}')
@@ -980,7 +972,7 @@ class atomic_forces(Card):
         c = ''
         rowsep = '\n'
         for i in range(len(self.atoms)):
-            c +='   '+'{0:2}'.format(self.atoms[i])+' '
+            c +='   '+f'{self.atoms[i]:2}'+' '
             c += array_to_string(self.forces[i],pad='',rowsep=rowsep)
         #end for
         return c
@@ -1375,10 +1367,10 @@ class hubbard(Card):
         for key, value in manifold_dict.items():
             if len(value) > 2:
                 msg = (
-                    'Element "{}" has more than 2 Hubbard manifolds "{}". '
+                    f'Element "{key}" has more than 2 Hubbard manifolds "{value}". '
                     'Up to 3 manifolds are allowed in QE 7.1, but in that case '
                     '2nd and 3rd manifolds must be defined as one effective manifold, '
-                    'e.g. "U Mn-3d 5.0" and "U Mn-3p-3s 3.0"'.format(key, value)
+                    'e.g. "U Mn-3d 5.0" and "U Mn-3p-3s 3.0"'
                     )
                 raise ValueError(msg)
             #end if
@@ -1474,8 +1466,8 @@ class PwscfInput(SimulationInput):
                     else:
                         msg = (
                             'encountered unrecognized input section during read\n'
-                            '{0} is not a recognized pwscf section\n'
-                            'file read failed'.format(l[1:])
+                            f'{l[1:]} is not a recognized pwscf section\n'
+                            'file read failed'
                             )
                         raise FileFormatError(msg)
                     #end if
@@ -1501,7 +1493,7 @@ class PwscfInput(SimulationInput):
                 else:
                     msg = (
                         'invalid line encountered during read\n'
-                        'invalid line: {0}\nfile read failed'.format(l)
+                        f'invalid line: {l}\nfile read failed'
                         )
                     raise FileFormatError(msg)
                 #end if
@@ -1642,16 +1634,14 @@ class PwscfInput(SimulationInput):
             if set(elem_order)!=set(system.ion_labels):
                 msg = (
                     'elem_order is missing some atomic species\n'
-                    'atomic species present: {0}\n'
-                    'elem_order: {1}'.format(
-                        sorted(system.ion_labels), elem_order
-                        )
+                    f'atomic species present: {sorted(system.ion_labels)}\n'
+                    f'elem_order: {elem_order}'
                     )
                 raise ValueError(msg)
             elif len(elem_order)!=system.n_ions:
                 msg = (
                     'elem_order has repeated elements\n'
-                    'elem_order: {0}'.format(elem_order)
+                    f'elem_order: {elem_order}'
                     )
                 raise ValueError(msg)
             #end if
@@ -1823,8 +1813,8 @@ class PwscfInput(SimulationInput):
         for atom in self.atomic_species.atoms:
             if atom not in valency:
                 msg = (
-                    'valence charge for atom {0} has not been defined\n'
-                    'please provide the valence charge as an argument to return_system()'.format(atom)
+                    f'valence charge for atom {atom} has not been defined\n'
+                    'please provide the valence charge as an argument to return_system()'
                     )
                 raise KeyError(msg)
             #end if
@@ -2006,10 +1996,8 @@ def generate_any_pwscf_input(**kwargs):
                 defaults = generate_any_defaults[defaults]
             else:
                 msg = (
-                    'invalid default set requested: {0}\n'
-                    '  valid options are {1}'.format(
-                        defaults, sorted(generate_any_defaults.keys())
-                        )
+                    f'invalid default set requested: {defaults}\n'
+                    f'  valid options are {sorted(generate_any_defaults.keys())}'
                     )
                 raise ValueError(msg)
             #end if
@@ -2045,7 +2033,7 @@ def generate_any_pwscf_input(**kwargs):
     hub_keys_v72 = 'hubbard hubbard_proj'.lower().split()
     has_v72_keys = any(([_ in kwargs.keys() for _ in hub_keys_v72]))
     if has_pre72_keys + has_v72_keys > 1:
-        msg = 'Please use {} for QE version <7.2 and {} for QE version >=7.2'.format(hub_keys_pre72, hub_keys_v72)
+        msg = f'Please use {hub_keys_pre72} for QE version <7.2 and {hub_keys_v72} for QE version >=7.2'
         raise ValueError(msg)
     #end if     
     occ               = kwargs.get('occupations',None)
@@ -2145,14 +2133,14 @@ def generate_any_pwscf_input(**kwargs):
                 if set(elem_order)!=species:
                     msg = (
                         'elem_order is missing some atomic species\n'
-                        'atomic species present: {0}\n'
-                        'elem_order: {1}'.format(sorted(species), elem_order)
+                        f'atomic species present: {sorted(species)}\n'
+                        f'elem_order: {elem_order}'
                         )
                     raise ValueError(msg)
                 elif len(elem_order)!=len(species):
                     msg = (
                         'elem_order has repeated elements\n'
-                        'elem_order: {0}'.format(elem_order)
+                        f'elem_order: {elem_order}'
                         )
                     raise ValueError(msg)
                 #end if
@@ -2314,9 +2302,7 @@ def generate_any_pwscf_input(**kwargs):
         else:
             if hubbard_option not in hubbard_card.available_specifiers:
                 msg = (
-                    'HUBBARD card specifier "{}" is not valid. Available specifiers: {}'.format(
-                        hubbard_option, hubbard_card.available_specifiers
-                        )
+                    f'HUBBARD card specifier "{hubbard_option}" is not valid. Available specifiers: {hubbard_card.available_specifiers}'
                     )
                 raise ValueError(msg)
             #end if
@@ -2334,8 +2320,8 @@ def generate_any_pwscf_input(**kwargs):
         if option is not None:
             if card_name not in pw:
                 msg = (
-                    'Card option provided for card "{}" but card is not present\n'
-                    'option provided: {}'.format(card_name, option)
+                    f'Card option provided for card "{card_name}" but card is not present\n'
+                    f'option provided: {option}'
                     )
                 raise ValueError(msg)
             #end if
@@ -2359,10 +2345,8 @@ def generate_any_pwscf_input(**kwargs):
     # check for leftover keywords
     if len(kwargs)>0:
         msg = (
-            'unrecognized keywords: {0}\n'
-            'these keywords are not known to belong to any namelist for PWSCF'.format(
-                sorted(kwargs.keys())
-                )
+            f'unrecognized keywords: {sorted(kwargs.keys())}\n'
+            'these keywords are not known to belong to any namelist for PWSCF'
             )
         raise ValueError(msg)
     #end if  

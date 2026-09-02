@@ -77,17 +77,15 @@ def write_qp_value(value_filepath,value):
     elif isinstance(value,int):
         svalue = str(value)
     elif isinstance(value,float):
-        svalue = '{0: 24.15e}'.format(value)
+        svalue = f'{value: 24.15e}'
     elif isinstance(value,str):
         svalue = value
     else:
         msg = (
             'invalid type encountered on write\n'
-            'attempted to write variable: {0}\n'
-            'with type: {1}\n'
-            'valid type options: bool,int,float,str'.format(
-                value_filepath, value.__class__.__name__
-                )
+            f'attempted to write variable: {value_filepath}\n'
+            f'with type: {value.__class__.__name__}\n'
+            'valid type options: bool,int,float,str'
             )
         raise TypeError(msg)
     #end if
@@ -247,18 +245,18 @@ def extract_input_specification(*ezfio_paths):
             msg = (
                 'cannot extract input spec from path\n'
                 'input path provided is not an ezfio directory\n'
-                'input path provided: {0}'.format(epath)
+                f'input path provided: {epath}'
                 )
             raise ValueError(msg)
         elif not os.path.exists(epath):
             msg = (
                 'cannot extract input spec from path\n'
                 'input path provided does not exist\n'
-                'input path provided: {0}'.format(epath)
+                f'input path provided: {epath}'
                 )
             raise FileNotFoundError(msg)
         #end if
-        log('  extracting from: {0}'.format(epath))
+        log(f'  extracting from: {epath}')
         for path,dirs,files in os.walk(epath):  # noqa: B007
             for file in files:
                 if 'save' not in path and 'work' not in path:
@@ -286,7 +284,7 @@ def extract_input_specification(*ezfio_paths):
         s = ''
         for vpath in sorted(new_input_spec.keys()):
             vtype = new_input_spec[vpath]
-            s += "    '{0}' : {1},\n".format(vpath,vtype)
+            s += f"    '{vpath}' : {vtype},\n"
         #end for
         s += '    })\n'
         log(s)
@@ -333,8 +331,8 @@ class QuantumPackageInput(SimulationInput):
     def present(self,name):
         if name not in known_variables:
             msg = (
-                'attempted to check presence of unknown variable "{0}"\n'
-                'valid options are: {1}'.format(name, sorted(known_variables))
+                f'attempted to check presence of unknown variable "{name}"\n'
+                f'valid options are: {sorted(known_variables)}'
                 )
             raise ValueError(msg)
         #end if
@@ -348,11 +346,9 @@ class QuantumPackageInput(SimulationInput):
             if name not in known_variables:
                 msg = (
                     'cannot set variable\n'
-                    'attempted to set unknown variable "{0}"\n'
-                    'with value: {1}\n'
-                    'valid options are: {2}'.format(
-                        name, value, sorted(known_variables)
-                        )
+                    f'attempted to set unknown variable "{name}"\n'
+                    f'with value: {value}\n'
+                    f'valid options are: {sorted(known_variables)}'
                     )
                 raise ValueError(msg)
             #end if
@@ -369,8 +365,8 @@ class QuantumPackageInput(SimulationInput):
         if name not in known_variables:
             msg = (
                 'cannot get variable\n'
-                'attempted to get unknown variable "{0}"\n'
-                'valid options are: {1}'.format(name, sorted(known_variables))
+                f'attempted to get unknown variable "{name}"\n'
+                f'valid options are: {sorted(known_variables)}'
                 )
             raise ValueError(msg)
         #end if
@@ -387,8 +383,8 @@ class QuantumPackageInput(SimulationInput):
         if name not in known_variables:
             msg = (
                 'cannot get variable\n'
-                'attempted to get unknown variable "{0}"\n'
-                'valid options are: {1}'.format(name, sorted(known_variables))
+                f'attempted to get unknown variable "{name}"\n'
+                f'valid options are: {sorted(known_variables)}'
                 )
             raise ValueError(msg)
         #end if
@@ -425,14 +421,14 @@ class QuantumPackageInput(SimulationInput):
             msg = (
                 'cannot read input\n'
                 'provided ezfio directory does not exist\n'
-                'directory provided:  {0}'.format(epath)
+                f'directory provided:  {epath}'
                 )
             raise FileNotFoundError(msg)
         elif not os.path.isdir(epath):
             msg = (
                 'cannot read input\n'
                 'provided ezfio path is not a directory\n'
-                'path provided:  {0}'.format(epath)
+                f'path provided:  {epath}'
                 )
             raise NotADirectoryError(msg)
         elif not epath.endswith('.ezfio'):
@@ -440,7 +436,7 @@ class QuantumPackageInput(SimulationInput):
                 'cannot read input\n'
                 'provided path does not end in an ezfio directory\n'
                 'directory must end with .ezfio\n'
-                'path provided:  {0}'.format(epath)
+                f'path provided:  {epath}'
                 )
             raise ValueError(msg)
         #end if
@@ -477,7 +473,7 @@ class QuantumPackageInput(SimulationInput):
                 'cannot write input\n'
                 'provided path does not end in an ezfio directory\n'
                 'directory must end with .ezfio\n'
-                'path provided:  {0}'.format(epath)
+                f'path provided:  {epath}'
                 )
             raise ValueError(msg)
         #end if
@@ -488,8 +484,8 @@ class QuantumPackageInput(SimulationInput):
         if not os.path.exists(path):
             msg = (
                 'cannot write input\n'
-                'attempted to write ezfio directory "{0}" at non-existent destination path\n'
-                'destination path: {1}'.format(edir, path)
+                f'attempted to write ezfio directory "{edir}" at non-existent destination path\n'
+                f'destination path: {path}'
                 )
             raise FileNotFoundError(msg)
         #end if
@@ -500,17 +496,15 @@ class QuantumPackageInput(SimulationInput):
                 msg = (
                     'cannot write input\n'
                     'structure is missing\n'
-                    'input path provided: {0}'.format(epath)
+                    f'input path provided: {epath}'
                     )
                 raise FileNotFoundError(msg)
             elif not isinstance(self.structure,Structure):
                 msg = (
                     'cannot write input\n'
                     'structure must be of type: Structure\n'
-                    'type provided: {0}\n'
-                    'input path provided: {1}'.format(
-                        type(self.structure).__name__, epath
-                        )
+                    f'type provided: {type(self.structure).__name__}\n'
+                    f'input path provided: {epath}'
                     )
                 raise TypeError(msg)
             #end if
@@ -528,12 +522,10 @@ class QuantumPackageInput(SimulationInput):
             if not os.path.exists(edir):
                 msg = (
                     'cannot write input\n'
-                    'ezfio creation command failed: {0}\n'
-                    'executed at path: {1}\n'
-                    'directory {2} not created\n'
-                    'please source your quantum_package.rc file before running the current script'.format(
-                        command, path, edir
-                        )
+                    f'ezfio creation command failed: {command}\n'
+                    f'executed at path: {path}\n'
+                    f'directory {edir} not created\n'
+                    'please source your quantum_package.rc file before running the current script'
                     )
                 raise RuntimeError(msg)
             #end if
@@ -549,9 +541,9 @@ class QuantumPackageInput(SimulationInput):
                 msg = (
                     'cannot write input\n'
                     'input section path does not exist\n'
-                    'section path: {0}\n'
+                    f'section path: {secpath}\n'
                     'please ensure that all variables were created previously for this ezfio directory\n'
-                    '(to create all variables, run "qp_edit -c {1}")'.format(secpath, edir)
+                    f'(to create all variables, run "qp_edit -c {edir}")'
                     )
                 raise FileNotFoundError(msg)
             #end if
@@ -604,21 +596,17 @@ class QuantumPackageInput(SimulationInput):
                     msg = (
                         'input is invalid\n'
                         'unknown section encountered\n'
-                        'unknown section provided: {0}\n'
-                        'valid options are: {1}'.format(
-                            secname, sorted(known_sections)
-                            )
+                        f'unknown section provided: {secname}\n'
+                        f'valid options are: {sorted(known_sections)}'
                         )
                 elif not isinstance(sec,Section):
                     msg = (
                         'input is invalid\n'
                         'invalid section type encountered\n'
                         'section must be of type: Section\n'
-                        'section name: {0}\n'
-                        'section type: {1}\n'
-                        'section contents: {2}'.format(
-                            secname, sec.__class__.__name__, sec
-                            )
+                        f'section name: {secname}\n'
+                        f'section type: {sec.__class__.__name__}\n'
+                        f'section contents: {sec}'
                         )
                 #end if
                 if len(msg)>0:
@@ -629,21 +617,19 @@ class QuantumPackageInput(SimulationInput):
                         if varname not in known_variables:
                             msg = (
                                 'input is invalid\n'
-                                'unknown variable encountered in section "{0}"\n'
-                                'unknown variable: {1}\n'
-                                'valid options are: {2}'.format(
-                                    secname, varname, sorted(section_variables[secname])
-                                    )
+                                f'unknown variable encountered in section "{secname}"\n'
+                                f'unknown variable: {varname}\n'
+                                f'valid options are: {sorted(section_variables[secname])}'
                                 )
                         elif types:
                             vpath = secname+'/'+varname
                             if vpath not in input_specification:
                                 msg = (
                                     'variable is known but variable path not found in input_specification\n'
-                                    'variable name: {0}\n'
-                                    'variable path: {1}\n'
+                                    f'variable name: {varname}\n'
+                                    f'variable path: {vpath}\n'
                                     'this is a developer error\n'
-                                    'please contact the developers'.format(varname, vpath)
+                                    'please contact the developers'
                                     )
                             else:
                                 vtype = input_specification[vpath]
@@ -654,11 +640,9 @@ class QuantumPackageInput(SimulationInput):
                                     type_map = {bool:'bool',int:'int',float:'float',str:'str'}
                                     msg = (
                                         'input is invalid\n'
-                                        'variable "{0}" in section "{1}" must be of type {2}\n'
-                                        'type provided: {3}\n'
-                                        'value provided: {4}'.format(
-                                            varname, secname, type_map[vtype], type(var).__name__, var
-                                            )
+                                        f'variable "{varname}" in section "{secname}" must be of type {type_map[vtype]}\n'
+                                        f'type provided: {type(var).__name__}\n'
+                                        f'value provided: {var}'
                                         )
                                 #end if
                             #end if
@@ -691,10 +675,8 @@ class QuantumPackageInput(SimulationInput):
                     msg = (
                         'input is invalid\n'
                         'variable "run_type" in section "run_control" has an invalid value\n'
-                        'value provided: {}\n'
-                        'valid options are: {}'.format(
-                            rc.run_type, sorted(QuantumPackageInput.run_types)
-                        )
+                        f'value provided: {rc.run_type}\n'
+                        f'valid options are: {sorted(QuantumPackageInput.run_types)}'
                     )
                 #end if
             #end if
@@ -777,10 +759,8 @@ def generate_quantum_package_input(**kwargs):
         msg = (
             'cannot generate input\n'
             'requested invalid default set\n'
-            'default set requested: {0}\n'
-            'valid options are: {1}'.format(
-                kw.defaults, sorted(qp_defaults.keys())
-                )
+            f'default set requested: {kw.defaults}\n'
+            f'valid options are: {sorted(qp_defaults.keys())}'
             )
         raise ValueError(msg)
     #end if
@@ -794,8 +774,8 @@ def generate_quantum_package_input(**kwargs):
         msg = (
             'cannot generate input\n'
             'required variables are missing\n'
-            'missing variables: {0}\n'
-            'please supply values for these variables via generate_quantum_package'.format(sorted(req_missing))
+            f'missing variables: {sorted(req_missing)}\n'
+            'please supply values for these variables via generate_quantum_package'
             )
         raise ValueError(msg)
     #end if
@@ -810,11 +790,9 @@ def generate_quantum_package_input(**kwargs):
     if name is not None:
         msg = (
             'cannot generate input\n'
-            'variable "{0}" has the wrong type\n'
-            'type required: {1}\n'
-            'type provided: {2}'.format(
-                name, vtype.__name__, type(kw[name]).__name__
-                )
+            f'variable "{name}" has the wrong type\n'
+            f'type required: {vtype.__name__}\n'
+            f'type provided: {type(kw[name]).__name__}'
             )
         raise TypeError(msg)
     #end if
@@ -832,9 +810,9 @@ def generate_quantum_package_input(**kwargs):
         msg = (
             'cannot generate input\n'
             'invalid run_type requested\n'
-            'run_type provided: {0}\n'
+            f'run_type provided: {run_kw.run_type}\n'
             'valid options are:\n'
-            '{1}'.format(run_kw.run_type, valid)
+            f'{valid}'
             )
         raise ValueError(msg)
     #end if
@@ -866,11 +844,9 @@ def generate_quantum_package_input(**kwargs):
             msg = (
                 'cannot generate input\n'
                 'encountered name that is not known as a section or variable\n'
-                'unrecognized name provided: {0}\n'
-                'valid sections: {1}\n'
-                'valid variables: {2}'.format(
-                    name, sorted(known_sections), sorted(known_variables)
-                    )
+                f'unrecognized name provided: {name}\n'
+                f'valid sections: {sorted(known_sections)}\n'
+                f'valid variables: {sorted(known_variables)}'
                 )
             raise ValueError(msg)
         #end if
@@ -890,7 +866,7 @@ def generate_quantum_package_input(**kwargs):
             msg = (
                 'cannot generate input\n'
                 'section cannot be fond for variable provided\n'
-                'unrecognized variable: {0}'.format(varname)
+                f'unrecognized variable: {varname}'
                 )
             raise ValueError(msg)
         #end if
@@ -899,11 +875,9 @@ def generate_quantum_package_input(**kwargs):
             msg = (
                 'cannot generate input\n'
                 'section cannot be uniquely determined from variable name\n'
-                'variable name provided: {0}\n'
-                'possible sections: {1}\n'
-                'please provide this variable directly within on of the input sections listed and try again'.format(
-                    varname, secname
-                    )
+                f'variable name provided: {varname}\n'
+                f'possible sections: {secname}\n'
+                'please provide this variable directly within on of the input sections listed and try again'
                 )
             raise ValueError(msg)
         #end if

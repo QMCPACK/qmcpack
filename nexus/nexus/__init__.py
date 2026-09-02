@@ -34,7 +34,7 @@ from .developer     import obj, log, NexusError
 from .debug         import ci
 from .utilities     import path_string
 
-from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults
+from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults, write_splash
 from .machines        import Job,                    job,            Machine, Supercomputer, get_machine, get_cpu_cores, Workstation
 from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims, DynamicProcess
 from .project_manager import ProjectManager,     DynamicWorkflowManager,     workflow_manager
@@ -97,14 +97,14 @@ def run_project(*args,**kwargs):
 #   place here for now as it depends on all other input functions
 def read_input(filepath,format=None):
     if not os.path.exists(filepath):
-        msg = 'cannot read input file\nfile does not exist: {0}'.format(filepath)
+        msg = f'cannot read input file\nfile does not exist: {filepath}'
         raise FileNotFoundError(msg)
     #end if
     if format is None:
         if filepath.endswith('in.xml'):
             format = 'qmcpack'
         else:
-            msg = 'cannot identify file format\nplease provide format for file: {0}'.format(filepath)
+            msg = f'cannot identify file format\nplease provide format for file: {filepath}'
             raise RuntimeError(msg)
         #end if
     #end if
@@ -116,7 +116,7 @@ def read_input(filepath,format=None):
     elif format=='gamess':
         input = GamessInput(filepath)
     else:
-        msg = 'cannot read input file\nfile format "{0}" is unsupported'.format(format)
+        msg = f'cannot read input file\nfile format "{format}" is unsupported'
         raise NotImplementedError(msg)
     #end if
     return input
@@ -200,7 +200,7 @@ class Settings(NexusCore):
         # guard against invalid settings
         not_allowed = set(kwargs.keys()) - Settings.allowed_vars
         if len(not_allowed)>0:
-            msg = 'unrecognized variables provided\nyou provided: {0}\nallowed variables are: {1}'.format(sorted(not_allowed),sorted(Settings.allowed_vars))
+            msg = f'unrecognized variables provided\nyou provided: {sorted(not_allowed)}\nallowed variables are: {sorted(Settings.allowed_vars)}'
             raise ValueError(msg)
         #end if
 
@@ -215,7 +215,7 @@ class Settings(NexusCore):
             self.process_command_line_settings(kwargs)
         #end if
 
-        NexusCore.write_splash()
+        write_splash()
 
         # print version information
         self.log("Checking current machine for Nexus dependencies...\n")
@@ -318,7 +318,7 @@ class Settings(NexusCore):
         pwscf_kw  = Settings.kw_set(Settings.pwscf_vars     ,kwargs)
         qm_pkg_kw = Settings.kw_set(Settings.qm_package_vars,kwargs)
         if len(kwargs)>0:
-            msg = 'some settings keywords have not been accounted for\nleftover keywords: {0}\nthis is a developer error'.format(sorted(kwargs.keys()))
+            msg = f'some settings keywords have not been accounted for\nleftover keywords: {sorted(kwargs.keys())}\nthis is a developer error'
             raise NexusError(msg)
         #end if
 
@@ -391,11 +391,11 @@ class Settings(NexusCore):
                         )
         parser.add_option('--sleep',dest='sleep',
                         default='none',
-                        help='Number of seconds between polls.  At each poll, simulations are actually run provided all simulations they depend on have successfully completed (default={0}).'.format(nexus_core_defaults.sleep)
+                        help=f'Number of seconds between polls.  At each poll, simulations are actually run provided all simulations they depend on have successfully completed (default={nexus_core_defaults.sleep}).'
                         )
         parser.add_option('--timeout',dest='timeout',
                         default='none',
-                        help='Number of seconds to wait for output and error files after a job exits the queue before marking the simulation as failed (default={}).'.format(nexus_core_defaults.timeout)
+                        help=f'Number of seconds to wait for output and error files after a job exits the queue before marking the simulation as failed (default={nexus_core_defaults.timeout}).'
                         )
         parser.add_option('--machine',dest='machine',
                         default='none',
@@ -407,15 +407,15 @@ class Settings(NexusCore):
                         )
         parser.add_option('--runs',dest='runs',
                         default='none',
-                        help='Directory to perform all runs in.  Simulation paths are appended to this directory (default={0}).'.format(nexus_core_defaults.runs)
+                        help=f'Directory to perform all runs in.  Simulation paths are appended to this directory (default={nexus_core_defaults.runs}).'
                         )
         parser.add_option('--results',dest='results',
                         default='none',
-                        help="Directory to copy out lightweight results data.  If set to '', results will not be stored outside of the runs directory (default={0}).".format(nexus_core_defaults.results)
+                        help=f"Directory to copy out lightweight results data.  If set to '', results will not be stored outside of the runs directory (default={nexus_core_defaults.results})."
                         )
         parser.add_option('--local_directory',dest='local_directory',
                         default='none',
-                        help='Base path where runs and results directories will be created (default={0}).'.format(nexus_core_defaults.local_directory)
+                        help=f'Base path where runs and results directories will be created (default={nexus_core_defaults.local_directory}).'
                         )
         parser.add_option('--pseudo_dir',dest='pseudo_dir',
                         default='none',
@@ -449,7 +449,7 @@ class Settings(NexusCore):
         # check that all options are allowed (developer check)
         invalid = set(opt.keys())-Settings.allowed_vars
         if len(invalid)>0:
-            msg = 'invalid command line settings encountered\ninvalid settings: {0}\nthis is a developer error'.format(sorted(invalid))
+            msg = f'invalid command line settings encountered\ninvalid settings: {sorted(invalid)}\nthis is a developer error'
             raise NexusError(msg)
         #end if
 
@@ -461,7 +461,7 @@ class Settings(NexusCore):
                 try:
                     opt[ropt] = float(opt[ropt])
                 except:
-                    msg = "command line option '{0}' must be a real value\nyou provided: {1}\nplease try again".format(ropt,opt[ropt])
+                    msg = f"command line option '{ropt}' must be a real value\nyou provided: {opt[ropt]}\nplease try again"
                     raise ValueError(msg)
                 #end try
             #end if
@@ -493,7 +493,7 @@ class Settings(NexusCore):
                         machine.incorporate_user_info(minfo)
                         mid_set.add(id(machine))
                     else:
-                        msg = 'machine {0} is unknown\n  cannot set machine_info'.format(machine_name)
+                        msg = f'machine {machine_name} is unknown\n  cannot set machine_info'
                         raise ValueError(msg)
                     #end if
                 #end for
@@ -516,7 +516,7 @@ class Settings(NexusCore):
                     Workstation(machine_name, n_cores, 'mpirun')
 
             if not Machine.exists(machine_name):
-                msg = 'machine {0} is unknown'.format(machine_name)
+                msg = f'machine {machine_name} is unknown'
                 raise ValueError(msg)
             #end if
             Job.machine = machine_name
@@ -528,7 +528,7 @@ class Settings(NexusCore):
             if 'account' in mset:
                 account = mset.account
                 if not isinstance(account,str):
-                    msg = 'account for {0} must be a string\nyou provided: {1}'.format(machine_name,account)
+                    msg = f'account for {machine_name} must be a string\nyou provided: {account}'
                     raise TypeError(msg)
                 #end if
                 ProjectManager.machine.account = account
@@ -536,7 +536,7 @@ class Settings(NexusCore):
             if 'user' in mset:
                 user = mset.user
                 if not isinstance(user,str):
-                    msg = 'user for {0} must be a string\nyou provided: {1}'.format(machine_name,user)
+                    msg = f'user for {machine_name} must be a string\nyou provided: {user}'
                     raise TypeError(msg)
                 #end if
                 ProjectManager.machine.user = user
@@ -580,7 +580,7 @@ class Settings(NexusCore):
             elif kw.status in nexus_core.status_modes:
                 nexus_core.status = nexus_core.status_modes[kw.status]
             else:
-                msg = 'invalid status mode specified: {0}\nvalid status modes are: {1}'.format(kw.status,sorted(nexus_core.status_modes.keys()))
+                msg = f'invalid status mode specified: {kw.status}\nvalid status modes are: {sorted(nexus_core.status_modes.keys())}'
                 raise ValueError(msg)
             #end if
         #end if
@@ -591,7 +591,7 @@ class Settings(NexusCore):
             if kw.mode in nexus_core.modes:
                 nexus_core.mode = kw.mode
             else:
-                msg = 'invalid mode specified: {0}\nvalid modes are: {1}'.format(kw.mode,sorted(nexus_core.modes.keys()))
+                msg = f'invalid mode specified: {kw.mode}\nvalid modes are: {sorted(nexus_core.modes.keys())}'
                 raise ValueError(msg)
             #end if
         #end if
@@ -640,7 +640,7 @@ class Settings(NexusCore):
         pseudo_dir = kw.get('pseudo_dir',None)
         if pseudo_dir is not None:
             if not os.path.isdir(pseudo_dir):
-                msg = 'pseudo_dir "{0}" does not exist or is not a directory'.format(pseudo_dir)
+                msg = f'pseudo_dir "{pseudo_dir}" does not exist or is not a directory'
                 raise NotADirectoryError(msg)
             #end if
             pseudo_dir = os.path.abspath(pseudo_dir)
@@ -672,7 +672,7 @@ class Settings(NexusCore):
             basis_dir = kw.basis_dir
             nexus_core.file_locations.append(basis_dir)
             if not os.path.exists(basis_dir):
-                msg = 'basis_dir "{0}" does not exist'.format(basis_dir)
+                msg = f'basis_dir "{basis_dir}" does not exist'
                 raise FileNotFoundError(msg)
             #end if
             files = os.listdir(basis_dir)
