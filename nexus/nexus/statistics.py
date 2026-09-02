@@ -103,6 +103,18 @@ def theil_sen_stoch(x,y):
 #end def theil_sen_stoch
 
 
+#######################################################################
+#                                                                     #
+#           Autocorrelation estimator stress testing                  #
+#           ----------------------------------------                  #
+#                                                                     #
+#                                                                     #
+#                                                                     #
+#                                                                     #
+#                                                                     #
+#######################################################################
+
+
 def theil_sen_stoch_reblock(x,y):
     """Estimate a Theil-Sen fit using a reblocking-specific sample schedule.
 
