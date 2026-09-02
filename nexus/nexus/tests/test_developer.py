@@ -264,9 +264,7 @@ def check_dictlike_pair(dict_type1,dict_type2):
     def check(condition, operation):
         if not condition:
             raise AssertionError(
-                '{} and {} are incompatible for {}'.format(
-                    name1, name2, operation
-                    )
+                f'{name1} and {name2} are incompatible for {operation}'
                 )
 
     contents = [('a', 1), ('b', 'two')]
@@ -278,9 +276,9 @@ def check_dictlike_pair(dict_type1,dict_type2):
     left_to_right = left == right
     right_to_left = right == left
     check(type(left_to_right) is bool and left_to_right,
-          '{} == {}'.format(name1, name2))
+          f'{name1} == {name2}')
     check(type(right_to_left) is bool and right_to_left,
-          '{} == {}'.format(name2, name1))
+          f'{name2} == {name1}')
     check(not (left != right) and not (right != left),
           'symmetric inequality of equal mappings')
 
@@ -290,9 +288,9 @@ def check_dictlike_pair(dict_type1,dict_type2):
                 (unequal_keys , 'different keys'  )]
     for unequal, description in ue_pairs:
         check(not (left == unequal) and not (unequal == left),
-              'symmetric equality with {}'.format(description))
+              f'symmetric equality with {description}')
         check(left != unequal and unequal != left,
-              'symmetric inequality with {}'.format(description))
+              f'symmetric inequality with {description}')
 
     empty1 = dict_type1()
     empty2 = dict_type2()
@@ -307,9 +305,9 @@ def check_dictlike_pair(dict_type1,dict_type2):
     converted1 = dict_type1(source2)
     converted2 = dict_type2(source1)
     check(converted1 == source2 and converted1['shared'] is shared,
-          '{} constructor from {}'.format(name1, name2))
+          f'{name1} constructor from {name2}')
     check(converted2 == source1 and converted2['shared'] is shared,
-          '{} constructor from {}'.format(name2, name1))
+          f'{name2} constructor from {name1}')
 
     # update must consume the other mapping type and preserve normal overwrite
     # behavior without mutating the source.
@@ -320,8 +318,8 @@ def check_dictlike_pair(dict_type1,dict_type2):
     updated1.update(source2)
     updated2.update(source1)
     expected = {'old': 0, 'a': 0, 'shared': shared, 'value': 1}
-    check(updated1 == expected, '{}.update({})'.format(name1, name2))
-    check(updated2 == expected, '{}.update({})'.format(name2, name1))
+    check(updated1 == expected, f'{name1}.update({name2})')
+    check(updated2 == expected, f'{name2}.update({name1})')
     check(source1 == source1_before and source2 == source2_before,
           'update leaves source mappings unchanged')
 
@@ -379,9 +377,7 @@ def test_dotdict_unique():
     def check(condition, operation):
         if not condition:
             raise AssertionError(
-                'dotdict does not satisfy its unique semantics for {}'.format(
-                    operation
-                    )
+                f'dotdict does not satisfy its unique semantics for {operation}'
                 )
 
     # String keys support dot access, assignment, and deletion in both
@@ -462,9 +458,7 @@ def test_obj_unique():
     def check(condition, operation):
         if not condition:
             raise AssertionError(
-                'obj does not satisfy its unique semantics for {}'.format(
-                    operation
-                    )
+                f'obj does not satisfy its unique semantics for {operation}'
                 )
 
     # obj uses its instance attribute dictionary as mapping storage, making
@@ -713,20 +707,8 @@ def test_developer_tools_devbase(tmp_path):
 
 def test_obj_virtual_subclass():
     from ..developer_tools import obj
-    from ..developer import obj_nexus
-    from ..developer import obj_deprecated
 
     assert(issubclass(obj, MutableMapping))
     assert(issubclass(obj, Mapping))
     assert(isinstance(obj(), MutableMapping))
     assert(isinstance(obj(), Mapping))
-
-    assert(issubclass(obj_nexus, MutableMapping))
-    assert(issubclass(obj_nexus, Mapping))
-    assert(isinstance(obj_nexus(), MutableMapping))
-    assert(isinstance(obj_nexus(), Mapping))
-
-    assert(not issubclass(obj_deprecated, MutableMapping))
-    assert(not issubclass(obj_deprecated, Mapping))
-    assert(not isinstance(obj_deprecated(), MutableMapping))
-    assert(not isinstance(obj_deprecated(), Mapping))

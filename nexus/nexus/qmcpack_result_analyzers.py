@@ -198,8 +198,8 @@ class OptimizationAnalyzer(ResultAnalyzer):
         else:
             msg = (
                 'selection for optimization is invalid\n'
-                'optimize setting: {0}\n'
-                'valid options are: energy, variance, energy_within_variance_tol, or a length 2 tuple containing the cost of energy and variance, e.g. (.5,.5)'.format(optimize)
+                f'optimize setting: {optimize}\n'
+                'valid options are: energy, variance, energy_within_variance_tol, or a length 2 tuple containing the cost of energy and variance, e.g. (.5,.5)'
                 )
             raise ValueError(msg)
         #end if
@@ -262,19 +262,19 @@ class OptimizationAnalyzer(ResultAnalyzer):
         #end if
         if energy:
             if header:
-                print('  Energies ({0}):'.format(units))
+                print(f'  Energies ({units}):')
             #end if
             for i in range(len(en)):
-                print('    {0:>2}    {1:9.6f} +/-{2:9.6f}'.format(i,en[i]-emax,enerr[i]))
+                print(f'    {i:>2}    {en[i]-emax:9.6f} +/-{enerr[i]:9.6f}')
             #end for
-            print('    ref {0:9.6f}'.format(emax))
+            print(f'    ref {emax:9.6f}')
         #end if
         if variance:
             if header:
-                print('  Variances ({0}^2):'.format(units))
+                print(f'  Variances ({units}^2):')
             #end if
             for i in range(len(en)):
-                print('    {0:>2}    {1:9.6f} +/- {2:9.6f}'.format(i,va[i],vaerr[i]))
+                print(f'    {i:>2}    {va[i]:9.6f} +/- {vaerr[i]:9.6f}')
             #end for
         #end if
     #end def summarize
@@ -433,7 +433,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
         #end if
         for i in range(len(timesteps)):
             ts,E,Eerr = timesteps[i],energies[i],errors[i]
-            print('    {0:>6.4f}   {1:>6.4f} +/- {2:>6.4f}'.format(ts,E-Esmall,Eerr))
+            print(f'    {ts:>6.4f}   {E-Esmall:>6.4f} +/- {Eerr:>6.4f}')
         #end for
     #end def summarize
 
@@ -454,7 +454,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
         tsrange = [0,1.1*timesteps[-1]]
         plot(tsrange,[0,0],'k-')
         errorbar(timesteps,energies-Esmall,errors,fmt='k.')
-        text(np.array(tsrange).mean(),0,'{0:6.4f} eV'.format(Esmall))
+        text(np.array(tsrange).mean(),0,f'{Esmall:6.4f} eV')
         xticks(timesteps)
         xlim(tsrange)
         xlabel('Timestep (Ha)')

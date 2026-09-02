@@ -146,13 +146,13 @@ class Pwscf(Simulation):
         if 'input_dft' in self.input.system:
             functional = self.input.system.input_dft.lower()
             if '+' not in functional and functional not in allowed_functionals:
-                self.warn('functional "{0}" is unknown to pwscf'.format(functional))
+                self.warn(f'functional "{functional}" is unknown to pwscf')
             #end if
             if functional in vdw_functionals:
                 if self.vdw_table is None:
                     msg = (
-                        'attempting to run vdW functional "{0}", but vdw_table is missing\n'
-                        'please provide path to table file via "vdw_table" parameter in settings'.format(functional)
+                        f'attempting to run vdW functional "{functional}", but vdw_table is missing\n'
+                        'please provide path to table file via "vdw_table" parameter in settings'
                         )
                     raise ValueError(msg)
                 #end if
@@ -251,15 +251,15 @@ class Pwscf(Simulation):
                 None # don't need to do anything if in same directory
             elif self.sync_from_scf: # rsync output into nscf dir
                 outdir = os.path.join(self.locdir,c.outdir)
-                command = 'rsync -av {0}/* {1}/'.format(result.outdir,outdir)
+                command = f'rsync -av {result.outdir}/* {outdir}/'
                 if not os.path.exists(outdir):
                     os.makedirs(outdir)
                 #end if
                 sync_record = os.path.join(outdir,'nexus_sync_record')
                 if not os.path.exists(sync_record):
-                    print('    Running rsync for the {} directory. This might take a while.'.format(outdir))
+                    print(f'    Running rsync for the {outdir} directory. This might take a while.')
                     execute(command)
-                    print('    Completed rsync for the {} directory.'.format(outdir))
+                    print(f'    Completed rsync for the {outdir} directory.')
                     with open(sync_record,'w') as f:
                         f.write('\n')
                 #end if
@@ -282,7 +282,7 @@ class Pwscf(Simulation):
                     os.system('ln -s '+cd_rel+' charge-density.dat')
                     os.system('ln -s '+sp_rel+' spin-polarization.dat')
                 else:
-                    raise FileNotFoundError('charge-density.dat or charge-density.hdf5 not found in {0}'.format(result_save_outdir))
+                    raise FileNotFoundError(f'charge-density.dat or charge-density.hdf5 not found in {result_save_outdir}')
                 os.chdir(cwd)
 
             #end if
@@ -326,15 +326,15 @@ class Pwscf(Simulation):
                 None # don't need to do anything if in same directory
             else: # rsync output into new scf dir
                 outdir = os.path.join(self.locdir,c.outdir)
-                command = 'rsync -av {0}/* {1}/'.format(result.outdir,outdir)
+                command = f'rsync -av {result.outdir}/* {outdir}/'
                 if not os.path.exists(outdir):
                     os.makedirs(outdir)
                 #end if
                 sync_record = os.path.join(outdir,'nexus_sync_record')
                 if not os.path.exists(sync_record):
-                    print('    Running rsync for the {} directory. This might take a while.'.format(outdir))
+                    print(f'    Running rsync for the {outdir} directory. This might take a while.')
                     execute(command)
-                    print('    Completed rsync for the {} directory.'.format(outdir))
+                    print(f'    Completed rsync for the {outdir} directory.')
                     with open(sync_record,'w') as f:
                         f.write('\n')
 
@@ -468,7 +468,7 @@ class Pwscf(Simulation):
         if not os.path.isdir(charge_density_path):
             msg = (
                 'charge density path is not a directory.\n'
-                'Path provided: {}'.format(charge_density_path)
+                f'Path provided: {charge_density_path}'
                 )
             raise NotADirectoryError(msg)
         c = self.input.control
@@ -483,7 +483,7 @@ class Pwscf(Simulation):
             os.makedirs(outdir)
         sync_record = os.path.join(outdir,'nexus_sync_record')
         if not os.path.exists(sync_record):
-            print('    Copying directory: {}\n      this might take a while'.format(outdir))
+            print(f'    Copying directory: {outdir}\n      this might take a while')
             #execute(command)
             shutil.copytree(res_path, outdir, dirs_exist_ok=True)
             print('      directory copy complete')
