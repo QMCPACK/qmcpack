@@ -373,10 +373,6 @@ class Settings(NexusCore):
                         action='store_true',default=False,
                         help='Report status of all simulations and then exit.'
                         )
-        parser.add_option('--status',dest='status',
-                        default='none',
-                        help="Controls displayed simulation status information.  May be set to one of 'standard', 'active', 'failed', or 'ready'."
-                        )
         parser.add_option('--generate_only',dest='generate_only',
                         action='store_true',default=False,
                         help='Write inputs to all simulations and then exit.  Note that no dependencies are processed, e.g. if one simulation depends on another for an orbital file location or for a relaxed structure, this information will not be present in the generated input file for that simulation since no simulations are actually run with this option.'
@@ -568,11 +564,6 @@ class Settings(NexusCore):
 
 
     def process_core_settings(self,kw):
-        # process project manager settings
-        if nexus_core.debug:
-            nexus_core.verbose = True
-        #end if
-
         # process simulation settings
         if 'local_directory' in kw:
             nexus_core.file_locations.append(kw.local_directory)

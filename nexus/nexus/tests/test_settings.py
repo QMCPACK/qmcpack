@@ -45,25 +45,25 @@ def test_settings(tmp_path):
 
     def check_settings_core_noncore():
         nckeys_check = {
-                'command_line','debug',
+                'command_line',
                 'file_locations', 'generate_only', 'graph_sims', 'indent',
                 'load_images', 'local_directory', 'monitor',
                 'progress_tty', 'pseudo_dir',
                 'remote_directory', 'results', 'runs',
                 'skip_submit', 'sleep', 'timeout',
-                'status_only', 'trace', 'verbose', 'dynamic'
+                'status_only', 'dynamic'
                 }
         nnckeys_check = {
                 'basis_dir', 'basissets', 'pseudo_dir'
                 }
         setkeys_check = {
-                'command_line','basis_dir', 'basissets', 'debug',
+                'command_line', 'basis_dir', 'basissets',
                 'file_locations', 'generate_only',
                 'graph_sims', 'indent', 'load_images', 'local_directory',
                 'monitor', 'progress_tty',
                 'pseudo_dir', 'remote_directory', 'results',
                 'runs', 'skip_submit', 'sleep',
-                'timeout', 'status_only', 'trace', 'verbose', 'dynamic'
+                'timeout', 'status_only', 'dynamic'
                 }
         setkeys_allowed = setkeys_check | Settings.allowed_vars
 

@@ -68,9 +68,6 @@ nexus_core_defaults = obj(
     monitor           = True,              # used by: ProjectManager,Simulation,Machine
     skip_submit       = False,             # used by: Simulation
     load_images       = True,              # used by: ProjectManager
-    verbose           = True,              # used by: NexusCore
-    debug             = False,             # used by: NexusCore
-    trace             = False,             # used by: NexusCore
     indent            = '  ',              # used by: NexusCore
     progress_tty      = False,             # used by: ProjectManager
     graph_sims        = False,             # used by: ProjectManager
@@ -159,26 +156,25 @@ class NexusCore(DevBase):
             If ``True`` and output is to a terminal, overwrite and update the
             last line, rather than scrolling.
         """
-        if nexus_core.verbose:
-            if len(kwargs)>0:
-                n = kwargs['n']
-            else:
-                n=0
-            #end if
-            is_progress = kwargs.get('progress',False)
-            text=''
-            for t in texts:
-                text+=str(t)+' '
-            #end for
-            pad = n*nexus_core.indent
-            output_text = pad+text.replace('\n','\n'+pad)
-            if nexus_core.progress_tty and is_progress and self._logfile.isatty():
-                # spaces to ensure previous line is overwritten.  Need better solution.
-                self._logfile.write(output_text+'        \r')
-                self._logfile.flush()
-            else:
-                self._logfile.write(output_text+'\n')
+        if len(kwargs)>0:
+            n = kwargs['n']
+        else:
+            n=0
         #end if
+        is_progress = kwargs.get('progress',False)
+        text=''
+        for t in texts:
+            text+=str(t)+' '
+        #end for
+        pad = n*nexus_core.indent
+        output_text = pad+text.replace('\n','\n'+pad)
+        if nexus_core.progress_tty and is_progress and self._logfile.isatty():
+            # spaces to ensure previous line is overwritten.  Need better solution.
+            self._logfile.write(output_text+'        \r')
+            self._logfile.flush()
+        else:
+            self._logfile.write(output_text+'\n')
+
         NexusCore.wrote_something = True
     #end def log
 
