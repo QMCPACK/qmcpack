@@ -4,11 +4,15 @@ import pytest
 from . import NexusTestOrder
 from .. import statistics
 
-pytestmark = pytest.mark.order(NexusTestOrder.NUMERICS)
+pytestmark = pytest.mark.order(NexusTestOrder.STATISTICS)
 
 
 
 def test_theil_sen():
+    """Verify exact robust fitting with an extreme outlier.
+
+    Also check vector flattening and mismatched-length rejection.
+    """
     x = np.arange(5,dtype=float)
     y = np.array([1.,3.,5.,7.,101.])
 
@@ -31,10 +35,14 @@ def test_theil_sen():
 
 
 def test_theil_sen_stochastic_exact_path(monkeypatch):
-    x = np.arange(10,dtype=float)
-    y = 1.5*x-4.
+    """Verify both stochastic estimators delegate below crossover.
+
+    The delegated inputs and returned values should remain unchanged.
+    """
+    x        = np.arange(10,dtype=float)
+    y        = 1.5*x-4.
     expected = (7.,-3.)
-    calls = []
+    calls    = []
 
     def exact_theil_sen(x_arg,y_arg):
         calls.append((x_arg.copy(),y_arg.copy()))
@@ -49,12 +57,15 @@ def test_theil_sen_stochastic_exact_path(monkeypatch):
     for x_arg,y_arg in calls:
         np.testing.assert_array_equal(x_arg,x)
         np.testing.assert_array_equal(y_arg,y)
-    #end for
 #end def test_theil_sen_stochastic_exact_path
 
 
 
 def test_theil_sen_stochastic_sampled_path(monkeypatch):
+    """Exercise the sampled paths without calling the exact estimator.
+
+    Check linear fits and reproducibility from the fixed random seed.
+    """
     def reject_exact_path(x,y):
         pytest.fail('sampled path unexpectedly called the exact estimator')
     #end def reject_exact_path
@@ -77,16 +88,20 @@ def test_theil_sen_stochastic_sampled_path(monkeypatch):
     assert(intercept==pytest.approx(3.))
 
     y_noisy = .2*x+np.sin(x/7.)
-    first = statistics.theil_sen_stoch(x,y_noisy)
-    second = statistics.theil_sen_stoch(x,y_noisy)
+    first   = statistics.theil_sen_stoch(x,y_noisy)
+    second  = statistics.theil_sen_stoch(x,y_noisy)
     assert(first==second)
 #end def test_theil_sen_stochastic_sampled_path
 
 
 
 def test_reblocked_autocorr_time():
+    """Check reblocking for trivial, IID, and correlated series.
+
+    Correlation should increase the estimate for flat and column input.
+    """
     singleton = np.array([3.])
-    constant = np.ones(32)
+    constant  = np.ones(32)
     assert(statistics.reblocked_autocorr_time(singleton)==1.)
     assert(statistics.reblocked_autocorr_time(constant)==1.)
 
@@ -95,9 +110,8 @@ def test_reblocked_autocorr_time():
     correlated = iid.copy()
     for index in range(1,len(correlated)):
         correlated[index] += .8*correlated[index-1]
-    #end for
 
-    tau_iid = statistics.reblocked_autocorr_time(iid)
+    tau_iid        = statistics.reblocked_autocorr_time(iid)
     tau_correlated = statistics.reblocked_autocorr_time(correlated)
     tau_column = statistics.reblocked_autocorr_time(correlated.reshape(-1,1))
 
@@ -110,6 +124,10 @@ def test_reblocked_autocorr_time():
 
 
 def test_reblocked_autocorr_time_invalid_input():
+    """Check reblocking validation for invalid shapes and limits.
+
+    Each diagnostic-bearing assertion must report its expected message.
+    """
     test_cases = [
         (np.array([]),10,r'data array must not be empty'),
         (np.arange(8),0,r'minimum number of blocks must be at least one'),
@@ -117,8 +135,6 @@ def test_reblocked_autocorr_time_invalid_input():
     for x,min_blocks,message in test_cases:
         with pytest.raises(AssertionError,match=message):
             statistics.reblocked_autocorr_time(x,min_blocks=min_blocks)
-        #end with
-    #end for
 
     with pytest.raises(AssertionError):
         statistics.reblocked_autocorr_time(np.ones((2,2)))
@@ -127,6 +143,10 @@ def test_reblocked_autocorr_time_invalid_input():
 
 
 def test_acf_autocorr_time():
+    """Check ACF estimates for trivial, IID, and correlated series.
+
+    Also verify reliability results and vector-shaped input handling.
+    """
     assert(statistics.acf_autocorr_time(np.array([2.]))==1.)
     assert(statistics.acf_autocorr_time(np.ones(32))==1.)
     assert(
@@ -134,12 +154,11 @@ def test_acf_autocorr_time():
         ==(1.,False)
         )
 
-    rng = np.random.default_rng(90210)
-    iid = rng.normal(size=256)
+    rng        = np.random.default_rng(90210)
+    iid        = rng.normal(size=256)
     correlated = iid.copy()
     for index in range(1,len(correlated)):
         correlated[index] += .8*correlated[index-1]
-    #end for
 
     tau_iid,unreliable_iid = statistics.acf_autocorr_time(
         iid,
@@ -161,6 +180,10 @@ def test_acf_autocorr_time():
 
 
 def test_acf_autocorr_time_invalid_input():
+    """Verify ACF validation rejects unsupported input arrays.
+
+    Error messages should identify the violated input requirement.
+    """
     test_cases = [
         (np.array([1.+1.j]),r'data array must be real-valued'),
         (np.ones((2,2)),r'data array must be 1-dimensional'),
@@ -170,13 +193,15 @@ def test_acf_autocorr_time_invalid_input():
     for x,message in test_cases:
         with pytest.raises(ValueError,match=message):
             statistics.acf_autocorr_time(x)
-        #end with
-    #end for
 #end def test_acf_autocorr_time_invalid_input
 
 
 
 def test_geyer_ims_autocorr_time():
+    """Check Geyer IMS edge cases, fallback, and reliability.
+
+    Alternating data exercises the pure estimate and ACF fallback.
+    """
     assert(statistics.geyer_ims_autocorr_time(np.array([2.]))==1.)
     assert(statistics.geyer_ims_autocorr_time(np.ones(32))==1.)
 
@@ -210,6 +235,10 @@ def test_geyer_ims_autocorr_time():
 
 
 def test_geyer_ims_autocorr_time_invalid_input():
+    """Verify Geyer IMS validation for options and input arrays.
+
+    Each invalid value should produce its documented diagnostic.
+    """
     invalid_c_values = [0.,-1.,np.inf,'invalid']
     for c in invalid_c_values:
         with pytest.raises(
@@ -217,8 +246,6 @@ def test_geyer_ims_autocorr_time_invalid_input():
             match=r'c must be a positive finite number',
             ):
             statistics.geyer_ims_autocorr_time(np.arange(8),c=c)
-        #end with
-    #end for
 
     test_cases = [
         (np.array([1.+1.j]),r'input must be real-valued'),
@@ -229,13 +256,15 @@ def test_geyer_ims_autocorr_time_invalid_input():
     for x,message in test_cases:
         with pytest.raises(ValueError,match=message):
             statistics.geyer_ims_autocorr_time(x)
-        #end with
-    #end for
 #end def test_geyer_ims_autocorr_time_invalid_input
 
 
 
 def test_autocorr_time(monkeypatch):
+    """Verify combined estimation selects the conservative maximum.
+
+    Reliability requests and component flags must also be propagated.
+    """
     calls = []
 
     def fake_acf(x,reliability=False):
@@ -259,12 +288,15 @@ def test_autocorr_time(monkeypatch):
         assert(name in {'acf','geyer'})
         np.testing.assert_array_equal(x_arg,x)
         assert(reliability)
-    #end for
 #end def test_autocorr_time
 
 
 
 def test_series_stats(monkeypatch):
+    """Check series statistics with supplied and estimated timing.
+
+    The standard error must use the autocorrelation-adjusted sample size.
+    """
     x = np.array([1.,2.,3.,4.])
     mean,error,tau = statistics.series_stats(x,t_auto=4.)
     assert(mean==pytest.approx(np.mean(x)))

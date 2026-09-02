@@ -103,16 +103,40 @@ def theil_sen_stoch(x,y):
 #end def theil_sen_stoch
 
 
-#######################################################################
-#                                                                     #
-#           Autocorrelation estimator stress testing                  #
-#           ----------------------------------------                  #
-#                                                                     #
-#                                                                     #
-#                                                                     #
-#                                                                     #
-#                                                                     #
-#######################################################################
+############################################################################
+#                                                                          #
+#                Autocorrelation estimator stress testing                  #
+#                ----------------------------------------                  #
+#                                                                          #
+# The estimators were judged with repeated equilibrium Markov-chain tests  #
+# designed around population-averaged VMC and DMC data. Each test used the #
+# mean of 32 walkers and an exactly known integrated autocorrelation time. #
+# Equilibrium marginals included Gaussian, symmetric Laplace, centered     #
+# exponential, Student-t(6), and Student-t(3) distributions; the last has  #
+# the pessimistic 1/|x|**4 density tail considered in QMC.                 #
+#                                                                          #
+# Reversible retain-or-refresh chains covered IID data (tau=1), ordinary   #
+# persistence (tau=9), and slow mixing (tau=39). Reversible sign-flip      #
+# chains tested negative correlation (tau=1/9). Two-scale walker groups    #
+# (tau=27) tested weak slow modes, while a slow population-wide common     #
+# mode (tau=31.5) represented DMC-like branching or population-control     #
+# correlations in data already averaged over walkers.                      #
+#                                                                          #
+# The main benchmark used 100 independent repetitions at lengths 64        #
+# through 4096; a separate long-chain benchmark used 4096, 8192, and       #
+# 16384. Comparisons included relative bias and RMSE, variability,         #
+# empirical 10/50/90 percentiles relative to truth, failure rates,         #
+# sustained convergence, weak-mode underestimation, and execution time.    #
+# Every estimator received the same generated series within each trial.    #
+#                                                                          #
+# The prewhitened spectral method was removed because it provided no clear #
+# long-chain accuracy advantage over ACF or Geyer, retained a broad upper  #
+# tail, and developed a large runtime increase at the longest length. The  #
+# Flyvbjerg--Petersen reblocking method was removed because it remained    #
+# systematically low, particularly for weak slow modes, and converged in   #
+# fewer cases than ACF or Geyer despite its relatively narrow spread.      #
+#                                                                          #
+############################################################################
 
 
 def theil_sen_stoch_reblock(x,y):
