@@ -7,18 +7,18 @@ def theil_sen(x,y):
 
     Parameters
     ----------
-    x : array_like
+    x: array_like
         Independent-variable observations.
 
-    y : array_like
+    y: array_like
         Dependent-variable observations paired with ``x``.
 
     Returns
     -------
-    slope : scalar
+    slope: scalar
         Median of all pairwise slopes.
 
-    intercept : scalar
+    intercept: scalar
         Median residual intercept for ``slope``.
     """
     x = np.asarray(x)
@@ -62,18 +62,18 @@ def theil_sen_stoch(x,y):
 
     Parameters
     ----------
-    x : array_like
+    x: array_like
         Independent-variable observations.
 
-    y : array_like
+    y: array_like
         Dependent-variable observations paired with ``x``.
 
     Returns
     -------
-    slope : scalar
+    slope: scalar
         Median of the exact or sampled pairwise slopes.
 
-    intercept : scalar
+    intercept: scalar
         Median residual intercept for ``slope``.
     """
     x = np.asarray(x)
@@ -115,18 +115,18 @@ def theil_sen_stoch_reblock(x,y):
 
     Parameters
     ----------
-    x : array_like
+    x: array_like
         Independent-variable observations.
 
-    y : array_like
+    y: array_like
         Dependent-variable observations paired with ``x``.
 
     Returns
     -------
-    slope : scalar
+    slope: scalar
         Median of the exact or sampled pairwise slopes.
 
-    intercept : scalar
+    intercept: scalar
         Median residual intercept for ``slope``.
     """
     x = np.asarray(x)
@@ -168,16 +168,16 @@ def acf_autocorr_time(x,reliability=False):
 
     Parameters
     ----------
-    x : array_like
+    x: array_like
         One-dimensional, finite, real-valued sample sequence.  Vector-shaped
         two-dimensional arrays are flattened.
 
-    reliability : bool, optional
+    reliability: bool, optional
         If true, return ``(tau, not_reliable)`` instead of only ``tau``.
 
     Returns
     -------
-    tau : float or (float, bool)
+    tau: float or (float, bool)
         Estimated integrated autocorrelation time.  A value of one denotes
         IID-like sampling; negative correlation can produce a value below
         one.  The optional Boolean is true when the ACF fails its reliability
@@ -265,25 +265,25 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
 
     Parameters
     ----------
-    x : numpy.ndarray
+    x: numpy.ndarray
         Nonempty one-dimensional sample sequence.  Vector-shaped arrays are
         flattened.
 
-    min_blocks : int, optional
+    min_blocks: int, optional
         Minimum number of complete blocks retained at the largest block
         length.  Must be at least one.
 
-    plot : bool, optional
+    plot: bool, optional
         Plot normalized blocked errors, the robust fitted line, and the
         selected error estimate.
 
-    show : bool, optional
+    show: bool, optional
         Display the plot immediately.  This has an effect only when ``plot``
         is true.
 
     Returns
     -------
-    tau : float
+    tau: float
         Estimated integrated autocorrelation time.  Constant and singleton
         sequences return one.
     """
@@ -360,7 +360,7 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
         plt.axhline(err_max,color='k')
         plt.xlabel('reblocking factor')
         plt.ylabel('errorbar')
-        plt.title('t_auto = {}'.format(t_auto))
+        plt.title(f't_auto = {t_auto}')
         if show:
             plt.show()
     return t_auto
@@ -377,19 +377,19 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False):
 
     Parameters
     ----------
-    x : array_like
+    x: array_like
         One-dimensional sample sequence.
 
-    c : float, optional
+    c: float, optional
         Minimum number of estimated autocorrelation times that should fit
         in the input series.
 
-    reliability : bool, optional
+    reliability: bool, optional
         If true, return ``(tau, not_reliable)`` instead of only ``tau``.
 
     Returns
     -------
-    tau : float or (float, bool)
+    tau: float or (float, bool)
         Estimated integrated autocorrelation time.  The optional Boolean is
         true when fewer than ``c`` estimated autocorrelation times fit in the
         series.
@@ -501,24 +501,24 @@ def prewhitened_spectral_autocorr_time(
 
     Parameters
     ----------
-    x : array_like
+    x: array_like
         One-dimensional, real-valued sample sequence.
 
-    max_order : int, optional
+    max_order: int, optional
         Largest autoregressive pilot order to consider.  The effective upper
         bound is also limited by the series length.
 
-    stability_threshold : float, optional
+    stability_threshold: float, optional
         Mark the estimate unreliable when positive long-run-variance estimates
         obtained at half and twice the selected bandwidth span a factor larger
         than this value.  Must be a finite number greater than one.
 
-    reliability : bool, optional
+    reliability: bool, optional
         If true, return ``(tau, not_reliable)`` instead of only ``tau``.
 
     Returns
     -------
-    tau : float or (float, bool)
+    tau: float or (float, bool)
         Estimated long-run variance divided by the marginal variance.  The
         optional Boolean reports whether any reliability assessment failed.
     """
@@ -567,12 +567,12 @@ def prewhitened_spectral_autocorr_time(
 
         Parameters
         ----------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Values whose scale is estimated.
 
         Returns
         -------
-        scale : float
+        scale: float
             Positive scale estimate.
         """
         residual = values-np.median(values)
@@ -589,15 +589,15 @@ def prewhitened_spectral_autocorr_time(
 
         Parameters
         ----------
-        coefficients : numpy.ndarray
+        coefficients: numpy.ndarray
             Fitted autoregressive coefficients.
 
         Returns
         -------
-        coefficients : numpy.ndarray
+        coefficients: numpy.ndarray
             Coefficients with unstable roots clipped to the stationary region.
 
-        clipped : bool
+        clipped: bool
             Whether any root was clipped.
         """
         if len(coefficients)==0:
@@ -887,16 +887,16 @@ def autocorr_time(x,reliability=False):
 
     Parameters
     ----------
-    x : array_like
+    x: array_like
         One-dimensional sample sequence.
 
-    reliability : bool, optional
+    reliability: bool, optional
         If true, return ``(tau, not_reliable)`` instead of only ``tau``.  The
         flag combines the ACF and Geyer IMS reliability assessments.
 
     Returns
     -------
-    tau : float or (float, bool)
+    tau: float or (float, bool)
         Maximum of ACF, Geyer, and reblocked autocorrelation times, optionally
         accompanied by the combined unreliability flag.
     """
