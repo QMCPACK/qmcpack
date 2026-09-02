@@ -14,9 +14,6 @@ TEST_DIR = Path(__file__).resolve().parent
 NEXUS_CORE_KEYS = (
     "local_directory",
     "remote_directory",
-    "mode",
-    "stages",
-    "stages_set",
     "status",
     "sleep",
     "timeout",

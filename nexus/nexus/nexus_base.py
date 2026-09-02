@@ -26,16 +26,17 @@
 
 
 import os
-from os import PathLike
-from copy import deepcopy
 import pickle
-from pickle import UnpicklingError
+from copy import deepcopy
+from enum import Flag, auto
+from os import PathLike
 from pathlib import Path
-from .utilities import path_string
-from .nexus_version import nexus_version
-from .memory import resident
-from .developer import DevBase, obj, log
+from pickle import UnpicklingError
 
+from .developer import DevBase, log, obj
+from .memory import resident
+from .nexus_version import nexus_version
+from .utilities import path_string
 
 # Nexus namespaces
 #  nexus_core:   to be used by NexusCore classes only
@@ -50,17 +51,6 @@ status_modes = obj(
     active   = 2,
     failed   = 3,
     ready    = 4,
-    )
-
-modes = obj(
-    none       = 0,
-    setup      = 1,
-    send_files = 2,
-    submit     = 3,
-    get_output = 4,
-    analyze    = 5,
-    stages     = 6,
-    all        = 7
     )
 
 nexus_noncore_defaults = obj(
@@ -86,19 +76,12 @@ nexus_core_defaults = obj(
     monitor           = True,              # used by: ProjectManager,Simulation,Machine
     skip_submit       = False,             # used by: Simulation
     load_images       = True,              # used by: ProjectManager
-    modes             = modes,             # used by: ProjectManager,Simulation
-    mode              = modes.stages,      # used by: Simulation
-    stages_set        = set(),             # used by: ProjectManager,Simulation
-    stages            = [],                # used by: Simulation
-    primary_modes     = ['setup','send_files','submit','get_output','analyze'], # used by: Settings
-    dependent_modes   = set(['submit']),   # used by: ProjectManager,Simulation
     verbose           = True,              # used by: NexusCore
     debug             = False,             # used by: NexusCore
     trace             = False,             # used by: NexusCore
     indent            = '  ',              # used by: NexusCore
     status_modes      = status_modes,      # used by: ProjectManager
     status            = status_modes.none, # used by: ProjectManager
-    emulate           = False,             # unused
     progress_tty      = False,             # used by: ProjectManager
     graph_sims        = False,             # used by: ProjectManager
     command_line      = True,              # used by: Settings

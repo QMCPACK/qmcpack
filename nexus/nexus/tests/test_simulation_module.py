@@ -743,7 +743,6 @@ def test_init():
         files                = set([]),
         finished             = False,
         force_restart        = False,
-        force_write          = False,
         got_dependencies     = False,
         got_output           = False,
         identifier           = 'sim',
@@ -2186,16 +2185,6 @@ def test_progress(tmp_path):
     nexus_core.local_directory  = str(tmp_path)
     nexus_core.remote_directory = str(tmp_path)
     nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
-
-    assert(nexus_core.mode==nexus_core.modes.stages)
-    assert(len(nexus_core.stages)==0)
-
-    nexus_core.stages     = list(nexus_core.primary_modes)
-    nexus_core.stages_set = set(nexus_core.stages)
-
-    primary_modes = ['setup','send_files','submit','get_output','analyze']
-    assert(value_eq(nexus_core.stages,primary_modes))
-    assert(value_eq(nexus_core.stages_set,set(primary_modes)))
 
 
     template = '''

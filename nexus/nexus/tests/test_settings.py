@@ -45,12 +45,12 @@ def test_settings(tmp_path):
 
     def check_settings_core_noncore():
         nckeys_check = set([
-                'command_line','debug', 'dependent_modes', 'emulate',
+                'command_line','debug',
                 'file_locations', 'generate_only', 'graph_sims', 'indent',
-                'load_images', 'local_directory', 'mode', 'modes', 'monitor',
-                'primary_modes', 'progress_tty', 'pseudo_dir',
+                'load_images', 'local_directory', 'monitor',
+                'progress_tty', 'pseudo_dir',
                 'remote_directory', 'results', 'runs',
-                'skip_submit', 'sleep', 'stages', 'stages_set', 'status', 'timeout',
+                'skip_submit', 'sleep', 'status', 'timeout',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
                 ])
         nnckeys_check = set([
@@ -58,11 +58,11 @@ def test_settings(tmp_path):
                 ])
         setkeys_check = set([
                 'command_line','basis_dir', 'basissets', 'debug',
-                'dependent_modes', 'emulate', 'file_locations', 'generate_only',
-                'graph_sims', 'indent', 'load_images', 'local_directory', 'mode',
-                'modes', 'monitor', 'primary_modes', 'progress_tty',
+                'file_locations', 'generate_only',
+                'graph_sims', 'indent', 'load_images', 'local_directory',
+                'monitor', 'progress_tty',
                 'pseudo_dir', 'remote_directory', 'results',
-                'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
+                'runs', 'skip_submit', 'sleep', 'status',
                 'timeout',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
                 ])
@@ -102,12 +102,9 @@ def test_settings(tmp_path):
         settings.command_line   = True
         nexus_core.command_line = True
         check_settings_core_noncore()
-        # nexus core sets basic run stages and PseudoSet registries are empty
-        assert(nexus_core.stages_set==set(nexus_core_defaults.primary_modes))
+        # PseudoSet registries are empty
         assert(len(PseudoSet.pseudo_files)==0)
         assert(len(PseudoSet.labeled_pseudosets)==0)
-        nexus_core.stages_set       = set()
-        nexus_core.stages           = []
         assert(object_eq(nexus_core,nexus_core_defaults))
         # nexus noncore sets a BasisSets object
         assert(isinstance(nexus_noncore.basissets,BasisSets))

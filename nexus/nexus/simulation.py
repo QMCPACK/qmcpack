@@ -65,27 +65,26 @@
 #====================================================================#
 
 
-import contextlib
 import os
-import sys
 import shutil
+import sys
 import tempfile
 import traceback
-from functools import partial
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from string import Template
 from subprocess import Popen
 from typing import ClassVar
-from .developer import DevBase, obj, unavailable, FileFormatError, NexusError
-from .structure import Structure, read_structure
-from .physical_system import PhysicalSystem
+
+from .developer import DevBase, FileFormatError, NexusError, obj, unavailable
 from .machines import Job, Workstation, get_machine
-from .nexus_base import NexusCore, nexus_core, dynamic_storage
+from .nexus_base import NexusCore, dynamic_storage, nexus_core
+from .physical_system import PhysicalSystem
+from .structure import Structure, read_structure
 from .utilities import path_string
 
- 
+
 class SimulationInput(NexusCore):
     def is_valid(self):
         raise NotImplementedError
@@ -279,7 +278,7 @@ class Simulation(NexusCore):
         'identifier','path','infile','outfile','errfile','imagefile',
         'input','job','files','dependencies','analysis_request',
         'block','block_subcascade','app_name','app_props','system',
-        'skip_submit','force_write','simlabel','fake_sim',
+        'skip_submit','simlabel','fake_sim',
         'restartable','force_restart'
         })
     sim_imagefile      = 'sim.p'
@@ -390,7 +389,6 @@ class Simulation(NexusCore):
         self.block          = False
         self.block_subcascade = False
         self.skip_submit    = nexus_core.skip_submit
-        self.force_write    = False
         self.loaded         = False
         self.ordered_dependencies = []
         self.process_id     = None
@@ -1374,96 +1372,36 @@ class Simulation(NexusCore):
     def progress(self,dependency_id=None):
         if dependency_id is not None:
             self.wait_ids.remove(dependency_id)
-        #end if
-        if len(self.wait_ids)==0 and not self.block and not self.failed:
-            modes = nexus_core.modes
-            mode  = nexus_core.mode
-            progress = True
-            if mode==modes.none:
-                return
-            elif mode==modes.setup:
-                self.write_inputs()
-            elif mode==modes.send_files:
-                self.send_files()
-            elif mode==modes.submit:
-                self.submit()
-                progress = self.finished
-            elif mode==modes.get_output:
+
+        if len(self.wait_ids) > 0 or self.block or self.failed:
+            return # No progression if we are waiting or blocked or failed
+
+        progress = True
+        conds_ops = (
+            (self.created_directories, self.create_directories),
+            (self.got_dependencies, self.get_dependencies),
+            (self.setup, self.write_inputs),
+            (self.sent_files, self.send_files),
+            (self.finished, self.submit),
+        )
+        for cond, op in conds_ops:
+            if not cond:
+                op()
+
+        progress_post = self.finished
+        progress = self.finished and self.analyzed
+
+        if progress_post:
+            if not self.got_output:
                 self.get_output()
-                progress = self.finished
-            elif mode==modes.analyze:
+
+            if not self.analyzed:
                 self.analyze()
-                progress = self.finished
-            elif mode==modes.stages:
-                if not self.created_directories:
-                    self.create_directories()
-                #end if
-                if not self.got_dependencies:
-                    self.get_dependencies()
-                #end if
-                if not self.setup and 'setup' in nexus_core.stages:
-                    self.write_inputs()
-                #end if
-                if not self.sent_files and 'send_files' in nexus_core.stages:
-                    self.send_files()
-                #end if
-                if not self.finished and 'submit' in nexus_core.stages:
-                    self.submit()
-                #end if
-                if nexus_core.dependent_modes <= nexus_core.stages_set:
-                    progress_post = self.finished
-                    progress = self.finished and self.analyzed
-                else:
-                    progress_post = progress
-                #end if
-                if progress_post:
-                    if not self.got_output and 'get_output' in nexus_core.stages:
-                        self.get_output()
-                    #end if
-                    if not self.analyzed and 'analyze' in nexus_core.stages:
-                        self.analyze()
-                    #end if
-                #end if
-            elif mode==modes.all:
-                if not self.setup:
-                    self.write_inputs()
-                    self.send_files(enter=False)
-                #end if
-                if not self.finished:
-                    self.submit()
-                #end if
-                if self.finished:
-                    if not self.got_output:
-                        self.get_output()
-                    #end if
-                    if not self.analyzed:
-                        self.analyze()
-                    #end if
-                #end if
-                progress = self.finished
-            #end if
-            if progress and not self.block_subcascade and not self.failed:
-                for sim in self.dependents.values():
-                    if not sim.bundled:
-                        sim.progress(self.simid)
-                    #end if
-                #end for
-            #end if
-        elif len(self.wait_ids)==0 and self.force_write:
-            modes = nexus_core.modes
-            mode  = nexus_core.mode
-            if mode==modes.stages:
-                if not self.got_dependencies:
-                    self.get_dependencies()
-                #end if
-                if 'setup' in nexus_core.stages:
-                    self.write_inputs()
-                #end if
-                if not self.sent_files and 'send_files' in nexus_core.stages:
-                    self.send_files()
-                #end if
-            #end if
-        #end if
+
+        if progress and not (self.block_subcascade or self.failed):
+            for sim in self.dependents.values():
+                if not sim.bundled:
+                    sim.progress(self.simid)
     #end def progress
 
 

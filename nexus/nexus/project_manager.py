@@ -62,8 +62,6 @@ class ProjectManager(NexusCore):
     #end def restore_default_settings
 
     def __init__(self):
-        modes = nexus_core.modes
-        self.persistent_modes = set([modes.submit,modes.all])
         self.simulations = obj()
         self.cascades = obj()
         self.progressing_cascades = obj()
@@ -107,35 +105,32 @@ class ProjectManager(NexusCore):
             #end if
         #end if
         self.log('\nstarting runs:\n'+30*'~',n=1)
-        if nexus_core.dependent_modes <= nexus_core.stages_set:
-            if nexus_core.monitor:
-                start_time = time.time()
-                ipoll = 0
-                while len(self.progressing_cascades)>0:
-                    elapsed_time = time.time() - start_time
-                    self.log('elapsed time %.1f s'%elapsed_time,
-                             ' memory %3.2f MB'%(memory.resident(children=True)/1e6),
-                             n=1,progress=True)
-                    NexusCore.wrote_something = False
-                    ipoll+=1
-                    self.machine.query_queue()
-                    self.progress_cascades()
-                    self.machine.submit_jobs()
-                    self.update_process_ids()
-                    time.sleep(nexus_core.sleep)
-                    if NexusCore.wrote_something:
-                        self.log()
-                    #end if
-                #end while
-            elif len(self.progressing_cascades)>0:
+
+        if nexus_core.monitor:
+            start_time = time.time()
+            while len(self.progressing_cascades)>0:
+                elapsed_time = time.time() - start_time
+                self.log(
+                    f'elapsed time {elapsed_time:.1f} s',
+                    f' memory {(memory.resident(children=True)/1e6):3.2f} MB',
+                    n=1,
+                    progress=True,
+                    )
+                NexusCore.wrote_something = False
                 self.machine.query_queue()
                 self.progress_cascades()
                 self.machine.submit_jobs()
                 self.update_process_ids()
-            #end if
-        else:
+                time.sleep(nexus_core.sleep)
+                if NexusCore.wrote_something:
+                    self.log()
+
+        elif len(self.progressing_cascades)>0:
+            self.machine.query_queue()
             self.progress_cascades()
-        #end if
+            self.machine.submit_jobs()
+            self.update_process_ids()
+
         self.log('Project finished\n')
     #end def run_project
 

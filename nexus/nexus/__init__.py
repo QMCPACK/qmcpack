@@ -587,43 +587,6 @@ class Settings(NexusCore):
         if nexus_core.status_only and nexus_core.status==nexus_core.status_modes.none:
             nexus_core.status = nexus_core.status_modes.standard
         #end if
-        if 'mode' in kw:
-            if kw.mode in nexus_core.modes:
-                nexus_core.mode = kw.mode
-            else:
-                msg = 'invalid mode specified: {0}\nvalid modes are: {1}'.format(kw.mode,sorted(nexus_core.modes.keys()))
-                raise ValueError(msg)
-            #end if
-        #end if
-        mode  = nexus_core.mode
-        modes = nexus_core.modes
-        if mode==modes.stages:
-            stages = nexus_core.stages
-        elif mode==modes.all:
-            stages = list(nexus_core.primary_modes)
-        else:
-            stages = [kw.mode]
-        #end if
-        allowed_stages = set(nexus_core.primary_modes)
-        if isinstance(stages,str):
-            stages = [stages]
-        #end if
-        if len(stages)==0:
-            stages = list(nexus_core.primary_modes)
-        elif 'all' in stages:
-            stages = list(nexus_core.primary_modes)
-        else:
-            forbidden = set(nexus_core.stages)-allowed_stages
-            if len(forbidden)>0:
-                msg = 'some stages provided are not primary stages.\n  You provided '+str(list(forbidden))+'\n  Options are '+str(list(allowed_stages))
-                raise ValueError(msg)
-            #end if
-        #end if
-        # overide user input and always use stages mode 
-        # keep processing code above in case a change is desired in the future
-        nexus_core.mode       = modes.stages
-        nexus_core.stages     = stages
-        nexus_core.stages_set = set(nexus_core.stages)
 
         # process simulation settings
         if 'local_directory' in kw:

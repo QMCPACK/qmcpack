@@ -9,13 +9,10 @@ from ..testing import failed,FailedTest
 
 def test_init():
     from ..developer import obj
-    from ..nexus_base import nexus_core
     from ..project_manager import ProjectManager
 
     pm = ProjectManager()
 
-    modes = nexus_core.modes
-    assert(pm.persistent_modes==set([modes.submit,modes.all]))
     def check(v):
         assert isinstance(v,obj)
         assert len(v)==0
@@ -413,19 +410,7 @@ def test_run_project(tmp_path):
     nexus_core.remote_directory = str(tmp_path)
     nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
 
-    assert(nexus_core.mode==nexus_core.modes.stages)
-    assert(len(nexus_core.stages)==0)
-
-    nexus_core.stages     = list(nexus_core.primary_modes)
-    nexus_core.stages_set = set(nexus_core.stages)
-
-    primary_modes = ['setup','send_files','submit','get_output','analyze']
-    assert(value_eq(nexus_core.stages,primary_modes))
-    assert(value_eq(nexus_core.stages_set,set(primary_modes)))
-
     nexus_core.sleep = 0.1
-
-    log = generic_settings.devlog
 
     flags = ['setup','sent_files','submitted','finished','got_output','analyzed']
 
