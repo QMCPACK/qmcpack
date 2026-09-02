@@ -81,7 +81,7 @@ class RmgOutData(DevBase):
             msg = (
                 'invalid type provided for filepath\n'
                 'Type expected: str\n'
-                f'Type provided: {filepath.__class__.__name__}'
+                f'Type provided: {type(filepath).__name__}'
                 )
             raise TypeError(msg)
         elif not os.path.exists(filepath):
@@ -102,14 +102,12 @@ class RmgOutData(DevBase):
         self.outfile_name  = outfile_name
         self.setup_info    = None
 
-        with open(filepath,'r') as fobj:
-            lines = fobj.read().splitlines()
+        with open(filepath,'r') as input_file:
+            lines = input_file.read().splitlines()
         self.read_setup_info(lines)
 
-        supported_modes = {'scf','nscf','relax'}
-
         # modes: scf, nscf, relax
-        if self.run_mode in supported_modes:
+        if self.run_mode in {'scf','nscf','relax'}:
             self.geometry     = None
             self.energy       = None
             self.energy_units = None
@@ -990,7 +988,7 @@ class RmgAnalyzer(SimulationAnalyzer):
                 msg = (
                     'invalid type provided for log_file\n'
                     'Type expected: str\n'
-                    f'Type provided: {arg0.__class__.__name__}'
+                    f'Type provided: {type(arg0).__name__}'
                     )
                 raise TypeError(msg)
             elif not os.path.exists(arg0):
