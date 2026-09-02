@@ -31,6 +31,46 @@ def theil_sen(x,y):
 #end def theil_sen
 
 
+def theil_sen_stoch(x,y):
+    """Estimate a Theil-Sen fit with stochastic pair sampling for large data.
+
+    The exact estimator is used through approximately 700,000 pairwise
+    slopes.  Above that crossover, the number of sampled slopes grows
+    linearly with the number of input points, with a rate calibrated to
+    100,000 samples at 448 points.  Pairwise slopes are sampled uniformly with
+    replacement.  A fixed local random seed makes the stochastic estimate
+    reproducible without altering NumPy's global random state.
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+    assert len(x)==x.size
+    assert len(y)==y.size
+    assert len(x)==len(y)
+    x = x.ravel()
+    y = y.ravel()
+
+    n = len(x)
+    npairs = n*(n-1)//2
+    exact_pair_limit = 700_000
+    if npairs<=exact_pair_limit:
+        return theil_sen(x,y)
+
+    sample_pair_reference = 100_000
+    sample_n_reference = 448
+    nsampled = (
+        sample_pair_reference*n+sample_n_reference//2)//sample_n_reference
+    random_seed = 314159
+    rng = np.random.Generator(np.random.PCG64(random_seed))
+    i = rng.integers(0,n,size=nsampled)
+    j = rng.integers(0,n-1,size=nsampled)
+    j += j>=i
+    slopes = (y[i]-y[j])/(x[i]-x[j])
+    m = np.median(slopes,overwrite_input=True)
+    b = np.median(y-m*x)
+    return m,b
+#end def theil_sen_stoch
+
+
 def acf_autocorr_time(x):
     """Estimate IAT from a noise-truncated, flat-top-windowed ACF."""
     x = np.asarray(x)
@@ -161,7 +201,7 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
     des = np.zeros_like(dem)
     assert len(dem)==len(block_lens)
     if len(block_lens)>1:
-        p = theil_sen(block_lens,dem)
+        p = theil_sen_stoch(block_lens,dem)
         m,b = p
         if m>0:
             err_max = np.polyval(p,[block_lens[-1]])[0]
