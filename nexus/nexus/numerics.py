@@ -82,25 +82,14 @@
 
 
 import sys
+import importlib
 import inspect
 import numpy as np
 from numpy import pi, exp, sqrt, sin, cos
 from numpy.linalg import norm
-from .developer import obj, unavailable
+from .developer import obj
 from .unit_converter import convert
 from .periodic_table import Elements
-
-try:
-    from scipy.special import betainc
-    from scipy.optimize import fmin
-    from scipy.spatial import KDTree,Delaunay,Voronoi
-    scipy_unavailable = False
-except:
-    betainc = unavailable('scipy.special' ,'betainc')
-    fmin    = unavailable('scipy.optimize','fmin')
-    KDTree,Delaunay,Voronoi  = unavailable('scipy.spatial' ,'KDTree','Delaunay','Voronoi')
-    scipy_unavailable = True
-#end try
 
 
 # cost functions
@@ -119,14 +108,15 @@ def curve_fit(x,y,f,p0,cost='least_squares',optimizer='fmin'):
     if isinstance(cost,str):
         if cost not in cost_functions:
             msg = (
-                '"{0}" is an invalid cost function\n'
-                'valid options are: {1}'.format(cost,sorted(cost_functions.keys()))
+                f'"{cost}" is an invalid cost function\n'
+                f'valid options are: {sorted(cost_functions.keys())}'
                 )
             raise ValueError(msg)
         #end if
         cost = cost_functions[cost]
     #end if
     if optimizer=='fmin':
+        from scipy.optimize import fmin
         p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000,disp=0)
     else:
         msg = 'optimizers other than fmin are not supported yet'
@@ -479,10 +469,8 @@ def eos_param(p,param,type='vinet'):
     eos_pfuncs = eos_param_funcs[type]
     if param not in eos_pfuncs:
         msg = (
-            '"{0}" is not an available parameter for a {1} fit\n'
-            'available parameters are: {2}'.format(
-                param, type, sorted(eos_pfuncs.keys())
-                )
+            f'"{param}" is not an available parameter for a {type} fit\n'
+            f'available parameters are: {sorted(eos_pfuncs.keys())}'
             )
         raise ValueError(msg)
     #end if
@@ -727,7 +715,7 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
         elif len(auxfunc)==4:
             auxfunc,args,kwargs,position = auxfunc
         else:
-            msg = 'between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {0}'.format(len(auxfunc))
+            msg = f'between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {len(auxfunc)}'
             raise ValueError(msg)
         #end if
     #end if
@@ -791,7 +779,7 @@ def check_jackknife_inputs(args,kwargs,position):
         elif isinstance(position,str):
             kwargpos = True
         else:
-            msg = 'position must be an integer or keyword, received: {0}'.format(position)
+            msg = f'position must be an integer or keyword, received: {position}'
             raise TypeError(msg)
         #end if
     elif args is None and kwargs is None:
@@ -1131,6 +1119,7 @@ def equilibration_length(x,tail=.5,*,plot=False,xlim=None,bounces=2,random=True,
 
 # probability that two means are from the same distribution
 def ttest(m1,e1,n1,m2,e2,n2):
+    from scipy.special import betainc
     m1 = float(m1)
     e1 = float(e1)
     m2 = float(m2)
@@ -1347,6 +1336,7 @@ def simple_surface(origin,axes,grid):
 # test needed
 #def least_squares(p, x, y, f): return ((f(p,x)-y)**2).sum()
 def func_fit(x,y,fitting_function,p0,cost=least_squares):
+    from scipy.optimize import fmin
     f = fitting_function
     p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000)
     return p
@@ -1413,14 +1403,15 @@ def nearest_neighbors(n,points,qpoints=None,*,return_distances=False,slow=False)
     if n>len(qpoints)-extra:
         msg = (
             'requested more than the total number of neighbors\n'
-            'maximum is: {0}\n'
-            'you requested: {1}\n'
-            'exiting.'.format(len(qpoints)-extra,n)
+            f'maximum is: {len(qpoints)-extra}\n'
+            f'you requested: {n}\n'
+            'exiting.'
             )
         raise ValueError(msg)
     #end if
-    slow = slow or scipy_unavailable
+    slow = slow or importlib.util.find_spec("scipy") is None
     if not slow:
+        from scipy.spatial import KDTree
         kt = KDTree(points)
         dist,ind = kt.query(qpoints,n+extra)
     else:
@@ -1443,6 +1434,7 @@ def nearest_neighbors(n,points,qpoints=None,*,return_distances=False,slow=False)
 
 
 def voronoi_neighbors(points):
+    from scipy.spatial import Voronoi
     vor = Voronoi(points)
     neighbor_pairs = vor.ridge_points
     return neighbor_pairs
@@ -1451,6 +1443,7 @@ def voronoi_neighbors(points):
 
 
 def convex_hull(points,dimension=None,tol=None):
+    from scipy.spatial import Delaunay
     if dimension is None:
         npts,dimension = points.shape
     #end if
@@ -1617,10 +1610,10 @@ def index_by_layer_1d(xpoints,tol,*,uniform=True,check=True,full_return=False):
             msg = (
                 'Could not determine layer separation.\n'
                 'Layers are not evenly spaced.\n'
-                'Min layer spacing: {}\n'
-                'Max layer spacing: {}\n'
-                'Spread   : {}\n'
-                'Tolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol)
+                f'Min layer spacing: {dxmin}\n'
+                f'Max layer spacing: {dxmax}\n'
+                f'Spread   : {dxmax-dxmin}\n'
+                f'Tolerance: {2*tol}'
                 )
             raise RuntimeError(msg)
         #end if

@@ -82,30 +82,11 @@ Module contents
 
 import os
 from copy import deepcopy
-from .developer import DevBase, obj, error, unavailable
+from .developer import DevBase, obj, error
 from .fileio import StandardFile,XsfFile
 from . import numpy_extensions as npe
 
-try:
-    import numpy as np
-except:
-    np = unavailable('numpy','np')
-#end try
-try:
-    import matplotlib.pyplot as plt
-except:
-    plt = unavailable('matplotlib','plt')
-#end try
-try:
-    from skimage import measure
-except:
-    measure = unavailable('skimage','measure')
-#end try
-try:
-    import scipy.ndimage as scipy_ndimage
-except:
-    scipy_ndimage = unavailable('scipy','ndimage')
-#end try
+import numpy as np
 
 
 
@@ -138,7 +119,7 @@ def polar_to_cartesian(points,surface=False):
     #end if
     npoints,dim = points.shape
     if dim!=2-int(surface):
-        error('dimension of points must be {}\ndimension of provided points: {}'.format(2-int(surface),dim),'polar_to_cartesian')
+        error(f'dimension of points must be {2-int(surface)}\ndimension of provided points: {dim}','polar_to_cartesian')
     #end if
     if surface:
         r   = 1.0
@@ -181,7 +162,7 @@ def cartesian_to_polar(points,surface=False):
     #end if
     npoints,dim = points.shape
     if dim!=2:
-        error('dimension of points must be 2\ndimension of provided points: {}'.format(dim),'cartesian_to_polar')
+        error(f'dimension of points must be 2\ndimension of provided points: {dim}','cartesian_to_polar')
     #end if
     x = points[:,0]
     y = points[:,1]
@@ -228,7 +209,7 @@ def spherical_to_cartesian(points,surface=False):
     #end if
     npoints,dim = points.shape
     if dim!=3-int(surface):
-        error('dimension of points must be {}\ndimension of provided points: '.format(req_dim,dim),'spherical_to_cartesian')
+        error(f'dimension of points must be {req_dim}\ndimension of provided points: ','spherical_to_cartesian')
     #end if
     if surface:
         r     = 1.0
@@ -275,7 +256,7 @@ def cartesian_to_spherical(points,surface=False):
     #end if
     npoints,dim = points.shape
     if dim!=3:
-        error('dimension of points must be 3\ndimension of provided points: {}'.format(dim),'cartesian_to_spherical')
+        error(f'dimension of points must be 3\ndimension of provided points: {dim}','cartesian_to_spherical')
     #end if
     x = points[:,0]
     y = points[:,1]
@@ -672,6 +653,7 @@ class PlotHandler(DevBase):
         ax : 
             Handle of the current figure's axes.
         """
+        import matplotlib.pyplot as plt
         if dim is None:
             self.error('cannot setup mpl figure, "dim" must be provided')
         #end if
@@ -794,12 +776,12 @@ class GBase(PlotHandler):
         if isinstance(filepath,StandardFile):
             format = filepath.sftype.lower()
         elif not isinstance(filepath,str):
-            self.error('Cannot read file.\nExpected a file path.\nInstead received type: {}\nWith value: {}\nPlease provide a file path and try again.'.format(filepath.__class__.__name__,filepath))
+            self.error(f'Cannot read file.\nExpected a file path.\nInstead received type: {filepath.__class__.__name__}\nWith value: {filepath}\nPlease provide a file path and try again.')
         elif not os.path.exists(filepath):
-            self.error('Cannot read file.  File path does not exist.\nFile path provided: {}'.format(filepath))
+            self.error(f'Cannot read file.  File path does not exist.\nFile path provided: {filepath}')
         elif format is not None:
             if not isinstance(format,str):
-                self.error('Cannot read file.\nExpected text (string) for file format.\nInstead received type: {}\nWith value: {}'.format(format.__class__.__name__,format))
+                self.error(f'Cannot read file.\nExpected text (string) for file format.\nInstead received type: {format.__class__.__name__}\nWith value: {format}')
             #end if
         else:
             format = filepath.rsplit('.',1)[1].lower()
@@ -862,7 +844,7 @@ class GBase(PlotHandler):
         msgs = []
         # check that the grid has been initialized
         if not self.initialized:
-            msgs.append('{} has not been initialized'.format(cls.descriptor))
+            msgs.append(f'{cls.descriptor} has not been initialized')
             return msgs
         #end if
         valid_key_list = list(cls.persistent_data_types.keys())
@@ -871,12 +853,12 @@ class GBase(PlotHandler):
         # check that all data members are present
         missing = valid_key_set - key_set
         if len(missing)>0:
-            msgs.append('some data members are missing: {}'.format(sorted(missing)))
+            msgs.append(f'some data members are missing: {sorted(missing)}')
         #end if
         # check that extra data members are not present
         extra = key_set - valid_key_set
         if len(extra)>0:
-            msgs.append('unknown data members encountered: {}'.format(sorted(extra)))
+            msgs.append(f'unknown data members encountered: {sorted(extra)}')
         #end if
         # check that all data members are of the correct type
         for name in valid_key_list:
@@ -884,9 +866,9 @@ class GBase(PlotHandler):
             if name in self:
                 val = self[name]
                 if val is None:
-                    msgs.append('data member "{}" has not been initialized, it is "None"'.format(name))
+                    msgs.append(f'data member "{name}" has not been initialized, it is "None"')
                 elif not isinstance(val,type):
-                    msgs.append('data member "{}" is not of type "{}", it is of type "{}" instead'.format(name,type.__name__,val.__class__.__name__))
+                    msgs.append(f'data member "{name}" is not of type "{type.__name__}", it is of type "{val.__class__.__name__}" instead')
                 #end if
             #end if
         #end for
@@ -933,7 +915,7 @@ class GBase(PlotHandler):
             elif isinstance(ai,np.ndarray):
                 a = ai
             else:
-                self.error('Cannot ensure array value.\nReceived data with type: {}\nOnly tuple, list, and ndarray are supported.'.format(ai.__class__.__name__))
+                self.error(f'Cannot ensure array value.\nReceived data with type: {ai.__class__.__name__}\nOnly tuple, list, and ndarray are supported.')
             #end if
             arrays[k] = a
         #end for
@@ -1058,7 +1040,7 @@ class Grid(GBase):
                 points = points.copy()
             #end if
         else:
-            self.error('cannot set points from data with type "{}"\nplease use tuple, list, or array for inputted points'.format(points.__class__.__name__))
+            self.error(f'cannot set points from data with type "{points.__class__.__name__}"\nplease use tuple, list, or array for inputted points')
         #end if
         self.points = points
     #end def set_points
@@ -1112,13 +1094,13 @@ class Grid(GBase):
         """
         shape = self.points.shape
         if len(shape)!=2:
-            msgs.append('points array must have two shape entries (number of points, dimension of points)\nnumber of shape entries present: {}\npoints shape: {}'.format(len(shape),shape))
+            msgs.append(f'points array must have two shape entries (number of points, dimension of points)\nnumber of shape entries present: {len(shape)}\npoints shape: {shape}')
         else:
             if shape[0]!=self.npoints:
-                msgs.append('unexpected number of points present\npoints expected: {}\npoints encountered: {}'.format(self.npoints,shape[0]))
+                msgs.append(f'unexpected number of points present\npoints expected: {self.npoints}\npoints encountered: {shape[0]}')
             #end if
             if shape[1]!=self.space_dim:
-                msgs.append('unexpected number of spatial dimensions encountered\nspatial dimensions expected: {}\nspatial dimensions encountered: {}'.format(self.space_dim,shape[1]))
+                msgs.append(f'unexpected number of spatial dimensions encountered\nspatial dimensions expected: {self.space_dim}\nspatial dimensions encountered: {shape[1]}')
             #end if
         #end if
         if id(self.r)!=id(self.points):
@@ -1149,12 +1131,12 @@ class Grid(GBase):
         if isinstance(points,(tuple,list)):
             points = np.array(points,dtype=self.dtype)
         elif not isinstance(points,np.ndarray):
-            self.error('invalid points provided to function "{}"\nprovided points must be an array\ntype provided: {}'.format(loc,points.__class__.__name__))
+            self.error(f'invalid points provided to function "{loc}"\nprovided points must be an array\ntype provided: {points.__class__.__name__}')
         #end if
         if len(points.shape)!=2:
-            self.error('invalid points provided to function "{}"\npoints must be a 2D array\nnumber of dimensions in provided points array: {}'.format(loc,len(points.shape)))
+            self.error(f'invalid points provided to function "{loc}"\npoints must be a 2D array\nnumber of dimensions in provided points array: {len(points.shape)}')
         elif points.shape[1]!=dim:
-            self.error('invalid points provided to function "{}"\npoints must reside in a {}-dimensional space\nspatial dimensions present: {}'.format(loc,dim,points.shape[1]))
+            self.error(f'invalid points provided to function "{loc}"\npoints must reside in a {dim}-dimensional space\nspatial dimensions present: {points.shape[1]}')
         #end if
         return points
     #end def check_valid_points
@@ -1181,6 +1163,7 @@ class Grid(GBase):
         **kwargs : 
             Arbitrary keyword arguments passed to `pyplot.scatter`.
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
         if points is None:
             r = self.r.T
@@ -1371,7 +1354,7 @@ class StructuredGrid(Grid):
             self.error('cannot initialize grid, "shape" is required')
         #end if
         if not isinstance(shape,(tuple,list,np.ndarray)):
-            self.error('cannot set shape from data with type "{}"\nplease use tuple, list, or array for inputted shape'.format(shape.__class__.__name__))
+            self.error(f'cannot set shape from data with type "{shape.__class__.__name__}"\nplease use tuple, list, or array for inputted shape')
         #end if
         shape = np.array(shape,dtype=int)
         if bconds is None:
@@ -1387,12 +1370,12 @@ class StructuredGrid(Grid):
         (`Internal API`) Sets the `shape` attribute in a protected way.
         """
         if not isinstance(shape,(tuple,list,np.ndarray)):
-            self.error('cannot set shape from data with type "{}"\nplease use tuple, list, or array for inputted shape'.format(shape.__class__.__name__))
+            self.error(f'cannot set shape from data with type "{shape.__class__.__name__}"\nplease use tuple, list, or array for inputted shape')
         #end if
         if 'points' in self and self.points is not None:
             npoints = np.array(shape,dtype=int).prod()
             if npoints!=len(self.points):
-                self.error('cannot set shape\ngrid shape provided does not match the number of points in the grid\npoints in grid: {}\npoints from shape: {}'.format(len(self.points),npoints))
+                self.error(f'cannot set shape\ngrid shape provided does not match the number of points in the grid\npoints in grid: {len(self.points)}\npoints from shape: {npoints}')
             #end if
         #end if
         self.shape = tuple(shape)
@@ -1407,12 +1390,12 @@ class StructuredGrid(Grid):
             bconds = tuple(bconds)
         #end if
         if not isinstance(bconds,(tuple,list,np.ndarray)):
-            self.error('cannot set bconds from data with type "{}"\nplease use tuple, list, or array for inputted bconds'.format(bconds.__class__.__name__))
+            self.error(f'cannot set bconds from data with type "{bconds.__class__.__name__}"\nplease use tuple, list, or array for inputted bconds')
         #end if
         bconds = np.array(bconds,dtype=object)
         for bc in bconds:
             if bc not in StructuredGrid.valid_bconds:
-                self.error('boundary conditions are invalid\nboundary conditions in each dimension must be one of: {}\nboundary conditions provided: {}'.format(sorted(StructuredGrid.valid_bconds),bconds))
+                self.error(f'boundary conditions are invalid\nboundary conditions in each dimension must be one of: {sorted(StructuredGrid.valid_bconds)}\nboundary conditions provided: {bconds}')
             #end if
         #end for
         self.bconds = bconds
@@ -1453,15 +1436,15 @@ class StructuredGrid(Grid):
         """
         msgs = Grid.local_validity_checks(self,msgs)
         if np.prod(self.shape)!=self.npoints:
-            msgs.append('grid shape does not match number of points\nnumber of points: {}\nproduct of shape: {}\nshape: {}'.format(self.npoints,np.prod(self.shape),self.shape))
+            msgs.append(f'grid shape does not match number of points\nnumber of points: {self.npoints}\nproduct of shape: {np.prod(self.shape)}\nshape: {self.shape}')
         #end if
         if len(self.shape)!=self.grid_dim:
-            msgs.append('number of entries in grid shape does not match grid dimension\nnumber of entries in grid shape: {}\ngrid dimension: {}'.format(len(self.shape),self.grid_dim))
+            msgs.append(f'number of entries in grid shape does not match grid dimension\nnumber of entries in grid shape: {len(self.shape)}\ngrid dimension: {self.grid_dim}')
         #end if
         if len(self.bconds)!=self.grid_dim:
-            msgs.append('number of entries in bconds does not match grid dimension\nnumber of entries in bconds: {}\ngrid dimension: {}'.format(len(self.bconds),self.grid_dim))
+            msgs.append(f'number of entries in bconds does not match grid dimension\nnumber of entries in bconds: {len(self.bconds)}\ngrid dimension: {self.grid_dim}')
         if len(set(self.bconds)-StructuredGrid.valid_bconds)>0:
-            msgs.append('boundary conditions are invalid\nboundary conditions in each dimension must be one of: {}\nboundary conditions provided: {}'.format(sorted(StructuredGrid.valid_bconds),self.bconds))
+            msgs.append(f'boundary conditions are invalid\nboundary conditions in each dimension must be one of: {sorted(StructuredGrid.valid_bconds)}\nboundary conditions provided: {self.bconds}')
             #end if
         #end for
         return msgs
@@ -1497,9 +1480,9 @@ class StructuredGrid(Grid):
             full_indices = np.array(full_indices,dtype=int)
         #end if
         if len(full_indices.shape)!=2:
-            self.error('full_indices must have shape (# points)x(# dimensions)\nShape received: {}'.format(full_indices.shape))
+            self.error(f'full_indices must have shape (# points)x(# dimensions)\nShape received: {full_indices.shape}')
         elif full_indices.shape[-1]!=self.grid_dim:
-            self.error('full_indices must have same dimension as the grid.\nfull_indices dimension: {}\nGrid dimension: {}'.format(full_indices.shape[-1],self.grid_dim))
+            self.error(f'full_indices must have same dimension as the grid.\nfull_indices dimension: {full_indices.shape[-1]}\nGrid dimension: {self.grid_dim}')
         #end if
         grid_shape = self.grid_shape
         D = len(grid_shape)
@@ -1734,6 +1717,7 @@ class StructuredGrid(Grid):
         show : `bool, optional, default True`
             Display the figure (`True`) or not (`False`).
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
         if self.grid_dim!=1 or self.surface:
             bpoints = self.get_boundary_lines(n=n)
@@ -1771,6 +1755,7 @@ class StructuredGrid(Grid):
         **kwargs : 
             Arbitrary keyword arguments passed to `pyplot.scatter`.
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
                                     ax1='a1',ax2='a2',ax3='a3')
         if points is None:
@@ -1807,6 +1792,7 @@ class StructuredGrid(Grid):
         show : `bool, optional, default True`
             Display the figure (`True`) or not (`False`).
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
                                     ax1='a1',ax2='a2',ax3='a3')
         if self.grid_dim!=1 or self.surface:
@@ -1958,7 +1944,7 @@ class StructuredGridWithAxes(StructuredGrid):
         (`Internal API`) Sets the `axes` attribute in a protected way.
         """
         if not isinstance(axes,(tuple,list,np.ndarray)):
-            self.error('cannot set axes from data with type "{}"\nplease use tuple, list, or array for inputted axes'.format(axes.__class__.__name__))
+            self.error(f'cannot set axes from data with type "{axes.__class__.__name__}"\nplease use tuple, list, or array for inputted axes')
         #end if
         self.axes = np.array(axes,dtype=self.dtype)
     #end def set_axes
@@ -1969,7 +1955,7 @@ class StructuredGridWithAxes(StructuredGrid):
         (`Internal API`) Sets the `origin` attribute in a protected way.
         """
         if not isinstance(origin,(tuple,list,np.ndarray)):
-            self.error('cannot set origin from data with type "{}"\nplease use tuple, list, or array for inputted origin'.format(origin.__class__.__name__))
+            self.error(f'cannot set origin from data with type "{origin.__class__.__name__}"\nplease use tuple, list, or array for inputted origin')
         #end if
         origin = np.array(origin,dtype=self.dtype)
         if self.origin is not None:
@@ -2009,26 +1995,26 @@ class StructuredGridWithAxes(StructuredGrid):
         msgs = StructuredGrid.local_validity_checks(self,msgs)
         shape = self.axes.shape
         if len(shape)!=2:
-            msgs.append('axes must be a 2 dimensional array\nnumber of dimensions present: {}\naxes present: {}'.format(len(shape),self.axes))
+            msgs.append(f'axes must be a 2 dimensional array\nnumber of dimensions present: {len(shape)}\naxes present: {self.axes}')
         else:
             if not self.surface:
                 if shape[0]!=self.grid_dim:
-                    msgs.append('number of axes must be equal to the embedded grid dimension\nembedded grid dimension: {}\nnumber of axes present: {}'.format(self.grid_dim,shape[0]))
+                    msgs.append(f'number of axes must be equal to the embedded grid dimension\nembedded grid dimension: {self.grid_dim}\nnumber of axes present: {shape[0]}')
                 #end if
             else:
                 if shape[0]!=self.grid_dim+1:
-                    msgs.append('number of axes must be equal to the embedded grid dimension + 1 for a surface\nembedded grid dimension + 1: {}\nnumber of axes present: {}'.format(self.grid_dim+1,shape[0]))
+                    msgs.append(f'number of axes must be equal to the embedded grid dimension + 1 for a surface\nembedded grid dimension + 1: {self.grid_dim+1}\nnumber of axes present: {shape[0]}')
                 #end if
             #end if
             if shape[1]!=self.space_dim:
-                msgs.append('axis dimension must be equal to the dimension of the space\nspace dimension: {}\naxis dimension: {}\naxes present: {}'.format(self.space_dim,shape[1],self.axes))
+                msgs.append(f'axis dimension must be equal to the dimension of the space\nspace dimension: {self.space_dim}\naxis dimension: {shape[1]}\naxes present: {self.axes}')
             #end if
         #end if
         shape = self.origin.shape
         if len(shape)!=1:
-            msgs.append('origin must be a 1 dimensional array (single point)\nnumber of dimensions present: {}\norigin present: {}'.format(len(shape),self.origin))
+            msgs.append(f'origin must be a 1 dimensional array (single point)\nnumber of dimensions present: {len(shape)}\norigin present: {self.origin}')
         elif shape[0]!=self.space_dim:
-            msgs.append('origin dimension must be equal to the dimension of the space\nspace dimension: {}\naxis dimension: {}\norigin present: {}'.format(self.space_dim,shape[0],self.origin))
+            msgs.append(f'origin dimension must be equal to the dimension of the space\nspace dimension: {self.space_dim}\naxis dimension: {shape[0]}\norigin present: {self.origin}')
         #end if
         return msgs
     #end def local_validity_checks
@@ -2276,7 +2262,7 @@ class ParallelotopeGrid(StructuredGridWithAxes):
         if format=='xsf':
             self.read_xsf(filepath)
         else:
-            self.error('Cannot read file.\nUnrecognized file format encountered.\nUnrecognized file format: {}\nValid options are: xsf'.format(format))
+            self.error(f'Cannot read file.\nUnrecognized file format encountered.\nUnrecognized file format: {format}\nValid options are: xsf')
         #end if
     #end def read_local
 
@@ -2535,7 +2521,7 @@ class SpheroidGrid(StructuredGridWithAxes):
             grid_dim = len(cells)
         #end if
         if grid_dim not in {2,3}:
-            self.error('only 2 and 3 dimensional spheroids grids are supported\nrequested dimension: {}'.format(grid_dim))
+            self.error(f'only 2 and 3 dimensional spheroids grids are supported\nrequested dimension: {grid_dim}')
         #end if
 
         # bconds match sphere constraints by default
@@ -2620,7 +2606,7 @@ class SpheroidGrid(StructuredGridWithAxes):
             upoints[:,1] /=   np.pi
             upoints[:,2] /= 2*np.pi
         else:
-            self.error('unit_points not supported for dim={}'.format(dim))
+            self.error(f'unit_points not supported for dim={dim}')
         #end if
         return upoints
     #end def unit_points_bare
@@ -2652,7 +2638,7 @@ class SpheroidGrid(StructuredGridWithAxes):
             upoints[:,2] *= 2*np.pi
             upoints = spherical_to_cartesian(upoints)
         else:
-            self.error('points_from_unit not supported for dim={}'.format(dim))
+            self.error(f'points_from_unit not supported for dim={dim}')
         #end if
         points = np.dot(upoints,self.axes)+self.center
         return points
@@ -2677,7 +2663,7 @@ class SpheroidGrid(StructuredGridWithAxes):
         elif dim==3:
             umetric += 2*np.pi**2*r**2*np.sin(np.pi*upoints[:,1]) # r^2 sin(theta)
         else:
-            self.error('unit_metric not supported for dim={}'.format(dim))
+            self.error(f'unit_metric not supported for dim={dim}')
         #end if
         umetric *= self.axes_volume()
         return umetric
@@ -2710,7 +2696,7 @@ class SpheroidGrid(StructuredGridWithAxes):
         elif self.grid_dim==3:
             vol_spheroid = 4*np.pi/3 # sphere of radius 1
         else:
-            self.error('volume not supported for dim={}'.format(self.grid_dim))
+            self.error(f'volume not supported for dim={self.grid_dim}')
         #end if
         return vol_axes*vol_spheroid
     #end def volume
@@ -2752,7 +2738,7 @@ class SpheroidGrid(StructuredGridWithAxes):
                 cell_vols[i] = cv*vol_axes
             #end for
         else:
-            self.error('cell_volumes not supported for dim={}'.format(dim))
+            self.error(f'cell_volumes not supported for dim={dim}')
         #end if
         return cell_vols
     #end def cell_volumes
@@ -2913,7 +2899,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         elif grid_dim==1:
             bconds = tuple('p')
         else:
-            self.error('only 1 and 2 dimensional spheroid surface grids are supported\nrequested dimension: {}'.format(grid_dim))
+            self.error(f'only 1 and 2 dimensional spheroid surface grids are supported\nrequested dimension: {grid_dim}')
         #end if
 
         endpoint = self.has_endpoints(bconds=bconds,grid_dim=grid_dim)
@@ -2990,7 +2976,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
             upoints[:,0] /=   np.pi
             upoints[:,1] /= 2*np.pi
         else:
-            self.error('unit_points not supported for dim={}'.format(dim))
+            self.error(f'unit_points not supported for dim={dim}')
         #end if
         return upoints
     #end def unit_points_bare
@@ -3022,7 +3008,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
             upoints[:,1] *= 2*np.pi
             upoints = spherical_to_cartesian(upoints,surface=True)
         else:
-            self.error('points_from_unit not supported for dim={}'.format(dim))
+            self.error(f'points_from_unit not supported for dim={dim}')
         #end if
         points = np.dot(upoints,self.axes)+self.center
         return points
@@ -3050,7 +3036,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         elif dim==2:
             umetric += 2*np.pi**2*r**2*np.sin(np.pi*upoints[:,1]) # r^2 sin(theta)
         else:
-            self.error('unit_metric not supported for dim={}'.format(dim))
+            self.error(f'unit_metric not supported for dim={dim}')
         #end if
         return umetric
     #end def unit_metric_bare
@@ -3087,7 +3073,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         elif dim==2:
             vol = 4*np.pi*r**2
         else:
-            self.error('volume is not supported for dim={}'.format(dim))
+            self.error(f'volume is not supported for dim={dim}')
         #end if
         return vol
     #end def volume
@@ -3128,7 +3114,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
                 cell_vols[i] = cv
             #end for
         else:
-            self.error('cell_volumes is not supported for dim={}'.format(dim))
+            self.error(f'cell_volumes is not supported for dim={dim}')
         #end if
         return cell_vols
     #end def cell_volumes
@@ -3310,9 +3296,9 @@ class GridFunction(GBase):
                 return
             #end if
         elif not isinstance(grid,cls.grid_class):
-            self.error('received "grid" input with incorrect type\ntype provided: {}\ntype required: {}'.format(grid.__class__.__name__,cls.grid_class.__name__))
+            self.error(f'received "grid" input with incorrect type\ntype provided: {grid.__class__.__name__}\ntype required: {cls.grid_class.__name__}')
         elif len(kwargs)>0:
-            self.error('received both a grid object and parameters intended for grid initialization\nplease remove the following parameters and try again: {}'.format(sorted(kwargs.keys())))
+            self.error(f'received both a grid object and parameters intended for grid initialization\nplease remove the following parameters and try again: {sorted(kwargs.keys())}')
         elif copy_grid:
             grid = deepcopy(grid)
         #end if
@@ -3333,7 +3319,7 @@ class GridFunction(GBase):
                 values = np.array(values,dtype=dtype)
             #end if
         else:
-            self.error('provided function values are of incorrect type\nvalues must be tuple, list, or ndarray\nyou provided: {}'.format(values.__class__.__name__))
+            self.error(f'provided function values are of incorrect type\nvalues must be tuple, list, or ndarray\nyou provided: {values.__class__.__name__}')
         #end if
         
         # process value_shape input
@@ -3352,7 +3338,7 @@ class GridFunction(GBase):
             nvtot = values.size
             nv    = np.prod(value_shape)
             if nvtot%nv!=0 or nvtot//nv!=grid.npoints:
-                self.error('value_shape and total number of values are inconsistent.\nTotal number of values: {}\nvalue_shape: {}\nExpected number of values per grid point: {}\nActual number of values per grid point: {}'.format(nvtot,value_shape,nv,nvtot/nv))
+                self.error(f'value_shape and total number of values are inconsistent.\nTotal number of values: {nvtot}\nvalue_shape: {value_shape}\nExpected number of values per grid point: {nv}\nActual number of values per grid point: {nvtot/nv}')
             #end if
             npe.reshape_inplace(values, (grid.npoints, nv))
         #end if
@@ -3375,23 +3361,23 @@ class GridFunction(GBase):
         """
         cls = self.__class__
         if not isinstance(self.grid,cls.grid_class):
-            msgs.append('Grid is not of the required type for current grid function.\nGrid function type: {}\nGrid type required: {}'.format(cls.__name__,self.grid.__class__.__name__))
+            msgs.append(f'Grid is not of the required type for current grid function.\nGrid function type: {cls.__name__}\nGrid type required: {self.grid.__class__.__name__}')
         #end if
         self.grid.local_validity_checks(msgs)
         if len(self.values)!=self.npoints:
-            msgs.append('Number of function values and number of grid points do not match.\nNumber of grid points: {}\nNumber of function values: {}'.format(self.npoints,len(self.values)))
+            msgs.append(f'Number of function values and number of grid points do not match.\nNumber of grid points: {self.npoints}\nNumber of function values: {len(self.values)}')
         #end if
         if len(self.values.shape)!=2:
-            msgs.append('Function values has incorrect shape.\nExpected shape is (# of points, # of function values at each point)\nShape received: {}'.format(self.values.shape))
+            msgs.append(f'Function values has incorrect shape.\nExpected shape is (# of points, # of function values at each point)\nShape received: {self.values.shape}')
         #end if
         if len(self.value_shape)<1:
             self.error('"value_shape" must have at least one entry.')
         #end if
         if np.prod(self.value_shape)!=self.values.size//self.npoints:
-            self.error('"value_shape" and "values" are inconsistent.\nNumber of values per point based on "values": {}\nNumber of values per point based on "value_shape": {}'.format(self.values.size/self.npoints,np.prod(self.value_shape)))
+            self.error(f'"value_shape" and "values" are inconsistent.\nNumber of values per point based on "values": {self.values.size/self.npoints}\nNumber of values per point based on "value_shape": {np.prod(self.value_shape)}')
         #end if
         if self.values.shape!=(self.npoints,self.nvalues):
-            self.error('Function values has incorrect shape.\nExected shape: {}\nShape received: {}'.format((self.npoints,self.nvalues),self.values.shape))
+            self.error(f'Function values has incorrect shape.\nExected shape: {(self.npoints,self.nvalues)}\nShape received: {self.values.shape}')
         #end if
     #end def local_validity_checks
 
@@ -3531,7 +3517,7 @@ class StructuredGridFunction(GridFunction):
             v[ -1, -1,:-1] = self.values[0,0,:]
             v[ -1, -1, -1] = self.values[0,0,0]
         else:
-            self.error('values_with_upper_ghost is not implemented for dimensions greater than 3.\nDimensionality of the current dataset: {}'.format(dim))
+            self.error(f'values_with_upper_ghost is not implemented for dimensions greater than 3.\nDimensionality of the current dataset: {dim}')
         #end if
 
         self.reshape_points_flat()
@@ -3569,8 +3555,9 @@ class StructuredGridFunction(GridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.contour`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
-            self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         X,Y = self.grid.unit_points().T
         npe.reshape_inplace(X, self.grid_shape)
@@ -3603,8 +3590,9 @@ class StructuredGridFunction(GridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_surface`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
-            self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         X,Y = self.grid.unit_points().T
         npe.reshape_inplace(X, self.grid_shape)
@@ -3637,8 +3625,10 @@ class StructuredGridFunction(GridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_trisurf`.
         """
+        import matplotlib.pyplot as plt
+        from skimage import measure
         if self.grid_dim!=3:
-            self.error('cannot plot isosurface in unit coordinates\ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot isosurface in unit coordinates\ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         fm = self.f.T
         # unit grid is used implicitly
@@ -3677,6 +3667,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
 
 
     def interpolate(self,r,type=None,copy=False,**kw):
+        import scipy.ndimage as scipy_ndimage
         # https://stackoverflow.com/questions/16217995/fast-interpolation-of-regularly-sampled-3d-data-with-different-intervals-in-x-y
         kw = obj(kw)
         grid = None
@@ -3710,7 +3701,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             values = scipy_ndimage.map_coordinates(v, indices, **kw)
             npe.reshape_inplace(v, v_shape)
         else:
-            self.error('Interpolation of type "{}" is not supported.\nValid options are: map_coordinates'.format(type))
+            self.error(f'Interpolation of type "{type}" is not supported.\nValid options are: map_coordinates')
         #end if
 
         if grid is None:
@@ -3745,8 +3736,9 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.contour`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
-            self.error('cannot plot contours\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot contours\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         #if self.space_dim!=2:
         #    self.error('cannot plot contours\ngrid points must reside in a 2D space to make contour plots\ndimension of the space for this function: {}'.format(self.space_dim))
@@ -3800,8 +3792,9 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_surface`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
-            self.error('cannot plot surface\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot surface\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         X,Y = self.r.T
         npe.reshape_inplace(X, self.grid_shape)
@@ -3834,11 +3827,13 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_trisurf`.
         """
+        import matplotlib.pyplot as plt
+        from skimage import measure
         if self.grid_dim!=3:
-            self.error('cannot plot isosurface \ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot isosurface \ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         if self.space_dim!=3:
-            self.error('cannot plot isosurface\ngrid points must reside in a 3D space to make contour plots\ndimension of the space for this function: {}'.format(self.space_dim))
+            self.error(f'cannot plot isosurface\ngrid points must reside in a 3D space to make contour plots\ndimension of the space for this function: {self.space_dim}')
         #end if
         fm = self.f.T
         # unit grid is used implicitly
@@ -3944,7 +3939,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         if format=='xsf':
             self.read_xsf(filepath)
         else:
-            self.error('Cannot read file.\nUnrecognized file format encountered.\nUnrecognized file format: {}\nValid options are: xsf'.format(format))
+            self.error(f'Cannot read file.\nUnrecognized file format encountered.\nUnrecognized file format: {format}\nValid options are: xsf')
         #end if
     #end def read_local
 
@@ -3992,13 +3987,13 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         axes   = d.axes.copy()
         del d
         if len(points)!=len(values):
-            self.error('"points" and "values" must have the same length.\nNumber of points: {}\nNumber of values: {}'.format(len(points),len(values)))
+            self.error(f'"points" and "values" must have the same length.\nNumber of points: {len(points)}\nNumber of values: {len(values)}')
         elif len(points.shape)!=2:
-            self.error('Shape of "points" array must be (# points) x (# dimensions).\nShape provided: {}'.format(points.shape))
+            self.error(f'Shape of "points" array must be (# points) x (# dimensions).\nShape provided: {points.shape}')
         #end if
         N,D = points.shape
         if axes.shape!=(D,D):
-            self.error('"axes" must have shape {}\nShape provided: {} '.format((D,D),axes.shape))
+            self.error(f'"axes" must have shape {(D,D)}\nShape provided: {axes.shape} ')
         #end if
 
         # reshape values (for now GridFunction does not support more structured values)
@@ -4062,7 +4057,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
             dxmin   = dxlayer.min()
             dxmax   = dxlayer.max()
             if np.abs(dxmax-dxmin)>2*tol:
-                error('Could not determine layer separation.\nLayers are not evenly spaced.\nMin layer spacing: {}\nMax layer spacing: {}\nSpread   : {}\nTolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol),'read_from_points')
+                error(f'Could not determine layer separation.\nLayers are not evenly spaced.\nMin layer spacing: {dxmin}\nMax layer spacing: {dxmax}\nSpread   : {dxmax-dxmin}\nTolerance: {2*tol}','read_from_points')
             #end if
             dx = dxlayer.mean()
             ipoints = np.array(np.around((xpoints-xmin)/dx),dtype=int)
@@ -4076,7 +4071,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         grid_corner = np.empty((D, ),dtype=float)
         ipoints     = np.empty((N,D),dtype=int)
         for d in range(D):
-            self.vlog('Indexing points along dim {}'.format(d),n=2,time=True)
+            self.vlog(f'Indexing points along dim {d}',n=2,time=True)
             ixpoints,xmin,xmax = index_by_layer(rpoints[:,d],tol)
             grid_shape[d]  = ixpoints.max()+1
             grid_axes[d,d] = xmax-xmin
@@ -4101,14 +4096,14 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         ipflat = grid.flat_indices(ipoints)
         dmax = np.linalg.norm(points-grid.points[ipflat],axis=1).max()
         if dmax>tol:
-            self.error('Generated grid points do not match those read in.\nMaximum deviation: {}\nTolerance        : {}'.format(dmax,tol))
+            self.error(f'Generated grid points do not match those read in.\nMaximum deviation: {dmax}\nTolerance        : {tol}')
         #end if
         # count number of times each grid point is mapped to
         point_counts = np.bincount(ipflat,minlength=grid.npoints)
         # if not averaging, check for one-to-one mapping
         max_count = point_counts.max()
         if not average and max_count>1:
-            self.error('Mapping to grid points is not one-to-one.\nMax no. of read points mapped to a grid point: {}'.format(max_count))
+            self.error(f'Mapping to grid points is not one-to-one.\nMax no. of read points mapped to a grid point: {max_count}')
         #end if
 
         # map the inputted values onto the generated grid
@@ -4310,9 +4305,9 @@ def parallelotope_grid_function(
         optional = set(('tol','average'))
         present  = set(kwargs.keys())
         if len(required-present)>0:
-            error('Grid function cannot be created.\nWhen "points" is provided, "axes" and "values" must also be given.\nInputs provided: {}'.format(sorted(present)),loc)
+            error(f'Grid function cannot be created.\nWhen "points" is provided, "axes" and "values" must also be given.\nInputs provided: {sorted(present)}',loc)
         elif len(present-required-optional)>0:
-            error('Grid function cannot be created.\nUnrecognized inputs provided.\nUnrecognized inputs: {}\nValid options are: {}'.format(sorted(present-required-optional),sorted(required|optional)))
+            error(f'Grid function cannot be created.\nUnrecognized inputs provided.\nUnrecognized inputs: {sorted(present-required-optional)}\nValid options are: {sorted(required|optional)}')
         #end if
         gf = ParallelotopeGridFunction()
         gf.read_from_points(**kwargs)
@@ -4340,7 +4335,7 @@ def grid_function(
     elif type=='spheroid_surface':
         gf = SpheroidSurfaceGridFunction(**kwargs)
     else:
-        error('Grid function type "{}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface'.format(type),loc)
+        error(f'Grid function type "{type}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface',loc)
     #end if
     return gf
 #end def grid_function
@@ -4363,7 +4358,7 @@ def grid(
     elif type=='spheroid_surface':
         g = SpheroidSurfaceGrid(**kwargs)
     else:
-        error('Grid type "{}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface'.format(type),loc)
+        error(f'Grid type "{type}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface',loc)
     #end if
     return g
 #end def grid
@@ -4377,7 +4372,7 @@ gf_file_type_map = obj(
 def read_grid_function(filepath,format=None,loc='read_grid_function'):
     filepath,format = process_file_format(filepath,format,loc)
     if format not in gf_file_type_map:
-        error('Cannot read file.\nUnrecognized file format for grid function.\nFile format provided: {}\nAllowed formats include: {}'.format(format,sorted(gf_file_type_map.keys())),loc)
+        error(f'Cannot read file.\nUnrecognized file format for grid function.\nFile format provided: {format}\nAllowed formats include: {sorted(gf_file_type_map.keys())}',loc)
     #end if
     gf = gf_file_type_map[format]()
     gf.read(filepath)
@@ -4392,7 +4387,7 @@ g_file_type_map = obj(
 def read_grid(filepath,format=None,loc='read_grid'):
     filepath,format = process_file_format(filepath,format,loc)
     if format not in g_file_type_map:
-        error('Cannot read file.\nUnrecognized file format for grid.\nFile format provided: {}\nAllowed formats include: {}'.format(format,sorted(g_file_type_map.keys())),loc)
+        error(f'Cannot read file.\nUnrecognized file format for grid.\nFile format provided: {format}\nAllowed formats include: {sorted(g_file_type_map.keys())}',loc)
     #end if
     g = g_file_type_map[format]()
     g.read(filepath)
@@ -4404,9 +4399,9 @@ def process_file_format(filepath,format,loc):
     if isinstance(filepath,StandardFile):
         format = filepath.sftype
     elif not isinstance(filepath,str):
-        error('Cannot read file.\nExpected a file path.\nInstead received type: {}\nWith value: {}\nPlease provide a file path and try again.'.format(filepath.__class__.__name__,filepath),loc)
+        error(f'Cannot read file.\nExpected a file path.\nInstead received type: {filepath.__class__.__name__}\nWith value: {filepath}\nPlease provide a file path and try again.',loc)
     elif not os.path.exists(filepath):
-        error('Cannot read file.  File path does not exist.\nFile path provided: {}'.format(filepath),loc)
+        error(f'Cannot read file.  File path does not exist.\nFile path provided: {filepath}',loc)
     #end if
     if format is None:
         format = filepath.rsplit('.',1)[1].lower()
@@ -4430,7 +4425,7 @@ del gfs
 def grid_function_from_grid(grid):
     gname = grid.__class__.__name__
     if gname not in grid_to_grid_function:
-        error('Cannot find matching grid function for grid "{}".'.format(gname))
+        error(f'Cannot find matching grid function for grid "{gname}".')
     #end if
     return grid_to_grid_function[gname]
 #end def grid_function_from_grid
@@ -4548,10 +4543,11 @@ if __name__=='__main__':
         if not g.initialized:
             continue
         #end if
-        print(' {:<16}  {} {}  {}  {}  {}'.format(label,g.grid_dim,g.space_dim,len(g.axes),g.bconds,g.shape))
+        print(f' {label:<16}  {g.grid_dim} {g.space_dim}  {len(g.axes)}  {g.bconds}  {g.shape}')
     #end for
 
     if demos.plot_grids:
+        import matplotlib.pyplot as plt
         #grids_plot = 'p23c p23_oo p23_op p23_pp s23c s23'.split()
         #grids_plot = 'p11 p12 p13 p23 p23c p33 p33c'.split()
         #grids_plot = 's23 s23c s33 s33c'.split()
@@ -4578,6 +4574,7 @@ if __name__=='__main__':
 
 
     if demos.plot_inside:
+        import matplotlib.pyplot as plt
         #grids_plot = 'p22_oo p22_op p22_pp'.split()
         #grids_plot = 's22 s23'.split()
         grids_plot = 'c23'.split()
@@ -4614,6 +4611,7 @@ if __name__=='__main__':
 
 
     if demos.plot_projection:
+        import matplotlib.pyplot as plt
         grids_plot = 'p22_oo p22_op p22_pp'.split()
 
         n = 100
@@ -4661,7 +4659,7 @@ if __name__=='__main__':
 
 
     if demos.plot_contours:
-
+        import matplotlib.pyplot as plt
         gp = ParallelotopeGrid(
             axes  = [[1,0],
                      [1,1]],
@@ -4705,7 +4703,7 @@ if __name__=='__main__':
 
 
     if demos.plot_surface:
-
+        import matplotlib.pyplot as plt
         gp = ParallelotopeGrid( 
            axes  = [[1,0],
                      [1,1]],
@@ -4749,7 +4747,7 @@ if __name__=='__main__':
 
 
     if demos.plot_isosurface:
-
+        import matplotlib.pyplot as plt
         gp = ParallelotopeGrid(
             axes  = [[1,0,0],
                      [1,1,0],
