@@ -1258,7 +1258,11 @@ def test_generate():
         )
     check_vs_serial_reference(ri,infile)
 
-    if find_spec("spglib") is not None and find_spec("seekpath") is not None:
+    if (
+        find_spec("spglib") is not None
+        and find_spec("seekpath") is not None
+        and find_spec("scipy") is not None
+        ):
         nio8 = generate_physical_system(
             units     = 'B',
             axes      = 7.8811*np.identity(3),

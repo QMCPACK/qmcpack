@@ -82,30 +82,11 @@ Module contents
 
 import os
 from copy import deepcopy
-from .developer import DevBase, obj, error, unavailable
+from .developer import DevBase, obj, error
 from .fileio import StandardFile,XsfFile
 from . import numpy_extensions as npe
 
-try:
-    import numpy as np
-except:
-    np = unavailable('numpy','np')
-#end try
-try:
-    import matplotlib.pyplot as plt
-except:
-    plt = unavailable('matplotlib','plt')
-#end try
-try:
-    from skimage import measure
-except:
-    measure = unavailable('skimage','measure')
-#end try
-try:
-    import scipy.ndimage as scipy_ndimage
-except:
-    scipy_ndimage = unavailable('scipy','ndimage')
-#end try
+import numpy as np
 
 
 
@@ -672,6 +653,7 @@ class PlotHandler(DevBase):
         ax : 
             Handle of the current figure's axes.
         """
+        import matplotlib.pyplot as plt
         if dim is None:
             self.error('cannot setup mpl figure, "dim" must be provided')
         #end if
@@ -1181,6 +1163,7 @@ class Grid(GBase):
         **kwargs : 
             Arbitrary keyword arguments passed to `pyplot.scatter`.
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
         if points is None:
             r = self.r.T
@@ -1734,6 +1717,7 @@ class StructuredGrid(Grid):
         show : `bool, optional, default True`
             Display the figure (`True`) or not (`False`).
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
         if self.grid_dim!=1 or self.surface:
             bpoints = self.get_boundary_lines(n=n)
@@ -1771,6 +1755,7 @@ class StructuredGrid(Grid):
         **kwargs : 
             Arbitrary keyword arguments passed to `pyplot.scatter`.
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
                                     ax1='a1',ax2='a2',ax3='a3')
         if points is None:
@@ -1807,6 +1792,7 @@ class StructuredGrid(Grid):
         show : `bool, optional, default True`
             Display the figure (`True`) or not (`False`).
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
                                     ax1='a1',ax2='a2',ax3='a3')
         if self.grid_dim!=1 or self.surface:
@@ -3569,6 +3555,7 @@ class StructuredGridFunction(GridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.contour`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
             self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -3603,6 +3590,7 @@ class StructuredGridFunction(GridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_surface`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
             self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -3637,6 +3625,8 @@ class StructuredGridFunction(GridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_trisurf`.
         """
+        import matplotlib.pyplot as plt
+        from skimage import measure
         if self.grid_dim!=3:
             self.error('cannot plot isosurface in unit coordinates\ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -3677,6 +3667,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
 
 
     def interpolate(self,r,type=None,copy=False,**kw):
+        import scipy.ndimage as scipy_ndimage
         # https://stackoverflow.com/questions/16217995/fast-interpolation-of-regularly-sampled-3d-data-with-different-intervals-in-x-y
         kw = obj(kw)
         grid = None
@@ -3745,6 +3736,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.contour`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
             self.error('cannot plot contours\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -3800,6 +3792,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_surface`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
             self.error('cannot plot surface\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -3834,6 +3827,8 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_trisurf`.
         """
+        import matplotlib.pyplot as plt
+        from skimage import measure
         if self.grid_dim!=3:
             self.error('cannot plot isosurface \ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
         #end if
@@ -4552,6 +4547,7 @@ if __name__=='__main__':
     #end for
 
     if demos.plot_grids:
+        import matplotlib.pyplot as plt
         #grids_plot = 'p23c p23_oo p23_op p23_pp s23c s23'.split()
         #grids_plot = 'p11 p12 p13 p23 p23c p33 p33c'.split()
         #grids_plot = 's23 s23c s33 s33c'.split()
@@ -4578,6 +4574,7 @@ if __name__=='__main__':
 
 
     if demos.plot_inside:
+        import matplotlib.pyplot as plt
         #grids_plot = 'p22_oo p22_op p22_pp'.split()
         #grids_plot = 's22 s23'.split()
         grids_plot = 'c23'.split()
@@ -4614,6 +4611,7 @@ if __name__=='__main__':
 
 
     if demos.plot_projection:
+        import matplotlib.pyplot as plt
         grids_plot = 'p22_oo p22_op p22_pp'.split()
 
         n = 100
@@ -4661,7 +4659,7 @@ if __name__=='__main__':
 
 
     if demos.plot_contours:
-
+        import matplotlib.pyplot as plt
         gp = ParallelotopeGrid(
             axes  = [[1,0],
                      [1,1]],
@@ -4705,7 +4703,7 @@ if __name__=='__main__':
 
 
     if demos.plot_surface:
-
+        import matplotlib.pyplot as plt
         gp = ParallelotopeGrid( 
            axes  = [[1,0],
                      [1,1]],
@@ -4749,7 +4747,7 @@ if __name__=='__main__':
 
 
     if demos.plot_isosurface:
-
+        import matplotlib.pyplot as plt
         gp = ParallelotopeGrid(
             axes  = [[1,0,0],
                      [1,1,0],

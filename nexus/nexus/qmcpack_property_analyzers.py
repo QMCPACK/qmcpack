@@ -38,14 +38,7 @@ import os
 import numpy as np
 from .qmcpack_input import QmcpackInput
 from .qmcpack_analyzer_base import QAobject,QAanalyzer
-from .developer import unavailable
 from . import numpy_extensions as npe
-
-try:
-    from matplotlib.pyplot import plot,show,figure,xlabel,ylabel,title,legend
-except:
-    plot,show,figure,xlabel,ylabel,title,legend = unavailable('matplotlib.pyplot','plot','show','figure','xlabel','ylabel','title','legend')
-#end try
 
 
 class Bspline(QAobject):
@@ -150,7 +143,10 @@ class RadialJastrow(QAobject):
         return r,d0,d1,d2
     #end def interpolate
 
-    def plot(self,r1=None,r2=None,color='b',ptype=plot):
+    def plot(self,r1=None,r2=None,color='b',ptype=None):
+        if ptype is None:
+            import matplotlib.pyplot as plt
+            ptype = plt.plot
         r,d0,d1,d2 = self.interpolate(r1,r2)
         c = color
         ptype(r,d0,ls='-' ,c=c,label='value')
@@ -297,6 +293,7 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
 
     def plot_jastrow_data(self):
+        import matplotlib.pyplot as plt
         for jt in self.jastrow_types:
             if len(self[jt])!=0:
                 for jn,je in self[jt].items():
@@ -304,39 +301,42 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
                     bs = Bspline(je.coefficients,r.max())
                     d0,d1,d2 = bs.evaluate(r)
 
-                    figure()
-                    plot(je.r,je.d0,'b-' ,label='value')
-                    plot(je.r,je.d1,'b-.',label='first derivative')
-                    plot(je.r,je.d2,'b:' ,label='second derivative')
-                    plot(r,d0,'r-' )
-                    plot(r,d1,'r-.')
-                    plot(r,d2,'r:' )
-                    plot(je.r,0*je.r,'k-')
-                    xlabel('r (Bohr)')
-                    title(jt+' '+jn)
-                    legend()
+                    plt.figure()
+                    plt.plot(je.r,je.d0,'b-' ,label='value')
+                    plt.plot(je.r,je.d1,'b-.',label='first derivative')
+                    plt.plot(je.r,je.d2,'b:' ,label='second derivative')
+                    plt.plot(r,d0,'r-' )
+                    plt.plot(r,d1,'r-.')
+                    plt.plot(r,d2,'r:' )
+                    plt.plot(je.r,0*je.r,'k-')
+                    plt.xlabel('r (Bohr)')
+                    plt.title(jt+' '+jn)
+                    plt.legend()
                 #end for
             #end if
         #end for
-        show()
+        plt.show()
     #end def plot_jastrow_data
 
 
-    def plot_jastrows(self,ptype=plot):
+    def plot_jastrows(self,ptype=None):
+        if ptype is None:
+            import matplotlib.pyplot as plt
+            ptype = plt.plot
         for name,value in self.items():
             if name in self.jastrow_types:
                 for label,jastrow in value.items():
                     jtype = jastrow.__class__.__name__
-                    figure()
+                    plt.figure()
                     jastrow.plot(ptype=ptype)
-                    xlabel('r (Bohr)')
-                    ylabel(jtype+' ('+label+')')
-                    title(jtype+' for '+label)
-                    legend()
+                    plt.xlabel('r (Bohr)')
+                    plt.ylabel(jtype+' ('+label+')')
+                    plt.title(jtype+' for '+label)
+                    plt.legend()
                 #end for
             #end if
         #end for
-        show()
+        plt.show()
     #end def plot_jastrows
 
 #end class WavefunctionAnalyzer

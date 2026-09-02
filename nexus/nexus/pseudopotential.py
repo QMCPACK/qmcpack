@@ -16,18 +16,11 @@ from .fileio import TextFile
 from .xmlreader import readxml
 from .periodic_table import Elements
 from .unit_converter import convert
-from .developer import DevBase, obj, unavailable, FileFormatError, NotAnElementError
+from .developer import DevBase, obj, FileFormatError, NotAnElementError
 from .basisset import process_gaussian_text, GaussianBasisSet
 from .testing import object_eq
 from .pseudoset import pp_elem_label
 from .utilities import path_string
-
-try:
-    import matplotlib.pyplot as plt
-except:
-    plt = unavailable('matplotlib','pyplot')
-#end try
-
 
 
 class Pseudopotential(DevBase):
@@ -774,6 +767,7 @@ class SemilocalPP(Pseudopotential):
 
 
     def plot(self,r=None,*,show=True,fig=True,linestyle='-',channels=None,with_local=False,rmin=0.01,rmax=5.0,title=None,metric=None,color=None):
+        import matplotlib.pyplot as plt
         if channels is None:
             channels = self.l_channels
         #end if
@@ -835,6 +829,7 @@ class SemilocalPP(Pseudopotential):
 
 
     def plot_components(self,r=None,*,show=True,fig=True,linestyle='-',rmin=0.01,rmax=5.0,title=None,metric=None,color=None,rpow=0):
+        import matplotlib.pyplot as plt
         channels = list(self.l_channels)+['L2']
         if fig:
             plt.figure(tight_layout=True)
@@ -898,6 +893,7 @@ class SemilocalPP(Pseudopotential):
 
 
     def plot_channels(self,r=None,channels=None,*,show=True,fig=True,linestyle='-',rmin=0.01,rmax=5.0,title=None,metric=None,color=None,rpow=0,with_local=True,with_L2=True):
+        import matplotlib.pyplot as plt
         if channels is None:
             channels = list(self.l_channels)
         #end if
@@ -1006,6 +1002,7 @@ class SemilocalPP(Pseudopotential):
 
 
     def plot_positive_definite(self,r=None,*,show=True,fig=True,linestyle='-',rmin=0.01,rmax=5.0,title=None,color='k'):
+        import matplotlib.pyplot as plt
         if not self.has_L2():
             msg = 'positive definite condition only applies to L2 potentials'
             raise RuntimeError(msg)
@@ -1040,6 +1037,7 @@ class SemilocalPP(Pseudopotential):
 
                 
     def plot_L2(self,*,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None,color=None):
+        import matplotlib.pyplot as plt
         color_in = color
         if fig:
             plt.figure(tight_layout=True)
@@ -1082,6 +1080,7 @@ class SemilocalPP(Pseudopotential):
 
 
     def plot_nonlocal_polar(self,*,show=True,lmax=10,rmin=0.01,rmax=2.0,nr=100,nt=100,levels=100,label=''):
+        import matplotlib.pyplot as plt
         from scipy.special import eval_legendre as legendre
 
         tlabel = label

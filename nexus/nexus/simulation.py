@@ -78,7 +78,7 @@ from pathlib import Path
 from string import Template
 from subprocess import Popen
 from typing import ClassVar
-from .developer import DevBase, obj, unavailable, FileFormatError, NexusError
+from .developer import DevBase, obj, FileFormatError, NexusError
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
@@ -1952,21 +1952,12 @@ def generate_simulation(**kwargs):
 
 
 # ability to graph simulation workflows
-try:
-    from pydot import Dot,Node,Edge
-except:
-    Dot,Node,Edge = unavailable('pydot','Dot','Node','Edge')
-#end try
-try:
-    from matplotlib.image import imread
-    from matplotlib.pyplot import imshow,show,xticks,yticks
-except:
-    imread = unavailable('matplotlib.image','imread')
-    imshow,show,xticks,yticks = unavailable('matplotlib.pyplot','imshow','show','xticks','yticks')
-#end try
-
 exit_call = sys.exit
 def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,display=True):
+    from matplotlib.image import imread
+    from matplotlib.pyplot import imshow,show,xticks,yticks
+    from pydot import Dot, Node, Edge
+
     if sims is None:
         sims = Simulation.all_sims
     #end if

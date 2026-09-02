@@ -25,11 +25,12 @@
 import os
 import sys
 import traceback
+import importlib
 from pathlib import Path
 from copy import deepcopy
 import numpy as np
 #custom library imports
-from .developer import obj, unavailable, DevBase, sorted_generic
+from .developer import obj, DevBase, sorted_generic
 from .physical_system import ghost_atoms
 #QmcpackAnalyzer classes imports
 from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAanalyzerCollection
@@ -50,20 +51,6 @@ from .qmcpack_result_analyzers import OptimizationAnalyzer, TimestepStudyAnalyze
 from .simulation import SimulationAnalyzer,Simulation
 from .qmcpack_input import QmcpackInput
 
-try:
-    import h5py
-    h5py_unavailable = False
-except:
-    h5py = unavailable('h5py')
-    h5py_unavailable = True
-#end try
-
-try:
-    import matplotlib.pyplot as plt
-except:
-    plt = unavailable('matplotlib','pyplot')
-#end try
-
 
 class QmcpackAnalyzerCapabilities(QAobject):
 
@@ -75,7 +62,7 @@ class QmcpackAnalyzerCapabilities(QAobject):
         self.fields=set(['energydensity','density','dm1b','spindensity','structurefactor'])
 
         hdf_data_sources = set(['stat','storeconfig','traces'])
-        if h5py_unavailable:
+        if importlib.util.find_spec("h5py") is None:
             self.data_sources -= hdf_data_sources
         #end if
 
@@ -731,6 +718,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
 
     def plot_trace(self,quantity,style='b-',offset=0,source='scalar',*,mlabels=True,
                    mlines=True,show=True,alloff=False):
+        import matplotlib.pyplot as plt
         mlabels &= not alloff
         mlines  &= not alloff
         show    &= not alloff

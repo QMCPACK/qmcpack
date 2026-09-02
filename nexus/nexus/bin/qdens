@@ -67,7 +67,7 @@ def find_nexus_modules():
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
 import nexus.numpy_extensions as npe
-from nexus.developer import DevBase,obj,unavailable
+from nexus.developer import DevBase,obj
 import nexus.memory as memory
 from nexus.hdfreader import HDFreader
 from nexus.fileio import XsfFile,ChgcarFile
@@ -78,36 +78,8 @@ from nexus.qmcpack_input import spindensity as spindensity_xml
 from nexus.qmcpack_input import density as density_xml
 from nexus.unit_converter import convert
 
-
-try:
-    import h5py
-except:
-    h5py = unavailable('h5py')
-#end try
-try:
-    import numpy as np
-except:
-    np = unavailable('numpy')
-#end try
-
-
-try:
-    import matplotlib.pyplot as plt
-    params = {
-        'legend.fontsize'      : 14,
-        'figure.facecolor'     : 'white',
-        'figure.subplot.hspace': 0.,
-        'axes.labelsize'       : 16,
-        'xtick.labelsize'      : 14,
-        'ytick.labelsize'      : 14,
-        }
-    plt.rcParams.update(params)
-except:
-    plt = unavailable('matplotlib.pyplot')
-#end try
-
-
-
+import h5py
+import numpy as np
 
 
 def h5_int(val):
@@ -867,6 +839,16 @@ class StatFile(QDBase):
 
 
     def line_plot(self,dim):
+        import matplotlib.pyplot as plt
+        params = {
+            'legend.fontsize'      : 14,
+            'figure.facecolor'     : 'white',
+            'figure.subplot.hspace': 0.,
+            'axes.labelsize'       : 16,
+            'xtick.labelsize'      : 14,
+            'ytick.labelsize'      : 14,
+            }
+        plt.rcParams.update(params)
         self.vlog('      making line plots for {0}'.format(self.file_prefix))
         opt = self.options
         ndim = 3
@@ -1722,6 +1704,7 @@ class QMCDensityProcessor(QDBase):
             #end if
         #end for
         if not opt.noplot and opt.lineplot is not None:
+            import matplotlib.pyplot as plt
             plt.show()
         #end if
     #end def process
