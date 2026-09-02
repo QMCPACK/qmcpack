@@ -37,7 +37,7 @@ import sphinx_rtd_theme
 
 extensions = ['sphinxcontrib.bibtex', "sphinx_rtd_theme"]
 bibtex_bibfiles = ["bibs/all.bib"]
-bibtex_reference_style = 'author_year'
+bibtex_reference_style = "author_year"
 
 numfig = True
 
