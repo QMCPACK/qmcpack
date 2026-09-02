@@ -2716,5 +2716,3 @@ Appendix: dmc.dat
   ``WalkerControlBase::branch``, which is called by
   ``SimpleFixedNodeBranch``
 | ``::branch``, for example.
-
-.. bibliography:: /bibs/developing.bib
