@@ -238,7 +238,7 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
     des = np.zeros_like(dem)
     assert len(dem)==len(block_lens)
     if len(block_lens)>1:
-        p = theil_sen_stoch(block_lens,dem)
+        p = theil_sen_stoch_reblock(block_lens,dem)
         m,b = p
         if m>0:
             err_max = np.polyval(p,[block_lens[-1]])[0]
