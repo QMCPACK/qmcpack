@@ -206,14 +206,36 @@ class PwscfOutData(DevBase):
 
     def read_calculation(self,lines):
         """Infer and bind the PWSCF calculation type from log records."""
-        has_cell     = any(line.strip().startswith('CELL_PARAMETERS') for line in lines)
-        has_bfgs     = any('BFGS Geometry Optimization' in line for line in lines)
-        has_band_run = any('Band Structure Calculation' in line for line in lines)
-        has_dynamics = any(
-            'Entering Dynamics' in line
-            or 'Molecular Dynamics Calculation' in line
-            for line in lines
-            )
+        has_cell      = False
+        has_bfgs      = False
+        has_band_run  = False
+        has_dynamics  = False
+        has_reference = False
+        for line in lines:
+            if not has_cell and line.strip().startswith('CELL_PARAMETERS'):
+                has_cell = True
+            if not has_bfgs and 'BFGS Geometry Optimization' in line:
+                has_bfgs = True
+            if not has_band_run and 'Band Structure Calculation' in line:
+                has_band_run = True
+            if (
+                not has_dynamics
+                and (
+                    'Entering Dynamics' in line
+                    or 'Molecular Dynamics Calculation' in line
+                    )
+                ):
+                has_dynamics = True
+            if (
+                not has_reference
+                and (
+                    'Fermi energ' in line
+                    or 'highest occupied' in line
+                    or 'occupation numbers' in line
+                    )
+                ):
+                has_reference = True
+        #end for
         if has_dynamics:
             raise RuntimeError('PWSCF molecular-dynamics calculations are not supported')
         elif has_bfgs:
@@ -221,12 +243,6 @@ class PwscfOutData(DevBase):
         elif has_band_run:
             # QE uses the same heading for nscf and bands, but suppresses
             # electronic-reference and occupation records for bands runs.
-            has_reference = any(
-                'Fermi energ' in line
-                or 'highest occupied' in line
-                or 'occupation numbers' in line
-                for line in lines
-                )
             if not has_reference:
                 raise RuntimeError('PWSCF bands calculations are not supported')
             calculation = 'nscf'
