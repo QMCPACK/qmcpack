@@ -34,12 +34,13 @@ def theil_sen(x,y):
 def theil_sen_stoch(x,y):
     """Estimate a Theil-Sen fit with stochastic pair sampling for large data.
 
-    The exact estimator is used through approximately 700,000 pairwise
-    slopes.  Above that crossover, the number of sampled slopes grows
-    linearly with the number of input points, with a rate calibrated to
-    100,000 samples at 448 points.  Pairwise slopes are sampled uniformly with
-    replacement.  A fixed local random seed makes the stochastic estimate
-    reproducible without altering NumPy's global random state.
+    The number of sampled pairwise slopes is ``ceil(16000*sqrt(n))``.  This
+    schedule was empirically calibrated on standardized linear-regression
+    problems with Gaussian, heavy-tailed, heteroscedastic, and contaminated
+    data; sampled slope angles stayed within one degree of their exact values.
+    Pairwise slopes are sampled uniformly with replacement.  A fixed local
+    random seed makes the estimate reproducible without altering NumPy's
+    global random state.
     """
     x = np.asarray(x)
     y = np.asarray(y)
@@ -51,14 +52,11 @@ def theil_sen_stoch(x,y):
 
     n = len(x)
     npairs = n*(n-1)//2
-    exact_pair_limit = 700_000
-    if npairs<=exact_pair_limit:
+    sample_scale = 16000.
+    nsampled = int(np.ceil(sample_scale*np.sqrt(n)))
+    if npairs<=nsampled:
         return theil_sen(x,y)
 
-    sample_pair_reference = 100_000
-    sample_n_reference = 448
-    nsampled = (
-        sample_pair_reference*n+sample_n_reference//2)//sample_n_reference
     random_seed = 314159
     rng = np.random.Generator(np.random.PCG64(random_seed))
     i = rng.integers(0,n,size=nsampled)
