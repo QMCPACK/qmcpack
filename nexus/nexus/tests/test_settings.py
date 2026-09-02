@@ -44,34 +44,33 @@ def test_settings(tmp_path):
     #end def aux_defaults
 
     def check_settings_core_noncore():
-        nckeys_check = set([
+        nckeys_check = {
                 'command_line','debug',
                 'file_locations', 'generate_only', 'graph_sims', 'indent',
                 'load_images', 'local_directory', 'monitor',
                 'progress_tty', 'pseudo_dir',
                 'remote_directory', 'results', 'runs',
-                'skip_submit', 'sleep', 'status', 'timeout',
-                'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
-                ])
-        nnckeys_check = set([
+                'skip_submit', 'sleep', 'timeout',
+                'status_only', 'trace', 'verbose', 'dynamic'
+                }
+        nnckeys_check = {
                 'basis_dir', 'basissets', 'pseudo_dir'
-                ])
-        setkeys_check = set([
+                }
+        setkeys_check = {
                 'command_line','basis_dir', 'basissets', 'debug',
                 'file_locations', 'generate_only',
                 'graph_sims', 'indent', 'load_images', 'local_directory',
                 'monitor', 'progress_tty',
                 'pseudo_dir', 'remote_directory', 'results',
-                'runs', 'skip_submit', 'sleep', 'status',
-                'timeout',
-                'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
-                ])
+                'runs', 'skip_submit', 'sleep',
+                'timeout', 'status_only', 'trace', 'verbose', 'dynamic'
+                }
         setkeys_allowed = setkeys_check | Settings.allowed_vars
 
         nckeys  = set(nexus_core.keys())
         nnckeys = set(nexus_noncore.keys())
         setkeys = set(settings.keys())
-        
+
         assert(nckeys==nckeys_check)
         assert(nnckeys==nnckeys_check)
         assert(setkeys>=setkeys_check)

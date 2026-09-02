@@ -572,21 +572,6 @@ class Settings(NexusCore):
         if nexus_core.debug:
             nexus_core.verbose = True
         #end if
-        if 'status' in kw:
-            if kw.status==None or kw.status==False:
-                nexus_core.status = nexus_core.status_modes.none
-            elif kw.status==True:
-                nexus_core.status = nexus_core.status_modes.standard
-            elif kw.status in nexus_core.status_modes:
-                nexus_core.status = nexus_core.status_modes[kw.status]
-            else:
-                msg = 'invalid status mode specified: {0}\nvalid status modes are: {1}'.format(kw.status,sorted(nexus_core.status_modes.keys()))
-                raise ValueError(msg)
-            #end if
-        #end if
-        if nexus_core.status_only and nexus_core.status==nexus_core.status_modes.none:
-            nexus_core.status = nexus_core.status_modes.standard
-        #end if
 
         # process simulation settings
         if 'local_directory' in kw:
