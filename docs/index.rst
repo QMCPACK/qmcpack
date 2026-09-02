@@ -20,7 +20,7 @@ User's Guide and Developer's Manual
    user_guide/index
    labs/index
    contributing/index
-   design_features
+   misc/design_features
    appendices
 
 

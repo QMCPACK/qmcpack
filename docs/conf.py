@@ -36,7 +36,7 @@ import sys
 sys.path.append(os.path.abspath('extensions'))
 
 extensions = [
-    'sphinxcontrib.bibtex',
+    "sphinxcontrib.bibtex",
     "pydata_sphinx_theme",
     "sphinx_copybutton",
     "sphinx.ext.viewcode",
@@ -63,6 +63,8 @@ bibtex_bibfiles = [
 ]
 copybutton_exclude = '.linenos, .gp, .go' # Don't copy line numbers, prompts, or outputs.
 numfig = True
+
+suppress_warnings = ["misc.highlighting_failure"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

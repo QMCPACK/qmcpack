@@ -534,7 +534,7 @@ Estimators are generally not accumulated during wavefunction optimization sectio
 ``estimator`` factory element:
 
   +------------------+----------------------+
-  | parent elements: | ``estimators`` |
+  | parent elements: | ``estimators``       |
   +------------------+----------------------+
   | type selector:   | ``type`` attribute   |
   +------------------+----------------------+
