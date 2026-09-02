@@ -21,7 +21,7 @@ class RmgOutData(DevBase):
 
     Parameters
     ----------
-    filepath : str
+    filepath : str or pathlib.Path
         Path to the RMG log output file.
 
     Attributes
@@ -48,7 +48,7 @@ class RmgOutData(DevBase):
     forces : numpy.ndarray or None
         Ionic forces with shape ``(nsteps, natoms, 3)``.
     structures : obj or None
-        Mapping from ionic-step index to a ``Structure`` instance.
+        Mapping from ionic-step index to a :class:`Structure` instance.
     stress : numpy.ndarray or None
         Stress tensors with shape ``(nsteps, 3, 3)``.
     pressure : float or numpy.floating or None
@@ -63,7 +63,7 @@ class RmgOutData(DevBase):
     Raises
     ------
     TypeError
-        If ``filepath`` is not a string.
+        If ``filepath`` is not a string or path-like object.
     FileNotFoundError
         If ``filepath`` does not exist.
     IsADirectoryError
@@ -77,14 +77,15 @@ class RmgOutData(DevBase):
 
     def __init__(self,filepath):
         """Initialize the parsed data by reading an RMG output file."""
-        if not isinstance(filepath,str):
+        if not isinstance(filepath,(str,os.PathLike)):
             msg = (
                 'invalid type provided for filepath\n'
-                'Type expected: str\n'
+                'Type expected: str or os.PathLike\n'
                 f'Type provided: {type(filepath).__name__}'
                 )
             raise TypeError(msg)
-        elif not os.path.exists(filepath):
+        filepath = os.fspath(filepath)
+        if not os.path.exists(filepath):
             msg = (
                 'RMG log output file does not exist.\n'
                 f'Path provided: {filepath}'
@@ -147,22 +148,11 @@ class RmgOutData(DevBase):
             return value if np.isfinite(value) else None
         #end def as_float
 
-        def position_units(line):
-            """Return units from an initial-position table heading."""
-            text   = ' '.join(line.split()).lower()
-            prefix = 'initial ionic positions and displacements'
-            if not text.startswith(prefix):
-                return None
-            suffix = text[len(prefix):].strip()
-            if not suffix.startswith('(') or ')' not in suffix:
-                return None
-            units = suffix[1:suffix.index(')')].strip()
-            if units=='bohr':
-                return 'B'
-            if units in {'angstrom','angstroms'}:
-                return 'A'
-            return None
-        #end def position_units
+        # Match an initial-position table heading and capture its units.
+        # Example: Initial Ionic Positions And Displacements (Bohr)
+        position_header = re.compile(
+            r'^\s*initial\s+ionic\s+positions\s+and\s+displacements\s*'
+            r'\(\s*(bohr|angstrom)\s*\)',re.IGNORECASE)
 
         run_mode = None
         for line in lines:
@@ -212,16 +202,17 @@ class RmgOutData(DevBase):
         position_tables = []
         i               = 0
         while i<len(lines):
-            units = position_units(lines[i])
-            if units is None:
+            match = position_header.match(lines[i])
+            if match is None:
                 i += 1
                 continue
+            units     = 'B' if match.group(1).lower()=='bohr' else 'A'
             atoms     = []
             positions = []
             i += 1
             while i<len(lines):
                 line = lines[i]
-                if position_units(line) is not None:
+                if position_header.match(line) is not None:
                     break
                 tokens = line.split()
                 atom   = tokens[0] if len(tokens)>0 else ''
@@ -303,15 +294,11 @@ class RmgOutData(DevBase):
 
     def read_energies(self,lines):
         """Read the final total energy obtained from the eigenvalue sum."""
-        labels = (
-            'final total energy from eigenvalue sum',
-            'final total energy from eig sum',
-            )
+        label = 'final total energy from eig sum'
         for line in lines:
             text  = ' '.join(line.split())
             lower = text.lower()
-            label = next((label for label in labels if label in lower),None)
-            if label is None:
+            if label not in lower:
                 continue
             remainder = text[lower.index(label)+len(label):].lstrip()
             if len(remainder)==0 or remainder[0] not in {':','='}:
@@ -333,21 +320,14 @@ class RmgOutData(DevBase):
     def read_electronic(self,lines):
         """Parse electronic quantities exposed by ``RmgAnalyzer``.
 
+        Binds ``electronic`` to an ``obj`` containing Fermi energies, band
+        edges, gaps, k-point-major eigenvalues, occupations, and k-points.
+
         Parameters
         ----------
         lines : list of str
             Complete RMG log split into lines.
-
-        Notes
-        -----
-        Binds ``electronic`` to an ``obj`` containing Fermi energies, band
-        edges, gaps, k-point-major eigenvalues, occupations, and k-points.
         """
-        def as_float(value):
-            """Convert an RMG-formatted numeric token to a float."""
-            return float(value.lower().replace('d','e'))
-        #end def as_float
-
         def assigned_value(text,lower,*labels):
             """Return a numeric value following a labeled assignment."""
             for label in labels:
@@ -361,7 +341,8 @@ class RmgOutData(DevBase):
                 if len(tokens)==0:
                     continue
                 try:
-                    value = as_float(tokens[0].strip(',;'))
+                    value = float(
+                        tokens[0].strip(',;').lower().replace('d','e'))
                 except ValueError:
                     continue
                 if np.isfinite(value):
@@ -428,8 +409,8 @@ class RmgOutData(DevBase):
                 channels = dataset[kpoint]['channels']
                 eigs,occs = channels.setdefault(spin,[[],[]])
                 for eigenvalue,occupation in pairs:
-                    eigs.append(as_float(eigenvalue))
-                    occs.append(as_float(occupation))
+                    eigs.append(float(eigenvalue.lower().replace('d','e')))
+                    occs.append(float(occupation.lower().replace('d','e')))
             if len(dataset)>0:
                 datasets.append(dataset)
 
@@ -532,15 +513,13 @@ class RmgOutData(DevBase):
     def read_ions(self,lines):
         """Read ionic forces and structures from ionic-step tables.
 
+        Binds ``forces`` to a trajectory array and ``structures`` to a mapping
+        from ionic-step indices to ``Structure`` instances.
+
         Parameters
         ----------
         lines : list of str
             Complete RMG log split into lines.
-
-        Notes
-        -----
-        Binds ``forces`` to a trajectory array and ``structures`` to a mapping
-        from ionic-step indices to ``Structure`` instances.
         """
         records = []
         i       = 0
@@ -604,8 +583,6 @@ class RmgOutData(DevBase):
     def read_geometry(self):
         """Collect k-point data derived from the setup report.
 
-        Notes
-        -----
         Binds ``geometry`` to an ``obj`` containing Cartesian k-points and
         k-point weights.
         """
@@ -624,30 +601,14 @@ class RmgOutData(DevBase):
     def read_stress(self,lines):
         """Parse stress tensors and derive hydrostatic pressures.
 
+        Binds ``stress`` to a NumPy array of shape ``(nsteps, 3, 3)`` and
+        ``pressure`` to the final hydrostatic pressure. Values are in kbar.
+
         Parameters
         ----------
         lines : list of str
             Complete RMG log split into lines.
-
-        Notes
-        -----
-        Binds ``stress`` to a NumPy array of shape ``(nsteps, 3, 3)`` and
-        ``pressure`` to the final hydrostatic pressure. Values are in kbar.
         """
-        def leading_numbers(line):
-            """Return the leading whitespace-separated numbers as a float array."""
-            values = []
-            for token in line.replace(',',' ').split():
-                try:
-                    value = float(token.lower().replace('d','e'))
-                except ValueError:
-                    break
-                if not np.isfinite(value):
-                    break
-                values.append(value)
-            return np.array(values,dtype=float)
-        #end def leading_numbers
-
         tensors = []
         for i,line in enumerate(lines):
             normalized = ' '.join(line.split()).lower()
@@ -662,7 +623,15 @@ class RmgOutData(DevBase):
                 j += 1
                 if len(row_line.strip())==0:
                     continue
-                values = leading_numbers(row_line)
+                values = []
+                for token in row_line.replace(',',' ').split():
+                    try:
+                        value = float(token.lower().replace('d','e'))
+                    except ValueError:
+                        break
+                    if not np.isfinite(value):
+                        break
+                    values.append(value)
                 if len(values)<3:
                     if len(rows)>0:
                         rows = []
@@ -687,7 +656,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     Parameters
     ----------
-    arg0 : Simulation or str or None, optional
+    arg0 : Simulation or str or pathlib.Path or None, optional
         RMG simulation to analyze or path to an RMG log output file. If
         ``None``, an unconfigured analyzer is created.
     analyze : bool, optional
@@ -765,7 +734,8 @@ class RmgAnalyzer(SimulationAnalyzer):
     Raises
     ------
     TypeError
-        If ``arg0`` is neither a ``Simulation``, a string, nor ``None``.
+        If ``arg0`` is neither a ``Simulation``, a string, a path-like object,
+        nor ``None``.
     FileNotFoundError
         If a supplied output path does not exist.
     IsADirectoryError
@@ -1030,14 +1000,15 @@ class RmgAnalyzer(SimulationAnalyzer):
             path     = arg0.locdir
             filename = arg0.outfile
         else:
-            if not isinstance(arg0,str):
+            if not isinstance(arg0,(str,os.PathLike)):
                 msg = (
                     'invalid type provided for log_file\n'
-                    'Type expected: str\n'
+                    'Type expected: str or os.PathLike\n'
                     f'Type provided: {type(arg0).__name__}'
                     )
                 raise TypeError(msg)
-            elif not os.path.exists(arg0):
+            arg0 = os.fspath(arg0)
+            if not os.path.exists(arg0):
                 msg = (
                     'RMG log output file does not exist.\n'
                     f'Path provided: {arg0}'

@@ -99,12 +99,12 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
 
     logfile = tmp_path/'rmg.log'
     logfile.write_text(rmg_log(calculation_type))
-    outdata = RmgOutData(str(logfile))
+    outdata = RmgOutData(logfile)
     assert outdata.run_mode==short_mode
     assert outdata.setup_info.run_mode==short_mode
     assert isinstance(outdata.setup_info.structure,Structure)
 
-    analyzer = RmgAnalyzer(str(logfile),analyze=True)
+    analyzer = RmgAnalyzer(logfile,analyze=True)
 
     assert analyzer.results.run_mode==short_mode
     assert analyzer.initial_structure() is not None
@@ -274,6 +274,8 @@ def test_whitespace_and_trailing_fields(tmp_path):
 
     log = rmg_log('Quench electrons').replace(
         'Calculation type:', 'Calculation\t type   :').replace(
+        'Initial Ionic Positions And Displacements',
+        'Initial\t Ionic  Positions And\tDisplacements').replace(
         'X Basis Vector: 4.0 0.0 0.0',
         'X Basis Vector = 4.0D+00 0.0 0.0 a0 trailing axis annotation').replace(
         '1-TOTAL                                             3.00                0.50',
@@ -286,7 +288,7 @@ K-points
 FERMI   ENERGY : 5.25 eV trailing diagnostic 77
 spin0: conduction band minimum = 6.0 eV, valence band maximum = 4.0 eV extra 88
 spin0: Band gap : 2.0 eV extra 99
-final   total energy from eigenvalue sum : -1.2345 Ry trailing 42
+final   total energy from eig sum : -1.2345 Ry trailing 42
 
 @ION\tIon\tSpecies X Y Z Charge Mag FX FY FZ Movable
 @ION 1 H 1.1 1.2 1.3 0.05 0.10 0.01 0.02 0.03 1 1 1 trailing 77
