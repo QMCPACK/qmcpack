@@ -141,7 +141,7 @@ class RmgOutData(DevBase):
         def as_float(token):
             """Convert an RMG-formatted numeric token when possible."""
             try:
-                value = float(token.replace('D','E').replace('d','e'))
+                value = float(token.lower().replace('d','e'))
             except (AttributeError,ValueError):
                 return None
             return value if np.isfinite(value) else None
@@ -320,7 +320,7 @@ class RmgOutData(DevBase):
             if len(tokens)==0:
                 continue
             try:
-                value = float(tokens[0].replace('D','E').replace('d','e'))
+                value = float(tokens[0].lower().replace('d','e'))
             except ValueError:
                 continue
             if not np.isfinite(value):
@@ -345,7 +345,7 @@ class RmgOutData(DevBase):
         """
         def as_float(value):
             """Convert an RMG-formatted numeric token to a float."""
-            return float(value.replace('D','E').replace('d','e'))
+            return float(value.lower().replace('d','e'))
         #end def as_float
 
         def assigned_value(text,lower,*labels):
@@ -400,7 +400,7 @@ class RmgOutData(DevBase):
                         datasets.append(dataset)
                         dataset = {}
                     coordinates = np.array([
-                        float(match.group(i).replace('D','E').replace('d','e'))
+                        float(match.group(i).lower().replace('d','e'))
                         for i in range(2,5)
                         ],dtype=float)
                     dataset[index] = {
@@ -569,7 +569,7 @@ class RmgOutData(DevBase):
                 numeric_tokens = tokens[3:14]
                 try:
                     values = [
-                        float(v.replace('D','E').replace('d','e'))
+                        float(v.lower().replace('d','e'))
                         for v in numeric_tokens
                         ]
                 except ValueError:
@@ -639,7 +639,7 @@ class RmgOutData(DevBase):
             values = []
             for token in line.replace(',',' ').split():
                 try:
-                    value = float(token.replace('D','E').replace('d','e'))
+                    value = float(token.lower().replace('d','e'))
                 except ValueError:
                     break
                 if not np.isfinite(value):
