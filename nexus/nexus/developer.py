@@ -42,9 +42,9 @@ def deprecation_error():
     highlight = '='*79
     stack = ''.join(traceback.format_stack()[:-1])
     report = (
-        '\n{0}\n{1}\n{0}\n'
-        '{0}\nTraceback (most recent call last):\n{2}{0}\n'
-        '{0}\n{1}\n{0}'.format(highlight,msg,stack)
+        f'\n{highlight}\n{msg}\n{highlight}\n'
+        f'{highlight}\nTraceback (most recent call last):\n{stack}{highlight}\n'
+        f'{highlight}\n{msg}\n{highlight}'
         )
     raise RuntimeError(report)
 #end def deprecation_error

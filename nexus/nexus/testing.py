@@ -358,25 +358,25 @@ def execute(command):
         command = 'PYTHONPATH='+pypath+' '+command
     out,err,rc = nexus_execute(command)
     if rc!=0:
-        msg = '''Executed system command failed.
+        msg = f'''Executed system command failed.
 
 Command:
 ========
-{}
+{command}
 
 stdout:
 =======
-{}
+{out}
 
 stderr:
 =======
-{}
+{err}
 
 Return code:
 ============
-{}
+{rc}
 
-'''.format(command,out,err,rc)
+'''
         failed(msg)
     #end if
     return out,err,rc

@@ -61,9 +61,9 @@ def make_serial_reference(ri):
             v = "'"+v+"'"
         #end if
         if not isinstance(v,np.ndarray) or len(v)!=v.size:
-            ref +="        '{}' : {},\n".format(k,v)
+            ref +=f"        '{k}' : {v},\n"
         else:
-            a = 'np.array({})'.format(v)
+            a = f'np.array({v})'
             a = a.replace('     ','    ,')
             a = a.replace('    ','   ,')
             a = a.replace('   ','  ,')
@@ -73,7 +73,7 @@ def make_serial_reference(ri):
             a = a.replace(',,,,','   ,')
             a = a.replace(',,,','  ,')
             a = a.replace(',,',' ,')
-            ref +="        '{}' : {},\n".format(k,a)
+            ref +=f"        '{k}' : {a},\n"
         #end if
     #end for
     ref += '        }\n'
