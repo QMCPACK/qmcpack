@@ -119,8 +119,8 @@ def curve_fit(x,y,f,p0,cost='least_squares',optimizer='fmin'):
     if isinstance(cost,str):
         if cost not in cost_functions:
             msg = (
-                '"{0}" is an invalid cost function\n'
-                'valid options are: {1}'.format(cost,sorted(cost_functions.keys()))
+                f'"{cost}" is an invalid cost function\n'
+                f'valid options are: {sorted(cost_functions.keys())}'
                 )
             raise ValueError(msg)
         #end if
@@ -479,10 +479,8 @@ def eos_param(p,param,type='vinet'):
     eos_pfuncs = eos_param_funcs[type]
     if param not in eos_pfuncs:
         msg = (
-            '"{0}" is not an available parameter for a {1} fit\n'
-            'available parameters are: {2}'.format(
-                param, type, sorted(eos_pfuncs.keys())
-                )
+            f'"{param}" is not an available parameter for a {type} fit\n'
+            f'available parameters are: {sorted(eos_pfuncs.keys())}'
             )
         raise ValueError(msg)
     #end if
@@ -727,7 +725,7 @@ def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=N
         elif len(auxfunc)==4:
             auxfunc,args,kwargs,position = auxfunc
         else:
-            msg = 'between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {0}'.format(len(auxfunc))
+            msg = f'between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {len(auxfunc)}'
             raise ValueError(msg)
         #end if
     #end if
@@ -791,7 +789,7 @@ def check_jackknife_inputs(args,kwargs,position):
         elif isinstance(position,str):
             kwargpos = True
         else:
-            msg = 'position must be an integer or keyword, received: {0}'.format(position)
+            msg = f'position must be an integer or keyword, received: {position}'
             raise TypeError(msg)
         #end if
     elif args is None and kwargs is None:
@@ -1413,9 +1411,9 @@ def nearest_neighbors(n,points,qpoints=None,*,return_distances=False,slow=False)
     if n>len(qpoints)-extra:
         msg = (
             'requested more than the total number of neighbors\n'
-            'maximum is: {0}\n'
-            'you requested: {1}\n'
-            'exiting.'.format(len(qpoints)-extra,n)
+            f'maximum is: {len(qpoints)-extra}\n'
+            f'you requested: {n}\n'
+            'exiting.'
             )
         raise ValueError(msg)
     #end if
@@ -1617,10 +1615,10 @@ def index_by_layer_1d(xpoints,tol,*,uniform=True,check=True,full_return=False):
             msg = (
                 'Could not determine layer separation.\n'
                 'Layers are not evenly spaced.\n'
-                'Min layer spacing: {}\n'
-                'Max layer spacing: {}\n'
-                'Spread   : {}\n'
-                'Tolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol)
+                f'Min layer spacing: {dxmin}\n'
+                f'Max layer spacing: {dxmax}\n'
+                f'Spread   : {dxmax-dxmin}\n'
+                f'Tolerance: {2*tol}'
                 )
             raise RuntimeError(msg)
         #end if
