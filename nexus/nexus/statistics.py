@@ -72,12 +72,8 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
     data_errs.append(data_errs1)
     # block lengths > 1
     for nrb in range(2,nreblock_max+1):
-        ds = []
-        for n in range(0,nblocks,nrb):
-            if n+nrb>nblocks:
-                break
-            ds.append(x[n:n+nrb].mean(axis=0))
-        ds = np.array(ds)
+        nused = nblocks//nrb*nrb
+        ds = x[:nused].reshape(-1,nrb).mean(axis=1)
         block_lens.append(nrb)
         data_errs.append(ds.std(axis=0).ravel()/np.sqrt(len(ds)))
     block_lens = np.array(block_lens)
@@ -113,13 +109,17 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
 #end def reblocked_autocorr_time
 
 
-def reblocked_autocorr_time2(x,confidence=0.99,plot=False,show=False):
+def reblocked_autocorr_time2(
+    x,confidence=0.99,plot=False,show=False,min_blocks=16,block_scale=5.):
     """Estimate the integrated autocorrelation time by data blocking.
 
     This implementation follows the blocking transformation and automatic
-    stopping test of Flyvbjerg and Petersen.  The returned value is the
-    variance-inflation factor ``N*Var(mean)/Var(data)``, consistent with an
-    effective sample size of ``N/t_auto``.
+    stopping test of Flyvbjerg and Petersen.  To avoid selecting a level before
+    the blocking curve has equilibrated, the selected block length must also
+    be at least ``block_scale`` times its IAT estimate while retaining at least
+    ``min_blocks`` blocks.  The returned value is the variance-inflation factor
+    ``N*Var(mean)/Var(data)``, consistent with an effective sample size of
+    ``N/t_auto``.
     """
     from scipy.stats import chi2
 
@@ -132,8 +132,18 @@ def reblocked_autocorr_time2(x,confidence=0.99,plot=False,show=False):
         raise ValueError('data array must not be empty')
     if not np.all(np.isfinite(x)):
         raise ValueError('data array must contain only finite values')
-    if not 0.<confidence<1.:
+    try:
+        confidence = float(confidence)
+        block_scale = float(block_scale)
+    except (TypeError,ValueError):
+        raise ValueError(
+            'confidence and block scale must be finite numbers') from None
+    if not np.isfinite(confidence) or not 0.<confidence<1.:
         raise ValueError('confidence must be between zero and one')
+    if not isinstance(min_blocks,(int,np.integer)) or min_blocks<2:
+        raise ValueError('minimum number of blocks must be an integer >= 2')
+    if not np.isfinite(block_scale) or block_scale<=0.:
+        raise ValueError('block scale must be a positive finite number')
     if len(x)==1 or x.var()==0.:
         return 1.
 
@@ -166,25 +176,56 @@ def reblocked_autocorr_time2(x,confidence=0.99,plot=False,show=False):
     test_statistics = np.cumsum((correlations**2*weights)[::-1])[::-1]
     critical_values = chi2.ppf(confidence,np.arange(nlevel,0,-1))
     passing_levels = np.flatnonzero(test_statistics<critical_values)
+    warning_reasons = []
     if len(passing_levels)>0:
-        selected_level = int(passing_levels[0])
+        test_level = int(passing_levels[0])
     else:
-        import warnings
-        selected_level = nlevel-1
-        warnings.warn(
-            'blocking analysis did not reach an uncorrelated level; '
-            'the autocorrelation-time estimate may be unreliable',
-            RuntimeWarning,
-            stacklevel=2)
+        test_level = nlevel-1
+        warning_reasons.append('the blocking test did not reach an uncorrelated level')
 
     tau_levels = block_sizes*variances/variances[0]
+    reliable_levels = np.flatnonzero(block_counts>=min_blocks)
+    if len(reliable_levels)>0:
+        max_reliable_level = int(reliable_levels[-1])
+    else:
+        max_reliable_level = 0
+        warning_reasons.append(
+            f'the series contains fewer than {min_blocks} samples')
+    if test_level>max_reliable_level:
+        warning_reasons.append(
+            f'the blocking test requires fewer than {min_blocks} blocks')
+    test_level = min(test_level,max_reliable_level)
+
+    if test_level==0:
+        selected_level = 0
+    else:
+        levels = np.arange(nlevel)
+        equilibrated = np.flatnonzero(
+            (levels>=test_level)
+            &(levels<=max_reliable_level)
+            &(block_sizes>=block_scale*tau_levels))
+        if len(equilibrated)>0:
+            selected_level = int(equilibrated[0])
+        else:
+            selected_level = max_reliable_level
+            warning_reasons.append(
+                'no reliable block length is sufficiently long relative to the IAT')
+
     t_auto = max(float(tau_levels[selected_level]),np.finfo(float).eps)
+
+    if warning_reasons:
+        import warnings
+        warnings.warn(
+            '; '.join(warning_reasons)+'; the estimate may be unreliable',
+            RuntimeWarning,
+            stacklevel=2)
 
     if plot:
         import matplotlib.pyplot as plt
         tau_errors = tau_levels*np.sqrt(2./(block_counts-1))
         plt.figure(tight_layout=True)
         plt.errorbar(block_sizes,tau_levels,yerr=tau_errors,fmt='b.-')
+        plt.axvline(block_sizes[test_level],color='grey',linestyle=':')
         plt.axvline(block_sizes[selected_level],color='k',linestyle='--')
         plt.axhline(t_auto,color='r')
         plt.xscale('log',base=2)
@@ -279,7 +320,9 @@ def integrated_autocorr_time(x, c=5.0):
         weights.append(1)
         while len(values)>1 and values[-2]<values[-1]:
             weight       = weights[-2]+weights[-1]
-            value        = values[-2]*weights[-2]+values[-1]*weights[-1]/weight
+            value        = (
+                values[-2]*weights[-2]+values[-1]*weights[-1]
+                )/weight
             values[-2:]  = [value]
             weights[-2:] = [weight]
 
