@@ -144,8 +144,8 @@ class RadialJastrow(QAobject):
     #end def interpolate
 
     def plot(self,r1=None,r2=None,color='b',ptype=None):
+        import matplotlib.pyplot as plt
         if ptype is None:
-            import matplotlib.pyplot as plt
             ptype = plt.plot
         r,d0,d1,d2 = self.interpolate(r1,r2)
         c = color
@@ -320,8 +320,8 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
 
     def plot_jastrows(self,ptype=None):
+        import matplotlib.pyplot as plt
         if ptype is None:
-            import matplotlib.pyplot as plt
             ptype = plt.plot
         for name,value in self.items():
             if name in self.jastrow_types:

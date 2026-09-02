@@ -1954,8 +1954,6 @@ def generate_simulation(**kwargs):
 # ability to graph simulation workflows
 exit_call = sys.exit
 def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,display=True):
-    from matplotlib.image import imread
-    from matplotlib.pyplot import imshow,show,xticks,yticks
     from pydot import Dot, Node, Edge
 
     if sims is None:
@@ -2013,6 +2011,8 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
 
     # display the image
     if fmt=='png' and display:
+        from matplotlib.image import imread
+        from matplotlib.pyplot import imshow,show,xticks,yticks
         imshow(imread(savefile))
         xticks([])
         yticks([])
