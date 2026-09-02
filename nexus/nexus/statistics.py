@@ -117,27 +117,48 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
         return t_auto
     nblocks = len(x)
     nreblock_max = int(np.floor(nblocks/min_blocks))
-    block_lens  = []
-    data_means = []
-    data_errs  = []
     # length 1 "reblocking"
-    data_errs1 = x.std(axis=0).ravel()/np.sqrt(nblocks)
-    if np.all(data_errs1==0):
+    data_errs1 = x.std()/np.sqrt(nblocks)
+    if data_errs1==0:
         return 1.
-    block_lens.append(1)
-    data_errs.append(data_errs1)
-    # block lengths > 1
-    for nrb in range(2,nreblock_max+1):
-        nused = nblocks//nrb*nrb
-        ds = x[:nused].reshape(-1,nrb).mean(axis=1)
-        block_lens.append(nrb)
-        data_errs.append(ds.std(axis=0).ravel()/np.sqrt(len(ds)))
-    block_lens = np.array(block_lens)
-    data_errs = np.array(data_errs)
-    for bl in range(len(block_lens)):
-        data_errs[bl] /= data_errs1
-    dem = data_errs.mean(axis=1)
-    des = data_errs.std(axis=1)
+
+    block_lens = np.arange(1,max(1,nreblock_max)+1)
+    data_errs = np.empty(len(block_lens),dtype=np.asarray(data_errs1).dtype)
+    data_errs[0] = data_errs1
+
+    if nreblock_max>=2:
+        # A prefix sum gives every contiguous block sum with two indexed
+        # reads.  Center first to limit cancellation in the differences.
+        work_dtype = np.result_type(x.dtype,np.float64)
+        centered = x.astype(work_dtype,copy=False)
+        centered = centered-centered.mean()
+        cumulative = np.empty(nblocks+1,dtype=work_dtype)
+        cumulative[0] = 0.
+        np.cumsum(centered,out=cumulative[1:])
+
+        # Lay out the blocks for all reblocking lengths in one flat array so
+        # their means and variances can be evaluated by grouped reductions.
+        block_counts = nblocks//block_lens[1:]
+        group_offsets = np.empty(len(block_counts),dtype=int)
+        group_offsets[0] = 0
+        np.cumsum(block_counts[:-1],out=group_offsets[1:])
+        repeated_lens = np.repeat(block_lens[1:],block_counts)
+        block_starts = (
+            np.arange(block_counts.sum())
+            -np.repeat(group_offsets,block_counts))
+        block_starts *= repeated_lens
+        block_means = (
+            cumulative[block_starts+repeated_lens]-cumulative[block_starts]
+            )/repeated_lens
+
+        group_means = np.add.reduceat(block_means,group_offsets)/block_counts
+        deviations = block_means-np.repeat(group_means,block_counts)
+        group_variances = np.add.reduceat(
+            np.abs(deviations)**2,group_offsets)/block_counts
+        data_errs[1:] = np.sqrt(group_variances/block_counts)
+
+    dem = data_errs/data_errs1
+    des = np.zeros_like(dem)
     assert len(dem)==len(block_lens)
     if len(block_lens)>1:
         p = theil_sen(block_lens,dem)
