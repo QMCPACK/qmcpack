@@ -3,6 +3,7 @@ import numpy as np
 
 
 def theil_sen(x,y):
+    """Return the Theil--Sen slope and intercept for paired observations."""
     x = np.asarray(x)
     y = np.asarray(y)
     assert len(x)==x.size
@@ -107,7 +108,34 @@ def theil_sen_stoch_reblock(x,y):
 
 
 def acf_autocorr_time(x):
-    """Estimate IAT from a noise-truncated, flat-top-windowed ACF."""
+    """Estimate autocorrelation time from a windowed sample ACF.
+
+    The autocorrelation function is evaluated in ``O(N log N)`` time with an
+    FFT and a common denominator at all lags.  A Bartlett noise estimate is
+    used to locate the first sustained noise-dominated region.  Resolved lags
+    are retained by a flat-top window, followed by a linear taper through the
+    noisy boundary.  The returned value is the variance-inflation factor
+    ``N*Var(mean)/Var(x)``.
+
+    Parameters
+    ----------
+    x : array_like
+        One-dimensional, finite, real-valued sample sequence.  Vector-shaped
+        two-dimensional arrays are flattened.
+
+    Returns
+    -------
+    tau : float
+        Estimated integrated autocorrelation time.  A value of one denotes
+        IID-like sampling; negative correlation can produce a value below
+        one.
+
+    Warns
+    -----
+    RuntimeWarning
+        If the ACF does not reach a noise-dominated region within the inspected
+        lag range.
+    """
     x = np.asarray(x)
     if np.iscomplexobj(x):
         raise ValueError('data array must be real-valued')
@@ -181,6 +209,39 @@ def acf_autocorr_time(x):
 
 
 def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
+    """Estimate autocorrelation time from the growth of blocked errors.
+
+    For every integer block length that leaves at least ``min_blocks`` blocks,
+    contiguous block means and their standard error are computed.  Their
+    ratio to the unblocked standard error is fitted as a function of block
+    length with a Theil--Sen line (using reproducible stochastic pair sampling
+    for large inputs).  The squared fitted ratio at the largest usable block
+    length is used to obtain the auto-correlation time.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Nonempty one-dimensional sample sequence.  Vector-shaped arrays are
+        flattened.
+
+    min_blocks : int, optional
+        Minimum number of complete blocks retained at the largest block
+        length.  Must be at least one.
+
+    plot : bool, optional
+        Plot normalized blocked errors, the robust fitted line, and the
+        selected error estimate.
+
+    show : bool, optional
+        Display the plot immediately.  This has an effect only when ``plot``
+        is true.
+
+    Returns
+    -------
+    tau : float
+        Estimated integrated autocorrelation time.  Constant and singleton
+        sequences return one.
+    """
     if x.ndim>1:
         assert np.max(x.shape)==x.size
         x = x.ravel()
@@ -261,7 +322,7 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
 #end def reblocked_autocorr_time
 
 
-def reblocked_autocorr_time2(
+def reblocked_autocorr_time_fp(
     x,confidence=0.99,plot=False,show=False,min_blocks=16,block_scale=5.):
     """Estimate the integrated autocorrelation time by data blocking.
 
@@ -387,10 +448,10 @@ def reblocked_autocorr_time2(
         if show:
             plt.show()
     return t_auto
-#end def reblocked_autocorr_time2
+#end def reblocked_autocorr_time_fp
 
 
-def integrated_autocorr_time(x, c=5.0):
+def geyer_ims_autocorr_time(x, c=5.0):
     """Estimate integrated autocorrelation time with Geyer's IMS method.
 
     Autocorrelations are computed with an FFT.  Geyer's initial positive
@@ -490,7 +551,7 @@ def integrated_autocorr_time(x, c=5.0):
             stacklevel=2)
 
     return tau
-#end def integrated_autocorr_time
+#end def geyer_ims_autocorr_time
 
 
 def prewhitened_spectral_autocorr_time(
@@ -869,86 +930,40 @@ def prewhitened_spectral_autocorr_time(
 #end def prewhitened_spectral_autocorr_time
 
 
-def autocorr_time(x, disagreement_threshold=1.5):
+def autocorr_time(x):
     """Conservatively combine three autocorrelation-time estimates.
 
-    The ACF, Geyer initial-monotone-sequence, and legacy reblocking
-    estimators probe the correlation structure in different ways.  Since an
+    The ACF, Geyer initial-monotone-sequence, and reblocking estimators 
+    probe the correlation structure in different ways.  Since an
     underestimated autocorrelation time leads directly to an underestimated
-    uncertainty, this function returns the largest of their estimates.  A
-    warning is emitted when the largest and smallest estimates differ by more
-    than ``disagreement_threshold``; such disagreement can indicate that the
-    series is too short to resolve a slow correlation mode.
+    uncertainty, this function returns the largest of their estimates. 
 
     Parameters
     ----------
     x : array_like
         One-dimensional sample sequence.
 
-    disagreement_threshold : float, optional
-        Warn when ``max(estimates)/min(estimates)`` exceeds this value.  Must
-        be a finite number greater than one.
-
     Returns
     -------
     tau : float
-        Maximum of ``acf_autocorr_time(x)``,
-        ``integrated_autocorr_time(x)``, and
-        ``reblocked_autocorr_time(x)``.
+        Maximum of ACF, Geyer, and reblocked auto-correlation times.
     """
 
-    try:
-        disagreement_threshold = float(disagreement_threshold)
-    except (TypeError,ValueError):
-        raise ValueError(
-            'disagreement threshold must be a finite number greater than one'
-            ) from None
-    if (
-        not np.isfinite(disagreement_threshold)
-        or disagreement_threshold<=1.
-    ):
-        raise ValueError(
-            'disagreement threshold must be a finite number greater than one')
-
     x = np.asarray(x)
-    names = ('ACF','integrated','reblocking')
-    estimates = np.array([
-        acf_autocorr_time(x),
-        integrated_autocorr_time(x),
-        reblocked_autocorr_time(x),
-        ],dtype=float)
-    if not np.all(np.isfinite(estimates)):
-        raise ValueError('component autocorrelation-time estimate is nonfinite')
+    t_auto_acf     = acf_autocorr_time(x)
+    t_auto_reblock = reblocked_autocorr_time(x)
+    t_auto_geyer   = geyer_ims_autocorr_time(x)
 
-    estimate_min = float(estimates.min())
-    estimate_max = float(estimates.max())
-    if estimate_min>0.:
-        disagreement = estimate_max/estimate_min
-    elif estimate_max>0.:
-        disagreement = np.inf
-    else:
-        disagreement = 1.
+    t_auto = max(t_auto_acf,t_auto_reblock,t_auto_geyer)
 
-    if disagreement>disagreement_threshold:
-        import warnings
-        detail = ', '.join(
-            f'{name}={estimate:.6g}'
-            for name,estimate in zip(names,estimates))
-        warnings.warn(
-            'autocorrelation-time estimators disagree by a factor of '
-            f'{disagreement:.3g} ({detail}); the estimate may be unreliable',
-            RuntimeWarning,
-            stacklevel=2)
-
-    return estimate_max
+    return t_auto
 #end def autocorr_time
 
 
 
 def series_stats(x,t_auto=None):
     if t_auto is None:
-        #t_auto = autocorr_time(x)
-        t_auto = 1.0
+        t_auto = autocorr_time(x)
     N        = len(x)
     N_eff    = N/t_auto
     x_mean   = np.mean(x)
