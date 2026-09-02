@@ -107,7 +107,7 @@ def theil_sen_stoch_reblock(x,y):
 #end def theil_sen_stoch_reblock
 
 
-def acf_autocorr_time(x):
+def acf_autocorr_time(x,reliability=False):
     """Estimate autocorrelation time from a windowed sample ACF.
 
     The autocorrelation function is evaluated in ``O(N log N)`` time with an
@@ -123,18 +123,16 @@ def acf_autocorr_time(x):
         One-dimensional, finite, real-valued sample sequence.  Vector-shaped
         two-dimensional arrays are flattened.
 
+    reliability : bool, optional
+        If true, return ``(tau, not_reliable)`` instead of only ``tau``.
+
     Returns
     -------
-    tau : float
+    tau : float or (float, bool)
         Estimated integrated autocorrelation time.  A value of one denotes
         IID-like sampling; negative correlation can produce a value below
-        one.
-
-    Warns
-    -----
-    RuntimeWarning
-        If the ACF does not reach a noise-dominated region within the inspected
-        lag range.
+        one.  The optional Boolean is true when the ACF fails its reliability
+        assessment.
     """
     x = np.asarray(x)
     if np.iscomplexobj(x):
@@ -148,13 +146,14 @@ def acf_autocorr_time(x):
     x = np.asarray(x,dtype=float)
     if not np.all(np.isfinite(x)):
         raise ValueError('data array must contain only finite values')
+    not_reliable = False
     if len(x)==1:
-        return 1.
+        return (1.,not_reliable) if reliability else 1.
 
     x = x-x.mean()
     variance = np.mean(x**2)
     if variance==0.:
-        return 1.
+        return (1.,not_reliable) if reliability else 1.
 
     n = len(x)
     nfft = 1 << (2*n-1).bit_length()
@@ -184,13 +183,10 @@ def acf_autocorr_time(x):
             break
 
     if quiet_start is None:
-        import warnings
+        # The ACF did not reach a noise-dominated region; the
+        # autocorrelation-time estimate may be unreliable.
+        not_reliable = True
         quiet_start = max_lag
-        warnings.warn(
-            'the ACF did not reach a noise-dominated region; '
-            'the autocorrelation-time estimate may be unreliable',
-            RuntimeWarning,
-            stacklevel=2)
 
     # If even the first nonzero lags are noise, the IID estimate is exact and
     # avoids adding pure-noise terms.  Otherwise, a flat-top lag window retains
@@ -204,7 +200,7 @@ def acf_autocorr_time(x):
         window = np.where(fraction<=.5,1.,2.*(1.-fraction))
         t_auto = 1.+2.*np.sum(window*acf[1:bandwidth+1])
         t_auto = max(float(t_auto),np.finfo(float).eps)
-    return t_auto
+    return (t_auto,not_reliable) if reliability else t_auto
 #end def acf_autocorr_time
 
 
@@ -323,7 +319,8 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
 
 
 def reblocked_autocorr_time_fp(
-    x,confidence=0.99,plot=False,show=False,min_blocks=16,block_scale=5.):
+    x,confidence=0.99,plot=False,show=False,min_blocks=16,block_scale=5.,
+    reliability=False):
     """Estimate the integrated autocorrelation time by data blocking.
 
     This implementation follows the blocking transformation and automatic
@@ -332,7 +329,9 @@ def reblocked_autocorr_time_fp(
     be at least ``block_scale`` times its IAT estimate while retaining at least
     ``min_blocks`` blocks.  The returned value is the variance-inflation factor
     ``N*Var(mean)/Var(data)``, consistent with an effective sample size of
-    ``N/t_auto``.
+    ``N/t_auto``.  If ``reliability`` is true, return
+    ``(t_auto, not_reliable)``; the Boolean identifies a failed stopping or
+    block-count assessment.
     """
     from scipy.stats import chi2
 
@@ -357,8 +356,9 @@ def reblocked_autocorr_time_fp(
         raise ValueError('minimum number of blocks must be an integer >= 2')
     if not np.isfinite(block_scale) or block_scale<=0.:
         raise ValueError('block scale must be a positive finite number')
+    not_reliable = False
     if len(x)==1 or x.var()==0.:
-        return 1.
+        return (1.,not_reliable) if reliability else 1.
 
     # The pairwise blocking transformation requires a power-of-two length.
     nlevel = int(np.floor(np.log2(len(x))))
@@ -389,24 +389,24 @@ def reblocked_autocorr_time_fp(
     test_statistics = np.cumsum((correlations**2*weights)[::-1])[::-1]
     critical_values = chi2.ppf(confidence,np.arange(nlevel,0,-1))
     passing_levels = np.flatnonzero(test_statistics<critical_values)
-    warning_reasons = []
     if len(passing_levels)>0:
         test_level = int(passing_levels[0])
     else:
+        # The blocking test did not reach an uncorrelated level.
+        not_reliable = True
         test_level = nlevel-1
-        warning_reasons.append('the blocking test did not reach an uncorrelated level')
 
     tau_levels = block_sizes*variances/variances[0]
     reliable_levels = np.flatnonzero(block_counts>=min_blocks)
     if len(reliable_levels)>0:
         max_reliable_level = int(reliable_levels[-1])
     else:
+        # The series contains fewer than min_blocks samples.
+        not_reliable = True
         max_reliable_level = 0
-        warning_reasons.append(
-            f'the series contains fewer than {min_blocks} samples')
     if test_level>max_reliable_level:
-        warning_reasons.append(
-            f'the blocking test requires fewer than {min_blocks} blocks')
+        # The blocking test requires fewer than min_blocks blocks.
+        not_reliable = True
     test_level = min(test_level,max_reliable_level)
 
     if test_level==0:
@@ -420,18 +420,12 @@ def reblocked_autocorr_time_fp(
         if len(equilibrated)>0:
             selected_level = int(equilibrated[0])
         else:
+            # No reliable block length is sufficiently long relative to the
+            # integrated autocorrelation time.
+            not_reliable = True
             selected_level = max_reliable_level
-            warning_reasons.append(
-                'no reliable block length is sufficiently long relative to the IAT')
 
     t_auto = max(float(tau_levels[selected_level]),np.finfo(float).eps)
-
-    if warning_reasons:
-        import warnings
-        warnings.warn(
-            '; '.join(warning_reasons)+'; the estimate may be unreliable',
-            RuntimeWarning,
-            stacklevel=2)
 
     if plot:
         import matplotlib.pyplot as plt
@@ -447,11 +441,11 @@ def reblocked_autocorr_time_fp(
         plt.title('t_auto = {}'.format(t_auto))
         if show:
             plt.show()
-    return t_auto
+    return (t_auto,not_reliable) if reliability else t_auto
 #end def reblocked_autocorr_time_fp
 
 
-def geyer_ims_autocorr_time(x, c=5.0):
+def geyer_ims_autocorr_time(x,c=5.0,reliability=False):
     """Estimate integrated autocorrelation time with Geyer's IMS method.
 
     Autocorrelations are computed with an FFT.  Geyer's initial positive
@@ -466,12 +460,17 @@ def geyer_ims_autocorr_time(x, c=5.0):
 
     c : float, optional
         Minimum number of estimated autocorrelation times that should fit
-        in the input series.  A warning is emitted when ``len(x)<c*tau``.
+        in the input series.
+
+    reliability : bool, optional
+        If true, return ``(tau, not_reliable)`` instead of only ``tau``.
 
     Returns
     -------
-    tau : float
-        Estimated integrated autocorrelation time.
+    tau : float or (float, bool)
+        Estimated integrated autocorrelation time.  The optional Boolean is
+        true when fewer than ``c`` estimated autocorrelation times fit in the
+        series.
     """
 
     try:
@@ -494,13 +493,14 @@ def geyer_ims_autocorr_time(x, c=5.0):
     x = np.asarray(x,dtype=float)
     if not np.all(np.isfinite(x)):
         raise ValueError('input must contain only finite values')
+    not_reliable = False
     if len(x)<2:
-        return 1.0
+        return (1.,not_reliable) if reliability else 1.
 
     x = x-x.mean()
     variance = np.mean(x**2)
     if variance==0.:
-        return 1.0
+        return (1.,not_reliable) if reliability else 1.
 
     # Use a common denominator at all lags.  Unlike unbiased lag-by-lag
     # normalization, this produces a positive-semidefinite autocovariance
@@ -522,7 +522,7 @@ def geyer_ims_autocorr_time(x, c=5.0):
     if len(nonpositive)>0:
         gamma = gamma[:nonpositive[0]]
     if len(gamma)==0:
-        return 0.0
+        return (0.,not_reliable) if reliability else 0.
 
     # Initial monotone sequence via a stack-based PAV implementation.
     # Each pooled block is represented by its mean and number of pairs.
@@ -543,19 +543,16 @@ def geyer_ims_autocorr_time(x, c=5.0):
     tau = max(0.,float(-1.+2.*gamma_mono.sum()))
 
     if n<c*tau:
-        import warnings
-        warnings.warn(
-            'the time series is shorter than c autocorrelation times; '
-            'the estimate may be unreliable',
-            RuntimeWarning,
-            stacklevel=2)
+        # The time series is shorter than c autocorrelation times; the
+        # estimate may be unreliable.
+        not_reliable = True
 
-    return tau
+    return (tau,not_reliable) if reliability else tau
 #end def geyer_ims_autocorr_time
 
 
 def prewhitened_spectral_autocorr_time(
-    x,max_order=10,stability_threshold=2.):
+    x,max_order=10,stability_threshold=2.,reliability=False):
     """Estimate autocorrelation time with a prewhitened QS spectrum.
 
     A low-order autoregressive model is used only as a prewhitening filter;
@@ -586,17 +583,19 @@ def prewhitened_spectral_autocorr_time(
         bound is also limited by the series length.
 
     stability_threshold : float, optional
-        Warn when positive long-run-variance estimates obtained at half and
-        twice the selected bandwidth span a factor larger than this value.
-        Must be a finite number greater than one.
+        Mark the estimate unreliable when positive long-run-variance estimates
+        obtained at half and twice the selected bandwidth span a factor larger
+        than this value.  Must be a finite number greater than one.
+
+    reliability : bool, optional
+        If true, return ``(tau, not_reliable)`` instead of only ``tau``.
 
     Returns
     -------
-    tau : float
-        Estimated long-run variance divided by the marginal variance.
+    tau : float or (float, bool)
+        Estimated long-run variance divided by the marginal variance.  The
+        optional Boolean reports whether any reliability assessment failed.
     """
-
-    import warnings
 
     x = np.asarray(x)
     if np.iscomplexobj(x):
@@ -625,13 +624,14 @@ def prewhitened_spectral_autocorr_time(
     if not np.isfinite(stability_threshold) or stability_threshold<=1.:
         raise ValueError(
             'stability threshold must be a finite number greater than one')
+    not_reliable = False
     if len(x)<2:
-        return 1.
+        return (1.,not_reliable) if reliability else 1.
 
     centered = x-x.mean()
     marginal_variance = np.mean(centered**2)
     if marginal_variance==0.:
-        return 1.
+        return (1.,not_reliable) if reliability else 1.
 
     tiny = np.finfo(float).eps
     normal_mad = 0.6744897501960817
@@ -719,7 +719,6 @@ def prewhitened_spectral_autocorr_time(
     # Select the AICc minimum; ties are resolved in favor of the lower order.
     selected_order = int(np.flatnonzero(candidate_scores==best_score)[0])
     coefficients = candidate_coefficients[selected_order]
-    warning_reasons = []
     coefficients_clipped = candidate_clipped[selected_order]
     selected_condition = 1.
     filter_gain_se = 0.
@@ -747,11 +746,11 @@ def prewhitened_spectral_autocorr_time(
         coefficients,refit_clipped = stable_coefficients(coefficients)
         coefficients_clipped = coefficients_clipped or refit_clipped
     if coefficients_clipped:
-        warning_reasons.append(
-            'the autoregressive pilot required a stationarity correction')
+        # The autoregressive pilot required a stationarity correction.
+        not_reliable = True
     if selected_condition>1.e10:
-        warning_reasons.append(
-            'the autoregressive pilot is ill-conditioned')
+        # The autoregressive pilot is ill-conditioned.
+        not_reliable = True
 
     # Recoloring divides by A(1)**2, where A(1)=1-sum(phi).  Require that this
     # gain be separated from zero by three estimated standard errors.  When it
@@ -769,15 +768,15 @@ def prewhitened_spectral_autocorr_time(
         )
     )
     if gain_unresolved:
-        warning_reasons.append(
-            'the autoregressive recoloring gain is not reliably resolved; '
-            'using an unprewhitened spectral estimate')
+        # The autoregressive recoloring gain is not reliably resolved; use an
+        # unprewhitened spectral estimate.
+        not_reliable = True
         coefficients = np.empty(0,dtype=float)
         selected_order = 0
         filter_gain = 1.
     elif abs(filter_gain)<.05:
-        warning_reasons.append(
-            'the recoloring factor is sensitive to the autoregressive pilot')
+        # The recoloring factor is sensitive to the autoregressive pilot.
+        not_reliable = True
 
     # Apply the accepted filter to the original, mean-centered observations.
     residual = centered[selected_order:].copy()
@@ -787,8 +786,8 @@ def prewhitened_spectral_autocorr_time(
     residual -= residual.mean()
     residual_variance = np.mean(residual**2)
     if residual_variance<=tiny*marginal_variance:
-        warning_reasons.append(
-            'the prewhitened residual variance is numerically zero')
+        # The prewhitened residual variance is numerically zero.
+        not_reliable = True
         residual_variance = max(residual_variance,tiny*marginal_variance)
 
     # Biased (common-denominator) autocovariances yield a stable finite-sample
@@ -825,9 +824,9 @@ def prewhitened_spectral_autocorr_time(
     bandwidth = 1.3221*(alpha*nresidual)**.2 if alpha>0. else 1.
     maximum_bandwidth = max(1.,nresidual/4.)
     if bandwidth>maximum_bandwidth:
+        # The automatic spectral bandwidth reached its sample-size limit.
+        not_reliable = True
         bandwidth = maximum_bandwidth
-        warning_reasons.append(
-            'the automatic spectral bandwidth reached its sample-size limit')
     bandwidth = max(1.,float(bandwidth))
 
     def quadratic_spectral_lrv(selected_bandwidth):
@@ -888,8 +887,8 @@ def prewhitened_spectral_autocorr_time(
     if low_frequency_growth:
         bandwidth = bandwidth_grid[selected_index]
         residual_lrv = grid_lrvs[selected_index]
-        warning_reasons.append(
-            'residual low-frequency growth required a larger spectral bandwidth')
+        # Residual low-frequency growth required a larger spectral bandwidth.
+        not_reliable = True
     else:
         residual_lrv = grid_lrvs[0]
 
@@ -900,37 +899,30 @@ def prewhitened_spectral_autocorr_time(
         for value in comparison_bandwidths])
     positive_lrvs = comparison_lrvs[comparison_lrvs>0.]
     if len(positive_lrvs)!=len(comparison_lrvs):
-        warning_reasons.append(
-            'the spectral estimate is not positive at nearby bandwidths')
+        # The spectral estimate is not positive at nearby bandwidths.
+        not_reliable = True
     elif (
         len(positive_lrvs)>1
         and positive_lrvs.max()/positive_lrvs.min()>stability_threshold
     ):
-        warning_reasons.append(
-            'the spectral estimate is sensitive to the bandwidth')
+        # The spectral estimate is sensitive to the bandwidth.
+        not_reliable = True
 
     if not np.isfinite(residual_lrv) or residual_lrv<=0.:
-        warning_reasons.append(
-            'the estimated residual spectrum is not numerically positive')
+        # The estimated residual spectrum is not numerically positive.
+        not_reliable = True
         residual_lrv = tiny*residual_variance
     long_run_variance = residual_lrv/filter_gain**2
     tau = max(float(long_run_variance/marginal_variance),tiny)
     if n<20.*tau:
-        warning_reasons.append(
-            'the series contains fewer than 20 estimated correlation times')
+        # The series contains fewer than 20 estimated correlation times.
+        not_reliable = True
 
-    if warning_reasons:
-        warnings.warn(
-            '; '.join(dict.fromkeys(warning_reasons))
-            +'; the estimate may be unreliable',
-            RuntimeWarning,
-            stacklevel=2)
-
-    return tau
+    return (tau,not_reliable) if reliability else tau
 #end def prewhitened_spectral_autocorr_time
 
 
-def autocorr_time(x):
+def autocorr_time(x,reliability=False):
     """Conservatively combine three autocorrelation-time estimates.
 
     The ACF, Geyer initial-monotone-sequence, and reblocking estimators 
@@ -943,20 +935,26 @@ def autocorr_time(x):
     x : array_like
         One-dimensional sample sequence.
 
+    reliability : bool, optional
+        If true, return ``(tau, not_reliable)`` instead of only ``tau``.  The
+        flag combines the ACF and Geyer IMS reliability assessments.
+
     Returns
     -------
-    tau : float
-        Maximum of ACF, Geyer, and reblocked auto-correlation times.
+    tau : float or (float, bool)
+        Maximum of ACF, Geyer, and reblocked autocorrelation times, optionally
+        accompanied by the combined unreliability flag.
     """
-
     x = np.asarray(x)
-    t_auto_acf     = acf_autocorr_time(x)
-    t_auto_reblock = reblocked_autocorr_time(x)
-    t_auto_geyer   = geyer_ims_autocorr_time(x)
+
+    t_auto_acf,nr_acf     = acf_autocorr_time(x,reliability=True)
+    t_auto_reblock        = reblocked_autocorr_time(x)
+    t_auto_geyer,nr_geyer = geyer_ims_autocorr_time(x,reliability=True)
 
     t_auto = max(t_auto_acf,t_auto_reblock,t_auto_geyer)
+    not_reliable = nr_acf or nr_geyer
 
-    return t_auto
+    return (t_auto,not_reliable) if reliability else t_auto
 #end def autocorr_time
 
 
