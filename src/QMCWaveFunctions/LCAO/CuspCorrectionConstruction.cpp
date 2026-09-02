@@ -94,29 +94,27 @@ bool readCuspInfo(const std::string& cuspInfoFile,
         {
           int orb = -1;
           OhmmsAttributeSet orbAttrib;
-          QMCTraits::RealType a1(0.0), a2, a3, a4, a5, a6, a7, a8, a9;
+          QMCTraits::RealType C(0.0), sg, rc, a1, a2, a3, a4, a5;
           orbAttrib.add(orb, "num");
-          orbAttrib.add(a1, "redo");
-          orbAttrib.add(a2, "C");
-          orbAttrib.add(a3, "sg");
-          orbAttrib.add(a4, "rc");
-          orbAttrib.add(a5, "a1");
-          orbAttrib.add(a6, "a2");
-          orbAttrib.add(a7, "a3");
-          orbAttrib.add(a8, "a4");
-          orbAttrib.add(a9, "a5");
+          orbAttrib.add(C, "C");
+          orbAttrib.add(sg, "sg");
+          orbAttrib.add(rc, "rc");
+          orbAttrib.add(a1, "a1");
+          orbAttrib.add(a2, "a2");
+          orbAttrib.add(a3, "a3");
+          orbAttrib.add(a4, "a4");
+          orbAttrib.add(a5, "a5");
           orbAttrib.put(ctr);
           if (orb < OrbitalSetSize)
           {
-            info(num, orb).redo     = a1;
-            info(num, orb).C        = a2;
-            info(num, orb).sg       = a3;
-            info(num, orb).Rc       = a4;
-            info(num, orb).alpha[0] = a5;
-            info(num, orb).alpha[1] = a6;
-            info(num, orb).alpha[2] = a7;
-            info(num, orb).alpha[3] = a8;
-            info(num, orb).alpha[4] = a9;
+            info(num, orb).C        = C;
+            info(num, orb).sg       = sg;
+            info(num, orb).Rc       = rc;
+            info(num, orb).alpha[0] = a1;
+            info(num, orb).alpha[1] = a2;
+            info(num, orb).alpha[2] = a3;
+            info(num, orb).alpha[3] = a4;
+            info(num, orb).alpha[4] = a5;
           }
         }
         ctr = ctr->next;
@@ -198,7 +196,7 @@ void saveCusp(const std::string& filename, const Matrix<CuspCorrectionParameters
 void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int root)
 {
 #ifdef HAVE_MPI
-  std::vector<double> buffer(9);
+  std::vector<double> buffer(8);
   buffer[0] = param.Rc;
   buffer[1] = param.C;
   buffer[2] = param.sg;
@@ -207,7 +205,6 @@ void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int r
   buffer[5] = param.alpha[2];
   buffer[6] = param.alpha[3];
   buffer[7] = param.alpha[4];
-  buffer[8] = param.redo;
 
   Comm.comm.broadcast(buffer.begin(), buffer.end(), root);
 
@@ -219,7 +216,6 @@ void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int r
   param.alpha[2] = buffer[5];
   param.alpha[3] = buffer[6];
   param.alpha[4] = buffer[7];
-  param.redo     = buffer[8] == 0.0 ? 0 : 1;
 #endif
 }
 

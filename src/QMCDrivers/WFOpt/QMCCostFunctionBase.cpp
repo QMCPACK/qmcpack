@@ -249,30 +249,16 @@ void QMCCostFunctionBase::reportParametersH5()
  */
 bool QMCCostFunctionBase::put(xmlNodePtr q)
 {
-  std::string includeNonlocalH;
-  std::string computeNLPPderiv;
-  std::string GEVType;
   astring variational_subset_str;
   ParameterSet m_param;
   m_param.add(MinNumWalkers, "minwalkers");
   m_param.add(MaxWeight, "maxWeight");
-  m_param.add(includeNonlocalH, "nonlocalpp", {}, TagStatus::DEPRECATED);
-  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", {}, TagStatus::DEPRECATED);
   m_param.add(w_beta, "beta");
-  m_param.add(GEVType, "GEVMethod", {}, TagStatus::DEPRECATED);
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
   m_param.add(do_override_output, "output_vp_override", {true});
   m_param.add(variational_subset_str, "variational_subset");
   m_param.put(q);
-
-  if (!includeNonlocalH.empty())
-    app_warning() << "'nonlocalpp' no more affects any part of the execution. Please remove it from your input file."
-                  << std::endl;
-  if (!computeNLPPderiv.empty())
-    app_warning()
-        << "'use_nonlocalpp_deriv' no more affects any part of the execution. Please remove it from your input file."
-        << std::endl;
 
   targetExcitedStr = lowerCase(targetExcitedStr);
   targetExcited    = (targetExcitedStr == "yes");

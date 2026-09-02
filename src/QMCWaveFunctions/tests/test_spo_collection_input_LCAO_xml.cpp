@@ -120,14 +120,14 @@ TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")
       <basisset name="LCAOBSet">
         <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="He" normalized="no">
           <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
-          <basisGroup rid="He00" n="0" l="0" type="Gaussian">
+          <basisGroup rid="He00" n="717" l="0" s="-99" ds="unused" rmax="-2" type="Gaussian">
             <radfunc exponent="6.362421400000e+00" contraction="1.543289672950e-01"/>
             <radfunc exponent="1.158923000000e+00" contraction="5.353281422820e-01"/>
             <radfunc exponent="3.136498000000e-01" contraction="4.446345421850e-01"/>
           </basisGroup>
         </atomicBasisSet>
       </basisset>
-      <sposet name="spo" size="1">
+      <sposet name="spo" size="1" orbital_mix_magnitude="123.5">
         <occupation mode="ground"/>
         <coefficient size="1" id="updetC">
           1.00000000000000e+00

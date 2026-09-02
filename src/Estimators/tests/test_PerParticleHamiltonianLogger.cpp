@@ -15,6 +15,7 @@
 #include <filesystem>
 #include "Utilities/StdRandom.h"
 #include "OhmmsData/Libxml2Doc.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -139,6 +140,14 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
   }
   // Now that the rank_logger has be destroyed its file must be present
   CHECK(std::filesystem::exists(per_rank_log_file_name));
+}
+
+TEST_CASE("PerParticleHamiltonianLogger retired validation attribute", "[estimators]")
+{
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(
+      R"(<PerParticleHamiltonianLogger validate_per_particle_sum="true"/>)"));
+  CHECK_THROWS_AS(PerParticleHamiltonianLoggerInput(doc.getRoot()), UniformCommunicateError);
 }
 
 } // namespace qmcplusplus

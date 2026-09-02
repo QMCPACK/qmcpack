@@ -23,6 +23,7 @@ set(UTEST_SRCS
     test_soa_cartesian_tensor.cpp
     test_transform.cpp
     test_min_oned.cpp
+    test_OneDimGridFactory.cpp
     test_OneDimCubicSplineLinearGrid.cpp
     test_one_dim_cubic_spline.cpp
     test_Quadrature.cpp

@@ -50,7 +50,6 @@ public:
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
     SFNBranch& branch_engine;
-    IndexType recalculate_properties_period;
     const size_t steps_per_block;
     IndexType step            = -1;
     IndexType global_step     = -1;

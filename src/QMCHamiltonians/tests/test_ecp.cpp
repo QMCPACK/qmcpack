@@ -12,6 +12,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Utilities/for_testing/Catch2Approx.h"
 
+#include <cmath>
+
 #include "Configuration.h"
 #include "Numerics/Quadrature.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
@@ -88,6 +90,133 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
   REQUIRE(ecp.Zeff == 4);
 
   // TODO: add more checks that pseudopotential file was read correctly
+}
+
+TEST_CASE("ECPComponentBuilder retired semilocal channel counts", "[hamiltonian]")
+{
+  Libxml2Document doc;
+  REQUIRE(doc.parse("C.BFD.xml"));
+
+  xmlNodePtr semilocal = nullptr;
+  for (xmlNodePtr child = doc.getRoot()->children; child != nullptr; child = child->next)
+    if (xmlStrEqual(child->name, BAD_CAST "semilocal"))
+      semilocal = child;
+  REQUIRE(semilocal != nullptr);
+
+  xmlSetProp(semilocal, BAD_CAST "npots-down", BAD_CAST "not-an-integer");
+  xmlSetProp(semilocal, BAD_CAST "npots-up", BAD_CAST "not-an-integer");
+
+  ECPComponentBuilder ecp("test_retired_semilocal_counts", OHMMS::Controller, 4, 1);
+  REQUIRE(ecp.put(doc.getRoot()));
+  CHECK(ecp.Zeff == 4);
+  REQUIRE(ecp.pp_nonloc != nullptr);
+}
+
+TEST_CASE("ECPComponentBuilder grid input controls", "[hamiltonian]")
+{
+  Communicate* c = OHMMS::Controller;
+  ECPComponentBuilder ecp("test_ecp_grid_input", c);
+  Libxml2Document doc;
+
+  SECTION("omitted-input defaults")
+  {
+    REQUIRE(doc.parseFromString(R"(<grid/>)"));
+    auto grid = ecp.createGrid(doc.getRoot());
+
+    REQUIRE(grid != nullptr);
+    CHECK(grid->getGridTag() == LOG_1DGRID);
+    CHECK(grid->size() == 1001);
+    CHECK(grid->rmin() == Approx(1.0e-6));
+    CHECK(grid->rmax() == Approx(100.0));
+  }
+
+  SECTION("bounded logarithmic grid and retired identity attributes")
+  {
+    REQUIRE(doc.parseFromString(R"(<grid type="log" ri="0.25" rf="4.0" npts="5"
+                                          grid_id="unused" grid_def="unused"
+                                          name="unused" id="unused"/>)"));
+    auto grid = ecp.createGrid(doc.getRoot());
+
+    REQUIRE(grid != nullptr);
+    CHECK(grid->getGridTag() == LOG_1DGRID);
+    CHECK(grid->size() == 5);
+    CHECK(grid->rmin() == Approx(0.25));
+    CHECK(grid->rmax() == Approx(4.0));
+    CHECK(grid->r(2) == Approx(1.0));
+  }
+
+  SECTION("origin logarithmic grid with ascale and astep")
+  {
+    REQUIRE(doc.parseFromString(R"(<grid type="log" ascale="2.0" astep="0.25" npts="4"/>)"));
+    auto grid = ecp.createGrid(doc.getRoot());
+
+    REQUIRE(grid != nullptr);
+    CHECK(grid->getGridTag() == LOGZERO_1DGRID);
+    CHECK(grid->size() == 4);
+    CHECK(grid->r(0) == Approx(0.0));
+    CHECK(grid->r(1) == Approx(2.0 * (std::exp(0.25) - 1.0)));
+  }
+
+  SECTION("origin logarithmic grid with scale and step aliases")
+  {
+    REQUIRE(doc.parseFromString(R"(<grid type="log" scale="3.0" step="0.5" npts="3"/>)"));
+    auto grid = ecp.createGrid(doc.getRoot());
+
+    REQUIRE(grid != nullptr);
+    CHECK(grid->getGridTag() == LOGZERO_1DGRID);
+    CHECK(grid->size() == 3);
+    CHECK(grid->r(1) == Approx(3.0 * (std::exp(0.5) - 1.0)));
+  }
+
+  SECTION("linear grid with explicit point count")
+  {
+    REQUIRE(doc.parseFromString(R"(<grid type="linear" ri="0.5" rf="2.5" npts="5"/>)"));
+    auto grid = ecp.createGrid(doc.getRoot());
+
+    REQUIRE(grid != nullptr);
+    CHECK(grid->getGridTag() == LINEAR_1DGRID);
+    CHECK(grid->size() == 5);
+    CHECK(grid->rmin() == Approx(0.5));
+    CHECK(grid->rmax() == Approx(2.5));
+    CHECK(grid->r(2) == Approx(1.5));
+  }
+
+  SECTION("linear grid with explicit spacing")
+  {
+    REQUIRE(doc.parseFromString(R"(<grid type="linear" ri="1.0" rf="2.0" step="0.25" npts="99"/>)"));
+    auto grid = ecp.createGrid(doc.getRoot());
+
+    REQUIRE(grid != nullptr);
+    CHECK(grid->getGridTag() == LINEAR_1DGRID);
+    CHECK(grid->size() == 5);
+    CHECK(grid->r(1) == Approx(1.25));
+  }
+
+  SECTION("forced linear local-potential grid")
+  {
+    REQUIRE(doc.parseFromString(R"(<grid type="log" ri="0.5" rf="1.0" astep="0.25" npts="99"/>)"));
+    auto grid = ecp.createGrid(doc.getRoot(), true);
+
+    REQUIRE(grid != nullptr);
+    CHECK(grid->getGridTag() == LINEAR_1DGRID);
+    CHECK(grid->size() == 5);
+    CHECK(grid->rmin() == Approx(0.0));
+    CHECK(grid->rmax() == Approx(1.0));
+  }
+
+  SECTION("tabulated numerical grid")
+  {
+    REQUIRE(doc.parseFromString(
+        R"(<grid type="numerical" npts="4"><data>0.0 0.25 1.0 2.0</data></grid>)"));
+    auto grid = ecp.createGrid(doc.getRoot());
+
+    REQUIRE(grid != nullptr);
+    CHECK(grid->getGridTag() == CUSTOM_1DGRID);
+    CHECK(grid->size() == 4);
+    CHECK(grid->rmin() == Approx(0.0));
+    CHECK(grid->rmax() == Approx(2.0));
+    CHECK(grid->r(1) == Approx(0.25));
+  }
 }
 
 TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")

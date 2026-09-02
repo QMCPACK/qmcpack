@@ -32,8 +32,6 @@ public:
   void readXML(xmlNodePtr xml_input);
 
   bool get_reconfiguration() const { return reconfiguration_; }
-  IndexType get_max_age() const { return max_age_; }
-  IndexType get_branch_interval() const { return branch_interval_; }
   double get_feedback() const { return feedback_; }
   DMCRefEnergyScheme get_refenergy_update_scheme() const { return refenergy_update_scheme_; }
   TmoveKind get_non_local_move() const { return tmove_kind_; }
@@ -48,8 +46,6 @@ private:
    *  Do not write out blocks of gets for variables like this
    *  there is are code_generation tools in QMCPACK_ROOT/utils/code_tools
    */
-  ///Interval between branching
-  IndexType branch_interval_ = 1;
   ///feed back parameter for population control
   double feedback_ = 1.0;
   ///input std::string to determine reference energy update scheme
@@ -62,8 +58,6 @@ private:
   bool reconfiguration_ = true;
   ///input to control Tmove
   TmoveKind tmove_kind_ = TmoveKind::OFF;
-  ///input to control maximum age allowed for walkers.
-  IndexType max_age_ = 10;
   /// reserved walkers for population growth
   RealType reserve_ = 1.0;
   double alpha_     = 0.0;

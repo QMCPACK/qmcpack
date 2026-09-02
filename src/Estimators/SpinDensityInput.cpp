@@ -24,7 +24,6 @@ SpinDensityInput::SpinDensityInput(xmlNodePtr cur)
 
   setIfInInput(name_, "name");
   setIfInInput(write_report_, "report");
-  setIfInInput(save_memory_, "save_memory");
   have_dr_     = setIfInInput(dr_, "dr");
   have_corner_ = setIfInInput(corner_, "corner");
   have_center_ = setIfInInput(center_, "center");

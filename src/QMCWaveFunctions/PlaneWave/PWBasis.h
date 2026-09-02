@@ -49,7 +49,6 @@ private:
   //Need to store the maximum translation in each dimension to use recursive PW generation.
   GIndex_t maxg;
   //The PlaneWave data - keep all of these strictly private to prevent inconsistencies.
-  RealType ecut;
   ///twist angle in reduced
   PosType twist;
   ///twist angle in cartesian
@@ -64,14 +63,6 @@ private:
   std::vector<PosType> kplusgvecs_cart; //Cartesian.
 
   Matrix<ComplexType> C;
-  //Real wavefunctions here. Now the basis states are cos(Gr) or sin(Gr), not exp(iGr)
-  //We need a way of switching between them for G -> -G, otherwise the
-  //determinant will have multiple rows that are equal (to within a constant factor)
-  //of others, giving a zero determinant. For this, we build a vector (negative) which
-  //stores whether a vector is "+" or "-" (with some criterion, to be defined). We
-  //the switch from cos() to sin() based on the value of this input.
-  std::vector<int> negative;
-
 public:
   //enumeration for the value, laplacian, gradients and size
   enum
@@ -127,25 +118,18 @@ public:
   ///reset
   void reset();
 
-  /** Read basisset from hdf5 file. Apply ecut.
+  /** Read basisset from hdf5 file.
    * @param h5basisgroup h5 node where basis is located
-   * @param ecutoff cutoff energy
    * @param lat CrystalLattice
    * @param resizeContainer if true, resize internal storage.
    * @return the number of plane waves
    */
   int readbasis(hdf_archive& h5basisgroup,
-                RealType ecutoff,
                 const ParticleLayout& lat,
-                const std::string& pwname     = "planewaves",
-                const std::string& pwmultname = "multipliers",
                 bool resizeContainer          = true);
 
-  /** Remove basis elements if kinetic energy > ecut.
-   *
-   * Keep and indexmap so we know how to match coefficients on read.
-   */
-  void trimforecut();
+  /** Rebuild the plane-wave basis for the current twist. */
+  void rebuildBasis();
 
 #if defined(PWBASIS_USE_RECURSIVE)
   /** Fill the recursion coefficients matrix.

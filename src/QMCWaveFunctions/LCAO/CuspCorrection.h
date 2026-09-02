@@ -51,10 +51,7 @@ struct CuspCorrectionParameters
   /// The coefficients of the polynomial \f$p(r)\f$ in Eq 8
   TinyVector<ValueType, 5> alpha;
 
-  /// Flag to indicate the correction should be recalculated
-  int redo;
-
-  CuspCorrectionParameters() : Rc(0.0), C(0.0), sg(1.0), alpha(0.0), redo(0) {}
+  CuspCorrectionParameters() : Rc(0.0), C(0.0), sg(1.0), alpha(0.0) {}
 };
 
 /// Formulas for applying the cusp correction

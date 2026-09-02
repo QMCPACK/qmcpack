@@ -29,13 +29,8 @@ std::unique_ptr<WaveFunctionComponent> LatticeGaussianProductBuilder::buildCompo
   widthOpt.resize(targetPtcl.getTotalNum(), 0);
   OhmmsAttributeSet oAttrib;
   oAttrib.add(sourceOpt, "source");
-  oAttrib.add(nameOpt, "name");
   oAttrib.add(widthOpt, "width");
   oAttrib.put(cur);
-  if (nameOpt == "")
-  {
-    app_warning() << "  LatticeGaussianProductBuilder::put does not have name " << std::endl;
-  }
 
   auto pa_it(ptclPool.find(sourceOpt));
   if (pa_it == ptclPool.end())

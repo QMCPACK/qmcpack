@@ -21,16 +21,11 @@
 namespace qmcplusplus
 {
 int PWBasis::readbasis(hdf_archive& h5basisgroup,
-                       RealType ecutoff,
                        const ParticleLayout& lat,
-                       const std::string& pwname,
-                       const std::string& pwmultname,
                        bool resizeContainer)
 {
   ///make a local copy
   Lattice = lat;
-  ecut    = ecutoff;
-  app_log() << "  PWBasis::" << pwmultname << " is found " << std::endl;
   h5basisgroup.read(gvecs, "/electrons/kpoint_0/gvectors");
   NumPlaneWaves = std::max(gvecs.size(), kplusgvecs_cart.size());
   if (NumPlaneWaves == 0)
@@ -47,10 +42,6 @@ int PWBasis::readbasis(hdf_archive& h5basisgroup,
   //{
   //  app_log() << kplusgvecs_cart[i] << std::endl;
   //}
-  //Now remove elements outside Ecut. At the same time, fill k+G and |k+G| lists.
-  //Also keep track of the original index ordering (using indexmap[]) so that
-  //orbital coefficients can be ordered and trimmed for ecut in the same way.
-  //support older parser
   if (resizeContainer)
     reset();
   //std::copy(gvecs.begin(),gvecs.end(),std::ostream_iterator<GIndex_t>(std::cout,"\n"));
@@ -69,31 +60,26 @@ void PWBasis::setTwistAngle(const PosType& tang)
 
 void PWBasis::reset()
 {
-  trimforecut();
+  rebuildBasis();
   //logC.resize(3,2*maxmaxg+1);
   Z.resize(NumPlaneWaves, 2 + DIM);
   Zv.resize(NumPlaneWaves);
   phi.resize(NumPlaneWaves);
 }
 
-/** Remove basis elements if kinetic energy > ecut.
- *
- * Keep and indexmap so we know how to match coefficients on read.
- */
-void PWBasis::trimforecut()
+void PWBasis::rebuildBasis()
 {
   //Convert the twist angle to Cartesian coordinates.
   twist_cart = Lattice.k_cart(twist);
   inputmap.resize(NumPlaneWaves);
   app_log() << "  PWBasis::TwistAngle (unit) =" << twist << std::endl;
   app_log() << "  PWBasis::TwistAngle (cart) =" << twist_cart << std::endl;
-  app_log() << "  PWBasis::trimforecut NumPlaneWaves (before) =" << NumPlaneWaves << std::endl;
+  app_log() << "  PWBasis::rebuildBasis NumPlaneWaves (before) =" << NumPlaneWaves << std::endl;
   std::vector<GIndex_t> gvecCopy(gvecs);
   std::vector<PosType> gcartCopy(kplusgvecs_cart);
   gvecs.clear();
   kplusgvecs_cart.clear();
   minusModKplusG2.reserve(NumPlaneWaves);
-  //  RealType kcutoff2 = 2.0*ecut; //std::sqrt(2.0*ecut);
   int ngIn = NumPlaneWaves;
   for (int ig = 0, newig = 0; ig < ngIn; ig++)
   {
@@ -101,35 +87,14 @@ void PWBasis::trimforecut()
     PosType tempvec = gcartCopy[ig] + twist_cart;
     RealType mod2   = dot(tempvec, tempvec);
 
-    // Keep all the g-vectors
-    // The cutoff energy is not stored in the HDF file now.
-    // Is truncating the gvectors to a spherical shell necessary?
-    if (true)
-    {
-      gvecs.push_back(gvecCopy[ig]);
-      kplusgvecs_cart.push_back(tempvec);
-      minusModKplusG2.push_back(-mod2);
-      //Remember which position in the HDF5 file this came from...for coefficients
-      inputmap[ig] = newig++;
-    }
-#if 0
-    if(mod2<=kcutoff2)
-    {
-      gvecs.push_back(gvecCopy[ig]);
-      kplusgvecs_cart.push_back(tempvec);
-      minusModKplusG2.push_back(-mod2);
-      //Remember which position in the HDF5 file this came from...for coefficients
-      inputmap[ig] = newig++;
-    }
-    else
-    {
-      inputmap[ig] = -1; //Temporary value...need to know final NumPlaneWaves.
-      NumPlaneWaves--;
-    }
-#endif
+    gvecs.push_back(gvecCopy[ig]);
+    kplusgvecs_cart.push_back(tempvec);
+    minusModKplusG2.push_back(-mod2);
+    //Remember which position in the HDF5 file this came from for coefficients.
+    inputmap[ig] = newig++;
   }
 #if defined(PWBASIS_USE_RECURSIVE)
-  //Store the maximum number of translations, within ecut, of any reciprocal cell vector.
+  //Store the maximum number of translations of any reciprocal cell vector.
   for (int ig = 0; ig < NumPlaneWaves; ig++)
     for (int i = 0; i < OHMMS_DIM; i++)
       if (std::abs(gvecs[ig][i]) > maxg[i])
@@ -143,45 +108,6 @@ void PWBasis::trimforecut()
 #else
   maxmaxg = 1;
 #endif
-  //    //make a copy of input to gvecCopy
-  ////    for(int ig=0, newig=0; ig<ngIn; ig++) {
-  //      //Check size of this g-vector
-  //      PosType tempvec = Lattice.k_cart(gvecCopy[ig]+twist);
-  //      RealType mod2 = dot(tempvec,tempvec);
-  //      if(mod2<=kcutoff2){ //Keep this element
-  //        gvecs.push_back(gvecCopy[ig]);
-  //        kplusgvecs_cart.push_back(tempvec);
-  //        minusModKplusG2.push_back(-mod2);
-  //        //Remember which position in the HDF5 file this came from...for coefficients
-  //        inputmap[ig] = newig++;
-  ////#if !defined(QMC_COMPLEX)
-  ////        //Build the negative vector. See comment at declaration (above) for details.
-  ////        if(gvecCopy[ig][0] < 0)
-  ////          negative.push_back(0);
-  ////        else if(gvecCopy[ig][0] > 0)
-  ////          negative.push_back(1);
-  ////        else { //gx == 0, test gy
-  ////          if(gvecCopy[ig][1] < 0)
-  ////            negative.push_back(0);
-  ////          else if(gvecCopy[ig][1] > 0)
-  ////            negative.push_back(1);
-  ////          else { //gx == gy == 0; test gz. If gz==0 also, take negative=1 (arbitrary)
-  ////            if(gvecCopy[ig][2] < 0)
-  ////              negative.push_back(0);
-  ////            else
-  ////              negative.push_back(1);
-  ////          }
-  ////        }
-  ////#endif
-  //      } else {
-  //        inputmap[ig] = -1; //Temporary value...need to know final NumPlaneWaves.
-  //        NumPlaneWaves--;
-  //      }
-  //    }
-  //Finalize the basis. Fix temporary values of inputmap.
-  //for(int ig=0; ig<inputmap.size(); ig++)
-  //  if(inputmap[ig] == -1)
-  //    inputmap[ig] = NumPlaneWaves; //For dumping coefficients of PWs>ecut
   app_log() << "                       NumPlaneWaves (after)  =" << NumPlaneWaves << std::endl;
 }
 } // namespace qmcplusplus

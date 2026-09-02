@@ -14,7 +14,6 @@
 
 #include "RMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Concurrency/OpenMP.h"
 #include "Configuration.h"
 #include "Particle/Reptile.h"
 #include <cmath>
@@ -50,10 +49,7 @@ RMCUpdatePbyPWithDrift::RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
       movepbyp_timer_(createGlobalTimer("RMCUpdatePbyP::movePbyP", timer_level_medium)),
       update_mbo_timer_(createGlobalTimer("RMCUpdatePbyP::updateMBO", timer_level_medium)),
       energy_timer_(createGlobalTimer("RMCUpdatePbyP::energy", timer_level_medium))
-{
-  scaleDrift = false;
-  actionType = SYM_ACTION;
-}
+{}
 
 RMCUpdatePbyPWithDrift::~RMCUpdatePbyPWithDrift() {}
 
@@ -83,44 +79,6 @@ void RMCUpdatePbyPWithDrift::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it
   }
 }
 
-bool RMCUpdatePbyPWithDrift::put(xmlNodePtr cur)
-{
-  QMCUpdateBase::put(cur);
-
-  ParameterSet m_param;
-  bool usedrift      = true;
-  std::string action = "SLA";
-  m_param.add(usedrift, "useDrift");
-  m_param.add(action, "Action");
-  m_param.add(equilSteps, "equilsteps");
-  m_param.add(equilSteps, "equilSteps");
-  m_param.put(cur);
-
-  if (usedrift == true)
-  {
-    if (omp_get_thread_num() == 0)
-      app_log() << "  Using Umrigar scaled drift\n";
-  }
-  else
-  {
-    if (omp_get_thread_num() == 0)
-      app_log() << "  Using non-scaled drift\n";
-  }
-
-  if (action == "DMC")
-  {
-    actionType = DMC_ACTION;
-    if (omp_get_thread_num() == 0)
-      app_log() << "  Using DMC link-action\n";
-  }
-  else
-  {
-    if (omp_get_thread_num() == 0)
-      app_log() << "  Using Symmetrized Link-Action\n";
-  }
-
-  return true;
-}
 void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
 {
   advance_timer_.start();
@@ -240,8 +198,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
 void RMCUpdatePbyPWithDrift::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
 {
   IndexType initsteps = W.reptile->nbeads * 2;
-
-  vmcSteps = W.reptile->nbeads + 1;
 
   for (int n = 0; n < initsteps; n++)
     advanceWalkersVMC();

@@ -105,6 +105,7 @@ TEST_CASE("WaveFunctionPool", "[wavefunction]")
                 <occupation mode='ground' spindataset='0'/>
              </determinant>
          </slaterdeterminant>
+         <h5tag name='twistAngle'>not-a-real-vector</h5tag>
      </determinantset>
    </wavefunction>
   )";
@@ -123,6 +124,10 @@ TEST_CASE("WaveFunctionPool", "[wavefunction]")
   // test getWaveFunction()
   TrialWaveFunction& psi(wp.getWaveFunction().value());
   REQUIRE(psi.getOrbitals().size() == 1);
+  REQUIRE(psi.twist().size() == 3);
+  CHECK(psi.twist()[0] == Approx(0.0));
+  CHECK(psi.twist()[1] == Approx(0.0));
+  CHECK(psi.twist()[2] == Approx(0.0));
 
   auto psi_noname_optional = wp.getWaveFunction();
   REQUIRE(psi_noname_optional);

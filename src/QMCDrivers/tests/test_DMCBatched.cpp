@@ -36,6 +36,37 @@ private:
 };
 } // namespace testing
 
+TEST_CASE("DMCDriverInput ignores retired DMC-only parameters", "[drivers][dmc][input]")
+{
+  const char* const input = R"(
+  <qmc method="dmc_batch">
+    <parameter name="feedback">2.5</parameter>
+    <parameter name="refenergy_update_scheme">unlimited_history</parameter>
+    <parameter name="reserve">1.5</parameter>
+    <parameter name="alpha">0.3</parameter>
+    <parameter name="gamma">0.7</parameter>
+    <parameter name="nonlocalmove">v1</parameter>
+    <parameter name="MaxAge">not-an-integer</parameter>
+    <parameter name="branchInterval">not-an-integer</parameter>
+    <parameter name="branchinterval">not-an-integer</parameter>
+    <parameter name="substeps">not-an-integer</parameter>
+    <parameter name="subStep">not-an-integer</parameter>
+    <parameter name="sub_stepd">not-an-integer</parameter>
+  </qmc>)";
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(input));
+
+  DMCDriverInput dmc_input;
+  REQUIRE_NOTHROW(dmc_input.readXML(doc.getRoot()));
+  CHECK(dmc_input.get_feedback() == Approx(2.5));
+  CHECK(dmc_input.get_refenergy_update_scheme() == DMCRefEnergyScheme::UNLIMITED_HISTORY);
+  CHECK(dmc_input.get_reserve() == Approx(1.5));
+  CHECK(dmc_input.get_alpha() == Approx(0.3));
+  CHECK(dmc_input.get_gamma() == Approx(0.7));
+  CHECK(dmc_input.get_non_local_move() == TmoveKind::V1);
+}
+
 /** Since we check the DMC only feature of reserve walkers perhaps this should be
  *  a DMC integration test.
  */

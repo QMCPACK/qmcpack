@@ -28,11 +28,19 @@ if(QMC_COMPLEX)
     list(APPEND DET_HEG54J2RPA_SCALARS "kinetic" "3.27073155 0.000007")
     list(APPEND DET_HEG54J2RPA_SCALARS "potential" "-7.18586671 0.000005")
     list(APPEND DET_HEG54J2RPA_SCALARS "eeenergy" "-7.18586671 0.000005")
+    list(APPEND DET_HEG54J2RPA_BATCHED_SCALARS "totenergy" "-3.91514077 0.000007")
+    list(APPEND DET_HEG54J2RPA_BATCHED_SCALARS "kinetic" "3.27072555 0.000007")
+    list(APPEND DET_HEG54J2RPA_BATCHED_SCALARS "potential" "-7.18586631 0.000005")
+    list(APPEND DET_HEG54J2RPA_BATCHED_SCALARS "eeenergy" "-7.18586631 0.000005")
   else()
     list(APPEND DET_HEG54J2RPA_SCALARS "totenergy" "-3.91514075 0.000001")
     list(APPEND DET_HEG54J2RPA_SCALARS "kinetic" "3.27072556 0.000001")
     list(APPEND DET_HEG54J2RPA_SCALARS "potential" "-7.18586631 0.000001")
     list(APPEND DET_HEG54J2RPA_SCALARS "eeenergy" "-7.18586631 0.000001")
+    list(APPEND DET_HEG54J2RPA_BATCHED_SCALARS "totenergy" "-3.91514077 0.000001")
+    list(APPEND DET_HEG54J2RPA_BATCHED_SCALARS "kinetic" "3.27072555 0.000001")
+    list(APPEND DET_HEG54J2RPA_BATCHED_SCALARS "potential" "-7.18586631 0.000001")
+    list(APPEND DET_HEG54J2RPA_BATCHED_SCALARS "eeenergy" "-7.18586631 0.000001")
   endif()
   qmc_run_and_check(
     deterministic-heg_54_J2rpa
@@ -44,6 +52,17 @@ if(QMC_COMPLEX)
     TRUE
     1
     DET_HEG54J2RPA_SCALARS)
+
+  qmc_run_and_check(
+    deterministic-heg_54_J2rpa-batched
+    "${qmcpack_SOURCE_DIR}/tests/heg/heg_54_J2rpa"
+    det_HEG.rs5.rpa_batched
+    det_heg.rpa.rs5_batched.xml
+    1
+    1
+    TRUE
+    1
+    DET_HEG54J2RPA_BATCHED_SCALARS)
 else()
   ## real code should not be ran with a twist
   ##if(QMC_MIXED_PRECISION)

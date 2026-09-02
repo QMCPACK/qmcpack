@@ -70,6 +70,15 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   <sposet name="updet" size="1" spindataset="0">
     <occupation mode="ground"/>
   </sposet>
+  <parameter name="rcut">not-a-real</parameter>
+  <parameter name="bufferLayer">not-a-real</parameter>
+  <parameter name="expand">not-an-integer-vector</parameter>
+  <parameter name="parameters">missing_parameters</parameter>
+  <parameter name="basis">missing_basis</parameter>
+  <parameter name="planewaves">missing_planewaves</parameter>
+  <parameter name="multiplers">missing_multipliers</parameter>
+  <parameter name="eigenstates">missing_eigenstates</parameter>
+  <basisset ecut="not-a-real"/>
 </sposet_collection>
 )";
 

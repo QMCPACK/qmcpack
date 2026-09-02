@@ -282,30 +282,15 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   std::string spin_name = target_species.speciesName[spin_group];
   std::string sposet_name;
   std::string basisName("invalid");
-  std::string detname("0"), refname("0");
-  std::string s_detSize("0");
+  std::string detname("0");
 
   OhmmsAttributeSet aAttrib;
   aAttrib.add(basisName, "basisset");
   aAttrib.add(detname, "id");
   aAttrib.add(sposet_name, "sposet");
-  aAttrib.add(refname, "ref");
-  aAttrib.add(s_detSize, "DetSize");
-
-  std::string s_cutoff("0.0");
-  std::string s_radius("0.0");
-  int s_smallnumber(-999999);
-  int rntype(0);
-  aAttrib.add(s_cutoff, "Cutoff");
-  aAttrib.add(s_radius, "Radius");
-  aAttrib.add(s_smallnumber, "smallnumber");
-  aAttrib.add(s_smallnumber, "eps");
-  aAttrib.add(rntype, "primary");
   aAttrib.add(spin_name, "group");
   aAttrib.put(cur);
 
-  // whether to use an optimizable slater determinant
-  std::string optimize;
   std::string matrix_inverter;
   std::string use_batch;
   std::string useGPU;
@@ -313,7 +298,6 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 
   OhmmsAttributeSet sdAttrib;
   sdAttrib.add(delay_rank, "delay_rank");
-  sdAttrib.add(optimize, "optimize", {"no", "yes"});
   sdAttrib.add(matrix_inverter, "matrix_inverter", {"gpu", "host"});
 #if defined(ENABLE_OFFLOAD)
   sdAttrib.add(use_batch, "batch", {"yes", "no"});

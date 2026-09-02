@@ -44,8 +44,6 @@ private:
   std::string funcOpt;
   /// \xmla{jastrow,spin}
   std::string spinOpt;
-  /// \xmla{jastrow,transform}
-  std::string transformOpt;
   /// \xmla{jastrow,source}
   std::string sourceOpt;
   ///reset the options
