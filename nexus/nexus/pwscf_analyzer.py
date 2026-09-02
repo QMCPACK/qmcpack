@@ -56,17 +56,6 @@ leading_number_list_pattern = (
     )
 
 
-# Match the first three entries of a whitespace-separated vector row.  This
-# accepts realistic CELL_PARAMETERS rows such as ``1.0 0.0 0.0`` and
-# ``-2.5D-01  .500000  0.``; extra printed columns or comments are harmless.
-# It rejects a short row (``1.0 0.0``) and concatenated entries
-# (``1.0-0.5 0.0``), which are not valid PWSCF cell-vector formatting.
-vector3_pattern = (
-    rf'^\s*(?P<x>{number_pattern})\s+(?P<y>{number_pattern})\s+'
-    rf'(?P<z>{number_pattern})(?=\s|$)'
-    )
-
-
 # Match one entry in each Cartesian or crystal k-point table.  Examples are
 # ``k( 1) = ( 0.0 0.0 0.0), wk = 0.25`` and
 # ``k(12)=(.5 -.5 5.0D-1), wk=1.0D+00``.  The required parentheses, comma,
@@ -80,29 +69,6 @@ kpoint_table_pattern = (
     )
 
 
-# Match a PWSCF total-energy assignment including its Rydberg unit.  Both SCF
-# iteration lines (``total energy = -168.12345678 Ry``) and completed lines
-# (``! total energy = -1.0D+02 Ry``) match.  Lines in eV, missing ``=``, or
-# reporting ``one-electron contribution`` do not match this field.
-total_energy_pattern = (
-    rf'\btotal\s+energy\s*=\s*(?P<energy>{number_pattern})\s+Ry\b'
-    )
-
-
-# Match pressure from a PWSCF total-stress heading.  It accepts forms such as
-# ``total stress (Ry/bohr**3) (kbar) P= -170.96`` and ``P = 1.2D+03``.
-# Lowercase ``p=``, the word ``pressure``, and a missing assignment operator
-# are rejected because they do not have the exact PWSCF field label.
-pressure_pattern = rf'\bP\s*=\s*(?P<pressure>{number_pattern})(?=\s|$)'
-
-
-# Match the optional lattice scale in CELL_PARAMETERS headers.  Examples are
-# ``CELL_PARAMETERS (alat= 10.20)`` and ``CELL_PARAMETERS (alat = 1.0D+01)``.
-# The expression rejects ``celldm(1)=`` and ``alat:`` variants, which do not
-# carry the same local scaling semantics for this structure block.
-alat_pattern = rf'\balat\s*=\s*(?P<alat>{number_pattern})(?=\s|\))'
-
-
 # Match one atomic-force row.  Representative lines are
 # ``atom 1 type 2 force = -0.001 0.002 0.000`` and
 # ``atom 12 type 1 force=1.0D-03 -2.0D-03 .0``.  The atom/type indices and all
@@ -111,17 +77,6 @@ atomic_force_pattern = (
     rf'\batom\s+(?P<atom>\d+)\s+type\s+(?P<type>\d+)\s+force\s*=\s*'
     rf'(?P<fx>{number_pattern})\s+(?P<fy>{number_pattern})\s+'
     rf'(?P<fz>{number_pattern})(?=\s|$)'
-    )
-
-
-# Match a complete six-column stress row: three Ry/bohr**3 entries followed by
-# three kbar entries.  Examples include ``-.001 0.0 .001 -147.1 0.0 147.1``
-# and exponent-form rows.  Five-column rows, labeled rows, and concatenated
-# columns are rejected because they cannot form the two complete tensors.
-stress_row_pattern = (
-    rf'^\s*(?P<sxx>{number_pattern})\s+(?P<sxy>{number_pattern})\s+'
-    rf'(?P<sxz>{number_pattern})\s+(?P<kxx>{number_pattern})\s+'
-    rf'(?P<kxy>{number_pattern})\s+(?P<kxz>{number_pattern})(?=\s|$)'
     )
 
 
@@ -138,13 +93,18 @@ fermi_energies_pattern = (
     )
 
 
-def match_float(pattern,line):
-    """Return the first captured floating-point value matching a pattern."""
-    match = re.search(pattern,line)
-    if match is None:
+def parse_float(text):
+    """Return a finite floating-point value from a complete numeric token."""
+    if '_' in text:
         return None
-    return float(match.group(1).replace('D','E').replace('d','e'))
-#end def match_float
+    try:
+        value = float(text.replace('D','E').replace('d','e'))
+    except ValueError:
+        return None
+    if not np.isfinite(value):
+        return None
+    return value
+#end def parse_float
 
 
 
@@ -307,8 +267,13 @@ class PwscfOutData(DevBase):
         """
         energy = None
         for line in lines:
-            if line.lstrip().startswith('!') and 'total energy' in line:
-                value = match_float(total_energy_pattern,line)
+            tokens = line.replace('=',' = ').split()
+            if (
+                len(tokens)>=6
+                and tokens[:4]==['!','total','energy','=']
+                and tokens[5]=='Ry'
+                ):
+                value = parse_float(tokens[4])
                 if value is not None:
                     energy = value
         if energy is not None:
@@ -448,21 +413,22 @@ class PwscfOutData(DevBase):
                 axes = []
                 if i+3<len(lines):
                     for axis_line in lines[i+1:i+4]:
-                        match = re.match(vector3_pattern,axis_line)
-                        if match is None:
+                        tokens = axis_line.split()
+                        values = [parse_float(token) for token in tokens[:3]]
+                        if len(tokens)<3 or any(value is None for value in values):
                             axes = []
                             break
-                        values = [
-                            float(match.group(name).replace('D','E').replace('d','e'))
-                            for name in ('x','y','z')
-                            ]
                         axes.append(values)
                 if len(axes)==3:
                     conf = obj()
                     axes = np.array(axes,dtype=float)
-                    alat = match_float(alat_pattern,line)
-                    if alat is not None:
-                        axes *= alat
+                    tokens = line.replace('(',' ').replace(')',' ').replace('=',' = ').split()
+                    if 'alat' in tokens:
+                        index = tokens.index('alat')
+                        if index+2<len(tokens) and tokens[index+1]=='=':
+                            alat = parse_float(tokens[index+2])
+                            if alat is not None:
+                                axes *= alat
                     conf.axes = axes
                     i+=3
                 else:
@@ -479,16 +445,11 @@ class PwscfOutData(DevBase):
                         break
                     coordinates = tokens[1:4]
                     # Check whether every coordinate is a complete numeric value.
-                    if not all(
-                        re.fullmatch(number_pattern,value.strip()) is not None
-                        for value in coordinates
-                        ):
+                    values = [parse_float(value) for value in coordinates]
+                    if any(value is None for value in values):
                         break
                     atoms.append(tokens[0])
-                    positions.append([
-                        float(value.replace('D','E').replace('d','e'))
-                        for value in coordinates
-                        ])
+                    positions.append(values)
                     i+=1
                 if len(positions)==0:
                     conf = None
@@ -510,10 +471,13 @@ class PwscfOutData(DevBase):
         """Read the final reported pressure."""
         pressure = None
         for line in lines:
-            if 'total' in line and 'stress' in line and 'P=' in line:
-                value = match_float(pressure_pattern,line)
-                if value is not None:
-                    pressure = value
+            tokens = line.replace('=',' = ').split()
+            if 'total' in tokens and 'stress' in tokens and 'P' in tokens:
+                index = tokens.index('P')
+                if index+2<len(tokens) and tokens[index+1]=='=':
+                    value = parse_float(tokens[index+2])
+                    if value is not None:
+                        pressure = value
         if pressure is not None and 'pressure' in self:
             self.pressure = pressure
     #end def read_pressure
@@ -527,20 +491,16 @@ class PwscfOutData(DevBase):
         """
         stress = []
         for i,line in enumerate(lines):
-            if 'total   stress' in line:
+            if 'total stress' in ' '.join(line.split()):
                 rows = []
                 if i+3<len(lines):
                     for stress_line in lines[i+1:i+4]:
-                        match = re.match(stress_row_pattern,stress_line)
-                        if match is None:
+                        tokens = stress_line.split()
+                        values = [parse_float(token) for token in tokens[:6]]
+                        if len(tokens)<6 or any(value is None for value in values):
                             rows = []
                             break
-                        names  = ('kxx','kxy','kxz')
-                        values = [
-                            float(match.group(name).replace('D','E').replace('d','e'))
-                            for name in names
-                            ]
-                        rows.append(values)
+                        rows.append(values[3:6])
                 if len(rows)==3:
                     stress.append(rows)
         if len(stress)>0:
@@ -559,9 +519,15 @@ class PwscfOutData(DevBase):
         nat    = None
         for line in lines:
             if 'number of atoms/cell' in line:
-                match = re.search(r'number of atoms/cell\s*=\s*(\d+)',line)
-                if match is not None:
-                    nat = int(match.group(1))
+                label,separator,text = line.partition('=')
+                tokens = text.split()
+                if (
+                    separator
+                    and label.rstrip().endswith('number of atoms/cell')
+                    and len(tokens)>0
+                    and tokens[0].isdecimal()
+                    ):
+                    nat = int(tokens[0])
                     break
         for i,line in enumerate(lines):
             if 'Forces acting on atoms' in line:
@@ -596,12 +562,18 @@ class PwscfOutData(DevBase):
         is incomplete.
         """
         for i,line in enumerate(lines):
-            if 'number of k points=' not in line:
+            if 'number of k points' not in line:
                 continue
-            match = re.search(r'number of k points=\s*(\d+)',line)
-            if match is None:
+            label,separator,text = line.partition('=')
+            tokens = text.split()
+            if (
+                not separator
+                or not label.rstrip().endswith('number of k points')
+                or len(tokens)==0
+                or not tokens[0].isdecimal()
+                ):
                 continue
-            nkpoints = int(match.group(1))
+            nkpoints = int(tokens[0])
             if i+1>=len(lines) or 'cart. coord.' not in lines[i+1]:
                 continue
             cart    = []

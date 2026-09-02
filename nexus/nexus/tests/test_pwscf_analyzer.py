@@ -35,6 +35,33 @@ def test_number_pattern_rejects(text):
 
 
 @pytest.mark.parametrize(
+    argnames='text,expected',
+    argvalues=(
+        ('0',0.0),('+7',7.0),('-12',-12.0),('3.',3.0),('.5',0.5),
+        ('-2.5E-4',-2.5e-4),('+6D+02',600.0),(' 7d-1 ',0.7),
+        ),
+    )
+def test_parse_float(text,expected):
+    from ..pwscf_analyzer import parse_float
+
+    assert(parse_float(text)==expected)
+#end def test_parse_float
+
+
+@pytest.mark.parametrize(
+    argnames='text',
+    argvalues=(
+        '','.','+','1e','1.2.3','abc123','NaN','Inf','--1','1_000',
+        ),
+    )
+def test_parse_float_rejects(text):
+    from ..pwscf_analyzer import parse_float
+
+    assert(parse_float(text) is None)
+#end def test_parse_float_rejects
+
+
+@pytest.mark.parametrize(
     argnames='pattern_name,text,expected',
     argvalues=(
         (
@@ -48,16 +75,6 @@ def test_number_pattern_rejects(text):
             {'values': '0.0488-0.0345 0.0345'},
             ),
         (
-            'vector3_pattern',
-            '  1.0 0.0 0.0',
-            {'x': '1.0','y': '0.0','z': '0.0'},
-            ),
-        (
-            'vector3_pattern',
-            '-2.5D-01  .500000  0.  fourth-column',
-            {'x': '-2.5D-01','y': '.500000','z': '0.'},
-            ),
-        (
             'kpoint_table_pattern',
             '     k( 1) = ( 0.0000000 0.0000000 0.0000000), wk = 0.2500000',
             {'kx': '0.0000000','ky': '0.0000000','kz': '0.0000000','weight': '0.2500000'},
@@ -68,36 +85,6 @@ def test_number_pattern_rejects(text):
             {'kx': '.5','ky': '-.5','kz': '5.0D-1','weight': '1.0D+00'},
             ),
         (
-            'total_energy_pattern',
-            '     total energy              =    -168.12345678 Ry',
-            {'energy': '-168.12345678'},
-            ),
-        (
-            'total_energy_pattern',
-            '!    total energy = -1.0D+02 Ry',
-            {'energy': '-1.0D+02'},
-            ),
-        (
-            'pressure_pattern',
-            'total stress (Ry/bohr**3) (kbar) P= -170.96',
-            {'pressure': '-170.96'},
-            ),
-        (
-            'pressure_pattern',
-            'total   stress  (Ry/bohr**3) (kbar) P = 1.2D+03 ',
-            {'pressure': '1.2D+03'},
-            ),
-        (
-            'alat_pattern',
-            'CELL_PARAMETERS (alat= 10.20)',
-            {'alat': '10.20'},
-            ),
-        (
-            'alat_pattern',
-            'CELL_PARAMETERS (alat = 1.0D+01)',
-            {'alat': '1.0D+01'},
-            ),
-        (
             'atomic_force_pattern',
             'atom 1 type 2 force = -0.001 0.002 0.000',
             {'atom': '1','type': '2','fx': '-0.001','fy': '0.002','fz': '0.000'},
@@ -106,16 +93,6 @@ def test_number_pattern_rejects(text):
             'atomic_force_pattern',
             'atom 12 type 1 force=1.0D-03 -2.0D-03 .0',
             {'atom': '12','type': '1','fx': '1.0D-03','fy': '-2.0D-03','fz': '.0'},
-            ),
-        (
-            'stress_row_pattern',
-            ' -.001 0.0 .001 -147.1 0.0 147.1',
-            {'sxx': '-.001','sxy': '0.0','sxz': '.001','kxx': '-147.1','kxy': '0.0','kxz': '147.1'},
-            ),
-        (
-            'stress_row_pattern',
-            '1D-3 2D-3 3D-3 1E+2 2E+2 3E+2 trailing',
-            {'sxx': '1D-3','sxy': '2D-3','sxz': '3D-3','kxx': '1E+2','kxy': '2E+2','kxz': '3E+2'},
             ),
         (
             'fermi_energies_pattern',
@@ -151,23 +128,12 @@ def test_tailored_pattern_matches(pattern_name,text,expected):
     argvalues=(
         ('leading_number_list_pattern','bands: 1.0 2.0'),
         ('leading_number_list_pattern','occupation numbers'),
-        ('vector3_pattern','1.0 0.0'),
-        ('vector3_pattern','1.0-0.5 0.0'),
         ('kpoint_table_pattern','k(1) = (0.0 0.0), wk = 1.0'),
         ('kpoint_table_pattern','k(1) = (0.0 0.0 0.0) weight = 1.0'),
         ('kpoint_table_pattern','k(1) = (0.0 0.0 0.0), wk = missing'),
-        ('total_energy_pattern','total energy = -168.1 eV'),
-        ('total_energy_pattern','total energy is -168.1 Ry'),
-        ('pressure_pattern','total stress pressure = -170.96'),
-        ('pressure_pattern','total stress p = -170.96'),
-        ('alat_pattern','CELL_PARAMETERS (alat: 10.20)'),
-        ('alat_pattern','CELL_PARAMETERS (celldm(1)=10.20)'),
         ('atomic_force_pattern','atom 1 type 2 force = -0.001 0.002'),
         ('atomic_force_pattern','Total force = 0.173046'),
         ('atomic_force_pattern','atom 1 force = -0.001 0.002 0.000'),
-        ('stress_row_pattern','-.001 0.0 .001 -147.1 0.0'),
-        ('stress_row_pattern','stress: -.001 0.0 .001 -147.1 0.0 147.1'),
-        ('stress_row_pattern','-.001 0.0.001 -147.1 0.0 147.1'),
         ('fermi_energies_pattern','the Fermi energy is 10.1198'),
         ('fermi_energies_pattern','the Fermi energies are 5.1 5.2 5.3 eV'),
         ('fermi_energies_pattern','highest occupied level is 10.1198 eV'),
@@ -193,7 +159,7 @@ def test_empty_init():
         match=r'PWSCF output file name is not available',
         ):
         pa.analyze()
-    free_helpers = ('match_float',)
+    free_helpers = ('parse_float',)
     for name in free_helpers:
         assert(callable(getattr(pa_module,name)))
         assert(not hasattr(PwscfAnalyzer,name))
@@ -247,6 +213,76 @@ def test_result_initialization(tmp_path,calculation,log_text):
     assert(out.calculation==calculation)
     assert(all(value is None for name,value in out.items() if name!='calculation'))
 #end def test_result_initialization
+
+
+def test_tokenized_log_parsing(tmp_path):
+    import numpy as np
+
+    from ..pwscf_analyzer import PwscfOutData
+
+    scf_file = tmp_path/'scf.out'
+    scf_file.write_text('''\
+Self-consistent Calculation
+number of atoms/cell   = 2 trailing tokens
+number of k points = 1 trailing tokens
+cart. coord.
+k(1) = (0.0 0.0 0.0), wk = 1.0 trailing
+cryst. coord.
+k(1) = (0.0 0.0 0.0), wk = 1.0 trailing
+!  total   energy = -1.0D+02 Ry trailing tokens
+total stress (Ry/bohr**3) (kbar) P = 1.2D+03 trailing tokens
+ 1D-3 2D-3 3D-3 1E+2 2E+2 3E+2 trailing
+ 4D-3 5D-3 6D-3 4E+2 5E+2 6E+2 trailing
+ 7D-3 8D-3 9D-3 7E+2 8E+2 9E+2 trailing
+Forces acting on atoms
+atom 1 type 1 force = 0.1 0.2 0.3
+atom 2 type 1 force = 0.4 0.5 0.6
+''')
+    scf = PwscfOutData(scf_file)
+
+    assert(scf.E==-100.0)
+    assert(scf.pressure==1200.0)
+    assert(np.allclose(scf.stress,[[[100.,200.,300.],
+                                    [400.,500.,600.],
+                                    [700.,800.,900.]]]))
+    assert(scf.forces.shape==(1,2,3))
+    assert(scf.kpoints_cart.shape==(1,3))
+    assert(scf.kpoints_unit.shape==(1,3))
+    assert(scf.kweights.shape==(1,))
+
+    relax_file = tmp_path/'relax.out'
+    relax_file.write_text('''\
+BFGS Geometry Optimization
+CELL_PARAMETERS (alat = 2.0D+00) trailing tokens
+1.0 0.0 0.0 trailing
+0.0 1.0 0.0 trailing
+0.0 0.0 1.0 trailing
+ATOMIC_POSITIONS (crystal)
+H .25 .25 .25 0 0 0
+H .75 .75 .75 1 1 1
+End final coordinates
+''')
+    relax = PwscfOutData(relax_file)
+    structure = relax.relax_structures[0]
+
+    assert(np.allclose(structure.axes,2*np.eye(3)))
+    assert(np.allclose(structure.positions,[[.5,.5,.5],[1.5,1.5,1.5]]))
+
+    malformed_file = tmp_path/'malformed.out'
+    malformed_file.write_text('''\
+Self-consistent Calculation
+! total energy = -168.1 eV
+total stress (Ry/bohr**3) (kbar) p = -170.96
+stress: -.001 0.0 .001 -147.1 0.0 147.1
+-.001 0.0 .001 -147.1 0.0
+-.001 0.0.001 -147.1 0.0 147.1
+''')
+    malformed = PwscfOutData(malformed_file)
+
+    assert(malformed.E is None)
+    assert(malformed.pressure is None)
+    assert(malformed.stress is None)
+#end def test_tokenized_log_parsing
 
 
 @pytest.mark.parametrize(
