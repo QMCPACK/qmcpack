@@ -78,21 +78,24 @@ class RmgOutData(DevBase):
     def __init__(self,filepath):
         """Initialize the parsed data by reading an RMG output file."""
         if not isinstance(filepath,str):
-            raise TypeError(
+            msg = (
                 'invalid type provided for filepath\n'
                 'Type expected: str\n'
                 f'Type provided: {filepath.__class__.__name__}'
                 )
+            raise TypeError(msg)
         elif not os.path.exists(filepath):
-            raise FileNotFoundError(
+            msg = (
                 'RMG log output file does not exist.\n'
                 f'Path provided: {filepath}'
                 )
+            raise FileNotFoundError(msg)
         elif not os.path.isfile(filepath):
-            raise IsADirectoryError(
+            msg = (
                 'Path provided for RMG log output is not a file.\n'
                 f'Path provided: {filepath}'
                 )
+            raise IsADirectoryError(msg)
         path,outfile_name  = os.path.split(filepath)
         self.path          = path
         self.abspath       = os.path.abspath(path)
@@ -229,9 +232,10 @@ class RmgOutData(DevBase):
             axes_array = convert(axes_array,aunits,'B')
             positions  = convert(ion_positions.positions,ion_positions.units,'B')
             valid      = (
-                axes_array.shape==(3,3) and positions.ndim==2 and
-                positions.shape[1:]==(3,) and
-                len(ion_positions.atoms)==len(positions)
+                axes_array.shape==(3,3)
+                and positions.ndim==2
+                and positions.shape[1:]==(3,)
+                and len(ion_positions.atoms)==len(positions)
                 )
             if valid:
                 setup_info.structure = generate_structure(
@@ -400,10 +404,11 @@ class RmgOutData(DevBase):
                 channels = [
                     dataset[index]['channels'].get(spin)
                     for index in indices for spin in spins
-                    ]
+                ]
                 if any(
-                    channel is None or len(channel[0])==0 or
-                    len(channel[0])!=len(channel[1])
+                    channel is None
+                    or len(channel[0])==0
+                    or len(channel[0])!=len(channel[1])
                     for channel in channels
                     ):
                     continue
@@ -497,10 +502,10 @@ class RmgOutData(DevBase):
         while i<len(lines):
             header_tokens = lines[i].split()
             is_header     = (
-                len(header_tokens)>=3 and
-                header_tokens[0].upper()=='@ION' and
-                header_tokens[1].lower()=='ion' and
-                header_tokens[2].lower()=='species'
+                len(header_tokens)>=3
+                and header_tokens[0].upper()=='@ION'
+                and header_tokens[1].lower()=='ion'
+                and header_tokens[2].lower()=='species'
                 )
             if not is_header:
                 i += 1
@@ -741,13 +746,15 @@ class RmgAnalyzer(SimulationAnalyzer):
     def _require_supported(self,quantity,modes):
         """Require analyzed output and a run mode supporting the quantity."""
         if self.results is None:
-            raise RuntimeError(
+            msg = (
                 f'RMG quantity "{quantity}" is unavailable because output has not been analyzed'
                 )
+            raise RuntimeError(msg)
         if self.run_mode not in modes:
-            raise RuntimeError(
+            msg = (
                 f'RMG quantity "{quantity}" is not supported for run mode "{self.run_mode}"'
                 )
+            raise RuntimeError(msg)
     #end def _require_supported
 
 
@@ -895,7 +902,11 @@ class RmgAnalyzer(SimulationAnalyzer):
         full_occupation = 2.0 if occupations.ndim==2 else 1.0
         empty           = np.isclose(occupations,0.0,rtol=0.0,atol=tolerance)
         full            = np.isclose(
-            occupations,full_occupation,rtol=0.0,atol=tolerance)
+            occupations,
+            full_occupation,
+            rtol = 0.0,
+            atol = tolerance,
+            )
         return bool(np.any(~(empty|full)))
     #end def fractional_occs
 
@@ -936,7 +947,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         self._require_supported('stress',self.all_modes)
         if units not in self.pressure_units:
             supported = ', '.join(sorted(self.pressure_units))
-            raise ValueError(f'stress units must be one of: {supported}')
+            msg = f'stress units must be one of: {supported}'
+            raise ValueError(msg)
         stress = self.results.stress
         if stress is None:
             return None
@@ -949,7 +961,8 @@ class RmgAnalyzer(SimulationAnalyzer):
         self._require_supported('pressure',self.all_modes)
         if units not in self.pressure_units:
             supported = ', '.join(sorted(self.pressure_units))
-            raise ValueError(f'pressure units must be one of: {supported}')
+            msg = f'pressure units must be one of: {supported}'
+            raise ValueError(msg)
         pressure = self.results.pressure
         if pressure is None:
             return None
@@ -974,21 +987,24 @@ class RmgAnalyzer(SimulationAnalyzer):
             filename = arg0.outfile
         else:
             if not isinstance(arg0,str):
-                raise TypeError(
+                msg = (
                     'invalid type provided for log_file\n'
                     'Type expected: str\n'
                     f'Type provided: {arg0.__class__.__name__}'
                     )
+                raise TypeError(msg)
             elif not os.path.exists(arg0):
-                raise FileNotFoundError(
+                msg = (
                     'RMG log output file does not exist.\n'
                     f'Path provided: {arg0}'
                     )
+                raise FileNotFoundError(msg)
             elif not os.path.isfile(arg0):
-                raise IsADirectoryError(
+                msg = (
                     'Path provided for RMG log output is not a file.\n'
                     f'Path provided: {arg0}'
                     )
+                raise IsADirectoryError(msg)
             path,filename = os.path.split(arg0)
 
         self.path         = path
