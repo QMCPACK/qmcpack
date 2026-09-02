@@ -97,7 +97,7 @@ class ProjectManager(NexusCore):
         self.log('\nProject starting',n=0)
         self.init_cascades()
         status_only = status_only or nexus_core.status_only
-        status = status or status_only
+        status = status or status_only or nexus_core.status!=nexus_core.status_modes.none
         if status:
             self.write_simulation_status()
             if status_only:
@@ -281,16 +281,33 @@ class ProjectManager(NexusCore):
 
 
     def write_simulation_status(self):
+        status       = nexus_core.status
+        status_modes = nexus_core.status_modes
         self.log('\ncascade status',n=1)
         self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
         all_sids = set()
         for sim in self.simulations.values():
-            all_sids.add(sim.simid)
-
+            add = False
+            if status==status_modes.active:
+                add = sim.active()
+            elif status==status_modes.ready:
+                add = sim.ready()
+            elif status==status_modes.failed:
+                add = sim.failed
+            else:
+                add = True
+            #end if
+            if add:
+                all_sids.add(sim.simid)
+            #end if
+        #end for
         sids = set()
         for isim in sorted(all_sids):
             sim = self.simulations[isim]
             if not sim.bundled:
+                if status==status_modes.active and not sim.active():
+                    continue
+                #end if
                 self.status_line(sim)
                 sids.add(sim.simid)
                 if sim.is_bundle:

@@ -290,6 +290,8 @@ def test_write_simulation_status():
     pm = ProjectManager()
     pm.add_simulations(list(sims.values()))
 
+    status_modes = nexus_core.status_modes
+
     def status_log():
         log.reset()
         pm.write_simulation_status()
@@ -297,6 +299,7 @@ def test_write_simulation_status():
         return '\n'.join(line.rstrip() for line in s.splitlines())
     #end def status_log
 
+    assert(nexus_core.status==status_modes.none)
     status_ref = '''
   cascade status
     setup, sent_files, submitted, finished, got_output, analyzed, failed
@@ -307,6 +310,31 @@ def test_write_simulation_status():
     000000           ------    test_sim_s3  ./runs/
     000000           ------    test_sim_s4  ./runs/
     000000           ------    test_sim_s5  ./runs/
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    '''
+    assert(status_log().strip()==status_ref.strip())
+
+    nexus_core.status = status_modes.standard
+    assert(status_log().strip()==status_ref.strip())
+
+    nexus_core.status = status_modes.active
+    status_ref = '''
+  cascade status
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    000000           ------    test_sim_s11  ./runs/
+    000000           ------    test_sim_s12  ./runs/
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    '''
+    assert(status_log().strip()==status_ref.strip())
+
+    nexus_core.status = status_modes.ready
+    assert(status_log().strip()==status_ref.strip())
+
+    nexus_core.status = status_modes.failed
+    status_ref = '''
+  cascade status
+    setup, sent_files, submitted, finished, got_output, analyzed, failed
+    (No simulations present)
     setup, sent_files, submitted, finished, got_output, analyzed, failed
     '''
     assert(status_log().strip()==status_ref.strip())

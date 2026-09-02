@@ -50,8 +50,8 @@ def test_settings(tmp_path):
                 'load_images', 'local_directory', 'monitor',
                 'progress_tty', 'pseudo_dir',
                 'remote_directory', 'results', 'runs',
-                'skip_submit', 'sleep', 'timeout',
-                'status_only', 'dynamic'
+                'skip_submit', 'sleep', 'status', 'timeout',
+                'status_modes', 'status_only', 'dynamic'
                 }
         nnckeys_check = {
                 'basis_dir', 'basissets', 'pseudo_dir'
@@ -62,15 +62,16 @@ def test_settings(tmp_path):
                 'graph_sims', 'indent', 'load_images', 'local_directory',
                 'monitor', 'progress_tty',
                 'pseudo_dir', 'remote_directory', 'results',
-                'runs', 'skip_submit', 'sleep',
-                'timeout', 'status_only', 'dynamic'
+                'runs', 'skip_submit', 'sleep', 'status',
+                'timeout',
+                'status_modes', 'status_only', 'dynamic'
                 }
         setkeys_allowed = setkeys_check | Settings.allowed_vars
 
         nckeys  = set(nexus_core.keys())
         nnckeys = set(nexus_noncore.keys())
         setkeys = set(settings.keys())
-
+        
         assert(nckeys==nckeys_check)
         assert(nnckeys==nnckeys_check)
         assert(setkeys>=setkeys_check)

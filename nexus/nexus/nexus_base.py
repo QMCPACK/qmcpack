@@ -45,6 +45,14 @@ nexus_core    = obj()
 nexus_noncore = obj()
 nexus_core_noncore = obj()
 
+status_modes = obj(
+    none     = 0,
+    standard = 1,
+    active   = 2,
+    failed   = 3,
+    ready    = 4,
+    )
+
 nexus_noncore_defaults = obj(
     basis_dir         = None,
     basissets         = None,
@@ -69,6 +77,8 @@ nexus_core_defaults = obj(
     skip_submit       = False,             # used by: Simulation
     load_images       = True,              # used by: ProjectManager
     indent            = '  ',              # used by: NexusCore
+    status_modes      = status_modes,      # used by: ProjectManager
+    status            = status_modes.none, # used by: ProjectManager
     progress_tty      = False,             # used by: ProjectManager
     graph_sims        = False,             # used by: ProjectManager
     command_line      = True,              # used by: Settings
