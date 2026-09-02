@@ -348,16 +348,20 @@ def acf_autocorr_time(x,reliability=False):
     """
     x = np.asarray(x)
     if np.iscomplexobj(x):
-        raise ValueError('data array must be real-valued')
+        msg = 'data array must be real-valued'
+        raise ValueError(msg)
     if x.ndim>1 and np.max(x.shape)==x.size:
         x = x.ravel()
     if x.ndim!=1:
-        raise ValueError('data array must be 1-dimensional')
+        msg = 'data array must be 1-dimensional'
+        raise ValueError(msg)
     if len(x)==0:
-        raise ValueError('data array must not be empty')
+        msg = 'data array must not be empty'
+        raise ValueError(msg)
     x = np.asarray(x,dtype=float)
     if not np.all(np.isfinite(x)):
-        raise ValueError('data array must contain only finite values')
+        msg = 'data array must contain only finite values'
+        raise ValueError(msg)
     not_reliable = False
     if len(x)==1:
         return (1.,not_reliable) if reliability else 1.
@@ -458,26 +462,31 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False,acf_fallback=True):
         returned value.
     """
 
+    msg = 'c must be a positive finite number'
     try:
         c = float(c)
     except (TypeError,ValueError):
-        raise ValueError('c must be a positive finite number') from None
+        raise ValueError(msg) from None
     if not np.isfinite(c) or c<=0.:
-        raise ValueError('c must be a positive finite number')
+        raise ValueError(msg)
 
     x = np.asarray(x)
     if np.iscomplexobj(x):
-        raise ValueError('input must be real-valued')
+        msg = 'input must be real-valued'
+        raise ValueError(msg)
     if x.ndim>1 and np.max(x.shape)==x.size:
         x = x.ravel()
     if x.ndim!=1:
-        raise ValueError('input must be one-dimensional')
+        msg = 'input must be one-dimensional'
+        raise ValueError(msg)
     if len(x)==0:
-        raise ValueError('input must not be empty')
+        msg = 'input must not be empty'
+        raise ValueError(msg)
 
     x = np.asarray(x,dtype=float)
     if not np.all(np.isfinite(x)):
-        raise ValueError('input must contain only finite values')
+        msg = 'input must contain only finite values'
+        raise ValueError(msg)
     not_reliable = False
     if len(x)<2:
         return (1.,not_reliable) if reliability else 1.
