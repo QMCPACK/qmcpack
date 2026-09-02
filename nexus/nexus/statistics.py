@@ -10,15 +10,23 @@ def theil_sen(x,y):
     assert len(x)==len(y)
     x = x.ravel()
     y = y.ravel()
-    ms = []
-    for i,(xi,yi) in enumerate(zip(x,y)):
-        for xj,yj in zip(x[i+1:],y[i+1:]):
-            ms.append((yi-yj)/(xi-xj))
-    m = np.median(ms)
-    bs = []
-    for xi,yi in zip(x,y):
-        bs.append(yi-m*xi)
-    b = np.median(bs)
+    n = len(x)
+    npairs = n*(n-1)//2
+    if npairs>0:
+        # Fill the upper triangle a row at a time.  This keeps the quadratic
+        # work in NumPy without allocating a pair of quadratic index arrays.
+        first_slopes = (y[0]-y[1:])/(x[0]-x[1:])
+        slopes = np.empty(npairs,dtype=first_slopes.dtype)
+        slopes[:n-1] = first_slopes
+        start = n-1
+        for i in range(1,n-1):
+            count = n-i-1
+            slopes[start:start+count] = (y[i]-y[i+1:])/(x[i]-x[i+1:])
+            start += count
+    else:
+        slopes = np.empty(0)
+    m = np.median(slopes,overwrite_input=True)
+    b = np.median(y-m*x)
     return m,b
 #end def theil_sen
 
@@ -387,6 +395,81 @@ def integrated_autocorr_time(x, c=5.0):
 
     return tau
 #end def integrated_autocorr_time
+
+
+def autocorr_time(x, disagreement_threshold=1.5):
+    """Conservatively combine three autocorrelation-time estimates.
+
+    The ACF, Geyer initial-monotone-sequence, and legacy reblocking
+    estimators probe the correlation structure in different ways.  Since an
+    underestimated autocorrelation time leads directly to an underestimated
+    uncertainty, this function returns the largest of their estimates.  A
+    warning is emitted when the largest and smallest estimates differ by more
+    than ``disagreement_threshold``; such disagreement can indicate that the
+    series is too short to resolve a slow correlation mode.
+
+    Parameters
+    ----------
+    x : array_like
+        One-dimensional sample sequence.
+
+    disagreement_threshold : float, optional
+        Warn when ``max(estimates)/min(estimates)`` exceeds this value.  Must
+        be a finite number greater than one.
+
+    Returns
+    -------
+    tau : float
+        Maximum of ``acf_autocorr_time(x)``,
+        ``integrated_autocorr_time(x)``, and
+        ``reblocked_autocorr_time(x)``.
+    """
+
+    try:
+        disagreement_threshold = float(disagreement_threshold)
+    except (TypeError,ValueError):
+        raise ValueError(
+            'disagreement threshold must be a finite number greater than one'
+            ) from None
+    if (
+        not np.isfinite(disagreement_threshold)
+        or disagreement_threshold<=1.
+    ):
+        raise ValueError(
+            'disagreement threshold must be a finite number greater than one')
+
+    x = np.asarray(x)
+    names = ('ACF','integrated','reblocking')
+    estimates = np.array([
+        acf_autocorr_time(x),
+        integrated_autocorr_time(x),
+        reblocked_autocorr_time(x),
+        ],dtype=float)
+    if not np.all(np.isfinite(estimates)):
+        raise ValueError('component autocorrelation-time estimate is nonfinite')
+
+    estimate_min = float(estimates.min())
+    estimate_max = float(estimates.max())
+    if estimate_min>0.:
+        disagreement = estimate_max/estimate_min
+    elif estimate_max>0.:
+        disagreement = np.inf
+    else:
+        disagreement = 1.
+
+    if disagreement>disagreement_threshold:
+        import warnings
+        detail = ', '.join(
+            f'{name}={estimate:.6g}'
+            for name,estimate in zip(names,estimates))
+        warnings.warn(
+            'autocorrelation-time estimators disagree by a factor of '
+            f'{disagreement:.3g} ({detail}); the estimate may be unreliable',
+            RuntimeWarning,
+            stacklevel=2)
+
+    return estimate_max
+#end def autocorr_time
 
 
 
