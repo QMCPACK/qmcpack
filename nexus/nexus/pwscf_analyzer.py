@@ -45,41 +45,6 @@ from .utilities import path_string
 number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
 
 
-# Match the numeric prefix of a PWSCF band or occupation line.  PWSCF usually
-# separates values with spaces (``-5.3120  1.2470  4.9810``), but fixed-width
-# output can join a negative value to its predecessor (``0.0488-0.0345``).
-# A trailing diagnostic is permitted (``1.0 2.0  convergence achieved``),
-# while a line beginning with a label (``bands: 1.0 2.0``) is rejected.
-leading_number_list_pattern = (
-    rf'^\s*(?P<values>{number_pattern}'
-    rf'(?:(?:\s+|(?=[+-])){number_pattern})*)'
-    )
-
-
-# Match one entry in each Cartesian or crystal k-point table.  Examples are
-# ``k( 1) = ( 0.0 0.0 0.0), wk = 0.25`` and
-# ``k(12)=(.5 -.5 5.0D-1), wk=1.0D+00``.  The required parentheses, comma,
-# ``wk`` label, three coordinates, and weight prevent unrelated vectors,
-# incomplete k-points, and malformed ``weight =`` variants from matching.
-kpoint_table_pattern = (
-    rf'\bk\(\s*\d+\s*\)\s*=\s*\(\s*'
-    rf'(?P<kx>{number_pattern})\s+(?P<ky>{number_pattern})\s+'
-    rf'(?P<kz>{number_pattern})\s*\)\s*,\s*wk\s*=\s*'
-    rf'(?P<weight>{number_pattern})(?=\s|$)'
-    )
-
-
-# Match one atomic-force row.  Representative lines are
-# ``atom 1 type 2 force = -0.001 0.002 0.000`` and
-# ``atom 12 type 1 force=1.0D-03 -2.0D-03 .0``.  The atom/type indices and all
-# three components are required; total-force summaries and short rows fail.
-atomic_force_pattern = (
-    rf'\batom\s+(?P<atom>\d+)\s+type\s+(?P<type>\d+)\s+force\s*=\s*'
-    rf'(?P<fx>{number_pattern})\s+(?P<fy>{number_pattern})\s+'
-    rf'(?P<fz>{number_pattern})(?=\s|$)'
-    )
-
-
 # Match the Fermi-energy result without collecting unrelated numbers earlier
 # on the line.  Real singular forms include ``the Fermi energy is 10.1198 ev``
 # and ``the Fermi energy = -3.22772442 eV``; spin-polarized output may report
@@ -144,8 +109,8 @@ class PwscfOutData(DevBase):
         Stress-tensor history in kbar with shape ``(nsteps, 3, 3)``.
     forces : numpy.ndarray or None
         Atomic-force history with shape ``(nsteps, natoms, 3)`` in Ry/bohr.
-    relax_structures : obj or None
-        Integer-indexed structure records containing atom labels, Cartesian
+    relax_structures : list or None
+        Structure records containing atom labels, Cartesian
         positions, and, when reported, cell axes.  Present for relaxation
         calculations.
 
@@ -185,7 +150,6 @@ class PwscfOutData(DevBase):
                 'E','pressure','stress','forces',
                 ):
                 del self[name]
-            #end for
         if self.calculation in {'scf','nscf'}:
             del self.relax_structures
         # all calculations
@@ -235,16 +199,17 @@ class PwscfOutData(DevBase):
                     )
                 ):
                 has_reference = True
-        #end for
         if has_dynamics:
-            raise RuntimeError('PWSCF molecular-dynamics calculations are not supported')
+            msg = 'PWSCF molecular-dynamics calculations are not supported'
+            raise RuntimeError(msg)
         elif has_bfgs:
             calculation = 'vc-relax' if has_cell else 'relax'
         elif has_band_run:
             # QE uses the same heading for nscf and bands, but suppresses
             # electronic-reference and occupation records for bands runs.
             if not has_reference:
-                raise RuntimeError('PWSCF bands calculations are not supported')
+                msg = 'PWSCF bands calculations are not supported'
+                raise RuntimeError(msg)
             calculation = 'nscf'
         else:
             calculation = 'scf'
@@ -310,17 +275,11 @@ class PwscfOutData(DevBase):
         Occupation arrays can be empty.  When complete occupations are
         present, :meth:`read_band_edges` adds VBM and CBM energies.
         """
-        def leading_numbers(line):
-            """Return the leading sequence of numeric values from a line."""
-            match = re.match(leading_number_list_pattern,line)
-            if match is None:
-                return np.array([],dtype=float)
-            return np.array(
-                re.findall(number_pattern,match.group('values').lower().replace('d','e')),
-                dtype=float,
-                )
-        #end def leading_numbers
-
+        # Match a numeric prefix, including joined fixed-width negatives.
+        leading_number_list_pattern = (
+            rf'^\s*(?P<values>{number_pattern}'
+            rf'(?:(?:\s+|(?=[+-])){number_pattern})*)'
+            )
         def read_values(start,markers=()):
             """Read a contiguous block of numeric values."""
             values = []
@@ -333,9 +292,16 @@ class PwscfOutData(DevBase):
                 elif any(marker in text for marker in markers):
                     break
                 else:
-                    numbers = leading_numbers(text)
-                    if len(numbers)==0:
+                    match = re.match(leading_number_list_pattern,text)
+                    if match is None:
                         break
+                    numbers = np.array(
+                        re.findall(
+                            number_pattern,
+                            match.group('values').lower().replace('d','e'),
+                            ),
+                        dtype=float,
+                        )
                     values.extend(numbers)
                 i+=1
             return values,i
@@ -410,8 +376,8 @@ class PwscfOutData(DevBase):
     def read_structures(self,lines):
         """Read and bind structures from ionic-step output blocks.
 
-        ``relax_structures`` is an ``obj`` mapping zero-based step indices to
-        configuration objects.  Each configuration contains ``atoms`` as a
+        ``relax_structures`` is a list of configuration objects.  Each
+        configuration contains ``atoms`` as a
         list of element labels and ``positions`` as an ``(natoms, 3)`` NumPy
         array.  An ``axes`` ``(3, 3)`` array is included when a preceding
         ``CELL_PARAMETERS`` block is available.  Crystal positions are
@@ -420,7 +386,7 @@ class PwscfOutData(DevBase):
         Fixed-cell output can omit cell blocks, while variable-cell output
         normally supplies new axes with each structure.
         """
-        structures = obj()
+        structures = []
         conf       = None
         i          = 0
         while i<len(lines):
@@ -474,7 +440,7 @@ class PwscfOutData(DevBase):
                 conf.positions = np.array(positions,dtype=float)
                 if 'crystal' in line.lower() and 'axes' in conf:
                     conf.positions = np.dot(conf.positions,conf.axes)
-                structures[len(structures)] = conf
+                structures.append(conf)
                 conf = None
                 continue
             i+=1
@@ -526,42 +492,54 @@ class PwscfOutData(DevBase):
 
     def read_forces(self,lines):
         """Read and bind atomic-force histories.
-
         ``forces`` is a NumPy array with shape ``(nsteps, natoms, 3)`` in
         Ry/bohr. Atomic-force blocks with a known atom count are retained only
         when all atoms are present.
         """
-        forces = []
-        nat    = None
+        nat = None
         for line in lines:
-            if 'number of atoms/cell' in line:
-                label,separator,text = line.partition('=')
-                tokens = text.split()
-                if (
-                    separator
-                    and label.rstrip().endswith('number of atoms/cell')
-                    and len(tokens)>0
-                    and tokens[0].isdecimal()
-                    ):
-                    nat = int(tokens[0])
-                    break
+            if 'number of atoms/cell' not in line:
+                continue
+            label,separator,text = line.partition('=')
+            tokens = text.split()
+            if (
+                not separator
+                or not label.rstrip().endswith('number of atoms/cell')
+                or len(tokens)==0
+                ):
+                continue
+            try:
+                nat = int(tokens[0])
+            except ValueError:
+                continue
+            break
+        forces = []
         for i,line in enumerate(lines):
-            if 'Forces acting on atoms' in line:
-                aforces = []
-                j       = i+1
-                while j<len(lines):
-                    match = re.search(atomic_force_pattern,lines[j])
-                    if match is not None:
-                        values = [
-                            float(match.group(name).lower().replace('d','e'))
-                            for name in ('fx','fy','fz')
-                            ]
-                        aforces.append(values)
-                    elif len(aforces)>0:
-                        break
-                    j+=1
-                if len(aforces)>0 and (nat is None or len(aforces)==nat):
-                    forces.append(aforces)
+            if 'Forces acting on atoms' not in line:
+                continue
+            aforces = []
+            j       = i+1
+            while j<len(lines):
+                tokens = lines[j].replace('=',' = ').split()
+                values = []
+                if (
+                    len(tokens)>=9
+                    and tokens[0]=='atom'
+                    and tokens[2]=='type'
+                    and tokens[4:6]==['force','=']
+                    ):
+                    for token in tokens[6:9]:
+                        value = parse_float(token)
+                        if value is None:
+                            break
+                        values.append(value)
+                if len(values)==3:
+                    aforces.append(values)
+                elif len(aforces)>0:
+                    break
+                j+=1
+            if len(aforces)>0 and (nat is None or len(aforces)==nat):
+                forces.append(aforces)
         if len(forces)>0:
             self.forces = np.array(forces,dtype=float)
     #end def read_forces
@@ -577,6 +555,13 @@ class PwscfOutData(DevBase):
         one-dimensional weight array.  No member is updated when either table
         is incomplete.
         """
+        # Match complete k-point rows with three coordinates and a weight.
+        kpoint_table_pattern = (
+            rf'\bk\(\s*\d+\s*\)\s*=\s*\(\s*'
+            rf'(?P<kx>{number_pattern})\s+(?P<ky>{number_pattern})\s+'
+            rf'(?P<kz>{number_pattern})\s*\)\s*,\s*wk\s*=\s*'
+            rf'(?P<weight>{number_pattern})(?=\s|$)'
+            )
         for i,line in enumerate(lines):
             if 'number of k points' not in line:
                 continue
@@ -779,7 +764,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         """Return the initial ``Structure`` in Angstrom or bohr."""
         self._require_supported('initial_structure',self.all_modes)
         if units not in {'A','B'}:
-            raise ValueError('initial_structure units must be one of: A, B')
+            msg = 'initial_structure units must be one of: A, B'
+            raise ValueError(msg)
         if 'simulation_structure' in self and self.simulation_structure is not None:
             structure = deepcopy(self.simulation_structure)
         elif (
@@ -811,7 +797,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         """Return the final total energy in eV, Hartree, or Rydberg."""
         self._require_supported('energy',self.energy_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('energy units must be one of: eV, Ha, Ry')
+            msg = 'energy units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         if 'E' in self.results_out and self.results_out.E is not None:
             return convert(self.results_out.E,'Ry',units)
         return None
@@ -822,7 +809,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         """Return Cartesian k-points in inverse Angstrom or inverse bohr."""
         self._require_supported('kpoints',self.all_modes)
         if units not in {'A','B'}:
-            raise ValueError('kpoints units must be one of: A, B')
+            msg = 'kpoints units must be one of: A, B'
+            raise ValueError(msg)
         kpoints = None
         if (
             self.results_out.kpoints_cart is not None
@@ -887,7 +875,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         """Return k-point-major eigenvalues in eV, Hartree, or Rydberg."""
         self._require_supported('eigenvalues',self.electronic_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('eigenvalues units must be one of: eV, Ha, Ry')
+            msg = 'eigenvalues units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         values = self._log_band_values('eigs')
         if values is None:
             return None
@@ -906,7 +895,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         """Return the final Fermi energy in eV, Hartree, or Rydberg."""
         self._require_supported('Ef',self.electronic_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('Ef units must be one of: eV, Ha, Ry')
+            msg = 'Ef units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         if self.results_out.Ef is not None:
             return convert(self.results_out.Ef,'eV',units)
         return None
@@ -917,7 +907,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         """Return the final valence-band maximum in selected energy units."""
         self._require_supported('Evbm',self.electronic_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('Evbm units must be one of: eV, Ha, Ry')
+            msg = 'Evbm units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         bands = self.results_out.bands
         if bands is not None and 'vbm' in bands:
             return convert(bands.vbm.energy,'eV',units)
@@ -929,7 +920,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         """Return the final conduction-band minimum in selected energy units."""
         self._require_supported('Ecbm',self.electronic_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('Ecbm units must be one of: eV, Ha, Ry')
+            msg = 'Ecbm units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         bands = self.results_out.bands
         if bands is not None and 'cbm' in bands:
             return convert(bands.cbm.energy,'eV',units)
@@ -941,7 +933,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         """Return the fundamental band gap in eV, Hartree, or Rydberg."""
         self._require_supported('band_gap',self.electronic_modes)
         if units not in {'eV','Ha','Ry'}:
-            raise ValueError('band_gap units must be one of: eV, Ha, Ry')
+            msg = 'band_gap units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
         bands = self.results_out.bands
         if bands is not None and 'vbm' in bands and 'cbm' in bands:
             gap = bands.cbm.energy-bands.vbm.energy
@@ -967,14 +960,15 @@ class PwscfAnalyzer(SimulationAnalyzer):
         """Return the final relaxed ``Structure`` in Angstrom or bohr."""
         self._require_supported('relaxed_structure',self.relaxation_modes)
         if units not in {'A','B'}:
-            raise ValueError('relaxed_structure units must be one of: A, B')
+            msg = 'relaxed_structure units must be one of: A, B'
+            raise ValueError(msg)
         if (
             'relax_structures' in self.results_out
             and self.results_out.relax_structures is not None
             and len(self.results_out.relax_structures)>0
             ):
             structures = self.results_out.relax_structures
-            result     = structures[max(structures.keys())]
+            result     = structures[-1]
             initial    = self.initial_structure('B')
             axes       = result.axes if 'axes' in result else None
             if axes is None and initial is not None:
@@ -999,7 +993,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         """Return ionic forces in ``eV/A``, ``Ry/B``, or ``Ha/B``."""
         self._require_supported('forces',self.force_modes)
         if units not in {'eV/A','Ry/B','Ha/B'}:
-            raise ValueError('forces units must be one of: eV/A, Ry/B, Ha/B')
+            msg = 'forces units must be one of: eV/A, Ry/B, Ha/B'
+            raise ValueError(msg)
         values = self.results_out.forces
         if values is None:
             return None
@@ -1117,7 +1112,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             or 'outfile_name' not in self
             or self.outfile_name is None
             ):
-            raise RuntimeError('PWSCF output file name is not available')
+            msg = 'PWSCF output file name is not available'
+            raise RuntimeError(msg)
         outfile = os.path.join(self.path,self.outfile_name)
         if not os.path.isfile(outfile):
             msg = (

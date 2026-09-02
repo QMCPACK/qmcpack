@@ -65,36 +65,6 @@ def test_parse_float_rejects(text):
     argnames='pattern_name,text,expected',
     argvalues=(
         (
-            'leading_number_list_pattern',
-            '  -5.3120  1.2470  4.9810',
-            {'values': '-5.3120  1.2470  4.9810'},
-            ),
-        (
-            'leading_number_list_pattern',
-            '0.0488-0.0345 0.0345  convergence achieved',
-            {'values': '0.0488-0.0345 0.0345'},
-            ),
-        (
-            'kpoint_table_pattern',
-            '     k( 1) = ( 0.0000000 0.0000000 0.0000000), wk = 0.2500000',
-            {'kx': '0.0000000','ky': '0.0000000','kz': '0.0000000','weight': '0.2500000'},
-            ),
-        (
-            'kpoint_table_pattern',
-            'k(12)=(.5 -.5 5.0D-1), wk=1.0D+00',
-            {'kx': '.5','ky': '-.5','kz': '5.0D-1','weight': '1.0D+00'},
-            ),
-        (
-            'atomic_force_pattern',
-            'atom 1 type 2 force = -0.001 0.002 0.000',
-            {'atom': '1','type': '2','fx': '-0.001','fy': '0.002','fz': '0.000'},
-            ),
-        (
-            'atomic_force_pattern',
-            'atom 12 type 1 force=1.0D-03 -2.0D-03 .0',
-            {'atom': '12','type': '1','fx': '1.0D-03','fy': '-2.0D-03','fz': '.0'},
-            ),
-        (
             'fermi_energies_pattern',
             '     the Fermi energy is    10.1198 ev',
             {'values': '10.1198'},
@@ -126,14 +96,6 @@ def test_tailored_pattern_matches(pattern_name,text,expected):
 @pytest.mark.parametrize(
     argnames='pattern_name,text',
     argvalues=(
-        ('leading_number_list_pattern','bands: 1.0 2.0'),
-        ('leading_number_list_pattern','occupation numbers'),
-        ('kpoint_table_pattern','k(1) = (0.0 0.0), wk = 1.0'),
-        ('kpoint_table_pattern','k(1) = (0.0 0.0 0.0) weight = 1.0'),
-        ('kpoint_table_pattern','k(1) = (0.0 0.0 0.0), wk = missing'),
-        ('atomic_force_pattern','atom 1 type 2 force = -0.001 0.002'),
-        ('atomic_force_pattern','Total force = 0.173046'),
-        ('atomic_force_pattern','atom 1 force = -0.001 0.002 0.000'),
         ('fermi_energies_pattern','the Fermi energy is 10.1198'),
         ('fermi_energies_pattern','the Fermi energies are 5.1 5.2 5.3 eV'),
         ('fermi_energies_pattern','highest occupied level is 10.1198 eV'),
@@ -263,6 +225,7 @@ H .75 .75 .75 1 1 1
 End final coordinates
 ''')
     relax = PwscfOutData(relax_file)
+    assert(isinstance(relax.relax_structures,list))
     structure = relax.relax_structures[0]
 
     assert(np.allclose(structure.axes,2*np.eye(3)))
