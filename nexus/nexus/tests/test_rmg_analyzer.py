@@ -260,9 +260,15 @@ def test_whitespace_and_trailing_fields(tmp_path):
 
     log = rmg_log('Quench electrons').replace(
         'Calculation type:', 'Calculation\t type   :').replace(
+        'X Basis Vector: 4.0 0.0 0.0',
+        'X Basis Vector = 4.0D+00 0.0 0.0 a0 trailing axis annotation').replace(
         '1-TOTAL                                             3.00                0.50',
         '1 - TOTAL\t3.00\t0.50\tnew timing annotation')
     body = '''
+K-points
+    Kx, Ky, Kz, Weight in crystal unit
+    0.0D+00 0.0 0.0 0.25 trailing k-point annotation
+
 FERMI   ENERGY : 5.25 eV trailing diagnostic 77
 spin0: conduction band minimum = 6.0 eV, valence band maximum = 4.0 eV extra 88
 spin0: Band gap : 2.0 eV extra 99
@@ -285,7 +291,9 @@ stress total in unit of kbar
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
     assert analyzer.results.run_mode=='scf'
+    assert analyzer.initial_structure() is not None
     assert analyzer.energy()==-0.61725
+    assert np.allclose(analyzer.kweights(),[0.25])
     assert analyzer.Ef()==5.25
     assert analyzer.Evbm()==4.0
     assert analyzer.Ecbm()==6.0

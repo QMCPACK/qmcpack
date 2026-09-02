@@ -128,87 +128,116 @@ class RmgOutData(DevBase):
     def read_setup_info(self,lines):
         """Read the run mode and initial structure from the setup report."""
         setup_info = obj()
-        npat       = self.number_pattern
 
-        # Match the calculation-type setup field.
-        # Example: Calculation type: Quench electrons - Fixed ions SCF calculation
-        mode_pattern = re.compile(
-            r'^\s*calculation\s*type\s*[:=]\s*(.*)$',re.IGNORECASE)
-        mode_patterns = (
-            (re.compile(r'\bquench\s+electrons\b',re.IGNORECASE),'scf'),
-            (re.compile(r'\bnscf\b',re.IGNORECASE),'nscf'),
-            (
-                re.compile(
-                    r'\b(?:structure\s+optimization|relax\s+structure)\b',
-                    re.IGNORECASE,
-                    ),
-                'relax',
-                ),
-            )
+        def split_assignment(line):
+            """Split a colon- or equals-delimited output assignment."""
+            indices = [i for i in (line.find(':'),line.find('=')) if i>=0]
+            if len(indices)==0:
+                return None,None
+            index = min(indices)
+            return line[:index].strip(),line[index+1:].strip()
+        #end def split_assignment
+
+        def as_float(token):
+            """Convert an RMG-formatted numeric token when possible."""
+            try:
+                value = float(token.replace('D','E').replace('d','e'))
+            except (AttributeError,ValueError):
+                return None
+            return value if np.isfinite(value) else None
+        #end def as_float
+
+        def position_units(line):
+            """Return units from an initial-position table heading."""
+            text   = ' '.join(line.split()).lower()
+            prefix = 'initial ionic positions and displacements'
+            if not text.startswith(prefix):
+                return None
+            suffix = text[len(prefix):].strip()
+            if not suffix.startswith('(') or ')' not in suffix:
+                return None
+            units = suffix[1:suffix.index(')')].strip()
+            if units=='bohr':
+                return 'B'
+            if units in {'angstrom','angstroms'}:
+                return 'A'
+            return None
+        #end def position_units
+
         run_mode = None
         for line in lines:
-            match = mode_pattern.match(line)
-            if match is None:
+            label,value = split_assignment(' '.join(line.split()))
+            if label is None or label.lower()!='calculation type':
                 continue
-            for pattern,mode in mode_patterns:
-                if pattern.search(match.group(1)) is not None:
-                    run_mode = mode
-                    break
+            mode_words = tuple(
+                word.strip('.,:;()[]{}')
+                for word in value.lower().replace('-',' ').split()
+                )
+            mode_pairs = {
+                mode_words[i:i+2] for i in range(len(mode_words)-1)
+                }
+            if ('quench','electrons') in mode_pairs:
+                run_mode = 'scf'
+            elif 'nscf' in mode_words:
+                run_mode = 'nscf'
+            elif (
+                ('structure','optimization') in mode_pairs
+                or ('relax','structure') in mode_pairs
+                ):
+                run_mode = 'relax'
             break
         self.run_mode       = run_mode
         setup_info.run_mode = run_mode
 
-        # Match Cartesian lattice basis vectors and their optional units.
-        # Example: X Basis Vector: 3.360 3.360 0.000 a0
-        axis_pattern = re.compile(
-            r'^\s*([xyz])\s+basis\s+vector\s*[:=]\s*'
-            r'('+npat+r')\s+('+npat+r')\s+('+npat+r')'
-            r'(?:\s+([^\s,;]+))?',re.IGNORECASE)
         axes      = {}
         axis_unit = None
         for line in lines:
-            match = axis_pattern.match(line)
-            if match is None:
+            label,value = split_assignment(' '.join(line.split()))
+            label_words = label.lower().split() if label is not None else []
+            if len(label_words)!=3 or label_words[1:]!=['basis','vector']:
                 continue
-            axes[match.group(1).lower()] = [
-                float(match.group(i).replace('D','E').replace('d','e'))
-                for i in range(2,5)
-                ]
-            if match.group(5) is not None:
-                axis_unit = match.group(5)
+            axis = label_words[0]
+            if axis not in {'x','y','z'}:
+                continue
+            tokens = value.split()
+            if len(tokens)<3:
+                continue
+            values = [as_float(token) for token in tokens[:3]]
+            if any(v is None for v in values):
+                continue
+            axes[axis] = values
+            if len(tokens)>=4:
+                axis_unit = tokens[3].strip(',;')
 
-        # Match an initial-position table heading and capture its units.
-        # Example: Initial Ionic Positions And Displacements (Bohr)
-        position_header = re.compile(
-            r'^\s*initial\s+ionic\s+positions\s+and\s+displacements\s*'
-            r'\(\s*(bohr|angstroms?)\s*\)',re.IGNORECASE)
-        # Match an element label followed by at least three coordinates.
-        # Example: C 1.6800 1.6800 1.6800 0.0000 0.0000 0.0000
-        position_row = re.compile(
-            r'^\s*([A-Za-z][A-Za-z0-9_]*)\s+'
-            r'('+npat+r')\s+('+npat+r')\s+('+npat+r')')
         position_tables = []
         i               = 0
         while i<len(lines):
-            match = position_header.match(lines[i])
-            if match is None:
+            units = position_units(lines[i])
+            if units is None:
                 i += 1
                 continue
-            units     = 'B' if match.group(1).lower()=='bohr' else 'A'
             atoms     = []
             positions = []
             i += 1
             while i<len(lines):
                 line = lines[i]
-                if position_header.match(line) is not None:
+                if position_units(line) is not None:
                     break
-                row = position_row.match(line)
-                if row is not None and row.group(1).lower()!='species':
-                    atoms.append(row.group(1))
-                    positions.append([
-                        float(row.group(j).replace('D','E').replace('d','e'))
-                        for j in range(2,5)
-                        ])
+                tokens = line.split()
+                atom   = tokens[0] if len(tokens)>0 else ''
+                valid_atom = (
+                    len(atom)>0
+                    and atom[0].isalpha()
+                    and all(c.isalnum() or c=='_' for c in atom)
+                    and atom.lower()!='species'
+                    )
+                values = (
+                    [as_float(token) for token in tokens[1:4]]
+                    if len(tokens)>=4 else []
+                    )
+                if valid_atom and len(values)==3 and None not in values:
+                    atoms.append(atom)
+                    positions.append(values)
                 elif len(atoms)>0 and len(line.strip())==0:
                     break
                 i += 1
@@ -243,31 +272,24 @@ class RmgOutData(DevBase):
                     pos   = positions,
                     )
 
-        # Match the crystal-coordinate k-point table heading.
-        # Example: Kx Ky Kz Weight in crystal unit
-        kpoint_header = re.compile(
-            r'\bkx\b.*\bky\b.*\bkz\b.*\bweight\b.*\bcrystal\b',
-            re.IGNORECASE)
-        # Match three crystal coordinates followed by a k-point weight.
-        # Example: 0.0000 0.5000 0.0000 0.750
-        kpoint_row = re.compile(
-            r'^\s*('+npat+r')\s+('+npat+r')\s+('+npat+r')\s+'
-            r'('+npat+r')(?:\s+.*)?$')
         kpoints  = []
         kweights = []
         for i,line in enumerate(lines):
-            if kpoint_header.search(line) is None:
+            header_words = {
+                word.strip('.,:;()[]{}').lower() for word in line.split()
+                }
+            if not {'kx','ky','kz','weight','crystal'}<=header_words:
                 continue
             for row_line in lines[i+1:]:
-                row = kpoint_row.match(row_line)
-                if row is None:
+                tokens = row_line.split()
+                values = (
+                    [as_float(token) for token in tokens[:4]]
+                    if len(tokens)>=4 else []
+                    )
+                if len(values)!=4 or None in values:
                     if len(kpoints)>0:
                         break
                     continue
-                values = [
-                    float(row.group(j).replace('D','E').replace('d','e'))
-                    for j in range(1,5)
-                    ]
                 kpoints.append(values[:3])
                 kweights.append(values[3])
             break
@@ -281,21 +303,30 @@ class RmgOutData(DevBase):
 
     def read_energies(self,lines):
         """Read the final total energy obtained from the eigenvalue sum."""
-        # Match a final total energy obtained from the eigenvalue sum.
-        # Example: final total energy from eigenvalue sum : -1.2345 Ha
-        energy_pattern = re.compile(
-            r'final\s+total\s+energy\s+from\s+'
-            r'eig(?:envalue)?\s+sum'
-            r'\s*[:=]\s*(?P<value>'+self.number_pattern+r')'
-            r'(?:\s+(?P<units>[^\s,;]+))?',
-            re.IGNORECASE,
+        labels = (
+            'final total energy from eigenvalue sum',
+            'final total energy from eig sum',
             )
         for line in lines:
-            match = energy_pattern.search(line)
-            if match is not None:
-                self.energy = float(
-                    match['value'].replace('D','E').replace('d','e'))
-                self.energy_units = match['units'] or 'Ha'
+            text  = ' '.join(line.split())
+            lower = text.lower()
+            label = next((label for label in labels if label in lower),None)
+            if label is None:
+                continue
+            remainder = text[lower.index(label)+len(label):].lstrip()
+            if len(remainder)==0 or remainder[0] not in {':','='}:
+                continue
+            tokens = remainder[1:].split()
+            if len(tokens)==0:
+                continue
+            try:
+                value = float(tokens[0].replace('D','E').replace('d','e'))
+            except ValueError:
+                continue
+            if not np.isfinite(value):
+                continue
+            self.energy       = value
+            self.energy_units = tokens[1].strip(',;') if len(tokens)>=2 else 'Ha'
     #end def read_energies
 
 
@@ -316,6 +347,27 @@ class RmgOutData(DevBase):
             """Convert an RMG-formatted numeric token to a float."""
             return float(value.replace('D','E').replace('d','e'))
         #end def as_float
+
+        def assigned_value(text,lower,*labels):
+            """Return a numeric value following a labeled assignment."""
+            for label in labels:
+                index = lower.find(label)
+                if index<0:
+                    continue
+                remainder = text[index+len(label):].lstrip()
+                if len(remainder)==0 or remainder[0] not in {':','='}:
+                    continue
+                tokens = remainder[1:].split()
+                if len(tokens)==0:
+                    continue
+                try:
+                    value = as_float(tokens[0].strip(',;'))
+                except ValueError:
+                    continue
+                if np.isfinite(value):
+                    return value
+            return None
+        #end def assigned_value
 
         def read_eigenvalue_data():
             """Return the final complete k-point eigenvalue and occupation table."""
@@ -440,30 +492,25 @@ class RmgOutData(DevBase):
             band_gaps              = [],
             )
 
-        npat = self.number_pattern
-        # Match and classify scalar electronic records.
-        # Example: FERMI ENERGY : 5.25 eV
-        electronic_pattern = re.compile(
-            r'(?P<fermi>fermi\s+energy\s*[:=]\s*'
-            r'(?P<fermi_value>'+npat+r'))|'
-            r'(?P<band_edges>^(?=.*valence\s+band\s+maximum\s*[:=]\s*'
-            r'(?P<vbm>'+npat+r'))(?=.*conduction\s+band\s+'
-            r'(?:minimum|minumm)\s*[:=]\s*(?P<cbm>'+npat+r')).*$)|'
-            r'(?P<band_gap>band\s+gap\s*[:=]\s*'
-            r'(?P<band_gap_value>'+npat+r'))',
-            re.IGNORECASE,
-            )
         for line in lines:
-            match = electronic_pattern.search(line)
-            if match is None:
-                continue
-            if match['fermi'] is not None:
-                data.fermi_energies.append(as_float(match['fermi_value']))
-            elif match['band_edges'] is not None:
-                data.valence_band_maxima.append(as_float(match['vbm']))
-                data.conduction_band_minima.append(as_float(match['cbm']))
-            elif match['band_gap'] is not None:
-                data.band_gaps.append(as_float(match['band_gap_value']))
+            text  = ' '.join(line.split())
+            lower = text.lower()
+            fermi = assigned_value(text,lower,'fermi energy')
+            vbm   = assigned_value(text,lower,'valence band maximum')
+            cbm   = assigned_value(
+                text,
+                lower,
+                'conduction band minimum',
+                'conduction band minumm',
+                )
+            gap = assigned_value(text,lower,'band gap')
+            if fermi is not None:
+                data.fermi_energies.append(fermi)
+            elif vbm is not None and cbm is not None:
+                data.valence_band_maxima.append(vbm)
+                data.conduction_band_minima.append(cbm)
+            elif gap is not None:
+                data.band_gaps.append(gap)
         for name,values in data.items():
             data[name] = np.array(values,dtype=float)
 
@@ -520,16 +567,15 @@ class RmgOutData(DevBase):
                 if len(tokens)<14:
                     continue
                 numeric_tokens = tokens[3:14]
-                # Match a complete numeric token before converting an ionic row.
-                # Example: 2.1
-                valid = all(
-                    re.fullmatch(self.number_pattern,v) is not None
-                    for v in numeric_tokens)
-                if not valid:
+                try:
+                    values = [
+                        float(v.replace('D','E').replace('d','e'))
+                        for v in numeric_tokens
+                        ]
+                except ValueError:
                     continue
-                values = [
-                    float(v.replace('D','E').replace('d','e'))
-                    for v in numeric_tokens]
+                if not all(np.isfinite(values)):
+                    continue
                 atoms.append(tokens[2])
                 positions.append(values[:3])
                 forces.append(values[5:8])
@@ -590,18 +636,15 @@ class RmgOutData(DevBase):
         """
         def leading_numbers(line):
             """Return the leading whitespace-separated numbers as a float array."""
-            # Match a whitespace-separated numeric sequence at the start of a line.
-            # Example: 1 1.0 0.1 0.2 trailing
-            npat    = self.number_pattern
-            pattern = r'^\s*((?:'+npat+r')(?:\s+(?:'+npat+r'))*)'
-            match   = re.match(pattern,line)
-            if match is None:
-                return np.array([],dtype=float)
-            # Find every RMG-formatted number in the matched numeric sequence.
-            # Example: 1 1.0 0.1 0.2
-            values = re.findall(
-                self.number_pattern,
-                match.group(1).replace('D','E').replace('d','e'))
+            values = []
+            for token in line.replace(',',' ').split():
+                try:
+                    value = float(token.replace('D','E').replace('d','e'))
+                except ValueError:
+                    break
+                if not np.isfinite(value):
+                    break
+                values.append(value)
             return np.array(values,dtype=float)
         #end def leading_numbers
 
