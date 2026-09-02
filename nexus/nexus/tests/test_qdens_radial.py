@@ -9,6 +9,7 @@ from ..testing import execute,text_eq,check_value_eq
 
 def test_radial_density():
     _ = pytest.importorskip("spglib")
+    _ = pytest.importorskip("scipy")
 
     exe = TEST_DIR.parent / "bin/qdens-radial"
 

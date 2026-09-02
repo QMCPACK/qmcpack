@@ -9,20 +9,10 @@ from pathlib import Path
 from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
-from .developer import DevBase, obj, log, unavailable, NexusError
+from .developer import DevBase, obj, log, NexusError
 from .fileio import TextFile
 from .utilities import path_string, to_str
 
-try:
-    import matplotlib.pyplot as plt
-except:
-    plt = unavailable('matplotlib','pyplot')
-#end try
-
-
-def show_plots():
-    plt.show()
-#end def show_plots
 
 # container class for available basis set files
 class BasisSets(DevBase):
@@ -921,6 +911,7 @@ class GaussianBasisSet(DevBase):
 
 
     def plot(self,r=None,rmin=0.01,rmax=8.0,*,show=True,fig=True,sep=False,prim=False,style=None,fmt=None,nsub=None):
+        import matplotlib.pyplot as plt
         if r is None:
             r = np.linspace(rmin,rmax,1000)
         #end if
@@ -987,7 +978,7 @@ class GaussianBasisSet(DevBase):
             #end if
             plt.xlabel('r')
             if show:
-                show_plots()
+                plt.show()
             #end if
         #end if
     #end def plot
@@ -999,6 +990,7 @@ class GaussianBasisSet(DevBase):
 
 
     def plot_prim_widths(self,*,show=True,fig=True,sep=False,style='o',fmt=None,nsub=None,semilog=True,label=True):
+        import matplotlib.pyplot as plt
         if self.contracted():
             msg = 'cannot plot primitive gaussian widths because basis is contracted'
             raise NexusError(msg)
@@ -1051,7 +1043,7 @@ class GaussianBasisSet(DevBase):
             plt.xlabel('primitive index')
         #end if
         if show:
-            show_plots()
+            plt.show()
         #end if
     #end def plot_prim_widths
 #end class GaussianBasisSet

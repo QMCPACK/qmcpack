@@ -55,7 +55,7 @@ from .qmcpack_input import (  # noqa: F401
 from .qmcpack_analyzer import QmcpackAnalyzer
 from .qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToAfqmc
 from .pyscf_sim import Pyscf
-from .developer import DevBase, obj, unavailable, NexusError, FileFormatError
+from .developer import DevBase, obj, NexusError, FileFormatError
 from .nexus_base import nexus_core
 from .pseudoset import PseudoSet
 from .hdfreader import read_hdf
@@ -63,12 +63,6 @@ from .unit_converter import convert
 from .pwscf import Pwscf
 from .xmlreader import XMLreader
 from . import numpy_extensions as npe
-
-try:
-    import h5py
-except:
-    h5py = unavailable('h5py')
-#end try
 
 
 def get_path(o, path, value=None):

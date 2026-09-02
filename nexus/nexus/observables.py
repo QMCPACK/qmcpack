@@ -11,7 +11,7 @@ import numpy as np
 # Nexus imports
 from . import memory
 from .unit_converter import convert
-from .developer import DevBase, obj, log, unavailable, NexusError, FileFormatError
+from .developer import DevBase, obj, log, NexusError, FileFormatError
 from .numerics import simstats
 from .grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
 from .grid_functions import SpheroidGrid,ParallelotopeGridFunction
@@ -23,16 +23,6 @@ from . import numpy_extensions as npe
 # Referenced in MomentumDistribution.backfold()
 from .debug import ci
 
-try:
-    import matplotlib.pyplot as plt
-except:
-    plt = unavailable('matplotlib','pyplot')
-#end try
-try:
-    import h5py
-except:
-    h5py = unavailable('h5py')
-#end try
 
 
 def get_path(o, path, value=None):
@@ -904,6 +894,7 @@ class MomentumDistribution(ObservableWithComponents):
 
 
     def plot_radial_raw(self,quants='all',kmax=None,fmt='b.',*,fig=True,show=True):
+        import matplotlib.pyplot as plt
         data = self.get_raw_data()
         if quants=='all':
             quants = list(data.keys())
@@ -942,6 +933,7 @@ class MomentumDistribution(ObservableWithComponents):
 
 
     def plot_directional_raw(self,kdir,quants='all',kmax=None,fmt='b.',*,fig=True,show=True,reflect=False):
+        import matplotlib.pyplot as plt
         data = self.get_raw_data()
         kdir = np.array(kdir,dtype=float)
         kdir /= np.linalg.norm(kdir)
@@ -1413,6 +1405,7 @@ class Density(ObservableWithComponents):
 
 
     def plot_radial_density(self,component=None,*,show=True,cumulative=False,**kwargs):
+        import matplotlib.pyplot as plt
         vlog('Plotting radial density')
         kwargs['comps_return'] = True
         if not cumulative:
@@ -1580,6 +1573,7 @@ class StatFile(DevBase):
 
             
     def read(self,filepath,observables='all'):
+        import h5py
         if not os.path.exists(filepath):
             msg = (
                 'Cannot read file.\n'
