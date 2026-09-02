@@ -142,8 +142,7 @@ import keyword
 import numpy as np
 from .numpy_extensions import reshape_inplace
 from .xmlreader import XMLreader, XMLelement
-from .developer import DevBase, dotdict, obj, log, warn, FileFormatError, NexusError
-from .generic import sorted_generic
+from .developer import DevBase, dotdict, obj, log, warn, FileFormatError, NexusError, sorted_generic
 from .periodic_table import Elements
 from .structure import Structure, Jellium, get_kpath
 from .physical_system import PhysicalSystem

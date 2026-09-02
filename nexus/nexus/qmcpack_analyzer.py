@@ -29,8 +29,7 @@ from pathlib import Path
 from copy import deepcopy
 import numpy as np
 #custom library imports
-from .generic import sorted_generic
-from .developer import obj, unavailable, DevBase
+from .developer import obj, unavailable, DevBase, sorted_generic
 from .physical_system import ghost_atoms
 #QmcpackAnalyzer classes imports
 from .qmcpack_analyzer_base import QAobject, QAanalyzer, QAanalyzerCollection

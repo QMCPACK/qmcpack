@@ -1131,8 +1131,7 @@ def test_compose():
 def test_generate():
     register_pseudo_files(['V.opt.xml','O.opt.xml'])
     import numpy as np
-    from ..developer import NexusError,dotdict,obj
-    from ..generic import obj_deprecated
+    from ..developer import dotdict,obj
     from ..physical_system import generate_physical_system
     from ..qmcpack_input import generate_qmcpack_input,spindensity
     from ..qmcpack_input import back_propagation,onerdm
@@ -1316,8 +1315,7 @@ def test_generate():
         assert('<pseudo elementType="O" href="O.opt.xml" nrule="5"/>' in nrule_text)
     #end for
 
-    for invalid_nrule in (7.0,'4',True,[('V',3),('O',5)],
-                          obj_deprecated(V=3,O=5)):
+    for invalid_nrule in (7.0,'4',True,[('V',3),('O',5)]):
         with pytest.raises(
             TypeError,
             match = 'nrule must be an integer, dict, dotdict, obj, or None',

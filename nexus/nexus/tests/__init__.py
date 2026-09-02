@@ -4,7 +4,7 @@ from pathlib import Path
 from copy import deepcopy
 import functools
 from nexus.nexus_base import nexus_core, nexus_noncore, nexus_noncore_defaults
-from nexus.generic import generic_settings, object_interface
+from nexus.generic import generic_settings
 from nexus.pseudoset import PseudoSet
 from nexus.simulation import Simulation
 
@@ -86,18 +86,15 @@ def divert_nexus_log():
     """Create a fake logging object to divert Nexus's output."""
     logging_storage = {
         'devlog': generic_settings.devlog,
-        'objlog': object_interface._logfile,
         }
     logfile = FakeLog()
     generic_settings.devlog   = logfile
-    object_interface._logfile = logfile
     return logfile, logging_storage
 
 
 def restore_nexus_log(logging_storage: dict):
     """Restore Nexus's logging to the state stored in ``logging_storage``."""
     generic_settings.devlog   = logging_storage.pop('devlog')
-    object_interface._logfile = logging_storage.pop('objlog')
 
 
 def isolate_nexus_core(test_func = None):

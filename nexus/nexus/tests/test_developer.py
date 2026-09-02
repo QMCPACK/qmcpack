@@ -707,20 +707,8 @@ def test_developer_tools_devbase(tmp_path):
 
 def test_obj_virtual_subclass():
     from ..developer_tools import obj
-    from ..developer import obj_nexus
-    from ..developer import obj_deprecated
 
     assert(issubclass(obj, MutableMapping))
     assert(issubclass(obj, Mapping))
     assert(isinstance(obj(), MutableMapping))
     assert(isinstance(obj(), Mapping))
-
-    assert(issubclass(obj_nexus, MutableMapping))
-    assert(issubclass(obj_nexus, Mapping))
-    assert(isinstance(obj_nexus(), MutableMapping))
-    assert(isinstance(obj_nexus(), Mapping))
-
-    assert(not issubclass(obj_deprecated, MutableMapping))
-    assert(not issubclass(obj_deprecated, Mapping))
-    assert(not isinstance(obj_deprecated(), MutableMapping))
-    assert(not isinstance(obj_deprecated(), Mapping))

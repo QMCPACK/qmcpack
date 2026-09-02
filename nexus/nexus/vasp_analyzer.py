@@ -32,8 +32,7 @@
 import os
 import numpy as np
 from . import numpy_extensions as npe
-from .generic import sorted_generic
-from .developer import DevBase, obj, FileFormatError, NotAnElementError
+from .developer import DevBase, obj, FileFormatError, sorted_generic
 from .simulation import Simulation,SimulationAnalyzer
 from .vasp_input import Incar
 
