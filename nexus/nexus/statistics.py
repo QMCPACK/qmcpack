@@ -197,6 +197,187 @@ def reblocked_autocorr_time2(x,confidence=0.99,plot=False,show=False):
 #end def reblocked_autocorr_time2
 
 
+def integrated_autocorr_time(x, c=5.0):
+    """
+    Estimate the integrated autocorrelation time (IAT) of a stationary
+    time series or MCMC chain.
+
+    This implementation combines several of the best modern techniques
+    for accurate, robust, and computationally efficient estimation:
+
+      • FFT-based autocorrelation computation (Wiener-Khinchin theorem)
+        - O(N log N) complexity instead of O(N²)
+        - Computes the same autocorrelation function as direct summation
+          but dramatically faster for large datasets.
+
+      • Geyer's Initial Monotone Sequence (IMS) estimator
+        - Forms paired autocorrelation sums
+              Γ_k = ρ_{2k} + ρ_{2k+1}
+        - Enforces monotonic decrease using the Pool Adjacent Violators
+          (PAV) algorithm (isotonic regression).
+        - Significantly reduces variance caused by noisy long-lag
+          autocorrelation estimates.
+        - Statistically well-founded for reversible Markov chains and
+          widely regarded as one of the most accurate practical IAT
+          estimators.
+
+      • Automatic window selection (Stan / Sokal style)
+        - After IMS smoothing, summation is truncated using the
+          self-consistent window criterion
+
+              window >= c * tau
+
+          where c≈5 is the standard choice.
+
+        - Prevents accumulation of noise from extremely long lags while
+          retaining nearly all useful autocorrelation information.
+
+    This combination provides an excellent balance of
+
+        • statistical accuracy
+        • numerical robustness
+        • computational efficiency
+
+    and is representative of the methodology used in modern Bayesian
+    software such as Stan and related MCMC diagnostics.
+
+    Parameters
+    ----------
+    x : array_like
+        One-dimensional sample sequence.
+
+    c : float, optional
+        Self-consistent window constant.
+        Standard values are between 4 and 10.
+        Default is 5.
+
+    Returns
+    -------
+    tau : float
+        Estimated integrated autocorrelation time.
+    """
+
+    x = np.asarray(x)
+
+    if x.ndim > 1:
+        assert np.max(x.shape) == x.size
+        x = x.ravel()
+
+    if x.ndim != 1:
+        raise ValueError("Input must be one-dimensional.")
+
+    n = len(x)
+
+    if n < 2:
+        return 1.0
+
+    # ------------------------------------------------------------------
+    # Center the data
+    # ------------------------------------------------------------------
+
+    x = x.astype(np.float64)
+    x -= np.mean(x)
+
+    var = np.dot(x, x) / n
+
+    if var <= 1e-15:
+        return 1.0
+
+    # ------------------------------------------------------------------
+    # FFT autocorrelation
+    # ------------------------------------------------------------------
+
+    nfft = 1 << (2 * n - 1).bit_length()
+
+    f = np.fft.rfft(x, nfft)
+    acf = np.fft.irfft(f * np.conjugate(f), nfft)[:n]
+
+    # unbiased normalization
+    acf /= np.arange(n, 0, -1)
+
+    # normalize so rho(0)=1
+    acf /= acf[0]
+
+    # ------------------------------------------------------------------
+    # Geyer paired sums
+    # ------------------------------------------------------------------
+
+    m = (len(acf) - 1) // 2
+
+    gamma = np.empty(m)
+
+    for k in range(m):
+        gamma[k] = acf[2 * k + 1] + acf[2 * k + 2]
+
+    # ------------------------------------------------------------------
+    # Pool Adjacent Violators Algorithm (PAV)
+    # Enforce monotone decreasing paired sums.
+    # ------------------------------------------------------------------
+
+    values = gamma.copy()
+    weights = np.ones_like(values)
+
+    i = 0
+    while i < len(values) - 1:
+        if values[i] < values[i + 1]:
+            total = (
+                values[i] * weights[i]
+                + values[i + 1] * weights[i + 1]
+            )
+            w = weights[i] + weights[i + 1]
+
+            values[i] = total / w
+            weights[i] = w
+
+            values = np.delete(values, i + 1)
+            weights = np.delete(weights, i + 1)
+
+            if i > 0:
+                i -= 1
+        else:
+            i += 1
+
+    # Expand pooled blocks back to original length
+    gamma_mono = np.empty_like(gamma)
+
+    idx = 0
+    for v, w in zip(values, weights):
+        gamma_mono[idx:idx + int(w)] = v
+        idx += int(w)
+
+    # ------------------------------------------------------------------
+    # Initial positive sequence
+    # ------------------------------------------------------------------
+
+    positive = np.where(gamma_mono <= 0)[0]
+
+    if len(positive):
+        gamma_mono = gamma_mono[:positive[0]]
+
+    if len(gamma_mono) == 0:
+        return 1.0
+
+    # cumulative tau estimates after each pair
+    tau_pairs = 1.0 + 2.0 * np.cumsum(gamma_mono)
+
+    # ------------------------------------------------------------------
+    # Self-consistent window
+    # ------------------------------------------------------------------
+
+    tau = tau_pairs[-1]
+
+    for k, t in enumerate(tau_pairs):
+        window = 2 * (k + 1)
+
+        if window >= c * t:
+            tau = t
+            break
+
+    return max(1.0, float(tau))
+#end def integrated_autocorr_time
+
+
+
 def series_stats(x,t_auto=None):
     if t_auto is None:
         #t_auto = autocorr_time(x)
