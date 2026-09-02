@@ -660,5 +660,3 @@ Alternatively, the excitations within Nexus can be defined as shown in the ``opt
       #excitation = ['up', '-35 + 36'], # Orbital (state) index notation
       ...
       )
-
-.. bibliography:: /bibs/lab_excited.bib
