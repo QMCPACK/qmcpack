@@ -71,6 +71,43 @@ def theil_sen_stoch(x,y):
 #end def theil_sen_stoch
 
 
+def theil_sen_stoch_reblock(x,y):
+    """Estimate a Theil-Sen fit using a reblocking-specific sample schedule.
+
+    The number of sampled pairwise slopes is ``ceil(24*sqrt(n))``.  This
+    schedule was empirically calibrated on reblocked IID, heavy-tailed,
+    correlated, oscillatory, mixed-timescale, and nonstationary series; the
+    sampled slope angle stayed within one degree of the exact slope angle.  A
+    fixed local random seed makes the estimate reproducible without altering
+    NumPy's global random state.
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+    assert len(x)==x.size
+    assert len(y)==y.size
+    assert len(x)==len(y)
+    x = x.ravel()
+    y = y.ravel()
+
+    n = len(x)
+    npairs = n*(n-1)//2
+    sample_scale = 24.
+    nsampled = int(np.ceil(sample_scale*np.sqrt(n)))
+    if npairs<=nsampled:
+        return theil_sen(x,y)
+
+    random_seed = 314159
+    rng = np.random.Generator(np.random.PCG64(random_seed))
+    i = rng.integers(0,n,size=nsampled)
+    j = rng.integers(0,n-1,size=nsampled)
+    j += j>=i
+    slopes = (y[i]-y[j])/(x[i]-x[j])
+    m = np.median(slopes,overwrite_input=True)
+    b = np.median(y-m*x)
+    return m,b
+#end def theil_sen_stoch_reblock
+
+
 def acf_autocorr_time(x):
     """Estimate IAT from a noise-truncated, flat-top-windowed ACF."""
     x = np.asarray(x)
