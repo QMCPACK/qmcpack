@@ -381,13 +381,17 @@ def acf_autocorr_time(x,reliability=False):
 
 
 
-def geyer_ims_autocorr_time(x,c=5.0,reliability=False):
+def geyer_ims_autocorr_time(x,c=5.0,reliability=False,acf_fallback=True):
     """Estimate integrated autocorrelation time with Geyer's IMS method.
 
     Autocorrelations are computed with an FFT.  Geyer's initial positive
     sequence of adjacent autocorrelation pairs is then made non-increasing
     with a linear-time pool-adjacent-violators algorithm.  This estimator is
     intended primarily for stationary, reversible Markov chains.
+
+    By default, estimates below one are replaced by the result from
+    :func:`acf_autocorr_time`.  Set ``acf_fallback=False`` to obtain the
+    pure Geyer IMS estimate.
 
     Strengths: Fast, stable noisy-tail treatment, and strong theoretical basis
     for reversible MCMC.
@@ -406,12 +410,16 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False):
     reliability : bool, optional
         If true, return ``(tau, not_reliable)`` instead of only ``tau``.
 
+    acf_fallback : bool, optional
+        If true, use :func:`acf_autocorr_time` when the Geyer IMS estimate
+        would be less than one.
+
     Returns
     -------
     tau : float or (float, bool)
         Estimated integrated autocorrelation time.  The optional Boolean is
-        true when fewer than ``c`` estimated autocorrelation times fit in the
-        series.
+        the reliability assessment from the estimator that supplies the
+        returned value.
     """
 
     try:
@@ -463,25 +471,28 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False):
     if len(nonpositive)>0:
         gamma = gamma[:nonpositive[0]]
     if len(gamma)==0:
-        return (0.,not_reliable) if reliability else 0.
+        tau = 0.
+    else:
+        # Initial monotone sequence via a stack-based PAV implementation.
+        # Each pooled block is represented by its mean and number of pairs.
+        values = []
+        weights = []
+        for value in gamma:
+            values.append(float(value))
+            weights.append(1)
+            while len(values)>1 and values[-2]<values[-1]:
+                weight       = weights[-2]+weights[-1]
+                value        = (
+                    values[-2]*weights[-2]+values[-1]*weights[-1]
+                    )/weight
+                values[-2:]  = [value]
+                weights[-2:] = [weight]
 
-    # Initial monotone sequence via a stack-based PAV implementation.
-    # Each pooled block is represented by its mean and number of pairs.
-    values = []
-    weights = []
-    for value in gamma:
-        values.append(float(value))
-        weights.append(1)
-        while len(values)>1 and values[-2]<values[-1]:
-            weight       = weights[-2]+weights[-1]
-            value        = (
-                values[-2]*weights[-2]+values[-1]*weights[-1]
-                )/weight
-            values[-2:]  = [value]
-            weights[-2:] = [weight]
+        gamma_mono = np.repeat(values,weights)
+        tau = max(0.,float(-1.+2.*gamma_mono.sum()))
 
-    gamma_mono = np.repeat(values,weights)
-    tau = max(0.,float(-1.+2.*gamma_mono.sum()))
+    if acf_fallback and tau<1.:
+        return acf_autocorr_time(x,reliability=reliability)
 
     if n<c*tau:
         # The time series is shorter than c autocorrelation times; the
