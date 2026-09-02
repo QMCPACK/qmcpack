@@ -250,7 +250,8 @@ class PwscfOutData(DevBase):
         has_bfgs     = any('BFGS Geometry Optimization' in line for line in lines)
         has_band_run = any('Band Structure Calculation' in line for line in lines)
         has_dynamics = any(
-            'Entering Dynamics' in line or 'Molecular Dynamics Calculation' in line
+            'Entering Dynamics' in line
+            or 'Molecular Dynamics Calculation' in line
             for line in lines
             )
         if has_dynamics:
@@ -362,7 +363,8 @@ class PwscfOutData(DevBase):
         bands        = obj(up=obj(),down=obj())
         band_channel = bands.up
         for i,line in enumerate(lines):
-            if ('End of self-consistent calculation' in line
+            if (
+                'End of self-consistent calculation' in line
                 and len(bands.up)+len(bands.down)>0
                 ):
                 bands        = obj(up=obj(),down=obj())
@@ -792,7 +794,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             raise ValueError('initial_structure units must be one of: A, B')
         if 'simulation_structure' in self and self.simulation_structure is not None:
             structure = deepcopy(self.simulation_structure)
-        elif (self.input is not None
+        elif (
+            self.input is not None
             and 'system' in self.input
             and 'ibrav' in self.input.system
             and self.input.system.ibrav==0
@@ -802,7 +805,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             ):
             input_data = deepcopy(self.input)
             system     = input_data.system
-            if ('celldm(1)' not in system
+            if (
+                'celldm(1)' not in system
                 and 'celldm' in system
                 and 1 in system.celldm
                 ):
@@ -832,7 +836,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if units not in {'A','B'}:
             raise ValueError('kpoints units must be one of: A, B')
         kpoints = None
-        if (self.results_out.kpoints_cart is not None
+        if (
+            self.results_out.kpoints_cart is not None
             and self.input is not None
             and 'system' in self.input
             ):
@@ -975,7 +980,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._require_supported('relaxed_structure',self.relaxation_modes)
         if units not in {'A','B'}:
             raise ValueError('relaxed_structure units must be one of: A, B')
-        if ('relax_structures' in self.results_out
+        if (
+            'relax_structures' in self.results_out
             and self.results_out.relax_structures is not None
             and len(self.results_out.relax_structures)>0
             ):
@@ -1116,7 +1122,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         """Analyze available PWSCF text and legacy XML output."""
         self.results_out = None
         self.results_xml = None
-        if ('path' not in self
+        if (
+            'path' not in self
             or 'outfile_name' not in self
             or self.outfile_name is None
             ):
@@ -1139,7 +1146,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
         legacy_file = None
         legacy_dir  = None
-        if ('input' in self
+        if (
+            'input' in self
             and self.input is not None
             and 'control' in self.input
             and 'outdir' in self.input.control
