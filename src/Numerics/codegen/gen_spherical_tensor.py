@@ -162,11 +162,10 @@ def gen_recurrence_coefficients():
 def gen_soa_gradient_recurrence():
     """Generate the shared first-derivative recurrence used by VGL and VGH."""
     return """template<typename T>
-template<typename Accessor>
 inline void SoaSphericalTensor<T>::gradient_recurrence(const int l,
                                                        const int m,
                                                        const T fac,
-                                                       Accessor lower,
+                                                       const T* restrict lower,
                                                        T& gx,
                                                        T& gy,
                                                        T& gz)
@@ -178,11 +177,11 @@ inline void SoaSphericalTensor<T>::gradient_recurrence(const int l,
 %s
 
   T dpr, dpi, dmr, dmi;
-  gz = (l > ma) ? c0 * lower(lm + m) : czero;
+  gz = (l > ma) ? c0 * lower[lm + m] : czero;
   if (l > ma + 1)
   {
-    dpr = cp * lower(lm + ma + 1);
-    dpi = cp * lower(lm - ma - 1);
+    dpr = cp * lower[lm + ma + 1];
+    dpi = cp * lower[lm - ma - 1];
   }
   else
   {
@@ -194,21 +193,21 @@ inline void SoaSphericalTensor<T>::gradient_recurrence(const int l,
     switch (ma)
     {
     case 0:
-      dmr = -cm * lower(lm + 1);
-      dmi = cm * lower(lm - 1);
+      dmr = -cm * lower[lm + 1];
+      dmi = cm * lower[lm - 1];
       break;
     case 1:
-      dmr = cm * lower(lm);
+      dmr = cm * lower[lm];
       dmi = czero;
       break;
     default:
-      dmr = cm * lower(lm + ma - 1);
-      dmi = cm * lower(lm - ma + 1);
+      dmr = cm * lower[lm + ma - 1];
+      dmi = cm * lower[lm - ma + 1];
     }
   }
   else
   {
-    dmr = cm * lower(lm);
+    dmr = cm * lower[lm];
     dmi = czero;
   }
   if (m < 0)
@@ -230,13 +229,19 @@ def gen_soa_evaluate_vgh():
     return """template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGH(T x, T y, T z)
 {
-  evaluateVGL(x, y, z);
+  // The Hessian is the same recurrence applied a second time to the gradients, and
+  // the recurrence consumes unnormalized quantities. Stopping short of normalizing
+  // hands them over in exactly that form, so nothing has to be undone here;
+  // norm_factor_ goes on at the end, once the Hessian loop is done reading them.
+  const int Nlm = cYlm.size();
+  evaluateVGL_bare(x, y, z, cYlm.data(), Lmax, factorL_.data(), factorLM_.data(), factor2L_.data(), cYlm.capacity());
 
   constexpr T czero(0);
   constexpr T ahalf(0.5);
-  const T* restrict gYlmX = cYlm.data(1);
-  const T* restrict gYlmY = cYlm.data(2);
-  const T* restrict gYlmZ = cYlm.data(3);
+  // not restrict-qualified: normalize_vg writes these same rows below
+  const T* gYlmX = cYlm.data(1);
+  const T* gYlmY = cYlm.data(2);
+  const T* gYlmZ = cYlm.data(3);
   T* restrict hYlmXX      = cYlm.data(4);
   T* restrict hYlmXY      = cYlm.data(5);
   T* restrict hYlmXZ      = cYlm.data(6);
@@ -259,14 +264,12 @@ inline void SoaSphericalTensor<T>::evaluateVGH(T x, T y, T z)
       const int lm = index(l, m);
 
       // The recurrence coefficients do not depend on position, so differentiating
-      // a second time is the same recurrence applied to the l-1 gradients that
-      // evaluateVGL just stored. Those carry norm_factor_, so strip it on the way
-      // in and apply the target harmonic's norm_factor_ on the way out.
-      const auto differentiate_gradient = [&](const T* restrict lower_derivative) -> TinyVector<T, 3> {
+      // a second time is the same recurrence applied to the bare l-1 gradients that
+      // evaluateVGL_bare just stored, with the target harmonic's norm_factor_
+      // applied on the way out.
+      const auto differentiate_gradient = [&](const T* lower_derivative) -> TinyVector<T, 3> {
         T dx, dy, dz;
-        gradient_recurrence(
-            l, m, fac, [&](const int lower_lm) { return lower_derivative[lower_lm] / norm_factor_[lower_lm]; }, dx, dy,
-            dz);
+        gradient_recurrence(l, m, fac, lower_derivative, dx, dy, dz);
         return {dx, dy, dz};
       };
 
@@ -288,6 +291,8 @@ inline void SoaSphericalTensor<T>::evaluateVGH(T x, T y, T z)
       hYlmZZ[lm]   = norm * d_gz[2];
     }
   }
+
+  normalize_vg(cYlm.data(), Nlm, norm_factor_.data(), cYlm.capacity());
 }
 """
 
