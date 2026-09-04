@@ -46,17 +46,48 @@ import numpy as np
 ############################################################################
 
 
+def _paired_real_arrays(x,y):
+    """Validate and flatten paired real-valued sample arrays."""
+    x = np.asarray(x)
+    y = np.asarray(y)
+    if np.iscomplexobj(x) or np.iscomplexobj(y):
+        msg = 'input arrays must be real-valued'
+        raise ValueError(msg)
+    if x.ndim>1 and np.max(x.shape)==x.size:
+        x = x.ravel()
+    if y.ndim>1 and np.max(y.shape)==y.size:
+        y = y.ravel()
+    if x.ndim!=1 or y.ndim!=1:
+        msg = 'input arrays must be one-dimensional'
+        raise ValueError(msg)
+    if len(x)!=len(y):
+        msg = 'input arrays must have equal lengths'
+        raise ValueError(msg)
+    try:
+        x = np.asarray(x,dtype=float)
+        y = np.asarray(y,dtype=float)
+    except (TypeError,ValueError):
+        msg = 'input arrays must be numeric'
+        raise ValueError(msg) from None
+    if not np.all(np.isfinite(x)) or not np.all(np.isfinite(y)):
+        msg = 'input arrays must contain only finite values'
+        raise ValueError(msg)
+    return x,y
+#end def _paired_real_arrays
+
+
 def theil_sen(x,y):
     """Return the Theil--Sen slope and intercept for paired observations.
 
     Parameters
     ----------
     x : array_like
-        Independent-variable observations containing at least two distinct
-        values. Pairs with equal values are excluded from the slope sample.
+        Finite, real-valued independent-variable observations containing at
+        least two distinct values. Pairs with equal values are excluded from
+        the slope sample.
 
     y : array_like
-        Dependent-variable observations paired with ``x``.
+        Finite, real-valued dependent-variable observations paired with ``x``.
 
     Returns
     -------
@@ -66,13 +97,7 @@ def theil_sen(x,y):
     intercept : scalar
         Median residual intercept for ``slope``.
     """
-    x = np.asarray(x)
-    y = np.asarray(y)
-    assert len(x)==x.size
-    assert len(y)==y.size
-    assert len(x)==len(y)
-    x = x.ravel()
-    y = y.ravel()
+    x,y = _paired_real_arrays(x,y)
     n = len(x)
     if n<2 or not np.any(x!=x[0]):
         msg = 'at least two distinct x values are required'
@@ -111,11 +136,12 @@ def theil_sen_stoch(x,y):
     Parameters
     ----------
     x : array_like
-        Independent-variable observations containing at least two distinct
-        values. Pairs with equal values are excluded from the slope sample.
+        Finite, real-valued independent-variable observations containing at
+        least two distinct values. Pairs with equal values are excluded from
+        the slope sample.
 
     y : array_like
-        Dependent-variable observations paired with ``x``.
+        Finite, real-valued dependent-variable observations paired with ``x``.
 
     Returns
     -------
@@ -125,13 +151,7 @@ def theil_sen_stoch(x,y):
     intercept : scalar
         Median residual intercept for ``slope``.
     """
-    x = np.asarray(x)
-    y = np.asarray(y)
-    assert len(x)==x.size
-    assert len(y)==y.size
-    assert len(x)==len(y)
-    x = x.ravel()
-    y = y.ravel()
+    x,y = _paired_real_arrays(x,y)
 
     n = len(x)
     npairs = n*(n-1)//2
@@ -170,11 +190,12 @@ def theil_sen_stoch_reblock(x,y):
     Parameters
     ----------
     x : array_like
-        Independent-variable observations containing at least two distinct
-        values. Pairs with equal values are excluded from the slope sample.
+        Finite, real-valued independent-variable observations containing at
+        least two distinct values. Pairs with equal values are excluded from
+        the slope sample.
 
     y : array_like
-        Dependent-variable observations paired with ``x``.
+        Finite, real-valued dependent-variable observations paired with ``x``.
 
     Returns
     -------
@@ -184,13 +205,7 @@ def theil_sen_stoch_reblock(x,y):
     intercept : scalar
         Median residual intercept for ``slope``.
     """
-    x = np.asarray(x)
-    y = np.asarray(y)
-    assert len(x)==x.size
-    assert len(y)==y.size
-    assert len(x)==len(y)
-    x = x.ravel()
-    y = y.ravel()
+    x,y = _paired_real_arrays(x,y)
 
     n = len(x)
     npairs = n*(n-1)//2
@@ -219,6 +234,11 @@ def theil_sen_stoch_reblock(x,y):
 def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
     """Estimate autocorrelation time from the growth of blocked errors.
 
+    This estimator currently overestimates the autocorrelation times in a 
+    number of cases. Prefer the Geyer method.
+
+    For MCMC data, just use the ``autocorr_time'' function.
+
     For every integer block length that leaves at least ``min_blocks`` blocks,
     contiguous block means and their standard error are computed.  Their
     ratio to the unblocked standard error is fitted as a function of block
@@ -235,8 +255,8 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
     Parameters
     ----------
     x : array_like
-        Nonempty one-dimensional sample sequence.  Vector-shaped arrays are
-        flattened.
+        Nonempty, finite, real-valued, one-dimensional sample sequence.
+        Vector-shaped arrays are flattened.
 
     min_blocks : int, optional
         Minimum number of complete blocks retained at the largest block
@@ -257,12 +277,30 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
         sequences return one.
     """
     x = np.asarray(x)
-    if x.ndim>1:
-        assert np.max(x.shape)==x.size
+    if np.iscomplexobj(x):
+        msg = 'data array must be real-valued'
+        raise ValueError(msg)
+    if x.ndim>1 and np.max(x.shape)==x.size:
         x = x.ravel()
-    assert x.ndim==1,'data array must be 1-dimensional'
-    assert len(x)>0,'data array must not be empty'
-    assert min_blocks>=1,'minimum number of blocks must be at least one'
+    if x.ndim!=1:
+        msg = 'data array must be 1-dimensional'
+        raise ValueError(msg)
+    if len(x)==0:
+        msg = 'data array must not be empty'
+        raise ValueError(msg)
+    try:
+        x = np.asarray(x,dtype=float)
+    except (TypeError,ValueError):
+        msg = 'data array must be numeric'
+        raise ValueError(msg) from None
+    if not np.all(np.isfinite(x)):
+        msg = 'data array must contain only finite values'
+        raise ValueError(msg)
+    if isinstance(min_blocks,(bool,np.bool_)) or not isinstance(
+        min_blocks,(int,np.integer)
+        ) or min_blocks<1:
+        msg = 'minimum number of blocks must be a positive integer'
+        raise ValueError(msg)
     t_auto = 1.
     if len(x)==1:
         return t_auto
@@ -340,6 +378,10 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
 
 def acf_autocorr_time(x,reliability=False):
     """Estimate autocorrelation time from a windowed sample ACF.
+
+    Best for long chains.  Generally prefer the Geyer method.
+
+    For MCMC data, just use the ``autocorr_time'' function.
 
     The autocorrelation function is evaluated in ``O(N log N)`` time with an
     FFT and a common denominator at all lags.  A Bartlett noise estimate is
@@ -448,6 +490,10 @@ def acf_autocorr_time(x,reliability=False):
 
 def geyer_ims_autocorr_time(x,c=5.0,reliability=False,acf_fallback=True):
     """Estimate integrated autocorrelation time with Geyer's IMS method.
+
+    This is the single best autocorrelation estimator.
+    
+    For MCMC data, just use the ``autocorr_time'' function.
 
     Autocorrelations are computed with an FFT.  Geyer's initial positive
     sequence of adjacent autocorrelation pairs is then made non-increasing
@@ -575,7 +621,7 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False,acf_fallback=True):
 
 
 def autocorr_time(x,reliability=False):
-    """Conservatively combine three autocorrelation-time estimates.
+    """Conservatively combine autocorrelation-time estimates.
 
     The ACF and Geyer initial-monotone-sequence probe the correlation
     structure in different ways.  Since an underestimated autocorrelation
@@ -618,10 +664,40 @@ def series_stats(x,t_auto=None):
     """Return the mean, autocorrelation-adjusted error, and correlation time.
 
     If ``t_auto`` is not supplied, it is estimated with
-    :func:`autocorr_time`.
+    :func:`autocorr_time`. A supplied value must be positive and finite.
     """
+    x = np.asarray(x)
+    if np.iscomplexobj(x):
+        msg = 'data array must be real-valued'
+        raise ValueError(msg)
+    if x.ndim>1 and np.max(x.shape)==x.size:
+        x = x.ravel()
+    if x.ndim!=1:
+        msg = 'data array must be 1-dimensional'
+        raise ValueError(msg)
+    if len(x)==0:
+        msg = 'data array must not be empty'
+        raise ValueError(msg)
+    try:
+        x = np.asarray(x,dtype=float)
+    except (TypeError,ValueError):
+        msg = 'data array must be numeric'
+        raise ValueError(msg) from None
+    if not np.all(np.isfinite(x)):
+        msg = 'data array must contain only finite values'
+        raise ValueError(msg)
+
     if t_auto is None:
         t_auto = autocorr_time(x)
+    else:
+        try:
+            t_auto = float(t_auto)
+        except (TypeError,ValueError):
+            msg = 'autocorrelation time must be a positive finite number'
+            raise ValueError(msg) from None
+        if not np.isfinite(t_auto) or t_auto<=0.:
+            msg = 'autocorrelation time must be a positive finite number'
+            raise ValueError(msg)
     N        = len(x)
     N_eff    = N/t_auto
     x_mean   = np.mean(x)

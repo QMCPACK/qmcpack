@@ -44,8 +44,18 @@ def test_theil_sen():
             ):
             statistics.theil_sen(x_degenerate,x_degenerate)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError,match=r'input arrays must have equal lengths'):
         statistics.theil_sen(x,y[:-1])
+
+    invalid_cases = [
+        (1.,1.,r'input arrays must be one-dimensional'),
+        (np.ones((2,2)),np.ones((2,2)),r'input arrays must be one-dimensional'),
+        (x,np.full(len(x),np.nan),r'input arrays must contain only finite values'),
+        (x.astype(complex),y,r'input arrays must be real-valued'),
+        ]
+    for x_invalid,y_invalid,message in invalid_cases:
+        with pytest.raises(ValueError,match=message):
+            statistics.theil_sen(x_invalid,y_invalid)
 #end def test_theil_sen
 
 
@@ -149,13 +159,17 @@ def test_reblocked_autocorr_time_invalid_input():
     """
     test_cases = [
         (np.array([]),10,r'data array must not be empty'),
-        (np.arange(8),0,r'minimum number of blocks must be at least one'),
+        (np.arange(8),0,r'minimum number of blocks must be a positive integer'),
+        (np.arange(8),1.5,r'minimum number of blocks must be a positive integer'),
+        (np.arange(8),np.inf,r'minimum number of blocks must be a positive integer'),
+        (np.array([1.,np.nan]),10,r'data array must contain only finite values'),
+        (np.array([1.+1.j]),10,r'data array must be real-valued'),
         ]
     for x,min_blocks,message in test_cases:
-        with pytest.raises(AssertionError,match=message):
+        with pytest.raises(ValueError,match=message):
             statistics.reblocked_autocorr_time(x,min_blocks=min_blocks)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError,match=r'data array must be 1-dimensional'):
         statistics.reblocked_autocorr_time(np.ones((2,2)))
 #end def test_reblocked_autocorr_time_invalid_input
 
@@ -336,4 +350,21 @@ def test_series_stats(monkeypatch):
     assert(mean==pytest.approx(np.mean(x)))
     assert(error==pytest.approx(expected_error))
     assert(tau==2.)
+
+    invalid_x = [
+        np.array([]),
+        np.array([1.,np.nan]),
+        np.array([1.+1.j]),
+        np.ones((2,2)),
+        ]
+    for x_invalid in invalid_x:
+        with pytest.raises(ValueError):
+            statistics.series_stats(x_invalid,t_auto=1.)
+
+    for t_auto_invalid in (0.,-1.,np.nan,np.inf,'invalid'):
+        with pytest.raises(
+            ValueError,
+            match=r'autocorrelation time must be a positive finite number',
+            ):
+            statistics.series_stats(x,t_auto=t_auto_invalid)
 #end def test_series_stats
