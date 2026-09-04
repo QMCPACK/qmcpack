@@ -298,9 +298,16 @@ def read_potcar_z_valence(file: PathLike) -> int | float:
 
 
 
-@nxs_deprecate(since="2.4.0", replacement="generate_pseudoset")
+@nxs_deprecate(since="2.4.0", replacement="generate_pseudoset (https://nexus-workflows.readthedocs.io/en/latest/user_guide/pseudo-handling.html#migrating-from-ppset)")
 def ppset(label: str, **codes_pps: Collection[str]):
     """Register pseudopotentials for codes with a label.
+
+    .. deprecated:: 2.4.0
+        :func:`ppset` has been replaced by :func:`generate_pseudoset` because
+        the labeling system that :func:`ppset` requires checks for the existence
+        of the label at runtime, whereas :func:`generate_pseudoset` returns an
+        object with a name, and if that name is misspelled then Python will not
+        execute and can provide a better diagnostic than Nexus can.
 
     This is intended as a backwards-compatible interface to not break existing
     user code. Users are suggested to migrate to :func:`generate_pseudoset` or
@@ -1088,7 +1095,8 @@ class PseudoSet(DevBase):
                 # Raise from None to prevent exception chain.
                 raise ValueError(msg) from None
 
-        return pseudos
+        sorted_pseudos = {k: v for k, v in sorted(pseudos.items(), key=lambda x: x[0])}
+        return sorted_pseudos
     #end def from_mixed_dir
 
 
@@ -1412,7 +1420,7 @@ class PseudoSet(DevBase):
             rep += "    },\n"
         else:
             rep += "},\n"
-        rep += ")\n"
+        rep += ")"
         return rep
     #end def __repr__
 #end class PseudoSet
