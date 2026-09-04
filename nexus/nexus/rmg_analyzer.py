@@ -16,6 +16,22 @@ from .structure import generate_structure
 from .unit_converter import UnitConverter, convert
 
 
+def as_float(text):
+    """Convert a finite RMG-formatted number to a float when possible."""
+    try:
+        value = float(text.lower().replace('d','e'))
+    except (AttributeError,ValueError):
+        return None
+    return value if np.isfinite(value) else None
+#end def as_float
+
+
+def normalize_line(line):
+    """Collapse whitespace in an output line."""
+    return ' '.join(line.split())
+#end def normalize_line
+
+
 class RmgOutData(DevBase):
     """Read an RMG output file and collect results appropriate to its run mode.
 
@@ -130,36 +146,10 @@ class RmgOutData(DevBase):
         """Read the run mode and initial structure from the setup report."""
         setup_info = obj()
 
-        def split_assignment(line):
-            """Split a colon- or equals-delimited output assignment."""
-            indices = [i for i in (line.find(':'),line.find('=')) if i>=0]
-            if len(indices)==0:
-                return None,None
-            index = min(indices)
-            return line[:index].strip(),line[index+1:].strip()
-        #end def split_assignment
-
-        def as_float(token):
-            """Convert an RMG-formatted numeric token when possible."""
-            try:
-                value = float(token.lower().replace('d','e'))
-            except (AttributeError,ValueError):
-                return None
-            return value if np.isfinite(value) else None
-        #end def as_float
-
-        # Match an initial-position table heading and capture its units.
-        # Example: Initial Ionic Positions And Displacements (Bohr)
-        position_header = re.compile(
-            r'^\s*initial\s+ionic\s+positions\s+and\s+displacements\s*'
-            r'\(\s*(bohr|angstrom)\s*\)',
-            re.IGNORECASE
-            )
-
         run_mode = None
         for line in lines:
-            label,value = split_assignment(' '.join(line.split()))
-            if label is None or label.lower()!='calculation type':
+            label,separator,value = normalize_line(line).partition(':')
+            if len(separator)==0 or label.strip().lower()!='calculation type':
                 continue
             mode_words = tuple(
                 word.strip('.,:;()[]{}')
@@ -184,8 +174,10 @@ class RmgOutData(DevBase):
         axes      = {}
         axis_unit = None
         for line in lines:
-            label,value = split_assignment(' '.join(line.split()))
-            label_words = label.lower().split() if label is not None else []
+            label,separator,value = normalize_line(line).partition(':')
+            if len(separator)==0:
+                continue
+            label_words = label.lower().split()
             if len(label_words)!=3 or label_words[1:]!=['basis','vector']:
                 continue
             axis = label_words[0]
@@ -201,20 +193,25 @@ class RmgOutData(DevBase):
             if len(tokens)>=4:
                 axis_unit = tokens[3].strip(',;')
 
+        position_heading = 'initial ionic positions and displacements'
         position_tables = []
-        i               = 0
+        i = 0
         while i<len(lines):
-            match = position_header.match(lines[i])
-            if match is None:
+            line = normalize_line(lines[i]).lower()
+            if not line.startswith(position_heading) or '(' not in line:
                 i += 1
                 continue
-            units     = 'B' if match.group(1).lower()=='bohr' else 'A'
+            units = line.split('(')[-1].partition(')')[0].strip()
+            if units not in {'bohr','angstrom'}:
+                i += 1
+                continue
+            units     = 'B' if units=='bohr' else 'A'
             atoms     = []
             positions = []
             i += 1
             while i<len(lines):
                 line = lines[i]
-                if position_header.match(line) is not None:
+                if len(line.strip())==0 and len(atoms)>0:
                     break
                 tokens = line.split()
                 atom   = tokens[0] if len(tokens)>0 else ''
@@ -231,8 +228,6 @@ class RmgOutData(DevBase):
                 if valid_atom and len(values)==3 and None not in values:
                     atoms.append(atom)
                     positions.append(values)
-                elif len(atoms)>0 and len(line.strip())==0:
-                    break
                 i += 1
             if len(atoms)>0:
                 position_tables.append(obj(
@@ -287,10 +282,19 @@ class RmgOutData(DevBase):
                 kweights.append(values[3])
             break
         if len(kpoints)>0:
+            kpoints  = np.array(kpoints,dtype=float)
+            kweights = np.array(kweights,dtype=float)
             setup_info.k_points = obj(
-                kpoints_crystal = np.array(kpoints,dtype=float),
-                kweights        = np.array(kweights,dtype=float),
+                kpoints_crystal = kpoints,
+                kweights        = kweights,
                 )
+            if 'structure' in setup_info:
+                setup_info.structure.add_kpoints(
+                    kpoints,
+                    kweights,
+                    recenter = False,
+                    cell_unit = True,
+                    )
         self.setup_info = setup_info
     #end def read_setup_info
 
@@ -298,7 +302,7 @@ class RmgOutData(DevBase):
         """Read the final total energy obtained from the eigenvalue sum."""
         label = 'final total energy from eig sum'
         for line in lines:
-            text  = ' '.join(line.split())
+            text  = normalize_line(line)
             lower = text.lower()
             if label not in lower:
                 continue
@@ -308,11 +312,8 @@ class RmgOutData(DevBase):
             tokens = remainder[1:].split()
             if len(tokens)==0:
                 continue
-            try:
-                value = float(tokens[0].lower().replace('d','e'))
-            except ValueError:
-                continue
-            if not np.isfinite(value):
+            value = as_float(tokens[0])
+            if value is None:
                 continue
             self.energy       = value
             self.energy_units = tokens[1].strip(',;') if len(tokens)>=2 else 'Ha'
@@ -342,136 +343,11 @@ class RmgOutData(DevBase):
                 tokens = remainder[1:].split()
                 if len(tokens)==0:
                     continue
-                try:
-                    value = float(
-                        tokens[0].strip(',;').lower().replace('d','e'))
-                except ValueError:
-                    continue
-                if np.isfinite(value):
+                value = as_float(tokens[0].strip(',;'))
+                if value is not None:
                     return value
             return None
         #end def assigned_value
-
-        def read_eigenvalue_data():
-            """Return the final complete k-point eigenvalue and occupation table."""
-            npat = self.number_pattern
-            # Match an eigenvalue-table heading with its k-point index and coordinates.
-            # Example: KOHN SHAM EIGENVALUES [eV] AT K-POINT [ 1]: 0.0 0.5 0.0
-            header_pattern = re.compile(
-                r'KOHN\s+SHAM\s+EIGENVALUES\s*\[\s*eV\s*\]\s+AT\s+'
-                r'K-POINT\s*\[\s*(\d+)\s*\]\s*:\s*'
-                r'('+npat+r')\s+('+npat+r')\s+('+npat+r')',
-                re.IGNORECASE
-                )
-            # Match an eigenvalue-table row and capture its k-point index and values.
-            # Example: [kpt 1 0 0] -6.4 [2.000] -1.9 [0.000]
-            row_pattern = re.compile(
-                r'^\s*\[\s*kpt\s+(\d+)\s+[-+]?\d+\s+\d+\s*\]\s*(.*)$',
-                re.IGNORECASE
-                )
-            # Match one eigenvalue followed by its bracketed occupation.
-            # Example: -6.4238 [2.000]
-            pair_pattern = re.compile(
-                r'('+npat+r')\s*\[\s*('+npat+r')\s*\]',
-                re.IGNORECASE
-                )
-
-            datasets  = []
-            dataset   = {}
-            kpoint    = None
-            spin      = 'none'
-            for line in lines:
-                match = header_pattern.search(line)
-                if match is not None:
-                    index = int(match.group(1))
-                    if index in dataset:
-                        datasets.append(dataset)
-                        dataset = {}
-                    coordinates = np.array([
-                        float(match.group(i).lower().replace('d','e'))
-                        for i in range(2,5)
-                        ],dtype=float)
-                    dataset[index] = {
-                        'kpoint'   : coordinates,
-                        'channels' : {},
-                        }
-                    kpoint = index
-                    spin   = 'none'
-                    continue
-                if kpoint is None:
-                    continue
-                normalized = ' '.join(line.split()).lower()
-                if 'spin up' in normalized:
-                    spin = 'up'
-                    continue
-                elif 'spin down' in normalized:
-                    spin = 'down'
-                    continue
-                match = row_pattern.match(line)
-                if match is None or int(match.group(1))!=kpoint:
-                    continue
-                pairs = pair_pattern.findall(match.group(2))
-                if len(pairs)==0:
-                    continue
-                channels = dataset[kpoint]['channels']
-                eigs,occs = channels.setdefault(spin,[[],[]])
-                for eigenvalue,occupation in pairs:
-                    eigs.append(float(eigenvalue.lower().replace('d','e')))
-                    occs.append(float(occupation.lower().replace('d','e')))
-            if len(dataset)>0:
-                datasets.append(dataset)
-
-            expected_kpoints = None
-            if 'k_points' in self.setup_info:
-                expected_kpoints = len(self.setup_info.k_points.kpoints_crystal)
-            for dataset in reversed(datasets):
-                indices = sorted(dataset)
-                if indices!=list(range(len(indices))):
-                    continue
-                if expected_kpoints is not None and len(indices)!=expected_kpoints:
-                    continue
-                spin_channels = set()
-                for record in dataset.values():
-                    spin_channels.update(record['channels'])
-                if spin_channels=={'none'}:
-                    spins = ['none']
-                elif spin_channels=={'up','down'}:
-                    spins = ['up','down']
-                else:
-                    continue
-                channels = [
-                    dataset[index]['channels'].get(spin)
-                    for index in indices for spin in spins
-                ]
-                if any(
-                    channel is None
-                    or len(channel[0])==0
-                    or len(channel[0])!=len(channel[1])
-                    for channel in channels
-                    ):
-                    continue
-                if len({len(channel[0]) for channel in channels})!=1:
-                    continue
-                kpoints     = np.array(
-                    [dataset[i]['kpoint'] for i in indices],dtype=float)
-                eigenvalues = np.array([
-                    [dataset[i]['channels'][spin][0] for spin in spins]
-                    for i in indices
-                    ],dtype=float)
-                occupations = np.array([
-                    [dataset[i]['channels'][spin][1] for spin in spins]
-                    for i in indices
-                    ],dtype=float)
-                if spins==['none']:
-                    eigenvalues = eigenvalues[:,0,:]
-                    occupations = occupations[:,0,:]
-                return {
-                    'kpoints_crystal' : kpoints,
-                    'eigenvalues'     : eigenvalues,
-                    'occupations'     : occupations,
-                    }
-            return None
-        #end def read_eigenvalue_data
 
         data = obj(
             fermi_energies         = [],
@@ -480,8 +356,19 @@ class RmgOutData(DevBase):
             band_gaps              = [],
             )
 
+        # Match one eigenvalue followed by its bracketed occupation.
+        # Example: -6.4238 [2.000]
+        npat = self.number_pattern
+        pair_pattern = re.compile(
+            r'('+npat+r')\s*\[\s*('+npat+r')\s*\]',
+            re.IGNORECASE
+            )
+        datasets = []
+        dataset  = {}
+        kpoint   = None
+        spin     = 'none'
         for line in lines:
-            text  = ' '.join(line.split())
+            text  = normalize_line(line)
             lower = text.lower()
             fermi = assigned_value(text,lower,'fermi energy')
             vbm   = assigned_value(text,lower,'valence band maximum')
@@ -499,17 +386,110 @@ class RmgOutData(DevBase):
                 data.conduction_band_minima.append(cbm)
             elif gap is not None:
                 data.band_gaps.append(gap)
+
+            if 'kohn sham eigenvalues' in lower and 'k-point' in lower:
+                kpoint_start = lower.rfind('k-point')+len('k-point')
+                kpoint_text = text[kpoint_start:]
+                index_text,separator,coordinates_text = kpoint_text.partition(']')
+                if len(separator)==0 or '[' not in index_text:
+                    continue
+                try:
+                    index = int(index_text.rsplit('[',1)[1].strip())
+                except ValueError:
+                    continue
+                coordinate_tokens = coordinates_text.lstrip(' :').split()
+                coordinates = [as_float(v) for v in coordinate_tokens[:3]]
+                if len(coordinates)!=3 or None in coordinates:
+                    continue
+                if index in dataset:
+                    datasets.append(dataset)
+                    dataset = {}
+                dataset[index] = {
+                    'kpoint'   : np.array(coordinates,dtype=float),
+                    'channels' : {},
+                    }
+                kpoint = index
+                spin   = 'none'
+                continue
+            if kpoint is None:
+                continue
+            if 'spin up' in lower:
+                spin = 'up'
+                continue
+            elif 'spin down' in lower:
+                spin = 'down'
+                continue
+            row_prefix,row_separator,row_text = line.lstrip().partition(']')
+            if (
+                len(row_separator)==0
+                or not row_prefix.lower().startswith('[kpt')
+                ):
+                continue
+            pairs = pair_pattern.findall(row_text)
+            if len(pairs)==0:
+                continue
+            channels = dataset[kpoint]['channels']
+            eigs,occs = channels.setdefault(spin,[[],[]])
+            for eigenvalue,occupation in pairs:
+                eigenvalue = as_float(eigenvalue)
+                occupation = as_float(occupation)
+                if eigenvalue is not None and occupation is not None:
+                    eigs.append(eigenvalue)
+                    occs.append(occupation)
+
         for name,values in data.items():
             data[name] = np.array(values,dtype=float)
 
-        eigenvalue_data = read_eigenvalue_data()
-        if eigenvalue_data is not None:
-            data.kpoints_crystal = eigenvalue_data['kpoints_crystal']
-            data.eigenvalues     = eigenvalue_data['eigenvalues']
-            data.occupations     = eigenvalue_data['occupations']
+        if len(dataset)>0:
+            datasets.append(dataset)
+        expected_kpoints = None
+        if 'k_points' in self.setup_info:
+            expected_kpoints = len(self.setup_info.k_points.kpoints_crystal)
+        for candidate in reversed(datasets):
+            indices = sorted(candidate)
+            if indices!=list(range(len(indices))):
+                continue
+            if expected_kpoints is not None and len(indices)!=expected_kpoints:
+                continue
+            spin_channels = set()
+            for record in candidate.values():
+                spin_channels.update(record['channels'])
+            if spin_channels=={'none'}:
+                spins = ['none']
+            elif spin_channels=={'up','down'}:
+                spins = ['up','down']
+            else:
+                continue
+            channels = [
+                candidate[index]['channels'].get(spin)
+                for index in indices for spin in spins
+            ]
+            if any(
+                channel is None
+                or len(channel[0])==0
+                or len(channel[0])!=len(channel[1])
+                for channel in channels
+                ):
+                continue
+            if len({len(channel[0]) for channel in channels})!=1:
+                continue
+            data.kpoints_crystal = np.array(
+                [candidate[i]['kpoint'] for i in indices],dtype=float)
+            data.eigenvalues = np.array([
+                [candidate[i]['channels'][spin][0] for spin in spins]
+                for i in indices
+                ],dtype=float)
+            data.occupations = np.array([
+                [candidate[i]['channels'][spin][1] for spin in spins]
+                for i in indices
+                ],dtype=float)
+            if spins==['none']:
+                data.eigenvalues = data.eigenvalues[:,0,:]
+                data.occupations = data.occupations[:,0,:]
             if 'structure' in self.setup_info:
                 data.kpoints = np.dot(
                     data.kpoints_crystal,self.setup_info.structure.kaxes)
+            break
 
         nfound = sum(len(v) for v in data.values() if isinstance(v,np.ndarray))
         if nfound>0:
@@ -528,8 +508,10 @@ class RmgOutData(DevBase):
         lines : list of str
             Complete RMG log split into lines.
         """
-        records = []
-        i       = 0
+        force_records = []
+        structures    = obj()
+        initial       = self.setup_info.get('structure')
+        i = 0
         while i<len(lines):
             header_tokens = lines[i].split()
             is_header     = (
@@ -552,37 +534,34 @@ class RmgOutData(DevBase):
                 i += 1
                 if len(tokens)<14:
                     continue
-                numeric_tokens = tokens[3:14]
-                try:
-                    values = [
-                        float(v.lower().replace('d','e'))
-                        for v in numeric_tokens
-                        ]
-                except ValueError:
-                    continue
-                if not all(np.isfinite(values)):
+                values = [as_float(v) for v in tokens[3:14]]
+                if None in values:
                     continue
                 atoms.append(tokens[2])
                 positions.append(values[:3])
                 forces.append(values[5:8])
             if len(atoms)>0:
-                records.append(obj(
-                    atoms     = np.array(atoms,dtype=object),
-                    positions = np.array(positions,dtype=float),
-                    forces    = np.array(forces,dtype=float),
-                    ))
-        if len(records)>0 and len({len(r.atoms) for r in records})==1:
-            self.forces = np.array([r.forces for r in records],dtype=float)
-            if 'structure' in self.setup_info:
-                structures = obj()
-                initial    = self.setup_info.structure
-                for n,record in enumerate(records):
-                    structures[n] = generate_structure(
+                forces = np.array(forces,dtype=float)
+                force_records.append(forces)
+                if initial is not None:
+                    structure = generate_structure(
                         units = 'B',
                         axes  = initial.axes,
-                        elem  = record.atoms,
-                        pos   = record.positions,
+                        elem  = np.array(atoms,dtype=object),
+                        pos   = np.array(positions,dtype=float),
                         )
+                    structure.add_kpoints(
+                        initial.kpoints,
+                        initial.kweights,
+                        recenter = False,
+                        )
+                    structures[len(force_records)-1] = structure
+        if (
+            len(force_records)>0
+            and len({len(forces) for forces in force_records})==1
+            ):
+            self.forces = np.array(force_records,dtype=float)
+            if len(structures)==len(force_records):
                 self.structures = structures
     #end def read_ions
 
@@ -594,12 +573,16 @@ class RmgOutData(DevBase):
         k-point weights.
         """
         geometry = obj()
-        if 'k_points' in self.setup_info:
+        structure = self.setup_info.get('structure')
+        if structure is not None and len(structure.kpoints)>0:
+            geometry.kpoints_cart = structure.kpoints
+            geometry.kweights     = structure.kweights
+        elif 'k_points' in self.setup_info:
             kpoints                  = self.setup_info.k_points
             geometry.kweights        = kpoints.kweights
-            if 'structure' in self.setup_info and len(kpoints.kpoints_crystal)>0:
+            if structure is not None and len(kpoints.kpoints_crystal)>0:
                 geometry.kpoints_cart = np.dot(
-                    kpoints.kpoints_crystal,self.setup_info.structure.kaxes)
+                    kpoints.kpoints_crystal,structure.kaxes)
         if len(geometry)>0:
             self.geometry = geometry
     #end def read_geometry
@@ -618,7 +601,7 @@ class RmgOutData(DevBase):
         """
         tensors = []
         for i,line in enumerate(lines):
-            normalized = ' '.join(line.split()).lower()
+            normalized = normalize_line(line).lower()
             # Match the heading for a total stress tensor reported in kbar.
             # Example: stress total in unit of kbar
             if 'stress total' not in normalized or 'kbar' not in normalized:
@@ -632,11 +615,8 @@ class RmgOutData(DevBase):
                     continue
                 values = []
                 for token in row_line.replace(',',' ').split():
-                    try:
-                        value = float(token.lower().replace('d','e'))
-                    except ValueError:
-                        break
-                    if not np.isfinite(value):
+                    value = as_float(token)
+                    if value is None:
                         break
                     values.append(value)
                 if len(values)<3:

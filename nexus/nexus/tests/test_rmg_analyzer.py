@@ -245,6 +245,10 @@ final total energy from eig sum = -1.23450000 Ha
     assert relax.relaxed_structure().units=='A'
     assert np.allclose(
         relax.relaxed_structure(units='B').pos[0],[1.1,1.2,1.3])
+    assert np.allclose(
+        relax.relaxed_structure(units='B').kpoints,
+        relax.kpoints(),
+        )
 #end def test_physical_results
 
 
@@ -277,7 +281,7 @@ def test_whitespace_and_trailing_fields(tmp_path):
         'Initial Ionic Positions And Displacements',
         'Initial\t Ionic  Positions And\tDisplacements').replace(
         'X Basis Vector: 4.0 0.0 0.0',
-        'X Basis Vector = 4.0D+00 0.0 0.0 a0 trailing axis annotation').replace(
+        'X  Basis Vector : 4.0D+00 0.0 0.0 a0 trailing axis annotation').replace(
         '1-TOTAL                                             3.00                0.50',
         '1 - TOTAL\t3.00\t0.50\tnew timing annotation')
     body = '''
@@ -308,6 +312,14 @@ stress total in unit of kbar
 
     assert analyzer.results.run_mode=='scf'
     assert analyzer.initial_structure() is not None
+    assert np.allclose(
+        analyzer.initial_structure(units='B').kpoints,
+        analyzer.kpoints(),
+        )
+    assert np.allclose(
+        analyzer.initial_structure().kweights,
+        analyzer.kweights(),
+        )
     assert analyzer.energy()==-0.61725
     assert np.allclose(analyzer.kweights(),[0.25])
     assert analyzer.Ef()==5.25
@@ -327,6 +339,8 @@ def test_malformed_sections_do_not_stop_analysis(tmp_path):
     body = '''
 @@ TOTAL ENERGY = malformed
 final total energy from eig sum = malformed Ha
+KOHN SHAM EIGENVALUES [eV] AT K-POINT [bad]: malformed coordinates
+[kpt malformed eigenvalue row
 @ION Ion Species X Y Z Charge Mag FX FY FZ Movable
 @ION 1 H malformed row
 @ION 2 H 2.1 2.2 2.3 0.0 0.0 0.1 0.2 0.3 1 1 1 valid trailing data
