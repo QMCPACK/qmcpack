@@ -152,7 +152,9 @@ class RmgOutData(DevBase):
         # Example: Initial Ionic Positions And Displacements (Bohr)
         position_header = re.compile(
             r'^\s*initial\s+ionic\s+positions\s+and\s+displacements\s*'
-            r'\(\s*(bohr|angstrom)\s*\)',re.IGNORECASE)
+            r'\(\s*(bohr|angstrom)\s*\)',
+            re.IGNORECASE
+            )
 
         run_mode = None
         for line in lines:
@@ -358,16 +360,21 @@ class RmgOutData(DevBase):
             header_pattern = re.compile(
                 r'KOHN\s+SHAM\s+EIGENVALUES\s*\[\s*eV\s*\]\s+AT\s+'
                 r'K-POINT\s*\[\s*(\d+)\s*\]\s*:\s*'
-                r'('+npat+r')\s+('+npat+r')\s+('+npat+r')',re.IGNORECASE)
+                r'('+npat+r')\s+('+npat+r')\s+('+npat+r')',
+                re.IGNORECASE
+                )
             # Match an eigenvalue-table row and capture its k-point index and values.
             # Example: [kpt 1 0 0] -6.4 [2.000] -1.9 [0.000]
             row_pattern = re.compile(
                 r'^\s*\[\s*kpt\s+(\d+)\s+[-+]?\d+\s+\d+\s*\]\s*(.*)$',
-                re.IGNORECASE)
+                re.IGNORECASE
+                )
             # Match one eigenvalue followed by its bracketed occupation.
             # Example: -6.4238 [2.000]
             pair_pattern = re.compile(
-                r'('+npat+r')\s*\[\s*('+npat+r')\s*\]',re.IGNORECASE)
+                r'('+npat+r')\s*\[\s*('+npat+r')\s*\]',
+                re.IGNORECASE
+                )
 
             datasets  = []
             dataset   = {}
