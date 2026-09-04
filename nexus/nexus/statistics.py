@@ -38,10 +38,7 @@ import numpy as np
 # systematically low, particularly for weak slow modes, and converged in   #
 # fewer cases than ACF or Geyer despite its relatively narrow spread.      #
 #                                                                          #
-# Development-only drivers local_dev/ac_test_suite.py and                  #
-# local_dev/ac_test_suite_qmc.py produced the results; these drivers are   #
-# not part of the installed test suite. Deterministic coverage is in       #
-# tests/test_statistics.py.                                                #
+# Deterministic test coverage is in tests/test_statistics.py.              #
 #                                                                          #
 ############################################################################
 
