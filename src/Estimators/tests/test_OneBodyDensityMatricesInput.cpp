@@ -20,6 +20,7 @@
 #include "Message/UniformCommunicateError.h"
 
 #include <iostream>
+#include <string_view>
 
 namespace qmcplusplus
 {
@@ -54,6 +55,22 @@ TEST_CASE("OneBodyDensityMatricesInput::copy_construction", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
   static_assert(std::is_copy_constructible_v<OneBodyDensityMatricesInput>);
+}
+
+TEST_CASE("OneBodyDensityMatricesInput::volume_normed", "[estimators]")
+{
+  constexpr std::string_view input_xml = R"XML(
+<estimator type="OneBodyDensityMatrices" name="OneBodyDensityMatrices">
+  <parameter name="basis">spo_ud</parameter>
+  <parameter name="integrator">uniform</parameter>
+  <parameter name="volume_normed">no</parameter>
+</estimator>
+)XML";
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(input_xml));
+  OneBodyDensityMatricesInput obdmi(doc.getRoot());
+  CHECK_FALSE(obdmi.get_volume_normalized());
 }
 
 } // namespace qmcplusplus
