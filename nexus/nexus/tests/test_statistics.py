@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from . import NexusTestOrder
 from .. import statistics
+from . import NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.STATISTICS)
 
@@ -27,6 +27,22 @@ def test_theil_sen():
         )
     assert(slope_column==pytest.approx(slope))
     assert(intercept_column==pytest.approx(intercept))
+
+    x_duplicate = np.array([0.,0.,1.,2.])
+    y_duplicate = 2.*x_duplicate+1.
+    slope_duplicate,intercept_duplicate = statistics.theil_sen(
+        x_duplicate,
+        y_duplicate,
+        )
+    assert(slope_duplicate==pytest.approx(2.))
+    assert(intercept_duplicate==pytest.approx(1.))
+
+    for x_degenerate in (np.array([]),np.array([1.]),np.ones(3)):
+        with pytest.raises(
+            ValueError,
+            match=r'at least two distinct x values are required',
+            ):
+            statistics.theil_sen(x_degenerate,x_degenerate)
 
     with pytest.raises(AssertionError):
         statistics.theil_sen(x,y[:-1])
@@ -73,6 +89,7 @@ def test_theil_sen_stochastic_sampled_path(monkeypatch):
     monkeypatch.setattr(statistics,'theil_sen',reject_exact_path)
 
     x = np.arange(1024,dtype=float)
+    x[1] = x[0]
     y = .75*x-2.
     slope,intercept = statistics.theil_sen_stoch(x,y)
     assert(slope==pytest.approx(.75))
@@ -114,11 +131,13 @@ def test_reblocked_autocorr_time():
     tau_iid        = statistics.reblocked_autocorr_time(iid)
     tau_correlated = statistics.reblocked_autocorr_time(correlated)
     tau_column = statistics.reblocked_autocorr_time(correlated.reshape(-1,1))
+    tau_list = statistics.reblocked_autocorr_time(correlated.tolist())
 
     assert(np.isfinite(tau_iid))
     assert(tau_iid>0.)
     assert(tau_correlated>3.*tau_iid)
     assert(tau_column==pytest.approx(tau_correlated))
+    assert(tau_list==pytest.approx(tau_correlated))
 #end def test_reblocked_autocorr_time
 
 
@@ -228,7 +247,9 @@ def test_geyer_ims_autocorr_time():
         trend,
         reliability=True,
         )
+    tau_column = statistics.geyer_ims_autocorr_time(trend.reshape(-1,1))
     assert(tau_trend>1.)
+    assert(tau_column==pytest.approx(tau_trend))
     assert(unreliable_trend)
 #end def test_geyer_ims_autocorr_time
 

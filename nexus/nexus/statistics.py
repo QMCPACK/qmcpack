@@ -1,5 +1,49 @@
+"""Robust statistics and autocorrelation analysis for simulation data."""
 
 import numpy as np
+
+############################################################################
+#                                                                          #
+#                Autocorrelation estimator stress testing                  #
+#                ----------------------------------------                  #
+#                                                                          #
+# The following recommendations summarize empirical stress tests of the    #
+# autocorrelation estimators for population-averaged QMC data.             #
+#                                                                          #
+# The estimators were judged with repeated equilibrium Markov-chain tests  #
+# designed around population-averaged VMC and DMC data. Each test used the #
+# mean of 32 walkers and an exactly known integrated autocorrelation time. #
+# Equilibrium marginals included Gaussian, symmetric Laplace, centered     #
+# exponential, Student-t(6), and Student-t(3) distributions; the last has  #
+# the pessimistic 1/|x|**4 density tail considered in QMC.                 #
+#                                                                          #
+# Reversible retain-or-refresh chains covered IID data (tau=1), ordinary   #
+# persistence (tau=9), and slow mixing (tau=39). Reversible sign-flip      #
+# chains tested negative correlation (tau=1/9). Two-scale walker groups    #
+# (tau=27) tested weak slow modes, while a slow population-wide common     #
+# mode (tau=31.5) represented DMC-like branching or population-control     #
+# correlations in data already averaged over walkers.                      #
+#                                                                          #
+# The main benchmark used 100 independent repetitions at lengths 64        #
+# through 4096; a separate long-chain benchmark used 4096, 8192, and       #
+# 16384. Comparisons included relative bias and RMSE, variability,         #
+# empirical 10/50/90 percentiles relative to truth, failure rates,         #
+# sustained convergence, weak-mode underestimation, and execution time.    #
+# Every estimator received the same generated series within each trial.    #
+#                                                                          #
+# The prewhitened spectral method was removed because it provided no clear #
+# long-chain accuracy advantage over ACF or Geyer, retained a broad upper  #
+# tail, and developed a large runtime increase at the longest length. The  #
+# Flyvbjerg--Petersen reblocking method was removed because it remained    #
+# systematically low, particularly for weak slow modes, and converged in   #
+# fewer cases than ACF or Geyer despite its relatively narrow spread.      #
+#                                                                          #
+# Development-only drivers local_dev/ac_test_suite.py and                  #
+# local_dev/ac_test_suite_qmc.py produced the results; these drivers are   #
+# not part of the installed test suite. Deterministic coverage is in       #
+# tests/test_statistics.py.                                                #
+#                                                                          #
+############################################################################
 
 
 def theil_sen(x,y):
@@ -8,7 +52,8 @@ def theil_sen(x,y):
     Parameters
     ----------
     x : array_like
-        Independent-variable observations.
+        Independent-variable observations containing at least two distinct
+        values. Pairs with equal values are excluded from the slope sample.
 
     y : array_like
         Dependent-variable observations paired with ``x``.
@@ -29,20 +74,23 @@ def theil_sen(x,y):
     x = x.ravel()
     y = y.ravel()
     n = len(x)
+    if n<2 or not np.any(x!=x[0]):
+        msg = 'at least two distinct x values are required'
+        raise ValueError(msg)
+
     npairs = n*(n-1)//2
-    if npairs>0:
-        # Fill the upper triangle a row at a time.  This keeps the quadratic
-        # work in NumPy without allocating a pair of quadratic index arrays.
-        first_slopes = (y[0]-y[1:])/(x[0]-x[1:])
-        slopes = np.empty(npairs,dtype=first_slopes.dtype)
-        slopes[:n-1] = first_slopes
-        start = n-1
-        for i in range(1,n-1):
-            count = n-i-1
-            slopes[start:start+count] = (y[i]-y[i+1:])/(x[i]-x[i+1:])
-            start += count
-    else:
-        slopes = np.empty(0)
+    slope_dtype = np.result_type(x.dtype,y.dtype,float)
+    slopes = np.empty(npairs,dtype=slope_dtype)
+    start = 0
+    # Fill the upper triangle a row at a time.  Pairs with equal independent
+    # coordinates do not define a slope and are excluded.
+    for i in range(n-1):
+        dx = x[i]-x[i+1:]
+        valid = dx!=0
+        count = np.count_nonzero(valid)
+        slopes[start:start+count] = (y[i]-y[i+1:])[valid]/dx[valid]
+        start += count
+    slopes = slopes[:start]
     m = np.median(slopes,overwrite_input=True)
     b = np.median(y-m*x)
     return m,b
@@ -63,7 +111,8 @@ def theil_sen_stoch(x,y):
     Parameters
     ----------
     x : array_like
-        Independent-variable observations.
+        Independent-variable observations containing at least two distinct
+        values. Pairs with equal values are excluded from the slope sample.
 
     y : array_like
         Dependent-variable observations paired with ``x``.
@@ -96,47 +145,16 @@ def theil_sen_stoch(x,y):
     i   = rng.integers(0,n,size=nsampled)
     j   = rng.integers(0,n-1,size=nsampled)
     j += j>=i
+    valid = x[i]!=x[j]
+    if not np.any(valid):
+        return theil_sen(x,y)
+    i = i[valid]
+    j = j[valid]
     slopes = (y[i]-y[j])/(x[i]-x[j])
     m = np.median(slopes,overwrite_input=True)
     b = np.median(y-m*x)
     return m,b
 #end def theil_sen_stoch
-
-
-############################################################################
-#                                                                          #
-#                Autocorrelation estimator stress testing                  #
-#                ----------------------------------------                  #
-#                                                                          #
-# The estimators were judged with repeated equilibrium Markov-chain tests  #
-# designed around population-averaged VMC and DMC data. Each test used the #
-# mean of 32 walkers and an exactly known integrated autocorrelation time. #
-# Equilibrium marginals included Gaussian, symmetric Laplace, centered     #
-# exponential, Student-t(6), and Student-t(3) distributions; the last has  #
-# the pessimistic 1/|x|**4 density tail considered in QMC.                 #
-#                                                                          #
-# Reversible retain-or-refresh chains covered IID data (tau=1), ordinary   #
-# persistence (tau=9), and slow mixing (tau=39). Reversible sign-flip      #
-# chains tested negative correlation (tau=1/9). Two-scale walker groups    #
-# (tau=27) tested weak slow modes, while a slow population-wide common     #
-# mode (tau=31.5) represented DMC-like branching or population-control     #
-# correlations in data already averaged over walkers.                      #
-#                                                                          #
-# The main benchmark used 100 independent repetitions at lengths 64        #
-# through 4096; a separate long-chain benchmark used 4096, 8192, and       #
-# 16384. Comparisons included relative bias and RMSE, variability,         #
-# empirical 10/50/90 percentiles relative to truth, failure rates,         #
-# sustained convergence, weak-mode underestimation, and execution time.    #
-# Every estimator received the same generated series within each trial.    #
-#                                                                          #
-# The prewhitened spectral method was removed because it provided no clear #
-# long-chain accuracy advantage over ACF or Geyer, retained a broad upper  #
-# tail, and developed a large runtime increase at the longest length. The  #
-# Flyvbjerg--Petersen reblocking method was removed because it remained    #
-# systematically low, particularly for weak slow modes, and converged in   #
-# fewer cases than ACF or Geyer despite its relatively narrow spread.      #
-#                                                                          #
-############################################################################
 
 
 def theil_sen_stoch_reblock(x,y):
@@ -152,7 +170,8 @@ def theil_sen_stoch_reblock(x,y):
     Parameters
     ----------
     x : array_like
-        Independent-variable observations.
+        Independent-variable observations containing at least two distinct
+        values. Pairs with equal values are excluded from the slope sample.
 
     y : array_like
         Dependent-variable observations paired with ``x``.
@@ -185,6 +204,11 @@ def theil_sen_stoch_reblock(x,y):
     i   = rng.integers(0,n,size=nsampled)
     j   = rng.integers(0,n-1,size=nsampled)
     j += j>=i
+    valid = x[i]!=x[j]
+    if not np.any(valid):
+        return theil_sen(x,y)
+    i = i[valid]
+    j = j[valid]
     slopes = (y[i]-y[j])/(x[i]-x[j])
     m = np.median(slopes,overwrite_input=True)
     b = np.median(y-m*x)
@@ -210,7 +234,7 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
 
     Parameters
     ----------
-    x : numpy.ndarray
+    x : array_like
         Nonempty one-dimensional sample sequence.  Vector-shaped arrays are
         flattened.
 
@@ -232,6 +256,7 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
         Estimated integrated autocorrelation time.  Constant and singleton
         sequences return one.
     """
+    x = np.asarray(x)
     if x.ndim>1:
         assert np.max(x.shape)==x.size
         x = x.ravel()
@@ -288,7 +313,7 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
     assert len(dem)==len(block_lens)
     if len(block_lens)>1:
         p = theil_sen_stoch_reblock(block_lens,dem)
-        m,b = p
+        m,_ = p
         if m>0:
             err_max = np.polyval(p,[block_lens[-1]])[0]
         else:
