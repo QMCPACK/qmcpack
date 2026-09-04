@@ -289,6 +289,10 @@ void SPOSetT<T>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
     throw std::logic_error("Bug!! " + getClassName() +
                            "::applyRotation "
                            "must be overloaded when the SPOSet supports rotation.");
+  else
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::applyRotation "
+                           "gets called while the SPOSet doesn't support rotation.");
 }
 
 template<typename T>
