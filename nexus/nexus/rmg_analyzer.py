@@ -10,7 +10,7 @@ from types import MappingProxyType
 
 import numpy as np
 
-from .developer import DevBase, obj
+from .developer import DevBase, dotdict, obj
 from .simulation import Simulation, SimulationAnalyzer
 from .structure import generate_structure
 from .unit_converter import UnitConverter, convert
@@ -144,8 +144,13 @@ class RmgOutData(DevBase):
 
     def read_setup_info(self,lines):
         """Read the run mode and initial structure from the setup report."""
-        setup_info = obj()
+        setup_info = obj(
+            run_mode  = None,
+            structure = None,
+            k_points  = None,
+            )
 
+        # Read the calculation mode from the run setup block.
         run_mode = None
         for line in lines:
             label,separator,value = normalize_line(line).partition(':')
@@ -171,6 +176,7 @@ class RmgOutData(DevBase):
         self.run_mode       = run_mode
         setup_info.run_mode = run_mode
 
+        # Read the lattice vectors used to construct the input structure.
         axes      = {}
         axis_unit = None
         for line in lines:
@@ -196,6 +202,7 @@ class RmgOutData(DevBase):
         position_heading = 'initial ionic positions and displacements'
         position_tables = []
         i = 0
+        # Read each initial-position table, retaining its reported units.
         while i<len(lines):
             line = normalize_line(lines[i]).lower()
             if not line.startswith(position_heading) or '(' not in line:
@@ -262,6 +269,7 @@ class RmgOutData(DevBase):
 
         kpoints  = []
         kweights = []
+        # Read crystal k-points and attach them to the input structure.
         for i,line in enumerate(lines):
             header_words = {
                 word.strip('.,:;()[]{}').lower() for word in line.split()
@@ -288,7 +296,7 @@ class RmgOutData(DevBase):
                 kpoints_crystal = kpoints,
                 kweights        = kweights,
                 )
-            if 'structure' in setup_info:
+            if setup_info.structure is not None:
                 setup_info.structure.add_kpoints(
                     kpoints,
                     kweights,
@@ -354,6 +362,10 @@ class RmgOutData(DevBase):
             valence_band_maxima    = [],
             conduction_band_minima = [],
             band_gaps              = [],
+            kpoints_crystal        = None,
+            kpoints                = None,
+            eigenvalues            = None,
+            occupations            = None,
             )
 
         # Match one eigenvalue followed by its bracketed occupation.
@@ -364,9 +376,10 @@ class RmgOutData(DevBase):
             re.IGNORECASE
             )
         datasets = []
-        dataset  = {}
+        dataset  = dotdict()
         kpoint   = None
         spin     = 'none'
+        # Collect scalar results and candidate eigenvalue tables in one pass.
         for line in lines:
             text  = normalize_line(line)
             lower = text.lower()
@@ -403,11 +416,11 @@ class RmgOutData(DevBase):
                     continue
                 if index in dataset:
                     datasets.append(dataset)
-                    dataset = {}
-                dataset[index] = {
-                    'kpoint'   : np.array(coordinates,dtype=float),
-                    'channels' : {},
-                    }
+                    dataset = dotdict()
+                dataset[index] = dotdict(
+                    kpoint   = np.array(coordinates,dtype=float),
+                    channels = dotdict(),
+                    )
                 kpoint = index
                 spin   = 'none'
                 continue
@@ -428,7 +441,7 @@ class RmgOutData(DevBase):
             pairs = pair_pattern.findall(row_text)
             if len(pairs)==0:
                 continue
-            channels = dataset[kpoint]['channels']
+            channels = dataset[kpoint].channels
             eigs,occs = channels.setdefault(spin,[[],[]])
             for eigenvalue,occupation in pairs:
                 eigenvalue = as_float(eigenvalue)
@@ -438,12 +451,14 @@ class RmgOutData(DevBase):
                     occs.append(occupation)
 
         for name,values in data.items():
-            data[name] = np.array(values,dtype=float)
+            if values is not None:
+                data[name] = np.array(values,dtype=float)
 
         if len(dataset)>0:
             datasets.append(dataset)
+        # Retain the final complete table with consistent spin and band counts.
         expected_kpoints = None
-        if 'k_points' in self.setup_info:
+        if self.setup_info.k_points is not None:
             expected_kpoints = len(self.setup_info.k_points.kpoints_crystal)
         for candidate in reversed(datasets):
             indices = sorted(candidate)
@@ -453,7 +468,7 @@ class RmgOutData(DevBase):
                 continue
             spin_channels = set()
             for record in candidate.values():
-                spin_channels.update(record['channels'])
+                spin_channels.update(record.channels)
             if spin_channels=={'none'}:
                 spins = ['none']
             elif spin_channels=={'up','down'}:
@@ -461,7 +476,7 @@ class RmgOutData(DevBase):
             else:
                 continue
             channels = [
-                candidate[index]['channels'].get(spin)
+                candidate[index].channels.get(spin)
                 for index in indices for spin in spins
             ]
             if any(
@@ -474,24 +489,24 @@ class RmgOutData(DevBase):
             if len({len(channel[0]) for channel in channels})!=1:
                 continue
             data.kpoints_crystal = np.array(
-                [candidate[i]['kpoint'] for i in indices],dtype=float)
+                [candidate[i].kpoint for i in indices],dtype=float)
             data.eigenvalues = np.array([
-                [candidate[i]['channels'][spin][0] for spin in spins]
+                [candidate[i].channels[spin][0] for spin in spins]
                 for i in indices
                 ],dtype=float)
             data.occupations = np.array([
-                [candidate[i]['channels'][spin][1] for spin in spins]
+                [candidate[i].channels[spin][1] for spin in spins]
                 for i in indices
                 ],dtype=float)
             if spins==['none']:
                 data.eigenvalues = data.eigenvalues[:,0,:]
                 data.occupations = data.occupations[:,0,:]
-            if 'structure' in self.setup_info:
+            if self.setup_info.structure is not None:
                 data.kpoints = np.dot(
                     data.kpoints_crystal,self.setup_info.structure.kaxes)
             break
 
-        nfound = sum(len(v) for v in data.values() if isinstance(v,np.ndarray))
+        nfound = sum(v.size for v in data.values() if isinstance(v,np.ndarray))
         if nfound>0:
             self.electronic = data
     #end def read_electronic
@@ -510,8 +525,9 @@ class RmgOutData(DevBase):
         """
         force_records = []
         structures    = obj()
-        initial       = self.setup_info.get('structure')
+        initial       = self.setup_info.structure
         i = 0
+        # Collect forces and construct a structure for each ionic step.
         while i<len(lines):
             header_tokens = lines[i].split()
             is_header     = (
@@ -556,6 +572,7 @@ class RmgOutData(DevBase):
                         recenter = False,
                         )
                     structures[len(force_records)-1] = structure
+        # Bind trajectories only when every ionic step has a consistent size.
         if (
             len(force_records)>0
             and len({len(forces) for forces in force_records})==1
@@ -572,18 +589,21 @@ class RmgOutData(DevBase):
         Binds ``geometry`` to an ``obj`` containing Cartesian k-points and
         k-point weights.
         """
-        geometry = obj()
-        structure = self.setup_info.get('structure')
+        geometry = obj(
+            kpoints_cart = None,
+            kweights     = None,
+            )
+        structure = self.setup_info.structure
         if structure is not None and len(structure.kpoints)>0:
             geometry.kpoints_cart = structure.kpoints
             geometry.kweights     = structure.kweights
-        elif 'k_points' in self.setup_info:
+        elif self.setup_info.k_points is not None:
             kpoints                  = self.setup_info.k_points
             geometry.kweights        = kpoints.kweights
             if structure is not None and len(kpoints.kpoints_crystal)>0:
                 geometry.kpoints_cart = np.dot(
                     kpoints.kpoints_crystal,structure.kaxes)
-        if len(geometry)>0:
+        if geometry.kpoints_cart is not None or geometry.kweights is not None:
             self.geometry = geometry
     #end def read_geometry
 
@@ -765,7 +785,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         if units not in {'A','B'}:
             msg = 'initial_structure units must be one of: A, B'
             raise ValueError(msg)
-        if 'structure' not in self.results.setup_info:
+        if self.results.setup_info.structure is None:
             return None
         structure = deepcopy(self.results.setup_info.structure)
         structure.change_units(units)
@@ -796,12 +816,12 @@ class RmgAnalyzer(SimulationAnalyzer):
         if units not in {'A','B'}:
             msg = 'kpoints units must be one of: A, B'
             raise ValueError(msg)
-        electronic = self.results.electronic if 'electronic' in self.results else None
-        if electronic is not None and 'kpoints' in electronic:
+        electronic = self.results.electronic
+        if electronic is not None and electronic.kpoints is not None:
             kpoints = electronic.kpoints
         else:
             geometry = self.results.geometry
-            if geometry is None or 'kpoints_cart' not in geometry:
+            if geometry is None or geometry.kpoints_cart is None:
                 return None
             kpoints = geometry.kpoints_cart
         return kpoints*convert(1.0,units,'B')
@@ -812,7 +832,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return dimensionless k-point weights, or ``None`` if unavailable."""
         self._require_supported('kweights',self.all_modes)
         geometry = self.results.geometry
-        if geometry is None or 'kweights' not in geometry:
+        if geometry is None or geometry.kweights is None:
             return None
         return geometry.kweights
     #end def kweights
@@ -825,7 +845,7 @@ class RmgAnalyzer(SimulationAnalyzer):
             msg = 'eigenvalues units must be one of: eV, Ha, Ry'
             raise ValueError(msg)
         electronic = self.results.electronic
-        if electronic is None or 'eigenvalues' not in electronic:
+        if electronic is None or electronic.eigenvalues is None:
             return None
         return convert(electronic.eigenvalues,'eV',units)
     #end def eigenvalues
@@ -835,7 +855,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Return the dimensionless K-point-major occupation array."""
         self._require_supported('occupations',self.all_modes)
         electronic = self.results.electronic
-        if electronic is None or 'occupations' not in electronic:
+        if electronic is None or electronic.occupations is None:
             return None
         return electronic.occupations
     #end def occupations
