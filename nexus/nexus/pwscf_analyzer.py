@@ -19,7 +19,7 @@
 
 import os
 import numpy as np
-from .developer import obj
+from .developer import obj, FileFormatError
 from .unit_converter import convert
 from .periodic_table import Elements
 from .numerics import simstats, simplestats
@@ -91,7 +91,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
         elif arg0 is not None:
             path = path_string(arg0)
             if not os.path.exists(path):
-                self.error('path to QE data does not exist\npath provided: {}'.format(path))
+                msg = (
+                    'path to QE data does not exist\n'
+                    f'path provided: {path}'
+                    )
+                raise FileNotFoundError(msg)
             #end if
             if os.path.isfile(path):
                 filepath = path
@@ -101,7 +105,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 elif filename.endswith('.out'):
                     outfile_name = filename
                 else:
-                    self.error('could not determine whether file is QE input or output\nfile provided: {}'.format(filepath))
+                    msg = (
+                        'could not determine whether file is QE input or output\n'
+                        f'file provided: {filepath}'
+                        )
+                    raise RuntimeError(msg)
                 #end if
             #end if
             if outfile_name is None:
@@ -275,7 +283,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     try:
                         num_kpoints      = int(l.strip().split()[4])
                     except:
-                        print("Number of k-points {0} is not an integer".format(num_kpoints))
+                        print(f"Number of k-points {num_kpoints} is not an integer")
                     #end try
 
                     kpoints_2pi_alat = lines[i+2:i+2+num_kpoints]
@@ -719,9 +727,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
     def write_electron_counts(self,filepath=None,*,return_flag=False):
         if not return_flag:
             if not self.info.xml:
-                self.error('xml data has not been processed\ncannot write electron counts')
+                msg = (
+                    'xml data has not been processed\n'
+                    'cannot write electron counts'
+                    )
+                raise RuntimeError(msg)
             elif self.xmldata.failed:
-                self.error('xml data processing failed\ncannot write electron counts')
+                msg = (
+                    'xml data processing failed\n'
+                    'cannot write electron counts'
+                    )
+                raise FileFormatError(msg)
             #end if
         elif not self.info.xml or self.xmldata.failed:
             return False
@@ -740,7 +756,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end for
         #end for
         text = 'total electron counts\n'
-        text += '  {0: 3.2f}  {1: 3.2f}  {2: 3.2f}  {3: 3.2f}\n'.format(tot.up+tot.down,tot.up-tot.down,tot.up,tot.down)
+        text += f'  {tot.up+tot.down: 3.2f}  {tot.up-tot.down: 3.2f}  {tot.up: 3.2f}  {tot.down: 3.2f}\n'
         text += '\nkpoint electron counts\n'
         weights = []
         for kp in kpoints.values():
@@ -755,7 +771,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 kpt[s] = w*kp[sl].occupations.sum()*mult
             #end for
             #text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}    {5}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up,kpt.down,kp.kpoint[0])
-            text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}  {5: 3.2f}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up-kpt.down,kpt.up,kpt.down)
+            text+=f'  {ik:>3}  {kp.weight: 8.6f}    {kpt.up+kpt.down: 3.2f}  {kpt.up-kpt.down: 3.2f}  {kpt.up: 3.2f}  {kpt.down: 3.2f}\n'
         #end for
         if filepath is not None:
             with open(filepath,'w') as fobj:
@@ -918,7 +934,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     if li == 'GAMMA':
                         labels[ln] = r'$\Gamma$'
                     elif li != '':
-                        labels[ln] = '${0}$'.format(li)
+                        labels[ln] = f'${li}$'
                     #end if
                     if labels[ln-1] != '' and ln > 0:
                         labels[ln] = labels[ln-1]+'|'+labels[ln]

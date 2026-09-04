@@ -1,11 +1,16 @@
 import pytest
+import numpy as np
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.RMG_INPUT)
 
 
 from importlib.util import find_spec
 from . import isolate_nexus_core, register_pseudo_files, TEST_DIR
+from ..developer import obj
+from ..physical_system import generate_physical_system
+from ..rmg_input import RmgInput,generate_rmg_input,input_spec,rmg_modes
 from ..testing import value_eq,check_object_eq,dict_serialize
+from ..unit_converter import convert
 
 TEST_FILES = {
     "AlN32_input":                                                 TEST_DIR / "test_rmg_input_files/AlN32_input",
@@ -22,19 +27,24 @@ TEST_FILES = {
     "BlackPhosphorus_Localize_proj_only_davidson_input":           TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_proj_only_davidson_input",
     "BlackPhosphorus_Localize_proj_only_multigrid_input":          TEST_DIR / "test_rmg_input_files/BlackPhosphorus_Localize_proj_only_multigrid_input",
     "C60_input":                                                   TEST_DIR / "test_rmg_input_files/C60_input",
+    "CO_qmcpack_semilocal_xml_input":                              TEST_DIR / "test_rmg_input_files/CO_qmcpack_semilocal_xml_input",
     "Diamond16_input":                                             TEST_DIR / "test_rmg_input_files/Diamond16_input",
     "Diamond2_input":                                              TEST_DIR / "test_rmg_input_files/Diamond2_input",
     "Fe_2atom_input":                                              TEST_DIR / "test_rmg_input_files/Fe_2atom_input",
     "graphite_stress_input":                                       TEST_DIR / "test_rmg_input_files/graphite_stress_input",
+    "H2O_tddft_electric_field_input":                              TEST_DIR / "test_rmg_input_files/H2O_tddft_electric_field_input",
+    "H2O_tddft_point_charge_input":                                TEST_DIR / "test_rmg_input_files/H2O_tddft_point_charge_input",
     "Mg_2atom_input":                                              TEST_DIR / "test_rmg_input_files/Mg_2atom_input",
     "nanotube_80_input":                                           TEST_DIR / "test_rmg_input_files/nanotube_80_input",
     "nanotube_80_input_band":                                      TEST_DIR / "test_rmg_input_files/nanotube_80_input_band",
     "nanotube_80_input_band1":                                     TEST_DIR / "test_rmg_input_files/nanotube_80_input_band1",
     "NiO512_input":                                                TEST_DIR / "test_rmg_input_files/NiO512_input",
     "NiO8_input":                                                  TEST_DIR / "test_rmg_input_files/NiO8_input",
+    "PbTiO3_berry_phase_nscf_input":                               TEST_DIR / "test_rmg_input_files/PbTiO3_berry_phase_nscf_input",
     "Pt_bulk_spinorbit_input":                                     TEST_DIR / "test_rmg_input_files/Pt_bulk_spinorbit_input",
     "Pt_bulk_spinorbit_input_band":                                TEST_DIR / "test_rmg_input_files/Pt_bulk_spinorbit_input_band",
     "Si_8atoms_EXX_kpoints_input":                                 TEST_DIR / "test_rmg_input_files/Si_8atoms_EXX_kpoints_input",
+    "Si_wannier90_nscf_input":                                     TEST_DIR / "test_rmg_input_files/Si_wannier90_nscf_input",
     "U_bulk_spinorbit_RMG_input":                                  TEST_DIR / "test_rmg_input_files/U_bulk_spinorbit_RMG_input",
     }
 
@@ -43,8 +53,6 @@ for file in TEST_FILES.values():
 
 
 def make_serial_reference(ri):
-    import numpy as np
-    from ..developer import obj
     s = dict_serialize(ri,dict_type=obj)
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
@@ -53,9 +61,9 @@ def make_serial_reference(ri):
             v = "'"+v+"'"
         #end if
         if not isinstance(v,np.ndarray) or len(v)!=v.size:
-            ref +="        '{}' : {},\n".format(k,v)
+            ref +=f"        '{k}' : {v},\n"
         else:
-            a = 'np.array({})'.format(v)
+            a = f'np.array({v})'
             a = a.replace('     ','    ,')
             a = a.replace('    ','   ,')
             a = a.replace('   ','  ,')
@@ -65,7 +73,7 @@ def make_serial_reference(ri):
             a = a.replace(',,,,','   ,')
             a = a.replace(',,,','  ,')
             a = a.replace(',,',' ,')
-            ref +="        '{}' : {},\n".format(k,a)
+            ref +=f"        '{k}' : {a},\n"
         #end if
     #end for
     ref += '        }\n'
@@ -77,8 +85,6 @@ serial_references = dict()
 
 
 def generate_serial_references():
-    import numpy as np
-
     serial_references['BlackPhosphorus_input'] = {
         'a_length' : 3.3136,
         'atomic_coordinate_type' : 'Absolute',
@@ -643,6 +649,181 @@ def generate_serial_references():
         'x_gamma_extrapolation' : False,
         }
 
+
+    serial_references['CO_qmcpack_semilocal_xml_input'] = {
+        'atomic_coordinate_type' : 'Absolute',
+        'atoms/atoms' : np.array(['C','O']),
+        'atoms/format' : 'movable',
+        'atoms/movable' : np.array([True,True]),
+        'atoms/positions' : np.array([[ 7.9316601,9.,9.],
+                                      [10.0683399,9.,9.]]),
+        'calculation_mode' : 'Quench Electrons',
+        'charge_mixing_type' : 'Broyden',
+        'davidson_multiplier' : 2,
+        'description' : 'CO dimer length test',
+        'energy_convergence_criterion' : 1e-14,
+        'force_grad_order' : 0,
+        'ionic_time_step' : 20.0,
+        'kohn_sham_solver' : 'davidson',
+        'lattice_vector' : np.array([18.,0.,0.,0.,18.,0.,0.,0.,18.]),
+        'max_md_steps' : 100,
+        'max_scf_steps' : 30,
+        'occupations_type' : 'Fixed',
+        'pseudopotential/pseudos' : np.array(['C.ccECP.xml','O.ccECP.xml']),
+        'pseudopotential/species' : np.array(['C','O']),
+        'qmc_nband' : 6,
+        'relax_max_force' : 1e-05,
+        'relax_method' : 'LBFGS',
+        'renormalize_forces' : False,
+        'rms_convergence_criterion' : 1e-10,
+        'semilocal_projectors' : 10,
+        'start_mode' : 'LCAO Start',
+        'test_energy' : -21.70721649,
+        'unoccupied_states_per_kpoint' : 4,
+        'use_bessel_projectors' : True,
+        'wavefunction_grid' : np.array([128,128,128]),
+        'write_qmcpack_restart' : True,
+        }
+
+
+    h2o_tddft_common = {
+        'a_length' : 24.0,
+        'atomic_coordinate_type' : 'Absolute',
+        'atoms/atoms' : np.array(['O','H','H']),
+        'atoms/format' : 'movable',
+        'atoms/movable' : np.array([True,True,True]),
+        'atoms/positions' : np.array([[9., 9.,      9.65808 ],
+                                      [9.,10.4362, 10.762926],
+                                      [9., 7.5638, 10.762926]]),
+        'b_length' : 24.0,
+        'bravais_lattice_type' : 'Orthorhombic Primitive',
+        'c_length' : 24.0,
+        'calculation_mode' : 'TDDFT',
+        'crds_units' : 'Bohr',
+        'dipole_correction' : np.array([1,1,1]),
+        'energy_convergence_criterion' : 1e-14,
+        'input_tddft_file' : 'Wave/wave_tddft',
+        'input_wave_function_file' : 'Wave/wave',
+        'length_units' : 'Bohr',
+        'max_scf_steps' : 100,
+        'occupation_electron_temperature_eV' : 0.1,
+        'occupation_number_mixing' : 0.3,
+        'occupations_type' : 'Fermi Dirac',
+        'output_tddft_file' : 'Wave/wave_tddft',
+        'output_wave_function_file' : 'Wave/wave',
+        'poisson_solver' : 'pfft',
+        'pseudopotential/pseudos' : np.array(['../H.UPF','../O.UPF']),
+        'pseudopotential/species' : np.array(['H','O']),
+        'restart_tddft' : False,
+        'rms_convergence_criterion' : 1e-10,
+        'start_mode' : 'LCAO Start',
+        'tddft_steps' : 10000,
+        'unoccupied_states_per_kpoint' : 50,
+        'verbose' : True,
+        'wavefunction_grid' : np.array([64,64,64]),
+        }
+
+    serial_references['H2O_tddft_electric_field_input'] = dict(
+        h2o_tddft_common,
+        description = 'H2O TDDFT electric-field perturbation',
+        electric_field_tddft = np.array([0.,0.,0.00272]),
+        tddft_mode = 'electric field',
+        )
+
+    serial_references['H2O_tddft_point_charge_input'] = dict(
+        h2o_tddft_common,
+        description = 'H2O TDDFT point-charge perturbation',
+        tddft_mode = 'point charge',
+        tddft_qgau = 1.0,
+        tddft_qpos = np.array([12.,12.,18.]),
+        )
+
+
+    serial_references['PbTiO3_berry_phase_nscf_input'] = {
+        'BerryPhase' : True,
+        'BerryPhaseDirection' : 2,
+        'a_length' : 7.3699,
+        'atomic_coordinate_type' : 'Cell Relative',
+        'atoms/atoms' : np.array(['Pb','Ti','O','O','O']),
+        'atoms/format' : 'basic',
+        'atoms/positions' : np.array([[0. ,0. ,0.01],
+                                      [0.5,0.5,0.5 ],
+                                      [0. ,0.5,0.5 ],
+                                      [0.5,0.5,0.  ],
+                                      [0.5,0. ,0.5 ]]),
+        'b_length' : 7.3699,
+        'bravais_lattice_type' : 'Cubic Primitive',
+        'c_length' : 7.3699,
+        'calculation_mode' : 'NSCF',
+        'charge_density_mixing' : 0.2,
+        'charge_mixing_type' : 'Broyden',
+        'description' : 'PbTiO3',
+        'dos_method' : 'Gaussian',
+        'energy_convergence_criterion' : 1e-07,
+        'internal_pseudo_type' : 'sg15',
+        'kohn_sham_mucycles' : 3,
+        'kohn_sham_solver' : 'davidson',
+        'kpoint_distribution' : 1,
+        'kpoint_is_shift' : np.array([1,1,0]),
+        'kpoint_mesh' : np.array([4,4,6]),
+        'localize_localpp' : False,
+        'localize_projectors' : False,
+        'max_scf_steps' : 40,
+        'output_wave_function_file' : '/dev/null',
+        'potential_grid_refinement' : 2,
+        'preconditioner_threshold' : 0.0001,
+        'start_mode' : 'LCAO Start',
+        'subdiag_driver' : 'scalapack',
+        'wavefunction_grid' : np.array([16,16,16]),
+        'write_data_period' : 50,
+        }
+
+
+    si_kvalues = np.arange(4,dtype=float)/4
+    si_kpoints = np.array([
+        (kx,ky,kz)
+        for kx in si_kvalues
+        for ky in si_kvalues
+        for kz in si_kvalues
+        ])
+    serial_references['Si_wannier90_nscf_input'] = {
+        'a_length' : 10.2,
+        'atomic_coordinate_type' : 'Cell Relative',
+        'atoms/atoms' : np.array(['Si','Si']),
+        'atoms/format' : 'full_spin',
+        'atoms/movable' : np.array([[True,True,True],[True,True,True]]),
+        'atoms/positions' : np.array([[0.75,0.75,0.75],[0.,0.,0.]]),
+        'atoms/spin_phi' : np.array([0.,0.]),
+        'atoms/spin_ratio' : np.array([0.,0.]),
+        'atoms/spin_theta' : np.array([0.,0.]),
+        'b_length' : 10.2,
+        'bravais_lattice_type' : 'Cubic Face Centered',
+        'c_length' : 10.2,
+        'calculation_mode' : 'NSCF',
+        'crds_units' : 'Bohr',
+        'description' : 'Silicon.txt',
+        'exchange_correlation_type' : 'AUTO_XC',
+        'internal_pseudo_type' : 'sg15',
+        'kohn_sham_solver' : 'davidson',
+        'kpoint_distribution' : 1,
+        'kpoint_is_shift' : np.array([0,0,0]),
+        'kpoint_mesh' : np.array([4,4,4]),
+        'kpoints/kpoints' : si_kpoints,
+        'kpoints/weights' : np.full(64,0.015625),
+        'lattice_units' : 'Bohr',
+        'num_wanniers' : 12,
+        'potential_grid_refinement' : 2,
+        'start_mode' : 'LCAO Start',
+        'subdiag_driver' : 'auto',
+        'time_reversal' : False,
+        'unoccupied_states_per_kpoint' : 8,
+        'use_symmetry' : 0,
+        'wannier90' : True,
+        'wannier90_scdm' : -1,
+        'wavefunction_grid' : np.array([32,32,32]),
+        'write_pseudopotential_plots' : False,
+        }
+
 #end def generate_serial_references
 
 
@@ -655,7 +836,6 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(gi,name):
-    from ..developer import obj
     sr = obj(get_serial_references()[name])
     sg = dict_serialize(gi,dict_type=obj)
     assert(check_object_eq(sg,sr))
@@ -663,14 +843,159 @@ def check_vs_serial_reference(gi,name):
 
 
 def test_empty_init():
-    from ..rmg_input import RmgInput
     ri = RmgInput()
 #end test_empty_init
 
 
-def test_read():
-    from ..rmg_input import RmgInput
+def test_input_spec():
+    documented_sections = input_spec.section_order[:15]
+    documented_count = sum(len(input_spec.section_contents[s]) for s in documented_sections)
+    assert(documented_count==271)
+    assert(len(input_spec.keywords)==284)
 
+    added_keywords = set([
+        'AFM',
+        'BerryPhase',
+        'BerryPhaseCycle',
+        'BerryPhaseDirection',
+        'STM_bias',
+        'STM_height',
+        'adaptive_cmix',
+        'adaptive_convergence',
+        'afd_cfac',
+        'all_electron_parm',
+        'davidson_1stage_ortho',
+        'davidson_2stage_ortho',
+        'davidson_premg',
+        'drho_precond',
+        'drho_precond_q0',
+        'drho_precond_type',
+        'electric_field',
+        'electric_field_tddft',
+        'epsg_guard',
+        'freeze_ldaU_steps',
+        'gpu_managed_memory',
+        'internal_pseudo_type',
+        'kpoint_units',
+        'kpoints',
+        'kpoints_bandstructure',
+        'lambda_max',
+        'lambda_min',
+        'ldau_mixing',
+        'ldau_mixing_type',
+        'ldau_pulay_order',
+        'ldau_pulay_refresh',
+        'ldau_pulay_scale',
+        'ldos_end_grid',
+        'ldos_start_grid',
+        'prolong_order',
+        'qmc_nband',
+        'resta_beta',
+        'semilocal_projectors',
+        'sts_end_grid',
+        'sts_start_grid',
+        'subdiag_groups',
+        'tddft_frequency',
+        'tddft_gpu',
+        'tddft_noscf',
+        'tddft_start_state',
+        'test_bond_length',
+        'test_bond_length_tolerance',
+        'test_steps',
+        'test_steps_tolerance',
+        'tetra_method',
+        'use_bessel_projectors',
+        'use_block_diag',
+        'use_cmix',
+        'use_energy_correction',
+        'use_gpu_fd',
+        'use_rmm_diis',
+        ])
+    assert(added_keywords <= set(input_spec.keywords.keys()))
+
+    assert(input_spec.keywords.AFM.key_type=='boolean')
+    assert(input_spec.keywords.adaptive_cmix.max_value==10.0)
+    assert(input_spec.keywords.electric_field.key_type=='double array')
+    assert(input_spec.keywords.tddft_mode.allowed==set(
+        ['electric field','point charge','vector potential']))
+    assert('Example: 2 means system is missing two electrons' in
+           input_spec.keywords.system_charge.description)
+    assert(rmg_modes.full_mode('nscf')=='NSCF')
+    assert(rmg_modes.full_mode('stm')=='STM')
+
+#end def test_input_spec
+
+
+def test_hubbard_u_records():
+    text = '''
+        Hubbard_U = "
+        Ni 6.5 3d 0.1 0.2 0.3
+        Mn 4.0 3d
+        "
+        '''
+    ri = RmgInput()
+    ri.read_text(text)
+    assert(ri.Hubbard_U.Ni.U==6.5)
+    assert(ri.Hubbard_U.Ni.orbital=='3d')
+    assert(value_eq(ri.Hubbard_U.Ni.J,np.array([0.1,0.2,0.3])))
+    assert(ri.Hubbard_U.Mn.U==4.0)
+    assert(ri.Hubbard_U.Mn.orbital=='3d')
+
+    ri_roundtrip = RmgInput()
+    ri_roundtrip.read_text(ri.write_text())
+    assert(check_object_eq(ri_roundtrip,ri))
+
+    ri_generated = RmgInput()
+    ri_generated.assign(Hubbard_U=obj(Ni=(6.5,'3d',0.1,0.2,0.3)))
+    assert(ri_generated.Hubbard_U.Ni.U==6.5)
+    assert(ri_generated.Hubbard_U.Ni.orbital=='3d')
+    assert(value_eq(ri_generated.Hubbard_U.Ni.J,np.array([0.1,0.2,0.3])))
+
+#end def test_hubbard_u_records
+
+
+def test_kpoints_bandstructure_records():
+    text = '''
+        kpoints_bandstructure = "
+        0.00 0.00 0.00  0 G
+        0.50 0.00 0.00 20 M
+        0.25 0.25 0.00 20 K
+        0.00 0.00 0.00 20 G
+        "
+        '''
+    ri = RmgInput()
+    ri.read_text(text)
+    assert(ri.kpoints_bandstructure.kpoints.shape==(4,3))
+    assert(value_eq(ri.kpoints_bandstructure.counts,np.array([0,20,20,20])))
+    assert(value_eq(ri.kpoints_bandstructure.labels,np.array(['G','M','K','G'])))
+
+    ri_roundtrip = RmgInput()
+    ri_roundtrip.read_text(ri.write_text())
+    assert(check_object_eq(ri_roundtrip,ri))
+
+#end def test_kpoints_bandstructure_records
+
+
+def test_atoms_spin_ratio_records():
+    text = '''
+        atoms = "
+        H 0.0 0.0 0.0 1 1 1  0.5
+        H 1.0 0.0 0.0 1 1 1 -0.5
+        "
+        '''
+    ri = RmgInput()
+    ri.read_text(text)
+    assert(ri.atoms.format=='spin_ratio')
+    assert(value_eq(ri.atoms.spin_ratio,np.array([0.5,-0.5])))
+
+    ri_roundtrip = RmgInput()
+    ri_roundtrip.read_text(ri.write_text())
+    assert(check_object_eq(ri_roundtrip,ri))
+
+#end def test_atoms_spin_ratio_records
+
+
+def test_read():
     infiles_read = {}
     for infile in TEST_FILES:
         ri_read = RmgInput(TEST_FILES[infile])
@@ -683,12 +1008,17 @@ def test_read():
         "BlackPhosphorus_input_band",
         "BlackPhosphorus_Localize_both_pp_and_proj_multigrid_input",
         "C60_input",
+        "CO_qmcpack_semilocal_xml_input",
         "Diamond16_input",
         "graphite_stress_input",
+        "H2O_tddft_electric_field_input",
+        "H2O_tddft_point_charge_input",
         "NiO8_input",
+        "PbTiO3_berry_phase_nscf_input",
         "Pt_bulk_spinorbit_input",
         "Pt_bulk_spinorbit_input_band",
         "Si_8atoms_EXX_kpoints_input",
+        "Si_wannier90_nscf_input",
         )
 
     # print out the reference text (used in generate_serial_references)
@@ -708,11 +1038,54 @@ def test_read():
 #end def test_read
 
 
+def test_run_mode_input_coverage():
+    mode_inputs = {
+        'BlackPhosphorus_input'          : 'Quench Electrons',
+        'BlackPhosphorus_input_band'     : 'Band Structure Only',
+        'graphite_stress_input'           : 'Relax Structure',
+        'Si_wannier90_nscf_input'         : 'NSCF',
+        'H2O_tddft_electric_field_input'  : 'TDDFT',
+        }
+    for name,mode in mode_inputs.items():
+        assert(RmgInput(TEST_FILES[name]).calculation_mode==mode)
+    #end for
+
+    wannier_nscf = RmgInput(TEST_FILES['Si_wannier90_nscf_input'])
+    assert(wannier_nscf.wannier90)
+    assert(len(wannier_nscf.kpoints.kpoints)==64)
+
+    berry_nscf = RmgInput(TEST_FILES['PbTiO3_berry_phase_nscf_input'])
+    assert(berry_nscf.calculation_mode=='NSCF')
+    assert(berry_nscf.BerryPhase)
+
+    electric_tddft = RmgInput(TEST_FILES['H2O_tddft_electric_field_input'])
+    point_charge_tddft = RmgInput(TEST_FILES['H2O_tddft_point_charge_input'])
+    assert(electric_tddft.tddft_mode=='electric field')
+    assert(point_charge_tddft.tddft_mode=='point charge')
+
+    qmcpack_orbitals = RmgInput(TEST_FILES['CO_qmcpack_semilocal_xml_input'])
+    assert(qmcpack_orbitals.write_qmcpack_restart)
+    assert(qmcpack_orbitals.qmc_nband==6)
+    assert(qmcpack_orbitals.use_bessel_projectors)
+    assert(qmcpack_orbitals.semilocal_projectors==10)
+    assert(all(p.endswith('.xml') for p in qmcpack_orbitals.pseudopotential.pseudos))
+
+#end def test_run_mode_input_coverage
+
+
 
 def test_write(tmp_path):
-    from ..rmg_input import RmgInput
+    new_input_files = {
+        'CO_qmcpack_semilocal_xml_input',
+        'H2O_tddft_electric_field_input',
+        'H2O_tddft_point_charge_input',
+        'PbTiO3_berry_phase_nscf_input',
+        'Si_wannier90_nscf_input',
+        }
+    input_files_write = tuple(TEST_FILES.keys())
+    assert(new_input_files <= set(input_files_write))
 
-    for infile in TEST_FILES:
+    for infile in input_files_write:
         write_file = tmp_path / infile
 
         ri_read = RmgInput(TEST_FILES[infile])
@@ -733,11 +1106,6 @@ def test_generate():
     register_pseudo_files([
         'Ni_oncv.UPF','O_oncv.UPF','Pt.rel-pbe-n-rrkjus.UPF'
         ])
-    import numpy as np
-    from ..developer import obj
-    from ..unit_converter import convert
-    from ..physical_system import generate_physical_system
-    from ..rmg_input import generate_rmg_input
 
     # recreate 'BlackPhosphorus_input'
     infile = 'BlackPhosphorus_input'
@@ -890,7 +1258,11 @@ def test_generate():
         )
     check_vs_serial_reference(ri,infile)
 
-    if find_spec("spglib") is not None and find_spec("seekpath") is not None:
+    if (
+        find_spec("spglib") is not None
+        and find_spec("seekpath") is not None
+        and find_spec("scipy") is not None
+        ):
         nio8 = generate_physical_system(
             units     = 'B',
             axes      = 7.8811*np.identity(3),
@@ -1247,5 +1619,25 @@ def test_generate():
         )
 
     assert(check_object_eq(gr,gr_ref,atol=1e-12))
+
+
+    # Regenerate the run-mode inputs from their parsed values. This follows the
+    # same keyword assignment path as generating them explicitly from scratch,
+    # while keeping the larger k-point and atomic tables readable in this test.
+    run_mode_inputs = (
+        'CO_qmcpack_semilocal_xml_input',
+        'H2O_tddft_electric_field_input',
+        'H2O_tddft_point_charge_input',
+        'PbTiO3_berry_phase_nscf_input',
+        'Si_wannier90_nscf_input',
+        )
+    for infile in run_mode_inputs:
+        ri_read = RmgInput(TEST_FILES[infile])
+        ri_generated = generate_rmg_input(
+            defaults = 'none',
+            **dict(ri_read.items())
+            )
+        check_vs_serial_reference(ri_generated,infile)
+    #end for
 
 #end def test_generate

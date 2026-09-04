@@ -267,5 +267,3 @@ This file contains information related to the trial wavefunction. It is identica
   +---------------+--------------+-------------+--------------------------------------------------------------------+
 
 Other files containing QMC methods (such as optimization, VMC, and DMC blocks) will be generated and will behave in a similar fashion regardless of the type of SPO in the trial wavefunction.
-
-.. bibliography:: /bibs/LCAO.bib

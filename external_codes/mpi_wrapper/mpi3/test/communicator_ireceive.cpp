@@ -1,36 +1,40 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ -O3 -std=c++14 -Wall -Wextra $0 -o $0x.x -D_MAKE_BOOST_SERIALIZATION_HEADER_ONLY && mpirun -n 3 $0x.x $@ && rm -f $0x.x; exit
-#endif
+// Copyright 2017-2025 Alfredo A. Correa
 
-#include "../../mpi3/main.hpp"
-#include "../../mpi3/communicator.hpp"
+#include <mpi3/communicator.hpp>
+#include <mpi3/environment.hpp>
 
-#include<list>
+#include <algorithm>
+#include <boost/core/lightweight_test.hpp>
+#include <iostream>
+#include <vector>
 
 namespace mpi3 = boost::mpi3;
+
 using std::cout;
 
-auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world)->int try{
+auto main(int argc, char** argv) -> int try {
+	mpi3::environment env(argc, argv);
 
-	assert( world.size() > 1 );
+	auto world = env.world();
+
+	BOOST_TEST( world.size() > 1 );
 
 	using T = double;
 	std::vector<T> const cbuffer = {0, 1, 2};
 	std::vector<T> buffer(3); // TODO(correaa): test with list
 
-	int right = world.right();
-	int left = world.left();
+	int const right = world.right();
+	int const left = world.left();
 	{
 		auto req = world.ireceive_n(buffer.begin(), buffer.size(), left);
 		world.send(cbuffer.begin(), cbuffer.end(), right);
-		cout <<"waiting ireceive in rank "<< world.rank() << std::endl;
+		cout <<"waiting ireceive in rank "<< world.rank() << '\n';
 		req.wait();
-		cout <<"ireceive completed in rank "<< world.rank() << std::endl;
+		cout <<"ireceive completed in rank "<< world.rank() << '\n';
 	}
-	assert( std::equal(cbuffer.begin(), cbuffer.end(), buffer.begin()) );
+	BOOST_TEST( std::equal(cbuffer.begin(), cbuffer.end(), buffer.begin()) );
 
-	return 0;
-}catch(...){
+	return boost::report_errors();
+} catch(...) {
 	return 1;
 }
-

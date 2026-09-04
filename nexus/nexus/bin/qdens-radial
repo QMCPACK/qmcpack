@@ -64,17 +64,12 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import DevBase,obj,error,unavailable
+from nexus.developer import DevBase,obj,error
 import nexus.memory as memory
 from nexus.observables import ChargeDensity, vlog
 from nexus.fileio import XsfFile
 
-# External imports
-try:
-    import numpy as np
-except:
-    np = unavailable('numpy')
-#end try
+import numpy as np
 
 
 def comma_list(s):
@@ -114,19 +109,6 @@ class QDRBase(DevBase):
     def help(self):
         self.log('\n'+self.parser.format_help().strip()+'\n')
     #end def help
-
-    def exit(self):
-        self.vlog('\n{0} finished\n'.format(self.name))
-        sys.exit()
-    #end def exit
-
-    def error(self,msg,loc=None):
-        if loc is None:
-            loc = self.name
-        #end if
-        error(msg,loc)
-        #self.exit()
-    #end def error
 
 #end class QDBase
 
@@ -206,10 +188,13 @@ class QMCDensityRadialProcessor(QDRBase):
 
         if opt.help or len(file_in)!=1:
             self.help()
-            self.exit()
+            if opt.help:
+                sys.exit()
+            else:
+                sys.exit(1)
         #end if
 
-        self.vlog('\n{0} initializing'.format(self.name))
+        self.vlog(f'\n{self.name} initializing')
         self.vlog('\noptions provided:')
         self.vlog(str(self.options))
 
@@ -234,7 +219,11 @@ class QMCDensityRadialProcessor(QDRBase):
                 opt_failed = True
             #end try
             if opt_failed:
-                self.error('species must be a list of species labels\nyou provided: {0}'.format(spc))
+                msg = (
+                    'species must be a list of species labels\n'
+                    f'you provided: {spc}'
+                    )
+                raise ValueError(msg)
             #end if
         #end if
 
@@ -260,10 +249,15 @@ class QMCDensityRadialProcessor(QDRBase):
                 opt_failed = True
             #end try
             if opt_failed:
-                self.error('radii must be a list of values and must be the same length as species list\nyou provided: {0}'.format(rad))
+                msg = (
+                    'radii must be a list of values and must be the same length as species list\n'
+                    f'you provided: {rad}'
+                    )
+                raise ValueError(msg)
             #end if
         else:
-            self.error('radii (-r option) must be provided.')
+            msg = 'radii (-r option) must be provided.'
+            raise ValueError(msg)
         #end if
 
         #   --seed option
@@ -276,7 +270,11 @@ class QMCDensityRadialProcessor(QDRBase):
                 opt_failed = True
             #end try
             if opt_failed:
-                self.error('seed must be an integer\nyou provided: {0}'.format(rseed))
+                msg = (
+                    'seed must be an integer\n'
+                    f'you provided: {rseed}'
+                    )
+                raise TypeError(msg)
             #end if
         #end if
 
@@ -293,11 +291,15 @@ class QMCDensityRadialProcessor(QDRBase):
         #end if
 
         if (opt.vmc_err_file is not None or opt.dmc_err_file is not None) and opt.app!='qmcpack':
-            self.error('Error files (and subsequent resampling) are not compatable with {} app files.'.format(opt.app))
+            msg = (
+                f'Error files (and subsequent resampling) are not compatible with {opt.app} app files.'
+                )
+            raise ValueError(msg)
         #end if
 
         if opt.vmc_err_file is not None and opt.vmc_file is None:
-            self.error('A VMC file (--vmc) must be provided along with the VMC+err file (--vmcerr)')
+            msg = 'A VMC file (--vmc) must be provided along with the VMC+err file (--vmcerr)'
+            raise ValueError(msg)
         #end if
 
         # if VMC file is given, perform extrapolation before 
@@ -359,7 +361,12 @@ class QMCDensityRadialProcessor(QDRBase):
                 err_data = deepcopy(dmc_err_xsf_data)
 
             else:
-                self.error('VMC and DMC densities provided but only one +err file was given.\nPlease either provide no +err file (which avoids resampling) or\nprovide a +err file for both VMC and DMC with --vmcerr and --dmcerr arguments.')
+                msg = (
+                    'VMC and DMC densities provided but only one +err file was given.\n'
+                    'Please either provide no +err file (which avoids resampling) or\n'
+                    'provide a +err file for both VMC and DMC with --vmcerr and --dmcerr arguments.'
+                    )
+                raise ValueError(msg)
             #end if
             show_error=True
 
@@ -374,9 +381,9 @@ class QMCDensityRadialProcessor(QDRBase):
             #end if
 
             nsamples = opt.nsamples
-            self.log('Will compute {} samples...'.format(nsamples))
+            self.log(f'Will compute {nsamples} samples...')
             for i in range(nsamples):
-                self.log('sample: {}'.format(i))
+                self.log(f'sample: {i}')
                 resample_xsf_data = deepcopy(file)
                 for d1_idx, d1 in enumerate(file.data[3]['density']['density'].values):
                     for d2_idx, d2 in enumerate(d1):
@@ -416,7 +423,12 @@ class QMCDensityRadialProcessor(QDRBase):
                 #end if
 
                 if opt.species is not None and not set(opt.species).issubset(equiv_atoms):
-                    self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,list(opt.species)))
+                    msg = (
+                        'Input species (-s,--species) must be a subset of the species in the .xsf file.\n'
+                        f'The .xsf contains: {equiv_atoms}\n'
+                        f'You provided: {list(opt.species)}.'
+                        )
+                    raise ValueError(msg)
                 #end if
                 if opt.cumulative:
                     if opt.species is None:
@@ -457,7 +469,12 @@ class QMCDensityRadialProcessor(QDRBase):
 
         else:
             if opt.vmc_err_file is not None:
-                self.error('VMC and DMC densities provided but only one +err file was given.\nPlease either provide no +err file (which avoids resampling) or\nprovide a +err file for both VMC and DMC with --vmcerr and --dmcerr arguments.')
+                msg = (
+                    'VMC and DMC densities provided but only one +err file was given.\n'
+                    'Please either provide no +err file (which avoids resampling) or\n'
+                    'provide a +err file for both VMC and DMC with --vmcerr and --dmcerr arguments.'
+                    )
+                raise ValueError(msg)
             #end if
         #end if
 
@@ -467,7 +484,12 @@ class QMCDensityRadialProcessor(QDRBase):
         equiv_atoms = list(cd.info.structure.equivalent_atoms().keys())
 
         if opt.species is not None and not set(opt.species).issubset(equiv_atoms):
-            self.error('Input species (-s,--species) must be a subset of the species in the .xsf file.\nThe .xsf contains: {}\nYou provided: {}.'.format(equiv_atoms,list(opt.species)))
+            msg = (
+                'Input species (-s,--species) must be a subset of the species in the .xsf file.\n'
+                f'The .xsf contains: {equiv_atoms}\n'
+                f'You provided: {list(opt.species)}.'
+                )
+            raise ValueError(msg)
         #end if
 
         if opt.app=='pwscf':
@@ -512,9 +534,9 @@ class QMCDensityRadialProcessor(QDRBase):
                     r = opt.radii[0]
                 #end if
                 if not show_error:
-                    self.log('{} Value of {} Species at Cutoff {} is: {:.8f}\n'.format(cstr,at,r,rdens.tot[at].density[-1]))
+                    self.log(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f}\n')
                 else:
-                    self.log('{} Value of {} Species at Cutoff {} is: {:.8f} +/- {:.8f}\n'.format(cstr,at,r,rdens.tot[at].density[-1],std_dict[at]))
+                    self.log(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f} +/- {std_dict[at]:.8f}\n')
                 #end if
             #end for
         else:
@@ -527,9 +549,9 @@ class QMCDensityRadialProcessor(QDRBase):
                     r = opt.radii[0]
                 #end if
                 if not show_error:
-                    self.log('{} Value of {} Species at Cutoff {} is: {:.8f}\n'.format(cstr,at,r,rdens.tot[at].density[-1]))
+                    self.log(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f}\n')
                 else:
-                    self.log('{} Value of {} Species at Cutoff {} is: {:.8f} +/- {:.8f}\n'.format(cstr,at,r,rdens.tot[at].density[-1],std_dict[at]))
+                    self.log(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f} +/- {std_dict[at]:.8f}\n')
                 #end if
             #end for
         #end if
@@ -546,5 +568,5 @@ if __name__=='__main__':
 
     qdensradial.process()
 
-    qdensradial.exit()
+    qdensradial.vlog(f'\n{qdensradial.name} finished\n')
 #end if

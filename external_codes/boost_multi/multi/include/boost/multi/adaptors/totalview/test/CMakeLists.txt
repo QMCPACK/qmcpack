@@ -19,7 +19,7 @@ project(
 	LANGUAGES CXX
 )
 
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+find_package(Boost REQUIRED CONFIG COMPONENTS unit_test_framework)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -38,7 +38,7 @@ add_executable(totalview.x totalview.cpp)
 
 target_compile_features(totalview.x PUBLIC cxx_std_17)
 
-target_compile_definitions(totalview.x PRIVATE "BOOST_PP_VARIADICS")
+# target_compile_definitions(totalview.x PRIVATE "BOOST_PP_VARIADICS")
 target_compile_definitions(totalview.x PRIVATE ${Boost_DEFINITIONS})
 target_include_directories(totalview.x SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(totalview.x PRIVATE ${Boost_LIBRARIES})

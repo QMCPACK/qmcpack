@@ -107,7 +107,7 @@
 import os
 from .fileio import TextFile
 from .simulation import Simulation,SimulationInput,SimulationAnalyzer,NullSimulationAnalyzer
-from .developer import DevBase, obj
+from .developer import DevBase, obj, FileFormatError, NexusError
 
 
 booldict = {'.true.':True,'.false.':False}
@@ -180,7 +180,13 @@ class Namelist(DevBase):
         if len(cls.name_set)>0:
             invalid = set(names)-cls.name_set
             if len(invalid)>0:
-                self.error('invalid names encountered in namelist during {0}\nnamelist name: {1}\ninvalid names: {2}\nvalid options are: {3}'.format(label,self.namelist,sorted(invalid),cls.names))
+                msg = (
+                    f'invalid names encountered in namelist during {label}\n'
+                    f'namelist name: {self.namelist}\n'
+                    f'invalid names: {sorted(invalid)}\n'
+                    f'valid options are: {cls.names}'
+                    )
+                raise FileFormatError(msg)
             #end if
         #end if
     #end def check_names
@@ -201,7 +207,11 @@ class Namelist(DevBase):
         elif isinstance(text,list):
             lines = text
         else:
-            self.error('read_text only accepts string or list inputs for text\nencountered invalid type for text: {0}'.format(text.__class__.__name__))
+            msg = (
+                'read_text only accepts string or list inputs for text\n'
+                f'encountered invalid type for text: {text.__class__.__name__}'
+                )
+            raise TypeError(msg)
         #end if
         if len(lines)>0:
             if lines[0].strip().startswith('&'):
@@ -226,7 +236,13 @@ class Namelist(DevBase):
                 if v is not None:
                     vals[name] = v
                 else:
-                    self.error('namelist read failed\nnamelist name: {0}\nvariable name: {1}\nvariable value: {2}'.format(self.namelist,name,value))
+                    msg = (
+                        'namelist read failed\n'
+                        f'namelist name: {self.namelist}\n'
+                        f'variable name: {name}\n'
+                        f'variable value: {value}'
+                        )
+                    raise FileFormatError(msg)
                 #end if
             #end for
         #end for
@@ -248,9 +264,15 @@ class Namelist(DevBase):
         for name,value in self.items():
             v = writeval(value)
             if v is not None:
-                text += '  {0} = {1}\n'.format(name,v)
+                text += f'  {name} = {v}\n'
             else:
-                self.error('namelist write failed\nnamelist name: {0}\nvariable name: {1}\nvariable value: {2}'.format(namelist,name,value))
+                msg = (
+                    'namelist write failed\n'
+                    f'namelist name: {namelist}\n'
+                    f'variable name: {name}\n'
+                    f'variable value: {value}'
+                    )
+                raise RuntimeError(msg)
             #end if
         #end for
         text += '/\n'
@@ -287,7 +309,8 @@ class NamelistInput(SimulationInput):
         #end if
         cls = self.__class__
         if len(cls.namelists)==0:
-            self.error('cannot initialize this input class as no namelists have been assigned it')
+            msg = 'cannot initialize this input class as no namelists have been assigned it'
+            raise NexusError(msg)
         #end if
         for name,value in vals.items():
             if name in cls.name_map:
@@ -300,7 +323,12 @@ class NamelistInput(SimulationInput):
                 #end if
                 namelist[name] = value
             else:
-                self.error('encountered invalid variable name during initialization\ninvalid variable name: {0}\nthis variable does not belong to any of the following namelists: {1}'.format(name,cls.namelists))
+                msg = (
+                    'encountered invalid variable name during initialization\n'
+                    f'invalid variable name: {name}\n'
+                    f'this variable does not belong to any of the following namelists: {cls.namelists}'
+                    )
+                raise ValueError(msg)
             #end if
         #end for
     #end def __init__
@@ -327,11 +355,15 @@ class NamelistInput(SimulationInput):
                 elif name in cls.namelist_classes:
                     self[name] = cls.namelist_classes[name](nl_lines)
                 else:
-                    msg = 'encountered invalid namelist during read\ninvalid namelist: {0}\nvalid namelists are: {1}'.format(name,cls.namelists)
+                    msg = (
+                        'encountered invalid namelist during read\n'
+                        f'invalid namelist: {name}\n'
+                        f'valid namelists are: {cls.namelists}'
+                        )
                     if filepath is not None:
-                        msg += '\nfilepath: {0}'.format(filepath)
+                        msg += f'\nfilepath: {filepath}'
                     #end if
-                    self.error(msg)
+                    raise FileFormatError(msg)
                 #end if
             #end if
         #end for
@@ -343,11 +375,15 @@ class NamelistInput(SimulationInput):
         text = ''
         for name in self.keys():
             if name not in cls.namelist_set:
-                msg = 'encountered invalid namelist during write\ninvalid namelist: {0}\nvalid namelists are: {1}'.format(name,cls.namelists)
+                msg = (
+                    'encountered invalid namelist during write\n'
+                    f'invalid namelist: {name}\n'
+                    f'valid namelists are: {cls.namelists}'
+                    )
                 if filepath is not None:
-                    msg += '\nfilepath: {0}'.format(filepath)
+                    msg += f'\nfilepath: {filepath}'
                 #end if
-                self.error(msg)
+                raise RuntimeError(msg)
             #end if
         #end for
         for name in cls.namelists:
@@ -584,7 +620,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
                 #end try
             #end for
             if len(failures)>0 and self.info.warn:
-                self.warn('analysis failed, some data will not be available\noperations failed: {0}'.format(failures))
+                self.warn(f'analysis failed, some data will not be available\noperations failed: {failures}')
             #end if
         #end if
     #end def analyze
@@ -718,8 +754,8 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
                     #end for
                 #end if
             #end if
-            text += 'nup+ndn = {0}\n'.format(nelec)
-            text += 'nup-ndn = {0}\n'.format(npol)
+            text += f'nup+ndn = {nelec}\n'
+            text += f'nup-ndn = {npol}\n'
             text += '\n'
         #end if
         lvals  = 'spdfg'
@@ -729,14 +765,14 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
                 for n in range(len(lowdin)):
                     lc = lowdin[n][q]
                     if elem is None:
-                        text += '  {0:>3}  {1: 3.2f}  '.format(n,lc.charge)
+                        text += f'  {n:>3}  {lc.charge: 3.2f}  '
                     else:
-                        text += '  {0:>3}  {1:>2}  {2: 3.2f}  '.format(n,elem[n],lc.charge)
+                        text += f'  {n:>3}  {elem[n]:>2}  {lc.charge: 3.2f}  '
                     #end if
                     if not long:
                         for l in lvals:
                             if l in lc:
-                                text += '{0}({1: 3.2f})'.format(l,lc[l])
+                                text += f'{l}({lc[l]: 3.2f})'
                             #end if
                         #end for
                     else:
@@ -749,7 +785,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
                                     #end if
                                 #end for
                                 for k in sorted(lset):
-                                    text += '{0}({1: 3.2f})'.format(k,lc[k])
+                                    text += f'{k}({lc[k]: 3.2f})'
                                 #end for
                             #end if
                         #end for
@@ -960,7 +996,7 @@ class HpAnalyzer(SimulationAnalyzer):
                 #end try
             #end for
             if len(failures)>0 and self.info.warn:
-                self.warn('analysis failed, some data will not be available\noperations failed: {0}'.format(failures))
+                self.warn(f'analysis failed, some data will not be available\noperations failed: {failures}')
             #end if
         #end if
     #end def analyze
@@ -1017,7 +1053,8 @@ class Hp(PostProcessSimulation):
             pa = self.load_analyzer_image()
             result = pa.hubbard_parameters
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result

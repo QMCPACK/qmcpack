@@ -145,16 +145,11 @@ def test_get_result(tmp_path):
 
     assert(Path(sim.locdir).resolve() == tmp_path)
 
-    try:
+    with pytest.raises(
+        NotImplementedError,
+        match="ability to get result unknown has not been implemented",
+        ):
         sim.get_result('unknown',None)
-        raise FailedTest
-    except NexusError:
-        None
-    except FailedTest:
-        failed()
-    except Exception as e:
-        failed(str(e))
-    #end try
 
     result = sim.get_result('cuspcorr',None)
 
@@ -207,7 +202,10 @@ def test_get_result(tmp_path):
     assert(restart.project_series==1)
 
     random_file.unlink()
-    with pytest.raises(NexusError,match='restart files do not exist'):
+    with pytest.raises(
+        FileNotFoundError,
+        match='restart files do not exist'
+        ):
         restart_sim.get_result('restart',None)
     #end with
     random_file.touch()
@@ -260,7 +258,7 @@ def test_restart_twist_average(tmp_path):
     source.input = source.input.trace('twistnum',[0,1])
 
     for group,inp in source.input.inputs.items():
-        fileroot = 'restart_source.g{}.s000'.format(str(group).zfill(3))
+        fileroot = f'restart_source.g{str(group).zfill(3)}.s000'
         restart_input = deepcopy(inp)
         restart_input.simulation.mcwalkerset = mcwalkerset(
             fileroot  = fileroot,
@@ -292,7 +290,7 @@ def test_restart_twist_average(tmp_path):
     assert(isinstance(target.input,TracedQmcpackInput))
     for group,inp in target.input.inputs.items():
         walkers = inp.simulation.mcwalkerset
-        expected = '../restart1/restart_source.g{}.s000'.format(str(group).zfill(3))
+        expected = f'../restart1/restart_source.g{str(group).zfill(3)}.s000'
         assert(walkers.fileroot==expected)
         assert(target.input.variables[group].value==result.restarts[group].twistnum)
     #end for

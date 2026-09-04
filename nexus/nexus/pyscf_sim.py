@@ -61,14 +61,15 @@ class Pyscf(Simulation):
                     kpoints = inp.kpoints
                 #end if
                 result.kpoints = kpoints.copy()
-                result.orb_files = ['{}.twistnum_{}.h5'.format(inp.prefix,str(n).zfill(3)) for n in range(len(kpoints))]
+                result.orb_files = [f'{inp.prefix}.twistnum_{str(n).zfill(3)}.h5' for n in range(len(kpoints))]
             #end if
             result.h5_file  = os.path.join(self.locdir,h5_file)
             result.location = self.locdir
         elif result_name=='wavefunction':
             result.chkfile = os.path.join(self.locdir,self.input.chkfile)
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
         return result
     #end def get_result
@@ -77,7 +78,8 @@ class Pyscf(Simulation):
     def incorporate_result(self,result_name,result,sim):
         not_implemented = False
         if not_implemented:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
+            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if
     #end def incorporate_result
 

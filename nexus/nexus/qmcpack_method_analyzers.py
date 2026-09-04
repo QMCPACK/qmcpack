@@ -19,7 +19,7 @@
 
 import os
 from copy import deepcopy
-from .developer import obj
+from .developer import obj, NexusError
 from .hdfreader import HDFreader
 from .qmcpack_analyzer_base import Checks,QAanalyzer,QAHDFdata
 from .qmcpack_property_analyzers import WavefunctionAnalyzer
@@ -86,7 +86,12 @@ class MethodAnalyzer(QAanalyzer):
                 nblocks_exclude = equil[series]
             #end if
         elif equil is not None:
-            self.error('invalid input for equilibration which must be an int, dict, or obj\n  you provided: {0}\n  with type {1}'.format(equil,equil.__class__.__name__))
+            msg = (
+                'invalid input for equilibration which must be an int, dict, or obj\n'
+                f'  you provided: {equil}\n'
+                f'  with type {type(equil).__name__}'
+                )
+            raise TypeError(msg)
         #end if
         data_sources     = request.data_sources & set(files.keys())
         method_info = obj(
@@ -106,7 +111,11 @@ class MethodAnalyzer(QAanalyzer):
         self.vlog('available sources = '+str(list(data_sources)),n=2)
 
         if not matched:
-            msg = 'no data files found\n  file prefix used for matching: {0}\n  checked all files in directory: {1}'.format(file_prefix,source_path)
+            msg = (
+                'no data files found\n'
+                f'  file prefix used for matching: {file_prefix}\n'
+                f'  checked all files in directory: {source_path}'
+                )
             #self.error(msg,trace=False)
             #self.warn(msg)
             return
@@ -138,7 +147,8 @@ class MethodAnalyzer(QAanalyzer):
                 #end if
                 for estname,est in estimators.items():
                     if est is None:
-                        self.error('estimators have not been read properly by QmcpackInput',trace=False)
+                        msg = 'estimators have not been read properly by QmcpackInput'
+                        raise NexusError(msg)
                     #end if
                     has_type = 'type' in est
                     has_name = 'name' in est
@@ -152,7 +162,8 @@ class MethodAnalyzer(QAanalyzer):
                         type = est.type
                         name = est.type
                     else:
-                        self.error('estimator '+estname+' has no type or name')
+                        msg = 'estimator '+estname+' has no type or name'
+                        raise ValueError(msg)
                     #end if
                     cname = self.condense_name(name)
                     ctype = self.condense_name(type)
@@ -245,7 +256,7 @@ class MethodAnalyzer(QAanalyzer):
         method = self.info.method
         series = self.info.series
         if verbose:
-            desc = 'method {0} series {1}'.format(method,series)
+            desc = f'method {method} series {series}'
         #end if
         if 'traces' in self:
             check = {None:True,False:False,True:True}

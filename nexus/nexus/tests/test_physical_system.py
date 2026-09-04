@@ -266,7 +266,7 @@ def test_physical_system_initialization(tmp_path):
 
     # test load
     for i,sys in enumerate(systems):
-        path = tmp_path / 'system_{}'.format(i)
+        path = tmp_path / f'system_{i}'
         sys.save(path)
         sys2 = PhysicalSystem()
         sys2.load(path)

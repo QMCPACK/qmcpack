@@ -731,32 +731,56 @@ def savetoqmcpack(
     print('Wavefunction successfully saved to QMCPACK HDF5 Format')
     print('Use: "convert4qmc -orbitals  {}.h5" to generate QMCPACK input files'.format(title))
 
-
 def make_multidet(cell, mf, title, h5_handle):
     import numpy
     import h5py, re, sys
+
     a = mf.fcisolver.large_ci(mf.ci, mf.ncas, mf.nelecas, tol=0.0, return_strs=True)
+
+    nmo = mf.mo_coeff.shape[1]
+    N_int = (nmo + 63) // 64
+
     dets_a = []
     dets_b = []
     coeffs = []
+
     cas_mo_start_a = cell.nelec[0] - mf.nelecas[0]
     cas_mo_start_b = cell.nelec[1] - mf.nelecas[1]
-    n = 64 # chunk length
+
     for idx, i in enumerate(a):
-        occ_a = numpy.array(list(i[1][2:]), dtype=int)
-        occ_b = numpy.array(list(i[2][2:]), dtype=int)
-        string_a = '0'*(len(mf.mo_coeff) - cas_mo_start_a - len(occ_a)) + i[1][2:] + '1'*cas_mo_start_a
-        string_b = '0'*(len(mf.mo_coeff) - cas_mo_start_b - len(occ_b)) + i[2][2:] + '1'*cas_mo_start_b
-        chunks_a = [int(string_a[j:j+n], 2) for j in range(0, len(string_a), n)]
-        chunks_b = [int(string_b[j:j+n], 2) for j in range(0, len(string_b), n)]
+        str_a = i[1].decode() if isinstance(i[1], bytes) else i[1]
+        str_b = i[2].decode() if isinstance(i[2], bytes) else i[2]
+
+        active_a = int(str_a, 2) if isinstance(str_a, str) else int(str_a)
+        active_b = int(str_b, 2) if isinstance(str_b, str) else int(str_b)
+
+        chunks_a = numpy.zeros(N_int, dtype=numpy.uint64)
+        chunks_b = numpy.zeros(N_int, dtype=numpy.uint64)
+
+        for p in range(cas_mo_start_a):
+            chunks_a[p // 64] |= numpy.uint64(1) << numpy.uint64(p % 64)
+
+        for p in range(cas_mo_start_b):
+            chunks_b[p // 64] |= numpy.uint64(1) << numpy.uint64(p % 64)
+
+        for p in range(mf.ncas):
+            if (active_a >> p) & 1:
+                q = cas_mo_start_a + p
+                chunks_a[q // 64] |= numpy.uint64(1) << numpy.uint64(q % 64)
+
+        for p in range(mf.ncas):
+            if (active_b >> p) & 1:
+                q = cas_mo_start_b + p
+                chunks_b[q // 64] |= numpy.uint64(1) << numpy.uint64(q % 64)
+
         dets_a.append(chunks_a)
         dets_b.append(chunks_b)
         coeffs.append(i[0])
 
     H5_qmcpack_multidet = h5py.File(title+'_multidet.h5','w')
     groupApp = H5_qmcpack_multidet.create_group("MultiDet")
-    dets_a = numpy.array(dets_a)
-    dets_b = numpy.array(dets_b)
+    dets_a = numpy.array(dets_a, dtype=numpy.uint64)
+    dets_b = numpy.array(dets_b, dtype=numpy.uint64)
 
     dt = numpy.dtype(numpy.uint64)
     groupApp.create_dataset('CI_Alpha',      dets_a.shape,   dtype=dt,    data=dets_a)
@@ -764,7 +788,7 @@ def make_multidet(cell, mf, title, h5_handle):
     groupApp.create_dataset('Coeff',         (len(coeffs),), dtype=float, data=coeffs)
     groupApp.create_dataset('NbDet',         (1,),           dtype="i4",  data=len(coeffs))
     groupApp.create_dataset('Nbits',         (1,),           dtype="i4",  data=len(dets_a[0]))
-    groupApp.create_dataset('nstate',        (1,),           dtype="i4",  data=mf.mo_coeff.shape[0])
+    groupApp.create_dataset('nstate',        (1,),           dtype="i4",  data=nmo)
     groupApp.create_dataset('nexcitedstate', (1,),           dtype="i4",  data=2)
 
     H5_qmcpack_multidet.close()

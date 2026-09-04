@@ -78,7 +78,7 @@ from pathlib import Path
 from string import Template
 from subprocess import Popen
 from typing import ClassVar
-from .developer import DevBase, obj, error, unavailable
+from .developer import DevBase, obj, FileFormatError, NexusError
 from .structure import Structure, read_structure
 from .physical_system import PhysicalSystem
 from .machines import Job, Workstation, get_machine
@@ -93,7 +93,8 @@ class SimulationInput(NexusCore):
 
     def read_file_text(self,filepath):
         if not os.path.exists(filepath):
-            self.error('file does not exist:  '+filepath)
+            msg = 'file does not exist:  '+filepath
+            raise FileNotFoundError(msg)
         #end if
         with open(filepath,'r') as fobj:
             text = fobj.read()
@@ -335,9 +336,15 @@ class Simulation(NexusCore):
             if not isinstance(system,PhysicalSystem):
                 extra=''
                 if not isinstance(extra,obj):
-                    extra = '\nwith value: {0}'.format(system)
+                    extra = f'\nwith value: {system}'
                 #end if
-                error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
+                msg = (
+                    'invalid input for variable "system"\n'
+                    'system object must be of type PhysicalSystem\n'
+                    f'you provided type: {system.__class__.__name__}'
+                    +extra
+                    )
+                raise TypeError(msg)
             #end if
         #end if
         return sim_args,inp_args
@@ -437,9 +444,15 @@ class Simulation(NexusCore):
 
     def init_job(self):
         if self.job is None:
-            self.error('job not provided.  Input field job must be set to a Job object.')
+            msg = 'job not provided.  Input field job must be set to a Job object.'
+            raise ValueError(msg)
         elif not isinstance(self.job,Job):
-            self.error('Input field job must be set to a Job object\nyou provided an object of type: {0}\nwith value: {1}'.format(self.job.__class__.__name__,self.job))
+            msg = (
+                'Input field job must be set to a Job object\n'
+                f'you provided an object of type: {self.job.__class__.__name__}\n'
+                f'with value: {self.job}'
+                )
+            raise TypeError(msg)
         #end if
         self.job = deepcopy(self.job)
         self.init_job_extra()
@@ -466,7 +479,12 @@ class Simulation(NexusCore):
         kwset = set(kw.keys())
         invalid = kwset - self.allowed_inputs
         if len(invalid)>0:
-            self.error('received invalid inputs\ninvalid inputs: {0}\nallowed inputs are: {1}'.format(sorted(invalid),sorted(self.allowed_inputs)))
+            msg = (
+                'received invalid inputs\n'
+                f'invalid inputs: {sorted(invalid)}\n'
+                f'allowed inputs are: {sorted(self.allowed_inputs)}'
+                )
+            raise ValueError(msg)
         #end if
         allowed =  kwset & self.allowed_inputs
         for name in allowed:
@@ -474,7 +492,10 @@ class Simulation(NexusCore):
         #end for
         if 'path' in allowed:
             if not isinstance(self.path, str | Path):
-                self.error('path must be a string or Path, you provided {0} (type {1})'.format(self.path,self.path.__class__.__name__))
+                msg = (
+                    f'path must be a string or Path, you provided {self.path} (type {self.path.__class__.__name__})'
+                    )
+                raise TypeError(msg)
             else:
                 self.path = path_string(self.path)
                 p = self.path
@@ -494,21 +515,37 @@ class Simulation(NexusCore):
             self.files = set([path_string(f) for f in self.files])
         #end if
         if not isinstance(self.input,(self.input_type,GenericSimulationInput)):
-            self.error('input must be of type {0}\nreceived {1}\nplease provide input appropriate to {2}'.format(self.input_type.__name__,self.input.__class__.__name__,self.__class__.__name__))
+            msg = (
+                f'input must be of type {self.input_type.__name__}\n'
+                f'received {type(self.input).__name__}\n'
+                f'please provide input appropriate to {type(self).__name__}'
+                )
+            raise TypeError(msg)
         #end if
         if isinstance(self.system,PhysicalSystem):
             self.system = deepcopy(self.system)
             consistent,msg = self.system.check_consistent(exit=False,message=True)
             if not consistent:
                 locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
-                self.error('user provided physical system is not internally consistent\nsimulation identifier: {0}\nlocal directory: {1}\nmore details on the user error are given below\n\n{2}'.format(self.identifier,locdir,msg))
+                msg = (
+                    'user provided physical system is not internally consistent\n'
+                    f'simulation identifier: {self.identifier}\n'
+                    f'local directory: {locdir}\n'
+                    'more details on the user error are given below\n\n'
+                    f'{msg}'
+                    )
+                raise ValueError(msg)
             #end if
         elif self.system is not None:
-            self.error('system must be a PhysicalSystem object\nyou provided an object of type: {0}'.format(self.system.__class__.__name__))
+            msg = (
+                'system must be a PhysicalSystem object\n'
+                f'you provided an object of type: {type(self.system).__name__}'
+                )
+            raise TypeError(msg)
         #end if
         if self.restartable or self.force_restart:
             if not cls.supports_restarts:
-                self.warn('restarts are not supported by {0}, request ignored'.format(cls.__name__))
+                self.warn(f'restarts are not supported by {cls.__name__}, request ignored')
             #end if
         #end if
     #end def set
@@ -529,7 +566,16 @@ class Simulation(NexusCore):
                 if self.identifier not in idset:
                     idset.add(self.identifier)
                 else:
-                    self.error('multiple simulations in a single directory have the same identifier\nplease assign unique identifiers to each simulation\nsimulation directory: {0}\nrepeated identifier: {1}\nother identifiers: {2}\nbetween the directory shown and the identifiers listed, it should be clear which simulations are involved\nmost likely, you described two simulations with identifier {3}'.format(self.locdir,self.identifier,sorted(idset),self.identifier))
+                    msg = (
+                        'multiple simulations in a single directory have the same identifier\n'
+                        'please assign unique identifiers to each simulation\n'
+                        f'simulation directory: {self.locdir}\n'
+                        f'repeated identifier: {self.identifier}\n'
+                        f'other identifiers: {sorted(idset)}\n'
+                        'between the directory shown and the identifiers listed, it should be clear which simulations are involved\n'
+                        f'most likely, you described two simulations with identifier {self.identifier}'
+                        )
+                    raise ValueError(msg)
                 #end if
             #end if
         #end if
@@ -705,7 +751,11 @@ class Simulation(NexusCore):
         if not os.path.exists(dir):
             os.makedirs(dir)
         elif os.path.isfile(dir):
-            self.error('cannot create directory {0}\na file exists at this location'.format(dir))
+            msg = (
+                f'cannot create directory {dir}\n'
+                'a file exists at this location'
+                )
+            raise FileExistsError(msg)
         #end if
     #end def _create_dir
 
@@ -719,7 +769,8 @@ class Simulation(NexusCore):
 
     def depends(self,*dependencies):
         if nexus_core.dynamic:
-            self.error('dynamic workflows do not allow explicit dependencies between simulations')
+            msg = 'dynamic workflows do not allow explicit dependencies between simulations'
+            raise ValueError(msg)
         if len(dependencies)==0:
             return
         #end if
@@ -729,7 +780,11 @@ class Simulation(NexusCore):
         for d in dependencies:
             sim = d[0]
             if not isinstance(sim,Simulation):
-                self.error('first element in a dependency tuple must be a Simulation object\nyou provided a '+sim.__class__.__name__)
+                msg = (
+                    'first element in a dependency tuple must be a Simulation object\n'
+                    'you provided a '+sim.__class__.__name__
+                    )
+                raise TypeError(msg)
             #end if
             dep = obj()
             dep.sim = sim
@@ -745,7 +800,11 @@ class Simulation(NexusCore):
                 #end if
             #end for
             if len(msg) > 0:
-                self.error('unrecognized dependencies specified for simulation '+self.identifier+f":\n{msg}")
+                msg = (
+                    'unrecognized dependencies specified for simulation '+self.identifier+":\n"
+                    f"{msg}"
+                    )
+                raise ValueError(msg)
             #end if
             dep.result_names = rn
             dep.results = obj()
@@ -820,21 +879,20 @@ class Simulation(NexusCore):
                     if sim.has_generic_input():
                         calculating_result = False
                         cls = self.__class__
-                        self.warn('a simulation result cannot be inferred from generic formatted or template input\nplease use {0} instead of {1}\nsee error below for information identifying this simulation instance'.format(cls.input_type.__class__.__name__,sim.input.__class__.__name__))
+                        self.warn(
+                            'a simulation result cannot be inferred from generic formatted or template input\n'
+                            f'please use {type(cls.input_type).__name__} instead of {type(sim.input).__name__}\n'
+                            'see error below for information identifying this simulation instance'
+                            )
                     else:
                         calculating_result = sim.check_result(result_name,self)
                     #end if
                     if not calculating_result:
                         self.warn(
-                            'simulation {0} id {1} is not calculating result {2}\n'
-                            'required by simulation {3} id {4}\n'
-                            '{5} {6} directory: {7}\n'
-                            '{8} {9} directory: {10}'.format(
-                                sim.identifier, sim.simid, result_name,   # {0}, {1}, {2}
-                                self.identifier, self.simid,              # {3}, {4}
-                                sim.identifier, sim.simid, sim.locdir,    # {5}, {6}, {7}
-                                self.identifier, self.simid, self.locdir, # {8}, {9}, {10}
-                                )
+                            f'simulation {sim.identifier} id {sim.simid} is not calculating result {result_name}\n'
+                            f'required by simulation {self.identifier} id {self.simid}\n'
+                            f'{sim.identifier} {sim.simid} directory: {sim.locdir}\n'
+                            f'{self.identifier} {self.simid} directory: {self.locdir}'
                             )
                     #end if
                 else:
@@ -860,7 +918,14 @@ class Simulation(NexusCore):
                 for result_name in dep.result_names:
                     if result_name!='other':
                         if sim.has_generic_input():
-                            self.error('a simulation result cannot be inferred from generic formatted or template input\nplease use {0} instead of {1}\nsim id: {2}\ndirectory: {3}\nresult: {4}'.format(cls.input_type.__class__.__name__,sim.input.__class__.__name__,sim.id,sim.locdir,result_name))
+                            msg = (
+                                'a simulation result cannot be inferred from generic formatted or template input\n'
+                                f'please use {type(self.input_type).__name__} instead of {type(sim.input).__name__}\n'
+                                f'sim id: {sim.id}\n'
+                                f'directory: {sim.locdir}\n'
+                                f'result: {result_name}'
+                                )
+                            raise ValueError(msg)
                         #end if
                         dep.results[result_name] = sim.get_result(result_name,sim)
                     else:
@@ -874,7 +939,14 @@ class Simulation(NexusCore):
                     for result_name,result in dep.results.items():
                         if result_name!='other':
                             if self.has_generic_input():
-                                self.error('a simulation result cannot be incorporated into generic formatted or template input\nplease use {0} instead of {1}\nsim id: {2}\ndirectory: {3}\nresult: {4}'.format(cls.input_type.__class__.__name__,self.input.__class__.__name__,self.id,self.locdir,result_name))
+                                msg = (
+                                    'a simulation result cannot be incorporated into generic formatted or template input\n'
+                                    f'please use {type(self.input_type).__name__} instead of {type(sim.input).__name__}\n'
+                                    f'sim id: {sim.id}\n'
+                                    f'directory: {sim.locdir}\n'
+                                    f'result: {result_name}'
+                                    )
+                                raise ValueError(msg)
                             #end if
                             self.incorporate_result(result_name,result,sim)
                         #end if
@@ -919,7 +991,7 @@ class Simulation(NexusCore):
             sim_image = SimulationImage()
             sim_image.save_image(self,imagefile)
         else:
-            self.error('attempting to save full object!')
+            self.warn('attempting to save full object!')
             self.save(imagefile)
         #end if
     #end def save_image
@@ -983,7 +1055,7 @@ class Simulation(NexusCore):
             attempt_dir = os.path.join(self.locdir,prefix+str(n))
             os.makedirs(attempt_dir)
             for filepath in filepaths:
-                os.system('mv {0} {1}'.format(filepath,attempt_dir))
+                os.system(f'mv {filepath} {attempt_dir}')
             #end for
         #end if
     #end def save_attempt
@@ -1059,7 +1131,11 @@ class Simulation(NexusCore):
             if found_file:
                 self.copy_file(local,remote)
             else:
-                self.error('file {0} not found\nlocations checked: {1}'.format(file,file_locations))
+                msg = (
+                    f'file {file} not found\n'
+                    f'locations checked: {file_locations}'
+                    )
+                raise FileNotFoundError(msg)
             #end if
         #end for
         self.sent_files = True
@@ -1473,7 +1549,7 @@ class Simulation(NexusCore):
     def show_input(self,*,exit=True):
         print()
         print(80*'=')
-        print('Input file for simulation "{}"\nDirectory: {}'.format(self.identifier,self.locdir))
+        print(f'Input file for simulation "{self.identifier}"\nDirectory: {self.locdir}')
         print(80*'-')
         print(self.input.write())
         print(80*'=')
@@ -1645,11 +1721,17 @@ class SimulationInputTemplateDev(SimulationInput):
 
     def assign(self,**values):
         if self.template is None:
-            self.error('cannot assign values prior to reading template')
+            msg = 'cannot assign values prior to reading template'
+            raise ValueError(msg)
         #end if
         invalid = set(values.keys()) - self.keywords - self.allow_not_set
         if len(invalid)>0:
-            self.error('attempted to assign invalid keywords\ninvalid keywords: {0}\nvalid options are: {1}'.format(sorted(invalid),sorted(self.keywords)))
+            msg = (
+                'attempted to assign invalid keywords\n'
+                f'invalid keywords: {sorted(invalid)}\n'
+                f'valid options are: {sorted(self.keywords)}'
+                )
+            raise ValueError(msg)
         #end if
         self.values.update(**values)
     #end def assign
@@ -1660,7 +1742,12 @@ class SimulationInputTemplateDev(SimulationInput):
             template   = Template(text)
             key_tuples = Template.pattern.findall(text)
         except Exception as e:
-            self.error('exception encountered during read\nfile: {0}\nexception: {1}'.format(filepath,e))
+            msg = (
+                'exception encountered during read\n'
+                f'file: {filepath}\n'
+                f'exception: {e}'
+                )
+            raise FileFormatError(msg)
         #end try
         for ktup in key_tuples:
             if len(ktup[1])>0:   # normal keyword, e.g. $key
@@ -1675,12 +1762,20 @@ class SimulationInputTemplateDev(SimulationInput):
     def write_text(self,filepath=None):
         kw_rem = self.keywords-set(self.values.keys())
         if len(kw_rem)>0:
-            self.error('not all keywords for this template have been assigned\nkeywords remaining: {0}'.format(sorted(kw_rem)))
+            msg = (
+                'not all keywords for this template have been assigned\n'
+                f'keywords remaining: {sorted(kw_rem)}'
+                )
+            raise ValueError(msg)
         #end if
         try:
             text = self.template.substitute(**self.values)
         except Exception as e:
-            self.error('exception encountered during write:\n'+str(e))
+            msg = (
+                'exception encountered during write:\n'
+                +str(e)
+                )
+            raise type(e)(msg)
         #end try
         return text
     #end def write_text
@@ -1706,7 +1801,11 @@ class SimulationInputMultiTemplateDev(SimulationInput):
         for name,val in file_templates.items():
             if isinstance(val,str):
                 if ' ' in val:
-                    self.error('filename cannot have any spaces\nbad filename provided with keyword '+name)
+                    msg = (
+                        'filename cannot have any spaces\n'
+                        'bad filename provided with keyword '+name
+                        )
+                    raise ValueError(msg)
                 #end if
                 self.filenames[name] = val
             elif isinstance(val,tuple) and len(val)==2:
@@ -1714,7 +1813,8 @@ class SimulationInputMultiTemplateDev(SimulationInput):
                 self[name] = SimulationInputTemplate(template_path)
                 self.filenames[name] = filename
             else:
-                self.error('keyword inputs must either be all filenames or all filename/filepath pairs')
+                msg = 'keyword inputs must either be all filenames or all filename/filepath pairs'
+                raise TypeError(msg)
             #end if
         #end for
     #end def set_templates
@@ -1722,7 +1822,8 @@ class SimulationInputMultiTemplateDev(SimulationInput):
 
     def read(self,filepath):
         if len(self.filenames)==0:
-            self.error('cannot perform read, filenames are not set')
+            msg = 'cannot perform read, filenames are not set'
+            raise RuntimeError(msg)
         #end if
         base,filename = os.path.split(filepath)
         filenames = self.filenames
@@ -1812,28 +1913,18 @@ def generate_simulation(**kwargs):
     if sim_type=='generic':
         return GenericSimulation(**kwargs)
     else:
-        error('sim_type {0} is unrecognized'.format(sim_type),'generate_simulation')
+        msg = f'sim_type {sim_type} is unrecognized'
+        raise ValueError(msg)
     #end if
 #end def generate_simulation
 
 
 
 # ability to graph simulation workflows
-try:
-    from pydot import Dot,Node,Edge
-except:
-    Dot,Node,Edge = unavailable('pydot','Dot','Node','Edge')
-#end try
-try:
-    from matplotlib.image import imread
-    from matplotlib.pyplot import imshow,show,xticks,yticks
-except:
-    imread = unavailable('matplotlib.image','imread')
-    imshow,show,xticks,yticks = unavailable('matplotlib.pyplot','imshow','show','xticks','yticks')
-#end try
-
 exit_call = sys.exit
 def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,display=True):
+    from pydot import Dot, Node, Edge
+
     if sims is None:
         sims = Simulation.all_sims
     #end if
@@ -1889,6 +1980,8 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
 
     # display the image
     if fmt=='png' and display:
+        from matplotlib.image import imread
+        from matplotlib.pyplot import imshow,show,xticks,yticks
         imshow(imread(savefile))
         xticks([])
         yticks([])
@@ -1937,7 +2030,12 @@ class DynamicProcess(DevBase):
         identifier = kw['identifier']
         locdir = os.path.join(nc_loc,runs,path)
         if 'dynamic_id' not in kw:
-            error('dynamic_id is required for dynamic workflows in a generate_* function.\nSimulation run location: {}\nSimulation identifier  : {}'.format(locdir,identifier))
+            msg = (
+                'dynamic_id is required for dynamic workflows in a generate_* function.\n'
+                f'Simulation run location: {locdir}\n'
+                f'Simulation identifier  : {identifier}'
+                )
+            raise ValueError(msg)
         dynamic_id = kw.pop('dynamic_id')
         dpid = (locdir,identifier,dynamic_id)
         if dpid in DynamicProcess.all_dynamic_processes:
@@ -1946,7 +2044,8 @@ class DynamicProcess(DevBase):
         else:
             dp = None
         if 'requires' not in kw:
-            error('dependency requirements must be given via the "requires" keyword for dynamic workflows')
+            msg = 'dependency requirements must be given via the "requires" keyword for dynamic workflows'
+            raise ValueError(msg)
         requires = kw.pop('requires')
         dyn_args = obj(dpid=dpid,requires=requires)
         return dp,dyn_args
@@ -1956,26 +2055,43 @@ class DynamicProcess(DevBase):
     def __init__(self,dpid,sim,requires):
         # check dynamic id
         if dpid in self.all_dynamic_processes:
-            self.error('dynamic process created with overlapping id.  Provided id: {}'.format(dpid))
+            msg = f'dynamic process created with overlapping id.  Provided id: {dpid}'
+            raise ValueError(msg)
 
         # check simulation type
         if not isinstance(sim,Simulation):
-            self.error('expected Simulation type but received type {}'.format(sim.__class__.__name__))
+            msg = f'expected Simulation type but received type {type(sim).__name__}'
+            raise TypeError(msg)
 
         # check requires
         if isinstance(requires,str):
             requires = [requires]
         elif not isinstance(requires,(tuple,list,set)):
-            self.error('keyword "requires" must be a tuple, list or set of requirements')
+            msg = 'keyword "requires" must be a tuple, list or set of requirements'
+            raise TypeError(msg)
         for req in requires:
             if not isinstance(req,str):
-                self.error('each requirement in "requires" must be given as a string.\nType received: {}\nValue received: {}'.format(req.__class__.__name__,req))
+                msg = (
+                    'each requirement in "requires" must be given as a string.\n'
+                    f'Type received: {type(req).__name__}\n'
+                    f'Value received: {req}'
+                    )
+                raise TypeError(msg)
         requires = set(requires)
         invalid_reqs = requires-self.allowed_requirements
         if len(invalid_reqs)>0:
-            self.error('invalid requirements provided.\nAllowed requirements: {}\nRequirements provided: {}'.format(list(self.allowed_requirements),list(invalid_reqs)))
+            msg = (
+                'invalid requirements provided.\n'
+                f'Allowed requirements: {list(self.allowed_requirements)}\n'
+                f'Requirements provided: {list(invalid_reqs)}'
+                )
+            raise ValueError(msg)
         if len(requires)==0:
-            self.error("every simulation dynamic process must specify least one dependency requirement.\nIf there are no dependencies/requirements, set requires='none'")
+            msg = (
+                "every simulation dynamic process must specify least one dependency requirement.\n"
+                "If there are no dependencies/requirements, set requires='none'"
+                )
+            raise ValueError(msg)
         if 'none' in requires:
             requires.remove('none')
 
@@ -1984,10 +2100,16 @@ class DynamicProcess(DevBase):
         if isinstance(produces,str):
             produces = [produces]
         if not isinstance(produces,(tuple,list,set)):
-            self.error('keyword "requires" must be a tuple, list or set of products')
+            msg = 'keyword "requires" must be a tuple, list or set of products'
+            raise TypeError(msg)
         for prod in produces:
             if not isinstance(prod,str):
-                self.error('each product in "produces" must be given as a string.\nType received: {}\nValue received: {}'.format(prod.__class__.__name__,prod))
+                msg = (
+                    'each product in "produces" must be given as a string.\n'
+                    f'Type received: {type(prod).__name__}\n'
+                    f'Value received: {prod}'
+                    )
+                raise TypeError(msg)
         produces = set(produces)
 
         # initial values
@@ -2026,15 +2148,25 @@ class DynamicProcess(DevBase):
         sim = self.sim
         msg = None
         if prod_name not in sim.produces:
-            msg = 'simulation does not produce "{}"'.format(prod_name)
+            msg = f'simulation does not produce "{prod_name}"'
         elif not sim.finished:
-            msg = 'Simulation is not finished\nProduct "{}" not yet computed'.format(prod_name)
+            msg = (
+                'Simulation is not finished\n'
+                f'Product "{prod_name}" not yet computed'
+                )
         elif not sim.analyzed:
-            msg = 'simulation has not been analyzed, requested prod_name "{}" has not been computed yet'.format(prod_name)
+            msg = f'simulation has not been analyzed, requested prod_name "{prod_name}" has not been computed yet'
         elif prod_name not in sim.products:
             msg = 'simulation products have not been handled correctly.  This is a developer error'
         if msg is not None:
-            self.error(msg+'\nSimulation type     : {}\nSimulation id       : {}\nSimulation directory: {}\nDynamic process id  : {}'.format(sim.__class__.__name__,sim.simid,sim.locdir,self.dpid))
+            msg = (
+                msg+'\n'
+                f'Simulation type     : {type(sim).__name__}\n'
+                f'Simulation id       : {sim.simid}\n'
+                f'Simulation directory: {sim.locdir}\n'
+                f'Dynamic process id  : {self.dpid}'
+                )
+            raise NexusError(msg)
         return sim.products[prod_name]
     #end def _check_get_product
 
@@ -2053,15 +2185,29 @@ class DynamicProcess(DevBase):
                 ts = req_type.__name__
             else:
                 ts = [t.__name__ for t in req_type]
-            self.error('product "{}" must be of type "{}".\nReceived type: {}'.format(req_name,ts,req_value.__class__.__name__))
+            msg = (
+                f'product "{req_name}" must be of type "{ts}".\n'
+                f'Received type: {type(req_value).__name__}'
+                )
+            raise TypeError(msg)
         # check if requirement value has already been set
         if req_name not in self.req_values:
             self.req_values[req_name] = req_value
             already_set = False
         elif isinstance(req_value,(str,int)) and req_value!=self.req_values[req_name]:
-            self.error('attempted assignment of required parameter "{}" with value differing from the original.\nOriginal value: {}\nValue received: {}'.format(req_name,self.req_values[req_name],req_value))
+            msg = (
+                f'attempted assignment of required parameter "{req_name}" with value differing from the original.\n'
+                f'Original value: {self.req_values[req_name]}\n'
+                f'Value received: {req_value}'
+                )
+            raise ValueError(msg)
         elif id(req_value)!=id(self.req_values[req_name]):
-            self.error('attempted assignment of required parameter "{}" with python id differing from the original.\nOriginal id: {}\nid received: {}'.format(req_name,id(self.req_values[req_name]),id(req_value)))            
+            msg = (
+                f'attempted assignment of required parameter "{req_name}" with python id differing from the original.\n'
+                f'Original id: {id(self.req_values[req_name])}\n'
+                f'id received: {id(req_value)}'
+                )
+            raise ValueError(msg)            
         else:
             already_set = True
         # if already set, return
@@ -2070,9 +2216,16 @@ class DynamicProcess(DevBase):
         # proceed with incorporation
         # ensure requirement is one of the supported options in general
         if req_name not in self.sim.allowed_requirements:
-            self.error('incorporating "{}" into simulation type {} is not supported.'.format(req_name,self.sim.__class__.__name__))
+            msg = (
+                f'incorporating "{req_name}" into simulation type {self.sim.__class__.__name__} is not supported.'
+                )
+            raise NotImplementedError(msg)
         elif is_path and isinstance(req_value,str) and not os.path.exists(req_value):
-            self.error('"{}" path does not exist.\nPath provided: {}'.format(req_name,req_value))
+            msg = (
+                f'"{req_name}" path does not exist.\n'
+                f'Path provided: {req_value}'
+                )
+            raise FileNotFoundError(msg)
         # mark the requirement as fulfilled
         self.unmet_reqs.remove(req_name)
         return already_set

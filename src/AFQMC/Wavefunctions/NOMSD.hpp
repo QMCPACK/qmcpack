@@ -69,7 +69,7 @@ class NOMSD : public AFQMCInfo
   using CTensor      = boost::multi::array<ComplexType, 3, Allocator>;
   using CVector_ref  = boost::multi::array_ref<ComplexType, 1, pointer>;
   using CMatrix_ref  = boost::multi::array_ref<ComplexType, 2, pointer>;
-  using CMatrix_ptr  = boost::multi::array_ptr<ComplexType, 2, pointer>;
+  using CMatrix_ptr  = boost::multi::detail::array_ptr<ComplexType, 2, pointer>;
   using CMatrix_cref = boost::multi::array_ref<const ComplexType, 2, const_pointer>;
   using CTensor_ref  = boost::multi::array_ref<ComplexType, 3, pointer>;
   using CTensor_cref = boost::multi::array_ref<const ComplexType, 3, const_pointer>;
@@ -86,12 +86,12 @@ class NOMSD : public AFQMCInfo
 
   using stdCMatrix_ref = boost::multi::array_ref<ComplexType, 2>;
 
-  using StaticVector  = boost::multi::static_array<ComplexType, 1, buffer_alloc_type>;
-  using StaticMatrix  = boost::multi::static_array<ComplexType, 2, buffer_alloc_type>;
-  using Static3Tensor = boost::multi::static_array<ComplexType, 3, buffer_alloc_type>;
+  using DynamicVector  = boost::multi::dynamic_array<ComplexType, 1, buffer_alloc_type>;
+  using DynamicMatrix  = boost::multi::dynamic_array<ComplexType, 2, buffer_alloc_type>;
+  using Dynamic3Tensor = boost::multi::dynamic_array<ComplexType, 3, buffer_alloc_type>;
 
-  using StaticSHMVector = boost::multi::static_array<ComplexType, 1, shm_buffer_alloc_type>;
-  using StaticSHMMatrix = boost::multi::static_array<ComplexType, 2, shm_buffer_alloc_type>;
+  using DynamicSHMVector = boost::multi::dynamic_array<ComplexType, 1, shm_buffer_alloc_type>;
+  using DynamicSHMMatrix = boost::multi::dynamic_array<ComplexType, 2, shm_buffer_alloc_type>;
 
 public:
   template<class MType>
@@ -212,10 +212,10 @@ public:
 
   ~NOMSD() {}
 
-  NOMSD(NOMSD const& other) = delete;
+  NOMSD(NOMSD const& other)            = delete;
   NOMSD& operator=(NOMSD const& other) = delete;
   NOMSD(NOMSD&& other)                 = default;
-  NOMSD& operator=(NOMSD&& other) = delete;
+  NOMSD& operator=(NOMSD&& other)      = delete;
 
   int local_number_of_cholesky_vectors() const { return HamOp.local_number_of_cholesky_vectors(); }
   int global_number_of_cholesky_vectors() const { return HamOp.global_number_of_cholesky_vectors(); }
@@ -268,7 +268,7 @@ public:
         HamOp.vbias(G, std::forward<MatA>(v), a);
       else
       {
-        if(transposed_G_for_vbias_)
+        if (transposed_G_for_vbias_)
           APP_ABORT(" Error in NOMSD::vbias: transposed_G_for_vbias_ should be false. \n");
         // HamOp expects either alpha or beta, so must be called twice
         HamOp.vbias(G.sliced(0, NMO * NMO), std::forward<MatA>(v), a, 0.0);
@@ -304,16 +304,16 @@ public:
   void Energy(WlkSet& wset)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
-    StaticMatrix eloc({nw, 3}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicMatrix eloc({nw, 3}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     Energy(wset, eloc, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)
     {
       wset.setProperty(OVLP, ovlp);
-      wset.setProperty(E1_, eloc(eloc.extension(), 0));
-      wset.setProperty(EXX_, eloc(eloc.extension(), 1));
-      wset.setProperty(EJ_, eloc(eloc.extension(), 2));
+      wset.setProperty(E1_, eloc(eloc.extent(), 0));
+      wset.setProperty(EXX_, eloc(eloc.extent(), 1));
+      wset.setProperty(EJ_, eloc(eloc.extent(), 2));
     }
     TG.local_barrier();
   }
@@ -343,7 +343,7 @@ public:
   void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact = true, bool transpose = false)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact, transpose);
   }
 
@@ -432,7 +432,7 @@ public:
   void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact_G_for_vbias, transposed_G_for_vbias_);
   }
 
@@ -455,7 +455,7 @@ public:
   void Overlap(WlkSet& wset)
   {
     int nw = wset.size();
-    StaticVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     Overlap(wset, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)
@@ -523,7 +523,7 @@ public:
         {
           for (int i = 0; i < ndet; ++i)
           {
-            boost::multi::array_ref<ComplexType, 2> A_(to_address(RefOrbMats[i].origin()), {nrow, ncol});
+            boost::multi::array_ref<ComplexType, 2> A_(to_address(RefOrbMats[i].base()), {nrow, ncol});
             ma::Matrix2MAREF('H', OrbMats[i], A_);
           }
         }
@@ -531,13 +531,13 @@ public:
         {
           for (int i = 0; i < ndet; ++i)
           {
-            boost::multi::array_ref<ComplexType, 2> A_(to_address(RefOrbMats[i].origin()), {NMO, NAEA});
+            boost::multi::array_ref<ComplexType, 2> A_(to_address(RefOrbMats[i].base()), {NMO, NAEA});
             ma::Matrix2MAREF('H', OrbMats[2 * i], A_);
-            boost::multi::array_ref<ComplexType, 2> B_(A_.origin() + A_.num_elements(), {NMO, NAEB});
+            boost::multi::array_ref<ComplexType, 2> B_(A_.base() + A_.num_elements(), {NMO, NAEB});
             ma::Matrix2MAREF('H', OrbMats[2 * i + 1], B_);
           }
         }
-      }                    // TG.Node().root()
+      } // TG.Node().root()
       TG.Node().barrier(); // for safety
     }
     using std::get;
@@ -549,7 +549,7 @@ public:
     int n0, n1;
     std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(get<1>(A.sizes())), TG.getNCoresPerTG());
     for (int i = 0; i < ndet; i++)
-      copy_n(RefOrbMats_[i].origin() + n0, n1 - n0, A_[i].origin() + n0);
+      copy_n(RefOrbMats_[i].base() + n0, n1 - n0, A_[i].base() + n0);
     TG.TG_local().barrier();
   }
 

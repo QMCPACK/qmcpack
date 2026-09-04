@@ -209,7 +209,6 @@ public:
       }
   }
 
-  virtual void finalize() {};
 
   template<typename PT, typename VT>
   inline void evaluate_v(const PT& r, VT& psi)

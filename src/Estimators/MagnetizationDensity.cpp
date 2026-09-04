@@ -14,7 +14,9 @@
 namespace qmcplusplus
 {
 MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput, const Lattice& lat)
-    : OperatorEstBase(DataLocality::crowd, minput.get_name(), minput.get_type()), input_(minput), lattice_(lat)
+    : OperatorEstBase(DataLocality::crowd, minput.get_name(), std::string{MagnetizationDensityInput::type_tag}),
+      input_(minput),
+      lattice_(lat)
 {
   //Pull consistent corner, grids, etc., from already inititalized input.
   //DerivedParameters does the sanity checks and consistent initialization of these variables.

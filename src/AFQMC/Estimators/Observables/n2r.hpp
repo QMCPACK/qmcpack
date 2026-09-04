@@ -173,7 +173,7 @@ public:
             APP_ABORT("");
           }
           using std::copy_n;
-          copy_n(orb.origin(), dm_size, ma::pointer_dispatch(Orbitals[kn].origin()));
+          copy_n(orb.base(), dm_size, ma::pointer_dispatch(Orbitals[kn].base()));
         }
       }
       dump.pop();
@@ -192,7 +192,7 @@ public:
     writer = (TG.getGlobalRank() == 0);
 
     DMAverage = mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
   template<class MatG, class MatG_host, class HostCVec1, class HostCVec2, class HostCVec3>
@@ -216,7 +216,7 @@ public:
     assert(Xw.size() == nw);
     assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
-    assert(G.extensions() == G_host.extensions());
+    assert(G.extents() == G_host.extents());
 
     int nsp;
     if (walker_type == CLOSED)
@@ -236,8 +236,8 @@ public:
       {
         DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
-      fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(denom.base(), denom.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(DMWork.base(), DMWork.num_elements(), ComplexType(0.0, 0.0));
     }
     else
     {
@@ -254,12 +254,12 @@ public:
     // G[spin][r] = sum_ij conj( Psi(i,r) ) * G[spin][i][j] * Psi(j,r) = sum_i conj( Psi(i,r) ) T1[i][r]
     int N = dm_size * NMO + dm_size;
     set_buffer(N);
-    auxCMatrix_ref T(Buff.origin(), {NMO, dm_size});
-    auxCVector_ref Gr(Buff.origin() + T.num_elements(), iextensions<1u>{dm_size});
+    auxCMatrix_ref T(Buff.base(), {NMO, dm_size});
+    auxCVector_ref Gr(Buff.base() + T.num_elements(), iextensions<1u>{dm_size});
 
     int N2 = nsp * (iN - i0);
     set_buffer2(N2);
-    stdCMatrix_ref Gr_(Buff2.origin(), {nsp, (iN - i0)});
+    stdCMatrix_ref Gr_(Buff2.base(), {nsp, (iN - i0)});
 
     // change batched_dot to a ** interface to make it more general and useful
 
@@ -268,30 +268,30 @@ public:
       if (TG.TG_local().root())
         denom[iw] += Xw[iw];
       auto&& Gu = G[iw][0];
-      auto&& Orb0N(Orbitals(Orbitals.extension(0), {i0, iN}));
-      auto&& T0N(T(T.extension(0), {i0, iN}));
+      auto&& Orb0N(Orbitals(get<0>(Orbitals.extents()), {i0, iN}));
+      auto&& T0N(T(get<0>(T.extents()), {i0, iN}));
       ma::product(Gu, Orb0N, T0N);
       using ma::batched_dot;
-      batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.origin()), Orb0N.stride(),
-                  ma::pointer_dispatch(T0N.origin()), T0N.stride(), ComplexType(0.0),
-                  ma::pointer_dispatch(Gr.origin()) + i0, 1);
+      batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.base()), Orb0N.stride(),
+                  ma::pointer_dispatch(T0N.base()), T0N.stride(), ComplexType(0.0),
+                  ma::pointer_dispatch(Gr.base()) + i0, 1);
       /*
-      fill_n(Gr.origin(),dm_size,ComplexType(0.0,0.0));
+      fill_n(Gr.base(),dm_size,ComplexType(0.0,0.0));
       for(int i=0; i<NMO; i++) {
-        ComplexType* O_(Orbitals[i].origin());
-        ComplexType* T_(T[i].origin());
-        ComplexType* G_(Gr.origin());
+        ComplexType* O_(Orbitals[i].base());
+        ComplexType* T_(T[i].base());
+        ComplexType* G_(Gr.base());
         for(int j=0; j<dm_size; j++, O_++, T_++, G_++)
           (*G_) += std::conj(*O_) * (*T_); 
       }  
 */
       using std::copy_n;
-      copy_n(ma::pointer_dispatch(Gr.origin()) + i0, (iN - i0), Gr_[0].origin());
+      copy_n(ma::pointer_dispatch(Gr.base()) + i0, (iN - i0), Gr_[0].base());
 
       if (walker_type == CLOSED)
       {
-        auto Gur(Gr_[0].origin());
-        auto DM(to_address(DMWork[iw].origin()) + i0);
+        auto Gur(Gr_[0].base());
+        auto DM(to_address(DMWork[iw].base()) + i0);
         auto X_(2.0 * Xw[iw]);
         for (int ir = i0; ir < iN; ir++, Gur++, DM++)
           (*DM) += X_ * (*Gur) * (*Gur);
@@ -300,15 +300,15 @@ public:
       {
         auto&& Gd = G[iw][1];
         ma::product(Gd, Orb0N, T0N);
-        batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.origin()), Orb0N.stride(),
-                    ma::pointer_dispatch(T0N.origin()), T0N.stride(), ComplexType(0.0),
-                    ma::pointer_dispatch(Gr.origin()) + i0, 1);
+        batched_dot('H', 'T', (iN - i0), NMO, ComplexType(1.0), ma::pointer_dispatch(Orb0N.base()), Orb0N.stride(),
+                    ma::pointer_dispatch(T0N.base()), T0N.stride(), ComplexType(0.0),
+                    ma::pointer_dispatch(Gr.base()) + i0, 1);
         using std::copy_n;
-        copy_n(ma::pointer_dispatch(Gr.origin()) + i0, (iN - i0), Gr_[1].origin());
+        copy_n(ma::pointer_dispatch(Gr.base()) + i0, (iN - i0), Gr_[1].base());
 
-        auto Gur(Gr_[0].origin());
-        auto Gdr(Gr_[1].origin());
-        auto DM(to_address(DMWork[iw].origin()) + i0);
+        auto Gur(Gr_[0].base());
+        auto Gdr(Gr_[1].base());
+        auto DM(to_address(DMWork[iw].base()) + i0);
         auto X_(2.0 * Xw[iw]);
         for (int ir = i0; ir < iN; ir++, Gur++, DM++)
           (*DM) += X_ * (*Gur) * (*Gdr);
@@ -348,7 +348,7 @@ public:
     if (TG.TG_local().root())
     {
       ma::scal(ComplexType(1.0 / block_size), DMAverage);
-      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.origin()), DMAverage.num_elements(), std::plus<>(), 0);
+      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.base()), DMAverage.num_elements(), std::plus<>(), 0);
       if (writer)
       {
         dump.push(std::string("N2R"));
@@ -357,7 +357,7 @@ public:
           dump.push(std::string("Average_") + std::to_string(i));
           std::string padded_iblock =
               std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-          stdCVector_ref DMAverage_(to_address(DMAverage[i].origin()), {dm_size});
+          stdCVector_ref DMAverage_(to_address(DMAverage[i].base()), {dm_size});
           dump.write(DMAverage_, "n2r_" + padded_iblock);
           dump.write(Wsum[i], "denominator_" + padded_iblock);
           dump.pop();
@@ -366,7 +366,7 @@ public:
       }
     }
     TG.TG_local().barrier();
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
 private:
@@ -408,14 +408,14 @@ private:
     if (Buff.num_elements() < N)
       Buff = auxCVector(iextensions<1u>(N), aux_alloc);
     using std::fill_n;
-    fill_n(Buff.origin(), N, ComplexType(0.0));
+    fill_n(Buff.base(), N, ComplexType(0.0));
   }
   void set_buffer2(size_t N)
   {
     if (Buff2.num_elements() < N)
       Buff2 = stdCVector(iextensions<1u>(N));
     using std::fill_n;
-    fill_n(Buff2.origin(), N, ComplexType(0.0));
+    fill_n(Buff2.base(), N, ComplexType(0.0));
   }
 };
 

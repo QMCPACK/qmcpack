@@ -55,7 +55,7 @@ from .qmcpack_input import (  # noqa: F401
 from .qmcpack_analyzer import QmcpackAnalyzer
 from .qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToAfqmc
 from .pyscf_sim import Pyscf
-from .developer import DevBase, obj, error, unavailable
+from .developer import DevBase, obj, NexusError, FileFormatError
 from .nexus_base import nexus_core
 from .pseudoset import PseudoSet
 from .hdfreader import read_hdf
@@ -63,12 +63,6 @@ from .unit_converter import convert
 from .pwscf import Pwscf
 from .xmlreader import XMLreader
 from . import numpy_extensions as npe
-
-try:
-    import h5py
-except:
-    h5py = unavailable('h5py')
-#end try
 
 
 def get_path(o, path, value=None):
@@ -96,37 +90,44 @@ class GCTA(DevBase):
     def check_implementation(self, gcta_possible, dependency):
         gcta_flavors = {'safl', 'afl', 'nscf', 'scf'}
         if self.flavor.lower() not in gcta_flavors:
-            self.error('GCTA type {} is not recognized. Valid options are {}.'.format(self.flavor, gcta_flavors))
+            msg = f'GCTA type {self.flavor} is not recognized. Valid options are {gcta_flavors}.'
+            raise ValueError(msg)
         #end if
         if not gcta_possible:
-            self.error('gcta keyword is not yet supported for this workflow. Please contact the developers.')
+            msg = 'gcta keyword is not yet supported for this workflow. Please contact the developers.'
+            raise NotImplementedError(msg)
         #end if
         try:
             symm_kgrid = self.system.generation_info.symm_kgrid
         except:
             symm_kgrid = False
         if (self.flavor.lower() in {'safl', 'afl'}) and (symm_kgrid == True):
-            self.error('''
-                safl and afl are not supported with symm_kgrid = True.
-                It is possible to implement the afl and safl algorithms with k-point symmetries
-                but it requires significant changes to the current simple implementation
-                that strictly uses the Fermi level to set the occupations.
-                Please contact the developers if this feature is pressing.
-                    ''')
+            msg = (
+                "safl and afl are not supported with symm_kgrid = True.\n"
+                "It is possible to implement the afl and safl algorithms with k-point symmetries\n"
+                "but it requires significant changes to the current simple implementation\n"
+                "that strictly uses the Fermi level to set the occupations.\n"
+                "Please contact the developers if this feature is pressing.\n"
+                )
+            raise NotImplementedError(msg)
         #end if
         spinor_run = self.input.get('spinor')
         if (self.flavor.lower() == 'safl') and (spinor_run is True):
-            self.error('safl is not supported with spinors. Use afl instead.')
+            msg = 'safl is not supported with spinors. Use afl instead.'
+            raise ValueError(msg)
         #end if
         if (self.flavor.lower() != 'afl') and (not isinstance(dependency,Pw2qmcpack)):
-            self.error('{} flavor of GCTA is only supported with pwscf at the moment.'.format(self.flavor))
+            msg = f'{self.flavor} flavor of GCTA is only supported with pwscf at the moment.'
+            raise ValueError(msg)
         #end if
         twistnum_input = self.input.get('twistnum')
         supercell_nkpoints = len(self.system.structure.kpoints)
         if (twistnum_input is not None) or (supercell_nkpoints == 1):
-            self.error('''
-                It appears that a single-twist QMC run was attempted using gcta keyword.
-                Currently, this is not supported. Please contact the developers if this is needed.''')
+            msg = (
+                "It appears that a single-twist QMC run was attempted using gcta keyword.\n"
+                "Currently, this is not supported. Please contact the developers if this is needed.\n"
+                )
+            raise NotImplementedError(msg)
         #end if
     #end def check_implementation
 
@@ -136,11 +137,11 @@ class GCTA(DevBase):
         This function checks if the float k-point weight/norm is close to its integer value. If so, returns the integer value.
         '''
         int_value = round(float_value)
-        assert abs(float_value - int_value) < atol, '''
-            The k-point weight or norm ({}) is not close to an integer!
+        assert abs(float_value - int_value) < atol, f'''
+            The k-point weight or norm ({float_value}) is not close to an integer!
             There might be a problem with how the weights were stored.
             Please check the SCF conversion step.
-            '''.format(float_value)
+            '''
         return int_value
     #end def check_kpoint_weight
 
@@ -168,7 +169,7 @@ class GCTA(DevBase):
             kw = h5_scalar(kp.weight)
             kweights.append(kw)
             for ispin in range(nspins):
-                path = 'electrons/kpoint_{0}/spin_{1}'.format(ikpoint,ispin)
+                path = f'electrons/kpoint_{ikpoint}/spin_{ispin}'
                 spin = get_path(h,path)
                 eigs = convert(np.array(spin.eigenvalues),'Ha','eV')
                 nstates = h5_scalar(spin.number_of_states)
@@ -243,11 +244,11 @@ class GCTA(DevBase):
         '''
         n_qmc_kpoints = len(self.prim_kpoints())
         n_scf_kpoints = self.eig_data.nkpoints
-        assert (n_scf_kpoints == n_qmc_kpoints), '''
-            The number of k-points in (N)SCF ({}) and QMC ({}) are not commensurate!
+        assert (n_scf_kpoints == n_qmc_kpoints), f'''
+            The number of k-points in (N)SCF ({n_scf_kpoints}) and QMC ({n_qmc_kpoints}) are not commensurate!
             This is not supported. Please rerun the (N)SCF and conversion steps such
             that the unfolded system contains the same number of k-points in both cases.
-            '''.format(n_scf_kpoints, n_qmc_kpoints)
+            '''
     #end def check_kmesh_size
 
     def check_kpoint_consistency(self, tol=1e-8):
@@ -266,8 +267,11 @@ class GCTA(DevBase):
         # Check if each row of gcta_kpoints exists in eig_kpoints
         for gcta_row in gcta_kpoints:
             if not np.any(np.all(np.isclose(eig_kpoints, gcta_row, atol=tol), axis=1)):
-                self.error('''The GCTA k-point {} was not found in the converted data. This is not supposed to happen.
-                            Please make sure that the k-points were written in unit coordinates.'''.format(gcta_row))
+                msg = (
+                    f"The GCTA k-point {gcta_row} was not found in the converted data. This is not supposed to happen.\n"
+                    "Please make sure that the k-points were written in unit coordinates."
+                    )
+                raise NexusError(msg)
             #end if
         #end for
     #end def check_kpoint_consistency
@@ -302,10 +306,12 @@ class GCTA(DevBase):
         This function provides limited functionality to go back in dependency by a certain level 
         '''
         if dependency is None:
-            error('This function requires a valid dependency. None was given.')
+            msg = 'This function requires a valid dependency. None was given.'
+            raise ValueError(msg)
         #end if
         if levels < 1:
-            error('Traceback level should be at least one. {} was given.'.format(levels))
+            msg = f'Traceback level should be at least one. {levels} was given.'
+            raise ValueError(msg)
         #end if
         current_dep = dependency
         for level in range(levels):  # noqa: B007
@@ -318,7 +324,8 @@ class GCTA(DevBase):
             #end for
             current_dep = found_dep
             if len_dep != 1:
-                error('This function can only traceback using single dependecies! Found {}'.format(len_dep))
+                msg = f'This function can only traceback using single dependecies! Found {len_dep}'
+                raise ValueError(msg)
             #end if
         #end for
         return current_dep.locdir
@@ -326,7 +333,7 @@ class GCTA(DevBase):
 
     @staticmethod
     def pwscf_tot_magnet(filepath):
-        file = '{}/pwscf_output/pwscf.xml'.format(filepath)
+        file = f'{filepath}/pwscf_output/pwscf.xml'
         xml = XMLreader(file, warn=False).obj
         calculation = xml['qes:espresso']['input']['control_variables']['calculation']['text']
         assert (calculation == 'scf'), 'The total magnetization should be obtained from an SCF run'
@@ -345,10 +352,10 @@ class GCTA(DevBase):
 
     @staticmethod
     def pwscf_fermi(filepath, scf_type):
-        file = '{}/pwscf_output/pwscf.xml'.format(filepath)
+        file = f'{filepath}/pwscf_output/pwscf.xml'
         xml = XMLreader(file, warn=False).obj
         calculation = xml['qes:espresso']['input']['control_variables']['calculation']['text']
-        assert (calculation == scf_type), 'The Fermi level should be obtained from an {} run.'.format(scf_type)
+        assert (calculation == scf_type), f'The Fermi level should be obtained from an {scf_type} run.'
         tot_magnetization = False
         if 'tot_magnetization' in xml['qes:espresso']['input']['bands'].keys():
             tot_magnetization = True
@@ -394,7 +401,8 @@ class GCTA(DevBase):
 
     def spin_adapted_fermi_level(self, scf_magnet):
         if scf_magnet is None:
-            self.error('The reference magnetization in safl can not be None. Please check that the SCF is appropriate.')
+            msg = 'The reference magnetization in safl can not be None. Please check that the SCF is appropriate.'
+            raise ValueError(msg)
         #end if
         combined_eigens = {}
         data = self.eig_data.data
@@ -430,7 +438,8 @@ class GCTA(DevBase):
 
     def set_gcta_occupations(self, fermi_level):
         if fermi_level is None:
-            self.error('The Fermi level can not be None. This indicates a bug in {}'.format(self.flavor))
+            msg = f'The Fermi level can not be None. This indicates a bug in {self.flavor}'
+            raise NexusError(msg)
         #end if
         ntwists = len(self.system.structure.kpoints)
         nspins = self.eig_data.nspins
@@ -510,12 +519,13 @@ class GCTA(DevBase):
         '''
         q_sum_twists = self.sum_charge_twists()
         if (self.flavor.lower() in {'safl', 'afl'}) and (q_sum_twists != 0):
-            self.error('''
-                The sum of charges over all twists is {} electrons!
-                This is not supposed to happen for afl or safl!
-                Check that the spinor keyword is correctly used in generate_qmcpack.
-                Otherwise, there might be a bug in the implementation of gcta.
-                '''.format(q_sum_twists))
+            msg = (
+                f"The sum of charges over all twists is {q_sum_twists} electrons!\n"
+                "This is not supposed to happen for afl or safl!\n"
+                "Check that the spinor keyword is correctly used in generate_qmcpack.\n"
+                "Otherwise, there might be a bug in the implementation of gcta."
+                )
+            raise NexusError(msg)
         #end if
     #end def check_charge_neutrality
 
@@ -530,10 +540,12 @@ class GCTA(DevBase):
             feasible_accuracy = (1.0 / nosym_kpoints) + 1e-8
             error_magnet = abs(qmc_magnet - scf_magnet)
             if error_magnet > feasible_accuracy:
-                self.error('''
-                    The twist-averaged QMC magnetization ({:.16f}) is not close to the SCF reference value ({:.16f})!
-                    This is not supposed to happen for safl. Likely, there is a bug in the implementation of safl.
-                    '''.format(qmc_magnet, scf_magnet))
+                msg = (
+                    f"The twist-averaged QMC magnetization ({qmc_magnet:.16f}) is not close to the SCF reference value ({scf_magnet:.16f})!\n"
+                    "This is not supposed to happen for safl. Likely, there is a bug in the implementation of safl."
+                    )
+                raise NexusError(msg)
+                
             #end if
         #end if
     #end def check_magnetization_accuracy
@@ -552,27 +564,28 @@ class GCTA(DevBase):
         n_total = n_up + n_dn
         nelecs_at_twist = self.nelecs_at_twist
         fermi_level = np.array(fermi_level)
-        filepath = '{}/gcta_report.txt'.format(locdir)
+        filepath = f'{locdir}/gcta_report.txt'
         with open(filepath, 'w') as gcta_file:
             # Writing data to a file
             gcta_file.write('SUMMARY FOR GCTA OCCUPATIONS:\n')
             gcta_file.write('==================================================\n')
-            gcta_file.write('GCTA Flavor:                    {}\n'.format(self.flavor))
+            gcta_file.write(f'GCTA Flavor:                    {self.flavor}\n')
             if fermi_level.size == 1:
-                gcta_file.write('Fermi Level [eV]              {:20.16f}\n'.format(fermi_level))
+                gcta_file.write(f'Fermi Level [eV]              {fermi_level:20.16f}\n')
             elif fermi_level.size == 2:
-                gcta_file.write('Fermi Level Up [eV]           {:20.16f}\n'.format(fermi_level[0]))
-                gcta_file.write('Fermi Level Dn [eV]           {:20.16f}\n'.format(fermi_level[1]))
+                gcta_file.write(f'Fermi Level Up [eV]           {fermi_level[0]:20.16f}\n')
+                gcta_file.write(f'Fermi Level Dn [eV]           {fermi_level[1]:20.16f}\n')
             else:
-                self.error('The number of provided Fermi levels ({}) does not make sense'.format(fermi_level.size))
+                msg = f'The number of provided Fermi levels ({fermi_level.size}) does not make sense'
+                raise ValueError(msg)
             #end if
-            gcta_file.write('Net Charge:                     {}\n'.format(q_sum_twists))
-            gcta_file.write('Net Charge / Prim Cell:       {:20.16f}\n'.format(qmc_charge))
+            gcta_file.write(f'Net Charge:                     {q_sum_twists}\n')
+            gcta_file.write(f'Net Charge / Prim Cell:       {qmc_charge:20.16f}\n')
             if spinor_run is not True:
-                gcta_file.write('Net Magnetization / Prim Cell:{:20.16f}\n'.format(qmc_magnet))
+                gcta_file.write(f'Net Magnetization / Prim Cell:{qmc_magnet:20.16f}\n')
             #end if
             if scf_magnet is not None:
-                gcta_file.write('SCF Magnetization (Reference):{:20.16f}\n'.format(scf_magnet))
+                gcta_file.write(f'SCF Magnetization (Reference):{scf_magnet:20.16f}\n')
             #end if
             gcta_file.write('\n\n')
             if spinor_run is not True:
@@ -584,20 +597,20 @@ class GCTA(DevBase):
             for itwist, nelec_up_dn in enumerate(nelecs_at_twist):
                 nelec_twist = sum(nelec_up_dn)
                 q_twist = n_total - nelec_twist
-                gcta_file.write('{:^10}'.format(itwist))
-                gcta_file.write('{:^10}'.format(nelec_up_dn[0]))
+                gcta_file.write(f'{itwist:^10}')
+                gcta_file.write(f'{nelec_up_dn[0]:^10}')
                 if spinor_run is not True:
-                    gcta_file.write('{:^10}'.format(nelec_up_dn[1]))
+                    gcta_file.write(f'{nelec_up_dn[1]:^10}')
                 #end if
-                gcta_file.write('{:^11}'.format(q_twist))
+                gcta_file.write(f'{q_twist:^11}')
                 if spinor_run is not True:
                     spin_twist = nelec_up_dn[0] - nelec_up_dn[1]
-                    gcta_file.write('{:^9}'.format(spin_twist))
+                    gcta_file.write(f'{spin_twist:^9}')
                 #end if
                 gcta_file.write('\n')
             #end for
         #end with
-        self.log('    See the GCTA occupation report at:  {}'.format(filepath))
+        self.log(f'    See the GCTA occupation report at:  {filepath}')
     #end def write_gcta_report
 #end class GCTA
 
@@ -638,7 +651,11 @@ class Qmcpack(Simulation):
         else:
             if generic_input:
                 cls = self.__class__
-                self.error('cannot twist average generic or templated input\nplease provide {0} instead of {1} for input'.format(cls.input_type.__class__.__name__,self.input.__class__.__name__))
+                msg = (
+                    'cannot twist average generic or templated input\n'
+                    f'please provide {cls.input_type.__class__.__name__} instead of {self.input.__class__.__name__} for input'
+                    )
+                raise TypeError(msg)
             #end if
             self.system.group_atoms()
             self.system.change_units('B')
@@ -708,7 +725,8 @@ class Qmcpack(Simulation):
     def get_restart_entry(self,input,group=None,twistnum=None):
         qmc = input.get_output_info('qmc')
         if len(qmc)==0:
-            self.error('cannot obtain a restart from a QMCPACK input without QMC calculation sections')
+            msg = 'cannot obtain a restart from a QMCPACK input without QMC calculation sections'
+            raise ValueError(msg)
         #end if
         final = qmc[len(qmc)-1]
         prefix = final.prefix
@@ -718,12 +736,20 @@ class Qmcpack(Simulation):
         fileroot = prefix+'.s'+str(final.series).zfill(3)
         cont_file = os.path.join(self.locdir,fileroot+'.cont.xml')
         if not os.path.exists(cont_file):
-            self.error('QMCPACK restart continuation file does not exist\n  file: '+cont_file)
+            msg = (
+                'QMCPACK restart continuation file does not exist\n'
+                '  file: '+cont_file
+                )
+            raise FileNotFoundError(msg)
         #end if
 
         cont_input = QmcpackInput(cont_file)
         if 'mcwalkerset' not in cont_input.simulation:
-            self.error('QMCPACK continuation file does not contain an mcwalkerset element\n  file: '+cont_file)
+            msg = (
+                'QMCPACK continuation file does not contain an mcwalkerset element\n'
+                '  file: '+cont_file
+                )
+            raise FileFormatError(msg)
         #end if
         walkers = deepcopy(cont_input.simulation.mcwalkerset)
         source_root = walkers.fileroot
@@ -735,7 +761,13 @@ class Qmcpack(Simulation):
         random_file = source_root+'.random.h5'
         missing = [f for f in (config_file,random_file) if not os.path.exists(f)]
         if len(missing)>0:
-            self.error('QMCPACK restart files do not exist\n  missing files:\n    '+'\n    '.join(missing))
+            msg = (
+                'QMCPACK restart files do not exist\n'
+                '  missing files:\n'
+                '    '
+                +'\n    '.join(missing)
+                )
+            raise FileNotFoundError(msg)
         #end if
         return obj(
             cont_file   = cont_file,
@@ -777,9 +809,17 @@ class Qmcpack(Simulation):
             analyzer = self.load_analyzer_image()
             if 'results' not in analyzer or 'optimization' not in analyzer.results:
                 if self.should_twist_average:
-                    self.error('Wavefunction optimization was performed for each twist separately.\nCurrently, the transfer of per-twist wavefunction parameters from\none QMCPACK simulation to another is not supported.  Please either\nredo the optimization with a single twist (see "twist" or "twistnum"\noptions), or request that this feature be implemented.')
+                    msg = (
+                        'Wavefunction optimization was performed for each twist separately.\n'
+                        'Currently, the transfer of per-twist wavefunction parameters from\n'
+                        'one QMCPACK simulation to another is not supported.  Please either\n'
+                        'redo the optimization with a single twist (see "twist" or "twistnum"\n'
+                        'options), or request that this feature be implemented.'
+                        )
+                    raise NotImplementedError(msg)
                 else:
-                    self.error('analyzer did not compute results required to determine jastrow')
+                    msg = 'analyzer did not compute results required to determine jastrow'
+                    raise RuntimeError(msg)
                 #end if
             #end if
             opt_file = analyzer.results.optimization.optimal_file
@@ -803,7 +843,8 @@ class Qmcpack(Simulation):
                 result.restarts.append(self.get_restart_entry(self.input))
             #end if
         else:
-            self.error('ability to get result '+result_name+' has not been implemented')
+            msg = 'ability to get result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if        
         return result
     #end def get_result
@@ -817,11 +858,12 @@ class Qmcpack(Simulation):
             downstream_bundled = self.should_twist_average
             upstream_bundled = nrestart>1
             if upstream_bundled != downstream_bundled:
-                self.error(
+                msg = (
                     'QMCPACK restart dependencies require matching single-twist or twist-averaged simulations\n'
-                    '  upstream restart count: {}\n'
-                    '  downstream twist averaged: {}'.format(nrestart,downstream_bundled)
+                    f'  upstream restart count: {nrestart}\n'
+                    f'  downstream twist averaged: {downstream_bundled}'
                     )
+                raise ValueError(msg)
             #end if
             if upstream_bundled:
                 self.restart_entries = deepcopy(result.restarts)
@@ -833,11 +875,12 @@ class Qmcpack(Simulation):
                 project_ids = set(r.project_id for r in result.restarts)
                 project_series = set(r.project_series for r in result.restarts)
                 if len(project_ids)!=1 or len(project_series)!=1:
-                    self.error(
+                    msg = (
                         'same-directory QMCPACK restart files contain inconsistent project metadata\n'
-                        '  project ids: {}\n'
-                        '  project series: {}'.format(sorted(project_ids),sorted(project_series))
+                        f'  project ids: {sorted(project_ids)}\n'
+                        f'  project series: {sorted(project_series)}'
                         )
+                    raise RuntimeError(msg)
                 #end if
                 input.simulation.project.id = project_ids.pop()
                 input.simulation.project.series = project_series.pop()
@@ -863,7 +906,11 @@ class Qmcpack(Simulation):
                 elif 'determinantset' in wf and wf.determinantset.type in {'bspline','einspline'}:
                     orb_elem = wf.determinantset
                 else:
-                    self.error('could not incorporate pw2qmcpack orbitals\nbspline sposet_builder and determinantset are both missing')
+                    msg = (
+                        'could not incorporate pw2qmcpack orbitals\n'
+                        'bspline sposet_builder and determinantset are both missing'
+                        )
+                    raise FileFormatError(msg)
                 #end if
                 if 'href' in orb_elem and isinstance(orb_elem.href,str) and os.path.exists(orb_elem.href):
                     # user specified h5 file for orbitals, bypass orbital dependency
@@ -893,11 +940,16 @@ class Qmcpack(Simulation):
                 structure = system.structure
                 nkpoints = len(structure.kpoints)
                 if nkpoints==0:
-                    self.error('system must have kpoints to assign twistnums')
+                    msg = 'system must have kpoints to assign twistnums'
+                    raise ValueError(msg)
                 #end if
                     
                 if not os.path.exists(h5file):
-                    self.error('wavefunction file not found:\n'+h5file)
+                    msg = (
+                        'wavefunction file not found:\n'
+                        +h5file
+                        )
+                    raise FileNotFoundError(msg)
                 #end if
 
                 twistnums = list(range(len(structure.kpoints)))
@@ -935,7 +987,11 @@ class Qmcpack(Simulation):
                         orb_h5file = os.path.join(sim.locdir,dset.href)
                     #end if
                     if not os.path.exists(orb_h5file):
-                        self.error('orbital h5 file from convert4qmc does not exist\nlocation checked: {}'.format(orb_h5file))
+                        msg = (
+                            'orbital h5 file from convert4qmc does not exist\n'
+                            f'location checked: {orb_h5file}'
+                            )
+                        raise FileNotFoundError(msg)
                     #end if
                     orb_path = os.path.relpath(orb_h5file,self.locdir)
                     dset.href = orb_path
@@ -955,11 +1011,21 @@ class Qmcpack(Simulation):
                     skpoints = sinp.kpoints
                 #end if
                 if skpoints is None:
-                    self.error('cannot incorporate orbitals from pyscf\nno k-points are present')
+                    msg = (
+                        'cannot incorporate orbitals from pyscf\n'
+                        'no k-points are present'
+                        )
+                    raise RuntimeError(msg)
                 #end if
                 nkpoints = len(self.system.structure.kpoints)
                 if len(skpoints)!=nkpoints:
-                    self.error('cannot incorporate orbitals from pyscf\nwrong number k-points are present\nexpected: {}\npresent: {}'.format(nkpoints,len(skpoints)))
+                    msg = (
+                        'cannot incorporate orbitals from pyscf\n'
+                        'wrong number k-points are present\n'
+                        f'expected: {nkpoints}\n'
+                        f'present: {len(skpoints)}'
+                        )
+                    raise ValueError(msg)
                 #end if
                 twist_updates = []
                 for h5file,kp in zip(result.orb_files,result.kpoints):
@@ -975,7 +1041,8 @@ class Qmcpack(Simulation):
                 ds.twistnum = -1 # set during twist average
                 self.twist_average(twist_updates)
             else:
-                self.error('incorporating orbitals from '+sim.__class__.__name__+' has not been implemented')
+                msg = 'incorporating orbitals from '+type(sim).__name__+' has not been implemented'
+                raise NotImplementedError(msg)
             #end if
 
             # Activate GCTA occupations if gcta is specified by the user
@@ -997,7 +1064,10 @@ class Qmcpack(Simulation):
                 if isinstance(gcta_dependency,Pw2qmcpack) or isinstance(gcta_dependency,Convertpw4qmc):
                     gcta_obj.read_eshdf_data(h5file)
                 else:
-                    gcta_obj.error('Reading the eigenvalues for this workflow ({}) is not yet implemented.'.format(gcta_dependency.__class__.__name__))
+                    msg = (
+                        f'Reading the eigenvalues for this workflow ({type(gcta_dependency).__name__}) is not yet implemented.'
+                        )
+                    raise NotImplementedError(msg)
                 #end if
 
                 gcta_obj.check_kmesh_size()
@@ -1014,7 +1084,10 @@ class Qmcpack(Simulation):
                         filepath = gcta_obj.traceback_dependency(gcta_dependency, Pwscf, levels = 2)
                         scf_magnet = gcta_obj.pwscf_tot_magnet(filepath)
                     else:
-                        gcta_obj.error('Reading the total magnetization for this workflow ({}) is not yet implemented.'.format(gcta_dependency.__class__.__name__))
+                        msg = (
+                            f'Reading the total magnetization for this workflow ({type(gcta_dependency).__name__}) is not yet implemented.'
+                            )
+                        raise NotImplementedError(msg)
                     #end if
                     fermi_level = gcta_obj.spin_adapted_fermi_level(scf_magnet)
 
@@ -1026,7 +1099,10 @@ class Qmcpack(Simulation):
                         filepath = gcta_obj.traceback_dependency(gcta_dependency, Pwscf, levels = 1)
                         fermi_level = gcta_obj.pwscf_fermi(filepath, 'nscf')
                     else:
-                        gcta_obj.error('Reading the Fermi level for this workflow ({}) is not yet implemented.'.format(gcta_dependency.__class__.__name__))
+                        msg = (
+                            f'Reading the Fermi level for this workflow ({type(gcta_dependency).__name__}) is not yet implemented.'
+                            )
+                        raise NotImplementedError(msg)
                     #end if
 
                 elif gcta_flavor.lower() == 'scf':
@@ -1034,11 +1110,15 @@ class Qmcpack(Simulation):
                         filepath = gcta_obj.traceback_dependency(gcta_dependency, Pwscf, levels = 2)
                         fermi_level = gcta_obj.pwscf_fermi(filepath, 'scf')
                     else:
-                        gcta_obj.error('Reading the Fermi level for this workflow ({}) is not yet implemented.'.format(gcta_dependency.__class__.__name__))
+                        msg = (
+                            f'Reading the Fermi level for this workflow ({type(gcta_dependency).__name__}) is not yet implemented.'
+                            )
+                        raise NotImplementedError(msg)
                     #end if
 
                 else:
-                    gcta_obj.error('GCTA type {} is not recognized.'.format(gcta_flavor))
+                    msg = f'GCTA type {gcta_flavor} is not recognized.'
+                    raise TypeError(msg)
                 # === Finished determining the Fermi level ===
 
                 # Set the twist occupations based on the user-requested Fermi level
@@ -1111,7 +1191,7 @@ class Qmcpack(Simulation):
                             key += j.name
                             if key in jd:  # if still duplicate then error out
                                 msg = 'duplicate jastrow in '+self.__class__.__name__
-                                self.error(msg)
+                                raise ValueError(msg)
                             #end if
                         #end if
                         jd[key] = j
@@ -1143,7 +1223,8 @@ class Qmcpack(Simulation):
                 qi = QmcpackInput(ptcl_file)
                 self.input.simulation.qmcsystem.particlesets = qi.qmcsystem.particlesets
             else:
-                self.error('incorporating particles from '+sim.__class__.__name__+' has not been implemented')
+                msg = 'incorporating particles from '+type(sim).__name__+' has not been implemented'
+                raise NotImplementedError(msg)
             # end if
         elif result_name=='structure':
             relstruct = deepcopy(result.structure)
@@ -1178,7 +1259,8 @@ class Qmcpack(Simulation):
                 qs.wavefunction = wfn
             elif isinstance(sim,PyscfToAfqmc):
                 if not self.input.is_afqmc_input():
-                    self.error('incorporating wavefunction from {} is only supported for AFQMC calculations'.format(sim.__class__.__name__))
+                    msg = f'incorporating wavefunction from {type(sim).__name__} is only supported for AFQMC calculations'
+                    raise RuntimeError(msg)
                 #end if
                 h5_file =  os.path.relpath(result.h5_file,self.locdir)
                 wfn = self.input.simulation.wavefunction
@@ -1209,13 +1291,14 @@ class Qmcpack(Simulation):
                     #end if
                 #end if
             else:
-                self.error('incorporating wavefunction from '+sim.__class__.__name__+' has not been implemented')
+                msg = 'incorporating wavefunction from '+type(sim).__name__+' has not been implemented'
+                raise NotImplementedError(msg)
             #end if
         elif result_name=='gc_occupation':
             from .qmcpack_converters import gcta_occupation
             if not isinstance(sim,Pw2qmcpack):
                 msg = 'grand-canonical occupation requires Pw2qmcpack'
-                self.error(msg)
+                raise RuntimeError(msg)
             #endif
             # step 1: extract Fermi energy for each spin from nscf
             nscf = None
@@ -1225,9 +1308,11 @@ class Qmcpack(Simulation):
                     nscf = dep.sim
                     npwdep += 1
             if npwdep != 1:
-                msg = 'need exactly 1 scf/nscf calculation for Fermi energy'
-                msg += '\n found %d' % npwdep
-                self.error(msg)
+                msg = (
+                    'need exactly 1 scf/nscf calculation for Fermi energy\n'
+                    f' found {npwdep:d}'
+                    )
+                raise RuntimeError(msg)
             #end if
             na = nscf.load_analyzer_image()
             Ef_list = na.fermi_energies
@@ -1271,10 +1356,12 @@ class Qmcpack(Simulation):
                 #end if
                 wf.determinantset = ds
             else:
-                self.error('incorporating determinantset from '+sim.__class__.__name__+' has not been implemented')
+                msg = 'incorporating determinantset from '+type(sim).__name__+' has not been implemented'
+                raise NotImplementedError(msg)
             #end if                
         else:
-            self.error('ability to incorporate result '+result_name+' has not been implemented')
+            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            raise NotImplementedError(msg)
         #end if        
     #end def incorporate_result
 
@@ -1328,7 +1415,7 @@ class Qmcpack(Simulation):
             for cuspfile in cuspfiles:
                 cf_orig = os.path.join(self.locdir,cuspfile)
                 cf_new  = os.path.join(self.locdir,self.identifier+'.'+cuspfile)
-                os.system('cp {0} {1}'.format(cf_orig,cf_new))
+                os.system(f'cp {cf_orig} {cf_new}')
             #end for
         #end if
     #end def check_sim_status
@@ -1402,7 +1489,7 @@ class Qmcpack(Simulation):
                             #end if
                         #end for
                     else:
-                        self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
+                        self.warn(f'No check for \'{exc_input[0]}\' excitation of type \'{exc_input[1]}\' was done. When this path is possible, then a check should be written.')
                     #end if
                 elif exc_type in {exc_types.energy,exc_types.lowest}:
                     # Lowest or Energy Index '-orbindex1 +orbindex2'. Eg., '-4 +5'
@@ -1469,7 +1556,7 @@ class Qmcpack(Simulation):
                 else:
                     # The format is: 'gamma vb z cb'
                     if exc1 in {'singlet','triplet'}:
-                        self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
+                        self.warn(f'No check for \'{exc_input[0]}\' excitation of type \'{exc_input[1]}\' was done. When this path is possible, then a check should be written.')
                     else:
 
                         # assume excitation of form 'gamma vb k cb' or 'gamma vb-1 k cb+1'
@@ -1511,7 +1598,8 @@ class Qmcpack(Simulation):
                                     bands[bnum] = vb
                                 #end if
                             else:
-                                error('{0} in excitation has the wrong formatting'.format(b))
+                                msg = f'{b} in excitation has the wrong formatting'
+                                raise FileFormatError(msg)
                             #end if
                         #end for
                         band_1, band_2 = bands
@@ -1545,10 +1633,21 @@ class Qmcpack(Simulation):
                                 #end if
                             #end for
                             if not found_k1 or not found_k2:
-                                error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
+                                msg = (
+                                    'Requested special kpoint is not in the tiled cell\n'
+                                    f'Requested "{k1_in}", present={found_k1}\n'
+                                    f'Requested "{k2_in}", present={found_k2}\n'
+                                    f'Available kpoints: {sorted(set(kpath_label))}'
+                                    )
+                                raise KeyError(msg)
                             #end if
                         else:
-                            error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
+                            msg = (
+                                'Excitation wavevectors are not found in the kpath\n'
+                                f'labels requested: {k_1} {k_2}\n'
+                                f'labels present: {sorted(set(kpath_label))}'
+                                )
+                            raise KeyError(msg)
                         #end if
 
                         tw1,bnd1 = (k_1,band_1)
@@ -1631,7 +1730,7 @@ class Qmcpack(Simulation):
                     if file.startswith(self.identifier+'.g'):
                         tokens = file.split('.')
                         twist_index = int(tokens[1].replace('g',''))
-                        twist_filename = '{}.{}.twist_info.dat'.format(tokens[0],tokens[1])
+                        twist_filename = f'{tokens[0]}.{tokens[1]}.twist_info.dat'
                         kw  = kweights[twist_index]
                         kp  = kpoints[twist_index]
                         kpq = kpoints_qmcpack[twist_index]
@@ -1663,8 +1762,8 @@ class Qmcpack(Simulation):
                             elif group == 'd':
                                 nelec = ndn
                             else:
-                                msg = 'need to count number of "%s"' % group
-                                self.error(msg)
+                                msg = f'need to count number of "{group}"'
+                                raise RuntimeError(msg)
                             #end if
                             spo_name = det.get('sposet')
                             spo_size_map[spo_name] = nelec
@@ -1685,31 +1784,30 @@ class Qmcpack(Simulation):
             #end if
             if 'restart_entries' in self:
                 if not isinstance(self.input,TracedQmcpackInput):
-                    self.error(
+                    msg = (
                         'twist-averaged QMCPACK restart could not be matched to bundled downstream inputs'
                         )
+                    raise RuntimeError(msg)
                 #end if
                 if len(self.restart_entries)!=len(self.input.inputs):
-                    self.error(
+                    msg = (
                         'twist-averaged QMCPACK restart count does not match the downstream input count\n'
-                        '  upstream restart count: {}\n'
-                        '  downstream input count: {}'.format(
-                            len(self.restart_entries),len(self.input.inputs)
-                            )
+                        f'  upstream restart count: {len(self.restart_entries)}\n'
+                        f'  downstream input count: {len(self.input.inputs)}'
                         )
+                    raise RuntimeError(msg)
                 #end if
                 for group,inp in self.input.inputs.items():
                     restart = self.restart_entries[group]
                     var = self.input.variables[group]
                     if restart.twistnum is None or var.quantity!='twistnum' or restart.twistnum!=var.value:
-                        self.error(
+                        msg = (
                             'twist-averaged QMCPACK restart does not match the downstream twist\n'
-                            '  bundle index: {}\n'
-                            '  upstream twist: {}\n'
-                            '  downstream variable: {}={}'.format(
-                                group,restart.twistnum,var.quantity,var.value
-                                )
+                            f'  bundle index: {group}\n'
+                            f'  upstream twist: {restart.twistnum}\n'
+                            f'  downstream variable: {var.quantity}={var.value}'
                             )
+                        raise RuntimeError(msg)
                     #end if
                     self.incorporate_restart_entry(inp,restart)
                 #end for
@@ -1763,7 +1861,8 @@ class Qmcpack(Simulation):
         if 'jastrow' in self.produces or 'wavefunction' in self.produces:
             analyzer = self.load_analyzer_image()
             if 'results' not in analyzer or 'optimization' not in analyzer.results:
-                self.error('analyzer did not compute results required to determine jastrow or wavefunction')
+                msg = 'analyzer did not compute results required to determine jastrow or wavefunction'
+                raise RuntimeError(msg)
             opt_file = str(analyzer.results.optimization.optimal_file)
             opt_file = os.path.join(self.locdir,opt_file)
             if 'jastrow' in self.produces:
@@ -1783,7 +1882,11 @@ class Qmcpack(Simulation):
 
     def receive_pwscf_orbitals(self,orb_file):
         if not orb_file.endswith('.h5'):
-            self.error('pwscf orbitals must be in hdf5 (.h5) file.\nFile provided: {}'.format(orb_file))
+            msg = (
+                'pwscf orbitals must be in hdf5 (.h5) file.\n'
+                f'File provided: {orb_file}'
+                )
+            raise ValueError(msg)
         input  = self.input
         system = self.system
         h5file = orb_file
@@ -1800,7 +1903,11 @@ class Qmcpack(Simulation):
         elif 'determinantset' in wf and wf.determinantset.type in {'bspline','einspline'}:
             orb_elem = wf.determinantset
         else:
-            self.error('Could not incorporate pw2qmcpack orbitals.\nbspline sposet_builder and determinantset are both missing.')
+            msg = (
+                'Could not incorporate pw2qmcpack orbitals.\n'
+                'bspline sposet_builder and determinantset are both missing.'
+                )
+            raise RuntimeError(msg)
         if 'href' in orb_elem and isinstance(orb_elem.href,str) and os.path.exists(orb_elem.href):
             # user specified h5 file for orbitals, bypass orbital dependency
             orb_elem.href = os.path.relpath(orb_elem.href,self.locdir)
@@ -1823,7 +1930,8 @@ class Qmcpack(Simulation):
         structure = system.structure
         nkpoints = len(structure.kpoints)
         if nkpoints==0:
-            self.error('system must have kpoints to assign twistnums')
+            msg = 'system must have kpoints to assign twistnums'
+            raise RuntimeError(msg)
 
         twistnums = list(range(len(structure.kpoints)))
         if self.should_twist_average:
@@ -1883,7 +1991,7 @@ class Qmcpack(Simulation):
                     key += j.name
                     if key in jd:  # if still duplicate then error out
                         msg = 'duplicate jastrow in '+self.__class__.__name__
-                        self.error(msg)
+                        raise ValueError(msg)
                 jd[key] = j
             return jd
         #end def process_jastrow
@@ -1922,7 +2030,11 @@ def generate_qmcpack(**kwargs):
     pseudos = kwargs.get('pseudos',None)
     if pseudos is not None:
         system = kwargs.get('system',None)
-        pseudos = PseudoSet.pseudo_remap('qmcpack',pseudos,system)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'qmcpack',
+            )
         kwargs['pseudos'] = pseudos
         kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
     #end if
@@ -1980,7 +2092,11 @@ def generate_cusp_correction(**kwargs):
     pseudos = kwargs.get('pseudos',None)
     if pseudos is not None:
         system = kwargs.get('system',None)
-        pseudos = PseudoSet.pseudo_remap('qmcpack',pseudos,system)
+        pseudos = PseudoSet.get_pseudos(
+            pseudos = pseudos,
+            system = system,
+            code = 'qmcpack',
+            )
         kwargs['pseudos'] = pseudos
         kwargs['files'] = list(kwargs.get('files',[])) + list(pseudos.values())
     #end if
@@ -1991,7 +2107,8 @@ def generate_cusp_correction(**kwargs):
 
     wf = input.get('wavefunction')
     if 'determinantset' not in wf:
-        error('wavefunction does not have determinantset, cannot create cusp correction','generate_cusp_correction')
+        msg = 'wavefunction does not have determinantset, cannot create cusp correction'
+        raise ValueError(msg)
     #end if
     wf.determinantset.cuspcorrection = True
 

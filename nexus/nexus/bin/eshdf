@@ -68,7 +68,7 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import obj,log,warn,error
+from nexus.developer import obj,log,warn
 from nexus.hdfreader import read_hdf
 
 
@@ -81,11 +81,6 @@ def vlog(*args,**kwargs):
         log(*args,**kwargs)
     #end if
 #end def vlog
-
-
-def user_error(msg):
-    error(msg,'User',trace=False)
-#end def user_error
 
 
 def get_path(o,path,value=None):
@@ -142,7 +137,7 @@ def read_eshdf_nofk_data(filename,Ef,ncore=0,nval=-1):
             k_s   = gvk
             nk_s  = 0*kmag
             nelec_s = 0
-            path = 'electrons/kpoint_{0}/spin_{1}'.format(k,s)
+            path = f'electrons/kpoint_{k}/spin_{s}'
             spin = get_path(h,path)
             eig = convert(array(spin.eigenvalues),'Ha','eV')
             nst = h5int(spin.number_of_states)
@@ -152,7 +147,7 @@ def read_eshdf_nofk_data(filename,Ef,ncore=0,nval=-1):
             for st in range(ncore, nlast):
                 e = eig[st]
                 if e<E_fermi:
-                    stpath = path+'/state_{0}/psi_g'.format(st)
+                    stpath = path+f'/state_{st}/psi_g'
                     occpaths.append(stpath)
                     psi = array(get_path(h,stpath))
                     nk_orb = (psi**2).sum(1)
@@ -190,13 +185,28 @@ def first_eshdf_file(args):
     # check files provided
     eshdf_files = list(sorted(args[1:]))
     if len(eshdf_files)!=1:
-        user_error('exactly one ESHDF file is allowed as input.\nYou provided: {}'.format(eshdf_files))
+        msg = (
+            'exactly one ESHDF file is allowed as input.\n'
+            f'You provided: {eshdf_files}'
+            )
+        raise ValueError(msg)
     #end if
     eshdf_filepath = eshdf_files[0]
     if not os.path.exists(eshdf_filepath):
-        user_error('ESHDF file does not exist.\nPlease check the path provided:\n  {}'.format(eshdf_filepath))
+        msg = (
+            'ESHDF file does not exist.\n'
+            'Please check the path provided:\n'
+            f'  {eshdf_filepath}'
+            )
+        raise FileNotFoundError(msg)
     elif not eshdf_filepath.endswith('.h5'):
-        user_error('file provided is not an HDF5 file.\nAn ESHDF file must have a .h5 extension.\nPlease check the path provided:\n  {}'.format(eshdf_filepath))
+        msg = (
+            'file provided is not an HDF5 file.\n'
+            'An ESHDF file must have a .h5 extension.\n'
+            'Please check the path provided:\n'
+            f'  {eshdf_filepath}'
+            )
+        raise ValueError(msg)
     #end if
     return eshdf_filepath
 #end def first_eshdf_file
@@ -217,12 +227,17 @@ def interpret_nk_options(parser):
     #end if
     # check Fermi energy
     if opt.E_fermi is None:
-        user_error('please provide the Fermi energy via the --Ef option.')
+        msg = 'please provide the Fermi energy via the --Ef option.'
+        raise ValueError(msg)
     else:
         try:
             opt.E_fermi = float(opt.E_fermi)
         except:
-            user_error('value provided for Fermi energy is not a real number.\nYou provided: {}'.format(opt.E_fermi))
+            msg = (
+                'value provided for Fermi energy is not a real number.\n'
+                f'You provided: {opt.E_fermi}'
+                )
+            raise ValueError(msg)
         #end try
     #end if
     # set active space
@@ -317,29 +332,29 @@ def kinetic():
     #end for
 
     def arr2str(a):
-        return '{}'.format(a).strip().strip('[]')
+        return f'{a}'.strip().strip('[]')
     #end def arr2str
 
-    log('\nNumber of spins              : {}'.format(nspins))
-    log('Number kpoints               : {}'.format(nkpoints))
-    log('Number of electrons per spin : {}'.format(arr2str(nspin)))
-    log('Summed orbital norm per spin : {}'.format(arr2str(normspin)))
-    log('Total kinetic energy         : {} Ha'.format(ktot))
-    log('Kinetic energy per spin      : {} Ha'.format(arr2str(kspin)))
+    log(f'\nNumber of spins              : {nspins}')
+    log(f'Number kpoints               : {nkpoints}')
+    log(f'Number of electrons per spin : {arr2str(nspin)}')
+    log(f'Summed orbital norm per spin : {arr2str(normspin)}')
+    log(f'Total kinetic energy         : {ktot} Ha')
+    log(f'Kinetic energy per spin      : {arr2str(kspin)} Ha')
 
     norm_diff = np.abs(normspin-nspin).max()
     if norm_diff>opt.norm_tol:
-        warn('Orbitals are not properly normalized!\nError in the summed norm is: {}\nThis exceeds a tolerance of: {}'.format(norm_diff,opt.norm_tol))
+        warn(f'Orbitals are not properly normalized!\nError in the summed norm is: {norm_diff}\nThis exceeds a tolerance of: {opt.norm_tol}')
     #end if
 
     spin_labels = {0:'up',1:'down'}
     if opt.orb_info:
         log('\nPer orbital kinetic energies')
         for s in range(nspins):
-            log('  Spin {} energies'.format(spin_labels[s]))
+            log(f'  Spin {spin_labels[s]} energies')
             log('    index kpoint_index  KS eig (eV)  kinetic (Ha)')
             for i,(kpi,eig,kin) in enumerate(zip(kpidx[s],eorb[s],korb[s])):
-                log('    {:>3}      {:>3}        {: 10.6f}   {: 10.6f}'.format(i,kpi,eig,kin))
+                log(f'    {i:>3}      {kpi:>3}        {eig: 10.6f}   {kin: 10.6f}')
             #end for
         #end for
     #end if
@@ -377,7 +392,7 @@ def write_nk():
     d = read_eshdf_nofk_data(eshdf_filepath,opt.E_fermi,ncore=opt.ncore,nval=opt.nval)
 
     ispin0 = int(opt.ispin)
-    log('Writing n(k) to HDF5 {}'.format(opt.outfile))
+    log(f'Writing n(k) to HDF5 {opt.outfile}')
     import tables
     klist = []
     nklist = []
@@ -409,13 +424,22 @@ operations = obj(
 if __name__=='__main__':
 
     if len(sys.argv)<2:
-        user_error('First argument must be operation to perform on ESHDF file.\ne.g. to examine kinetic energies, type "eshdf kinetic ..."\nValid operations are: {0}'.format(sorted(operations.keys())))
+        msg = (
+            'First argument must be operation to perform on ESHDF file.\n'
+            'e.g. to examine kinetic energies, type "eshdf kinetic ..."\n'
+            f'Valid operations are: {sorted(operations.keys())}'
+            )
+        raise ValueError(msg)
     #end if
     op_type = sys.argv[1]
     if op_type in operations:
         operations[op_type]()
     else:
-        user_error('Unknown operation: {0}\nValid options are: {1}'.format(op_type,sorted(operations.keys())))
+        msg = (
+            f'Unknown operation: {op_type}\n'
+            f'Valid options are: {sorted(operations.keys())}'
+            )
+        raise ValueError(msg)
     #end if
 
 #end if

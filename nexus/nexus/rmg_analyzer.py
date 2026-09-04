@@ -60,11 +60,24 @@ class RmgAnalyzer(SimulationAnalyzer):
         else:
             log_file = arg0
             if not isinstance(log_file,str):
-                self.error('invalid type provided for log_file\nType expected: str\nType provided: {}'.format(log_file.__class__.__name__))
+                msg = (
+                    'invalid type provided for log_file\n'
+                    'Type expected: str\n'
+                    f'Type provided: {log_file.__class__.__name__}'
+                    )
+                raise TypeError(msg)
             elif not os.path.exists(log_file):
-                self.error('RMG log output file does not exist.\nPath provided: {}'.format(log_file))
+                msg = (
+                    'RMG log output file does not exist.\n'
+                    f'Path provided: {log_file}'
+                    )
+                raise FileNotFoundError(msg)
             elif not os.path.isfile(log_file):
-                self.error('Path provided for RMG log output is not a file.\nPath provided: {}'.format(log_file))
+                msg = (
+                    'Path provided for RMG log output is not a file.\n'
+                    f'Path provided: {log_file}'
+                    )
+                raise IsADirectoryError(msg)
             #end if
             path,filename = os.path.split(log_file)
         #end if
@@ -85,7 +98,12 @@ class RmgAnalyzer(SimulationAnalyzer):
         #end if
         log_filepath = os.path.join(self.path,self.outfile_name)
         if not os.path.exists(log_filepath):
-            self.error('RMG analysis cannot be completed.\nLog file does not exist at path provided.\nPath provided: {}'.format(log_filepath))
+            msg = (
+                'RMG analysis cannot be completed.\n'
+                'Log file does not exist at path provided.\n'
+                f'Path provided: {log_filepath}'
+                )
+            raise FileNotFoundError(msg)
         #end if
         logfile = TextFile(log_filepath)
         self.setup_info = obj()
@@ -413,7 +431,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         elif mode=='band':
             None
         else:
-            self.warn('Results not read.\nUnrecognized run mode: {}'.format(mode))
+            self.warn(f'Results not read.\nUnrecognized run mode: {mode}')
         #end if
         self.results = results
     #end def read_results

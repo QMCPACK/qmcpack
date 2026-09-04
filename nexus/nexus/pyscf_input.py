@@ -18,7 +18,7 @@
 
 from copy import deepcopy
 import numpy as np
-from .developer import obj, error
+from .developer import obj
 from .simulation import SimulationInputTemplateDev
 
 
@@ -47,7 +47,8 @@ def render_array(a,n):
         #end for
         s = s[:-2]+'])'
     else:
-        error('render_array only supports up to 2D arrays')
+        msg = 'render_array only supports up to 2D arrays'
+        raise NotImplementedError(msg)
     #end if
     return s
 #end def render_array
@@ -180,24 +181,42 @@ $calculation
         is_mole = mole is not None
         is_cell = cell is not None
         if is_mole and is_cell:
-            self.error('both mole and cell provided\nplease provide only one of them\nsystem cannot be both molecule and periodic solid')
+            msg = (
+                'both mole and cell provided\n'
+                'please provide only one of them\n'
+                'system cannot be both molecule and periodic solid'
+                )
+            raise ValueError(msg)
         elif is_mole and not isinstance(mole,(dict,obj)):
-            self.error('mole input must be a dict or obj\nyou provided input of type: {0}'.format(mole.__class__.__name__))
+            msg = (
+                'mole input must be a dict or obj\n'
+                f'you provided input of type: {mole.__class__.__name__}'
+                )
+            raise TypeError(msg)
         elif is_cell and not isinstance(cell,(dict,obj)):
-            self.error('cell input must be a dict or obj\nyou provided input of type: {0}'.format(cell.__class__.__name__))
+            msg = (
+                'cell input must be a dict or obj\n'
+                f'you provided input of type: {cell.__class__.__name__}'
+                )
+            raise TypeError(msg)
         #end if
         extra = ''
         if filepath is not None:
-            extra = '\ntemplate located at: {0}'.format(filepath)
+            extra = f'\ntemplate located at: {filepath}'
         #end if
         if system is not None and 'system' not in self.keywords:
-            self.error('system input is provided, but $system is not present in template input'+extra)
+            msg = 'system input is provided, but $system is not present in template input'+extra
+            raise ValueError(msg)
         #end if
         folded_structure = None
         tiled_structure  = None
         if system is not None and 'system' not in self.values:
             if 'system' not in self.keywords:
-                self.error('cannot incorporate "system" input\n$system is not present in template input'+extra)
+                msg = (
+                    'cannot incorporate "system" input\n'
+                    '$system is not present in template input'+extra
+                    )
+                raise ValueError(msg)
             #end if
             system = deepcopy(system) # make a local copy
             if use_folded and system.has_folded():
@@ -211,9 +230,11 @@ $calculation
             is_solid    = s.has_axes()
             is_molecule = not is_solid
             if is_solid and is_mole:
-                self.error('mole input provided, but provided system is not a molecule (cell axes are present)')
+                msg = 'mole input provided, but provided system is not a molecule (cell axes are present)'
+                raise ValueError(msg)
             elif is_molecule and is_cell:
-                self.error('cell input provided, but provided system is a molecule (cell axes are not present)')
+                msg = 'cell input provided, but provided system is a molecule (cell axes are not present)'
+                raise ValueError(msg)
             #end if
             is_mole |= is_molecule
             is_cell |= is_solid
@@ -285,9 +306,9 @@ $calculation
                 df_str = '.density_fit()' if calc.df_fitting else ''
                 if sys_name == 'mole':
                     if calc.u_idx is None:
-                        c += 'mf = scf.{}({}){}\n'.format(calc.method,sys_var,df_str)
+                        c += f'mf = scf.{calc.method}({sys_var}){df_str}\n'
                     else:
-                        c += 'mf = dft.{}({},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(calc.method,sys_var,render_array(calc.u_idx,1),render_array(calc.u_val,1),calc.C_ao_lo,df_str)    
+                        c += f'mf = dft.{calc.method}({sys_var},U_idx={render_array(calc.u_idx,1)},U_val={render_array(calc.u_val,1)},C_ao_lo=\'{calc.C_ao_lo}\'){df_str}\n'    
                     #end if
                 elif sys_name == 'cell':
                     c += 'mydf          = df.{}({})\n'.format(calc.df_method,sys_var,'kpts')
@@ -299,22 +320,22 @@ $calculation
                         c += 'mf = scf.{}({},{}){}\n'.format(calc.method,sys_var,'kpts',df_str)
                     else:
                         c += 'mf = dft.{}({},{},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(calc.method,sys_var,'kpts',render_array(calc.u_idx,1),render_array(calc.u_val,1),calc.C_ao_lo,df_str)    
-                    c += 'mf.exxdiv      = \'{}\'\n'.format(calc.exxdiv)
+                    c += f'mf.exxdiv      = \'{calc.exxdiv}\'\n'
                 #end if
                 if calc.max_cycle is not None: 
-                    c += 'mf.max_cycle={}\n'.format(calc.max_cycle)
+                    c += f'mf.max_cycle={calc.max_cycle}\n'
                 #end if
                 if calc.level_shift is not None: 
-                    c += 'mf.level_shift={}\n'.format(calc.level_shift)
+                    c += f'mf.level_shift={calc.level_shift}\n'
                 #end if
                 if calc.chkfile is not None: 
-                    c += 'mf.chkfile=\'{}\'\n'.format(calc.chkfile)
+                    c += f'mf.chkfile=\'{calc.chkfile}\'\n'
                 #end if
             #end if
             if 'KS' in calc.method:
-                c += 'mf.xc          = \'{}\'\n'.format(calc.xc)
+                c += f'mf.xc          = \'{calc.xc}\'\n'
             #end if
-            c += 'mf.tol         = \'{}\'\n'.format(calc.tol)
+            c += f'mf.tol         = \'{calc.tol}\'\n'
             if calc.df_fitting and not is_mole:
                 c += 'mf.with_df     = mydf\n'
             #end if
@@ -336,7 +357,12 @@ $calculation
         if sys_name is not None:
             invalid = set(sys_inputs.keys())-sys_allowed
             if len(invalid)>0:
-                self.error('invalid {0} inputs\ninvalid inputs: {1}\nvalid options are: {2}'.format(sys_name,sorted(invalid),sorted(sys_allowed)))
+                msg = (
+                    f'invalid {sys_name} inputs\n'
+                    f'invalid inputs: {sorted(invalid)}\n'
+                    f'valid options are: {sorted(sys_allowed)}'
+                    )
+                raise ValueError(msg)
             #end if
             klen = 0
             has_array = False
@@ -347,7 +373,12 @@ $calculation
                         tlist += t.__name__+','
                     #end for
                     tlist = tlist[:-1]
-                    self.error('{0} input "{1}" has an invalid type\ninvalid type: {2}\nallowed types are: {3}'.format(sys_name,k,v.__class__.__name__,tlist))
+                    msg = (
+                        f'{sys_name} input "{k}" has an invalid type\n'
+                        f'invalid type: {v.__class__.__name__}\n'
+                        f'allowed types are: {tlist}'
+                        )
+                    raise TypeError(msg)
                 #end if
                 klen = max(klen,len(k))
                 has_array |= isinstance(v,np.ndarray)
@@ -359,10 +390,10 @@ $calculation
             #end if
             if is_mole:
                 c += 'from pyscf import gto as gto_loc\n'
-                c += '{0} = gto_loc.Mole()\n'.format(sys_var)
+                c += f'{sys_var} = gto_loc.Mole()\n'
             elif is_cell:
                 c += 'from pyscf.pbc import gto as gto_loc\n'
-                c += '{0} = gto_loc.Cell()\n'.format(sys_var)
+                c += f'{sys_var} = gto_loc.Cell()\n'
             #end if
             fmt = sys_var+'.{0:<'+str(klen)+'} = {1}\n'
             nalign = klen+len(sys_var)+4
@@ -373,7 +404,13 @@ $calculation
                         vs = render_string(v,nalign)
                     elif isinstance(v,np.ndarray):
                         if len(v.shape)>2:
-                            self.error('cannot write system input variable {0}\n{0} is an array with more than two dimensions\nonly two dimensions are currently supported for writing\narray contents: {1}'.format(k,v))
+                            msg = (
+                                f'cannot write system input variable {k}\n'
+                                f'{k} is an array with more than two dimensions\n'
+                                'only two dimensions are currently supported for writing\n'
+                                f'array contents: {v}'
+                                )
+                            raise ValueError(msg)
                         #end if
                         vs = render_array(v,nalign)
                     elif isinstance(v,PyscfInput.basic_types):
@@ -384,9 +421,9 @@ $calculation
                     c += fmt.format(k,vs)
                 #end if
             #end for
-            c += '{0}.build()\n'.format(sys_var)
+            c += f'{sys_var}.build()\n'
             if sys_kpoints is not None:
-                c += '{0} = {1}\n'.format(kpts_var,render_array(sys_kpoints,4))
+                c += f'{kpts_var} = {render_array(sys_kpoints,4)}\n'
             #end if
             c += '### end generated system text ###\n\n'
             self.assign(system=c)
@@ -399,32 +436,46 @@ $calculation
 
         if save_qmc:
             if prefix is None:
-                self.error('cannot generate save2qmcpack text\nplease provide input variable "prefix"\n(used to set "title" in save2qmcpack)')
+                msg = (
+                    'cannot generate save2qmcpack text\n'
+                    'please provide input variable "prefix"\n'
+                    '(used to set "title" in save2qmcpack)'
+                    )
+                raise ValueError(msg)
             elif sys_var is None:
-                self.error('cannot generate save2qmcpack text\nplease provide input variable "sys_var"\n(used to set "cell" in save2qmcpack) ')
+                msg = (
+                    'cannot generate save2qmcpack text\n'
+                    'please provide input variable "sys_var"\n'
+                    '(used to set "cell" in save2qmcpack) '
+                    )
+                raise ValueError(msg)
             #end if
             if folded_structure is not None:
                 folded_structure.change_units('B') # always use Bohr units for k-points
                 nkpoints = len(folded_structure.kpoints)
                 if sys_kpoints is None and nkpoints!=0 or sys_kpoints is not None and len(sys_kpoints)!=nkpoints:
-                    self.error('inconsistency in written and saved k-points')
+                    msg = 'inconsistency in written and saved k-points'
+                    raise ValueError(msg)
                 #end if
                 if tiled_structure is None:
                     tiling  = np.array([1,1,1],dtype=int)
                     ntwists = nkpoints
                 else:
                     if nkpoints==0:
-                        self.error('k-points must be present for save2qmcpack to write supercell wavefunction')
+                        msg = 'k-points must be present for save2qmcpack to write supercell wavefunction'
+                        raise ValueError(msg)
                     #end if
                     tiled_structure.change_units('B') # always use Bohr units for twists/k-points
                     tiled_kpoints = tiled_structure.kpoints.copy()
                     ntwists = len(tiled_kpoints)
                     if ntwists==0:
-                        self.error('supercell k-points must be present for save2qmcpack to write supercell wavefunction')
+                        msg = 'supercell k-points must be present for save2qmcpack to write supercell wavefunction'
+                        raise ValueError(msg)
                     #end if
                     kmap = tiled_structure.kmap()
                     if len(kmap)!=ntwists:
-                        self.error('inconsistency between supercell twist mapping and supercell twist count')
+                        msg = 'inconsistency between supercell twist mapping and supercell twist count'
+                        raise ValueError(msg)
                     #end if
                     assert len(kmap)==ntwists
                     kmap_array = []
@@ -436,16 +487,19 @@ $calculation
                     #end for
                     kmap_array = np.array(kmap_array,dtype=int)
                     if len(set(folded_indices))!=nkpoints:
-                        self.error('inconsistency in mapping between supercell twists and folded cell k-points')
+                        msg = 'inconsistency in mapping between supercell twists and folded cell k-points'
+                        raise ValueError(msg)
                     #end if
                     if not tiled_structure.has_tmatrix():
-                        self.error('tiling matrix is missing')
+                        msg = 'tiling matrix is missing'
+                        raise ValueError(msg)
                     #end if
                     tmatrix  = tiled_structure.tmatrix.copy()
                     tiling   = np.diag(tmatrix)
                     diagonal = np.abs(tmatrix-np.diag(tiling)).sum()==0
                     if not diagonal:
-                        self.error('non-diagonal tilings are not yet supported by save2qmcpack')
+                        msg = 'non-diagonal tilings are not yet supported by save2qmcpack'
+                        raise NotImplementedError(msg)
                     #end if
                 #end if
             #end if
@@ -455,19 +509,19 @@ $calculation
             self.tiled_kpoints = None
             self.tiled_kmap    = None
             if sys_kpoints is None:
-                s += "savetoqmcpack({0},{1},'{2}')\n".format(sys_var,mf_var,prefix)
+                s += f"savetoqmcpack({sys_var},{mf_var},'{prefix}')\n"
             elif tiled_structure is None:
                 s += 'tiling = [{},{},{}]\n'.format(*tiling)
-                s += 'for n,kp in enumerate({}):\n'.format(kpts_var)
-                s += "    savetoqmcpack({0},{1},'{2}.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts=[kp],sp_twist=kp)\n".format(sys_var,mf_var,prefix)
+                s += f'for n,kp in enumerate({kpts_var}):\n'
+                s += f"    savetoqmcpack({sys_var},{mf_var},'{prefix}.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts=[kp],sp_twist=kp)\n"
                 s += "#end for\n"
                 self.kpoints = sys_kpoints.copy()
             else:
                 s += 'tiling = [{},{},{}]\n'.format(*tiling)
-                s += "sp_kpoints = {}\n".format(render_array(tiled_kpoints,4))
-                s += "sp_kmap    = {}\n".format(render_array(kmap_array,4))
+                s += f"sp_kpoints = {render_array(tiled_kpoints,4)}\n"
+                s += f"sp_kmap    = {render_array(kmap_array,4)}\n"
                 s += 'for n,kp in enumerate(sp_kpoints):\n'
-                s += "    savetoqmcpack({0},{1},'{2}.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts={3}[sp_kmap[n]],sp_twist=kp,kmap=sp_kmap[n])\n".format(sys_var,mf_var,prefix,kpts_var)
+                s += f"    savetoqmcpack({sys_var},{mf_var},'{prefix}.twistnum_{{}}'.format(str(n).zfill(3)),kmesh=tiling,kpts={kpts_var}[sp_kmap[n]],sp_twist=kp,kmap=sp_kmap[n])\n"
                 s += "#end for\n"
                 self.kpoints       = sys_kpoints.copy()
                 self.tiled_kpoints = tiled_kpoints.copy()
@@ -479,9 +533,13 @@ $calculation
 
         if checkpoint and 'chkfile' not in self.values:
             if prefix is None:
-                self.error('cannot set $chkpoint variable\nplease provide input variable "prefix"')
+                msg = (
+                    'cannot set $chkpoint variable\n'
+                    'please provide input variable "prefix"'
+                    )
+                raise ValueError(msg)
             #end if
-            chkfile = '{}.chk'.format(prefix)
+            chkfile = f'{prefix}.chk'
             self.chkfile = chkfile
             self.assign(chkfile="'"+chkfile+"'")
         #end if
