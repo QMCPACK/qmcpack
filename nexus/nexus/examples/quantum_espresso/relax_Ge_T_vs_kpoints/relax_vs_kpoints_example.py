@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from nexus import settings
+from nexus import settings, NEXUS_CONFIG
 from nexus import generate_physical_system
 from nexus import generate_pwscf,job
 from nexus import run_project
@@ -64,7 +64,7 @@ run_project()
 
 
 # analyze the results
-performed_runs = not settings.generate_only and not settings.status_only
+performed_runs = not NEXUS_CONFIG.generate_only and not NEXUS_CONFIG.status_only
 if performed_runs:
     print()
     print('Relaxation results:')

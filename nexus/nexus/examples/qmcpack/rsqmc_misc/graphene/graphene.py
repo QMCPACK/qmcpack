@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from nexus import settings,job,run_project
+from nexus import settings,job,run_project,NEXUS_CONFIG
 from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
@@ -203,7 +203,7 @@ run_project()
 
 
 # print out the total energy
-performed_runs = not settings.generate_only and not settings.status_only
+performed_runs = not NEXUS_CONFIG.generate_only and not NEXUS_CONFIG.status_only
 if performed_runs:
     # get the qmcpack analyzer object
     # it contains all of the statistically analyzed data from the run

@@ -54,7 +54,7 @@ import subprocess
 from subprocess import Popen, CalledProcessError
 import numpy as np
 from .developer import DevBase, obj, warn, NexusError
-from .nexus_base import NexusCore, nexus_core
+from .nexus_base import NexusCore, NEXUS_CONFIG
 from .execute import execute
 from .utilities import path_string
 import importlib.util
@@ -637,7 +637,7 @@ class Job(NexusCore):
         #end if
         if self.subdir is None:
             if machine.local_directory is not None:
-                self.subdir = os.path.join(machine.local_directory,nexus_core.runs,sim.path)
+                self.subdir = os.path.join(machine.local_directory,NEXUS_CONFIG.runs,sim.path)
                 self.abs_subdir = self.subdir
             else:
                 self.subdir = self.directory
@@ -759,7 +759,7 @@ class Job(NexusCore):
 
     # remove?
     def determine_end_status(self,status):
-        if not nexus_core.generate_only:
+        if not NEXUS_CONFIG.generate_only:
             self.successful = False # not really implemented yet
         #end if
     #end def determine_end_status
@@ -1312,7 +1312,7 @@ class Workstation(Machine):
         self.validate()
         done = []
         for pid,process in self.processes.items():
-            if nexus_core.generate_only or not nexus_core.monitor:
+            if NEXUS_CONFIG.generate_only or not NEXUS_CONFIG.monitor:
                 qpid,status = pid,0
             else:
                 qpid,status = os.waitpid(pid,os.WNOHANG)
@@ -1326,7 +1326,7 @@ class Workstation(Machine):
                 self.running.remove(iid)
                 self.finished.add(iid)
                 done.append(pid)
-                if not nexus_core.generate_only:
+                if not NEXUS_CONFIG.generate_only:
                     job.out.close()
                     job.err.close()
                 #end if
@@ -1369,7 +1369,7 @@ class Workstation(Machine):
         job_req  = job_req[order]
 
         for job in job_req:
-            if job.cores>self.cores and not nexus_core.generate_only:
+            if job.cores>self.cores and not NEXUS_CONFIG.generate_only:
                 msg = (
                     'job '+str(job.internal_id)+' is too large to run on this machine\n'
                     'cores requested: '+str(job.cores)+'\n'
@@ -1443,11 +1443,11 @@ class Workstation(Machine):
         job.status = job.states.running
         process = obj()
         process.job = job
-        if nexus_core.generate_only:
+        if NEXUS_CONFIG.generate_only:
             self.log(pad+'Would have executed:  '+command)
             job.system_id = job.internal_id
         else:
-            if nexus_core.monitor:
+            if NEXUS_CONFIG.monitor:
                 self.log(pad+'Executing:  '+command)
                 job.out = open(job.outfile,'w')
                 job.err = open(job.errfile,'w')
@@ -1747,7 +1747,7 @@ class Supercomputer(Machine):
             #end if
             self.process_job(job)
             self.jobs[jid] = job
-            if not nexus_core.dynamic:
+            if not NEXUS_CONFIG.dynamic:
                 self.running.add(jid)
                 process = obj(job=job)
                 self.processes[pid] = process
@@ -2087,7 +2087,7 @@ class Supercomputer(Machine):
         #end if
         done = []
         for pid,process in self.processes.items():
-            if pid not in self.system_queue or self.system_queue[pid]=='complete' or nexus_core.generate_only:
+            if pid not in self.system_queue or self.system_queue[pid]=='complete' or NEXUS_CONFIG.generate_only:
                 job = process.job
                 job.status = job.states.finished
                 job.finished = True
@@ -2138,7 +2138,7 @@ class Supercomputer(Machine):
             raise FileNotFoundError(msg)
         #end if
         command = self.sub_command(job)
-        if nexus_core.generate_only:
+        if NEXUS_CONFIG.generate_only:
             self.log(pad+'Would have executed:  '+command)
             job.status = job.states.running
             process = obj()
