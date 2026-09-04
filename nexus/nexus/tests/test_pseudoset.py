@@ -12,7 +12,7 @@ from typing import Literal
 
 import numpy as np
 
-from nexus.nexus_base import nexus_core
+from nexus.nexus_base import NEXUS_CONFIG
 from nexus.physical_system import generate_physical_system
 from nexus.pseudoset import PseudoSet, ppset, generate_pseudoset
 from nexus.pseudoset import read_potcar_z_valence, read_qmcpack_xml_z_valence, read_upf_z_valence
@@ -1903,7 +1903,7 @@ def test_legacy_ppset(tmp_path):
     psp_dir.mkdir()
     assert psp_dir.exists(), "Failed to create pseudo directory!"
 
-    nexus_core.file_locations += [str(psp_dir)]
+    NEXUS_CONFIG.file_locations += [str(psp_dir)]
 
     pseudo_list = []
     for psp in pseudo_names:
@@ -2014,7 +2014,7 @@ def test_get_pseudos(tmp_path):
     psp_dir.mkdir()
     assert psp_dir.exists(), "Failed to create pseudo directory!"
 
-    nexus_core.file_locations += [str(psp_dir)]
+    NEXUS_CONFIG.file_locations += [str(psp_dir)]
 
     pseudo_list = []
     for psp in pseudo_names:

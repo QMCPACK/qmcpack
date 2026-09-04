@@ -37,7 +37,7 @@ from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
 from .developer import DevBase, obj, warn, FileFormatError
-from .nexus_base import nexus_noncore
+from .nexus_base import NEXUS_CONFIG
 from .pseudoset import pp_elem_label, PseudoSet
 from .simulation import SimulationInput
 from .utilities import path_string
@@ -1253,7 +1253,7 @@ def generate_any_gamess_input(**kwargs):
         #end if
         if pskw.pseudos is None:
             if pskw.bases is not None:
-                bss = nexus_noncore.basissets.bases_by_atom(*pskw.bases)
+                bss = NEXUS_CONFIG.basissets.bases_by_atom(*pskw.bases)
             else:
                 bss = obj()
                 if 'coord' not in gi.contrl:
