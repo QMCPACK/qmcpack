@@ -169,7 +169,7 @@ public:
   iterator begin()
   {
     assert(get<1>(walker_buffer.sizes()) == walker_size);
-    return iterator(0, boost::multi::static_array_cast<element, pointer>(walker_buffer), data_displ, wlk_desc);
+    return iterator(0, walker_buffer.template static_array_cast<element, pointer>(), data_displ, wlk_desc);
   }
 
   /*
@@ -178,7 +178,7 @@ public:
   const_iterator begin() const
   {
     assert(get<1>(walker_buffer.sizes()) == walker_size);
-    return const_iterator(0, boost::multi::static_array_cast<element, pointer>(walker_buffer), data_displ, wlk_desc);
+    return const_iterator(0, walker_buffer.template static_array_cast<element, pointer>(), data_displ, wlk_desc);
   }
 
   /*
@@ -187,7 +187,7 @@ public:
   iterator end()
   {
     assert(get<1>(walker_buffer.sizes()) == walker_size);
-    return iterator(tot_num_walkers, boost::multi::static_array_cast<element, pointer>(walker_buffer), data_displ,
+    return iterator(tot_num_walkers, walker_buffer.template static_array_cast<element, pointer>(), data_displ,
                     wlk_desc);
   }
 
@@ -199,7 +199,7 @@ public:
     if (i < 0 || i > tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
     assert(get<1>(walker_buffer.sizes()) == walker_size);
-    return reference(boost::multi::static_array_cast<element, pointer>(walker_buffer)[i], data_displ, wlk_desc);
+    return reference(walker_buffer.template static_array_cast<element, pointer>()[i], data_displ, wlk_desc);
   }
 
   /*
@@ -210,7 +210,7 @@ public:
     if (i < 0 || i > tot_num_walkers)
       APP_ABORT("error: index out of bounds.\n");
     assert(get<1>(walker_buffer.sizes()) == walker_size);
-    return const_reference(boost::multi::static_array_cast<element, pointer>(walker_buffer.const_array_cast())[i], data_displ, wlk_desc);
+    return const_reference(walker_buffer.const_array_cast().template static_array_cast<element, pointer>()[i], data_displ, wlk_desc);
   }
 
   // cleans state of object.
@@ -256,7 +256,7 @@ public:
     {
       if (TG.TG_local().root())
       {
-        auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
+        auto W(walker_buffer.template static_array_cast<element, pointer>());
         auto pos = tot_num_walkers;
         // careful here!!!
         while (pos < n)
@@ -406,8 +406,8 @@ public:
       tot_num_walkers += M.size();
       return;
     }
-    auto&& W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
-    auto&& BPW(boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer));
+    auto&& W(walker_buffer.template static_array_cast<element, pointer>());
+    auto&& BPW(bp_buffer.template static_array_cast<bp_element, bp_pointer>());
     for (int i = 0; i < M.size(); i++)
     {
       W[tot_num_walkers] = M[i].sliced(0, walker_size);
@@ -441,8 +441,8 @@ public:
       tot_num_walkers -= int(M.size());
       return;
     }
-    auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
-    auto BPW(boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer));
+    auto W(walker_buffer.template static_array_cast<element, pointer>());
+    auto BPW(bp_buffer.template static_array_cast<bp_element, bp_pointer>());
     for (int i = 0; i < M.size(); i++)
     {
       M[i].sliced(0, walker_size) = W[tot_num_walkers - 1];
@@ -482,8 +482,8 @@ public:
       return;
     }
 
-    auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
-    auto BPW(boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer));
+    auto W(walker_buffer.template static_array_cast<element, pointer>());
+    auto BPW(bp_buffer.template static_array_cast<bp_element, bp_pointer>());
 
     //1. push/swap all dead walkers to the end and adjust tot_num_walkers
     {
@@ -584,14 +584,14 @@ public:
     if (!TG.TG_local().root())
       return;
     assert(get<1>(walker_buffer.sizes()) == walker_size);
-    auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
+    auto W(walker_buffer.template static_array_cast<element, pointer>());
     ma::scal(ComplexType(w0), W({0, tot_num_walkers}, data_displ[WEIGHT]));
     if (scale_last_history)
     {
       int his_pos = ((history_pos == 0) ? wlk_desc[6] - 1 : history_pos - 1);
       if (wlk_desc[6] > 0 && his_pos >= 0 && his_pos < wlk_desc[6])
       {
-        auto BPW(boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer));
+        auto BPW(bp_buffer.template static_array_cast<bp_element, bp_pointer>());
         ma::scal(bp_element(w0), BPW[data_displ[WEIGHT_HISTORY] + his_pos]);
       }
     }
@@ -602,7 +602,7 @@ public:
     if (!TG.TG_local().root())
       return;
     assert(walker_buffer.size(1) == walker_size);
-    auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
+    auto W(walker_buffer.template static_array_cast<element, pointer>());
     boost::multi::array<ComplexType, 1> ov(iextensions<1u>{tot_num_walkers});
     boost::multi::array<ComplexType, 1> buff(iextensions<1u>{tot_num_walkers});
     getProperty(OVLP, ov);
@@ -641,7 +641,7 @@ public:
     assert(n < tot_num_walkers);
     assert(x.size() >= walkerSizeIO());
     assert(get<1>(walker_buffer.sizes()) == walker_size);
-    auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
+    auto W(walker_buffer.template static_array_cast<element, pointer>());
     using std::copy_n;
     copy_n(W[n].origin(), walkerSizeIO(), x.origin());
   }
@@ -653,7 +653,7 @@ public:
     assert(n < tot_num_walkers);
     assert(x.size() >= walkerSizeIO());
     assert(get<1>(walker_buffer.sizes()) == walker_size);
-    auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
+    auto W(walker_buffer.template static_array_cast<element, pointer>());
     using std::copy_n;
     copy_n(x.origin(), walkerSizeIO(), W[n].origin());
   }
@@ -664,7 +664,7 @@ public:
     static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
     if (v.num_elements() < tot_num_walkers)
       APP_ABORT("Error: getProperty(v):: v.size < tot_num_walkers.\n");
-    auto W_(boost::multi::static_array_cast<element, pointer>(walker_buffer.const_array_cast()));
+    auto W_(walker_buffer.const_array_cast().template static_array_cast<element, pointer>());
     ma::copy(W_({0, tot_num_walkers}, data_displ[id]), v.sliced(0, tot_num_walkers));
   }
 
@@ -674,7 +674,7 @@ public:
     static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
     if (v.num_elements() < tot_num_walkers)
       APP_ABORT("Error: setProperty(v):: v.size < tot_num_walkers.\n");
-    auto W_(boost::multi::static_array_cast<element, pointer>(walker_buffer));
+    auto W_(walker_buffer.template static_array_cast<element, pointer>());
     ma::copy(v.sliced(0, tot_num_walkers), W_({0, tot_num_walkers}, data_displ[id]));
   }
 
@@ -743,7 +743,7 @@ public:
     double nx = (walkerType == NONCOLLINEAR ? 1.0 : 2.0);
     if (TG.TG_local().root())
     {
-      auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
+      auto W(walker_buffer.template static_array_cast<element, pointer>());
       ma::scal(ComplexType(std::exp(-f)), W({0, tot_num_walkers}, data_displ[OVLP]));
     }
     LogOverlapFactor += f / nx;
