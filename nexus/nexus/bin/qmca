@@ -213,7 +213,7 @@ class QBase(DevBase):
             text+=str(t)+' '
         #end for
         pad = n*'  '
-        self._logfile.write(pad+text.replace('\n','\n'+pad)+'\n')
+        sys.stdout.write(pad+text.replace('\n','\n'+pad)+'\n')
     #end def log
 
 
