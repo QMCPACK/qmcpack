@@ -9,7 +9,7 @@ from pathlib import Path
 from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
-from .developer import DevBase, obj, log, NexusError
+from .developer import DevBase, obj, nxs_print, NexusError
 from .fileio import TextFile
 from .utilities import path_string, to_str
 
@@ -64,11 +64,11 @@ class BasisSets(DevBase):
             bsfiles = bsfiles[0]
         #end if
         bss = []
-        log('')
-        log('  Basissets')
+        nxs_print('')
+        nxs_print('  Basissets')
         for filepath in bsfiles:
             filepath_str = str(filepath)
-            log('    reading basis: '+filepath_str)
+            nxs_print('    reading basis: '+filepath_str)
             ext = filepath_str.split('.')[-1].lower()
             if ext=='gms_bas' or ext=='bas':
                 bs = gamessBasisFile(filepath_str)
@@ -77,7 +77,7 @@ class BasisSets(DevBase):
             #end if
             bss.append(bs)
         #end for
-        log('')
+        nxs_print('')
         self.addbs(bss)
     #end def readbs
 

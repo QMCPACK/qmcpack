@@ -35,7 +35,7 @@ from pathlib import Path
 from pickle import UnpicklingError
 from typing import Literal
 
-from .developer import DevBase, log, obj
+from .developer import DevBase, nxs_print, obj
 from .memory import resident
 from .nexus_version import nexus_version
 from .utilities import path_string
@@ -160,7 +160,7 @@ _____________________________________________________
 _____________________________________________________
           
 '''.format(*nexus_version)
-        log(splash_text)
+        nxs_print(splash_text)
         write_splash.wrote_splash = True
     #end if
 #end def write_splash

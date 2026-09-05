@@ -27,7 +27,7 @@ from .debug import ci, interact  # noqa: F401
 
 
 from .generic import NexusError, FileFormatError, NotAnElementError  # noqa: F401
-from .generic import error, log, warn, message  # noqa: F401
+from .generic import error, nxs_print, warn, message  # noqa: F401
 
 
 import traceback
@@ -66,7 +66,7 @@ class DevBaseNexus(DevBase):
 
     def nxs_print(self,*a,**kw):
         kw.setdefault('logfile',self._logfile)
-        log(*a,**kw)
+        nxs_print(*a,**kw)
 
     def warn(self,msg,indent='    '):
         warn(

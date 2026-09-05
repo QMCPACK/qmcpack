@@ -97,7 +97,7 @@ class QDRBase(DevBase):
     
     def vlog(self,*args,**kwargs):
         if self.verbose:
-            DevBase.log(self,*args,**kwargs)
+            DevBase.nxs_print(self,*args,**kwargs)
         #end if
     #end def vlog
 
@@ -107,7 +107,7 @@ class QDRBase(DevBase):
     #end def vmlog
 
     def help(self):
-        self.log('\n'+self.parser.format_help().strip()+'\n')
+        self.nxs_print('\n'+self.parser.format_help().strip()+'\n')
     #end def help
 
 #end class QDBase
@@ -305,7 +305,7 @@ class QMCDensityRadialProcessor(QDRBase):
         # if VMC file is given, perform extrapolation before 
         # instantiating ChargeDensity object
         if opt.vmc_file is not None:
-            self.log('Extrapolating from VMC and DMC densities...')
+            self.nxs_print('Extrapolating from VMC and DMC densities...')
             vmc_xsf_data = XsfFile(filepath=opt.vmc_file)
             dmc_xsf_data = XsfFile(filepath=file)
             # Initialize extrapolated XsfFile object
@@ -319,14 +319,14 @@ class QMCDensityRadialProcessor(QDRBase):
             dmc_xsf_data = XsfFile(filepath=file)
             file = deepcopy(dmc_xsf_data)
             if opt.write_extrap:
-                self.log('\nWARNING: You provided --write, however, extrapolated density will not be written since a VMC file was not provided (via --vmc=VMC_FILE).\n')
+                self.nxs_print('\nWARNING: You provided --write, however, extrapolated density will not be written since a VMC file was not provided (via --vmc=VMC_FILE).\n')
             #end if
         #end if
 
         show_error=False
         # If error files are given, then user wants resampled error bars
         if opt.dmc_err_file is not None:
-            self.log('Resampling to obtain error bar (NOTE: This can be slow)...')
+            self.nxs_print('Resampling to obtain error bar (NOTE: This can be slow)...')
             if opt.vmc_file is not None and opt.vmc_err_file is not None:
                 # Data without errors
                 vmc_xsf_data = XsfFile(filepath=opt.vmc_file)
@@ -381,9 +381,9 @@ class QMCDensityRadialProcessor(QDRBase):
             #end if
 
             nsamples = opt.nsamples
-            self.log(f'Will compute {nsamples} samples...')
+            self.nxs_print(f'Will compute {nsamples} samples...')
             for i in range(nsamples):
-                self.log(f'sample: {i}')
+                self.nxs_print(f'sample: {i}')
                 resample_xsf_data = deepcopy(file)
                 for d1_idx, d1 in enumerate(file.data[3]['density']['density'].values):
                     for d2_idx, d2 in enumerate(d1):
@@ -500,7 +500,7 @@ class QMCDensityRadialProcessor(QDRBase):
             cd.set_attribute('density_units','A') # xsf format uses Angstrom units which makes the QMCPACK density units (e/Angstrom^3) after volume normalization
         #end if
 
-        self.log('\nNorm:',cd.norm())
+        self.nxs_print('\nNorm:',cd.norm())
 
         if opt.plot:
             if opt.species is None:
@@ -534,9 +534,9 @@ class QMCDensityRadialProcessor(QDRBase):
                     r = opt.radii[0]
                 #end if
                 if not show_error:
-                    self.log(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f}\n')
+                    self.nxs_print(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f}\n')
                 else:
-                    self.log(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f} +/- {std_dict[at]:.8f}\n')
+                    self.nxs_print(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f} +/- {std_dict[at]:.8f}\n')
                 #end if
             #end for
         else:
@@ -549,9 +549,9 @@ class QMCDensityRadialProcessor(QDRBase):
                     r = opt.radii[0]
                 #end if
                 if not show_error:
-                    self.log(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f}\n')
+                    self.nxs_print(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f}\n')
                 else:
-                    self.log(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f} +/- {std_dict[at]:.8f}\n')
+                    self.nxs_print(f'{cstr} Value of {at} Species at Cutoff {r} is: {rdens.tot[at].density[-1]:.8f} +/- {std_dict[at]:.8f}\n')
                 #end if
             #end for
         #end if

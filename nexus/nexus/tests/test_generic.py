@@ -7,7 +7,7 @@ from ..generic import warn, NexusDevWarning, NexusUserWarning, nxs_deprecate
 
 @isolate_nexus_core
 def test_logging():
-    from ..generic import log,error
+    from ..generic import nxs_print,error
     from ..generic import generic_settings,NexusError
 
     logfile = generic_settings.devlog
@@ -16,23 +16,23 @@ def test_logging():
     #   simple message
     s = 'simple message'
     logfile.reset()
-    log(s)
+    nxs_print(s)
     assert(logfile.s==s+'\n')
 
     #   list of items
     items = ['a','b','c',1,2,3]
     logfile.reset()
-    log(*items)
+    nxs_print(*items)
     assert(logfile.s=='a b c 1 2 3 \n')
 
     #   message with indentation
     s = 'a message\nwith indentation'
     logfile.reset()
-    log(s,indent='  ')
+    nxs_print(s,indent='  ')
     assert(logfile.s=='  a message\n  with indentation\n')
 
     logfile.reset()
-    log(s,indent='msg: ')
+    nxs_print(s,indent='msg: ')
     assert(logfile.s=='msg: a message\nmsg: with indentation\n')
     
     #   writing to separate log files
@@ -41,13 +41,13 @@ def test_logging():
     s2 = 'message to log 2'
     logfile.reset()
     logfile2.reset()
-    log(s1)
+    nxs_print(s1)
     assert(logfile.s==s1+'\n')
     assert(logfile2.s=='')
 
     logfile.reset()
     logfile2.reset()
-    log(s2,logfile=logfile2)
+    nxs_print(s2,logfile=logfile2)
     assert(logfile.s=='')
     assert(logfile2.s==s2+'\n')
 

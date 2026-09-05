@@ -116,7 +116,7 @@ def nocopy(value):
 #end def nocopy
 
 
-def log(
+def nxs_print(
     *items,
     indent: str | None = None,
     logfile: TextIO | None = None,
@@ -156,8 +156,8 @@ def message(msg,header=None,post_header=' message:',indent='    ',logfile=None):
     else:
         header += post_header
     #end if
-    log('\n  '+header,logfile=logfile)
-    log(msg.rstrip(),indent=indent,logfile=logfile)
+    nxs_print('\n  '+header,logfile=logfile)
+    nxs_print(msg.rstrip(),indent=indent,logfile=logfile)
 #end def message
 
 

@@ -628,11 +628,11 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
 
     def open_log(self):
         logfile = os.path.join(self.info.path,self.info.outfile)
-        self.nxs_print = TextFile(logfile)
+        self.log = TextFile(logfile)
     #end def open_log
 
     def read_states(self):
-        log = self.nxs_print
+        log = self.log
         log.seek('state #')
         nstates  = 0
         elem_ind = set()
@@ -654,7 +654,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
     #end def read_states
 
     def read_lowdin(self):
-        log = self.nxs_print
+        log = self.log
         log.seek('Lowdin Charges')
         lowdin = obj()
         has_ud = False
@@ -804,7 +804,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
 
     def close_log(self):
         if 'log' in self:
-            del self.nxs_print
+            del self.log
         #end if
     #end def close_log
         
