@@ -2258,8 +2258,3 @@ real-valued wavefunction):
     size                8           # array has 8 elements total
     shape               8, 0, 0, 0  # array has linear shape, length 8
     unit_size           1           # data stored as single real values (2 if complex)
-
-
-
-
-.. bibliography:: /bibs/methods.bib

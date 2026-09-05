@@ -82,25 +82,14 @@
 
 
 import sys
+import importlib
 import inspect
 import numpy as np
 from numpy import pi, exp, sqrt, sin, cos
 from numpy.linalg import norm
-from .developer import obj, unavailable
+from .developer import obj
 from .unit_converter import convert
 from .periodic_table import Elements
-
-try:
-    from scipy.special import betainc
-    from scipy.optimize import fmin
-    from scipy.spatial import KDTree,Delaunay,Voronoi
-    scipy_unavailable = False
-except:
-    betainc = unavailable('scipy.special' ,'betainc')
-    fmin    = unavailable('scipy.optimize','fmin')
-    KDTree,Delaunay,Voronoi  = unavailable('scipy.spatial' ,'KDTree','Delaunay','Voronoi')
-    scipy_unavailable = True
-#end try
 
 
 # cost functions
@@ -127,6 +116,7 @@ def curve_fit(x,y,f,p0,cost='least_squares',optimizer='fmin'):
         cost = cost_functions[cost]
     #end if
     if optimizer=='fmin':
+        from scipy.optimize import fmin
         p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000,disp=0)
     else:
         msg = 'optimizers other than fmin are not supported yet'
@@ -1129,6 +1119,7 @@ def equilibration_length(x,tail=.5,*,plot=False,xlim=None,bounces=2,random=True,
 
 # probability that two means are from the same distribution
 def ttest(m1,e1,n1,m2,e2,n2):
+    from scipy.special import betainc
     m1 = float(m1)
     e1 = float(e1)
     m2 = float(m2)
@@ -1345,6 +1336,7 @@ def simple_surface(origin,axes,grid):
 # test needed
 #def least_squares(p, x, y, f): return ((f(p,x)-y)**2).sum()
 def func_fit(x,y,fitting_function,p0,cost=least_squares):
+    from scipy.optimize import fmin
     f = fitting_function
     p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000)
     return p
@@ -1417,8 +1409,9 @@ def nearest_neighbors(n,points,qpoints=None,*,return_distances=False,slow=False)
             )
         raise ValueError(msg)
     #end if
-    slow = slow or scipy_unavailable
+    slow = slow or importlib.util.find_spec("scipy") is None
     if not slow:
+        from scipy.spatial import KDTree
         kt = KDTree(points)
         dist,ind = kt.query(qpoints,n+extra)
     else:
@@ -1441,6 +1434,7 @@ def nearest_neighbors(n,points,qpoints=None,*,return_distances=False,slow=False)
 
 
 def voronoi_neighbors(points):
+    from scipy.spatial import Voronoi
     vor = Voronoi(points)
     neighbor_pairs = vor.ridge_points
     return neighbor_pairs
@@ -1449,6 +1443,7 @@ def voronoi_neighbors(points):
 
 
 def convex_hull(points,dimension=None,tol=None):
+    from scipy.spatial import Delaunay
     if dimension is None:
         npts,dimension = points.shape
     #end if

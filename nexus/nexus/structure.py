@@ -118,7 +118,6 @@ Module contents
 
 from __future__ import annotations
 import os
-import sys
 from pathlib import Path
 from types import MappingProxyType
 from typing import TypeAlias
@@ -133,7 +132,7 @@ from .unit_converter import convert
 from .numerics import nearest_neighbors, convex_hull, voronoi_neighbors
 from .periodic_table import Elements
 from .fileio import XsfFile, PoscarFile
-from .developer import DevBase, obj, unavailable, FileFormatError, NotAnElementError
+from .developer import DevBase, obj, FileFormatError, NotAnElementError
 from .utilities import path_string
 from . import numpy_extensions as npe
 
@@ -151,83 +150,12 @@ ElementOrList: TypeAlias = str | int | Elements | list[str | Elements | int]
 """Alias for types that can be coerced into an element, or a list of those types."""
 
 
-try:
-    from scipy.special import erfc
-except:
-    erfc = unavailable('scipy.special','erfc')
-#end try
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.pyplot import plot,subplot,title,xlabel,ylabel
-except:
-    plot,subplot,title,xlabel,ylabel,plt = unavailable('matplotlib.pyplot','plot','subplot','title','xlabel','ylabel','plt')
-#end try
-
-
-
-# installation instructions for spglib interface
-#
-#  this is bootstrapped off of spglib's ASE Python interface
-#
-#  installation of spglib
-#    go to http://sourceforge.net/projects/spglib/files/
-#    click on Download spglib-1.8.2.tar.gz (952.6 kB)
-#    unpack directory (tar -xzf spglib-1.8.2.tar.gz)
-#    enter ase directory (cd spglib-1.8.2/python/ase/)
-#    build and install (sudo python setup.py install)
-
-#try:
-#    from pyspglib import spglib
-#except:
-#    spglib = unavailable('pyspglib','spglib')
-##end try
-try:
-    import spglib
-except:
-    spglib = unavailable('spglib')
-#end try
-
-
-
-# installation instructions to enable cif file read
-#   
-#   cif file support in Nexus currently requires two external libraries
-#     PyCifRW  - base interface to read cif files into object format: CifFile
-#     cif2cell - translation layer from CifFile object to cell reconstruction: CellData
-#     (note: cif2cell installation includes PyCifRW)
-#
-#  installation of cif2cell
-#    go to http://sourceforge.net/projects/cif2cell/
-#    click on Download (example: cif2cell-1.2.10.tar.gz)
-#    unpack directory (tar -xzf cif2cell-1.2.10.tar.gz)
-#    enter directory (cd cif2cell-1.2.10)
-#    install cif2cell (python setup.py install)
-#    check python installation
-#      >python
-#      >>>from CifFile import CifFile
-#      >>>from uctools import CellData
-#   
-#   Nexus is currently compatible with
-#     cif2cell-1.2.10 and PyCifRW-3.3
-#     cif2cell-1.2.7  and PyCifRW-4.1.1 
-#     compatibility last tested: 20 Mar 2017
-#
-try:
-    from CifFile import CifFile
-except:
-    CifFile = unavailable('CifFile','CifFile')
-#end try
-try:
-    from cif2cell.uctools import CellData
-except:
-    CellData = unavailable('cif2cell.uctools','CellData')
-#end try
-
-
 cif2cell_unit_dict = dict(angstrom='A',bohr='B',nm='nm')
 
 
 def read_cif_celldata(filepath,*,block=None,grammar='1.1'):
+    from cif2cell.uctools import CellData
+    from CifFile import CifFile
     # read cif file with PyCifRW
     path,cif_file = os.path.split(filepath)
     if path!='':
@@ -3154,6 +3082,7 @@ class Structure(Sobj):
             layers[ldist] = np.array(pindices,dtype=int)
         #end for
         if plot:
+            import matplotlib.pyplot as plt
             plt.plot(dbins,boxhist,'b.-',label='boxcar histogram')
             plt.plot(dbins,hist,'r.-',label='fine histogram')
             plt.plot(dbins[ip],boxhist[ip],'rv',markersize=20)
@@ -4678,6 +4607,7 @@ class Structure(Sobj):
 
 
     def add_symmetrized_kmesh(self,kgrid=None,kshift=(0,0,0),kspacing=None):
+        import spglib
         # find kgrid from kspacing, if requested
         if kspacing is not None:
             kgrid = self.kgrid_from_kspacing(kspacing)
@@ -5431,6 +5361,7 @@ class Structure(Sobj):
     # returns madelung potential constant v_M
     #   see equation 7 in PRB 78 125106 (2008) 
     def madelung(self,axes=None,tol=1e-10):
+        from scipy.special import erfc
         if self.dim!=3:
             msg = 'madelung is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
@@ -6009,6 +5940,7 @@ class Structure(Sobj):
 
 
     def plot2d_ax(self,ix=0,iy=1,*args,**kwargs):
+        import matplotlib.pyplot as plt
         if self.dim!=3:
             msg = 'plot2d_ax is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
@@ -6022,11 +5954,12 @@ class Structure(Sobj):
             pp[i]+=dc
             pp[i]-=dot(a,pp[i])/dot(a,a)*a
         #end for
-        plot(pp[:,ix],pp[:,iy],*args,**kwargs)
+        plt.plot(pp[:,ix],pp[:,iy],*args,**kwargs)
     #end def plot2d_ax
 
 
     def plot2d_pos(self,ix=0,iy=1,*args,**kwargs):
+        import matplotlib.pyplot as plt
         if self.dim!=3:
             msg = 'plot2d_pos is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
@@ -6037,11 +5970,12 @@ class Structure(Sobj):
         for i in range(len(pp)):
             pp[i] -= dot(a,pp[i])/dot(a,a)*a
         #end for
-        plot(pp[:,ix],pp[:,iy],*args,**kwargs)
+        plt.plot(pp[:,ix],pp[:,iy],*args,**kwargs)
     #end def plot2d_pos
 
 
     def plot2d_points(self,points,ix=0,iy=1,*args,**kwargs):
+        import matplotlib.pyplot as plt
         if self.dim!=3:
             msg = 'plot2d_points is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
@@ -6052,31 +5986,33 @@ class Structure(Sobj):
         for i in range(len(pp)):
             pp[i] -= dot(a,pp[i])/dot(a,a)*a
         #end for
-        plot(pp[:,ix],pp[:,iy],*args,**kwargs)
+        plt.plot(pp[:,ix],pp[:,iy],*args,**kwargs)
     #end def plot2d_points
 
 
     def plot2d(self,pos_style='b.',ax_style='k-'):
+        import matplotlib.pyplot as plt
         if self.dim!=3:
             msg = 'plot2d is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
         #end if
-        subplot(1,3,1)
+        plt.subplot(1,3,1)
         self.plot2d_ax(0,1,ax_style,lw=2)
         self.plot2d_pos(0,1,pos_style)
-        title('a1,a2')
-        subplot(1,3,2)
+        plt.title('a1,a2')
+        plt.subplot(1,3,2)
         self.plot2d_ax(1,2,ax_style,lw=2)
         self.plot2d_pos(1,2,pos_style)
-        title('a2,a3')
-        subplot(1,3,3)
+        plt.title('a2,a3')
+        plt.subplot(1,3,3)
         self.plot2d_ax(2,0,ax_style,lw=2)
         self.plot2d_pos(2,0,pos_style)
-        title('a3,a1')
+        plt.title('a3,a1')
     #end def plot2d
 
 
     def plot2d_kax(self,ix,iy,*args,**kwargs):
+        import matplotlib.pyplot as plt
         if self.dim!=3:
             msg = 'plot2d_ax is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
@@ -6090,11 +6026,12 @@ class Structure(Sobj):
             pp[i]+=dc
             pp[i]-=dot(a,pp[i])/dot(a,a)*a
         #end for
-        plot(pp[:,ix],pp[:,iy],*args,**kwargs)
+        plt.plot(pp[:,ix],pp[:,iy],*args,**kwargs)
     #end def plot2d_kax
 
 
     def plot2d_kp(self,ix,iy,*args,**kwargs):
+        import matplotlib.pyplot as plt
         if self.dim!=3:
             msg = 'plot2d_kp is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
@@ -6105,7 +6042,7 @@ class Structure(Sobj):
         for i in range(len(pp)):
             pp[i] -= dot(a,pp[i])/dot(a,a)*a
         #end for
-        plot(pp[:,ix],pp[:,iy],*args,**kwargs)
+        plt.plot(pp[:,ix],pp[:,iy],*args,**kwargs)
     #end def plot2d_kp
 
 
@@ -6163,12 +6100,14 @@ class Structure(Sobj):
 
 
     def get_symmetry(self,symprec=1e-5):
+        import spglib
         cell = self.spglib_cell()
         return spglib.get_symmetry(cell,symprec=symprec)
     #end def get_symmetry
 
 
     def get_symmetry_dataset(self,symprec=1e-5, angle_tolerance=-1.0, hall_number=0):
+        import spglib
         cell = self.spglib_cell()
         ds   = spglib.get_symmetry_dataset(
             cell,
@@ -6183,6 +6122,7 @@ class Structure(Sobj):
     # functions based on direct spglib interface
 
     def symmetry_data(self,*args,**kwargs):
+        import spglib
         ds = self.get_symmetry_dataset(*args,**kwargs)
         if isinstance(ds,dict):
             # Spglib version < v.2.5.0, see https://spglib.readthedocs.io/en/stable/releases.html
@@ -6244,6 +6184,7 @@ class Structure(Sobj):
 
     # test needed
     def space_group_operations(self,tol=1e-5,*,unit=False):
+        import spglib
         ds = self.get_symmetry(symprec=tol)
         if ds is None:
             msg = (
@@ -6529,32 +6470,6 @@ Structure.set_operations()
 #  SeeK-path functions #
 #======================#
 
-# installation instructions for seekpath interface
-#
-#  installation of seekpath
-#    pip install seekpath
-try:
-    import seekpath
-    from seekpath import get_explicit_k_path
-    version = seekpath.__version__
-
-    try:
-        version = [int(i) for i in version.split('.')]
-        if len(version) < 3:
-            raise ValueError
-        #end if
-    except ValueError:
-        raise ValueError("Unable to parse version number")
-    #end try
-    if tuple(version) < (1, 8, 3):
-        raise ValueError("Invalid seekpath version, need >= 1.8.4")
-    #end if
-    del version
-    del seekpath
-except:
-    get_explicit_k_path = unavailable('seekpath','get_explicit_k_path')
-#end try
-
 def _getseekpath(
     structure          = None, 
     recipe             = 'hpkot', 
@@ -6565,6 +6480,7 @@ def _getseekpath(
     *,
     with_time_reversal = False,
     ):
+    from seekpath import get_explicit_k_path
     if not isinstance(structure, Structure):
         raise TypeError(
             "structure is not of type Structure\n"

@@ -21,15 +21,8 @@
 import numpy as np
 import keyword
 from inspect import getmembers
-from .developer import DevBase, obj, unavailable
+from .developer import DevBase, obj
 from .utilities import path_string, valid_variable_name
-
-try:
-    import h5py
-except:
-    h5py = unavailable('h5py')
-#end try
-
 
 class HDFglobals(DevBase):
     view = False
@@ -269,6 +262,7 @@ class HDFgroup(DevBase):
 class HDFreader(DevBase):
     
     def __init__(self,fpath,*,verbose=False,view=False):
+        import h5py
         fpath = path_string(fpath)
         HDFglobals.view = view
 
@@ -357,6 +351,7 @@ class HDFreader(DevBase):
     #end def add_dataset
 
     def add_group(self,hcur,cur,k,v):
+        import h5py
         cur[k] = HDFgroup()
         cur._add_group(k,cur[k])
         cur._groups[k]._parent = cur
