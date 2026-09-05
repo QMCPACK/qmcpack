@@ -218,7 +218,7 @@ class Settings(NexusCore):
         write_splash()
 
         # print version information
-        self.log("Checking current machine for Nexus dependencies...\n")
+        self.nxs_print("Checking current machine for Nexus dependencies...\n")
         pkg_sort = {
             "numpy":      0,
             "scipy":      1,
@@ -293,9 +293,9 @@ class Settings(NexusCore):
 
         version_text += "\n"
 
-        self.log(version_text)
+        self.nxs_print(version_text)
 
-        self.log('Applying user settings')
+        self.nxs_print('Applying user settings')
 
         # assign simple variables
         for name in Settings.core_assign_vars:
@@ -505,9 +505,9 @@ class Settings(NexusCore):
         if 'machine' in mset:
             machine_name = mset.machine
             if machine_name in {"ws", "workstation"}:
-                self.log("Automatically detecting physical CPU cores for workstation...", n=1)
+                self.nxs_print("Automatically detecting physical CPU cores for workstation...", n=1)
                 n_cores = get_cpu_cores()
-                self.log(f"Using {n_cores} core workstation", n=1)
+                self.nxs_print(f"Using {n_cores} core workstation", n=1)
                 machine_name = f"ws{n_cores}"
 
                 if not Machine.exists(machine_name):

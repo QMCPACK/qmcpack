@@ -50,21 +50,19 @@ def test_write_splash():
 #end def test_write_splash
     
 
-@isolate_nexus_core
-def test_enter_leave(tmp_path):
+def test_enter_leave(tmp_path, capsys):
     import os
     from ..nexus_base import NexusCore
     cwd = os.getcwd()
-
-    log = generic_settings.devlog
 
     nc = NexusCore()
 
     nc.enter(tmp_path)
     tcwd = os.getcwd()
     assert(tcwd==str(tmp_path))
-    assert('Entering' in log.contents())
-    assert(str(tmp_path) in log.contents())
+    captured = capsys.readouterr()
+    assert('Entering' in captured.out)
+    assert(str(tmp_path) in captured.out)
 
     nc.leave()
     assert(os.getcwd()==cwd)

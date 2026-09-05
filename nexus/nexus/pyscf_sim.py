@@ -110,7 +110,7 @@ class Pyscf(Simulation):
 
         if self.failed:
             error_txt = textwrap.indent(errors, "  ", lambda _: True)
-            self.log(
+            self.nxs_print(
                 "\n"
                 "PySCF run failed!\n"
                 "Error File Contents:\n\n"

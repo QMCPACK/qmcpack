@@ -64,7 +64,7 @@ class DevBaseNexus(DevBase):
         return generic_settings.devlog
 
 
-    def log(self,*a,**kw):
+    def nxs_print(self,*a,**kw):
         kw.setdefault('logfile',self._logfile)
         log(*a,**kw)
 

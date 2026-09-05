@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
@@ -274,16 +276,13 @@ def test_check_dependencies():
 #end def test_check_dependencies
 
 
-@isolate_nexus_core
-def test_write_simulation_status():
+def test_write_simulation_status(capsys):
     from ..generic import generic_settings
     from ..nexus_base import nexus_core
     from ..simulation import Simulation
     from ..project_manager import ProjectManager
 
     from .test_simulation_module import get_test_workflow
-
-    log = generic_settings.devlog
 
     sims = get_test_workflow(3)
     for id,sim in sims.items():
@@ -296,9 +295,9 @@ def test_write_simulation_status():
     status_modes = nexus_core.status_modes
 
     def status_log():
-        log.reset()
         pm.write_simulation_status()
-        s = log.contents()
+        s = capsys.readouterr().out
+
         return '\n'.join(line.rstrip() for line in s.splitlines())
     #end def status_log
 
@@ -347,24 +346,22 @@ def test_write_simulation_status():
     sim.sent_files = True
     sim.submitted  = True
 
-    log.reset()
     pm.status_line(sim)
-    assert(log.contents().strip()=='111000           ------    test_sim_s11  ./runs/')
+    assert(capsys.readouterr().out.strip()=='111000           ------    test_sim_s11  ./runs/')
 
     sim.finished  = True
     sim.got_output = True
     sim.analyzed   = True
 
-    log.reset()
     pm.status_line(sim)
-    assert(log.contents().strip()=='111111  SUCCESS  ------    test_sim_s11  ./runs/')
+    assert(capsys.readouterr().out.strip()=='111111  SUCCESS  ------    test_sim_s11  ./runs/')
 
     sim.failed = True
 
-    log.reset()
     pm.status_line(sim)
-    assert(log.contents().strip()=='111111  FAILURE  ------    test_sim_s11  ./runs/')
+    assert(capsys.readouterr().out.strip()=='111111  FAILURE  ------    test_sim_s11  ./runs/')
 
+    nexus_core.status = 0
     Simulation.clear_all_sims()
 #end def test_write_simulation_status
 
@@ -424,8 +421,6 @@ def test_run_project(tmp_path):
     assert(value_eq(nexus_core.stages_set,set(primary_modes)))
 
     nexus_core.sleep = 0.1
-
-    log = generic_settings.devlog
 
     flags = ['setup','sent_files','submitted','finished','got_output','analyzed']
 
