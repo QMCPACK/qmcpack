@@ -277,7 +277,6 @@ def test_check_dependencies():
 
 
 def test_write_simulation_status(capsys):
-    from ..generic import generic_settings
     from ..nexus_base import nexus_core
     from ..simulation import Simulation
     from ..project_manager import ProjectManager
@@ -398,7 +397,6 @@ def test_color_status_result(monkeypatch):
 
 @isolate_nexus_core
 def test_run_project(tmp_path):
-    from ..generic import generic_settings
     from ..nexus_base import nexus_core
     from ..simulation import Simulation,input_template
     from ..project_manager import ProjectManager

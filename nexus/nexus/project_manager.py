@@ -18,6 +18,7 @@
 
 import gc
 import os
+import sys
 import time
 from typing import ClassVar,Literal,TextIO
 from . import memory
@@ -360,7 +361,7 @@ class ProjectManager(NexusCore):
         if sim.finished:
             result = 'FAILURE' if sim.failed else 'SUCCESS'
         #end if
-        result = color_status_result(result,self._logfile)
+        result = color_status_result(result,sys.stdout)
         sline = f'{status}  {result:<7}  {pid:<8}  {sim.identifier:<6}  {sim.locdir}'
         self.nxs_print(sline,extra,n=2)
     #end def status_line

@@ -31,7 +31,6 @@ from .generic import error, nxs_print, warn, message  # noqa: F401
 
 
 import traceback
-from .generic import generic_settings
 
 
 def deprecation_error():
@@ -58,14 +57,8 @@ class DevBaseNexus(DevBase):
     # change from deepcopy to shallow copy, blow up
     def copy(self): deprecation_error()
 
-    # logging - unique to Nexus-style DevBase (future refactor)
-    @property
-    def _logfile(self):
-        return generic_settings.devlog
-
 
     def nxs_print(self,*a,**kw):
-        kw.setdefault('logfile',self._logfile)
         nxs_print(*a,**kw)
 
     def warn(self,msg,indent='    '):

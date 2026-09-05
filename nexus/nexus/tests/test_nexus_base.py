@@ -4,7 +4,6 @@ pytestmark = pytest.mark.order(NexusTestOrder.NEXUS_BASE)
 
 from . import isolate_nexus_core, TEST_DIR
 from ..testing import object_eq
-from ..generic import generic_settings
 
 
 TEST_FILES = {
@@ -36,15 +35,14 @@ def test_empty_init():
 #end def test_empty_init
 
 
-@isolate_nexus_core
-def test_write_splash():
+def test_write_splash(capsys):
     from ..nexus_base import write_splash
 
-    log = generic_settings.devlog
     assert(not hasattr(write_splash, "wrote_splash"))
     write_splash()
-    assert('Nexus' in log.contents())
-    assert('Please cite:' in log.contents())
+    captured = capsys.readouterr()
+    assert('Nexus' in captured.out)
+    assert('Please cite:' in captured.out)
     assert(hasattr(write_splash, "wrote_splash"))
     assert(write_splash.wrote_splash)
 #end def test_write_splash

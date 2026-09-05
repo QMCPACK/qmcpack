@@ -29,7 +29,6 @@ from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 
 from .nexus_version import nexus_version
-from .generic       import generic_settings
 from .developer     import obj, nxs_print, NexusError
 from .debug         import ci
 from .utilities     import path_string
