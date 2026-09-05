@@ -543,8 +543,8 @@ public:
     using std::get;
     assert(get<0>(RefOrbMats.sizes()) == ndet);
     assert(get<1>(RefOrbMats.sizes()) == get<1>(A.sizes()));
-    auto&& RefOrbMats_(boost::multi::static_array_cast<ComplexType, ComplexType*>(RefOrbMats));
-    auto&& A_(boost::multi::static_array_cast<ComplexType, Ptr>(A));
+    auto&& RefOrbMats_(RefOrbMats.template static_array_cast<ComplexType, ComplexType*>());
+    auto&& A_(A.template static_array_cast<ComplexType, Ptr>());
     using std::copy_n;
     int n0, n1;
     std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(get<1>(A.sizes())), TG.getNCoresPerTG());

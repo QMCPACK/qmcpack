@@ -1019,7 +1019,7 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> fill_n(
 {
   if (n == 0)
     return first;
-  kernels::fill_n(to_address(base(first)), n, stride(first), val);
+  kernels::fill_n(to_address(base(first)), n, first.stride(), val);
   return first + n;
 }
 
@@ -1029,10 +1029,10 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> fill(
     multi::detail::array_iterator<T, 1, device::device_pointer<T>> last,
     T const& val)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return first;
-  kernels::fill_n(to_address(base(first)), std::distance(first, last), stride(first), val);
+  kernels::fill_n(to_address(base(first)), std::distance(first, last), first.stride(), val);
   return first + std::distance(first, last);
 }
 
@@ -1045,7 +1045,7 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> uninitialized_fil
 {
   if (n == 0)
     return first;
-  kernels::fill_n(to_address(base(first)), n, stride(first), val);
+  kernels::fill_n(to_address(base(first)), n, first.stride(), val);
   return first + n;
 }
 
@@ -1056,10 +1056,10 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> uninitialized_fil
     multi::detail::array_iterator<T, 1, device::device_pointer<T>> last,
     T const& val)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return first;
-  kernels::fill_n(to_address(base(first)), std::distance(first, last), stride(first), val);
+  kernels::fill_n(to_address(base(first)), std::distance(first, last), first.stride(), val);
   return first + std::distance(first, last);
 }
 
@@ -1072,7 +1072,7 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitializ
 {
   if (n == 0)
     return first;
-  kernels::fill_n(to_address(base(first)), n, stride(first), val);
+  kernels::fill_n(to_address(base(first)), n, first.stride(), val);
   return first + n;
 }
 
@@ -1083,10 +1083,10 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitializ
     multi::detail::array_iterator<T, 1, device::device_pointer<T>> last,
     T const& val)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return first;
-  kernels::fill_n(to_address(base(first)), std::distance(first, last), stride(first), val);
+  kernels::fill_n(to_address(base(first)), std::distance(first, last), first.stride(), val);
   return first + std::distance(first, last);
 }
 
@@ -1098,10 +1098,10 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> copy(
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last), arch::memcopyD2D);
   return dest + std::distance(first, last);
 }
@@ -1111,11 +1111,11 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> copy(ForwardIt fi
                                                             ForwardIt last,
                                                             multi::detail::array_iterator<T, 1, device::device_pointer<T>> dest)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last));
   return dest + std::distance(first, last);
 }
@@ -1127,11 +1127,11 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> uninitialized_cop
     multi::detail::array_iterator<Q, 1, device::device_pointer<QQ>> dest)
 {
   static_assert(std::is_trivially_assignable<QQ&, T>{}, "!");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * 1, sizeof(T),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * 1, sizeof(T),
                   std::distance(first, last));
   return dest + std::distance(first, last);
 }
@@ -1144,11 +1144,11 @@ ForwardIt copy(multi::detail::array_iterator<Q1, 1, device::device_pointer<Q2>> 
   using T = typename std::decay<typename ForwardIt::value_type>::type;
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last), arch::memcopyD2H);
   return dest + std::distance(first, last);
 }
@@ -1163,7 +1163,7 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> copy_n(
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
   if (N == 0)
     return dest;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), N, arch::memcopyD2D);
   return dest + N;
 }
@@ -1177,7 +1177,7 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> copy_n(
   if (n == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), n);
   return dest + n;
 }
@@ -1191,7 +1191,7 @@ ForwardIt copy_n(multi::detail::array_iterator<Q1, 1, device::device_pointer<Q2>
   if (N == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), N, arch::memcopyD2H);
   return dest + N;
 }
@@ -1203,11 +1203,11 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> uninitialized_cop
     multi::detail::array_iterator<T, 1, device::device_pointer<TT>> dest)
 {
   static_assert(std::is_trivially_assignable<TT&, QQ&>{}, "!");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last));
   return dest + std::distance(first, last);
 }
@@ -1219,11 +1219,11 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitializ
     ForwardIt last,
     multi::detail::array_iterator<T, 1, device::device_pointer<T>> dest)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last));
   return dest + std::distance(first, last);
 }
@@ -1236,11 +1236,11 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitializ
     multi::detail::array_iterator<T, 1, device::device_pointer<TT>> dest)
 {
   static_assert(std::is_trivially_assignable<TT&, QQ&>{}, "!");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last));
   return dest + std::distance(first, last);
 }
@@ -1253,10 +1253,10 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> uninitialized_cop
                          multi::detail::array_iterator<Q, 1, device::device_pointer<Q>> last,
                          multi::detail::array_iterator<T, 1, device::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
-  assert( stride(first) == stride(last) );
+  assert( first.stride() == last.stride() );
   if(std::distance(first,last) == 0 ) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*dest.stride(),
+                                 to_address(base(first)),sizeof(T)*first.stride(),
                                  sizeof(T),std::distance(first,last),cudaMemcpyDeviceToDevice))
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   return dest+std::distance(first,last); 
@@ -1269,10 +1269,10 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> uninitialized_cop
                          multi::detail::array_iterator<Q, 1, boost::mpi3::intranode::array_ptr<Q>> last,
                          multi::detail::array_iterator<T, 1, device::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
-  assert( stride(first) == stride(last) );
+  assert( first.stride() == last.stride() );
   if(std::distance(first,last) == 0 ) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*dest.stride(),
+                                 to_address(base(first)),sizeof(T)*first.stride(),
                                  sizeof(T),std::distance(first,last),cudaMemcpyHostToDevice))
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   return dest+std::distance(first,last);
@@ -1286,10 +1286,10 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> uninitialized_cop
                          multi::detail::array_iterator<T, 1, device::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q1>::type,T>::value,"Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type,T>::value,"Wrong dispatch.\n");
-  assert( stride(first) == stride(last) );
+  assert( first.stride() == last.stride() );
   if(std::distance(first,last) == 0 ) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*dest.stride(),
+                                 to_address(base(first)),sizeof(T)*first.stride(),
                                  sizeof(T),std::distance(first,last),cudaMemcpyHostToDevice))
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   return dest+std::distance(first,last);
@@ -1304,11 +1304,11 @@ multi::detail::array_iterator<T, 1, T*> uninitialized_copy(Alloc& a,
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last), arch::memcopyD2H);
   return dest + std::distance(first, last);
 }
@@ -1321,11 +1321,11 @@ multi::detail::array_iterator<T, 1, T*> alloc_uninitialized_copy(Alloc& a,
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), std::distance(first, last), arch::memcopyD2H);
   return dest + std::distance(first, last);
 }
@@ -1339,8 +1339,8 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> uninitialized_cop
                            multi::detail::array_iterator<T, 1, device::device_pointer<T>> dest ){
   static_assert(std::is_same<typename std::decay<Q>::type,T>::value,"Wrong dispatch.\n");
   if(N==0) return dest;
-  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*stride(dest),
-                                 to_address(base(first)),sizeof(T)*stride(first),
+  if(cudaSuccess != cudaMemcpy2D(to_address(base(dest)),sizeof(T)*dest.stride(),
+                                 to_address(base(first)),sizeof(T)*first.stride(),
                                  sizeof(T),N,cudaMemcpyDeviceToDevice))
       throw std::runtime_error("Error: cudaMemcpy2D returned error code.");
   return dest+N;
@@ -1358,7 +1358,7 @@ multi::detail::array_iterator<T, 1, T*> uninitialized_copy_n(Alloc& a,
   if (n == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), n);
   return dest + n;
 }
@@ -1373,7 +1373,7 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> uninitialized_cop
   if (n == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), n);
   return dest + n;
 }
@@ -1426,7 +1426,7 @@ multi::detail::array_iterator<T, 1, T*> alloc_uninitialized_copy_n(
   if (n == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), n);
   return dest + n;
 }
@@ -1441,7 +1441,7 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitializ
   if (n == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), n);
   return dest + n;
 }
@@ -1458,7 +1458,7 @@ multi::detail::array_iterator<T, 1, T*> alloc_uninitialized_move_n(
   if (n == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), n);
   return dest + n;
 }
@@ -1473,7 +1473,7 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> alloc_uninitializ
   if (n == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
-  arch::memcopy2D(to_address(base(dest)), sizeof(T) * stride(dest), to_address(base(first)), sizeof(T) * stride(first),
+  arch::memcopy2D(to_address(base(dest)), sizeof(T) * dest.stride(), to_address(base(first)), sizeof(T) * first.stride(),
                   sizeof(T), n);
   return dest + n;
 }
