@@ -1127,7 +1127,6 @@ multi::detail::array_iterator<T, 1, device::device_pointer<T>> uninitialized_cop
     multi::detail::array_iterator<Q, 1, device::device_pointer<QQ>> dest)
 {
   static_assert(std::is_trivially_assignable<QQ&, T>{}, "!");
-  assert(first.stride() == last.stride());
   if (std::distance(first, last) == 0)
     return dest;
   using qmcplusplus::afqmc::to_address;
