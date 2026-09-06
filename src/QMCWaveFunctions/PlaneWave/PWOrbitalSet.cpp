@@ -42,6 +42,7 @@ void PWOrbitalSet::resize(PWBasisPtr bset, bool cleanup)
   BasisSetSize = myBasisSet->NumPlaneWaves;
   C            = new ValueMatrix(OrbitalSetSize, BasisSetSize);
   Temp.resize(OrbitalSetSize, PW_MAXINDEX);
+  TempHess.resize(OrbitalSetSize, OHMMS_DIM * OHMMS_DIM);
   app_log() << "  PWOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize
             << std::endl;
 }
@@ -120,6 +121,34 @@ void PWOrbitalSet::evaluate_notranspose(const ParticleSet& P,
       logdet(i, j)   = tptr[PW_VALUE];
       d2logdet(i, j) = tptr[PW_LAP];
       dlogdet(i, j)  = GradType(tptr[PW_GRADX], tptr[PW_GRADY], tptr[PW_GRADZ]);
+    }
+  }
+}
+
+void PWOrbitalSet::evaluate_notranspose(const ParticleSet& P,
+                                        int first,
+                                        int last,
+                                        ValueMatrix& logdet,
+                                        GradMatrix& dlogdet,
+                                        HessMatrix& grad_grad_logdet)
+{
+  for (int iat = first, i = 0; iat < last; ++iat, ++i)
+  {
+    myBasisSet->evaluateAll(P, iat);
+    myBasisSet->evaluateHessian();
+    MatrixOperators::product(*C, myBasisSet->Z, Temp);
+    MatrixOperators::product(*C, myBasisSet->Zh, TempHess);
+    const ValueType* restrict value_ptr   = Temp.data();
+    const ValueType* restrict hessian_ptr = TempHess.data();
+    for (int orbital_index = 0; orbital_index < OrbitalSetSize;
+         ++orbital_index, value_ptr += PW_MAXINDEX, hessian_ptr += OHMMS_DIM * OHMMS_DIM)
+    {
+      logdet(i, orbital_index)  = value_ptr[PW_VALUE];
+      dlogdet(i, orbital_index) =
+          GradType(value_ptr[PW_GRADX], value_ptr[PW_GRADY], value_ptr[PW_GRADZ]);
+      for (int row = 0; row < OHMMS_DIM; ++row)
+        for (int column = 0; column < OHMMS_DIM; ++column)
+          grad_grad_logdet(i, orbital_index)(row, column) = hessian_ptr[row * OHMMS_DIM + column];
     }
   }
 }

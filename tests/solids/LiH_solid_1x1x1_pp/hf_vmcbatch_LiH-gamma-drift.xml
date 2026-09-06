@@ -68,16 +68,16 @@
     </pairpot>
     <constant name="IonIon" type="coulomb" source="i" target="i"/>
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
-    <estimator type="flux" name="Flux"/>
+
   </hamiltonian>
 
   <qmc method="vmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no"/>
-    <parameter name="total_walkers">    16 </parameter>
+    <parameter name="total_walkers">     16 </parameter>
     <parameter name="substeps">  5 </parameter>
     <parameter name="warmupSteps">  400 </parameter>
     <parameter name="steps">  100 </parameter>
-    <parameter name="blocks">  1000 </parameter>
+    <parameter name="blocks">   1000 </parameter>
     <parameter name="timestep">  1.0 </parameter>
     <parameter name="usedrift">   yes </parameter>
   </qmc>

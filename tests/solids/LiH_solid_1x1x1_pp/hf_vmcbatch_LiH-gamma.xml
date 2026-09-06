@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="hf_vmc_dmc_short_LiH-gamma" series="0">
-    <parameter name="driver_version">legacy</parameter>
+  <project id="hf_vmcbatch_LiH-gamma" series="0">
+    <parameter name="driver_version">batched</parameter>
   </project>
   <!--random seed="49154"/-->
 
@@ -71,27 +71,15 @@
 
   </hamiltonian>
 
-   <qmc method="vmc" move="pbyp">
+  <qmc method="vmc" move="pbyp" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no"/>
-    <parameter name="walkers">    256 </parameter>
-    <parameter name="substeps">  1 </parameter>
+    <parameter name="total_walkers">     16 </parameter>
+    <parameter name="substeps">  5 </parameter>
     <parameter name="warmupSteps">  400 </parameter>
-    <parameter name="steps">  1 </parameter>
-    <parameter name="blocks">  1 </parameter>
+    <parameter name="steps">  100 </parameter>
+    <parameter name="blocks">   1000 </parameter>
     <parameter name="timestep">  1.0 </parameter>
     <parameter name="usedrift">   no </parameter>
   </qmc>
-
-  <qmc method="dmc" move="pbyp" checkpoint="-1">
-    <estimator name="LocalEnergy" hdf5="no"/>
-    <parameter name="targetwalkers"> 256 </parameter>
-    <parameter name="reconfiguration">   no </parameter>
-    <parameter name="warmupSteps">  100 </parameter>
-    <parameter name="timestep">  0.001 </parameter>
-    <parameter name="steps">   100 </parameter>
-    <parameter name="blocks">  400 </parameter>
-    <parameter name="nonlocalmoves">  no </parameter>
-  </qmc>
-   
 
 </simulation>

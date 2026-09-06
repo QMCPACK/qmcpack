@@ -71,19 +71,19 @@ public:
    * @param coefs real input data
    * @param jorb orbital index
    */
-  void addVector(const std::vector<RealType>& coefs, int jorb);
+  void addVector(const std::vector<RealType>& coefs, int jorb, bool use_imaginary_part = false);
 
   /** add eigenstate for jorb-th orbital
    * @param coefs complex input data
    * @param jorb orbital index
    */
-  void addVector(const std::vector<ComplexType>& coefs, int jorb);
+  void addVector(const std::vector<ComplexType>& coefs, int jorb, bool use_imaginary_part = false);
 
 
   inline ValueType evaluate(int ib, const PosType& pos)
   {
     myBasisSet->evaluate(pos);
-    return real(BLAS::dot(BasisSetSize, CC[ib], myBasisSet->Zv.data()));
+    return project(BLAS::dot(BasisSetSize, CC[ib], myBasisSet->Zv.data()), ib);
   }
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
@@ -102,8 +102,7 @@ public:
                             int last,
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
-                            HessMatrix& grad_grad_logdet) override
-  { APP_ABORT("Need specialization of evaluate_notranspose() for grad_grad_logdet. \n"); }
+                            HessMatrix& grad_grad_logdet) override;
 
 
   /** boolean
@@ -121,8 +120,17 @@ public:
   Matrix<ComplexType> CC;
   /// temporary array to perform gemm operation
   Matrix<ComplexType> Temp;
+  Matrix<ComplexType> TempHess;
   ///temporary complex vector before assigning to a real psi
   Vector<ComplexType> tempPsi;
+  ///select the imaginary rather than real projection for each orbital
+  std::vector<bool> useImaginaryPart;
+
+private:
+  RealType project(const ComplexType& value, int orbital_index) const
+  {
+    return useImaginaryPart[orbital_index] ? value.imag() : value.real();
+  }
 };
 } // namespace qmcplusplus
 #endif

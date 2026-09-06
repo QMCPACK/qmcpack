@@ -44,11 +44,25 @@ private:
 #endif
 
   /// target particle set
-  const ParticleSet& targetPtcl;
+  ParticleSet& targetPtcl;
   ///xml node for determinantset
   xmlNodePtr rootNode{nullptr};
   ///input twist angle
   PosType TwistAngle;
+  ///selected supercell twist angle
+  TinyVector<double, OHMMS_DIM> superTwist;
+  ///requested supercell twist angle
+  TinyVector<double, OHMMS_DIM> requestedTwist;
+  ///true when the twist XML attribute contains a reduced-coordinate twist
+  bool hasRequestedTwist{false};
+  ///orbital sorting mode, matching the bspline builder
+  int sortBands{1};
+  ///primitive-to-supercell tiling matrix
+  Tensor<int, OHMMS_DIM> tileMatrix;
+  ///primitive-cell k-points contributing to the selected supercell twist
+  std::vector<int> includedKPoints;
+  ///primitive-cell twist angles read from the HDF file
+  std::vector<TinyVector<double, OHMMS_DIM>> twistAngles;
   ///parameter set
   std::unique_ptr<PWParameterSet> myParam;
   //will do something for twist
@@ -58,7 +72,7 @@ private:
 
 public:
   ///constructor
-  PWOrbitalSetBuilder(const ParticleSet& p, Communicate* comm, xmlNodePtr cur);
+  PWOrbitalSetBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur);
   ~PWOrbitalSetBuilder() override;
 
   /// create an sposet from xml and save the resulting SPOSet
@@ -67,7 +81,7 @@ public:
 private:
   bool getH5(xmlNodePtr cur, const char* aname);
   bool createPWBasis();
-  std::unique_ptr<SPOSet> createPW(xmlNodePtr cur, const std::string& objname, int spinIndex);
+  std::unique_ptr<SPOSet> createPW(xmlNodePtr cur, const std::string& objname, int spinIndex, int orbital_count);
 #if defined(QMC_COMPLEX)
   void transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc);
 #endif
