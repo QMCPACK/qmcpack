@@ -688,7 +688,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> fill_
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
     Q const& val)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return fill_n(first, std::distance(first, last), val);
 }
 
@@ -729,7 +729,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> unini
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
     T const& val)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return uninitialized_fill_n(a, first, std::distance(first, last), val);
 }
 
@@ -750,7 +750,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> last,
     T const& val)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return uninitialized_fill_n(a, first, std::distance(first, last), val);
 }
 
@@ -828,7 +828,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return copy_n(first, std::distance(first, last), dest);
 }
 
@@ -838,7 +838,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> copy(
     ForwardIt last,
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return copy_n(first, std::distance(first, last), dest);
 }
 
@@ -849,7 +849,7 @@ multi::detail::array_iterator<T, 1, T*> copy(multi::detail::array_iterator<Q1, 1
 {
   static_assert(std::is_same<typename std::decay<Q1>::type, T>::value, "Wrong dispatch.\n");
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return copy_n(first, std::distance(first, last), dest);
 }
 
@@ -923,7 +923,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> unini
     ForwardIt last,
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return uninitialized_copy_n(a, first, std::distance(first, last), dest);
 }
 
@@ -938,7 +938,7 @@ multi::detail::array_iterator<T, 1, T*> uninitialized_copy(
   static_assert(std::is_same<typename std::decay<Q2>::type, T>::value, "Wrong dispatch.\n");
   if (std::distance(first, last) == 0)
     return dest;
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   base(first).wSP_->fence();
   {
     auto d = dest;
@@ -963,7 +963,7 @@ multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> alloc
     ForwardIt last,
     multi::detail::array_iterator<T, 1, shm::shm_ptr_with_raw_ptr_dispatch<T>> dest)
 {
-  assert(stride(first) == stride(last));
+  assert(first.stride() == last.stride());
   return uninitialized_copy_n(a, first, std::distance(first, last), dest);
 }
 
