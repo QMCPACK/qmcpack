@@ -604,7 +604,7 @@ Attribute:
 
 ``radfunc`` element:
   attributes for ``type`` = *"Gaussian"*:
-``TBDoc``
+  ``TBDoc``
 
 .. _spo-hybrid:
 

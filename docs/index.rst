@@ -13,43 +13,13 @@ User's Guide and Developer's Manual
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
-   introduction
-   features
-   citing
-   performance_portable
-   installation
-   running
-   units
-   input_overview
-   simulationcell
-   intro_wavefunction
-   hamiltonianobservable
-   methods
-   output_overview
-   analyzing
-   LCAO
-   sCI
-   spin_orbit
-   afqmc
-   examples
-   lab_qmc_statistics
-   lab_qmc_basics
-   lab_advanced_molecules
-   lab_condensed_matter
-   lab_excited
-   lab_afqmc
-   additional_tools
-   external_tools
-   contributing
-   unit_testing
-   integration_tests
-   github_actions
-   running_docker
-   design_features
-   developing
+   introduction/index
+   user_guide/index
+   labs/index
+   contributing/index
    bibliography
    appendices
 
