@@ -245,31 +245,6 @@ class RmgOutData(DevBase):
             return name.replace('/','_').replace('-','_')
         #end def process_name
 
-        def process_value(text):
-            """Convert a setup value to a scalar, array, Boolean, or string."""
-            text = text.strip()
-            if text.upper() in {'ON','OFF'}:
-                return text.upper()=='ON',None
-            value = as_float(text)
-            if value is not None:
-                if value.is_integer() and not any(c in text.lower() for c in '.e'):
-                    return int(value),None
-                return value,None
-            tokens = text.replace(',',' ').split()
-            units  = None
-            if len(tokens)>1 and as_float(tokens[-1]) is None:
-                numeric = [as_float(token) for token in tokens[:-1]]
-                if None not in numeric:
-                    units  = tokens[-1]
-                    tokens = tokens[:-1]
-            values = [as_float(token) for token in tokens]
-            if units is not None and len(values)>0 and None not in values:
-                return np.array(values,dtype=float),units
-            if len(values)>1 and None not in values:
-                return np.array(values,dtype=float),units
-            return text,None
-        #end def process_value
-
         # Parse the indented setup report into named persistent sections.
         sections      = obj()
         current       = None
@@ -314,10 +289,37 @@ class RmgOutData(DevBase):
             if not section_added and section_name!='k_points':
                 sections[section_name] = current
                 section_added = True
-            label,value       = stripped.split(':',1)
-            name              = process_name(label)
-            value,units       = process_value(value)
-            current[name]     = value
+            label,value = stripped.split(':',1)
+            name        = process_name(label)
+            value       = value.strip()
+            units       = None
+
+            # Convert simple Boolean, integer, and floating-point fields.
+            upper_value = value.upper()
+            number      = as_float(value)
+            if upper_value in {'ON','OFF'}:
+                value = upper_value=='ON'
+            elif number is not None:
+                is_integer = (
+                    number.is_integer()
+                    and not any(c in value.lower() for c in '.e')
+                    )
+                value = int(number) if is_integer else number
+            else:
+                # Convert numeric sequences, separating a trailing unit label.
+                tokens = value.replace(',',' ').split()
+                if len(tokens)>1 and as_float(tokens[-1]) is None:
+                    numeric = [as_float(token) for token in tokens[:-1]]
+                    if None not in numeric:
+                        units  = tokens[-1]
+                        tokens = tokens[:-1]
+                values = [as_float(token) for token in tokens]
+                if (
+                    len(values)>1
+                    or units is not None and len(values)>0
+                    ) and None not in values:
+                    value = np.array(values,dtype=float)
+            current[name] = value
             if units is not None:
                 current.units = units
         setup_info.update(sections)
@@ -556,10 +558,6 @@ class RmgOutData(DevBase):
             target_units  = None
             if 'final total energy from eig sum' in lower:
                 label         = 'final total energy from eig sum'
-                target_values = energies
-                target_units  = energy_units
-            elif 'final total energy from eigenvalue sum' in lower:
-                label         = 'final total energy from eigenvalue sum'
                 target_values = energies
                 target_units  = energy_units
             elif 'final total energy from direct' in lower:
