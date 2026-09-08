@@ -34,13 +34,14 @@ def normalize_line(line):
 #end def normalize_line
 
 
-def line_numbers(line,number_pattern):
-    """Return all finite RMG-formatted numbers found in a line."""
-    # Match each signed integer or decimal with an optional E- or D-exponent.
-    # Example: SUM FORCE = 0.1 0.2 0.3
-    values = re.findall(number_pattern,line)
-    values = [as_float(value) for value in values]
-    return np.array([value for value in values if value is not None],dtype=float)
+def line_numbers(line):
+    """Return all finite, whitespace-delimited RMG numbers in a line."""
+    values = []
+    for token in line.replace(',',' ').split():
+        value = as_float(token.strip('()[]{}'))
+        if value is not None:
+            values.append(value)
+    return np.array(values,dtype=float)
 #end def line_numbers
 
 
@@ -135,6 +136,9 @@ class RmgOutData(DevBase):
         If ``filepath`` does not identify a regular file.
     """
 
+    # This pattern represents RMG numbers embedded in records whose structural
+    # punctuation must also be recognized. Splitting those records on whitespace
+    # would not reliably separate signed values, brackets, and optional exponents.
     # Match a signed integer or decimal with an optional E- or D-exponent.
     # Example: -1.2345D+02
     number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
@@ -238,6 +242,9 @@ class RmgOutData(DevBase):
 
         def process_name(text):
             """Convert an RMG setup label to a normalized member name."""
+            # Parenthetical annotations can occur inside a label with meaningful
+            # text on either side. Delimiter splitting would discard one side,
+            # while tokenization cannot identify the full annotation reliably.
             # Remove parenthetical annotations from setup labels.
             # Example: Grid Points (Linear Anisotropy: 1.000)
             text = re.sub(r'\([^)]*\)','',text)
@@ -450,7 +457,7 @@ class RmgOutData(DevBase):
                 grid_points.grid_units   = 'a0'
             cutoffs = grid_points.equivalent_energy_cutoffs
             if cutoffs is not None:
-                cutoff_values = line_numbers(str(cutoffs),self.number_pattern)
+                cutoff_values = line_numbers(str(cutoffs))
                 if len(cutoff_values)>=2:
                     grid_points.ecut        = cutoff_values[0]
                     grid_points.ecut_charge = cutoff_values[1]
@@ -645,6 +652,9 @@ class RmgOutData(DevBase):
             occupations             = None,
             )
 
+        # Each row can contain several value/occupation pairs with arbitrary
+        # whitespace inside and outside the brackets. Plain token positions are
+        # therefore unstable and cannot preserve the pair boundaries safely.
         # Match one eigenvalue followed by its bracketed occupation.
         # Example: -6.4238 [2.000]
         npat         = self.number_pattern
@@ -698,17 +708,11 @@ class RmgOutData(DevBase):
             elif absolute_magnetization is not None:
                 data.absolute_magnetizations.append(absolute_magnetization)
             elif lower.startswith('sum force'):
-                values = line_numbers(
-                    text.partition('=')[2],
-                    self.number_pattern,
-                    )
+                values = line_numbers(text.partition('=')[2])
                 if len(values)>=3:
                     data.sum_forces.append(values[:3])
             elif 'volume and energy per atom' in lower:
-                values = line_numbers(
-                    text.partition('=')[2],
-                    self.number_pattern,
-                    )
+                values = line_numbers(text.partition('=')[2])
                 if len(values)>=2:
                     data.volume_per_atom.append(values[0])
                     data.energy_per_atom.append(values[1])
@@ -865,14 +869,9 @@ class RmgOutData(DevBase):
             estimated_error = [],
             )
 
-        # Match an SCF energy-component label and its value or overflow stars.
-        # Example: @@ TOTAL ENERGY = -1.250000 Ha
-        component_pattern = re.compile(
-            r'^\s*@@\s*(?P<label>eigenvalue\s+sum|ion_ion|electrostatic|'
-            r'vxc|exc|total\s+energy|estimated\s+error)\s*[:=]\s*'
-            r'(?P<value>'+self.number_pattern+r'|\*+)',
-            re.IGNORECASE,
-            )
+        # Detailed summaries contain an optional subset of multiword fields in
+        # varying order, and some labels include brackets. Positional splitting
+        # would couple parsing to the current order and fail when fields are absent.
         # Match fields within a detailed SCF-iteration summary.
         # Example: quench: [md: 0/2 scf: 3/20 step time: 0.20 RMS[dV]: 2e-5]
         detail_pattern = re.compile(
@@ -889,16 +888,28 @@ class RmgOutData(DevBase):
         scf_times  = []
         rms_dv     = []
         for line in lines:
-            match = component_pattern.search(line)
-            if match is not None:
-                label = normalize_line(match.group('label')).lower()
-                name  = component_names.get(label)
-                token = match.group('value')
-                if name is not None:
-                    value = np.nan if '*' in token else as_float(token)
-                    if value is not None:
-                        values[name].append(value)
-            summary_label,separator,_ = normalize_line(line).partition(':')
+            text = normalize_line(line)
+
+            # Energy component records have a fixed prefix and one of two
+            # delimiters, making direct line parsing independent of spacing.
+            if text.startswith('@@'):
+                component       = text[2:].strip()
+                delimiter_sites = [
+                    site for site in (component.find(':'),component.find('='))
+                    if site>=0
+                    ]
+                if len(delimiter_sites)>0:
+                    delimiter_site = min(delimiter_sites)
+                    label          = component[:delimiter_site].strip().lower()
+                    name           = component_names.get(label)
+                    tokens         = component[delimiter_site+1:].split()
+                    if name is not None and len(tokens)>0:
+                        token = tokens[0]
+                        value = np.nan if token.strip('*')=='' else as_float(token)
+                        if value is not None:
+                            values[name].append(value)
+
+            summary_label,separator,_ = text.partition(':')
             if len(separator)==0 or summary_label.lower()!='quench':
                 continue
             details = dotdict(
@@ -1202,6 +1213,9 @@ class RmgOutData(DevBase):
         lines : list of str
             Complete RMG log split into lines.
         """
+        # Timing labels contain a variable number of words and can themselves
+        # contain digits, while the two trailing numeric fields accept D-exponents,
+        # infinity, and NaN. Token positions cannot distinguish these cases safely.
         # Match a numbered timing section followed by total and per-step times.
         # Example: 1-TOTAL 3.00 0.50
         time_value = r'(?:'+self.number_pattern+r'|inf|nan)'
@@ -1222,9 +1236,11 @@ class RmgOutData(DevBase):
                 name = prefix.strip()+'-'+suffix.strip()
             total    = float(match.group(2).lower().replace('d','e'))
             per_step = float(match.group(3).lower().replace('d','e'))
-            # Replace non-alphanumeric runs to form a stable section key.
-            # Example: 1-TOTAL
-            key = re.sub(r'[^a-z0-9]+','_',name.lower()).strip('_')
+            key_text = ''.join(
+                character if character.isascii() and character.isalnum() else ' '
+                for character in name.lower()
+                )
+            key = '_'.join(key_text.split())
             sections[key] = obj(total=total,per_step=per_step)
             if name.lower()=='1-total':
                 timing = obj(
@@ -1369,14 +1385,10 @@ class RmgAnalyzer(SimulationAnalyzer):
     def _require_supported(self,quantity,modes):
         """Require analyzed output and a run mode supporting the quantity."""
         if self.results is None:
-            msg = (
-                f'RMG quantity "{quantity}" is unavailable because output has not been analyzed'
-                )
+            msg = f'RMG quantity "{quantity}" is unavailable because output has not been analyzed'
             raise RuntimeError(msg)
         if self.run_mode not in modes:
-            msg = (
-                f'RMG quantity "{quantity}" is not supported for run mode "{self.run_mode}"'
-                )
+            msg = f'RMG quantity "{quantity}" is not supported for run mode "{self.run_mode}"'
             raise RuntimeError(msg)
     #end def _require_supported
 
@@ -1515,25 +1527,24 @@ class RmgAnalyzer(SimulationAnalyzer):
     #end def band_gap
 
 
-    def fractional_occs(self):
+    def fractional_occs(self,tol=1e-3):
         """Whether any occupation differs from empty or full by over ``1e-3``."""
         self._require_supported('fractional_occs',self.all_modes)
         occupations = self.occupations()
         if occupations is None:
             return None
-        tolerance       = 1e-3
         full_occupation = 2.0 if occupations.ndim==2 else 1.0
-        empty           = np.isclose(
+        empty = np.isclose(
             occupations,
             0.0,
             rtol = 0.0,
-            atol = tolerance,
+            atol = tol,
             )
-        full            = np.isclose(
+        full = np.isclose(
             occupations,
             full_occupation,
             rtol = 0.0,
-            atol = tolerance,
+            atol = tol,
             )
         return bool(np.any(~(empty|full)))
     #end def fractional_occs
