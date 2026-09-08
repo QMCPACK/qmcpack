@@ -11,6 +11,8 @@ from types import MappingProxyType
 import numpy as np
 
 from .developer import DevBase, dotdict, obj
+from .generic import NexusError
+from .rmg_input import RmgInput
 from .simulation import Simulation, SimulationAnalyzer
 from .structure import generate_structure
 from .unit_converter import UnitConverter, convert
@@ -32,6 +34,16 @@ def normalize_line(line):
 #end def normalize_line
 
 
+def line_numbers(line,number_pattern):
+    """Return all finite RMG-formatted numbers found in a line."""
+    # Match each signed integer or decimal with an optional E- or D-exponent.
+    # Example: SUM FORCE = 0.1 0.2 0.3
+    values = re.findall(number_pattern,line)
+    values = [as_float(value) for value in values]
+    return np.array([value for value in values if value is not None],dtype=float)
+#end def line_numbers
+
+
 class RmgOutData(DevBase):
     """Read an RMG output file and collect results appropriate to its run mode.
 
@@ -48,27 +60,64 @@ class RmgOutData(DevBase):
         Absolute path to the output directory.
     outfile_name : str
         Name of the RMG output file.
+    input : RmgInput or None
+        Parsed control input when the referenced input file is available.
     setup_info : obj
-        Run mode and the initial structure, when available.
+        Parsed setup sections, run mode, structure, and k-point information.
     run_mode : str or None
         Short RMG calculation mode: ``"scf"``, ``"nscf"``, or ``"relax"``.
     geometry : obj or None
-        Cartesian k-points and k-point weights.
+        Cell volume and crystal/Cartesian k-point information.
+    convergence : obj or None
+        Electronic and ionic convergence indicators and event counts.
+    timing : obj or None
+        Total, per-step, and section-resolved timing data in seconds.
     energy : float or numpy.floating or None
         Last total energy obtained from the eigenvalue sum.
     energy_units : str or None
         Units associated with ``energy``.
+    energies : numpy.ndarray or None
+        History of total energies obtained from eigenvalue sums.
+    energy_units_history : numpy.ndarray or None
+        Units corresponding to ``energies``.
+    direct_energies : numpy.ndarray or None
+        History of directly evaluated total energies.
+    direct_energy_units : numpy.ndarray or None
+        Units corresponding to ``direct_energies``.
     electronic : obj or None
         Fermi energies, band edges, gaps, k-points, eigenvalues, and
-        occupations when reported.
+        occupations, charge, magnetization, force, volume, and per-atom energy
+        data when reported.
+    scf : obj or None
+        SCF energy components, iteration indices, residuals, and timing data.
+    ionic_steps : obj or None
+        Detailed per-step ionic records.
+    position_units : str or None
+        Units associated with ionic positions.
+    force_units : str or None
+        Units associated with ionic forces.
+    positions : numpy.ndarray or None
+        Ionic positions with shape ``(nsteps, natoms, 3)``.
     forces : numpy.ndarray or None
         Ionic forces with shape ``(nsteps, natoms, 3)``.
+    charges : numpy.ndarray or None
+        Ionic charges with shape ``(nsteps, natoms)``.
+    magnetizations : numpy.ndarray or None
+        Ionic magnetizations with shape ``(nsteps, natoms)``.
+    max_forces : numpy.ndarray or None
+        Maximum ionic force magnitude at each ionic step.
     structures : obj or None
         Mapping from ionic-step index to a :class:`Structure` instance.
     stress : numpy.ndarray or None
         Stress tensors with shape ``(nsteps, 3, 3)``.
+    stress_units : str or None
+        Units associated with stress and pressure values.
+    pressures : numpy.ndarray or None
+        Hydrostatic pressure at each reported stress step.
     pressure : float or numpy.floating or None
         Last hydrostatic pressure.
+    produced_files : obj or None
+        Paths to recognized files produced by an SCF run.
 
     Notes
     -----
@@ -117,6 +166,7 @@ class RmgOutData(DevBase):
         self.path          = path
         self.abspath       = os.path.abspath(path)
         self.outfile_name  = outfile_name
+        self.input         = None
         self.setup_info    = None
 
         with open(filepath,'r') as input_file:
@@ -125,30 +175,152 @@ class RmgOutData(DevBase):
 
         # modes: scf, nscf, relax
         if self.run_mode in {'scf','nscf','relax'}:
-            self.geometry     = None
-            self.energy       = None
-            self.energy_units = None
-            self.electronic   = None
-            self.forces       = None
-            self.structures   = None
-            self.stress       = None
-            self.pressure     = None
+            self.geometry             = None
+            self.convergence          = None
+            self.timing               = None
+            self.energy               = None
+            self.energy_units         = None
+            self.energies             = None
+            self.energy_units_history = None
+            self.direct_energies      = None
+            self.direct_energy_units  = None
+            self.electronic           = None
+            self.scf                  = None
+            self.ionic_steps          = None
+            self.position_units       = None
+            self.force_units          = None
+            self.positions            = None
+            self.forces               = None
+            self.charges              = None
+            self.magnetizations       = None
+            self.max_forces           = None
+            self.structures           = None
+            self.stress               = None
+            self.stress_units         = None
+            self.pressures            = None
+            self.pressure             = None
 
             self.read_geometry()
+            self.read_convergence(lines)
+            self.read_timing(lines)
             self.read_energies(lines)
+            self.read_scf(lines)
             self.read_ions(lines)
             self.read_stress(lines)
             self.read_electronic(lines)
+
+        # modes: scf
+        if self.run_mode=='scf':
+            self.produced_files = None
+            self.read_produced_files()
     #end def __init__
 
 
     def read_setup_info(self,lines):
-        """Read the run mode and initial structure from the setup report."""
+        """Read setup sections, the run mode, and the initial structure.
+
+        Binds ``setup_info`` to an ``obj`` containing normalized setup blocks
+        and derived grid, lattice, ion, k-point, and structure data. When the
+        referenced control file is available, also binds ``input``.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+        """
         setup_info = obj(
             run_mode  = None,
             structure = None,
             k_points  = None,
+            files     = None,
             )
+        position_heading = 'initial ionic positions and displacements'
+
+        def process_name(text):
+            """Convert an RMG setup label to a normalized member name."""
+            # Remove parenthetical annotations from setup labels.
+            # Example: Grid Points (Linear Anisotropy: 1.000)
+            text = re.sub(r'\([^)]*\)','',text)
+            name = '_'.join(text.strip().lower().split())
+            return name.replace('/','_').replace('-','_')
+        #end def process_name
+
+        def process_value(text):
+            """Convert a setup value to a scalar, array, Boolean, or string."""
+            text = text.strip()
+            if text.upper() in {'ON','OFF'}:
+                return text.upper()=='ON',None
+            value = as_float(text)
+            if value is not None:
+                if value.is_integer() and not any(c in text.lower() for c in '.e'):
+                    return int(value),None
+                return value,None
+            tokens = text.replace(',',' ').split()
+            units  = None
+            if len(tokens)>1 and as_float(tokens[-1]) is None:
+                numeric = [as_float(token) for token in tokens[:-1]]
+                if None not in numeric:
+                    units  = tokens[-1]
+                    tokens = tokens[:-1]
+            values = [as_float(token) for token in tokens]
+            if units is not None and len(values)>0 and None not in values:
+                return np.array(values,dtype=float),units
+            if len(values)>1 and None not in values:
+                return np.array(values,dtype=float),units
+            return text,None
+        #end def process_value
+
+        # Parse the indented setup report into named persistent sections.
+        sections      = obj()
+        current       = None
+        files         = None
+        grid_points   = None
+        lattice_setup = None
+        in_setup      = False
+        section_added = False
+        for raw_line in lines:
+            stripped = raw_line.strip()
+            if not in_setup:
+                if stripped.lower()!='files':
+                    continue
+                in_setup = True
+            if normalize_line(stripped).lower().startswith(position_heading):
+                break
+            if len(stripped)==0:
+                continue
+            if not raw_line[0].isspace():
+                section_name = process_name(stripped.rstrip(':'))
+                section_added = False
+                if section_name=='files':
+                    current = obj(
+                        control_input_file = None,
+                        data_output_file   = None,
+                        )
+                    files = current
+                elif section_name=='grid_points':
+                    current = obj(
+                        equivalent_energy_cutoffs = None,
+                        units                     = None,
+                        )
+                    grid_points = current
+                elif section_name=='lattice_setup':
+                    current = obj()
+                    lattice_setup = current
+                else:
+                    current = obj()
+                continue
+            if current is None or ':' not in stripped:
+                continue
+            if not section_added and section_name!='k_points':
+                sections[section_name] = current
+                section_added = True
+            label,value       = stripped.split(':',1)
+            name              = process_name(label)
+            value,units       = process_value(value)
+            current[name]     = value
+            if units is not None:
+                current.units = units
+        setup_info.update(sections)
 
         # Read the calculation mode from the run setup block.
         run_mode = None
@@ -199,7 +371,6 @@ class RmgOutData(DevBase):
             if len(tokens)>=4:
                 axis_unit = tokens[3].strip(',;')
 
-        position_heading = 'initial ionic positions and displacements'
         position_tables = []
         i = 0
         # Read each initial-position table, retaining its reported units.
@@ -243,15 +414,54 @@ class RmgOutData(DevBase):
                     positions = np.array(positions,dtype=float),
                     ))
 
+        if grid_points is not None:
+            grid         = []
+            grid_pe      = []
+            grid_spacing = []
+            for direction in ('x','y','z'):
+                if direction not in grid_points:
+                    break
+                text   = normalize_line(str(grid_points[direction]))
+                lower  = text.lower()
+                values = []
+                for label in ('total','per pe','spacing'):
+                    start = lower.find(label)
+                    if start<0:
+                        break
+                    remainder = text[start+len(label):].lstrip(' :')
+                    tokens    = remainder.split()
+                    value     = as_float(tokens[0]) if len(tokens)>0 else None
+                    if value is None:
+                        break
+                    values.append(value)
+                if len(values)!=3:
+                    break
+                grid.append(values[0])
+                grid_pe.append(values[1])
+                grid_spacing.append(values[2])
+            if len(grid)==3:
+                grid_points.grid         = np.array(grid,dtype=int)
+                grid_points.grid_pe      = np.array(grid_pe,dtype=int)
+                grid_points.grid_spacing = np.array(grid_spacing,dtype=float)
+                grid_points.grid_units   = 'a0'
+            cutoffs = grid_points.equivalent_energy_cutoffs
+            if cutoffs is not None:
+                cutoff_values = line_numbers(str(cutoffs),self.number_pattern)
+                if len(cutoff_values)>=2:
+                    grid_points.ecut        = cutoff_values[0]
+                    grid_points.ecut_charge = cutoff_values[1]
+                    grid_points.ecut_units  = grid_points.units
+
         if set(axes)=={'x','y','z'} and len(position_tables)>0:
             ion_positions = next(
                 (table for table in position_tables if table.units=='B'),
                 position_tables[0],
                 )
+            setup_info.ion_positions = ion_positions
             aunits = 'B' if axis_unit in {None,'a0','B','bohr'} else 'A'
-            axes_array = np.array(
+            reported_axes = np.array(
                 [axes[c] for c in ('x','y','z')],dtype=float)
-            axes_array = convert(axes_array,aunits,'B')
+            axes_array = convert(reported_axes,aunits,'B')
             positions  = convert(ion_positions.positions,ion_positions.units,'B')
             valid      = (
                 axes_array.shape==(3,3)
@@ -266,6 +476,8 @@ class RmgOutData(DevBase):
                     elem  = ion_positions.atoms,
                     pos   = positions,
                     )
+                if lattice_setup is not None:
+                    lattice_setup.axes = reported_axes
 
         kpoints  = []
         kweights = []
@@ -303,16 +515,58 @@ class RmgOutData(DevBase):
                     recenter = False,
                     cell_unit = True,
                     )
+
+        if files is not None and files.control_input_file is not None:
+            control_file = str(files.control_input_file)
+            filepaths    = (
+                os.path.join(self.path,control_file),
+                os.path.join(self.path,os.path.basename(control_file)),
+                os.path.join(os.path.dirname(self.path),control_file),
+                )
+            filepath = next(
+                (path for path in filepaths if os.path.isfile(path)),None)
+            if filepath is not None:
+                try:
+                    self.input = RmgInput(filepath)
+                except (NexusError,OSError,TypeError,ValueError):
+                    pass
         self.setup_info = setup_info
     #end def read_setup_info
 
     def read_energies(self,lines):
-        """Read the final total energy obtained from the eigenvalue sum."""
-        label = 'final total energy from eig sum'
+        """Read eigenvalue-sum and direct total-energy histories.
+
+        Binds the history arrays and their unit arrays, as well as the final
+        eigenvalue-sum energy and its units.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+        """
+        energies            = []
+        energy_units        = []
+        direct_energies     = []
+        direct_energy_units = []
         for line in lines:
             text  = normalize_line(line)
             lower = text.lower()
-            if label not in lower:
+            label         = None
+            target_values = None
+            target_units  = None
+            if 'final total energy from eig sum' in lower:
+                label         = 'final total energy from eig sum'
+                target_values = energies
+                target_units  = energy_units
+            elif 'final total energy from eigenvalue sum' in lower:
+                label         = 'final total energy from eigenvalue sum'
+                target_values = energies
+                target_units  = energy_units
+            elif 'final total energy from direct' in lower:
+                label         = 'final total energy from direct'
+                target_values = direct_energies
+                target_units  = direct_energy_units
+            if label is None:
                 continue
             remainder = text[lower.index(label)+len(label):].lstrip()
             if len(remainder)==0 or remainder[0] not in {':','='}:
@@ -323,8 +577,18 @@ class RmgOutData(DevBase):
             value = as_float(tokens[0])
             if value is None:
                 continue
-            self.energy       = value
-            self.energy_units = tokens[1].strip(',;') if len(tokens)>=2 else 'Ha'
+            target_values.append(value)
+            target_units.append(
+                tokens[1].strip(',;') if len(tokens)>=2 else None)
+        if len(energies)>0:
+            self.energies             = np.array(energies,dtype=float)
+            self.energy_units_history = np.array(energy_units,dtype=object)
+            self.energy               = self.energies[-1]
+            self.energy_units         = self.energy_units_history[-1] or 'Ha'
+        if len(direct_energies)>0:
+            self.direct_energies     = np.array(direct_energies,dtype=float)
+            self.direct_energy_units = np.array(
+                direct_energy_units,dtype=object)
     #end def read_energies
 
 
@@ -332,7 +596,9 @@ class RmgOutData(DevBase):
         """Parse electronic quantities exposed by ``RmgAnalyzer``.
 
         Binds ``electronic`` to an ``obj`` containing Fermi energies, band
-        edges, gaps, k-point-major eigenvalues, occupations, and k-points.
+        edges, gaps, charge and magnetization values, summed forces, per-atom
+        volume and energy, k-point-major eigenvalues and occupations, and
+        k-points.
 
         Parameters
         ----------
@@ -358,14 +624,20 @@ class RmgOutData(DevBase):
         #end def assigned_value
 
         data = obj(
-            fermi_energies         = [],
-            valence_band_maxima    = [],
-            conduction_band_minima = [],
-            band_gaps              = [],
-            kpoints_crystal        = None,
-            kpoints                = None,
-            eigenvalues            = None,
-            occupations            = None,
+            fermi_energies          = [],
+            valence_band_maxima     = [],
+            conduction_band_minima  = [],
+            band_gaps               = [],
+            total_charges           = [],
+            total_magnetizations    = [],
+            absolute_magnetizations = [],
+            sum_forces              = [],
+            volume_per_atom         = [],
+            energy_per_atom         = [],
+            kpoints_crystal         = None,
+            kpoints                 = None,
+            eigenvalues             = None,
+            occupations             = None,
             )
 
         # Match one eigenvalue followed by its bracketed occupation.
@@ -391,7 +663,13 @@ class RmgOutData(DevBase):
                 'conduction band minimum',
                 'conduction band minumm',
                 )
-            gap = assigned_value(text,lower,'band gap')
+            gap                    = assigned_value(text,lower,'band gap')
+            total_charge           = assigned_value(
+                text,lower,'total charge in supercell')
+            total_magnetization    = assigned_value(
+                text,lower,'total magnetization')
+            absolute_magnetization = assigned_value(
+                text,lower,'absolute magnetization')
             if fermi is not None:
                 data.fermi_energies.append(fermi)
             elif vbm is not None and cbm is not None:
@@ -399,6 +677,23 @@ class RmgOutData(DevBase):
                 data.conduction_band_minima.append(cbm)
             elif gap is not None:
                 data.band_gaps.append(gap)
+            elif total_charge is not None:
+                data.total_charges.append(total_charge)
+            elif total_magnetization is not None:
+                data.total_magnetizations.append(total_magnetization)
+            elif absolute_magnetization is not None:
+                data.absolute_magnetizations.append(absolute_magnetization)
+            elif lower.startswith('sum force'):
+                values = line_numbers(
+                    text.partition('=')[2],self.number_pattern)
+                if len(values)>=3:
+                    data.sum_forces.append(values[:3])
+            elif 'volume and energy per atom' in lower:
+                values = line_numbers(
+                    text.partition('=')[2],self.number_pattern)
+                if len(values)>=2:
+                    data.volume_per_atom.append(values[0])
+                    data.energy_per_atom.append(values[1])
 
             if 'kohn sham eigenvalues' in lower and 'k-point' in lower:
                 kpoint_start = lower.rfind('k-point')+len('k-point')
@@ -453,6 +748,10 @@ class RmgOutData(DevBase):
         for name,values in data.items():
             if values is not None:
                 data[name] = np.array(values,dtype=float)
+        data.energy_units          = 'eV'
+        data.magnetization_units   = 'Bohr mag/cell'
+        data.sum_force_units       = 'Ha/a0'
+        data.energy_per_atom_units = 'eV'
 
         if len(dataset)>0:
             datasets.append(dataset)
@@ -512,22 +811,115 @@ class RmgOutData(DevBase):
     #end def read_electronic
 
 
-    def read_ions(self,lines):
-        """Read ionic forces and structures from ionic-step tables.
+    def read_scf(self,lines):
+        """Read SCF energy components, iteration indices, residuals, and times.
 
-        Binds ``forces`` to a trajectory array and ``structures`` to a mapping
-        from ionic-step indices to ``Structure`` instances.
+        Binds ``scf`` to an ``obj`` containing NumPy histories. Energies are
+        in Hartree and times are in seconds.
 
         Parameters
         ----------
         lines : list of str
             Complete RMG log split into lines.
         """
-        force_records = []
-        structures    = obj()
-        initial       = self.setup_info.structure
+        component_names = {
+            'eigenvalue sum'  : 'eigenvalue_sum',
+            'ion_ion'         : 'ion_ion',
+            'electrostatic'   : 'electrostatic',
+            'vxc'             : 'vxc',
+            'exc'             : 'exc',
+            'total energy'    : 'total_energy',
+            'estimated error' : 'estimated_error',
+            }
+        values = dotdict(
+            eigenvalue_sum  = [],
+            ion_ion         = [],
+            electrostatic   = [],
+            vxc             = [],
+            exc             = [],
+            total_energy    = [],
+            estimated_error = [],
+            )
+
+        # Match an SCF energy-component label and its value or overflow stars.
+        # Example: @@ TOTAL ENERGY = -1.250000 Ha
+        component_pattern = re.compile(
+            r'^\s*@@\s*(?P<label>eigenvalue\s+sum|ion_ion|electrostatic|'
+            r'vxc|exc|total\s+energy|estimated\s+error)\s*[:=]\s*'
+            r'(?P<value>'+self.number_pattern+r'|\*+)',
+            re.IGNORECASE
+            )
+        # Match fields within a detailed SCF-iteration summary.
+        # Example: quench: [md: 0/2 scf: 3/20 step time: 0.20 RMS[dV]: 2e-5]
+        detail_pattern = re.compile(
+            r'\bmd\s*:\s*(?P<md>\d+)\s*/|'
+            r'\bscf\s*:\s*(?P<scf>\d+)\s*/|'
+            r'\bstep\s+time\s*:\s*(?P<step>'+self.number_pattern+r')|'
+            r'\bscf\s+time\s*:\s*(?P<time>'+self.number_pattern+r')|'
+            r'\brms\s*\[\s*dv\s*\]\s*:\s*(?P<rms>[^\]\s]+)',
+            re.IGNORECASE
+            )
+        md_steps   = []
+        scf_steps  = []
+        step_times = []
+        scf_times  = []
+        rms_dv     = []
+        for line in lines:
+            match = component_pattern.search(line)
+            if match is not None:
+                label = normalize_line(match.group('label')).lower()
+                name  = component_names.get(label)
+                token = match.group('value')
+                if name is not None:
+                    value = np.nan if '*' in token else as_float(token)
+                    if value is not None:
+                        values[name].append(value)
+            summary_label,separator,_ = normalize_line(line).partition(':')
+            if len(separator)==0 or summary_label.lower()!='quench':
+                continue
+            details = dotdict(md=None,scf=None,step=None,time=None,rms=None)
+            for match in detail_pattern.finditer(line):
+                details[match.lastgroup] = match.group(match.lastgroup)
+            md_steps.append(int(details.md) if details.md is not None else -1)
+            scf_steps.append(int(details.scf) if details.scf is not None else -1)
+            step_times.append(
+                as_float(details.step) if details.step is not None else np.nan)
+            scf_times.append(
+                as_float(details.time) if details.time is not None else np.nan)
+            rms = as_float(details.rms) if details.rms is not None else None
+            rms_dv.append(rms if rms is not None else np.nan)
+
+        if len(values.total_energy)>0:
+            scf = obj()
+            for name,array in values.items():
+                scf[name] = np.array(array,dtype=float)
+            scf.md_steps     = np.array(md_steps,dtype=int)
+            scf.scf_steps    = np.array(scf_steps,dtype=int)
+            scf.step_times   = np.array(step_times,dtype=float)
+            scf.scf_times    = np.array(scf_times,dtype=float)
+            scf.rms_dv       = np.array(rms_dv,dtype=float)
+            scf.energy_units = 'Ha'
+            scf.time_units   = 's'
+            self.scf         = scf
+    #end def read_scf
+
+
+    def read_ions(self,lines):
+        """Read detailed ionic records and construct trajectory-level data.
+
+        Binds ``ionic_steps`` to detailed per-step records and, for consistent
+        atom counts, binds trajectory arrays and corresponding structures.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+        """
+        records    = []
+        structures = obj()
+        initial    = self.setup_info.structure
         i = 0
-        # Collect forces and construct a structure for each ionic step.
+        # Collect complete ionic rows and construct each reported structure.
         while i<len(lines):
             header_tokens = lines[i].split()
             is_header     = (
@@ -539,9 +931,12 @@ class RmgOutData(DevBase):
             if not is_header:
                 i += 1
                 continue
-            atoms     = []
-            positions = []
-            forces    = []
+            atoms          = []
+            positions      = []
+            charges        = []
+            magnetizations = []
+            forces         = []
+            movable        = []
             i += 1
             while i<len(lines):
                 tokens = lines[i].split()
@@ -553,57 +948,91 @@ class RmgOutData(DevBase):
                 values = [as_float(v) for v in tokens[3:14]]
                 if None in values:
                     continue
+                move_values = values[8:11]
+                if not all(value.is_integer() for value in move_values):
+                    continue
                 atoms.append(tokens[2])
                 positions.append(values[:3])
+                charges.append(values[3])
+                magnetizations.append(values[4])
                 forces.append(values[5:8])
+                movable.append([int(value) for value in move_values])
             if len(atoms)>0:
-                forces = np.array(forces,dtype=float)
-                force_records.append(forces)
+                record = obj(
+                    atoms          = np.array(atoms,dtype=object),
+                    positions      = np.array(positions,dtype=float),
+                    position_units = 'a0',
+                    charges        = np.array(charges,dtype=float),
+                    magnetizations = np.array(magnetizations,dtype=float),
+                    forces         = np.array(forces,dtype=float),
+                    force_units    = 'Ha/a0',
+                    movable        = np.array(movable,dtype=int),
+                    )
+                records.append(record)
                 if initial is not None:
                     structure = generate_structure(
                         units = 'B',
                         axes  = initial.axes,
-                        elem  = np.array(atoms,dtype=object),
-                        pos   = np.array(positions,dtype=float),
+                        elem  = record.atoms,
+                        pos   = record.positions,
                         )
                     structure.add_kpoints(
                         initial.kpoints,
                         initial.kweights,
                         recenter = False,
                         )
-                    structures[len(force_records)-1] = structure
+                    structures[len(records)-1] = structure
         # Bind trajectories only when every ionic step has a consistent size.
-        if (
-            len(force_records)>0
-            and len({len(forces) for forces in force_records})==1
-            ):
-            self.forces = np.array(force_records,dtype=float)
-            if len(structures)==len(force_records):
+        if len(records)>0:
+            self.ionic_steps    = obj(dict(enumerate(records)))
+            self.position_units = 'a0'
+            self.force_units    = 'Ha/a0'
+        if len(records)>0 and len({len(record.atoms) for record in records})==1:
+            self.positions      = np.array(
+                [record.positions for record in records],dtype=float)
+            self.forces         = np.array(
+                [record.forces for record in records],dtype=float)
+            self.charges        = np.array(
+                [record.charges for record in records],dtype=float)
+            self.magnetizations = np.array(
+                [record.magnetizations for record in records],dtype=float)
+            self.max_forces     = np.array([
+                np.linalg.norm(record.forces,axis=1).max()
+                for record in records
+                ],dtype=float)
+            if len(structures)==len(records):
                 self.structures = structures
     #end def read_ions
 
 
     def read_geometry(self):
-        """Collect k-point data derived from the setup report.
+        """Collect cell volume and k-point data from the setup report.
 
-        Binds ``geometry`` to an ``obj`` containing Cartesian k-points and
-        k-point weights.
+        Binds ``geometry`` to an ``obj`` containing volume and crystal and
+        Cartesian k-point data.
         """
         geometry = obj(
-            kpoints_cart = None,
-            kweights     = None,
+            volume          = None,
+            volume_units    = None,
+            kpoints_crystal = None,
+            kpoints_cart    = None,
+            kweights        = None,
             )
         structure = self.setup_info.structure
-        if structure is not None and len(structure.kpoints)>0:
-            geometry.kpoints_cart = structure.kpoints
-            geometry.kweights     = structure.kweights
-        elif self.setup_info.k_points is not None:
+        if structure is not None:
+            geometry.volume       = abs(np.linalg.det(structure.axes))
+            geometry.volume_units = 'a0^3'
+            if len(structure.kpoints)>0:
+                geometry.kpoints_cart = structure.kpoints
+                geometry.kweights     = structure.kweights
+        if self.setup_info.k_points is not None:
             kpoints                  = self.setup_info.k_points
+            geometry.kpoints_crystal = kpoints.kpoints_crystal
             geometry.kweights        = kpoints.kweights
             if structure is not None and len(kpoints.kpoints_crystal)>0:
                 geometry.kpoints_cart = np.dot(
                     kpoints.kpoints_crystal,structure.kaxes)
-        if geometry.kpoints_cart is not None or geometry.kweights is not None:
+        if any(value is not None for value in geometry.values()):
             self.geometry = geometry
     #end def read_geometry
 
@@ -611,8 +1040,8 @@ class RmgOutData(DevBase):
     def read_stress(self,lines):
         """Parse stress tensors and derive hydrostatic pressures.
 
-        Binds ``stress`` to a NumPy array of shape ``(nsteps, 3, 3)`` and
-        ``pressure`` to the final hydrostatic pressure. Values are in kbar.
+        Binds ``stress`` and ``pressures`` histories, their shared unit label,
+        and ``pressure`` as the final hydrostatic pressure. Values are in kbar.
 
         Parameters
         ----------
@@ -650,11 +1079,135 @@ class RmgOutData(DevBase):
             if len(rows)==3:
                 tensors.append(rows)
         if len(tensors)>0:
-            stress        = np.array(tensors,dtype=float)
-            pressures     = -np.trace(stress,axis1=1,axis2=2)/3.0
-            self.stress   = stress
-            self.pressure = pressures[-1]
+            stress            = np.array(tensors,dtype=float)
+            pressures         = -np.trace(stress,axis1=1,axis2=2)/3.0
+            self.stress       = stress
+            self.stress_units = 'kbar'
+            self.pressures    = pressures
+            self.pressure     = pressures[-1]
     #end def read_stress
+
+
+    def read_convergence(self,lines):
+        """Read electronic and ionic convergence messages.
+
+        Binds ``convergence`` to an ``obj`` containing nullable status values
+        and electronic success and failure counts.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+        """
+        electronic_successes = 0
+        electronic_failures  = 0
+        ionic_converged      = None
+        for line in lines:
+            text         = normalize_line(line).lower()
+            not_achieved = (
+                'not achieved' in text or 'not been achieved' in text)
+            electronic_failure = (
+                'potential convergence' in text
+                and not_achieved
+                ) or (
+                'convergence criterion' in text
+                and 'not met' in text
+                )
+            electronic_success = (
+                'potential convergence' in text
+                and 'achieved' in text
+                and not electronic_failure
+                )
+            ionic_failure = (
+                'force convergence' in text
+                and not_achieved
+                )
+            ionic_success = (
+                'force convergence' in text
+                and 'achieved' in text
+                and not ionic_failure
+                )
+            if electronic_failure:
+                electronic_failures += 1
+            elif electronic_success:
+                electronic_successes += 1
+            elif ionic_failure:
+                ionic_converged = False
+            elif ionic_success:
+                ionic_converged = True
+        electronic_converged = None
+        if electronic_successes+electronic_failures>0:
+            electronic_converged = (
+                electronic_successes>0 and electronic_failures==0)
+        if electronic_converged is not None or ionic_converged is not None:
+            self.convergence = obj(
+                electronic_converged = electronic_converged,
+                electronic_successes = electronic_successes,
+                electronic_failures  = electronic_failures,
+                ionic_converged      = ionic_converged,
+                )
+    #end def read_convergence
+
+
+    def read_timing(self,lines):
+        """Read total, per-step, and section-resolved timing information.
+
+        Binds ``timing`` to an ``obj`` measured in seconds, with individual
+        timing rows stored under ``timing.sections``.
+
+        Parameters
+        ----------
+        lines : list of str
+            Complete RMG log split into lines.
+        """
+        # Match a numbered timing section followed by total and per-step times.
+        # Example: 1-TOTAL 3.00 0.50
+        time_value = r'(?:'+self.number_pattern+r'|inf|nan)'
+        pattern = re.compile(
+            r'^\s*(\d+\s*-\s*.*?)\s+('+time_value+r')\s+('+time_value+r')'
+            r'(?:\s+.*)?$',
+            re.IGNORECASE
+            )
+        timing   = None
+        sections = obj()
+        for line in lines:
+            match = pattern.match(line)
+            if match is None:
+                continue
+            name                    = normalize_line(match.group(1))
+            prefix,separator,suffix = name.partition('-')
+            if len(separator)>0:
+                name = prefix.strip()+'-'+suffix.strip()
+            total    = float(match.group(2).lower().replace('d','e'))
+            per_step = float(match.group(3).lower().replace('d','e'))
+            # Replace non-alphanumeric runs to form a stable section key.
+            # Example: 1-TOTAL
+            key = re.sub(r'[^a-z0-9]+','_',name.lower()).strip('_')
+            sections[key] = obj(total=total,per_step=per_step)
+            if name.lower()=='1-total':
+                timing = obj(total=total,per_step=per_step,units='s')
+        if timing is not None:
+            timing.sections = sections
+            self.timing     = timing
+    #end def read_timing
+
+
+    def read_produced_files(self):
+        """Locate recognized files produced by QMCPACK-interface SCF runs.
+
+        Binds ``produced_files`` to an ``obj`` containing the QMCPACK restart
+        path when the file exists.
+        """
+        produced_files = obj()
+        files          = self.setup_info.files
+        if files is not None and files.data_output_file is not None:
+            qmcpack_file = os.path.join(
+                self.path,str(files.data_output_file)+'.h5')
+            if os.path.isfile(qmcpack_file):
+                produced_files.qmcpack_restart = qmcpack_file
+        if len(produced_files)>0:
+            self.produced_files = produced_files
+    #end def read_produced_files
 
 
 
@@ -680,8 +1233,8 @@ class RmgAnalyzer(SimulationAnalyzer):
     info : obj
         General analyzer metadata.
     input : RmgInput or None
-        Reserved analyzer input member; this reduced implementation leaves it
-        as ``None``.
+        RMG input reconstructed from the referenced control file when it is
+        available.
     run_mode : str or None
         Short RMG calculation mode determined during analysis: ``"scf"``,
         ``"nscf"``, or ``"relax"``.
@@ -1044,6 +1597,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         results       = RmgOutData(filepath)
         self.results  = results
         self.run_mode = results.run_mode
+        self.input    = results.input
     #end def analyze
 
 #end class RmgAnalyzer
