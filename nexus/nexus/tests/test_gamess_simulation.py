@@ -80,12 +80,12 @@ def test_check_result():
 @isolate_nexus_core
 def test_get_result(tmp_path):
     from ..developer import obj, NexusError
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
-    nexus_core.runs = ''
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.runs = ''
 
     sim = get_gamess_sim('rhf')
 
@@ -160,12 +160,12 @@ def test_incorporate_result():
 
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
-    nexus_core.runs = ''
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.runs = ''
 
     sim = get_gamess_sim('rhf')
 

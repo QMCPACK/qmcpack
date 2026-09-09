@@ -27,14 +27,15 @@ from copy import deepcopy
 import importlib
 from importlib.metadata import PackageNotFoundError
 from pathlib import Path
+from collections.abc import Collection
 
 from .nexus_version import nexus_version
 from .generic       import generic_settings
-from .developer     import obj, log, NexusError
+from .developer     import obj, log, NexusError, warn
 from .debug         import ci
 from .utilities     import path_string
 
-from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults, write_splash
+from .nexus_base      import NexusCore, NexusConfig, SimStage, ShowStatusMode, NEXUS_CONFIG, write_splash
 from .machines        import Job,                    job,            Machine, Supercomputer, get_machine, get_cpu_cores, Workstation
 from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims, DynamicProcess
 from .project_manager import ProjectManager,     DynamicWorkflowManager,     workflow_manager
@@ -82,7 +83,7 @@ if Machine.exists(hostmachine):
 
 # test needed
 def run_project(*args,**kwargs):
-    if nexus_core.graph_sims:
+    if NEXUS_CONFIG.graph_sims:
         graph_sims()
     #end if
     pm = ProjectManager()
@@ -131,28 +132,13 @@ class Settings(NexusCore):
         'interactive_cores', 'machine_info', 'machine', 'machine_mode', 'user', 'account'
         })
 
-    core_assign_vars = frozenset({
-        'results', 'load_images', 'remote_directory', 'verbose', 'progress_tty',
-        'command_line', 'sleep', 'timeout', 'monitor', 'debug', 'skip_submit', 'dynamic', 'runs',
-        'stages', 'pseudo_dir', 'graph_sims', 'generate_only', 'trace',
-        'local_directory', 'status_only'
-        })
-
-    core_process_vars = frozenset({'file_locations', 'status', 'mode'})
-
-    noncore_assign_vars = frozenset({'basis_dir'})
-
-    noncore_process_vars = frozenset()
-
     gamess_vars  = frozenset({'ericfmt', 'mcppath'})
 
     pwscf_vars   = frozenset({'vdw_table'})
 
     qm_package_vars = frozenset({'qprc'})
 
-    nexus_core_vars    = core_assign_vars    | core_process_vars
-    nexus_noncore_vars = noncore_assign_vars | noncore_process_vars
-    nexus_vars         = nexus_core_vars     | nexus_noncore_vars
+    nexus_vars         = frozenset(NexusConfig.__slots__)
     allowed_vars       = nexus_vars | machine_vars \
                     | gamess_vars | pwscf_vars | qm_package_vars
 
@@ -205,13 +191,13 @@ class Settings(NexusCore):
         #end if
 
         # restore default core default settings
-        restore_nexus_core_defaults()
+        NEXUS_CONFIG.restore_defaults()
 
         # process command line inputs, if any
         if 'command_line' in kwargs:
-            nexus_core.command_line = kwargs.command_line
+            NEXUS_CONFIG.command_line = kwargs.command_line
         #end if
-        if nexus_core.command_line:
+        if NEXUS_CONFIG.command_line:
             self.process_command_line_settings(kwargs)
         #end if
 
@@ -258,7 +244,7 @@ class Settings(NexusCore):
         nxs_deps = {k:v for k, v in sorted(nxs_deps.items(), key=lambda x: pkg_sort.get(x[0], 1000))}
 
         available_pkgs = {}
-        for module in nxs_deps.keys():
+        for module in nxs_deps:
             if importlib.util.find_spec(module) is not None:
                 available_pkgs[module] = importlib.metadata.version(module)
             else:
@@ -266,7 +252,7 @@ class Settings(NexusCore):
 
         version_text = ""
 
-        name_align = max([len(i) for i in nxs_deps.keys()])
+        name_align = max([len(i) for i in nxs_deps])
         version_text +=  "  Currently Available Nexus Dependencies:\n"
         version_text += f"    {'Python':<{name_align}} = {sys.version.split()[0]}\n"
         for pkg_name, pkg_ver in available_pkgs.items():
@@ -279,7 +265,7 @@ class Settings(NexusCore):
             version_text += f"    {pkg_name:<{name_align}} >= {pkg_info['min_ver']:<10} ({pkg_info['status']})\n"
 
         version_text += "\n"
-        missing_deps = set(nxs_deps) - set([i for i, a in available_pkgs.items() if a != "Unavailable"])
+        missing_deps = set(nxs_deps) - {i for i, a in available_pkgs.items() if a != "Unavailable"}
         if len(missing_deps) > 0:
             version_text += "  Required dependencies are met,\n"
             version_text += "  however some optional dependencies are missing.\n"
@@ -297,20 +283,6 @@ class Settings(NexusCore):
 
         self.log('Applying user settings')
 
-        # assign simple variables
-        for name in Settings.core_assign_vars:
-            if name in kwargs:
-                nexus_core[name] = kwargs[name]
-            #end if
-        #end for
-
-        # assign simple variables
-        for name in Settings.noncore_assign_vars:
-            if name in kwargs:
-                nexus_noncore[name] = kwargs[name]
-            #end if
-        #end for
-
         # extract settings based on keyword groups
         kw        = Settings.kw_set(Settings.nexus_vars     ,kwargs)
         mach_kw   = Settings.kw_set(Settings.machine_vars   ,kwargs)
@@ -318,7 +290,11 @@ class Settings(NexusCore):
         pwscf_kw  = Settings.kw_set(Settings.pwscf_vars     ,kwargs)
         qm_pkg_kw = Settings.kw_set(Settings.qm_package_vars,kwargs)
         if len(kwargs)>0:
-            msg = f'some settings keywords have not been accounted for\nleftover keywords: {sorted(kwargs.keys())}\nthis is a developer error'
+            msg = (
+                'Some settings keywords have not been accounted for\n'
+                f'Leftover keywords: {sorted(kwargs.keys())}\n'
+                'This is a developer error'
+            )
             raise NexusError(msg)
         #end if
 
@@ -331,21 +307,8 @@ class Settings(NexusCore):
         # process machine settings
         self.process_machine_settings(mach_kw)
 
-        # process nexus core settings
-        self.process_core_settings(kw)
-
-        # process nexus noncore settings
-        self.process_noncore_settings(kw)
-
-        # transfer select core data to the global namespace
-        for k in nexus_core_noncore.keys():
-            nexus_core_noncore[k] = nexus_core[k]
-        nexus_noncore.update(**deepcopy(nexus_core_noncore)) # prevent write to core namespace
-
-        # copy final core and noncore settings
-        self.update(**deepcopy(nexus_core))
-        self.update(**deepcopy(nexus_noncore))
-
+        # process nexus config settings
+        self.process_config_settings(kw)
 
         # process gamess settings
         Gamess.restore_default_settings()
@@ -358,8 +321,6 @@ class Settings(NexusCore):
         # process quantum package settings
         QuantumPackage.restore_default_settings()
         QuantumPackage.settings(**qm_pkg_kw)
-
-        return
     #end def __call__
 
 
@@ -391,11 +352,11 @@ class Settings(NexusCore):
                         )
         parser.add_option('--sleep',dest='sleep',
                         default='none',
-                        help=f'Number of seconds between polls.  At each poll, simulations are actually run provided all simulations they depend on have successfully completed (default={nexus_core_defaults.sleep}).'
+                        help=f'Number of seconds between polls.  At each poll, simulations are actually run provided all simulations they depend on have successfully completed (default={NEXUS_CONFIG.sleep}).'
                         )
         parser.add_option('--timeout',dest='timeout',
                         default='none',
-                        help=f'Number of seconds to wait for output and error files after a job exits the queue before marking the simulation as failed (default={nexus_core_defaults.timeout}).'
+                        help=f'Number of seconds to wait for output and error files after a job exits the queue before marking the simulation as failed (default={NEXUS_CONFIG.timeout}).'
                         )
         parser.add_option('--machine',dest='machine',
                         default='none',
@@ -407,15 +368,15 @@ class Settings(NexusCore):
                         )
         parser.add_option('--runs',dest='runs',
                         default='none',
-                        help=f'Directory to perform all runs in.  Simulation paths are appended to this directory (default={nexus_core_defaults.runs}).'
+                        help=f'Directory to perform all runs in.  Simulation paths are appended to this directory (default={NEXUS_CONFIG.runs}).'
                         )
         parser.add_option('--results',dest='results',
                         default='none',
-                        help=f"Directory to copy out lightweight results data.  If set to '', results will not be stored outside of the runs directory (default={nexus_core_defaults.results})."
+                        help=f"Directory to copy out lightweight results data.  If set to '', results will not be stored outside of the runs directory (default={NEXUS_CONFIG.results})."
                         )
         parser.add_option('--local_directory',dest='local_directory',
                         default='none',
-                        help=f'Base path where runs and results directories will be created (default={nexus_core_defaults.local_directory}).'
+                        help=f'Base path where runs and results directories will be created (default={NEXUS_CONFIG.local_directory}).'
                         )
         parser.add_option('--pseudo_dir',dest='pseudo_dir',
                         default='none',
@@ -449,20 +410,28 @@ class Settings(NexusCore):
         # check that all options are allowed (developer check)
         invalid = set(opt.keys())-Settings.allowed_vars
         if len(invalid)>0:
-            msg = f'invalid command line settings encountered\ninvalid settings: {sorted(invalid)}\nthis is a developer error'
+            msg = (
+                'Invalid command line settings encountered\n'
+                f'Invalid settings: {sorted(invalid)}\n'
+                'This is a developer error'
+                )
             raise NexusError(msg)
         #end if
 
         # pre-process options, full processing occurs upon return
-        boolean_options = set(['status_only','generate_only','progress_tty'])
+        boolean_options = {'status_only','generate_only','progress_tty'}
         real_options = {'sleep', 'timeout'}
         for ropt in real_options:
             if opt[ropt]!='none':
                 try:
                     opt[ropt] = float(opt[ropt])
-                except:
-                    msg = f"command line option '{ropt}' must be a real value\nyou provided: {opt[ropt]}\nplease try again"
-                    raise ValueError(msg)
+                except ValueError as err:
+                    msg = (
+                        f"Command line option '{ropt}' must be a real value\n"
+                        f"You provided: {opt[ropt]}\n"
+                        "Please try again"
+                        )
+                    raise TypeError(msg) from err
                 #end try
             #end if
         #end for
@@ -474,7 +443,6 @@ class Settings(NexusCore):
                 script_settings[name] = value
             #end if
         #end for
-
     #end def process_command_line_settings
 
 
@@ -484,7 +452,7 @@ class Settings(NexusCore):
         mid_set = set()
         if 'machine_info' in mset:
             machine_info = mset.machine_info
-            if isinstance(machine_info,dict) or isinstance(machine_info,obj):
+            if isinstance(machine_info, dict | obj):
                 for machine_name,minfo in machine_info.items():
                     mname = machine_name.lower()
                     if Machine.exists(mname):
@@ -493,12 +461,18 @@ class Settings(NexusCore):
                         machine.incorporate_user_info(minfo)
                         mid_set.add(id(machine))
                     else:
-                        msg = f'machine {machine_name} is unknown\n  cannot set machine_info'
+                        msg = (
+                            f'machine {machine_name} is unknown\n'
+                            '  cannot set machine_info'
+                            )
                         raise ValueError(msg)
                     #end if
                 #end for
             else:
-                msg = 'machine_info must be a dict or obj\n  you provided type '+machine_info.__class__.__name__
+                msg = (
+                    'machine_info must be a dict or obj\n'
+                    '  you provided type '+type(machine_info).__name__
+                    )
                 raise TypeError(msg)
             #end if
         #end if
@@ -528,7 +502,10 @@ class Settings(NexusCore):
             if 'account' in mset:
                 account = mset.account
                 if not isinstance(account,str):
-                    msg = f'account for {machine_name} must be a string\nyou provided: {account}'
+                    msg = (
+                        f'account for {machine_name} must be a string\n'
+                        f'you provided: {account}'
+                        )
                     raise TypeError(msg)
                 #end if
                 ProjectManager.machine.account = account
@@ -536,7 +513,10 @@ class Settings(NexusCore):
             if 'user' in mset:
                 user = mset.user
                 if not isinstance(user,str):
-                    msg = f'user for {machine_name} must be a string\nyou provided: {user}'
+                    msg = (
+                        f'user for {machine_name} must be a string\n'
+                        f'you provided: {user}'
+                        )
                     raise TypeError(msg)
                 #end if
                 ProjectManager.machine.user = user
@@ -567,125 +547,120 @@ class Settings(NexusCore):
     #end def process_machine_settings
 
 
-    def process_core_settings(self,kw):
-        # process project manager settings
-        if nexus_core.debug:
-            nexus_core.verbose = True
-        #end if
-        if 'status' in kw:
-            if kw.status==None or kw.status==False:
-                nexus_core.status = nexus_core.status_modes.none
-            elif kw.status==True:
-                nexus_core.status = nexus_core.status_modes.standard
-            elif kw.status in nexus_core.status_modes:
-                nexus_core.status = nexus_core.status_modes[kw.status]
-            else:
-                msg = f'invalid status mode specified: {kw.status}\nvalid status modes are: {sorted(nexus_core.status_modes.keys())}'
-                raise ValueError(msg)
-            #end if
-        #end if
-        if nexus_core.status_only and nexus_core.status==nexus_core.status_modes.none:
-            nexus_core.status = nexus_core.status_modes.standard
-        #end if
-        if 'mode' in kw:
-            if kw.mode in nexus_core.modes:
-                nexus_core.mode = kw.mode
-            else:
-                msg = f'invalid mode specified: {kw.mode}\nvalid modes are: {sorted(nexus_core.modes.keys())}'
-                raise ValueError(msg)
-            #end if
-        #end if
-        mode  = nexus_core.mode
-        modes = nexus_core.modes
-        if mode==modes.stages:
-            stages = nexus_core.stages
-        elif mode==modes.all:
-            stages = list(nexus_core.primary_modes)
-        else:
-            stages = [kw.mode]
-        #end if
-        allowed_stages = set(nexus_core.primary_modes)
-        if isinstance(stages,str):
-            stages = [stages]
-        #end if
-        if len(stages)==0:
-            stages = list(nexus_core.primary_modes)
-        elif 'all' in stages:
-            stages = list(nexus_core.primary_modes)
-        else:
-            forbidden = set(nexus_core.stages)-allowed_stages
-            if len(forbidden)>0:
-                msg = 'some stages provided are not primary stages.\n  You provided '+str(list(forbidden))+'\n  Options are '+str(list(allowed_stages))
-                raise ValueError(msg)
-            #end if
-        #end if
-        # overide user input and always use stages mode 
-        # keep processing code above in case a change is desired in the future
-        nexus_core.mode       = modes.stages
-        nexus_core.stages     = stages
-        nexus_core.stages_set = set(nexus_core.stages)
+    def process_config_settings(self, kw: dict):
+        # Deprecated variables
+        deprecated = (
+            ("mode", "Please use `stages` instead!"),
+            ("verbose", "Please use `quiet` instead!"),
+            ("debug", "This variable was redundant, please remove from your script!"),
+            ("trace", "This variable was unused in Nexus, please remove from your script!"),
+            ("emulate", "This variable was unused in Nexus, please remove from your script!"),
+        )
+        for var, extra in deprecated:
+            if var in kw:
+                del kw[var]
+                warn(
+                    f"The setting '{var}' has been deprecated!\n"
+                    f"{extra}"
+                    )
 
-        # process simulation settings
-        if 'local_directory' in kw:
-            nexus_core.file_locations.append(kw.local_directory)
-        #end if
-        if 'file_locations' in kw:
-            fl = kw.file_locations
-            if isinstance(fl,str):
-                nexus_core.file_locations.extend([path_string(fl)])
+        match kw.pop("status", None):
+            case None | False:
+                pass
+            case True:
+                NEXUS_CONFIG.status = ShowStatusMode.ALL
+            case val:
+                val_str = str(val).upper()
+                if val_str not in ShowStatusMode.__members__:
+                    msg = (
+                        f"Invalid status mode specified: {val}\n"
+                        f"Valid status modes are: {[*ShowStatusMode.__members__]}"
+                    )
+                    raise ValueError(msg)
+                NEXUS_CONFIG.status = ShowStatusMode[val_str]
+
+        if status_only := kw.pop("status_only", None):
+            NEXUS_CONFIG.status_only = status_only
+            if NEXUS_CONFIG.status is ShowStatusMode.NONE:
+                NEXUS_CONFIG.status = ShowStatusMode.ALL
+
+        stages = kw.pop("stages", None)
+        generate_only = kw.pop("generate_only", None)
+        if stages is not None and generate_only is not None:
+            msg = "Can not set both `stages` and `generate_only`!"
+            raise ValueError(msg)
+        elif isinstance(stages, SimStage):
+            NEXUS_CONFIG.stages = stages
+        elif isinstance(stages, str):
+            if stages.upper() not in SimStage.__members__:
+                msg = (
+                    f"Invalid stages specified: {val}\n"
+                    f"Valid stages are: {[*SimStage.__members__]}"
+                )
+                raise ValueError(msg)
+            NEXUS_CONFIG.stages = SimStage[stages.upper()]
+        elif isinstance(stages, Collection):
+            NEXUS_CONFIG.stages = SimStage.from_list(stages)
+        elif stages is not None:
+            msg = f"stages should be a SimStage, str, or list of str, but is {type(stages)}!"
+            raise TypeError(msg)
+        elif generate_only:
+            NEXUS_CONFIG.stages = SimStage.SETUP # Preferred new route
+            NEXUS_CONFIG.generate_only = True # Legacy, will replace
+
+        if (loc_dir := kw.pop("local_directory", None)) is not None:
+            NEXUS_CONFIG.file_locations.append(loc_dir)
+
+        if (file_locs := kw.pop("file_locations", None)) is not None:
+            if isinstance(file_locs, str | Path):
+                NEXUS_CONFIG.file_locations.append(path_string(file_locs))
             else:
-                nexus_core.file_locations.extend([path_string(f) for f in fl])
-            #end if
-        #end if
-        pseudo_dir = kw.get('pseudo_dir',None)
-        if pseudo_dir is not None:
-            if not os.path.isdir(pseudo_dir):
-                msg = f'pseudo_dir "{pseudo_dir}" does not exist or is not a directory'
+                NEXUS_CONFIG.file_locations.extend(
+                    path_string(i) for i in file_locs
+                )
+
+        if (pseudo_dir := kw.pop("pseudo_dir", None)) is not None:
+            pseudo_dir = Path(pseudo_dir).resolve(strict=True)
+            if not pseudo_dir.is_dir():
+                msg = f"pseudo_dir '{pseudo_dir}' is not a directory!"
                 raise NotADirectoryError(msg)
-            #end if
-            pseudo_dir = os.path.abspath(pseudo_dir)
-            nexus_core.pseudo_dir = pseudo_dir
-        #end if
+
+            NEXUS_CONFIG.pseudo_dir = path_string(pseudo_dir)
+
         PseudoSet.pseudo_files.clear()
         PseudoSet.labeled_pseudosets.clear()
-        if pseudo_dir is not None:
-            for file in Path(pseudo_dir).iterdir():
+        if NEXUS_CONFIG.pseudo_dir is not None:
+            for file in Path(NEXUS_CONFIG.pseudo_dir).iterdir():
                 if file.is_file():
-                    PseudoSet.pseudo_files[file.name] = str(file.resolve())
-                #end if
-            #end for
-        #end if
+                    PseudoSet.pseudo_files[file.name] = str(file)
 
         # backwards compatibility with prior results_dir default
         old_results_default = 'results'
-        old_results_dir = os.path.join(nexus_core.local_directory,old_results_default)
+        old_results_dir = os.path.join(NEXUS_CONFIG.local_directory,old_results_default)
         if 'results' not in kw and os.path.exists(old_results_dir):
-            nexus_core.results = old_results_default
-        #end if
-    #end def process_core_settings
+            NEXUS_CONFIG.results = old_results_default
 
+        if basis_dir := kw.pop("basis_dir", None):
+            basis_dir = Path(basis_dir).resolve(strict=True)
+            if not basis_dir.is_dir():
+                msg = f"basis_dir '{basis_dir}' is not a directory!"
+                raise NotADirectoryError(msg)
 
-    def process_noncore_settings(self,kw):
-        if 'basis_dir' not in kw:
-            nexus_noncore.basissets = BasisSets()
+            NEXUS_CONFIG.file_locations.append(path_string(basis_dir))
+            bs_files = []
+            for file in basis_dir.iterdir():
+                if file.is_file():
+                    bs_files.append(path_string(file))
+
+            NEXUS_CONFIG.basissets = BasisSets(bs_files)
         else:
-            basis_dir = kw.basis_dir
-            nexus_core.file_locations.append(basis_dir)
-            if not os.path.exists(basis_dir):
-                msg = f'basis_dir "{basis_dir}" does not exist'
-                raise FileNotFoundError(msg)
-            #end if
-            files = os.listdir(basis_dir)
-            bsfiles = []
-            for f in files:
-                pf = os.path.join(basis_dir,f)
-                if os.path.isfile(pf):
-                    bsfiles.append(pf)
-                #end if
-            #end for
-            nexus_noncore.basissets = BasisSets(bsfiles)        
-        #end if
-    #end def process_noncore_settings
+            NEXUS_CONFIG.basissets = BasisSets()
+
+        # Set remaining settings
+        for cfg_var in NexusConfig.__slots__:
+            if (cfg_val := kw.pop(cfg_var, None)) is not None:
+                setattr(NEXUS_CONFIG, cfg_var, cfg_val)
+    #end def process_core_settings
 #end class Settings
 
 

@@ -5,17 +5,13 @@ pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
 from . import isolate_nexus_core
 from ..testing import value_eq
 from ..testing import failed,FailedTest
-
+from ..nexus_base import NEXUS_CONFIG, ShowStatusMode, SimStage
 
 def test_init():
     from ..developer import obj
-    from ..nexus_base import nexus_core
     from ..project_manager import ProjectManager
 
     pm = ProjectManager()
-
-    modes = nexus_core.modes
-    assert(pm.persistent_modes==set([modes.submit,modes.all]))
     def check(v):
         assert isinstance(v,obj)
         assert len(v)==0
@@ -277,7 +273,6 @@ def test_check_dependencies():
 @isolate_nexus_core
 def test_write_simulation_status():
     from ..generic import generic_settings
-    from ..nexus_base import nexus_core
     from ..simulation import Simulation
     from ..project_manager import ProjectManager
 
@@ -293,8 +288,6 @@ def test_write_simulation_status():
     pm = ProjectManager()
     pm.add_simulations(list(sims.values()))
 
-    status_modes = nexus_core.status_modes
-
     def status_log():
         log.reset()
         pm.write_simulation_status()
@@ -302,7 +295,7 @@ def test_write_simulation_status():
         return '\n'.join(line.rstrip() for line in s.splitlines())
     #end def status_log
 
-    assert(nexus_core.status==status_modes.none)
+    assert(NEXUS_CONFIG.status is ShowStatusMode.NONE)
     status_ref = '''
   cascade status
     setup, sent_files, submitted, finished, got_output, analyzed, failed
@@ -317,10 +310,10 @@ def test_write_simulation_status():
     '''
     assert(status_log().strip()==status_ref.strip())
 
-    nexus_core.status = status_modes.standard
+    NEXUS_CONFIG.status = ShowStatusMode.ALL
     assert(status_log().strip()==status_ref.strip())
 
-    nexus_core.status = status_modes.active
+    NEXUS_CONFIG.status = ShowStatusMode.ACTIVE
     status_ref = '''
   cascade status
     setup, sent_files, submitted, finished, got_output, analyzed, failed
@@ -330,10 +323,10 @@ def test_write_simulation_status():
     '''
     assert(status_log().strip()==status_ref.strip())
 
-    nexus_core.status = status_modes.ready
+    NEXUS_CONFIG.status = ShowStatusMode.READY
     assert(status_log().strip()==status_ref.strip())
 
-    nexus_core.status = status_modes.failed
+    NEXUS_CONFIG.status = ShowStatusMode.FAILED
     status_ref = '''
   cascade status
     setup, sent_files, submitted, finished, got_output, analyzed, failed
@@ -402,30 +395,20 @@ def test_color_status_result(monkeypatch):
 @isolate_nexus_core
 def test_run_project(tmp_path):
     from ..generic import generic_settings
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
     from ..simulation import Simulation,input_template
     from ..project_manager import ProjectManager
 
     from .test_simulation_module import get_test_workflow,n_test_workflows
 
     # divert_nexus()
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
-    assert(nexus_core.mode==nexus_core.modes.stages)
-    assert(len(nexus_core.stages)==0)
+    assert(NEXUS_CONFIG.stages is SimStage.ALL)
 
-    nexus_core.stages     = list(nexus_core.primary_modes)
-    nexus_core.stages_set = set(nexus_core.stages)
-
-    primary_modes = ['setup','send_files','submit','get_output','analyze']
-    assert(value_eq(nexus_core.stages,primary_modes))
-    assert(value_eq(nexus_core.stages_set,set(primary_modes)))
-
-    nexus_core.sleep = 0.1
-
-    log = generic_settings.devlog
+    NEXUS_CONFIG.sleep = 0.1
 
     flags = ['setup','sent_files','submitted','finished','got_output','analyzed']
 

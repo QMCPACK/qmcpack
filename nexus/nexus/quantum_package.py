@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 from .developer import obj, NexusError
 from .execute import execute
-from .nexus_base import nexus_core
+from .nexus_base import NEXUS_CONFIG
 from .simulation import Simulation
 from .quantum_package_input import QuantumPackageInput, generate_quantum_package_input, read_qp_value
 from .quantum_package_analyzer import QuantumPackageAnalyzer
@@ -54,7 +54,7 @@ class QuantumPackage(Simulation):
         else:
             QuantumPackage.qprc = qprc
 
-        if qprc is not None and not nexus_core.status_only:
+        if qprc is not None and not NEXUS_CONFIG.status_only:
             if not isinstance(qprc,str):
                 msg = (
                     'settings input "qprc" must be a path\n'

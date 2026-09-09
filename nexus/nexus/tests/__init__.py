@@ -3,67 +3,13 @@ from enum import IntEnum, auto
 from pathlib import Path
 from copy import deepcopy
 import functools
-from nexus.nexus_base import nexus_core, nexus_noncore, nexus_noncore_defaults
+from nexus.nexus_base import NEXUS_CONFIG
 from nexus.generic import generic_settings
 from nexus.pseudoset import PseudoSet
 from nexus.simulation import Simulation
 
 # qmcpack/nexus/nexus/tests/
 TEST_DIR = Path(__file__).resolve().parent
-
-NEXUS_CORE_KEYS = (
-    "local_directory",
-    "remote_directory",
-    "mode",
-    "stages",
-    "stages_set",
-    "status",
-    "sleep",
-    "timeout",
-    "file_locations",
-    "pseudo_dir",
-    "runs",
-    "results",
-    )
-NEXUS_NONCORE_KEYS = (
-    "pseudo_dir",
-    )
-
-def divert_nexus_core():
-    """Store Nexus's core and noncore keys and return them."""
-    nexus_core_storage = {}
-    for key in NEXUS_CORE_KEYS:
-        nexus_core_storage[key] = nexus_core[key]
-        nexus_core[key] = deepcopy(nexus_core[key])
-
-    nexus_noncore_storage = {}
-    for key in NEXUS_NONCORE_KEYS:
-        if key in nexus_noncore:
-            nexus_noncore_storage[key] = nexus_noncore[key]
-            nexus_noncore[key] = deepcopy(nexus_noncore[key])
-
-    return nexus_core_storage, nexus_noncore_storage
-
-
-def restore_nexus_core(nexus_core_storage: dict, nexus_noncore_storage: dict):
-    """Use the keys in ``nexus_core_storage`` and ``nexus_noncore_storage`` to restore state."""
-
-    for key in NEXUS_CORE_KEYS:
-        nexus_core[key] = nexus_core_storage.pop(key)
-
-    for key in NEXUS_NONCORE_KEYS:
-        if key in nexus_noncore_storage:
-            nexus_noncore[key] = nexus_noncore_storage.pop(key)
-        elif key in nexus_noncore:
-            del nexus_noncore[key]
-
-    for key in list(nexus_noncore.keys()):
-        if key not in nexus_noncore_defaults:
-            del nexus_noncore[key]
-
-    assert len(nexus_noncore_storage) == 0, "Nexus Core keys have not been properly reset!"
-    assert len(nexus_core_storage) == 0,    "Nexus NonCore keys have not been properly reset!"
-
 
 class FakeLog:
     def __init__(self):
@@ -76,7 +22,7 @@ class FakeLog:
         self.s += s
 
     def close(self):
-        None
+        pass
 
     def contents(self):
         return self.s
@@ -98,49 +44,37 @@ def restore_nexus_log(logging_storage: dict):
 
 
 def isolate_nexus_core(test_func = None):
-    """Isolate changes in ``nexus_core`` for a test function."""
+    """Isolate changes in ``NEXUS_CONFIG`` for a test function."""
 
     needs_tmp_path = "tmp_path" in str(signature(test_func))
 
     @functools.wraps(test_func)
     def wrap_path(tmp_path):
-        nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
         pseudo_files = deepcopy(PseudoSet.pseudo_files)
         labeled_pseudosets = deepcopy(PseudoSet.labeled_pseudosets)
         logfile, logging_storage = divert_nexus_log()
         try:
             test_func(tmp_path)
-            test_err = None
-        except Exception as err:
-            test_err = err
-
-        restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
-        PseudoSet.pseudo_files = pseudo_files
-        PseudoSet.labeled_pseudosets = labeled_pseudosets
-        restore_nexus_log(logging_storage)
-        Simulation.clear_all_sims()
-        if test_err is not None:
-            raise test_err
+        finally:
+            NEXUS_CONFIG.restore_defaults()
+            PseudoSet.pseudo_files = pseudo_files
+            PseudoSet.labeled_pseudosets = labeled_pseudosets
+            restore_nexus_log(logging_storage)
+            Simulation.clear_all_sims()
 
     @functools.wraps(test_func)
     def wrap():
-        nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
         pseudo_files = deepcopy(PseudoSet.pseudo_files)
         labeled_pseudosets = deepcopy(PseudoSet.labeled_pseudosets)
         logfile, logging_storage = divert_nexus_log()
         try:
             test_func()
-            test_err = None
-        except Exception as err:
-            test_err = err
-
-        restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
-        PseudoSet.pseudo_files = pseudo_files
-        PseudoSet.labeled_pseudosets = labeled_pseudosets
-        restore_nexus_log(logging_storage)
-        Simulation.clear_all_sims()
-        if test_err is not None:
-            raise test_err
+        finally:
+            NEXUS_CONFIG.restore_defaults()
+            PseudoSet.pseudo_files = pseudo_files
+            PseudoSet.labeled_pseudosets = labeled_pseudosets
+            restore_nexus_log(logging_storage)
+            Simulation.clear_all_sims()
 
     if needs_tmp_path:
         return wrap_path
@@ -191,8 +125,7 @@ def create_pseudo_files(
         if pseudo.is_file()
         }
     PseudoSet.labeled_pseudosets = {}
-    nexus_core.pseudo_dir    = str(pseudo_dir)
-    nexus_noncore.pseudo_dir = str(pseudo_dir)
+    NEXUS_CONFIG.pseudo_dir    = str(pseudo_dir)
 
 
 def register_pseudo_files(pseudos: list[str]):

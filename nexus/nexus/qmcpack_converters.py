@@ -47,7 +47,7 @@ import os
 from types import MappingProxyType
 import numpy as np
 from .developer import obj, FileFormatError
-from .nexus_base import nexus_core
+from .nexus_base import NEXUS_CONFIG
 from .simulation import Simulation, SimulationInput, SimulationAnalyzer
 from .simulation import DynamicProcess
 from .pwscf import Pwscf
@@ -537,7 +537,7 @@ class Pw2qmcpack(Simulation):
 
 def generate_pw2qmcpack(**kwargs):
 
-    if nexus_core.dynamic:
+    if NEXUS_CONFIG.dynamic:
         dp,dyn_args = DynamicProcess.check_first_gen(kwargs)
         if dp is not None:
             return dp
@@ -549,7 +549,7 @@ def generate_pw2qmcpack(**kwargs):
     #end if
     pw2qmcpack = Pw2qmcpack(**sim_args)
 
-    if nexus_core.dynamic:
+    if NEXUS_CONFIG.dynamic:
         pw2qmcpack = DynamicProcess(sim=pw2qmcpack,**dyn_args)
 
     return pw2qmcpack

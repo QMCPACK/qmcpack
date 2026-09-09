@@ -7,7 +7,7 @@ from pathlib import Path
 from copy import deepcopy
 
 from . import isolate_nexus_core, create_pseudo_files
-from nexus.nexus_base import nexus_core
+from nexus.nexus_base import NEXUS_CONFIG
 from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
 from ..testing import value_eq,object_eq
@@ -35,11 +35,11 @@ def get_system():
 
 
 def get_pwscf_sim(type='scf'):
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
     from ..machines import job
     from ..pwscf import Pwscf,generate_pwscf
 
-    nexus_core.runs = ''
+    NEXUS_CONFIG.runs = ''
 
     sim = None
 
@@ -89,9 +89,9 @@ def test_minimal_init():
 @isolate_nexus_core
 def test_check_result(tmp_path):
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
@@ -111,9 +111,9 @@ def test_check_result(tmp_path):
 def test_get_result(tmp_path):
     from ..developer import NexusError
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
@@ -164,9 +164,9 @@ def test_get_result(tmp_path):
 def test_incorporate_result(tmp_path):
     from ..developer import obj, to_obj
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
@@ -222,9 +222,9 @@ def test_incorporate_result(tmp_path):
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 

@@ -7,7 +7,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.SIMULATION)
 from pathlib import Path
 from copy import deepcopy
 from . import isolate_nexus_core
-from nexus.nexus_base import nexus_core
+from nexus.nexus_base import NEXUS_CONFIG, SimStage
 
 from ..testing import value_eq,object_eq
 from ..testing import FailedTest,failed
@@ -1002,9 +1002,9 @@ def test_create_directories(tmp_path):
     import os
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     s = Simulation()
 
@@ -1026,9 +1026,9 @@ def test_create_directories(tmp_path):
 def test_file_text(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     s = Simulation()
     s.create_directories()
@@ -1687,9 +1687,9 @@ def test_save_load_image(tmp_path):
     from ..developer import obj, load
     from ..simulation import Simulation,SimulationImage
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     nsave = 31
     nload = 23
@@ -1746,9 +1746,9 @@ def test_save_load_image(tmp_path):
 def test_load_analyzer_image(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     sim = get_test_sim()
 
@@ -1778,9 +1778,9 @@ def test_load_analyzer_image(tmp_path):
 def test_save_attempt(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     sim = get_test_sim()
 
@@ -1810,9 +1810,9 @@ def test_save_attempt(tmp_path):
 def test_write_inputs(tmp_path):
     from ..simulation import Simulation,input_template
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     template = '''
 name = "$name"
@@ -1861,12 +1861,12 @@ a    = 1
 
 @isolate_nexus_core
 def test_send_files(tmp_path):
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     # make fake data files
     data_file1 = 'data_file1.txt'
@@ -1917,9 +1917,9 @@ def test_submit(tmp_path):
     from ..machines import job
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     s = get_test_sim(
         job = job(machine='ws1',app_command='echo run'),
@@ -1951,9 +1951,9 @@ def test_submit(tmp_path):
 def test_update_process_id(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
     j = s.job
@@ -1984,9 +1984,9 @@ def test_check_status(tmp_path):
     from datetime import datetime
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
     j = s.job
@@ -2028,10 +2028,10 @@ def test_check_status_timeout(tmp_path):
     from datetime import datetime,timedelta
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
-    nexus_core.timeout = 10
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.timeout = 10
 
     # output files that arrive before the timeout are checked normally
     s = get_test_sim()
@@ -2063,7 +2063,7 @@ def test_check_status_timeout(tmp_path):
     s = get_test_sim()
     s.create_directories()
     s.job.finished = True
-    nexus_core.timeout = 1
+    NEXUS_CONFIG.timeout = 1
     exited_queue = (datetime.now().astimezone()-timedelta(seconds=2)).isoformat()
     s.timestamps.exited_queue = exited_queue
 
@@ -2085,9 +2085,9 @@ def test_check_status_timeout(tmp_path):
 def test_get_output(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
 
@@ -2148,9 +2148,9 @@ def test_get_output(tmp_path):
 def test_analyze(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     s = get_test_sim()
 
@@ -2180,23 +2180,13 @@ def test_analyze(tmp_path):
 
 @isolate_nexus_core
 def test_progress(tmp_path):
-    from ..nexus_base import nexus_core
     from ..simulation import Simulation,input_template
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
-    assert(nexus_core.mode==nexus_core.modes.stages)
-    assert(len(nexus_core.stages)==0)
-
-    nexus_core.stages     = list(nexus_core.primary_modes)
-    nexus_core.stages_set = set(nexus_core.stages)
-
-    primary_modes = ['setup','send_files','submit','get_output','analyze']
-    assert(value_eq(nexus_core.stages,primary_modes))
-    assert(value_eq(nexus_core.stages_set,set(primary_modes)))
-
+    assert(NEXUS_CONFIG.stages is SimStage.ALL)
 
     template = '''
 name = "$name"
@@ -2370,9 +2360,9 @@ def test_execute(tmp_path):
     from ..machines import job
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     import shutil
     serial = shutil.which('mpirun') is None
@@ -2553,9 +2543,9 @@ def test_block_dependents():
 def test_reconstruct_cascade(tmp_path):
     from ..simulation import Simulation
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     sims = get_test_workflow(2)
     assert(len(sims)==7)
