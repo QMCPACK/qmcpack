@@ -1069,7 +1069,7 @@ class Simulation(NexusCore):
     def write_inputs(self,*,save_image=True):
         self.pre_write_inputs(save_image)
         self.enter(self.locdir,changedir=False,msg=self.simid)
-        self.log('writing input files'+self.idstr(),n=3)
+        self.nxs_print('writing input files'+self.idstr(),n=3)
         self.write_prep()
         if self.infile is not None:
             infile = os.path.join(self.locdir,self.infile)
@@ -1106,7 +1106,7 @@ class Simulation(NexusCore):
         if enter:
             self.enter(self.locdir,changedir=False,msg=self.simid)
         #end if
-        self.log('sending required files'+self.idstr(),n=3)
+        self.nxs_print('sending required files'+self.idstr(),n=3)
         if not os.path.exists(self.remdir):
             os.makedirs(self.remdir)
         #end if
@@ -1158,7 +1158,7 @@ class Simulation(NexusCore):
                 self.block_dependents(block_self=True)
                 return
             #end if
-            self.log('submitting job'+self.idstr(),n=3)
+            self.nxs_print('submitting job'+self.idstr(),n=3)
             if not self.skip_submit:
                 if not self.job.local:
                     self.job.submit()
@@ -1251,7 +1251,7 @@ class Simulation(NexusCore):
         #end if
         if self.finished:
             self.enter(self.locdir,changedir=False,msg=self.simid)
-            self.log('copying results'+self.idstr(),n=3)
+            self.nxs_print('copying results'+self.idstr(),n=3)
             if not nexus_core.generate_only:
                 output_files = self.get_output_files()
                 if self.infile is not None:
@@ -1273,9 +1273,9 @@ class Simulation(NexusCore):
                     #end if
                 #end for
                 if len(files_missing)>0:
-                    self.log('warning: the following files were missing',n=4)
+                    self.nxs_print('warning: the following files were missing',n=4)
                     for file in files_missing:
-                        self.log(file,n=5)
+                        self.nxs_print(file,n=5)
                     #end for
                 #end if
             #end if
@@ -1292,7 +1292,7 @@ class Simulation(NexusCore):
         #end if
         if self.finished:
             self.enter(self.locdir,changedir=False,msg=self.simid)
-            self.log('analyzing'+self.idstr(),n=3)
+            self.nxs_print('analyzing'+self.idstr(),n=3)
             if not nexus_core.generate_only:
                 analyzer = self.analyzer_type(self)
                 analyzer.analyze()
@@ -1500,7 +1500,7 @@ class Simulation(NexusCore):
             #end if
         #end if
         outs.append(list(self.dependency_ids))
-        self.log(*outs,n=n)
+        self.nxs_print(*outs,n=n)
         n+=1
         for sim in self.dependents.values():
             sim.write_dependents(n=n,location=location,block_status=block_status)
@@ -1530,9 +1530,9 @@ class Simulation(NexusCore):
             env = job.env
         #end if
         if nexus_core.generate_only:
-            self.log(pad+'Would have executed:  '+command)
+            self.nxs_print(pad+'Would have executed:  '+command)
         else:
-            self.log(pad+'Executing:  '+command)
+            self.nxs_print(pad+'Executing:  '+command)
             with open(self.outfile,'w') as fout, open(self.errfile,'w') as ferr:
                 out,err = Popen(command,env=env,stdout=fout,stderr=ferr,shell=True,close_fds=True).communicate()
         #end if

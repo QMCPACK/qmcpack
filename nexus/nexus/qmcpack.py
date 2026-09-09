@@ -610,7 +610,7 @@ class GCTA(DevBase):
                 gcta_file.write('\n')
             #end for
         #end with
-        self.log(f'    See the GCTA occupation report at:  {filepath}')
+        self.nxs_print(f'    See the GCTA occupation report at:  {filepath}')
     #end def write_gcta_report
 #end class GCTA
 
@@ -1060,7 +1060,7 @@ class Qmcpack(Simulation):
 
                 gcta_obj.check_implementation(gcta_possible, gcta_dependency)
 
-                gcta_obj.log('    Reading the eigenvalue and k-point data for GCTA. This might take a while.')
+                gcta_obj.nxs_print('    Reading the eigenvalue and k-point data for GCTA. This might take a while.')
                 if isinstance(gcta_dependency,Pw2qmcpack) or isinstance(gcta_dependency,Convertpw4qmc):
                     gcta_obj.read_eshdf_data(h5file)
                 else:
@@ -1401,8 +1401,8 @@ class Qmcpack(Simulation):
 
             if ran_to_end and not files_exist:
                 self.warn('run finished successfully, but output files do not exist')
-                self.log(outfiles)
-                self.log(os.listdir(self.locdir))
+                self.nxs_print(outfiles)
+                self.nxs_print(os.listdir(self.locdir))
             #end if
         #end if
 

@@ -11,7 +11,7 @@ import numpy as np
 # Nexus imports
 from . import memory
 from .unit_converter import convert
-from .developer import DevBase, obj, log, NexusError, FileFormatError
+from .developer import DevBase, obj, nxs_print, NexusError, FileFormatError
 from .numerics import simstats
 from .grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
 from .grid_functions import SpheroidGrid,ParallelotopeGridFunction
@@ -73,7 +73,7 @@ class VLog(DevBase):
                     self.tlast = tnow
                 #end if
             #end if
-            log(msg,n=n+self.indent)
+            nxs_print(msg,n=n+self.indent)
         #end if
     #end def __init__
 

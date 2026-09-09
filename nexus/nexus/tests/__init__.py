@@ -4,7 +4,6 @@ from pathlib import Path
 from copy import deepcopy
 import functools
 from nexus.nexus_base import nexus_core, nexus_noncore, nexus_noncore_defaults
-from nexus.generic import generic_settings
 from nexus.pseudoset import PseudoSet
 from nexus.simulation import Simulation
 
@@ -65,38 +64,6 @@ def restore_nexus_core(nexus_core_storage: dict, nexus_noncore_storage: dict):
     assert len(nexus_core_storage) == 0,    "Nexus NonCore keys have not been properly reset!"
 
 
-class FakeLog:
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.s = ""
-
-    def write(self,s):
-        self.s += s
-
-    def close(self):
-        None
-
-    def contents(self):
-        return self.s
-
-
-def divert_nexus_log():
-    """Create a fake logging object to divert Nexus's output."""
-    logging_storage = {
-        'devlog': generic_settings.devlog,
-        }
-    logfile = FakeLog()
-    generic_settings.devlog   = logfile
-    return logfile, logging_storage
-
-
-def restore_nexus_log(logging_storage: dict):
-    """Restore Nexus's logging to the state stored in ``logging_storage``."""
-    generic_settings.devlog   = logging_storage.pop('devlog')
-
-
 def isolate_nexus_core(test_func = None):
     """Isolate changes in ``nexus_core`` for a test function."""
 
@@ -107,17 +74,15 @@ def isolate_nexus_core(test_func = None):
         nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
         pseudo_files = deepcopy(PseudoSet.pseudo_files)
         labeled_pseudosets = deepcopy(PseudoSet.labeled_pseudosets)
-        logfile, logging_storage = divert_nexus_log()
         try:
             test_func(tmp_path)
             test_err = None
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             test_err = err
 
         restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
         PseudoSet.pseudo_files = pseudo_files
         PseudoSet.labeled_pseudosets = labeled_pseudosets
-        restore_nexus_log(logging_storage)
         Simulation.clear_all_sims()
         if test_err is not None:
             raise test_err
@@ -127,17 +92,15 @@ def isolate_nexus_core(test_func = None):
         nexus_core_storage, nexus_noncore_storage = divert_nexus_core()
         pseudo_files = deepcopy(PseudoSet.pseudo_files)
         labeled_pseudosets = deepcopy(PseudoSet.labeled_pseudosets)
-        logfile, logging_storage = divert_nexus_log()
         try:
             test_func()
             test_err = None
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             test_err = err
 
         restore_nexus_core(nexus_core_storage, nexus_noncore_storage)
         PseudoSet.pseudo_files = pseudo_files
         PseudoSet.labeled_pseudosets = labeled_pseudosets
-        restore_nexus_log(logging_storage)
         Simulation.clear_all_sims()
         if test_err is not None:
             raise test_err

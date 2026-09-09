@@ -261,7 +261,7 @@ class MethodAnalyzer(QAanalyzer):
         if 'traces' in self:
             check = {None:True,False:False,True:True}
             if verbose:
-                self.log(pad+'Checking traces in '+desc)
+                self.nxs_print(pad+'Checking traces in '+desc)
             #end if
             scalars     = None
             scalars_hdf = None
@@ -294,7 +294,7 @@ class MethodAnalyzer(QAanalyzer):
             return valid
         else:
             if verbose:
-                self.log(pad+'No traces in '+desc)
+                self.nxs_print(pad+'No traces in '+desc)
             #end if
             return None
         #end if
