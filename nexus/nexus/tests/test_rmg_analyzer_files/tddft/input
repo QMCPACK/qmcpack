@@ -1,0 +1,41 @@
+description = "H2O laptop TDDFT analyzer run"
+calculation_mode = "TDDFT"
+start_mode = "LCAO Start"
+
+wavefunction_grid = "32 32 32"
+potential_grid_refinement = "1"
+pseudopotential = "
+H  H.UPF
+O  O.UPF
+"
+
+bravais_lattice_type = "Orthorhombic Primitive"
+lattice_units = "Bohr"
+a_length = "18.0"
+b_length = "18.0"
+c_length = "18.0"
+crds_units = "Bohr"
+atomic_coordinate_type = "Absolute"
+atoms = "
+O  9.0000  9.0000   8.65808
+H  9.0000 10.4362   9.76293
+H  9.0000  7.5638   9.76293
+"
+
+kohn_sham_solver = "davidson"
+subdiag_driver = "lapack"
+charge_mixing_type = "Broyden"
+max_scf_steps = "30"
+energy_convergence_criterion = "1.0e-7"
+rms_convergence_criterion = "1.0e-7"
+unoccupied_states_per_kpoint = "4"
+
+tddft_mode = "electric field"
+electric_field_tddft = "0.0 0.0 0.001"
+tddft_steps = "4"
+tddft_time_step = "0.05"
+restart_tddft = "false"
+input_tddft_file = "Wave/wave_tddft"
+output_tddft_file = "Wave/wave_tddft"
+input_wave_function_file = "Wave/wave"
+output_wave_function_file = "Wave/wave"

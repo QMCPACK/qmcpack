@@ -1,0 +1,27 @@
+description = "Graphene laptop STM analyzer run"
+calculation_mode = "STM"
+start_mode = "Restart From File"
+
+wavefunction_grid = "16 16 64"
+potential_grid_refinement = "2"
+internal_pseudo_type = "nc_accuracy"
+bravais_lattice_type = "Hexagonal Primitive"
+lattice_units = "Angstrom"
+a_length = "2.46"
+b_length = "2.46"
+c_length = "9.84"
+crds_units = "Angstrom"
+atomic_coordinate_type = "Absolute"
+atoms = "
+C  0.00  0.00000000  0.0
+C  1.23  0.71014083  0.0
+"
+
+kpoint_mesh = "2 2 1"
+kpoint_is_shift = "0 0 0"
+kohn_sham_solver = "davidson"
+subdiag_driver = "lapack"
+unoccupied_states_per_kpoint = "4"
+input_wave_function_file = "Waves/stm_seed"
+STM_bias = "-0.5 0.5"
+STM_height = "2.0 3.0"

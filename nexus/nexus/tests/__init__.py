@@ -220,6 +220,7 @@ class NexusTestOrder(IntEnum):
     UNIT_CONVERTER                  = auto()
     PERIODIC_TABLE                  = auto()
     NUMERICS                        = auto()
+    STATISTICS                      = auto()
     GRID_FUNCTIONS                  = auto()
     FILEIO                          = auto()
     HDFREADER                       = auto()
