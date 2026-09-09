@@ -1,10 +1,6 @@
 #! /usr/bin/env python3
 
-from nexus import settings
-from nexus import generate_physical_system
-from nexus import generate_pwscf,job
-from nexus import run_project
-
+from nexus import generate_physical_system, generate_pwscf, job, run_project, settings
 
 # set global parameters of nexus
 settings(
@@ -39,7 +35,7 @@ for kgrid in supercell_kgrids:          # loop over supercell kgrids
     relax = generate_pwscf(             # make each relax simulation
         identifier = 'relax',               # file prefix
                                             # run directory
-        path       = 'relax/kgrid_{0}{1}{2}'.format(*kgrid),
+        path       = f'relax/kgrid_{kgrid[0]}{kgrid[1]}{kgrid[2]}',
         job        = job(cores=16),         # will run with mpirun -np 16
         input_type = 'relax',               # this is a relax calculation
         input_dft  = 'pbe',                 # PBE functional
@@ -74,16 +70,17 @@ if performed_runs:
         kgrid = supercell_kgrids[ik]
         relax = relaxations[ik]
         pa = relax.load_analyzer_image()
-        start_force = pa.tot_forces[0]
-        max_force   = pa.tot_forces.max()
-        ncycles     = len(pa.tot_forces)
-        print(f'  {kgrid:10}  {start_force:10}     {max_force:10}  {ncycles:8}')
+        forces      = pa.forces('Ry/B')
+        total_force = (forces**2).sum(axis=(1,2))**0.5
+        start_force = total_force[0]
+        max_force   = total_force.max()
+        ncycles     = len(total_force)
+        kgrid_text  = str(kgrid)
+        print(f'  {kgrid_text:10}  {start_force:10}     {max_force:10}  {ncycles:8}')
     #end for
     print()
     print()
     print('The final structure is:')
     print()
-    print(list(pa.structures.values())[-1].positions)
+    print(pa.relaxed_structure('B').pos)
 #end if
-
-
