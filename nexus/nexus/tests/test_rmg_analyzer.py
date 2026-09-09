@@ -11,18 +11,21 @@ representative_runs = (
         'electronic/input.scf.02.log',
         'scf',
         -10.93257703,
+        (1,2,3),
         id = 'scf',
         ),
     pytest.param(
         'electronic/input.nscf.05.log',
         'nscf',
         0.0,
+        (1,2,3),
         id = 'nscf',
         ),
     pytest.param(
         'ionic/relax/input.01.log',
         'relax',
         -10.93250973,
+        (3,2,3),
         id = 'relax',
         ),
     )
@@ -100,25 +103,39 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
     logfile = tmp_path/'rmg.log'
     logfile.write_text(rmg_log(calculation_type))
     outdata = RmgOutData(logfile)
+    metadata_fields = {
+        'abspath','input','outfile_name','path','run_mode','setup_info',
+        }
+    result_fields = set(outdata.keys())
+
     assert outdata.run_mode==short_mode
     assert outdata.setup_info.run_mode==short_mode
     assert isinstance(outdata.setup_info.structure,Structure)
+    assert metadata_fields<result_fields
+    assert {'geometry','convergence','timing'}<result_fields
+    assert {'energy','ionic_steps','pressure','electronic'}<result_fields
+    assert ('produced_files' in result_fields)==(short_mode=='scf')
 
     analyzer = RmgAnalyzer(logfile,analyze=True)
 
     assert analyzer.results.run_mode==short_mode
+    assert set(analyzer.results.keys())==result_fields
+    assert analyzer.results.timing is not None
+    assert analyzer.results.timing.total==3.0
+    assert analyzer.results.setup_info.grid_points.grid.tolist()==[8,8,8]
     assert analyzer.initial_structure() is not None
 #end def test_run_modes
 
 
 @pytest.mark.parametrize(
-    argnames='relative_path,run_mode,energy',
+    argnames='relative_path,run_mode,energy,positions_shape',
     argvalues=representative_runs,
     )
-def test_representative_outputs(relative_path,run_mode,energy):
+def test_representative_outputs(relative_path,run_mode,energy,positions_shape):
     import numpy as np
 
     from ..rmg_analyzer import RmgAnalyzer, RmgOutData
+    from ..rmg_input import RmgInput
     from ..structure import Structure
 
     logfile  = representative_root/relative_path
@@ -127,8 +144,14 @@ def test_representative_outputs(relative_path,run_mode,energy):
 
     assert outdata.run_mode==run_mode
     assert analyzer.run_mode==run_mode
+    assert isinstance(outdata.input,RmgInput)
+    assert isinstance(analyzer.input,RmgInput)
     assert isinstance(analyzer.initial_structure(),Structure)
     assert np.isclose(analyzer.energy(),energy)
+    assert outdata.timing is not None
+    assert outdata.timing.total>0.0
+    assert outdata.positions.shape==positions_shape
+    assert len(outdata.energies)>0
 #end def test_representative_outputs
 
 
@@ -155,7 +178,24 @@ def test_representative_physical_results():
 
     assert isinstance(relax.relaxed_structure(),Structure)
     assert relax.forces().shape==(3,2,3)
+    assert relax.results.positions.shape==(3,2,3)
 #end def test_representative_physical_results
+
+
+def test_representative_produced_files(tmp_path):
+    from shutil import copytree
+
+    from ..rmg_analyzer import RmgAnalyzer
+
+    electronic = tmp_path/'electronic'
+    copytree(representative_root/'electronic',electronic)
+    waves = electronic/'Waves'
+    waves.mkdir()
+    (waves/'wave.out.h5').touch()
+
+    scf = RmgAnalyzer(electronic/'input.scf.02.log',analyze=True)
+    assert scf.results.produced_files.qmcpack_restart.endswith('wave.out.h5')
+#end def test_representative_produced_files
 
 
 def test_physical_results(tmp_path):
@@ -176,7 +216,21 @@ KOHN SHAM EIGENVALUES [eV] AT K-POINT [  1]: 0.5 0.0 0.0
 FERMI ENERGY = 5.25 eV
 spinup: valence band maximum = 4.0 eV, conduction band minumm = 6.0 eV
 spinup: Band gap = 2.0 eV
+@@ EIGENVALUE SUM     =       -0.500000 Ha
+@@ ION_ION            =        0.100000 Ha
+@@ ELECTROSTATIC      =       -0.200000 Ha
+@@ VXC                =       -0.300000 Ha
+@@ EXC                =       -0.250000 Ha
+@@ TOTAL ENERGY       =       -1.250000 Ha
+@@ estimated error    =        1.00e-08 Ha
+quench: [md: 0/2 scf: 3/20 step time: 0.20 scf time: 0.80 secs RMS[dV]: 2.00e-05]
 final total energy from eig sum = -1.23450000 Ha
+final total energy from direct = -1.23440000 Ha
+Total charge in supercell = 1.0
+@@ TOTAL MAGNETIZATION = 1.0
+@@ ABSOLUTE MAGNETIZATION = 1.5
+SUM FORCE = 0.1 0.2 0.3
+volume and energy per atom = 64.0 -33.0 eV
 
 @ION  Ion  Species       X           Y           Z       Charge  Mag       FX          FY         FZ      Movable
 @ION    1     H      1.1000000   1.2000000   1.3000000    0.050  0.100   0.0100000   0.0200000   0.0300000  1 1 1
@@ -185,6 +239,7 @@ final total energy from eig sum = -1.23450000 Ha
  1.0 0.1 0.2
  0.1 2.0 0.3
  0.2 0.3 3.0
+potential convergence has been achieved. stopping ...
 '''
     logfile = tmp_path/'scf.log'
     logfile.write_text(rmg_log('Quench electrons',body))
@@ -193,6 +248,11 @@ final total energy from eig sum = -1.23450000 Ha
     from ..structure import Structure
     from ..unit_converter import UnitConverter, convert
 
+    assert analyzer.results.timing is not None
+    assert analyzer.results.timing.total==3.0
+    assert analyzer.results.timing.per_step==0.5
+    assert analyzer.results.timing.units=='s'
+    assert len(analyzer.results.timing.sections)>0
     assert isinstance(analyzer.initial_structure(),Structure)
     assert analyzer.initial_structure().units=='A'
     assert analyzer.initial_structure(units='B').units=='B'
@@ -211,6 +271,42 @@ final total energy from eig sum = -1.23450000 Ha
     assert analyzer.Ecbm()==6.0
     assert analyzer.band_gap()==2.0
     assert analyzer.fractional_occs()
+    assert analyzer.results.energies.tolist()==[-1.2345]
+    assert analyzer.results.energy_units_history.tolist()==['Ha']
+    assert analyzer.results.direct_energies.tolist()==[-1.2344]
+    assert analyzer.results.direct_energy_units.tolist()==['Ha']
+    assert analyzer.results.electronic.total_charges.tolist()==[1.0]
+    assert analyzer.results.electronic.total_magnetizations.tolist()==[1.0]
+    assert analyzer.results.electronic.absolute_magnetizations.tolist()==[1.5]
+    assert analyzer.results.electronic.sum_forces.tolist()==[[0.1,0.2,0.3]]
+    assert analyzer.results.electronic.volume_per_atom.tolist()==[64.0]
+    assert analyzer.results.electronic.energy_per_atom.tolist()==[-33.0]
+    assert analyzer.results.electronic.energy_units=='eV'
+    assert analyzer.results.electronic.magnetization_units=='Bohr mag/cell'
+    assert analyzer.results.electronic.sum_force_units=='Ha/a0'
+    assert analyzer.results.electronic.energy_per_atom_units=='eV'
+    assert analyzer.results.scf.total_energy.tolist()==[-1.25]
+    assert analyzer.results.scf.eigenvalue_sum.tolist()==[-0.5]
+    assert analyzer.results.scf.scf_steps.tolist()==[3]
+    assert analyzer.results.scf.md_steps.tolist()==[0]
+    assert analyzer.results.scf.step_times.tolist()==[0.2]
+    assert analyzer.results.scf.scf_times.tolist()==[0.8]
+    assert analyzer.results.scf.rms_dv.tolist()==[2e-5]
+    assert analyzer.results.scf.energy_units=='Ha'
+    assert analyzer.results.scf.time_units=='s'
+    assert analyzer.results.positions.shape==(1,1,3)
+    assert analyzer.results.charges.tolist()==[[0.05]]
+    assert analyzer.results.magnetizations.tolist()==[[0.1]]
+    assert analyzer.results.max_forces.shape==(1,)
+    assert analyzer.results.ionic_steps[0].movable.tolist()==[[1,1,1]]
+    assert analyzer.results.position_units=='a0'
+    assert analyzer.results.force_units=='Ha/a0'
+    assert analyzer.results.pressures.tolist()==[-2.0]
+    assert analyzer.results.stress_units=='kbar'
+    assert analyzer.results.convergence.electronic_converged
+    assert np.isclose(analyzer.results.geometry.volume,64.0)
+    assert analyzer.results.geometry.volume_units=='a0^3'
+    assert analyzer.results.geometry.kpoints_crystal.shape==(2,3)
     force_factor = convert(1.0,'Ha','eV')/convert(1.0,'B','A')
     assert np.allclose(analyzer.forces(),analyzer.results.forces*force_factor)
     assert np.allclose(analyzer.forces(units='Ha/B'),analyzer.results.forces)
@@ -292,7 +388,12 @@ K-points
 FERMI   ENERGY : 5.25 eV trailing diagnostic 77
 spin0: conduction band minimum = 6.0 eV, valence band maximum = 4.0 eV extra 88
 spin0: Band gap : 2.0 eV extra 99
+@@   TOTAL ENERGY : -1.250000 Ha extra 123
+@@ estimated error = 1.0D-8 Ha extra 456
+quench: [ RMS [ dV ] : 2.0D-5 scf time: 0.80 md: 0/2 extra 44 step time: 0.20 scf: 3/20 ]
 final   total energy from eig sum : -1.2345 Ry trailing 42
+SUM FORCE = 0.1 0.2 0.3 trailing 55
+volume and energy per atom = 64.0 -33.0 eV trailing 66
 
 @ION\tIon\tSpecies X Y Z Charge Mag FX FY FZ Movable
 @ION 1 H 1.1 1.2 1.3 0.05 0.10 0.01 0.02 0.03 1 1 1 trailing 77
@@ -302,6 +403,7 @@ stress total in unit of kbar
 1 1.0 0.1 0.2 trailing
 2 0.1 2.0 0.3 trailing
 3 0.2 0.3 3.0 trailing
+potential   convergence has been achieved trailing status
 '''
     log = log.replace(
         '\n\n--------TIMING INFORMATION',body+'\n--------TIMING INFORMATION')
@@ -326,11 +428,39 @@ stress total in unit of kbar
     assert analyzer.Evbm()==4.0
     assert analyzer.Ecbm()==6.0
     assert analyzer.band_gap()==2.0
+    assert analyzer.results.timing is not None
+    assert analyzer.results.electronic.sum_forces.tolist()==[[0.1,0.2,0.3]]
+    assert analyzer.results.electronic.volume_per_atom.tolist()==[64.0]
+    assert analyzer.results.scf.scf_steps.tolist()==[3]
+    assert analyzer.results.scf.step_times.tolist()==[0.2]
+    assert analyzer.results.convergence.electronic_converged
     assert np.allclose(analyzer.forces(units='Ha/B')[0,0],[0.01,0.02,0.03])
     assert np.allclose(
         analyzer.stress(units='kbar')[0],
         [[1.0,0.1,0.2],[0.1,2.0,0.3],[0.2,0.3,3.0]])
 #end def test_whitespace_and_trailing_fields
+
+
+def test_convergence_patterns(tmp_path):
+    from ..rmg_analyzer import RmgAnalyzer
+
+    body = '''
+Potential convergence has not been achieved
+Convergence criterion not met
+Potential convergence has been achieved
+Force convergence has not been achieved
+Force convergence has been achieved
+'''
+    logfile = tmp_path/'convergence.log'
+    logfile.write_text(rmg_log('Quench electrons',body))
+
+    convergence = RmgAnalyzer(logfile,analyze=True).results.convergence
+
+    assert not convergence.electronic_converged
+    assert convergence.electronic_successes==1
+    assert convergence.electronic_failures==2
+    assert convergence.ionic_converged
+#end def test_convergence_patterns
 
 
 def test_malformed_sections_do_not_stop_analysis(tmp_path):
@@ -351,6 +481,10 @@ KOHN SHAM EIGENVALUES [eV] AT K-POINT [bad]: malformed coordinates
     analyzer = RmgAnalyzer(str(logfile),analyze=True)
 
     assert analyzer.energy() is None
+    assert analyzer.results.timing is not None
+    assert len(analyzer.results.ionic_steps)==1
+    assert analyzer.results.positions.shape==(1,1,3)
+    assert analyzer.results.scf is None
     assert analyzer.forces(units='Ha/B').shape==(1,1,3)
     assert len(analyzer.info)==0
 #end def test_malformed_sections_do_not_stop_analysis
