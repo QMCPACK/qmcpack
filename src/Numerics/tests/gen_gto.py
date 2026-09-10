@@ -1,5 +1,6 @@
 
 from collections import namedtuple, defaultdict
+from functools import lru_cache
 from sympy import *
 
 # See the GaussianOrbitals notebook in the qmc_algorithms repo for more explanation,
@@ -349,6 +350,90 @@ def compute_radial_values(p, print_value=False, print_grad=False, print_lap=Fals
 
   return out
 
+SPH_X, SPH_Y, SPH_Z = symbols('x y z', real=True)
+SPH_R, SPH_RHO = Symbol('r_sph', positive=True), Symbol('rho_sph', positive=True)
+SPH_THETA, SPH_PHI = symbols('theta_sph phi_sph', real=True)
+
+
+@lru_cache(maxsize=None)
+def create_real_solid_harmonic(l, m, addsign=True):
+  """Construct r**l S_l^m directly from SymPy's complex spherical harmonic."""
+  if m == 0:
+    angular = expand_func(Ynm(l, 0, SPH_THETA, SPH_PHI))
+  else:
+    complex_ylm = expand_complex(expand_func(Ynm(l, abs(m), SPH_THETA, SPH_PHI)))
+    real_part = re(complex_ylm) if m > 0 else im(complex_ylm)
+    sign = Integer(-1)**m if addsign else Integer(1)
+    angular = sign * sqrt(2) * real_part
+
+  regular = expand(expand_trig(angular) * SPH_R**l)
+  regular = regular.subs(
+      {
+          cos(SPH_PHI): SPH_X / SPH_RHO,
+          sin(SPH_PHI): SPH_Y / SPH_RHO,
+          cos(SPH_THETA): SPH_Z / SPH_R,
+          sin(SPH_THETA): SPH_RHO / SPH_R,
+      },
+      simultaneous=True)
+  regular = expand(regular)
+  regular = regular.subs(SPH_RHO**2, SPH_X**2 + SPH_Y**2)
+  regular = regular.subs(SPH_R**2, SPH_X**2 + SPH_Y**2 + SPH_Z**2)
+  regular = powdenest(regular, force=True)
+  regular = simplify(
+      regular.subs(SPH_RHO, sqrt(SPH_X**2 + SPH_Y**2)).subs(
+          SPH_R, sqrt(SPH_X**2 + SPH_Y**2 + SPH_Z**2)))
+  regular = expand(regular)
+  Poly(regular, SPH_X, SPH_Y, SPH_Z)
+  return regular
+
+
+@lru_cache(maxsize=None)
+def create_spherical_tensor_components(l, m, addsign=True):
+  """Return V, G, L, and the six unique Hessian components."""
+  expression = create_real_solid_harmonic(l, m, addsign)
+  gr0 = diff(expression, SPH_X)
+  gr1 = diff(expression, SPH_Y)
+  gr2 = diff(expression, SPH_Z)
+  lap = diff(expression, SPH_X, 2) + diff(expression, SPH_Y, 2) + diff(expression, SPH_Z, 2)
+  return tuple(simplify(component) for component in
+               (expression, gr0, gr1, gr2, lap,
+                diff(expression, SPH_X, 2),
+                diff(expression, SPH_X, SPH_Y),
+                diff(expression, SPH_X, SPH_Z),
+                diff(expression, SPH_Y, 2),
+                diff(expression, SPH_Y, SPH_Z),
+                diff(expression, SPH_Z, 2)))
+
+
+def compute_spherical_tensor_values(p, lmax=6, print_value=False, print_grad=False,
+                                    print_lap=False, print_hess=False, addsign=True):
+  """Generate checks from analytic regular solid harmonics, independently of QMCPACK."""
+  component_names = ('Ylm', 'gr0', 'gr1', 'gr2', 'lap',
+                     'h00', 'h01', 'h02', 'h11', 'h12', 'h22')
+  selected_components = []
+  if print_value:
+    selected_components.append(0)
+  if print_grad:
+    selected_components.extend((1, 2, 3))
+  if print_lap:
+    selected_components.append(4)
+  if print_hess:
+    selected_components.extend((5, 6, 7, 8, 9, 10))
+
+  substitutions = {SPH_X:p[0], SPH_Y:p[1], SPH_Z:p[2]}
+  out = ''
+  for l in range(lmax + 1):
+    for m in range(-l, l + 1):
+      lm = l * (l + 1) + m
+      components = create_spherical_tensor_components(l, m, addsign)
+      for component in selected_components:
+        value = float(components[component].subs(substitutions).evalf(17))
+        formatted_value = '0.0' if value == 0.0 else '%.15g' % value
+        out += '  CHECK(%s[%d] == Approx(%s));\n' % (component_names[component], lm, formatted_value)
+      out += '\n'
+  return out.rstrip() + '\n'
+
+
 # A simple template replacement engine.
 # Template items to be replaced start on a line with '%'.
 def run_template(fname_in, fname_out, bodies):
@@ -409,6 +494,19 @@ def create_test_full_soa_cartesian_tensor():
   run_template(fname_in, fname_out, bodies)
 
 
+def create_test_full_soa_spherical_tensor():
+  p = [1.3, 1.2, -0.5]
+  bodies = dict()
+  bodies['test_evaluateV'] = compute_spherical_tensor_values(p, print_value=True)
+  bodies['test_evaluateVGL'] = compute_spherical_tensor_values(
+      p, print_value=True, print_grad=True, print_lap=True)
+  bodies['test_evaluateVGH'] = compute_spherical_tensor_values(
+      p, print_value=True, print_grad=True, print_hess=True)
+
+  fname_in = 'test_full_soa_spherical_tensor.cpp.in'
+  fname_out = 'test_full_soa_spherical_tensor.cpp'
+
+  run_template(fname_in, fname_out, bodies)
 
 
 if __name__ == '__main__':
@@ -435,4 +533,5 @@ if __name__ == '__main__':
     # Create full test
     create_test_full_cartesian_tensor()
     create_test_full_soa_cartesian_tensor()
+    create_test_full_soa_spherical_tensor()
 
