@@ -70,63 +70,31 @@ class RmgOutData(DevBase):
         Parsed setup sections, run mode, structure, and k-point information.
     run_mode : str or None
         Short RMG calculation mode: ``"scf"``, ``"nscf"``, or ``"relax"``.
-    geometry : obj or None
-        Cell volume and crystal/Cartesian k-point information.
     convergence : obj or None
         Electronic and ionic convergence indicators and event counts.
     timing : obj or None
         Total, per-step, and section-resolved timing data in seconds.
-    energy : float or numpy.floating or None
-        Last total energy obtained from the eigenvalue sum.
-    energy_units : str or None
-        Units associated with ``energy``.
-    energies : numpy.ndarray or None
-        History of total energies obtained from eigenvalue sums.
-    energy_units_history : numpy.ndarray or None
-        Units corresponding to ``energies``.
-    direct_energies : numpy.ndarray or None
-        History of directly evaluated total energies.
-    direct_energy_units : numpy.ndarray or None
-        Units corresponding to ``direct_energies``.
+    energies : obj or None
+        Eigenvalue-sum and direct energy histories, their units, and the final
+        eigenvalue-sum energy.
     electronic : obj or None
         Fermi energies, band edges, gaps, k-points, eigenvalues, and
         occupations, charge, magnetization, force, volume, and per-atom energy
         data when reported.
     scf : obj or None
         SCF energy components, iteration indices, residuals, and timing data.
-    ionic_steps : obj or None
-        Detailed per-step ionic records.
-    position_units : str or None
-        Units associated with ionic positions.
-    force_units : str or None
-        Units associated with ionic forces.
-    positions : numpy.ndarray or None
-        Ionic positions with shape ``(nsteps, natoms, 3)``.
-    forces : numpy.ndarray or None
-        Ionic forces with shape ``(nsteps, natoms, 3)``.
-    charges : numpy.ndarray or None
-        Ionic charges with shape ``(nsteps, natoms)``.
-    magnetizations : numpy.ndarray or None
-        Ionic magnetizations with shape ``(nsteps, natoms)``.
-    max_forces : numpy.ndarray or None
-        Maximum ionic force magnitude at each ionic step.
-    structures : obj or None
-        Mapping from ionic-step index to a :class:`Structure` instance.
-    stress : numpy.ndarray or None
-        Stress tensors with shape ``(nsteps, 3, 3)``.
-    stress_units : str or None
-        Units associated with stress and pressure values.
-    pressures : numpy.ndarray or None
-        Hydrostatic pressure at each reported stress step.
-    pressure : float or numpy.floating or None
-        Last hydrostatic pressure.
+    ions : obj or None
+        Detailed ionic steps, cell and position histories, units, forces, and
+        structures constructed with the cell reported for each step.
+    stress : obj or None
+        Stress tensors, hydrostatic pressures, their units, and the final
+        pressure.
     produced_files : obj or None
         Paths to recognized files produced by an SCF run.
 
     Notes
     -----
-    The supported modes are ``scf``, ``nscf``, and ``relax``. A
-    mode-applicable member is initialized to ``None`` and remains ``None``
+    A mode-applicable member is initialized to ``None`` and remains ``None``
     when its data cannot be obtained.
 
     Raises
@@ -185,36 +153,17 @@ class RmgOutData(DevBase):
         supported_modes  = eigenvalue_modes|{'exx','stm'}
 
         if self.run_mode in supported_modes:
-            self.geometry    = None
             self.convergence = None
             self.timing      = None
 
-            self.read_geometry()
             self.read_convergence(lines)
             self.read_timing(lines)
 
         if self.run_mode in electronic_modes:
-            self.energy               = None
-            self.energy_units         = None
-            self.energies             = None
-            self.energy_units_history = None
-            self.direct_energies      = None
-            self.direct_energy_units  = None
-            self.electronic           = None
-            self.scf                  = None
-            self.ionic_steps          = None
-            self.position_units       = None
-            self.force_units          = None
-            self.positions            = None
-            self.forces               = None
-            self.charges              = None
-            self.magnetizations       = None
-            self.max_forces           = None
-            self.structures           = None
-            self.stress               = None
-            self.stress_units         = None
-            self.pressures            = None
-            self.pressure             = None
+            self.energies = None
+            self.scf      = None
+            self.ions     = None
+            self.stress   = None
 
             self.read_energies(lines)
             self.read_scf(lines)
@@ -427,7 +376,12 @@ class RmgOutData(DevBase):
 
 
     def read_neb(self,lines):
-        """Read NEB controller, path, energy-profile, and local-image data."""
+        """Read NEB controller, path, energy, and final-image data.
+
+        Final reported image geometries are collected in ``final_images`` in
+        path order. Its position and cell arrays are in bohr and remain ``None``
+        unless every image supplies compatible data.
+        """
         def read_assignments(filepath):
             """Read quoted, possibly multiline controller assignments."""
             values = {}
@@ -534,6 +488,7 @@ class RmgOutData(DevBase):
             image_log_files           = None,
             image_mpi_processes       = None,
             input_structures          = None,
+            final_images              = None,
             reaction_coordinate       = None,
             reaction_coordinate_units = 'B',
             energies                  = None,
@@ -608,6 +563,30 @@ class RmgOutData(DevBase):
         local_index = None
         if len(constrained_images)>0:
             local_index = constrained_images[-1]
+        energy         = None
+        energy_units   = None
+        energy_history = None
+        if self.energies is not None:
+            energy         = self.energies.final
+            energy_units   = self.energies.final_units
+            energy_history = self.energies.history
+        position_history  = None
+        position_units    = None
+        cell_history      = None
+        cell_units        = None
+        force_history     = None
+        force_units       = None
+        max_force_history = None
+        structure_history = None
+        if self.ions is not None:
+            position_history  = self.ions.position_history
+            position_units    = self.ions.position_units
+            cell_history      = self.ions.cell_history
+            cell_units        = self.ions.cell_units
+            force_history     = self.ions.forces
+            force_units       = self.ions.force_units
+            max_force_history = self.ions.max_forces
+            structure_history = self.ions.structure_history
         neb.local_image = obj(
             index                   = local_index,
             neb_calls               = neb_calls,
@@ -615,15 +594,17 @@ class RmgOutData(DevBase):
                 constrained_images,
                 dtype=int,
                 ),
-            energy         = self.energy,
-            energy_units   = self.energy_units,
-            energies       = self.energies,
-            positions      = self.positions,
-            position_units = self.position_units,
-            forces         = self.forces,
-            force_units    = self.force_units,
-            max_forces     = self.max_forces,
-            structures     = self.structures,
+            energy            = energy,
+            energy_units      = energy_units,
+            energy_history    = energy_history,
+            position_history  = position_history,
+            position_units    = position_units,
+            cell_history      = cell_history,
+            cell_units        = cell_units,
+            force_history     = force_history,
+            force_units       = force_units,
+            max_force_history = max_force_history,
+            structure_history = structure_history,
             )
 
         controller_candidates = (
@@ -750,6 +731,63 @@ class RmgOutData(DevBase):
         if len(image_logs)>0:
             neb.image_log_files = image_logs
 
+            final_records    = []
+            final_structures = []
+            for index,filepath in enumerate(image_logs):
+                record    = None
+                structure = None
+                initial_structure = None
+                if index<len(input_structures):
+                    initial_structure = input_structures[index]
+                if filepath is not None:
+                    try:
+                        with open(filepath,'r') as output_file:
+                            image_lines = output_file.read().splitlines()
+                    except (OSError,UnicodeError):
+                        image_lines = []
+                    records,structures = self.read_ion_records(
+                        image_lines,
+                        initial_structure,
+                        )
+                    if len(records)>0:
+                        record = records[-1]
+                        structure = structures.get(len(records)-1,None)
+                final_records.append(record)
+                final_structures.append(structure)
+
+            final_images = obj(
+                structures     = final_structures,
+                positions      = None,
+                position_units = None,
+                cells          = None,
+                cell_units     = None,
+                atoms          = None,
+                source_files   = image_logs,
+                )
+            complete = (
+                len(final_records)>0
+                and all(record is not None for record in final_records)
+                )
+            if complete:
+                atom_counts = {len(record.atoms) for record in final_records}
+                if len(atom_counts)==1:
+                    final_images.positions = np.array(
+                        [record.positions for record in final_records],
+                        dtype=float,
+                        )
+                    final_images.position_units = 'a0'
+                    final_images.atoms = np.array(
+                        [record.atoms for record in final_records],
+                        dtype=object,
+                        )
+                if all(record.cell is not None for record in final_records):
+                    final_images.cells = np.array(
+                        [record.cell for record in final_records],
+                        dtype=float,
+                        )
+                    final_images.cell_units = 'a0'
+            neb.final_images = final_images
+
         energies = np.full(len(ordered_input_files),np.nan,dtype=float)
         if len(energies)>0:
             initial_energy     = as_float(control.get('totale_initial_image'))
@@ -791,6 +829,7 @@ class RmgOutData(DevBase):
         setup_info = obj(
             run_mode  = None,
             structure = None,
+            cell      = None,
             k_points  = None,
             files     = None,
             )
@@ -1102,8 +1141,10 @@ class RmgOutData(DevBase):
             kpoints  = np.array(kpoints,dtype=float)
             kweights = np.array(kweights,dtype=float)
             setup_info.k_points = obj(
-                kpoints_crystal = kpoints,
-                kweights        = kweights,
+                crystal        = kpoints,
+                cartesian      = None,
+                weights        = kweights,
+                cartesian_units = '1/a0',
                 )
             if setup_info.structure is not None:
                 setup_info.structure.add_kpoints(
@@ -1144,24 +1185,71 @@ class RmgOutData(DevBase):
                     f'Output run mode: {self.run_mode}'
                     )
                 raise ValueError(msg)
+
+        structure = setup_info.structure
+        if setup_info.k_points is None and (
+            self.run_mode=='band'
+            and self.input is not None
+            and 'kpoints_bandstructure' in self.input
+            ):
+            band_path = self.input.kpoints_bandstructure
+            endpoints = np.asarray(band_path.kpoints,dtype=float)
+            counts    = np.asarray(band_path.counts,dtype=int)
+            valid     = (
+                endpoints.ndim==2
+                and endpoints.shape[1:]==(3,)
+                and len(endpoints)==len(counts)
+                and len(endpoints)>0
+                and np.all(counts>=0)
+                )
+            if valid:
+                path_kpoints = [endpoints[0]]
+                for index in range(1,len(endpoints)):
+                    count = counts[index]
+                    if count>0:
+                        path_kpoints.extend(
+                            np.linspace(
+                                endpoints[index-1],
+                                endpoints[index],
+                                count+1,
+                                )[1:],
+                            )
+                setup_info.k_points = obj(
+                    crystal         = np.array(path_kpoints,dtype=float),
+                    cartesian       = None,
+                    weights         = None,
+                    cartesian_units = '1/a0',
+                    )
+        if structure is not None:
+            setup_info.cell = obj(
+                volume       = abs(np.linalg.det(structure.axes)),
+                volume_units = 'a0^3',
+                )
+            if setup_info.k_points is not None:
+                kpoints = setup_info.k_points
+                if kpoints.crystal is not None and len(kpoints.crystal)>0:
+                    kpoints.cartesian = np.dot(
+                        kpoints.crystal,
+                        structure.kaxes,
+                        )
         self.setup_info = setup_info
     #end def read_setup_info
 
     def read_energies(self,lines):
         """Read eigenvalue-sum and direct total-energy histories.
 
-        Binds the history arrays and their unit arrays, as well as the final
-        eigenvalue-sum energy and its units.
+        Binds ``energies`` to an ``obj`` containing the history arrays and
+        their units, as well as the final eigenvalue-sum energy and its units.
 
         Parameters
         ----------
         lines : list of str
             Complete RMG log split into lines.
         """
-        energies            = []
-        energy_units        = []
-        direct_energies     = []
-        direct_energy_units = []
+        values       = []
+        units        = []
+        direct       = []
+        direct_units = []
         for line in lines:
             text         = normalize_line(line)
             lower        = text.lower()
@@ -1170,12 +1258,12 @@ class RmgOutData(DevBase):
             target_units  = None
             if 'final total energy from eig sum' in lower:
                 label         = 'final total energy from eig sum'
-                target_values = energies
-                target_units  = energy_units
+                target_values = values
+                target_units  = units
             elif 'final total energy from direct' in lower:
                 label         = 'final total energy from direct'
-                target_values = direct_energies
-                target_units  = direct_energy_units
+                target_values = direct
+                target_units  = direct_units
             if label is None:
                 continue
             remainder = text[lower.index(label)+len(label):].lstrip()
@@ -1191,17 +1279,24 @@ class RmgOutData(DevBase):
             target_units.append(
                 tokens[1].strip(',;') if len(tokens)>=2 else None,
                 )
-        if len(energies)>0:
-            self.energies             = np.array(energies,dtype=float)
-            self.energy_units_history = np.array(energy_units,dtype=object)
-            self.energy               = self.energies[-1]
-            self.energy_units         = self.energy_units_history[-1] or 'Ha'
-        if len(direct_energies)>0:
-            self.direct_energies     = np.array(direct_energies,dtype=float)
-            self.direct_energy_units = np.array(
-                direct_energy_units,
-                dtype=object,
+        if len(values)>0 or len(direct)>0:
+            energies = obj(
+                history      = None,
+                units        = None,
+                final        = None,
+                final_units  = None,
+                direct       = None,
+                direct_units = None,
                 )
+            if len(values)>0:
+                energies.history     = np.array(values,dtype=float)
+                energies.units       = np.array(units,dtype=object)
+                energies.final       = energies.history[-1]
+                energies.final_units = energies.units[-1] or 'Ha'
+            if len(direct)>0:
+                energies.direct       = np.array(direct,dtype=float)
+                energies.direct_units = np.array(direct_units,dtype=object)
+            self.energies = energies
     #end def read_energies
 
 
@@ -1381,7 +1476,7 @@ class RmgOutData(DevBase):
         # Retain the final complete table with consistent spin and band counts.
         expected_kpoints = None
         if self.setup_info.k_points is not None:
-            expected_kpoints = len(self.setup_info.k_points.kpoints_crystal)
+            expected_kpoints = len(self.setup_info.k_points.crystal)
         for candidate in reversed(datasets):
             indices = sorted(candidate)
             if indices!=list(range(len(indices))):
@@ -1548,24 +1643,101 @@ class RmgOutData(DevBase):
     #end def read_scf
 
 
-    def read_ions(self,lines):
-        """Read detailed ionic records and construct trajectory-level data.
+    def read_cell_events(self,lines,initial_structure=None):
+        """Return line-indexed lattice cells reported in an RMG output."""
+        events        = []
+        pending       = {}
+        pending_units = 'B'
+        row_mode      = False
 
-        Binds ``ionic_steps`` to detailed per-step records and, for consistent
-        atom counts, binds trajectory arrays and corresponding structures.
+        def set_units(text):
+            """Return cell units identified in a heading or row."""
+            lower = text.lower()
+            if 'angstrom' in lower:
+                return 'A'
+            if 'bohr' in lower or 'a0' in lower:
+                return 'B'
+            return None
+        #end def set_units
 
-        Parameters
-        ----------
-        lines : list of str
-            Complete RMG log split into lines.
-        """
-        records    = []
-        structures = obj()
-        initial    = self.setup_info.structure
-        i       = 0
-        # Collect complete ionic rows and construct each reported structure.
-        while i<len(lines):
-            header_tokens = lines[i].split()
+        def add_cell(index):
+            """Add a complete pending cell in bohr."""
+            nonlocal pending
+            if set(pending)!={0,1,2}:
+                return
+            cell = np.array([pending[i] for i in range(3)],dtype=float)
+            events.append((index,convert(cell,pending_units,'B')))
+            pending = {}
+        #end def add_cell
+
+        for index,line in enumerate(lines):
+            text  = normalize_line(line)
+            lower = text.lower()
+            if (
+                'lattice setup' in lower
+                or 'lattice vectors' in lower
+                or 'cell vectors' in lower
+                ):
+                units = set_units(lower)
+                if units is not None:
+                    pending_units = units
+                pending  = {}
+                row_mode = 'vectors' in lower
+                continue
+
+            label,separator,value = text.partition(':')
+            label_words = label.lower().split()
+            if (
+                len(separator)>0
+                and len(label_words)==3
+                and label_words[1:]==['basis','vector']
+                and label_words[0] in {'x','y','z'}
+                ):
+                tokens = value.split()
+                values = [as_float(token) for token in tokens[:3]]
+                if len(values)==3 and None not in values:
+                    axis = {'x':0,'y':1,'z':2}[label_words[0]]
+                    pending[axis] = values
+                    units = set_units(value)
+                    if units is not None:
+                        pending_units = units
+                    add_cell(index)
+                continue
+
+            tokens = text.replace(',',' ').split()
+            is_cell_row = len(tokens)>0 and tokens[0].upper()=='@CELL'
+            if not is_cell_row and not row_mode:
+                continue
+            if is_cell_row:
+                tokens = tokens[1:]
+            values = [as_float(token.strip('()[]{}')) for token in tokens]
+            axis   = len(pending)
+            if len(values)>=4 and values[0] in {1.0,2.0,3.0}:
+                axis   = int(values[0])-1
+                values = values[1:]
+            if len(values)>=3 and None not in values[:3] and axis in {0,1,2}:
+                pending[axis] = values[:3]
+                add_cell(index)
+                if len(pending)==0:
+                    row_mode = False
+
+        if initial_structure is not None:
+            initial_cell = np.asarray(initial_structure.axes,dtype=float)
+            if len(events)==0 or not np.allclose(events[0][1],initial_cell):
+                events.insert(0,(-1,initial_cell))
+        return events
+    #end def read_cell_events
+
+
+    def read_ion_records(self,lines,initial_structure=None):
+        """Return ionic records and structures without binding analyzer data."""
+        records     = []
+        structures  = obj()
+        cell_events = self.read_cell_events(lines,initial_structure)
+        index       = 0
+        while index<len(lines):
+            header_index  = index
+            header_tokens = lines[index].split()
             is_header     = (
                 len(header_tokens)>=3
                 and header_tokens[0].upper()=='@ION'
@@ -1573,7 +1745,7 @@ class RmgOutData(DevBase):
                 and header_tokens[2].lower()=='species'
                 )
             if not is_header:
-                i += 1
+                index += 1
                 continue
             atoms          = []
             positions      = []
@@ -1581,15 +1753,15 @@ class RmgOutData(DevBase):
             magnetizations = []
             forces         = []
             movable        = []
-            i += 1
-            while i<len(lines):
-                tokens = lines[i].split()
+            index += 1
+            while index<len(lines):
+                tokens = lines[index].split()
                 if len(tokens)==0 or tokens[0].upper()!='@ION':
                     break
-                i += 1
+                index += 1
                 if len(tokens)<14:
                     continue
-                values = [as_float(v) for v in tokens[3:14]]
+                values = [as_float(value) for value in tokens[3:14]]
                 if None in values:
                     continue
                 move_values = values[8:11]
@@ -1601,135 +1773,103 @@ class RmgOutData(DevBase):
                 magnetizations.append(values[4])
                 forces.append(values[5:8])
                 movable.append([int(value) for value in move_values])
-            if len(atoms)>0:
-                record = obj(
-                    atoms          = np.array(atoms,dtype=object),
-                    positions      = np.array(positions,dtype=float),
-                    position_units = 'a0',
-                    charges        = np.array(charges,dtype=float),
-                    magnetizations = np.array(magnetizations,dtype=float),
-                    forces         = np.array(forces,dtype=float),
-                    force_units    = 'Ha/a0',
-                    movable        = np.array(movable,dtype=int),
+            if len(atoms)==0:
+                continue
+            cell = next((
+                event_cell for event_index,event_cell in reversed(cell_events)
+                if event_index<header_index
+                ),None)
+            record = obj(
+                atoms          = np.array(atoms,dtype=object),
+                cell           = cell,
+                cell_units     = 'a0' if cell is not None else None,
+                positions      = np.array(positions,dtype=float),
+                position_units = 'a0',
+                charges        = np.array(charges,dtype=float),
+                magnetizations = np.array(magnetizations,dtype=float),
+                forces         = np.array(forces,dtype=float),
+                force_units    = 'Ha/a0',
+                movable        = np.array(movable,dtype=int),
+                )
+            records.append(record)
+            if cell is not None:
+                structure = generate_structure(
+                    units = 'B',
+                    axes  = cell,
+                    elem  = record.atoms,
+                    pos   = record.positions,
                     )
-                records.append(record)
-                if initial is not None:
-                    structure = generate_structure(
-                        units = 'B',
-                        axes  = initial.axes,
-                        elem  = record.atoms,
-                        pos   = record.positions,
-                        )
+                if initial_structure is not None:
                     structure.add_kpoints(
-                        initial.kpoints,
-                        initial.kweights,
+                        initial_structure.kpoints,
+                        initial_structure.kweights,
                         recenter=False,
                         )
-                    structures[len(records)-1] = structure
-        # Bind trajectories only when every ionic step has a consistent size.
-        if len(records)>0:
-            self.ionic_steps    = obj(dict(enumerate(records)))
-            self.position_units = 'a0'
-            self.force_units    = 'Ha/a0'
-        if len(records)>0 and len({len(record.atoms) for record in records})==1:
-            self.positions      = np.array(
+                structures[len(records)-1] = structure
+        return records,structures
+    #end def read_ion_records
+
+
+    def read_ions(self,lines):
+        """Read ionic records, cells, and trajectory-level structures."""
+        records,structures = self.read_ion_records(
+            lines,
+            self.setup_info.structure,
+            )
+        if len(records)==0:
+            return
+        ions = obj(
+            steps             = obj(dict(enumerate(records))),
+            cell_history      = None,
+            cell_units        = None,
+            position_history  = None,
+            position_units    = 'a0',
+            forces            = None,
+            force_units       = 'Ha/a0',
+            charges           = None,
+            magnetizations    = None,
+            max_forces        = None,
+            structure_history = None,
+            )
+        if all(record.cell is not None for record in records):
+            ions.cell_history = np.array(
+                [record.cell for record in records],
+                dtype=float,
+                )
+            ions.cell_units = 'a0'
+        if len({len(record.atoms) for record in records})==1:
+            ions.position_history = np.array(
                 [record.positions for record in records],
                 dtype=float,
                 )
-            self.forces         = np.array(
+            ions.forces = np.array(
                 [record.forces for record in records],
                 dtype=float,
                 )
-            self.charges        = np.array(
+            ions.charges = np.array(
                 [record.charges for record in records],
                 dtype=float,
                 )
-            self.magnetizations = np.array(
+            ions.magnetizations = np.array(
                 [record.magnetizations for record in records],
                 dtype=float,
                 )
-            self.max_forces     = np.array(
+            ions.max_forces = np.array(
                 [np.linalg.norm(record.forces,axis=1).max()
                  for record in records],
                 dtype=float,
                 )
             if len(structures)==len(records):
-                self.structures = structures
+                ions.structure_history = structures
+        self.ions = ions
     #end def read_ions
-
-
-    def read_geometry(self):
-        """Collect cell volume and k-point data from the setup report.
-
-        Binds ``geometry`` to an ``obj`` containing volume and crystal and
-        Cartesian k-point data.
-        """
-        geometry = obj(
-            volume          = None,
-            volume_units    = None,
-            kpoints_crystal = None,
-            kpoints_cart    = None,
-            kweights        = None,
-            )
-        structure = self.setup_info.structure
-        if structure is not None:
-            geometry.volume       = abs(np.linalg.det(structure.axes))
-            geometry.volume_units = 'a0^3'
-            if len(structure.kpoints)>0:
-                geometry.kpoints_cart = structure.kpoints
-                geometry.kweights     = structure.kweights
-        if self.setup_info.k_points is not None:
-            kpoints                  = self.setup_info.k_points
-            geometry.kpoints_crystal = kpoints.kpoints_crystal
-            geometry.kweights        = kpoints.kweights
-            if structure is not None and len(kpoints.kpoints_crystal)>0:
-                geometry.kpoints_cart = np.dot(
-                    kpoints.kpoints_crystal,
-                    structure.kaxes,
-                    )
-        elif (
-            self.run_mode=='band'
-            and self.input is not None
-            and 'kpoints_bandstructure' in self.input
-            ):
-            band_path = self.input.kpoints_bandstructure
-            endpoints = np.asarray(band_path.kpoints,dtype=float)
-            counts    = np.asarray(band_path.counts,dtype=int)
-            valid     = (
-                endpoints.ndim==2
-                and endpoints.shape[1:]==(3,)
-                and len(endpoints)==len(counts)
-                and len(endpoints)>0
-                and np.all(counts>=0)
-                )
-            if valid:
-                kpoints = [endpoints[0]]
-                for index in range(1,len(endpoints)):
-                    count = counts[index]
-                    if count>0:
-                        kpoints.extend(
-                            np.linspace(
-                                endpoints[index-1],
-                                endpoints[index],
-                                count+1,
-                                )[1:],
-                            )
-                geometry.kpoints_crystal = np.array(kpoints,dtype=float)
-                if structure is not None:
-                    geometry.kpoints_cart = np.dot(
-                        geometry.kpoints_crystal,
-                        structure.kaxes,
-                        )
-        if any(value is not None for value in geometry.values()):
-            self.geometry = geometry
-    #end def read_geometry
 
 
     def read_stress(self,lines):
         """Parse stress tensors and derive hydrostatic pressures.
 
-        Binds ``stress`` and ``pressures`` histories, their shared unit label,
-        and ``pressure`` as the final hydrostatic pressure. Values are in kbar.
+        Binds ``stress`` to an ``obj`` containing tensor and pressure histories,
+        their shared unit label, and the final hydrostatic pressure.
 
         Parameters
         ----------
@@ -1767,12 +1907,14 @@ class RmgOutData(DevBase):
             if len(rows)==3:
                 tensors.append(rows)
         if len(tensors)>0:
-            stress    = np.array(tensors,dtype=float)
-            pressures = -np.trace(stress,axis1=1,axis2=2)/3.0
-            self.stress       = stress
-            self.stress_units = 'kbar'
-            self.pressures    = pressures
-            self.pressure     = pressures[-1]
+            tensors   = np.array(tensors,dtype=float)
+            pressures = -np.trace(tensors,axis1=1,axis2=2)/3.0
+            self.stress = obj(
+                tensors          = tensors,
+                units            = 'kbar',
+                pressure_history = pressures,
+                pressure         = pressures[-1],
+                )
     #end def read_stress
 
 
@@ -2073,8 +2215,11 @@ class RmgAnalyzer(SimulationAnalyzer):
         if units not in {'eV','Ha','Ry'}:
             msg = 'energy units must be one of: eV, Ha, Ry'
             raise ValueError(msg)
-        value        = self.results.energy
-        source_units = self.results.energy_units
+        energies = self.results.energies
+        if energies is None:
+            return None
+        value        = energies.final
+        source_units = energies.final_units
         if value is None or source_units is None:
             return None
         try:
@@ -2094,10 +2239,10 @@ class RmgAnalyzer(SimulationAnalyzer):
         if electronic is not None and electronic.kpoints is not None:
             kpoints = electronic.kpoints
         else:
-            geometry = self.results.geometry
-            if geometry is None or geometry.kpoints_cart is None:
+            kpoint_data = self.results.setup_info.k_points
+            if kpoint_data is None or kpoint_data.cartesian is None:
                 return None
-            kpoints = geometry.kpoints_cart
+            kpoints = kpoint_data.cartesian
         return kpoints*convert(1.0,units,'B')
     #end def kpoints
 
@@ -2105,10 +2250,10 @@ class RmgAnalyzer(SimulationAnalyzer):
     def kweights(self):
         """Return dimensionless k-point weights, or ``None`` if unavailable."""
         self._require_supported('kweights',self.all_modes)
-        geometry = self.results.geometry
-        if geometry is None or geometry.kweights is None:
+        kpoint_data = self.results.setup_info.k_points
+        if kpoint_data is None or kpoint_data.weights is None:
             return None
-        return geometry.kweights
+        return kpoint_data.weights
     #end def kweights
 
 
@@ -2236,7 +2381,10 @@ class RmgAnalyzer(SimulationAnalyzer):
         if units not in {'A','B'}:
             msg = 'relaxed_structure units must be one of: A, B'
             raise ValueError(msg)
-        structures = self.results.structures
+        ions = self.results.ions
+        if ions is None:
+            return None
+        structures = ions.structure_history
         if structures is None or len(structures)==0:
             return None
         structure = deepcopy(structures[max(structures.keys())])
@@ -2251,7 +2399,10 @@ class RmgAnalyzer(SimulationAnalyzer):
         if units not in {'eV/A','Ry/B','Ha/B'}:
             msg = 'forces units must be one of: eV/A, Ry/B, Ha/B'
             raise ValueError(msg)
-        forces = self.results.forces
+        ions = self.results.ions
+        if ions is None:
+            return None
+        forces = ions.forces
         if forces is None:
             return None
         energy_units,length_units = units.split('/')
@@ -2269,9 +2420,9 @@ class RmgAnalyzer(SimulationAnalyzer):
             msg       = f'stress units must be one of: {supported}'
             raise ValueError(msg)
         stress = self.results.stress
-        if stress is None:
+        if stress is None or stress.tensors is None:
             return None
-        return stress*self.pressure_units[units]
+        return stress.tensors*self.pressure_units[units]
     #end def stress
 
 
@@ -2282,10 +2433,10 @@ class RmgAnalyzer(SimulationAnalyzer):
             supported = ', '.join(sorted(self.pressure_units))
             msg       = f'pressure units must be one of: {supported}'
             raise ValueError(msg)
-        pressure = self.results.pressure
-        if pressure is None:
+        stress = self.results.stress
+        if stress is None or stress.pressure is None:
             return None
-        return pressure*self.pressure_units[units]
+        return stress.pressure*self.pressure_units[units]
     #end def pressure
 
 
