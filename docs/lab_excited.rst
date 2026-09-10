@@ -238,8 +238,8 @@ following lines to get the exact location of VBM and CBM using
 .. code-block:: python
 
   p = band.load_analyzer_image()
-  print("VBM:\n{0}".format(p.bands.vbm))
-  print("CBM:\n{0}".format(p.bands.cbm))
+  print("VBM:\n{0}".format(p.results_out.bands.vbm))
+  print("CBM:\n{0}".format(p.results_out.bands.cbm))
 
 Output must be the following:
 
@@ -303,8 +303,8 @@ lines to get the exact location of VBM and CBM using
 .. code-block:: python
 
   p = band.load_analyzer_image()
-  print("VBM:\n{0}".format(p.bands.vbm))
-  print("CBM:\n{0}".format(p.bands.cbm))
+  print("VBM:\n{0}".format(p.results_out.bands.vbm))
+  print("CBM:\n{0}".format(p.results_out.bands.cbm))
 
 Output must be the following:
 
@@ -384,14 +384,14 @@ eigenvalues using their index numbers:
 
 .. code-block:: python
 
-  >>> print p.bands.up[51] ## CBM, $\Delta$ ##
+  >>> print p.results_out.bands.up[51] ## CBM, $\Delta$ ##
     eigs            = [-3.2076  4.9221  7.5433  7.5433 17.1545 19.7598 28.3242 28.3242]
     index           = 51
     kpoint_2pi_alat = [0.        0.1095605 0.       ]
     kpoint_rel      = [0.3695652 0.        0.3695652]
     occs            = [1. 1. 1. 1. 0. 0. 0. 0.]
     pol             = up
-  >>> print p.bands.up[46] ## $\Delta'$ ##
+  >>> print p.results_out.bands.up[46] ## $\Delta'$ ##
     eigs            = [-4.0953  6.1376  7.9247  7.9247 17.1972 20.6393 27.3653 27.3653]
     index           = 46
     kpoint_2pi_alat = [0.        0.0988193 0.       ]
@@ -458,11 +458,11 @@ Alternatively, we can also read the band and twist indexes using PwscfAnalyzer a
 
   p = nscf.load_analyzer_image()
   print('band information')
-  print(p.bands.up)
-  print('twist 0 k-point:',p.bands.up[0].kpoint_rel)
-  print('twist 4 k-point:',p.bands.up[4].kpoint_rel)
-  print('twist 0 band 3 eigenvalue:',p.bands.up[0].eigs[3])
-  print('twist 4 band 4 eigenvalue:',p.bands.up[4].eigs[4])
+  print(p.results_out.bands.up)
+  print('twist 0 k-point:',p.results_out.bands.up[0].kpoint_rel)
+  print('twist 4 k-point:',p.results_out.bands.up[4].kpoint_rel)
+  print('twist 0 band 3 eigenvalue:',p.results_out.bands.up[0].eigs[3])
+  print('twist 4 band 4 eigenvalue:',p.results_out.bands.up[4].eigs[4])
 
 Giving output:
 
