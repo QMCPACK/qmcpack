@@ -1,0 +1,35 @@
+&CONTROL
+  calculation = 'relax'
+  verbosity = 'default'
+  restart_mode = 'from_scratch'
+  prefix = 'carbon_relax'
+  outdir = './tmp'
+  pseudo_dir = '/home/j1k/repositories/quantum_espresso/q-e-qe-7.6/pseudo'
+  tstress = .true.
+  tprnfor = .true.
+  nstep = 3
+/
+&SYSTEM
+  ibrav = 2
+  celldm(1) = 6.80
+  nat = 2
+  ntyp = 1
+  ecutwfc = 25.0
+  ecutrho = 100.0
+  occupations = 'fixed'
+/
+&ELECTRONS
+  conv_thr = 1.0d-8
+  mixing_beta = 0.5
+  diagonalization = 'david'
+/
+&IONS
+  ion_dynamics = 'bfgs'
+/
+ATOMIC_SPECIES
+  C 12.0107 C.UPF
+ATOMIC_POSITIONS crystal
+  C 0.000 0.000 0.000
+  C 0.255 0.245 0.250
+K_POINTS automatic
+  2 2 2 0 0 0
