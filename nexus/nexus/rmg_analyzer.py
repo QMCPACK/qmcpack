@@ -53,7 +53,7 @@ class RmgOutData(DevBase):
 
     Parameters
     ----------
-    filepath : str or pathlib.Path
+    filepath : str or os.PathLike
         Path to the RMG log output file.
 
     Attributes
@@ -67,16 +67,20 @@ class RmgOutData(DevBase):
     input : RmgInput or None
         Parsed control input when the referenced input file is available.
     setup_info : obj
-        Parsed setup sections, run mode, structure, and k-point information.
+        Parsed setup sections and derived setup data. Derived members include
+        ``run_mode``, the initial ``structure``, ``cell`` volume information,
+        and crystal and Cartesian ``k_points`` with optional weights.
     run_mode : str or None
-        Short RMG calculation mode: ``"scf"``, ``"nscf"``, or ``"relax"``.
+        Short RMG calculation mode: ``"scf"``, ``"nscf"``, ``"band"``,
+        ``"exx"``, ``"relax"``, ``"md_VE"``, ``"md_TE"``, ``"tddft"``,
+        ``"stm"``, or ``"neb"``.
     convergence : obj or None
         Electronic and ionic convergence indicators and event counts.
     timing : obj or None
         Total, per-step, and section-resolved timing data in seconds.
     energies : obj or None
-        Eigenvalue-sum and direct energy histories, their units, and the final
-        eigenvalue-sum energy.
+        Energy data with ``history``, ``units``, ``final``, ``final_units``,
+        ``direct``, and ``direct_units`` members.
     electronic : obj or None
         Fermi energies, band edges, gaps, k-points, eigenvalues, and
         occupations, charge, magnetization, force, volume, and per-atom energy
@@ -84,18 +88,40 @@ class RmgOutData(DevBase):
     scf : obj or None
         SCF energy components, iteration indices, residuals, and timing data.
     ions : obj or None
-        Detailed ionic steps, cell and position histories, units, forces, and
-        structures constructed with the cell reported for each step.
+        Detailed ionic ``steps``; cell, position, force, charge,
+        magnetization, and maximum-force histories; associated units; and a
+        ``structure_history`` constructed with the cell reported for each step.
     stress : obj or None
-        Stress tensors, hydrostatic pressures, their units, and the final
-        pressure.
+        Stress-tensor and hydrostatic-pressure histories, their units, and the
+        final pressure.
+    bands : obj or None
+        Spin-indexed band-path distances and band energies read from companion
+        band-structure files.
+    md : obj or None
+        Molecular-dynamics step, energy, temperature, and displacement arrays.
+    md_stats : obj or None
+        Statistical summaries for the molecular-dynamics arrays.
+    tddft : obj or None
+        Time-dependent energy changes and spin-resolved dipole histories read
+        from companion files.
+    neb : obj or None
+        NEB controller and parallel settings, input and final path structures,
+        reaction coordinate, image energies and barriers, and local-image
+        histories. ``final_images`` contains ordered final structures,
+        positions, cells, atoms, units, and source files when available.
     produced_files : obj or None
-        Paths to recognized files produced by an SCF run.
+        Paths to recognized QMCPACK restart, EXX integral, or STM files.
 
     Notes
     -----
+    ``convergence`` and ``timing`` apply to all supported modes. ``energies``,
+    ``scf``, ``ions``, and ``stress`` apply to SCF, NSCF, relaxation, molecular
+    dynamics, TDDFT, and NEB modes. ``electronic`` also applies to band mode.
+    ``bands``, ``md`` and ``md_stats``, ``tddft``, and ``neb`` are specific to
+    their corresponding modes. ``produced_files`` applies to SCF, EXX, and STM.
     A mode-applicable member is initialized to ``None`` and remains ``None``
-    when its data cannot be obtained.
+    when its data cannot be obtained. History arrays are ordered as they occur
+    in the output.
 
     Raises
     ------
@@ -105,6 +131,9 @@ class RmgOutData(DevBase):
         If ``filepath`` does not exist.
     IsADirectoryError
         If ``filepath`` does not identify a regular file.
+    ValueError
+        If independently identified input and output run modes disagree, except
+        for the expected SCF input associated with an NEB image calculation.
     """
 
     # This pattern represents RMG numbers embedded in records whose structural
@@ -2077,7 +2106,7 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     Parameters
     ----------
-    arg0 : Simulation or str or pathlib.Path or None, optional
+    arg0 : Simulation or str or os.PathLike or None, optional
         RMG simulation to analyze or path to an RMG log output file. If
         ``None``, an unconfigured analyzer is created.
     analyze : bool, optional
@@ -2098,25 +2127,31 @@ class RmgAnalyzer(SimulationAnalyzer):
         available.
     run_mode : str or None
         Short RMG calculation mode determined during analysis: ``"scf"``,
-        ``"nscf"``, or ``"relax"``.
+        ``"nscf"``, ``"band"``, ``"exx"``, ``"relax"``, ``"md_VE"``,
+        ``"md_TE"``, ``"tddft"``, ``"stm"``, or ``"neb"``.
     results : RmgOutData or None
-        Parsed RMG output data. ``None`` until analysis is performed.
+        Parsed setup and mode-specific RMG output data. ``None`` until analysis
+        is performed.
 
     Methods
     -------
     initial_structure(units='A') : Structure or None
         Input atomic structure in Angstrom (``'A'``) or bohr (``'B'``).
     energy(units='Ha') : float or numpy.floating or None
-        Final total energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
+        Final eigenvalue-sum energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
+        Available for electronic, ionic, molecular-dynamics, TDDFT, and NEB
+        calculations, but not band, EXX, or STM calculations.
     kpoints(units='B') : numpy.ndarray or None
         Cartesian k-points in inverse Angstrom or inverse bohr with shape
-        ``(nkpoints, 3)``. The unit argument is ``'A'`` or ``'B'``.
+        ``(nkpoints, 3)``. The unit argument is ``'A'`` or ``'B'``. Electronic
+        output data are preferred over setup data when both are available.
     kweights() : numpy.ndarray or None
         Dimensionless k-point weights with shape ``(nkpoints,)``.
     eigenvalues(units='eV') : numpy.ndarray or None
         Kohn--Sham eigenvalues in ``'eV'``, ``'Ha'``, or ``'Ry'``. The
         leading dimension has length ``nkpoints``; remaining dimensions
-        represent spin, when present, and bands.
+        represent spin, when present, and bands. Band calculations are read
+        from their spin-resolved companion files.
     occupations() : numpy.ndarray or None
         Dimensionless Kohn--Sham occupations. The leading dimension has
         length ``nkpoints``; remaining dimensions represent spin, when
@@ -2129,11 +2164,12 @@ class RmgAnalyzer(SimulationAnalyzer):
         Final reported conduction-band minimum in selected energy units.
     band_gap(units='eV') : float or numpy.floating or None
         Final reported electronic band gap in selected energy units.
-    fractional_occs() : bool or None
-        Whether any occupation is farther than ``1e-3`` from both empty
-        and full occupation.
+    fractional_occs(tol=1e-3) : bool or None
+        Whether any occupation is farther than ``tol`` from both empty and
+        full occupation.
     relaxed_structure(units='A') : Structure or None
-        Final relaxed structure in Angstrom (``'A'``) or bohr (``'B'``).
+        Final structure from the ionic history of a relaxation or local NEB
+        image, in Angstrom (``'A'``) or bohr (``'B'``).
     forces(units='eV/A') : numpy.ndarray or None
         Ionic-force history with shape ``(nsteps, natoms, 3)``. Available
         units are ``'eV/A'``, ``'Ry/B'``, and ``'Ha/B'``.
@@ -2146,11 +2182,14 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     Notes
     -----
-    A physical query method returns ``None`` when its quantity is supported
-    by the detected run mode but was not successfully parsed. Calling a
-    query before analysis, or for a run mode that does not support the
-    quantity, raises ``RuntimeError``. Supplying unsupported units raises
-    ``ValueError``.
+    Initial structures and setup k-points are queryable for every supported
+    mode. Eigenvalues additionally support band mode. Energy, occupations,
+    band-edge quantities, forces, stress, and pressure apply to SCF, NSCF,
+    relaxation, molecular-dynamics, TDDFT, and NEB modes. Relaxed structures
+    apply to relaxation and NEB modes. A query returns ``None`` when its
+    quantity is supported but was not successfully parsed. Calling a query
+    before analysis, or for a mode that does not support the quantity, raises
+    ``RuntimeError``. Supplying unsupported units raises ``ValueError``.
 
     Raises
     ------
@@ -2161,6 +2200,9 @@ class RmgAnalyzer(SimulationAnalyzer):
         If a supplied output path does not exist.
     IsADirectoryError
         If a supplied output path does not identify a regular file.
+    ValueError
+        If analysis identifies inconsistent input and output run modes or a
+        query receives unsupported units.
     """
 
     all_modes = frozenset({
