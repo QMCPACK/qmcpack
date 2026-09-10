@@ -185,9 +185,9 @@ class RmgOutData(DevBase):
         supported_modes  = eigenvalue_modes|{'exx','stm'}
 
         if self.run_mode in supported_modes:
-            self.geometry             = None
-            self.convergence          = None
-            self.timing               = None
+            self.geometry    = None
+            self.convergence = None
+            self.timing      = None
 
             self.read_geometry()
             self.read_convergence(lines)
@@ -225,22 +225,548 @@ class RmgOutData(DevBase):
             self.electronic = None
             self.read_electronic(lines)
 
+        def read_md(lines):
+            """Read molecular-dynamics records and compute summary statistics."""
+            records = []
+            for line in lines:
+                tokens = line.split()
+                if (
+                    len(tokens)<7
+                    or not tokens[0].upper().startswith(('@CVE','@CVT'))
+                    ):
+                    continue
+                values = [as_float(token) for token in tokens[1:7]]
+                if None not in values:
+                    records.append(values)
+            if len(records)==0:
+                return
+            values  = np.array(records,dtype=float)
+            self.md = obj(
+                step              = values[:,0].astype(int),
+                potential_energy  = values[:,1],
+                kinetic_energy    = values[:,2],
+                total_energy      = values[:,3],
+                temperature       = values[:,4],
+                displacement      = values[:,5],
+                energy_units      = 'Ha',
+                temperature_units = 'K',
+                )
+            statistics = obj()
+            for name,data in self.md.items():
+                if isinstance(data,np.ndarray):
+                    mean,var,error,kappa = simstats(data)
+                    statistics[name]     = obj(
+                        mean  = mean,
+                        var   = var,
+                        error = error,
+                        kappa = kappa,
+                        )
+            self.md_stats = statistics
+        #end def read_md
+
         if self.run_mode in {'md_VE','md_TE'}:
             self.md       = None
             self.md_stats = None
-            self.read_md(lines)
+            read_md(lines)
+
+        def read_band():
+            """Read spin-resolved band structures from companion data files."""
+            prefix  = self.outfile_name.removesuffix('.log')
+            pattern = os.path.join(
+                self.path,
+                prefix+'_spin*.bandstructure.dat',
+                )
+            bands = obj()
+            for filepath in sorted(glob(pattern)):
+                filename = os.path.basename(filepath)
+                suffix   = '.bandstructure.dat'
+                stem     = filename.removesuffix(suffix)
+                base,separator,spin_text = stem.rpartition('_spin')
+                if (
+                    filename==stem
+                    or len(separator)==0
+                    or len(base)==0
+                    or not spin_text.isdigit()
+                    ):
+                    continue
+                groups = []
+                group  = []
+                with open(filepath,'r') as band_file:
+                    for line in band_file:
+                        if '&&' in line:
+                            if len(group)>0:
+                                groups.append(np.array(group,dtype=float))
+                                group = []
+                            continue
+                        tokens = line.replace(',',' ').split()
+                        values = (
+                            [as_float(token) for token in tokens[:2]]
+                            if len(tokens)>=2 else []
+                            )
+                        if len(values)==2 and None not in values:
+                            group.append(values)
+                if len(group)>0:
+                    groups.append(np.array(group,dtype=float))
+                if len(groups)>0 and len({len(group) for group in groups})==1:
+                    bands[int(spin_text)] = obj(
+                        distance = groups[0][:,0],
+                        energies = np.array(
+                            [group[:,1] for group in groups],
+                            dtype=float,
+                            ),
+                        energy_units = 'eV',
+                        filepath     = filepath,
+                        )
+            if len(bands)>0:
+                self.bands = bands
+        #end def read_band
 
         if self.run_mode=='band':
             self.bands = None
-            self.read_band()
+            read_band()
+
+        def read_tddft():
+            """Read TDDFT energy and spin-resolved dipole time series."""
+            prefix       = self.outfile_name.removesuffix('.log')
+            energy_file  = os.path.join(self.path,prefix+'_totalE')
+            dipole_files = sorted(
+                glob(os.path.join(
+                    self.path,
+                    prefix+'_spin*_dipole.dat',
+                    )),
+                )
+            tddft = obj()
+            if os.path.isfile(energy_file):
+                rows = []
+                with open(energy_file,'r') as data_file:
+                    for line in data_file:
+                        if line.lstrip().startswith('&&'):
+                            continue
+                        tokens = line.replace(',',' ').split()
+                        values = (
+                            [as_float(token) for token in tokens[:5]]
+                            if len(tokens)>=5 else []
+                            )
+                        if len(values)==5 and None not in values:
+                            rows.append(values)
+                if len(rows)>0:
+                    values = np.array(rows,dtype=float)
+                    tddft.energy = obj(
+                        time                  = values[:,0],
+                        kinetic_pseudo_change = values[:,1],
+                        hartree_change        = values[:,2],
+                        xc_change             = values[:,3],
+                        total_energy_change   = values[:,4],
+                        energy_units          = 'Ha',
+                        filepath              = energy_file,
+                        )
+            dipoles = obj()
+            for filepath in dipole_files:
+                rows         = []
+                field        = None
+                ground_state = None
+                with open(filepath,'r') as data_file:
+                    for line in data_file:
+                        lower = normalize_line(line).lower()
+                        if 'electric field' in lower:
+                            values = line_numbers(line.partition(':')[2])
+                            if len(values)>=3:
+                                field = values[:3]
+                        elif 'dipole at' in lower:
+                            values = line_numbers(line.partition(':')[2])
+                            if len(values)>=3:
+                                ground_state = values[:3]
+                        elif not line.lstrip().startswith('&&'):
+                            tokens = line.replace(',',' ').split()
+                            values = (
+                                [as_float(token) for token in tokens[:4]]
+                                if len(tokens)>=4 else []
+                                )
+                            if len(values)==4 and None not in values:
+                                rows.append(values)
+                if len(rows)>0:
+                    filename = os.path.basename(filepath)
+                    suffix   = '_dipole.dat'
+                    stem     = filename.removesuffix(suffix)
+                    _,separator,spin_text = stem.rpartition('_spin')
+                    spin = (
+                        int(spin_text)
+                        if (
+                            filename!=stem
+                            and len(separator)>0
+                            and spin_text.isdigit()
+                            )
+                        else len(dipoles)
+                        )
+                    values = np.array(rows,dtype=float)
+                    dipoles[spin] = obj(
+                        time           = values[:,0],
+                        dipole         = values[:,1:4],
+                        electric_field = field,
+                        ground_state   = ground_state,
+                        filepath       = filepath,
+                        )
+            if len(dipoles)>0:
+                tddft.dipoles = dipoles
+            if len(tddft)>0:
+                self.tddft = tddft
+        #end def read_tddft
 
         if self.run_mode=='tddft':
             self.tddft = None
-            self.read_tddft()
+            read_tddft()
+
+        def read_neb(lines):
+            """Read NEB controller, path, energy-profile, and local-image data."""
+            def read_assignments(filepath):
+                """Read quoted, possibly multiline controller assignments."""
+                values = {}
+                with open(filepath,'r') as control_file:
+                    control_lines = control_file.read().splitlines()
+                index = 0
+                while index<len(control_lines):
+                    line = control_lines[index]
+                    index += 1
+                    if '=' not in line:
+                        continue
+                    key,value = line.split('=',1)
+                    key   = key.strip()
+                    value = value.strip()
+                    if len(key)==0 or len(value)==0:
+                        continue
+                    quote = value[0] if value[0] in {'"',"'"} else None
+                    if quote is None:
+                        values[key] = value
+                    else:
+                        value = value[1:]
+                        if value.endswith(quote):
+                            values[key] = value[:-1]
+                            continue
+                        parts = [value]
+                        while index<len(control_lines):
+                            part = control_lines[index]
+                            index += 1
+                            if quote in part:
+                                parts.append(part.split(quote,1)[0])
+                                break
+                            parts.append(part)
+                        values[key] = ('\n').join(parts)
+                return values
+            #end def read_assignments
+
+            def as_int(value):
+                """Convert a controller value to an integer when possible."""
+                try:
+                    return int(value)
+                except (TypeError,ValueError):
+                    return None
+            #end def as_int
+
+            def final_energy(filepath):
+                """Return the last final eigenvalue-sum energy in Hartree."""
+                value = None
+                units = None
+                try:
+                    with open(filepath,'r') as output_file:
+                        energy_lines = output_file.read().splitlines()
+                except (OSError,UnicodeError):
+                    return None
+                for line in energy_lines:
+                    text  = normalize_line(line)
+                    lower = text.lower()
+                    label = next((
+                        candidate for candidate in (
+                            'final total energy from eig sum',
+                            'final total energy from eigenvalue sum',
+                            )
+                        if candidate in lower
+                        ),None)
+                    if label is None:
+                        continue
+                    remainder = text[lower.index(label)+len(label):].lstrip()
+                    if len(remainder)==0 or remainder[0] not in {':','='}:
+                        continue
+                    tokens = remainder[1:].split()
+                    if len(tokens)<2:
+                        continue
+                    candidate        = as_float(tokens[0].strip('.,:;()[]{}'))
+                    candidate_units  = tokens[1].strip('.,:;()[]{}')
+                    normalized_units = {
+                        'ev' : 'eV',
+                        'ha' : 'Ha',
+                        'ry' : 'Ry',
+                        }.get(candidate_units.lower())
+                    if candidate is not None and normalized_units is not None:
+                        value = candidate
+                        units = normalized_units
+                if value is None or units is None:
+                    return None
+                try:
+                    return convert(value,units,'Ha')
+                except (KeyError,TypeError,ValueError):
+                    return None
+            #end def final_energy
+
+            neb = obj(
+                controller_file           = None,
+                calculation_mode          = None,
+                spin_polarized            = None,
+                num_intermediate_images   = None,
+                num_images                = None,
+                images_per_node           = None,
+                max_steps                 = None,
+                spring_constant           = None,
+                spring_constant_units     = 'Ha/B^2',
+                initial_input_file        = None,
+                final_input_file          = None,
+                image_directories         = None,
+                image_input_files         = None,
+                image_log_files           = None,
+                image_mpi_processes       = None,
+                input_structures          = None,
+                reaction_coordinate       = None,
+                reaction_coordinate_units = 'B',
+                energies                  = None,
+                relative_energies         = None,
+                energy_units              = 'Ha',
+                forward_barrier           = None,
+                reverse_barrier           = None,
+                barrier_image_index       = None,
+                parallel                  = None,
+                local_image               = None,
+                )
+
+            constrained_images = []
+            neb_calls          = 0
+            for line in lines:
+                text  = normalize_line(line)
+                lower = text.lower()
+                if neb.parallel is None:
+                    words = ''.join(
+                        character if character.isalnum() else ' '
+                        for character in lower
+                        ).split()
+                    total_index = next((
+                        index for index,word in enumerate(words)
+                        if word=='total'
+                           and (index>=1 and words[index-1]=='images' or index>=2 and words[index-2:index]==['image','s'])
+                        ),None)
+                    per_index = next((
+                        index for index,word in enumerate(words)
+                        if word=='per'
+                           and index+1<len(words)
+                           and words[index+1]=='node'
+                        ),None)
+                    mpi_index = next((
+                        index for index,word in enumerate(words)
+                        if word=='mpi'
+                           and index+2<len(words)
+                           and words[index+1] in {'process','processes'}
+                           and words[index+2]=='image'
+                        ),None)
+                    layout_indices = (total_index,per_index,mpi_index)
+                    layout_values  = []
+                    if 'rmg initialization' in lower and None not in layout_indices:
+                        for index in layout_indices:
+                            value = next((
+                                as_float(word) for word in reversed(words[:index])
+                                if as_float(word) is not None
+                                ),None)
+                            layout_values.append(value)
+                    if (
+                        len(layout_values)==3
+                        and None not in layout_values
+                        and all(value.is_integer() for value in layout_values)
+                        ):
+                        neb.parallel = obj(
+                            num_intermediate_images = int(layout_values[0]),
+                            images_per_node         = int(layout_values[1]),
+                            mpi_processes_per_image = int(layout_values[2]),
+                            )
+                if 'neb call' in lower:
+                    neb_calls += 1
+                label = 'entering constrained forces for image'
+                if label in lower:
+                    remainder = text[lower.index(label)+len(label):].lstrip(' :')
+                    tokens    = remainder.split()
+                    value     = (
+                        as_float(tokens[0].strip('.,:;()[]{}'))
+                        if len(tokens)>0 else None
+                        )
+                    if value is not None and value.is_integer():
+                        constrained_images.append(int(value))
+
+            neb.local_image = obj(
+                index=constrained_images[-1]
+                    if len(constrained_images)>0 else None,
+                neb_calls               = neb_calls,
+                constrained_force_calls = np.array(
+                    constrained_images,
+                    dtype=int,
+                    ),
+                energy         = self.energy,
+                energy_units   = self.energy_units,
+                energies       = self.energies,
+                positions      = self.positions,
+                position_units = self.position_units,
+                forces         = self.forces,
+                force_units    = self.force_units,
+                max_forces     = self.max_forces,
+                structures     = self.structures,
+                )
+
+            controller_candidates = (
+                os.path.join(self.path,'ctrl_init.dat'),
+                os.path.join(os.path.dirname(self.path),'ctrl_init.dat'),
+                )
+            controller_file = next((
+                os.path.abspath(filepath)
+                for filepath in controller_candidates
+                if os.path.isfile(filepath)
+                ),None)
+            if controller_file is None:
+                self.neb = neb
+                return
+
+            neb.controller_file = controller_file
+            try:
+                control = read_assignments(controller_file)
+            except (OSError,UnicodeError):
+                control = {}
+            controller_path = os.path.dirname(controller_file)
+
+            nintermediate               = as_int(control.get('num_images'))
+            neb.num_intermediate_images = nintermediate
+            if nintermediate is not None:
+                neb.num_images = nintermediate+2
+            neb.calculation_mode = control.get('calculation_mode')
+            neb.images_per_node  = as_int(control.get('image_per_node'))
+            neb.max_steps        = as_int(control.get('max_neb_steps'))
+            neb.spring_constant  = as_float(control.get('neb_spring_constant'))
+            spin_polarized       = control.get('spin_polarization')
+            if spin_polarized is not None:
+                spin_polarized = spin_polarized.strip().lower()
+                if spin_polarized in {'true','yes','1','false','no','0'}:
+                    neb.spin_polarized = spin_polarized in {'true','yes','1'}
+
+            initial_file = control.get('input_file_initial_image')
+            final_file   = control.get('input_file_final_image')
+            if initial_file is not None:
+                neb.initial_input_file = os.path.abspath(
+                    os.path.join(
+                        controller_path,
+                        initial_file,
+                        ),
+                    )
+            if final_file is not None:
+                neb.final_input_file = os.path.abspath(
+                    os.path.join(
+                        controller_path,
+                        final_file,
+                        ),
+                    )
+
+            image_directories   = []
+            image_input_files   = []
+            image_mpi_processes = []
+            image_info          = control.get('image_infos')
+            if image_info is not None:
+                for line in image_info.splitlines():
+                    tokens = line.split()
+                    if len(tokens)<2:
+                        continue
+                    directory = os.path.abspath(
+                        os.path.join(
+                            controller_path,
+                            tokens[0],
+                            ),
+                        )
+                    image_directories.append(directory)
+                    image_input_files.append(os.path.join(directory,tokens[1]))
+                    image_mpi_processes.append(
+                        as_int(tokens[2]) if len(tokens)>=3 else None,
+                        )
+            if len(image_directories)>0:
+                neb.image_directories   = image_directories
+                neb.image_mpi_processes = np.array(
+                    image_mpi_processes,
+                    dtype=object,
+                    )
+
+            ordered_input_files = []
+            if neb.initial_input_file is not None:
+                ordered_input_files.append(neb.initial_input_file)
+            ordered_input_files.extend(image_input_files)
+            if neb.final_input_file is not None:
+                ordered_input_files.append(neb.final_input_file)
+            if len(ordered_input_files)>0:
+                neb.image_input_files = ordered_input_files
+
+            input_structures = []
+            for filepath in ordered_input_files:
+                structure = None
+                if os.path.isfile(filepath):
+                    try:
+                        structure = RmgInput(filepath).return_structure('B')
+                    except (NexusError,KeyError,TypeError,ValueError):
+                        pass
+                input_structures.append(structure)
+            if any(structure is not None for structure in input_structures):
+                neb.input_structures = input_structures
+            if (
+                len(input_structures)>0
+                and all(structure is not None for structure in input_structures)
+                ):
+                coordinate       = [0.0]
+                valid_coordinate = True
+                for previous,current in pairwise(input_structures):
+                    if previous.pos.shape!=current.pos.shape:
+                        valid_coordinate = False
+                        break
+                    coordinate.append(
+                        coordinate[-1]+np.linalg.norm(current.pos-previous.pos),
+                        )
+                if valid_coordinate:
+                    neb.reaction_coordinate = np.array(coordinate,dtype=float)
+
+            image_logs = []
+            for filepath in ordered_input_files:
+                pattern = os.path.join(
+                    os.path.dirname(filepath),
+                    os.path.basename(filepath)+'.*.log',
+                    )
+                image_logs.append(max(glob(pattern),default=None))
+            if len(image_logs)>0:
+                neb.image_log_files = image_logs
+
+            energies = np.full(len(ordered_input_files),np.nan,dtype=float)
+            if len(energies)>0:
+                initial_energy     = as_float(control.get('totale_initial_image'))
+                final_image_energy = as_float(control.get('totale_final_image'))
+                if initial_energy is not None:
+                    energies[0] = initial_energy
+                if final_image_energy is not None:
+                    energies[-1] = final_image_energy
+                for index,filepath in enumerate(image_logs[1:-1],start=1):
+                    if filepath is not None:
+                        value = final_energy(filepath)
+                        if value is not None:
+                            energies[index] = value
+                if np.any(np.isfinite(energies)):
+                    neb.energies = energies
+                if np.all(np.isfinite(energies)):
+                    barrier_index           = int(np.argmax(energies))
+                    neb.relative_energies   = energies-energies[0]
+                    neb.forward_barrier     = energies[barrier_index]-energies[0]
+                    neb.reverse_barrier     = energies[barrier_index]-energies[-1]
+                    neb.barrier_image_index = barrier_index
+
+            self.neb = neb
+        #end def read_neb
 
         if self.run_mode=='neb':
             self.neb = None
-            self.read_neb(lines)
+            read_neb(lines)
 
         if self.run_mode in {'scf','exx','stm'}:
             self.produced_files = None
@@ -389,18 +915,23 @@ class RmgOutData(DevBase):
                 run_mode = 'relax'
             elif 'neb' in mode_words or ('nudged','elastic') in mode_pairs:
                 run_mode = 'neb'
-            elif 'cve' in mode_words or (
-                ('constant','volume') in mode_pairs and 'energy' in mode_words
+            elif (
+                'cve' in mode_words
+                or ('constant','volume') in mode_pairs
+                and 'energy' in mode_words
                 ):
                 run_mode = 'md_VE'
-            elif 'cvt' in mode_words or (
-                ('constant','temperature') in mode_pairs and 'energy' in mode_words
+            elif (
+                'cvt' in mode_words
+                or ('constant','temperature') in mode_pairs
+                and 'energy' in mode_words
                 ):
                 run_mode = 'md_TE'
             elif 'tddft' in mode_words or ('time','dependent') in mode_pairs:
                 run_mode = 'tddft'
-            elif 'stm' in mode_words and (
-                ('charge','density') in mode_pairs or len(mode_words)==1
+            elif (
+                'stm' in mode_words
+                and (('charge','density') in mode_pairs or len(mode_words)==1)
                 ):
                 run_mode = 'stm'
             break
@@ -1124,46 +1655,6 @@ class RmgOutData(DevBase):
     #end def read_ions
 
 
-    def read_md(self,lines):
-        """Read molecular-dynamics records and compute summary statistics."""
-        records = []
-        for line in lines:
-            tokens = line.split()
-            if (
-                len(tokens)<7
-                or not tokens[0].upper().startswith(('@CVE','@CVT'))
-                ):
-                continue
-            values = [as_float(token) for token in tokens[1:7]]
-            if None not in values:
-                records.append(values)
-        if len(records)==0:
-            return
-        values  = np.array(records,dtype=float)
-        self.md = obj(
-            step              = values[:,0].astype(int),
-            potential_energy  = values[:,1],
-            kinetic_energy    = values[:,2],
-            total_energy      = values[:,3],
-            temperature       = values[:,4],
-            displacement      = values[:,5],
-            energy_units      = 'Ha',
-            temperature_units = 'K',
-            )
-        statistics = obj()
-        for name,data in self.md.items():
-            if isinstance(data,np.ndarray):
-                mean,var,error,kappa = simstats(data)
-                statistics[name] = obj(
-                    mean  = mean,
-                    var   = var,
-                    error = error,
-                    kappa = kappa,
-                    )
-        self.md_stats = statistics
-    #end def read_md
-
-
     def read_geometry(self):
         """Collect cell volume and k-point data from the setup report.
 
@@ -1201,7 +1692,7 @@ class RmgOutData(DevBase):
             band_path = self.input.kpoints_bandstructure
             endpoints = np.asarray(band_path.kpoints,dtype=float)
             counts    = np.asarray(band_path.counts,dtype=int)
-            valid = (
+            valid     = (
                 endpoints.ndim==2
                 and endpoints.shape[1:]==(3,)
                 and len(endpoints)==len(counts)
@@ -1213,11 +1704,13 @@ class RmgOutData(DevBase):
                 for index in range(1,len(endpoints)):
                     count = counts[index]
                     if count>0:
-                        kpoints.extend(np.linspace(
-                            endpoints[index-1],
-                            endpoints[index],
-                            count+1,
-                            )[1:])
+                        kpoints.extend(
+                            np.linspace(
+                                endpoints[index-1],
+                                endpoints[index],
+                                count+1,
+                                )[1:],
+                            )
                 geometry.kpoints_crystal = np.array(kpoints,dtype=float)
                 if structure is not None:
                     geometry.kpoints_cart = np.dot(
@@ -1392,422 +1885,6 @@ class RmgOutData(DevBase):
     #end def read_timing
 
 
-    def read_band(self):
-        """Read spin-resolved band structures from companion data files."""
-        prefix = self.outfile_name.removesuffix('.log')
-        pattern = os.path.join(
-            self.path,
-            prefix+'_spin*.bandstructure.dat',
-            )
-        bands = obj()
-        for filepath in sorted(glob(pattern)):
-            match = re.search(r'_spin(\d+)\.bandstructure\.dat$',filepath)
-            if match is None:
-                continue
-            groups = []
-            group  = []
-            with open(filepath,'r') as band_file:
-                for line in band_file:
-                    if '&&' in line:
-                        if len(group)>0:
-                            groups.append(np.array(group,dtype=float))
-                            group = []
-                        continue
-                    tokens = line.replace(',',' ').split()
-                    values = (
-                        [as_float(token) for token in tokens[:2]]
-                        if len(tokens)>=2 else []
-                        )
-                    if len(values)==2 and None not in values:
-                        group.append(values)
-            if len(group)>0:
-                groups.append(np.array(group,dtype=float))
-            if len(groups)>0 and len({len(group) for group in groups})==1:
-                bands[int(match.group(1))] = obj(
-                    distance     = groups[0][:,0],
-                    energies     = np.array(
-                        [group[:,1] for group in groups],
-                        dtype=float,
-                        ),
-                    energy_units = 'eV',
-                    filepath     = filepath,
-                    )
-        if len(bands)>0:
-            self.bands = bands
-    #end def read_band
-
-
-    def read_tddft(self):
-        """Read TDDFT energy and spin-resolved dipole time series."""
-        prefix       = self.outfile_name.removesuffix('.log')
-        energy_file  = os.path.join(self.path,prefix+'_totalE')
-        dipole_files = sorted(glob(os.path.join(
-            self.path,
-            prefix+'_spin*_dipole.dat',
-            )))
-        tddft = obj()
-        if os.path.isfile(energy_file):
-            rows = []
-            with open(energy_file,'r') as data_file:
-                for line in data_file:
-                    if line.lstrip().startswith('&&'):
-                        continue
-                    tokens = line.replace(',',' ').split()
-                    values = (
-                        [as_float(token) for token in tokens[:5]]
-                        if len(tokens)>=5 else []
-                        )
-                    if len(values)==5 and None not in values:
-                        rows.append(values)
-            if len(rows)>0:
-                values = np.array(rows,dtype=float)
-                tddft.energy = obj(
-                    time                  = values[:,0],
-                    kinetic_pseudo_change = values[:,1],
-                    hartree_change        = values[:,2],
-                    xc_change             = values[:,3],
-                    total_energy_change   = values[:,4],
-                    energy_units          = 'Ha',
-                    filepath              = energy_file,
-                    )
-        dipoles = obj()
-        for filepath in dipole_files:
-            rows         = []
-            field        = None
-            ground_state = None
-            with open(filepath,'r') as data_file:
-                for line in data_file:
-                    lower = normalize_line(line).lower()
-                    if 'electric field' in lower:
-                        values = line_numbers(line.partition(':')[2])
-                        if len(values)>=3:
-                            field = values[:3]
-                    elif 'dipole at' in lower:
-                        values = line_numbers(line.partition(':')[2])
-                        if len(values)>=3:
-                            ground_state = values[:3]
-                    elif not line.lstrip().startswith('&&'):
-                        tokens = line.replace(',',' ').split()
-                        values = (
-                            [as_float(token) for token in tokens[:4]]
-                            if len(tokens)>=4 else []
-                            )
-                        if len(values)==4 and None not in values:
-                            rows.append(values)
-            if len(rows)>0:
-                match = re.search(r'_spin(\d+)_dipole\.dat$',filepath)
-                spin  = int(match.group(1)) if match is not None else len(dipoles)
-                values = np.array(rows,dtype=float)
-                dipoles[spin] = obj(
-                    time           = values[:,0],
-                    dipole         = values[:,1:4],
-                    electric_field = field,
-                    ground_state   = ground_state,
-                    filepath       = filepath,
-                    )
-        if len(dipoles)>0:
-            tddft.dipoles = dipoles
-        if len(tddft)>0:
-            self.tddft = tddft
-    #end def read_tddft
-
-
-    def read_neb(self,lines):
-        """Read NEB controller, path, energy-profile, and local-image data."""
-        def read_assignments(filepath):
-            """Read quoted, possibly multiline controller assignments."""
-            values = {}
-            with open(filepath,'r') as control_file:
-                control_lines = control_file.read().splitlines()
-            index = 0
-            while index<len(control_lines):
-                line = control_lines[index]
-                index += 1
-                if '=' not in line:
-                    continue
-                key,value = line.split('=',1)
-                key       = key.strip()
-                value     = value.strip()
-                if len(key)==0 or len(value)==0:
-                    continue
-                quote = value[0] if value[0] in {'"',"'"} else None
-                if quote is None:
-                    values[key] = value
-                else:
-                    value = value[1:]
-                    if value.endswith(quote):
-                        values[key] = value[:-1]
-                        continue
-                    parts = [value]
-                    while index<len(control_lines):
-                        part = control_lines[index]
-                        index += 1
-                        if quote in part:
-                            parts.append(part.split(quote,1)[0])
-                            break
-                        parts.append(part)
-                    values[key] = '\n'.join(parts)
-            return values
-        #end def read_assignments
-
-        def as_int(value):
-            """Convert a controller value to an integer when possible."""
-            try:
-                return int(value)
-            except (TypeError,ValueError):
-                return None
-        #end def as_int
-
-        energy_pattern = re.compile(
-            r'final\s+total\s+energy\s+from\s+eig(?:envalue)?\s+sum.*?'
-            r'[:=]\s*(?P<value>'+self.number_pattern+r').*?'
-            r'\b(?P<units>eV|Ha|Ry)\b',
-            re.IGNORECASE,
-            )
-
-        def final_energy(filepath):
-            """Return the last final eigenvalue-sum energy in Hartree."""
-            value = None
-            units = None
-            try:
-                with open(filepath,'r') as output_file:
-                    energy_lines = output_file.read().splitlines()
-            except (OSError,UnicodeError):
-                return None
-            for line in energy_lines:
-                match = energy_pattern.search(line)
-                if match is not None:
-                    candidate = as_float(match['value'])
-                    if candidate is not None:
-                        value = candidate
-                        units = {'ev':'eV','ha':'Ha','ry':'Ry'}[
-                            match['units'].lower()]
-            if value is None or units is None:
-                return None
-            try:
-                return convert(value,units,'Ha')
-            except (KeyError,TypeError,ValueError):
-                return None
-        #end def final_energy
-
-        neb = obj(
-            controller_file           = None,
-            calculation_mode          = None,
-            spin_polarized            = None,
-            num_intermediate_images   = None,
-            num_images                = None,
-            images_per_node           = None,
-            max_steps                 = None,
-            spring_constant           = None,
-            spring_constant_units     = 'Ha/B^2',
-            initial_input_file        = None,
-            final_input_file          = None,
-            image_directories         = None,
-            image_input_files         = None,
-            image_log_files           = None,
-            image_mpi_processes       = None,
-            input_structures          = None,
-            reaction_coordinate       = None,
-            reaction_coordinate_units = 'B',
-            energies                  = None,
-            relative_energies         = None,
-            energy_units              = 'Ha',
-            forward_barrier           = None,
-            reverse_barrier           = None,
-            barrier_image_index       = None,
-            parallel                  = None,
-            local_image               = None,
-            )
-
-        layout_pattern = re.compile(
-            r'RMG\s+initialization.*?(\d+)\s+image\(s\)\s+total\s*,?\s*'
-            r'(\d+)\s+per\s+node\s*\.?\s*(\d+)\s+MPI\s+process(?:es)?/image',
-            re.IGNORECASE,
-            )
-        constrained_pattern = re.compile(
-            r'entering\s+constrained\s+forces\s+for\s+image\s+(\d+)',
-            re.IGNORECASE,
-            )
-        constrained_images = []
-        neb_calls          = 0
-        for line in lines:
-            if neb.parallel is None:
-                match = layout_pattern.search(line)
-                if match is not None:
-                    neb.parallel = obj(
-                        num_intermediate_images = int(match.group(1)),
-                        images_per_node         = int(match.group(2)),
-                        mpi_processes_per_image = int(match.group(3)),
-                        )
-            if 'neb call' in normalize_line(line).lower():
-                neb_calls += 1
-            match = constrained_pattern.search(line)
-            if match is not None:
-                constrained_images.append(int(match.group(1)))
-
-        neb.local_image = obj(
-            index = (
-                constrained_images[-1]
-                if len(constrained_images)>0 else None
-                ),
-            neb_calls               = neb_calls,
-            constrained_force_calls = np.array(
-                constrained_images,
-                dtype=int,
-                ),
-            energy         = self.energy,
-            energy_units   = self.energy_units,
-            energies       = self.energies,
-            positions      = self.positions,
-            position_units = self.position_units,
-            forces         = self.forces,
-            force_units    = self.force_units,
-            max_forces     = self.max_forces,
-            structures     = self.structures,
-            )
-
-        controller_candidates = (
-            os.path.join(self.path,'ctrl_init.dat'),
-            os.path.join(os.path.dirname(self.path),'ctrl_init.dat'),
-            )
-        controller_file = next((
-            os.path.abspath(filepath)
-            for filepath in controller_candidates
-            if os.path.isfile(filepath)
-            ),None)
-        if controller_file is None:
-            self.neb = neb
-            return
-
-        neb.controller_file = controller_file
-        try:
-            control = read_assignments(controller_file)
-        except (OSError,UnicodeError):
-            control = {}
-        controller_path = os.path.dirname(controller_file)
-
-        nintermediate               = as_int(control.get('num_images'))
-        neb.num_intermediate_images = nintermediate
-        if nintermediate is not None:
-            neb.num_images = nintermediate+2
-        neb.calculation_mode = control.get('calculation_mode')
-        neb.images_per_node  = as_int(control.get('image_per_node'))
-        neb.max_steps        = as_int(control.get('max_neb_steps'))
-        neb.spring_constant  = as_float(control.get('neb_spring_constant'))
-        spin_polarized       = control.get('spin_polarization')
-        if spin_polarized is not None:
-            spin_polarized = spin_polarized.strip().lower()
-            if spin_polarized in {'true','yes','1','false','no','0'}:
-                neb.spin_polarized = spin_polarized in {'true','yes','1'}
-
-        initial_file = control.get('input_file_initial_image')
-        final_file   = control.get('input_file_final_image')
-        if initial_file is not None:
-            neb.initial_input_file = os.path.abspath(os.path.join(
-                controller_path,
-                initial_file,
-                ))
-        if final_file is not None:
-            neb.final_input_file = os.path.abspath(os.path.join(
-                controller_path,
-                final_file,
-                ))
-
-        image_directories   = []
-        image_input_files   = []
-        image_mpi_processes = []
-        image_info          = control.get('image_infos')
-        if image_info is not None:
-            for line in image_info.splitlines():
-                tokens = line.split()
-                if len(tokens)<2:
-                    continue
-                directory = os.path.abspath(os.path.join(
-                    controller_path,
-                    tokens[0],
-                    ))
-                image_directories.append(directory)
-                image_input_files.append(os.path.join(directory,tokens[1]))
-                image_mpi_processes.append(
-                    as_int(tokens[2]) if len(tokens)>=3 else None)
-        if len(image_directories)>0:
-            neb.image_directories   = image_directories
-            neb.image_mpi_processes = np.array(
-                image_mpi_processes,
-                dtype=object,
-                )
-
-        ordered_input_files = []
-        if neb.initial_input_file is not None:
-            ordered_input_files.append(neb.initial_input_file)
-        ordered_input_files.extend(image_input_files)
-        if neb.final_input_file is not None:
-            ordered_input_files.append(neb.final_input_file)
-        if len(ordered_input_files)>0:
-            neb.image_input_files = ordered_input_files
-
-        input_structures = []
-        for filepath in ordered_input_files:
-            structure = None
-            if os.path.isfile(filepath):
-                try:
-                    structure = RmgInput(filepath).return_structure('B')
-                except (NexusError,KeyError,TypeError,ValueError):
-                    pass
-            input_structures.append(structure)
-        if any(structure is not None for structure in input_structures):
-            neb.input_structures = input_structures
-        if (
-            len(input_structures)>0
-            and all(structure is not None for structure in input_structures)
-            ):
-            coordinate       = [0.0]
-            valid_coordinate = True
-            for previous,current in pairwise(input_structures):
-                if previous.pos.shape!=current.pos.shape:
-                    valid_coordinate = False
-                    break
-                coordinate.append(
-                    coordinate[-1]+np.linalg.norm(current.pos-previous.pos))
-            if valid_coordinate:
-                neb.reaction_coordinate = np.array(coordinate,dtype=float)
-
-        image_logs = []
-        for filepath in ordered_input_files:
-            pattern = os.path.join(
-                os.path.dirname(filepath),
-                os.path.basename(filepath)+'.*.log',
-                )
-            image_logs.append(max(glob(pattern),default=None))
-        if len(image_logs)>0:
-            neb.image_log_files = image_logs
-
-        energies = np.full(len(ordered_input_files),np.nan,dtype=float)
-        if len(energies)>0:
-            initial_energy = as_float(control.get('totale_initial_image'))
-            final_image_energy = as_float(control.get('totale_final_image'))
-            if initial_energy is not None:
-                energies[0] = initial_energy
-            if final_image_energy is not None:
-                energies[-1] = final_image_energy
-            for index,filepath in enumerate(image_logs[1:-1],start=1):
-                if filepath is not None:
-                    value = final_energy(filepath)
-                    if value is not None:
-                        energies[index] = value
-            if np.any(np.isfinite(energies)):
-                neb.energies = energies
-            if np.all(np.isfinite(energies)):
-                barrier_index           = int(np.argmax(energies))
-                neb.relative_energies   = energies-energies[0]
-                neb.forward_barrier     = energies[barrier_index]-energies[0]
-                neb.reverse_barrier     = energies[barrier_index]-energies[-1]
-                neb.barrier_image_index = barrier_index
-
-        self.neb = neb
-    #end def read_neb
-
-
     def read_produced_files(self):
         """Locate recognized files produced by EXX, STM, and SCF runs.
 
@@ -1816,10 +1893,12 @@ class RmgOutData(DevBase):
         """
         produced_files = obj()
         if self.run_mode=='exx':
-            files = sorted(glob(os.path.join(
-                self.path,
-                '*exx*integral*.h5',
-                )))
+            files = sorted(
+                glob(os.path.join(
+                    self.path,
+                    '*exx*integral*.h5',
+                    )),
+                )
             if len(files)>0:
                 produced_files.exx_integrals = files
         elif self.run_mode=='stm':
