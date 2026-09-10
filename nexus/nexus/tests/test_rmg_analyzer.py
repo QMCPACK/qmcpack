@@ -128,6 +128,42 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
 
 
 @pytest.mark.parametrize(
+    argnames='calculation_type,input_mode,run_mode',
+    argvalues=[
+        ('Quench electrons','Quench Electrons','scf'),
+        ('Unrecognized calculation','NSCF','nscf'),
+        ],
+    )
+def test_input_run_mode(tmp_path,calculation_type,input_mode,run_mode):
+    from ..rmg_analyzer import RmgOutData
+
+    input_file = tmp_path/'input'
+    log_file   = tmp_path/'rmg.log'
+    input_file.write_text(f'calculation_mode = "{input_mode}"')
+    log_file.write_text(rmg_log(calculation_type))
+
+    outdata = RmgOutData(log_file)
+
+    assert outdata.input.run_mode==run_mode
+    assert outdata.run_mode==run_mode
+    assert outdata.setup_info.run_mode==run_mode
+#end def test_input_run_mode
+
+
+def test_inconsistent_input_run_mode(tmp_path):
+    from ..rmg_analyzer import RmgOutData
+
+    input_file = tmp_path/'input'
+    log_file   = tmp_path/'rmg.log'
+    input_file.write_text('calculation_mode = "NSCF"')
+    log_file.write_text(rmg_log('Quench electrons'))
+
+    with pytest.raises(ValueError,match='do not agree'):
+        RmgOutData(log_file)
+#end def test_inconsistent_input_run_mode
+
+
+@pytest.mark.parametrize(
     argnames='relative_path,run_mode,energy,positions_shape',
     argvalues=representative_runs,
     )

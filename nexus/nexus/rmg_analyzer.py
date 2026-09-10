@@ -173,8 +173,8 @@ class RmgOutData(DevBase):
         self.input        = None
         self.setup_info   = None
 
-        with open(filepath,'r') as input_file:
-            lines = input_file.read().splitlines()
+        with open(filepath,'r') as output_file:
+            lines = output_file.read().splitlines()
         self.read_setup_info(lines)
 
         # modes: scf, nscf, relax
@@ -543,6 +543,20 @@ class RmgOutData(DevBase):
                     self.input = RmgInput(filepath)
                 except (NexusError,OSError,TypeError,ValueError):
                     pass
+
+        input_run_mode = self.input.run_mode if self.input is not None else None
+        if input_run_mode is not None:
+            if self.run_mode is None:
+                self.run_mode       = input_run_mode
+                setup_info.run_mode = input_run_mode
+            elif self.run_mode!=input_run_mode:
+                msg = (
+                    'RMG calculation modes reported by the input and output do '
+                    'not agree.\n'
+                    f'Input run mode: {input_run_mode}\n'
+                    f'Output run mode: {self.run_mode}'
+                    )
+                raise ValueError(msg)
         self.setup_info = setup_info
     #end def read_setup_info
 
