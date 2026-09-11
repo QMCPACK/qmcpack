@@ -487,14 +487,6 @@ if(MKL_FOUND)
   set(MATH_VENDOR_GUESS "INTEL_VML")
 endif()
 
-# AFQMC requires MKL sparse for good performance (roughly a factor of 2x)
-if(BUILD_AFQMC AND NOT MKL_FOUND)
-  message(
-    WARNING
-      "AFQMC - MKL not found, using simple sparse matrix routines.  Link with MKL sparse libraries for better performance."
-  )
-endif()
-
 #-------------------------------------------------------------------
 #  set up scalar/vector math libraries
 #-------------------------------------------------------------------
