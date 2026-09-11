@@ -110,9 +110,28 @@ def test_tailored_pattern_rejects(pattern_name,text):
 #end def test_tailored_pattern_rejects
 
 
+@pytest.mark.parametrize(
+    argnames='text,expected',
+    argvalues=(
+        ('4m33.69s',(('4','m'),('33.69','s'))),
+        ('1h 2m 3.5s',(('1','h'),('2','m'),('3.5','s'))),
+        ('0.10s',(('0.10','s'),)),
+        ),
+    )
+def test_timing_value_sequence(text,expected):
+    from ..pwscf_analyzer import timing_value_pattern
+
+    values = tuple(
+        (match.group('value'),match.group('unit'))
+        for match in re.finditer(timing_value_pattern,text)
+        )
+    assert(values==expected)
+#end def test_timing_value_sequence
+
+
 def test_empty_init():
     from .. import pwscf_analyzer as pa_module
-    from ..pwscf_analyzer import PwscfAnalyzer, PwscfOutData
+    from ..pwscf_analyzer import Pw2CasinoAnalyzer, PwscfAnalyzer, PwscfOutData
 
     pa = PwscfAnalyzer()
     assert(len(pa)==0)
@@ -129,14 +148,16 @@ def test_empty_init():
     assert(not hasattr(pa_module,'read_kpoint_tables'))
     reader_names = (
         'read_calculation','read_fermi_energies',
-        'read_energies','read_bands','read_band_edges','read_structures',
-        'read_pressure','read_stress','read_forces','read_kpoints',
+        'read_energies','read_scf_convergence','read_bands','read_band_edges',
+        'read_structures','read_pressure','read_volume','read_stress',
+        'read_forces','read_timing','read_kpoints',
         )
     assert(all(callable(getattr(PwscfOutData,name)) for name in reader_names))
     assert(not hasattr(PwscfOutData,'read'))
     assert(not any(hasattr(PwscfAnalyzer,'analyze_'+name[5:]) for name in reader_names))
     assert(not hasattr(PwscfAnalyzer,'analyze_schema_xml'))
-    assert(not hasattr(pa_module,'Pw2CasinoAnalyzer'))
+    assert(callable(Pw2CasinoAnalyzer))
+    assert(not hasattr(Pw2CasinoAnalyzer,'read'))
     assert(not hasattr(pa_module,'PwscfXmlData'))
 #end def test_empty_init
 
@@ -160,11 +181,13 @@ def test_result_initialization(tmp_path,calculation,log_text):
     expected = {
         'calculation',
         'Ef','fermi_energies','bands',
+        'volume','cputime','walltime',
         'kpoints_cart','kpoints_unit','kweights',
         }
     if calculation in {'scf','relax','vc-relax'}:
         expected.update((
-            'E','pressure','stress','forces',
+            'E','relax_energies','scf_conv_energy','scf_conv_accuracy',
+            'pressure','stress','forces','tot_forces','max_forces',
             ))
     #end if
     if calculation in {'relax','vc-relax'}:
@@ -192,6 +215,9 @@ k(1) = (0.0 0.0 0.0), wk = 1.0 trailing
 cryst. coord.
 k(1) = (0.0 0.0 0.0), wk = 1.0 trailing
 !  total   energy = -1.0D+02 Ry trailing tokens
+     total energy              =    -9.9D+01 Ry
+     estimated scf accuracy < 6.3E-09 Ry
+unit-cell volume = 3.806210D+02 (a.u.)^3
 total stress (Ry/bohr**3) (kbar) P = 1.2D+03 trailing tokens
  1D-3 2D-3 3D-3 1E+2 2E+2 3E+2 trailing
  4D-3 5D-3 6D-3 4E+2 5E+2 6E+2 trailing
@@ -199,15 +225,25 @@ total stress (Ry/bohr**3) (kbar) P = 1.2D+03 trailing tokens
 Forces acting on atoms
 atom 1 type 1 force = 0.1 0.2 0.3
 atom 2 type 1 force = 0.4 0.5 0.6
+Total force = 1.25D-04 Total SCF correction = 0.0
+PWSCF        : 1h 2m 3.5s CPU 4m33.69s WALL
 ''')
     scf = PwscfOutData(scf_file)
 
     assert(scf.E==-100.0)
+    assert(np.allclose(scf.relax_energies,[-100.0]))
+    assert(np.allclose(scf.scf_conv_energy,[-99.0]))
+    assert(np.allclose(scf.scf_conv_accuracy,[6.3e-9]))
+    assert(scf.volume==380.621)
+    assert(np.isclose(scf.cputime,1+2/60+3.5/3600))
+    assert(np.isclose(scf.walltime,4/60+33.69/3600))
     assert(scf.pressure==1200.0)
     assert(np.allclose(scf.stress,[[[100.,200.,300.],
                                     [400.,500.,600.],
                                     [700.,800.,900.]]]))
     assert(scf.forces.shape==(1,2,3))
+    assert(np.allclose(scf.tot_forces,[1.25e-4]))
+    assert(np.allclose(scf.max_forces,[np.linalg.norm([.4,.5,.6])]))
     assert(scf.kpoints_cart.shape==(1,3))
     assert(scf.kpoints_unit.shape==(1,3))
     assert(scf.kweights.shape==(1,))
@@ -248,6 +284,36 @@ stress: -.001 0.0 .001 -147.1 0.0 147.1
 #end def test_tokenized_log_parsing
 
 
+def test_pw2casino_analyzer_read(tmp_path):
+    from ..pwscf_analyzer import Pw2CasinoAnalyzer, PwscfAnalyzer, PwscfOutData
+
+    (tmp_path/'pwscf.in').write_text("&CONTROL\n  calculation = 'scf'\n/\n")
+    (tmp_path/'pwscf.out').write_text('Self-consistent Calculation\n')
+    (tmp_path/'pw2casino.out').write_text('Kinetic energy from orbitals = 1.25D+01\n')
+
+    pw2casino = Pw2CasinoAnalyzer(tmp_path/'pw2casino.out')
+    assert(pw2casino.K==12.5)
+    analyzer = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        'pwscf.out',
+        'pw2casino.out',
+        analyze = True,
+        )
+    assert(isinstance(analyzer.results_out,PwscfOutData))
+    assert(isinstance(analyzer.pw2casino,Pw2CasinoAnalyzer))
+    assert(analyzer.pw2casino.K==12.5)
+
+    (tmp_path/'pw2casino.out').write_text('Kinetic energy is unavailable\n')
+    assert(Pw2CasinoAnalyzer(tmp_path/'pw2casino.out').K is None)
+    with pytest.raises(FileNotFoundError):
+        Pw2CasinoAnalyzer(tmp_path/'missing.out')
+    (tmp_path/'pw2casino.out').unlink()
+    with pytest.raises(FileNotFoundError):
+        PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out','pw2casino.out',analyze=True)
+#end def test_pw2casino_analyzer_read
+
+
 @pytest.mark.parametrize(
     argnames='verbosity,calculation',
     argvalues=tuple(
@@ -282,6 +348,11 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
         'relax'    : 4,
         'vc-relax' : 4,
         }
+    scf_cycle_counts = {
+        'scf'      : 6,
+        'relax'    : 13,
+        'vc-relax' : 23,
+        }
     npoints = kpoint_counts[calculation]
     nbands  = band_counts[calculation]
 
@@ -289,6 +360,9 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
     assert(isinstance(out,PwscfOutData))
     assert(out.calculation==calculation)
     assert(out.bands is not None)
+    assert(out.volume is not None)
+    assert(out.cputime is not None)
+    assert(out.walltime is not None)
     assert(analyzer.results_xml is None)
     if verbosity=='high':
         assert(out.kpoints_cart.shape==(npoints,3))
@@ -302,6 +376,8 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
         assert(out.kweights is None)
     #end if
     assert(analyzer.eigenvalues('Ha').shape==(npoints,nbands))
+    band = out.bands.up[0]
+    assert({'index','kpoint_2pi_alat','kpoint_rel','eigs','occs','pol'}<=set(band))
     if verbosity=='high':
         assert(analyzer.occupations().shape==(npoints,nbands))
     else:
@@ -311,6 +387,11 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
         assert('E' not in out)
         assert('forces' not in out)
         assert('stress' not in out)
+        if verbosity=='high':
+            assert(out.bands.electronic_structure=='insulating')
+            assert(out.bands.direct_gap.energy>0)
+            assert(out.bands.indirect_gap.energy>0)
+            assert(out.bands.vbm.index!=out.bands.cbm.index)
         with pytest.raises(
             RuntimeError,
             match=r'not supported for calculation "nscf"',
@@ -319,7 +400,12 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
     else:
         nsteps = 1 if calculation=='scf' else 3
         assert(out.E is not None)
+        assert(out.relax_energies.shape==(nsteps,))
+        assert(out.scf_conv_energy.shape==(scf_cycle_counts[calculation],))
+        assert(out.scf_conv_accuracy.shape==(scf_cycle_counts[calculation],))
         assert(out.forces.shape==(nsteps,2,3))
+        assert(out.tot_forces.shape==(nsteps,))
+        assert(out.max_forces.shape==(nsteps,))
         assert(out.pressure is not None)
         assert(out.stress is not None)
         assert(analyzer.energy('Ry')==out.E)

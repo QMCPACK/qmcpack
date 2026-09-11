@@ -32,7 +32,7 @@ from .developer import DevBase, obj
 from .pwscf_data_reader import read_qexml
 from .pwscf_input import PwscfInput
 from .simulation import Simulation, SimulationAnalyzer
-from .structure import Structure
+from .structure import Structure, get_kpath
 from .unit_converter import convert
 from .utilities import path_string
 
@@ -43,6 +43,13 @@ from .utilities import path_string
 # exponents such as ``1.0E``.  It has no capturing groups so it can be safely
 # embedded in each of the field-specific expressions below.
 number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
+
+
+# Match one component of a PWSCF CPU or wall-clock time.  Components may be
+# adjacent (``4m33.69s``) or separated by whitespace.
+timing_value_pattern = (
+    rf'(?P<value>{number_pattern})\s*(?P<unit>[hms])(?=\s|[-+.\d]|$)'
+    )
 
 
 # Match the Fermi-energy result without collecting unrelated numbers earlier
@@ -101,14 +108,24 @@ class PwscfOutData(DevBase):
     kweights : numpy.ndarray or None
         One-dimensional k-point weight array.  Present for every calculation
         type.
+    volume : float or None
+        Final unit-cell volume in bohr cubed.
+    cputime, walltime : float or None
+        Total CPU and wall-clock time in hours.
     E : float or None
         Final total energy in Ry for ``scf``, ``relax``, and ``vc-relax``.
+    relax_energies : numpy.ndarray or None
+        Completed SCF total-energy history in Ry.
+    scf_conv_energy, scf_conv_accuracy : numpy.ndarray or None
+        Electronic SCF iteration energies and accuracy estimates in Ry.
     pressure : float or None
         Final pressure in kbar.
     stress : numpy.ndarray or None
         Stress-tensor history in kbar with shape ``(nsteps, 3, 3)``.
     forces : numpy.ndarray or None
         Atomic-force history with shape ``(nsteps, natoms, 3)`` in Ry/bohr.
+    tot_forces, max_forces : numpy.ndarray or None
+        Histories of reported total-force and maximum atomic-force magnitudes.
     relax_structures : list or None
         Structure records containing atom labels, Cartesian
         positions, and, when reported, cell axes.  Present for relaxation
@@ -129,14 +146,22 @@ class PwscfOutData(DevBase):
         self.Ef                = None
         self.fermi_energies    = None
         self.bands             = None
+        self.volume            = None
+        self.cputime           = None
+        self.walltime          = None
         self.kpoints_cart      = None
         self.kpoints_unit      = None
         self.kweights          = None
         # scf/relax/vc-relax
         self.E                 = None
+        self.relax_energies    = None
+        self.scf_conv_energy   = None
+        self.scf_conv_accuracy = None
         self.pressure          = None
         self.stress            = None
         self.forces            = None
+        self.tot_forces        = None
+        self.max_forces        = None
         # relax/vc-relax
         self.relax_structures  = None
 
@@ -147,7 +172,8 @@ class PwscfOutData(DevBase):
         # remove unused attributes, depending on the calculation type
         if self.calculation=='nscf':
             for name in (
-                'E','pressure','stress','forces',
+                'E','relax_energies','scf_conv_energy','scf_conv_accuracy',
+                'pressure','stress','forces','tot_forces','max_forces',
                 ):
                 del self[name]
         if self.calculation in {'scf','nscf'}:
@@ -156,15 +182,18 @@ class PwscfOutData(DevBase):
         self.read_fermi_energies(lines)
         self.read_kpoints(lines)
         self.read_bands(lines)
+        self.read_volume(lines)
         # all but nscf
         if self.calculation in {'scf','relax','vc-relax'}:
             self.read_energies(lines)
+            self.read_scf_convergence(lines)
             self.read_pressure(lines)
             self.read_stress(lines)
             self.read_forces(lines)
         # relaxation calculations
         if self.calculation in {'relax','vc-relax'}:
             self.read_structures(lines)
+        self.read_timing(lines)
     #end def __init__
 
 
@@ -246,7 +275,7 @@ class PwscfOutData(DevBase):
         ``E`` is the final completed total energy marked with ``!`` in the
         output, in Ry.
         """
-        energy = None
+        energies = []
         for line in lines:
             tokens = line.replace('=',' = ').split()
             if (
@@ -256,10 +285,44 @@ class PwscfOutData(DevBase):
                 ):
                 value = parse_float(tokens[4])
                 if value is not None:
-                    energy = value
-        if energy is not None:
-            self.E = energy
+                    energies.append(value)
+        if len(energies)>0:
+            self.E              = energies[-1]
+            self.relax_energies = np.array(energies,dtype=float)
     #end def read_energies
+
+
+    def read_scf_convergence(self,lines):
+        """Read electronic SCF iteration energies and accuracy estimates."""
+        energies   = []
+        accuracies = []
+        capture    = False
+        for line in lines:
+            tokens = line.replace('=',' = ').replace('<',' < ').split()
+            if 'total' in tokens and 'energy' in tokens and '=' in tokens:
+                capture = False
+                if tokens[0]!='!':
+                    index = tokens.index('=')
+                    if index+2<len(tokens) and tokens[index+2]=='Ry':
+                        value = parse_float(tokens[index+1])
+                        if value is not None:
+                            energies.append(value)
+                            capture = True
+            elif capture and 'estimated scf accuracy' in ' '.join(tokens):
+                for operator in ('<','=','>'):
+                    if operator in tokens:
+                        index = tokens.index(operator)
+                        if index+2<len(tokens) and tokens[index+2]=='Ry':
+                            value = parse_float(tokens[index+1])
+                            if value is not None:
+                                accuracies.append(value)
+                        break
+                capture = False
+        if len(energies)>0:
+            self.scf_conv_energy = np.array(energies,dtype=float)
+        if len(accuracies)>0:
+            self.scf_conv_accuracy = np.array(accuracies,dtype=float)
+    #end def read_scf_convergence
 
 
     def read_bands(self,lines):
@@ -307,8 +370,15 @@ class PwscfOutData(DevBase):
             return values,i
         #end def read_values
 
+        band_kpoint_pattern = (
+            rf'\bk\s*=\s*(?P<kx>{number_pattern})(?:\s+|(?=[+-]))'
+            rf'(?P<ky>{number_pattern})(?:\s+|(?=[+-]))'
+            rf'(?P<kz>{number_pattern})\s*\('
+            )
         bands        = obj(up=obj(),down=obj())
         band_channel = bands.up
+        polarized    = any('- SPIN ' in line for line in lines)
+        up_spin      = True
         for i,line in enumerate(lines):
             if (
                 'End of self-consistent calculation' in line
@@ -316,12 +386,15 @@ class PwscfOutData(DevBase):
                 ):
                 bands        = obj(up=obj(),down=obj())
                 band_channel = bands.up
+                up_spin      = True
                 continue
             if '- SPIN UP -' in line:
                 band_channel = bands.up
+                up_spin      = True
                 continue
             if '- SPIN DOWN -' in line:
                 band_channel = bands.down
+                up_spin      = False
                 continue
             if 'bands (ev)' not in line:
                 continue
@@ -335,10 +408,26 @@ class PwscfOutData(DevBase):
             if j<len(lines) and 'occupation numbers' in lines[j]:
                 occs,_ = read_values(j+1)
 
-            index = len(band_channel)
+            index       = len(band_channel)
+            kpoint_cart = None
+            match       = re.search(band_kpoint_pattern,line)
+            if match is not None:
+                kpoint_cart = np.array(
+                    [parse_float(match.group(name)) for name in ('kx','ky','kz')],
+                    dtype=float,
+                    )
+            kpoint_rel = kpoint_cart
+            if self.kpoints_cart is not None and index<len(self.kpoints_cart):
+                kpoint_cart = self.kpoints_cart[index]
+            if self.kpoints_unit is not None and index<len(self.kpoints_unit):
+                kpoint_rel = self.kpoints_unit[index]
             band_channel[index] = obj(
-                eigs = np.array(eigs,dtype=float),
-                occs = np.array(occs,dtype=float),
+                index           = index,
+                kpoint_2pi_alat = kpoint_cart,
+                kpoint_rel      = kpoint_rel,
+                eigs            = np.array(eigs,dtype=float),
+                occs            = np.array(occs,dtype=float),
+                pol             = ('up' if up_spin else 'down') if polarized else 'none',
                 )
         if len(bands.up)+len(bands.down)==0:
             return
@@ -348,10 +437,20 @@ class PwscfOutData(DevBase):
 
 
     def read_band_edges(self):
-        """Add VBM and CBM energies to a parsed bands object."""
+        """Add band edges, gaps, and electronic classification to bands."""
+        def edge_data(band,energy,band_number):
+            return obj(
+                energy          = energy,
+                kpoint_rel      = band.kpoint_rel,
+                kpoint_2pi_alat = band.kpoint_2pi_alat,
+                index           = band.index,
+                pol             = band.pol,
+                band_number     = band_number,
+                )
         bands = self.bands
         vbm   = None
         cbm   = None
+        direct_gap = None
         for band_channel in (bands.up,bands.down):
             for band in band_channel.values():
                 if len(band.occs)!=len(band.eigs) or len(band.occs)==0:
@@ -362,14 +461,38 @@ class PwscfOutData(DevBase):
                     continue
                 e_val  = np.max(band.eigs[occ])
                 e_cond = np.min(band.eigs[unocc])
-                if vbm is None or e_val>vbm:
-                    vbm = e_val
-                if cbm is None or e_cond<cbm:
-                    cbm = e_cond
+                if vbm is None or e_val>vbm.energy:
+                    vbm = edge_data(band,e_val,int(np.max(np.where(occ)[0])))
+                if cbm is None or e_cond<cbm.energy:
+                    cbm = edge_data(band,e_cond,int(np.min(np.where(unocc)[0])))
+                if direct_gap is None or e_cond-e_val<direct_gap.energy:
+                    direct_gap = obj(
+                        energy          = e_cond-e_val,
+                        kpoint_rel      = band.kpoint_rel,
+                        kpoint_2pi_alat = band.kpoint_2pi_alat,
+                        index           = band.index,
+                        pol             = band.pol,
+                        )
         if vbm is None:
             return
-        bands.vbm = obj(energy=vbm)
-        bands.cbm = obj(energy=cbm)
+        electronic_structure = 'insulating'
+        if vbm.energy+.025>=cbm.energy:
+            electronic_structure = 'metallic' if vbm.band_number==cbm.band_number else 'semi-metal'
+        elif (
+            vbm.kpoint_rel is not None
+            and cbm.kpoint_rel is not None
+            and not np.equal(vbm.kpoint_rel,cbm.kpoint_rel).all()
+            ):
+            bands.indirect_gap = obj(
+                energy  = round(cbm.energy-vbm.energy,3),
+                kpoints = obj(vbm=vbm,cbm=cbm),
+                )
+        bands.update(
+            electronic_structure = electronic_structure,
+            vbm                  = vbm,
+            cbm                  = cbm,
+            direct_gap           = direct_gap,
+            )
     #end def read_band_edges
 
 
@@ -465,6 +588,20 @@ class PwscfOutData(DevBase):
     #end def read_pressure
 
 
+    def read_volume(self,lines):
+        """Read the final reported unit-cell volume in bohr cubed."""
+        volume = None
+        for line in lines:
+            tokens = line.replace('=',' = ').split()
+            if tokens[:3]==['unit-cell','volume','='] and len(tokens)>3:
+                value = parse_float(tokens[3])
+                if value is not None:
+                    volume = value
+        if volume is not None:
+            self.volume = volume
+    #end def read_volume
+
+
     def read_stress(self,lines):
         """Read and bind the sequence of reported stress tensors.
 
@@ -513,7 +650,8 @@ class PwscfOutData(DevBase):
             except ValueError:
                 continue
             break
-        forces = []
+        forces     = []
+        tot_forces = []
         for i,line in enumerate(lines):
             if 'Forces acting on atoms' not in line:
                 continue
@@ -540,9 +678,39 @@ class PwscfOutData(DevBase):
                 j+=1
             if len(aforces)>0 and (nat is None or len(aforces)==nat):
                 forces.append(aforces)
+        for line in lines:
+            tokens = line.replace('=',' = ').split()
+            if tokens[:3]==['Total','force','='] and len(tokens)>3:
+                value = parse_float(tokens[3])
+                if value is not None:
+                    tot_forces.append(value)
         if len(forces)>0:
-            self.forces = np.array(forces,dtype=float)
+            self.forces     = np.array(forces,dtype=float)
+            self.max_forces = np.linalg.norm(self.forces,axis=2).max(axis=1)
+        if len(tot_forces)>0:
+            self.tot_forces = np.array(tot_forces,dtype=float)
     #end def read_forces
+
+
+    def read_timing(self,lines):
+        """Read total PWSCF CPU and wall-clock time in hours."""
+        def pwscf_time(text):
+            scales = {'h':1.0,'m':60.0,'s':3600.0}
+            return sum(
+                parse_float(match.group('value'))/scales[match.group('unit')]
+                for match in re.finditer(timing_value_pattern,text)
+                )
+        #end def pwscf_time
+
+        for line in lines:
+            if 'PWSCF' not in line or 'CPU' not in line or 'WALL' not in line:
+                continue
+            match = re.search(r'PWSCF\s*:\s*(.*?)\s+CPU\s+(.*?)\s+WALL',line)
+            if match is not None:
+                self.cputime  = pwscf_time(match.group(1))
+                self.walltime = pwscf_time(match.group(2))
+                return
+    #end def read_timing
 
 
     def read_kpoints(self,lines):
@@ -624,6 +792,29 @@ class PwscfOutData(DevBase):
 #end class PwscfOutData
 
 
+class Pw2CasinoAnalyzer(DevBase):
+    """Read kinetic energy reported by a PW2CASINO output file."""
+
+    def __init__(self,filepath):
+        self.K = None
+        with open(filepath,'r') as fobj:
+            for line in fobj:
+                if 'Kinetic' not in line:
+                    continue
+                label,separator,text = line.partition('=')
+                if not separator or not label.strip().startswith('Kinetic'):
+                    continue
+                tokens = text.split()
+                if len(tokens)==0:
+                    continue
+                value = parse_float(tokens[0])
+                if value is not None:
+                    self.K = value
+    #end def __init__
+
+#end class Pw2CasinoAnalyzer
+
+
 
 
 
@@ -646,9 +837,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
     outfile_name : str, optional
         Name of the PWSCF output file. It is inferred from ``infile_name``
         when possible.
+    pw2c_outfile_name : str, optional
+        Name of an accompanying PW2CASINO output file.
     analyze : bool, optional
-        If ``True``, parse the available log and legacy XML during
-        initialization.
+        If ``True``, parse the available log, legacy XML, and requested
+        PW2CASINO output during initialization.
 
     Attributes
     ----------
@@ -658,6 +851,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         Absolute path to the calculation directory.
     infile_name, outfile_name : str or None
         Names of the PWSCF input and text-output files.
+    pw2c_outfile_name : str or None
+        Name of the optional PW2CASINO output file.
     input : PwscfInput or None
         Parsed PWSCF input when an input file is available.
     simulation_structure : Structure
@@ -669,6 +864,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
     results_xml : obj or None
         Parsed legacy XML data. It remains ``None`` when legacy XML output is
         absent or cannot be read.
+    pw2casino : Pw2CasinoAnalyzer or None
+        Parsed PW2CASINO data when an auxiliary output file is requested.
 
     Methods
     -------
@@ -714,7 +911,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
     Raises
     ------
     FileNotFoundError
-        If a supplied path, input file, or output file does not exist.
+        If a supplied path, input file, output file, or requested PW2CASINO
+        file does not exist.
     RuntimeError
         If a supplied file cannot be identified as input or output.
 
@@ -1040,9 +1238,10 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def __init__(
         self,
-        arg0         = None,
-        infile_name  = None,
-        outfile_name = None,
+        arg0              = None,
+        infile_name       = None,
+        outfile_name      = None,
+        pw2c_outfile_name = None,
         *,
         analyze      = False,
         ):
@@ -1091,22 +1290,25 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     )
                 raise FileNotFoundError(msg)
 
-        self.infile_name  = infile_name
-        self.outfile_name = outfile_name
-        self.path         = path
-        self.abspath      = os.path.abspath(path)
-        self.input        = inp
-        self.results_out  = None
-        self.results_xml  = None
+        self.infile_name       = infile_name
+        self.outfile_name      = outfile_name
+        self.pw2c_outfile_name = pw2c_outfile_name
+        self.path              = path
+        self.abspath           = os.path.abspath(path)
+        self.input             = inp
+        self.results_out       = None
+        self.results_xml       = None
+        self.pw2casino         = None
         if analyze:
             self.analyze()
     #end def __init__
 
 
     def analyze(self):
-        """Analyze available PWSCF text and legacy XML output."""
+        """Analyze available PWSCF text, legacy XML, and PW2CASINO output."""
         self.results_out = None
         self.results_xml = None
+        self.pw2casino   = None
         if (
             'path' not in self
             or 'outfile_name' not in self
@@ -1123,6 +1325,15 @@ class PwscfAnalyzer(SimulationAnalyzer):
             raise FileNotFoundError(msg)
         self.results_out = PwscfOutData(outfile)
         self.analyze_xml()
+        if self.pw2c_outfile_name is not None:
+            filepath = os.path.join(self.path,self.pw2c_outfile_name)
+            if not os.path.isfile(filepath):
+                msg = (
+                    'PW2CASINO output file is not available\n'
+                    f'file not found: {filepath}'
+                    )
+                raise FileNotFoundError(msg)
+            self.pw2casino = Pw2CasinoAnalyzer(filepath)
     #end def analyze
 
 
@@ -1211,6 +1422,117 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     kp.down = spin
         self.results_xml.update(data=data,kpoints=kpoints)
     #end def analyze_legacy_xml
+
+
+    def make_movie(self,filename,filepath=None):
+        """Write the parsed relaxation trajectory as a tiled XYZ movie."""
+        if (
+            'results_out' not in self
+            or self.results_out is None
+            or 'relax_structures' not in self.results_out
+            or self.results_out.relax_structures is None
+            ):
+            return
+        initial = self.initial_structure('B') if self.input is not None else None
+        frames  = []
+        for result in self.results_out.relax_structures:
+            axes = result.axes if 'axes' in result else None
+            if axes is None and initial is not None:
+                axes = initial.axes
+            if axes is None:
+                return
+            frame = Structure(
+                axes    = np.asarray(axes,dtype=float),
+                elem    = np.asarray(result.atoms,dtype=str),
+                pos     = np.asarray(result.positions,dtype=float),
+                units   = 'B',
+                rescale = False,
+                ).tile(2,2,2)
+            frames.append(frame.write_xyz())
+        target_dir = self.abspath if filepath is None else filepath
+        with open(os.path.join(target_dir,filename),'w') as fobj:
+            fobj.write(''.join(frames))
+    #end def make_movie
+
+
+    def plot_bandstructure(
+        self,
+        filename     = None,
+        filepath     = None,
+        max_min_e    = None,
+        *,
+        show         = False,
+        save         = True,
+        show_vbm_cbm = True,
+        k_labels     = None,
+        ):
+        """Plot the analyzed band structure along a reciprocal-space path."""
+        import matplotlib.pyplot as plt
+
+        if self.results_out is None or self.results_out.bands is None:
+            return
+        bands = self.results_out.bands
+        if 'vbm' not in bands:
+            return
+        channels = [channel for channel in (bands.up,bands.down) if len(channel)>0]
+        if len(channels)==0:
+            return
+        nkpoints = len(channels[0])
+        if any(len(channel)!=nkpoints for channel in channels):
+            return
+        if k_labels is None:
+            structure = self.initial_structure()
+            if structure is None:
+                return
+            kpath  = get_kpath(structure=structure,check_standard=False)
+            x      = np.asarray(kpath['explicit_path_linearcoords'],dtype=float)
+            labels = list(kpath['explicit_kpoints_labels'])
+            if len(x)!=nkpoints:
+                return
+        else:
+            if self.results_out.kpoints_cart is None or len(k_labels)!=nkpoints:
+                return
+            labels = list(k_labels)
+            kpoints = self.results_out.kpoints_cart
+            x       = np.zeros(nkpoints,dtype=float)
+            for index in range(1,nkpoints):
+                x[index] = x[index-1]+np.linalg.norm(kpoints[index]-kpoints[index-1])
+        plt.figure()
+        ax = plt.gca()
+        for channel,color in zip(channels,('k','r')):
+            records = list(channel.values())
+            nbands  = min(len(record.eigs) for record in records)
+            for band_index in range(nbands):
+                values = [record.eigs[band_index]-bands.vbm.energy for record in records]
+                plt.plot(x,values,color=color)
+        for index,label in enumerate(labels):
+            if label:
+                plt.axvline(x[index],linewidth=1,color='k')
+                labels[index] = r'$\Gamma$' if label=='GAMMA' else f'${label}$'
+        plt.xlim([np.min(x),np.max(x)])
+        plt.ylim((-5,5) if max_min_e is None else max_min_e)
+        plt.ylabel('Energy (eV)')
+        plt.xticks(x,labels)
+        ax.tick_params(axis='x',which='both',length=0,pad=10)
+        if show_vbm_cbm:
+            for edge,color in ((bands.vbm,'green'),(bands.cbm,'red')):
+                if edge.kpoint_rel is None:
+                    continue
+                channel = bands.up if edge.pol!='down' else bands.down
+                for index,record in channel.items():
+                    if record.kpoint_rel is not None and np.equal(
+                        edge.kpoint_rel,record.kpoint_rel,
+                        ).all():
+                        plt.scatter(x[index],edge.energy-bands.vbm.energy,c=color,s=100)
+        if save:
+            name   = 'band_structure.pdf' if filename is None else filename
+            target = self.abspath if filepath is None else filepath
+            plt.savefig(os.path.join(target,name),format='pdf',bbox_inches='tight')
+        if show:
+            plt.show()
+        else:
+            plt.close()
+    #end def plot_bandstructure
 
 
 
