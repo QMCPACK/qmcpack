@@ -854,31 +854,22 @@ def interval_distribution(x1,x2=None):
     span to the returned distribution.
     """
     xi,si = _int_dist_input(x1,x2)
-    xi = xi.ravel()
-    si = si.ravel()
     # organize by edge order
-    order = xi.argsort()
-    xi = xi[order]
-    si = si[order]
-    # make the interval counting distribution
-    cd = {}
-    n=0
-    for s,xv in zip(si,xi):
-        n += s
-        cd[xv] = n
-    # first organize into sorted point/edge arrays
-    x = []
-    c = []
-    for xv in sorted(cd.keys()):
-        x.append(xv)
-        c.append(cd[xv])
-    x = np.array(x)
-    c = np.array(c)
-    # next into interval array
-    xi = np.zeros((len(x)-1,2),dtype=x.dtype)
-    xi[:,0] = x[:-1]
-    xi[:,1] = x[1:]
-    ci = c[:-1].copy()
+    edges = xi.ravel()
+    signs = si.ravel()
+    order = edges.argsort()
+    edges = edges[order]
+    signs = signs[order]
+
+    # Combine all coincident edges before accumulating their net change.
+    # This vectorized sweep avoids one Python dictionary entry and two list
+    # appends per edge while preserving the span counts between unique edges.
+    values,starts = np.unique(edges,return_index=True)
+    counts = np.cumsum(np.add.reduceat(signs,starts))
+    xi = np.empty((len(values)-1,2),dtype=values.dtype)
+    xi[:,0] = values[:-1]
+    xi[:,1] = values[1:]
+    ci = counts[:-1]
     return xi,ci
 #end def interval_distribution
 
