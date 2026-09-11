@@ -248,7 +248,13 @@ def theil_sen_stoch_reblock(x,y):
 #end def theil_sen_stoch_reblock
 
 
-def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
+def reblocked_autocorr_time(
+        x,
+        min_blocks = 10,
+        *,
+        plot       = False,
+        show       = False,
+        ):
     """Estimate autocorrelation time from the growth of blocked errors.
 
     This estimator currently overestimates the autocorrelation times in a 
@@ -393,7 +399,7 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
 
 
 
-def acf_autocorr_time(x,reliability=False):
+def acf_autocorr_time(x,*,reliability=False):
     """Estimate autocorrelation time from a windowed sample ACF.
 
     Best for long chains.  Generally prefer the Geyer method.
@@ -505,7 +511,13 @@ def acf_autocorr_time(x,reliability=False):
 
 
 
-def geyer_ims_autocorr_time(x,c=5.0,reliability=False,acf_fallback=True):
+def geyer_ims_autocorr_time(
+        x,
+        c            = 5.0,
+        *,
+        reliability  = False,
+        acf_fallback = True,
+        ):
     """Estimate integrated autocorrelation time with Geyer's IMS method.
 
     This is the single best autocorrelation estimator.
@@ -637,7 +649,7 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False,acf_fallback=True):
 
 
 
-def autocorr_time(x,reliability=False):
+def autocorr_time(x,*,reliability=False):
     """Conservatively combine autocorrelation-time estimates.
 
     The ACF and Geyer initial-monotone-sequence probe the correlation
@@ -875,7 +887,11 @@ def interval_distribution(x1,x2=None):
 
 
 
-def plot_interval_dist(xi,ci,style='b.-'):
+def plot_interval_dist(
+        xi,
+        ci,
+        style = 'b.-',
+        ):
     """Plot an interval distribution as a piecewise-constant curve.
 
     Parameters
@@ -905,8 +921,15 @@ def plot_interval_dist(xi,ci,style='b.-'):
 
 
 
-def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False,
-                       quad_weighting='endpoint'):
+def interval_dist_peak(
+        xi,
+        ci,
+        method         = 'interval_mid',
+        peak_frac      = 0.5,
+        *,
+        height         = False,
+        quad_weighting = 'endpoint',
+        ):
     """Return a representative location at the peak of an interval distribution.
 
     Parameters
@@ -1030,14 +1053,15 @@ def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False,
 
 def rolling_interval_dist_peak(
         x1,
-        x2          = None,
-        window      = 10,
-        step        = 5,
-        method      = 'interval_mid',
-        peak_frac  = 0.5,
+        x2             = None,
+        window         = 10,
+        step           = 5,
+        method         = 'interval_mid',
+        peak_frac      = 0.5,
+        *,
         quad_weighting = 'endpoint',
-        ret_height  = False,
-        ret_windows = False,
+        ret_height     = False,
+        ret_windows    = False,
         ):
     """Return interval-distribution peaks for overlapping input windows.
 
@@ -1115,8 +1139,12 @@ def rolling_interval_dist_peak(
             msg = 'each rolling window must span a nonzero interval'
             raise ValueError(msg)
         xm,cm = interval_dist_peak(
-            xi,ci,method=method,peak_frac=peak_frac,height=True,
-            quad_weighting=quad_weighting,
+            xi,
+            ci,
+            method         = method,
+            peak_frac      = peak_frac,
+            height         = True,
+            quad_weighting = quad_weighting,
             )
         xp.append(xm)
         cp.append(cm)
@@ -1184,8 +1212,13 @@ def line_crossing_distribution(x,nperm=0):
 
 
 
-def lcd_peak(x,method='interval_mid',peak_frac=0.5,nperm=0,
-             quad_weighting='endpoint'):
+def lcd_peak(
+        x,
+        method         = 'interval_mid',
+        peak_frac      = 0.5,
+        nperm          = 0,
+        quad_weighting = 'endpoint',
+        ):
     """Return a peak of a series line-crossing distribution.
 
     Parameters
@@ -1204,22 +1237,26 @@ def lcd_peak(x,method='interval_mid',peak_frac=0.5,nperm=0,
     """
     xi,ci = line_crossing_distribution(x,nperm=nperm)
     xp = interval_dist_peak(
-        xi,ci,method=method,peak_frac=peak_frac,
-        quad_weighting=quad_weighting,
+        xi,
+        ci,
+        method         = method,
+        peak_frac      = peak_frac,
+        quad_weighting = quad_weighting,
         )
     return xp
 #end def lcd_peak
 
 
 
-def lcd_smooth(x,
-               t      = None,
-               window = 10,
-               step   = 5,
-               method = 'interval_rand',
-               peak_frac = 0.5,
-               quad_weighting = 'endpoint',
-               ):
+def lcd_smooth(
+        x,
+        t              = None,
+        window         = 10,
+        step           = 5,
+        method         = 'interval_rand',
+        peak_frac      = 0.5,
+        quad_weighting = 'endpoint',
+        ):
     """Return rolling line-crossing-distribution peaks for a time series.
 
     Parameters
@@ -1242,12 +1279,12 @@ def lcd_smooth(x,
     xi,ti = time_series_intervals(x,t)
     xp,windows = rolling_interval_dist_peak(
         xi,
-        window      = window,
-        step        = step,
-        method      = method,
-        peak_frac   = peak_frac,
+        window         = window,
+        step           = step,
+        method         = method,
+        peak_frac      = peak_frac,
         quad_weighting = quad_weighting,
-        ret_windows = True,
+        ret_windows    = True,
         )
     if t is None:
         return xp
