@@ -93,7 +93,7 @@ def test_empty_init():
     assert(not hasattr(pa_module,'read_kpoint_tables'))
     reader_names = (
         'read_calculation','read_fermi_energies',
-        'read_energies','read_scf_convergence','read_bands',
+        'read_energies','read_scf_convergence','read_bands','read_initial_structure',
         'read_structures','read_pressure','read_volume','read_stress',
         'read_forces','read_timing','read_kpoints',
         )
@@ -126,9 +126,9 @@ def test_result_initialization(tmp_path,calculation,log_text):
 
     expected = {
         'calculation',
-        'Ef','fermi_energies','bands',
-        'volume','cputime','walltime',
-        'kpoints_cart','kpoints_unit','kweights',
+            'Ef','fermi_energies','bands',
+            'volume','cputime','walltime',
+            'kpoints_cart','kpoints_unit','kweights','initial_structure_data',
         }
     if calculation in {'scf','relax','vc-relax'}:
         expected.update((
@@ -504,6 +504,11 @@ def test_supplemental_qe_runs(
         assert(np.isclose(analyzer.kweights().sum(),2.0))
     if case in {'cbn_relax','cbn_vc_relax'}:
         assert(out.relax_structures[-1].atoms==['B','N'])
+        assert(analyzer.relaxed_structure('B').pos.shape==(2,3))
+    if case.startswith('cbn_'):
+        initial = analyzer.initial_structure('B')
+        assert(initial.elem.tolist()==['B','N'])
+        assert(initial.axes.shape==(3,3))
     #end if
 #end def test_supplemental_qe_runs
 
