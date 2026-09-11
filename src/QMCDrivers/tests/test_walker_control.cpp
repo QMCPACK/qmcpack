@@ -114,6 +114,39 @@ TEST_CASE("WalkerControl round trip index conversions", "[drivers][walker_contro
   REQUIRE(all_pass);
 }
 
+TEST_CASE("Legacy WalkerControlBase population inputs", "[drivers][walker_control][legacy][input]")
+{
+  Communicate* comm = OHMMS::Controller;
+  REQUIRE(comm->size() == 1);
+
+  WalkerControlBase walker_control(comm);
+  walker_control.set_method(0);
+
+  const char* const input = R"(
+  <qmc method="dmc">
+    <parameter name="maxCopy">3</parameter>
+    <parameter name="targetwalkers">10</parameter>
+    <parameter name="max_walkers">7</parameter>
+  </qmc>)";
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(input));
+  REQUIRE(walker_control.put(doc.getRoot()));
+
+  CHECK(walker_control.get_n_max() == 7);
+  CHECK(walker_control.get_n_min() == 3);
+
+  const SimulationCell simulation_cell;
+  MCWalkerConfiguration walkers(simulation_cell);
+  walkers.create({1});
+  walkers.createWalkers(1);
+  walkers[0]->Multiplicity = 5.0;
+  walkers[0]->Weight       = 1.0;
+
+  // Legacy MaxCopy limits the multiplicity used to estimate the next
+  // population even though the walker requests five copies.
+  CHECK(walker_control.doNotBranch(0, walkers) == 3);
+}
+
 // uncomment the std::cout and output_vector lines to see the walker assignments
 TEST_CASE("Walker control assign walkers odd ranks", "[drivers][walker_control]")
 {

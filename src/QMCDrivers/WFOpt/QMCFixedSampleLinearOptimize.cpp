@@ -80,7 +80,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
       nblocks(1),
       nolds(1),
       nkept(1),
-      nsamp_comp(0),
       omega_shift(0.0),
       block_first(true),
       block_second(false),
@@ -117,7 +116,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
   m_param.add(nblocks, "nblocks");
   m_param.add(nolds, "nolds");
   m_param.add(nkept, "nkept");
-  m_param.add(nsamp_comp, "nsamp_comp");
   m_param.add(omega_shift, "omega");
   m_param.add(max_relative_cost_change, "max_relative_cost_change");
   m_param.add(max_param_change, "max_param_change");

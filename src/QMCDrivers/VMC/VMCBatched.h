@@ -48,7 +48,6 @@ public:
     const VMCDriverInput& vmcdrv_input;
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
-    IndexType recalculate_properties_period;
     const size_t steps_per_block;
     IndexType step            = -1;
     IndexType global_step     = -1;

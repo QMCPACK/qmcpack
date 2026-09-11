@@ -42,7 +42,6 @@ RMC::RMC(const ProjectData& project_data,
          Communicate* comm)
     : QMCDriver(project_data, w, psi, h, comm, "RMC"),
       prestepsVMC(-1),
-      rescaleDrift("no"),
       beta(-1),
       beads(-1),
       fromScratch(true)
@@ -50,10 +49,8 @@ RMC::RMC(const ProjectData& project_data,
   RootName = "rmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
   qmc_driver_mode.set(QMC_WARMUP, 0);
-  m_param.add(rescaleDrift, "drift");
   m_param.add(beta, "beta");
   m_param.add(beads, "beads");
-  m_param.add(resizeReptile, "resize");
   m_param.add(prestepsVMC, "vmcpresteps");
 
   Action.resize(3);
@@ -84,8 +81,7 @@ void RMC::run()
     rmc_loop.start();
 #pragma omp parallel
     {
-      int ip                 = omp_get_thread_num();
-      IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
+      int ip = omp_get_thread_num();
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator wit(W.begin() + wPerRank[ip]), wit_end(W.begin() + wPerRank[ip + 1]);
       Movers[ip]->startBlock(nSteps);

@@ -278,7 +278,6 @@ bool QMCMain::execute()
     v_str << cur_version[0] << " " << cur_version[1];
     xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
     xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)my_project_.currentMainRoot().c_str());
-    xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
     xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"collected", (const xmlChar*)"yes");

@@ -42,12 +42,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   int dummy_int = 0;
 
   ParameterSet parameter_set;
-  parameter_set.add(recalculate_properties_period_, "checkProperties");
-  parameter_set.add(recalculate_properties_period_, "checkproperties");
-  parameter_set.add(recalculate_properties_period_, "check_properties");
-  parameter_set.add(config_dump_period_.period, "recordconfigs");
-  parameter_set.add(config_dump_period_.period, "record_configs");
-  parameter_set.add(starting_step_, "current");
   parameter_set.add(max_blocks_, "blocks");
   parameter_set.add(requested_steps_, "steps");
   parameter_set.add(sub_steps_, "substeps");
@@ -70,7 +64,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(blocks_between_recompute_, "blocks_between_recompute");
   parameter_set.add(drift_modifier_, "drift_modifier");
   parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a");
-  parameter_set.add(max_disp_sq_, "maxDisplSq");
   parameter_set.add(debug_checks_str, "debug_checks",
                     {"no", "all", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
   parameter_set.add(measure_imbalance_, "measure_imbalance", {false});
@@ -85,8 +78,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   aAttrib.put(cur);
 
   //set default to match legacy QMCDriver
-  check_point_period_.stride = Period4CheckPoint;
-  check_point_period_.period = Period4CheckPoint;
+  check_point_period_ = Period4CheckPoint;
 
   if (cur != NULL)
   {
@@ -98,31 +90,11 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
     while (tcur != NULL)
     {
       std::string cname{lowerCase(castXMLCharToChar(tcur->name))};
-      if (cname == "record")
-      {
-        //dump walkers for optimization
-        OhmmsAttributeSet rAttrib;
-        rAttrib.add(walker_dump_period_.stride, "stride");
-        rAttrib.add(walker_dump_period_.period, "period");
-        rAttrib.put(tcur);
-      }
-      else if (cname == "checkpoint")
+      if (cname == "checkpoint")
       {
         OhmmsAttributeSet rAttrib;
-        rAttrib.add(check_point_period_.stride, "stride");
-        rAttrib.add(check_point_period_.period, "period");
+        rAttrib.add(check_point_period_, "period");
         rAttrib.put(tcur);
-      }
-      else if (cname == "dumpconfig")
-      {
-        OhmmsAttributeSet rAttrib;
-        rAttrib.add(config_dump_period_.stride, "stride");
-        rAttrib.add(config_dump_period_.period, "period");
-        rAttrib.put(tcur);
-      }
-      else if (cname == "random")
-      {
-        reset_random_ = true;
       }
       // These complications are due to the need to support bare <esimator> nodes
       else if (cname == "estimators" || cname == "estimator")
@@ -153,8 +125,8 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
       debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_TMOVE;
   }
 
-  if (check_point_period_.period < 1)
-    check_point_period_.period = max_blocks_;
+  if (check_point_period_ < 1)
+    check_point_period_ = max_blocks_;
 
   // \todo this should be moved to a checkParticularValidity override
   // when QMCDriverInput is modernized.

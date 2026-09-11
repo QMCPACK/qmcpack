@@ -33,6 +33,7 @@ set(DRIVER_TEST_SRC
     test_LMYEngine.cpp
     test_vmc_driver.cpp
     test_dmc_driver.cpp
+    test_rmc_update.cpp
     test_PsiHamNamePairReader.cpp
     test_SimpleFixedNodeBranch.cpp
     test_QMCDriverFactory.cpp
@@ -86,8 +87,7 @@ set(DRIVER_TEST_SRC
     test_QMCCostFunctionBase.cpp
     test_LinearMethod.cpp
     test_ConjugateGradient.cpp
-    test_Eigensolver.cpp
-    test_WFOptDriverInput.cpp)
+    test_Eigensolver.cpp)
 add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
 target_link_libraries(${UTEST_EXE} catch_main qmcdriver minimal_test_pools)
 if(USE_OBJECT_TARGET)

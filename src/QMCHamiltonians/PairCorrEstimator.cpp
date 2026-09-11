@@ -208,12 +208,10 @@ bool PairCorrEstimator::put(xmlNodePtr cur)
 {
   //set resolution
   int nbins = (int)std::ceil(Dmax * DeltaInv);
-  std::string debug("no");
   OhmmsAttributeSet attrib;
   attrib.add(nbins, "num_bin");
   attrib.add(Dmax, "rmax");
   attrib.add(Delta, "dr");
-  attrib.add(debug, "debug");
   attrib.put(cur);
   Delta    = Dmax / static_cast<RealType>(nbins);
   DeltaInv = 1.0 / Delta;

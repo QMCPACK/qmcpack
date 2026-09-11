@@ -16,7 +16,6 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "InputTypes.hpp"
 #include "DriverDebugChecks.h"
 #include "EstimatorManagerInput.h"
 #include "type_traits/template_types.hpp"
@@ -58,11 +57,6 @@ protected:
 
   /// if true, batched operations are serialized over walkers
   bool crowd_serialize_walkers_ = false;
-  /// period to recalculate the walker properties from scratch.
-  int recalculate_properties_period_ = 100;
-  /// period of recording walker positions and IDs for forward walking afterwards
-  input::PeriodStride config_dump_period_;
-  IndexType starting_step_ = 0;
   IndexType num_crowds_    = 0;
   // This is the global walkers it is a hard limit for VMC and the target for DMC
   IndexType total_walkers_     = 0;
@@ -91,13 +85,8 @@ protected:
   std::optional<EstimatorManagerInput> estimator_manager_input_;
 
   // from putQMCInfo
-  input::PeriodStride walker_dump_period_{0, 0};
-  input::PeriodStride check_point_period_{0, 0};
-  bool dump_config_  = false;
-  bool reset_random_ = false;
-
-  // from QMCUpdateBase
-  RealType max_disp_sq_ = -1.0;
+  IndexType check_point_period_ = 0;
+  bool dump_config_             = false;
 
   // for drift modifer
   std::string drift_modifier_{"UNR"};
@@ -107,15 +96,11 @@ protected:
    */
 
 public:
-  int get_recalculate_properties_period() const { return recalculate_properties_period_; }
-  input::PeriodStride get_config_dump_period() const { return config_dump_period_; }
-  IndexType get_starting_step() const { return starting_step_; }
   IndexType get_num_crowds() const { return num_crowds_; }
   IndexType get_walkers_per_rank() const { return walkers_per_rank_; }
   IndexType get_total_walkers() const { return total_walkers_; }
   IndexType get_requested_samples() const { return requested_samples_; }
   IndexType get_sub_steps() const { return sub_steps_; }
-  RealType get_max_disp_sq() const { return max_disp_sq_; }
   IndexType get_max_blocks() const { return max_blocks_; }
   IndexType get_requested_steps() const { return requested_steps_; }
   IndexType get_warmup_steps() const { return warmup_steps_; }
@@ -124,9 +109,7 @@ public:
   IndexType get_blocks_between_recompute() const { return blocks_between_recompute_; }
   bool get_append_run() const { return append_run_; }
   IndexType get_estimator_measurement_period() const { return estimator_measurement_period_; }
-  input::PeriodStride get_walker_dump_period() const { return walker_dump_period_; }
-  input::PeriodStride get_check_point_period() const { return check_point_period_; }
-  bool get_reset_random() const { return reset_random_; }
+  IndexType get_check_point_period() const { return check_point_period_; }
   bool get_dump_config() const { return dump_config_; }
 
   const std::string& get_qmc_method() const { return qmc_method_; }

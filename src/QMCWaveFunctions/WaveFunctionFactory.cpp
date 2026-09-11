@@ -75,31 +75,8 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
     else if (cname == WaveFunctionComponentBuilder::detset_tag)
     {
       addFermionTerm(*targetPsi, sposet_builder_factory, cur);
-      bool foundtwist(false);
-      xmlNodePtr kcur = cur->children;
-      while (kcur != NULL)
-      {
-        std::string kname((const char*)(kcur->name));
-        if (kname == "h5tag")
-        {
-          std::string hdfName;
-          OhmmsAttributeSet attribs;
-          attribs.add(hdfName, "name");
-          if (hdfName == "twistAngle")
-          {
-            std::vector<ParticleSet::RealType> twists(3, 0);
-            putContent(twists, kcur);
-            targetPsi->setTwist(std::move(twists));
-            foundtwist = true;
-          }
-        }
-        kcur = kcur->next;
-      }
-      if (!foundtwist)
-      {
-        //default twist is [0 0 0]
-        targetPsi->setTwist(std::vector<ParticleSet::RealType>(3, 0));
-      }
+      //default twist is [0 0 0]
+      targetPsi->setTwist(std::vector<ParticleSet::RealType>(3, 0));
     }
     else if (cname == WaveFunctionComponentBuilder::jastrow_tag)
     {

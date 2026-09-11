@@ -601,11 +601,9 @@ bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet& spo, xmlNodePtr cur)
 
   //initialize the number of orbital by the basis set size
   std::string debugc("no");
-  double orbital_mix_magnitude = 0.0;
   bool PBC                     = false;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(debugc, "debug");
-  aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
   xmlNodePtr occ_ptr   = NULL;
   xmlNodePtr coeff_ptr = NULL;

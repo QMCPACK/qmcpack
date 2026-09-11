@@ -67,16 +67,12 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   std::string curName(castXMLCharToChar(cur->name));
   std::string update_mode("pbyp");
   std::string qmc_mode;
-  std::string multi_tag("no");
-  std::string warp_tag("no");
   std::string append_tag("no");
   std::string profiling_tag("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(qmc_mode, "method",
               {"", "vmc", "vmc_batch", "dmc", "dmc_batch", "csvmc", "rmc", "linear", "linear_batch", "wftest"});
   aAttrib.add(update_mode, "move");
-  aAttrib.add(multi_tag, "multiple");
-  aAttrib.add(warp_tag, "warp");
   aAttrib.add(append_tag, "append");
   aAttrib.add(profiling_tag, "profiling");
   aAttrib.add(das.traces_tag, "trace");
@@ -84,8 +80,6 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   aAttrib.put(cur);
   das.append_run                 = (append_tag == "yes");
   das.enable_profiling           = (profiling_tag == "yes");
-  das.what_to_do[SPACEWARP_MODE] = (warp_tag == "yes");
-  das.what_to_do[MULTIPLE_MODE]  = (multi_tag == "yes");
   das.what_to_do[UPDATE_MODE]    = (update_mode == "pbyp");
   infoSummary.flush();
   infoLog.flush();

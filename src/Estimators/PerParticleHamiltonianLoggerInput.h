@@ -33,8 +33,8 @@ public:
     PerParticleHamiltonianLoggerInputSection()
     {
       section_name = type_tag;
-      attributes   = {"to_stdout", "validate_per_particle_sum", "name"};
-      bools        = {"to_stdout", "validate_per_particle_sum"};
+      attributes   = {"to_stdout", "name"};
+      bools        = {"to_stdout"};
       strings      = {"name"};
     }
     PerParticleHamiltonianLoggerInputSection(const PerParticleHamiltonianLoggerInputSection& other) = default;

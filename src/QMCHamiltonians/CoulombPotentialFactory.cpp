@@ -81,8 +81,6 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   std::string targetInp(targetPtcl.getName());
   std::string sourceInp(targetPtcl.getName());
   std::string title("ElecElec"), pbc("yes");
-  std::string forces("no");
-  std::string use_gpu;
   bool physical = true;
   OhmmsAttributeSet hAttrib;
   hAttrib.add(title, "id");
@@ -91,11 +89,8 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   hAttrib.add(sourceInp, "source");
   hAttrib.add(pbc, "pbc");
   hAttrib.add(physical, "physical");
-  hAttrib.add(forces, "forces");
-  hAttrib.add(use_gpu, "gpu", CPUOMPTargetSelector::candidate_values);
   hAttrib.put(cur);
   const bool applyPBC = (PBCType && pbc == "yes");
-  const bool doForces = (forces == "yes") || (forces == "true");
 
   app_summary() << std::endl;
   app_summary() << "   Coulomb Potential" << std::endl;
@@ -119,6 +114,14 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 
   if (sourceInp == targetInp) // AA type
   {
+    std::string forces("no");
+    std::string use_gpu;
+    OhmmsAttributeSet aaAttrib;
+    aaAttrib.add(forces, "forces");
+    aaAttrib.add(use_gpu, "gpu", CPUOMPTargetSelector::candidate_values);
+    aaAttrib.put(cur);
+    const bool doForces = (forces == "yes") || (forces == "true");
+
     if (!applyPBC && ptclA->getTotalNum() == 1)
     {
       app_log() << "  CoulombAA for " << sourceInp << " is not created.  Number of particles == 1 and nonPeriodic"
@@ -164,7 +167,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 void HamiltonianFactory::addForceHam(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
-  std::string a("ion0"), targetName("e"), title("ForceBase"), pbc("yes"), PsiName = "psi0";
+  std::string a("ion0"), targetName("e"), title("ForceBase"), pbc("yes");
   OhmmsAttributeSet hAttrib;
   std::string mode("bare");
   //hAttrib.add(title,"id");
@@ -173,7 +176,6 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   hAttrib.add(targetName, "target");
   hAttrib.add(pbc, "pbc");
   hAttrib.add(mode, "mode");
-  hAttrib.add(PsiName, "psi");
   hAttrib.put(cur);
   app_log() << "HamFac forceBase mode " << mode << std::endl;
   bool applyPBC = (PBCType && pbc == "yes");
@@ -240,11 +242,10 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
 void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
-  std::string src("i"), title("PseudoPot"), wfname("invalid"), format("xml");
+  std::string src("i"), title("PseudoPot"), format("xml");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(title, "name");
   pAttrib.add(src, "source");
-  pAttrib.add(wfname, "wavefunction");
   pAttrib.add(format, "format"); //temperary tag to switch between format
   pAttrib.put(cur);
   if (format == "old")

@@ -26,8 +26,6 @@ enum class QMCRunType
 enum QMCModeEnum
 {
   UPDATE_MODE,    /**< bit for move: walker or pbyp */
-  MULTIPLE_MODE,  /**< bit for multple configuration */
-  SPACEWARP_MODE, /**< bit for space-warping */
   ALTERNATE_MODE, /**< bit for performing various analysis and weird qmc methods */
   GPU_MODE,       /**< bit to use GPU driver */
   QMC_MODE_MAX = 8

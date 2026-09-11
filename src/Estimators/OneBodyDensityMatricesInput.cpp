@@ -27,12 +27,9 @@ OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(name_, "name");
-  setIfInInput(energy_matrix_, "energy_matrix");
   setIfInInput(use_drift_, "use_drift");
   setIfInInput(normalized_, "normalized");
-  setIfInInput(volume_normalized_, "volume_normalized");
-  setIfInInput(check_overlap_, "check_overlap");
-  setIfInInput(check_derivatives_, "check_derivatives");
+  setIfInInput(volume_normalized_, "volume_normed");
   setIfInInput(rstats_, "rstats");
   setIfInInput(write_acceptance_ratio_, "acceptance_ratio");
   setIfInInput(integrator_, "integrator");

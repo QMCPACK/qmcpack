@@ -386,8 +386,6 @@ void VMCBatched::run()
   {
     {
       ScopeGuard<LoopTimer<>> vmc_local_timer(vmc_loop);
-      vmc_state.recalculate_properties_period =
-          (qmc_driver_mode_[QMC_UPDATE_MODE]) ? qmcdriver_input_.get_recalculate_properties_period() : 0;
       vmc_state.is_recomputing_block = qmcdriver_input_.get_blocks_between_recompute()
           ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
           : false;

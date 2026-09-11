@@ -22,6 +22,11 @@
 #include "QMCDrivers/CloneManager.h"
 namespace qmcplusplus
 {
+namespace testing
+{
+class DMCTests;
+}
+
 /** @ingroup QMCDrivers
  * @brief DMC driver using OpenMP paragra
  *
@@ -45,17 +50,16 @@ public:
   QMCRunType getRunType() override { return QMCRunType::DMC; }
 
 private:
+  friend class testing::DMCTests;
+
   ///driver level reference of Random number generators
   const UPtrVector<RandomBase<QMCTraits::FullPrecRealType>>& rngs_;
   ///Index to determine what to do when node crossing is detected
-  // does not appear to be used
   IndexType KillNodeCrossing;
   ///Interval between branching
   IndexType BranchInterval;
   ///hdf5 file name for Branch conditions
   std::string BranchInfo;
-  ///input std::string to determine kill walkers or not
-  std::string KillWalker;
   ///input std::string to determine swap walkers among mpi processors
   std::string SwapWalkers;
   ///input to control diffusion with L2 operator
