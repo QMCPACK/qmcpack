@@ -10,7 +10,7 @@ def test_redo(tmp_path):
 
     exe = TEST_DIR.parent / "bin/nxs-redo"
 
-    command = '{} {}'.format(exe,tmp_path)
+    command = f'{exe} {tmp_path}'
 
 
     # empty directory

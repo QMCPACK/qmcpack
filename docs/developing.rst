@@ -906,7 +906,7 @@ understand, and review. In this way we can maintain a good collective developmen
 Release Process
 ---------------
 
-This section documents the steps to follow to make a new release of QMCPACK. The examples are given for the 4.1.0 release. This
+This section documents the steps to follow to make a new release of QMCPACK. The examples are given for the 4.4.0 release. This
 simple process should be followed step-by-step to ensure accuracy and avoid need for a rerelease.
 
 1. Make a fresh clone of the repo and create a release candidate branch labeled rc_Mmp where Mmp are digits following semantic versioning.
@@ -915,46 +915,49 @@ simple process should be followed step-by-step to ensure accuracy and avoid need
 
  git clone https://github.com/QMCPACK/qmcpack.git
  cd qmcpack
- git branch rc_410
- git checkout rc_410
+ git checkout -b rc_440
 
-2. Update the VERSION numbers in the project section of qmcpack/CMakeLists.txt for the new release, e.g. 4.1.0
+2. Update the VERSION numbers in the project section of qmcpack/CMakeLists.txt for the new release, e.g. 4.4.0
 3. Update qmcpack/CHANGELOG.md by replacing the unreleased section with the new version and release date. Update the notes section
-   to recommend the update to all users (if appropriate) and note any major headline items such as backwards incompatibility. The
-   preferred way to get a list of all merged PRs is via the gh cli tool. Use the following to generate a starting point, after adjusting
-   the dates to include the day of the previous release. Edit the output to include only "significant" changes.
+   to recommend the update to all users (if appropriate) and note any major headline items such as new features or backwards
+   incompatibility. The changelog is intended to be readable by general users and does not list every single change. The preferred
+   way to get a list of all merged PRs is via the gh cli tool. Use the following to generate a starting point, after adjusting the
+   dates to include the day of the previous release. Edit the output to include only "significant" changes.
 
 .. code:: shell
 
   gh search prs --merged-at 2025-02-05..2025-04-29 -R QMCPACK/qmcpack  --json title,url,repository,number -L 1000 --jq '.[]|("* " + .title + " [#" + (.number|tostring) +"]("+ .url + ")\n")'
 
-4. Commit and push the changes to GitHub
+4. Update the Nexus version number in nexus/nexus/nexus_version.py, nexus/pyproject.toml, and run `uv sync` to update the `nexus/uv.lock` file.
+5. Commit and push the changes to GitHub
 
 ::
 
- git add qmcpack/CMakeLists.txt qmcpack/CHANGELOG.md
+ git add -u
  git commit -m "Increase version number, update release notes"
- git push origin rc_410
+ git push origin rc_440
 
-5. On GitHub, make a pull request into the main branch from the rc.
-6. Ensure CI tests run and pass.
-7. Make an independent download of the proposed merged PR.
-8. Verify code configures and builds on at least one system. Be sure to do this on a clean, freshly cloned repo.
-9. Run all the tests apart from the long ones, confirm version reports correctly. e.g. ctest -VV -E long. Confirm the results are appropriately similar to the last nightly and weekly test results.
-10. Push any needed fixes to the rc and repeat the tests.
-11. Add notes on the test status to the PR.
-12. Request reviewer / other PR approver approves the merge. At least one review is required to merge to main. ** The reviewer needs to check the updated version number and CHANGELOG. **
-13. Merge the PR.
-14. Create a new release using the release tool on GitHub. Link to the CHANGELOG.md in the release notes. The GitHub link can be copied & updated from previous release. 
-15. Issue a PR back to develop from main to update with the new version number and any other updates made to the rc.
-16. Once the PR is merged to develop, update the QMCPACK_VERSION_PATCH version to 9 in CMakeLists.txt in the develop branch to indicate it is the development version.
-17. Delete the rc branch.
-18. Verify readthedocs is seeing the new release and update readthedocs configuration if needed.
-19. Announce the release on qmcpack.org. Create a new page of type "Release" with title similar to "QMCPACK Release v4.1.0 -
-    2025-04-30" via https://qmcpack.org/user. The page type is required for https://www.qmcpack.org/releases to update
+6. On GitHub, make a pull request into the main branch from the rc.
+7. Ensure CI tests run and pass.
+8. Make an independent download of the proposed merged PR.
+9. Verify code configures and builds on at least one system. Be sure to do this on a clean, freshly cloned repo.
+10. Run all the tests apart from the long ones, confirm version reports correctly. e.g. ctest -VV -E long. Confirm the results are appropriately similar to the last nightly and weekly test results.
+11. Push any needed fixes to the rc and repeat the tests.
+12. Add notes on the test status to the PR.
+13. Request reviewer / other PR approver approves the merge. At least one review is required to merge to main. ** The reviewer needs to check the updated version number and CHANGELOG. **
+14. Merge the PR.
+15. Create a new release using the release tool on GitHub. Link to the CHANGELOG.md in the release notes. The GitHub link can be copied & updated from previous release. 
+16. Issue a PR back to develop from main to update with the new version number and any other updates made to the rc.
+17. Once the PR is merged to develop, update the QMCPACK_VERSION_PATCH version and Nexus patch version to 9 in CMakeLists.txt,
+    nexus/nexus/nexus_version.py, nexus/pyproject.toml, and run `uv sync` to update the `nexus/uv.lock` file in the develop branch
+    to indicate it is the development version.
+18. Delete the rc branch.
+19. Verify readthedocs is seeing the new release and update readthedocs configuration if needed.
+20. Announce the release on qmcpack.org. Create a new page of type "Release" with title similar to "QMCPACK Release v4.4.0 -
+    2026-08-31" via https://qmcpack.org/user. The page type is required for https://www.qmcpack.org/releases to update
     automatically. Also check the documentation pages.
-20. Announce the release on Google Groups.
-21. Update the spack package https://packages.spack.io/package.html?name=qmcpack
+21. Announce the release on Google Groups.
+22. Update the spack package https://packages.spack.io/package.html?name=qmcpack
 
 
 .. include:: input_code.txt
@@ -2713,5 +2716,3 @@ Appendix: dmc.dat
   ``WalkerControlBase::branch``, which is called by
   ``SimpleFixedNodeBranch``
 | ``::branch``, for example.
-
-.. bibliography:: /bibs/developing.bib

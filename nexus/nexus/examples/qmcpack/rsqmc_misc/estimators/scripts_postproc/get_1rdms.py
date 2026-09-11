@@ -50,11 +50,11 @@ class OneReducedDensityMatrix:
         self.rdm_d_err = 0.5*(self.rdm_d_err + self.rdm_d_err.T)
 
         print("Read summary:")
-        print("Norbs  = {:4d}".format(dim1))
-        print("Nblocks= {:4d}".format(nblk))
+        print(f"Norbs  = {dim1:4d}")
+        print(f"Nblocks= {nblk:4d}")
         print("Trace of 1rdms:")
-        print("   spin 0 = {:12.8f} +/- {:12.8f}".format(np.trace(self.rdm_u), np.trace(self.rdm_u_err)))
-        print("   spin 1 = {:12.8f} +/- {:12.8f}".format(np.trace(self.rdm_d), np.trace(self.rdm_d_err)))
+        print(f"   spin 0 = {np.trace(self.rdm_u):12.8f} +/- {np.trace(self.rdm_u_err):12.8f}")
+        print(f"   spin 1 = {np.trace(self.rdm_d):12.8f} +/- {np.trace(self.rdm_d_err):12.8f}")
         
         self.is_valid = True
     # End function
@@ -66,13 +66,13 @@ class OneReducedDensityMatrix:
             for i in range(self.rdm_u.shape[0]):
                 txt = ""
                 for j in range(self.rdm_u.shape[1]):
-                    txt += "{:12.8e} ".format(self.rdm_u[i,j])
+                    txt += f"{self.rdm_u[i,j]:12.8e} "
                 print(txt)
         elif channel == "down":
             for i in range(self.rdm_d.shape[0]):
                 txt = ""
                 for j in range(self.rdm_d.shape[1]):
-                    txt += "{:12.8e} ".format(self.rdm_d[i,j])
+                    txt += f"{self.rdm_d[i,j]:12.8e} "
                 print(txt)
     # End function
 
@@ -96,8 +96,8 @@ class OneReducedDensityMatrix:
                 txta = ""
                 txte = ""
                 for j in range(self.rdm_u.shape[1]):
-                    txta += "{:12.8e} ".format(arr[i,j])
-                    txte += "{:12.8e} ".format(err[i,j])
+                    txta += f"{arr[i,j]:12.8e} "
+                    txte += f"{err[i,j]:12.8e} "
                 fa.write(txta + "\n")
                 fe.write(txte + "\n")
     # End function

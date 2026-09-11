@@ -1183,5 +1183,3 @@ propagation time, and skip 10 blocks as the equilibration phase.
     from afqmctools.analysis.average import average_one_rdm
 
     P, Perr = average_one_rdm('qmc.s000.stat.h5', estimator='back_propagated', eqlb=10)
-
-.. bibliography:: /bibs/afqmc.bib

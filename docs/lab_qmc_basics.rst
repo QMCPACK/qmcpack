@@ -1539,5 +1539,3 @@ Functions: ``def``, argument syntax
   f(**o)                   # kw. args from obj, prints:
                            #   ()
                            #   {'timestep': 0.02, 'blocks': 100, 'steps': 5}
-
-.. bibliography:: /bibs/labs_qmc_basics.bib

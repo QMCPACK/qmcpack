@@ -42,7 +42,7 @@ def make_serial_reference(qi):
     ref = '    ref = {\n'
     for k in sorted(s.keys()):
         v = s[k]
-        ref +="        '{}' : {},\n".format(k,format_value(v))
+        ref +=f"        '{k}' : {format_value(v)},\n"
     #end for
     ref += '        }\n'
     return ref

@@ -16,6 +16,7 @@
 #====================================================================#
 
 
+import gc
 import os
 import time
 from typing import ClassVar,Literal,TextIO
@@ -102,7 +103,6 @@ class ProjectManager(NexusCore):
         if status:
             self.write_simulation_status()
             if status_only:
-                NexusCore.write_end_splash()
                 return
             #end if
         #end if
@@ -137,7 +137,6 @@ class ProjectManager(NexusCore):
             self.progress_cascades()
         #end if
         self.log('Project finished\n')
-        NexusCore.write_end_splash()
     #end def run_project
 
 
@@ -173,7 +172,7 @@ class ProjectManager(NexusCore):
                 'list of fake sims and directories:\n'
                 )
             for sim in fake:
-                msg +='  {0:>8}  {1}\n'.format(sim.simid,sim.locdir)
+                msg +=f'  {sim.simid:>8}  {sim.locdir}\n'
             #end for
             raise NexusError(msg)
         #end if
@@ -356,13 +355,13 @@ class ProjectManager(NexusCore):
             result = 'FAILURE' if sim.failed else 'SUCCESS'
         #end if
         result = color_status_result(result,self._logfile)
-        sline = '{}  {:<7}  {:<8}  {:<6}  {}'.format(status,result,pid,sim.identifier,sim.locdir)
+        sline = f'{status}  {result:<7}  {pid:<8}  {sim.identifier:<6}  {sim.locdir}'
         self.log(sline,extra,n=2)
     #end def status_line
 
 
     def progress_cascades(self):
-        NexusCore.gc.collect()
+        gc.collect()
         finished = []
         progressing_cascades = self.progressing_cascades
         for cascade in progressing_cascades.values():
@@ -397,12 +396,12 @@ class ProjectManager(NexusCore):
         for simid in sorted(self.simulations.keys()):
             sim = self.simulations[simid]
             if idkey is None or sim.identifier==idkey:
-                self.log('\n{0} {1} {2}'.format(sim.identifier,simid,sim.locdir))
+                self.log(f'\n{sim.identifier} {simid} {sim.locdir}')
                 for did in sorted(sim.dependencies.keys()):
                     dep = sim.dependencies[did]
                     dsim  = dep.sim
                     names = dep.result_names
-                    self.log('  {0} {1} {2} {3}'.format(dsim.identifier,dsim.simid,names,dsim.locdir))
+                    self.log(f'  {dsim.identifier} {dsim.simid} {names} {dsim.locdir}')
                 #end for
             #end if
         #end for
@@ -458,8 +457,8 @@ class DynamicWorkflowManager(NexusCore):
                 if len(sim.dependencies)>0 or len(sim.dependents)>0:
                     msg = (
                         'encountered simulation with explicit dependencies, but these are not allowed in dynamic workflows.\n'
-                        'Simulation id: {}\n'
-                        'Simulation directory: {}'.format(sim.simid,sim.locdir)
+                        f'Simulation id: {sim.simid}\n'
+                        f'Simulation directory: {sim.locdir}'
                         )
                     raise ValueError(msg)
         # screen for simulations not associated with dyn process

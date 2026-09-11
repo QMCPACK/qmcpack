@@ -1381,8 +1381,7 @@ def test_compose():
 def test_generate():
     register_pseudo_files(['V.opt.xml','O.opt.xml'])
     import numpy as np
-    from ..developer import NexusError,dotdict,obj
-    from ..generic import obj_deprecated
+    from ..developer import dotdict,obj
     from ..physical_system import generate_physical_system
     from ..qmcpack_input import generate_qmcpack_input,spindensity
     from ..qmcpack_input import back_propagation,onerdm
@@ -1542,7 +1541,7 @@ def test_generate():
             check_paths = False,
             )
         nrule_text = qi_valid_nrule.write_text()
-        assert(nrule_text.count('nrule="{}"'.format(valid_nrule))==2)
+        assert(nrule_text.count(f'nrule="{valid_nrule}"')==2)
     #end for
 
     nrule_maps = [
@@ -1566,8 +1565,7 @@ def test_generate():
         assert('<pseudo elementType="O" href="O.opt.xml" nrule="5"/>' in nrule_text)
     #end for
 
-    for invalid_nrule in (7.0,'4',True,[('V',3),('O',5)],
-                          obj_deprecated(V=3,O=5)):
+    for invalid_nrule in (7.0,'4',True,[('V',3),('O',5)]):
         with pytest.raises(
             TypeError,
             match = 'nrule must be an integer, dict, dotdict, obj, or None',
@@ -1741,7 +1739,7 @@ def test_read():
 def test_qmc_estimator_input_scoping(tmp_path,qmc_method):
     from ..qmcpack_input import QmcpackInput
 
-    qmc_input = '''\
+    qmc_input = f'''\
 <simulation>
   <project id="case" series="5"/>
   <estimators>
@@ -1766,7 +1764,7 @@ def test_qmc_estimator_input_scoping(tmp_path,qmc_method):
     </estimators>
   </qmc>
 </simulation>
-'''.format(qmc_method=qmc_method)
+'''
     filepath = tmp_path / 'qmc_estimators.xml'
     filepath.write_text(qmc_input)
 

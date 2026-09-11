@@ -1085,5 +1085,3 @@ Here's a summary of some of the tests provided:
    finite-difference and direct computation of wave function values.
 
 The output of the various tests will be to standard out or "wftest.000" after successful execution of qmcpack.
-
-.. bibliography:: /bibs/additional_tools.bib

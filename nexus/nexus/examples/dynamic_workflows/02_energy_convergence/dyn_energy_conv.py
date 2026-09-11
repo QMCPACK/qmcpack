@@ -58,7 +58,7 @@ def gen_qe(run_type   = 'scf',
         nkgrid = 1
         path = '01_ecut_conv/ecut_'+str(ecutwfc)
     else:
-        path = '02_kgrid_conv/kgrid_{0}{0}{0}'.format(nkgrid)
+        path = f'02_kgrid_conv/kgrid_{nkgrid}{nkgrid}{nkgrid}'
     assert run_type in {'scf','nscf'}
     if run_type=='scf':
         kgrid = 3*[nkgrid]
@@ -102,7 +102,7 @@ def print_progress(ecut,energies):
     print('  energies:',energies)
     if len(energies)>=2:
         dE = abs(energies[-1]-energies[-2])
-        print('  dE = {:7.5f} , tol = {:7.5f}'.format(dE,tol))
+        print(f'  dE = {dE:7.5f} , tol = {tol:7.5f}')
     print(50*'=')
     print()
 
@@ -140,9 +140,9 @@ while not converged:
             if nruns>max_runs:
                 dE = abs(energies[-1]-energies[-2])
                 print('\n'+50*'*')
-                print('Maximum number of runs exceeded ({})'.format(max_runs))
-                print('Convergence level requested: {:6.4e}'.format(tol))
-                print('Convergence level reached  : {:6.4e}'.format(abs(dE)))
+                print(f'Maximum number of runs exceeded ({max_runs})')
+                print(f'Convergence level requested: {tol:6.4e}')
+                print(f'Convergence level reached  : {abs(dE):6.4e}')
                 print(50*'*'+'\n')
                 sys.exit(1)
             qe = gen_qe(ecutwfc=ecut)
@@ -178,7 +178,7 @@ def print_progress(nkgrid,energies):
     print('  energies:',energies)
     if len(energies)>=2:
         dE = abs(energies[-1]-energies[-2])
-        print('  dE = {:6.4f} , tol = {:6.4f}'.format(dE,tol))
+        print(f'  dE = {dE:6.4f} , tol = {tol:6.4f}')
     print(50*'=')
     print()
 
@@ -205,16 +205,16 @@ while not converged:
             if nruns>max_runs:
                 dE = abs(energies[-1]-energies[-2])
                 print('\n'+50*'*')
-                print('Maximum number of runs exceeded ({})'.format(max_runs))
-                print('Convergence level requested: {:6.4e}'.format(tol))
-                print('Convergence level reached  : {:6.4e}'.format(abs(dE)))
+                print(f'Maximum number of runs exceeded ({max_runs})')
+                print(f'Convergence level requested: {tol:6.4e}')
+                print(f'Convergence level reached  : {abs(dE):6.4e}')
                 print(50*'*'+'\n')
                 sys.exit(1)
             qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
         else:
             print_progress(nkgrid,energies)
             print('\n'+50*'*')
-            print('Converged!!!  Final kgrid: {0}x{0}x{0}'.format(nkgrid))
+            print(f'Converged!!!  Final kgrid: {nkgrid}x{nkgrid}x{nkgrid}')
             print(50*'*')
             converged = True # to exit polling loop
     elif qe.fail:

@@ -162,7 +162,7 @@ if performed_runs:
     le = qa.dmc[1].dmc.LocalEnergy  # dmc series 1, dmc.dat, local energy
     #  print the total energy for the 20 atom system
     print('The DMC ground state energy for C20 is:')
-    print('    {0} +/- {1} Ha'.format(le.mean,le.error))
+    print(f'    {le.mean} +/- {le.error} Ha')
 #end if
 
 

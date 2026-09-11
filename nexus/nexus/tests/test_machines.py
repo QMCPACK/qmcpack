@@ -970,7 +970,7 @@ def test_process_job():
         for name in sorted(not_idempotent.keys()):
             mlist+= '\n  '+name
         #end for
-        msg='\n\nsome machines failed process_job idempotency test:{0}'.format(mlist)
+        msg=f'\n\nsome machines failed process_job idempotency test:{mlist}'
         pytest.fail(msg)
     #end if
     Machine.allow_warnings = allow_warn
@@ -1373,21 +1373,19 @@ def test_job_run_command():
                       )
             command = job.run_command()
             if testing.global_data['job_ref_table']:
-                sname = "'{0}'".format(name)
-                stype = "'{0}'".format(jtype)
-                print("        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command))
+                sname = f"'{name}'"
+                stype = f"'{jtype}'"
+                print(f"        ({sname:<16} , {stype:<16}) : '{command}',")
                 continue
             #end if
             ref_command = job_run_ref[name,jtype]
             if not job_commands_equal(command,ref_command):
                 msg = (
-                    'Job.run_command for machine "{0}" does not match the reference\n'
+                    f'Job.run_command for machine "{name}" does not match the reference\n'
                     'job inputs:\n'
-                    '{1}\n'
-                    'reference command: {2}\n'
-                    'incorrect command: {3}'.format(
-                        name,job_inputs[jtype],ref_command,command
-                        )
+                    f'{job_inputs[jtype]}\n'
+                    f'reference command: {ref_command}\n'
+                    f'incorrect command: {command}'
                     )
                 pytest.fail(msg)
             #end for
@@ -1425,9 +1423,9 @@ def test_job_run_command():
         rc  = job.run_command()
         rc1 = job1.run_command()
         rc2 = job2.run_command()
-        ns  = ' {0} '.format(job.nodes)
-        ns1 = ' {0} '.format(job1.nodes)
-        ns2 = ' {0} '.format(job2.nodes)
+        ns  = f' {job.nodes} '
+        ns1 = f' {job1.nodes} '
+        ns2 = f' {job2.nodes} '
         # verify that node count is in each command
         assert(ns  in rc )
         assert(ns1 in rc1)
@@ -2302,7 +2300,7 @@ srun -N 2 -n 64 test.x
         j.abs_dir = '/path/on/'+name
         wj = m.write_job(j)
         if testing.global_data['job_ref_table']:
-            print("        {} = '''{}''',".format(name,wj.strip()))
+            print(f"        {name} = '''{wj.strip()}''',")
             continue
         #end if
         ref_wj = job_write_ref[name]

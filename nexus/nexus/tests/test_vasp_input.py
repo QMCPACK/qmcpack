@@ -147,7 +147,7 @@ def test_keyword_consistency():
         assert(scalar_keywords==cls.scalar_keywords)
         assert(array_keywords==cls.array_keywords)
         assert(typed_keywords==cls.keywords)
-        assert(set(cls.type.keys())==cls.keywords)
+        assert(set(cls.dtype.keys())==cls.keywords)
         assert(set(cls.read_value.keys())==cls.keywords)
         assert(set(cls.write_value.keys())==cls.keywords)
         assert(set(cls.assign_value.keys())==cls.keywords)
@@ -159,7 +159,7 @@ def test_keyword_consistency():
 
     AdditionalKeywordFile.class_init()
     assert(AdditionalKeywordFile.keywords==frozenset({'flag'}))
-    assert(AdditionalKeywordFile.type.flag=='bools')
+    assert(AdditionalKeywordFile.dtype.flag=='bools')
 #end def test_keyword_consistency
 
 
@@ -193,7 +193,7 @@ def test_current_keyword_types():
 
     for keyword_type,keywords in expected.items():
         for keyword in keywords:
-            assert(Incar.type[keyword]==keyword_type)
+            assert(Incar.dtype[keyword]==keyword_type)
         #end for
     #end for
 
@@ -206,7 +206,7 @@ def test_current_keyword_types():
         }
     assert(dict(Incar.mixed_types)==expected_mixed)
     for keyword,types in expected_mixed.items():
-        assert(Incar.type[keyword]==types)
+        assert(Incar.dtype[keyword]==types)
     #end for
 #end def test_current_keyword_types
 
@@ -292,7 +292,7 @@ def test_mixed_keyword_types():
     for keyword,value in invalid:
         with pytest.raises(
             NexusError,
-            match='assign failed for keyword {0}'.format(keyword),
+            match=f'assign failed for keyword {keyword}',
             ):
             Incar().assign(**{keyword:value})
         #end with

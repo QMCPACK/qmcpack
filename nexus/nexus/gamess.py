@@ -84,7 +84,7 @@ class Gamess(Simulation):
         #end if
         env = obj()
         for file,unit in GamessInput.file_units.items():
-            env[file] = '{0}.F{1}'.format(self.identifier,str(unit).zfill(2))
+            env[file] = f'{self.identifier}.F{str(unit).zfill(2)}'
         #end for
         env.INPUT   = self.infile
         env.ERICFMT = self.ericfmt
@@ -153,7 +153,7 @@ class Gamess(Simulation):
             #end if
             if self.mo_reorder is not None:
                 if 'orbitals' not in result:
-                    msg = 'Orbital information from prior calculation "{}" located at {} cannot be found. You requested orbital reordering via the  "mo_reorder" input keyword.  Due to missing information, this operation cannot be performed.  The current simulation "{}" is located at {}.'.format(sim.identifier,sim.locdir,self.identifier,self.locdir)
+                    msg = f'Orbital information from prior calculation "{sim.identifier}" located at {sim.locdir} cannot be found. You requested orbital reordering via the  "mo_reorder" input keyword.  Due to missing information, this operation cannot be performed.  The current simulation "{self.identifier}" is located at {self.locdir}.'
                     raise RuntimeError(msg)
                     self.block()
                 #end if
@@ -166,14 +166,12 @@ class Gamess(Simulation):
                     nelec = nelec_map[spin]
                     if len(self.mo_reorder)<nelec:
                         msg = (
-                            'Too few symmetries provided in "mo_reorder" for spin "{0}".\n'
-                            'Number of electrons with spin "{0}": {1}\n'
-                            'Number of entries in "mo_reorder": {2}\n'
-                            'Contents of "mo_reorder": {3}\n'
-                            'Simulation identifier: {4}\n'
-                            'Simulation location: {5}'.format(
-                                spin,nelec,len(self.mo_reorder),self.mo_reorder,self.identifier,self.locdir
-                                )
+                            f'Too few symmetries provided in "mo_reorder" for spin "{spin}".\n'
+                            f'Number of electrons with spin "{spin}": {nelec}\n'
+                            f'Number of entries in "mo_reorder": {len(self.mo_reorder)}\n'
+                            f'Contents of "mo_reorder": {self.mo_reorder}\n'
+                            f'Simulation identifier: {self.identifier}\n'
+                            f'Simulation location: {self.locdir}'
                             )
                         raise RuntimeError(msg)
                     #end if
@@ -182,13 +180,11 @@ class Gamess(Simulation):
                     if len(missing)>0:
                         msg = (
                             'Symmetries provided by "mo_reorder" keyword are not found in the outputted MOs.\n'
-                            'Set of symmetries provided in "mo_reorder": {}\n'
-                            'Set of symmetries present in MOs: {}\n'
-                            'Contents of "mo_reorder": {}\n'
-                            'Simulation identifier: {}\n'
-                            'Simulation location: {}'.format(
-                                sorted(set(self.mo_reorder)),sorted(set(symmetries)),self.mo_reorder,self.identifier,self.locdir
-                                )
+                            f'Set of symmetries provided in "mo_reorder": {sorted(set(self.mo_reorder))}\n'
+                            f'Set of symmetries present in MOs: {sorted(set(symmetries))}\n'
+                            f'Contents of "mo_reorder": {self.mo_reorder}\n'
+                            f'Simulation identifier: {self.identifier}\n'
+                            f'Simulation location: {self.locdir}'
                             )
                         raise RuntimeError(msg)
                     #end if
@@ -204,13 +200,11 @@ class Gamess(Simulation):
                     if occ.sum()<nelec:
                         msg = (
                             'Too few orbitals occupied based on "mo_reorder" request.\n'
-                            'Number of orbitals occupied: {}\n'
-                            'Number of spin "{}" electrons: {}\n'
-                            'Contents of "mo_reorder": {}\n'
-                            'Simulation identifier: {}\n'
-                            'Simulation location: {}'.format(
-                                occ.sum(),spin,nelec,self.mo_reorder,self.identifier,self.locdir
-                                )
+                            f'Number of orbitals occupied: {occ.sum()}\n'
+                            f'Number of spin "{spin}" electrons: {nelec}\n'
+                            f'Contents of "mo_reorder": {self.mo_reorder}\n'
+                            f'Simulation identifier: {self.identifier}\n'
+                            f'Simulation location: {self.locdir}'
                             )
                         raise RuntimeError(msg)
                     #end if
@@ -278,11 +272,11 @@ class Gamess(Simulation):
     def output_filename(self,name):
         name = name.upper()
         if name not in GamessInput.file_units:
-            msg = 'gamess does not produce a file matching the requested description: {0}'.format(name)
+            msg = f'gamess does not produce a file matching the requested description: {name}'
             raise ValueError(msg)
         #end if
         unit = GamessInput.file_units[name]
-        filename = '{0}.F{1}'.format(self.identifier,str(unit).zfill(2))
+        filename = f'{self.identifier}.F{str(unit).zfill(2)}'
         return filename
     #end def output_filename
 

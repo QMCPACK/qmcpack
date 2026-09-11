@@ -56,7 +56,7 @@ def gen_qe(run_type   = 'scf',
         nkgrid = 1
         path = '01_ecut_conv/ecut_'+str(ecutwfc)
     else:
-        path = '02_kgrid_conv/kgrid_{0}{0}{0}'.format(nkgrid)
+        path = f'02_kgrid_conv/kgrid_{nkgrid}{nkgrid}{nkgrid}'
     assert run_type in {'scf','nscf'}
     if run_type=='scf':
         kgrid = 3*[nkgrid]
@@ -136,7 +136,7 @@ while not converged:
             nkgrid += 1
             qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
         else:
-            print('Converged!!!  Final kgrid: {0}x{0}x{0}'.format(nkgrid))
+            print(f'Converged!!!  Final kgrid: {nkgrid}x{nkgrid}x{nkgrid}')
             converged = True
     elif qe.fail:
         print('\nQE run failed!!!')

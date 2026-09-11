@@ -115,7 +115,7 @@ Note that this installation route will take precedence over existing pip, uv, or
 
 - `generic.py`, `developer.py`
 
-    Abstract base classes for all Nexus classes.  Defines abilities such as querying, printing, etc.  Also provides developer interface functions such as error reporting and redirection for unimplemented base class functions.  Void class protects imports and halts execution if items from unavailable modules are encountered.
+    Abstract base classes for all Nexus classes.  Defines abilities such as querying, printing, etc.  Also provides developer interface functions such as error reporting and redirection for unimplemented base class functions.
  
 - `project_manager.py`
 

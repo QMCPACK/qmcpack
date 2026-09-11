@@ -266,11 +266,11 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
     #end if
     for scalar_file in scalar_files:
         if not os.path.exists(scalar_file):
-            msg = 'scalar file does not exist: {0}'.format(scalar_file)
+            msg = f'scalar file does not exist: {scalar_file}'
             raise FileNotFoundError(msg)
         #end if
         if not scalar_file.endswith('.scalar.dat'):
-            msg = 'file must be of type scalar.dat: {0}'.format(scalar_file)
+            msg = f'file must be of type scalar.dat: {scalar_file}'
             raise ValueError(msg)
         #end if
     #end for
@@ -292,12 +292,10 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
     elif equils is not None and len(equils)!=len(scalar_files):
         msg = (
             'must provide one equilibration length per scalar file\n'
-            'number of equils provided: {0}\n'
-            'number of scalar files provided: {1}\n'
-            'equils provided: {2}\n'
-            'scalar files provided: {3}'.format(
-                len(equils), len(scalar_files), equils, scalar_files
-                )
+            f'number of equils provided: {len(equils)}\n'
+            f'number of scalar files provided: {len(scalar_files)}\n'
+            f'equils provided: {equils}\n'
+            f'scalar files provided: {scalar_files}'
             )
         raise ValueError(msg)
     #end if
@@ -307,12 +305,10 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
     elif reblock_factors is not None and len(reblock_factors)!=len(scalar_files):
         msg = (
             'must provide one reblocking factor per scalar file\n'
-            'number of reblock_factors provided: {0}\n'
-            'number of scalar files provided: {1}\n'
-            'reblock_factors provided: {2}\n'
-            'scalar files provided: {3}'.format(
-                len(reblock_factors), len(scalar_files), reblock_factors, scalar_files
-                )
+            f'number of reblock_factors provided: {len(reblock_factors)}\n'
+            f'number of scalar files provided: {len(scalar_files)}\n'
+            f'reblock_factors provided: {reblock_factors}\n'
+            f'scalar files provided: {scalar_files}'
             )
         raise ValueError(msg)
     #end if
@@ -346,11 +342,9 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
             msg = (
                 'equilibration cannot be applied\n'
                 'equilibration length given is greater than the number of blocks in the file\n'
-                'file name: {0}\n'
-                '# blocks present: {1}\n'
-                'equilibration length given: {2}'.format(
-                    scalar_file, len(E), nbe
-                    )
+                f'file name: {scalar_file}\n'
+                f'# blocks present: {len(E)}\n'
+                f'equilibration length given: {nbe}'
                 )
             raise ValueError(msg)
         #end if
@@ -419,7 +413,7 @@ def parse_list(opt,name,dtype,len1=False):
             #end if
         #end if
     except:
-        msg = '{0} list misformatted: {1}'.format(name, opt[name])
+        msg = f'{name} list misformatted: {opt[name]}'
         raise ValueError(msg)
     #end try
 #end def parse_list
@@ -436,10 +430,8 @@ def timestep_fit(args):
 
     if opt.fit_function not in fit_functions:
         msg = (
-            'invalid fitting function: {0}\n'
-            'valid options are: {1}'.format(
-                opt.fit_function, sorted(fit_functions.keys())
-                )
+            f'invalid fitting function: {opt.fit_function}\n'
+            f'valid options are: {sorted(fit_functions.keys())}'
             )
         raise ValueError(msg)
     #end if
@@ -462,12 +454,10 @@ def timestep_fit(args):
     if len(Edata)!=len(opt.timesteps):
         msg = (
             'must provide one timestep per scalar file\n'
-            'number of timesteps provided: {0}\n'
-            'number of scalar files provided: {1}\n'
-            'timeteps provided: {2}\n'
-            'scalar files provided: {3}'.format(
-                len(opt.timesteps), len(scalar_files), opt.timesteps, scalar_files
-                )
+            f'number of timesteps provided: {len(opt.timesteps)}\n'
+            f'number of scalar files provided: {len(scalar_files)}\n'
+            f'timeteps provided: {opt.timesteps}\n'
+            f'scalar files provided: {scalar_files}'
             )
         raise ValueError(msg)
     #end if
@@ -486,7 +476,7 @@ def timestep_fit(args):
     log('fitted formula: '+func_info.format.format(*pvals))
     for pname,pfunc in func_info.params:  # noqa: B007
         pm,pe = stat_strings(*auxres[pname])
-        log('{0:<14}: {1} +/- {2}  Ha\n'.format(pname,pm,pe))
+        log(f'{pname:<14}: {pm} +/- {pe}  Ha\n')
     #end for
 
     # plot the fit (if available)
@@ -515,10 +505,8 @@ def hubbard_u_fit(args):
     scalar_files = sorted(opt.scalar_files)
     if opt.fit_function not in fit_functions:
         msg = (
-            'invalid fitting function: {0}\n'
-            'valid options are: {1}'.format(
-                opt.fit_function, sorted(fit_functions.keys())
-                )
+            f'invalid fitting function: {opt.fit_function}\n'
+            f'valid options are: {sorted(fit_functions.keys())}'
             )
         raise ValueError(msg)
     #end if
@@ -535,12 +523,10 @@ def hubbard_u_fit(args):
         if len(Edata)!=len(opt.hubbards):
             msg = (
                 "must provide one hubbard_u value per scalar file\n"
-                "number of hubbard_u provided: {0}\n"
-                "number of scalar files provided: {1}\n"
-                "hubbards provided: {2}\n"
-                "scalar files provided: {3}".format(
-                    len(opt.hubbards), len(scalar_files), opt.hubbards, scalar_files
-                    )
+                f"number of hubbard_u provided: {len(opt.hubbards)}\n"
+                f"number of scalar files provided: {len(scalar_files)}\n"
+                f"hubbards provided: {opt.hubbards}\n"
+                f"scalar files provided: {scalar_files}"
                 )
             raise ValueError(msg)
         #end if
@@ -551,12 +537,10 @@ def hubbard_u_fit(args):
         if len(Edata)!=len(opt.exx):
             msg = (
                 "must provide one hubbard_u value per scalar file\n"
-                "number of hubbard_u provided: {0}\n"
-                "number of scalar files provided: {1}\n"
-                "hubbards provided: {2}\n"
-                "scalar files provided: {3}".format(
-                    len(opt.hubbards), len(scalar_files), opt.hubbards, scalar_files
-                    )
+                f"number of hubbard_u provided: {len(opt.hubbards)}\n"
+                f"number of scalar files provided: {len(scalar_files)}\n"
+                f"hubbards provided: {opt.hubbards}\n"
+                f"scalar files provided: {scalar_files}"
                 )
             raise ValueError(msg)
         #end if
@@ -597,7 +581,7 @@ def hubbard_u_fit(args):
             else:
                 param = pname
             #end if
-            log('root {0} {1:<14}: {2} +/- {3} {4}'.format(i+1,param,pm,pe, unit))
+            log(f'root {i+1} {param:<14}: {pm} +/- {pe} {unit}')
     #end for
     # plot the fit (if available)
 
@@ -636,10 +620,8 @@ def eos_fit(args):
     scalar_files = sorted(opt.scalar_files)
     if opt.fit_function not in fit_functions:
         msg = (
-            'invalid fitting function: {0}\n'
-            'valid options are: {1}'.format(
-                opt.fit_function, sorted(fit_functions.keys())
-                )
+            f'invalid fitting function: {opt.fit_function}\n'
+            f'valid options are: {sorted(fit_functions.keys())}'
             )
         raise ValueError(msg)
     #end if
@@ -681,7 +663,7 @@ def eos_fit(args):
     if 'params' in func_info.keys():
         for pname,pfunc in func_info.params:  # noqa: B007
             pm,pe = stat_strings(*np.array(auxres[pname]))
-            log('{0}: {1} +/- {2} '.format(pname,pm,pe))
+            log(f'{pname}: {pm} +/- {pe} ')
         #end for
     
     # plot the fit (if available)
@@ -730,7 +712,7 @@ def parse_args():
                         ) 
     valid_fit_functions = set([j for i in all_fit_functions.keys() for j in all_fit_functions[i].keys()])
     parser.add_argument('-f','--fit',dest='fit_function',default='linear',
-                        help='Fitting function, options are {0}.'.format(sorted(valid_fit_functions))
+                        help=f'Fitting function, options are {sorted(valid_fit_functions)}.'
                         )                        
     # List of 1-D parameters, mutually exclusive
     parameters = parser.add_mutually_exclusive_group(required=True)
@@ -779,8 +761,8 @@ if __name__=='__main__':
         fit_functions.update(**all_fit_functions[fit_type])
     else:
         msg = (
-            'unknown fit type: {0}\n'
-            'valid options are: {1}'.format(fit_type, fit_types)
+            f'unknown fit type: {fit_type}\n'
+            f'valid options are: {fit_types}'
             )
         raise ValueError(msg)
     #end if
@@ -792,7 +774,7 @@ if __name__=='__main__':
     elif fit_type == 'eos':
         eos_fit(args)
     else:
-        msg = 'unsupported fit type: {0}'.format(fit_type)
+        msg = f'unsupported fit type: {fit_type}'
         raise ValueError(msg)
     #end if
 #end if

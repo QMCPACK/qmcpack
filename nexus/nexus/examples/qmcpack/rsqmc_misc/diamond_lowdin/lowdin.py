@@ -130,7 +130,7 @@ if __name__ == '__main__':
     sp = int(sys.argv[5])
 
     if not sp in {0,1}:
-        print('Invalid spin specfied: {}'.format(sp))
+        print(f'Invalid spin specfied: {sp}')
         print('Must be either 0 (up) or 1 (down)')
         sys.exit()
     #end if
@@ -143,14 +143,14 @@ if __name__ == '__main__':
     # Collect parameters from <prefix>.xml
     nAtom,nElec,nOccUp,nOccDown = collectValuesFromXML(pw_outdir+"/"+pw_prefix+".xml")
 
-    print('\nNumber of up electrons: {}'.format(nOccUp))
-    print('Number of down electrons: {}'.format(nOccDown))
+    print(f'\nNumber of up electrons: {nOccUp}')
+    print(f'Number of down electrons: {nOccDown}')
 
     # Analyze QMC data
     qa = [] # qmcpack_analyzer instance
     nm = [] # number matrix
     for tn in range(nKpoints):
-        qa_tmp = QmcpackAnalyzer('{}/{}.g{:03d}.twistnum_{}.in.xml'.format(qmc_directory,qmc_identifier,tn,tn),verbose=False)
+        qa_tmp = QmcpackAnalyzer(f'{qmc_directory}/{qmc_identifier}.g{tn:03d}.twistnum_{tn}.in.xml',verbose=False)
         qa_tmp.analyze()
         qa.append(qa_tmp)
 

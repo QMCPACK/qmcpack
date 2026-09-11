@@ -88,8 +88,8 @@ class MethodAnalyzer(QAanalyzer):
         elif equil is not None:
             msg = (
                 'invalid input for equilibration which must be an int, dict, or obj\n'
-                '  you provided: {0}\n'
-                '  with type {1}'.format(equil, type(equil).__name__)
+                f'  you provided: {equil}\n'
+                f'  with type {type(equil).__name__}'
                 )
             raise TypeError(msg)
         #end if
@@ -113,10 +113,8 @@ class MethodAnalyzer(QAanalyzer):
         if not matched:
             msg = (
                 'no data files found\n'
-                '  file prefix used for matching: {0}\n'
-                '  checked all files in directory: {1}'.format(
-                    file_prefix, source_path
-                    )
+                f'  file prefix used for matching: {file_prefix}\n'
+                f'  checked all files in directory: {source_path}'
                 )
             #self.error(msg,trace=False)
             #self.warn(msg)
@@ -258,7 +256,7 @@ class MethodAnalyzer(QAanalyzer):
         method = self.info.method
         series = self.info.series
         if verbose:
-            desc = 'method {0} series {1}'.format(method,series)
+            desc = f'method {method} series {series}'
         #end if
         if 'traces' in self:
             check = {None:True,False:False,True:True}
