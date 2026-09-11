@@ -368,3 +368,346 @@ def test_series_stats(monkeypatch):
             ):
             statistics.series_stats(x,t_auto=t_auto_invalid)
 #end def test_series_stats
+
+
+
+def test_time_series_intervals():
+    """Check adjacent-value intervals and their associated midpoint times."""
+    x = np.array([3.,1.,2.])
+    t = np.array([0.,2.,5.])
+
+    intervals,times = statistics.time_series_intervals(x,t)
+    np.testing.assert_array_equal(intervals,[[1.,3.],[1.,2.]])
+    np.testing.assert_array_equal(times,[1.,3.5])
+
+    intervals,no_times = statistics.time_series_intervals(x)
+    np.testing.assert_array_equal(intervals,[[1.,3.],[1.,2.]])
+    assert(no_times is None)
+
+    column_intervals,column_times = statistics.time_series_intervals(
+        x.reshape(-1,1),
+        t.reshape(-1,1),
+        )
+    np.testing.assert_array_equal(column_intervals,intervals)
+    np.testing.assert_array_equal(column_times,times)
+#end def test_time_series_intervals
+
+
+
+def test_interval_and_lcd_input_validation():
+    """Check diagnostics for malformed interval and LCD inputs."""
+    with pytest.raises(ValueError,match=r'data array must contain at least two values'):
+        statistics.time_series_intervals([1.])
+    with pytest.raises(ValueError,match=r'time array must have the same length'):
+        statistics.time_series_intervals([1.,2.],[0.])
+    with pytest.raises(ValueError,match=r'time array must be real-valued'):
+        statistics.time_series_intervals([1.,2.],[0.+1.j,1.+1.j])
+
+    invalid_intervals = [
+        (np.array([1.,2.]),None,r'interval array must have shape'),
+        (np.empty((0,2)),None,r'interval array must not be empty'),
+        (np.array([[2.,1.]]),None,r'upper endpoints must not be less'),
+        (np.array([1.,2.]),np.array([3.]),r'endpoint arrays must have equal lengths'),
+        ]
+    for lower,upper,message in invalid_intervals:
+        with pytest.raises(ValueError,match=message):
+            statistics.interval_distribution(lower,upper)
+
+    intervals = np.array([[0.,1.],[1.,2.]])
+    for counts,message in [
+        ([1.],r'counts must have the same length'),
+        ]:
+        with pytest.raises(ValueError,match=message):
+            statistics.interval_dist_peak(intervals,counts)
+    with pytest.raises(ValueError,match=r'peak method must be a string'):
+        statistics.interval_dist_peak(intervals,[1.,2.],method=1)
+    for peak_frac in (np.nan,0.,-1.,1.1):
+        with pytest.raises(ValueError,match=r'peak fraction must be in the interval'):
+            statistics.interval_dist_peak(intervals,[1.,2.],peak_frac=peak_frac)
+
+    for window,step,message in [
+        (0,1,r'window must be a positive integer'),
+        (1,0,r'step must be a positive integer'),
+        (1,2,r'step must not exceed window'),
+        (3,1,r'window must not exceed the number of intervals'),
+        ]:
+        with pytest.raises(ValueError,match=message):
+            statistics.rolling_interval_dist_peak(intervals,window=window,step=step)
+    with pytest.raises(ValueError,match=r'method "invalid" is unrecognized'):
+        statistics.rolling_interval_dist_peak(
+            intervals,window=1,step=1,method='invalid'
+            )
+
+    for x,nperm,message in [
+        ([1.],0,r'data array must contain at least two values'),
+        ([1.,2.],-1,r'number of permutations must be a nonnegative integer'),
+        ([1.,2.],True,r'number of permutations must be a nonnegative integer'),
+        ]:
+        with pytest.raises(ValueError,match=message):
+            statistics.line_crossing_distribution(x,nperm=nperm)
+
+    with pytest.raises(ValueError,match=r'window must not exceed the number of intervals'):
+        statistics.lcd_smooth([1.,2.],window=2,step=1)
+#end def test_interval_and_lcd_input_validation
+
+
+
+def test_interval_distribution_and_peak(monkeypatch):
+    """Check interval-overlap counts and the supported peak selections."""
+    endpoints = np.array([1.,2.,3.])
+    upper     = np.array([4.,5.,6.])
+    intervals,counts = statistics.interval_distribution(endpoints,upper)
+    expected_intervals = np.array(
+        [[1.,2.],[2.,3.],[3.,4.],[4.,5.],[5.,6.]]
+        )
+    np.testing.assert_array_equal(intervals,expected_intervals)
+    np.testing.assert_array_equal(counts,[1,2,3,2,1])
+
+    matrix_intervals,matrix_counts = statistics.interval_distribution(
+        np.column_stack((endpoints,upper))
+        )
+    np.testing.assert_array_equal(matrix_intervals,expected_intervals)
+    np.testing.assert_array_equal(matrix_counts,counts)
+
+    column_intervals,column_counts = statistics.interval_distribution(
+        endpoints.reshape(-1,1),
+        upper.reshape(1,-1),
+        )
+    np.testing.assert_array_equal(column_intervals,expected_intervals)
+    np.testing.assert_array_equal(column_counts,counts)
+
+    touching_intervals,touching_counts = statistics.interval_distribution(
+        np.array([[1.,2.],[2.,3.],[3.,4.]])
+        )
+    np.testing.assert_array_equal(
+        touching_intervals,
+        [[1.,2.],[2.,3.],[3.,4.]],
+        )
+    np.testing.assert_array_equal(touching_counts,[1,1,1])
+
+    repeated_intervals,repeated_counts = statistics.interval_distribution(
+        np.array([[1.,1.],[1.,2.],[2.,2.]])
+        )
+    np.testing.assert_array_equal(repeated_intervals,[[1.,2.]])
+    np.testing.assert_array_equal(repeated_counts,[1])
+
+    irregular_intervals,irregular_counts = statistics.interval_distribution(
+        np.array([[0.,10.],[.5,.75]])
+        )
+    np.testing.assert_array_equal(
+        irregular_intervals,
+        [[0.,.5],[.5,.75],[.75,10.]],
+        )
+    np.testing.assert_array_equal(irregular_counts,[1,2,1])
+
+    peak_intervals = np.array([[0.,1.],[1.,2.],[2.,3.]])
+    peak_counts    = np.array([1,3,3])
+    peak,height = statistics.interval_dist_peak(
+        peak_intervals,
+        peak_counts,
+        height=True,
+        )
+    assert(peak==pytest.approx(2.))
+    assert(height==3)
+
+    column_peak = statistics.interval_dist_peak(
+        peak_intervals,
+        peak_counts.reshape(-1,1),
+        )
+    assert(column_peak==pytest.approx(peak))
+
+    quadratic_intervals = np.array(
+        [[0.,1.],[1.,2.],[2.,3.],[3.,4.],[4.,5.]]
+        )
+    quadratic_counts = np.array([1.,2.,3.,2.,1.])
+    quadratic_peak,quadratic_height = statistics.interval_dist_peak(
+        quadratic_intervals,
+        quadratic_counts,
+        method='quad_peak',
+        height=True,
+    )
+    assert(quadratic_peak==pytest.approx(2.5))
+    assert(np.isfinite(quadratic_height))
+    assert(quadratic_height>0.)
+
+    fallback_peak,fallback_height = statistics.interval_dist_peak(
+        np.array([[0.,2.]]),
+        np.array([4.]),
+        method='quad_peak',
+        height=True,
+        )
+    assert(fallback_peak==pytest.approx(1.))
+    assert(fallback_height==4.)
+
+    multimodal_intervals = np.array([[0.,1.],[1.,2.],[2.,3.],[3.,4.]])
+    multimodal_counts    = np.array([4.,1.,1.,4.])
+    assert(
+        statistics.interval_dist_peak(
+            multimodal_intervals,multimodal_counts,method='quad_peak'
+            )
+        ==pytest.approx(2.)
+        )
+
+    monkeypatch.setattr(
+        statistics.np,
+        'polyfit',
+        lambda x,y,degree: np.array([1.,0.,0.]),
+        )
+    assert(
+        statistics.interval_dist_peak(
+            quadratic_intervals,quadratic_counts,method='quad_peak'
+            )
+        ==pytest.approx(2.5)
+        )
+
+    monkeypatch.setattr(
+        statistics.np.random,
+        'uniform',
+        lambda size: np.full(size,.5),
+        )
+    assert(
+        statistics.interval_dist_peak(
+            peak_intervals,
+            peak_counts,
+            method='interval_rand',
+            )
+        ==pytest.approx(2.)
+        )
+
+    with pytest.raises(ValueError,match=r'unrecognized int. dist. max method'):
+        statistics.interval_dist_peak(peak_intervals,peak_counts,method='invalid')
+    with pytest.raises(ValueError,match=r'quadratic weighting'):
+        statistics.interval_dist_peak(
+            peak_intervals,peak_counts,quad_weighting='invalid'
+            )
+#end def test_interval_distribution_and_peak
+
+
+
+def test_quad_peak_width_weighting(monkeypatch):
+    """Check width-based quadratic weights and convenience-API forwarding."""
+    intervals = np.array(
+        [[0.,1.],[1.,3.],[3.,6.],[6.,10.],[10.,15.]]
+        )
+    counts = np.array([1.,2.,3.,2.,1.])
+    polyfit = statistics.np.polyfit
+    weights = []
+
+    def capture_polyfit(x,y,degree,**kwargs):
+        weights.append(kwargs.get('w'))
+        return polyfit(x,y,degree,**kwargs)
+    #end def capture_polyfit
+
+    monkeypatch.setattr(statistics.np,'polyfit',capture_polyfit)
+    peak = statistics.interval_dist_peak(
+        intervals,counts,method='quad_peak',quad_weighting='width'
+        )
+    assert(np.isfinite(peak))
+    np.testing.assert_allclose(weights[0],np.sqrt([2.,2.,3.,3.,4.,4.]))
+
+    rolling_peak, = statistics.rolling_interval_dist_peak(
+        intervals,
+        window=5,
+        step=1,
+        method='quad_peak',
+        quad_weighting='width',
+        )
+    assert(np.isfinite(rolling_peak[0]))
+#end def test_quad_peak_width_weighting
+
+
+
+def test_rolling_interval_dist_peak_and_lcd_smooth():
+    """Check rolling peak locations, heights, window bounds, and times."""
+    intervals = np.array([[0.,2.],[1.,3.],[2.,4.],[3.,5.]])
+    peaks,heights,windows = statistics.rolling_interval_dist_peak(
+        intervals,
+        window=2,
+        step=2,
+        ret_height=True,
+        ret_windows=True,
+        )
+    np.testing.assert_allclose(peaks,[1.5,3.5])
+    np.testing.assert_array_equal(heights,[2,2])
+    assert(windows==[(0,2),(2,4)])
+
+    quadratic_peaks,quadratic_heights = statistics.rolling_interval_dist_peak(
+        np.array([[1.,4.],[2.,5.],[3.,6.]]),
+        window=3,
+        step=1,
+        method='quad_peak',
+        ret_height=True,
+        )
+    np.testing.assert_allclose(quadratic_peaks,[3.5])
+    assert(quadratic_heights[0]>0.)
+
+    x = np.array([0.,2.,1.,3.])
+    t = np.array([0.,1.,3.,6.])
+    smooth,times = statistics.lcd_smooth(x,t,window=2,step=1,method='interval_mid')
+    np.testing.assert_allclose(smooth,[1.5,1.5])
+    np.testing.assert_allclose(times,[1.25,3.25])
+    np.testing.assert_allclose(
+        statistics.lcd_smooth(x,window=2,step=1,method='interval_mid'),
+        smooth,
+        )
+#end def test_rolling_interval_dist_peak_and_lcd_smooth
+
+
+
+def test_line_crossing_distribution_and_lcd_peak(monkeypatch):
+    """Check LCD counts, peaks, and independently accumulated permutations."""
+    x = np.array([0.,2.,1.])
+
+    def fail_shuffle(values):
+        pytest.fail('the nperm=0 path must not shuffle data')
+    #end def fail_shuffle
+
+    monkeypatch.setattr(statistics.np.random,'shuffle',fail_shuffle)
+    intervals,counts = statistics.line_crossing_distribution(x)
+    np.testing.assert_array_equal(intervals,[[0.,1.],[1.,2.]])
+    np.testing.assert_array_equal(counts,[1,2])
+    assert(statistics.lcd_peak(x)==pytest.approx(1.5))
+
+    def reverse(values):
+        values[:] = values[::-1]
+    #end def reverse
+
+    monkeypatch.setattr(statistics.np.random,'shuffle',reverse)
+    intervals,counts = statistics.line_crossing_distribution(x,nperm=2)
+    np.testing.assert_array_equal(intervals,[[0.,1.],[1.,2.]])
+    np.testing.assert_array_equal(counts,[1.,2.])
+    assert(statistics.lcd_peak(x,nperm=2)==pytest.approx(1.5))
+
+    permutations = [
+        np.array([0.,1.,3.,6.]),
+        np.array([0.,3.,1.,6.]),
+        ]
+    def set_permutation(values):
+        values[:] = permutations.pop(0)
+    #end def set_permutation
+
+    monkeypatch.setattr(statistics.np.random,'shuffle',set_permutation)
+    intervals,counts = statistics.line_crossing_distribution(
+        np.array([0.,1.,3.,6.]),nperm=2
+        )
+    np.testing.assert_array_equal(intervals,[[0.,1.],[1.,3.],[3.,6.]])
+    np.testing.assert_array_equal(counts,[1.,2.,1.])
+#end def test_line_crossing_distribution_and_lcd_peak
+
+
+
+def test_plot_interval_dist():
+    """Check that interval-distribution plotting adds the expected lines."""
+    matplotlib = pytest.importorskip('matplotlib')
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    figure,axis = plt.subplots()
+    plt.sca(axis)
+    statistics.plot_interval_dist(
+        np.array([[0.,1.],[1.,2.]]),
+        np.array([1,2]),
+        )
+    assert(len(axis.lines)==2)
+    plt.close(figure)
+#end def test_plot_interval_dist

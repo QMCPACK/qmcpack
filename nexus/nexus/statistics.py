@@ -73,6 +73,26 @@ def _paired_real_arrays(x,y):
 #end def _paired_real_arrays
 
 
+def _real_vector(x,name):
+    """Return a real vector, flattening vector-shaped arrays."""
+    x = np.asarray(x)
+    if np.iscomplexobj(x):
+        msg = f'{name} must be real-valued'
+        raise ValueError(msg)
+    if x.ndim>1 and np.max(x.shape)==x.size:
+        x = x.ravel()
+    if x.ndim!=1:
+        msg = f'{name} must be one-dimensional'
+        raise ValueError(msg)
+    try:
+        x = np.asarray(x,dtype=float)
+    except (TypeError,ValueError):
+        msg = f'{name} must be numeric'
+        raise ValueError(msg) from None
+    return x
+#end def _real_vector
+
+
 def theil_sen(x,y):
     """Return the Theil--Sen slope and intercept for paired observations.
 
@@ -228,7 +248,13 @@ def theil_sen_stoch_reblock(x,y):
 #end def theil_sen_stoch_reblock
 
 
-def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
+def reblocked_autocorr_time(
+        x,
+        min_blocks = 10,
+        *,
+        plot       = False,
+        show       = False,
+        ):
     """Estimate autocorrelation time from the growth of blocked errors.
 
     This estimator currently overestimates the autocorrelation times in a 
@@ -373,7 +399,7 @@ def reblocked_autocorr_time(x,min_blocks=10,plot=False,show=False):
 
 
 
-def acf_autocorr_time(x,reliability=False):
+def acf_autocorr_time(x,*,reliability=False):
     """Estimate autocorrelation time from a windowed sample ACF.
 
     Best for long chains.  Generally prefer the Geyer method.
@@ -485,7 +511,13 @@ def acf_autocorr_time(x,reliability=False):
 
 
 
-def geyer_ims_autocorr_time(x,c=5.0,reliability=False,acf_fallback=True):
+def geyer_ims_autocorr_time(
+        x,
+        c            = 5.0,
+        *,
+        reliability  = False,
+        acf_fallback = True,
+        ):
     """Estimate integrated autocorrelation time with Geyer's IMS method.
 
     This is the single best autocorrelation estimator.
@@ -617,7 +649,7 @@ def geyer_ims_autocorr_time(x,c=5.0,reliability=False,acf_fallback=True):
 
 
 
-def autocorr_time(x,reliability=False):
+def autocorr_time(x,*,reliability=False):
     """Conservatively combine autocorrelation-time estimates.
 
     The ACF and Geyer initial-monotone-sequence probe the correlation
@@ -701,3 +733,562 @@ def series_stats(x,t_auto=None):
     x_stderr = np.std(x)/np.sqrt(N_eff)
     return x_mean,x_stderr,t_auto
 #end def series_stats
+
+
+############################################################################
+#                                                                          #
+#              Line-crossing and interval-distribution analysis            #
+#              ------------------------------------------------            #
+#                                                                          #
+# These functions represent a time series as intervals between neighboring #
+# values and count their overlap along the value axis.  The resulting      #
+# interval distribution is a line-crossing density: locations with many    #
+# overlapping segments identify values persistently traversed by the       #
+# series.                                                                  #
+#                                                                          #
+# The distribution and its peak provide robust center estimates that       #
+# emphasize locally stable, equilibrium-like portions of a fluctuating     #
+# series.  Rolling versions track this center over time, while related     #
+# utilities support broader interval-distribution analysis.                #
+#                                                                          #
+############################################################################
+
+
+def time_series_intervals(x,t=None):
+    """Return ordered intervals between adjacent time-series values.
+
+    Parameters
+    ----------
+    x : array_like
+        Real one-dimensional series with at least two values. Vector-shaped
+        arrays are flattened.
+
+    t : array_like, optional
+        Real times paired with ``x``. If supplied, must have the same length.
+
+    Returns
+    -------
+    xi : ndarray
+        ``(len(x)-1, 2)`` array of ordered adjacent-value intervals.
+
+    ti : ndarray or None
+        Adjacent-pair time midpoints, or ``None`` when ``t`` is omitted.
+    """
+    x = _real_vector(x,'data array')
+    if len(x)<2:
+        msg = 'data array must contain at least two values'
+        raise ValueError(msg)
+    if t is not None:
+        t = _real_vector(t,'time array')
+        if len(t)!=len(x):
+            msg = 'time array must have the same length as data array'
+            raise ValueError(msg)
+    xi = np.empty((len(x)-1,2),dtype=x.dtype)
+    for n in range(len(x)-1):
+        xi[n,0] = x[n]
+        xi[n,1] = x[n+1]
+    xi = np.sort(xi,axis=1)
+    if t is None:
+        return xi,None
+    else:
+        ti = (t[:-1]+t[1:])/2
+        return xi,ti
+#end def time_series_intervals
+
+
+
+def _int_dist_input(x1,x2=None):
+    """Normalize one interval matrix or paired lower and upper endpoints.
+
+    Returns ordered endpoint pairs and corresponding ``+1/-1`` edge signs.
+    """
+    if x2 is not None:
+        x1 = _real_vector(x1,'lower endpoints')
+        x2 = _real_vector(x2,'upper endpoints')
+        if len(x1)!=len(x2):
+            msg = 'interval endpoint arrays must have equal lengths'
+            raise ValueError(msg)
+        xi = np.vstack((x1,x2)).T
+    else:
+        xi = np.asarray(x1)
+        if np.iscomplexobj(xi):
+            msg = 'interval array must be real-valued'
+            raise ValueError(msg)
+    # xi is array of N intervals
+    if xi.ndim!=2 or xi.shape[1]!=2:
+        msg = 'interval array must have shape (n,2)'
+        raise ValueError(msg)
+    if len(xi)==0:
+        msg = 'interval array must not be empty'
+        raise ValueError(msg)
+    try:
+        xi = np.asarray(xi,dtype=float)
+    except (TypeError,ValueError):
+        msg = 'interval array must be numeric'
+        raise ValueError(msg) from None
+    # check endpoint ordering
+    if np.any(xi[:,1]<xi[:,0]):
+        msg = 'interval upper endpoints must not be less than lower endpoints'
+        raise ValueError(msg)
+    si = np.empty(xi.shape,dtype=int)
+    si[:,0] =  1
+    si[:,1] = -1
+    return xi,si
+#end def _int_dist_input
+
+
+
+def interval_distribution(x1,x2=None):
+    """Return spans between interval edges and their overlap counts.
+
+    Parameters
+    ----------
+    x1 : array_like
+        ``(n,2)`` ordered interval array, or lower endpoints when ``x2`` is
+        supplied.
+
+    x2 : array_like, optional
+        Upper endpoints paired with ``x1``.
+
+    Returns
+    -------
+    xi : ndarray
+        Consecutive spans between sorted unique interval endpoints.
+
+    ci : ndarray
+        Number of input intervals overlapping each span in ``xi``.
+
+    Notes
+    -----
+    Each row of ``xi`` denotes the open span between consecutive unique
+    endpoints. Endpoint membership is not counted separately: touching
+    intervals occupy adjacent spans, and zero-width intervals contribute no
+    span to the returned distribution.
+    """
+    xi,si = _int_dist_input(x1,x2)
+    # organize by edge order
+    edges = xi.ravel()
+    signs = si.ravel()
+    order = edges.argsort()
+    edges = edges[order]
+    signs = signs[order]
+
+    # Combine all coincident edges before accumulating their net change.
+    # This vectorized sweep avoids one Python dictionary entry and two list
+    # appends per edge while preserving the span counts between unique edges.
+    values,starts = np.unique(edges,return_index=True)
+    counts = np.cumsum(np.add.reduceat(signs,starts))
+    xi = np.empty((len(values)-1,2),dtype=values.dtype)
+    xi[:,0] = values[:-1]
+    xi[:,1] = values[1:]
+    ci = counts[:-1]
+    return xi,ci
+#end def interval_distribution
+
+
+
+def plot_interval_dist(
+        xi,
+        ci,
+        style = 'b.-',
+        ):
+    """Plot an interval distribution as a piecewise-constant curve.
+
+    Parameters
+    ----------
+    xi : array_like
+        ``(n,2)`` interval-distribution spans.
+
+    ci : array_like
+        Counts paired with ``xi``.
+
+    style : str, optional
+        Matplotlib style specification for the distribution line.
+    """
+    import matplotlib.pyplot as plt
+    xi,_ = _int_dist_input(xi)
+    ci = _real_vector(ci,'interval counts')
+    if len(ci)!=len(xi):
+        msg = 'interval counts must have the same length as intervals'
+        raise ValueError(msg)
+    xif = xi.ravel()
+    cif = np.zeros(xif.shape)
+    cif[::2]  = ci
+    cif[1::2] = ci
+    plt.axhline(0,color='k')
+    plt.plot(xif,cif,style)
+#end def plot_interval_dist
+
+
+
+def interval_dist_peak(
+        xi,
+        ci,
+        method         = 'interval_mid',
+        peak_frac      = 0.5,
+        *,
+        height         = False,
+        quad_weighting = 'endpoint',
+        ):
+    """Return a representative location at the peak of an interval distribution.
+
+    Parameters
+    ----------
+    xi : array_like
+        ``(n,2)`` interval-distribution spans.
+
+    ci : array_like
+        Counts paired with ``xi``.
+
+    method : {'interval_mid', 'interval_rand', 'quad_peak'}, optional
+        Peak estimator. The first averages all maximum-count intervals, the
+        second averages random interior samples of those intervals, and the
+        third fits each separated high-count peak region quadratically.
+
+    peak_frac : float, optional
+        Fraction of the maximum count retained for each quadratic-fit region.
+        Must lie in ``(0,1]``.
+
+    height : bool, optional
+        If true, return the peak location and its estimated height.
+
+    quad_weighting : {'endpoint', 'width'}, optional
+        Weighting used only by ``'quad_peak'``. ``'endpoint'`` gives every
+        duplicated interval endpoint equal fit weight. ``'width'`` weights
+        each endpoint by the square root of its interval width, making the
+        least-squares objective proportional to interval width.
+
+    Returns
+    -------
+    peak : float or (float, float)
+        Peak location, optionally followed by peak height. Separated
+        equal-height modes are averaged.
+    """
+    xi,_ = _int_dist_input(xi)
+    ci = _real_vector(ci,'interval counts')
+    if len(ci)!=len(xi):
+        msg = 'interval counts must have the same length as intervals'
+        raise ValueError(msg)
+    if not isinstance(method,str):
+        msg = 'peak method must be a string'
+        raise ValueError(msg)
+    try:
+        peak_frac = float(peak_frac)
+    except (TypeError,ValueError):
+        msg = 'peak fraction must be a finite number'
+        raise ValueError(msg) from None
+    if not np.isfinite(peak_frac) or not 0.<peak_frac<=1.:
+        msg = 'peak fraction must be in the interval (0,1]'
+        raise ValueError(msg)
+    if not isinstance(quad_weighting,str) or quad_weighting not in (
+        'endpoint','width'
+        ):
+        msg = 'quadratic weighting must be "endpoint" or "width"'
+        raise ValueError(msg)
+    if method=='interval_mid':
+        cm = ci.max()
+        xm = xi[ci==cm].mean()
+    elif method=='interval_rand':
+        cm    = ci.max()
+        xi    = xi[ci==cm]
+        u     = np.random.uniform(size=len(xi))
+        x1,x2 = xi.T
+        dx    = x2-x1
+        xmid  = (x2+x1)/2
+        x     = xmid + (u-0.5)*dx/2
+        xm    = x.mean()
+    elif method=='quad_peak':
+        cm = ci.max()
+        cf = peak_frac*cm
+        high = ci>=cf
+        edges = np.flatnonzero(np.diff(np.r_[False,high,False]))
+        xpeaks = []
+        cpeaks = []
+        for i1,i2 in zip(edges[::2],edges[1::2]-1):
+            ci_region = ci[i1:i2+1]
+            if ci_region.max()!=cm:
+                continue
+            xi_region = xi[i1:i2+1]
+            peak_mean = xi_region[ci_region==cm].mean()
+            xp = xi_region.ravel()
+            cp = np.repeat(ci_region,2)
+            weights = None
+            if quad_weighting=='width':
+                widths = xi_region[:,1]-xi_region[:,0]
+                weights = np.repeat(np.sqrt(widths),2)
+                nonzero = weights>0.
+                xp = xp[nonzero]
+                cp = cp[nonzero]
+                weights = weights[nonzero]
+            if len(np.unique(xp))<3:
+                # A single usable span cannot determine a quadratic peak.
+                xp = peak_mean
+                cp = cm
+            else:
+                if weights is None:
+                    p = np.polyfit(xp,cp,2)
+                else:
+                    p = np.polyfit(xp,cp,2,w=weights)
+                if not np.isfinite(p[0]) or p[0]>=0.:
+                    # A non-concave fit has no interior maximum.
+                    xp = peak_mean
+                    cp = cm
+                else:
+                    xp = -p[1]/(2*p[0])
+                    xp = np.clip(xp,xi_region.min(),xi_region.max())
+                    cp = np.polyval(p,xp)
+            xpeaks.append(xp)
+            cpeaks.append(cp)
+        xm = np.mean(xpeaks)
+        cm = np.mean(cpeaks)
+    else:
+        raise ValueError(f'unrecognized int. dist. max method: "{method}"')
+    if not height:
+        return xm
+    else:
+        return xm,cm
+#end def interval_dist_peak
+
+
+
+def rolling_interval_dist_peak(
+        x1,
+        x2             = None,
+        window         = 10,
+        step           = 5,
+        method         = 'interval_mid',
+        peak_frac      = 0.5,
+        *,
+        quad_weighting = 'endpoint',
+        ret_height     = False,
+        ret_windows    = False,
+        ):
+    """Return interval-distribution peaks for overlapping input windows.
+
+    Parameters
+    ----------
+    x1 : array_like
+        ``(n,2)`` interval array, or lower endpoints when ``x2`` is given.
+
+    x2 : array_like, optional
+        Upper endpoints paired with ``x1``.
+
+    window : int, optional
+        Number of input intervals in each rolling distribution.
+
+    step : int, optional
+        Number of intervals between successive window starts. It must not
+        exceed ``window``.
+
+    method : {'interval_mid', 'interval_rand', 'quad_peak'}, optional
+        Peak estimator passed to :func:`interval_dist_peak`.
+
+    peak_frac : float, optional
+        Quadratic peak-region threshold passed to :func:`interval_dist_peak`.
+
+    quad_weighting : {'endpoint', 'width'}, optional
+        Quadratic-fit weighting passed to :func:`interval_dist_peak`.
+
+    ret_height : bool, optional
+        Include a peak-height array in the returned tuple.
+
+    ret_windows : bool, optional
+        Include ``(start, stop)`` bounds for each returned window.
+
+    Returns
+    -------
+    result : tuple
+        A tuple beginning with the peak-location array. When requested, it
+        then contains the peak-height array and/or window-bound list, in that
+        order. Windows advance by ``step``; a final window ending at the last
+        input interval is appended when the regular sequence does not reach
+        it exactly.
+    """
+    for value,name in ((window,'window'),(step,'step')):
+        if isinstance(value,(bool,np.bool_)) or not isinstance(
+            value,(int,np.integer)
+            ) or value<1:
+            msg = f'{name} must be a positive integer'
+            raise ValueError(msg)
+    if step>window:
+        msg = 'step must not exceed window'
+        raise ValueError(msg)
+    interval_mid  = method=='interval_mid'
+    interval_rand = method=='interval_rand'
+    interval_quad = method=='quad_peak'
+    if not interval_mid and not interval_rand and not interval_quad:
+        msg = f'method "{method}" is unrecognized'
+        raise ValueError(msg)
+    # map inputs to intervals
+    xia,sia = _int_dist_input(x1,x2)
+    N = len(xia)
+    if N<window:
+        msg = 'window must not exceed the number of intervals'
+        raise ValueError(msg)
+    # find window segments
+    starts = list(range(0,N-window+1,step))
+    if starts[-1]!=N-window:
+        starts.append(N-window)
+    windows = [(i1,i1+window) for i1 in starts]
+    # find interval dist peaks in each window
+    xp = []
+    cp = []
+    for i1,i2 in windows:
+        xi,ci = interval_distribution(xia[i1:i2])
+        if len(ci)==0:
+            msg = 'each rolling window must span a nonzero interval'
+            raise ValueError(msg)
+        xm,cm = interval_dist_peak(
+            xi,
+            ci,
+            method         = method,
+            peak_frac      = peak_frac,
+            height         = True,
+            quad_weighting = quad_weighting,
+            )
+        xp.append(xm)
+        cp.append(cm)
+    xp = np.array(xp)
+    ret = [xp]
+    if ret_height:
+        cp = np.array(cp)
+        ret.append(cp)
+    if ret_windows:
+        ret.append(windows)
+    if len(ret)==0:
+        return ret[0]
+    else:
+        return tuple(ret)
+#end def rolling_interval_dist_peak
+
+
+
+def line_crossing_distribution(x,nperm=0):
+    """Return the line-crossing distribution of a series or its permutations.
+
+    Parameters
+    ----------
+    x : array_like
+        Real one-dimensional series with at least two values.
+
+    nperm : int, optional
+        Number of independently shuffled series to average. Zero evaluates
+        the input series directly.
+
+    Returns
+    -------
+    xi : ndarray
+        Line-crossing distribution spans.
+
+    ci : ndarray
+        Crossing counts, averaged over permutations when ``nperm`` is
+        positive. Permutations are never connected to one another.
+    """
+    x = _real_vector(x,'data array')
+    if len(x)<2:
+        msg = 'data array must contain at least two values'
+        raise ValueError(msg)
+    if isinstance(nperm,(bool,np.bool_)) or not isinstance(
+        nperm,(int,np.integer)
+        ) or nperm<0:
+        msg = 'number of permutations must be a nonnegative integer'
+        raise ValueError(msg)
+
+    # permutation-free (typical) case
+    if nperm==0:
+        xi,_ = time_series_intervals(x,t=None)
+        return interval_distribution(xi)
+
+    # use permutation shuffling
+    permutation_intervals = []
+    for n in range(nperm):
+        xp = x.copy()
+        np.random.shuffle(xp)
+        xi,_ = time_series_intervals(xp,t=None)
+        permutation_intervals.append(xi)
+    xi,ci = interval_distribution(np.vstack(permutation_intervals))
+    return xi,ci/nperm
+#end def line_crossing_distribution
+
+
+
+def lcd_peak(
+        x,
+        method         = 'interval_mid',
+        peak_frac      = 0.5,
+        nperm          = 0,
+        quad_weighting = 'endpoint',
+        ):
+    """Return a peak of a series line-crossing distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Time series supplied to :func:`line_crossing_distribution`.
+
+    method, peak_frac, quad_weighting, nperm
+        Options forwarded to :func:`interval_dist_peak` and
+        :func:`line_crossing_distribution`.
+
+    Returns
+    -------
+    float
+        Estimated line-crossing-distribution peak.
+    """
+    xi,ci = line_crossing_distribution(x,nperm=nperm)
+    xp = interval_dist_peak(
+        xi,
+        ci,
+        method         = method,
+        peak_frac      = peak_frac,
+        quad_weighting = quad_weighting,
+        )
+    return xp
+#end def lcd_peak
+
+
+
+def lcd_smooth(
+        x,
+        t              = None,
+        window         = 10,
+        step           = 5,
+        method         = 'interval_rand',
+        peak_frac      = 0.5,
+        quad_weighting = 'endpoint',
+        ):
+    """Return rolling line-crossing-distribution peaks for a time series.
+
+    Parameters
+    ----------
+    x : array_like
+        Time series to smooth with rolling line-crossing peaks.
+
+    t : array_like, optional
+        Times paired with ``x``.
+
+    window, step, method, peak_frac, quad_weighting
+        Options forwarded to :func:`rolling_interval_dist_peak`.
+
+    Returns
+    -------
+    peaks : ndarray or (ndarray, ndarray)
+        Rolling peak locations, optionally paired with their mean window
+        times when ``t`` is supplied.
+    """
+    xi,ti = time_series_intervals(x,t)
+    xp,windows = rolling_interval_dist_peak(
+        xi,
+        window         = window,
+        step           = step,
+        method         = method,
+        peak_frac      = peak_frac,
+        quad_weighting = quad_weighting,
+        ret_windows    = True,
+        )
+    if t is None:
+        return xp
+    else:
+        tp = np.array([ti[i1:i2].mean() for i1,i2 in windows])
+        return xp,tp
+#end def lcd_smooth
