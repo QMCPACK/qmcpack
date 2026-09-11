@@ -476,6 +476,30 @@ def test_interval_distribution_and_peak(monkeypatch):
     np.testing.assert_array_equal(column_intervals,expected_intervals)
     np.testing.assert_array_equal(column_counts,counts)
 
+    touching_intervals,touching_counts = statistics.interval_distribution(
+        np.array([[1.,2.],[2.,3.],[3.,4.]])
+        )
+    np.testing.assert_array_equal(
+        touching_intervals,
+        [[1.,2.],[2.,3.],[3.,4.]],
+        )
+    np.testing.assert_array_equal(touching_counts,[1,1,1])
+
+    repeated_intervals,repeated_counts = statistics.interval_distribution(
+        np.array([[1.,1.],[1.,2.],[2.,2.]])
+        )
+    np.testing.assert_array_equal(repeated_intervals,[[1.,2.]])
+    np.testing.assert_array_equal(repeated_counts,[1])
+
+    irregular_intervals,irregular_counts = statistics.interval_distribution(
+        np.array([[0.,10.],[.5,.75]])
+        )
+    np.testing.assert_array_equal(
+        irregular_intervals,
+        [[0.,.5],[.5,.75],[.75,10.]],
+        )
+    np.testing.assert_array_equal(irregular_counts,[1,2,1])
+
     peak_intervals = np.array([[0.,1.],[1.,2.],[2.,3.]])
     peak_counts    = np.array([1,3,3])
     peak,height = statistics.interval_dist_peak(
@@ -514,6 +538,27 @@ def test_interval_distribution_and_peak(monkeypatch):
         )
     assert(fallback_peak==pytest.approx(1.))
     assert(fallback_height==4.)
+
+    multimodal_intervals = np.array([[0.,1.],[1.,2.],[2.,3.],[3.,4.]])
+    multimodal_counts    = np.array([4.,1.,1.,4.])
+    assert(
+        statistics.interval_dist_peak(
+            multimodal_intervals,multimodal_counts,method='quad_peak'
+            )
+        ==pytest.approx(2.)
+        )
+
+    monkeypatch.setattr(
+        statistics.np,
+        'polyfit',
+        lambda x,y,degree: np.array([1.,0.,0.]),
+        )
+    assert(
+        statistics.interval_dist_peak(
+            quadratic_intervals,quadratic_counts,method='quad_peak'
+            )
+        ==pytest.approx(2.5)
+        )
 
     monkeypatch.setattr(
         statistics.np.random,
@@ -595,6 +640,21 @@ def test_line_crossing_distribution_and_lcd_peak(monkeypatch):
     np.testing.assert_array_equal(intervals,[[0.,1.],[1.,2.]])
     np.testing.assert_array_equal(counts,[1.,2.])
     assert(statistics.lcd_peak(x,nperm=2)==pytest.approx(1.5))
+
+    permutations = [
+        np.array([0.,1.,3.,6.]),
+        np.array([0.,3.,1.,6.]),
+        ]
+    def set_permutation(values):
+        values[:] = permutations.pop(0)
+    #end def set_permutation
+
+    monkeypatch.setattr(statistics.np.random,'shuffle',set_permutation)
+    intervals,counts = statistics.line_crossing_distribution(
+        np.array([0.,1.,3.,6.]),nperm=2
+        )
+    np.testing.assert_array_equal(intervals,[[0.,1.],[1.,3.],[3.,6.]])
+    np.testing.assert_array_equal(counts,[1.,2.,1.])
 #end def test_line_crossing_distribution_and_lcd_peak
 
 

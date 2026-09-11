@@ -745,7 +745,22 @@ def series_stats(x,t_auto=None):
 def time_series_intervals(x,t=None):
     """Return ordered intervals between adjacent time-series values.
 
-    If times are supplied, return their adjacent-pair midpoints as well.
+    Parameters
+    ----------
+    x : array_like
+        Real one-dimensional series with at least two values. Vector-shaped
+        arrays are flattened.
+
+    t : array_like, optional
+        Real times paired with ``x``. If supplied, must have the same length.
+
+    Returns
+    -------
+    xi : ndarray
+        ``(len(x)-1, 2)`` array of ordered adjacent-value intervals.
+
+    ti : ndarray or None
+        Adjacent-pair time midpoints, or ``None`` when ``t`` is omitted.
     """
     x = _real_vector(x,'data array')
     if len(x)<2:
@@ -771,7 +786,10 @@ def time_series_intervals(x,t=None):
 
 
 def _int_dist_input(x1,x2=None):
-    """Normalize one interval matrix or paired lower and upper endpoints."""
+    """Normalize one interval matrix or paired lower and upper endpoints.
+
+    Returns ordered endpoint pairs and corresponding ``+1/-1`` edge signs.
+    """
     if x2 is not None:
         x1 = _real_vector(x1,'lower endpoints')
         x2 = _real_vector(x2,'upper endpoints')
@@ -809,7 +827,25 @@ def _int_dist_input(x1,x2=None):
 
 
 def interval_distribution(x1,x2=None):
-    """Return spans between interval edges and their overlap counts."""
+    """Return spans between interval edges and their overlap counts.
+
+    Parameters
+    ----------
+    x1 : array_like
+        ``(n,2)`` ordered interval array, or lower endpoints when ``x2`` is
+        supplied.
+
+    x2 : array_like, optional
+        Upper endpoints paired with ``x1``.
+
+    Returns
+    -------
+    xi : ndarray
+        Consecutive spans between sorted unique interval endpoints.
+
+    ci : ndarray
+        Number of input intervals overlapping each span in ``xi``.
+    """
     xi,si = _int_dist_input(x1,x2)
     xi = xi.ravel()
     si = si.ravel()
@@ -842,7 +878,19 @@ def interval_distribution(x1,x2=None):
 
 
 def plot_interval_dist(xi,ci,style='b.-'):
-    """Plot an interval distribution as a piecewise-constant curve."""
+    """Plot an interval distribution as a piecewise-constant curve.
+
+    Parameters
+    ----------
+    xi : array_like
+        ``(n,2)`` interval-distribution spans.
+
+    ci : array_like
+        Counts paired with ``xi``.
+
+    style : str, optional
+        Matplotlib style specification for the distribution line.
+    """
     import matplotlib.pyplot as plt
     xi,_ = _int_dist_input(xi)
     ci = _real_vector(ci,'interval counts')
@@ -862,8 +910,31 @@ def plot_interval_dist(xi,ci,style='b.-'):
 def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False):
     """Return a representative location at the peak of an interval distribution.
 
-    ``method`` selects a peak-interval midpoint, random interior samples, or
-    a quadratic fit over the region at least ``peak_frac`` of the maximum.
+    Parameters
+    ----------
+    xi : array_like
+        ``(n,2)`` interval-distribution spans.
+
+    ci : array_like
+        Counts paired with ``xi``.
+
+    method : {'interval_mid', 'interval_rand', 'quad_peak'}, optional
+        Peak estimator. The first averages all maximum-count intervals, the
+        second averages random interior samples of those intervals, and the
+        third fits each separated high-count peak region quadratically.
+
+    peak_frac : float, optional
+        Fraction of the maximum count retained for each quadratic-fit region.
+        Must lie in ``(0,1]``.
+
+    height : bool, optional
+        If true, return the peak location and its estimated height.
+
+    Returns
+    -------
+    peak : float or (float, float)
+        Peak location, optionally followed by peak height. Separated
+        equal-height modes are averaged.
     """
     xi,_ = _int_dist_input(xi)
     ci = _real_vector(ci,'interval counts')
@@ -894,33 +965,38 @@ def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False):
         x     = xmid + (u-0.5)*dx/2
         xm    = x.mean()
     elif method=='quad_peak':
-        imax = ci.argmax()
-        cf = peak_frac*ci[imax]
-        peak_mean = xi[ci==ci[imax]].mean()
-        # Locate the contiguous high-count region in interval coordinates.
-        # ``imax`` indexes ``ci``, not the flattened endpoint array.
-        i1 = imax
-        while i1>0 and ci[i1-1]>=cf:
-            i1 -= 1
-        i2 = imax
-        while i2+1<len(ci) and ci[i2+1]>=cf:
-            i2 += 1
-        xp = xi[i1:i2+1].ravel()
-        cp = np.repeat(ci[i1:i2+1],2)
-        if len(np.unique(xp))<3:
-            # A single usable span cannot determine a quadratic peak.
-            xm = peak_mean
-            cm = ci[imax]
-        else:
-            p = np.polyfit(xp,cp,2)
-            if not np.isfinite(p[0]) or p[0]>=0.:
-                # A non-concave fit has no interior maximum.
-                xm = peak_mean
-                cm = ci[imax]
+        cm = ci.max()
+        cf = peak_frac*cm
+        high = ci>=cf
+        edges = np.flatnonzero(np.diff(np.r_[False,high,False]))
+        xpeaks = []
+        cpeaks = []
+        for i1,i2 in zip(edges[::2],edges[1::2]-1):
+            ci_region = ci[i1:i2+1]
+            if ci_region.max()!=cm:
+                continue
+            xi_region = xi[i1:i2+1]
+            peak_mean = xi_region[ci_region==cm].mean()
+            xp = xi_region.ravel()
+            cp = np.repeat(ci_region,2)
+            if len(np.unique(xp))<3:
+                # A single usable span cannot determine a quadratic peak.
+                xp = peak_mean
+                cp = cm
             else:
-                xm = -p[1]/(2*p[0])
-                xm = np.clip(xm,xp.min(),xp.max())
-                cm = np.polyval(p,xm)
+                p = np.polyfit(xp,cp,2)
+                if not np.isfinite(p[0]) or p[0]>=0.:
+                    # A non-concave fit has no interior maximum.
+                    xp = peak_mean
+                    cp = cm
+                else:
+                    xp = -p[1]/(2*p[0])
+                    xp = np.clip(xp,xi_region.min(),xi_region.max())
+                    cp = np.polyval(p,xp)
+            xpeaks.append(xp)
+            cpeaks.append(cp)
+        xm = np.mean(xpeaks)
+        cm = np.mean(cpeaks)
     else:
         raise ValueError(f'unrecognized int. dist. max method: "{method}"')
     if not height:
@@ -943,8 +1019,41 @@ def rolling_interval_dist_peak(
         ):
     """Return interval-distribution peaks for overlapping input windows.
 
-    ``method`` accepts ``'interval_mid'``, ``'interval_rand'``, and
-    ``'quad_peak'``.  ``peak_frac`` is used by the quadratic method.
+    Parameters
+    ----------
+    x1 : array_like
+        ``(n,2)`` interval array, or lower endpoints when ``x2`` is given.
+
+    x2 : array_like, optional
+        Upper endpoints paired with ``x1``.
+
+    window : int, optional
+        Number of input intervals in each rolling distribution.
+
+    step : int, optional
+        Number of intervals between successive window starts. It must not
+        exceed ``window``.
+
+    method : {'interval_mid', 'interval_rand', 'quad_peak'}, optional
+        Peak estimator passed to :func:`interval_dist_peak`.
+
+    peak_frac : float, optional
+        Quadratic peak-region threshold passed to :func:`interval_dist_peak`.
+
+    ret_height : bool, optional
+        Include a peak-height array in the returned tuple.
+
+    ret_windows : bool, optional
+        Include ``(start, stop)`` bounds for each returned window.
+
+    Returns
+    -------
+    result : tuple
+        A tuple beginning with the peak-location array. When requested, it
+        then contains the peak-height array and/or window-bound list, in that
+        order. Windows advance by ``step``; a final window ending at the last
+        input interval is appended when the regular sequence does not reach
+        it exactly.
     """
     for value,name in ((window,'window'),(step,'step')):
         if isinstance(value,(bool,np.bool_)) or not isinstance(
@@ -1003,8 +1112,23 @@ def rolling_interval_dist_peak(
 def line_crossing_distribution(x,nperm=0):
     """Return the line-crossing distribution of a series or its permutations.
 
-    Positive ``nperm`` values average independently shuffled line-crossing
-    distributions without connecting successive permutations.
+    Parameters
+    ----------
+    x : array_like
+        Real one-dimensional series with at least two values.
+
+    nperm : int, optional
+        Number of independently shuffled series to average. Zero evaluates
+        the input series directly.
+
+    Returns
+    -------
+    xi : ndarray
+        Line-crossing distribution spans.
+
+    ci : ndarray
+        Crossing counts, averaged over permutations when ``nperm`` is
+        positive. Permutations are never connected to one another.
     """
     x = _real_vector(x,'data array')
     if len(x)<2:
@@ -1037,7 +1161,19 @@ def line_crossing_distribution(x,nperm=0):
 def lcd_peak(x,method='interval_mid',peak_frac=0.5,nperm=0):
     """Return a peak of a series line-crossing distribution.
 
-    ``nperm`` is passed to :func:`line_crossing_distribution`.
+    Parameters
+    ----------
+    x : array_like
+        Time series supplied to :func:`line_crossing_distribution`.
+
+    method, peak_frac, nperm
+        Options forwarded to :func:`interval_dist_peak` and
+        :func:`line_crossing_distribution`.
+
+    Returns
+    -------
+    float
+        Estimated line-crossing-distribution peak.
     """
     xi,ci = line_crossing_distribution(x,nperm=nperm)
     xp = interval_dist_peak(xi,ci,method=method,peak_frac=peak_frac)
@@ -1055,7 +1191,22 @@ def lcd_smooth(x,
                ):
     """Return rolling line-crossing-distribution peaks for a time series.
 
-    ``peak_frac`` is forwarded to the rolling quadratic-peak method.
+    Parameters
+    ----------
+    x : array_like
+        Time series to smooth with rolling line-crossing peaks.
+
+    t : array_like, optional
+        Times paired with ``x``.
+
+    window, step, method, peak_frac
+        Options forwarded to :func:`rolling_interval_dist_peak`.
+
+    Returns
+    -------
+    peaks : ndarray or (ndarray, ndarray)
+        Rolling peak locations, optionally paired with their mean window
+        times when ``t`` is supplied.
     """
     xi,ti = time_series_intervals(x,t)
     xp,windows = rolling_interval_dist_peak(
