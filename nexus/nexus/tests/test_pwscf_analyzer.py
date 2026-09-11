@@ -88,12 +88,13 @@ def test_empty_init():
     assert(not hasattr(pa_module,'read_kpoint_tables'))
     reader_names = (
         'read_calculation','read_fermi_energies',
-        'read_energies','read_scf_convergence','read_bands','read_band_edges',
+        'read_energies','read_scf_convergence','read_bands',
         'read_structures','read_pressure','read_volume','read_stress',
         'read_forces','read_timing','read_kpoints',
         )
     assert(all(callable(getattr(PwscfOutData,name)) for name in reader_names))
     assert(not hasattr(PwscfOutData,'read'))
+    assert(not hasattr(PwscfOutData,'read_band_edges'))
     assert(not any(hasattr(PwscfAnalyzer,'analyze_'+name[5:]) for name in reader_names))
     assert(not hasattr(PwscfAnalyzer,'analyze_schema_xml'))
     assert(callable(Pw2CasinoAnalyzer))

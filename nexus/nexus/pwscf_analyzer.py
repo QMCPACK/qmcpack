@@ -36,6 +36,7 @@ from .structure import Structure, get_kpath
 from .unit_converter import convert
 from .utilities import path_string
 
+
 def parse_float(text):
     """Return a finite floating-point value from a complete numeric token."""
     if '_' in text:
@@ -48,8 +49,6 @@ def parse_float(text):
         return None
     return value
 #end def parse_float
-
-
 
 
 
@@ -415,12 +414,57 @@ class PwscfOutData(DevBase):
         if len(bands.up)+len(bands.down)==0:
             return
         self.bands = bands
-        self.read_band_edges()
-    #end def read_bands
 
+        def read_band_edges():
+            """Add band edges, gaps, and electronic classification to bands."""
+            bands      = self.bands
+            vbm        = None
+            cbm        = None
+            direct_gap = None
+            for band_channel in (bands.up,bands.down):
+                for band in band_channel.values():
+                    if len(band.occs)!=len(band.eigs) or len(band.occs)==0:
+                        continue
+                    occ   = band.occs > 0.5
+                    unocc = band.occs < 0.5
+                    if not occ.any() or not unocc.any():
+                        continue
+                    e_val  = np.max(band.eigs[occ])
+                    e_cond = np.min(band.eigs[unocc])
+                    if vbm is None or e_val>vbm.energy:
+                        vbm = edge_data(band,e_val,int(np.max(np.where(occ)[0])))
+                    if cbm is None or e_cond<cbm.energy:
+                        cbm = edge_data(band,e_cond,int(np.min(np.where(unocc)[0])))
+                    if direct_gap is None or e_cond-e_val<direct_gap.energy:
+                        direct_gap = obj(
+                            energy          = e_cond-e_val,
+                            kpoint_rel      = band.kpoint_rel,
+                            kpoint_2pi_alat = band.kpoint_2pi_alat,
+                            index           = band.index,
+                            pol             = band.pol,
+                            )
+            if vbm is None:
+                return
+            electronic_structure = 'insulating'
+            if vbm.energy+.025>=cbm.energy:
+                electronic_structure = 'metallic' if vbm.band_number==cbm.band_number else 'semi-metal'
+            elif (
+                vbm.kpoint_rel is not None
+                and cbm.kpoint_rel is not None
+                and not np.equal(vbm.kpoint_rel,cbm.kpoint_rel).all()
+                ):
+                bands.indirect_gap = obj(
+                    energy  = round(cbm.energy-vbm.energy,3),
+                    kpoints = obj(vbm=vbm,cbm=cbm),
+                    )
+            bands.update(
+                electronic_structure = electronic_structure,
+                vbm                  = vbm,
+                cbm                  = cbm,
+                direct_gap           = direct_gap,
+                )
+        #end def read_band_edges
 
-    def read_band_edges(self):
-        """Add band edges, gaps, and electronic classification to bands."""
         def edge_data(band,energy,band_number):
             return obj(
                 energy          = energy,
@@ -430,53 +474,8 @@ class PwscfOutData(DevBase):
                 pol             = band.pol,
                 band_number     = band_number,
                 )
-        bands      = self.bands
-        vbm        = None
-        cbm        = None
-        direct_gap = None
-        for band_channel in (bands.up,bands.down):
-            for band in band_channel.values():
-                if len(band.occs)!=len(band.eigs) or len(band.occs)==0:
-                    continue
-                occ   = band.occs > 0.5
-                unocc = band.occs < 0.5
-                if not occ.any() or not unocc.any():
-                    continue
-                e_val  = np.max(band.eigs[occ])
-                e_cond = np.min(band.eigs[unocc])
-                if vbm is None or e_val>vbm.energy:
-                    vbm = edge_data(band,e_val,int(np.max(np.where(occ)[0])))
-                if cbm is None or e_cond<cbm.energy:
-                    cbm = edge_data(band,e_cond,int(np.min(np.where(unocc)[0])))
-                if direct_gap is None or e_cond-e_val<direct_gap.energy:
-                    direct_gap = obj(
-                        energy          = e_cond-e_val,
-                        kpoint_rel      = band.kpoint_rel,
-                        kpoint_2pi_alat = band.kpoint_2pi_alat,
-                        index           = band.index,
-                        pol             = band.pol,
-                        )
-        if vbm is None:
-            return
-        electronic_structure = 'insulating'
-        if vbm.energy+.025>=cbm.energy:
-            electronic_structure = 'metallic' if vbm.band_number==cbm.band_number else 'semi-metal'
-        elif (
-            vbm.kpoint_rel is not None
-            and cbm.kpoint_rel is not None
-            and not np.equal(vbm.kpoint_rel,cbm.kpoint_rel).all()
-            ):
-            bands.indirect_gap = obj(
-                energy  = round(cbm.energy-vbm.energy,3),
-                kpoints = obj(vbm=vbm,cbm=cbm),
-                )
-        bands.update(
-            electronic_structure = electronic_structure,
-            vbm                  = vbm,
-            cbm                  = cbm,
-            direct_gap           = direct_gap,
-            )
-    #end def read_band_edges
+        read_band_edges()
+    #end def read_bands
 
 
     def read_structures(self,lines):
@@ -787,6 +786,7 @@ class PwscfOutData(DevBase):
 #end class PwscfOutData
 
 
+
 class Pw2CasinoAnalyzer(DevBase):
     """Read kinetic energy reported by a PW2CASINO output file."""
 
@@ -808,9 +808,6 @@ class Pw2CasinoAnalyzer(DevBase):
     #end def __init__
 
 #end class Pw2CasinoAnalyzer
-
-
-
 
 
 
@@ -1528,11 +1525,5 @@ class PwscfAnalyzer(SimulationAnalyzer):
         else:
             plt.close()
     #end def plot_bandstructure
-
-
-
-
-
-
 
 #end class PwscfAnalyzer
