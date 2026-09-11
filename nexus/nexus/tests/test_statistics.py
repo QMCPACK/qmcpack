@@ -398,8 +398,6 @@ def test_interval_and_lcd_input_validation():
     """Check diagnostics for malformed interval and LCD inputs."""
     with pytest.raises(ValueError,match=r'data array must contain at least two values'):
         statistics.time_series_intervals([1.])
-    with pytest.raises(ValueError,match=r'data array must contain only finite values'):
-        statistics.time_series_intervals([1.,np.nan])
     with pytest.raises(ValueError,match=r'time array must have the same length'):
         statistics.time_series_intervals([1.,2.],[0.])
     with pytest.raises(ValueError,match=r'time array must be real-valued'):
@@ -418,14 +416,14 @@ def test_interval_and_lcd_input_validation():
     intervals = np.array([[0.,1.],[1.,2.]])
     for counts,message in [
         ([1.],r'counts must have the same length'),
-        ([1.,np.nan],r'counts must contain only finite values'),
         ]:
         with pytest.raises(ValueError,match=message):
             statistics.interval_dist_peak(intervals,counts)
     with pytest.raises(ValueError,match=r'peak method must be a string'):
         statistics.interval_dist_peak(intervals,[1.,2.],method=1)
-    with pytest.raises(ValueError,match=r'peak fraction must be a finite number'):
-        statistics.interval_dist_peak(intervals,[1.,2.],peak_frac=np.nan)
+    for peak_frac in (np.nan,0.,-1.,1.1):
+        with pytest.raises(ValueError,match=r'peak fraction must be in the interval'):
+            statistics.interval_dist_peak(intervals,[1.,2.],peak_frac=peak_frac)
 
     for window,step,message in [
         (0,1,r'window must be a positive integer'),
@@ -508,6 +506,15 @@ def test_interval_distribution_and_peak(monkeypatch):
     assert(np.isfinite(quadratic_height))
     assert(quadratic_height>0.)
 
+    fallback_peak,fallback_height = statistics.interval_dist_peak(
+        np.array([[0.,2.]]),
+        np.array([4.]),
+        method='quad_peak',
+        height=True,
+        )
+    assert(fallback_peak==pytest.approx(1.))
+    assert(fallback_height==4.)
+
     monkeypatch.setattr(
         statistics.np.random,
         'uniform',
@@ -541,6 +548,16 @@ def test_rolling_interval_dist_peak_and_lcd_smooth():
     np.testing.assert_allclose(peaks,[1.5,3.5])
     np.testing.assert_array_equal(heights,[2,2])
     assert(windows==[(0,2),(2,4)])
+
+    quadratic_peaks,quadratic_heights = statistics.rolling_interval_dist_peak(
+        np.array([[1.,4.],[2.,5.],[3.,6.]]),
+        window=3,
+        step=1,
+        method='quad_peak',
+        ret_height=True,
+        )
+    np.testing.assert_allclose(quadratic_peaks,[3.5])
+    assert(quadratic_heights[0]>0.)
 
     x = np.array([0.,2.,1.,3.])
     t = np.array([0.,1.,3.,6.])
@@ -577,6 +594,7 @@ def test_line_crossing_distribution_and_lcd_peak(monkeypatch):
     intervals,counts = statistics.line_crossing_distribution(x,nperm=2)
     np.testing.assert_array_equal(intervals,[[0.,1.],[1.,2.]])
     np.testing.assert_array_equal(counts,[1.,2.])
+    assert(statistics.lcd_peak(x,nperm=2)==pytest.approx(1.5))
 #end def test_line_crossing_distribution_and_lcd_peak
 
 
