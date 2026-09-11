@@ -750,6 +750,35 @@ def series_stats(x,t_auto=None):
 ############################################################################
 
 
+def _smoothing_window_length(n,m,maximum=None):
+    """Validate or select an odd smoothing-window length."""
+    if m is None:
+        if n==0:
+            return None
+        m = min(n//6,15)
+        m = max(3,2*(m//2)+1)
+        m = min(m,n if n%2 else n-1)
+    elif not isinstance(m,(int,np.integer)) or isinstance(m,(bool,np.bool_)):
+        msg = 'smoothing window length must be an integer'
+        raise TypeError(msg)
+
+    m = int(m)
+    if m<1:
+        msg = 'smoothing window length must be positive'
+        raise ValueError(msg)
+    if m%2==0:
+        msg = 'smoothing window length must be odd'
+        raise ValueError(msg)
+    if m>n:
+        msg = 'smoothing window length must not exceed the data length'
+        raise ValueError(msg)
+    if maximum is not None and m>maximum:
+        msg = f'smoothing window length must not exceed {maximum}'
+        raise ValueError(msg)
+    return m
+#end def _smoothing_window_length
+
+
 def mean_smooth(x,m=None):
     """Smooth a sequence with tapered-endpoint moving averages.
 
@@ -764,8 +793,9 @@ def mean_smooth(x,m=None):
         Values to smooth.
 
     m : int, optional
-        Nominal odd window width.  By default, use the largest odd width no
-        greater than ``min(len(x)/6, 15)``, with a minimum of three.
+        Positive odd window width no greater than ``len(x)``.  By default,
+        use the largest applicable odd width no greater than
+        ``min(len(x)/6, 15)``, nominally with a minimum of three.
 
     Returns
     -------
@@ -773,10 +803,9 @@ def mean_smooth(x,m=None):
         Smoothed values.
     """
     N = len(x)
+    m = _smoothing_window_length(N,m)
     if m is None:
-        m = min(N/6,15)
-        m = int(2*(m//2)+1)
-        m = max(3,m)
+        return np.array([])
     dm = m//2
     xs = []
     for n,xn in enumerate(x):
@@ -811,8 +840,8 @@ def median_smooth(x,m=None,post_mean=False):
         Values to smooth.
 
     m : int, optional
-        Nominal odd window width; the default is selected as in
-        :func:`mean_smooth`.
+        Positive odd window width no greater than ``len(x)``.  The default is
+        selected as in :func:`mean_smooth`.
 
     post_mean : bool, optional
         Apply :func:`mean_smooth` with the same width after the median pass.
@@ -823,10 +852,13 @@ def median_smooth(x,m=None,post_mean=False):
         Smoothed values.
     """
     N = len(x)
+    m = _smoothing_window_length(N,m)
+    if not isinstance(post_mean,(bool,np.bool_)):
+        msg = 'post_mean must be a Boolean value'
+        raise TypeError(msg)
+    post_mean = bool(post_mean)
     if m is None:
-        m = min(N/6,15)
-        m = int(2*(m//2)+1)
-        m = max(3,m)
+        return np.array([])
     dm = m//2
     xs = []
     for n,xn in enumerate(x):
@@ -865,8 +897,9 @@ def poly_smooth(x,m=None,post_mean=False):
         Values to smooth.
 
     m : int, optional
-        Nominal odd window width from 1 through 21.  The default is selected
-        as in :func:`mean_smooth` and is at most 15.
+        Positive odd window width from 1 through 21 and no greater than
+        ``len(x)``.  The default is selected as in :func:`mean_smooth` and is
+        at most 15.
 
     post_mean : bool, optional
         Apply :func:`mean_smooth` with the same width after polynomial
@@ -880,10 +913,13 @@ def poly_smooth(x,m=None,post_mean=False):
     poly_order = {1:0,3:1,5:2,7:2,9:3,11:3,
                   13:4,15:4,17:4,19:4,21:4}
     N = len(x)
+    m = _smoothing_window_length(N,m,maximum=21)
+    if not isinstance(post_mean,(bool,np.bool_)):
+        msg = 'post_mean must be a Boolean value'
+        raise TypeError(msg)
+    post_mean = bool(post_mean)
     if m is None:
-        m = min(N/6,15)
-        m = int(2*(m//2)+1)
-        m = max(3,m)
+        return np.array([])
     dm = m//2
     xs = []
     for n,xn in enumerate(x):
@@ -917,11 +953,11 @@ def local_median_smooth(x_list,m=None,poly_smooth=True,post_mean=False):
 
     For each position, all neighboring sample sets in a centered window are
     pooled, excluding the sample set at that position, and their median is
-    taken.  As with the scalar smoothers, windows taper symmetrically at the
-    endpoints.  The resulting median sequence is then polynomial-smoothed by
-    default, or mean-smoothed when ``poly_smooth`` is false; either result can
-    receive a final mean-smoothing pass. Notice that this is not just a 
-    batched version of median_smooth.
+    taken.  At an endpoint where the tapered window contains only that sample
+    set, its own median is used.  The resulting median sequence is then
+    polynomial-smoothed by default, or mean-smoothed when ``poly_smooth`` is
+    false; either result can receive a final mean-smoothing pass.  This is
+    not a batched version of :func:`median_smooth`.
 
     Parameters
     ----------
@@ -929,8 +965,8 @@ def local_median_smooth(x_list,m=None,poly_smooth=True,post_mean=False):
         Per-position sample sets to pool locally.
 
     m : int, optional
-        Nominal odd window width; the default is selected as in
-        :func:`mean_smooth` using ``len(x_list)``.
+        Positive odd window width no greater than ``len(x_list)``.  The
+        default is selected as in :func:`mean_smooth` using ``len(x_list)``.
 
     poly_smooth : bool, optional
         Use :func:`poly_smooth` for the second pass.  If false, use
@@ -946,10 +982,17 @@ def local_median_smooth(x_list,m=None,poly_smooth=True,post_mean=False):
     """
     # x_list: list of arrays containing trace/time-series data
     N = len(x_list)
+    if not isinstance(poly_smooth,(bool,np.bool_)):
+        msg = 'poly_smooth must be a Boolean value'
+        raise TypeError(msg)
+    poly_smooth = bool(poly_smooth)
+    if not isinstance(post_mean,(bool,np.bool_)):
+        msg = 'post_mean must be a Boolean value'
+        raise TypeError(msg)
+    post_mean = bool(post_mean)
+    m = _smoothing_window_length(N,m,maximum=21 if poly_smooth else None)
     if m is None:
-        m = min(N/6,15)
-        m = int(2*(m//2)+1)
-        m = max(3,m)
+        return np.array([])
     dm = m//2
     # median smoother on data
     xs_list = [] # smoothed values
