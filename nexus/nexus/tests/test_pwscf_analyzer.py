@@ -1,37 +1,8 @@
-import re
-
 import pytest
 
 from . import TEST_DIR, NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_ANALYZER)
-
-
-@pytest.mark.parametrize(
-    argnames='text',
-    argvalues=(
-        '0','+7','-12','1.0','3.','.5','-.75','1e3','-2.5E-4',
-        '+6D+02','7d-1',
-        ),
-    )
-def test_number_pattern_matches(text):
-    from ..pwscf_analyzer import number_pattern
-
-    assert(re.fullmatch(number_pattern,text) is not None)
-#end def test_number_pattern_matches
-
-
-@pytest.mark.parametrize(
-    argnames='text',
-    argvalues=(
-        '','.','+','1e','1.2.3','abc123','NaN','Inf','--1','1_000',
-        ),
-    )
-def test_number_pattern_rejects(text):
-    from ..pwscf_analyzer import number_pattern
-
-    assert(re.fullmatch(number_pattern,text) is None)
-#end def test_number_pattern_rejects
 
 
 @pytest.mark.parametrize(
@@ -62,71 +33,40 @@ def test_parse_float_rejects(text):
 
 
 @pytest.mark.parametrize(
-    argnames='pattern_name,text,expected',
-    argvalues=(
-        (
-            'fermi_energies_pattern',
-            '     the Fermi energy is    10.1198 ev',
-            {'values': '10.1198'},
-            ),
-        (
-            'fermi_energies_pattern',
-            'the Fermi energy          =      -3.22772442 eV',
-            {'values': '-3.22772442'},
-            ),
-        (
-            'fermi_energies_pattern',
-            'the spin up/dw Fermi energies are 5.1 5.2 EV',
-            {'values': '5.1 5.2'},
-            ),
-        ),
-    )
-def test_tailored_pattern_matches(pattern_name,text,expected):
-    from .. import pwscf_analyzer as pa_module
-
-    pattern = getattr(pa_module,pattern_name)
-    match   = re.search(pattern,text)
-    assert(match is not None)
-    for name,value in expected.items():
-        assert(match.group(name)==value)
-    #end for
-#end def test_tailored_pattern_matches
-
-
-@pytest.mark.parametrize(
-    argnames='pattern_name,text',
-    argvalues=(
-        ('fermi_energies_pattern','the Fermi energy is 10.1198'),
-        ('fermi_energies_pattern','the Fermi energies are 5.1 5.2 5.3 eV'),
-        ('fermi_energies_pattern','highest occupied level is 10.1198 eV'),
-        ('fermi_energies_pattern','Fermi energy convergence was reached'),
-        ),
-    )
-def test_tailored_pattern_rejects(pattern_name,text):
-    from .. import pwscf_analyzer as pa_module
-
-    pattern = getattr(pa_module,pattern_name)
-    assert(re.search(pattern,text) is None)
-#end def test_tailored_pattern_rejects
-
-
-@pytest.mark.parametrize(
     argnames='text,expected',
     argvalues=(
-        ('4m33.69s',(('4','m'),('33.69','s'))),
-        ('1h 2m 3.5s',(('1','h'),('2','m'),('3.5','s'))),
-        ('0.10s',(('0.10','s'),)),
+        ('the Fermi energy is 10.1198 eV',[10.1198]),
+        ('the Fermi energy = -3.22772442 eV',[-3.22772442]),
+        ('the spin up/dw Fermi energies are 5.1 5.2 EV',[5.1,5.2]),
         ),
     )
-def test_timing_value_sequence(text,expected):
-    from ..pwscf_analyzer import timing_value_pattern
+def test_fermi_energy_parsing(tmp_path,text,expected):
+    import numpy as np
 
-    values = tuple(
-        (match.group('value'),match.group('unit'))
-        for match in re.finditer(timing_value_pattern,text)
-        )
-    assert(values==expected)
-#end def test_timing_value_sequence
+    from ..pwscf_analyzer import PwscfOutData
+
+    outfile = tmp_path/'pwscf.out'
+    outfile.write_text(f'Self-consistent Calculation\n{text}\n')
+    assert(np.allclose(PwscfOutData(outfile).fermi_energies,expected))
+#end def test_fermi_energy_parsing
+
+
+@pytest.mark.parametrize(
+    argnames='text',
+    argvalues=(
+        'the Fermi energy is 10.1198',
+        'the Fermi energies are 5.1 5.2 5.3 eV',
+        'highest occupied level is 10.1198 eV',
+        'Fermi energy convergence was reached',
+        ),
+    )
+def test_fermi_energy_rejects(tmp_path,text):
+    from ..pwscf_analyzer import PwscfOutData
+
+    outfile = tmp_path/'pwscf.out'
+    outfile.write_text(f'Self-consistent Calculation\n{text}\n')
+    assert(PwscfOutData(outfile).fermi_energies is None)
+#end def test_fermi_energy_rejects
 
 
 def test_empty_init():

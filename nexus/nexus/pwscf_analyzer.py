@@ -36,35 +36,6 @@ from .structure import Structure, get_kpath
 from .unit_converter import convert
 from .utilities import path_string
 
-# Match one complete decimal or scientific-notation number as PWSCF writes it.
-# Examples include ``-168.12345678``, ``.5000000``, ``6.3E-09``, and
-# ``-1.250D+02``.  The pattern intentionally excludes nonnumeric XML values
-# such as ``true``, non-finite spellings such as ``NaN``, and incomplete
-# exponents such as ``1.0E``.  It has no capturing groups so it can be safely
-# embedded in each of the field-specific expressions below.
-number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
-
-
-# Match one component of a PWSCF CPU or wall-clock time.  Components may be
-# adjacent (``4m33.69s``) or separated by whitespace.
-timing_value_pattern = (
-    rf'(?P<value>{number_pattern})\s*(?P<unit>[hms])(?=\s|[-+.\d]|$)'
-    )
-
-
-# Match the Fermi-energy result without collecting unrelated numbers earlier
-# on the line.  Real singular forms include ``the Fermi energy is 10.1198 ev``
-# and ``the Fermi energy = -3.22772442 eV``; spin-polarized output may report
-# ``the spin up/dw Fermi energies are 5.1 5.2 ev``.  Missing eV units, three
-# energies, ``highest occupied level``, and prose merely mentioning Fermi
-# energy fail.
-fermi_energies_pattern = (
-    rf'(?i:\b(?:the\s+)?(?:spin\s+up/dw\s+)?Fermi\s+energ(?:y|ies)\s*'
-    rf'(?:is|are|=)\s*)'
-    rf'(?P<values>{number_pattern}(?:\s+{number_pattern})?)\s+(?i:eV)\b'
-    )
-
-
 def parse_float(text):
     """Return a finite floating-point value from a complete numeric token."""
     if '_' in text:
@@ -255,14 +226,24 @@ class PwscfOutData(DevBase):
         """
         fermi_energies = []
         for line in lines:
-            if 'Fermi energ' in line:
-                match = re.search(fermi_energies_pattern,line)
-                if match is not None:
-                    values = re.findall(number_pattern,match.group('values'))
-                    fermi_energies.extend(
-                        float(value.lower().replace('d','e'))
-                        for value in values
-                        )
+            tokens = line.replace('=',' = ').split()
+            lower  = [token.lower() for token in tokens]
+            if 'fermi' not in lower:
+                continue
+            index = lower.index('fermi')
+            if index+2>=len(tokens) or lower[index+1] not in {'energy','energies'}:
+                continue
+            if lower[index+2] not in {'is','are','='}:
+                continue
+            values = []
+            for token in tokens[index+3:index+5]:
+                value = parse_float(token)
+                if value is None:
+                    break
+                values.append(value)
+            unit_index = index+3+len(values)
+            if len(values)>0 and unit_index<len(tokens) and lower[unit_index]=='ev':
+                fermi_energies.extend(values)
         if len(fermi_energies)>0:
             self.Ef             = fermi_energies[-1]
             self.fermi_energies = np.array(fermi_energies,dtype=float)
@@ -339,6 +320,8 @@ class PwscfOutData(DevBase):
         present, :meth:`read_band_edges` adds VBM and CBM energies.
         """
         # Match a numeric prefix, including joined fixed-width negatives.
+        # This cannot be parsed by whitespace tokenization alone.
+        number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
         leading_number_list_pattern = (
             rf'^\s*(?P<values>{number_pattern}'
             rf'(?:(?:\s+|(?=[+-])){number_pattern})*)'
@@ -694,6 +677,10 @@ class PwscfOutData(DevBase):
 
     def read_timing(self,lines):
         """Read total PWSCF CPU and wall-clock time in hours."""
+        number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
+        timing_value_pattern = (
+            rf'(?P<value>{number_pattern})\s*(?P<unit>[hms])(?=\s|[-+.\d]|$)'
+            )
         def pwscf_time(text):
             scales = {'h':1.0,'m':60.0,'s':3600.0}
             return sum(
@@ -705,11 +692,18 @@ class PwscfOutData(DevBase):
         for line in lines:
             if 'PWSCF' not in line or 'CPU' not in line or 'WALL' not in line:
                 continue
-            match = re.search(r'PWSCF\s*:\s*(.*?)\s+CPU\s+(.*?)\s+WALL',line)
-            if match is not None:
-                self.cputime  = pwscf_time(match.group(1))
-                self.walltime = pwscf_time(match.group(2))
-                return
+            label,separator,text = line.partition(':')
+            if not separator or label.strip()!='PWSCF':
+                continue
+            cpu,separator,wall = text.partition('CPU')
+            if not separator:
+                continue
+            wall,separator,_ = wall.partition('WALL')
+            if not separator:
+                continue
+            self.cputime  = pwscf_time(cpu)
+            self.walltime = pwscf_time(wall)
+            return
     #end def read_timing
 
 
@@ -723,13 +717,22 @@ class PwscfOutData(DevBase):
         one-dimensional weight array.  No member is updated when either table
         is incomplete.
         """
-        # Match complete k-point rows with three coordinates and a weight.
-        kpoint_table_pattern = (
-            rf'\bk\(\s*\d+\s*\)\s*=\s*\(\s*'
-            rf'(?P<kx>{number_pattern})\s+(?P<ky>{number_pattern})\s+'
-            rf'(?P<kz>{number_pattern})\s*\)\s*,\s*wk\s*=\s*'
-            rf'(?P<weight>{number_pattern})(?=\s|$)'
-            )
+        def read_kpoint(line):
+            """Parse a complete QE k-point table row."""
+            tokens = line.translate(str.maketrans('(),=','    ')).split()
+            if (
+                len(tokens)<7
+                or tokens[0]!='k'
+                or not tokens[1].isdecimal()
+                or tokens[5]!='wk'
+                ):
+                return None
+            values = [parse_float(token) for token in tokens[2:5]]
+            weight = parse_float(tokens[6])
+            if any(value is None for value in values) or weight is None:
+                return None
+            return values,weight
+        #end def read_kpoint
         for i,line in enumerate(lines):
             if 'number of k points' not in line:
                 continue
@@ -749,18 +752,13 @@ class PwscfOutData(DevBase):
             weights = []
             valid   = len(lines[i+2:i+2+nkpoints])==nkpoints
             for kline in lines[i+2:i+2+nkpoints]:
-                match = re.search(kpoint_table_pattern,kline)
-                if match is None:
+                kpoint = read_kpoint(kline)
+                if kpoint is None:
                     valid = False
                     break
-                coordinates = [
-                    float(match.group(name).lower().replace('d','e'))
-                    for name in ('kx','ky','kz')
-                    ]
+                coordinates,weight = kpoint
                 cart.append(coordinates)
-                weights.append(
-                    float(match.group('weight').lower().replace('d','e'))
-                    )
+                weights.append(weight)
             if not valid:
                 continue
             j = i+2+nkpoints
@@ -771,14 +769,11 @@ class PwscfOutData(DevBase):
             unit  = []
             valid = len(lines[j+1:j+1+nkpoints])==nkpoints
             for kline in lines[j+1:j+1+nkpoints]:
-                match = re.search(kpoint_table_pattern,kline)
-                if match is None:
+                kpoint = read_kpoint(kline)
+                if kpoint is None:
                     valid = False
                     break
-                coordinates = [
-                    float(match.group(name).lower().replace('d','e'))
-                    for name in ('kx','ky','kz')
-                    ]
+                coordinates,_ = kpoint
                 unit.append(coordinates)
             if not valid:
                 continue
