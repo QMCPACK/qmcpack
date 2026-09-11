@@ -701,3 +701,297 @@ def series_stats(x,t_auto=None):
     x_stderr = np.std(x)/np.sqrt(N_eff)
     return x_mean,x_stderr,t_auto
 #end def series_stats
+
+
+############################################################################
+#                                                                          #
+#              Line-crossing and interval-distribution analysis            #
+#              ------------------------------------------------            #
+#                                                                          #
+# These functions represent a time series as intervals between neighboring #
+# values and count their overlap along the value axis.  The resulting      #
+# interval distribution is a line-crossing density: locations with many    #
+# overlapping segments identify values persistently traversed by the       #
+# series.                                                                  #
+#                                                                          #
+# The distribution and its peak provide robust center estimates that       #
+# emphasize locally stable, equilibrium-like portions of a fluctuating     #
+# series.  Rolling versions track this center over time, while related     #
+# utilities support broader interval-distribution analysis.                #
+#                                                                          #
+############################################################################
+
+
+def _int_dist_input(x1,x2=None):
+    # process input types
+    x1 = np.asarray(x1)
+    if x2 is not None:
+        x2 = np.asarray(x2)
+        if x1.ndim>1:
+            assert x1.size==max(x1.shape)
+            x1 = x1.ravel()
+        if x2.ndim>1:
+            assert x2.size==max(x2.shape)
+            x2 = x2.ravel()
+        xi = np.vstack((x1,x2)).T
+    else:
+        xi = x1
+    # xi is array of N intervals
+    assert xi.ndim==2
+    assert xi.shape[1]==2
+    # check endpoint ordering
+    assert (xi[:,1]-xi[:,0]).min()>=0
+    si = np.empty(xi.shape,dtype=int)
+    si[:,0] =  1
+    si[:,1] = -1
+    return xi,si
+#end def _int_dist_input
+
+
+
+def interval_distribution(x1,x2=None):
+    xi,si = _int_dist_input(x1,x2)
+    xi = xi.ravel()
+    si = si.ravel()
+    # organize by edge order
+    order = xi.argsort()
+    xi = xi[order]
+    si = si[order]
+    # make the interval counting distribution
+    cd = {}
+    n=0
+    for s,xv in zip(si,xi):
+        n += s
+        cd[xv] = n
+    # first organize into sorted point/edge arrays
+    x = []
+    c = []
+    for xv in sorted(cd.keys()):
+        x.append(xv)
+        c.append(cd[xv])
+    x = np.array(x)
+    c = np.array(c)
+    # next into interval array
+    xi = np.zeros((len(x)-1,2),dtype=x.dtype)
+    xi[:,0] = x[:-1]
+    xi[:,1] = x[1:]
+    ci = c[:-1].copy()
+    return xi,ci
+#end def interval_distribution
+
+
+
+def plot_interval_dist(xi,ci,style='b.-'):
+    import matplotlib.pyplot as plt
+    xif = xi.ravel()
+    cif = np.zeros(xif.shape)
+    cif[::2]  = ci
+    cif[1::2] = ci
+    plt.axhline(0,color='k')
+    plt.plot(xif,cif,style)
+#end def plot_interval_dist
+
+
+
+def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False):
+    if method=='interval_mid':
+        cm = ci.max()
+        xm = xi[ci==cm].mean()
+    elif method=='interval_rand':
+        cm    = ci.max()
+        xi    = xi[ci==cm]
+        u     = np.random.uniform(size=len(xi))
+        x1,x2 = xi.T
+        dx    = x2-x1
+        xmid  = (x2+x1)/2
+        x     = xmid + (u-0.5)*dx/2
+        xm    = x.mean()
+    elif method=='quad_peak':
+        # first find the overall max
+        imax = ci.argmax()
+        cf = peak_frac*ci[imax]
+        # flatten for search and fit
+        xif = xi.ravel()
+        cif = np.zeros(xif.shape)
+        cif[::2]  = ci
+        cif[1::2] = ci
+        N = len(cif)
+        # move left until below peak frac
+        i1 = imax
+        for n in range(N):
+            if i1==0 or cif[i1]<cf:
+                break
+            i1 -= 1
+        # move right until below peak frac
+        i2 = imax
+        for n in range(N):
+            if i2==N-1 or cif[i2]<cf:
+                break
+            i2 += 1
+        # fit the peak
+        xp = xif[i1:i2+1]
+        cp = cif[i1:i2+1]
+        p = np.polyfit(xp,cp,2)
+        # find the max
+        xm = -p[1]/(2*p[0])
+        cm = np.polyval(p,xm)
+    else:
+        raise ValueError(f'unrecognized int. dist. max method: "{method}"')
+    if not height:
+        return xm
+    else:
+        return xm,cm
+#end def interval_dist_peak
+
+
+
+def rolling_interval_dist_peak(
+        x1,
+        x2          = None,
+        window      = 10,
+        step        = 5,
+        method      = 'interval_mid',
+        ret_height  = False,
+        ret_windows = False,
+        ):
+    assert step<=window
+    interval_mid  = method=='interval_mid'
+    interval_rand = method=='interval_rand'
+    # map inputs to intervals
+    xia,sia = _int_dist_input(x1,x2)
+    N = len(xia)
+    assert N>=window
+    # find window segments
+    windows = []
+    i1 = 0
+    for n in range(N):
+        i2 = i1 + window
+        if i2<N:
+            windows.append((i1,i2))
+        elif i2==N:
+            windows.append((i1,i2))
+            break
+        else: #i2>N
+            windows.append((N-window,N))
+            break
+        i1 += step
+    assert n+1<N
+    assert len(windows)>0
+    assert windows[-1][1]==N
+    # find interval dist peaks in each window
+    xp = []
+    cp = []
+    for i1,i2 in windows:
+        xi = xia[i1:i2]
+        si = sia[i1:i2]
+        assert len(xi)==window
+        xi = xi.ravel()
+        si = si.ravel()
+        order = xi.argsort()
+        xi = xi[order]
+        si = si[order]
+        cd = {}
+        n=0
+        for s,xv in zip(si,xi):
+            n += s
+            cd[xv] = n
+        x = []
+        c = []
+        for xv in sorted(cd.keys()):
+            x.append(xv)
+            c.append(cd[xv])
+        x = np.array(x)
+        c = np.array(c)[:-1]
+        cm = c.max()
+        if interval_mid:
+            xmid = (x[:-1]+x[1:])/2
+            xm   = xmid[c==cm].mean()
+        elif interval_rand:
+            x1 = x[:-1]
+            x2 = x[1:]
+            xmid = (x1+x2)/2
+            dx   = x2-x1
+            u    = np.random.uniform(size=len(xmid))
+            xc   = xmid + (u-0.5)*dx/2
+            xm   = xc[c==cm].mean()
+        else:
+            raise ValueError(f'method "{method}" is unrecognized')
+        xp.append(xm)
+        cp.append(cm)
+    xp = np.array(xp)
+    ret = [xp]
+    if ret_height:
+        cp = np.array(cp)
+        ret.append(cp)
+    if ret_windows:
+        ret.append(windows)
+    if len(ret)==0:
+        return ret[0]
+    else:
+        return tuple(ret)
+#end def rolling_interval_dist_peak
+
+
+
+
+
+
+def time_series_intervals(x,t=None):
+    xi = np.empty((len(x)-1,2),dtype=x.dtype)
+    for n in range(len(x)-1):
+        xi[n,0] = x[n]
+        xi[n,1] = x[n+1]
+    xi = np.sort(xi,axis=1)
+    if t is None:
+        return xi,None
+    else:
+        ti = (t[:-1]+t[1:])/2
+        return xi,ti
+#end def time_series_intervals
+
+
+
+
+def line_crossing_distribution(x,nperm=0):
+    if nperm>1:
+        xperm = []
+        for n in range(nperm):
+            xp = x.copy()
+            np.random.shuffle(xp)
+            xperm.append(xp)
+        x = np.hstack(xperm)
+    xi,_ = time_series_intervals(x,t=None)
+    xi,ci = interval_distribution(xi)
+    return xi,ci
+#end def line_crossing_distribution
+
+
+
+def lcd_peak(x,method='interval_mid',peak_frac=0.5):
+    xi,ci = line_crossing_distribution(x)
+    xp = interval_dist_peak(xi,ci,method=method,peak_frac=peak_frac)
+    return xp
+#end def lcd_peak
+
+
+
+def lcd_smooth(x,
+               t      = None,
+               window = 10,
+               step   = 5,
+               method = 'interval_rand',
+               ):
+    xi,ti = time_series_intervals(x,t)
+    xp,windows = rolling_interval_dist_peak(
+        xi,
+        window      = window,
+        step        = step,
+        method      = method,
+        ret_windows = True,
+        )
+    if t is None:
+        return xp
+    else:
+        tp = np.array([ti[i1:i2].mean() for i1,i2 in windows])
+        return xp,tp
+#end def lcd_smooth
