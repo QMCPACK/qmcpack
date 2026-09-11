@@ -701,3 +701,133 @@ def series_stats(x,t_auto=None):
     x_stderr = np.std(x)/np.sqrt(N_eff)
     return x_mean,x_stderr,t_auto
 #end def series_stats
+
+
+
+
+def mean_smooth(x,m=None):
+    N = len(x)
+    if m is None:
+        m = min(N/6,15)
+        m = 2*(m//2)+1
+        m = max(3,m)
+    dm = m//2
+    xs = []
+    for n,xn in enumerate(x):
+        if n<dm:
+            n1 = 0
+            n2 = 2*n+1
+        elif N-1-n<dm:
+            n1 = (N-1)-2*(N-1-n)
+            n2 = N
+        else:
+            n1 = n-dm
+            n2 = n+dm+1
+        xsl = np.array(x[n1:n2])
+        xsn = np.mean(xsl)
+        xs.append(xsn)
+    xs = np.array(xs)
+    return xs
+#end def mean_smooth
+
+
+def median_smooth(x,m=None,post_mean=False):
+    N = len(x)
+    if m is None:
+        m = min(N/6,15)
+        m = 2*(m//2)+1
+        m = max(3,m)
+    dm = m//2
+    xs = []
+    for n,xn in enumerate(x):
+        if n<dm:
+            n1 = 0
+            n2 = 2*n+1
+        elif N-1-n<dm:
+            n1 = (N-1)-2*(N-1-n)
+            n2 = N
+        else:
+            n1 = n-dm
+            n2 = n+dm+1
+        xsl = np.array(x[n1:n2])
+        xsn = np.median(xsl)
+        xs.append(xsn)
+    xs = np.array(xs)
+    if post_mean:
+        xs = mean_smooth(xs,m=m)
+    return xs
+#end def median_smooth
+
+
+def poly_smooth(x,m=None,post_mean=False):
+    poly_order = {1:0,3:1,5:2,7:2,9:3,11:3,
+                  13:4,15:4,17:4,19:4,21:4}
+    N = len(x)
+    if m is None:
+        m = min(N/6,15)
+        m = 2*(m//2)+1
+        m = max(3,m)
+        print(N,m)
+    dm = m//2
+    xs = []
+    for n,xn in enumerate(x):
+        if n<dm:
+            n1 = 0
+            n2 = 2*n+1
+        elif N-1-n<dm:
+            n1 = (N-1)-2*(N-1-n)
+            n2 = N
+        else:
+            n1 = n-dm
+            n2 = n+dm+1
+        xsl = np.array(x[n1:n2])
+        if len(xsl)>1:
+            porder = poly_order[len(xsl)]
+            p = np.polyfit(np.arange(n1,n2),xsl,porder)
+            xsn = np.polyval(p,n)
+        else:
+            xsn = xsl[0]
+        xs.append(xsn)
+    xs = np.array(xs)
+    if post_mean:
+        xs = mean_smooth(xs,m=m)
+    return xs
+#end def poly_smooth
+poly_smooth_ = poly_smooth
+
+
+def local_median_smooth(x_list,m=None,poly_smooth=True,post_mean=False):
+    # x_list: list of arrays containing trace/time-series data
+    N = len(x_list)
+    if m is None:
+        m = min(N/6,15)
+        m = 2*(m//2)+1
+        m = max(3,m)
+    dm = m//2
+    # median smoother on data
+    xs_list = [] # smoothed values
+    for n,x in enumerate(x_list):
+        if n<dm:
+            n1 = 0
+            n2 = 2*n+1
+        elif N-1-n<dm:
+            n1 = (N-1)-2*(N-1-n)
+            n2 = N
+        else:
+            n1 = n-dm
+            n2 = n+dm+1
+        nvals = list(range(n1,n2))
+        if len(nvals)>1:
+            nvals.remove(n)
+        xl = [x_list[nv] for nv in nvals] 
+        xl = np.hstack(xl)
+        xs = np.median(xl)
+        xs_list.append(xs)
+    xs_list = np.array(xs_list)
+    # poly smoother on medians
+    if poly_smooth:
+        xs_list = poly_smooth_(xs_list,m=m)
+    if post_mean:
+        xs_list = mean_smooth(xs_list,m=m)
+    return xs_list
+#end def local_median_smooth
