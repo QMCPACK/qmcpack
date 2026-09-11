@@ -3,7 +3,8 @@
 Notable changes to QMCPACK and NEXUS are documented in this file.
 
 ## [Unreleased]
-* Removed use of legacy NIST-like Sparse BLAS Level 2 and Level 3 APIs from MKL in AFQMC due to their removal in oneAPI 2026 release.
+
+* Removed use of legacy NIST-like sparse BLAS Level 2 and Level 3 APIs from MKL in AFQMC due to their removal in the oneAPI 2026 release.
 
 ## [4.4.0] - 2026-08-31
 

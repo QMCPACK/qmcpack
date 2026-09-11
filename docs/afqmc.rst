@@ -820,8 +820,8 @@ The following is a growing list of useful advice for new users, followed by a sa
    parallel implementation. For large calculations, values between 6–12
    for both quantities should be reasonable, depending on architecture.
 
--  The legacy NIST-like Sparse BLAS Level 2 and Level 3 APIs from MKL have been removed from the AFQMC implementation.
-   The default fallback routines are used instead. Currently no optimized sparse BLAS library in use.
+-  The legacy NIST-like sparse BLAS Level 2 and Level 3 APIs from MKL have been removed from the AFQMC implementation.
+   The default fallback routines are used instead. Currently, no optimized sparse BLAS library is in use.
 
 .. code-block:: xml
   :caption: Example of sections of an AFQMC input file for a large calculation.
