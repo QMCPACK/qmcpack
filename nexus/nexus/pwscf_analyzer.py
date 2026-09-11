@@ -430,9 +430,9 @@ class PwscfOutData(DevBase):
                 pol             = band.pol,
                 band_number     = band_number,
                 )
-        bands = self.bands
-        vbm   = None
-        cbm   = None
+        bands      = self.bands
+        vbm        = None
+        cbm        = None
         direct_gap = None
         for band_channel in (bands.up,bands.down):
             for band in band_channel.values():
