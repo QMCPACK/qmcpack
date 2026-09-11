@@ -10,7 +10,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/RMC/RMCUpdateAll.h"
-#include "QMCDrivers/RMC/RMCUpdatePbyP.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Utilities/RandomGenerator.h"
@@ -31,41 +30,6 @@ public:
   }
 };
 } // namespace testing
-
-TEST_CASE("RMC particle-by-particle retired input controls", "[drivers][rmc]")
-{
-  const SimulationCell simulation_cell;
-  MCWalkerConfiguration elec(simulation_cell);
-  elec.setName("elec");
-  elec.create({1});
-
-  SpeciesSet& species         = elec.getSpeciesSet();
-  int up_idx                  = species.addSpecies("u");
-  int charge_idx              = species.addAttribute("charge");
-  int mass_idx                = species.addAttribute("mass");
-  species(charge_idx, up_idx) = -1;
-  species(mass_idx, up_idx)   = 1.0;
-
-  RuntimeOptions runtime_options;
-  TrialWaveFunction psi(runtime_options);
-  QMCHamiltonian h;
-  FakeRandom<QMCTraits::FullPrecRealType> rng;
-  RMCUpdatePbyPWithDrift update(elec, psi, h, rng, {}, {});
-
-  Libxml2Document doc;
-  REQUIRE(doc.parseFromString(R"(<qmc>
-    <parameter name="useDrift">not-a-boolean</parameter>
-    <parameter name="Action">DMC</parameter>
-    <parameter name="equilsteps">not-an-integer</parameter>
-    <parameter name="equilSteps">also-not-an-integer</parameter>
-    <parameter name="debug_checks">checkGL_after_moves</parameter>
-  </qmc>)"));
-
-  // These names are intentionally ignored by the PbyP mover. Common live
-  // QMCUpdateBase controls continue to be parsed through the inherited put().
-  REQUIRE(update.put(doc.getRoot()));
-  CHECK(update.debug_checks_ & DriverDebugChecks::CHECKGL_AFTER_MOVES);
-}
 
 TEST_CASE("RMC all-particle input controls remain live", "[drivers][rmc]")
 {

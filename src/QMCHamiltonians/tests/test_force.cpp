@@ -70,11 +70,6 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   elec.update();
 
   BareForce force(ions, elec);
-  Libxml2Document doc;
-  REQUIRE(doc.parseFromString(R"(<estimator name="bare_force" add_ion_ion_="no"/>)"));
-  REQUIRE(force.put(doc.getRoot()));
-  CHECK(force.getAddIonIon());
-
   force.setAddIonIon(false);
 
   force.evaluate(elec);

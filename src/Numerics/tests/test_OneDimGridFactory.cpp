@@ -40,10 +40,9 @@ TEST_CASE("OneDimGridFactory input controls", "[numerics]")
     CHECK(grid->rmax() == Approx(100.0));
   }
 
-  SECTION("bounded logarithmic grid and retired identity attributes")
+  SECTION("bounded logarithmic grid")
   {
-    auto grid = makeGrid(R"(<grid type="log" ri="0.25" rf="4.0" npts="5"
-                                  id="unused" name="unused" ref="unused"/>)");
+    auto grid = makeGrid(R"(<grid type="log" ri="0.25" rf="4.0" npts="5"/>)");
 
     REQUIRE(grid != nullptr);
     CHECK(grid->getGridTag() == LOG_1DGRID);

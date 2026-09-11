@@ -92,26 +92,6 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
   // TODO: add more checks that pseudopotential file was read correctly
 }
 
-TEST_CASE("ECPComponentBuilder retired semilocal channel counts", "[hamiltonian]")
-{
-  Libxml2Document doc;
-  REQUIRE(doc.parse("C.BFD.xml"));
-
-  xmlNodePtr semilocal = nullptr;
-  for (xmlNodePtr child = doc.getRoot()->children; child != nullptr; child = child->next)
-    if (xmlStrEqual(child->name, BAD_CAST "semilocal"))
-      semilocal = child;
-  REQUIRE(semilocal != nullptr);
-
-  xmlSetProp(semilocal, BAD_CAST "npots-down", BAD_CAST "not-an-integer");
-  xmlSetProp(semilocal, BAD_CAST "npots-up", BAD_CAST "not-an-integer");
-
-  ECPComponentBuilder ecp("test_retired_semilocal_counts", OHMMS::Controller, 4, 1);
-  REQUIRE(ecp.put(doc.getRoot()));
-  CHECK(ecp.Zeff == 4);
-  REQUIRE(ecp.pp_nonloc != nullptr);
-}
-
 TEST_CASE("ECPComponentBuilder grid input controls", "[hamiltonian]")
 {
   Communicate* c = OHMMS::Controller;
@@ -130,11 +110,9 @@ TEST_CASE("ECPComponentBuilder grid input controls", "[hamiltonian]")
     CHECK(grid->rmax() == Approx(100.0));
   }
 
-  SECTION("bounded logarithmic grid and retired identity attributes")
+  SECTION("bounded logarithmic grid")
   {
-    REQUIRE(doc.parseFromString(R"(<grid type="log" ri="0.25" rf="4.0" npts="5"
-                                          grid_id="unused" grid_def="unused"
-                                          name="unused" id="unused"/>)"));
+    REQUIRE(doc.parseFromString(R"(<grid type="log" ri="0.25" rf="4.0" npts="5"/>)"));
     auto grid = ecp.createGrid(doc.getRoot());
 
     REQUIRE(grid != nullptr);

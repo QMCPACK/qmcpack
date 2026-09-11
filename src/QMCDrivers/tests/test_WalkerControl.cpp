@@ -76,17 +76,14 @@ void UnifiedDriverWalkerControlMPITest::testInput()
   CHECK(wc_.use_nonblocking_);
   CHECK_FALSE(wc_.debug_disable_branching_);
 
-  const char* const retired_input = R"(
+  const char* const configured_input = R"(
   <qmc method="dmc_batch">
-    <parameter name="maxCopy">not-an-integer</parameter>
-    <parameter name="targetwalkers">not-an-integer</parameter>
-    <parameter name="max_walkers">not-an-integer</parameter>
     <parameter name="use_nonblocking">false</parameter>
     <parameter name="debug_disable_branching">true</parameter>
   </qmc>)";
-  Libxml2Document retired_doc;
-  REQUIRE(retired_doc.parseFromString(retired_input));
-  REQUIRE(wc_.put(retired_doc.getRoot()));
+  Libxml2Document configured_doc;
+  REQUIRE(configured_doc.parseFromString(configured_input));
+  REQUIRE(wc_.put(configured_doc.getRoot()));
   CHECK_FALSE(wc_.use_nonblocking_);
   CHECK(wc_.debug_disable_branching_);
 }

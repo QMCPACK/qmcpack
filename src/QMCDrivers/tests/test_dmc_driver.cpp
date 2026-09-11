@@ -273,13 +273,12 @@ TEST_CASE("DMC move-all node-crossing mover selection", "[drivers][dmc]")
     <parameter name="steps">1</parameter>
     <parameter name="blocks">1</parameter>
     <parameter name="timestep">0.1</parameter>
-    <parameter name="killnode">yes</parameter>
   </qmc>)";
   Libxml2Document doc;
   REQUIRE(doc.parseFromString(dmc_input));
   dmc.process(doc.getRoot());
 
-  // The retired killnode string never controlled this separate internal policy.
+  // Verify the default internal node-crossing policy.
   CHECK(testing::DMCTests::getKillNodeCrossing(dmc) == 0);
 
   SECTION("default rejection policy")

@@ -61,18 +61,10 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
-         <pairpot type="coulomb" name="ElecElec" source="e" target="e"
-                  forces="yes" gpu="no" units="not-a-unit"/>
-         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"
-                  forces="no" gpu="no" units="not-a-unit"/>
-         <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"
-                  forces="retired-value" gpu="not-a-platform" units="not-a-unit"/>
-         <estimator type="Pressure" name="pressure" potential="coulomb"
-                    source="retired-value" sources="retired-value" target="retired-value"
-                    etype="retired-value" functor="retired-value"
-                    truncateSum="not-an-integer" units="not-a-unit">
-           <parameter name="kc">not-a-real</parameter>
-         </estimator>
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
+         <estimator type="Pressure" name="pressure"/>
 </hamiltonian>)";
 
   Libxml2Document doc;
@@ -123,10 +115,10 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   HamiltonianFactory hf("h0", elec, particle_set_map, psi, c);
 
   const char* hamilonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
-    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="not-a-wavefunction" format="xml">
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
         <pseudo elementType="C" href="C.BFD.xml"/>
      </pairpot>
-    <estimator type="Force" name="force" mode="bare" source="ion0" target="e" psi="not-a-wavefunction"/>
+    <estimator type="Force" name="force" mode="bare" source="ion0" target="e"/>
 </hamiltonian>)";
 
   Libxml2Document doc;

@@ -40,9 +40,7 @@ public:
    */
   void testNewDistribution(std::vector<int>& initial_num_per_rank, std::vector<int>& minus, std::vector<int>& plus);
 
-  /** Verify retired modern population-cap inputs are ignored while live
-   *  WalkerControl inputs remain active.
-   */
+  /** Verify live WalkerControl inputs remain active. */
   void testInput();
 
   /** This test function manipulates walker multiplicity and then checks that after "population control"
