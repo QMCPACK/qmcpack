@@ -722,6 +722,21 @@ def series_stats(x,t_auto=None):
 ############################################################################
 
 
+def time_series_intervals(x,t=None):
+    xi = np.empty((len(x)-1,2),dtype=x.dtype)
+    for n in range(len(x)-1):
+        xi[n,0] = x[n]
+        xi[n,1] = x[n+1]
+    xi = np.sort(xi,axis=1)
+    if t is None:
+        return xi,None
+    else:
+        ti = (t[:-1]+t[1:])/2
+        return xi,ti
+#end def time_series_intervals
+
+
+
 def _int_dist_input(x1,x2=None):
     # process input types
     x1 = np.asarray(x1)
@@ -930,25 +945,6 @@ def rolling_interval_dist_peak(
     else:
         return tuple(ret)
 #end def rolling_interval_dist_peak
-
-
-
-
-
-
-def time_series_intervals(x,t=None):
-    xi = np.empty((len(x)-1,2),dtype=x.dtype)
-    for n in range(len(x)-1):
-        xi[n,0] = x[n]
-        xi[n,1] = x[n+1]
-    xi = np.sort(xi,axis=1)
-    if t is None:
-        return xi,None
-    else:
-        ti = (t[:-1]+t[1:])/2
-        return xi,ti
-#end def time_series_intervals
-
 
 
 

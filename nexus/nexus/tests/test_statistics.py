@@ -368,3 +368,122 @@ def test_series_stats(monkeypatch):
             ):
             statistics.series_stats(x,t_auto=t_auto_invalid)
 #end def test_series_stats
+
+
+
+def test_time_series_intervals():
+    """Check adjacent-value intervals and their associated midpoint times."""
+    x = np.array([3.,1.,2.])
+    t = np.array([0.,2.,5.])
+
+    intervals,times = statistics.time_series_intervals(x,t)
+    np.testing.assert_array_equal(intervals,[[1.,3.],[1.,2.]])
+    np.testing.assert_array_equal(times,[1.,3.5])
+
+    intervals,no_times = statistics.time_series_intervals(x)
+    np.testing.assert_array_equal(intervals,[[1.,3.],[1.,2.]])
+    assert(no_times is None)
+#end def test_time_series_intervals
+
+
+
+def test_interval_distribution_and_peak(monkeypatch):
+    """Check interval-overlap counts and the supported peak selections."""
+    endpoints = np.array([1.,2.,3.])
+    upper     = np.array([4.,5.,6.])
+    intervals,counts = statistics.interval_distribution(endpoints,upper)
+    expected_intervals = np.array(
+        [[1.,2.],[2.,3.],[3.,4.],[4.,5.],[5.,6.]]
+        )
+    np.testing.assert_array_equal(intervals,expected_intervals)
+    np.testing.assert_array_equal(counts,[1,2,3,2,1])
+
+    matrix_intervals,matrix_counts = statistics.interval_distribution(
+        np.column_stack((endpoints,upper))
+        )
+    np.testing.assert_array_equal(matrix_intervals,expected_intervals)
+    np.testing.assert_array_equal(matrix_counts,counts)
+
+    peak_intervals = np.array([[0.,1.],[1.,2.],[2.,3.]])
+    peak_counts    = np.array([1,3,3])
+    peak,height = statistics.interval_dist_peak(
+        peak_intervals,
+        peak_counts,
+        height=True,
+        )
+    assert(peak==pytest.approx(2.))
+    assert(height==3)
+
+    monkeypatch.setattr(
+        statistics.np.random,
+        'uniform',
+        lambda size: np.full(size,.5),
+        )
+    assert(
+        statistics.interval_dist_peak(
+            peak_intervals,
+            peak_counts,
+            method='interval_rand',
+            )
+        ==pytest.approx(2.)
+        )
+
+    with pytest.raises(ValueError,match=r'unrecognized int. dist. max method'):
+        statistics.interval_dist_peak(peak_intervals,peak_counts,method='invalid')
+#end def test_interval_distribution_and_peak
+
+
+
+def test_rolling_interval_dist_peak_and_lcd_smooth():
+    """Check rolling peak locations, heights, window bounds, and times."""
+    intervals = np.array([[0.,2.],[1.,3.],[2.,4.],[3.,5.]])
+    peaks,heights,windows = statistics.rolling_interval_dist_peak(
+        intervals,
+        window=2,
+        step=2,
+        ret_height=True,
+        ret_windows=True,
+        )
+    np.testing.assert_allclose(peaks,[1.5,3.5])
+    np.testing.assert_array_equal(heights,[2,2])
+    assert(windows==[(0,2),(2,4)])
+
+    x = np.array([0.,2.,1.,3.])
+    t = np.array([0.,1.,3.,6.])
+    smooth,times = statistics.lcd_smooth(x,t,window=2,step=1,method='interval_mid')
+    np.testing.assert_allclose(smooth,[1.5,1.5])
+    np.testing.assert_allclose(times,[1.25,3.25])
+    np.testing.assert_allclose(
+        statistics.lcd_smooth(x,window=2,step=1,method='interval_mid'),
+        smooth,
+        )
+#end def test_rolling_interval_dist_peak_and_lcd_smooth
+
+
+
+def test_line_crossing_distribution_and_lcd_peak():
+    """Check LCD interval counts and their peak-derived center."""
+    x = np.array([0.,2.,1.])
+    intervals,counts = statistics.line_crossing_distribution(x)
+    np.testing.assert_array_equal(intervals,[[0.,1.],[1.,2.]])
+    np.testing.assert_array_equal(counts,[1,2])
+    assert(statistics.lcd_peak(x)==pytest.approx(1.5))
+#end def test_line_crossing_distribution_and_lcd_peak
+
+
+
+def test_plot_interval_dist():
+    """Check that interval-distribution plotting adds the expected lines."""
+    matplotlib = pytest.importorskip('matplotlib')
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    figure,axis = plt.subplots()
+    plt.sca(axis)
+    statistics.plot_interval_dist(
+        np.array([[0.,1.],[1.,2.]]),
+        np.array([1,2]),
+        )
+    assert(len(axis.lines)==2)
+    plt.close(figure)
+#end def test_plot_interval_dist
