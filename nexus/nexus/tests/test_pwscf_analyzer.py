@@ -388,6 +388,101 @@ def test_unsupported_calculation_modes(calculation):
 #end def test_unsupported_calculation_modes
 
 
+@pytest.mark.parametrize(
+    argnames='version,case,calculation,eigenvalue_shape,has_schema',
+    argvalues=tuple(
+        (version,case,calculation,eigenvalue_shape,has_schema)
+        for version in ('qe_7_0','qe_7_6')
+        for case,calculation,eigenvalue_shape,has_schema in (
+            ('cbn_crystal_kpoints','scf',(4,4),True),
+            ('cbn_relax','relax',(6,4),True),
+            ('cbn_scf','scf',(3,4),True),
+            ('cbn_smearing','scf',(4,8),True),
+            ('cbn_spin','scf',(4,2,8),True),
+            ('cbn_vc_relax','vc-relax',(6,4),True),
+            ('scf_crystal_kpoints','scf',(4,4),True),
+            ('scf_no_symmetry','scf',(27,4),True),
+            ('scf_no_xml','scf',(3,4),False),
+            ('scf_smearing','scf',(4,8),True),
+            ('scf_spin','scf',(4,2,8),True),
+            ('scf_symmetry','scf',(4,4),True),
+            )
+        ),
+    )
+def test_supplemental_qe_runs(
+    version,
+    case,
+    calculation,
+    eigenvalue_shape,
+    has_schema,
+    ):
+    import numpy as np
+
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    fixture_path = (
+        TEST_DIR/'test_pwscf_analyzer_files'/version/'supplemental'/case
+        )
+    schema_file = fixture_path/'pwscf.save'/'data-file-schema.xml'
+    assert(schema_file.is_file()==has_schema)
+    analyzer = PwscfAnalyzer(
+        fixture_path,
+        'pwscf.in',
+        'pwscf.out',
+        analyze = True,
+        )
+    out = analyzer.results_out
+
+    assert(out.calculation==calculation)
+    assert(analyzer.eigenvalues().shape==eigenvalue_shape)
+    assert(analyzer.occupations().shape==eigenvalue_shape)
+    assert(out.forces.shape[1:]==(2,3))
+    assert(out.stress.shape[1:]==(3,3))
+    if case in {'cbn_smearing','cbn_spin','scf_smearing','scf_spin'}:
+        assert(analyzer.Ef() is not None)
+    else:
+        assert(analyzer.Ef() is None)
+    if 'spin' in case:
+        assert(out.bands.up[0].pol=='up')
+        assert(out.bands.down[0].pol=='down')
+    else:
+        assert(out.bands.up[0].pol=='none')
+        assert(len(out.bands.down)==0)
+    if 'crystal_kpoints' in case:
+        assert(np.isclose(analyzer.kweights().sum(),2.0))
+    if case in {'cbn_relax','cbn_vc_relax'}:
+        assert(out.relax_structures[-1].atoms==['B','N'])
+    #end if
+#end def test_supplemental_qe_runs
+
+
+@pytest.mark.parametrize(
+    argnames='version,case',
+    argvalues=tuple(
+        (version,case)
+        for version in ('qe_7_0','qe_7_6')
+        for case in ('md_iprint','vc_md_iprint')
+        ),
+    )
+def test_supplemental_md_runs_are_unsupported(version,case):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    fixture_path = (
+        TEST_DIR/'test_pwscf_analyzer_files'/version/'supplemental'/case
+        )
+    with pytest.raises(
+        RuntimeError,
+        match=r'PWSCF molecular-dynamics calculations are not supported',
+        ):
+        PwscfAnalyzer(
+            fixture_path,
+            'pwscf.in',
+            'pwscf.out',
+            analyze = True,
+            )
+#end def test_supplemental_md_runs_are_unsupported
+
+
 def test_quantity_accessors():
     import numpy as np
 
