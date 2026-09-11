@@ -368,3 +368,145 @@ def test_series_stats(monkeypatch):
             ):
             statistics.series_stats(x,t_auto=t_auto_invalid)
 #end def test_series_stats
+
+
+
+def test_mean_smooth():
+    """Check moving means, tapered endpoints, and automatic width."""
+    x = np.array([0.,10.,0.,10.,0.])
+    expected = np.array([0.,10./3.,20./3.,10./3.,0.])
+
+    np.testing.assert_allclose(statistics.mean_smooth(x,m=3),expected)
+    np.testing.assert_allclose(statistics.mean_smooth(x),expected)
+#end def test_mean_smooth
+
+
+
+def test_median_smooth():
+    """Check median smoothing suppresses spikes and supports a mean pass."""
+    x = np.array([0.,10.,0.,10.,0.])
+    median = np.array([0.,0.,10.,0.,0.])
+    post_mean = np.array([0.,10./3.,10./3.,10./3.,0.])
+
+    np.testing.assert_allclose(statistics.median_smooth(x,m=3),median)
+    np.testing.assert_allclose(statistics.median_smooth(x),median)
+    np.testing.assert_allclose(
+        statistics.median_smooth(x,m=3,post_mean=True),
+        post_mean,
+        )
+#end def test_median_smooth
+
+
+
+def test_poly_smooth(capsys):
+    """Check local linear fits and the optional mean post-processing pass."""
+    x = np.array([0.,10.,0.,10.,0.])
+    polynomial = np.array([0.,10./3.,20./3.,10./3.,0.])
+    post_mean = np.array([0.,10./3.,40./9.,10./3.,0.])
+
+    np.testing.assert_allclose(statistics.poly_smooth(x,m=3),polynomial)
+    np.testing.assert_allclose(
+        statistics.poly_smooth(x,m=3,post_mean=True),
+        post_mean,
+        )
+    np.testing.assert_allclose(statistics.poly_smooth(np.arange(24.)),np.arange(24.))
+    assert(capsys.readouterr().out=='')
+#end def test_poly_smooth
+
+
+
+def test_local_median_smooth():
+    """Check leave-one-out pooling and each selectable second pass."""
+    x_list = [np.array([value]) for value in (0.,10.,0.,10.,0.)]
+    median = np.array([0.,0.,10.,0.,0.])
+    mean = np.array([0.,10./3.,10./3.,10./3.,0.])
+
+    np.testing.assert_allclose(
+        statistics.local_median_smooth(x_list,m=3,poly_smooth=False),
+        median,
+        )
+    np.testing.assert_allclose(
+        statistics.local_median_smooth(x_list,m=3),
+        mean,
+        )
+    np.testing.assert_allclose(statistics.local_median_smooth(x_list),mean)
+    np.testing.assert_allclose(
+        statistics.local_median_smooth(
+            x_list,
+            m=3,
+            poly_smooth=False,
+            post_mean=True,
+            ),
+        mean,
+        )
+#end def test_local_median_smooth
+
+
+
+@pytest.mark.parametrize(
+    'smoother,kwargs',
+    [
+        (statistics.mean_smooth,{}),
+        (statistics.median_smooth,{}),
+        (statistics.poly_smooth,{}),
+        (statistics.local_median_smooth,{'poly_smooth':False}),
+        ],
+    )
+def test_smoothers_validate_window_length(smoother,kwargs):
+    """Require an in-range, positive odd integer smoothing window."""
+    x = np.arange(5.)
+    if smoother is statistics.local_median_smooth:
+        x = [np.array([value]) for value in x]
+
+    result = smoother(x,m=np.int64(3),**kwargs)
+    assert(len(result)==len(x))
+
+    invalid_windows = [
+        (3.,TypeError,r'smoothing window length must be an integer'),
+        (True,TypeError,r'smoothing window length must be an integer'),
+        (0,ValueError,r'smoothing window length must be positive'),
+        (-1,ValueError,r'smoothing window length must be positive'),
+        (2,ValueError,r'smoothing window length must be odd'),
+        (7,ValueError,r'smoothing window length must not exceed the data length'),
+        ]
+    for m,error_type,message in invalid_windows:
+        with pytest.raises(error_type,match=message):
+            smoother(x,m=m,**kwargs)
+#end def test_smoothers_validate_window_length
+
+
+
+def test_poly_smooth_validates_maximum_window_length():
+    """Reject polynomial widths beyond the supported order table."""
+    with pytest.raises(
+        ValueError,
+        match=r'smoothing window length must not exceed 21',
+        ):
+        statistics.poly_smooth(np.arange(23.),m=23)
+#end def test_poly_smooth_validates_maximum_window_length
+
+
+
+def test_smoothers_validate_boolean_options():
+    """Require explicit Boolean values for smoothing options."""
+    x = np.arange(5.)
+    x_list = [np.array([value]) for value in x]
+
+    for smoother,kwargs,name in (
+        (statistics.median_smooth,{'post_mean':1},'post_mean'),
+        (statistics.poly_smooth,{'post_mean':'yes'},'post_mean'),
+        (statistics.local_median_smooth,{'poly_smooth':0},'poly_smooth'),
+        (statistics.local_median_smooth,{'post_mean':None},'post_mean'),
+        ):
+        data = x_list if smoother is statistics.local_median_smooth else x
+        with pytest.raises(TypeError,match=rf'{name} must be a Boolean value'):
+            smoother(data,m=3,**kwargs)
+
+    assert(len(statistics.median_smooth(x,m=3,post_mean=np.bool_(True)))==len(x))
+    assert(len(statistics.local_median_smooth(
+        x_list,
+        m=3,
+        poly_smooth=np.bool_(False),
+        post_mean=np.bool_(True),
+        ))==len(x_list))
+#end def test_smoothers_validate_boolean_options
