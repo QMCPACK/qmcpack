@@ -387,6 +387,64 @@ def test_time_series_intervals():
 
 
 
+def test_interval_and_lcd_input_validation():
+    """Check diagnostics for malformed interval and LCD inputs."""
+    with pytest.raises(ValueError,match=r'data array must contain at least two values'):
+        statistics.time_series_intervals([1.])
+    with pytest.raises(ValueError,match=r'data array must contain only finite values'):
+        statistics.time_series_intervals([1.,np.nan])
+    with pytest.raises(ValueError,match=r'time array must have the same length'):
+        statistics.time_series_intervals([1.,2.],[0.])
+    with pytest.raises(ValueError,match=r'time array must be real-valued'):
+        statistics.time_series_intervals([1.,2.],[0.+1.j,1.+1.j])
+
+    invalid_intervals = [
+        (np.array([1.,2.]),None,r'interval array must have shape'),
+        (np.empty((0,2)),None,r'interval array must not be empty'),
+        (np.array([[2.,1.]]),None,r'upper endpoints must not be less'),
+        (np.array([[1.,np.nan]]),None,r'interval array must contain only finite values'),
+        (np.array([1.,2.]),np.array([3.]),r'endpoint arrays must have equal lengths'),
+        ]
+    for lower,upper,message in invalid_intervals:
+        with pytest.raises(ValueError,match=message):
+            statistics.interval_distribution(lower,upper)
+
+    intervals = np.array([[0.,1.],[1.,2.]])
+    for counts,message in [
+        ([1.],r'counts must have the same length'),
+        ([1.,np.nan],r'counts must contain only finite values'),
+        ]:
+        with pytest.raises(ValueError,match=message):
+            statistics.interval_dist_peak(intervals,counts)
+    with pytest.raises(ValueError,match=r'peak method must be a string'):
+        statistics.interval_dist_peak(intervals,[1.,2.],method=1)
+    with pytest.raises(ValueError,match=r'peak fraction must be a finite number'):
+        statistics.interval_dist_peak(intervals,[1.,2.],peak_frac=np.nan)
+
+    for window,step,message in [
+        (0,1,r'window must be a positive integer'),
+        (1,0,r'step must be a positive integer'),
+        (1,2,r'step must not exceed window'),
+        (3,1,r'window must not exceed the number of intervals'),
+        ]:
+        with pytest.raises(ValueError,match=message):
+            statistics.rolling_interval_dist_peak(intervals,window=window,step=step)
+    with pytest.raises(ValueError,match=r'method "invalid" is unrecognized'):
+        statistics.rolling_interval_dist_peak(
+            intervals,window=1,step=1,method='invalid'
+            )
+
+    for x,nperm,message in [
+        ([1.],0,r'data array must contain at least two values'),
+        ([1.,2.],-1,r'number of permutations must be a nonnegative integer'),
+        ([1.,2.],True,r'number of permutations must be a nonnegative integer'),
+        ]:
+        with pytest.raises(ValueError,match=message):
+            statistics.line_crossing_distribution(x,nperm=nperm)
+#end def test_interval_and_lcd_input_validation
+
+
+
 def test_interval_distribution_and_peak(monkeypatch):
     """Check interval-overlap counts and the supported peak selections."""
     endpoints = np.array([1.,2.,3.])

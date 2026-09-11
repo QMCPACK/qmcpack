@@ -73,6 +73,29 @@ def _paired_real_arrays(x,y):
 #end def _paired_real_arrays
 
 
+def _real_vector(x,name):
+    """Return a finite real vector, flattening vector-shaped arrays."""
+    x = np.asarray(x)
+    if np.iscomplexobj(x):
+        msg = f'{name} must be real-valued'
+        raise ValueError(msg)
+    if x.ndim>1 and np.max(x.shape)==x.size:
+        x = x.ravel()
+    if x.ndim!=1:
+        msg = f'{name} must be one-dimensional'
+        raise ValueError(msg)
+    try:
+        x = np.asarray(x,dtype=float)
+    except (TypeError,ValueError):
+        msg = f'{name} must be numeric'
+        raise ValueError(msg) from None
+    if not np.all(np.isfinite(x)):
+        msg = f'{name} must contain only finite values'
+        raise ValueError(msg)
+    return x
+#end def _real_vector
+
+
 def theil_sen(x,y):
     """Return the Theil--Sen slope and intercept for paired observations.
 
@@ -723,6 +746,15 @@ def series_stats(x,t_auto=None):
 
 
 def time_series_intervals(x,t=None):
+    x = _real_vector(x,'data array')
+    if len(x)<2:
+        msg = 'data array must contain at least two values'
+        raise ValueError(msg)
+    if t is not None:
+        t = _real_vector(t,'time array')
+        if len(t)!=len(x):
+            msg = 'time array must have the same length as data array'
+            raise ValueError(msg)
     xi = np.empty((len(x)-1,2),dtype=x.dtype)
     for n in range(len(x)-1):
         xi[n,0] = x[n]
@@ -738,24 +770,34 @@ def time_series_intervals(x,t=None):
 
 
 def _int_dist_input(x1,x2=None):
-    # process input types
-    x1 = np.asarray(x1)
     if x2 is not None:
-        x2 = np.asarray(x2)
-        if x1.ndim>1:
-            assert x1.size==max(x1.shape)
-            x1 = x1.ravel()
-        if x2.ndim>1:
-            assert x2.size==max(x2.shape)
-            x2 = x2.ravel()
+        x1 = _real_vector(x1,'lower endpoints')
+        x2 = _real_vector(x2,'upper endpoints')
+        if len(x1)!=len(x2):
+            msg = 'interval endpoint arrays must have equal lengths'
+            raise ValueError(msg)
         xi = np.vstack((x1,x2)).T
     else:
-        xi = x1
+        xi = np.asarray(x1)
+        if np.iscomplexobj(xi):
+            msg = 'interval array must be real-valued'
+            raise ValueError(msg)
     # xi is array of N intervals
-    assert xi.ndim==2
-    assert xi.shape[1]==2
+    if xi.ndim!=2 or xi.shape[1]!=2:
+        msg = 'interval array must have shape (n,2)'
+        raise ValueError(msg)
+    if len(xi)==0:
+        msg = 'interval array must not be empty'
+        raise ValueError(msg)
+    try:
+        xi = np.asarray(xi,dtype=float)
+    except (TypeError,ValueError):
+        msg = 'interval array must be numeric'
+        raise ValueError(msg) from None
     # check endpoint ordering
-    assert (xi[:,1]-xi[:,0]).min()>=0
+    if np.any(xi[:,1]<xi[:,0]):
+        msg = 'interval upper endpoints must not be less than lower endpoints'
+        raise ValueError(msg)
     si = np.empty(xi.shape,dtype=int)
     si[:,0] =  1
     si[:,1] = -1
@@ -798,6 +840,11 @@ def interval_distribution(x1,x2=None):
 
 def plot_interval_dist(xi,ci,style='b.-'):
     import matplotlib.pyplot as plt
+    xi,_ = _int_dist_input(xi)
+    ci = _real_vector(ci,'interval counts')
+    if len(ci)!=len(xi):
+        msg = 'interval counts must have the same length as intervals'
+        raise ValueError(msg)
     xif = xi.ravel()
     cif = np.zeros(xif.shape)
     cif[::2]  = ci
@@ -809,6 +856,22 @@ def plot_interval_dist(xi,ci,style='b.-'):
 
 
 def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False):
+    xi,_ = _int_dist_input(xi)
+    ci = _real_vector(ci,'interval counts')
+    if len(ci)!=len(xi):
+        msg = 'interval counts must have the same length as intervals'
+        raise ValueError(msg)
+    if not isinstance(method,str):
+        msg = 'peak method must be a string'
+        raise ValueError(msg)
+    try:
+        peak_frac = float(peak_frac)
+    except (TypeError,ValueError):
+        msg = 'peak fraction must be a finite number'
+        raise ValueError(msg) from None
+    if not np.isfinite(peak_frac):
+        msg = 'peak fraction must be a finite number'
+        raise ValueError(msg)
     if method=='interval_mid':
         cm = ci.max()
         xm = xi[ci==cm].mean()
@@ -869,68 +932,45 @@ def rolling_interval_dist_peak(
         ret_height  = False,
         ret_windows = False,
         ):
-    assert step<=window
+    for value,name in ((window,'window'),(step,'step')):
+        if isinstance(value,(bool,np.bool_)) or not isinstance(
+            value,(int,np.integer)
+            ) or value<1:
+            msg = f'{name} must be a positive integer'
+            raise ValueError(msg)
+    if step>window:
+        msg = 'step must not exceed window'
+        raise ValueError(msg)
     interval_mid  = method=='interval_mid'
     interval_rand = method=='interval_rand'
+    if not interval_mid and not interval_rand:
+        msg = f'method "{method}" is unrecognized'
+        raise ValueError(msg)
     # map inputs to intervals
     xia,sia = _int_dist_input(x1,x2)
     N = len(xia)
-    assert N>=window
+    if N<window:
+        msg = 'window must not exceed the number of intervals'
+        raise ValueError(msg)
     # find window segments
-    windows = []
-    i1 = 0
-    for n in range(N):
-        i2 = i1 + window
-        if i2<N:
-            windows.append((i1,i2))
-        elif i2==N:
-            windows.append((i1,i2))
-            break
-        else: #i2>N
-            windows.append((N-window,N))
-            break
-        i1 += step
-    assert n+1<N
-    assert len(windows)>0
-    assert windows[-1][1]==N
+    starts = list(range(0,N-window+1,step))
+    if starts[-1]!=N-window:
+        starts.append(N-window)
+    windows = [(i1,i1+window) for i1 in starts]
     # find interval dist peaks in each window
     xp = []
     cp = []
     for i1,i2 in windows:
-        xi = xia[i1:i2]
-        si = sia[i1:i2]
-        assert len(xi)==window
-        xi = xi.ravel()
-        si = si.ravel()
-        order = xi.argsort()
-        xi = xi[order]
-        si = si[order]
-        cd = {}
-        n=0
-        for s,xv in zip(si,xi):
-            n += s
-            cd[xv] = n
-        x = []
-        c = []
-        for xv in sorted(cd.keys()):
-            x.append(xv)
-            c.append(cd[xv])
-        x = np.array(x)
-        c = np.array(c)[:-1]
-        cm = c.max()
+        xi,ci = interval_distribution(xia[i1:i2])
+        if len(ci)==0:
+            msg = 'each rolling window must span a nonzero interval'
+            raise ValueError(msg)
         if interval_mid:
-            xmid = (x[:-1]+x[1:])/2
-            xm   = xmid[c==cm].mean()
-        elif interval_rand:
-            x1 = x[:-1]
-            x2 = x[1:]
-            xmid = (x1+x2)/2
-            dx   = x2-x1
-            u    = np.random.uniform(size=len(xmid))
-            xc   = xmid + (u-0.5)*dx/2
-            xm   = xc[c==cm].mean()
+            xm,cm = interval_dist_peak(xi,ci,height=True)
         else:
-            raise ValueError(f'method "{method}" is unrecognized')
+            xm,cm = interval_dist_peak(
+                xi,ci,method='interval_rand',height=True
+                )
         xp.append(xm)
         cp.append(cm)
     xp = np.array(xp)
@@ -949,6 +989,15 @@ def rolling_interval_dist_peak(
 
 
 def line_crossing_distribution(x,nperm=0):
+    x = _real_vector(x,'data array')
+    if len(x)<2:
+        msg = 'data array must contain at least two values'
+        raise ValueError(msg)
+    if isinstance(nperm,(bool,np.bool_)) or not isinstance(
+        nperm,(int,np.integer)
+        ) or nperm<0:
+        msg = 'number of permutations must be a nonnegative integer'
+        raise ValueError(msg)
     if nperm>1:
         xperm = []
         for n in range(nperm):
