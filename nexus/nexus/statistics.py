@@ -845,6 +845,13 @@ def interval_distribution(x1,x2=None):
 
     ci : ndarray
         Number of input intervals overlapping each span in ``xi``.
+
+    Notes
+    -----
+    Each row of ``xi`` denotes the open span between consecutive unique
+    endpoints. Endpoint membership is not counted separately: touching
+    intervals occupy adjacent spans, and zero-width intervals contribute no
+    span to the returned distribution.
     """
     xi,si = _int_dist_input(x1,x2)
     xi = xi.ravel()
@@ -907,7 +914,8 @@ def plot_interval_dist(xi,ci,style='b.-'):
 
 
 
-def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False):
+def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False,
+                       quad_weighting='endpoint'):
     """Return a representative location at the peak of an interval distribution.
 
     Parameters
@@ -930,6 +938,12 @@ def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False):
     height : bool, optional
         If true, return the peak location and its estimated height.
 
+    quad_weighting : {'endpoint', 'width'}, optional
+        Weighting used only by ``'quad_peak'``. ``'endpoint'`` gives every
+        duplicated interval endpoint equal fit weight. ``'width'`` weights
+        each endpoint by the square root of its interval width, making the
+        least-squares objective proportional to interval width.
+
     Returns
     -------
     peak : float or (float, float)
@@ -951,6 +965,11 @@ def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False):
         raise ValueError(msg) from None
     if not np.isfinite(peak_frac) or not 0.<peak_frac<=1.:
         msg = 'peak fraction must be in the interval (0,1]'
+        raise ValueError(msg)
+    if not isinstance(quad_weighting,str) or quad_weighting not in (
+        'endpoint','width'
+        ):
+        msg = 'quadratic weighting must be "endpoint" or "width"'
         raise ValueError(msg)
     if method=='interval_mid':
         cm = ci.max()
@@ -979,12 +998,23 @@ def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False):
             peak_mean = xi_region[ci_region==cm].mean()
             xp = xi_region.ravel()
             cp = np.repeat(ci_region,2)
+            weights = None
+            if quad_weighting=='width':
+                widths = xi_region[:,1]-xi_region[:,0]
+                weights = np.repeat(np.sqrt(widths),2)
+                nonzero = weights>0.
+                xp = xp[nonzero]
+                cp = cp[nonzero]
+                weights = weights[nonzero]
             if len(np.unique(xp))<3:
                 # A single usable span cannot determine a quadratic peak.
                 xp = peak_mean
                 cp = cm
             else:
-                p = np.polyfit(xp,cp,2)
+                if weights is None:
+                    p = np.polyfit(xp,cp,2)
+                else:
+                    p = np.polyfit(xp,cp,2,w=weights)
                 if not np.isfinite(p[0]) or p[0]>=0.:
                     # A non-concave fit has no interior maximum.
                     xp = peak_mean
@@ -1014,6 +1044,7 @@ def rolling_interval_dist_peak(
         step        = 5,
         method      = 'interval_mid',
         peak_frac  = 0.5,
+        quad_weighting = 'endpoint',
         ret_height  = False,
         ret_windows = False,
         ):
@@ -1039,6 +1070,9 @@ def rolling_interval_dist_peak(
 
     peak_frac : float, optional
         Quadratic peak-region threshold passed to :func:`interval_dist_peak`.
+
+    quad_weighting : {'endpoint', 'width'}, optional
+        Quadratic-fit weighting passed to :func:`interval_dist_peak`.
 
     ret_height : bool, optional
         Include a peak-height array in the returned tuple.
@@ -1090,7 +1124,8 @@ def rolling_interval_dist_peak(
             msg = 'each rolling window must span a nonzero interval'
             raise ValueError(msg)
         xm,cm = interval_dist_peak(
-            xi,ci,method=method,peak_frac=peak_frac,height=True
+            xi,ci,method=method,peak_frac=peak_frac,height=True,
+            quad_weighting=quad_weighting,
             )
         xp.append(xm)
         cp.append(cm)
@@ -1158,7 +1193,8 @@ def line_crossing_distribution(x,nperm=0):
 
 
 
-def lcd_peak(x,method='interval_mid',peak_frac=0.5,nperm=0):
+def lcd_peak(x,method='interval_mid',peak_frac=0.5,nperm=0,
+             quad_weighting='endpoint'):
     """Return a peak of a series line-crossing distribution.
 
     Parameters
@@ -1166,7 +1202,7 @@ def lcd_peak(x,method='interval_mid',peak_frac=0.5,nperm=0):
     x : array_like
         Time series supplied to :func:`line_crossing_distribution`.
 
-    method, peak_frac, nperm
+    method, peak_frac, quad_weighting, nperm
         Options forwarded to :func:`interval_dist_peak` and
         :func:`line_crossing_distribution`.
 
@@ -1176,7 +1212,10 @@ def lcd_peak(x,method='interval_mid',peak_frac=0.5,nperm=0):
         Estimated line-crossing-distribution peak.
     """
     xi,ci = line_crossing_distribution(x,nperm=nperm)
-    xp = interval_dist_peak(xi,ci,method=method,peak_frac=peak_frac)
+    xp = interval_dist_peak(
+        xi,ci,method=method,peak_frac=peak_frac,
+        quad_weighting=quad_weighting,
+        )
     return xp
 #end def lcd_peak
 
@@ -1188,6 +1227,7 @@ def lcd_smooth(x,
                step   = 5,
                method = 'interval_rand',
                peak_frac = 0.5,
+               quad_weighting = 'endpoint',
                ):
     """Return rolling line-crossing-distribution peaks for a time series.
 
@@ -1199,7 +1239,7 @@ def lcd_smooth(x,
     t : array_like, optional
         Times paired with ``x``.
 
-    window, step, method, peak_frac
+    window, step, method, peak_frac, quad_weighting
         Options forwarded to :func:`rolling_interval_dist_peak`.
 
     Returns
@@ -1215,6 +1255,7 @@ def lcd_smooth(x,
         step        = step,
         method      = method,
         peak_frac   = peak_frac,
+        quad_weighting = quad_weighting,
         ret_windows = True,
         )
     if t is None:

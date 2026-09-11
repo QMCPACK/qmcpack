@@ -576,7 +576,44 @@ def test_interval_distribution_and_peak(monkeypatch):
 
     with pytest.raises(ValueError,match=r'unrecognized int. dist. max method'):
         statistics.interval_dist_peak(peak_intervals,peak_counts,method='invalid')
+    with pytest.raises(ValueError,match=r'quadratic weighting'):
+        statistics.interval_dist_peak(
+            peak_intervals,peak_counts,quad_weighting='invalid'
+            )
 #end def test_interval_distribution_and_peak
+
+
+
+def test_quad_peak_width_weighting(monkeypatch):
+    """Check width-based quadratic weights and convenience-API forwarding."""
+    intervals = np.array(
+        [[0.,1.],[1.,3.],[3.,6.],[6.,10.],[10.,15.]]
+        )
+    counts = np.array([1.,2.,3.,2.,1.])
+    polyfit = statistics.np.polyfit
+    weights = []
+
+    def capture_polyfit(x,y,degree,**kwargs):
+        weights.append(kwargs.get('w'))
+        return polyfit(x,y,degree,**kwargs)
+    #end def capture_polyfit
+
+    monkeypatch.setattr(statistics.np,'polyfit',capture_polyfit)
+    peak = statistics.interval_dist_peak(
+        intervals,counts,method='quad_peak',quad_weighting='width'
+        )
+    assert(np.isfinite(peak))
+    np.testing.assert_allclose(weights[0],np.sqrt([2.,2.,3.,3.,4.,4.]))
+
+    rolling_peak, = statistics.rolling_interval_dist_peak(
+        intervals,
+        window=5,
+        step=1,
+        method='quad_peak',
+        quad_weighting='width',
+        )
+    assert(np.isfinite(rolling_peak[0]))
+#end def test_quad_peak_width_weighting
 
 
 
