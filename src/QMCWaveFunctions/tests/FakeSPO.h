@@ -57,6 +57,10 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override;
 
+  bool isRotationSupported() const override { return true; }
+
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
+
 private:
   using SPOSet::OrbitalSetSize;
 };

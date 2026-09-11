@@ -926,6 +926,17 @@ def test_input_spec():
 #end def test_input_spec
 
 
+def test_run_mode():
+    rmg_input = RmgInput()
+    assert rmg_input.run_mode is None
+
+    for short_mode,calculation_mode in rmg_modes.full_calc.items():
+        rmg_input.assign(calculation_mode=calculation_mode)
+        assert rmg_input.run_mode==short_mode
+    #end for
+#end def test_run_mode
+
+
 def test_hubbard_u_records():
     text = '''
         Hubbard_U = "

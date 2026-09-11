@@ -19,7 +19,8 @@
  */
 #ifndef QMCPLUSPLUS_MULTIDIRACDETERMINANT_H
 #define QMCPLUSPLUS_MULTIDIRACDETERMINANT_H
-#include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "Configuration.h"
+#include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
@@ -31,17 +32,21 @@
 
 namespace qmcplusplus
 {
-class MultiDiracDeterminant : public WaveFunctionComponent
+class MultiDiracDeterminant : public QMCTraits
 {
 public:
-  NewTimer &inverse_timer, &buildTable_timer, &table2ratios_timer, &evalWalker_timer, &evalOrbValue_timer,
-      &evalOrbVGL_timer;
-  NewTimer &updateInverse_timer, &calculateRatios_timer, &calculateGradRatios_timer, &updateRatios_timer;
-  NewTimer &evaluateDetsForPtclMove_timer, &evaluateDetsAndGradsForPtclMove_timer, &evaluateGrads_timer;
-  NewTimer &offload_timer, &transferH2D_timer, &transferD2H_timer;
+  using LogValue     = std::complex<QTFull::RealType>;
+  using PsiValue     = QTFull::ValueType;
+  using WFBufferType = ParticleSet::Walker_t::WFBuffer_t;
 
-  // Optimizable parameter
-  OptVariables myVars;
+  enum
+  {
+    ORB_PBYP_RATIO,
+    ORB_PBYP_ALL,
+    ORB_PBYP_PARTIAL,
+    ORB_WALKER,
+    ORB_ALLWALKER
+  };
 
   template<typename DT>
   using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
@@ -115,9 +120,6 @@ public:
     OffloadVector<GradType> ratioGradRef_list;
   };
 
-  //lookup table mapping the unique determinants to their element position in C2_node vector
-  std::vector<std::vector<int>> lookup_tbl;
-
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
@@ -125,7 +127,7 @@ public:
   MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor, int first, int nel);
 
   ///default destructor
-  ~MultiDiracDeterminant() override;
+  ~MultiDiracDeterminant();
 
   /**copy constructor
    * @param s existing DiracDeterminant
@@ -143,15 +145,11 @@ public:
 
   SPOSetPtr getPhi() { return Phi.get(); };
 
-  std::string getClassName() const override { return "MultiDiracDeterminant"; }
+  inline bool isOptimizable() const { return Phi->isOptimizable(); }
 
-  bool isFermionic() const final { return true; }
-  inline bool isOptimizable() const final { return Phi->isOptimizable(); }
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) { Phi->extractOptimizableObjectRefs(opt_obj_refs); }
 
-  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
-  { Phi->extractOptimizableObjectRefs(opt_obj_refs); }
-
-  inline void checkOutVariables(const OptVariables& active) override
+  inline void checkOutVariables(const OptVariables& active)
   {
     if (Phi->isOptimizable())
       Phi->checkOutVariables(active);
@@ -161,12 +159,6 @@ public:
   void buildOptVariables(std::vector<size_t>& C2node);
   ///helper function to buildOptVariables
   int build_occ_vec(const OffloadVector<int>& data, const size_t nel, const size_t nmo, std::vector<int>& occ_vec);
-
-  void evaluateDerivatives(ParticleSet& P,
-                           const OptVariables& optvars,
-                           Vector<ValueType>& dlogpsi,
-                           Vector<ValueType>& dhpsioverpsi) override
-  {}
 
   void evaluateDerivatives(ParticleSet& P,
                            const OptVariables& optvars,
@@ -188,74 +180,32 @@ public:
                              const std::vector<size_t>& C2node_dn);
 
 
-  void registerData(ParticleSet& P, WFBufferType& buf) override;
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
-  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
+  LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false);
 
-  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** move was accepted, update the real container
    */
-  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);
 
   /** move was rejected. copy the real container to the temporary to move on
    */
-  void restore(int iat) override;
+  void restore(int iat);
 
   static void mw_accept_rejectMove(const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list,
                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                    int iat,
                                    const std::vector<bool>& isAccepted);
 
-  void createResource(ResourceCollection& collection) const override;
+  void createResource(ResourceCollection& collection) const;
   void acquireResource(ResourceCollection& collection,
                        const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const;
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const;
-  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
+  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
 
-  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
-
-  /****************************************************************************
-   * These functions should not be called.
-   ***************************************************************************/
-
-  PsiValue ratio(ParticleSet& P, int iat) override
-  {
-    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return PsiValue();
-  }
-
-  GradType evalGrad(ParticleSet& P, int iat) override
-  {
-    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return GradType();
-  }
-
-  PsiValue ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override
-  {
-    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return PsiValue();
-  }
-
-  LogValue evaluateLog(const ParticleSet& P,
-                       ParticleSet::ParticleGradient& G,
-                       ParticleSet::ParticleLaplacian& L) override
-  {
-    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return 0.0;
-  }
-
-  ValueType evaluate(const ParticleSet& P, ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L)
-  {
-    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return ValueType();
-  }
-
-
-  /****************************************************************************
-   * END END END
-   ***************************************************************************/
 
   /** create necessary structures related to unique determinants
    * sort configlist_unsorted by excitation level abd store the results in ciConfigList (class member)
@@ -516,6 +466,20 @@ private:
 
   ///reset the size: with the number of particles
   void resize();
+
+  // used by timers must be declared before them
+  const std::string class_name_ = "MultiDiracDeterminant";
+
+  int UpdateMode;
+
+  NewTimer &inverse_timer, &buildTable_timer, &table2ratios_timer, &evalWalker_timer, &evalOrbValue_timer,
+      &evalOrbVGL_timer;
+  NewTimer &updateInverse_timer, &calculateRatios_timer, &calculateGradRatios_timer, &updateRatios_timer;
+  NewTimer &evaluateDetsForPtclMove_timer, &evaluateDetsAndGradsForPtclMove_timer, &evaluateGrads_timer;
+  NewTimer &offload_timer, &transferH2D_timer, &transferD2H_timer;
+
+  //lookup table mapping the unique determinants to their element position in C2_node vector
+  std::vector<std::vector<int>> lookup_tbl;
 
   ///a set of single-particle orbitals used to fill in the  values of the matrix
   const std::unique_ptr<SPOSet> Phi;
