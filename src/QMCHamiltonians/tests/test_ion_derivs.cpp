@@ -413,12 +413,12 @@ void test_msd_wrapper(const std::string& wffile,
 
   // same order as Dets in msd; index of associated SPOset in twf.sposets_
   std::vector<int> mdd_spo_ids;
-  std::vector<const WaveFunctionComponent*> mdd_list;
+  std::vector<const MultiDiracDeterminant*> mdd_list;
 
   for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
   {
     const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
-    mdd_list.push_back(static_cast<const WaveFunctionComponent*>(&multidiracdet_i));
+    mdd_list.push_back(&multidiracdet_i);
     // particle group id for this multidiracdet
     const int gid = elec.getGroupID(multidiracdet_i.getFirstIndex());
     // SPOSet location in twf.sposets_ for this particle group
