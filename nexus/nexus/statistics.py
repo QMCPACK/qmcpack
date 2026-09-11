@@ -661,7 +661,32 @@ def series_stats(x,t_auto=None):
     """Return the mean, autocorrelation-adjusted error, and correlation time.
 
     If ``t_auto`` is not supplied, it is estimated with
-    :func:`autocorr_time`. A supplied value must be positive and finite.
+    :func:`autocorr_time`.  The returned standard error is ``std(x) /
+    sqrt(N / t_auto)``, where ``std`` uses NumPy's default ``ddof=0`` and
+    ``N / t_auto`` is the effective number of independent samples.  Thus,
+    independently sampled data have ``t_auto`` near one, while positive
+    serial correlation increases the reported uncertainty.
+
+    Parameters
+    ----------
+    x : array_like
+        Nonempty, finite, real-valued one-dimensional sample sequence.
+        Vector-shaped arrays are flattened.
+
+    t_auto : float, optional
+        Positive, finite integrated autocorrelation time.  If omitted, it is
+        estimated from ``x`` with :func:`autocorr_time`.
+
+    Returns
+    -------
+    mean : float
+        Arithmetic mean of the samples.
+
+    error : float
+        Autocorrelation-adjusted standard error of ``mean``.
+
+    t_auto : float
+        The supplied or estimated integrated autocorrelation time.
     """
     x = np.asarray(x)
     if np.iscomplexobj(x):
@@ -706,10 +731,31 @@ def series_stats(x,t_auto=None):
 
 
 def mean_smooth(x,m=None):
+    """Smooth a sequence with tapered-endpoint moving averages.
+
+    Each interior value is replaced by the mean in a centered, odd-length
+    window of width ``m``.  Near either endpoint the window is shortened to
+    remain symmetric about the current value, so the first and last samples
+    are unchanged.  The result always has the same length as ``x``.
+
+    Parameters
+    ----------
+    x : sequence
+        Values to smooth.
+
+    m : int, optional
+        Nominal odd window width.  By default, use the largest odd width no
+        greater than ``min(len(x)/6, 15)``, with a minimum of three.
+
+    Returns
+    -------
+    ndarray
+        Smoothed values.
+    """
     N = len(x)
     if m is None:
         m = min(N/6,15)
-        m = 2*(m//2)+1
+        m = int(2*(m//2)+1)
         m = max(3,m)
     dm = m//2
     xs = []
@@ -732,10 +778,34 @@ def mean_smooth(x,m=None):
 
 
 def median_smooth(x,m=None,post_mean=False):
+    """Smooth a sequence with local medians, optionally followed by means.
+
+    Local windows and endpoint treatment are the same as :func:`mean_smooth`,
+    but each value is replaced by the window median.  This is less sensitive
+    to isolated spikes.  When requested, a moving-mean pass is applied to the
+    median-smoothed result.
+
+    Parameters
+    ----------
+    x : sequence
+        Values to smooth.
+
+    m : int, optional
+        Nominal odd window width; the default is selected as in
+        :func:`mean_smooth`.
+
+    post_mean : bool, optional
+        Apply :func:`mean_smooth` with the same width after the median pass.
+
+    Returns
+    -------
+    ndarray
+        Smoothed values.
+    """
     N = len(x)
     if m is None:
         m = min(N/6,15)
-        m = 2*(m//2)+1
+        m = int(2*(m//2)+1)
         m = max(3,m)
     dm = m//2
     xs = []
@@ -760,14 +830,40 @@ def median_smooth(x,m=None,post_mean=False):
 
 
 def poly_smooth(x,m=None,post_mean=False):
+    """Smooth a sequence by evaluating local polynomial fits.
+
+    A polynomial is fitted in each centered window and evaluated at the
+    current index.  Endpoint windows are shortened symmetrically as in
+    :func:`mean_smooth`; a one-value window is returned unchanged.  Polynomial
+    order increases gradually with window size, from constant for one sample
+    to quartic for windows of 13--21 samples.  An optional moving-mean pass
+    can further reduce residual variation.
+
+    Parameters
+    ----------
+    x : sequence
+        Values to smooth.
+
+    m : int, optional
+        Nominal odd window width from 1 through 21.  The default is selected
+        as in :func:`mean_smooth` and is at most 15.
+
+    post_mean : bool, optional
+        Apply :func:`mean_smooth` with the same width after polynomial
+        smoothing.
+
+    Returns
+    -------
+    ndarray
+        Smoothed values.
+    """
     poly_order = {1:0,3:1,5:2,7:2,9:3,11:3,
                   13:4,15:4,17:4,19:4,21:4}
     N = len(x)
     if m is None:
         m = min(N/6,15)
-        m = 2*(m//2)+1
+        m = int(2*(m//2)+1)
         m = max(3,m)
-        print(N,m)
     dm = m//2
     xs = []
     for n,xn in enumerate(x):
@@ -797,11 +893,41 @@ poly_smooth_ = poly_smooth
 
 
 def local_median_smooth(x_list,m=None,poly_smooth=True,post_mean=False):
+    """Smooth a sequence of sample sets through leave-one-out local medians.
+
+    For each position, all neighboring sample sets in a centered window are
+    pooled, excluding the sample set at that position, and their median is
+    taken.  As with the scalar smoothers, windows taper symmetrically at the
+    endpoints.  The resulting median sequence is then polynomial-smoothed by
+    default, or mean-smoothed when ``poly_smooth`` is false; either result can
+    receive a final mean-smoothing pass.
+
+    Parameters
+    ----------
+    x_list : sequence of array_like
+        Per-position sample sets to pool locally.
+
+    m : int, optional
+        Nominal odd window width; the default is selected as in
+        :func:`mean_smooth` using ``len(x_list)``.
+
+    poly_smooth : bool, optional
+        Use :func:`poly_smooth` for the second pass.  If false, use
+        :func:`mean_smooth` instead.
+
+    post_mean : bool, optional
+        Apply a final :func:`mean_smooth` pass with the same width.
+
+    Returns
+    -------
+    ndarray
+        One smoothed value for every input sample set.
+    """
     # x_list: list of arrays containing trace/time-series data
     N = len(x_list)
     if m is None:
         m = min(N/6,15)
-        m = 2*(m//2)+1
+        m = int(2*(m//2)+1)
         m = max(3,m)
     dm = m//2
     # median smoother on data

@@ -368,3 +368,75 @@ def test_series_stats(monkeypatch):
             ):
             statistics.series_stats(x,t_auto=t_auto_invalid)
 #end def test_series_stats
+
+
+
+def test_mean_smooth():
+    """Check moving means, tapered endpoints, and automatic width."""
+    x = np.array([0.,10.,0.,10.,0.])
+    expected = np.array([0.,10./3.,20./3.,10./3.,0.])
+
+    np.testing.assert_allclose(statistics.mean_smooth(x,m=3),expected)
+    np.testing.assert_allclose(statistics.mean_smooth(x),expected)
+#end def test_mean_smooth
+
+
+
+def test_median_smooth():
+    """Check median smoothing suppresses spikes and supports a mean pass."""
+    x = np.array([0.,10.,0.,10.,0.])
+    median = np.array([0.,0.,10.,0.,0.])
+    post_mean = np.array([0.,10./3.,10./3.,10./3.,0.])
+
+    np.testing.assert_allclose(statistics.median_smooth(x,m=3),median)
+    np.testing.assert_allclose(statistics.median_smooth(x),median)
+    np.testing.assert_allclose(
+        statistics.median_smooth(x,m=3,post_mean=True),
+        post_mean,
+        )
+#end def test_median_smooth
+
+
+
+def test_poly_smooth(capsys):
+    """Check local linear fits and the optional mean post-processing pass."""
+    x = np.array([0.,10.,0.,10.,0.])
+    polynomial = np.array([0.,10./3.,20./3.,10./3.,0.])
+    post_mean = np.array([0.,10./3.,40./9.,10./3.,0.])
+
+    np.testing.assert_allclose(statistics.poly_smooth(x,m=3),polynomial)
+    np.testing.assert_allclose(
+        statistics.poly_smooth(x,m=3,post_mean=True),
+        post_mean,
+        )
+    np.testing.assert_allclose(statistics.poly_smooth(np.arange(24.)),np.arange(24.))
+    assert(capsys.readouterr().out=='')
+#end def test_poly_smooth
+
+
+
+def test_local_median_smooth():
+    """Check leave-one-out pooling and each selectable second pass."""
+    x_list = [np.array([value]) for value in (0.,10.,0.,10.,0.)]
+    median = np.array([0.,0.,10.,0.,0.])
+    mean = np.array([0.,10./3.,10./3.,10./3.,0.])
+
+    np.testing.assert_allclose(
+        statistics.local_median_smooth(x_list,m=3,poly_smooth=False),
+        median,
+        )
+    np.testing.assert_allclose(
+        statistics.local_median_smooth(x_list,m=3),
+        mean,
+        )
+    np.testing.assert_allclose(statistics.local_median_smooth(x_list),mean)
+    np.testing.assert_allclose(
+        statistics.local_median_smooth(
+            x_list,
+            m=3,
+            poly_smooth=False,
+            post_mean=True,
+            ),
+        mean,
+        )
+#end def test_local_median_smooth
