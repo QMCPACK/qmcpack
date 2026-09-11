@@ -392,6 +392,7 @@ def test_quantity_accessors():
     import numpy as np
 
     from ..pwscf_analyzer import PwscfAnalyzer
+    from ..unit_converter import UnitConverter
 
     fixture_root = TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/'high'
     scf = PwscfAnalyzer(
@@ -405,9 +406,24 @@ def test_quantity_accessors():
     assert(scf.kweights().shape==(3,))
     assert(scf.eigenvalues('eV').shape==(3,4))
     assert(scf.occupations().shape==(3,4))
+    assert('nspin' not in scf.input.system)
+    assert(np.all(scf.occupations()==1.0))
+    assert(not scf.fractional_occs())
+    scf.results_out.bands.up[0].occs[0] = .9995
+    assert(not scf.fractional_occs())
+    assert(scf.fractional_occs(tol=1e-4))
     assert(scf.forces('Ry/B').shape==(1,2,3))
     assert(scf.stress('kbar').shape==(1,3,3))
     assert(scf.pressure('kbar') is not None)
+    unit_scales = {
+        'eV/A^3'    : UnitConverter.A**3/UnitConverter.eV,
+        'Ha/Bohr^3' : UnitConverter.B**3/UnitConverter.Ha,
+        'Ry/Bohr^3' : UnitConverter.B**3/UnitConverter.Ry,
+        }
+    for units,scale in unit_scales.items():
+        assert(np.allclose(scf.stress(units),scf.stress('kbar')*1e8*scale))
+        assert(np.isclose(scf.pressure(units),scf.pressure('kbar')*1e8*scale))
+    #end for
 
     input_fixture = TEST_DIR/'test_pwscf_analyzer_files'/'scf_output'
     input_scf = PwscfAnalyzer(

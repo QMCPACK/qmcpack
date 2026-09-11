@@ -33,7 +33,7 @@ from .pwscf_data_reader import read_qexml
 from .pwscf_input import PwscfInput
 from .simulation import Simulation, SimulationAnalyzer
 from .structure import Structure, get_kpath
-from .unit_converter import convert
+from .unit_converter import UnitConverter, convert
 from .utilities import path_string
 
 
@@ -70,9 +70,10 @@ class PwscfOutData(DevBase):
         One-dimensional history of Fermi energies in eV.
     bands : obj or None
         Spin-resolved band records.  The ``up`` and ``down`` members map
-        k-point indices to objects containing ``eigs`` and ``occs`` arrays.
-        Optional ``vbm`` and ``cbm`` members contain their respective
-        energies.
+        k-point indices to objects containing eigenvalues, occupations,
+        k-point coordinates, index, and polarization.  When complete
+        occupations are present, ``vbm``, ``cbm``, ``direct_gap``,
+        ``indirect_gap``, and ``electronic_structure`` may also be present.
     kpoints_cart, kpoints_unit : numpy.ndarray or None
         Cartesian and crystal k-point arrays with shape ``(nkpoints, 3)``.
     kweights : numpy.ndarray or None
@@ -316,7 +317,7 @@ class PwscfOutData(DevBase):
         Non-spin-polarized output places all records in ``bands.up``.
         Spin-polarized output separates records into ``up`` and ``down``.
         Occupation arrays can be empty.  When complete occupations are
-        present, :meth:`read_band_edges` adds VBM and CBM energies.
+        present, band-edge and gap metadata is added to ``bands``.
         """
         # Match a numeric prefix, including joined fixed-width negatives.
         # This cannot be parsed by whitespace tokenization alone.
@@ -788,7 +789,19 @@ class PwscfOutData(DevBase):
 
 
 class Pw2CasinoAnalyzer(DevBase):
-    """Read kinetic energy reported by a PW2CASINO output file."""
+    """Read kinetic energy reported by a PW2CASINO output file.
+
+    Parameters
+    ----------
+    filepath : str or os.PathLike
+        Path to the PW2CASINO text-output file.
+
+    Attributes
+    ----------
+    K : float or None
+        Kinetic energy parsed from the last applicable ``Kinetic ... =``
+        record.  It remains ``None`` when no valid record is present.
+    """
 
     def __init__(self,filepath):
         self.K = None
@@ -815,8 +828,9 @@ class Pw2CasinoAnalyzer(DevBase):
 class PwscfAnalyzer(SimulationAnalyzer):
     """Analyze output produced by Quantum ESPRESSO PWscf calculations.
 
-    The analyzer coordinates PWSCF text and legacy XML readers for SCF, NSCF,
-    relaxation, and variable-cell relaxation calculations.
+    The analyzer coordinates PWSCF text, legacy XML, and optional PW2CASINO
+    readers for SCF, NSCF, relaxation, and variable-cell relaxation
+    calculations.
 
     Parameters
     ----------
@@ -885,9 +899,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
         Final conduction-band minimum in selected energy units.
     band_gap(units='eV') : float or numpy.floating or None
         Fundamental electronic band gap in selected energy units.
-    fractional_occs() : bool or None
+    fractional_occs(tol=1e-3) : bool or None
         Whether any occupation differs from both empty and full by more than
-        ``1e-3``.
+        ``tol``.
     relaxed_structure(units='A') : Structure or None
         Final relaxed structure in Angstrom (``'A'``) or bohr (``'B'``).
     forces(units='eV/A') : numpy.ndarray or None
@@ -896,9 +910,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
     stress(units='GPa') : numpy.ndarray or None
         Stress-tensor history with shape ``(nsteps, 3, 3)``. Available units
         are ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``, and
-        ``'atm'``.
+        ``'atm'``, ``'eV/A^3'``, ``'Ha/Bohr^3'``, and ``'Ry/Bohr^3'``.
     pressure(units='GPa') : float or numpy.floating or None
         Final hydrostatic pressure in the units accepted by ``stress``.
+    make_movie(filename, filepath=None)
+        Write the parsed relaxation trajectory as a tiled XYZ movie.
+    plot_bandstructure(...)
+        Plot analyzed band energies relative to the valence-band maximum.
 
     Raises
     ------
@@ -935,6 +953,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
         'Mbar' : 1e11,
         'GPa'  : 1e9,
         'atm'  : 1.01325e5,
+        'eV/A^3'    : UnitConverter.eV/UnitConverter.A**3,
+        'Ha/Bohr^3' : UnitConverter.Ha/UnitConverter.B**3,
+        'Ry/Bohr^3' : UnitConverter.Ry/UnitConverter.B**3,
         })
 
 
@@ -1133,15 +1154,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def band_gap
 
 
-    def fractional_occs(self):
-        """Whether any occupation differs from empty or full by over ``1e-3``."""
+    def fractional_occs(self,tol=1e-3):
+        """Whether any occupation differs from empty or full by over ``tol``."""
         self._require_supported('fractional_occs',self.electronic_modes)
         occupations = self.occupations()
         if occupations is None:
             return None
-        tolerance = 1e-3
-        empty     = np.isclose(occupations,0.0,rtol=0.0,atol=tolerance)
-        full      = np.isclose(occupations,1.0,rtol=0.0,atol=tolerance)
+        empty = np.isclose(occupations,0.0,rtol=0.0,atol=tol)
+        full  = np.isclose(occupations,1.0,rtol=0.0,atol=tol)
         return bool(np.any(~(empty|full)))
     #end def fractional_occs
 
