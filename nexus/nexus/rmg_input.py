@@ -3828,6 +3828,17 @@ class RmgInput(SimulationInput):
     #end def __init__
 
 
+    @property
+    def run_mode(self):
+        """Return the short run mode corresponding to ``calculation_mode``."""
+        mode = None
+        if 'calculation_mode' in self:
+            mode = rmg_modes.short_mode(self.calculation_mode)
+        #end if
+        return mode
+    #end def run_mode
+
+
     def assign(self,**values):
         unrecognized = []
         for k,v in values.items():

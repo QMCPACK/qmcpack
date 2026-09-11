@@ -22,11 +22,88 @@ representative_runs = (
         id = 'nscf',
         ),
     pytest.param(
+        'electronic/input.band.02.log',
+        'band',
+        None,
+        None,
+        id = 'band',
+        ),
+    pytest.param(
+        'electronic/input.exx.01.log',
+        'exx',
+        None,
+        None,
+        id = 'exx',
+        ),
+    pytest.param(
         'ionic/relax/input.01.log',
         'relax',
         -10.93250973,
         (3,2,3),
         id = 'relax',
+        ),
+    pytest.param(
+        'ionic/nve/input.01.log',
+        'md_VE',
+        -10.93251979,
+        (3,2,3),
+        id = 'nve',
+        ),
+    pytest.param(
+        'ionic/nvt/input.01.log',
+        'md_TE',
+        -10.93251979,
+        (3,2,3),
+        id = 'nvt',
+        ),
+    pytest.param(
+        'tddft/input.00.log',
+        'tddft',
+        -16.75166816,
+        (1,3,3),
+        id = 'tddft',
+        ),
+    pytest.param(
+        'stm/input.scf.01.log',
+        'scf',
+        -11.96999888,
+        (1,2,3),
+        id = 'stm_scf',
+        ),
+    pytest.param(
+        'stm/input.stm.00.log',
+        'stm',
+        None,
+        None,
+        id = 'stm',
+        ),
+    pytest.param(
+        'neb/image_initial/input.00.log',
+        'scf',
+        -1.73498899,
+        (1,3,3),
+        id = 'neb_initial',
+        ),
+    pytest.param(
+        'neb/image_final/input.00.log',
+        'scf',
+        -1.73498890,
+        (1,3,3),
+        id = 'neb_final',
+        ),
+    pytest.param(
+        'neb/image01/input.02.log',
+        'neb',
+        -1.67437690,
+        (1,3,3),
+        id = 'neb_image01',
+        ),
+    pytest.param(
+        'neb/image02/input.01.log',
+        'neb',
+        -1.67437690,
+        (1,3,3),
+        id = 'neb_image02',
         ),
     )
 
@@ -93,7 +170,14 @@ Initial Ionic Positions And Displacements (Angstrom)
     argvalues=[
         ('Quench electrons','scf'),
         ('NSCF calculate','nscf'),
+        ('Band structure calculation.','band'),
+        ("calculate Exx integral's from saved wave functions",'exx'),
         ('Structure Optimization.','relax'),
+        ('Molecular dynamics - CVE','md_VE'),
+        ('Molecular dynamics - CVT','md_TE'),
+        ('Time dependent DFT (TDDFT) calculation','tddft'),
+        ('calculate STM charge density','stm'),
+        ('Molecular dynamics using Nudged Elastic Band.','neb'),
         ],
     )
 def test_run_modes(tmp_path,calculation_type,short_mode):
@@ -112,9 +196,24 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
     assert outdata.setup_info.run_mode==short_mode
     assert isinstance(outdata.setup_info.structure,Structure)
     assert metadata_fields<result_fields
-    assert {'geometry','convergence','timing'}<result_fields
-    assert {'energy','ionic_steps','pressure','electronic'}<result_fields
-    assert ('produced_files' in result_fields)==(short_mode=='scf')
+    assert {'convergence','timing'}<result_fields
+    assert 'geometry' not in result_fields
+    electronic_run = short_mode in {
+        'scf','nscf','relax','md_VE','md_TE','tddft','neb',
+        }
+    field_applicability = {
+        'energies'       : electronic_run,
+        'ions'           : electronic_run,
+        'stress'         : electronic_run,
+        'electronic'     : electronic_run or short_mode=='band',
+        'bands'          : short_mode=='band',
+        'md'             : short_mode in {'md_VE','md_TE'},
+        'tddft'          : short_mode=='tddft',
+        'neb'            : short_mode=='neb',
+        'produced_files' : short_mode in {'scf','exx','stm'},
+        }
+    for name,applies in field_applicability.items():
+        assert (name in result_fields)==applies
 
     analyzer = RmgAnalyzer(logfile,analyze=True)
 
@@ -125,6 +224,42 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
     assert analyzer.results.setup_info.grid_points.grid.tolist()==[8,8,8]
     assert analyzer.initial_structure() is not None
 #end def test_run_modes
+
+
+@pytest.mark.parametrize(
+    argnames='calculation_type,input_mode,run_mode',
+    argvalues=[
+        ('Quench electrons','Quench Electrons','scf'),
+        ('Unrecognized calculation','NSCF','nscf'),
+        ],
+    )
+def test_input_run_mode(tmp_path,calculation_type,input_mode,run_mode):
+    from ..rmg_analyzer import RmgOutData
+
+    input_file = tmp_path/'input'
+    log_file   = tmp_path/'rmg.log'
+    input_file.write_text(f'calculation_mode = "{input_mode}"')
+    log_file.write_text(rmg_log(calculation_type))
+
+    outdata = RmgOutData(log_file)
+
+    assert outdata.input.run_mode==run_mode
+    assert outdata.run_mode==run_mode
+    assert outdata.setup_info.run_mode==run_mode
+#end def test_input_run_mode
+
+
+def test_inconsistent_input_run_mode(tmp_path):
+    from ..rmg_analyzer import RmgOutData
+
+    input_file = tmp_path/'input'
+    log_file   = tmp_path/'rmg.log'
+    input_file.write_text('calculation_mode = "NSCF"')
+    log_file.write_text(rmg_log('Quench electrons'))
+
+    with pytest.raises(ValueError,match='do not agree'):
+        RmgOutData(log_file)
+#end def test_inconsistent_input_run_mode
 
 
 @pytest.mark.parametrize(
@@ -147,21 +282,30 @@ def test_representative_outputs(relative_path,run_mode,energy,positions_shape):
     assert isinstance(outdata.input,RmgInput)
     assert isinstance(analyzer.input,RmgInput)
     assert isinstance(analyzer.initial_structure(),Structure)
-    assert np.isclose(analyzer.energy(),energy)
     assert outdata.timing is not None
     assert outdata.timing.total>0.0
-    assert outdata.positions.shape==positions_shape
-    assert len(outdata.energies)>0
+    if energy is None:
+        assert 'energies' not in outdata
+    else:
+        assert np.isclose(analyzer.energy(),energy)
+        assert len(outdata.energies.history)>0
+    if positions_shape is None:
+        assert 'ions' not in outdata
+    else:
+        assert outdata.ions.position_history.shape==positions_shape
 #end def test_representative_outputs
 
 
 def test_representative_physical_results():
+    import numpy as np
+
     from ..rmg_analyzer import RmgAnalyzer
     from ..structure import Structure
 
     electronic = representative_root/'electronic'
     scf         = RmgAnalyzer(str(electronic/'input.scf.02.log'),analyze=True)
     nscf        = RmgAnalyzer(str(electronic/'input.nscf.05.log'),analyze=True)
+    band        = RmgAnalyzer(str(electronic/'input.band.02.log'),analyze=True)
 
     assert scf.kpoints().shape==(1,3)
     assert scf.kweights() is None
@@ -170,16 +314,140 @@ def test_representative_physical_results():
     assert scf.forces().shape==(1,2,3)
     assert nscf.eigenvalues().shape==(1,14)
     assert nscf.occupations().shape==(1,14)
+    assert band.kpoints().shape==(13,3)
+    assert band.eigenvalues().shape==(13,14)
 
+    ionic = representative_root/'ionic'
     relax = RmgAnalyzer(
         str(representative_root/'ionic/relax/input.01.log'),
         analyze = True,
         )
+    nve = RmgAnalyzer(str(ionic/'nve/input.01.log'),analyze=True)
+    nvt = RmgAnalyzer(str(ionic/'nvt/input.01.log'),analyze=True)
 
     assert isinstance(relax.relaxed_structure(),Structure)
     assert relax.forces().shape==(3,2,3)
-    assert relax.results.positions.shape==(3,2,3)
+    assert relax.results.ions.position_history.shape==(3,2,3)
+    assert nve.results.md.step.tolist()==[1]
+    assert nvt.results.md.step.tolist()==[1]
+    assert np.isclose(nve.results.md.temperature[0],99.9942651269)
+    assert np.isclose(nvt.results.md.temperature[0],99.9942651269)
+    assert np.isclose(nve.results.md_stats.temperature.mean,99.9942651269)
+
+    tddft = RmgAnalyzer(
+        str(representative_root/'tddft/input.00.log'),
+        analyze = True,
+        )
+    assert tddft.results.tddft.energy.time.tolist()==[0.0,0.05,0.1,0.15]
+    assert tddft.results.tddft.energy.total_energy_change.shape==(4,)
+    assert tddft.results.tddft.dipoles[0].dipole.shape==(4,3)
 #end def test_representative_physical_results
+
+
+def test_representative_neb_results():
+    import numpy as np
+
+    from ..rmg_analyzer import RmgAnalyzer
+
+    neb_root = representative_root/'neb'
+    image01 = RmgAnalyzer(
+        str(neb_root/'image01/input.02.log'),
+        analyze = True,
+        ).results.neb
+    image02 = RmgAnalyzer(
+        str(neb_root/'image02/input.01.log'),
+        analyze = True,
+        ).results.neb
+
+    expected_energies = [-1.73498899,-1.67437690,-1.67437690,-1.73498890]
+    assert image01.calculation_mode=='NEB Relax'
+    assert image01.spin_polarized
+    assert image01.num_images==4
+    assert image01.num_intermediate_images==2
+    assert image01.images_per_node==1
+    assert image01.max_steps==1
+    assert image01.spring_constant==0.05
+    assert image01.spring_constant_units=='Ha/B^2'
+    assert image01.parallel.images_per_node==1
+    assert image01.parallel.mpi_processes_per_image==2
+    assert len(image01.image_input_files)==4
+    assert len(image01.input_structures)==4
+    assert image01.reaction_coordinate.shape==(4,)
+    assert np.allclose(image01.energies,expected_energies)
+    assert np.isclose(image01.forward_barrier,0.06061209)
+    assert np.isclose(image01.reverse_barrier,0.06061200)
+    assert image01.barrier_image_index==1
+    assert image01.local_image.index==1
+    assert image01.local_image.neb_calls==1
+    assert image01.local_image.force_history.shape==(1,3,3)
+    assert image01.local_image.position_history.shape==(1,3,3)
+    assert image01.local_image.cell_history.shape==(1,3,3)
+    assert image01.local_image.structure_history is not None
+    assert image01.local_image.energy==expected_energies[1]
+    assert image01.local_image.energy_units=='Ha'
+    assert image02.local_image.index==2
+    assert image02.local_image.force_history.shape==(1,3,3)
+    assert len(image01.final_images.structures)==4
+    assert all(
+        structure is not None for structure in image01.final_images.structures)
+    assert image01.final_images.positions.shape==(4,3,3)
+    assert image01.final_images.cells.shape==(4,3,3)
+    assert image01.final_images.atoms.shape==(4,3)
+    assert image01.final_images.position_units=='a0'
+    assert image01.final_images.cell_units=='a0'
+    assert len(image01.final_images.source_files)==4
+    for structure,cell in zip(
+        image01.final_images.structures,
+        image01.final_images.cells,
+        strict = True,
+        ):
+        assert np.allclose(structure.axes,cell)
+#end def test_representative_neb_results
+
+
+def test_variable_cell_history(tmp_path):
+    import numpy as np
+
+    from ..rmg_analyzer import RmgAnalyzer
+
+    body = '''
+Cell Vectors (a0)
+1 4.0 0.0 0.0
+2 0.0 4.0 0.0
+3 0.0 0.0 4.0
+@ION Ion Species X Y Z Charge Mag FX FY FZ Movable
+@ION 1 H 1.0 1.0 1.0 0.0 0.0 0.1 0.2 0.3 1 1 1
+
+Cell Vectors (a0)
+1 5.0 0.0 0.0
+2 0.0 5.0 0.0
+3 0.0 0.0 5.0
+@ION Ion Species X Y Z Charge Mag FX FY FZ Movable
+@ION 1 H 1.1 1.2 1.3 0.0 0.0 0.1 0.2 0.3 1 1 1
+'''
+    logfile = tmp_path/'relax.log'
+    logfile.write_text(rmg_log('Structure Optimization.',body))
+    analyzer = RmgAnalyzer(logfile,analyze=True)
+
+    assert analyzer.results.ions.cell_history.shape==(2,3,3)
+    assert analyzer.results.ions.cell_units=='a0'
+    assert np.allclose(analyzer.results.ions.cell_history[0],4*np.eye(3))
+    assert np.allclose(analyzer.results.ions.cell_history[1],5*np.eye(3))
+    assert np.allclose(
+        analyzer.results.ions.steps[1].cell,
+        5*np.eye(3),
+        )
+    assert analyzer.results.ions.steps[1].cell_units=='a0'
+    assert np.allclose(
+        analyzer.results.ions.structure_history[1].axes,
+        5*np.eye(3),
+        )
+    assert np.allclose(
+        analyzer.results.ions.structure_history[0].axes,
+        analyzer.results.ions.cell_history[0],
+        )
+    assert np.allclose(analyzer.relaxed_structure(units='B').axes,5*np.eye(3))
+#end def test_variable_cell_history
 
 
 def test_representative_produced_files(tmp_path):
@@ -192,10 +460,82 @@ def test_representative_produced_files(tmp_path):
     waves = electronic/'Waves'
     waves.mkdir()
     (waves/'wave.out.h5').touch()
+    (electronic/'exx_integrals.h5').touch()
 
     scf = RmgAnalyzer(electronic/'input.scf.02.log',analyze=True)
+    exx = RmgAnalyzer(electronic/'input.exx.01.log',analyze=True)
     assert scf.results.produced_files.qmcpack_restart.endswith('wave.out.h5')
+    assert len(exx.results.produced_files.exx_integrals)==1
+
+    stm_root = tmp_path/'stm'
+    copytree(representative_root/'stm',stm_root)
+    stm_dir = stm_root/'STM'
+    stm_dir.mkdir()
+    (stm_dir/'bias.stm').touch()
+    (stm_dir/'bias.cube').touch()
+
+    stm = RmgAnalyzer(stm_root/'input.stm.00.log',analyze=True)
+    assert len(stm.results.produced_files.stm)==1
+    assert len(stm.results.produced_files.stm_cube)==1
 #end def test_representative_produced_files
+
+
+def test_mode_specific_results(tmp_path):
+    import numpy as np
+
+    from ..rmg_analyzer import RmgAnalyzer
+
+    band_log = tmp_path/'band.log'
+    band_log.write_text(rmg_log('Band structure calculation.'))
+    (tmp_path/'band_spin0.bandstructure.dat').write_text(
+        '0.0 -1.0\n1.0 -0.5\n&&\n0.0 1.0\n1.0 1.5\n&&\n')
+    band = RmgAnalyzer(band_log,analyze=True)
+    assert band.results.bands[0].energies.shape==(2,2)
+    assert band.eigenvalues().shape==(2,2)
+    with pytest.raises(RuntimeError,match='energy'):
+        band.energy()
+    with pytest.raises(RuntimeError,match='occupations'):
+        band.occupations()
+
+    md_log = tmp_path/'md.log'
+    md_log.write_text(rmg_log(
+        'Molecular dynamics - CVE',
+        '@CVE 1 -1.0 0.1 -0.9 300.0 2.5e-4',
+        ))
+    md = RmgAnalyzer(md_log,analyze=True)
+    assert md.results.md.step.tolist()==[1]
+    assert md.results.md.temperature.tolist()==[300.0]
+    assert md.results.md_stats.temperature.mean==300.0
+
+    td_log = tmp_path/'td.log'
+    td_log.write_text(rmg_log('Time dependent DFT (TDDFT) calculation'))
+    (tmp_path/'td_totalE').write_text(
+        '&& time kinetic hartree xc total\n0.0 1.0 2.0 3.0 4.0\n')
+    (tmp_path/'td_spin0_dipole.dat').write_text(
+        '&&electric field in cartesian unit: 0.0 0.0 0.1\n'
+        '&&dipole at ground state: 1.0 2.0 3.0\n'
+        '0.0 1.1 2.1 3.1\n')
+    tddft = RmgAnalyzer(td_log,analyze=True)
+    assert tddft.results.tddft.energy.total_energy_change.tolist()==[4.0]
+    assert np.allclose(tddft.results.tddft.dipoles[0].dipole,[[1.1,2.1,3.1]])
+
+    exx_log = tmp_path/'exx.log'
+    exx_log.write_text(rmg_log(
+        "calculate Exx integral's from saved wave functions"))
+    (tmp_path/'exx_integrals.h5').touch()
+    exx = RmgAnalyzer(exx_log,analyze=True)
+    assert len(exx.results.produced_files.exx_integrals)==1
+
+    stm_dir = tmp_path/'STM'
+    stm_dir.mkdir()
+    (stm_dir/'bias.stm').touch()
+    (stm_dir/'bias.cube').touch()
+    stm_log = tmp_path/'stm.log'
+    stm_log.write_text(rmg_log('calculate STM charge density'))
+    stm = RmgAnalyzer(stm_log,analyze=True)
+    assert len(stm.results.produced_files.stm)==1
+    assert len(stm.results.produced_files.stm_cube)==1
+#end def test_mode_specific_results
 
 
 def test_physical_results(tmp_path):
@@ -271,10 +611,12 @@ potential convergence has been achieved. stopping ...
     assert analyzer.Ecbm()==6.0
     assert analyzer.band_gap()==2.0
     assert analyzer.fractional_occs()
-    assert analyzer.results.energies.tolist()==[-1.2345]
-    assert analyzer.results.energy_units_history.tolist()==['Ha']
-    assert analyzer.results.direct_energies.tolist()==[-1.2344]
-    assert analyzer.results.direct_energy_units.tolist()==['Ha']
+    assert analyzer.results.energies.history.tolist()==[-1.2345]
+    assert analyzer.results.energies.units.tolist()==['Ha']
+    assert analyzer.results.energies.final==-1.2345
+    assert analyzer.results.energies.final_units=='Ha'
+    assert analyzer.results.energies.direct.tolist()==[-1.2344]
+    assert analyzer.results.energies.direct_units.tolist()==['Ha']
     assert analyzer.results.electronic.total_charges.tolist()==[1.0]
     assert analyzer.results.electronic.total_magnetizations.tolist()==[1.0]
     assert analyzer.results.electronic.absolute_magnetizations.tolist()==[1.5]
@@ -294,25 +636,43 @@ potential convergence has been achieved. stopping ...
     assert analyzer.results.scf.rms_dv.tolist()==[2e-5]
     assert analyzer.results.scf.energy_units=='Ha'
     assert analyzer.results.scf.time_units=='s'
-    assert analyzer.results.positions.shape==(1,1,3)
-    assert analyzer.results.charges.tolist()==[[0.05]]
-    assert analyzer.results.magnetizations.tolist()==[[0.1]]
-    assert analyzer.results.max_forces.shape==(1,)
-    assert analyzer.results.ionic_steps[0].movable.tolist()==[[1,1,1]]
-    assert analyzer.results.position_units=='a0'
-    assert analyzer.results.force_units=='Ha/a0'
-    assert analyzer.results.pressures.tolist()==[-2.0]
-    assert analyzer.results.stress_units=='kbar'
+    assert analyzer.results.ions.position_history.shape==(1,1,3)
+    assert analyzer.results.ions.charges.tolist()==[[0.05]]
+    assert analyzer.results.ions.magnetizations.tolist()==[[0.1]]
+    assert analyzer.results.ions.max_forces.shape==(1,)
+    assert analyzer.results.ions.steps[0].movable.tolist()==[[1,1,1]]
+    assert analyzer.results.ions.position_units=='a0'
+    assert analyzer.results.ions.force_units=='Ha/a0'
+    assert analyzer.results.stress.pressure_history.tolist()==[-2.0]
+    assert analyzer.results.stress.units=='kbar'
     assert analyzer.results.convergence.electronic_converged
-    assert np.isclose(analyzer.results.geometry.volume,64.0)
-    assert analyzer.results.geometry.volume_units=='a0^3'
-    assert analyzer.results.geometry.kpoints_crystal.shape==(2,3)
+    assert np.isclose(analyzer.results.setup_info.cell.volume,64.0)
+    assert analyzer.results.setup_info.cell.volume_units=='a0^3'
+    assert analyzer.results.setup_info.k_points.crystal.shape==(2,3)
+    assert analyzer.results.setup_info.k_points.cartesian.shape==(2,3)
+    assert analyzer.results.setup_info.k_points.weights.shape==(2,)
+    assert analyzer.results.setup_info.k_points.cartesian_units=='1/a0'
     force_factor = convert(1.0,'Ha','eV')/convert(1.0,'B','A')
-    assert np.allclose(analyzer.forces(),analyzer.results.forces*force_factor)
-    assert np.allclose(analyzer.forces(units='Ha/B'),analyzer.results.forces)
-    assert np.allclose(analyzer.forces(units='Ry/B'),2*analyzer.results.forces)
-    assert np.allclose(analyzer.stress(),analyzer.results.stress*0.1)
-    assert np.allclose(analyzer.stress(units='kbar'),analyzer.results.stress)
+    assert np.allclose(
+        analyzer.forces(),
+        analyzer.results.ions.forces*force_factor,
+        )
+    assert np.allclose(
+        analyzer.forces(units='Ha/B'),
+        analyzer.results.ions.forces,
+        )
+    assert np.allclose(
+        analyzer.forces(units='Ry/B'),
+        2*analyzer.results.ions.forces,
+        )
+    assert np.allclose(
+        analyzer.stress(),
+        analyzer.results.stress.tensors*0.1,
+        )
+    assert np.allclose(
+        analyzer.stress(units='kbar'),
+        analyzer.results.stress.tensors,
+        )
     assert np.isclose(analyzer.pressure(),-0.2)
     assert np.isclose(analyzer.pressure(units='kbar'),-2.0)
     energy_density_units = {
@@ -482,8 +842,8 @@ KOHN SHAM EIGENVALUES [eV] AT K-POINT [bad]: malformed coordinates
 
     assert analyzer.energy() is None
     assert analyzer.results.timing is not None
-    assert len(analyzer.results.ionic_steps)==1
-    assert analyzer.results.positions.shape==(1,1,3)
+    assert len(analyzer.results.ions.steps)==1
+    assert analyzer.results.ions.position_history.shape==(1,1,3)
     assert analyzer.results.scf is None
     assert analyzer.forces(units='Ha/B').shape==(1,1,3)
     assert len(analyzer.info)==0
