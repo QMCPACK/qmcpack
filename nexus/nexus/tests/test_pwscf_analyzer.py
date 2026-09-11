@@ -80,6 +80,11 @@ def test_empty_init():
         match=r'PWSCF output file name is not available',
         ):
         pa.analyze()
+    with pytest.raises(
+        RuntimeError,
+        match=r'PWSCF output has not been analyzed',
+        ):
+        pa.make_movie('movie.xyz')
     free_helpers = ('parse_float',)
     for name in free_helpers:
         assert(callable(getattr(pa_module,name)))
@@ -151,6 +156,8 @@ def test_tokenized_log_parsing(tmp_path):
 Self-consistent Calculation
 number of atoms/cell   = 2 trailing tokens
 number of k points = 1 trailing tokens
+
+unrelated informational line
 cart. coord.
 k(1) = (0.0 0.0 0.0), wk = 1.0 trailing
 cryst. coord.
@@ -222,7 +229,52 @@ stress: -.001 0.0 .001 -147.1 0.0 147.1
     assert(malformed.E is None)
     assert(malformed.pressure is None)
     assert(malformed.stress is None)
+
+    angstrom_file = tmp_path/'angstrom.out'
+    angstrom_file.write_text('''\
+BFGS Geometry Optimization
+CELL_PARAMETERS (angstrom)
+1.0 0.0 0.0
+0.0 1.0 0.0
+0.0 0.0 1.0
+ATOMIC_POSITIONS (angstrom)
+H 1.0 2.0 3.0
+End final coordinates
+''')
+    angstrom = PwscfOutData(angstrom_file)
+    structure = angstrom.relax_structures[0]
+    bohr_per_angstrom = 1.0/0.529177210903
+    assert(np.allclose(structure.axes,bohr_per_angstrom*np.eye(3)))
+    assert(np.allclose(
+        structure.positions,
+        np.array([1.0,2.0,3.0])*bohr_per_angstrom,
+        ))
 #end def test_tokenized_log_parsing
+
+
+def test_input_calculation_overrides_ambiguous_output(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    (tmp_path/'pwscf.in').write_text('''\
+&CONTROL
+  calculation = 'relax'
+/
+''')
+    (tmp_path/'pwscf.out').write_text('''\
+BFGS Geometry Optimization
+CELL_PARAMETERS (alat= 5.0)
+1.0 0.0 0.0
+0.0 1.0 0.0
+0.0 0.0 1.0
+''')
+    analyzer = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        'pwscf.out',
+        analyze = True,
+        )
+    assert(analyzer.results_out.calculation=='relax')
+#end def test_input_calculation_overrides_ambiguous_output
 
 
 def test_pw2casino_analyzer_read(tmp_path):

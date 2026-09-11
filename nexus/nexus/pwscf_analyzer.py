@@ -59,6 +59,9 @@ class PwscfOutData(DevBase):
     ----------
     filepath : str or os.PathLike
         Path to the PWSCF text-output file.
+    calculation : str, optional
+        Calculation type from the associated PWSCF input. When supplied, it
+        takes precedence over output-text inference.
 
     Attributes
     ----------
@@ -109,7 +112,7 @@ class PwscfOutData(DevBase):
     calculation type are removed from the object.
     """
 
-    def __init__(self,filepath):
+    def __init__(self,filepath,calculation=None):
         """Read a PWSCF log and initialize its accessible physical data."""
         self.calculation = None
 
@@ -139,7 +142,7 @@ class PwscfOutData(DevBase):
         with open(filepath,'r') as fobj:
             lines = fobj.read().splitlines()
         # read the calculation type
-        self.read_calculation(lines)
+        self.read_calculation(lines,calculation)
         # remove unused attributes, depending on the calculation type
         if self.calculation=='nscf':
             for name in (
@@ -168,8 +171,21 @@ class PwscfOutData(DevBase):
     #end def __init__
 
 
-    def read_calculation(self,lines):
+    def read_calculation(self,lines,calculation=None):
         """Infer and bind the PWSCF calculation type from log records."""
+        if calculation is not None:
+            calculation = calculation.lower()
+            if calculation in {'md','vc-md'}:
+                msg = 'PWSCF molecular-dynamics calculations are not supported'
+                raise RuntimeError(msg)
+            if calculation=='bands':
+                msg = 'PWSCF bands calculations are not supported'
+                raise RuntimeError(msg)
+            if calculation not in {'scf','nscf','relax','vc-relax'}:
+                msg = f'PWSCF calculation "{calculation}" is not supported'
+                raise RuntimeError(msg)
+            self.calculation = calculation
+            return
         has_cell      = False
         has_bfgs      = False
         has_band_run  = False
@@ -492,6 +508,32 @@ class PwscfOutData(DevBase):
         Fixed-cell output can omit cell blocks, while variable-cell output
         normally supplies new axes with each structure.
         """
+        def card_option(line,name):
+            """Return the lower-case unit option from a QE card header."""
+            text = line.strip()
+            if not text.startswith(name):
+                return None
+            text = text[len(name):].strip().lower()
+            if len(text)==0:
+                return None
+            if text[0] in '({':
+                end = ')' if text[0]=='(' else '}'
+                text = text[1:text.find(end)] if end in text else text[1:]
+            return text.split()[0] if len(text)>0 else None
+        #end def card_option
+
+        def alat_from_header(line):
+            """Return the bohr lattice parameter given in a card header."""
+            tokens = line.replace('(',' ').replace(')',' ').replace('=',' = ').split()
+            lower  = [token.lower() for token in tokens]
+            if 'alat' not in lower:
+                return None
+            index = lower.index('alat')
+            if index+2<len(tokens) and tokens[index+1]=='=':
+                return parse_float(tokens[index+2])
+            return None
+        #end def alat_from_header
+
         structures = []
         conf       = None
         i          = 0
@@ -510,14 +552,19 @@ class PwscfOutData(DevBase):
                 if len(axes)==3:
                     conf = obj()
                     axes = np.array(axes,dtype=float)
-                    tokens = line.replace('(',' ').replace(')',' ').replace('=',' = ').split()
-                    if 'alat' in tokens:
-                        index = tokens.index('alat')
-                        if index+2<len(tokens) and tokens[index+1]=='=':
-                            alat = parse_float(tokens[index+2])
-                            if alat is not None:
-                                axes *= alat
+                    option = card_option(line,'CELL_PARAMETERS')
+                    alat   = alat_from_header(line)
+                    if option is not None and option.startswith('ang'):
+                        axes *= convert(1.0,'A','B')
+                    elif option is not None and option.startswith('alat'):
+                        if alat is None:
+                            conf = None
+                            i += 3
+                            continue
+                        axes *= alat
                     conf.axes = axes
+                    if alat is not None:
+                        conf.alat = alat
                     i+=3
                 else:
                     conf = None
@@ -544,8 +591,19 @@ class PwscfOutData(DevBase):
                     continue
                 conf.atoms     = atoms
                 conf.positions = np.array(positions,dtype=float)
-                if 'crystal' in line.lower() and 'axes' in conf:
+                option = card_option(line,'ATOMIC_POSITIONS')
+                if option is not None and option.startswith('crystal') and 'axes' in conf:
                     conf.positions = np.dot(conf.positions,conf.axes)
+                elif option is not None and option.startswith('ang'):
+                    conf.positions *= convert(1.0,'A','B')
+                elif option is not None and option.startswith('alat'):
+                    alat = conf.alat if 'alat' in conf else None
+                    if alat is not None:
+                        conf.positions *= alat
+                    else:
+                        conf.position_units = 'alat'
+                elif option is not None and option.startswith('crystal'):
+                    conf.position_units = 'crystal'
                 structures.append(conf)
                 conf = None
                 continue
@@ -746,12 +804,18 @@ class PwscfOutData(DevBase):
                 ):
                 continue
             nkpoints = int(tokens[0])
-            if i+1>=len(lines) or 'cart. coord.' not in lines[i+1]:
+            cart_header = None
+            for j in range(i+1,min(i+9,len(lines))):
+                if 'cart. coord.' in lines[j]:
+                    cart_header = j
+                    break
+            if cart_header is None:
                 continue
             cart    = []
             weights = []
-            valid   = len(lines[i+2:i+2+nkpoints])==nkpoints
-            for kline in lines[i+2:i+2+nkpoints]:
+            cart_start = cart_header+1
+            valid   = len(lines[cart_start:cart_start+nkpoints])==nkpoints
+            for kline in lines[cart_start:cart_start+nkpoints]:
                 kpoint = read_kpoint(kline)
                 if kpoint is None:
                     valid = False
@@ -761,10 +825,11 @@ class PwscfOutData(DevBase):
                 weights.append(weight)
             if not valid:
                 continue
-            j = i+2+nkpoints
-            while j<len(lines) and 'cryst. coord.' not in lines[j]:
+            j = cart_start+nkpoints
+            cryst_end = min(j+9,len(lines))
+            while j<cryst_end and 'cryst. coord.' not in lines[j]:
                 j+=1
-            if j>=len(lines):
+            if j>=cryst_end:
                 continue
             unit  = []
             valid = len(lines[j+1:j+1+nkpoints])==nkpoints
@@ -1185,10 +1250,19 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 axes = initial.axes
             if axes is None:
                 return None
+            positions = np.asarray(result.positions,dtype=float)
+            position_units = result.position_units if 'position_units' in result else 'B'
+            if position_units=='crystal':
+                positions = np.dot(positions,axes)
+            elif position_units=='alat':
+                alat = result.alat if 'alat' in result else None
+                if alat is None:
+                    return None
+                positions *= alat
             structure = Structure(
                 axes    = np.asarray(axes,dtype=float),
                 elem    = np.asarray(result.atoms,dtype=str),
-                pos     = np.asarray(result.positions,dtype=float),
+                pos     = positions,
                 units   = 'B',
                 rescale = False,
                 )
@@ -1335,7 +1409,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 f'file not found: {outfile}'
                 )
             raise FileNotFoundError(msg)
-        self.results_out = PwscfOutData(outfile)
+        calculation = None
+        if (
+            self.input is not None
+            and 'control' in self.input
+            and 'calculation' in self.input.control
+            ):
+            calculation = self.input.control.calculation
+        self.results_out = PwscfOutData(outfile,calculation)
         self.analyze_xml()
         if self.pw2c_outfile_name is not None:
             filepath = os.path.join(self.path,self.pw2c_outfile_name)
@@ -1438,10 +1519,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def make_movie(self,filename,filepath=None):
         """Write the parsed relaxation trajectory as a tiled XYZ movie."""
+        if 'results_out' not in self or self.results_out is None:
+            msg = 'PWSCF output has not been analyzed'
+            raise RuntimeError(msg)
         if (
-            'results_out' not in self
-            or self.results_out is None
-            or 'relax_structures' not in self.results_out
+            'relax_structures' not in self.results_out
             or self.results_out.relax_structures is None
             ):
             return
@@ -1453,10 +1535,19 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 axes = initial.axes
             if axes is None:
                 return
+            positions = np.asarray(result.positions,dtype=float)
+            position_units = result.position_units if 'position_units' in result else 'B'
+            if position_units=='crystal':
+                positions = np.dot(positions,axes)
+            elif position_units=='alat':
+                alat = result.alat if 'alat' in result else None
+                if alat is None:
+                    return
+                positions *= alat
             frame = Structure(
                 axes    = np.asarray(axes,dtype=float),
                 elem    = np.asarray(result.atoms,dtype=str),
-                pos     = np.asarray(result.positions,dtype=float),
+                pos     = positions,
                 units   = 'B',
                 rescale = False,
                 ).tile(2,2,2)
