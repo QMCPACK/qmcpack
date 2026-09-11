@@ -885,34 +885,30 @@ def interval_dist_peak(xi,ci,method='interval_mid',peak_frac=0.5,height=False):
         x     = xmid + (u-0.5)*dx/2
         xm    = x.mean()
     elif method=='quad_peak':
-        # first find the overall max
         imax = ci.argmax()
         cf = peak_frac*ci[imax]
-        # flatten for search and fit
-        xif = xi.ravel()
-        cif = np.zeros(xif.shape)
-        cif[::2]  = ci
-        cif[1::2] = ci
-        N = len(cif)
-        # move left until below peak frac
+        # Locate the contiguous high-count region in interval coordinates.
+        # ``imax`` indexes ``ci``, not the flattened endpoint array.
         i1 = imax
-        for n in range(N):
-            if i1==0 or cif[i1]<cf:
-                break
+        while i1>0 and ci[i1-1]>=cf:
             i1 -= 1
-        # move right until below peak frac
         i2 = imax
-        for n in range(N):
-            if i2==N-1 or cif[i2]<cf:
-                break
+        while i2+1<len(ci) and ci[i2+1]>=cf:
             i2 += 1
-        # fit the peak
-        xp = xif[i1:i2+1]
-        cp = cif[i1:i2+1]
-        p = np.polyfit(xp,cp,2)
-        # find the max
-        xm = -p[1]/(2*p[0])
-        cm = np.polyval(p,xm)
+        xp = xi[i1:i2+1].ravel()
+        cp = np.repeat(ci[i1:i2+1],2)
+        if len(np.unique(xp))<3:
+            xm = xi[ci==ci[imax]].mean()
+            cm = ci[imax]
+        else:
+            p = np.polyfit(xp,cp,2)
+            if not np.isfinite(p[0]) or p[0]>=0.:
+                xm = xi[ci==ci[imax]].mean()
+                cm = ci[imax]
+            else:
+                xm = -p[1]/(2*p[0])
+                xm = np.clip(xm,xp.min(),xp.max())
+                cm = np.polyval(p,xm)
     else:
         raise ValueError(f'unrecognized int. dist. max method: "{method}"')
     if not height:
@@ -998,16 +994,21 @@ def line_crossing_distribution(x,nperm=0):
         ) or nperm<0:
         msg = 'number of permutations must be a nonnegative integer'
         raise ValueError(msg)
-    if nperm>1:
-        xperm = []
-        for n in range(nperm):
-            xp = x.copy()
-            np.random.shuffle(xp)
-            xperm.append(xp)
-        x = np.hstack(xperm)
-    xi,_ = time_series_intervals(x,t=None)
-    xi,ci = interval_distribution(xi)
-    return xi,ci
+
+    # permutation-free (typical) case
+    if nperm==0:
+        xi,_ = time_series_intervals(x,t=None)
+        return interval_distribution(xi)
+
+    # use permutation shuffling
+    permutation_intervals = []
+    for n in range(nperm):
+        xp = x.copy()
+        np.random.shuffle(xp)
+        xi,_ = time_series_intervals(xp,t=None)
+        permutation_intervals.append(xi)
+    xi,ci = interval_distribution(np.vstack(permutation_intervals))
+    return xi,ci/nperm
 #end def line_crossing_distribution
 
 

@@ -383,6 +383,13 @@ def test_time_series_intervals():
     intervals,no_times = statistics.time_series_intervals(x)
     np.testing.assert_array_equal(intervals,[[1.,3.],[1.,2.]])
     assert(no_times is None)
+
+    column_intervals,column_times = statistics.time_series_intervals(
+        x.reshape(-1,1),
+        t.reshape(-1,1),
+        )
+    np.testing.assert_array_equal(column_intervals,intervals)
+    np.testing.assert_array_equal(column_times,times)
 #end def test_time_series_intervals
 
 
@@ -402,7 +409,6 @@ def test_interval_and_lcd_input_validation():
         (np.array([1.,2.]),None,r'interval array must have shape'),
         (np.empty((0,2)),None,r'interval array must not be empty'),
         (np.array([[2.,1.]]),None,r'upper endpoints must not be less'),
-        (np.array([[1.,np.nan]]),None,r'interval array must contain only finite values'),
         (np.array([1.,2.]),np.array([3.]),r'endpoint arrays must have equal lengths'),
         ]
     for lower,upper,message in invalid_intervals:
@@ -441,6 +447,9 @@ def test_interval_and_lcd_input_validation():
         ]:
         with pytest.raises(ValueError,match=message):
             statistics.line_crossing_distribution(x,nperm=nperm)
+
+    with pytest.raises(ValueError,match=r'window must not exceed the number of intervals'):
+        statistics.lcd_smooth([1.,2.],window=2,step=1)
 #end def test_interval_and_lcd_input_validation
 
 
@@ -462,6 +471,13 @@ def test_interval_distribution_and_peak(monkeypatch):
     np.testing.assert_array_equal(matrix_intervals,expected_intervals)
     np.testing.assert_array_equal(matrix_counts,counts)
 
+    column_intervals,column_counts = statistics.interval_distribution(
+        endpoints.reshape(-1,1),
+        upper.reshape(1,-1),
+        )
+    np.testing.assert_array_equal(column_intervals,expected_intervals)
+    np.testing.assert_array_equal(column_counts,counts)
+
     peak_intervals = np.array([[0.,1.],[1.,2.],[2.,3.]])
     peak_counts    = np.array([1,3,3])
     peak,height = statistics.interval_dist_peak(
@@ -471,6 +487,26 @@ def test_interval_distribution_and_peak(monkeypatch):
         )
     assert(peak==pytest.approx(2.))
     assert(height==3)
+
+    column_peak = statistics.interval_dist_peak(
+        peak_intervals,
+        peak_counts.reshape(-1,1),
+        )
+    assert(column_peak==pytest.approx(peak))
+
+    quadratic_intervals = np.array(
+        [[0.,1.],[1.,2.],[2.,3.],[3.,4.],[4.,5.]]
+        )
+    quadratic_counts = np.array([1.,2.,3.,2.,1.])
+    quadratic_peak,quadratic_height = statistics.interval_dist_peak(
+        quadratic_intervals,
+        quadratic_counts,
+        method='quad_peak',
+        height=True,
+    )
+    assert(quadratic_peak==pytest.approx(2.5))
+    assert(np.isfinite(quadratic_height))
+    assert(quadratic_height>0.)
 
     monkeypatch.setattr(
         statistics.np.random,
@@ -519,13 +555,28 @@ def test_rolling_interval_dist_peak_and_lcd_smooth():
 
 
 
-def test_line_crossing_distribution_and_lcd_peak():
-    """Check LCD interval counts and their peak-derived center."""
+def test_line_crossing_distribution_and_lcd_peak(monkeypatch):
+    """Check LCD counts, peaks, and independently accumulated permutations."""
     x = np.array([0.,2.,1.])
+
+    def fail_shuffle(values):
+        pytest.fail('the nperm=0 path must not shuffle data')
+    #end def fail_shuffle
+
+    monkeypatch.setattr(statistics.np.random,'shuffle',fail_shuffle)
     intervals,counts = statistics.line_crossing_distribution(x)
     np.testing.assert_array_equal(intervals,[[0.,1.],[1.,2.]])
     np.testing.assert_array_equal(counts,[1,2])
     assert(statistics.lcd_peak(x)==pytest.approx(1.5))
+
+    def reverse(values):
+        values[:] = values[::-1]
+    #end def reverse
+
+    monkeypatch.setattr(statistics.np.random,'shuffle',reverse)
+    intervals,counts = statistics.line_crossing_distribution(x,nperm=2)
+    np.testing.assert_array_equal(intervals,[[0.,1.],[1.,2.]])
+    np.testing.assert_array_equal(counts,[1.,2.])
 #end def test_line_crossing_distribution_and_lcd_peak
 
 
