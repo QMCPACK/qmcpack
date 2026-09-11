@@ -729,6 +729,26 @@ def series_stats(x,t_auto=None):
 
 
 
+############################################################################
+#                                                                          #
+#                         Local series smoothers                           #
+#                         ----------------------                           #
+#                                                                          #
+# The smoothers reduce short-scale variation while preserving the length   #
+# and ordering of a series.  Their centered windows taper at endpoints,    #
+# leaving the first and last values unchanged.                             #
+#                                                                          #
+# Mean smoothing provides simple local averaging.  Median smoothing is     #
+# more resistant to isolated outliers and may be followed by mean          #
+# smoothing.  Polynomial smoothing fits low-order local trends and may     #
+# likewise receive a final mean pass.                                      #
+#                                                                          #
+# Local-median smoothing accepts one sample set per position.  It pools    #
+# nearby sets while omitting the current one, takes a robust local median, #
+# and then applies polynomial or mean smoothing to the resulting series.   #
+#                                                                          #
+############################################################################
+
 
 def mean_smooth(x,m=None):
     """Smooth a sequence with tapered-endpoint moving averages.
@@ -900,7 +920,8 @@ def local_median_smooth(x_list,m=None,poly_smooth=True,post_mean=False):
     taken.  As with the scalar smoothers, windows taper symmetrically at the
     endpoints.  The resulting median sequence is then polynomial-smoothed by
     default, or mean-smoothed when ``poly_smooth`` is false; either result can
-    receive a final mean-smoothing pass.
+    receive a final mean-smoothing pass. Notice that this is not just a 
+    batched version of median_smooth.
 
     Parameters
     ----------
