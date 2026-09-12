@@ -1,0 +1,131 @@
+\documentclass[t,aspectratio=169,%
+presentation
+%handout
+]{beamer}
+\usetheme{Madrid}  % or another theme
+\usepackage{tikz}
+\usetikzlibrary{shadows,shadows.blur,decorations.pathmorphing,decorations.pathreplacing,shadings,mindmap}
+\pgfdeclarelayer{background}
+\pgfsetlayers{background,main}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[T1]{fontenc}
+\usepackage[scale=0.85]{FiraMono}
+\usepackage{ulem}
+\usepackage{svg}
+\svgsetup{inkscapeversion=1.4, inkscape=newer, inkscapelatex=false}
+\transduration{0}
+\usepackage{emoji}
+\usepackage{multimedia}
+\usepackage{eso-pic}
+%\setemojifont{NotoColorEmoji}[Extension=.ttf, Path=/usr/share/fonts/truetype/noto/]
+
+\beamertemplatenavigationsymbolsempty
+
+% Show each frame's [label=...] floating in the top-right corner, but ONLY in
+% handout mode (\documentclass[...,handout]{beamer}). Drawn on the shipout
+% foreground (eso-pic): on top of content so the title bar can't hide it, and
+% with zero layout impact so it never shifts the slide body. Re-evaluated per
+% page, so it tracks the current frame label.  Vanishes in presentation mode.
+\makeatletter
+\newcommand{\insertframelabel}{\@ifundefined{beamer@againname}{}{\beamer@againname}}
+\makeatother
+\mode<handout>{%
+\AddToShipoutPictureFG{%
+  \AtPageUpperLeft{%
+    \put(\LenToUnit{\paperwidth-2mm},\LenToUnit{-2mm}){%
+      \makebox[0pt][r]{\raisebox{-\height}{%
+        \tikz\node[inner sep=3pt, font=\small\ttfamily\bfseries,
+                   text=red!80!black, fill=yellow!30, rounded corners=2pt]
+              {\insertframelabel};}%
+      }%
+    }%
+  }%
+}%
+}
+
+% define some styles
+\tikzset{
+   paper/.style={draw=black!10, blur shadow,
+                 lower left=white, upper left=black!5, upper right=white, lower right=white},
+   irregular border/.style={decoration={random steps, segment length=3mm, amplitude=1mm},
+           decorate,
+     },
+   ragged border/.style={ decoration={random steps, segment length=7mm, amplitude=2mm},
+           decorate,
+   }
+}
+
+% Macro to draw the shape behind the text, when it fits completely in the
+% page
+\def\tornpaper#1{
+\tikz{
+  \node[inner sep=0em] (A) {#1};  % Draw the text of the node
+  \begin{pgfonlayer}{background}  % Draw the shape behind
+  \fill[paper] % recursively decorate the bottom border
+        decorate[irregular border]{decorate{decorate{decorate{decorate[ragged border]{
+        ($(A.south east) - (0, random*5mm)$) -- ($(A.south west) - (0, random*5mm)$)
+        }}}}}
+        -- (A.north west) -- (A.north east) -- cycle;
+  \end{pgfonlayer}}
+}
+
+\definecolor{kwblue}{RGB}{0,102,204}      % Keywords: blue
+\definecolor{varblack}{RGB}{32,32,32}     % Variables: near-black
+\definecolor{symbolGray}{RGB}{100,100,100} % Operators/symbols: dark gray
+\definecolor{bracketGray}{RGB}{80,80,80}   % Brackets/delimiters
+\definecolor{typepur}{RGB}{153,0,153}     % Types: purple
+\definecolor{funcgreen}{RGB}{0,100,0}     % Function names: dark green
+\definecolor{codebackground}{RGB}{245,245,245} % Light gray background
+
+\lstset{
+  language=C++,
+  basicstyle=\ttfamily\small\color{varblack},
+  escapeinside={<@}{@>},
+  keywordstyle=\color{varblack}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{red},
+  keywordstyle=[2]\color{kwblue}\bfseries,
+  morekeywords=[2]{array,array_ref,restriction,dynamic_array,subarray,const_subarray,inplace_array,subarray_ptr,extensions_t,layout_t,device_array,universal_array},
+  morekeywords=[3]{multi},
+  keywordstyle=[3]\color{kwblue},
+  backgroundcolor=\color{codebackground},
+  breaklines=true,
+  showstringspaces=false,
+  columns=fixed,
+  literate={->}{{$\rightarrow$}}2
+}
+
+%\lstMakeShortInline[backgroundcolor=\color{codebackground}]|
+
+\title{Practical introduction to the \textsc{Multi} library}
+\author{Alfredo A. Correa}
+\date{\today}
+ 
+\includeonlyframes{%
+  title,toc,intro1,intro2,%
+  strided1,strided2,strided3,strided4,%
+  boost1,%
+  motivation1,motivation2,%
+  history1,history2,fortran-comparison,numpy-comparison,%
+  uses1,uses2,%
+  inq0,%
+  allocator4,%
+  basic1,basic2,basic4,basic5,%
+  algo1,algo2,algo3,algo4,algo5,algo6,algo7,algo8,%
+  gpurun1,gpurun2,%
+  inq1,inq2,inq3,inq4,inq5,inq6,blasops,%
+  adaptors,adaptors1,adaptors2,%
+  uses3,%
+  demo,conclusion}
+
+\begin{document}
+
+\frame[label=title]{\titlepage}
+
+\begin{frame}[label=toc]{Outline}
+  \tableofcontents
+\end{frame}
+
+\input{frames}
+\end{document}

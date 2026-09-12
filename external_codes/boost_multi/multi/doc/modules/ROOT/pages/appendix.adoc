@@ -1,0 +1,246 @@
+[#appendix]
+
+= Appendix
+
+:idprefix: appendix_
+
+[#appendix_comparison]
+== Comparison to Other Array Libraries (mdspan, Boost.MultiArray, etc)
+
+The pass:[C++23] standard provides `std::mdspan`, a non-owning _multidimensional_ array.
+So here is an appropriate point to compare the two libraries.
+Although the goals are similar, the two libraries differ in their generality and approach.
+
+The Multi library concentrates on _well-defined value- and reference-semantics of arbitrary memory types with regularly arranged elements_ (distributions described by strides and offsets) and _extreme compatibility with STL algorithms_ (via iterators) and other fundamental libraries,
+while `mdspan` concentrates on _arbitrary layouts_ for non-owning memory of a single type (CPU raw pointers).
+Due to the priority of arbitrary layouts, the `mdspan` research team didn't find efficient ways to introduce iterators into the library. 
+Therefore, its compatibility with the rest of the STL is lacking.
+link:https://godbolt.org/z/aWW3vzfPj[Preliminarily], Multi array can be converted (viewed as) `mdspan`.
+
+link:https://www.boost.org/doc/libs/1_82_0/libs/multi_array/doc/user.html[Boost.MultiArray] is the original multidimensional array library shipped with Boost.
+This library can replace Boost.MultiArray in most contexts; it even fulfills the concepts of `boost::multi_array_concepts::ConstMultiArrayConcept` and `...::MutableMultiArrayConcept`.
+Boost.MultiArray has technical and semantic limitations that are overcome in this library, regarding layouts and references;
+it doesn't support value-semantics, iterator support is limited, and it has other technical problems.
+
+link:https://eigen.tuxfamily.org/index.php?title=Main_Page[Eigen] is a popular matrix linear algebra framework library, and as such, it only handles the special 2D (and 1D) array case.
+Instead, the Multi library is dimension-generic and doesn't make any algebraic assumptions for arrays or contained elements; it can still be used to _implement_, or be combined with, dense linear algebra algorithms.
+
+Other frameworks include the OpenCV framework, which is too specialized to make a comparison here.
+
+Here is a table comparing with `mdspan`, R. Garcia's link:https://www.boost.org/doc/libs/1_82_0/libs/multi_array/doc/user.html[Boost.MultiArray] and Eigen.
+link:https://godbolt.org/z/555893MqW[(open with Compiler Explorer)].
+
+|===
+|                                      | Multi (this library)                                                         | mdspan/mdarray                                                                  | Boost.MultiArray (R. Garcia)                                                   | Inria's Eigen
+
+| No external Deps                     | **yes** (only Standard Library pass:[C++17])                                      | **yes** (only Standard Library, pass:[C++17]/pass:[C++26])                      | **yes** (only Boost)                                                           | **yes**
+| Arbitrary number of dims             | **yes**, via positive dimension (compile-time) parameter `D`               | **yes**                                                                         | **yes**                                                                        | no  (only 1D and 2D)
+| Non-owning view of data              | **yes**, via `multi::array_ref<T, D>(ptr, {n1, n2, ..., nD})`              | **yes**, via `mdspan m{T*, extents{n1, n2, ..., nD}};`                          | **yes**, via `boost::multi_array_ref<T, D>(T*, boost::extents[n1][n2]...[nD])` | **yes**, via `Eigen::Map<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic>>(ptr, n1, n2)`
+| Compile-time dim size                | no                                                                         | **yes**, via template parameters `mdspan{T*, extent<16, dynamic_extents>+{32}+ }` | no                                                                             | **yes**, via `Eigen::Array<T, N1, N2>`
+| Array values (owning data)           | **yes**, via `multi::array<T, D>({n1, n2, ..., nD})`                       | yes? (planned for `mdarray`)                                                    | **yes**, via `boost::multi_array<T, D>(boost::extents[n1][n2]...[nD])`         | **yes**, via `Eigen::Array<T>(n1, n2)`
+| Value semantic (Regular)             | **yes**, via cctor, mctor, assign, massign, auto decay of views            | yes? (planned for `mdarray`)                                                    | partial, assignment on equal extents                                            | **yes** (?)
+| Move semantic                        | **yes**, via mctor and massign                                             | yes? for `mdarray` (depends on adapted container)                               | no (pass:[C++98] library)                                                             | **yes** (?)
+| const-propagation semantics          | **yes**, via `const` or `const&`                                           | no, const mdspan elements are assignable!                                       | no, inconsistent                                                               | (?)
+| Element initialization               | **yes**, via nested init-list                                              | no (?)                                                                          | no                                                                             | no, only delayed init via `A << v1, v2, ...;`
+| References w/no-rebinding            | **yes**, assignment is deep                                                | no, assignment of mdspan rebinds!                                               | **yes**                                                                        | **yes** (?)
+| Element access                       | **yes**, via `A(i, j, ...)` or `A[i][j]...`                                | **yes**, via `A[i, j, ...]`                                                     | **yes**, via `A[i][j]...`                                                      | **yes**, via `A(i, j)` (2D only)
+| Partial element access               | **yes**, via `A[i]` or `A(i, multi::all)`                                  | no, only via `submdspan(A, i, full_extent)`                                     | **yes**, via `A[i]`                                                            | **yes**, via `A.row(i)`
+| Subarray views                       | **yes**, via `A({0, 2}, {1, 3})` or `A(1, {1, 3})`                         | **yes**, via `submdspan(A, std::tuple{0, 2}, std::tuple{1, 3})`                 | **yes**, via `A[indices[range(0, 2)][range(1, 3)]]`                            | **yes**, via `A.block(i, j, di, dj)`
+| Subarray with lower dim              | **yes**, via `A(1, {1, 3})`                                                | **yes**, via `submdspan(A, 1, std::tuple{1, 3})`                                | **yes**, via `A[1][indices[range(1, 3)]]`                                      | **yes**, via `A(1, Eigen::placeholders::all)`
+| Subarray w/well def layout           | **yes** (strided layout)                                                   | no                                                                              | **yes** (strided layout)                                                       | **yes** (strided)
+| Recursive subarray                   | **yes** (layout is stack-based and owned by the view)                      | **yes** (?)                                                                     | no (subarray may dangle layout, design bug?)                                   | **yes** (?) (1D only)
+| Restrictions (lazy arrays)           | **yes**, `[](auto is...) {...} ^ extensions_t<D>(...)`                     | no                                                                              | no                                                                             | no?
+| Expression templates                 | no (implementable through Restrictions, see section)                       | no                                                                              | no                                                                             | **yes** (via operator overloading `A + B * C`)
+| Custom Allocators                     | **yes**, via `multi::array<T, D, Alloc>`                                  | yes(?) through `mdarray`'s adapted container                                    | **yes** (stateless?)                                                           | no
+| PMR Allocators                        | **yes**, via `multi::pmr::array<T, D>`                                    | yes(?) through `mdarray`'s adapted container                                    | no                                                                             | no
+| Fancy pointers / references          | **yes**, via `multi::array<T, D, FancyAlloc>` or views                     | no                                                                              | no                                                                             | no
+| Stride-based Layout                  | **yes**                                                                    | **yes**                                                                         | **yes**                                                                        | **yes**
+| Fortran-ordering                     | **yes**, only for views, e.g. resulting from transposed views               | **yes**                                                                         | **yes**.                                                                       | **yes**
+| Zig-zag / Hilbert ordering           | no                                                                         | **yes**, via arbitrary layouts (no inverse or flattening)                       | no                                                                             | no
+| Arbitrary layout                     | no                                                                         | **yes**, possibly inefficient, no efficient slicing                             | no                                                                             | no
+| Flattening of elements               | **yes**, via `A.elements()` range (efficient representation)               | **yes**, but via indices roundtrip (inefficient)                                | no, only for allocated arrays                                                  | no, not for subblocks (?)
+| Iterators                            | **yes**, standard compliant, random-access-iterator                        | no                                                                              | **yes**, limited                                                               | no
+| Multidimensional iterators (cursors) | **yes** (experimental)                                                     | no                                                                              | no                                                                             | no
+| STL algorithms or Ranges             | **yes**                                                                    | no, limited via `std::cartesian_product`                                        | **yes**, some do not work                                                      | no
+| Compatibility with Boost             | **yes**, serialization, interprocess  (see sections)                       | no                                                                              | no                                                                             | no
+| Compatibility with Thrust or GPUs    | **yes**, via flatten views (loop fusion), thrust-pointers/-refs            | **yes** (ad-hoc, link:https://arxiv.org/pdf/2010.06474[needs markings], no pointer-type propagation) | no                                                                             | no
+| Used in production                   | link:https://qmcpack.org/[QMCPACK], link:https://gitlab.com/npneq/inq[INQ] | (?) , experience from Kokkos incarnation                                        | **yes** (?)                                                                    | link:https://eigen.tuxfamily.org/index.php?title=Main_Page#Projects_using_Eigen[**yes**]
+|===
+
+[#appendix_fortran]
+== Multi for Fortran Programmers
+
+This section summarizes simple cases translated from Fortran syntax to pass:[C++] using the library.
+The library strives to give a familiar feeling to those who use multidimensional arrays in Fortran.
+Arrays can be indexed using square brackets (`[]`) or parentheses (`()`), which would be more familiar to Fortran syntax.
+The most significant differences are that array indices in Fortran start at `1`, and that index ranges are specified as closed intervals, while in Multi, they start by default at `0`, and ranges are half-open, following pass:[C++] conventions.
+Like in Fortran, arrays are not initialized automatically for simple types (e.g., numeric); such initialization needs to be explicit.
+
+|===
+|                             | Fortran 90                                           | pass:[C++] Multi
+
+| Declaration/Construction 1D | `real, dimension(3) :: numbers` (at top)           | `multi::array<float, 1> numbers(3);` (at scope)
+| Initialization (3 elements) | `numbers = (/ 1.0, 2.0, 3.0 /)`                        | `numbers = { 1.0F, 2.0F, 3.0F };`
+| Element assignment (3rd)    | `numbers(3) = 99.0`                                | `numbers[2] = 99.0F;`
+| Element access (print 3rd)  | `print *, numbers(3)`                              | `std::cout << numbers[2] << '\n';`
+| Printing all elements       | `print *, numbers`                                 | `std::cout << numbers;` (needs `multi/io.hpp`) or  `std::print("{}", numbers);` (needs pass:[C++23])
+| Re-initialization           | `numbers = (/ 10.0, 20.0, 30.0 /)`                | `numbers = {10.0F, 20.0F, 30.0F};`
+|===
+
+In the more general case for the dimensionality, we have the following correspondence:
+
+|===
+|                              | Fortran 90                                           | pass:[C++] Multi
+
+| Construction 2D (3 by 3)     | `real(kind=8) :: A2D(3,3)` (at top)               | `multi::array<double, 2> A2D({3, 3});` (at scope)
+| Construction 2D (2 by 2)     | `real(kind=8) :: B2D(2,2)` (at top)               | `multi::array<double, 2> B2D({2, 2});` (at scope)
+| Construction 1D (3 elements) | `real(kind=8) :: v1D(3)` (at top)                 | `multi::array<double, 1> v1D(3);` (at scope)
+| Assign the 1st column of A2D | `v1D(:) = A2D(:,1)`                               | `v1D( _ ) = A2D( _ , 0 );`
+| Assign the 1st row of A2D    | `v1D(:) = A2D(1,:)`                               | `v1D( _ ) = A2D( 0 , _ );`
+| Assign upper part of A2D     | `B2D = A2D(1:2,1:2)`                              | `B2D( _ , _ ) = A2D({0, 2}, {0, 2});`
+| Allocatable  declaration     | `real(kind=8), allocatable :: a(:,:)` | `multi::array<double, 2> a;`
+| Allocation                   | `allocate(a(10,5))` | `a.reextent({10, 5})` or `a = multi::array<double, 2>({10, 5})`
+| Deallocation                 | `deallocate(a)`     | `a.clear()` or `a = {}`
+|===
+
+Note that these correspondences are notationally logical;
+internal representation (memory ordering) can still be different, affecting operations that interpret 2D arrays as contiguous elements in memory.
+
+Range notation such as `1:2` is replaced by `{0, 2}`, which considers both the difference in the start index and the half-open interval notation in the pass:[C++] conventions.
+Stride notation such as `1:10:2` (i.e., from first to tenth included, every two elements) is replaced by `{0, 10, 2}`.
+Complete range interval (single `:` notation) is replaced by `multi::_`, (or by `pass:c[_]` after the declaration `using multi::_;`).
+These rules extend to higher dimensionality.
+
+Multi provides algebraic operators that are expanded elementwise.
+For example, a Fortran statement like `C = A + B` or `C = C + A` is translated as this:
+
+[source,cpp]
+----
+using multi::elementwise::operator+;
+
+multi::array C = A + B;
+C = C + A;  // assigning to itself is ok for elementwise operations
+----
+
+For one-dimensional arrays, this is equivalent to:
+
+[source,cpp]
+----
+std::transform(A.begin(), A.end(), B.begin(), A.begin(), std::plus{});  // valid for 1D arrays only
+----
+
+Or, in the general dimensionality the equivalent code is:
+
+[source,cpp]
+----
+auto&&      Aelems = A.elements();
+auto const& Belems = B.elements();
+std::transform(Aelems.begin(), Aelems.end(), Belems.begin(), Aelems.begin(), std::plus<>{});  // valid for arbitrary dimension
+----
+
+or
+
+[source,cpp]
+----
+std::ranges::transform(A.elements(), B.elements(), A.elements().begin(), std::plus<>{});  // alternative using C++20 ranges
+----
+
+A Fortran statement like `C = 2.0*C` is rewritten as
+
+[source,cpp]
+----
+using multi::elementwise::operator*;
+
+C = 2.0*C;  // self-assignment is ok because this is an elementwise operation
+----
+(equivalent to `std::ranges::transform(C.elements(), C.elements().begin(), [](auto const& e) { return 2.0*e; });`.)
+
+Simple loops can be mapped as well, taking into account indexing differences (pass:[C++] version on the right):
+
+[source,fortran]
+-----
+do i = 1, 5         ! for(int i = 0; i != 5; ++i) {
+  do j = 1, 5       !   for(int j = 0; j != 5; ++j) {
+    D2D(i, j) = 0   !     D2D(i, j) = 0;
+  end do            !   }
+end do              ! }
+-----
+
+link:https://godbolt.org/z/77onne46W[(open with Compiler Explorer)]
+
+However, algorithms like `transform`, `reduce`, `transform_reduce` and `for_each` offer a higher degree of control over operations, including memory allocations if needed, and even enable parallelization, providing a higher level of flexibility.
+In this case, `std::fill(D2D.elements().begin(), D2D.elements().end(), 0);` will also work.
+
+[#appendix_apl]
+== Multi for APL Programmers
+
+|===
+|                             | APL                       | pass:[C++] Multi
+
+| Construction 1D (3 elems)   | `V ← 1 2 3`               | `+multi::array<int, 1> V = {1, 2, 3};+`
+| Construction 2D (2 by 3)    | `A ← 2 3 ⍴ 1 2 3 4 5 6`   | `+multi::array<int, 2> A = {{1, 2, 3}, {4, 5, 6}};+`
+| Indexing                    | `A[i;j]`                 | `+A[i][j]+` or `+A(i, j)+` (or `+A[i, j]+` in pass:[C++23])
+| row `i`                     | `A[i;]`                   | `+A(i, _)+` or `A[i]` or `A[i, _]` (pass:[C++23])
+| column `j`                  | `A[;j]`                   | `+A(_, j)+` (or `+A[_, j]+` in pass:[C++23])
+| subrange of indices `I`     | `V[I]`                    | `+V(I)+` or `+V({f, l})+` (limited: `I` must be an integer interval or use `multi::restriction` https://godbolt.org/z/Ka3f3T9xj)
+| Compress                    | `U / V`                   | no (approx: https://godbolt.org/z/z8M6qhq5G)
+| Compress last axis          | `U / A`                   | no
+| Restructuring (elements)    | `,A`                      | `A.elements()`
+| Restructuring (1D to 2D)    | `3 4 ⍴ V`                 | limited (approx: `multi::array_ref<int, 2>(V.data_elements(), {3, 4})`)
+| Restructuring (2D to 2D)    | `3 4 ⍴ A`                 | limited (approx: `multi::array_ref<int, 2>(A.data_elements(), {3, 4})`)
+| Catenation                  | `V, W`                    | no (approx: https://godbolt.org/z/cKcbWTooG)
+| Transposition               | `⍉ A`                     | `~A` or `A.transposed()`
+| Main diagonal               | `1 1 ⍉ A`                 | `A.diagonal()`
+| Drop                        | `3 ↓ V`                   | `V.dropped(3)`
+| Drop (from both sides)      | `2 -1 ↓ A`                | `A.taked(A.size() - 1).dropped(2)`
+| Rotate (3 places left)      | `3 ⌽ A`                   | no (approx: use `std::rotate`)
+| Rotate (2 places right)     | `-2 ⌽ A`                  | no (approx: use `std::rotate`)
+| Reversal                    | `⌽ V`                     | `V.reversed()`
+| column reversed             | `⌽ [1] A`                 | `+~((~A).reversed())+`
+|===
+
+inspired on: https://dl.acm.org/doi/epdf/10.1145/390015.808410
+
+[#appendix_numpy]
+== Multi for NumPy Programmers
+
+NumPy and Multi share the conventions that matter most for translation: 0-based indexing, half-open ranges (`[first, last)`), and row-major (C-order) storage by default, so most indexing and slicing maps almost directly.
+
+There are two important differences to keep in mind.
+First, *assignment semantics*: in NumPy, `B = A` makes `B` another name for the same array (and a slice `A[i:j]` is a view), so an independent array requires an explicit `A.copy()`; in Multi, `auto B = A;` is a deep copy (value semantics), while a reference into existing data is requested explicitly with `auto&& B = A(...);`.
+Second, *scope*: unlike NumPy, Multi is not a numerical library, so element-wise arithmetic, broadcasting, reshaping, and concatenation are not first-class operations -- they are expressed with standard algorithms over `.elements()`, or are limited.
+
+|===
+|                              | NumPy                              | pass:[C++] Multi
+
+| Import / include             | `+import numpy as np+`             | `+#include <boost/multi/array.hpp>+`
+| Construction 1D              | `+A = np.array([1, 2, 3])+`        | `+multi::array<int, 1> A = {1, 2, 3};+`
+| Construction 2D              | `+A = np.array([[1, 2], [3, 4]])+` | `+multi::array<int, 2> A = {{1, 2}, {3, 4}};+`
+| Zeros (given shape)          | `+np.zeros((3, 4))+`               | `+multi::array<double, 2>({3, 4}, 0.0)+`
+| Uninitialized (given shape)  | `+np.empty((3, 4))+`               | `+multi::array<double, 2>({3, 4})+`
+| Shape                        | `+A.shape+`                        | `+A.sizes()+`
+| Number of dimensions         | `+A.ndim+`                         | `+A.num_dimensions()+` (or `+decltype(A)::rank{}+`)
+| Total number of elements     | `+A.size+`                         | `+A.num_elements()+`
+| Length of first axis         | `+len(A)+`                         | `+A.size()+`
+| Element access               | `+A[i, j]+`                        | `+A[i][j]+` or `+A(i, j)+` (or `+A[i, j]+` in pass:[C++23])
+| Row `+i+`                    | `+A[i]+` or `+A[i, :]+`            | `+A[i]+` or `+A(i, _)+`
+| Column `+j+`                 | `+A[:, j]+`                        | `+A(_, j)+`
+| Slice of rows                | `+A[i0:i1]+`                       | `+A({i0, i1})+` or `+A.sliced(i0, i1)+`
+| 2D block                     | `+A[i0:i1, j0:j1]+`                | `+A({i0, i1}, {j0, j1})+`
+| Strided slice (step 2)       | `+A[::2]+`                         | `+A.strided(2)+`
+| Transpose                    | `+A.T+` or `+np.transpose(A)+`     | `+~A+` or `+A.transposed()+`
+| Main diagonal                | `+np.diag(A)+` or `+A.diagonal()+` | `+A.diagonal()+`
+| Flatten (view)               | `+A.ravel()+`                      | `+A.elements()+`
+| Reshape                      | `+A.reshape(3, 4)+`                | limited (approx: `+multi::array_ref<int, 2>(A.data_elements(), {3, 4})+`)
+| Iterate over rows            | `+for row in A[1]:+`               | `+for(auto&& row : A[1])+`
+| Deep copy                    | `+B = A.copy()+`                   | `+auto B = A;+` (use `+auto&& B = A+` or `+= A()+` for a shallow reference)
+| View / reference             | `+B = A[i0:i1]+`                   | `+auto&& B = A({i0, i1});+`
+| Fill with a constant         | `+A[:] = 7+` (or `+A.fill(7)+`)    | `+std::fill(A.elements().begin(), A.elements().end(), 7)+` or equivalent
+| Sum of all elements          | `+A.sum()+`                        | `+std::reduce(A.elements().begin(), A.elements().end())+` or equivalent
+| Element-wise `+A + B+`       | `+A + B+`                          | no (use `+multi::elementwise+` operations)
+| Broadcasting                 | `+A + b+`                          | no (use `+multi::elementwise+` operations)
+| Concatenation                | `+np.concatenate([A, B])+`         | no (approx: use `+std::ranges::concat+`)
+|===
+
+> **Thanks** to Joaquín López Muñoz and Andrzej Krzemienski for the critical reading of the documentation, to Sean Parent for inspiring ideas, and especially to Matt Borland for his help integrating the Boost infrastructure into the unit tests, and for the formatting of the documentation.
+
