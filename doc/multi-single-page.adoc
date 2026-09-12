@@ -1,0 +1,40 @@
+= https://gitlab.com/correaa/boost-multi[Boost.Multi]
+Alfredo A. Correa (last modified: {docdatetime})
+:toc: left
+:toclevels: 2
+:idprefix:
+:docinfo: private-footer
+:source-highlighter: rouge
+:source-language: c++
+:nofooter:
+:sectlinks:
+:leveloffset: +1
+:imagesdir: ../img
+:stem: latexmath
+:small: pass:[<font style="font-size:90%">]
+:small-end: pass:[</font>]
+
+++++
+<style>
+.imageblock > .title {
+  text-align: inherit;
+}
+
+.indent {
+  padding-left: 2rem;
+}
+
+.bordered_table th, .bordered_table td {
+  border: 1px solid lightgray;
+}
+</style>
+++++
+
+include::modules/ROOT/pages/intro.adoc[]
+include::modules/ROOT/pages/install.adoc[]
+include::modules/ROOT/pages/primer.adoc[]
+include::modules/ROOT/pages/tutorial.adoc[]
+include::modules/ROOT/pages/interop.adoc[]
+include::modules/ROOT/pages/technical.adoc[]
+include::modules/ROOT/pages/reference.adoc[]
+include::modules/ROOT/pages/appendix.adoc[]
