@@ -9,3 +9,6 @@ run_qmc_app(
   TEST_ADDED
   TEST_LABELS
   InSe-S1.xml)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

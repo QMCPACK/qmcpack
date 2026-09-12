@@ -344,3 +344,6 @@ qmc_run_and_check(
   5
   1
   TRUE)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

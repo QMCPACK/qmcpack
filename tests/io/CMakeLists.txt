@@ -241,3 +241,6 @@ run_restart_and_check(
   3
   check_batched.sh
   true)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

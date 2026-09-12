@@ -203,7 +203,6 @@ function(
   # set additional test properties when the test gets added
   set(TEST_LABELS_TEMP "")
   if(TEST_ADDED_TEMP)
-    add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
     set_property(
       TEST ${TESTNAME}
       APPEND
