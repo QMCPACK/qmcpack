@@ -76,7 +76,7 @@ public:
       parameters    = {"basis", "energy_matrix", "integrator", "evaluator", "scale",
                        "corner", "center", "points", "samples", "warmup", "timestep",
                        "use_drift", "check_overlap", "check_derivatives", "acceptance_ratio", "rstats",
-                       "normalized", "volumed_normed"};
+                       "normalized", "volume_normed"};
       bools         = {"energy_matrix", "use_drift", "normalized", "volume_normed",
                        "check_overlap", "check_derivatives", "rstats", "acceptance_ratio"};
       enums         = {"integrator", "evaluator"};
