@@ -1,6 +1,0 @@
-# asciidoctor-pdf theme for the single-file docs build (doc/single.adoc).
-# Tightens code/listing line-height to 1 so box-drawing diagrams (├ ┼ ┴ ─ │)
-# connect vertically instead of showing gaps.
-extends: default
-code:
-  line_height: 1

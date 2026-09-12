@@ -1,9 +1,0 @@
-preprocessorErrorDirective
-missingIncludeSystem
-unhandledChar
-checkersReport
-syntaxError
-unmatchedSuppression
-unusedFunction
-constParameterReference
-normalCheckLevelMaxBranches

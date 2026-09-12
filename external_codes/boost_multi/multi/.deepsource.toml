@@ -1,9 +1,0 @@
-version = 1
-
-test_patterns = ["test/**"]
-
-[[analyzers]]
-name = "test-coverage"
-
-[[analyzers]]
-name = "cxx"
