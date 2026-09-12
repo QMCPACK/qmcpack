@@ -415,7 +415,6 @@ if(NOT QMC_COMPLEX)
     1
     1
     TEST_ADDED_EIGENVALUE_CHOICE
-    ""
     det-check-eigenvalue-choice.xml
     )
   # Check that the general eigenvalue solver was chosen. Overwrite the usual passing regular expression.

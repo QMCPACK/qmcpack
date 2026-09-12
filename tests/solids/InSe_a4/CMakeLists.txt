@@ -1,5 +1,4 @@
 set(TEST_ADDED FALSE)
-set(TEST_LABELS "")
 
 run_qmc_app(
   deterministic-InSe_a4_slab
@@ -7,7 +6,6 @@ run_qmc_app(
   1
   1
   TEST_ADDED
-  TEST_LABELS
   InSe-S1.xml)
 
 get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)

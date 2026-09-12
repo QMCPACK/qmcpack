@@ -2910,7 +2910,6 @@ qmc_run_and_check(
 
 # Orbital images tests
 set(TEST_ADDED FALSE)
-set(TEST_LABELS "")
 
 run_qmc_app(
   deterministic-diamondC_1x1x1_pp-orbital_images-1-1
@@ -2918,7 +2917,6 @@ run_qmc_app(
   1
   1
   TEST_ADDED
-  TEST_LABELS
   det_qmc_orbital_images.in.xml)
 # Override the default check for "QMCPACK execution completed successfully"
 set_tests_properties(deterministic-diamondC_1x1x1_pp-orbital_images-1-1
