@@ -24,3 +24,6 @@ set_property(
   TEST ${UTEST_NAME}
   APPEND
   PROPERTY LABELS "afqmc")
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

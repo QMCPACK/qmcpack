@@ -36,8 +36,7 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
         PROPERTY ENVIRONMENT "OMP_TARGET_OFFLOAD=mandatory")
     endif()
 
-    set(TEST_LABELS_TEMP "")
-    add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
+
     set_property(
       TEST ${TESTNAME}
       APPEND

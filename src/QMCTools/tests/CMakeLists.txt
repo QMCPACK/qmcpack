@@ -189,3 +189,6 @@ set_tests_properties(
              OMP_NUM_THREADS=3
              PROCESSOR_AFFINITY
              TRUE)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")
