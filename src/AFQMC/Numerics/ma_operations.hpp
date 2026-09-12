@@ -600,7 +600,7 @@ T invert(MultiArray2D&& m, T LogOverlapFactor)
   using element         = typename std::decay<MultiArray2D>::type::element;
   using allocator_type  = typename std::decay<MultiArray2D>::type::allocator_type;
   using iallocator_type = typename allocator_type::template rebind<int>::other;
-  using extensions      = typename boost::multi::layout_t<1u>::extents_type;
+  using extensions      = boost::multi::extents_t<1u>;
   using qmcplusplus::afqmc::fill2D;
   auto bufferSize(invert_optimal_workspace_size(std::forward<MultiArray2D>(m)));
   boost::multi::array<element, 1, allocator_type> WORK(extensions{bufferSize}, m.get_allocator());
