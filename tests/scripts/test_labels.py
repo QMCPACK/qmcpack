@@ -30,20 +30,20 @@ def error(msg=None):
 #     (bug/unsupported/poor/unknown are comprehensive for failures)
 #
 #   failure type classification of unstable tests
-#     hard_fail              - ungraceful crash (segfault, etc) 
-#     abort                  - controlled abort 
+#     hard_fail              - ungraceful crash (segfault, etc)
+#     abort                  - controlled abort
 #     check_fail             - fails rigorous non-statistical check (e.g. checksum)
 #     reference_stat_fail    - fails separate reference level check by > 5 sigma
 #     definite_stat_fail     - statistical failure by > 5 sigma
 #     intermittent_stat_fail - statistical failure by < 5 sigma
 #     deterministic_fail     - fails non-rigorous deterministic check
 #     (failure types are comprehensive for failures)
-#  
+#
 #   test quality categories
-#     good_test       - test well designed: test fail means there is a bug  
+#     good_test       - test well designed: test fail means there is a bug
 #                       any failure means: action needed to fix QMCPACK
 #     poor_test       - test poorly designed and failure likely reflects this
-#                       regardless of pass/fail: action needed to improve test 
+#                       regardless of pass/fail: action needed to improve test
 #     quality_unknown - test quality has not yet been assessed
 #                       code failure means: action needed to fix QMCPACK
 #                       statistical failure means: prioritize quality assessment
@@ -151,14 +151,14 @@ def create_label_sets():
         'short-diamondC_2x1x1_hybridrep_pp-vmc_sdj',
         'short-bccH_1x1x1_ae-dmc_sdj',
         'short-NiO_a4_e48_pp-dmc-TMv1v3_sdj',
-        'long-heg_14_gamma-sj-1-16',            
+        'long-heg_14_gamma-sj-1-16',
         'short-chn_ae_cuspCorrection-vmc',
         'short-li2_sto-sj_dmc',
         'short-LiH_dimer_ae_qp-vmc_hf_noj',
         'short-LiH_dimer_ae_pyscf-vmc_hf_noj',
         'short-LiH_ae-vmc_msdj-1-16',
-        'short-LiH_ae-vmc_msdj_noj-1-16',        
-        'vmc_short_C2_pp_msdj-H5',    
+        'short-LiH_ae-vmc_msdj_noj-1-16',
+        'vmc_short_C2_pp_msdj-H5',
         ])
 
     poor_test |= set([
@@ -261,7 +261,7 @@ def create_label_sets():
     if comp:
         None
     #end if
-    
+
     # mixed precision specific (but general otherwise)
     if mixed:
         abort |= set([
@@ -356,7 +356,7 @@ def create_label_sets():
                 | abort               \
                 | check_fail          \
                 | reference_stat_fail \
-                | definite_stat_fail 
+                | definite_stat_fail
 
     fail = weak_fail | strong_fail
 
@@ -371,7 +371,7 @@ def create_label_sets():
     # a failing test needs to be followed up with a reference-level statistical test
     #   if it is insufficient on its own to imply a bug
     # currently this includes intermittent failures with test data of unverified quality
-    #   and deterministic failures  
+    #   and deterministic failures
     cause_unknown = unstable - bug - unsupported - poor_test
 
 
@@ -476,7 +476,7 @@ def check_positive_label_sets(positive_label_sets):
 
 # extract test name and build flags from args
 try:
-    full_test,qmc_complex,qmc_mixed = sys.argv[1:]
+    full_test_list,qmc_complex,qmc_mixed = sys.argv[1:]
     qmc_complex = qmc_complex=='1'
     qmc_mixed   = qmc_mixed=='1'
     cpu   = True
@@ -489,22 +489,6 @@ try:
     mixed = qmc_mixed
 except:
     error("command line args: " + str(sys.argv))
-#end try
-
-
-# get a shortened name for the test without #mpi and #omp parts
-try:
-    test = full_test
-    tokens = test.replace('-','_').split('_')
-    if len(tokens)>1:
-        mpi = tokens[-2]
-        omp = tokens[-1]
-        if mpi.isdigit() and omp.isdigit():
-            test = full_test.rsplit('-',2)[0]
-        #end if
-    #end if
-except:
-    error()
 #end try
 
 
@@ -524,66 +508,90 @@ except:
 #end try
 
 
-# get labels from known sets
-try:
-    labels = []
-    for label,label_set in positive_label_sets.items():
-        if test in label_set or full_test in label_set:
-            labels.append(label)
+full_tests = full_test_list.split(';')
+
+for full_test in full_tests:
+    if not full_test:
+        continue
+
+    # get a shortened name for the test without #mpi and #omp parts
+    try:
+        test = full_test
+        tokens = test.replace('-','_').split('_')
+        if len(tokens)>1:
+            mpi = tokens[-2]
+            omp = tokens[-1]
+            if mpi.isdigit() and omp.isdigit():
+                test = full_test.rsplit('-',2)[0]
+            #end if
         #end if
-    #end for
-    for label,label_set in negative_label_sets.items():
-        if test not in label_set and full_test not in label_set:
-            labels.append(label)
+    except:
+        error()
+    #end try
+
+
+    # get labels from known sets
+    try:
+        labels = []
+        for label,label_set in positive_label_sets.items():
+            if test in label_set or full_test in label_set:
+                labels.append(label)
+            #end if
+        #end for
+        for label,label_set in negative_label_sets.items():
+            if test not in label_set and full_test not in label_set:
+                labels.append(label)
+            #end if
+        #end for
+    except:
+        error()
+    #end try
+
+
+    # directly apply labels based on test names/pattern matching
+    try:
+        if test.startswith('deterministic'):
+            labels.append('deterministic')
         #end if
-    #end for
-except:
-    error()
-#end try
+    except:
+        error()
+    #end try
 
 
-# directly apply labels based on test names/pattern matching
-try:
-    if test.startswith('deterministic'):
-        labels.append('deterministic')
-    #end if
-except:
-    error()
-#end try
-
-
-try:
-    if test.startswith('qe-'):
-        labels.append('converter')
-    #end if
-except:
-    error()
-#end try
-
-
-# mark all statistical tests as unstable
-#   some of these work well, and others do not
-#   cause of intermittent statistical failures needs further investiagion
-try: 
-    if test.startswith('short-') or test.startswith('long-') or test.startswith('estimator-'):
-        if 'unstable' not in labels:
-            labels.append('unstable')
+    try:
+        if test.startswith('qe-'):
+            labels.append('converter')
         #end if
-    #end if
-except:
-    error()
-#end try
+    except:
+        error()
+    #end try
 
 
-# make a ctest list of the labels
-try:
-    ctest_labels = ';'.join(labels)
-except:
-    error()
-#end try
+    # mark all statistical tests as unstable
+    #   some of these work well, and others do not
+    #   cause of intermittent statistical failures needs further investiagion
+    try:
+        if test.startswith('short-') or test.startswith('long-') or test.startswith('estimator-'):
+            if 'unstable' not in labels:
+                labels.append('unstable')
+            #end if
+        #end if
+    except:
+        error()
+    #end try
 
 
-# print out the label list for ctest to read
-sys.stdout.write(ctest_labels)
+    # make a ctest list of the labels
+    try:
+        ctest_labels = ';'.join(labels)
+    except:
+        error()
+    #end try
+
+
+    # print out the label list for ctest to read
+    sys.stdout.write(ctest_labels + '\n')
+#end for
+
 sys.exit(0)
 

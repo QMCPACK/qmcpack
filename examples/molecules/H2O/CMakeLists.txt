@@ -16,3 +16,6 @@ if(NOT QMC_COMPLEX)
     H2O_SCALARS # check the DMC data
   )
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

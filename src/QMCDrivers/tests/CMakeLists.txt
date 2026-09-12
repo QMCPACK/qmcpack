@@ -134,3 +134,6 @@ if(HAVE_MPI)
     set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
   endforeach()
 endif(HAVE_MPI)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

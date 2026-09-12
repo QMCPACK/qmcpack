@@ -102,3 +102,6 @@ if(NOT MIXED_PRECISION)
 else()
   message(VERBOSE "Skipping bccH_2x2x2_ae derivative and optimization tests in mixed precision (QMC_MIXED_PRECISION=1)")
 endif(NOT MIXED_PRECISION)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")
