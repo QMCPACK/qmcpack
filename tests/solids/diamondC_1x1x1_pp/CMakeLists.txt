@@ -1286,6 +1286,226 @@ if(add_estimator_tests AND NOT QMC_MIXED_PRECISION)
     -r
     qmc-ref/det_qmc_momentum_vmc_dmc.s001.stat_ref_momentum_4_4${OFEXT}.dat)
 
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-estimator-spindensity-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_spindens_batched.in.xml
+    1
+    1
+    check_stats.py
+    -s
+    0
+    -q
+    spindensity
+    -e
+    0
+    -c
+    8
+    -p
+    det_qmc_spindens_batched
+    -r
+    qmc-ref/det_qmc_spindens_batched.s000.stat_ref_spindensity_1_1.dat)
+
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-estimator-spindensity-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_spindens_mw_batched.in.xml
+    4
+    4
+    check_stats.py
+    -s
+    0
+    -q
+    spindensity
+    -e
+    0
+    -c
+    8
+    -p
+    det_qmc_spindens_mw_batched
+    -r
+    qmc-ref/det_qmc_spindens_mw_batched.s000.stat_ref_spindensity_4_4.dat)
+
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-spindensity-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_spindens_vmc_dmc_batched.in.xml
+    1
+    1
+    check_stats.py
+    -s
+    1
+    -q
+    spindensity
+    -e
+    1
+    -c
+    8
+    -p
+    det_qmc_spindens_vmc_dmc_batched
+    -r
+    qmc-ref/det_qmc_spindens_vmc_dmc_batched.s001.stat_ref_spindensity_1_1${OFEXT}.dat)
+
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-spindensity-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_spindens_vmc_dmc_batched.in.xml
+    4
+    4
+    check_stats.py
+    -s
+    1
+    -q
+    spindensity
+    -e
+    1
+    -c
+    8
+    -p
+    det_qmc_spindens_vmc_dmc_batched
+    -r
+    qmc-ref/det_qmc_spindens_vmc_dmc_batched.s001.stat_ref_spindensity_4_4${OFEXT}.dat)
+
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-noJ-estimator-onebodydensitymatrices-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_1rdm_noJ_batched.in.xml
+    1
+    1
+    check_stats.py
+    -s
+    0
+    -q
+    1rdm
+    -e
+    0
+    -c
+    8
+    -p
+    det_qmc_1rdm_noJ_batched
+    -r
+    qmc-ref/det_qmc_1rdm_noJ_batched.s000.stat_ref_1rdm${OFEXT}.dat)
+
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-J2-estimator-onebodydensitymatrices-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_1rdm_J2_batched.in.xml
+    1
+    1
+    check_stats.py
+    -s
+    0
+    -q
+    1rdm
+    -e
+    0
+    -c
+    8
+    -p
+    det_qmc_1rdm_J2_batched
+    -r
+    qmc-ref/det_qmc_1rdm_J2_batched.s000.stat_ref_1rdm${OFEXT}.dat)
+
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-onebodydensitymatrices-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_1rdm_vmc_dmc_batched.in.xml
+    1
+    1
+    check_stats.py
+    -s
+    1
+    -q
+    1rdm
+    -e
+    0
+    -c
+    8
+    -p
+    det_qmc_1rdm_vmc_dmc_batched
+    -r
+    qmc-ref/det_qmc_1rdm_vmc_dmc_batched.s001.stat_ref_1rdm_1_1${OFEXT}.dat)
+
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-onebodydensitymatrices-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_1rdm_vmc_dmc_batched.in.xml
+    4
+    4
+    check_stats.py
+    -s
+    1
+    -q
+    1rdm
+    -e
+    0
+    -c
+    8
+    -p
+    det_qmc_1rdm_vmc_dmc_batched
+    -r
+    qmc-ref/det_qmc_1rdm_vmc_dmc_batched.s001.stat_ref_1rdm_4_4${OFEXT}.dat)
+
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-estimator-momentum-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_momentum_batched.in.xml
+    1
+    1
+    check_stats.py
+    -s
+    0
+    -q
+    momentum
+    -e
+    0
+    -c
+    5
+    -p
+    det_qmc_momentum_batched
+    -r
+    qmc-ref/det_qmc_momentum_batched.s000.stat_ref_momentum_1_1.dat)
+
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_momentum_vmc_dmc_batched.in.xml
+    1
+    1
+    check_stats.py
+    -s
+    1
+    -q
+    momentum
+    -e
+    0
+    -c
+    5
+    -p
+    det_qmc_momentum_vmc_dmc_batched
+    -r
+    qmc-ref/det_qmc_momentum_vmc_dmc_batched.s001.stat_ref_momentum_1_1${OFEXT}.dat)
+
+  simple_run_and_check(
+    deterministic-diamondC_1x1x1_pp-dmc-estimator-momentum-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_momentum_vmc_dmc_batched.in.xml
+    4
+    4
+    check_stats.py
+    -s
+    1
+    -q
+    momentum
+    -e
+    0
+    -c
+    5
+    -p
+    det_qmc_momentum_vmc_dmc_batched
+    -r
+    qmc-ref/det_qmc_momentum_vmc_dmc_batched.s001.stat_ref_momentum_4_4${OFEXT}.dat)
+
 endif()
 
 # deterministic scalar tests
@@ -1737,6 +1957,38 @@ if((NOT QMC_MIXED_PRECISION) AND (NOT QMC_COMPLEX))
     2
     DET_DIAMOND_DMC_LGTS2_SCALARS # DMC cycle 2
   )
+
+  list(APPEND DET_DIAMOND_DMC_LGTS1_BATCHED_SCALARS "totenergy" "-10.59602600 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS1_BATCHED_SCALARS "kinetic" "12.09612656 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS1_BATCHED_SCALARS "potential" "-22.69215255 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS1_BATCHED_SCALARS "eeenergy" "-1.77176293 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS1_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS1_BATCHED_SCALARS "localecp" "-7.89463768 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS1_BATCHED_SCALARS "nonlocalecp" "-0.25008448 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS1_BATCHED_SCALARS "mpc" "-1.64675499 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS1_BATCHED_SCALARS "samples" "19.6421721392 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS2_BATCHED_SCALARS "totenergy" "-11.07841202 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS2_BATCHED_SCALARS "kinetic" "11.83262782 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS2_BATCHED_SCALARS "potential" "-22.91103984 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS2_BATCHED_SCALARS "eeenergy" "-0.08706086 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS2_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS2_BATCHED_SCALARS "localecp" "-10.00787463 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS2_BATCHED_SCALARS "nonlocalecp" "-0.04043689 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS2_BATCHED_SCALARS "mpc" "0.09183812 0.000001")
+  list(APPEND DET_DIAMOND_DMC_LGTS2_BATCHED_SCALARS "samples" "18.038919458899997 0.000001")
+
+  qmc_run_and_check(
+    deterministic-diamondC_1x1x1_pp-vmc-dmc-multi_ts_sdj-batched
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_vmc_dmc_lg_ts_batched
+    det_qmc_vmc_dmc_lg_ts_batched.in.xml
+    1
+    1
+    TRUE
+    1
+    DET_DIAMOND_DMC_LGTS1_BATCHED_SCALARS
+    2
+    DET_DIAMOND_DMC_LGTS2_BATCHED_SCALARS)
 endif()
 
 if(QMC_MIXED_PRECISION)
@@ -1886,6 +2138,376 @@ qmc_run_and_check(
   3
   DET_DIAMOND_DMC_TM3_BATCH_SCALARS # DMC v3
 )
+
+# Batched-driver references generated from the deterministic inputs above.
+if(QMC_MIXED_PRECISION)
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "totenergy" "-10.65021864 0.00001582")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "kinetic" "16.03245759 0.00001650")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "potential" "-26.68267623 0.00000819")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "eeenergy" "-1.64876055 0.00000211")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "localecp" "-13.45055709 0.00000725")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "nonlocalecp" "1.19230887 0.00000439")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "mpc" "-1.45236706 0.0000025")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "samples" "9.0 0.0")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "flux" "-14.25663001 0.00005886")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "totenergy" "-10.14833460 0.00001992")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "kinetic" "14.67051169 0.00001980")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "potential" "-24.81884629 0.00003")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "eeenergy" "-3.54361895 0.00001190")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "localecp" "-8.35088811 0.00005")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "nonlocalecp" "-0.14867176 0.00002")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "mpc" "-3.24606659 0.00001149")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "samples" "9.0 0.0")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "flux" "-3.81745231 0.0001")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "totenergy" "-10.46752519 0.00022771")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "kinetic" "8.69700399 0.00022263")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "potential" "-19.16452918 0.00001348")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "eeenergy" "-1.77232655 0.00000280")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "ionion" "-12.77566610 0.000001")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "localecp" "-4.61128938 0.00002025")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "nonlocalecp" "-0.00524715 0.00000811")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "mpc" "-1.62672858 0.00000307")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "samples" "9.0 0.0")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "flux" "5.47727521 0.00099470")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "totenergy" "-10.43065964 0.00001226")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "kinetic" "11.79557948 0.00001421")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "potential" "-22.22623911 0.00000791")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "eeenergy" "-1.30357075 0.00000629")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "localecp" "-9.17380266 0.00001481")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "nonlocalecp" "1.02680176 0.00000270")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "mpc" "-1.00378421 0.00000754")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "samples" "9.0 0.0")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "flux" "-10.16222139 0.00006170")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "totenergy" "-10.04121480 0.00001129")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "kinetic" "6.32914195 0.00001257")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "potential" "-16.37035675 0.00000253")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "eeenergy" "-3.13924275 0.00000157")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "localecp" "-0.43682619 0.00000147")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "nonlocalecp" "-0.01862035 0.000001")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "mpc" "-2.72319506 0.00000225")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "samples" "8.9952815704 0.000001")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "totenergy" "-10.70792315 0.00001562")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "kinetic" "5.32178176 0.00001143")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "potential" "-16.02970491 0.00000463")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "eeenergy" "-3.16254099 0.00000125")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "localecp" "-0.23742734 0.0000047")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "nonlocalecp" "0.14593087 0.000001")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "mpc" "-2.59791538 0.000002")
+  if(QMC_COMPLEX)
+    list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "samples" "9.0047290708 0.000001")
+  else()
+    list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "samples" "9.0047290709 0.000001")
+  endif()
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "totenergy" "-10.77326917 0.0000139")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "kinetic" "5.52739067 0.00001647")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "potential" "-16.30065984 0.00000446")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "eeenergy" "-3.08629708 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "localecp" "-0.85638510 0.00000448")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "nonlocalecp" "0.41768979 0.00000178")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "mpc" "-2.46937777 0.00000122")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "samples" "9.0004895509 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "totenergy" "-10.26640058 0.000027")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "kinetic" "9.02623927 0.00003329")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "potential" "-19.29263985 0.00003051")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "eeenergy" "-3.87489024 0.00000133")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "localecp" "-3.41521282 0.00001471")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "nonlocalecp" "0.77313068 0.00001448")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "mpc" "-3.42375251 0.00000179")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "samples" "8.9984043996 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "totenergy" "-11.04030964 0.00001861")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "kinetic" "7.79232202 0.00003064")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "potential" "-18.83263167 0.00001851")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "eeenergy" "-4.20791090 0.00000776")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "localecp" "-2.09659208 0.00001536")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "nonlocalecp" "0.24753877 0.00000689")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "mpc" "-4.02245568 0.00000857")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "samples" "9.000129654 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "totenergy" "-10.25144793 0.00000925")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "kinetic" "12.61745486 0.00001716")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "potential" "-22.86890279 0.00000257")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "eeenergy" "-2.76796750 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "ionion" "-12.77566610 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "localecp" "-7.73167035 0.0000035")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "nonlocalecp" "0.40640117 0.00000126")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "mpc" "-2.55709541 0.00000112")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "samples" "18.0 0.0")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "totenergy" "-10.27972351 0.00001796")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "kinetic" "8.77559616 0.0000143")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "potential" "-19.05531967 0.00000366")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "eeenergy" "-3.58662179 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "ionion" "-12.77566610 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "localecp" "-3.14823297 0.00000897")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "nonlocalecp" "0.45520119 0.00000743")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "mpc" "-3.34190151 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "samples" "18.0 0.0")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "totenergy" "-9.88097989 0.00000979")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "kinetic" "8.81677592 0.00000959")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "potential" "-18.69775582 0.00000443")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "eeenergy" "-3.89720728 0.00000344")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "ionion" "-12.77566661 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "localecp" "-2.58970604 0.00000184")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "nonlocalecp" "0.56482411 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "mpc" "-3.58281126 0.00000365")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "samples" "17.9870548248 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "totenergy" "-10.55135341 0.0000083")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "kinetic" "10.75689267 0.00000847")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "potential" "-21.30824608 0.00000232")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "eeenergy" "-4.01966690 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "ionion" "-12.77566572 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "localecp" "-6.33859920 0.00000206")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "nonlocalecp" "1.82568574 0.00000168")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "mpc" "-3.84491804 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "samples" "18.0043306351 0.000001")
+else()
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "totenergy" "-10.65021864 0.000001")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "kinetic" "16.03245759 0.000001")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "potential" "-26.68267623 0.000001")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "eeenergy" "-1.64876055 0.000001")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "localecp" "-13.45055709 0.000001")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "nonlocalecp" "1.19230887 0.000001")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "mpc" "-1.45236706 0.000001")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "samples" "9.0 0.0")
+  list(APPEND DET_DIAMOND_BATCHED_SCALARS "flux" "-14.25663001 0.000001")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "totenergy" "-10.14833460 0.000001")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "kinetic" "14.67051169 0.000001")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "potential" "-24.81884629 0.000001")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "eeenergy" "-3.54361895 0.000001")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "localecp" "-8.35088811 0.000001")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "nonlocalecp" "-0.14867176 0.000001")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "mpc" "-3.24606659 0.000001")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "samples" "9.0 0.0")
+  list(APPEND DET_DIAMOND_EXCITED_BATCHED_SCALARS "flux" "-3.81745231 0.000001")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "totenergy" "-10.42053417 0.000001")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "kinetic" "8.33224514 0.000001")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "potential" "-18.75277932 0.000001")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "eeenergy" "-2.11829684 0.000001")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "localecp" "-5.01891620 0.000001")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "nonlocalecp" "1.16010119 0.000001")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "mpc" "-1.77420680 0.000001")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "samples" "9.0 0.0")
+  list(APPEND DET_DIAMOND_MESHF_BATCHED_SCALARS "flux" "3.91287383 0.000001")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "totenergy" "-10.43065964 0.000001")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "kinetic" "11.79557948 0.000001")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "potential" "-22.22623911 0.000001")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "eeenergy" "-1.30357075 0.000001")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "localecp" "-9.17380266 0.000001")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "nonlocalecp" "1.02680176 0.000001")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "mpc" "-1.00378421 0.000001")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "samples" "9.0 0.0")
+  list(APPEND DET_DIAMOND_KSPACE_BATCHED_SCALARS "flux" "-10.16222139 0.000001")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "totenergy" "-10.04121480 0.000001")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "kinetic" "6.32914195 0.000001")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "potential" "-16.37035675 0.000001")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "eeenergy" "-3.13924275 0.000001")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "localecp" "-0.43682619 0.000001")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "nonlocalecp" "-0.01862035 0.000001")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "mpc" "-2.72319506 0.000001")
+  list(APPEND DET_DIAMOND_DMC_BATCHED_SCALARS "samples" "8.9952815704 0.000001")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "totenergy" "-10.70792315 0.000001")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "kinetic" "5.32178176 0.000001")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "potential" "-16.02970491 0.000001")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "eeenergy" "-3.16254099 0.000001")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "localecp" "-0.23742734 0.000001")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "nonlocalecp" "0.14593087 0.000001")
+  list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "mpc" "-2.59791538 0.000001")
+  if(QMC_COMPLEX)
+    list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "samples" "9.0047290708 0.000001")
+  else()
+    list(APPEND DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS "samples" "9.0047290709 0.000001")
+  endif()
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "totenergy" "-10.77326917 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "kinetic" "5.52739067 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "potential" "-16.30065984 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "eeenergy" "-3.08629708 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "localecp" "-0.85638510 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "nonlocalecp" "0.41768979 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "mpc" "-2.46937777 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS "samples" "9.0004895509 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "totenergy" "-10.26640058 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "kinetic" "9.02623927 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "potential" "-19.29263985 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "eeenergy" "-3.87489024 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "localecp" "-3.41521282 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "nonlocalecp" "0.77313068 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "mpc" "-3.42375251 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS "samples" "8.9984043996 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "totenergy" "-11.04030964 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "kinetic" "7.79232202 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "potential" "-18.83263167 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "eeenergy" "-4.20791090 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "localecp" "-2.09659208 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "nonlocalecp" "0.24753877 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "mpc" "-4.02245568 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS "samples" "9.000129654 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "totenergy" "-10.47487261 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "kinetic" "12.07871618 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "potential" "-22.55358880 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "eeenergy" "-2.30809710 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "localecp" "-8.18502729 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "nonlocalecp" "0.71520306 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "mpc" "-2.04799788 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS "samples" "18.0 0.0")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "totenergy" "-10.31732620 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "kinetic" "7.71687538 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "potential" "-18.03420158 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "eeenergy" "-3.62936152 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "localecp" "-1.75727884 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "nonlocalecp" "0.12810625 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "mpc" "-3.25564667 0.000001")
+  list(APPEND DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS "samples" "18.0 0.0")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "totenergy" "-10.37294107 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "kinetic" "9.98178943 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "potential" "-20.35473050 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "eeenergy" "-3.85308596 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "localecp" "-3.96822635 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "nonlocalecp" "0.24224927 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "mpc" "-3.49779370 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS "samples" "17.9970038664 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "totenergy" "-10.47268153 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "kinetic" "8.90175898 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "potential" "-19.37444050 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "eeenergy" "-3.78996028 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "ionion" "-12.77566746 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "localecp" "-3.11453585 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "nonlocalecp" "0.30572309 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "mpc" "-3.52737548 0.000001")
+  list(APPEND DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS "samples" "18.001344580999998 0.000001")
+endif()
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc_sdj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_batched
+  det_qmc_batched.in.xml
+  1
+  1
+  TRUE
+  0
+  DET_DIAMOND_BATCHED_SCALARS)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc_sdj_excited-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_excited_batched
+  det_qmc_excited_batched.in.xml
+  1
+  1
+  TRUE
+  0
+  DET_DIAMOND_EXCITED_BATCHED_SCALARS)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc_sdj-meshf-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_meshf_batched
+  det_qmc_meshf_batched.in.xml
+  1
+  1
+  TRUE
+  0
+  DET_DIAMOND_MESHF_BATCHED_SCALARS)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc_sdj_kspace-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_kspace_batched
+  det_qmc_kspace_batched.in.xml
+  1
+  1
+  TRUE
+  0
+  DET_DIAMOND_KSPACE_BATCHED_SCALARS)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-dmc_sdj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_vmc_dmc_batched
+  det_qmc_vmc_dmc_batched.in.xml
+  1
+  1
+  TRUE
+  1
+  DET_DIAMOND_DMC_BATCHED_SCALARS)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-dmc_sdj_excited-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_vmc_dmc_excited_batched
+  det_qmc_vmc_dmc_excited_batched.in.xml
+  1
+  1
+  TRUE
+  1
+  DET_DIAMOND_DMC_EXCITED_BATCHED_SCALARS)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-multi_dmc_sdj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_vmc_multi_dmc_batched
+  det_qmc_vmc_multi_dmc_batched.in.xml
+  1
+  1
+  TRUE
+  1
+  DET_DIAMOND_DMC_MULTI1_BATCHED_SCALARS
+  2
+  DET_DIAMOND_DMC_MULTI2_BATCHED_SCALARS
+  3
+  DET_DIAMOND_DMC_MULTI3_BATCHED_SCALARS)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers_sdj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_vmc_dmc_mwalkers_batched
+  det_qmc_vmc_dmc_mwalkers_batched.in.xml
+  1
+  1
+  TRUE
+  0
+  DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS
+  1
+  DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS
+  2
+  DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS
+  3
+  DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS)
+
+qmc_run_and_check(
+  deterministic-diamondC_1x1x1_pp-vmc-dmc-mwalkers-checks_sdj-batched
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+  det_qmc_vmc_dmc_mwalkers_with_checks_batched
+  det_qmc_vmc_dmc_mwalkers_with_checks_batched.in.xml
+  1
+  1
+  TRUE
+  0
+  DET_DIAMOND_VMC_MWALKERS1_BATCHED_SCALARS
+  1
+  DET_DIAMOND_VMC_MWALKERS2_BATCHED_SCALARS
+  2
+  DET_DIAMOND_DMC_MWALKERS1_BATCHED_SCALARS
+  3
+  DET_DIAMOND_DMC_MWALKERS2_BATCHED_SCALARS)
 
 # traces tests
 check_python_reqs("numpy;h5py" diamond-traces add_traces_tests)
