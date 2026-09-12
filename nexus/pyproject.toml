@@ -10,6 +10,7 @@ dependencies = [
     "scipy>=1.8.0",
     "h5py>=3.6.0",
     "matplotlib>=3.3.0",
+    "tables (>=3.8.0, !=3.9.0)", # For eshdf script
     "pytest>=9.0.2",
 ]
 
