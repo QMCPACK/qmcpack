@@ -269,7 +269,7 @@ std::pair<MultiArray1D, MultiArray2D> symEig(MultiArray2D const& A)
   using eigSys     = std::pair<MultiArray1D, MultiArray2D>;
   using Type       = typename MultiArray2D::element;
   using RealType   = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
-  using extensions = typename boost::multi::layout_t<1u>::extents_type;
+  using extensions = typename boost::multi::extents_t<1u>;
 
   using std::get;
   assert(A.size() == get<1>(A.sizes()));
@@ -344,7 +344,7 @@ std::pair<MultiArray1D, MultiArray2D> symEigSelect(MultiArray2DA& A, int neig)
   using TypeA  = typename MultiArray2DA::element;
   static_assert(std::is_same<Type, TypeA>::value, "Wrong types.");
   using RealType   = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
-  using extensions = typename boost::multi::layout_t<1u>::extents_type;
+  using extensions = boost::multi::extents_t<1u>;
 
   using std::get;
   assert(get<0>(A.sizes()) == get<1>(A.sizes()));
@@ -424,7 +424,7 @@ std::pair<MultiArray1D, MultiArray2D> genEigSelect(MultiArray2DA& A, MultiArray2
   static_assert(std::is_same<Type, TypeA>::value, "Wrong types.");
   static_assert(std::is_same<TypeA, TypeB>::value, "Wrong types.");
   using RealType   = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
-  using extensions = typename boost::multi::layout_t<1u>::extents_type;
+  using extensions = boost::multi::extents_t<1u>;
 
   using std::get;
   assert(get<0>(A.sizes()) == get<1>(A.sizes()));
