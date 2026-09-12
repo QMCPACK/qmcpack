@@ -31,7 +31,9 @@ function(ADD_LABELS_FOR_TESTS TEST_NAMES)
   foreach(i RANGE ${loop_max})
     list(GET TEST_NAMES ${i} TEST_NAME)
     list(GET TEST_LABELS_LINES ${i} TEST_LABELS_LOCAL)
-    list(REMOVE_ITEM TEST_LABELS_LOCAL unstable)
+    if(TEST_NAME MATCHES "-r[0-9][0-9]?-t[0-9][0-9]?$")
+      list(REMOVE_ITEM TEST_LABELS_LOCAL unstable)
+    endif()
     if(TEST_LABELS_LOCAL)
       set_property(
         TEST ${TEST_NAME}
