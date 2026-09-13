@@ -143,7 +143,7 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
     std::generate(rank_expected_ids.begin(), rank_expected_ids.end(),
                   [n = 0, rank, num_ranks]() mutable { return (n++) * num_ranks + rank + 1; });
     CHECK(per_rank_walker_ids[rank] == rank_expected_ids);
-    std::cout << NativePrint(rank_expected_ids) << '\n';
+    app_log() << NativePrint(rank_expected_ids) << '\n';
   }
 }
 

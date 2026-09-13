@@ -49,7 +49,6 @@
 using boost::multi::array;
 using boost::multi::array_ref;
 using std::complex;
-using std::cout;
 using std::endl;
 using std::string;
 using std::vector;

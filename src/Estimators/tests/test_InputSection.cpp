@@ -141,7 +141,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     TestInputSection ti;
     ti.readXML(cur);
 
-    ti.report(std::cout);
+    ti.report(app_log());
 
     // assigned from xml
     CHECK(ti.has("full"));
@@ -194,7 +194,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     TestInputSection ti;
     ti.readXML(cur);
 
-    ti.report(std::cout);
+    ti.report(app_log());
     // assigned from xml
     CHECK(ti.has("name"));
     CHECK(ti.has("samples"));
@@ -251,7 +251,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 )"},
          {"invalid_section_name", R"(<not_test><parameter name="nothing"></parameter></not_test>)"}};
 
-    std::cout << "really going to try bad sections\n" << std::endl;
+    app_log() << "really going to try bad sections\n" << std::endl;
     for (auto& [label, xml] : invalid_inputs)
     {
       // parse xml doc
@@ -289,7 +289,7 @@ TEST_CASE("InputSection::init", "[estimators]")
     TestInputSection ti;
     ti.init({{"full", bool(false)}, {"count", int(15)}});
 
-    ti.report(std::cout);
+    ti.report(app_log());
 
     // assigned from initializer-list
     CHECK(ti.has("full"));
@@ -327,7 +327,7 @@ TEST_CASE("InputSection::init", "[estimators]")
              {"sposets", std::vector<std::string>{"spo1", "spo2"}},
              {"center", InputSection::Position(0.0, 0.0, 0.1)}});
 
-    ti.report(std::cout);
+    ti.report(app_log());
     // assigned from initializer-list
     CHECK(ti.has("name"));
     CHECK(ti.has("samples"));
@@ -486,7 +486,7 @@ TEST_CASE("InputSection::custom", "[estimators]")
   std::array<int, 3> exp_numbers{10, 20, 10};
   CHECK(ws.numbers == exp_numbers);
 
-  cti.report(std::cout);
+  cti.report(app_log());
   std::string custom_attribute = cti.get<std::string>("with_custom::custom_attribute");
   CHECK(custom_attribute == "This is a custom attribute.");
   custom_attribute = cti.get<std::string>("custom_attribute");

@@ -19,7 +19,6 @@
 #include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
-#include "Platforms/Host/OutputManager.h"
 
 #include <string>
 #include <vector>
@@ -40,7 +39,6 @@
 
 using std::cerr;
 using std::complex;
-using std::cout;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
@@ -913,11 +911,11 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
       shmCMatrix Gno({2*NMO*NMO,nwalk},alloc_);
       wfn.MixedDensityMatrix(wset,Gph,false,false);
       nomsd.MixedDensityMatrix(wset,Gno,false,false);
-      std::cout<<" Comparing G \n";
+      app_log()<<" Comparing G \n";
       for(int i=0; i<NMO; i++)
        for(int j=0; j<NMO; j++)
         if(std::abs(Gph[i*NMO+j][0]-Gno[i*NMO+j][0]) > 1e-8)
-          std::cout<<i <<" " <<j <<" " <<Gph[i*NMO+j][0] <<" " <<Gno[i*NMO+j][0] <<" "
+          app_log()<<i <<" " <<j <<" " <<Gph[i*NMO+j][0] <<" " <<Gno[i*NMO+j][0] <<" "
                    <<std::abs(Gph[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;
 #endif
 
