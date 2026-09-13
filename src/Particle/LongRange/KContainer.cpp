@@ -141,8 +141,6 @@ void KContainerT<REAL>::BuildKLists(const Lattice& lattice,
 {
   TinyVector<int, DIM + 1> TempActualMax;
   TinyVector<int, DIM> kvec;
-  TinyVector<FullPrecReal, DIM> kvec_cart;
-  FullPrecReal modk2;
   std::vector<TinyVector<int, DIM>> kpts_tmp;
   std::vector<PositionFull> kpts_cart_tmp;
   std::vector<FullPrecReal> ksq_tmp;
@@ -164,9 +162,9 @@ void KContainerT<REAL>::BuildKLists(const Lattice& lattice,
           if (i == 0 && j == 0 && k == 0)
             continue;
           //Convert kvec to Cartesian
-          kvec_cart = lattice.k_cart(kvec + twist);
+          auto kvec_cart = lattice.k_cart(kvec + twist);
           //Find modk
-          modk2 = dot(kvec_cart, kvec_cart);
+          const auto modk2 = dot(kvec_cart, kvec_cart);
           if (modk2 > kcut2)
             continue; //Inside cutoff?
           //This k-point should be added to the list
@@ -206,8 +204,8 @@ void KContainerT<REAL>::BuildKLists(const Lattice& lattice,
           if (kvec[2] > mmax[2])
             kvec[2] -= kdimsize;
           // get cartesian location and modk2
-          kvec_cart = lattice.k_cart(kvec);
-          modk2     = dot(kvec_cart, kvec_cart);
+          auto kvec_cart   = lattice.k_cart(kvec);
+          const auto modk2 = dot(kvec_cart, kvec_cart);
           // add k-point to lists
           kpts_tmp.push_back(kvec);
           kpts_cart_tmp.push_back(kvec_cart);
