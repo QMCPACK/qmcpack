@@ -54,7 +54,7 @@ using std::endl;
 using std::string;
 using std::vector;
 template<std::ptrdiff_t D>
-using iextensions = typename boost::multi::iextensions<D>;
+using extents_t = typename boost::multi::extents_t<D>;
 
 namespace qmcplusplus
 {
@@ -66,15 +66,15 @@ void test_dense_matrix_mult()
     array_ref<double, 2> M(m.data(), {3, 3});
     REQUIRE(M.num_elements() == m.size());
     vector<double> x = {1., 2., 3.};
-    array_ref<double, 1> X(x.data(), iextensions<1u>(x.size()));
+    array_ref<double, 1> X(x.data(), extents_t<1u>(x.size()));
     vector<double> y(3);
-    array_ref<double, 1> Y(y.data(), iextensions<1u>(y.size()));
+    array_ref<double, 1> Y(y.data(), extents_t<1u>(y.size()));
 
     using ma::T;
     ma::product(M, X, Y); // Y := M X
 
     vector<double> mx = {147., 60., 154.};
-    array_ref<double, 1> MX(mx.data(), iextensions<1u>(mx.size()));
+    array_ref<double, 1> MX(mx.data(), extents_t<1u>(mx.size()));
     verify_approx(MX, Y);
   }
   {
@@ -82,15 +82,15 @@ void test_dense_matrix_mult()
     array_ref<double, 2> M(m.data(), {3, 4});
     REQUIRE(M.num_elements() == m.size());
     vector<double> x = {1., 2., 3., 4.};
-    array_ref<double, 1> X(x.data(), iextensions<1u>(x.size()));
+    array_ref<double, 1> X(x.data(), extents_t<1u>(x.size()));
     vector<double> y(3);
-    array_ref<double, 1> Y(y.data(), iextensions<1u>(y.size()));
+    array_ref<double, 1> Y(y.data(), extents_t<1u>(y.size()));
 
     using ma::T;
     ma::product(M, X, Y); // Y := M X
 
     vector<double> mx = {155., 64., 234.};
-    array_ref<double, 1> MX(mx.data(), iextensions<1u>(mx.size()));
+    array_ref<double, 1> MX(mx.data(), extents_t<1u>(mx.size()));
     verify_approx(MX, Y);
   }
   {
@@ -98,28 +98,28 @@ void test_dense_matrix_mult()
     array_ref<double, 2> M(m.data(), {3, 4});
     REQUIRE(M.num_elements() == m.size());
     vector<double> x = {1., 2., 3.};
-    array_ref<double, 1> X(x.data(), iextensions<1u>(x.size()));
+    array_ref<double, 1> X(x.data(), extents_t<1u>(x.size()));
     vector<double> y(4);
-    array_ref<double, 1> Y(y.data(), iextensions<1u>(y.size()));
+    array_ref<double, 1> Y(y.data(), extents_t<1u>(y.size()));
 
     using ma::T;
     ma::product(T(M), X, Y); // Y := T(M) X
 
     vector<double> mx = {59., 92., 162., 64.};
-    array_ref<double, 1> MX(mx.data(), iextensions<1u>(mx.size()));
+    array_ref<double, 1> MX(mx.data(), extents_t<1u>(mx.size()));
     verify_approx(MX, Y);
   }
   {
     vector<double> m = {9., 24., 30., 9., 4., 10., 12., 7., 14., 16., 36., 1.};
     array_ref<double, 2> M(m.data(), {3, 4});
     vector<double> x = {1., 2., 3., 4.};
-    array_ref<double, 1> X(x.data(), iextensions<1u>(x.size()));
+    array_ref<double, 1> X(x.data(), extents_t<1u>(x.size()));
     vector<double> y = {4., 5., 6.};
-    array_ref<double, 1> Y(y.data(), iextensions<1u>(y.size()));
+    array_ref<double, 1> Y(y.data(), extents_t<1u>(y.size()));
     ma::product(M, X, Y); // y := M x
 
     vector<double> y2 = {183., 88., 158.};
-    array_ref<double, 1> Y2(y2.data(), iextensions<1u>(y2.size()));
+    array_ref<double, 1> Y2(y2.data(), extents_t<1u>(y2.size()));
     verify_approx(Y, Y2);
   }
 
@@ -210,7 +210,7 @@ void test_dense_matrix_mult()
   }
   {
     std::vector<double> WORK;
-    array<double, 1> TAU(iextensions<1u>{3});
+    array<double, 1> TAU(extents_t<1u>{3});
 
     vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
     array_ref<double, 2> A(a.data(), {3, 3});
@@ -230,7 +230,7 @@ void test_dense_matrix_mult()
   }
   {
     std::vector<double> WORK;
-    array<double, 1> TAU(iextensions<1u>{4});
+    array<double, 1> TAU(extents_t<1u>{4});
 
     vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129., 10., 23., 35.};
     array_ref<double, 2> A(a.data(), {4, 3});
@@ -250,7 +250,7 @@ void test_dense_matrix_mult()
   }
   {
     std::vector<double> WORK;
-    array<double, 1> TAU(iextensions<1u>{3});
+    array<double, 1> TAU(extents_t<1u>{3});
 
     vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129.};
     array_ref<double, 2> A(a.data(), {3, 3});
@@ -270,7 +270,7 @@ void test_dense_matrix_mult()
   }
   {
     std::vector<double> WORK;
-    array<double, 1> TAU(iextensions<1u>{4});
+    array<double, 1> TAU(extents_t<1u>{4});
 
     vector<double> a = {37., 45., 59., 53., 81., 97., 87., 105., 129., 10., 23., 35.};
     array_ref<double, 2> A(a.data(), {3, 4});
@@ -339,8 +339,8 @@ void test_dense_mat_vec_device(Allocator& alloc)
     vector<T> y(3);
 
     array<T, 2, Allocator> M({3, 3}, alloc);
-    array<T, 1, Allocator> X(iextensions<1u>(x.size()), alloc);
-    array<T, 1, Allocator> Y(iextensions<1u>(y.size()), alloc);
+    array<T, 1, Allocator> X(extents_t<1u>(x.size()), alloc);
+    array<T, 1, Allocator> Y(extents_t<1u>(y.size()), alloc);
 
     copy_n(m.data(), m.size(), M.base());
     REQUIRE(M.num_elements() == m.size());
@@ -352,7 +352,7 @@ void test_dense_mat_vec_device(Allocator& alloc)
     ma::product(M, X, Y); // Y := M X
 
     vector<T> mx = {147., 60., 154.};
-    array_ref<T, 1> MX(mx.data(), iextensions<1u>(mx.size()));
+    array_ref<T, 1> MX(mx.data(), extents_t<1u>(mx.size()));
     verify_approx(MX, Y);
   }
 
@@ -363,8 +363,8 @@ void test_dense_mat_vec_device(Allocator& alloc)
     vector<T> y(3);
 
     array<T, 2, Allocator> M({3, 4}, alloc);
-    array<T, 1, Allocator> X(iextensions<1u>(x.size()), alloc);
-    array<T, 1, Allocator> Y(iextensions<1u>(y.size()), alloc);
+    array<T, 1, Allocator> X(extents_t<1u>(x.size()), alloc);
+    array<T, 1, Allocator> Y(extents_t<1u>(y.size()), alloc);
 
     copy_n(m.data(), m.size(), M.base());
     REQUIRE(M.num_elements() == m.size());
@@ -375,7 +375,7 @@ void test_dense_mat_vec_device(Allocator& alloc)
     ma::product(M, X, Y); // Y := M X
 
     vector<T> mx = {155., 64., 234.};
-    array_ref<T, 1> MX(mx.data(), iextensions<1u>(mx.size()));
+    array_ref<T, 1> MX(mx.data(), extents_t<1u>(mx.size()));
     verify_approx(MX, Y);
   }
   //SECTION("mat_vec_trans")
@@ -385,8 +385,8 @@ void test_dense_mat_vec_device(Allocator& alloc)
     vector<T> y(4);
 
     array<T, 2, Allocator> M({3, 4}, alloc);
-    array<T, 1, Allocator> X(iextensions<1u>(x.size()), alloc);
-    array<T, 1, Allocator> Y(iextensions<1u>(y.size()), alloc);
+    array<T, 1, Allocator> X(extents_t<1u>(x.size()), alloc);
+    array<T, 1, Allocator> Y(extents_t<1u>(y.size()), alloc);
 
     copy_n(m.data(), m.size(), M.base());
     REQUIRE(M.num_elements() == m.size());
@@ -397,7 +397,7 @@ void test_dense_mat_vec_device(Allocator& alloc)
     ma::product(ma::T(M), X, Y); // Y := M X
 
     vector<T> mx = {59., 92., 162., 64.};
-    array_ref<T, 1> MX(mx.data(), iextensions<1u>(mx.size()));
+    array_ref<T, 1> MX(mx.data(), extents_t<1u>(mx.size()));
     verify_approx(MX, Y);
   }
   //SECTION("mat_vec_add")
@@ -410,17 +410,17 @@ void test_dense_mat_vec_device(Allocator& alloc)
     copy_n(m.data(), m.size(), M.base());
     REQUIRE(M.num_elements() == m.size());
 
-    array<T, 1, Allocator> X(iextensions<1u>(x.size()), alloc);
+    array<T, 1, Allocator> X(extents_t<1u>(x.size()), alloc);
     copy_n(x.data(), x.size(), X.base());
     REQUIRE(X.num_elements() == x.size());
 
-    array<T, 1, Allocator> Y(iextensions<1u>(y.size()), alloc);
+    array<T, 1, Allocator> Y(extents_t<1u>(y.size()), alloc);
     REQUIRE(Y.num_elements() == y.size());
 
     ma::product(M, X, Y); // Y := M X
 
     vector<T> y2 = {183., 88., 158.};
-    array_ref<T, 1> Y2(y2.data(), iextensions<1u>(y2.size()));
+    array_ref<T, 1> Y2(y2.data(), extents_t<1u>(y2.size()));
     verify_approx(Y, Y2);
   }
 }
@@ -554,8 +554,8 @@ void test_dense_gerf_gqr_device(Allocator& alloc)
     array<T, 2, Allocator> Id({3, 3}, alloc);
 
     auto sz = std::max(ma::geqrf_optimal_workspace_size(A), ma::gqr_optimal_workspace_size(A));
-    array<T, 1, Allocator> WORK(iextensions<1u>{sz}, alloc);
-    array<T, 1, Allocator> TAU(iextensions<1u>{3}, alloc);
+    array<T, 1, Allocator> WORK(extents_t<1u>{sz}, alloc);
+    array<T, 1, Allocator> TAU(extents_t<1u>{3}, alloc);
 
     ma::geqrf(A, TAU, WORK);
     ma::gqr(A, TAU, WORK);
@@ -577,8 +577,8 @@ void test_dense_gerf_gqr_device(Allocator& alloc)
     array<T, 2, Allocator> Id({3, 3}, alloc);
 
     auto sz = std::max(ma::geqrf_optimal_workspace_size(A), ma::gqr_optimal_workspace_size(A));
-    array<T, 1, Allocator> WORK(iextensions<1u>{sz}, alloc);
-    array<T, 1, Allocator> TAU(iextensions<1u>{3}, alloc);
+    array<T, 1, Allocator> WORK(extents_t<1u>{sz}, alloc);
+    array<T, 1, Allocator> TAU(extents_t<1u>{3}, alloc);
 
     ma::geqrf(A, TAU, WORK);
     ma::gqr(A, TAU, WORK);
@@ -604,10 +604,10 @@ void test_dense_gerf_gqr_strided_device(Allocator& alloc)
     REQUIRE(A.num_elements() == 2 * a.size());
 
     auto sz = std::max(ma::geqrf_optimal_workspace_size(A[0]), ma::gqr_optimal_workspace_size(A[0]));
-    array<T, 1, Allocator> WORK(iextensions<1u>{sz}, alloc);
+    array<T, 1, Allocator> WORK(extents_t<1u>{sz}, alloc);
     array<T, 2, Allocator> Id({3, 3}, alloc);
     using IAllocator = typename Allocator::template rebind<int>::other;
-    array<int, 1, IAllocator> info(iextensions<1u>{2}, IAllocator{alloc});
+    array<int, 1, IAllocator> info(extents_t<1u>{2}, IAllocator{alloc});
     array<T, 2, Allocator> TAU({2, 4}, alloc);
 
     geqrfStrided(4, 3, A.base(), 4, 12, TAU.base(), 4, info.base(), 2);
@@ -672,13 +672,13 @@ void test_dense_geqrf_getri_batched_device(Allocator& alloc)
     Ai_array.emplace_back(Ai[i].base());
   }
 
-  array<T, 1, Allocator> WORK(iextensions<1u>{9}, alloc);
+  array<T, 1, Allocator> WORK(extents_t<1u>{9}, alloc);
   array<T, 2, Allocator> Id({3, 3}, alloc);
   using IAllocator = typename Allocator::template rebind<int>::other;
-  array<int, 1, IAllocator> info(iextensions<1u>{2}, IAllocator{alloc});
-  array<int, 1, IAllocator> piv(iextensions<1u>{2 * (3 + 1)}, IAllocator{alloc});
+  array<int, 1, IAllocator> info(extents_t<1u>{2}, IAllocator{alloc});
+  array<int, 1, IAllocator> piv(extents_t<1u>{2 * (3 + 1)}, IAllocator{alloc});
   array<T, 2, Allocator> B({3, 3}, 0.0, alloc), Bi({3, 3}, 0.0, alloc);
-  array<int, 1, IAllocator> spiv(iextensions<1u>{4}, IAllocator{alloc});
+  array<int, 1, IAllocator> spiv(extents_t<1u>{4}, IAllocator{alloc});
   int status;
   //SECTION("getrf_batched")
   {

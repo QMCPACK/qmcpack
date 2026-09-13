@@ -36,8 +36,6 @@ if(ADD_TEST)
       TEST ntest_nexus_coverage_all
       APPEND
       PROPERTY LABELS "nexus;deterministic")
-    set(TEST_LABELS "")
-    add_test_labels(ntest_nexus_coverage_all TEST_LABELS)
   else()
     foreach(TESTFILE IN LISTS NEXUS_TESTLIST)
       string(REGEX REPLACE "\.py:.*[0-9]" "" TESTFILE "${TESTFILE}")
@@ -55,8 +53,6 @@ if(ADD_TEST)
         TEST ntest_nexus_${TESTNAME}
         APPEND
         PROPERTY LABELS "nexus;deterministic")
-      set(TEST_LABELS "")
-      add_test_labels(ntest_nexus_${TESTNAME} TEST_LABELS)
       # Use a resource lock to avoid potential race condition in copying example inputs
       if(${TESTNAME} MATCHES ".*example.*")
         set_tests_properties(ntest_nexus_${TESTNAME} PROPERTIES RESOURCE_LOCK nexus_examples_resource)
@@ -64,3 +60,6 @@ if(ADD_TEST)
     endforeach()
   endif()
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

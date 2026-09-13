@@ -77,3 +77,6 @@ else()
   ## list(APPEND DET_HEG54J2RPA_SCALARS "eeenergy" "-7.55488135 0.000001")
   ##endif()
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

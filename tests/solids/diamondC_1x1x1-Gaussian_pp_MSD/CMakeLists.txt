@@ -176,3 +176,6 @@ qmc_run_and_check(
   det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_VMC_SCALARS
   1
   det_diamondC_1x1x1-Gaussian_pp_MSD_BATCHED_DMC_SCALARS)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

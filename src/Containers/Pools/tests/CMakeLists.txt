@@ -16,3 +16,6 @@ add_executable(${UTEST_EXE} test_pooled_memory.cpp test_PooledData.cpp)
 target_link_libraries(${UTEST_EXE} catch_main containers)
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

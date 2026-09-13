@@ -260,8 +260,8 @@ enum HamiltonianTypes
 };
 
 template<std::ptrdiff_t D>
-using iextensions = typename boost::multi::iextensions<D>;
-//using extensions = typename boost::multi::layout_t<D>::extents_type;
+using extents_t = typename boost::multi::extents_t<D>;
+//using extensions = typename boost::multi::extents_t<D>;
 
 // general matrix definitions
 template<class Alloc = std::allocator<int>>

@@ -1003,7 +1003,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
       }
     }
 
-    boost::multi::array<ComplexType,1> vMF(iextensions<1u>{nCV});
+    boost::multi::array<ComplexType,1> vMF(extents_t<1u>{nCV});
     wfn.vMF(vMF);
     ComplexType vMFsum=0;
     {
@@ -1065,7 +1065,7 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
 
-    boost::multi::array<ComplexType,1> vMF2(iextensions<1u>{nCV});
+    boost::multi::array<ComplexType,1> vMF2(extents_t<1u>{nCV});
     nomsd.vMF(vMF2);
     vMFsum=0;
     {

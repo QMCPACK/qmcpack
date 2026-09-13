@@ -168,7 +168,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
       estimators[0]->print(out, dump, wset);
     }
     dump.close();
-    boost::multi::array<ComplexType, 1> read_data(boost::multi::iextensions<1u>{2 * NMO * NMO});
+    boost::multi::array<ComplexType, 1> read_data(boost::multi::extents_t<1u>{2 * NMO * NMO});
 
     ComplexType denom;
     hdf_archive reader;

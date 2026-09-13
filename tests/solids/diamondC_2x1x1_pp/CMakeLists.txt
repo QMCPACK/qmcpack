@@ -1765,3 +1765,6 @@ qmc_run_and_check(
   TRUE
   1
   DET_DIAMOND2_DMC_PW_BATCHED_SCALARS)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")
