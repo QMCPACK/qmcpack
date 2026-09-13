@@ -46,7 +46,7 @@ TEST_CASE("dummy", "[lrhandler]")
 
   handler.initBreakup(ref);
 
-  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  app_log() << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
   CHECK( handler.MaxKshell == 78);
   CHECK(handler.LR_kc == Approx(12));
   CHECK(handler.LR_rc == Approx(0));

@@ -9,6 +9,7 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include "Platforms/Host/OutputManager.h"
 
 #include <iostream>
 #include "config.h"
@@ -23,7 +24,7 @@ TEST_CASE("OMP runtime memory", "[OMP]")
     // intentional empty target to initialize offload runtime library.
   }
 
-  print_mem("OMP runtime memory", std::cout);
+  print_mem("OMP runtime memory", app_log());
 }
 
 } // namespace qmcplusplus
