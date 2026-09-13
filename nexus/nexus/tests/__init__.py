@@ -271,4 +271,5 @@ class NexusTestOrder(IntEnum):
     QDENS                           = auto()
     QDENS_RADIAL                    = auto()
     QMCA                            = auto()
+    ESHDF                           = auto()
     USER_EXAMPLES                   = auto()
