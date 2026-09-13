@@ -227,7 +227,7 @@ TEST_CASE("SkAll", "[hamiltonian]")
   app_log() << std::setprecision(5);
   for (int k = 0; k < nkpts; k++)
   {
-    auto kvec      = elec->getSimulationCell().getKLists().getKptsCartWorking()[k];
+    auto kvec      = elec->getSimulationCell().getKLists().getKptsCart()[k];
     RealType kx    = kvec[0];
     RealType ky    = kvec[1];
     RealType kz    = kvec[2];
