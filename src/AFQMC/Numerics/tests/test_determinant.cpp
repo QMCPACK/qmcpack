@@ -29,7 +29,7 @@
 
 using boost::multi::array;
 using boost::multi::array_ref;
-using boost::multi::iextensions;
+using boost::multi::extents_t;
 using std::copy_n;
 
 namespace qmcplusplus

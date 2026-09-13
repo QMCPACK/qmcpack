@@ -101,7 +101,7 @@ void CUDA_INIT(boost::mpi3::shared_communicator& node, unsigned long long int is
   /*
     device::cusparse_buffer = new boost::multi::array<std::complex<double>,1,
                                  device::device_allocator<std::complex<double>>>(
-                                 (typename boost::multi::layout_t<1u>::extents_type{1},
+                                 (boost::multi::extents_t<1u>{1},
                                  device::device_allocator<std::complex<double>>{}));
 */
 }

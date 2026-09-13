@@ -280,7 +280,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     //CHECK(imag(*it->energy()) == Approx(imag(energy)));
     //}
     //auto nCV = wfn.local_number_of_cholesky_vectors();
-    //boost::multi::array<ComplexType,1> vMF(iextensions<1u>{nCV});
+    //boost::multi::array<ComplexType,1> vMF(extents_t<1u>{nCV});
     //std::cout << "NCHOL : " << nCV << " " << NMO*NMO << std::endl;
     //wfn.vMF(vMF);
     //computeVariationalEnergy(wfn, occs, ham, NAEA, NAEB);
