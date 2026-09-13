@@ -194,7 +194,7 @@ public:
     // for now, stay collinear
 
     ShmArray<ComplexType, 1> vMF_(vMF, shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
-    ShmArray<ComplexType, 1> P1D(iextensions<1u>{NMO * NMO}, ComplexType(0),
+    ShmArray<ComplexType, 1> P1D(extents_t<1u>{NMO * NMO}, ComplexType(0),
                                  shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
 
     vHS(vMF_, P1D);
@@ -308,7 +308,7 @@ public:
     Bytes -= mem_needs * long(sizeof(SPComplexType));
     Bytes /= long((nu * nv + nv + nv * nup) * sizeof(SPComplexType));
     int nwmax = std::min(nwalk, std::max(1, int(Bytes)));
-    ShmArray<SPComplexType, 1> Gbuff(iextensions<1u>{mem_needs},
+    ShmArray<SPComplexType, 1> Gbuff(extents_t<1u>{mem_needs},
                                      shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     const_sp_pointer Gptr(nullptr);
@@ -526,7 +526,7 @@ public:
       boost::multi::array_ref<ComplexType,2> Guv(to_address(SM_TMats.base()),{nu,nv});
       cnt+=Guv.num_elements();
       // Gvv[v]: summed over spin
-      boost::multi::array_ref<ComplexType,1> Gvv(to_address(SM_TMats.base())+cnt,iextensions<1u>{nv});
+      boost::multi::array_ref<ComplexType,1> Gvv(to_address(SM_TMats.base())+cnt,extents_t<1u>{nv});
       cnt+=Gvv.num_elements();
       // S[nel_][nv]
       boost::multi::array_ref<ComplexType,2> Scu(to_address(SM_TMats.base())+cnt,{nel_,nv});
@@ -534,7 +534,7 @@ public:
       // Qub[nu][nel_]:
       boost::multi::array_ref<ComplexType,2> Qub(to_address(SM_TMats.base())+cnt,{nu,nel_});
       cnt+=Qub.num_elements();
-      boost::multi::array_ref<ComplexType,1> Tuu(to_address(SM_TMats.base())+cnt,iextensions<1u>{nu});
+      boost::multi::array_ref<ComplexType,1> Tuu(to_address(SM_TMats.base())+cnt,extents_t<1u>{nu});
       cnt+=Tuu.num_elements();
       boost::multi::array_ref<ComplexType,2> Jcb(to_address(SM_TMats.base())+cnt,{nel_,nel_});
       cnt+=Jcb.num_elements();
@@ -571,7 +571,7 @@ public:
         { // Alpha
           auto Gw = GrefA[wi];
           boost::multi::array_cref<ComplexType,1> G1D(to_address(Gw.base()),
-                                                        iextensions<1u>{Gw.num_elements()});
+                                                        extents_t<1u>{Gw.num_elements()});
           Guv_Guu2(Gw,Guv,Gvv,Scu,0);
           if(u0!=uN)
             ma::product(rotMuv.sliced(u0,uN),Gvv,
@@ -612,7 +612,7 @@ public:
         { // Beta: Unnecessary in CLOSED walker type (on Walker)
           auto Gw = GrefB[wi];
           boost::multi::array_cref<ComplexType,1> G1D(to_address(Gw.base()),
-                                                        iextensions<1u>{Gw.num_elements()});
+                                                        extents_t<1u>{Gw.num_elements()});
           Guv_Guu2(Gw,Guv,Gvv,Scu,0);
           if(u0!=uN)
             ma::product(rotMuv.sliced(u0,uN),Gvv,
@@ -716,7 +716,7 @@ public:
     Bytes /= size_t(nmo_ * nu * sizeof(SPComplexType));
     int nwmax = std::min(nwalk, std::max(1, int(Bytes)));
     memory_needs += nwmax * nmo_ * nu;
-    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>(memory_needs),
+    ShmArray<SPComplexType, 1> SM_TMats(extents_t<1u>(memory_needs),
                                         shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     size_t cnt(0);
@@ -873,7 +873,7 @@ public:
       memory_needs += G.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       memory_needs += v.num_elements();
-    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>(memory_needs),
+    ShmArray<SPComplexType, 1> SM_TMats(extents_t<1u>(memory_needs),
                                         shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     size_t cnt(0);
     const_sp_pointer Gptr(nullptr);
@@ -1110,7 +1110,7 @@ protected:
 
     for (int iw = 0; iw < nw; ++iw)
     {
-      Gwaj.emplace_back(make_device_ptr(G[iw].base()) + ispin * nup * nmo_, iextensions<2u>{nelec[ispin], nmo_});
+      Gwaj.emplace_back(make_device_ptr(G[iw].base()) + ispin * nup * nmo_, extents_t<2u>{nelec[ispin], nmo_});
       Pjv.emplace_back(&(rotPiu({0, nmo_}, {v0, vN})));
       Twav.emplace_back(&(Tav[iw]({0, nelec[ispin]}, {v0, vN})));
       Pua.emplace_back(Pua_ptr);
@@ -1130,7 +1130,7 @@ protected:
     for (int iw = 0; iw < nw; ++iw)
     {
       Twva.emplace_back(&(Tva[iw]({v0, vN}, {0, nelec[ispin]})));
-      Gwja.emplace_back(make_device_ptr(Gja[iw].base()), iextensions<2u>{nmo_, nelec[ispin]});
+      Gwja.emplace_back(make_device_ptr(Gja[iw].base()), extents_t<2u>{nmo_, nelec[ispin]});
       ma::transpose((*(Gwaj[iw]))({0, nelec[ispin]}, {k0, kN}), (*(Gwja[iw])).sliced(k0, kN));
     }
     comm->barrier();

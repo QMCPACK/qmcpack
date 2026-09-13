@@ -98,9 +98,9 @@ public:
         Orbitals({0, 0}, orb_alloc_),
         DMAverage({0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork({0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
-        denom(iextensions<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
-        Buff(iextensions<1u>{0}, alloc_),
-        Buff2(iextensions<1u>{0})
+        denom(extents_t<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
+        Buff(extents_t<1u>{0}, alloc_),
+        Buff2(extents_t<1u>{0})
   {
     app_log() << "  --  Adding Back Propagated on-top pair density (N2R) estimator. -- \n ";
     std::string orb_file("");
@@ -119,8 +119,8 @@ public:
       APP_ABORT("");
     }
 
-    stdIVector norbs(iextensions<1u>{0});
-    stdIVector grid_dim(iextensions<1u>{3});
+    stdIVector norbs(extents_t<1u>{0});
+    stdIVector grid_dim(extents_t<1u>{3});
     dm_size = 0;
 
     // read orbitals
@@ -166,7 +166,7 @@ public:
       {
         for (int i = 0; i < norbs[k]; i++, kn++)
         {
-          stdCVector orb(iextensions<1u>{dm_size});
+          stdCVector orb(extents_t<1u>{dm_size});
           if (!dump.readEntry(orb, "kp" + std::to_string(k) + "_b" + std::to_string(i)))
           {
             app_error() << " Error in n2r: Problems reading orbital: " << k << " " << i << std::endl;
@@ -230,7 +230,7 @@ public:
     {
       if (denom.size() != nw)
       {
-        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
+        denom = mpi3CVector(extents_t<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size)
       {
@@ -255,7 +255,7 @@ public:
     int N = dm_size * NMO + dm_size;
     set_buffer(N);
     auxCMatrix_ref T(Buff.base(), {NMO, dm_size});
-    auxCVector_ref Gr(Buff.base() + T.num_elements(), iextensions<1u>{dm_size});
+    auxCVector_ref Gr(Buff.base() + T.num_elements(), extents_t<1u>{dm_size});
 
     int N2 = nsp * (iN - i0);
     set_buffer2(N2);
@@ -406,14 +406,14 @@ private:
   void set_buffer(size_t N)
   {
     if (Buff.num_elements() < N)
-      Buff = auxCVector(iextensions<1u>(N), aux_alloc);
+      Buff = auxCVector(extents_t<1u>(N), aux_alloc);
     using std::fill_n;
     fill_n(Buff.base(), N, ComplexType(0.0));
   }
   void set_buffer2(size_t N)
   {
     if (Buff2.num_elements() < N)
-      Buff2 = stdCVector(iextensions<1u>(N));
+      Buff2 = stdCVector(extents_t<1u>(N));
     using std::fill_n;
     fill_n(Buff2.base(), N, ComplexType(0.0));
   }

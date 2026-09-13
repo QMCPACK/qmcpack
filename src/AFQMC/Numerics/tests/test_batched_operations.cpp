@@ -28,7 +28,7 @@
 
 using boost::multi::array;
 using boost::multi::array_ref;
-using boost::multi::iextensions;
+using boost::multi::extents_t;
 using std::copy_n;
 
 namespace qmcplusplus
@@ -90,7 +90,7 @@ TEST_CASE("Tab_to_Kl", "[Numerics][batched_operations]")
   Tensor2D<ComplexType> Kl({nwalk, nchol}, 0.0, alloc);
   using ma::Tab_to_Kl;
   Tab_to_Kl(nwalk, nel, nchol, Twban.base(), Kl.base());
-  array_ref<ComplexType, 1, pointer<ComplexType>> Kl_(Kl.base(), iextensions<1u>{nwalk * nchol});
+  array_ref<ComplexType, 1, pointer<ComplexType>> Kl_(Kl.base(), extents_t<1u>{nwalk * nchol});
   array<ComplexType, 1, Alloc<ComplexType>> ref = {84.0,  87.0,  90.0,  93.0,  96.0,  99.0,  102.0,
                                                    273.0, 276.0, 279.0, 282.0, 285.0, 288.0, 291.0,
                                                    462.0, 465.0, 468.0, 471.0, 474.0, 477.0, 480.0};
@@ -108,7 +108,7 @@ TEST_CASE("batched_Tab_to_Klr", "[batched_operations]")
   int ncholQ             = 2;
   int ncholQ0            = 2;
   std::vector<int> kdiag = {0, 1, 2, 3};
-  Tensor1D<int> dev_kdiag(iextensions<1u>{nbatch}, alloc);
+  Tensor1D<int> dev_kdiag(extents_t<1u>{nbatch}, alloc);
   copy_n(kdiag.data(), kdiag.size(), dev_kdiag.base());
   std::vector<ComplexType> buffer(2 * nbatch * nwalk * nel * nel * nchol_max);
   create_data(buffer, ComplexType(1.0));
@@ -140,7 +140,7 @@ TEST_CASE("Tanb_to_Kl", "[batched_operations]")
   Tensor2D<ComplexType> Kl({nwalk, nchol}, 0.0, alloc);
   using ma::Tanb_to_Kl;
   Tanb_to_Kl(nwalk, nel, nchol, nchol, Twanb.base(), Kl.base());
-  array_ref<ComplexType, 1, pointer<ComplexType>> Kl_(Kl.base(), iextensions<1u>{nwalk * nchol});
+  array_ref<ComplexType, 1, pointer<ComplexType>> Kl_(Kl.base(), extents_t<1u>{nwalk * nchol});
   //std::cout << "{";
   //for (auto i : Kl_)
   //std::cout << "ComplexType(" << real(i) << ")," << std::endl;
@@ -169,7 +169,7 @@ TEST_CASE("batched_dot_wabn_wban", "[Numerics][batched_operations]")
   Tensor1D<ComplexType> scal({nbatch}, 1.0, alloc);
   copy_n(buffer.data(), buffer.size(), Twabn.base());
   std::vector<pointer<ComplexType>> Aarray;
-  array<ComplexType, 1, Alloc<ComplexType>> out(iextensions<1u>{nwalk}, alloc);
+  array<ComplexType, 1, Alloc<ComplexType>> out(extents_t<1u>{nwalk}, alloc);
   array<ComplexType, 1, Alloc<ComplexType>> ref = {ComplexType(1693.073254599684), ComplexType(1930.853888599637),
                                                    ComplexType(2189.312510839587)};
   using ma::batched_dot_wabn_wban;
@@ -193,7 +193,7 @@ TEST_CASE("batched_dot_wanb_wbna", "[Numerics][batched_operations]")
   Tensor1D<ComplexType> scal({nbatch}, 1.0, alloc);
   copy_n(buffer.data(), buffer.size(), Twabn.base());
   std::vector<pointer<ComplexType>> Aarray;
-  array<ComplexType, 1, Alloc<ComplexType>> out(iextensions<1u>{nwalk}, alloc);
+  array<ComplexType, 1, Alloc<ComplexType>> out(extents_t<1u>{nwalk}, alloc);
   array<ComplexType, 1, Alloc<ComplexType>> ref = {ComplexType(1692.867783879684), ComplexType(1930.648417879638),
                                                    ComplexType(2189.107040119586)};
   using ma::batched_dot_wanb_wbna;
@@ -213,7 +213,7 @@ TEST_CASE("dot_wabn", "[Numerics][batched_operations]")
   create_data(buffer, ComplexType(100));
   Tensor4D<ComplexType> Twabn({nwalk, nocc, nocc, nchol}, alloc);
   copy_n(buffer.data(), buffer.size(), Twabn.base());
-  array<ComplexType, 1, Alloc<ComplexType>> out(iextensions<1u>{nwalk}, alloc);
+  array<ComplexType, 1, Alloc<ComplexType>> out(extents_t<1u>{nwalk}, alloc);
   using ma::dot_wabn;
   dot_wabn(nwalk, nocc, nchol, ComplexType(1.0), Twabn.base(), to_address(out.base()), 1);
   array<ComplexType, 1, Alloc<ComplexType>> ref = {ComplexType(7045.35), ComplexType(58699.7), ComplexType(162049.0)};
@@ -231,7 +231,7 @@ TEST_CASE("dot_wanb", "[Numerics][batched_operations]")
   create_data(buffer, ComplexType(100));
   Tensor4D<ComplexType> Twanb({nwalk, nocc, nchol, nocc}, alloc);
   copy_n(buffer.data(), buffer.size(), Twanb.base());
-  array<ComplexType, 1, Alloc<ComplexType>> out(iextensions<1u>{nwalk}, 0.0, alloc);
+  array<ComplexType, 1, Alloc<ComplexType>> out(extents_t<1u>{nwalk}, 0.0, alloc);
   using ma::dot_wanb;
   // out = numpy.einsum('wanb,wbna->w', Twanb, Twanb)
   dot_wanb(nwalk, nocc, nchol, ComplexType(1.0), Twanb.base(), to_address(out.base()), 1);
@@ -399,10 +399,10 @@ TEST_CASE("inplace_product", "[Numerics][batched_operations]")
 //int ncols = 7;
 //std::vector<int> packed_dims = {7,7,7,7,7,7,7,7};
 //Tensor1D<ComplexType> Buff;
-//Buff = std::move(Tensor1D<ComplexType>(iextensions<1u>{2*nrows*ncols+nbatch}, alloc));
+//Buff = std::move(Tensor1D<ComplexType>(extents_t<1u>{2*nrows*ncols+nbatch}, alloc));
 //Tensor2D_ref<ComplexType> A(make_device_ptr(Buff.base()), {nrows,ncols});
 //Tensor2D_ref<ComplexType> B(make_device_ptr(Buff.base()+nrows*ncols), {nrows,ncols});
-//Tensor1D_ref<ComplexType> C(make_device_ptr(Buff.base()+2*nrows*ncols), iextensions<1u>{nbatch});
+//Tensor1D_ref<ComplexType> C(make_device_ptr(Buff.base()+2*nrows*ncols), extents_t<1u>{nbatch});
 
 ////Tensor2D<ComplexType> A({nrows, ncols}, alloc);
 ////Tensor2D<ComplexType> B({ncols, nrows}, alloc);

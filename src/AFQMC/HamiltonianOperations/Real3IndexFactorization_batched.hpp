@@ -99,7 +99,7 @@ public:
         Lank(std::move(move_vector<shmSpC3Tensor>(std::move(vank)))),
         Lakn(std::move(vak)),
         vn0(std::move(vn0_)),
-        TBuff(iextensions<1u>{1}, sp_allocator_)
+        TBuff(extents_t<1u>{1}, sp_allocator_)
   {
     local_nCV = Likn.size(1);
     size_t lank(0);
@@ -128,7 +128,7 @@ public:
     // for now, stay collinear
 
     CVector vMF_(vMF);
-    CVector P1D(iextensions<1u>{NMO * NMO});
+    CVector P1D(extents_t<1u>{NMO * NMO});
     fill_n(P1D.base(), P1D.num_elements(), ComplexType(0));
     vHS(vMF_, P1D);
     if (TG.TG().size() > 1)
@@ -283,7 +283,7 @@ public:
     // not parallelized for now, since it would require customization of Wfn
     if (addH1)
     {
-      CVector_ref haj_ref(make_device_ptr(haj[nd].base()), iextensions<1u>{haj[nd].num_elements()});
+      CVector_ref haj_ref(make_device_ptr(haj[nd].base()), extents_t<1u>{haj[nd].num_elements()});
       ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(get<0>(E.extents()), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;
@@ -599,7 +599,7 @@ private:
       app_log() << " Resizing buffer space in Real3IndexFactorization_batched to "
                 << N * sizeof(SPComplexType) / 1024.0 / 1024.0 << " MBs. \n";
       {
-        TBuff = std::move(SpVector(iextensions<1u>{N}));
+        TBuff = std::move(SpVector(extents_t<1u>{N}));
       }
       memory_report();
       using std::fill_n;

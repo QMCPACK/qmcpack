@@ -158,7 +158,7 @@ public:
     // for now, stay collinear
 
     CVector vMF_(vMF);
-    CVector P1D(iextensions<1u>{NMO * NMO});
+    CVector P1D(extents_t<1u>{NMO * NMO});
     fill_n(P1D.base(), P1D.num_elements(), ComplexType(0));
     vHS(vMF_, P1D);
     if (TG.TG().size() > 1)
@@ -282,7 +282,7 @@ public:
     // not parallelized for now, since it would require customization of Wfn
     if (addH1)
     {
-      CVector_ref haj_ref(make_device_ptr(haj[nd].base()), iextensions<1u>{haj[nd].num_elements()});
+      CVector_ref haj_ref(make_device_ptr(haj[nd].base()), extents_t<1u>{haj[nd].num_elements()});
       ma::product(ComplexType(1.), Gc, haj_ref, ComplexType(1.), E(get<0>(E.extents()), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;
@@ -302,7 +302,7 @@ public:
       if (nspin > 1)
         mem_needs = nwalk * std::max(nel[0], nel[1]) * NMO;
 #endif
-      DynamicVector T1(iextensions<1u>{mem_needs},
+      DynamicVector T1(extents_t<1u>{mem_needs},
                        buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
       for (int ispin = 0, is0 = 0; ispin < nspin; ispin++)
@@ -414,7 +414,7 @@ public:
       Xmem = X.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       vmem = v.num_elements();
-    DynamicVector SPBuff(iextensions<1u>(Xmem + vmem),
+    DynamicVector SPBuff(extents_t<1u>(Xmem + vmem),
                          buffer_manager.get_generator().template get_allocator<SPComplexType>());
     sp_pointer vptr(nullptr);
     const_sp_pointer Xptr(nullptr);
@@ -481,7 +481,7 @@ public:
       Gmem = G.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       vmem = v.num_elements();
-    DynamicVector SPBuff(iextensions<1u>(Gmem + vmem),
+    DynamicVector SPBuff(extents_t<1u>(Gmem + vmem),
                          buffer_manager.get_generator().template get_allocator<SPComplexType>());
     sp_pointer vptr(nullptr);
     const_sp_pointer Gptr(nullptr);
@@ -618,7 +618,7 @@ public:
     if (nspin > 1)
       gsz = nspin * nwmax * NMO * NMO;
 #endif
-    DynamicVector GBuff(iextensions<1u>{gsz}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
+    DynamicVector GBuff(extents_t<1u>{gsz}, buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     int nw0(0);
     while (nw0 < nwalk)

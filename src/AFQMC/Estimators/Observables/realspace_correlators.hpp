@@ -87,7 +87,7 @@ public:
         Orbitals({0, 0}, alloc),
         DMAverage({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
-        denom(iextensions<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
+        denom(extents_t<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
         Gr_host({0, 0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         Orrp({0, 0}, shared_allocator<ComplexType>{TG.TG_local()})
   {
@@ -108,7 +108,7 @@ public:
       APP_ABORT("");
     }
 
-    stdIVector norbs(iextensions<1u>{0});
+    stdIVector norbs(extents_t<1u>{0});
     dm_size     = 0;
     int npoints = 0;
 
@@ -124,7 +124,7 @@ public:
       dump.push("OrbsR", false);
 
       // read one orbital to check size and later corroborate all orbitals have same size
-      stdCVector orb(iextensions<1u>{1});
+      stdCVector orb(extents_t<1u>{1});
       if (!dump.readEntry(orb, "kp0_b0"))
       {
         app_error() << " Error in realspace_correlators: Problems reading orbital: 0  0" << std::endl;
@@ -245,7 +245,7 @@ public:
     {
       if (denom.size() != nw)
       {
-        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
+        denom = mpi3CVector(extents_t<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != 3 || get<2>(DMWork.sizes()) != dm_size)
       {

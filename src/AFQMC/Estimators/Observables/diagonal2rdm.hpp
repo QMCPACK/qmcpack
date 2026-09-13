@@ -68,7 +68,7 @@ public:
         hdf_walker_output(""),
         DMAverage({0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork({0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
-        denom(iextensions<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()})
+        denom(extents_t<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()})
   {
     app_log() << "  --  Adding Back Propagated Diagonal 2RDM (Diag2RDM) estimator. -- \n";
 
@@ -139,7 +139,7 @@ public:
     {
       if (denom.size() != nw)
       {
-        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
+        denom = mpi3CVector(extents_t<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size)
       {

@@ -86,7 +86,7 @@ public:
         XRot({0, 0}, make_node_allocator<ComplexType>(TG)),
         print_from_list(false),
         index_list({0, 0}, shared_allocator<int>{TG.Node()}),
-        denom(iextensions<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
+        denom(extents_t<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMAverage({0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork({0, 0}, shared_allocator<ComplexType>{TG.TG_local()})
   {
@@ -251,7 +251,7 @@ public:
     {
       if (denom.size() != nw)
       {
-        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
+        denom = mpi3CVector(extents_t<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size)
       {
@@ -449,7 +449,7 @@ private:
     DynamicMatrix T1({(iN - i0), NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     DynamicMatrix T2({(iN - i0), nX}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     if (Grot.size() != npts)
-      Grot = stdCVector(iextensions<1u>(npts));
+      Grot = stdCVector(extents_t<1u>(npts));
 
     // round-robin for now
     int cnt = 0;

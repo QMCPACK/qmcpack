@@ -55,16 +55,16 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   const int node_number   = TG.getLocalGroupNumber();
   // if transposed_XXX_=true  --> XXX[nwalk][...],
   // if transposed_XXX_=false --> XXX[...][nwalk]
-  auto vhs_ext   = iextensions<2u>{NMO * NMO, nwalk * nsteps};
-  auto vhs3d_ext = iextensions<3u>{NMO, NMO, nwalk * nsteps};
-  auto G_ext     = iextensions<2u>{Gsize, nwalk};
+  auto vhs_ext   = extents_t<2u>{NMO * NMO, nwalk * nsteps};
+  auto vhs3d_ext = extents_t<3u>{NMO, NMO, nwalk * nsteps};
+  auto G_ext     = extents_t<2u>{Gsize, nwalk};
   if (transposed_vHS_)
   {
-    vhs_ext   = iextensions<2u>{nwalk * nsteps, NMO * NMO};
-    vhs3d_ext = iextensions<3u>{nwalk * nsteps, NMO, NMO};
+    vhs_ext   = extents_t<2u>{nwalk * nsteps, NMO * NMO};
+    vhs3d_ext = extents_t<3u>{nwalk * nsteps, NMO, NMO};
   }
   if (transposed_G_)
-    G_ext = iextensions<2u>{nwalk, Gsize};
+    G_ext = extents_t<2u>{nwalk, Gsize};
 
   using std::get;
   if (get<0>(MFfactor.sizes()) != nsteps || get<1>(MFfactor.sizes()) != nwalk)
@@ -72,7 +72,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   if (get<0>(hybrid_weight.sizes()) != nsteps || get<1>(hybrid_weight.sizes()) != nwalk)
     hybrid_weight = CMatrix({long(nsteps), long(nwalk)});
   if (get<0>(new_overlaps.sizes()) != nwalk)
-    new_overlaps = CVector(iextensions<1u>{nwalk});
+    new_overlaps = CVector(extents_t<1u>{nwalk});
   if (get<0>(new_energies.sizes()) != nwalk || get<1>(new_energies.sizes()) != 3)
     new_energies = CMatrix({long(nwalk), 3});
 
@@ -154,7 +154,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       size_t m_(globalnCV * nwalk * nsteps * 2);
       if (bpX.num_elements() < m_)
       {
-        bpX = mpi3SPCVector(iextensions<1u>(m_), shared_allocator<SPComplexType>{TG.TG_local()});
+        bpX = mpi3SPCVector(extents_t<1u>(m_), shared_allocator<SPComplexType>{TG.TG_local()});
         if (TG.TG_local().root())
           fill_n(bpX.base(), bpX.num_elements(), SPComplexType(0.0));
       }
@@ -425,16 +425,16 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
   const int node_number   = TG.getLocalGroupNumber();
   // if transposed_XXX_=true  --> XXX[nwalk][...],
   // if transposed_XXX_=false --> XXX[...][nwalk]
-  auto vhs_ext   = iextensions<2u>{NMO * NMO, nwalk * nsteps};
-  auto vhs3d_ext = iextensions<3u>{NMO, NMO, nwalk * nsteps};
-  auto G_ext     = iextensions<2u>{Gsize, nwalk};
+  auto vhs_ext   = extents_t<2u>{NMO * NMO, nwalk * nsteps};
+  auto vhs3d_ext = extents_t<3u>{NMO, NMO, nwalk * nsteps};
+  auto G_ext     = extents_t<2u>{Gsize, nwalk};
   if (transposed_vHS_)
   {
-    vhs_ext   = iextensions<2u>{nwalk * nsteps, NMO * NMO};
-    vhs3d_ext = iextensions<3u>{nwalk * nsteps, NMO, NMO};
+    vhs_ext   = extents_t<2u>{nwalk * nsteps, NMO * NMO};
+    vhs3d_ext = extents_t<3u>{nwalk * nsteps, NMO, NMO};
   }
   if (transposed_G_)
-    G_ext = iextensions<2u>{nwalk, Gsize};
+    G_ext = extents_t<2u>{nwalk, Gsize};
 
   using std::get;
   if (get<0>(MFfactor.sizes()) != nsteps || get<1>(MFfactor.sizes()) != nwalk)
@@ -442,7 +442,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
   if (get<0>(hybrid_weight.sizes()) != nsteps || get<1>(hybrid_weight.sizes()) != nwalk)
     hybrid_weight = CMatrix({long(nsteps), long(nwalk)});
   if (get<0>(new_overlaps.sizes()) != nwalk)
-    new_overlaps = CVector(iextensions<1u>{nwalk});
+    new_overlaps = CVector(extents_t<1u>{nwalk});
   if (get<0>(new_energies.sizes()) != nwalk || get<1>(new_energies.sizes()) != 3)
     new_energies = CMatrix({long(nwalk), 3});
 
@@ -512,7 +512,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       size_t m_(globalnCV * nwalk * nsteps);
       if (bpX.num_elements() < m_)
       {
-        bpX = mpi3SPCVector(iextensions<1u>(m_), shared_allocator<SPComplexType>{TG.TG_local()});
+        bpX = mpi3SPCVector(extents_t<1u>(m_), shared_allocator<SPComplexType>{TG.TG_local()});
         if (TG.TG_local().root())
           fill_n(bpX.base(), bpX.num_elements(), SPComplexType(0.0));
       }
@@ -788,12 +788,12 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
   const int global_origin = wfn.global_origin_cholesky_vector();
   const int nnodes        = TG.getNGroupsPerTG();
 
-  auto vhs_ext   = iextensions<2u>{NMO * NMO, nwalk};
-  auto vhs3d_ext = iextensions<3u>{NMO, NMO, nwalk};
+  auto vhs_ext   = extents_t<2u>{NMO * NMO, nwalk};
+  auto vhs3d_ext = extents_t<3u>{NMO, NMO, nwalk};
   if (transposed_vHS_)
   {
-    vhs_ext   = iextensions<2u>{nwalk, NMO * NMO};
-    vhs3d_ext = iextensions<3u>{nwalk, NMO, NMO};
+    vhs_ext   = extents_t<2u>{nwalk, NMO * NMO};
+    vhs3d_ext = extents_t<3u>{nwalk, NMO, NMO};
   }
 
   //  Shared buffer used for:

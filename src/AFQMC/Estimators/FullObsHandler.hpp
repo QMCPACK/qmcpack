@@ -167,7 +167,7 @@ public:
 
     writer = (TG.getGlobalRank() == 0);
 
-    denominator = stdCVector(iextensions<1u>{nave});
+    denominator = stdCVector(extents_t<1u>{nave});
     fill_n(denominator.begin(), denominator.num_elements(), ComplexType(0.0, 0.0));
   }
 
@@ -200,7 +200,7 @@ public:
     LocalTGBufferManager shm_buffer_manager;
     DynamicSHM4Tensor G4D({nw, nspins, get<0>(Gdims), get<1>(Gdims)},
                           shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
-    DynamicSHMVector DevOv(iextensions<1u>{2 * nw},
+    DynamicSHMVector DevOv(extents_t<1u>{2 * nw},
                            shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
     sharedCMatrix_ref G2D(G4D.base(), {nw, dm_size});
 
@@ -210,9 +210,9 @@ public:
       TG.TG_local().barrier();
     }
 
-    stdCVector Xw(iextensions<1u>{nw});
+    stdCVector Xw(extents_t<1u>{nw});
     std::fill_n(Xw.base(), Xw.num_elements(), ComplexType(1.0, 0.0));
-    stdCVector Ov(iextensions<1u>{2 * nw});
+    stdCVector Ov(extents_t<1u>{2 * nw});
     stdCMatrix detR(DevdetR);
 
     using SMType = typename WlkSet::reference::SMType;
@@ -262,8 +262,8 @@ public:
         {
           SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
           SMB.emplace_back(wset[iw].SlaterMatrixN(Beta));
-          GA.emplace_back(make_device_ptr(G2D[iw].base()), iextensions<2u>{NMO, NMO});
-          GB.emplace_back(make_device_ptr(G2D[iw].base()) + NMO * NMO, iextensions<2u>{NMO, NMO});
+          GA.emplace_back(make_device_ptr(G2D[iw].base()), extents_t<2u>{NMO, NMO});
+          GB.emplace_back(make_device_ptr(G2D[iw].base()) + NMO * NMO, extents_t<2u>{NMO, NMO});
           RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
           RefsB.emplace_back(wset[iw].SlaterMatrixAux(Beta));
           copy_n(Refs[iw][iref].base(), (*RefsA.back()).num_elements(), (*RefsA.back()).base());
@@ -278,7 +278,7 @@ public:
         for (int iw = 0; iw < nw; iw++)
         {
           SMA.emplace_back(wset[iw].SlaterMatrixN(Alpha));
-          GA.emplace_back(make_device_ptr(G2D[iw].base()), iextensions<2u>{NMO, NMO});
+          GA.emplace_back(make_device_ptr(G2D[iw].base()), extents_t<2u>{NMO, NMO});
           RefsA.emplace_back(wset[iw].SlaterMatrixAux(Alpha));
           copy_n(Refs[iw][iref].base(), (*RefsA.back()).num_elements(), (*RefsA.back()).base());
         }

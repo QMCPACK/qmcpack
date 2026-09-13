@@ -33,7 +33,7 @@
 
 using boost::multi::array;
 using boost::multi::array_ref;
-using boost::multi::iextensions;
+using boost::multi::extents_t;
 using std::copy_n;
 
 namespace qmcplusplus
@@ -64,7 +64,7 @@ TEST_CASE("axpyBatched", "[Numerics][misc_kernels]")
   Alloc<std::complex<double>> alloc{};
   Tensor2D<std::complex<double>> y({3, 4}, 1.0, alloc);
   Tensor2D<std::complex<double>> x({3, 4}, 1.0, alloc);
-  Tensor1D<std::complex<double>> a(iextensions<1u>{3}, 2.0, alloc);
+  Tensor1D<std::complex<double>> a(extents_t<1u>{3}, 2.0, alloc);
   std::vector<pointer<std::complex<double>>> x_batched, y_batched;
   using std::get;
   for (int i = 0; i < get<0>(x.sizes()); i++)
@@ -91,7 +91,7 @@ TEST_CASE("construct_X", "[Numerics][misc_kernels]")
   double sqrtdt           = 0.002;
   double vbound           = 40.0;
   std::complex<double> im = std::complex<double>(0.0, 1.0);
-  Tensor1D<std::complex<double>> vmf(iextensions<1U>{ncv}, im, alloc);
+  Tensor1D<std::complex<double>> vmf(extents_t<1U>{ncv}, im, alloc);
   Tensor2D<std::complex<double>> vbias({ncv, nwalk}, 1.0, alloc);
   Tensor2D<std::complex<double>> hws({nsteps, nwalk}, -0.2, alloc);
   Tensor2D<std::complex<double>> mf({nsteps, nwalk}, 2.0, alloc);
@@ -111,7 +111,7 @@ TEST_CASE("batchedDot", "[Numerics][misc_kernels]")
   Alloc<std::complex<double>> alloc{};
   std::complex<double> im = std::complex<double>(0.0, 1.0);
   int dim                 = 3;
-  Tensor1D<std::complex<double>> y(iextensions<1U>{dim}, im, alloc);
+  Tensor1D<std::complex<double>> y(extents_t<1U>{dim}, im, alloc);
   Tensor2D<std::complex<double>> A({dim, dim}, 1.0, alloc);
   Tensor2D<std::complex<double>> B({dim, dim}, -0.2, alloc);
   std::complex<double> alpha(2.0);
@@ -121,7 +121,7 @@ TEST_CASE("batchedDot", "[Numerics][misc_kernels]")
              1);
   // from numpy.
   std::complex<double> ref_val(-1.2, -1.0);
-  Tensor1D<std::complex<double>> ref(iextensions<1U>{dim}, ref_val, alloc);
+  Tensor1D<std::complex<double>> ref(extents_t<1U>{dim}, ref_val, alloc);
   verify_approx(ref, y);
 }
 #endif
