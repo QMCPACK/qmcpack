@@ -41,7 +41,6 @@
 
 using std::cerr;
 using std::complex;
-using std::cout;
 using std::endl;
 using std::ifstream;
 using std::setprecision;
@@ -147,7 +146,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     PropgFac.push(prop_name, doc4.getRoot());
     Propagator& prop = PropgFac.getPropagator(TG, prop_name, wfn, rng);
 
-    std::cout << setprecision(12);
+    app_log() << setprecision(12);
     wfn.Energy(wset);
     {
       ComplexType eav = 0, ov = 0;

@@ -26,6 +26,29 @@ TEST_FILES = {
     "README": TEST_DIR / "test_pwscf_input_files/README",
     }
 
+# These are input-only counterparts to supplemental PwscfAnalyzer runs.  Keep
+# them in the analyzer fixture tree: the analyzer tests need the complete run
+# products, while the input tests exercise the same representative inputs.
+ANALYZER_SUPPLEMENTAL_DIR = (
+    TEST_DIR / "test_pwscf_analyzer_files/qe_7_0/supplemental"
+    )
+for input_name in (
+    'cbn_scf',
+    'cbn_relax',
+    'cbn_vc_relax',
+    'cbn_smearing',
+    'cbn_spin',
+    'cbn_crystal_kpoints',
+    'md_iprint',
+    'vc_md_iprint',
+    'scf_crystal_kpoints',
+    'scf_no_symmetry',
+    ):
+    TEST_FILES[f'supplemental_{input_name}.in'] = (
+        ANALYZER_SUPPLEMENTAL_DIR / input_name / 'pwscf.in'
+        )
+#end for
+
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file not found! {file}"
 
@@ -682,3 +705,152 @@ def test_input(tmp_path):
     pw2 = PwscfInput(write_path)
     check_pw_same(pw2,reads[infile],'generate','read')
 #end def test_input
+
+
+@isolate_nexus_core
+def test_supplemental_input_generation(tmp_path):
+    """Generate representative inputs for supplemental analyzer run styles."""
+    import numpy as np
+    from ..developer import obj
+    from ..pwscf_input import PwscfInput, generate_pwscf_input
+
+    def check_round_trip(name,pw):
+        write_path = tmp_path / f'{name}.in'
+        pw.write(write_path)
+        pwr = PwscfInput(write_path)
+        pw.standardize_types()
+        pwr.standardize_types()
+        assert object_eq(pw,pwr,int_as_float=True,atol=5e-4)
+    #end def check_round_trip
+
+    carbon = dict(
+        selector      = 'generic',
+        prefix        = 'carbon',
+        outdir        = './tmp',
+        pseudo_dir    = './pseudo',
+        tstress       = True,
+        tprnfor       = True,
+        ibrav         = 2,
+        celldm        = {1:6.80},
+        nat           = 2,
+        ntyp          = 1,
+        ecutwfc       = 25.0,
+        ecutrho       = 100.0,
+        occupations   = 'fixed',
+        nosym         = True,
+        noinv         = True,
+        conv_thr      = 1e-8,
+        mixing_beta   = 0.5,
+        diagonalization = 'david',
+        mass          = obj(C=12.0107),
+        pseudos       = ['C.UPF'],
+        elem          = ['C','C'],
+        pos           = [[0.0,0.0,0.0],[0.255,0.245,0.250]],
+        pos_specifier = 'crystal',
+        kgrid         = np.array((2,2,2)),
+        kshift        = np.array((0,0,0)),
+        )
+
+    md = generate_pwscf_input(
+        calculation     = 'md',
+        nstep           = 5,
+        iprint          = 1,
+        dt              = 5.0,
+        ion_dynamics    = 'verlet',
+        ion_temperature = 'initial',
+        tempw           = 300.0,
+        **carbon,
+        )
+    assert md.control.calculation == 'md'
+    assert md.control.iprint == 1
+    assert md.ions.ion_dynamics == 'verlet'
+    check_round_trip('md',md)
+
+    vc_md = generate_pwscf_input(
+        calculation     = 'vc-md',
+        nstep           = 5,
+        iprint          = 1,
+        dt              = 5.0,
+        ion_dynamics    = 'beeman',
+        ion_temperature = 'initial',
+        tempw           = 300.0,
+        cell_dynamics   = 'pr',
+        press           = 0.0,
+        cell_dofree     = 'all',
+        **carbon,
+        )
+    assert vc_md.control.calculation == 'vc-md'
+    assert vc_md.ions.ion_dynamics == 'beeman'
+    assert vc_md.cell.cell_dynamics == 'pr'
+    check_round_trip('vc_md',vc_md)
+
+    crystal_kpoints = generate_pwscf_input(calculation='scf',**carbon)
+    crystal_kpoints.k_points.clear()
+    crystal_kpoints.k_points.update(
+        specifier = 'crystal',
+        nkpoints  = 4,
+        kpoints   = np.array([
+            [0.00,0.00,0.00],
+            [0.25,0.00,0.00],
+            [0.25,0.25,0.00],
+            [0.25,0.25,0.25],
+            ]),
+        weights   = np.array([0.10,0.20,0.30,0.40]),
+        )
+    assert crystal_kpoints.k_points.specifier == 'crystal'
+    assert np.allclose(crystal_kpoints.k_points.weights,[0.10,0.20,0.30,0.40])
+    check_round_trip('crystal_kpoints',crystal_kpoints)
+
+    cbn = dict(
+        selector      = 'generic',
+        calculation   = 'scf',
+        prefix        = 'cbn',
+        outdir        = './tmp',
+        pseudo_dir    = './pseudo',
+        tstress       = True,
+        tprnfor       = True,
+        ibrav         = 2,
+        celldm        = {1:6.82},
+        nat           = 2,
+        ntyp          = 2,
+        ecutwfc       = 300.0,
+        ecutrho       = 1200.0,
+        occupations   = 'smearing',
+        smearing      = 'gaussian',
+        degauss       = 0.02,
+        nbnd          = 8,
+        conv_thr      = 1e-8,
+        mixing_beta   = 0.5,
+        diagonalization = 'david',
+        mass          = obj(B=10.81,N=14.01),
+        pseudos       = ['B.ccECP.upf','N.ccECP.upf'],
+        elem          = ['B','N'],
+        pos           = [[0.0,0.0,0.0],[0.25,0.25,0.25]],
+        pos_specifier = 'crystal',
+        kgrid         = np.array((3,3,3)),
+        kshift        = np.array((0,0,0)),
+        )
+    cbn_spin = generate_pwscf_input(
+        nspin                    = 2,
+        starting_magnetization   = {1:0.5,2:-0.5},
+        **cbn,
+        )
+    assert cbn_spin.atomic_species.atoms == ['B','N']
+    assert cbn_spin.system.nspin == 2
+    assert cbn_spin.system.ecutwfc == 300.0
+    check_round_trip('cbn_spin',cbn_spin)
+
+    cbn_vc_relax_kwargs = dict(cbn)
+    cbn_vc_relax_kwargs.update(
+        calculation     = 'vc-relax',
+        occupations     = 'fixed',
+        ion_dynamics    = 'bfgs',
+        cell_dynamics   = 'bfgs',
+        press           = 0.0,
+        press_conv_thr  = 0.5,
+        cell_dofree     = 'all',
+        )
+    cbn_vc_relax = generate_pwscf_input(**cbn_vc_relax_kwargs)
+    assert cbn_vc_relax.control.calculation == 'vc-relax'
+    assert cbn_vc_relax.cell.press_conv_thr == 0.5
+    check_round_trip('cbn_vc_relax',cbn_vc_relax)

@@ -111,7 +111,7 @@ public:
         SpvnT(std::move(vnT)),
         SpvnT_view(std::move(vnTview)),
         vn0(std::move(vn0_)),
-        SM_TMats(iextensions<1u>{0}, shared_allocator<SPComplexType>{c_}),
+        SM_TMats(extents_t<1u>{0}, shared_allocator<SPComplexType>{c_}),
         separateEJ(true)
   {
     assert(haj.size() == Vakbl.size());
@@ -194,7 +194,7 @@ public:
     assert(k >= 0 && k < Vakbl_view.size());
     using std::get;
     if (Gcloc.num_elements() < get<1>(Gc.sizes()) * get<0>(Vakbl_view[k].sizes()))
-      Gcloc.reextent(iextensions<1u>(get<0>(Vakbl_view[k].sizes()) * get<1>(Gc.sizes())));
+      Gcloc.reextent(extents_t<1u>(get<0>(Vakbl_view[k].sizes()) * get<1>(Gc.sizes())));
     boost::multi::array_ref<SPComplexType, 2> buff(Gcloc.data(), {long(get<0>(Vakbl_view[k].sizes())), long(get<1>(Gc.sizes()))});
 
     int nwalk = get<1>(Gc.sizes());
@@ -226,7 +226,7 @@ public:
     if (addH1)
     {
       boost::multi::array_cref<ComplexType, 1> haj_ref(to_address(haj[k].base()),
-                                                       iextensions<1u>{haj[k].num_elements()});
+                                                       extents_t<1u>{haj[k].num_elements()});
       ma::product(ComplexType(1.), ma::T(Gc), haj_ref, ComplexType(1.), E(get<0>(E.extents()), 0));
       for (int i = 0; i < nwalk; i++)
         E[i][0] += E0;
@@ -243,7 +243,7 @@ public:
     {
       using ma::T;
       if (Gcloc.num_elements() < get<0>(SpvnT[k].sizes()) * get<1>(Gc.sizes()))
-        Gcloc.reextent(iextensions<1u>(get<0>(SpvnT[k].sizes()) * get<1>(Gc.sizes())));
+        Gcloc.reextent(extents_t<1u>(get<0>(SpvnT[k].sizes()) * get<1>(Gc.sizes())));
       assert(get<1>(SpvnT_view[k].sizes()) == get<0>(Gc.sizes()));
       RealType scl = (walker_type == CLOSED ? 4.0 : 1.0);
 
@@ -525,7 +525,7 @@ private:
   {
     if (SM_TMats.num_elements() < N)
     {
-      SM_TMats.reextent(iextensions<1u>(N));
+      SM_TMats.reextent(extents_t<1u>(N));
       using std::fill_n;
       fill_n(SM_TMats.base(), N, SPComplexType(0.0));
       comm->barrier();

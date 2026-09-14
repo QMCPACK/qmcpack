@@ -276,7 +276,7 @@ public:
           pos++;
         }
         // use operator= or assign when ready!!!
-        boost::multi::array<ComplexType, 1> buff(iextensions<1u>{n - tot_num_walkers}, ComplexType(1.0));
+        boost::multi::array<ComplexType, 1> buff(extents_t<1u>{n - tot_num_walkers}, ComplexType(1.0));
         ma::copy(buff, W({tot_num_walkers, n}, data_displ[WEIGHT]));
         ma::copy(buff, W({tot_num_walkers, n}, data_displ[OVLP]));
         ma::copy(buff, W({tot_num_walkers, n}, data_displ[PHASE]));
@@ -379,7 +379,7 @@ public:
     assert(get<1>(walker_buffer.sizes()) == walker_size);
     if (TG.TG_local().root())
     {
-      boost::multi::array<ComplexType, 1> buff(iextensions<1u>{tot_num_walkers});
+      boost::multi::array<ComplexType, 1> buff(extents_t<1u>{tot_num_walkers});
       getProperty(WEIGHT, buff);
       for (int i = 0; i < tot_num_walkers; i++)
         res += std::abs(buff[i]);
@@ -603,8 +603,8 @@ public:
       return;
     assert(walker_buffer.size(1) == walker_size);
     auto W(walker_buffer.template static_array_cast<element, pointer>());
-    boost::multi::array<ComplexType, 1> ov(iextensions<1u>{tot_num_walkers});
-    boost::multi::array<ComplexType, 1> buff(iextensions<1u>{tot_num_walkers});
+    boost::multi::array<ComplexType, 1> ov(extents_t<1u>{tot_num_walkers});
+    boost::multi::array<ComplexType, 1> buff(extents_t<1u>{tot_num_walkers});
     getProperty(OVLP, ov);
     for (int i = 0; i < tot_num_walkers; i++)
       buff[i] = ComplexType(1.0 / std::abs(ov[i]), 0.0);
@@ -683,7 +683,7 @@ public:
     TG.TG_local().barrier();
     if (TG.TG_local().root())
     {
-      boost::multi::array<element, 1> w_(iextensions<1u>{tot_num_walkers}, ComplexType(1.0));
+      boost::multi::array<element, 1> w_(extents_t<1u>{tot_num_walkers}, ComplexType(1.0));
       setProperty(WEIGHT, w_);
     }
     TG.TG_local().barrier();

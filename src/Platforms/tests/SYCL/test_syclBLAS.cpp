@@ -192,7 +192,7 @@ TEST_CASE("OmpBLAS gemv", "[SYCL]")
   const int batch_count = 23;
 
   // Non-batched test
-  std::cout << "Testing TRANS gemv" << std::endl;
+  app_log() << "Testing TRANS gemv" << std::endl;
   test_gemv<float>(M, N, 'T');
   test_gemv<double>(M, N, 'T');
 #if defined(QMC_COMPLEX)
@@ -200,7 +200,7 @@ TEST_CASE("OmpBLAS gemv", "[SYCL]")
   test_gemv<std::complex<double>>(N, M, 'T');
 #endif
   // Batched Test
-  std::cout << "Testing TRANS gemv_batched" << std::endl;
+  app_log() << "Testing TRANS gemv_batched" << std::endl;
   test_gemv_batched<float>(M, N, 'T', batch_count);
   test_gemv_batched<double>(M, N, 'T', batch_count);
 #if defined(QMC_COMPLEX)
@@ -216,7 +216,7 @@ TEST_CASE("OmpBLAS gemv notrans", "[SYCL]")
   const int batch_count = 23;
 
   // Non-batched test
-  std::cout << "Testing NOTRANS gemv" << std::endl;
+  app_log() << "Testing NOTRANS gemv" << std::endl;
   test_gemv<float>(M, N, 'N');
   test_gemv<double>(M, N, 'N');
 #if defined(QMC_COMPLEX)
@@ -224,7 +224,7 @@ TEST_CASE("OmpBLAS gemv notrans", "[SYCL]")
   test_gemv<std::complex<double>>(N, M, 'N');
 #endif
   // Batched Test
-  std::cout << "Testing NOTRANS gemv_batched" << std::endl;
+  app_log() << "Testing NOTRANS gemv_batched" << std::endl;
   test_gemv_batched<float>(M, N, 'N', batch_count);
   test_gemv_batched<double>(M, N, 'N', batch_count);
 #if defined(QMC_COMPLEX)
@@ -335,7 +335,7 @@ TEST_CASE("OmpBLAS ger", "[SYCL]")
   const int batch_count = 23;
 
   // Batched Test
-  std::cout << "Testing ger_batched" << std::endl;
+  app_log() << "Testing ger_batched" << std::endl;
   test_ger_batched<float>(M, N, batch_count);
   test_ger_batched<double>(M, N, batch_count);
 #if defined(QMC_COMPLEX)

@@ -9,6 +9,7 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
+#include "Platforms/Host/OutputManager.h"
 
 #include <memory>
 #include <vector>
@@ -60,11 +61,11 @@ TEST_CASE("OMPdeepcopy", "[OMP]")
     check_address3 = foo;
   }
 
-  std::cout << "foo->data value on the host " << foo->data << std::endl;
-  std::cout << "foo->data value on the device " << check_address2 << std::endl;
-  std::cout << "foo->data mapped address on the device " << check_address1 << std::endl;
-  std::cout << "foo value on the host " << foo << std::endl;
-  std::cout << "foo mapped address on the device " << check_address3 << std::endl;
+  app_log() << "foo->data value on the host " << foo->data << std::endl;
+  app_log() << "foo->data value on the device " << check_address2 << std::endl;
+  app_log() << "foo->data mapped address on the device " << check_address1 << std::endl;
+  app_log() << "foo value on the host " << foo << std::endl;
+  app_log() << "foo mapped address on the device " << check_address3 << std::endl;
 
   REQUIRE(check_data1 == 1.0);
   REQUIRE(check_size == MAX);

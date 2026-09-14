@@ -25,28 +25,24 @@ function(
 
   # add run (task 1)
   set(test_added false)
-  set(test_labels "")
   run_qmc_app(
     ${full_name}
     ${base_dir}
     ${procs}
     ${threads}
     test_added
-    test_labels
     ${input_file}.in.xml)
   if(test_added)
 
     # add restart (task 2)
     set(restart_name "${base_name}-r${procs}-t${threads}-restart")
     #set (test_added false)
-    set(test_labels "")
     run_qmc_app_no_copy(
       ${restart_name}
       ${CMAKE_CURRENT_BINARY_DIR}/${full_name}
       ${procs}
       ${threads}
       test_added
-      test_labels
       ${input_file}.restart.xml)
 
     # make restart depend on the initial run
@@ -75,7 +71,6 @@ function(
 
     # make test depend on the restart run
     set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name}-restart)
-    set_property(TEST ${test_name} APPEND PROPERTY LABELS ${test_labels})
 
   endif()
 
@@ -207,6 +202,24 @@ run_restart_and_check(
   true)
 
 run_restart_and_check(
+  deterministic-save_spline_coefs-batched
+  "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs"
+  qmc_batched
+  2
+  2
+  check_batched.sh
+  false)
+
+run_restart_and_check(
+  deterministic-save_spline_coefs-batched
+  "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs"
+  qmc_batched
+  1
+  4
+  check_batched.sh
+  true)
+
+run_restart_and_check(
   deterministic-save_spline_coefs_hybridrep
   "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs_hybridrep"
   qmc
@@ -214,3 +227,15 @@ run_restart_and_check(
   3
   check.sh
   true)
+
+run_restart_and_check(
+  deterministic-save_spline_coefs_hybridrep-batched
+  "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs_hybridrep"
+  qmc_batched
+  1
+  3
+  check_batched.sh
+  true)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

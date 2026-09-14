@@ -27,7 +27,7 @@
 
 using boost::multi::array;
 using boost::multi::array_ref;
-using boost::multi::iextensions;
+using boost::multi::extents_t;
 using std::copy_n;
 
 namespace qmcplusplus
@@ -150,7 +150,7 @@ TEST_CASE("term_by_term_matrix_vector", "[Numerics][tensor_operations]")
   int nrow = 3;
   int ncol = 3;
   Tensor2D<ComplexType> A({nrow, ncol}, alloc);
-  Tensor1D<ComplexType> x(iextensions<1u>{ncol}, alloc);
+  Tensor1D<ComplexType> x(extents_t<1u>{ncol}, alloc);
   std::vector<ComplexType> buffer(nrow * ncol);
   create_data(buffer, ComplexType(1.0));
   copy_n(buffer.data(), buffer.size(), A.base());
@@ -211,7 +211,7 @@ TEST_CASE("transpose_wabn_to_wban", "[Numerics][tensor_operations]")
   // Twban = numpy.transpose(Twabn, (0,2,1,3))
   using ma::transpose_wabn_to_wban;
   transpose_wabn_to_wban(nwalk, na, nb, nchol, Twabn.base(), Twban.base());
-  Tensor1D_ref<ComplexType> chunk(Twban.base() + 10, iextensions<1u>{10});
+  Tensor1D_ref<ComplexType> chunk(Twban.base() + 10, extents_t<1u>{10});
   // From Twban.copy().ravel()[10:20].
   Tensor1D<ComplexType> ref = {10, 55, 56, 57, 58, 59, 60, 61, 62, 63};
   verify_approx(chunk, ref);

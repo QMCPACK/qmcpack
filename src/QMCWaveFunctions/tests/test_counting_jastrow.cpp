@@ -354,7 +354,7 @@ TEST_CASE("CountingJastrow", "[wavefunction]")
   optVars.resetIndex();
   cj->checkInVariablesExclusive(optVars);
   cj->checkOutVariables(optVars);
-  optVars.print(std::cout);
+  optVars.print(app_log());
 
   // test evaluateDerivatives
   cj->evaluateDerivatives(elec, optVars, dlogpsi, dhpsioverpsi);
@@ -378,7 +378,7 @@ TEST_CASE("CountingJastrow", "[wavefunction]")
   optVars2.resetIndex();
   cj2->checkInVariablesExclusive(optVars2);
   cj2->checkOutVariables(optVars2);
-  optVars2.print(std::cout);
+  optVars2.print(app_log());
 
   cj2->evaluateDerivatives(elec, optVars2, dlogpsi, dhpsioverpsi);
   for (int p = 0; p < num_derivs; ++p)

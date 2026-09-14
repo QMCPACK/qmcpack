@@ -119,7 +119,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
   if (type == NONCOLLINEAR)
     APP_ABORT(" GHF not yet implemented. \n");
 
-  boost::multi::array<SPComplexType, 1> vec(iextensions<1u>{nvec});
+  boost::multi::array<SPComplexType, 1> vec(extents_t<1u>{nvec});
   if (reserve_to_fit_)
   {
     std::vector<std::size_t> sz_per_row(Qdim);
@@ -323,7 +323,7 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type,
   if (type == NONCOLLINEAR)
     APP_ABORT(" GHF not yet implemented. \n");
 
-  boost::multi::array<SPComplexType, 1> vec(iextensions<1u>{nvec});
+  boost::multi::array<SPComplexType, 1> vec(extents_t<1u>{nvec});
   std::vector<std::size_t> sz_per_row(nvec);
   std::size_t cnt = 0;
   for (int a = 0; a < NAEA; a++)

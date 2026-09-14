@@ -34,10 +34,10 @@ public:
     RealType xa = bracket.a;
     RealType xb = bracket.b;
     RealType xc = bracket.c;
-    //std::cout << " xa = " << xa;
-    //std::cout << " xb = " << xb;
-    //std::cout << " xc = " << xc;
-    //std::cout << std::endl;
+    //app_log() << " xa = " << xa;
+    //app_log() << " xb = " << xb;
+    //app_log() << " xc = " << xc;
+    //app_log() << std::endl;
 
     REQUIRE(xa < xb);
     REQUIRE(xb < xc);
