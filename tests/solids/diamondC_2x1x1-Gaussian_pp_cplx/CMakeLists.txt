@@ -10,7 +10,7 @@ if(QMC_COMPLEX)
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_LONG_SCALARS "eeenergy" "-4.537323794961 0.028697376864")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_LONG_SCALARS "localecp" "-12.875979090005 0.104598406850")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_LONG_SCALARS "nonlocalecp" "2.113850615398 0.028971593529")
-  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_LONG_SCALARS "ionion" "-25.551326757000 0.020000000000")
+  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_LONG_SCALARS "ionion" "-25.55132719 0.000002")
   qmc_run_and_check(
     long-diamondC_2x1x1-Gaussian_pp_Tw_cplx
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx"
@@ -45,7 +45,7 @@ if(QMC_COMPLEX)
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "eeenergy" "-4.537323794961 0.058408305166")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "localecp" "-12.875979090005 0.173005314408")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "nonlocalecp" "2.113850615398 0.059863222645")
-  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "ionion" "-25.551326757000 0.020000000000")
+  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "ionion" "-25.55132719 0.000002")
   qmc_run_and_check(
     short-diamondC_2x1x1-Gaussian_pp_Tw_cplx
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp_cplx"
