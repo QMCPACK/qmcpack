@@ -711,6 +711,18 @@ def test_line_crossing_distribution_and_lcd_peak(monkeypatch):
     np.testing.assert_array_equal(constant_counts,[3])
     assert(statistics.lcd_peak(constant)==pytest.approx(5.))
 
+    _,_,perturbed_constant = statistics.line_crossing_distribution(
+        constant,
+        ret_x=True,
+        )
+    np.testing.assert_array_equal(
+        perturbed_constant,
+        [
+            np.nextafter(5.,-np.inf),np.nextafter(5.,np.inf),
+            np.nextafter(5.,-np.inf),np.nextafter(5.,np.inf),
+            ],
+        )
+
     def reverse(values):
         values[:] = values[::-1]
     #end def reverse
@@ -736,6 +748,119 @@ def test_line_crossing_distribution_and_lcd_peak(monkeypatch):
     np.testing.assert_array_equal(intervals,[[0.,1.],[1.,3.],[3.,6.]])
     np.testing.assert_array_equal(counts,[1.,2.,1.])
 #end def test_line_crossing_distribution_and_lcd_peak
+
+
+
+def test_lcd_trim_find_segments():
+    """Identify contiguous masked regions, including a final region."""
+    x = np.arange(9.)
+    mask = np.array([False,True,True,False,True,False,True,True,True])
+
+    assert(statistics.find_segments(x,mask)==[(1,3),(4,5),(6,9)])
+    assert(statistics.find_segments(x,mask,seg_min=2)==[(1,3),(6,9)])
+    assert(statistics.find_segments(x,[False]*8+[True],seg_min=2)==[])
+
+    with pytest.raises(ValueError,match=r'mask must have the same length'):
+        statistics.find_segments(x,mask[:-1])
+    with pytest.raises(ValueError,match=r'minimum segment length'):
+        statistics.find_segments(x,mask,seg_min=0)
+#end def test_lcd_trim_find_segments
+
+
+
+@pytest.mark.parametrize(
+    'trim_function,nmasks',
+    [
+        (statistics.lcd_trim_l,2),
+        (statistics.lcd_trim_r,2),
+        (statistics.lcd_trim_lr,3),
+        (statistics.lcd_trim_lrm,4),
+        ],
+    )
+def test_lcd_trim_masks_and_segments(trim_function,nmasks):
+    """Return disjoint masks and clean segments consistent with those masks."""
+    x = np.sin(np.linspace(0.,8.*np.pi,128))
+
+    result = trim_function(x,niter=1,ret_seg=True,ret_mask=True)
+    segments = result[:nmasks]
+    masks = result[nmasks:]
+
+    assert(len(masks)==nmasks)
+    assert(all(mask.dtype==bool and mask.shape==x.shape for mask in masks))
+    np.testing.assert_array_equal(
+        sum(mask.astype(int) for mask in masks),
+        np.ones(len(x),dtype=int),
+        )
+    assert(masks[0].any())
+    assert(segments[0]==statistics.find_segments(x,masks[0]))
+#end def test_lcd_trim_masks_and_segments
+
+
+
+@pytest.mark.parametrize(
+    'trim_function,nmasks',
+    [
+        (statistics.lcd_trim_l,2),
+        (statistics.lcd_trim_r,2),
+        (statistics.lcd_trim_lr,3),
+        (statistics.lcd_trim_lrm,4),
+        ],
+    )
+def test_lcd_trim_handles_constant_and_vector_shaped_data(
+        trim_function,
+        nmasks,
+        ):
+    """Preserve a clean point and a mask partition for constant input."""
+    x = np.full(4,5.)
+    masks = trim_function(x,niter=3,ret_seg=False,ret_mask=True)
+    shaped_masks = trim_function(
+        x.reshape(1,len(x),1),
+        niter=3,
+        ret_seg=False,
+        ret_mask=True,
+        )
+
+    assert(len(masks)==nmasks)
+    np.testing.assert_array_equal(
+        sum(mask.astype(int) for mask in masks),
+        np.ones(len(x),dtype=int),
+        )
+    assert(masks[0].any())
+    for mask,shaped_mask in zip(masks,shaped_masks):
+        np.testing.assert_array_equal(shaped_mask,mask)
+
+    with pytest.raises(ValueError,match=r'data array must be one-dimensional'):
+        trim_function(np.ones((2,2)))
+    for invalid_niter in (0,1.5,True):
+        with pytest.raises(ValueError,match=r'number of trim iterations'):
+            trim_function(x,niter=invalid_niter)
+#end def test_lcd_trim_handles_constant_and_vector_shaped_data
+
+
+
+def test_lcd_trim_lrm_respects_minimum_middle_segment_length():
+    """Do not remove an isolated low point below a multi-point threshold."""
+    x = np.array([0.,1.,0.,1.,0.,-100.,0.,1.,0.,1.,0.])
+
+    clean,left,right,middle = statistics.lcd_trim_lrm(
+        x,
+        niter=1,
+        nseg_min=2,
+        ret_seg=False,
+        ret_mask=True,
+        )
+
+    assert(middle.sum()==0)
+    np.testing.assert_array_equal(
+        clean|left|right,
+        np.ones(len(x),dtype=bool),
+        )
+    for low_scale in (0.,-1.,np.nan):
+        with pytest.raises(ValueError,match=r'low scale must be a positive finite'):
+            statistics.lcd_trim_lrm(x,low_scale=low_scale)
+    with pytest.raises(ValueError,match=r'minimum segment length'):
+        statistics.lcd_trim_lrm(x,nseg_min=0)
+#end def test_lcd_trim_lrm_respects_minimum_middle_segment_length
 
 
 

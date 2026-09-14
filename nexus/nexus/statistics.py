@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from .developer_tools import DevBase,obj
+
 ############################################################################
 #                                                                          #
 #                Autocorrelation estimator stress testing                  #
@@ -1234,7 +1236,38 @@ def rolling_interval_dist_peak(
 
 
 
-def line_crossing_distribution(x,nperm=0):
+def _perturb_constant_series(x,perturb_const=1):
+    """Alternately displace each repeated-value run by floating-point steps."""
+    if isinstance(perturb_const,(bool,np.bool_)) or not isinstance(
+        perturb_const,(int,np.integer)
+        ) or perturb_const<0:
+        msg = 'constant perturbation must be a nonnegative integer'
+        raise ValueError(msg)
+    if perturb_const==0:
+        return x
+    repeated = x[1:]==x[:-1]
+    if not repeated.any():
+        return x
+
+    xp = x.copy()
+    starts = np.r_[0,np.flatnonzero(x[1:]!=x[:-1])+1]
+    stops = np.r_[starts[1:],len(x)]
+    for i1,i2 in zip(starts,stops):
+        if i2-i1<2:
+            continue
+        lower = x[i1]
+        upper = x[i1]
+        for _ in range(perturb_const):
+            lower = np.nextafter(lower,-np.inf)
+            upper = np.nextafter(upper,np.inf)
+        xp[i1:i2:2] = lower
+        xp[i1+1:i2:2] = upper
+    return xp
+#end def _perturb_constant_series
+
+
+
+def line_crossing_distribution(x,nperm=0,ret_x=False):
     """Return the line-crossing distribution of a series or its permutations.
 
     Parameters
@@ -1246,6 +1279,12 @@ def line_crossing_distribution(x,nperm=0):
         Number of independently shuffled series to average. Zero evaluates
         the input series directly.
 
+    ret_x : bool, optional
+        Also return a copy of the input series in which each run of repeated
+        values alternates between deterministic ULP-scale displacements about
+        its original value.  This representation gives repeated values a
+        nonzero side relative to an LCD peak while preserving their center.
+
     Returns
     -------
     xi : ndarray
@@ -1254,6 +1293,9 @@ def line_crossing_distribution(x,nperm=0):
     ci : ndarray
         Crossing counts, averaged over permutations when ``nperm`` is
         positive. Permutations are never connected to one another.
+
+    xp : ndarray, optional
+        Perturbed time series, returned only when ``ret_x`` is true.
 
     Notes
     -----
@@ -1288,11 +1330,18 @@ def line_crossing_distribution(x,nperm=0):
         ) or nperm<0:
         msg = 'number of permutations must be a nonnegative integer'
         raise ValueError(msg)
+    if not isinstance(ret_x,(bool,np.bool_)):
+        msg = 'ret_x must be a Boolean value'
+        raise ValueError(msg)
+    xp = _perturb_constant_series(x)
 
     # permutation-free (typical) case
     if nperm==0:
         xi,_ = time_series_intervals(x,t=None)
-        return interval_distribution(xi,perturb_const=1)
+        xi,ci = interval_distribution(xi,perturb_const=1)
+        if ret_x:
+            return xi,ci,xp
+        return xi,ci
 
     # use permutation shuffling
     permutation_intervals = []
@@ -1304,7 +1353,10 @@ def line_crossing_distribution(x,nperm=0):
     xi,ci = interval_distribution(
         np.vstack(permutation_intervals),perturb_const=1
         )
-    return xi,ci/nperm
+    ci = ci/nperm
+    if ret_x:
+        return xi,ci,xp
+    return xi,ci
 #end def line_crossing_distribution
 
 
@@ -1390,6 +1442,290 @@ def lcd_smooth(
         tp = np.array([ti[i1:i2].mean() for i1,i2 in windows])
         return xp,tp
 #end def lcd_smooth
+
+
+def pair_expand_ts_intervals(x,t=None,expand=10):
+    assert expand%2==0
+    assert len(x)>expand
+    ne = expand//2
+    N  = len(x)
+    xi = []
+    for i,x0 in enumerate(x):
+        i1 = max(i-ne,0)
+        i2 = min(i+ne,N-1)
+        for j in range(i1,i2+1):
+            if j==i:
+                continue
+            xi.append((x0,x[j]))
+    xi = np.array(xi)
+    xi = np.sort(xi,axis=1)
+    ti = None
+    if t is not None:
+        assert len(t)==len(x)
+        ti = []
+        for i,t0 in enumerate(t):
+            if i==0:
+                dt = t[i+1]-t0
+                dtj = dt/2/(ne+1)
+                ti.extend([t0+(j+1)*dtj for j in range(ne)])
+            elif i==N-1:
+                dt = t0-t[i-1]
+                dtj = dt/2/(ne+1)
+                ti.extend([t0-dt/2+(j+1)*dtj for j in range(ne)])
+            else:
+                n1 = min(ne,i)
+                n2 = min(ne,N-1-i)
+                dt = t0-t[i-1]
+                dtj = dt/2/(n1+1)
+                ti.extend([t0-dt/2+(j+1)*dtj for j in range(n1)])
+                dt = t[i+1]-t0
+                dtj = dt/2/(n2+1)
+                ti.extend([t0+(j+1)*dtj for j in range(n2)])
+        ti = np.array(ti)
+        assert len(ti)==len(xi)
+    return xi,ti
+#end def pair_expand_ts_intervals
+
+
+
+def find_segments(x,mask,seg_min=1):
+    # find contiguous segments in a mask
+    if isinstance(seg_min,(bool,np.bool_)) or not isinstance(
+        seg_min,(int,np.integer)
+        ) or seg_min<1:
+        msg = 'minimum segment length must be a positive integer'
+        raise ValueError(msg)
+    if len(x)!=len(mask):
+        msg = 'mask must have the same length as data array'
+        raise ValueError(msg)
+    seg = []
+    n1 = None
+    for n,in_seg in enumerate(mask):
+        if n1 is None and in_seg:
+            n1 = n
+        if n1 is not None and not in_seg:
+            if n-n1>=seg_min:
+                seg.append((n1,n))
+            n1 = None
+    if n1 is not None:
+        if len(x)-n1>=seg_min:
+            seg.append((n1,len(x)))
+    return seg
+#end def find_segments
+
+
+
+def _lcd_trim_input(x,niter):
+    """Validate trimming inputs and obtain its LCD peak and perturbed series."""
+    x = _real_vector(x,'data array')
+    if len(x)<2:
+        msg = 'data array must contain at least two values'
+        raise ValueError(msg)
+    if isinstance(niter,(bool,np.bool_)) or not isinstance(
+        niter,(int,np.integer)
+        ) or niter<1:
+        msg = 'number of trim iterations must be a positive integer'
+        raise ValueError(msg)
+    xi,ci,x = line_crossing_distribution(x,ret_x=True)
+    x_lcd = interval_dist_peak(xi,ci,perturb_const=1)
+    return x,x_lcd,int(niter)
+#end def _lcd_trim_input
+
+
+
+def _lcd_trim_options(ret_seg,ret_mask):
+    """Validate trim return selections."""
+    for value,name in ((ret_seg,'ret_seg'),(ret_mask,'ret_mask')):
+        if not isinstance(value,(bool,np.bool_)):
+            msg = f'{name} must be a Boolean value'
+            raise ValueError(msg)
+#end def _lcd_trim_options
+
+
+
+def _trim_run(x,x_lcd,start,stop):
+    """Return the leading count before a crossing, retaining one endpoint."""
+    if start>=stop:
+        return 0
+    val_sign = np.sign(x[start]-x_lcd)
+    for n in range(start,stop):
+        if np.sign(x[n]-x_lcd)*val_sign<0:
+            return n-start
+    return stop-start-1
+#end def _trim_run
+
+
+
+def lcd_trim_l(
+        x,
+        niter    = 3,
+        ret_seg  = True,
+        ret_mask = False,
+        ):
+    x,x_lcd,niter = _lcd_trim_input(x,niter)
+    _lcd_trim_options(ret_seg,ret_mask)
+    mask_left  = np.zeros(len(x),dtype=bool)
+    ntrim_l = 0
+    # perform lcd trim
+    for _ in range(niter):
+        ntrim_l += _trim_run(x,x_lcd,ntrim_l,len(x))
+        mask_left[:ntrim_l] = True
+    mask_clean = ~mask_left
+    seg_l = 0,ntrim_l
+    seg_c = find_segments(x,mask_clean,1)
+    ret = []
+    if ret_seg:
+        ret.extend([seg_c,seg_l])
+    if ret_mask:
+        ret.extend([mask_clean,mask_left])
+    return tuple(ret)
+#end def lcd_trim_l
+
+
+def lcd_trim_r(
+        x,
+        niter    = 3,
+        ret_seg  = True,
+        ret_mask = False,
+        ):
+    x,x_lcd,niter = _lcd_trim_input(x,niter)
+    _lcd_trim_options(ret_seg,ret_mask)
+    xr = np.flip(x)
+    mask_right = np.zeros(len(x),dtype=bool)
+    ntrim_r = 0
+    # perform lcd trim
+    for _ in range(niter):
+        ntrim_r += _trim_run(xr,x_lcd,ntrim_r,len(x))
+        mask_right[len(x)-ntrim_r:] = True
+    mask_clean = ~mask_right
+    seg_r = len(x)-ntrim_r,len(x)
+    seg_c = find_segments(x,mask_clean,1)
+    ret = []
+    if ret_seg:
+        ret.extend([seg_c,seg_r])
+    if ret_mask:
+        ret.extend([mask_clean,mask_right])
+    return tuple(ret)
+#end def lcd_trim_r
+
+
+def lcd_trim_lr(
+        x,
+        niter    = 3,
+        ret_seg  = True,
+        ret_mask = False,
+        ):
+    x,x_lcd,niter = _lcd_trim_input(x,niter)
+    _lcd_trim_options(ret_seg,ret_mask)
+    xr = np.flip(x)
+    mask_left  = np.zeros(len(x),dtype=bool)
+    mask_right = np.zeros(len(x),dtype=bool)
+    ntrim_l = 0
+    ntrim_r = 0
+    # perform lcd trim
+    for _ in range(niter):
+        ntrim_l += _trim_run(x,x_lcd,ntrim_l,len(x)-ntrim_r)
+        mask_left[:ntrim_l] = True
+        ntrim_r += _trim_run(xr,x_lcd,ntrim_r,len(x)-ntrim_l)
+        mask_right[len(x)-ntrim_r:] = True
+    mask_clean = (~mask_left)&(~mask_right)
+    seg_l = 0,ntrim_l
+    seg_r = len(x)-ntrim_r,len(x)
+    seg_c = find_segments(x,mask_clean,1)
+    ret = []
+    if ret_seg:
+        ret.extend([seg_c,seg_l,seg_r])
+    if ret_mask:
+        ret.extend([mask_clean,mask_left,mask_right])
+    return tuple(ret)
+#end def lcd_trim_lr
+
+
+def lcd_trim_lrm(
+        x,
+        niter    = 3,
+        low_scale = 2.,
+        nseg_min = 4,
+        ret_seg  = True,
+        ret_mask = False,
+        ):
+    x,x_lcd,niter = _lcd_trim_input(x,niter)
+    _lcd_trim_options(ret_seg,ret_mask)
+    try:
+        low_scale = float(low_scale)
+    except (TypeError,ValueError):
+        msg = 'low scale must be a positive finite number'
+        raise ValueError(msg) from None
+    if not np.isfinite(low_scale) or low_scale<=0.:
+        msg = 'low scale must be a positive finite number'
+        raise ValueError(msg)
+    if isinstance(nseg_min,(bool,np.bool_)) or not isinstance(
+        nseg_min,(int,np.integer)
+        ) or nseg_min<1:
+        msg = 'minimum segment length must be a positive integer'
+        raise ValueError(msg)
+    xr = np.flip(x)
+    mask_left  = np.zeros(len(x),dtype=bool)
+    mask_right = np.zeros(len(x),dtype=bool)
+    ntrim_l = 0
+    ntrim_r = 0
+    seg_m = []
+    # perform lcd trim
+    for ni in range(niter):
+        # left trim
+        tleft = True
+        if ni>0:
+            for n1,n2 in seg_m:
+                tleft &= ntrim_l < n1
+        if tleft:
+            ntrim_l += _trim_run(x,x_lcd,ntrim_l,len(x)-ntrim_r)
+            mask_left[:ntrim_l] = True
+        # right trim
+        tright = True
+        if ni>0:
+            for n1,n2 in seg_m:
+                tright &= len(x)-ntrim_r > n2
+        if tright:
+            ntrim_r += _trim_run(xr,x_lcd,ntrim_r,len(x)-ntrim_l)
+            mask_right[len(x)-ntrim_r:] = True
+        # mid trim
+        #  initial low cut to identify mid trim segments
+        mask_clean = (~mask_left)&(~mask_right)
+        xc = x[mask_clean]
+        xc_max = xc.max()
+        xm_cut = x_lcd-low_scale*(xc_max-x_lcd)
+        candidates = (x<xm_cut)&mask_clean
+        seg_m = find_segments(x,candidates,nseg_min)
+        mask_mid = np.zeros(len(x),dtype=bool)
+        #  extend the segments left and right
+        for n1,n2 in seg_m:
+            while n1>ntrim_l and x[n1]<x_lcd:
+                n1 -= 1
+            while n2<len(x)-ntrim_r and x[n2]<x_lcd:
+                n2 += 1
+            mask_mid[n1:n2] = True
+        mask_mid = mask_mid&(~mask_left)&(~mask_right)
+        #  find enlarged segments w/ >neg_min points
+        seg_m = find_segments(x,mask_mid,nseg_min)
+        # find final clean points
+        candidate_clean = (~mask_left)&(~mask_right)&(~mask_mid)
+        if candidate_clean.any():
+            mask_clean = candidate_clean
+        else:
+            mask_mid = np.zeros(len(x),dtype=bool)
+            seg_m = []
+            mask_clean = (~mask_left)&(~mask_right)
+        seg_c = find_segments(x,mask_clean,1)
+
+    seg_l = 0,ntrim_l
+    seg_r = len(x)-ntrim_r,len(x)
+    ret = []
+    if ret_seg:
+        ret.extend([seg_c,seg_l,seg_r,seg_m])
+    if ret_mask:
+        ret.extend([mask_clean,mask_left,mask_right,mask_mid])
+    return tuple(ret)
+#end def lcd_trim_lrm
 
 
 ############################################################################
@@ -1684,3 +2020,312 @@ def local_median_smooth(x_list,m=None,poly_smooth=True,post_mean=False):
         xs_list = mean_smooth(xs_list,m=m)
     return xs_list
 #end def local_median_smooth
+
+
+
+
+class TimeSeriesAnalyzer(DevBase):
+    '''Uniform time series'''
+    def __init__(self,arg0=None,clean_inp='lcd_trim_l',label='',analyze=True):
+        filepath = None
+        # process arg0
+        if arg0 is None:
+            return
+        elif isinstance(arg0,str):
+            filepath = arg0
+            x = self.read(filepath)
+        else:
+            x = arg0
+        # process x
+        if not isinstance(x,np.ndarray):
+            x = np.array(x,dtype=float)
+        if len(x.shape)>1:
+            x = x.ravel()
+        # process ind
+        ind = np.arange(len(x),dtype=int)
+        # process clean input
+        if clean_inp is not None and not isinstance(clean_inp,str):
+            assert 'method' in clean_inp
+        # assign values
+        #   inputs
+        self.filepath  = filepath  # path to data file, if any
+        self.clean_inp = clean_inp # approach for data cleaning
+        self.label     = label
+        self.x         = x    # time series
+        self.ind       = ind  # uniformly spaced times
+        #   reset analysis results
+        self.reset()
+        # analyze time series
+        if analyze:
+            self.analyze()
+        self.check()
+    #end def __init_
+
+    def reset(self):
+        #   results/outputs from analysis
+        self.xc        = None # clean data
+        self.indc      = None # indices of clean data
+        self.xl        = None # left data removed
+        self.indl      = None # indices of left data
+        self.xr        = None # right data removed
+        self.indr      = None # indices of right data
+        self.xm        = None # middle data removed
+        self.indm      = None # indices of middle data
+        self.x_mean    = None # mean of clean data
+        self.x_stderr  = None # errorbar of clean data
+        self.t_auto    = None # autocorr time of clean data
+    #end def reset
+
+    def check(self):
+        def check_x_ind(xk,indk):
+            if self[indk] is None:
+                assert self[xk] is None
+            elif self[xk] is None:
+                assert self[indk] is None
+            else:
+                assert len(self[xk])>0
+                assert len(self[indk])>0
+        check_x_ind('x','ind')
+        check_x_ind('xc','indc')
+        check_x_ind('xl','indl')
+        check_x_ind('xr','indr')
+        check_x_ind('xm','indm')
+        if self.x_mean is not None:
+            assert np.isfinite(self.x_mean)
+        if self.x_stderr is not None:
+            assert np.isfinite(self.x_stderr)
+            assert self.x_stderr>=0.
+        if self.t_auto is not None:
+            assert np.isfinite(self.t_auto)
+            assert self.t_auto>0.
+            assert self.t_auto>1.0-1e-12
+    #end def check
+
+    def read(self,filepath=None):
+        self.reset()
+        self.check()
+        if filepath is None:
+            filepath = self.filepath
+        assert isinstance(filepath,str)
+        x = np.loadtxt(filepath)
+        assert np.max(x.shape)==x.size
+        if x.ndim>1:
+            x = x.ravel()
+        if self.ind is not None and len(self.ind)==len(x):
+            ind = self.ind
+        else:
+            ind = np.arange(len(x),dtype=int)
+        self.x   = x
+        self.ind = ind
+        self.check()
+    #end def read
+
+    def partition_from_timeseries(self,other):
+        assert isinstance(other,TimeSeriesAnalyzer)
+        assert len(other.x)==len(self.x)
+        self.check()
+        other.check()
+        if other.indc is not None:
+            self.xc   = self.x[other.indc]
+            self.indc = self.ind[other.indc]
+        if other.indl is not None:
+            self.xl   = self.x[other.indl]
+            self.indl = self.ind[other.indl]
+        if other.indr is not None:
+            self.xr   = self.x[other.indr]
+            self.indr = self.ind[other.indr]
+        if other.indm is not None:
+            self.xm   = self.x[other.indm]
+            self.indm = self.ind[other.indm]
+        self.check()
+        other.check()
+    #end def partition_from_timeseries
+
+    def clean_intersect(self,other):
+        assert isinstance(other,TimeSeriesAnalyzer)
+        assert len(other.x)==len(self.x)
+        self.check()
+        other.check()
+        count = np.zeros(len(self.x),dtype=int)
+        count[self.indc]  += 1
+        count[other.indc] += 1
+        intersect = count==2
+        ind = self.ind[intersect]
+        xc1 = self.x[intersect]
+        xc2 = other.x[intersect]
+        self.check()
+        other.check()
+        return xc1,xc2,ind
+    #end def clean_intersect
+
+    def analyze(self,clean_inp=None):
+        assert self.x is not None
+        assert self.ind is not None
+        self.check()
+        if clean_inp is None:
+            clean_inp = self.clean_inp
+        else:
+            self.clean_inp = clean_inp
+        if clean_inp is None:
+            method = 'simple'
+        elif isinstance(clean_inp,str):
+            method = clean_inp
+            clean_inp = obj(method=method)
+        else:
+            method = clean_inp.method
+        x   = self.x
+        ind = self.ind
+        # no cleaning, straightforward data analysis
+        if method=='simple':
+            t_auto = None
+            if 't_auto' in clean_inp:
+                t_auto = clean_inp.t_auto
+            xs   = self.xc   if self.xc is not None else x
+            inds = self.indc if self.xc is not None else ind
+            x_mean,x_stderr,t_auto = series_stats(xs,t_auto=t_auto)
+            self.x_mean   = x_mean
+            self.x_stderr = x_stderr
+            self.t_auto   = t_auto
+            self.xc       = xs
+            self.indc     = inds
+            return
+        self.reset()
+        # clean the time series, then calculate stats
+        #   (remove faulty data at beginning, middle, and/or end)
+        del clean_inp.method
+        # trim from left/right or both
+        if method=='lcd_trim_lrm':
+            mc,ml,mr,mm = lcd_trim_lrm(x,ret_seg=False,ret_mask=True)
+            self.xc   = self.x[mc]
+            self.indc = self.ind[mc]
+            if ml.sum()==0:
+                self.xl   = None
+                self.indl = None
+            else:
+                self.xl   = self.x[ml]
+                self.indl = self.ind[ml]
+            if mr.sum()==0:
+                self.xr   = None
+                self.indr = None
+            else:
+                self.xr   = self.x[mr]
+                self.indr = self.ind[mr]
+            if mm.sum()==0:
+                self.xm   = None
+                self.indm = None
+            else:
+                self.xm   = self.x[mm]
+                self.indm = self.ind[mm]
+            x_mean,x_stderr,t_auto = series_stats(self.xc)
+            self.x_mean   = x_mean
+            self.x_stderr = x_stderr
+            self.t_auto   = t_auto
+        elif method=='lcd_trim_lr':
+            mc,ml,mr = lcd_trim_lr(x,ret_seg=False,ret_mask=True)
+            self.xc   = self.x[mc]
+            self.indc = self.ind[mc]
+            if ml.sum()==0:
+                self.xl   = None
+                self.indl = None
+            else:
+                self.xl   = self.x[ml]
+                self.indl = self.ind[ml]
+            if mr.sum()==0:
+                self.xr   = None
+                self.indr = None
+            else:
+                self.xr   = self.x[mr]
+                self.indr = self.ind[mr]
+            self.xm   = None
+            self.indm = None
+            x_mean,x_stderr,t_auto = series_stats(self.xc)
+            self.x_mean   = x_mean
+            self.x_stderr = x_stderr
+            self.t_auto   = t_auto
+        elif method=='lcd_trim_l':
+            mc,ml = lcd_trim_l(x,ret_seg=False,ret_mask=True)
+            self.xc   = self.x[mc]
+            self.indc = self.ind[mc]
+            if ml.sum()==0:
+                self.xl   = None
+                self.indl = None
+            else:
+                self.xl   = self.x[ml]
+                self.indl = self.ind[ml]
+            self.xr   = None
+            self.indr = None
+            self.xm   = None
+            self.indm = None
+            x_mean,x_stderr,t_auto = series_stats(self.xc)
+            self.x_mean   = x_mean
+            self.x_stderr = x_stderr
+            self.t_auto   = t_auto
+        elif method=='lcd_trim_r':
+            mc,mr = lcd_trim_r(x,ret_seg=False,ret_mask=True)
+            self.xc   = self.x[mc]
+            self.indc = self.ind[mc]
+            if mr.sum()==0:
+                self.xr   = None
+                self.indr = None
+            else:
+                self.xr   = self.x[mr]
+                self.indr = self.ind[mr]
+            self.xl   = None
+            self.indl = None
+            self.xm   = None
+            self.indm = None
+            x_mean,x_stderr,t_auto = series_stats(self.xc)
+            self.x_mean   = x_mean
+            self.x_stderr = x_stderr
+            self.t_auto   = t_auto
+        else:
+            raise RuntimeError(f'unrecognized data cleaning method "{method}"')
+        clean_inp.method = method
+        self.check()
+    #end def analyze
+
+    def plot(self,fig=False,show=False,ishift=0):
+        import matplotlib.pyplot as plt
+        self.check()
+        if fig:
+            plt.figure(tight_layout=True)
+
+        plt.plot(self.ind+ishift,self.x,color='Grey')
+
+        imin = self.ind[0]+ishift
+        imax = self.ind[-1]+ishift
+        plt.plot([imin,imax],2*[self.x_mean],'g-')
+        plt.plot([imin,imax],2*[self.x_mean+np.std(self.xc)],'g-.')
+        plt.plot([imin,imax],2*[self.x_mean-np.std(self.xc)],'g-.')
+
+        assert self.xc is not None
+
+        mask = np.zeros(len(self.x),dtype=bool)
+        mask[self.indc]=True
+        segs = find_segments(self.x,mask,1)
+        for n1,n2 in segs:
+            plt.plot(self.ind[n1:n2]+ishift,self.x[n1:n2],'k-')
+
+        if self.xl is not None:
+            plt.plot(self.indl+ishift,self.xl,'r-')
+            mask[self.indl] = True
+
+        if self.xr is not None:
+            plt.plot(self.indr+ishift,self.xr,'r-')
+            mask[self.indr] = True
+
+        if self.xm is not None:
+            mask = np.zeros(len(self.x),dtype=bool)
+            mask[self.indm]=True
+            segs = find_segments(self.x,mask,1)
+            for n1,n2 in segs:
+                plt.plot(self.ind[n1:n2]+ishift,self.x[n1:n2],'m-')
+            #plt.plot(self.indm+ishift,self.xm,'mx')
+            mask[self.indm] = True
+
+        #assert mask.all()
+        if show:
+            plt.show()
+        self.check()
+    #end def plot
+#end def TimeSeriesAnalyzer
