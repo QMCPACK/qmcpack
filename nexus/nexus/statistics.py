@@ -2,7 +2,8 @@
 
 import numpy as np
 
-from .developer_tools import DevBase,obj
+from .developer_tools import DevBase,obj,dotdict
+
 
 ############################################################################
 #                                                                          #
@@ -1444,7 +1445,11 @@ def lcd_smooth(
 #end def lcd_smooth
 
 
-def pair_expand_ts_intervals(x,t=None,expand=10):
+def pair_expand_ts_intervals(
+        x,
+        t      = None,
+        expand = 10,
+        ):
     """Return sorted pairs between samples in a bounded local neighborhood.
 
     Each sample is paired with up to ``expand/2`` earlier and later samples.
@@ -1528,8 +1533,12 @@ def pair_expand_ts_intervals(x,t=None,expand=10):
 
 
 
-def find_segments(x,mask,seg_min=1):
-    # find contiguous segments in a mask
+def _find_segments(
+        x,
+        mask,
+        seg_min = 1,
+        ):
+    """Return contiguous true-mask index spans meeting a minimum length."""
     if isinstance(seg_min,(bool,np.bool_)) or not isinstance(
         seg_min,(int,np.integer)
         ) or seg_min<1:
@@ -1551,7 +1560,7 @@ def find_segments(x,mask,seg_min=1):
         if len(x)-n1>=seg_min:
             seg.append((n1,len(x)))
     return seg
-#end def find_segments
+#end def _find_segments
 
 
 
@@ -1583,7 +1592,12 @@ def _lcd_trim_options(ret_seg,ret_mask):
 
 
 
-def _trim_run(x,x_lcd,start,stop):
+def _trim_run(
+        x,
+        x_lcd,
+        start,
+        stop,
+        ):
     """Return the leading count before a crossing, retaining one endpoint."""
     if start>=stop:
         return 0
@@ -1602,6 +1616,36 @@ def lcd_trim_l(
         ret_seg  = True,
         ret_mask = False,
         ):
+    """Trim initial runs separated from the LCD peak by sign crossings.
+
+    The LCD peak is calculated once from the full series.  Starting at the
+    left endpoint, each iteration removes values up to the next crossing of
+    that peak.  Repeated values receive deterministic ULP-scale perturbations
+    for the crossing comparison, while returned masks still index the input
+    series.
+
+    Parameters
+    ----------
+    x : array_like
+        Real vector-like time series with at least two values.
+
+    niter : int, optional
+        Positive number of consecutive left-side runs to remove.
+
+    ret_seg : bool, optional
+        Include clean and left-trim index spans in the result.
+
+    ret_mask : bool, optional
+        Include clean and left-trim Boolean masks in the result.
+
+    Returns
+    -------
+    result : tuple
+        Requested outputs in this order: ``clean_segments``,
+        ``left_segment``, ``clean_mask``, and ``left_mask``.  Segment outputs
+        are omitted when ``ret_seg`` is false and mask outputs are omitted
+        when ``ret_mask`` is false.
+    """
     x,x_lcd,niter = _lcd_trim_input(x,niter)
     _lcd_trim_options(ret_seg,ret_mask)
     mask_left  = np.zeros(len(x),dtype=bool)
@@ -1612,7 +1656,7 @@ def lcd_trim_l(
         mask_left[:ntrim_l] = True
     mask_clean = ~mask_left
     seg_l = 0,ntrim_l
-    seg_c = find_segments(x,mask_clean,1)
+    seg_c = _find_segments(x,mask_clean,1)
     ret = []
     if ret_seg:
         ret.extend([seg_c,seg_l])
@@ -1628,6 +1672,34 @@ def lcd_trim_r(
         ret_seg  = True,
         ret_mask = False,
         ):
+    """Trim terminal runs separated from the LCD peak by sign crossings.
+
+    This is the right-to-left counterpart of :func:`lcd_trim_l`: it starts at
+    the final sample and removes up to ``niter`` consecutive runs before a
+    crossing of the full-series LCD peak.  Constant-value runs are compared
+    through the deterministic perturbed representation used by the LCD.
+
+    Parameters
+    ----------
+    x : array_like
+        Real vector-like time series with at least two values.
+
+    niter : int, optional
+        Positive number of consecutive right-side runs to remove.
+
+    ret_seg : bool, optional
+        Include clean and right-trim index spans in the result.
+
+    ret_mask : bool, optional
+        Include clean and right-trim Boolean masks in the result.
+
+    Returns
+    -------
+    result : tuple
+        Requested outputs in this order: ``clean_segments``,
+        ``right_segment``, ``clean_mask``, and ``right_mask``.  Segment and
+        mask groups are controlled by ``ret_seg`` and ``ret_mask``.
+    """
     x,x_lcd,niter = _lcd_trim_input(x,niter)
     _lcd_trim_options(ret_seg,ret_mask)
     xr = np.flip(x)
@@ -1639,7 +1711,7 @@ def lcd_trim_r(
         mask_right[len(x)-ntrim_r:] = True
     mask_clean = ~mask_right
     seg_r = len(x)-ntrim_r,len(x)
-    seg_c = find_segments(x,mask_clean,1)
+    seg_c = _find_segments(x,mask_clean,1)
     ret = []
     if ret_seg:
         ret.extend([seg_c,seg_r])
@@ -1655,6 +1727,35 @@ def lcd_trim_lr(
         ret_seg  = True,
         ret_mask = False,
         ):
+    """Trim leading and trailing runs according to the full-series LCD peak.
+
+    Left and right runs are removed independently on every iteration.  Each
+    side stops at its next crossing of the LCD peak, and the opposite trim
+    boundary limits the search so the masks remain disjoint and retain at
+    least one clean sample.
+
+    Parameters
+    ----------
+    x : array_like
+        Real vector-like time series with at least two values.
+
+    niter : int, optional
+        Positive number of trim iterations on each endpoint.
+
+    ret_seg : bool, optional
+        Include clean, left-trim, and right-trim index spans.
+
+    ret_mask : bool, optional
+        Include corresponding Boolean masks.
+
+    Returns
+    -------
+    result : tuple
+        Requested outputs in this order: ``clean_segments``, ``left_segment``,
+        ``right_segment``, ``clean_mask``, ``left_mask``, and ``right_mask``.
+        Segment and mask groups are controlled by ``ret_seg`` and
+        ``ret_mask``.
+    """
     x,x_lcd,niter = _lcd_trim_input(x,niter)
     _lcd_trim_options(ret_seg,ret_mask)
     xr = np.flip(x)
@@ -1671,7 +1772,7 @@ def lcd_trim_lr(
     mask_clean = (~mask_left)&(~mask_right)
     seg_l = 0,ntrim_l
     seg_r = len(x)-ntrim_r,len(x)
-    seg_c = find_segments(x,mask_clean,1)
+    seg_c = _find_segments(x,mask_clean,1)
     ret = []
     if ret_seg:
         ret.extend([seg_c,seg_l,seg_r])
@@ -1689,6 +1790,44 @@ def lcd_trim_lrm(
         ret_seg  = True,
         ret_mask = False,
         ):
+    """Trim endpoint runs and sustained low-valued interior excursions.
+
+    Endpoint removal follows :func:`lcd_trim_lr`.  Among the remaining
+    samples, candidate middle regions below a cutoff derived from the LCD
+    peak and retained maximum are retained only when they contain at least
+    ``nseg_min`` samples.  Qualifying regions are extended until they reach
+    values at or above the LCD peak.  Later iterations do not trim an endpoint
+    through an identified middle region.
+
+    Parameters
+    ----------
+    x : array_like
+        Real vector-like time series with at least two values.
+
+    niter : int, optional
+        Positive number of endpoint and middle-trimming iterations.
+
+    low_scale : float, optional
+        Positive multiplier defining the low-value cutoff relative to the LCD
+        peak and the maximum value retained after endpoint trimming.
+
+    nseg_min : int, optional
+        Minimum length of a candidate middle region before it is removed.
+
+    ret_seg : bool, optional
+        Include clean, left-trim, right-trim, and middle-trim index spans.
+
+    ret_mask : bool, optional
+        Include corresponding Boolean masks.
+
+    Returns
+    -------
+    result : tuple
+        Requested outputs in this order: ``clean_segments``, ``left_segment``,
+        ``right_segment``, ``middle_segments``, ``clean_mask``, ``left_mask``,
+        ``right_mask``, and ``middle_mask``.  Segment and mask groups are
+        controlled by ``ret_seg`` and ``ret_mask``.
+    """
     x,x_lcd,niter = _lcd_trim_input(x,niter)
     _lcd_trim_options(ret_seg,ret_mask)
     try:
@@ -1735,7 +1874,7 @@ def lcd_trim_lrm(
         xc_max = xc.max()
         xm_cut = x_lcd-low_scale*(xc_max-x_lcd)
         candidates = (x<xm_cut)&mask_clean
-        seg_m = find_segments(x,candidates,nseg_min)
+        seg_m = _find_segments(x,candidates,nseg_min)
         mask_mid = np.zeros(len(x),dtype=bool)
         #  extend the segments left and right
         for n1,n2 in seg_m:
@@ -1746,7 +1885,7 @@ def lcd_trim_lrm(
             mask_mid[n1:n2] = True
         mask_mid = mask_mid&(~mask_left)&(~mask_right)
         #  find enlarged segments w/ >neg_min points
-        seg_m = find_segments(x,mask_mid,nseg_min)
+        seg_m = _find_segments(x,mask_mid,nseg_min)
         # find final clean points
         candidate_clean = (~mask_left)&(~mask_right)&(~mask_mid)
         if candidate_clean.any():
@@ -1755,7 +1894,7 @@ def lcd_trim_lrm(
             mask_mid = np.zeros(len(x),dtype=bool)
             seg_m = []
             mask_clean = (~mask_left)&(~mask_right)
-        seg_c = find_segments(x,mask_clean,1)
+        seg_c = _find_segments(x,mask_clean,1)
 
     seg_l = 0,ntrim_l
     seg_r = len(x)-ntrim_r,len(x)
@@ -2074,8 +2213,46 @@ class TimeSeriesAnalyzer(DevBase):
     from the observed data, the reported statistics describe that selected
     region and should be used as a diagnostic cleaning result rather than as
     a selection-free estimator.
+
+    Parameters
+    ----------
+    arg0 : array_like or str, optional
+        Real vector-like series, or path to a one-column text file containing
+        one uniformly spaced sample per row.  If omitted, create an empty
+        analyzer that can later receive data through :meth:`read`.
+
+    clean_inp : {'simple', 'lcd_trim_l', 'lcd_trim_r', 'lcd_trim_lr',
+                 'lcd_trim_lrm'} or mapping, optional
+        Default analysis method.  A mapping must provide ``method`` and may
+        provide supported options for that method, such as ``t_auto`` for
+        ``'simple'`` or LCD-trim options such as ``niter``.
+
+    label : str, optional
+        Caller-supplied descriptive label retained without interpretation.
+
+    analyze : bool, optional
+        Analyze immediately when data are supplied.  If false, data are
+        stored without calculating a clean partition or statistics.
+
+    Attributes
+    ----------
+    x, ind : ndarray
+        Original series and its uniform integer sample indices.
+
+    xc, xl, xr, xm : ndarray or None
+        Clean, left-trimmed, right-trimmed, and middle-trimmed values.
+
+    x_mean, x_stderr, t_auto : float or None
+        Mean, autocorrelation-adjusted standard error, and autocorrelation
+        time for the current clean series.
     """
-    def __init__(self,arg0=None,clean_inp='lcd_trim_l',label='',analyze=True):
+    def __init__(
+            self,
+            arg0      = None,
+            clean_inp = 'lcd_trim_l',
+            label     = '',
+            analyze   = True,
+            ):
         if not isinstance(analyze,(bool,np.bool_)):
             raise ValueError('analyze must be a Boolean value')
         self.filepath  = None
@@ -2083,10 +2260,10 @@ class TimeSeriesAnalyzer(DevBase):
         self.label     = label
         self.x         = None
         self.ind       = None
-        self.reset()
+        self._reset()
         # process arg0
         if arg0 is None:
-            self.check()
+            self._check()
             return
         elif isinstance(arg0,str):
             self.read(arg0)
@@ -2096,10 +2273,11 @@ class TimeSeriesAnalyzer(DevBase):
         # analyze time series
         if analyze:
             self.analyze()
-        self.check()
+        self._check()
     #end def __init_
 
-    def reset(self):
+    def _reset(self):
+        """Clear all derived partition and statistical results."""
         #   results/outputs from analysis
         self.xc        = None # clean data
         self.indc      = None # indices of clean data
@@ -2112,9 +2290,10 @@ class TimeSeriesAnalyzer(DevBase):
         self.x_mean    = None # mean of clean data
         self.x_stderr  = None # errorbar of clean data
         self.t_auto    = None # autocorr time of clean data
-    #end def reset
+    #end def _reset
 
-    def check(self):
+    def _check(self):
+        """Validate internal series, partition, and statistic consistency."""
         def check_x_ind(xk,indk):
             if self[indk] is None:
                 if self[xk] is not None:
@@ -2140,9 +2319,23 @@ class TimeSeriesAnalyzer(DevBase):
         if self.t_auto is not None:
             if not np.isfinite(self.t_auto) or self.t_auto<1.0-1e-12:
                 raise RuntimeError('autocorrelation time must be finite and positive')
-    #end def check
+    #end def _check
 
     def read(self,filepath=None):
+        """Load a one-dimensional uniformly sampled series from a text file.
+
+        Parameters
+        ----------
+        filepath : str, optional
+            File to load with :func:`numpy.loadtxt`.  By default, reload the
+            previously recorded file path.
+
+        Returns
+        -------
+        ndarray
+            Loaded series.  Existing analysis results are cleared and integer
+            sample indices are recreated.
+        """
         if filepath is None:
             filepath = self.filepath
         if not isinstance(filepath,str):
@@ -2152,18 +2345,26 @@ class TimeSeriesAnalyzer(DevBase):
         self.filepath = filepath
         self.x   = x
         self.ind = np.arange(len(x),dtype=int)
-        self.reset()
-        self.check()
+        self._reset()
+        self._check()
         return x
     #end def read
 
     def partition_from_timeseries(self,other):
+        """Copy another analyzer's clean/removal index partition.
+
+        Parameters
+        ----------
+        other : TimeSeriesAnalyzer
+            Analyzer with a series of the same length.  Its clean and removed
+            indices are applied to this analyzer's original values.
+        """
         if not isinstance(other,TimeSeriesAnalyzer):
             raise TypeError('other must be a TimeSeriesAnalyzer')
         if len(other.x)!=len(self.x):
             raise ValueError('time series must have the same length')
-        self.check()
-        other.check()
+        self._check()
+        other._check()
         if other.indc is not None:
             self.xc   = self.x[other.indc]
             self.indc = self.ind[other.indc]
@@ -2176,17 +2377,31 @@ class TimeSeriesAnalyzer(DevBase):
         if other.indm is not None:
             self.xm   = self.x[other.indm]
             self.indm = self.ind[other.indm]
-        self.check()
-        other.check()
+        self._check()
+        other._check()
     #end def partition_from_timeseries
 
     def clean_intersect(self,other):
+        """Return values retained by both same-length analyzers.
+
+        Parameters
+        ----------
+        other : TimeSeriesAnalyzer
+            Analyzer defined on a series of the same length with a clean
+            partition.
+
+        Returns
+        -------
+        self_values, other_values, indices : ndarray
+            Values from each analyzer and uniform indices at positions clean
+            in both partitions.
+        """
         if not isinstance(other,TimeSeriesAnalyzer):
             raise TypeError('other must be a TimeSeriesAnalyzer')
         if len(other.x)!=len(self.x):
             raise ValueError('time series must have the same length')
-        self.check()
-        other.check()
+        self._check()
+        other._check()
         count = np.zeros(len(self.x),dtype=int)
         count[self.indc]  += 1
         count[other.indc] += 1
@@ -2194,15 +2409,32 @@ class TimeSeriesAnalyzer(DevBase):
         ind = self.ind[intersect]
         xc1 = self.x[intersect]
         xc2 = other.x[intersect]
-        self.check()
-        other.check()
+        self._check()
+        other._check()
         return xc1,xc2,ind
     #end def clean_intersect
 
     def analyze(self,clean_inp=None):
+        """Apply a cleaning method and calculate clean-series statistics.
+
+        Parameters
+        ----------
+        clean_inp : {'simple', 'lcd_trim_l', 'lcd_trim_r', 'lcd_trim_lr',
+                     'lcd_trim_lrm'} or mapping, optional
+            Method and options for this analysis.  If omitted, use the stored
+            default from construction or the preceding explicit call.  A
+            mapping contains ``method`` plus options forwarded to that method.
+            The analyzer manages trim return options internally.
+
+        Returns
+        -------
+        None
+            Results are stored in the clean/removal attributes and in
+            ``x_mean``, ``x_stderr``, and ``t_auto``.
+        """
         if self.x is None or self.ind is None:
             raise ValueError('a time series must be provided before analysis')
-        self.check()
+        self._check()
         if clean_inp is None:
             clean_inp = self.clean_inp
         else:
@@ -2213,7 +2445,7 @@ class TimeSeriesAnalyzer(DevBase):
         elif isinstance(clean_inp,str):
             method = clean_inp
             options = {}
-        elif isinstance(clean_inp,(obj,dict)):
+        elif isinstance(clean_inp,(obj,dotdict,dict)):
             if 'method' not in clean_inp:
                 msg = 'cleaning options must contain a method'
                 raise ValueError(msg)
@@ -2249,7 +2481,7 @@ class TimeSeriesAnalyzer(DevBase):
             self.xc       = xs
             self.indc     = inds
             return
-        self.reset()
+        self._reset()
         # clean the time series, then calculate stats
         #   (remove faulty data at beginning, middle, and/or end)
         if 'ret_seg' in options or 'ret_mask' in options:
@@ -2331,7 +2563,7 @@ class TimeSeriesAnalyzer(DevBase):
             calculate_stats()
         else:
             raise ValueError(f'unrecognized data cleaning method "{method}"')
-        self.check()
+        self._check()
     #end def analyze
 
     def plot(
@@ -2341,9 +2573,35 @@ class TimeSeriesAnalyzer(DevBase):
             ishift = 0,
             legend = True,
             ):
-        """Plot the trace, cleaning partition, and clean-data reference lines."""
+        """Plot the trace, cleaning partition, and clean-data reference lines.
+
+        The full series is gray, clean segments are black, left and right
+        trims are red and blue, and middle trims are magenta.  Green lines
+        show the clean mean and one clean-series standard deviation on either
+        side.  The existing pyplot axes are used unless ``fig`` is true.
+
+        Parameters
+        ----------
+        fig : bool, optional
+            Create a new tight-layout matplotlib figure before plotting.
+
+        show : bool, optional
+            Display the current figure after plotting.
+
+        ishift : float, optional
+            Add this offset to each integer sample index on the horizontal
+            axis.
+
+        legend : bool, optional
+            Add a legend describing the plotted series and reference lines.
+
+        Returns
+        -------
+        None
+            Lines are added to the current matplotlib axes.
+        """
         import matplotlib.pyplot as plt
-        self.check()
+        self._check()
         if self.xc is None or self.x_mean is None or self.x_stderr is None:
             raise ValueError('analysis must be completed before plotting')
         if fig:
@@ -2364,7 +2622,7 @@ class TimeSeriesAnalyzer(DevBase):
 
         mask = np.zeros(len(self.x),dtype=bool)
         mask[self.indc]=True
-        segs = find_segments(self.x,mask,1)
+        segs = _find_segments(self.x,mask,1)
         for iseg,(n1,n2) in enumerate(segs):
             label = 'clean series' if iseg==0 else None
             plt.plot(self.ind[n1:n2]+ishift,self.x[n1:n2],'k-',label=label)
@@ -2378,15 +2636,18 @@ class TimeSeriesAnalyzer(DevBase):
         if self.xm is not None:
             mask = np.zeros(len(self.x),dtype=bool)
             mask[self.indm]=True
-            segs = find_segments(self.x,mask,1)
+            segs = _find_segments(self.x,mask,1)
             for iseg,(n1,n2) in enumerate(segs):
                 label = 'middle trim' if iseg==0 else None
                 plt.plot(self.ind[n1:n2]+ishift,self.x[n1:n2],'m-',label=label)
 
         if legend:
             plt.legend()
+        plt.xlabel('time index')
+        ylabel = self.label if self.label is not None else 'time series'
+        plt.ylabel(ylabel)
         if show:
             plt.show()
-        self.check()
+        self._check()
     #end def plot
 #end def TimeSeriesAnalyzer

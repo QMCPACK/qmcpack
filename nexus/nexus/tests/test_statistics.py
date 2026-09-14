@@ -756,14 +756,14 @@ def test_lcd_trim_find_segments():
     x = np.arange(9.)
     mask = np.array([False,True,True,False,True,False,True,True,True])
 
-    assert(statistics.find_segments(x,mask)==[(1,3),(4,5),(6,9)])
-    assert(statistics.find_segments(x,mask,seg_min=2)==[(1,3),(6,9)])
-    assert(statistics.find_segments(x,[False]*8+[True],seg_min=2)==[])
+    assert(statistics._find_segments(x,mask)==[(1,3),(4,5),(6,9)])
+    assert(statistics._find_segments(x,mask,seg_min=2)==[(1,3),(6,9)])
+    assert(statistics._find_segments(x,[False]*8+[True],seg_min=2)==[])
 
     with pytest.raises(ValueError,match=r'mask must have the same length'):
-        statistics.find_segments(x,mask[:-1])
+        statistics._find_segments(x,mask[:-1])
     with pytest.raises(ValueError,match=r'minimum segment length'):
-        statistics.find_segments(x,mask,seg_min=0)
+        statistics._find_segments(x,mask,seg_min=0)
 #end def test_lcd_trim_find_segments
 
 
@@ -792,7 +792,7 @@ def test_lcd_trim_masks_and_segments(trim_function,nmasks):
         np.ones(len(x),dtype=int),
         )
     assert(masks[0].any())
-    assert(segments[0]==statistics.find_segments(x,masks[0]))
+    assert(segments[0]==statistics._find_segments(x,masks[0]))
 #end def test_lcd_trim_masks_and_segments
 
 
@@ -970,7 +970,10 @@ def test_time_series_analyzer_forwards_trim_options(monkeypatch):
 def test_time_series_analyzer_reanalysis_is_configuration_independent():
     """Repeated and explicit analyses depend only on the requested method."""
     x = np.sin(np.linspace(0.,8.*np.pi,128))
-    analyzer = statistics.TimeSeriesAnalyzer(x,clean_inp='lcd_trim_l')
+    analyzer = statistics.TimeSeriesAnalyzer(
+        x,
+        clean_inp='lcd_trim_l',
+        )
     first = (analyzer.xc.copy(),analyzer.indc.copy(),analyzer.x_mean,
              analyzer.x_stderr,analyzer.t_auto)
 
@@ -1005,12 +1008,23 @@ def test_time_series_analyzer_plot():
     with pytest.raises(ValueError,match=r'analysis must be completed'):
         uninitialized.plot()
 
-    analyzer = statistics.TimeSeriesAnalyzer(x,clean_inp='lcd_trim_l')
+    analyzer = statistics.TimeSeriesAnalyzer(
+        x,
+        clean_inp='lcd_trim_l',
+        label='energy',
+        )
     figure,axis = plt.subplots()
     plt.sca(axis)
     analyzer.plot(legend=True)
     labels = {text.get_text() for text in axis.get_legend().get_texts()}
     assert({'full series','clean mean','clean mean ± std. dev.','clean series'}<=labels)
+    assert(axis.get_xlabel()=='time index')
+    assert(axis.get_ylabel()=='energy')
+
+    analyzer.label = None
+    plt.sca(axis)
+    analyzer.plot(legend=False)
+    assert(axis.get_ylabel()=='time series')
     plt.close(figure)
 #end def test_time_series_analyzer_plot
 
