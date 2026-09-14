@@ -2065,36 +2065,34 @@ def local_median_smooth(x_list,m=None,poly_smooth=True,post_mean=False):
 
 
 class TimeSeriesAnalyzer(DevBase):
-    '''Uniform time series'''
+    """Analyze a scalar time series sampled at uniform index intervals.
+
+    LCD trimming can identify an initial, terminal, or interior region to
+    remove before :func:`series_stats` estimates the retained mean and its
+    autocorrelation-adjusted uncertainty.  The returned autocorrelation time
+    is measured in sample-index units.  Because the clean region is selected
+    from the observed data, the reported statistics describe that selected
+    region and should be used as a diagnostic cleaning result rather than as
+    a selection-free estimator.
+    """
     def __init__(self,arg0=None,clean_inp='lcd_trim_l',label='',analyze=True):
-        filepath = None
+        if not isinstance(analyze,(bool,np.bool_)):
+            raise ValueError('analyze must be a Boolean value')
+        self.filepath  = None
+        self.clean_inp = clean_inp
+        self.label     = label
+        self.x         = None
+        self.ind       = None
+        self.reset()
         # process arg0
         if arg0 is None:
+            self.check()
             return
         elif isinstance(arg0,str):
-            filepath = arg0
-            x = self.read(filepath)
+            self.read(arg0)
         else:
-            x = arg0
-        # process x
-        if not isinstance(x,np.ndarray):
-            x = np.array(x,dtype=float)
-        if len(x.shape)>1:
-            x = x.ravel()
-        # process ind
-        ind = np.arange(len(x),dtype=int)
-        # process clean input
-        if clean_inp is not None and not isinstance(clean_inp,str):
-            assert 'method' in clean_inp
-        # assign values
-        #   inputs
-        self.filepath  = filepath  # path to data file, if any
-        self.clean_inp = clean_inp # approach for data cleaning
-        self.label     = label
-        self.x         = x    # time series
-        self.ind       = ind  # uniformly spaced times
-        #   reset analysis results
-        self.reset()
+            self.x = _real_vector(arg0,'data array')
+            self.ind = np.arange(len(self.x),dtype=int)
         # analyze time series
         if analyze:
             self.analyze()
@@ -2119,50 +2117,51 @@ class TimeSeriesAnalyzer(DevBase):
     def check(self):
         def check_x_ind(xk,indk):
             if self[indk] is None:
-                assert self[xk] is None
+                if self[xk] is not None:
+                    raise RuntimeError(f'{xk} requires matching {indk}')
             elif self[xk] is None:
-                assert self[indk] is None
+                raise RuntimeError(f'{indk} requires matching {xk}')
             else:
-                assert len(self[xk])>0
-                assert len(self[indk])>0
+                if len(self[xk])==0 or len(self[indk])==0:
+                    raise RuntimeError(f'{xk} and {indk} must not be empty')
+                if len(self[xk])!=len(self[indk]):
+                    raise RuntimeError(f'{xk} and {indk} must have equal lengths')
         check_x_ind('x','ind')
         check_x_ind('xc','indc')
         check_x_ind('xl','indl')
         check_x_ind('xr','indr')
         check_x_ind('xm','indm')
         if self.x_mean is not None:
-            assert np.isfinite(self.x_mean)
+            if not np.isfinite(self.x_mean):
+                raise RuntimeError('mean must be finite')
         if self.x_stderr is not None:
-            assert np.isfinite(self.x_stderr)
-            assert self.x_stderr>=0.
+            if not np.isfinite(self.x_stderr) or self.x_stderr<0.:
+                raise RuntimeError('standard error must be finite and nonnegative')
         if self.t_auto is not None:
-            assert np.isfinite(self.t_auto)
-            assert self.t_auto>0.
-            assert self.t_auto>1.0-1e-12
+            if not np.isfinite(self.t_auto) or self.t_auto<1.0-1e-12:
+                raise RuntimeError('autocorrelation time must be finite and positive')
     #end def check
 
     def read(self,filepath=None):
-        self.reset()
-        self.check()
         if filepath is None:
             filepath = self.filepath
-        assert isinstance(filepath,str)
-        x = np.loadtxt(filepath)
-        assert np.max(x.shape)==x.size
-        if x.ndim>1:
-            x = x.ravel()
-        if self.ind is not None and len(self.ind)==len(x):
-            ind = self.ind
-        else:
-            ind = np.arange(len(x),dtype=int)
+        if not isinstance(filepath,str):
+            msg = 'filepath must be a string'
+            raise ValueError(msg)
+        x = _real_vector(np.loadtxt(filepath),'data array')
+        self.filepath = filepath
         self.x   = x
-        self.ind = ind
+        self.ind = np.arange(len(x),dtype=int)
+        self.reset()
         self.check()
+        return x
     #end def read
 
     def partition_from_timeseries(self,other):
-        assert isinstance(other,TimeSeriesAnalyzer)
-        assert len(other.x)==len(self.x)
+        if not isinstance(other,TimeSeriesAnalyzer):
+            raise TypeError('other must be a TimeSeriesAnalyzer')
+        if len(other.x)!=len(self.x):
+            raise ValueError('time series must have the same length')
         self.check()
         other.check()
         if other.indc is not None:
@@ -2182,8 +2181,10 @@ class TimeSeriesAnalyzer(DevBase):
     #end def partition_from_timeseries
 
     def clean_intersect(self,other):
-        assert isinstance(other,TimeSeriesAnalyzer)
-        assert len(other.x)==len(self.x)
+        if not isinstance(other,TimeSeriesAnalyzer):
+            raise TypeError('other must be a TimeSeriesAnalyzer')
+        if len(other.x)!=len(self.x):
+            raise ValueError('time series must have the same length')
         self.check()
         other.check()
         count = np.zeros(len(self.x),dtype=int)
@@ -2199,8 +2200,8 @@ class TimeSeriesAnalyzer(DevBase):
     #end def clean_intersect
 
     def analyze(self,clean_inp=None):
-        assert self.x is not None
-        assert self.ind is not None
+        if self.x is None or self.ind is None:
+            raise ValueError('a time series must be provided before analysis')
         self.check()
         if clean_inp is None:
             clean_inp = self.clean_inp
@@ -2208,20 +2209,39 @@ class TimeSeriesAnalyzer(DevBase):
             self.clean_inp = clean_inp
         if clean_inp is None:
             method = 'simple'
+            options = {}
         elif isinstance(clean_inp,str):
             method = clean_inp
-            clean_inp = obj(method=method)
+            options = {}
+        elif isinstance(clean_inp,(obj,dict)):
+            if 'method' not in clean_inp:
+                msg = 'cleaning options must contain a method'
+                raise ValueError(msg)
+            method = clean_inp['method']
+            options = dict(clean_inp.items())
+            del options['method']
         else:
-            method = clean_inp.method
+            msg = 'cleaning options must be a method string or mapping'
+            raise TypeError(msg)
         x   = self.x
         ind = self.ind
+
+        def calculate_stats():
+            x_mean,x_stderr,t_auto = series_stats(self.xc)
+            self.x_mean   = x_mean
+            self.x_stderr = x_stderr
+            self.t_auto   = t_auto
+        #end def calculate_stats
+
         # no cleaning, straightforward data analysis
         if method=='simple':
-            t_auto = None
-            if 't_auto' in clean_inp:
-                t_auto = clean_inp.t_auto
-            xs   = self.xc   if self.xc is not None else x
-            inds = self.indc if self.xc is not None else ind
+            unknown = set(options)-{'t_auto'}
+            if unknown:
+                msg = f'unrecognized simple-analysis options: {sorted(unknown)}'
+                raise ValueError(msg)
+            t_auto = options.get('t_auto')
+            xs   = x
+            inds = ind
             x_mean,x_stderr,t_auto = series_stats(xs,t_auto=t_auto)
             self.x_mean   = x_mean
             self.x_stderr = x_stderr
@@ -2232,10 +2252,13 @@ class TimeSeriesAnalyzer(DevBase):
         self.reset()
         # clean the time series, then calculate stats
         #   (remove faulty data at beginning, middle, and/or end)
-        del clean_inp.method
+        if 'ret_seg' in options or 'ret_mask' in options:
+            msg = 'trim return options are managed by TimeSeriesAnalyzer'
+            raise ValueError(msg)
+        options.update(ret_seg=False,ret_mask=True)
         # trim from left/right or both
         if method=='lcd_trim_lrm':
-            mc,ml,mr,mm = lcd_trim_lrm(x,ret_seg=False,ret_mask=True)
+            mc,ml,mr,mm = lcd_trim_lrm(x,**options)
             self.xc   = self.x[mc]
             self.indc = self.ind[mc]
             if ml.sum()==0:
@@ -2256,12 +2279,9 @@ class TimeSeriesAnalyzer(DevBase):
             else:
                 self.xm   = self.x[mm]
                 self.indm = self.ind[mm]
-            x_mean,x_stderr,t_auto = series_stats(self.xc)
-            self.x_mean   = x_mean
-            self.x_stderr = x_stderr
-            self.t_auto   = t_auto
+            calculate_stats()
         elif method=='lcd_trim_lr':
-            mc,ml,mr = lcd_trim_lr(x,ret_seg=False,ret_mask=True)
+            mc,ml,mr = lcd_trim_lr(x,**options)
             self.xc   = self.x[mc]
             self.indc = self.ind[mc]
             if ml.sum()==0:
@@ -2278,12 +2298,9 @@ class TimeSeriesAnalyzer(DevBase):
                 self.indr = self.ind[mr]
             self.xm   = None
             self.indm = None
-            x_mean,x_stderr,t_auto = series_stats(self.xc)
-            self.x_mean   = x_mean
-            self.x_stderr = x_stderr
-            self.t_auto   = t_auto
+            calculate_stats()
         elif method=='lcd_trim_l':
-            mc,ml = lcd_trim_l(x,ret_seg=False,ret_mask=True)
+            mc,ml = lcd_trim_l(x,**options)
             self.xc   = self.x[mc]
             self.indc = self.ind[mc]
             if ml.sum()==0:
@@ -2296,12 +2313,9 @@ class TimeSeriesAnalyzer(DevBase):
             self.indr = None
             self.xm   = None
             self.indm = None
-            x_mean,x_stderr,t_auto = series_stats(self.xc)
-            self.x_mean   = x_mean
-            self.x_stderr = x_stderr
-            self.t_auto   = t_auto
+            calculate_stats()
         elif method=='lcd_trim_r':
-            mc,mr = lcd_trim_r(x,ret_seg=False,ret_mask=True)
+            mc,mr = lcd_trim_r(x,**options)
             self.xc   = self.x[mc]
             self.indc = self.ind[mc]
             if mr.sum()==0:
@@ -2314,19 +2328,17 @@ class TimeSeriesAnalyzer(DevBase):
             self.indl = None
             self.xm   = None
             self.indm = None
-            x_mean,x_stderr,t_auto = series_stats(self.xc)
-            self.x_mean   = x_mean
-            self.x_stderr = x_stderr
-            self.t_auto   = t_auto
+            calculate_stats()
         else:
-            raise RuntimeError(f'unrecognized data cleaning method "{method}"')
-        clean_inp.method = method
+            raise ValueError(f'unrecognized data cleaning method "{method}"')
         self.check()
     #end def analyze
 
     def plot(self,fig=False,show=False,ishift=0):
         import matplotlib.pyplot as plt
         self.check()
+        if self.xc is None:
+            raise ValueError('analysis must be completed before plotting')
         if fig:
             plt.figure(tight_layout=True)
 
@@ -2337,8 +2349,6 @@ class TimeSeriesAnalyzer(DevBase):
         plt.plot([imin,imax],2*[self.x_mean],'g-')
         plt.plot([imin,imax],2*[self.x_mean+np.std(self.xc)],'g-.')
         plt.plot([imin,imax],2*[self.x_mean-np.std(self.xc)],'g-.')
-
-        assert self.xc is not None
 
         mask = np.zeros(len(self.x),dtype=bool)
         mask[self.indc]=True

@@ -900,6 +900,100 @@ def test_pair_expand_ts_intervals():
 
 
 
+@pytest.mark.parametrize(
+    'method',
+    ['simple','lcd_trim_l','lcd_trim_r','lcd_trim_lr','lcd_trim_lrm'],
+    )
+def test_time_series_analyzer_modes(method):
+    """Analyze a representative uniformly sampled trace in each mode."""
+    x = np.sin(np.linspace(0.,8.*np.pi,128))
+    analyzer = statistics.TimeSeriesAnalyzer(x,clean_inp=method)
+
+    assert(analyzer.clean_inp==method)
+    assert(len(analyzer.xc)==len(analyzer.indc))
+    assert(len(analyzer.xc)>=2)
+    assert(np.isfinite(analyzer.x_mean))
+    assert(np.isfinite(analyzer.x_stderr))
+    assert(np.isfinite(analyzer.t_auto))
+#end def test_time_series_analyzer_modes
+
+
+
+def test_time_series_analyzer_read_partition_and_intersect(tmp_path):
+    """Initialize from a file and transfer a clean partition by index."""
+    x = np.sin(np.linspace(0.,8.*np.pi,128))
+    filepath = tmp_path/'series.dat'
+    np.savetxt(filepath,x)
+
+    source = statistics.TimeSeriesAnalyzer(str(filepath),clean_inp='lcd_trim_l')
+    target = statistics.TimeSeriesAnalyzer(analyze=False)
+    target.read(str(filepath))
+    target.partition_from_timeseries(source)
+    xc_source,xc_target,indices = source.clean_intersect(target)
+
+    np.testing.assert_array_equal(source.x,x)
+    np.testing.assert_array_equal(target.xc,source.xc)
+    np.testing.assert_array_equal(target.indc,source.indc)
+    np.testing.assert_array_equal(indices,source.indc)
+    np.testing.assert_array_equal(xc_source,source.xc)
+    np.testing.assert_array_equal(xc_target,target.xc)
+#end def test_time_series_analyzer_read_partition_and_intersect
+
+
+
+def test_time_series_analyzer_forwards_trim_options(monkeypatch):
+    """Pass LCD trim settings without mutating the caller configuration."""
+    captured = {}
+
+    def trim(x,**kwargs):
+        captured.update(kwargs)
+        return np.ones(len(x),dtype=bool),np.zeros(len(x),dtype=bool)
+    #end def trim
+
+    monkeypatch.setattr(statistics,'lcd_trim_l',trim)
+    clean_inp = statistics.obj(method='lcd_trim_l',niter=1)
+    statistics.TimeSeriesAnalyzer(np.arange(8.),clean_inp=clean_inp)
+
+    assert(captured=={'niter':1,'ret_seg':False,'ret_mask':True})
+    assert(clean_inp.method=='lcd_trim_l')
+
+    single = statistics.TimeSeriesAnalyzer([1.],clean_inp='simple')
+    assert(single.x_mean==1.)
+    assert(single.x_stderr==0.)
+    assert(single.t_auto==1.)
+    with pytest.raises(ValueError,match=r'unrecognized data cleaning method'):
+        statistics.TimeSeriesAnalyzer(np.arange(8.),clean_inp='invalid')
+#end def test_time_series_analyzer_forwards_trim_options
+
+
+
+def test_time_series_analyzer_reanalysis_is_configuration_independent():
+    """Repeated and explicit analyses depend only on the requested method."""
+    x = np.sin(np.linspace(0.,8.*np.pi,128))
+    analyzer = statistics.TimeSeriesAnalyzer(x,clean_inp='lcd_trim_l')
+    first = (analyzer.xc.copy(),analyzer.indc.copy(),analyzer.x_mean,
+             analyzer.x_stderr,analyzer.t_auto)
+
+    analyzer.analyze()
+    second = (analyzer.xc,analyzer.indc,analyzer.x_mean,
+              analyzer.x_stderr,analyzer.t_auto)
+    for value,expected in zip(second,first):
+        if isinstance(value,np.ndarray):
+            np.testing.assert_array_equal(value,expected)
+        else:
+            assert(value==expected)
+
+    analyzer.analyze(clean_inp='simple')
+    simple = statistics.TimeSeriesAnalyzer(x,clean_inp='simple')
+    np.testing.assert_array_equal(analyzer.xc,simple.xc)
+    np.testing.assert_array_equal(analyzer.indc,simple.indc)
+    assert(analyzer.x_mean==simple.x_mean)
+    assert(analyzer.x_stderr==simple.x_stderr)
+    assert(analyzer.t_auto==simple.t_auto)
+#end def test_time_series_analyzer_reanalysis_is_configuration_independent
+
+
+
 def test_plot_interval_dist():
     """Check that interval-distribution plotting adds the expected lines."""
     matplotlib = pytest.importorskip('matplotlib')
