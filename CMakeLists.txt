@@ -140,6 +140,7 @@ endif()
 string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE)
 message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 
+option(VPL_OMP "Use OpenMP threading for Vendor Performance Libraries" ${QMC_OMP})
 option(QMC_BUILD_SANDBOX_ONLY "Build only applications in Sandbox directory" OFF)
 option(ENABLE_GCOV "Enable code coverage" OFF)
 option(ENABLE_PYCOV "Enable python code coverage" OFF)
@@ -451,40 +452,10 @@ check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
 # Add Math::BLAS_LAPACK target
 add_library(Math::BLAS_LAPACK INTERFACE IMPORTED)
 
-foreach(MKL_LIB_PATH IN ITEMS ${MKL_ROOT} $ENV{MKL_ROOT} $ENV{MKLROOT} $ENV{MKL_HOME})
-  set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${MKL_LIB_PATH}/lib/intel64)
-endforeach()
-if(NOT BLA_VENDOR)
-  message(STATUS "Trying to find LAPACK from Intel MKL")
-  if(QMC_OMP AND COMPILER STREQUAL "Intel")
-    set(BLA_VENDOR Intel10_64lp)
-  else()
-    set(BLA_VENDOR Intel10_64lp_seq)
-  endif()
-  find_package(LAPACK)
-  if(NOT LAPACK_FOUND)
-    message(STATUS "Intel MKL library files not found via FindLAPACK.")
-    message(STATUS "Trying to find alternative LAPACK libraries")
-    set(BLA_VENDOR All)
-    find_package(LAPACK REQUIRED)
-  endif()
-else()
-  message(STATUS "Trying to find LAPACK library as requested BLA_VENDOR=${BLA_VENDOR}")
-  find_package(LAPACK REQUIRED)
-endif()
-
-message(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
-message(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
-target_link_libraries(Math::BLAS_LAPACK INTERFACE "${LAPACK_LINKER_FLAGS};${LAPACK_LIBRARIES}")
-
-# Detects MKL header files and other components.
-if(LAPACK_LIBRARIES MATCHES "mkl_core")
-  include(FindMKL)
-endif()
-
-if(MKL_FOUND)
-  target_link_libraries(Math::BLAS_LAPACK INTERFACE MKL::BLAS_LAPACK)
-  set(MATH_VENDOR_GUESS "INTEL_VML")
+find_package(VendorPerfLibs REQUIRED COMPONENTS lapack)
+target_link_libraries(Math::BLAS_LAPACK INTERFACE VPL::lapack)
+if(VPL_lapack_ID STREQUAL "IntelMKL")
+  target_compile_definitions(Math::BLAS_LAPACK INTERFACE "HAVE_MKL")
 endif()
 
 #-------------------------------------------------------------------
@@ -493,51 +464,42 @@ endif()
 add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
 
 set(VALID_MATH_VENDORS "GENERIC" "INTEL_VML" "IBM_MASS" "AMD_LIBM")
-if(NOT DEFINED MATH_VENDOR_GUESS)
-  set(MATH_VENDOR_GUESS "GENERIC")
-endif()
 set(QMC_MATH_VENDOR
-    ${MATH_VENDOR_GUESS}
+    "GENERIC"
     CACHE STRING "Vendor optimized libraries for scalar and vector math functions")
 
 # Perform math vendor option check
 if(NOT QMC_MATH_VENDOR IN_LIST VALID_MATH_VENDORS)
   message(FATAL_ERROR "Invalid vendor math library ${QMC_MATH_VENDOR}, value must be one of ${VALID_MATH_VENDORS}")
+endif()
+
+find_package(VendorPerfLibs QUIET COMPONENTS vml)
+if(VendorPerfLibs_FOUND)
+  if(VPL_vml_ID STREQUAL "IntelMKL")
+    target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_MKL;HAVE_MKL_VML")
+  elseif(VPL_vml_ID STREQUAL "AOCL")
+    target_compile_definitions(Math::scalar_vector_functions INTERFACE "HAVE_AMD_LIBM")
+  endif()
+  target_link_libraries(Math::scalar_vector_functions INTERFACE VPL::vml)
 else()
   message(STATUS "Selected vendor math library ${QMC_MATH_VENDOR}")
-endif()
-
-# This needs to go before HAVE_SINCOS
-if(QMC_MATH_VENDOR STREQUAL "INTEL_VML")
-  include(FindMKLVML)
-elseif(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
-  include(FindIBMMASS)
-elseif(QMC_MATH_VENDOR STREQUAL "AMD_LIBM")
-  include(FindAMDLibM)
-endif()
-
-# CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
-if(NOT SINCOS_INCLUDE)
+  # This needs to go before HAVE_SINCOS check
   set(SINCOS_INCLUDE cmath)
-endif(NOT SINCOS_INCLUDE)
-message(STATUS "SINCOS_INCLUDE : ${SINCOS_INCLUDE}")
-include(CheckSincos)
+  if(QMC_MATH_VENDOR STREQUAL "IBM_MASS")
+    include(FindIBMMASS)
+  endif()
+
+  # CheckSincos relies on SINCOS_INCLUDE which may be modified based on vendor libraries
+  message(STATUS "SINCOS_INCLUDE : ${SINCOS_INCLUDE}")
+  include(CheckSincos)
+endif()
 
 #-------------------------------------------------------------------
 #  set up FFTW3 library
 #-------------------------------------------------------------------
 add_library(Math::FFTW3 INTERFACE IMPORTED)
-set(FFTW_FOUND 0)
-if(HAVE_MKL)
-  if(HAVE_MKL_FFTW3)
-    set(FFTW_FOUND 1)
-    target_link_libraries(Math::FFTW3 INTERFACE MKL::FFTW3)
-  endif()
-endif()
-if(NOT FFTW_FOUND)
-  find_package(FFTW REQUIRED)
-  target_link_libraries(Math::FFTW3 INTERFACE FFTW::FFTW3)
-endif()
+find_package(VendorPerfLibs REQUIRED COMPONENTS fft)
+target_link_libraries(Math::FFTW3 INTERFACE VPL::fft)
 
 set(HAVE_LIBFFTW 1)
 target_compile_definitions(Math::FFTW3 INTERFACE "HAVE_LIBFFTW")
@@ -831,6 +793,9 @@ if(ENABLE_SYCL)
     NO_DEFAULT_PATH)
   target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
   target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
+
+  find_package(MKLsycl REQUIRED)
+
   if(TARGET MKL::sycl)
     target_link_libraries(MKL::sycl INTERFACE OneAPI::DPCPP-host)
   endif()

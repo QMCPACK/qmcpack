@@ -118,7 +118,6 @@ before doing significant production. i.e. Check the details below.
 |----------------------|-------------|
 |   CXX          |    C++ compiler |
 |   CC           |    C Compiler |
-|   MKL_ROOT     |    Path for MKL |
 |   HDF5_ROOT    |    Path for HDF5 |
 |   BOOST_ROOT   |    Path for Boost |
 |   FFTW_HOME    |    Path for FFTW |

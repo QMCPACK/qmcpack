@@ -305,7 +305,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   values = 0.0;
   sposet->evaluateValue(elec, 0, values);
-  //std::cout << "values = " << values << std::endl;
+  //app_log() << "values = " << values << std::endl;
   // Values from gen_cusp_corr.py
   CHECK(values[0] == Approx(9.5150713253));
   CHECK(values[1] == Approx(-0.0086731542));
@@ -319,9 +319,9 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   values = 0.0;
   sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
-  //std::cout << "values = " << values << std::endl;
-  //std::cout << "dpsi = " << dpsi << std::endl;
-  //std::cout << "d2psi = " << d2psi << std::endl;
+  //app_log() << "values = " << values << std::endl;
+  //app_log() << "dpsi = " << dpsi << std::endl;
+  //app_log() << "d2psi = " << d2psi << std::endl;
 
   // Values from gen_cusp_corr.py
   CHECK(values[0] == Approx(9.5150713253));

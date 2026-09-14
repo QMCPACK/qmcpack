@@ -120,7 +120,7 @@ TEST_CASE("batched_Tab_to_Klr", "[batched_operations]")
   batched_Tab_to_Klr(nbatch, nwalk, nel, nchol_max, nchol, ncholQ, ncholQ0, dev_kdiag.base(), Tab.base(),
                      Kl.base(), Kr.base());
   copy_n(Kr.base(), Kr.num_elements(), buffer.data());
-  //std::cout << std::setprecision(16) << Kl[2][3] << " " << Kl[1][4] << " " << Kr[1][3] << " " << Kr[0][1] << std::endl;
+  //app_log() << std::setprecision(16) << Kl[2][3] << " " << Kl[1][4] << " " << Kr[1][3] << " " << Kr[0][1] << std::endl;
   CHECK(real(buffer[2 * nchol + 3]) == Approx(2262));
 }
 
@@ -141,10 +141,10 @@ TEST_CASE("Tanb_to_Kl", "[batched_operations]")
   using ma::Tanb_to_Kl;
   Tanb_to_Kl(nwalk, nel, nchol, nchol, Twanb.base(), Kl.base());
   array_ref<ComplexType, 1, pointer<ComplexType>> Kl_(Kl.base(), extents_t<1u>{nwalk * nchol});
-  //std::cout << "{";
+  //app_log() << "{";
   //for (auto i : Kl_)
-  //std::cout << "ComplexType(" << real(i) << ")," << std::endl;
-  //std::cout << "};" << std::endl;;
+  //app_log() << "ComplexType(" << real(i) << ")," << std::endl;
+  //app_log() << "};" << std::endl;;
   array<ComplexType, 1, Alloc<ComplexType>> ref = {ComplexType(66),  ComplexType(75),  ComplexType(84),
                                                    ComplexType(93),  ComplexType(102), ComplexType(111),
                                                    ComplexType(120), ComplexType(255), ComplexType(264),
@@ -174,7 +174,7 @@ TEST_CASE("batched_dot_wabn_wban", "[Numerics][batched_operations]")
                                                    ComplexType(2189.312510839587)};
   using ma::batched_dot_wabn_wban;
   batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.base(), Twabn.base(), to_address(out.data()), 1);
-  //std::cout << std::setprecision(16) << "this: " <<  out[0] << " " << out[1] << " " << out[2] << std::endl;
+  //app_log() << std::setprecision(16) << "this: " <<  out[0] << " " << out[1] << " " << out[2] << std::endl;
   verify_approx(ref, out);
 }
 
@@ -198,7 +198,7 @@ TEST_CASE("batched_dot_wanb_wbna", "[Numerics][batched_operations]")
                                                    ComplexType(2189.107040119586)};
   using ma::batched_dot_wanb_wbna;
   batched_dot_wanb_wbna(nbatch, nwalk, nocc, nchol, scal.base(), Twabn.base(), to_address(out.data()), 1);
-  //std::cout << std::setprecision(16) << "this: " <<  out[0] << " " << out[1] << " " << out[2] << std::endl;
+  //app_log() << std::setprecision(16) << "this: " <<  out[0] << " " << out[1] << " " << out[2] << std::endl;
   verify_approx(ref, out);
 }
 
@@ -312,7 +312,7 @@ TEST_CASE("viwj_vwij", "[Numerics][batched_operations]")
   copy_n(buffer.data(), buffer.size(), B.base());
   using ma::viwj_vwij;
   //viwj_vwij(nw, ni, 0, nj, B.data(), A.data());
-  //std::cout << A[0][1][1] << " " << A[1][2][1] << std::endl;
+  //app_log() << A[0][1][1] << " " << A[1][2][1] << std::endl;
 }
 
 TEST_CASE("element_wise_Aij_Bjk_Ckij", "[Numerics][batched_operations]")

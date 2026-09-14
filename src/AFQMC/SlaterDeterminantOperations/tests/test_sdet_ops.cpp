@@ -34,7 +34,6 @@
 #include "AFQMC/SlaterDeterminantOperations/mixed_density_matrix.hpp"
 
 using std::complex;
-using std::cout;
 using std::endl;
 using std::string;
 

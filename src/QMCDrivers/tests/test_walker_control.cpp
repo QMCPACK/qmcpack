@@ -32,15 +32,15 @@ namespace qmcplusplus
 {
 void output_vector(const std::string& name, std::vector<int>& vec)
 {
-  std::cout << name;
+  app_log() << name;
   for (int i = 0; i < vec.size(); i++)
   {
-    std::cout << vec[i] << " ";
+    app_log() << vec[i] << " ";
   }
-  std::cout << std::endl;
+  app_log() << std::endl;
 }
 
-// uncomment the std::cout and output_vector lines to see the walker assignments
+// uncomment the app_log() and output_vector lines to see the walker assignments
 TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
 {
   int Cur_pop     = 8;
@@ -58,7 +58,7 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
     std::vector<int> plus;
     std::vector<int> num_per_rank = NumPerRank;
 
-    //std::cout << "For processor number " << me << std::endl;
+    //app_log() << "For processor number " << me << std::endl;
     WalkerControlMPI::determineNewWalkerPopulation(Cur_pop, NumContexts, me, num_per_rank, FairOffset, minus, plus);
 
     REQUIRE(minus.size() == plus.size());
@@ -114,7 +114,7 @@ TEST_CASE("WalkerControl round trip index conversions", "[drivers][walker_contro
   REQUIRE(all_pass);
 }
 
-// uncomment the std::cout and output_vector lines to see the walker assignments
+// uncomment the app_log() and output_vector lines to see the walker assignments
 TEST_CASE("Walker control assign walkers odd ranks", "[drivers][walker_control]")
 {
   int Cur_pop                 = 9;
@@ -128,7 +128,7 @@ TEST_CASE("Walker control assign walkers odd ranks", "[drivers][walker_control]"
     std::vector<int> minus;
     std::vector<int> plus;
     std::vector<int> num_per_rank = NumPerRank;
-    //std::cout << "For processor number " << me << std::endl;
+    //app_log() << "For processor number " << me << std::endl;
     WalkerControlMPI::determineNewWalkerPopulation(Cur_pop, NumContexts, me, num_per_rank, FairOffset, minus, plus);
 
     REQUIRE(minus.size() == plus.size());
@@ -194,8 +194,8 @@ TEST_CASE("Walker control assign walkers many", "[drivers][walker_control][prope
       }
       NumPerRank[i] = p;
     }
-    //std::cout << "NumNodes = " << NumContexts << std::endl;
-    //std::cout << "TotalPop = " << Cur_pop << std::endl;
+    //app_log() << "NumNodes = " << NumContexts << std::endl;
+    //app_log() << "TotalPop = " << Cur_pop << std::endl;
     //output_vector("Start: ",NumPerRank);
 
     std::vector<int> NewNum = NumPerRank;
@@ -288,7 +288,7 @@ struct WalkerControlMPITest
 
       wc.swapWalkersSimple(W);
 
-      //std::cout << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
+      //app_log() << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
       //          " ID = " << wc.good_w[0]->ID << std::endl;
 
       if (c->rank() == c->size() - 2)
@@ -397,10 +397,10 @@ private:
     c->allreduce(rank_walker_count);
     if (c->rank() == 0)
     {
-      std::cout << "Walkers Per Rank (Total: " << wc.Cur_pop << ")\n";
+      app_log() << "Walkers Per Rank (Total: " << wc.Cur_pop << ")\n";
       for (int i = 0; i < rank_walker_count.size(); ++i)
       {
-        std::cout << " " << i << "  " << rank_walker_count[i] << "\n";
+        app_log() << " " << i << "  " << rank_walker_count[i] << "\n";
       }
     }
   }
