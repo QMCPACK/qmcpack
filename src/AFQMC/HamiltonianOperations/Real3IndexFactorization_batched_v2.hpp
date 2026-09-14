@@ -68,7 +68,7 @@ class Real3IndexFactorization_batched_v2
   using SpCVector_ref  = SPComplexVector_ref<sp_pointer>;
   using CMatrix_ref    = ComplexMatrix_ref<pointer>;
   using SpCMatrix_ref  = SPComplexMatrix_ref<sp_pointer>;
-  using SpRMatrix_ref  = SPComplexMatrix_ref<sp_rpointer>;
+  using SpRMatrix_ref  = SPRealMatrix_ref<sp_rpointer>;
   using SpCTensor_ref  = boost::multi::array_ref<SPComplexType, 3, sp_pointer>;
   using SpC4Tensor_ref = boost::multi::array_ref<SPComplexType, 4, sp_pointer>;
   using C4Tensor_ref   = boost::multi::array_ref<ComplexType, 4, pointer>;
