@@ -864,6 +864,42 @@ def test_lcd_trim_lrm_respects_minimum_middle_segment_length():
 
 
 
+def test_pair_expand_ts_intervals():
+    """Expand each sample into duplicated, bounded-lag sorted intervals."""
+    x = np.arange(5.)
+    t = 2.*x
+
+    intervals,times = statistics.pair_expand_ts_intervals(x,t,expand=2)
+    expected_intervals = np.array(
+        [
+            [0.,1.],[0.,1.],[1.,2.],[1.,2.],
+            [2.,3.],[2.,3.],[3.,4.],[3.,4.],
+            ],
+        )
+    np.testing.assert_array_equal(intervals,expected_intervals)
+    np.testing.assert_allclose(times,[.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5])
+
+    intervals_without_times,times_without_times = (
+        statistics.pair_expand_ts_intervals(x.reshape(1,len(x),1),expand=2)
+        )
+    np.testing.assert_array_equal(intervals_without_times,expected_intervals)
+    assert(times_without_times is None)
+
+    invalid_inputs = [
+        (np.arange(2.),None,2,r'data array length must exceed expansion'),
+        (x,None,0,r'expansion must be a positive even integer'),
+        (x,None,3,r'expansion must be a positive even integer'),
+        (x,None,True,r'expansion must be a positive even integer'),
+        (np.ones((2,2)),None,2,r'data array must be one-dimensional'),
+        (x,[0.,1.],2,r'time array must have the same length'),
+        ]
+    for x_invalid,t_invalid,expand,message in invalid_inputs:
+        with pytest.raises(ValueError,match=message):
+            statistics.pair_expand_ts_intervals(x_invalid,t_invalid,expand=expand)
+#end def test_pair_expand_ts_intervals
+
+
+
 def test_plot_interval_dist():
     """Check that interval-distribution plotting adds the expected lines."""
     matplotlib = pytest.importorskip('matplotlib')

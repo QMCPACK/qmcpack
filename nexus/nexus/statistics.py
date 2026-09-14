@@ -1445,8 +1445,48 @@ def lcd_smooth(
 
 
 def pair_expand_ts_intervals(x,t=None,expand=10):
-    assert expand%2==0
-    assert len(x)>expand
+    """Return sorted pairs between samples in a bounded local neighborhood.
+
+    Each sample is paired with up to ``expand/2`` earlier and later samples.
+    Consequently, every unordered pair within that index separation occurs
+    twice, once from each endpoint.  This supplies local multi-lag intervals
+    for line-crossing analysis.
+
+    Parameters
+    ----------
+    x : array_like
+        Real vector-like time series.  Singleton dimensions are flattened.
+
+    t : array_like, optional
+        Real vector-like sample times paired with ``x``.
+
+    expand : int, optional
+        Positive even number of local neighbor positions.  It must be less
+        than ``len(x)``.
+
+    Returns
+    -------
+    xi : ndarray
+        Sorted endpoint pairs for all local directed pairings.
+
+    ti : ndarray or None
+        Constructed sub-times paired with ``xi``, or ``None`` if ``t`` is not
+        supplied.
+    """
+    x = _real_vector(x,'data array')
+    if isinstance(expand,(bool,np.bool_)) or not isinstance(
+        expand,(int,np.integer)
+        ) or expand<1 or expand%2!=0:
+        msg = 'expansion must be a positive even integer'
+        raise ValueError(msg)
+    if len(x)<=expand:
+        msg = 'data array length must exceed expansion'
+        raise ValueError(msg)
+    if t is not None:
+        t = _real_vector(t,'time array')
+        if len(t)!=len(x):
+            msg = 'time array must have the same length as data array'
+            raise ValueError(msg)
     ne = expand//2
     N  = len(x)
     xi = []
@@ -1461,7 +1501,6 @@ def pair_expand_ts_intervals(x,t=None,expand=10):
     xi = np.sort(xi,axis=1)
     ti = None
     if t is not None:
-        assert len(t)==len(x)
         ti = []
         for i,t0 in enumerate(t):
             if i==0:
@@ -1482,7 +1521,8 @@ def pair_expand_ts_intervals(x,t=None,expand=10):
                 dtj = dt/2/(n2+1)
                 ti.extend([t0+(j+1)*dtj for j in range(n2)])
         ti = np.array(ti)
-        assert len(ti)==len(xi)
+        if len(ti)!=len(xi):
+            raise RuntimeError('internal pair/time expansion length mismatch')
     return xi,ti
 #end def pair_expand_ts_intervals
 
