@@ -66,7 +66,7 @@ if(QMC_COMPLEX)
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "eeenergy" "-4.603005269151 0.085411994867")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "localecp" "-13.070694487044 0.441491994197")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "nonlocalecp" "2.101896531043 0.146195537980")
-  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "ionion" "-25.551327062000 0.000100000000")
+  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_SHORT_SCALARS "ionion" "-25.55132719 0.000002")
 
   qmc_run_and_check(
     short-diamondC_2x1x1-Gaussian_pp_cplx_ground_MSD
@@ -88,7 +88,7 @@ if(QMC_COMPLEX)
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_LONG_SCALARS "eeenergy" "-4.603005269151 0.030347826563")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_LONG_SCALARS "localecp" "-13.070694487044 0.093758470517")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_LONG_SCALARS "nonlocalecp" "2.101896531043 0.033542969378")
-  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_LONG_SCALARS "ionion" "-25.551327062000 0.000100000000")
+  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_GROUND_LONG_SCALARS "ionion" "-25.55132719 0.000002")
 
   qmc_run_and_check(
     long-diamondC_2x1x1-Gaussian_pp_cplx_ground_MSD
@@ -110,7 +110,7 @@ if(QMC_COMPLEX)
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_LONG_SCALARS "eeenergy" "-4.670554461220 0.018805728911")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_LONG_SCALARS "localecp" "-13.325392368394 0.084934045045")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_LONG_SCALARS "nonlocalecp" "2.213740245050 0.021921851285")
-  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_LONG_SCALARS "ionion" "-25.551327062000 0.000100000000")
+  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_LONG_SCALARS "ionion" "-25.55132719 0.000002")
 
   qmc_run_and_check(
     long-diamondC_2x1x1-Gaussian_pp_cplx_excited_MSD
@@ -132,7 +132,7 @@ if(QMC_COMPLEX)
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "eeenergy" "-4.670554461220 0.057273234412")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "localecp" "-13.325392368394 0.264864425798")
   list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "nonlocalecp" "2.213740245050 0.089172131789")
-  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "ionion" "-25.551327062000 0.0000100000000")
+  list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_MSD_EXCITED_SHORT_SCALARS "ionion" "-25.55132719 0.000002")
 
   qmc_run_and_check(
     short-diamondC_2x1x1-Gaussian_pp_cplx_excited_MSD
