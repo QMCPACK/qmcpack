@@ -2650,4 +2650,4 @@ class TimeSeriesAnalyzer(DevBase):
             plt.show()
         self._check()
     #end def plot
-#end def TimeSeriesAnalyzer
+#end class TimeSeriesAnalyzer
