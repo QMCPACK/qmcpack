@@ -994,6 +994,28 @@ def test_time_series_analyzer_reanalysis_is_configuration_independent():
 
 
 
+def test_time_series_analyzer_plot():
+    """Plot labeled clean and full traces only after analysis has run."""
+    matplotlib = pytest.importorskip('matplotlib')
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    x = np.sin(np.linspace(0.,4.*np.pi,64))
+    uninitialized = statistics.TimeSeriesAnalyzer(x,analyze=False)
+    with pytest.raises(ValueError,match=r'analysis must be completed'):
+        uninitialized.plot()
+
+    analyzer = statistics.TimeSeriesAnalyzer(x,clean_inp='lcd_trim_l')
+    figure,axis = plt.subplots()
+    plt.sca(axis)
+    analyzer.plot(legend=True)
+    labels = {text.get_text() for text in axis.get_legend().get_texts()}
+    assert({'full series','clean mean','clean mean ± std. dev.','clean series'}<=labels)
+    plt.close(figure)
+#end def test_time_series_analyzer_plot
+
+
+
 def test_plot_interval_dist():
     """Check that interval-distribution plotting adds the expected lines."""
     matplotlib = pytest.importorskip('matplotlib')

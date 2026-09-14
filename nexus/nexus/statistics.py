@@ -2334,46 +2334,57 @@ class TimeSeriesAnalyzer(DevBase):
         self.check()
     #end def analyze
 
-    def plot(self,fig=False,show=False,ishift=0):
+    def plot(
+            self,
+            fig    = False,
+            show   = False,
+            ishift = 0,
+            legend = True,
+            ):
+        """Plot the trace, cleaning partition, and clean-data reference lines."""
         import matplotlib.pyplot as plt
         self.check()
-        if self.xc is None:
+        if self.xc is None or self.x_mean is None or self.x_stderr is None:
             raise ValueError('analysis must be completed before plotting')
         if fig:
             plt.figure(tight_layout=True)
 
-        plt.plot(self.ind+ishift,self.x,color='Grey')
+        plt.plot(self.ind+ishift,self.x,color='Grey',label='full series')
 
         imin = self.ind[0]+ishift
         imax = self.ind[-1]+ishift
-        plt.plot([imin,imax],2*[self.x_mean],'g-')
-        plt.plot([imin,imax],2*[self.x_mean+np.std(self.xc)],'g-.')
+        plt.plot([imin,imax],2*[self.x_mean],'g-',label='clean mean')
+        plt.plot(
+            [imin,imax],
+            2*[self.x_mean+np.std(self.xc)],
+            'g-.',
+            label='clean mean ± std. dev.',
+            )
         plt.plot([imin,imax],2*[self.x_mean-np.std(self.xc)],'g-.')
 
         mask = np.zeros(len(self.x),dtype=bool)
         mask[self.indc]=True
         segs = find_segments(self.x,mask,1)
-        for n1,n2 in segs:
-            plt.plot(self.ind[n1:n2]+ishift,self.x[n1:n2],'k-')
+        for iseg,(n1,n2) in enumerate(segs):
+            label = 'clean series' if iseg==0 else None
+            plt.plot(self.ind[n1:n2]+ishift,self.x[n1:n2],'k-',label=label)
 
         if self.xl is not None:
-            plt.plot(self.indl+ishift,self.xl,'r-')
-            mask[self.indl] = True
+            plt.plot(self.indl+ishift,self.xl,'r-',label='left trim')
 
         if self.xr is not None:
-            plt.plot(self.indr+ishift,self.xr,'r-')
-            mask[self.indr] = True
+            plt.plot(self.indr+ishift,self.xr,'b-',label='right trim')
 
         if self.xm is not None:
             mask = np.zeros(len(self.x),dtype=bool)
             mask[self.indm]=True
             segs = find_segments(self.x,mask,1)
-            for n1,n2 in segs:
-                plt.plot(self.ind[n1:n2]+ishift,self.x[n1:n2],'m-')
-            #plt.plot(self.indm+ishift,self.xm,'mx')
-            mask[self.indm] = True
+            for iseg,(n1,n2) in enumerate(segs):
+                label = 'middle trim' if iseg==0 else None
+                plt.plot(self.ind[n1:n2]+ishift,self.x[n1:n2],'m-',label=label)
 
-        #assert mask.all()
+        if legend:
+            plt.legend()
         if show:
             plt.show()
         self.check()
