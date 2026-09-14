@@ -486,10 +486,27 @@ def test_interval_distribution_and_peak(monkeypatch):
     np.testing.assert_array_equal(touching_counts,[1,1,1])
 
     repeated_intervals,repeated_counts = statistics.interval_distribution(
-        np.array([[1.,1.],[1.,2.],[2.,2.]])
+        np.array([[1.,1.],[1.,2.],[2.,2.]]),perturb_const=0
         )
     np.testing.assert_array_equal(repeated_intervals,[[1.,2.]])
     np.testing.assert_array_equal(repeated_counts,[1])
+
+    constant_intervals = np.array([[1.,1.]])
+    perturbed_intervals,perturbed_counts = statistics.interval_distribution(
+        constant_intervals
+        )
+    np.testing.assert_array_equal(
+        perturbed_intervals,
+        [[np.nextafter(1.,-np.inf),np.nextafter(1.,np.inf)]],
+        )
+    np.testing.assert_array_equal(perturbed_counts,[1])
+    constant_peak,constant_height = statistics.interval_dist_peak(
+        constant_intervals,
+        [3.],
+        height=True,
+        )
+    assert(constant_peak==pytest.approx(1.))
+    assert(constant_height==3.)
 
     irregular_intervals,irregular_counts = statistics.interval_distribution(
         np.array([[0.,10.],[.5,.75]])
@@ -580,6 +597,21 @@ def test_interval_distribution_and_peak(monkeypatch):
         statistics.interval_dist_peak(
             peak_intervals,peak_counts,quad_weighting='invalid'
             )
+    for perturb_const in (-1,1.5,True):
+        with pytest.raises(
+            ValueError,
+            match=r'constant perturbation must be a nonnegative integer',
+            ):
+            statistics.interval_distribution(
+                constant_intervals,perturb_const=perturb_const
+                )
+        with pytest.raises(
+            ValueError,
+            match=r'constant perturbation must be a nonnegative integer',
+            ):
+            statistics.interval_dist_peak(
+                constant_intervals,[1.],perturb_const=perturb_const
+                )
 #end def test_interval_distribution_and_peak
 
 
@@ -667,6 +699,17 @@ def test_line_crossing_distribution_and_lcd_peak(monkeypatch):
     np.testing.assert_array_equal(intervals,[[0.,1.],[1.,2.]])
     np.testing.assert_array_equal(counts,[1,2])
     assert(statistics.lcd_peak(x)==pytest.approx(1.5))
+
+    constant = np.full(4,5.)
+    constant_intervals,constant_counts = statistics.line_crossing_distribution(
+        constant
+        )
+    np.testing.assert_array_equal(
+        constant_intervals,
+        [[np.nextafter(5.,-np.inf),np.nextafter(5.,np.inf)]],
+        )
+    np.testing.assert_array_equal(constant_counts,[3])
+    assert(statistics.lcd_peak(constant)==pytest.approx(5.))
 
     def reverse(values):
         values[:] = values[::-1]

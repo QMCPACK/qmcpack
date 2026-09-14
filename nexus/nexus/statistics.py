@@ -775,6 +775,8 @@ def series_stats(x,t_auto=None):
 # emphasize locally stable, equilibrium-like portions of a fluctuating     #
 # series.  Rolling versions track this center over time, while related     #
 # utilities support broader interval-distribution analysis.                #
+############################################################################
+
 
 def time_series_intervals(x,t=None):
     """Return ordered intervals between adjacent time-series values.
@@ -860,7 +862,37 @@ def _int_dist_input(x1,x2=None):
 
 
 
-def interval_distribution(x1,x2=None):
+def _perturb_constant_intervals(xi,perturb_const):
+    """Expand constant intervals by a fixed number of floating-point steps."""
+    if isinstance(perturb_const,(bool,np.bool_)) or not isinstance(
+        perturb_const,(int,np.integer)
+        ) or perturb_const<0:
+        msg = 'constant perturbation must be a nonnegative integer'
+        raise ValueError(msg)
+    if perturb_const==0:
+        return xi
+    constant = xi[:,0]==xi[:,1]
+    if not constant.any():
+        return xi
+    xi = xi.copy()
+    lower = xi[constant,0]
+    upper = xi[constant,1]
+    for n in range(perturb_const):
+        lower = np.nextafter(lower,-np.inf)
+        upper = np.nextafter(upper,np.inf)
+    xi[constant,0] = lower
+    xi[constant,1] = upper
+    return xi
+#end def _perturb_constant_intervals
+
+
+
+def interval_distribution(
+        x1,
+        x2             = None,
+        *,
+        perturb_const  = 1,
+        ):
     """Return spans between interval edges and their overlap counts.
 
     Parameters
@@ -871,6 +903,12 @@ def interval_distribution(x1,x2=None):
 
     x2 : array_like, optional
         Upper endpoints paired with ``x1``.
+
+    perturb_const : int, optional
+        Number of floating-point steps used to expand each zero-width input
+        interval by equal step counts toward negative and positive infinity.
+        One gives a deterministic ULP-scale representation of constant
+        intervals; zero leaves them unexpanded.
 
     Returns
     -------
@@ -884,10 +922,13 @@ def interval_distribution(x1,x2=None):
     -----
     Each row of ``xi`` denotes the open span between consecutive unique
     endpoints. Endpoint membership is not counted separately: touching
-    intervals occupy adjacent spans, and zero-width intervals contribute no
-    span to the returned distribution.
+    intervals occupy adjacent spans.  By default, zero-width intervals are
+    expanded by ``perturb_const`` representable floating-point values on each
+    side before the distribution is constructed.  This preserves a narrow,
+    deterministic LCD contribution for repeated adjacent time-series values.
     """
     xi,si = _int_dist_input(x1,x2)
+    xi = _perturb_constant_intervals(xi,perturb_const)
     # organize by edge order
     edges = xi.ravel()
     signs = si.ravel()
@@ -951,6 +992,7 @@ def interval_dist_peak(
         *,
         height         = False,
         quad_weighting = 'endpoint',
+        perturb_const  = 1,
         ):
     """Return a representative location at the peak of an interval distribution.
 
@@ -980,6 +1022,11 @@ def interval_dist_peak(
         each endpoint by the square root of its interval width, making the
         least-squares objective proportional to interval width.
 
+    perturb_const : int, optional
+        Number of floating-point steps used to expand any zero-width spans
+        before locating the peak.  One gives a deterministic ULP-scale
+        representation; zero leaves the spans unexpanded.
+
     Returns
     -------
     peak : float or (float, float)
@@ -987,6 +1034,7 @@ def interval_dist_peak(
         equal-height modes are averaged.
     """
     xi,_ = _int_dist_input(xi)
+    xi = _perturb_constant_intervals(xi,perturb_const)
     ci = _real_vector(ci,'interval counts')
     if len(ci)!=len(xi):
         msg = 'interval counts must have the same length as intervals'
@@ -1156,7 +1204,7 @@ def rolling_interval_dist_peak(
     xp = []
     cp = []
     for i1,i2 in windows:
-        xi,ci = interval_distribution(xia[i1:i2])
+        xi,ci = interval_distribution(xia[i1:i2],perturb_const=1)
         if len(ci)==0:
             msg = 'each rolling window must span a nonzero interval'
             raise ValueError(msg)
@@ -1167,6 +1215,7 @@ def rolling_interval_dist_peak(
             peak_frac      = peak_frac,
             height         = True,
             quad_weighting = quad_weighting,
+            perturb_const  = 1,
             )
         xp.append(xm)
         cp.append(cm)
@@ -1205,6 +1254,30 @@ def line_crossing_distribution(x,nperm=0):
     ci : ndarray
         Crossing counts, averaged over permutations when ``nperm`` is
         positive. Permutations are never connected to one another.
+
+    Notes
+    -----
+    Each adjacent pair defines an interval, and the distribution count at a
+    value is the number of such intervals that span it.  For a continuous
+    equilibrium series with independent samples ``X`` and ``Y`` drawn from
+    CDF ``F``, the corresponding crossing probability is
+
+    .. math::
+
+       L(z) = P(\min(X,Y) < z < \max(X,Y)) = 2F(z)[1-F(z)].
+
+    Thus, for a series with ``N`` samples, the expected count is
+    ``(N - 1) L(z)``.  The distribution is maximized at a median of the
+    sampled distribution, which motivates its use as a robust equilibrium
+    location estimator.  It is a crossing-rate curve rather than a normalized
+    probability density; when ``E[|X-Y|]`` is finite, its normalized form is
+    ``2 F(z) [1-F(z)] / E[|X-Y|]``.
+
+    In the ideal continuous i.i.d. case, a probability-scale LCD can be
+    inverted to obtain ``F(z) = (1 - sqrt(1 - 2 L(z))) / 2`` below a median
+    and ``F(z) = (1 + sqrt(1 - 2 L(z))) / 2`` above one, followed by
+    differentiation to obtain the density.  Empirical inversion is noisy,
+    and the LCD does not uniquely determine distributions with atoms or gaps.
     """
     x = _real_vector(x,'data array')
     if len(x)<2:
@@ -1219,7 +1292,7 @@ def line_crossing_distribution(x,nperm=0):
     # permutation-free (typical) case
     if nperm==0:
         xi,_ = time_series_intervals(x,t=None)
-        return interval_distribution(xi)
+        return interval_distribution(xi,perturb_const=1)
 
     # use permutation shuffling
     permutation_intervals = []
@@ -1228,7 +1301,9 @@ def line_crossing_distribution(x,nperm=0):
         np.random.shuffle(xp)
         xi,_ = time_series_intervals(xp,t=None)
         permutation_intervals.append(xi)
-    xi,ci = interval_distribution(np.vstack(permutation_intervals))
+    xi,ci = interval_distribution(
+        np.vstack(permutation_intervals),perturb_const=1
+        )
     return xi,ci/nperm
 #end def line_crossing_distribution
 
@@ -1264,6 +1339,7 @@ def lcd_peak(
         method         = method,
         peak_frac      = peak_frac,
         quad_weighting = quad_weighting,
+        perturb_const  = 1,
         )
     return xp
 #end def lcd_peak
