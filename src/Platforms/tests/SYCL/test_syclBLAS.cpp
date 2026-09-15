@@ -18,6 +18,7 @@
 #include "SYCL/syclBLAS.hpp"
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
+#include "Platforms/Host/OutputManager.h"
 #include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
