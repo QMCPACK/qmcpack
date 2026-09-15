@@ -200,7 +200,7 @@ class QDBase(DevBase):
 
     def vlog(self,*args,**kwargs):
         if self.verbose:
-            DevBase.log(self,*args,**kwargs)
+            DevBase.nxs_print(self,*args,**kwargs)
         #end if
     #end def vlog
 
@@ -210,7 +210,7 @@ class QDBase(DevBase):
     #end def vmlog
 
     def help(self):
-        self.log('\n'+self.parser.format_help().strip()+'\n')
+        self.nxs_print('\n'+self.parser.format_help().strip()+'\n')
     #end def help
 
     # options accessor functions
@@ -1213,8 +1213,8 @@ class QMCDensityProcessor(QDBase):
         self.vlog(f'\n{self.name} initializing')
 
         if self.verbose:
-            self.log('\noptions provided:')
-            self.log(str(self.options))
+            self.nxs_print('\noptions provided:')
+            self.nxs_print(str(self.options))
         #end if
 
 
@@ -1496,7 +1496,7 @@ class QMCDensityProcessor(QDBase):
         #end if
 
         if opt.verbose and opt.input_metadata is not None:
-            self.log(f'input density metadata found for series: {sorted(opt.input_metadata.series.keys())}')
+            self.nxs_print(f'input density metadata found for series: {sorted(opt.input_metadata.series.keys())}')
         #end if
 
         for file in files_in:

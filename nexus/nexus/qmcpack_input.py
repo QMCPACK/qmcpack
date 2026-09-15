@@ -142,7 +142,7 @@ import keyword
 import numpy as np
 from .numpy_extensions import reshape_inplace
 from .xmlreader import XMLreader, XMLelement
-from .developer import DevBase, dotdict, obj, log, warn, FileFormatError, NexusError, sorted_generic
+from .developer import DevBase, dotdict, obj, nxs_print, warn, FileFormatError, NexusError, sorted_generic
 from .periodic_table import Elements
 from .structure import Structure, Jellium, get_kpath
 from .physical_system import PhysicalSystem
@@ -444,7 +444,7 @@ class hobj(obj):
     def log(self,*items,**kwargs):
         if 'logfile' not in kwargs and '_logfile' in self.__dict__:
             kwargs['logfile'] = self._logfile
-        log(*items,**kwargs)
+        nxs_print(*items,**kwargs)
     #end def log
 
     def warn(self,message,header=None):

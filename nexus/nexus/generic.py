@@ -24,21 +24,9 @@ import os
 import sys
 import traceback
 import warnings
-from typing import NoReturn, TextIO, ClassVar, TypeAlias
+from typing import NoReturn, TextIO, TypeAlias
 
 VersionStr: TypeAlias = str
-
-class generic_settings:
-    devlog         = sys.stdout
-
-    # Warnings for trying to reference or set `raise_error`
-    @property
-    def raise_error(self):
-        warn("Referencing `raise_error` is deprecated!", warn_type="dev")
-    @raise_error.setter
-    def raise_error(self, _):
-        warn("Setting `raise_error` is deprecated!", warn_type="dev")
-#end class generic_settings
 
 
 class NexusError(Exception):
@@ -70,9 +58,9 @@ class NexusUserWarning(NexusDevWarning):
 
 
 # Hook for replacing `warnings.showwarning`
-def __nexus_showwarning(message, category, filename, lineno, file=None, line=None):
+def __nexus_showwarning(message, category, filename, lineno, file=None, line=None):  # noqa: ARG001
     if file is None:
-        file = generic_settings.devlog
+        file = sys.stdout
 
     indent = ""
     cls    = ""
@@ -116,13 +104,13 @@ def nocopy(value):
 #end def nocopy
 
 
-def log(
+def nxs_print(
     *items,
     indent: str | None = None,
     logfile: TextIO | None = None,
     n: int = 0
     ) -> None:
-    logfile = logfile if logfile is not None else generic_settings.devlog
+    logfile = logfile if logfile is not None else sys.stdout
     if n!=0:
         if indent is None:
             indent = n*'  '
@@ -149,15 +137,15 @@ def log(
 
 def message(msg,header=None,post_header=' message:',indent='    ',logfile=None):
     if logfile is None:
-        logfile = generic_settings.devlog
+        logfile = sys.stdout
     #end if
     if header is None:
         header = post_header.lstrip()
     else:
         header += post_header
     #end if
-    log('\n  '+header,logfile=logfile)
-    log(msg.rstrip(),indent=indent,logfile=logfile)
+    nxs_print('\n  '+header,logfile=logfile)
+    nxs_print(msg.rstrip(),indent=indent,logfile=logfile)
 #end def message
 
 
