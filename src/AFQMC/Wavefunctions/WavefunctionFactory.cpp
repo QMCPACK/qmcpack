@@ -1081,7 +1081,7 @@ void WavefunctionFactory::computeVariationalEnergyPHMSD(TaskGroup_& TG,
   // Allocate H in Node's shared memory, but use as a raw array with proper synchronization
   int dim((recompute_ci ? ndets : 0));
   boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> H({dim, dim}, TG.Node());
-  boost::multi::array<ComplexType, 1> energy(iextensions<1u>{2});
+  boost::multi::array<ComplexType, 1> energy(extents_t<1u>{2});
   using std::fill_n;
   fill_n(H.base(), H.num_elements(), ComplexType(0.0));           // this call synchronizes
   fill_n(energy.base(), energy.num_elements(), ComplexType(0.0)); // this call synchronizes

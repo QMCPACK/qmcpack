@@ -27,7 +27,7 @@ using boost::multi::array;
 using boost::multi::array_ref;
 using std::vector;
 template<std::ptrdiff_t D>
-using iextensions = typename boost::multi::iextensions<D>;
+using extents_t = typename boost::multi::extents_t<D>;
 
 namespace qmcplusplus
 {
@@ -35,11 +35,11 @@ void ma_tensor_tests()
 {
   vector<double> v = {1., 2., 3.};
   {
-    array_ref<double, 1> V(v.data(), iextensions<1u>{v.size()});
+    array_ref<double, 1> V(v.data(), extents_t<1u>{v.size()});
     ma::scal(2., V);
     {
       vector<double> v2 = {2., 4., 6.};
-      array_ref<double, 1> V2(v2.data(), iextensions<1u>{v2.size()});
+      array_ref<double, 1> V2(v2.data(), extents_t<1u>{v2.size()});
       verify_approx(V, V2);
     }
   }

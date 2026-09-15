@@ -1,0 +1,36 @@
+&CONTROL
+  calculation = 'scf'
+  verbosity = 'high'
+  restart_mode = 'from_scratch'
+  prefix = 'cbn_crystal_kpoints'
+  outdir = './tmp'
+  pseudo_dir = '../../additional_pseudos'
+  tstress = .true.
+  tprnfor = .true.
+/
+&SYSTEM
+  ibrav = 2
+  celldm(1) = 6.82
+  nat = 2
+  ntyp = 2
+  ecutwfc = 300.0
+  ecutrho = 1200.0
+  occupations = 'fixed'
+/
+&ELECTRONS
+  conv_thr = 1.0d-8
+  mixing_beta = 0.5
+  diagonalization = 'david'
+/
+ATOMIC_SPECIES
+  B 10.81 B.ccECP.upf
+  N 14.01 N.ccECP.upf
+ATOMIC_POSITIONS crystal
+  B 0.000 0.000 0.000
+  N 0.250 0.250 0.250
+K_POINTS crystal
+  4
+  0.000 0.000 0.000 0.10
+  0.250 0.000 0.000 0.20
+  0.250 0.250 0.000 0.30
+  0.250 0.250 0.250 0.40

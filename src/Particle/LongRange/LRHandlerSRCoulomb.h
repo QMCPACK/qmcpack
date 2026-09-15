@@ -395,12 +395,12 @@ private:
 
   void fillYk(KContainer& KList)
   {
-    Fk.resize(KList.getKptsCartWorking().size());
+    Fk.resize(KList.getKptsCart().size());
     const std::vector<int>& kshell(KList.getKShell());
     if (MaxKshell >= kshell.size())
       MaxKshell = kshell.size() - 1;
     Fk_symm.resize(MaxKshell);
-    const auto& ksq = KList.getKSQWorking();
+    const auto& ksq = KList.getKSQ();
     for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
     {
       mRealType uk = evalYk(std::sqrt(ksq[ki]));
@@ -408,15 +408,15 @@ private:
       while (ki < kshell[ks + 1] && ki < Fk.size())
         Fk[ki++] = uk;
     }
-    //for(int ki=0; ki<KList.getKptsCartWorking().size(); ki++){
-    //  mRealType k=dot(KList.getKptsCartWorking()[ki],KList.getKptsCartWorking()[ki]);
+    //for(int ki=0; ki<KList.getKptsCart().size(); ki++){
+    //  mRealType k=dot(KList.getKptsCart()[ki],KList.getKptsCart()[ki]);
     //  k=std::sqrt(k);
     //  Fk[ki] = evalFk(k); //Call derived fn.
     //}
   }
   void fillYkg(const KContainer& KList)
   {
-    const auto& kpts_cart = KList.getKptsCartWorking();
+    const auto& kpts_cart = KList.getKptsCart();
     Fkg.resize(kpts_cart.size());
     //LRHandlerSRCoulomb is the force handler now.  Only want
     //Fourier coefficients optimized for forces being used period.
@@ -426,7 +426,7 @@ private:
     if (MaxKshell >= kshell.size())
       MaxKshell = kshell.size() - 1;
 
-    const auto& ksq = KList.getKSQWorking();
+    const auto& ksq = KList.getKSQ();
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
     {
       mRealType uk = evalYkg(std::sqrt(ksq[ki]));
@@ -443,11 +443,11 @@ private:
   void fillYkgstrain(KContainer& KList)
   {
     APP_ABORT("Stresses not supported yet\n");
-    Fkgstrain.resize(KList.getKptsCartWorking().size());
+    Fkgstrain.resize(KList.getKptsCart().size());
     const std::vector<int>& kshell(KList.getKShell());
     if (MaxKshell >= kshell.size())
       MaxKshell = kshell.size() - 1;
-    const auto& ksq = KList.getKSQWorking();
+    const auto& ksq = KList.getKSQ();
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
     {
       mRealType uk = evalYkgstrain(std::sqrt(ksq[ki]));
@@ -458,10 +458,10 @@ private:
   void filldFk_dk(KContainer& KList)
   {
     throw std::runtime_error("Stresses not supported yet\n");
-    // dFk_dstrain.resize(KList.getKptsCartWorking().size());
+    // dFk_dstrain.resize(KList.getKptsCart().size());
 
     // for (int ki = 0; ki < dFk_dstrain.size(); ki++)
-    //   dFk_dstrain[ki] = evaluateLR_dstrain(KList.getKptsCartWorking()[ki], std::sqrt(KList.getKSQWorking()[ki]));
+    //   dFk_dstrain[ki] = evaluateLR_dstrain(KList.getKptsCart()[ki], std::sqrt(KList.getKSQ()[ki]));
   }
 };
 } // namespace qmcplusplus

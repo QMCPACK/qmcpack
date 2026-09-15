@@ -129,3 +129,6 @@ qmc_run_and_check(
 #                  TRUE
 #                  0 LONG_DIAMOND_AFQMC_SCALARS_PHMSD
 #                  )
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

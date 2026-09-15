@@ -1,0 +1,29 @@
+description = "C2 laptop band-structure analyzer run"
+calculation_mode = "Band Structure Only"
+start_mode = "LCAO Start"
+
+wavefunction_grid = "16 16 16"
+potential_grid_refinement = "2"
+internal_pseudo_type = "nc_accuracy"
+unoccupied_states_per_kpoint = "10"
+
+bravais_lattice_type = "Cubic Face Centered"
+lattice_units = "Bohr"
+a_length = "6.72"
+b_length = "6.72"
+c_length = "6.72"
+atomic_coordinate_type = "Cell Relative"
+atoms = "
+C  0.25  0.25  0.25
+C  0.00  0.00  0.00
+"
+
+kpoints_bandstructure = "
+0.0  0.0  0.0  0  G
+0.5  0.0  0.0  4  X
+0.5  0.5  0.0  4  K
+0.0  0.0  0.0  4  G
+"
+kohn_sham_solver = "davidson"
+subdiag_driver = "lapack"
+input_wave_function_file = "Waves/wave.out"

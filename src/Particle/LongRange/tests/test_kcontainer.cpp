@@ -54,7 +54,7 @@ TEST_CASE("kcontainer at gamma in 3D", "[longrange]")
     for (int ldim = 0; ldim < ndim; ldim++)
     {
       CHECK(klists.getKpts()[ik][ldim] == gvecs[ik][ldim]);
-      CHECK(klists.getKpts()[ik][ldim] * blat == Approx(klists.getKptsCartWorking()[ik][ldim]));
+      CHECK(klists.getKpts()[ik][ldim] * blat == Approx(klists.getKptsCart()[ik][ldim]));
     }
   }
 }
@@ -78,7 +78,7 @@ TEST_CASE("kcontainer at twist in 3D", "[longrange]")
   twist[0] = 0.1;
   klists.updateKLists(lattice, kc, ndim, twist);
   CHECK(klists.getKpts().size() == 1);
-  CHECK(klists.getKptsCartWorking()[0][0] == Approx(blat * (twist[0] - 1)));
+  CHECK(klists.getKptsCart()[0][0] == Approx(blat * (twist[0] - 1)));
 
   twist = {-0.5, 0, 0.5};
   klists.updateKLists(lattice, kc, ndim, twist);
@@ -86,7 +86,7 @@ TEST_CASE("kcontainer at twist in 3D", "[longrange]")
   CHECK(klists.getKpts().size() == 3);
   for (int ik = 0; ik < klists.getKpts().size(); ik++)
     for (int ldim = 0; ldim < ndim; ldim++)
-      CHECK(klists.getKptsCartWorking()[ik][ldim] == Approx(blat * (twist[ldim] + gvecs[ik][ldim])));
+      CHECK(klists.getKptsCart()[ik][ldim] == Approx(blat * (twist[ldim] + gvecs[ik][ldim])));
 }
 
 TEST_CASE("kcontainer at gamma in 2D", "[longrange]")
@@ -121,7 +121,7 @@ TEST_CASE("kcontainer at gamma in 2D", "[longrange]")
     for (int ldim = 0; ldim < ndim; ldim++)
     {
       CHECK(klists.getKpts()[ik][ldim] == gvecs[ik][ldim]);
-      CHECK(klists.getKpts()[ik][ldim] * blat == Approx(klists.getKptsCartWorking()[ik][ldim]));
+      CHECK(klists.getKpts()[ik][ldim] * blat == Approx(klists.getKptsCart()[ik][ldim]));
     }
   }
 }
@@ -145,27 +145,27 @@ TEST_CASE("kcontainer at twist in 2D", "[longrange]")
   twist[0] = 0.1;
   klists.updateKLists(lattice, kc, ndim, twist);
   CHECK(klists.getKpts().size() == 1);
-  CHECK(klists.getKptsCartWorking()[0][0] == Approx(blat * (twist[0] - 1)));
+  CHECK(klists.getKptsCart()[0][0] == Approx(blat * (twist[0] - 1)));
 
   twist[1] = 0.1;
   klists.updateKLists(lattice, kc, ndim, twist);
   CHECK(klists.getKpts().size() == 2);
-  CHECK(klists.getKptsCartWorking()[0][0] == Approx(blat * (twist[0] - 1)));
-  CHECK(klists.getKptsCartWorking()[0][1] == Approx(blat * twist[1]));
-  CHECK(klists.getKptsCartWorking()[1][0] == Approx(blat * (twist[0])));
-  CHECK(klists.getKptsCartWorking()[1][1] == Approx(blat * (twist[1] - 1)));
+  CHECK(klists.getKptsCart()[0][0] == Approx(blat * (twist[0] - 1)));
+  CHECK(klists.getKptsCart()[0][1] == Approx(blat * twist[1]));
+  CHECK(klists.getKptsCart()[1][0] == Approx(blat * (twist[0])));
+  CHECK(klists.getKptsCart()[1][1] == Approx(blat * (twist[1] - 1)));
 
   twist = {-0.5, 0.5, 0};
   klists.updateKLists(lattice, kc, ndim, twist);
   CHECK(klists.getKpts().size() == 3);
   //for (int ik=0;ik<3;ik++)
-  //  app_log() << klists.getKptsCartWorking()[ik] << std::endl;
-  CHECK(klists.getKptsCartWorking()[0][0] == Approx(blat * (twist[0] - 0)));
-  CHECK(klists.getKptsCartWorking()[0][1] == Approx(blat * (twist[1] - 1)));
-  CHECK(klists.getKptsCartWorking()[1][0] == Approx(blat * (twist[0] + 1)));
-  CHECK(klists.getKptsCartWorking()[1][1] == Approx(blat * (twist[1] - 1)));
-  CHECK(klists.getKptsCartWorking()[2][0] == Approx(blat * (twist[0] + 1)));
-  CHECK(klists.getKptsCartWorking()[2][1] == Approx(blat * twist[1]));
+  //  app_log() << klists.getKptsCart()[ik] << std::endl;
+  CHECK(klists.getKptsCart()[0][0] == Approx(blat * (twist[0] - 0)));
+  CHECK(klists.getKptsCart()[0][1] == Approx(blat * (twist[1] - 1)));
+  CHECK(klists.getKptsCart()[1][0] == Approx(blat * (twist[0] + 1)));
+  CHECK(klists.getKptsCart()[1][1] == Approx(blat * (twist[1] - 1)));
+  CHECK(klists.getKptsCart()[2][0] == Approx(blat * (twist[0] + 1)));
+  CHECK(klists.getKptsCart()[2][1] == Approx(blat * twist[1]));
 }
 
 TEST_CASE("kcontainer for diamond", "[longrange]")
