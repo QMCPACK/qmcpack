@@ -17,8 +17,6 @@
 #include "Concurrency/OpenMP.h"
 #include "spline2/MultiBspline.hpp"
 #include "spline2/MultiBsplineOffloadMapper.hpp"
-#include "spline2/MultiBsplineEval.hpp"
-#include "spline2/MultiBsplineEval_OMPoffload.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "Platforms/CPU/BLAS.hpp"
 #include "CPU/SIMD/inner_product.hpp"
