@@ -30,7 +30,7 @@ from pathlib import Path
 
 from .nexus_version import nexus_version
 from .generic       import generic_settings
-from .developer     import obj, log, NexusError
+from .developer     import obj, log, NexusError, warn
 from .debug         import ci
 from .utilities     import path_string
 
@@ -358,123 +358,197 @@ class Settings(NexusCore):
         # process quantum package settings
         QuantumPackage.restore_default_settings()
         QuantumPackage.settings(**qm_pkg_kw)
-
-        return
     #end def __call__
 
 
-    def process_command_line_settings(self,script_settings):
-        from optparse import OptionParser
-        usage = '''usage: %prog [options]'''
-        version = '{}.{}.{}'.format(*nexus_version)
-        parser = OptionParser(usage=usage,add_help_option=True,version='%prog '+version)
+    def process_command_line_settings(self, script_settings: obj):
+        import argparse
+        from argparse import ArgumentParser
 
-        parser.add_option('--status_only',dest='status_only',
-                        action='store_true',default=False,
-                        help='Report status of all simulations and then exit.'
-                        )
-        parser.add_option('--status',dest='status',
-                        default='none',
-                        help="Controls displayed simulation status information.  May be set to one of 'standard', 'active', 'failed', or 'ready'."
-                        )
-        parser.add_option('--generate_only',dest='generate_only',
-                        action='store_true',default=False,
-                        help='Write inputs to all simulations and then exit.  Note that no dependencies are processed, e.g. if one simulation depends on another for an orbital file location or for a relaxed structure, this information will not be present in the generated input file for that simulation since no simulations are actually run with this option.'
-                        )
-        parser.add_option('--graph_sims',dest='graph_sims',
-                        action='store_true',default=False,
-                        help='Display a graph of simulation workflows, then exit.'
-                        )
-        parser.add_option('--progress_tty',dest='progress_tty',
-                        action='store_true',default=False,
-                        help='Print abbreviated polling messages.'
-                        )
-        parser.add_option('--sleep',dest='sleep',
-                        default='none',
-                        help=f'Number of seconds between polls.  At each poll, simulations are actually run provided all simulations they depend on have successfully completed (default={nexus_core_defaults.sleep}).'
-                        )
-        parser.add_option('--timeout',dest='timeout',
-                        default='none',
-                        help=f'Number of seconds to wait for output and error files after a job exits the queue before marking the simulation as failed (default={nexus_core_defaults.timeout}).'
-                        )
-        parser.add_option('--machine',dest='machine',
-                        default='none',
-                        help="(Required) Name of the machine the simulations will be run on.  Workstations with between 1 and 128 cores may be specified by 'ws1' to 'ws128' (works for any machine where only mpirun is used).  For a complete listing of currently available machines (including those at HPC centers) please see the manual."
-                        )
-        parser.add_option('--account',dest='account',
-                        default='none',
-                        help='Account name required to submit jobs at some HPC centers.'
-                        )
-        parser.add_option('--runs',dest='runs',
-                        default='none',
-                        help=f'Directory to perform all runs in.  Simulation paths are appended to this directory (default={nexus_core_defaults.runs}).'
-                        )
-        parser.add_option('--results',dest='results',
-                        default='none',
-                        help=f"Directory to copy out lightweight results data.  If set to '', results will not be stored outside of the runs directory (default={nexus_core_defaults.results})."
-                        )
-        parser.add_option('--local_directory',dest='local_directory',
-                        default='none',
-                        help=f'Base path where runs and results directories will be created (default={nexus_core_defaults.local_directory}).'
-                        )
-        parser.add_option('--pseudo_dir',dest='pseudo_dir',
-                        default='none',
-                        help='Path to directory containing pseudopotential files (required if running with pseudopotentials).'
-                        )
-        parser.add_option('--basis_dir',dest='basis_dir',
-                        default='none',
-                        help='Path to directory containing basis set files (useful if running gaussian based QMC workflows).'
-                        )
-        parser.add_option('--ericfmt',dest='ericfmt',
-                        default='none',
-                        help='Path to the ericfmt file used with GAMESS (required if running GAMESS).'
-                        )
-        parser.add_option('--mcppath',dest='mcppath',
-                        default='none',
-                        help='Path to the mcpdata file used with GAMESS (optional for most workflows)'
-                        )
-        parser.add_option('--vdw_table',dest='vdw_table',
-                        default='none',
-                        help='Path to the vdw_table file used with Quantum Espresso (required only if running Quantum Espresso with van der Waals functionals).'
-                        )
-        parser.add_option('--qprc',dest='qprc',
-                        default='none',
-                        help='Path to the quantum_package.rc file used with Quantum Package.'
-                        )
+        parser = ArgumentParser(prog="Nexus")
+        parser.add_argument(
+            "--version",
+            action="version",
+            version="Nexus {}.{}.{}".format(*nexus_version)
+            )
+        parser.add_argument(
+            "--status-only",
+            "--status_only",
+            action="store_true",
+            default=argparse.SUPPRESS,
+            help=(
+                "Report status of all simulations and then exit. "
+                f"(default: {nexus_core_defaults.status_only})"
+                )
+            )
+        parser.add_argument(
+            "--status",
+            default=argparse.SUPPRESS,
+            choices=("standard", "active", "failed", "ready"),
+            help=(
+                "Controls displayed simulation status information. "
+                f"(default: {nexus_core_defaults.status})"
+                )
+            )
+        parser.add_argument(
+            "--generate-only",
+            "--generate_only",
+            action="store_true",
+            default=argparse.SUPPRESS,
+            help=(
+                "Write inputs to all simulations and then exit. "
+                "Note that no dependencies are processed, "
+                "e.g. if one simulation depends on another for an "
+                "orbital file location or for a relaxed structure, "
+                "this information will not be present in the generated "
+                "input file for that simulation since no simulations are "
+                "actually run with this option. "
+                f"(default: {nexus_core_defaults.generate_only})"
+                )
+            )
+        parser.add_argument(
+            "--graph-sims",
+            "--graph_sims",
+            action="store_true",
+            default=argparse.SUPPRESS,
+            help=(
+                "Display a graph of simulation workflows, then exit. "
+                f"(default: {nexus_core_defaults.graph_sims})"
+                )
+            )
+        parser.add_argument(
+            "--progress-tty",
+            "--progress_tty",
+            action="store_true",
+            default=argparse.SUPPRESS,
+            help=(
+                "Print abbreviated polling messages. "
+                "(default: {nexus_core_defaults.progress_tty})"
+                )
+            )
+        parser.add_argument(
+            "--sleep",
+            type=float,
+            default=argparse.SUPPRESS,
+            help=(
+                "Number of seconds between polls. "
+                "At each poll, simulations are actually run provided all "
+                "simulations they depend on have successfully completed "
+                f"(default: {nexus_core_defaults.sleep})."
+                )
+            )
+        parser.add_argument(
+            "--timeout",
+            type=float,
+            default=argparse.SUPPRESS,
+            help=(
+                "Number of seconds to wait for output and error files after "
+                "a job exits the queue before marking the simulation as failed "
+                f"(default: {nexus_core_defaults.timeout})."
+                )
+            )
+        parser.add_argument(
+            "--machine",
+            choices=("ws", *Machine.machines),
+            default=argparse.SUPPRESS,
+            help=(
+                "Name of the machine the simulations will be run on. "
+                "Workstations may be specified by 'ws', which will "
+                "automatically detect the number of cores "
+                "(works for any machine where only mpirun is used). "
+                "For a complete listing of currently available machines "
+                "(including those at HPC centers) please see the manual."
+                )
+            )
+        parser.add_argument(
+            "--account",
+            default=argparse.SUPPRESS,
+            help="Account name required to submit jobs at some HPC centers."
+            )
+        parser.add_argument(
+            "--runs",
+            default=argparse.SUPPRESS,
+            help=(
+                "Directory to perform all runs in. "
+                "Simulation paths are appended to this directory "
+                f"(default: {nexus_core_defaults.runs})."
+                )
+            )
+        parser.add_argument(
+            "--results",
+            default=argparse.SUPPRESS,
+            help=(
+                "Directory to copy out lightweight results data. "
+                "If set to '', results will not be stored outside of the runs "
+                f"directory (default: {nexus_core_defaults.results})."
+                )
+            )
+        parser.add_argument(
+            "--local-directory",
+            "--local_directory",
+            default=argparse.SUPPRESS,
+            help=(
+                "Base path where runs and results directories will be created "
+                f"(default={nexus_core_defaults.local_directory})."
+                )
+            )
+        parser.add_argument(
+            "--pseudo-dir",
+            "--pseudo_dir",
+            default=argparse.SUPPRESS,
+            help=(
+                "Path to directory containing pseudopotential files "
+                "(required if running with pseudopotentials)."
+                )
+            )
+        parser.add_argument(
+            "--basis-dir",
+            "--basis_dir",
+            default=argparse.SUPPRESS,
+            help=(
+                "Path to directory containing basis set files "
+                "(useful if running gaussian based QMC workflows)."
+                )
+            )
+        parser.add_argument(
+            "--ericfmt",
+            default=argparse.SUPPRESS,
+            help=(
+                "Path to the ericfmt file used with GAMESS "
+                "(required if running GAMESS)."
+                )
+            )
+        parser.add_argument(
+            "--mcppath",
+            default=argparse.SUPPRESS,
+            help=(
+                "Path to the mcpdata file used with GAMESS "
+                "(optional for most workflows)"
+                )
+            )
+        parser.add_argument(
+            "--vdw-table",
+            "--vdw_table",
+            default=argparse.SUPPRESS,
+            help=(
+                "Path to the vdw_table file used with Quantum ESPRESSO "
+                "(required only if running QE with van der Waals functionals)."
+                )
+            )
+        parser.add_argument(
+            "--qprc",
+            default=argparse.SUPPRESS,
+            help="Path to the quantum_package.rc file used with Quantum Package."
+            )
 
         # parse the command line inputs
-        options,files_in = parser.parse_args()
-        opt = obj(**options.__dict__)
-
-        # check that all options are allowed (developer check)
-        invalid = set(opt.keys())-Settings.allowed_vars
-        if len(invalid)>0:
-            msg = f'invalid command line settings encountered\ninvalid settings: {sorted(invalid)}\nthis is a developer error'
-            raise NexusError(msg)
-        #end if
-
-        # pre-process options, full processing occurs upon return
-        boolean_options = set(['status_only','generate_only','progress_tty'])
-        real_options = {'sleep', 'timeout'}
-        for ropt in real_options:
-            if opt[ropt]!='none':
-                try:
-                    opt[ropt] = float(opt[ropt])
-                except:
-                    msg = f"command line option '{ropt}' must be a real value\nyou provided: {opt[ropt]}\nplease try again"
-                    raise ValueError(msg)
-                #end try
-            #end if
-        #end for
+        args = vars(parser.parse_args())
 
         # override script settings with command line settings
-        for name,value in opt.items():
-            bool_name = name in boolean_options
-            if (bool_name and value) or (not bool_name and value!='none'):
-                script_settings[name] = value
-            #end if
-        #end for
-
+        for name,value in args.items():
+            if name in script_settings:
+                warn(f"Overriding setting {name} with value from command line.")
+            script_settings[name] = value
     #end def process_command_line_settings
 
 
