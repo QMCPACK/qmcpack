@@ -460,7 +460,7 @@ def test_spindensity_input_metadata_overrides_grid_fallback(tmp_path):
     stat = tmp_path / 'series_spindensity.s005.stat.h5'
     _write_spin_density_stat(stat,8)
 
-    out,err,_ = execute(f'{exe} -f xsf -g "1 1 8" -i {infile} {stat}')
+    out,err,_ = execute(f'{exe} -f xsf -g 1 1 8 -i {infile} {stat}')
     assert 'Ignoring --grid' in out + err
     assert '3 3 3' in (tmp_path / 'series_spindensity.s005.SpinDensity_u+d.xsf').read_text()
 #end def test_spindensity_input_metadata_overrides_grid_fallback
@@ -502,6 +502,6 @@ def test_spindensity_series_mismatch_requires_unambiguous_fallback(tmp_path):
     with pytest.raises(
             AssertionError,
             match='density grid does not match number of HDF5 data cells'):
-        execute(f'{exe} -f xsf -g "3 3 3" -i {infile} {stat}')
+        execute(f'{exe} -f xsf -g 3 3 3 -i {infile} {stat}')
     #end with
 #end def test_spindensity_series_mismatch_requires_unambiguous_fallback
