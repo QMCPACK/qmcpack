@@ -72,6 +72,15 @@ from nexus.developer import obj,log,warn
 from nexus.hdfreader import read_hdf
 
 
+try:
+    import h5py
+except ImportError as err:
+    msg = (
+        f"{err!s}\n"
+        "You must have h5py installed to use this script!"
+        )
+    raise ImportError(msg) from None
+
 opt = obj(
     verbose = False,
     )
@@ -393,7 +402,6 @@ def write_nk():
 
     ispin0 = int(opt.ispin)
     log(f'Writing n(k) to HDF5 {opt.outfile}')
-    import tables
     klist = []
     nklist = []
     for key, val in d.data.items():
@@ -404,12 +412,13 @@ def write_nk():
     kvecs = np.concatenate(klist, axis=0)
     nk = np.concatenate(nklist, axis=0)
     data = np.c_[kvecs, nk]
-    filters = tables.Filters(complevel=5, complib='zlib')
-    fp = tables.open_file(opt.outfile, mode='w', filter=filters)
-    atom = tables.Atom.from_dtype(data.dtype)
-    ca = fp.create_carray(fp.root, 'data', atom, data.shape)
-    ca[:] = data
-    fp.close()
+    with h5py.File(opt.outfile, "w") as fp:
+        fp.create_dataset(
+            "data",
+            data=data,
+            compression="gzip",
+            compression_opts=5,
+            )
 #end def write_nk
 
 
