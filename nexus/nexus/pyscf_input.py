@@ -116,7 +116,7 @@ class PyscfInput(SimulationInputTemplateDev):
     cell_order: tuple[str] = tuple(cell_order)
     mole_allowed = frozenset(mole_order)
     cell_allowed = frozenset(cell_order)
-    
+
 
     def __init__(self,
                  template    = None,     # path to template input file
@@ -136,7 +136,7 @@ class PyscfInput(SimulationInputTemplateDev):
                  mf_var      = 'mf',     # local var name for mf, used for convert
                  kpts_var    = 'kpts',   # local var name for kpts, used for convert
                  filepath    = None,     # alias for template
-                 text        = None,     # full text of (and alternate to) template 
+                 text        = None,     # full text of (and alternate to) template
                  calculation = None,     # obj w/ Calculation variables
                  chkfile     = None,     # obj w/ Calculation variables
                  twist_num   = None,     # Twist index
@@ -308,7 +308,7 @@ $calculation
                     if calc.u_idx is None:
                         c += f'mf = scf.{calc.method}({sys_var}){df_str}\n'
                     else:
-                        c += f'mf = dft.{calc.method}({sys_var},U_idx={render_array(calc.u_idx,1)},U_val={render_array(calc.u_val,1)},C_ao_lo=\'{calc.C_ao_lo}\'){df_str}\n'    
+                        c += f'mf = dft.{calc.method}({sys_var},U_idx={render_array(calc.u_idx,1)},U_val={render_array(calc.u_val,1)},C_ao_lo=\'{calc.C_ao_lo}\'){df_str}\n'
                     #end if
                 elif sys_name == 'cell':
                     c += 'mydf          = df.{}({})\n'.format(calc.df_method,sys_var,'kpts')
@@ -319,16 +319,16 @@ $calculation
                     if calc.u_idx is None:
                         c += 'mf = scf.{}({},{}){}\n'.format(calc.method,sys_var,'kpts',df_str)
                     else:
-                        c += 'mf = dft.{}({},{},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(calc.method,sys_var,'kpts',render_array(calc.u_idx,1),render_array(calc.u_val,1),calc.C_ao_lo,df_str)    
+                        c += 'mf = dft.{}({},{},U_idx={},U_val={},C_ao_lo=\'{}\'){}\n'.format(calc.method,sys_var,'kpts',render_array(calc.u_idx,1),render_array(calc.u_val,1),calc.C_ao_lo,df_str)
                     c += f'mf.exxdiv      = \'{calc.exxdiv}\'\n'
                 #end if
-                if calc.max_cycle is not None: 
+                if calc.max_cycle is not None:
                     c += f'mf.max_cycle={calc.max_cycle}\n'
                 #end if
-                if calc.level_shift is not None: 
+                if calc.level_shift is not None:
                     c += f'mf.level_shift={calc.level_shift}\n'
                 #end if
-                if calc.chkfile is not None: 
+                if calc.chkfile is not None:
                     c += f'mf.chkfile=\'{calc.chkfile}\'\n'
                 #end if
             #end if

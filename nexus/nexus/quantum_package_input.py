@@ -98,7 +98,7 @@ def write_qp_value(value_filepath,value):
 
 # quantum package path input specification
 #   The spec below was obtained by using the extract_input_specification
-#   function.  Run this function again with ezfio directory paths as 
+#   function.  Run this function again with ezfio directory paths as
 #   arguments to further augment the specification over time.
 #
 #   An ezfio directory containing all possible variables can be created
@@ -692,7 +692,7 @@ class QuantumPackageInput(SimulationInput):
     def is_valid(self):
         return self.check_valid(exit=False)
     #end def is_valid
-                
+
 #end class QuantumPackageInput
 
 

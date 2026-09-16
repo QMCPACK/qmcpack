@@ -15,7 +15,7 @@
 #    XsfFile                                                         #
 #      Represents generic XSF, AXSF, and BXSF files.                 #
 #      Can read/write arbitrary files of these formats.              #
-#      Useful for atomic structure and electronic density I/O.       #       
+#      Useful for atomic structure and electronic density I/O.       #
 #                                                                    #
 #====================================================================#
 
@@ -738,7 +738,7 @@ class XsfFile(StandardFile):
                 #end for
                 c += f' END_BLOCK_DATAGRID_{d}D\n'
             #end for
-        #end for                    
+        #end for
         return c
     #end def write_data
 
@@ -827,7 +827,7 @@ class XsfFile(StandardFile):
 
 
     def validity_checks(self):
-        ha = self.has_animation() 
+        ha = self.has_animation()
         hb = self.has_bands()
         hs = self.has_structure()
         hd = self.has_data()
@@ -877,9 +877,9 @@ class XsfFile(StandardFile):
         cell    = np.array(cell  ,dtype=float)
         density = np.array(density,dtype=float)
         npe.reshape_inplace(density, tuple(grid))
-        
+
         if centered: # shift corner by half a grid cell to center it
-            dc = 0.5/grid     
+            dc = 0.5/grid
             dc = np.dot(dc,cell)
             corner += dc
         #end if
@@ -894,13 +894,13 @@ class XsfFile(StandardFile):
             density[:g[0],   -1,:g[2]] = d[:,0,:]
             density[:g[0],:g[1],   -1] = d[:,:,0]
             density[   -1,   -1,:g[2]] = d[0,0,:] # edge copies
-            density[   -1,:g[1],   -1] = d[0,:,0] 
-            density[:g[0],   -1,   -1] = d[:,0,0] 
+            density[   -1,:g[1],   -1] = d[0,:,0]
+            density[:g[0],   -1,   -1] = d[:,0,0]
             density[   -1,   -1,   -1] = d[0,0,0] # corner copy
             npe.reshape_inplace(density, tuple(grid))
         #end if
 
-        self.data = obj()     
+        self.data = obj()
         self.data[3] = obj()
         self.data[3][name] = obj()
         self.data[3][name][name] = obj(
@@ -949,7 +949,7 @@ class XsfFile(StandardFile):
         return data
     #end def remove_ghost
 
-    
+
     # test needed
     def norm(self,density=None,*,vnorm=True):
         if density is None:
@@ -1005,58 +1005,58 @@ class XsfFile(StandardFile):
         if density is None:
             density = self.get_density()
         #end if
-   
+
         dens_values = np.array(density.values)
 
         # Construct crystal meshgrid for dens
         da = 1./(density.grid[0]-1)
         db = 1./(density.grid[1]-1)
         dc = 1./(density.grid[2]-1)
-    
+
         cry_corner = np.matmul(density.corner,np.linalg.inv(density.cell))
         a0  = cry_corner[0]
         b0  = cry_corner[1]
         c0  = cry_corner[2]
-        
+
         ra = np.arange(a0, density.grid[0]*da, da)
         rb = np.arange(b0, density.grid[1]*db, db)
         rc = np.arange(c0, density.grid[2]*dc, dc)
-    
+
         [mra, mrb, mrc] = np.meshgrid(ra, rb, rc)
-    
+
         # 3d Interpolation on crystal coordinates
         from scipy.interpolate import RegularGridInterpolator
         g = RegularGridInterpolator((ra,rb,rc), dens_values, bounds_error=False,fill_value=fill_value)
-    
+
         # Construct cartesian meshgrid for dens
         mrx,mry,mrz = np.array([mra,mrb,mrc]).T.dot(density.cell).T
-     
+
         # First construct a basis (x'^,y'^,z'^) where z'^ is normal to the plane formed from ra, rb, and rc
         zph = np.cross((r2-r3),(r1-r3))
         zph = zph/np.linalg.norm(zph)
         yph = r2-r3
         yph = yph/np.linalg.norm(yph)
         xph = np.cross(yph,zph)
-    
+
         # Positions in (x'^,y'^,z'^) basis
-        rp1 = np.dot(r1,np.linalg.inv((xph,yph,zph))) 
-        rp2 = np.dot(r2,np.linalg.inv((xph,yph,zph))) 
-        rp3 = np.dot(r3,np.linalg.inv((xph,yph,zph)))  
-    
+        rp1 = np.dot(r1,np.linalg.inv((xph,yph,zph)))
+        rp2 = np.dot(r2,np.linalg.inv((xph,yph,zph)))
+        rp3 = np.dot(r3,np.linalg.inv((xph,yph,zph)))
+
         # Meshgrid in (x'^,y'^,z'^) basis
         mrxp,mryp,mrzp = np.array([mrx,mry,mrz]).T.dot(np.linalg.inv([xph,yph,zph])).T
-    
+
         # Generate mesh in (x'^,y'^,z'^) basis. Ensure all points are in cell.
         xp_min = np.amin(mrxp)
         xp_max = np.amax(mrxp)
         yp_min = np.amin(mryp)
         yp_max = np.amax(mryp)
-    
-    
+
+
         rpx = np.arange(xp_min,xp_max,(xp_max-xp_min)/meshsize)
         rpy = np.arange(yp_min,yp_max,(yp_max-yp_min)/meshsize)
         mrpx, mrpy = np.meshgrid(rpx,rpy)
-    
+
         slice_dens = []
         for xpi in np.arange(xp_min,xp_max,(xp_max-xp_min)/meshsize):
             yline = []
@@ -1069,7 +1069,7 @@ class XsfFile(StandardFile):
             slice_dens.append(yline)
         #end for
         slice_dens = np.array(slice_dens).T
-       
+
         # return the following...
         # slice_dens: density on slice
         # mrpx, mrpy: meshgrid for x',y' coordinates parallel to slice, i.e., (x'^,y'^) basis

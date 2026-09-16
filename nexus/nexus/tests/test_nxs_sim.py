@@ -19,7 +19,7 @@ def test_sim(tmp_path):
 
     nexus_core.runs    = ''
     nexus_core.results = ''
-    
+
     exe = TEST_DIR.parent / "bin/nxs-sim"
 
     sim = get_sim()

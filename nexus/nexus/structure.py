@@ -24,7 +24,7 @@
 
 """
 The :py:mod:`structure` module provides support for atomic structure I/O,
-generation, and manipulation.  
+generation, and manipulation.
 
 
 List of module contents
@@ -271,7 +271,7 @@ def negate(expr):
 
 def kmesh(kaxes,dim,shift=None):
     '''
-    Create a Monkhorst-Pack k-point mesh 
+    Create a Monkhorst-Pack k-point mesh
     '''
     if shift is None:
         shift = (0.,0,0)
@@ -326,7 +326,7 @@ def reduce_tilematrix(tiling):
         # until it is orthogonal (in the untiled cell axes)
         # this is just rearranging triangular tiles of space to reshape the cell
         # so that t1*t2*t3 = det(T) = det(A_tiled)/det(A_untiled)
-        #this way the atoms in the (perhaps oddly shaped) supercell can be 
+        #this way the atoms in the (perhaps oddly shaped) supercell can be
         # obtained from simple translations of the untiled cell positions
         T = t  #tiling matrix
         tilematrix = T.copy()
@@ -335,7 +335,7 @@ def reduce_tilematrix(tiling):
         dr = list(range(dim))
         #dr = [1,0,2]
         other = dim*[0] # other[d] = dimensions other than d
-        for d in dr: 
+        for d in dr:
             other[d] = set(dr)-set([d])
         #end for
         #move each axis to be parallel to barred directions
@@ -346,7 +346,7 @@ def reduce_tilematrix(tiling):
             success = True
             Tnew = np.array(T,dtype=float) #sheared/orthogonal tiling matrix
             for d in dr:
-                tb = tbar[dp[d]] 
+                tb = tbar[dp[d]]
                 t  = T[d]
                 d2,d3 = other[d]
                 n = cross(Tnew[d2],Tnew[d3])  #vector normal to 2 cell faces
@@ -447,7 +447,7 @@ def rotate_plane(plane,angle,points,units='degrees'):
 
 def recenter_points(pos, center, axes):
     """Center a given set of points in a cell around a provided center.
-    
+
     Parameters
     ----------
     pos : NDArray
@@ -519,7 +519,7 @@ class MaskFilter(DevBase):
     #end def __call__
 #end class MaskFilter
 mask_filter = MaskFilter()
-            
+
 
 def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None,nc=5,Tref=None):
     if mask is not None:
@@ -617,7 +617,7 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
         volfacs -= (Tref[i1,j1]+mats[:,i1,j1])*(Tref[i2,j2]+mats[:,i2,j2])*(Tref[i3,j3]+mats[:,i3,j3])
     #end for
     Tmats = mats[np.abs(volfacs)==volfac]
-    nequiv_volume = len(Tmats)    
+    nequiv_volume = len(Tmats)
     # find the set of cells with maximal inscribing radius
     inscribe_tilings = []
     rmax = -1e99
@@ -654,7 +654,7 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None
     #end for
     # find the set of cells w/ maximal cubicity
     # (minimum cube_deviation)
-    cube_tilings = []            
+    cube_tilings = []
     cmin = 1e99
     for rw,T,Ta in wigner_tilings:
         if np.abs(rw-rwmax)<tol:
@@ -851,7 +851,7 @@ class Structure(Sobj):
         Vector to permute the structure.
         See :py:meth:`~.Structure.permute()` for more information.
     units : str, optional
-        Units of the positions. See :py:mod:`unit_converter.py` for a 
+        Units of the positions. See :py:mod:`unit_converter.py` for a
         full list of supported units.
     tiling : ArrayLike of int, optional
         A vector of ints for tiling the cell in each dimension.
@@ -988,8 +988,8 @@ class Structure(Sobj):
         self.set_mag(mag)
         self.set_vel(vel)
         self.set_frozen(frozen)
-        self.kpoints  = np.empty((0,dim))            
-        self.kweights = np.empty((0,))         
+        self.kpoints  = np.empty((0,dim))
+        self.kweights = np.empty((0,))
         self.background_charge = background_charge
         self.remove_folded_structure()
         if len(axes)==0:
@@ -1105,7 +1105,7 @@ class Structure(Sobj):
         self.elem = np.array(elem,dtype=object)
     #end def set_elem
 
-    
+
     def set_pos(self,pos):
         self.pos = np.array(pos,dtype=float)
         if len(self.pos)!=len(self.elem):
@@ -1174,7 +1174,7 @@ class Structure(Sobj):
         return len(self.elem)
     #end def size
 
-    
+
     def has_axes(self):
         return len(self.axes)==self.dim
     #end def has_axes
@@ -1217,7 +1217,7 @@ class Structure(Sobj):
         self.remove_folded_structure()
     #end def remove_folded
 
-    
+
     def has_folded(self):
         return self.has_folded_structure()
     #end def has_folded
@@ -1246,12 +1246,12 @@ class Structure(Sobj):
         #end if
     #end def remove_folded_structure
 
-        
+
     def has_folded_structure(self):
         return self.folded_structure is not None
     #end def has_folded_structure
 
-            
+
     def group_atoms(self, *, folded=True) -> None:
         """Group the atoms by their element type, sorting in alphabetical order.
 
@@ -1421,7 +1421,7 @@ class Structure(Sobj):
     def adjust_axes(self,axes):
         self.skew(dot(inv(self.axes),axes))
     #end def adjust_axes
-        
+
 
     # test needed
     def reshape_axes(self,reshaping):
@@ -1476,7 +1476,7 @@ class Structure(Sobj):
         return c
     #end def corners
 
-    
+
     # test needed
     def miller_direction(self,h,k,l,*,normalize=False):
         d = dot((h,k,l),self.axes)
@@ -1486,7 +1486,7 @@ class Structure(Sobj):
         return d
     #end def miller_direction
 
-    
+
     # test needed
     def miller_normal(self,h,k,l,*,normalize=False):
         d = dot((h,k,l),self.kaxes)
@@ -1518,7 +1518,7 @@ class Structure(Sobj):
         return np.array(plane_coords,dtype=float)
     #end def project_plane
 
-        
+
     def bounding_box(self,scale=1.0,minsize=None,mindist=0,box='tight',*,recenter=False):
         pmin    = self.pos.min(0)-mindist
         pmax    = self.pos.max(0)+mindist
@@ -1706,7 +1706,7 @@ class Structure(Sobj):
         return ds
     #end def upcast
 
-    
+
     # test needed
     def incorporate(self,other):
         self.set_elem(list(self.elem)+list(other.elem))
@@ -1756,7 +1756,7 @@ class Structure(Sobj):
         return periodic
     #end def any_periodic
 
-    
+
     def all_periodic(self):
         has_cell = self.has_axes()
         pbc = True
@@ -1818,7 +1818,7 @@ class Structure(Sobj):
       return len(ukmags)
     #end def count_kshells
 
-    
+
     def volume(self):
         if not self.has_axes():
             return None
@@ -1957,7 +1957,7 @@ class Structure(Sobj):
             axes = self.axes
         #end if
         fv = inv(axes).T
-        for d in range(len(fv)): 
+        for d in range(len(fv)):
             fv[d] /= norm(fv[d]) # face normals
         #end for
         dv = dot(axes,fv.T) # axis projections onto face normals
@@ -1975,7 +1975,7 @@ class Structure(Sobj):
         return self.face_vectors(distances=True)[1]
     #end def face_distances
 
-    
+
     # test needed
     def rescale(self,scale):
         self.scale  *= scale
@@ -2016,7 +2016,7 @@ class Structure(Sobj):
 
             1. If ``rp`` is a scalar, then ``rp`` is assumed to be an angle and
                a rotation of ``rp`` is made about the axis defined by ``r``.
-            2. If ``rp`` is a vector, then ``rp`` is assumed to be an axis and a 
+            2. If ``rp`` is a vector, then ``rp`` is assumed to be an axis and a
                rotation is made such that ``r`` aligns with ``rp``.
             3. If ``rp`` is a ``str``, then the rotation is such that ``r``
                aligns with the axis given by the str
@@ -2045,7 +2045,7 @@ class Structure(Sobj):
         """
         if rp is not None:
             dirmap = dict(x=[1,0,0],y=[0,1,0],z=[0,0,1])
-            if isinstance(r,str): 
+            if isinstance(r,str):
                 if r[0]=='a': # r= 'a0', 'a1', or 'a2'
                     r = self.axes[int(r[1])]
                 else: # r= 'x', 'y', or 'z'
@@ -2082,7 +2082,7 @@ class Structure(Sobj):
                     s = 0.0
                     r = np.array([1,0,0])
                 else:
-                    s = np.dot(cross(r,rp),cross(r,rp))/norm(r)/norm(rp)/norm(cross(r,rp)) 
+                    s = np.dot(cross(r,rp),cross(r,rp))/norm(r)/norm(rp)/norm(cross(r,rp))
                     r = cross(r,rp)/norm(cross(r,rp))
                 #end if
             #end if
@@ -2108,7 +2108,7 @@ class Structure(Sobj):
 
 
     # test needed
-    def matrix_transform(self,A): 
+    def matrix_transform(self,A):
         """
         Arbitrary transformation matrix (column-major).
 
@@ -2152,8 +2152,8 @@ class Structure(Sobj):
         """
         self.matrix_transform(skew.T)
     #end def skew
-        
-    
+
+
     # test needed
     def change_units(self,units,*,folded=True):
         if units!=self.units:
@@ -2173,8 +2173,8 @@ class Structure(Sobj):
             self.folded_structure.change_units(units,folded=folded)
         #end if
     #end def change_units
-                              
-        
+
+
     # test needed
     # insert sep space at loc along axis
     #   if sep<0, space is removed instead
@@ -2261,7 +2261,7 @@ class Structure(Sobj):
         #end if
     #end def translate
 
-                              
+
     # test needed
     def slide(self,v,*,recenter=True):
         v = np.array(v)
@@ -2670,7 +2670,7 @@ class Structure(Sobj):
         return sub
     #end def carve
 
-        
+
     # test needed
     def remove(self,identifiers):
         indices = self.locate(identifiers)
@@ -2683,7 +2683,7 @@ class Structure(Sobj):
         return erem,prem
     #end def remove
 
-    
+
     # test needed
     def replace(self,identifiers,elem=None,pos=None,radii=None,*,exterior=False):
         indices = self.locate(identifiers,radii,invert=exterior)
@@ -2886,7 +2886,7 @@ class Structure(Sobj):
         #end if
     #end def species
 
-        
+
     # test needed
     def ordered_species(self,*,symbol=False):
         speclab_set    = set()
@@ -2994,7 +2994,7 @@ class Structure(Sobj):
         #end for
     #end def reorder
 
-    
+
     # test needed
     # find layers parallel to a particular cell face
     #   layers are found by scanning a window of width dtol along the axis and counting
@@ -3221,7 +3221,7 @@ class Structure(Sobj):
     #           4    #   sum of vertex degrees is 4 (2 atoms have 1 neighbor and 1 atom has 2)
     #             (1,1,2) = [ (3,5,4) ]
     #           6    #   sum of vertex degrees is 6 (each atom is connected to 2 others)
-    #             (2,2,2) = [ (0,1,2) ]           # graphs with vertex degree (2,2,2)  
+    #             (2,2,2) = [ (0,1,2) ]           # graphs with vertex degree (2,2,2)
 
     def connected_graphs(self,order,indices=None,rmax=None,nmax=None,*,voronoi=False,degree=False,site_maps=False,**spec_max):
         if indices is None:
@@ -3263,7 +3263,7 @@ class Structure(Sobj):
             elif rmax is None:
                 nneigh[:] = num_indices
             else:
-                nneigh = (dt<rmax).sum(1)                    
+                nneigh = (dt<rmax).sum(1)
             #end if
             for i in range(num_indices):
                 neigh_table.append(nt[i,1:nneigh[i]])
@@ -3304,7 +3304,7 @@ class Structure(Sobj):
                 graphs_found.add(gi)   # add graph to set of all graphs
             #end for
             for o in range(2,order+1): # graphs of order o are found by adding all
-                cglast = cgraphs[o-1]  # possible single neighbors to each graph of order o-1 
+                cglast = cgraphs[o-1]  # possible single neighbors to each graph of order o-1
                 cg     = cgraphs[o]
                 for gilast in cglast:    # all graphs of order o-1
                     for i in gilast:       # all indices in each graph of order o-1
@@ -3461,7 +3461,7 @@ class Structure(Sobj):
         # contruct rings from lines that share endpoints
         rgraphs = obj()
         for o in range(3,order+1):
-            o1 = o/2+1    # split half order for odd, same for even, 
+            o1 = o/2+1    # split half order for odd, same for even,
             o2 = o1+o%2
             lg1 = lgraphs.get(o1,None) # sets of half order lines
             lg2 = lgraphs.get(o2,None)
@@ -3528,8 +3528,8 @@ class Structure(Sobj):
         #end if
         return np.array(cents,dtype=float)
     #end def min_image_centroids
-    
-    
+
+
     def min_image_vectors(self,points=None,points2=None,axes=None,*,pairs=True):
         if points is None:
             points = self.pos
@@ -3586,7 +3586,7 @@ class Structure(Sobj):
             #end for
             result = vectors
         #end if
-                
+
         return result
     #end def min_image_vectors
 
@@ -3612,7 +3612,7 @@ class Structure(Sobj):
         return self.min_image_vectors(points,points2,axes)
     #end def vector_table
 
-    
+
     def neighbor_table(self,points=None,points2=None,axes=None,*,distances=False,vectors=False):
         dtable,vtable = self.min_image_distances(points,points2,axes,vectors=True)
         ntable = np.empty(dtable.shape,dtype=int)
@@ -3916,7 +3916,7 @@ class Structure(Sobj):
             c = self.center.copy()
         else:
             c = np.array(center,dtype=float)
-        #end if        
+        #end if
         points = self.cell_image(points,center=c)
         for i in range(len(points)):
             points[i] -= c
@@ -3941,7 +3941,7 @@ class Structure(Sobj):
     # test needed
     def recenter_k(self,kpoints=None,kaxes=None,kcenter=None,*,remove_duplicates=False):
         """Center k-points around the provided center of k-space.
-        
+
         Parameters
         ----------
         kpoints : NDArray | None, default = None
@@ -3997,7 +3997,7 @@ class Structure(Sobj):
         if use_self:
             self.kpoints = kpoints
         else:
-            return kpoints   
+            return kpoints
         #end if
     #end def recenter_k
 
@@ -4272,7 +4272,7 @@ class Structure(Sobj):
                         for d in range(dim):
                             tpoints[ns:ne,d] = points[:,d]+v[0,d]
                         #end for
-                        ns+=npoints 
+                        ns+=npoints
                         ne+=npoints
                     #end for
                 #end for
@@ -4390,7 +4390,7 @@ class Structure(Sobj):
         imin[:] =  1000000
         imax[:] = -1000000
         axinv  = inv(self.kaxes)
-        center = self.kaxes.sum(0)/2 
+        center = self.kaxes.sum(0)/2
         c = np.empty((1,3))
         for k in -1,2:
             for j in -1,2:
@@ -4550,7 +4550,7 @@ class Structure(Sobj):
         prim = self.primitive(source=source,add_kpath=add_kpath,**kwargs)
         self.clone_from(prim)
     #end def become_primitive
-            
+
 
     def add_kpoints(self,kpoints,kweights=None,*,unique=False,recenter=True,cell_unit=False):
         if kweights is None:
@@ -4656,7 +4656,7 @@ class Structure(Sobj):
         self.add_kpoints(kpoints_symm,kweights_symm)
     #end def add_symmetrized_kmesh
 
-    
+
     def kpoints_unit(self,kpoints=None):
         if kpoints is None:
             kpoints = self.kpoints
@@ -4778,7 +4778,7 @@ class Structure(Sobj):
                 axmax = max(axmax,norm(a))
             #end for
             #   make an integer space corresponding to 1e-7 self.units spatial resolution
-            cmax = np.uint64(1e7)*np.uint64(np.ceil(axmax)) 
+            cmax = np.uint64(1e7)*np.uint64(np.ceil(axmax))
             ipoints = np.array(np.around(cmax*upoints),dtype=np.uint64)
             ipoints[ipoints==cmax] = 0 # make the outer boundary the same as the inner boundary
             # load the cell table with point indices
@@ -4817,7 +4817,7 @@ class Structure(Sobj):
         return pmap
     #end def unique_positions
 
-        
+
     # test needed
     def unique_kpoints(self,tol=1e-10,*,folded=False):
         kmap = obj()
@@ -4941,7 +4941,7 @@ class Structure(Sobj):
             raise RuntimeError(msg)
         #end if
         nnearest = int(np.around(vratio))
-        self.elem = large.elem.copy() 
+        self.elem = large.elem.copy()
         self.pos  = large.pos.copy()
         self.recenter()
         nt,dt = self.neighbor_table(distances=True)
@@ -5084,7 +5084,7 @@ class Structure(Sobj):
         #end if
     #end def bonds
 
-        
+
     # test needed
     def displacement(self,reference,*,map=False):
         if self.dim!=3:
@@ -5109,7 +5109,7 @@ class Structure(Sobj):
         return sqrt((self.displacement(reference)**2).sum(1))
     #end def scalar_displacement
 
-    
+
     # test needed
     def distortion(self,reference,neighbors):
         if self.dim!=3:
@@ -5274,7 +5274,7 @@ class Structure(Sobj):
                 #end for
             #end for
         #end for
-        
+
         inside = np.empty(ntile,)
         inside[:]=False
         ins = cell.inside(pos)
@@ -5359,7 +5359,7 @@ class Structure(Sobj):
 
 
     # returns madelung potential constant v_M
-    #   see equation 7 in PRB 78 125106 (2008) 
+    #   see equation 7 in PRB 78 125106 (2008)
     def madelung(self,axes=None,tol=1e-10):
         from scipy.special import erfc
         if self.dim!=3:
@@ -5380,7 +5380,7 @@ class Structure(Sobj):
         kconv = 2*pi/rconv
         gconst = -1./(4*kconv**2)
         vmc = -pi/(kconv**2*volume)-2*kconv/sqrt(pi)
-        
+
         nshells = 20
         vshell = [0.]
         p = Sobj()
@@ -5390,7 +5390,7 @@ class Structure(Sobj):
             i = i.reshape(3,(2*n+1)**3)
             R = sqrt((dot(a,i)**2).sum(0))
             G2 = (dot(b,i)**2).sum(0)
-            
+
             izero = n + n*(2*n+1) + n*(2*n+1)**2
 
             p.R  = R[0:izero]
@@ -5826,7 +5826,7 @@ class Structure(Sobj):
         ----------
         filepath : PathLike or None, default=None
             Path to where the XYZ file should be written.
-            If this is ``None``, then this function just returns 
+            If this is ``None``, then this function just returns
             what would have been written to the XYZ file.
 
         Returns
@@ -6344,7 +6344,7 @@ class Structure(Sobj):
         # get current bravais lattice name
         d   = sp.symmetry_data()
         bv  = sp.bravais_lattice_name(d)
-        bvp = bv.rsplit('_',1)[0]+'_P' 
+        bvp = bv.rsplit('_',1)[0]+'_P'
         if bv in rmg_lattices:
             rmg_lattice = bv
         #end if
@@ -6471,11 +6471,11 @@ Structure.set_operations()
 #======================#
 
 def _getseekpath(
-    structure          = None, 
-    recipe             = 'hpkot', 
-    reference_distance = 0.025, 
-    threshold          = 1E-7, 
-    symprec            = 1E-5, 
+    structure          = None,
+    recipe             = 'hpkot',
+    reference_distance = 0.025,
+    threshold          = 1E-7,
+    symprec            = 1E-5,
     angle_tolerance    = 1.0,
     *,
     with_time_reversal = False,
@@ -6502,8 +6502,8 @@ def _getseekpath(
 #end def _getseekpath
 
 def get_conventional_cell(
-    structure       = None, 
-    symprec         = 1E-5, 
+    structure       = None,
+    symprec         = 1E-5,
     angle_tolerance = 1.0,
     seekpathout     = None,
     ):
@@ -6531,8 +6531,8 @@ def get_conventional_cell(
 #end def get_conventional_cell
 
 def get_primitive_cell(
-    structure       = None, 
-    symprec         = 1E-5, 
+    structure       = None,
+    symprec         = 1E-5,
     angle_tolerance = 1.0,
     seekpathout     = None,
     ):
@@ -6553,13 +6553,13 @@ def get_primitive_cell(
 
 def get_kpath(
     *,
-    structure          = None, 
-    check_standard     = True, 
-    with_time_reversal = False, 
+    structure          = None,
+    check_standard     = True,
+    with_time_reversal = False,
     recipe             = 'hpkot',
-    reference_distance = 0.025, 
-    threshold          = 1E-7, 
-    symprec            = 1E-5, 
+    reference_distance = 0.025,
+    threshold          = 1E-7,
+    symprec            = 1E-5,
     angle_tolerance    = 1.0,
     seekpathout        = None,
     ):
@@ -6591,8 +6591,8 @@ def get_kpath(
 #end def get_kpath
 
 def get_symmetry(
-    structure       = None, 
-    symprec         = 1E-5, 
+    structure       = None,
+    symprec         = 1E-5,
     angle_tolerance = 1.0,
     seekpathout     = None,
     ):
@@ -6609,12 +6609,12 @@ def get_symmetry(
 
 def get_structure_with_bands(
     *,
-    cell               = 0, 
-    structure          = None, 
+    cell               = 0,
+    structure          = None,
     with_time_reversal = False,
-    reference_distance = 0.025, 
-    threshold          = 1E-7, 
-    symprec            = 1E-5, 
+    reference_distance = 0.025,
+    threshold          = 1E-7,
+    symprec            = 1E-5,
     angle_tolerance    = 1.0,
     ):
     if cell == 0:
@@ -6642,14 +6642,14 @@ def get_structure_with_bands(
 # test needed
 def get_band_tiling(
     *,
-    structure      = None, 
-    check_standard = True, 
-    use_ktol       = True, 
-    kpoints_label  = None, 
-    kpoints_rel    = None, 
+    structure      = None,
+    check_standard = True,
+    use_ktol       = True,
+    kpoints_label  = None,
+    kpoints_rel    = None,
     max_volfac     = 20,
     min_volfac     = 0,
-    target_volfac  = None,    
+    target_volfac  = None,
     ):
 
     def cube_deviation(axes):
@@ -6690,7 +6690,7 @@ def get_band_tiling(
             msg = 'Volume multiplier must be integer'
             raise ValueError(msg)
         #end if
-        
+
         return edges
     #end def cuboid_with_int_edges
 
@@ -6698,7 +6698,7 @@ def get_band_tiling(
         new_alphas = []
         for alpha in alphas:
             abs_alpha  = np.abs(alpha)
-            sign_alpha = np.sign(alpha) 
+            sign_alpha = np.sign(alpha)
             new_alpha  = np.round(abs_alpha*divs)*1./divs*sign_alpha
             new_alphas.append(new_alpha)
         #end for
@@ -6706,12 +6706,12 @@ def get_band_tiling(
     #end def alphas_on_grid
 
     def find_alphas(structure, kpoints_label, kpoints_rel, check_standard):
-        # Read wavevectors from the input and return the differences between all wavevectors (alphas) 
+        # Read wavevectors from the input and return the differences between all wavevectors (alphas)
         kpath       = get_kpath(structure = structure, check_standard = check_standard)
         kpath_label = np.array(kpath['explicit_kpoints_labels'])
         kpath_rel   = kpath['explicit_kpoints_rel']
         kpts        = dict()
-    
+
         if kpoints_label is None:
             kpoints_label = []
             if kpoints_rel is None:
@@ -6759,10 +6759,10 @@ def get_band_tiling(
     def find_vars(alphas,min_volfac, max_volfac, target_volfac, use_ktol):
         '''
         Find variables to generate possible smallest matrices in the Upper Triangular Hermite Normal Form, from PHYSICAL REVIEW B 92, 184301 (2015)
-        For target or min/max volumes, it returns vol_mul, which is the smallest volume multiplier to be used on the volfac here   
+        For target or min/max volumes, it returns vol_mul, which is the smallest volume multiplier to be used on the volfac here
         '''
-        if use_ktol:               
-            ktol = 0.25/max_volfac  
+        if use_ktol:
+            ktol = 0.25/max_volfac
         else:
             ktol = 0.0
         #end if
@@ -6776,7 +6776,7 @@ def get_band_tiling(
                 raise ValueError(msg)
             #end if
         #end if
-        
+
         cur_volfac = 1e6
         vars       = []
         for mvol in range(max_volfac, 0, -1):
@@ -6785,7 +6785,7 @@ def get_band_tiling(
                 a_1, a_2, a_3 = c
                 new_alphas = alphas_on_grid(alphas, c)
 
-    
+
                 rec_grid_voxel = np.array([1./a_1,1./a_2,1./a_3]) # reciprocal grid voxel size
                 rem = []
                 for alpha in alphas:
@@ -6815,7 +6815,7 @@ def get_band_tiling(
         else:
             can_be_found = False
             vol_mul = 1
-            while not can_be_found:           
+            while not can_be_found:
                 if volfac*vol_mul <= max_volfac and volfac*vol_mul >= min_volfac:
                     can_be_found = True
                 elif volfac*vol_mul > max_volfac:
@@ -6827,7 +6827,7 @@ def get_band_tiling(
             #end while
             return vars, vol_mul
         #end if
-        
+
     #end def find_vars
 
     def find_mats(mat_vars, alphas):
@@ -6842,8 +6842,8 @@ def get_band_tiling(
                 for q in range(0, g12//g123):
                     for r in range(g13*g23//g123):
                         temp_mat = [
-                            [g123*n1//(g12*g13), q*g123*n2//(g12*g23), r*g123*n3//(g13*g23)], 
-                            [0, n2//g23, p*n3//g23], 
+                            [g123*n1//(g12*g13), q*g123*n2//(g12*g23), r*g123*n3//(g13*g23)],
+                            [0, n2//g23, p*n3//g23],
                             [0,0,n3]]
                         comm = []
                         div = np.array([n1, n2, n3])
@@ -6866,7 +6866,7 @@ def get_band_tiling(
         return mats
 
     #end def find_mats
-    
+
     def find_cubic_mat(mats, structure, mat_vol_mul):
         final_axes       = []
         final_t          = []
@@ -6884,13 +6884,13 @@ def get_band_tiling(
                 final_t           = dot(m_t, m)
             #end if
         #end for
-        return final_t.tolist()                
+        return final_t.tolist()
     #end def find_cubic_mat
 
     def find_shift(final_mat, structure, kpt0):
         return None
     #end def find_cubic_mat
-    
+
     alphas, kpt0            = find_alphas(structure,kpoints_label,kpoints_rel, check_standard) # Wavevector differences
     mat_vars, mat_vol_mul   = find_vars(alphas,min_volfac,max_volfac,target_volfac,use_ktol)   # Variables to construct upper triangular matrices
     mats                    = find_mats(mat_vars,alphas)                                       # List of upper triangular matrices that are commensurate with alphas
@@ -6956,7 +6956,7 @@ def interpolate_structures(struct1,struct2=None,*,images=None,min_image=True,rec
 
     # if a list of structures is provided,
     # interpolate between pairs in the chain of structures
-    if isinstance(struct1,(list,tuple)): 
+    if isinstance(struct1,(list,tuple)):
         structures_in = struct1
         structures = []
         for n in range(len(structures_in)-1):
@@ -7071,7 +7071,7 @@ class DefectStructure(Structure):
         return defect
     #end def defect_from_bond_compression
 
-    
+
     def defect_from_displacement(self,displacement_cutoff,reference):
         displacement = self.scalar_displacement(reference)
         idefect = displacement > displacement_cutoff
@@ -7184,7 +7184,7 @@ class Crystal(Structure):
         base_centered         = ('A','B','C'),
         face_centered         = 'F',
         body_centered         = 'I',
-        rhombohedral_centered = 'R'        
+        rhombohedral_centered = 'R'
         )
     """Mapping from centering types to their Pearson symbol."""
 
@@ -7230,7 +7230,7 @@ class Crystal(Structure):
         cell_classes[lattice]=lattice
     #end for
 
-    
+
     #helpful websites for structures
     #  wikipedia.org
     #  webelements.com
@@ -7456,7 +7456,7 @@ class Crystal(Structure):
                          [   0,  .5,  .817]],
             basis_vectors = 'conventional'
             ),
-        ('CuO2_plane','prim'):obj( 
+        ('CuO2_plane','prim'):obj(
             lattice   = 'tetragonal',
             cell      = 'primitive',
             centering = 'P',
@@ -7523,7 +7523,7 @@ class Crystal(Structure):
                  lattice        = None,
                  cell           = None,
                  centering      = None,
-                 constants      = None, 
+                 constants      = None,
                  atoms          = None,
                  basis          = None,
                  basis_vectors  = None,
@@ -7539,7 +7539,7 @@ class Crystal(Structure):
                  kshift         = (0,0,0),
                  permute        = None,
                  operations     = None,
-                 elem           = None, 
+                 elem           = None,
                  pos            = None,
                  use_prim       = None,
                  add_kpath      = False,
@@ -7551,10 +7551,10 @@ class Crystal(Structure):
         #end if
 
         gi = obj(
-            lattice        = lattice       ,  
+            lattice        = lattice       ,
             cell           = cell          ,
             centering      = centering     ,
-            constants      = constants     ,   
+            constants      = constants     ,
             atoms          = atoms         ,
             basis          = basis         ,
             basis_vectors  = basis_vectors ,
@@ -7594,7 +7594,7 @@ class Crystal(Structure):
             known_crystal = True
             lattice_info = deepcopy(self.known_crystals[lattice,cell])
         #end if
-        
+
         if known_crystal:
             while 'lattice' in lattice_info and 'cell' in lattice_info and (lattice_info.lattice,lattice_info.cell) in self.known_crystals:
                 li_old = lattice_info
@@ -7834,10 +7834,10 @@ class Crystal(Structure):
             axes_prim = np.array([a1,a2,a3])
             if cell=='primitive':
                 axes = axes_prim
-            elif cell=='conventional':            
+            elif cell=='conventional':
                 axes = axes_conv
                 points.extend(self.centerings[centering])
-            #end if            
+            #end if
         elif known_crystal:
             axes = dot(np.diag([a,b,c]),np.array(axes))
         #end if
@@ -7953,7 +7953,7 @@ class Jellium(Structure):
         #end if
         Structure.__init__(self,background_charge=charge,axes=cell,dim=dim,kpoints=kpoints,kweights=kweights,kgrid=kgrid,kshift=kshift,units=units)
     #end def __init__
-    
+
     def density(self):
         return self.background_charge/self.volume()
     #end def density
@@ -8408,10 +8408,10 @@ def generate_crystal_structure(
     #end if
 
     s=Crystal(
-        lattice        = lattice       ,  
+        lattice        = lattice       ,
         cell           = cell          ,
         centering      = centering     ,
-        constants      = constants     ,   
+        constants      = constants     ,
         atoms          = atoms         ,
         basis          = basis         ,
         basis_vectors  = basis_vectors ,
@@ -8498,7 +8498,7 @@ def generate_defect_structure(*,defect,structure,shape=None,element=None,
     ds.replace(drep.pristine,pos=drep.defect)
 
     ds.rescale(scale)
-    
+
     return ds
 #end def generate_defect_structure
 
@@ -8527,7 +8527,7 @@ if __name__=='__main__':
         kgrid     = (1,1,1),
         kshift    = (0,0,0),
         )
-    
+
     small = large.folded_structure
 
     print(small.kpoints_unit())
