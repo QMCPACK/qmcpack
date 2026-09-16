@@ -1,18 +1,20 @@
 .. _adding-supercomputer-machine:
 
+.. currentmodule:: nexus.machines
+
 Adding a Supercomputer Machine
 ==============================
 
-This section describes how to add a permanent machine definition to ``machines.py``. These definitions are used by Nexus to generate
-job submission scripts, and subsequently to help submit and monitor jobs. Within Nexus, ``Supercomputer`` refers to any machine that
+This section describes how to add a permanent machine definition to :py:mod:`~nexus.machines`. These definitions are used by Nexus to generate
+job submission scripts, and subsequently to help submit and monitor jobs. Within Nexus, :py:class:`Supercomputer` refers to any machine that
 uses a batch scheduler such at Slurm or PBS and not the size of the machine. This could include even a small workstation where a
 batch scheduler is installed and used to schedule jobs overnight. If a new machine only requires common or default behaviors, the
-new machine definition will require minimal Python code due to the functionality provided by the ``Supercomputer`` base class. Runs
+new machine definition will require minimal Python code due to the functionality provided by the :py:class:`Supercomputer` base class. Runs
 on machines that do not have a batch scheduler should use one of the workstation machine definitions.
 
 We encourage submission of new permanent machine definitions to the Nexus repository on GitHub to reduce the need for ongoing local
 maintenance and to share them with other users. For a one-off local computational cluster, the same class and instantiation patterns
-can be used in``~/.nexus/local_machines.py``. 
+can be used in ``~/.nexus/local_machines.py``.
 
 In the following we describe a step-by-step process for adding a new machine. 
 
@@ -22,22 +24,22 @@ Choose the Closest Existing Machine
 To minimize the work required, start by finding a machine that uses the same scheduler and run launcher.
 For example:
 
-- Slurm plus ``srun``: see ``Andes``, ``Rhea``, ``Frontier``, ``Leonardo``.
-- Slurm plus ``mpirun``: see ``CadesSlurm``, ``Tomcat3``, ``Improv``.
-- PBS plus ``mpiexec``: see ``Polaris``, ``Aurora``.
-- PBS plus ``aprun``: see ``BlueWatersXE``, ``BlueWatersXK``, ``Theta``.
-- LSF plus ``jsrun`` or ``lrun``: see ``Summit``, ``Lassen``.
+- Slurm plus ``srun``: see :py:class:`Andes`, :py:class:`Rhea`, :py:class:`Frontier`, :py:class:`Leonardo`.
+- Slurm plus ``mpirun``: see :py:class:`CadesSlurm`, :py:class:`Tomcat3`, :py:class:`Improv`.
+- PBS plus ``mpiexec``: see :py:class:`Polaris`, :py:class:`Aurora`.
+- PBS plus ``aprun``: see :py:class:`BlueWatersXE`, :py:class:`BlueWatersXK`, :py:class:`Theta`.
+- LSF plus ``jsrun`` or ``lrun``: see :py:class:`Summit`, :py:class:`Lassen`.
 
 If the header and launcher behavior are shared by several machines, consider
-deriving from the existing intermediate class, such as ``NerscMachine`` or
-``SnlMachine``. Otherwise, derive directly from ``Supercomputer``.
+deriving from the existing intermediate class, such as :py:class:`NerscMachine` or
+:py:class:`SnlMachine`. Otherwise, derive directly from :py:class:`Supercomputer`.
 
 Adding the Machine Class
 ------------------------
 
-Place the new class near similar machines in ``machines.py``. At minimum, define
-a unique lower-case ``name``, the account/capability flags, and
-``write_job_header``.
+Place the new class near similar machines in :py:mod:`~.nexus.machines`. At minimum, define
+a unique lower-case :py:attr:`~Supercomputer.name`, the account/capability flags, and
+``write_job_header`` method.
 
 .. code-block:: python
 
@@ -79,31 +81,31 @@ a unique lower-case ``name``, the account/capability flags, and
        #end def write_job_header
    #end class NewMachine
 
-Please note: the only required class method is ``write_job_header``.  Defining the ``post_process_job`` function can be useful in special cases, see below.
+Please note: the only required class method is :py:meth:`~Supercomputer.write_job_header`.  Defining the :py:meth:`Supercomputer.post_process_job` function can be useful in special cases, see below.
 
 Important class details:
 
-- ``name`` is the key used by ``Machine.get``, ``job(machine=...)``, and the tests.
-  It must be unique in ``Machine.machines``.
+- :py:attr:`~Supercomputer.name` is the key used by :py:meth:`~Machine.get`, ``job(machine=...)``, and the tests.
+  It must be unique in :py:attr:`Machine.machines`.
 - ``requires_account = True`` makes jobs require ``account``; the machine tests
   supply ``ABC123`` automatically for such machines.
-- ``write_job_header`` returns only the batch-script header and any setup lines.
-  ``Supercomputer.write_job`` appends environment exports and the run command.
+- :py:meth:`~Supercomputer.write_job_header` returns only the batch-script header and any setup lines.
+  :py:meth:`Supercomputer.write_job` appends environment exports and the run command.
 - Use ``pre_process_job`` to set defaults or hardware variants before generic
-  node/core calculations. Use ``post_process_job`` to add launcher options after
-  ``job.nodes``, ``job.processes``, ``job.processes_per_node``, and ``job.threads``
+  node/core calculations. Use :py:meth:`~Supercomputer.post_process_job` to add launcher options after
+  ``job.nodes``, :py:attr:`Job.processes`, ``job.processes_per_node``, and ``job.threads``
   have been finalized.
-- Keep ``process_job`` behavior idempotent. The tests call it more than once on
+- Keep :py:meth:`Supercomputer.process_job` behavior idempotent. The tests call it more than once on
   already-processed jobs, so avoid appending duplicate options or mutating
   machine-wide state in a way that changes later jobs unexpectedly.
 
 Understanding the role of the Base Class
 ----------------------------------------
 
-``Supercomputer.process_job`` fills in missing ``cores`` or ``nodes``, computes
-``processes``, ``processes_per_node``, ``processes_per_proc``, ``ppn``, applies the
+The :py:meth:`Supercomputer.process_job` method fills in missing :py:attr:`Job.cores` or :py:attr:`Job.nodes`, computes
+:py:attr:`Job.processes`, :py:attr:`Job.processes_per_node`, :py:attr:`Job.processes_per_proc`, :py:attr:`Job.ppn`, applies the
 machine account default, sets ``OMP_NUM_THREADS``, and then calls
-``process_job_options``.
+:py:meth:`~Supercomputer.process_job_options`.
 
 Default launcher handling is limited:
 
@@ -114,48 +116,55 @@ Default launcher handling is limited:
 - ``ibrun`` adds ``-n <processes> -o 0``.
 - ``srun``, ``jsrun``, and ``lrun`` intentionally add nothing by default.
 
-For launchers that need machine-specific options, override ``post_process_job``
-or ``process_job_options``. Prefer ``post_process_job`` when you only need to add
-or adjust ``job.run_options``; override ``process_job_options`` when the base
+For launchers that need machine-specific options, override :py:meth:`Supercomputer.post_process_job`
+or :py:meth:`Supercomputer.process_job_options`. Prefer :py:meth:`Supercomputer.post_process_job` when you only need to add
+or adjust :py:attr:`Job.run_options`; override :py:meth:`Supercomputer.process_job_options` when the base
 launcher behavior is not appropriate at all.
 
-``Options.write()`` sorts option keys before building the command, so choose
+The :py:meth:`Options.write()` method sorts option keys before building the command, so choose
 stable keys if test output ordering matters.
 
 Registering the Machine
 -----------------------
 
-At the bottom of ``machines.py``, add an instance to the ``#Known machines`` block:
+The :py:func:`register_supercomputer` decorator is used to automatically register a supercomputer in :py:attr:`Machine.machines`.
 
-.. code-block:: python
+You must define the following parameters in the subclass you have created:
 
-   #            nodes sockets cores ram qslots qlaunch qsubmit qstatus qdelete
-   NewMachine(  1000,   2,    32, 256, 1000,  'srun', 'sbatch','squeue','scancel')
+.. autoattribute:: nexus.machines.Supercomputer.nodes
+    :no-index:
 
+.. autoattribute:: nexus.machines.Supercomputer.sockets_per_node
+    :no-index:
 
-The positional arguments are:
+.. autoattribute:: nexus.machines.Supercomputer.cores_per_socket
+    :no-index:
 
-- ``nodes``: total compute nodes.
-- ``procs_per_node``: usually sockets or processor packages per node.
-- ``cores_per_proc``: cores per socket/package.
-- ``ram_per_node``: memory per node, in GB.
-- ``queue_size``: maximum queued/running jobs Nexus should track.
-- ``app_launcher``: command used in ``Job.run_command``.
-- ``sub_launcher``: command used by ``sub_command`` and submission file names.
-- ``queue_querier``: queue-status command/parser. Supported values include
-  ``qstat``, ``qstata``, ``squeue``, ``sacct``, ``llq``, ``bjobs``, and ``test_query``.
-- ``job_remover``: cancellation command. Existing support includes ``qdel`` and
-  ``scancel``; add support if the scheduler needs another remover.
+.. autoattribute:: nexus.machines.Supercomputer.ram_per_node
+    :no-index:
 
-``cores_per_node`` is computed as ``procs_per_node * cores_per_proc``. Use the
-actual socket/package layout when it matters for binding or
-``processes_per_proc``.
+.. autoattribute:: nexus.machines.Supercomputer.queue_size
+    :no-index:
+
+.. autoattribute:: nexus.machines.Supercomputer.app_launcher
+    :no-index:
+
+.. autoattribute:: nexus.machines.Supercomputer.sub_launcher
+    :no-index:
+
+.. autoattribute:: nexus.machines.Supercomputer.queue_querier
+    :no-index:
+
+.. autoattribute:: nexus.machines.Supercomputer.job_remover
+    :no-index:
+
+.. autoattribute:: nexus.machines.Supercomputer.cores_per_node
+    :no-index:
 
 Updating the Machine Tests
 --------------------------
 
-Adding the instance registers the machine in ``Machine.machines``, so the generic
-machine tests will include it automatically.
+Adding the :py:func:`register_supercomputer` decorator registers the machine in :py:attr:`Machine.machines`, so the generic machine tests will include it automatically.
 
 Update ``tests/test_machines.py::test_job_run_command`` by adding entries to
 ``job_run_ref`` for the new machine. Unless the test has a special case for the
@@ -200,7 +209,7 @@ From the repository root, run the machine tests that cover the new definition:
 
 If the new machine requires an extra mandatory job field, either provide a safe
 default in the machine class or add a narrow special case in the relevant test,
-as ``summit`` and ``flight`` already do.
+as :py:class:`Summit` and :py:class:`Flight` already do.
 
 If you are also using and configuring QMCPACK alongside Nexus, you can more simply run the machines test using ``ctest -R ntest_nexus_machines``, or all the Nexus tests with ``ctest -R nexus``,
 from the QMCPACK build directory.
