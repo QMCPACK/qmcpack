@@ -631,7 +631,12 @@ class Qmcpack(Simulation):
     )
 
     # dynamic workflow support
-    allowed_requirements = ('none','pwscf_orbitals','jastrow','wavefunction')
+    allowed_requirements = (
+        AppResult.NONE
+        | AppResult.PWSCF_ORBITALS
+        | AppResult.JASTROW
+        | AppResult.WAVEFUNCTION
+    )
 
     def has_afqmc_input(self):
         afqmc_input = False
@@ -1855,25 +1860,25 @@ class Qmcpack(Simulation):
         calctypes = self.input.get_output_info('calctypes')
         if 'opt' in calctypes:
             if self.input.has_jastrows():
-                self.produces.add('jastrows')
-            self.produces.add('wavefunction')
+                self.produces |= AppResult.JASTROW
+            self.produces |= AppResult.WAVEFUNCTION
     #end def fill_produces
 
 
     def fill_products(self):
-        if len(self.produces)==0:
+        if self.produces is AppResult(0):
             return
-        if 'jastrow' in self.produces or 'wavefunction' in self.produces:
+        if AppResult.JASTROW in self.produces or AppResult.WAVEFUNCTION in self.produces:
             analyzer = self.load_analyzer_image()
             if 'results' not in analyzer or 'optimization' not in analyzer.results:
                 msg = 'analyzer did not compute results required to determine jastrow or wavefunction'
                 raise RuntimeError(msg)
             opt_file = str(analyzer.results.optimization.optimal_file)
             opt_file = os.path.join(self.locdir,opt_file)
-            if 'jastrow' in self.produces:
-                self.products.jastrow = opt_file
-            if 'wavefunction' in self.produces:
-                self.products.wavefunction = opt_file
+            if AppResult.JASTROW in self.produces:
+                self.products[AppResult.JASTROW] = opt_file
+            if AppResult.WAVEFUNCTION in self.produces:
+                self.products[AppResult.WAVEFUNCTION] = opt_file
     #end def fill_products
 
 

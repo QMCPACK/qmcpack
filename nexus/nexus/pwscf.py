@@ -102,7 +102,12 @@ class Pwscf(Simulation):
     vdw_table = None
 
     # dynamic workflow support
-    allowed_requirements = ('none','structure','charge_density','orbitals')
+    allowed_requirements = (
+        AppResult.NONE
+        | AppResult.STRUCTURE
+        | AppResult.CHARGE_DENSITY
+        | AppResult.ORBITALS
+    )
 
     @staticmethod
     def settings(vdw_table=None):
@@ -399,12 +404,12 @@ class Pwscf(Simulation):
 
         # charge density
         if calc=='scf':
-            self.produces.add('charge_density')
-            self.produces.add('energy')
+            self.produces |= AppResult.CHARGE_DENSITY
+            self.produces |= AppResult.ENERGY
 
         # orbitals
         if calc=='nscf':
-            self.produces.add('orbitals')
+            self.produces |= AppResult.ORBITALS
         elif calc=='scf':
             k_points = self.input.k_points
             nkpoints = 1
@@ -416,12 +421,12 @@ class Pwscf(Simulation):
             if 'nosym' in self.input.system:
                 nosym = self.input.system.nosym
             if nkpoints==1 or not nosym:
-                self.produces.add('orbitals')
+                self.produces |= AppResult.ORBITALS
 
         # structure
         if 'relax' in calc:
-            self.produces.add('structure')
-            self.produces.add('energy')
+            self.produces |= AppResult.STRUCTURE
+            self.produces |= AppResult.ENERGY
     #end def fill_produces
 
 
@@ -434,21 +439,21 @@ class Pwscf(Simulation):
                 'This is likely a developer error.'
                 )
             raise NexusError(msg)
-        if len(self.produces)==0:
+        if self.produces is AppResult(0):
             return
         analyzer = self.load_analyzer_image()
         input    = analyzer.input
-        if 'energy' in self.produces:
-            self.products.energy = analyzer.results_out.E
-        if 'charge_density' in self.produces:
+        if AppResult.ENERGY in self.produces:
+            self.products[AppResult.ENERGY] = analyzer.results_out.E
+        if AppResult.CHARGE_DENSITY in self.produces:
             outdir = input.control.outdir
             path   = os.path.join(self.locdir,outdir)
-            self.products.charge_density = path
-        if 'orbitals' in self.produces:
+            self.products[AppResult.CHARGE_DENSITY] = path
+        if AppResult.ORBITALS in self.produces:
             outdir = input.control.outdir
             path   = os.path.join(self.locdir,outdir)
-            self.products.orbitals = path
-        if 'structure' in self.produces:
+            self.products[AppResult.ORBITALS] = path
+        if AppResult.STRUCTURE in self.produces:
             pa = analyzer
             structs = pa.results_out.relax_structures
             struct  = deepcopy(structs[len(structs)-1])
@@ -465,7 +470,7 @@ class Pwscf(Simulation):
             structure.set_elem(atoms)
             if 'axes' in struct:
                 structure._set_axes(struct.axes)
-            self.products.structure = structure
+            self.products[AppResult.STRUCTURE] = structure
     #end def fill_products
 
 

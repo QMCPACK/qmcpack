@@ -468,7 +468,7 @@ class Pw2qmcpack(Simulation):
     # dynamic workflow support
 
     def fill_produces(self):
-        self.produces.add('orbitals')
+        self.produces |= AppResult.ORBITALS
     #end def fill_produces
 
 
@@ -483,7 +483,7 @@ class Pw2qmcpack(Simulation):
         if outdir.startswith('./'):
             outdir = outdir[2:]
         orb_file = os.path.join(self.locdir,outdir,prefix+'.pwscf.h5')
-        self.products.orbitals = orb_file
+        self.products[AppResult.ORBITALS] = orb_file
     #end def fill_products
 
 
