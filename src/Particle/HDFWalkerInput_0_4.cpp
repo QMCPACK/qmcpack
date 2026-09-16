@@ -15,7 +15,7 @@
 
 #include "HDFWalkerInput_0_4.h"
 #include "hdf/hdf_archive.h"
-#include "mpi/mpi_datatype.h"
+#include "Message/mpi_datatype.h"
 #include "mpi/collectives.h"
 #include "Utilities/FairDivide.h"
 

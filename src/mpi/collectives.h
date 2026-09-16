@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_BOOSTADAPTOR_COLLECTIVES_OPERATIONS_H
 
 #include "type_traits/container_proxy.h"
-#include "mpi/mpi_datatype.h"
+#include "Message/mpi_datatype.h"
 
 namespace qmcplusplus
 {
