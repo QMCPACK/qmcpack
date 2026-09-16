@@ -49,7 +49,7 @@ import numpy as np
 from .developer import obj, FileFormatError
 from .nexus_base import nexus_core
 from .simulation import Simulation, SimulationInput, SimulationAnalyzer
-from .simulation import DynamicProcess
+from .simulation import DynamicProcess, AppResult
 from .pwscf import Pwscf
 from .gamess import Gamess
 from .pyscf_sim import Pyscf
@@ -305,18 +305,15 @@ class Pw2qmcpack(Simulation):
     generic_identifier = 'pw2qmcpack'
     application = 'pw2qmcpack.x'
     application_properties = frozenset({'serial'})
-    application_results    = frozenset({'orbitals','gc_occupation'})
+    application_results = AppResult.ORBITALS | AppResult.GC_OCCUPATION
 
     # dynamic workflow support
     allowed_requirements = ('orbitals',)
 
     def check_result(self,result_name,sim):
         calculating_result = False
-        if result_name=='orbitals':
+        if result_name in AppResult.ORBITALS | AppResult.GC_OCCUPATION:
             calculating_result = True
-        elif result_name=='gc_occupation':
-            calculating_result = True
-        #end if        
         return calculating_result
     #end def check_result
 
@@ -335,14 +332,14 @@ class Pw2qmcpack(Simulation):
         if outdir.startswith('./'):
             outdir = outdir[2:]
         #end if
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             result.h5file   = os.path.join(self.locdir,outdir,prefix+'.pwscf.h5')
             result.ptcl_xml = os.path.join(self.locdir,outdir,prefix+'.ptcl.xml')
             result.wfs_xml  = os.path.join(self.locdir,outdir,prefix+'.wfs.xml')
-        elif result_name=='gc_occupation':
+        elif result_name is AppResult.GC_OCCUPATION:
             pass  # defer to Qmcpack.incorporate_result
         else:
-            msg = 'ability to get result '+result_name+' has not been implemented'
+            msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if        
         return result
@@ -351,7 +348,7 @@ class Pw2qmcpack(Simulation):
 
     def incorporate_result(self,result_name,result,sim):
         implemented = True
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             if isinstance(sim,Pwscf):
                 pwin = sim.input.control
                 p2in = self.input.inputpp
@@ -408,7 +405,7 @@ class Pw2qmcpack(Simulation):
             implemented = False
         #end if
         if not implemented:
-            msg = f'ability to incorporate result "{result_name}" from {type(sim).__name__} has not been implemented'
+            msg = f"Ability to incorporate result '{result_name.name}' from {type(sim).__name__} has not been implemented"
             raise NotImplementedError(msg)
         #end if                
     #end def incorporate_result
@@ -471,7 +468,7 @@ class Pw2qmcpack(Simulation):
     # dynamic workflow support
 
     def fill_produces(self):
-        self.produces.add('orbitals')
+        self.produces |= AppResult.ORBITALS
     #end def fill_produces
 
 
@@ -486,7 +483,7 @@ class Pw2qmcpack(Simulation):
         if outdir.startswith('./'):
             outdir = outdir[2:]
         orb_file = os.path.join(self.locdir,outdir,prefix+'.pwscf.h5')
-        self.products.orbitals = orb_file
+        self.products[AppResult.ORBITALS] = orb_file
     #end def fill_products
 
 
@@ -848,7 +845,11 @@ class Convert4qmc(Simulation):
     generic_identifier     = 'convert4qmc'
     application            = 'convert4qmc'
     application_properties = frozenset({'serial'})
-    application_results    = frozenset({'orbitals','particles','determinantset'})
+    application_results = (
+        AppResult.ORBITALS
+        | AppResult.PARTICLES
+        | AppResult.DETERMINANTSET
+    )
     renew_app_command      = True
 
     def __init__(self,*args,**kwargs):
@@ -905,16 +906,16 @@ class Convert4qmc(Simulation):
         result = obj()
         input = self.input
         wfn_file,ptcl_file = self.list_output_files()
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             result.location = os.path.join(self.locdir,wfn_file)
             orbfile = self.get_prefix()+'.orbs.h5'
             result.orbfile = os.path.join(self.locdir,orbfile)
-        elif result_name=='particles':
+        elif result_name is AppResult.PARTICLES:
             result.location = os.path.join(self.locdir,ptcl_file)
-        elif result_name=='determinantset':
+        elif result_name is AppResult.DETERMINANTSET:
             result.location = os.path.join(self.locdir,wfn_file)            
         else:
-            msg = 'ability to get result '+result_name+' has not been implemented'
+            msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if        
         return result
@@ -926,7 +927,7 @@ class Convert4qmc(Simulation):
         input = self.input
         if isinstance(sim,Gamess):
             self.input_code = 'gamess'
-            if result_name=='orbitals':
+            if result_name is AppResult.ORBITALS:
                 orbpath = os.path.relpath(result.location,self.locdir)
                 if result.scftyp=='mcscf':
                     input.gamess_ascii = orbpath
@@ -948,7 +949,7 @@ class Convert4qmc(Simulation):
             #end if
         elif isinstance(sim,Pyscf):
             self.input_code = 'pyscf'
-            if result_name=='orbitals':
+            if result_name is AppResult.ORBITALS:
                 orbpath = os.path.relpath(result.h5_file,self.locdir)
                 input.orbitals = orbpath
             else:
@@ -956,7 +957,7 @@ class Convert4qmc(Simulation):
             #end if
         elif isinstance(sim,QuantumPackage):
             self.input_code = 'qp'
-            if result_name=='orbitals':
+            if result_name is AppResult.ORBITALS:
                 orbpath = os.path.relpath(result.outfile,self.locdir)
                 input.orbitals = orbpath
             else:
@@ -966,7 +967,7 @@ class Convert4qmc(Simulation):
             implemented = False
         #end if
         if not implemented:
-            msg = f'ability to incorporate result "{result_name}" from {type(sim).__name__} has not been implemented'
+            msg = f"Ability to incorporate result '{result_name.name}' from {type(sim).__name__} has not been implemented"
             raise NotImplementedError(msg)
         #end if
     #end def incorporate_result
@@ -1075,7 +1076,7 @@ class Convertpw4qmc(Simulation):
     generic_identifier     = 'convertpw4qmc'
     application            = 'convertpw4qmc'
     application_properties = frozenset({'serial'})
-    application_results    = frozenset({'orbitals'})
+    application_results    = AppResult.ORBITALS
     renew_app_command      = True
 
     def set_app_name(self,app_name):
@@ -1098,19 +1099,19 @@ class Convertpw4qmc(Simulation):
     #end def set_files
 
     def check_result(self,result_name,sim):
-        return result_name=='orbitals'
+        return result_name is AppResult.ORBITALS
     #end def check_result
 
     def get_result(self,result_name,sim):
         result = obj()
         input = self.input
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             wfn_file = 'eshdf.h5'
             orbfile = os.path.join(self.locdir,wfn_file)
             result.location = orbfile
             result.h5file = orbfile
         else:
-            msg = 'ability to get result '+result_name+' has not been implemented'
+            msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if        
         return result
@@ -1130,7 +1131,7 @@ class Convertpw4qmc(Simulation):
 
     def incorporate_result(self,result_name,result,sim):
         implemented = True
-        if result_name=='orbitals':
+        if result_name is AppResult.ORBITALS:
             if isinstance(sim,Pwscf):
                 pwin = sim.input.control
                 pwprefix = 'pwscf'
@@ -1175,7 +1176,7 @@ class Convertpw4qmc(Simulation):
             implemented = False
         #end if
         if not implemented:
-            msg = f'ability to incorporate result "{result_name}" from {type(sim).__name__} has not been implemented'
+            msg = f"Ability to incorporate result '{result_name.name}' from {type(sim).__name__} has not been implemented"
             raise NotImplementedError(msg)
         #end if                
     #end def incorporate_result
@@ -1438,7 +1439,7 @@ class PyscfToAfqmc(Simulation):
     generic_identifier     = 'pyscf2afqmc'
     application            = 'pyscf_to_afqmc.py'
     application_properties = frozenset({'serial'})
-    application_results    = frozenset({'wavefunction','hamiltonian'})
+    application_results    = AppResult.WAVEFUNCTION | AppResult.HAMILTONIAN
     renew_app_command      = True
 
 
@@ -1450,11 +1451,8 @@ class PyscfToAfqmc(Simulation):
 
     def check_result(self,result_name,sim):
         calculating_result = False
-        if result_name=='wavefunction':
+        if result_name in AppResult.WAVEFUNCTION | AppResult.HAMILTONIAN:
             calculating_result = self.input.output is not None
-        elif result_name=='hamiltonian':
-            calculating_result = self.input.output is not None
-        #end if        
         return calculating_result
     #end def check_result
 
@@ -1462,13 +1460,13 @@ class PyscfToAfqmc(Simulation):
     def get_result(self,result_name,sim):
         result = obj()
         input = self.input
-        if result_name in {'wavefunction','hamiltonian'}:
+        if result_name in AppResult.WAVEFUNCTION | AppResult.HAMILTONIAN:
             result.h5_file = os.path.join(self.locdir,input.output)
             if input.qmcpack_input is not None:
                 result.xml = os.path.join(self.locdir,input.qmcpack_input)
             #end if
         else:
-            msg = 'ability to get result '+result_name+' has not been implemented'
+            msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if        
         return result
@@ -1479,7 +1477,7 @@ class PyscfToAfqmc(Simulation):
         implemented = True
         input = self.input
         if isinstance(sim,Pyscf):
-            if result_name=='wavefunction':
+            if result_name is AppResult.WAVEFUNCTION:
                 chkfile = os.path.relpath(result.chkfile,self.locdir)
                 input.input = chkfile
             else:
@@ -1489,7 +1487,7 @@ class PyscfToAfqmc(Simulation):
             implemented = False
         #end if
         if not implemented:
-            msg = f'ability to incorporate result "{result_name}" from {type(sim).__name__} has not been implemented'
+            msg = f"Ability to incorporate result '{result_name.name}' from {type(sim).__name__} has not been implemented"
             raise NotImplementedError(msg)
         #end if
     #end def incorporate_result       

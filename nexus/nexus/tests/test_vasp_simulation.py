@@ -9,6 +9,7 @@ from nexus.nexus_base import nexus_core
 from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
 from ..testing import value_eq,object_eq,check_object_eq
+from ..simulation import AppResult
 
 from .test_vasp_input import c_potcar_text, TEST_FILES
 
@@ -94,7 +95,7 @@ def test_check_result(tmp_path):
 
     assert(not sim.check_result('unknown',None))
 
-    assert(sim.check_result('structure',None))
+    assert(sim.check_result(AppResult.STRUCTURE, None))
 
     clear_all_sims()
 #end def test_check_result
@@ -116,9 +117,9 @@ def test_get_result(tmp_path):
 
     with pytest.raises(
         NotImplementedError,
-        match="ability to get result unknown has not been implemented",
+        match="Ability to get result 'NONE' has not been implemented!",
         ):
-        sim.get_result('unknown',None)
+        sim.get_result(AppResult.NONE,None)
 
 
     pcfile = tmp_path / 'diamond_POSCAR'
@@ -130,7 +131,7 @@ def test_get_result(tmp_path):
 
     assert(ccfile.exists())
 
-    result = sim.get_result('structure',None)
+    result = sim.get_result(AppResult.STRUCTURE,None)
 
     result_ref = obj(
           structure = obj(
@@ -211,13 +212,13 @@ def test_incorporate_result(tmp_path):
 
     assert(ccfile.exists())
 
-    result = sim.get_result('structure',None)
+    result = sim.get_result(AppResult.STRUCTURE,None)
 
     sim2 = setup_vasp_sim(tmp_path)
 
     pid = id(sim2.input.poscar)
 
-    sim2.incorporate_result('structure',result,None)
+    sim2.incorporate_result(AppResult.STRUCTURE,result,None)
 
     assert(id(sim2.input.poscar)!=pid)
 

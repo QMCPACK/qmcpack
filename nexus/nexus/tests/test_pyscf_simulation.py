@@ -11,6 +11,7 @@ from nexus.physical_system import generate_physical_system
 from nexus.structure import generate_trimer_structure
 from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
+from ..simulation import AppResult
 
 TEST_FILES = {
     "scf_template.py": TEST_DIR / "test_pyscf_simulation_files/scf_template.py",
@@ -51,22 +52,22 @@ def test_minimal_init():
 def test_check_result():
     sim = get_pyscf_sim()
     
-    assert(not sim.check_result('unknown',None))
-    assert(not sim.check_result('orbitals',None))
-    assert(not sim.check_result('wavefunction',None))
+    assert(not sim.check_result(AppResult.NONE,None))
+    assert(not sim.check_result(AppResult.ORBITALS,None))
+    assert(not sim.check_result(AppResult.WAVEFUNCTION,None))
 
     sim.input.prefix   = 'scf'
     sim.input.save_qmc = True
 
-    assert(sim.check_result('orbitals',None))
-    assert(not sim.check_result('wavefunction',None))
+    assert(sim.check_result(AppResult.ORBITALS,None))
+    assert(not sim.check_result(AppResult.WAVEFUNCTION,None))
 
     sim.input.prefix   = None
     sim.input.save_qmc = None
     sim.input.checkpoint = True
 
-    assert(not sim.check_result('orbitals',None))
-    assert(sim.check_result('wavefunction',None))
+    assert(not sim.check_result(AppResult.ORBITALS,None))
+    assert(sim.check_result(AppResult.WAVEFUNCTION,None))
 
     clear_all_sims()
 #end def test_check_result
@@ -96,15 +97,15 @@ def test_get_result(tmp_path):
     
     with pytest.raises(
         NotImplementedError,
-        match="ability to get result unknown has not been implemented"
+        match="Ability to get result 'NONE' has not been implemented!"
         ):
-        sim.get_result('unknown',None)
+        sim.get_result(AppResult.NONE,None)
 
-    result = sim.get_result('orbitals',None)
+    result = sim.get_result(AppResult.ORBITALS,None)
 
     assert(result.h5_file.replace(str(tmp_path),'').lstrip('/')=='scf.h5')
 
-    result = sim.get_result('wavefunction',None)
+    result = sim.get_result(AppResult.WAVEFUNCTION,None)
 
     assert(result.chkfile.replace(str(tmp_path),'').lstrip('/')=='scf.chk')
 

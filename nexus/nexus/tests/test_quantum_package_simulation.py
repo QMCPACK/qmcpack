@@ -8,7 +8,7 @@ from . import isolate_nexus_core
 
 from ..testing import failed,FailedTest
 from ..testing import object_eq
-
+from ..simulation import AppResult
 
 def clear_all_sims():
     from ..quantum_package import QuantumPackage
@@ -60,12 +60,12 @@ def test_minimal_init():
 def test_check_result():
     sim = get_quantum_package_sim()
     
-    assert(not sim.check_result('unknown',None))
-    assert(not sim.check_result('orbitals',None))
+    assert(not sim.check_result(AppResult.NONE,None))
+    assert(not sim.check_result(AppResult.ORBITALS,None))
 
     sim.input.run_control.save_for_qmcpack = True
 
-    assert(sim.check_result('orbitals',None))
+    assert(sim.check_result(AppResult.ORBITALS,None))
 
     clear_all_sims()
 #end def test_check_result
@@ -79,13 +79,13 @@ def test_get_result():
     
     with pytest.raises(
         NotImplementedError,
-        match="ability to get result unknown has not been implemented",
+        match="Ability to get result 'NONE' has not been implemented!",
         ):
-        sim.get_result('unknown',None)
+        sim.get_result(AppResult.NONE,None)
 
     sim.input.run_control.save_for_qmcpack = True
 
-    result = sim.get_result('orbitals',None)
+    result = sim.get_result(AppResult.ORBITALS,None)
 
     result_ref = obj(
         outfile = './runs/qp_savewf.out',
@@ -118,15 +118,15 @@ def test_incorporate_result():
     
     with pytest.raises(
         NotImplementedError,
-        match="ability to get result unknown has not been implemented",
+        match="Ability to get result 'NONE' has not been implemented!",
         ):
-        sim.get_result('unknown',None)
+        sim.get_result(AppResult.NONE,None)
 
     with pytest.raises(
         NexusError,
         match="cannot get orbitals",
         ):
-        sim.get_result('orbitals',other)
+        sim.get_result(AppResult.ORBITALS,other)
 
     clear_all_sims()
 #end def test_incorporate_result

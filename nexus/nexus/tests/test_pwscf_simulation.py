@@ -11,6 +11,7 @@ from nexus.nexus_base import nexus_core
 from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
 from ..testing import value_eq,object_eq
+from ..simulation import AppResult
 
 
 def get_system():
@@ -97,11 +98,11 @@ def test_check_result(tmp_path):
 
     sim = get_pwscf_sim('scf')
 
-    assert(not sim.check_result('unknown',None))
-    assert(sim.check_result('charge_density',None))
-    assert(sim.check_result('restart',None))
-    assert(sim.check_result('orbitals',None))
-    assert(not sim.check_result('structure',None))
+    assert(not sim.check_result(AppResult.NONE,None))
+    assert(sim.check_result(AppResult.CHARGE_DENSITY,None))
+    assert(sim.check_result(AppResult.RESTART,None))
+    assert(sim.check_result(AppResult.ORBITALS,None))
+    assert(not sim.check_result(AppResult.STRUCTURE,None))
 
     clear_all_sims()
 #end def test_check_result
@@ -121,13 +122,13 @@ def test_get_result(tmp_path):
 
     with pytest.raises(
         NotImplementedError,
-        match="ability to get result unknown has not been implemented"
+        match="Ability to get result 'NONE' has not been implemented!"
         ):
-        sim.get_result('unknown',None)
+        sim.get_result(AppResult.NONE,None)
 
 
-    result  = sim.get_result('charge_density',None)
-    result2 = sim.get_result('restart',None)
+    result  = sim.get_result(AppResult.CHARGE_DENSITY,None)
+    result2 = sim.get_result(AppResult.RESTART,None)
 
     assert(object_eq(result,result2))
 
@@ -144,7 +145,7 @@ def test_get_result(tmp_path):
         assert(path==result_ref[k])
     #end for
 
-    result = sim.get_result('orbitals',None)
+    result = sim.get_result(AppResult.ORBITALS,None)
 
     result_ref = dict(
         location = 'scf/pwscf_output/pwscf.wfc1',
@@ -181,12 +182,12 @@ def test_incorporate_result(tmp_path):
         locdir = sim.locdir,
         )
 
-    sim.incorporate_result('charge_density',result,None)
+    sim.incorporate_result(AppResult.CHARGE_DENSITY,result,None)
 
     assert(object_eq(to_obj(sim),sim_start))
 
     # restart
-    sim.incorporate_result('restart',result,None)
+    sim.incorporate_result(AppResult.RESTART,result,None)
 
     c = sim.input.control
     assert(c.restart_mode=='restart')
@@ -201,7 +202,7 @@ def test_incorporate_result(tmp_path):
         structure = altered_structure,
         )
 
-    sim.incorporate_result('structure',result,None)
+    sim.incorporate_result(AppResult.STRUCTURE,result,None)
 
     sim_ref = deepcopy(sim_start)
     pos_ref = sim_ref.system.structure.__dict__.pop('pos')+0.1

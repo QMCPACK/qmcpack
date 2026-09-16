@@ -25,7 +25,7 @@ from .nexus_base import nexus_core
 from .developer import obj, NexusError
 from .physical_system import PhysicalSystem
 from .pseudoset import PseudoSet
-from .simulation import Simulation, DynamicProcess
+from .simulation import Simulation, DynamicProcess, AppResult
 from .pwscf_input import PwscfInput, generate_pwscf_input
 from .pwscf_analyzer import PwscfAnalyzer
 from .execute import execute
@@ -90,14 +90,24 @@ class Pwscf(Simulation):
     generic_identifier = 'pwscf'
     application = 'pw.x'
     application_properties = frozenset({'serial','mpi'})
-    application_results    = frozenset({'charge_density','orbitals','structure','restart'})
+    application_results = (
+        AppResult.CHARGE_DENSITY
+        | AppResult.ORBITALS
+        | AppResult.STRUCTURE
+        | AppResult.RESTART
+    )
 
     supports_restarts = True # supports restartable, but not force restart yet
 
     vdw_table = None
 
     # dynamic workflow support
-    allowed_requirements = ('none','structure','charge_density','orbitals')
+    allowed_requirements = (
+        AppResult.NONE
+        | AppResult.STRUCTURE
+        | AppResult.CHARGE_DENSITY
+        | AppResult.ORBITALS
+    )
 
     @staticmethod
     def settings(vdw_table=None):
@@ -168,11 +178,11 @@ class Pwscf(Simulation):
     def check_result(self,result_name,sim):
         input = self.input
         control = input.control
-        if result_name=='charge_density' or result_name=='restart':
+        if result_name in AppResult.CHARGE_DENSITY | AppResult.RESTART:
             calculating_result = True
-        elif result_name=='orbitals':
+        elif result_name is AppResult.ORBITALS:
             calculating_result = 'calculation' not in control or 'scf' in control.calculation.lower()
-        elif result_name=='structure':
+        elif result_name is AppResult.STRUCTURE:
             calculating_result = 'calculation' in control and 'relax' in control.calculation.lower()
         else:
             calculating_result = False
@@ -196,7 +206,7 @@ class Pwscf(Simulation):
         if outdir.startswith('./'):
             outdir = outdir[2:]
         #end if
-        if result_name=='charge_density' or result_name=='restart':
+        if result_name in AppResult.CHARGE_DENSITY | AppResult.RESTART:
             result.locdir   = self.locdir
             result.outdir   = os.path.join(self.locdir,outdir)
             result_save_outdir = os.path.join(self.locdir,outdir,prefix+'.save')
@@ -211,9 +221,9 @@ class Pwscf(Simulation):
                 result.spin_location = os.path.join(result_save_outdir,'spin-polarization.dat')
             elif chg_dens_format == 'hdf5':
                 result.spin_location = None
-        elif result_name=='orbitals':
+        elif result_name is AppResult.ORBITALS:
             result.location = os.path.join(self.locdir,outdir,prefix+'.wfc1')
-        elif result_name=='structure':
+        elif result_name is AppResult.STRUCTURE:
             pa = self.load_analyzer_image()
             structs = pa.results_out.relax_structures
             struct  = structs[len(structs)-1]
@@ -235,7 +245,7 @@ class Pwscf(Simulation):
             #end if
             result.structure = structure
         else:
-            msg = 'ability to get result '+result_name+' has not been implemented'
+            msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if
         return result
@@ -243,7 +253,7 @@ class Pwscf(Simulation):
 
 
     def incorporate_result(self,result_name,result,sim):
-        if result_name=='charge_density':
+        if result_name is AppResult.CHARGE_DENSITY:
             c = self.input.control
             res_path = os.path.abspath(result.locdir)
             loc_path = os.path.abspath(self.locdir)
@@ -286,7 +296,7 @@ class Pwscf(Simulation):
                 os.chdir(cwd)
 
             #end if
-        elif result_name=='structure':
+        elif result_name is AppResult.STRUCTURE:
             relstruct = deepcopy(result.structure)
             relstruct.change_units('B')
             self.system.structure = relstruct
@@ -301,7 +311,7 @@ class Pwscf(Simulation):
             if preserve_kp:
                 input.k_points = kp
             #end if
-        elif result_name=='restart':
+        elif result_name is AppResult.RESTART:
             c = self.input.control
             if('startingwfc' in self.input.electrons and self.input.electrons.startingwfc != 'file'):
                 msg = (
@@ -340,10 +350,10 @@ class Pwscf(Simulation):
 
                 #end if
             #end if
-        elif result_name == 'hubbard_parameters':
+        elif result_name is AppResult.HUBBARD_PARAMETERS:
             self.input.incorporate_hubbard(result)
         else:
-            msg = 'ability to incorporate result '+result_name+' has not been implemented'
+            msg = f"Ability to incorporate result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if        
     #end def incorporate_result
@@ -394,12 +404,12 @@ class Pwscf(Simulation):
 
         # charge density
         if calc=='scf':
-            self.produces.add('charge_density')
-            self.produces.add('energy')
+            self.produces |= AppResult.CHARGE_DENSITY
+            self.produces |= AppResult.ENERGY
 
         # orbitals
         if calc=='nscf':
-            self.produces.add('orbitals')
+            self.produces |= AppResult.ORBITALS
         elif calc=='scf':
             k_points = self.input.k_points
             nkpoints = 1
@@ -411,12 +421,12 @@ class Pwscf(Simulation):
             if 'nosym' in self.input.system:
                 nosym = self.input.system.nosym
             if nkpoints==1 or not nosym:
-                self.produces.add('orbitals')
+                self.produces |= AppResult.ORBITALS
 
         # structure
         if 'relax' in calc:
-            self.produces.add('structure')
-            self.produces.add('energy')
+            self.produces |= AppResult.STRUCTURE
+            self.produces |= AppResult.ENERGY
     #end def fill_produces
 
 
@@ -429,21 +439,21 @@ class Pwscf(Simulation):
                 'This is likely a developer error.'
                 )
             raise NexusError(msg)
-        if len(self.produces)==0:
+        if self.produces is AppResult(0):
             return
         analyzer = self.load_analyzer_image()
         input    = analyzer.input
-        if 'energy' in self.produces:
-            self.products.energy = analyzer.results_out.E
-        if 'charge_density' in self.produces:
+        if AppResult.ENERGY in self.produces:
+            self.products[AppResult.ENERGY] = analyzer.results_out.E
+        if AppResult.CHARGE_DENSITY in self.produces:
             outdir = input.control.outdir
             path   = os.path.join(self.locdir,outdir)
-            self.products.charge_density = path
-        if 'orbitals' in self.produces:
+            self.products[AppResult.CHARGE_DENSITY] = path
+        if AppResult.ORBITALS in self.produces:
             outdir = input.control.outdir
             path   = os.path.join(self.locdir,outdir)
-            self.products.orbitals = path
-        if 'structure' in self.produces:
+            self.products[AppResult.ORBITALS] = path
+        if AppResult.STRUCTURE in self.produces:
             pa = analyzer
             structs = pa.results_out.relax_structures
             struct  = deepcopy(structs[len(structs)-1])
@@ -460,7 +470,7 @@ class Pwscf(Simulation):
             structure.set_elem(atoms)
             if 'axes' in struct:
                 structure._set_axes(struct.axes)
-            self.products.structure = structure
+            self.products[AppResult.STRUCTURE] = structure
     #end def fill_products
 
 
