@@ -701,7 +701,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         #end if
         if 'qmc' in self:
             if verbose:
-                self.log(pad+header)
+                self.nxs_print(pad+header)
                 pad += '  '
             #end if
             for method in self.qmc.values():
@@ -709,7 +709,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             #end for
         else:
             if verbose:
-                self.log(pad+'\nNo traces to check')
+                self.nxs_print(pad+'\nNo traces to check')
             #end if
             return None
         #end if

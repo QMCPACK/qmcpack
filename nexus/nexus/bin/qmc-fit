@@ -85,7 +85,7 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.developer import obj,log
+from nexus.developer import obj,nxs_print
 from nexus.numerics import jackknife,jackknife_aux
 from nexus.numerics import simstats,equilibration_length
 from nexus.numerics import curve_fit,least_squares
@@ -424,7 +424,7 @@ def timestep_fit(args):
     scalar_files = sorted(opt.scalar_files)
 
     if len(scalar_files)==0:
-        log('\n'+parser.format_help().strip()+'\n')
+        nxs_print('\n'+parser.format_help().strip()+'\n')
         sys.exit()
     #end if
 
@@ -472,11 +472,11 @@ def timestep_fit(args):
         pvals.append('({0} +/- {1})'.format(*stat_strings(pmean[n],perror[n])))
     #end for
 
-    log('\nfit function  : '+opt.fit_function)
-    log('fitted formula: '+func_info.format.format(*pvals))
+    nxs_print('\nfit function  : '+opt.fit_function)
+    nxs_print('fitted formula: '+func_info.format.format(*pvals))
     for pname,pfunc in func_info.params:  # noqa: B007
         pm,pe = stat_strings(*auxres[pname])
-        log(f'{pname:<14}: {pm} +/- {pe}  Ha\n')
+        nxs_print(f'{pname:<14}: {pm} +/- {pe}  Ha\n')
     #end for
 
     # plot the fit (if available)
@@ -546,7 +546,7 @@ def hubbard_u_fit(args):
         #end if
         x = opt.exx
     else:
-        log("\n Please provide either EXX or Hubbard_U values")
+        nxs_print("\n Please provide either EXX or Hubbard_U values")
     #end if
 
     parse_list(opt,'equils',int,len1=True)
@@ -562,8 +562,8 @@ def hubbard_u_fit(args):
         pvals.append('({0} +/- {1})'.format(*stat_strings(pmean[n],perror[n])))
     #end for
 
-    log('\nfit function  : '+opt.fit_function)
-    log('fitted formula: '+func_info.format.format(*pvals))
+    nxs_print('\nfit function  : '+opt.fit_function)
+    nxs_print('fitted formula: '+func_info.format.format(*pvals))
     for pname,pfunc in func_info.params:  # noqa: B007
         for i in range(len(auxres[pname][0])):
             pm,pe = stat_strings(*np.array(auxres[pname])[:,i])
@@ -581,7 +581,7 @@ def hubbard_u_fit(args):
             else:
                 param = pname
             #end if
-            log(f'root {i+1} {param:<14}: {pm} +/- {pe} {unit}')
+            nxs_print(f'root {i+1} {param:<14}: {pm} +/- {pe} {unit}')
     #end for
     # plot the fit (if available)
 
@@ -657,13 +657,13 @@ def eos_fit(args):
     for n in range(len(pmean)):
         pvals.append('({0} +/- {1})'.format(*stat_strings(pmean[n],perror[n])))
     #end for
-    log('\nfit function  : '+opt.fit_function)
-    log('fitted formula: '+func_info.format.format(*pvals))
+    nxs_print('\nfit function  : '+opt.fit_function)
+    nxs_print('fitted formula: '+func_info.format.format(*pvals))
 
     if 'params' in func_info.keys():
         for pname,pfunc in func_info.params:  # noqa: B007
             pm,pe = stat_strings(*np.array(auxres[pname]))
-            log(f'{pname}: {pm} +/- {pe} ')
+            nxs_print(f'{pname}: {pm} +/- {pe} ')
         #end for
     
     # plot the fit (if available)
@@ -751,7 +751,7 @@ if __name__=='__main__':
     fit_types = sorted(all_fit_functions.keys())
     parser, args = parse_args()
     if len(args.scalar_files) == 0:
-        log('\n'+'Please provide scalar files'+'\n')
+        nxs_print('\n'+'Please provide scalar files'+'\n')
         parser.print_help()
         sys.exit()
     #end if

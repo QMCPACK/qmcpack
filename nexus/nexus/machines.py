@@ -1267,43 +1267,43 @@ class Workstation(Machine):
 
 
     def write_job_states(self,title=''):
-        self.log(title,n=2)
+        self.nxs_print(title,n=2)
         n=3
-        self.log(f'{self.__class__.__name__} {self.name} {id(self)} job states',n=n )
-        self.log('processes',n=n+1)
+        self.nxs_print(f'{self.__class__.__name__} {self.name} {id(self)} job states',n=n )
+        self.nxs_print('processes',n=n+1)
         for process in self.processes:
             job = process.job
-            self.log(f'{job.internal_id:>4} {job.name:>10} {job.simid:>4} {job.directory}',n=n+2)
+            self.nxs_print(f'{job.internal_id:>4} {job.name:>10} {job.simid:>4} {job.directory}',n=n+2)
         #end for
-        self.log('jobs',n=n+1)
+        self.nxs_print('jobs',n=n+1)
         jobids = list(self.jobs.keys())
         jobids.sort()
         for jobid in jobids:
             job = self.jobs[jobid]
-            self.log(f'{job.internal_id:>4} {job.name:>10} {job.simid:>4} {job.directory}',n=n+2)
+            self.nxs_print(f'{job.internal_id:>4} {job.name:>10} {job.simid:>4} {job.directory}',n=n+2)
         #end for
-        self.log('waiting',n=n+1)
+        self.nxs_print('waiting',n=n+1)
         jobids = list(self.waiting)
         jobids.sort()
         for jobid in jobids:
             job = self.jobs[jobid]
-            self.log(f'{job.internal_id:>4} {job.name:>10} {job.simid:>4} {job.directory}',n=n+2)
+            self.nxs_print(f'{job.internal_id:>4} {job.name:>10} {job.simid:>4} {job.directory}',n=n+2)
         #end for
-        self.log('running',n=n+1)
+        self.nxs_print('running',n=n+1)
         jobids = list(self.running)
         jobids.sort()
         for jobid in jobids:
             job = self.jobs[jobid]
-            self.log(f'{job.internal_id:>4} {job.name:>10} {job.simid:>4} {job.directory}',n=n+2)
+            self.nxs_print(f'{job.internal_id:>4} {job.name:>10} {job.simid:>4} {job.directory}',n=n+2)
         #end for
-        self.log('finished',n=n+1)
+        self.nxs_print('finished',n=n+1)
         jobids = list(self.finished)
         jobids.sort()
         for jobid in jobids:
             job = self.jobs[jobid]
-            self.log(f'{job.internal_id:>4} {job.name:>10} {job.simid:>4} {job.directory}',n=n+2)
+            self.nxs_print(f'{job.internal_id:>4} {job.name:>10} {job.simid:>4} {job.directory}',n=n+2)
         #end for
-        self.log('end job states',n=1)
+        self.nxs_print('end job states',n=1)
     #end def write_job_states
 
 
@@ -1444,11 +1444,11 @@ class Workstation(Machine):
         process = obj()
         process.job = job
         if nexus_core.generate_only:
-            self.log(pad+'Would have executed:  '+command)
+            self.nxs_print(pad+'Would have executed:  '+command)
             job.system_id = job.internal_id
         else:
             if nexus_core.monitor:
-                self.log(pad+'Executing:  '+command)
+                self.nxs_print(pad+'Executing:  '+command)
                 job.out = open(job.outfile,'w')
                 job.err = open(job.errfile,'w')
                 p = Popen(command,env=job.env,stdout=job.out,stderr=job.err,shell=True)
@@ -1456,7 +1456,7 @@ class Workstation(Machine):
                 job.system_id = p.pid
             else:
                 command+=' >'+job.outfile+' 2>'+job.errfile+'&'
-                self.log(pad+'Executing:  '+command)
+                self.nxs_print(pad+'Executing:  '+command)
                 os.system(command)
                 job.system_id = job.internal_id
             #end if
@@ -2139,13 +2139,13 @@ class Supercomputer(Machine):
         #end if
         command = self.sub_command(job)
         if nexus_core.generate_only:
-            self.log(pad+'Would have executed:  '+command)
+            self.nxs_print(pad+'Would have executed:  '+command)
             job.status = job.states.running
             process = obj()
             process.job = job
             self.processes[job.internal_id] = process
         else:
-            self.log(pad+'Executing:  '+command)
+            self.nxs_print(pad+'Executing:  '+command)
             job.status = job.states.running
             process = obj()
             process.job = job
@@ -2159,7 +2159,7 @@ class Supercomputer(Machine):
                     )
                 raise RuntimeError(msg)
             else:
-                self.log(pad+f'  pid: {pid}')
+                self.nxs_print(pad+f'  pid: {pid}')
             #end if
             #pid = 'fakepid_'+str(job.internal_id)
             job.system_id = pid

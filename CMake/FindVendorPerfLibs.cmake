@@ -51,8 +51,12 @@
 #     - "IntelMKL" : Intel Math Kernel Library
 #     - "AOCL"     : AMD Optimizing CPU Libraries
 #     - "Generic"  : Generic libraries (e.g., standard BLAS/LAPACK and FFTW)
-#   Note: If VPL_ID is not provided, the module will attempt to auto-detect
-#   the appropriate vendor by checking for the presence of the MKL core or AOCL utils libraries.
+#   Note: If VPL_ID is not set, the following rules determine its value
+#   (once a rule applies, the subsequent rules are ignored):
+#     1. "Generic" if BLA_VENDOR was specified.
+#     2. "IntelMKL" if the Intel MKL mkl_core library file was found.
+#     3. "AOCL" if the AOCL aoclutils library file was found.
+#     4. "Generic" if all previous rules fail.
 #
 # - VPL_OMP: If ON, OpenMP threading is requested. If OFF (default), sequential is used.
 #   Note: If ON, you must call find_package(OpenMP) before finding VendorPerfLibs.
@@ -90,11 +94,20 @@ endif()
 set(_VPL_VALID_IDS "IntelMKL" "AOCL" "Generic")
 function(check_VPL_ID var_name id_to_check)
   if(NOT id_to_check IN_LIST _VPL_VALID_IDS)
-    message(FATAL_ERROR "VendorPerfLibs: Unknown ${var_name} '${id_to_check}'. Acceptable values are: 'IntelMKL', 'Generic'")
+    message(FATAL_ERROR "VendorPerfLibs: Unknown ${var_name} '${id_to_check}'. Acceptable values are: 'IntelMKL', 'AOCL', 'Generic'")
   endif()
 endfunction()
 
 macro(speculateVendor)
+  if(BLA_VENDOR)
+    # If BLA_VENDOR was set, interpret user intention as opting out of auto-detection by VPL.
+    set(VPL_ID_GUESS "Generic")
+    if(NOT VendorPerfLibs_FIND_QUIETLY)
+      message(STATUS "BLA_VENDOR has been set to '${BLA_VENDOR}'. Guessed VPL_ID 'Generic'.")
+    endif()
+    return()
+  endif()
+
   find_library(_MKL_CORE_TEST_LIB NAMES mkl_core
     HINTS
       "$ENV{MKLROOT}/lib/intel64"
@@ -104,10 +117,19 @@ macro(speculateVendor)
 
   if(_MKL_CORE_TEST_LIB)
     set(VPL_ID_GUESS "IntelMKL")
+    if(NOT VendorPerfLibs_FIND_QUIETLY)
+      message(STATUS "Found mkl_core library file. Guessed VPL_ID 'IntelMKL'.")
+    endif()
   elseif(AOCL_UTILS_LIB)
     set(VPL_ID_GUESS "AOCL")
+    if(NOT VendorPerfLibs_FIND_QUIETLY)
+      message(STATUS "Found aoclutils library file. Guessed VPL_ID 'AOCL'.")
+    endif()
   else()
     set(VPL_ID_GUESS "Generic")
+    if(NOT VendorPerfLibs_FIND_QUIETLY)
+      message(STATUS "Signs of vendor performance libraries not found. Guessed VPL_ID 'Generic'.")
+    endif()
   endif()
 endmacro()
 
@@ -117,7 +139,7 @@ else()
   check_VPL_ID("VPL_ID" "${VPL_ID}")
 endif()
 
-set(VPL_ID "${VPL_ID_GUESS}" CACHE STRING "Vendor Performance Library ID (IntelMKL, Generic)")
+set(VPL_ID "${VPL_ID_GUESS}" CACHE STRING "Vendor Performance Library ID (IntelMKL, AOCL, Generic)")
 
 set(_find_package_args)
 if(VendorPerfLibs_FIND_QUIETLY)
@@ -172,24 +194,47 @@ macro(find_VPL_core)
     else()
       set(VPL_CORE_FOUND FALSE)
       if(NOT VendorPerfLibs_FIND_QUIETLY)
-        message(WARNING "Intel MKL not found. Please set the MKL root directory via CMake variable CMAKE_PREFIX_PATH or environment variable MKLROOT.")
+        set(_vpl_warning_core_mkl)
+        if(NOT VendorPerfLibs_INCLUDE_DIR)
+          list(APPEND _vpl_warning_core_mkl "Intel header file mkl.h not found.\n")
+        endif()
+        if(NOT BLAS_FOUND)
+          # exactly the same check as in speculateVendor in case it was not called.
+          find_library(_MKL_CORE_TEST_LIB NAMES mkl_core
+            HINTS
+              "$ENV{MKLROOT}/lib/intel64"
+          )
+          if(_MKL_CORE_TEST_LIB)
+            list(APPEND _vpl_warning_core_mkl "Intel mkl_core library file was found. FindBLAS failed most likely when testing linking MKL for complex reasons.\n")
+            if(VPL_OMP)
+              list(APPEND _vpl_warning_core_mkl "Threaded MKL requested but linking may fail due to incompatible compiler OpenMP runtime. To request sequential MKL, set VPL_OMP=OFF.\n")
+            endif()
+          else()
+            list(APPEND _vpl_warning_core_mkl "Intel mkl_core library file not found. Please set the MKL root directory via a CMake variable CMAKE_PREFIX_PATH or VendorPerfLibs_ROOT.\n")
+          endif()
+        endif()
+        message(WARNING ${_vpl_warning_core_mkl} "If you'd like to fully opt out Intel MKL, set VPL_ID=Generic.")
       endif()
     endif()
   elseif(VPL_ID STREQUAL "AOCL")
     list(APPEND _vpl_required_vars VendorPerfLibs_INCLUDE_DIR)
 
+    set(_vpl_warning_core_aocl)
     find_path(VendorPerfLibs_INCLUDE_DIR NAMES blis/blis.h blis.h)
-
     if(NOT VendorPerfLibs_INCLUDE_DIR)
       set(VPL_CORE_FOUND FALSE)
-      if(NOT VendorPerfLibs_FIND_QUIETLY)
-        message(WARNING "AMD AOCL include directory not found. Please set the AOCL root directory via CMake variable CMAKE_PREFIX_PATH.")
-      endif()
+      list(APPEND _vpl_warning_core_aocl "AOCL header file blis.h not found.\n")
     endif()
 
     find_library(AOCL_UTILS_LIB NAMES aoclutils)
     if(AOCL_UTILS_LIB)
       set(VPL_UTILS ${AOCL_UTILS_LIB})
+    else()
+      list(APPEND _vpl_warning_core_aocl "AOCL aoclutils library file not found. Please set the AOCL root directory via a CMake variable CMAKE_PREFIX_PATH or VendorPerfLibs_ROOT.\n")
+    endif()
+
+    if(NOT VendorPerfLibs_FIND_QUIETLY AND NOT (VendorPerfLibs_INCLUDE_DIR AND AOCL_UTILS_LIB))
+      message(WARNING ${_vpl_warning_core_aocl} "If you'd like to fully opt out AOCL, set VPL_ID=Generic.")
     endif()
   endif()
 
@@ -197,13 +242,13 @@ macro(find_VPL_core)
     list(APPEND _vpl_lib_found_ids "core(${VPL_ID})")
   endif()
 
-  if(VPL_UTILS_LIB)
+  if(VPL_UTILS)
     list(APPEND _vpl_lib_found_ids "utils(${VPL_ID})")
   endif()
 endmacro()
 
 macro(find_VPL_lapack)
-  set(VPL_lapack_ID ${VPL_ID} CACHE STRING "Vendor LAPACK ID (IntelMKL, Generic)")
+  set(VPL_lapack_ID ${VPL_ID} CACHE STRING "Vendor LAPACK ID (IntelMKL, AOCL, Generic)")
   check_VPL_ID("VPL_lapack_ID" "${VPL_lapack_ID}")
   list(APPEND _vpl_required_vars LAPACK_LIBRARIES)
 
@@ -246,7 +291,7 @@ macro(find_VPL_lapack)
 endmacro()
 
 macro(find_VPL_fft)
-  set(VPL_fft_ID ${VPL_ID} CACHE STRING "Vendor FFT ID (IntelMKL, Generic)")
+  set(VPL_fft_ID ${VPL_ID} CACHE STRING "Vendor FFT ID (IntelMKL, AOCL, Generic)")
   check_VPL_ID("VPL_fft_ID" "${VPL_fft_ID}")
   list(APPEND _vpl_required_vars VendorPerfLibs_FFTW_INCLUDE_DIR VPL_FFT_LIBRARIES)
 
@@ -258,9 +303,6 @@ macro(find_VPL_fft)
     find_path(VendorPerfLibs_FFTW_INCLUDE_DIR NAMES fftw3.f03
       HINTS
         "$ENV{MKLROOT}/include"
-      PATHS
-        /opt/intel/oneapi/mkl/latest/include
-        /opt/intel/mkl/include
       PATH_SUFFIXES fftw mkl/fftw
     )
     set(VPL_FFT_LIBRARIES ${VPL_CORE_LIBRARIES})
@@ -298,7 +340,7 @@ macro(find_VPL_fft)
 endmacro()
 
 macro(find_VPL_vml)
-  set(VPL_vml_ID ${VPL_ID} CACHE STRING "Vendor VML ID (IntelMKL, Generic)")
+  set(VPL_vml_ID ${VPL_ID} CACHE STRING "Vendor VML ID (IntelMKL, AOCL, Generic)")
   check_VPL_ID("VPL_vml_ID" "${VPL_vml_ID}")
 
   set(VPL_VML_FOUND TRUE)

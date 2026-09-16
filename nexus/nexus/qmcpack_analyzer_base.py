@@ -225,17 +225,17 @@ class Checks(DevBase):
         #end if
         valid = self._valid
         if valid:
-            self.log(pad+self._label+' is valid')
+            self.nxs_print(pad+self._label+' is valid')
         else:
-            self.log(pad+self._label+' is invalid')
+            self.nxs_print(pad+self._label+' is invalid')
             for name,value in self.items():
                 if not (isinstance(name,str) and name.startswith('_')):
                     if value in self._exclusions:
-                        self.log(pad2+name+' could not be checked')
+                        self.nxs_print(pad2+name+' could not be checked')
                     elif value:
-                        self.log(pad2+name+' is valid')
+                        self.nxs_print(pad2+name+' is valid')
                     else:
-                        self.log(pad2+name+' is invalid')
+                        self.nxs_print(pad2+name+' is invalid')
                     #end if
                 #end if
             #end for
@@ -381,7 +381,7 @@ class QAanalyzer(QAobject):
 
     def vlog(self,msg,n=0):
         if QAanalyzer.verbose_vlog:
-            self.log(msg,n=self.info.nindent+n)
+            self.nxs_print(msg,n=self.info.nindent+n)
         #end if
     #end def vlog
 
