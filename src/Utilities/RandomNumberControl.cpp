@@ -52,7 +52,7 @@ RefVector<RandomNumberControl::Generator> RandomNumberControl::getChildrenRefs()
 {
   auto& rngs_children = getChildren();
   RefVector<Generator> rng_refs;
-  for (auto& child: rngs_children)
+  for (auto& child : rngs_children)
     rng_refs.push_back(*child);
   return rng_refs;
 }
@@ -192,9 +192,7 @@ void RandomNumberControl::read(const std::string& fname, Communicate* comm)
 }
 
 void RandomNumberControl::write(const std::string& fname, Communicate* comm)
-{
-  write(convertUPtrToRefVector(Children), fname, comm);
-}
+{ write(convertUPtrToRefVector(Children), fname, comm); }
 
 //switch between write functions
 void RandomNumberControl::write(const RefVector<Generator>& rng, const std::string& fname, Communicate* comm)

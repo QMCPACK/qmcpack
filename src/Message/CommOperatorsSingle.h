@@ -29,7 +29,8 @@ inline void Communicate::reduce(T&)
 template<typename T>
 inline void Communicate::reduce(T* restrict g, T* restrict res, int n)
 {
-  for(int i=0; i<n; ++i) res[i] = g[i];
+  for (int i = 0; i < n; ++i)
+    res[i] = g[i];
 }
 
 template<typename T>
@@ -46,9 +47,7 @@ inline void Communicate::bcast(T* restrict, int n)
 
 template<typename T>
 inline Communicate::request Communicate::irecv(int source, int tag, T&)
-{
-  return 1;
-}
+{ return 1; }
 
 template<typename T>
 inline void Communicate::send(int dest, int tag, T&)
@@ -56,9 +55,7 @@ inline void Communicate::send(int dest, int tag, T&)
 
 template<typename T>
 inline void Communicate::gather(T& sb, T& rb, int dest)
-{
-  rb = sb;
-}
+{ rb = sb; }
 
 template<typename T>
 inline void Communicate::allgather(T& sb, T& rb, int count)
@@ -69,44 +66,33 @@ inline void Communicate::allgather(T& sb, T& rb, int count)
 
 template<typename T>
 inline void Communicate::scatter(T& sb, T& rb, int dest)
-{
-  rb = sb;
-}
+{ rb = sb; }
 
 template<typename T>
 inline Communicate::request Communicate::isend(int dest, int tag, T&)
-{
-  return 1;
-}
+{ return 1; }
 
 template<typename T>
 inline Communicate::request Communicate::irecv(int source, int tag, T*, int n)
-{
-  return 1;
-}
+{ return 1; }
 
 template<typename T>
 inline Communicate::request Communicate::isend(int dest, int tag, T*, int n)
-{
-  return 1;
-}
+{ return 1; }
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T& sb, T& rb, IT&, IT&, int dest)
-{
-  rb = sb;
-}
+{ rb = sb; }
 
 template<typename T, typename IT>
 inline void Communicate::scatterv(T& sb, T& rb, IT&, IT&, int source)
-{
-  rb = sb;
-}
+{ rb = sb; }
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest)
 {
-  for(int i=0; i<n; ++i) rb[i] = sb[i];
+  for (int i = 0; i < n; ++i)
+    rb[i] = sb[i];
 }
 
 template<typename T, typename TMPI, typename IT>
@@ -116,9 +102,9 @@ inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT
 template<typename T>
 inline void Communicate::allgather(T* sb, T* rb, int count)
 {
-  for(int i=0; i<count; ++i) rb[i] = sb[i];
+  for (int i = 0; i < count; ++i)
+    rb[i] = sb[i];
 }
-
 
 
 #endif

@@ -61,9 +61,7 @@ HDFWalkerOutput::HDFWalkerOutput(size_t num_ptcls, const std::string& aroot, Com
       myComm(c),
       currentConfigNumber(0),
       RootName(aroot)
-{
-  block = -1;
-}
+{ block = -1; }
 
 /** Destructor writes the state of random numbers and close the file */
 HDFWalkerOutput::~HDFWalkerOutput() = default;
@@ -119,7 +117,7 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
   }
 
   auto& walker_offsets = W.getWalkerOffsets();
-  number_of_walkers_ = walker_offsets[myComm->size()];
+  number_of_walkers_   = walker_offsets[myComm->size()];
   hout.write(number_of_walkers_, hdf::num_walkers);
 
   if (hout.is_parallel())

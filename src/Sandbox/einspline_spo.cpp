@@ -268,7 +268,7 @@ int main(int argc, char** argv)
             v_t_loc += clock.elapsed();
           }
         } // els
-      }   //ions
+      } //ions
 
       for (int p = 0; p < time_array_size; p++)
       {

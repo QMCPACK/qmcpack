@@ -28,9 +28,7 @@ HDFWalkerInput_0_4::HDFWalkerInput_0_4(WalkerConfigurations& wc_list,
                                        Communicate* c,
                                        const HDFVersion& v)
     : wc_list_(wc_list), num_ptcls_(num_ptcls), myComm(c), cur_version(0, 4)
-{
-  i_info.version = v;
-}
+{ i_info.version = v; }
 
 HDFWalkerInput_0_4::~HDFWalkerInput_0_4()
 {

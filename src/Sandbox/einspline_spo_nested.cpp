@@ -249,8 +249,8 @@ int main(int argc, char** argv)
               v_t_loc2 += clock.elapsed();
             }
           } // els
-        }   //ions
-      }     // steps.
+        } //ions
+      } // steps.
 
       vgh_t_loc += vgh_t_loc2;
       v_t_loc += v_t_loc2;

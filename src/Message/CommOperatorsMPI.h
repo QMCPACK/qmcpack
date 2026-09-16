@@ -58,7 +58,8 @@ inline void Communicate::gather(T& sb, T& rb, int dest)
 template<typename T>
 inline void Communicate::allreduce(T& g)
 {
-  if (d_ncontexts == 1) return;
+  if (d_ncontexts == 1)
+    return;
   T gt(g);
   qmcplusplus::container_proxy<T> t_in(g), t_out(gt);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_in.data());
@@ -69,7 +70,8 @@ inline void Communicate::allreduce(T& g)
 template<typename T>
 inline void Communicate::reduce(T& g)
 {
-  if (d_ncontexts == 1) return;
+  if (d_ncontexts == 1)
+    return;
   T gt(g);
   qmcplusplus::container_proxy<T> t_in(g), t_out(gt);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_in.data());
@@ -83,7 +85,8 @@ inline void Communicate::reduce(T* restrict g, T* restrict res, int n)
 {
   if (d_ncontexts == 1)
   {
-    for(int i=0; i<n; ++i) res[i] = g[i];
+    for (int i = 0; i < n; ++i)
+      res[i] = g[i];
     return;
   }
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*g);
@@ -93,7 +96,8 @@ inline void Communicate::reduce(T* restrict g, T* restrict res, int n)
 template<typename T>
 inline void Communicate::reduce_in_place(T* restrict res, int n)
 {
-  if (d_ncontexts == 1) return;
+  if (d_ncontexts == 1)
+    return;
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*res);
   if (!d_mycontext)
     MPI_Reduce(MPI_IN_PLACE, res, n, type_id, MPI_SUM, 0, myMPI);
@@ -102,12 +106,9 @@ inline void Communicate::reduce_in_place(T* restrict res, int n)
 }
 
 
-
 template<typename T>
 inline void Communicate::send(int dest, int tag, T&)
-{
-  throw std::runtime_error("Need specialization for send(int, int, T& )");
-}
+{ throw std::runtime_error("Need specialization for send(int, int, T& )"); }
 
 
 template<typename T>
@@ -161,7 +162,8 @@ inline void Communicate::scatterv(T& sb, T& rb, IT& counts, IT& displ, int sourc
   qmcplusplus::container_proxy<T> t_in(sb), t_out(rb);
   qmcplusplus::container_proxy<IT> t_counts(counts), t_displ(displ);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_out.data());
-  MPI_Scatterv(t_in.data(), t_counts.data(), t_displ.data(), type_id, t_out.data(), t_out.size(), type_id, source, myMPI);
+  MPI_Scatterv(t_in.data(), t_counts.data(), t_displ.data(), type_id, t_out.data(), t_out.size(), type_id, source,
+               myMPI);
 }
 
 template<typename T>
@@ -197,7 +199,8 @@ inline void Communicate::allgather(T* sb, T* rb, int count)
 {
   if (d_ncontexts == 1)
   {
-    for(int i=0; i<count; ++i) rb[i] = sb[i];
+    for (int i = 0; i < count; ++i)
+      rb[i] = sb[i];
     return;
   }
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*sb);
@@ -209,52 +212,13 @@ inline void Communicate::gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int
 {
   if (d_ncontexts == 1)
   {
-    std::copy(sb, sb+n, rb);
+    std::copy(sb, sb + n, rb);
     return;
   }
   qmcplusplus::container_proxy<IT> t_counts(counts), t_displ(displ);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*sb);
   MPI_Gatherv(sb, n, type_id, rb, t_counts.data(), t_displ.data(), type_id, dest, myMPI);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 template<>
@@ -264,44 +228,6 @@ inline void Communicate::bcast(bool& g)
   MPI_Bcast(&val, 1, MPI_INT, 0, myMPI);
   g = val != 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 template<>
@@ -314,11 +240,6 @@ inline void Communicate::bcast(std::vector<bool>& g)
   for (int i = 0; i < g.size(); i++)
     g[i] = intVec[i] != 0;
 }
-
-
-
-
-
 
 
 template<>
@@ -335,9 +256,7 @@ inline void Communicate::bcast(std::string& g)
 
 template<>
 inline void Communicate::send(int dest, int tag, std::vector<double>& g)
-{
-  MPI_Send(g.data(), g.size(), MPI_DOUBLE, dest, tag, myMPI);
-}
+{ MPI_Send(g.data(), g.size(), MPI_DOUBLE, dest, tag, myMPI); }
 
 template<>
 inline Communicate::request Communicate::isend(int dest, int tag, std::vector<double>& g)
@@ -356,28 +275,6 @@ inline Communicate::request Communicate::irecv(int source, int tag, std::vector<
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template<typename T, typename TMPI, typename IT>
 inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
 {
@@ -387,9 +284,6 @@ inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT
     MPI_Gatherv(buf + displ[d_mycontext], counts[d_mycontext], datatype, NULL, counts.data(), displ.data(), datatype,
                 dest, myMPI);
 }
-
-
-
 
 
 #endif

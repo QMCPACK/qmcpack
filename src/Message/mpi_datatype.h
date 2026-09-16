@@ -34,16 +34,12 @@ using status = MPI_Status;
 
 template<typename T>
 inline MPI_Datatype get_mpi_datatype(const T&)
-{
-  return MPI_BYTE;
-}
+{ return MPI_BYTE; }
 
 #define BOOSTSUB_MPI_DATATYPE(CppType, MPITYPE)                 \
   template<>                                                    \
   inline MPI_Datatype get_mpi_datatype<CppType>(const CppType&) \
-  {                                                             \
-    return MPITYPE;                                             \
-  }
+  { return MPITYPE; }
 
 BOOSTSUB_MPI_DATATYPE(short, MPI_SHORT);
 
@@ -71,9 +67,7 @@ BOOSTSUB_MPI_DATATYPE(std::complex<float>, MPI_FLOAT);
 
 template<typename T>
 void free_column_type(T& datatype)
-{
-  MPI_Type_free(&datatype);
-}
+{ MPI_Type_free(&datatype); }
 
 template<typename T>
 MPI_Datatype construct_column_type(const T* element, int nrow, int ncol)
@@ -96,9 +90,7 @@ using MPI_Datatype = int;
 //return a non-sense integer
 template<typename T>
 inline MPI_Datatype get_mpi_datatype(const T&)
-{
-  return 0;
-}
+{ return 0; }
 
 template<typename T>
 void free_column_type(T& datatype)
@@ -106,9 +98,7 @@ void free_column_type(T& datatype)
 
 template<typename T>
 MPI_Datatype construct_column_type(const T* element, int nrow, int ncol)
-{
-  return 0;
-}
+{ return 0; }
 
 #endif
 } // namespace mpi
