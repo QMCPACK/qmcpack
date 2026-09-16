@@ -335,7 +335,7 @@ class Simulation(NexusCore):
     sim_count = 0
     creating_fake_sims = False
 
-    sim_directories: ClassVar[dict] = {}
+    sim_directories: ClassVar[dict] = dict()
     all_sims: ClassVar[list] = []
 
     # Type definitions
@@ -922,12 +922,12 @@ class Simulation(NexusCore):
     # remove?
     def eliminate(self):
         # reverse relationship of dependents (downstream)
-        dsims = self.dependents
+        dsims = obj(self.dependents)
         for dsim in dsims.values():
             dsim.undo_depends(self)
         #end for
         # reverse relationship of dependencies (upstream)
-        deps = self.dependencies
+        deps = obj(self.dependencies)
         for dep in deps.values():
             self.undo_depends(dep.sim)
         #end for
@@ -1274,7 +1274,7 @@ class Simulation(NexusCore):
             if not self.finished and should_check:
                 self.check_sim_status()
             elif not self.finished:
-                exited_queue = datetime.fromisoformat(self.timestamps["exited_queue"])
+                exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
                 elapsed = datetime.now().astimezone() - exited_queue
                 if elapsed.total_seconds()>nexus_core.timeout:
                     self.record_timestamp('timed_out')
@@ -2039,7 +2039,6 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
     if savefile is None:
         with tempfile.NamedTemporaryFile(suffix='.png') as fout:
             savefile = fout.name
-            print(savefile)
         #savefile = './sims.png'
     #end if
     fmt = savefile.rsplit('.',1)[1]
@@ -2077,7 +2076,7 @@ class DynamicProcess(DevBase):
     executing dynamic workflows.
     '''
 
-    all_dynamic_processes: ClassVar[dict[str, DynamicProcess]] = {}
+    all_dynamic_processes = obj()
 
     allowed_requirements = (
         AppResult.NONE
@@ -2088,8 +2087,6 @@ class DynamicProcess(DevBase):
         | AppResult.WAVEFUNCTION
         | AppResult.PWSCF_ORBITALS
     )
-
-    req_values: dict[AppResult, Any]
 
     @classmethod
     def check_first_gen(cls, kw: Mapping) -> tuple[DynamicProcess, None] | tuple[None, obj]:
@@ -2183,7 +2180,7 @@ class DynamicProcess(DevBase):
         self.sim        = sim      # wrapped Simulation object
         self.requires   = reqs     # replaces dependencies
         self.unmet_reqs = reqs
-        self.req_values = {}
+        self.req_values = obj()
         self.reqs_met   = False
         self.produces   = produces
 
@@ -2198,9 +2195,12 @@ class DynamicProcess(DevBase):
         '''Check if all input/dependency requirements are met'''
         if self.reqs_met:
             return True
+        req_vals_met = AppResult(0)
+        for req_val in self.req_values:
+            req_vals_met |= req_val
         reqs_met  = True
         reqs_met &= self.unmet_reqs is AppResult(0)
-        reqs_met &= (self.requires ^ self.req_values) is AppResult(0)
+        reqs_met &= (self.requires ^ req_vals_met) is AppResult(0)
         if reqs_met:
             self.reqs_met = reqs_met
         return reqs_met
