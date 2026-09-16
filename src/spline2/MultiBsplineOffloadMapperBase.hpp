@@ -29,8 +29,8 @@ protected:
 
   /// reference to a host spline object.
   const HostBspline& host_bsplines_;
-  /// array of host coefficient pointers for all the blocks.
-  std::vector<const T*> block_coefs_;
+  /// array of device coefficient pointers for all the blocks.
+  std::vector<const T*> block_coefs_dev_;
 
 public:
   MultiBsplineOffloadMapperBase(const HostBspline& host_bsplines);

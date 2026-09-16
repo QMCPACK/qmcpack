@@ -22,7 +22,7 @@ class MultiBsplineOffloadMapper : public MultiBsplineOffloadMapperBase<T>
 {
   using HostBspline = MultiBsplineBase<T>;
   using MultiBsplineOffloadMapperBase<T>::host_bsplines_;
-  using MultiBsplineOffloadMapperBase<T>::block_coefs_;
+  using MultiBsplineOffloadMapperBase<T>::block_coefs_dev_;
 
   /// map host coefficients to devices
   void mapToDevice();

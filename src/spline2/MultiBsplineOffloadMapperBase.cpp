@@ -21,14 +21,7 @@ namespace qmcplusplus
 template<typename T>
 MultiBsplineOffloadMapperBase<T>::MultiBsplineOffloadMapperBase(const HostBspline& host_bsplines)
     : host_bsplines_(host_bsplines)
-{
-  block_coefs_.reserve(host_bsplines_.getNumBlocks());
-  for (int ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
-  {
-    auto* coefs = host_bsplines_.getBlock(ib).coefs;
-    block_coefs_.push_back(coefs);
-  }
-}
+{}
 
 template<typename T>
 void MultiBsplineOffloadMapperBase<T>::updateToDevice()
@@ -36,17 +29,17 @@ void MultiBsplineOffloadMapperBase<T>::updateToDevice()
   for (int ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
   {
     auto* spline_m = &host_bsplines_.getBlock(ib);
-    auto* coefs    = block_coefs_[ib];
+    auto* coefs    = host_bsplines_.getBlock(ib).coefs;
     PRAGMA_OFFLOAD("omp target update to(coefs[:spline_m->coefs_size])")
   }
 }
 
 template<typename T>
 void MultiBsplineOffloadMapperBase<T>::mw_evaluate_v(int num_pos,
-                                                 T* pos_arr,
-                                                 int pos_stride,
-                                                 T* spline_v,
-                                                 size_t walker_stride)
+                                                     T* pos_arr,
+                                                     int pos_stride,
+                                                     T* spline_v,
+                                                     size_t walker_stride)
 {
   const auto block_offsets = host_bsplines_.getBlockOffsets();
   for (size_t ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
@@ -61,10 +54,10 @@ void MultiBsplineOffloadMapperBase<T>::mw_evaluate_v(int num_pos,
 
     // Ye: need to extract sizes and pointers before entering target region
     const auto* spline_ptr   = &host_block;
-    const auto* spline_coefs = block_coefs_[ib];
+    const auto* spline_coefs = block_coefs_dev_[ib];
     const auto block_offset  = block_offsets[ib];
 
-    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams * num_pos)")
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams * num_pos) is_device_ptr(spline_coefs)")
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
@@ -87,11 +80,11 @@ void MultiBsplineOffloadMapperBase<T>::mw_evaluate_v(int num_pos,
 
 template<typename T>
 void MultiBsplineOffloadMapperBase<T>::mw_evaluate_vgh(int num_pos,
-                                                   T* pos_arr,
-                                                   int pos_stride,
-                                                   T* spline_vgh,
-                                                   size_t walker_stride,
-                                                   size_t field_stride)
+                                                       T* pos_arr,
+                                                       int pos_stride,
+                                                       T* spline_vgh,
+                                                       size_t walker_stride,
+                                                       size_t field_stride)
 {
   const auto block_offsets = host_bsplines_.getBlockOffsets();
   for (size_t ib = 0; ib < host_bsplines_.getNumBlocks(); ib++)
@@ -106,10 +99,10 @@ void MultiBsplineOffloadMapperBase<T>::mw_evaluate_vgh(int num_pos,
 
     // Ye: need to extract sizes and pointers before entering target region
     const auto* spline_ptr   = &host_block;
-    const auto* spline_coefs = block_coefs_[ib];
+    const auto* spline_coefs = block_coefs_dev_[ib];
     const auto block_offset  = block_offsets[ib];
 
-    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams * num_pos)")
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams * num_pos) is_device_ptr(spline_coefs)")
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
