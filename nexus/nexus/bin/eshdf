@@ -68,7 +68,7 @@ def find_nexus_modules():
 # Load Nexus modules
 find_nexus_modules()
 from nexus.nexus_version import nexus_version
-from nexus.developer import obj,log,warn
+from nexus.developer import obj,nxs_print,warn
 from nexus.hdfreader import read_hdf
 
 
@@ -87,7 +87,7 @@ opt = obj(
 
 def vlog(*args,**kwargs):
     if opt.verbose:
-        log(*args,**kwargs)
+        nxs_print(*args,**kwargs)
     #end if
 #end def vlog
 
@@ -344,12 +344,12 @@ def kinetic():
         return f'{a}'.strip().strip('[]')
     #end def arr2str
 
-    log(f'\nNumber of spins              : {nspins}')
-    log(f'Number kpoints               : {nkpoints}')
-    log(f'Number of electrons per spin : {arr2str(nspin)}')
-    log(f'Summed orbital norm per spin : {arr2str(normspin)}')
-    log(f'Total kinetic energy         : {ktot} Ha')
-    log(f'Kinetic energy per spin      : {arr2str(kspin)} Ha')
+    nxs_print(f'\nNumber of spins              : {nspins}')
+    nxs_print(f'Number kpoints               : {nkpoints}')
+    nxs_print(f'Number of electrons per spin : {arr2str(nspin)}')
+    nxs_print(f'Summed orbital norm per spin : {arr2str(normspin)}')
+    nxs_print(f'Total kinetic energy         : {ktot} Ha')
+    nxs_print(f'Kinetic energy per spin      : {arr2str(kspin)} Ha')
 
     norm_diff = np.abs(normspin-nspin).max()
     if norm_diff>opt.norm_tol:
@@ -358,12 +358,12 @@ def kinetic():
 
     spin_labels = {0:'up',1:'down'}
     if opt.orb_info:
-        log('\nPer orbital kinetic energies')
+        nxs_print('\nPer orbital kinetic energies')
         for s in range(nspins):
-            log(f'  Spin {spin_labels[s]} energies')
-            log('    index kpoint_index  KS eig (eV)  kinetic (Ha)')
+            nxs_print(f'  Spin {spin_labels[s]} energies')
+            nxs_print('    index kpoint_index  KS eig (eV)  kinetic (Ha)')
             for i,(kpi,eig,kin) in enumerate(zip(kpidx[s],eorb[s],korb[s])):
-                log(f'    {i:>3}      {kpi:>3}        {eig: 10.6f}   {kin: 10.6f}')
+                nxs_print(f'    {i:>3}      {kpi:>3}        {eig: 10.6f}   {kin: 10.6f}')
             #end for
         #end for
     #end if
@@ -401,7 +401,7 @@ def write_nk():
     d = read_eshdf_nofk_data(eshdf_filepath,opt.E_fermi,ncore=opt.ncore,nval=opt.nval)
 
     ispin0 = int(opt.ispin)
-    log(f'Writing n(k) to HDF5 {opt.outfile}')
+    nxs_print(f'Writing n(k) to HDF5 {opt.outfile}')
     klist = []
     nklist = []
     for key, val in d.data.items():
