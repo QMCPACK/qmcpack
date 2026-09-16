@@ -183,7 +183,7 @@ def read_eshdf_nofk_data(filename,Ef,ncore=0,nval=-1):
 
 def first_eshdf_file(args):
     # check files provided
-    eshdf_files = list(sorted(args[1:]))
+    eshdf_files = sorted(args[1:])
     if len(eshdf_files)!=1:
         msg = (
             'exactly one ESHDF file is allowed as input.\n'
@@ -220,7 +220,7 @@ def interpret_nk_options(parser):
             opt[k] = None
         #end if
     #end for
-    eshdf_files = list(sorted(args[1:]))
+    eshdf_files = sorted(args[1:])
     if opt.help or len(eshdf_files)==0:
         print('\n'+parser.format_help().strip()+'\n')
         sys.exit()

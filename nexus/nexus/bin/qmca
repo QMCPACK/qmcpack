@@ -538,8 +538,8 @@ class DatAnalyzer(QBase):
         prefix = self.info.prefix
         series = self.info.series
         qset  = set(quantities)
-        evset = set(['LocalEnergy','Variance'])
-        cvset = set(['CorrectedEnergy','Variance'])
+        evset = {'LocalEnergy','Variance'}
+        cvset = {'CorrectedEnergy','Variance'}
         if first_series and not only_series:
             self.log('')
         #end if
@@ -624,7 +624,7 @@ class DatAnalyzer(QBase):
                     last.append(qn)
                 #end if
             #end for
-            mid = sorted(list(squants-set(first)-set(last)))
+            mid = sorted(squants-set(first)-set(last))
             order = first+mid+last
             self.log(f'\n{prefix}  series {series}')
             for qname in order:
@@ -1250,7 +1250,7 @@ QMCA examples:
             if not isdat:
                 msg = (
                     f'{file} is not a valid source of input\n'
-                    f'please aim qmca at files with the following extensions: {[v for v in allowed_extensions.values()]}'
+                    f'please aim qmca at files with the following extensions: {list(allowed_extensions.values())}'
                     )
                 raise ValueError(msg)
             #end if
@@ -1263,13 +1263,13 @@ QMCA examples:
                 if len(missing)>1:
                     msg = (
                         f'files with prefix {prefix} are missing series provided for other prefixes\n'
-                        f'series provided for prefix {prefix}: {sorted(list(pset))}\n'
-                        f'series missing: {sorted(list(missing))}'
+                        f'series provided for prefix {prefix}: {sorted(pset)}\n'
+                        f'series missing: {sorted(missing)}'
                         )
                     raise ValueError(msg)
                 #end if
             #end for
-            serieslist = sorted(list(seriesset))
+            serieslist = sorted(seriesset)
             for series in serieslist:
                 filetypes = set()
                 for pdata in data.values():
@@ -1278,15 +1278,15 @@ QMCA examples:
                 if len(filetypes)>1:
                     msg = (
                         f'files with mixed extensions encountered for series {series}\n'
-                        f'extensions encountered: {sorted(list(filetypes))}\n'
-                        f'please provide files with only one of the following extensions: {[v for v in allowed_extensions.values()]}'
+                        f'extensions encountered: {sorted(filetypes)}\n'
+                        f'please provide files with only one of the following extensions: {list(allowed_extensions.values())}'
                         )
                     raise ValueError(msg)
                 #end if
             #end for
             
             weights = opt.weights
-            prefixes = sorted(list(data.keys()))
+            prefixes = sorted(data.keys())
 
             # identify batches of prefixes for averaging
             batch_prefixes = obj()

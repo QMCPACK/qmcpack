@@ -24,30 +24,29 @@ def test_empty_init():
             savefile        = '',
             savefilepath    = './',
             request = obj(
-                calculations    = set([]),
+                calculations    = set(),
                 #data_sources    = set(['opt', 'stat', 'dmc', 'storeconfig', 'traces', 'scalar']),
                 destination     = '.',
                 dm_settings     = None,
                 equilibration   = None,
                 group_num       = None,
-                methods         = set(['opt', 'rmc', 'dmc', 'vmc']),
+                methods         = {'opt', 'rmc', 'dmc', 'vmc'},
                 ndmc_blocks     = 1000,
-                output          = set(['averages', 'samples']),
-                quantities      = set(
-                    ['mpc', 'localenergy', 'nonlocalecp', 'acceptratio', 
+                output          = {'averages', 'samples'},
+                quantities      = {'mpc', 'localenergy', 'nonlocalecp', 'acceptratio', 
                      'spindensity', 'kinetic', 'blockweight', 'structurefactor',
                      'localecp', 'density', 'kecorr', 'energydensity', 
                      'localenergy_sq', 'blockcpu', 'dm1b', 'localpotential', 
-                     'elecelec', 'ionion']),
+                     'elecelec', 'ionion'},
                 savefile        = '',
                 source          = './qmcpack.in.xml',
                 traces          = False,
-                warmup_calculations = set([]),
+                warmup_calculations = set(),
                 ),
             )
         )
 
-    data_sources_ref = set(['opt', 'stat', 'dmc', 'storeconfig', 'traces', 'scalar'])
+    data_sources_ref = {'opt', 'stat', 'dmc', 'storeconfig', 'traces', 'scalar'}
 
     req = qa.info.request
     data_sources = req.data_sources

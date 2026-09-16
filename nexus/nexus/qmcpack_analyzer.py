@@ -56,12 +56,12 @@ class QmcpackAnalyzerCapabilities(QAobject):
 
     def __init__(self):
 
-        self.methods=set(['opt','vmc','dmc','rmc'])
-        self.data_sources = set(['scalar','stat','dmc','storeconfig','opt','traces'])
-        self.scalars=set(['localenergy','localpotential','kinetic','elecelec','localecp','nonlocalecp','ionion','localenergy_sq','acceptratio','blockcpu','blockweight','mpc','kecorr'])
-        self.fields=set(['energydensity','density','dm1b','spindensity','structurefactor'])
+        self.methods={'opt','vmc','dmc','rmc'}
+        self.data_sources = {'scalar','stat','dmc','storeconfig','opt','traces'}
+        self.scalars={'localenergy','localpotential','kinetic','elecelec','localecp','nonlocalecp','ionion','localenergy_sq','acceptratio','blockcpu','blockweight','mpc','kecorr'}
+        self.fields={'energydensity','density','dm1b','spindensity','structurefactor'}
 
-        hdf_data_sources = set(['stat','storeconfig','traces'])
+        hdf_data_sources = {'stat','storeconfig','traces'}
         if importlib.util.find_spec("h5py") is None:
             self.data_sources -= hdf_data_sources
         #end if
@@ -82,14 +82,14 @@ class QmcpackAnalyzerCapabilities(QAobject):
 
         self.quantities = self.scalars | self.fields
 
-        self.ignorable_estimators=set(['LocalEnergy'])
+        self.ignorable_estimators={'LocalEnergy'}
 
         self.quantity_aliases=dict()
         for q in self.analyzer_quantities:
             self.quantity_aliases[q]=q
         #end for
 
-        self.future_quantities=set(['StructureFactor','MomentumDistribution'])
+        self.future_quantities={'StructureFactor','MomentumDistribution'}
         return
     #end def __init__
 #end class QmcpackCapabilities
@@ -572,7 +572,7 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
         if twist_averaging:
             self.info.perform_bundle_average = True
         #end if
-        example = [v for v in analyzers.values()][0]
+        example = list(analyzers.values())[0]
         info = example.info
         input,system = info.input,info.system
         self.info.update(

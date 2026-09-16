@@ -4301,8 +4301,8 @@ def parallelotope_grid_function(
     if 'points' not in kwargs:
         gf = ParallelotopeGridFunction(**kwargs)
     else:
-        required = set(('points','values','axes'))
-        optional = set(('tol','average'))
+        required = {'points','values','axes'}
+        optional = {'tol','average'}
         present  = set(kwargs.keys())
         if len(required-present)>0:
             error(f'Grid function cannot be created.\nWhen "points" is provided, "axes" and "values" must also be given.\nInputs provided: {sorted(present)}',loc)
@@ -4484,8 +4484,8 @@ if __name__=='__main__':
 
     supported = obj(
         parallelotope    = obj(dims=set(axes.keys())),
-        spheroid         = obj(dims=set([(2,2),(2,3),(3,3)])),
-        spheroid_surface = obj(dims=set([(1,2),(1,3),(2,3)])),
+        spheroid         = obj(dims={(2,2),(2,3),(3,3)}),
+        spheroid_surface = obj(dims={(1,2),(1,3),(2,3)}),
         )
 
     gdict = dict(

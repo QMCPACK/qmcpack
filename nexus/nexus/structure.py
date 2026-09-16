@@ -336,7 +336,7 @@ def reduce_tilematrix(tiling):
         #dr = [1,0,2]
         other = dim*[0] # other[d] = dimensions other than d
         for d in dr: 
-            other[d] = set(dr)-set([d])
+            other[d] = set(dr)-{d}
         #end for
         #move each axis to be parallel to barred directions
         # these are volume preserving shears of the supercell
@@ -4508,7 +4508,7 @@ class Structure(Sobj):
 
     def primitive(self,source=None,*,tmatrix=False,add_kpath=False,**kwargs):
         res = None
-        allowed_sources = set(['seekpath'])
+        allowed_sources = {'seekpath'}
         if source is None or isinstance(source,bool):
             source = 'seekpath'
         #end if
@@ -5945,7 +5945,7 @@ class Structure(Sobj):
             msg = 'plot2d_ax is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
         #end if
-        iz = list(set([0,1,2])-set([ix,iy]))[0]
+        iz = list({0,1,2}-{ix,iy})[0]
         ax = self.axes.copy()
         a  = self.axes[iz]
         dc = self.center-ax.sum(0)/2
@@ -5964,7 +5964,7 @@ class Structure(Sobj):
             msg = 'plot2d_pos is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
         #end if
-        iz = list(set([0,1,2])-set([ix,iy]))[0]
+        iz = list({0,1,2}-{ix,iy})[0]
         pp = self.pos.copy()
         a = self.axes[iz]
         for i in range(len(pp)):
@@ -5980,7 +5980,7 @@ class Structure(Sobj):
             msg = 'plot2d_points is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
         #end if
-        iz = list(set([0,1,2])-set([ix,iy]))[0]
+        iz = list({0,1,2}-{ix,iy})[0]
         pp = np.array(points,dtype=float)
         a = self.axes[iz]
         for i in range(len(pp)):
@@ -6017,7 +6017,7 @@ class Structure(Sobj):
             msg = 'plot2d_ax is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
         #end if
-        iz = list(set([0,1,2])-set([ix,iy]))[0]
+        iz = list({0,1,2}-{ix,iy})[0]
         ax = self.kaxes.copy()
         a  = ax[iz]
         dc = 0*a
@@ -6036,7 +6036,7 @@ class Structure(Sobj):
             msg = 'plot2d_kp is currently only implemented for 3 dimensions'
             raise NotImplementedError(msg)
         #end if
-        iz = list(set([0,1,2])-set([ix,iy]))[0]
+        iz = list({0,1,2}-{ix,iy})[0]
         pp = self.kpoints.copy()
         a = self.kaxes[iz]
         for i in range(len(pp)):
@@ -6370,7 +6370,7 @@ class Structure(Sobj):
             msg = (
                 "Bravais lattice is not supported by the RMG code.\n"
                 f"Cell bravais lattice: {bv}\n"
-                f"Lattices supported by RMG: {list(sorted(rmg_lattices.keys()))}"
+                f"Lattices supported by RMG: {sorted(rmg_lattices.keys())}"
                 )
             if exit:
                 raise ValueError(msg)

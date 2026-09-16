@@ -872,8 +872,8 @@ class Qmcpack(Simulation):
             #end if
             same_directory = os.path.abspath(sim.locdir)==os.path.abspath(self.locdir)
             if same_directory:
-                project_ids = set(r.project_id for r in result.restarts)
-                project_series = set(r.project_series for r in result.restarts)
+                project_ids = {r.project_id for r in result.restarts}
+                project_series = {r.project_series for r in result.restarts}
                 if len(project_ids)!=1 or len(project_series)!=1:
                     msg = (
                         'same-directory QMCPACK restart files contain inconsistent project metadata\n'
