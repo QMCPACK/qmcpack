@@ -8,9 +8,9 @@ def collectValuesFromAtomicProj(xmlfile):
 
     tree = ET.parse(xmlfile)
     root = tree.getroot()
-    
+
     header = root.find('.//HEADER')
-    
+
     # Find number of bands
     nBands = int(header.attrib['NUMBER_OF_BANDS'])
     # Find number of kpoints

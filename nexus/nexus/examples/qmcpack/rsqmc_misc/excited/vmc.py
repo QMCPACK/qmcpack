@@ -34,7 +34,7 @@ dia2_structure   = get_primitive_cell(structure=dia.structure)['structure']
 
 dia2 = generate_physical_system(
     structure    = dia2_structure,
-    kgrid  = (1,1,1), 
+    kgrid  = (1,1,1),
     kshift = (0,0,0), # Assumes we study transitions from Gamma. For non-gamma tilings, use kshift appropriately
     tiling = [3,1,3],
     C            = 4,
@@ -47,14 +47,14 @@ scf = generate_pwscf(
     input_type   = 'generic',
     calculation  = 'scf',
     nspin        = 2,
-    input_dft    = 'lda', 
-    ecutwfc      = 200,   
-    conv_thr     = 1e-8, 
+    input_dft    = 'lda',
+    ecutwfc      = 200,
+    conv_thr     = 1e-8,
     nosym        = True,
     wf_collect   = True,
     system       = dia2,
     tot_magnetization = 0,
-    pseudos      = ['C.BFD.upf'], 
+    pseudos      = ['C.BFD.upf'],
     )
 
 nscf = generate_pwscf(
@@ -63,16 +63,16 @@ nscf = generate_pwscf(
     job          = job(nodes=1,app='pw.x',hours=1),
     input_type   = 'generic',
     calculation  = 'nscf',
-    input_dft    = 'lda', 
+    input_dft    = 'lda',
     ecutwfc      = 200,
-    nspin        = 2,   
+    nspin        = 2,
     conv_thr     = 1e-8,
     nosym        = True,
     wf_collect   = True,
     system       = dia2,
-    nbnd         = 8,      #a sensible nbnd value can be given 
+    nbnd         = 8,      #a sensible nbnd value can be given
     verbosity    = 'high', #verbosity must be set to high
-    pseudos      = ['C.BFD.upf'], 
+    pseudos      = ['C.BFD.upf'],
     dependencies = (scf, 'charge_density'),
     )
 

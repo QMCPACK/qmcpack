@@ -360,7 +360,7 @@ def mixed_type_matches(value,value_type):
     else:
         msg = (
             f'unknown value for keyword value_type: {value_type}, must be one of {list(block_type_names.values())}'
-            
+
             )
         raise ValueError(msg)
     #end if
@@ -540,7 +540,7 @@ class VFile(Vobj):
                 self.error(
                     'max number of multi-line strings exceeded.\n'
                     f'Over {nqmax-1} quotation marks found in file.'
-                    
+
                     )
             #end if
             if len(plocs)%2!=0:
@@ -624,7 +624,7 @@ class VKeywordFile(VFile):
             if classified_type not in types:
                 msg = (
                     f'classified type {classified_type} is not permitted for keyword {name}'
-                    
+
                     )
                 raise ValueError(msg)
             #end if
@@ -645,7 +645,7 @@ class VKeywordFile(VFile):
             elif not isinstance(schema,MappingProxyType):
                 msg = (
                     f'schema for block construct {block_name} must be read-only'
-                    
+
                     )
                 raise TypeError(msg)
             #end if
@@ -789,7 +789,7 @@ class VKeywordFile(VFile):
         if not isinstance(value,Mapping):
             msg = (
                 f'block construct value should be a mapping, but is {type(value).__name__}'
-                
+
                 )
             raise TypeError(msg)
         #end if
@@ -921,13 +921,13 @@ class VKeywordFile(VFile):
                             elif name in self.unsupported:
                                 self.warn(
                                     f'keyword {name} is not currently supported'
-                                    
+
                                     )
                             else:
                                 #ci(lcs(),gs())
                                 self.error(
                                     f'{name.upper()} is not a keyword for the {self.__class__.__name__.upper()} file'
-                                    
+
                                     )
                             #end if
                         #end if
@@ -980,7 +980,7 @@ class VKeywordFile(VFile):
             elif name not in self.keywords:
                 self.error(
                     f'{name.upper()} is not a keyword for the {self.__class__.__name__.upper()} file'
-                    
+
                     )
             #end if
             try:
@@ -1489,7 +1489,7 @@ class Kpoints(VFormattedFile):
                 self.error(
                     f'invalid centering for file {filepath}: {self.centering}\n'
                     'valid options are: auto, gamma, monkhorst-pack'
-                    
+
                     )
             #end if
         elif self.mode=='basis':
@@ -1523,7 +1523,7 @@ class Kpoints(VFormattedFile):
                 kw = self.kweights[n]
                 text += (
                     f' {kp[0]:18.14f} {kp[1]:18.14f} {kp[2]:18.14f} {kw:12.8f}'
-                    
+
                     )
                 if 'labels' in self and len(self.labels[n])>0:
                     text += f'  {self.labels[n]}'
@@ -1628,7 +1628,7 @@ class Irccar(VFormattedFile):
         if len(lines[1:])!=npoints:
             self.error(
                 f'IRCCAR declares {npoints} points but contains {len(lines[1:])}'
-                
+
                 )
         #end if
         rows = [line.split() for line in lines[1:]]
@@ -1783,7 +1783,7 @@ class Poscar(VFormattedFile):
             self.error(
                 f'file {filepath} must have at least {min_lines} lines\n'
                 f'  only {nlines} lines found'
-                
+
                 )
         #end if
         description = text.split('\n',1)[0].strip()
@@ -1796,7 +1796,7 @@ class Poscar(VFormattedFile):
         else:
             self.error(
                 f'file {filepath} must contain one or three scaling factors'
-                
+
                 )
         #end if
         axes = np.empty((dim,dim))
@@ -1870,7 +1870,7 @@ class Poscar(VFormattedFile):
             if lcur+8>len(lines):
                 self.error(
                     f'file {filepath} is incomplete (missing lattice velocities)'
-                    
+
                     )
             #end if
             lcur += 1
@@ -1896,7 +1896,7 @@ class Poscar(VFormattedFile):
             if lcur+npos>len(lines):
                 self.error(
                     f'file {filepath} is incomplete (missing post-position vectors)'
-                    
+
                     )
             #end if
             is_velocity = (
@@ -2008,7 +2008,7 @@ class Poscar(VFormattedFile):
                 text += (
                     f' {p[0]:18.14f} {p[1]:18.14f} {p[2]:18.14f}'
                     f'  {bm[d[0]]}  {bm[d[1]]}  {bm[d[2]]}'
-                    
+
                     )
                 if 'labels' in self and len(self.labels[i])>0:
                     text += f'  {self.labels[i]}'
@@ -2045,7 +2045,7 @@ class Poscar(VFormattedFile):
             if vector_header is None:
                 self.error(
                     f'post-position vector header is missing for file {filepath}'
-                    
+
                     )
             #end if
             text += vector_header+'\n'
@@ -2454,7 +2454,7 @@ class VaspInput(SimulationInput,Vobj):
             else:
                 self.error(
                     f'invalid POSCAR velocity coordinate specifier: {self.poscar.vel_coord}'
-                    
+
                     )
             #end if
         #end if
@@ -2526,7 +2526,7 @@ class VaspInput(SimulationInput,Vobj):
             else:
                 self.error(
                     f'invalid KPOINTS coordinate specifier: {kpoints_file.coord}'
-                    
+
                     )
             #end if
             structure.add_kpoints(
@@ -2621,7 +2621,7 @@ class VaspInput(SimulationInput,Vobj):
                     self.error(
                         f'pseudopotential for element {symbol} not found\n'
                         f'elements present: {sorted(pseudo_map.keys())}'
-                        
+
                         )
                 #end if
                 ordered_pseudos.append(pseudo_map[symbol])
@@ -2642,7 +2642,7 @@ class VaspInput(SimulationInput,Vobj):
                     'arguments to setup NEB must either be structure or '
                     'system objects\n'
                     f'  received an object of type: {s.__class__.__name__}'
-                    
+
                     )
             #end if
         #end for
@@ -2686,7 +2686,7 @@ class VaspInput(SimulationInput,Vobj):
                     'consistent with number of images in INCAR\n'
                     f'  INCAR images: {self.incar.images}\n'
                     f'  structures provided {len(neb_structures)}'
-                    
+
                     )
             #end if
             self.incar.images = len(neb_structures)-2
@@ -2783,13 +2783,13 @@ class VaspInput(SimulationInput,Vobj):
             if len(poscar.pos)!=natoms:
                 messages.append(
                     f'{prefix}: atom counts do not match the number of positions'
-                    
+
                     )
             #end if
             if poscar.elem is not None and len(poscar.elem)!=len(poscar.elem_count):
                 messages.append(
                     f'{prefix}: species names do not match species counts'
-                    
+
                     )
             #end if
             if (
@@ -2798,7 +2798,7 @@ class VaspInput(SimulationInput,Vobj):
                 ):
                 messages.append(
                     f'{prefix}: selective-dynamics flags must have shape ({natoms}, 3)'
-                    
+
                     )
             #end if
         #end for
@@ -2809,7 +2809,7 @@ class VaspInput(SimulationInput,Vobj):
                 if not np.array_equal(poscar.elem_count,reference.elem_count):
                     messages.append(
                         f'NEB POSCAR {n:02d} has different species counts'
-                        
+
                         )
                 elif (
                     reference.elem is not None
@@ -2818,7 +2818,7 @@ class VaspInput(SimulationInput,Vobj):
                     ):
                     messages.append(
                         f'NEB POSCAR {n:02d} has different species names'
-                        
+
                         )
                 #end if
                 if (
@@ -2832,7 +2832,7 @@ class VaspInput(SimulationInput,Vobj):
                     if not np.allclose(image_axes,reference_axes):
                         messages.append(
                             f'NEB POSCAR {n:02d} has different lattice vectors'
-                            
+
                             )
                     #end if
                 #end if

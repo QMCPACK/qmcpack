@@ -37,8 +37,8 @@ class MethodAnalyzer(QAanalyzer):
 
     def init_sub_analyzers(self,series,calc,input):
         request  = QAanalyzer.request
-        run_info = QAanalyzer.run_info 
-        
+        run_info = QAanalyzer.run_info
+
         source_path = run_info.source_path
         file_prefix = run_info.file_prefix+'.s'+str(series).zfill(3)
         method = calc.method
@@ -234,14 +234,14 @@ class MethodAnalyzer(QAanalyzer):
                     remove.append(name)
                 #end if
             #end if
-        #end for       
+        #end for
         for name in remove:
             del self[name]
         #end for
     #end def load_data_local
-        
 
-    
+
+
     def set_global_info(self):
         QAanalyzer.method_info = self.info
     #end def set_global_info
