@@ -33,14 +33,14 @@ using request = MPI_Request;
 using status = MPI_Status;
 
 template<typename T>
-inline MPI_Datatype get_mpi_datatype(const T&)
-{ return MPI_BYTE; }
+inline MPI_Datatype get_mpi_datatype(const T&);
 
 #define BOOSTSUB_MPI_DATATYPE(CppType, MPITYPE)                 \
   template<>                                                    \
   inline MPI_Datatype get_mpi_datatype<CppType>(const CppType&) \
   { return MPITYPE; }
 
+BOOSTSUB_MPI_DATATYPE(char, MPI_CHAR);
 BOOSTSUB_MPI_DATATYPE(short, MPI_SHORT);
 
 BOOSTSUB_MPI_DATATYPE(int, MPI_INT);
@@ -87,10 +87,6 @@ using status       = int;
 using request      = int;
 using MPI_Datatype = int;
 
-//return a non-sense integer
-template<typename T>
-inline MPI_Datatype get_mpi_datatype(const T&)
-{ return 0; }
 
 template<typename T>
 void free_column_type(T& datatype)
