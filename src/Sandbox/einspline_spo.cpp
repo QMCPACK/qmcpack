@@ -320,8 +320,8 @@ int main(int argc, char** argv)
   timer_type global_t(t0, vgh_t, val_t, 0.0);
   timer_type global_t_1(tInit, tBigClock, 0.0, 0.0);
 
-  mpi::reduce(*myComm, global_t);
-  mpi::reduce(*myComm, global_t_1);
+  myComm->reduce(global_t);
+  myComm->reduce(global_t_1);
 
   const int nmpi = myComm->size();
   t0             = global_t[0] / nmpi;

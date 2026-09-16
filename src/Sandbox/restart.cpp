@@ -286,7 +286,7 @@ int main(int argc, char** argv)
 
   //print out hdf5 R/W times
   TinyVector<double, 4> timers(h5read, h5write, walkerRead, walkerWrite);
-  mpi::reduce(*myComm, timers);
+  myComm->reduce(timers);
   h5read      = timers[0] / myComm->size();
   h5write     = timers[1] / myComm->size();
   walkerRead  = timers[2] / myComm->size();

@@ -27,11 +27,13 @@ inline void Communicate::reduce(T&)
 {}
 
 template<typename T>
-inline void Communicate::reduce(T* restrict, T* restrict, int n)
-{}
+inline void Communicate::reduce(T* restrict g, T* restrict res, int n)
+{
+  for(int i=0; i<n; ++i) res[i] = g[i];
+}
 
 template<typename T>
-inline void Communicate::reduce_in_place(T* restrict, int n)
+inline void Communicate::reduce_in_place(T* restrict res, int n)
 {}
 
 template<typename T>

@@ -62,21 +62,38 @@ inline void Communicate::allreduce(T&)
 }
 
 template<typename T>
-inline void Communicate::reduce(T&)
+inline void Communicate::reduce(T& g)
 {
-  throw std::runtime_error("Need specialization for reduce(T&)");
+  if (d_ncontexts == 1) return;
+  T gt(g);
+  qmcplusplus::container_proxy<T> t_in(g), t_out(gt);
+  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_in.data());
+  MPI_Reduce(t_in.data(), t_out.data(), t_in.size(), type_id, MPI_SUM, 0, myMPI);
+  if (!d_mycontext)
+    g = gt;
 }
 
 template<typename T>
-inline void Communicate::reduce(T* restrict, T* restrict, int n)
+inline void Communicate::reduce(T* restrict g, T* restrict res, int n)
 {
-  throw std::runtime_error("Need specialization for reduce(T* restrict , T* restrict, int n)");
+  if (d_ncontexts == 1)
+  {
+    for(int i=0; i<n; ++i) res[i] = g[i];
+    return;
+  }
+  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*g);
+  MPI_Reduce(g, res, n, type_id, MPI_SUM, 0, myMPI);
 }
 
 template<typename T>
-inline void Communicate::reduce_in_place(T* restrict, int n)
+inline void Communicate::reduce_in_place(T* restrict res, int n)
 {
-  throw std::runtime_error("Need specialization for reduce_in_place(T* restrict, int n)");
+  if (d_ncontexts == 1) return;
+  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*res);
+  if (!d_mycontext)
+    MPI_Reduce(MPI_IN_PLACE, res, n, type_id, MPI_SUM, 0, myMPI);
+  else
+    MPI_Reduce(res, NULL, n, type_id, MPI_SUM, 0, myMPI);
 }
 
 
@@ -361,71 +378,12 @@ inline void Communicate::allreduce(qmcplusplus::Matrix<double>& g)
   copy(gt.begin(), gt.end(), g.data());
 }
 
-template<>
-inline void Communicate::reduce(std::vector<float>& g)
-{
-  std::vector<float> gt(g.size(), 0.0f);
-  MPI_Reduce(g.data(), gt.data(), g.size(), MPI_FLOAT, MPI_SUM, 0, myMPI);
-  if (!d_mycontext)
-    g = gt;
-}
 
-template<>
-inline void Communicate::reduce(std::vector<double>& g)
-{
-  std::vector<double> gt(g.size(), 0.0);
-  MPI_Reduce(g.data(), gt.data(), g.size(), MPI_DOUBLE, MPI_SUM, 0, myMPI);
-  if (!d_mycontext)
-    g = gt;
-}
 
-template<>
-inline void Communicate::reduce(std::vector<int>& g)
-{
-  std::vector<int> gt(g.size(), 0.0);
-  MPI_Reduce(g.data(), gt.data(), g.size(), MPI_INT, MPI_SUM, 0, myMPI);
-  if (!d_mycontext)
-    g = gt;
-}
 
-template<>
-inline void Communicate::reduce(std::vector<long>& g)
-{
-  std::vector<long> gt(g.size(), 0.0);
-  MPI_Reduce(g.data(), gt.data(), g.size(), MPI_LONG, MPI_SUM, 0, myMPI);
-  if (!d_mycontext)
-    g = gt;
-}
 
-template<>
-inline void Communicate::reduce(int* restrict g, int* restrict res, int n)
-{
-  MPI_Reduce(g, res, n, MPI_INT, MPI_SUM, 0, myMPI);
-}
 
-template<>
-inline void Communicate::reduce(double* restrict g, double* restrict res, int n)
-{
-  MPI_Reduce(g, res, n, MPI_DOUBLE, MPI_SUM, 0, myMPI);
-}
 
-template<>
-inline void Communicate::reduce_in_place(double* restrict res, int n)
-{
-  if (!d_mycontext)
-    MPI_Reduce(MPI_IN_PLACE, res, n, MPI_DOUBLE, MPI_SUM, 0, myMPI);
-  else
-    MPI_Reduce(res, NULL, n, MPI_DOUBLE, MPI_SUM, 0, myMPI);
-}
-
-template<>
-inline void Communicate::reduce_in_place(float* restrict res, int n)
-{
-  if (!d_mycontext)
-    MPI_Reduce(MPI_IN_PLACE, res, n, MPI_FLOAT, MPI_SUM, 0, myMPI);
-  else
-    MPI_Reduce(res, NULL, n, MPI_FLOAT, MPI_SUM, 0, myMPI);
-}
 
 
 

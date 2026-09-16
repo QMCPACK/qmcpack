@@ -40,21 +40,9 @@ namespace mpi
 //   }
 //
 
-template<typename T>
-inline void reduce(const communicator& comm, T& in, T& out, int dest = 0)
-{
-  container_proxy<T> t_in(in), t_out(out);
-  MPI_Datatype type_id = get_mpi_datatype(*t_in.data());
-  MPI_Reduce(t_in.data(), t_out.data(), t_in.size(), type_id, MPI_SUM, dest, comm);
-}
 
-template<typename T>
-inline void reduce(const communicator& comm, T& in, int dest = 0)
-{
-  T out(in);
-  reduce<T>(comm, in, out, dest);
-  in = out;
-}
+
+
 
 
 template<typename T, typename CT>
@@ -88,14 +76,8 @@ inline void all_gather(const communicator& comm, T& in, CT& out)
 
 
 
-template<typename T>
-inline void reduce(const communicator& comm, T& in, int dest = 0)
-{}
-template<typename T>
-inline void reduce(const communicator& comm, T& in, T& out, int dest = 0)
-{
-  out = in;
-}
+
+
 #endif
 } // namespace mpi
 } // namespace qmcplusplus
