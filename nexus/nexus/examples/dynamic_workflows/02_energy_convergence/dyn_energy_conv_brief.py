@@ -5,7 +5,6 @@ from nexus import settings,job,workflow_manager
 from nexus import generate_physical_system
 from nexus import generate_pwscf
 
-
 '''
 A simple type of dynamic workflow is to automatically determine 
 converged parameter values.  In DFT, two such cases are convergence 
