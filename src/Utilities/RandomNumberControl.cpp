@@ -361,8 +361,8 @@ void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
 
   if (comm->size() > 1)
   {
-    mpi::scatter(*comm, vt_tot, vt); //divide big buffer into on for each proc
-    mpi::scatter(*comm, mt_tot, mt);
+    comm->scatter(vt_tot, vt); //divide big buffer into on for each proc
+    comm->scatter(mt_tot, mt);
   }
   else
   {
@@ -405,8 +405,8 @@ void RandomNumberControl::write_rank_0(const RefVector<Generator>& rng, hdf_arch
   {
     vt_tot.resize(vt.size() * comm->size());
     mt_tot.resize(mt.size() * comm->size());
-    mpi::gather(*comm, vt, vt_tot); //gather into one big buffer for master write
-    mpi::gather(*comm, mt, mt_tot);
+    comm->gather(vt, vt_tot); //gather into one big buffer for master write
+    comm->gather(mt, mt_tot);
   }
   else
   {

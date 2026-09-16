@@ -41,6 +41,20 @@ inline void Communicate::bcast(T* restrict inout, int n)
   MPI_Bcast(inout, n, qmcplusplus::mpi::get_mpi_datatype(*inout), 0, myMPI);
 }
 
+
+template<typename T>
+inline void Communicate::gather(T& sb, T& rb, int dest)
+{
+  if (d_ncontexts == 1)
+  {
+    rb = sb;
+    return;
+  }
+  qmcplusplus::container_proxy<T> t_in(sb), t_out(rb);
+  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_in.data());
+  MPI_Gather(t_in.data(), t_in.size(), type_id, t_out.data(), t_in.size(), type_id, dest, myMPI);
+}
+
 template<typename T>
 inline void Communicate::allreduce(T&)
 {
@@ -73,11 +87,6 @@ inline void Communicate::send(int dest, int tag, T&)
   throw std::runtime_error("Need specialization for send(int, int, T& )");
 }
 
-template<typename T>
-inline void Communicate::gather(T& sb, T& rb, int dest)
-{
-  throw std::runtime_error("Need specialization for gather(T&, T&, int)");
-}
 
 template<typename T>
 inline void Communicate::allgather(T& sb, T& rb, int count)
@@ -94,7 +103,14 @@ inline void Communicate::gatherv(T& sb, T& rb, IT&, IT&, int dest)
 template<typename T>
 inline void Communicate::scatter(T& sb, T& rb, int dest)
 {
-  throw std::runtime_error("Need specialization for scatter(T&, T&, int)");
+  if (d_ncontexts == 1)
+  {
+    rb = sb;
+    return;
+  }
+  qmcplusplus::container_proxy<T> t_in(sb), t_out(rb);
+  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_out.data());
+  MPI_Scatter(t_in.data(), t_out.size(), type_id, t_out.data(), t_out.size(), type_id, dest, myMPI);
 }
 
 template<typename T, typename IT>
@@ -565,23 +581,8 @@ inline void Communicate::gatherv(std::vector<long>& l,
   MPI_Gatherv(l.data(), l.size(), MPI_LONG, g.data(), counts.data(), displ.data(), MPI_LONG, dest, myMPI);
 }
 
-template<>
-inline void Communicate::gather(std::vector<double>& l, std::vector<double>& g, int dest)
-{
-  MPI_Gather(l.data(), l.size(), MPI_DOUBLE, g.data(), l.size(), MPI_DOUBLE, dest, myMPI);
-}
 
-template<>
-inline void Communicate::gather(std::vector<char>& l, std::vector<char>& g, int dest)
-{
-  MPI_Gather(l.data(), l.size(), MPI_CHAR, g.data(), l.size(), MPI_CHAR, dest, myMPI);
-}
 
-template<>
-inline void Communicate::gather(std::vector<int>& l, std::vector<int>& g, int dest)
-{
-  MPI_Gather(l.data(), l.size(), MPI_INT, g.data(), l.size(), MPI_INT, dest, myMPI);
-}
 
 template<>
 inline void Communicate::gatherv(PooledData<double>& l,
@@ -593,11 +594,6 @@ inline void Communicate::gatherv(PooledData<double>& l,
   MPI_Gatherv(l.data(), l.size(), MPI_DOUBLE, g.data(), counts.data(), displ.data(), MPI_DOUBLE, dest, myMPI);
 }
 
-template<>
-inline void Communicate::gather(PooledData<double>& l, PooledData<double>& g, int dest)
-{
-  MPI_Gather(l.data(), l.size(), MPI_DOUBLE, g.data(), l.size(), MPI_DOUBLE, dest, myMPI);
-}
 
 
 
