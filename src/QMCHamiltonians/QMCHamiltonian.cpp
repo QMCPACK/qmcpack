@@ -1193,7 +1193,7 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
 
   // same order as Dets in msd; index of associated SPOset in psi_wrapper_in.sposets_
   std::vector<int> mdd_spo_ids;
-  std::vector<const WaveFunctionComponent*> mdd_list;
+  std::vector<const MultiDiracDeterminant*> mdd_list;
 
   if (psi_wrapper_in.hasMultiSlaterDet())
   {
@@ -1207,7 +1207,7 @@ void QMCHamiltonian::evaluateIonDerivsFast(ParticleSet& P,
     for (size_t i_mdd = 0; i_mdd < n_mdd; i_mdd++)
     {
       const MultiDiracDeterminant& multidiracdet_i = msd.getDet(i_mdd);
-      mdd_list.push_back(static_cast<const WaveFunctionComponent*>(&multidiracdet_i));
+      mdd_list.push_back(&multidiracdet_i);
       // particle group id for this multidiracdet
       const int gid = P.getGroupID(multidiracdet_i.getFirstIndex());
       // SPOSet location in psi_wrapper_in.sposets_ for this particle group

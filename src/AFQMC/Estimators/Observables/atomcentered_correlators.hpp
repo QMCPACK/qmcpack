@@ -101,12 +101,12 @@ public:
         writer(false),
         S({0, 0, 0}, make_node_allocator<ComplexType>(TG)),
         XY({0, 0}, make_node_allocator<ComplexType>(TG)),
-        shapes(iextensions<1u>{0}, IAllocator{}),
+        shapes(extents_t<1u>{0}, IAllocator{}),
         DMAverage2D({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork2D({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMAverage1D({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork1D({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
-        denom(iextensions<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
+        denom(extents_t<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
         NwIJ({0, 0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         NwI({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()})
   {
@@ -259,7 +259,7 @@ public:
     {
       if (denom.size() != nw)
       {
-        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
+        denom = mpi3CVector(extents_t<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (get<0>(DMWork1D.sizes()) != nw || get<1>(DMWork1D.sizes()) != 3 || get<2>(DMWork1D.sizes()) != nsites)
       {
@@ -279,7 +279,7 @@ public:
         NwI = mpi3CTensor({nsp, nw, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (shapes.size() < 2 * nw * nsites * nsites)
-        shapes = IVector(iextensions<1u>{2 * nw * nsites * nsites}, IAllocator{});
+        shapes = IVector(extents_t<1u>{2 * nw * nsites * nsites}, IAllocator{});
       fill_n(denom.base(), denom.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork1D.base(), DMWork1D.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork2D.base(), DMWork2D.num_elements(), ComplexType(0.0, 0.0));

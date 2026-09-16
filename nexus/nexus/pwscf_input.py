@@ -56,7 +56,7 @@ from numpy import pi
 from numpy.linalg import inv
 
 from . import numpy_extensions as npe
-from .developer import DevBase, log, obj, warn, NexusError, FileFormatError
+from .developer import DevBase, nxs_print, obj, warn, NexusError, FileFormatError
 from .periodic_table import Elements
 from .physical_system import PhysicalSystem
 from .pseudoset import pp_elem_label, PseudoSet
@@ -813,7 +813,7 @@ def check_section_classes(*,exit=True):
         #end if
         raise NexusError(msg)
     else:
-        log('pwscf input checks passed')
+        nxs_print('pwscf input checks passed')
     #end if
     if exit:
         sys.exit()

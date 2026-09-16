@@ -47,8 +47,8 @@ public:
     char* buf;
     int out_buflen;
     xmlDocDumpFormatMemory(m_doc_out, (xmlChar**)&buf, &out_buflen, 1);
-    std::cout << "XML buffer length = " << out_buflen << std::endl;
-    std::cout << "XML: " << std::endl << buf << std::endl;
+    app_log() << "XML buffer length = " << out_buflen << std::endl;
+    app_log() << "XML: " << std::endl << buf << std::endl;
     xmlFree(buf);
   }
 
