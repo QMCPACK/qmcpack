@@ -277,6 +277,7 @@ void SplineR2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
 
     {
       auto* pos_scratch = reinterpret_cast<ST*>(buffer_H2D_ptr + nw * sizeof(ValueType*));
+      // pos_scratch offset 1 skips sign and points to ru[3]
       offload_mapper_->mw_evaluate_v(mw_nVP, pos_scratch + 1, 4, offload_scratch_ptr, spline_padded_size);
     }
 
@@ -464,6 +465,7 @@ void SplineR2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
     {
       assert(buffer_H2D.cols() % sizeof(ST) == 0 && "Bug! buffer_H2D.cols() not divisible by sizeof(ST)");
       const int pos_stride = buffer_H2D.cols() / sizeof(ST);
+      // buffer_H2D offset 1 skips sign and points to ru[3]
       offload_mapper_->mw_evaluate_vgh(num_pos, reinterpret_cast<ST*>(buffer_H2D.data()) + 1, pos_stride,
                                        offload_scratch_ptr, spline_padded_size * SoAFields3D::NUM_FIELDS,
                                        spline_padded_size);
