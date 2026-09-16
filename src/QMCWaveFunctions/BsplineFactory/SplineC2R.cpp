@@ -273,6 +273,7 @@ void SplineC2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
     ScopedTimer offload(offload_timer_);
     psiinv_pos_copy.updateTo();
 
+    // pos_scratch offset 3 skips r[3] and points to ru[3]
     offload_mapper_->mw_evaluate_v(nVP, pos_scratch + 3, 6, offload_scratch_ptr, spline_padded_size);
 
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*nVP) \
@@ -397,6 +398,7 @@ void SplineC2R<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_
     ScopedTimer offload(offload_timer_);
     det_ratios_buffer_H2D.updateTo();
 
+    // det_ratios_buffer_H2D offset 3 skips r[3] and points to ru[3]
     offload_mapper_->mw_evaluate_v(mw_nVP,
                                    reinterpret_cast<ST*>(det_ratios_buffer_H2D.data() + nw * sizeof(ValueType*)) + 3, 6,
                                    offload_scratch_ptr, spline_padded_size);
@@ -859,6 +861,7 @@ void SplineC2R<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<
     ScopedTimer offload(offload_timer_);
     const_cast<Vector<ST, OffloadPinnedAllocator<ST>>&>(multi_pos).updateTo();
 
+    // pos_copy_ptr offset 3 skips r[3] and points to ru[3]
     offload_mapper_->mw_evaluate_vgh(num_pos, pos_copy_ptr + 3, 6, offload_scratch_ptr,
                                      spline_padded_size * SoAFields3D::NUM_FIELDS, spline_padded_size);
 
@@ -1039,6 +1042,7 @@ void SplineC2R<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
     {
       assert(buffer_H2D.cols() % sizeof(ST) == 0 && "Bug! buffer_H2D.cols() not divisible by sizeof(ST)");
       const int pos_stride = buffer_H2D.cols() / sizeof(ST);
+      // buffer_H2D offset 3 skips r[3] and points to ru[3]
       offload_mapper_->mw_evaluate_vgh(num_pos, reinterpret_cast<ST*>(buffer_H2D.data()) + 3, pos_stride,
                                        offload_scratch_ptr, spline_padded_size * SoAFields3D::NUM_FIELDS,
                                        spline_padded_size);
