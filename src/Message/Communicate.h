@@ -202,8 +202,7 @@ public:
   void gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest = 0);
   template<typename T>
   void allgather(T* sb, T* rb, int count);
-  template<typename T>
-  void gsum(T&);
+
 
 protected:
   /** Raw communicator

@@ -19,11 +19,6 @@
 #include <cstdint>
 #include <stdexcept>
 ///dummy declarations to be specialized
-template<typename T>
-inline void gsum(T&, int)
-{
-  throw std::runtime_error("Need specialization for gsum(T&, int)");
-}
 
 template<typename T>
 inline void Communicate::allreduce(T&)
@@ -137,72 +132,13 @@ inline void Communicate::gatherv(T* sb, T* rb, int n, IT&, IT&, int dest)
   throw std::runtime_error("Need specialization for gatherv(T*, T*, int, IT&, IT&, int)");
 }
 
-template<typename T>
-inline void Communicate::gsum(T&)
-{
-  throw std::runtime_error("Need specialization for Communicate::::gsum(T&)");
-}
 
-template<>
-inline void gsum(int& g, int gid)
-{
-  int gt = g;
-  MPI_Allreduce(&(gt), &(g), 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-}
 
-template<unsigned N>
-inline void gsum(qmcplusplus::TinyVector<double, N>& g, int gid)
-{
-  //TinyVector<double,N> gt = g;
-  //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  qmcplusplus::TinyVector<double, N> gt(g);
-  MPI_Allreduce(g.begin(), gt.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  g = gt;
-}
 
-template<>
-inline void gsum(std::vector<int>& g, int gid)
-{
-  std::vector<int> gt(g.size(), 0);
-  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-  g = gt;
-}
 
-template<>
-inline void gsum(double& g, int gid)
-{
-  double gt = g;
-  MPI_Allreduce(&(gt), &(g), 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-}
 
-template<unsigned N>
-inline void gsum(qmcplusplus::TinyVector<int, N>& g, int gid)
-{
-  //TinyVector<double,N> gt = g;
-  //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  qmcplusplus::TinyVector<int, N> gt(g);
-  MPI_Allreduce(g.begin(), gt.begin(), N, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-  g = gt;
-}
 
-template<>
-inline void gsum(std::vector<double>& g, int gid)
-{
-  std::vector<double> gt(g.size(), 0.0);
-  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  g = gt;
-}
 
-template<>
-inline void gsum(qmcplusplus::Matrix<double>& g, int gid)
-{
-  //TinyVector<double,N> gt = g;
-  //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  std::vector<double> gt(g.size());
-  copy(g.begin(), g.end(), gt.begin());
-  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  copy(gt.begin(), gt.end(), g.data());
-}
 
 template<>
 inline void Communicate::allreduce(int& g)
@@ -886,37 +822,9 @@ inline void Communicate::gather(PooledData<double>& l, PooledData<double>& g, in
   MPI_Gather(l.data(), l.size(), MPI_DOUBLE, g.data(), l.size(), MPI_DOUBLE, dest, myMPI);
 }
 
-template<>
-inline void Communicate::gsum(std::vector<int>& g)
-{
-  std::vector<int> gt(g.size(), 0.0);
-  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_INT, MPI_SUM, myMPI);
-  g = gt;
-}
 
-template<>
-inline void Communicate::gsum(std::vector<double>& g)
-{
-  std::vector<double> gt(g.size(), 0.0);
-  MPI_Allreduce(g.data(), gt.data(), g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
-  g = gt;
-}
 
-template<>
-inline void gsum(std::vector<std::complex<double>>& g, int gid)
-{
-  std::vector<std::complex<double>> gt(g.size(), 0.0);
-  MPI_Allreduce(g.data(), gt.data(), 2 * g.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  g = gt;
-}
 
-template<>
-inline void Communicate::gsum(std::vector<std::complex<double>>& g)
-{
-  std::vector<std::complex<double>> gt(g.size(), 0.0);
-  MPI_Allreduce(g.data(), gt.data(), 2 * g.size(), MPI_DOUBLE, MPI_SUM, myMPI);
-  g = gt;
-}
 
 template<>
 inline void Communicate::gatherv(char* l, char* g, int n, std::vector<int>& counts, std::vector<int>& displ, int dest)

@@ -16,9 +16,7 @@
 #define OHMMS_COMMUNICATION_OPERATORS_SINGLE_H
 
 ///dummy declarations to be specialized
-template<typename T>
-inline void gsum(T&, int)
-{}
+
 
 template<typename T>
 inline void Communicate::allreduce(T&)
@@ -107,8 +105,6 @@ template<typename T>
 void allgather(T* sb, T* rb, int count)
 {}
 
-template<typename T>
-void gsum(T&)
-{}
+
 
 #endif
