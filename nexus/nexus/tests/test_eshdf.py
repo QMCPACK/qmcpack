@@ -83,7 +83,6 @@ Per orbital kinetic energies
 
 def test_write_nk(tmp_path):
     import h5py
-    _ = pytest.importorskip("tables")
 
     outfile = tmp_path / "eshdf_write_nk.h5"
     command = f"{ESHDF_EXECUTABLE} write_nk {TEST_FILES['small_archive.h5']} --Ef={E_FERMI} --outfile={outfile}"
