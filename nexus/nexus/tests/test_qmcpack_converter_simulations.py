@@ -11,6 +11,7 @@ from nexus.nexus_base import nexus_core
 from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
 from ..testing import object_eq
+from ..simulation import AppResult
 
 
 #====================================================================#
@@ -51,8 +52,8 @@ def test_pw2qmcpack_minimal_init():
 def test_pw2qmcpack_check_result():
     sim = get_pw2qmcpack_sim()
     
-    assert(not sim.check_result('unknown',None))
-    assert(sim.check_result('orbitals',None))
+    assert(not sim.check_result(AppResult.NONE,None))
+    assert(sim.check_result(AppResult.ORBITALS,None))
 
     clear_all_sims()
 #end def test_pw2qmcpack_check_result
@@ -66,11 +67,11 @@ def test_pw2qmcpack_get_result():
     
     with pytest.raises(
         NotImplementedError,
-        match="ability to get result unknown has not been implemented",
+        match="Ability to get result 'NONE' has not been implemented!",
         ):
-        sim.get_result('unknown',None)
+        sim.get_result(AppResult.NONE,None)
 
-    result = sim.get_result('orbitals',None)
+    result = sim.get_result(AppResult.ORBITALS,None)
 
     result_ref = obj(
         h5file   = './runs/pwscf_output/pwscf.pwscf.h5',
@@ -104,11 +105,11 @@ def test_pw2qmcpack_incorporate_result(tmp_path):
 
     with pytest.raises(
         NotImplementedError,
-        match='ability to incorporate result "unknown" from Simulation has not been implemented',
+        match="Ability to incorporate result 'NONE' from Simulation has not been implemented",
         ):
-        sim.incorporate_result('unknown',None,other)
+        sim.incorporate_result(AppResult.NONE,None,other)
 
-    sim.incorporate_result('orbitals',None,scf)
+    sim.incorporate_result(AppResult.ORBITALS,None,scf)
 
     clear_all_sims()
 #end def test_pw2qmcpack_incorporate_result
@@ -204,9 +205,9 @@ def test_convert4qmc_minimal_init():
 def test_convert4qmc_check_result():
     sim = get_convert4qmc_sim()
     
-    assert(not sim.check_result('unknown',None))
-    assert(sim.check_result('orbitals',None))
-    assert(sim.check_result('particles',None))
+    assert(not sim.check_result(AppResult.NONE,None))
+    assert(sim.check_result(AppResult.ORBITALS,None))
+    assert(sim.check_result(AppResult.PARTICLES,None))
 
     clear_all_sims()
 #end def test_convert4qmc_check_result
@@ -220,11 +221,11 @@ def test_convert4qmc_get_result():
     
     with pytest.raises(
         NotImplementedError,
-        match="ability to get result unknown has not been implemented",
+        match="Ability to get result 'NONE' has not been implemented!",
         ):
-        sim.get_result('unknown',None)
+        sim.get_result(AppResult.NONE,None)
 
-    result = sim.get_result('orbitals',None)
+    result = sim.get_result(AppResult.ORBITALS,None)
 
     result_ref = obj(
         location = './runs/sample.wfj.xml',
@@ -233,7 +234,7 @@ def test_convert4qmc_get_result():
 
     assert(object_eq(result,result_ref))
 
-    result = sim.get_result('particles',None)
+    result = sim.get_result(AppResult.PARTICLES,None)
 
     result_ref = obj(
         location = './runs/sample.structure.xml',
@@ -284,9 +285,9 @@ def test_convert4qmc_incorporate_result():
     sim = deepcopy(sim_start)
     with pytest.raises(
         NotImplementedError,
-        match='ability to incorporate result "unknown" from Simulation has not been implemented',
+        match="Ability to incorporate result 'NONE' from Simulation has not been implemented",
         ):
-        sim.incorporate_result('unknown',None,other)
+        sim.incorporate_result(AppResult.NONE,None,other)
 
     # incorporate orbitals from gamess
     sim = deepcopy(sim_start)
@@ -295,7 +296,7 @@ def test_convert4qmc_incorporate_result():
     assert(sim.input.gamess_ascii is None)
     assert(sim.job.app_command=='convert4qmc')
 
-    sim.incorporate_result('orbitals',gms_result,gms)
+    sim.incorporate_result(AppResult.ORBITALS,gms_result,gms)
 
     assert(sim.input_code=='gamess')
     assert(sim.input.gamess_ascii=='../rhf/rhf.out')
@@ -307,7 +308,7 @@ def test_convert4qmc_incorporate_result():
     assert(sim.input_code is None)
     assert(sim.input.pyscf is None)
 
-    sim.incorporate_result('orbitals',pscf_result,pscf)
+    sim.incorporate_result(AppResult.ORBITALS,pscf_result,pscf)
 
     assert(sim.input_code=='pyscf')
     assert(sim.input.orbitals=='../scf.h5')
@@ -318,7 +319,7 @@ def test_convert4qmc_incorporate_result():
     assert(sim.input_code is None)
     assert(sim.input.qp is None)
 
-    sim.incorporate_result('orbitals',qp_result,qp)
+    sim.incorporate_result(AppResult.ORBITALS,qp_result,qp)
 
     assert(sim.input_code=='qp')
     #assert(sim.input.qp=='../qp_savewf.out')
@@ -415,14 +416,14 @@ def test_pyscf_to_afqmc_minimal_init():
 def test_pyscf_to_afqmc_check_result():
     sim = get_pyscf_to_afqmc_sim()
 
-    assert(not sim.check_result('unknown',None))
-    assert(not sim.check_result('wavefunction',None))
-    assert(not sim.check_result('hamiltonian',None))
+    assert(not sim.check_result(AppResult.NONE,None))
+    assert(not sim.check_result(AppResult.WAVEFUNCTION,None))
+    assert(not sim.check_result(AppResult.HAMILTONIAN,None))
 
     sim.input.output = 'afqmc.h5'
 
-    assert(sim.check_result('wavefunction',None))
-    assert(sim.check_result('hamiltonian',None))
+    assert(sim.check_result(AppResult.WAVEFUNCTION,None))
+    assert(sim.check_result(AppResult.HAMILTONIAN,None))
 
     clear_all_sims()
 #end def test_pyscf_to_afqmc_check_result
@@ -438,19 +439,19 @@ def test_pyscf_to_afqmc_get_result():
 
     with pytest.raises(
         NotImplementedError,
-        match="ability to get result unknown has not been implemented",
+        match="Ability to get result 'NONE' has not been implemented!",
         ):
-        sim.get_result('unknown',None)
+        sim.get_result(AppResult.NONE,None)
 
     result_ref = obj(
         h5_file = './runs/afqmc.h5',
         )
 
-    result = sim.get_result('wavefunction',None)
+    result = sim.get_result(AppResult.WAVEFUNCTION,None)
 
     assert(object_eq(result,result_ref))
 
-    result = sim.get_result('hamiltonian',None)
+    result = sim.get_result(AppResult.HAMILTONIAN,None)
 
     assert(object_eq(result,result_ref))
 
@@ -473,9 +474,9 @@ def test_pyscf_to_afqmc_incorporate_result():
 
     with pytest.raises(
         NotImplementedError,
-        match='ability to incorporate result "unknown" from Simulation has not been implemented',
+        match="Ability to incorporate result 'NONE' from Simulation has not been implemented",
         ):
-        sim.incorporate_result('unknown',None,other)
+        sim.incorporate_result(AppResult.NONE,None,other)
 
     result = obj(
         chkfile = os.path.join(scf.locdir,'scf.chk'),
@@ -483,7 +484,7 @@ def test_pyscf_to_afqmc_incorporate_result():
 
     assert(sim.input.input==None)
 
-    sim.incorporate_result('wavefunction',result,scf)
+    sim.incorporate_result(AppResult.WAVEFUNCTION,result,scf)
 
     assert(sim.input.input=='scf.chk')
 

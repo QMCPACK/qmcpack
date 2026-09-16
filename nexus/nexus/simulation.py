@@ -63,29 +63,49 @@
 #      User-facing function to create SimulationInputMultiTemplate's.#
 #                                                                    #
 #====================================================================#
+from __future__ import annotations
 
-
-import contextlib
 import os
-import sys
 import shutil
+import sys
 import tempfile
 import traceback
-from functools import partial
 from copy import deepcopy
+from dataclasses import dataclass
 from datetime import datetime
+from enum import Flag, auto
 from pathlib import Path
 from string import Template
 from subprocess import Popen
-from typing import ClassVar
-from .developer import DevBase, obj, FileFormatError, NexusError
-from .structure import Structure, read_structure
-from .physical_system import PhysicalSystem
+from typing import Any, ClassVar
+
+from .developer import DevBase, FileFormatError, NexusError, obj
 from .machines import Job, Workstation, get_machine
-from .nexus_base import NexusCore, nexus_core, dynamic_storage
+from .nexus_base import NexusCore, dynamic_storage, nexus_core
+from .physical_system import PhysicalSystem
+from .structure import Structure, read_structure
 from .utilities import path_string
 
- 
+
+class AppResult(Flag):
+    """Flags for what results an application can produce."""
+
+    NONE = auto()
+    CHARGE_DENSITY = auto()
+    ORBITALS = auto()
+    WAVEFUNCTION = auto()
+    STRUCTURE = auto()
+    RESTART = auto()
+    JASTROW = auto()
+    CUSPCORR = auto()
+    HUBBARD_PARAMETERS = auto()
+    GC_OCCUPATION = auto()
+    PARTICLES = auto()
+    DETERMINANTSET = auto()
+    HAMILTONIAN = auto()
+    OTHER = auto()
+
+
 class SimulationInput(NexusCore):
     def is_valid(self):
         raise NotImplementedError
@@ -273,15 +293,34 @@ class Simulation(NexusCore):
     errfile_extension  = '.err'
     application   = 'simapp'
     application_properties = frozenset({'serial'})
-    application_results    = frozenset()
+    application_results: AppResult = AppResult.NONE
     allow_overlapping_files = False
-    allowed_inputs = frozenset({
-        'identifier','path','infile','outfile','errfile','imagefile',
-        'input','job','files','dependencies','analysis_request',
-        'block','block_subcascade','app_name','app_props','system',
-        'skip_submit','force_write','simlabel','fake_sim',
-        'restartable','force_restart'
-        })
+    allowed_inputs = frozenset(
+        {
+            "identifier",
+            "path",
+            "infile",
+            "outfile",
+            "errfile",
+            "imagefile",
+            "input",
+            "job",
+            "files",
+            "dependencies",
+            "analysis_request",
+            "block",
+            "block_subcascade",
+            "app_name",
+            "app_props",
+            "system",
+            "skip_submit",
+            "force_write",
+            "simlabel",
+            "fake_sim",
+            "restartable",
+            "force_restart",
+        }
+    )
     sim_imagefile      = 'sim.p'
     input_imagefile    = 'input.p'
     analyzer_imagefile = 'analyzer.p'
@@ -294,8 +333,9 @@ class Simulation(NexusCore):
     sim_count = 0
     creating_fake_sims = False
 
-    sim_directories: ClassVar[dict] = dict()
+    sim_directories: ClassVar[dict] = {}
     all_sims: ClassVar[list] = []
+    dependencies: obj[str, obj[str, int | AppResult | obj | Any]]
 
     @classmethod
     def clear_all_sims(cls):
@@ -655,19 +695,26 @@ class Simulation(NexusCore):
     #end def ready
 
 
-    def check_result(self,result_name,sim):
+    def check_result(self, result_name: AppResult, sim: Simulation) -> bool:
+        """Check if ``result_name`` is produced by ``self``."""
         raise NotImplementedError
     #end def check_result
 
-    def get_result(self,result_name,sim):
+    def get_result(self, result_name: AppResult, sim: Simulation) -> obj | Any:
+        """Get result from ``self``."""
         raise NotImplementedError
     #end def get_result
 
-    def incorporate_result(self,result_name,result,sim):
+    def incorporate_result(
+        self,
+        result_name: AppResult,
+        result: Any,
+        sim: Simulation,
+    ):
         raise NotImplementedError
     #end def incorporate_result
 
-    def app_command(self):
+    def app_command(self) -> str:
         raise NotImplementedError
     #end def app_command
 
@@ -720,12 +767,6 @@ class Simulation(NexusCore):
         None
     #end def post_analyze
 
-
-    def condense_name(self,name):
-        return name.strip().lower().replace('-','_').replace(' ','_')
-    #end def condense_name
-
-
     def has_generic_input(self):
         return isinstance(self.input,GenericSimulationInput)
     #end def has_generic_input
@@ -767,7 +808,7 @@ class Simulation(NexusCore):
     #end def create_directories
             
 
-    def depends(self,*dependencies):
+    def depends(self, *dependencies: tuple[Simulation, str]):
         if nexus_core.dynamic:
             msg = 'dynamic workflows do not allow explicit dependencies between simulations'
             raise ValueError(msg)
@@ -788,20 +829,38 @@ class Simulation(NexusCore):
             #end if
             dep = obj()
             dep.sim = sim
-            rn = []
+            rn = AppResult(0)
             msg = ""
-            app_results = sim.application_results | set(['other'])
+            app_results = sim.application_results | AppResult.OTHER
             for name in d[1:]:
-                result_name = self.condense_name(name)
-                if result_name in app_results:
-                    rn.append(result_name)
+                if isinstance(name, str):
+                    result_name = name.strip().replace('-','_').replace(' ','_').upper()
+                    if result_name not in AppResult.__members__:
+                        msg = (
+                            f"Result name '{name}' is not a known application result!\n"
+                            f"Must be one of {[i.name.lower() for i in AppResult]}"
+                        )
+                        raise ValueError(msg)
+
+                    result = AppResult[result_name]
+                elif isinstance(name, AppResult):
+                    result = name
                 else:
-                    msg += name+' is not known to be a result of '+sim.__class__.__name__+"\n"
+                    msg = (
+                        "Invalid type for an application result!\n"
+                        f"Expected AppResult or str but got {type(name).__name__}"
+                    )
+                    raise TypeError(msg)
+
+                if result in app_results:
+                    rn |= result
+                else:
+                    msg += f"'{name}' is not known to be a result of {type(sim).__name__}\n"
                 #end if
             #end for
             if len(msg) > 0:
                 msg = (
-                    'unrecognized dependencies specified for simulation '+self.identifier+":\n"
+                    f"Unrecognized dependencies specified for simulation {self.identifier}:\n"
                     f"{msg}"
                     )
                 raise ValueError(msg)
@@ -810,12 +869,12 @@ class Simulation(NexusCore):
             dep.results = obj()
             if sim.simid not in self.dependencies:
                 self.ordered_dependencies.append(dep)
-                self.dependencies[sim.simid]=dep
-                sim.dependents[self.simid]=self
+                self.dependencies[sim.simid] = dep
+                sim.dependents[self.simid] = self
                 self.dependency_ids.add(sim.simid)
                 self.wait_ids.add(sim.simid)
             else:
-                self.dependencies[sim.simid].result_names.extend(dep.result_names)
+                self.dependencies[sim.simid].result_names |= dep.result_names
             #end if
         #end for
     #end def depends
@@ -856,12 +915,12 @@ class Simulation(NexusCore):
     # remove?
     def eliminate(self):
         # reverse relationship of dependents (downstream)
-        dsims = obj(self.dependents)
+        dsims = self.dependents
         for dsim in dsims.values():
             dsim.undo_depends(self)
         #end for
         # reverse relationship of dependencies (upstream)
-        deps = obj(self.dependencies)
+        deps = self.dependencies
         for dep in deps.values():
             self.undo_depends(dep.sim)
         #end for
@@ -875,7 +934,7 @@ class Simulation(NexusCore):
         for dep in self.dependencies.values():
             sim = dep.sim
             for result_name in dep.result_names:
-                if result_name!='other':
+                if result_name is not AppResult.OTHER:
                     if sim.has_generic_input():
                         calculating_result = False
                         cls = self.__class__
@@ -885,11 +944,11 @@ class Simulation(NexusCore):
                             'see error below for information identifying this simulation instance'
                             )
                     else:
-                        calculating_result = sim.check_result(result_name,self)
+                        calculating_result = sim.check_result(result_name, self)
                     #end if
                     if not calculating_result:
                         self.warn(
-                            f'simulation {sim.identifier} id {sim.simid} is not calculating result {result_name}\n'
+                            f'simulation {sim.identifier} id {sim.simid} is not calculating result {result_name.name}\n'
                             f'required by simulation {self.identifier} id {self.simid}\n'
                             f'{sim.identifier} {sim.simid} directory: {sim.locdir}\n'
                             f'{self.identifier} {self.simid} directory: {self.locdir}'
@@ -916,7 +975,7 @@ class Simulation(NexusCore):
             for dep in self.dependencies.values():
                 sim = dep.sim
                 for result_name in dep.result_names:
-                    if result_name!='other':
+                    if result_name is not AppResult.OTHER:
                         if sim.has_generic_input():
                             msg = (
                                 'a simulation result cannot be inferred from generic formatted or template input\n'
@@ -929,7 +988,7 @@ class Simulation(NexusCore):
                         #end if
                         dep.results[result_name] = sim.get_result(result_name,sim)
                     else:
-                        dep.results['other'] = obj()
+                        dep.results[AppResult.OTHER] = obj()
                     #end if
                 #end for
             #end for
@@ -937,7 +996,7 @@ class Simulation(NexusCore):
                 for dep in self.ordered_dependencies:
                     sim = dep.sim
                     for result_name,result in dep.results.items():
-                        if result_name!='other':
+                        if result_name is not AppResult.OTHER:
                             if self.has_generic_input():
                                 msg = (
                                     'a simulation result cannot be incorporated into generic formatted or template input\n'
@@ -1208,7 +1267,7 @@ class Simulation(NexusCore):
             if not self.finished and should_check:
                 self.check_sim_status()
             elif not self.finished:
-                exited_queue = datetime.fromisoformat(self.timestamps.exited_queue)
+                exited_queue = datetime.fromisoformat(self.timestamps["exited_queue"])
                 elapsed = datetime.now().astimezone() - exited_queue
                 if elapsed.total_seconds()>nexus_core.timeout:
                     self.record_timestamp('timed_out')
@@ -1960,7 +2019,7 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
             other = nodes[simid].node
             if quants:
                 for quantity in dep.result_names:
-                    edge = Edge(other,node.node,label=quantity,fontsize='10.0')
+                    edge = Edge(other,node.node,label=quantity.name,fontsize='10.0')
                     graph.add_edge(edge)
                 #end for
             else:
@@ -1973,6 +2032,7 @@ def graph_sims(sims=None,savefile=None,*,useid=False,exit=True,quants=True,displ
     if savefile is None:
         with tempfile.NamedTemporaryFile(suffix='.png') as fout:
             savefile = fout.name
+            print(savefile)
         #savefile = './sims.png'
     #end if
     fmt = savefile.rsplit('.',1)[1]

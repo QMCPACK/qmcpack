@@ -8,6 +8,7 @@ from . import isolate_nexus_core
 from .. import testing
 from ..testing import failed,FailedTest
 from ..testing import object_eq
+from ..simulation import AppResult
 
 
 def clear_all_sims():
@@ -70,8 +71,8 @@ def test_check_result():
 
     sim = get_gamess_sim('rhf')
     
-    assert(not sim.check_result('unknown',None))
-    assert(sim.check_result('orbitals',None))
+    assert(not sim.check_result(AppResult.NONE,None))
+    assert(sim.check_result(AppResult.ORBITALS,None))
 
     clear_all_sims()
 #end def test_check_result
@@ -99,11 +100,11 @@ def test_get_result(tmp_path):
 
     with pytest.raises(
         NotImplementedError,
-        match="ability to get result unknown has not been implemented",
+        match="Ability to get result 'NONE' has not been implemented!",
         ):
-        sim.get_result('unknown',None)
+        sim.get_result(AppResult.NONE,None)
 
-    result = sim.get_result('orbitals',None)
+    result = sim.get_result(AppResult.ORBITALS,None)
 
     result_ref = obj(
         location        = 'rhf/rhf.out',
@@ -132,9 +133,9 @@ def test_incorporate_result():
 
     with pytest.raises(
         NotImplementedError,
-        match="ability to incorporate result unknown has not been implemented",
+        match="Ability to incorporate result 'NONE' has not been implemented!",
         ):
-        sim.incorporate_result('unknown',None,None)
+        sim.incorporate_result(AppResult.NONE,None,None)
 
     result = obj(
         vec       = 'vec text',
@@ -147,7 +148,7 @@ def test_incorporate_result():
     assert('norb' not in input.guess)
     assert('prtmo' not in input.guess)
 
-    sim.incorporate_result('orbitals',result,None)
+    sim.incorporate_result(AppResult.ORBITALS,result,None)
 
     assert(input.vec.text=='vec text')
     assert(input.guess.guess=='moread')

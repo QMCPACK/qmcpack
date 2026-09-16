@@ -105,10 +105,16 @@
 
 
 import os
-from .fileio import TextFile
-from .simulation import Simulation,SimulationInput,SimulationAnalyzer,NullSimulationAnalyzer
-from .developer import DevBase, obj, FileFormatError, NexusError
 
+from .developer import DevBase, FileFormatError, NexusError, obj
+from .fileio import TextFile
+from .simulation import (
+    AppResult,
+    NullSimulationAnalyzer,
+    Simulation,
+    SimulationAnalyzer,
+    SimulationInput,
+)
 
 booldict = {'.true.':True,'.false.':False}
 def readval(val):
@@ -1035,11 +1041,11 @@ class Hp(PostProcessSimulation):
     analyzer_type      = HpAnalyzer
     generic_identifier = 'hp'
     application        = 'hp.x'
-    application_results = frozenset({'hubbard_parameters'})
+    application_results = AppResult.HUBBARD_PARAMETERS
 
     def check_result(self,result_name,sim):
         calculating_result = False
-        if result_name=='hubbard_parameters':
+        if result_name is AppResult.HUBBARD_PARAMETERS:
             calculating_result = True
         #end if 
         return calculating_result
@@ -1049,11 +1055,11 @@ class Hp(PostProcessSimulation):
         result = obj()        
         prefix = 'pwscf'
         outdir = './'
-        if result_name == 'hubbard_parameters':
+        if result_name is AppResult.HUBBARD_PARAMETERS:
             pa = self.load_analyzer_image()
             result = pa.hubbard_parameters
         else:
-            msg = 'ability to get result '+result_name+' has not been implemented'
+            msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
         #end if
         return result
