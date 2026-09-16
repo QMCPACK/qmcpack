@@ -183,7 +183,6 @@ public:
   template<typename T>
   void allgather(T& sb, T& rb, int count);
   template<typename T, typename IT>
-  void allgatherv(T& sb, T& rb, IT& counts, IT& displ);
   template<typename T>
   void scatter(T& sb, T& rb, int dest = 0);
   template<typename T, typename IT>

@@ -281,11 +281,11 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
 
   Buffer_t posout(counts[myComm->rank()]);
   std::vector<QMCTraits::FullPrecRealType> weights_out(counts[myComm->rank()]);
-  mpi::scatterv(*myComm, posin, posout, counts, woffsets);
+  myComm->scatterv(posin, posout, counts, woffsets);
 
   myComm->bcast(has_weights);
   if (has_weights)
-    mpi::scatterv(*myComm, weights_in, weights_out, counts_weights, woffsets_weights);
+    myComm->scatterv(weights_in, weights_out, counts_weights, woffsets_weights);
 
   const size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
   const int curWalker = wc_list_.getActiveWalkers();

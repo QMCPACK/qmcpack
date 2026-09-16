@@ -91,23 +91,31 @@ inline Communicate::request Communicate::isend(int dest, int tag, T*, int n)
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T& sb, T& rb, IT&, IT&, int dest)
-{}
+{
+  rb = sb;
+}
 
 template<typename T, typename IT>
 inline void Communicate::scatterv(T& sb, T& rb, IT&, IT&, int source)
-{}
+{
+  rb = sb;
+}
 
 template<typename T, typename IT>
-void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest)
-{}
+inline void Communicate::gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest)
+{
+  for(int i=0; i<n; ++i) rb[i] = sb[i];
+}
 
 template<typename T, typename TMPI, typename IT>
 inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
 {}
 
 template<typename T>
-void allgather(T* sb, T* rb, int count)
-{}
+inline void Communicate::allgather(T* sb, T* rb, int count)
+{
+  for(int i=0; i<count; ++i) rb[i] = sb[i];
+}
 
 
 

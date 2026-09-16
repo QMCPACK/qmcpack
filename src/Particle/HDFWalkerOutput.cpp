@@ -25,6 +25,7 @@
 #include <iostream>
 #include <sstream>
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 #include "mpi/collectives.h"
 #include "hdf/hdf_hyperslab.h"
 
@@ -172,7 +173,7 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
       }
       if (!myComm->rank())
         RemoteData[1].resize(wb * walker_offsets[myComm->size()]);
-      mpi::gatherv(*myComm, RemoteData[0], RemoteData[1], counts, displ);
+      myComm->gatherv(RemoteData[0], RemoteData[1], counts, displ);
       // update counts and displ for gathering walker weights
       for (int i = 0; i < myComm->size(); ++i)
       {
@@ -181,7 +182,7 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
       }
       if (!myComm->rank())
         RemoteDataW[1].resize(walker_offsets[myComm->size()]);
-      mpi::gatherv(*myComm, RemoteDataW[0], RemoteDataW[1], counts, displ);
+      myComm->gatherv(RemoteDataW[0], RemoteDataW[1], counts, displ);
     }
     int buffer_id = (myComm->size() > 1) ? 1 : 0;
     {

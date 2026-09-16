@@ -57,10 +57,6 @@ inline void reduce(const communicator& comm, T& in, int dest = 0)
 }
 
 
-/** generic function to perform allgather
- *
- * allgather of a scalar to a vectorized container
- */
 template<typename T, typename CT>
 inline void all_gather(const communicator& comm, T& in, CT& out)
 {
@@ -69,49 +65,6 @@ inline void all_gather(const communicator& comm, T& in, CT& out)
   MPI_Datatype type_id = get_mpi_datatype(*t_in.data());
   int ierr             = MPI_Allgather(t_in.data(), t_in.size(), type_id, t_out.data(), t_in.size(), type_id, comm);
 }
-
-/** generic function to perform allgather
- *
- * allgather of a scalar to a vectorized container
- */
-template<typename CT, typename IV>
-inline void all_gatherv(const communicator& comm, CT& in, CT& out, IV& counts, IV& displ)
-{
-  container_proxy<CT> t_in(in), t_out(out);
-  container_proxy<IV> t_counts(counts), t_displ(displ);
-  MPI_Datatype type_id = get_mpi_datatype(*t_in.data());
-  int ierr =
-      MPI_Allgatherv(t_in.data(), t_in.size(), type_id, t_out.data(), t_counts.data(), t_displ.data(), type_id, comm);
-}
-/** generic function to perform allgather
- *
- * allgather of a scalar to a vectorized container
- */
-template<typename CT, typename IV>
-inline void gatherv(const communicator& comm, CT& in, CT& out, IV& counts, IV& displ, int dest = 0)
-{
-  container_proxy<CT> t_in(in), t_out(out);
-  container_proxy<IV> t_counts(counts), t_displ(displ);
-  MPI_Datatype type_id = get_mpi_datatype(*t_in.data());
-  int ierr = MPI_Gatherv(t_in.data(), t_in.size(), type_id, t_out.data(), t_counts.data(), t_displ.data(), type_id,
-                         dest, comm);
-}
-
-
-/** generic function to perform allgather
- *
- * allgather of a scalar to a vectorized container
- */
-template<typename CT, typename IV>
-inline void scatterv(const communicator& comm, CT& in, CT& out, IV& counts, IV& displ, int dest = 0)
-{
-  container_proxy<CT> t_in(in), t_out(out);
-  container_proxy<IV> t_counts(counts), t_displ(displ);
-  MPI_Datatype type_id = get_mpi_datatype(*t_out.data());
-  int ierr = MPI_Scatterv(t_in.data(), t_counts.data(), t_displ.data(), type_id, t_out.data(), t_out.size(), type_id,
-                          dest, comm);
-}
-
 
 /** generic function to perform bcast
  *
@@ -132,21 +85,8 @@ inline void all_gather(const communicator& comm, T& in, CT& out)
 {
   out = in;
 }
-template<typename CT, typename IT>
-inline void all_gatherv(const communicator& comm, CT& in, CT& out, IT& counts, IT& displ)
-{
-  out = in;
-}
-template<typename CT, typename IT>
-inline void gatherv(const communicator& comm, CT& in, CT& out, IT& counts, IT& displ, int dest = 0)
-{
-  out = in;
-}
-template<typename CT, typename IV>
-inline void scatterv(const communicator& comm, CT& in, CT& out, IV& counts, IV& displ, int dest = 0)
-{
-  out = in;
-}
+
+
 
 template<typename T>
 inline void reduce(const communicator& comm, T& in, int dest = 0)
