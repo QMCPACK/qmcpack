@@ -138,23 +138,7 @@ inline void scatter(const communicator& comm, CT& in, CT& out, int dest = 0)
 /** generic function to perform bcast
  *
  */
-template<typename CT>
-inline void bcast(const communicator& comm, CT& inout, int source = 0)
-{
-  if (comm.size() == 1)
-    return;
-  container_proxy<CT> t_in(inout);
-  MPI_Datatype type_id = get_mpi_datatype(*t_in.data());
-  MPI_Bcast(t_in.data(), t_in.size(), type_id, source, comm);
-}
 
-template<typename T>
-inline void bcast(const communicator& comm, T* inout, int n, int source = 0)
-{
-  if (comm.size() == 1)
-    return;
-  MPI_Bcast(inout, n, get_mpi_datatype(*inout), source, comm);
-}
 
 #else
 template<typename T, typename OP>
@@ -195,12 +179,7 @@ inline void scatter(const communicator& comm, CT& in, CT& out, int dest = 0)
 {
   out = in;
 }
-template<typename CT>
-inline void bcast(const communicator& comm, CT& inout, int source = 0)
-{}
-template<typename T>
-inline void bcast(const communicator& comm, T* inout, int n, int source = 0)
-{}
+
 template<typename T>
 inline void reduce(const communicator& comm, T& in, int dest = 0)
 {}

@@ -16,9 +16,30 @@
 #ifndef OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #define OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #include "Pools/PooledData.h"
+#include "type_traits/container_proxy.h"
+#include "Message/mpi_datatype.h"
 #include <cstdint>
 #include <stdexcept>
 ///dummy declarations to be specialized
+
+
+template<typename T>
+inline void Communicate::bcast(T& inout)
+{
+  if (d_ncontexts == 1)
+    return;
+  qmcplusplus::container_proxy<T> t_in(inout);
+  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_in.data());
+  MPI_Bcast(t_in.data(), t_in.size(), type_id, 0, myMPI);
+}
+
+template<typename T>
+inline void Communicate::bcast(T* restrict inout, int n)
+{
+  if (d_ncontexts == 1)
+    return;
+  MPI_Bcast(inout, n, qmcplusplus::mpi::get_mpi_datatype(*inout), 0, myMPI);
+}
 
 template<typename T>
 inline void Communicate::allreduce(T&)
@@ -44,17 +65,7 @@ inline void Communicate::reduce_in_place(T* restrict, int n)
   throw std::runtime_error("Need specialization for reduce_in_place(T* restrict, int n)");
 }
 
-template<typename T>
-inline void Communicate::bcast(T&)
-{
-  throw std::runtime_error("Need specialization for bcast(T&)");
-}
 
-template<typename T>
-inline void Communicate::bcast(T* restrict, int n)
-{
-  throw std::runtime_error("Need specialization for bcast(T* restrict ,int n)");
-}
 
 template<typename T>
 inline void Communicate::send(int dest, int tag, T&)
@@ -377,36 +388,11 @@ inline void Communicate::reduce_in_place(float* restrict res, int n)
     MPI_Reduce(res, NULL, n, MPI_FLOAT, MPI_SUM, 0, myMPI);
 }
 
-template<>
-inline void Communicate::bcast(int& g)
-{
-  MPI_Bcast(&g, 1, MPI_INT, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(std::uint32_t& g)
-{
-  MPI_Bcast(&g, 1, MPI_UNSIGNED, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(std::vector<std::uint32_t>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_UNSIGNED, 0, myMPI);
-}
 
 
-template<>
-inline void Communicate::bcast(double& g)
-{
-  MPI_Bcast(&g, 1, MPI_DOUBLE, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(float& g)
-{
-  MPI_Bcast(&g, 1, MPI_FLOAT, 0, myMPI);
-}
+
+
 
 template<>
 inline void Communicate::bcast(bool& g)
@@ -416,223 +402,44 @@ inline void Communicate::bcast(bool& g)
   g = val != 0;
 }
 
-template<>
-inline void Communicate::bcast(qmcplusplus::TinyVector<double, 2>& g)
-{
-  MPI_Bcast(g.begin(), 2, MPI_DOUBLE, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::TinyVector<int, 2>& g)
-{
-  MPI_Bcast(g.begin(), 2, MPI_INT, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::TinyVector<int, 3>& g)
-{
-  MPI_Bcast(g.begin(), 3, MPI_INT, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(std::vector<qmcplusplus::TinyVector<int, 3>>& g)
-{
-  if (g.size())
-    MPI_Bcast(g[0].data(), 3 * g.size(), MPI_INT, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::TinyVector<double, 3>& g)
-{
-  MPI_Bcast(g.begin(), 3, MPI_DOUBLE, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::TinyVector<float, 3>& g)
-{
-  MPI_Bcast(g.begin(), 3, MPI_FLOAT, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::TinyVector<double, 4>& g)
-{
-  MPI_Bcast(g.begin(), 4, MPI_DOUBLE, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::Tensor<double, 3>& g)
-{
-  MPI_Bcast(g.data(), 9, MPI_DOUBLE, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::Tensor<float, 3>& g)
-{
-  MPI_Bcast(g.data(), 9, MPI_FLOAT, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::Vector<double>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_DOUBLE, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::Vector<float>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_FLOAT, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::Vector<std::complex<double>>& g)
-{
-  MPI_Bcast(g.data(), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::Vector<std::complex<float>>& g)
-{
-  MPI_Bcast(g.data(), 2 * g.size(), MPI_FLOAT, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::Vector<int>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_INT, 0, myMPI);
-}
 
 
-template<>
-inline void Communicate::bcast(qmcplusplus::Vector<qmcplusplus::TinyVector<double, 2>>& g)
-{
-  MPI_Bcast(g.data(), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::Vector<qmcplusplus::TinyVector<double, 3>>& g)
-{
-  MPI_Bcast(g.data(), 3 * g.size(), MPI_DOUBLE, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(qmcplusplus::Vector<qmcplusplus::TinyVector<float, 3>>& g)
-{
-  MPI_Bcast(g.data(), 3 * g.size(), MPI_FLOAT, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(Array<double, 3>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_DOUBLE, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(Array<float, 3>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_FLOAT, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(Array<int, 1>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_INT, 0, myMPI);
-}
 
 
-template<>
-inline void Communicate::bcast(Array<std::complex<double>, 1>& g)
-{
-  MPI_Bcast(g.data(), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
-}
 
 
-template<>
-inline void Communicate::bcast(Array<std::complex<double>, 2>& g)
-{
-  MPI_Bcast(g.data(), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(Array<std::complex<double>, 3>& g)
-{
-  MPI_Bcast(g.data(), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
-}
-
-template<>
-inline void Communicate::bcast(Array<std::complex<float>, 3>& g)
-{
-  MPI_Bcast(g.data(), 2 * g.size(), MPI_FLOAT, 0, myMPI);
-}
 
 
-template<>
-inline void Communicate::bcast(std::vector<double>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_DOUBLE, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(std::vector<std::complex<double>>& g)
-{
-  MPI_Bcast(g.data(), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(std::vector<std::complex<float>>& g)
-{
-  MPI_Bcast(g.data(), 2 * g.size(), MPI_FLOAT, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(std::vector<float>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_FLOAT, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(PooledData<double>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_DOUBLE, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(PooledData<float>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_FLOAT, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(PooledData<int>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_INT, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(std::vector<qmcplusplus::TinyVector<double, 2>>& g)
-{
-  if (g.size())
-    MPI_Bcast(g[0].data(), 2 * g.size(), MPI_DOUBLE, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(std::vector<qmcplusplus::TinyVector<double, 3>>& g)
-{
-  if (g.size())
-    MPI_Bcast(g[0].data(), 3 * g.size(), MPI_DOUBLE, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(std::vector<qmcplusplus::TinyVector<float, 3>>& g)
-{
-  if (g.size())
-    MPI_Bcast(g[0].data(), 3 * g.size(), MPI_FLOAT, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(std::vector<int>& g)
-{
-  MPI_Bcast(g.data(), g.size(), MPI_INT, 0, myMPI);
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 template<>
 inline void Communicate::bcast(std::vector<bool>& g)
@@ -645,41 +452,11 @@ inline void Communicate::bcast(std::vector<bool>& g)
     g[i] = intVec[i] != 0;
 }
 
-template<>
-inline void Communicate::bcast(double* restrict x, int n)
-{
-  MPI_Bcast(x, n, MPI_DOUBLE, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(std::complex<double>* restrict x, int n)
-{
-  MPI_Bcast(x, 2 * n, MPI_DOUBLE, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(float* restrict x, int n)
-{
-  MPI_Bcast(x, n, MPI_FLOAT, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(std::complex<float>* restrict x, int n)
-{
-  MPI_Bcast(x, 2 * n, MPI_FLOAT, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(int* restrict x, int n)
-{
-  MPI_Bcast(x, n, MPI_INT, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(char* restrict x, int n)
-{
-  MPI_Bcast(x, n, MPI_CHAR, 0, myMPI);
-}
 
 template<>
 inline void Communicate::bcast(std::string& g)
@@ -876,16 +653,6 @@ inline void Communicate::allreduce(qmcplusplus::Matrix<std::complex<float>>& g)
   std::copy(gt.begin(), gt.end(), g.data());
 }
 
-template<>
-inline void Communicate::bcast(std::complex<double>& g)
-{
-  MPI_Bcast(&g, 2, MPI_DOUBLE, 0, myMPI);
-}
 
-template<>
-inline void Communicate::bcast(std::complex<float>& g)
-{
-  MPI_Bcast(&g, 2, MPI_FLOAT, 0, myMPI);
-}
 
 #endif

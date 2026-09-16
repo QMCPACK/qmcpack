@@ -21,6 +21,7 @@
 #include "Utilities/Timer.h"
 #include "hdf/HDFVersion.h"
 #include "hdf/hdf_archive.h"
+#include "Message/CommOperators.h"
 #include "mpi/collectives.h"
 #include "Utilities/SimpleParser.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -87,7 +88,7 @@ void RandomNumberControl::make_seeds()
   int pid         = OHMMS::Controller->rank();
   int nprocs      = OHMMS::Controller->size();
   uint_type iseed = static_cast<uint_type>(std::time(0)) % 1024;
-  mpi::bcast(*OHMMS::Controller, iseed);
+  OHMMS::Controller->bcast(iseed);
   //OHMMS::Controller->bcast(iseed);//broadcast the seed
   Offset = iseed;
   std::vector<uint_type> mySeeds;
@@ -153,7 +154,7 @@ bool RandomNumberControl::put(xmlNodePtr cur)
     {
       offset_in = static_cast<int>(static_cast<uint_type>(std::time(0)) % 1024);
       app_summary() << "  Offset for the random number seeds based on time: " << offset_in << std::endl;
-      mpi::bcast(*OHMMS::Controller, offset_in);
+      OHMMS::Controller->bcast(offset_in);
     }
     else
     {
@@ -327,7 +328,7 @@ void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
     hin.read(shape_hdf5, "nprocs_nthreads_statesize");
   }
 
-  mpi::bcast(*comm, shape_hdf5);
+  comm->bcast(shape_hdf5);
 
   //if hdf5 file's configuration and current configuration don't match, abort read
   if (shape_hdf5[0] != shape_now[0] || shape_hdf5[1] != shape_now[1] || shape_hdf5[2] != shape_now[2])
