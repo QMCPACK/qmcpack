@@ -838,6 +838,30 @@ def test_lcd_trim_handles_constant_and_vector_shaped_data(
 
 
 
+@pytest.mark.parametrize(
+    'trim_function,nmasks',
+    [
+        (statistics.lcd_trim_l,2),
+        (statistics.lcd_trim_r,2),
+        (statistics.lcd_trim_lr,3),
+        (statistics.lcd_trim_lrm,4),
+        ],
+    )
+def test_lcd_trim_preserves_an_endpoint_at_the_lcd_peak(
+        trim_function,
+        nmasks,
+        ):
+    """Do not trim through an endpoint numerically equal to the LCD peak."""
+    x = np.array([0.,1.,-1.,0.])
+    masks = trim_function(x,niter=1,ret_seg=False,ret_mask=True)
+
+    assert(len(masks)==nmasks)
+    np.testing.assert_array_equal(masks[0],np.ones(len(x),dtype=bool))
+    assert(all(not mask.any() for mask in masks[1:]))
+#end def test_lcd_trim_preserves_an_endpoint_at_the_lcd_peak
+
+
+
 def test_lcd_trim_lrm_respects_minimum_middle_segment_length():
     """Do not remove an isolated low point below a multi-point threshold."""
     x = np.array([0.,1.,0.,1.,0.,-100.,0.,1.,0.,1.,0.])
@@ -906,7 +930,11 @@ def test_pair_expand_ts_intervals():
     )
 def test_time_series_analyzer_modes(method):
     """Analyze a representative uniformly sampled trace in each mode."""
-    x = np.sin(np.linspace(0.,8.*np.pi,128))
+    rng = np.random.default_rng(421)
+    x = np.empty(128)
+    x[0] = rng.normal()
+    for n in range(1,len(x)):
+        x[n] = .85*x[n-1]+rng.normal()
     analyzer = statistics.TimeSeriesAnalyzer(x,clean_inp=method)
 
     assert(analyzer.clean_inp==method)
