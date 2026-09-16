@@ -2,8 +2,7 @@
 
 import numpy as np
 
-from .developer_tools import DevBase,obj,dotdict
-
+from .developer_tools import DevBase, dotdict, obj
 
 ############################################################################
 #                                                                          #
@@ -260,10 +259,10 @@ def reblocked_autocorr_time(
         ):
     """Estimate autocorrelation time from the growth of blocked errors.
 
-    This estimator currently overestimates the autocorrelation times in a 
+    This estimator currently overestimates the autocorrelation times in a
     number of cases. Prefer the Geyer method.
 
-    For MCMC data, just use the ``autocorr_time'' function.
+    For MCMC data, just use the :func:`autocorr_time` function.
 
     For every integer block length that leaves at least ``min_blocks`` blocks,
     contiguous block means and their standard error are computed.  Their
@@ -272,10 +271,10 @@ def reblocked_autocorr_time(
     for large inputs).  The squared fitted ratio at the largest usable block
     length is used to obtain the auto-correlation time.
 
-    Strengths: Independent block-based cross-check that can expose slow-mode
+    **Strengths**: Independent block-based cross-check that can expose slow-mode
     uncertainty without requiring reversibility.
 
-    Weaknesses: Its estimates have a broad 10--90% spread, and the calculated
+    **Weaknesses**: Its estimates have a broad 10--90% spread, and the calculated
     autocorrelation times can exhibit larger fluctutations toward overestimation.
 
     Parameters
@@ -407,7 +406,7 @@ def acf_autocorr_time(x,*,reliability=False):
 
     Best for long chains.  Generally prefer the Geyer method.
 
-    For MCMC data, just use the ``autocorr_time'' function.
+    For MCMC data, just use the :func:`autocorr_time` function.
 
     The autocorrelation function is evaluated in ``O(N log N)`` time with an
     FFT and a common denominator at all lags.  A Bartlett noise estimate is
@@ -416,10 +415,10 @@ def acf_autocorr_time(x,*,reliability=False):
     noisy boundary.  The returned value is the variance-inflation factor
     ``N*Var(mean)/Var(x)``.
 
-    Strengths: Best long-chain accuracy, low variance, fast, and supports
+    **Strengths**: Best long-chain accuracy, low variance, fast, and supports
     negative or oscillatory correlation.
 
-    Weaknesses: Can truncate before detecting weak slow modes and generally
+    **Weaknesses**: Can truncate before detecting weak slow modes and generally
     underestimates the autocorrelation time for short time series.
 
     Parameters
@@ -524,8 +523,8 @@ def geyer_ims_autocorr_time(
     """Estimate integrated autocorrelation time with Geyer's IMS method.
 
     This is the single best autocorrelation estimator.
-    
-    For MCMC data, just use the ``autocorr_time'' function.
+
+    For MCMC data, just use the :func:`autocorr_time` function.
 
     Autocorrelations are computed with an FFT.  Geyer's initial positive
     sequence of adjacent autocorrelation pairs is then made non-increasing
@@ -536,10 +535,10 @@ def geyer_ims_autocorr_time(
     :func:`acf_autocorr_time`.  Set ``acf_fallback=False`` to obtain the
     pure Geyer IMS estimate.
 
-    Strengths: Fast, stable noisy-tail treatment, and strong theoretical basis
+    **Strengths**: Fast, stable noisy-tail treatment, and strong theoretical basis
     for reversible MCMC.
 
-    Shortcomings: Relatively variable for negative correlation.
+    **Shortcomings**:: Relatively variable for negative correlation.
 
     Parameters
     ----------
@@ -696,9 +695,9 @@ def series_stats(x,t_auto=None):
     """Return the mean, autocorrelation-adjusted error, and correlation time.
 
     If ``t_auto`` is not supplied, it is estimated with
-    :func:`autocorr_time`.  The returned standard error is ``std(x) /
-    sqrt(N / t_auto)``, where ``std`` uses NumPy's default ``ddof=0`` and
-    ``N / t_auto`` is the effective number of independent samples.  Thus,
+    :func:`autocorr_time`.  The returned standard error is
+    ``std(x) / sqrt(N / t_auto)``, where ``std`` uses NumPy's default ``ddof=0``
+    and ``N / t_auto`` is the effective number of independent samples.  Thus,
     independently sampled data have ``t_auto`` near one, while positive
     serial correlation increases the reported uncertainty.
 
@@ -880,7 +879,7 @@ def _perturb_constant_intervals(xi,perturb_const):
     xi = xi.copy()
     lower = xi[constant,0]
     upper = xi[constant,1]
-    for n in range(perturb_const):
+    for _ in range(perturb_const):
         lower = np.nextafter(lower,-np.inf)
         upper = np.nextafter(upper,np.inf)
     xi[constant,0] = lower
@@ -1044,7 +1043,7 @@ def interval_dist_peak(
         raise ValueError(msg)
     if not isinstance(method,str):
         msg = 'peak method must be a string'
-        raise ValueError(msg)
+        raise TypeError(msg)
     try:
         peak_frac = float(peak_frac)
     except (TypeError,ValueError):
@@ -1077,7 +1076,7 @@ def interval_dist_peak(
         edges = np.flatnonzero(np.diff(np.r_[False,high,False]))
         xpeaks = []
         cpeaks = []
-        for i1,i2 in zip(edges[::2],edges[1::2]-1):
+        for i1,i2 in zip(edges[::2],edges[1::2]-1, strict=True):
             ci_region = ci[i1:i2+1]
             if ci_region.max()!=cm:
                 continue
@@ -1115,7 +1114,8 @@ def interval_dist_peak(
         xm = np.mean(xpeaks)
         cm = np.mean(cpeaks)
     else:
-        raise ValueError(f'unrecognized int. dist. max method: "{method}"')
+        msg = f'unrecognized int. dist. max method: "{method}"'
+        raise ValueError(msg)
     if not height:
         return xm
     else:
@@ -1193,9 +1193,9 @@ def rolling_interval_dist_peak(
         msg = f'method "{method}" is unrecognized'
         raise ValueError(msg)
     # map inputs to intervals
-    xia,sia = _int_dist_input(x1,x2)
+    xia,_ = _int_dist_input(x1,x2)
     N = len(xia)
-    if N<window:
+    if window > N:
         msg = 'window must not exceed the number of intervals'
         raise ValueError(msg)
     # find window segments
@@ -1253,7 +1253,7 @@ def _perturb_constant_series(x,perturb_const=1):
     xp = x.copy()
     starts = np.r_[0,np.flatnonzero(x[1:]!=x[:-1])+1]
     stops = np.r_[starts[1:],len(x)]
-    for i1,i2 in zip(starts,stops):
+    for i1,i2 in zip(starts,stops, strict=True):
         if i2-i1<2:
             continue
         lower = x[i1]
@@ -1268,7 +1268,7 @@ def _perturb_constant_series(x,perturb_const=1):
 
 
 
-def line_crossing_distribution(x,nperm=0,ret_x=False):
+def line_crossing_distribution(x,nperm=0, *, ret_x=False):
     """Return the line-crossing distribution of a series or its permutations.
 
     Parameters
@@ -1307,19 +1307,19 @@ def line_crossing_distribution(x,nperm=0,ret_x=False):
 
     .. math::
 
-       L(z) = P(\min(X,Y) < z < \max(X,Y)) = 2F(z)[1-F(z)].
+       L(z) = P(\\min(X,Y) < z < \\max(X,Y)) = 2F(z)[1-F(z)].
 
     Thus, for a series with ``N`` samples, the expected count is
-    ``(N - 1) L(z)``.  The distribution is maximized at a median of the
+    :math:`(N - 1) L(z)`.  The distribution is maximized at a median of the
     sampled distribution, which motivates its use as a robust equilibrium
     location estimator.  It is a crossing-rate curve rather than a normalized
-    probability density; when ``E[|X-Y|]`` is finite, its normalized form is
-    ``2 F(z) [1-F(z)] / E[|X-Y|]``.
+    probability density; when :math:`E[|X-Y|]` is finite, its normalized form is
+    :math:`2 F(z) [1-F(z)] / E[|X-Y|]`.
 
     In the ideal continuous i.i.d. case, a probability-scale LCD can be
-    inverted to obtain ``F(z) = (1 - sqrt(1 - 2 L(z))) / 2`` below a median
-    and ``F(z) = (1 + sqrt(1 - 2 L(z))) / 2`` above one, followed by
-    differentiation to obtain the density.  Empirical inversion is noisy,
+    inverted to obtain :math:`F(z) = (1 - \\sqrt{1 - 2 L(z)}) / 2` below a
+    median and :math:`F(z) = (1 + \\sqrt{1 - 2 L(z)}) / 2` above one, followed
+    by differentiation to obtain the density.  Empirical inversion is noisy,
     and the LCD does not uniquely determine distributions with atoms or gaps.
     """
     x = _real_vector(x,'data array')
@@ -1333,7 +1333,7 @@ def line_crossing_distribution(x,nperm=0,ret_x=False):
         raise ValueError(msg)
     if not isinstance(ret_x,(bool,np.bool_)):
         msg = 'ret_x must be a Boolean value'
-        raise ValueError(msg)
+        raise TypeError(msg)
     xp = _perturb_constant_series(x)
 
     # permutation-free (typical) case
@@ -1346,7 +1346,7 @@ def line_crossing_distribution(x,nperm=0,ret_x=False):
 
     # use permutation shuffling
     permutation_intervals = []
-    for n in range(nperm):
+    for _ in range(nperm):
         xp = x.copy()
         np.random.shuffle(xp)
         xi,_ = time_series_intervals(xp,t=None)
@@ -1527,7 +1527,8 @@ def pair_expand_ts_intervals(
                 ti.extend([t0+(j+1)*dtj for j in range(n2)])
         ti = np.array(ti)
         if len(ti)!=len(xi):
-            raise RuntimeError('internal pair/time expansion length mismatch')
+            msg = 'internal pair/time expansion length mismatch'
+            raise RuntimeError(msg)
     return xi,ti
 #end def pair_expand_ts_intervals
 
@@ -1556,9 +1557,8 @@ def _find_segments(
             if n-n1>=seg_min:
                 seg.append((n1,n))
             n1 = None
-    if n1 is not None:
-        if len(x)-n1>=seg_min:
-            seg.append((n1,len(x)))
+    if n1 is not None and len(x)-n1>=seg_min:
+        seg.append((n1,len(x)))
     return seg
 #end def _find_segments
 
@@ -1587,7 +1587,7 @@ def _lcd_trim_options(ret_seg,ret_mask):
     for value,name in ((ret_seg,'ret_seg'),(ret_mask,'ret_mask')):
         if not isinstance(value,(bool,np.bool_)):
             msg = f'{name} must be a Boolean value'
-            raise ValueError(msg)
+            raise TypeError(msg)
 #end def _lcd_trim_options
 
 
@@ -1613,6 +1613,7 @@ def _trim_run(
 def lcd_trim_l(
         x,
         niter    = 3,
+        *,
         ret_seg  = True,
         ret_mask = False,
         ):
@@ -1669,6 +1670,7 @@ def lcd_trim_l(
 def lcd_trim_r(
         x,
         niter    = 3,
+        *,
         ret_seg  = True,
         ret_mask = False,
         ):
@@ -1724,6 +1726,7 @@ def lcd_trim_r(
 def lcd_trim_lr(
         x,
         niter    = 3,
+        *,
         ret_seg  = True,
         ret_mask = False,
         ):
@@ -1787,6 +1790,7 @@ def lcd_trim_lrm(
         niter    = 3,
         low_scale = 2.,
         nseg_min = 4,
+        *,
         ret_seg  = True,
         ret_mask = False,
         ):
@@ -1854,7 +1858,7 @@ def lcd_trim_lrm(
         # left trim
         tleft = True
         if ni>0:
-            for n1,n2 in seg_m:
+            for n1,_ in seg_m:
                 tleft &= ntrim_l < n1
         if tleft:
             ntrim_l += _trim_run(x,x_lcd,ntrim_l,len(x)-ntrim_r)
@@ -1862,7 +1866,7 @@ def lcd_trim_lrm(
         # right trim
         tright = True
         if ni>0:
-            for n1,n2 in seg_m:
+            for _,n2 in seg_m:
                 tright &= len(x)-ntrim_r > n2
         if tright:
             ntrim_r += _trim_run(xr,x_lcd,ntrim_r,len(x)-ntrim_l)
@@ -1986,7 +1990,7 @@ def mean_smooth(x,m=None):
         return np.array([])
     dm = m//2
     xs = []
-    for n,xn in enumerate(x):
+    for n in range(N):
         if n<dm:
             n1 = 0
             n2 = 2*n+1
@@ -2004,7 +2008,7 @@ def mean_smooth(x,m=None):
 #end def mean_smooth
 
 
-def median_smooth(x,m=None,post_mean=False):
+def median_smooth(x,m=None,*,post_mean=False):
     """Smooth a sequence with local medians, optionally followed by means.
 
     Local windows and endpoint treatment are the same as :func:`mean_smooth`,
@@ -2039,7 +2043,7 @@ def median_smooth(x,m=None,post_mean=False):
         return np.array([])
     dm = m//2
     xs = []
-    for n,xn in enumerate(x):
+    for n in range(N):
         if n<dm:
             n1 = 0
             n2 = 2*n+1
@@ -2059,7 +2063,7 @@ def median_smooth(x,m=None,post_mean=False):
 #end def median_smooth
 
 
-def poly_smooth(x,m=None,post_mean=False):
+def poly_smooth(x,m=None,*,post_mean=False):
     """Smooth a sequence by evaluating local polynomial fits.
 
     A polynomial is fitted in each centered window and evaluated at the
@@ -2100,7 +2104,7 @@ def poly_smooth(x,m=None,post_mean=False):
         return np.array([])
     dm = m//2
     xs = []
-    for n,xn in enumerate(x):
+    for n in range(N):
         if n<dm:
             n1 = 0
             n2 = 2*n+1
@@ -2126,7 +2130,7 @@ def poly_smooth(x,m=None,post_mean=False):
 poly_smooth_ = poly_smooth
 
 
-def local_median_smooth(x_list,m=None,poly_smooth=True,post_mean=False):
+def local_median_smooth(x_list,m=None,*,poly_smooth=True,post_mean=False):
     """Smooth a sequence of sample sets through leave-one-out local medians.
 
     For each position, all neighboring sample sets in a centered window are
@@ -2174,7 +2178,7 @@ def local_median_smooth(x_list,m=None,poly_smooth=True,post_mean=False):
     dm = m//2
     # median smoother on data
     xs_list = [] # smoothed values
-    for n,x in enumerate(x_list):
+    for n in range(N):
         if n<dm:
             n1 = 0
             n2 = 2*n+1
@@ -2221,8 +2225,7 @@ class TimeSeriesAnalyzer(DevBase):
         one uniformly spaced sample per row.  If omitted, create an empty
         analyzer that can later receive data through :meth:`read`.
 
-    clean_inp : {'simple', 'lcd_trim_l', 'lcd_trim_r', 'lcd_trim_lr',
-                 'lcd_trim_lrm'} or mapping, optional
+    clean_inp : {'simple', 'lcd_trim_l', 'lcd_trim_r', 'lcd_trim_lr', 'lcd_trim_lrm'} or mapping, optional
         Default analysis method.  A mapping must provide ``method`` and may
         provide supported options for that method, such as ``t_auto`` for
         ``'simple'`` or LCD-trim options such as ``niter``.
@@ -2251,10 +2254,12 @@ class TimeSeriesAnalyzer(DevBase):
             arg0      = None,
             clean_inp = 'lcd_trim_l',
             label     = '',
+            *,
             analyze   = True,
             ):
         if not isinstance(analyze,(bool,np.bool_)):
-            raise ValueError('analyze must be a Boolean value')
+            msg = 'analyze must be a Boolean value'
+            raise TypeError(msg)
         self.filepath  = None
         self.clean_inp = clean_inp
         self.label     = label
@@ -2297,28 +2302,38 @@ class TimeSeriesAnalyzer(DevBase):
         def check_x_ind(xk,indk):
             if self[indk] is None:
                 if self[xk] is not None:
-                    raise RuntimeError(f'{xk} requires matching {indk}')
+                    msg = f'{xk} requires matching {indk}'
+                    raise RuntimeError(msg)
             elif self[xk] is None:
-                raise RuntimeError(f'{indk} requires matching {xk}')
+                msg = f'{indk} requires matching {xk}'
+                raise RuntimeError(msg)
             else:
                 if len(self[xk])==0 or len(self[indk])==0:
-                    raise RuntimeError(f'{xk} and {indk} must not be empty')
+                    msg = f'{xk} and {indk} must not be empty'
+                    raise RuntimeError(msg)
                 if len(self[xk])!=len(self[indk]):
-                    raise RuntimeError(f'{xk} and {indk} must have equal lengths')
+                    msg = f'{xk} and {indk} must have equal lengths'
+                    raise RuntimeError(msg)
         check_x_ind('x','ind')
         check_x_ind('xc','indc')
         check_x_ind('xl','indl')
         check_x_ind('xr','indr')
         check_x_ind('xm','indm')
-        if self.x_mean is not None:
-            if not np.isfinite(self.x_mean):
-                raise RuntimeError('mean must be finite')
-        if self.x_stderr is not None:
-            if not np.isfinite(self.x_stderr) or self.x_stderr<0.:
-                raise RuntimeError('standard error must be finite and nonnegative')
-        if self.t_auto is not None:
-            if not np.isfinite(self.t_auto) or self.t_auto<1.0-1e-12:
-                raise RuntimeError('autocorrelation time must be finite and positive')
+        if self.x_mean is not None and not np.isfinite(self.x_mean):
+            msg = 'mean must be finite'
+            raise RuntimeError(msg)
+        if (
+            self.x_stderr is not None
+            and (not np.isfinite(self.x_stderr) or self.x_stderr<0.)
+            ):
+            msg = 'standard error must be finite and nonnegative'
+            raise RuntimeError(msg)
+        if (
+            self.t_auto is not None
+            and (not np.isfinite(self.t_auto) or self.t_auto<1.0-1e-12)
+            ):
+            msg = 'autocorrelation time must be finite and positive'
+            raise RuntimeError(msg)
     #end def _check
 
     def read(self,filepath=None):
@@ -2340,7 +2355,7 @@ class TimeSeriesAnalyzer(DevBase):
             filepath = self.filepath
         if not isinstance(filepath,str):
             msg = 'filepath must be a string'
-            raise ValueError(msg)
+            raise TypeError(msg)
         x = _real_vector(np.loadtxt(filepath),'data array')
         self.filepath = filepath
         self.x   = x
@@ -2360,9 +2375,11 @@ class TimeSeriesAnalyzer(DevBase):
             indices are applied to this analyzer's original values.
         """
         if not isinstance(other,TimeSeriesAnalyzer):
-            raise TypeError('other must be a TimeSeriesAnalyzer')
+            msg = 'other must be a TimeSeriesAnalyzer'
+            raise TypeError(msg)
         if len(other.x)!=len(self.x):
-            raise ValueError('time series must have the same length')
+            msg = 'time series must have the same length'
+            raise ValueError(msg)
         self._check()
         other._check()
         if other.indc is not None:
@@ -2397,9 +2414,11 @@ class TimeSeriesAnalyzer(DevBase):
             in both partitions.
         """
         if not isinstance(other,TimeSeriesAnalyzer):
-            raise TypeError('other must be a TimeSeriesAnalyzer')
+            msg = 'other must be a TimeSeriesAnalyzer'
+            raise TypeError(msg)
         if len(other.x)!=len(self.x):
-            raise ValueError('time series must have the same length')
+            msg = 'time series must have the same length'
+            raise ValueError(msg)
         self._check()
         other._check()
         count = np.zeros(len(self.x),dtype=int)
@@ -2419,8 +2438,7 @@ class TimeSeriesAnalyzer(DevBase):
 
         Parameters
         ----------
-        clean_inp : {'simple', 'lcd_trim_l', 'lcd_trim_r', 'lcd_trim_lr',
-                     'lcd_trim_lrm'} or mapping, optional
+        clean_inp : {'simple', 'lcd_trim_l', 'lcd_trim_r', 'lcd_trim_lr', 'lcd_trim_lrm'} or mapping, optional
             Method and options for this analysis.  If omitted, use the stored
             default from construction or the preceding explicit call.  A
             mapping contains ``method`` plus options forwarded to that method.
@@ -2433,7 +2451,8 @@ class TimeSeriesAnalyzer(DevBase):
             ``x_mean``, ``x_stderr``, and ``t_auto``.
         """
         if self.x is None or self.ind is None:
-            raise ValueError('a time series must be provided before analysis')
+            msg = 'a time series must be provided before analysis'
+            raise ValueError(msg)
         self._check()
         if clean_inp is None:
             clean_inp = self.clean_inp
@@ -2562,12 +2581,14 @@ class TimeSeriesAnalyzer(DevBase):
             self.indm = None
             calculate_stats()
         else:
-            raise ValueError(f'unrecognized data cleaning method "{method}"')
+            msg = f'unrecognized data cleaning method "{method}"'
+            raise ValueError(msg)
         self._check()
     #end def analyze
 
     def plot(
             self,
+            *,
             fig    = False,
             show   = False,
             ishift = 0,
@@ -2603,7 +2624,8 @@ class TimeSeriesAnalyzer(DevBase):
         import matplotlib.pyplot as plt
         self._check()
         if self.xc is None or self.x_mean is None or self.x_stderr is None:
-            raise ValueError('analysis must be completed before plotting')
+            msg = 'analysis must be completed before plotting'
+            raise ValueError(msg)
         if fig:
             plt.figure(tight_layout=True)
 
