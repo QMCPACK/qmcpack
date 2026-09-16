@@ -4,7 +4,7 @@ import sys
 from nexus import settings,job,workflow_manager
 from nexus import generate_physical_system
 from nexus import generate_pwscf
-from nexus.simulation import AppResult
+
 
 '''
 A simple type of dynamic workflow is to automatically determine 
@@ -95,7 +95,7 @@ nruns = 1
 qe    = gen_qe(ecutwfc=ecut)
 while not converged:
     if qe.succ:
-        energies.append(qe.products[AppResult.ENERGY])
+        energies.append(qe.products.energy)
         ecuts.append(ecut)
         if len(energies)<2 or abs(energies[-1]-energies[-2])>tol:
             nruns +=1
@@ -125,7 +125,7 @@ nruns = 1
 qe    = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
 while not converged:
     if qe.succ:
-        energies.append(qe.products[AppResult.ENERGY])
+        energies.append(qe.products.energy)
         nkgrids.append(nkgrid)
         if len(energies)<2 or abs(energies[-1]-energies[-2])>tol:
             nruns +=1

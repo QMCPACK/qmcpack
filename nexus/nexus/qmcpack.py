@@ -1876,9 +1876,9 @@ class Qmcpack(Simulation):
             opt_file = str(analyzer.results.optimization.optimal_file)
             opt_file = os.path.join(self.locdir,opt_file)
             if AppResult.JASTROW in self.produces:
-                self.products[AppResult.JASTROW] = opt_file
+                self.products.jastrow = opt_file
             if AppResult.WAVEFUNCTION in self.produces:
-                self.products[AppResult.WAVEFUNCTION] = opt_file
+                self.products.wavefunction = opt_file
     #end def fill_products
 
 

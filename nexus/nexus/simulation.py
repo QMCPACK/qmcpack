@@ -341,7 +341,7 @@ class Simulation(NexusCore):
     # Type definitions
     allowed_requirements: AppResult
     produces: AppResult
-    products: dict[AppResult, Any]
+    products: obj
     filled_products: bool
 
     @classmethod
@@ -470,11 +470,11 @@ class Simulation(NexusCore):
         if nexus_core.dynamic:
             assert self.simid not in dynamic_storage.simulation_ids
             self.produces = AppResult(0)
-            self.products = {}
+            self.products = obj()
             self.filled_products = False
             self.fill_produces()
             for prod in self.produces:
-                self.products[prod] = None
+                self.products[prod.name.lower()] = None
             dynamic_storage.simulations[self.simid] = self
             dynamic_storage.simulation_ids.add(self.simid)
             # instantly restore image/state data from disk
@@ -2222,7 +2222,7 @@ class DynamicProcess(DevBase):
                 )
         elif not sim.analyzed:
             msg = f'simulation has not been analyzed, requested prod_name "{prod_name.name}" has not been computed yet'
-        elif prod_name not in sim.products:
+        elif prod_name.name.lower() not in sim.products:
             msg = 'simulation products have not been handled correctly.  This is a developer error'
         if msg is not None:
             msg = (
@@ -2233,7 +2233,7 @@ class DynamicProcess(DevBase):
                 f'Dynamic process id  : {self.dpid}'
                 )
             raise NexusError(msg)
-        return sim.products[prod_name]
+        return sim.products[prod_name.name.lower()]
     #end def _check_get_product
 
 

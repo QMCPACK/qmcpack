@@ -483,7 +483,7 @@ class Pw2qmcpack(Simulation):
         if outdir.startswith('./'):
             outdir = outdir[2:]
         orb_file = os.path.join(self.locdir,outdir,prefix+'.pwscf.h5')
-        self.products[AppResult.ORBITALS] = orb_file
+        self.products.orbitals = orb_file
     #end def fill_products
 
 

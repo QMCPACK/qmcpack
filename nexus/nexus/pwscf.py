@@ -444,15 +444,15 @@ class Pwscf(Simulation):
         analyzer = self.load_analyzer_image()
         input    = analyzer.input
         if AppResult.ENERGY in self.produces:
-            self.products[AppResult.ENERGY] = analyzer.results_out.E
+            self.products.energy = analyzer.results_out.E
         if AppResult.CHARGE_DENSITY in self.produces:
             outdir = input.control.outdir
             path   = os.path.join(self.locdir,outdir)
-            self.products[AppResult.CHARGE_DENSITY] = path
+            self.products.charge_density = path
         if AppResult.ORBITALS in self.produces:
             outdir = input.control.outdir
             path   = os.path.join(self.locdir,outdir)
-            self.products[AppResult.ORBITALS] = path
+            self.products.orbitals = path
         if AppResult.STRUCTURE in self.produces:
             pa = analyzer
             structs = pa.results_out.relax_structures
@@ -470,7 +470,7 @@ class Pwscf(Simulation):
             structure.set_elem(atoms)
             if 'axes' in struct:
                 structure._set_axes(struct.axes)
-            self.products[AppResult.STRUCTURE] = structure
+            self.products.structure = structure
     #end def fill_products
 
 

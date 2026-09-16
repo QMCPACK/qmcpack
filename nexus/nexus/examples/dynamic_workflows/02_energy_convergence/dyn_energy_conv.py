@@ -25,7 +25,6 @@ import sys
 from nexus import settings,job,workflow_manager
 from nexus import generate_physical_system
 from nexus import generate_pwscf
-from nexus.simulation import AppResult
 
 
 settings(
@@ -129,7 +128,7 @@ while not converged:
     if qe.succ:
         # Current QE run succeeded
         # Capture the total energy and the energy cutoff
-        energies.append(qe.products[AppResult.ENERGY])
+        energies.append(qe.products.energy)
         ecuts.append(ecut)
         # Check if the tolerance has been met
         if len(energies)<2 or abs(energies[-1]-energies[-2])>tol:
@@ -197,7 +196,7 @@ qe    = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
 while not converged:
     print('poll')
     if qe.succ:
-        energies.append(qe.products[AppResult.ENERGY])
+        energies.append(qe.products.energy)
         nkgrids.append(nkgrid)
         if len(energies)<2 or abs(energies[-1]-energies[-2])>tol:
             print_progress(nkgrid,energies)
