@@ -17,7 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "random.hpp"
-#include "mpi/collectives.h"
+#include "Message/CommOperators.h"
 #include "Sandbox/input.hpp"
 #include "Sandbox/pseudo.hpp"
 #include "Utilities/Timer.h"

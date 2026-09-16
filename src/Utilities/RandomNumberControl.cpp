@@ -22,7 +22,6 @@
 #include "hdf/HDFVersion.h"
 #include "hdf/hdf_archive.h"
 #include "Message/CommOperators.h"
-#include "mpi/collectives.h"
 #include "Utilities/SimpleParser.h"
 #include "OhmmsData/Libxml2Doc.h"
 

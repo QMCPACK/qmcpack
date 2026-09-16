@@ -17,7 +17,6 @@
 #include "hdf/hdf_archive.h"
 #include "Message/mpi_datatype.h"
 #include "Message/CommOperators.h"
-#include "mpi/collectives.h"
 #include "Utilities/FairDivide.h"
 
 #include <array>

@@ -19,7 +19,7 @@
 #include "Particle/DistanceTable.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "random.hpp"
-#include "mpi/collectives.h"
+#include "Message/CommOperators.h"
 #include "Sandbox/input.hpp"
 #include "Sandbox/pseudo.hpp"
 #include "Utilities/Timer.h"

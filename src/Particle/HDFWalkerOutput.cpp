@@ -26,7 +26,6 @@
 #include <sstream>
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
-#include "mpi/collectives.h"
 #include "hdf/hdf_hyperslab.h"
 
 namespace qmcplusplus

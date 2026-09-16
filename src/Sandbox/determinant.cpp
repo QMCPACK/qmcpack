@@ -18,7 +18,7 @@
 #include "Utilities/PrimeNumberSet.h"
 #include "Utilities/Timer.h"
 #include "random.hpp"
-#include "mpi/collectives.h"
+#include "Message/CommOperators.h"
 #include <getopt.h>
 using namespace std;
 #include "determinant.hpp"
