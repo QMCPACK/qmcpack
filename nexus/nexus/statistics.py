@@ -1858,7 +1858,7 @@ def lcd_trim_lrm(
         # left trim
         tleft = True
         if ni>0:
-            for n1,_ in seg_m:
+            for n1,n2 in seg_m:  # noqa: B007
                 tleft &= ntrim_l < n1
         if tleft:
             ntrim_l += _trim_run(x,x_lcd,ntrim_l,len(x)-ntrim_r)
@@ -1866,7 +1866,7 @@ def lcd_trim_lrm(
         # right trim
         tright = True
         if ni>0:
-            for _,n2 in seg_m:
+            for n1,n2 in seg_m:  # noqa: B007
                 tright &= len(x)-ntrim_r > n2
         if tright:
             ntrim_r += _trim_run(xr,x_lcd,ntrim_r,len(x)-ntrim_l)
