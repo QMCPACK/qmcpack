@@ -45,14 +45,7 @@ namespace mpi
 
 
 
-template<typename T, typename CT>
-inline void all_gather(const communicator& comm, T& in, CT& out)
-{
-  container_proxy<T> t_in(in);
-  container_proxy<CT> t_out(out);
-  MPI_Datatype type_id = get_mpi_datatype(*t_in.data());
-  int ierr             = MPI_Allgather(t_in.data(), t_in.size(), type_id, t_out.data(), t_in.size(), type_id, comm);
-}
+
 
 /** generic function to perform bcast
  *
@@ -60,19 +53,9 @@ inline void all_gather(const communicator& comm, T& in, CT& out)
 
 
 #else
-template<typename T, typename OP>
-inline void all_reduce(const communicator& comm, T& in, T& out)
-{
-  out = in;
-}
-template<typename T, typename OP>
-inline void all_reduce(const communicator& comm, T& in)
-{}
-template<typename T, typename CT>
-inline void all_gather(const communicator& comm, T& in, CT& out)
-{
-  out = in;
-}
+
+
+
 
 
 
