@@ -365,7 +365,7 @@ class Settings(NexusCore):
         import argparse
         from argparse import ArgumentParser
 
-        parser = ArgumentParser(prog="Nexus")
+        parser = ArgumentParser()
         parser.add_argument(
             "--version",
             action="version",
@@ -423,7 +423,7 @@ class Settings(NexusCore):
             default=argparse.SUPPRESS,
             help=(
                 "Print abbreviated polling messages. "
-                "(default: {nexus_core_defaults.progress_tty})"
+                f"(default: {nexus_core_defaults.progress_tty})"
                 )
             )
         parser.add_argument(
@@ -449,7 +449,12 @@ class Settings(NexusCore):
             )
         parser.add_argument(
             "--machine",
-            choices=("ws", *Machine.machines),
+            choices=(
+                "ws",
+                "ws{1-128}",
+                "workstation",
+                *[m for m in Machine.machines if not m.startswith("ws")],
+                ),
             default=argparse.SUPPRESS,
             help=(
                 "Name of the machine the simulations will be run on. "
@@ -546,8 +551,6 @@ class Settings(NexusCore):
 
         # override script settings with command line settings
         for name,value in args.items():
-            if name in script_settings:
-                warn(f"Overriding setting {name} with value from command line.")
             script_settings[name] = value
     #end def process_command_line_settings
 
@@ -646,6 +649,18 @@ class Settings(NexusCore):
         if nexus_core.debug:
             nexus_core.verbose = True
         #end if
+        for arg in ("sleep", "timeout"):
+            arg_val = kw.get(arg)
+            if arg_val is None:
+                continue
+
+            if not isinstance(arg_val, float | int):
+                msg = f"Setting '{arg}' must be a number, but is {type(arg_val).__name__}!"
+                raise TypeError(msg)
+            elif arg_val <= 0:
+                msg = f"Setting '{arg}' must be greater than zero!"
+                raise ValueError(msg)
+
         if 'status' in kw:
             if kw.status==None or kw.status==False:
                 nexus_core.status = nexus_core.status_modes.none
