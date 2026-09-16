@@ -58,7 +58,7 @@ class BasisSets(DevBase):
         #end for
     #end def addbs
 
-        
+
     def readbs(self,*bsfiles):
         if len(bsfiles)==1 and isinstance(bsfiles[0],list):
             bsfiles = bsfiles[0]
@@ -558,7 +558,7 @@ class GaussianBasisSet(DevBase):
         return lbasis
     #end def lbasis
 
-    
+
     # test needed
     def lsort(self):
         lbasis = self.lbasis()
@@ -700,7 +700,7 @@ class GaussianBasisSet(DevBase):
         return gwidth
     #end def prim_widths
 
-    
+
     # test needed
     def remove_prims(self,comp=None,keep=None,**lselectors):
         lbasis = self.lbasis()
@@ -744,7 +744,7 @@ class GaussianBasisSet(DevBase):
                         del lbas[rem[i]]
                     #end for
                 #end if
-            elif isinstance(lsel,int):                
+            elif isinstance(lsel,int):
                 if comp=='<':
                     if lsel>len(lbas):
                         msg = f'cannot remove {lsel} basis functions from channel {l} as it only has {len(lbas)}'
@@ -851,7 +851,7 @@ class GaussianBasisSet(DevBase):
             #end if
         #end for
     #end def remove_channels
-                
+
 
     # test needed
     def incorporate(self,other,tol=1e-3,*,unique=False):

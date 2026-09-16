@@ -8,7 +8,7 @@
 #    Base class for all Nexus classes (obj).  Support for hidden     #
 #    data UI (hidden).                                               #
 #                                                                    #
-#  Content summary:                                                  # 
+#  Content summary:                                                  #
 #    obj                                                             #
 #      Base class for all Nexus classes.                             #
 #      Inherits from AllAbilities and wraps all functions for UI.    #

@@ -22,7 +22,7 @@
 #      Returns a SimulationBundle object.                            #
 #      Syntax:                                                       #
 #        sim_bundle = bundle(sim1,sim2,sim3,...)                     #
-#                                                                    #                                        
+#                                                                    #
 #====================================================================#
 
 
@@ -120,7 +120,7 @@ class SimulationBundle(Simulation):
         self.allow_analyze            = False
     #end def __init__
 
-            
+
     #def init_job(self):
     #    None # this is to override the default behavior of Simulation
     ##end def init_job
@@ -305,7 +305,7 @@ class SimulationBundle(Simulation):
             if not self.allow_analyze:
                 self.allow_analyze = self.check_allowed('analyzed')
             #end if
-            
+
             # progress the bundle itself
             Simulation.progress(self)
         #end if
