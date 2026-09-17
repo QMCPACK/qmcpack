@@ -618,7 +618,7 @@ class Settings(NexusCore):
                 raise ValueError(msg)
             #end if
         #end if
-        # overide user input and always use stages mode 
+        # overide user input and always use stages mode
         # keep processing code above in case a change is desired in the future
         nexus_core.mode       = modes.stages
         nexus_core.stages     = stages
@@ -682,7 +682,7 @@ class Settings(NexusCore):
                     bsfiles.append(pf)
                 #end if
             #end for
-            nexus_noncore.basissets = BasisSets(bsfiles)        
+            nexus_noncore.basissets = BasisSets(bsfiles)
         #end if
     #end def process_noncore_settings
 #end class Settings

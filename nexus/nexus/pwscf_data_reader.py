@@ -116,8 +116,8 @@ def readval(s):
     #end if
     return v
 #end readval
-                    
-        
+
+
 
 
 def read_qexml(inp):
@@ -181,7 +181,7 @@ def read_qexml(inp):
                 #end for
                 tokens = ls.split()
                 name = tokens[0].lower().replace('-','_')
-                attrs = tokens[1:]                
+                attrs = tokens[1:]
                 cur = QEXML()
                 base[name] = cur
                 for attr in attrs:

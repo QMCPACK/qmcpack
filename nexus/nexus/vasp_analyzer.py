@@ -42,7 +42,7 @@ class VXML(DevBase):
     basic_types = frozenset({'dimension', 'field', 'v', 'time', 'i', 'set'})
 
     data_types = obj(int=int,string=str,float=float)
-    
+
     def __init__(self,tag,attr=None):
         self._tag   = tag
         self._lines = []
@@ -145,7 +145,7 @@ class VXML(DevBase):
         # if sub-objects resolve to a value, replace with that value
         for name in list(self.keys()):
             value = self[name]
-            if isinstance(value,VXML) and value._value is not None: 
+            if isinstance(value,VXML) and value._value is not None:
                 self[name] = value._value
             #end if
         #end for
@@ -282,7 +282,7 @@ class VXML(DevBase):
                     del self[n]
                 #end if
             #end if
-        #end for 
+        #end for
     #end def _remove_empty
 
 
@@ -364,7 +364,7 @@ def readval(val):
     #end if
     return v
 #end def readval
-            
+
 
 
 def read_vxml(filepath):
@@ -842,7 +842,7 @@ class VaspAnalyzer(SimulationAnalyzer):
             #end for
             return
         #end if
-            
+
         if outcar is None and self.info.outcar_file is not None:
             outcar = os.path.join(self.info.path,self.info.outcar_file)
         #ned if
