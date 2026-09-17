@@ -727,7 +727,7 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     assert(set(sc.jobs.keys())==set([j.internal_id]))
     assert(id(sc.jobs[j.internal_id])==id(j))
 
-    
+
     # test write_job() to file
     sc.write_job(j,file=True)
 
@@ -783,7 +783,7 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 #end def test_supercomputer_scheduling
 
 
-def select_random(d): 
+def select_random(d):
     return d[randint(0,len(d)-1)]
 
 def test_process_job():
@@ -1028,7 +1028,7 @@ def test_job_run_command():
     #end def job_command_equal
 
     job_run_ref = obj({
-        ('amber'          , 'n1'            ) : 'srun test.x', 
+        ('amber'          , 'n1'            ) : 'srun test.x',
         ('amber'          , 'n1_p1'         ) : 'srun test.x',
         ('amber'          , 'n2'            ) : 'srun test.x',
         ('amber'          , 'n2_t2'         ) : 'srun test.x',
@@ -1052,7 +1052,7 @@ def test_job_run_command():
         ('archer2'        , 'n2_t2'         ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 128 test.x',
         ('archer2'        , 'n2_t2_e'       ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 128 test.x',
         ('archer2'        , 'n2_t2_p2'      ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 4 test.x',
-        ('attaway'        , 'n1'            ) : 'srun test.x', 
+        ('attaway'        , 'n1'            ) : 'srun test.x',
         ('attaway'        , 'n1_p1'         ) : 'srun test.x',
         ('attaway'        , 'n2'            ) : 'srun test.x',
         ('attaway'        , 'n2_t2'         ) : 'srun test.x',
@@ -1100,7 +1100,7 @@ def test_job_run_command():
         ('cori'           , 'n2_t2'         ) : 'srun test.x',
         ('cori'           , 'n2_t2_e'       ) : 'srun test.x',
         ('cori'           , 'n2_t2_p2'      ) : 'srun test.x',
-        ('eclipse'        , 'n1'            ) : 'srun test.x', 
+        ('eclipse'        , 'n1'            ) : 'srun test.x',
         ('eclipse'        , 'n1_p1'         ) : 'srun test.x',
         ('eclipse'        , 'n2'            ) : 'srun test.x',
         ('eclipse'        , 'n2_t2'         ) : 'srun test.x',
@@ -1112,19 +1112,19 @@ def test_job_run_command():
         ('eos'            , 'n2_t2'         ) : 'aprun -ss -cc numa_node -d 2 -n 16 test.x',
         ('eos'            , 'n2_t2_e'       ) : 'aprun -ss -cc numa_node -d 2 -n 16 test.x',
         ('eos'            , 'n2_t2_p2'      ) : 'aprun -ss -cc numa_node -d 2 -n 4 test.x',
-        ('flight'          , 'n1'           ) : 'srun test.x', 
+        ('flight'          , 'n1'           ) : 'srun test.x',
         ('flight'          , 'n1_p1'        ) : 'srun test.x',
         ('flight'          , 'n2'           ) : 'srun test.x',
         ('flight'          , 'n2_t2'        ) : 'srun test.x',
         ('flight'          , 'n2_t2_e'      ) : 'srun test.x',
         ('flight'          , 'n2_t2_p2'     ) : 'srun test.x',
-        ('ghost'          , 'n1'            ) : 'srun test.x', 
+        ('ghost'          , 'n1'            ) : 'srun test.x',
         ('ghost'          , 'n1_p1'         ) : 'srun test.x',
         ('ghost'          , 'n2'            ) : 'srun test.x',
         ('ghost'          , 'n2_t2'         ) : 'srun test.x',
         ('ghost'          , 'n2_t2_e'       ) : 'srun test.x',
         ('ghost'          , 'n2_t2_p2'      ) : 'srun test.x',
-        ('hops'          , 'n1'             ) : 'srun test.x', 
+        ('hops'          , 'n1'             ) : 'srun test.x',
         ('hops'          , 'n1_p1'          ) : 'srun test.x',
         ('hops'          , 'n2'             ) : 'srun test.x',
         ('hops'          , 'n2_t2'          ) : 'srun test.x',
@@ -1160,7 +1160,7 @@ def test_job_run_command():
         ('lonestar'       , 'n2_t2'         ) : 'ibrun -n 12 -o 0 test.x',
         ('lonestar'       , 'n2_t2_e'       ) : 'ibrun -n 12 -o 0 test.x',
         ('lonestar'       , 'n2_t2_p2'      ) : 'ibrun -n 4 -o 0 test.x',
-        ('manzano'        , 'n1'            ) : 'srun test.x', 
+        ('manzano'        , 'n1'            ) : 'srun test.x',
         ('manzano'        , 'n1_p1'         ) : 'srun test.x',
         ('manzano'        , 'n2'            ) : 'srun test.x',
         ('manzano'        , 'n2_t2'         ) : 'srun test.x',
@@ -1202,7 +1202,7 @@ def test_job_run_command():
         ('rhea'           , 'n2_t2'         ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
         ('rhea'           , 'n2_t2_e'       ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
         ('rhea'           , 'n2_t2_p2'      ) : 'srun -N 2 -n 4 -c 2 --cpu-bind=cores test.x',
-        ('solo'           , 'n1'            ) : 'srun test.x', 
+        ('solo'           , 'n1'            ) : 'srun test.x',
         ('solo'           , 'n1_p1'         ) : 'srun test.x',
         ('solo'           , 'n2'            ) : 'srun test.x',
         ('solo'           , 'n2_t2'         ) : 'srun test.x',
@@ -1430,7 +1430,7 @@ def test_job_run_command():
         assert(ns  in rc )
         assert(ns1 in rc1)
         assert(ns2 in rc2)
-        # verify that text on either side of node count 
+        # verify that text on either side of node count
         # agrees for original and split commands
         assert(len(rc1)==len(rc))
         assert(len(rc2)==len(rc))
@@ -1509,7 +1509,7 @@ echo List of nodes assigned to the job: $SLURM_NODELIST
 
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
-srun -N 2 -n 64 test.x''',
+srun -N 2 -n 64 test.x''',  # noqa: W291
         archer2 = '''#!/bin/bash
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
@@ -1924,7 +1924,7 @@ echo List of nodes assigned to the job: $SLURM_NODELIST
 
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
-srun -N 2 -n 32 test.x''',
+srun -N 2 -n 32 test.x''',  # noqa: W291
         solo = '''#!/bin/bash
 #SBATCH -p batch
 #SBATCH --job-name jobname

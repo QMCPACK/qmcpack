@@ -67,7 +67,7 @@ from nexus.developer import obj,save,load
 
 
 class SimTool(obj):
-    
+
     indicators = ('setup','sent_files','submitted','finished','failed','got_output','analyzed')
 
     fields = frozenset(indicators)
@@ -131,7 +131,7 @@ class SimTool(obj):
         #end for
     #end def write_state_all
 
-                
+
     def backup(self):
         for path in self.paths:
             base,file = os.path.split(path)
@@ -140,7 +140,7 @@ class SimTool(obj):
         #end for
     #end def backup
 
-                
+
     def restore(self):
         for path in self.paths:
             base,file = os.path.split(path)
@@ -178,7 +178,7 @@ class SimTool(obj):
             save(sim,path)
         #end for
     #end def set_indicators
-                
+
 #end class SimTool
 
 
@@ -247,5 +247,5 @@ if __name__=='__main__':
     elif command=='restore':
         st.restore()
     #end if
-    
+
 #end if

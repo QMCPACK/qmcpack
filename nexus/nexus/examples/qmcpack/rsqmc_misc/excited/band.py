@@ -42,14 +42,14 @@ scf = generate_pwscf(
     input_type   = 'generic',
     calculation  = 'scf',
     nspin        = 2,
-    input_dft    = 'lda', 
-    ecutwfc      = 200,   
-    conv_thr     = 1e-8, 
+    input_dft    = 'lda',
+    ecutwfc      = 200,
+    conv_thr     = 1e-8,
     nosym        = True,
     wf_collect   = True,
     system       = dia2,
     tot_magnetization = 0,
-    pseudos      = ['C.BFD.upf'], 
+    pseudos      = ['C.BFD.upf'],
     )
 #K-path of the standardized primitive cell
 dia2_structure.clear_kpoints()
@@ -65,16 +65,16 @@ band = generate_pwscf(
     job          = job(nodes=1,app='pw.x', hours = 1),
     input_type   = 'generic',
     calculation  = 'nscf',
-    input_dft    = 'lda', 
+    input_dft    = 'lda',
     ecutwfc      = 200,
-    nspin        = 2,   
+    nspin        = 2,
     conv_thr     = 1e-8,
     nosym        = True,
     wf_collect   = True,
     system       = dia2_kpts,
-    nbnd         = 8,      #a sensible nbnd value can be given 
+    nbnd         = 8,      #a sensible nbnd value can be given
     verbosity    = 'high', #verbosity must be set to high
-    pseudos      = ['C.BFD.upf'], 
+    pseudos      = ['C.BFD.upf'],
     dependencies = (scf, 'charge_density'),
     )
 

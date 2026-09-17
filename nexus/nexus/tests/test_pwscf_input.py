@@ -137,8 +137,8 @@ def test_input(tmp_path):
         specifier = 'angstrom',
         atoms     = ['Fe','Fe'],
         positions = np.array([
-            [2.070000000,   0.000000000,   0.000000000],   
-            [0.000000000,   0.000000000,   0.000000000], 
+            [2.070000000,   0.000000000,   0.000000000],
+            [0.000000000,   0.000000000,   0.000000000],
             ]),
         )
     pw.k_points.update(
@@ -461,7 +461,7 @@ def test_input(tmp_path):
         mass            = obj(Fe=58.69000),
         pseudos         = ['Fe.pbe-nd-rrkjus.UPF'],
         elem            = ['Fe','Fe'],
-        pos             = [[2.070000000, 0.000000000, 0.000000000],    
+        pos             = [[2.070000000, 0.000000000, 0.000000000],
                            [0.000000000, 0.000000000, 0.000000000]],
         pos_specifier   = 'angstrom',
         kgrid           = np.array((1,1,1)),
@@ -521,7 +521,7 @@ def test_input(tmp_path):
         mass            = obj(Fe=58.69000),
         pseudos         = ['Fe.pbe-nd-rrkjus.UPF'],
         elem            = ['Fe','Fe'],
-        pos             = [[2.070000000, 0.000000000, 0.000000000],    
+        pos             = [[2.070000000, 0.000000000, 0.000000000],
                            [0.000000000, 0.000000000, 0.000000000]],
         pos_specifier   = 'angstrom',
         kgrid           = np.array((1,1,1)),

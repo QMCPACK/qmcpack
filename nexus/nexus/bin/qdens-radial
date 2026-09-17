@@ -94,7 +94,7 @@ class QDRBase(DevBase):
     verbose = None
     options = obj()
     parser  = None
-    
+
     def vlog(self,*args,**kwargs):
         if self.verbose:
             DevBase.nxs_print(self,*args,**kwargs)
@@ -241,9 +241,9 @@ class QMCDensityRadialProcessor(QDRBase):
                 opt_failed = len(opt.radii.shape)!=1
                 if opt.species is not None:
                     opt_failed = opt_failed or \
-                            (len(opt.radii)!=len(opt.species) and len(opt.radii)>1) # If only 1 radius was given, we apply it globally to all species 
+                            (len(opt.radii)!=len(opt.species) and len(opt.radii)>1) # If only 1 radius was given, we apply it globally to all species
                 #end if
-                # Note: if species list not provided. the length of radii list must be one or the same as 
+                # Note: if species list not provided. the length of radii list must be one or the same as
                 # number of species in .xsf file, but this will need to be checked after .xsf is read
             except:
                 opt_failed = True
@@ -302,7 +302,7 @@ class QMCDensityRadialProcessor(QDRBase):
             raise ValueError(msg)
         #end if
 
-        # if VMC file is given, perform extrapolation before 
+        # if VMC file is given, perform extrapolation before
         # instantiating ChargeDensity object
         if opt.vmc_file is not None:
             self.nxs_print('Extrapolating from VMC and DMC densities...')
@@ -342,8 +342,8 @@ class QMCDensityRadialProcessor(QDRBase):
                 dmc_err_xsf_data.data[3]['density']['density'].values = dmc_plus_err_xsf_data.data[3]['density']['density'].values \
                                    - dmc_xsf_data.data[3]['density']['density'].values
 
-                # Get standard deviation corresponding to the extrapolation formula: 
-                #   
+                # Get standard deviation corresponding to the extrapolation formula:
+                #
                 # std_dev = sqrt(4*sigma_dmc**2+sigma_vmc**2)
                 #
                 extrap_err_xsf_data = deepcopy(dmc_err_xsf_data)
@@ -371,7 +371,7 @@ class QMCDensityRadialProcessor(QDRBase):
             show_error=True
 
             # We now have the means and the errors (either extrapolated or not). So let's now resample for the errorbars
-            
+
             sum_dict = {}
             sum_sq_dict = {}
             std_dict = {}
@@ -505,7 +505,7 @@ class QMCDensityRadialProcessor(QDRBase):
         if opt.plot:
             if opt.species is None:
                 cd.plot_radial_density(rmax=list(opt.radii),cumulative=opt.cumulative)
-            else: 
+            else:
                 cd.plot_radial_density(rmax=list(opt.radii),species=list(opt.species),cumulative=opt.cumulative)
             #end if
         #end if
