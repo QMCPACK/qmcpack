@@ -48,7 +48,7 @@ This type of install can be performed with:
 
 .. code-block:: bash
 
-    pip install "numpy>=1.22.0,!=2.4.0"
+    pip install "numpy>=1.24.0,!=2.4.0"
     pip install --no-deps "nexus@git+https://github.com/QMCPACK/qmcpack.git@main#subdirectory=nexus"
 
 If pip is not available on your machine, you can perform a numpy-only install manually (set ``PYTHONPATH``).
@@ -317,75 +317,78 @@ If you have cloned ``qmcpack`` and are using the version of Nexus that comes wit
 
     > cd nexus/
     > pytest
-    =========================== test session starts ============================
-    platform linux -- Python 3.14.4, pytest-9.0.3, pluggy-1.6.0
-    rootdir: /home/brock/Documents/github/qmcpack/nexus
+    ============================================ test session starts ============================================
+    platform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+    rootdir: /home/qmcpack/nexus
     configfile: pyproject.toml
-    plugins: order-1.3.0, cov-7.1.0
-    collected 397 items
+    testpaths: nexus/tests
+    plugins: order-1.5.0, cov-7.1.0
+    collected 628 items
 
-    test_versions.py .....                                               [  1%]
-    test_required_dependencies.py .                                      [  1%]
-    test_nexus_imports.py .                                              [  1%]
-    test_testing.py ....                                                 [  2%]
-    test_execute.py ..                                                   [  3%]
-    test_memory.py ....                                                  [  4%]
-    test_generic.py ...                                                  [  5%]
-    test_developer.py ...                                                [  5%]
-    test_unit_converter.py ...                                           [  6%]
-    test_periodic_table.py ......                                        [  8%]
-    test_numerics.py ...............                                     [ 11%]
-    test_grid_functions.py ......................                        [ 17%]
-    test_fileio.py .......                                               [ 19%]
-    test_hdfreader.py ..                                                 [ 19%]
-    test_xmlreader.py .......                                            [ 21%]
-    test_structure.py ...................................                [ 30%]
-    test_physical_system.py .......                                      [ 31%]
-    test_basisset.py .....                                               [ 33%]
-    test_pseudopotential.py ......                                       [ 34%]
-    test_nexus_base.py .....                                             [ 36%]
-    test_machines.py ......................                              [ 41%]
-    test_simulation_module.py .........................................  [ 51%]
-    test_bundle.py ..                                                    [ 52%]
-    test_project_manager.py ...........                                  [ 55%]
-    test_settings.py ..                                                  [ 55%]
-    test_pwscf_input.py ...                                              [ 56%]
-    test_pwscf_postprocessor_input.py .....                              [ 57%]
-    test_gamess_input.py .......                                         [ 59%]
-    test_pyscf_input.py ....                                             [ 60%]
-    test_quantum_package_input.py ....                                   [ 61%]
-    test_rmg_input.py ......                                             [ 62%]
-    test_qmcpack_converter_input.py ..........                           [ 65%]
-    test_qmcpack_input.py .............                                  [ 68%]
-    test_vasp_analyzer.py ....                                           [ 69%]
-    test_vasp_input.py .......                                           [ 71%]
-    test_pwscf_analyzer.py ...                                           [ 72%]
-    test_pwscf_postprocessor_analyzers.py ...                            [ 73%]
-    test_gamess_analyzer.py ...                                          [ 73%]
-    test_pyscf_analyzer.py ..                                            [ 74%]
-    test_quantum_package_analyzer.py ..                                  [ 74%]
-    test_rmg_analyzer.py ..                                              [ 75%]
-    test_qmcpack_converter_analyzers.py ....                             [ 76%]
-    test_qmcpack_analyzer.py ......                                      [ 77%]
-    test_vasp_simulation.py .......                                      [ 79%]
-    test_pwscf_simulation.py ......                                      [ 81%]
-    test_gamess_simulation.py ......                                     [ 82%]
-    test_pyscf_simulation.py .....                                       [ 83%]
-    test_quantum_package_simulation.py ......                            [ 85%]
-    test_rmg_simulation.py ..                                            [ 85%]
-    test_pwscf_postprocessor_simulations.py ......                       [ 87%]
-    test_qmcpack_converter_simulations.py ..................             [ 91%]
-    test_qmcpack_simulation.py ......                                    [ 93%]
-    test_observables.py ..                                               [ 93%]
-    test_nxs_redo.py .                                                   [ 94%]
-    test_nxs_sim.py .                                                    [ 94%]
-    test_qmc_fit.py .                                                    [ 94%]
-    test_qdens.py .                                                      [ 94%]
-    test_qdens_radial.py .                                               [ 95%]
-    test_qmca.py ...........                                             [ 97%]
-    test_user_examples_alt.py ........                                   [100%]
+    test_testing.py ...                                                                                    [  0%]
+    test_execute.py .                                                                                      [  0%]
+    test_memory.py ...                                                                                     [  1%]
+    test_utilities.py ....                                                                                 [  1%]
+    test_generic.py ...                                                                                    [  2%]
+    test_developer.py ........                                                                             [  3%]
+    test_unit_converter.py ..                                                                              [  3%]
+    test_periodic_table.py ........                                                                        [  5%]
+    test_numerics.py ..............                                                                        [  7%]
+    test_statistics.py ....................................................                                [ 15%]
+    test_grid_functions.py .....................                                                           [ 18%]
+    test_fileio.py .....                                                                                   [ 19%]
+    test_hdfreader.py .                                                                                    [ 19%]
+    test_xmlreader.py .....                                                                                [ 20%]
+    test_structure.py ............................................                                         [ 27%]
+    test_physical_system.py .....                                                                          [ 28%]
+    test_basisset.py ...                                                                                   [ 28%]
+    test_pseudoset.py ..................................                                                   [ 34%]
+    test_pseudopotential.py .                                                                              [ 34%]
+    test_nexus_base.py .....                                                                               [ 35%]
+    test_error_keys.py .....................                                                               [ 38%]
+    test_machines.py ......................                                                                [ 42%]
+    test_simulation_module.py .........................................                                    [ 48%]
+    test_bundle.py .                                                                                       [ 48%]
+    test_project_manager.py ...........                                                                    [ 50%]
+    test_settings.py ..                                                                                    [ 50%]
+    test_pwscf_input.py ..                                                                                 [ 51%]
+    test_pwscf_postprocessor_input.py ....                                                                 [ 51%]
+    test_gamess_input.py .....                                                                             [ 52%]
+    test_pyscf_input.py ...                                                                                [ 53%]
+    test_quantum_package_input.py ...                                                                      [ 53%]
+    test_rmg_input.py ..........                                                                           [ 55%]
+    test_qmcpack_converter_input.py .........                                                              [ 56%]
+    test_qmcpack_input.py ................                                                                 [ 59%]
+    test_vasp_analyzer.py ..                                                                               [ 59%]
+    test_vasp_input.py .................................                                                   [ 64%]
+    test_pwscf_analyzer.py ..............................................................................  [ 77%]
+    test_pwscf_postprocessor_analyzers.py ..                                                               [ 77%]
+    test_gamess_analyzer.py ..                                                                             [ 77%]
+    test_pyscf_analyzer.py .                                                                               [ 78%]
+    test_quantum_package_analyzer.py .                                                                     [ 78%]
+    test_rmg_analyzer.py ......................................                                            [ 84%]
+    test_qmcpack_converter_analyzers.py ...                                                                [ 84%]
+    test_qmcpack_analyzer.py .....                                                                         [ 85%]
+    test_vasp_simulation.py ......                                                                         [ 86%]
+    test_pwscf_simulation.py .....                                                                         [ 87%]
+    test_gamess_simulation.py .....                                                                        [ 88%]
+    test_pyscf_simulation.py ....                                                                          [ 88%]
+    test_quantum_package_simulation.py .....                                                               [ 89%]
+    test_rmg_simulation.py .                                                                               [ 89%]
+    test_pwscf_postprocessor_simulations.py .....                                                          [ 90%]
+    test_qmcpack_converter_simulations.py ...............                                                  [ 92%]
+    test_qmcpack_simulation.py ......                                                                      [ 93%]
+    test_observables.py .                                                                                  [ 93%]
+    test_nxs_redo.py .                                                                                     [ 94%]
+    test_nxs_sim.py .                                                                                      [ 94%]
+    test_qmc_fit.py .                                                                                      [ 94%]
+    test_qdens.py ..........                                                                               [ 96%]
+    test_qdens_radial.py .                                                                                 [ 96%]
+    test_qmca.py .............                                                                             [ 98%]
+    test_user_examples.py ...........                                                                      [100%]
 
-    ==================== 397 passed, 43 warnings in 58.38s =====================
+    ====================================== 628 passed, 5 warnings in 34.65s =====================================
+
 
 Some tests may be skipped depending on what dependencies you have available, or if they are marked to be skipped.
 Additionally, you may see a number of warnings appear; some of these may be warnings about Nexus, but it is likely that the majority arise from a Nexus dependency.
@@ -406,76 +409,95 @@ Code coverage can be assessed by using the ``pytest-cov`` plugin (``pip install 
     ...
     > coverage report
 
-    Name                                  Stmts   Miss  Cover
-    ---------------------------------------------------------
-    nexus/__init__.py                       305     99    68%
-    nexus/_bin.py                            25     25     0%
-    nexus/basisset.py                       645    387    40%
-    nexus/bin/nxs-redo                       90     31    66%
-    nexus/bin/nxs-sim                       148     62    58%
-    nexus/bin/qdens                         846    438    48%
-    nexus/bin/qdens-radial                  282     84    70%
-    nexus/bin/qmc-fit                       380    186    51%
-    nexus/bin/qmca                          887    326    63%
-    nexus/bundle.py                         191     68    64%
-    nexus/debug.py                           12      6    50%
-    nexus/developer.py                      265     88    67%
-    nexus/execute.py                         14      2    86%
-    nexus/fileio.py                        1019    407    60%
-    nexus/gamess.py                         151     62    59%
-    nexus/gamess_analyzer.py                306    131    57%
-    nexus/gamess_input.py                   593    167    72%
-    nexus/gaussian_process.py               943    943     0%
-    nexus/generic.py                        842    184    78%
-    nexus/grid_functions.py                1641    689    58%
-    nexus/hdfreader.py                      205     59    71%
-    nexus/machines.py                      2593    705    73%
-    nexus/memory.py                          60      7    88%
-    nexus/nexus_base.py                      76     10    87%
-    nexus/nexus_version.py                    2      0   100%
-    nexus/numerics.py                       904    461    49%
-    nexus/numpy_extensions.py                 7      1    86%
-    nexus/observables.py                    891    492    45%
-    nexus/periodic_table.py                 301      4    99%
-    nexus/physical_system.py                429     67    84%
-    nexus/project_manager.py                233     37    84%
-    nexus/pseudopotential.py               1675   1003    40%
-    nexus/pwscf.py                          216     86    60%
-    nexus/pwscf_analyzer.py                 653    283    57%
-    nexus/pwscf_data_reader.py              130    120     8%
-    nexus/pwscf_input.py                   1387    494    64%
-    nexus/pwscf_postprocessors.py           517    113    78%
-    nexus/pyscf_analyzer.py                   3      0   100%
-    nexus/pyscf_input.py                    285     44    85%
-    nexus/pyscf_sim.py                       64     14    78%
-    nexus/qmcpack.py                       1044    789    24%
-    nexus/qmcpack_analyzer.py               456    106    77%
-    nexus/qmcpack_analyzer_base.py          326    136    58%
-    nexus/qmcpack_converters.py             673    215    68%
-    nexus/qmcpack_input.py                 4440   1906    57%
-    nexus/qmcpack_method_analyzers.py       196     64    67%
-    nexus/qmcpack_property_analyzers.py     204    100    51%
-    nexus/qmcpack_quantity_analyzers.py    2095   1818    13%
-    nexus/qmcpack_result_analyzers.py       289    144    50%
-    nexus/quantum_package.py                253    141    44%
-    nexus/quantum_package_analyzer.py         3      0   100%
-    nexus/quantum_package_input.py          337    164    51%
-    nexus/rmg.py                             33     10    70%
-    nexus/rmg_analyzer.py                   293    265    10%
-    nexus/rmg_input.py                      682    148    78%
-    nexus/simulation.py                    1055    185    82%
-    nexus/structure.py                     4121   2099    49%
-    nexus/template_simulation.py             64     64     0%
-    nexus/testing.py                        451     87    81%
-    nexus/unit_converter.py                 120      2    98%
-    nexus/utilities.py                       56     16    71%
-    nexus/vasp.py                            93     15    84%
-    nexus/vasp_analyzer.py                  547     73    87%
-    nexus/vasp_input.py                     958    454    53%
-    nexus/versions.py                       348     52    85%
-    nexus/xmlreader.py                      298     53    82%
-    ---------------------------------------------------------
-    TOTAL                                 39651  17491    56%
+    Name                                                           Stmts   Miss  Cover
+    ----------------------------------------------------------------------------------
+    __init__.py                                                      377    132    65%
+    basisset.py                                                      672    411    39%
+    bin/nxs-redo                                                      96     35    64%
+    bin/nxs-sim                                                      150     64    57%
+    bin/qdens                                                        923    408    56%
+    bin/qdens-radial                                                 291     95    67%
+    bin/qmc-fit                                                      397    204    49%
+    bin/qmca                                                         939    239    75%
+    bundle.py                                                        198     73    63%
+    debug.py                                                          12      6    50%
+    developer.py                                                      32      5    84%
+    developer_tools.py                                               175     26    85%
+    error_keys.py                                                    145      6    96%
+    examples/.../h2o_pp_casscf.py                                      9      0   100%
+    examples/.../h2o_pp_cisd.py                                        9      0   100%
+    examples/.../h2o_pp_hf.py                                          8      0   100%
+    examples/.../h2o_ae_hf.py                                          7      0   100%
+    examples/.../H2O.py                                               29      0   100%
+    examples/.../LiH.py                                               33      0   100%
+    examples/.../c20.py                                               23      4    83%
+    examples/.../diamond.py                                           11      0   100%
+    examples/.../diamond_vacancy.py                                    9      0   100%
+    examples/.../graphene.py                                          22      4    82%
+    examples/.../oxygen_dimer.py                                      23      0   100%
+    examples/.../diamond_lda_dmc_restart_same_dir.py                  13      0   100%
+    examples/.../diamond_lda_dmc_restart_separate_dirs.py             13      0   100%
+    examples/.../diamond_lda_dmc_twistavg_restart_same_dir.py         13      0   100%
+    examples/.../diamond_lda_dmc_twistavg_restart_separate_dirs.py    13      0   100%
+    examples/.../relax_vs_kpoints_example.py                          33     20    39%
+    examples/.../diamond_scf.py                                       12      0   100%
+    execute.py                                                        14      2    86%
+    fileio.py                                                       1049    429    59%
+    gamess.py                                                        160     68    58%
+    gamess_analyzer.py                                               323    144    55%
+    gamess_input.py                                                  661    181    73%
+    generic.py                                                        93     16    83%
+    grid_functions.py                                               1645    701    57%
+    hdfreader.py                                                     211     63    70%
+    machines.py                                                     2692    764    72%
+    memory.py                                                         58      7    88%
+    nexus_base.py                                                     90      9    90%
+    nexus_version.py                                                   2      0   100%
+    numerics.py                                                      917    473    48%
+    numpy_extensions.py                                                7      1    86%
+    observables.py                                                   919    517    44%
+    periodic_table.py                                                313      4    99%
+    physical_system.py                                               296     67    77%
+    project_manager.py                                               354    125    65%
+    pseudopotential.py                                              1588   1039    35%
+    pseudoset.py                                                     556     78    86%
+    pwscf.py                                                         329    172    48%
+    pwscf_analyzer.py                                               1047    240    77%
+    pwscf_data_reader.py                                             131    121     8%
+    pwscf_input.py                                                  1448    505    65%
+    pwscf_input_defs.py                                              304      7    98%
+    pwscf_postprocessors.py                                          531    120    77%
+    pyscf_analyzer.py                                                  3      0   100%
+    pyscf_input.py                                                   311     65    79%
+    pyscf_sim.py                                                      78     15    81%
+    qmcpack.py                                                      1326    937    29%
+    qmcpack_analyzer.py                                              457    106    77%
+    qmcpack_analyzer_base.py                                         342    151    56%
+    qmcpack_converters.py                                            745    264    65%
+    qmcpack_input.py                                                5333   2090    61%
+    qmcpack_method_analyzers.py                                      200     67    66%
+    qmcpack_property_analyzers.py                                    206    105    49%
+    qmcpack_quantity_analyzers.py                                   2061   1784    13%
+    qmcpack_result_analyzers.py                                      292    146    50%
+    quantum_package.py                                               263    148    44%
+    quantum_package_analyzer.py                                        3      0   100%
+    quantum_package_input.py                                         378    176    53%
+    rmg.py                                                            41     11    73%
+    rmg_analyzer.py                                                 1400    105    92%
+    rmg_input.py                                                     763    133    83%
+    simulation.py                                                   1382    381    72%
+    statistics.py                                                   1244    118    91%
+    structure.py                                                    4287   2125    50%
+    testing.py                                                       245     60    76%
+    unit_converter.py                                                124      4    97%
+    utilities.py                                                      62      2    97%
+    vasp.py                                                          104     18    83%
+    vasp_analyzer.py                                                 553     80    86%
+    vasp_input.py                                                   1581    263    83%
+    xmlreader.py                                                     292     54    82%
+    ----------------------------------------------------------------------------------
+    TOTAL                                                          44501  16993    62%
+
 
 The first column is the total number of statements, the second is the number not yet covered by the tests and the third is the percent covered. At the bottom is the sum total of all covered lines, all missed lines, and the average coverage percent.
 

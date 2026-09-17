@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.14"]
+        python-version: ["3.11", "3.14"]
 
     runs-on: ubuntu-latest
 
@@ -29,16 +29,16 @@ jobs:
     - name: Install uv and Setup Python ${{ matrix.python-version }}
       uses: astral-sh/setup-uv@v8.3.0
       with:
-        version: "0.11.26"
+        version: "0.12.15"
         python-version: ${{ matrix.python-version }}
 
     - name: Install Project and All Dependencies
       run: uv sync --locked --all-extras --dev
       working-directory: ./nexus
 
-    - name: Downgrade to Minimum Versions (Python 3.10 only)
-      if: contains(matrix.python-version, '3.10')
-      run: uv pip install numpy==1.22.0 scipy==1.8.0 h5py==3.6.0 matplotlib==3.3.0 spglib==1.16.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.0.0
+    - name: Downgrade to Minimum Versions (Python 3.11 only)
+      if: contains(matrix.python-version, '3.11')
+      run: uv pip install numpy==1.24.0 scipy==1.10.0 h5py==3.8.0 matplotlib==3.6.0 spglib==2.0.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.1.0
       working-directory: ./nexus
 
     - name: Run Nexus Tests
@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.14"]
+        python-version: ["3.11", "3.14"]
     runs-on: macos-latest
 
     steps:
@@ -64,16 +64,16 @@ jobs:
     - name: Install uv and Setup Python ${{ matrix.python-version }}
       uses: astral-sh/setup-uv@v8.3.0
       with:
-        version: "0.11.26"
+        version: "0.12.15"
         python-version: ${{ matrix.python-version }}
 
     - name: Install Project and All Dependencies
       run: uv sync --locked --all-extras --dev
       working-directory: ./nexus
 
-    - name: Downgrade to Minimum Versions (Python 3.10 only)
-      if: contains(matrix.python-version, '3.10')
-      run: uv pip install numpy==1.22.0 scipy==1.8.0 spglib==1.16.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.0.0 matplotlib==3.8.4
+    - name: Downgrade to Minimum Versions (Python 3.11 only)
+      if: contains(matrix.python-version, '3.11')
+      run: uv pip install numpy==1.24.0 scipy==1.10.0 spglib==2.0.0 cif2cell==2.1.0 pydot==2.0.0 seekpath==2.1.0 matplotlib==3.8.4
       working-directory: ./nexus
 
     - name: Run Nexus Tests
