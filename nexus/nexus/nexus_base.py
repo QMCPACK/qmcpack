@@ -74,6 +74,7 @@ class SimStage(Flag):
 
     @classmethod
     def from_list(cls, items: Collection[str]) -> SimStage:
+        """Join a collection of strings into a union of :class:`SimStage`."""
         if not all(isinstance(item, str) for item in items):
             msg = f"Expected a collection of strs, but got {items}"
             raise TypeError(msg)
@@ -90,104 +91,7 @@ class SimStage(Flag):
 
 
 class NexusConfig:
-    """Singleton class that represents all of Nexus's configuration settings.
-
-    Attributes
-    ----------
-    status_only : bool
-        Show status only and exit.
-
-        See :meth:`~.project_manager.ProjectManager.write_simulation_status`.
-    status : ShowStatusMode
-        Which jobs to show the status of.
-
-        See :class:`~.ShowStatusMode`, :attr:`~.status_only`.
-    sleep : int
-        How long (in seconds) to sleep between polling the queue and checking memory consumption of subprocesses.
-
-        See :meth:`~.project_manager.ProjectManager.run_project`.
-    timeout : int
-        Number of seconds to wait for output and error files after a job exits the queue before marking the simulation as failed.
-
-        See :meth:`~.simulation.Simulation.check_status`.
-    runs : StrPath
-        Name of the directory that Nexus runs should be placed in.
-
-        See :meth:`~.simulation.Simulation.set_directories`.
-    results : StrPath
-        Name of the directory that results from Nexus runs should be copied to.
-
-        If not set (empty string), results will not be stored outside of the runs directory.
-
-        See :meth:`~.simulation.Simulation.set_directories`.
-    local_directory : StrPath
-        Directory that Nexus will create files relative to.
-
-        See :meth:`~.simulation.Simulation.set_directories`.
-    remote_directory : StrPath
-        Unknown purpose.
-    file_locations : list[StrPath]
-        List of paths to directories that Nexus will look in for files.
-
-        See :meth:`~.simulation.Simulation.send_files`.
-    monitor : bool
-        Toggle whether or not Nexus should continue to monitor jobs after submission.
-
-        See :meth:`~.project_manager.ProjectManager.run_project`.
-    skip_submit : bool
-        Toggle whether or not to skip actually submitting a job.
-
-        See :meth:`~.simulation.Simulation.submit`.
-
-        Also related to :class:`~.bundle.SimulationBundle`.
-    load_images : bool
-        Whether or not to load the simulation image saves to reconstruct the project state.
-
-        See :meth:`~.project_manager.ProjectManager.load_cascades`.
-    stages : SimStage
-        Control which simulation stages Nexus should run.
-
-        See :class:`~.SimStage` and :meth:`~.simulation.Simulation.progress`.
-    dependent_modes : SimStage
-        Set which stages are required for runtime execution.
-    quiet : bool
-        Disable all Nexus output after initialization.
-    indent : str
-        Indentation base level for Nexus output.
-
-        See :meth:`~.nexus_base.NexusCore.log`.
-    progress_tty : bool
-        Toggle printing abbreviated polling messages.graph_sims: bool
-        Optionally create a graph of the simulations that maps their dependency trees.
-
-        See :func:`~nexus.run_project` and :func:`~.simulation.graph_sims`.
-    command_line : bool
-        Toggle processing of command line arguments.
-
-        See :meth:`nexus.Settings.__call__`
-    dynamic : bool
-        Toggle use of dynamic workflows.
-
-        Used in various places. Some spots to look are in
-        :meth:`.simulation.Simulation.__init__`, :func:`~.pwscf.generate_pwscf`,
-        :func:`~.qmcpack_converters.generate_pw2qmcpack`, and
-        :func:`~.project_manager.workflow_manager`.
-    basis_dir : StrPath | None
-        Directory that basis sets are stored in.
-
-        See :attr:`~.basissets`.
-    basissets : BasisSets
-        Basis sets found in ``basis_dir`` if it exists.
-
-        See :func:`~.gamess_input.generate_any_gamess_input`.
-    pseudo_dir : StrPath | None
-        Directory that pseudopotentials are stored in.
-
-        See :attr:`~.pseudoset.PseudoSet.pseudo_files`,
-        :meth:`~.vasp_input.VaspInput.set_potcar`.
-    generate_only : bool
-        (LEGACY) Toggle only generating inputs and sending files.
-    """
+    """Singleton class that represents all of Nexus's configuration settings."""
 
     __slots__ = (  # noqa: RUF023
         "status_only",
@@ -218,34 +122,147 @@ class NexusConfig:
     )
 
     status_only: bool
+    """Show status only and exit.
+
+    See :meth:`~.project_manager.ProjectManager.write_simulation_status`.
+    """
+
     status: ShowStatusMode
+    """Which jobs to show the status of.
+
+    See :class:`~.ShowStatusMode`, :attr:`~.status_only`.
+    """
+
     sleep: int
+    """How long (in seconds) to sleep between polling the queue and checking memory consumption of subprocesses.
+
+    See :meth:`~.project_manager.ProjectManager.run_project`.
+    """
+
     timeout: int
+    """Number of seconds to wait for output and error files after a job exits the queue before marking the simulation as failed.
+
+    See :meth:`~.simulation.Simulation.check_status`.
+    """
+
     runs: StrPath
+    """Name of the directory that Nexus runs should be placed in.
+
+    See :meth:`~.simulation.Simulation.set_directories`.
+    """
+
     results: StrPath
+    """Name of the directory that results from Nexus runs should be copied to.
+
+    If not set (empty string), results will not be stored outside of the runs directory.
+
+    See :meth:`~.simulation.Simulation.set_directories`.
+    """
+
     local_directory: StrPath
+    """Directory that Nexus will create files relative to.
+
+    See :meth:`~.simulation.Simulation.set_directories`.
+    """
+
     remote_directory: StrPath
+    """Unknown purpose."""
+
     file_locations: list[StrPath]
+    """List of paths to directories that Nexus will look in for files.
+
+    See :meth:`~.simulation.Simulation.send_files`.
+    """
+
     monitor: bool
+    """Toggle whether or not Nexus should continue to monitor jobs after submission.
+
+    See :meth:`~.project_manager.ProjectManager.run_project`.
+    """
+
     skip_submit: bool
+    """Toggle whether or not to skip actually submitting a job.
+
+    See :meth:`~.simulation.Simulation.submit`.
+
+    Also related to :class:`~.bundle.SimulationBundle`.
+    """
+
     load_images: bool
+    """Whether or not to load the simulation image saves to reconstruct the project state.
+
+    See :meth:`~.project_manager.ProjectManager.load_cascades`.
+    """
+
     stages: SimStage
+    """Control which simulation stages Nexus should run.
+
+    See :class:`~.SimStage` and :meth:`~.simulation.Simulation.progress`.
+    """
+
     dependent_modes: SimStage
+    """Set which stages are required for runtime execution."""
+
     quiet: bool
+    """Disable all Nexus output after initialization."""
+
     indent: str
+    """Indentation base level for Nexus output.
+
+    See :meth:`~.nexus_base.NexusCore.nxs_print`.
+    """
+
     progress_tty: bool
+    """Toggle printing abbreviated polling messages."""
+
     graph_sims: bool
+    """Optionally create a graph of the simulations that maps their dependency trees.
+
+    See :func:`~nexus.run_project` and :func:`~.simulation.graph_sims`.
+    """
+
     command_line: bool
+    """Toggle processing of command line arguments.
+
+    See :meth:`~nexus.Settings`
+    """
+
     dynamic: bool
+    """Toggle use of dynamic workflows.
+
+    Used in various places. Some spots to look are in
+    :class:`~.simulation.Simulation`, :func:`~.pwscf.generate_pwscf`,
+    :func:`~.qmcpack_converters.generate_pw2qmcpack`, and
+    :func:`~.project_manager.workflow_manager`.
+    """
+
     basis_dir: StrPath | None
+    """Directory that basis sets are stored in.
+
+    See :attr:`~.basissets`.
+    """
+
     basissets: BasisSets
+    """Basis sets found in :attr:`basis_dir` if it exists.
+
+    See :func:`~.gamess_input.generate_any_gamess_input`.
+    """
+
     pseudo_dir: StrPath | None
+    """Directory that pseudopotentials are stored in.
+
+    See :attr:`~.pseudoset.PseudoSet.pseudo_files`,
+    :meth:`~.vasp_input.VaspInput.set_potcar`.
+    """
+
     generate_only: bool
+    """(LEGACY) Toggle only generating inputs and sending files."""
 
     def __init__(self):
         self.restore_defaults()
 
     def restore_defaults(self) -> None:
+        """Restore all config variables to their default values."""
         self.status_only      = False
         self.status           = ShowStatusMode.NONE
         self.sleep            = 3
