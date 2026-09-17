@@ -99,15 +99,6 @@ function(check_VPL_ID var_name id_to_check)
 endfunction()
 
 macro(speculateVendor)
-  if(BLA_VENDOR)
-    # If BLA_VENDOR was set, interpret user intention as opting out of auto-detection by VPL.
-    set(VPL_ID_GUESS "Generic")
-    if(NOT VendorPerfLibs_FIND_QUIETLY)
-      message(STATUS "BLA_VENDOR has been set to '${BLA_VENDOR}'. Guessed VPL_ID 'Generic'.")
-    endif()
-    return()
-  endif()
-
   find_library(_MKL_CORE_TEST_LIB NAMES mkl_core
     HINTS
       "$ENV{MKLROOT}/lib/intel64"
@@ -134,7 +125,15 @@ macro(speculateVendor)
 endmacro()
 
 if(NOT VPL_ID)
-  speculateVendor()
+  if(BLA_VENDOR)
+    # If BLA_VENDOR was set, interpret user intention as opting out of auto-detection by VPL.
+    set(VPL_ID_GUESS "Generic")
+    if(NOT VendorPerfLibs_FIND_QUIETLY)
+      message(STATUS "BLA_VENDOR has been set to '${BLA_VENDOR}'. Guessed VPL_ID 'Generic'.")
+    endif()
+  else()
+    speculateVendor()
+  endif()
 else()
   check_VPL_ID("VPL_ID" "${VPL_ID}")
 endif()
