@@ -26,12 +26,6 @@ template<typename T>
 inline void Communicate::reduce(T&)
 {}
 
-template<typename T>
-inline void Communicate::reduce(T* restrict g, T* restrict res, int n)
-{
-  for (int i = 0; i < n; ++i)
-    res[i] = g[i];
-}
 
 template<typename T>
 inline void Communicate::reduce_in_place(T* restrict res, int n)
@@ -47,9 +41,6 @@ inline void Communicate::bcast(T* restrict, int n)
 
 
 
-template<typename T>
-inline void Communicate::send(int dest, int tag, T&)
-{}
 
 template<typename T>
 inline void Communicate::gather(T& sb, T& rb, int dest)

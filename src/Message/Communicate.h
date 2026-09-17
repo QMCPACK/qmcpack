@@ -33,18 +33,13 @@ namespace mpi3 = boost::mpi3;
 struct CommunicatorTraits
 {
   using mpi_comm_type = MPI_Comm;
-  using status        = MPI_Status;
-  using request       = MPI_Request;
 };
 
 #else
 struct CommunicatorTraits
 {
   using mpi_comm_type               = int;
-  using status                      = int;
-  using request                     = int;
   static const int MPI_COMM_NULL    = 0;
-  static const int MPI_REQUEST_NULL = 1;
 };
 #endif
 
@@ -121,11 +116,6 @@ public:
   int getGroupID() const { return d_groupid; }
   ///return the number of intra_comms which belong to the same group
   int getNumGroups() const { return d_ngroups; }
-
-  void cleanupMessage(void*);
-  void setNodeID(int i) { d_mycontext = i; }
-  void setNumNodes(int n) { d_ncontexts = n; }
-
   void setName(const std::string& aname) { myName = aname; }
   void setName(const char* aname, int alen) { myName = std::string(aname, alen); }
   const std::string& getName() const { return myName; }
@@ -167,15 +157,11 @@ public:
   template<typename T>
   void reduce(T&);
   template<typename T>
-  void reduce(T* restrict, T* restrict, int n);
-  template<typename T>
   void reduce_in_place(T* restrict, int n);
   template<typename T>
   void bcast(T&);
   template<typename T>
   void bcast(T* restrict, int n);
-  template<typename T>
-  void send(int dest, int tag, T&);
   template<typename T>
   void gather(T& sb, T& rb, int dest = 0);
   template<typename T, typename IT>

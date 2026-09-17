@@ -80,18 +80,6 @@ inline void Communicate::reduce(T& g)
     g = gt;
 }
 
-template<typename T>
-inline void Communicate::reduce(T* restrict g, T* restrict res, int n)
-{
-  if (d_ncontexts == 1)
-  {
-    for (int i = 0; i < n; ++i)
-      res[i] = g[i];
-    return;
-  }
-  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*g);
-  MPI_Reduce(g, res, n, type_id, MPI_SUM, 0, myMPI);
-}
 
 template<typename T>
 inline void Communicate::reduce_in_place(T* restrict res, int n)
@@ -106,9 +94,6 @@ inline void Communicate::reduce_in_place(T* restrict res, int n)
 }
 
 
-template<typename T>
-inline void Communicate::send(int dest, int tag, T&)
-{ throw std::runtime_error("Need specialization for send(int, int, T& )"); }
 
 
 template<typename T>
@@ -234,9 +219,6 @@ inline void Communicate::bcast(std::string& g)
   bcast(g.data(), g.size());
 }
 
-template<>
-inline void Communicate::send(int dest, int tag, std::vector<double>& g)
-{ MPI_Send(g.data(), g.size(), MPI_DOUBLE, dest, tag, myMPI); }
 
 
 
