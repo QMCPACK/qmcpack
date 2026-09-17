@@ -57,7 +57,7 @@ class PhysicalSystem(DevBase):
                     msg = 'net_spin of system does not divide evenly into folded system'
                     raise RuntimeError(msg)
                 else:
-                    net_spin_fold = net_spin//ncells 
+                    net_spin_fold = net_spin//ncells
                 #end if
                 net_charge_fold = net_charge//ncells
             elif not self.structure.has_axes(): # folded molecule
@@ -73,7 +73,7 @@ class PhysicalSystem(DevBase):
                     )
                 raise NexusError(msg)
             #end if
-                
+
             self.folded_system = PhysicalSystem(
                 structure  = structure.folded_structure,
                 net_charge = net_charge_fold,
@@ -102,7 +102,7 @@ class PhysicalSystem(DevBase):
         self.pseudized = True
     #end def pseudize
 
-        
+
     def check_folded_system(self,*,exit=True,message=False):
         msg = ''
         sys_folded    = self.folded_system is not None
@@ -272,12 +272,12 @@ class PhysicalSystem(DevBase):
         #end if
     #end def get_smallest
 
-    
+
     def is_magnetic(self):
         return self.net_spin!=0 or self.structure.is_magnetic()
     #end def is_magnetic
 
-    
+
     def spin_polarized_orbitals(self):
         return self.is_magnetic()
     #end def spin_polarized_orbitals
@@ -525,7 +525,7 @@ def generate_physical_system(**kwargs):
             **valency
             )
     #end if
-    
+
     ps.generation_info = generation_info
 
     return ps

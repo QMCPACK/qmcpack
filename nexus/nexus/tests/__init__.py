@@ -168,7 +168,7 @@ def register_pseudo_files(pseudos: list[str]):
 
 class NexusTestOrder(IntEnum):
     """Test order for Nexus testing.
-    
+
     This dictates the order that the tests are run in, reflecting the
     inheritance hierarchy that Nexus has, so the first tests to fail are
     going to be indicative of where the actual root problem is.

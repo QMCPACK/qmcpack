@@ -57,7 +57,7 @@ def test_pseudopotential_classes(tmp_path):
 
     # below follows by virtue of being numeric
     qpp.assert_numeric('some location')
-    
+
     vcomp = qpp.components
 
     vloc = qpp.evaluate_local(rpow=1)
@@ -102,9 +102,9 @@ def test_pseudopotential_classes(tmp_path):
 
     qtext_ref = '''<?xml version="1.0" encoding="UTF-8"?>
 <pseudo version="0.5">
-  <header symbol="C" atomic-number="6" zval="4" relativistic="unknown" 
-   polarized="unknown" creator="Nexus" flavor="unknown" 
-   core-corrections="unknown" xc-functional-type="unknown" 
+  <header symbol="C" atomic-number="6" zval="4" relativistic="unknown"
+   polarized="unknown" creator="Nexus" flavor="unknown"
+   core-corrections="unknown" xc-functional-type="unknown"
    xc-functional-parametrization="unknown"/>
   <grid type="linear" units="bohr" ri="0.0" rf="10.0" npts="6"/>
   <semilocal units="hartree" format="r*V" npots-down="2" npots-up="0" l-local="1">
@@ -186,7 +186,7 @@ r*potential (L=1) in Ha
     ctext = qpp_fake.write_casino()
     assert(ctext.strip()==ctext_ref.strip())
 
-    
+
     # tests for GaussianPP
     gpp = GaussianPP(TEST_FILES['C.BFD.gms'],format='gamess')
     assert(gpp.Zcore   == 2   )

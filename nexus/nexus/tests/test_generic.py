@@ -32,7 +32,7 @@ def test_logging(tmp_path, capsys):
     nxs_print(s,indent='msg: ')
     captured = capsys.readouterr()
     assert(captured.out=='msg: a message\nmsg: with indentation\n')
-    
+
     #   writing to separate log files
     logfile = tmp_path / "fake.log"
     logfile.touch()

@@ -34,7 +34,7 @@ def test_defined_attribute_base():
         dest     = 'nest',
         deepcopy = True,
         )
-    
+
     pref = obj(
         assigned        = {'dest', 'default', 'deepcopy'},
         deepcopy        = True,
@@ -56,13 +56,13 @@ def test_defined_attribute_base():
     da_attributes = obj(
         a = obj(
             default    = 1,
-            ),         
-        b = obj(       
+            ),
+        b = obj(
             default    = 2,
             type       = int,
             required   = True,
-            ),         
-        c = obj(       
+            ),
+        c = obj(
             dest       = 'nest',
             type       = str,
             ),
@@ -150,7 +150,7 @@ def test_defined_attribute_base():
                 ),
             ),
         )
-    
+
     assert(check_object_eq(o,oref))
 
 
@@ -192,7 +192,7 @@ def test_defined_attribute_base():
 
     # set_default_attributes
     da.set_default_attributes()
-    
+
     da_ref = obj(
         a    = 1,
         b    = 2,
@@ -326,7 +326,7 @@ def test_defined_attribute_base():
             c = None,
             )
         )
-    
+
     assert(check_object_eq(da,da_ref))
 
     da.b = None
