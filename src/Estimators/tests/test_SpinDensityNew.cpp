@@ -234,9 +234,9 @@ TEST_CASE("SpinDensityNew::accumulate partial cell", "[estimators]")
 )XML"));
   SpinDensityInput sdi(doc.getRoot());
   SpeciesSet species_set;
-  const int ispecies                 = species_set.addSpecies("u");
-  const int iattribute               = species_set.addAttribute("membersize");
-  species_set(iattribute, ispecies)  = 2;
+  const int ispecies                = species_set.addSpecies("u");
+  const int iattribute              = species_set.addAttribute("membersize");
+  species_set(iattribute, ispecies) = 2;
 
   std::vector<MCPWalker> walkers;
   walkers.emplace_back(2);
@@ -246,7 +246,7 @@ TEST_CASE("SpinDensityNew::accumulate partial cell", "[estimators]")
 
   Lattice simulation_lattice;
   simulation_lattice.BoxBConds = true;
-  simulation_lattice.R = ParticleSet::Tensor_t(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+  simulation_lattice.R         = ParticleSet::Tensor_t(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
   simulation_lattice.reset();
   const SimulationCell simulation_cell(simulation_lattice);
   std::vector<ParticleSet> psets;

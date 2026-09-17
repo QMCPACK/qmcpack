@@ -33,7 +33,7 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
       lattice_(input_.has_cell() ? input_.get_cell() : lattice),
       simulation_lattice_(lattice)
 {
-  data_locality_ = dl;
+  data_locality_      = dl;
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
   if (input_.has_cell())
     initializeFiniteCellBounds();
@@ -134,7 +134,7 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
 
 bool SpinDensityNew::getFiniteCellPoint(const QMCT::PosType& position, size_t& point) const
 {
-  const QMCT::PosType u = lattice_.toUnit(position - derived_parameters_.corner);
+  const QMCT::PosType u  = lattice_.toUnit(position - derived_parameters_.corner);
   size_t candidate_point = point;
   for (int d = 0; d < QMCT::DIM; ++d)
   {
@@ -182,8 +182,8 @@ bool SpinDensityNew::getPeriodicFiniteCellPoint(const QMCT::PosType& position, s
     for (int ny = nlo[1]; ny <= nhi[1]; ++ny)
       for (int nz = nlo[2]; nz <= nhi[2]; ++nz)
       {
-        const QMCT::PosType image = primary_image + nx * simulation_lattice_.Rv[0] +
-            ny * simulation_lattice_.Rv[1] + nz * simulation_lattice_.Rv[2];
+        const QMCT::PosType image = primary_image + nx * simulation_lattice_.Rv[0] + ny * simulation_lattice_.Rv[1] +
+            nz * simulation_lattice_.Rv[2];
         if (getFiniteCellPoint(image, point))
           return true;
       }
