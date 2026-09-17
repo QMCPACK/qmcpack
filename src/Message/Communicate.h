@@ -186,14 +186,6 @@ public:
   void scatter(T& sb, T& rb, int dest = 0);
   template<typename T, typename IT>
   void scatterv(T& sb, T& rb, IT& counts, IT& displ, int source = 0);
-  template<typename T>
-  request irecv(int source, int tag, T&);
-  template<typename T>
-  request isend(int dest, int tag, T&);
-  template<typename T>
-  request irecv(int source, int tag, T*, int n);
-  template<typename T>
-  request isend(int dest, int tag, T*, int n);
   template<typename T, typename IT>
   void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest = 0);
   template<typename T, typename TMPI, typename IT>

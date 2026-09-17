@@ -45,9 +45,7 @@ template<typename T>
 inline void Communicate::bcast(T* restrict, int n)
 {}
 
-template<typename T>
-inline Communicate::request Communicate::irecv(int source, int tag, T&)
-{ return 1; }
+
 
 template<typename T>
 inline void Communicate::send(int dest, int tag, T&)
@@ -68,17 +66,11 @@ template<typename T>
 inline void Communicate::scatter(T& sb, T& rb, int dest)
 { rb = sb; }
 
-template<typename T>
-inline Communicate::request Communicate::isend(int dest, int tag, T&)
-{ return 1; }
 
-template<typename T>
-inline Communicate::request Communicate::irecv(int source, int tag, T*, int n)
-{ return 1; }
 
-template<typename T>
-inline Communicate::request Communicate::isend(int dest, int tag, T*, int n)
-{ return 1; }
+
+
+
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T& sb, T& rb, IT&, IT&, int dest)

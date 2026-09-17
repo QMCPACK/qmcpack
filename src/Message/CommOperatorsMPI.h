@@ -166,33 +166,13 @@ inline void Communicate::scatterv(T& sb, T& rb, IT& counts, IT& displ, int sourc
                myMPI);
 }
 
-template<typename T>
-inline Communicate::request Communicate::irecv(int source, int tag, T&)
-{
-  throw std::runtime_error("Need specialization for irecv(int source, int tag, T& )");
-  return MPI_REQUEST_NULL;
-}
 
-template<typename T>
-inline Communicate::request Communicate::isend(int dest, int tag, T&)
-{
-  throw std::runtime_error("Need specialization for isend(int source, int tag, T& )");
-  return MPI_REQUEST_NULL;
-}
 
-template<typename T>
-inline Communicate::request Communicate::irecv(int source, int tag, T*, int n)
-{
-  throw std::runtime_error("Need specialization for irecv(int source, int tag, T*, int )");
-  return MPI_REQUEST_NULL;
-}
 
-template<typename T>
-inline Communicate::request Communicate::isend(int dest, int tag, T*, int n)
-{
-  throw std::runtime_error("Need specialization for isend(int source, int tag, T*, int )");
-  return MPI_REQUEST_NULL;
-}
+
+
+
+
 
 template<typename T>
 inline void Communicate::allgather(T* sb, T* rb, int count)
@@ -258,21 +238,9 @@ template<>
 inline void Communicate::send(int dest, int tag, std::vector<double>& g)
 { MPI_Send(g.data(), g.size(), MPI_DOUBLE, dest, tag, myMPI); }
 
-template<>
-inline Communicate::request Communicate::isend(int dest, int tag, std::vector<double>& g)
-{
-  request r;
-  MPI_Isend(g.data(), g.size(), MPI_DOUBLE, dest, tag, myMPI, &r);
-  return r;
-}
 
-template<>
-inline Communicate::request Communicate::irecv(int source, int tag, std::vector<double>& g)
-{
-  request r;
-  MPI_Irecv(g.data(), g.size(), MPI_DOUBLE, source, tag, myMPI, &r);
-  return r;
-}
+
+
 
 
 template<typename T, typename TMPI, typename IT>
