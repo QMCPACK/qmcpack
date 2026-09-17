@@ -55,7 +55,7 @@ class OneReducedDensityMatrix:
         print("Trace of 1rdms:")
         print(f"   spin 0 = {np.trace(self.rdm_u):12.8f} +/- {np.trace(self.rdm_u_err):12.8f}")
         print(f"   spin 1 = {np.trace(self.rdm_d):12.8f} +/- {np.trace(self.rdm_d_err):12.8f}")
-        
+
         self.is_valid = True
     # End function
 
@@ -89,7 +89,7 @@ class OneReducedDensityMatrix:
             else:
                 arr = np.copy(self.rdm_d)
                 err = np.copy(self.rdm_d_err)
-                
+
             print("Writing file: ", fa)
             print("Writing file: ", fe)
             for i in range(self.rdm_u.shape[0]):
@@ -102,7 +102,7 @@ class OneReducedDensityMatrix:
                 fe.write(txte + "\n")
     # End function
 # End class
-        
+
 
 
 if __name__ == "__main__":
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: ./get_1rdms.py path/to/qmcpack.stat.h5")
         sys.exit()
-    
+
     print("Starting job...")
     rdms = OneReducedDensityMatrix()
     rdms.read_qmcpack_stath5(sys.argv[1])
@@ -120,5 +120,5 @@ if __name__ == "__main__":
     else:
         print("It failed!")
         sys.exit()
-    
+
     print("Done.")

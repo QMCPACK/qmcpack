@@ -1602,6 +1602,8 @@ def _trim_run(
     if start>=stop:
         return 0
     val_sign = np.sign(x[start]-x_lcd)
+    if val_sign==0.:
+        return 0
     for n in range(start,stop):
         if np.sign(x[n]-x_lcd)*val_sign<0:
             return n-start

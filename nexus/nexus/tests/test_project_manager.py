@@ -84,7 +84,7 @@ def test_traverse_cascades():
     pm.add_simulations(sims)
 
     pm.traverse_cascades()
-    
+
     def count_visits(sim,visit_counts):
         i = sim.simid
         if i not in visit_counts:

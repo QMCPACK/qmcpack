@@ -23,14 +23,14 @@ SplineC2R<ST>::SplineC2R(const std::string& my_name,
                          size_t size,
                          const Lattice& prim_lattice,
                          std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
-                         bool use_offload)
+                         std::unique_ptr<MultiBsplineOffloadMapperBase<ST>> mapper)
     : BsplineSet(my_name, size, prim_lattice),
       offload_timer_(createGlobalTimer("SplineC2R::offload", timer_level_fine)),
       nComplexBands(0),
       GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
       prim_lattice_G_offload(std::make_shared<OffloadVector<ST>>(9)),
       SplineInst(std::move(multi_spline)),
-      offload_mapper_(use_offload ? std::make_shared<MultiBsplineOffloadMapper<ST>>(*SplineInst) : nullptr)
+      offload_mapper_(std::move(mapper))
 
 {
   auto GGt(dot(transpose(prim_lattice.G), prim_lattice.G));

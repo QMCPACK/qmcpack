@@ -19,7 +19,7 @@
 #include "Particle/DistanceTable.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "random.hpp"
-#include "mpi/collectives.h"
+#include "Message/CommOperators.h"
 #include "Sandbox/input.hpp"
 #include "Sandbox/pseudo.hpp"
 #include "Utilities/Timer.h"
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
     els.create({nels / 2, nels - nels / 2});
     els.R.InUnit = PosUnit::Lattice;
     std::generate(&els.R[0][0], &els.R[0][0] + nels3, random_th);
-    els.convert2Cart(els.R);   // convert to Cartiesian
+    els.convert2Cart(els.R); // convert to Cartiesian
     els.update();
   }
 
