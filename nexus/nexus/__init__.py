@@ -575,7 +575,7 @@ class Settings(NexusCore):
                 if val_str not in ShowStatusMode.__members__:
                     msg = (
                         f"Invalid status mode specified: {val}\n"
-                        f"Valid status modes are: {[*ShowStatusMode.__members__]}"
+                        f"Valid status modes are: {[i.lower() for i in ShowStatusMode.__members__]}"
                     )
                     raise ValueError(msg)
                 NEXUS_CONFIG.status = ShowStatusMode[val_str]
