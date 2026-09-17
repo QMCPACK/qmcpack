@@ -81,7 +81,7 @@ class DevBaseNexus(DevBase):
 def to_obj(d):
     o = obj()
     for k,v in d.items():
-        if hasattr(v,'__dict__'):
+        if hasattr(v,'__dict__') and k != "logger":
             o[k] = to_obj(v)
         else:
             o[k] = v
