@@ -273,7 +273,7 @@ class Settings(NexusCore):
 
             version_text += "  Missing dependencies:\n"
             for missing in missing_deps:
-                version_text += f"    - {missing} ({nxs_deps[pkg_name]['status']})\n"
+                version_text += f"    - {missing} ({nxs_deps[missing]['status']})\n"
         else:
             version_text += "  All dependencies are present.\n"
 
@@ -309,6 +309,7 @@ class Settings(NexusCore):
 
         # process nexus config settings
         self.process_config_settings(kw)
+        self.update(**{s: getattr(NEXUS_CONFIG, s) for s in Settings.nexus_vars})
 
         # process gamess settings
         Gamess.restore_default_settings()
@@ -594,7 +595,7 @@ class Settings(NexusCore):
         elif isinstance(stages, str):
             if stages.upper() not in SimStage.__members__:
                 msg = (
-                    f"Invalid stages specified: {val}\n"
+                    f"Invalid stages specified: {stages}\n"
                     f"Valid stages are: {[*SimStage.__members__]}"
                 )
                 raise ValueError(msg)

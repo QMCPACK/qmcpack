@@ -1,32 +1,26 @@
-import pytest
+import os
 import sys
-from . import NexusTestOrder
+from pathlib import Path
+
+import pytest
+
+from .. import Settings, settings, testing
+from ..basisset import BasisSets
+from ..developer import obj
+from ..gamess import Gamess
+from ..machines import Job, Workstation
+from ..nexus_base import NEXUS_CONFIG, SimStage
+from ..project_manager import ProjectManager
+from ..pseudoset import PseudoSet
+from ..pwscf import Pwscf
+from ..quantum_package import QuantumPackage
+from . import NexusTestOrder, isolate_nexus_core
+
 pytestmark = pytest.mark.order(NexusTestOrder.SETTINGS_OPERATION)
 
-from .. import settings
-from ..developer import obj
-
-from pathlib import Path
-from . import isolate_nexus_core
-from .. import testing
-from ..testing import object_eq
-from ..nexus_base import NEXUS_CONFIG, SimStage, ShowStatusMode
 
 @isolate_nexus_core
 def test_settings(tmp_path):
-    # test full imports
-    import os
-    from nexus import settings,Settings
-    from ..developer import DevBase
-    
-    from ..pseudoset import PseudoSet
-    from ..basisset import BasisSets
-    from ..machines import Job,Workstation
-    from ..project_manager import ProjectManager
-    from ..gamess import Gamess
-    from ..pwscf import Pwscf
-    from ..quantum_package import QuantumPackage
-
     testing.check_final_state()
 
     def aux_defaults():
@@ -41,10 +35,77 @@ def test_settings(tmp_path):
         assert(QuantumPackage.qprc is None)
     #end def aux_defaults
 
+    def check_settings_core_noncore():
+        nckeys_check = {
+            'command_line',
+            'dependent_modes',
+            'file_locations',
+            'generate_only',
+            'graph_sims',
+            'indent',
+            'load_images',
+            'local_directory',
+            'monitor',
+            'progress_tty',
+            'pseudo_dir',
+            'quiet',
+            'remote_directory',
+            'results',
+            'runs',
+            'skip_submit',
+            'sleep',
+            'stages',
+            'status',
+            'timeout',
+            'status_only',
+            'dynamic',
+            'basis_dir',
+            'basissets',
+            }
+        setkeys_check = {
+            'command_line',
+            'dependent_modes',
+            'file_locations',
+            'generate_only',
+            'graph_sims',
+            'indent',
+            'load_images',
+            'local_directory',
+            'monitor',
+            'progress_tty',
+            'pseudo_dir',
+            'quiet',
+            'remote_directory',
+            'results',
+            'runs',
+            'skip_submit',
+            'sleep',
+            'stages',
+            'status',
+            'timeout',
+            'status_only',
+            'dynamic',
+            'basis_dir',
+            'basissets',
+            }
+        setkeys_allowed = setkeys_check | Settings.allowed_vars
+
+        nckeys  = set(NEXUS_CONFIG.__slots__)
+        setkeys = set(settings.keys())
+
+        assert(nckeys==nckeys_check)
+        assert(setkeys>=setkeys_check)
+        assert(setkeys<=setkeys_allowed)
+
+        for s in NEXUS_CONFIG.__slots__:
+            assert(settings[s] == getattr(NEXUS_CONFIG, s))
+    #end check_settings_core_noncore
+
     def check_empty_settings():
         settings(command_line = False)
         settings.command_line     = True
         NEXUS_CONFIG.command_line = True
+        check_settings_core_noncore()
         # nexus config has basic run stages and PseudoSet registries are empty
         assert(NEXUS_CONFIG.stages is SimStage.ALL)
 
@@ -89,6 +150,7 @@ def test_settings(tmp_path):
         machine       = 'ws16',
         command_line  = False,
         )
+    check_settings_core_noncore()
     assert(NEXUS_CONFIG.status_only==0)
     assert(NEXUS_CONFIG.generate_only==1)
     assert(NEXUS_CONFIG.timeout==10)
