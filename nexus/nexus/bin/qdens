@@ -1055,7 +1055,7 @@ class QMCDensityProcessor(QDBase):
                         msg = (
                             f'density estimator "{name}" must provide three positive '
                             f'delta values less than one in QMCPACK input file: {self.options.input}'
-                            
+
                             )
                         raise ValueError(msg)
                     #end if

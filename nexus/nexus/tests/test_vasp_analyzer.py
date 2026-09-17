@@ -100,7 +100,7 @@ def test_analyze():
     assert(object_eq(va.info,info))
 
     types = dict(
-        Efermi               = float  ,               
+        Efermi               = float  ,
         core_potential_radii = ndarray,
         core_potentials      = ndarray,
         force                = ndarray,
@@ -287,7 +287,7 @@ def test_analyze():
         )
 
     assert(object_eq(va.ion_steps[10][4],last_data))
-    
+
 
     vxml = va.xmldata
 

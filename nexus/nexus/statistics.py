@@ -260,7 +260,7 @@ def reblocked_autocorr_time(
         ):
     """Estimate autocorrelation time from the growth of blocked errors.
 
-    This estimator currently overestimates the autocorrelation times in a 
+    This estimator currently overestimates the autocorrelation times in a
     number of cases. Prefer the Geyer method.
 
     For MCMC data, just use the ``autocorr_time'' function.
@@ -524,7 +524,7 @@ def geyer_ims_autocorr_time(
     """Estimate integrated autocorrelation time with Geyer's IMS method.
 
     This is the single best autocorrelation estimator.
-    
+
     For MCMC data, just use the ``autocorr_time'' function.
 
     Autocorrelations are computed with an FFT.  Geyer's initial positive
@@ -1602,6 +1602,8 @@ def _trim_run(
     if start>=stop:
         return 0
     val_sign = np.sign(x[start]-x_lcd)
+    if val_sign==0.:
+        return 0
     for n in range(start,stop):
         if np.sign(x[n]-x_lcd)*val_sign<0:
             return n-start

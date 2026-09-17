@@ -15,7 +15,7 @@
 #    HDFgroup                                                        #
 #      Class representing an HDF group.                              #
 #      Contains other HDFgroup's or named data as numpy arrays       #
-#                                                                    #                                        
+#                                                                    #
 #====================================================================#
 
 import numpy as np
@@ -44,13 +44,13 @@ class HDFgroup(DevBase):
 
     def _add_dataset(self,name,dataset):
         self._datasets[name]=dataset
-        return 
+        return
     #end def add_dataset
 
     def _add_group(self,name,group):
         group._name=name
         self._groups[name]=group
-        return 
+        return
     #end def add_group
 
     def _contains_group(self,name):
@@ -229,7 +229,7 @@ class HDFgroup(DevBase):
         #self.sum(*names)
     #end def accumulate
 
-    
+
     def normalize(self,normalization,*names):
         for name in names:
             if name in self and isinstance(self[name],np.ndarray):
@@ -245,7 +245,7 @@ class HDFgroup(DevBase):
         #self.sum(*names)
     #end def normalize
 
-        
+
     def sum(self,*names):
         for name in names:
             if name in self and isinstance(self[name],np.ndarray) and name=='value':
@@ -260,7 +260,7 @@ class HDFgroup(DevBase):
 
 
 class HDFreader(DevBase):
-    
+
     def __init__(self,fpath,*,verbose=False,view=False):
         import h5py
         fpath = path_string(fpath)

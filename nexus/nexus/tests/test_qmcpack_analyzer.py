@@ -34,10 +34,10 @@ def test_empty_init():
                 ndmc_blocks     = 1000,
                 output          = set(['averages', 'samples']),
                 quantities      = set(
-                    ['mpc', 'localenergy', 'nonlocalecp', 'acceptratio', 
+                    ['mpc', 'localenergy', 'nonlocalecp', 'acceptratio',
                      'spindensity', 'kinetic', 'blockweight', 'structurefactor',
-                     'localecp', 'density', 'kecorr', 'energydensity', 
-                     'localenergy_sq', 'blockcpu', 'dm1b', 'localpotential', 
+                     'localecp', 'density', 'kecorr', 'energydensity',
+                     'localenergy_sq', 'blockcpu', 'dm1b', 'localpotential',
                      'elecelec', 'ionion']),
                 savefile        = '',
                 source          = './qmcpack.in.xml',
@@ -56,7 +56,7 @@ def test_empty_init():
     assert(len(data_sources-data_sources_ref)==0)
 
     assert(object_eq(to_obj(qa),qa_ref))
-#end def test_empty_init    
+#end def test_empty_init
 
 
 
@@ -199,7 +199,7 @@ def test_vmc_dmc_analysis():
 
     assert(object_eq(to_obj(scalars),scalars_ref))
 
-    
+
     # test analysis of dmc data
     infile = test_files / 'dmc/dmc.in.xml'
 
@@ -307,14 +307,14 @@ def test_optimization_analysis():
    </determinantset>
    <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
       <correlation speciesA="u" speciesB="u" size="8" rcut="2.3851851232">
-         <coefficients id="uu" type="Array">            
-0.2576630369 0.1796686015 0.1326653657 0.09407180823 0.06267013118 0.03899100023 
+         <coefficients id="uu" type="Array">
+0.2576630369 0.1796686015 0.1326653657 0.09407180823 0.06267013118 0.03899100023
 0.02070235604 0.009229775746
          </coefficients>
       </correlation>
       <correlation speciesA="u" speciesB="d" size="8" rcut="2.3851851232">
-         <coefficients id="ud" type="Array">            
-0.4385891515 0.3212399072 0.2275448261 0.1558506324 0.1009589176 0.06108433554 
+         <coefficients id="ud" type="Array">
+0.4385891515 0.3212399072 0.2275448261 0.1558506324 0.1009589176 0.06108433554
 0.03154274436 0.01389485975
          </coefficients>
       </correlation>
