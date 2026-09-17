@@ -256,6 +256,7 @@ mpi_errors = (
     'cleaning up processes',
     'execvp error',
     'not enough slots available',
+    'unable to find the specified executable file',
     )
 
 mpi_error_patterns = (
