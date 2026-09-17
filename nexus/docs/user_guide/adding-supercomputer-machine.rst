@@ -271,3 +271,9 @@ as :py:class:`Summit` and :py:class:`Flight` already do.
 
 If you are also using and configuring QMCPACK alongside Nexus, you can more simply run the machines test using ``ctest -R ntest_nexus_machines``, or all the Nexus tests with ``ctest -R nexus``,
 from the QMCPACK build directory.
+
+
+Current Supercomputer List
+--------------------------
+
+.. include:: /_static/machine_table.rst
