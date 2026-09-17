@@ -6,7 +6,7 @@ Adding a Supercomputer Machine
 ==============================
 
 This section describes how to add a permanent machine definition to :py:mod:`~nexus.machines`. These definitions are used by Nexus to generate
-job submission scripts, and subsequently to help submit and monitor jobs. Within Nexus, :py:class:`Supercomputer` refers to any machine that
+job submission scripts, and subsequently to help submit and monitor jobs. Within Nexus, 'Supercomputer' refers to any machine that
 uses a batch scheduler such at Slurm or PBS and not the size of the machine. This could include even a small workstation where a
 batch scheduler is installed and used to schedule jobs overnight. If a new machine only requires common or default behaviors, the
 new machine definition will require minimal Python code due to the functionality provided by the :py:class:`Supercomputer` base class. Runs
@@ -17,6 +17,7 @@ maintenance and to share them with other users. For a one-off local computationa
 can be used in ``~/.nexus/local_machines.py``.
 
 In the following we describe a step-by-step process for adding a new machine. 
+
 
 Choose the Closest Existing Machine
 -----------------------------------
@@ -34,102 +35,76 @@ If the header and launcher behavior are shared by several machines, consider
 deriving from the existing intermediate class, such as :py:class:`NerscMachine` or
 :py:class:`SnlMachine`. Otherwise, derive directly from :py:class:`Supercomputer`.
 
+
 Adding the Machine Class
 ------------------------
 
-Place the new class near similar machines in :py:mod:`~.nexus.machines`. At minimum, define
-a unique lower-case :py:attr:`~Supercomputer.name`, the account/capability flags, and
-``write_job_header`` method.
+Place the new class near similar machines in :py:mod:`~.nexus.machines`, and make sure
+to add the :py:func:`register_supercomputer` decorator to the class.
+
+Example Implementation
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
-   class NewMachine(Supercomputer):
-       name = 'newmachine'
-       requires_account = True
-       batch_capable    = True
-   
-       def post_process_job(self,job):
-           if len(job.run_options)==0:
-               job.run_options.add(
-                   N = '-N {}'.format(job.nodes),
-                   n = '-n {}'.format(job.processes),
-                   c = '-c {}'.format(job.threads),
-                   )
-           #end if
-       #end def post_process_job
-   
-       def write_job_header(self,job):
-           if job.queue is None:
-               job.queue = 'regular'
-           #end if
-           c  = '#!/bin/bash\n'
-           c += '#SBATCH -A {}\n'.format(job.account)
-           c += '#SBATCH -p {}\n'.format(job.queue)
-           c += '#SBATCH -J {}\n'.format(job.name)
-           c += '#SBATCH -t {}\n'.format(job.sbatch_walltime())
-           c += '#SBATCH -N {}\n'.format(job.nodes)
-           c += '#SBATCH --ntasks-per-node={}\n'.format(job.processes_per_node)
-           c += '#SBATCH --cpus-per-task={}\n'.format(job.threads)
-           c += '#SBATCH -o {}\n'.format(job.outfile)
-           c += '#SBATCH -e {}\n'.format(job.errfile)
-           if job.user_env:
-               c += '#SBATCH --export=ALL\n'
-           else:
-               c += '#SBATCH --export=NONE\n'
-           #end if
-           return c
-       #end def write_job_header
-   #end class NewMachine
+    @register_supercomputer
+    class NewMachine(Supercomputer):
+        name = 'newmachine'
+        requires_account = True
+        batch_capable    = True
+ 
+        nodes            = 3072
+        sockets_per_node = 2
+        cores_per_socket = 128
+        ram_per_node     = 512
+        queue_size       = 5000
+        app_launcher     = "srun"
+        sub_launcher     = "sbatch"
+        queue_querier    = "squeue"
+        job_remover      = "scancel"
 
-Please note: the only required class method is :py:meth:`~Supercomputer.write_job_header`.  Defining the :py:meth:`Supercomputer.post_process_job` function can be useful in special cases, see below.
+        def post_process_job(self,job):
+            if len(job.run_options)==0:
+                job.run_options.add(
+                    N = f'-N {job.nodes}',
+                    n = f'-n {job.processes}',
+                    c = f'-c {job.threads}',
+                    )
+            #end if
+        #end def post_process_job
 
-Important class details:
+        def write_job_header(self,job):
+            if job.queue is None:
+                job.queue = 'regular'
+            #end if
+            c  = '#!/bin/bash\n'
+            c += f'#SBATCH -A {job.account}\n'
+            c += f'#SBATCH -p {job.queue}\n'
+            c += f'#SBATCH -J {job.name}\n'
+            c += f'#SBATCH -t {job.sbatch_walltime()}\n'
+            c += f'#SBATCH -N {job.nodes}\n'
+            c += f'#SBATCH --ntasks-per-node={job.processes_per_node}\n'
+            c += f'#SBATCH --cpus-per-task={job.threads}\n'
+            c += f'#SBATCH -o {job.outfile}\n'
+            c += f'#SBATCH -e {job.errfile}\n'
+            if job.user_env:
+                c += '#SBATCH --export=ALL\n'
+            else:
+                c += '#SBATCH --export=NONE\n'
+            #end if
+            return c
+        #end def write_job_header
+    #end class NewMachine
 
-- :py:attr:`~Supercomputer.name` is the key used by :py:meth:`~Machine.get`, ``job(machine=...)``, and the tests.
-  It must be unique in :py:attr:`Machine.machines`.
-- ``requires_account = True`` makes jobs require ``account``; the machine tests
-  supply ``ABC123`` automatically for such machines.
-- :py:meth:`~Supercomputer.write_job_header` returns only the batch-script header and any setup lines.
-  :py:meth:`Supercomputer.write_job` appends environment exports and the run command.
-- Use ``pre_process_job`` to set defaults or hardware variants before generic
-  node/core calculations. Use :py:meth:`~Supercomputer.post_process_job` to add launcher options after
-  ``job.nodes``, :py:attr:`Job.processes`, ``job.processes_per_node``, and ``job.threads``
-  have been finalized.
-- Keep :py:meth:`Supercomputer.process_job` behavior idempotent. The tests call it more than once on
-  already-processed jobs, so avoid appending duplicate options or mutating
-  machine-wide state in a way that changes later jobs unexpectedly.
 
-Understanding the role of the Base Class
-----------------------------------------
+Required Methods/Attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`Supercomputer.process_job` method fills in missing :py:attr:`Job.cores` or :py:attr:`Job.nodes`, computes
-:py:attr:`Job.processes`, :py:attr:`Job.processes_per_node`, :py:attr:`Job.processes_per_proc`, :py:attr:`Job.ppn`, applies the
-machine account default, sets ``OMP_NUM_THREADS``, and then calls
-:py:meth:`~Supercomputer.process_job_options`.
+.. automethod:: nexus.machines.Supercomputer.write_job_header
+    :no-index:
 
-Default launcher handling is limited:
-
-- ``mpirun`` adds ``-np <processes>``.
-- ``mpiexec`` adds ``-n <processes>``.
-- ``aprun`` adds ``-n <processes>`` and, for threaded jobs, ``-d <threads>``.
-- ``runjob`` adds Blue Gene style ``--np``, ``-p``, ``$LOCARGS``, and ``--envs``.
-- ``ibrun`` adds ``-n <processes> -o 0``.
-- ``srun``, ``jsrun``, and ``lrun`` intentionally add nothing by default.
-
-For launchers that need machine-specific options, override :py:meth:`Supercomputer.post_process_job`
-or :py:meth:`Supercomputer.process_job_options`. Prefer :py:meth:`Supercomputer.post_process_job` when you only need to add
-or adjust :py:attr:`Job.run_options`; override :py:meth:`Supercomputer.process_job_options` when the base
-launcher behavior is not appropriate at all.
-
-The :py:meth:`Options.write()` method sorts option keys before building the command, so choose
-stable keys if test output ordering matters.
-
-Registering the Machine
------------------------
-
-The :py:func:`register_supercomputer` decorator is used to automatically register a supercomputer in :py:attr:`Machine.machines`.
-
-You must define the following parameters in the subclass you have created:
+.. autoattribute:: nexus.machines.Supercomputer.name
+    :no-index:
 
 .. autoattribute:: nexus.machines.Supercomputer.nodes
     :no-index:
@@ -160,6 +135,89 @@ You must define the following parameters in the subclass you have created:
 
 .. autoattribute:: nexus.machines.Supercomputer.cores_per_node
     :no-index:
+
+
+Optional Methods/Attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automethod:: nexus.machines.Supercomputer.pre_process_job
+    :no-index:
+
+.. automethod:: nexus.machines.Supercomputer.post_process_job
+    :no-index:
+
+.. autoattribute:: nexus.machines.Machine.batch_capable
+    :no-index:
+
+.. autoattribute:: nexus.machines.Machine.requires_account
+    :no-index:
+
+.. autoattribute:: nexus.machines.Machine.executable_subfile
+    :no-index:
+
+.. autoattribute:: nexus.machines.Machine.redirect_output
+    :no-index:
+
+.. autoattribute:: nexus.machines.Machine.query_with_username
+    :no-index:
+
+.. autoattribute:: nexus.machines.Machine.special_bundling
+    :no-index:
+
+.. autoattribute:: nexus.machines.Machine.prefixed_output
+    :no-index:
+
+.. autoattribute:: nexus.machines.Machine.outfile_extension
+    :no-index:
+
+.. autoattribute:: nexus.machines.Machine.errfile_extension
+    :no-index:
+
+.. autoattribute:: nexus.machines.Machine.allow_warnings
+    :no-index:
+
+.. autoattribute:: nexus.machines.Machine.queue_configs
+    :no-index:
+
+
+.. note::
+
+    The only required class method is :py:meth:`~Supercomputer.write_job_header`. Defining the :py:meth:`~Supercomputer.post_process_job` function can be useful in special cases, see below.
+
+Important class details:
+
+- :py:meth:`~Supercomputer.write_job_header` returns only the batch-script header and any setup lines.
+  :py:meth:`~Supercomputer.write_job` appends environment exports and the run command.
+- Keep :py:meth:`~Supercomputer.process_job` behavior idempotent. The tests call it more than once on
+  already-processed jobs, so avoid appending duplicate options or mutating
+  machine-wide state in a way that changes later jobs unexpectedly.
+
+
+Understanding the role of the Base Class
+----------------------------------------
+
+The :py:meth:`~Supercomputer.process_job` method fills in missing :py:attr:`Job.cores` or :py:attr:`Job.nodes`, computes
+:py:attr:`Job.processes`, :py:attr:`Job.processes_per_node`, :py:attr:`Job.processes_per_socket`, :py:attr:`Job.ppn`, applies the
+machine account default, sets ``OMP_NUM_THREADS``, and then calls
+:py:meth:`~Supercomputer.process_job_options`.
+
+Default launcher handling is limited:
+
+- ``mpirun`` adds ``-np <processes>``.
+- ``mpiexec`` adds ``-n <processes>``.
+- ``aprun`` adds ``-n <processes>`` and, for threaded jobs, ``-d <threads>``.
+- ``runjob`` adds Blue Gene style ``--np``, ``-p``, ``$LOCARGS``, and ``--envs``.
+- ``ibrun`` adds ``-n <processes> -o 0``.
+- ``srun``, ``jsrun``, and ``lrun`` intentionally add nothing by default.
+
+For launchers that need machine-specific options, override :py:meth:`~Supercomputer.post_process_job`
+or :py:meth:`~Supercomputer.process_job_options`. Prefer :py:meth:`~Supercomputer.post_process_job` when you only need to add
+or adjust :py:attr:`Job.run_options`; override :py:meth:`~Supercomputer.process_job_options` when the base
+launcher behavior is not appropriate at all.
+
+The :py:meth:`Options.write()` method sorts option keys before building the command, so choose
+stable keys if test output ordering matters.
+
 
 Updating the Machine Tests
 --------------------------

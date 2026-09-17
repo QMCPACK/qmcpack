@@ -48,6 +48,7 @@ import importlib.util
 import os
 import platform
 import subprocess
+from collections.abc import Mapping
 from copy import deepcopy
 from pathlib import Path
 from socket import gethostname
@@ -828,7 +829,7 @@ class Job(NexusCore):
             #end if
         elif machine.special_bundling:
             c+='\n'
-            c+=machine.specialized_bundle_commands(self,launcher,serial)
+            c+=machine.specialized_bundle_commands(self,launcher,serial=serial)
         elif self.relative:
             cdir = self.abs_subdir
             c+='\n'
@@ -985,19 +986,75 @@ class Machine(NexusCore):
         )
     mode = modes.none
 
-    batch_capable       = False
-    requires_account    = False
-    executable_subfile  = False
-    redirect_output     = False
-    query_with_username = False
-    special_bundling    = False
+    batch_capable: bool = False
+    """Whether or not a machine is capable of using bundled/batched jobs.
 
-    prefixed_output    = False
-    outfile_extension  = None
-    errfile_extension  = None
+    See the ``__init__`` method of :class:`Job`.
+    """
 
-    allow_warnings = True
-    queue_configs = None
+    requires_account: bool = False
+    """Whether or not the machine requires an account.
+
+    If this is ``True``, machine tests will supply the account name ``ABC123``
+    automatically.
+
+    See :meth:`Supercomputer.process_job`.
+    """
+
+    executable_subfile: bool = False
+    """Whether or not the machine uses executable submission files.
+
+    For example, a submission file with a shebang ``#! /usr/bin/env sbatch``
+    can be run as ``./submission_file.sbatch``.
+
+    See :meth:`Supercomputer.write_job` for implementation.
+    """
+
+    redirect_output: bool = False
+    """Whether or not the machine uses Unix-style output redirection.
+
+    See :meth:`Job.run_command`.
+    """
+
+    query_with_username: bool = False
+    """Require that a machine queries the queue with a username.
+
+    See :meth:`Supercomputer.query_queue`.
+    """
+
+    special_bundling: bool = False
+    """Toggle calling the ``specialized_bundle_commands`` method for a machine.
+
+    Some examples can be found at :meth:`Polaris.specialized_bundle_commands`,
+    or :meth:`Aurora.specialized_bundle_commands`.
+    """
+
+    prefixed_output: bool = False
+    """Whether or not the machine uses a special prefix for output/error files.
+
+    If this is set to ``True`` you must also specify :attr:`outfile_extension`
+    and :attr:`errfile_extension`.
+
+    Used by :meth:`Job.initialize`.
+    """
+
+    outfile_extension: str | None = None
+    """If :attr:`prefixed_output` is ``True`` then this is appended to the output file name."""
+
+    errfile_extension: str | None = None
+    """If :attr:`prefixed_output` is ``True`` then this is appended to the error file name."""
+
+    allow_warnings: bool = True
+    """Whether or not to allow the reporting of warnings."""
+
+    queue_configs: Mapping | None = None
+    """A map of configurations for different queues/QOS's.
+
+    Queue configs are validated in :meth:`Supercomputer.validate_queue_config`.
+
+    Some examples can be found in :attr:`Baseline.queue_configs` and
+    :attr:`Frontier.queue_configs`.
+    """
 
     @staticmethod
     def get_hostname():
@@ -1088,37 +1145,43 @@ class Machine(NexusCore):
     #end def validate
 
 
-    def in_batch_mode(self):
+    def in_batch_mode(self) -> bool:
         return self.mode==self.modes.batch
     #end def in_batch_mode
 
 
-    def query_queue(self):
+    def query_queue(self) -> None:
         raise NotImplementedError
     #end def query_queue
 
-    def submit_jobs(self):
+    def submit_jobs(self) -> None:
         raise NotImplementedError
     #end def submit_jobs
 
     # update all job information, must be idempotent
-    def process_job(self,job):
+    def process_job(self, job: Job) -> None:
         raise NotImplementedError
     #end def process_job
 
-    def process_job_options(self,job):
+    def process_job_options(self, job: Job) -> None:
         raise NotImplementedError
     #end def process_job_options
 
-    def write_job(self,job,*,file=False):
+    def write_job(self,job: Job, *, file: bool = False) -> str:
         raise NotImplementedError
     #end def write_job
 
-    def submit_job(self,job):
+    def submit_job(self, job: Job) -> None:
         raise NotImplementedError
     #end def submit_job
 
-    def specialized_bundle_commands(self,job,launcher,serial):
+    def specialized_bundle_commands(
+        self,
+        job: Job,
+        launcher: str,
+        *,
+        serial: bool,
+        ) -> str:
         raise NotImplementedError
     #end def specialized_bundle_commands
 
@@ -1564,13 +1627,21 @@ class InteractiveCluster(Workstation):
 
 class Supercomputer(Machine):
     mode = Machine.modes.batch
-    name = 'supercomputer'
+    name: str = 'supercomputer'
+    """Lowercase name for the supercomputer. **MUST BE UNIQUE in** :attr:`Machine.machines`!!
+
+    Used by :meth:`Machine.get`, the ``__init__`` of :class:`Job`, and the tests.
+    """
 
     batch_capable = False #only set to true for specific machines
 
-    aprun_options = frozenset({'n','d'})
+    aprun_options: frozenset[Literal['n', 'd', 'N', 'S']] = frozenset({'n','d'})
+    """Options passed to a launcher when :attr:`app_launcher` is ``aprun``.
 
-    # Items that subclasses need to define
+    See :meth:`Supercomputer.process_job_options` for use/implementation.
+    """
+
+    # Items that subclasses must define
     nodes: int
     """Total number of nodes on the supercomputer (CPU and GPU)."""
 
@@ -1927,12 +1998,12 @@ class Supercomputer(Machine):
 
 
     def pre_process_job(self, job: Job):
-        pass
+        """Set defaults or hardware variants before generic node/core calculations."""
     #end def pre_process_job
 
 
     def post_process_job(self, job: Job):
-        pass
+        """Add launcher options after job nodes, processes, processes_per_node, and threads have been finalized."""
     #end def post_process_job
 
 
@@ -2236,6 +2307,7 @@ class Supercomputer(Machine):
 
 
     def write_job(self, job: Job, *, file: bool = False) -> str:
+        """Calls :meth:`write_job_header` and then appends environment exports and the run command."""
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         if job.template is None:
             env = self.setup_environment(job)
@@ -2267,6 +2339,7 @@ class Supercomputer(Machine):
 
 
     def write_job_header(self, job: Job) -> str:
+        """Should return only the batch-script header and any setup lines."""
         raise NotImplementedError
     #end def write_job_header
 
@@ -5154,7 +5227,7 @@ class Polaris(Supercomputer):
         return c
     #end def write_job_header
 
-    def specialized_bundle_commands(self,job,launcher,serial):
+    def specialized_bundle_commands(self,job,launcher,*,serial):
         c = ''
         j0 = job.bundled_jobs[0]
         c+=f'split --lines={j0.nodes} --numeric-suffixes=1 --suffix-length=3 $PBS_NODEFILE local_hostfile.\n'
@@ -5271,7 +5344,7 @@ class Aurora(Supercomputer):
         return c
     #end def write_job_header
 
-    def specialized_bundle_commands(self,job,launcher,serial):
+    def specialized_bundle_commands(self,job,launcher,*,serial):
         c = ''
         j0 = job.bundled_jobs[0]
         c+=f'split --lines={j0.nodes} --numeric-suffixes=1 --suffix-length=3 $PBS_NODEFILE local_hostfile.\n'
