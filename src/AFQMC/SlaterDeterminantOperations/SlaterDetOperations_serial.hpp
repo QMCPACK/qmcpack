@@ -251,7 +251,7 @@ public:
     }
     TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TTensor TNM3D({n1, n2, n3}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
+    IVector IWORK(extents_t<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     SlaterDeterminantOperations::batched::MixedDensityMatrix(hermA, Bi, std::forward<MatC>(C), LogOverlapFactor,
                                                              std::forward<TVec>(ovlp), TNN3D, TNM3D, IWORK, compact,
                                                              herm);
@@ -290,7 +290,7 @@ public:
     }
     TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TTensor TNM3D({n1, n2, n3}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
+    IVector IWORK(extents_t<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     SlaterDeterminantOperations::batched::DensityMatrices(Left, Right, G, LogOverlapFactor, std::forward<TVec>(ovlp),
                                                           TNN3D, TNM3D, IWORK, compact, herm);
   }
@@ -316,7 +316,7 @@ public:
     int nbatch = Bi.size();
     assert(ovlp.size() == nbatch);
     TTensor TNN3D({nbatch, NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
+    IVector IWORK(extents_t<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     SlaterDeterminantOperations::batched::Overlap(hermA, Bi, LogOverlapFactor, std::forward<TVec>(ovlp), TNN3D, IWORK,
                                                   herm);
   }
@@ -338,8 +338,8 @@ public:
     TMatrix T_({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix scl({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     int sz = ma::gqr_optimal_workspace_size(AT[0]);
-    TVector WORK(iextensions<1u>{nbatch * sz}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
+    TVector WORK(extents_t<1u>{nbatch * sz}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(extents_t<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     for (int i = 0; i < nbatch; i++)
       ma::transpose(*Ai[i], AT[i]);
     // careful, expects fortran order
@@ -377,8 +377,8 @@ public:
     TMatrix T_({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix scl({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     int sz = ma::gqr_optimal_workspace_size(AT[0]);
-    TVector WORK(iextensions<1u>{nbatch * sz}, buffer_manager.get_generator().template get_allocator<T>());
-    IVector IWORK(iextensions<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
+    TVector WORK(extents_t<1u>{nbatch * sz}, buffer_manager.get_generator().template get_allocator<T>());
+    IVector IWORK(extents_t<1u>{nbatch * (NMO + 1)}, buffer_manager.get_generator().template get_allocator<int>());
     for (int i = 0; i < nbatch; i++)
       ma::transpose(*Ai[i], AT[i]);
     // careful, expects fortran order

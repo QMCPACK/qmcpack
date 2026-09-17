@@ -56,7 +56,7 @@ from numpy import pi
 from numpy.linalg import inv
 
 from . import numpy_extensions as npe
-from .developer import DevBase, log, obj, warn, NexusError, FileFormatError
+from .developer import DevBase, nxs_print, obj, warn, NexusError, FileFormatError
 from .periodic_table import Elements
 from .physical_system import PhysicalSystem
 from .pseudoset import pp_elem_label, PseudoSet
@@ -188,7 +188,7 @@ def array_from_lines(lines):
 
 
 pwscf_precision = '16.8f'
-pwscf_array_format = '{0:'+pwscf_precision+'}' 
+pwscf_array_format = '{0:'+pwscf_precision+'}'
 def array_to_string(a,pad='   ',format=pwscf_array_format,converter=noconv,rowsep='\n'):
     s=''
     if len(a.shape)==1:
@@ -813,7 +813,7 @@ def check_section_classes(*,exit=True):
         #end if
         raise NexusError(msg)
     else:
-        log('pwscf input checks passed')
+        nxs_print('pwscf input checks passed')
     #end if
     if exit:
         sys.exit()
@@ -940,7 +940,7 @@ class atomic_positions(Card):
                 )
             raise ValueError(msg)
         #end if
-            
+
         self.positions = pos
         self.specifier = new_specifier
     #end def change_specifier
@@ -1005,7 +1005,7 @@ class k_points(Card):
 
 
     def write_text(self):
-        c = ''        
+        c = ''
         if self.specifier in {'tpiba','crystal','tpiba_b','crystal_b',''}:
             self.nkpoints = len(self.kpoints)
             c+='   '+str(self.nkpoints)+'\n'
@@ -1076,7 +1076,7 @@ class k_points(Card):
                 )
             raise ValueError(msg)
         #end if
-            
+
         self.kpoints   = kpoints
         self.specifier = new_specifier
     #end def change_specifier
@@ -1132,7 +1132,7 @@ class cell_parameters(Card):
                 )
             raise ValueError(msg)
         #end if
-            
+
         self.vectors   = vec
         self.specifier = new_specifier
     #end def change_specifier
@@ -1220,7 +1220,7 @@ class collective_vars(Card):
         #end if
         for collv in self.collective_vars:
             c+='   '+collv.type+' '+array_to_string(collv.parameters,pad='')
-        #end for        
+        #end for
         return c
     #end def write_text
 #end class collective_vars
@@ -1234,7 +1234,7 @@ class occupations(Card):
     def read_text(self,lines):
         self.occupations = array_from_lines(lines)
     #end def read_text
- 
+
     def write_text(self):
         return array_to_string(self.occupations)
     #end def write_text
@@ -1246,7 +1246,7 @@ class hubbard(Card):
     available_specifiers = ('atomic', 'ortho-atomic', 'norm-atomic', 'wf', 'pseudo')
     default_specifier = 'atomic'
     system = None
-    def read_text(self, lines):        
+    def read_text(self, lines):
         contents = ''
         self.hubbard = {}
         for line in lines:
@@ -1273,14 +1273,14 @@ class hubbard(Card):
                             self.hubbard[intrxn][(specie1, specie2)]=[{'indices':(ind1, ind2), 'value':val}]
                         else:
                             self.hubbard[intrxn][(specie1, specie2)].append({'indices':(ind1, ind2), 'value':val})
-                        #end if 
+                        #end if
                     #end if
             #end for
         #end for
     #end def read_text
 
     def write_text(self):
-        manifold_dict = {} 
+        manifold_dict = {}
         contents = ''
         for param, interaction in self.hubbard.items():
             valid_format = True
@@ -1351,11 +1351,11 @@ class hubbard(Card):
                                 #end for
                             else:
                                 valid_format = False
-                            #end if 
+                            #end if
                         #end for
                     else:
                         valid_format = False
-                    #end if 
+                    #end if
                 else:
                     valid_format = False
                 #end for
@@ -1597,7 +1597,7 @@ class PwscfInput(SimulationInput):
         if 'cell_parameters' not in self:
             self.cell_parameters = self.element_types['cell_parameters']()
         #end if
-        self.cell_parameters.specifier = 'bohr' 
+        self.cell_parameters.specifier = 'bohr'
         self.cell_parameters.vectors   = s.axes.copy()
 
         self.k_points.clear()
@@ -1676,7 +1676,7 @@ class PwscfInput(SimulationInput):
                 relax_directions[i,2] = int(not frozen[i,2] and relax_directions[i,2])
             #end for
             self.atomic_positions.relax_directions = relax_directions
-        #end if                    
+        #end if
     #end def incorporate_system
 
 
@@ -1767,10 +1767,10 @@ class PwscfInput(SimulationInput):
                 relax_directions[i,2] = int(not frozen[i,2] and relax_directions[i,2])
             #end for
             self.atomic_positions.relax_directions = relax_directions
-        #end if                    
+        #end if
     #end def incorporate_system_old
 
-        
+
     # test needed
     def return_system(self,*,structure_only=False,**valency):
         ibrav = self.system.ibrav
@@ -1807,7 +1807,7 @@ class PwscfInput(SimulationInput):
         if structure_only:
             return structure
         #end if
-  
+
         ion_charge = 0
         atoms   = list(self.atomic_positions.atoms)
         for atom in self.atomic_species.atoms:
@@ -2035,9 +2035,9 @@ def generate_any_pwscf_input(**kwargs):
     if has_pre72_keys + has_v72_keys > 1:
         msg = f'Please use {hub_keys_pre72} for QE version <7.2 and {hub_keys_v72} for QE version >=7.2'
         raise ValueError(msg)
-    #end if     
+    #end if
     occ               = kwargs.get('occupations',None)
-    
+
     #make an empty input file
     pw = PwscfInput()
 
@@ -2087,7 +2087,7 @@ def generate_any_pwscf_input(**kwargs):
     #end if
     hubbard_input  = kwargs.pop('hubbard', None)
     hubbard_option = kwargs.pop('hubbard_proj',None)
-    
+
     #  pseudopotentials
     pseudopotentials = obj()
     atom_species = []
@@ -2169,7 +2169,7 @@ def generate_any_pwscf_input(**kwargs):
         system.change_units('B')
         s = system.structure
         #setting the 'lattice' (cell axes) requires some delicate care
-        #  qmcpack will fail if this is even 1e-10 off of what is in 
+        #  qmcpack will fail if this is even 1e-10 off of what is in
         #  the wavefunction hdf5 file from pwscf
         if s.folded_structure is not None:
             fs = s.folded_structure
@@ -2290,7 +2290,7 @@ def generate_any_pwscf_input(**kwargs):
         occ_card.occupations = np.array(occ,dtype=float)
         pw.occupations = occ_card
     #end if
-    
+
     # hubbard card
     if hubbard_input is not None:
         hubbard_card = hubbard()
@@ -2308,7 +2308,7 @@ def generate_any_pwscf_input(**kwargs):
             #end if
         #end if
         pw.hubbard.specifier = hubbard_option
-    #end if 
+    #end if
 
     # adjust card options, if requested
     options = obj(
@@ -2349,8 +2349,8 @@ def generate_any_pwscf_input(**kwargs):
             'these keywords are not known to belong to any namelist for PWSCF'
             )
         raise ValueError(msg)
-    #end if  
-    
+    #end if
+
     return pw
 #end def generate_any_pwscf_input
 
@@ -2492,7 +2492,7 @@ def generate_scf_input(*,
     system.change_units('B')
     s = system.structure
     #setting the 'lattice' (cell axes) requires some delicate care
-    #  qmcpack will fail if this is even 1e-10 off of what is in 
+    #  qmcpack will fail if this is even 1e-10 off of what is in
     #  the wavefunction hdf5 file from pwscf
     if s.folded_structure is not None:
         fs = s.folded_structure
@@ -2521,7 +2521,7 @@ def generate_scf_input(*,
     if use_folded:
         system = system.get_smallest()
     #end if
-        
+
     if start_mag is not None:
         spin_polarized=True
     #end if
@@ -2660,7 +2660,7 @@ def generate_relax_input(*,
             code = 'pwscf',
             )
     #end if
-    
+
     pseudopotentials = obj()
     atoms = []
     for ppname in pseudos:
@@ -2816,7 +2816,7 @@ def generate_relax_input(*,
 
 def generate_vcrelax_input(
     press          = None, # None = use pw.x default
-    cell_factor    = None, 
+    cell_factor    = None,
     cell_dofree    = None,
     forc_conv_thr  = None,
     ion_dynamics   = None,
@@ -2857,7 +2857,7 @@ def generate_vcrelax_input(
 #    if pseudos is None:
 #        pseudos = []
 #    #end if
-#    
+#
 #    pseudopotentials = obj()
 #    atoms = []
 #    for ppname in pseudos:

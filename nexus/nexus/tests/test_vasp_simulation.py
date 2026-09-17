@@ -23,25 +23,25 @@ def setup_vasp_sim(path,identifier='vasp',*,copy_files=False):
 
     dia16 = generate_physical_system(
         structure = TEST_FILES['d16bulk.POSCAR'],
-        C         = 4                  
+        C         = 4
         )
 
     sim = generate_vasp(
         identifier   = identifier,
         path         = path,
         job          = job(machine='ws1',cores=1),
-        system       = dia16,            
-        pseudos      = ['C.POTCAR'], 
+        system       = dia16,
+        pseudos      = ['C.POTCAR'],
         input_type   = 'generic',
-        istart       = 0, 
+        istart       = 0,
         icharg       = 2,
         encut        = 450,
         nsw          = 5,
         ibrion       = 2,
         isif         = 2,
         kcenter      = 'monkhorst',
-        kgrid        = (2,2,2),                
-        kshift       = (0,0,0),              
+        kgrid        = (2,2,2),
+        kshift       = (0,0,0),
         )
 
     assert(isinstance(sim,Vasp))
@@ -57,7 +57,7 @@ def setup_vasp_sim(path,identifier='vasp',*,copy_files=False):
             shutil.copy2(TEST_FILES[vfile],path)
         #end for
     #end if
-        
+
     return sim
 #end def setup_vasp_sim
 

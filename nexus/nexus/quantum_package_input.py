@@ -18,7 +18,7 @@
 
 import os
 from copy import deepcopy
-from .developer import DevBase, obj, log, NexusError
+from .developer import DevBase, obj, nxs_print, NexusError
 from .structure import Structure
 from .physical_system import PhysicalSystem
 from .simulation import SimulationInput
@@ -98,7 +98,7 @@ def write_qp_value(value_filepath,value):
 
 # quantum package path input specification
 #   The spec below was obtained by using the extract_input_specification
-#   function.  Run this function again with ezfio directory paths as 
+#   function.  Run this function again with ezfio directory paths as
 #   arguments to further augment the specification over time.
 #
 #   An ezfio directory containing all possible variables can be created
@@ -233,7 +233,7 @@ def extract_input_specification(*ezfio_paths):
     if len(ezfio_paths)==1 and isinstance(ezfio_paths[0],(list,tuple)):
         ezfio_paths = ezfio_paths[0]
     #end if
-    log('\nextracting Quantum Package input specification from ezfio directories')
+    nxs_print('\nextracting Quantum Package input specification from ezfio directories')
     typedict = {bool:'bool',int:'int',float:'float',str:'str'}
     new_input_spec = obj()
     for vpath,vtype in input_specification.items():
@@ -256,7 +256,7 @@ def extract_input_specification(*ezfio_paths):
                 )
             raise FileNotFoundError(msg)
         #end if
-        log(f'  extracting from: {epath}')
+        nxs_print(f'  extracting from: {epath}')
         for path,dirs,files in os.walk(epath):  # noqa: B007
             for file in files:
                 if 'save' not in path and 'work' not in path:
@@ -272,22 +272,22 @@ def extract_input_specification(*ezfio_paths):
             #end for
         #end for
     #end for
-    log('  extraction complete')
+    nxs_print('  extraction complete')
 
     old_vpaths = set(input_specification.keys())
     new_vpaths = set(new_input_spec.keys())
     if new_vpaths==old_vpaths:
-        log('\ninput specification in quantum_package_input.py needs no changes\n')
+        nxs_print('\ninput specification in quantum_package_input.py needs no changes\n')
     else:
-        log('\nplease replace input_specification in quantum_package_input.py with the following:\n')
-        log('input_specification = obj({')
+        nxs_print('\nplease replace input_specification in quantum_package_input.py with the following:\n')
+        nxs_print('input_specification = obj({')
         s = ''
         for vpath in sorted(new_input_spec.keys()):
             vtype = new_input_spec[vpath]
             s += f"    '{vpath}' : {vtype},\n"
         #end for
         s += '    })\n'
-        log(s)
+        nxs_print(s)
     #end if
 #end def extract_input_specification
 
@@ -692,7 +692,7 @@ class QuantumPackageInput(SimulationInput):
     def is_valid(self):
         return self.check_valid(exit=False)
     #end def is_valid
-                
+
 #end class QuantumPackageInput
 
 

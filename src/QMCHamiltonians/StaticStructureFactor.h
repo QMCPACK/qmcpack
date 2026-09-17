@@ -21,7 +21,6 @@ namespace qmcplusplus
 class StaticStructureFactor : public OperatorDependsOnlyOnParticleSet
 {
 public:
-  using k2_t   = std::vector<RealType>;
   using dens_t = std::vector<RealType>;
   using pts_t  = std::vector<PosType>;
 

@@ -19,7 +19,7 @@ def test_sim(tmp_path):
 
     NEXUS_CONFIG.runs    = ''
     NEXUS_CONFIG.results = ''
-    
+
     exe = TEST_DIR.parent / "bin/nxs-sim"
 
     sim = get_sim()

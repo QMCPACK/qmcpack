@@ -211,7 +211,7 @@ public:
 
       //4. calculate properties
       // adjust weights here is path restoration
-      stdCVector wgt(iextensions<1u>{wset.size()});
+      stdCVector wgt(extents_t<1u>{wset.size()});
       wset.getProperty(WEIGHT, wgt);
       if (path_restoration)
       {
@@ -231,7 +231,7 @@ public:
       }
       else if (!importanceSampling)
       {
-        stdCVector phase(iextensions<1u>{wset.size()});
+        stdCVector phase(extents_t<1u>{wset.size()});
         wset.getProperty(PHASE, phase);
         for (int i = 0; i < wgt.size(); i++)
           wgt[i] *= phase[i];

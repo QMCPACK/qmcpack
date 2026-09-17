@@ -20,7 +20,7 @@ from ..testing import object_eq
 def get_pw2qmcpack_sim(**kwargs):
     from ..machines import job
     from ..qmcpack_converters import Pw2qmcpack,generate_pw2qmcpack
-    
+
     sim = generate_pw2qmcpack(
         job = job(machine='ws1',cores=1),
         **kwargs
@@ -36,7 +36,7 @@ def get_pw2qmcpack_sim(**kwargs):
 def test_pw2qmcpack_minimal_init():
     from ..machines import job
     from ..qmcpack_converters import Pw2qmcpack,generate_pw2qmcpack
-    
+
     sim = generate_pw2qmcpack(
         job = job(machine='ws1',cores=1),
         )
@@ -50,7 +50,7 @@ def test_pw2qmcpack_minimal_init():
 
 def test_pw2qmcpack_check_result():
     sim = get_pw2qmcpack_sim()
-    
+
     assert(not sim.check_result('unknown',None))
     assert(sim.check_result('orbitals',None))
 
@@ -63,7 +63,7 @@ def test_pw2qmcpack_get_result():
     from ..developer import obj
 
     sim = get_pw2qmcpack_sim()
-    
+
     with pytest.raises(
         NotImplementedError,
         match="ability to get result unknown has not been implemented",
@@ -156,9 +156,9 @@ def test_pw2qmcpack_check_sim_status(tmp_path):
         assert(filepath.exists())
     #end for
     sim.job.finished = True
-    
+
     sim.check_sim_status()
-    
+
     assert(sim.finished)
     assert(not sim.failed)
 
@@ -173,7 +173,7 @@ def test_pw2qmcpack_check_sim_status(tmp_path):
 def get_convert4qmc_sim(**kwargs):
     from ..machines import job
     from ..qmcpack_converters import Convert4qmc,generate_convert4qmc
-    
+
     sim = generate_convert4qmc(
         job = job(machine='ws1',cores=1),
         **kwargs
@@ -189,7 +189,7 @@ def get_convert4qmc_sim(**kwargs):
 def test_convert4qmc_minimal_init():
     from ..machines import job
     from ..qmcpack_converters import Convert4qmc,generate_convert4qmc
-    
+
     sim = generate_convert4qmc(
         job = job(machine='ws1',cores=1),
         )
@@ -203,7 +203,7 @@ def test_convert4qmc_minimal_init():
 
 def test_convert4qmc_check_result():
     sim = get_convert4qmc_sim()
-    
+
     assert(not sim.check_result('unknown',None))
     assert(sim.check_result('orbitals',None))
     assert(sim.check_result('particles',None))
@@ -217,7 +217,7 @@ def test_convert4qmc_get_result():
     from ..developer import obj
 
     sim = get_convert4qmc_sim()
-    
+
     with pytest.raises(
         NotImplementedError,
         match="ability to get result unknown has not been implemented",
@@ -311,7 +311,7 @@ def test_convert4qmc_incorporate_result():
 
     assert(sim.input_code=='pyscf')
     assert(sim.input.orbitals=='../scf.h5')
-    
+
     # incorporate orbitals from quantum package
     sim = deepcopy(sim_start)
 
@@ -384,7 +384,7 @@ def test_convert4qmc_check_sim_status(tmp_path):
 def get_pyscf_to_afqmc_sim(**kwargs):
     from ..machines import job
     from ..qmcpack_converters import PyscfToAfqmc,generate_pyscf_to_afqmc
-    
+
     sim = generate_pyscf_to_afqmc(
         job = job(machine='ws1',cores=1),
         **kwargs
@@ -400,7 +400,7 @@ def get_pyscf_to_afqmc_sim(**kwargs):
 def test_pyscf_to_afqmc_minimal_init():
     from ..machines import job
     from ..qmcpack_converters import PyscfToAfqmc,generate_pyscf_to_afqmc
-    
+
     sim = generate_pyscf_to_afqmc(
         job = job(machine='ws1',cores=1),
         )
@@ -433,7 +433,7 @@ def test_pyscf_to_afqmc_get_result():
     from ..developer import NexusError, obj
 
     sim = get_pyscf_to_afqmc_sim()
-    
+
     sim.input.output = 'afqmc.h5'
 
     with pytest.raises(

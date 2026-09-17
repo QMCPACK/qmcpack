@@ -50,7 +50,7 @@ def test_minimal_init():
 
 def test_check_result():
     sim = get_pyscf_sim()
-    
+
     assert(not sim.check_result('unknown',None))
     assert(not sim.check_result('orbitals',None))
     assert(not sim.check_result('wavefunction',None))
@@ -93,7 +93,7 @@ def test_get_result(tmp_path):
         checkpoint = 'scf.chk',
         template   = template_filepath,
         )
-    
+
     with pytest.raises(
         NotImplementedError,
         match="ability to get result unknown has not been implemented"

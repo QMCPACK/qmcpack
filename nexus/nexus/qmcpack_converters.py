@@ -316,7 +316,7 @@ class Pw2qmcpack(Simulation):
             calculating_result = True
         elif result_name=='gc_occupation':
             calculating_result = True
-        #end if        
+        #end if
         return calculating_result
     #end def check_result
 
@@ -344,7 +344,7 @@ class Pw2qmcpack(Simulation):
         else:
             msg = 'ability to get result '+result_name+' has not been implemented'
             raise NotImplementedError(msg)
-        #end if        
+        #end if
         return result
     #end def get_result
 
@@ -410,7 +410,7 @@ class Pw2qmcpack(Simulation):
         if not implemented:
             msg = f'ability to incorporate result "{result_name}" from {type(sim).__name__} has not been implemented'
             raise NotImplementedError(msg)
-        #end if                
+        #end if
     #end def incorporate_result
 
 
@@ -677,7 +677,7 @@ class Convert4qmcInput(SimulationInput):
         gaussian           = None,
         casino             = None,
         vsvb               = None,
-        gamess             = None, 
+        gamess             = None,
         gamess_ascii       = None,
         gamess_fmo         = None,
         gamess_xml         = None,
@@ -912,11 +912,11 @@ class Convert4qmc(Simulation):
         elif result_name=='particles':
             result.location = os.path.join(self.locdir,ptcl_file)
         elif result_name=='determinantset':
-            result.location = os.path.join(self.locdir,wfn_file)            
+            result.location = os.path.join(self.locdir,wfn_file)
         else:
             msg = 'ability to get result '+result_name+' has not been implemented'
             raise NotImplementedError(msg)
-        #end if        
+        #end if
         return result
     #end def get_result
 
@@ -979,7 +979,7 @@ class Convert4qmc(Simulation):
 
         # Recent versions of convert4qmc no longer produce the orbs.h5 file.
         # Instead, the file produced directly by e.g. Pyscf is used instead.
-        # Therefore, make a symlink to the previously produced file in 
+        # Therefore, make a symlink to the previously produced file in
         # place of the orbs.h5 file.
         orbs     = self.input.orbitals
         finished = self.job.finished
@@ -1112,7 +1112,7 @@ class Convertpw4qmc(Simulation):
         else:
             msg = 'ability to get result '+result_name+' has not been implemented'
             raise NotImplementedError(msg)
-        #end if        
+        #end if
         return result
     #end def get_result
 
@@ -1123,7 +1123,7 @@ class Convertpw4qmc(Simulation):
 
     def app_command(self):
         app_name  = self.app_name
-        data_file = self.input.data_file 
+        data_file = self.input.data_file
         command = f'{app_name} {data_file}'
         return command
     #end def app_command
@@ -1177,7 +1177,7 @@ class Convertpw4qmc(Simulation):
         if not implemented:
             msg = f'ability to incorporate result "{result_name}" from {type(sim).__name__} has not been implemented'
             raise NotImplementedError(msg)
-        #end if                
+        #end if
     #end def incorporate_result
 
     def check_sim_status(self):
@@ -1454,7 +1454,7 @@ class PyscfToAfqmc(Simulation):
             calculating_result = self.input.output is not None
         elif result_name=='hamiltonian':
             calculating_result = self.input.output is not None
-        #end if        
+        #end if
         return calculating_result
     #end def check_result
 
@@ -1470,7 +1470,7 @@ class PyscfToAfqmc(Simulation):
         else:
             msg = 'ability to get result '+result_name+' has not been implemented'
             raise NotImplementedError(msg)
-        #end if        
+        #end if
         return result
     #end def get_result
 
@@ -1492,7 +1492,7 @@ class PyscfToAfqmc(Simulation):
             msg = f'ability to incorporate result "{result_name}" from {type(sim).__name__} has not been implemented'
             raise NotImplementedError(msg)
         #end if
-    #end def incorporate_result       
+    #end def incorporate_result
 
 
     def check_sim_status(self):

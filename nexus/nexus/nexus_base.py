@@ -27,15 +27,17 @@ from __future__ import annotations
 
 import os
 import pickle
+import sys
+import textwrap
 from collections.abc import Collection
 from enum import Flag, auto
 from os import PathLike
 from pathlib import Path
 from pickle import UnpicklingError
-from typing import TypeAlias
+from typing import Literal, TypeAlias
 
 from .basisset import BasisSets
-from .developer import DevBase, log, obj
+from .developer import DevBase, nxs_print, obj
 from .memory import resident
 from .nexus_version import nexus_version
 from .utilities import path_string
@@ -89,7 +91,7 @@ class SimStage(Flag):
 
 class NexusConfig:
     """Singleton class that represents all of Nexus's configuration settings.
-    
+
     Attributes
     ----------
     status_only : bool
@@ -307,7 +309,7 @@ _____________________________________________________
 _____________________________________________________
 
 '''.format(*nexus_version)
-        log(splash_text)
+        nxs_print(splash_text)
         write_splash.wrote_splash = True
     #end if
 #end def write_splash
@@ -323,43 +325,41 @@ class NexusCore(DevBase):
         return int(resident()/1e6)
     #end def mem_usage
 
-    def log(self,*texts,**kwargs):
-        """Write output to log file.
+    def nxs_print(self, *texts: str, n: int = 0, progress: bool = False):
+        """Write text to standard output.
 
         Parameters
         ----------
         *texts
-            Strings that will be joined by newlines
+            Strings that will be joined by newline characters.
         n : int, kwargs
-            Spaces to indent
+            Spaces to indent by.
         progress : bool, kwargs
             If ``True`` and output is to a terminal, overwrite and update the
             last line, rather than scrolling.
         """
         if not NEXUS_CONFIG.quiet:
-            if len(kwargs)>0:
-                n = kwargs['n']
+            text = ' '.join(str(t) for t in texts)
+            output_text = textwrap.indent(text, n * NEXUS_CONFIG.indent)
+            if NEXUS_CONFIG.progress_tty and progress and sys.stdout.isatty():
+                # Line up + Line clear ANSI sequence
+                sys.stdout.write('\033[1A'+'\x1b[2K')
+                sys.stdout.write(output_text+"\n")
+                sys.stdout.flush()
             else:
-                n=0
-            #end if
-            is_progress = kwargs.get('progress',False)
-            text=''
-            for t in texts:
-                text+=str(t)+' '
-            #end for
-            pad = n*NEXUS_CONFIG.indent
-            output_text = pad+text.replace('\n','\n'+pad)
-            if NEXUS_CONFIG.progress_tty and is_progress and self._logfile.isatty():
-                # spaces to ensure previous line is overwritten.  Need better solution.
-                self._logfile.write(output_text+'        \r')
-                self._logfile.flush()
-            else:
-                self._logfile.write(output_text+'\n')
-        #end if
+                sys.stdout.write(output_text+'\n')
+                sys.stdout.flush()
+
         NexusCore.wrote_something = True
     #end def log
 
-    def enter(self, directory: PathLike, *, changedir: bool = True, msg: str = ''):
+    def enter(
+        self,
+        directory: PathLike,
+        *,
+        changedir: bool = True,
+        msg: str = '',
+        ) -> Literal['      ']:
         """Have Nexus enter a directory and change its current working directory.
 
         Parameters
@@ -376,10 +376,10 @@ class NexusCore(DevBase):
         NexusCore.working_directory = os.getcwd()
         directory = path_string(directory)
 
-        self.log('    Entering ' + directory, msg)
+        self.nxs_print('\nEntering ' + directory, msg, n=2)
         if changedir:
             os.chdir(directory)
-        #end if
+
         pad = '      '
         return pad
     #end def enter

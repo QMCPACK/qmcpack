@@ -208,7 +208,7 @@ class KeywordGroup(Group):
         #end if
         return v
     #end def readval
-            
+
 
     def read(self,text):
         tokens = text.replace(',',' ').split()
@@ -350,7 +350,7 @@ class CardGroup(Group):
         #end for
     #end def append_text
 
-            
+
     def append_list(self,lst):
         for tokens in lst:
             self[len(self)] = tokens
@@ -450,7 +450,7 @@ class KeywordSpecGroup(KeywordGroup):
         return valid
     #end def is_valid
 #end class KeywordSpecGroup
-    
+
 
 
 class ContrlGroup(KeywordSpecGroup):
@@ -710,7 +710,7 @@ class CidrtGroup(KeywordSpecGroup):
         nprt = set([0,1,2,3]),
         )
 #end class CidrtGroup
- 
+
 
 
 class DetGroup(KeywordSpecGroup):
@@ -847,7 +847,7 @@ class GamessInput(SimulationInput,GIbase):
 
     group_keyword_overlap = all_groups & all_keywords
     all_names = all_groups | all_keywords
-    
+
     #cardspec_groups = obj()
 
     # aliases for generate_gamess_input
@@ -862,25 +862,25 @@ class GamessInput(SimulationInput,GIbase):
     # gamess file I/O
     file_units = obj(
         #MCPPATH = -5,BASPATH = -4,EXTCAB  = -3,
-        #MAKEFP  =  1, ERICFMT =  2, EXTBAS  =  3, 
-        TRAJECT =  4, INPUT   =  5, 
-        OUTPUT  =  6, PUNCH   =  7, AOINTS  =  8, MOINTS  =  9, DICTNRY = 10, 
-        DRTFILE = 11, CIVECTR = 12, CASINTS = 13, CIINTS  = 14, WORK15  = 15, 
-        WORK16  = 16, CSFSAVE = 17, FOCKDER = 18, WORK19  = 19, DASORT  = 20, 
-        DFTINTS = 21, DFTGRID = 22, JKFILE  = 23, ORDINT  = 24, EFPIND  = 25, 
-        PCMDATA = 26, PCMINTS = 27, MLTPL   = 28, MLTPLT  = 29, DAFL30  = 30, 
-        RESTART = 35, HESSIAN = 38, SOCCDAT = 40, AABB41  = 41, BBAA42  = 42, 
-        BBBB43  = 43, REMD    = 44, MCQD50  = 50, MCQD51  = 51, MCQD52  = 52, 
-        MCQD53  = 53, MCQD54  = 54, MCQD55  = 55, MCQD56  = 56, MCQD57  = 57, 
-        MCQD58  = 58, MCQD59  = 59, MCQD60  = 60, MCQD61  = 61, MCQD62  = 62, 
-        MCQD63  = 63, MCQD64  = 64, DCPHFH2 = 67, NMRINT1 = 61, CCREST  = 70, 
-        CCDIIS  = 71, CCINTS  = 72, CCT1AMP = 73, CCT2AMP = 74, CCT3AMP = 75, 
-        CCVM    = 76, CCVE    = 77, CCQUADS = 78, QUADSVO = 79, EOMSTAR = 80, 
-        EOMVEC1 = 81, EOMVEC2 = 82, EOMHC1  = 83, EOMHC2  = 84, EOMHHHH = 85, 
-        EOMPPPP = 86, EOMRAMP = 87, EOMRTMP = 88, EOMDG12 = 89, MMPP    = 90, 
-        MMHPP   = 91, MMCIVEC = 92, MMCIVC1 = 93, MMCIITR = 94, EOMVL1  = 95, 
-        EOMVL2  = 96, EOMLVEC = 97, EOMHL1  = 98, EOMHL2  = 99, EFMOI   = 102, 
-        EFMOF   = 103 
+        #MAKEFP  =  1, ERICFMT =  2, EXTBAS  =  3,
+        TRAJECT =  4, INPUT   =  5,
+        OUTPUT  =  6, PUNCH   =  7, AOINTS  =  8, MOINTS  =  9, DICTNRY = 10,
+        DRTFILE = 11, CIVECTR = 12, CASINTS = 13, CIINTS  = 14, WORK15  = 15,
+        WORK16  = 16, CSFSAVE = 17, FOCKDER = 18, WORK19  = 19, DASORT  = 20,
+        DFTINTS = 21, DFTGRID = 22, JKFILE  = 23, ORDINT  = 24, EFPIND  = 25,
+        PCMDATA = 26, PCMINTS = 27, MLTPL   = 28, MLTPLT  = 29, DAFL30  = 30,
+        RESTART = 35, HESSIAN = 38, SOCCDAT = 40, AABB41  = 41, BBAA42  = 42,
+        BBBB43  = 43, REMD    = 44, MCQD50  = 50, MCQD51  = 51, MCQD52  = 52,
+        MCQD53  = 53, MCQD54  = 54, MCQD55  = 55, MCQD56  = 56, MCQD57  = 57,
+        MCQD58  = 58, MCQD59  = 59, MCQD60  = 60, MCQD61  = 61, MCQD62  = 62,
+        MCQD63  = 63, MCQD64  = 64, DCPHFH2 = 67, NMRINT1 = 61, CCREST  = 70,
+        CCDIIS  = 71, CCINTS  = 72, CCT1AMP = 73, CCT2AMP = 74, CCT3AMP = 75,
+        CCVM    = 76, CCVE    = 77, CCQUADS = 78, QUADSVO = 79, EOMSTAR = 80,
+        EOMVEC1 = 81, EOMVEC2 = 82, EOMHC1  = 83, EOMHC2  = 84, EOMHHHH = 85,
+        EOMPPPP = 86, EOMRAMP = 87, EOMRTMP = 88, EOMDG12 = 89, MMPP    = 90,
+        MMHPP   = 91, MMCIVEC = 92, MMCIVC1 = 93, MMCIITR = 94, EOMVL1  = 95,
+        EOMVL2  = 96, EOMLVEC = 97, EOMHL1  = 98, EOMHL2  = 99, EFMOI   = 102,
+        EFMOF   = 103
         )
 
     def __init__(self,filepath=None):
@@ -965,7 +965,7 @@ class GamessInput(SimulationInput,GIbase):
                     f'{line}'
                     )
                 raise FileFormatError(msg)
-            #end if                    
+            #end if
             # specialized parsing for unknown card groups
             if ended:
                 if '=' not in groups[gname]:
@@ -1014,7 +1014,7 @@ class GamessInput(SimulationInput,GIbase):
         #end for
     #end def read_text
 
-        
+
     def process_line(self,ls):
         ended = True
         if ls.endswith('$END'):
@@ -1140,7 +1140,7 @@ def generate_any_gamess_input(**kwargs):
     #end if
 
     gi = GamessInput()
-    
+
     # handle groups provided directly by the user
     #   use aliases to guard against namespace collisions w/ nexus (e.g. system)
     group_names = kwset & GamessInput.all_group_aliases
@@ -1272,7 +1272,7 @@ def generate_any_gamess_input(**kwargs):
             gi.contrl.update(
                 coord = 'unique',
                 ecp   = 'read'
-                )   
+                )
             pseudo_files = PseudoSet.get_pseudos(
                 pseudos = pskw.pseudos,
                 system = system,

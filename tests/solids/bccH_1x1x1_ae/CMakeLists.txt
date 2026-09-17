@@ -293,3 +293,6 @@ qmc_run_and_check(
   1
   LONG_BCC_H_RMC_SCALARS # DMC
 )
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

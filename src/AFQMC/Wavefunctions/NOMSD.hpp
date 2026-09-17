@@ -304,7 +304,7 @@ public:
   void Energy(WlkSet& wset)
   {
     int nw = wset.size();
-    DynamicVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicVector ovlp(extents_t<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     DynamicMatrix eloc({nw, 3}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     Energy(wset, eloc, ovlp);
     TG.local_barrier();
@@ -343,7 +343,7 @@ public:
   void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact = true, bool transpose = false)
   {
     int nw = wset.size();
-    DynamicVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicVector ovlp(extents_t<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact, transpose);
   }
 
@@ -432,7 +432,7 @@ public:
   void MixedDensityMatrix_for_vbias(const WlkSet& wset, MatG&& G)
   {
     int nw = wset.size();
-    DynamicVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicVector ovlp(extents_t<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact_G_for_vbias, transposed_G_for_vbias_);
   }
 
@@ -455,7 +455,7 @@ public:
   void Overlap(WlkSet& wset)
   {
     int nw = wset.size();
-    DynamicVector ovlp(iextensions<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
+    DynamicVector ovlp(extents_t<1u>{nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     Overlap(wset, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)
@@ -543,8 +543,8 @@ public:
     using std::get;
     assert(get<0>(RefOrbMats.sizes()) == ndet);
     assert(get<1>(RefOrbMats.sizes()) == get<1>(A.sizes()));
-    auto&& RefOrbMats_(boost::multi::static_array_cast<ComplexType, ComplexType*>(RefOrbMats));
-    auto&& A_(boost::multi::static_array_cast<ComplexType, Ptr>(A));
+    auto&& RefOrbMats_(RefOrbMats.template static_array_cast<ComplexType, ComplexType*>());
+    auto&& A_(A.template static_array_cast<ComplexType, Ptr>());
     using std::copy_n;
     int n0, n1;
     std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(get<1>(A.sizes())), TG.getNCoresPerTG());

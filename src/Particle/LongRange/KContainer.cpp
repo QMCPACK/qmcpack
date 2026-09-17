@@ -23,26 +23,6 @@
 namespace qmcplusplus
 {
 
-template<typename REAL>
-const std::vector<typename KContainerT<REAL>::AppPosition>& KContainerT<
-    REAL>::getKptsCartWorking() const
-{
-  // This is an `if constexpr` so it should not cost a branch at runtime.
-  if constexpr (std::is_same_v<decltype(kpts_cart_), decltype(kpts_cart_working_)>)
-    return kpts_cart_;
-  else
-    return kpts_cart_working_;
-}
-
-template<typename REAL>
-const std::vector<REAL>& KContainerT<REAL>::getKSQWorking() const
-{
-  // This is an `if constexpr` so it should not cost a branch at runtime.
-  if constexpr (std::is_same<decltype(ksq_), decltype(ksq_working_)>::value)
-    return ksq_;
-  else
-    return ksq_working_;
-}
 
 template<typename REAL>
 int KContainerT<REAL>::getMinusK(int k) const
@@ -141,10 +121,8 @@ void KContainerT<REAL>::BuildKLists(const Lattice& lattice,
 {
   TinyVector<int, DIM + 1> TempActualMax;
   TinyVector<int, DIM> kvec;
-  TinyVector<FullPrecReal, DIM> kvec_cart;
-  FullPrecReal modk2;
   std::vector<TinyVector<int, DIM>> kpts_tmp;
-  std::vector<PositionFull> kpts_cart_tmp;
+  std::vector<Position> kpts_cart_tmp;
   std::vector<FullPrecReal> ksq_tmp;
   // reserve the space for memory efficiency
   if (useSphere)
@@ -164,9 +142,9 @@ void KContainerT<REAL>::BuildKLists(const Lattice& lattice,
           if (i == 0 && j == 0 && k == 0)
             continue;
           //Convert kvec to Cartesian
-          kvec_cart = lattice.k_cart(kvec + twist);
+          auto kvec_cart = lattice.k_cart(kvec + twist);
           //Find modk
-          modk2 = dot(kvec_cart, kvec_cart);
+          const auto modk2 = dot(kvec_cart, kvec_cart);
           if (modk2 > kcut2)
             continue; //Inside cutoff?
           //This k-point should be added to the list
@@ -206,8 +184,8 @@ void KContainerT<REAL>::BuildKLists(const Lattice& lattice,
           if (kvec[2] > mmax[2])
             kvec[2] -= kdimsize;
           // get cartesian location and modk2
-          kvec_cart = lattice.k_cart(kvec);
-          modk2     = dot(kvec_cart, kvec_cart);
+          auto kvec_cart   = lattice.k_cart(kvec);
+          const auto modk2 = dot(kvec_cart, kvec_cart);
           // add k-point to lists
           kpts_tmp.push_back(kvec);
           kpts_cart_tmp.push_back(kvec_cart);
@@ -267,13 +245,7 @@ void KContainerT<REAL>::BuildKLists(const Lattice& lattice,
     ++ish;
   }
   kpts_cart_soa_.updateTo();
-  if constexpr (!std::is_same<Real, FullPrecReal>::value)
-  {
-    // This copy implicity does the precision reduction.
-    // the working vectors are not used or initialized for full precision builds.
-    std::copy(kpts_cart_.begin(), kpts_cart_.end(), std::back_inserter(kpts_cart_working_));
-    std::copy(ksq_.begin(), ksq_.end(), std::back_inserter(ksq_working_));
-  }
+
   it = kpts_sorted.begin();
   std::map<int64_t, std::vector<int>*>::iterator e_it(kpts_sorted.end());
   while (it != e_it)

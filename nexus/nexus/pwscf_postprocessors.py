@@ -113,7 +113,7 @@ from .developer import DevBase, obj, FileFormatError, NexusError
 booldict = {'.true.':True,'.false.':False}
 def readval(val):
     if val in booldict:
-        v = booldict[val]   
+        v = booldict[val]
     else:
         try:
             v = int(val)
@@ -164,7 +164,7 @@ class Namelist(DevBase):
         cls.name_set = set(cls.names)
     #end def class_init
 
-        
+
     def __init__(self,text=None,**vals):
         if text is not None:
             self.read_text(text)
@@ -403,7 +403,7 @@ class PostProcessSimulation(Simulation):
 
     def check_result(self,result_name,sim):
         return False
-    #end def check_result    
+    #end def check_result
 
     def app_command(self):
         return self.app_name+'<'+self.infile
@@ -596,7 +596,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
         if analyze:
             self.analyze()
         #end if
-    #end def __init__ 
+    #end def __init__
 
 
     def analyze(self):
@@ -643,7 +643,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             if not (len(tokens)>0 and tokens[0]=='state'):
                 break
             #end if
-            ei,e = tokens[4],tokens[5] 
+            ei,e = tokens[4],tokens[5]
             if ei not in elem_ind:
                 elem.append(e)
                 elem_ind.add(ei)
@@ -671,7 +671,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
                 if cur_atom not in lowdin:
                     lowdin[cur_atom] = obj(tot=obj(),up=obj(),down=obj())
                 #end if
-                lc = lowdin[cur_atom]                
+                lc = lowdin[cur_atom]
             #end if
             if 'tot' in ls:
                 lc_comp = lc.tot
@@ -807,7 +807,7 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
             del self.log
         #end if
     #end def close_log
-        
+
 #end class ProjwfcAnalyzer
 
 
@@ -920,10 +920,10 @@ def generate_pwexport(**kwargs):
 
 class HpNamelist(Namelist):
     namelist = 'inputhp'
-    names = ('prefix', 'outdir', 'max_seconds', 'nq1', 'nq2', 'nq3', 'skip_equivalence_q', 
-             'determine_num_pert_only', 'find_atpert', 'docc_thr', 'skip_type', 'equiv_type', 
-             'perturb_only_atom', 'start_q', 'last_q', 'sum_pertq', 'compute_hp', 'conv_thr_chi', 
-             'thresh_init', 'ethr_nscf', 'niter_max', 'alpha_mix(i)', 'nmix', 'num_neigh', 'lmin', 
+    names = ('prefix', 'outdir', 'max_seconds', 'nq1', 'nq2', 'nq3', 'skip_equivalence_q',
+             'determine_num_pert_only', 'find_atpert', 'docc_thr', 'skip_type', 'equiv_type',
+             'perturb_only_atom', 'start_q', 'last_q', 'sum_pertq', 'compute_hp', 'conv_thr_chi',
+             'thresh_init', 'ethr_nscf', 'niter_max', 'alpha_mix(i)', 'nmix', 'num_neigh', 'lmin',
              'rmax', 'dist_thr')
 #end class HpNamelist
 
@@ -973,7 +973,7 @@ class HpAnalyzer(SimulationAnalyzer):
         if analyze:
             self.analyze()
         #end if
-    #end def __init__ 
+    #end def __init__
 
 
     def analyze(self):
@@ -1016,7 +1016,7 @@ class HpAnalyzer(SimulationAnalyzer):
             result += line
             if not (len(line)>0):
                 break
-            #end if 
+            #end if
         #end while
         self.hubbard_parameters = result
     #end def read_hubbard_dat
@@ -1026,7 +1026,7 @@ class HpAnalyzer(SimulationAnalyzer):
             del self.hubbard_dat
         #end if
     #end def close_hubbard_dat
-        
+
 #end class ProjwfcAnalyzer
 
 
@@ -1041,12 +1041,12 @@ class Hp(PostProcessSimulation):
         calculating_result = False
         if result_name=='hubbard_parameters':
             calculating_result = True
-        #end if 
+        #end if
         return calculating_result
-    #end def check_result    
+    #end def check_result
 
     def get_result(self,result_name,sim):
-        result = obj()        
+        result = obj()
         prefix = 'pwscf'
         outdir = './'
         if result_name == 'hubbard_parameters':
