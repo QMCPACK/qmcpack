@@ -14,7 +14,7 @@ TEST_FILES = {
     }
 
 ESHDF_EXECUTABLE = TEST_DIR.parent / "bin/eshdf"
-E_FERMI = 13.9291
+E_FERMI = 19.1114
 
 for file in TEST_FILES.values():
     assert(file.exists()), f"Test file {file} does not exist!"
@@ -33,8 +33,8 @@ Number of spins              : 1
 Number kpoints               : 4
 Number of electrons per spin : 16
 Summed orbital norm per spin : 16.
-Total kinetic energy         : 17.62702973479747 Ha
-Kinetic energy per spin      : 17.62702973 Ha
+Total kinetic energy         : 13.315652678318026 Ha
+Kinetic energy per spin      : 13.31565268 Ha
 """
 
     assert(out.strip() == ref_output.strip())
@@ -53,28 +53,28 @@ Number of spins              : 1
 Number kpoints               : 4
 Number of electrons per spin : 16
 Summed orbital norm per spin : 16.
-Total kinetic energy         : 17.62702973479747 Ha
-Kinetic energy per spin      : 17.62702973 Ha
+Total kinetic energy         : 13.315652678318026 Ha
+Kinetic energy per spin      : 13.31565268 Ha
 
 Per orbital kinetic energies
   Spin up energies
     index kpoint_index  KS eig (eV)  kinetic (Ha)
-      0        0         -7.937200     0.088413
-      1        1          0.831948     0.654364
-      2        3          0.831948     0.654364
-      3        2          0.831948     0.654364
-      4        1          0.831948     0.654364
-      5        2          0.831948     0.654364
-      6        3          0.831948     0.654364
-      7        1          7.392005     1.333446
-      8        2          7.392005     1.333446
-      9        3          7.392005     1.333446
-     10        3          7.392006     1.333446
-     11        2          7.392006     1.333446
-     12        1          7.392006     1.333446
-     13        0         13.929089     1.870585
-     14        0         13.929089     1.870585
-     15        0         13.929089     1.870585
+      0        0         -8.582273     0.079274
+      1        2          1.940267     0.507421
+      2        1          1.940267     0.507421
+      3        3          1.940267     0.507421
+      4        3          1.940267     0.507421
+      5        2          1.940267     0.507421
+      6        1          1.940267     0.507421
+      7        1         11.328221     0.980532
+      8        3         11.328221     0.980532
+      9        2         11.328221     0.980532
+     10        3         11.328221     0.980532
+     11        1         11.328221     0.980532
+     12        2         11.328221     0.980532
+     13        0         19.111379     1.436222
+     14        0         19.111379     1.436222
+     15        0         19.111379     1.436222
 """
 
     assert(out.strip() == ref_output.strip())
@@ -86,6 +86,7 @@ def test_write_nk(tmp_path):
 
     outfile = tmp_path / "eshdf_write_nk.h5"
     command = f"{ESHDF_EXECUTABLE} write_nk {TEST_FILES['small_archive.h5']} --Ef={E_FERMI} --outfile={outfile}"
+    print(command)
     out, _, rc = execute(command)
 
     # Assert that return code is 0
