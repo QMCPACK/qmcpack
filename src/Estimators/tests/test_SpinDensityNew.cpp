@@ -276,7 +276,7 @@ TEST_CASE("SpinDensityNew::accumulate partial cell", "[estimators]")
   CHECK(std::accumulate(crowd_data.begin(), crowd_data.end(), 0.0) == 4.0);
   CHECK(crowd_sdn.get_walkers_weight() == 5.0);
   crowd_sdn.normalize(1.0 / crowd_sdn.get_walkers_weight());
-  CHECK(std::accumulate(crowd_data.begin(), crowd_data.end(), 0.0) == 0.8);
+  CHECK(std::accumulate(crowd_data.begin(), crowd_data.end(), 0.0) == Approx(0.8));
 }
 
 TEST_CASE("SpinDensityNew::accumulate open finite cell", "[estimators]")
