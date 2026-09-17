@@ -182,8 +182,6 @@ public:
   void gatherv(T& sb, T& rb, IT& counts, IT& displ, int dest = 0);
   template<typename T>
   void allgather(T& sb, T& rb, int count);
-  template<typename T, typename IT>
-  void allgatherv(T& sb, T& rb, IT& counts, IT& displ);
   template<typename T>
   void scatter(T& sb, T& rb, int dest = 0);
   template<typename T, typename IT>
@@ -202,8 +200,7 @@ public:
   void gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest = 0);
   template<typename T>
   void allgather(T* sb, T* rb, int count);
-  template<typename T>
-  void gsum(T&);
+
 
 protected:
   /** Raw communicator
