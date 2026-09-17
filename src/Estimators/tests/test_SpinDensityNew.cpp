@@ -279,6 +279,57 @@ TEST_CASE("SpinDensityNew::accumulate partial cell", "[estimators]")
   CHECK(std::accumulate(crowd_data.begin(), crowd_data.end(), 0.0) == 0.8);
 }
 
+TEST_CASE("SpinDensityNew::accumulate open finite cell", "[estimators]")
+{
+  using MCPWalker = OperatorEstBase::MCPWalker;
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"XML(
+<estimator type="spindensity">
+  <parameter name="grid">2 2 2</parameter>
+  <parameter name="corner">0 0 0</parameter>
+  <parameter name="cell">0.5 0 0 0 0.5 0 0 0 0.5</parameter>
+</estimator>
+)XML"));
+  SpinDensityInput sdi(doc.getRoot());
+  SpeciesSet species_set;
+  const int ispecies                = species_set.addSpecies("u");
+  const int iattribute              = species_set.addAttribute("membersize");
+  species_set(iattribute, ispecies) = 2;
+
+  Lattice simulation_lattice;
+  simulation_lattice.BoxBConds = false;
+  simulation_lattice.R         = ParticleSet::Tensor_t(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+  simulation_lattice.reset();
+  SpinDensityNew sdn(std::move(sdi), simulation_lattice, species_set);
+
+  std::vector<MCPWalker> walkers;
+  walkers.emplace_back(2);
+  walkers[0].Weight = 2.0;
+  const SimulationCell simulation_cell(simulation_lattice);
+  std::vector<ParticleSet> psets;
+  psets.emplace_back(simulation_cell);
+  psets.back().create({2});
+  psets[0].R[0] = ParticleSet::PosType(0.25, 0.25, 0.25);
+  psets[0].R[1] = ParticleSet::PosType(1.25, 0.25, 0.25);
+
+  std::vector<TrialWaveFunction> wfns;
+  std::vector<QMCHamiltonian> hams;
+  auto ref_walkers = makeRefVector<MCPWalker>(walkers);
+  auto ref_psets   = makeRefVector<ParticleSet>(psets);
+  auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
+  auto ref_hams    = makeRefVector<QMCHamiltonian>(hams);
+  FakeRandom<OHMMS_PRECISION_FULL> rng;
+
+  sdn.accumulate(ref_walkers, ref_psets, ref_wfns, ref_hams, rng);
+  const auto& data = sdn.get_data();
+  CHECK(data[7] == 2.0);
+  CHECK(std::accumulate(data.begin(), data.end(), 0.0) == 2.0);
+  CHECK(sdn.get_walkers_weight() == 2.0);
+  sdn.normalize(1.0 / sdn.get_walkers_weight());
+  CHECK(std::accumulate(data.begin(), data.end(), 0.0) == 1.0);
+}
+
 TEST_CASE("SpinDensityNew::collect(DataLocality::crowd)", "[estimators]")
 {
   {
