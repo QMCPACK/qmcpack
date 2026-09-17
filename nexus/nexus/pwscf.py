@@ -374,10 +374,12 @@ class Pwscf(Simulation):
             )
 
         if err_err_found:
+            self.logger.error(f"Error detected in stderr ({errfile})")
             self.failed = True
 
         restartable = False
         if out_err_found:
+            self.logger.error(f"Error detected in stdout ({outfile})")
             output_errs = "".join(out_err_lines)
             not_converged    = 'convergence NOT achieved'  in output_errs
             time_exceeded    = 'Maximum CPU time exceeded' in output_errs
@@ -397,9 +399,12 @@ class Pwscf(Simulation):
         restart = run_finished and self.restartable and restartable
         self.finished = run_finished
         if restart:
+            self.logger.info("Run finished before converging and is restartable")
             self.save_attempt()
             self.input.control.restart_mode = 'restart'
             self.reset_indicators()
+        else:
+            self.logger.warning("Run finished before converging and is not restartable")
         #end if
     #end def check_sim_status
 
