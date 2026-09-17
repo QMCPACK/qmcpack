@@ -14,36 +14,14 @@
 
 #include "hdf5.h"
 
+#include <array>
+#include <cmath>
 #include <iostream>
 #include <numeric>
 #include <SpeciesSet.h>
 
 namespace qmcplusplus
 {
-SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& species, DataLocality dl)
-    : OperatorEstBase(dl, input.get_name(), std::string{SpinDensityInput::type_tag}),
-      input_(std::move(input)),
-      species_(species),
-      species_size_(getSpeciesSize(species))
-{
-  data_locality_ = DataLocality::crowd;
-  if (input_.get_save_memory())
-    dl = DataLocality::rank;
-
-  if (input_.get_cell().explicitly_defined == true)
-    lattice_ = input_.get_cell();
-  else
-    throw std::runtime_error("If SpinDensityInput does not contain a cell definition you must call the constructor "
-                             "with an explicit lattice defined");
-
-  derived_parameters_ = input_.calculateDerivedParameters(lattice_);
-
-  data_.resize(getFullDataSize(), 0.0);
-
-  if (input_.get_write_report())
-    report("  ");
-}
-
 SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
                                const Lattice& lattice,
                                const SpeciesSet& species,
@@ -52,12 +30,13 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
       input_(std::move(input)),
       species_(species),
       species_size_(getSpeciesSize(species)),
-      lattice_(lattice)
+      lattice_(input_.has_cell() ? input_.get_cell() : lattice),
+      simulation_lattice_(lattice)
 {
   data_locality_ = dl;
-  if (input_.get_cell().explicitly_defined == true)
-    lattice_ = input_.get_cell();
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
+  if (input_.has_cell())
+    initializeFiniteCellBounds();
   data_.resize(getFullDataSize());
   if (input_.get_write_report())
     report("  ");
@@ -134,13 +113,81 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
     for (int s = 0; s < species_.size(); ++s, offset += dp_.npoints)
       for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
       {
-        QMCT::PosType u = lattice_.toUnit(pset.R[p] - dp_.corner);
-        size_t point    = offset;
-        for (int d = 0; d < QMCT::DIM; ++d)
-          point += dp_.gdims[d] * ((int)(dp_.grid[d] * (u[d] - std::floor(u[d])))); //periodic only
-        accumulateToData(point, weight);
+        size_t point = offset;
+        if (!input_.has_cell())
+        {
+          const QMCT::PosType u = lattice_.toUnit(pset.R[p] - dp_.corner);
+          for (int d = 0; d < QMCT::DIM; ++d)
+            point += dp_.gdims[d] * static_cast<int>(dp_.grid[d] * (u[d] - std::floor(u[d])));
+          accumulateToData(point, weight);
+        }
+        else if (simulation_lattice_.SuperCellEnum == SUPERCELL_OPEN)
+        {
+          if (getFiniteCellPoint(pset.R[p], point))
+            accumulateToData(point, weight);
+        }
+        else if (getPeriodicFiniteCellPoint(pset.R[p], point))
+          accumulateToData(point, weight);
       }
   }
+}
+
+bool SpinDensityNew::getFiniteCellPoint(const QMCT::PosType& position, size_t& point) const
+{
+  const QMCT::PosType u = lattice_.toUnit(position - derived_parameters_.corner);
+  size_t candidate_point = point;
+  for (int d = 0; d < QMCT::DIM; ++d)
+  {
+    if (!std::isfinite(u[d]) || u[d] < 0.0 || u[d] >= 1.0)
+      return false;
+    candidate_point += derived_parameters_.gdims[d] *
+        std::min(static_cast<int>(derived_parameters_.grid[d] * u[d]), derived_parameters_.grid[d] - 1);
+  }
+  point = candidate_point;
+  return true;
+}
+
+void SpinDensityNew::initializeFiniteCellBounds()
+{
+  finite_cell_lo_ = simulation_lattice_.toUnit(derived_parameters_.corner);
+  finite_cell_hi_ = finite_cell_lo_;
+  for (int j = 0; j < QMCT::DIM; ++j)
+  {
+    const QMCT::PosType axis_u = simulation_lattice_.toUnit(lattice_.Rv[j]);
+    for (int d = 0; d < QMCT::DIM; ++d)
+      if (axis_u[d] < 0.0)
+        finite_cell_lo_[d] += axis_u[d];
+      else
+        finite_cell_hi_[d] += axis_u[d];
+  }
+}
+
+bool SpinDensityNew::getPeriodicFiniteCellPoint(const QMCT::PosType& position, size_t& point) const
+{
+  static_assert(QMCT::DIM == 3, "SpinDensity supports three-dimensional cells only");
+  QMCT::PosType simulation_u = simulation_lattice_.toUnit(position);
+
+  std::array<int, 3> nlo{};
+  std::array<int, 3> nhi{};
+  for (int d = 0; d < QMCT::DIM; ++d)
+    if (simulation_lattice_.BoxBConds[d])
+    {
+      simulation_u[d] -= std::floor(simulation_u[d]);
+      nlo[d] = static_cast<int>(std::ceil(finite_cell_lo_[d] - simulation_u[d]));
+      nhi[d] = static_cast<int>(std::floor(finite_cell_hi_[d] - simulation_u[d]));
+    }
+
+  const QMCT::PosType primary_image = simulation_lattice_.toCart(simulation_u);
+  for (int nx = nlo[0]; nx <= nhi[0]; ++nx)
+    for (int ny = nlo[1]; ny <= nhi[1]; ++ny)
+      for (int nz = nlo[2]; nz <= nhi[2]; ++nz)
+      {
+        const QMCT::PosType image = primary_image + nx * simulation_lattice_.Rv[0] +
+            ny * simulation_lattice_.Rv[1] + nz * simulation_lattice_.Rv[2];
+        if (getFiniteCellPoint(image, point))
+          return true;
+      }
+  return false;
 }
 
 void SpinDensityNew::accumulateToData(size_t point, QMCT::RealType weight)
