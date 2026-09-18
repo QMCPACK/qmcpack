@@ -172,6 +172,8 @@ def test_incorporate_result(tmp_path):
 
     sim = get_pwscf_sim('scf')
 
+    del sim.logger # Can't deepcopy a logger.
+
     sim_start = deepcopy(to_obj(sim))
 
     assert(object_eq(to_obj(sim),sim_start))
