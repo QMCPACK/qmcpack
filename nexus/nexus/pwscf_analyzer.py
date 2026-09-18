@@ -1383,7 +1383,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         Base directory for relative paths and file discovery.
     xmlfile : str, os.PathLike, or None, optional
         Explicit modern ``data-file-schema.xml`` path.
-    pw2c_outfile_name : str, os.PathLike, or None, optional
+    pw2c_outfile : str, os.PathLike, or None, optional
         Path to optional PW2CASINO text output.
     read_all : bool, default=True
         Parse all available modern XML and text output. If ``False``, parse
@@ -1409,8 +1409,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         Absolute path to the calculation directory.
     infile_name, outfile_name : str or None
         Names of the PWSCF input and text-output files.
-    pw2c_outfile_name : str or None
-        Name of the optional PW2CASINO output file.
+    pw2c_outfile : str or None
+        Path to the optional PW2CASINO output file, relative to ``path``.
     input : PwscfInput or None
         Parsed PWSCF input when an input file is available.
     simulation_structure : Structure
@@ -2269,9 +2269,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
             status = 'found' if os.path.isfile(filepath) else 'missing'
             return filepath,status
         candidates = sorted(glob(os.path.join(self.path,'*.out')))
-        if self.pw2c_outfile_name is not None:
+        if self.pw2c_outfile is not None:
             auxiliary = os.path.abspath(
-                os.path.join(self.path,self.pw2c_outfile_name),
+                os.path.join(self.path,self.pw2c_outfile),
                 )
             candidates = [
                 path for path in candidates
@@ -2326,7 +2326,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         analyze           = False,
         path              = None,
         xmlfile           = None,
-        pw2c_outfile_name = None,
+        pw2c_outfile      = None,
         read_all          = True,
         strict            = True,
         required          = None,
@@ -2347,7 +2347,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             Base directory for relative paths and file discovery.
         xmlfile : str or os.PathLike, optional
             Explicit modern Quantum ESPRESSO schema-XML path.
-        pw2c_outfile_name : str or os.PathLike, optional
+        pw2c_outfile : str or os.PathLike, optional
             Optional PW2CASINO text-output path.
         read_all : bool, default=True
             Parse all available modern XML and text output.  If ``False``,
@@ -2376,7 +2376,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             ('outfile',outfile),
             ('path',path),
             ('xmlfile',xmlfile),
-            ('pw2c_outfile_name',pw2c_outfile_name),
+            ('pw2c_outfile',pw2c_outfile),
             ):
             if value is not None and not isinstance(value,(str,os.PathLike)):
                 raise TypeError(f'{name} must be a path or None')
@@ -2394,7 +2394,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.abspath           = None
         self.infile_name       = None
         self.outfile_name      = None
-        self.pw2c_outfile_name = pw2c_outfile_name
+        self.pw2c_outfile      = None
         self.xmlfile           = xmlfile
         self.input_requested   = input is not None
         self.outfile_requested = outfile is not None
@@ -2441,6 +2441,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
             path = os.path.dirname(path_string(outfile))
         if path is None and xmlfile is not None:
             path = os.path.dirname(path_string(xmlfile))
+        if path is None and pw2c_outfile is not None:
+            path = os.path.dirname(path_string(pw2c_outfile))
         if path is None:
             path = '.'
         self.path    = os.path.abspath(path_string(path) or '.')
@@ -2457,6 +2459,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if not os.path.isabs(outpath):
                 outpath = os.path.join(self.path,outpath)
             self.outfile_name = os.path.relpath(outpath,self.path)
+        if pw2c_outfile is not None:
+            pw2c_path = path_string(pw2c_outfile)
+            if not os.path.isabs(pw2c_path):
+                pw2c_path = os.path.join(self.path,pw2c_path)
+            self.pw2c_outfile = os.path.relpath(pw2c_path,self.path)
         if analyze:
             self.analyze()
     #end def __init__
@@ -2517,8 +2524,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     paths = '\n'.join(output_file)
                     errors.append(f'multiple PWSCF output files were found\n{paths}')
             auxiliary = None
-            if self.pw2c_outfile_name is not None:
-                auxiliary = os.path.join(self.path,self.pw2c_outfile_name)
+            if self.pw2c_outfile is not None:
+                auxiliary = os.path.join(self.path,self.pw2c_outfile)
                 if not os.path.isfile(auxiliary):
                     if self.strict:
                         errors.append(

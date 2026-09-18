@@ -168,7 +168,7 @@ def analyze_output(code=None,input=None,outfile=None,*,analyze=True,path=None,**
 
        analyze_output(
            'pwscf', input=None, outfile=None, analyze=True, path=None,
-           xmlfile=None, pw2c_outfile_name=None, read_all=True, strict=True,
+           xmlfile=None, pw2c_outfile=None, read_all=True, strict=True,
            required=None,
            )
 
@@ -182,8 +182,9 @@ def analyze_output(code=None,input=None,outfile=None,*,analyze=True,path=None,**
         Base directory for relative file paths and file discovery.
     xmlfile : str or os.PathLike, optional
         Explicit modern ``data-file-schema.xml`` path.
-    pw2c_outfile_name : str, optional
-        Optional PW2CASINO output-file name within ``path``.
+    pw2c_outfile : str or os.PathLike, optional
+        Optional PW2CASINO text-output path. Relative paths are resolved below
+        ``path``.
     read_all : bool, default=True
         Read all available modern XML and text output.  If ``False``, read XML
         first and read text output only when a constructor-required quantity
@@ -435,7 +436,7 @@ def analyze_output(code=None,input=None,outfile=None,*,analyze=True,path=None,**
             analyze           = analyze,
             path              = path,
             xmlfile           = kw.pop('xmlfile',None),
-            pw2c_outfile_name = kw.pop('pw2c_outfile_name',None),
+            pw2c_outfile      = kw.pop('pw2c_outfile',None),
             read_all          = kw.pop('read_all',True),
             strict            = kw.pop('strict',True),
             required          = kw.pop('required',None),

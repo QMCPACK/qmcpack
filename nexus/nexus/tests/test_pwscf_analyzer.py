@@ -600,7 +600,7 @@ def test_pw2casino_analyzer_read(tmp_path):
         input   = 'pwscf.in',
         outfile = 'pwscf.out',
         path    = tmp_path,
-        pw2c_outfile_name = 'pw2casino.out',
+        pw2c_outfile = 'pw2casino.out',
         analyze = True,
         )
     assert(isinstance(analyzer.results_out,PwscfOutData))
@@ -617,7 +617,7 @@ def test_pw2casino_analyzer_read(tmp_path):
             input   = 'pwscf.in',
             outfile = 'pwscf.out',
             path    = tmp_path,
-            pw2c_outfile_name = 'pw2casino.out',
+            pw2c_outfile = 'pw2casino.out',
             analyze = True,
             )
 #end def test_pw2casino_analyzer_read
@@ -1354,10 +1354,11 @@ def test_unique_output_discovery_excludes_auxiliary(tmp_path):
         'Kinetic energy from orbitals = 2.0\n'
         )
     analyzer = PwscfAnalyzer(
-        path = tmp_path,
-        pw2c_outfile_name = 'pw2casino.out',
+        pw2c_outfile = tmp_path/'pw2casino.out',
         analyze = True,
         )
+    assert(analyzer.path==str(tmp_path))
+    assert(analyzer.pw2c_outfile=='pw2casino.out')
     assert(analyzer.results_out is not None)
     assert(analyzer.energy('Ry')==-4.0)
     assert(analyzer.pw2casino.K==2.0)
