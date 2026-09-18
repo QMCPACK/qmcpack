@@ -40,10 +40,10 @@ PWSCF Data Analysis
 -------------------
 
 Nexus reads the results of a completed Quantum ESPRESSO ``pw.x`` calculation
-with a :class:`~pwscf_analyzer.PwscfAnalyzer`.  Its query functions provide a
-consistent interface to structures, energies, k-points, electronic data,
-forces, and stress.  When modern Quantum ESPRESSO XML and text output are
-both available, modern XML is preferred and text output fills unavailable
+with a :class:`~pwscf_analyzer.PwscfAnalyzer` object.  Its query functions 
+provide a consistent interface to structures, energies, k-points, electronic 
+data, forces, and stress.  When modern Quantum ESPRESSO XML and text output 
+are both available, modern XML is preferred and text output fills unavailable
 quantities.  Some information, such as an ionic trajectory, is unique to text
 output.
 
@@ -63,23 +63,28 @@ analyzer image when present; otherwise it constructs and analyzes an analyzer.
 
 .. code-block:: python
 
+    from nexus import analyze_output
+
     scf = generate_pwscf(
         ...
         )
     ao  = analyze_output(scf)
 
-``ao`` is a ``PwscfAnalyzer``.  This is convenient in a Nexus workflow because
-the simulation supplies the calculation directory and file names.
+``ao`` is a ``PwscfAnalyzer`` object.  This is convenient in a Nexus workflow 
+because the simulation supplies all the information needed to perform the analysis.
 
 
 Reading data directly
 ^^^^^^^^^^^^^^^^^^^^^
 
-Output can also be analyzed without a simulation object.  Give the factory the
-code name and either a calculation directory, input file, or output file.  Use
-explicit file names when the directory contains nonstandard names.
+Output can also be analyzed without a simulation object.  Give `analyze_output` 
+the name of the simulation code and either a calculation directory, input file, 
+or output file.  Using explicit file names is recommended (see
+:ref:`pwscf-source-selection` for alternatives).
 
 .. code-block:: python
+
+    from nexus import analyze_output
 
     ao = analyze_output(
         'pwscf',
@@ -87,6 +92,9 @@ explicit file names when the directory contains nonstandard names.
         infile_name  = 'scf.in',
         outfile_name = 'scf.out',
         )
+
+    # or shortform:
+    ao = analyze_output('pwscf','./scf_run','scf.in','scf.out')
 
 The analyzer discovers modern Quantum ESPRESSO XML in the calculation
 directory and reads it automatically when present.
@@ -152,11 +160,7 @@ additional parsing.
 
 .. code-block:: python
 
-    electronic_data = ao.available(
-        'eigenvalues',
-        'occupations',
-        'Ef',
-        )
+    electronic_data = ao.available('Ef','eigenvalues','occupations')
     print(electronic_data)
 
 .. code-block:: text
@@ -169,13 +173,21 @@ quantity raises an exception rather than returning ``None``.
 
 .. code-block:: python
 
-    ao.require(
-        'energy',
-        'forces',
-        )
+    print('Unavailable quantity:')
+    print('Energy =',[ao.energy()])
 
-    if not ao.available('forces'):
-        raise RuntimeError('PWSCF did not provide final ionic forces')
+    ao.require('energy','forces')
+
+    print('\nNow required:')
+    E = ao.energy()
+
+.. code-block:: text
+
+    Unavailable quantity:
+    Energy = [None]
+
+    Now required:
+    RuntimeError: required PWSCF quantity "energy" is not available
 
 
 Common structure and k-point data
@@ -188,11 +200,23 @@ and ``pos`` shaped ``(natoms, 3)``.  Its default length unit is Angstrom; use
 .. code-block:: python
 
     structure = ao.initial_structure()
-    print(structure.axes.shape, structure.pos.shape)
+
+    print('cell axes:')
+    print(structure.axes)
+
+    print('\natomic positions:')
+    print(structure.pos)
 
 .. code-block:: text
 
-    (3, 3) (2, 3)
+    cell axes:
+    [[2.500 0.000 0.000]
+     [0.000 2.500 0.000]
+     [0.000 0.000 2.500]]
+
+    atomic positions:
+    [[0.000 0.000 0.000]
+     [1.250 1.250 1.250]]
 
 ``kpoints()`` returns Cartesian reciprocal coordinates as a float array of
 shape ``(nkpoints, 3)``.  Its default unit is inverse bohr; use ``units='A'``
@@ -201,11 +225,13 @@ for inverse Angstrom.
 .. code-block:: python
 
     kpoints = ao.kpoints(units = 'A')
-    print(kpoints.shape)
+    print(kpoints[:3])
 
 .. code-block:: text
 
-    (8, 3)
+    [[ 0.000  0.000  0.000]
+     [ 0.628  0.000  0.000]
+     [ 0.000  0.628  0.000]]
 
 ``kweights()`` returns the dimensionless integration weights as a float array
 of shape ``(nkpoints,)``.
@@ -242,11 +268,11 @@ default is Hartree; ``'eV'`` and ``'Ry'`` are also accepted.
 .. code-block:: python
 
     eigenvalues = ao.eigenvalues()
-    print(eigenvalues.shape)
+    print(eigenvalues[0, :6])
 
 .. code-block:: text
 
-    (8, 24)
+    [-15.382  -8.437  -1.928   2.714   6.183   9.762]
 
 ``occupations()`` returns a dimensionless float array with the same shape as
 ``eigenvalues()``.
@@ -254,11 +280,11 @@ default is Hartree; ``'eV'`` and ``'Ry'`` are also accepted.
 .. code-block:: python
 
     occupations = ao.occupations()
-    print(occupations.shape)
+    print(occupations[0, :6])
 
 .. code-block:: text
 
-    (8, 24)
+    [1.000 1.000 1.000 0.000 0.000 0.000]
 
 ``Ef()``, ``Evbm()``, ``Ecbm()``, and ``band_gap()`` return Python ``float``
 values in eV by default: the Fermi energy, valence maximum, conduction
@@ -299,11 +325,12 @@ as the initial structure.
 .. code-block:: python
 
     relaxed_structure = ao.relaxed_structure(units = 'A')
-    print(relaxed_structure.pos.shape)
+    print(relaxed_structure.pos)
 
 .. code-block:: text
 
-    (2, 3)
+    [[0.000 0.000 0.000]
+     [1.247 1.247 1.247]]
 
 ``forces()`` returns final Cartesian ionic forces as a float array of shape
 ``(natoms, 3)``.  The default unit is eV/Angstrom; ``'Ry/B'`` and ``'Ha/B'``
@@ -312,11 +339,12 @@ are also accepted.
 .. code-block:: python
 
     forces = ao.forces(units = 'eV/A')
-    print(forces.shape)
+    print(forces)
 
 .. code-block:: text
 
-    (2, 3)
+    [[-0.003  0.000  0.000]
+     [ 0.003  0.000  0.000]]
 
 ``stress()`` returns the final stress tensor as a float array of shape
 ``(3, 3)``.  The default is GPa; it also accepts ``'Pa'``, ``'bar'``,
@@ -326,11 +354,13 @@ are also accepted.
 .. code-block:: python
 
     stress = ao.stress(units = 'GPa')
-    print(stress.shape)
+    print(stress)
 
 .. code-block:: text
 
-    (3, 3)
+    [[ 0.010  0.000  0.000]
+     [ 0.000  0.012  0.000]
+     [ 0.000  0.000  0.014]]
 
 ``pressure()`` returns the final hydrostatic pressure as a Python ``float``.
 It accepts the same units as ``stress()`` and uses GPa by default.
@@ -343,3 +373,111 @@ It accepts the same units as ``stress()`` and uses GPa by default.
 .. code-block:: text
 
     P = 0.012 GPa
+
+
+.. _pwscf-source-selection:
+
+Source selection and strict parsing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PWSCF results can be obtained from modern Quantum ESPRESSO schema XML, text
+output, or both.  The ``source`` keyword selects the requested sources:
+``'both'`` is the default, while ``'xml'`` and ``'out'`` select only modern XML
+or text output, respectively.  Legacy ``data-file.xml`` is retained for
+separate inspection but is not used by the physical-quantity queries.
+
+The direct forms below show how :func:`~nexus.analyze_output` identifies the
+calculation location and chooses candidate XML and text-output files.  The
+keyword arguments shown after ``path`` are PWSCF-analyzer arguments.
+
+.. code-block:: python
+
+    ao = analyze_output(
+        'pwscf',
+        path   = './scf_run',
+        source = 'both',
+        strict = True,
+        )
+
+With only directory path provided (no input or output filenames), Nexus searches 
+the directory for one ``*.out`` file and searches for one modern schema XML file 
+named ``data-file-schema.xml`` within a ``*.save`` directory.  It checks both a
+``*.save`` directory directly inside the calculation directory and one level
+below it.
+
+.. code-block:: python
+
+    ao = analyze_output(
+        'pwscf',
+        path         = './scf_run',
+        infile_name  = 'scf.in',
+        outfile_name = 'scf.out',
+        source       = 'both',
+        strict       = True,
+        )
+
+An explicit ``outfile_name`` selects that text file directly.  An explicit
+input file is also parsed.  When its ``CONTROL`` section specifies ``prefix``
+and ``outdir``, those values identify the modern XML file at
+``outdir/prefix.save/data-file-schema.xml``.  This input-derived location takes
+precedence over the directory search.  If ``infile_name`` is given without
+``outfile_name``, the output name defaults to the input-file stem with an
+``.out`` suffix.
+
+.. code-block:: python
+
+    ao = analyze_output(
+        'pwscf',
+        path   = './scf_run/scf.in',
+        source = 'xml',
+        strict = True,
+        )
+
+Passing an input-file path is equivalent to providing its directory and
+``infile_name``.  It enables input-guided XML discovery and infers
+``scf.out`` as the text-output name if text parsing is selected.
+
+.. code-block:: python
+
+    ao = analyze_output(
+        'pwscf',
+        path   = './scf_run/scf.out',
+        source = 'out',
+        strict = True,
+        )
+
+Passing a text-output path selects that file directly.  No input file is
+assumed, so XML discovery, if selected instead with ``source='both'`` or
+``source='xml'``, uses the directory search rather than input-derived
+``prefix`` and ``outdir`` values.
+
+With ``strict=True``, all selected output files are required to exist when
+analysis begins.  For ``source='xml'`` the modern XML file must exist; for
+``source='out'`` the text-output file must exist.  For ``source='both'``, at
+least one source must exist, so an XML-only or text-only calculation can be
+analyzed without changing ``strict``.  A supplied input file is required.  
+If more than one candidate modern XML or text-output file is found for a 
+selected source, strict parsing raises an ambiguity error rather than choosing 
+one arbitrarily.
+
+Set ``strict=False`` to inspect an incomplete directory without file-discovery
+errors.  Missing files are skipped.  An ambiguous search is likewise treated
+as unavailable and is not parsed.  Applicable query functions then return
+``None`` when their data was not found, while any successfully parsed data
+remains accessible.
+
+.. code-block:: python
+
+    ao = analyze_output(
+        'pwscf',
+        path   = './interrupted_scf',
+        source = 'both',
+        strict = False,
+        )
+
+For ``source='both'``, modern XML is parsed first.  With no required
+quantities, text output is parsed as well so that data unique to the log is
+available.  If ``required`` quantities were supplied at construction, text
+output is parsed only when XML does not provide all of them.  Regardless of
+output file selection, a successfully parsed value is returned by its query 
+even when it is unusual for the reconciled calculation type.
