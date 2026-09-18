@@ -19,6 +19,7 @@ from .rmg_input import RmgInput
 from .simulation import Simulation, SimulationAnalyzer
 from .structure import generate_structure
 from .unit_converter import UnitConverter, convert
+from .utilities import path_string
 
 
 def as_float(text):
@@ -160,8 +161,10 @@ class RmgOutData(DevBase):
     number_pattern = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?'
 
 
-    def __init__(self,filepath):
+    def __init__(self,filepath,input=None):
         """Initialize the parsed data by reading an RMG output file."""
+        if isinstance(filepath,os.PathLike):
+            filepath = path_string(filepath)
         if not isinstance(filepath,(str,os.PathLike)):
             provided_type = type(filepath).__name__
             msg = (
@@ -170,7 +173,6 @@ class RmgOutData(DevBase):
                 f'Type provided: {provided_type}'
                 )
             raise TypeError(msg)
-        filepath = os.fspath(filepath)
         if not os.path.exists(filepath):
             msg = (
                 'RMG log output file does not exist.\n'
@@ -187,7 +189,7 @@ class RmgOutData(DevBase):
         self.path         = path
         self.abspath      = os.path.abspath(path)
         self.outfile_name = outfile_name
-        self.input        = None
+        self.input        = input
         self.setup_info   = obj(
             run_mode  = None,
             structure = None,
@@ -624,7 +626,7 @@ class RmgOutData(DevBase):
                     cell_unit = True,
                     )
 
-        if files is not None and files.control_input_file is not None:
+        if self.input is None and files is not None and files.control_input_file is not None:
             control_file = str(files.control_input_file)
             filepaths    = (
                 os.path.join(self.path,control_file),
@@ -2162,18 +2164,22 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     Parameters
     ----------
-    arg0 : Simulation or str or os.PathLike or None, optional
-        RMG simulation to analyze or path to an RMG log output file. If
-        ``None``, an unconfigured analyzer is created.
-    analyze : bool, optional
+    input : Simulation, RmgInput, str, os.PathLike, or None, optional
+        RMG simulation, parsed input, input-file path, or directory in which
+        an input can be discovered.
+    outfile : str, os.PathLike, or None, optional
+        Path to RMG log output. Relative paths are resolved below ``path``.
+    analyze : bool, default=False
         If ``True``, parse the RMG output during initialization.
+    path : str, os.PathLike, or None, optional
+        Base directory for relative paths and log-output discovery.
     strict : bool, default=True
         Require the configured log output to be a regular file when analysis
         begins. Top-level run types discovered from the referenced input and
         output log must also agree. If ``False``, a missing or non-file path
         completes analysis with empty results and run-type disagreement is
         retained as a tuple.
-    required : str or iterable of str or None, optional
+    required : str, iterable of str, or None, optional
         Query quantities whose absence should raise ``RuntimeError`` instead
         of returning ``None``.
 
@@ -2210,7 +2216,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     -------
     initial_structure(units='A') : Structure or None
         Input atomic structure in Angstrom (``'A'``) or bohr (``'B'``).
-    energy(units='Ha') : float or numpy.floating or None
+    energy(units='Ha') : float or None
         Final eigenvalue-sum energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
         Available for electronic, ionic, molecular-dynamics, TDDFT, and NEB
         calculations, but not band, EXX, or STM calculations.
@@ -2229,13 +2235,13 @@ class RmgAnalyzer(SimulationAnalyzer):
         Dimensionless Kohn--Sham occupations. The leading dimension has
         length ``nkpoints``; remaining dimensions represent spin, when
         present, and bands.
-    Ef(units='eV') : float or numpy.floating or None
+    Ef(units='eV') : float or None
         Final Fermi energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
-    Evbm(units='eV') : float or numpy.floating or None
+    Evbm(units='eV') : float or None
         Final reported valence-band maximum in selected energy units.
-    Ecbm(units='eV') : float or numpy.floating or None
+    Ecbm(units='eV') : float or None
         Final reported conduction-band minimum in selected energy units.
-    band_gap(units='eV') : float or numpy.floating or None
+    band_gap(units='eV') : float or None
         Final reported electronic band gap in selected energy units.
     fractional_occs(tol=1e-3) : bool or None
         Whether any occupation is farther than ``tol`` from both empty and
@@ -2250,7 +2256,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         Final stress tensor with shape ``(3, 3)``. Available units are
         ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``, ``'atm'``,
         ``'eV/A^3'``, ``'Ha/Bohr^3'``, and ``'Ry/Bohr^3'``.
-    pressure(units='GPa') : float or numpy.floating or None
+    pressure(units='GPa') : float or None
         Final hydrostatic pressure in the units accepted by ``stress``.
     require(*quantities)
         Add query quantities to the required-data policy without parsing.
@@ -2272,8 +2278,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     Raises
     ------
     TypeError
-        If ``arg0`` is neither a ``Simulation``, a string, a path-like object,
-        nor ``None``.
+        If an input or path argument has an unsupported type.
     FileNotFoundError
         During strict analysis, if the configured output path does not exist.
     IsADirectoryError
@@ -2846,17 +2851,97 @@ class RmgAnalyzer(SimulationAnalyzer):
     #end def _empty_results
 
 
+    def _input_file(self):
+        """Resolve an explicitly requested RMG input file."""
+        if isinstance(self.input,RmgInput):
+            return None,'parsed'
+        if self.infile_name is not None:
+            filepath = os.path.join(self.path,self.infile_name)
+            status = 'found' if os.path.isfile(filepath) else 'missing'
+            return filepath,status
+        if not self.input_requested:
+            return None,'omitted'
+        if self.path is None:
+            return None,'missing'
+        candidates = []
+        for pattern in ('input','*.in'):
+            candidates.extend(glob(os.path.join(self.path,pattern)))
+        candidates = sorted(set(candidates))
+        if len(candidates)==1:
+            return candidates[0],'found'
+        if len(candidates)>1:
+            return candidates,'ambiguous'
+        return None,'missing'
+    #end def _input_file
+
+
+    def _output_file(self):
+        """Resolve the RMG log-output file."""
+        if self.path is None:
+            return None,'missing'
+        if self.outfile_name is not None:
+            filepath = os.path.join(self.path,self.outfile_name)
+            if os.path.isfile(filepath):
+                status = 'found'
+            elif os.path.exists(filepath):
+                status = 'not_file'
+            else:
+                status = 'missing'
+            return filepath,status
+        candidates = sorted(glob(os.path.join(self.path,'*.log')))
+        if len(candidates)==1:
+            return candidates[0],'found'
+        if len(candidates)>1:
+            return candidates,'ambiguous'
+        return None,'missing'
+    #end def _output_file
+
+
     def __init__(
         self,
-        arg0         = None,
+        input        = None,
+        outfile      = None,
         *,
         analyze      = False,
-        strict = True,
+        path         = None,
+        strict       = True,
         required     = None,
         ):
-        """Initialize analyzer state and optionally parse the RMG output."""
+        """Initialize an RMG output analyzer.
+
+        Parameters
+        ----------
+        input : Simulation, RmgInput, str, or os.PathLike, optional
+            RMG simulation, parsed input, input-file path, or directory in
+            which an input file can be discovered.
+        outfile : str or os.PathLike, optional
+            Log-output path.  Relative paths are resolved below ``path``.
+        analyze : bool, default=False
+            Perform analysis during construction.
+        path : str or os.PathLike, optional
+            Base directory for relative paths and log-file discovery.
+        strict : bool, default=True
+            Require supplied files, reject ambiguous discovery, require a log
+            output, and require parsed top-level run types to agree.
+        required : str or iterable of str, optional
+            Quantity names whose query functions must raise when unavailable.
+        """
+        if isinstance(input,os.PathLike):
+            input = path_string(input)
+        if isinstance(outfile,os.PathLike):
+            outfile = path_string(outfile)
+        if isinstance(path,os.PathLike):
+            path = path_string(path)
+
         if not isinstance(strict,bool):
             raise TypeError('strict must be a bool')
+        if input is not None and not isinstance(
+            input,(Simulation,RmgInput,str,os.PathLike)
+            ):
+            raise TypeError('input must be a Simulation, RmgInput, path, or None')
+        for name,value in (('outfile',outfile),('path',path)):
+            if value is not None and not isinstance(value,(str,os.PathLike)):
+                raise TypeError(f'{name} must be a path or None')
         if required is None:
             required = ()
         elif isinstance(required,str):
@@ -2869,38 +2954,60 @@ class RmgAnalyzer(SimulationAnalyzer):
 
         self.path         = None
         self.abspath      = None
+        self.infile_name  = None
         self.outfile_name = None
         self.info         = obj()
         self.input        = None
         self.run_mode     = None
         self.results      = None
-        self.strict = strict
+        self.strict       = strict
+        self.input_requested   = input is not None
+        self.outfile_requested = outfile is not None
         self.required     = set()
         self.analysis_state = 'not_analyzed'
         self.source_status  = obj(input='not_analyzed',out='not_analyzed')
         self._query_depth   = 0
         self.require(*required)
 
-        if arg0 is None:
-            return
-        if isinstance(arg0,Simulation):
-            path     = arg0.locdir
-            filename = arg0.outfile
-        else:
-            if not isinstance(arg0,(str,os.PathLike)):
-                provided_type = type(arg0).__name__
-                msg = (
-                    'invalid type provided for log_file\n'
-                    'Type expected: str or os.PathLike\n'
-                    f'Type provided: {provided_type}'
-                    )
-                raise TypeError(msg)
-            arg0 = os.fspath(arg0)
-            path,filename = os.path.split(arg0)
-
-        self.path         = path
-        self.abspath      = os.path.abspath(path)
-        self.outfile_name = filename
+        if isinstance(input,Simulation):
+            sim = input
+            path = sim.locdir if path is None else path
+            if outfile is None:
+                outfile = sim.outfile
+            input = sim.input
+            self.input_requested   = True
+            self.outfile_requested = True
+        if input is not None and isinstance(input,(str,os.PathLike)):
+            input_path = os.fspath(input)
+            if path is not None and not os.path.isabs(input_path):
+                input_path = os.path.join(os.fspath(path),input_path)
+            input_path = os.path.abspath(input_path)
+            if os.path.isdir(input_path):
+                path  = input_path
+                input = None
+            else:
+                if path is None:
+                    path = os.path.dirname(input_path)
+                input = input_path
+        if path is None and outfile is not None:
+            outfile_path = os.path.abspath(os.fspath(outfile))
+            path         = os.path.dirname(outfile_path)
+            outfile      = outfile_path
+        if path is not None:
+            self.path    = os.path.abspath(os.fspath(path))
+            self.abspath = self.path
+        if isinstance(input,RmgInput):
+            self.input = input
+        elif input is not None:
+            base_path = self.path if self.path is not None else os.curdir
+            self.infile_name = os.path.relpath(os.fspath(input),base_path)
+        if outfile is not None:
+            outfile_path = os.fspath(outfile)
+            if not os.path.isabs(outfile_path):
+                base_path = self.path if self.path is not None else os.curdir
+                outfile_path = os.path.join(base_path,outfile_path)
+            base_path = self.path if self.path is not None else os.curdir
+            self.outfile_name = os.path.relpath(outfile_path,base_path)
 
         if analyze:
             self.analyze()
@@ -2911,37 +3018,57 @@ class RmgAnalyzer(SimulationAnalyzer):
         """Parse the configured RMG output into an ``RmgOutData`` instance."""
         self.results        = None
         self.run_mode       = None
-        self.input          = None
+        input_data          = self.input
         self.analysis_state = 'analyzing'
-        self.source_status  = obj(input='omitted',out='missing')
-        if self.path is None or self.outfile_name is None:
-            self.analysis_state = 'not_analyzed'
-            raise RuntimeError('RMG output file name is not available')
-        filepath = os.path.join(self.path,self.outfile_name)
+        self.source_status  = obj(
+            input = 'parsed' if isinstance(input_data,RmgInput) else 'omitted',
+            out   = 'missing',
+            )
         try:
-            if not os.path.exists(filepath):
-                if self.strict:
-                    msg = (
-                        'RMG log output file does not exist.\n'
-                        f'Path provided: {filepath}'
+            errors = []
+            input_file,input_status = self._input_file()
+            self.source_status.input = input_status
+            if input_status=='found':
+                input_data = RmgInput(input_file)
+                self.input = input_data
+                self.source_status.input = 'parsed'
+            elif self.strict and self.input_requested:
+                if input_status=='ambiguous':
+                    paths = '\n'.join(input_file)
+                    errors.append(f'multiple RMG input files were found\n{paths}')
+                elif not isinstance(input_data,RmgInput):
+                    errors.append('RMG input file is not available')
+
+            filepath,output_status = self._output_file()
+            self.source_status.out = output_status
+            if self.strict and output_status=='ambiguous':
+                paths = '\n'.join(filepath)
+                errors.append(f'multiple RMG output files were found\n{paths}')
+            elif self.strict and output_status=='not_file':
+                errors.append(
+                    'Path provided for RMG log output is not a file.\n'
+                    f'Path provided: {filepath}'
                     )
-                    raise FileNotFoundError(msg)
-                self.results = self._empty_results()
-                self.analysis_state = 'analyzed'
-                return
-            if not os.path.isfile(filepath):
+            elif self.strict and output_status=='missing':
+                errors.append('RMG log output file does not exist')
+            if len(errors)>0:
+                message = '\n\n'.join(errors)
+                if any('multiple ' in error for error in errors):
+                    error_type = RuntimeError
+                elif output_status=='not_file':
+                    error_type = IsADirectoryError
+                else:
+                    error_type = FileNotFoundError
+                raise error_type(message)
+
+            if output_status!='found':
                 if self.strict:
-                    msg = (
-                        'Path provided for RMG log output is not a file.\n'
-                        f'Path provided: {filepath}'
-                    )
-                    raise IsADirectoryError(msg)
+                    raise FileNotFoundError('RMG log output file does not exist')
                 self.results = self._empty_results()
-                self.source_status.out = 'not_file'
                 self.analysis_state = 'analyzed'
                 return
 
-            results = RmgOutData(filepath)
+            results = RmgOutData(filepath,input=input_data)
             self.results  = results
             self.run_mode = results.run_mode
             self.input    = results.input

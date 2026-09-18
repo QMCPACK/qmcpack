@@ -117,7 +117,8 @@ def test_empty_init():
 
     expected_members = {
         '_query_depth','abspath','analysis_state','info','input','outfile_name',
-        'path','required','results','run_mode','source_status','strict',
+        'infile_name','input_requested','outfile_requested','path','required',
+        'results','run_mode','source_status','strict',
         }
     assert set(analyzer.keys())==expected_members
     assert analyzer.path is None
@@ -223,7 +224,7 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
         if not applies:
             assert outdata[name] is None
 
-    analyzer = RmgAnalyzer(logfile,analyze=True)
+    analyzer = RmgAnalyzer(outfile=logfile,analyze=True)
 
     assert analyzer.results.run_mode==short_mode
     assert set(analyzer.results.keys())==result_fields
@@ -278,6 +279,60 @@ def test_input_run_mode(tmp_path,calculation_type,input_mode,run_mode):
 #end def test_input_run_mode
 
 
+def test_analyzer_input_forms(tmp_path):
+    from ..rmg_analyzer import RmgAnalyzer
+    from ..rmg_input import RmgInput
+
+    input_file = tmp_path/'input'
+    log_file   = tmp_path/'rmg.log'
+    input_file.write_text('calculation_mode = "Quench Electrons"')
+    log_file.write_text(rmg_log('Quench electrons'))
+
+    input_data = RmgInput(input_file)
+    from_object = RmgAnalyzer(
+        input   = input_data,
+        outfile = 'rmg.log',
+        path    = tmp_path,
+        analyze = True,
+        )
+    assert from_object.input is input_data
+    assert from_object.run_mode=='scf'
+
+    from_path = RmgAnalyzer(
+        input   = 'input',
+        outfile = 'rmg.log',
+        path    = tmp_path,
+        analyze = True,
+        )
+    assert isinstance(from_path.input,RmgInput)
+    assert from_path.run_mode=='scf'
+#end def test_analyzer_input_forms
+
+
+def test_output_discovery_from_path(tmp_path):
+    from ..rmg_analyzer import RmgAnalyzer
+
+    (tmp_path/'rmg.log').write_text(rmg_log('Quench electrons'))
+    analyzer = RmgAnalyzer(path=tmp_path,analyze=True)
+    assert isinstance(analyzer.path,str)
+    assert analyzer.outfile_name is None
+    assert analyzer.source_status.out=='parsed'
+    assert analyzer.run_mode=='scf'
+
+    (tmp_path/'second.log').write_text(rmg_log('Quench electrons'))
+    with pytest.raises(RuntimeError,match='multiple RMG output files'):
+        RmgAnalyzer(path=tmp_path,analyze=True)
+
+    permissive = RmgAnalyzer(
+        path    = tmp_path,
+        strict  = False,
+        analyze = True,
+        )
+    assert permissive.source_status.out=='ambiguous'
+    assert permissive.energy() is None
+#end def test_output_discovery_from_path
+
+
 def test_inconsistent_input_run_mode(tmp_path):
     from ..rmg_analyzer import RmgAnalyzer, RmgOutData
 
@@ -294,8 +349,8 @@ def test_inconsistent_input_run_mode(tmp_path):
     assert outdata.run_mode==('nscf','scf')
     assert outdata.setup_info.run_mode==('nscf','scf')
     with pytest.raises(RuntimeError,match='top-level run types disagree'):
-        RmgAnalyzer(log_file,analyze=True)
-    analyzer = RmgAnalyzer(log_file,analyze=True,strict=False)
+        RmgAnalyzer(outfile=log_file,analyze=True)
+    analyzer = RmgAnalyzer(outfile=log_file,analyze=True,strict=False)
     assert analyzer.run_mode==('nscf','scf')
 #end def test_inconsistent_input_run_mode
 
@@ -313,7 +368,7 @@ def test_representative_outputs(relative_path,run_mode,energy,positions_shape):
 
     logfile  = representative_root/relative_path
     outdata  = RmgOutData(str(logfile))
-    analyzer = RmgAnalyzer(str(logfile),analyze=True)
+    analyzer = RmgAnalyzer(outfile=str(logfile),analyze=True)
 
     assert outdata.run_mode==run_mode
     assert analyzer.run_mode==run_mode
@@ -341,9 +396,9 @@ def test_representative_physical_results():
     from ..structure import Structure
 
     electronic = representative_root/'electronic'
-    scf         = RmgAnalyzer(str(electronic/'input.scf.02.log'),analyze=True)
-    nscf        = RmgAnalyzer(str(electronic/'input.nscf.05.log'),analyze=True)
-    band        = RmgAnalyzer(str(electronic/'input.band.02.log'),analyze=True)
+    scf         = RmgAnalyzer(outfile=str(electronic/'input.scf.02.log'),analyze=True)
+    nscf        = RmgAnalyzer(outfile=str(electronic/'input.nscf.05.log'),analyze=True)
+    band        = RmgAnalyzer(outfile=str(electronic/'input.band.02.log'),analyze=True)
 
     assert scf.kpoints().shape==(1,3)
     assert scf.kweights() is None
@@ -357,11 +412,11 @@ def test_representative_physical_results():
 
     ionic = representative_root/'ionic'
     relax = RmgAnalyzer(
-        str(representative_root/'ionic/relax/input.01.log'),
+        outfile=str(representative_root/'ionic/relax/input.01.log'),
         analyze = True,
         )
-    nve = RmgAnalyzer(str(ionic/'nve/input.01.log'),analyze=True)
-    nvt = RmgAnalyzer(str(ionic/'nvt/input.01.log'),analyze=True)
+    nve = RmgAnalyzer(outfile=str(ionic/'nve/input.01.log'),analyze=True)
+    nvt = RmgAnalyzer(outfile=str(ionic/'nvt/input.01.log'),analyze=True)
 
     assert isinstance(relax.relaxed_structure(),Structure)
     assert relax.forces().shape==(2,3)
@@ -373,7 +428,7 @@ def test_representative_physical_results():
     assert np.isclose(nve.results.md_stats.temperature.mean,99.9942651269)
 
     tddft = RmgAnalyzer(
-        str(representative_root/'tddft/input.00.log'),
+        outfile=str(representative_root/'tddft/input.00.log'),
         analyze = True,
         )
     assert tddft.results.tddft.energy.time.tolist()==[0.0,0.05,0.1,0.15]
@@ -389,11 +444,11 @@ def test_representative_neb_results():
 
     neb_root = representative_root/'neb'
     image01 = RmgAnalyzer(
-        str(neb_root/'image01/input.02.log'),
+        outfile=str(neb_root/'image01/input.02.log'),
         analyze = True,
         ).results.neb
     image02 = RmgAnalyzer(
-        str(neb_root/'image02/input.01.log'),
+        outfile=str(neb_root/'image02/input.01.log'),
         analyze = True,
         ).results.neb
 
@@ -465,7 +520,7 @@ Cell Vectors (a0)
 '''
     logfile = tmp_path/'relax.log'
     logfile.write_text(rmg_log('Structure Optimization.',body))
-    analyzer = RmgAnalyzer(logfile,analyze=True)
+    analyzer = RmgAnalyzer(outfile=logfile,analyze=True)
 
     assert analyzer.results.ions.cell_history.shape==(2,3,3)
     assert analyzer.results.ions.cell_units=='a0'
@@ -500,8 +555,8 @@ def test_representative_produced_files(tmp_path):
     (waves/'wave.out.h5').touch()
     (electronic/'exx_integrals.h5').touch()
 
-    scf = RmgAnalyzer(electronic/'input.scf.02.log',analyze=True)
-    exx = RmgAnalyzer(electronic/'input.exx.01.log',analyze=True)
+    scf = RmgAnalyzer(outfile=electronic/'input.scf.02.log',analyze=True)
+    exx = RmgAnalyzer(outfile=electronic/'input.exx.01.log',analyze=True)
     assert scf.results.produced_files.qmcpack_restart.endswith('wave.out.h5')
     assert len(exx.results.produced_files.exx_integrals)==1
 
@@ -512,7 +567,7 @@ def test_representative_produced_files(tmp_path):
     (stm_dir/'bias.stm').touch()
     (stm_dir/'bias.cube').touch()
 
-    stm = RmgAnalyzer(stm_root/'input.stm.00.log',analyze=True)
+    stm = RmgAnalyzer(outfile=stm_root/'input.stm.00.log',analyze=True)
     assert len(stm.results.produced_files.stm)==1
     assert len(stm.results.produced_files.stm_cube)==1
 #end def test_representative_produced_files
@@ -527,7 +582,7 @@ def test_mode_specific_results(tmp_path):
     band_log.write_text(rmg_log('Band structure calculation.'))
     (tmp_path/'band_spin0.bandstructure.dat').write_text(
         '0.0 -1.0\n1.0 -0.5\n&&\n0.0 1.0\n1.0 1.5\n&&\n')
-    band = RmgAnalyzer(band_log,analyze=True)
+    band = RmgAnalyzer(outfile=band_log,analyze=True)
     assert band.results.bands[0].energies.shape==(2,2)
     assert band.eigenvalues().shape==(2,2)
     with pytest.raises(RuntimeError,match='energy'):
@@ -540,7 +595,7 @@ def test_mode_specific_results(tmp_path):
         'Molecular dynamics - CVE',
         '@CVE 1 -1.0 0.1 -0.9 300.0 2.5e-4',
         ))
-    md = RmgAnalyzer(md_log,analyze=True)
+    md = RmgAnalyzer(outfile=md_log,analyze=True)
     assert md.results.md.step.tolist()==[1]
     assert md.results.md.temperature.tolist()==[300.0]
     assert md.results.md_stats.temperature.mean==300.0
@@ -553,7 +608,7 @@ def test_mode_specific_results(tmp_path):
         '&&electric field in cartesian unit: 0.0 0.0 0.1\n'
         '&&dipole at ground state: 1.0 2.0 3.0\n'
         '0.0 1.1 2.1 3.1\n')
-    tddft = RmgAnalyzer(td_log,analyze=True)
+    tddft = RmgAnalyzer(outfile=td_log,analyze=True)
     assert tddft.results.tddft.energy.total_energy_change.tolist()==[4.0]
     assert np.allclose(tddft.results.tddft.dipoles[0].dipole,[[1.1,2.1,3.1]])
 
@@ -561,7 +616,7 @@ def test_mode_specific_results(tmp_path):
     exx_log.write_text(rmg_log(
         "calculate Exx integral's from saved wave functions"))
     (tmp_path/'exx_integrals.h5').touch()
-    exx = RmgAnalyzer(exx_log,analyze=True)
+    exx = RmgAnalyzer(outfile=exx_log,analyze=True)
     assert len(exx.results.produced_files.exx_integrals)==1
 
     stm_dir = tmp_path/'STM'
@@ -570,7 +625,7 @@ def test_mode_specific_results(tmp_path):
     (stm_dir/'bias.cube').touch()
     stm_log = tmp_path/'stm.log'
     stm_log.write_text(rmg_log('calculate STM charge density'))
-    stm = RmgAnalyzer(stm_log,analyze=True)
+    stm = RmgAnalyzer(outfile=stm_log,analyze=True)
     assert len(stm.results.produced_files.stm)==1
     assert len(stm.results.produced_files.stm_cube)==1
 #end def test_mode_specific_results
@@ -621,7 +676,7 @@ potential convergence has been achieved. stopping ...
 '''
     logfile = tmp_path/'scf.log'
     logfile.write_text(rmg_log('Quench electrons',body))
-    analyzer = RmgAnalyzer(str(logfile),analyze=True)
+    analyzer = RmgAnalyzer(outfile=str(logfile),analyze=True)
 
     from ..structure import Structure
     from ..unit_converter import UnitConverter, convert
@@ -737,7 +792,7 @@ potential convergence has been achieved. stopping ...
 
     relax_log = tmp_path/'relax.log'
     relax_log.write_text(rmg_log('Structure Optimization.',body))
-    relax = RmgAnalyzer(str(relax_log),analyze=True)
+    relax = RmgAnalyzer(outfile=str(relax_log),analyze=True)
     assert isinstance(relax.relaxed_structure(),Structure)
     assert relax.relaxed_structure().units=='A'
     assert np.allclose(
@@ -754,7 +809,7 @@ def test_missing_property_data(tmp_path):
 
     logfile = tmp_path/'missing.log'
     logfile.write_text(rmg_log('Quench electrons'))
-    analyzer = RmgAnalyzer(str(logfile),analyze=True)
+    analyzer = RmgAnalyzer(outfile=str(logfile),analyze=True)
 
     for name in (
         'energy','kpoints','kweights','eigenvalues','occupations','Ef','Evbm','Ecbm',
@@ -774,7 +829,7 @@ def test_required_available_and_validation(tmp_path):
     logfile = tmp_path/'missing.log'
     logfile.write_text(rmg_log('Quench electrons'))
     analyzer = RmgAnalyzer(
-        logfile,
+        outfile=logfile,
         analyze  = True,
         required = 'energy',
         )
@@ -798,13 +853,13 @@ def test_required_available_and_validation(tmp_path):
     with pytest.raises(ValueError,match='unknown RMG quantity'):
         analyzer.available(None)
     with pytest.raises(TypeError,match='strict must be a bool'):
-        RmgAnalyzer(logfile,strict=1)
+        RmgAnalyzer(outfile=logfile,strict=1)
     with pytest.raises(TypeError,match='required must be'):
-        RmgAnalyzer(logfile,required=1)
+        RmgAnalyzer(outfile=logfile,required=1)
     with pytest.raises(ValueError,match='unknown RMG quantity'):
-        RmgAnalyzer(logfile,required='timing')
+        RmgAnalyzer(outfile=logfile,required='timing')
 
-    unparsed = RmgAnalyzer(logfile)
+    unparsed = RmgAnalyzer(outfile=logfile)
     with pytest.raises(RuntimeError,match='has not been analyzed'):
         unparsed.available('energy')
     with pytest.raises(ValueError,match='energy units'):
@@ -816,14 +871,14 @@ def test_strict_at_analysis_time(tmp_path):
     from ..rmg_analyzer import RmgAnalyzer
 
     missing = tmp_path/'missing.log'
-    strict = RmgAnalyzer(missing)
+    strict = RmgAnalyzer(outfile=missing)
     assert strict.analysis_state=='not_analyzed'
     with pytest.raises(FileNotFoundError,match='does not exist'):
         strict.analyze()
     assert strict.analysis_state=='not_analyzed'
 
     permissive = RmgAnalyzer(
-        missing,
+        outfile=missing,
         strict = False,
         analyze      = True,
         )
@@ -833,7 +888,7 @@ def test_strict_at_analysis_time(tmp_path):
     assert not permissive.available('energy')
 
     required = RmgAnalyzer(
-        missing,
+        outfile=missing,
         strict = False,
         required     = 'energy',
         analyze      = True,
@@ -841,10 +896,10 @@ def test_strict_at_analysis_time(tmp_path):
     with pytest.raises(RuntimeError,match='required RMG quantity "energy"'):
         required.energy()
 
-    directory = RmgAnalyzer(tmp_path)
+    directory = RmgAnalyzer(outfile=tmp_path)
     with pytest.raises(IsADirectoryError,match='is not a file'):
         directory.analyze()
-    directory = RmgAnalyzer(tmp_path,strict=False,analyze=True)
+    directory = RmgAnalyzer(outfile=tmp_path,strict=False,analyze=True)
     assert directory.source_status.out=='not_file'
     assert directory.energy() is None
 #end def test_strict_at_analysis_time
@@ -862,7 +917,7 @@ final total energy from eig sum = -1.25 Ha
 '''
     logfile = tmp_path/'unknown.log'
     logfile.write_text(rmg_log('Unrecognized calculation',body))
-    analyzer = RmgAnalyzer(logfile,analyze=True)
+    analyzer = RmgAnalyzer(outfile=logfile,analyze=True)
 
     assert analyzer.run_mode is None
     assert not analyzer.results.run_mode_detected
@@ -872,7 +927,7 @@ final total energy from eig sum = -1.25 Ha
 
     bandfile = tmp_path/'band.log'
     bandfile.write_text(rmg_log('Band structure calculation.',body))
-    band = RmgAnalyzer(bandfile,analyze=True)
+    band = RmgAnalyzer(outfile=bandfile,analyze=True)
     assert band.results.run_mode_detected
     assert band.results.energies is None
     assert not band.available('energy')
@@ -891,7 +946,7 @@ def test_reader_failures_are_not_masked(monkeypatch,tmp_path):
     monkeypatch.setattr(RmgOutData,'read_energies',fail_energies)
     logfile = tmp_path/'scf.log'
     logfile.write_text(rmg_log('Quench electrons'))
-    analyzer = RmgAnalyzer(logfile)
+    analyzer = RmgAnalyzer(outfile=logfile)
 
     with pytest.raises(ValueError,match='damaged energy section'):
         analyzer.analyze()
@@ -943,7 +998,7 @@ potential   convergence has been achieved trailing status
     logfile = tmp_path/'spacing.log'
     logfile.write_text(log)
 
-    analyzer = RmgAnalyzer(str(logfile),analyze=True)
+    analyzer = RmgAnalyzer(outfile=str(logfile),analyze=True)
 
     assert analyzer.results.run_mode=='scf'
     assert analyzer.initial_structure() is not None
@@ -987,7 +1042,7 @@ Force convergence has been achieved
     logfile = tmp_path/'convergence.log'
     logfile.write_text(rmg_log('Quench electrons',body))
 
-    convergence = RmgAnalyzer(logfile,analyze=True).results.convergence
+    convergence = RmgAnalyzer(outfile=logfile,analyze=True).results.convergence
 
     assert not convergence.electronic_converged
     assert convergence.electronic_successes==1
@@ -1011,7 +1066,7 @@ KOHN SHAM EIGENVALUES [eV] AT K-POINT [bad]: malformed coordinates
     logfile = tmp_path/'malformed.log'
     logfile.write_text(rmg_log('Quench electrons',body))
 
-    analyzer = RmgAnalyzer(str(logfile),analyze=True)
+    analyzer = RmgAnalyzer(outfile=str(logfile),analyze=True)
 
     assert analyzer.energy() is None
     assert analyzer.results.timing is not None
