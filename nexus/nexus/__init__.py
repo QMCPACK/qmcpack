@@ -35,7 +35,7 @@ from .utilities     import path_string
 
 from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults, write_splash
 from .machines        import Job,                    job,            Machine, Supercomputer, get_machine, get_cpu_cores, Workstation
-from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims, DynamicProcess
+from .simulation      import Simulation, generate_simulation, input_template, multi_input_template, generate_template_input, generate_multi_template_input, graph_sims, DynamicProcess
 from .project_manager import ProjectManager,     DynamicWorkflowManager,     workflow_manager
 
 from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
@@ -120,6 +120,392 @@ def read_input(filepath,format=None):
     #end if
     return input
 #end def read_input
+
+
+
+def analyze_output(code=None,input=None,outfile=None,*,analyze=True,path=None,**kw):
+    """Construct or load an analyzer for output from a supported code.
+
+    Parameters
+    ----------
+    code : str or Simulation
+        Case-insensitive code identifier, or a ``Simulation`` object.  When a
+        simulation is supplied, it must be the only argument.  Its saved
+        analyzer image is loaded when present; otherwise its analyzer is
+        constructed and analyzed.
+    input : Simulation, SimulationInput, str, or os.PathLike, optional
+        Simulation or code-specific input.  A path may name an input file or,
+        where supported, a directory containing one.
+    outfile : str or os.PathLike, optional
+        Path to the primary text-output file.  PWSCF and RMG accept this
+        argument directly; other analyzers map it only where noted below.
+    analyze : bool, default=True
+        Perform analysis when constructing a new analyzer.  Simulation-image
+        loading is unaffected.
+    path : str or os.PathLike, optional
+        Base directory for relative ``input``, ``outfile``, and other
+        code-specific file paths.
+    **kw
+        Additional keyword arguments for the selected analyzer signature.
+        Unknown keyword arguments raise ``ValueError``.
+
+    Notes
+    -----
+    .. rubric:: Simulation signature
+
+    .. code-block:: python
+
+       analyze_output(sim)
+
+    sim : Simulation
+        Simulation produced by a Nexus ``generate_*`` function.  Its saved
+        analyzer image is returned when available; otherwise its analyzer is
+        constructed with ``analyze=True``.
+
+    .. rubric:: PWSCF signature
+
+    .. code-block:: python
+
+       analyze_output(
+           'pwscf', input=None, outfile=None, analyze=True, path=None,
+           xmlfile=None, pw2c_outfile=None, read_all=True, strict=True,
+           required=None,
+           )
+
+    input : PwscfInput, Simulation, str, or os.PathLike, optional
+        PWSCF input object, simulation, input-file path, or directory.
+    outfile : str or os.PathLike, optional
+        PWSCF text-output path.
+    analyze : bool, default=True
+        Perform analysis during construction.
+    path : str or os.PathLike, optional
+        Base directory for relative file paths and file discovery.
+    xmlfile : str or os.PathLike, optional
+        Explicit modern ``data-file-schema.xml`` path.
+    pw2c_outfile : str or os.PathLike, optional
+        Optional PW2CASINO text-output path. Relative paths are resolved below
+        ``path``.
+    read_all : bool, default=True
+        Read all available modern XML and text output.  If ``False``, read XML
+        first and read text output only when a constructor-required quantity
+        remains unavailable.
+    strict : bool, default=True
+        Require explicitly supplied files, reject ambiguous discovery, and
+        require at least one PWSCF XML or text-output source.
+    required : str or iterable of str, optional
+        Quantities whose unavailable query functions must raise exceptions.
+
+    .. rubric:: RMG signature
+
+    .. code-block:: python
+
+       analyze_output(
+           'rmg', input=None, outfile=None, analyze=True, path=None,
+           strict=True, required=None,
+           )
+
+    input : RmgInput, Simulation, str, or os.PathLike, optional
+        RMG input object, simulation, input-file path, or directory.
+    outfile : str or os.PathLike, optional
+        RMG log-output path.
+    analyze : bool, default=True
+        Perform analysis during construction.
+    path : str or os.PathLike, optional
+        Base directory for relative file paths and output discovery.
+    strict : bool, default=True
+        Require supplied files, reject ambiguous discovery, and require an
+        RMG log-output file.
+    required : str or iterable of str, optional
+        Quantities whose unavailable query functions must raise exceptions.
+
+    .. rubric:: QMCPACK signature
+
+    .. code-block:: python
+
+       analyze_output(
+           'qmcpack', input=None, analyze=True, path=None, source=None,
+           destination=None, savefile='',
+           methods=None, calculations=None, data_sources=None,
+           quantities=None, warmup_calculations=None,
+           output=('averages', 'samples'), ndmc_blocks=1000,
+           equilibration=None, group_num=None, traces=False,
+           dm_settings=None, verbose=False, nindent=0, ghost_atoms=sequence,
+           )
+
+    input : str or os.PathLike, optional
+        QMCPACK input file or bundled-output path.  Mapped to the analyzer's
+        primary source and mutually exclusive with ``source``.
+    analyze : bool, default=True
+        Perform analysis during construction.
+    path : str or os.PathLike, optional
+        Base directory for a relative ``input`` path, or the primary source
+        when ``input`` is omitted.
+    source : str or os.PathLike, optional
+        QMCPACK input file or bundled-output path.  Mutually exclusive with
+        ``path``.
+    destination : str or os.PathLike, optional
+        Directory in which analysis data and optional saved results reside.
+    savefile : str, default=''
+        Name of an optional saved analyzer image to load or write.
+    methods : iterable of str, optional
+        QMC method types to analyze.
+    calculations : iterable of int, optional
+        Calculation-series indices to analyze.
+    data_sources : iterable of str, optional
+        Output-data source types to include in the analysis.
+    quantities : iterable of str, optional
+        Observable quantities to analyze.
+    warmup_calculations : iterable of int, optional
+        Calculation-series indices used only for equilibration data.
+    output : iterable of {'averages', 'samples'}, default=('averages', 'samples')
+        Analysis result types to produce.
+    ndmc_blocks : int, default=1000
+        Number of DMC blocks used for derived DMC analyses.
+    equilibration : int or dict, optional
+        Equilibration period or calculation-specific equilibration settings.
+    group_num : int, optional
+        Bundle group number to analyze.
+    traces : bool, default=False
+        Include trace-file analysis.
+    dm_settings : dict, optional
+        Density-matrix analysis settings.
+    verbose : bool, default=False
+        Enable verbose analyzer logging.
+    nindent : int, default=0
+        Initial indentation level for analyzer logging.
+    ghost_atoms : sequence, optional
+        Atom indices treated as ghost atoms during analysis.
+
+    .. rubric:: VASP signature
+
+    .. code-block:: python
+
+       analyze_output(
+           'vasp', input=None, outfile=None, analyze=True, path=None,
+           xml=False,
+           )
+
+    input : str or os.PathLike, optional
+        VASP ``INCAR`` or ``OUTCAR`` path; this is the primary argument.
+    outfile : str or os.PathLike, optional
+        VASP ``OUTCAR`` path used when ``input`` is omitted.
+    analyze : bool, default=True
+        Perform analysis during construction.
+    path : str or os.PathLike, optional
+        Base directory for a relative input or output path.
+    xml : bool, default=False
+        Parse ``vasprun.xml`` in addition to text outputs.
+
+    .. rubric:: GAMESS signature
+
+    .. code-block:: python
+
+       analyze_output(
+           'gamess', input=None, analyze=True, path=None, prefix=None,
+           exit=False,
+           )
+
+    input : str or os.PathLike, optional
+        GAMESS input file associated with the output to analyze.
+    analyze : bool, default=True
+        Perform analysis during construction.
+    path : str or os.PathLike, optional
+        Base directory for a relative input path, or the input path when
+        ``input`` is omitted.
+    prefix : str, optional
+        Prefix used to locate GAMESS output and punch files.  The input-file
+        stem is used when this is not provided.
+    exit : bool, default=False
+        Enable analysis of the GAMESS exit file.
+
+    Returns
+    -------
+    SimulationAnalyzer
+        Newly constructed and analyzed code-specific analyzer, or an analyzer
+        loaded from a simulation image.
+
+    Raises
+    ------
+    TypeError
+        If ``code`` is neither a string nor a ``Simulation`` object.
+    ValueError
+        If incompatible or unrecognized keyword arguments are supplied.
+    NotImplementedError
+        If ``code`` does not identify a supported analyzer.
+    """
+
+    if isinstance(input,os.PathLike):
+        input = path_string(input)
+    if isinstance(outfile,os.PathLike):
+        outfile = path_string(outfile)
+    if isinstance(path,os.PathLike):
+        path = path_string(path)
+    for name,value in kw.items():
+        if isinstance(value,os.PathLike):
+            kw[name] = path_string(value)
+        #end if
+    #end for
+
+    # Retrieve analyzer from a Simulation object
+    simulation_types = {
+        'qmcpack' : Qmcpack,
+        'pwscf'   : Pwscf,
+        'rmg'     : Rmg,
+        'vasp'    : Vasp,
+        'gamess'  : Gamess,
+        }
+    sim = None
+    if isinstance(code,Simulation):
+        sim = code
+        if (
+            input is not None
+            or outfile is not None
+            or analyze is not True
+            or path is not None
+            or len(kw)>0
+            ):
+            msg = (
+                'Cannot analyze output.\n'
+                'You provided a Simulation object (allowed),\n'
+                '\nbut also included additional arguments (not allowed).\n'
+                f'Invalid arguments: {sorted(kw)}'
+                )
+            raise ValueError(msg)
+    elif code is None and isinstance(input,Simulation):
+        sim = input
+        if outfile is not None or analyze is not True or path is not None or len(kw)>0:
+            msg = (
+                'Cannot analyze output.\n'
+                'You provided a Simulation object as "input" (allowed),\n'
+                'but also included additional arguments (not allowed).'
+                )
+            raise ValueError(msg)
+    elif isinstance(code,str):
+        code = code.lower()
+        if isinstance(input,Simulation):
+            sim = input
+            if outfile is not None or analyze is not True or path is not None or len(kw)>0:
+                msg = (
+                    'Cannot analyze output.\n'
+                    'You provided a Simulation object as "input" (allowed),\n'
+                    'but also included additional arguments (not allowed).'
+                    )
+                raise ValueError(msg)
+            if code not in simulation_types or not isinstance(sim,simulation_types[code]):
+                msg = (
+                    'Cannot analyze output.\n'
+                    f'Code "{code}" does not match the provided '
+                    f'{sim.__class__.__name__} object.'
+                    )
+                raise ValueError(msg)
+    else:
+        msg = (
+            'Cannot analyze output.\n'
+            'Argument "code" must be provided as a string or a Simulation object.\n'
+            'You provided: '+type(code).__name__
+            )
+        raise TypeError(msg)
+
+    if sim is not None:
+        imagepath = os.path.join(sim.imresdir,sim.analyzer_image)
+        if os.path.isfile(imagepath):
+            return sim.load_analyzer_image()
+        return sim.analyzer_type(sim,analyze=True)
+
+    # Construct an analyzer directly from inputs
+    if path is not None:
+        path = path_string(path)
+    if code=='qmcpack':
+        qmcpack_kw = dict(analyze=analyze)
+        for name in (
+            'verbose','nindent','ghost_atoms','source','destination','savefile',
+            'methods','calculations','data_sources','quantities',
+            'warmup_calculations','output','ndmc_blocks','equilibration',
+            'group_num','traces','dm_settings',
+            ):
+            if name in kw:
+                qmcpack_kw[name] = kw.pop(name)
+        if outfile is not None:
+            raise ValueError('QMCPACK output does not accept "outfile"')
+        if input is not None and 'source' in qmcpack_kw:
+            msg = (
+                'Cannot analyze QMCPACK output.\n'
+                'Specify either "input" or "source", not both.'
+                )
+            raise ValueError(msg)
+        source = input
+        if source is None:
+            source = path
+        elif path is not None and isinstance(source,(str,os.PathLike)):
+            source = path_string(source)
+            if not os.path.isabs(source):
+                source = os.path.join(path,source)
+        analyzer = QmcpackAnalyzer(source,**qmcpack_kw)
+    elif code=='pwscf':
+        analyzer = PwscfAnalyzer(
+            input,
+            outfile,
+            analyze           = analyze,
+            path              = path,
+            xmlfile           = kw.pop('xmlfile',None),
+            pw2c_outfile      = kw.pop('pw2c_outfile',None),
+            read_all          = kw.pop('read_all',True),
+            strict            = kw.pop('strict',True),
+            required          = kw.pop('required',None),
+            )
+    elif code=='rmg':
+        analyzer = RmgAnalyzer(
+            input,
+            outfile,
+            analyze  = analyze,
+            path     = path,
+            strict   = kw.pop('strict',True),
+            required = kw.pop('required',None),
+            )
+    elif code=='vasp':
+        if input is not None and outfile is not None:
+            raise ValueError('VASP output accepts either "input" or "outfile", not both')
+        source = input if input is not None else outfile
+        if source is None:
+            source = path
+        elif path is not None and isinstance(source,(str,os.PathLike)):
+            source = path_string(source)
+            if not os.path.isabs(source):
+                source = os.path.join(path,source)
+        analyzer = VaspAnalyzer(
+            source,
+            xml     = kw.pop('xml',False),
+            analyze = analyze,
+            )
+    elif code=='gamess':
+        if outfile is not None:
+            raise ValueError('GAMESS output does not accept "outfile"')
+        source = input if input is not None else path
+        if input is not None and path is not None and isinstance(input,(str,os.PathLike)):
+            source = path_string(input)
+            if not os.path.isabs(source):
+                source = os.path.join(path,source)
+        analyzer = GamessAnalyzer(
+            source,
+            prefix  = kw.pop('prefix',None),
+            exit    = kw.pop('exit',False),
+            analyze = analyze,
+            )
+    else:
+        msg = (
+            f'Cannot analyze output.\nCode "{code}" is unsupported.\n'
+            'Valid options are: qmcpack, pwscf, rmg, vasp, gamess'
+            )
+        raise NotImplementedError(msg)
+    if len(kw)>0:
+        msg = (
+            f'Cannot analyze {code} output.\n'
+            'You provided unrecognized arguments.\n'
+            f'Unrecognized arguments: {sorted(kw)}'
+            )
+        raise ValueError(msg)
+    return analyzer
+#end def analyze_output
 
 
 
