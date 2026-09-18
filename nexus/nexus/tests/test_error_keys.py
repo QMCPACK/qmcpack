@@ -136,16 +136,16 @@ def test_selectors():
     assert not find_error_keys('calculation completed normally', shell=True)
 
     # Batch selectors enable their documented constituent sets.
-    assert find_error_keys('UCX ERROR transport endpoint failed', hpc=True)
+    assert find_error_keys('State=FAILED', hpc=True)
     assert find_error_keys(
         'terminate called after throwing an instance of std::runtime_error',
         code=True,
         )
     assert find_error_keys(
-        'parallel write failed while storing required walker data',
+        'Intel MKL FATAL ERROR: Cannot load libmkl_avx2.so',
         code_library=True,
         )
-    assert find_error_keys(
+    assert not find_error_keys(
         'scipy.sparse.linalg.ArpackNoConvergence: no convergence',
         python_module=True,
         )
@@ -192,19 +192,19 @@ def test_operating_system_catches():
         'fatal error: No space left on device',
         posix=True,
         )
-    assert find_error_keys('I/O failed with errno ENOSPC', posix=True)
+    assert find_error_keys('fatal I/O error: errno ENOSPC', posix=True)
 
 
 def test_hpc_environment_catches():
-    assert find_error_keys(
+    assert not find_error_keys(
         '[1712] UCX ERROR endpoint timed out',
         infiniband=True,
         )
-    assert find_error_keys(
+    assert not find_error_keys(
         'LNet peer unreachable: fatal transport error',
         lustre=True,
         )
-    assert find_error_keys('GPFS: [ERROR] disk unavailable', gpfs=True)
+    assert not find_error_keys('GPFS: [ERROR] disk unavailable', gpfs=True)
     assert find_error_keys(
         'slurmstepd: error: Detected 1 oom-kill event',
         slurm=True,
@@ -241,15 +241,15 @@ def test_compiled_code_catches():
         cpp=True,
         )
     assert find_error_keys(
-        'kernel launch returned cudaErrorIllegalAddress',
+        'CUDA error: kernel launch returned cudaErrorIllegalAddress',
         cuda=True,
         )
-    assert find_error_keys(
+    assert not find_error_keys(
         'NCCL transport returned ncclSystemError',
         cuda=True,
         )
     assert find_error_keys(
-        'kernel returned hipErrorLaunchFailure',
+        'HIP error: kernel returned hipErrorLaunchFailure',
         hip=True,
         )
 
@@ -267,30 +267,30 @@ def test_compiled_library_catches():
         'Intel MKL FATAL ERROR: Cannot load libmkl_avx2.so',
         blas=True,
         )
-    assert find_error_keys(
+    assert not find_error_keys(
         'LAPACK computational failure: eigensolver failed',
         lapack=True,
         )
-    assert find_error_keys(
+    assert not find_error_keys(
         'parallel write failed while storing required simulation data',
         hdf5=True,
         )
-    assert find_error_keys(
+    assert not find_error_keys(
         'input.xml: parser error : Premature end of data',
         libxml2=True,
         )
 
 
-def test_python_module_catches():
-    assert find_error_keys(
+def test_python_module_exceptions_are_not_definitive():
+    assert not find_error_keys(
         'numpy.linalg.LinAlgError: Singular matrix',
         numpy=True,
         )
-    assert find_error_keys(
+    assert not find_error_keys(
         'scipy.spatial.QhullError: Initial simplex is flat',
         scipy=True,
         )
-    assert find_error_keys(
+    assert not find_error_keys(
         'OSError: unable to open file (file signature not found)',
         h5py=True,
         )
@@ -318,6 +318,16 @@ def test_operating_system_near_misses():
     assert not find_error_keys(
         'Optional cache file does not exist; continuing normally',
         posix=True,
+        )
+    assert not find_error_keys('No such file or directory', posix=True)
+    assert not find_error_keys('I/O failed with errno ENOSPC', posix=True)
+    assert not find_error_keys(
+        'Connection timed out; retrying with the secondary endpoint',
+        posix=True,
+        )
+    assert not find_error_keys(
+        'optional allocation failed: out of memory; using less workspace',
+        shell=True,
         )
 
 
@@ -349,11 +359,19 @@ def test_compiled_code_near_misses():
         cuda=True,
         )
     assert not find_error_keys(
+        'kernel launch returned cudaErrorIllegalAddress; using the CPU path',
+        cuda=True,
+        )
+    assert not find_error_keys(
         'ncclCommGetAsyncError returned ncclInProgress',
         cuda=True,
         )
     assert not find_error_keys(
         'hipEventQuery returned hipErrorNotReady',
+        hip=True,
+        )
+    assert not find_error_keys(
+        'kernel returned hipErrorLaunchFailure; using the CPU path',
         hip=True,
         )
     assert not find_error_keys('ECC Error Count: 0', hip=True)

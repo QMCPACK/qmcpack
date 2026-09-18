@@ -24,9 +24,10 @@ shell_errors = (
     'Stack overflow',
     'Out of memory',
     'Cannot allocate memory',
-    'oom-kill',
-    'invoked oom-killer',
-    'Killed process 123',
+    # Kernel OOM messages can identify a different process on the node.
+    # 'oom-kill',
+    # 'invoked oom-killer',
+    # 'Killed process 123',
     'run.sh: line 8: 4217 Killed',
     # Machine-check and EDAC diagnostics can report corrected hardware errors.
     # 'Machine Check Exception',
@@ -40,7 +41,7 @@ shell_error_patterns = (
     r'^\s*(?:aborted|killed)(?:\s+\(core dumped\))?\s*$',
     r'^.*:\s+line\s+\d+:\s+\d+\s+(?:aborted|killed)(?:\s+\(core dumped\))?(?:\s+.+)?$',
     r'^\s*terminated\s*$',
-    r'\b(?:out of memory|cannot allocate memory|oom-kill(?:er)?|invoked oom-killer|killed process\s+\d+)\b',
+    r'^\s*(?:out of memory|cannot allocate memory)\s*$',
     r'\b(?:stack overflow|stack smashing detected|general protection fault)\b',
     # Machine-check and EDAC diagnostics can report corrected hardware errors.
     # r'\bMachine Check Exception\b',
@@ -75,20 +76,24 @@ linux_signal_error_patterns = (
     )
 
 posix_errors = (
-    'No such file or directory',
-    'Permission denied',
-    'Not a directory',
-    'Is a directory',
-    'No space left on device',
-    'Too many open files',
-    'Cannot allocate memory',
-    'Connection refused',
-    'Connection timed out',
-    'Network is unreachable',
-    'Address already in use',
-    'Broken pipe',
-    'fatal error: errno ENOSPC',
+    # Most errno messages can result from handled probes or retryable I/O.
+    # Missing executables and explicitly fatal errors provide run-failure
+    # context rather than relying on the errno message alone.
+    'bash: pw.x: No such file or directory',
+    'bash: ./pw.x: Permission denied',
+    'fatal error: No such file or directory',
+    'fatal error: Permission denied',
+    'fatal error: Not a directory',
+    'fatal error: Is a directory',
     'fatal error: No space left on device',
+    'fatal error: Too many open files',
+    'fatal error: Cannot allocate memory',
+    'fatal error: Connection refused',
+    'fatal error: Connection timed out',
+    'fatal error: Network is unreachable',
+    'fatal error: Address already in use',
+    'fatal error: Broken pipe',
+    'fatal error: errno ENOSPC',
     )
 
 posix_errno_keys = (
@@ -117,64 +122,63 @@ posix_errno_keys = (
     )
 
 posix_error_patterns = (
-    r'^(?:.*:\s*)?(?:no such file or directory|permission denied|not a directory|is a directory|no space left on device|too many open files|cannot allocate memory|connection refused|connection timed out|network is unreachable|address already in use|broken pipe)\s*$',
-    r'\b(?:fatal|error|exception|failed|cannot|unable)[^\n]{0,100}\b(?:no such file or directory|permission denied|not a directory|is a directory|no space left on device|too many open files|cannot allocate memory|connection refused|connection timed out|network is unreachable|address already in use|broken pipe)\b',
-    r'\b(?:errno|error|failed|failure|fatal)[^\n]{0,40}\b(?:ENOENT|EACCES|EISDIR|ENOTDIR|ENOSPC|EMFILE|ENOMEM|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EADDRINUSE|EPIPE|EIO|ENXIO|EBADF|EBUSY|ENODEV|EROFS|EDQUOT|ECONNRESET|EHOSTUNREACH|ENOTCONN)\b',
+    r'^\s*(?:bash|sh|zsh|ksh):(?:\s+line\s+\d+:)?\s+[^:\n]+:\s+(?:no such file or directory|permission denied)\s*$',
+    r'\bfatal(?:\s+error)?[^\n]{0,100}\b(?:no such file or directory|permission denied|not a directory|is a directory|no space left on device|too many open files|cannot allocate memory|connection refused|connection timed out|network is unreachable|address already in use|broken pipe)\b',
+    r'\bfatal[^\n]{0,40}\b(?:errno\s+)?(?:ENOENT|EACCES|EISDIR|ENOTDIR|ENOSPC|EMFILE|ENOMEM|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EADDRINUSE|EPIPE|EIO|ENXIO|EBADF|EBUSY|ENODEV|EROFS|EDQUOT|ECONNRESET|EHOSTUNREACH|ENOTCONN)\b',
     )
 
 
 # HPC environment errors
 
 infiniband_errors = (
-    'UCX ERROR',
-    'libibverbs: malformed packet',
-    'ucp_ep_create failed',
-    'uct_ep_connect_to_ep unreachable',
-    'ucs_init timed out',
-    'ibv_create_qp failed',
-    'libfabric transport error',
-    'ofi_endpoint unreachable',
+    # Provider initialization and endpoint errors can be retried or cause a
+    # fallback to another transport; none alone establishes run failure.
+    # 'UCX ERROR',
+    # 'libibverbs: malformed packet',
+    # 'ucp_ep_create failed',
+    # 'uct_ep_connect_to_ep unreachable',
+    # 'ucs_init timed out',
+    # 'ibv_create_qp failed',
+    # 'libfabric transport error',
+    # 'ofi_endpoint unreachable',
     )
 
 infiniband_error_patterns = (
-    r'\bUCX\s+ERROR\b',
-    r'\blibibverbs:\s*malformed packet\b',
-    r'\b(?:ucp|uct|ucs)_[a-z0-9_]+\b[^\n]{0,80}\b(?:failed|error|unreachable|timed out)\b',
-    r'\bibv_[a-z0-9_]+\b[^\n]{0,80}\b(?:failed|error)\b',
-    r'\b(?:libfabric|ofi_[a-z0-9_]+)\b[^\n]{0,80}\b(?:error|failed|unreachable)\b',
+    # See infiniband_errors: these require separate termination context.
     )
 
 lustre_errors = (
-    'LustreError:',
-    'LBUG:',
-    'LNetError transport failed',
-    'Lustre client evicted',
+    # Filesystem and network-layer errors can concern another client or be
+    # recovered by retry/failover without invalidating this simulation.
+    # 'LustreError:',
+    # 'LBUG:',
+    # 'LNetError transport failed',
+    # 'Lustre client evicted',
     )
 
 lustre_error_patterns = (
-    r'\bLustreError\s*:',
-    r'\bLBUG\s*:',
-    r'\bLNet(?:Error)?\b[^\n]{0,80}\b(?:error|failed|fatal|timeout|unreachable)\b',
-    r'\bLustre\b[^\n]{0,80}\b(?:error|failed|fatal|evicted)\b',
+    # See lustre_errors: these require separate termination context.
     )
 
 gpfs_errors = (
-    'GPFS: [ERROR]',
-    'GPFS: [FATAL]',
-    'GPFS deadlock detected',
-    'GPFS disk unavailable',
-    'GPFS unmounted abnormally',
-    'GPFS token expired',
+    # GPFS can retry, renew tokens, or fail over disks; these messages can also
+    # describe node-wide events unrelated to the process being inspected.
+    # 'GPFS: [ERROR]',
+    # 'GPFS: [FATAL]',
+    # 'GPFS deadlock detected',
+    # 'GPFS disk unavailable',
+    # 'GPFS unmounted abnormally',
+    # 'GPFS token expired',
     )
 
 gpfs_error_patterns = (
-    r'\bGPFS:\s*\[(?:ERROR|FATAL)\]',
-    r'\bGPFS\b[^\n]{0,80}\b(?:deadlock detected|disk unavailable|unmounted abnormally|token expired)\b',
+    # See gpfs_errors: these require separate termination context.
     )
 
 slurm_errors = (
-    'slurmstepd: error:',
-    'srun: error:',
+    # Generic launcher errors can describe non-fatal setup/cleanup issues.
+    # 'slurmstepd: error:',
+    # 'srun: error:',
     'srun: Force term; sending SIGKILL',
     'DUE TO TIME LIMIT',
     'Exceeded job memory limit',
@@ -188,18 +192,18 @@ slurm_errors = (
     'State=PREEMPTED',
     'JOB CANCELLED',
     'STEP FAILED',
-    'launch failed',
-    'oom-kill',
+    'srun: launch failed',
+    'slurmstepd: error: Detected 1 oom-kill event',
     )
 
 slurm_error_patterns = (
-    r'\b(?:slurmstepd|srun):\s*error:',
     r'\bsrun:\s*Force term;\s*sending SIGKILL\b',
     r'\bDUE TO TIME LIMIT\b',
     r'\bExceeded job memory limit\b',
     r'\bState=(?:FAILED|TIMEOUT|NODE_FAIL|OUT_OF_MEMORY|BOOT_FAIL|DEADLINE|CANCELLED|PREEMPTED)\b',
     r'\b(?:JOB|STEP)[^\n]{0,80}\b(?:CANCELLED|FAILED|OUT_OF_MEMORY|TIMEOUT|NODE_FAIL)\b',
-    r'\b(?:launch failed|oom-kill)\b',
+    r'\b(?:srun|slurmstepd):[^\n]{0,80}\blaunch failed\b',
+    r'\bslurmstepd:[^\n]{0,80}\boom-kill\b',
     )
 
 pbs_errors = (
@@ -298,9 +302,10 @@ mpi_errors = (
     # 'MPI_T_ERR_INVALID_NAME',
     # 'MPI_ERR_SESSION',
     'mpirun: kill job',
-    'mpirun noticed that process rank',
-    'ORTE_ERROR_LOG',
-    'PRTE_ERROR_LOG',
+    'mpirun noticed that process rank 1 exited on signal 11',
+    # ORTE/PRTE can log handled internal errors during component selection.
+    # 'ORTE_ERROR_LOG',
+    # 'PRTE_ERROR_LOG',
     'the first job to fail is listed below',
     'job aborted:',
     'MPI_Abort was invoked',
@@ -321,8 +326,7 @@ mpi_errors = (
 
 mpi_error_patterns = (
     r'\bmpirun:\s*kill job\b',
-    r'\bmpirun noticed that process rank\b',
-    r'\b(?:ORTE|PRTE)_ERROR_LOG\b',
+    r'\bmpirun noticed that process rank\s+\d+[^\n]{0,80}\b(?:non-zero|signal|terminated|aborted|died)\b',
     r'\bthe first job to fail is listed below\b',
     r'\bjob aborted:',
     r'\bMPI_Abort was invoked\b',
@@ -352,9 +356,10 @@ openmp_error_patterns = (
 
 linking_errors = (
     'error while loading shared libraries',
-    'cannot open shared object file',
-    'undefined symbol:',
-    'wrong ELF class',
+    # These fragments can be emitted while probing an optional plugin.
+    # 'cannot open shared object file',
+    # 'undefined symbol:',
+    # 'wrong ELF class',
     'symbol lookup error',
     'relocation error',
     'GLIBCXX_3.4.30 not found',
@@ -363,7 +368,7 @@ linking_errors = (
     )
 
 linking_error_patterns = (
-    r'\b(?:error while loading shared libraries|cannot open shared object file|undefined symbol:|wrong ELF class|symbol lookup error|relocation error)',
+    r'\b(?:error while loading shared libraries|symbol lookup error|relocation error)',
     r'\b(?:GLIBCXX|CXXABI)_[0-9.]+\b[^\n]{0,40}\bnot found\b',
     r'\bversion\s+[\'`][^\'`]+[\'`]\s+not found\b',
     )
@@ -419,28 +424,31 @@ cpp_error_patterns = (
 
 cuda_errors = (
     'CUDA error:',
-    'cudaErrorMemoryAllocation',
-    'cudaErrorInitializationError',
-    'cudaErrorLaunchFailure',
-    'cudaErrorLaunchTimeout',
-    'cudaErrorLaunchOutOfResources',
-    'cudaErrorIllegalAddress',
-    'cudaErrorNoKernelImageForDevice',
-    'cudaErrorInsufficientDriver',
-    'cudaErrorSystemDriverMismatch',
-    'cudaErrorECCUncorrectable',
-    'cudaErrorUnknown',
-    'ncclUnhandledCudaError',
-    'ncclSystemError',
-    'ncclInternalError',
-    'ncclInvalidArgument',
-    'ncclInvalidUsage',
-    'ncclRemoteError',
-    'NCCL call to connect failed',
-    'UCX call to connect failed',
-    'CUDA call to connect failed',
-    'socket call to connect failed',
-    'transport call to connect failed',
+    # CUDA/NCCL return values can be checked and handled, and connection
+    # failures can trigger transport fallback.  Require an application's
+    # explicit "CUDA error:" diagnostic rather than a bare status token.
+    # 'cudaErrorMemoryAllocation',
+    # 'cudaErrorInitializationError',
+    # 'cudaErrorLaunchFailure',
+    # 'cudaErrorLaunchTimeout',
+    # 'cudaErrorLaunchOutOfResources',
+    # 'cudaErrorIllegalAddress',
+    # 'cudaErrorNoKernelImageForDevice',
+    # 'cudaErrorInsufficientDriver',
+    # 'cudaErrorSystemDriverMismatch',
+    # 'cudaErrorECCUncorrectable',
+    # 'cudaErrorUnknown',
+    # 'ncclUnhandledCudaError',
+    # 'ncclSystemError',
+    # 'ncclInternalError',
+    # 'ncclInvalidArgument',
+    # 'ncclInvalidUsage',
+    # 'ncclRemoteError',
+    # 'NCCL call to connect failed',
+    # 'UCX call to connect failed',
+    # 'CUDA call to connect failed',
+    # 'socket call to connect failed',
+    # 'transport call to connect failed',
     # An Xid is a driver event, not proof that this process failed.  NCCL WARN
     # includes warnings as well as errors; concrete NCCL failures are matched
     # below.
@@ -450,41 +458,38 @@ cuda_errors = (
 
 cuda_error_patterns = (
     r'\bCUDA error:',
-    r'\bcudaError(?:MemoryAllocation|InitializationError|LaunchFailure|LaunchTimeout|LaunchOutOfResources|IllegalAddress|NoKernelImageForDevice|InsufficientDriver|SystemDriverMismatch|ECCUncorrectable|Unknown)\b',
-    r'\bnccl(?:UnhandledCudaError|SystemError|InternalError|InvalidArgument|InvalidUsage|RemoteError)\b',
-    r'\b(?:NCCL|UCX|CUDA|socket|transport)[^\n]{0,80}\bcall to connect failed\b',
     )
 
 hip_errors = (
     'HIP error:',
-    'hipErrorMemoryAllocation',
-    'hipErrorInitializationError',
-    'hipErrorLaunchFailure',
-    'hipErrorLaunchTimeOut',
-    'hipErrorLaunchOutOfResources',
-    'hipErrorIllegalAddress',
-    'hipErrorNoBinaryForGpu',
-    'hipErrorInsufficientDriver',
-    'hipErrorECCNotCorrectable',
-    'hipErrorUnknown',
+    # HIP return values can be handled by a fallback path.
+    # 'hipErrorMemoryAllocation',
+    # 'hipErrorInitializationError',
+    # 'hipErrorLaunchFailure',
+    # 'hipErrorLaunchTimeOut',
+    # 'hipErrorLaunchOutOfResources',
+    # 'hipErrorIllegalAddress',
+    # 'hipErrorNoBinaryForGpu',
+    # 'hipErrorInsufficientDriver',
+    # 'hipErrorECCNotCorrectable',
+    # 'hipErrorUnknown',
     # This also occurs in status labels such as "ECC Error Count: 0".
     # 'ECC Error',
-    'amdgpu: Page Fault',
-    'amdgpu GPU fault',
-    'amdgpu ring timeout',
-    'amdgpu GPU reset',
-    'amdgpu uncorrectable error',
-    'kfd GPU fault',
-    'kfd page fault',
-    'kfd ring timeout',
-    'kfd GPU reset',
-    'kfd uncorrectable error',
+    # Kernel GPU messages can concern a different process on the node.
+    # 'amdgpu: Page Fault',
+    # 'amdgpu GPU fault',
+    # 'amdgpu ring timeout',
+    # 'amdgpu GPU reset',
+    # 'amdgpu uncorrectable error',
+    # 'kfd GPU fault',
+    # 'kfd page fault',
+    # 'kfd ring timeout',
+    # 'kfd GPU reset',
+    # 'kfd uncorrectable error',
     )
 
 hip_error_patterns = (
     r'\bHIP error:',
-    r'\bhipError(?:MemoryAllocation|InitializationError|LaunchFailure|LaunchTimeOut|LaunchOutOfResources|IllegalAddress|NoBinaryForGpu|InsufficientDriver|ECCNotCorrectable|Unknown)\b',
-    r'\b(?:amdgpu|kfd)[^\n]{0,100}\b(?:GPU fault|page fault|ring timeout|GPU reset|uncorrectable)\b',
     )
 
 
@@ -534,21 +539,24 @@ python_error_patterns = (
 # Compiled scientific-library errors
 
 blas_errors = (
-    'Intel MKL ERROR:',
     'Intel MKL FATAL ERROR:',
-    'OpenBLAS Error:',
-    'on entry to DGEMM parameter number 1 had an illegal value',
+    # BLAS argument errors and non-fatal library errors return to the caller,
+    # which can select a fallback or otherwise handle them.
+    # 'Intel MKL ERROR:',
+    # 'OpenBLAS Error:',
+    # 'on entry to DGEMM parameter number 1 had an illegal value',
     )
 
 blas_error_patterns = (
-    r'\b(?:Intel MKL(?: FATAL)? ERROR|OpenBLAS Error):',
-    r'\bon entry to\s+[a-z0-9_]+\s+parameter(?: number)?\s+\d+\s+had an illegal value\b',
+    r'\bIntel MKL FATAL ERROR:',
     )
 
 lapack_errors = (
-    'LAPACK error:',
-    'LAPACK native error:',
-    'LAPACK computational failure:',
+    # LAPACK reports status to its caller; these conditions can be handled by
+    # fallback algorithms and do not establish failure of the simulation.
+    # 'LAPACK error:',
+    # 'LAPACK native error:',
+    # 'LAPACK computational failure:',
     # These numerical conditions can be handled by fallback algorithms.
     # 'matrix is exactly singular',
     # 'matrix is singular',
@@ -557,7 +565,6 @@ lapack_errors = (
     )
 
 lapack_error_patterns = (
-    r'\bLAPACK(?: native error| computational failure| error):',
     # Numerical solver conditions can be handled by a fallback algorithm.
     # r'\b(?:LAPACK|[sdcz][a-z0-9_]{3,})[^\n]{0,100}\b(?:matrix is singular|is not positive definite|failed to converge|computational failure)\b',
     )
@@ -574,60 +581,61 @@ hdf5_errors = (
     # 'unable to create file',
     # 'unable to open group',
     # 'unable to open dataset',
-    'parallel write failed',
+    # A failed write or invalid selection can concern optional checkpoint or
+    # metadata output, and HDF5 returns these errors to the caller.
+    # 'parallel write failed',
     # This is only an HDF5 error-stack classification, not a terminal outcome.
     # 'major: Parallel HDF5',
-    'data space selection exceeds dataset dimensions',
+    # 'data space selection exceeds dataset dimensions',
     )
 
 hdf5_error_patterns = (
-    r'\bparallel write failed\b',
-    r'\bdata space selection exceeds dataset dimensions\b',
     # HDF5 prints an error stack for failed probes even when the caller recovers.
     # r'HDF5-DIAG:\s*Error\s*detected',
     # r'\b(?:major|minor):\s*(?:file accessibility|unable to open file|unable to create file|write failed|read failed|object not found|bad value)\b',
     )
 
 libxml2_errors = (
-    'parser error :',
-    'This element is not expected',
-    'Schemas validity error',
+    # Parsing and validation failures can concern optional XML content and are
+    # returned to the caller; termination must be established elsewhere.
+    # 'parser error :',
+    # 'This element is not expected',
+    # 'Schemas validity error',
     # External entities can be optional and failure to load them is recoverable.
     # 'I/O error : Permission denied to access system file',
     # 'failed to load external entity',
-    'Opening and ending tag mismatch',
-    'Premature end of data',
-    'XML validation failed',
-    'XML element is not expected',
+    # 'Opening and ending tag mismatch',
+    # 'Premature end of data',
+    # 'XML validation failed',
+    # 'XML element is not expected',
     )
 
 libxml2_error_patterns = (
-    r'\b(?:parser|schemas?|xml)[^\n]{0,80}\b(?:error|validation failed|not expected)\b',
-    r'\bThis element is not expected\b',
-    r'\bOpening and ending tag mismatch\b',
-    r'\bPremature end of data\b',
+    # See libxml2_errors: these require separate termination context.
     )
 
 
 # Python-module errors
 
 numpy_errors = (
-    'LinAlgError: calculation failed',
-    'AxisError: calculation failed',
-    'DTypePromotionError: calculation failed',
-    'TooHardError: calculation failed',
-    '_ArrayMemoryError: calculation failed',
+    # NumPy exceptions can be caught and handled by the calling application.
+    # 'LinAlgError: calculation failed',
+    # 'AxisError: calculation failed',
+    # 'DTypePromotionError: calculation failed',
+    # 'TooHardError: calculation failed',
+    # '_ArrayMemoryError: calculation failed',
     )
 
 numpy_error_patterns = (
-    r'^\s*(?:numpy[\w.]*\.)?(?:LinAlgError|AxisError|DTypePromotionError|TooHardError|_ArrayMemoryError)\s*:',
+    # A surrounding uncaught traceback must establish run failure.
     )
 
 scipy_errors = (
-    'ArpackError: calculation failed',
-    'ArpackNoConvergence: calculation failed',
-    'NoConvergence: calculation failed',
-    'QhullError: calculation failed',
+    # SciPy exceptions and partial-convergence results can be handled.
+    # 'ArpackError: calculation failed',
+    # 'ArpackNoConvergence: calculation failed',
+    # 'NoConvergence: calculation failed',
+    # 'QhullError: calculation failed',
     # These are exception messages that callers can catch and recover from.
     # 'ARPACK error',
     # 'ARPACK iteration did not converge',
@@ -636,20 +644,21 @@ scipy_errors = (
     )
 
 scipy_error_patterns = (
-    r'^\s*(?:scipy[\w.]*\.)?(?:ArpackError|ArpackNoConvergence|NoConvergence|QhullError)\s*:',
+    # A surrounding uncaught traceback must establish run failure.
     )
 
 h5py_errors = (
-    'CheckWriteEligibilityError: write is not permitted',
-    'OSError: unable to open file',
-    'RuntimeError: unable to create file',
-    'ValueError: unable to read dataset',
-    'OSError: unable to write dataset',
-    'OSError: file signature not found',
-    "RuntimeError: object doesn't exist",
-    'OSError: bad object header',
-    'ValueError: address overflow',
-    'OSError: no write intent',
+    # h5py exceptions are routinely caught during optional file/object probes.
+    # 'CheckWriteEligibilityError: write is not permitted',
+    # 'OSError: unable to open file',
+    # 'RuntimeError: unable to create file',
+    # 'ValueError: unable to read dataset',
+    # 'OSError: unable to write dataset',
+    # 'OSError: file signature not found',
+    # "RuntimeError: object doesn't exist",
+    # 'OSError: bad object header',
+    # 'ValueError: address overflow',
+    # 'OSError: no write intent',
     # These fragments can come from caught exceptions during optional probes.
     # 'file signature not found',
     # "object doesn't exist",
@@ -659,8 +668,7 @@ h5py_errors = (
     )
 
 h5py_error_patterns = (
-    r'^\s*(?:h5py[\w.]*\.)?CheckWriteEligibilityError\s*:',
-    r'^\s*(?:OSError|RuntimeError|ValueError):[^\n]*(?:unable to (?:open|create|read|write)|file signature not found|object doesn\'t exist|bad object header|address overflow|no write intent)',
+    # A surrounding uncaught traceback must establish run failure.
     )
 
 
@@ -1050,7 +1058,9 @@ def find_error_keys(
     code_library : bool, optional
         Enable ``blas``, ``lapack``, ``fftw``, ``hdf5``, and ``libxml2``.
     python_module : bool, optional
-        Enable ``numpy``, ``scipy``, and ``h5py``.
+        Enable ``numpy``, ``scipy``, and ``h5py``.  These sets intentionally
+        exclude standalone exception lines; also enable ``python`` to detect
+        uncaught failures through their traceback.
     shell, linux_signals, posix : bool, optional
         Select individual operating-system error sets.
     infiniband, lustre, gpfs, slurm, pbs, mpi, openmp : bool, optional
@@ -1061,8 +1071,18 @@ def find_error_keys(
         Select uncaught Python and interpreter errors.
     blas, lapack, fftw, hdf5, libxml2 : bool, optional
         Select individual compiled-library error sets.
-    numpy, scipy, h5py : bool, optional
-        Select individual Python-module error sets.
+    numpy : bool, optional
+        Select NumPy-specific errors.  A NumPy exception can be handled, so
+        no standalone exception is currently definitive; enable ``python``
+        to detect an uncaught exception through its traceback.
+    scipy : bool, optional
+        Select SciPy-specific errors.  A SciPy exception can be handled, so
+        no standalone exception is currently definitive; enable ``python``
+        to detect an uncaught exception through its traceback.
+    h5py : bool, optional
+        Select h5py-specific errors.  An h5py exception can be handled, so no
+        standalone exception is currently definitive; enable ``python`` to
+        detect an uncaught exception through its traceback.
     pwscf, pyscf, quantum_package, rmg, qmcpack, vasp, gamess : bool, optional
         Select individual simulation-code error sets.
     return_lines : bool, optional
