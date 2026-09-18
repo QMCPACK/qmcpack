@@ -30,13 +30,13 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
       input_(std::move(input)),
       species_(species),
       species_size_(getSpeciesSize(species)),
-      lattice_(input_.has_cell() ? input_.get_cell() : lattice),
-      simulation_lattice_(lattice)
+      simulation_lattice_(lattice),
+      custom_measurement_lattice_(input_.hasCustomCell() ? std::optional<Lattice>{input_.get_cell()} : std::nullopt),
+      derived_parameters_(input_.calculateDerivedParameters(input_.hasCustomCell() ? *custom_measurement_lattice_
+                                                                                   : simulation_lattice_)),
+      implicit_corner_u_(simulation_lattice_.toUnit(derived_parameters_.corner))
 {
-  data_locality_      = dl;
-  derived_parameters_ = input_.calculateDerivedParameters(lattice_);
-  if (input_.has_cell())
-    initializeFiniteCellBounds();
+  data_locality_ = dl;
   data_.resize(getFullDataSize());
   if (input_.get_write_report())
     report("  ");
@@ -99,7 +99,11 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
                                 const RefVector<QMCHamiltonian>& hams,
                                 RandomBase<FullPrecRealType>& rng)
 {
-  auto& dp_ = derived_parameters_;
+  const auto& dp_ = derived_parameters_;
+  std::optional<PeriodicFiniteCellBounds> periodic_finite_cell_bounds;
+  if (input_.hasCustomCell() && simulation_lattice_.SuperCellEnum != SUPERCELL_OPEN)
+    periodic_finite_cell_bounds = getPeriodicFiniteCellBounds();
+
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
     MCPWalker& walker     = walkers[iw];
@@ -114,9 +118,9 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
       for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
       {
         size_t point = offset;
-        if (!input_.has_cell())
+        if (!input_.hasCustomCell())
         {
-          const QMCT::PosType u = lattice_.toUnit(pset.R[p] - dp_.corner);
+          const QMCT::PosType u = simulation_lattice_.toUnit(pset.R[p]) - implicit_corner_u_;
           for (int d = 0; d < QMCT::DIM; ++d)
             point += dp_.gdims[d] * static_cast<int>(dp_.grid[d] * (u[d] - std::floor(u[d])));
           accumulateToData(point, weight);
@@ -126,7 +130,7 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
           if (getFiniteCellPoint(pset.R[p], point))
             accumulateToData(point, weight);
         }
-        else if (getPeriodicFiniteCellPoint(pset.R[p], point))
+        else if (getPeriodicFiniteCellPoint(pset.R[p], *periodic_finite_cell_bounds, point))
           accumulateToData(point, weight);
       }
   }
@@ -134,11 +138,11 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
 
 bool SpinDensityNew::getFiniteCellPoint(const QMCT::PosType& position, size_t& point) const
 {
-  const QMCT::PosType u  = lattice_.toUnit(position - derived_parameters_.corner);
+  const QMCT::PosType u  = custom_measurement_lattice_->toUnit(position - derived_parameters_.corner);
   size_t candidate_point = point;
   for (int d = 0; d < QMCT::DIM; ++d)
   {
-    if (!std::isfinite(u[d]) || u[d] < 0.0 || u[d] >= 1.0)
+    if (u[d] < 0.0 || u[d] >= 1.0)
       return false;
     candidate_point += derived_parameters_.gdims[d] *
         std::min(static_cast<int>(derived_parameters_.grid[d] * u[d]), derived_parameters_.grid[d] - 1);
@@ -147,22 +151,26 @@ bool SpinDensityNew::getFiniteCellPoint(const QMCT::PosType& position, size_t& p
   return true;
 }
 
-void SpinDensityNew::initializeFiniteCellBounds()
+SpinDensityNew::PeriodicFiniteCellBounds SpinDensityNew::getPeriodicFiniteCellBounds() const
 {
-  finite_cell_lo_ = simulation_lattice_.toUnit(derived_parameters_.corner);
-  finite_cell_hi_ = finite_cell_lo_;
+  PeriodicFiniteCellBounds bounds;
+  bounds.lo = simulation_lattice_.toUnit(derived_parameters_.corner);
+  bounds.hi = bounds.lo;
   for (int j = 0; j < QMCT::DIM; ++j)
   {
-    const QMCT::PosType axis_u = simulation_lattice_.toUnit(lattice_.Rv[j]);
+    const QMCT::PosType axis_u = simulation_lattice_.toUnit(custom_measurement_lattice_->Rv[j]);
     for (int d = 0; d < QMCT::DIM; ++d)
       if (axis_u[d] < 0.0)
-        finite_cell_lo_[d] += axis_u[d];
+        bounds.lo[d] += axis_u[d];
       else
-        finite_cell_hi_[d] += axis_u[d];
+        bounds.hi[d] += axis_u[d];
   }
+  return bounds;
 }
 
-bool SpinDensityNew::getPeriodicFiniteCellPoint(const QMCT::PosType& position, size_t& point) const
+bool SpinDensityNew::getPeriodicFiniteCellPoint(const QMCT::PosType& position,
+                                                const PeriodicFiniteCellBounds& bounds,
+                                                size_t& point) const
 {
   static_assert(QMCT::DIM == 3, "SpinDensity supports three-dimensional cells only");
   QMCT::PosType simulation_u = simulation_lattice_.toUnit(position);
@@ -173,8 +181,8 @@ bool SpinDensityNew::getPeriodicFiniteCellPoint(const QMCT::PosType& position, s
     if (simulation_lattice_.BoxBConds[d])
     {
       simulation_u[d] -= std::floor(simulation_u[d]);
-      nlo[d] = static_cast<int>(std::ceil(finite_cell_lo_[d] - simulation_u[d]));
-      nhi[d] = static_cast<int>(std::floor(finite_cell_hi_[d] - simulation_u[d]));
+      nlo[d] = static_cast<int>(std::ceil(bounds.lo[d] - simulation_u[d]));
+      nhi[d] = static_cast<int>(std::floor(bounds.hi[d] - simulation_u[d]));
     }
 
   const QMCT::PosType primary_image = simulation_lattice_.toCart(simulation_u);
@@ -249,13 +257,16 @@ void SpinDensityNew::report(const std::string& pad)
   app_log() << pad << "SpinDensity report" << std::endl;
   app_log() << pad << "  dim     = " << QMCT::DIM << std::endl;
   app_log() << pad << "  npoints = " << dp_.npoints << std::endl;
+  const Lattice& measurement_lattice = input_.hasCustomCell() ? *custom_measurement_lattice_ : simulation_lattice_;
+  const QMCT::PosType measurement_corner =
+      input_.hasCustomCell() ? dp_.corner : simulation_lattice_.toCart(implicit_corner_u_);
   app_log() << pad << "  grid    = " << dp_.grid << std::endl;
   app_log() << pad << "  gdims   = " << dp_.gdims << std::endl;
-  app_log() << pad << "  corner  = " << dp_.corner << std::endl;
-  app_log() << pad << "  center  = " << dp_.corner + lattice_.Center << std::endl;
+  app_log() << pad << "  corner  = " << measurement_corner << std::endl;
+  app_log() << pad << "  center  = " << measurement_corner + measurement_lattice.Center << std::endl;
   app_log() << pad << "  cell " << std::endl;
   for (int d = 0; d < QMCT::DIM; ++d)
-    app_log() << pad << "    " << d << " " << lattice_.Rv[d] << std::endl;
+    app_log() << pad << "    " << d << " " << measurement_lattice.Rv[d] << std::endl;
   app_log() << pad << "  end cell " << std::endl;
   app_log() << pad << "  nspecies = " << species_.size() << std::endl;
   for (int s = 0; s < species_.size(); ++s)

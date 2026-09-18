@@ -14,6 +14,7 @@
 
 #include "SpinDensityInput.h"
 
+#include <optional>
 #include <vector>
 
 #include "Configuration.h"
@@ -40,9 +41,10 @@ public:
 
   /** Constructor
    *
-   *  If the sdi contains a cell definition the Lattice passed will be ignored.
+   *  The Lattice is the simulation lattice and must outlive this estimator. An explicit
+   *  input cell instead defines an owned, immutable measurement lattice.
    *
-   *  Other wise the crystal lattice should come from the same particle set as the species set.
+   *  The simulation lattice should come from the same particle set as the species set.
    *  in case you are tempted to just pass the ParticleSet don't. It clouds the data dependence of
    *  constructing the estimator and creates a strong coupling between the classes.
    *
@@ -113,9 +115,17 @@ private:
   size_t getFullDataSize() const override;
   void accumulateToData(size_t point, QMCT::RealType weight);
   /// point must initially be the species offset; on success it is the corresponding grid point.
+  struct PeriodicFiniteCellBounds
+  {
+    QMCT::PosType lo;
+    QMCT::PosType hi;
+  };
+
   bool getFiniteCellPoint(const QMCT::PosType& position, size_t& point) const;
-  bool getPeriodicFiniteCellPoint(const QMCT::PosType& position, size_t& point) const;
-  void initializeFiniteCellBounds();
+  PeriodicFiniteCellBounds getPeriodicFiniteCellBounds() const;
+  bool getPeriodicFiniteCellPoint(const QMCT::PosType& position,
+                                  const PeriodicFiniteCellBounds& bounds,
+                                  size_t& point) const;
   void reset();
   void report(const std::string& pad);
 
@@ -132,12 +142,14 @@ private:
    *  @{
    */
 
-  /// Lattice is the density grid cell; simulation_lattice_ defines its periodic images.
-  const Lattice lattice_;
-  const Lattice simulation_lattice_;
-  SpinDensityInput::DerivedParameters derived_parameters_;
-  QMCT::PosType finite_cell_lo_;
-  QMCT::PosType finite_cell_hi_;
+  /// The simulation lattice is shared so changing cell geometry is observed during accumulation.
+  const Lattice& simulation_lattice_;
+  /// Present only for an explicit <cell>; it is the immutable measurement lattice.
+  const std::optional<Lattice> custom_measurement_lattice_;
+  /// Grid dimensions and Cartesian corner are fixed when the estimator is constructed.
+  const SpinDensityInput::DerivedParameters derived_parameters_;
+  /// Construction-time Cartesian corner expressed in simulation reduced coordinates.
+  const QMCT::PosType implicit_corner_u_;
   /**}@*/
 
   friend class testing::SpinDensityNewTests;

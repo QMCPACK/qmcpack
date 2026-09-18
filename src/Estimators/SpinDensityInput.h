@@ -64,7 +64,7 @@ public:
   SpinDensityInput(const SpinDensityInput&) = default;
   Lattice get_cell() const { return cell_; }
   /// True when input supplies a finite density cell rather than inheriting the simulation cell.
-  bool has_cell() const { return have_cell_; }
+  bool hasCustomCell() const { return have_cell_; }
   PosType get_corner() const { return corner_; }
   TinyVector<int, DIM> get_grid() const { return grid_; }
   int get_npoints() const { return npoints_; }
