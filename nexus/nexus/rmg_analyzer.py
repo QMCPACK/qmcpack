@@ -70,10 +70,19 @@ class RmgOutData(DevBase):
         Parsed setup sections and derived setup data. Derived members include
         ``run_mode``, the initial ``structure``, ``cell`` volume information,
         and crystal and Cartesian ``k_points`` with optional weights.
-    run_mode : str or None
+    run_mode : str, tuple, or None
         Short RMG calculation mode: ``"scf"``, ``"nscf"``, ``"band"``,
         ``"exx"``, ``"relax"``, ``"md_VE"``, ``"md_TE"``, ``"tddft"``,
-        ``"stm"``, or ``"neb"``.
+        ``"stm"``, or ``"neb"``. Input/output disagreement is represented by
+        ``(input_mode, output_mode)``.
+    input_run_mode, output_run_mode : str or None
+        Calculation modes independently identified from the referenced input
+        and the output log.
+    reader_mode : str or None
+        Mode used to select the structured reader stack. Output-log data take
+        precedence over referenced-input data for this purpose.
+    run_mode_detected : bool
+        Whether a mode was available to select the structured reader stack.
     convergence : obj or None
         Electronic and ionic convergence indicators and event counts.
     timing : obj or None
@@ -114,14 +123,24 @@ class RmgOutData(DevBase):
 
     Notes
     -----
-    ``convergence`` and ``timing`` apply to all supported modes. ``energies``,
+    All result members are initialized to ``None``. ``convergence`` and
+    ``timing`` apply to all supported modes. ``energies``,
     ``scf``, ``ions``, and ``stress`` apply to SCF, NSCF, relaxation, molecular
     dynamics, TDDFT, and NEB modes. ``electronic`` also applies to band mode.
     ``bands``, ``md`` and ``md_stats``, ``tddft``, and ``neb`` are specific to
     their corresponding modes. ``produced_files`` applies to SCF, EXX, and STM.
-    A mode-applicable member is initialized to ``None`` and remains ``None``
-    when its data cannot be obtained. History arrays are ordered as they occur
-    in the output.
+    A member remains ``None`` when its data cannot be obtained. History arrays
+    are ordered as they occur in the output. When no run mode can be detected,
+    all readers are attempted permissively. When a mode is detected, only the
+    corresponding structured reader stack is attempted. Readers skip absent or
+    malformed records they recognize, but unexpected reader exceptions are not
+    suppressed.
+
+    Independently identified input and output modes are normally stored as a
+    single string. A disagreement is retained as
+    ``(input_mode, output_mode)`` rather than terminating parsing. The expected
+    SCF input associated with an NEB image calculation is represented as
+    ``"neb"``.
 
     Raises
     ------
@@ -131,9 +150,6 @@ class RmgOutData(DevBase):
         If ``filepath`` does not exist.
     IsADirectoryError
         If ``filepath`` does not identify a regular file.
-    ValueError
-        If independently identified input and output run modes disagree, except
-        for the expected SCF input associated with an NEB image calculation.
     """
 
     # This pattern represents RMG numbers embedded in records whose structural
@@ -147,10 +163,11 @@ class RmgOutData(DevBase):
     def __init__(self,filepath):
         """Initialize the parsed data by reading an RMG output file."""
         if not isinstance(filepath,(str,os.PathLike)):
+            provided_type = type(filepath).__name__
             msg = (
                 'invalid type provided for filepath\n'
                 'Type expected: str or os.PathLike\n'
-                f'Type provided: {type(filepath).__name__}'
+                f'Type provided: {provided_type}'
                 )
             raise TypeError(msg)
         filepath = os.fspath(filepath)
@@ -171,58 +188,77 @@ class RmgOutData(DevBase):
         self.abspath      = os.path.abspath(path)
         self.outfile_name = outfile_name
         self.input        = None
-        self.setup_info   = None
+        self.setup_info   = obj(
+            run_mode  = None,
+            structure = None,
+            cell      = None,
+            k_points  = None,
+            files     = None,
+            )
+        self.input_run_mode  = None
+        self.output_run_mode = None
+        self.reader_mode     = None
+        self.run_mode        = None
+        self.run_mode_detected = False
+        self.convergence     = None
+        self.timing          = None
+        self.energies        = None
+        self.scf             = None
+        self.ions            = None
+        self.stress          = None
+        self.electronic      = None
+        self.bands           = None
+        self.md              = None
+        self.md_stats        = None
+        self.tddft           = None
+        self.neb             = None
+        self.produced_files  = None
 
-        with open(filepath,'r') as output_file:
+        with open(filepath,'r',errors='replace') as output_file:
             lines = output_file.read().splitlines()
+
         self.read_setup_info(lines)
 
         electronic_modes = {'scf','nscf','relax','md_VE','md_TE','tddft','neb'}
         eigenvalue_modes = electronic_modes|{'band'}
         supported_modes  = eigenvalue_modes|{'exx','stm'}
+        mode = self.reader_mode
+        self.run_mode_detected = mode is not None
 
-        if self.run_mode in supported_modes:
-            self.convergence = None
-            self.timing      = None
-
+        if mode is None:
             self.read_convergence(lines)
             self.read_timing(lines)
-
-        if self.run_mode in electronic_modes:
-            self.energies = None
-            self.scf      = None
-            self.ions     = None
-            self.stress   = None
-
             self.read_energies(lines)
             self.read_scf(lines)
             self.read_ions(lines)
             self.read_stress(lines)
-
-        if self.run_mode in eigenvalue_modes:
-            self.electronic = None
             self.read_electronic(lines)
-
-        if self.run_mode in {'md_VE','md_TE'}:
-            self.md       = None
-            self.md_stats = None
             self.read_md(lines)
-
-        if self.run_mode=='band':
-            self.bands = None
             self.read_band()
-
-        if self.run_mode=='tddft':
-            self.tddft = None
             self.read_tddft()
-
-        if self.run_mode=='neb':
-            self.neb = None
             self.read_neb(lines)
-
-        if self.run_mode in {'scf','exx','stm'}:
-            self.produced_files = None
             self.read_produced_files()
+        else:
+            if mode in supported_modes:
+                self.read_convergence(lines)
+                self.read_timing(lines)
+            if mode in electronic_modes:
+                self.read_energies(lines)
+                self.read_scf(lines)
+                self.read_ions(lines)
+                self.read_stress(lines)
+            if mode in eigenvalue_modes:
+                self.read_electronic(lines)
+            if mode in {'md_VE','md_TE'}:
+                self.read_md(lines)
+            if mode=='band':
+                self.read_band()
+            if mode=='tddft':
+                self.read_tddft()
+            if mode=='neb':
+                self.read_neb(lines)
+            if mode in {'scf','exx','stm'}:
+                self.read_produced_files()
     #end def __init__
 
 
@@ -245,6 +281,7 @@ class RmgOutData(DevBase):
             k_points  = None,
             files     = None,
             )
+        self.setup_info = setup_info
         position_heading = 'initial ionic positions and displacements'
 
         def process_name(text):
@@ -339,7 +376,19 @@ class RmgOutData(DevBase):
         setup_info.update(sections)
 
         # Read the calculation mode from the run setup block.
-        run_mode = None
+        run_modes = []
+        mode_precedence = {
+            'scf'   : 0,
+            'nscf'  : 1,
+            'band'  : 1,
+            'exx'   : 1,
+            'stm'   : 1,
+            'relax' : 2,
+            'md_VE' : 2,
+            'md_TE' : 2,
+            'tddft' : 2,
+            'neb'   : 3,
+            }
         for line in lines:
             label,separator,value = normalize_line(line).partition(':')
             if len(separator)==0 or label.strip().lower()!='calculation type':
@@ -387,9 +436,18 @@ class RmgOutData(DevBase):
                 and (('charge','density') in mode_pairs or len(mode_words)==1)
                 ):
                 run_mode = 'stm'
-            break
-        self.run_mode       = run_mode
-        setup_info.run_mode = run_mode
+            else:
+                run_mode = None
+            if run_mode is not None:
+                run_modes.append(run_mode)
+        run_mode = (
+            max(run_modes,key=lambda mode:mode_precedence[mode])
+            if len(run_modes)>0 else None
+            )
+        self.output_run_mode = run_mode
+        self.reader_mode     = run_mode
+        self.run_mode        = run_mode
+        setup_info.run_mode  = run_mode
 
         # Read the lattice vectors used to construct the input structure.
         axes      = {}
@@ -581,26 +639,23 @@ class RmgOutData(DevBase):
                 except (NexusError,OSError,TypeError,ValueError):
                     pass
 
-        input_run_mode = self.input.run_mode if self.input is not None else None
-        if input_run_mode is not None:
-            if self.run_mode is None:
-                self.run_mode       = input_run_mode
-                setup_info.run_mode = input_run_mode
-            elif (
-                self.run_mode!=input_run_mode
-                and not (self.run_mode=='neb' and input_run_mode=='scf')
-                ):
-                msg = (
-                    'RMG calculation modes reported by the input and output do '
-                    'not agree.\n'
-                    f'Input run mode: {input_run_mode}\n'
-                    f'Output run mode: {self.run_mode}'
-                    )
-                raise ValueError(msg)
+        input_run_mode       = self.input.run_mode if self.input is not None else None
+        self.input_run_mode  = input_run_mode
+        self.reader_mode     = run_mode if run_mode is not None else input_run_mode
+        if run_mode is None:
+            reconciled_mode = input_run_mode
+        elif input_run_mode is None or input_run_mode==run_mode:
+            reconciled_mode = run_mode
+        elif run_mode=='neb' and input_run_mode=='scf':
+            reconciled_mode = run_mode
+        else:
+            reconciled_mode = (input_run_mode,run_mode)
+        self.run_mode       = reconciled_mode
+        setup_info.run_mode = reconciled_mode
 
         structure = setup_info.structure
         if setup_info.k_points is None and (
-            self.run_mode=='band'
+            self.reader_mode=='band'
             and self.input is not None
             and 'kpoints_bandstructure' in self.input
             ):
@@ -1899,7 +1954,8 @@ class RmgOutData(DevBase):
         path when the file exists.
         """
         produced_files = obj()
-        if self.run_mode=='exx':
+        mode = self.reader_mode
+        if mode=='exx' or mode is None:
             files = sorted(
                 glob(os.path.join(
                     self.path,
@@ -1908,7 +1964,7 @@ class RmgOutData(DevBase):
                 )
             if len(files)>0:
                 produced_files.exx_integrals = files
-        elif self.run_mode=='stm':
+        if mode=='stm' or mode is None:
             files = sorted(glob(os.path.join(self.path,'STM','*.stm')))
             cubes = sorted(glob(os.path.join(self.path,'STM','*.cube')))
             if len(files)>0:
@@ -1917,7 +1973,7 @@ class RmgOutData(DevBase):
                 produced_files.stm_cube = cubes
         files = self.setup_info.files
         if (
-            self.run_mode=='scf'
+            (mode=='scf' or mode is None)
             and files is not None
             and files.data_output_file is not None
             ):
@@ -2111,6 +2167,15 @@ class RmgAnalyzer(SimulationAnalyzer):
         ``None``, an unconfigured analyzer is created.
     analyze : bool, optional
         If ``True``, parse the RMG output during initialization.
+    strict : bool, default=True
+        Require the configured log output to be a regular file when analysis
+        begins. Top-level run types discovered from the referenced input and
+        output log must also agree. If ``False``, a missing or non-file path
+        completes analysis with empty results and run-type disagreement is
+        retained as a tuple.
+    required : str or iterable of str or None, optional
+        Query quantities whose absence should raise ``RuntimeError`` instead
+        of returning ``None``.
 
     Attributes
     ----------
@@ -2125,13 +2190,21 @@ class RmgAnalyzer(SimulationAnalyzer):
     input : RmgInput or None
         RMG input reconstructed from the referenced control file when it is
         available.
-    run_mode : str or None
+    run_mode : str, tuple, or None
         Short RMG calculation mode determined during analysis: ``"scf"``,
         ``"nscf"``, ``"band"``, ``"exx"``, ``"relax"``, ``"md_VE"``,
-        ``"md_TE"``, ``"tddft"``, ``"stm"``, or ``"neb"``.
-    results : RmgOutData or None
-        Parsed setup and mode-specific RMG output data. ``None`` until analysis
-        is performed.
+        ``"md_TE"``, ``"tddft"``, ``"stm"``, or ``"neb"``. Disagreement
+        between a referenced input and output log is represented by
+        ``(input_mode, output_mode)``.
+    results : RmgOutData, obj, or None
+        Parsed setup and mode-specific RMG output data, an empty result object
+        after permissive missing-file analysis, or ``None`` before analysis.
+    required : set of str
+        Validated query quantities subject to required-data behavior.
+    analysis_state : {'not_analyzed', 'analyzing', 'analyzed'}
+        Current analysis lifecycle state.
+    source_status : obj
+        Diagnostic referenced-input and output-log states.
 
     Methods
     -------
@@ -2171,14 +2244,18 @@ class RmgAnalyzer(SimulationAnalyzer):
         Final structure from the ionic history of a relaxation or local NEB
         image, in Angstrom (``'A'``) or bohr (``'B'``).
     forces(units='eV/A') : numpy.ndarray or None
-        Ionic-force history with shape ``(nsteps, natoms, 3)``. Available
-        units are ``'eV/A'``, ``'Ry/B'``, and ``'Ha/B'``.
+        Final ionic forces with shape ``(natoms, 3)``. Available units are
+        ``'eV/A'``, ``'Ry/B'``, and ``'Ha/B'``.
     stress(units='GPa') : numpy.ndarray or None
-        Stress-tensor history with shape ``(nsteps, 3, 3)``. Available
-        units are ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``,
-        ``'atm'``, ``'eV/A^3'``, ``'Ha/Bohr^3'``, and ``'Ry/Bohr^3'``.
+        Final stress tensor with shape ``(3, 3)``. Available units are
+        ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``, ``'atm'``,
+        ``'eV/A^3'``, ``'Ha/Bohr^3'``, and ``'Ry/Bohr^3'``.
     pressure(units='GPa') : float or numpy.floating or None
         Final hydrostatic pressure in the units accepted by ``stress``.
+    require(*quantities)
+        Add query quantities to the required-data policy without parsing.
+    available(*quantities) : bool
+        Report whether every named quantity is currently queryable.
 
     Notes
     -----
@@ -2186,9 +2263,10 @@ class RmgAnalyzer(SimulationAnalyzer):
     mode. Eigenvalues additionally support band mode. Energy, occupations,
     band-edge quantities, forces, stress, and pressure apply to SCF, NSCF,
     relaxation, molecular-dynamics, TDDFT, and NEB modes. Relaxed structures
-    apply to relaxation and NEB modes. A query returns ``None`` when its
-    quantity is supported but was not successfully parsed. Calling a query
-    before analysis, or for a mode that does not support the quantity, raises
+    apply to relaxation and NEB modes. Parsed data are returned even when
+    unusual for the identified mode. Otherwise, a query returns ``None`` when
+    applicable data were not parsed unless the quantity is required. Calling
+    a query before analysis or for a definitively unsupported mode raises
     ``RuntimeError``. Supplying unsupported units raises ``ValueError``.
 
     Raises
@@ -2197,12 +2275,11 @@ class RmgAnalyzer(SimulationAnalyzer):
         If ``arg0`` is neither a ``Simulation``, a string, a path-like object,
         nor ``None``.
     FileNotFoundError
-        If a supplied output path does not exist.
+        During strict analysis, if the configured output path does not exist.
     IsADirectoryError
-        If a supplied output path does not identify a regular file.
+        During strict analysis, if the configured output path is not a file.
     ValueError
-        If analysis identifies inconsistent input and output run modes or a
-        query receives unsupported units.
+        If a query receives unsupported units or a quantity name is invalid.
     """
 
     all_modes = frozenset({
@@ -2213,6 +2290,11 @@ class RmgAnalyzer(SimulationAnalyzer):
         })
     eigenvalue_modes = electronic_modes|{'band'}
     relaxation_modes = frozenset({'relax','neb'})
+    quantity_names   = frozenset({
+        'initial_structure','energy','kpoints','kweights','eigenvalues',
+        'occupations','Ef','Evbm','Ecbm','band_gap','fractional_occs',
+        'relaxed_structure','forces','stress','pressure',
+        })
     pressure_units   = MappingProxyType({
         'Pa'        : 1e8,
         'bar'       : 1e3,
@@ -2226,25 +2308,129 @@ class RmgAnalyzer(SimulationAnalyzer):
         })
 
 
-    def _require_supported(self,quantity,modes):
-        """Require analyzed output and a run mode supporting the quantity."""
-        if self.results is None:
+    def _require_analyzed(self,quantity):
+        """Require completed analysis unless a private query is in progress."""
+        if self._query_depth>0:
+            return
+        if self.analysis_state!='analyzed':
             msg = f'RMG quantity "{quantity}" is unavailable because output has not been analyzed'
             raise RuntimeError(msg)
-        if self.run_mode not in modes:
+    #end def _require_analyzed
+
+
+    def _unavailable(self,quantity,modes):
+        """Apply unsupported and required-quantity policy to absent data."""
+        if self._query_depth>0:
+            return None
+        if isinstance(self.run_mode,str) and self.run_mode not in modes:
             msg = f'RMG quantity "{quantity}" is not supported for run mode "{self.run_mode}"'
             raise RuntimeError(msg)
-    #end def _require_supported
+        if quantity in self.required:
+            msg = f'required RMG quantity "{quantity}" is not available'
+            raise RuntimeError(msg)
+        return None
+    #end def _unavailable
+
+
+    def _query_value(self,quantity,*args):
+        """Return a query value without applying public missing-data policy."""
+        self._query_depth += 1
+        try:
+            return getattr(self,quantity)(*args)
+        finally:
+            self._query_depth -= 1
+    #end def _query_value
+
+
+    def _validate_quantities(self,quantities):
+        """Validate quantity names atomically and return them as a tuple."""
+        names = tuple(quantities)
+        unknown = [
+            name for name in names
+            if not isinstance(name,str) or name not in self.quantity_names
+            ]
+        if len(unknown)>0:
+            names_text = ', '.join(repr(name) for name in unknown)
+            msg = f'unknown RMG quantity name(s): {names_text}'
+            raise ValueError(msg)
+        return names
+    #end def _validate_quantities
+
+
+    def require(self,*quantities):
+        """Add query quantities to the required-data policy.
+
+        Parameters
+        ----------
+        *quantities : str
+            Case-sensitive names from :attr:`quantity_names`.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        This method only updates :attr:`required`. It does not parse files,
+        reanalyze existing results, or check current availability.
+        """
+        names = self._validate_quantities(quantities)
+        self.required.update(names)
+    #end def require
+
+
+    def available(self,*quantities):
+        """Return whether all named query quantities are available.
+
+        Parameters
+        ----------
+        *quantities : str
+            Case-sensitive names from :attr:`quantity_names`.
+
+        Returns
+        -------
+        bool
+            ``True`` only when every named query returns a value other than
+            ``None``. With no names, returns ``True``.
+
+        Raises
+        ------
+        RuntimeError
+            If analysis has not completed.
+        ValueError
+            If any quantity name is invalid.
+
+        Notes
+        -----
+        Required-data and run-mode-applicability errors are suppressed for
+        this check. The method never parses or reanalyzes data.
+        """
+        names = self._validate_quantities(quantities)
+        if self.analysis_state!='analyzed':
+            raise RuntimeError('RMG output has not been analyzed')
+        return all(self._query_value(name) is not None for name in names)
+    #end def available
 
 
     def initial_structure(self,units='A'):
-        """Return the input ``Structure`` in Angstrom or bohr."""
-        self._require_supported('initial_structure',self.all_modes)
+        """Return the initial structure.
+
+        Parameters
+        ----------
+        units : {'A', 'B'}, default='A'
+            Requested length unit: Angstrom or bohr.
+
+        Returns
+        -------
+        Structure or None
+            Structure with axes ``(3, 3)`` and positions ``(natoms, 3)``, or ``None``.
+        """
         if units not in {'A','B'}:
             msg = 'initial_structure units must be one of: A, B'
             raise ValueError(msg)
+        self._require_analyzed('initial_structure')
         if self.results.setup_info.structure is None:
-            return None
+            return self._unavailable('initial_structure',self.all_modes)
         structure = deepcopy(self.results.setup_info.structure)
         structure.change_units(units)
         return structure
@@ -2252,74 +2438,112 @@ class RmgAnalyzer(SimulationAnalyzer):
 
 
     def energy(self,units='Ha'):
-        """Return the final total energy in eV, Hartree, or Rydberg."""
-        self._require_supported('energy',self.electronic_modes)
+        """Return the final total energy.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='Ha'
+            Requested energy unit.
+
+        Returns
+        -------
+        float or None
+            Final total energy, or ``None``.
+        """
         if units not in {'eV','Ha','Ry'}:
             msg = 'energy units must be one of: eV, Ha, Ry'
             raise ValueError(msg)
+        self._require_analyzed('energy')
         energies = self.results.energies
         if energies is None:
-            return None
+            return self._unavailable('energy',self.electronic_modes)
         value        = energies.final
         source_units = energies.final_units
         if value is None or source_units is None:
-            return None
+            return self._unavailable('energy',self.electronic_modes)
         try:
-            return convert(value,source_units,units)
+            return float(convert(value,source_units,units))
         except (KeyError,TypeError,ValueError):
-            return None
+            return self._unavailable('energy',self.electronic_modes)
     #end def energy
 
 
     def kpoints(self,units='B'):
-        """Return Cartesian k-points in inverse Angstrom or inverse bohr."""
-        self._require_supported('kpoints',self.all_modes)
+        """Return Cartesian k-points.
+
+        Parameters
+        ----------
+        units : {'A', 'B'}, default='B'
+            Reciprocal length unit, inverse Angstrom or inverse bohr.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Float array of shape ``(nkpoints, 3)``, or ``None``.
+        """
         if units not in {'A','B'}:
             msg = 'kpoints units must be one of: A, B'
             raise ValueError(msg)
+        self._require_analyzed('kpoints')
         electronic = self.results.electronic
         if electronic is not None and electronic.kpoints is not None:
             kpoints = electronic.kpoints
         else:
             kpoint_data = self.results.setup_info.k_points
             if kpoint_data is None or kpoint_data.cartesian is None:
-                return None
+                return self._unavailable('kpoints',self.all_modes)
             kpoints = kpoint_data.cartesian
         return kpoints*convert(1.0,units,'B')
     #end def kpoints
 
 
     def kweights(self):
-        """Return dimensionless k-point weights, or ``None`` if unavailable."""
-        self._require_supported('kweights',self.all_modes)
+        """Return k-point integration weights.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            One-dimensional float array with shape ``(nkpoints,)``, or ``None``.
+        """
+        self._require_analyzed('kweights')
         kpoint_data = self.results.setup_info.k_points
         if kpoint_data is None or kpoint_data.weights is None:
-            return None
+            return self._unavailable('kweights',self.all_modes)
         return kpoint_data.weights
     #end def kweights
 
 
     def eigenvalues(self,units='eV'):
-        """Return K-point-major eigenvalues in eV, Hartree, or Rydberg."""
-        self._require_supported('eigenvalues',self.eigenvalue_modes)
+        """Return Kohn--Sham eigenvalues.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='eV'
+            Requested energy unit.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Float array shaped ``(nkpoints, nbands)`` or
+            ``(nkpoints, 2, nbands)`` for collinear spin, or ``None``.
+        """
         if units not in {'eV','Ha','Ry'}:
             msg = 'eigenvalues units must be one of: eV, Ha, Ry'
             raise ValueError(msg)
-        if self.run_mode=='band':
-            bands = self.results.bands
-            if bands is None:
-                return None
+        self._require_analyzed('eigenvalues')
+        bands = self.results.bands
+        if bands is not None:
             spin_values = []
             for spin in sorted(bands.keys()):
                 values = np.asarray(bands[spin].energies,dtype=float).T
                 if values.ndim!=2:
-                    return None
+                    return self._unavailable('eigenvalues',self.eigenvalue_modes)
                 spin_values.append(values)
             if len(spin_values)==0:
-                return None
+                return self._unavailable('eigenvalues',self.eigenvalue_modes)
             shape = spin_values[0].shape
             if any(values.shape!=shape for values in spin_values):
-                return None
+                return self._unavailable('eigenvalues',self.eigenvalue_modes)
             if len(spin_values)==1:
                 eigenvalues = spin_values[0]
             else:
@@ -2327,79 +2551,141 @@ class RmgAnalyzer(SimulationAnalyzer):
             return convert(eigenvalues,'eV',units)
         electronic = self.results.electronic
         if electronic is None or electronic.eigenvalues is None:
-            return None
+            return self._unavailable('eigenvalues',self.eigenvalue_modes)
         return convert(electronic.eigenvalues,'eV',units)
     #end def eigenvalues
 
 
     def occupations(self):
-        """Return the dimensionless K-point-major occupation array."""
-        self._require_supported('occupations',self.electronic_modes)
+        """Return Kohn--Sham occupations.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Dimensionless float array with the shape returned by
+            :meth:`eigenvalues`, or ``None``.
+        """
+        self._require_analyzed('occupations')
         electronic = self.results.electronic
         if electronic is None or electronic.occupations is None:
-            return None
+            return self._unavailable('occupations',self.electronic_modes)
         return electronic.occupations
     #end def occupations
 
 
     def Ef(self,units='eV'):
-        """Return the final Fermi energy in eV, Hartree, or Rydberg."""
-        self._require_supported('Ef',self.electronic_modes)
+        """Return the final Fermi energy.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='eV'
+            Requested energy unit.
+
+        Returns
+        -------
+        float or None
+            Fermi energy, or ``None``.
+        """
         if units not in {'eV','Ha','Ry'}:
             msg = 'Ef units must be one of: eV, Ha, Ry'
             raise ValueError(msg)
+        self._require_analyzed('Ef')
         electronic = self.results.electronic
         if electronic is None or len(electronic.fermi_energies)==0:
-            return None
-        return convert(electronic.fermi_energies[-1],'eV',units)
+            return self._unavailable('Ef',self.electronic_modes)
+        return float(convert(electronic.fermi_energies[-1],'eV',units))
     #end def Ef
 
 
     def Evbm(self,units='eV'):
-        """Return the final valence-band maximum in selected energy units."""
-        self._require_supported('Evbm',self.electronic_modes)
+        """Return the valence-band maximum.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='eV'
+            Requested energy unit.
+
+        Returns
+        -------
+        float or None
+            Valence-band maximum, or ``None``.
+        """
         if units not in {'eV','Ha','Ry'}:
             msg = 'Evbm units must be one of: eV, Ha, Ry'
             raise ValueError(msg)
+        self._require_analyzed('Evbm')
         electronic = self.results.electronic
         if electronic is None or len(electronic.valence_band_maxima)==0:
-            return None
-        return convert(electronic.valence_band_maxima[-1],'eV',units)
+            return self._unavailable('Evbm',self.electronic_modes)
+        return float(convert(electronic.valence_band_maxima[-1],'eV',units))
     #end def Evbm
 
 
     def Ecbm(self,units='eV'):
-        """Return the final conduction-band minimum in selected energy units."""
-        self._require_supported('Ecbm',self.electronic_modes)
+        """Return the conduction-band minimum.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='eV'
+            Requested energy unit.
+
+        Returns
+        -------
+        float or None
+            Conduction-band minimum, or ``None``.
+        """
         if units not in {'eV','Ha','Ry'}:
             msg = 'Ecbm units must be one of: eV, Ha, Ry'
             raise ValueError(msg)
+        self._require_analyzed('Ecbm')
         electronic = self.results.electronic
         if electronic is None or len(electronic.conduction_band_minima)==0:
-            return None
-        return convert(electronic.conduction_band_minima[-1],'eV',units)
+            return self._unavailable('Ecbm',self.electronic_modes)
+        return float(convert(electronic.conduction_band_minima[-1],'eV',units))
     #end def Ecbm
 
 
     def band_gap(self,units='eV'):
-        """Return the final band gap in eV, Hartree, or Rydberg."""
-        self._require_supported('band_gap',self.electronic_modes)
+        """Return the final band gap.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='eV'
+            Requested energy unit.
+
+        Returns
+        -------
+        float or None
+            Fundamental band gap, or ``None``.
+        """
         if units not in {'eV','Ha','Ry'}:
             msg = 'band_gap units must be one of: eV, Ha, Ry'
             raise ValueError(msg)
+        self._require_analyzed('band_gap')
         electronic = self.results.electronic
         if electronic is None or len(electronic.band_gaps)==0:
-            return None
-        return convert(electronic.band_gaps[-1],'eV',units)
+            return self._unavailable('band_gap',self.electronic_modes)
+        return float(convert(electronic.band_gaps[-1],'eV',units))
     #end def band_gap
 
 
     def fractional_occs(self,tol=1e-3):
-        """Whether any occupation differs from empty or full by over ``1e-3``."""
-        self._require_supported('fractional_occs',self.electronic_modes)
-        occupations = self.occupations()
+        """Determine whether any occupation is fractional.
+
+        Parameters
+        ----------
+        tol : float, default=1e-3
+            Absolute tolerance for identifying empty and full occupations.
+
+        Returns
+        -------
+        bool or None
+            ``True`` for a fractional occupation, or ``None`` if unavailable.
+        """
+        self._require_analyzed('fractional_occs')
+        occupations = self._query_value('occupations')
         if occupations is None:
-            return None
+            return self._unavailable('fractional_occs',self.electronic_modes)
         full_occupation = 2.0 if occupations.ndim==2 else 1.0
         empty = np.isclose(
             occupations,
@@ -2418,17 +2704,29 @@ class RmgAnalyzer(SimulationAnalyzer):
 
 
     def relaxed_structure(self,units='A'):
-        """Return the final relaxed ``Structure`` in Angstrom or bohr."""
-        self._require_supported('relaxed_structure',self.relaxation_modes)
+        """Return the final ionic structure.
+
+        Parameters
+        ----------
+        units : {'A', 'B'}, default='A'
+            Requested length unit: Angstrom or bohr.
+
+        Returns
+        -------
+        Structure or None
+            Final structure with axes ``(3, 3)`` and positions
+            ``(natoms, 3)``, or ``None``.
+        """
         if units not in {'A','B'}:
             msg = 'relaxed_structure units must be one of: A, B'
             raise ValueError(msg)
+        self._require_analyzed('relaxed_structure')
         ions = self.results.ions
         if ions is None:
-            return None
+            return self._unavailable('relaxed_structure',self.relaxation_modes)
         structures = ions.structure_history
         if structures is None or len(structures)==0:
-            return None
+            return self._unavailable('relaxed_structure',self.relaxation_modes)
         structure = deepcopy(structures[max(structures.keys())])
         structure.change_units(units)
         return structure
@@ -2436,54 +2734,139 @@ class RmgAnalyzer(SimulationAnalyzer):
 
 
     def forces(self,units='eV/A'):
-        """Return ionic forces in ``eV/A``, ``Ry/B``, or ``Ha/B``."""
-        self._require_supported('forces',self.electronic_modes)
+        """Return final ionic forces.
+
+        Parameters
+        ----------
+        units : {'eV/A', 'Ry/B', 'Ha/B'}, default='eV/A'
+            Requested energy-per-length unit.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Float array of shape ``(natoms, 3)``, or ``None``.
+        """
         if units not in {'eV/A','Ry/B','Ha/B'}:
             msg = 'forces units must be one of: eV/A, Ry/B, Ha/B'
             raise ValueError(msg)
+        self._require_analyzed('forces')
         ions = self.results.ions
         if ions is None:
-            return None
+            return self._unavailable('forces',self.electronic_modes)
         forces = ions.forces
         if forces is None:
-            return None
+            return self._unavailable('forces',self.electronic_modes)
         energy_units,length_units = units.split('/')
         factor = (
             convert(1.0,'Ha',energy_units)/convert(1.0,'B',length_units))
-        return forces*factor
+        forces = np.asarray(forces,dtype=float)
+        if forces.ndim!=3 or forces.shape[-1]!=3:
+            return self._unavailable('forces',self.electronic_modes)
+        return forces[-1]*factor
     #end def forces
 
 
     def stress(self,units='GPa'):
-        """Return the stress-tensor history in selected pressure units."""
-        self._require_supported('stress',self.electronic_modes)
+        """Return the final stress tensor.
+
+        Parameters
+        ----------
+        units : {'Pa', 'bar', 'kbar', 'Mbar', 'GPa', 'atm', 'eV/A^3', 'Ha/Bohr^3', 'Ry/Bohr^3'}, default='GPa'
+            Requested pressure or energy-density unit.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Float array of shape ``(3, 3)``, or ``None``.
+        """
         if units not in self.pressure_units:
             supported = ', '.join(sorted(self.pressure_units))
             msg       = f'stress units must be one of: {supported}'
             raise ValueError(msg)
+        self._require_analyzed('stress')
         stress = self.results.stress
         if stress is None or stress.tensors is None:
-            return None
-        return stress.tensors*self.pressure_units[units]
+            return self._unavailable('stress',self.electronic_modes)
+        tensors = np.asarray(stress.tensors,dtype=float)
+        if tensors.ndim!=3 or tensors.shape[1:]!=(3,3):
+            return self._unavailable('stress',self.electronic_modes)
+        return tensors[-1]*self.pressure_units[units]
     #end def stress
 
 
     def pressure(self,units='GPa'):
-        """Return the final hydrostatic pressure in selected pressure units."""
-        self._require_supported('pressure',self.electronic_modes)
+        """Return final hydrostatic pressure.
+
+        Parameters
+        ----------
+        units : {'Pa', 'bar', 'kbar', 'Mbar', 'GPa', 'atm', 'eV/A^3', 'Ha/Bohr^3', 'Ry/Bohr^3'}, default='GPa'
+            Requested pressure or energy-density unit.
+
+        Returns
+        -------
+        float or None
+            Final hydrostatic pressure, or ``None``.
+        """
         if units not in self.pressure_units:
             supported = ', '.join(sorted(self.pressure_units))
             msg       = f'pressure units must be one of: {supported}'
             raise ValueError(msg)
+        self._require_analyzed('pressure')
         stress = self.results.stress
         if stress is None or stress.pressure is None:
-            return None
-        return stress.pressure*self.pressure_units[units]
+            return self._unavailable('pressure',self.electronic_modes)
+        return float(stress.pressure*self.pressure_units[units])
     #end def pressure
 
 
-    def __init__(self,arg0=None,*,analyze=False):
+    def _empty_results(self):
+        """Return an empty result container for permissive file handling."""
+        return obj(
+            setup_info = obj(
+                run_mode  = None,
+                structure = None,
+                cell      = None,
+                k_points  = None,
+                files     = None,
+                ),
+            convergence    = None,
+            timing         = None,
+            energies       = None,
+            scf            = None,
+            ions           = None,
+            stress         = None,
+            electronic     = None,
+            bands          = None,
+            md             = None,
+            md_stats       = None,
+            tddft          = None,
+            neb            = None,
+            produced_files = None,
+            )
+    #end def _empty_results
+
+
+    def __init__(
+        self,
+        arg0         = None,
+        *,
+        analyze      = False,
+        strict = True,
+        required     = None,
+        ):
         """Initialize analyzer state and optionally parse the RMG output."""
+        if not isinstance(strict,bool):
+            raise TypeError('strict must be a bool')
+        if required is None:
+            required = ()
+        elif isinstance(required,str):
+            required = (required,)
+        else:
+            try:
+                required = tuple(required)
+            except TypeError as error:
+                raise TypeError('required must be a quantity name or iterable') from error
+
         self.path         = None
         self.abspath      = None
         self.outfile_name = None
@@ -2491,6 +2874,12 @@ class RmgAnalyzer(SimulationAnalyzer):
         self.input        = None
         self.run_mode     = None
         self.results      = None
+        self.strict = strict
+        self.required     = set()
+        self.analysis_state = 'not_analyzed'
+        self.source_status  = obj(input='not_analyzed',out='not_analyzed')
+        self._query_depth   = 0
+        self.require(*required)
 
         if arg0 is None:
             return
@@ -2499,25 +2888,14 @@ class RmgAnalyzer(SimulationAnalyzer):
             filename = arg0.outfile
         else:
             if not isinstance(arg0,(str,os.PathLike)):
+                provided_type = type(arg0).__name__
                 msg = (
                     'invalid type provided for log_file\n'
                     'Type expected: str or os.PathLike\n'
-                    f'Type provided: {type(arg0).__name__}'
+                    f'Type provided: {provided_type}'
                     )
                 raise TypeError(msg)
             arg0 = os.fspath(arg0)
-            if not os.path.exists(arg0):
-                msg = (
-                    'RMG log output file does not exist.\n'
-                    f'Path provided: {arg0}'
-                    )
-                raise FileNotFoundError(msg)
-            elif not os.path.isfile(arg0):
-                msg = (
-                    'Path provided for RMG log output is not a file.\n'
-                    f'Path provided: {arg0}'
-                    )
-                raise IsADirectoryError(msg)
             path,filename = os.path.split(arg0)
 
         self.path         = path
@@ -2531,11 +2909,60 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     def analyze(self):
         """Parse the configured RMG output into an ``RmgOutData`` instance."""
+        self.results        = None
+        self.run_mode       = None
+        self.input          = None
+        self.analysis_state = 'analyzing'
+        self.source_status  = obj(input='omitted',out='missing')
+        if self.path is None or self.outfile_name is None:
+            self.analysis_state = 'not_analyzed'
+            raise RuntimeError('RMG output file name is not available')
         filepath = os.path.join(self.path,self.outfile_name)
-        results  = RmgOutData(filepath)
-        self.results  = results
-        self.run_mode = results.run_mode
-        self.input    = results.input
+        try:
+            if not os.path.exists(filepath):
+                if self.strict:
+                    msg = (
+                        'RMG log output file does not exist.\n'
+                        f'Path provided: {filepath}'
+                    )
+                    raise FileNotFoundError(msg)
+                self.results = self._empty_results()
+                self.analysis_state = 'analyzed'
+                return
+            if not os.path.isfile(filepath):
+                if self.strict:
+                    msg = (
+                        'Path provided for RMG log output is not a file.\n'
+                        f'Path provided: {filepath}'
+                    )
+                    raise IsADirectoryError(msg)
+                self.results = self._empty_results()
+                self.source_status.out = 'not_file'
+                self.analysis_state = 'analyzed'
+                return
+
+            results = RmgOutData(filepath)
+            self.results  = results
+            self.run_mode = results.run_mode
+            self.input    = results.input
+            self.source_status.out = 'parsed'
+            files = results.setup_info.files
+            if self.input is not None:
+                self.source_status.input = 'parsed'
+            elif files is not None and files.control_input_file is not None:
+                self.source_status.input = 'missing'
+            if self.strict and isinstance(self.run_mode,tuple):
+                input_mode,output_mode = self.run_mode
+                msg = (
+                    'RMG top-level run types disagree.\n'
+                    f'input: {input_mode}\n'
+                    f'output: {output_mode}'
+                    )
+                raise RuntimeError(msg)
+            self.analysis_state = 'analyzed'
+        except Exception:
+            self.analysis_state = 'not_analyzed'
+            raise
     #end def analyze
 
 #end class RmgAnalyzer

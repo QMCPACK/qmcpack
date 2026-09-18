@@ -116,7 +116,8 @@ def test_empty_init():
     analyzer = RmgAnalyzer()
 
     expected_members = {
-        'abspath','info','input','outfile_name','path','results','run_mode',
+        '_query_depth','abspath','analysis_state','info','input','outfile_name',
+        'path','required','results','run_mode','source_status','strict',
         }
     assert set(analyzer.keys())==expected_members
     assert analyzer.path is None
@@ -125,6 +126,11 @@ def test_empty_init():
     assert analyzer.input is None
     assert analyzer.run_mode is None
     assert analyzer.results is None
+    assert analyzer.analysis_state=='not_analyzed'
+    assert analyzer.strict
+    assert analyzer.required==set()
+    assert analyzer.source_status.input=='not_analyzed'
+    assert analyzer.source_status.out=='not_analyzed'
     assert isinstance(analyzer.info,obj)
     assert len(analyzer.info)==0
 #end def test_empty_init
@@ -213,7 +219,9 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
         'produced_files' : short_mode in {'scf','exx','stm'},
         }
     for name,applies in field_applicability.items():
-        assert (name in result_fields)==applies
+        assert name in result_fields
+        if not applies:
+            assert outdata[name] is None
 
     analyzer = RmgAnalyzer(logfile,analyze=True)
 
@@ -224,6 +232,27 @@ def test_run_modes(tmp_path,calculation_type,short_mode):
     assert analyzer.results.setup_info.grid_points.grid.tolist()==[8,8,8]
     assert analyzer.initial_structure() is not None
 #end def test_run_modes
+
+
+@pytest.mark.parametrize(
+    'calculation_types',
+    (
+        ('Quench electrons','Structure Optimization.'),
+        ('Structure Optimization.','Quench electrons'),
+        ),
+    )
+def test_outer_run_mode_takes_precedence(tmp_path,calculation_types):
+    from ..rmg_analyzer import RmgOutData
+
+    logfile = tmp_path/'rmg.log'
+    logfile.write_text(
+        rmg_log(calculation_types[0])
+        + f'\nCalculation type: {calculation_types[1]}\n'
+        )
+    outdata = RmgOutData(logfile)
+    assert(outdata.output_run_mode=='relax')
+    assert(outdata.run_mode=='relax')
+#end def test_outer_run_mode_takes_precedence
 
 
 @pytest.mark.parametrize(
@@ -250,15 +279,24 @@ def test_input_run_mode(tmp_path,calculation_type,input_mode,run_mode):
 
 
 def test_inconsistent_input_run_mode(tmp_path):
-    from ..rmg_analyzer import RmgOutData
+    from ..rmg_analyzer import RmgAnalyzer, RmgOutData
 
     input_file = tmp_path/'input'
     log_file   = tmp_path/'rmg.log'
     input_file.write_text('calculation_mode = "NSCF"')
     log_file.write_text(rmg_log('Quench electrons'))
 
-    with pytest.raises(ValueError,match='do not agree'):
-        RmgOutData(log_file)
+    outdata = RmgOutData(log_file)
+
+    assert outdata.input_run_mode=='nscf'
+    assert outdata.output_run_mode=='scf'
+    assert outdata.reader_mode=='scf'
+    assert outdata.run_mode==('nscf','scf')
+    assert outdata.setup_info.run_mode==('nscf','scf')
+    with pytest.raises(RuntimeError,match='top-level run types disagree'):
+        RmgAnalyzer(log_file,analyze=True)
+    analyzer = RmgAnalyzer(log_file,analyze=True,strict=False)
+    assert analyzer.run_mode==('nscf','scf')
 #end def test_inconsistent_input_run_mode
 
 
@@ -285,12 +323,12 @@ def test_representative_outputs(relative_path,run_mode,energy,positions_shape):
     assert outdata.timing is not None
     assert outdata.timing.total>0.0
     if energy is None:
-        assert 'energies' not in outdata
+        assert outdata.energies is None
     else:
         assert np.isclose(analyzer.energy(),energy)
         assert len(outdata.energies.history)>0
     if positions_shape is None:
-        assert 'ions' not in outdata
+        assert outdata.ions is None
     else:
         assert outdata.ions.position_history.shape==positions_shape
 #end def test_representative_outputs
@@ -311,7 +349,7 @@ def test_representative_physical_results():
     assert scf.kweights() is None
     assert scf.eigenvalues().shape==(1,14)
     assert scf.occupations().shape==(1,14)
-    assert scf.forces().shape==(1,2,3)
+    assert scf.forces().shape==(2,3)
     assert nscf.eigenvalues().shape==(1,14)
     assert nscf.occupations().shape==(1,14)
     assert band.kpoints().shape==(13,3)
@@ -326,7 +364,7 @@ def test_representative_physical_results():
     nvt = RmgAnalyzer(str(ionic/'nvt/input.01.log'),analyze=True)
 
     assert isinstance(relax.relaxed_structure(),Structure)
-    assert relax.forces().shape==(3,2,3)
+    assert relax.forces().shape==(2,3)
     assert relax.results.ions.position_history.shape==(3,2,3)
     assert nve.results.md.step.tolist()==[1]
     assert nvt.results.md.step.tolist()==[1]
@@ -597,6 +635,7 @@ potential convergence has been achieved. stopping ...
     assert analyzer.initial_structure().units=='A'
     assert analyzer.initial_structure(units='B').units=='B'
     assert analyzer.energy()==-1.2345
+    assert type(analyzer.energy()) is float
     assert np.isclose(analyzer.energy(units='Ry'),-2.469)
     assert analyzer.kpoints().shape==(2,3)
     assert np.allclose(
@@ -610,6 +649,8 @@ potential convergence has been achieved. stopping ...
     assert analyzer.Evbm()==4.0
     assert analyzer.Ecbm()==6.0
     assert analyzer.band_gap()==2.0
+    for quantity in ('Ef','Evbm','Ecbm','band_gap'):
+        assert type(getattr(analyzer,quantity)()) is float
     assert analyzer.fractional_occs()
     assert analyzer.results.energies.history.tolist()==[-1.2345]
     assert analyzer.results.energies.units.tolist()==['Ha']
@@ -655,26 +696,27 @@ potential convergence has been achieved. stopping ...
     force_factor = convert(1.0,'Ha','eV')/convert(1.0,'B','A')
     assert np.allclose(
         analyzer.forces(),
-        analyzer.results.ions.forces*force_factor,
+        analyzer.results.ions.forces[-1]*force_factor,
         )
     assert np.allclose(
         analyzer.forces(units='Ha/B'),
-        analyzer.results.ions.forces,
+        analyzer.results.ions.forces[-1],
         )
     assert np.allclose(
         analyzer.forces(units='Ry/B'),
-        2*analyzer.results.ions.forces,
+        2*analyzer.results.ions.forces[-1],
         )
     assert np.allclose(
         analyzer.stress(),
-        analyzer.results.stress.tensors*0.1,
+        analyzer.results.stress.tensors[-1]*0.1,
         )
     assert np.allclose(
         analyzer.stress(units='kbar'),
-        analyzer.results.stress.tensors,
+        analyzer.results.stress.tensors[-1],
         )
     assert np.isclose(analyzer.pressure(),-0.2)
     assert np.isclose(analyzer.pressure(units='kbar'),-2.0)
+    assert type(analyzer.pressure()) is float
     energy_density_units = {
         'eV/A^3'    : UnitConverter.eV/UnitConverter.A**3,
         'Ha/Bohr^3' : UnitConverter.Ha/UnitConverter.B**3,
@@ -689,8 +731,7 @@ potential convergence has been achieved. stopping ...
             analyzer.pressure(units=units)*pascals_per_unit/1e9,
             analyzer.pressure(),
             )
-    with pytest.raises(RuntimeError,match='relaxed_structure'):
-        analyzer.relaxed_structure()
+    assert isinstance(analyzer.relaxed_structure(),Structure)
     with pytest.raises(ValueError,match='energy units'):
         analyzer.energy(units='J')
 
@@ -725,6 +766,138 @@ def test_missing_property_data(tmp_path):
     with pytest.raises(RuntimeError,match='has not been analyzed'):
         RmgAnalyzer().energy()
 #end def test_missing_property_data
+
+
+def test_required_available_and_validation(tmp_path):
+    from ..rmg_analyzer import RmgAnalyzer
+
+    logfile = tmp_path/'missing.log'
+    logfile.write_text(rmg_log('Quench electrons'))
+    analyzer = RmgAnalyzer(
+        logfile,
+        analyze  = True,
+        required = 'energy',
+        )
+
+    assert analyzer.required=={'energy'}
+    assert analyzer.available()
+    assert analyzer.available('initial_structure')
+    assert not analyzer.available('energy')
+    with pytest.raises(RuntimeError,match='required RMG quantity "energy"'):
+        analyzer.energy()
+
+    analyzer.require('forces')
+    assert analyzer.required=={'energy','forces'}
+    with pytest.raises(RuntimeError,match='required RMG quantity "forces"'):
+        analyzer.forces()
+
+    before = set(analyzer.required)
+    with pytest.raises(ValueError,match='unknown RMG quantity'):
+        analyzer.require('stress','timing')
+    assert analyzer.required==before
+    with pytest.raises(ValueError,match='unknown RMG quantity'):
+        analyzer.available(None)
+    with pytest.raises(TypeError,match='strict must be a bool'):
+        RmgAnalyzer(logfile,strict=1)
+    with pytest.raises(TypeError,match='required must be'):
+        RmgAnalyzer(logfile,required=1)
+    with pytest.raises(ValueError,match='unknown RMG quantity'):
+        RmgAnalyzer(logfile,required='timing')
+
+    unparsed = RmgAnalyzer(logfile)
+    with pytest.raises(RuntimeError,match='has not been analyzed'):
+        unparsed.available('energy')
+    with pytest.raises(ValueError,match='energy units'):
+        unparsed.energy(units='J')
+#end def test_required_available_and_validation
+
+
+def test_strict_at_analysis_time(tmp_path):
+    from ..rmg_analyzer import RmgAnalyzer
+
+    missing = tmp_path/'missing.log'
+    strict = RmgAnalyzer(missing)
+    assert strict.analysis_state=='not_analyzed'
+    with pytest.raises(FileNotFoundError,match='does not exist'):
+        strict.analyze()
+    assert strict.analysis_state=='not_analyzed'
+
+    permissive = RmgAnalyzer(
+        missing,
+        strict = False,
+        analyze      = True,
+        )
+    assert permissive.analysis_state=='analyzed'
+    assert permissive.source_status.out=='missing'
+    assert permissive.energy() is None
+    assert not permissive.available('energy')
+
+    required = RmgAnalyzer(
+        missing,
+        strict = False,
+        required     = 'energy',
+        analyze      = True,
+        )
+    with pytest.raises(RuntimeError,match='required RMG quantity "energy"'):
+        required.energy()
+
+    directory = RmgAnalyzer(tmp_path)
+    with pytest.raises(IsADirectoryError,match='is not a file'):
+        directory.analyze()
+    directory = RmgAnalyzer(tmp_path,strict=False,analyze=True)
+    assert directory.source_status.out=='not_file'
+    assert directory.energy() is None
+#end def test_strict_at_analysis_time
+
+
+def test_unknown_run_mode_is_parsed_permissively(tmp_path):
+    import numpy as np
+
+    from ..rmg_analyzer import RmgAnalyzer
+
+    body = '''
+final total energy from eig sum = -1.25 Ha
+@ION Ion Species X Y Z Charge Mag FX FY FZ Movable
+@ION 1 H 1.1 1.2 1.3 0.0 0.0 0.1 0.2 0.3 1 1 1
+'''
+    logfile = tmp_path/'unknown.log'
+    logfile.write_text(rmg_log('Unrecognized calculation',body))
+    analyzer = RmgAnalyzer(logfile,analyze=True)
+
+    assert analyzer.run_mode is None
+    assert not analyzer.results.run_mode_detected
+    assert np.isclose(analyzer.energy(),-1.25)
+    assert np.allclose(analyzer.forces(units='Ha/B'),[[0.1,0.2,0.3]])
+    assert analyzer.results.timing is not None
+
+    bandfile = tmp_path/'band.log'
+    bandfile.write_text(rmg_log('Band structure calculation.',body))
+    band = RmgAnalyzer(bandfile,analyze=True)
+    assert band.results.run_mode_detected
+    assert band.results.energies is None
+    assert not band.available('energy')
+    with pytest.raises(RuntimeError,match='not supported'):
+        band.energy()
+#end def test_unknown_run_mode_is_parsed_permissively
+
+
+def test_reader_failures_are_not_masked(monkeypatch,tmp_path):
+    from ..rmg_analyzer import RmgAnalyzer, RmgOutData
+
+    def fail_energies(self,lines):
+        raise ValueError('damaged energy section')
+    #end def fail_energies
+
+    monkeypatch.setattr(RmgOutData,'read_energies',fail_energies)
+    logfile = tmp_path/'scf.log'
+    logfile.write_text(rmg_log('Quench electrons'))
+    analyzer = RmgAnalyzer(logfile)
+
+    with pytest.raises(ValueError,match='damaged energy section'):
+        analyzer.analyze()
+    assert analyzer.analysis_state=='not_analyzed'
+    assert analyzer.results is None
+#end def test_reader_failures_are_not_masked
 
 
 def test_whitespace_and_trailing_fields(tmp_path):
@@ -794,9 +967,9 @@ potential   convergence has been achieved trailing status
     assert analyzer.results.scf.scf_steps.tolist()==[3]
     assert analyzer.results.scf.step_times.tolist()==[0.2]
     assert analyzer.results.convergence.electronic_converged
-    assert np.allclose(analyzer.forces(units='Ha/B')[0,0],[0.01,0.02,0.03])
+    assert np.allclose(analyzer.forces(units='Ha/B')[0],[0.01,0.02,0.03])
     assert np.allclose(
-        analyzer.stress(units='kbar')[0],
+        analyzer.stress(units='kbar'),
         [[1.0,0.1,0.2],[0.1,2.0,0.3],[0.2,0.3,3.0]])
 #end def test_whitespace_and_trailing_fields
 
@@ -845,6 +1018,6 @@ KOHN SHAM EIGENVALUES [eV] AT K-POINT [bad]: malformed coordinates
     assert len(analyzer.results.ions.steps)==1
     assert analyzer.results.ions.position_history.shape==(1,1,3)
     assert analyzer.results.scf is None
-    assert analyzer.forces(units='Ha/B').shape==(1,1,3)
+    assert analyzer.forces(units='Ha/B').shape==(1,3)
     assert len(analyzer.info)==0
 #end def test_malformed_sections_do_not_stop_analysis
