@@ -403,7 +403,7 @@ class Pwscf(Simulation):
             self.save_attempt()
             self.input.control.restart_mode = 'restart'
             self.reset_indicators()
-        else:
+        elif not run_finished:
             self.logger.warning("Run finished before converging and is not restartable")
         #end if
     #end def check_sim_status
