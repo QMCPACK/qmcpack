@@ -505,8 +505,6 @@ pwscf_errors = (
     'convergence NOT achieved',
     'problems computing cholesky',
     'too many bands are not converged',
-    "Maximum CPU time exceeded",
-    "Program stopped by user request",
     )
 
 pwscf_error_patterns = (

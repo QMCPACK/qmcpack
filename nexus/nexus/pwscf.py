@@ -352,10 +352,10 @@ class Pwscf(Simulation):
 
 
     def check_sim_status(self):
-        outfile = os.path.join(self.locdir, self.outfile)
+        output_text = self.outfile_text()
         errfile = os.path.join(self.locdir, self.errfile)
         out_err_found, out_err_lines = find_error_keys(
-            outfile,
+            output_text,
             mpi=True,
             pwscf=True,
             return_lines=True,
@@ -373,10 +373,12 @@ class Pwscf(Simulation):
         restartable = False
         if out_err_found:
             output_errs = "".join(out_err_lines)
+            # Real pw.x errors
             not_converged    = 'convergence NOT achieved'  in output_errs
-            time_exceeded    = 'Maximum CPU time exceeded' in output_errs
-            user_stop        = 'Program stopped by user request' in output_errs
             error_in_routine = 'Error in routine' in output_errs
+            # Not really an error since it's intended behavior
+            time_exceeded    = 'Maximum CPU time exceeded' in output_text
+            user_stop        = 'Program stopped by user request' in output_text
             restartable      = not_converged or time_exceeded or user_stop
             failed = (
                 not_converged
@@ -387,7 +389,7 @@ class Pwscf(Simulation):
                 )
             self.failed = failed
 
-        run_finished  = 'JOB DONE' in self.outfile_text()
+        run_finished  = 'JOB DONE' in output_text
         restart = run_finished and self.restartable and restartable
         self.finished = run_finished
         if restart:
