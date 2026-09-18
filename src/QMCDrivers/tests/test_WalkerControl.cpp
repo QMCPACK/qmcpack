@@ -22,7 +22,6 @@
 #include "QMCDrivers/MCPopulation.h"
 #include "Utilities/MPIExceptionWrapper.hpp"
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
-#include "Platforms/Host/OutputManager.h"
 
 
 //#include "Concurrency/Info.hpp"
@@ -83,7 +82,7 @@ TEST_CASE("WalkerControl::determineNewWalkerPopulation", "[drivers][walker_contr
   int rank = test.getRank();
   app_log() << "rank:" << rank << " minus: " << NativePrint(minus) << std::endl;
 
-  std::cout << "rank:" << rank << " plus: " << NativePrint(plus) << std::endl;
+  app_log() << "rank:" << rank << " plus: " << NativePrint(plus) << std::endl;
   CHECK(minus.size() == num_ranks - 1);
   CHECK(plus.size() == num_ranks - 1);
   app_log() << "rank:" << rank << " plus: " << NativePrint(num_per_rank) << std::endl;
@@ -130,7 +129,7 @@ void testing::UnifiedDriverWalkerControlMPITest::testWalkerIDs(std::vector<std::
     walker_ids.push_back(pop_->get_walkers()[iw]->getWalkerID());
     parent_ids.push_back(pop_->get_walkers()[iw]->getParentID());
   }
-  std::cout << "rank: " << rank << "  walker ids: " << NativePrint(walker_ids)
+  app_log() << "rank: " << rank << "  walker ids: " << NativePrint(walker_ids)
             << " parent ids: " << NativePrint(parent_ids) << std::endl;
 #endif
   for (int iw = 0; iw < walker_ids_after[rank].size(); ++iw)

@@ -83,7 +83,7 @@ public:
         counter(0),
         apply_rotation(false),
         XRot({0, 0}, make_node_allocator<ComplexType>(TG)),
-        denom(iextensions<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
+        denom(extents_t<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMAverage({0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork({0, 0}, shared_allocator<ComplexType>{TG.TG_local()})
   {
@@ -203,7 +203,7 @@ public:
     {
       if (denom.size() != nw)
       {
-        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
+        denom = mpi3CVector(extents_t<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size)
       {
@@ -328,7 +328,7 @@ private:
     CMatrix_ref GtC(Gt.base(), {NMO * NMO, 1});
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
     if (Grot.size() < R.num_elements())
-      Grot = stdCVector(iextensions<1u>(R.num_elements()));
+      Grot = stdCVector(extents_t<1u>(R.num_elements()));
 #endif
 
     if (TG.TG_local().size() > 1)
@@ -418,7 +418,7 @@ private:
       CVector_ref R1D( Buff.base(), {dN*NMO*NMO});
 #if defined(ENABLE_CUDA)
       if(Grot.size() < R.num_elements()) 
-        Grot = stdCVector(iextensions<1u>(R.num_elements()));
+        Grot = stdCVector(extents_t<1u>(R.num_elements()));
 #endif
         
 
@@ -461,7 +461,7 @@ private:
     CMatrix_ref T1(Buff.base(),{(iN-i0),NMO});
     CMatrix_ref T2(T1.base()+T1.num_elements(),{(iN-i0),nX});
     if(Grot.size() != npts) 
-      Grot = stdCVector(iextensions<1u>(npts));
+      Grot = stdCVector(extents_t<1u>(npts));
 
     // round-robin for now
     int cnt=0;

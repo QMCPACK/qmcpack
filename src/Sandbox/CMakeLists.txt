@@ -12,3 +12,6 @@ foreach(p ${ESTEST})
   target_link_libraries(${p} spline2 qmcparticle sandbox_helper)
   add_unit_test(sandbox_${p} 1 3 $<TARGET_FILE:${p}>)
 endforeach(p ${ESTEST})
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -153,17 +153,17 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
 
   if constexpr (generate_test_data)
   {
-    std::cout << "QMCHamiltonian-registerListeners initialize psets with:\n{";
+    app_log() << "QMCHamiltonian-registerListeners initialize psets with:\n{";
 
     for (int iw = 0; iw < num_walkers; ++iw)
     {
       //psets.emplace_back(pset_target);
-      std::cout << "{";
+      app_log() << "{";
       for (auto r : p_refs[iw].get().R)
-        std::cout << NativePrint(r) << ",";
-      std::cout << "},\n";
+        app_log() << NativePrint(r) << ",";
+      app_log() << "},\n";
     }
-    std::cout << "}\n";
+    app_log() << "}\n";
   }
   else
   {
@@ -233,18 +233,18 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   // {
   std::vector<Real> vector_kinetic;
   std::copy(kinetic.begin(), kinetic.end(), std::back_inserter(vector_kinetic));
-  std::cout << " size kinetic: " << vector_kinetic.size() << '\n';
-  std::cout << " std::vector<Real> kinetic_ref_vector = " << NativePrint(vector_kinetic) << ";\n";
+  app_log() << " size kinetic: " << vector_kinetic.size() << '\n';
+  app_log() << " std::vector<Real> kinetic_ref_vector = " << NativePrint(vector_kinetic) << ";\n";
 
   std::vector<Real> vector_pots;
   std::copy(local_pots.begin(), local_pots.end(), std::back_inserter(vector_pots));
-  std::cout << " size potentials: " << vector_pots.size() << '\n';
-  std::cout << " std::vector<Real> potential_ref_vector = " << NativePrint(vector_pots) << ";\n";
+  app_log() << " size potentials: " << vector_pots.size() << '\n';
+  app_log() << " std::vector<Real> potential_ref_vector = " << NativePrint(vector_pots) << ";\n";
 
   std::vector<Real> vector_ions;
   std::copy(ion_pots.begin(), ion_pots.end(), std::back_inserter(vector_ions));
-  std::cout << " size ion potentials: " << vector_ions.size() << '\n';
-  std::cout << " std::vector<Real> ion_potential_ref_vector = " << NativePrint(vector_ions) << ";\n";
+  app_log() << " size ion potentials: " << vector_ions.size() << '\n';
+  app_log() << " std::vector<Real> ion_potential_ref_vector = " << NativePrint(vector_ions) << ";\n";
   // }
   // else
   // {
@@ -342,7 +342,7 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
   for (int iw = 0; iw < num_walkers; ++iw)
   {
     auto hamiltonian_local_energy = ham_list[iw].getLocalEnergy();
-    std::cout << "Walker: " << iw << " hamiltonian_local_energy (" << hamiltonian_local_energy
+    app_log() << "Walker: " << iw << " hamiltonian_local_energy (" << hamiltonian_local_energy
               << ") shadow_energy: " << shadow_ham_list[iw].getLocalEnergy() << "\n";
     hamiltonian_local_nrg_sum += ham_list[iw].getLocalEnergy();
     energies_sum += energies[iw];

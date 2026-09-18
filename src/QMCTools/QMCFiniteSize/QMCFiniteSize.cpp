@@ -403,7 +403,7 @@ void QMCFiniteSize::printSkRawSphAvg(const std::vector<RealType>& sk)
             << "\n";
   for (int ks = 0; ks < Klist.getKShell().size() - 1; ks++)
   {
-    app_log() << std::setw(12) << std::setprecision(8) << std::sqrt(Klist.getKSQWorking()[Klist.getKShell()[ks]])
+    app_log() << std::setw(12) << std::setprecision(8) << std::sqrt(Klist.getKSQ()[Klist.getKShell()[ks]])
               << std::setw(12) << std::setprecision(8) << vsk_1d[ks] << std::setw(12) << std::setprecision(8)
               << AA->Fk_symm[ks] << '\n';
   }

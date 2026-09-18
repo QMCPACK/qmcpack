@@ -29,8 +29,7 @@ from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 
 from .nexus_version import nexus_version
-from .generic       import generic_settings
-from .developer     import obj, log, NexusError, warn
+from .developer     import obj, NexusError
 from .debug         import ci
 from .utilities     import path_string
 
@@ -218,7 +217,7 @@ class Settings(NexusCore):
         write_splash()
 
         # print version information
-        self.log("Checking current machine for Nexus dependencies...\n")
+        self.nxs_print("Checking current machine for Nexus dependencies...\n")
         pkg_sort = {
             "numpy":      0,
             "scipy":      1,
@@ -293,9 +292,9 @@ class Settings(NexusCore):
 
         version_text += "\n"
 
-        self.log(version_text)
+        self.nxs_print(version_text)
 
-        self.log('Applying user settings')
+        self.nxs_print('Applying user settings')
 
         # assign simple variables
         for name in Settings.core_assign_vars:
@@ -582,9 +581,9 @@ class Settings(NexusCore):
         if 'machine' in mset:
             machine_name = mset.machine
             if machine_name in {"ws", "workstation"}:
-                self.log("Automatically detecting physical CPU cores for workstation...", n=1)
+                self.nxs_print("Automatically detecting physical CPU cores for workstation...", n=1)
                 n_cores = get_cpu_cores()
-                self.log(f"Using {n_cores} core workstation", n=1)
+                self.nxs_print(f"Using {n_cores} core workstation", n=1)
                 machine_name = f"ws{n_cores}"
 
                 if not Machine.exists(machine_name):
@@ -708,7 +707,7 @@ class Settings(NexusCore):
                 raise ValueError(msg)
             #end if
         #end if
-        # overide user input and always use stages mode 
+        # overide user input and always use stages mode
         # keep processing code above in case a change is desired in the future
         nexus_core.mode       = modes.stages
         nexus_core.stages     = stages
@@ -772,7 +771,7 @@ class Settings(NexusCore):
                     bsfiles.append(pf)
                 #end if
             #end for
-            nexus_noncore.basissets = BasisSets(bsfiles)        
+            nexus_noncore.basissets = BasisSets(bsfiles)
         #end if
     #end def process_noncore_settings
 #end class Settings

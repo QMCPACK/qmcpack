@@ -36,7 +36,6 @@
 #include "AFQMC/Walkers/WalkerIO.hpp"
 
 using std::complex;
-using std::cout;
 using std::endl;
 using std::string;
 
