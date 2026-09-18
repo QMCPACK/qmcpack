@@ -79,10 +79,6 @@ public:
 
   bool put(xmlNodePtr cur);
 
-  void setMinMax(int nw_in, int nmax_in);
-
-  int get_n_max() const { return n_max_; }
-  int get_n_min() const { return n_min_; }
   MCDataType<FullPrecRealType>& get_ensemble_property() { return ensemble_property_; }
   void set_ensemble_property(MCDataType<FullPrecRealType>& ensemble_property)
   {
@@ -157,12 +153,6 @@ private:
   RandomBase<FullPrecRealType>& rng_;
   ///if true, use fixed population
   bool use_fixed_pop_;
-  ///minimum number of walkers
-  IndexType n_min_;
-  ///maximum number of walkers
-  IndexType n_max_;
-  ///maximum copy per walker
-  IndexType max_copy_;
   ///trial energy energy
   FullPrecRealType trial_energy_;
   /** Copied from curData[LE_MAX+rank_num] during branching
