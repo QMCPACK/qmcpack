@@ -17,4 +17,5 @@ User Guide
     qmcpack-input-mod
     qmcpack-input-gen
     qmcpack-restarts
+    pwscf
     adding-supercomputer-machine
