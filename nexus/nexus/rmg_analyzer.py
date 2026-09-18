@@ -19,6 +19,7 @@ from .rmg_input import RmgInput
 from .simulation import Simulation, SimulationAnalyzer
 from .structure import generate_structure
 from .unit_converter import UnitConverter, convert
+from .utilities import path_string
 
 
 def as_float(text):
@@ -162,6 +163,8 @@ class RmgOutData(DevBase):
 
     def __init__(self,filepath,input=None):
         """Initialize the parsed data by reading an RMG output file."""
+        if isinstance(filepath,os.PathLike):
+            filepath = path_string(filepath)
         if not isinstance(filepath,(str,os.PathLike)):
             provided_type = type(filepath).__name__
             msg = (
@@ -170,7 +173,6 @@ class RmgOutData(DevBase):
                 f'Type provided: {provided_type}'
                 )
             raise TypeError(msg)
-        filepath = os.fspath(filepath)
         if not os.path.exists(filepath):
             msg = (
                 'RMG log output file does not exist.\n'
@@ -2924,6 +2926,13 @@ class RmgAnalyzer(SimulationAnalyzer):
         required : str or iterable of str, optional
             Quantity names whose query functions must raise when unavailable.
         """
+        if isinstance(input,os.PathLike):
+            input = path_string(input)
+        if isinstance(outfile,os.PathLike):
+            outfile = path_string(outfile)
+        if isinstance(path,os.PathLike):
+            path = path_string(path)
+
         if not isinstance(strict,bool):
             raise TypeError('strict must be a bool')
         if input is not None and not isinstance(

@@ -334,6 +334,18 @@ def analyze_output(code=None,input=None,outfile=None,*,analyze=True,path=None,**
         If ``code`` does not identify a supported analyzer.
     """
 
+    if isinstance(input,os.PathLike):
+        input = path_string(input)
+    if isinstance(outfile,os.PathLike):
+        outfile = path_string(outfile)
+    if isinstance(path,os.PathLike):
+        path = path_string(path)
+    for name,value in kw.items():
+        if isinstance(value,os.PathLike):
+            kw[name] = path_string(value)
+        #end if
+    #end for
+
     # Retrieve analyzer from a Simulation object
     simulation_types = {
         'qmcpack' : Qmcpack,

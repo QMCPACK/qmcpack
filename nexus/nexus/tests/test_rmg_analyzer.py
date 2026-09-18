@@ -314,6 +314,7 @@ def test_output_discovery_from_path(tmp_path):
 
     (tmp_path/'rmg.log').write_text(rmg_log('Quench electrons'))
     analyzer = RmgAnalyzer(path=tmp_path,analyze=True)
+    assert isinstance(analyzer.path,str)
     assert analyzer.outfile_name is None
     assert analyzer.source_status.out=='parsed'
     assert analyzer.run_mode=='scf'

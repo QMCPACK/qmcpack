@@ -116,6 +116,7 @@ def test_explicit_xml_only(tmp_path):
         )
 
     assert analyzer.input is None
+    assert isinstance(analyzer.xmlfile,str)
     assert analyzer.results_out is None
     assert isinstance(analyzer.results_xml,PwscfXmlData)
     assert analyzer.energy('Ha')==-2.5
@@ -1358,6 +1359,7 @@ def test_unique_output_discovery_excludes_auxiliary(tmp_path):
         analyze = True,
         )
     assert(analyzer.path==str(tmp_path))
+    assert isinstance(analyzer.pw2c_outfile,str)
     assert(analyzer.pw2c_outfile=='pw2casino.out')
     assert(analyzer.results_out is not None)
     assert(analyzer.energy('Ry')==-4.0)

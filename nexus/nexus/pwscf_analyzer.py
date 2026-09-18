@@ -121,6 +121,8 @@ class PwscfOutData(DevBase):
 
     def __init__(self,filepath,calculation=None,*,md_only=False):
         """Read a PWSCF log and initialize its accessible physical data."""
+        if isinstance(filepath,os.PathLike):
+            filepath = path_string(filepath)
         self.calculation = None
         self.run_type_detected = False
 
@@ -1090,6 +1092,8 @@ class PwscfXmlData(DevBase):
     """Read primary physical results from QE schema XML output."""
 
     def __init__(self,filepath):
+        if isinstance(filepath,os.PathLike):
+            filepath = path_string(filepath)
         self.data = None
         self.parse_failed = False
         for name in ('version','calculation','total_energy','initial_atoms',
@@ -1341,6 +1345,8 @@ class Pw2CasinoAnalyzer(DevBase):
     """
 
     def __init__(self,filepath):
+        if isinstance(filepath,os.PathLike):
+            filepath = path_string(filepath)
         self.K = None
         with open(filepath,'r') as fobj:
             for line in fobj:
@@ -2362,6 +2368,17 @@ class PwscfAnalyzer(SimulationAnalyzer):
         md_only : bool, default=False
             Restrict text parsing to molecular-dynamics data.
         """
+        if isinstance(input,os.PathLike):
+            input = path_string(input)
+        if isinstance(outfile,os.PathLike):
+            outfile = path_string(outfile)
+        if isinstance(path,os.PathLike):
+            path = path_string(path)
+        if isinstance(xmlfile,os.PathLike):
+            xmlfile = path_string(xmlfile)
+        if isinstance(pw2c_outfile,os.PathLike):
+            pw2c_outfile = path_string(pw2c_outfile)
+
         if not isinstance(read_all,bool):
             raise TypeError('read_all must be a bool')
         if not isinstance(strict,bool):

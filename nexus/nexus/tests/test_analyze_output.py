@@ -40,6 +40,7 @@ def test_analyze_output_unified_paths():
         path    = pwscf_path,
         )
     assert pwscf.analysis_state=='analyzed'
+    assert isinstance(pwscf.path,str)
     assert pwscf.input is not None
 
     rmg_path = TEST_DIR/'test_rmg_analyzer_files/electronic'
@@ -50,6 +51,7 @@ def test_analyze_output_unified_paths():
         path    = rmg_path,
         )
     assert rmg.analysis_state=='analyzed'
+    assert isinstance(rmg.path,str)
     assert rmg.input is not None
 
     deferred = analyze_output('pwscf',analyze=False,strict=False)
