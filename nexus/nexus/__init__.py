@@ -273,7 +273,7 @@ class Settings(NexusCore):
 
         version_text +=  "\n"
         version_text +=  "  Recommended Nexus Dependencies:\n"
-        version_text += f"    {'Python':<{name_align}} >= 3.10.0\n"
+        version_text += f"    {'Python':<{name_align}} >= 3.11.0\n"
         for pkg_name, pkg_info in nxs_deps.items():
             version_text += f"    {pkg_name:<{name_align}} >= {pkg_info['min_ver']:<10} ({pkg_info['status']})\n"
 
