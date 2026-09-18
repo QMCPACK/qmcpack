@@ -361,14 +361,20 @@ class Pwscf(Simulation):
             return_lines=True,
             )
 
-        err_err_found = find_error_keys(
+        err_err_found, err_err_lines = find_error_keys(
             errfile,
             mpi=True,
             pwscf=True,
+            return_lines=True,
             )
 
         if err_err_found:
-            self.failed = True
+            # This might happen at the end of a run even if it succeeds.
+            # We can't actually know if it really indicates a failure.
+            if "cleaning up processes" not in next(err_err_lines, ""):
+                pass
+            else:
+                self.failed = True
 
         restartable = False
         if out_err_found:
