@@ -22,6 +22,7 @@
 
 import os
 import re
+import xml.etree.ElementTree as ET
 from copy import deepcopy
 from glob import glob
 from types import MappingProxyType
@@ -60,13 +61,18 @@ class PwscfOutData(DevBase):
     filepath : str or os.PathLike
         Path to the PWSCF text-output file.
     calculation : str, optional
-        Calculation type from the associated PWSCF input. When supplied, it
-        takes precedence over output-text inference.
+        Explicit calculation type. When omitted, the type is inferred only
+        from output-text records. ``PwscfAnalyzer`` always uses inference so
+        that input and output calculation types remain independent.
 
     Attributes
     ----------
-    calculation : {'scf', 'nscf', 'relax', 'vc-relax'}
-        Calculation type inferred from the output text.
+    calculation : {'scf', 'nscf', 'bands', 'relax', 'vc-relax', 'md', 'vc-md'} or None
+        Calculation type inferred from the output text, or ``None`` when no
+        recognized run marker is present.
+    run_type_detected : bool
+        Whether ``calculation`` was explicitly supplied or inferred from a
+        recognized output-log marker.
     Ef : float or None
         Final Fermi energy in eV.
     fermi_energies : numpy.ndarray or None
@@ -82,14 +88,13 @@ class PwscfOutData(DevBase):
     initial_structure_data : obj or None
         Initial QE-generated cell axes and Cartesian ion positions in bohr.
     kweights : numpy.ndarray or None
-        One-dimensional k-point weight array.  Present for every calculation
-        type.
+        One-dimensional k-point weight array.
     volume : float or None
         Final unit-cell volume in bohr cubed.
     cputime, walltime : float or None
         Total CPU and wall-clock time in hours.
     E : float or None
-        Final total energy in Ry for ``scf``, ``relax``, and ``vc-relax``.
+        Final total energy in Ry.
     relax_energies : numpy.ndarray or None
         Completed SCF total-energy history in Ry.
     scf_conv_energy, scf_conv_accuracy : numpy.ndarray or None
@@ -103,20 +108,21 @@ class PwscfOutData(DevBase):
     tot_forces, max_forces : numpy.ndarray or None
         Histories of reported total-force and maximum atomic-force magnitudes.
     relax_structures : list or None
-        Structure records containing atom labels, Cartesian
-        positions, and, when reported, cell axes.  Present for relaxation
-        calculations.
+        Structure records containing atom labels, Cartesian positions, and,
+        when reported, cell axes.
 
     Notes
     -----
-    An applicable attribute remains ``None`` when its record is absent or
-    cannot be parsed.  Attributes that do not apply to the inferred
-    calculation type are removed from the object.
+    Every result attribute is retained for every calculation type. Readers
+    appropriate to a detected type are called selectively; when no type can
+    be detected, every reader is attempted permissively. An attribute remains
+    ``None`` when its reader is not selected or its record cannot be parsed.
     """
 
-    def __init__(self,filepath,calculation=None):
+    def __init__(self,filepath,calculation=None,*,md_only=False):
         """Read a PWSCF log and initialize its accessible physical data."""
         self.calculation = None
+        self.run_type_detected = False
 
         # all calculation types
         self.Ef                = None
@@ -139,6 +145,8 @@ class PwscfOutData(DevBase):
         self.forces            = None
         self.tot_forces        = None
         self.max_forces        = None
+        self.md_data           = None
+        self.md_stats          = None
         # relax/vc-relax
         self.relax_structures  = None
 
@@ -146,32 +154,46 @@ class PwscfOutData(DevBase):
             lines = fobj.read().splitlines()
         # read the calculation type
         self.read_calculation(lines,calculation)
-        # remove unused attributes, depending on the calculation type
-        if self.calculation=='nscf':
-            for name in (
-                'E','relax_energies','scf_conv_energy','scf_conv_accuracy',
-                'pressure','stress','forces','tot_forces','max_forces',
-                ):
-                del self[name]
-        if self.calculation in {'scf','nscf'}:
-            del self.relax_structures
-        # all calculations
-        self.read_initial_structure(lines)
-        self.read_fermi_energies(lines)
-        self.read_kpoints(lines)
-        self.read_bands(lines)
-        self.read_volume(lines)
-        # all but nscf
-        if self.calculation in {'scf','relax','vc-relax'}:
+        if self.run_type_detected:
+            if self.calculation in {'md','vc-md'}:
+                self.read_md(lines)
+                if md_only:
+                    return
+            # all calculations
+            self.read_initial_structure(lines)
+            self.read_fermi_energies(lines)
+            self.read_kpoints(lines)
+            self.read_bands(lines)
+            self.read_volume(lines)
+            # all but nscf/bands
+            if self.calculation in {'scf','relax','vc-relax','md','vc-md'}:
+                self.read_energies(lines)
+                self.read_scf_convergence(lines)
+                self.read_pressure(lines)
+                self.read_stress(lines)
+                self.read_forces(lines)
+            # relaxation and molecular-dynamics calculations
+            if self.calculation in {'relax','vc-relax','md','vc-md'}:
+                self.read_structures(lines)
+            self.read_timing(lines)
+        else:
+            # With no trustworthy run type, retain as much recognizable data
+            # as possible instead of assuming an SCF-specific layout.
+            self.read_md(lines)
+            if md_only:
+                return
+            self.read_initial_structure(lines)
+            self.read_fermi_energies(lines)
+            self.read_kpoints(lines)
+            self.read_bands(lines)
+            self.read_volume(lines)
             self.read_energies(lines)
             self.read_scf_convergence(lines)
             self.read_pressure(lines)
             self.read_stress(lines)
             self.read_forces(lines)
-        # relaxation calculations
-        if self.calculation in {'relax','vc-relax'}:
             self.read_structures(lines)
-        self.read_timing(lines)
+            self.read_timing(lines)
     #end def __init__
 
 
@@ -179,21 +201,17 @@ class PwscfOutData(DevBase):
         """Infer and bind the PWSCF calculation type from log records."""
         if calculation is not None:
             calculation = calculation.lower()
-            if calculation in {'md','vc-md'}:
-                msg = 'PWSCF molecular-dynamics calculations are not supported'
-                raise RuntimeError(msg)
-            if calculation=='bands':
-                msg = 'PWSCF bands calculations are not supported'
-                raise RuntimeError(msg)
-            if calculation not in {'scf','nscf','relax','vc-relax'}:
+            if calculation not in {'scf','nscf','bands','relax','vc-relax','md','vc-md'}:
                 msg = f'PWSCF calculation "{calculation}" is not supported'
                 raise RuntimeError(msg)
             self.calculation = calculation
+            self.run_type_detected = True
             return
         has_cell      = False
         has_bfgs      = False
         has_band_run  = False
         has_dynamics  = False
+        has_scf_run   = False
         has_reference = False
         for line in lines:
             if not has_cell and line.strip().startswith('CELL_PARAMETERS'):
@@ -202,6 +220,8 @@ class PwscfOutData(DevBase):
                 has_bfgs = True
             if not has_band_run and 'Band Structure Calculation' in line:
                 has_band_run = True
+            if not has_scf_run and 'Self-consistent Calculation' in line:
+                has_scf_run = True
             if (
                 not has_dynamics
                 and (
@@ -220,21 +240,89 @@ class PwscfOutData(DevBase):
                 ):
                 has_reference = True
         if has_dynamics:
-            msg = 'PWSCF molecular-dynamics calculations are not supported'
-            raise RuntimeError(msg)
+            calculation = 'vc-md' if has_cell or any('Entering Dynamics;' in line for line in lines) else 'md'
         elif has_bfgs:
             calculation = 'vc-relax' if has_cell else 'relax'
         elif has_band_run:
             # QE uses the same heading for nscf and bands, but suppresses
             # electronic-reference and occupation records for bands runs.
-            if not has_reference:
-                msg = 'PWSCF bands calculations are not supported'
-                raise RuntimeError(msg)
-            calculation = 'nscf'
-        else:
+            calculation = 'nscf' if has_reference else 'bands'
+        elif has_scf_run:
             calculation = 'scf'
+        else:
+            calculation = None
         self.calculation = calculation
+        self.run_type_detected = calculation is not None
     #end def read_calculation
+
+
+    def read_md(self,lines):
+        """Read complete molecular-dynamics records from text output."""
+        records = []
+        record = None
+        for line in lines:
+            text = ' '.join(line.split())
+            if line.lstrip().startswith('!') and 'total energy' in line:
+                tokens = line.replace('=',' = ').split()
+                index = tokens.index('=') if '=' in tokens else len(tokens)
+                value = parse_float(tokens[index+1]) if index+1<len(tokens) else None
+                record = {} if value is None else {'total_energy':value}
+            elif record is not None and 'total stress' in text and 'P=' in text:
+                tokens = line.replace('=',' = ').split()
+                if 'P' in tokens:
+                    index = tokens.index('P')
+                    value = parse_float(tokens[index+2]) if index+2<len(tokens) and tokens[index+1]=='=' else None
+                    if value is not None:
+                        record['pressure'] = value
+            elif record is not None and 'time' in line and ('Entering Dynamics' in line or line.strip().startswith('time')):
+                tokens = line.replace('=',' = ').split()
+                if 'time' in tokens:
+                    index = tokens.index('time')
+                    value = parse_float(tokens[index+2]) if index+2<len(tokens) and tokens[index+1]=='=' else None
+                    if value is not None:
+                        record['time'] = value
+            elif record is not None and ('kinetic energy' in line or line.strip().startswith('Ekin')):
+                tokens = line.replace('=',' = ').split()
+                if 'kinetic energy' in line and '=' in tokens:
+                    index = tokens.index('=')
+                    value = parse_float(tokens[index+1]) if index+1<len(tokens) else None
+                    if value is not None:
+                        record['kinetic_energy'] = value
+                elif 'Ekin' in tokens and 'T' in tokens:
+                    eindex = tokens.index('Ekin')
+                    tindex = tokens.index('T')
+                    evalue = parse_float(tokens[eindex+2]) if eindex+2<len(tokens) and tokens[eindex+1]=='=' else None
+                    tvalue = parse_float(tokens[tindex+2]) if tindex+2<len(tokens) and tokens[tindex+1]=='=' else None
+                    if evalue is not None and tvalue is not None:
+                        record['kinetic_energy'],record['temperature'] = evalue,tvalue
+            elif record is not None and line.strip().startswith('temperature'):
+                tokens = line.replace('=',' = ').split()
+                if '=' in tokens:
+                    index = tokens.index('=')
+                    value = parse_float(tokens[index+1]) if index+1<len(tokens) else None
+                    if value is not None:
+                        record['temperature'] = value
+            if record is not None and all(name in record for name in ('total_energy','pressure','time','kinetic_energy','temperature')):
+                records.append(record)
+                record = None
+        if records:
+            self.md_data = obj({name:np.array([r[name] for r in records],dtype=float) for name in records[0]})
+            self.md_data.potential_energy = self.md_data.total_energy-self.md_data.kinetic_energy
+            self.md_stats = self.md_statistics()
+    #end def read_md
+
+
+    def md_statistics(self,equil=None):
+        """Return mean and standard error for each MD history."""
+        if self.md_data is None:
+            return None
+        stats = obj()
+        for name,values in self.md_data.items():
+            values = values[equil:] if equil is not None else values
+            if len(values):
+                stats[name] = (float(np.mean(values)),float(np.std(values,ddof=1)/np.sqrt(len(values))) if len(values)>1 else 0.0)
+        return stats
+    #end def md_statistics
 
 
     def read_fermi_energies(self,lines):
@@ -361,13 +449,15 @@ class PwscfOutData(DevBase):
                     match = re.match(leading_number_list_pattern,text)
                     if match is None:
                         break
-                    numbers = np.array(
-                        re.findall(
+                    numbers = [
+                        parse_float(number)
+                        for number in re.findall(
                             number_pattern,
-                            match.group('values').lower().replace('d','e'),
-                            ),
-                        dtype=float,
-                        )
+                            match.group('values'),
+                            )
+                        ]
+                    if any(number is None for number in numbers):
+                        return [],i
                     values.extend(numbers)
                 i+=1
             return values,i
@@ -415,10 +505,12 @@ class PwscfOutData(DevBase):
             kpoint_cart = None
             match       = re.search(band_kpoint_pattern,line)
             if match is not None:
-                kpoint_cart = np.array(
-                    [parse_float(match.group(name)) for name in ('kx','ky','kz')],
-                    dtype=float,
-                    )
+                coordinates = [
+                    parse_float(match.group(name))
+                    for name in ('kx','ky','kz')
+                    ]
+                if all(value is not None for value in coordinates):
+                    kpoint_cart = np.array(coordinates,dtype=float)
             kpoint_rel = kpoint_cart
             if self.kpoints_cart is not None and index<len(self.kpoints_cart):
                 kpoint_cart = self.kpoints_cart[index]
@@ -487,6 +579,7 @@ class PwscfOutData(DevBase):
         #end def read_band_edges
 
         def edge_data(band,energy,band_number):
+            """Return identifying data for a valence or conduction band edge."""
             return obj(
                 energy          = energy,
                 kpoint_rel      = band.kpoint_rel,
@@ -495,6 +588,8 @@ class PwscfOutData(DevBase):
                 pol             = band.pol,
                 band_number     = band_number,
                 )
+        #end def edge_data
+
         read_band_edges()
     #end def read_bands
 
@@ -625,6 +720,25 @@ class PwscfOutData(DevBase):
             return None
         #end def alat_from_header
 
+        nat = None
+        for line in lines:
+            if 'number of atoms/cell' not in line:
+                continue
+            label,separator,text = line.partition('=')
+            tokens = text.split()
+            if (
+                separator
+                and label.rstrip().endswith('number of atoms/cell')
+                and len(tokens)>0
+                ):
+                try:
+                    candidate = int(tokens[0])
+                except ValueError:
+                    candidate = None
+                if candidate is not None and candidate>0:
+                    nat = candidate
+                    break
+
         structures = []
         conf       = None
         i          = 0
@@ -677,27 +791,35 @@ class PwscfOutData(DevBase):
                     atoms.append(tokens[0])
                     positions.append(values)
                     i+=1
-                if len(positions)==0:
+                if len(positions)==0 or (nat is not None and len(positions)!=nat):
+                    conf = None
+                    if (
+                        i<len(lines)
+                        and (
+                            lines[i].strip().startswith('CELL_PARAMETERS')
+                            or 'ATOMIC_POSITIONS' in lines[i]
+                            )
+                        ):
+                        continue
+                else:
+                    conf.atoms     = atoms
+                    conf.positions = np.array(positions,dtype=float)
+                    option = card_option(line,'ATOMIC_POSITIONS')
+                    if option is not None and option.startswith('crystal') and 'axes' in conf:
+                        conf.positions = np.dot(conf.positions,conf.axes)
+                    elif option is not None and option.startswith('ang'):
+                        conf.positions *= convert(1.0,'A','B')
+                    elif option is not None and option.startswith('alat'):
+                        alat = conf.alat if 'alat' in conf else None
+                        if alat is not None:
+                            conf.positions *= alat
+                        else:
+                            conf.position_units = 'alat'
+                    elif option is not None and option.startswith('crystal'):
+                        conf.position_units = 'crystal'
+                    structures.append(conf)
                     conf = None
                     continue
-                conf.atoms     = atoms
-                conf.positions = np.array(positions,dtype=float)
-                option = card_option(line,'ATOMIC_POSITIONS')
-                if option is not None and option.startswith('crystal') and 'axes' in conf:
-                    conf.positions = np.dot(conf.positions,conf.axes)
-                elif option is not None and option.startswith('ang'):
-                    conf.positions *= convert(1.0,'A','B')
-                elif option is not None and option.startswith('alat'):
-                    alat = conf.alat if 'alat' in conf else None
-                    if alat is not None:
-                        conf.positions *= alat
-                    else:
-                        conf.position_units = 'alat'
-                elif option is not None and option.startswith('crystal'):
-                    conf.position_units = 'crystal'
-                structures.append(conf)
-                conf = None
-                continue
             i+=1
         if len(structures)>0:
             self.relax_structures = structures
@@ -778,11 +900,13 @@ class PwscfOutData(DevBase):
                 ):
                 continue
             try:
-                nat = int(tokens[0])
+                candidate = int(tokens[0])
             except ValueError:
                 continue
-            break
-        forces     = []
+            if candidate>0:
+                nat = candidate
+                break
+        force_blocks = []
         tot_forces = []
         for i,line in enumerate(lines):
             if 'Forces acting on atoms' not in line:
@@ -808,8 +932,19 @@ class PwscfOutData(DevBase):
                 elif len(aforces)>0:
                     break
                 j+=1
-            if len(aforces)>0 and (nat is None or len(aforces)==nat):
-                forces.append(aforces)
+            if len(aforces)>0:
+                force_blocks.append(aforces)
+        force_count = nat
+        if force_count is None and len(force_blocks)>0:
+            force_counts = [len(aforces) for aforces in force_blocks]
+            force_count = max(
+                set(force_counts),
+                key=lambda count:(force_counts.count(count),count),
+                )
+        forces = [
+            aforces for aforces in force_blocks
+            if len(aforces)==force_count
+            ]
         for line in lines:
             tokens = line.replace('=',' = ').split()
             if tokens[:3]==['Total','force','='] and len(tokens)>3:
@@ -832,10 +967,12 @@ class PwscfOutData(DevBase):
             )
         def pwscf_time(text):
             scales = {'h':1.0,'m':60.0,'s':3600.0}
-            return sum(
-                parse_float(match.group('value'))/scales[match.group('unit')]
-                for match in re.finditer(timing_value_pattern,text)
-                )
+            values = []
+            for match in re.finditer(timing_value_pattern,text):
+                value = parse_float(match.group('value'))
+                if value is not None:
+                    values.append(value/scales[match.group('unit')])
+            return sum(values) if len(values)>0 else None
         #end def pwscf_time
 
         for line in lines:
@@ -850,9 +987,14 @@ class PwscfOutData(DevBase):
             wall,separator,_ = wall.partition('WALL')
             if not separator:
                 continue
-            self.cputime  = pwscf_time(cpu)
-            self.walltime = pwscf_time(wall)
-            return
+            cputime  = pwscf_time(cpu)
+            walltime = pwscf_time(wall)
+            if cputime is not None:
+                self.cputime = cputime
+            if walltime is not None:
+                self.walltime = walltime
+            if cputime is not None or walltime is not None:
+                return
     #end def read_timing
 
 
@@ -944,6 +1086,245 @@ class PwscfOutData(DevBase):
 
 
 
+class PwscfXmlData(DevBase):
+    """Read primary physical results from QE schema XML output."""
+
+    def __init__(self,filepath):
+        self.data = None
+        self.parse_failed = False
+        for name in ('version','calculation','total_energy','initial_atoms',
+                     'initial_positions','initial_axes','initial_alat','atoms',
+                     'positions','axes','alat','volume','forces','stress',
+                     'spin_polarized','kpoints_rel','kweights','eigenvalues',
+                     'occupations','fermi_energy'):
+            self[name] = None
+        try:
+            root = ET.parse(filepath).getroot()
+        except (OSError,LookupError,ET.ParseError):
+            self.parse_failed = True
+            return
+        self.data = obj(root=root)
+        self.extract_results(root)
+    #end def __init__
+
+
+    def extract_results(self,root):
+        """Extract structures, energies, forces, and electronic arrays."""
+        # Navigate XML elements and normalize their textual data.
+        def tag(element):
+            """Return an XML tag without its optional namespace."""
+            return element.tag.rsplit('}',1)[-1]
+        #end def tag
+
+        def child(element,name):
+            """Return a named child element, or ``None`` when absent."""
+            if element is None:
+                return None
+            return next(
+                (item for item in element if tag(item)==name),
+                None,
+                )
+        #end def child
+
+        def children(element,name):
+            """Return all child elements with a given name."""
+            if element is None:
+                return []
+            return [item for item in element if tag(item)==name]
+        #end def children
+
+        def element_path(element,*names):
+            """Follow a sequence of named children from an XML element."""
+            for name in names:
+                element = child(element,name)
+            return element
+        #end def element_path
+
+        def scalar(element,*,allow_text=False):
+            """Return scalar text as a bool, float, array, or optional string."""
+            text = '' if element is None else (element.text or '').strip()
+            if len(text)==0:
+                return None
+            if text.lower() in {'true','false'}:
+                return text.lower()=='true'
+            values = [parse_float(value) for value in text.split()]
+            if any(value is None for value in values):
+                return text if allow_text else None
+            if len(values)==1:
+                return values[0]
+            return np.array(values)
+        #end def scalar
+
+        def number(element):
+            """Return a numeric XML scalar, excluding booleans and arrays."""
+            value = scalar(element)
+            return value if isinstance(value,(float,np.floating)) else None
+        #end def number
+
+        def vector(element):
+            """Return numeric element text as a one-dimensional float array."""
+            value = scalar(element)
+            if value is None or isinstance(value,(str,bool)):
+                return None
+            return np.asarray(value,dtype=float).reshape(-1)
+        #end def vector
+
+        def structure(element):
+            """Return atoms, positions, and axes from an atomic-structure node."""
+            atom_nodes = children(child(element,'atomic_positions'),'atom')
+            positions  = [vector(atom) for atom in atom_nodes]
+            cell       = child(element,'cell')
+            axes       = [vector(child(cell,name)) for name in ('a1','a2','a3')]
+            valid_positions = (
+                len(positions)>0
+                and all(position is not None and len(position)>=3 for position in positions)
+                )
+            if valid_positions:
+                atoms = np.array(
+                    [atom.attrib.get('name','') for atom in atom_nodes],
+                    dtype = str,
+                    )
+                positions = np.array([position[:3] for position in positions])
+            else:
+                atoms     = None
+                positions = None
+            valid_axes = all(axis is not None and len(axis)>=3 for axis in axes)
+            axes = np.array([axis[:3] for axis in axes]) if valid_axes else None
+            return atoms,positions,axes
+        #end def structure
+
+        def stack(values):
+            """Stack finite arrays with a common shape, or return ``None``."""
+            if len(values)==0 or any(value is None for value in values):
+                return None
+            arrays = [np.asarray(value,dtype=float) for value in values]
+            shape  = arrays[0].shape
+            if any(array.shape!=shape or not np.isfinite(array).all() for array in arrays):
+                return None
+            return np.stack(arrays)
+        #end def stack
+
+        # Read general metadata and the initial/final atomic structures.
+        creator = element_path(root,'general_info','creator')
+        if creator is not None:
+            self.version = creator.attrib.get(
+                'VERSION',
+                creator.attrib.get('version'),
+                )
+        self.calculation = scalar(
+            element_path(root,'input','control_variables','calculation'),
+            allow_text = True,
+            )
+        output  = child(root,'output')
+        initial = element_path(root,'input','atomic_structure')
+        final   = child(output,'atomic_structure')
+        iatoms,ipos,iaxes      = structure(initial)
+        self.initial_atoms     = iatoms
+        self.initial_positions = ipos
+        self.initial_axes      = iaxes
+        fatoms,fpos,faxes = structure(final)
+        self.atoms        = fatoms
+        self.positions    = fpos
+        self.axes         = faxes
+        for name,structure_data in (('initial_alat',initial),('alat',final)):
+            if structure_data is not None:
+                self[name] = parse_float(structure_data.attrib.get('alat',''))
+        if self.axes is not None:
+            self.volume = abs(np.linalg.det(self.axes))
+
+        # Extract scalar output quantities and final force/stress tensors.
+        self.total_energy = number(element_path(output,'total_energy','etot'))
+        forces            = vector(child(output,'forces'))
+        stress            = vector(child(output,'stress'))
+        if forces is not None and len(forces)>0 and len(forces)%3==0:
+            self.forces = forces.reshape(-1,3)
+        if stress is not None and len(stress)==9:
+            self.stress = stress.reshape(3,3)
+
+        # Collect complete k-point records with matching band occupations.
+        band           = child(output,'band_structure')
+        spin_polarized = scalar(child(band,'lsda'))
+        self.spin_polarized = (
+            spin_polarized if isinstance(spin_polarized,bool) else None)
+        self.fermi_energy = number(child(band,'fermi_energy'))
+        kpoints = []
+        weights = []
+        eigs    = []
+        occs    = []
+        for record in children(band,'ks_energies'):
+            kpoint      = child(record,'k_point')
+            point       = vector(kpoint)
+            eigenvalues = vector(child(record,'eigenvalues'))
+            occupations = vector(child(record,'occupations'))
+            weight = None
+            if kpoint is not None:
+                weight = parse_float(kpoint.attrib.get('weight',''))
+            valid_record = (
+                point is not None
+                and len(point)>=3
+                and eigenvalues is not None
+                and occupations is not None
+                and len(eigenvalues)==len(occupations)
+                and weight is not None
+                )
+            if valid_record:
+                kpoints.append(point[:3])
+                weights.append(weight)
+                eigs.append(eigenvalues)
+                occs.append(occupations)
+        if len(kpoints)>0:
+            if self.spin_polarized:
+                # Group separate spin records by their common k-point.
+                groups = obj()
+                for point,weight,eigenvalues,occupation in zip(kpoints,weights,eigs,occs):
+                    key = tuple(np.round(point,12))
+                    if key not in groups:
+                        groups[key] = obj(
+                            point  = point,
+                            weight = weight,
+                            eigs   = [],
+                            occs   = [],
+                            )
+                    groups[key].eigs.append(eigenvalues)
+                    groups[key].occs.append(occupation)
+                records = list(groups.values())
+                if all(len(record.eigs)==2 for record in records):
+                    # Store one explicitly paired up/down record per k-point.
+                    eigenvalues = stack([stack(record.eigs) for record in records])
+                    occupations = stack([stack(record.occs) for record in records])
+                    if eigenvalues is not None and occupations is not None:
+                        self.kpoints_rel = np.array([record.point for record in records])
+                        self.kweights    = np.array([record.weight for record in records])
+                        self.eigenvalues = eigenvalues
+                        self.occupations = occupations
+                        return
+                # Accommodate schema variants with adjacent spin records.
+                eigenvalues = stack(eigs)
+                occupations = stack(occs)
+                if (
+                    eigenvalues is not None
+                    and occupations is not None
+                    and eigenvalues.shape==occupations.shape
+                    and eigenvalues.shape[1]%2==0
+                    ):
+                    self.kpoints_rel = np.array(kpoints)
+                    self.kweights    = np.array(weights)
+                    self.eigenvalues = eigenvalues.reshape(len(eigs),2,-1)
+                    self.occupations = occupations.reshape(len(occs),2,-1)
+                    return
+            # Store a consistent non-spin band table.
+            eigenvalues = stack(eigs)
+            occupations = stack(occs)
+            if eigenvalues is not None and occupations is not None and eigenvalues.shape==occupations.shape:
+                self.kpoints_rel = np.array(kpoints)
+                self.kweights    = np.array(weights)
+                self.eigenvalues = eigenvalues
+                self.occupations = occupations
+    #end def extract_results
+
+#end class PwscfXmlData
+
+
 class Pw2CasinoAnalyzer(DevBase):
     """Read kinetic energy reported by a PW2CASINO output file.
 
@@ -1004,6 +1385,26 @@ class PwscfAnalyzer(SimulationAnalyzer):
     analyze : bool, optional
         If ``True``, parse the available log, legacy XML, and requested
         PW2CASINO output during initialization.
+    source : {'both', 'xml', 'out'}, default='both'
+        Select both data sources, modern schema XML only, or text output only.
+        Legacy XML remains browse-only and is never used by query methods.
+    strict : bool, default=True
+        Require the selected source to exist unambiguously when analysis
+        begins. With ``source='both'``, at least one of modern XML or text
+        output must be available; either source may be absent. A supplied
+        input file and requested PW2CASINO file are also required. If
+        ``True``, the top-level calculation types discovered from parsed
+        input, XML, and text output must also agree. If ``False``, missing or
+        ambiguous files are skipped and calculation disagreements are retained
+        as a tuple.
+    required : str or iterable of str or None, optional
+        Query quantities whose absence should raise ``RuntimeError`` instead
+        of returning ``None``. With ``source='both'``, text output is parsed
+        only when at least one requested quantity remains unavailable after
+        XML parsing. An empty requirement set causes both sources to be
+        parsed.
+    md_only : bool, default=False
+        For molecular-dynamics text output, stop after parsing MD histories.
 
     Attributes
     ----------
@@ -1023,11 +1424,22 @@ class PwscfAnalyzer(SimulationAnalyzer):
     results_out : PwscfOutData or None
         Parsed PWSCF text-output data. It is ``None`` until analysis is
         performed.
-    results_xml : obj or None
-        Parsed legacy XML data. It remains ``None`` when legacy XML output is
-        absent or cannot be read.
+    results_xml : PwscfXmlData or obj or None
+        Parsed modern schema XML, or browse-only legacy XML when schema XML is
+        absent. It remains ``None`` when XML analysis is disabled or unavailable.
     pw2casino : Pw2CasinoAnalyzer or None
         Parsed PW2CASINO data when an auxiliary output file is requested.
+    calculation : str, tuple, or None
+        Reconciled calculation type. A string is stored when all known parsed
+        sources agree. Disagreement is represented by
+        ``(input_type, xml_type, output_type)``, with ``None`` in unavailable
+        or unparsed positions.
+    required : set of str
+        Validated query quantities subject to required-data behavior.
+    source_status : obj
+        Diagnostic input, modern-XML, and text-output states, such as
+        ``'parsed'``, ``'missing'``, ``'ambiguous'``, ``'excluded'``, or
+        ``'skipped'``.
 
     Methods
     -------
@@ -1061,14 +1473,18 @@ class PwscfAnalyzer(SimulationAnalyzer):
     relaxed_structure(units='A') : Structure or None
         Final relaxed structure in Angstrom (``'A'``) or bohr (``'B'``).
     forces(units='eV/A') : numpy.ndarray or None
-        Ionic-force history with shape ``(nsteps, natoms, 3)``. Available
-        units are ``'eV/A'``, ``'Ry/B'``, and ``'Ha/B'``.
+        Final ionic forces with shape ``(natoms, 3)``. Available units are
+        ``'eV/A'``, ``'Ry/B'``, and ``'Ha/B'``.
     stress(units='GPa') : numpy.ndarray or None
-        Stress-tensor history with shape ``(nsteps, 3, 3)``. Available units
-        are ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``, and
+        Final stress tensor with shape ``(3, 3)``. Available units are
+        ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``, and
         ``'atm'``, ``'eV/A^3'``, ``'Ha/Bohr^3'``, and ``'Ry/Bohr^3'``.
     pressure(units='GPa') : float or numpy.floating or None
         Final hydrostatic pressure in the units accepted by ``stress``.
+    require(*quantities)
+        Add query quantities to the required-data policy without parsing.
+    available(*quantities) : bool
+        Report whether every named quantity is currently queryable.
     make_movie(filename, filepath=None)
         Write the parsed relaxation trajectory as a tiled XYZ movie.
     plot_bandstructure(...)
@@ -1077,31 +1493,37 @@ class PwscfAnalyzer(SimulationAnalyzer):
     Raises
     ------
     FileNotFoundError
-        If a supplied path, input file, output file, or requested PW2CASINO
-        file does not exist.
+        During strict analysis, if a selected input, output, modern XML, or
+        requested PW2CASINO file does not exist.
     RuntimeError
         If a supplied file cannot be identified as input or output.
 
     Notes
     -----
-    Log output is parsed automatically, and legacy XML is retained when
-    present. Physical quantity methods use only the text-output results. A
-    query returns ``None`` when its quantity applies to the detected
-    calculation but was not parsed. Calling a query before analysis or for an
-    unsupported calculation raises ``RuntimeError``. Supplying unsupported
-    units raises ``ValueError``.
+    Modern schema XML is the primary source for query data, with text output
+    used as a field-by-field fallback. Legacy XML is browse-only. A query
+    returns ``None`` when applicable data was not parsed unless the quantity
+    is required. Calling a query before completed analysis or for a
+    definitively unsupported calculation raises ``RuntimeError``. Data that
+    is present is returned even when unusual for the reconciled calculation
+    type. Supplying unsupported units raises ``ValueError``.
 
     Initial structure, k-point, and electronic quantities apply to all
-    supported calculation modes. Relaxed structures apply only to ``relax``
-    and ``vc-relax``; forces, stress, and pressure apply to ``scf``,
-    ``relax``, and ``vc-relax``.
+    supported calculation modes. Relaxed structures apply to relaxation and
+    molecular-dynamics modes; forces, stress, and pressure apply to ``scf``,
+    relaxation, and molecular-dynamics modes.
     """
 
-    all_modes        = frozenset({'scf','nscf','relax','vc-relax'})
-    energy_modes     = all_modes
+    all_modes        = frozenset({'scf','nscf','bands','relax','vc-relax','md','vc-md'})
+    energy_modes     = frozenset({'scf','nscf','relax','vc-relax','md','vc-md'})
     electronic_modes = all_modes
-    relaxation_modes = frozenset({'relax','vc-relax'})
-    force_modes      = frozenset({'scf','relax','vc-relax'})
+    relaxation_modes = frozenset({'relax','vc-relax','md','vc-md'})
+    force_modes      = frozenset({'scf','relax','vc-relax','md','vc-md'})
+    quantity_names   = frozenset({
+        'initial_structure','energy','kpoints','kweights','eigenvalues',
+        'occupations','Ef','Evbm','Ecbm','band_gap','fractional_occs',
+        'relaxed_structure','forces','stress','pressure',
+        })
     pressure_units   = MappingProxyType({
         'Pa'   : 1.0,
         'bar'  : 1e5,
@@ -1115,27 +1537,36 @@ class PwscfAnalyzer(SimulationAnalyzer):
         })
 
 
-    def _require_supported(self,quantity,modes):
-        """Require analyzed output and a calculation supporting the quantity."""
-        if 'results_out' not in self or self.results_out is None:
-            msg = f'PWSCF quantity "{quantity}" is unavailable because output has not been analyzed'
-            raise RuntimeError(msg)
-        calculation = self.results_out.calculation
-        if calculation not in modes:
-            msg = f'PWSCF quantity "{quantity}" is not supported for calculation "{calculation}"'
-            raise RuntimeError(msg)
-    #end def _require_supported
-
-
     def initial_structure(self,units='A'):
-        """Return the initial ``Structure`` in Angstrom or bohr."""
-        self._require_supported('initial_structure',self.all_modes)
+        """Return the initial structure.
+
+        Parameters
+        ----------
+        units : {'A', 'B'}, default='A'
+            Requested length unit: Angstrom or bohr.
+
+        Returns
+        -------
+        Structure or None
+            Initial structure with ``axes`` and ``pos`` arrays of shape
+            ``(3, 3)`` and ``(natoms, 3)``, respectively, or ``None``.
+        """
         if units not in {'A','B'}:
             msg = 'initial_structure units must be one of: A, B'
             raise ValueError(msg)
-        if 'simulation_structure' in self and self.simulation_structure is not None:
+        self._require_analyzed('initial_structure')
+        xml = self._schema_results()
+        if xml is not None and xml.initial_atoms is not None and xml.initial_positions is not None and xml.initial_axes is not None:
+            structure = Structure(
+                axes    = np.asarray(xml.initial_axes,dtype=float),
+                elem    = np.asarray(xml.initial_atoms,dtype=str),
+                pos     = np.asarray(xml.initial_positions,dtype=float),
+                units   = 'B',
+                rescale = False,
+                )
+        elif 'simulation_structure' in self and self.simulation_structure is not None:
             structure = deepcopy(self.simulation_structure)
-        elif self.results_out.initial_structure_data is not None:
+        elif self.results_out is not None and self.results_out.initial_structure_data is not None:
             data = self.results_out.initial_structure_data
             structure = Structure(
                 axes    = np.asarray(data.axes,dtype=float),
@@ -1166,7 +1597,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             elif specifier=='crystal':
                 positions = np.dot(positions,axes)
             elif specifier!='bohr':
-                return None
+                return self._unavailable('initial_structure',self.all_modes)
             structure = Structure(
                 axes    = axes,
                 elem    = np.asarray(input_data.atomic_positions.atoms,dtype=str),
@@ -1175,33 +1606,64 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 rescale = False,
                 )
         else:
-            return None
+            return self._unavailable('initial_structure',self.all_modes)
         structure.change_units(units)
         return structure
     #end def initial_structure
 
 
     def energy(self,units='Ha'):
-        """Return the final total energy in eV, Hartree, or Rydberg."""
-        self._require_supported('energy',self.energy_modes)
+        """Return the final total energy.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='Ha'
+            Requested energy unit.
+
+        Returns
+        -------
+        float or None
+            Final total energy, or ``None`` if it was not reported.
+        """
         if units not in {'eV','Ha','Ry'}:
             msg = 'energy units must be one of: eV, Ha, Ry'
             raise ValueError(msg)
-        if 'E' in self.results_out and self.results_out.E is not None:
-            return convert(self.results_out.E,'Ry',units)
-        return None
+        self._require_analyzed('energy')
+        xml = self._schema_results()
+        if xml is not None and xml.total_energy is not None:
+            return float(convert(xml.total_energy,'Ha',units))
+        if self.results_out is not None and 'E' in self.results_out and self.results_out.E is not None:
+            return float(convert(self.results_out.E,'Ry',units))
+        return self._unavailable('energy',self.energy_modes)
     #end def energy
 
 
     def kpoints(self,units='B'):
-        """Return Cartesian k-points in inverse Angstrom or inverse bohr."""
-        self._require_supported('kpoints',self.all_modes)
+        """Return Cartesian k-points.
+
+        Parameters
+        ----------
+        units : {'A', 'B'}, default='B'
+            Reciprocal length unit, inverse Angstrom or inverse bohr.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Float array with shape ``(nkpoints, 3)``, or ``None``.
+        """
         if units not in {'A','B'}:
             msg = 'kpoints units must be one of: A, B'
             raise ValueError(msg)
+        self._require_analyzed('kpoints')
         kpoints = None
-        if (
-            self.results_out.kpoints_cart is not None
+        xml = self._schema_results()
+        if xml is not None and xml.kpoints_rel is not None:
+            alat = xml.alat if xml.alat is not None else xml.initial_alat
+            if alat is not None and alat>0:
+                kpoints = xml.kpoints_rel*2*np.pi/alat
+        if kpoints is None and (
+            self.results_out is not None
+            and self.results_out.kpoints_cart is not None
             and self.input is not None
             and 'system' in self.input
             ):
@@ -1213,25 +1675,501 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 scale = system.celldm[1]
             if scale is not None:
                 kpoints = self.results_out.kpoints_cart*2*np.pi/scale
-        if kpoints is None and self.results_out.kpoints_unit is not None:
-            structure = self.initial_structure('B')
+        if kpoints is None and self.results_out is not None and self.results_out.kpoints_unit is not None:
+            structure = self._query_value('initial_structure','B')
             if structure is not None:
                 kpoints = np.dot(self.results_out.kpoints_unit,structure.kaxes)
         if kpoints is None:
-            return None
+            return self._unavailable('kpoints',self.all_modes)
         return kpoints*convert(1.0,units,'B')
     #end def kpoints
 
 
     def kweights(self):
-        """Return dimensionless k-point weights, or ``None`` if unavailable."""
-        self._require_supported('kweights',self.all_modes)
-        return self.results_out.kweights
+        """Return k-point integration weights.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            One-dimensional float array of shape ``(nkpoints,)``, or ``None``.
+        """
+        self._require_analyzed('kweights')
+        xml = self._schema_results()
+        if xml is not None and xml.kweights is not None:
+            return xml.kweights
+        values = None if self.results_out is None else self.results_out.kweights
+        if values is None:
+            return self._unavailable('kweights',self.all_modes)
+        return values
     #end def kweights
+
+
+    def eigenvalues(self,units='eV'):
+        """Return Kohn--Sham eigenvalues.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='eV'
+            Requested energy unit.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Float array shaped ``(nkpoints, nbands)`` for non-spin runs or
+            ``(nkpoints, 2, nbands)`` for collinear spin runs, or ``None``.
+        """
+        if units not in {'eV','Ha','Ry'}:
+            msg = 'eigenvalues units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
+        self._require_analyzed('eigenvalues')
+        xml = self._schema_results()
+        values = None if xml is None else xml.eigenvalues
+        if values is not None:
+            return convert(values,'Ha',units)
+        values = self._log_band_values('eigs')
+        if values is None:
+            return self._unavailable('eigenvalues',self.electronic_modes)
+        return convert(values,'eV',units)
+    #end def eigenvalues
+
+
+    def occupations(self):
+        """Return Kohn--Sham occupations.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Dimensionless float array with the shape returned by
+            :meth:`eigenvalues`, or ``None``.
+        """
+        self._require_analyzed('occupations')
+        xml = self._schema_results()
+        if xml is not None and xml.occupations is not None:
+            return xml.occupations
+        values = self._log_band_values('occs')
+        if values is None:
+            return self._unavailable('occupations',self.electronic_modes)
+        return values
+    #end def occupations
+
+
+    def Ef(self,units='eV'):
+        """Return the final Fermi energy.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='eV'
+            Requested energy unit.
+
+        Returns
+        -------
+        float or None
+            Fermi energy, or ``None`` when unavailable.
+        """
+        if units not in {'eV','Ha','Ry'}:
+            msg = 'Ef units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
+        self._require_analyzed('Ef')
+        xml = self._schema_results()
+        if xml is not None and xml.fermi_energy is not None:
+            return float(convert(xml.fermi_energy,'Ha',units))
+        if self.results_out is not None and self.results_out.Ef is not None:
+            return float(convert(self.results_out.Ef,'eV',units))
+        return self._unavailable('Ef',self.electronic_modes)
+    #end def Ef
+
+
+    def Evbm(self,units='eV'):
+        """Return the valence-band maximum.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='eV'
+            Requested energy unit.
+
+        Returns
+        -------
+        float or None
+            Valence-band maximum, or ``None`` when band edges are unavailable.
+        """
+        if units not in {'eV','Ha','Ry'}:
+            msg = 'Evbm units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
+        self._require_analyzed('Evbm')
+        vbm,_ = self._schema_band_edges()
+        if vbm is not None:
+            return float(convert(vbm,'Ha',units))
+        bands = None if self.results_out is None else self.results_out.bands
+        if bands is not None and 'vbm' in bands:
+            return float(convert(bands.vbm.energy,'eV',units))
+        return self._unavailable('Evbm',self.electronic_modes)
+    #end def Evbm
+
+
+    def Ecbm(self,units='eV'):
+        """Return the conduction-band minimum.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='eV'
+            Requested energy unit.
+
+        Returns
+        -------
+        float or None
+            Conduction-band minimum, or ``None`` when unavailable.
+        """
+        if units not in {'eV','Ha','Ry'}:
+            msg = 'Ecbm units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
+        self._require_analyzed('Ecbm')
+        _,cbm = self._schema_band_edges()
+        if cbm is not None:
+            return float(convert(cbm,'Ha',units))
+        bands = None if self.results_out is None else self.results_out.bands
+        if bands is not None and 'cbm' in bands:
+            return float(convert(bands.cbm.energy,'eV',units))
+        return self._unavailable('Ecbm',self.electronic_modes)
+    #end def Ecbm
+
+
+    def band_gap(self,units='eV'):
+        """Return the fundamental band gap.
+
+        Parameters
+        ----------
+        units : {'eV', 'Ha', 'Ry'}, default='eV'
+            Requested energy unit.
+
+        Returns
+        -------
+        float or None
+            Conduction-minus-valence energy, or ``None`` when unavailable.
+        """
+        if units not in {'eV','Ha','Ry'}:
+            msg = 'band_gap units must be one of: eV, Ha, Ry'
+            raise ValueError(msg)
+        self._require_analyzed('band_gap')
+        vbm,cbm = self._schema_band_edges()
+        if vbm is not None and cbm is not None:
+            return float(convert(cbm-vbm,'Ha',units))
+        bands = None if self.results_out is None else self.results_out.bands
+        if bands is not None and 'vbm' in bands and 'cbm' in bands:
+            gap = bands.cbm.energy-bands.vbm.energy
+            return float(convert(gap,'eV',units))
+        return self._unavailable('band_gap',self.electronic_modes)
+    #end def band_gap
+
+
+    def fractional_occs(self,tol=1e-3):
+        """Determine whether any occupation is fractional.
+
+        Parameters
+        ----------
+        tol : float, default=1e-3
+            Absolute tolerance for identifying empty and full occupations.
+
+        Returns
+        -------
+        bool or None
+            ``True`` when any occupation is fractional, or ``None`` when the
+            occupation array is unavailable.
+        """
+        self._require_analyzed('fractional_occs')
+        occupations = self._query_value('occupations')
+        if occupations is None:
+            return self._unavailable('fractional_occs',self.electronic_modes)
+        empty = np.isclose(occupations,0.0,rtol=0.0,atol=tol)
+        full  = np.isclose(occupations,1.0,rtol=0.0,atol=tol)
+        return bool(np.any(~(empty|full)))
+    #end def fractional_occs
+
+
+    def relaxed_structure(self,units='A'):
+        """Return the final ionic structure.
+
+        Parameters
+        ----------
+        units : {'A', 'B'}, default='A'
+            Requested length unit: Angstrom or bohr.
+
+        Returns
+        -------
+        Structure or None
+            Final structure with axes ``(3, 3)`` and positions
+            ``(natoms, 3)``, or ``None``.
+        """
+        if units not in {'A','B'}:
+            msg = 'relaxed_structure units must be one of: A, B'
+            raise ValueError(msg)
+        self._require_analyzed('relaxed_structure')
+        xml = self._schema_results()
+        if xml is not None and xml.atoms is not None and xml.positions is not None and xml.axes is not None:
+            structure = Structure(
+                axes    = np.asarray(xml.axes,dtype=float),
+                elem    = np.asarray(xml.atoms,dtype=str),
+                pos     = np.asarray(xml.positions,dtype=float),
+                units   = 'B',
+                rescale = False,
+                )
+        elif (
+            self.results_out is not None
+            and 'relax_structures' in self.results_out
+            and self.results_out.relax_structures is not None
+            and len(self.results_out.relax_structures)>0
+            ):
+            structures = self.results_out.relax_structures
+            result     = structures[-1]
+            initial    = self._query_value('initial_structure','B')
+            axes       = result.axes if 'axes' in result else None
+            if axes is None and initial is not None:
+                axes = initial.axes
+            if axes is None:
+                return self._unavailable('relaxed_structure',self.relaxation_modes)
+            positions = np.asarray(result.positions,dtype=float)
+            position_units = result.position_units if 'position_units' in result else 'B'
+            if position_units=='crystal':
+                positions = np.dot(positions,axes)
+            elif position_units=='alat':
+                alat = result.alat if 'alat' in result else None
+                if alat is None:
+                    return self._unavailable('relaxed_structure',self.relaxation_modes)
+                positions *= alat
+            structure = Structure(
+                axes    = np.asarray(axes,dtype=float),
+                elem    = np.asarray(result.atoms,dtype=str),
+                pos     = positions,
+                units   = 'B',
+                rescale = False,
+                )
+        else:
+            return self._unavailable('relaxed_structure',self.relaxation_modes)
+        structure.change_units(units)
+        return structure
+    #end def relaxed_structure
+
+
+    def forces(self,units='eV/A'):
+        """Return final ionic forces.
+
+        Parameters
+        ----------
+        units : {'eV/A', 'Ry/B', 'Ha/B'}, default='eV/A'
+            Requested energy-per-length unit.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Float array of shape ``(natoms, 3)`` containing final Cartesian
+            forces, or ``None``.
+        """
+        if units not in {'eV/A','Ry/B','Ha/B'}:
+            msg = 'forces units must be one of: eV/A, Ry/B, Ha/B'
+            raise ValueError(msg)
+        self._require_analyzed('forces')
+        xml = self._schema_results()
+        values = None
+        source_energy = None
+        if xml is not None and xml.forces is not None:
+            values = xml.forces
+            source_energy = 'Ha'
+        if values is None:
+            values = None if self.results_out is None else self.results_out.forces
+            source_energy = 'Ry'
+        if values is None:
+            return self._unavailable('forces',self.force_modes)
+        energy_units,length_units = units.split('/')
+        factor                    = convert(1.0,source_energy,energy_units)/convert(1.0,'B',length_units)
+        values = np.asarray(values,dtype=float)
+        if values.ndim==3:
+            values = values[-1]
+        if values.ndim!=2 or values.shape[-1]!=3:
+            return self._unavailable('forces',self.force_modes)
+        return values*factor
+    #end def forces
+
+
+    def stress(self,units='GPa'):
+        """Return the final stress tensor.
+
+        Parameters
+        ----------
+        units : {'Pa', 'bar', 'kbar', 'Mbar', 'GPa', 'atm', 'eV/A^3', 'Ha/Bohr^3', 'Ry/Bohr^3'}, default='GPa'
+            Requested pressure or energy-density unit.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Float array of shape ``(3, 3)``, or ``None``.
+        """
+        if units not in self.pressure_units:
+            supported = ', '.join(sorted(self.pressure_units))
+            msg = f'stress units must be one of: {supported}'
+            raise ValueError(msg)
+        self._require_analyzed('stress')
+        xml = self._schema_results()
+        values = None
+        source_pressure = None
+        if xml is not None and xml.stress is not None:
+            values = np.asarray(xml.stress,dtype=float)
+            source_pressure = convert(1.0,'Ha','J')/convert(1.0,'B','m')**3
+        elif self.results_out is not None and self.results_out.stress is not None:
+            values = np.asarray(self.results_out.stress,dtype=float)
+            source_pressure = 1e8
+        if values is None:
+            return self._unavailable('stress',self.force_modes)
+        if values.ndim==3:
+            values = values[-1]
+        if values.shape!=(3,3):
+            return self._unavailable('stress',self.force_modes)
+        return values*source_pressure/self.pressure_units[units]
+    #end def stress
+
+
+    def pressure(self,units='GPa'):
+        """Return final hydrostatic pressure.
+
+        Parameters
+        ----------
+        units : {'Pa', 'bar', 'kbar', 'Mbar', 'GPa', 'atm', 'eV/A^3', 'Ha/Bohr^3', 'Ry/Bohr^3'}, default='GPa'
+            Requested pressure or energy-density unit.
+
+        Returns
+        -------
+        float or None
+            Trace of the final stress tensor divided by three, or ``None``.
+        """
+        if units not in self.pressure_units:
+            supported = ', '.join(sorted(self.pressure_units))
+            msg = f'pressure units must be one of: {supported}'
+            raise ValueError(msg)
+        self._require_analyzed('pressure')
+        stress = self._query_value('stress',units)
+        if stress is not None:
+            return float(np.trace(stress)/3.0)
+        if self.results_out is not None and self.results_out.pressure is not None:
+            return float(self.results_out.pressure*1e8/self.pressure_units[units])
+        return self._unavailable('pressure',self.force_modes)
+    #end def pressure
+
+
+    def _require_analyzed(self,quantity):
+        """Require completed analysis unless a private query is in progress."""
+        if self._query_depth>0:
+            return
+        if self.analysis_state!='analyzed':
+            msg = f'PWSCF quantity "{quantity}" is unavailable because output has not been analyzed'
+            raise RuntimeError(msg)
+    #end def _require_analyzed
+
+
+    def _unavailable(self,quantity,modes):
+        """Apply unsupported and required-quantity policy to absent data."""
+        if self._query_depth>0:
+            return None
+        calculation = self.calculation
+        if isinstance(calculation,str) and calculation not in modes:
+            msg = f'PWSCF quantity "{quantity}" is not supported for calculation "{calculation}"'
+            raise RuntimeError(msg)
+        if quantity in self.required:
+            msg = f'required PWSCF quantity "{quantity}" is not available'
+            raise RuntimeError(msg)
+        return None
+    #end def _unavailable
+
+
+    def _query_value(self,quantity,*args):
+        """Return a query value without applying public missing-data policy."""
+        self._query_depth += 1
+        try:
+            return getattr(self,quantity)(*args)
+        finally:
+            self._query_depth -= 1
+    #end def _query_value
+
+
+    def _validate_quantities(self,quantities):
+        """Validate quantity names atomically and return them as a tuple."""
+        names = tuple(quantities)
+        unknown = [
+            name for name in names
+            if not isinstance(name,str) or name not in self.quantity_names
+            ]
+        if len(unknown)>0:
+            names_text = ', '.join(repr(name) for name in unknown)
+            msg = f'unknown PWSCF quantity name(s): {names_text}'
+            raise ValueError(msg)
+        return names
+    #end def _validate_quantities
+
+
+    def require(self,*quantities):
+        """Add query quantities to the required-data policy.
+
+        Parameters
+        ----------
+        *quantities : str
+            Case-sensitive names from :attr:`quantity_names`.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        This method only updates :attr:`required`. It does not parse files,
+        reanalyze existing results, or check current availability.
+        """
+        names = self._validate_quantities(quantities)
+        self.required.update(names)
+    #end def require
+
+
+    def available(self,*quantities):
+        """Return whether all named query quantities are available.
+
+        Parameters
+        ----------
+        *quantities : str
+            Case-sensitive names from :attr:`quantity_names`.
+
+        Returns
+        -------
+        bool
+            ``True`` only when every named query returns a value other than
+            ``None``. With no names, returns ``True``.
+
+        Raises
+        ------
+        RuntimeError
+            If analysis has not completed.
+        ValueError
+            If any quantity name is invalid.
+
+        Notes
+        -----
+        Required-data and calculation-applicability errors are suppressed for
+        this check. The method never parses or reanalyzes data.
+        """
+        names = self._validate_quantities(quantities)
+        if self.analysis_state!='analyzed':
+            raise RuntimeError('PWSCF output has not been analyzed')
+        return all(self._query_value(name) is not None for name in names)
+    #end def available
+
+
+    def _schema_results(self):
+        """Return modern XML results, excluding browse-only legacy XML."""
+        if 'results_xml' in self and isinstance(self.results_xml,PwscfXmlData):
+            return self.results_xml
+        return None
+    #end def _schema_results
 
 
     def _log_band_values(self,name):
         """Return complete k-point-major band values from text output."""
+        if self.results_out is None:
+            return None
         bands = self.results_out.bands
         if bands is None:
             return None
@@ -1259,179 +2197,103 @@ class PwscfAnalyzer(SimulationAnalyzer):
     #end def _log_band_values
 
 
-    def eigenvalues(self,units='eV'):
-        """Return k-point-major eigenvalues in eV, Hartree, or Rydberg."""
-        self._require_supported('eigenvalues',self.electronic_modes)
-        if units not in {'eV','Ha','Ry'}:
-            msg = 'eigenvalues units must be one of: eV, Ha, Ry'
-            raise ValueError(msg)
-        values = self._log_band_values('eigs')
-        if values is None:
-            return None
-        return convert(values,'eV',units)
-    #end def eigenvalues
+    def _schema_band_edges(self):
+        """Return schema-XML valence and conduction edges in Hartree."""
+        xml = self._schema_results()
+        if xml is None or xml.eigenvalues is None or xml.occupations is None:
+            return None,None
+        eigenvalues = np.asarray(xml.eigenvalues,dtype=float)
+        occupations = np.asarray(xml.occupations,dtype=float)
+        if eigenvalues.shape!=occupations.shape:
+            return None,None
+        occupied = occupations>0.5
+        unoccupied = occupations<0.5
+        if not occupied.any() or not unoccupied.any():
+            return None,None
+        return np.max(eigenvalues[occupied]),np.min(eigenvalues[unoccupied])
+    #end def _schema_band_edges
 
 
-    def occupations(self):
-        """Return the dimensionless k-point-major occupation array."""
-        self._require_supported('occupations',self.electronic_modes)
-        return self._log_band_values('occs')
-    #end def occupations
+    def _schema_file(self):
+        """Resolve the modern schema file and report discovery status."""
+        if self.input is not None and 'control' in self.input:
+            control = self.input.control
+            if 'outdir' in control and 'prefix' in control:
+                savedir = f'{control.prefix}.save'
+                filepath = os.path.join(
+                    self.path,
+                    control.outdir,
+                    savedir,
+                    'data-file-schema.xml',
+                    )
+                status = 'found' if os.path.isfile(filepath) else 'missing'
+                return filepath,status
+        candidates = sorted(set(
+            glob(os.path.join(self.path,'*.save','data-file-schema.xml'))
+            + glob(os.path.join(self.path,'*','*.save','data-file-schema.xml'))
+            ))
+        if len(candidates)==1:
+            return candidates[0],'found'
+        if len(candidates)>1:
+            return candidates,'ambiguous'
+        return None,'missing'
+    #end def _schema_file
 
 
-    def Ef(self,units='eV'):
-        """Return the final Fermi energy in eV, Hartree, or Rydberg."""
-        self._require_supported('Ef',self.electronic_modes)
-        if units not in {'eV','Ha','Ry'}:
-            msg = 'Ef units must be one of: eV, Ha, Ry'
-            raise ValueError(msg)
-        if self.results_out.Ef is not None:
-            return convert(self.results_out.Ef,'eV',units)
-        return None
-    #end def Ef
-
-
-    def Evbm(self,units='eV'):
-        """Return the final valence-band maximum in selected energy units."""
-        self._require_supported('Evbm',self.electronic_modes)
-        if units not in {'eV','Ha','Ry'}:
-            msg = 'Evbm units must be one of: eV, Ha, Ry'
-            raise ValueError(msg)
-        bands = self.results_out.bands
-        if bands is not None and 'vbm' in bands:
-            return convert(bands.vbm.energy,'eV',units)
-        return None
-    #end def Evbm
-
-
-    def Ecbm(self,units='eV'):
-        """Return the final conduction-band minimum in selected energy units."""
-        self._require_supported('Ecbm',self.electronic_modes)
-        if units not in {'eV','Ha','Ry'}:
-            msg = 'Ecbm units must be one of: eV, Ha, Ry'
-            raise ValueError(msg)
-        bands = self.results_out.bands
-        if bands is not None and 'cbm' in bands:
-            return convert(bands.cbm.energy,'eV',units)
-        return None
-    #end def Ecbm
-
-
-    def band_gap(self,units='eV'):
-        """Return the fundamental band gap in eV, Hartree, or Rydberg."""
-        self._require_supported('band_gap',self.electronic_modes)
-        if units not in {'eV','Ha','Ry'}:
-            msg = 'band_gap units must be one of: eV, Ha, Ry'
-            raise ValueError(msg)
-        bands = self.results_out.bands
-        if bands is not None and 'vbm' in bands and 'cbm' in bands:
-            gap = bands.cbm.energy-bands.vbm.energy
-            return convert(gap,'eV',units)
-        return None
-    #end def band_gap
-
-
-    def fractional_occs(self,tol=1e-3):
-        """Whether any occupation differs from empty or full by over ``tol``."""
-        self._require_supported('fractional_occs',self.electronic_modes)
-        occupations = self.occupations()
-        if occupations is None:
-            return None
-        empty = np.isclose(occupations,0.0,rtol=0.0,atol=tol)
-        full  = np.isclose(occupations,1.0,rtol=0.0,atol=tol)
-        return bool(np.any(~(empty|full)))
-    #end def fractional_occs
-
-
-    def relaxed_structure(self,units='A'):
-        """Return the final relaxed ``Structure`` in Angstrom or bohr."""
-        self._require_supported('relaxed_structure',self.relaxation_modes)
-        if units not in {'A','B'}:
-            msg = 'relaxed_structure units must be one of: A, B'
-            raise ValueError(msg)
-        if (
-            'relax_structures' in self.results_out
-            and self.results_out.relax_structures is not None
-            and len(self.results_out.relax_structures)>0
-            ):
-            structures = self.results_out.relax_structures
-            result     = structures[-1]
-            initial    = self.initial_structure('B')
-            axes       = result.axes if 'axes' in result else None
-            if axes is None and initial is not None:
-                axes = initial.axes
-            if axes is None:
-                return None
-            positions = np.asarray(result.positions,dtype=float)
-            position_units = result.position_units if 'position_units' in result else 'B'
-            if position_units=='crystal':
-                positions = np.dot(positions,axes)
-            elif position_units=='alat':
-                alat = result.alat if 'alat' in result else None
-                if alat is None:
-                    return None
-                positions *= alat
-            structure = Structure(
-                axes    = np.asarray(axes,dtype=float),
-                elem    = np.asarray(result.atoms,dtype=str),
-                pos     = positions,
-                units   = 'B',
-                rescale = False,
+    def _output_file(self):
+        """Resolve the text-output file and report discovery status."""
+        if self.outfile_name is not None:
+            filepath = os.path.join(self.path,self.outfile_name)
+            status = 'found' if os.path.isfile(filepath) else 'missing'
+            return filepath,status
+        candidates = sorted(glob(os.path.join(self.path,'*.out')))
+        if self.pw2c_outfile_name is not None:
+            auxiliary = os.path.abspath(
+                os.path.join(self.path,self.pw2c_outfile_name),
                 )
-        else:
-            return None
-        structure.change_units(units)
-        return structure
-    #end def relaxed_structure
+            candidates = [
+                path for path in candidates
+                if os.path.abspath(path)!=auxiliary
+                ]
+        if len(candidates)==1:
+            return candidates[0],'found'
+        if len(candidates)>1:
+            return candidates,'ambiguous'
+        return None,'missing'
+    #end def _output_file
 
 
-    def forces(self,units='eV/A'):
-        """Return ionic forces in ``eV/A``, ``Ry/B``, or ``Ha/B``."""
-        self._require_supported('forces',self.force_modes)
-        if units not in {'eV/A','Ry/B','Ha/B'}:
-            msg = 'forces units must be one of: eV/A, Ry/B, Ha/B'
-            raise ValueError(msg)
-        values = self.results_out.forces
-        if values is None:
-            return None
-        energy_units,length_units = units.split('/')
-        factor                    = convert(1.0,'Ry',energy_units)/convert(1.0,'B',length_units)
-        return values*factor
-    #end def forces
-
-
-    def stress(self,units='GPa'):
-        """Return the stress-tensor history in selected pressure units."""
-        self._require_supported('stress',self.force_modes)
-        if units not in self.pressure_units:
-            supported = ', '.join(sorted(self.pressure_units))
-            msg = f'stress units must be one of: {supported}'
-            raise ValueError(msg)
-        values = None
-        if self.results_out.stress is not None:
-            values = np.asarray(self.results_out.stress,dtype=float)
-            if values.ndim!=3 or values.shape[1:]!=(3,3):
+    def _set_calculation(self):
+        """Reconcile calculation types from the input, XML, and output."""
+        def normalized(value):
+            if value is None:
                 return None
-        if values is None:
-            return None
-        return values*1e8/self.pressure_units[units]
-    #end def stress
+            return str(value).strip().lower().replace('_','-')
+        #end def normalized
 
-
-    def pressure(self,units='GPa'):
-        """Return the final hydrostatic pressure in selected pressure units."""
-        self._require_supported('pressure',self.force_modes)
-        if units not in self.pressure_units:
-            supported = ', '.join(sorted(self.pressure_units))
-            msg = f'pressure units must be one of: {supported}'
-            raise ValueError(msg)
-        stress = self.stress(units)
-        if stress is not None and len(stress)>0:
-            return np.trace(stress[-1])/3.0
-        if self.results_out.pressure is not None:
-            return self.results_out.pressure*1e8/self.pressure_units[units]
-        return None
-    #end def pressure
+        input_calculation = None
+        if self.input is not None and 'control' in self.input:
+            control = self.input.control
+            if 'calculation' in control:
+                input_calculation = control.calculation
+        xml = self._schema_results()
+        xml_calculation = None if xml is None else xml.calculation
+        out_calculation = (
+            None if self.results_out is None else self.results_out.calculation
+            )
+        calculations = tuple(normalized(value) for value in (
+            input_calculation,
+            xml_calculation,
+            out_calculation,
+            ))
+        known = [value for value in calculations if value is not None]
+        if len(known)==0:
+            self.calculation = None
+        elif len(set(known))==1:
+            self.calculation = known[0]
+        else:
+            self.calculation = calculations
+    #end def _set_calculation
 
 
     def __init__(
@@ -1441,9 +2303,51 @@ class PwscfAnalyzer(SimulationAnalyzer):
         outfile_name      = None,
         pw2c_outfile_name = None,
         *,
-        analyze      = False,
+        analyze           = False,
+        source            = 'both',
+        strict      = True,
+        required          = None,
+        md_only           = False,
         ):
         """Initialize an analyzer for a PWSCF simulation or output path."""
+        if source not in {'both','xml','out'}:
+            msg = "source must be one of: both, xml, out"
+            raise ValueError(msg)
+        if not isinstance(strict,bool):
+            raise TypeError('strict must be a bool')
+        if required is None:
+            required = ()
+        elif isinstance(required,str):
+            required = (required,)
+        else:
+            try:
+                required = tuple(required)
+            except TypeError as error:
+                raise TypeError('required must be a quantity name or iterable') from error
+
+        self.path              = None
+        self.abspath           = None
+        self.infile_name       = infile_name
+        self.outfile_name      = outfile_name
+        self.pw2c_outfile_name = pw2c_outfile_name
+        self.input             = None
+        self.results_out       = None
+        self.results_xml       = None
+        self.pw2casino         = None
+        self.calculation       = None
+        self.source            = source
+        self.strict      = strict
+        self.required          = set()
+        self.md_only           = md_only
+        self.analysis_state    = 'not_analyzed'
+        self.source_status     = obj(
+            input = 'not_analyzed',
+            xml   = 'not_analyzed',
+            out   = 'not_analyzed',
+            )
+        self._query_depth      = 0
+        self.require(*required)
+
         if isinstance(arg0,Simulation):
             sim                       = arg0
             path                      = sim.locdir
@@ -1452,12 +2356,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
             self.simulation_structure = sim.system.structure
         elif arg0 is not None:
             path = path_string(arg0)
-            if not os.path.exists(path):
-                msg = (
-                    'path to QE data does not exist\n'
-                    f'path provided: {path}'
-                    )
-                raise FileNotFoundError(msg)
             if os.path.isfile(path):
                 filepath      = path
                 path,filename = os.path.split(filepath)
@@ -1471,32 +2369,23 @@ class PwscfAnalyzer(SimulationAnalyzer):
                         f'file provided: {filepath}'
                         )
                     raise RuntimeError(msg)
+            elif not os.path.exists(path) and path.endswith(('.in','.out')):
+                filepath      = path
+                path,filename = os.path.split(filepath)
+                if filename.endswith('.in'):
+                    infile_name = filename
+                else:
+                    outfile_name = filename
             if outfile_name is None and infile_name is not None:
-                outfile_name = f"{infile_name.rsplit('.',1)[0]}.out"
+                infile_stem  = infile_name.rsplit('.',1)[0]
+                outfile_name = f'{infile_stem}.out'
         else:
             return
-
-        inp = None
-        if infile_name is not None:
-            infile = os.path.join(path,infile_name)
-            if os.path.isfile(infile):
-                inp = PwscfInput(infile)
-            else:
-                msg = (
-                    'PWSCF input file is not available\n'
-                    f'file not found: {infile}'
-                    )
-                raise FileNotFoundError(msg)
-
         self.infile_name       = infile_name
         self.outfile_name      = outfile_name
         self.pw2c_outfile_name = pw2c_outfile_name
         self.path              = path
         self.abspath           = os.path.abspath(path)
-        self.input             = inp
-        self.results_out       = None
-        self.results_xml       = None
-        self.pw2casino         = None
         if analyze:
             self.analyze()
     #end def __init__
@@ -1507,44 +2396,165 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.results_out = None
         self.results_xml = None
         self.pw2casino   = None
-        if (
-            'path' not in self
-            or 'outfile_name' not in self
-            or self.outfile_name is None
-            ):
+        self.calculation = None
+        self.analysis_state = 'analyzing'
+        self.source_status = obj(
+            input = 'omitted' if self.infile_name is None else 'missing',
+            xml   = 'excluded' if self.source=='out' else 'missing',
+            out   = 'excluded' if self.source=='xml' else 'missing',
+            )
+        if self.path is None:
+            self.analysis_state = 'not_analyzed'
             msg = 'PWSCF output file name is not available'
             raise RuntimeError(msg)
-        outfile = os.path.join(self.path,self.outfile_name)
-        if not os.path.isfile(outfile):
-            msg = (
-                'PWSCF output file is not available\n'
-                f'file not found: {outfile}'
-                )
-            raise FileNotFoundError(msg)
-        calculation = None
-        if (
-            self.input is not None
-            and 'control' in self.input
-            and 'calculation' in self.input.control
-            ):
-            calculation = self.input.control.calculation
-        self.results_out = PwscfOutData(outfile,calculation)
-        self.analyze_xml()
-        if self.pw2c_outfile_name is not None:
-            filepath = os.path.join(self.path,self.pw2c_outfile_name)
-            if not os.path.isfile(filepath):
-                msg = (
-                    'PW2CASINO output file is not available\n'
-                    f'file not found: {filepath}'
+        try:
+            self.input = None
+            errors = []
+            if self.infile_name is not None:
+                infile = os.path.join(self.path,self.infile_name)
+                if os.path.isfile(infile):
+                    self.input = PwscfInput(infile)
+                    self.source_status.input = 'parsed'
+                elif self.strict:
+                    errors.append(
+                        'PWSCF input file is not available\n'
+                        f'file not found: {infile}'
+                        )
+
+            schema_file,schema_status = self._schema_file()
+            output_file,output_status = self._output_file()
+            if self.source in {'both','xml'}:
+                self.source_status.xml = schema_status
+            if self.source in {'both','out'}:
+                self.source_status.out = output_status
+            if self.strict:
+                if self.source=='xml' and schema_status=='missing':
+                    errors.append('PWSCF schema XML file is not available')
+                elif self.source=='out' and output_status=='missing':
+                    errors.append('PWSCF output file is not available')
+                elif (
+                    self.source=='both'
+                    and schema_status=='missing'
+                    and output_status=='missing'
+                    ):
+                    errors.append(
+                        'PWSCF schema XML file and output file are not available'
+                        )
+                if self.source in {'both','xml'} and schema_status=='ambiguous':
+                    paths = '\n'.join(schema_file)
+                    errors.append(f'multiple PWSCF schema XML files were found\n{paths}')
+                if self.source in {'both','out'} and output_status=='ambiguous':
+                    paths = '\n'.join(output_file)
+                    errors.append(f'multiple PWSCF output files were found\n{paths}')
+            auxiliary = None
+            if self.pw2c_outfile_name is not None:
+                auxiliary = os.path.join(self.path,self.pw2c_outfile_name)
+                if not os.path.isfile(auxiliary):
+                    if self.strict:
+                        errors.append(
+                            'PW2CASINO output file is not available\n'
+                            f'file not found: {auxiliary}'
+                            )
+                    auxiliary = None
+            if len(errors)>0:
+                message = '\n\n'.join(errors)
+                ambiguous = any('multiple ' in error for error in errors)
+                error_type = RuntimeError if ambiguous else FileNotFoundError
+                raise error_type(message)
+
+            if self.source in {'both','xml'}:
+                if schema_status=='found':
+                    self.analyze_xml(schema_file)
+                    self.source_status.xml = (
+                        'parsed' if self._schema_results() is not None
+                        else 'parse_failed'
+                        )
+                else:
+                    # Legacy XML remains browse-only and does not change the
+                    # modern XML resolution status.
+                    self.analyze_xml(discover=False)
+            self._set_calculation()
+
+            parse_output = self.source=='out'
+            if self.source=='both':
+                parse_output = len(self.required)==0
+                if not parse_output:
+                    parse_output = not all(
+                        self._query_value(name) is not None
+                        for name in self.required
+                        )
+            if parse_output and output_status=='found':
+                self.results_out = PwscfOutData(
+                    output_file,
+                    md_only = self.md_only,
                     )
-                raise FileNotFoundError(msg)
-            self.pw2casino = Pw2CasinoAnalyzer(filepath)
+                self.source_status.out = 'parsed'
+            elif self.source=='both' and output_status=='found':
+                self.source_status.out = 'skipped'
+            self._set_calculation()
+            calculation_types = self.calculation
+            if isinstance(calculation_types,tuple):
+                input_type,xml_type,out_type = calculation_types
+                known_types = {
+                    calculation_type
+                    for calculation_type in calculation_types
+                    if calculation_type is not None
+                    }
+                outer_types = {'relax','vc-relax','md','vc-md'}
+                if known_types & outer_types:
+                    # SCF cycles are encapsulated within outer ionic runs and
+                    # do not represent a conflicting calculation type.
+                    known_types.discard('scf')
+            else:
+                known_types = set()
+            if self.strict and len(known_types)>1:
+                msg = (
+                    'PWSCF top-level calculation types disagree.\n'
+                    f'input: {input_type}\n'
+                    f'xml: {xml_type}\n'
+                    f'output: {out_type}'
+                    )
+                raise RuntimeError(msg)
+
+            if auxiliary is not None:
+                self.pw2casino = Pw2CasinoAnalyzer(auxiliary)
+            self.analysis_state = 'analyzed'
+        except Exception:
+            self.analysis_state = 'not_analyzed'
+            raise
     #end def analyze
 
 
-    def analyze_xml(self):
-        """Locate and parse legacy PWscf XML output."""
+    def analyze_xml(self,schema_file=None,*,discover=True):
+        """Locate schema XML first, falling back to legacy PWscf XML."""
         self.results_xml = None
+
+        if (
+            discover
+            and schema_file is None
+            and self.input is not None
+            and 'control' in self.input
+            ):
+            control = self.input.control
+            if 'outdir' in control and 'prefix' in control:
+                savedir = f'{control.prefix}.save'
+                candidate = os.path.join(
+                    self.path,
+                    control.outdir,
+                    savedir,
+                    'data-file-schema.xml',
+                    )
+                if os.path.isfile(candidate):
+                    schema_file = candidate
+        if discover and schema_file is None:
+            candidates = sorted(set(glob(os.path.join(self.path,'*.save','data-file-schema.xml')) + glob(os.path.join(self.path,'*','*.save','data-file-schema.xml'))))
+            if len(candidates)==1:
+                schema_file = candidates[0]
+        if schema_file is not None:
+            results = PwscfXmlData(schema_file)
+            if not results.parse_failed:
+                self.results_xml = results
+                return
 
         legacy_file = None
         legacy_dir  = None
@@ -1572,9 +2582,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 legacy_dir  = os.path.dirname(legacy_file)
         if legacy_file is None:
             return
-        data = read_qexml(legacy_file)
-        self.results_xml = obj(data=None,kpoints=None,failed=False)
-        self.analyze_legacy_xml(data,legacy_dir)
+        try:
+            data = read_qexml(legacy_file)
+            self.results_xml = obj(data=None,kpoints=None,failed=False)
+            self.analyze_legacy_xml(data,legacy_dir)
+        except Exception:  # noqa: BLE001
+            self.results_xml = None
+            return
         if self.results_xml.failed:
             self.results_xml = None
     #end def analyze_xml
@@ -1627,6 +2641,32 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     kp.down = spin
         self.results_xml.update(data=data,kpoints=kpoints)
     #end def analyze_legacy_xml
+
+
+    def md_statistics(self,equil=None):
+        """Return summary statistics for parsed molecular-dynamics histories."""
+        if self.results_out is None or 'md_data' not in self.results_out:
+            return None
+        return self.results_out.md_statistics(equil)
+    #end def md_statistics
+
+
+    def md_plots(self,*,show=True):
+        """Plot molecular-dynamics energy, temperature, and pressure histories."""
+        if self.results_out is None or 'md_data' not in self.results_out or self.results_out.md_data is None:
+            return None
+        import matplotlib.pyplot as plt
+        md = self.results_out.md_data
+        fig,axes = plt.subplots(3,1,sharex=True)
+        axes[0].plot(md.time,md.total_energy-md.total_energy[0],label='Etot')
+        axes[0].plot(md.time,md.kinetic_energy-md.kinetic_energy[0],label='Ekin')
+        axes[0].plot(md.time,md.potential_energy-md.potential_energy[0],label='Epot')
+        axes[0].set_ylabel('E (Ry)'); axes[0].legend()
+        axes[1].plot(md.time,md.temperature); axes[1].set_ylabel('T (K)')
+        axes[2].plot(md.time,md.pressure); axes[2].set_ylabel('P (kbar)'); axes[2].set_xlabel('time (ps)')
+        if show: plt.show()
+        return fig
+    #end def md_plots
 
 
     def make_movie(self,filename,filepath=None):

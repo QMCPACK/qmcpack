@@ -4,6 +4,89 @@ from . import TEST_DIR, NexusTestOrder
 
 pytestmark = pytest.mark.order(NexusTestOrder.PWSCF_ANALYZER)
 
+PWSCF_ANALYZER_FIXTURES = TEST_DIR/'test_pwscf_analyzer_files'
+SCHEMA_FIXTURES = tuple(sorted(
+    PWSCF_ANALYZER_FIXTURES.rglob('data-file-schema.xml'),
+    ))
+TRIPLE_SOURCE_CASES = (
+    (
+        'scf',
+        'qe_7_0/high/scf',
+        (
+            'initial_structure','energy','kpoints','kweights','eigenvalues',
+            'occupations','fractional_occs','forces','stress','pressure',
+            ),
+        ),
+    (
+        'nscf',
+        'qe_7_0/high/nscf',
+        (
+            'initial_structure','kpoints','kweights','eigenvalues',
+            'occupations','Evbm','Ecbm','band_gap','fractional_occs',
+            ),
+        ),
+    (
+        'relax',
+        'qe_7_0/high/relax',
+        (
+            'initial_structure','energy','kpoints','kweights','eigenvalues',
+            'occupations','fractional_occs','relaxed_structure','forces',
+            'stress','pressure',
+            ),
+        ),
+    (
+        'vc-relax',
+        'qe_7_0/high/vc-relax',
+        (
+            'initial_structure','energy','kweights','eigenvalues',
+            'occupations','fractional_occs','relaxed_structure','forces',
+            'stress','pressure',
+            ),
+        ),
+    (
+        'spin',
+        'qe_7_6/supplemental/cbn_spin',
+        (
+            'initial_structure','energy','kpoints','kweights','eigenvalues',
+            'occupations','Ef','Evbm','Ecbm','band_gap','fractional_occs',
+            'forces','stress','pressure',
+            ),
+        ),
+    )
+
+
+def write_input(directory,calculation='scf',prefix='pwscf',outdir='.'):
+    """Write a minimal PWSCF input used by analyzer policy tests."""
+    infile = directory/'pwscf.in'
+    infile.write_text(
+        "&CONTROL\n"
+        f"  calculation = '{calculation}'\n"
+        f"  prefix = '{prefix}'\n"
+        f"  outdir = '{outdir}'\n"
+        "/\n"
+        )
+    return infile
+#end def write_input
+
+
+def write_schema(directory,calculation='scf',energy=-1.0,prefix='pwscf'):
+    """Write a minimal modern QE schema file and return its path."""
+    savedir = directory/f'{prefix}.save'
+    savedir.mkdir(parents=True,exist_ok=True)
+    schema_file = savedir/'data-file-schema.xml'
+    schema_file.write_text(
+        '<espresso>\n'
+        '  <input><control_variables>'
+        f'<calculation>{calculation}</calculation>'
+        '</control_variables></input>\n'
+        '  <output><total_energy>'
+        f'<etot>{energy}</etot>'
+        '</total_energy></output>\n'
+        '</espresso>\n'
+        )
+    return schema_file
+#end def write_schema
+
 
 @pytest.mark.parametrize(
     argnames='text,expected',
@@ -71,10 +154,17 @@ def test_fermi_energy_rejects(tmp_path,text):
 
 def test_empty_init():
     from .. import pwscf_analyzer as pa_module
-    from ..pwscf_analyzer import Pw2CasinoAnalyzer, PwscfAnalyzer, PwscfOutData
+    from ..pwscf_analyzer import (
+        Pw2CasinoAnalyzer,
+        PwscfAnalyzer,
+        PwscfOutData,
+        PwscfXmlData,
+    )
 
     pa = PwscfAnalyzer()
-    assert(len(pa)==0)
+    assert(pa.source=='both')
+    assert(pa.strict)
+    assert(pa.required==set())
     with pytest.raises(
         RuntimeError,
         match=r'PWSCF output file name is not available',
@@ -104,8 +194,129 @@ def test_empty_init():
     assert(not hasattr(PwscfAnalyzer,'analyze_schema_xml'))
     assert(callable(Pw2CasinoAnalyzer))
     assert(not hasattr(Pw2CasinoAnalyzer,'read'))
-    assert(not hasattr(pa_module,'PwscfXmlData'))
+    assert(pa_module.PwscfXmlData is PwscfXmlData)
 #end def test_empty_init
+
+
+@pytest.mark.parametrize(
+    argnames='schema_file',
+    argvalues=SCHEMA_FIXTURES,
+    ids=lambda path:str(path.relative_to(PWSCF_ANALYZER_FIXTURES)),
+    )
+def test_all_schema_fixtures_are_parsed(schema_file):
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
+
+    fixture_path = schema_file.parent
+    while (
+        fixture_path!=PWSCF_ANALYZER_FIXTURES
+        and not (fixture_path/'pwscf.in').is_file()
+        ):
+        fixture_path = fixture_path.parent
+    assert((fixture_path/'pwscf.in').is_file())
+
+    analyzer = PwscfAnalyzer(
+        fixture_path,
+        'pwscf.in',
+        analyze = True,
+        source = 'xml',
+        )
+    selected,status = analyzer._schema_file()
+    assert(status=='found')
+    assert(schema_file.samefile(selected))
+    assert(isinstance(analyzer.results_xml,PwscfXmlData))
+    assert(analyzer.source_status.xml=='parsed')
+#end def test_all_schema_fixtures_are_parsed
+
+
+@pytest.mark.parametrize(
+    argnames='case,relative_path,quantities',
+    argvalues=TRIPLE_SOURCE_CASES,
+    ids=[case[0] for case in TRIPLE_SOURCE_CASES],
+    )
+def test_query_agreement_across_sources(case,relative_path,quantities):
+    import numpy as np
+
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
+    from ..structure import Structure
+
+    fixture_path = PWSCF_ANALYZER_FIXTURES/relative_path
+    analyzers = {
+        source:PwscfAnalyzer(
+            fixture_path,
+            'pwscf.in',
+            'pwscf.out',
+            analyze = True,
+            source = source,
+            )
+        for source in ('both','xml','out')
+        }
+    both = analyzers['both']
+    xml  = analyzers['xml']
+    out  = analyzers['out']
+
+    assert(isinstance(both.results_xml,PwscfXmlData))
+    assert(both.results_out is not None)
+    assert(isinstance(xml.results_xml,PwscfXmlData))
+    assert(xml.results_out is None)
+    assert(out.results_xml is None)
+    assert(out.results_out is not None)
+    assert(both.calculation==xml.calculation==out.calculation)
+
+    tolerances = {
+        'initial_structure' : 1e-7,
+        'relaxed_structure' : 1e-7,
+        'energy'            : 1e-7,
+        'kpoints'           : 1e-7,
+        'kweights'          : 1e-7,
+        'eigenvalues'       : 1e-4,
+        'occupations'       : 1e-10,
+        'Ef'                : 1e-4,
+        'Evbm'              : 1e-4,
+        'Ecbm'              : 1e-4,
+        'band_gap'          : 1e-4,
+        'forces'            : 1e-5,
+        'stress'            : 1e-3,
+        'pressure'          : 1e-3,
+        }
+
+    for quantity in quantities:
+        assert(all(
+            analyzer.available(quantity)
+            for analyzer in analyzers.values()
+            )), f'{case}: {quantity} is not available from every source'
+        values = {
+            source:getattr(analyzer,quantity)()
+            for source,analyzer in analyzers.items()
+            }
+        both_value = values['both']
+        xml_value  = values['xml']
+        out_value  = values['out']
+        if isinstance(xml_value,Structure):
+            assert(isinstance(both_value,Structure))
+            assert(isinstance(out_value,Structure))
+            assert(both_value.units==xml_value.units==out_value.units)
+            assert(np.array_equal(both_value.elem,xml_value.elem))
+            assert(np.array_equal(xml_value.elem,out_value.elem))
+            assert(np.array_equal(both_value.axes,xml_value.axes))
+            assert(np.array_equal(both_value.pos,xml_value.pos))
+            atol = tolerances[quantity]
+            assert(np.allclose(xml_value.axes,out_value.axes,rtol=0,atol=atol))
+            assert(np.allclose(xml_value.pos,out_value.pos,rtol=0,atol=atol))
+        elif isinstance(xml_value,(bool,np.bool_)):
+            assert(both_value==xml_value==out_value)
+        else:
+            both_array = np.asarray(both_value)
+            xml_array  = np.asarray(xml_value)
+            out_array  = np.asarray(out_value)
+            assert(both_array.shape==xml_array.shape==out_array.shape)
+            assert(both_array.dtype.kind==xml_array.dtype.kind)
+            assert(xml_array.dtype.kind==out_array.dtype.kind)
+            assert(np.array_equal(both_array,xml_array))
+            atol = tolerances[quantity]
+            assert(np.allclose(xml_array,out_array,rtol=0,atol=atol))
+        #end if
+    #end for
+#end def test_query_agreement_across_sources
 
 
 @pytest.mark.parametrize(
@@ -125,24 +336,23 @@ def test_result_initialization(tmp_path,calculation,log_text):
     out = PwscfOutData(outfile)
 
     expected = {
-        'calculation',
+        'calculation','run_type_detected',
             'Ef','fermi_energies','bands',
             'volume','cputime','walltime',
             'kpoints_cart','kpoints_unit','kweights','initial_structure_data',
-        }
-    if calculation in {'scf','relax','vc-relax'}:
-        expected.update((
             'E','relax_energies','scf_conv_energy','scf_conv_accuracy',
             'pressure','stress','forces','tot_forces','max_forces',
-            ))
-    #end if
-    if calculation in {'relax','vc-relax'}:
-        expected.add('relax_structures')
-    #end if
+            'md_data','md_stats','relax_structures',
+        }
 
     assert(set(out.keys())==expected)
     assert(out.calculation==calculation)
-    assert(all(value is None for name,value in out.items() if name!='calculation'))
+    assert(out.run_type_detected)
+    assert(all(
+        value is None
+        for name,value in out.items()
+        if name not in {'calculation','run_type_detected'}
+        ))
 #end def test_result_initialization
 
 
@@ -252,7 +462,74 @@ End final coordinates
 #end def test_tokenized_log_parsing
 
 
-def test_input_calculation_overrides_ambiguous_output(tmp_path):
+def test_malformed_log_records_are_skipped(tmp_path):
+    import numpy as np
+
+    from ..pwscf_analyzer import PwscfOutData
+
+    md_file = tmp_path/'md.out'
+    md_file.write_text('''\
+! total energy =
+total stress (Ry/bohr**3) (kbar) P=
+time =
+Ekin T
+temperature =
+! total energy = -1.0 Ry
+total stress (Ry/bohr**3) (kbar) P= 2.0
+time = 0.5
+kinetic energy = 0.25 Ry
+temperature = 300 K
+''')
+    md = PwscfOutData(md_file,'md',md_only=True)
+    assert(md.md_data is not None)
+    assert(np.allclose(md.md_data.total_energy,[-1.0]))
+    assert(np.allclose(md.md_data.pressure,[2.0]))
+    assert(np.allclose(md.md_data.time,[0.5]))
+
+    forces_file = tmp_path/'forces.out'
+    forces_file.write_text('''\
+Self-consistent Calculation
+Forces acting on atoms
+atom 1 type 1 force = 0.1 0.2 0.3
+Forces acting on atoms
+atom 1 type 1 force = 0.4 0.5 0.6
+    atom 2 type 1 force = 0.7 0.8 0.9
+''')
+    forces = PwscfOutData(forces_file)
+    assert(forces.forces.shape==(1,2,3))
+    assert(np.allclose(forces.forces[0,0],[0.4,0.5,0.6]))
+
+    timing_file = tmp_path/'timing.out'
+    timing_file.write_text(
+        'Self-consistent Calculation\n'
+        'PWSCF : 1e999s CPU 2s WALL\n'
+        )
+    timing = PwscfOutData(timing_file)
+    assert(timing.cputime is None)
+    assert(np.isclose(timing.walltime,2/3600))
+
+    bands_file = tmp_path/'bands.out'
+    bands_file.write_text('''\
+Band Structure Calculation
+highest occupied level (ev): 1.0
+bands (ev):  k = 0.0 0.0 0.0 ( 1 PWs) bands (ev):
+1e999 2.0
+''')
+    assert(PwscfOutData(bands_file).bands is None)
+
+    structure_file = tmp_path/'structure.out'
+    structure_file.write_text('''\
+BFGS Geometry Optimization
+number of atoms/cell = 2
+ATOMIC_POSITIONS (bohr)
+H 0.0 0.0 0.0
+End final coordinates
+''')
+    assert(PwscfOutData(structure_file).relax_structures is None)
+#end def test_malformed_log_records_are_skipped
+
+
+def test_calculation_sources_are_independent(tmp_path):
     from ..pwscf_analyzer import PwscfAnalyzer
 
     (tmp_path/'pwscf.in').write_text('''\
@@ -272,9 +549,23 @@ CELL_PARAMETERS (alat= 5.0)
         'pwscf.in',
         'pwscf.out',
         analyze = True,
+        source = 'out',
+        strict = False,
         )
-    assert(analyzer.results_out.calculation=='relax')
-#end def test_input_calculation_overrides_ambiguous_output
+    assert(analyzer.results_out.calculation=='vc-relax')
+    assert(analyzer.calculation==('relax',None,'vc-relax'))
+
+    (tmp_path/'pwscf.out').write_text('Self-consistent Calculation\n')
+    analyzer = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        'pwscf.out',
+        analyze = True,
+        source = 'out',
+        )
+    assert(analyzer.results_out.calculation=='scf')
+    assert(analyzer.calculation==('relax',None,'scf'))
+#end def test_calculation_sources_are_independent
 
 
 def test_pw2casino_analyzer_read(tmp_path):
@@ -292,6 +583,7 @@ def test_pw2casino_analyzer_read(tmp_path):
         'pwscf.out',
         'pw2casino.out',
         analyze = True,
+        source = 'out',
         )
     assert(isinstance(analyzer.results_out,PwscfOutData))
     assert(isinstance(analyzer.pw2casino,Pw2CasinoAnalyzer))
@@ -303,7 +595,14 @@ def test_pw2casino_analyzer_read(tmp_path):
         Pw2CasinoAnalyzer(tmp_path/'missing.out')
     (tmp_path/'pw2casino.out').unlink()
     with pytest.raises(FileNotFoundError):
-        PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out','pw2casino.out',analyze=True)
+        PwscfAnalyzer(
+            tmp_path,
+            'pwscf.in',
+            'pwscf.out',
+            'pw2casino.out',
+            analyze = True,
+            source = 'out',
+            )
 #end def test_pw2casino_analyzer_read
 
 
@@ -316,6 +615,8 @@ def test_pw2casino_analyzer_read(tmp_path):
         ),
     )
 def test_qe_7_0_calculation_modes(verbosity,calculation):
+    import numpy as np
+
     from ..pwscf_analyzer import PwscfAnalyzer, PwscfOutData
 
     fixture_path = (
@@ -356,30 +657,26 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
     assert(out.volume is not None)
     assert(out.cputime is not None)
     assert(out.walltime is not None)
-    assert(analyzer.results_xml is None)
+    assert(analyzer.results_xml is not None)
     if verbosity=='high':
         assert(out.kpoints_cart.shape==(npoints,3))
         assert(out.kpoints_unit.shape==(npoints,3))
         assert(out.kweights.shape==(npoints,))
-        assert(analyzer.kpoints('B').shape==(npoints,3))
-        assert(analyzer.kweights().shape==(npoints,))
     else:
         assert(out.kpoints_cart is None)
         assert(out.kpoints_unit is None)
         assert(out.kweights is None)
     #end if
+    assert(analyzer.kpoints('B').shape==(npoints,3))
+    assert(analyzer.kweights().shape==(npoints,))
     assert(analyzer.eigenvalues('Ha').shape==(npoints,nbands))
     band = out.bands.up[0]
     assert({'index','kpoint_2pi_alat','kpoint_rel','eigs','occs','pol'}<=set(band))
-    if verbosity=='high':
-        assert(analyzer.occupations().shape==(npoints,nbands))
-    else:
-        assert(analyzer.occupations() is None)
-    #end if
+    assert(analyzer.occupations().shape==(npoints,nbands))
     if calculation=='nscf':
-        assert('E' not in out)
-        assert('forces' not in out)
-        assert('stress' not in out)
+        assert('E' in out)
+        assert('forces' in out)
+        assert('stress' in out)
         if verbosity=='high':
             assert(out.bands.electronic_structure=='insulating')
             assert(out.bands.direct_gap.energy>0)
@@ -401,10 +698,12 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
         assert(out.max_forces.shape==(nsteps,))
         assert(out.pressure is not None)
         assert(out.stress is not None)
-        assert(analyzer.energy('Ry')==out.E)
-        assert(analyzer.forces('Ry/B').shape==(nsteps,2,3))
-        assert(analyzer.stress('kbar').shape==(nsteps,3,3))
+        assert(np.isclose(analyzer.energy('Ry'),out.E))
+        assert(type(analyzer.energy()) is float)
+        assert(analyzer.forces('Ry/B').shape==(2,3))
+        assert(analyzer.stress('kbar').shape==(3,3))
         assert(analyzer.pressure('kbar') is not None)
+        assert(type(analyzer.pressure()) is float)
     #end if
     if calculation in {'relax','vc-relax'}:
         assert(len(out.relax_structures)==3)
@@ -412,32 +711,34 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
         if calculation=='vc-relax':
             assert(analyzer.relaxed_structure('B').pos.shape==(2,3))
     else:
-        assert('relax_structures' not in out)
+        assert(out.relax_structures is None)
     #end if
 #end def test_qe_7_0_calculation_modes
 
 
 @pytest.mark.parametrize(
-    argnames='calculation',
-    argvalues=('bands','md','vc-md'),
+    argnames='verbosity,calculation',
+    argvalues=tuple(
+        (verbosity,calculation)
+        for verbosity in ('default','high','low')
+        for calculation in ('bands','md','vc-md')
+        ),
     )
-def test_unsupported_calculation_modes(calculation):
-    from ..pwscf_analyzer import PwscfAnalyzer
+def test_supported_calculation_modes(verbosity,calculation):
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
 
     fixture_path = (
-        TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/'default'/calculation
+        TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/verbosity/calculation
         )
-    with pytest.raises(
-        RuntimeError,
-        match=r'PWSCF .* calculations are not supported',
-        ):
-        PwscfAnalyzer(
-            fixture_path,
-            'pwscf.in',
-            'pwscf.out',
-            analyze = True,
-            )
-#end def test_unsupported_calculation_modes
+    analyzer = PwscfAnalyzer(
+        fixture_path,
+        'pwscf.in',
+        'pwscf.out',
+        analyze = True,
+        )
+    assert(analyzer.results_out.calculation==calculation)
+    assert(isinstance(analyzer.results_xml,PwscfXmlData))
+#end def test_supported_calculation_modes
 
 
 @pytest.mark.parametrize(
@@ -470,7 +771,7 @@ def test_supplemental_qe_runs(
     ):
     import numpy as np
 
-    from ..pwscf_analyzer import PwscfAnalyzer
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
 
     fixture_path = (
         TEST_DIR/'test_pwscf_analyzer_files'/version/'supplemental'/case
@@ -482,15 +783,18 @@ def test_supplemental_qe_runs(
         'pwscf.in',
         'pwscf.out',
         analyze = True,
+        source = 'both' if has_schema else 'out',
         )
     out = analyzer.results_out
 
     assert(out.calculation==calculation)
+    assert(isinstance(analyzer.results_xml,PwscfXmlData)==has_schema)
+    assert(analyzer.source_status.xml==('parsed' if has_schema else 'excluded'))
     assert(analyzer.eigenvalues().shape==eigenvalue_shape)
     assert(analyzer.occupations().shape==eigenvalue_shape)
     assert(out.forces.shape[1:]==(2,3))
     assert(out.stress.shape[1:]==(3,3))
-    if case in {'cbn_smearing','cbn_spin','scf_smearing','scf_spin'}:
+    if has_schema or case in {'cbn_smearing','cbn_spin','scf_smearing','scf_spin'}:
         assert(analyzer.Ef() is not None)
     else:
         assert(analyzer.Ef() is None)
@@ -521,23 +825,36 @@ def test_supplemental_qe_runs(
         for case in ('md_iprint','vc_md_iprint')
         ),
     )
-def test_supplemental_md_runs_are_unsupported(version,case):
-    from ..pwscf_analyzer import PwscfAnalyzer
+def test_supplemental_md_runs(version,case):
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
 
     fixture_path = (
         TEST_DIR/'test_pwscf_analyzer_files'/version/'supplemental'/case
         )
-    with pytest.raises(
-        RuntimeError,
-        match=r'PWSCF molecular-dynamics calculations are not supported',
-        ):
-        PwscfAnalyzer(
-            fixture_path,
-            'pwscf.in',
-            'pwscf.out',
-            analyze = True,
-            )
-#end def test_supplemental_md_runs_are_unsupported
+    analyzer = PwscfAnalyzer(
+        fixture_path,
+        'pwscf.in',
+        'pwscf.out',
+        analyze = True,
+        )
+    assert(isinstance(analyzer.results_xml,PwscfXmlData))
+    assert(analyzer.results_out.calculation in {'md','vc-md'})
+    assert(analyzer.results_out.md_data is not None)
+    assert(len(analyzer.results_out.md_data.time)>0)
+    stats = analyzer.md_statistics()
+    assert(stats is not None)
+    assert(set(stats)==set(analyzer.results_out.md_data))
+    md_only = PwscfAnalyzer(
+        fixture_path,
+        'pwscf.in',
+        'pwscf.out',
+        analyze = True,
+        md_only = True,
+        )
+    assert(isinstance(md_only.results_xml,PwscfXmlData))
+    assert(md_only.results_out.md_data is not None)
+    assert(md_only.results_out.E is None)
+#end def test_supplemental_md_runs
 
 
 def test_quantity_accessors():
@@ -561,11 +878,11 @@ def test_quantity_accessors():
     assert('nspin' not in scf.input.system)
     assert(np.all(scf.occupations()==1.0))
     assert(not scf.fractional_occs())
-    scf.results_out.bands.up[0].occs[0] = .9995
+    scf.results_xml.occupations[0,0] = .9995
     assert(not scf.fractional_occs())
     assert(scf.fractional_occs(tol=1e-4))
-    assert(scf.forces('Ry/B').shape==(1,2,3))
-    assert(scf.stress('kbar').shape==(1,3,3))
+    assert(scf.forces('Ry/B').shape==(2,3))
+    assert(scf.stress('kbar').shape==(3,3))
     assert(scf.pressure('kbar') is not None)
     unit_scales = {
         'eV/A^3'    : UnitConverter.A**3/UnitConverter.eV,
@@ -583,6 +900,7 @@ def test_quantity_accessors():
         'scf.in',
         'scf.out',
         analyze = True,
+        source = 'out',
         )
     assert(input_scf.initial_structure('A').units=='A')
 
@@ -592,22 +910,20 @@ def test_quantity_accessors():
         'pwscf.out',
         analyze = True,
         )
-    assert(nscf.energy() is None)
-    assert(nscf.Ef() is None)
+    assert(nscf.energy() is not None)
+    assert(nscf.Ef() is not None)
     assert(nscf.Evbm() is not None)
     assert(nscf.Ecbm() is not None)
     assert(nscf.band_gap() is not None)
+    for quantity in ('energy','Ef','Evbm','Ecbm','band_gap'):
+        assert(type(getattr(nscf,quantity)()) is float)
     assert(not nscf.fractional_occs())
     with pytest.raises(
         RuntimeError,
         match=r'not supported for calculation "nscf"',
         ):
         nscf.forces()
-    with pytest.raises(
-        RuntimeError,
-        match=r'not supported for calculation "nscf"',
-        ):
-        nscf.relaxed_structure()
+    assert(nscf.relaxed_structure() is not None)
     with pytest.raises(
         ValueError,
         match=r'energy units must be one of',
@@ -630,6 +946,7 @@ def test_quantity_accessors():
         'nscf.in',
         'nscf.out',
         analyze = True,
+        source = 'out',
         )
     assert(fermi_nscf.results_out.fermi_energies.shape==(1,))
 #end def test_quantity_accessors
@@ -676,4 +993,660 @@ def test_legacy_xml(tmp_path,monkeypatch):
     assert(analyzer.results_xml.kpoints[1].weight==1.0)
     assert(analyzer.results_xml.kpoints[1].up.units=='Ha')
     assert(analyzer.results_xml.kpoints[1].up.eigenvalues==[-0.5,0.5])
+
+    browse_only = PwscfAnalyzer(
+        tmp_path,
+        analyze = True,
+        source = 'xml',
+        strict = False,
+        )
+    assert(browse_only.results_xml.data is data)
+    assert(browse_only.energy() is None)
+    assert(browse_only.calculation is None)
+
+    def broken_read_qexml(filepath):
+        raise RuntimeError('malformed legacy XML')
+    #end def broken_read_qexml
+
+    analyzer.results_out = obj(marker='preserved')
+    monkeypatch.setattr(pa_module,'read_qexml',broken_read_qexml)
+    analyzer.analyze_xml()
+    assert(analyzer.results_xml is None)
+    assert(analyzer.results_out.marker=='preserved')
 #end def test_legacy_xml
+
+
+def test_schema_queries_are_preferred(tmp_path):
+    """Modern XML supplies query data even when the text output is sparse."""
+    import numpy as np
+
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
+
+    (tmp_path/'pwscf.in').write_text("""&CONTROL
+ calculation = 'relax'
+ prefix = 'pwscf'
+ outdir = '.'
+/
+""")
+    (tmp_path/'pwscf.out').write_text('Self-consistent Calculation\n')
+    savedir = tmp_path/'pwscf.save'
+    savedir.mkdir()
+    (savedir/'data-file-schema.xml').write_text("""<espresso>
+  <input><control_variables><calculation>relax</calculation></control_variables>
+    <atomic_structure alat="2"><atomic_positions><atom name="H">0 0 0</atom></atomic_positions><cell><a1>2 0 0</a1><a2>0 2 0</a2><a3>0 0 2</a3></cell></atomic_structure>
+  </input>
+  <output><atomic_structure alat="2"><atomic_positions><atom name="H">0.5 0 0</atom></atomic_positions><cell><a1>2 0 0</a1><a2>0 2 0</a2><a3>0 0 2</a3></cell></atomic_structure>
+    <total_energy><etot>-1</etot></total_energy><forces>0.1 0.2 0.3</forces><stress>1 0 0 0 2 0 0 0 3</stress>
+    <band_structure><lsda>false</lsda><fermi_energy>0</fermi_energy><ks_energies><k_point weight="1">0 0 0</k_point><eigenvalues>-0.5 0.25</eigenvalues><occupations>1 0</occupations></ks_energies></band_structure>
+  </output>
+</espresso>""")
+
+    analyzer = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True)
+    assert(isinstance(analyzer.results_xml,PwscfXmlData))
+    assert(np.isclose(analyzer.energy('Ha'),-1.0))
+    assert(analyzer.initial_structure('B').pos.shape==(1,3))
+    assert(analyzer.relaxed_structure('B').pos[0,0]==0.5)
+    assert(analyzer.kpoints('B').shape==(1,3))
+    assert(analyzer.kweights().shape==(1,))
+    assert(analyzer.eigenvalues('Ha').shape==(1,2))
+    assert(analyzer.occupations().shape==(1,2))
+    assert(np.isclose(analyzer.Ef('Ha'),0.0))
+    assert(np.isclose(analyzer.Evbm('Ha'),-0.5))
+    assert(np.isclose(analyzer.Ecbm('Ha'),0.25))
+    assert(np.isclose(analyzer.band_gap('Ha'),0.75))
+    assert(not analyzer.fractional_occs())
+    assert(analyzer.forces('Ha/B').shape==(1,3))
+    stress = analyzer.stress('GPa')
+    assert(stress.shape==(3,3))
+    assert(np.isclose(analyzer.pressure('GPa'),np.trace(stress)/3))
+
+    xml_only = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        analyze = True,
+        source = 'xml',
+        )
+    assert(xml_only.results_out is None)
+    assert(xml_only.results_xml is not None)
+    assert(np.isclose(xml_only.energy('Ha'),-1.0))
+    out_only = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        'pwscf.out',
+        analyze = True,
+        source = 'out',
+        )
+    assert(out_only.results_out is not None)
+    assert(out_only.results_xml is None)
+    with pytest.raises(ValueError,match='source must be one of'):
+        PwscfAnalyzer(tmp_path,'pwscf.in',source='invalid')
+
+    malformed = tmp_path/'bad-schema.xml'
+    malformed.write_text('<espresso>')
+    assert(PwscfXmlData(malformed).parse_failed)
+
+    bad_encoding = tmp_path/'bad-encoding-schema.xml'
+    bad_encoding.write_text(
+        '<?xml version="1.0" encoding="DTF-8"?>\n<espresso/>\n'
+        )
+    assert(PwscfXmlData(bad_encoding).parse_failed)
+#end def test_schema_queries_are_preferred
+
+
+def test_schema_semantic_errors_are_field_local(tmp_path):
+    import numpy as np
+
+    from ..pwscf_analyzer import PwscfXmlData
+
+    schema_file = tmp_path/'data-file-schema.xml'
+    schema_file.write_text('''\
+<espresso>
+  <input>
+    <control_variables><calculation>scf</calculation></control_variables>
+    <atomic_structure alat="bad">
+      <atomic_positions><atom name="H">bad coordinates</atom></atomic_positions>
+      <cell><a1>1 0 0</a1><a2>0 1 0</a2><a3>0 0 1</a3></cell>
+    </atomic_structure>
+  </input>
+  <output>
+    <atomic_structure alat="2">
+      <atomic_positions><atom name="H">0 0 0</atom></atomic_positions>
+      <cell><a1>2 0 0</a1><a2>0 2 0</a2><a3>0 0 2</a3></cell>
+    </atomic_structure>
+    <total_energy><etot>not-a-number</etot></total_energy>
+    <forces>not-a-force</forces>
+    <stress>1 0 0 0 2 0 0 0 3</stress>
+    <band_structure>
+      <lsda>false</lsda><fermi_energy>0.1</fermi_energy>
+      <ks_energies><k_point weight="0.5">0 0 0</k_point><eigenvalues>-1 1</eigenvalues><occupations>1 0</occupations></ks_energies>
+      <ks_energies><k_point weight="0.5">0.5 0 0</k_point><eigenvalues>-0.5 0.5 1</eigenvalues><occupations>1 0 0</occupations></ks_energies>
+    </band_structure>
+  </output>
+</espresso>
+''')
+    xml = PwscfXmlData(schema_file)
+    assert(not xml.parse_failed)
+    assert(xml.calculation=='scf')
+    assert(xml.initial_atoms is None)
+    assert(xml.initial_alat is None)
+    assert(xml.positions.shape==(1,3))
+    assert(xml.total_energy is None)
+    assert(xml.forces is None)
+    assert(np.allclose(xml.stress,np.diag([1.,2.,3.])))
+    assert(xml.eigenvalues is None)
+    assert(xml.occupations is None)
+    assert(xml.fermi_energy==0.1)
+#end def test_schema_semantic_errors_are_field_local
+
+
+def test_default_source_requires_one_file(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
+
+    (tmp_path/'pwscf.in').write_text("""&CONTROL
+ calculation = 'scf'
+ prefix = 'pwscf'
+ outdir = '.'
+/
+""")
+    savedir = tmp_path/'pwscf.save'
+    savedir.mkdir()
+    (savedir/'data-file-schema.xml').write_text('''\
+<espresso>
+  <input><control_variables><calculation>scf</calculation></control_variables></input>
+  <output><total_energy><etot>-1</etot></total_energy></output>
+</espresso>
+''')
+
+    analyzer = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        analyze = True,
+        )
+    assert(analyzer.results_out is None)
+    assert(isinstance(analyzer.results_xml,PwscfXmlData))
+    assert(analyzer.energy('Ha')==-1.0)
+
+    with pytest.raises(FileNotFoundError,match='PWSCF output file is not available'):
+        PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True,source='out')
+#end def test_default_source_requires_one_file
+
+
+def test_source_required_and_strict_validation(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    quantities = {
+        'initial_structure','energy','kpoints','kweights','eigenvalues',
+        'occupations','Ef','Evbm','Ecbm','band_gap','fractional_occs',
+        'relaxed_structure','forces','stress','pressure',
+        }
+    analyzer = PwscfAnalyzer(
+        tmp_path,
+        analyze = False,
+        required = 'energy',
+        )
+    assert(analyzer.source=='both')
+    assert(analyzer.strict is True)
+    assert(analyzer.required=={'energy'})
+    assert(set(analyzer.quantity_names)==quantities)
+
+    analyzer = PwscfAnalyzer(
+        tmp_path,
+        analyze = False,
+        required = ['energy','forces','energy'],
+        strict = False,
+        )
+    assert(analyzer.required=={'energy','forces'})
+    with pytest.raises(TypeError,match='strict must be a bool'):
+        PwscfAnalyzer(tmp_path,strict=1)
+    with pytest.raises(ValueError,match='source must be one of'):
+        PwscfAnalyzer(tmp_path,source='either')
+    with pytest.raises(ValueError,match='unknown PWSCF quantity'):
+        PwscfAnalyzer(tmp_path,required='timing')
+    with pytest.raises(ValueError,match='unknown PWSCF quantity'):
+        PwscfAnalyzer(tmp_path,required=[None])
+#end def test_source_required_and_strict_validation
+
+
+def test_file_requirements_are_checked_at_analysis_time(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    analyzer = PwscfAnalyzer(
+        tmp_path,
+        'missing.in',
+        'missing.out',
+        analyze = False,
+        source = 'both',
+        )
+    with pytest.raises(FileNotFoundError,match='PWSCF input file is not available'):
+        analyzer.analyze()
+
+    direct = PwscfAnalyzer(tmp_path/'direct.in',analyze=False,source='out')
+    with pytest.raises(FileNotFoundError,match='PWSCF input file is not available'):
+        direct.analyze()
+    permissive = PwscfAnalyzer(
+        tmp_path,
+        'missing.in',
+        analyze = True,
+        source = 'out',
+        strict = False,
+        )
+    assert(permissive.input is None)
+    assert(permissive.energy() is None)
+
+    for source in ('xml','out','both'):
+        analyzer = PwscfAnalyzer(
+            tmp_path,
+            analyze = False,
+            source = source,
+            strict = False,
+            )
+        with pytest.raises(RuntimeError,match='has not been analyzed'):
+            analyzer.energy()
+        with pytest.raises(RuntimeError,match='has not been analyzed'):
+            analyzer.available('energy')
+        analyzer.analyze()
+        assert(analyzer.energy() is None)
+        assert(not analyzer.available('energy'))
+    #end for
+
+    with pytest.raises(FileNotFoundError,match='schema XML'):
+        PwscfAnalyzer(tmp_path,analyze=True,source='xml')
+    with pytest.raises(FileNotFoundError,match='output file'):
+        PwscfAnalyzer(tmp_path,analyze=True,source='out')
+    with pytest.raises(FileNotFoundError) as error:
+        PwscfAnalyzer(tmp_path,analyze=True)
+    message = str(error.value)
+    assert('schema XML' in message)
+    assert('output file' in message)
+#end def test_file_requirements_are_checked_at_analysis_time
+
+
+def test_strict_source_file_matrix(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    write_input(tmp_path)
+    write_schema(tmp_path)
+    (tmp_path/'pwscf.out').write_text(
+        'Self-consistent Calculation\n'
+        '! total energy = -2.0 Ry\n'
+        )
+
+    xml = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True,source='xml')
+    assert(xml.results_xml is not None)
+    assert(xml.results_out is None)
+    out = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True,source='out')
+    assert(out.results_xml is None)
+    assert(out.results_out is not None)
+    both = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True)
+    assert(both.results_xml is not None)
+    assert(both.results_out is not None)
+    assert(both.calculation=='scf')
+
+    (tmp_path/'pwscf.save'/'data-file-schema.xml').unlink()
+    out_only = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True)
+    assert(out_only.results_xml is None)
+    assert(out_only.results_out is not None)
+    assert(out_only.calculation=='scf')
+#end def test_strict_source_file_matrix
+
+
+def test_ambiguous_source_discovery(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    write_schema(tmp_path,energy=-1.0,prefix='one')
+    write_schema(tmp_path,energy=-2.0,prefix='two')
+    with pytest.raises(RuntimeError,match='multiple.*schema XML'):
+        PwscfAnalyzer(tmp_path,analyze=True,source='xml')
+    permissive_xml = PwscfAnalyzer(
+        tmp_path,
+        analyze = True,
+        source = 'xml',
+        strict = False,
+        )
+    assert(permissive_xml.results_xml is None)
+    assert(permissive_xml.energy() is None)
+
+    (tmp_path/'one.out').write_text('Self-consistent Calculation\n')
+    (tmp_path/'two.out').write_text('Self-consistent Calculation\n')
+    with pytest.raises(RuntimeError,match='multiple.*output'):
+        PwscfAnalyzer(tmp_path,analyze=True,source='out')
+    permissive_out = PwscfAnalyzer(
+        tmp_path,
+        analyze = True,
+        source = 'out',
+        strict = False,
+        )
+    assert(permissive_out.results_out is None)
+
+    write_input(tmp_path,prefix='expected')
+    with pytest.raises(FileNotFoundError,match='schema XML'):
+        PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True,source='xml')
+    with pytest.raises(FileNotFoundError,match='output file'):
+        PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True,source='out')
+#end def test_ambiguous_source_discovery
+
+
+def test_unique_output_discovery_excludes_auxiliary(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    (tmp_path/'actual.out').write_text(
+        'Self-consistent Calculation\n'
+        '! total energy = -4.0 Ry\n'
+        )
+    (tmp_path/'pw2casino.out').write_text(
+        'Kinetic energy from orbitals = 2.0\n'
+        )
+    analyzer = PwscfAnalyzer(
+        tmp_path,
+        pw2c_outfile_name = 'pw2casino.out',
+        analyze = True,
+        source = 'out',
+        )
+    assert(analyzer.results_out is not None)
+    assert(analyzer.energy('Ry')==-4.0)
+    assert(analyzer.pw2casino.K==2.0)
+#end def test_unique_output_discovery_excludes_auxiliary
+
+
+def test_required_controls_both_source_fallback(tmp_path):
+    import numpy as np
+
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    write_input(tmp_path)
+    write_schema(tmp_path,energy=-1.0)
+    (tmp_path/'pwscf.out').write_text('''\
+Self-consistent Calculation
+number of atoms/cell = 1
+! total energy = -3.0 Ry
+Forces acting on atoms
+atom 1 type 1 force = 0.1 0.2 0.3
+''')
+
+    xml_suffices = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        analyze = True,
+        required = 'energy',
+        )
+    assert(xml_suffices.results_xml is not None)
+    assert(xml_suffices.results_out is None)
+    assert(xml_suffices.energy('Ha')==-1.0)
+    assert(xml_suffices.source_status.xml=='parsed')
+    assert(xml_suffices.source_status.out=='skipped')
+
+    (tmp_path/'pwscf.out').unlink()
+    xml_without_output = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        analyze = True,
+        required = 'energy',
+        )
+    assert(xml_without_output.results_out is None)
+    assert(xml_without_output.energy('Ha')==-1.0)
+    (tmp_path/'pwscf.out').write_text('''\
+Self-consistent Calculation
+number of atoms/cell = 1
+! total energy = -3.0 Ry
+Forces acting on atoms
+atom 1 type 1 force = 0.1 0.2 0.3
+''')
+
+    fallback = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        analyze = True,
+        required = ('energy','forces'),
+        )
+    assert(fallback.results_out is not None)
+    assert(np.allclose(fallback.forces('Ry/B'),[[.1,.2,.3]]))
+    assert(fallback.source_status.out=='parsed')
+
+    no_requirements = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True)
+    assert(no_requirements.results_out is not None)
+
+    xml_only = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        analyze = True,
+        source = 'xml',
+        required = 'forces',
+        )
+    assert(xml_only.results_out is None)
+    with pytest.raises(RuntimeError,match='required PWSCF quantity "forces"'):
+        xml_only.forces()
+#end def test_required_controls_both_source_fallback
+
+
+def test_require_only_updates_policy(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    write_input(tmp_path)
+    write_schema(tmp_path)
+    (tmp_path/'pwscf.out').write_text('Self-consistent Calculation\n')
+    analyzer = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        analyze = True,
+        required = 'energy',
+        )
+    assert(analyzer.results_out is None)
+    analyzer.require('forces')
+    assert(analyzer.required=={'energy','forces'})
+    assert(analyzer.results_out is None)
+    with pytest.raises(RuntimeError,match='required PWSCF quantity "forces"'):
+        analyzer.forces()
+
+    before = set(analyzer.required)
+    with pytest.raises(ValueError,match='unknown PWSCF quantity'):
+        analyzer.require('stress','timing')
+    assert(analyzer.required==before)
+    assert(analyzer.require() is None)
+    analyzer.analyze()
+    assert(analyzer.results_out is not None)
+#end def test_require_only_updates_policy
+
+
+def test_available_is_policy_free(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    write_schema(tmp_path,energy=0.0)
+    analyzer = PwscfAnalyzer(
+        tmp_path,
+        analyze = True,
+        source = 'xml',
+        required = ('energy','forces'),
+        )
+    assert(analyzer.available())
+    assert(analyzer.available('energy'))
+    assert(not analyzer.available('energy','forces'))
+    assert(not analyzer.available('relaxed_structure'))
+    with pytest.raises(ValueError,match='unknown PWSCF quantity'):
+        analyzer.available('energy','timing')
+    with pytest.raises(RuntimeError,match='required PWSCF quantity "forces"'):
+        analyzer.forces()
+
+    fixture = TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/'high'/'scf'
+    scf = PwscfAnalyzer(
+        fixture,
+        'pwscf.in',
+        'pwscf.out',
+        analyze = True,
+        )
+    assert(scf.fractional_occs() is False)
+    assert(scf.available('fractional_occs'))
+#end def test_available_is_policy_free
+
+
+def test_internal_query_dependencies_ignore_requirements(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    outfile = tmp_path/'pwscf.out'
+    outfile.write_text('''\
+Self-consistent Calculation
+total stress (Ry/bohr**3) (kbar) P = 12.0
+malformed stress row
+''')
+    analyzer = PwscfAnalyzer(
+        outfile,
+        analyze = True,
+        source = 'out',
+        required = ('stress','occupations'),
+        )
+    assert(analyzer.pressure('kbar')==12.0)
+    assert(analyzer.fractional_occs() is None)
+    with pytest.raises(RuntimeError,match='required PWSCF quantity "stress"'):
+        analyzer.stress()
+#end def test_internal_query_dependencies_ignore_requirements
+
+
+def test_malformed_xml_field_falls_back_to_output(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    write_input(tmp_path)
+    schema_file = write_schema(tmp_path)
+    schema_file.write_text('''\
+<espresso>
+  <input><control_variables><calculation>scf</calculation></control_variables></input>
+  <output><total_energy><etot>malformed</etot></total_energy></output>
+</espresso>
+''')
+    (tmp_path/'pwscf.out').write_text(
+        'Self-consistent Calculation\n'
+        '! total energy = -5.0 Ry\n'
+        )
+    analyzer = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True)
+    assert(analyzer.results_xml.total_energy is None)
+    assert(analyzer.energy('Ry')==-5.0)
+#end def test_malformed_xml_field_falls_back_to_output
+
+
+def test_legacy_xml_does_not_satisfy_modern_xml_source(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    savedir = tmp_path/'pwscf.save'
+    savedir.mkdir()
+    (savedir/'data-file.xml').write_text('<legacy/>')
+    with pytest.raises(FileNotFoundError,match='schema XML'):
+        PwscfAnalyzer(tmp_path,analyze=True,source='xml')
+
+    analyzer = PwscfAnalyzer(
+        tmp_path,
+        analyze = True,
+        source = 'xml',
+        strict = False,
+        )
+    assert(analyzer.results_xml is None)
+    assert(analyzer.energy() is None)
+#end def test_legacy_xml_does_not_satisfy_modern_xml_source
+
+
+def test_calculation_disagreement_tuple(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer
+
+    write_input(tmp_path,calculation='relax')
+    write_schema(tmp_path,calculation='nscf')
+    (tmp_path/'pwscf.out').write_text('Self-consistent Calculation\n')
+
+    with pytest.raises(RuntimeError,match='top-level calculation types disagree'):
+        PwscfAnalyzer(
+            tmp_path,
+            'pwscf.in',
+            analyze = True,
+            required = 'energy',
+            )
+
+    skipped_out = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        analyze = True,
+        required = 'energy',
+        strict = False,
+        )
+    assert(skipped_out.calculation==('relax','nscf',None))
+
+    all_sources = PwscfAnalyzer(
+        tmp_path,
+        'pwscf.in',
+        analyze = True,
+        strict = False,
+        )
+    assert(all_sources.calculation==('relax','nscf','scf'))
+#end def test_calculation_disagreement_tuple
+
+
+def test_output_reader_selection_uses_detected_run_type(tmp_path):
+    import numpy as np
+
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfOutData
+
+    outfile = tmp_path/'pwscf.out'
+    outfile.write_text('''\
+Band Structure Calculation
+highest occupied level (ev): 1.0
+number of atoms/cell = 1
+! total energy = -2.0 Ry
+Forces acting on atoms
+atom 1 type 1 force = 0.1 0.2 0.3
+ATOMIC_POSITIONS (bohr)
+H 0.0 0.0 0.0
+End final coordinates
+    ''')
+    out = PwscfOutData(outfile)
+    assert(out.calculation=='nscf')
+    assert(out.run_type_detected)
+    assert(out.E is None)
+    assert(out.forces is None)
+    assert(out.relax_structures is None)
+
+    outfile.write_text('''\
+highest occupied level (ev): 1.0
+number of atoms/cell = 1
+! total energy = -2.0 Ry
+Forces acting on atoms
+atom 1 type 1 force = 0.1 0.2 0.3
+ATOMIC_POSITIONS (bohr)
+H 0.0 0.0 0.0
+End final coordinates
+''')
+    out = PwscfOutData(outfile)
+    assert(out.calculation is None)
+    assert(not out.run_type_detected)
+    assert(out.E==-2.0)
+    assert(np.allclose(out.forces,[[[.1,.2,.3]]]))
+    assert(len(out.relax_structures)==1)
+
+    analyzer = PwscfAnalyzer(
+        outfile,
+        analyze = True,
+        source = 'out',
+        )
+    assert(analyzer.calculation is None)
+    assert(np.allclose(analyzer.forces('Ry/B'),[[.1,.2,.3]]))
+#end def test_output_reader_selection_uses_detected_run_type
+
+
+def test_undetected_run_type_permissively_reads_md(tmp_path):
+    import numpy as np
+
+    from ..pwscf_analyzer import PwscfOutData
+
+    outfile = tmp_path/'unknown.out'
+    outfile.write_text('''\
+! total energy = -1.0 Ry
+total stress (Ry/bohr**3) (kbar) P= 2.0
+time = 0.5
+kinetic energy = 0.25 Ry
+temperature = 300 K
+''')
+    out = PwscfOutData(outfile)
+    assert(out.calculation is None)
+    assert(not out.run_type_detected)
+    assert(out.md_data is not None)
+    assert(np.allclose(out.md_data.total_energy,[-1.0]))
+    assert(out.E==-1.0)
+
+    md_only = PwscfOutData(outfile,md_only=True)
+    assert(md_only.md_data is not None)
+    assert(md_only.E is None)
+#end def test_undetected_run_type_permissively_reads_md
