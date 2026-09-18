@@ -356,20 +356,14 @@ class Pwscf(Simulation):
         errfile = os.path.join(self.locdir, self.errfile)
         out_err_found, out_err_lines = find_error_keys(
             outfile,
-            operating_system=True,
-            hpc=True,
-            code=True,
-            code_library=True,
+            mpi=True,
             pwscf=True,
             return_lines=True,
             )
 
         err_err_found = find_error_keys(
             errfile,
-            operating_system=True,
-            hpc=True,
-            code=True,
-            code_library=True,
+            mpi=True,
             pwscf=True,
             )
 
