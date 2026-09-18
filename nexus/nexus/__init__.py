@@ -35,7 +35,7 @@ from .utilities     import path_string
 
 from .nexus_base      import NexusCore,              nexus_core,     nexus_noncore,          nexus_core_noncore,         restore_nexus_core_defaults,    nexus_core_defaults, write_splash
 from .machines        import Job,                    job,            Machine, Supercomputer, get_machine, get_cpu_cores, Workstation
-from .simulation      import generate_simulation,    input_template, multi_input_template,   generate_template_input,    generate_multi_template_input,  graph_sims, DynamicProcess
+from .simulation      import Simulation, generate_simulation, input_template, multi_input_template, generate_template_input, generate_multi_template_input, graph_sims, DynamicProcess
 from .project_manager import ProjectManager,     DynamicWorkflowManager,     workflow_manager
 
 from .structure       import Structure,          generate_structure,         generate_cell,  read_structure
@@ -120,6 +120,100 @@ def read_input(filepath,format=None):
     #end if
     return input
 #end def read_input
+
+
+
+def analyze_output(code=None,**kw):
+    """Construct or load an analyzer for output from a supported code."""
+
+    # Retrieve analyzer from Simulation object
+    if isinstance(code,Simulation):
+        sim = code
+        if len(kw)>0:
+            msg = (
+                'Cannot analyze output.\n'
+                'You provided a Simulation object (allowed),\n'
+                '\nbut also included additional arguments (not allowed).\n'
+                f'Invalid arguments: {sorted(kw)}'
+                )
+            raise ValueError(msg)
+        imagepath = os.path.join(sim.imresdir,sim.analyzer_image)
+        if os.path.isfile(imagepath):
+            analyzer = sim.load_analyzer_image()
+        else:
+            analyzer = sim.analyzer_type(sim,analyze=True)
+        return analyzer
+
+    # Construct analyzer directly from inputs
+    if not isinstance(code,str):
+        msg = (
+            'Cannot analyze output.\n'
+            'Argument "code" must be provided as a string or a Simulation object.\n'
+            'You provided: '+type(code).__name__
+            )
+        raise TypeError(msg)
+    code = code.lower()
+    path = kw.pop('path',None)
+    if path is not None:
+        path = path_string(path)
+    if code=='qmcpack':
+        qmcpack_kw = dict(analyze=True)
+        for name in (
+            'verbose','nindent','ghost_atoms','source','destination','savefile',
+            'methods','calculations','data_sources','quantities',
+            'warmup_calculations','output','ndmc_blocks','equilibration',
+            'group_num','traces','dm_settings',
+            ):
+            if name in kw:
+                qmcpack_kw[name] = kw.pop(name)
+        if path is not None and 'source' in qmcpack_kw:
+            msg = (
+                'Cannot analyze QMCPACK output.\n'
+                'Specify either "path" or "source", not both.'
+                )
+            raise ValueError(msg)
+        analyzer = QmcpackAnalyzer(path,**qmcpack_kw)
+    elif code=='pwscf':
+        analyzer = PwscfAnalyzer(
+            path,
+            infile_name       = kw.pop('infile_name',None),
+            outfile_name      = kw.pop('outfile_name',None),
+            pw2c_outfile_name = kw.pop('pw2c_outfile_name',None),
+            analyze           = True,
+            )
+    elif code=='rmg':
+        analyzer = RmgAnalyzer(
+            path,
+            analyze = True,
+            )
+    elif code=='vasp':
+        analyzer = VaspAnalyzer(
+            path,
+            xml     = kw.pop('xml',False),
+            analyze = True,
+            )
+    elif code=='gamess':
+        analyzer = GamessAnalyzer(
+            path,
+            prefix  = kw.pop('prefix',None),
+            exit    = kw.pop('exit',False),
+            analyze = True,
+            )
+    else:
+        msg = (
+            f'Cannot analyze output.\nCode "{code}" is unsupported.\n'
+            'Valid options are: qmcpack, pwscf, rmg, vasp, gamess'
+            )
+        raise NotImplementedError(msg)
+    if len(kw)>0:
+        msg = (
+            f'Cannot analyze {code} output.\n'
+            'You provided unrecognized arguments.\n'
+            f'Unrecognized arguments: {sorted(kw)}'
+            )
+        raise ValueError(msg)
+    return analyzer
+#end def analyze_output
 
 
 
