@@ -371,10 +371,10 @@ class Pwscf(Simulation):
         if err_err_found:
             # This might happen at the end of a run even if it succeeds.
             # We can't actually know if it really indicates a failure.
-            if "cleaning up processes" in next(err_err_lines, ""):
-                pass
-            else:
-                self.failed = True
+            self.failed = any(
+                "cleaning up processes" not in line.lower()
+                for line in err_err_lines
+                )
 
         restartable = False
         if out_err_found: # No sense checking if we didn't find anything
