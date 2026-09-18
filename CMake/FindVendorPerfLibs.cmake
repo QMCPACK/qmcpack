@@ -249,7 +249,6 @@ endmacro()
 macro(find_VPL_lapack)
   set(VPL_lapack_ID ${VPL_ID} CACHE STRING "Vendor LAPACK ID (IntelMKL, AOCL, Generic)")
   check_VPL_ID("VPL_lapack_ID" "${VPL_lapack_ID}")
-  list(APPEND _vpl_required_vars LAPACK_LIBRARIES)
 
   if(VPL_lapack_ID STREQUAL "IntelMKL")
     if(NOT VPL_ID STREQUAL "IntelMKL")
