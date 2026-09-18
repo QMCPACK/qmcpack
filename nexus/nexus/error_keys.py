@@ -29,11 +29,14 @@ shell_errors = (
 
 shell_error_patterns = (
     r'^.*\b(?:segmentation fault|floating point exception|illegal instruction|bus error|bad system call)(?:\s+\(core dumped\))?\s*$',
-    r'^.*\b(?:aborted|killed)(?:\s+\(core dumped\))?\s*$',
-    r'^.*\bterminated\s*$',
+    r'^\s*(?:aborted|killed)(?:\s+\(core dumped\))?\s*$',
+    r'^.*:\s+line\s+\d+:\s+\d+\s+(?:aborted|killed)(?:\s+\(core dumped\))?(?:\s+.+)?$',
+    r'^\s*terminated\s*$',
     r'\b(?:out of memory|cannot allocate memory|oom-kill(?:er)?|invoked oom-killer|killed process\s+\d+)\b',
-    r'\b(?:stack smashing detected|general protection fault|Machine Check Exception)\b',
-    r'\b(?:MCE|EDAC)[^\n]{0,80}\bHardware Error\b',
+    r'\b(?:stack smashing detected|general protection fault)\b',
+    # Machine-check and EDAC diagnostics can report corrected hardware errors.
+    # r'\bMachine Check Exception\b',
+    # r'\b(?:MCE|EDAC)[^\n]{0,80}\bHardware Error\b',
     )
 
 # Signal names are matched only when termination context is present.  Several
@@ -167,90 +170,93 @@ pbs_error_patterns = (
     )
 
 mpi_errors = (
-    'MPI_ABORT',
-    'MPI_ERR_BUFFER',
-    'MPI_ERR_COUNT',
-    'MPI_ERR_TYPE',
-    'MPI_ERR_TAG',
-    'MPI_ERR_COMM',
-    'MPI_ERR_RANK',
-    'MPI_ERR_REQUEST',
-    'MPI_ERR_ROOT',
-    'MPI_ERR_GROUP',
-    'MPI_ERR_OP',
-    'MPI_ERR_TOPOLOGY',
-    'MPI_ERR_DIMS',
-    'MPI_ERR_ARG',
-    'MPI_ERR_UNKNOWN',
-    'MPI_ERR_TRUNCATE',
-    'MPI_ERR_OTHER',
-    'MPI_ERR_INTERN',
-    'MPI_ERR_IN_STATUS',
-    'MPI_ERR_PENDING',
-    'MPI_ERR_ACCESS',
-    'MPI_ERR_AMODE',
-    'MPI_ERR_ASSERT',
-    'MPI_ERR_BAD_FILE',
-    'MPI_ERR_BASE',
-    'MPI_ERR_CONVERSION',
-    'MPI_ERR_DISP',
-    'MPI_ERR_DUP_DATAREP',
-    'MPI_ERR_FILE_EXISTS',
-    'MPI_ERR_FILE_IN_USE',
-    'MPI_ERR_FILE',
-    'MPI_ERR_INFO_KEY',
-    'MPI_ERR_INFO_NOKEY',
-    'MPI_ERR_INFO_VALUE',
-    'MPI_ERR_INFO',
-    'MPI_ERR_IO',
-    'MPI_ERR_KEYVAL',
-    'MPI_ERR_LOCKTYPE',
-    'MPI_ERR_NAME',
-    'MPI_ERR_NO_MEM',
-    'MPI_ERR_NOT_SAME',
-    'MPI_ERR_NO_SPACE',
-    'MPI_ERR_NO_SUCH_FILE',
-    'MPI_ERR_PORT',
-    'MPI_ERR_PROC_ABORTED',
-    'MPI_ERR_QUOTA',
-    'MPI_ERR_READ_ONLY',
-    'MPI_ERR_RMA_CONFLICT',
-    'MPI_ERR_RMA_SYNC',
-    'MPI_ERR_SERVICE',
-    'MPI_ERR_SIZE',
-    'MPI_ERR_SPAWN',
-    'MPI_ERR_UNSUPPORTED_DATAREP',
-    'MPI_ERR_UNSUPPORTED_OPERATION',
-    'MPI_ERR_WIN',
-    'MPI_T_ERR_MEMORY',
-    'MPI_T_ERR_NOT_INITIALIZED',
-    'MPI_T_ERR_CANNOT_INIT',
-    'MPI_T_ERR_INVALID_INDEX',
-    'MPI_T_ERR_INVALID_ITEM',
-    'MPI_T_ERR_INVALID_HANDLE',
-    'MPI_T_ERR_OUT_OF_HANDLES',
-    'MPI_T_ERR_OUT_OF_SESSIONS',
-    'MPI_T_ERR_INVALID_SESSION',
-    'MPI_T_ERR_CVAR_SET_NOT_NOW',
-    'MPI_T_ERR_CVAR_SET_NEVER',
-    'MPI_T_ERR_PVAR_NO_STARTSTOP',
-    'MPI_T_ERR_PVAR_NO_WRITE',
-    'MPI_T_ERR_PVAR_NO_ATOMIC',
-    'MPI_ERR_RMA_RANGE',
-    'MPI_ERR_RMA_ATTACH',
-    'MPI_ERR_RMA_FLAVOR',
-    'MPI_ERR_RMA_SHARED',
-    'MPI_T_ERR_INVALID',
-    'MPI_T_ERR_INVALID_NAME',
-    'MPI_ERR_SESSION',
+    # MPI error-class names are return values that applications may handle.
+    # MPI_Abort is also an API name; termination context is required below.
+    # 'MPI_ABORT',
+    # 'MPI_ERR_BUFFER',
+    # 'MPI_ERR_COUNT',
+    # 'MPI_ERR_TYPE',
+    # 'MPI_ERR_TAG',
+    # 'MPI_ERR_COMM',
+    # 'MPI_ERR_RANK',
+    # 'MPI_ERR_REQUEST',
+    # 'MPI_ERR_ROOT',
+    # 'MPI_ERR_GROUP',
+    # 'MPI_ERR_OP',
+    # 'MPI_ERR_TOPOLOGY',
+    # 'MPI_ERR_DIMS',
+    # 'MPI_ERR_ARG',
+    # 'MPI_ERR_UNKNOWN',
+    # 'MPI_ERR_TRUNCATE',
+    # 'MPI_ERR_OTHER',
+    # 'MPI_ERR_INTERN',
+    # 'MPI_ERR_IN_STATUS',
+    # 'MPI_ERR_PENDING',
+    # 'MPI_ERR_ACCESS',
+    # 'MPI_ERR_AMODE',
+    # 'MPI_ERR_ASSERT',
+    # 'MPI_ERR_BAD_FILE',
+    # 'MPI_ERR_BASE',
+    # 'MPI_ERR_CONVERSION',
+    # 'MPI_ERR_DISP',
+    # 'MPI_ERR_DUP_DATAREP',
+    # 'MPI_ERR_FILE_EXISTS',
+    # 'MPI_ERR_FILE_IN_USE',
+    # 'MPI_ERR_FILE',
+    # 'MPI_ERR_INFO_KEY',
+    # 'MPI_ERR_INFO_NOKEY',
+    # 'MPI_ERR_INFO_VALUE',
+    # 'MPI_ERR_INFO',
+    # 'MPI_ERR_IO',
+    # 'MPI_ERR_KEYVAL',
+    # 'MPI_ERR_LOCKTYPE',
+    # 'MPI_ERR_NAME',
+    # 'MPI_ERR_NO_MEM',
+    # 'MPI_ERR_NOT_SAME',
+    # 'MPI_ERR_NO_SPACE',
+    # 'MPI_ERR_NO_SUCH_FILE',
+    # 'MPI_ERR_PORT',
+    # 'MPI_ERR_PROC_ABORTED',
+    # 'MPI_ERR_QUOTA',
+    # 'MPI_ERR_READ_ONLY',
+    # 'MPI_ERR_RMA_CONFLICT',
+    # 'MPI_ERR_RMA_SYNC',
+    # 'MPI_ERR_SERVICE',
+    # 'MPI_ERR_SIZE',
+    # 'MPI_ERR_SPAWN',
+    # 'MPI_ERR_UNSUPPORTED_DATAREP',
+    # 'MPI_ERR_UNSUPPORTED_OPERATION',
+    # 'MPI_ERR_WIN',
+    # 'MPI_T_ERR_MEMORY',
+    # 'MPI_T_ERR_NOT_INITIALIZED',
+    # 'MPI_T_ERR_CANNOT_INIT',
+    # 'MPI_T_ERR_INVALID_INDEX',
+    # 'MPI_T_ERR_INVALID_ITEM',
+    # 'MPI_T_ERR_INVALID_HANDLE',
+    # 'MPI_T_ERR_OUT_OF_HANDLES',
+    # 'MPI_T_ERR_OUT_OF_SESSIONS',
+    # 'MPI_T_ERR_INVALID_SESSION',
+    # 'MPI_T_ERR_CVAR_SET_NOT_NOW',
+    # 'MPI_T_ERR_CVAR_SET_NEVER',
+    # 'MPI_T_ERR_PVAR_NO_STARTSTOP',
+    # 'MPI_T_ERR_PVAR_NO_WRITE',
+    # 'MPI_T_ERR_PVAR_NO_ATOMIC',
+    # 'MPI_ERR_RMA_RANGE',
+    # 'MPI_ERR_RMA_ATTACH',
+    # 'MPI_ERR_RMA_FLAVOR',
+    # 'MPI_ERR_RMA_SHARED',
+    # 'MPI_T_ERR_INVALID',
+    # 'MPI_T_ERR_INVALID_NAME',
+    # 'MPI_ERR_SESSION',
     'mpirun: kill job',
     'mpirun noticed that process rank',
     'ORTE_ERROR_LOG',
     'PRTE_ERROR_LOG',
     'the first job to fail is listed below',
     'job aborted:',
-    'mpiexec_callback_proc',
-    'cleaning up processes',
+    # A callback name and generic cleanup text do not establish failure.
+    # 'mpiexec_callback_proc',
+    # 'cleaning up processes',
     'execvp error',
     )
 
@@ -292,7 +298,8 @@ linking_error_patterns = (
 fortran_runtime_errors = (
     'Fortran runtime error:',
     'ERROR STOP',
-    'Stat_Stopped_Image',
+    # A coarray status value may be inspected and handled by the application.
+    # 'Stat_Stopped_Image',
     )
 
 fortran_error_patterns = (
@@ -316,19 +323,24 @@ cpp_errors = (
     'AddressSanitizer:DEADLYSIGNAL',
     'ERROR: AddressSanitizer',
     'SUMMARY: AddressSanitizer',
-    'ERROR: LeakSanitizer',
-    'WARNING: ThreadSanitizer',
-    'UndefinedBehaviorSanitizer',
+    # These sanitizers can report issues without terminating the calculation.
+    # 'ERROR: LeakSanitizer',
+    # 'WARNING: ThreadSanitizer',
+    # 'UndefinedBehaviorSanitizer',
     )
 
 cpp_error_patterns = (
-    r'^\s*what\(\):\s+.+$',
+    # A what() line alone does not establish that an exception was uncaught.
+    # r'^\s*what\(\):\s+.+$',
     )
 
 cuda_errors = (
     'CUDA error:',
-    'NVRM: Xid',
-    'NCCL WARN',
+    # An Xid is a driver event, not proof that this process failed.  NCCL WARN
+    # includes warnings as well as errors; concrete NCCL failures are matched
+    # below.
+    # 'NVRM: Xid',
+    # 'NCCL WARN',
     )
 
 cuda_error_patterns = (
@@ -339,7 +351,8 @@ cuda_error_patterns = (
 
 hip_errors = (
     'HIP error:',
-    'ECC Error',
+    # This also occurs in status labels such as "ECC Error Count: 0".
+    # 'ECC Error',
     'amdgpu: Page Fault',
     )
 
@@ -383,7 +396,9 @@ python_errors = (
     )
 
 python_error_patterns = (
-    r'^\s*(?:[\w.]+\.)?[A-Za-z_]\w*(?:Error|Exception)\s*:\s*.*$',
+    # Exception lines can be printed by handlers; traceback/fatal markers above
+    # provide termination context.
+    # r'^\s*(?:[\w.]+\.)?[A-Za-z_]\w*(?:Error|Exception)\s*:\s*.*$',
     )
 
 
@@ -403,14 +418,16 @@ lapack_errors = (
     'LAPACK error:',
     'LAPACK native error:',
     'LAPACK computational failure:',
-    'matrix is exactly singular',
-    'matrix is singular',
-    'is not positive definite',
-    'decomposition constraint violation',
+    # These numerical conditions can be handled by fallback algorithms.
+    # 'matrix is exactly singular',
+    # 'matrix is singular',
+    # 'is not positive definite',
+    # 'decomposition constraint violation',
     )
 
 lapack_error_patterns = (
-    r'\b(?:LAPACK|[sdcz][a-z0-9_]{3,})[^\n]{0,100}\b(?:matrix is singular|is not positive definite|failed to converge|computational failure)\b',
+    # Numerical solver conditions can be handled by a fallback algorithm.
+    # r'\b(?:LAPACK|[sdcz][a-z0-9_]{3,})[^\n]{0,100}\b(?:matrix is singular|is not positive definite|failed to converge|computational failure)\b',
     )
 
 # Failure to import FFTW wisdom is recoverable and fftw_execute is merely an
@@ -419,32 +436,37 @@ fftw_errors = ()
 fftw_error_patterns = ()
 
 hdf5_errors = (
-    'unable to open file',
-    'unable to create file',
-    'unable to open group',
-    'unable to open dataset',
+    # Applications routinely probe optional files and objects and recover from
+    # the resulting HDF5 error stack.
+    # 'unable to open file',
+    # 'unable to create file',
+    # 'unable to open group',
+    # 'unable to open dataset',
     'parallel write failed',
-    'major: Parallel HDF5',
+    # This is only an HDF5 error-stack classification, not a terminal outcome.
+    # 'major: Parallel HDF5',
     'data space selection exceeds dataset dimensions',
     )
 
 hdf5_error_patterns = (
-    r'HDF5-DIAG:\s*Error\s*detected',
-    r'\b(?:major|minor):\s*(?:file accessibility|unable to open file|unable to create file|write failed|read failed|object not found|bad value)\b',
+    # HDF5 prints an error stack for failed probes even when the caller recovers.
+    # r'HDF5-DIAG:\s*Error\s*detected',
+    # r'\b(?:major|minor):\s*(?:file accessibility|unable to open file|unable to create file|write failed|read failed|object not found|bad value)\b',
     )
 
 libxml2_errors = (
     'parser error :',
     'This element is not expected',
     'Schemas validity error',
-    'I/O error : Permission denied to access system file',
-    'failed to load external entity',
+    # External entities can be optional and failure to load them is recoverable.
+    # 'I/O error : Permission denied to access system file',
+    # 'failed to load external entity',
     'Opening and ending tag mismatch',
     'Premature end of data',
     )
 
 libxml2_error_patterns = (
-    r'\b(?:parser|schemas?|xml)[^\n]{0,80}\b(?:error|validation failed|not expected|failed to load)\b',
+    r'\b(?:parser|schemas?|xml)[^\n]{0,80}\b(?:error|validation failed|not expected)\b',
     )
 
 
@@ -467,10 +489,11 @@ scipy_errors = (
     'ArpackNoConvergence',
     'NoConvergence',
     'QhullError',
-    'ARPACK error',
-    'ARPACK iteration did not converge',
-    'SuperLU factorization failed',
-    'Factor is exactly singular',
+    # These are exception messages that callers can catch and recover from.
+    # 'ARPACK error',
+    # 'ARPACK iteration did not converge',
+    # 'SuperLU factorization failed',
+    # 'Factor is exactly singular',
     )
 
 scipy_error_patterns = (
@@ -479,11 +502,12 @@ scipy_error_patterns = (
 
 h5py_errors = (
     'CheckWriteEligibilityError',
-    'file signature not found',
-    "object doesn't exist",
-    'bad object header',
-    'address overflow',
-    'no write intent',
+    # These fragments can come from caught exceptions during optional probes.
+    # 'file signature not found',
+    # "object doesn't exist",
+    # 'bad object header',
+    # 'address overflow',
+    # 'no write intent',
     )
 
 h5py_error_patterns = (
@@ -564,7 +588,8 @@ qmcpack_error_patterns = (
 vasp_errors = (
     'VERY BAD NEWS! internal error in subroutine',
     'ZBRENT: fatal error in bracketing',
-    'BRMIX: very serious problems',
+    # VASP can continue from this warning and subsequently converge.
+    # 'BRMIX: very serious problems',
     'EDDDAV: Call to ZHEGV failed',
     'EDDRMM: Call to ZHEGV failed',
     'LAPACK: Routine ZPOTRF failed',
@@ -576,7 +601,8 @@ vasp_errors = (
 vasp_error_patterns = (
     r'^\s*(?:\|\s*)?(?:VERY BAD NEWS!\s*)?(?:internal\s+)?error in subroutine\b',
     r'^\s*ZBRENT:\s*fatal\s+(?:error|internal)[^\n]*\bbracket',
-    r'^\s*BRMIX:\s*very serious problems\b',
+    # BRMIX can be transient and followed by a converged, valid calculation.
+    # r'^\s*BRMIX:\s*very serious problems\b',
     r'^\s*(?:EDDDAV|EDDRMM):[^\n]*(?:ZHEGV|ZHEEV)[^\n]*failed\b',
     r'^\s*LAPACK:[^\n]*\bfailed\b',
     r'^\s*ERROR FEXCP:',
@@ -631,28 +657,27 @@ _error_keys = {
     'libxml2'         : libxml2_errors,
     'numpy'           : (),
     # Exception class names from scipy_errors are matched only as structured
-    # exception lines by scipy_error_patterns.  These library messages are
-    # sufficiently specific to search for literally.
+    # exception lines by scipy_error_patterns.  Message fragments alone do not
+    # establish that the exception was left unhandled.
     'scipy'           : (
-        'ARPACK error',
-        'ARPACK iteration did not converge',
-        'SuperLU factorization failed',
-        'Factor is exactly singular',
+        # 'ARPACK error',
+        # 'ARPACK iteration did not converge',
+        # 'SuperLU factorization failed',
+        # 'Factor is exactly singular',
         ),
     # CheckWriteEligibilityError is anchored as an exception line by
-    # h5py_error_patterns.  These HDF5-specific message fragments are retained
-    # as safe literal matches.
+    # h5py_error_patterns.  HDF5 message fragments can result from caught
+    # exceptions during optional probes.
     'h5py'            : (
-        'file signature not found',
-        "object doesn't exist",
-        'bad object header',
-        'address overflow',
-        'no write intent',
+        # 'file signature not found',
+        # "object doesn't exist",
+        # 'bad object header',
+        # 'address overflow',
+        # 'no write intent',
         ),
     'pwscf'           : pwscf_errors,
     # LibxcError is matched as a structured exception line by
-    # pyscf_error_patterns; PySCF's explicit convergence message is safe to
-    # search for literally.
+    # pyscf_error_patterns.
     'pyscf'           : ('SCF not converged',),
     'quantum_package' : quantum_package_errors,
     'rmg'             : rmg_errors,

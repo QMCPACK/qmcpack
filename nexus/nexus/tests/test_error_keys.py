@@ -54,7 +54,7 @@ def test_selectors():
         code=True,
         )
     assert find_error_keys(
-        'HDF5-DIAG: Error detected in HDF5',
+        'parallel write failed while storing required walker data',
         code_library=True,
         )
     assert find_error_keys(
@@ -91,7 +91,7 @@ def test_operating_system_catches():
         'run.sh: line 8: 4217 Segmentation fault (core dumped)',
         shell=True,
         )
-    assert find_error_keys('EDAC MC0: Hardware Error', shell=True)
+    assert find_error_keys('*** stack smashing detected ***', shell=True)
     assert find_error_keys(
         'rank 3 terminated by SIGSEGV',
         linux_signals=True,
@@ -157,7 +157,7 @@ def test_compiled_code_catches():
         cuda=True,
         )
     assert find_error_keys(
-        'NCCL WARN Error: failed to extend /dev/shm/nccl-a1',
+        'NCCL transport returned ncclSystemError',
         cuda=True,
         )
     assert find_error_keys(
@@ -169,7 +169,7 @@ def test_compiled_code_catches():
 def test_python_runtime_catches():
     assert find_error_keys('Traceback (most recent call last):', python=True)
     assert find_error_keys(
-        'pyscf.lib.exceptions.SomeError: failed operation',
+        'Fatal Python error: failed to initialize the interpreter',
         python=True,
         )
 
@@ -184,7 +184,7 @@ def test_compiled_library_catches():
         lapack=True,
         )
     assert find_error_keys(
-        'HDF5-DIAG: Error detected in HDF5 (1.14.0) thread 0:',
+        'parallel write failed while storing required simulation data',
         hdf5=True,
         )
     assert find_error_keys(
@@ -211,6 +211,12 @@ def test_python_module_catches():
 def test_operating_system_near_misses():
     assert not find_error_keys(
         'The documentation discusses a segmentation fault example.',
+        shell=True,
+        )
+    assert not find_error_keys('No walkers were killed', shell=True)
+    assert not find_error_keys('Geometry optimization terminated', shell=True)
+    assert not find_error_keys(
+        'EDAC MC0: Hardware Error: corrected memory error',
         shell=True,
         )
     assert not find_error_keys(
@@ -243,6 +249,14 @@ def test_hpc_environment_near_misses():
 
 def test_compiled_code_near_misses():
     assert not find_error_keys(
+        'NCCL WARN optional network plugin unavailable; using built-in transport',
+        cuda=True,
+        )
+    assert not find_error_keys(
+        'NVRM: Xid 45, Preemptive Channel Removal',
+        cuda=True,
+        )
+    assert not find_error_keys(
         'cudaEventQuery returned cudaErrorNotReady',
         cuda=True,
         )
@@ -254,9 +268,22 @@ def test_compiled_code_near_misses():
         'hipEventQuery returned hipErrorNotReady',
         hip=True,
         )
+    assert not find_error_keys('ECC Error Count: 0', hip=True)
+    assert not find_error_keys(
+        'WARNING: ThreadSanitizer report collected; calculation continued',
+        cpp=True,
+        )
+    assert not find_error_keys(
+        'what(): optional accelerator unavailable; using the CPU path',
+        cpp=True,
+        )
 
 
 def test_python_runtime_near_misses():
+    assert not find_error_keys(
+        'ValueError: optional setting rejected; using the default',
+        python=True,
+        )
     assert not find_error_keys(
         'except ValueError: use the default input',
         python=True,
@@ -277,11 +304,27 @@ def test_compiled_library_near_misses():
         lapack=True,
         )
     assert not find_error_keys(
+        'LAPACK dpotrf: matrix is singular; switching to least squares',
+        lapack=True,
+        )
+    assert not find_error_keys(
         'capacity exceeded the estimate, resizing buffer',
         hdf5=True,
         )
     assert not find_error_keys(
+        'unable to open group; optional metadata will be skipped',
+        hdf5=True,
+        )
+    assert not find_error_keys(
+        'HDF5-DIAG: Error detected while probing an optional restart file',
+        hdf5=True,
+        )
+    assert not find_error_keys(
         'Validation failed: optional metadata ignored',
+        libxml2=True,
+        )
+    assert not find_error_keys(
+        'XML optional schema failed to load; continuing without validation',
         libxml2=True,
         )
 
@@ -291,6 +334,20 @@ def test_python_module_near_misses():
         'FileExistsError is caught before creating the HDF5 file',
         h5py=True,
         )
+    assert not find_error_keys(
+        'file signature not found; treating the optional cache as empty',
+        h5py=True,
+        )
+    assert not find_error_keys(
+        'ARPACK iteration did not converge; using converged eigenpairs',
+        scipy=True,
+        )
+
+
+def test_context_free_status_near_misses():
+    assert not find_error_keys('MPI_ERR_PENDING', mpi=True)
+    assert not find_error_keys('cleaning up processes', mpi=True)
+    assert not find_error_keys('Stat_Stopped_Image', fortran=True)
 
 
 def test_pwscf_output():
@@ -347,6 +404,10 @@ qp run: Error: Selection failed before the requested PT2 threshold
 ''',
         quantum_package=True,
         )
+    assert find_error_keys(
+        'Selection failed before reaching the requested PT2 threshold',
+        quantum_package=True,
+        )
     assert not find_error_keys(
         '''
 Selection completed
@@ -365,6 +426,10 @@ RMG Error: domain decomposition failed for the requested processor grid
 ''',
         rmg=True,
         )
+    assert find_error_keys(
+        'CRITICAL: requested eigensolver result is unavailable',
+        rmg=True,
+        )
     assert not find_error_keys(
         '''
 RMGDFT: SCF convergence achieved
@@ -381,6 +446,10 @@ QMCPACK 4.1.0
 Reading particlesets from input.xml
 APP_ABORT: inconsistent input settings in determinantset
 ''',
+        qmcpack=True,
+        )
+    assert find_error_keys(
+        'inconsistent input settings in determinantset',
         qmcpack=True,
         )
     assert not find_error_keys(
@@ -420,6 +489,15 @@ EDDDAV: Call to ZHEGV failed. Returncode = 6 3 8
     assert not find_error_keys(
         '''
 WARNING: small aliasing (wrap around) errors must be expected
+reached required accuracy - stopping structural energy minimisation
+General timing and accounting informations for this job:
+''',
+        vasp=True,
+        )
+    assert not find_error_keys(
+        '''
+BRMIX: very serious problems
+the old and the new charge density differ
 reached required accuracy - stopping structural energy minimisation
 General timing and accounting informations for this job:
 ''',
