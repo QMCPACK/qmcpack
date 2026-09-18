@@ -34,7 +34,7 @@ def _path_to_str(path: str | bytes | Path) -> str:
     else:
         raise TypeError(
             f'path must be of type "str", "bytes" or "Path". Type received: {path.__class__.__name__}'
-            
+
             )
     return path
 #end def _path_to_str
@@ -95,7 +95,7 @@ def path_string(
     Parameters
     ----------
     path : str, bytes or Path
-        A file path or directory path. 
+        A file path or directory path.
     strict : bool, default=False
         Require inputted path to be str type.
         Raises ValueError otherwise.

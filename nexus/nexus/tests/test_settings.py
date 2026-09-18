@@ -71,7 +71,7 @@ def test_settings(tmp_path):
         nckeys  = set(nexus_core.keys())
         nnckeys = set(nexus_noncore.keys())
         setkeys = set(settings.keys())
-        
+
         assert(nckeys==nckeys_check)
         assert(nnckeys==nnckeys_check)
         assert(setkeys>=setkeys_check)
@@ -119,8 +119,8 @@ def test_settings(tmp_path):
         # other settings objects should be at default also
         aux_defaults()
     #end def_check_empty_settings
-    
-    
+
+
     # check that core settings are at default values
     assert(object_eq(nexus_core,nexus_core_defaults))
     assert(nexus_core.timeout==5*60)

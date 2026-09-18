@@ -134,7 +134,7 @@ def generate_serial_references():
         'atoms/atoms' : np.array(['P','P','P','P']),
         'atoms/format' : 'movable',
         'atoms/movable' : np.array([True ,True ,True ,True]),
-        'atoms/positions' : np.array([[0.    ,  0.     , 0.     ], 
+        'atoms/positions' : np.array([[0.    ,  0.     , 0.     ],
                                       [1.6568,  0.     , 1.48364],
                                       [1.6568,  2.13054, 2.18815],
                                       [0.    ,  2.13054, 3.67179]]),
@@ -241,7 +241,7 @@ def generate_serial_references():
                                     True,True,True,True,True,True,True,True,
                                     True,True,True,True,True,True,True,True,
                                     True,True,True,True]),
-        'atoms/positions' : np.array([[15.3293, 12.96  , 19.207 ], 
+        'atoms/positions' : np.array([[15.3293, 12.96  , 19.207 ],
                                       [17.5363, 12.96  , 17.7857],
                                       [13.7313, 15.1732, 19.2251],
                                       [14.4083, 17.2893, 17.8251],
@@ -1494,13 +1494,13 @@ def test_generate():
     skeys = mkeys & gkeys & kkeys
 
     skeys_ref = {
-        'atomic_coordinate_type', 'atoms', 'calculation_mode', 
-        'charge_density_mixing', 'charge_mixing_type', 'compressed_infile', 
-        'compressed_outfile', 'description', 'energy_convergence_criterion', 
-        'kohn_sham_mucycles', 'kohn_sham_solver', 'kpoint_distribution', 
-        'localize_localpp', 'localize_projectors', 'max_scf_steps', 
-        'occupations_type', 'potential_acceleration_constant_step', 
-        'potential_grid_refinement', 'states_count_and_occupation', 
+        'atomic_coordinate_type', 'atoms', 'calculation_mode',
+        'charge_density_mixing', 'charge_mixing_type', 'compressed_infile',
+        'compressed_outfile', 'description', 'energy_convergence_criterion',
+        'kohn_sham_mucycles', 'kohn_sham_solver', 'kpoint_distribution',
+        'localize_localpp', 'localize_projectors', 'max_scf_steps',
+        'occupations_type', 'potential_acceleration_constant_step',
+        'potential_grid_refinement', 'states_count_and_occupation',
         'subdiag_driver', 'wavefunction_grid', 'write_data_period'}
 
     assert(skeys==skeys_ref)

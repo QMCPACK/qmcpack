@@ -3955,7 +3955,7 @@ class RmgInput(SimulationInput):
                 +msg
                 )
             raise ValueError(msg)
-            
+
         #end if
         return len(msg)==0
     #end def check_valid
@@ -4184,7 +4184,7 @@ def generate_any_rmg_input(**kwargs):
                 f'Received: {act}'
                 )
             raise ValueError(msg)
-            
+
         #end if
         movable = None
         if s.frozen is not None:

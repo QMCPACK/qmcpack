@@ -85,7 +85,7 @@ from .machines import Job, Workstation, get_machine
 from .nexus_base import NexusCore, nexus_core, dynamic_storage
 from .utilities import path_string
 
- 
+
 class SimulationInput(NexusCore):
     def is_valid(self):
         raise NotImplementedError
@@ -324,7 +324,7 @@ class Simulation(NexusCore):
         #end if
         kw       = set(kwargs.keys())
         sim_kw   = kw & (Simulation.allowed_inputs | sim_kw)
-        inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)    
+        inp_kw   = (kw - sim_kw) | (kw & overlapping_kw)
         sim_args = obj()
         inp_args = obj()
         for k in sim_kw:
@@ -371,7 +371,7 @@ class Simulation(NexusCore):
         self.input_image    = self.input_imagefile
         self.analyzer_image = self.analyzer_imagefile
         self.image_dir      = self.image_directory
-        self.input          = self.input_type() 
+        self.input          = self.input_type()
         self.system         = None
         self.dependents     = obj()
         self.created_directories = False
@@ -404,7 +404,7 @@ class Simulation(NexusCore):
         self.fake_sim       = Simulation.creating_fake_sims
 
         #variables determined by derived classes
-        self.outputs = None  #object representing output data 
+        self.outputs = None  #object representing output data
                              # accessed by dependents when calling get_dependencies
 
         self.set(**kwargs)
@@ -555,7 +555,7 @@ class Simulation(NexusCore):
         self.locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
         self.remdir = os.path.join(nexus_core.remote_directory,nexus_core.runs,self.path)
         self.resdir = os.path.join(nexus_core.local_directory,nexus_core.results,nexus_core.runs,self.path)
-        
+
         if not self.fake():
             #print '  creating sim {0} in {1}'.format(self.simid,self.locdir)
 
@@ -581,9 +581,9 @@ class Simulation(NexusCore):
         #end if
 
         self.image_dir = self.image_dir+'_'+self.identifier
-        self.imlocdir = os.path.join(self.locdir,self.image_dir) 
-        self.imremdir = os.path.join(self.remdir,self.image_dir) 
-        self.imresdir = os.path.join(self.resdir,self.image_dir) 
+        self.imlocdir = os.path.join(self.locdir,self.image_dir)
+        self.imremdir = os.path.join(self.remdir,self.image_dir)
+        self.imresdir = os.path.join(self.resdir,self.image_dir)
     #end def set_directories
 
 
@@ -624,11 +624,11 @@ class Simulation(NexusCore):
 
     def completed(self):
         completed  = self.setup
-        completed &= self.sent_files 
-        completed &= self.submitted  
-        completed &= self.finished   
-        completed &= self.got_output 
-        completed &= self.analyzed   
+        completed &= self.sent_files
+        completed &= self.submitted
+        completed &= self.finished
+        completed &= self.got_output
+        completed &= self.analyzed
         completed &= not self.failed
         return completed
     #end def completed
@@ -765,7 +765,7 @@ class Simulation(NexusCore):
         self._create_dir(self.imlocdir)
         self.created_directories = True
     #end def create_directories
-            
+
 
     def depends(self,*dependencies):
         if nexus_core.dynamic:
@@ -959,7 +959,7 @@ class Simulation(NexusCore):
         #end if
         self.got_dependencies = True
     #end def get_dependencies
-        
+
 
     def downstream_simids(self,simids=None):
         if simids is None:
@@ -1121,7 +1121,7 @@ class Simulation(NexusCore):
         remote = self.remdir
         for file in send_files:
             found_file = False
-            for location in file_locations:                
+            for location in file_locations:
                 local = os.path.join(location,file)
                 found_file = os.path.exists(local)
                 if found_file:
@@ -1193,7 +1193,7 @@ class Simulation(NexusCore):
             newly_exited_queue = 'exited_queue' not in self.timestamps
             self.record_timestamp('exited_queue')
         #end if
-        if nexus_core.generate_only: 
+        if nexus_core.generate_only:
             self.finished = self.job.finished
         elif self.job.finished:
             should_check = True
@@ -1285,7 +1285,7 @@ class Simulation(NexusCore):
         #end if
     #end def get_output
 
-        
+
     def analyze(self):
         if not os.path.exists(self.imresdir):
             os.makedirs(self.imresdir)
@@ -1450,7 +1450,7 @@ class Simulation(NexusCore):
                         # fully rerun following interrupt
                         self.save_attempt()
                         self.reset_indicators()
-                
+
                 self.job.system_id = self.process_id # load process id of job
                 self.job.reenter_queue()
             #end if
@@ -1560,7 +1560,7 @@ class Simulation(NexusCore):
 
 
     # dynamic workflow support
-    
+
     def fill_produces(self):
         raise NotImplementedError('fill_produces')
     #end def fill_produces
@@ -1579,7 +1579,7 @@ class Simulation(NexusCore):
 
 
 
- 
+
 class NullSimulationInput(SimulationInput):
     def is_valid(self):
         return True
@@ -1701,14 +1701,14 @@ class SimulationInputTemplateDev(SimulationInput):
             self.read_text(text)
         #end if
     #end def __init__
-            
+
     def reset(self):
         self.template = None
         self.keywords = set()
         self.values   = obj()
         self.allow_not_set = set()
     #end def reset
-        
+
     def clear(self):
         self.values.clear()
     #end def clear
@@ -1795,7 +1795,7 @@ class SimulationInputMultiTemplateDev(SimulationInput):
             self.set_templates(**file_templates)
         #end if
     #end def __init__
-        
+
 
     def set_templates(self,**file_templates):
         for name,val in file_templates.items():
@@ -2000,13 +2000,13 @@ class DynamicProcess(DevBase):
     '''Enables dynamic workflows execution
 
     Basic DP contains a single simulation.
-    Derived classes may perform more elaborate processes, 
+    Derived classes may perform more elaborate processes,
     i.e. recovery for failed jobs, resetting the primary
-    simulation object (sim data member) to point at the 
+    simulation object (sim data member) to point at the
     final sim in the process.
 
     Takes the place of Simulation in user scripts. All
-    generate_* simulation functions return DP's when 
+    generate_* simulation functions return DP's when
     executing dynamic workflows.
     '''
 
@@ -2142,7 +2142,7 @@ class DynamicProcess(DevBase):
 
     def _check_get_product(self,prod_name):
         '''Support product getter functions
-        
+
         Note that requirements are a subset of products
         '''
         sim = self.sim
@@ -2207,7 +2207,7 @@ class DynamicProcess(DevBase):
                 f'Original id: {id(self.req_values[req_name])}\n'
                 f'id received: {id(req_value)}'
                 )
-            raise ValueError(msg)            
+            raise ValueError(msg)
         else:
             already_set = True
         # if already set, return
@@ -2265,7 +2265,7 @@ class DynamicProcess(DevBase):
     @property
     def pwscf_orbitals(self):
         return self._check_get_product('pwscf_orbitals')
- 
+
 
     # setters for all possible requirements
     @structure.setter
@@ -2340,7 +2340,7 @@ class DynamicProcess(DevBase):
     @property
     def job(self):
         return self.sim.job
-     
+
     @property
     def input(self):
         return self.sim.input

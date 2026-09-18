@@ -17,7 +17,7 @@ def test_namespaces():
     from ..nexus_base import nexus_core,nexus_core_defaults
     from ..nexus_base import nexus_noncore,nexus_noncore_defaults
     from ..nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
-    
+
     assert('runs' in nexus_core_defaults)
     assert('basis_dir' in nexus_noncore_defaults)
     assert('pseudo_dir' in nexus_core_noncore_defaults)
@@ -46,7 +46,7 @@ def test_write_splash(capsys):
     assert(hasattr(write_splash, "wrote_splash"))
     assert(write_splash.wrote_splash)
 #end def test_write_splash
-    
+
 
 def test_enter_leave(tmp_path, capsys):
     import os

@@ -197,7 +197,7 @@ class ProjectManager(NexusCore):
                 entry_order[locdir].append(sim)
             #end if
         #end def set_entry_order
-        self.traverse_cascades(set_entry_order,entry_order)        
+        self.traverse_cascades(set_entry_order,entry_order)
         any_collisions = False
         collpath = ''
         for path,simlist in entry_order.items():
@@ -253,13 +253,13 @@ class ProjectManager(NexusCore):
         #end for
     #end def propagate_blockages
 
-    
+
     def load_cascades(self):
         cascades = obj()
         progressing_cascades = obj()
         for cascade in self.cascades.values():
             rc = cascade.reconstruct_cascade()
-            cascades[rc.simid] = rc 
+            cascades[rc.simid] = rc
             progressing_cascades[rc.simid] = rc
         #end for
         self.cascades = cascades
@@ -280,7 +280,7 @@ class ProjectManager(NexusCore):
         #end if
     #end def check_dependencies
 
-                    
+
     def traverse_cascades(self,operation=trivial,*args,**kwargs):
         for cascade in self.cascades.values():
             cascade.reset_wait_ids()
@@ -344,7 +344,7 @@ class ProjectManager(NexusCore):
         self.nxs_print('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
     #end def write_simulation_status
 
-        
+
     def status_line(self,sim,extra=''):
         indicators = ('setup','sent_files','submitted','finished','got_output','analyzed')
         stats = tuple([sim[k] for k in indicators])
@@ -377,7 +377,7 @@ class ProjectManager(NexusCore):
         #end for
         for cid,cascade in progressing_cascades.items():
             with sim_err_handler(sim=cascade): # Wrap execution in sim error handler
-                
+
                 if not cascade.bundled or cascade.bundler.finished:
                     cascade.progress()
 

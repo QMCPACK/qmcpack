@@ -130,7 +130,7 @@ nexus_modules = [mod.stem for mod in Path(__file__).parent.iterdir() if mod.suff
 
 class NexusUnpickler(pickle.Unpickler):
     """This class is designed for backwards compatibility with pickles generated
-    before Nexus was packaged (PR #5700, December 20, 2025). 
+    before Nexus was packaged (PR #5700, December 20, 2025).
     It shouldn't touch anything but old Nexus pickles.
     """
     def find_class(self, module, name):
@@ -158,7 +158,7 @@ _____________________________________________________
   J. T. Krogel Comput. Phys. Commun. 198 154 (2016)
      https://doi.org/10.1016/j.cpc.2015.08.012
 _____________________________________________________
-          
+
 '''.format(*nexus_version)
         nxs_print(splash_text)
         write_splash.wrote_splash = True
@@ -212,7 +212,7 @@ class NexusCore(DevBase):
         msg: str = '',
         ) -> Literal['      ']:
         """Have Nexus enter a directory and change its current working directory.
-        
+
         Parameters
         ----------
         directory : PathLike
@@ -250,7 +250,7 @@ class NexusCore(DevBase):
                 fobj.seek(0)
                 try:
                     # Old pickles from before Nexus was packaged (PR #5700, December 20 2025)
-                    # won't have the correct module path. The custom unpickler will handle this by 
+                    # won't have the correct module path. The custom unpickler will handle this by
                     # prepending "nexus." to the module path
                     tmp = NexusUnpickler(fobj).load()
                 except UnpicklingError:
