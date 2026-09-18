@@ -17,7 +17,7 @@ from .generic import nxs_deprecate
 from .periodic_table import Elements
 from .physical_system import PhysicalSystem
 from .utilities import is_valid_filename
-from .nexus_base import nexus_core
+from .nexus_base import NEXUS_CONFIG
 
 
 def pp_elem_label(
@@ -1521,8 +1521,8 @@ def generate_pseudoset(
         H: /path/to/pseudo_dir/H.ccECP.gamess
     """
     if pseudo_dir is None and len(codes_psps) == 0:
-        if nexus_core.pseudo_dir is not None:
-            pseudo_dir = Path(nexus_core.pseudo_dir).resolve()
+        if NEXUS_CONFIG.pseudo_dir is not None:
+            pseudo_dir = Path(NEXUS_CONFIG.pseudo_dir).resolve()
         else:
             msg = "Must supply `pseudo_dir` and/or `codes_psps`!"
             raise ValueError(msg)

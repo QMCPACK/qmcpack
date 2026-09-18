@@ -131,15 +131,15 @@ def test_check_result():
 @isolate_nexus_core
 def test_get_result(tmp_path):
     from ..developer import NexusError, obj
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
     from ..qmcpack_analyzer import QmcpackAnalyzer
     from ..qmcpack_input import dmc,mcwalkerset
 
-    nexus_core.runs    = ''
-    nexus_core.results = ''
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.runs    = ''
+    NEXUS_CONFIG.results = ''
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     sim = get_qmcpack_sim()
 
@@ -238,14 +238,14 @@ def test_get_result(tmp_path):
 
 @isolate_nexus_core
 def test_restart_twist_average(tmp_path):
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
     from ..qmcpack_input import TracedQmcpackInput,dmc,mcwalkerset
 
-    nexus_core.runs    = ''
-    nexus_core.results = ''
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.runs    = ''
+    NEXUS_CONFIG.results = ''
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     source = get_qmcpack_sim(
         identifier   = 'restart_source',
@@ -304,18 +304,18 @@ def test_incorporate_result(tmp_path):
     import shutil
     from numpy import array
     from ..developer import obj
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
     from ..qmcpack_input import dmc,mcwalkerset
     from .test_vasp_simulation import setup_vasp_sim as get_vasp_sim
     from .test_qmcpack_converter_simulations import get_pw2qmcpack_sim
     from .test_qmcpack_converter_simulations import get_convert4qmc_sim
     from .test_qmcpack_converter_simulations import get_pyscf_to_afqmc_sim
 
-    nexus_core.runs    = ''
-    nexus_core.results = ''
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.runs    = ''
+    NEXUS_CONFIG.results = ''
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     create_pseudo_files(
         tmp_dir=tmp_path,
@@ -549,12 +549,12 @@ def test_incorporate_result(tmp_path):
 
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
 
-    nexus_core.runs = ''
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.runs = ''
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     sim = get_qmcpack_sim(identifier='qmc')
 

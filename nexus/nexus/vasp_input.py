@@ -19,7 +19,7 @@ from functools import partial
 from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
-from .nexus_base import nexus_noncore
+from .nexus_base import NEXUS_CONFIG
 from .simulation import SimulationInput
 from .structure import interpolate_structures, Structure
 from .physical_system import PhysicalSystem
@@ -2627,7 +2627,7 @@ class VaspInput(SimulationInput,Vobj):
                 ordered_pseudos.append(pseudo_map[symbol])
             #end for
         #end if
-        self.potcar = Potcar(nexus_noncore.pseudo_dir,ordered_pseudos)
+        self.potcar = Potcar(NEXUS_CONFIG.pseudo_dir,ordered_pseudos)
     #end def set_potcar
 
 

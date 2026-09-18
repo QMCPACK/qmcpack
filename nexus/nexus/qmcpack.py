@@ -56,7 +56,7 @@ from .qmcpack_analyzer import QmcpackAnalyzer
 from .qmcpack_converters import Pw2qmcpack, Convert4qmc, Convertpw4qmc, PyscfToAfqmc
 from .pyscf_sim import Pyscf
 from .developer import DevBase, obj, NexusError, FileFormatError
-from .nexus_base import nexus_core
+from .nexus_base import NEXUS_CONFIG
 from .pseudoset import PseudoSet
 from .hdfreader import read_hdf
 from .unit_converter import convert
@@ -692,7 +692,7 @@ class Qmcpack(Simulation):
         # fix to make twist averaged input file under generate_only
         if self.system is None:
             self.should_twist_average = False
-        elif nexus_core.generate_only:
+        elif NEXUS_CONFIG.generate_only:
             twistnums = list(range(len(self.system.structure.kpoints)))
             if self.should_twist_average:
                 self.twist_average(twistnums)
@@ -2059,7 +2059,7 @@ def generate_qmcpack(**kwargs):
     if 'input' not in sim_args:
         run_path = None
         if 'path' in sim_args:
-            run_path = os.path.join(nexus_core.local_directory,nexus_core.runs,sim_args.path)
+            run_path = os.path.join(NEXUS_CONFIG.local_directory,NEXUS_CONFIG.runs,sim_args.path)
         #end if
         inp_args.run_path = run_path
         sim_args.input = generate_qmcpack_input(**inp_args)

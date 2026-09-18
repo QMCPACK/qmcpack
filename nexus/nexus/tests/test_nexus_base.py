@@ -13,22 +13,6 @@ TEST_FILES = {
     "old_nxs_sim_numpy_1.p":         (TEST_DIR / "test_generic_files/old_nxs_sim_numpy_1.p").resolve(),
     }
 
-def test_namespaces():
-    from ..nexus_base import nexus_core,nexus_core_defaults
-    from ..nexus_base import nexus_noncore,nexus_noncore_defaults
-    from ..nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
-
-    assert('runs' in nexus_core_defaults)
-    assert('basis_dir' in nexus_noncore_defaults)
-    assert('pseudo_dir' in nexus_core_noncore_defaults)
-
-    assert(object_eq(nexus_core,nexus_core_defaults))
-    assert(object_eq(nexus_noncore,nexus_noncore_defaults))
-    assert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
-#end def test_namespaces
-
-
-
 def test_empty_init():
     from ..nexus_base import NexusCore
     nc = NexusCore()

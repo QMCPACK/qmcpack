@@ -7,7 +7,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.QMCPACK_CONVERTER_SIMULATIONS)
 from pathlib import Path
 
 from . import isolate_nexus_core, create_pseudo_files
-from nexus.nexus_base import nexus_core
+from nexus.nexus_base import NEXUS_CONFIG
 from ..testing import clear_all_sims
 from ..testing import failed,FailedTest
 from ..testing import object_eq
@@ -90,9 +90,9 @@ def test_pw2qmcpack_incorporate_result(tmp_path):
     from ..simulation import Simulation
     from .test_pwscf_simulation import get_pwscf_sim
 
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     create_pseudo_files(tmp_path, ["C.BFD.upf"])
 
@@ -116,12 +116,12 @@ def test_pw2qmcpack_incorporate_result(tmp_path):
 
 @isolate_nexus_core
 def test_pw2qmcpack_check_sim_status(tmp_path):
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
 
-    nexus_core.runs = ''
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.runs = ''
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     sim = get_pw2qmcpack_sim()
 
@@ -330,12 +330,12 @@ def test_convert4qmc_incorporate_result():
 
 @isolate_nexus_core
 def test_convert4qmc_check_sim_status(tmp_path):
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
 
-    nexus_core.runs = ''
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.runs = ''
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     sim = get_convert4qmc_sim()
 
@@ -493,12 +493,12 @@ def test_pyscf_to_afqmc_incorporate_result():
 
 @isolate_nexus_core
 def test_pyscf_to_afqmc_check_sim_status(tmp_path):
-    from ..nexus_base import nexus_core
+    from ..nexus_base import NEXUS_CONFIG
 
-    nexus_core.runs = ''
-    nexus_core.local_directory  = str(tmp_path)
-    nexus_core.remote_directory = str(tmp_path)
-    nexus_core.file_locations = nexus_core.file_locations + [str(tmp_path)]
+    NEXUS_CONFIG.runs = ''
+    NEXUS_CONFIG.local_directory  = str(tmp_path)
+    NEXUS_CONFIG.remote_directory = str(tmp_path)
+    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
 
     sim = get_pyscf_to_afqmc_sim()
 
