@@ -123,7 +123,7 @@ def read_input(filepath,format=None):
 
 
 
-def analyze_output(code=None,**kw):
+def analyze_output(code=None,input=None,outfile=None,*,analyze=True,path=None,**kw):
     """Construct or load an analyzer for output from a supported code.
 
     Parameters
@@ -133,9 +133,20 @@ def analyze_output(code=None,**kw):
         simulation is supplied, it must be the only argument.  Its saved
         analyzer image is loaded when present; otherwise its analyzer is
         constructed and analyzed.
+    input : Simulation, SimulationInput, str, or os.PathLike, optional
+        Simulation or code-specific input.  A path may name an input file or,
+        where supported, a directory containing one.
+    outfile : str or os.PathLike, optional
+        Path to the primary text-output file.  PWSCF and RMG accept this
+        argument directly; other analyzers map it only where noted below.
+    analyze : bool, default=True
+        Perform analysis when constructing a new analyzer.  Simulation-image
+        loading is unaffected.
+    path : str or os.PathLike, optional
+        Base directory for relative ``input``, ``outfile``, and other
+        code-specific file paths.
     **kw
-        Keyword arguments for the selected analyzer signature.  ``path`` is
-        the primary input or output path for all direct-construction forms.
+        Additional keyword arguments for the selected analyzer signature.
         Unknown keyword arguments raise ``ValueError``.
 
     Notes
@@ -156,34 +167,63 @@ def analyze_output(code=None,**kw):
     .. code-block:: python
 
        analyze_output(
-           'pwscf', path=None, infile_name=None, outfile_name=None,
-           pw2c_outfile_name=None,
+           'pwscf', input=None, outfile=None, analyze=True, path=None,
+           xmlfile=None, pw2c_outfile_name=None, read_all=True, strict=True,
+           required=None,
            )
 
+    input : PwscfInput, Simulation, str, or os.PathLike, optional
+        PWSCF input object, simulation, input-file path, or directory.
+    outfile : str or os.PathLike, optional
+        PWSCF text-output path.
+    analyze : bool, default=True
+        Perform analysis during construction.
     path : str or os.PathLike, optional
-        Calculation directory, PWSCF input file, or PWSCF output file.
-    infile_name : str, optional
-        PWSCF input-file name within ``path`` when ``path`` is a directory.
-    outfile_name : str, optional
-        PWSCF output-file name within ``path`` when ``path`` is a directory.
+        Base directory for relative file paths and file discovery.
+    xmlfile : str or os.PathLike, optional
+        Explicit modern ``data-file-schema.xml`` path.
     pw2c_outfile_name : str, optional
         Optional PW2CASINO output-file name within ``path``.
+    read_all : bool, default=True
+        Read all available modern XML and text output.  If ``False``, read XML
+        first and read text output only when a constructor-required quantity
+        remains unavailable.
+    strict : bool, default=True
+        Require explicitly supplied files, reject ambiguous discovery, and
+        require at least one PWSCF XML or text-output source.
+    required : str or iterable of str, optional
+        Quantities whose unavailable query functions must raise exceptions.
 
     .. rubric:: RMG signature
 
     .. code-block:: python
 
-       analyze_output('rmg', path=None)
+       analyze_output(
+           'rmg', input=None, outfile=None, analyze=True, path=None,
+           strict=True, required=None,
+           )
 
+    input : RmgInput, Simulation, str, or os.PathLike, optional
+        RMG input object, simulation, input-file path, or directory.
+    outfile : str or os.PathLike, optional
+        RMG log-output path.
+    analyze : bool, default=True
+        Perform analysis during construction.
     path : str or os.PathLike, optional
-        RMG log-output file to analyze.
+        Base directory for relative file paths and output discovery.
+    strict : bool, default=True
+        Require supplied files, reject ambiguous discovery, and require an
+        RMG log-output file.
+    required : str or iterable of str, optional
+        Quantities whose unavailable query functions must raise exceptions.
 
     .. rubric:: QMCPACK signature
 
     .. code-block:: python
 
        analyze_output(
-           'qmcpack', path=None, source=None, destination=None, savefile='',
+           'qmcpack', input=None, analyze=True, path=None, source=None,
+           destination=None, savefile='',
            methods=None, calculations=None, data_sources=None,
            quantities=None, warmup_calculations=None,
            output=('averages', 'samples'), ndmc_blocks=1000,
@@ -191,9 +231,14 @@ def analyze_output(code=None,**kw):
            dm_settings=None, verbose=False, nindent=0, ghost_atoms=sequence,
            )
 
+    input : str or os.PathLike, optional
+        QMCPACK input file or bundled-output path.  Mapped to the analyzer's
+        primary source and mutually exclusive with ``source``.
+    analyze : bool, default=True
+        Perform analysis during construction.
     path : str or os.PathLike, optional
-        QMCPACK input file or bundled-output path.  Mutually exclusive with
-        ``source``.
+        Base directory for a relative ``input`` path, or the primary source
+        when ``input`` is omitted.
     source : str or os.PathLike, optional
         QMCPACK input file or bundled-output path.  Mutually exclusive with
         ``path``.
@@ -234,10 +279,19 @@ def analyze_output(code=None,**kw):
 
     .. code-block:: python
 
-       analyze_output('vasp', path=None, xml=False)
+       analyze_output(
+           'vasp', input=None, outfile=None, analyze=True, path=None,
+           xml=False,
+           )
 
+    input : str or os.PathLike, optional
+        VASP ``INCAR`` or ``OUTCAR`` path; this is the primary argument.
+    outfile : str or os.PathLike, optional
+        VASP ``OUTCAR`` path used when ``input`` is omitted.
+    analyze : bool, default=True
+        Perform analysis during construction.
     path : str or os.PathLike, optional
-        VASP ``INCAR`` or ``OUTCAR`` file to analyze.
+        Base directory for a relative input or output path.
     xml : bool, default=False
         Parse ``vasprun.xml`` in addition to text outputs.
 
@@ -245,10 +299,18 @@ def analyze_output(code=None,**kw):
 
     .. code-block:: python
 
-       analyze_output('gamess', path=None, prefix=None, exit=False)
+       analyze_output(
+           'gamess', input=None, analyze=True, path=None, prefix=None,
+           exit=False,
+           )
 
-    path : str or os.PathLike, optional
+    input : str or os.PathLike, optional
         GAMESS input file associated with the output to analyze.
+    analyze : bool, default=True
+        Perform analysis during construction.
+    path : str or os.PathLike, optional
+        Base directory for a relative input path, or the input path when
+        ``input`` is omitted.
     prefix : str, optional
         Prefix used to locate GAMESS output and punch files.  The input-file
         stem is used when this is not provided.
@@ -271,10 +333,24 @@ def analyze_output(code=None,**kw):
         If ``code`` does not identify a supported analyzer.
     """
 
-    # Retrieve analyzer from Simulation object
+    # Retrieve analyzer from a Simulation object
+    simulation_types = {
+        'qmcpack' : Qmcpack,
+        'pwscf'   : Pwscf,
+        'rmg'     : Rmg,
+        'vasp'    : Vasp,
+        'gamess'  : Gamess,
+        }
+    sim = None
     if isinstance(code,Simulation):
         sim = code
-        if len(kw)>0:
+        if (
+            input is not None
+            or outfile is not None
+            or analyze is not True
+            or path is not None
+            or len(kw)>0
+            ):
             msg = (
                 'Cannot analyze output.\n'
                 'You provided a Simulation object (allowed),\n'
@@ -282,27 +358,52 @@ def analyze_output(code=None,**kw):
                 f'Invalid arguments: {sorted(kw)}'
                 )
             raise ValueError(msg)
-        imagepath = os.path.join(sim.imresdir,sim.analyzer_image)
-        if os.path.isfile(imagepath):
-            analyzer = sim.load_analyzer_image()
-        else:
-            analyzer = sim.analyzer_type(sim,analyze=True)
-        return analyzer
-
-    # Construct analyzer directly from inputs
-    if not isinstance(code,str):
+    elif code is None and isinstance(input,Simulation):
+        sim = input
+        if outfile is not None or analyze is not True or path is not None or len(kw)>0:
+            msg = (
+                'Cannot analyze output.\n'
+                'You provided a Simulation object as "input" (allowed),\n'
+                'but also included additional arguments (not allowed).'
+                )
+            raise ValueError(msg)
+    elif isinstance(code,str):
+        code = code.lower()
+        if isinstance(input,Simulation):
+            sim = input
+            if outfile is not None or analyze is not True or path is not None or len(kw)>0:
+                msg = (
+                    'Cannot analyze output.\n'
+                    'You provided a Simulation object as "input" (allowed),\n'
+                    'but also included additional arguments (not allowed).'
+                    )
+                raise ValueError(msg)
+            if code not in simulation_types or not isinstance(sim,simulation_types[code]):
+                msg = (
+                    'Cannot analyze output.\n'
+                    f'Code "{code}" does not match the provided '
+                    f'{sim.__class__.__name__} object.'
+                    )
+                raise ValueError(msg)
+    else:
         msg = (
             'Cannot analyze output.\n'
             'Argument "code" must be provided as a string or a Simulation object.\n'
             'You provided: '+type(code).__name__
             )
         raise TypeError(msg)
-    code = code.lower()
-    path = kw.pop('path',None)
+
+    if sim is not None:
+        imagepath = os.path.join(sim.imresdir,sim.analyzer_image)
+        if os.path.isfile(imagepath):
+            return sim.load_analyzer_image()
+        return sim.analyzer_type(sim,analyze=True)
+
+    # Construct an analyzer directly from inputs
     if path is not None:
         path = path_string(path)
     if code=='qmcpack':
-        qmcpack_kw = dict(analyze=True)
+        qmcpack_kw = dict(analyze=analyze)
         for name in (
             'verbose','nindent','ghost_atoms','source','destination','savefile',
             'methods','calculations','data_sources','quantities',
@@ -311,38 +412,71 @@ def analyze_output(code=None,**kw):
             ):
             if name in kw:
                 qmcpack_kw[name] = kw.pop(name)
-        if path is not None and 'source' in qmcpack_kw:
+        if outfile is not None:
+            raise ValueError('QMCPACK output does not accept "outfile"')
+        if input is not None and 'source' in qmcpack_kw:
             msg = (
                 'Cannot analyze QMCPACK output.\n'
-                'Specify either "path" or "source", not both.'
+                'Specify either "input" or "source", not both.'
                 )
             raise ValueError(msg)
-        analyzer = QmcpackAnalyzer(path,**qmcpack_kw)
+        source = input
+        if source is None:
+            source = path
+        elif path is not None and isinstance(source,(str,os.PathLike)):
+            source = path_string(source)
+            if not os.path.isabs(source):
+                source = os.path.join(path,source)
+        analyzer = QmcpackAnalyzer(source,**qmcpack_kw)
     elif code=='pwscf':
         analyzer = PwscfAnalyzer(
-            path,
-            infile_name       = kw.pop('infile_name',None),
-            outfile_name      = kw.pop('outfile_name',None),
+            input,
+            outfile,
+            analyze           = analyze,
+            path              = path,
+            xmlfile           = kw.pop('xmlfile',None),
             pw2c_outfile_name = kw.pop('pw2c_outfile_name',None),
-            analyze           = True,
+            read_all          = kw.pop('read_all',True),
+            strict            = kw.pop('strict',True),
+            required          = kw.pop('required',None),
             )
     elif code=='rmg':
         analyzer = RmgAnalyzer(
-            path,
-            analyze = True,
+            input,
+            outfile,
+            analyze  = analyze,
+            path     = path,
+            strict   = kw.pop('strict',True),
+            required = kw.pop('required',None),
             )
     elif code=='vasp':
+        if input is not None and outfile is not None:
+            raise ValueError('VASP output accepts either "input" or "outfile", not both')
+        source = input if input is not None else outfile
+        if source is None:
+            source = path
+        elif path is not None and isinstance(source,(str,os.PathLike)):
+            source = path_string(source)
+            if not os.path.isabs(source):
+                source = os.path.join(path,source)
         analyzer = VaspAnalyzer(
-            path,
+            source,
             xml     = kw.pop('xml',False),
-            analyze = True,
+            analyze = analyze,
             )
     elif code=='gamess':
+        if outfile is not None:
+            raise ValueError('GAMESS output does not accept "outfile"')
+        source = input if input is not None else path
+        if input is not None and path is not None and isinstance(input,(str,os.PathLike)):
+            source = path_string(input)
+            if not os.path.isabs(source):
+                source = os.path.join(path,source)
         analyzer = GamessAnalyzer(
-            path,
+            source,
             prefix  = kw.pop('prefix',None),
             exit    = kw.pop('exit',False),
-            analyze = True,
+            analyze = analyze,
             )
     else:
         msg = (

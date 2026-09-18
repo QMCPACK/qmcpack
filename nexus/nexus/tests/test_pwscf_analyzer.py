@@ -88,6 +88,24 @@ def write_schema(directory,calculation='scf',energy=-1.0,prefix='pwscf'):
 #end def write_schema
 
 
+def test_analyzer_input_object():
+    from ..pwscf_analyzer import PwscfAnalyzer
+    from ..pwscf_input import PwscfInput
+
+    fixture = PWSCF_ANALYZER_FIXTURES/'qe_7_0/default/scf'
+    input_data = PwscfInput(fixture/'pwscf.in')
+    analyzer = PwscfAnalyzer(
+        input   = input_data,
+        outfile = 'pwscf.out',
+        path    = fixture,
+        analyze = True,
+        )
+
+    assert analyzer.input is input_data
+    assert analyzer.calculation=='scf'
+#end def test_analyzer_input_object
+
+
 @pytest.mark.parametrize(
     argnames='text,expected',
     argvalues=(
@@ -162,12 +180,12 @@ def test_empty_init():
     )
 
     pa = PwscfAnalyzer()
-    assert(pa.source=='both')
+    assert(pa.read_all)
     assert(pa.strict)
     assert(pa.required==set())
     with pytest.raises(
-        RuntimeError,
-        match=r'PWSCF output file name is not available',
+        FileNotFoundError,
+        match=r'PWSCF schema XML file and output file are not available',
         ):
         pa.analyze()
     with pytest.raises(
@@ -215,10 +233,10 @@ def test_all_schema_fixtures_are_parsed(schema_file):
     assert((fixture_path/'pwscf.in').is_file())
 
     analyzer = PwscfAnalyzer(
-        fixture_path,
-        'pwscf.in',
+        input = 'pwscf.in',
+        path  = fixture_path,
         analyze = True,
-        source = 'xml',
+        read_all = False,
         )
     selected,status = analyzer._schema_file()
     assert(status=='found')
@@ -241,26 +259,23 @@ def test_query_agreement_across_sources(case,relative_path,quantities):
 
     fixture_path = PWSCF_ANALYZER_FIXTURES/relative_path
     analyzers = {
-        source:PwscfAnalyzer(
-            fixture_path,
-            'pwscf.in',
-            'pwscf.out',
+        mode:PwscfAnalyzer(
+            input   = 'pwscf.in',
+            outfile = 'pwscf.out',
+            path    = fixture_path,
             analyze = True,
-            source = source,
+            read_all = mode=='all',
             )
-        for source in ('both','xml','out')
+        for mode in ('all','xml')
         }
-    both = analyzers['both']
+    both = analyzers['all']
     xml  = analyzers['xml']
-    out  = analyzers['out']
 
     assert(isinstance(both.results_xml,PwscfXmlData))
     assert(both.results_out is not None)
     assert(isinstance(xml.results_xml,PwscfXmlData))
     assert(xml.results_out is None)
-    assert(out.results_xml is None)
-    assert(out.results_out is not None)
-    assert(both.calculation==xml.calculation==out.calculation)
+    assert(both.calculation==xml.calculation)
 
     tolerances = {
         'initial_structure' : 1e-7,
@@ -288,32 +303,22 @@ def test_query_agreement_across_sources(case,relative_path,quantities):
             source:getattr(analyzer,quantity)()
             for source,analyzer in analyzers.items()
             }
-        both_value = values['both']
+        both_value = values['all']
         xml_value  = values['xml']
-        out_value  = values['out']
         if isinstance(xml_value,Structure):
             assert(isinstance(both_value,Structure))
-            assert(isinstance(out_value,Structure))
-            assert(both_value.units==xml_value.units==out_value.units)
+            assert(both_value.units==xml_value.units)
             assert(np.array_equal(both_value.elem,xml_value.elem))
-            assert(np.array_equal(xml_value.elem,out_value.elem))
             assert(np.array_equal(both_value.axes,xml_value.axes))
             assert(np.array_equal(both_value.pos,xml_value.pos))
-            atol = tolerances[quantity]
-            assert(np.allclose(xml_value.axes,out_value.axes,rtol=0,atol=atol))
-            assert(np.allclose(xml_value.pos,out_value.pos,rtol=0,atol=atol))
         elif isinstance(xml_value,(bool,np.bool_)):
-            assert(both_value==xml_value==out_value)
+            assert(both_value==xml_value)
         else:
             both_array = np.asarray(both_value)
             xml_array  = np.asarray(xml_value)
-            out_array  = np.asarray(out_value)
-            assert(both_array.shape==xml_array.shape==out_array.shape)
+            assert(both_array.shape==xml_array.shape)
             assert(both_array.dtype.kind==xml_array.dtype.kind)
-            assert(xml_array.dtype.kind==out_array.dtype.kind)
             assert(np.array_equal(both_array,xml_array))
-            atol = tolerances[quantity]
-            assert(np.allclose(xml_array,out_array,rtol=0,atol=atol))
         #end if
     #end for
 #end def test_query_agreement_across_sources
@@ -545,11 +550,10 @@ CELL_PARAMETERS (alat= 5.0)
 0.0 0.0 1.0
 ''')
     analyzer = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
-        'pwscf.out',
+        input   = 'pwscf.in',
+        outfile = 'pwscf.out',
+        path    = tmp_path,
         analyze = True,
-        source = 'out',
         strict = False,
         )
     assert(analyzer.results_out.calculation=='vc-relax')
@@ -557,11 +561,10 @@ CELL_PARAMETERS (alat= 5.0)
 
     (tmp_path/'pwscf.out').write_text('Self-consistent Calculation\n')
     analyzer = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
-        'pwscf.out',
+        input   = 'pwscf.in',
+        outfile = 'pwscf.out',
+        path    = tmp_path,
         analyze = True,
-        source = 'out',
         )
     assert(analyzer.results_out.calculation=='scf')
     assert(analyzer.calculation==('relax',None,'scf'))
@@ -578,12 +581,11 @@ def test_pw2casino_analyzer_read(tmp_path):
     pw2casino = Pw2CasinoAnalyzer(tmp_path/'pw2casino.out')
     assert(pw2casino.K==12.5)
     analyzer = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
-        'pwscf.out',
-        'pw2casino.out',
+        input   = 'pwscf.in',
+        outfile = 'pwscf.out',
+        path    = tmp_path,
+        pw2c_outfile_name = 'pw2casino.out',
         analyze = True,
-        source = 'out',
         )
     assert(isinstance(analyzer.results_out,PwscfOutData))
     assert(isinstance(analyzer.pw2casino,Pw2CasinoAnalyzer))
@@ -596,12 +598,11 @@ def test_pw2casino_analyzer_read(tmp_path):
     (tmp_path/'pw2casino.out').unlink()
     with pytest.raises(FileNotFoundError):
         PwscfAnalyzer(
-            tmp_path,
-            'pwscf.in',
-            'pwscf.out',
-            'pw2casino.out',
+            input   = 'pwscf.in',
+            outfile = 'pwscf.out',
+            path    = tmp_path,
+            pw2c_outfile_name = 'pw2casino.out',
             analyze = True,
-            source = 'out',
             )
 #end def test_pw2casino_analyzer_read
 
@@ -623,9 +624,9 @@ def test_qe_7_0_calculation_modes(verbosity,calculation):
         TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/verbosity/calculation
         )
     analyzer = PwscfAnalyzer(
-        fixture_path,
-        'pwscf.in',
-        'pwscf.out',
+        input   = 'pwscf.in',
+        outfile = 'pwscf.out',
+        path    = fixture_path,
         analyze = True,
         )
     out = analyzer.results_out
@@ -731,9 +732,9 @@ def test_supported_calculation_modes(verbosity,calculation):
         TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/verbosity/calculation
         )
     analyzer = PwscfAnalyzer(
-        fixture_path,
-        'pwscf.in',
-        'pwscf.out',
+        input   = 'pwscf.in',
+        outfile = 'pwscf.out',
+        path    = fixture_path,
         analyze = True,
         )
     assert(analyzer.results_out.calculation==calculation)
@@ -779,17 +780,16 @@ def test_supplemental_qe_runs(
     schema_file = fixture_path/'pwscf.save'/'data-file-schema.xml'
     assert(schema_file.is_file()==has_schema)
     analyzer = PwscfAnalyzer(
-        fixture_path,
-        'pwscf.in',
-        'pwscf.out',
+        input   = 'pwscf.in',
+        outfile = 'pwscf.out',
+        path    = fixture_path,
         analyze = True,
-        source = 'both' if has_schema else 'out',
         )
     out = analyzer.results_out
 
     assert(out.calculation==calculation)
     assert(isinstance(analyzer.results_xml,PwscfXmlData)==has_schema)
-    assert(analyzer.source_status.xml==('parsed' if has_schema else 'excluded'))
+    assert(analyzer.source_status.xml==('parsed' if has_schema else 'missing'))
     assert(analyzer.eigenvalues().shape==eigenvalue_shape)
     assert(analyzer.occupations().shape==eigenvalue_shape)
     assert(out.forces.shape[1:]==(2,3))
@@ -832,9 +832,9 @@ def test_supplemental_md_runs(version,case):
         TEST_DIR/'test_pwscf_analyzer_files'/version/'supplemental'/case
         )
     analyzer = PwscfAnalyzer(
-        fixture_path,
-        'pwscf.in',
-        'pwscf.out',
+        input   = 'pwscf.in',
+        outfile = 'pwscf.out',
+        path    = fixture_path,
         analyze = True,
         )
     assert(isinstance(analyzer.results_xml,PwscfXmlData))
@@ -845,9 +845,9 @@ def test_supplemental_md_runs(version,case):
     assert(stats is not None)
     assert(set(stats)==set(analyzer.results_out.md_data))
     md_only = PwscfAnalyzer(
-        fixture_path,
-        'pwscf.in',
-        'pwscf.out',
+        input   = 'pwscf.in',
+        outfile = 'pwscf.out',
+        path    = fixture_path,
         analyze = True,
         md_only = True,
         )
@@ -865,9 +865,9 @@ def test_quantity_accessors():
 
     fixture_root = TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/'high'
     scf = PwscfAnalyzer(
-        fixture_root/'scf',
-        'pwscf.in',
-        'pwscf.out',
+        input   = 'pwscf.in',
+        outfile = 'pwscf.out',
+        path    = fixture_root/'scf',
         analyze = True,
         )
     assert(np.isclose(scf.energy('Ha'),scf.energy('Ry')/2))
@@ -896,18 +896,17 @@ def test_quantity_accessors():
 
     input_fixture = TEST_DIR/'test_pwscf_analyzer_files'/'scf_output'
     input_scf = PwscfAnalyzer(
-        input_fixture,
-        'scf.in',
-        'scf.out',
+        input   = 'scf.in',
+        outfile = 'scf.out',
+        path    = input_fixture,
         analyze = True,
-        source = 'out',
         )
     assert(input_scf.initial_structure('A').units=='A')
 
     nscf = PwscfAnalyzer(
-        fixture_root/'nscf',
-        'pwscf.in',
-        'pwscf.out',
+        input   = 'pwscf.in',
+        outfile = 'pwscf.out',
+        path    = fixture_root/'nscf',
         analyze = True,
         )
     assert(nscf.energy() is not None)
@@ -942,11 +941,10 @@ def test_quantity_accessors():
 
     fermi_fixture = TEST_DIR/'test_pwscf_analyzer_files'/'nscf_output'
     fermi_nscf = PwscfAnalyzer(
-        fermi_fixture,
-        'nscf.in',
-        'nscf.out',
+        input   = 'nscf.in',
+        outfile = 'nscf.out',
+        path    = fermi_fixture,
         analyze = True,
-        source = 'out',
         )
     assert(fermi_nscf.results_out.fermi_energies.shape==(1,))
 #end def test_quantity_accessors
@@ -995,9 +993,9 @@ def test_legacy_xml(tmp_path,monkeypatch):
     assert(analyzer.results_xml.kpoints[1].up.eigenvalues==[-0.5,0.5])
 
     browse_only = PwscfAnalyzer(
-        tmp_path,
+        path = tmp_path,
         analyze = True,
-        source = 'xml',
+        read_all = False,
         strict = False,
         )
     assert(browse_only.results_xml.data is data)
@@ -1041,7 +1039,7 @@ def test_schema_queries_are_preferred(tmp_path):
   </output>
 </espresso>""")
 
-    analyzer = PwscfAnalyzer(tmp_path,'pwscf.in','pwscf.out',analyze=True)
+    analyzer = PwscfAnalyzer(input='pwscf.in',outfile='pwscf.out',path=tmp_path,analyze=True)
     assert(isinstance(analyzer.results_xml,PwscfXmlData))
     assert(np.isclose(analyzer.energy('Ha'),-1.0))
     assert(analyzer.initial_structure('B').pos.shape==(1,3))
@@ -1061,25 +1059,16 @@ def test_schema_queries_are_preferred(tmp_path):
     assert(np.isclose(analyzer.pressure('GPa'),np.trace(stress)/3))
 
     xml_only = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
+        input = 'pwscf.in',
+        path  = tmp_path,
         analyze = True,
-        source = 'xml',
+        read_all = False,
         )
     assert(xml_only.results_out is None)
     assert(xml_only.results_xml is not None)
     assert(np.isclose(xml_only.energy('Ha'),-1.0))
-    out_only = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
-        'pwscf.out',
-        analyze = True,
-        source = 'out',
-        )
-    assert(out_only.results_out is not None)
-    assert(out_only.results_xml is None)
-    with pytest.raises(ValueError,match='source must be one of'):
-        PwscfAnalyzer(tmp_path,'pwscf.in',source='invalid')
+    with pytest.raises(TypeError,match='read_all must be a bool'):
+        PwscfAnalyzer(input='pwscf.in',path=tmp_path,read_all='invalid')
 
     malformed = tmp_path/'bad-schema.xml'
     malformed.write_text('<espresso>')
@@ -1158,8 +1147,8 @@ def test_default_source_requires_one_file(tmp_path):
 ''')
 
     analyzer = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
+        input = 'pwscf.in',
+        path  = tmp_path,
         analyze = True,
         )
     assert(analyzer.results_out is None)
@@ -1167,7 +1156,12 @@ def test_default_source_requires_one_file(tmp_path):
     assert(analyzer.energy('Ha')==-1.0)
 
     with pytest.raises(FileNotFoundError,match='PWSCF output file is not available'):
-        PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True,source='out')
+        PwscfAnalyzer(
+            input   = 'pwscf.in',
+            outfile = 'missing.out',
+            path    = tmp_path,
+            analyze = True,
+            )
 #end def test_default_source_requires_one_file
 
 
@@ -1180,30 +1174,30 @@ def test_source_required_and_strict_validation(tmp_path):
         'relaxed_structure','forces','stress','pressure',
         }
     analyzer = PwscfAnalyzer(
-        tmp_path,
+        path = tmp_path,
         analyze = False,
         required = 'energy',
         )
-    assert(analyzer.source=='both')
+    assert(analyzer.read_all)
     assert(analyzer.strict is True)
     assert(analyzer.required=={'energy'})
     assert(set(analyzer.quantity_names)==quantities)
 
     analyzer = PwscfAnalyzer(
-        tmp_path,
+        path = tmp_path,
         analyze = False,
         required = ['energy','forces','energy'],
         strict = False,
         )
     assert(analyzer.required=={'energy','forces'})
     with pytest.raises(TypeError,match='strict must be a bool'):
-        PwscfAnalyzer(tmp_path,strict=1)
-    with pytest.raises(ValueError,match='source must be one of'):
-        PwscfAnalyzer(tmp_path,source='either')
+        PwscfAnalyzer(path=tmp_path,strict=1)
+    with pytest.raises(TypeError,match='read_all must be a bool'):
+        PwscfAnalyzer(path=tmp_path,read_all=1)
     with pytest.raises(ValueError,match='unknown PWSCF quantity'):
-        PwscfAnalyzer(tmp_path,required='timing')
+        PwscfAnalyzer(path=tmp_path,required='timing')
     with pytest.raises(ValueError,match='unknown PWSCF quantity'):
-        PwscfAnalyzer(tmp_path,required=[None])
+        PwscfAnalyzer(path=tmp_path,required=[None])
 #end def test_source_required_and_strict_validation
 
 
@@ -1211,33 +1205,31 @@ def test_file_requirements_are_checked_at_analysis_time(tmp_path):
     from ..pwscf_analyzer import PwscfAnalyzer
 
     analyzer = PwscfAnalyzer(
-        tmp_path,
-        'missing.in',
-        'missing.out',
+        input   = 'missing.in',
+        outfile = 'missing.out',
+        path    = tmp_path,
         analyze = False,
-        source = 'both',
         )
     with pytest.raises(FileNotFoundError,match='PWSCF input file is not available'):
         analyzer.analyze()
 
-    direct = PwscfAnalyzer(tmp_path/'direct.in',analyze=False,source='out')
+    direct = PwscfAnalyzer(input=tmp_path/'direct.in',analyze=False)
     with pytest.raises(FileNotFoundError,match='PWSCF input file is not available'):
         direct.analyze()
     permissive = PwscfAnalyzer(
-        tmp_path,
-        'missing.in',
+        input = 'missing.in',
+        path  = tmp_path,
         analyze = True,
-        source = 'out',
         strict = False,
         )
     assert(permissive.input is None)
     assert(permissive.energy() is None)
 
-    for source in ('xml','out','both'):
+    for read_all in (False,True):
         analyzer = PwscfAnalyzer(
-            tmp_path,
+            path = tmp_path,
             analyze = False,
-            source = source,
+            read_all = read_all,
             strict = False,
             )
         with pytest.raises(RuntimeError,match='has not been analyzed'):
@@ -1250,11 +1242,11 @@ def test_file_requirements_are_checked_at_analysis_time(tmp_path):
     #end for
 
     with pytest.raises(FileNotFoundError,match='schema XML'):
-        PwscfAnalyzer(tmp_path,analyze=True,source='xml')
+        PwscfAnalyzer(path=tmp_path,xmlfile='missing.xml',analyze=True)
     with pytest.raises(FileNotFoundError,match='output file'):
-        PwscfAnalyzer(tmp_path,analyze=True,source='out')
+        PwscfAnalyzer(path=tmp_path,outfile='missing.out',analyze=True)
     with pytest.raises(FileNotFoundError) as error:
-        PwscfAnalyzer(tmp_path,analyze=True)
+        PwscfAnalyzer(path=tmp_path,analyze=True)
     message = str(error.value)
     assert('schema XML' in message)
     assert('output file' in message)
@@ -1271,19 +1263,16 @@ def test_strict_source_file_matrix(tmp_path):
         '! total energy = -2.0 Ry\n'
         )
 
-    xml = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True,source='xml')
+    xml = PwscfAnalyzer(input='pwscf.in',path=tmp_path,analyze=True,read_all = False)
     assert(xml.results_xml is not None)
     assert(xml.results_out is None)
-    out = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True,source='out')
-    assert(out.results_xml is None)
-    assert(out.results_out is not None)
-    both = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True)
+    both = PwscfAnalyzer(input='pwscf.in',path=tmp_path,analyze=True)
     assert(both.results_xml is not None)
     assert(both.results_out is not None)
     assert(both.calculation=='scf')
 
     (tmp_path/'pwscf.save'/'data-file-schema.xml').unlink()
-    out_only = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True)
+    out_only = PwscfAnalyzer(input='pwscf.in',path=tmp_path,analyze=True)
     assert(out_only.results_xml is None)
     assert(out_only.results_out is not None)
     assert(out_only.calculation=='scf')
@@ -1296,11 +1285,11 @@ def test_ambiguous_source_discovery(tmp_path):
     write_schema(tmp_path,energy=-1.0,prefix='one')
     write_schema(tmp_path,energy=-2.0,prefix='two')
     with pytest.raises(RuntimeError,match='multiple.*schema XML'):
-        PwscfAnalyzer(tmp_path,analyze=True,source='xml')
+        PwscfAnalyzer(path=tmp_path,analyze=True,read_all=False)
     permissive_xml = PwscfAnalyzer(
-        tmp_path,
+        path = tmp_path,
         analyze = True,
-        source = 'xml',
+        read_all = False,
         strict = False,
         )
     assert(permissive_xml.results_xml is None)
@@ -1309,20 +1298,32 @@ def test_ambiguous_source_discovery(tmp_path):
     (tmp_path/'one.out').write_text('Self-consistent Calculation\n')
     (tmp_path/'two.out').write_text('Self-consistent Calculation\n')
     with pytest.raises(RuntimeError,match='multiple.*output'):
-        PwscfAnalyzer(tmp_path,analyze=True,source='out')
+        PwscfAnalyzer(path=tmp_path,analyze=True)
     permissive_out = PwscfAnalyzer(
-        tmp_path,
+        path = tmp_path,
         analyze = True,
-        source = 'out',
         strict = False,
         )
     assert(permissive_out.results_out is None)
 
+    (tmp_path/'one.out').unlink()
+    (tmp_path/'two.out').unlink()
     write_input(tmp_path,prefix='expected')
     with pytest.raises(FileNotFoundError,match='schema XML'):
-        PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True,source='xml')
+        PwscfAnalyzer(
+            input   = 'pwscf.in',
+            xmlfile = 'missing.xml',
+            path    = tmp_path,
+            analyze = True,
+            read_all = False,
+            )
     with pytest.raises(FileNotFoundError,match='output file'):
-        PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True,source='out')
+        PwscfAnalyzer(
+            input   = 'pwscf.in',
+            outfile = 'missing.out',
+            path    = tmp_path,
+            analyze = True,
+            )
 #end def test_ambiguous_source_discovery
 
 
@@ -1337,10 +1338,9 @@ def test_unique_output_discovery_excludes_auxiliary(tmp_path):
         'Kinetic energy from orbitals = 2.0\n'
         )
     analyzer = PwscfAnalyzer(
-        tmp_path,
+        path = tmp_path,
         pw2c_outfile_name = 'pw2casino.out',
         analyze = True,
-        source = 'out',
         )
     assert(analyzer.results_out is not None)
     assert(analyzer.energy('Ry')==-4.0)
@@ -1364,9 +1364,10 @@ atom 1 type 1 force = 0.1 0.2 0.3
 ''')
 
     xml_suffices = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
+        input = 'pwscf.in',
+        path  = tmp_path,
         analyze = True,
+        read_all = False,
         required = 'energy',
         )
     assert(xml_suffices.results_xml is not None)
@@ -1377,9 +1378,10 @@ atom 1 type 1 force = 0.1 0.2 0.3
 
     (tmp_path/'pwscf.out').unlink()
     xml_without_output = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
+        input = 'pwscf.in',
+        path  = tmp_path,
         analyze = True,
+        read_all = False,
         required = 'energy',
         )
     assert(xml_without_output.results_out is None)
@@ -1393,25 +1395,26 @@ atom 1 type 1 force = 0.1 0.2 0.3
 ''')
 
     fallback = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
+        input = 'pwscf.in',
+        path  = tmp_path,
         analyze = True,
+        read_all = False,
         required = ('energy','forces'),
         )
     assert(fallback.results_out is not None)
     assert(np.allclose(fallback.forces('Ry/B'),[[.1,.2,.3]]))
     assert(fallback.source_status.out=='parsed')
 
-    no_requirements = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True)
+    no_requirements = PwscfAnalyzer(input='pwscf.in',path=tmp_path,analyze=True)
     assert(no_requirements.results_out is not None)
 
     xml_only = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
+        input = 'pwscf.in',
+        path  = tmp_path,
         analyze = True,
-        source = 'xml',
-        required = 'forces',
+        read_all = False,
         )
+    xml_only.require('forces')
     assert(xml_only.results_out is None)
     with pytest.raises(RuntimeError,match='required PWSCF quantity "forces"'):
         xml_only.forces()
@@ -1425,9 +1428,10 @@ def test_require_only_updates_policy(tmp_path):
     write_schema(tmp_path)
     (tmp_path/'pwscf.out').write_text('Self-consistent Calculation\n')
     analyzer = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
+        input = 'pwscf.in',
+        path  = tmp_path,
         analyze = True,
+        read_all = False,
         required = 'energy',
         )
     assert(analyzer.results_out is None)
@@ -1452,9 +1456,9 @@ def test_available_is_policy_free(tmp_path):
 
     write_schema(tmp_path,energy=0.0)
     analyzer = PwscfAnalyzer(
-        tmp_path,
+        path = tmp_path,
         analyze = True,
-        source = 'xml',
+        read_all = False,
         required = ('energy','forces'),
         )
     assert(analyzer.available())
@@ -1468,9 +1472,9 @@ def test_available_is_policy_free(tmp_path):
 
     fixture = TEST_DIR/'test_pwscf_analyzer_files'/'qe_7_0'/'high'/'scf'
     scf = PwscfAnalyzer(
-        fixture,
-        'pwscf.in',
-        'pwscf.out',
+        input   = 'pwscf.in',
+        outfile = 'pwscf.out',
+        path    = fixture,
         analyze = True,
         )
     assert(scf.fractional_occs() is False)
@@ -1488,9 +1492,8 @@ total stress (Ry/bohr**3) (kbar) P = 12.0
 malformed stress row
 ''')
     analyzer = PwscfAnalyzer(
-        outfile,
+        outfile = outfile,
         analyze = True,
-        source = 'out',
         required = ('stress','occupations'),
         )
     assert(analyzer.pressure('kbar')==12.0)
@@ -1515,7 +1518,7 @@ def test_malformed_xml_field_falls_back_to_output(tmp_path):
         'Self-consistent Calculation\n'
         '! total energy = -5.0 Ry\n'
         )
-    analyzer = PwscfAnalyzer(tmp_path,'pwscf.in',analyze=True)
+    analyzer = PwscfAnalyzer(input='pwscf.in',path=tmp_path,analyze=True)
     assert(analyzer.results_xml.total_energy is None)
     assert(analyzer.energy('Ry')==-5.0)
 #end def test_malformed_xml_field_falls_back_to_output
@@ -1528,12 +1531,17 @@ def test_legacy_xml_does_not_satisfy_modern_xml_source(tmp_path):
     savedir.mkdir()
     (savedir/'data-file.xml').write_text('<legacy/>')
     with pytest.raises(FileNotFoundError,match='schema XML'):
-        PwscfAnalyzer(tmp_path,analyze=True,source='xml')
+        PwscfAnalyzer(
+            path    = tmp_path,
+            xmlfile = 'missing.xml',
+            analyze = True,
+            read_all = False,
+            )
 
     analyzer = PwscfAnalyzer(
-        tmp_path,
+        path = tmp_path,
         analyze = True,
-        source = 'xml',
+        read_all = False,
         strict = False,
         )
     assert(analyzer.results_xml is None)
@@ -1550,24 +1558,26 @@ def test_calculation_disagreement_tuple(tmp_path):
 
     with pytest.raises(RuntimeError,match='top-level calculation types disagree'):
         PwscfAnalyzer(
-            tmp_path,
-            'pwscf.in',
+            input = 'pwscf.in',
+            path  = tmp_path,
             analyze = True,
+            read_all = False,
             required = 'energy',
             )
 
     skipped_out = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
+        input = 'pwscf.in',
+        path  = tmp_path,
         analyze = True,
+        read_all = False,
         required = 'energy',
         strict = False,
         )
     assert(skipped_out.calculation==('relax','nscf',None))
 
     all_sources = PwscfAnalyzer(
-        tmp_path,
-        'pwscf.in',
+        input = 'pwscf.in',
+        path  = tmp_path,
         analyze = True,
         strict = False,
         )
@@ -1617,9 +1627,8 @@ End final coordinates
     assert(len(out.relax_structures)==1)
 
     analyzer = PwscfAnalyzer(
-        outfile,
+        outfile = outfile,
         analyze = True,
-        source = 'out',
         )
     assert(analyzer.calculation is None)
     assert(np.allclose(analyzer.forces('Ry/B'),[[.1,.2,.3]]))

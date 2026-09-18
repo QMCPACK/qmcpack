@@ -1,10 +1,10 @@
-.. _pwscf:
+.. _user-guide-rmg:
 
-Working with PWSCF
-==================
+Working with RMG
+================
 
-PWSCF Workflows
----------------
+RMG Workflows
+-------------
 
 Allowed inflowing dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -17,8 +17,8 @@ Available outflowing dependencies
 TBD
 
 
-PWSCF Input
------------
+RMG Input
+---------
 
 Generating input
 ^^^^^^^^^^^^^^^^
@@ -36,18 +36,13 @@ Writing input
 TBD
 
 
-.. _pwscf-data-analysis:
+RMG Data Analysis
+-----------------
 
-PWSCF Data Analysis
--------------------
-
-Nexus reads the results of a completed Quantum ESPRESSO ``pw.x`` calculation
-with a :class:`~pwscf_analyzer.PwscfAnalyzer` object.  Its query functions 
-provide a consistent interface to structures, energies, k-points, electronic 
-data, forces, and stress.  When modern Quantum ESPRESSO XML and text output 
-are both available, modern XML is preferred and text output fills unavailable
-quantities.  Some information, such as an ionic trajectory, is unique to text
-output.
+Nexus reads the results of a completed RMG calculation with an
+:class:`~rmg_analyzer.RmgAnalyzer` object.  Its query functions provide a
+consistent interface to structures, energies, k-points, electronic data,
+forces, and stress.  RMG data analysis uses the calculation log output.
 
 The following sections show how to load an analyzer and retrieve physical
 quantities.  A query normally returns ``None`` if relevant data was not written
@@ -55,14 +50,14 @@ or could not be parsed.  It raises an exception if analysis was not performed,
 the quantity is inapplicable to the detected run type, or an invalid unit is
 requested.
 
-Note: PWSCF and RMG analyzers share the exact same access patterns and return 
-types for obtaining physical quantities.
+RMG follows the same physical-quantity access patterns and return types shown
+for :ref:`PWSCF data analysis <pwscf-data-analysis>`.
 
 
 Loading data from a simulation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For a calculation created with :func:`~pwscf.generate_pwscf`, pass the
+For a calculation created with :func:`~rmg.generate_rmg`, pass the
 simulation object to :func:`~nexus.analyze_output`.  The factory loads a saved
 analyzer image when present; otherwise it constructs and analyzes an analyzer.
 
@@ -70,12 +65,12 @@ analyzer image when present; otherwise it constructs and analyzes an analyzer.
 
     from nexus import analyze_output
 
-    scf = generate_pwscf(
+    scf = generate_rmg(
         ...
         )
     ao  = analyze_output(scf)
 
-``ao`` is a ``PwscfAnalyzer`` object.  This is convenient in a Nexus workflow 
+``ao`` is an ``RmgAnalyzer`` object.  This is convenient in a Nexus workflow
 because the simulation supplies all the information needed to perform the analysis.
 
 
@@ -83,30 +78,21 @@ Reading data directly
 ^^^^^^^^^^^^^^^^^^^^^
 
 Output can also be analyzed without a simulation object.  Give
-``analyze_output`` the code name and any known input, text-output, or modern
-XML paths.  Using explicit file names is recommended (see
-:ref:`pwscf-source-selection` for alternatives).
+``analyze_output`` the RMG code name and its log-output path.  An input object,
+input-file path, or input directory can be supplied separately.
 
 .. code-block:: python
 
     from nexus import analyze_output
 
     ao = analyze_output(
-        'pwscf',
-        input   = 'scf.in',
-        outfile = 'scf.out',
-        path    = './scf_run',
+        'rmg',
+        input   = './scf_run/input',
+        outfile = './scf_run/rmg.log',
         )
 
-    # or with complete paths:
-    ao = analyze_output(
-        'pwscf',
-        input   = './scf_run/scf.in',
-        outfile = './scf_run/scf.out',
-        )
-
-The analyzer discovers modern Quantum ESPRESSO XML in the calculation
-directory and reads it automatically when present.
+The analyzer reads the selected RMG log.  It can also locate and read the RMG
+control input named by the log when that file is available.
 
 
 Accessing physical quantities
@@ -121,13 +107,13 @@ applicable.
 Supported run types and quantities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The table lists data ordinarily produced by each major PWSCF run type.  Actual
-availability also depends on PWSCF printing options and successful parsing.
+The table lists data ordinarily produced by each major RMG run type.  Actual
+availability also depends on RMG printing options and successful parsing.
 Here, *common data* means ``initial_structure``, ``kpoints``, and ``kweights``;
 *electronic data* means ``eigenvalues``, ``occupations``, ``Ef``, ``Evbm``,
 ``Ecbm``, ``band_gap``, and ``fractional_occs``.
 
-.. list-table:: Expected query data by PWSCF run type
+.. list-table:: Expected query data by RMG run type
     :header-rows: 1
     :widths: 18 48 34
 
@@ -141,7 +127,7 @@ Here, *common data* means ``initial_structure``, ``kpoints``, and ``kweights``;
     * - ``nscf``
       - Common data, ``energy``, and electronic data.
       - ``relaxed_structure``, ``forces``, ``stress``, and ``pressure``.
-    * - ``bands``
+    * - ``band``
       - Common data and ``eigenvalues``; ``occupations`` and band-edge data
         when reported.
       - ``energy``, ``relaxed_structure``, ``forces``, ``stress``, and
@@ -150,20 +136,20 @@ Here, *common data* means ``initial_structure``, ``kpoints``, and ``kweights``;
       - Common data, ``energy``, electronic data, ``relaxed_structure``,
         ``forces``, ``stress``, and ``pressure``.
       - None of the listed query groups.
-    * - ``vc-relax``
-      - The same data as ``relax``; the final cell is included in
-        ``relaxed_structure``.
+    * - ``neb``
+      - Common data, ``energy``, electronic data, ``relaxed_structure``,
+        ``forces``, ``stress``, and ``pressure`` when reported.
       - None of the listed query groups.
-    * - ``md`` and ``vc-md``
-      - Common data, ``energy``, final structure, ``forces``, ``stress``, and
-        ``pressure``.  Electronic data is returned when reported.
-      - No query group solely because it is a dynamics run.
+    * - ``md_VE``, ``md_TE``, ``tddft``, ``exx``, and ``stm``
+      - Data reported by the selected RMG mode.  Electronic quantities are
+        available for ``md_VE``, ``md_TE``, and ``tddft`` when reported.
+      - ``relaxed_structure`` except for ``neb`` and ``relax``.
 
 
 Checking and requiring quantities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use :meth:`~pwscf_analyzer.PwscfAnalyzer.available` to check whether all named
+Use :meth:`~rmg_analyzer.RmgAnalyzer.available` to check whether all named
 quantities are accessible.  It returns a single Boolean and does not initiate
 additional parsing.
 
@@ -176,7 +162,7 @@ additional parsing.
 
     True
 
-Use :meth:`~pwscf_analyzer.PwscfAnalyzer.require` when downstream work cannot
+Use :meth:`~rmg_analyzer.RmgAnalyzer.require` when downstream work cannot
 continue without a quantity.  A later query for an unavailable required
 quantity raises an exception rather than returning ``None``.
 
@@ -196,7 +182,7 @@ quantity raises an exception rather than returning ``None``.
     Energy = [None]
 
     Now required:
-    RuntimeError: required PWSCF quantity "energy" is not available
+    RuntimeError: required RMG quantity "energy" is not available
 
 
 Common structure and k-point data
@@ -327,9 +313,9 @@ occupation is neither empty nor full within a default tolerance of ``1e-3``.
 Final structure, forces, and stress
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``relaxed_structure()`` returns the final ``Structure`` for a relaxation or
-molecular-dynamics calculation.  Its axes and positions have the same shapes
-as the initial structure.
+``relaxed_structure()`` returns the final ``Structure`` for a ``relax`` or
+``neb`` calculation.  Its axes and positions have the same shapes as the
+initial structure.
 
 .. code-block:: python
 
@@ -384,102 +370,40 @@ It accepts the same units as ``stress()`` and uses GPa by default.
     P = 0.012 GPa
 
 
-.. _pwscf-source-selection:
+Strict and permissive parsing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-File selection and strict parsing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-PWSCF results can be obtained from modern Quantum ESPRESSO schema XML, text
-output, or both.  By default, ``read_all=True`` reads every available source.
-Modern XML values take precedence in physical-quantity queries, with text
-output supplying values absent from XML.  Legacy ``data-file.xml`` is retained
-for separate inspection but is not used by these queries.
-
-The direct forms below show how :func:`~nexus.analyze_output` identifies the
-calculation location and chooses candidate XML and text-output files.  The
-keyword arguments shown after ``path`` are PWSCF-analyzer arguments.
+RMG analysis reads one selected log-output file.  It may be provided directly,
+or discovered as the sole ``*.log`` file under ``path``.
 
 .. code-block:: python
 
     ao = analyze_output(
-        'pwscf',
-        path   = './scf_run',
-        strict = True,
-        )
-
-With only directory path provided (no input or output filenames), Nexus searches 
-the directory for one ``*.out`` file and searches for one modern schema XML file 
-named ``data-file-schema.xml`` within a ``*.save`` directory.  It checks both a
-``*.save`` directory directly inside the calculation directory and one level
-below it.
-
-.. code-block:: python
-
-    ao = analyze_output(
-        'pwscf',
-        input   = 'scf.in',
-        outfile = 'scf.out',
+        'rmg',
+        input   = 'input',
+        outfile = 'rmg.log',
         path    = './scf_run',
         strict  = True,
         )
 
-An explicit ``outfile`` selects that text file directly.  An explicit
-input file is also parsed.  When its ``CONTROL`` section specifies ``prefix``
-and ``outdir``, those values identify the modern XML file at
-``outdir/prefix.save/data-file-schema.xml``.  This input-derived location takes
-precedence over the directory search.
+With the default ``strict=True``, an explicitly selected input or output must
+exist, and output discovery must identify exactly one log.  If the input and
+log both identify a top-level run mode, they must agree.  A disagreement raises
+an exception under strict parsing.
+
+Set ``strict=False`` to analyze an incomplete or missing log path without a
+file error.  The analyzer completes with no parsed physical data, and
+applicable queries return ``None``.  Any data that is successfully parsed from
+an existing log remains available.
 
 .. code-block:: python
 
     ao = analyze_output(
-        'pwscf',
-        input    = './scf_run/scf.in',
-        read_all = False,
-        strict   = True,
-        )
-
-Passing an input-file path enables input-guided XML discovery.  With
-``read_all=False`` and no required quantities, successfully parsed XML ends
-the output-reading process.
-
-.. code-block:: python
-
-    ao = analyze_output(
-        'pwscf',
-        outfile = './scf_run/scf.out',
-        strict  = True,
-        )
-
-Passing a text-output path selects that file directly.  No input file is
-assumed, so modern XML discovery uses the directory search rather than
-input-derived ``prefix`` and ``outdir`` values.  An explicit ``xmlfile`` may be
-provided when XML discovery is unnecessary or ambiguous.
-
-With ``strict=True``, explicitly supplied files are required to exist when
-analysis begins.  If neither ``xmlfile`` nor ``outfile`` is supplied, at least
-one discoverable modern XML or text-output file must exist.  A supplied input
-file is also required.  If discovery finds more than one candidate of a file
-type, strict parsing raises an ambiguity error rather than choosing one
-arbitrarily.
-
-Set ``strict=False`` to inspect an incomplete directory without file-discovery
-errors.  Missing files are skipped.  An ambiguous search is likewise treated
-as unavailable and is not parsed.  Applicable query functions then return
-``None`` when their data was not found, while any successfully parsed data
-remains accessible.
-
-.. code-block:: python
-
-    ao = analyze_output(
-        'pwscf',
-        path   = './interrupted_scf',
+        'rmg',
+        outfile = './interrupted_scf/rmg.log',
         strict = False,
         )
 
-Modern XML is always parsed before text output.  With ``read_all=True``, text
-output is parsed as well so that log-only data is available.  With
-``read_all=False``, text output is parsed only when one or more quantities in
-the constructor's ``required`` set remain unavailable after XML parsing.  If
-that set is empty, text output is skipped.  Regardless of file selection, a
-successfully parsed value remains accessible even when unusual for the
-reconciled calculation type.
+As with PWSCF, ``required`` quantities can be supplied at construction or
+added with ``require()``.  They do not trigger additional parsing for RMG; a
+query for unavailable required data raises an exception.

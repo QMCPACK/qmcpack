@@ -2216,6 +2216,12 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def _schema_file(self):
         """Resolve the modern schema file and report discovery status."""
+        if self.xmlfile is not None:
+            filepath = path_string(self.xmlfile)
+            if not os.path.isabs(filepath):
+                filepath = os.path.join(self.path,filepath)
+            status = 'found' if os.path.isfile(filepath) else 'missing'
+            return filepath,status
         if self.input is not None and 'control' in self.input:
             control = self.input.control
             if 'outdir' in control and 'prefix' in control:
@@ -2238,6 +2244,25 @@ class PwscfAnalyzer(SimulationAnalyzer):
             return candidates,'ambiguous'
         return None,'missing'
     #end def _schema_file
+
+
+    def _input_file(self):
+        """Resolve the PWSCF input file and report discovery status."""
+        if isinstance(self.input,PwscfInput):
+            return None,'parsed'
+        if self.infile_name is not None:
+            filepath = os.path.join(self.path,self.infile_name)
+            status = 'found' if os.path.isfile(filepath) else 'missing'
+            return filepath,status
+        if not self.input_requested:
+            return None,'omitted'
+        candidates = sorted(glob(os.path.join(self.path,'*.in')))
+        if len(candidates)==1:
+            return candidates[0],'found'
+        if len(candidates)>1:
+            return candidates,'ambiguous'
+        return None,'missing'
+    #end def _input_file
 
 
     def _output_file(self):
@@ -2298,23 +2323,66 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     def __init__(
         self,
-        arg0              = None,
-        infile_name       = None,
-        outfile_name      = None,
-        pw2c_outfile_name = None,
+        input             = None,
+        outfile           = None,
         *,
         analyze           = False,
-        source            = 'both',
-        strict      = True,
+        path              = None,
+        xmlfile           = None,
+        pw2c_outfile_name = None,
+        read_all          = True,
+        strict            = True,
         required          = None,
         md_only           = False,
         ):
-        """Initialize an analyzer for a PWSCF simulation or output path."""
-        if source not in {'both','xml','out'}:
-            msg = "source must be one of: both, xml, out"
-            raise ValueError(msg)
+        """Initialize a PWSCF output analyzer.
+
+        Parameters
+        ----------
+        input : Simulation, PwscfInput, str, or os.PathLike, optional
+            PWSCF simulation, parsed input, input-file path, or directory in
+            which a single ``*.in`` input can be discovered.
+        outfile : str or os.PathLike, optional
+            Text-output path.  Relative paths are resolved below ``path``.
+        analyze : bool, default=False
+            Perform analysis during construction.
+        path : str or os.PathLike, optional
+            Base directory for relative paths and file discovery.
+        xmlfile : str or os.PathLike, optional
+            Explicit modern Quantum ESPRESSO schema-XML path.
+        pw2c_outfile_name : str or os.PathLike, optional
+            Optional PW2CASINO text-output path.
+        read_all : bool, default=True
+            Parse all available modern XML and text output.  If ``False``,
+            parse text output only when a constructor-required quantity is
+            unavailable after XML parsing.
+        strict : bool, default=True
+            Require explicitly supplied files, reject ambiguous discovery,
+            require at least one modern XML or text-output source, and require
+            parsed top-level calculation types to agree.
+        required : str or iterable of str, optional
+            Quantity names whose query functions must raise when unavailable.
+        md_only : bool, default=False
+            Restrict text parsing to molecular-dynamics data.
+        """
+        if not isinstance(read_all,bool):
+            raise TypeError('read_all must be a bool')
         if not isinstance(strict,bool):
             raise TypeError('strict must be a bool')
+        if input is not None and not isinstance(
+            input,(Simulation,PwscfInput,str,os.PathLike)
+            ):
+            raise TypeError(
+                'input must be a Simulation, PwscfInput, path, or None'
+                )
+        for name,value in (
+            ('outfile',outfile),
+            ('path',path),
+            ('xmlfile',xmlfile),
+            ('pw2c_outfile_name',pw2c_outfile_name),
+            ):
+            if value is not None and not isinstance(value,(str,os.PathLike)):
+                raise TypeError(f'{name} must be a path or None')
         if required is None:
             required = ()
         elif isinstance(required,str):
@@ -2327,16 +2395,20 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
         self.path              = None
         self.abspath           = None
-        self.infile_name       = infile_name
-        self.outfile_name      = outfile_name
+        self.infile_name       = None
+        self.outfile_name      = None
         self.pw2c_outfile_name = pw2c_outfile_name
+        self.xmlfile           = xmlfile
+        self.input_requested   = input is not None
+        self.outfile_requested = outfile is not None
+        self.xmlfile_requested = xmlfile is not None
         self.input             = None
         self.results_out       = None
         self.results_xml       = None
         self.pw2casino         = None
         self.calculation       = None
-        self.source            = source
-        self.strict      = strict
+        self.read_all          = read_all
+        self.strict            = strict
         self.required          = set()
         self.md_only           = md_only
         self.analysis_state    = 'not_analyzed'
@@ -2348,44 +2420,46 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self._query_depth      = 0
         self.require(*required)
 
-        if isinstance(arg0,Simulation):
-            sim                       = arg0
-            path                      = sim.locdir
-            infile_name               = sim.infile
-            outfile_name              = sim.outfile
+        if isinstance(input,Simulation):
+            sim                       = input
+            path                      = sim.locdir if path is None else path
+            input                     = sim.input
+            outfile                   = sim.outfile if outfile is None else outfile
             self.simulation_structure = sim.system.structure
-        elif arg0 is not None:
-            path = path_string(arg0)
-            if os.path.isfile(path):
-                filepath      = path
-                path,filename = os.path.split(filepath)
-                if filename.endswith('.in'):
-                    infile_name = filename
-                elif filename.endswith('.out'):
-                    outfile_name = filename
-                else:
-                    msg = (
-                        'could not determine whether file is QE input or output\n'
-                        f'file provided: {filepath}'
-                        )
-                    raise RuntimeError(msg)
-            elif not os.path.exists(path) and path.endswith(('.in','.out')):
-                filepath      = path
-                path,filename = os.path.split(filepath)
-                if filename.endswith('.in'):
-                    infile_name = filename
-                else:
-                    outfile_name = filename
-            if outfile_name is None and infile_name is not None:
-                infile_stem  = infile_name.rsplit('.',1)[0]
-                outfile_name = f'{infile_stem}.out'
-        else:
-            return
-        self.infile_name       = infile_name
-        self.outfile_name      = outfile_name
-        self.pw2c_outfile_name = pw2c_outfile_name
-        self.path              = path
-        self.abspath           = os.path.abspath(path)
+            self.input_requested      = True
+            self.outfile_requested    = True
+        if input is not None and isinstance(input,(str,os.PathLike)):
+            input_path = path_string(input)
+            if path is not None and not os.path.isabs(input_path):
+                input_path = os.path.join(path_string(path),input_path)
+            input_path = os.path.abspath(input_path)
+            if os.path.isdir(input_path):
+                path  = input_path
+                input = None
+            else:
+                if path is None:
+                    path = os.path.dirname(input_path)
+                input = input_path
+        if path is None and outfile is not None:
+            path = os.path.dirname(path_string(outfile))
+        if path is None and xmlfile is not None:
+            path = os.path.dirname(path_string(xmlfile))
+        if path is None:
+            path = '.'
+        self.path    = os.path.abspath(path_string(path) or '.')
+        self.abspath = os.path.abspath(self.path)
+        if isinstance(input, PwscfInput):
+            self.input = input
+        elif input is not None:
+            infile = path_string(input)
+            if not os.path.isabs(infile):
+                infile = os.path.join(self.path,infile)
+            self.infile_name = os.path.relpath(infile,self.path)
+        if outfile is not None:
+            outpath = path_string(outfile)
+            if not os.path.isabs(outpath):
+                outpath = os.path.join(self.path,outpath)
+            self.outfile_name = os.path.relpath(outpath,self.path)
         if analyze:
             self.analyze()
     #end def __init__
@@ -2399,51 +2473,50 @@ class PwscfAnalyzer(SimulationAnalyzer):
         self.calculation = None
         self.analysis_state = 'analyzing'
         self.source_status = obj(
-            input = 'omitted' if self.infile_name is None else 'missing',
-            xml   = 'excluded' if self.source=='out' else 'missing',
-            out   = 'excluded' if self.source=='xml' else 'missing',
+            input = 'parsed' if isinstance(self.input,PwscfInput) else 'omitted',
+            xml   = 'missing',
+            out   = 'missing',
             )
         if self.path is None:
             self.analysis_state = 'not_analyzed'
             msg = 'PWSCF output file name is not available'
             raise RuntimeError(msg)
         try:
-            self.input = None
             errors = []
-            if self.infile_name is not None:
-                infile = os.path.join(self.path,self.infile_name)
-                if os.path.isfile(infile):
-                    self.input = PwscfInput(infile)
-                    self.source_status.input = 'parsed'
-                elif self.strict:
-                    errors.append(
-                        'PWSCF input file is not available\n'
-                        f'file not found: {infile}'
-                        )
+            input_file,input_status = self._input_file()
+            self.source_status.input = input_status
+            if input_status=='found':
+                self.input = PwscfInput(input_file)
+                self.source_status.input = 'parsed'
+            elif self.strict and self.input_requested:
+                if input_status=='ambiguous':
+                    paths = '\n'.join(input_file)
+                    errors.append(f'multiple PWSCF input files were found\n{paths}')
+                elif not isinstance(self.input,PwscfInput):
+                    errors.append('PWSCF input file is not available')
 
             schema_file,schema_status = self._schema_file()
             output_file,output_status = self._output_file()
-            if self.source in {'both','xml'}:
-                self.source_status.xml = schema_status
-            if self.source in {'both','out'}:
-                self.source_status.out = output_status
+            self.source_status.xml = schema_status
+            self.source_status.out = output_status
             if self.strict:
-                if self.source=='xml' and schema_status=='missing':
+                if self.xmlfile_requested and schema_status=='missing':
                     errors.append('PWSCF schema XML file is not available')
-                elif self.source=='out' and output_status=='missing':
+                if self.outfile_requested and output_status=='missing':
                     errors.append('PWSCF output file is not available')
-                elif (
-                    self.source=='both'
+                if (
+                    not self.xmlfile_requested
+                    and not self.outfile_requested
                     and schema_status=='missing'
                     and output_status=='missing'
                     ):
                     errors.append(
                         'PWSCF schema XML file and output file are not available'
                         )
-                if self.source in {'both','xml'} and schema_status=='ambiguous':
+                if schema_status=='ambiguous':
                     paths = '\n'.join(schema_file)
                     errors.append(f'multiple PWSCF schema XML files were found\n{paths}')
-                if self.source in {'both','out'} and output_status=='ambiguous':
+                if output_status=='ambiguous':
                     paths = '\n'.join(output_file)
                     errors.append(f'multiple PWSCF output files were found\n{paths}')
             auxiliary = None
@@ -2462,24 +2535,23 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 error_type = RuntimeError if ambiguous else FileNotFoundError
                 raise error_type(message)
 
-            if self.source in {'both','xml'}:
-                if schema_status=='found':
-                    self.analyze_xml(schema_file)
-                    self.source_status.xml = (
-                        'parsed' if self._schema_results() is not None
-                        else 'parse_failed'
-                        )
-                else:
-                    # Legacy XML remains browse-only and does not change the
-                    # modern XML resolution status.
-                    self.analyze_xml(discover=False)
+            if schema_status=='found':
+                self.analyze_xml(schema_file)
+                self.source_status.xml = (
+                    'parsed' if self._schema_results() is not None
+                    else 'parse_failed'
+                    )
+            else:
+                # Legacy XML remains browse-only and does not change the
+                # modern XML resolution status.
+                self.analyze_xml(discover=False)
             self._set_calculation()
 
-            parse_output = self.source=='out'
-            if self.source=='both':
-                parse_output = len(self.required)==0
+            parse_output = self.read_all
+            if not self.read_all:
+                parse_output = False
                 if not parse_output:
-                    parse_output = not all(
+                    parse_output = len(self.required)>0 and not all(
                         self._query_value(name) is not None
                         for name in self.required
                         )
@@ -2489,7 +2561,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     md_only = self.md_only,
                     )
                 self.source_status.out = 'parsed'
-            elif self.source=='both' and output_status=='found':
+            elif output_status=='found':
                 self.source_status.out = 'skipped'
             self._set_calculation()
             calculation_types = self.calculation
