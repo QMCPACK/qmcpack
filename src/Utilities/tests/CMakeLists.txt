@@ -40,3 +40,6 @@ target_link_libraries(${UTEST_EXE} catch_main qmcutil)
 add_unit_test(deterministic-unit_${UTEST_EXE} 1 1 $<TARGET_FILE:${UTEST_EXE}> --turn-on-printout)
 
 add_subdirectory(for_testing)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

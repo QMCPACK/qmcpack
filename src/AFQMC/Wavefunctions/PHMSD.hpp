@@ -305,7 +305,7 @@ public:
     using std::get;
     int nw = wset.size();
     if (ovlp.num_elements() != nw)
-      ovlp.reextent(iextensions<1u>{nw});
+      ovlp.reextent(extents_t<1u>{nw});
     if (get<0>(eloc.sizes()) != nw || get<1>(eloc.sizes()) != 3)
       eloc.reextent({nw, 3});
     Energy(wset, eloc, ovlp);
@@ -350,7 +350,7 @@ public:
   {
     int nw = wset.size();
     if (ovlp.num_elements() != nw)
-      ovlp.reextent(iextensions<1u>{nw});
+      ovlp.reextent(extents_t<1u>{nw});
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact, transpose);
   }
 
@@ -422,7 +422,7 @@ public:
   {
     int nw = wset.size();
     if (ovlp.num_elements() != nw)
-      ovlp.reextent(iextensions<1u>{nw});
+      ovlp.reextent(extents_t<1u>{nw});
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact_G_for_vbias, transposed_G_for_vbias_);
   }
 
@@ -440,7 +440,7 @@ public:
   {
     int nw = wset.size();
     if (ovlp.num_elements() != nw)
-      ovlp.reextent(iextensions<1u>{nw});
+      ovlp.reextent(extents_t<1u>{nw});
     Overlap(wset, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)

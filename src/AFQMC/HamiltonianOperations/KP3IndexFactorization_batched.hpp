@@ -345,7 +345,7 @@ public:
     int npol  = (walker_type == NONCOLLINEAR) ? 2 : 1;
 
     CVector vMF_(vMF);
-    CVector P0D(iextensions<1u>{NMO * NMO});
+    CVector P0D(extents_t<1u>{NMO * NMO});
     fill_n(P0D.base(), P0D.num_elements(), ComplexType(0));
     vHS(vMF_, P0D);
     if (TG_.TG().size() > 1)
@@ -627,10 +627,10 @@ public:
       std::vector<int> kdiag;
       kdiag.reserve(batch_size);
 
-      DynamicIVector IMats(iextensions<1u>{batch_size},
+      DynamicIVector IMats(extents_t<1u>{batch_size},
                            device_buffer_manager.get_generator().template get_allocator<int>());
       fill_n(IMats.base(), IMats.num_elements(), 0);
-      DynamicVector dev_scl_factors(iextensions<1u>{batch_size},
+      DynamicVector dev_scl_factors(extents_t<1u>{batch_size},
                                     device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       Dynamic3Tensor T1({batch_size, nwalk * nocc_max, nocc_max * nchol_max},
                         device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
@@ -640,7 +640,7 @@ public:
       long mem_ank(0);
       if (needs_copy)
         mem_ank = nkpts * nocc_max * nchol_max * npol * nmo_max;
-      DynamicVector LBuff(iextensions<1u>{2 * mem_ank},
+      DynamicVector LBuff(extents_t<1u>{2 * mem_ank},
                           device_buffer_manager.get_generator().template get_allocator<SPComplexType>());
       sp_pointer LQptr(nullptr), LQmptr(nullptr);
       if (needs_copy)
@@ -970,7 +970,7 @@ public:
         }
         size_t local_memory_needs = 2*nocca_max*nocca_max*nchol_max; 
         if(TMats.num_elements() < local_memory_needs) { 
-          TMats = std::move(SpVector(iextensions<1u>{local_memory_needs})); 
+          TMats = std::move(SpVector(extents_t<1u>{local_memory_needs})); 
           using std::fill_n;
           fill_n(TMats.base(),TMats.num_elements(),SPComplexType(0.0));
         }
@@ -1062,7 +1062,7 @@ public:
       if(addEJ) {
         size_t local_memory_needs = 2*nchol_max*nwalk; 
         if(TMats.num_elements() < local_memory_needs) { 
-          TMats = std::move(SpVector(iextensions<1u>{local_memory_needs}));
+          TMats = std::move(SpVector(extents_t<1u>{local_memory_needs}));
           using std::fill_n;
           fill_n(TMats.base(),TMats.num_elements(),SPComplexType(0.0));
         }

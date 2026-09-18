@@ -765,11 +765,11 @@ def test_compose():
                                         type = 'Array',
                                         coeff = np.array([
                                             -1.488295706, -1.406709163,
-                                            -1.232298155, -0.9391459067, 
-                                            -0.5575491618, -0.2186131788, 
-                                            -0.1463697747, -0.09781208605, 
-                                            -0.06418209044, -0.03977101442, 
-                                            -0.02226362717, -0.009458557456, 
+                                            -1.232298155, -0.9391459067,
+                                            -0.5575491618, -0.2186131788,
+                                            -0.1463697747, -0.09781208605,
+                                            -0.06418209044, -0.03977101442,
+                                            -0.02226362717, -0.009458557456,
                                             -0.002401473122])
                                         ),
                                     ),
@@ -782,12 +782,12 @@ def test_compose():
                                         id   = 'eV',
                                         type = 'Array',
                                         coeff = np.array([
-                                            -2.88368129, -2.686350256, 
-                                            -2.500947608, -2.096756839, 
-                                            -1.444128943, -0.7686333881, 
+                                            -2.88368129, -2.686350256,
+                                            -2.500947608, -2.096756839,
+                                            -1.444128943, -0.7686333881,
                                             -0.5720610092, -0.4061081504,
-                                            -0.2772741837, -0.1767662649, 
-                                            -0.1010035901, -0.047325819, 
+                                            -0.2772741837, -0.1767662649,
+                                            -0.1010035901, -0.047325819,
                                             -0.01700847314])
                                         ),
                                     ),
@@ -808,12 +808,12 @@ def test_compose():
                                         id    = 'uu',
                                         type  = 'Array',
                                         coeff = np.array([
-                                            0.3569086717, 0.2751683418, 
-                                            0.2058897032, 0.1520886231, 
-                                            0.111693376, 0.08181917929, 
-                                            0.05977972383, 0.04283213009, 
-                                            0.02968150709, 0.01944788064, 
-                                            0.01196129476, 0.006271327336, 
+                                            0.3569086717, 0.2751683418,
+                                            0.2058897032, 0.1520886231,
+                                            0.111693376, 0.08181917929,
+                                            0.05977972383, 0.04283213009,
+                                            0.02968150709, 0.01944788064,
+                                            0.01196129476, 0.006271327336,
                                             0.002804432275])
                                         ),
                                     ),
@@ -826,12 +826,12 @@ def test_compose():
                                         id    = 'ud',
                                         type  = 'Array',
                                         coeff = np.array([
-                                            0.529300758, 0.3529320289, 
-                                            0.2365993762, 0.1604582152, 
-                                            0.1128159005, 0.08243318778, 
-                                            0.06023602184, 0.04310552718, 
-                                            0.02984314449, 0.01958170086, 
-                                            0.01186100803, 0.006112206499, 
+                                            0.529300758, 0.3529320289,
+                                            0.2365993762, 0.1604582152,
+                                            0.1128159005, 0.08243318778,
+                                            0.06023602184, 0.04310552718,
+                                            0.02984314449, 0.01958170086,
+                                            0.01186100803, 0.006112206499,
                                             0.002625360754])
                                         ),
                                     ),
@@ -856,18 +856,18 @@ def test_compose():
                                         type     = 'Array',
                                         optimize = True,
                                         coeff    = np.array([
-                                            -0.0006976974299, -0.001602461137, 
-                                            0.002262076236, -0.001250356792, 
-                                            -0.002453974076, 0.00100226978, 
-                                            -0.008343708726, 0.01062739293, 
-                                            0.01589135522, 0.007887562739, 
-                                            -0.0005580320441, -0.01523126657, 
-                                            -0.009565046782, -0.0009005995139, 
-                                            0.01105399926, -0.0002575705031, 
-                                            -0.01652920678, 0.00747060564, 
-                                            0.01464528142, 0.005133083617, 
-                                            0.006916610617, -0.009683594066, 
-                                            0.001290999707, -0.001322800206, 
+                                            -0.0006976974299, -0.001602461137,
+                                            0.002262076236, -0.001250356792,
+                                            -0.002453974076, 0.00100226978,
+                                            -0.008343708726, 0.01062739293,
+                                            0.01589135522, 0.007887562739,
+                                            -0.0005580320441, -0.01523126657,
+                                            -0.009565046782, -0.0009005995139,
+                                            0.01105399926, -0.0002575705031,
+                                            -0.01652920678, 0.00747060564,
+                                            0.01464528142, 0.005133083617,
+                                            0.006916610617, -0.009683594066,
+                                            0.001290999707, -0.001322800206,
                                             0.003931225142, -0.001163411737])
                                         ),
                                     ),
@@ -883,18 +883,18 @@ def test_compose():
                                         type     = 'Array',
                                         optimize = True,
                                         coeff    = np.array([
-                                            -0.004166620907, 0.0003869059334, 
-                                            0.01344638104, -7.5215692e-05, 
-                                            -0.006436299048, 0.0008791813519, 
-                                            0.007681280497, -0.006673633544, 
-                                            0.0300621195, 0.00157665002, 
-                                            -0.001657156134, -0.01142258435, 
-                                            -0.02006687607, 0.005271171591, 
-                                            0.01511417522, 0.0008942941789, 
-                                            -0.002018984988, 0.01595864928, 
-                                            0.005244762096, 0.01545262066, 
-                                            -0.006397246289, -0.0072233246, 
-                                            -0.0008063061353, 0.00830708478, 
+                                            -0.004166620907, 0.0003869059334,
+                                            0.01344638104, -7.5215692e-05,
+                                            -0.006436299048, 0.0008791813519,
+                                            0.007681280497, -0.006673633544,
+                                            0.0300621195, 0.00157665002,
+                                            -0.001657156134, -0.01142258435,
+                                            -0.02006687607, 0.005271171591,
+                                            0.01511417522, 0.0008942941789,
+                                            -0.002018984988, 0.01595864928,
+                                            0.005244762096, 0.01545262066,
+                                            -0.006397246289, -0.0072233246,
+                                            -0.0008063061353, 0.00830708478,
                                             0.001242024926, -0.0003962016339])
                                         ),
                                     ),
@@ -910,18 +910,18 @@ def test_compose():
                                         type     = 'Array',
                                         optimize = True,
                                         coeff    = np.array([
-                                            0.004388200165, 0.001900643263, 
-                                            -0.01549468789, -0.002564479476, 
-                                            0.002118937653, 0.0007437421471, 
-                                            -0.0085007067, 0.009637603236, 
-                                            -0.01717900977, 0.00186285366, 
+                                            0.004388200165, 0.001900643263,
+                                            -0.01549468789, -0.002564479476,
+                                            0.002118937653, 0.0007437421471,
+                                            -0.0085007067, 0.009637603236,
+                                            -0.01717900977, 0.00186285366,
                                             -0.006121695671, 0.01831402072,
-                                            0.006890778761, 0.003340289515, 
-                                            -0.001491823024, -0.001123033117, 
-                                            -0.008713157223, 0.02100098414, 
-                                            -0.03224060809, -0.002479213835, 
-                                            0.001387768485, 0.006636471962, 
-                                            0.0004745014561, 0.001629700016, 
+                                            0.006890778761, 0.003340289515,
+                                            -0.001491823024, -0.001123033117,
+                                            -0.008713157223, 0.02100098414,
+                                            -0.03224060809, -0.002479213835,
+                                            0.001387768485, 0.006636471962,
+                                            0.0004745014561, 0.001629700016,
                                             -0.001615344115, -0.0001680854702])
                                         ),
                                     ),
@@ -937,18 +937,18 @@ def test_compose():
                                         type     = 'Array',
                                         optimize = True,
                                         coeff    = np.array([
-                                            0.000658573315, 0.005924655484, 
-                                            0.008096696785, 0.002998451182, 
-                                            0.001289481835, 8.390092052e-05, 
-                                            0.0174934698, 0.004082827829, 
-                                            0.001656608224, -0.01638865932, 
-                                            0.002852247319, -0.01043954065, 
-                                            0.006179637761, -0.000652977982, 
-                                            -0.004542989787, -0.0004825008427, 
-                                            0.03569269894, -0.01539236687, 
-                                            0.007843924995, -0.009660462887, 
-                                            -0.01173827315, 0.005074028683, 
-                                            0.001248279616, 0.008752252359, 
+                                            0.000658573315, 0.005924655484,
+                                            0.008096696785, 0.002998451182,
+                                            0.001289481835, 8.390092052e-05,
+                                            0.0174934698, 0.004082827829,
+                                            0.001656608224, -0.01638865932,
+                                            0.002852247319, -0.01043954065,
+                                            0.006179637761, -0.000652977982,
+                                            -0.004542989787, -0.0004825008427,
+                                            0.03569269894, -0.01539236687,
+                                            0.007843924995, -0.009660462887,
+                                            -0.01173827315, 0.005074028683,
+                                            0.001248279616, 0.008752252359,
                                             -0.003457347502, 0.0001174638519])
                                         ),
                                     ),
@@ -961,7 +961,7 @@ def test_compose():
                     type   = 'generic',
                     target = 'e',
                     pairpots = [
-                        section( 
+                        section(
                             type   = 'coulomb',
                             name   = 'ElecElec',
                             source = 'e',
@@ -1135,7 +1135,7 @@ def test_generate():
     from ..physical_system import generate_physical_system
     from ..qmcpack_input import generate_qmcpack_input,spindensity
     from ..qmcpack_input import back_propagation,onerdm
-    
+
     system = generate_physical_system(
         units    = 'A',
         axes     = '''
@@ -1261,7 +1261,7 @@ def test_generate():
         timestep        = 0.005,
         nonlocalmoves   = 'yes',
         )
-    
+
     qi.pluralize()
 
     check_vs_serial_reference(qi,'VO2_M1_afm.in.xml gen')
@@ -1393,14 +1393,14 @@ def test_generate():
         eq_blocks        = 80,
         eq_steps         =  5,
         eq_timestep      = 0.02,
-        # dmc inputs     
+        # dmc inputs
         warmupsteps      = 10,
         blocks           = 600,
         steps            =  5,
         timestep         = 0.005,
         nonlocalmoves    = 'yes',
         )
-    
+
     qi.pluralize()
 
     check_vs_serial_reference(qi,'VO2_M1_afm.in.xml batched gen')
@@ -1470,7 +1470,7 @@ def test_read():
     check_vs_serial_reference(qi,'CH4_afqmc.in.xml read')
 
 
-    # test reading mixed integer/float positions 
+    # test reading mixed integer/float positions
     qi = QmcpackInput(TEST_FILES['OH_mixed_pos.in.xml'])
     pos = qi.qmcsystem.particlesets.ion0.position
     assert pos.dtype==float
@@ -1967,7 +1967,7 @@ def test_incorporate_system():
 
     axes     = qi.get('lattice')
     psi      = qi.get('ion0')
-    
+
     assert(value_eq(axes-shift,axes_ref))
     assert(value_eq(psi.groups.V.position-shift,psi_ref.groups.V.position))
     assert(value_eq(psi.groups.O.position-shift,psi_ref.groups.O.position))
@@ -1997,7 +1997,7 @@ def test_generate_kspace_jastrow():
       </coefficients>
    </correlation>
 </jastrow>
-'''
+'''  # noqa: W291
     text = kjas.write()
     assert text == expect
 #end def test_generate_kspace_jastrow
@@ -2018,13 +2018,13 @@ def test_excited_state():
         elem      = ['C','C'],
         pos       = [[ 0.    ,  0.    ,  0.    ],
                      [ 0.8925,  0.8925,  0.8925]],
-        tiling    = [3,1,3], 
-        kgrid     = (1,1,1), 
-        kshift    = (0,0,0), 
+        tiling    = [3,1,3],
+        kgrid     = (1,1,1),
+        kshift    = (0,0,0),
         C         = 4
         )
-  
-  
+
+
     # test kp_index, band_index format (format="band")
     qmc_optical = generate_qmcpack_input(
         det_format     = 'old',
@@ -2045,7 +2045,7 @@ def test_excited_state():
    <determinant id="downdet" size="36">
       <occupation mode="ground" spindataset="1"/>
    </determinant>
-</slaterdeterminant>'''.strip()
+</slaterdeterminant>'''.strip()  # noqa: W291
 
     text = qmc_optical.get('slaterdeterminant').write().strip()
     assert(text==expect)
@@ -2071,7 +2071,7 @@ def test_excited_state():
    <determinant id="downdet" size="36">
       <occupation mode="ground" spindataset="1"/>
    </determinant>
-</slaterdeterminant>'''.strip()
+</slaterdeterminant>'''.strip()  # noqa: W291
 
     text = qmc_optical.get('slaterdeterminant').write().strip()
     assert(text==expect)
@@ -2259,8 +2259,8 @@ def test_symbolic_excited_state():
         pos       = [[ 0.    ,  0.    ,  0.    ],
                      [ 0.8925,  0.8925,  0.8925]],
         use_prim  = True,    # Use SeeK-path library to identify prim cell
-        tiling    = [2,1,2], 
-        kgrid     = (1,1,1), 
+        tiling    = [2,1,2],
+        kgrid     = (1,1,1),
         kshift    = (0,0,0), # Assumes we study transitions from Gamma. For non-gamma tilings, use kshift appropriately
         #C         = 4
         )
@@ -2270,7 +2270,7 @@ def test_symbolic_excited_state():
         input_type     = 'basic',
         spin_polarized = True,
         system         = dia,
-        excitation     = ['up', 'gamma vb x cb'], 
+        excitation     = ['up', 'gamma vb x cb'],
         jastrows       = [],
         qmc            = 'vmc',
         )
@@ -2284,7 +2284,7 @@ def test_symbolic_excited_state():
    <determinant id="downdet" size="24">
       <occupation mode="ground" spindataset="1"/>
    </determinant>
-</slaterdeterminant>'''.strip()
+</slaterdeterminant>'''.strip()  # noqa: W291
     text = qmc_optical.get('slaterdeterminant').write().strip()
     assert(text==expect)
 
@@ -2294,7 +2294,7 @@ def test_symbolic_excited_state():
         input_type     = 'basic',
         spin_polarized = True,
         system         = dia,
-        excitation     = ['up', 'gamma vb-1 x cb'], 
+        excitation     = ['up', 'gamma vb-1 x cb'],
         jastrows       = [],
         qmc            = 'vmc',
         )
@@ -2308,7 +2308,7 @@ def test_symbolic_excited_state():
    <determinant id="downdet" size="24">
       <occupation mode="ground" spindataset="1"/>
    </determinant>
-</slaterdeterminant>'''.strip()
+</slaterdeterminant>'''.strip()  # noqa: W291
     text = qmc_optical.get('slaterdeterminant').write().strip()
     assert(text==expect)
 
@@ -2318,7 +2318,7 @@ def test_symbolic_excited_state():
         input_type     = 'basic',
         spin_polarized = True,
         system         = dia,
-        excitation     = ['up', 'gamma vb x cb+1'], 
+        excitation     = ['up', 'gamma vb x cb+1'],
         jastrows       = [],
         qmc            = 'vmc',
         )
@@ -2332,7 +2332,7 @@ def test_symbolic_excited_state():
    <determinant id="downdet" size="24">
       <occupation mode="ground" spindataset="1"/>
    </determinant>
-</slaterdeterminant>'''.strip()
+</slaterdeterminant>'''.strip()  # noqa: W291
     text = qmc_optical.get('slaterdeterminant').write().strip()
     assert(text==expect)
 

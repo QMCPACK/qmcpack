@@ -106,10 +106,10 @@ void timeBatchedQR(std::ostream& out, Allocator& alloc, Buff& buffer, int nbatch
   offset += T_.num_elements();
   int sz = ma::gqr_optimal_workspace_size(AT[0]);
   //std::cout << buffer.num_elements() << " " << 2*nbatch*m*n + 2*nbatch*m + nbatch*sz << " " << offset << std::endl;
-  Tensor1D_ref<T> WORK(buffer.origin() + offset, boost::multi::iextensions<1u>{nbatch * sz});
+  Tensor1D_ref<T> WORK(buffer.origin() + offset, boost::multi::extents_t<1u>{nbatch * sz});
   Alloc<int> ialloc{};
   std::vector<pointer<T>> Aarray;
-  Tensor1D<int> IWORK(boost::multi::iextensions<1u>{nbatch * (m + 1)}, ialloc);
+  Tensor1D<int> IWORK(boost::multi::extents_t<1u>{nbatch * (m + 1)}, ialloc);
   using std::copy_n;
   for (int i = 0; i < nbatch; i++)
   {
@@ -144,7 +144,7 @@ void timeQR(std::ostream& out, Allocator& alloc, Buff& buffer, int m)
   Tensor1D_ref<T> TAU(buffer.origin() + offset, {m});
   offset += TAU.num_elements();
   int sz = ma::gqr_optimal_workspace_size(A);
-  Tensor1D_ref<T> WORK(buffer.origin() + offset, boost::multi::iextensions<1u>{sz});
+  Tensor1D_ref<T> WORK(buffer.origin() + offset, boost::multi::extents_t<1u>{sz});
   Timer timer;
   using ma::geqrf;
   geqrf(A, TAU, WORK);
@@ -164,9 +164,9 @@ void timeExchangeKernel(std::ostream& out, Allocator& alloc, Buff& buffer, int n
   int offset = 0;
   Tensor3D_ref<T> Twabn(buffer.origin(), {2 * nbatch, nwalk * nocc, nocc * nchol});
   offset += Twabn.num_elements();
-  Tensor1D_ref<T> scal(buffer.origin() + offset, boost::multi::iextensions<1u>{nbatch});
+  Tensor1D_ref<T> scal(buffer.origin() + offset, boost::multi::extents_t<1u>{nbatch});
   offset += scal.num_elements();
-  Tensor1D_ref<T> result(buffer.origin() + offset, boost::multi::iextensions<1u>{nwalk});
+  Tensor1D_ref<T> result(buffer.origin() + offset, boost::multi::extents_t<1u>{nwalk});
   using ma::batched_dot_wabn_wban;
   Timer timer;
   batched_dot_wabn_wban(nbatch, nwalk, nocc, nchol, scal.origin(), Twabn.origin(), to_address(result.data()), 1);
@@ -229,7 +229,7 @@ void timeBatchedMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer,
   Tensor3D_ref<T> a(buffer.origin(), {nbatch, m, m});
   Tensor3D_ref<T> b(buffer.origin() + a.num_elements(), {nbatch, m, m});
   Alloc<int> ialloc{};
-  Tensor1D<int> IWORK(boost::multi::iextensions<1u>{nbatch * (m + 1)}, ialloc);
+  Tensor1D<int> IWORK(boost::multi::extents_t<1u>{nbatch * (m + 1)}, ialloc);
   std::vector<pointer<T>> A_array, B_array;
   A_array.reserve(nbatch);
   B_array.reserve(nbatch);
@@ -258,9 +258,9 @@ void timeMatrixInverse(std::ostream& out, Allocator& alloc, Buff& buffer, int m)
   using T    = typename Allocator::value_type;
   int offset = 0;
   Tensor2D_ref<T> a(buffer.origin(), {m, m});
-  Tensor1D_ref<T> WORK(buffer.origin() + a.num_elements(), boost::multi::iextensions<1u>{m * m});
+  Tensor1D_ref<T> WORK(buffer.origin() + a.num_elements(), boost::multi::extents_t<1u>{m * m});
   Alloc<int> ialloc{};
-  Tensor1D<int> IWORK(boost::multi::iextensions<1u>{m + 1}, ialloc);
+  Tensor1D<int> IWORK(boost::multi::extents_t<1u>{m + 1}, ialloc);
   using ma::getrf;
   Timer timer;
   getrf(a, IWORK, WORK);
@@ -293,7 +293,7 @@ int main(int argc, char* argv[])
     int max_rows              = num_rows[num_rows.size() - 1];
     int size                  = (2 * max_batch * max_rows * (max_rows / 2.0) + 3 * max_batch * max_rows);
     Alloc<std::complex<double>> alloc{};
-    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, 1.0, alloc);
+    Tensor1D<std::complex<double>> buffer(extents_t<1u>{size}, 1.0, alloc);
     for (auto nb : batches)
     {
       for (auto m : num_rows)
@@ -311,7 +311,7 @@ int main(int argc, char* argv[])
     out << "      M     M      tzgeqrf        tzungqr\n";
     int size = 3 * 1000 * 1000;
     Alloc<std::complex<double>> alloc{};
-    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, 1.0, alloc);
+    Tensor1D<std::complex<double>> buffer(extents_t<1u>{size}, 1.0, alloc);
     std::vector<int> dims = {100, 200, 500, 800, 1000};
     for (auto d : dims)
     {
@@ -325,7 +325,7 @@ int main(int argc, char* argv[])
     out << "       M     M       tsgemm\n";
     int size = 3 * 8000 * 8000;
     Alloc<float> alloc{};
-    Tensor1D<float> buffer(iextensions<1u>{size}, 1.0, alloc);
+    Tensor1D<float> buffer(extents_t<1u>{size}, 1.0, alloc);
     std::vector<int> dims = {200, 500, 800, 1000, 2000, 3000, 4000, 8000};
     for (auto d : dims)
     {
@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
     int max_batch             = batches[batches.size() - 1];
     int max_rows              = num_rows[num_rows.size() - 1];
     int size                  = 3 * max_batch * max_rows * max_rows;
-    Tensor1D<float> buffer(iextensions<1u>{size}, 1.0, alloc);
+    Tensor1D<float> buffer(extents_t<1u>{size}, 1.0, alloc);
     for (auto nb : batches)
     {
       for (auto m : num_rows)
@@ -364,7 +364,7 @@ int main(int argc, char* argv[])
     std::vector<int> batches = {100, 200, 400, 800};
     int nbatch_max           = batches[batches.size() - 1];
     int size                 = 2 * nbatch_max * nwalk * nocc * nocc * nchol + nbatch_max + nwalk;
-    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, 1.0, alloc);
+    Tensor1D<std::complex<double>> buffer(extents_t<1u>{size}, 1.0, alloc);
     for (auto b : batches)
     {
       timeExchangeKernel(out, alloc, buffer, b, nwalk, nocc, nchol);
@@ -382,7 +382,7 @@ int main(int argc, char* argv[])
     int max_batch             = batches[batches.size() - 1];
     int max_rows              = num_rows[num_rows.size() - 1];
     int size                  = 2 * max_batch * max_rows * max_rows;
-    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, alloc);
+    Tensor1D<std::complex<double>> buffer(extents_t<1u>{size}, alloc);
     {
       std::vector<std::complex<double>> tmp(size);
       fillRandomMatrix(tmp);
@@ -407,7 +407,7 @@ int main(int argc, char* argv[])
     std::vector<int> num_rows = {100, 110, 120, 200, 210, 300, 400, 500, 600, 700, 800, 1000, 2000, 4000};
     int max_rows              = num_rows[num_rows.size() - 1];
     int size                  = 2 * max_rows * max_rows;
-    Tensor1D<std::complex<double>> buffer(iextensions<1u>{size}, alloc);
+    Tensor1D<std::complex<double>> buffer(extents_t<1u>{size}, alloc);
     {
       std::vector<std::complex<double>> tmp(size);
       fillRandomMatrix(tmp);

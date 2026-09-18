@@ -9,7 +9,7 @@ from pathlib import Path
 from types import MappingProxyType
 import numpy as np
 from .periodic_table import Elements
-from .developer import DevBase, obj, log, NexusError
+from .developer import DevBase, obj, nxs_print, NexusError
 from .fileio import TextFile
 from .utilities import path_string, to_str
 
@@ -58,17 +58,17 @@ class BasisSets(DevBase):
         #end for
     #end def addbs
 
-        
+
     def readbs(self,*bsfiles):
         if len(bsfiles)==1 and isinstance(bsfiles[0],list):
             bsfiles = bsfiles[0]
         #end if
         bss = []
-        log('')
-        log('  Basissets')
+        nxs_print('')
+        nxs_print('  Basissets')
         for filepath in bsfiles:
             filepath_str = str(filepath)
-            log('    reading basis: '+filepath_str)
+            nxs_print('    reading basis: '+filepath_str)
             ext = filepath_str.split('.')[-1].lower()
             if ext=='gms_bas' or ext=='bas':
                 bs = gamessBasisFile(filepath_str)
@@ -77,7 +77,7 @@ class BasisSets(DevBase):
             #end if
             bss.append(bs)
         #end for
-        log('')
+        nxs_print('')
         self.addbs(bss)
     #end def readbs
 
@@ -558,7 +558,7 @@ class GaussianBasisSet(DevBase):
         return lbasis
     #end def lbasis
 
-    
+
     # test needed
     def lsort(self):
         lbasis = self.lbasis()
@@ -700,7 +700,7 @@ class GaussianBasisSet(DevBase):
         return gwidth
     #end def prim_widths
 
-    
+
     # test needed
     def remove_prims(self,comp=None,keep=None,**lselectors):
         lbasis = self.lbasis()
@@ -744,7 +744,7 @@ class GaussianBasisSet(DevBase):
                         del lbas[rem[i]]
                     #end for
                 #end if
-            elif isinstance(lsel,int):                
+            elif isinstance(lsel,int):
                 if comp=='<':
                     if lsel>len(lbas):
                         msg = f'cannot remove {lsel} basis functions from channel {l} as it only has {len(lbas)}'
@@ -851,7 +851,7 @@ class GaussianBasisSet(DevBase):
             #end if
         #end for
     #end def remove_channels
-                
+
 
     # test needed
     def incorporate(self,other,tol=1e-3,*,unique=False):

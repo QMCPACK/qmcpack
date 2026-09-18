@@ -15,8 +15,8 @@
 
 #include "HDFWalkerInput_0_4.h"
 #include "hdf/hdf_archive.h"
-#include "mpi/mpi_datatype.h"
-#include "mpi/collectives.h"
+#include "Message/mpi_datatype.h"
+#include "Message/CommOperators.h"
 #include "Utilities/FairDivide.h"
 
 #include <array>
@@ -28,9 +28,7 @@ HDFWalkerInput_0_4::HDFWalkerInput_0_4(WalkerConfigurations& wc_list,
                                        Communicate* c,
                                        const HDFVersion& v)
     : wc_list_(wc_list), num_ptcls_(num_ptcls), myComm(c), cur_version(0, 4)
-{
-  i_info.version = v;
-}
+{ i_info.version = v; }
 
 HDFWalkerInput_0_4::~HDFWalkerInput_0_4()
 {
@@ -226,10 +224,10 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
     }
   }
 
-  mpi::bcast(*myComm, success);
+  myComm->bcast(success);
   if (!success)
     return false;
-  mpi::bcast(*myComm, nw_in);
+  myComm->bcast(nw_in);
 
   if (nw_in == 0)
   {
@@ -272,17 +270,17 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
       has_weights = hin.readEntry(weights_in, hdf::walker_weights);
     }
   }
-  mpi::bcast(*myComm, success2);
+  myComm->bcast(success2);
   if (!success2)
     return false;
 
   Buffer_t posout(counts[myComm->rank()]);
   std::vector<QMCTraits::FullPrecRealType> weights_out(counts[myComm->rank()]);
-  mpi::scatterv(*myComm, posin, posout, counts, woffsets);
+  myComm->scatterv(posin, posout, counts, woffsets);
 
-  mpi::bcast(*myComm, has_weights);
+  myComm->bcast(has_weights);
   if (has_weights)
-    mpi::scatterv(*myComm, weights_in, weights_out, counts_weights, woffsets_weights);
+    myComm->scatterv(weights_in, weights_out, counts_weights, woffsets_weights);
 
   const size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
   const int curWalker = wc_list_.getActiveWalkers();
@@ -337,7 +335,7 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
         success = false;
       }
     }
-    mpi::bcast(*myComm, success);
+    myComm->bcast(success);
     if (!success)
       return false;
 
@@ -350,9 +348,9 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
       assert(woffsets[woffsets_size - 1] == nw_in);
     }
 
-    mpi::bcast(*myComm, woffsets_size);
+    myComm->bcast(woffsets_size);
     woffsets.resize(woffsets_size);
-    mpi::bcast(*myComm, woffsets.data(), woffsets_size);
+    myComm->bcast(woffsets.data(), woffsets_size);
     nw_in = woffsets[woffsets_size - 1];
   }
 

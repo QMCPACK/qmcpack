@@ -73,13 +73,13 @@ class Bspline(QAobject):
         for i in range(2,len(p)):
             c[0,i+1] = p[i]
         #end for
-           
-        self.p      = p      
-        self.rcut   = rcut   
-        self.cusp   = cusp   
-        self.c      = c      
-        self.nintervals = nintervals 
-        self.dr     = dr     
+
+        self.p      = p
+        self.rcut   = rcut
+        self.cusp   = cusp
+        self.c      = c
+        self.nintervals = nintervals
+        self.dr     = dr
         self.odr    = odr
         self.default_range = 0.,rcut
     #end def __init__
@@ -95,7 +95,7 @@ class Bspline(QAobject):
         v   = np.zeros(r.shape)
         dv  = np.zeros(r.shape)
         d2v = np.zeros(r.shape)
-        for p in range(len(r)):               
+        for p in range(len(r)):
             ri = r[p]*odr
             i = int(np.floor(ri))
             if i<ni:
@@ -196,8 +196,8 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
 
         self.info.fail = False
     #end def __init__
-            
-            
+
+
     def load_data_local(self):
         info = self.info
         if info.load_jastrow:

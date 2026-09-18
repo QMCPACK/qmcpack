@@ -33,9 +33,7 @@ class KContainerT
 public:
   using Real               = REAL;
   using FullPrecReal       = QMCTraits::FullPrecRealType;
-  using PositionFull       = QMCTraits::QTFull::PosType;
   static constexpr int DIM = OHMMS_DIM;
-  using AppPosition        = typename QMCTraits::PosType;
   using Position           = typename QMCTypes<Real, DIM>::PosType;
   using Kpts               = std::vector<TinyVector<int, DIM>>;
 
@@ -47,17 +45,10 @@ public:
   const auto& get_kpts_cart_soa() const { return kpts_cart_soa_; }
   const std::vector<TinyVector<int, DIM>>& getKpts() const { return kpts_; }
 
-  /** @ingroup Working Precision accessors
-   *  @brief   return reference kpt values in the working precision of build
-   *           these encapsulate the cached reduced precision or pass through of the
-   *           full precision values.
-   *  @{
-   */
-  ///get cartesian kpt representation in the working precision of the application.
-  const std::vector<AppPosition>& getKptsCartWorking() const;
-  ///get ksqr in the working precision of the application.
-  const std::vector<Real>& getKSQWorking() const;
-  /// @}
+  ///get cartesian kpt representation
+  const std::vector<Position>& getKptsCart() const { return kpts_cart_; }
+  ///get ksqr
+  const std::vector<FullPrecReal>& getKSQ() const { return ksq_; }
 
   const std::vector<int>& getKShell() const { return kshell; };
 
@@ -95,14 +86,6 @@ private:
   std::vector<Position> kpts_cart_;
   /// k squared at full precision
   std::vector<FullPrecReal> ksq_;
-  /** @ingroup Cached Working Precision values
-   *  @brief   only used or initialized for mixed precision
-   *  @{
-   */
-  std::vector<AppPosition> kpts_cart_working_;
-  std::vector<Real> ksq_working_;
-  /// @}
-
   /** Given a k index, return index to -k
    */
   std::vector<int> minusk;

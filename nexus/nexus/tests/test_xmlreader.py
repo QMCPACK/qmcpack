@@ -391,7 +391,7 @@ def test_remove_pair_sections():
               ...
            </qmc>
         </simulation>
-        '''
+        '''  # noqa: W293
     assert(s==s_no_h)
 
     s = remove_pair_sections(s,('<qmcsystem>','</qmcsystem>'))
@@ -406,9 +406,9 @@ def test_remove_pair_sections():
               ...
            </qmc>
         </simulation>
-        '''
+        '''  # noqa: W293
     assert(s==s_no_sys)
-    
+
     s = remove_pair_sections(s,('<simulation>','</simulation>'))
     assert(s.strip()=='')
 #end def test_remove_pair_sections
@@ -429,7 +429,7 @@ def test_remove_empty_lines():
 
 
         empty lines.
-        '''
+        '''  # noqa: W293
 
     sref = '''        This string
         has a

@@ -11,7 +11,7 @@ import numpy as np
 # Nexus imports
 from . import memory
 from .unit_converter import convert
-from .developer import DevBase, obj, log, NexusError, FileFormatError
+from .developer import DevBase, obj, nxs_print, NexusError, FileFormatError
 from .numerics import simstats
 from .grid_functions import grid_function, read_grid, StructuredGrid, grid as generate_grid
 from .grid_functions import SpheroidGrid,ParallelotopeGridFunction
@@ -73,7 +73,7 @@ class VLog(DevBase):
                     self.tlast = tnow
                 #end if
             #end if
-            log(msg,n=n+self.indent)
+            nxs_print(msg,n=n+self.indent)
         #end if
     #end def __init__
 
@@ -509,8 +509,8 @@ class Observable(DefinedAttributeBase):
 Observable.set_unassigned_default(None)
 
 Observable.define_attributes(
-    info = obj( 
-        type    = obj, 
+    info = obj(
+        type    = obj,
         default = obj,
         ),
     initialized = obj(
@@ -632,7 +632,7 @@ def read_eshdf_nofk_data(filename,Ef):
     # Compute the k-space cell axes
     kaxes    = 2*np.pi*np.linalg.inv(axes).T
 
-    # Convert G-vectors from cell coordinates to atomic units 
+    # Convert G-vectors from cell coordinates to atomic units
     gv       = np.dot(gvu,kaxes)
 
     # Get number of kpoints/twists, spins, and G-vectors
@@ -706,7 +706,7 @@ def read_eshdf_nofk_data(filename,Ef):
 
 class MomentumDistribution(ObservableWithComponents):
     component_names = ('tot','pol','u','d')
-    
+
     default_component_name = 'tot'
 
     def get_raw_data(self):
@@ -1034,9 +1034,9 @@ class MomentumDistributionDFT(MomentumDistribution):
                 return
             else:
                 save = True
-            #end if            
+            #end if
         #end if
-                
+
         vlog(f'\nExtracting n(k) data from {filepath}')
 
         if E_fermi is None:
@@ -1121,7 +1121,7 @@ class MomentumDistributionQMC(MomentumDistribution):
                 return
             else:
                 save = True
-            #end if            
+            #end if
         #end if
 
         vlog('\nReading n(k) data from stat.h5 files',time=True)
@@ -1237,7 +1237,7 @@ class Density(ObservableWithComponents):
         vlog('Current memory:',n=1,mem=True)
     #end def read_xsf
 
-    
+
     def volume_normalize(self):
         g = self.get_attribute('grid')
         dV = g.volume()/g.ncells
@@ -1283,7 +1283,7 @@ class Density(ObservableWithComponents):
 
 
     def radial_density(self,component=None,dr=0.01,ntheta=100,rmax=None,*,single=False,interp_kwargs=None,comps_return=False,species=None):
-        
+
         vlog('Computing radial density',time=True)
         vlog('Current memory:',n=1,mem=True)
         if interp_kwargs is None:
@@ -1571,7 +1571,7 @@ class StatFile(DevBase):
         #end if
     #end def __init__
 
-            
+
     def read(self,filepath,observables='all'):
         import h5py
         if not os.path.exists(filepath):

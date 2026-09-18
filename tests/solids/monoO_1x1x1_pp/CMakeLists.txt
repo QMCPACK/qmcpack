@@ -63,3 +63,6 @@ qmc_run_and_check(
   0
   LONG_MONO_O_J3_SCALARS # VMC
 )
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -265,9 +265,9 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
       throw std::runtime_error("Error generating filename");
     fout = fopen(fname.data(), "w");
   }
-  for (int iG = 0; iG < targetPtcl.getSimulationCell().getKLists().getKSQWorking().size(); iG++)
+  for (int iG = 0; iG < targetPtcl.getSimulationCell().getKLists().getKSQ().size(); iG++)
   {
-    RealType Gmag = std::sqrt(targetPtcl.getSimulationCell().getKLists().getKSQWorking()[iG]);
+    RealType Gmag = std::sqrt(targetPtcl.getSimulationCell().getKLists().getKSQ()[iG]);
     RealType sum  = 0.0;
     RealType uk   = 0.0;
     for (int i = 0; i < targetPtcl.groups(); i++)
