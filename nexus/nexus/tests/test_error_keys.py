@@ -1,4 +1,5 @@
 from io import BytesIO, StringIO
+import re
 
 import pytest
 
@@ -6,7 +7,94 @@ from . import NexusTestOrder
 pytestmark = pytest.mark.order(NexusTestOrder.ERROR_KEYS)
 
 
+from .. import error_keys
 from ..error_keys import find_error_keys
+
+
+_DIRECT_ERROR_LISTS = (
+    ('shell', 'shell_errors'),
+    ('posix', 'posix_errors'),
+    ('infiniband', 'infiniband_errors'),
+    ('lustre', 'lustre_errors'),
+    ('gpfs', 'gpfs_errors'),
+    ('slurm', 'slurm_errors'),
+    ('pbs', 'pbs_errors'),
+    ('mpi', 'mpi_errors'),
+    ('openmp', 'openmp_errors'),
+    ('linking', 'linking_errors'),
+    ('fortran', 'fortran_runtime_errors'),
+    ('cpp', 'cpp_errors'),
+    ('cuda', 'cuda_errors'),
+    ('hip', 'hip_errors'),
+    ('python', 'python_errors'),
+    ('blas', 'blas_errors'),
+    ('lapack', 'lapack_errors'),
+    ('fftw', 'fftw_errors'),
+    ('hdf5', 'hdf5_errors'),
+    ('libxml2', 'libxml2_errors'),
+    ('numpy', 'numpy_errors'),
+    ('scipy', 'scipy_errors'),
+    ('h5py', 'h5py_errors'),
+    ('pwscf', 'pwscf_errors'),
+    ('pyscf', 'pyscf_errors'),
+    ('quantum_package', 'quantum_package_errors'),
+    ('rmg', 'rmg_errors'),
+    ('qmcpack', 'qmcpack_errors'),
+    ('vasp', 'vasp_errors'),
+    ('gamess', 'gamess_errors'),
+    )
+
+
+def test_all_error_lists_have_consistency_checks():
+    """Ensure no documented ``*_errors`` catalog bypasses these checks."""
+    checked_lists = {list_name for _, list_name in _DIRECT_ERROR_LISTS}
+    documented_lists = {
+        name for name, value in vars(error_keys).items()
+        if name.endswith('_errors') and isinstance(value, tuple)
+        }
+    assert checked_lists == documented_lists
+
+
+@pytest.mark.parametrize(('selector', 'list_name'), _DIRECT_ERROR_LISTS)
+def test_error_lists(selector, list_name):
+    """Every documented active key is recognized by its error set."""
+    for key in getattr(error_keys, list_name):
+        assert find_error_keys(key, **{selector: True}), (
+            f'{list_name} entry is not matched: {key!r}'
+            )
+
+
+@pytest.mark.parametrize(('selector', 'list_name'), _DIRECT_ERROR_LISTS)
+def test_error_lists_and_patterns_are_consistent(selector, list_name):
+    """Keep every listed diagnostic and every regex represented mutually."""
+    entries = getattr(error_keys, list_name)
+    patterns = error_keys._error_patterns[selector]
+    flags = re.IGNORECASE | re.MULTILINE
+
+    for entry in entries:
+        assert any(re.search(pattern, entry, flags) for pattern in patterns), (
+            f'{list_name} entry is not covered by a regex: {entry!r}'
+            )
+
+    for pattern in patterns:
+        assert any(re.search(pattern, entry, flags) for entry in entries), (
+            f'{selector} regex has no representative in {list_name}: '
+            f'{pattern!r}'
+            )
+
+
+def test_contextual_error_lists():
+    """Keys whose regexes require failure context are recognized in context."""
+    for key in error_keys.linux_exit_signals:
+        text = key if ' signal ' in key else f'rank terminated by {key}'
+        assert find_error_keys(text, linux_signals=True), key
+
+    for key in error_keys.posix_errno_keys:
+        assert find_error_keys(f'fatal error: errno {key}', posix=True), key
+
+    for key in error_keys.python_exception_names:
+        text = f'Traceback (most recent call last):\n{key}: calculation failed'
+        assert find_error_keys(text, python=True), key
 
 
 def test_input_forms_and_return_lines(tmp_path):

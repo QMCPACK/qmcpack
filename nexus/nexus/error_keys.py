@@ -18,11 +18,19 @@ shell_errors = (
     'Illegal instruction',
     'Bus error',
     'Bad system call',
+    'Aborted',
+    'Killed',
+    'Terminated',
     'Stack overflow',
     'Out of memory',
+    'Cannot allocate memory',
+    'oom-kill',
     'invoked oom-killer',
-    'Machine Check Exception',
-    'EDAC Hardware Error',
+    'Killed process 123',
+    'run.sh: line 8: 4217 Killed',
+    # Machine-check and EDAC diagnostics can report corrected hardware errors.
+    # 'Machine Check Exception',
+    # 'EDAC Hardware Error',
     'stack smashing detected',
     'general protection fault',
     )
@@ -33,7 +41,7 @@ shell_error_patterns = (
     r'^.*:\s+line\s+\d+:\s+\d+\s+(?:aborted|killed)(?:\s+\(core dumped\))?(?:\s+.+)?$',
     r'^\s*terminated\s*$',
     r'\b(?:out of memory|cannot allocate memory|oom-kill(?:er)?|invoked oom-killer|killed process\s+\d+)\b',
-    r'\b(?:stack smashing detected|general protection fault)\b',
+    r'\b(?:stack overflow|stack smashing detected|general protection fault)\b',
     # Machine-check and EDAC diagnostics can report corrected hardware errors.
     # r'\bMachine Check Exception\b',
     # r'\b(?:MCE|EDAC)[^\n]{0,80}\bHardware Error\b',
@@ -55,6 +63,8 @@ linux_exit_signals = (
     'SIGTRAP',
     'SIGXCPU',
     'SIGXFSZ',
+    'terminated with signal 11',
+    'exited on signal 11',
     )
 
 linux_signal_error_patterns = (
@@ -77,6 +87,8 @@ posix_errors = (
     'Network is unreachable',
     'Address already in use',
     'Broken pipe',
+    'fatal error: errno ENOSPC',
+    'fatal error: No space left on device',
     )
 
 posix_errno_keys = (
@@ -116,10 +128,17 @@ posix_error_patterns = (
 infiniband_errors = (
     'UCX ERROR',
     'libibverbs: malformed packet',
+    'ucp_ep_create failed',
+    'uct_ep_connect_to_ep unreachable',
+    'ucs_init timed out',
+    'ibv_create_qp failed',
+    'libfabric transport error',
+    'ofi_endpoint unreachable',
     )
 
 infiniband_error_patterns = (
     r'\bUCX\s+ERROR\b',
+    r'\blibibverbs:\s*malformed packet\b',
     r'\b(?:ucp|uct|ucs)_[a-z0-9_]+\b[^\n]{0,80}\b(?:failed|error|unreachable|timed out)\b',
     r'\bibv_[a-z0-9_]+\b[^\n]{0,80}\b(?:failed|error)\b',
     r'\b(?:libfabric|ofi_[a-z0-9_]+)\b[^\n]{0,80}\b(?:error|failed|unreachable)\b',
@@ -128,9 +147,13 @@ infiniband_error_patterns = (
 lustre_errors = (
     'LustreError:',
     'LBUG:',
+    'LNetError transport failed',
+    'Lustre client evicted',
     )
 
 lustre_error_patterns = (
+    r'\bLustreError\s*:',
+    r'\bLBUG\s*:',
     r'\bLNet(?:Error)?\b[^\n]{0,80}\b(?:error|failed|fatal|timeout|unreachable)\b',
     r'\bLustre\b[^\n]{0,80}\b(?:error|failed|fatal|evicted)\b',
     )
@@ -138,9 +161,14 @@ lustre_error_patterns = (
 gpfs_errors = (
     'GPFS: [ERROR]',
     'GPFS: [FATAL]',
+    'GPFS deadlock detected',
+    'GPFS disk unavailable',
+    'GPFS unmounted abnormally',
+    'GPFS token expired',
     )
 
 gpfs_error_patterns = (
+    r'\bGPFS:\s*\[(?:ERROR|FATAL)\]',
     r'\bGPFS\b[^\n]{0,80}\b(?:deadlock detected|disk unavailable|unmounted abnormally|token expired)\b',
     )
 
@@ -150,9 +178,25 @@ slurm_errors = (
     'srun: Force term; sending SIGKILL',
     'DUE TO TIME LIMIT',
     'Exceeded job memory limit',
+    'State=FAILED',
+    'State=TIMEOUT',
+    'State=NODE_FAIL',
+    'State=OUT_OF_MEMORY',
+    'State=BOOT_FAIL',
+    'State=DEADLINE',
+    'State=CANCELLED',
+    'State=PREEMPTED',
+    'JOB CANCELLED',
+    'STEP FAILED',
+    'launch failed',
+    'oom-kill',
     )
 
 slurm_error_patterns = (
+    r'\b(?:slurmstepd|srun):\s*error:',
+    r'\bsrun:\s*Force term;\s*sending SIGKILL\b',
+    r'\bDUE TO TIME LIMIT\b',
+    r'\bExceeded job memory limit\b',
     r'\bState=(?:FAILED|TIMEOUT|NODE_FAIL|OUT_OF_MEMORY|BOOT_FAIL|DEADLINE|CANCELLED|PREEMPTED)\b',
     r'\b(?:JOB|STEP)[^\n]{0,80}\b(?:CANCELLED|FAILED|OUT_OF_MEMORY|TIMEOUT|NODE_FAIL)\b',
     r'\b(?:launch failed|oom-kill)\b',
@@ -163,9 +207,14 @@ pbs_errors = (
     'ob_init: Unable to read server database',
     'cannot send job to mom',
     'qsub: Bad UID for job execution',
+    'exit_status=1',
     )
 
 pbs_error_patterns = (
+    r'\bPBS:\s*job killed:',
+    r'\bob_init:\s*Unable to read server database\b',
+    r'\bcannot send job to mom\b',
+    r'\bqsub:\s*Bad UID for job execution\b',
     r'\bexit_status\s*=\s*(?!0\b)-?\d+\b',
     )
 
@@ -254,6 +303,16 @@ mpi_errors = (
     'PRTE_ERROR_LOG',
     'the first job to fail is listed below',
     'job aborted:',
+    'MPI_Abort was invoked',
+    'one or more processes exited with non-zero status',
+    'process returned a non-zero exit code',
+    'Primary job terminated normally, but',
+    'mpirun aborted',
+    'mpiexec failed to launch the application',
+    'orterun terminated',
+    'prterun exited on signal 11',
+    'exited on signal 11',
+    'terminated with signal 11',
     # A callback name and generic cleanup text do not establish failure.
     # 'mpiexec_callback_proc',
     # 'cleaning up processes',
@@ -261,12 +320,18 @@ mpi_errors = (
     )
 
 mpi_error_patterns = (
+    r'\bmpirun:\s*kill job\b',
+    r'\bmpirun noticed that process rank\b',
+    r'\b(?:ORTE|PRTE)_ERROR_LOG\b',
+    r'\bthe first job to fail is listed below\b',
+    r'\bjob aborted:',
     r'\bMPI_Abort was invoked\b',
     r'\bone or more processes exited with non-zero status\b',
     r'\bprocess returned a non-zero exit code\b',
     r'\bPrimary job terminated normally, but\b',
     r'\b(?:mpirun|mpiexec|orterun|prterun)\b[^\n]{0,120}\b(?:aborted|failed|non-zero|signal|terminated)\b',
     r'\b(?:exited on|terminated with) signal(?:\s+\d+)?\b',
+    r'\bexecvp error\b',
     )
 
 openmp_errors = (
@@ -276,7 +341,11 @@ openmp_errors = (
     'libiomp5: error',
     )
 
-openmp_error_patterns = ()
+openmp_error_patterns = (
+    r'\bOMP:\s*Error\b',
+    r'\blibgomp:\s*(?:Thread creation failed|Out of memory)\b',
+    r'\blibiomp5:\s*error\b',
+    )
 
 
 # Compiled-code and language-runtime errors
@@ -288,9 +357,13 @@ linking_errors = (
     'wrong ELF class',
     'symbol lookup error',
     'relocation error',
+    'GLIBCXX_3.4.30 not found',
+    'CXXABI_1.3.13 not found',
+    "version 'GLIBC_2.34' not found",
     )
 
 linking_error_patterns = (
+    r'\b(?:error while loading shared libraries|cannot open shared object file|undefined symbol:|wrong ELF class|symbol lookup error|relocation error)',
     r'\b(?:GLIBCXX|CXXABI)_[0-9.]+\b[^\n]{0,40}\bnot found\b',
     r'\bversion\s+[\'`][^\'`]+[\'`]\s+not found\b',
     )
@@ -298,11 +371,15 @@ linking_error_patterns = (
 fortran_runtime_errors = (
     'Fortran runtime error:',
     'ERROR STOP',
+    'forrtl: severe (174):',
+    'Coarray ERROR STOP',
     # A coarray status value may be inspected and handled by the application.
     # 'Stat_Stopped_Image',
     )
 
 fortran_error_patterns = (
+    r'\bFortran runtime error:',
+    r'\bERROR STOP\b',
     r'\bforrtl:\s*severe\s*\(\d+\):',
     r'\bCoarray\s+ERROR STOP\b',
     )
@@ -330,12 +407,40 @@ cpp_errors = (
     )
 
 cpp_error_patterns = (
+    r'\bterminate called after throwing an instance of\b',
+    r'\bterminating with uncaught exception of type\b',
+    r'\bterminate called (?:without an active exception|recursively)\b',
+    r'\bAssertion failed\b',
+    r'(?:\bdouble free or corruption\b|\bcorrupted size vs\. prev_size\b|free\(\): (?:invalid pointer|double free detected)|malloc\(\): memory corruption|munmap_chunk\(\): invalid pointer|\bpure virtual method called\b)',
+    r'\b(?:AddressSanitizer:DEADLYSIGNAL|ERROR: AddressSanitizer|SUMMARY: AddressSanitizer)\b',
     # A what() line alone does not establish that an exception was uncaught.
     # r'^\s*what\(\):\s+.+$',
     )
 
 cuda_errors = (
     'CUDA error:',
+    'cudaErrorMemoryAllocation',
+    'cudaErrorInitializationError',
+    'cudaErrorLaunchFailure',
+    'cudaErrorLaunchTimeout',
+    'cudaErrorLaunchOutOfResources',
+    'cudaErrorIllegalAddress',
+    'cudaErrorNoKernelImageForDevice',
+    'cudaErrorInsufficientDriver',
+    'cudaErrorSystemDriverMismatch',
+    'cudaErrorECCUncorrectable',
+    'cudaErrorUnknown',
+    'ncclUnhandledCudaError',
+    'ncclSystemError',
+    'ncclInternalError',
+    'ncclInvalidArgument',
+    'ncclInvalidUsage',
+    'ncclRemoteError',
+    'NCCL call to connect failed',
+    'UCX call to connect failed',
+    'CUDA call to connect failed',
+    'socket call to connect failed',
+    'transport call to connect failed',
     # An Xid is a driver event, not proof that this process failed.  NCCL WARN
     # includes warnings as well as errors; concrete NCCL failures are matched
     # below.
@@ -344,6 +449,7 @@ cuda_errors = (
     )
 
 cuda_error_patterns = (
+    r'\bCUDA error:',
     r'\bcudaError(?:MemoryAllocation|InitializationError|LaunchFailure|LaunchTimeout|LaunchOutOfResources|IllegalAddress|NoKernelImageForDevice|InsufficientDriver|SystemDriverMismatch|ECCUncorrectable|Unknown)\b',
     r'\bnccl(?:UnhandledCudaError|SystemError|InternalError|InvalidArgument|InvalidUsage|RemoteError)\b',
     r'\b(?:NCCL|UCX|CUDA|socket|transport)[^\n]{0,80}\bcall to connect failed\b',
@@ -351,12 +457,32 @@ cuda_error_patterns = (
 
 hip_errors = (
     'HIP error:',
+    'hipErrorMemoryAllocation',
+    'hipErrorInitializationError',
+    'hipErrorLaunchFailure',
+    'hipErrorLaunchTimeOut',
+    'hipErrorLaunchOutOfResources',
+    'hipErrorIllegalAddress',
+    'hipErrorNoBinaryForGpu',
+    'hipErrorInsufficientDriver',
+    'hipErrorECCNotCorrectable',
+    'hipErrorUnknown',
     # This also occurs in status labels such as "ECC Error Count: 0".
     # 'ECC Error',
     'amdgpu: Page Fault',
+    'amdgpu GPU fault',
+    'amdgpu ring timeout',
+    'amdgpu GPU reset',
+    'amdgpu uncorrectable error',
+    'kfd GPU fault',
+    'kfd page fault',
+    'kfd ring timeout',
+    'kfd GPU reset',
+    'kfd uncorrectable error',
     )
 
 hip_error_patterns = (
+    r'\bHIP error:',
     r'\bhipError(?:MemoryAllocation|InitializationError|LaunchFailure|LaunchTimeOut|LaunchOutOfResources|IllegalAddress|NoBinaryForGpu|InsufficientDriver|ECCNotCorrectable|Unknown)\b',
     r'\b(?:amdgpu|kfd)[^\n]{0,100}\b(?:GPU fault|page fault|ring timeout|GPU reset|uncorrectable)\b',
     )
@@ -396,6 +522,9 @@ python_errors = (
     )
 
 python_error_patterns = (
+    r'^\s*Traceback \(most recent call last\):',
+    r'^\s*ExceptionGroup Traceback\b',
+    r'^\s*Fatal Python error\b',
     # Exception lines can be printed by handlers; traceback/fatal markers above
     # provide termination context.
     # r'^\s*(?:[\w.]+\.)?[A-Za-z_]\w*(?:Error|Exception)\s*:\s*.*$',
@@ -408,9 +537,11 @@ blas_errors = (
     'Intel MKL ERROR:',
     'Intel MKL FATAL ERROR:',
     'OpenBLAS Error:',
+    'on entry to DGEMM parameter number 1 had an illegal value',
     )
 
 blas_error_patterns = (
+    r'\b(?:Intel MKL(?: FATAL)? ERROR|OpenBLAS Error):',
     r'\bon entry to\s+[a-z0-9_]+\s+parameter(?: number)?\s+\d+\s+had an illegal value\b',
     )
 
@@ -426,6 +557,7 @@ lapack_errors = (
     )
 
 lapack_error_patterns = (
+    r'\bLAPACK(?: native error| computational failure| error):',
     # Numerical solver conditions can be handled by a fallback algorithm.
     # r'\b(?:LAPACK|[sdcz][a-z0-9_]{3,})[^\n]{0,100}\b(?:matrix is singular|is not positive definite|failed to converge|computational failure)\b',
     )
@@ -449,6 +581,8 @@ hdf5_errors = (
     )
 
 hdf5_error_patterns = (
+    r'\bparallel write failed\b',
+    r'\bdata space selection exceeds dataset dimensions\b',
     # HDF5 prints an error stack for failed probes even when the caller recovers.
     # r'HDF5-DIAG:\s*Error\s*detected',
     # r'\b(?:major|minor):\s*(?:file accessibility|unable to open file|unable to create file|write failed|read failed|object not found|bad value)\b',
@@ -463,21 +597,26 @@ libxml2_errors = (
     # 'failed to load external entity',
     'Opening and ending tag mismatch',
     'Premature end of data',
+    'XML validation failed',
+    'XML element is not expected',
     )
 
 libxml2_error_patterns = (
     r'\b(?:parser|schemas?|xml)[^\n]{0,80}\b(?:error|validation failed|not expected)\b',
+    r'\bThis element is not expected\b',
+    r'\bOpening and ending tag mismatch\b',
+    r'\bPremature end of data\b',
     )
 
 
 # Python-module errors
 
 numpy_errors = (
-    'LinAlgError',
-    'AxisError',
-    'DTypePromotionError',
-    'TooHardError',
-    '_ArrayMemoryError',
+    'LinAlgError: calculation failed',
+    'AxisError: calculation failed',
+    'DTypePromotionError: calculation failed',
+    'TooHardError: calculation failed',
+    '_ArrayMemoryError: calculation failed',
     )
 
 numpy_error_patterns = (
@@ -485,10 +624,10 @@ numpy_error_patterns = (
     )
 
 scipy_errors = (
-    'ArpackError',
-    'ArpackNoConvergence',
-    'NoConvergence',
-    'QhullError',
+    'ArpackError: calculation failed',
+    'ArpackNoConvergence: calculation failed',
+    'NoConvergence: calculation failed',
+    'QhullError: calculation failed',
     # These are exception messages that callers can catch and recover from.
     # 'ARPACK error',
     # 'ARPACK iteration did not converge',
@@ -501,7 +640,16 @@ scipy_error_patterns = (
     )
 
 h5py_errors = (
-    'CheckWriteEligibilityError',
+    'CheckWriteEligibilityError: write is not permitted',
+    'OSError: unable to open file',
+    'RuntimeError: unable to create file',
+    'ValueError: unable to read dataset',
+    'OSError: unable to write dataset',
+    'OSError: file signature not found',
+    "RuntimeError: object doesn't exist",
+    'OSError: bad object header',
+    'ValueError: address overflow',
+    'OSError: no write intent',
     # These fragments can come from caught exceptions during optional probes.
     # 'file signature not found',
     # "object doesn't exist",
@@ -520,21 +668,33 @@ h5py_error_patterns = (
 
 pwscf_errors = (
     'Error in routine',
+    'Error in routine cdiaghg (1):',
     'bfgs failed',
+    'bfgs failed: convergence not achieved',
     'convergence NOT achieved',
+    'convergence NOT achieved after 100 iterations',
     'problems computing cholesky',
     'too many bands are not converged',
     )
 
 pwscf_error_patterns = (
+    r'\bError in routine\b',
+    r'\bbfgs failed\b',
+    r'\bconvergence\s+NOT\s+achieved\b',
+    r'\bproblems computing cholesky\b',
+    r'\btoo many bands are not converged\b',
     r'\bError in routine\s+[a-z0-9_]+\s*\(\d+\):',
     r'\bconvergence\s+NOT\s+achieved\s+after\s+\d+\s+iterations\b',
     r'\bbfgs failed\b[^\n]*\bconvergence not achieved\b',
     )
 
 pyscf_errors = (
-    'LibxcError',
+    'LibxcError: functional is not available',
     'SCF not converged',
+    'CASSCF not converged',
+    'UCASSCF not converged',
+    'CCSD not converged',
+    'Newton not converged',
     )
 
 pyscf_error_patterns = (
@@ -550,9 +710,14 @@ quantum_package_errors = (
     'qp run: Error',
     'Too many determinants',
     'Selection failed',
+    'Davidson not converged',
+    'CIPSI not converged',
+    'SCF not converged',
+    'selection not converged',
     )
 
 quantum_package_error_patterns = (
+    r'(?:\bEZFIO error:|\bFATAL ERROR:|\birp_error\b|\bIRP_FATAL\b|\bqp run:\s*Error\b|\bToo many determinants\b|\bSelection failed\b)',
     r'\b(?:Davidson|CIPSI|SCF|selection)[^\n]{0,60}\bnot converged\b',
     )
 
@@ -560,9 +725,26 @@ rmg_errors = (
     'FATAL ERROR:',
     'CRITICAL:',
     'RMG Error:',
+    'RMG Fatal:',
+    'RMG Critical:',
+    'RMGDFT Error:',
+    'RMGDFT Fatal:',
+    'RMGDFT Critical:',
+    'Fatal RMG error',
+    'Critical RMG error',
+    'Fatal RMGDFT error',
+    'Critical RMGDFT error',
+    'SCF failed to converge',
+    'SCF not converged',
+    'multigrid failed',
+    'Davidson breakdown',
+    'subspace not converged',
+    'domain decomposition failed',
+    'grid decomposition failed',
     )
 
 rmg_error_patterns = (
+    r'^\s*(?:FATAL ERROR|CRITICAL):',
     r'\bRMG(?:DFT)?\s*(?:Error|Fatal|Critical)\s*:',
     r'\b(?:Fatal|Critical)\s+RMG(?:DFT)?\s+error\b',
     r'\bSCF[^\n]{0,60}\b(?:failed to converge|not converged)\b',
@@ -577,12 +759,16 @@ qmcpack_errors = (
     'inconsistent input settings',
     'UniformCommunicateError',
     'barrier_and_abort',
+    'Communicate::abort',
     )
 
 qmcpack_error_patterns = (
     r'\bAPP_ABORT\b',
     r'\bUniformCommunicateError\b',
     r'\b(?:barrier_and_abort|Communicate::abort)\b',
+    r'\bFatal Error\b',
+    r'\bAborting at\b',
+    r'\binconsistent input settings\b',
     )
 
 vasp_errors = (
@@ -591,7 +777,9 @@ vasp_errors = (
     # VASP can continue from this warning and subsequently converge.
     # 'BRMIX: very serious problems',
     'EDDDAV: Call to ZHEGV failed',
+    'EDDDAV: Call to ZHEEV failed',
     'EDDRMM: Call to ZHEGV failed',
+    'EDDRMM: Call to ZHEEV failed',
     'LAPACK: Routine ZPOTRF failed',
     'ERROR FEXCP:',
     'ERROR: the triple product of the basis vectors',
@@ -606,6 +794,8 @@ vasp_error_patterns = (
     r'^\s*(?:EDDDAV|EDDRMM):[^\n]*(?:ZHEGV|ZHEEV)[^\n]*failed\b',
     r'^\s*LAPACK:[^\n]*\bfailed\b',
     r'^\s*ERROR FEXCP:',
+    r'^\s*ERROR:\s*the triple product of the basis vectors\b',
+    r'^\s*ERROR:\s*there must be 1 or 3 items on line 2 of POSCAR\b',
     )
 
 gamess_errors = (
@@ -614,20 +804,29 @@ gamess_errors = (
     'SCF DID NOT CONVERGE',
     'MEMORY REQUEST EXCEEDS AVAILABLE MEMORY',
     'WORDS OF MEMORY UNAVAILABLE',
+    '1024 WORDS OF MEMORY UNAVAILABLE',
     'INPUT HAS AT LEAST ONE SPELLING OR LOGIC MISTAKE',
     'THIS JOB CANNOT CONTINUE',
     'ddikick.x: Fatal error detected',
     'ddikick.x: application process quit unexpectedly',
+    'ddikick.x: application process 0 quit unexpectedly',
     'ddikick.x: Execution terminated due to error(s)',
+    'DDI Process 0: error code 1',
     '*** ERROR TERMINATION ***',
     )
 
 gamess_error_patterns = (
     r'\bEXECUTION OF GAMESS TERMINATED\s+-?ABNORMALLY-?(?!\w)',
-    r'\bddikick\.x:\s*application process\s+\d+\s+quit unexpectedly\b',
+    r'\bddikick\.x:\s*application process(?:\s+\d+)?\s+quit unexpectedly\b',
     r'\bDDI Process\s+\d+:\s*error code\s+(?!0\b)\d+\b',
     r'\bSCF\s+(?:IS UNCONVERGED,\s+TOO MANY ITERATIONS|DID NOT CONVERGE)\b',
-    r'\b\d+\s+WORDS OF MEMORY UNAVAILABLE\b',
+    r'\bMEMORY REQUEST EXCEEDS AVAILABLE MEMORY\b',
+    r'\b(?:\d+\s+)?WORDS OF MEMORY UNAVAILABLE\b',
+    r'\bINPUT HAS AT LEAST ONE SPELLING OR LOGIC MISTAKE\b',
+    r'\bTHIS JOB CANNOT CONTINUE\b',
+    r'\bddikick\.x:\s*Fatal error detected\b',
+    r'\bddikick\.x:\s*Execution terminated due to error\(s\)\.?',
+    r'\*{3}\s*ERROR TERMINATION\s*\*{3}',
     )
 
 
