@@ -371,29 +371,32 @@ class Pwscf(Simulation):
         if err_err_found:
             # This might happen at the end of a run even if it succeeds.
             # We can't actually know if it really indicates a failure.
-            if "cleaning up processes" not in next(err_err_lines, ""):
+            if "cleaning up processes" in next(err_err_lines, ""):
                 pass
             else:
                 self.failed = True
 
         restartable = False
-        if out_err_found:
+        if out_err_found: # No sense checking if we didn't find anything
             output_errs = "".join(out_err_lines)
-            # Real pw.x errors
             not_converged    = 'convergence NOT achieved'  in output_errs
             error_in_routine = 'Error in routine' in output_errs
-            # Not really an error since it's intended behavior
-            time_exceeded    = 'Maximum CPU time exceeded' in output_text
-            user_stop        = 'Program stopped by user request' in output_text
-            restartable      = not_converged or time_exceeded or user_stop
-            failed = (
-                not_converged
-                or time_exceeded
-                or user_stop
-                or error_in_routine
-                or self.failed
-                )
-            self.failed = failed
+        else:
+            not_converged = False
+            error_in_routine = False
+
+        # Not really an error since it's intended behavior
+        time_exceeded    = 'Maximum CPU time exceeded' in output_text
+        user_stop        = 'Program stopped by user request' in output_text
+        restartable      = not_converged or time_exceeded or user_stop
+        failed = (
+            not_converged
+            or time_exceeded
+            or user_stop
+            or error_in_routine
+            or self.failed
+            )
+        self.failed = failed
 
         run_finished  = 'JOB DONE' in output_text
         restart = run_finished and self.restartable and restartable
