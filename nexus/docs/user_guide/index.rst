@@ -18,4 +18,5 @@ User Guide
     qmcpack-input-gen
     qmcpack-restarts
     pwscf
+    rmg
     adding-supercomputer-machine

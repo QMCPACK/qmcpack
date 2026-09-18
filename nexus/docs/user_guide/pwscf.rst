@@ -53,6 +53,9 @@ or could not be parsed.  It raises an exception if analysis was not performed,
 the quantity is inapplicable to the detected run type, or an invalid unit is
 requested.
 
+Note: PWSCF and RMG analyzers share the exact same access patterns and return 
+types for obtaining physical quantities.
+
 
 Loading data from a simulation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
