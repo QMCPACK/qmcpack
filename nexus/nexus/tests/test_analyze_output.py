@@ -55,3 +55,32 @@ def test_analyze_output_unified_paths():
     deferred = analyze_output('pwscf',analyze=False,strict=False)
     assert deferred.analysis_state=='not_analyzed'
 #end def test_analyze_output_unified_paths
+
+
+def test_analyze_output_simulation_forms(tmp_path):
+    from .. import analyze_output
+    from ..machines import job
+    from ..pwscf import generate_pwscf
+    from ..testing import clear_all_sims
+    from .test_pwscf_simulation import get_system
+
+    sim = generate_pwscf(
+        job    = job(machine='ws1',cores=1),
+        system = get_system(),
+        )
+    sentinel = object()
+    sim.imresdir = str(tmp_path)
+    imagepath = tmp_path/sim.analyzer_image
+    imagepath.touch()
+    sim.load_analyzer_image = lambda:sentinel
+
+    assert analyze_output(sim) is sentinel
+    assert analyze_output(input=sim) is sentinel
+    assert analyze_output('pwscf',sim) is sentinel
+    with pytest.raises(ValueError,match='does not match'):
+        analyze_output('rmg',sim)
+    with pytest.raises(ValueError,match='additional arguments'):
+        analyze_output(sim,analyze=False)
+
+    clear_all_sims()
+#end def test_analyze_output_simulation_forms

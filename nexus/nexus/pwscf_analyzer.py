@@ -1371,38 +1371,33 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     Parameters
     ----------
-    arg0 : Simulation or str or os.PathLike or None, optional
-        PWSCF simulation to analyze, or path to a calculation directory,
-        input file, or output file. If ``None``, an unconfigured analyzer is
-        created.
-    infile_name : str, optional
-        Name of the PWSCF input file within the calculation directory.
-    outfile_name : str, optional
-        Name of the PWSCF output file. It is inferred from ``infile_name``
-        when possible.
-    pw2c_outfile_name : str, optional
-        Name of an accompanying PW2CASINO output file.
-    analyze : bool, optional
+    input : Simulation, PwscfInput, str, os.PathLike, or None, optional
+        PWSCF simulation, parsed input, input-file path, or directory in which
+        a single ``*.in`` input can be discovered.
+    outfile : str, os.PathLike, or None, optional
+        Path to PWSCF text output. Relative paths are resolved below ``path``.
+    analyze : bool, default=False
         If ``True``, parse the available log, legacy XML, and requested
         PW2CASINO output during initialization.
-    source : {'both', 'xml', 'out'}, default='both'
-        Select both data sources, modern schema XML only, or text output only.
-        Legacy XML remains browse-only and is never used by query methods.
+    path : str, os.PathLike, or None, optional
+        Base directory for relative paths and file discovery.
+    xmlfile : str, os.PathLike, or None, optional
+        Explicit modern ``data-file-schema.xml`` path.
+    pw2c_outfile_name : str, os.PathLike, or None, optional
+        Path to optional PW2CASINO text output.
+    read_all : bool, default=True
+        Parse all available modern XML and text output. If ``False``, parse
+        XML first and parse text output only when a constructor-required
+        quantity remains unavailable.
     strict : bool, default=True
-        Require the selected source to exist unambiguously when analysis
-        begins. With ``source='both'``, at least one of modern XML or text
-        output must be available; either source may be absent. A supplied
-        input file and requested PW2CASINO file are also required. If
-        ``True``, the top-level calculation types discovered from parsed
-        input, XML, and text output must also agree. If ``False``, missing or
-        ambiguous files are skipped and calculation disagreements are retained
-        as a tuple.
-    required : str or iterable of str or None, optional
+        Require explicitly supplied files, reject ambiguous discovery, and
+        require at least one modern XML or text-output source. Parsed
+        top-level calculation types must also agree. If ``False``, missing or
+        ambiguous files are skipped and disagreements are retained as a tuple.
+    required : str, iterable of str, or None, optional
         Query quantities whose absence should raise ``RuntimeError`` instead
-        of returning ``None``. With ``source='both'``, text output is parsed
-        only when at least one requested quantity remains unavailable after
-        XML parsing. An empty requirement set causes both sources to be
-        parsed.
+        of returning ``None``. These quantities also control text-output
+        fallback when ``read_all=False``.
     md_only : bool, default=False
         For molecular-dynamics text output, stop after parsing MD histories.
 
@@ -1426,7 +1421,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
         performed.
     results_xml : PwscfXmlData or obj or None
         Parsed modern schema XML, or browse-only legacy XML when schema XML is
-        absent. It remains ``None`` when XML analysis is disabled or unavailable.
+        absent. It remains ``None`` when XML is unavailable or cannot be
+        parsed.
     pw2casino : Pw2CasinoAnalyzer or None
         Parsed PW2CASINO data when an auxiliary output file is requested.
     calculation : str, tuple, or None
@@ -1438,14 +1434,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
         Validated query quantities subject to required-data behavior.
     source_status : obj
         Diagnostic input, modern-XML, and text-output states, such as
-        ``'parsed'``, ``'missing'``, ``'ambiguous'``, ``'excluded'``, or
+        ``'parsed'``, ``'missing'``, ``'ambiguous'``, ``'parse_failed'``, or
         ``'skipped'``.
 
     Methods
     -------
     initial_structure(units='A') : Structure or None
         Initial structure in Angstrom (``'A'``) or bohr (``'B'``).
-    energy(units='Ha') : float or numpy.floating or None
+    energy(units='Ha') : float or None
         Final total energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
     kpoints(units='B') : numpy.ndarray or None
         Cartesian k-points in inverse Angstrom or inverse bohr with shape
@@ -1459,13 +1455,13 @@ class PwscfAnalyzer(SimulationAnalyzer):
     occupations() : numpy.ndarray or None
         Dimensionless Kohn--Sham occupations with the same layout as the
         eigenvalue array.
-    Ef(units='eV') : float or numpy.floating or None
+    Ef(units='eV') : float or None
         Final Fermi energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
-    Evbm(units='eV') : float or numpy.floating or None
+    Evbm(units='eV') : float or None
         Final valence-band maximum in selected energy units.
-    Ecbm(units='eV') : float or numpy.floating or None
+    Ecbm(units='eV') : float or None
         Final conduction-band minimum in selected energy units.
-    band_gap(units='eV') : float or numpy.floating or None
+    band_gap(units='eV') : float or None
         Fundamental electronic band gap in selected energy units.
     fractional_occs(tol=1e-3) : bool or None
         Whether any occupation differs from both empty and full by more than
@@ -1479,7 +1475,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         Final stress tensor with shape ``(3, 3)``. Available units are
         ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``, and
         ``'atm'``, ``'eV/A^3'``, ``'Ha/Bohr^3'``, and ``'Ry/Bohr^3'``.
-    pressure(units='GPa') : float or numpy.floating or None
+    pressure(units='GPa') : float or None
         Final hydrostatic pressure in the units accepted by ``stress``.
     require(*quantities)
         Add query quantities to the required-data policy without parsing.
@@ -1493,10 +1489,11 @@ class PwscfAnalyzer(SimulationAnalyzer):
     Raises
     ------
     FileNotFoundError
-        During strict analysis, if a selected input, output, modern XML, or
+        During strict analysis, if a supplied input, output, modern XML, or
         requested PW2CASINO file does not exist.
     RuntimeError
-        If a supplied file cannot be identified as input or output.
+        During strict analysis, if discovery is ambiguous or parsed top-level
+        calculation types disagree.
 
     Notes
     -----

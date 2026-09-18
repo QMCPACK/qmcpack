@@ -309,6 +309,29 @@ def test_analyzer_input_forms(tmp_path):
 #end def test_analyzer_input_forms
 
 
+def test_output_discovery_from_path(tmp_path):
+    from ..rmg_analyzer import RmgAnalyzer
+
+    (tmp_path/'rmg.log').write_text(rmg_log('Quench electrons'))
+    analyzer = RmgAnalyzer(path=tmp_path,analyze=True)
+    assert analyzer.outfile_name is None
+    assert analyzer.source_status.out=='parsed'
+    assert analyzer.run_mode=='scf'
+
+    (tmp_path/'second.log').write_text(rmg_log('Quench electrons'))
+    with pytest.raises(RuntimeError,match='multiple RMG output files'):
+        RmgAnalyzer(path=tmp_path,analyze=True)
+
+    permissive = RmgAnalyzer(
+        path    = tmp_path,
+        strict  = False,
+        analyze = True,
+        )
+    assert permissive.source_status.out=='ambiguous'
+    assert permissive.energy() is None
+#end def test_output_discovery_from_path
+
+
 def test_inconsistent_input_run_mode(tmp_path):
     from ..rmg_analyzer import RmgAnalyzer, RmgOutData
 

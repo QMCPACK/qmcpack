@@ -2162,18 +2162,22 @@ class RmgAnalyzer(SimulationAnalyzer):
 
     Parameters
     ----------
-    arg0 : Simulation or str or os.PathLike or None, optional
-        RMG simulation to analyze or path to an RMG log output file. If
-        ``None``, an unconfigured analyzer is created.
-    analyze : bool, optional
+    input : Simulation, RmgInput, str, os.PathLike, or None, optional
+        RMG simulation, parsed input, input-file path, or directory in which
+        an input can be discovered.
+    outfile : str, os.PathLike, or None, optional
+        Path to RMG log output. Relative paths are resolved below ``path``.
+    analyze : bool, default=False
         If ``True``, parse the RMG output during initialization.
+    path : str, os.PathLike, or None, optional
+        Base directory for relative paths and log-output discovery.
     strict : bool, default=True
         Require the configured log output to be a regular file when analysis
         begins. Top-level run types discovered from the referenced input and
         output log must also agree. If ``False``, a missing or non-file path
         completes analysis with empty results and run-type disagreement is
         retained as a tuple.
-    required : str or iterable of str or None, optional
+    required : str, iterable of str, or None, optional
         Query quantities whose absence should raise ``RuntimeError`` instead
         of returning ``None``.
 
@@ -2210,7 +2214,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     -------
     initial_structure(units='A') : Structure or None
         Input atomic structure in Angstrom (``'A'``) or bohr (``'B'``).
-    energy(units='Ha') : float or numpy.floating or None
+    energy(units='Ha') : float or None
         Final eigenvalue-sum energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
         Available for electronic, ionic, molecular-dynamics, TDDFT, and NEB
         calculations, but not band, EXX, or STM calculations.
@@ -2229,13 +2233,13 @@ class RmgAnalyzer(SimulationAnalyzer):
         Dimensionless Kohn--Sham occupations. The leading dimension has
         length ``nkpoints``; remaining dimensions represent spin, when
         present, and bands.
-    Ef(units='eV') : float or numpy.floating or None
+    Ef(units='eV') : float or None
         Final Fermi energy in ``'eV'``, ``'Ha'``, or ``'Ry'``.
-    Evbm(units='eV') : float or numpy.floating or None
+    Evbm(units='eV') : float or None
         Final reported valence-band maximum in selected energy units.
-    Ecbm(units='eV') : float or numpy.floating or None
+    Ecbm(units='eV') : float or None
         Final reported conduction-band minimum in selected energy units.
-    band_gap(units='eV') : float or numpy.floating or None
+    band_gap(units='eV') : float or None
         Final reported electronic band gap in selected energy units.
     fractional_occs(tol=1e-3) : bool or None
         Whether any occupation is farther than ``tol`` from both empty and
@@ -2250,7 +2254,7 @@ class RmgAnalyzer(SimulationAnalyzer):
         Final stress tensor with shape ``(3, 3)``. Available units are
         ``'Pa'``, ``'bar'``, ``'kbar'``, ``'Mbar'``, ``'GPa'``, ``'atm'``,
         ``'eV/A^3'``, ``'Ha/Bohr^3'``, and ``'Ry/Bohr^3'``.
-    pressure(units='GPa') : float or numpy.floating or None
+    pressure(units='GPa') : float or None
         Final hydrostatic pressure in the units accepted by ``stress``.
     require(*quantities)
         Add query quantities to the required-data policy without parsing.
@@ -2272,8 +2276,7 @@ class RmgAnalyzer(SimulationAnalyzer):
     Raises
     ------
     TypeError
-        If ``arg0`` is neither a ``Simulation``, a string, a path-like object,
-        nor ``None``.
+        If an input or path argument has an unsupported type.
     FileNotFoundError
         During strict analysis, if the configured output path does not exist.
     IsADirectoryError

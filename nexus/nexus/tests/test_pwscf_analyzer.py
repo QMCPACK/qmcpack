@@ -106,6 +106,22 @@ def test_analyzer_input_object():
 #end def test_analyzer_input_object
 
 
+def test_explicit_xml_only(tmp_path):
+    from ..pwscf_analyzer import PwscfAnalyzer, PwscfXmlData
+
+    schema_file = write_schema(tmp_path,energy=-2.5)
+    analyzer = PwscfAnalyzer(
+        xmlfile = schema_file,
+        analyze = True,
+        )
+
+    assert analyzer.input is None
+    assert analyzer.results_out is None
+    assert isinstance(analyzer.results_xml,PwscfXmlData)
+    assert analyzer.energy('Ha')==-2.5
+#end def test_explicit_xml_only
+
+
 @pytest.mark.parametrize(
     argnames='text,expected',
     argvalues=(
