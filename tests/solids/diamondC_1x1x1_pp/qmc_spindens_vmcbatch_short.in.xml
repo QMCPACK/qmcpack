@@ -82,7 +82,7 @@
       </hamiltonian>
       <!-- SpinDensity corner below is the legacy implementation default. -->
       <estimators>
-	<estimator name="spindensity" type="spindensity" report="yes">
+	<estimator name="spindensity" type="spindensity" report="yes" save_memory="yes">
 	  <parameter name="grid">
             10 10 10
 	  </parameter>

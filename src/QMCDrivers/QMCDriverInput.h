@@ -57,6 +57,8 @@ protected:
 
   /// if true, batched operations are serialized over walkers
   bool crowd_serialize_walkers_ = false;
+  /// period to recalculate the walker properties from scratch.
+  int recalculate_properties_period_ = 100;
   IndexType num_crowds_    = 0;
   // This is the global walkers it is a hard limit for VMC and the target for DMC
   IndexType total_walkers_     = 0;
@@ -96,6 +98,7 @@ protected:
    */
 
 public:
+  int get_recalculate_properties_period() const { return recalculate_properties_period_; }
   IndexType get_num_crowds() const { return num_crowds_; }
   IndexType get_walkers_per_rank() const { return walkers_per_rank_; }
   IndexType get_total_walkers() const { return total_walkers_; }

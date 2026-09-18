@@ -40,6 +40,8 @@ public:
 
 private:
   int prestepsVMC;
+  ///option to enable/disable drift equation for RMC
+  std::string rescaleDrift;
   ///projection time of reptile
   RealType beta;
   ///period for walker dump
@@ -48,6 +50,9 @@ private:
   int beads;
   //number of reptiles.
   int nReptiles;
+  ///rescale for time step studies. some int>2 and new beads are inserted in between the old ones.
+  int resizeReptile;
+
   //Calculating the reptiles from scratch or from a previous VMC/DMC/RMC run.
   bool fromScratch;
   //       vector of indices for the action and transprob

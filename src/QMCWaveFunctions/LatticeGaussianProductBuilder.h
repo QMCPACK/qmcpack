@@ -30,6 +30,8 @@ public:
 private:
   ///particleset pool to get ParticleSet other than the target
   const PSetMap& ptclPool;
+  ///name
+  std::string nameOpt;
   ///function
   Vector<RealType> widthOpt;
   ///source

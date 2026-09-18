@@ -42,6 +42,9 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   int dummy_int = 0;
 
   ParameterSet parameter_set;
+  parameter_set.add(recalculate_properties_period_, "checkProperties");
+  parameter_set.add(recalculate_properties_period_, "checkproperties");
+  parameter_set.add(recalculate_properties_period_, "check_properties");
   parameter_set.add(max_blocks_, "blocks");
   parameter_set.add(requested_steps_, "steps");
   parameter_set.add(sub_steps_, "substeps");

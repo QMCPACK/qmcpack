@@ -167,7 +167,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 void HamiltonianFactory::addForceHam(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
-  std::string a("ion0"), targetName("e"), title("ForceBase"), pbc("yes");
+  std::string a("ion0"), targetName("e"), title("ForceBase"), pbc("yes"), PsiName = "psi0";
   OhmmsAttributeSet hAttrib;
   std::string mode("bare");
   //hAttrib.add(title,"id");
@@ -176,6 +176,7 @@ void HamiltonianFactory::addForceHam(xmlNodePtr cur)
   hAttrib.add(targetName, "target");
   hAttrib.add(pbc, "pbc");
   hAttrib.add(mode, "mode");
+  hAttrib.add(PsiName, "psi");
   hAttrib.put(cur);
   app_log() << "HamFac forceBase mode " << mode << std::endl;
   bool applyPBC = (PBCType && pbc == "yes");

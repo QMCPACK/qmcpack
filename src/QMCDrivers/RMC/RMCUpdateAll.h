@@ -17,11 +17,6 @@
 
 namespace qmcplusplus
 {
-namespace testing
-{
-class RMCUpdateAllTests;
-}
-
 /** @ingroup QMCDrivers  ParticleByParticle
  *@brief Implements the RMC algorithm using all electron moves
  */
@@ -55,8 +50,6 @@ public:
   bool put(xmlNodePtr cur) override;
 
 private:
-  friend class testing::RMCUpdateAllTests;
-
   /// Copy Constructor (disabled)
   RMCUpdateAllWithDrift(const RMCUpdateAllWithDrift&) = delete;
   /// Copy operator (disabled).
