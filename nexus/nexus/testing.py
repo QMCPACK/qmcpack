@@ -237,9 +237,9 @@ def print_diff(o1,o2,atol=def_atol,rtol=def_rtol,*,int_as_float=False,text=False
     print(hline.format('right object'))
     print(o2)
     if not text:
-        diff,diff1,diff2 = object_diff(o1,o2,atol,rtol,int_as_float,full=True)
+        diff,diff1,diff2 = object_diff(o1,o2,atol,rtol,int_as_float=int_as_float,full=True)
     else:
-        diff,diff1,diff2 = text_diff(o1,o2,atol,rtol,int_as_float,full=True,by_line=by_line)
+        diff,diff1,diff2 = text_diff(o1,o2,atol,rtol,int_as_float=int_as_float,full=True,by_line=by_line)
     #end if
     d1 = obj(diff1)
     d2 = obj(diff2)
