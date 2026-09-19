@@ -134,12 +134,12 @@ def test_incorporate_result():
 
 @isolate_nexus_core
 def test_check_sim_status(tmp_path):
-    from ..nexus_base import NEXUS_CONFIG
+    from ..nexus_base import nexus_config
 
-    NEXUS_CONFIG.runs = ''
-    NEXUS_CONFIG.local_directory  = str(tmp_path)
-    NEXUS_CONFIG.remote_directory = str(tmp_path)
-    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
+    nexus_config.runs = ''
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
     sim = get_quantum_package_sim()
 

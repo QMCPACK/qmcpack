@@ -10,15 +10,15 @@ from ..testing import execute,text_eq
 
 @isolate_nexus_core
 def test_sim(tmp_path):
-    from ..nexus_base import NEXUS_CONFIG
+    from ..nexus_base import nexus_config
     from .test_simulation_module import get_sim
 
-    NEXUS_CONFIG.local_directory  = str(tmp_path)
-    NEXUS_CONFIG.remote_directory = str(tmp_path)
-    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    NEXUS_CONFIG.runs    = ''
-    NEXUS_CONFIG.results = ''
+    nexus_config.runs    = ''
+    nexus_config.results = ''
 
     exe = TEST_DIR.parent / "bin/nxs-sim"
 

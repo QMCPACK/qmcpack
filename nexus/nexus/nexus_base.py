@@ -50,11 +50,11 @@ class ShowStatusMode(Flag):
     See :meth:`~.project_manager.ProjectManager.write_simulation_status`.
     """
 
-    NONE     = auto()
-    READY    = auto()
-    ACTIVE   = auto()
-    FAILED   = auto()
-    ALL      = READY | ACTIVE | FAILED
+    none     = auto()
+    ready    = auto()
+    active   = auto()
+    failed   = auto()
+    all      = ready | active | failed
 #end class ShowStatusMode
 
 
@@ -64,13 +64,13 @@ class SimStage(Flag):
     See :meth:`~.simulation.Simulation.progress`.
     """
 
-    WRITE_INPUT = auto()
-    SEND_FILES  = auto()
-    SETUP       = WRITE_INPUT | SEND_FILES
-    SUBMIT      = auto()
-    GET_OUTPUT  = auto()
-    ANALYZE     = auto()
-    ALL         = SETUP | SUBMIT | GET_OUTPUT | ANALYZE
+    write_input = auto()
+    send_files  = auto()
+    setup       = write_input | send_files
+    submit      = auto()
+    get_output  = auto()
+    analyze     = auto()
+    all         = setup | submit | get_output | analyze
 
     @classmethod
     def from_list(cls, items: Collection[str]) -> SimStage:
@@ -81,7 +81,7 @@ class SimStage(Flag):
 
         stages = cls(0)
         for stage in items:
-            st_up = stage.upper()
+            st_up = stage.lower()
             if st_up not in cls.__members__:
                 msg = f"Encountered invalid stage '{stage}'"
                 raise ValueError(msg)
@@ -264,7 +264,7 @@ class NexusConfig:
     def restore_defaults(self) -> None:
         """Restore all config variables to their default values."""
         self.status_only      = False
-        self.status           = ShowStatusMode.NONE
+        self.status           = ShowStatusMode.none
         self.sleep            = 3
         self.timeout          = 5*60
         self.runs             = 'runs'
@@ -275,8 +275,8 @@ class NexusConfig:
         self.monitor          = True
         self.skip_submit      = False
         self.load_images      = True
-        self.stages           = SimStage.ALL
-        self.dependent_modes  = SimStage.SUBMIT
+        self.stages           = SimStage.all
+        self.dependent_modes  = SimStage.submit
         self.quiet            = False
         self.indent           = '  '
         self.progress_tty     = False
@@ -289,7 +289,7 @@ class NexusConfig:
         # Legacy
         self.generate_only = False
 
-NEXUS_CONFIG = NexusConfig()
+nexus_config = NexusConfig()
 
 
 nexus_modules = [mod.stem for mod in Path(__file__).parent.iterdir() if mod.suffix == ".py"]
@@ -355,10 +355,10 @@ class NexusCore(DevBase):
             If ``True`` and output is to a terminal, overwrite and update the
             last line, rather than scrolling.
         """
-        if not NEXUS_CONFIG.quiet:
+        if not nexus_config.quiet:
             text = ' '.join(str(t) for t in texts)
-            output_text = textwrap.indent(text, n * NEXUS_CONFIG.indent)
-            if NEXUS_CONFIG.progress_tty and progress and sys.stdout.isatty():
+            output_text = textwrap.indent(text, n * nexus_config.indent)
+            if nexus_config.progress_tty and progress and sys.stdout.isatty():
                 # Line up + Line clear ANSI sequence
                 sys.stdout.write('\033[1A'+'\x1b[2K')
                 sys.stdout.write(output_text+"\n")

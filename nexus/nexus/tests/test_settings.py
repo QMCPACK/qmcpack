@@ -8,8 +8,9 @@ from .. import Settings, settings, testing
 from ..basisset import BasisSets
 from ..developer import obj
 from ..gamess import Gamess
+from ..generic import NexusUserWarning
 from ..machines import Job, Workstation
-from ..nexus_base import NEXUS_CONFIG, SimStage
+from ..nexus_base import nexus_config, ShowStatusMode, SimStage
 from ..project_manager import ProjectManager
 from ..pseudoset import PseudoSet
 from ..pwscf import Pwscf
@@ -90,37 +91,37 @@ def test_settings(tmp_path):
             }
         setkeys_allowed = setkeys_check | Settings.allowed_vars
 
-        nckeys  = set(NEXUS_CONFIG.__slots__)
+        nckeys  = set(nexus_config.__slots__)
         setkeys = set(settings.keys())
 
         assert(nckeys==nckeys_check)
         assert(setkeys>=setkeys_check)
         assert(setkeys<=setkeys_allowed)
 
-        for s in NEXUS_CONFIG.__slots__:
-            assert(settings[s] == getattr(NEXUS_CONFIG, s))
+        for s in nexus_config.__slots__:
+            assert(settings[s] == getattr(nexus_config, s))
     #end check_settings_core_noncore
 
     def check_empty_settings():
         settings(command_line = False)
         settings.command_line     = True
-        NEXUS_CONFIG.command_line = True
+        nexus_config.command_line = True
         check_settings_core_noncore()
         # nexus config has basic run stages and PseudoSet registries are empty
-        assert(NEXUS_CONFIG.stages is SimStage.ALL)
+        assert(nexus_config.stages is SimStage.all)
 
         assert(len(PseudoSet.pseudo_files)==0)
         assert(len(PseudoSet.labeled_pseudosets)==0)
-        assert(isinstance(NEXUS_CONFIG.basissets,BasisSets))
-        assert(len(NEXUS_CONFIG.basissets)==0)
-        NEXUS_CONFIG.restore_defaults()
-        assert(NEXUS_CONFIG.basissets is None)
+        assert(isinstance(nexus_config.basissets,BasisSets))
+        assert(len(nexus_config.basissets)==0)
+        nexus_config.restore_defaults()
+        assert(nexus_config.basissets is None)
         # other settings objects should be at default also
         aux_defaults()
     #end def_check_empty_settings
 
-    NEXUS_CONFIG.restore_defaults()
-    assert(NEXUS_CONFIG.timeout==5*60)
+    nexus_config.restore_defaults()
+    assert(nexus_config.timeout==5*60)
     aux_defaults()
 
     # core settings remain almost at default with empty settings
@@ -151,11 +152,11 @@ def test_settings(tmp_path):
         command_line  = False,
         )
     check_settings_core_noncore()
-    assert(NEXUS_CONFIG.status_only==0)
-    assert(NEXUS_CONFIG.generate_only==1)
-    assert(NEXUS_CONFIG.timeout==10)
+    assert(nexus_config.status_only==0)
+    assert(nexus_config.generate_only==1)
+    assert(nexus_config.timeout==10)
     pseudo_path = str((tmp_path / 'pseudopotentials').resolve())
-    assert(NEXUS_CONFIG.pseudo_dir==pseudo_path)
+    assert(nexus_config.pseudo_dir==pseudo_path)
     assert(PseudoSet.pseudo_files=={
         pseudo:str((Path(pseudo_path)/pseudo).resolve()) for pseudo in pseudos
         })
@@ -184,3 +185,26 @@ def test_command_line_timeout():
 
     assert(script_settings.timeout==12.5)
 #end def test_command_line_timeout
+
+
+@isolate_nexus_core
+def test_legacy_and_path_settings(tmp_path):
+    local_dir = tmp_path / "local"
+    basis_dir = tmp_path / "basis"
+    basis_dir.mkdir()
+
+    with pytest.warns(NexusUserWarning, match="verbose"):
+        settings(command_line=False, verbose=False)
+
+    settings(
+        command_line=False,
+        status="standard",
+        local_directory=local_dir,
+        basis_dir=basis_dir,
+        )
+
+    assert(nexus_config.status is ShowStatusMode.all)
+    assert(nexus_config.local_directory == str(local_dir))
+    assert(nexus_config.basis_dir == str(basis_dir))
+    assert(settings.local_directory == str(local_dir))
+    assert(settings.basis_dir == str(basis_dir))

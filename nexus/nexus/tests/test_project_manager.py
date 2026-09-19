@@ -7,7 +7,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.PROJECT_MANAGER)
 from . import isolate_nexus_core
 from ..testing import value_eq
 from ..testing import failed,FailedTest
-from ..nexus_base import NEXUS_CONFIG, ShowStatusMode, SimStage
+from ..nexus_base import nexus_config, ShowStatusMode, SimStage
 
 def test_init():
     from ..developer import obj
@@ -293,7 +293,7 @@ def test_write_simulation_status(capsys):
         return '\n'.join(line.rstrip() for line in s.splitlines())
     #end def status_log
 
-    assert(NEXUS_CONFIG.status is ShowStatusMode.NONE)
+    assert(nexus_config.status is ShowStatusMode.none)
     status_ref = '''
   cascade status
     setup, sent_files, submitted, finished, got_output, analyzed, failed
@@ -308,10 +308,10 @@ def test_write_simulation_status(capsys):
     '''
     assert(status_log().strip()==status_ref.strip())
 
-    NEXUS_CONFIG.status = ShowStatusMode.ALL
+    nexus_config.status = ShowStatusMode.all
     assert(status_log().strip()==status_ref.strip())
 
-    NEXUS_CONFIG.status = ShowStatusMode.ACTIVE
+    nexus_config.status = ShowStatusMode.active
     status_ref = '''
   cascade status
     setup, sent_files, submitted, finished, got_output, analyzed, failed
@@ -321,10 +321,10 @@ def test_write_simulation_status(capsys):
     '''
     assert(status_log().strip()==status_ref.strip())
 
-    NEXUS_CONFIG.status = ShowStatusMode.READY
+    nexus_config.status = ShowStatusMode.ready
     assert(status_log().strip()==status_ref.strip())
 
-    NEXUS_CONFIG.status = ShowStatusMode.FAILED
+    nexus_config.status = ShowStatusMode.failed
     status_ref = '''
   cascade status
     setup, sent_files, submitted, finished, got_output, analyzed, failed
@@ -389,20 +389,20 @@ def test_color_status_result(monkeypatch):
 
 @isolate_nexus_core
 def test_run_project(tmp_path):
-    from ..nexus_base import NEXUS_CONFIG
+    from ..nexus_base import nexus_config
     from ..simulation import Simulation,input_template
     from ..project_manager import ProjectManager
 
     from .test_simulation_module import get_test_workflow,n_test_workflows
 
     # divert_nexus()
-    NEXUS_CONFIG.local_directory  = str(tmp_path)
-    NEXUS_CONFIG.remote_directory = str(tmp_path)
-    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
 
-    assert(NEXUS_CONFIG.stages is SimStage.ALL)
+    assert(nexus_config.stages is SimStage.all)
 
-    NEXUS_CONFIG.sleep = 0.1
+    nexus_config.sleep = 0.1
 
     flags = ['setup','sent_files','submitted','finished','got_output','analyzed']
 

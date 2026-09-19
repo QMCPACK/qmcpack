@@ -3,7 +3,7 @@ from enum import IntEnum, auto
 from pathlib import Path
 from copy import deepcopy
 import functools
-from nexus.nexus_base import NEXUS_CONFIG
+from nexus.nexus_base import nexus_config
 from nexus.pseudoset import PseudoSet
 from nexus.simulation import Simulation
 
@@ -23,7 +23,7 @@ def isolate_nexus_core(test_func = None):
         try:
             test_func(tmp_path)
         finally:
-            NEXUS_CONFIG.restore_defaults()
+            nexus_config.restore_defaults()
             PseudoSet.pseudo_files = pseudo_files
             PseudoSet.labeled_pseudosets = labeled_pseudosets
             Simulation.clear_all_sims()
@@ -35,7 +35,7 @@ def isolate_nexus_core(test_func = None):
         try:
             test_func()
         finally:
-            NEXUS_CONFIG.restore_defaults()
+            nexus_config.restore_defaults()
             PseudoSet.pseudo_files = pseudo_files
             PseudoSet.labeled_pseudosets = labeled_pseudosets
             Simulation.clear_all_sims()
@@ -89,7 +89,7 @@ def create_pseudo_files(
         if pseudo.is_file()
         }
     PseudoSet.labeled_pseudosets = {}
-    NEXUS_CONFIG.pseudo_dir    = str(pseudo_dir)
+    nexus_config.pseudo_dir    = str(pseudo_dir)
 
 
 def register_pseudo_files(pseudos: list[str]):

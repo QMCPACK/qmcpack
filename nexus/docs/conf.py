@@ -41,7 +41,7 @@ sys.path.insert(0,str(nxs_root))
 # Not sure why, but Sphinx has problems with this import unless it's in this file
 from CifFile import CifFile
 
-from nexus.nexus_base import NEXUS_CONFIG
+from nexus.nexus_base import nexus_config
 
 try:
     release = importlib.metadata.version("nexus")
@@ -76,8 +76,8 @@ def _add_nexus_config_defaults(app, what, name, obj, options, lines):
         return
 
     attribute = name.removeprefix(prefix)
-    if attribute in NEXUS_CONFIG.__slots__:
-        default = getattr(NEXUS_CONFIG, attribute)
+    if attribute in nexus_config.__slots__:
+        default = getattr(nexus_config, attribute)
         if isinstance(default, str):
             lines.extend(("", f"Default: ``{default!r}``"))
         else:

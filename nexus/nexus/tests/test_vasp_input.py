@@ -6,7 +6,7 @@ pytestmark = pytest.mark.order(NexusTestOrder.VASP_ANALYZER)
 from ..generic import NexusError
 from ..pseudoset import PseudoSet
 
-from nexus.nexus_base import NEXUS_CONFIG
+from nexus.nexus_base import nexus_config
 from . import isolate_nexus_core, TEST_DIR
 from .. import testing
 from ..testing import object_eq,dict_serialize
@@ -1008,10 +1008,10 @@ def test_generate(tmp_path):
     pseudo_dir = tmp_path / 'pseudopotentials'
     pseudo_dir.mkdir()
 
-    NEXUS_CONFIG.local_directory  = str(tmp_path)
-    NEXUS_CONFIG.remote_directory = str(tmp_path)
-    NEXUS_CONFIG.file_locations = NEXUS_CONFIG.file_locations + [str(tmp_path)]
-    NEXUS_CONFIG.pseudo_dir = pseudo_dir
+    nexus_config.local_directory  = str(tmp_path)
+    nexus_config.remote_directory = str(tmp_path)
+    nexus_config.file_locations = nexus_config.file_locations + [str(tmp_path)]
+    nexus_config.pseudo_dir = pseudo_dir
 
     (pseudo_dir / 'C.POTCAR').write_text(c_potcar_text)
     PseudoSet.pseudo_files = {

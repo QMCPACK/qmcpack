@@ -34,7 +34,7 @@ from .developer     import obj, NexusError, warn
 from .debug         import ci
 from .utilities     import path_string
 
-from .nexus_base      import NexusCore, NexusConfig, SimStage, ShowStatusMode, NEXUS_CONFIG, write_splash
+from .nexus_base      import NexusCore, NexusConfig, SimStage, ShowStatusMode, nexus_config, write_splash
 from .machines        import Job,                    job,            Machine, Supercomputer, get_machine, get_cpu_cores, Workstation
 from .simulation      import Simulation, generate_simulation, input_template, multi_input_template, generate_template_input, generate_multi_template_input, graph_sims, DynamicProcess
 from .project_manager import ProjectManager,     DynamicWorkflowManager,     workflow_manager
@@ -82,7 +82,7 @@ if Machine.exists(hostmachine):
 
 # test needed
 def run_project(*args,**kwargs):
-    if NEXUS_CONFIG.graph_sims:
+    if nexus_config.graph_sims:
         graph_sims()
     #end if
     pm = ProjectManager()
@@ -523,9 +523,19 @@ class Settings(NexusCore):
 
     qm_package_vars = frozenset({'qprc'})
 
-    nexus_vars         = frozenset(NexusConfig.__slots__)
-    allowed_vars       = nexus_vars | machine_vars \
-                    | gamess_vars | pwscf_vars | qm_package_vars
+    deprecated_vars = frozenset({
+        'mode', 'verbose', 'debug', 'trace', 'emulate'
+        })
+
+    nexus_vars = frozenset(NexusConfig.__slots__)
+    allowed_vars = (
+        nexus_vars
+        | machine_vars
+        | deprecated_vars
+        | gamess_vars
+        | pwscf_vars
+        | qm_package_vars
+        )
 
 
     @staticmethod
@@ -576,13 +586,13 @@ class Settings(NexusCore):
         #end if
 
         # restore default core default settings
-        NEXUS_CONFIG.restore_defaults()
+        nexus_config.restore_defaults()
 
         # process command line inputs, if any
         if 'command_line' in kwargs:
-            NEXUS_CONFIG.command_line = kwargs.command_line
+            nexus_config.command_line = kwargs.command_line
         #end if
-        if NEXUS_CONFIG.command_line:
+        if nexus_config.command_line:
             self.process_command_line_settings(kwargs)
         #end if
 
@@ -669,7 +679,7 @@ class Settings(NexusCore):
         self.nxs_print('Applying user settings')
 
         # extract settings based on keyword groups
-        kw        = Settings.kw_set(Settings.nexus_vars     ,kwargs)
+        kw        = Settings.kw_set(Settings.nexus_vars | Settings.deprecated_vars, kwargs)
         mach_kw   = Settings.kw_set(Settings.machine_vars   ,kwargs)
         gamess_kw = Settings.kw_set(Settings.gamess_vars    ,kwargs)
         pwscf_kw  = Settings.kw_set(Settings.pwscf_vars     ,kwargs)
@@ -694,7 +704,7 @@ class Settings(NexusCore):
 
         # process nexus config settings
         self.process_config_settings(kw)
-        self.update(**{s: getattr(NEXUS_CONFIG, s) for s in Settings.nexus_vars})
+        self.update(**{s: getattr(nexus_config, s) for s in Settings.nexus_vars})
 
         # process gamess settings
         Gamess.restore_default_settings()
@@ -727,16 +737,16 @@ class Settings(NexusCore):
             default=argparse.SUPPRESS,
             help=(
                 "Report status of all simulations and then exit. "
-                f"(default: {NEXUS_CONFIG.status_only})"
+                f"(default: {nexus_config.status_only})"
                 )
             )
         parser.add_argument(
             "--status",
             default=argparse.SUPPRESS,
-            choices=("standard", "active", "failed", "ready"),
+            choices=("all", "active", "failed", "ready", "standard"),
             help=(
                 "Controls displayed simulation status information. "
-                f"(default: {NEXUS_CONFIG.status})"
+                f"(default: {nexus_config.status})"
                 )
             )
         parser.add_argument(
@@ -752,7 +762,7 @@ class Settings(NexusCore):
                 "this information will not be present in the generated "
                 "input file for that simulation since no simulations are "
                 "actually run with this option. "
-                f"(default: {NEXUS_CONFIG.generate_only})"
+                f"(default: {nexus_config.generate_only})"
                 )
             )
         parser.add_argument(
@@ -762,7 +772,7 @@ class Settings(NexusCore):
             default=argparse.SUPPRESS,
             help=(
                 "Display a graph of simulation workflows, then exit. "
-                f"(default: {NEXUS_CONFIG.graph_sims})"
+                f"(default: {nexus_config.graph_sims})"
                 )
             )
         parser.add_argument(
@@ -772,7 +782,7 @@ class Settings(NexusCore):
             default=argparse.SUPPRESS,
             help=(
                 "Print abbreviated polling messages. "
-                f"(default: {NEXUS_CONFIG.progress_tty})"
+                f"(default: {nexus_config.progress_tty})"
                 )
             )
         parser.add_argument(
@@ -783,7 +793,7 @@ class Settings(NexusCore):
                 "Number of seconds between polls. "
                 "At each poll, simulations are actually run provided all "
                 "simulations they depend on have successfully completed "
-                f"(default: {NEXUS_CONFIG.sleep})."
+                f"(default: {nexus_config.sleep})."
                 )
             )
         parser.add_argument(
@@ -793,7 +803,7 @@ class Settings(NexusCore):
             help=(
                 "Number of seconds to wait for output and error files after "
                 "a job exits the queue before marking the simulation as failed "
-                f"(default: {NEXUS_CONFIG.timeout})."
+                f"(default: {nexus_config.timeout})."
                 )
             )
         parser.add_argument(
@@ -825,7 +835,7 @@ class Settings(NexusCore):
             help=(
                 "Directory to perform all runs in. "
                 "Simulation paths are appended to this directory "
-                f"(default: {NEXUS_CONFIG.runs})."
+                f"(default: {nexus_config.runs})."
                 )
             )
         parser.add_argument(
@@ -834,7 +844,7 @@ class Settings(NexusCore):
             help=(
                 "Directory to copy out lightweight results data. "
                 "If set to '', results will not be stored outside of the runs "
-                f"directory (default: {NEXUS_CONFIG.results})."
+                f"directory (default: {nexus_config.results})."
                 )
             )
         parser.add_argument(
@@ -843,7 +853,7 @@ class Settings(NexusCore):
             default=argparse.SUPPRESS,
             help=(
                 "Base path where runs and results directories will be created "
-                f"(default={NEXUS_CONFIG.local_directory})."
+                f"(default={nexus_config.local_directory})."
                 )
             )
         parser.add_argument(
@@ -1009,7 +1019,7 @@ class Settings(NexusCore):
         # Deprecated variables
         deprecated = (
             ("mode", "Please use `stages` instead!"),
-            ("verbose", "Please use `quiet` instead!"),
+            ("verbose", "Please use `quiet=True` to turn off output instead of `verbose=False`!"),
             ("debug", "This variable was redundant, please remove from your script!"),
             ("trace", "This variable was unused in Nexus, please remove from your script!"),
             ("emulate", "This variable was unused in Nexus, please remove from your script!"),
@@ -1038,21 +1048,24 @@ class Settings(NexusCore):
             case None | False:
                 pass
             case True:
-                NEXUS_CONFIG.status = ShowStatusMode.ALL
+                nexus_config.status = ShowStatusMode.all
             case val:
-                val_str = str(val).upper()
-                if val_str not in ShowStatusMode.__members__:
+                val_str = str(val).lower()
+                if val_str == "standard":
+                    nexus_config.status = ShowStatusMode.all
+                elif val_str in ShowStatusMode.__members__:
+                    nexus_config.status = ShowStatusMode[val_str]
+                else:
                     msg = (
                         f"Invalid status mode specified: {val}\n"
                         f"Valid status modes are: {[i.lower() for i in ShowStatusMode.__members__]}"
                     )
                     raise ValueError(msg)
-                NEXUS_CONFIG.status = ShowStatusMode[val_str]
 
         if status_only := kw.pop("status_only", None):
-            NEXUS_CONFIG.status_only = status_only
-            if NEXUS_CONFIG.status is ShowStatusMode.NONE:
-                NEXUS_CONFIG.status = ShowStatusMode.ALL
+            nexus_config.status_only = status_only
+            if nexus_config.status is ShowStatusMode.none:
+                nexus_config.status = ShowStatusMode.all
 
         stages = kw.pop("stages", None)
         generate_only = kw.pop("generate_only", None)
@@ -1060,32 +1073,33 @@ class Settings(NexusCore):
             msg = "Can not set both `stages` and `generate_only`!"
             raise ValueError(msg)
         elif isinstance(stages, SimStage):
-            NEXUS_CONFIG.stages = stages
+            nexus_config.stages = stages
         elif isinstance(stages, str):
-            if stages.upper() not in SimStage.__members__:
+            if stages.lower() not in SimStage.__members__:
                 msg = (
                     f"Invalid stages specified: {stages}\n"
                     f"Valid stages are: {[*SimStage.__members__]}"
                 )
                 raise ValueError(msg)
-            NEXUS_CONFIG.stages = SimStage[stages.upper()]
+            nexus_config.stages = SimStage[stages.lower()]
         elif isinstance(stages, Collection):
-            NEXUS_CONFIG.stages = SimStage.from_list(stages)
+            nexus_config.stages = SimStage.from_list(stages)
         elif stages is not None:
             msg = f"stages should be a SimStage, str, or list of str, but is {type(stages)}!"
             raise TypeError(msg)
         elif generate_only:
-            NEXUS_CONFIG.stages = SimStage.SETUP # Preferred new route
-            NEXUS_CONFIG.generate_only = True # Legacy, will replace
+            nexus_config.stages = SimStage.setup # Preferred new route
+            nexus_config.generate_only = True # Legacy, will replace
 
         if (loc_dir := kw.pop("local_directory", None)) is not None:
-            NEXUS_CONFIG.file_locations.append(loc_dir)
+            nexus_config.local_directory = path_string(loc_dir)
+            nexus_config.file_locations.append(path_string(loc_dir))
 
         if (file_locs := kw.pop("file_locations", None)) is not None:
             if isinstance(file_locs, str | Path):
-                NEXUS_CONFIG.file_locations.append(path_string(file_locs))
+                nexus_config.file_locations.append(path_string(file_locs))
             else:
-                NEXUS_CONFIG.file_locations.extend(
+                nexus_config.file_locations.extend(
                     path_string(i) for i in file_locs
                 )
 
@@ -1095,20 +1109,20 @@ class Settings(NexusCore):
                 msg = f"pseudo_dir '{pseudo_dir}' is not a directory!"
                 raise NotADirectoryError(msg)
 
-            NEXUS_CONFIG.pseudo_dir = path_string(pseudo_dir)
+            nexus_config.pseudo_dir = path_string(pseudo_dir)
 
         PseudoSet.pseudo_files.clear()
         PseudoSet.labeled_pseudosets.clear()
-        if NEXUS_CONFIG.pseudo_dir is not None:
-            for file in Path(NEXUS_CONFIG.pseudo_dir).iterdir():
+        if nexus_config.pseudo_dir is not None:
+            for file in Path(nexus_config.pseudo_dir).iterdir():
                 if file.is_file():
                     PseudoSet.pseudo_files[file.name] = str(file)
 
         # backwards compatibility with prior results_dir default
         old_results_default = 'results'
-        old_results_dir = os.path.join(NEXUS_CONFIG.local_directory,old_results_default)
+        old_results_dir = os.path.join(nexus_config.local_directory,old_results_default)
         if 'results' not in kw and os.path.exists(old_results_dir):
-            NEXUS_CONFIG.results = old_results_default
+            nexus_config.results = old_results_default
 
         if basis_dir := kw.pop("basis_dir", None):
             basis_dir = Path(basis_dir).resolve(strict=True)
@@ -1116,20 +1130,21 @@ class Settings(NexusCore):
                 msg = f"basis_dir '{basis_dir}' is not a directory!"
                 raise NotADirectoryError(msg)
 
-            NEXUS_CONFIG.file_locations.append(path_string(basis_dir))
+            nexus_config.basis_dir = path_string(basis_dir)
+            nexus_config.file_locations.append(path_string(basis_dir))
             bs_files = []
             for file in basis_dir.iterdir():
                 if file.is_file():
                     bs_files.append(path_string(file))
 
-            NEXUS_CONFIG.basissets = BasisSets(bs_files)
+            nexus_config.basissets = BasisSets(bs_files)
         else:
-            NEXUS_CONFIG.basissets = BasisSets()
+            nexus_config.basissets = BasisSets()
 
         # Set remaining settings
         for cfg_var in NexusConfig.__slots__:
             if (cfg_val := kw.pop(cfg_var, None)) is not None:
-                setattr(NEXUS_CONFIG, cfg_var, cfg_val)
+                setattr(nexus_config, cfg_var, cfg_val)
     #end def process_config_settings
 #end class Settings
 
