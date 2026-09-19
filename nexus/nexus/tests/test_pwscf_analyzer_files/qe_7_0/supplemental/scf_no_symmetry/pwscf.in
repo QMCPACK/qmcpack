@@ -2,8 +2,8 @@
   calculation = 'scf'
   verbosity = 'high'
   restart_mode = 'from_scratch'
-  prefix = 'carbon_no_symmetry'
-  outdir = './tmp'
+  prefix = 'pwscf'
+  outdir = '.'
   pseudo_dir = '/home/j1k/repositories/quantum_espresso/q-e-qe-7.6/pseudo'
   tstress = .true.
   tprnfor = .true.
