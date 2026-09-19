@@ -38,11 +38,6 @@ public:
   using QMCT             = QMCTraits;
   using FullPrecRealType = QMCT::FullPrecRealType;
 
-  /** Constructor for SpinDensityNew that contains an explicitly defined cell
-   *  part of legacy input handling, Deprecated
-   */
-  SpinDensityNew(SpinDensityInput&& sdi, const SpeciesSet& species, DataLocality dl = DataLocality::crowd);
-
   /** Constructor
    *
    *  If the sdi contains a cell definition the Lattice passed will be ignored.
@@ -117,6 +112,10 @@ private:
    */
   size_t getFullDataSize() const override;
   void accumulateToData(size_t point, QMCT::RealType weight);
+  /// point must initially be the species offset; on success it is the corresponding grid point.
+  bool getFiniteCellPoint(const QMCT::PosType& position, size_t& point) const;
+  bool getPeriodicFiniteCellPoint(const QMCT::PosType& position, size_t& point) const;
+  void initializeFiniteCellBounds();
   void reset();
   void report(const std::string& pad);
 
@@ -133,9 +132,12 @@ private:
    *  @{
    */
 
-  /// Lattice is always local since it is either in the input or a constructor argument.
-  Lattice lattice_;
+  /// Lattice is the density grid cell; simulation_lattice_ defines its periodic images.
+  const Lattice lattice_;
+  const Lattice simulation_lattice_;
   SpinDensityInput::DerivedParameters derived_parameters_;
+  QMCT::PosType finite_cell_lo_;
+  QMCT::PosType finite_cell_hi_;
   /**}@*/
 
   friend class testing::SpinDensityNewTests;
