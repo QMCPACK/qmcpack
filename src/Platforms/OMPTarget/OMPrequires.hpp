@@ -2,29 +2,21 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2026 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-#include <catch2/catch_test_macros.hpp>
-#include "Platforms/Host/OutputManager.h"
+// -*- C++ -*-
+/** @file OMPrequires.hpp
+ */
 
-#include <iostream>
-#include "config.h"
-#include "MemoryUsage.h"
+#ifndef QMCPLUSPLUS_OPENMP_REQUIRES_H
+#define QMCPLUSPLUS_OPENMP_REQUIRES_H
 
-namespace qmcplusplus
-{
-TEST_CASE("OMP runtime memory", "[OMP]")
-{
-  PRAGMA_OFFLOAD("omp target")
-  {
-    // intentional empty target to initialize offload runtime library.
-  }
+#ifdef QMC_OFFLOAD_USM
+#pragma omp requires unified_shared_memory
+#endif
 
-  print_mem("OMP runtime memory", app_log());
-}
-
-} // namespace qmcplusplus
+#endif
