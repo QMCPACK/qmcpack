@@ -640,7 +640,7 @@ class Settings(NexusCore):
                 "seekpath":   {"min_ver": "x.x.x", "status": "optional"},
                 }
 
-        nxs_deps = {k:v for k, v in sorted(nxs_deps.items(), key=lambda x: pkg_sort.get(x[0], 1000))}
+        nxs_deps = dict(sorted(nxs_deps.items(), key=lambda x: pkg_sort.get(x[0], 1000)))
 
         available_pkgs = {}
         for module in nxs_deps.keys():
@@ -664,7 +664,7 @@ class Settings(NexusCore):
             version_text += f"    {pkg_name:<{name_align}} >= {pkg_info['min_ver']:<10} ({pkg_info['status']})\n"
 
         version_text += "\n"
-        missing_deps = set(nxs_deps) - set([i for i, a in available_pkgs.items() if a != "Unavailable"])
+        missing_deps = set(nxs_deps) - {i for i, a in available_pkgs.items() if a != "Unavailable"}
         if len(missing_deps) > 0:
             version_text += "  Required dependencies are met,\n"
             version_text += "  however some optional dependencies are missing.\n"

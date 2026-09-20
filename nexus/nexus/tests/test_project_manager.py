@@ -17,7 +17,7 @@ def test_init():
     pm = ProjectManager()
 
     modes = nexus_core.modes
-    assert(pm.persistent_modes==set([modes.submit,modes.all]))
+    assert(pm.persistent_modes=={modes.submit,modes.all})
     def check(v):
         assert isinstance(v,obj)
         assert len(v)==0
