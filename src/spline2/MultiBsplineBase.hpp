@@ -213,7 +213,8 @@ public:
   }
 
 
-  inline void evaluate_v(const TinyVector<T, 3>& r, Vector<T, aligned_allocator<T>>& psi)
+  template<typename VT>
+  inline void evaluate_v_impl(const TinyVector<VT, 3>& r, Vector<VT, aligned_allocator<VT>>& psi)
   {
     for (size_t ib = 0; ib < spline_blocks.size(); ib++)
     {
@@ -224,7 +225,18 @@ public:
     }
   }
 
-  inline void evaluate_vgl(const TinyVector<T, 3>& r, Vector<T, aligned_allocator<T>>& psi, VectorSoaContainer<T, 3>& grad, VectorSoaContainer<T, 3>& lap)
+  inline void evaluate_v(const TinyVector<float, 3>& r, Vector<float, aligned_allocator<float>>& psi)
+  {
+    evaluate_v_impl(r, psi);
+  }
+
+  inline void evaluate_v(const TinyVector<double, 3>& r, Vector<double, aligned_allocator<double>>& psi)
+  {
+    evaluate_v_impl(r, psi);
+  }
+
+  template<typename VT>
+  inline void evaluate_vgl_impl(const TinyVector<VT, 3>& r, Vector<VT, aligned_allocator<VT>>& psi, VectorSoaContainer<VT, 3>& grad, VectorSoaContainer<VT, 3>& lap)
   {
     for (size_t ib = 0; ib < spline_blocks.size(); ib++)
     {
@@ -236,7 +248,18 @@ public:
     }
   }
 
-  inline void evaluate_vgh(const TinyVector<T, 3>& r, Vector<T, aligned_allocator<T>>& psi, VectorSoaContainer<T, 3>& grad, VectorSoaContainer<T, 6>& hess)
+  inline void evaluate_vgl(const TinyVector<float, 3>& r, Vector<float, aligned_allocator<float>>& psi, VectorSoaContainer<float, 3>& grad, VectorSoaContainer<float, 3>& lap)
+  {
+    evaluate_vgl_impl(r, psi, grad, lap);
+  }
+
+  inline void evaluate_vgl(const TinyVector<double, 3>& r, Vector<double, aligned_allocator<double>>& psi, VectorSoaContainer<double, 3>& grad, VectorSoaContainer<double, 3>& lap)
+  {
+    evaluate_vgl_impl(r, psi, grad, lap);
+  }
+
+  template<typename VT>
+  inline void evaluate_vgh_impl(const TinyVector<VT, 3>& r, Vector<VT, aligned_allocator<VT>>& psi, VectorSoaContainer<VT, 3>& grad, VectorSoaContainer<VT, 6>& hess)
   {
     for (size_t ib = 0; ib < spline_blocks.size(); ib++)
     {
@@ -248,7 +271,18 @@ public:
     }
   }
 
-  inline void evaluate_vghgh(const TinyVector<T, 3>& r, Vector<T, aligned_allocator<T>>& psi, VectorSoaContainer<T, 3>& grad, VectorSoaContainer<T, 6>& hess, VectorSoaContainer<T, 10>& ghess)
+  inline void evaluate_vgh(const TinyVector<float, 3>& r, Vector<float, aligned_allocator<float>>& psi, VectorSoaContainer<float, 3>& grad, VectorSoaContainer<float, 6>& hess)
+  {
+    evaluate_vgh_impl(r, psi, grad, hess);
+  }
+
+  inline void evaluate_vgh(const TinyVector<double, 3>& r, Vector<double, aligned_allocator<double>>& psi, VectorSoaContainer<double, 3>& grad, VectorSoaContainer<double, 6>& hess)
+  {
+    evaluate_vgh_impl(r, psi, grad, hess);
+  }
+
+  template<typename VT>
+  inline void evaluate_vghgh_impl(const TinyVector<VT, 3>& r, Vector<VT, aligned_allocator<VT>>& psi, VectorSoaContainer<VT, 3>& grad, VectorSoaContainer<VT, 6>& hess, VectorSoaContainer<VT, 10>& ghess)
   {
     for (size_t ib = 0; ib < spline_blocks.size(); ib++)
     {
@@ -259,6 +293,16 @@ public:
                                    hess.data() + offsets_[ib], ghess.data() + offsets_[ib], psi.size(), 0,
                                    spline_m->num_splines);
     }
+  }
+
+  inline void evaluate_vghgh(const TinyVector<float, 3>& r, Vector<float, aligned_allocator<float>>& psi, VectorSoaContainer<float, 3>& grad, VectorSoaContainer<float, 6>& hess, VectorSoaContainer<float, 10>& ghess)
+  {
+    evaluate_vghgh_impl(r, psi, grad, hess, ghess);
+  }
+
+  inline void evaluate_vghgh(const TinyVector<double, 3>& r, Vector<double, aligned_allocator<double>>& psi, VectorSoaContainer<double, 3>& grad, VectorSoaContainer<double, 6>& hess, VectorSoaContainer<double, 10>& ghess)
+  {
+    evaluate_vghgh_impl(r, psi, grad, hess, ghess);
   }
 };
 
