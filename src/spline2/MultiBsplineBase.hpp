@@ -221,7 +221,7 @@ public:
       const auto* spline_m(spline_blocks[ib]);
       if (spline_m->num_splines == 0)
         continue;
-      spline2::evaluate_v_impl(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], 0, spline_m->num_splines);
+      spline2::evaluate_v_impl<T, VT>(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], 0, spline_m->num_splines);
     }
   }
 
@@ -243,7 +243,7 @@ public:
       const auto* spline_m(spline_blocks[ib]);
       if (spline_m->num_splines == 0)
         continue;
-      spline2::evaluate_vgl_impl(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], grad.data() + offsets_[ib],
+      spline2::evaluate_vgl_impl<T, VT>(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], grad.data() + offsets_[ib],
                                  lap.data() + offsets_[ib], psi.size(), 0, spline_m->num_splines);
     }
   }
@@ -266,7 +266,7 @@ public:
       const auto* spline_m(spline_blocks[ib]);
       if (spline_m->num_splines == 0)
         continue;
-      spline2::evaluate_vgh_impl(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], grad.data() + offsets_[ib],
+      spline2::evaluate_vgh_impl<T, VT>(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], grad.data() + offsets_[ib],
                                  hess.data() + offsets_[ib], psi.size(), 0, spline_m->num_splines);
     }
   }
@@ -289,7 +289,7 @@ public:
       const auto* spline_m(spline_blocks[ib]);
       if (spline_m->num_splines == 0)
         continue;
-      spline2::evaluate_vghgh_impl(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], grad.data() + offsets_[ib],
+      spline2::evaluate_vghgh_impl<T, VT>(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], grad.data() + offsets_[ib],
                                    hess.data() + offsets_[ib], ghess.data() + offsets_[ib], psi.size(), 0,
                                    spline_m->num_splines);
     }
@@ -305,6 +305,10 @@ public:
     evaluate_vghgh_impl(r, psi, grad, hess, ghess);
   }
 };
+
+
+extern template class MultiBsplineBase<float>;
+extern template class MultiBsplineBase<double>;
 
 } // namespace qmcplusplus
 

@@ -68,7 +68,7 @@ void MultiBsplineOffloadMapperBase<T>::mw_evaluate_v(int num_pos,
         auto* spline_v_iw = spline_v + walker_stride * iw;
         int ix, iy, iz;
         T a[4], b[4], c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos[0], pos[1], pos[2], ix, iy, iz, a, b, c);
+        spline2::computeLocationAndFractional<T, T>(spline_ptr, pos[0], pos[1], pos[2], ix, iy, iz, a, b, c);
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
@@ -113,7 +113,7 @@ void MultiBsplineOffloadMapperBase<T>::mw_evaluate_vgh(int num_pos,
         auto* pos           = pos_arr + pos_stride * iw;
         int ix, iy, iz;
         T a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos[0], pos[1], pos[2], ix, iy, iz, a, b, c, da, db, dc, d2a,
+        spline2::computeLocationAndFractional<T, T>(spline_ptr, pos[0], pos[1], pos[2], ix, iy, iz, a, b, c, da, db, dc, d2a,
                                               d2b, d2c);
 
         PRAGMA_OFFLOAD("omp parallel for")
