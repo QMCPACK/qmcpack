@@ -28,5 +28,5 @@ jobs:
       working-directory: ./nexus
 
     - name: Run ruff linter
-      run: uv run ruff check --output-format=github .
+      run: uv run ruff check --config="pyproject.toml" --output-format=github .
       working-directory: ./nexus
