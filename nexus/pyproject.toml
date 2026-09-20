@@ -75,3 +75,102 @@ filterwarnings = [
 ]
 testpaths = ["nexus/tests"]
 xfail_strict = true
+
+[tool.ruff]
+line-length = 100
+indent-width = 4
+
+target-version = "py311"
+extend-include = ["nexus/bin/*", "nexus/*.py"]
+exclude = [
+    "scf_template.py",
+    "hf_template.py",
+    "dft_template.py"
+] # PySCF template files
+
+[tool.ruff.lint]
+flake8-pytest-style.parametrize-values-type = "tuple"
+ignore = [
+    # Potentially permanently disabled
+    "PLW2901",
+    "SIM105",
+    "SIM108",
+    "C408",
+    "A002",
+    # Should be fixed
+    "S110",
+    "BLE001",
+    "B005",
+    "B008",
+    "B009",
+    "B010",
+    "B018",
+    "B023",
+    "C401",
+    "C403",
+    "C405",
+    "C413",
+    "C414",
+    "C419",
+    "DTZ005",
+    "EXE001",
+    "ISC004",
+    "PIE808",
+    "PIE810",
+    "RET501",
+    "SIM101",
+    "SIM102",
+    "SIM103",
+    "SIM113",
+    "SIM114",
+    "SIM115",
+    "SIM118",
+    "SIM201",
+    "SIM202",
+    "SIM905",
+    "I001",
+    "PERF402",
+    "E722",
+    "F401",
+    "F523",
+    "F524",
+    "F541",
+    "F821",
+    "F841",
+    "PLC0206",
+    "PLR0133",
+    "PLR0402",
+    "PLR1704",
+    "PLR1711",
+    "PLR2044",
+    "PLW0127",
+    "PLW0128",
+    "PLW0602",
+    "PLW0642",
+    "PLW1510",
+    "UP004",
+    "UP024",
+    "UP028",
+    "UP030",
+    "UP031",
+    "UP034",
+    "UP036",
+    "FURB122",
+    "FURB132",
+    "FURB188",
+    "RUF010",
+    "RUF012",
+    "RUF013",
+    "RUF015",
+    "RUF019",
+    "RUF046",
+    "RUF059",
+    "RUF100",
+    "TRY004",
+    "TRY201",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"generic.py" = ["PLE"]
+"__init__.py" = ["E402", "F401", "I"]
+"**/{tests,docs,tools}/*" = ["E402"]

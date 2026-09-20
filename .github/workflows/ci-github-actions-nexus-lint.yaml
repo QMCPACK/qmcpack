@@ -1,0 +1,32 @@
+name: Nexus Lint
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install uv and Setup Python
+      uses: astral-sh/setup-uv@v10.0.0
+      with:
+        version: "0.12.13"
+        python-version: 3.14
+
+    - name: Install project and all dependencies
+      run: uv sync --locked --all-extras --dev
+      working-directory: ./nexus
+
+    - name: Run ruff linter
+      run: uv run ruff check --output-format=github .
+      working-directory: ./nexus
