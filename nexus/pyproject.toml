@@ -90,9 +90,25 @@ exclude = [
 
 [tool.ruff.lint]
 flake8-pytest-style.parametrize-values-type = "tuple"
+extend-select = [
+    "FBT",
+    "ISC",
+    "Q003",
+    "RET501",
+    "NPY001",
+    "W292",
+    "PLE",
+    "PLR1711",
+    "PLR1722",
+    "PLR2044",
+    "PLW",
+    "RUF",
+    "TRY",
+]
 ignore = [
     # Potentially permanently disabled
     "PLW2901",
+    "PLW1641",
     "SIM105",
     "SIM108",
     "C408",
@@ -114,6 +130,7 @@ ignore = [
     "C419",
     "DTZ005",
     "EXE001",
+    "ISC001",
     "ISC004",
     "PIE808",
     "PIE810",
@@ -168,6 +185,18 @@ ignore = [
     "RUF100",
     "TRY004",
     "TRY201",
+    "W292",
+    "RUF005",
+    "FBT002",
+    "TRY003",
+    "TRY301",
+    "FBT003",
+    "RUF021",
+    "TRY300",
+    "RUF043",
+    "RUF002",
+    "ISC003",
+    "PLW0108",
 ]
 
 [tool.ruff.lint.per-file-ignores]
