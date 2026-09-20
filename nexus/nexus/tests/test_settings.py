@@ -44,7 +44,7 @@ def test_settings(tmp_path):
     #end def aux_defaults
 
     def check_settings_core_noncore():
-        nckeys_check = set([
+        nckeys_check = {
                 'command_line','debug', 'dependent_modes', 'emulate',
                 'file_locations', 'generate_only', 'graph_sims', 'indent',
                 'load_images', 'local_directory', 'mode', 'modes', 'monitor',
@@ -52,11 +52,11 @@ def test_settings(tmp_path):
                 'remote_directory', 'results', 'runs',
                 'skip_submit', 'sleep', 'stages', 'stages_set', 'status', 'timeout',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
-                ])
-        nnckeys_check = set([
+                }
+        nnckeys_check = {
                 'basis_dir', 'basissets', 'pseudo_dir'
-                ])
-        setkeys_check = set([
+                }
+        setkeys_check = {
                 'command_line','basis_dir', 'basissets', 'debug',
                 'dependent_modes', 'emulate', 'file_locations', 'generate_only',
                 'graph_sims', 'indent', 'load_images', 'local_directory', 'mode',
@@ -65,7 +65,7 @@ def test_settings(tmp_path):
                 'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
                 'timeout',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
-                ])
+                }
         setkeys_allowed = setkeys_check | Settings.allowed_vars
 
         nckeys  = set(nexus_core.keys())

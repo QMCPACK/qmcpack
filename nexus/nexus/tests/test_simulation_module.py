@@ -165,7 +165,7 @@ def generate_network():
                 deps.append(i)
             #end if
         #end for
-        sims.append(list(sorted(set(deps))))
+        sims.append(sorted(set(deps)))
     #end for
 
     sims_dict = {}
@@ -489,7 +489,7 @@ file2 = "$file.$ext2"
     si_read = input_template(template_filepath)
 
     assert(isinstance(si_read.template,Template))
-    assert(si_read.keywords==set(['a','b','ext1','ext2','file']))
+    assert(si_read.keywords=={'a','b','ext1','ext2','file'})
 
 
     # assign
@@ -630,9 +630,9 @@ c    = $c
     assert(len(si.filenames)==3)
     assert(object_eq(si.filenames,filenames))
     keywords_ref = dict(
-        input1 = set(['a', 'name']),
-        input2 = set(['b', 'name']),
-        input3 = set(['c', 'name']),
+        input1 = {'a', 'name'},
+        input2 = {'b', 'name'},
+        input3 = {'c', 'name'},
         )
     for name,keyword_set in keywords_ref.items():
         assert(name in si)
@@ -736,11 +736,11 @@ def test_init():
         bundled              = False,
         bundler              = None,
         created_directories  = False,
-        dependency_ids       = set([]),
+        dependency_ids       = set(),
         errfile              = 'sim.err',
         failed               = False,
         fake_sim             = False,
-        files                = set([]),
+        files                = set(),
         finished             = False,
         force_restart        = False,
         force_write          = False,
@@ -772,7 +772,7 @@ def test_init():
         subcascade_finished  = False,
         submitted            = False,
         system               = None,
-        wait_ids             = set([]),
+        wait_ids             = set(),
         dependencies         = obj(),
         dependents           = obj(),
         input                = SimulationInput(),
@@ -1645,7 +1645,7 @@ def test_downstream_simids():
     for sname in sorted(sims.keys()):
         s = sims[sname]
         ds_ids = s.downstream_simids()
-        ds_ids_ref = set([sd.simid for sd in downstream_sims[sname]])
+        ds_ids_ref = {sd.simid for sd in downstream_sims[sname]}
         assert(ds_ids==ds_ids_ref)
         n+=1
     #end for
@@ -2254,7 +2254,7 @@ a    = $a
     assert(not s.finished)
     assert(not s.got_output)
     assert(not s.analyzed)
-    assert(s.files==set([s.infile]))
+    assert(s.files=={s.infile})
     assert(s.job.status==1)
     assert(Path(s.locdir).exists())
     assert(Path(s.remdir).exists())

@@ -234,7 +234,7 @@ class VXML(DevBase):
                     fields[len(fields)] = obj(name=fname,dtype=dtype)
                 elif line.startswith('<set'):
                     if not set_dims:
-                        dims = [v for v in dims.values()]
+                        dims = list(dims.values())
                         dims.reverse()
                         dims = tuple(dims)
                         dim_counts = np.zeros((len(dims),),dtype=int)
