@@ -23,6 +23,9 @@
 #include <cstddef>
 #include <vector>
 #include <stdexcept>
+#include <OhmmsPETE/OhmmsVector.h>
+#include <OhmmsSoA/VectorSoaContainer.h>
+#include <CPU/SIMD/aligned_allocator.hpp>
 #include "spline2/bspline_traits.hpp"
 #include "spline2/MultiBsplineEval.hpp"
 
@@ -210,8 +213,7 @@ public:
   }
 
 
-  template<typename PT, typename VT>
-  inline void evaluate_v(const PT& r, VT& psi)
+  inline void evaluate_v(const TinyVector<T, 3>& r, Vector<T, aligned_allocator<T>>& psi)
   {
     for (size_t ib = 0; ib < spline_blocks.size(); ib++)
     {
@@ -222,8 +224,7 @@ public:
     }
   }
 
-  template<typename PT, typename VT, typename GT>
-  inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, GT& lap)
+  inline void evaluate_vgl(const TinyVector<T, 3>& r, Vector<T, aligned_allocator<T>>& psi, VectorSoaContainer<T, 3>& grad, VectorSoaContainer<T, 3>& lap)
   {
     for (size_t ib = 0; ib < spline_blocks.size(); ib++)
     {
@@ -235,8 +236,7 @@ public:
     }
   }
 
-  template<typename PT, typename VT, typename GT, typename HT>
-  inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
+  inline void evaluate_vgh(const TinyVector<T, 3>& r, Vector<T, aligned_allocator<T>>& psi, VectorSoaContainer<T, 3>& grad, VectorSoaContainer<T, 6>& hess)
   {
     for (size_t ib = 0; ib < spline_blocks.size(); ib++)
     {
@@ -248,8 +248,7 @@ public:
     }
   }
 
-  template<typename PT, typename VT, typename GT, typename HT, typename GHT>
-  inline void evaluate_vghgh(const PT& r, VT& psi, GT& grad, HT& hess, GHT& ghess)
+  inline void evaluate_vghgh(const TinyVector<T, 3>& r, Vector<T, aligned_allocator<T>>& psi, VectorSoaContainer<T, 3>& grad, VectorSoaContainer<T, 6>& hess, VectorSoaContainer<T, 10>& ghess)
   {
     for (size_t ib = 0; ib < spline_blocks.size(); ib++)
     {

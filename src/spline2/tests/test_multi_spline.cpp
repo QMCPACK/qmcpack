@@ -173,7 +173,7 @@ struct test_splines : public test_splines_base<T, GRID_SIZE, NUM_SPLINES>
 
     TinyVector<T, 3> pos = {0, 0, 0};
 
-    aligned_vector<T> v(npad);
+    Vector<T, aligned_allocator<T>> v(npad);
     spline2::evaluate3d(bs.getSplinePtr(), pos, v);
 
     VectorSoaContainer<T, 3> dv(npad);
@@ -229,7 +229,7 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
 
     // symbolic value at pos =  (cx[0]/6 + 2*cx[1]/3 + cx[2]/6)*(cy[0]/6 + 2*cy[1]/3 + cy[2]/6)*(cz[0]/6 + 2*cz[1]/3 + cz[2]/6)
 
-    aligned_vector<T> v(npad);
+    Vector<T, aligned_allocator<T>> v(npad);
     spline2::evaluate3d(bs.getSplinePtr(), pos, v);
     CHECK(v[0] == Approx(-3.529930688e-12));
 

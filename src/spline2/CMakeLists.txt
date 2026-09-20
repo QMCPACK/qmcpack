@@ -11,7 +11,7 @@
 
 
 add_library(spline2_omptarget OBJECT MultiBsplineOffloadMapperBase.cpp MultiBsplineOffloadMapper.cpp)
-target_link_libraries(spline2_omptarget PUBLIC einspline platform_runtime)
+target_link_libraries(spline2_omptarget PUBLIC einspline platform_runtime containers)
 
 set(SPLINE2_SRC MultiBspline.cpp MultiBspline1D.cpp SplineUtils.cpp)
 if(HAVE_MPI)
