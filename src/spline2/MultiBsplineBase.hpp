@@ -30,7 +30,6 @@
 #include <OhmmsSoA/VectorSoaContainer.h>
 #include <CPU/SIMD/aligned_allocator.hpp>
 #include "spline2/bspline_traits.hpp"
-#include "spline2/MultiBsplineEval.hpp"
 
 namespace qmcplusplus
 {
