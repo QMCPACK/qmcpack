@@ -1,7 +1,267 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2026 QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+//                    Amrita Mathuriya, amrita.mathuriya@intel.com, Intel Corp.
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//////////////////////////////////////////////////////////////////////////////////////
+
 #include "MultiBsplineBase.hpp"
 
 namespace qmcplusplus
 {
+
+template<typename T>
+typename MultiBsplineBase<T>::SplineType* MultiBsplineBase<T>::getSplinePtr()
+{
+  if (spline_blocks.size() != 1)
+    throw std::runtime_error("Bug! Cannot access splime_m. the number of spline_blocks is not 1.");
+  return spline_blocks[0];
+}
+
+template<typename T>
+void MultiBsplineBase<T>::flush_zero(size_t iblock) const
+{ std::fill(spline_blocks[iblock]->coefs, spline_blocks[iblock]->coefs + spline_blocks[iblock]->coefs_size, T(0)); }
+
+template<typename T>
+size_t MultiBsplineBase<T>::num_splines() const
+{
+  size_t num_splines = 0;
+  for (auto spline_m : spline_blocks)
+    num_splines += spline_m->num_splines;
+  return num_splines;
+}
+
+template<typename T>
+size_t MultiBsplineBase<T>::num_splines_padded() const
+{
+  size_t num_splines_padded = 0;
+  for (auto spline_m : spline_blocks)
+    num_splines_padded += spline_m->z_stride;
+  return num_splines_padded;
+}
+
+template<typename T>
+size_t MultiBsplineBase<T>::sizeInByte() const
+{
+  size_t num_T = 0;
+  for (auto spline_m : spline_blocks)
+    num_T += spline_m->coefs_size;
+  return num_T * sizeof(T);
+}
+
+template<typename T>
+void MultiBsplineBase<T>::set_spline(const UBspline_3d_d& single, int i)
+{
+  size_t iblock = 0;
+  while (iblock < spline_blocks.size() && i >= offsets_[iblock + 1])
+    iblock++;
+  if (iblock == spline_blocks.size())
+    throw std::runtime_error("Bug detected in MultiBsplineBase::set_spline i goes out of bound!");
+
+  auto& multi(*spline_blocks[iblock]);
+
+  if (single.x_grid.num != multi.x_grid.num || single.y_grid.num != multi.y_grid.num ||
+      single.z_grid.num != multi.z_grid.num)
+    throw std::runtime_error("Cannot copy a single spline to MultiSpline with a different grid!\n");
+
+  intptr_t x_stride_in  = single.x_stride;
+  intptr_t y_stride_in  = single.y_stride;
+  intptr_t x_stride_out = multi.x_stride;
+  intptr_t y_stride_out = multi.y_stride;
+  intptr_t z_stride_out = multi.z_stride;
+  const intptr_t istart = static_cast<intptr_t>(i - offsets_[iblock]);
+  const intptr_t n0 = multi.x_grid.num + 3, n1 = multi.y_grid.num + 3, n2 = multi.z_grid.num + 3;
+  for (intptr_t ix = 0; ix < n0; ++ix)
+    for (intptr_t iy = 0; iy < n1; ++iy)
+    {
+      auto* __restrict__ out      = multi.coefs + ix * x_stride_out + iy * y_stride_out + istart;
+      const auto* __restrict__ in = single.coefs + ix * x_stride_in + iy * y_stride_in;
+      for (intptr_t iz = 0; iz < n2; ++iz)
+        out[iz * z_stride_out] = in[iz];
+    }
+}
+
+template<typename T>
+template<typename VT>
+void MultiBsplineBase<T>::evaluate_v_impl(const TinyVector<VT, 3>& r, Vector<VT, aligned_allocator<VT>>& psi)
+{
+  for (size_t ib = 0; ib < spline_blocks.size(); ib++)
+  {
+    const auto* spline_m(spline_blocks[ib]);
+    if (spline_m->num_splines == 0)
+      continue;
+    spline2::evaluate_v_impl<T, VT>(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], 0, spline_m->num_splines);
+  }
+}
+
+template<typename T>
+void MultiBsplineBase<T>::evaluate_v(const TinyVector<float, 3>& r, Vector<float, aligned_allocator<float>>& psi)
+{ evaluate_v_impl(r, psi); }
+
+template<typename T>
+void MultiBsplineBase<T>::evaluate_v(const TinyVector<double, 3>& r, Vector<double, aligned_allocator<double>>& psi)
+{ evaluate_v_impl(r, psi); }
+
+template<typename T>
+template<typename VT>
+void MultiBsplineBase<T>::evaluate_vgl_impl(const TinyVector<VT, 3>& r,
+                                            Vector<VT, aligned_allocator<VT>>& psi,
+                                            VectorSoaContainer<VT, 3>& grad,
+                                            VectorSoaContainer<VT, 3>& lap)
+{
+  for (size_t ib = 0; ib < spline_blocks.size(); ib++)
+  {
+    const auto* spline_m(spline_blocks[ib]);
+    if (spline_m->num_splines == 0)
+      continue;
+    spline2::evaluate_vgl_impl<T, VT>(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], grad.data() + offsets_[ib],
+                                      lap.data() + offsets_[ib], psi.size(), 0, spline_m->num_splines);
+  }
+}
+
+template<typename T>
+void MultiBsplineBase<T>::evaluate_vgl(const TinyVector<float, 3>& r,
+                                       Vector<float, aligned_allocator<float>>& psi,
+                                       VectorSoaContainer<float, 3>& grad,
+                                       VectorSoaContainer<float, 3>& lap)
+{ evaluate_vgl_impl(r, psi, grad, lap); }
+
+template<typename T>
+void MultiBsplineBase<T>::evaluate_vgl(const TinyVector<double, 3>& r,
+                                       Vector<double, aligned_allocator<double>>& psi,
+                                       VectorSoaContainer<double, 3>& grad,
+                                       VectorSoaContainer<double, 3>& lap)
+{ evaluate_vgl_impl(r, psi, grad, lap); }
+
+template<typename T>
+template<typename VT>
+void MultiBsplineBase<T>::evaluate_vgh_impl(const TinyVector<VT, 3>& r,
+                                            Vector<VT, aligned_allocator<VT>>& psi,
+                                            VectorSoaContainer<VT, 3>& grad,
+                                            VectorSoaContainer<VT, 6>& hess)
+{
+  for (size_t ib = 0; ib < spline_blocks.size(); ib++)
+  {
+    const auto* spline_m(spline_blocks[ib]);
+    if (spline_m->num_splines == 0)
+      continue;
+    spline2::evaluate_vgh_impl<T, VT>(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib], grad.data() + offsets_[ib],
+                                      hess.data() + offsets_[ib], psi.size(), 0, spline_m->num_splines);
+  }
+}
+
+template<typename T>
+void MultiBsplineBase<T>::evaluate_vgh(const TinyVector<float, 3>& r,
+                                       Vector<float, aligned_allocator<float>>& psi,
+                                       VectorSoaContainer<float, 3>& grad,
+                                       VectorSoaContainer<float, 6>& hess)
+{ evaluate_vgh_impl(r, psi, grad, hess); }
+
+template<typename T>
+void MultiBsplineBase<T>::evaluate_vgh(const TinyVector<double, 3>& r,
+                                       Vector<double, aligned_allocator<double>>& psi,
+                                       VectorSoaContainer<double, 3>& grad,
+                                       VectorSoaContainer<double, 6>& hess)
+{ evaluate_vgh_impl(r, psi, grad, hess); }
+
+template<typename T>
+template<typename VT>
+void MultiBsplineBase<T>::evaluate_vghgh_impl(const TinyVector<VT, 3>& r,
+                                              Vector<VT, aligned_allocator<VT>>& psi,
+                                              VectorSoaContainer<VT, 3>& grad,
+                                              VectorSoaContainer<VT, 6>& hess,
+                                              VectorSoaContainer<VT, 10>& ghess)
+{
+  for (size_t ib = 0; ib < spline_blocks.size(); ib++)
+  {
+    const auto* spline_m(spline_blocks[ib]);
+    if (spline_m->num_splines == 0)
+      continue;
+    spline2::evaluate_vghgh_impl<T, VT>(spline_m, r[0], r[1], r[2], psi.data() + offsets_[ib],
+                                        grad.data() + offsets_[ib], hess.data() + offsets_[ib],
+                                        ghess.data() + offsets_[ib], psi.size(), 0, spline_m->num_splines);
+  }
+}
+
+template<typename T>
+void MultiBsplineBase<T>::evaluate_vghgh(const TinyVector<float, 3>& r,
+                                         Vector<float, aligned_allocator<float>>& psi,
+                                         VectorSoaContainer<float, 3>& grad,
+                                         VectorSoaContainer<float, 6>& hess,
+                                         VectorSoaContainer<float, 10>& ghess)
+{ evaluate_vghgh_impl(r, psi, grad, hess, ghess); }
+
+template<typename T>
+void MultiBsplineBase<T>::evaluate_vghgh(const TinyVector<double, 3>& r,
+                                         Vector<double, aligned_allocator<double>>& psi,
+                                         VectorSoaContainer<double, 3>& grad,
+                                         VectorSoaContainer<double, 6>& hess,
+                                         VectorSoaContainer<double, 10>& ghess)
+{ evaluate_vghgh_impl(r, psi, grad, hess, ghess); }
+
+
+template<typename T>
+void MultiBsplineBase<T>::setMetaData(typename MultiBsplineBase<T>::SplineType& spline,
+                                      Ugrid x_grid,
+                                      Ugrid y_grid,
+                                      Ugrid z_grid,
+                                      const typename MultiBsplineBase<T>::BoundaryCondition bc[3],
+                                      size_t num_splines,
+                                      size_t num_splines_padded)
+{
+  auto& xBC          = bc[0];
+  auto& yBC          = bc[1];
+  auto& zBC          = bc[2];
+  spline.spcode      = bspline_traits<T, 3>::spcode;
+  spline.tcode       = bspline_traits<T, 3>::tcode;
+  spline.xBC         = xBC;
+  spline.yBC         = yBC;
+  spline.zBC         = zBC;
+  spline.num_splines = num_splines;
+
+  // Setup internal variables
+  int Mx = x_grid.num;
+  int My = y_grid.num;
+  int Mz = z_grid.num;
+  int Nx, Ny, Nz;
+
+  if (xBC.lCode == PERIODIC || xBC.lCode == ANTIPERIODIC)
+    Nx = Mx + 3;
+  else
+    Nx = Mx + 2;
+  x_grid.delta     = (x_grid.end - x_grid.start) / (double)(Nx - 3);
+  x_grid.delta_inv = 1.0 / x_grid.delta;
+  spline.x_grid    = x_grid;
+
+  if (yBC.lCode == PERIODIC || yBC.lCode == ANTIPERIODIC)
+    Ny = My + 3;
+  else
+    Ny = My + 2;
+  y_grid.delta     = (y_grid.end - y_grid.start) / (double)(Ny - 3);
+  y_grid.delta_inv = 1.0 / y_grid.delta;
+  spline.y_grid    = y_grid;
+
+  if (zBC.lCode == PERIODIC || zBC.lCode == ANTIPERIODIC)
+    Nz = Mz + 3;
+  else
+    Nz = Mz + 2;
+  z_grid.delta     = (z_grid.end - z_grid.start) / (double)(Nz - 3);
+  z_grid.delta_inv = 1.0 / z_grid.delta;
+  spline.z_grid    = z_grid;
+
+  spline.x_stride = (size_t)Ny * (size_t)Nz * num_splines_padded;
+  spline.y_stride = Nz * num_splines_padded;
+  spline.z_stride = num_splines_padded;
+
+  spline.coefs_size = (size_t)Nx * spline.x_stride;
+}
+
 template class MultiBsplineBase<float>;
 template class MultiBsplineBase<double>;
 } // namespace qmcplusplus

@@ -42,12 +42,12 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<ST, 3>::S
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
     {
-      const T pre00              = a[i] * b[j];
+      const T pre00               = a[i] * b[j];
       const ST* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
       const ST* restrict coefszs  = coefs + zs;
       const ST* restrict coefs2zs = coefs + 2 * zs;
       const ST* restrict coefs3zs = coefs + 3 * zs;
-#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals : QMC_SIMD_ALIGNMENT)
       for (int n = 0; n < num_splines; n++)
         vals[n] += pre00 * (c[0] * coefs[n] + c[1] * coefszs[n] + c[2] * coefs2zs[n] + c[3] * coefs3zs[n]);
     }
