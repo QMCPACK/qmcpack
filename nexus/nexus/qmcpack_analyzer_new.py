@@ -93,10 +93,12 @@ class ReadScalarIssues(DevBase):
         The first nonblank line is not a comment containing at least one
         column name.
     bad_col_count : bool
-        After excluding a tolerated short final numeric row and corrupt
-        trailing rows, all rows have the same number of columns, but that
-        number differs from the number of header columns.  This differs from
-        ``uneven_cols``, which indicates inconsistent row widths.
+        The first trusted data row has a uniform but incorrect width: its
+        number of tokens differs from the number of header columns and no
+        earlier data row established the header width.  Parsing stops at this
+        row.  This differs from ``uneven_cols``, where an earlier row already
+        had the expected width.  A tolerated short final numeric row and
+        trailing corrupt text do not produce this issue.
     no_data : bool
         A valid header is present, but there are no nonblank, noncomment data
         rows.
@@ -107,39 +109,56 @@ class ReadScalarIssues(DevBase):
         returned data; the issue is still recorded.  Such rows count toward
         ``nrows`` if they are otherwise complete and numeric.
     unparsable_vals : bool
-        A row containing a token that cannot be converted to a float occurs
-        before a later complete numeric row.  This specifically identifies
-        corruption within the data.  Unparsable rows after the final complete
-        row produce ``corrupt_end`` instead.
+        An exact-width row containing a token that cannot be converted to a
+        float occurs before a later complete numeric row.  Such a row is
+        skipped, does not count toward ``nrows``, and does not stop extraction.
+        A wrong-width unparsable row also produces this issue if complete data
+        occurs later, but that row stops extraction because its width is
+        wrong.  Unparsable rows after the final trusted complete row produce
+        ``corrupt_end`` instead.
     uneven_cols : bool
-        Rows outside the tolerated corrupt end do not all have the same
-        token count.  Both numeric and internally unparsable rows participate
-        in this check.  A single final numeric row with too few columns is
-        treated as a partial write and is excluded, while a row with too many
-        columns is not excluded.
+        A row has a different token count from the header after an earlier
+        row established the expected width.  Parsing stops at the first such
+        row, and that row and all following rows are excluded from extraction
+        and ``nrows`` validation.  Both numeric and nonnumeric rows can expose
+        this condition.  A short final numeric row is instead treated as a
+        partial write and does not produce this issue; an overlong final
+        numeric row does.
     incomplete : bool
         The number of complete numeric rows differs from the requested
         ``nrows``.  A complete row has exactly the header width and every
         token converts to a float; NaNs and infinities count as converted
         values.  Counting occurs before recognized-column NaN filtering.
+    nrows_unchecked : bool
+        No expected ``nrows`` value was supplied, so row-count completeness
+        was not validated.  This is recoverable for ordinary parsing, but
+        causes :meth:`complete` to return ``False`` because completeness
+        cannot be established.
     no_usable_vals : bool
-        Data rows exist, but no usable contiguous data prefix can be returned,
-        or filtering removes every row in that prefix.
+        No fully parsable, exact-width row before the first width error has
+        usable recognized scalar data.  With ``trim_nan=True``, a row is usable
+        only when all recognized scalar values are finite; with
+        ``trim_nan=False``, parsed NaNs and infinities are allowed.  The index
+        is not scalar data, except that it counts as usable when it is the only
+        column in the file.
     corrupt_end : bool
-        One or more rows after the final complete numeric row contain tokens
-        that cannot be converted to floats.  This is a recoverable condition:
-        the valid prefix is returned and the corrupt rows are excluded from
-        column consistency checks.  A short partial numeric row may occur
-        before or after such garbage without changing the classification; it
-        is not itself corrupt end data.
+        One or more unparsable rows occur after the final trusted complete
+        numeric row.  These rows are trailing garbage rather than middle
+        corruption.  A short final numeric row may occur before or after such
+        garbage without becoming corrupt itself.  Trailing corruption is
+        recoverable and does not by itself prevent complete trusted data from
+        being returned.
 
     Notes
     -----
-    ``failed()`` treats ``nan_vals``, ``incomplete``, and ``corrupt_end`` as
-    recoverable conditions.  Every other active issue is considered a parsing
-    failure.  When corruption occurs in the middle of a file, only the
-    contiguous valid prefix preceding it is returned, even though later rows
-    are inspected for issue classification and ``nrows`` validation.
+    ``failed()`` treats ``nan_vals``, ``incomplete``, ``nrows_unchecked``, and
+    ``corrupt_end`` as recoverable conditions.  Every other active issue is
+    considered a parsing failure.  When corruption occurs in the middle of a
+    file, later exact-width complete rows are returned after the corrupt row.
+    In contrast, the first wrong-width row is a trust boundary: that row and
+    all later rows are excluded from extraction and ``nrows`` validation.
+    Later rows may be inspected only to distinguish middle corruption from a
+    corrupt end and a final partial numeric row.
     """
 
     issues = (
@@ -152,13 +171,16 @@ class ReadScalarIssues(DevBase):
         'unparsable_vals',  # some data values couldn't be read
         'uneven_cols',      # not all rows had the same length
         'incomplete',       # file does not contain all expected data
+        'nrows_unchecked',  # no expected row count was provided
         'no_usable_vals',   # file has no usable data
         'corrupt_end',      # trailing rows contain nonnumeric garbage
         )
 
-    def __init__(self):
+    def __init__(self,nrows_checked=False):
         for issue in self.issues:
             self[issue] = False
+        if not nrows_checked:
+            self.add('nrows_unchecked')
     #end def __init__
 
     def add(self,issue):
@@ -172,9 +194,48 @@ class ReadScalarIssues(DevBase):
 
     def failed(self):
         issues = self.issue_set()
-        issues -= {'nan_vals','incomplete','corrupt_end'}
+        issues -= {'nan_vals','incomplete','nrows_unchecked','corrupt_end'}
         return len(issues)>0
     #end def failed
+
+    def complete(self,allow_nan=False):
+        """Return whether the requested number of usable rows is present.
+
+        Parameters
+        ----------
+        allow_nan : bool, optional
+            If ``False``, recognized non-finite scalar values prevent the
+            result from being complete.  If ``True``, rows containing such
+            values count toward completeness.  The default is ``False``.
+
+        Returns
+        -------
+        complete : bool
+            ``True`` only when ``nrows`` was supplied, exactly that many
+            complete numeric rows were present, and no fatal parsing issue was
+            encountered.  Recoverable trailing corruption does not prevent
+            completeness.  ``nan_vals`` prevents completeness unless
+            ``allow_nan=True``.
+        """
+        assert isinstance(allow_nan,bool)
+        incomplete_issues = {
+            'no_file',
+            'empty_file',
+            'bad_header',
+            'bad_col_count',
+            'no_data',
+            'unparsable_vals',
+            'uneven_cols',
+            'incomplete',
+            'nrows_unchecked',
+            'no_usable_vals',
+            }
+        if any(self[issue] for issue in incomplete_issues):
+            return False
+        if self.nan_vals and not allow_nan:
+            return False
+        return True
+    #end def complete
 #end class ReadScalarIssues
 
 
@@ -196,7 +257,7 @@ def read_scalar_file(filepath,
     assert isinstance(issues,bool)
     ret_issues = issues
     data   = dict_type()
-    issues = ReadScalarIssues()
+    issues = ReadScalarIssues(nrows_checked=nrows is not None)
     if not ret_issues:
         ret = data
     else:
@@ -228,9 +289,10 @@ def read_scalar_file(filepath,
         issues.add('bad_header')
     elif var_names is None:
         issues.add('empty_file')
-    if len(issues.issue_set())>0:
+    if issues.no_file or issues.empty_file or issues.bad_header:
         return ret
-    # Parse every data row before classifying corruption and column counts.
+    # Read every row so that a width boundary can be classified without using
+    # any data beyond it for extraction or nrows validation.
     nvars = len(var_names)
     rows = []
     f = open(filepath,'r')
@@ -259,53 +321,55 @@ def read_scalar_file(filepath,
             issues.add('incomplete')
         return ret
 
-    # Unparsable rows after the final complete row are recoverable end
-    # corruption, even if a short partial numeric row follows them.
-    complete_indices = [n for n,row in enumerate(rows) if row.complete]
-    if len(complete_indices)>0:
-        last_complete = complete_indices[-1]
-    else:
-        last_complete = -1
-    corrupt_end_rows = {
-        n for n,row in enumerate(rows)
-        if not row.parsable and n>last_complete
-        }
-    if len(corrupt_end_rows)>0:
+    wrong_width = next(
+        (n for n,row in enumerate(rows) if row.ncols!=nvars), len(rows)
+        )
+    trusted_rows = rows[:wrong_width]
+
+    # Determine whether the width boundary is a tolerated partial final write,
+    # recoverable trailing garbage, or an actual column-count error.  Later
+    # rows inform this classification but remain untrusted.
+    if wrong_width<len(rows):
+        boundary_row = rows[wrong_width]
+        later_complete = any(row.complete for row in rows[wrong_width+1:])
+        later_parsable = any(row.parsable for row in rows[wrong_width+1:])
+        partial_final = (
+            boundary_row.parsable and boundary_row.ncols<nvars and
+            not later_parsable
+            )
+        corrupt_boundary = not boundary_row.parsable and not later_complete
+        if corrupt_boundary:
+            issues.add('corrupt_end')
+        elif partial_final:
+            if any(not row.parsable for row in rows[wrong_width+1:]):
+                issues.add('corrupt_end')
+        else:
+            if wrong_width==0:
+                issues.add('bad_col_count')
+            else:
+                issues.add('uneven_cols')
+            if not boundary_row.parsable and later_complete:
+                issues.add('unparsable_vals')
+
+    # Exact-width unparsable rows do not stop parsing.  They are middle
+    # corruption when complete data resumes, and corrupt-end data otherwise.
+    trusted_complete = [n for n,row in enumerate(trusted_rows) if row.complete]
+    last_trusted_complete = trusted_complete[-1] if trusted_complete else -1
+    if any(
+        not row.parsable and n<last_trusted_complete
+        for n,row in enumerate(trusted_rows)
+    ):
+        issues.add('unparsable_vals')
+    if any(
+        not row.parsable and n>last_trusted_complete
+        for n,row in enumerate(trusted_rows)
+    ):
         issues.add('corrupt_end')
 
-    # A short final numeric row represents a write still in progress.  It is
-    # not used for column consistency checks or as complete scalar data.
-    parsable_indices = [n for n,row in enumerate(rows) if row.parsable]
-    partial_final_row = None
-    if len(parsable_indices)>0:
-        n = parsable_indices[-1]
-        if rows[n].ncols<nvars:
-            partial_final_row = n
-    column_rows = [
-        row for n,row in enumerate(rows)
-        if n not in corrupt_end_rows and n!=partial_final_row
-        ]
-
-    col_counts = {row.ncols for row in column_rows}
-    if len(col_counts)>1:
-        issues.add('uneven_cols')
-    elif (len(col_counts)==1 and next(iter(col_counts))!=nvars and
-          any(row.parsable for row in column_rows)):
-        issues.add('bad_col_count')
-
-    # Unparsable data is fatal only if complete numeric data resumes later.
-    if any(not row.parsable and n<last_complete for n,row in enumerate(rows)):
-        issues.add('unparsable_vals')
-
-    # Only return the contiguous complete prefix.  Later complete rows are
-    # still counted for nrows and used to detect middle corruption above.
-    data_rows = []
-    for row in rows:
-        if not row.complete:
-            break
-        data_rows.append(row.values)
-
-    complete_rows = sum(row.complete for row in rows)
+    # Skip exact-width nonnumeric rows, but retain all complete rows up to the
+    # first width error.
+    data_rows = [row.values for row in trusted_rows if row.complete]
+    complete_rows = len(data_rows)
     if nrows is not None and complete_rows!=nrows:
         issues.add('incomplete')
 
@@ -336,22 +400,29 @@ def read_scalar_file(filepath,
         del data['LocalEnergy_sq']
     if remove_index and 'index' in data:
         del data['index']
-    # detect non-finite scalar values and optionally remove affected rows
+    # Detect non-finite recognized scalar values and optionally remove their
+    # rows.  Index and ignored columns do not participate in this check.
     scalar_data = [d for k,d in data.items() if k in scalar_names]
+    ndata_rows = len(data_rows)
     if len(scalar_data)>0:
-        usable_rows = np.ones(len(scalar_data[0]),dtype=bool)
+        finite_rows = np.ones(ndata_rows,dtype=bool)
         for d in scalar_data:
-            usable_rows &= np.isfinite(d)
-        if not usable_rows.all():
+            finite_rows &= np.isfinite(d)
+        if not finite_rows.all():
             issues.add('nan_vals')
             if trim_nan:
                 for k,d in data.items():
-                    data[k] = d[usable_rows]
-    # check for usable data
-    if len(data)==0:
-        nusable = 0
+                    data[k] = d[finite_rows]
+        if trim_nan:
+            nusable = int(finite_rows.sum())
+        else:
+            nusable = ndata_rows
+    elif var_names==['index']:
+        # Index is normally metadata, but an index-only file has no other
+        # possible payload and its complete rows therefore count as usable.
+        nusable = ndata_rows
     else:
-        nusable = max([len(v) for v in data.values()])
+        nusable = 0
     if nusable==0:
         issues.add('no_usable_vals')
     return ret
