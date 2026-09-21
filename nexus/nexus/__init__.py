@@ -31,6 +31,7 @@ from collections.abc import Collection
 
 from .nexus_version import nexus_version
 from .developer     import obj, NexusError, warn
+from .developer_tools import unset
 from .debug         import ci
 from .utilities     import path_string
 
@@ -1016,17 +1017,34 @@ class Settings(NexusCore):
 
 
     def process_config_settings(self, kw: dict):
+        # Preserve the runtime meaning of legacy settings while warning users
+        # about their replacement API.  These are deliberately translated
+        # before their keys are discarded.
+        legacy_mode = kw.pop("mode", unset)
+        legacy_verbose = kw.pop("verbose", unset)
+        legacy_debug = kw.pop("debug", unset)
+        legacy_trace = kw.pop("trace", unset)
+        legacy_emulate = kw.pop("emulate", unset)
+
+
+        # `debug=True` historically overrode `verbose=False`.
+        if "quiet" not in kw:
+            if legacy_debug is not unset and legacy_debug:
+                kw["quiet"] = False
+            elif legacy_verbose is not unset:
+                kw["quiet"] = not legacy_verbose
+
+
         # Deprecated variables
         deprecated = (
-            ("mode", "Please use `stages` instead!"),
-            ("verbose", "Please use `quiet=True` to turn off output instead of `verbose=False`!"),
-            ("debug", "This variable was redundant, please remove from your script!"),
-            ("trace", "This variable was unused in Nexus, please remove from your script!"),
-            ("emulate", "This variable was unused in Nexus, please remove from your script!"),
+            (legacy_mode, "mode", "Please use `stages` instead!"),
+            (legacy_verbose, "verbose", "Please use `quiet=True` to turn off output instead of `verbose=False`!"),
+            (legacy_debug, "debug", "This variable was redundant, please remove from your script!"),
+            (legacy_trace, "trace", "This variable was unused in Nexus, please remove from your script!"),
+            (legacy_emulate, "emulate", "This variable was unused in Nexus, please remove from your script!"),
         )
-        for var, extra in deprecated:
-            if var in kw:
-                del kw[var]
+        for value, var, extra in deprecated:
+            if value is not unset:
                 warn(
                     f"The setting '{var}' has been deprecated!\n"
                     f"{extra}"
@@ -1040,8 +1058,8 @@ class Settings(NexusCore):
             if not isinstance(arg_val, float | int):
                 msg = f"Setting '{arg}' must be a number, but is {type(arg_val).__name__}!"
                 raise TypeError(msg)
-            elif arg_val <= 0:
-                msg = f"Setting '{arg}' must be greater than zero!"
+            elif arg_val < 0:
+                msg = f"Setting '{arg}' must be greater or equal to zero!"
                 raise ValueError(msg)
 
         match kw.pop("status", None):
@@ -1069,27 +1087,68 @@ class Settings(NexusCore):
 
         stages = kw.pop("stages", None)
         generate_only = kw.pop("generate_only", None)
-        if stages is not None and generate_only is not None:
-            msg = "Can not set both `stages` and `generate_only`!"
-            raise ValueError(msg)
-        elif isinstance(stages, SimStage):
+        # A legacy mode takes precedence over stages, just as it did before
+        # the Flag representation was introduced.  In particular, legacy
+        # "setup" meant only write_inputs(), whereas SimStage.setup is the
+        # new API spelling for write_inputs() plus send_files().
+        legacy_stages = {
+            "none": SimStage(0),
+            "setup": SimStage.write_input,
+            "send_files": SimStage.send_files,
+            "submit": SimStage.submit,
+            "get_output": SimStage.get_output,
+            "analyze": SimStage.analyze,
+            "all": SimStage.all,
+        }
+        if legacy_mode is not unset:
+            mode = str(legacy_mode).lower()
+            if mode == "stages":
+                pass
+            elif mode in legacy_stages:
+                nexus_config.stages = legacy_stages[mode]
+                stages = None
+            else:
+                msg = f"Invalid mode specified: {legacy_mode}"
+                raise ValueError(msg)
+
+        if isinstance(stages, SimStage):
             nexus_config.stages = stages
         elif isinstance(stages, str):
-            if stages.lower() not in SimStage.__members__:
+            stage = stages.lower()
+            if stage == "setup":
+                nexus_config.stages = SimStage.write_input
+            elif stage == "all":
+                nexus_config.stages = SimStage.all
+            elif stage not in SimStage.__members__:
                 msg = (
                     f"Invalid stages specified: {stages}\n"
                     f"Valid stages are: {[*SimStage.__members__]}"
                 )
                 raise ValueError(msg)
-            nexus_config.stages = SimStage[stages.lower()]
+            else:
+                nexus_config.stages = SimStage[stage]
         elif isinstance(stages, Collection):
-            nexus_config.stages = SimStage.from_list(stages)
+            # [] and ["all"] were both legacy spellings for all stages.
+            if not all(isinstance(stage, str) for stage in stages):
+                nexus_config.stages = SimStage.from_list(stages)
+            elif len(stages) == 0 or "all" in stages:
+                nexus_config.stages = SimStage.all
+            else:
+                nexus_config.stages = SimStage.from_list(
+                    [
+                        "write_input" if stage.lower() == "setup" else stage
+                        for stage in stages
+                    ]
+                )
         elif stages is not None:
             msg = f"stages should be a SimStage, str, or list of str, but is {type(stages)}!"
             raise TypeError(msg)
-        elif generate_only:
-            nexus_config.stages = SimStage.setup # Preferred new route
-            nexus_config.generate_only = True # Legacy, will replace
+
+        # Keep this independent of stages.  Legacy generate_only ran the
+        # selected stages (including its simulated submit lifecycle), and
+        # callers were allowed to provide both settings.
+        if generate_only is not None:
+            nexus_config.generate_only = generate_only
 
         if (loc_dir := kw.pop("local_directory", None)) is not None:
             nexus_config.local_directory = path_string(loc_dir)
