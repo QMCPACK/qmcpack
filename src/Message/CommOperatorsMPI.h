@@ -38,7 +38,8 @@ inline void Communicate::bcast(T* restrict inout, int n)
 {
   if (d_ncontexts == 1)
     return;
-  MPI_Bcast(inout, n, qmcplusplus::mpi::get_mpi_datatype(*inout), 0, myMPI);
+  auto* addr = qmcplusplus::scalar_traits<T>::get_address(inout);
+  MPI_Bcast(addr, n * qmcplusplus::scalar_traits<T>::DIM, qmcplusplus::mpi::get_mpi_datatype(*addr), 0, myMPI);
 }
 
 

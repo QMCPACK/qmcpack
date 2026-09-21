@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include <catch2/catch_test_macros.hpp>
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 
 namespace qmcplusplus
 {
@@ -108,6 +109,19 @@ TEST_CASE("test_communicate_split_two_stripe_three", "[message]")
   REQUIRE(c2->size() == group_size);
   REQUIRE(c2->rank() == new_rank);
   REQUIRE(c2->getGroupID() == (c->rank() / 3 % 2));
+}
+
+TEST_CASE("test_communicate_complex_pointer_bcast", "[message]")
+{
+  Communicate* c = OHMMS::Controller;
+  std::vector<std::complex<double>> values{{-11.0, -12.0}, {-13.0, -14.0}};
+  if (c->rank() == 0)
+    values = {{1.5, -2.5}, {3.5, -4.5}};
+
+  c->bcast(values.data(), values.size());
+
+  REQUIRE(values[0] == std::complex<double>{1.5, -2.5});
+  REQUIRE(values[1] == std::complex<double>{3.5, -4.5});
 }
 
 } // namespace qmcplusplus
