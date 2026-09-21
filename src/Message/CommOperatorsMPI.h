@@ -112,6 +112,7 @@ inline void Communicate::allgather(T& sb, T& rb, int count)
 template<typename T, typename IT>
 inline void Communicate::gatherv(T& sb, T& rb, IT& counts, IT& displ, int dest)
 {
+  static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (d_ncontexts == 1)
   {
     rb = sb;
@@ -139,6 +140,7 @@ inline void Communicate::scatter(T& sb, T& rb, int dest)
 template<typename T, typename IT>
 inline void Communicate::scatterv(T& sb, T& rb, IT& counts, IT& displ, int source)
 {
+  static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (d_ncontexts == 1)
   {
     rb = sb;
