@@ -182,7 +182,7 @@ struct container_proxy<Matrix<T>>
   using pointer = typename container_proxy<T>::pointer;
   Matrix<T>& ref;
   inline container_proxy(Matrix<T>& a) : ref(a) {}
-  inline size_t size() const { return ref.size(); }
+  inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
   inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
 
 };
