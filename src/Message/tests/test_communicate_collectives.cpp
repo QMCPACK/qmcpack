@@ -30,8 +30,8 @@ TEST_CASE("communicate_collectives_complex_pointer_bcast", "[message][collective
 
   comm->bcast(values.data(), static_cast<int>(values.size()));
 
-  REQUIRE(values[0] == Complex{1, -2});
-  REQUIRE(values[1] == Complex{3, -4});
+  CHECK(values[0] == Complex{1, -2});
+  CHECK(values[1] == Complex{3, -4});
 }
 
 TEST_CASE("communicate_collectives_complex_pointer_allgather", "[message][collectives]")
@@ -44,7 +44,7 @@ TEST_CASE("communicate_collectives_complex_pointer_allgather", "[message][collec
 
   for (int rank = 0; rank < comm->size(); ++rank)
     for (int element = 0; element < static_cast<int>(send.size()); ++element)
-      REQUIRE(receive[rank * send.size() + element] == rank_value(rank, element));
+      CHECK(receive[rank * send.size() + element] == rank_value(rank, element));
 }
 
 TEST_CASE("communicate_collectives_complex_pointer_gatherv", "[message][collectives]")
@@ -71,7 +71,7 @@ TEST_CASE("communicate_collectives_complex_pointer_gatherv", "[message][collecti
   if (comm->rank() == 0)
     for (int rank = 0; rank < comm->size(); ++rank)
       for (int element = 0; element < counts[rank]; ++element)
-        REQUIRE(receive[displacements[rank] + element] == rank_value(rank, element));
+        CHECK(receive[displacements[rank] + element] == rank_value(rank, element));
 }
 
 TEST_CASE("communicate_collectives_complex_matrix_allreduce", "[message][collectives]")
@@ -92,7 +92,7 @@ TEST_CASE("communicate_collectives_complex_matrix_allreduce", "[message][collect
     for (int column = 0; column < 2; ++column)
     {
       const int value = rank_sum * (2 * row + column + 1);
-      REQUIRE(values(row, column) == Complex{static_cast<double>(value), static_cast<double>(-value)});
+      CHECK(values(row, column) == Complex{static_cast<double>(value), static_cast<double>(-value)});
     }
 }
 
@@ -106,8 +106,8 @@ TEST_CASE("communicate_collectives_serial_allgather_count", "[message][collectiv
   std::vector<int> receive{0, 0, -1};
   comm->allgather(send, receive, 2);
 
-  REQUIRE(receive[0] == 1);
-  REQUIRE(receive[1] == 2);
-  REQUIRE(receive[2] == -1);
+  CHECK(receive[0] == 1);
+  CHECK(receive[1] == 2);
+  CHECK(receive[2] == -1);
 }
 } // namespace qmcplusplus
