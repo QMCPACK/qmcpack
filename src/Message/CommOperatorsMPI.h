@@ -16,7 +16,7 @@
 #ifndef OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #define OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #include "Pools/PooledData.h"
-#include "type_traits/container_proxy.h"
+#include "container_proxy.h"
 #include "Message/mpi_datatype.h"
 #include <cstdint>
 #include <stdexcept>
