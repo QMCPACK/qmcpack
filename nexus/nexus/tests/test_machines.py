@@ -9,7 +9,7 @@ from random import randint
 from copy import deepcopy
 from . import isolate_nexus_core
 from .. import testing
-from ..testing import object_eq,object_diff
+from ..testing import object_eq,object_diff, check_object_eq
 from ..utilities import path_string
 
 all_machines = []
@@ -607,13 +607,14 @@ def test_workstation_requeue(tmp_path):
 
 def test_supercomputer_init():
     from ..developer import obj, to_obj
-    from ..machines import Theta, Machine
+    from ..machines import Theta, Machine, register_supercomputer
 
+    @register_supercomputer
     class ThetaInit(Theta):
         name = 'theta_init'
     #end class ThetaInit
 
-    sc = ThetaInit(4392,1,64,192,1000,'aprun','qsub','qstata','qdel')
+    sc = Machine.machines["theta_init"]
 
     refsc = obj(
         account         = None,
@@ -622,14 +623,14 @@ def test_supercomputer_init():
         app_launcher    = 'aprun',
         cores           = 281088,
         cores_per_node  = 64,
-        cores_per_proc  = 64,
+        cores_per_socket= 64,
         finished        = set(),
         job_remover     = 'qdel',
         local_directory = None,
         name            = 'theta_init',
         nodes           = 4392,
-        procs           = 4392,
-        procs_per_node  = 1,
+        sockets         = 4392,
+        sockets_per_node= 1,
         queue_querier   = 'qstata',
         queue_size      = 1000,
         ram             = 843264,
@@ -656,15 +657,17 @@ def test_supercomputer_scheduling(tmp_path):
     import os
     import time
     from ..developer import obj, to_obj
-    from ..machines import Theta, Machine
+    from ..machines import Theta, Machine, register_supercomputer
     from ..machines import job,Job
 
     # create supercomputer for testing
+    @register_supercomputer
     class ThetaSched(Theta):
         name = 'theta_sched'
+        sub_launcher = "echo"
     #end class ThetaSched
 
-    sc = ThetaSched(4392,1,64,192,1000,'aprun','echo','test_query','qdel')
+    sc = Machine.machines["theta_sched"]
 
 
     # test process_job() and process_job_options()
