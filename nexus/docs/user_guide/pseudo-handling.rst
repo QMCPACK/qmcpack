@@ -302,19 +302,19 @@ Example 4 - Searching by Inclusion Pattern
 
             uspp = generate_pseudoset(
                 pseudo_dir="/tmp/pseudo_dir",
-                code="espresso",
+                code="quantum_espresso",
                 include="*USPP*",
             )
 
             ncpp = generate_pseudoset(
                 pseudo_dir="/tmp/pseudo_dir",
-                code="espresso",
+                code="quantum_espresso",
                 include="*NCPP*",
             )
 
             ccECP = generate_pseudoset(
                 pseudo_dir="/tmp/pseudo_dir",
-                code="espresso",
+                code="quantum_espresso",
                 include="*ccECP*",
             )
 
@@ -327,19 +327,19 @@ Example 4 - Searching by Inclusion Pattern
 
             uspp = PseudoSet.from_dir(
                 pseudo_dir="/tmp/pseudo_dir",
-                code="espresso",
+                code="quantum_espresso",
                 include="*USPP*",
             )
 
             ncpp = PseudoSet.from_dir(
                 pseudo_dir="/tmp/pseudo_dir",
-                code="espresso",
+                code="quantum_espresso",
                 include="*NCPP*",
             )
 
             ccECP = PseudoSet.from_dir(
                 pseudo_dir="/tmp/pseudo_dir",
-                code="espresso",
+                code="quantum_espresso",
                 include="*ccECP*",
             )
 
