@@ -34,14 +34,7 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
       species_(species),
       species_size_(getSpeciesSize(species)),
       simulation_lattice_(lattice),
-      custom_measurement_lattice_(input_.hasCustomCell() ? std::optional<Lattice>{input_.get_cell()} : std::nullopt),
-      derived_parameters_(input_.calculateDerivedParameters(
-          getInitialMeasurementLattice(input_, simulation_lattice_, custom_measurement_lattice_))),
-      implicit_corner_u_(simulation_lattice_.toUnit(derived_parameters_.corner)),
-      folded_measurement_cell_(makeFoldedMeasurementCell(input_,
-                                                         simulation_lattice_,
-                                                         custom_measurement_lattice_,
-                                                         derived_parameters_.corner))
+      instance_parameters_(makeInstanceParameters(input_, simulation_lattice_))
 {
   data_locality_ = dl;
   data_.resize(getFullDataSize());
@@ -54,16 +47,24 @@ SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn, DataLocality dl) : Spi
   data_locality_ = dl;
 }
 
-const Lattice& SpinDensityNew::getInitialMeasurementLattice(const SpinDensityInput& input,
-                                                            const Lattice& simulation_lattice,
-                                                            const std::optional<Lattice>& custom_measurement_lattice)
+SpinDensityNew::InstanceParameters SpinDensityNew::makeInstanceParameters(const SpinDensityInput& input,
+                                                                          const Lattice& simulation_lattice)
 {
+  std::optional<Lattice> custom_measurement_lattice;
   if (input.hasCustomCell())
-    return *custom_measurement_lattice;
+    custom_measurement_lattice = input.get_cell();
 
-  if (simulation_lattice.SuperCellEnum == SUPERCELL_OPEN)
+  if (!custom_measurement_lattice && simulation_lattice.SuperCellEnum == SUPERCELL_OPEN)
     throw UniformCommunicateError("SpinDensity input: an explicit cell is required for a fully open simulation cell");
-  return simulation_lattice;
+
+  const Lattice& measurement_lattice = custom_measurement_lattice ? *custom_measurement_lattice : simulation_lattice;
+  SpinDensityInput::DerivedParameters derived_parameters = input.calculateDerivedParameters(measurement_lattice);
+  QMCT::PosType implicit_corner_u                        = simulation_lattice.toUnit(derived_parameters.corner);
+  std::optional<FoldedMeasurementCell> folded_measurement_cell =
+      makeFoldedMeasurementCell(input, simulation_lattice, custom_measurement_lattice, derived_parameters.corner);
+
+  return {std::move(custom_measurement_lattice), std::move(derived_parameters), implicit_corner_u,
+          std::move(folded_measurement_cell)};
 }
 
 std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
@@ -77,7 +78,10 @@ std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
   return species_size;
 }
 
-size_t SpinDensityNew::getFullDataSize() const { return species_.size() * derived_parameters_.npoints; }
+size_t SpinDensityNew::getFullDataSize() const
+{
+  return species_.size() * instance_parameters_.derived_parameters.npoints;
+}
 
 std::optional<SpinDensityNew::FoldedMeasurementCell> SpinDensityNew::makeFoldedMeasurementCell(
     const SpinDensityInput& input,
@@ -152,18 +156,13 @@ void SpinDensityNew::startBlock(int steps)
   }
 }
 
-/** Gets called every step and writes to thread local data.
- *
- *  I tried for readable and not doing the optimizers job.
- *  The offsets into bare data are already bad enough.
- */
 void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
                                 const RefVector<ParticleSet>& psets,
                                 const RefVector<TrialWaveFunction>& wfns,
                                 const RefVector<QMCHamiltonian>& hams,
                                 RandomBase<FullPrecRealType>& rng)
 {
-  const auto& dp_ = derived_parameters_;
+  const auto& dp_ = instance_parameters_.derived_parameters;
   std::optional<CustomMeasurementCellBounds> custom_measurement_cell_bounds;
   if (input_.hasCustomCell() && !input_.hasFolding() && simulation_lattice_.SuperCellEnum != SUPERCELL_OPEN)
     custom_measurement_cell_bounds = getCustomMeasurementCellBounds();
@@ -178,6 +177,7 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
     walkers_weight_ += weight;
     int p         = 0;
     size_t offset = 0;
+    // important notice the offset increment
     for (int s = 0; s < species_.size(); ++s, offset += dp_.npoints)
       for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
       {
@@ -185,7 +185,7 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
         // This is the simple path, cell is implicit
         if (!input_.hasCustomCell())
         {
-          const QMCT::PosType u = simulation_lattice_.toUnit(pset.R[p]) - implicit_corner_u_;
+          const QMCT::PosType u = simulation_lattice_.toUnit(pset.R[p]) - instance_parameters_.implicit_corner_u;
           for (int d = 0; d < QMCT::DIM; ++d)
             point += dp_.gdims[d] * static_cast<int>(dp_.grid[d] * (u[d] - std::floor(u[d])));
           accumulateToData(point, weight);
@@ -208,14 +208,17 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
 
 bool SpinDensityNew::getCustomMeasurementCellPointForOpenSimulation(const QMCT::PosType& position, size_t& point) const
 {
-  const QMCT::PosType u  = custom_measurement_lattice_->toUnit(position - derived_parameters_.corner);
+  const InstanceParameters& parameters = instance_parameters_;
+  const QMCT::PosType u =
+      parameters.custom_measurement_lattice->toUnit(position - parameters.derived_parameters.corner);
   size_t candidate_point = point;
   for (int d = 0; d < QMCT::DIM; ++d)
   {
     if (u[d] < 0.0 || u[d] >= 1.0)
       return false;
-    candidate_point += derived_parameters_.gdims[d] *
-        std::min(static_cast<int>(derived_parameters_.grid[d] * u[d]), derived_parameters_.grid[d] - 1);
+    candidate_point += parameters.derived_parameters.gdims[d] *
+        std::min(static_cast<int>(parameters.derived_parameters.grid[d] * u[d]),
+                 parameters.derived_parameters.grid[d] - 1);
   }
   point = candidate_point;
   return true;
@@ -223,8 +226,8 @@ bool SpinDensityNew::getCustomMeasurementCellPointForOpenSimulation(const QMCT::
 
 bool SpinDensityNew::getFoldedCustomMeasurementCellPoint(const QMCT::PosType& position, size_t& point) const
 {
-  assert(folded_measurement_cell_);
-  const FoldedMeasurementCell& folded_measurement_cell = *folded_measurement_cell_;
+  assert(instance_parameters_.folded_measurement_cell);
+  const FoldedMeasurementCell& folded_measurement_cell = *instance_parameters_.folded_measurement_cell;
   const QMCT::PosType custom_u =
       folded_measurement_cell.lattice_u.toUnit(simulation_lattice_.toUnit(position) - folded_measurement_cell.corner_u);
   size_t candidate_point = point;
@@ -235,9 +238,9 @@ bool SpinDensityNew::getFoldedCustomMeasurementCellPoint(const QMCT::PosType& po
       folded_u = 0.0;
 
     // Rounding can make a coordinate just below one index as the upper boundary.
-    const int bin =
-        std::clamp(static_cast<int>(derived_parameters_.grid[d] * folded_u), 0, derived_parameters_.grid[d] - 1);
-    candidate_point += derived_parameters_.gdims[d] * bin;
+    const int bin = std::clamp(static_cast<int>(instance_parameters_.derived_parameters.grid[d] * folded_u), 0,
+                               instance_parameters_.derived_parameters.grid[d] - 1);
+    candidate_point += instance_parameters_.derived_parameters.gdims[d] * bin;
   }
   point = candidate_point;
   return true;
@@ -246,11 +249,12 @@ bool SpinDensityNew::getFoldedCustomMeasurementCellPoint(const QMCT::PosType& po
 SpinDensityNew::CustomMeasurementCellBounds SpinDensityNew::getCustomMeasurementCellBounds() const
 {
   CustomMeasurementCellBounds bounds;
-  bounds.lo = simulation_lattice_.toUnit(derived_parameters_.corner);
-  bounds.hi = bounds.lo;
+  const InstanceParameters& parameters = instance_parameters_;
+  bounds.lo                            = simulation_lattice_.toUnit(parameters.derived_parameters.corner);
+  bounds.hi                            = bounds.lo;
   for (int j = 0; j < QMCT::DIM; ++j)
   {
-    const QMCT::PosType axis_u = simulation_lattice_.toUnit(custom_measurement_lattice_->Rv[j]);
+    const QMCT::PosType axis_u = simulation_lattice_.toUnit(parameters.custom_measurement_lattice->Rv[j]);
     for (int d = 0; d < QMCT::DIM; ++d)
       if (axis_u[d] < 0.0)
         bounds.lo[d] += axis_u[d];
@@ -345,13 +349,15 @@ void SpinDensityNew::collect(const RefVector<OperatorEstBase>& type_erased_opera
 
 void SpinDensityNew::report(const std::string& pad)
 {
-  auto& dp_ = derived_parameters_;
+  const InstanceParameters& parameters = instance_parameters_;
+  const auto& dp_                      = parameters.derived_parameters;
   app_log() << pad << "SpinDensity report" << std::endl;
   app_log() << pad << "  dim     = " << QMCT::DIM << std::endl;
   app_log() << pad << "  npoints = " << dp_.npoints << std::endl;
-  const Lattice& measurement_lattice = input_.hasCustomCell() ? *custom_measurement_lattice_ : simulation_lattice_;
+  const Lattice& measurement_lattice =
+      parameters.custom_measurement_lattice ? *parameters.custom_measurement_lattice : simulation_lattice_;
   const QMCT::PosType measurement_corner =
-      input_.hasCustomCell() ? dp_.corner : simulation_lattice_.toCart(implicit_corner_u_);
+      parameters.custom_measurement_lattice ? dp_.corner : simulation_lattice_.toCart(parameters.implicit_corner_u);
   app_log() << pad << "  grid    = " << dp_.grid << std::endl;
   app_log() << pad << "  gdims   = " << dp_.gdims << std::endl;
   app_log() << pad << "  corner  = " << measurement_corner << std::endl;
@@ -371,14 +377,14 @@ void SpinDensityNew::registerOperatorEstimator(hdf_archive& file)
 {
   std::vector<size_t> my_indexes;
 
-  std::vector<int> ng(1, derived_parameters_.npoints);
+  std::vector<int> ng(1, instance_parameters_.derived_parameters.npoints);
 
   hdf_path hdf_name{my_name_};
   for (int s = 0; s < species_.size(); ++s)
   {
     h5desc_.emplace_back(hdf_name / species_.speciesName[s]);
     auto& oh = h5desc_.back();
-    oh.set_dimensions(ng, s * derived_parameters_.npoints);
+    oh.set_dimensions(ng, s * instance_parameters_.derived_parameters.npoints);
   }
 }
 

@@ -113,13 +113,6 @@ public:
    */
   void collect(const RefVector<OperatorEstBase>& operator_estimators) override;
 
-  /** this allows the EstimatorManagerNew to reduce without needing to know the details
-   *  of SpinDensityNew's data.
-   *
-   *  can use base class default until crowd level SpinDensity estimators don't have a copy of the density grid.
-   */
-  //void collect(const OperatorEstBase&  oeb);
-
   /** this gets us into the hdf5 file
    *
    *  Just parroting for now don't fully understand.
@@ -130,36 +123,29 @@ public:
 
 private:
   SpinDensityNew(const SpinDensityNew& sdn) = default;
-
-  static constexpr FullPrecRealType folding_coordinate_tolerance = 64 * std::numeric_limits<QMCT::RealType>::epsilon();
-  static constexpr FullPrecRealType folding_commensurability_absolute_tolerance = folding_coordinate_tolerance;
-  static constexpr FullPrecRealType folding_commensurability_relative_tolerance =
-      64 * std::numeric_limits<FullPrecRealType>::epsilon();
-
   static std::vector<int> getSpeciesSize(const SpeciesSet& species);
-  static const Lattice& getInitialMeasurementLattice(const SpinDensityInput& input,
-                                                     const Lattice& simulation_lattice,
-                                                     const std::optional<Lattice>& custom_measurement_lattice);
-  /** derived_parameters_ must be valid i.e. initialized with call to input_.calculateDerivedParameters
-   */
   size_t getFullDataSize() const override;
   void accumulateToData(size_t point, QMCT::RealType weight);
-  struct FoldedMeasurementCell
-  {
-    QMCT::PosType corner_u;
-    Lattice lattice_u;
-  };
 
-  /// Validate the initial folded geometry and express it in initial simulation reduced coordinates.
-  static std::optional<FoldedMeasurementCell> makeFoldedMeasurementCell(
-      const SpinDensityInput& input,
-      const Lattice& simulation_lattice,
-      const std::optional<Lattice>& custom_measurement_lattice,
-      const QMCT::PosType& custom_corner);
-  /// point must initially be the species offset; on success it is the corresponding grid point.
-  /** These give the conservative bounding box for the custom measurment
-   *  cell in the simulation cell reduced coordinates. See docs for
-   *  getPeriodicCustomMeasurementCellPoint.
+  /** @ingroup point resolution functions
+   *  All of these functions return whether a point is in the measurement cell the grid covers
+   *  Note! point is incremented to the flat index of the grid point corresponding to the position.
+   * @{
+   */
+
+  /** Get the point when simulation cell has open boundary conditions.
+   *  @param position[in]    particle position in native QMCPACK
+   *  @param point[in/out]   the index of the grid point the position is binned into.
+   */
+  bool getCustomMeasurementCellPointForOpenSimulation(const QMCT::PosType& position, size_t& point) const;
+  /** Get the point when simulation is periodic and the estimator is folding to a subcell
+   *  @param position[in]    particle position in native QMCPACK
+   *  @param point[in/out]   the index of the grid point the position is binned into.
+   */
+  bool getFoldedCustomMeasurementCellPoint(const QMCT::PosType& position, size_t& point) const;
+
+  /** The conservative bounding box for the custom cell in the simulation cell reduced
+   *  only used for the non folded custom cell case when simulation cell is periodic
    */
   struct CustomMeasurementCellBounds
   {
@@ -167,17 +153,6 @@ private:
     QMCT::PosType hi;
   };
 
-  /** Get the point when simulation cell has open boundary conditions.
-   *  @param position[in]    particle position in native QMCPACK
-   *  @param point[in/out]   the index of the grid point the position is binned into.
-   */
-  bool getCustomMeasurementCellPointForOpenSimulation(const QMCT::PosType& position, size_t& point) const;
-  /// Fold a position into the co-moving custom measurement cell and return its bounded grid point.
-  bool getFoldedCustomMeasurementCellPoint(const QMCT::PosType& position, size_t& point) const;
-  /** This calculates the CustomMeasurementCellBounds for the custom  measurement cell box.
-   *  We need to do this for each accumulate call because there is no guarantee the simulation cell hasn't changed.
-   */
-  CustomMeasurementCellBounds getCustomMeasurementCellBounds() const;
   /** Get the point when the simulation cell is periodic and the measurement cell is custom.
    *  @param position[in]    particle position in native QMCPACK coordinates.
    *  @param bounds[in]      the conservative bounding box for custom cell
@@ -186,33 +161,77 @@ private:
   bool getCustomMeasurementCellPointForPeriodicSimulation(const QMCT::PosType& position,
                                                           const CustomMeasurementCellBounds& bounds,
                                                           size_t& point) const;
+
+  /** This calculates the CustomMeasurementCellBounds
+   *  We need to do this for each accumulate call because there is no guarantee the simulation cell hasn't changed.
+   */
+  CustomMeasurementCellBounds getCustomMeasurementCellBounds() const;
+
+  /**}@*/
+
   void reset();
   void report(const std::string& pad);
 
-  //data members
+  /// input object
   const SpinDensityInput input_;
+  /// The species of particles being accumulated over, determines number of grids
   const SpeciesSet& species_;
-  // this is a bit of a mess to get from SpeciesSet
+  /// this is a bit of a mess to get from SpeciesSet so is pulled out
   const std::vector<int> species_size_;
 
-  /** @ingroup SpinDensity mutable parameters
-   *
-   *  they should be limited to values that can be changed from input
-   *  or are not present explicitly in the SpinDensityInput
-   *  @{
+  static constexpr FullPrecRealType folding_coordinate_tolerance = 64 * std::numeric_limits<QMCT::RealType>::epsilon();
+  static constexpr FullPrecRealType folding_commensurability_absolute_tolerance = folding_coordinate_tolerance;
+  static constexpr FullPrecRealType folding_commensurability_relative_tolerance =
+      64 * std::numeric_limits<FullPrecRealType>::epsilon();
+
+  /** @ingroup Constant Object Parameters
+   *  All the following types, members, and functions handle the const
+   *  parmeters of a particular SpinDensity estimator. There are serveral different cases the
+   *  SpinDensity estimator needs to cover depending on the type of simulation cell, whether
+   *  an explicit cell is set by input, and whether it is intended as a unit cell to fold a
+   *  simulation supercell down to.
+   * @{
    */
 
-  /// The simulation lattice is shared so changing cell geometry is observed during accumulation.
+  /// the explicit unit cell to fold down to in reduced supercell coordinates
+  struct FoldedMeasurementCell
+  {
+    QMCT::PosType corner_u;
+    Lattice lattice_u;
+  };
+
+  /// Values derived once from the input and initial simulation lattice.
+  struct InstanceParameters
+  {
+    /// Present only for an explicit <cell>; it is the immutable measurement lattice.
+    std::optional<Lattice> custom_measurement_lattice;
+    /// Grid dimensions and Cartesian corner are fixed when the estimator is constructed.
+    SpinDensityInput::DerivedParameters derived_parameters;
+    /// Construction-time Cartesian corner expressed in simulation reduced coordinates.
+    QMCT::PosType implicit_corner_u;
+    /// Present only with folding; the custom geometry in initial simulation reduced coordinates.
+    std::optional<FoldedMeasurementCell> folded_measurement_cell;
+  };
+
+  /// Construct the input-dependent parameters and validate the initial measurement geometry.
+  static InstanceParameters makeInstanceParameters(const SpinDensityInput& input, const Lattice& simulation_lattice);
+
+  /** Validate the initial custom cell is a possible unit cell
+   *  @param ...
+   */
+  static std::optional<FoldedMeasurementCell> makeFoldedMeasurementCell(
+      const SpinDensityInput& input,
+      const Lattice& simulation_lattice,
+      const std::optional<Lattice>& custom_measurement_lattice,
+      const QMCT::PosType& custom_corner);
+
+  /** The simulation lattice is shared so changing cell geometry may is considered possible
+   *  If this ever becomes possible think carefully about what the measurement be accumulated now
+   *  means.
+   */
   const Lattice& simulation_lattice_;
-  /// Present only for an explicit <cell>; it is the immutable measurement lattice.
-  const std::optional<Lattice> custom_measurement_lattice_;
-  /// Grid dimensions and Cartesian corner are fixed when the estimator is constructed.
-  const SpinDensityInput::DerivedParameters derived_parameters_;
-  /// Construction-time Cartesian corner expressed in simulation reduced coordinates.
-  const QMCT::PosType implicit_corner_u_;
-  /// Present only with folding; the custom geometry in initial simulation reduced coordinates.
-  const std::optional<FoldedMeasurementCell> folded_measurement_cell_;
-  /**}@*/
+  /// struct containing theb const parameters of this object fixed at construction
+  const InstanceParameters instance_parameters_;
 
   friend class testing::SpinDensityNewTests;
 };
