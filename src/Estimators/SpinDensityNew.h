@@ -45,7 +45,8 @@ public:
    *   estimator.
    * @param simulation_lattice The simulation lattice used to locate particles and
    *   enumerate periodic images. It must outlive this estimator and may change during
-   *   its lifetime; an implicit measurement grid co-moves with those changes.
+   *   its lifetime; an implicit measurement grid co-moves with those changes. A fully
+   *   open simulation cell requires an explicit measurement cell in @p sdi.
    * @param species Species associated with the measured particle set. It must outlive
    *   this estimator.
    * @param dl Data locality for estimator accumulation.
@@ -126,6 +127,9 @@ private:
   SpinDensityNew(const SpinDensityNew& sdn) = default;
 
   static std::vector<int> getSpeciesSize(const SpeciesSet& species);
+  static const Lattice& getInitialMeasurementLattice(const SpinDensityInput& input,
+                                                     const Lattice& simulation_lattice,
+                                                     const std::optional<Lattice>& custom_measurement_lattice);
   /** derived_parameters_ must be valid i.e. initialized with call to input_.calculateDerivedParameters
    */
   size_t getFullDataSize() const override;
@@ -155,9 +159,9 @@ private:
    *  @param bounds[in]      the conservative bounding box for custom cell
    *  @param point[in/out]   the index of the grid point the position is binned into.
    */
-  bool getCustomMeasurementCellPointForPeriodSimulation(const QMCT::PosType& position,
-                                                        const CustomMeasurementCellBounds& bounds,
-                                                        size_t& point) const;
+  bool getCustomMeasurementCellPointForPeriodicSimulation(const QMCT::PosType& position,
+                                                          const CustomMeasurementCellBounds& bounds,
+                                                          size_t& point) const;
   void reset();
   void report(const std::string& pad);
 

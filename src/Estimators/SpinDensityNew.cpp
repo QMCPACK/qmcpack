@@ -14,6 +14,8 @@
 
 #include "hdf5.h"
 
+#include "Message/UniformCommunicateError.h"
+
 #include <array>
 #include <cmath>
 #include <iostream>
@@ -32,8 +34,8 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
       species_size_(getSpeciesSize(species)),
       simulation_lattice_(lattice),
       custom_measurement_lattice_(input_.hasCustomCell() ? std::optional<Lattice>{input_.get_cell()} : std::nullopt),
-      derived_parameters_(input_.calculateDerivedParameters(input_.hasCustomCell() ? *custom_measurement_lattice_
-                                                                                   : simulation_lattice_)),
+      derived_parameters_(input_.calculateDerivedParameters(
+          getInitialMeasurementLattice(input_, simulation_lattice_, custom_measurement_lattice_))),
       implicit_corner_u_(simulation_lattice_.toUnit(derived_parameters_.corner))
 {
   data_locality_ = dl;
@@ -45,6 +47,18 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
 SpinDensityNew::SpinDensityNew(const SpinDensityNew& sdn, DataLocality dl) : SpinDensityNew(sdn)
 {
   data_locality_ = dl;
+}
+
+const Lattice& SpinDensityNew::getInitialMeasurementLattice(const SpinDensityInput& input,
+                                                            const Lattice& simulation_lattice,
+                                                            const std::optional<Lattice>& custom_measurement_lattice)
+{
+  if (input.hasCustomCell())
+    return *custom_measurement_lattice;
+
+  if (simulation_lattice.SuperCellEnum == SUPERCELL_OPEN)
+    throw UniformCommunicateError("SpinDensity input: an explicit cell is required for a fully open simulation cell");
+  return simulation_lattice;
 }
 
 std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
@@ -100,9 +114,9 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
                                 RandomBase<FullPrecRealType>& rng)
 {
   const auto& dp_ = derived_parameters_;
-  std::optional<PeriodicFiniteCellBounds> periodic_finite_cell_bounds;
+  std::optional<CustomMeasurementCellBounds> custom_measurement_cell_bounds;
   if (input_.hasCustomCell() && simulation_lattice_.SuperCellEnum != SUPERCELL_OPEN)
-    periodic_finite_cell_bounds = getPeriodicFiniteCellBounds();
+    custom_measurement_cell_bounds = getCustomMeasurementCellBounds();
 
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
@@ -118,6 +132,7 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
       for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
       {
         size_t point = offset;
+        // This is the simple path, cell is implicit
         if (!input_.hasCustomCell())
         {
           const QMCT::PosType u = simulation_lattice_.toUnit(pset.R[p]) - implicit_corner_u_;
@@ -127,16 +142,16 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
         }
         else if (simulation_lattice_.SuperCellEnum == SUPERCELL_OPEN)
         {
-          if (getFiniteCellPoint(pset.R[p], point))
+          if (getCustomMeasurementCellPointForOpenSimulation(pset.R[p], point))
             accumulateToData(point, weight);
         }
-        else if (getPeriodicFiniteCellPoint(pset.R[p], *periodic_finite_cell_bounds, point))
+        else if (getCustomMeasurementCellPointForPeriodicSimulation(pset.R[p], *custom_measurement_cell_bounds, point))
           accumulateToData(point, weight);
       }
   }
 }
 
-bool SpinDensityNew::getFiniteCellPoint(const QMCT::PosType& position, size_t& point) const
+bool SpinDensityNew::getCustomMeasurementCellPointForOpenSimulation(const QMCT::PosType& position, size_t& point) const
 {
   const QMCT::PosType u  = custom_measurement_lattice_->toUnit(position - derived_parameters_.corner);
   size_t candidate_point = point;
@@ -151,9 +166,9 @@ bool SpinDensityNew::getFiniteCellPoint(const QMCT::PosType& position, size_t& p
   return true;
 }
 
-SpinDensityNew::PeriodicFiniteCellBounds SpinDensityNew::getPeriodicFiniteCellBounds() const
+SpinDensityNew::CustomMeasurementCellBounds SpinDensityNew::getCustomMeasurementCellBounds() const
 {
-  PeriodicFiniteCellBounds bounds;
+  CustomMeasurementCellBounds bounds;
   bounds.lo = simulation_lattice_.toUnit(derived_parameters_.corner);
   bounds.hi = bounds.lo;
   for (int j = 0; j < QMCT::DIM; ++j)
@@ -168,9 +183,9 @@ SpinDensityNew::PeriodicFiniteCellBounds SpinDensityNew::getPeriodicFiniteCellBo
   return bounds;
 }
 
-bool SpinDensityNew::getPeriodicFiniteCellPoint(const QMCT::PosType& position,
-                                                const PeriodicFiniteCellBounds& bounds,
-                                                size_t& point) const
+bool SpinDensityNew::getCustomMeasurementCellPointForPeriodicSimulation(const QMCT::PosType& position,
+                                                                        const CustomMeasurementCellBounds& bounds,
+                                                                        size_t& point) const
 {
   static_assert(QMCT::DIM == 3, "SpinDensity supports three-dimensional cells only");
   QMCT::PosType simulation_u = simulation_lattice_.toUnit(position);
@@ -192,7 +207,7 @@ bool SpinDensityNew::getPeriodicFiniteCellPoint(const QMCT::PosType& position,
       {
         const QMCT::PosType image = primary_image + nx * simulation_lattice_.Rv[0] + ny * simulation_lattice_.Rv[1] +
             nz * simulation_lattice_.Rv[2];
-        if (getFiniteCellPoint(image, point))
+        if (getCustomMeasurementCellPointForOpenSimulation(image, point))
           return true;
       }
   return false;

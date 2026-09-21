@@ -18,6 +18,7 @@
 #include "ParticleSet.h"
 #include "TrialWaveFunction.h"
 #include "EstimatorTesting.h"
+#include "Message/UniformCommunicateError.h"
 
 #include "OhmmsData/Libxml2Doc.h"
 
@@ -218,6 +219,28 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   // is correct.  This just checks it hasn't changed from how it was in SpinDensity which lacked testing.
   CHECK(data_ref[555] == 4);
   CHECK(data_ref[1777] == 4);
+}
+
+TEST_CASE("SpinDensityNew rejects implicit open cell", "[estimators]")
+{
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"XML(
+<estimator type="spindensity">
+  <parameter name="grid">2 2 2</parameter>
+  <parameter name="corner">0 0 0</parameter>
+</estimator>
+)XML"));
+  SpinDensityInput sdi(doc.getRoot());
+  SpeciesSet species_set;
+  const int ispecies                = species_set.addSpecies("u");
+  const int iattribute              = species_set.addAttribute("membersize");
+  species_set(iattribute, ispecies) = 1;
+
+  Lattice simulation_lattice;
+  simulation_lattice.BoxBConds = false;
+  simulation_lattice.R         = ParticleSet::Tensor_t(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+  simulation_lattice.reset();
+  CHECK_THROWS_AS(SpinDensityNew(std::move(sdi), simulation_lattice, species_set), UniformCommunicateError);
 }
 
 TEST_CASE("SpinDensityNew::accumulate implicit grid follows simulation lattice", "[estimators]")
