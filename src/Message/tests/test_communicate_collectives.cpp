@@ -96,6 +96,32 @@ TEST_CASE("communicate_collectives_complex_matrix_allreduce", "[message][collect
     }
 }
 
+TEST_CASE("test_communicate_complex_pointer_reduce_in_place", "[message]")
+{
+  Communicate* c = OHMMS::Controller;
+  std::vector<Complex> values{{(double)(c->rank() + 1), (double)(c->rank() + 2)},
+                                           {(double)(c->rank() + 3), (double)(c->rank() + 4)}};
+
+  c->reduce_in_place(values.data(), values.size());
+
+  if (c->rank() == 0)
+  {
+    double expected_real_0 = 0.0;
+    double expected_imag_0 = 0.0;
+    double expected_real_1 = 0.0;
+    double expected_imag_1 = 0.0;
+    for (int i = 0; i < c->size(); i++)
+    {
+      expected_real_0 += (double)(i + 1);
+      expected_imag_0 += (double)(i + 2);
+      expected_real_1 += (double)(i + 3);
+      expected_imag_1 += (double)(i + 4);
+    }
+    REQUIRE(values[0] == Complex{expected_real_0, expected_imag_0});
+    REQUIRE(values[1] == Complex{expected_real_1, expected_imag_1});
+  }
+}
+
 TEST_CASE("communicate_collectives_allgather_count", "[message][collectives]")
 {
   Communicate* comm = OHMMS::Controller;
