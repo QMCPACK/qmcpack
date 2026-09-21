@@ -39,25 +39,30 @@ public:
   using QMCT             = QMCTraits;
   using FullPrecRealType = QMCT::FullPrecRealType;
 
-  /** Constructor
+  /** Construct a spin-density estimator.
    *
-   *  The Lattice is the simulation lattice and must outlive this estimator. An explicit
-   *  input cell instead defines an owned, immutable measurement lattice.
+   * @param sdi Validated estimator input, moved to this
+   *   estimator.
+   * @param simulation_lattice The simulation lattice used to locate particles and
+   *   enumerate periodic images. It must outlive this estimator and may change during
+   *   its lifetime; an implicit measurement grid co-moves with those changes.
+   * @param species Species associated with the measured particle set. It must outlive
+   *   this estimator.
+   * @param dl Data locality for estimator accumulation.
    *
-   *  The simulation lattice should come from the same particle set as the species set.
-   *  in case you are tempted to just pass the ParticleSet don't. It clouds the data dependence of
-   *  constructing the estimator and creates a strong coupling between the classes.
-   *
-   *  Ideally when validating input is built up enough there would be only one constructor with
-   *  signature
-   *
-   *  SpinDensityNew(SpinDensityInput&& sdi,
-   *                 SpinDensityInput::DerivedParameters&& dev_par,
-   *                 SpeciesSet species,
-   *                 DataLocality dl);
+   * All sdi input results in a grid of fixed size being constructed.
+   * if sdi.hasCustomCell() then then the volume,shape, and origin in absolute space that
+   * grid covers is also fixed. otherwise a grid is constructed based on the initial mapping of
+   * sdi values into the the natural coordinates of the simulation
+   * lattice.
+   * If the simulation_lattice does not change you can continue to
+   * interpret the grid in terms of the absolute Bohr units and
+   * the cartesian positions of the sdi input. If the simulation_lattice
+   * changes over the course of accumulation the density grid only
+   * make sense wrt the simulation lattice coordinates.
    */
   SpinDensityNew(SpinDensityInput&& sdi,
-                 const Lattice&,
+                 const Lattice& simulation_lattice,
                  const SpeciesSet& species,
                  const DataLocality dl = DataLocality::crowd);
 
@@ -76,6 +81,17 @@ public:
   std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
 
   /** accumulate 1 or more walkers of SpinDensity samples
+   *
+   *  Accumulation is into a grid that may or may not cover the entire
+   *  space particles can sample.
+   *
+   * Currently each particle is accumulated at most once. i.e. if your
+   * grid is defined such that covers the "same" location in the
+   * periodic simulation cell more than once you will not acumulate
+   * the particle twice.
+   * For instance if you define a grid that covers the simulation cell twice
+   * your density will infact integrate to np * total_weight not np *
+   * total_weight * 2.
    */
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
