@@ -1,13 +1,13 @@
 #! /usr/bin/env python3
 
 '''
-This example shows how a familiar DAG-like Nexus workflow 
-is translated to the dynamic setting.  
+This example shows how a familiar DAG-like Nexus workflow
+is translated to the dynamic setting.
 
-Here, a relaxation calculation passes a relaxed structure 
-to subsequent SCF and NSCF runs, now at the moment of completion.  
+Here, a relaxation calculation passes a relaxed structure
+to subsequent SCF and NSCF runs, now at the moment of completion.
 
-Similarly, SCF produces and provides a charge density for 
+Similarly, SCF produces and provides a charge density for
 the final NSCF run.
 '''
 
@@ -57,7 +57,7 @@ relax = generate_pwscf(
     # combined [path,identifier,dynamic_id] must be unique
     dynamic_id = 'relax1',
     # requires nothing (runs immediately)
-    requires   = 'none', 
+    requires   = 'none',
     )
 
 

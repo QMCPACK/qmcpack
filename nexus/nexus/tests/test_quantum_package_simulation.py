@@ -28,7 +28,7 @@ def get_quantum_package_sim(**kwargs):
 
     system = generate_physical_system(
         elem_pos = '''
-            O  0.000000  0.000000  0.000000 
+            O  0.000000  0.000000  0.000000
             H  0.000000  0.757160  0.586260
             H  0.000000  0.757160 -0.586260
             ''',
@@ -43,7 +43,7 @@ def get_quantum_package_sim(**kwargs):
         )
 
     assert(isinstance(sim,QuantumPackage))
-    
+
     return sim
 #end def get_quantum_package_sim
 
@@ -59,7 +59,7 @@ def test_minimal_init():
 
 def test_check_result():
     sim = get_quantum_package_sim()
-    
+
     assert(not sim.check_result(AppResult.NONE,None))
     assert(not sim.check_result(AppResult.ORBITALS,None))
 
@@ -76,7 +76,7 @@ def test_get_result():
     from ..developer import obj
 
     sim = get_quantum_package_sim()
-    
+
     with pytest.raises(
         NotImplementedError,
         match="Ability to get result 'NONE' has not been implemented!",
@@ -115,7 +115,7 @@ def test_incorporate_result():
     Gamess.ericfmt = None
 
     sim = get_quantum_package_sim()
-    
+
     with pytest.raises(
         NotImplementedError,
         match="Ability to get result 'NONE' has not been implemented!",

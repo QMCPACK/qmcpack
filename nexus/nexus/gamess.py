@@ -43,7 +43,7 @@ class Gamess(Simulation):
     input_type         = GamessInput
     analyzer_type      = GamessAnalyzer
     generic_identifier = 'gamess'
-    application        = 'gamess.x' 
+    application        = 'gamess.x'
     infile_extension   = '.inp'
     application_properties = frozenset({'serial','mpi'})
     application_results    = AppResult.ORBITALS
@@ -94,7 +94,7 @@ class Gamess(Simulation):
 
 
     def check_result(self,result_name,sim):
-        input = self.input 
+        input = self.input
         if result_name is AppResult.ORBITALS:
             calculating_result = 'contrl' in input and 'scftyp' in input.contrl and input.contrl.scftyp.lower() in {'rhf','rohf','uhf','mcscf','none'}
         else:
@@ -248,7 +248,7 @@ class Gamess(Simulation):
         if self.app_name == 'rungms':
             return 'rungms '+self.infile
         else:
-          return self.app_name+' '+self.infile.replace('.inp','')      
+          return self.app_name+' '+self.infile.replace('.inp','')
         #end if
     #end def app_command
 
@@ -257,7 +257,7 @@ class Gamess(Simulation):
         with open(os.path.join(self.locdir,self.outfile), "r") as out:
             output = out.read()
         #errors = open(os.path.join(self.locdir,self.errfile),'r').read()
-        
+
         self.failed = 'EXECUTION OF GAMESS TERMINATED -ABNORMALLY-' in output
         self.finished = self.failed or 'EXECUTION OF GAMESS TERMINATED NORMALLY' in output
     #end def check_sim_status

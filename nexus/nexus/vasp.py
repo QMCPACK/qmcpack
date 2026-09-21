@@ -38,7 +38,7 @@ class Vasp(Simulation):
     input_type         = VaspInput
     analyzer_type      = VaspAnalyzer
     generic_identifier = 'vasp'
-    application        = 'vasp' 
+    application        = 'vasp'
     application_properties = frozenset({'serial','mpi'})
     application_results    = AppResult.STRUCTURE
 
@@ -126,7 +126,7 @@ class Vasp(Simulation):
         else:
             msg = f"Ability to incorporate result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
-        #end if  
+        #end if
     #end def incorporate_result
 
 

@@ -15,7 +15,7 @@ def to_str(s):
 
 def valid_variable_name(s):
     """Check if a variable name contains invalid characters."""
-    if not any([i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in s]):
+    if not any(i in ('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}-\n\t ') for i in s):
         return True
     else:
         return False
@@ -34,7 +34,7 @@ def _path_to_str(path: str | bytes | Path) -> str:
     else:
         raise TypeError(
             f'path must be of type "str", "bytes" or "Path". Type received: {path.__class__.__name__}'
-            
+
             )
     return path
 #end def _path_to_str
@@ -46,7 +46,7 @@ def is_valid_path(path: str | bytes | Path) -> bool:
     if not hasattr(is_valid_path,'invalid_chars'):
         unprintable = [chr(c) for c in range(128) if chr(c) not in string.printable]
         special = r'!@#$%^&*;|?\`",()[]{}<>' + r"'"
-        whitespace = set(string.whitespace) - set([' '])
+        whitespace = set(string.whitespace) - {' '}
         invalid = set(unprintable) | set(special) | whitespace
         is_valid_path.invalid_chars = invalid
     invalid_chars = is_valid_path.invalid_chars
@@ -95,7 +95,7 @@ def path_string(
     Parameters
     ----------
     path : str, bytes or Path
-        A file path or directory path. 
+        A file path or directory path.
     strict : bool, default=False
         Require inputted path to be str type.
         Raises ValueError otherwise.

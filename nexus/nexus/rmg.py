@@ -14,7 +14,7 @@ class Rmg(Simulation):
     input_type             = RmgInput
     analyzer_type          = RmgAnalyzer
     generic_identifier     = 'rmg'
-    application            = 'rmg-cpu' 
+    application            = 'rmg-cpu'
     application_properties = frozenset({'serial','mpi'})
     application_results    = AppResult.NONE
 

@@ -603,7 +603,7 @@ def test_developer_tools_devbase(tmp_path):
     del protected[key]
     assert(key not in protected and popped is not None)
 
-    fromkeys = DerivedDevBase({key:shared for key in ('x','y')})
+    fromkeys = DerivedDevBase(dict.fromkeys(('x', 'y'), shared))
     assert(type(fromkeys) is DerivedDevBase)
     assert(fromkeys.x is shared and fromkeys.y is shared)
     protected._clear()

@@ -69,11 +69,11 @@
 #     See classes simulation, project, application, random, include, #
 #       mcwalkerset, qmcsystem, simulationcell, particleset, group,  #
 #       sposet, bspline_builder, heg_builder, composite_builder,     #
-#       wavefunction, determinantset, basisset, grid, atomicbasisset,# 
+#       wavefunction, determinantset, basisset, grid, atomicbasisset,#
 #       basisgroup, radfunc, slaterdeterminant, determinant,         #
 #       occupation, multideterminant, detlist, ci, jastrow1,         #
 #       jastrow2, jastrow3, correlation, var, coefficients,          #
-#       coefficient, hamiltonian, coulomb, constant, pseudopotential,# 
+#       coefficient, hamiltonian, coulomb, constant, pseudopotential,#
 #       pseudo, mpc, localenergy, energydensity, reference_points,   #
 #       spacegrid, origin, axis, chiesa, density, nearestneighbors,  #
 #       neighbor_trace, dm1b, spindensity, magnetizationdensity,     #
@@ -252,7 +252,7 @@ def render_bool(var,T,F):
 #end def render_bool
 
 
-bool_write_types = set([yesno,onezero,truefalse])
+bool_write_types = {yesno,onezero,truefalse}
 
 
 
@@ -460,8 +460,8 @@ class hobj(obj):
         return hobj.keys(self,*args,**kwargs)
     def _values(self,*args,**kwargs):
         return hobj.values(self,*args,**kwargs)
-    def _items(self,*args,**kwargs):         
-        return hobj.items(self,*args,**kwargs)         
+    def _items(self,*args,**kwargs):
+        return hobj.items(self,*args,**kwargs)
     def _clear(self,*args,**kwargs):
         hobj.clear(self,*args,**kwargs)
     def _sorted_keys(self):
@@ -596,9 +596,9 @@ class QIobj(DevBase):
         permissive_write = False,
         permissive_init  = False,
         ):
-        QIobj.permissive_read  = permissive_read 
+        QIobj.permissive_read  = permissive_read
         QIobj.permissive_write = permissive_write
-        QIobj.permissive_init  = permissive_init 
+        QIobj.permissive_init  = permissive_init
     #end def settings
 #end class QIobj
 
@@ -878,7 +878,7 @@ class Names(QIobj):
         keylist = np.array(list(self.condensed_names.keys()))
         order = np.array(list(self.condensed_names.values())).argsort()
         keylist = keylist[order]
-        for expanded in keylist: 
+        for expanded in keylist:
             condensed = self.condensed_names[expanded]
             if expanded!=condensed:
                 print(f"    {condensed:15} = '{expanded}'")
@@ -1047,12 +1047,12 @@ class QIxml(Names):
                     if isinstance(elem,QIxml):
                         c += elem.write(indent_level+1)
                     else:
-                        begin = '<'+e+'>'                        
+                        begin = '<'+e+'>'
                         contents = param.write(elem)
                         end = '</'+e+'>'
                         if contents.strip()=='':
                             c += ip+begin+end+'\n'
-                        else:                            
+                        else:
                             c += ip+begin+'\n'
                             c += ipp+contents+'\n'
                             c += ip+end+'\n'
@@ -1226,7 +1226,7 @@ class QIxml(Names):
         elem = ks & set(self.elements)
         plur = ks & set(self.plurals.keys())
         if self.text is not None:
-            text = ks & set([self.text])
+            text = ks & {self.text}
         else:
             text = set()
         #end if
@@ -1320,7 +1320,7 @@ class QIxml(Names):
                 #end if
             #end for
         #end if
-    #end def incorporate_defaults                    
+    #end def incorporate_defaults
 
 
     def check_junk(self,junk=None,*,exit=False):
@@ -1334,7 +1334,7 @@ class QIxml(Names):
             elem = ks & set(self.elements)
             plur = ks & set(self.plurals.keys())
             if self.text is not None:
-                text = ks & set([self.text])
+                text = ks & {self.text}
             else:
                 text = set()
             #end if
@@ -1425,7 +1425,7 @@ class QIxml(Names):
                     print(ms)
                 #end if
             #end if
-            if junk!=set(['analysis']) and junk!=set(['ratio']) and junk!=set(['randmo']) and junk!=set(['printeloc', 'source']) and junk!=set(['warmup_steps']) and junk!=set(['sposet_collection']) and junk!=set(['eigensolve', 'atom']) and junk!=set(['maxweight', 'reweightedvariance', 'unreweightedvariance', 'energy', 'exp0', 'stabilizerscale', 'minmethod', 'alloweddifference', 'stepsize', 'beta', 'minwalkers', 'nstabilizers', 'bigchange', 'usebuffer']) and junk!=set(['loop2']) and junk!=set(['random']) and junk!=set(['max_steps']):
+            if junk!={'analysis'} and junk!={'ratio'} and junk!={'randmo'} and junk!={'printeloc', 'source'} and junk!={'warmup_steps'} and junk!={'sposet_collection'} and junk!={'eigensolve', 'atom'} and junk!={'maxweight', 'reweightedvariance', 'unreweightedvariance', 'energy', 'exp0', 'stabilizerscale', 'minmethod', 'alloweddifference', 'stepsize', 'beta', 'minwalkers', 'nstabilizers', 'bigchange', 'usebuffer'} and junk!={'loop2'} and junk!={'random'} and junk!={'max_steps'}:
                 sys.exit()
             #end if
         #end if
@@ -1678,8 +1678,8 @@ class QIxml(Names):
         #end for
     #end def combine
 
-                    
-    def move(self,**elemdests):        
+
+    def move(self,**elemdests):
         names = list(elemdests.keys())
         hosts = self.get_host(names)
         dests = self.get(list(elemdests.values()))
@@ -1844,7 +1844,7 @@ class QIxml(Names):
                     d1[k] = kd1
                 #end if
                 if kd2 is not None:
-                    d2[k] = kd2  
+                    d2[k] = kd2
                 #end if
             #end for
         #end if
@@ -1854,7 +1854,7 @@ class QIxml(Names):
             #end if
             d1.remove_empty()
             d2.remove_empty()
-        #end if 
+        #end if
         return different,diff,d1,d2
     #end def difference
 
@@ -1962,7 +1962,7 @@ class QIxmlFactory(Names):
 
 
 
-class Param(Names):        
+class Param(Names):
     metadata = None
 
     def __init__(self):
@@ -2000,7 +2000,7 @@ class Param(Names):
     def read(self,xml):
         val = None
         attr = set(xml._attributes.keys())
-        other_attr = attr-set(['name'])
+        other_attr = attr-{'name'}
         if 'name' in attr and len(other_attr)>0:
             oa = obj()
             for a in other_attr:
@@ -2161,7 +2161,7 @@ class Param(Names):
         #end if
         return c
     #end def write
-            
+
 
     def write_val(self,val):
         if self.precision is not None and isinstance(val,float):
@@ -3316,7 +3316,7 @@ estimator = QIxmlFactory(
                  selfhealingoverlap     = selfhealingoverlap,
                  cslocalenergy          = cslocalenergy,
                  rmclocalenergy         = rmclocalenergy,
-                 # afqmc estimators   
+                 # afqmc estimators
                  back_propagation       = back_propagation,
                  ),
     typekey  = 'type',
@@ -3725,8 +3725,8 @@ class rmc(QIxml):
 
 class vmc_batch(QIxml):
     # Do not assume all of the parameters below are supported.
-    # These were simply copied over from legacy drivers because the 
-    # batched driver compatible inputs have yet not been listed anywhere. 
+    # These were simply copied over from legacy drivers because the
+    # batched driver compatible inputs have yet not been listed anywhere.
     collection_id   = 'qmc'
     tag             = 'qmc'
     attributes      = ('method','move','profiling','kdelay','checkpoint',
@@ -4087,8 +4087,8 @@ types = dict( #simple types and factories
     )
 plurals = obj(
     particlesets    = 'particleset',
-    groups          = 'group',    
-    hamiltonians    = 'hamiltonian', 
+    groups          = 'group',
+    hamiltonians    = 'hamiltonian',
     pairpots        = 'pairpot',
     pseudos         = 'pseudo',
     estimators      = 'estimator',
@@ -4486,7 +4486,7 @@ def set_afqmc_mode():
 
 
 class QmcpackInput(SimulationInput,Names):
-    
+
     profile_collection = None
 
     opt_methods = frozenset({'opt','linear','cslinear','linear_batch'})
@@ -4759,12 +4759,12 @@ class QmcpackInput(SimulationInput,Names):
         base = self.get_base()
         base.remove(*names)
     #end def remove
-    
+
     def assign(self,**kwargs):
         base = self.get_base()
         base.assign(**kwargs)
     #end def assign
-    
+
     def replace(self,*args,**kwargs):# input is list of keyword=(oldval,newval)
         base = self.get_base()
         base.replace(*args,**kwargs)
@@ -4774,7 +4774,7 @@ class QmcpackInput(SimulationInput,Names):
         base = self.get_base()
         base.move(**elemdests)
     #end def move
-            
+
 
     def get_host(self,names):
         base = self.get_base()
@@ -4912,14 +4912,14 @@ class QmcpackInput(SimulationInput,Names):
     #    i.e. where is the particleset? the wavefunction? a particular determinant?
     #   -Difficulty in locating components makes it difficult to modify them
     #   -Includes necessarily introduce greater variability in input file structure
-    #    and it is difficult to ensure every possible form is preserved each and 
+    #    and it is difficult to ensure every possible form is preserved each and
     #    every time a modification is made
     #   -The only time it is undesirable to incorporate the contents of an
     #    include directly into the input file object is if the data is large
     #    e.g. for an xml wavefunction or pseudopotential.
     #    In these cases, an external file should be provided that contains
     #    only the large object in question (pseudo or wavefunction).
-    #    This is already done for pseudopotentials and should be done for 
+    #    This is already done for pseudopotentials and should be done for
     #    wavefunctions, e.g. multideterminants.
     #    Until that time, wavefunctions will be explicitly read into the full
     #    input file.
@@ -5017,7 +5017,7 @@ class QmcpackInput(SimulationInput,Names):
         for elem in elems:
             pbef = cur_elems[elem,'before']
             pon  = cur_elems[elem,'on'    ]
-            paft = cur_elems[elem,'after' ] 
+            paft = cur_elems[elem,'after' ]
             if pon is None:
                 if pbef is not None and paft is None:
                     cur_elems[elem,'on'    ] = pbef
@@ -5093,7 +5093,7 @@ class QmcpackInput(SimulationInput,Names):
                 files.scalar = fprefix+'scalar.dat'
                 files.stat   = fprefix+'stat.h5'
                 # apparently this one is no longer generated by default as of r5756
-                #files.config = fprefix+'storeConfig.h5' 
+                #files.config = fprefix+'storeConfig.h5'
                 if q.type=='opt':
                     files.opt = fprefix+'opt.xml'
                 elif q.type=='dmc':
@@ -5263,7 +5263,7 @@ class QmcpackInput(SimulationInput,Names):
             #end if
         #end if
 
-        #only add the jastrows if ones of the same type 
+        #only add the jastrows if ones of the same type
         # (one-body,two-body,etc) are not already present
         for jastrow in jastrows:
             jtype = jastrow.type.lower().replace('-','_')
@@ -5340,7 +5340,7 @@ class QmcpackInput(SimulationInput,Names):
 
         if len(structure.axes)>0: #exclude systems with open boundaries
             #setting the 'lattice' (cell axes) requires some delicate care
-            #  qmcpack will fail if this is even 1e-10 off of what is in 
+            #  qmcpack will fail if this is even 1e-10 off of what is in
             #  the wavefunction hdf5 file from pwscf
             if structure.folded_structure is not None:
                 fs = structure.folded_structure
@@ -5367,7 +5367,7 @@ class QmcpackInput(SimulationInput,Names):
             structure.adjust_axes(axes)
 
             sc.lattice = axes
-        #end if    
+        #end if
 
 
         particlesets = []
@@ -5381,7 +5381,7 @@ class QmcpackInput(SimulationInput,Names):
         particlesets.append(eps)
         if system.n_ions>0:
             if sc is not None and 'bconds' in sc and tuple(sc.bconds)!=('p','p','p'):
-                eps.randomsrc = 'ion0'  
+                eps.randomsrc = 'ion0'
             #end if
             ips = particleset(
                 name='ion0',
@@ -5424,7 +5424,7 @@ class QmcpackInput(SimulationInput,Names):
         if old_ips_name is not None and system.n_ions>0:
             self.replace(old_ips_name,'ion0')
         #end if
-            
+
         udet,ddet = self.get('updet','downdet')
 
         if udet is not None:
@@ -5445,7 +5445,7 @@ class QmcpackInput(SimulationInput,Names):
             #end if
         #end if
     #end def incorporate_system
-        
+
 
     def get_electron_particle_set(self):
         input = deepcopy(self)
@@ -5610,8 +5610,8 @@ class QmcpackInput(SimulationInput,Names):
 
         net_charge = ion_charge + eln_charge
 
-        system = PhysicalSystem(structure,net_charge,net_spin,**valency) 
-        
+        system = PhysicalSystem(structure,net_charge,net_spin,**valency)
+
         if structure_only:
             return structure
         else:
@@ -5686,7 +5686,7 @@ class QmcpackInput(SimulationInput,Names):
         self.replace('ion0','i')
     #end def remove_physical_system
 
-        
+
     def cusp_correction(self):
         cc = False
         if not self.is_afqmc_input():
@@ -5697,7 +5697,7 @@ class QmcpackInput(SimulationInput,Names):
         #end if
         return cc
     #end def cusp_correction
-        
+
 
     def get_driver(self):
         driver = self.get('driver_version')
@@ -5856,7 +5856,7 @@ class QmcpackInput(SimulationInput,Names):
             msg = 'input file has no multideterminant'
             raise FileFormatError(msg)
         dl = md.detlist
-        names = set(list(kwargs.keys()))
+        names = set(kwargs.keys())
         mdc = multideterminant
         md_names = set(mdc.attributes)|set(mdc.parameters)
         dl_names = set(detlist.attributes)|set(detlist.parameters)
@@ -5865,8 +5865,8 @@ class QmcpackInput(SimulationInput,Names):
         if len(invalid)>0:
             msg = (
                 'unrecognized multideterminant parameters encountered.\n'
-                f'  Allowed params are: {list(sorted(allowed_names))}\n'
-                f'You provided:{list(sorted(invalid))}'
+                f'  Allowed params are: {sorted(allowed_names)}\n'
+                f'You provided:{sorted(invalid)}'
                 )
             raise ValueError(msg)
         for name in md_names:
@@ -6581,32 +6581,32 @@ class QmcpackInput(SimulationInput,Names):
         # generate jastrows
         if J1 or J2 or J3 or J1k or J2k:
             self.gen_jastrows(
-                J1           = J1          , 
-                J2           = J2          , 
-                J3           = J3          , 
-                J1_size      = J1_size     , 
-                J1_rcut      = J1_rcut     , 
-                J1_dr        = J1_dr       , 
-                J1_opt       = J1_opt      , 
-                J2_size      = J2_size     , 
-                J2_rcut      = J2_rcut     , 
-                J2_dr        = J2_dr       , 
-                J2_init      = J2_init     , 
-                J2_opt       = J2_opt      , 
-                J3_isize     = J3_isize    , 
-                J3_esize     = J3_esize    , 
-                J3_rcut      = J3_rcut     , 
-                J3_opt       = J3_opt      , 
-                J1_rcut_open = J1_rcut_open, 
-                J2_rcut_open = J2_rcut_open, 
-                J1k          = J1k         , 
-                J1k_kcut     = J1k_kcut    , 
-                J1k_symm     = J1k_symm    , 
-                J1k_opt      = J1k_opt     , 
-                J2k          = J2k         , 
-                J2k_kcut     = J2k_kcut    , 
-                J2k_symm     = J2k_symm    , 
-                J2k_opt      = J2k_opt     , 
+                J1           = J1          ,
+                J2           = J2          ,
+                J3           = J3          ,
+                J1_size      = J1_size     ,
+                J1_rcut      = J1_rcut     ,
+                J1_dr        = J1_dr       ,
+                J1_opt       = J1_opt      ,
+                J2_size      = J2_size     ,
+                J2_rcut      = J2_rcut     ,
+                J2_dr        = J2_dr       ,
+                J2_init      = J2_init     ,
+                J2_opt       = J2_opt      ,
+                J3_isize     = J3_isize    ,
+                J3_esize     = J3_esize    ,
+                J3_rcut      = J3_rcut     ,
+                J3_opt       = J3_opt      ,
+                J1_rcut_open = J1_rcut_open,
+                J2_rcut_open = J2_rcut_open,
+                J1k          = J1k         ,
+                J1k_kcut     = J1k_kcut    ,
+                J1k_symm     = J1k_symm    ,
+                J1k_opt      = J1k_opt     ,
+                J2k          = J2k         ,
+                J2k_kcut     = J2k_kcut    ,
+                J2k_symm     = J2k_symm    ,
+                J2k_opt      = J2k_opt     ,
                 system       = system      ,
                 )
         # remove deteriminants
@@ -6662,12 +6662,12 @@ class QmcpackInput(SimulationInput,Names):
         return BundledQmcpackInput(inputs,filenames)
     #end def bundle
 
-    
+
     def trace(self,quantity,values):
         return TracedQmcpackInput(quantity,values,self)
     #end def trace
 
-    
+
     def twist_average(self,twistnums):
         return self.trace('twistnum',twistnums)
     #end def twist_average
@@ -6678,7 +6678,7 @@ class QmcpackInput(SimulationInput,Names):
 # base class for bundled qmcpack input
 #  not used on its own
 class BundledQmcpackInput(SimulationInput):
-    
+
     def __init__(self,inputs,filenames):
         self.inputs = obj()
         for inp in inputs:
@@ -6720,11 +6720,11 @@ class BundledQmcpackInput(SimulationInput):
         #end if
     #end def get_output_info
 
-        
+
     def generate_filenames(self,infile):
         raise NotImplementedError
     #end def generate_filenames
-        
+
 
     def write(self,filepath=None):
         if filepath is not None and 'filenames' not in self:
@@ -6777,7 +6777,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
         self.quantities[len(self.quantities)] = obj(quantity=quantity,range=range)
         for value in values:
             inp = deepcopy(input)
-            qhost = inp.get_host(quantity)                               
+            qhost = inp.get_host(quantity)
             #print(qhost)
             if qhost is not None:
                 if not isinstance(value,obj):
@@ -6893,7 +6893,7 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
             sc.nparticles = system.n_elec
         else:
             #setting the 'lattice' (cell axes) requires some delicate care
-            #  qmcpack will fail if this is even 1e-10 off of what is in 
+            #  qmcpack will fail if this is even 1e-10 off of what is in
             #  the wavefunction hdf5 file from pwscf
             if structure.folded_structure is not None:
                 fs = structure.folded_structure
@@ -6922,7 +6922,7 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,lr_tol=None,lr_handler
 
             sc.lattice = axes
         #end if
-    #end if    
+    #end if
     return sc
 #end def generate_simulationcell
 
@@ -7002,7 +7002,7 @@ def generate_particlesets(*,
         if hybridrep:
             hybrid_vars = (
                 ('hybrid_rcut',hybrid_rcut),
-                ('hybrid_lmax',hybrid_lmax),                
+                ('hybrid_lmax',hybrid_lmax),
                 )
             for hvar,hval in hybrid_vars:
                 if not isinstance(hval,obj):
@@ -7158,7 +7158,7 @@ def generate_bspline_builder(type           = 'bspline',
                              *,
                              meshfactor     = 1.0,
                              precision      = 'float',
-                             twistnum       = None, 
+                             twistnum       = None,
                              twist          = None,
                              sort           = None,
                              version        = '0.10',
@@ -7319,7 +7319,7 @@ def partition_sposets(sposet_builder,partition,partition_meshfactors=None):
             )
         comp_spos.append(comp_spo)
     #end for
-        
+
     ssb.sposets = make_collection(part_spos)
 
     cssb = composite_builder(
@@ -7351,7 +7351,7 @@ def generate_determinantset(*,
     nup  = system.n_up
     ndn  = system.n_down
     use_spinor = spinor is not None and spinor
-    if not spin_polarized and nup==ndn and not use_spinor:  
+    if not spin_polarized and nup==ndn and not use_spinor:
         spo_u = 'spo_ud'
         spo_d = 'spo_ud'
     else:
@@ -7491,7 +7491,7 @@ def check_excitation_type(excitation):
             #end if
         #end if
     #end if
-    
+
     if format_failed:
         msg = (
             'excitation must be a tuple or list with with two elements.\n'
@@ -7512,7 +7512,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 *,
                                 meshfactor     = 1.0,
                                 precision      = 'float',
-                                twistnum       = None, 
+                                twistnum       = None,
                                 twist          = None,
                                 spin_polarized = False,
                                 hybridrep      = None,
@@ -7614,7 +7614,7 @@ def generate_determinantset_old(type           = 'bspline',
         elif exc_spin in {exc_spins.singlet,exc_spins.triplet}:
 
             # Are there an equal number of up and down electrons?
-            # If no, then exit. Currently, singlet and triplet 
+            # If no, then exit. Currently, singlet and triplet
             # excitations are assumed to have ms = 0.
             if system.n_down != system.n_up:
                 msg = (
@@ -7696,7 +7696,7 @@ def generate_determinantset_old(type           = 'bspline',
                         ),
                     )
                 )
-            
+
             if exc_type in {exc_types.energy,exc_types.lowest}:
 
                 nup = system.n_up
@@ -7723,10 +7723,10 @@ def generate_determinantset_old(type           = 'bspline',
                 dset.multideterminant.detlist.csf.dets[1].alpha = '1'*nup+'0'*(exc_orbs[1]-nup)
                 dset.multideterminant.detlist.csf.dets[1].beta = '1'*(exc_orbs[0]-1)+'0'+'1'*(nup-exc_orbs[0])+'0'*(exc_orbs[1]-nup-1)+'1'
 
-            elif exc_type == exc_types.kpoint: 
+            elif exc_type == exc_types.kpoint:
                 msg = f'{exc1} excitation is not yet available for kpoint type'
                 raise NotImplementedError(msg)
-            else: 
+            else:
                 msg = f'{exc1} excitation is not yet available for band type'
                 raise NotImplementedError(msg)
             #end if
@@ -7749,7 +7749,7 @@ def generate_determinantset_old(type           = 'bspline',
                 msg = 'excitation with vb-cb band format works only with special k-points'
                 raise ValueError(msg)
             #end if
-            
+
             vb = int(sdet.size / np.abs(np.linalg.det(tilematrix))) -1  # Separate for each spin channel
             cb = vb+1
             # Convert band_1, band_2 to band indexes
@@ -7782,17 +7782,17 @@ def generate_determinantset_old(type           = 'bspline',
                 #end if
             #end for
             band_1, band_2 = bands
-            
+
             # Convert k_1 k_2 to wavevector indexes
             structure = deepcopy(system.structure.get_smallest())
             structure.change_units('A')
             kpath       = get_kpath(structure=structure)
             kpath_label = np.array(kpath['explicit_kpoints_labels'])
             kpath_rel   = kpath['explicit_kpoints_rel']
-            
+
             k1_in = k_1
             k2_in = k_2
-            if k_1 in kpath_label and k_2 in kpath_label:   
+            if k_1 in kpath_label and k_2 in kpath_label:
                 k_1 = kpath_rel[np.where(kpath_label == k_1)][0]
                 k_2 = kpath_rel[np.where(kpath_label == k_2)][0]
 
@@ -7831,7 +7831,7 @@ def generate_determinantset_old(type           = 'bspline',
             #Write everything in band (ti,bi) format
             occ.contents = '\n'+str(k_1)+' '+str(band_1)+' '+str(k_2)+' '+str(band_2)+'\n'
             occ.format = 'band'
-            
+
         elif exc_type == exc_types.energy:
             # assume excitation of form '-216 +217'
             occ.format = 'energy'
@@ -7842,7 +7842,7 @@ def generate_determinantset_old(type           = 'bspline',
             else:
                 nel = system.n_down
             #end if
-            excitation = f'-{nel} +{nel+1}' 
+            excitation = f'-{nel} +{nel+1}'
             occ.contents = '\n'+excitation+'\n'
         else: #Type 1
             # assume excitation of form '6 36 6 37'
@@ -8270,7 +8270,7 @@ def generate_jastrows(jastrows,system=None,*,return_list=False,check_ions=False)
             raise ValueError(msg)
         #end if
     else:
-        jset = set(['J1','J2','J3'])
+        jset = {'J1','J2','J3'}
         for jastrow in jastrows:
             if isinstance(jastrow,QIxml):
                 jin.append(jastrow)
@@ -8391,7 +8391,7 @@ def generate_jastrows_alt(
                 if rwigner is None:
                     rwigner = system.structure.rwigner(1)
                 #end if
-                J1_rcut = rwigner 
+                J1_rcut = rwigner
             #end if
         #end if
         if J1_size is None:
@@ -8476,8 +8476,8 @@ def generate_jastrows_alt(
 
 
 def generate_jastrow(descriptor,*args,**kwargs):
-    keywords = set(['function','size','rcut','elements','coeff','cusp','ename',
-                    'iname','spins','density','Buu','Bud','opt','system','isize','esize','init'])
+    keywords = {'function','size','rcut','elements','coeff','cusp','ename',
+                'iname','spins','density','Buu','Bud','opt','system','isize','esize','init'}
     if not 'system' in kwargs:
         kwargs['system'] = None
     #end if
@@ -8558,7 +8558,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
     #end if
     # remove duplicate elements
     eset = set()
-    elements = [ e for e in elements if e not in eset and not eset.add(e) ]     
+    elements = [ e for e in elements if e not in eset and not eset.add(e) ]
     corrs = []
     for i in range(len(elements)):
         element = elements[i]
@@ -8600,8 +8600,8 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
                 id       = ename+element,
                 type     = 'Array',
                 coeff    = lcoeff,
-                )         
-            )    
+                )
+            )
         if opt is not None:
             corr.coefficients.optimize = bool(opt)
         if lrcut!=None:
@@ -8612,7 +8612,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
                     f'wigner radius: {rwigner}'
                     )
                 raise ValueError(msg)
-                
+
             corr.rcut = lrcut
         elif isopen:
             msg = 'rcut must be provided for an open system'
@@ -8652,7 +8652,7 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
             rwigner = system.structure.rwigner()
         #end if
         volume = system.structure.volume()
-        if isopen: 
+        if isopen:
             if rcut is None:
                 msg = 'rcut must be provided for an open system'
                 raise ValueError(msg)
@@ -8875,14 +8875,14 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
 
 
 def generate_kspace_jastrow(
-        kc1:    float | None = None, 
-        kc2:    float | None = None, 
-        nk1:    int          = 0, 
+        kc1:    float | None = None,
+        kc2:    float | None = None,
+        nk1:    int          = 0,
         nk2:    int          = 0,
         *,
-        symm1:  str          = 'isotropic', 
-        symm2:  str          = 'isotropic', 
-        coeff1: list         = None, 
+        symm1:  str          = 'isotropic',
+        symm2:  str          = 'isotropic',
+        coeff1: list         = None,
         coeff2: list         = None,
         opt1:   bool | None  = None,
         opt2:   bool | None  = None,
@@ -8947,7 +8947,7 @@ def generate_kspace_jastrow(
     if not J1k and not J2k:
         msg = 'must have at least one term'
         raise ValueError(msg)
-    #end if      
+    #end if
     if coeff1 is None:
         coeff1 = [0]*nk1
     if coeff2 is None:
@@ -9130,7 +9130,7 @@ def generate_energydensity(
                 msg = (
                     'ion species not found for spherical grid\n'
                     f'species not found: {sorted(missing)}\n'
-                    f'species present: {sorted(set(list(system.structure.elem)))}'
+                    f'species present: {sorted(set(system.structure.elem))}'
                     )
                 raise ValueError(msg)
             #end if
@@ -9224,7 +9224,7 @@ def generate_opt(method,
     blocks = min(blocks,samples_per_proc*decorr)
 
     opt = opt_map[method]()
- 
+
     opt.update(
         walkers    = walkers,
         blocks     = blocks,
@@ -9244,7 +9244,7 @@ def generate_opt(method,
     if urw_variance is not None:
         opt.unreweightedvariance = urw_variance
     #end if
-    
+
     opt.incorporate_defaults(elements=True)
 
     if repeat>1:
@@ -9288,12 +9288,12 @@ shared_opt_legacy_defaults = obj(
     samples              = 204800,
     nonlocalpp           = True,
     use_nonlocalpp_deriv = True,
-    warmupsteps          = 300,                
-    blocks               = 100,                
-    steps                = 1,                  
-    substeps             = 10,                 
+    warmupsteps          = 300,
+    blocks               = 100,
+    steps                = 1,
+    substeps             = 10,
     timestep             = 0.3,
-    usedrift             = False,  
+    usedrift             = False,
     max_seconds          = None,
     spin_mass            = None,
     )
@@ -9375,7 +9375,7 @@ dmc_legacy_defaults = obj(
     timestep                = 0.01,
     checkpoint              = -1,
     vmc_samples             = 2048,
-    vmc_samplesperthread    = None, 
+    vmc_samplesperthread    = None,
     vmc_walkers             = None,
     vmc_warmupsteps         = 30,
     vmc_blocks              = 40,
@@ -9392,7 +9392,7 @@ dmc_legacy_defaults = obj(
     eq_timestep             = 0.02,
     eq_checkpoint           = -1,
     ntimesteps              = 1,
-    timestep_factor         = 0.5,    
+    timestep_factor         = 0.5,
     nonlocalmoves           = None,
     branching_cutoff_scheme = None,
     maxage                  = None,
@@ -9443,10 +9443,10 @@ shared_opt_batched_defaults = obj(
     samples              = None, # 204800 if steps is None
     #nonlocalpp           = True,
     #use_nonlocalpp_deriv = True,
-    warmupsteps          = 300,                
-    blocks               = 100,                
-    steps                = None,                 
-    substeps             = 10,                 
+    warmupsteps          = 300,
+    blocks               = 100,
+    steps                = None,
+    substeps             = 10,
     timestep             = 0.3,
     usedrift             = False,
     spin_mass            = None,
@@ -9482,7 +9482,7 @@ linear_sr_cg_batched_defaults = obj(
     sr_tau            = None,  # projector: 1-tau*H  (0.01/0.1 if line_search=no/yes)
     sr_tolerance      = 0.001, # conjugate gradient convergence tolerance
     sr_regularization = 0.01,  # ~diagonal shift to overlap matrix
-    line_search       = False, # corr samp line search on cost along sr param direction 
+    line_search       = False, # corr samp line search on cost along sr param direction
     **shared_opt_batched_defaults
     )
 
@@ -9559,7 +9559,7 @@ dmc_batched_defaults = obj(
     eq_timestep             = 0.02,
     eq_checkpoint           = None,
     ntimesteps              = 1,
-    timestep_factor         = 0.5,    
+    timestep_factor         = 0.5,
     nonlocalmoves           = None,
     branching_cutoff_scheme = None,
     crowd_serialize_walkers = None,
@@ -9800,7 +9800,7 @@ def generate_legacy_vmc_calculations(
         checkpoint ,
         usedrift   ,
         max_seconds,
-        spin_mass,    
+        spin_mass,
         loc        = 'generate_vmc_calculations',
         ):
 
@@ -9838,7 +9838,7 @@ def generate_legacy_dmc_calculations(
         timestep               ,
         checkpoint             ,
         vmc_samples            ,
-        vmc_samplesperthread   , 
+        vmc_samplesperthread   ,
         vmc_walkers            ,
         vmc_warmupsteps        ,
         vmc_blocks             ,
@@ -9855,7 +9855,7 @@ def generate_legacy_dmc_calculations(
         eq_timestep            ,
         eq_checkpoint          ,
         ntimesteps             ,
-        timestep_factor        ,    
+        timestep_factor        ,
         nonlocalmoves          ,
         branching_cutoff_scheme,
         maxage                 ,
@@ -9945,7 +9945,7 @@ def generate_legacy_dmc_calculations(
             #end for
         #end if
     #end for
-    
+
     return dmc_calcs
 #end def generate_legacy_dmc_calculations
 
@@ -10106,7 +10106,7 @@ def generate_batched_opt_calculations(
 
 def generate_batched_vmc_calculations(
         total_walkers    ,
-        walkers_per_rank ,     
+        walkers_per_rank ,
         warmupsteps      ,
         blocks           ,
         steps            ,
@@ -10118,7 +10118,7 @@ def generate_batched_vmc_calculations(
         crowds           ,
         spin_mass        ,
         ):
-    
+
     if total_walkers is not None and walkers_per_rank is not None:
         msg = 'Only one of "total_walkers" and "walkers_per_rank" may be provided.'
         raise ValueError(msg)
@@ -10177,7 +10177,7 @@ def generate_batched_dmc_calculations(
         eq_timestep            ,
         eq_checkpoint          ,
         ntimesteps             ,
-        timestep_factor        ,    
+        timestep_factor        ,
         nonlocalmoves          ,
         branching_cutoff_scheme,
         crowd_serialize_walkers,
@@ -10269,7 +10269,7 @@ def generate_batched_dmc_calculations(
             #end for
         #end if
     #end for
-    
+
     return dmc_calcs
 #end def generate_batched_dmc_calculations
 
@@ -10304,38 +10304,38 @@ def read_jastrows(filepath):
 
 
 gen_basic_input_defaults = obj(
-    id               = 'qmc',            
-    series           = 0,                
-    purpose          = '',     
+    id               = 'qmc',
+    series           = 0,
+    purpose          = '',
     maxcpusecs       = None,
     max_seconds      = None,
-    seed             = None,             
-    bconds           = None,             
-    truncate         = False,            
-    buffer           = None,             
-    lr_dim_cutoff    = 15,               
-    lr_tol           = None,               
-    lr_handler       = None,               
-    remove_cell      = False,            
-    randomsrc        = True,            
-    meshfactor       = 1.0,              
-    orbspline        = None,             
-    precision        = 'float',          
-    twistnum         = None,             
-    twist            = None,             
+    seed             = None,
+    bconds           = None,
+    truncate         = False,
+    buffer           = None,
+    lr_dim_cutoff    = 15,
+    lr_tol           = None,
+    lr_handler       = None,
+    remove_cell      = False,
+    randomsrc        = True,
+    meshfactor       = 1.0,
+    orbspline        = None,
+    precision        = 'float',
+    twistnum         = None,
+    twist            = None,
     gcta             = None,
-    spin_polarized   = None,             
-    partition        = None,             
-    partition_mf     = None,             
-    hybridrep        = None,             
-    hybrid_rcut      = None,             
-    hybrid_lmax      = None,             
+    spin_polarized   = None,
+    partition        = None,
+    partition_mf     = None,
+    hybridrep        = None,
+    hybrid_rcut      = None,
+    hybrid_lmax      = None,
     orbitals_h5      = 'MISSING.h5',
     rotated_orbitals = False,
     run_path         = None,
     check_paths      = True,
-    excitation       = None,             
-    system           = 'missing',        
+    excitation       = None,
+    system           = 'missing',
     pseudos          = None,
     nrule            = None,
     pseudo_algorithm = None,
@@ -10345,31 +10345,31 @@ gen_basic_input_defaults = obj(
     det_batch        = None,
     jastrows         = 'generateJ12',
     opt_params       = None,
-    interactions     = 'all',            
-    corrections      = 'default',        
-    observables      = None,             
+    interactions     = 'all',
+    corrections      = 'default',
+    observables      = None,
     estimators       = None,
     estimator_period = None,
-    traces           = None,             
-    calculations     = None,             
-    det_format       = 'new',            
-    J1               = False,            
-    J2               = False,            
-    J3               = False,            
-    J1_size          = None,             
-    J1_rcut          = None,             
+    traces           = None,
+    calculations     = None,
+    det_format       = 'new',
+    J1               = False,
+    J2               = False,
+    J3               = False,
+    J1_size          = None,
+    J1_rcut          = None,
     J1_dr            = 0.5,
     J1_opt           = None,
-    J2_size          = None,             
-    J2_rcut          = None,             
-    J2_dr            = 0.5, 
+    J2_size          = None,
+    J2_rcut          = None,
+    J2_dr            = 0.5,
     J2_init          = 'zero',
     J2_opt           = None,
-    J3_isize         = 3,                
-    J3_esize         = 3,                
-    J3_rcut          = 5.0, 
+    J3_isize         = 3,
+    J3_esize         = 3,
+    J3_rcut          = 5.0,
     J3_opt           = None,
-    J1_rcut_open     = 5.0,              
+    J1_rcut_open     = 5.0,
     J2_rcut_open     = 10.0,
     J1k              = False,
     J1k_kcut         = 5.0,
@@ -10633,7 +10633,7 @@ def generate_basic_input(**kwargs):
     #end if
 
 
-    wfn = wavefunction(        
+    wfn = wavefunction(
         name           = 'psi0',
         target         = 'e',
         determinantset = dset,
@@ -10692,7 +10692,7 @@ def generate_basic_input(**kwargs):
     #end if
 
     if kw.spinor is not None and kw.spinor:
-        # remove u-d 
+        # remove u-d
         # also set correct cusp
         J2 = wfn.jastrows.get('J2')
         if J2 is not None:
@@ -10854,8 +10854,8 @@ def generate_basic_input(**kwargs):
 
 
 gen_basic_afqmc_input_defaults = obj(
-    id          = 'qmc',            
-    series      = 0,   
+    id          = 'qmc',
+    series      = 0,
     seed        = None,
     nmo         = None,
     naea        = None,
@@ -10956,7 +10956,7 @@ def generate_basic_afqmc_input(**kwargs):
         #end if
         return filetype
     #end def get_filetype
-    
+
     ham = hamiltonian(
         name     = kw.ham_name,
         info     = info.name,
@@ -11040,7 +11040,7 @@ def generate_basic_afqmc_input(**kwargs):
         exe.estimators = make_collection(estimators)
     #end if
     sim.execute = exe
-    
+
     qi = QmcpackInput(metadata,sim)
 
     return qi
@@ -11057,7 +11057,7 @@ def generate_opt_jastrow_input(id  = 'qmc',
                                remove_cell      = False,
                                meshfactor       = 1.0,
                                precision        = 'float',
-                               twistnum         = None, 
+                               twistnum         = None,
                                twist            = None,
                                spin_polarized   = False,
                                orbitals_h5      = 'MISSING.h5',
@@ -11197,7 +11197,7 @@ if __name__=='__main__':
     if test_ret_system:
         from .structure import generate_structure
         from .physical_system import PhysicalSystem
-        
+
         system = PhysicalSystem(
             structure = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
             net_charge = 1,
@@ -11206,7 +11206,7 @@ if __name__=='__main__':
             )
 
         gi = generate_qmcpack_input('basic',system=system)
-        
+
         rsys = gi.return_system()
 
         print(rsys)
@@ -11217,7 +11217,7 @@ if __name__=='__main__':
     if test_gen_input:
         from .structure import generate_structure
         from .physical_system import PhysicalSystem
-        
+
         system = PhysicalSystem(
             structure = generate_structure('diamond','fcc','Ge',(2,2,2),scale=5.639,units='A'),
             net_charge = 1,
@@ -11226,7 +11226,7 @@ if __name__=='__main__':
             )
 
         gi = generate_qmcpack_input('basic',system=system)
-        
+
         print(gi)
 
         print(gi.write())
@@ -11240,7 +11240,7 @@ if __name__=='__main__':
 
         different,diff,d1,d2 = tstep.difference(tstep)
         different,diff,d1,d2 = tstep.difference(opt)
-        
+
     #end if
 
 
@@ -11270,14 +11270,14 @@ if __name__=='__main__':
                 qmcsystem=section(
                     simulationcell = section(),
                     wavefunction = section(),
-                    hamiltonian = section()             
+                    hamiltonian = section()
                     ),
                 calculations = [
                     cslinear(),
                     vmc(),
                     dmc()
                     ]
-                )            
+                )
             )
 
         #q.simulation = simulation()
@@ -11304,7 +11304,7 @@ if __name__=='__main__':
         qnj.write('./output/jastrow_gen.in.xml')
 
     #end if
-    
+
 
 
     if test_generation:
@@ -11337,7 +11337,7 @@ if __name__=='__main__':
                         lattice = np.array([[1,1,0],[1,0,1],[0,1,1]]),
                         reciprocal = np.array([[1,1,-1],[1,-1,1],[-1,1,1]]),
                         bconds = 'p p p',
-                        LR_dim_cutoff = 15            
+                        LR_dim_cutoff = 15
                         ),
                     particlesets = [
                         particleset(
@@ -11382,7 +11382,7 @@ if __name__=='__main__':
                                     name='d',
                                     size=63,
                                     charge=-1
-                                    )                    
+                                    )
                                 ]
                             ),
                         ],
@@ -11624,7 +11624,7 @@ if __name__=='__main__':
                                 name='LocalEnergy',
                                 hdf5='no'
                                 )
-                            ]            
+                            ]
                         )
                     ]
                 )
@@ -11847,7 +11847,7 @@ if __name__=='__main__':
                     units = 'bohr',
                     lattice = np.array([[1,1,0],[1,0,1],[0,1,1]]),
                     bconds = 'p p p',
-                    LR_dim_cutoff = 15            
+                    LR_dim_cutoff = 15
                     ),
                 particlesets = [
                     particleset('ion0', ('C',4), ('B',3),
@@ -11900,7 +11900,7 @@ if __name__=='__main__':
                                     ('u','u',3.9,[0,0,0,0,0,0]),
                                     ('u','d',3.9,[0,0,0,0,0,0])),
                             onebody('J1','bspline','ion0',
-                                    ('C',3.9,[0,0,0,0,0,0]),                            
+                                    ('C',3.9,[0,0,0,0,0,0]),
                                     ('B',3.9,[0,0,0,0,0,0]))
                             ]
                         )
@@ -11926,7 +11926,7 @@ if __name__=='__main__':
                         energy = 0.,
                         unreweightedvariance = 0.,
                         reweightedvariance = 0.,
-                        estimator = localenergy(hdf5='no') 
+                        estimator = localenergy(hdf5='no')
                         )
                     ),
                 vmc(
@@ -11934,7 +11934,7 @@ if __name__=='__main__':
                     steps = 500,
                     substeps = 3,
                     timestep = .5,
-                    estimator = localenergy(hdf5='yes') 
+                    estimator = localenergy(hdf5='yes')
                     ),
                 dmc(
                     walkers = 72,
@@ -11942,7 +11942,7 @@ if __name__=='__main__':
                     steps = 50,
                     timestep = .01,
                     nonlocalmove = 'yes',
-                    estimator = localenergy(hdf5='no') 
+                    estimator = localenergy(hdf5='no')
                     )
                 ]
             )

@@ -370,8 +370,8 @@ def test_rotate():
 
     # Test the case where rp is not given
     # Perform active rotation taking a2-coords to a0-coords
-    R = [[0.2570157723433977, 0.6326366344635742,-0.7305571719594085], 
-         [0.4370696746690278, 0.5981289557203555, 0.6717230469572912], 
+    R = [[0.2570157723433977, 0.6326366344635742,-0.7305571719594085],
+         [0.4370696746690278, 0.5981289557203555, 0.6717230469572912],
          [0.8619240060767753,-0.4919478031900122,-0.12277771249328594]]
     s1.rotate(R)
     assert(value_eq(s1.pos[-1],np.array([-2.15536928,3.46035669,0.86507139])))
@@ -506,7 +506,7 @@ def test_gen_molecule():
     from ..structure import generate_structure
 
     h2o = generate_structure(
-        elem  = ['O','H','H'], 
+        elem  = ['O','H','H'],
         pos   = [[0.000000, 0.000000, 0.000000],
                  [0.000000,-0.757160, 0.586260],
                  [0.000000, 0.757160, 0.586260]],
@@ -619,7 +619,7 @@ def test_gen_graphene():
         pos   = [[0.   ,      0.        , 0.        ],
                  [1.231,      0.71071818, 0.        ]],
         )
-        
+
     assert(structure_same(graphene,ref))
 #end def test_gen_graphene
 
@@ -811,7 +811,7 @@ def test_read_write(tmp_path):
     # Write an XYZ file
     xyz_file = tmp_path / 'diamond8.xyz'
     d8.write(xyz_file)
-    
+
     # Write an XSF file
     xsf_file = tmp_path / 'diamond8.xsf'
     d8.write(xsf_file)
@@ -881,7 +881,7 @@ def test_bounding_box():
     from ..structure import generate_structure,read_structure
 
     h2o = generate_structure(
-        elem  = ['O','H','H'], 
+        elem  = ['O','H','H'],
         pos   = [[0.000000, 0.000000, 0.000000],
                  [0.000000,-0.757160, 0.586260],
                  [0.000000, 0.757160, 0.586260]],
@@ -913,7 +913,7 @@ def test_bounding_box():
     assert(value_eq(s.axes,ref_axes))
     assert(value_eq(s.pos[:,2].min(),5.0))
     assert(value_eq(s.pos[:,2].max(),5.0))
-    
+
 #end def test_bounding_box
 
 
@@ -1011,7 +1011,7 @@ def test_unit_coords():
         [ 0.125, 0.625, 0.625 ],
         [ 0.500, 0.500, 0.500 ],
         [ 0.625, 0.625, 0.625 ]])
-        
+
     upos = s.pos_unit()
 
     upos[np.abs(upos-1.0)<1e-10] = 0.0
@@ -1224,10 +1224,10 @@ def test_monkhorst_pack_kpoints():
 
     # Get the mapping between supercell and primitive cell k-points
     kmap_ref = obj({
-        0 : set([0,32,4,48,8,60,12,44,16,40,20,56,24,52,28,36]),
-        1 : set([1,61,5,49,9,13,45,17,37,25,53,41,57,33,29,21]),
-        2 : set([2,50,54,6,26,10,62,34,14,18,46,22,58,38,42,30]),
-        3 : set([35,3,51,7,63,23,47,15,27,43,19,11,55,39,59,31]),
+        0 : {0,32,4,48,8,60,12,44,16,40,20,56,24,52,28,36},
+        1 : {1,61,5,49,9,13,45,17,37,25,53,41,57,33,29,21},
+        2 : {2,50,54,6,26,10,62,34,14,18,46,22,58,38,42,30},
+        3 : {35,3,51,7,63,23,47,15,27,43,19,11,55,39,59,31},
         })
 
     kmap = g44s.kmap()
@@ -1415,7 +1415,7 @@ def test_min_image_distances():
         tiling    = (4,4,1),
         )
 
-    # Get the neighbor (index) table, along with sorted distance 
+    # Get the neighbor (index) table, along with sorted distance
     # and displacement tables.
     nt,dt,vt = g.neighbor_table(distances=True,vectors=True)
 
@@ -1423,7 +1423,7 @@ def test_min_image_distances():
     nt = nt[:,1:4]
     dt = dt[:,1:4]
     vt = vt[:,1:4]
-    
+
     nt_ref = np.array(
         [
             [ 1,  7, 31],
@@ -1555,7 +1555,7 @@ def test_embed():
     # check that the large local distortion made in the small cell
     # is present in the large cell after embedding
     rnn_max_ref = 2.1076122431022664
-    
+
     # Check small cell distortion max distance
     rnn_max = np.linalg.norm(gr.pos[0]-gr.pos[1])
     assert(value_eq(rnn_max,rnn_max_ref))
@@ -1573,7 +1573,7 @@ def test_interpolate():
     """
     import numpy as np
     from ..structure import generate_structure
-    
+
     g = generate_structure(
         structure = 'graphene',
         cell      = 'prim',
@@ -1655,7 +1655,7 @@ def test_interpolate():
 #             structure = struct,
 #             cell      = cell,
 #             )
-            
+
 #         rotations = s.point_group_operations()
 #         assert(struct in nrotations)
 #         assert(len(rotations)==nrotations[struct])

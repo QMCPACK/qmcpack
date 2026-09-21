@@ -51,7 +51,7 @@ def test_minimal_init():
 
 def test_check_result():
     sim = get_pyscf_sim()
-    
+
     assert(not sim.check_result(AppResult.NONE,None))
     assert(not sim.check_result(AppResult.ORBITALS,None))
     assert(not sim.check_result(AppResult.WAVEFUNCTION,None))
@@ -94,7 +94,7 @@ def test_get_result(tmp_path):
         checkpoint = 'scf.chk',
         template   = template_filepath,
         )
-    
+
     with pytest.raises(
         NotImplementedError,
         match="Ability to get result 'NONE' has not been implemented!"

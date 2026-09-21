@@ -303,7 +303,7 @@ class GCTA(DevBase):
     @staticmethod
     def traceback_dependency(dependency, cls, levels = 1):
         '''
-        This function provides limited functionality to go back in dependency by a certain level 
+        This function provides limited functionality to go back in dependency by a certain level
         '''
         if dependency is None:
             msg = 'This function requires a valid dependency. None was given.'
@@ -545,7 +545,7 @@ class GCTA(DevBase):
                     "This is not supposed to happen for safl. Likely, there is a bug in the implementation of safl."
                     )
                 raise NexusError(msg)
-                
+
             #end if
         #end if
     #end def check_magnetization_accuracy
@@ -855,7 +855,7 @@ class Qmcpack(Simulation):
         else:
             msg = f"Ability to get result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
-        #end if        
+        #end if
         return result
     #end def get_result
 
@@ -882,8 +882,8 @@ class Qmcpack(Simulation):
             #end if
             same_directory = os.path.abspath(sim.locdir)==os.path.abspath(self.locdir)
             if same_directory:
-                project_ids = set(r.project_id for r in result.restarts)
-                project_series = set(r.project_series for r in result.restarts)
+                project_ids = {r.project_id for r in result.restarts}
+                project_series = {r.project_series for r in result.restarts}
                 if len(project_ids)!=1 or len(project_series)!=1:
                     msg = (
                         'same-directory QMCPACK restart files contain inconsistent project metadata\n'
@@ -953,7 +953,7 @@ class Qmcpack(Simulation):
                     msg = 'system must have kpoints to assign twistnums'
                     raise ValueError(msg)
                 #end if
-                    
+
                 if not os.path.exists(h5file):
                     msg = (
                         'wavefunction file not found:\n'
@@ -1184,7 +1184,7 @@ class Qmcpack(Simulation):
                             #end for
                     #end if
                 #end if
-                def process_jastrow(wf):                
+                def process_jastrow(wf):
                     if 'jastrow' in wf:
                         js = [wf.jastrow]
                     elif 'jastrows' in wf:
@@ -1338,7 +1338,7 @@ class Qmcpack(Simulation):
             nelecs_at_twist = gcta_occupation(pa.wfh5, ntwist)
             self.nelecs_at_twist = nelecs_at_twist
         elif result_name is AppResult.DETERMINANTSET:
-            # This should be removed someday far in the future, 
+            # This should be removed someday far in the future,
             # when QMCPACK can actually read its HDF5 files all by itself.
             if isinstance(sim,Convert4qmc):
                 wf = input.get('wavefunction')
@@ -1349,11 +1349,11 @@ class Qmcpack(Simulation):
                 if 'sposet_builder' in wf and 'spline' in wf.sposet_builder.type.lower():
                     spoc_key = 'sposet_builder'
                 elif 'sposet_builders' in wf and ('bspline' in wf.sposet_builders or 'einspline' in wf.sposet_builders):
-                    spoc_key = 'sposet_builders'                    
+                    spoc_key = 'sposet_builders'
                 elif 'sposet_collection' in wf and 'spline' in wf.sposet_builder.type.lower():
                     spoc_key = 'sposet_builder'
                 elif 'sposet_collections' in wf and ('bspline' in wf.sposet_collections or 'einspline' in wf.sposet_collections):
-                    spoc_key = 'sposet_collections'                    
+                    spoc_key = 'sposet_collections'
                 #end if
                 if spoc_key is not None:
                     del wf[spoc_key]
@@ -1368,11 +1368,11 @@ class Qmcpack(Simulation):
             else:
                 msg = f'Incorporating determinantset from {type(sim).__name__} has not been implemented'
                 raise NotImplementedError(msg)
-            #end if                
+            #end if
         else:
             msg = f"Ability to incorporate result '{result_name.name}' has not been implemented!"
             raise NotImplementedError(msg)
-        #end if        
+        #end if
     #end def incorporate_result
 
 
@@ -1419,7 +1419,7 @@ class Qmcpack(Simulation):
 
         self.succeeded = ran_to_end
         self.failed    = aborted
-        self.finished  = files_exist and (self.job.finished or ran_to_end) and not aborted 
+        self.finished  = files_exist and (self.job.finished or ran_to_end) and not aborted
 
         if cusp_run and files_exist:
             for cuspfile in cuspfiles:
@@ -1447,7 +1447,7 @@ class Qmcpack(Simulation):
         return output_files
     #end def get_output_files
 
-    
+
     def post_analyze(self,analyzer):
         if not self.has_generic_input():
             calctypes = self.input.get_output_info('calctypes')
@@ -1468,8 +1468,8 @@ class Qmcpack(Simulation):
                 exc_spin,exc_type,exc_spins,exc_types,exc1,exc2 = check_excitation_type(exc_input)
 
                 elns = self.input.get_electron_particle_set()
-                
-                if exc_type==exc_types.band: 
+
+                if exc_type==exc_types.band:
                     # Band Index 'tw1 band1 tw2 band2'. Eg., '0 45 3 46'
                     # Check that tw1,band1 is no longer in occupied set
                     tw1,bnd1 = exc2.split()[0:2]
@@ -1509,7 +1509,7 @@ class Qmcpack(Simulation):
                         else:
                             orb1 = elns.groups.u.size
                         #end if
-                        orb2 = orb1+1 
+                        orb2 = orb1+1
                     else:
                         orb1 = int(exc_input[1].split()[0][1:])
                         orb2 = int(exc_input[1].split()[1][1:])
@@ -1534,7 +1534,7 @@ class Qmcpack(Simulation):
                         ground = np.asarray(ground).tolist()
                         # After concatenating, convert back to ndarray
                         hc_excited = np.array(ground[:orb1-1]+[ground[orb2-1]]+ground[orb1:nelec])
-                            
+
                         etol = 1e-6
                         if np.abs(hc_excited-excited).max() > etol:
                             msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
@@ -1573,7 +1573,7 @@ class Qmcpack(Simulation):
                         excitation = exc2.upper().split(' ')
                         k_1, band_1, k_2, band_2 = excitation
                         tilematrix = self.system.structure.tilematrix()
-                        
+
                         wf = self.input.get('wavefunction')
                         if exc_spin==exc_spins.up:
                             sdet =  wf.determinantset.get('updet')
@@ -1613,7 +1613,7 @@ class Qmcpack(Simulation):
                             #end if
                         #end for
                         band_1, band_2 = bands
-                        
+
                         # Convert k_1 k_2 to wavevector indexes
                         structure = deepcopy(self.system.structure.get_smallest())
                         structure.change_units('A')
@@ -1622,10 +1622,10 @@ class Qmcpack(Simulation):
                         kpath       = get_kpath(structure=structure)
                         kpath_label = np.array(kpath['explicit_kpoints_labels'])
                         kpath_rel   = kpath['explicit_kpoints_rel']
-                        
+
                         k1_in = k_1
                         k2_in = k_2
-                        if k_1 in kpath_label and k_2 in kpath_label:   
+                        if k_1 in kpath_label and k_2 in kpath_label:
                             k_1 = kpath_rel[where(kpath_label == k_1)][0]
                             k_2 = kpath_rel[where(kpath_label == k_2)][0]
 
@@ -1702,7 +1702,7 @@ class Qmcpack(Simulation):
 
 
     def app_command(self):
-        return self.app_name+' '+self.infile      
+        return self.app_name+' '+self.infile
     #end def app_command
 
 
@@ -1985,7 +1985,7 @@ class Qmcpack(Simulation):
                     for j3_id in j3_ids:
                         if 'ud' in j3_id:
                             delattr(corr, j3_id)
-        def process_jastrow(wf):                
+        def process_jastrow(wf):
             if 'jastrow' in wf:
                 js = [wf.jastrow]
             elif 'jastrows' in wf:

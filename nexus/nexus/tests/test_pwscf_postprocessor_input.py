@@ -51,7 +51,7 @@ def test_read(tmp_path):
     infile_path.write_text(projwfc_in)
 
     pi = ProjwfcInput(infile_path)
-    
+
     pi_ref = obj(
         projwfc = obj(
             prefix = 'pwscf',
@@ -73,7 +73,7 @@ def test_write(tmp_path):
 
     write_path = tmp_path / 'projwfc_write.in'
     pi_write = ProjwfcInput(infile_path)
-    
+
     pi_write.write(write_path)
 
     pi_read = ProjwfcInput(write_path)

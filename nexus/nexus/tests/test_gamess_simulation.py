@@ -70,7 +70,7 @@ def test_minimal_init():
 def test_check_result():
 
     sim = get_gamess_sim('rhf')
-    
+
     assert(not sim.check_result(AppResult.NONE,None))
     assert(sim.check_result(AppResult.ORBITALS,None))
 

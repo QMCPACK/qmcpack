@@ -93,7 +93,7 @@ def first(d):
 
 def sigfig_round(some_float, nsigfig):
     if nsigfig >= 1 and nsigfig == int(nsigfig):
-        return round(some_float, nsigfig - int(np.floor(np.log10(abs(some_float))))-1) 
+        return round(some_float, nsigfig - int(np.floor(np.log10(abs(some_float))))-1)
     else:
         msg = (
             "Number of significant figures must be a whole number\n'"
@@ -109,7 +109,7 @@ class ColorWheel(DevBase):
     def __init__(self):
         colors  = 'Black Maroon DarkOrange Green DarkBlue Purple Gray Firebrick Orange MediumSeaGreen DodgerBlue MediumOrchid'.split()
         lines  = '- -- -. :'.split()
-        markers = '. v s o ^ d p'.split() 
+        markers = '. v s o ^ d p'.split()
         ls = []
         for line in lines:
             for color in colors:
@@ -179,12 +179,12 @@ class QBase(DevBase):
 
     quantity_abbreviations = obj(
         e   = 'LocalEnergy',    v  = 'Variance',       k    = 'Kinetic',
-        p   = 'LocalPotential', ee = 'ElecElec',       ii   = 'IonIon',      
+        p   = 'LocalPotential', ee = 'ElecElec',       ii   = 'IonIon',
         l   = 'LocalECP',       n  = 'NonLocalECP',    ce   = 'CorrectedEnergy',
         mpc = 'MPC',            kc = 'KEcorr',         bw   = 'BlockWeight',
         bc  = 'BlockCPU',       ar = 'AcceptRatio',    eff  = 'Efficiency',
         te  = 'TrialEnergy',    de = 'DiffEff',        w    = 'Weight',
-        nw  = 'NumOfWalkers',   sw = 'AvgSentWalkers', tt   = 'TotalTime', 
+        nw  = 'NumOfWalkers',   sw = 'AvgSentWalkers', tt   = 'TotalTime',
         ts  = 'TotalSamples',   le2= 'LocalEnergy_sq', fl   = 'Flux',
         # RMC
         k_m  = 'Kinetic_m',     k_p  = 'Kinetic_p',    p_p  = 'LocalPotential_pure',
@@ -282,7 +282,7 @@ class DatAnalyzer(QBase):
             )
     #end def extract_info
 
-        
+
     def get_equilibration(self):
         eq = self.options.equilibration
         if eq=='auto':
@@ -386,7 +386,7 @@ class DatAnalyzer(QBase):
             le_recovered = False
 
             # Attempt to make a correction that is right regardless of whether
-            # ElecElec/MPC are present or "physical" in QMCPACK's parlance.  
+            # ElecElec/MPC are present or "physical" in QMCPACK's parlance.
             if 'Kinetic' in data:
                 # Attempt to reconstruct the total energy w/o e-e contribution
                 non_ee_energies = self.non_ee_potentials
@@ -398,9 +398,9 @@ class DatAnalyzer(QBase):
                 #end for
 
                 # Allow the correction only if the local energy sum is correct.
-                # This might not be possible if the non-e-e potential energy terms 
-                # listed in non_ee_potentials are not comprehensive for whatever 
-                # reason (e.g. the user included a new potential of their own making 
+                # This might not be possible if the non-e-e potential energy terms
+                # listed in non_ee_potentials are not comprehensive for whatever
+                # reason (e.g. the user included a new potential of their own making
                 # that qmca is not aware of).
                 le_ref = data.LocalEnergy.sum()
                 for ee in ('ElecElec','MPC'):
@@ -422,8 +422,8 @@ class DatAnalyzer(QBase):
                 #end if
             #end if
 
-            # Fall back to using LocalEnergy alone in case attempt above is 
-            # flawed due to imperfect knowledge.  This case represents an 
+            # Fall back to using LocalEnergy alone in case attempt above is
+            # flawed due to imperfect knowledge.  This case represents an
             # assumption that MPC is used only as a post-correction.
             if not le_recovered:
                 ce = data.LocalEnergy.copy()
@@ -530,23 +530,23 @@ class DatAnalyzer(QBase):
             self.data[q] = np.concatenate(qlist)
         #end for
     #end def join
-            
-    
+
+
     def write_stats(self,quantities,first_prefix=False,first_series=False,only_series=False):
         opt   = self.options
         stats = self.stats
         prefix = self.info.prefix
         series = self.info.series
         qset  = set(quantities)
-        evset = set(['LocalEnergy','Variance'])
-        cvset = set(['CorrectedEnergy','Variance'])
+        evset = {'LocalEnergy','Variance'}
+        cvset = {'CorrectedEnergy','Variance'}
         if first_series and not only_series:
             self.log('')
         #end if
 
         if opt.desired_error or opt.particle_number:
             ratio = 1.0
-            current_error = sigfig_round(stats.LocalEnergy.error, 1) 
+            current_error = sigfig_round(stats.LocalEnergy.error, 1)
             if opt.desired_error:
                 ratio = stats.LocalEnergy.error / opt.desired_error
                 phrase = "{:<50} {} {}".format(
@@ -554,7 +554,7 @@ class DatAnalyzer(QBase):
                          opt.desired_error,
                          opt.units
                          )
-                self.log(f"\n{phrase:<50}") 
+                self.log(f"\n{phrase:<50}")
             #end if
             if opt.particle_number:
                 ratio *= opt.particle_number[0]/opt.particle_number[1]
@@ -563,15 +563,15 @@ class DatAnalyzer(QBase):
                          opt.particle_number[0]
                          )
                 if opt.desired_error:
-                    self.log(f"{phrase:<50}") 
+                    self.log(f"{phrase:<50}")
                 else:
-                    self.log(f"\n{phrase:<50}") 
+                    self.log(f"\n{phrase:<50}")
                     phrase = "{:<50} {} {}".format(
                                 "Maintaining current error bar of ",
-                                    current_error, 
+                                    current_error,
                                     opt.units
                              )
-                    self.log(f"{phrase:<50}") 
+                    self.log(f"{phrase:<50}")
                 #end if
             #end if
             required_samples = int((ratio ** 2) * stats.TotalSamples.mean)
@@ -624,7 +624,7 @@ class DatAnalyzer(QBase):
                     last.append(qn)
                 #end if
             #end for
-            mid = sorted(list(squants-set(first)-set(last)))
+            mid = sorted(squants-set(first)-set(last))
             order = first+mid+last
             self.log(f'\n{prefix}  series {series}')
             for qname in order:
@@ -643,7 +643,7 @@ class DatAnalyzer(QBase):
         #end if
     #end def write_stats
 
-    
+
     def stat_line(self,qname,compress=False,prec='auto'):
         opt = self.options
         q = self.stats[qname]
@@ -794,7 +794,7 @@ class QMCA(QBase):
 
 
     def examples(self):
-        examples = '''  
+        examples = '''
 QMCA examples:
 =============
 
@@ -821,9 +821,9 @@ QMCA examples:
    qmca -q ev qmc.s*.scalar.dat
 
  setting equilibration lengths
-  equilibration length of 10 applied to all files    
+  equilibration length of 10 applied to all files
    qmca -e 10 qmc.s000.scalar.dat  qmc.s001.scalar.dat
-  equilibration lengths of 10 and 20 applied series 0 and 1    
+  equilibration lengths of 10 and 20 applied series 0 and 1
    qmca -e '10 20' qmc.s000.scalar.dat  qmc.s001.scalar.dat
 
  twist averaging
@@ -839,11 +839,11 @@ QMCA examples:
 
  plotting vs samples (sample traces)
    qmca -t -q e -e 10 qmc.s*.scalar.dat
-   
+
  plotting multiple twists on the same plot
    qmca -po -q e -e 10 qmc.g*.s*.scalar.dat
    qmca -to -q e -e 10 qmc.g*.s*.scalar.dat
-   
+
  plotting twist averages
    qmca -pa -q e -e 10 qmc.g*.s*.scalar.dat
    qmca -ta -q e -e 10 qmc.g*.s*.scalar.dat
@@ -985,7 +985,7 @@ QMCA examples:
         parser.add_option('-n', '--enlarge_system',dest='particle_number',
                           type="int", nargs=2, default=None,
                           help=('Show number of samples needed to maintain '
-                                'error bar on larger system: desired particle number ' 
+                                'error bar on larger system: desired particle number '
                                 'first, current particle number second (default=%default)'
                                )
                          )
@@ -1250,7 +1250,7 @@ QMCA examples:
             if not isdat:
                 msg = (
                     f'{file} is not a valid source of input\n'
-                    f'please aim qmca at files with the following extensions: {[v for v in allowed_extensions.values()]}'
+                    f'please aim qmca at files with the following extensions: {list(allowed_extensions.values())}'
                     )
                 raise ValueError(msg)
             #end if
@@ -1263,13 +1263,13 @@ QMCA examples:
                 if len(missing)>1:
                     msg = (
                         f'files with prefix {prefix} are missing series provided for other prefixes\n'
-                        f'series provided for prefix {prefix}: {sorted(list(pset))}\n'
-                        f'series missing: {sorted(list(missing))}'
+                        f'series provided for prefix {prefix}: {sorted(pset)}\n'
+                        f'series missing: {sorted(missing)}'
                         )
                     raise ValueError(msg)
                 #end if
             #end for
-            serieslist = sorted(list(seriesset))
+            serieslist = sorted(seriesset)
             for series in serieslist:
                 filetypes = set()
                 for pdata in data.values():
@@ -1278,15 +1278,15 @@ QMCA examples:
                 if len(filetypes)>1:
                     msg = (
                         f'files with mixed extensions encountered for series {series}\n'
-                        f'extensions encountered: {sorted(list(filetypes))}\n'
-                        f'please provide files with only one of the following extensions: {[v for v in allowed_extensions.values()]}'
+                        f'extensions encountered: {sorted(filetypes)}\n'
+                        f'please provide files with only one of the following extensions: {list(allowed_extensions.values())}'
                         )
                     raise ValueError(msg)
                 #end if
             #end for
-            
+
             weights = opt.weights
-            prefixes = sorted(list(data.keys()))
+            prefixes = sorted(data.keys())
 
             # identify batches of prefixes for averaging
             batch_prefixes = obj()
@@ -1704,26 +1704,26 @@ if __name__=='__main__':
     QMCA()
 #end if
 
-   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

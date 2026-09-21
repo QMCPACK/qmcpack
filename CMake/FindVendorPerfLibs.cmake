@@ -51,8 +51,12 @@
 #     - "IntelMKL" : Intel Math Kernel Library
 #     - "AOCL"     : AMD Optimizing CPU Libraries
 #     - "Generic"  : Generic libraries (e.g., standard BLAS/LAPACK and FFTW)
-#   Note: If VPL_ID is not provided, the module will attempt to auto-detect
-#   the appropriate vendor by checking for the presence of the MKL core or AOCL utils libraries.
+#   Note: If VPL_ID is not set, the following rules determine its value
+#   (once a rule applies, the subsequent rules are ignored):
+#     1. "Generic" if BLA_VENDOR was specified.
+#     2. "IntelMKL" if the Intel MKL mkl_core library file was found.
+#     3. "AOCL" if the AOCL aoclutils library file was found.
+#     4. "Generic" if all previous rules fail.
 #
 # - VPL_OMP: If ON, OpenMP threading is requested. If OFF (default), sequential is used.
 #   Note: If ON, you must call find_package(OpenMP) before finding VendorPerfLibs.
@@ -121,7 +125,15 @@ macro(speculateVendor)
 endmacro()
 
 if(NOT VPL_ID)
-  speculateVendor()
+  if(BLA_VENDOR)
+    # If BLA_VENDOR was set, interpret user intention as opting out of auto-detection by VPL.
+    set(VPL_ID_GUESS "Generic")
+    if(NOT VendorPerfLibs_FIND_QUIETLY)
+      message(STATUS "BLA_VENDOR has been set to '${BLA_VENDOR}'. Guessed VPL_ID 'Generic'.")
+    endif()
+  else()
+    speculateVendor()
+  endif()
 else()
   check_VPL_ID("VPL_ID" "${VPL_ID}")
 endif()
@@ -237,7 +249,6 @@ endmacro()
 macro(find_VPL_lapack)
   set(VPL_lapack_ID ${VPL_ID} CACHE STRING "Vendor LAPACK ID (IntelMKL, AOCL, Generic)")
   check_VPL_ID("VPL_lapack_ID" "${VPL_lapack_ID}")
-  list(APPEND _vpl_required_vars LAPACK_LIBRARIES)
 
   if(VPL_lapack_ID STREQUAL "IntelMKL")
     if(NOT VPL_ID STREQUAL "IntelMKL")

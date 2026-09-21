@@ -394,6 +394,9 @@ the path to the source directory.
     QMC_DISABLE_HIP_HOST_REGISTER  ON/OFF(default). If ON, make all the use of hipHostRegister/Unregister
                                    as no-op, namely disabling all the use of pinned memory.
 
+    QMC_OFFLOAD_USM                ON/OFF(default). If ON, enable OpenMP offload unified shared memory feature
+                                   that eliminates the device copies of data.
+
 - CPU Vendor Performance Libraries
 
   ::

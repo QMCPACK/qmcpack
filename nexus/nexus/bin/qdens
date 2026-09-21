@@ -1055,7 +1055,7 @@ class QMCDensityProcessor(QDBase):
                         msg = (
                             f'density estimator "{name}" must provide three positive '
                             f'delta values less than one in QMCPACK input file: {self.options.input}'
-                            
+
                             )
                         raise ValueError(msg)
                     #end if
@@ -1229,7 +1229,7 @@ class QMCDensityProcessor(QDBase):
         #   --format option (output file formats)
         if opt.formats is not None:
             opt.formats = input_list(opt.formats)
-            allowed_formats = set(['dat','xsf','chgcar'])
+            allowed_formats = {'dat','xsf','chgcar'}
             invalid = set(opt.formats)-allowed_formats
             if len(invalid)>0:
                 msg = (

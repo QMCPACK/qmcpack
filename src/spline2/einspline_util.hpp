@@ -19,7 +19,7 @@
 #define QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 
 #include "Message/CommOperators.h"
-#include "mpi/mpi_datatype.h"
+#include "Message/mpi_datatype.h"
 #include "Host/OutputManager.h"
 #include "bspline_traits.hpp"
 #include <limits>

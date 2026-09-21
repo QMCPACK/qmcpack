@@ -163,7 +163,7 @@ def check_generated_files(
                 gs = gen_input.return_structure()
                 # compare minimum image distances of all atomic coordinates
                 d = rs.min_image_distances(gs.pos,pairs=False)
-                # allow for small deviation due to precision of ascii floats in the text input files 
+                # allow for small deviation due to precision of ascii floats in the text input files
                 if d.min()<1e-6:
                     failed = False
                 #end if
@@ -192,7 +192,7 @@ def check_generated_files(
 
 def test_pwscf_relax_Ge_T(tmp_path):
     test_data = dict(
-        path = 'quantum_espresso/relax_Ge_T_vs_kpoints', 
+        path = 'quantum_espresso/relax_Ge_T_vs_kpoints',
         scripts = [
             'relax_vs_kpoints_example.py',
             ],

@@ -77,7 +77,7 @@ def test_coord_conversion():
             n+=1
         #end for
     #end for
-    
+
     cart_from_sphere = spherical_to_cartesian(sphere_ref)
     diff = np.abs(cart_ref-cart_from_sphere).max()
     assert(diff<1e-12)
@@ -94,7 +94,7 @@ def test_unit_grid_points():
     import numpy as np
 
     from ..testing import value_eq
-    from .. import numpy_extensions as npe    
+    from .. import numpy_extensions as npe
     from ..grid_functions import unit_grid_points
 
     lin_grid = np.array([0.00,0.25,0.50,0.75])
@@ -160,7 +160,7 @@ def test_unit_grid_points():
     ref = make_2d(lin_grid_endpoint,lin_gridh_endpoint)
     u = unit_grid_points((5,3),endpoint=[True,True])
     assert(value_eq(u,ref))
-    
+
     # test 3d grids
     ref = make_3d(lin_grid,lin_gridh,lin_grid)
     u = unit_grid_points((4,2,4))
@@ -233,7 +233,7 @@ def test_parallelotope_grid_points():
                                                centered=c,
                                                endpoint=ep)
                 assert(value_eq(p,ref))
-                
+
             #end for
         #end for
     #end for
@@ -408,9 +408,9 @@ def get_grids():
             )
 
         supported = obj(
-            parallelotope    = obj(dims=set([(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)])),
-            spheroid         = obj(dims=set([(2,2),(2,3),(3,3)])),
-            spheroid_surface = obj(dims=set([(1,2),(1,3),(2,3)])),
+            parallelotope    = obj(dims={(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)}),
+            spheroid         = obj(dims={(2,2),(2,3),(3,3)}),
+            spheroid_surface = obj(dims={(1,2),(1,3),(2,3)}),
             )
 
         gdict = dict(
@@ -518,7 +518,7 @@ def test_grid_initialization():
     #end for
 
     # check properties
-    bcs = set(tuple('op'))
+    bcs = set('op')
     for name in sorted(grids.keys()):
         g = grids[name]
         p = props[name]
@@ -628,7 +628,7 @@ def test_grid_reset():
     from ..grid_functions import ParallelotopeGrid
     from ..grid_functions import SpheroidGrid
     from ..grid_functions import SpheroidSurfaceGrid
-    
+
     grid_inputs = [
         ( ParallelotopeGrid   , obj(cells=(5,6),axes=[[1,0,0],[1,1,0]]) ),
         ( SpheroidGrid        , obj(cells=(5,6),axes=[[1,0,0],[1,1,0]]) ),
@@ -794,8 +794,8 @@ def test_grid_reshape():
         if p.bconds is None and p.sheared and p.translated:
             g = deepcopy(grids[name])
             gref = deepcopy(g)
-            points_shape = tuple(list(g.points.shape))
-            grid_shape   = tuple(list(g.shape))
+            points_shape = tuple(g.points.shape)
+            grid_shape   = tuple(g.shape)
             g.reshape_full()
             assert(g.shape==gref.shape)
             assert(g.points.shape==gref.shape+(p.space_dim,))
@@ -859,8 +859,8 @@ def test_grid_unit_points():
     props = get_props()
 
     # Check that the points resident in the grid map as expected.
-    #   Further tests are necessary to verify correct tranformation 
-    #   of general points (perhaps those falling outside the grid 
+    #   Further tests are necessary to verify correct tranformation
+    #   of general points (perhaps those falling outside the grid
     #   domain) onto the unit space.
     for name in sorted(grids.keys()):
         g = deepcopy(grids[name])
@@ -1019,7 +1019,7 @@ def test_grid_project():
     import numpy as np
     from ..testing import object_eq
     from .. import numpy_extensions as npe
-    
+
     def make_1d(x):
         p = x.copy()
         npe.reshape_inplace(p, (len(p), 1))
@@ -1143,7 +1143,7 @@ def test_grid_axes_volume():
                 assert(1==0)
             #end if
         #end if
-        
+
     #end for
 #end def test_grid_axes_volume
 
@@ -1155,7 +1155,7 @@ def test_grid_volume():
     from ..grid_functions import ParallelotopeGrid
     from ..grid_functions import SpheroidGrid
     from ..grid_functions import SpheroidSurfaceGrid
-    
+
     grids = get_grids()
     props = get_props()
 
@@ -1235,7 +1235,7 @@ def test_grid_unit_metric():
     from ..grid_functions import ParallelotopeGrid
     from ..grid_functions import SpheroidGrid
     from ..grid_functions import SpheroidSurfaceGrid
-    
+
     grids = get_grids()
 
     # test parallelotope grids
@@ -1312,7 +1312,7 @@ def test_grid_function_initialization():
         GridFunction,
         StructuredGridFunction,
         StructuredGridFunctionWithAxes,
-        ] 
+        ]
 
     gftypes = [
         ParallelotopeGridFunction,
@@ -1331,7 +1331,7 @@ def test_grid_function_initialization():
         assert(not f.initialized)
         assert(not f.valid())
     #end for
-    
+
     def unit_function(u,fdim=None):
         values = np.cos(2*np.pi*(u-1)).sum(axis=1)
         if fdim is not None:
@@ -1358,7 +1358,7 @@ def test_grid_function_initialization():
                 values = f,
                 )
             assert(gf.valid())
-            
+
             assert(id(g)!=id(gf.grid))
             assert(gf.space_dim==g.space_dim)
             assert(gf.npoints==g.npoints)

@@ -35,7 +35,7 @@ def _VmB(VmKey, pid=None):
     '''
     global _scale
      # get pseudo file  /proc/<pid>/status
- 
+
     if not pid:
         pid = os.getpid()
     proc_status = '/proc/%d/status' % pid
