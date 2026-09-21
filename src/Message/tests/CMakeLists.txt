@@ -13,18 +13,8 @@ set(SRC_DIR message)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-add_executable(${UTEST_EXE} test_communciate.cpp)
+add_executable(${UTEST_EXE} test_communciate.cpp test_communicate_collectives.cpp)
 target_link_libraries(${UTEST_EXE} PUBLIC message catch_main containers)
-
-set(COLLECTIVES_UTEST_EXE test_${SRC_DIR}_collectives)
-set(COLLECTIVES_UTEST_NAME deterministic-unit_test_${SRC_DIR}_collectives)
-add_executable(${COLLECTIVES_UTEST_EXE} test_communicate_collectives.cpp)
-target_link_libraries(${COLLECTIVES_UTEST_EXE} PUBLIC message containers catch_main)
-
-add_unit_test(${COLLECTIVES_UTEST_NAME}-r1 1 1 $<TARGET_FILE:${COLLECTIVES_UTEST_EXE}>)
-if(HAVE_MPI)
-  add_unit_test(${COLLECTIVES_UTEST_NAME}-r2 2 1 $<TARGET_FILE:${COLLECTIVES_UTEST_EXE}>)
-endif()
 
 foreach(NUM_RANKS 1 2 3 6 12)
   set(UTEST_NAME_MPI ${UTEST_NAME}-r${NUM_RANKS})

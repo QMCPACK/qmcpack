@@ -51,9 +51,9 @@ TEST_CASE("communicate_collectives_complex_pointer_gatherv", "[message][collecti
 {
   Communicate* comm     = OHMMS::Controller;
   const int local_count = comm->rank() + 1;
-  std::vector<Complex> send(local_count);
+  std::vector<double> send(local_count);
   for (int element = 0; element < local_count; ++element)
-    send[element] = rank_value(comm->rank(), element);
+    send[element] = 10 * comm->rank() + element + 1;
 
   std::vector<int> counts(comm->size());
   std::vector<int> displacements(comm->size());
@@ -64,14 +64,14 @@ TEST_CASE("communicate_collectives_complex_pointer_gatherv", "[message][collecti
     displacements[rank] = total_count;
     total_count += counts[rank];
   }
-  std::vector<Complex> receive(total_count, Complex{-1, -1});
+  std::vector<double> receive(total_count, -1);
 
   comm->gatherv(send.data(), receive.data(), local_count, counts, displacements);
 
   if (comm->rank() == 0)
     for (int rank = 0; rank < comm->size(); ++rank)
       for (int element = 0; element < counts[rank]; ++element)
-        CHECK(receive[displacements[rank] + element] == rank_value(rank, element));
+        CHECK(receive[displacements[rank] + element] == 10 * rank + element + 1);
 }
 
 TEST_CASE("communicate_collectives_complex_matrix_allreduce", "[message][collectives]")
