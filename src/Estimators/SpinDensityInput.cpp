@@ -25,6 +25,7 @@ SpinDensityInput::SpinDensityInput(xmlNodePtr cur)
   setIfInInput(name_, "name");
   setIfInInput(write_report_, "report");
   setIfInInput(save_memory_, "save_memory");
+  setIfInInput(folding_, "folding");
   have_dr_     = setIfInInput(dr_, "dr");
   have_corner_ = setIfInInput(corner_, "corner");
   have_center_ = setIfInInput(center_, "center");
@@ -58,6 +59,9 @@ void SpinDensityInput::SpinDensityInputSection::checkParticularValidity()
     throw UniformCommunicateError(error_tag + "dr and grid are provided, this is ambiguous");
   if (!has("dr") && !has("grid"))
     throw UniformCommunicateError(error_tag + "must provide dr or grid");
+
+  if (has("folding") && get<bool>("folding") && !has("cell"))
+    throw UniformCommunicateError(error_tag + "folding requires an explicitly defined cell");
 
   if (has("cell"))
   {

@@ -16,6 +16,7 @@
 
 #include "Message/UniformCommunicateError.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <iostream>
@@ -36,7 +37,11 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
       custom_measurement_lattice_(input_.hasCustomCell() ? std::optional<Lattice>{input_.get_cell()} : std::nullopt),
       derived_parameters_(input_.calculateDerivedParameters(
           getInitialMeasurementLattice(input_, simulation_lattice_, custom_measurement_lattice_))),
-      implicit_corner_u_(simulation_lattice_.toUnit(derived_parameters_.corner))
+      implicit_corner_u_(simulation_lattice_.toUnit(derived_parameters_.corner)),
+      folded_measurement_cell_(makeFoldedMeasurementCell(input_,
+                                                         simulation_lattice_,
+                                                         custom_measurement_lattice_,
+                                                         derived_parameters_.corner))
 {
   data_locality_ = dl;
   data_.resize(getFullDataSize());
@@ -73,6 +78,51 @@ std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
 }
 
 size_t SpinDensityNew::getFullDataSize() const { return species_.size() * derived_parameters_.npoints; }
+
+std::optional<SpinDensityNew::FoldedMeasurementCell> SpinDensityNew::makeFoldedMeasurementCell(
+    const SpinDensityInput& input,
+    const Lattice& simulation_lattice,
+    const std::optional<Lattice>& custom_measurement_lattice,
+    const QMCT::PosType& custom_corner)
+{
+  if (!input.hasFolding())
+    return std::nullopt;
+
+  assert(custom_measurement_lattice);
+  if (simulation_lattice.SuperCellEnum != SUPERCELL_BULK)
+    throw UniformCommunicateError("SpinDensity input: folding requires a fully periodic simulation cell");
+
+  Tensor<FullPrecRealType, QMCT::DIM> rounded_transform;
+  for (int i = 0; i < QMCT::DIM; ++i)
+  {
+    const QMCT::PosType custom_u = custom_measurement_lattice->toUnit(simulation_lattice.Rv[i]);
+    for (int j = 0; j < QMCT::DIM; ++j)
+    {
+      const FullPrecRealType nearest_integer = std::round(custom_u[j]);
+      const FullPrecRealType tolerance       = folding_commensurability_absolute_tolerance +
+          folding_commensurability_relative_tolerance *
+              std::max(std::abs(static_cast<FullPrecRealType>(custom_u[j])), std::abs(nearest_integer));
+      if (!std::isfinite(custom_u[j]) || std::abs(custom_u[j] - nearest_integer) > tolerance)
+        throw UniformCommunicateError(
+            "SpinDensity input: folding requires simulation and measurement cells to be commensurate");
+      rounded_transform(i, j) = nearest_integer;
+    }
+  }
+
+  const FullPrecRealType transform_determinant = det(rounded_transform);
+  if (!std::isfinite(transform_determinant) || transform_determinant == 0.0)
+    throw UniformCommunicateError("SpinDensity input: folding requires a nonsingular cell transformation");
+
+  Lattice reduced_custom_lattice;
+  for (int i = 0; i < QMCT::DIM; ++i)
+  {
+    const QMCT::PosType axis_u = simulation_lattice.toUnit(custom_measurement_lattice->Rv[i]);
+    for (int j = 0; j < QMCT::DIM; ++j)
+      reduced_custom_lattice.R(i, j) = axis_u[j];
+  }
+  reduced_custom_lattice.reset();
+  return FoldedMeasurementCell{simulation_lattice.toUnit(custom_corner), std::move(reduced_custom_lattice)};
+}
 
 std::unique_ptr<OperatorEstBase> SpinDensityNew::spawnCrowdClone() const
 {
@@ -115,7 +165,7 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
 {
   const auto& dp_ = derived_parameters_;
   std::optional<CustomMeasurementCellBounds> custom_measurement_cell_bounds;
-  if (input_.hasCustomCell() && simulation_lattice_.SuperCellEnum != SUPERCELL_OPEN)
+  if (input_.hasCustomCell() && !input_.hasFolding() && simulation_lattice_.SuperCellEnum != SUPERCELL_OPEN)
     custom_measurement_cell_bounds = getCustomMeasurementCellBounds();
 
   for (int iw = 0; iw < walkers.size(); ++iw)
@@ -140,6 +190,11 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
             point += dp_.gdims[d] * static_cast<int>(dp_.grid[d] * (u[d] - std::floor(u[d])));
           accumulateToData(point, weight);
         }
+        else if (input_.hasFolding())
+        {
+          if (getFoldedCustomMeasurementCellPoint(pset.R[p], point))
+            accumulateToData(point, weight);
+        }
         else if (simulation_lattice_.SuperCellEnum == SUPERCELL_OPEN)
         {
           if (getCustomMeasurementCellPointForOpenSimulation(pset.R[p], point))
@@ -161,6 +216,28 @@ bool SpinDensityNew::getCustomMeasurementCellPointForOpenSimulation(const QMCT::
       return false;
     candidate_point += derived_parameters_.gdims[d] *
         std::min(static_cast<int>(derived_parameters_.grid[d] * u[d]), derived_parameters_.grid[d] - 1);
+  }
+  point = candidate_point;
+  return true;
+}
+
+bool SpinDensityNew::getFoldedCustomMeasurementCellPoint(const QMCT::PosType& position, size_t& point) const
+{
+  assert(folded_measurement_cell_);
+  const FoldedMeasurementCell& folded_measurement_cell = *folded_measurement_cell_;
+  const QMCT::PosType custom_u =
+      folded_measurement_cell.lattice_u.toUnit(simulation_lattice_.toUnit(position) - folded_measurement_cell.corner_u);
+  size_t candidate_point = point;
+  for (int d = 0; d < QMCT::DIM; ++d)
+  {
+    FullPrecRealType folded_u = custom_u[d] - std::floor(custom_u[d]);
+    if (folded_u >= 1.0 - folding_coordinate_tolerance)
+      folded_u = 0.0;
+
+    // Rounding can make a coordinate just below one index as the upper boundary.
+    const int bin =
+        std::clamp(static_cast<int>(derived_parameters_.grid[d] * folded_u), 0, derived_parameters_.grid[d] - 1);
+    candidate_point += derived_parameters_.gdims[d] * bin;
   }
   point = candidate_point;
   return true;

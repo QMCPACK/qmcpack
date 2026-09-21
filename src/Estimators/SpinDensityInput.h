@@ -46,9 +46,9 @@ public:
       // clang-format off
       section_name = type_tag;
       attributes   = {"name", "report", "save_memory"};
-      parameters   = {"dr", "grid", "corner", "center", "cell"};
+      parameters   = {"dr", "grid", "corner", "center", "cell", "folding"};
       strings      = {"name"};
-      bools        = {"report", "save_memory"};
+      bools        = {"report", "save_memory", "folding"};
       positions    = {"dr", "grid", "corner", "center"};
       multi_reals  = {"cell"};
       // clang-format on
@@ -65,6 +65,7 @@ public:
   Lattice get_cell() const { return cell_; }
   /// True when input supplies a finite density cell rather than inheriting the simulation cell.
   bool hasCustomCell() const { return have_cell_; }
+  bool hasFolding() const { return folding_; }
   PosType get_corner() const { return corner_; }
   TinyVector<int, DIM> get_grid() const { return grid_; }
   int get_npoints() const { return npoints_; }
@@ -103,6 +104,7 @@ private:
   int npoints_{0};
   bool write_report_{false};
   bool save_memory_{false};
+  bool folding_{false};
   /** these are necessary for calculateDerivedParameters
    *
    *  If we are going to later write out a canonical input for

@@ -351,7 +351,7 @@ TEST_CASE("SpinDensityNew::accumulate partial cell", "[estimators]")
   CHECK(std::accumulate(crowd_data.begin(), crowd_data.end(), 0.0) == Approx(0.8));
 }
 
-TEST_CASE("SpinDensityNew::accumulate custom cell follows simulation lattice", "[estimators]")
+TEST_CASE("SpinDensityNew::accumulate custom cell remains Cartesian after simulation lattice change", "[estimators]")
 {
   using MCPWalker = OperatorEstBase::MCPWalker;
 
@@ -395,6 +395,164 @@ TEST_CASE("SpinDensityNew::accumulate custom cell follows simulation lattice", "
   const auto& data = sdn.get_data();
   CHECK(data[4] == 1.0);
   CHECK(std::accumulate(data.begin(), data.end(), 0.0) == 1.0);
+}
+
+TEST_CASE("SpinDensityNew folds a commensurate supercell", "[estimators]")
+{
+  using MCPWalker = OperatorEstBase::MCPWalker;
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"XML(
+<estimator type="spindensity">
+  <parameter name="grid">2 2 2</parameter>
+  <parameter name="corner">0 0 0</parameter>
+  <parameter name="cell">1 0 0 0 1 0 0 0 1</parameter>
+  <parameter name="folding">yes</parameter>
+</estimator>
+)XML"));
+  SpinDensityInput sdi(doc.getRoot());
+  SpeciesSet species_set;
+  const int ispecies                = species_set.addSpecies("u");
+  const int iattribute              = species_set.addAttribute("membersize");
+  species_set(iattribute, ispecies) = 8;
+
+  Lattice simulation_lattice;
+  simulation_lattice.BoxBConds = true;
+  simulation_lattice.R         = ParticleSet::Tensor_t(2.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0);
+  simulation_lattice.reset();
+  SpinDensityNew sdn(std::move(sdi), simulation_lattice, species_set);
+
+  std::vector<MCPWalker> walkers(1, MCPWalker(8));
+  walkers[0].Weight = 1.25;
+  const SimulationCell simulation_cell(simulation_lattice);
+  std::vector<ParticleSet> psets;
+  psets.emplace_back(simulation_cell);
+  psets.back().create({8});
+  psets.back().R[0] = ParticleSet::PosType(0.75, 0.25, 0.25);
+  psets.back().R[1] = ParticleSet::PosType(1.75, 0.25, 0.25);
+  psets.back().R[2] = ParticleSet::PosType(0.75, 1.25, 0.25);
+  psets.back().R[3] = ParticleSet::PosType(1.75, 1.25, 0.25);
+  psets.back().R[4] = ParticleSet::PosType(0.0, 0.5, 0.5);
+  psets.back().R[5] = ParticleSet::PosType(1.0, 0.5, 0.5);
+  psets.back().R[6] = ParticleSet::PosType(0.0, 1.5, 0.5);
+  psets.back().R[7] = ParticleSet::PosType(1.0, 1.5, 0.5);
+
+  std::vector<TrialWaveFunction> wfns;
+  std::vector<QMCHamiltonian> hams;
+  auto ref_walkers = makeRefVector<MCPWalker>(walkers);
+  auto ref_psets   = makeRefVector<ParticleSet>(psets);
+  auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
+  auto ref_hams    = makeRefVector<QMCHamiltonian>(hams);
+  FakeRandom<OHMMS_PRECISION_FULL> rng;
+
+  sdn.accumulate(ref_walkers, ref_psets, ref_wfns, ref_hams, rng);
+  const auto& data = sdn.get_data();
+  CHECK(data[3] == Approx(5.0));
+  CHECK(data[4] == Approx(5.0));
+  CHECK(std::accumulate(data.begin(), data.end(), 0.0) == Approx(10.0));
+
+  std::vector<QMCT::PosType> reduced_positions;
+  for (const ParticleSet& pset : psets)
+    for (const QMCT::PosType& position : pset.R)
+      reduced_positions.push_back(simulation_lattice.toUnit(position));
+
+  simulation_lattice.R = ParticleSet::Tensor_t(4.0, 0.0, 0.0, 1.0, 3.0, 0.0, 0.0, 0.0, 1.0);
+  simulation_lattice.reset();
+  for (int p = 0; p < psets.back().getTotalNum(); ++p)
+    psets.back().R[p] = simulation_lattice.toCart(reduced_positions[p]);
+
+  sdn.accumulate(ref_walkers, ref_psets, ref_wfns, ref_hams, rng);
+  CHECK(data[3] == Approx(10.0));
+  CHECK(data[4] == Approx(10.0));
+  CHECK(std::accumulate(data.begin(), data.end(), 0.0) == Approx(20.0));
+}
+
+TEST_CASE("SpinDensityNew folds custom-cell boundaries", "[estimators]")
+{
+  using MCPWalker = OperatorEstBase::MCPWalker;
+
+  Libxml2Document doc;
+  REQUIRE(doc.parseFromString(R"XML(
+<estimator type="spindensity">
+  <parameter name="grid">2 2 2</parameter>
+  <parameter name="corner">0 0 0</parameter>
+  <parameter name="cell">0.7 0 0 0 1 0 0 0 1</parameter>
+  <parameter name="folding">yes</parameter>
+</estimator>
+)XML"));
+  SpinDensityInput sdi(doc.getRoot());
+  SpeciesSet species_set;
+  const int ispecies                = species_set.addSpecies("u");
+  const int iattribute              = species_set.addAttribute("membersize");
+  species_set(iattribute, ispecies) = 2;
+
+  Lattice simulation_lattice;
+  simulation_lattice.BoxBConds = true;
+  simulation_lattice.R         = ParticleSet::Tensor_t(1.4, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+  simulation_lattice.reset();
+  SpinDensityNew sdn(std::move(sdi), simulation_lattice, species_set);
+
+  std::vector<MCPWalker> walkers(1, MCPWalker(2));
+  const SimulationCell simulation_cell(simulation_lattice);
+  std::vector<ParticleSet> psets;
+  psets.emplace_back(simulation_cell);
+  psets.back().create({2});
+  psets.back().R[0] = ParticleSet::PosType(0.7, 0.25, 0.25);
+  psets.back().R[1] = ParticleSet::PosType(0.6999, 0.25, 0.25);
+  std::vector<TrialWaveFunction> wfns;
+  std::vector<QMCHamiltonian> hams;
+  auto ref_walkers = makeRefVector<MCPWalker>(walkers);
+  auto ref_psets   = makeRefVector<ParticleSet>(psets);
+  auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
+  auto ref_hams    = makeRefVector<QMCHamiltonian>(hams);
+  FakeRandom<OHMMS_PRECISION_FULL> rng;
+
+  sdn.accumulate(ref_walkers, ref_psets, ref_wfns, ref_hams, rng);
+  const auto& data = sdn.get_data();
+  CHECK(data[0] == 1.0);
+  CHECK(data[4] == 1.0);
+  CHECK(std::accumulate(data.begin(), data.end(), 0.0) == 2.0);
+}
+
+TEST_CASE("SpinDensityNew rejects invalid folding geometries", "[estimators]")
+{
+  const std::string folding_input = R"XML(
+<estimator type="spindensity">
+  <parameter name="grid">2 2 2</parameter>
+  <parameter name="corner">0 0 0</parameter>
+  <parameter name="cell">1 0 0 0 1 0 0 0 1</parameter>
+  <parameter name="folding">yes</parameter>
+</estimator>
+)XML";
+
+  SpeciesSet species_set;
+  const int ispecies                = species_set.addSpecies("u");
+  const int iattribute              = species_set.addAttribute("membersize");
+  species_set(iattribute, ispecies) = 1;
+
+  SECTION("noncommensurate simulation cell")
+  {
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(folding_input));
+    SpinDensityInput sdi(doc.getRoot());
+    Lattice simulation_lattice;
+    simulation_lattice.BoxBConds = true;
+    simulation_lattice.R         = ParticleSet::Tensor_t(1.5, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+    simulation_lattice.reset();
+    CHECK_THROWS_AS(SpinDensityNew(std::move(sdi), simulation_lattice, species_set), UniformCommunicateError);
+  }
+
+  SECTION("open simulation cell")
+  {
+    Libxml2Document doc;
+    REQUIRE(doc.parseFromString(folding_input));
+    SpinDensityInput sdi(doc.getRoot());
+    Lattice simulation_lattice;
+    simulation_lattice.BoxBConds = false;
+    simulation_lattice.R         = ParticleSet::Tensor_t(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+    simulation_lattice.reset();
+    CHECK_THROWS_AS(SpinDensityNew(std::move(sdi), simulation_lattice, species_set), UniformCommunicateError);
+  }
 }
 
 TEST_CASE("SpinDensityNew::accumulate open finite cell", "[estimators]")
