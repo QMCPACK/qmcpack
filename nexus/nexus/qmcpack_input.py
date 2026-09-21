@@ -2277,7 +2277,6 @@ class molecular_orbital_builder(QIxml):
     tag = 'sposet_builder'
     identifier  = 'type'
     attributes  = ('name','type','transform','source','cuspcorrection','href')
-    elements    = ('basisset','sposet')
     elements    = ('basisset','sposet','rotated_sposet')
     write_types = obj(transform=yesno,cuspcorrection=yesno)
 #end class molecular_orbital_builder
@@ -2809,7 +2808,7 @@ estimator = QIxmlFactory(
                  momentum               = momentum,
                  momentumdistribution   = momentumdistribution,
                  onebodydensitymatrices = onebodydensitymatrices,
-                 # afqmc estimators   
+                 # afqmc estimators
                  back_propagation       = back_propagation,
                  ),
     typekey  = 'type',
@@ -3032,8 +3031,8 @@ class rmc(QIxml):
 
 class vmc_batch(QIxml):
     # Do not assume all of the parameters below are supported.
-    # These were simply copied over from legacy drivers because the 
-    # batched driver compatible inputs have yet not been listed anywhere. 
+    # These were simply copied over from legacy drivers because the
+    # batched driver compatible inputs have yet not been listed anywhere.
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ('method','move','profiling','kdelay','checkpoint')
