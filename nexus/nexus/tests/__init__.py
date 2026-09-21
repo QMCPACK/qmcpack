@@ -218,6 +218,7 @@ class NexusTestOrder(IntEnum):
     RMG_ANALYZER                    = auto()
     QMCPACK_CONVERTER_ANALYZERS     = auto()
     QMCPACK_ANALYZER                = auto()
+    ANALYZE_OUTPUT                  = auto()
     VASP_SIMULATION                 = auto()
     PWSCF_SIMULATION                = auto()
     GAMESS_SIMULATION               = auto()
@@ -234,4 +235,5 @@ class NexusTestOrder(IntEnum):
     QDENS                           = auto()
     QDENS_RADIAL                    = auto()
     QMCA                            = auto()
+    ESHDF                           = auto()
     USER_EXAMPLES                   = auto()

@@ -536,7 +536,7 @@ def test_qixml_class_init():
         expanded_names = obj,
         afqmc_order    = tuple,
         )
-    optional = set(['expanded_names','afqmc_order'])
+    optional = {'expanded_names','afqmc_order'}
     assert(len(attr_types)==25)
 
     def valid_name(s):

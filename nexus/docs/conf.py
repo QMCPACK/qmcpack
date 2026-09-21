@@ -35,7 +35,7 @@ from pathlib import Path
 import importlib
 from importlib.metadata import PackageNotFoundError
 nxs_root = Path(__file__).parent.parent.resolve()
-sys.path.append(str(nxs_root))
+sys.path.insert(0,str(nxs_root))
 
 # Not sure why, but Sphinx has problems with this import unless it's in this file
 from CifFile import CifFile

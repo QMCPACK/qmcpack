@@ -97,7 +97,7 @@ def get_cpu_cores() -> int:
                 output = query.stdout.decode().strip().splitlines()
                 # set will automatically remove duplicate entries.
                 # Anything that remains is the list of physical cores.
-                output = set([i for i in output if not i.startswith("#")])
+                output = {i for i in output if not i.startswith("#")}
                 n_cores = len(output)
             case "Darwin":
                 query = subprocess.run(
