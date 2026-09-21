@@ -1,10 +1,12 @@
-// Copyright 2018-2023 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
-#include "../../mpi3/main.hpp"
-#include "../../mpi3/communicator.hpp"
+#include <mpi3/communicator.hpp>
+#include <mpi3/environment.hpp>
 
-#include<list>
-#include<vector>
+#include <boost/core/lightweight_test.hpp>
+#include <list>
+#include <utility>
+#include <vector>
 
 namespace mpi3 = boost::mpi3;
 
@@ -13,10 +15,14 @@ struct projector {
 
 	explicit projector(mpi3::communicator comm) : n_{5}, comm_{std::move(comm)} {}
 
-	projector(projector const&) = default;
 	projector(projector     &&) = default;
-
+#ifdef _MSC_VER
+	projector(projector const& other) : n_{other.n_}, comm_{other.comm_} {}  // mutable member: const& gives non-const access. Necessary for MSVC
+	auto operator=(projector const& other) -> projector& { n_ = other.n_; comm_ = std::move(mpi3::communicator{other.comm_}); return *this; }  // NOLINT(clang-diagnostic-deprecated-declarations)
+#else
+	projector(projector const&) = default;
 	auto operator=(projector const&) -> projector& = default;  // NOLINT(clang-diagnostic-deprecated-declarations) TODO(correaa) deprecate copy assigment
+#endif
 	auto operator=(projector     &&) -> projector& = default;  // NOLINT(clang-diagnostic-deprecated-declarations) TODO(correaa) deprecate move assigment
 //  auto operator=(projector      &) -> projector& = default;
 
@@ -37,12 +43,16 @@ struct projector2 {
 
 	explicit projector2(mpi3::communicator comm) : n_{5}, comm_{std::move(comm)} {}
 
-	projector2(projector2 const&) = default;
 	projector2(projector2     &&) = default;
+#ifdef _MSC_VER
+	projector2(projector2 const& other) : n_{other.n_}, comm_{other.comm_} {}  // mutable member: const& gives non-const access. Necessary for MSVC
+#else
+	projector2(projector2 const&) = default;
+#endif
 
 	auto operator=(projector2 const& other) -> projector2& {
 		if(this == &other) {return *this;}
-		assert(comm_ == other.comm_);
+		BOOST_TEST(comm_.compare(other.comm_) == mpi3::detail::equality::congruent);
 		n_ = other.n_;
 		return *this;
 	}
@@ -66,8 +76,12 @@ struct projector3 {  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-
 
 	explicit projector3(mpi3::communicator comm) : n_{5}, comm_{std::move(comm)} {}
 
-	projector3(projector3 const&) = default;
 	projector3(projector3     &&) = default;
+#ifdef _MSC_VER
+	projector3(projector3 const& other) : n_{other.n_}, comm_{other.comm_} {}  // mutable member: const& gives non-const access. Necessary for MSVC
+#else
+	projector3(projector3 const&) = default;
+#endif
 
 	auto operator=(projector3 other) noexcept -> projector3& {
 		swap(other);
@@ -92,7 +106,11 @@ struct projector3 {  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-
 	}
 };
 
-auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int try {
+auto main(int argc, char** argv) -> int try {
+	mpi3::environment env(argc, argv);
+
+	auto world = env.world();
+
 //  {
 //      projector const p{world};
 //      projector p2;
@@ -114,12 +132,11 @@ auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int tr
 		v.emplace_back(world);
 		v.emplace_back(world);
 		v[1] = v[0];
-		assert( v[1] == v[0] );
+		BOOST_TEST( v[1] == v[0] );
 		v[1] = std::move(v[0]);
-		assert( v[0] == v[0] );
-		assert( v[0].get_comm().is_empty() );
+		BOOST_TEST( v[0].get_comm().is_empty() );
 		v[1] = static_cast<projector const&>(v[2]);
-		assert( v[2].get_comm() == world );
+		BOOST_TEST( v[2].get_comm() == world );
 	}
 	{ // but this works because the member is mutable
 		std::vector<projector2> v = {projector2{world}, projector2{world}};
@@ -127,12 +144,11 @@ auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int tr
 		v.emplace_back(world);
 		v.emplace_back(world);
 		v[1] = v[0];
-		assert( v[1] == v[0] );
+		BOOST_TEST( v[1] == v[0] );
 		v[1] = std::move(v[0]);
-		assert( v[0] == v[0] );
-		assert( v[0].get_comm().is_empty() );
+		BOOST_TEST( v[0].get_comm().is_empty() );
 		v[1] = static_cast<projector2 const&>(v[2]);
-		assert( v[2].get_comm() == world );
+		BOOST_TEST( v[2].get_comm() == world );
 	}
 	{ // but this works because the member is mutable
 		std::vector<projector3> v = {projector3{world}, projector3{world}};
@@ -140,21 +156,19 @@ auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int tr
 		v.emplace_back(world);
 		v.emplace_back(world);
 		v[1] = v[0];
-		assert( v[1] == v[0] );
+		BOOST_TEST( v[1] == v[0] );
 		v[1] = std::move(v[0]);
-		assert( v[0] == v[0] );
-		assert( v[0].get_comm().is_empty() );
+		BOOST_TEST( v[0].get_comm().is_empty() );
 		v[1] = static_cast<projector3 const&>(v[2]);
-		assert( v[2].get_comm() == world );
+		BOOST_TEST( v[2].get_comm() == world );
 	}
 	{
-		mpi3::communicator comm;
-		assert( not comm );
-		assert( comm.is_empty() );
+		mpi3::communicator const comm;
+		BOOST_TEST( ! comm );
+		BOOST_TEST( comm.is_empty() );
 	}
 
-	return 0;
+	return boost::report_errors();
 } catch(...) {
-	return 0;
+	return 1;
 }
-

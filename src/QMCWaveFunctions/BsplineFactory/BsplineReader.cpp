@@ -85,10 +85,6 @@ void BsplineReader::setCommon(xmlNodePtr cur)
   }
   saveSplineCoefs = saveCoefs == "yes";
   use_offload     = CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET;
-  if (use_offload)
-    app_summary() << "    Running OpenMP offload code path." << std::endl;
-  else
-    app_summary() << "    Running on CPU." << std::endl;
 }
 
 std::unique_ptr<SPOSet> BsplineReader::create_spline_set(const std::string& spo_name,

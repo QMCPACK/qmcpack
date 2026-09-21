@@ -26,14 +26,19 @@
 
 
 import os
-import gc as garbage_collector
-from os import PathLike
+import pickle
+import sys
+import textwrap
 from copy import deepcopy
-from .utilities import path_string
-from .nexus_version import nexus_version
-from .memory import resident
-from .developer import DevBase, obj, log
+from os import PathLike
+from pathlib import Path
+from pickle import UnpicklingError
+from typing import Literal
 
+from .developer import DevBase, nxs_print, obj
+from .memory import resident
+from .nexus_version import nexus_version
+from .utilities import path_string
 
 # Nexus namespaces
 #  nexus_core:   to be used by NexusCore classes only
@@ -60,9 +65,6 @@ modes = obj(
     stages     = 6,
     all        = 7
     )
-
-garbage_collector.enable()
-
 
 nexus_noncore_defaults = obj(
     basis_dir         = None,
@@ -92,7 +94,7 @@ nexus_core_defaults = obj(
     stages_set        = set(),             # used by: ProjectManager,Simulation
     stages            = [],                # used by: Simulation
     primary_modes     = ['setup','send_files','submit','get_output','analyze'], # used by: Settings
-    dependent_modes   = set(['submit']),   # used by: ProjectManager,Simulation
+    dependent_modes   = {'submit'},   # used by: ProjectManager,Simulation
     verbose           = True,              # used by: NexusCore
     debug             = False,             # used by: NexusCore
     trace             = False,             # used by: NexusCore
@@ -124,21 +126,28 @@ restore_nexus_core_defaults()
 
 nexus_core_no_process = {'status_only', 'generate_only', 'sleep', 'timeout'}
 
+nexus_modules = [mod.stem for mod in Path(__file__).parent.iterdir() if mod.suffix == ".py"]
 
-class NexusCore(DevBase):
+class NexusUnpickler(pickle.Unpickler):
+    """This class is designed for backwards compatibility with pickles generated
+    before Nexus was packaged (PR #5700, December 20, 2025).
+    It shouldn't touch anything but old Nexus pickles.
+    """
+    def find_class(self, module, name):
+        if module in nexus_modules and "nexus." not in module:
+            module = "nexus." + module
+        if module == "nexus.generic":
+            if name == "obj":
+                module = "nexus.developer_tools"
+            elif name == "DevBase":
+                module = "nexus.developer"
 
-    # garbage collector
-    gc = garbage_collector
+        return super().find_class(module, name)
 
-    # mutable/dynamic nexus core data
-    wrote_something   = False # for pretty printing
-    working_directory = None
-    wrote_splash      = False
 
-    @staticmethod
-    def write_splash():
-        if not NexusCore.wrote_splash:
-            splash_text = '''
+def write_splash():
+    if not hasattr(write_splash, "wrote_splash"):
+        splash_text = '''
 _____________________________________________________
 
                      Nexus {}.{}.{}
@@ -149,83 +158,61 @@ _____________________________________________________
   J. T. Krogel Comput. Phys. Commun. 198 154 (2016)
      https://doi.org/10.1016/j.cpc.2015.08.012
 _____________________________________________________
-          
-            '''.format(*nexus_version)
-            log(splash_text)
-            NexusCore.wrote_splash = True
-        #end if
-    #end def write_splash
 
-    @staticmethod
-    def write_end_splash():
-        return # don't do this yet
-        splash_text = '''
-_____________________________________________________
-_____________________________________________________
-            '''
-        print(splash_text)
-    #end def write_end_splash
+'''.format(*nexus_version)
+        nxs_print(splash_text)
+        write_splash.wrote_splash = True
+    #end if
+#end def write_splash
+
+
+class NexusCore(DevBase):
+
+    # mutable/dynamic nexus core data
+    wrote_something   = False # for pretty printing
+    working_directory = None
 
     def mem_usage(self):
         return int(resident()/1e6)
     #end def mem_usage
 
-    def log(self,*texts,**kwargs):
-        """Write output to log file.
+    def nxs_print(self, *texts: str, n: int = 0, progress: bool = False):
+        """Write text to standard output.
 
         Parameters
         ----------
         *texts
-            Strings that will be joined by newlines
+            Strings that will be joined by newline characters.
         n : int, kwargs
-            Spaces to indent
+            Spaces to indent by.
         progress : bool, kwargs
             If ``True`` and output is to a terminal, overwrite and update the
             last line, rather than scrolling.
         """
         if nexus_core.verbose:
-            if len(kwargs)>0:
-                n = kwargs['n']
+            text = ' '.join(str(t) for t in texts)
+            output_text = textwrap.indent(text, n * nexus_core.indent)
+            if nexus_core.progress_tty and progress and sys.stdout.isatty():
+                # Line up + Line clear ANSI sequence
+                sys.stdout.write('\033[1A'+'\x1b[2K')
+                sys.stdout.write(output_text+"\n")
+                sys.stdout.flush()
             else:
-                n=0
-            #end if
-            is_progress = kwargs.get('progress',False)
-            text=''
-            for t in texts:
-                text+=str(t)+' '
-            #end for
-            pad = n*nexus_core.indent
-            output_text = pad+text.replace('\n','\n'+pad)
-            if nexus_core.progress_tty and is_progress and self._logfile.isatty():
-                # spaces to ensure previous line is overwritten.  Need better solution.
-                self._logfile.write(output_text+'        \r')
-                self._logfile.flush()
-            else:
-                self._logfile.write(output_text+'\n')
-        #end if
+                sys.stdout.write(output_text+'\n')
+                sys.stdout.flush()
+
         NexusCore.wrote_something = True
     #end def log
 
-    def dlog(self,*texts,**kwargs):
-        if nexus_core.debug:
-            #self.log('mem_usage',self.mem_usage(),n=5)
-            self.log(*texts,**kwargs)
-        #end if
-    #end def dlog
-
-    def tlog(self,*texts,**kwargs):
-        if nexus_core.trace:
-            self.log(*texts,**kwargs)
-            w,s,j,f,g,a=int(self.setup),int(self.submitted),int(self.job.finished),int(self.finished),int(self.got_output),int(self.analyzed)
-            self.log('w,s,j,f,g,a',w,s,j,f,g,a,n=kwargs['n']+1)
-            #self.log('dependencies',self.dependencies.keys(),n=kwargs['n']+1)
-            #self.log('dependents  ',self.dependents.keys(),n=kwargs['n']+1)
-        #end if
-    #end def tlog
-
-    def enter(self, directory: PathLike, *, changedir: bool = True, msg: str = ''):
+    def enter(
+        self,
+        directory: PathLike,
+        *,
+        changedir: bool = True,
+        msg: str = '',
+        ) -> Literal['      ']:
         """Have Nexus enter a directory and change its current working directory.
-        
+
         Parameters
         ----------
         directory : PathLike
@@ -240,10 +227,10 @@ _____________________________________________________
         NexusCore.working_directory = os.getcwd()
         directory = path_string(directory)
 
-        self.log('    Entering ' + directory, msg)
+        self.nxs_print('\nEntering ' + directory, msg, n=2)
         if changedir:
             os.chdir(directory)
-        #end if
+
         pad = '      '
         return pad
     #end def enter
@@ -252,6 +239,30 @@ _____________________________________________________
         os.chdir(NexusCore.working_directory)
     #end def leave
 
+    def load(self, fpath: PathLike | None = None):
+        if fpath is None:
+            fpath = f'./{type(self).__name__}.p'
+
+        with open(fpath, 'rb') as fobj:
+            try:
+                tmp = pickle.load(fobj)
+            except (ImportError, ModuleNotFoundError):
+                fobj.seek(0)
+                try:
+                    # Old pickles from before Nexus was packaged (PR #5700, December 20 2025)
+                    # won't have the correct module path. The custom unpickler will handle this by
+                    # prepending "nexus." to the module path
+                    tmp = NexusUnpickler(fobj).load()
+                except UnpicklingError:
+                    # NumPy pickles can use latin1 encoding
+                    # They will likely still fail from an underflow since they are not pickle-compliant
+                    tmp = NexusUnpickler(fobj).load(encoding='latin1')
+
+        d = self.__dict__
+        d.clear()
+        for k, v in tmp.__dict__.items():
+            d[k] = v
+    #end def load
 #end class NexusCore
 
 

@@ -129,8 +129,8 @@ if len(paths)>0:
         print('redo: backing up attempted sim runs')
     #end if
 else:
-    print('redo: no simulation directories found')
-    sys.exit()
+    msg = 'redo: no simulation directories found'
+    raise RuntimeError(msg)
 #end if
 cwd = os.getcwd()
 for path in sorted(paths.keys()):
@@ -144,16 +144,16 @@ for path in sorted(paths.keys()):
         if len(contents)==0:
             print('    no contents to backup')
         elif dryrun:
-            print('    would have created backup of {0} files in directory {1}'.format(len(contents),attempt_dir))
+            print(f'    would have created backup of {len(contents)} files in directory {attempt_dir}')
         else:
-            print('    creating backup of {0} files in directory {1}'.format(len(contents),attempt_dir))
+            print(f'    creating backup of {len(contents)} files in directory {attempt_dir}')
         #end if
     #end if
     if not dryrun and len(contents)>0:
         os.mkdir(attempt_dir)
         if os.path.exists(attempt_dir) and os.path.isdir(attempt_dir):
             for item in contents:
-                os.system('mv {0} {1}'.format(item,attempt_dir))
+                os.system(f'mv {item} {attempt_dir}')
             #end for
         else:
             print('  failed to create backup directory '+os.path.join(path,attempt_dir))

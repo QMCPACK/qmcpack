@@ -454,6 +454,15 @@ qmc_run_and_check(
   DET_HEG14GSSJB_SCALARS # VMC
 )
 
+qmc_run_and_check(
+  deterministic-heg_14_gamma-sjb-batched
+  "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
+  det_heg_SJB_batched
+  det_heg-SJB_batched.xml
+  1
+  1
+  TRUE)
+
 if(NOT QMC_MIXED_PRECISION)
   simple_run_and_check(
     deterministic-heg_14_gamma-sjb-opt
@@ -483,4 +492,16 @@ if(NOT QMC_MIXED_PRECISION)
     DET_HEG14GSSJB_OPT_SCALARS # VMC
   )
 
+  qmc_run_and_check(
+    deterministic-heg_14_gamma-sjb-opt-batched
+    "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
+    det_heg_SJB_opt_batched
+    det_heg-SJB_opt_batched.xml
+    1
+    1
+    TRUE)
+
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -1,36 +1,53 @@
+// Copyright 2020-2024 Alfredo A. Correa
+
 #include <mpi3/communicator.hpp>
-#include <mpi3/main.hpp>
-#if not defined(EXAMPI)
+#include <mpi3/environment.hpp>
+
+#ifndef EXAMPI
 #include <mpi3/ostream.hpp>
 #endif
 
+#include <algorithm>
+#include <boost/core/lightweight_test.hpp>
+#include <iostream>
+#include <iterator>
+#include <numeric>
+#include <thread>
+#include <vector>
+
 namespace mpi3 = boost::mpi3;
 
-auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int try {
-	assert(world.size() > 2);
+auto main(int argc, char** argv) -> int try {
+	mpi3::environment env(argc, argv);
+
+	auto world = env.world();
+
+	BOOST_TEST(world.size() > 2);
 
 	std::vector<int> large(10);
 	if(world.root()) {
-		iota(large.begin(), large.end(), 0);
+		iota(large.begin(), large.end(), 0);  // NOLINT(boost-use-ranges) for C++20, use std::ranges::iota
 	}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	mpi3::ostream wout(world);
-	wout << "before:" << std::endl;
-	std::copy(large.begin(), large.end(), std::ostream_iterator<int>(wout, " "));
+	wout << "before:\n" << std::flush;
+	std::copy(large.begin(), large.end(), std::ostream_iterator<int>(wout, " "));  // NOLINT(boost-use-ranges) for C++20, use std::ranges::copy
 
-	wout << std::endl;
+	wout << '\n' << std::flush;
 
 	{
 		auto req = world.ibroadcast(large.begin(), large.end(), 0);
 		using namespace std::chrono_literals;
-		std::this_thread::sleep_for(5s);
+		std::this_thread::sleep_for(5s);  // NOLINT(misc-include-cleaner) bug in clang-tidy 18.1
 	}
 
-	wout << "after:" << std::endl;
-	std::copy(large.begin(), large.end(), std::ostream_iterator<int>(wout, " "));
-	wout << std::endl;
+	wout << "after:\n" << std::flush;
+	std::copy(large.begin(), large.end(), std::ostream_iterator<int>(wout, " "));  // NOLINT(boost-use-ranges) for C++20, use std::ranges::copy
+	wout << '\n' << std::flush;
 #endif
 
-	return 0;
-} catch(...) {return 1;}
+	return boost::report_errors();
+} catch(...) {
+	return 1;
+}

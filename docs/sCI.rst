@@ -462,5 +462,3 @@ remember that CCSD(T) cannot correctly describe multireference systems;
 therefore, it is impossible to assess the correctness of the
 single-determinant-DMC result, making CIPSI-DMC calculations an ideal
 benchmark tool for multireference systems.
-
-.. bibliography:: /bibs/sCI.bib

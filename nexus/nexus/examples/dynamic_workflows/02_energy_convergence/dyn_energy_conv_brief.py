@@ -6,23 +6,23 @@ from nexus import generate_physical_system
 from nexus import generate_pwscf
 
 '''
-A simple type of dynamic workflow is to automatically determine 
-converged parameter values.  In DFT, two such cases are convergence 
-of the total energy with respect to increasing planewave energy 
-cutoff and to increasingly large k-poing grids.  
+A simple type of dynamic workflow is to automatically determine
+converged parameter values.  In DFT, two such cases are convergence
+of the total energy with respect to increasing planewave energy
+cutoff and to increasingly large k-poing grids.
 
-This example first iteratively finds a converged planewave energy 
-cutoff for a diamond primitive cell using a BFD potential for carbon 
-and terminating when successive iterations produce total energies 
-within 1e-4 Ry of each other.  The resulting energy cutoff is then 
-fed into another iterative convergence procedure for the k-point grid, 
-which stops when a tolerance of 1e-3 Ry has been met.  The converged 
-values for the energy cutoff and k-point grid are 330 Ry and 7x7x7, 
-respectively.  
+This example first iteratively finds a converged planewave energy
+cutoff for a diamond primitive cell using a BFD potential for carbon
+and terminating when successive iterations produce total energies
+within 1e-4 Ry of each other.  The resulting energy cutoff is then
+fed into another iterative convergence procedure for the k-point grid,
+which stops when a tolerance of 1e-3 Ry has been met.  The converged
+values for the energy cutoff and k-point grid are 330 Ry and 7x7x7,
+respectively.
 
-From this example, it is clear how the workflow can be extended to 
-include subsequent supercell expansion, Jastrow factor optimization, 
-and VMC/DMC runs with total energies converged below a specified 
+From this example, it is clear how the workflow can be extended to
+include subsequent supercell expansion, Jastrow factor optimization,
+and VMC/DMC runs with total energies converged below a specified
 minimum statistical errorbar.
 '''
 
@@ -56,7 +56,7 @@ def gen_qe(run_type   = 'scf',
         nkgrid = 1
         path = '01_ecut_conv/ecut_'+str(ecutwfc)
     else:
-        path = '02_kgrid_conv/kgrid_{0}{0}{0}'.format(nkgrid)
+        path = f'02_kgrid_conv/kgrid_{nkgrid}{nkgrid}{nkgrid}'
     assert run_type in {'scf','nscf'}
     if run_type=='scf':
         kgrid = 3*[nkgrid]
@@ -86,7 +86,7 @@ wm = workflow_manager()
 # determine planewave energy cutoff
 max_runs  = 10
 energies  = []
-ecut      = 50  
+ecut      = 50
 tol       = 1e-4
 converged = False
 ecuts     = []
@@ -136,7 +136,7 @@ while not converged:
             nkgrid += 1
             qe = gen_qe(ecutwfc=ecut,nkgrid=nkgrid)
         else:
-            print('Converged!!!  Final kgrid: {0}x{0}x{0}'.format(nkgrid))
+            print(f'Converged!!!  Final kgrid: {nkgrid}x{nkgrid}x{nkgrid}')
             converged = True
     elif qe.fail:
         print('\nQE run failed!!!')

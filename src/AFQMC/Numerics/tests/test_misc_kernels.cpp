@@ -33,7 +33,7 @@
 
 using boost::multi::array;
 using boost::multi::array_ref;
-using boost::multi::iextensions;
+using boost::multi::extents_t;
 using std::copy_n;
 
 namespace qmcplusplus
@@ -64,16 +64,16 @@ TEST_CASE("axpyBatched", "[Numerics][misc_kernels]")
   Alloc<std::complex<double>> alloc{};
   Tensor2D<std::complex<double>> y({3, 4}, 1.0, alloc);
   Tensor2D<std::complex<double>> x({3, 4}, 1.0, alloc);
-  Tensor1D<std::complex<double>> a(iextensions<1u>{3}, 2.0, alloc);
+  Tensor1D<std::complex<double>> a(extents_t<1u>{3}, 2.0, alloc);
   std::vector<pointer<std::complex<double>>> x_batched, y_batched;
   using std::get;
   for (int i = 0; i < get<0>(x.sizes()); i++)
   {
-    x_batched.emplace_back(x[i].origin());
-    y_batched.emplace_back(y[i].origin());
+    x_batched.emplace_back(x[i].base());
+    y_batched.emplace_back(y[i].base());
   }
   using ma::axpyBatched;
-  axpyBatched(get<1>(x.sizes()), to_address(a.origin()), x_batched.data(), 1, y_batched.data(), 1, x_batched.size());
+  axpyBatched(get<1>(x.sizes()), to_address(a.base()), x_batched.data(), 1, y_batched.data(), 1, x_batched.size());
   // 1 + 2 = 3.
   Tensor2D<std::complex<double>> ref({3, 4}, 3.0, alloc);
   verify_approx(y, ref);
@@ -91,14 +91,14 @@ TEST_CASE("construct_X", "[Numerics][misc_kernels]")
   double sqrtdt           = 0.002;
   double vbound           = 40.0;
   std::complex<double> im = std::complex<double>(0.0, 1.0);
-  Tensor1D<std::complex<double>> vmf(iextensions<1U>{ncv}, im, alloc);
+  Tensor1D<std::complex<double>> vmf(extents_t<1U>{ncv}, im, alloc);
   Tensor2D<std::complex<double>> vbias({ncv, nwalk}, 1.0, alloc);
   Tensor2D<std::complex<double>> hws({nsteps, nwalk}, -0.2, alloc);
   Tensor2D<std::complex<double>> mf({nsteps, nwalk}, 2.0, alloc);
   Tensor3D<std::complex<double>> x({ncv, nsteps, nwalk}, 0.1, alloc);
   using kernels::construct_X;
-  construct_X(ncv, nsteps, nwalk, fp, sqrtdt, vbound, to_address(vmf.origin()), to_address(vbias.origin()),
-              to_address(hws.origin()), to_address(mf.origin()), to_address(x.origin()));
+  construct_X(ncv, nsteps, nwalk, fp, sqrtdt, vbound, to_address(vmf.base()), to_address(vbias.base()),
+              to_address(hws.base()), to_address(mf.base()), to_address(x.base()));
   // captured from stdout.
   std::complex<double> ref_val = std::complex<double>(0.102, 0.08);
   Tensor3D<std::complex<double>> ref({ncv, nsteps, nwalk}, ref_val, alloc);
@@ -111,17 +111,17 @@ TEST_CASE("batchedDot", "[Numerics][misc_kernels]")
   Alloc<std::complex<double>> alloc{};
   std::complex<double> im = std::complex<double>(0.0, 1.0);
   int dim                 = 3;
-  Tensor1D<std::complex<double>> y(iextensions<1U>{dim}, im, alloc);
+  Tensor1D<std::complex<double>> y(extents_t<1U>{dim}, im, alloc);
   Tensor2D<std::complex<double>> A({dim, dim}, 1.0, alloc);
   Tensor2D<std::complex<double>> B({dim, dim}, -0.2, alloc);
   std::complex<double> alpha(2.0);
   std::complex<double> beta(-1.0);
   using kernels::batchedDot;
-  batchedDot(dim, dim, alpha, to_address(A.origin()), dim, to_address(B.origin()), dim, beta, to_address(y.origin()),
+  batchedDot(dim, dim, alpha, to_address(A.base()), dim, to_address(B.base()), dim, beta, to_address(y.base()),
              1);
   // from numpy.
   std::complex<double> ref_val(-1.2, -1.0);
-  Tensor1D<std::complex<double>> ref(iextensions<1U>{dim}, ref_val, alloc);
+  Tensor1D<std::complex<double>> ref(extents_t<1U>{dim}, ref_val, alloc);
   verify_approx(ref, y);
 }
 #endif

@@ -1,10 +1,7 @@
 #! /usr/bin/env python3
 
-from nexus import settings,job,run_project
-from nexus import generate_physical_system
-from nexus import generate_pwscf
-
-from nexus.structure import get_primitive_cell, get_kpath
+from nexus import generate_physical_system, generate_pwscf, job, run_project, settings
+from nexus.structure import get_kpath, get_primitive_cell
 
 settings(
     pseudo_dir    = '../../pseudopotentials',
@@ -45,14 +42,14 @@ scf = generate_pwscf(
     input_type   = 'generic',
     calculation  = 'scf',
     nspin        = 2,
-    input_dft    = 'lda', 
-    ecutwfc      = 200,   
-    conv_thr     = 1e-8, 
+    input_dft    = 'lda',
+    ecutwfc      = 200,
+    conv_thr     = 1e-8,
     nosym        = True,
     wf_collect   = True,
     system       = dia2,
     tot_magnetization = 0,
-    pseudos      = ['C.BFD.upf'], 
+    pseudos      = ['C.BFD.upf'],
     )
 #K-path of the standardized primitive cell
 dia2_structure.clear_kpoints()
@@ -68,26 +65,26 @@ band = generate_pwscf(
     job          = job(nodes=1,app='pw.x', hours = 1),
     input_type   = 'generic',
     calculation  = 'nscf',
-    input_dft    = 'lda', 
+    input_dft    = 'lda',
     ecutwfc      = 200,
-    nspin        = 2,   
+    nspin        = 2,
     conv_thr     = 1e-8,
     nosym        = True,
     wf_collect   = True,
     system       = dia2_kpts,
-    nbnd         = 8,      #a sensible nbnd value can be given 
+    nbnd         = 8,      #a sensible nbnd value can be given
     verbosity    = 'high', #verbosity must be set to high
-    pseudos      = ['C.BFD.upf'], 
+    pseudos      = ['C.BFD.upf'],
     dependencies = (scf, 'charge_density'),
     )
 
 run_project()
 
-if band.finished:
+performed_runs = not settings.generate_only and not settings.status_only
+if performed_runs and band.finished:
     from nexus.pwscf_analyzer import PwscfAnalyzer
     p = PwscfAnalyzer(band)
     p.analyze()
-    p.plot_bandstructure()
-    print("VBM: {0}".format(p.bands.vbm))
-    print("CBM: {0}".format(p.bands.cbm))
+    print(f"VBM: {p.Evbm()}")
+    print(f"CBM: {p.Ecbm()}")
 #end if

@@ -57,8 +57,8 @@ def test_bundle():
         bundle(levels[1]+[sims.s8])
 
     with pytest.raises(
-        NexusError,
-        match="SimulationBundle error:\nmultiple simulations in a single directory have the same identifier"
+        ValueError,
+        match="multiple simulations in a single directory have the same identifier"
         ):
         bundle(levels[1]+[sims.s9])
 

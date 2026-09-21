@@ -32,3 +32,6 @@ if(HAVE_MPI)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif(HAVE_MPI)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -49,7 +49,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
 
         ew,vw = energy_weight,variance_weight
         if ew is None or vw is None:
-            opts_in = []            
+            opts_in = []
             for qmc in input.simulation.calculations:
                 if qmc.method in self.opt_methods:
                     opts_in.append(qmc)
@@ -105,7 +105,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
         Vfail        = 1e3
         EVratio_fail = 0.30
         EVratio_soft_fail = 0.15
-        
+
         #save the energies and variances of opt iterations
         res = obj()
         variance_present = False
@@ -167,7 +167,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
             #end if
             i+=1
         #end for
-                
+
 
         self.update(
             any_complete   = any_complete,
@@ -196,7 +196,12 @@ class OptimizationAnalyzer(ResultAnalyzer):
         elif isinstance(optimize,(tuple,list)) and len(optimize)==2:
             ew,vw = optimize
         else:
-            self.error('selection for optimization is invalid\noptimize setting: {0}\nvalid options are: energy, variance, energy_within_variance_tol, or a length 2 tuple containing the cost of energy and variance, e.g. (.5,.5)'.format(optimize))
+            msg = (
+                'selection for optimization is invalid\n'
+                f'optimize setting: {optimize}\n'
+                'valid options are: energy, variance, energy_within_variance_tol, or a length 2 tuple containing the cost of energy and variance, e.g. (.5,.5)'
+                )
+            raise ValueError(msg)
         #end if
 
         self.failed = True
@@ -219,7 +224,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
                 index = cost.argmin()
                 opt_series = series[index]
             #end if
-            failed = abs(en[index])>Efail or abs(va[index])>Vfail or abs(va[index]/en[index])>EVratio_soft_fail 
+            failed = abs(en[index])>Efail or abs(va[index])>Vfail or abs(va[index]/en[index])>EVratio_soft_fail
 
             self.failed = failed
             # In QMCPACK series the optimal parameters are off by 1 index
@@ -237,7 +242,11 @@ class OptimizationAnalyzer(ResultAnalyzer):
             if norm=='per atom':
                 norm = len(self.info.system.structure.elem)
             else:
-                self.error('norm must be a number or "per atom"\n you provided '+norm)
+                msg = (
+                    'norm must be a number or "per atom"\n'
+                    ' you provided '+norm
+                    )
+                raise ValueError(msg)
             #end if
         #end if
         econv = convert(1.0,'Ha',units)/norm
@@ -253,19 +262,19 @@ class OptimizationAnalyzer(ResultAnalyzer):
         #end if
         if energy:
             if header:
-                print('  Energies ({0}):'.format(units))
+                print(f'  Energies ({units}):')
             #end if
             for i in range(len(en)):
-                print('    {0:>2}    {1:9.6f} +/-{2:9.6f}'.format(i,en[i]-emax,enerr[i]))
+                print(f'    {i:>2}    {en[i]-emax:9.6f} +/-{enerr[i]:9.6f}')
             #end for
-            print('    ref {0:9.6f}'.format(emax))
+            print(f'    ref {emax:9.6f}')
         #end if
         if variance:
             if header:
-                print('  Variances ({0}^2):'.format(units))
+                print(f'  Variances ({units}^2):')
             #end if
             for i in range(len(en)):
-                print('    {0:>2}    {1:9.6f} +/- {2:9.6f}'.format(i,va[i],vaerr[i]))
+                print(f'    {i:>2}    {va[i]:9.6f} +/- {vaerr[i]:9.6f}')
             #end for
         #end if
     #end def summarize
@@ -311,7 +320,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
         xticks(r)
         xlim([r[0]-.5,r[-1]+.5])
     #end def plot_opt_convergence
-    
+
 
     def plot_jastrow_convergence(self,title=None,*,saveonly=False,optconv=True):
         if title is None:
@@ -424,7 +433,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
         #end if
         for i in range(len(timesteps)):
             ts,E,Eerr = timesteps[i],energies[i],errors[i]
-            print('    {0:>6.4f}   {1:>6.4f} +/- {2:>6.4f}'.format(ts,E-Esmall,Eerr))
+            print(f'    {ts:>6.4f}   {E-Esmall:>6.4f} +/- {Eerr:>6.4f}')
         #end for
     #end def summarize
 
@@ -433,7 +442,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
 
         params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
           'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
-        rcParams.update(params) 
+        rcParams.update(params)
 
 
         timesteps = self.timesteps
@@ -445,7 +454,7 @@ class TimestepStudyAnalyzer(ResultAnalyzer):
         tsrange = [0,1.1*timesteps[-1]]
         plot(tsrange,[0,0],'k-')
         errorbar(timesteps,energies-Esmall,errors,fmt='k.')
-        text(np.array(tsrange).mean(),0,'{0:6.4f} eV'.format(Esmall))
+        text(np.array(tsrange).mean(),0,f'{Esmall:6.4f} eV')
         xticks(timesteps)
         xlim(tsrange)
         xlabel('Timestep (Ha)')

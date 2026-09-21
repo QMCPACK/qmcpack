@@ -595,16 +595,7 @@ Use deferred (a.k.a. "lazy") imports.
 With deferred imports, Nexus requires the minimum from external libraries and only fails if a specific missing functionality is actually used during execution.
 This way, Nexus will often operate successfully even if some libraries are missing or outdated.
 
-Top-level/header imports:
-
-.. code-block:: python
-
-    try:
-        import h5py
-    except:
-        h5py = unavailable('h5py')
-
-Function/method imports (preferred):
+Function/method imports:
 
 .. code-block:: python
 

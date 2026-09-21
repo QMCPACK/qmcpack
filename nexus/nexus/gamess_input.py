@@ -87,9 +87,9 @@ def _read_gamess_pseudopotential(filepath):
                 pseudo.basis_text = block
             else:
                 msg = (
-                    'could not identify text block in {0} as pseudopotential or basis text\n'
+                    f'could not identify text block in {filename} as pseudopotential or basis text\n'
                     'text block:\n'
-                    '{1}'.format(filename,block)
+                    f'{block}'
                     )
                 raise FileFormatError(msg)
             #end if
@@ -122,8 +122,8 @@ class GIarray(GIbase):
             if not isinstance(n,int):
                 msg = (
                     "keys must be integers\n"
-                    "attempted to initialize array from input provided: {0}\n"
-                    "note that dict's are used only for arrays".format(d)
+                    f"attempted to initialize array from input provided: {d}\n"
+                    "note that dict's are used only for arrays"
                     )
                 raise TypeError(msg)
             #end if
@@ -203,12 +203,12 @@ class KeywordGroup(Group):
             #end try
         #end if
         if fail:
-            msg = 'failed to read value: "{0}"'.format(val)
+            msg = f'failed to read value: "{val}"'
             raise RuntimeError(msg)
         #end if
         return v
     #end def readval
-            
+
 
     def read(self,text):
         tokens = text.replace(',',' ').split()
@@ -267,7 +267,7 @@ class KeywordGroup(Group):
             #end for
             sval = sval[0:-1]
         else:
-            msg = 'unknown type encountered on write: {0}'.format(val)
+            msg = f'unknown type encountered on write: {val}'
             raise TypeError(msg)
         #end if
         return sval
@@ -276,11 +276,11 @@ class KeywordGroup(Group):
 
     def write(self,name):
         text = ''
-        line = ' ${0:<6} '.format(name)
+        line = f' ${name:<6} '
         for var in sorted(self.keys()):
             val = self[var]
             if not isinstance(val,GIarray):
-                vtext='{0}={1} '.format(var,self.writeval(val))
+                vtext=f'{var}={self.writeval(val)} '
                 if len(line)+len(vtext) < self.linewrap:
                     line+=vtext
                 else:
@@ -289,7 +289,7 @@ class KeywordGroup(Group):
                 #end if
             else:
                 for n in sorted(val.keys()):
-                    vtext = '{0}({1})={2} '.format(var,n,self.writeval(val[n]))
+                    vtext = f'{var}({n})={self.writeval(val[n])} '
                     if len(line)+len(vtext) < self.linewrap:
                         line+=vtext
                     else:
@@ -350,7 +350,7 @@ class CardGroup(Group):
         #end for
     #end def append_text
 
-            
+
     def append_list(self,lst):
         for tokens in lst:
             self[len(self)] = tokens
@@ -372,7 +372,7 @@ class CardGroup(Group):
         if isinstance(val,float):
             sval = str(val).replace('e','d')
             if len(sval)>8 and np.abs(val)>=10.0:
-                sval = '{0:16.8e}'.format(val).replace('e','d')
+                sval = f'{val:16.8e}'.replace('e','d')
             #end if
         else:
             sval = str(val)
@@ -382,7 +382,7 @@ class CardGroup(Group):
 
 
     def write(self,name):
-        text = ' ${0}\n'.format(name)
+        text = f' ${name}\n'
         contents = ''
         for n in range(len(self)):
             for token in self[n]:
@@ -414,7 +414,7 @@ class FormattedGroup(Group):
 
     def write(self,name):
         #return ' ${0}\n{1} $END\n'.format(name.upper(),self.text.lstrip())
-        return ' ${0}\n{1} $END\n'.format(name.upper(),self.text)
+        return f' ${name.upper()}\n{self.text} $END\n'
     #end def write
 #end class FormattedGroup
 
@@ -450,7 +450,7 @@ class KeywordSpecGroup(KeywordGroup):
         return valid
     #end def is_valid
 #end class KeywordSpecGroup
-    
+
 
 
 class ContrlGroup(KeywordSpecGroup):
@@ -595,7 +595,7 @@ class ScfGroup(KeywordSpecGroup):
             })
 
     allowed_values = obj(
-        kproj = set([0,1,2]),
+        kproj = {0,1,2},
         )
 #end class ScfGroup
 
@@ -644,10 +644,10 @@ class DftGroup(KeywordSpecGroup):
     strings  = frozenset({'method','auxfun'})
 
     allowed_values = obj(
-        method = set(['grid','gridfree']),
-        idcver = set([1,2,3]),
-        jans   = set([1,2]),
-        auxfun = set(['aux0','aux3']),
+        method = {'grid','gridfree'},
+        idcver = {1,2,3},
+        jans   = {1,2},
+        auxfun = {'aux0','aux3'},
         )
 #end class DftGroup
 
@@ -680,11 +680,11 @@ class DrtGroup(KeywordSpecGroup):
     strings  = frozenset({'group','stsym'})
 
     allowed_values = obj(
-        group = set(['c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h']),
-        stsym = set(['a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
+        group = {'c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h'},
+        stsym = {'a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
                      'bu','bg','au','a','b1','b2','b3','ag','b1g','b2g','b3g',
-                     'au','b1u','b2u','b3u']),
-        nprt = set([0,1,2,3]),
+                     'au','b1u','b2u','b3u'},
+        nprt = {0,1,2,3},
         )
 #end class DrtGroup
 
@@ -703,14 +703,14 @@ class CidrtGroup(KeywordSpecGroup):
     strings  = frozenset({'group','stsym'})
 
     allowed_values = obj(
-        group = set(['c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h']),
-        stsym = set(['a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
+        group = {'c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h'},
+        stsym = {'a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
                      'bu','bg','au','a','b1','b2','b3','ag','b1g','b2g','b3g',
-                     'au','b1u','b2u','b3u']),
-        nprt = set([0,1,2,3]),
+                     'au','b1u','b2u','b3u'},
+        nprt = {0,1,2,3},
         )
 #end class CidrtGroup
- 
+
 
 
 class DetGroup(KeywordSpecGroup):
@@ -729,10 +729,10 @@ class DetGroup(KeywordSpecGroup):
     arrays   = frozenset({'irreps','nflgdm','wstate'})
 
     allowed_values = obj(
-        group = set(['c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h']),
-        stsym = set(['a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
+        group = {'c1','c2','ci','cs','c2v','c2h','d2','d2h','c4v','d4','d4h'},
+        stsym = {'a','ag','au','ap','app','a','b','a1','a2','b1','b2','ag',
                      'bu','bg','au','a','b1','b2','b3','ag','b1g','b2g','b3g',
-                     'au','b1u','b2u','b3u']),
+                     'au','b1u','b2u','b3u'},
         )
 #end class DetGroup
 
@@ -752,9 +752,9 @@ class BasisGroup(KeywordSpecGroup):
     allowed_values = obj(
         #gbasis = set(['sto','n21','n31','n311','g3l','g3lx','mini','midi','dzv',
         #              'dh','tzv','mc']) # many others
-        ndfunc = set([0,1,2,3]),
-        nffunc = set([0,1]),
-        polar  = set(['common','popn31','popn311','dunning','huzinaga','hondo7']),
+        ndfunc = {0,1,2,3},
+        nffunc = {0,1},
+        polar  = {'common','popn31','popn311','dunning','huzinaga','hondo7'},
         )
 #end class BasisGroup
 
@@ -847,7 +847,7 @@ class GamessInput(SimulationInput,GIbase):
 
     group_keyword_overlap = all_groups & all_keywords
     all_names = all_groups | all_keywords
-    
+
     #cardspec_groups = obj()
 
     # aliases for generate_gamess_input
@@ -862,25 +862,25 @@ class GamessInput(SimulationInput,GIbase):
     # gamess file I/O
     file_units = obj(
         #MCPPATH = -5,BASPATH = -4,EXTCAB  = -3,
-        #MAKEFP  =  1, ERICFMT =  2, EXTBAS  =  3, 
-        TRAJECT =  4, INPUT   =  5, 
-        OUTPUT  =  6, PUNCH   =  7, AOINTS  =  8, MOINTS  =  9, DICTNRY = 10, 
-        DRTFILE = 11, CIVECTR = 12, CASINTS = 13, CIINTS  = 14, WORK15  = 15, 
-        WORK16  = 16, CSFSAVE = 17, FOCKDER = 18, WORK19  = 19, DASORT  = 20, 
-        DFTINTS = 21, DFTGRID = 22, JKFILE  = 23, ORDINT  = 24, EFPIND  = 25, 
-        PCMDATA = 26, PCMINTS = 27, MLTPL   = 28, MLTPLT  = 29, DAFL30  = 30, 
-        RESTART = 35, HESSIAN = 38, SOCCDAT = 40, AABB41  = 41, BBAA42  = 42, 
-        BBBB43  = 43, REMD    = 44, MCQD50  = 50, MCQD51  = 51, MCQD52  = 52, 
-        MCQD53  = 53, MCQD54  = 54, MCQD55  = 55, MCQD56  = 56, MCQD57  = 57, 
-        MCQD58  = 58, MCQD59  = 59, MCQD60  = 60, MCQD61  = 61, MCQD62  = 62, 
-        MCQD63  = 63, MCQD64  = 64, DCPHFH2 = 67, NMRINT1 = 61, CCREST  = 70, 
-        CCDIIS  = 71, CCINTS  = 72, CCT1AMP = 73, CCT2AMP = 74, CCT3AMP = 75, 
-        CCVM    = 76, CCVE    = 77, CCQUADS = 78, QUADSVO = 79, EOMSTAR = 80, 
-        EOMVEC1 = 81, EOMVEC2 = 82, EOMHC1  = 83, EOMHC2  = 84, EOMHHHH = 85, 
-        EOMPPPP = 86, EOMRAMP = 87, EOMRTMP = 88, EOMDG12 = 89, MMPP    = 90, 
-        MMHPP   = 91, MMCIVEC = 92, MMCIVC1 = 93, MMCIITR = 94, EOMVL1  = 95, 
-        EOMVL2  = 96, EOMLVEC = 97, EOMHL1  = 98, EOMHL2  = 99, EFMOI   = 102, 
-        EFMOF   = 103 
+        #MAKEFP  =  1, ERICFMT =  2, EXTBAS  =  3,
+        TRAJECT =  4, INPUT   =  5,
+        OUTPUT  =  6, PUNCH   =  7, AOINTS  =  8, MOINTS  =  9, DICTNRY = 10,
+        DRTFILE = 11, CIVECTR = 12, CASINTS = 13, CIINTS  = 14, WORK15  = 15,
+        WORK16  = 16, CSFSAVE = 17, FOCKDER = 18, WORK19  = 19, DASORT  = 20,
+        DFTINTS = 21, DFTGRID = 22, JKFILE  = 23, ORDINT  = 24, EFPIND  = 25,
+        PCMDATA = 26, PCMINTS = 27, MLTPL   = 28, MLTPLT  = 29, DAFL30  = 30,
+        RESTART = 35, HESSIAN = 38, SOCCDAT = 40, AABB41  = 41, BBAA42  = 42,
+        BBBB43  = 43, REMD    = 44, MCQD50  = 50, MCQD51  = 51, MCQD52  = 52,
+        MCQD53  = 53, MCQD54  = 54, MCQD55  = 55, MCQD56  = 56, MCQD57  = 57,
+        MCQD58  = 58, MCQD59  = 59, MCQD60  = 60, MCQD61  = 61, MCQD62  = 62,
+        MCQD63  = 63, MCQD64  = 64, DCPHFH2 = 67, NMRINT1 = 61, CCREST  = 70,
+        CCDIIS  = 71, CCINTS  = 72, CCT1AMP = 73, CCT2AMP = 74, CCT3AMP = 75,
+        CCVM    = 76, CCVE    = 77, CCQUADS = 78, QUADSVO = 79, EOMSTAR = 80,
+        EOMVEC1 = 81, EOMVEC2 = 82, EOMHC1  = 83, EOMHC2  = 84, EOMHHHH = 85,
+        EOMPPPP = 86, EOMRAMP = 87, EOMRTMP = 88, EOMDG12 = 89, MMPP    = 90,
+        MMHPP   = 91, MMCIVEC = 92, MMCIVC1 = 93, MMCIITR = 94, EOMVL1  = 95,
+        EOMVL2  = 96, EOMLVEC = 97, EOMHL1  = 98, EOMHL2  = 99, EFMOI   = 102,
+        EFMOF   = 103
         )
 
     def __init__(self,filepath=None):
@@ -952,8 +952,8 @@ class GamessInput(SimulationInput,GIbase):
                     None
                 else:
                     msg = (
-                        'invalid text encountered during read of line number {0}:\n'
-                        '{1}'.format(n,line)
+                        f'invalid text encountered during read of line number {n}:\n'
+                        f'{line}'
                         )
                     raise FileFormatError(msg)
                 #end if
@@ -961,11 +961,11 @@ class GamessInput(SimulationInput,GIbase):
                 None
             else:
                 msg = (
-                    'invalid text encountered during read of line number {0}:\n'
-                    '{1}'.format(n,line)
+                    f'invalid text encountered during read of line number {n}:\n'
+                    f'{line}'
                     )
                 raise FileFormatError(msg)
-            #end if                    
+            #end if
             # specialized parsing for unknown card groups
             if ended:
                 if '=' not in groups[gname]:
@@ -1005,16 +1005,16 @@ class GamessInput(SimulationInput,GIbase):
             #end if
             if failed:
                 msg = (
-                    'Read failure: group "{0}" does not appear to be a keyword group\n'
+                    f'Read failure: group "{group_name}" does not appear to be a keyword group\n'
                     'and a generic read of card data failed\n'
-                    'data for this group will not be available'.format(group_name)
+                    'data for this group will not be available'
                     )
                 raise FileFormatError(msg)
             #end if
         #end for
     #end def read_text
 
-        
+
     def process_line(self,ls):
         ended = True
         if ls.endswith('$END'):
@@ -1040,9 +1040,7 @@ class GamessInput(SimulationInput,GIbase):
         if len(extra_groups)>0:
             msg = (
                 'write failed\n'
-                'the following groups are unknown: {0}'.format(
-                    sorted(extra_groups)
-                    )
+                f'the following groups are unknown: {sorted(extra_groups)}'
                 )
             raise ValueError(msg)
         #end if
@@ -1080,8 +1078,8 @@ def generate_gamess_input(**kwargs):
         gi = generate_any_gamess_input(**kwargs)
     else:
         msg = (
-            'input_type {0} is unrecognized\n'
-            'valid options are: general'.format(input_type)
+            f'input_type {input_type} is unrecognized\n'
+            'valid options are: general'
             )
         raise ValueError(msg)
     #end if
@@ -1129,20 +1127,20 @@ def generate_any_gamess_input(**kwargs):
     if len(invalid_names)>0:
         msg = (
             'invalid group names or keywords encountered\n'
-            'invalid names/keywords provided: {0}\n'
+            f'invalid names/keywords provided: {sorted(invalid_names)}\n'
             'please check if these group names or keywords are actually valid GAMESS inputs\n'
             'if so, unsupported groups can be generated by providing the keywords as a single argument:\n'
             'generate_gamess_input(\n'
             '  ...,\n'
             '  group_name = obj(assign keywords),\n'
             '  ...,\n'
-            '  )'.format(sorted(invalid_names))
+            '  )'
             )
         raise ValueError(msg)
     #end if
 
     gi = GamessInput()
-    
+
     # handle groups provided directly by the user
     #   use aliases to guard against namespace collisions w/ nexus (e.g. system)
     group_names = kwset & GamessInput.all_group_aliases
@@ -1169,16 +1167,16 @@ def generate_any_gamess_input(**kwargs):
                 gi[name] = KeywordGroup(**group_info)
             elif name in GamessInput.card_groups:
                 msg = (
-                    'card group {0} cannot be generated from a keyword list\n'
+                    f'card group {name} cannot be generated from a keyword list\n'
                     'keyword list provided:\n'
-                    '{1}'.format(name,group_info)
+                    f'{group_info}'
                     )
                 raise ValueError(msg)
             elif name in GamessInput.formatted_groups:
                 msg = (
-                    'formatted group {0} cannot be generated from a keyword list\n'
+                    f'formatted group {name} cannot be generated from a keyword list\n'
                     'keyword list provided:\n'
-                    '{1}'.format(name,group_info)
+                    f'{group_info}'
                     )
                 raise ValueError(msg)
             else:
@@ -1190,9 +1188,9 @@ def generate_any_gamess_input(**kwargs):
             None
         else:
             msg = (
-                'invalid information provided to initialize group {0}\n'
+                f'invalid information provided to initialize group {vname}\n'
                 'you must provide a dict, obj, or Group\n'
-                'you provided {1}'.format(vname,group_info)
+                f'you provided {group_info}'
                 )
             raise TypeError(msg)
         #end if
@@ -1215,12 +1213,10 @@ def generate_any_gamess_input(**kwargs):
     if len(kwrem)>0:
         msg = (
             'encountered unrecognized keywords\n'
-            'unrecognized keywords: {0}\n'
+            f'unrecognized keywords: {sorted(kwrem)}\n'
             'these keywords may belong to groups not fully implemented here\n'
-            'fully supported groups: {1}\n'
-            'unsupported groups can be generated by providing the keywords as a single argument: group_name = obj(assign keywords)'.format(
-                sorted(kwrem),GamessInput.keyspec_group_order
-                )
+            f'fully supported groups: {GamessInput.keyspec_group_order}\n'
+            'unsupported groups can be generated by providing the keywords as a single argument: group_name = obj(assign keywords)'
             )
         raise ValueError(msg)
     #end if
@@ -1251,7 +1247,7 @@ def generate_any_gamess_input(**kwargs):
         elem = sf.elem
         pos  = sf.pos
         pskw.symmetry = pskw.symmetry.strip()
-        data = '{0}\n{1}\n'.format(pskw.descriptor,pskw.symmetry)
+        data = f'{pskw.descriptor}\n{pskw.symmetry}\n'
         if pskw.symmetry!='C1':
             data+='\n'
         #end if
@@ -1276,7 +1272,7 @@ def generate_any_gamess_input(**kwargs):
             gi.contrl.update(
                 coord = 'unique',
                 ecp   = 'read'
-                )   
+                )
             pseudo_files = PseudoSet.get_pseudos(
                 pseudos = pskw.pseudos,
                 system = system,
@@ -1336,7 +1332,7 @@ def check_keyspec_groups():
     #check for unrecognized groups
     extra_groups = set(groups.keys())-set(group_order)
     if len(extra_groups)>0:
-        err += '  encountered unrecognized keyspec groups: {0}\n'.format(sorted(extra_groups))
+        err += f'  encountered unrecognized keyspec groups: {sorted(extra_groups)}\n'
     #end if
 
     #check that integers, reals, bools, strings, and arrays are non-overlapping subsets of keywords
@@ -1362,13 +1358,11 @@ def check_keyspec_groups():
             #end for
         #end for
         if len(overlaps)>0:
-            msg = '  keyspec group {0} has overlapping keywords'.format(g.__name__)
+            msg = f'  keyspec group {g.__name__} has overlapping keywords'
             for tname1,tname2 in sorted(overlaps.keys()):
                 msg += (
                     '    \n'
-                    ' {0} {1} overlap: {2}\n'.format(
-                        tname1, tname2, overlaps[tname1,tname2]
-                        )
+                    f' {tname1} {tname2} overlap: {overlaps[tname1,tname2]}\n'
                     )
             #end for
             err += msg
@@ -1377,16 +1371,16 @@ def check_keyspec_groups():
             extra_keys = go[tname]-g.keywords
             if len(extra_keys)>0:
                 err += (
-                    '  keyspec group {0} has unrecognized {1} keywords:\n'
-                    '    {2}\n'.format(g.__name__,tname,sorted(extra_keys))
+                    f'  keyspec group {g.__name__} has unrecognized {tname} keywords:\n'
+                    f'    {sorted(extra_keys)}\n'
                     )
             #end if
         #end for
         extra_keys = set(g.allowed_values.keys())-g.keywords
         if len(extra_keys)>0:
             err += (
-                '  keyspec group {0} has unrecognized allowed_value keywords:\n'
-                '    {1}\n'.format(g.__name__,sorted(extra_keys))
+                f'  keyspec group {g.__name__} has unrecognized allowed_value keywords:\n'
+                f'    {sorted(extra_keys)}\n'
                 )
         #end if
         type_keys = set()
@@ -1396,8 +1390,8 @@ def check_keyspec_groups():
         undefined = g.keywords-type_keys
         if len(undefined)>0:
             err += (
-                '  keyspec group {0} has keywords w/o type assignment:\n'
-                '    {1}\n'.format(g.__name__,sorted(undefined))
+                f'  keyspec group {g.__name__} has keywords w/o type assignment:\n'
+                f'    {sorted(undefined)}\n'
                 )
         #end if
 
@@ -1416,9 +1410,7 @@ def check_keyspec_groups():
                     for val in g.allowed_values[kw]:
                         if not isinstance(val,type):
                             err += (
-                                '  allowed values of {0} keyword {1} are not all {2}: {3}\n'.format(
-                                    g.__name__, kw, tname, sorted(g.allowed_values[kw])
-                                    )
+                                f'  allowed values of {g.__name__} keyword {kw} are not all {tname}: {sorted(g.allowed_values[kw])}\n'
                                 )
                             break
                         #end if
@@ -1447,8 +1439,8 @@ def check_keyspec_groups():
         wrn += '\n  Note: some groups have overlapping keywords\n'
         for gname1,gname2 in sorted(overlaps.keys()):
             wrn += (
-                '    groups {0} and {1} have overlapping keywords:\n'
-                '      {2}\n'.format(gname1, gname2, overlaps[gname1,gname2])
+                f'    groups {gname1} and {gname2} have overlapping keywords:\n'
+                f'      {overlaps[gname1,gname2]}\n'
                 )
         #end for
     #end if
@@ -1459,7 +1451,7 @@ def check_keyspec_groups():
         wrn += (
             '\n'
             '  Note: some group names overlap with keywords:\n'
-            '    {0}\n'.format(sorted(overlap))
+            f'    {sorted(overlap)}\n'
             )
     #end if
 

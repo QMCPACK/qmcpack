@@ -1,19 +1,18 @@
-// Copyright 2018-2021 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
 #ifndef MPI3_GROUP_HPP
 #define MPI3_GROUP_HPP
 
-#include "detail/equality.hpp"
+#include <mpi3/detail/equality.hpp>
 
-#include "../mpi3/error.hpp"
+#include <mpi3/error.hpp>
 
-#include "../mpi3/detail/call.hpp"
-#include "../mpi3/detail/iterator_traits.hpp"
+#include <mpi3/detail/call.hpp>
+#include <mpi3/detail/iterator_traits.hpp>
 
 #include<cassert>
 
-// #define OMPI_SKIP_MPICXX 1  // https://github.com/open-mpi/ompi/issues/5157
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
 namespace boost {
 namespace mpi3 {
@@ -41,17 +40,16 @@ class group {
 	group& operator=(group const& other) {group tmp(other); swap(tmp)  ; return *this;}
 	group& operator=(group     && other) noexcept {         swap(other); return *this;}
 
-	void clear(){
+	void clear() {
 		if(impl_ != MPI_GROUP_EMPTY) {
-			try {
-				MPI_(Group_free)(&impl_);
-			} catch(...) {}
+			MPI_(Group_free)(&impl_);
 		}
 		impl_ = MPI_GROUP_EMPTY;
 	}
-	~group(){
+
+	~group() {  // NOLINT(bugprone-exception-escape)
 		if(impl_ != MPI_GROUP_EMPTY) {
-			try {MPI_(Group_free)(&impl_);} catch(...) {}
+			MPI_(Group_free)(&impl_);
 		}
 	}
 
@@ -65,7 +63,7 @@ class group {
 	auto root() const -> bool {assert(not empty()); return rank() == 0;}
 	auto size() const -> int {int size = -1; MPI_(Group_size)(impl_, &size); return size;}
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	auto sliced(int first, int last, int stride = 1) const {
 		int ranges[][3] = {{first, last - 1, stride}};  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 		group ret; MPI_(Group_range_incl)(impl_, 1, ranges, &ret.impl_); return ret;
@@ -78,13 +76,14 @@ class group {
 		MPI_(Group_compare)(self.impl_, other.impl_, &result);
 		return static_cast<mpi3::detail::equality>(result);
 	}
+
 	bool operator==(group const& other) const{
 		auto e=compare(*this, other); 
-		return e == mpi3::detail::identical or e == mpi3::detail::congruent;
+		return e == mpi3::detail::equality::identical or e == mpi3::detail::equality::congruent;
 	}
 	bool operator!=(group const& other) const{return not operator==(other);}
 	bool friend is_permutation(group const& self, group const& other){
-		return compare(self, other) != mpi3::detail::unequal;
+		return compare(self, other) != mpi3::detail::equality::unequal;
 	}
 	friend group set_intersection(group const& self, group const& other){
 		group ret; MPI_(Group_intersection)(self.impl_, other.impl_, &ret.impl_); return ret;

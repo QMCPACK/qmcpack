@@ -1,14 +1,12 @@
-#if COMPILATION_INSTRUCTIONS /* -*- indent-tabs-mode: t -*- */
-(echo "#include \""$0"\"" > $0x.cpp) && mpic++ -O3 -std=c++14 -Wfatal-errors -D_TEST_BOOST_MPI3_MUTEX $0x.cpp -o $0x.x && time mpirun -n 8 $0x.x $@ && rm -f $0x.x $0x.cpp; exit
-#endif
+// Copyright 2017-2025 Alfredo A. Correa
+
 #ifndef BOOST_MPI3_MUTEX_HPP
 #define BOOST_MPI3_MUTEX_HPP
 
-#define OMPI_SKIP_MPICXX 1  // https://github.com/open-mpi/ompi/issues/5157
-#include<mpi.h>
+#include <mpi3/detail/mpi_impl.h>
 
-#include "../mpi3/window.hpp"
-#include "../mpi3/detail/basic_mutex.hpp"
+#include <mpi3/window.hpp>
+#include <mpi3/detail/basic_mutex.hpp>
 
 namespace boost{
 namespace mpi3{
@@ -25,7 +23,7 @@ struct mutex{ //https://gist.github.com/aprell/1486197#file-mpi_mutex-c-L61
 
 	std::vector<flag_t> wait_list; //[comm_.size()];
 
-//	int tag_;
+//  int tag_;
 
 	mutex(mutex&&) = delete;
 	mutex(mutex const&) = delete;
@@ -40,16 +38,16 @@ struct mutex{ //https://gist.github.com/aprell/1486197#file-mpi_mutex-c-L61
 		wait_list(comm.size())
 	{
 		if(addr_) std::memset(addr_, 0, comm.size());
-	//	tag_ = tag_counter;
+	//  tag_ = tag_counter;
 		++tag_counter;
 		comm.barrier();
 	}
 
 	void lock(){
-		std::fill(wait_list.begin(), wait_list.end(), 0); //	flag_t wait_list[comm_.size()];
+		std::fill(wait_list.begin(), wait_list.end(), 0); //    flag_t wait_list[comm_.size()];
 		flag_t lock = 1;
 		win_.lock_exclusive(rank_);
-		win_.put_value(lock, rank_, comm_.rank()); //	win_.put_n(&lock, 1, rank_, comm_.rank());
+		win_.put_value(lock, rank_, comm_.rank()); //   win_.put_n(&lock, 1, rank_, comm_.rank());
 		win_.get_n(wait_list.data(), comm_.size(), rank_);
 		win_.unlock(rank_);
 		for(int i = 0; i != comm_.size(); ++i){
@@ -71,7 +69,7 @@ struct mutex{ //https://gist.github.com/aprell/1486197#file-mpi_mutex-c-L61
 		return true;
 	}
 	void unlock(){
-		std::fill(wait_list.begin(), wait_list.end(), 0);// wait_list.assign(unsigned char(0)); //	flag_t wait_list[comm_.size()];
+		std::fill(wait_list.begin(), wait_list.end(), 0);// wait_list.assign(unsigned char(0)); //  flag_t wait_list[comm_.size()];
 		flag_t lock = 0;
 		win_.lock_exclusive(rank_);
 		win_.put_value(lock, rank_, comm_.rank());
@@ -88,7 +86,7 @@ struct mutex{ //https://gist.github.com/aprell/1486197#file-mpi_mutex-c-L61
 	}
 	~mutex(){
 		comm_.barrier();
-	//	if(addr_) 
+	//  if(addr_) 
 		mpi3::free(addr_);
 	}
 };
@@ -108,7 +106,7 @@ struct rmutex{ //https://gist.github.com/aprell/1486197#file-mpi_mutex-c-L61
 
 	std::vector<flag_t> wait_list; //[comm_.size()];
 
-//	int tag_;
+//  int tag_;
 
 	rmutex(rmutex&&) = delete;
 	rmutex(rmutex const&) = delete;
@@ -130,7 +128,7 @@ struct rmutex{ //https://gist.github.com/aprell/1486197#file-mpi_mutex-c-L61
 			assert(comm_.rank() == 0);
 		}
 		win_.fence();
-	//	tag_ = tag_counter;
+	//  tag_ = tag_counter;
 		++tag_counter;
 		comm_.barrier();
 	}
@@ -149,16 +147,16 @@ struct rmutex{ //https://gist.github.com/aprell/1486197#file-mpi_mutex-c-L61
 			if(count > 0) assert(owner == comm_.rank());
 			++count;
 			owner = comm_.rank();
-		//	win_.put_value(count, rank_, 0);
-		//	win_.put_value(owner, rank_, 1);
+		//  win_.put_value(count, rank_, 0);
+		//  win_.put_value(owner, rank_, 1);
 			if(count > 1) return;
 		}
 		win_.unlock(rank_);
 
-		std::fill(wait_list.begin(), wait_list.end(), 0); //	flag_t wait_list[comm_.size()];
+		std::fill(wait_list.begin(), wait_list.end(), 0); //    flag_t wait_list[comm_.size()];
 		flag_t lock = 1;
 		win_.lock_exclusive(rank_);
-		win_.put_value(lock, rank_, comm_.rank() + 2); //	win_.put_n(&lock, 1, rank_, comm_.rank());
+		win_.put_value(lock, rank_, comm_.rank() + 2); //   win_.put_n(&lock, 1, rank_, comm_.rank());
 		win_.get_n(wait_list.data(), comm_.size(), rank_, 2);
 		win_.unlock(rank_);
 		for(int i = 0; i != comm_.size(); ++i){
@@ -194,7 +192,7 @@ struct rmutex{ //https://gist.github.com/aprell/1486197#file-mpi_mutex-c-L61
 		}
 		win_.unlock(rank_);
 		
-		std::fill(wait_list.begin(), wait_list.end(), 0);// wait_list.assign(unsigned char(0)); //	flag_t wait_list[comm_.size()];
+		std::fill(wait_list.begin(), wait_list.end(), 0);// wait_list.assign(unsigned char(0)); //  flag_t wait_list[comm_.size()];
 		flag_t lock = 0;
 		win_.lock_exclusive(rank_);
 		
@@ -212,7 +210,7 @@ struct rmutex{ //https://gist.github.com/aprell/1486197#file-mpi_mutex-c-L61
 	}
 	~rmutex(){
 		comm_.barrier();
-	//	if(addr_) 
+	//  if(addr_) 
 		mpi3::free(addr_);
 	}
 };
@@ -225,7 +223,7 @@ struct atomic{
 	int rank_;
 	T* addr_;
 	communicator& comm_;
-//	T counter = -999;
+//  T counter = -999;
 	window<T> win_;
 
 	atomic(T const& value, communicator& comm, int rank = 0) : 
@@ -235,12 +233,12 @@ struct atomic{
 		win_(addr_, addr_?sizeof(T):0, comm_)
 	{
 		if(addr_) new (addr_) T(value);
-//		if(addr_) *addr_ = value;
+//      if(addr_) *addr_ = value;
 	}
 	atomic& operator+=(T const& t){
 		win_.lock_exclusive(rank_);
 		win_.fetch_sum_value(t, *addr_, rank_);
-	//	win_.fetch_sum_value(t, counter, rank_);
+	//  win_.fetch_sum_value(t, counter, rank_);
 		win_.unlock(rank_);
 		return *this;
 	}
@@ -248,7 +246,7 @@ struct atomic{
 		win_.lock_exclusive(rank_);
 		T t = T(1);
 		win_.fetch_sum_value(t, *addr_, rank_);
-	//	win_.fetch_sum_value(t, counter, rank_);
+	//  win_.fetch_sum_value(t, counter, rank_);
 		win_.unlock(rank_);
 		return *this;
 	}
@@ -256,7 +254,7 @@ struct atomic{
 		win_.lock_exclusive(rank_);
 		T t = -T(1);
 		win_.fetch_sum_value(t, *addr_, rank_);
-	//	win_.fetch_sum_value(t, counter, rank_);
+	//  win_.fetch_sum_value(t, counter, rank_);
 		win_.unlock(rank_);
 		return *this;
 	}
@@ -265,7 +263,7 @@ struct atomic{
 	atomic& operator*=(T const& t){
 		win_.lock_exclusive(rank_);
 		win_.fetch_prod_value(t, *addr_, rank_);
-	//	win_.fetch_prod_value(t, counter, rank_);
+	//  win_.fetch_prod_value(t, counter, rank_);
 		win_.unlock(rank_);
 		return *this;
 	}
@@ -273,11 +271,11 @@ struct atomic{
 	atomic& operator=(T const& t){
 		win_.lock_exclusive(rank_);
 		win_.fetch_replace_value(t, *addr_, rank_);
-	//	win_.fetch_replace_value(t, counter, rank_);
+	//  win_.fetch_replace_value(t, counter, rank_);
 		win_.unlock(rank_);
 		return *this;
 	}
-//	T const& load() const{return counter;}
+//  T const& load() const{return counter;}
 	operator T(){
 		T t;
 		win_.lock_exclusive(0);
@@ -331,12 +329,12 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 		mpi3::rmutex m(world);
 		{
 			m.lock();
-		//	m.lock();
+		//  m.lock();
 			cout << "locked from " << world.rank() << '\n';
 			cout << "never interleaved " << world.rank() << '\n';
 			cout << "forever blocked " << world.rank() << '\n';
 			cout << std::endl;
-		//	m.unlock();
+		//  m.unlock();
 			m.unlock();
 		}
 	}

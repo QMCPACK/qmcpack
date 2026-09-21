@@ -15,6 +15,15 @@
 #ifndef AFQMC_NUMERICS_HELPERS_TENSOR_TRANSPOSITION_HPP
 #define AFQMC_NUMERICS_HELPERS_TENSOR_TRANSPOSITION_HPP
 
+// multi::array_ref::origin() is deprecated in favor of .base(), but .base() (const&) miscomputes
+// element_const_ptr when ElementPtr's pointee type differs from T (as with the real/complex
+// reinterpret views used throughout this file for BLAS calls) in boost-multi 0.91.1. Keep .origin()
+// here and suppress the warning until that library issue is fixed.
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include <cassert>
 #include "AFQMC/Numerics/detail/utilities.hpp"
 #if defined(ENABLE_CUDA) || defined(BUILD_AFQMC_HIP)
@@ -367,6 +376,10 @@ void transpose_wabn_to_wban(int nwalk, int na, int nb, int nchol, device_pointer
 }
 
 } // namespace device
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
 #endif
 
 #endif

@@ -18,7 +18,6 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "BsplineFactory/EinsplineSetBuilder.h"
 #include "BsplineFactory/EinsplineSpinorSetBuilder.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineC2C.h"
 #include "Utilities/for_testing/checkMatrix.hpp"
 
 #include <stdio.h>

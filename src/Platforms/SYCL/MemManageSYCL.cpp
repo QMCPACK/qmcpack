@@ -16,7 +16,7 @@ namespace qmcplusplus
 {
 namespace compute
 {
-std::atomic<size_t> MemManage<PlatformKind::SYCL>::device_mem_allocated_ = 0;
+MemoryUsageAccount MemManage<PlatformKind::SYCL>::device_mem_usage_;
 template class MemManage<PlatformKind::SYCL>;
 } // namespace compute
 } // namespace qmcplusplus

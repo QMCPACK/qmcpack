@@ -343,16 +343,16 @@ def test_generate(tmp_path):
     input_files = ['rhf.inp','cisd.inp','cas.inp']
 
     h2o = generate_physical_system(
-        elem        = ['O','H','H'], 
+        elem        = ['O','H','H'],
         pos         = [[0.000000, 0.000000, 0.000000],
                        [0.000000,-0.757160, 0.586260],
                        [0.000000, 0.757160, 0.586260]],
         units       = 'A',
-        net_spin    = 0,  
-        O           = 6,  
-        H           = 1,  
+        net_spin    = 0,
+        O           = 6,
+        H           = 1,
         # C2v symmetry structure
-        folded_elem = ['O','H'],     
+        folded_elem = ['O','H'],
         folded_pos  = [[0.000000, 0.000000, 0.000000],
                        [0.000000, 0.757160, 0.586260]],
         )

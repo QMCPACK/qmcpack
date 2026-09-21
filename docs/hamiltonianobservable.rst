@@ -2257,5 +2257,3 @@ The following is an example use case.
   <hamiltonian>
     <estimator name="S" type="Force" mode="stress" source="ion0"/>
   </hamiltonian>
-
-.. bibliography:: /bibs/hamiltonianobservable.bib

@@ -3,30 +3,30 @@
 ##################################################################
 
 """
-The :py:mod:`grid_functions` module provides generic capabilities to 
-handle function data that are represented on discrete grids of points.  
+The :py:mod:`grid_functions` module provides generic capabilities to
+handle function data that are represented on discrete grids of points.
 
-Spatial grids currently supported by the classes in this module include 
-sheared parallelotope (simulation cell), spherical, and spherical surface 
-grids.  Grids of arbitrary dimension are supported within parallelotope 
-domains while 2D (disk) and 3D (ball) grids are supported for 
-spherical domains.  Grids over `N`-sphere surfaces are supported in 1D 
-(circles) and 2D (spheres). Grids of lower dimension may reside in 
-spaces of higher dimension, for example lines, planar plaquettes, and 
-disks may all reside in a 3D space.  Both periodic and open boundary 
+Spatial grids currently supported by the classes in this module include
+sheared parallelotope (simulation cell), spherical, and spherical surface
+grids.  Grids of arbitrary dimension are supported within parallelotope
+domains while 2D (disk) and 3D (ball) grids are supported for
+spherical domains.  Grids over `N`-sphere surfaces are supported in 1D
+(circles) and 2D (spheres). Grids of lower dimension may reside in
+spaces of higher dimension, for example lines, planar plaquettes, and
+disks may all reside in a 3D space.  Both periodic and open boundary
 conditions are supported for parallelotope grids.
 
-Discrete functions are defined as sets of values over these grids.  
-Supported functions may be scalar valued, vector valued, or tensor valued. 
-For each of these cases, this module aims to support plotting, 
+Discrete functions are defined as sets of values over these grids.
+Supported functions may be scalar valued, vector valued, or tensor valued.
+For each of these cases, this module aims to support plotting,
 interpolation, integration, and differentiation.
 
-The main classes intended for instantiation and use are 
-:py:class:`ParallelotopeGridFunction`, :py:class:`SpheroidGridFunction`, 
-and :py:class:`SpheroidSurfaceGridFunction`.  The point grid classes 
-corresponding to these grid functions may also be instantiated and used 
-directly.  See :py:class:`ParallelotopeGrid`, :py:class:`SpheroidGrid`, 
-and :py:class:`SpheroidSurfaceGrid`. 
+The main classes intended for instantiation and use are
+:py:class:`ParallelotopeGridFunction`, :py:class:`SpheroidGridFunction`,
+and :py:class:`SpheroidSurfaceGridFunction`.  The point grid classes
+corresponding to these grid functions may also be instantiated and used
+directly.  See :py:class:`ParallelotopeGrid`, :py:class:`SpheroidGrid`,
+and :py:class:`SpheroidSurfaceGrid`.
 
 
 List of module contents
@@ -65,13 +65,13 @@ Abstract :py:class:`GridFunction` classes:
 
 Concrete :py:class:`Grid` classes:
 
-* :py:class:`ParallelotopeGrid` 
+* :py:class:`ParallelotopeGrid`
 * :py:class:`SpheroidGrid`
 * :py:class:`SpheroidSurfaceGrid`
 
 Concrete :py:class:`GridFunction` classes:
 
-* :py:class:`ParallelotopeGridFunction` 
+* :py:class:`ParallelotopeGridFunction`
 * :py:class:`SpheroidGridFunction`
 * :py:class:`SpheroidSurfaceGridFunction`
 
@@ -82,30 +82,11 @@ Module contents
 
 import os
 from copy import deepcopy
-from .developer import DevBase, obj, error, unavailable
+from .developer import DevBase, obj, error
 from .fileio import StandardFile,XsfFile
 from . import numpy_extensions as npe
 
-try:
-    import numpy as np
-except:
-    np = unavailable('numpy','np')
-#end try
-try:
-    import matplotlib.pyplot as plt
-except:
-    plt = unavailable('matplotlib','plt')
-#end try
-try:
-    from skimage import measure
-except:
-    measure = unavailable('skimage','measure')
-#end try
-try:
-    import scipy.ndimage as scipy_ndimage
-except:
-    scipy_ndimage = unavailable('scipy','ndimage')
-#end try
+import numpy as np
 
 
 
@@ -117,15 +98,15 @@ def polar_to_cartesian(points,surface=False):
     Parameters
     ----------
     points  : `array_like, float, shape (N,d)`
-        Real valued points in polar coordinates :math:`(r,\\phi)`. `N` is the 
-        number of points and `d` is the dimension of the coordinate system.  
-        The inputted points must satisfy :math:`r=\\mathrm{points[:,0]}`, 
+        Real valued points in polar coordinates :math:`(r,\\phi)`. `N` is the
+        number of points and `d` is the dimension of the coordinate system.
+        The inputted points must satisfy :math:`r=\\mathrm{points[:,0]}`,
         :math:`\\phi=\\mathrm{points[:,1]}`, and :math:`\\phi\\in[0,2\\pi)`.
     surface : `bool, optional, default False`
-        Points lie only on the boundary (a circle) or not.  If `False` (the 
-        default), the inputted points are two-dimensional (`d=2`) with 
-        :math:`(r,\\phi)` provided.  If `True`, the inputted points are angular 
-        only (`d=1` with :math:`\\phi=\\mathrm{points[:,0]}`). In this case, 
+        Points lie only on the boundary (a circle) or not.  If `False` (the
+        default), the inputted points are two-dimensional (`d=2`) with
+        :math:`(r,\\phi)` provided.  If `True`, the inputted points are angular
+        only (`d=1` with :math:`\\phi=\\mathrm{points[:,0]}`). In this case,
         :math:`r=1`.
 
     Returns
@@ -138,7 +119,7 @@ def polar_to_cartesian(points,surface=False):
     #end if
     npoints,dim = points.shape
     if dim!=2-int(surface):
-        error('dimension of points must be {}\ndimension of provided points: {}'.format(2-int(surface),dim),'polar_to_cartesian')
+        error(f'dimension of points must be {2-int(surface)}\ndimension of provided points: {dim}','polar_to_cartesian')
     #end if
     if surface:
         r   = 1.0
@@ -161,14 +142,14 @@ def cartesian_to_polar(points,surface=False):
     Parameters
     ----------
     points  : `array_like, float, shape (N,2)`
-        Real valued points in Cartesian coordinates :math:`(x, y)`. `N` is 
-        the number of points and :math:`x=\\mathrm{points[:,0]}`, 
-        :math:`y=\\mathrm{points[:,1]}`. 
+        Real valued points in Cartesian coordinates :math:`(x, y)`. `N` is
+        the number of points and :math:`x=\\mathrm{points[:,0]}`,
+        :math:`y=\\mathrm{points[:,1]}`.
     surface : `bool, optional, default False`
-        Inputted points lie only on a circle or not.  It is the user's 
+        Inputted points lie only on a circle or not.  It is the user's
         responsibility to guarantee the correctness of this assertion.
-        If `False` (the default), the outputted points are two-dimensional 
-        (`d=2`) with :math:`(r,\\phi)` returned.  If `True`, only :math:`\\phi` 
+        If `False` (the default), the outputted points are two-dimensional
+        (`d=2`) with :math:`(r,\\phi)` returned.  If `True`, only :math:`\\phi`
         is returned (`d=1`).
 
     Returns
@@ -181,7 +162,7 @@ def cartesian_to_polar(points,surface=False):
     #end if
     npoints,dim = points.shape
     if dim!=2:
-        error('dimension of points must be 2\ndimension of provided points: {}'.format(dim),'cartesian_to_polar')
+        error(f'dimension of points must be 2\ndimension of provided points: {dim}','cartesian_to_polar')
     #end if
     x = points[:,0]
     y = points[:,1]
@@ -205,17 +186,17 @@ def spherical_to_cartesian(points,surface=False):
     Parameters
     ----------
     points  : `array_like, float, shape (N,d)`
-        Real valued points in spherical coordinates :math:`(r,\\theta,\\phi)`. 
-        `N` is the number of points, `d` is the dimension of the coordinate 
-        system.  The inputted points must satisfy 
-        :math:`r=\\mathrm{points[:,0]}`, :math:`\\theta=\\mathrm{points[:,1]}`, 
-        :math:`\\phi=\\mathrm{points[:,1]}`, with :math:`\\theta\\in[0,\\pi)`, 
+        Real valued points in spherical coordinates :math:`(r,\\theta,\\phi)`.
+        `N` is the number of points, `d` is the dimension of the coordinate
+        system.  The inputted points must satisfy
+        :math:`r=\\mathrm{points[:,0]}`, :math:`\\theta=\\mathrm{points[:,1]}`,
+        :math:`\\phi=\\mathrm{points[:,1]}`, with :math:`\\theta\\in[0,\\pi)`,
         :math:`\\phi\\in[0,2\\pi)`.
     surface : `bool, optional, default False`
-        Points lie only on the boundary (a sphere) or not. If `False` (the 
-        default), the inputted points are 3D (`d=3`) with 
-        :math:`(r,\\theta,\\phi)` provided.  If `True`, the inputted points are 
-        angular only (`d=2` with :math:`\\theta=\\mathrm{points[:,0]}`, 
+        Points lie only on the boundary (a sphere) or not. If `False` (the
+        default), the inputted points are 3D (`d=3`) with
+        :math:`(r,\\theta,\\phi)` provided.  If `True`, the inputted points are
+        angular only (`d=2` with :math:`\\theta=\\mathrm{points[:,0]}`,
         :math:`\\phi=\\mathrm{points[:,0]}`). In this case, :math:`r=1`.
 
     Returns
@@ -228,7 +209,7 @@ def spherical_to_cartesian(points,surface=False):
     #end if
     npoints,dim = points.shape
     if dim!=3-int(surface):
-        error('dimension of points must be {}\ndimension of provided points: '.format(req_dim,dim),'spherical_to_cartesian')
+        error(f'dimension of points must be {req_dim}\ndimension of provided points: ','spherical_to_cartesian')
     #end if
     if surface:
         r     = 1.0
@@ -255,14 +236,14 @@ def cartesian_to_spherical(points,surface=False):
     Parameters
     ----------
     points  : `array_like, float, shape (N,3)`
-        Real valued points in Cartesian coordinates :math:`(x,y,z)`. `N` is 
-        the number of points and :math:`x=\\mathrm{points[:,0]}`, 
-        :math:`y=\\mathrm{points[:,1]}`, :math:`z=\\mathrm{points[:,2]}`. 
+        Real valued points in Cartesian coordinates :math:`(x,y,z)`. `N` is
+        the number of points and :math:`x=\\mathrm{points[:,0]}`,
+        :math:`y=\\mathrm{points[:,1]}`, :math:`z=\\mathrm{points[:,2]}`.
     surface : `bool, optional, default False`
-        Inputted points lie only on a sphere or not.  It is the user's 
+        Inputted points lie only on a sphere or not.  It is the user's
         responsibility to guarantee the correctness of this assertion.
-        If `False` (the default), the outputted points are 3D (`d=3`) with 
-        :math:`(r,\\theta,\\phi)` returned.  If `True`, only 
+        If `False` (the default), the outputted points are 3D (`d=3`) with
+        :math:`(r,\\theta,\\phi)` returned.  If `True`, only
         :math:`(\\theta,\\phi)` is returned (`d=2`).
 
     Returns
@@ -275,7 +256,7 @@ def cartesian_to_spherical(points,surface=False):
     #end if
     npoints,dim = points.shape
     if dim!=3:
-        error('dimension of points must be 3\ndimension of provided points: {}'.format(dim),'cartesian_to_spherical')
+        error(f'dimension of points must be 3\ndimension of provided points: {dim}','cartesian_to_spherical')
     #end if
     x = points[:,0]
     y = points[:,1]
@@ -304,15 +285,15 @@ def unit_grid_points(shape,centered=False,endpoint=None):
     Parameters
     ----------
     shape : `array_like, int`
-        Number of points in the grid in each dimension.  The dimension of 
+        Number of points in the grid in each dimension.  The dimension of
         the grid is the number of entries in `shape`.
     centered : `bool, optional, default False`
-        Locate grid points at lower cell corners (`False`) or cell centers 
+        Locate grid points at lower cell corners (`False`) or cell centers
         (`True`).
     endpoint : `array_like, bool, optional`
-        If `True` for given dimension, add an endpoint at the upper edge 
-        of the grid in that dimension (default `False`).  Applies only to 
-        non-centered grids. `shape` and `endpoint` must have the same number 
+        If `True` for given dimension, add an endpoint at the upper edge
+        of the grid in that dimension (default `False`).  Applies only to
+        non-centered grids. `shape` and `endpoint` must have the same number
         of entries.
 
     Returns
@@ -332,7 +313,7 @@ def unit_grid_points(shape,centered=False,endpoint=None):
         #end for
         linear_grids.append(lin_grid)
     #end for
-    # equivalent to 
+    # equivalent to
     #   points = ndgrid(*linear_grids)
     points = np.meshgrid(*linear_grids,indexing='ij')
     points = np.array(points)
@@ -361,24 +342,24 @@ def parallelotope_grid_points(axes,
     axes : `array_like, float, shape (d,d)`
         Axis vectors defining the cell (parallelotope).
     shape : `array_like, int, optional`
-        Number of points in the grid in each dimension.  The dimension of 
-        the grid is the number of entries in `shape`.  Either `shape`,  
+        Number of points in the grid in each dimension.  The dimension of
+        the grid is the number of entries in `shape`.  Either `shape`,
         `cells`, or `dr` must be provided.
     cells : `array_like, int, optional`
-        Number of cells in the grid in each dimension.  The dimension of the 
-        grid is the number of entries in `cells`.  Either `shape`, `cells`, 
+        Number of cells in the grid in each dimension.  The dimension of the
+        grid is the number of entries in `cells`.  Either `shape`, `cells`,
         or `dr` must be provided.
     dr : `array_like, float, optional`
-        Width of grid cells in each dimension.  The dimension of the grid 
-        is the number of entries in `dr`.  Either `shape`, `cells`, or 
+        Width of grid cells in each dimension.  The dimension of the grid
+        is the number of entries in `dr`.  Either `shape`, `cells`, or
         `dr` must be provided.
     centered : `bool, optional, default False`
-        Locate grid points at lower cell corners (`False`) or cell centers 
+        Locate grid points at lower cell corners (`False`) or cell centers
         (`True`).
     endpoint : `array_like, bool, optional`
-        If `True` for given dimension, add an endpoint at the upper edge 
-        of the grid in that dimension (default `False`).  Applies only to 
-        non-centered grids. `shape/cells/dr` and `endpoint` must have the 
+        If `True` for given dimension, add an endpoint at the upper edge
+        of the grid in that dimension (default `False`).  Applies only to
+        non-centered grids. `shape/cells/dr` and `endpoint` must have the
         same number of entries.
     return_shape : `bool, optional, default False`
         Additionally return the shape of the grid.
@@ -388,13 +369,13 @@ def parallelotope_grid_points(axes,
     Returns
     -------
     pgrid : `ndarray, float, shape (N,d)`
-        Array containing the grid points.  `N` is the number of points, `d` 
+        Array containing the grid points.  `N` is the number of points, `d`
         is the dimension of the grid.
     shape : `array_like, shape (d,), optional`
-        Number of grid points in each dimension.  Returned only if 
+        Number of grid points in each dimension.  Returned only if
         `return_shape=True`.
     axes : `ndarray, shape (d,d), optional`
-        Array of axes vector of the parallelotope cell.  Returned only if 
+        Array of axes vector of the parallelotope cell.  Returned only if
         `return_axes=True`.
     """
     if not isinstance(axes,np.ndarray):
@@ -448,20 +429,20 @@ def spheroid_grid_points(axes,shape=None,cells=None,centered=False,endpoint=None
     Parameters
     ----------
     shape : `array_like, int, optional`
-        Number of points in the grid in each dimension.  The dimension of 
-        the grid is the number of entries in `shape`.  Either `shape` or  
+        Number of points in the grid in each dimension.  The dimension of
+        the grid is the number of entries in `shape`.  Either `shape` or
         `cells` must be provided.
     cells : `array_like, int, optional`
-        Number of cells in the grid in each dimension.  The dimension of the 
-        grid is the number of entries in `cells`.  Either `shape` or `cells` 
+        Number of cells in the grid in each dimension.  The dimension of the
+        grid is the number of entries in `cells`.  Either `shape` or `cells`
         must be provided.
     centered : `bool, optional, default False`
-        Locate grid points at lower cell corners (`False`) or cell centers 
+        Locate grid points at lower cell corners (`False`) or cell centers
         (`True`).
     endpoint : `array_like, bool, optional`
-        If `True` for given dimension, add an endpoint at the upper edge 
-        of the grid in that dimension (default `False`).  Applies only to 
-        non-centered grids. `shape/cells/dr` and `endpoint` must have the 
+        If `True` for given dimension, add an endpoint at the upper edge
+        of the grid in that dimension (default `False`).  Applies only to
+        non-centered grids. `shape/cells/dr` and `endpoint` must have the
         same number of entries.
     return_shape : `bool, optional, default False`
         Additionally return the shape of the grid.
@@ -469,10 +450,10 @@ def spheroid_grid_points(axes,shape=None,cells=None,centered=False,endpoint=None
     Returns
     -------
     sgrid : `ndarray, float, shape (N,d)`
-        Array containing the grid points.  `N` is the number of points, `d` 
+        Array containing the grid points.  `N` is the number of points, `d`
         is the dimension of the grid.
     shape : `array_like, shape (d,), optional`
-        Number of grid points in each dimension.  Returned only if 
+        Number of grid points in each dimension.  Returned only if
         `return_shape=True`.
     """
     if not isinstance(axes,np.ndarray):
@@ -524,20 +505,20 @@ def spheroid_surface_grid_points(axes,shape=None,cells=None,centered=False,endpo
     Parameters
     ----------
     shape : `array_like, int, optional`
-        Number of points in the grid in each dimension.  The dimension of 
-        the grid is the number of entries in `shape`.  Either `shape` or  
+        Number of points in the grid in each dimension.  The dimension of
+        the grid is the number of entries in `shape`.  Either `shape` or
         `cells` must be provided.
     cells : `array_like, int, optional`
-        Number of cells in the grid in each dimension.  The dimension of the 
-        grid is the number of entries in `cells`.  Either `shape` or `cells` 
+        Number of cells in the grid in each dimension.  The dimension of the
+        grid is the number of entries in `cells`.  Either `shape` or `cells`
         must be provided.
     centered : `bool, optional, default False`
-        Locate grid points at lower cell corners (`False`) or cell centers 
+        Locate grid points at lower cell corners (`False`) or cell centers
         (`True`).
     endpoint : `array_like, bool, optional`
-        If `True` for given dimension, add an endpoint at the upper edge 
-        of the grid in that dimension (default `False`).  Applies only to 
-        non-centered grids. `shape/cells/dr` and `endpoint` must have the 
+        If `True` for given dimension, add an endpoint at the upper edge
+        of the grid in that dimension (default `False`).  Applies only to
+        non-centered grids. `shape/cells/dr` and `endpoint` must have the
         same number of entries.
     return_shape : `bool, optional, default False`
         Additionally return the shape of the grid.
@@ -545,10 +526,10 @@ def spheroid_surface_grid_points(axes,shape=None,cells=None,centered=False,endpo
     Returns
     -------
     sgrid : `ndarray, float, shape (N,d)`
-        Array containing the grid points.  `N` is the number of points, `d` 
+        Array containing the grid points.  `N` is the number of points, `d`
         is the dimension of the grid.
     shape : `array_like, shape (d,), optional`
-        Number of grid points in each dimension.  Returned only if 
+        Number of grid points in each dimension.  Returned only if
         `return_shape=True`.
     """
     if not isinstance(axes,np.ndarray):
@@ -603,12 +584,12 @@ class PlotHandler(DevBase):
 
     Attributes
     ----------
-    fig : 
+    fig :
         Handle of the current figure.
-    ax : 
+    ax :
         Handle of the current figure's axes.
     """
-    
+
     @staticmethod
     def reset():
         """
@@ -656,7 +637,7 @@ class PlotHandler(DevBase):
         fig : `bool, optional, default True`
             If `True`, create a new figure.  Reuse the current one otherwise.
         dim : `int`
-            The dimension of the figure.  Supports 1, 2, and 3 dimensional 
+            The dimension of the figure.  Supports 1, 2, and 3 dimensional
             figures.
         ax1 : `str, optional, default x`
             Label of the first axis.
@@ -667,11 +648,12 @@ class PlotHandler(DevBase):
 
         Returns:
         --------
-        fig : 
+        fig :
             Handle of the current figure.
-        ax : 
+        ax :
             Handle of the current figure's axes.
         """
+        import matplotlib.pyplot as plt
         if dim is None:
             self.error('cannot setup mpl figure, "dim" must be provided')
         #end if
@@ -717,7 +699,7 @@ class GBase(PlotHandler):
 
     descriptor = 'gbase'
 
-    #: (`obj`) Collection of attributes for the class.  Used to check assigned 
+    #: (`obj`) Collection of attributes for the class.  Used to check assigned
     #: members for type conformity and to assign default values.
     persistent_data_types = obj(
         initialized = (bool,False),
@@ -764,14 +746,14 @@ class GBase(PlotHandler):
 
     def initialize(self,*args,**kwargs):
         """
-        (`Internal API`) Initialize the instance, starting from the Grid base 
+        (`Internal API`) Initialize the instance, starting from the Grid base
         class and then down the inheritance hierarchy.
 
         Parameters
         ----------
         check : `bool, optional, default True`
             Check all the assigned attributes for type and shape validity.
-        **kwargs : 
+        **kwargs :
             Arbitrary keyword arguments corresponding to instance attributes.
         """
         # remove check argument
@@ -789,17 +771,17 @@ class GBase(PlotHandler):
         #end if
     #end def initialize
 
-    
+
     def read(self,filepath,format=None,check=True):
         if isinstance(filepath,StandardFile):
             format = filepath.sftype.lower()
         elif not isinstance(filepath,str):
-            self.error('Cannot read file.\nExpected a file path.\nInstead received type: {}\nWith value: {}\nPlease provide a file path and try again.'.format(filepath.__class__.__name__,filepath))
+            self.error(f'Cannot read file.\nExpected a file path.\nInstead received type: {filepath.__class__.__name__}\nWith value: {filepath}\nPlease provide a file path and try again.')
         elif not os.path.exists(filepath):
-            self.error('Cannot read file.  File path does not exist.\nFile path provided: {}'.format(filepath))
+            self.error(f'Cannot read file.  File path does not exist.\nFile path provided: {filepath}')
         elif format is not None:
             if not isinstance(format,str):
-                self.error('Cannot read file.\nExpected text (string) for file format.\nInstead received type: {}\nWith value: {}'.format(format.__class__.__name__,format))
+                self.error(f'Cannot read file.\nExpected text (string) for file format.\nInstead received type: {format.__class__.__name__}\nWith value: {format}')
             #end if
         else:
             format = filepath.rsplit('.',1)[1].lower()
@@ -827,12 +809,12 @@ class GBase(PlotHandler):
 
     def check_valid(self,exit=True):
         """
-        (`External API`) Check the validity of a Grid object.  
+        (`External API`) Check the validity of a Grid object.
 
         Parameters
         ----------
         exit : `bool, default True`
-            If `True` (the default), exit with an error if the object is 
+            If `True` (the default), exit with an error if the object is
             invalid.
 
         Returns
@@ -855,14 +837,14 @@ class GBase(PlotHandler):
 
     def validity_checks(self):
         """
-        (`Internal API`)  Check validity of all assigned attributes, starting 
+        (`Internal API`)  Check validity of all assigned attributes, starting
         from the Grid base class and then down the inheritance hierarchy.
         """
         cls = self.__class__
         msgs = []
         # check that the grid has been initialized
         if not self.initialized:
-            msgs.append('{} has not been initialized'.format(cls.descriptor))
+            msgs.append(f'{cls.descriptor} has not been initialized')
             return msgs
         #end if
         valid_key_list = list(cls.persistent_data_types.keys())
@@ -871,12 +853,12 @@ class GBase(PlotHandler):
         # check that all data members are present
         missing = valid_key_set - key_set
         if len(missing)>0:
-            msgs.append('some data members are missing: {}'.format(sorted(missing)))
+            msgs.append(f'some data members are missing: {sorted(missing)}')
         #end if
         # check that extra data members are not present
         extra = key_set - valid_key_set
         if len(extra)>0:
-            msgs.append('unknown data members encountered: {}'.format(sorted(extra)))
+            msgs.append(f'unknown data members encountered: {sorted(extra)}')
         #end if
         # check that all data members are of the correct type
         for name in valid_key_list:
@@ -884,9 +866,9 @@ class GBase(PlotHandler):
             if name in self:
                 val = self[name]
                 if val is None:
-                    msgs.append('data member "{}" has not been initialized, it is "None"'.format(name))
+                    msgs.append(f'data member "{name}" has not been initialized, it is "None"')
                 elif not isinstance(val,type):
-                    msgs.append('data member "{}" is not of type "{}", it is of type "{}" instead'.format(name,type.__name__,val.__class__.__name__))
+                    msgs.append(f'data member "{name}" is not of type "{type.__name__}", it is of type "{val.__class__.__name__}" instead')
                 #end if
             #end if
         #end for
@@ -899,7 +881,7 @@ class GBase(PlotHandler):
 
     def initialize_local(self,*args,**kwargs):
         """
-        (`Internal API`) Virtual function used to assign attributes local 
+        (`Internal API`) Virtual function used to assign attributes local
         to the current derived class.
         """
         raise NotImplementedError
@@ -908,7 +890,7 @@ class GBase(PlotHandler):
 
     def local_validity_checks(self,msgs):
         """
-        (`Internal API`) Virtual function used to check the validity of 
+        (`Internal API`) Virtual function used to check the validity of
         attributes local to the current derived class.
         """
         raise NotImplementedError
@@ -933,7 +915,7 @@ class GBase(PlotHandler):
             elif isinstance(ai,np.ndarray):
                 a = ai
             else:
-                self.error('Cannot ensure array value.\nReceived data with type: {}\nOnly tuple, list, and ndarray are supported.'.format(ai.__class__.__name__))
+                self.error(f'Cannot ensure array value.\nReceived data with type: {ai.__class__.__name__}\nOnly tuple, list, and ndarray are supported.')
             #end if
             arrays[k] = a
         #end for
@@ -947,12 +929,12 @@ class Grid(GBase):
     """
     Base class for `M` dimensional grids embedded within `N` dimensional spaces.
 
-    Universal grid properties are handled/represented at this level.  This 
+    Universal grid properties are handled/represented at this level.  This
     includes the fact that a grid contains a set of points and resides within
-    a space of a particular dimension.  Derived classes add more specific 
+    a space of a particular dimension.  Derived classes add more specific
     information and functionality for particular kinds of grids.
 
-    General initialization, checking, and copying of all types of grids is 
+    General initialization, checking, and copying of all types of grids is
     handled at this level.
 
     This class should not be instantiated directly.
@@ -965,7 +947,7 @@ class Grid(GBase):
     Attributes
     ----------
     points : `ndarray, float, shape (N,d)`
-        Array containing the grid points.  `N` is the number of grid points, 
+        Array containing the grid points.  `N` is the number of grid points,
         `d` is the dimension of the space.
     r : `ndarray, float, property`
         Array containing the grid points.  User-facing alias for `points`.
@@ -979,7 +961,7 @@ class Grid(GBase):
 
     descriptor = 'grid'
 
-    #: (`obj`) Collection of attributes for the class.  Used to check assigned 
+    #: (`obj`) Collection of attributes for the class.  Used to check assigned
     #: members for type conformity and to assign default values.
     persistent_data_types = obj(
         points      = (np.ndarray,None ),
@@ -1014,8 +996,8 @@ class Grid(GBase):
         Parameters
         ----------
         points : `array_like, float, shape (N,d)`
-            Array of grid points.  `N` is the number of points, `d` is the 
-            dimension of the space (not necessarily the same as the dimension 
+            Array of grid points.  `N` is the number of points, `d` is the
+            dimension of the space (not necessarily the same as the dimension
             of the grid).
         dtype : `optional`
             Data type of the grid point values.  Should be similar to `float`.
@@ -1037,8 +1019,8 @@ class Grid(GBase):
         Parameters
         ----------
         points : `array_like, float, shape (N,d)`
-            Array of grid points.  `N` is the number of points, `d` is the 
-            dimension of the space (not necessarily the same as the dimension 
+            Array of grid points.  `N` is the number of points, `d` is the
+            dimension of the space (not necessarily the same as the dimension
             of the grid).
         dtype : `optional`
             Data type of the grid point values.  Should be similar to `float`.
@@ -1058,7 +1040,7 @@ class Grid(GBase):
                 points = points.copy()
             #end if
         else:
-            self.error('cannot set points from data with type "{}"\nplease use tuple, list, or array for inputted points'.format(points.__class__.__name__))
+            self.error(f'cannot set points from data with type "{points.__class__.__name__}"\nplease use tuple, list, or array for inputted points')
         #end if
         self.points = points
     #end def set_points
@@ -1071,8 +1053,8 @@ class Grid(GBase):
         Parameters
         ----------
         shallow : `bool, optional, default False`
-            If `False` (the default), perform a deep copy of the object.  
-            Otherwise, perform a deep copy of all attributes except for 
+            If `False` (the default), perform a deep copy of the object.
+            Otherwise, perform a deep copy of all attributes except for
             `points` which is copied shallowly.
         """
         if not shallow:
@@ -1112,13 +1094,13 @@ class Grid(GBase):
         """
         shape = self.points.shape
         if len(shape)!=2:
-            msgs.append('points array must have two shape entries (number of points, dimension of points)\nnumber of shape entries present: {}\npoints shape: {}'.format(len(shape),shape))
+            msgs.append(f'points array must have two shape entries (number of points, dimension of points)\nnumber of shape entries present: {len(shape)}\npoints shape: {shape}')
         else:
             if shape[0]!=self.npoints:
-                msgs.append('unexpected number of points present\npoints expected: {}\npoints encountered: {}'.format(self.npoints,shape[0]))
+                msgs.append(f'unexpected number of points present\npoints expected: {self.npoints}\npoints encountered: {shape[0]}')
             #end if
             if shape[1]!=self.space_dim:
-                msgs.append('unexpected number of spatial dimensions encountered\nspatial dimensions expected: {}\nspatial dimensions encountered: {}'.format(self.space_dim,shape[1]))
+                msgs.append(f'unexpected number of spatial dimensions encountered\nspatial dimensions expected: {self.space_dim}\nspatial dimensions encountered: {shape[1]}')
             #end if
         #end if
         if id(self.r)!=id(self.points):
@@ -1132,8 +1114,8 @@ class Grid(GBase):
         """
         (`Internal API`) Ensure inputted points are valid.
 
-        This function upcasts inputted points to an `ndarray` and checks that 
-        the shape is correct.  It is used by other functions to guard against 
+        This function upcasts inputted points to an `ndarray` and checks that
+        the shape is correct.  It is used by other functions to guard against
         improper input for `points`.
 
         Parameters
@@ -1143,18 +1125,18 @@ class Grid(GBase):
         dim : `int`
             Dimension of the space the points must reside in (`d`).
         loc : `str`
-            Name of the calling function.  This is used to format appropriate 
+            Name of the calling function.  This is used to format appropriate
             error messages.
         """
         if isinstance(points,(tuple,list)):
             points = np.array(points,dtype=self.dtype)
         elif not isinstance(points,np.ndarray):
-            self.error('invalid points provided to function "{}"\nprovided points must be an array\ntype provided: {}'.format(loc,points.__class__.__name__))
+            self.error(f'invalid points provided to function "{loc}"\nprovided points must be an array\ntype provided: {points.__class__.__name__}')
         #end if
         if len(points.shape)!=2:
-            self.error('invalid points provided to function "{}"\npoints must be a 2D array\nnumber of dimensions in provided points array: {}'.format(loc,len(points.shape)))
+            self.error(f'invalid points provided to function "{loc}"\npoints must be a 2D array\nnumber of dimensions in provided points array: {len(points.shape)}')
         elif points.shape[1]!=dim:
-            self.error('invalid points provided to function "{}"\npoints must reside in a {}-dimensional space\nspatial dimensions present: {}'.format(loc,dim,points.shape[1]))
+            self.error(f'invalid points provided to function "{loc}"\npoints must reside in a {dim}-dimensional space\nspatial dimensions present: {points.shape[1]}')
         #end if
         return points
     #end def check_valid_points
@@ -1169,18 +1151,19 @@ class Grid(GBase):
         Parameters
         ----------
         points : `array_like, float, optional`
-            Set of points to plot.  If no points are provided, the grid points 
+            Set of points to plot.  If no points are provided, the grid points
             are plotted.
         fig : `bool, optional, default True`
             If `True`, make a new figure.  Reuse the current one otherwise.
         show : `bool, optional, default True`
             If `True`, display the plot immediately on the screen.
         default_marker : `str, optional, default` "."
-            Default marker symbol for the scatter plot.  Used if "marker" is 
+            Default marker symbol for the scatter plot.  Used if "marker" is
             not provided as a keyword argument.
-        **kwargs : 
+        **kwargs :
             Arbitrary keyword arguments passed to `pyplot.scatter`.
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
         if points is None:
             r = self.r.T
@@ -1215,26 +1198,26 @@ class StructuredGrid(Grid):
     """
     Base class for structured grids.
 
-    A structured grid has the property that each grid point in the `M` 
-    dimensional space, excepting those on the boundary, are connected to `2M` 
-    neighbors.  We further assume that the domain can be described by an `M` 
-    dimensional coordinate system that can be mapped onto a unit cube of 
-    dimension `M`.  The general structured grid can then be described through  
-    a mapping of a uniform grid over the unit M-cube onto the target space. 
+    A structured grid has the property that each grid point in the `M`
+    dimensional space, excepting those on the boundary, are connected to `2M`
+    neighbors.  We further assume that the domain can be described by an `M`
+    dimensional coordinate system that can be mapped onto a unit cube of
+    dimension `M`.  The general structured grid can then be described through
+    a mapping of a uniform grid over the unit M-cube onto the target space.
 
-    This class represents grids of this type and adds appropriate descriptive 
-    properties and functions to the bare Grid class, including the fact that 
-    the grid has a particluar shape (number of grid cells in each dimension), 
-    that its points can reside at cell centers or edges, and that it has 
-    boundaries (as follows from the mapping of the `M`-cube facets) and 
-    accompanying boundary conditions (e.g. periodic).  Further, the grid can 
+    This class represents grids of this type and adds appropriate descriptive
+    properties and functions to the bare Grid class, including the fact that
+    the grid has a particluar shape (number of grid cells in each dimension),
+    that its points can reside at cell centers or edges, and that it has
+    boundaries (as follows from the mapping of the `M`-cube facets) and
+    accompanying boundary conditions (e.g. periodic).  Further, the grid can
     exist on the surface of another space with little additional complication.
 
-    An advantage of framing an entire class of grids through mappings to the 
-    unit `M`-cube is that operations such as interpolation and integration of 
+    An advantage of framing an entire class of grids through mappings to the
+    unit `M`-cube is that operations such as interpolation and integration of
     functions on these grids can be formulated in a centralized fashion.
 
-    The actual mappings back and forth from the unit `M`-cube are left to 
+    The actual mappings back and forth from the unit `M`-cube are left to
     derived classes.
 
     This class should not be instantiated directly.
@@ -1242,16 +1225,16 @@ class StructuredGrid(Grid):
     Parameters
     ----------
     shape : `array_like, int, shape (d,)`
-        The number of grid points in each dimension. `d` is the dimension of 
+        The number of grid points in each dimension. `d` is the dimension of
         the grid (`grid_dim`).
     centered : `bool, optional, default False`
-        Locate grid points at lower cell corners (`False`) or cell centers 
+        Locate grid points at lower cell corners (`False`) or cell centers
         (`True`).
     bconds : `array_like, str, shape (d,), {'o','p'}, optional, default d*['o']`
-        Boundary conditions for each dimension.  Options are open (`'o'`) 
+        Boundary conditions for each dimension.  Options are open (`'o'`)
         and periodic (`'p'`).  `d` is the dimension of the grid (`grid_dim`).
     surface : `bool`
-        If `True`, then the grid is known to reside on the surface of another 
+        If `True`, then the grid is known to reside on the surface of another
         space.  Otherwise, the grid spans the volume of that space.
 
     Attributes
@@ -1259,13 +1242,13 @@ class StructuredGrid(Grid):
     shape : `tuple, int`
         The number of grid points in each dimension.
     centered : `bool`
-        Grid points are located at lower cell corners (`False`) or cell 
+        Grid points are located at lower cell corners (`False`) or cell
         centers (`True`).
     bconds : `ndarray, str`
         Boundary conditions for each dimension.
     surface : `bool`
-        The grid is resides on the surface of a space (`True`), otherwise, it 
-        spans the volume of the space (`False`).  This attribute is intended 
+        The grid is resides on the surface of a space (`True`), otherwise, it
+        spans the volume of the space (`False`).  This attribute is intended
         to be immutable once set.
     grid_dim : `int, property`
         The dimension of the grid.  Must be less than or equal to `space_dim`.
@@ -1276,16 +1259,16 @@ class StructuredGrid(Grid):
     ncells : `int, property`
         The total number of grid cells.
     flat_points_shape : `tuple, int, property`
-        The shape of the `points` array in its default (flat) representation. 
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        The shape of the `points` array in its default (flat) representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `flat_points_shape` is `(N*M*P,D)`.
     full_points_shape : `tuple, int, property`
         The shape of the points array in its full representation.
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `full_points_shape` is `(N,M,P,D)`.
     """
 
-    #: (`obj`) Collection of attributes for the class.  Used to check assigned 
+    #: (`obj`) Collection of attributes for the class.  Used to check assigned
     #: members for type conformity and to assign default values.
     persistent_data_types = obj(
         shape    = (tuple     ,None),
@@ -1355,10 +1338,10 @@ class StructuredGrid(Grid):
 
     def initialize_local(self,**kwargs):
         """
-        (`Internal API`) Sets `shape`, `centered`, `bconds`, and `surface` 
+        (`Internal API`) Sets `shape`, `centered`, `bconds`, and `surface`
         attributes.
 
-        The `surface` attribute is set to `False`.  It is the responsibility 
+        The `surface` attribute is set to `False`.  It is the responsibility
         of the derived classes to set this in an appropriate way.
         """
         shape    = kwargs.pop('shape'   ,None)
@@ -1371,7 +1354,7 @@ class StructuredGrid(Grid):
             self.error('cannot initialize grid, "shape" is required')
         #end if
         if not isinstance(shape,(tuple,list,np.ndarray)):
-            self.error('cannot set shape from data with type "{}"\nplease use tuple, list, or array for inputted shape'.format(shape.__class__.__name__))
+            self.error(f'cannot set shape from data with type "{shape.__class__.__name__}"\nplease use tuple, list, or array for inputted shape')
         #end if
         shape = np.array(shape,dtype=int)
         if bconds is None:
@@ -1387,12 +1370,12 @@ class StructuredGrid(Grid):
         (`Internal API`) Sets the `shape` attribute in a protected way.
         """
         if not isinstance(shape,(tuple,list,np.ndarray)):
-            self.error('cannot set shape from data with type "{}"\nplease use tuple, list, or array for inputted shape'.format(shape.__class__.__name__))
+            self.error(f'cannot set shape from data with type "{shape.__class__.__name__}"\nplease use tuple, list, or array for inputted shape')
         #end if
         if 'points' in self and self.points is not None:
             npoints = np.array(shape,dtype=int).prod()
             if npoints!=len(self.points):
-                self.error('cannot set shape\ngrid shape provided does not match the number of points in the grid\npoints in grid: {}\npoints from shape: {}'.format(len(self.points),npoints))
+                self.error(f'cannot set shape\ngrid shape provided does not match the number of points in the grid\npoints in grid: {len(self.points)}\npoints from shape: {npoints}')
             #end if
         #end if
         self.shape = tuple(shape)
@@ -1407,12 +1390,12 @@ class StructuredGrid(Grid):
             bconds = tuple(bconds)
         #end if
         if not isinstance(bconds,(tuple,list,np.ndarray)):
-            self.error('cannot set bconds from data with type "{}"\nplease use tuple, list, or array for inputted bconds'.format(bconds.__class__.__name__))
+            self.error(f'cannot set bconds from data with type "{bconds.__class__.__name__}"\nplease use tuple, list, or array for inputted bconds')
         #end if
         bconds = np.array(bconds,dtype=object)
         for bc in bconds:
             if bc not in StructuredGrid.valid_bconds:
-                self.error('boundary conditions are invalid\nboundary conditions in each dimension must be one of: {}\nboundary conditions provided: {}'.format(sorted(StructuredGrid.valid_bconds),bconds))
+                self.error(f'boundary conditions are invalid\nboundary conditions in each dimension must be one of: {sorted(StructuredGrid.valid_bconds)}\nboundary conditions provided: {bconds}')
             #end if
         #end for
         self.bconds = bconds
@@ -1443,7 +1426,7 @@ class StructuredGrid(Grid):
 
     def local_validity_checks(self,msgs):
         """
-        (`Internal API`) Check the validity of the `shape` and `bconds` 
+        (`Internal API`) Check the validity of the `shape` and `bconds`
         attributes.
 
         Parameters
@@ -1453,15 +1436,15 @@ class StructuredGrid(Grid):
         """
         msgs = Grid.local_validity_checks(self,msgs)
         if np.prod(self.shape)!=self.npoints:
-            msgs.append('grid shape does not match number of points\nnumber of points: {}\nproduct of shape: {}\nshape: {}'.format(self.npoints,np.prod(self.shape),self.shape))
+            msgs.append(f'grid shape does not match number of points\nnumber of points: {self.npoints}\nproduct of shape: {np.prod(self.shape)}\nshape: {self.shape}')
         #end if
         if len(self.shape)!=self.grid_dim:
-            msgs.append('number of entries in grid shape does not match grid dimension\nnumber of entries in grid shape: {}\ngrid dimension: {}'.format(len(self.shape),self.grid_dim))
+            msgs.append(f'number of entries in grid shape does not match grid dimension\nnumber of entries in grid shape: {len(self.shape)}\ngrid dimension: {self.grid_dim}')
         #end if
         if len(self.bconds)!=self.grid_dim:
-            msgs.append('number of entries in bconds does not match grid dimension\nnumber of entries in bconds: {}\ngrid dimension: {}'.format(len(self.bconds),self.grid_dim))
+            msgs.append(f'number of entries in bconds does not match grid dimension\nnumber of entries in bconds: {len(self.bconds)}\ngrid dimension: {self.grid_dim}')
         if len(set(self.bconds)-StructuredGrid.valid_bconds)>0:
-            msgs.append('boundary conditions are invalid\nboundary conditions in each dimension must be one of: {}\nboundary conditions provided: {}'.format(sorted(StructuredGrid.valid_bconds),self.bconds))
+            msgs.append(f'boundary conditions are invalid\nboundary conditions in each dimension must be one of: {sorted(StructuredGrid.valid_bconds)}\nboundary conditions provided: {self.bconds}')
             #end if
         #end for
         return msgs
@@ -1472,7 +1455,7 @@ class StructuredGrid(Grid):
         """
         (`Internal API`) Transform the grid points array into full shape.
 
-        This should only be a local and temporary change of state.  It should 
+        This should only be a local and temporary change of state.  It should
         be reversed by calling `reshape_flat` as soon as possible.
         """
         npe.reshape_inplace(self.r, self.full_points_shape)
@@ -1484,7 +1467,7 @@ class StructuredGrid(Grid):
         (`Internal API`) Transform the grid points array into the default flat
         shape.
 
-        This function is meant to reverse the temporary state change induced 
+        This function is meant to reverse the temporary state change induced
         by `reshape_full`.
         """
         npe.reshape_inplace(self.r, self.flat_points_shape)
@@ -1497,9 +1480,9 @@ class StructuredGrid(Grid):
             full_indices = np.array(full_indices,dtype=int)
         #end if
         if len(full_indices.shape)!=2:
-            self.error('full_indices must have shape (# points)x(# dimensions)\nShape received: {}'.format(full_indices.shape))
+            self.error(f'full_indices must have shape (# points)x(# dimensions)\nShape received: {full_indices.shape}')
         elif full_indices.shape[-1]!=self.grid_dim:
-            self.error('full_indices must have same dimension as the grid.\nfull_indices dimension: {}\nGrid dimension: {}'.format(full_indices.shape[-1],self.grid_dim))
+            self.error(f'full_indices must have same dimension as the grid.\nfull_indices dimension: {full_indices.shape[-1]}\nGrid dimension: {self.grid_dim}')
         #end if
         grid_shape = self.grid_shape
         D = len(grid_shape)
@@ -1521,13 +1504,13 @@ class StructuredGrid(Grid):
         ----------
         points : `array_like, float, shape(N,d), optional`
             Array of points in the full coordinate space. `N` is the number of
-            points and `d` must be equal to `space_dim`.  The grid points are 
+            points and `d` must be equal to `space_dim`.  The grid points are
             used if no points are provided.
 
         Returns
         -------
         upoints : `ndarray, float, shape (N,dg)`
-            Array of points in the unit coordinate space.  `N` is the number 
+            Array of points in the unit coordinate space.  `N` is the number
             of points and `dg` is equal to `grid_dim`.
         """
         if points is None:
@@ -1549,21 +1532,21 @@ class StructuredGrid(Grid):
 
     def unit_metric(self,upoints=None):
         """
-        (`External API`)  Compute the integration metric in the unit coordinate 
+        (`External API`)  Compute the integration metric in the unit coordinate
         space for a set of points defined there.
 
         Parameters
         ----------
         upoints : `array_like, float, shape (N,d), optional`
-            Array of points in the unit coordinate space.  `N` is the number 
-            of points and `d` must be equal to `grid_dim`.  The unit 
-            representation of the grid points is used if no points are 
+            Array of points in the unit coordinate space.  `N` is the number
+            of points and `d` must be equal to `grid_dim`.  The unit
+            representation of the grid points is used if no points are
             provided.
 
         Returns
         -------
         umetric : `ndarray, float, shape (N,)`
-            Array containing the integration metric in the unit space at the 
+            Array containing the integration metric in the unit space at the
             set of points provided.  `N` is the number of points.
         """
         return self.unit_metric_bare(upoints)
@@ -1572,14 +1555,14 @@ class StructuredGrid(Grid):
 
     def cell_indices(self,points=None,project=True):
         """
-        (`External API`) Given a set of points, find the index of the grid cell 
+        (`External API`) Given a set of points, find the index of the grid cell
         bounding each point.
 
         Parameters
         ----------
         points : `array_like, float, shape (N,d), optional`
             Array of points in the full coordinate space. `N` is the number of
-            points and `d` must be equal to `space_dim`.  The grid points are 
+            points and `d` must be equal to `space_dim`.  The grid points are
             used if no points are provided.
 
         Returns
@@ -1604,7 +1587,7 @@ class StructuredGrid(Grid):
 
     def inside(self,points,tol=1e-12):
         """
-        (`External API`)  Given a set of points, determine which are inside the 
+        (`External API`)  Given a set of points, determine which are inside the
         boundary of the grid.
 
         Parameters
@@ -1616,7 +1599,7 @@ class StructuredGrid(Grid):
         Returns
         -------
         inside : `ndarray, bool, shape (N,)`
-            Mask array that is `True` if a point is inside and `False` 
+            Mask array that is `True` if a point is inside and `False`
             otherwise.  `N` is the number of points.
         """
         points = self.check_valid_points(points,self.space_dim,'inside')
@@ -1636,13 +1619,13 @@ class StructuredGrid(Grid):
         """
         (`External API`) Project a set of points into the grid domain, if possible.
 
-        The points are first projected into the unit cube and then, if in 
-        periodic boundary conditions, folded back into the unit cube.  Note 
-        that following this operation, some points may still fall outside the 
+        The points are first projected into the unit cube and then, if in
+        periodic boundary conditions, folded back into the unit cube.  Note
+        that following this operation, some points may still fall outside the
         grid boundary if there are any open boundaries.
 
-        In derived classes, the projection onto the unit cube may have the 
-        additional effect of projection points from a higher dimensional 
+        In derived classes, the projection onto the unit cube may have the
+        additional effect of projection points from a higher dimensional
         embedding space onto the grid domain.
 
         Parameters
@@ -1664,10 +1647,10 @@ class StructuredGrid(Grid):
 
     def get_boundary_lines(self,n=200,unit=False):
         """
-        (`Internal API`)  Generate a set of points on the edges of the 
+        (`Internal API`)  Generate a set of points on the edges of the
         boundary.
 
-        This function is used primarily to make plots of the grid domain 
+        This function is used primarily to make plots of the grid domain
         boundaries.
 
         Parameters
@@ -1675,14 +1658,14 @@ class StructuredGrid(Grid):
         n : `int, optional, default 200`
             Number of points to generate along each boundary edge.
         unit : `bool, optional, default False`
-            Generate the points in unit coordinates (`True`), or in the full 
+            Generate the points in unit coordinates (`True`), or in the full
             space (`False`).
 
         Returns
         -------
         bpoints : `ndarray, float, shape (NL,n,d)`
-            Array containing the boundary lines. `NL` is the number of lines 
-            and `d` is either the dimension of the full space (`space_dim, 
+            Array containing the boundary lines. `NL` is the number of lines
+            and `d` is either the dimension of the full space (`space_dim,
             unit=False`) or the embedded space (`grid_dim, unit=True`).
         """
         u = np.linspace(0.,1.,n)
@@ -1734,6 +1717,7 @@ class StructuredGrid(Grid):
         show : `bool, optional, default True`
             Display the figure (`True`) or not (`False`).
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.space_dim)
         if self.grid_dim!=1 or self.surface:
             bpoints = self.get_boundary_lines(n=n)
@@ -1750,27 +1734,28 @@ class StructuredGrid(Grid):
 
     def plot_unit_points(self,points=None,fig=True,show=True,default_marker='.',**kwargs):
         """
-        (`External API`) Make a scatter plot of a set of points in unit 
+        (`External API`) Make a scatter plot of a set of points in unit
         coordinates.
 
-        The inputted points are projected into the unit cube before plotting.  
+        The inputted points are projected into the unit cube before plotting.
         By default, the grid points are plotted.
 
         Parameters
         ----------
         points : `array_like, float, optional`
-            Set of points to plot.  If no points are provided, the grid points 
+            Set of points to plot.  If no points are provided, the grid points
             are plotted.
         fig : `bool, optional, default True`
             If `True`, make a new figure.  Reuse the current one otherwise.
         show : `bool, optional, default True`
             If `True`, display the plot immediately on the screen.
         default_marker : `str, optional, default` "."
-            Default marker symbol for the scatter plot.  Used if "marker" is 
+            Default marker symbol for the scatter plot.  Used if "marker" is
             not provided as a keyword argument.
-        **kwargs : 
+        **kwargs :
             Arbitrary keyword arguments passed to `pyplot.scatter`.
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
                                     ax1='a1',ax2='a2',ax3='a3')
         if points is None:
@@ -1807,6 +1792,7 @@ class StructuredGrid(Grid):
         show : `bool, optional, default True`
             Display the figure (`True`) or not (`False`).
         """
+        import matplotlib.pyplot as plt
         fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim,
                                     ax1='a1',ax2='a2',ax3='a3')
         if self.grid_dim!=1 or self.surface:
@@ -1824,7 +1810,7 @@ class StructuredGrid(Grid):
 
     def unit_points_bare(self,points=None):
         """
-        (`Internal API`)  Derived class function to map points into the unit 
+        (`Internal API`)  Derived class function to map points into the unit
         cube.
         """
         raise NotImplementedError
@@ -1838,13 +1824,13 @@ class StructuredGrid(Grid):
         Parameters
         ----------
         upoints : `array_like, float, shape (N,dg), optional`
-            Array of points in the unit coordinate space.  `N` is the number 
+            Array of points in the unit coordinate space.  `N` is the number
             of points and `dg` must be equal to `grid_dim`.
 
         Returns
         -------
         points : `ndarray, float, shape (N,ds)`
-            Array of points in the full coordinate space.  `ds` is the 
+            Array of points in the full coordinate space.  `ds` is the
             dimension of the full space (`space_dim`).
         """
         raise NotImplementedError
@@ -1853,7 +1839,7 @@ class StructuredGrid(Grid):
 
     def unit_metric_bare(self,upoints):
         """
-        (`Internal API`) Derived class function that computes the integration 
+        (`Internal API`) Derived class function that computes the integration
         metric in the unit coordinate space for a set of points defined there.
         """
         raise NotImplementedError
@@ -1880,7 +1866,7 @@ class StructuredGrid(Grid):
         Returns
         -------
         cell_vols : `ndarray, shape (N,)`
-            Array containing the volume of each grid cell.  `N` is the number 
+            Array containing the volume of each grid cell.  `N` is the number
             of points in the grid.
         """
         raise NotImplementedError
@@ -1891,12 +1877,12 @@ class StructuredGrid(Grid):
 
 class StructuredGridWithAxes(StructuredGrid):
     """
-    Base class for structured grids with linear axes that act as scaffolding 
+    Base class for structured grids with linear axes that act as scaffolding
     for the coordinate system.
 
-    Examples are sheared cartesian and spherical coordinate systems.  Each 
-    derived class optionally enacts a coordinate transformation on top of 
-    the sheared axes.  With the introduction of the axes, this class also 
+    Examples are sheared cartesian and spherical coordinate systems.  Each
+    derived class optionally enacts a coordinate transformation on top of
+    the sheared axes.  With the introduction of the axes, this class also
     handles the notion of the origin of the coordinate system.
 
     This class should not be instantiated directly.
@@ -1904,30 +1890,30 @@ class StructuredGridWithAxes(StructuredGrid):
     Parameters
     ----------
     axes : `array_like, float, shape (dg,ds)`
-        Axes used to form the coordinate system.  `dg` is the dimension of 
-        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of 
+        Axes used to form the coordinate system.  `dg` is the dimension of
+        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of
         the points in the grid (full space, `ds=space_dim`).
     origin : `array_like, float, shape (ds,), optional, default ds*[0]`
         Origin of the space.  `ds` is the dimension of the full space.
-    
+
     Attributes
     ----------
     axes : `ndarray, float, shape (dg,ds)`
-        Axes used to form the coordinate system.  `dg` is the dimension of 
-        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of 
+        Axes used to form the coordinate system.  `dg` is the dimension of
+        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of
         the points in the grid (full space, `ds=space_dim`).
     origin : `ndarray, float, shape (ds,)`
         Origin of the space.  `ds` is the dimension of the full space.
     """
 
-    #: (`obj`) Collection of attributes for the class.  Used to check assigned 
+    #: (`obj`) Collection of attributes for the class.  Used to check assigned
     #: members for type conformity and to assign default values.
     persistent_data_types = obj(
         axes   = (np.ndarray,None),
         origin = (np.ndarray,None),
         **StructuredGrid.persistent_data_types
         )
-    
+
     def initialize_local(self,
                          axes   = None,
                          origin = None,
@@ -1936,7 +1922,7 @@ class StructuredGridWithAxes(StructuredGrid):
         """
         (`Internal API`) Sets `axes` and `origin` attributes.
 
-        The `surface` attribute is set to `False`.  It is the responsibility 
+        The `surface` attribute is set to `False`.  It is the responsibility
         of the derived classes to set this in an appropriate way.
         """
         if axes is None:
@@ -1958,7 +1944,7 @@ class StructuredGridWithAxes(StructuredGrid):
         (`Internal API`) Sets the `axes` attribute in a protected way.
         """
         if not isinstance(axes,(tuple,list,np.ndarray)):
-            self.error('cannot set axes from data with type "{}"\nplease use tuple, list, or array for inputted axes'.format(axes.__class__.__name__))
+            self.error(f'cannot set axes from data with type "{axes.__class__.__name__}"\nplease use tuple, list, or array for inputted axes')
         #end if
         self.axes = np.array(axes,dtype=self.dtype)
     #end def set_axes
@@ -1969,7 +1955,7 @@ class StructuredGridWithAxes(StructuredGrid):
         (`Internal API`) Sets the `origin` attribute in a protected way.
         """
         if not isinstance(origin,(tuple,list,np.ndarray)):
-            self.error('cannot set origin from data with type "{}"\nplease use tuple, list, or array for inputted origin'.format(origin.__class__.__name__))
+            self.error(f'cannot set origin from data with type "{origin.__class__.__name__}"\nplease use tuple, list, or array for inputted origin')
         #end if
         origin = np.array(origin,dtype=self.dtype)
         if self.origin is not None:
@@ -1998,7 +1984,7 @@ class StructuredGridWithAxes(StructuredGrid):
 
     def local_validity_checks(self,msgs):
         """
-        (`Internal API`) Check the validity of the `axes` and `origin` 
+        (`Internal API`) Check the validity of the `axes` and `origin`
         attributes.
 
         Parameters
@@ -2009,26 +1995,26 @@ class StructuredGridWithAxes(StructuredGrid):
         msgs = StructuredGrid.local_validity_checks(self,msgs)
         shape = self.axes.shape
         if len(shape)!=2:
-            msgs.append('axes must be a 2 dimensional array\nnumber of dimensions present: {}\naxes present: {}'.format(len(shape),self.axes))
+            msgs.append(f'axes must be a 2 dimensional array\nnumber of dimensions present: {len(shape)}\naxes present: {self.axes}')
         else:
             if not self.surface:
                 if shape[0]!=self.grid_dim:
-                    msgs.append('number of axes must be equal to the embedded grid dimension\nembedded grid dimension: {}\nnumber of axes present: {}'.format(self.grid_dim,shape[0]))
+                    msgs.append(f'number of axes must be equal to the embedded grid dimension\nembedded grid dimension: {self.grid_dim}\nnumber of axes present: {shape[0]}')
                 #end if
             else:
                 if shape[0]!=self.grid_dim+1:
-                    msgs.append('number of axes must be equal to the embedded grid dimension + 1 for a surface\nembedded grid dimension + 1: {}\nnumber of axes present: {}'.format(self.grid_dim+1,shape[0]))
+                    msgs.append(f'number of axes must be equal to the embedded grid dimension + 1 for a surface\nembedded grid dimension + 1: {self.grid_dim+1}\nnumber of axes present: {shape[0]}')
                 #end if
             #end if
             if shape[1]!=self.space_dim:
-                msgs.append('axis dimension must be equal to the dimension of the space\nspace dimension: {}\naxis dimension: {}\naxes present: {}'.format(self.space_dim,shape[1],self.axes))
+                msgs.append(f'axis dimension must be equal to the dimension of the space\nspace dimension: {self.space_dim}\naxis dimension: {shape[1]}\naxes present: {self.axes}')
             #end if
         #end if
         shape = self.origin.shape
         if len(shape)!=1:
-            msgs.append('origin must be a 1 dimensional array (single point)\nnumber of dimensions present: {}\norigin present: {}'.format(len(shape),self.origin))
+            msgs.append(f'origin must be a 1 dimensional array (single point)\nnumber of dimensions present: {len(shape)}\norigin present: {self.origin}')
         elif shape[0]!=self.space_dim:
-            msgs.append('origin dimension must be equal to the dimension of the space\nspace dimension: {}\naxis dimension: {}\norigin present: {}'.format(self.space_dim,shape[0],self.origin))
+            msgs.append(f'origin dimension must be equal to the dimension of the space\nspace dimension: {self.space_dim}\naxis dimension: {shape[0]}\norigin present: {self.origin}')
         #end if
         return msgs
     #end def local_validity_checks
@@ -2038,19 +2024,19 @@ class StructuredGridWithAxes(StructuredGrid):
         """
         (`Internal API`) Compute the volume enclosed by the axes.
 
-        The volume enclosed by the axes is not in general the volume 
-        enclosed by the grid boundaries, but it is used to compute the full 
-        grid volume once any additional coordinate transformations are 
+        The volume enclosed by the axes is not in general the volume
+        enclosed by the grid boundaries, but it is used to compute the full
+        grid volume once any additional coordinate transformations are
         accounted for.
 
-        This function uses singular value decomposition to compute the 
-        volume.  This is important for grids embedded in higher dimensional 
+        This function uses singular value decomposition to compute the
+        volume.  This is important for grids embedded in higher dimensional
         spaces.
 
         Returns
         -------
         ax_vol : `float`
-            Volume enclosed by the axes.  
+            Volume enclosed by the axes.
         """
         return np.abs(np.prod(np.linalg.svd(self.axes,compute_uv=False)))
     #end def axes_volume
@@ -2075,15 +2061,15 @@ class ParallelotopeGrid(StructuredGridWithAxes):
     """
     A regular structured grid over a sheared cell (parallelotope).
 
-    This type of grid is standard for representing the domain of one, two, 
+    This type of grid is standard for representing the domain of one, two,
     and three dimensional functions in scientific applications.
 
-    An `M`-dimensional parallelotope grid may be embedded in an `N`-dimensional 
-    space, e.g. a 2D planar plaquette with arbitrary orientation in an open 
-    3D space.  Such grids are useful to describe planar or line cuts through 
+    An `M`-dimensional parallelotope grid may be embedded in an `N`-dimensional
+    space, e.g. a 2D planar plaquette with arbitrary orientation in an open
+    3D space.  Such grids are useful to describe planar or line cuts through
     higher dimensional spaces.
 
-    Below, `M` and `N` are referred to as `dg` and `ds`, or the dimension of 
+    Below, `M` and `N` are referred to as `dg` and `ds`, or the dimension of
     the grid (embedded space) and the full space (embedding space) respectively.
     These spaces may be chosen to be the same.
 
@@ -2092,75 +2078,75 @@ class ParallelotopeGrid(StructuredGridWithAxes):
     Parameters
     ----------
     axes : `array_like, float, shape (dg,ds)`
-        Axes used to form the coordinate system.  `dg` is the dimension of 
-        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of 
+        Axes used to form the coordinate system.  `dg` is the dimension of
+        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of
         the points in the grid (full space, `ds=space_dim`).
     bconds : `array_like, str, shape (d,), {'o','p'}, optional, default d*['o']`
-        Boundary conditions for each dimension.  Options are open (`'o'`) 
+        Boundary conditions for each dimension.  Options are open (`'o'`)
         and periodic (`'p'`).  `d` is the dimension of the grid (`grid_dim`).
     centered : `bool, optional, default False`
-        Locate grid points at lower cell corners (`False`) or cell centers 
+        Locate grid points at lower cell corners (`False`) or cell centers
         (`True`).
     cells : `array_like, int, shape (dg,), optional`
-        The number of grid cells in each dimension. An additional grid point 
-        will be present at the upper edge of any dimension with open boundary 
-        conditions.  `dg` is the dimension of the grid (`grid_dim`).  One of 
+        The number of grid cells in each dimension. An additional grid point
+        will be present at the upper edge of any dimension with open boundary
+        conditions.  `dg` is the dimension of the grid (`grid_dim`).  One of
         `cells`, `dr`, or `shape` must be provided to generate the grid.
     dr : `array_like, float, shape (dg,), optional`
-        The approximate width of grid cells in each dimension. The number of 
-        grid cells is determined by adjusting `dr` in each dimension such that 
-        an integer number of cells results.  `dg` is the dimension of the grid 
-        (`grid_dim`).  One of `cells`, `dr`, or `shape` must be provided to 
+        The approximate width of grid cells in each dimension. The number of
+        grid cells is determined by adjusting `dr` in each dimension such that
+        an integer number of cells results.  `dg` is the dimension of the grid
+        (`grid_dim`).  One of `cells`, `dr`, or `shape` must be provided to
         generate the grid.
     shape : `array_like, int, shape (dg,), optional`
-        The number of grid points in each dimension. In periodic boundary 
-        conditions, the number of grid cells and grid points match in each 
-        dimension.  In dimensions with open boundary conditions, there is 
-        one fewer grid cell than grid point since a grid point is present 
-        at the upper edge of open boundaries, but not periodic ones.  `dg` is 
-        the dimension of the grid (`grid_dim`).  One of `cells`, `dr`, or 
+        The number of grid points in each dimension. In periodic boundary
+        conditions, the number of grid cells and grid points match in each
+        dimension.  In dimensions with open boundary conditions, there is
+        one fewer grid cell than grid point since a grid point is present
+        at the upper edge of open boundaries, but not periodic ones.  `dg` is
+        the dimension of the grid (`grid_dim`).  One of `cells`, `dr`, or
         `shape` must be provided to generate the grid.
     corner : `array_like, float, shape (ds,), optional, default ds*[0]`
-        The location of the lower corner of the cell.  This point is also 
-        the origin of the grid coordinate system.  `ds` is the dimension of the 
-        full space (`space_dim`). One of `corner`, `center`, or `origin` must 
+        The location of the lower corner of the cell.  This point is also
+        the origin of the grid coordinate system.  `ds` is the dimension of the
+        full space (`space_dim`). One of `corner`, `center`, or `origin` must
         be provided, with `corner` or `center` preferred.
     center : `array_like, float, shape (ds,), optional`
-        The location of the middle of the cell.  It is sometimes convenient 
-        to define the location of the cell relative to its mid-point rather 
-        than its lower corner. `ds` is the dimension of the full space 
+        The location of the middle of the cell.  It is sometimes convenient
+        to define the location of the cell relative to its mid-point rather
+        than its lower corner. `ds` is the dimension of the full space
         (`space_dim`). One of `corner`, `center`, or `origin` must be provided,
         with `corner` or `center` preferred.
     origin : `array_like, float, shape (ds,), optional, default ds*[0]`
-        Origin of the space.  For a parallelotope grid, this point is the 
-        lower corner of the cell.  `ds` is the dimension of the full space 
+        Origin of the space.  For a parallelotope grid, this point is the
+        lower corner of the cell.  `ds` is the dimension of the full space
         (`space_dim`). One of `corner`, `center`, or `origin` must be provided,
         with `corner` or `center` preferred.
 
     Attributes
     ----------
     points : `ndarray, float, shape (N,d)`
-        Array containing the grid points.  `N` is the number of grid points, 
+        Array containing the grid points.  `N` is the number of grid points,
         `d` is the dimension of the space.
     axes : `ndarray, float, shape (dg,ds)`
-        Axes used to form the coordinate system.  `dg` is the dimension of 
-        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of 
+        Axes used to form the coordinate system.  `dg` is the dimension of
+        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of
         the points in the grid (full space, `ds=space_dim`).
     bconds : `ndarray, str`
         Boundary conditions for each dimension.
     centered : `bool`
-        Grid points are located at lower cell corners (`False`) or cell 
+        Grid points are located at lower cell corners (`False`) or cell
         centers (`True`).
     shape : `tuple, int`
         The number of grid points in each dimension.
     origin : `ndarray, float, shape (ds,)`
         Origin of the space.  `ds` is the dimension of the full space.
     surface : `bool`
-        (`Internal`) The grid is resides on the surface of a space (`True`), 
-        otherwise, it spans the volume of the space (`False`).  This attribute 
+        (`Internal`) The grid is resides on the surface of a space (`True`),
+        otherwise, it spans the volume of the space (`False`).  This attribute
         is intended to be immutable once set.
     initialized : `bool`
-        (`Internal`) Set to true if the instance has been initialized in 
+        (`Internal`) Set to true if the instance has been initialized in
         non-vacuous fashion.
     r : `ndarray, float, property`
         Array containing the grid points.  User facing alias for `points`.
@@ -2179,12 +2165,12 @@ class ParallelotopeGrid(StructuredGridWithAxes):
     ncells : `int, property`
         The total number of grid cells.
     flat_points_shape : `tuple, int, property`
-        The shape of the `points` array in its default (flat) representation. 
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        The shape of the `points` array in its default (flat) representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `flat_points_shape` is `(N*M*P,D)`.
     full_points_shape : `tuple, int, property`
         The shape of the points array in its full representation.
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `full_points_shape` is `(N,M,P,D)`.
     corner : `ndarray, float, shape (ds,), property`
         Location of the lower corner of the cell.  `ds` is the dimension of the
@@ -2276,7 +2262,7 @@ class ParallelotopeGrid(StructuredGridWithAxes):
         if format=='xsf':
             self.read_xsf(filepath)
         else:
-            self.error('Cannot read file.\nUnrecognized file format encountered.\nUnrecognized file format: {}\nValid options are: xsf'.format(format))
+            self.error(f'Cannot read file.\nUnrecognized file format encountered.\nUnrecognized file format: {format}\nValid options are: xsf')
         #end if
     #end def read_local
 
@@ -2331,13 +2317,13 @@ class ParallelotopeGrid(StructuredGridWithAxes):
         Parameters
         ----------
         upoints : `array_like, float, shape (N,dg), optional`
-            Array of points in the unit coordinate space.  `N` is the number 
+            Array of points in the unit coordinate space.  `N` is the number
             of points and `dg` must be equal to `grid_dim`.
 
         Returns
         -------
         points : `ndarray, float, shape (N,ds)`
-            Array of points in the full coordinate space.  `ds` is the 
+            Array of points in the full coordinate space.  `ds` is the
             dimension of the full space (`space_dim`).
         """
         points = np.dot(upoints,self.axes)+self.corner
@@ -2347,7 +2333,7 @@ class ParallelotopeGrid(StructuredGridWithAxes):
 
     def unit_metric_bare(self,upoints):
         """
-        (`Internal API`) Compute the parallelotope integration metric in the 
+        (`Internal API`) Compute the parallelotope integration metric in the
         unit coordinate space for a set of points defined there.
         """
         if upoints is None:
@@ -2361,7 +2347,7 @@ class ParallelotopeGrid(StructuredGridWithAxes):
 
     def volume(self):
         """
-        (`External API`)  Compute the volume of the parallelotope bounding the 
+        (`External API`)  Compute the volume of the parallelotope bounding the
         grid.
 
         Returns
@@ -2380,7 +2366,7 @@ class ParallelotopeGrid(StructuredGridWithAxes):
         Returns
         -------
         cell_vols : `ndarray, shape (N,)`
-            Array containing the volume of each grid cell.  `N` is the number 
+            Array containing the volume of each grid cell.  `N` is the number
             of points in the grid.
         """
         ncells = self.ncells
@@ -2397,15 +2383,15 @@ class SpheroidGrid(StructuredGridWithAxes):
     """
     A regular structured grid within a sheared spheroid volume.
 
-    This type of grid is only defined in two or three (possibly embedded) 
+    This type of grid is only defined in two or three (possibly embedded)
     dimensions.  The grid spans the volume within the spheroidal surface.
 
-    An `M`-dimensional spheroid grid may be embedded in an `N`-dimensional 
-    space, e.g. a 2D planar disk with arbitrary orientation in an open 
-    3D space.  Such grids are useful to describe planar disk cuts through 
+    An `M`-dimensional spheroid grid may be embedded in an `N`-dimensional
+    space, e.g. a 2D planar disk with arbitrary orientation in an open
+    3D space.  Such grids are useful to describe planar disk cuts through
     higher dimensional spaces.
 
-    Below, `M` and `N` are referred to as `dg` and `ds`, or the dimension of 
+    Below, `M` and `N` are referred to as `dg` and `ds`, or the dimension of
     the grid (embedded space) and the full space (embedding space) respectively.
     These spaces may be chosen to be the same.
 
@@ -2414,66 +2400,66 @@ class SpheroidGrid(StructuredGridWithAxes):
     Parameters
     ----------
     axes : `array_like, float, shape (dg,ds)`
-        Axes used to form the coordinate system.  The axes are used in place 
-        of the normal `x`, `y` (and, if present, `z`) axes so that the 
-        resultant spheroid may be spatially skewed.  `dg` is the dimension of 
-        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of the 
+        Axes used to form the coordinate system.  The axes are used in place
+        of the normal `x`, `y` (and, if present, `z`) axes so that the
+        resultant spheroid may be spatially skewed.  `dg` is the dimension of
+        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of the
         points in the grid (full space, `ds=space_dim`).
     centered : `bool, optional, default False`
-        Locate grid points at lower cell corners (`False`) or cell centers 
+        Locate grid points at lower cell corners (`False`) or cell centers
         (`True`).
     cells : `array_like, int, shape (dg,), optional`
-        The number of grid cells in each dimension. An additional grid point 
-        will be present at the upper edge of the radial dimension and, if in 
-        3D spherical coordinates, also the upper edge of the polar angle 
-        dimension (:math:`\\theta`).  `dg` is the dimension of the grid 
-        (`grid_dim`).  Either `cells` or `shape` must be provided to generate 
+        The number of grid cells in each dimension. An additional grid point
+        will be present at the upper edge of the radial dimension and, if in
+        3D spherical coordinates, also the upper edge of the polar angle
+        dimension (:math:`\\theta`).  `dg` is the dimension of the grid
+        (`grid_dim`).  Either `cells` or `shape` must be provided to generate
         the grid.
     shape : `array_like, int, shape (dg,), optional`
-        The number of grid points in each dimension. The number of grid cells 
-        in the azimuthal direction (:math:`\\phi`) matches the number of grid 
-        points.  In the radial (and, if present, 3D polar) dimension, there is 
-        one fewer grid cell than grid points as the grid points go all the way 
-        to the edge of the boundary in those directions.  `dg` is the dimension 
-        of the grid (`grid_dim`).  Either `cells` or `shape` must be provided 
+        The number of grid points in each dimension. The number of grid cells
+        in the azimuthal direction (:math:`\\phi`) matches the number of grid
+        points.  In the radial (and, if present, 3D polar) dimension, there is
+        one fewer grid cell than grid points as the grid points go all the way
+        to the edge of the boundary in those directions.  `dg` is the dimension
+        of the grid (`grid_dim`).  Either `cells` or `shape` must be provided
         to generate the grid.
     center : `array_like, float, shape (ds,), optional`
-        The location of the center of the spheroid, which is also the origin 
-        of the coordinate system for the grid.  `ds` is the dimension of the 
+        The location of the center of the spheroid, which is also the origin
+        of the coordinate system for the grid.  `ds` is the dimension of the
         full space (`space_dim`). Either `center` or `origin` must be provided,
         with `center` preferred.
     origin : `array_like, float, shape (ds,), optional, default ds*[0]`
-        Origin of the space.  For a spheroid grid, this point is the 
-        center of the spheroid.  `ds` is the dimension of the full space 
-        (`space_dim`). Either `center` or `origin` must be provided, with 
+        Origin of the space.  For a spheroid grid, this point is the
+        center of the spheroid.  `ds` is the dimension of the full space
+        (`space_dim`). Either `center` or `origin` must be provided, with
         `center` preferred.
 
     Attributes
     ----------
     points : `ndarray, float, shape (N,d)`
-        Array containing the grid points.  `N` is the number of grid points, 
+        Array containing the grid points.  `N` is the number of grid points,
         `d` is the dimension of the space.
     axes : `ndarray, float, shape (dg,ds)`
-        Axes used to form the coordinate system.  `dg` is the dimension of 
-        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of 
+        Axes used to form the coordinate system.  `dg` is the dimension of
+        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of
         the points in the grid (full space, `ds=space_dim`).
     centered : `bool`
-        Grid points are located at lower cell corners (`False`) or cell 
+        Grid points are located at lower cell corners (`False`) or cell
         centers (`True`).
     shape : `tuple, int`
         The number of grid points in each dimension.
     origin : `ndarray, float, shape (ds,)`
         Origin of the space.  `ds` is the dimension of the full space.
     surface : `bool`
-        (`Internal`) The grid is resides on the surface of a space (`True`), 
-        otherwise, it spans the volume of the space (`False`).  This attribute 
+        (`Internal`) The grid is resides on the surface of a space (`True`),
+        otherwise, it spans the volume of the space (`False`).  This attribute
         is intended to be immutable once set.
     bconds : `ndarray, str`
         (`Internal`) Boundary conditions for each dimension.
     isotropic : `bool`
         (`Internal`) Whether or not the spheroid is isotropic (regular sphere).
     initialized : `bool`
-        (`Internal`) Set to true if the instance has been initialized in 
+        (`Internal`) Set to true if the instance has been initialized in
         non-vacuous fashion.
     r : `ndarray, float, property`
         Array containing the grid points.  User facing alias for `points`.
@@ -2490,12 +2476,12 @@ class SpheroidGrid(StructuredGridWithAxes):
     ncells : `int, property`
         The total number of grid cells.
     flat_points_shape : `tuple, int, property`
-        The shape of the `points` array in its default (flat) representation. 
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        The shape of the `points` array in its default (flat) representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `flat_points_shape` is `(N*M*P,D)`.
     full_points_shape : `tuple, int, property`
         The shape of the points array in its full representation.
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `full_points_shape` is `(N,M,P,D)`.
     center : `ndarray, float, shape (ds,), property`
         Location of the center of the cell.  `ds` is the dimension of the
@@ -2504,7 +2490,7 @@ class SpheroidGrid(StructuredGridWithAxes):
         Datatype of the grid point values.
     """
 
-    #: (`obj`) Collection of attributes for the class.  Used to check assigned 
+    #: (`obj`) Collection of attributes for the class.  Used to check assigned
     #: members for type conformity and to assign default values.
     persistent_data_types = obj(
         isotropic = (bool,None),
@@ -2535,7 +2521,7 @@ class SpheroidGrid(StructuredGridWithAxes):
             grid_dim = len(cells)
         #end if
         if grid_dim not in {2,3}:
-            self.error('only 2 and 3 dimensional spheroids grids are supported\nrequested dimension: {}'.format(grid_dim))
+            self.error(f'only 2 and 3 dimensional spheroids grids are supported\nrequested dimension: {grid_dim}')
         #end if
 
         # bconds match sphere constraints by default
@@ -2576,7 +2562,7 @@ class SpheroidGrid(StructuredGridWithAxes):
 
     def set_isotropic(self,tol=1e-6):
         """
-        (`Internal API`) Determine whether the spheroid is isotropic (constant 
+        (`Internal API`) Determine whether the spheroid is isotropic (constant
         radius) and internally store the result.
 
         Parameters
@@ -2620,7 +2606,7 @@ class SpheroidGrid(StructuredGridWithAxes):
             upoints[:,1] /=   np.pi
             upoints[:,2] /= 2*np.pi
         else:
-            self.error('unit_points not supported for dim={}'.format(dim))
+            self.error(f'unit_points not supported for dim={dim}')
         #end if
         return upoints
     #end def unit_points_bare
@@ -2633,13 +2619,13 @@ class SpheroidGrid(StructuredGridWithAxes):
         Parameters
         ----------
         upoints : `array_like, float, shape (N,dg), optional`
-            Array of points in the unit coordinate space.  `N` is the number 
+            Array of points in the unit coordinate space.  `N` is the number
             of points and `dg` must be equal to `grid_dim`.
 
         Returns
         -------
         points : `ndarray, float, shape (N,ds)`
-            Array of points in the full coordinate space.  `ds` is the 
+            Array of points in the full coordinate space.  `ds` is the
             dimension of the full space (`space_dim`).
         """
         dim = self.grid_dim
@@ -2652,7 +2638,7 @@ class SpheroidGrid(StructuredGridWithAxes):
             upoints[:,2] *= 2*np.pi
             upoints = spherical_to_cartesian(upoints)
         else:
-            self.error('points_from_unit not supported for dim={}'.format(dim))
+            self.error(f'points_from_unit not supported for dim={dim}')
         #end if
         points = np.dot(upoints,self.axes)+self.center
         return points
@@ -2661,7 +2647,7 @@ class SpheroidGrid(StructuredGridWithAxes):
 
     def unit_metric_bare(self,upoints):
         """
-        (`Internal API`) Compute the spheroid integration metric in the 
+        (`Internal API`) Compute the spheroid integration metric in the
         unit coordinate space for a set of points defined there.
         """
         if upoints is None:
@@ -2677,7 +2663,7 @@ class SpheroidGrid(StructuredGridWithAxes):
         elif dim==3:
             umetric += 2*np.pi**2*r**2*np.sin(np.pi*upoints[:,1]) # r^2 sin(theta)
         else:
-            self.error('unit_metric not supported for dim={}'.format(dim))
+            self.error(f'unit_metric not supported for dim={dim}')
         #end if
         umetric *= self.axes_volume()
         return umetric
@@ -2686,7 +2672,7 @@ class SpheroidGrid(StructuredGridWithAxes):
 
     def radius(self):
         """
-        (`External API`) Return the radius of the spheroid, if isotropic. 
+        (`External API`) Return the radius of the spheroid, if isotropic.
         """
         if not self.isotropic:
             self.error('radius is not supported for anisotropic spheroid surface grids')
@@ -2710,7 +2696,7 @@ class SpheroidGrid(StructuredGridWithAxes):
         elif self.grid_dim==3:
             vol_spheroid = 4*np.pi/3 # sphere of radius 1
         else:
-            self.error('volume not supported for dim={}'.format(self.grid_dim))
+            self.error(f'volume not supported for dim={self.grid_dim}')
         #end if
         return vol_axes*vol_spheroid
     #end def volume
@@ -2723,7 +2709,7 @@ class SpheroidGrid(StructuredGridWithAxes):
         Returns
         -------
         cell_vols : `ndarray, shape (N,)`
-            Array containing the volume of each grid cell.  `N` is the number 
+            Array containing the volume of each grid cell.  `N` is the number
             of points in the grid.
         """
         vol_axes = self.axes_volume()
@@ -2752,7 +2738,7 @@ class SpheroidGrid(StructuredGridWithAxes):
                 cell_vols[i] = cv*vol_axes
             #end for
         else:
-            self.error('cell_volumes not supported for dim={}'.format(dim))
+            self.error(f'cell_volumes not supported for dim={dim}')
         #end if
         return cell_vols
     #end def cell_volumes
@@ -2772,15 +2758,15 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
     """
     A regular structured grid over the surface of a sheared spheroid volume.
 
-    This type of grid is only defined in one or two embedded dimensions.  The 
+    This type of grid is only defined in one or two embedded dimensions.  The
     grid spans the area over the spheroidal surface.
 
-    An `M`-dimensional spheroid surface grid may be embedded in an 
-    `N`-dimensional space, e.g. a 2D spherical surface or 1D circular ring 
-    with arbitrary orientation in an open 3D space.  Such grids are useful to 
+    An `M`-dimensional spheroid surface grid may be embedded in an
+    `N`-dimensional space, e.g. a 2D spherical surface or 1D circular ring
+    with arbitrary orientation in an open 3D space.  Such grids are useful to
     describe curved surface cuts through higher dimensional spaces.
 
-    Below, `M` and `N` are referred to as `dg` and `ds`, or the dimension of 
+    Below, `M` and `N` are referred to as `dg` and `ds`, or the dimension of
     the grid (embedded space) and the full space (embedding space) respectively.
     These spaces may be chosen to be the same.
 
@@ -2789,63 +2775,63 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
     Parameters
     ----------
     axes : `array_like, float, shape (dg,ds)`
-        Axes used to form the coordinate system.  The axes are used in place 
-        of the normal `x`, `y` (and, if present, `z`) axes so that the 
-        resultant spheroid may be spatially skewed.  `dg` is the dimension of 
-        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of the 
+        Axes used to form the coordinate system.  The axes are used in place
+        of the normal `x`, `y` (and, if present, `z`) axes so that the
+        resultant spheroid may be spatially skewed.  `dg` is the dimension of
+        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of the
         points in the grid (full space, `ds=space_dim`).
     centered : `bool, optional, default False`
-        Locate grid points at lower cell corners (`False`) or cell centers 
+        Locate grid points at lower cell corners (`False`) or cell centers
         (`True`).
     cells : `array_like, int, shape (dg,), optional`
-        The number of grid cells in each (angular) dimension. In 3D spherical 
-        coordinates, an additional grid point will be present at the upper edge 
-        of the polar angle dimension (:math:`\\theta`).  `dg` is the dimension 
-        of the grid (`grid_dim`).  Either `cells` or `shape` must be provided 
+        The number of grid cells in each (angular) dimension. In 3D spherical
+        coordinates, an additional grid point will be present at the upper edge
+        of the polar angle dimension (:math:`\\theta`).  `dg` is the dimension
+        of the grid (`grid_dim`).  Either `cells` or `shape` must be provided
         to generate the grid.
     shape : `array_like, int, shape (dg,), optional`
-        The number of grid points in each dimension. The number of grid cells 
-        in the azimuthal direction (:math:`\\phi`) matches the number of grid 
+        The number of grid points in each dimension. The number of grid cells
+        in the azimuthal direction (:math:`\\phi`) matches the number of grid
         points.  In 3D spherical coordinates, along the polar dimension there is
-        one fewer grid cell than grid points as the grid points go all the way 
-        to the edge of the boundary in that direction.  `dg` is the dimension 
-        of the grid (`grid_dim`).  Either `cells` or `shape` must be provided 
+        one fewer grid cell than grid points as the grid points go all the way
+        to the edge of the boundary in that direction.  `dg` is the dimension
+        of the grid (`grid_dim`).  Either `cells` or `shape` must be provided
         to generate the grid.
     center : `array_like, float, shape (ds,), optional`
-        The location of the center of the spheroid.  `ds` is the dimension of 
-        the full space (`space_dim`). Either `center` or `origin` must be 
+        The location of the center of the spheroid.  `ds` is the dimension of
+        the full space (`space_dim`). Either `center` or `origin` must be
         provided, with `center` preferred.
     origin : `array_like, float, shape (ds,), optional, default ds*[0]`
-        Origin of the space, which resides at the center of the spheroid. `ds` 
-        is the dimension of the full space (`space_dim`). Either `center` or 
+        Origin of the space, which resides at the center of the spheroid. `ds`
+        is the dimension of the full space (`space_dim`). Either `center` or
         `origin` must be provided, with `center` preferred.
 
     Attributes
     ----------
     points : `ndarray, float, shape (N,d)`
-        Array containing the grid points.  `N` is the number of grid points, 
+        Array containing the grid points.  `N` is the number of grid points,
         `d` is the dimension of the space.
     axes : `ndarray, float, shape (dg,ds)`
-        Axes used to form the coordinate system.  `dg` is the dimension of 
-        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of 
+        Axes used to form the coordinate system.  `dg` is the dimension of
+        the grid (embedded space, `dg=grid_dim`), `ds` is the dimension of
         the points in the grid (full space, `ds=space_dim`).
     centered : `bool`
-        Grid points are located at lower cell corners (`False`) or cell 
+        Grid points are located at lower cell corners (`False`) or cell
         centers (`True`).
     shape : `tuple, int`
         The number of grid points in each dimension.
     origin : `ndarray, float, shape (ds,)`
         Origin of the space.  `ds` is the dimension of the full space.
     surface : `bool`
-        (`Internal`) The grid is resides on the surface of a space (`True`), 
-        otherwise, it spans the volume of the space (`False`).  This attribute 
+        (`Internal`) The grid is resides on the surface of a space (`True`),
+        otherwise, it spans the volume of the space (`False`).  This attribute
         is intended to be immutable once set.
     bconds : `ndarray, str`
         (`Internal`) Boundary conditions for each dimension.
     isotropic : `bool`
         (`Internal`) Whether or not the spheroid is isotropic (regular sphere).
     initialized : `bool`
-        (`Internal`) Set to true if the instance has been initialized in 
+        (`Internal`) Set to true if the instance has been initialized in
         non-vacuous fashion.
     r : `ndarray, float, property`
         Array containing the grid points.  User facing alias for `points`.
@@ -2862,12 +2848,12 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
     ncells : `int, property`
         The total number of grid cells.
     flat_points_shape : `tuple, int, property`
-        The shape of the `points` array in its default (flat) representation. 
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        The shape of the `points` array in its default (flat) representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `flat_points_shape` is `(N*M*P,D)`.
     full_points_shape : `tuple, int, property`
         The shape of the points array in its full representation.
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `full_points_shape` is `(N,M,P,D)`.
     center : `ndarray, float, shape (ds,), property`
         Location of the center of the cell.  `ds` is the dimension of the
@@ -2876,7 +2862,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         Datatype of the grid point values.
     """
 
-    #: (`obj`) Collection of attributes for the class.  Used to check assigned 
+    #: (`obj`) Collection of attributes for the class.  Used to check assigned
     #: members for type conformity and to assign default values.
     persistent_data_types = obj(
         isotropic = (bool,None),
@@ -2913,7 +2899,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         elif grid_dim==1:
             bconds = tuple('p')
         else:
-            self.error('only 1 and 2 dimensional spheroid surface grids are supported\nrequested dimension: {}'.format(grid_dim))
+            self.error(f'only 1 and 2 dimensional spheroid surface grids are supported\nrequested dimension: {grid_dim}')
         #end if
 
         endpoint = self.has_endpoints(bconds=bconds,grid_dim=grid_dim)
@@ -2946,7 +2932,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
     def set_isotropic(self,tol=1e-6):
         """
-        (`Internal API`) Determine whether the spheroid is isotropic (constant 
+        (`Internal API`) Determine whether the spheroid is isotropic (constant
         radius) and internally store the result.
 
         Parameters
@@ -2990,7 +2976,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
             upoints[:,0] /=   np.pi
             upoints[:,1] /= 2*np.pi
         else:
-            self.error('unit_points not supported for dim={}'.format(dim))
+            self.error(f'unit_points not supported for dim={dim}')
         #end if
         return upoints
     #end def unit_points_bare
@@ -3003,13 +2989,13 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         Parameters
         ----------
         upoints : `array_like, float, shape (N,dg), optional`
-            Array of points in the unit coordinate space.  `N` is the number 
+            Array of points in the unit coordinate space.  `N` is the number
             of points and `dg` must be equal to `grid_dim`.
 
         Returns
         -------
         points : `ndarray, float, shape (N,ds)`
-            Array of points in the full coordinate space.  `ds` is the 
+            Array of points in the full coordinate space.  `ds` is the
             dimension of the full space (`space_dim`).
         """
         dim = self.grid_dim
@@ -3022,7 +3008,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
             upoints[:,1] *= 2*np.pi
             upoints = spherical_to_cartesian(upoints,surface=True)
         else:
-            self.error('points_from_unit not supported for dim={}'.format(dim))
+            self.error(f'points_from_unit not supported for dim={dim}')
         #end if
         points = np.dot(upoints,self.axes)+self.center
         return points
@@ -3031,7 +3017,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
     def unit_metric_bare(self,upoints):
         """
-        (`Internal API`) Compute the spheroid surface integration metric in the 
+        (`Internal API`) Compute the spheroid surface integration metric in the
         unit coordinate space for a set of points defined there.
         """
         if not self.isotropic:
@@ -3050,7 +3036,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         elif dim==2:
             umetric += 2*np.pi**2*r**2*np.sin(np.pi*upoints[:,1]) # r^2 sin(theta)
         else:
-            self.error('unit_metric not supported for dim={}'.format(dim))
+            self.error(f'unit_metric not supported for dim={dim}')
         #end if
         return umetric
     #end def unit_metric_bare
@@ -3058,7 +3044,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
     def radius(self):
         """
-        (`External API`) Return the radius of the spheroid, if isotropic. 
+        (`External API`) Return the radius of the spheroid, if isotropic.
         """
         if not self.isotropic:
             self.error('radius is not supported for anisotropic spheroid surface grids')
@@ -3069,7 +3055,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
     def volume(self):
         """
-        (`External API`) Compute the area of the spheroid surface containing the 
+        (`External API`) Compute the area of the spheroid surface containing the
         grid (isotropic only).
 
         Returns
@@ -3087,7 +3073,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
         elif dim==2:
             vol = 4*np.pi*r**2
         else:
-            self.error('volume is not supported for dim={}'.format(dim))
+            self.error(f'volume is not supported for dim={dim}')
         #end if
         return vol
     #end def volume
@@ -3095,13 +3081,13 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
 
     def cell_volumes(self):
         """
-        (`External API`) Compute the areas of the spheroid surface grid cells 
+        (`External API`) Compute the areas of the spheroid surface grid cells
         (isotropic only).
 
         Returns
         -------
         cell_vols : `ndarray, shape (N,)`
-            Array containing the area of each grid cell.  `N` is the number 
+            Array containing the area of each grid cell.  `N` is the number
             of points in the grid.
         """
         if not self.isotropic:
@@ -3128,7 +3114,7 @@ class SpheroidSurfaceGrid(StructuredGridWithAxes):
                 cell_vols[i] = cv
             #end for
         else:
-            self.error('cell_volumes is not supported for dim={}'.format(dim))
+            self.error(f'cell_volumes is not supported for dim={dim}')
         #end if
         return cell_vols
     #end def cell_volumes
@@ -3141,9 +3127,9 @@ class GridFunction(GBase):
     Base class for `P` dimensional functions defined over `M` dimensional grids
     that are embedded in `N` dimensional spaces.
 
-    The main aims of this class hierarchy are to provide interpolation, 
-    integration, and (where possible) plotting capabilities for functions of 
-    this type.  These operations are common in large scale post-processing 
+    The main aims of this class hierarchy are to provide interpolation,
+    integration, and (where possible) plotting capabilities for functions of
+    this type.  These operations are common in large scale post-processing
     and analysis of scientific data.
 
     This class should not be instantiated directly.
@@ -3151,12 +3137,12 @@ class GridFunction(GBase):
     Parameters
     ----------
     grid : `Grid, optional`
-        Grid of points in a `d` dimensional space.  If `grid` is not provided, 
+        Grid of points in a `d` dimensional space.  If `grid` is not provided,
         additional parameters must be given to initialize a Grid object.
     values : `array_like, float/complex, shape (N,P), (N,)`
         Array of function values defined at the grid points.  `N` is the number
-        of points and `P` is the number of function values.  With `P>1`, the 
-        function is vector or tensor valued.  If the array has shape (`N`,), 
+        of points and `P` is the number of function values.  With `P>1`, the
+        function is vector or tensor valued.  If the array has shape (`N`,),
         then `P` is set to `1`.
     copy_grid : `bool, optional, default True`
         Copy provided grid (`True`) or not (`False`).
@@ -3168,9 +3154,9 @@ class GridFunction(GBase):
         Data type for local function values.
     grid_dtype : `optional`
         Data type for grid point locations.
-    **kwargs: 
-        Arbitrary set of parameters used to create a Grid object.  See 
-        documentation for the `Grid` class and its derived classes for allowed 
+    **kwargs:
+        Arbitrary set of parameters used to create a Grid object.  See
+        documentation for the `Grid` class and its derived classes for allowed
         inputs.  Used/allowed only if `grid` is not provided.
 
     Attributes
@@ -3179,7 +3165,7 @@ class GridFunction(GBase):
         Grid of points in a `d` dimensional space.
     values : `ndarray, float/complex, shape (N,P)`
         Array of function values defined at the grid points.  `N` is the number
-        of points and `P` is the number of function values.  With `P>1`, the 
+        of points and `P` is the number of function values.  With `P>1`, the
         function is vector or tensor valued.
     space_dim : `int, property`
         Dimension of the space the grid resides in.  Referred to as `d` above.
@@ -3195,16 +3181,16 @@ class GridFunction(GBase):
         Datatype of the function values.
     """
 
-    #: Descriptive string for class.  Used in the GBase base class when 
+    #: Descriptive string for class.  Used in the GBase base class when
     #: printing error messages.
     descriptor = 'grid function'
 
     #: Grid class type that must be associated (contained by) a particular
-    #: `GridFunction` class.  Must be a sub-class of `Grid`.  Required only 
+    #: `GridFunction` class.  Must be a sub-class of `Grid`.  Required only
     #: for grid function classes that support direct instantiation.
     grid_class = None
 
-    #: (`obj`) Collection of attributes for the class.  Used to check assigned 
+    #: (`obj`) Collection of attributes for the class.  Used to check assigned
     #: members for type conformity and to assign default values.
     persistent_data_types = obj(
         grid        = (Grid      , None),
@@ -3238,7 +3224,7 @@ class GridFunction(GBase):
         return self.grid.r
     #end def r
 
-    @property 
+    @property
     def f(self):
         return self.values
     #end def f
@@ -3265,13 +3251,13 @@ class GridFunction(GBase):
         Parameters
         ----------
         grid : `Grid, optional`
-            Grid of points in a `d` dimensional space.  If `grid` is not 
-            provided, additional parameters must be given to initialize a 
+            Grid of points in a `d` dimensional space.  If `grid` is not
+            provided, additional parameters must be given to initialize a
             `Grid` object.
         values : `array_like, float/complex, shape (N,P), (N,)`
-            Array of function values defined at the grid points.  `N` is the 
-            number of points and `P` is the number of function values.  With 
-            `P>1`, the function is vector or tensor valued.  If the array 
+            Array of function values defined at the grid points.  `N` is the
+            number of points and `P` is the number of function values.  With
+            `P>1`, the function is vector or tensor valued.  If the array
             has shape (`N`,), then `P` is set to `1`.
         copy_grid : `bool, optional, default True`
             Copy provided grid (`True`) or not (`False`).
@@ -3283,9 +3269,9 @@ class GridFunction(GBase):
             Data type for local function values.
         grid_dtype : `optional`
             Data type for grid point locations.
-        **kwargs: 
-            Arbitrary set of parameters used to create a `Grid` object.  See 
-            documentation for the `Grid` class and its derived classes for 
+        **kwargs:
+            Arbitrary set of parameters used to create a `Grid` object.  See
+            documentation for the `Grid` class and its derived classes for
             allowed inputs.  Used/allowed only if `grid` is not provided.
         """
 
@@ -3298,7 +3284,7 @@ class GridFunction(GBase):
             copy_grid   = copy
             copy_values = copy
         #end if
-        
+
         # process grid inputs
         cls = self.__class__
         if grid is None:
@@ -3310,9 +3296,9 @@ class GridFunction(GBase):
                 return
             #end if
         elif not isinstance(grid,cls.grid_class):
-            self.error('received "grid" input with incorrect type\ntype provided: {}\ntype required: {}'.format(grid.__class__.__name__,cls.grid_class.__name__))
+            self.error(f'received "grid" input with incorrect type\ntype provided: {grid.__class__.__name__}\ntype required: {cls.grid_class.__name__}')
         elif len(kwargs)>0:
-            self.error('received both a grid object and parameters intended for grid initialization\nplease remove the following parameters and try again: {}'.format(sorted(kwargs.keys())))
+            self.error(f'received both a grid object and parameters intended for grid initialization\nplease remove the following parameters and try again: {sorted(kwargs.keys())}')
         elif copy_grid:
             grid = deepcopy(grid)
         #end if
@@ -3333,9 +3319,9 @@ class GridFunction(GBase):
                 values = np.array(values,dtype=dtype)
             #end if
         else:
-            self.error('provided function values are of incorrect type\nvalues must be tuple, list, or ndarray\nyou provided: {}'.format(values.__class__.__name__))
+            self.error(f'provided function values are of incorrect type\nvalues must be tuple, list, or ndarray\nyou provided: {values.__class__.__name__}')
         #end if
-        
+
         # process value_shape input
         if len(values.shape)==1 or values.shape==grid.shape:
             value_shape = (1,)
@@ -3352,7 +3338,7 @@ class GridFunction(GBase):
             nvtot = values.size
             nv    = np.prod(value_shape)
             if nvtot%nv!=0 or nvtot//nv!=grid.npoints:
-                self.error('value_shape and total number of values are inconsistent.\nTotal number of values: {}\nvalue_shape: {}\nExpected number of values per grid point: {}\nActual number of values per grid point: {}'.format(nvtot,value_shape,nv,nvtot/nv))
+                self.error(f'value_shape and total number of values are inconsistent.\nTotal number of values: {nvtot}\nvalue_shape: {value_shape}\nExpected number of values per grid point: {nv}\nActual number of values per grid point: {nvtot/nv}')
             #end if
             npe.reshape_inplace(values, (grid.npoints, nv))
         #end if
@@ -3375,23 +3361,23 @@ class GridFunction(GBase):
         """
         cls = self.__class__
         if not isinstance(self.grid,cls.grid_class):
-            msgs.append('Grid is not of the required type for current grid function.\nGrid function type: {}\nGrid type required: {}'.format(cls.__name__,self.grid.__class__.__name__))
+            msgs.append(f'Grid is not of the required type for current grid function.\nGrid function type: {cls.__name__}\nGrid type required: {self.grid.__class__.__name__}')
         #end if
         self.grid.local_validity_checks(msgs)
         if len(self.values)!=self.npoints:
-            msgs.append('Number of function values and number of grid points do not match.\nNumber of grid points: {}\nNumber of function values: {}'.format(self.npoints,len(self.values)))
+            msgs.append(f'Number of function values and number of grid points do not match.\nNumber of grid points: {self.npoints}\nNumber of function values: {len(self.values)}')
         #end if
         if len(self.values.shape)!=2:
-            msgs.append('Function values has incorrect shape.\nExpected shape is (# of points, # of function values at each point)\nShape received: {}'.format(self.values.shape))
+            msgs.append(f'Function values has incorrect shape.\nExpected shape is (# of points, # of function values at each point)\nShape received: {self.values.shape}')
         #end if
         if len(self.value_shape)<1:
             self.error('"value_shape" must have at least one entry.')
         #end if
         if np.prod(self.value_shape)!=self.values.size//self.npoints:
-            self.error('"value_shape" and "values" are inconsistent.\nNumber of values per point based on "values": {}\nNumber of values per point based on "value_shape": {}'.format(self.values.size/self.npoints,np.prod(self.value_shape)))
+            self.error(f'"value_shape" and "values" are inconsistent.\nNumber of values per point based on "values": {self.values.size/self.npoints}\nNumber of values per point based on "value_shape": {np.prod(self.value_shape)}')
         #end if
         if self.values.shape!=(self.npoints,self.nvalues):
-            self.error('Function values has incorrect shape.\nExected shape: {}\nShape received: {}'.format((self.npoints,self.nvalues),self.values.shape))
+            self.error(f'Function values has incorrect shape.\nExected shape: {(self.npoints,self.nvalues)}\nShape received: {self.values.shape}')
         #end if
     #end def local_validity_checks
 
@@ -3412,8 +3398,8 @@ class StructuredGridFunction(GridFunction):
     """
     Base class for functions defined on structured grids.
 
-    This class handles plotting functions within the unit coordinate space.  
-    It will handle unified interpolation and integration of (potentially 
+    This class handles plotting functions within the unit coordinate space.
+    It will handle unified interpolation and integration of (potentially
     multi-valued) discrete functions.
 
     This class should not be instantiated directly.
@@ -3429,12 +3415,12 @@ class StructuredGridFunction(GridFunction):
     ncells : `int, property`
         The total number of grid cells.
     flat_points_shape : `tuple, int, property`
-        The shape of the `points` array in its default (flat) representation. 
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        The shape of the `points` array in its default (flat) representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `flat_points_shape` is `(N*M*P,D)`.
     full_points_shape : `tuple, int, property`
         The shape of the points array in its full representation.
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `full_points_shape` is `(N,M,P,D)`.
     """
 
@@ -3477,7 +3463,7 @@ class StructuredGridFunction(GridFunction):
     def periodic(self):
         return self.grid.periodic
     #end def periodic
-    
+
 
     def reshape_points_full(self):
         npe.reshape_inplace(self.values, (self.grid_shape+(self.nvalues,)))
@@ -3531,7 +3517,7 @@ class StructuredGridFunction(GridFunction):
             v[ -1, -1,:-1] = self.values[0,0,:]
             v[ -1, -1, -1] = self.values[0,0,0]
         else:
-            self.error('values_with_upper_ghost is not implemented for dimensions greater than 3.\nDimensionality of the current dataset: {}'.format(dim))
+            self.error(f'values_with_upper_ghost is not implemented for dimensions greater than 3.\nDimensionality of the current dataset: {dim}')
         #end if
 
         self.reshape_points_flat()
@@ -3569,8 +3555,9 @@ class StructuredGridFunction(GridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.contour`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
-            self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         X,Y = self.grid.unit_points().T
         npe.reshape_inplace(X, self.grid_shape)
@@ -3588,7 +3575,7 @@ class StructuredGridFunction(GridFunction):
             plt.show()
         #end if
     #end def plot_unit_contours
-    
+
 
     def plot_unit_surface(self,fig=True,show=True,**kwargs):
         """
@@ -3603,8 +3590,9 @@ class StructuredGridFunction(GridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_surface`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
-            self.error('cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot contours in unit coordinates\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         X,Y = self.grid.unit_points().T
         npe.reshape_inplace(X, self.grid_shape)
@@ -3619,7 +3607,7 @@ class StructuredGridFunction(GridFunction):
             plt.show()
         #end if
     #end def plot_unit_surface
-    
+
 
     def plot_unit_isosurface(self,level=None,fig=True,show=True,**kwargs):
         """
@@ -3628,7 +3616,7 @@ class StructuredGridFunction(GridFunction):
         Parameters
         ----------
         level : `float, optional`
-            Isosurface value to plot.  If not provided, the average of the max 
+            Isosurface value to plot.  If not provided, the average of the max
             and min function values are used.
         fig : `bool, optional, default True`
             Create a fresh figure (`True`) or not (`False`).
@@ -3637,8 +3625,10 @@ class StructuredGridFunction(GridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_trisurf`.
         """
+        import matplotlib.pyplot as plt
+        from skimage import measure
         if self.grid_dim!=3:
-            self.error('cannot plot isosurface in unit coordinates\ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot isosurface in unit coordinates\ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         fm = self.f.T
         # unit grid is used implicitly
@@ -3649,7 +3639,7 @@ class StructuredGridFunction(GridFunction):
             #end if
             npe.reshape_inplace(f, self.grid_shape)
             ret = measure.marching_cubes(f,level,spacing=spacing)
-            verts = ret[0] 
+            verts = ret[0]
             faces = ret[1]
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
             ax.plot_trisurf(verts[:, 0], verts[:,1], faces, verts[:, 2],**kwargs)
@@ -3665,10 +3655,10 @@ class StructuredGridFunction(GridFunction):
 
 class StructuredGridFunctionWithAxes(StructuredGridFunction):
     """
-    Base class for functions over structured grids with linear axes that act 
+    Base class for functions over structured grids with linear axes that act
     as scaffolding for the coordinate system.
 
-    The associated Grids for these classes can handle the mapping back and 
+    The associated Grids for these classes can handle the mapping back and
     forth between the unit and full coordinate spaces.  As such, this class
     handles the plotting of function values in the full space.
 
@@ -3677,6 +3667,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
 
 
     def interpolate(self,r,type=None,copy=False,**kw):
+        import scipy.ndimage as scipy_ndimage
         # https://stackoverflow.com/questions/16217995/fast-interpolation-of-regularly-sampled-3d-data-with-different-intervals-in-x-y
         kw = obj(kw)
         grid = None
@@ -3710,7 +3701,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             values = scipy_ndimage.map_coordinates(v, indices, **kw)
             npe.reshape_inplace(v, v_shape)
         else:
-            self.error('Interpolation of type "{}" is not supported.\nValid options are: map_coordinates'.format(type))
+            self.error(f'Interpolation of type "{type}" is not supported.\nValid options are: map_coordinates')
         #end if
 
         if grid is None:
@@ -3745,8 +3736,9 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.contour`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
-            self.error('cannot plot contours\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot contours\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         #if self.space_dim!=2:
         #    self.error('cannot plot contours\ngrid points must reside in a 2D space to make contour plots\ndimension of the space for this function: {}'.format(self.space_dim))
@@ -3785,7 +3777,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             plt.show()
         #end if
     #end def plot_contours
-    
+
 
     def plot_surface(self,fig=True,show=True,**kwargs):
         """
@@ -3800,8 +3792,9 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_surface`.
         """
+        import matplotlib.pyplot as plt
         if self.grid_dim!=2:
-            self.error('cannot plot surface\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot surface\ngrid must have dimension 2 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         X,Y = self.r.T
         npe.reshape_inplace(X, self.grid_shape)
@@ -3816,7 +3809,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             plt.show()
         #end if
     #end def plot_surface
-    
+
 
     def plot_isosurface(self,level=None,fig=True,show=True,**kwargs):
         """
@@ -3825,7 +3818,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         Parameters
         ----------
         level : `float, optional`
-            Isosurface value to plot.  If not provided, the average of the max 
+            Isosurface value to plot.  If not provided, the average of the max
             and min function values are used.
         fig : `bool, optional, default True`
             Create a fresh figure (`True`) or not (`False`).
@@ -3834,11 +3827,13 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
         **kwargs : `optional`
             Arbitrary keyword argments passed to `pyplot.plot_trisurf`.
         """
+        import matplotlib.pyplot as plt
+        from skimage import measure
         if self.grid_dim!=3:
-            self.error('cannot plot isosurface \ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {}'.format(self.grid_dim))
+            self.error(f'cannot plot isosurface \ngrid must have dimension 3 to make contour plots\ndimension of grid for this function: {self.grid_dim}')
         #end if
         if self.space_dim!=3:
-            self.error('cannot plot isosurface\ngrid points must reside in a 3D space to make contour plots\ndimension of the space for this function: {}'.format(self.space_dim))
+            self.error(f'cannot plot isosurface\ngrid points must reside in a 3D space to make contour plots\ndimension of the space for this function: {self.space_dim}')
         #end if
         fm = self.f.T
         # unit grid is used implicitly
@@ -3849,7 +3844,7 @@ class StructuredGridFunctionWithAxes(StructuredGridFunction):
             #end if
             npe.reshape_inplace(f, self.grid_shape)
             ret = measure.marching_cubes(f,level,spacing=spacing)
-            verts = ret[0] 
+            verts = ret[0]
             faces = ret[1]
             verts = self.grid.points_from_unit(verts)
             fig,ax = self.setup_mpl_fig(fig=fig,dim=self.grid_dim)
@@ -3869,7 +3864,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
     """
     Represents functions over parallelotope grids.
 
-    Most of the functionality is enabled by parent classes.  Instances of 
+    Most of the functionality is enabled by parent classes.  Instances of
     this class must only own a ParallelotopeGrid.
 
     This class is intended for direct instantiation and use.
@@ -3877,13 +3872,13 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
     Parameters
     ----------
     grid : `ParallelotopeGrid, optional`
-        Grid of points in a `d` dimensional space.  If `grid` is not provided, 
+        Grid of points in a `d` dimensional space.  If `grid` is not provided,
         additional parameters must be given to initialize a `ParallelotopeGrid`
         object.
     values : `array_like, float/complex, shape (N,P), (N,)`
         Array of function values defined at the grid points.  `N` is the number
-        of points and `P` is the number of function values.  With `P>1`, the 
-        function is vector or tensor valued.  If the array has shape (`N`,), 
+        of points and `P` is the number of function values.  With `P>1`, the
+        function is vector or tensor valued.  If the array has shape (`N`,),
         then `P` is set to `1`.
     copy_grid : `bool, optional, default True`
         Copy provided grid (`True`) or not (`False`).
@@ -3895,9 +3890,9 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         Data type for local function values.
     grid_dtype : `optional`
         Data type for grid point locations.
-    **kwargs: 
-        Arbitrary set of parameters used to create a `ParallelotopeGrid` 
-        object.  See documentation for the `ParallelotopeGrid` class and for 
+    **kwargs:
+        Arbitrary set of parameters used to create a `ParallelotopeGrid`
+        object.  See documentation for the `ParallelotopeGrid` class and for
         allowed inputs.  Used/allowed only if `grid` is not provided.
 
     Attributes
@@ -3906,7 +3901,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         Grid of points in a `d` dimensional space.
     values : `ndarray, float/complex, shape (N,P)`
         Array of function values defined at the grid points.  `N` is the number
-        of points and `P` is the number of function values.  With `P>1`, the 
+        of points and `P` is the number of function values.  With `P>1`, the
         function is vector or tensor valued.
     space_dim : `int, property`
         Dimension of the space the grid resides in.  Referred to as `d` above.
@@ -3923,12 +3918,12 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
     ncells : `int, property`
         The total number of grid cells.
     flat_points_shape : `tuple, int, property`
-        The shape of the `points` array in its default (flat) representation. 
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        The shape of the `points` array in its default (flat) representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `flat_points_shape` is `(N*M*P,D)`.
     full_points_shape : `tuple, int, property`
         The shape of the points array in its full representation.
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `full_points_shape` is `(N,M,P,D)`.
     r : `ndarray, float, property`
         Array containing the grid points.
@@ -3944,7 +3939,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         if format=='xsf':
             self.read_xsf(filepath)
         else:
-            self.error('Cannot read file.\nUnrecognized file format encountered.\nUnrecognized file format: {}\nValid options are: xsf'.format(format))
+            self.error(f'Cannot read file.\nUnrecognized file format encountered.\nUnrecognized file format: {format}\nValid options are: xsf')
         #end if
     #end def read_local
 
@@ -3992,13 +3987,13 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         axes   = d.axes.copy()
         del d
         if len(points)!=len(values):
-            self.error('"points" and "values" must have the same length.\nNumber of points: {}\nNumber of values: {}'.format(len(points),len(values)))
+            self.error(f'"points" and "values" must have the same length.\nNumber of points: {len(points)}\nNumber of values: {len(values)}')
         elif len(points.shape)!=2:
-            self.error('Shape of "points" array must be (# points) x (# dimensions).\nShape provided: {}'.format(points.shape))
+            self.error(f'Shape of "points" array must be (# points) x (# dimensions).\nShape provided: {points.shape}')
         #end if
         N,D = points.shape
         if axes.shape!=(D,D):
-            self.error('"axes" must have shape {}\nShape provided: {} '.format((D,D),axes.shape))
+            self.error(f'"axes" must have shape {(D,D)}\nShape provided: {axes.shape} ')
         #end if
 
         # reshape values (for now GridFunction does not support more structured values)
@@ -4062,7 +4057,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
             dxmin   = dxlayer.min()
             dxmax   = dxlayer.max()
             if np.abs(dxmax-dxmin)>2*tol:
-                error('Could not determine layer separation.\nLayers are not evenly spaced.\nMin layer spacing: {}\nMax layer spacing: {}\nSpread   : {}\nTolerance: {}'.format(dxmin,dxmax,dxmax-dxmin,2*tol),'read_from_points')
+                error(f'Could not determine layer separation.\nLayers are not evenly spaced.\nMin layer spacing: {dxmin}\nMax layer spacing: {dxmax}\nSpread   : {dxmax-dxmin}\nTolerance: {2*tol}','read_from_points')
             #end if
             dx = dxlayer.mean()
             ipoints = np.array(np.around((xpoints-xmin)/dx),dtype=int)
@@ -4076,7 +4071,7 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
         grid_corner = np.empty((D, ),dtype=float)
         ipoints     = np.empty((N,D),dtype=int)
         for d in range(D):
-            self.vlog('Indexing points along dim {}'.format(d),n=2,time=True)
+            self.vlog(f'Indexing points along dim {d}',n=2,time=True)
             ixpoints,xmin,xmax = index_by_layer(rpoints[:,d],tol)
             grid_shape[d]  = ixpoints.max()+1
             grid_axes[d,d] = xmax-xmin
@@ -4095,20 +4090,20 @@ class ParallelotopeGridFunction(StructuredGridFunctionWithAxes):
             bconds   = grid_bconds,
             centered = False,
             )
-        
+
         self.vlog('Checking grid point mapping',n=1,time=True)
         # check that the generated grid contains the inputted points
         ipflat = grid.flat_indices(ipoints)
         dmax = np.linalg.norm(points-grid.points[ipflat],axis=1).max()
         if dmax>tol:
-            self.error('Generated grid points do not match those read in.\nMaximum deviation: {}\nTolerance        : {}'.format(dmax,tol))
+            self.error(f'Generated grid points do not match those read in.\nMaximum deviation: {dmax}\nTolerance        : {tol}')
         #end if
         # count number of times each grid point is mapped to
         point_counts = np.bincount(ipflat,minlength=grid.npoints)
         # if not averaging, check for one-to-one mapping
         max_count = point_counts.max()
         if not average and max_count>1:
-            self.error('Mapping to grid points is not one-to-one.\nMax no. of read points mapped to a grid point: {}'.format(max_count))
+            self.error(f'Mapping to grid points is not one-to-one.\nMax no. of read points mapped to a grid point: {max_count}')
         #end if
 
         # map the inputted values onto the generated grid
@@ -4148,7 +4143,7 @@ class SpheroidGridFunction(StructuredGridFunctionWithAxes):
     """
     Represents functions over spheroidal grids.
 
-    Most of the functionality is enabled by parent classes.  Instances of 
+    Most of the functionality is enabled by parent classes.  Instances of
     this class must only own a SpheroidGrid.
 
     This class is intended for direct instantiation and use.
@@ -4156,13 +4151,13 @@ class SpheroidGridFunction(StructuredGridFunctionWithAxes):
     Parameters
     ----------
     grid : `SpheroidGrid, optional`
-        Grid of points in a `d` dimensional space.  If `grid` is not provided, 
-        additional parameters must be given to initialize a `SpheroidGrid` 
+        Grid of points in a `d` dimensional space.  If `grid` is not provided,
+        additional parameters must be given to initialize a `SpheroidGrid`
         object.
     values : `array_like, float/complex, shape (N,P), (N,)`
         Array of function values defined at the grid points.  `N` is the number
-        of points and `P` is the number of function values.  With `P>1`, the 
-        function is vector or tensor valued.  If the array has shape (`N`,), 
+        of points and `P` is the number of function values.  With `P>1`, the
+        function is vector or tensor valued.  If the array has shape (`N`,),
         then `P` is set to `1`.
     copy_grid : `bool, optional, default True`
         Copy provided grid (`True`) or not (`False`).
@@ -4174,9 +4169,9 @@ class SpheroidGridFunction(StructuredGridFunctionWithAxes):
         Data type for local function values.
     grid_dtype : `optional`
         Data type for grid point locations.
-    **kwargs: 
+    **kwargs:
         Arbitrary set of parameters used to create a `SpheroidGrid` object. See
-        documentation for the `SpheroidGrid` class for allowed inputs.  
+        documentation for the `SpheroidGrid` class for allowed inputs.
         Used/allowed only if `grid` is not provided.
 
     Attributes
@@ -4185,7 +4180,7 @@ class SpheroidGridFunction(StructuredGridFunctionWithAxes):
         Grid of points in a `d` dimensional space.
     values : `ndarray, float/complex, shape (N,P)`
         Array of function values defined at the grid points.  `N` is the number
-        of points and `P` is the number of function values.  With `P>1`, the 
+        of points and `P` is the number of function values.  With `P>1`, the
         function is vector or tensor valued.
     space_dim : `int, property`
         Dimension of the space the grid resides in.  Referred to as `d` above.
@@ -4202,12 +4197,12 @@ class SpheroidGridFunction(StructuredGridFunctionWithAxes):
     ncells : `int, property`
         The total number of grid cells.
     flat_points_shape : `tuple, int, property`
-        The shape of the `points` array in its default (flat) representation. 
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        The shape of the `points` array in its default (flat) representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `flat_points_shape` is `(N*M*P,D)`.
     full_points_shape : `tuple, int, property`
         The shape of the points array in its full representation.
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `full_points_shape` is `(N,M,P,D)`.
     r : `ndarray, float, property`
         Array containing the grid points.
@@ -4225,7 +4220,7 @@ class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
     """
     Represents functions over spheroidal surface grids.
 
-    Most of the functionality is enabled by parent classes.  Instances of 
+    Most of the functionality is enabled by parent classes.  Instances of
     this class must only own a SpheroidalSurfaceGrid.
 
     This class is intended for direct instantiation and use.
@@ -4233,13 +4228,13 @@ class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
     Parameters
     ----------
     grid : `SpheroidSurfaceGrid, optional`
-        Grid of points in a `d` dimensional space.  If `grid` is not provided, 
-        additional parameters must be given to initialize a 
+        Grid of points in a `d` dimensional space.  If `grid` is not provided,
+        additional parameters must be given to initialize a
         `SpheroidSurfaceGrid` object.
     values : `array_like, float/complex, shape (N,P), (N,)`
         Array of function values defined at the grid points.  `N` is the number
-        of points and `P` is the number of function values.  With `P>1`, the 
-        function is vector or tensor valued.  If the array has shape (`N`,), 
+        of points and `P` is the number of function values.  With `P>1`, the
+        function is vector or tensor valued.  If the array has shape (`N`,),
         then `P` is set to `1`.
     copy_grid : `bool, optional, default True`
         Copy provided grid (`True`) or not (`False`).
@@ -4251,9 +4246,9 @@ class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
         Data type for local function values.
     grid_dtype : `optional`
         Data type for grid point locations.
-    **kwargs: 
-        Arbitrary set of parameters used to create a `SpheroidSurfaceGrid` 
-        object.  See documentation for the `SpheroidSurfaceGrid` class for 
+    **kwargs:
+        Arbitrary set of parameters used to create a `SpheroidSurfaceGrid`
+        object.  See documentation for the `SpheroidSurfaceGrid` class for
         allowed inputs.  Used/allowed only if `grid` is not provided.
 
     Attributes
@@ -4262,7 +4257,7 @@ class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
         Grid of points in a `d` dimensional space.
     values : `ndarray, float/complex, shape (N,P)`
         Array of function values defined at the grid points.  `N` is the number
-        of points and `P` is the number of function values.  With `P>1`, the 
+        of points and `P` is the number of function values.  With `P>1`, the
         function is vector or tensor valued.
     space_dim : `int, property`
         Dimension of the space the grid resides in.  Referred to as `d` above.
@@ -4279,12 +4274,12 @@ class SpheroidSurfaceGridFunction(StructuredGridFunctionWithAxes):
     ncells : `int, property`
         The total number of grid cells.
     flat_points_shape : `tuple, int, property`
-        The shape of the `points` array in its default (flat) representation. 
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        The shape of the `points` array in its default (flat) representation.
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `flat_points_shape` is `(N*M*P,D)`.
     full_points_shape : `tuple, int, property`
         The shape of the points array in its full representation.
-        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then 
+        If `grid_shape` is `(N,M,P)` and `space_dim` is `D`, then
         `full_points_shape` is `(N,M,P,D)`.
     r : `ndarray, float, property`
         Array containing the grid points.
@@ -4306,13 +4301,13 @@ def parallelotope_grid_function(
     if 'points' not in kwargs:
         gf = ParallelotopeGridFunction(**kwargs)
     else:
-        required = set(('points','values','axes'))
-        optional = set(('tol','average'))
+        required = {'points','values','axes'}
+        optional = {'tol','average'}
         present  = set(kwargs.keys())
         if len(required-present)>0:
-            error('Grid function cannot be created.\nWhen "points" is provided, "axes" and "values" must also be given.\nInputs provided: {}'.format(sorted(present)),loc)
+            error(f'Grid function cannot be created.\nWhen "points" is provided, "axes" and "values" must also be given.\nInputs provided: {sorted(present)}',loc)
         elif len(present-required-optional)>0:
-            error('Grid function cannot be created.\nUnrecognized inputs provided.\nUnrecognized inputs: {}\nValid options are: {}'.format(sorted(present-required-optional),sorted(required|optional)))
+            error(f'Grid function cannot be created.\nUnrecognized inputs provided.\nUnrecognized inputs: {sorted(present-required-optional)}\nValid options are: {sorted(required|optional)}')
         #end if
         gf = ParallelotopeGridFunction()
         gf.read_from_points(**kwargs)
@@ -4340,7 +4335,7 @@ def grid_function(
     elif type=='spheroid_surface':
         gf = SpheroidSurfaceGridFunction(**kwargs)
     else:
-        error('Grid function type "{}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface'.format(type),loc)
+        error(f'Grid function type "{type}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface',loc)
     #end if
     return gf
 #end def grid_function
@@ -4363,7 +4358,7 @@ def grid(
     elif type=='spheroid_surface':
         g = SpheroidSurfaceGrid(**kwargs)
     else:
-        error('Grid type "{}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface'.format(type),loc)
+        error(f'Grid type "{type}" is not recognized.\nValid options are: parallelotope, spheroid, or spheroid_surface',loc)
     #end if
     return g
 #end def grid
@@ -4377,7 +4372,7 @@ gf_file_type_map = obj(
 def read_grid_function(filepath,format=None,loc='read_grid_function'):
     filepath,format = process_file_format(filepath,format,loc)
     if format not in gf_file_type_map:
-        error('Cannot read file.\nUnrecognized file format for grid function.\nFile format provided: {}\nAllowed formats include: {}'.format(format,sorted(gf_file_type_map.keys())),loc)
+        error(f'Cannot read file.\nUnrecognized file format for grid function.\nFile format provided: {format}\nAllowed formats include: {sorted(gf_file_type_map.keys())}',loc)
     #end if
     gf = gf_file_type_map[format]()
     gf.read(filepath)
@@ -4392,7 +4387,7 @@ g_file_type_map = obj(
 def read_grid(filepath,format=None,loc='read_grid'):
     filepath,format = process_file_format(filepath,format,loc)
     if format not in g_file_type_map:
-        error('Cannot read file.\nUnrecognized file format for grid.\nFile format provided: {}\nAllowed formats include: {}'.format(format,sorted(g_file_type_map.keys())),loc)
+        error(f'Cannot read file.\nUnrecognized file format for grid.\nFile format provided: {format}\nAllowed formats include: {sorted(g_file_type_map.keys())}',loc)
     #end if
     g = g_file_type_map[format]()
     g.read(filepath)
@@ -4404,9 +4399,9 @@ def process_file_format(filepath,format,loc):
     if isinstance(filepath,StandardFile):
         format = filepath.sftype
     elif not isinstance(filepath,str):
-        error('Cannot read file.\nExpected a file path.\nInstead received type: {}\nWith value: {}\nPlease provide a file path and try again.'.format(filepath.__class__.__name__,filepath),loc)
+        error(f'Cannot read file.\nExpected a file path.\nInstead received type: {filepath.__class__.__name__}\nWith value: {filepath}\nPlease provide a file path and try again.',loc)
     elif not os.path.exists(filepath):
-        error('Cannot read file.  File path does not exist.\nFile path provided: {}'.format(filepath),loc)
+        error(f'Cannot read file.  File path does not exist.\nFile path provided: {filepath}',loc)
     #end if
     if format is None:
         format = filepath.rsplit('.',1)[1].lower()
@@ -4430,7 +4425,7 @@ del gfs
 def grid_function_from_grid(grid):
     gname = grid.__class__.__name__
     if gname not in grid_to_grid_function:
-        error('Cannot find matching grid function for grid "{}".'.format(gname))
+        error(f'Cannot find matching grid function for grid "{gname}".')
     #end if
     return grid_to_grid_function[gname]
 #end def grid_function_from_grid
@@ -4489,8 +4484,8 @@ if __name__=='__main__':
 
     supported = obj(
         parallelotope    = obj(dims=set(axes.keys())),
-        spheroid         = obj(dims=set([(2,2),(2,3),(3,3)])),
-        spheroid_surface = obj(dims=set([(1,2),(1,3),(2,3)])),
+        spheroid         = obj(dims={(2,2),(2,3),(3,3)}),
+        spheroid_surface = obj(dims={(1,2),(1,3),(2,3)}),
         )
 
     gdict = dict(
@@ -4548,10 +4543,11 @@ if __name__=='__main__':
         if not g.initialized:
             continue
         #end if
-        print(' {:<16}  {} {}  {}  {}  {}'.format(label,g.grid_dim,g.space_dim,len(g.axes),g.bconds,g.shape))
+        print(f' {label:<16}  {g.grid_dim} {g.space_dim}  {len(g.axes)}  {g.bconds}  {g.shape}')
     #end for
 
     if demos.plot_grids:
+        import matplotlib.pyplot as plt
         #grids_plot = 'p23c p23_oo p23_op p23_pp s23c s23'.split()
         #grids_plot = 'p11 p12 p13 p23 p23c p33 p33c'.split()
         #grids_plot = 's23 s23c s33 s33c'.split()
@@ -4578,6 +4574,7 @@ if __name__=='__main__':
 
 
     if demos.plot_inside:
+        import matplotlib.pyplot as plt
         #grids_plot = 'p22_oo p22_op p22_pp'.split()
         #grids_plot = 's22 s23'.split()
         grids_plot = 'c23'.split()
@@ -4614,6 +4611,7 @@ if __name__=='__main__':
 
 
     if demos.plot_projection:
+        import matplotlib.pyplot as plt
         grids_plot = 'p22_oo p22_op p22_pp'.split()
 
         n = 100
@@ -4630,7 +4628,7 @@ if __name__=='__main__':
             dim = int(name[1])
             points = g.points_from_unit(upoints[dim])
             proj_points = g.project(points)
-            
+
             inside = g.inside(points)
             if not unit:
                 g.plot_points(points,color='r',marker='o',facecolors='none',show=0)
@@ -4661,7 +4659,7 @@ if __name__=='__main__':
 
 
     if demos.plot_contours:
-
+        import matplotlib.pyplot as plt
         gp = ParallelotopeGrid(
             axes  = [[1,0],
                      [1,1]],
@@ -4700,13 +4698,13 @@ if __name__=='__main__':
         fs.plot_unit_contours(boundary=True,show=False)
 
         fs.plot_contours(boundary=True)
-        
+
     #end if
 
 
     if demos.plot_surface:
-
-        gp = ParallelotopeGrid( 
+        import matplotlib.pyplot as plt
+        gp = ParallelotopeGrid(
            axes  = [[1,0],
                      [1,1]],
             bconds = 'pp',
@@ -4732,24 +4730,24 @@ if __name__=='__main__':
                      [1,1]],
             cells  = (80,80),
             )
-        
+
         u = gs.unit_points()
         values = np.cos(3*np.pi*u[:,0])**2*np.sin(2*np.pi*u[:,1])
-        
+
         fs = SpheroidGridFunction(
             grid   = gs,
             values = values,
             )
-        
+
         fs.plot_unit_surface(show=False)
-        
+
         fs.plot_surface()
-        
+
     #end if
 
 
     if demos.plot_isosurface:
-
+        import matplotlib.pyplot as plt
         gp = ParallelotopeGrid(
             axes  = [[1,0,0],
                      [1,1,0],
@@ -4789,12 +4787,12 @@ if __name__=='__main__':
             grid   = gs,
             values = values,
             )
-        
-        fs.plot_unit_isosurface(level=0,show=False)
-        
-        fs.plot_isosurface(level=0)
-        
-    #end if
-    
 
-#end if 
+        fs.plot_unit_isosurface(level=0,show=False)
+
+        fs.plot_isosurface(level=0)
+
+    #end if
+
+
+#end if

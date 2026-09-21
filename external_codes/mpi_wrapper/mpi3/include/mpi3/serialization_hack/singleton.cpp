@@ -14,6 +14,11 @@
 #include <boost/serialization/config.hpp>
 #include <boost/serialization/singleton.hpp>
 
+#ifdef BOOST_MSVC
+#undef BOOST_SERIALIZATION_DECL
+#define BOOST_SERIALIZATION_DECL /*comment*/  // for MSVC
+#endif
+
 namespace boost { 
 namespace serialization { 
 

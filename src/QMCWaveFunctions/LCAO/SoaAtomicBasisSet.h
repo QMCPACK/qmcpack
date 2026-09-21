@@ -17,6 +17,7 @@
 #include "CPU/math.hpp"
 #include "OptimizableObject.h"
 #include <ResourceCollection.h>
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {

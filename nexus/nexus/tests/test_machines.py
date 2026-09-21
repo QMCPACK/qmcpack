@@ -435,14 +435,14 @@ def test_workstation_init():
         app_directory   = None,
         app_launcher    = 'mpirun',
         cores           = 16,
-        finished        = set([]),
+        finished        = set(),
         local_directory = None,
         name            = 'wsi',
         process_granularity = 1,
         queue_size      = 16,
-        running         = set([]),
+        running         = set(),
         user            = None,
-        waiting         = set([]),
+        waiting         = set(),
         jobs            = obj(),
         processes       = obj(),
         )
@@ -518,8 +518,8 @@ def test_workstation_scheduling(tmp_path):
 
     assert(j.status==Job.states.waiting)
     assert(j.submitted)
-    assert(ws.waiting==set([j.internal_id]))
-    assert(set(ws.jobs.keys())==set([j.internal_id]))
+    assert(ws.waiting=={j.internal_id})
+    assert(set(ws.jobs.keys())=={j.internal_id})
     assert(id(ws.jobs[j.internal_id])==id(j))
 
 
@@ -533,12 +533,12 @@ def test_workstation_scheduling(tmp_path):
     assert(j.status==Job.states.running)
     assert(isinstance(j.system_id,int))
     assert(len(ws.waiting)==0)
-    assert(ws.running==set([j.internal_id]))
-    assert(set(ws.processes.keys())==set([j.system_id]))
+    assert(ws.running=={j.internal_id})
+    assert(set(ws.processes.keys())=={j.system_id})
     p = ws.processes[j.system_id]
     assert(p.popen.pid==j.system_id)
     assert(id(p.job)==id(j))
-    assert(set(ws.jobs.keys())==set([j.internal_id]))
+    assert(set(ws.jobs.keys())=={j.internal_id})
 
     # allow a moment for all system calls to resolve
     time.sleep(0.1)
@@ -552,8 +552,8 @@ def test_workstation_scheduling(tmp_path):
     assert(j.status==Job.states.finished)
     assert(len(ws.running)==0)
     assert(len(ws.processes)==0)
-    assert(ws.finished==set([j.internal_id]))
-    assert(set(ws.jobs.keys())==set([j.internal_id]))
+    assert(ws.finished=={j.internal_id})
+    assert(set(ws.jobs.keys())=={j.internal_id})
 
 #end def test_workstation_scheduling
 
@@ -580,7 +580,7 @@ def test_workstation_requeue(tmp_path):
     assert(j.system_id==old_pid)
     assert(j.internal_id in ws.jobs)
     assert(id(ws.jobs[j.internal_id])==id(j))
-    assert(ws.waiting==set([j.internal_id]))
+    assert(ws.waiting=={j.internal_id})
     assert(len(ws.running)==0)
     assert(len(ws.processes)==0)
 
@@ -589,8 +589,8 @@ def test_workstation_requeue(tmp_path):
     assert(j.status==Job.states.running)
     assert(j.system_id!=old_pid)
     assert(ws.waiting==set())
-    assert(ws.running==set([j.internal_id]))
-    assert(set(ws.processes.keys())==set([j.system_id]))
+    assert(ws.running=={j.internal_id})
+    assert(set(ws.processes.keys())=={j.system_id})
 
     time.sleep(0.1)
     ws.query_queue()
@@ -598,7 +598,7 @@ def test_workstation_requeue(tmp_path):
     assert(j.finished)
     assert(j.status==Job.states.finished)
     assert(ws.running==set())
-    assert(ws.finished==set([j.internal_id]))
+    assert(ws.finished=={j.internal_id})
     assert(len(ws.processes)==0)
 
 #end def test_workstation_requeue
@@ -623,7 +623,7 @@ def test_supercomputer_init():
         cores           = 281088,
         cores_per_node  = 64,
         cores_per_proc  = 64,
-        finished        = set([]),
+        finished        = set(),
         job_remover     = 'qdel',
         local_directory = None,
         name            = 'theta_init',
@@ -634,10 +634,10 @@ def test_supercomputer_init():
         queue_size      = 1000,
         ram             = 843264,
         ram_per_node    = 192,
-        running         = set([]),
+        running         = set(),
         sub_launcher    = 'qsub',
         user            = None,
-        waiting         = set([]),
+        waiting         = set(),
         jobs            = obj(),
         processes       = obj(),
         system_queue    = obj(),
@@ -723,11 +723,11 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 
     assert(j.status==Job.states.waiting)
     assert(j.submitted)
-    assert(sc.waiting==set([j.internal_id]))
-    assert(set(sc.jobs.keys())==set([j.internal_id]))
+    assert(sc.waiting=={j.internal_id})
+    assert(set(sc.jobs.keys())=={j.internal_id})
     assert(id(sc.jobs[j.internal_id])==id(j))
 
-    
+
     # test write_job() to file
     sc.write_job(j,file=True)
 
@@ -756,9 +756,9 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     assert(j.status==Job.states.running)
     assert(j.system_id==123)
     assert(len(sc.waiting)==0)
-    assert(sc.running==set([j.internal_id]))
-    assert(set(sc.processes.keys())==set([123]))
-    assert(set(sc.jobs.keys())==set([j.internal_id]))
+    assert(sc.running=={j.internal_id})
+    assert(set(sc.processes.keys())=={123})
+    assert(set(sc.jobs.keys())=={j.internal_id})
 
 
     # allow a moment for all system calls to resolve
@@ -774,8 +774,8 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     assert(j.status==Job.states.finished)
     assert(len(sc.running)==0)
     assert(len(sc.processes)==0)
-    assert(sc.finished==set([j.internal_id]))
-    assert(set(sc.jobs.keys())==set([j.internal_id]))
+    assert(sc.finished=={j.internal_id})
+    assert(set(sc.jobs.keys())=={j.internal_id})
 
     # remove test machine
     del Machine.machines["theta_sched"]
@@ -783,7 +783,7 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 #end def test_supercomputer_scheduling
 
 
-def select_random(d): 
+def select_random(d):
     return d[randint(0,len(d)-1)]
 
 def test_process_job():
@@ -970,7 +970,7 @@ def test_process_job():
         for name in sorted(not_idempotent.keys()):
             mlist+= '\n  '+name
         #end for
-        msg='\n\nsome machines failed process_job idempotency test:{0}'.format(mlist)
+        msg=f'\n\nsome machines failed process_job idempotency test:{mlist}'
         pytest.fail(msg)
     #end if
     Machine.allow_warnings = allow_warn
@@ -1028,7 +1028,7 @@ def test_job_run_command():
     #end def job_command_equal
 
     job_run_ref = obj({
-        ('amber'          , 'n1'            ) : 'srun test.x', 
+        ('amber'          , 'n1'            ) : 'srun test.x',
         ('amber'          , 'n1_p1'         ) : 'srun test.x',
         ('amber'          , 'n2'            ) : 'srun test.x',
         ('amber'          , 'n2_t2'         ) : 'srun test.x',
@@ -1052,7 +1052,7 @@ def test_job_run_command():
         ('archer2'        , 'n2_t2'         ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 128 test.x',
         ('archer2'        , 'n2_t2_e'       ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 128 test.x',
         ('archer2'        , 'n2_t2_p2'      ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 4 test.x',
-        ('attaway'        , 'n1'            ) : 'srun test.x', 
+        ('attaway'        , 'n1'            ) : 'srun test.x',
         ('attaway'        , 'n1_p1'         ) : 'srun test.x',
         ('attaway'        , 'n2'            ) : 'srun test.x',
         ('attaway'        , 'n2_t2'         ) : 'srun test.x',
@@ -1100,7 +1100,7 @@ def test_job_run_command():
         ('cori'           , 'n2_t2'         ) : 'srun test.x',
         ('cori'           , 'n2_t2_e'       ) : 'srun test.x',
         ('cori'           , 'n2_t2_p2'      ) : 'srun test.x',
-        ('eclipse'        , 'n1'            ) : 'srun test.x', 
+        ('eclipse'        , 'n1'            ) : 'srun test.x',
         ('eclipse'        , 'n1_p1'         ) : 'srun test.x',
         ('eclipse'        , 'n2'            ) : 'srun test.x',
         ('eclipse'        , 'n2_t2'         ) : 'srun test.x',
@@ -1112,19 +1112,19 @@ def test_job_run_command():
         ('eos'            , 'n2_t2'         ) : 'aprun -ss -cc numa_node -d 2 -n 16 test.x',
         ('eos'            , 'n2_t2_e'       ) : 'aprun -ss -cc numa_node -d 2 -n 16 test.x',
         ('eos'            , 'n2_t2_p2'      ) : 'aprun -ss -cc numa_node -d 2 -n 4 test.x',
-        ('flight'          , 'n1'           ) : 'srun test.x', 
+        ('flight'          , 'n1'           ) : 'srun test.x',
         ('flight'          , 'n1_p1'        ) : 'srun test.x',
         ('flight'          , 'n2'           ) : 'srun test.x',
         ('flight'          , 'n2_t2'        ) : 'srun test.x',
         ('flight'          , 'n2_t2_e'      ) : 'srun test.x',
         ('flight'          , 'n2_t2_p2'     ) : 'srun test.x',
-        ('ghost'          , 'n1'            ) : 'srun test.x', 
+        ('ghost'          , 'n1'            ) : 'srun test.x',
         ('ghost'          , 'n1_p1'         ) : 'srun test.x',
         ('ghost'          , 'n2'            ) : 'srun test.x',
         ('ghost'          , 'n2_t2'         ) : 'srun test.x',
         ('ghost'          , 'n2_t2_e'       ) : 'srun test.x',
         ('ghost'          , 'n2_t2_p2'      ) : 'srun test.x',
-        ('hops'          , 'n1'             ) : 'srun test.x', 
+        ('hops'          , 'n1'             ) : 'srun test.x',
         ('hops'          , 'n1_p1'          ) : 'srun test.x',
         ('hops'          , 'n2'             ) : 'srun test.x',
         ('hops'          , 'n2_t2'          ) : 'srun test.x',
@@ -1160,7 +1160,7 @@ def test_job_run_command():
         ('lonestar'       , 'n2_t2'         ) : 'ibrun -n 12 -o 0 test.x',
         ('lonestar'       , 'n2_t2_e'       ) : 'ibrun -n 12 -o 0 test.x',
         ('lonestar'       , 'n2_t2_p2'      ) : 'ibrun -n 4 -o 0 test.x',
-        ('manzano'        , 'n1'            ) : 'srun test.x', 
+        ('manzano'        , 'n1'            ) : 'srun test.x',
         ('manzano'        , 'n1_p1'         ) : 'srun test.x',
         ('manzano'        , 'n2'            ) : 'srun test.x',
         ('manzano'        , 'n2_t2'         ) : 'srun test.x',
@@ -1202,7 +1202,7 @@ def test_job_run_command():
         ('rhea'           , 'n2_t2'         ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
         ('rhea'           , 'n2_t2_e'       ) : 'srun -N 2 -n 16 -c 2 --cpu-bind=cores test.x',
         ('rhea'           , 'n2_t2_p2'      ) : 'srun -N 2 -n 4 -c 2 --cpu-bind=cores test.x',
-        ('solo'           , 'n1'            ) : 'srun test.x', 
+        ('solo'           , 'n1'            ) : 'srun test.x',
         ('solo'           , 'n1_p1'         ) : 'srun test.x',
         ('solo'           , 'n2'            ) : 'srun test.x',
         ('solo'           , 'n2_t2'         ) : 'srun test.x',
@@ -1373,21 +1373,19 @@ def test_job_run_command():
                       )
             command = job.run_command()
             if testing.global_data['job_ref_table']:
-                sname = "'{0}'".format(name)
-                stype = "'{0}'".format(jtype)
-                print("        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command))
+                sname = f"'{name}'"
+                stype = f"'{jtype}'"
+                print(f"        ({sname:<16} , {stype:<16}) : '{command}',")
                 continue
             #end if
             ref_command = job_run_ref[name,jtype]
             if not job_commands_equal(command,ref_command):
                 msg = (
-                    'Job.run_command for machine "{0}" does not match the reference\n'
+                    f'Job.run_command for machine "{name}" does not match the reference\n'
                     'job inputs:\n'
-                    '{1}\n'
-                    'reference command: {2}\n'
-                    'incorrect command: {3}'.format(
-                        name,job_inputs[jtype],ref_command,command
-                        )
+                    f'{job_inputs[jtype]}\n'
+                    f'reference command: {ref_command}\n'
+                    f'incorrect command: {command}'
                     )
                 pytest.fail(msg)
             #end for
@@ -1425,14 +1423,14 @@ def test_job_run_command():
         rc  = job.run_command()
         rc1 = job1.run_command()
         rc2 = job2.run_command()
-        ns  = ' {0} '.format(job.nodes)
-        ns1 = ' {0} '.format(job1.nodes)
-        ns2 = ' {0} '.format(job2.nodes)
+        ns  = f' {job.nodes} '
+        ns1 = f' {job1.nodes} '
+        ns2 = f' {job2.nodes} '
         # verify that node count is in each command
         assert(ns  in rc )
         assert(ns1 in rc1)
         assert(ns2 in rc2)
-        # verify that text on either side of node count 
+        # verify that text on either side of node count
         # agrees for original and split commands
         assert(len(rc1)==len(rc))
         assert(len(rc2)==len(rc))
@@ -1511,7 +1509,7 @@ echo List of nodes assigned to the job: $SLURM_NODELIST
 
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
-srun -N 2 -n 64 test.x''',
+srun -N 2 -n 64 test.x''',  # noqa: W291
         archer2 = '''#!/bin/bash
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
@@ -1926,7 +1924,7 @@ echo List of nodes assigned to the job: $SLURM_NODELIST
 
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
-srun -N 2 -n 32 test.x''',
+srun -N 2 -n 32 test.x''',  # noqa: W291
         solo = '''#!/bin/bash
 #SBATCH -p batch
 #SBATCH --job-name jobname
@@ -2302,7 +2300,7 @@ srun -N 2 -n 64 test.x
         j.abs_dir = '/path/on/'+name
         wj = m.write_job(j)
         if testing.global_data['job_ref_table']:
-            print("        {} = '''{}''',".format(name,wj.strip()))
+            print(f"        {name} = '''{wj.strip()}''',")
             continue
         #end if
         ref_wj = job_write_ref[name]

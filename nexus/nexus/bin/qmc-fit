@@ -85,7 +85,7 @@ def find_nexus_modules():
 
 # Load Nexus modules
 find_nexus_modules()
-from nexus.developer import obj,log,error
+from nexus.developer import obj,nxs_print
 from nexus.numerics import jackknife,jackknife_aux
 from nexus.numerics import simstats,equilibration_length
 from nexus.numerics import curve_fit,least_squares
@@ -140,7 +140,7 @@ all_fit_functions = obj(
             params   = [('minimum_x',lambda p: roots_n(p, 1)[moment_n(p,2) > 0]),
                         ('minimum_e',lambda p: root_vals_n(p,1)[moment_n(p,2) > 0]),
                         ('curvature',lambda p: moment_n(p, 2)[moment_n(p,2) > 0])],
-            ),            
+            ),
         quartic = obj(
             nparam   = 5,
             function = lambda p,t: p[0]+p[1]*t+p[2]*t*t+p[3]*t*t*t+p[4]*t*t*t*t,
@@ -148,14 +148,14 @@ all_fit_functions = obj(
             params   = [('minimum_x',lambda p: roots_n(p, 1)[moment_n(p,2) > 0]),
                         ('minimum_e',lambda p: root_vals_n(p,1)[moment_n(p,2) > 0]),
                         ('curvature',lambda p: moment_n(p, 2)[moment_n(p,2) > 0])],
-            ),            
+            ),
         ),
     eos = obj(
         morse = obj(
             nparam   = 4,
             function = morse,
             format   = 'De ( (1-e^-a(r-re))^2 - 1 ) + E_infinity',
-            params   = [('minimum_x', morse_re), 
+            params   = [('minimum_x', morse_re),
                         ('a',         morse_a),
                         ('de',        morse_De),
                         ('einf',      morse_einf),
@@ -166,18 +166,18 @@ all_fit_functions = obj(
             ),
         birch = obj(
             nparam   = 4,
-            format   = 'E_inf + 9*V_0*B/16*((V_0/V)**(2./3)-1)**2*( 2 + (Bp-4)*((V_0/V)**(2./3)-1) )', 
-            function = birch, 
+            format   = 'E_inf + 9*V_0*B/16*((V_0/V)**(2./3)-1)**2*( 2 + (Bp-4)*((V_0/V)**(2./3)-1) )',
+            function = birch,
             params   = [('minimum_x', lambda p: p[1]),
                         ('e_inf',     lambda p: p[0]),
                         ('B',         lambda p: p[2]),
                         ('Bp',        lambda p: p[3]),
                         ('pressure' , lambda p, V: birch_pressure(p[1:], V))],
-            ),         
+            ),
         vinet = obj(
             nparam   = 4,
-            format   = 'E_inf + 2*V_0*B/(Bp-1)**2*( 2 - (2+3*(Bp-1)*((V/V_0)**(1./3)-1))*exp(-1.5*(Bp-1)*((V/V_0)**(1./3)-1)) ) ', 
-            function = vinet, 
+            format   = 'E_inf + 2*V_0*B/(Bp-1)**2*( 2 - (2+3*(Bp-1)*((V/V_0)**(1./3)-1))*exp(-1.5*(Bp-1)*((V/V_0)**(1./3)-1)) ) ',
+            function = vinet,
             params   = [('minimum_x', lambda p: p[1]),
                         ('e_inf',     lambda p: p[0]),
                         ('B',         lambda p: p[2]),
@@ -186,14 +186,14 @@ all_fit_functions = obj(
             ),
         murnaghan = obj(
             nparam   = 4,
-            format   = 'E_inf + B/Bp*V*((V_0/V)**Bp/(Bp-1)+1)-V_0*B/(Bp-1)', 
-            function = murnaghan, 
+            format   = 'E_inf + B/Bp*V*((V_0/V)**Bp/(Bp-1)+1)-V_0*B/(Bp-1)',
+            function = murnaghan,
             params   = [('minimum_x', lambda p: p[1]),
                         ('e_inf',     lambda p: p[0]),
                         ('B',         lambda p: p[2]),
                         ('Bp',        lambda p: p[3]),
                         ('pressure' , lambda p, V: murnaghan_pressure(p[1:], V))],
-            ),             
+            ),
         ),
     )
 fit_functions = obj()
@@ -244,7 +244,7 @@ def qmcfit(q,E,fname='linear',minimizer=least_squares):
                              position = 1,
                              capture  = jcapture,
                              )
-    
+
     # obtain jackknife estimates of derived parameters
     if len(auxfuncs)>0:
         psamples = jcapture.jsamples
@@ -261,14 +261,17 @@ def qmcfit(q,E,fname='linear',minimizer=least_squares):
 # Reads scalar.dat files and extracts energy series
 def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_start=None):
     if len(scalar_files)==0:
-        error('must provide at least one scalar file')
+        msg = 'must provide at least one scalar file'
+        raise ValueError(msg)
     #end if
     for scalar_file in scalar_files:
         if not os.path.exists(scalar_file):
-            error('scalar file does not exist: {0}'.format(scalar_file))
+            msg = f'scalar file does not exist: {scalar_file}'
+            raise FileNotFoundError(msg)
         #end if
         if not scalar_file.endswith('.scalar.dat'):
-            error('file must be of type scalar.dat: {0}'.format(scalar_file))
+            msg = f'file must be of type scalar.dat: {scalar_file}'
+            raise ValueError(msg)
         #end if
     #end for
     if series_start!=None:
@@ -287,13 +290,27 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
     if isinstance(equils,(int,np.int_)):
         equils = len(scalar_files)*[equils]
     elif equils is not None and len(equils)!=len(scalar_files):
-        error('must provide one equilibration length per scalar file\nnumber of equils provided: {0}\nnumber of scalar files provided: {1}\nequils provided: {2}\nscalar files provided: {3}'.format(len(equils),len(scalar_files),equils,scalar_files))
+        msg = (
+            'must provide one equilibration length per scalar file\n'
+            f'number of equils provided: {len(equils)}\n'
+            f'number of scalar files provided: {len(scalar_files)}\n'
+            f'equils provided: {equils}\n'
+            f'scalar files provided: {scalar_files}'
+            )
+        raise ValueError(msg)
     #end if
 
     if isinstance(reblock_factors,(int,np.int_)):
         reblock_factors = len(scalar_files)*[reblock_factors]
     elif reblock_factors is not None and len(reblock_factors)!=len(scalar_files):
-        error('must provide one reblocking factor per scalar file\nnumber of reblock_factors provided: {0}\nnumber of scalar files provided: {1}\nreblock_factors provided: {2}\nscalar files provided: {3}'.format(len(reblock_factors),len(scalar_files),reblock_factors,scalar_files))
+        msg = (
+            'must provide one reblocking factor per scalar file\n'
+            f'number of reblock_factors provided: {len(reblock_factors)}\n'
+            f'number of scalar files provided: {len(scalar_files)}\n'
+            f'reblock_factors provided: {reblock_factors}\n'
+            f'scalar files provided: {scalar_files}'
+            )
+        raise ValueError(msg)
     #end if
 
     # extract energy data from scalar files
@@ -322,7 +339,14 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
             nbe = equilibration_length(E)
         #end if
         if nbe>len(E):
-            error('equilibration cannot be applied\nequilibration length given is greater than the number of blocks in the file\nfile name: {0}\n# blocks present: {1}\nequilibration length given: {2}'.format(scalar_file,len(E),nbe))
+            msg = (
+                'equilibration cannot be applied\n'
+                'equilibration length given is greater than the number of blocks in the file\n'
+                f'file name: {scalar_file}\n'
+                f'# blocks present: {len(E)}\n'
+                f'equilibration length given: {nbe}'
+                )
+            raise ValueError(msg)
         #end if
         E = E[nbe:]
 
@@ -348,7 +372,7 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
     else:
         for n in range(len(Edata)):
             block_targets.append(len(Edata[n])//reblock_factors[n])
-        #end if        
+        #end if
     #end if
 
     bt = np.array(block_targets,dtype=int).min()
@@ -389,7 +413,8 @@ def parse_list(opt,name,dtype,len1=False):
             #end if
         #end if
     except:
-        error('{0} list misformatted: {1}'.format(name,opt[name]))
+        msg = f'{name} list misformatted: {opt[name]}'
+        raise ValueError(msg)
     #end try
 #end def parse_list
 
@@ -399,12 +424,16 @@ def timestep_fit(args):
     scalar_files = sorted(opt.scalar_files)
 
     if len(scalar_files)==0:
-        log('\n'+parser.format_help().strip()+'\n')
+        nxs_print('\n'+parser.format_help().strip()+'\n')
         sys.exit()
     #end if
 
     if opt.fit_function not in fit_functions:
-        error('invalid fitting function: {0}\nvalid options are: {1}'.format(opt.fit_function,sorted(fit_functions.keys())))
+        msg = (
+            f'invalid fitting function: {opt.fit_function}\n'
+            f'valid options are: {sorted(fit_functions.keys())}'
+            )
+        raise ValueError(msg)
     #end if
 
     if opt.timesteps is None:
@@ -413,7 +442,7 @@ def timestep_fit(args):
     parse_list(opt,'timesteps',float)
     parse_list(opt,'equils',int,len1=True)
     parse_list(opt,'reblock_factors',int,len1=True)
-    
+
     # read in scalar energy data
     Edata,Emean,Eerror,scalar_files = process_scalar_files(
         scalar_files    = scalar_files,
@@ -423,7 +452,14 @@ def timestep_fit(args):
         )
 
     if len(Edata)!=len(opt.timesteps):
-        error('must provide one timestep per scalar file\nnumber of timesteps provided: {0}\nnumber of scalar files provided: {1}\ntimeteps provided: {2}\nscalar files provided: {3}'.format(len(opt.timesteps),len(scalar_files),opt.timesteps,scalar_files))
+        msg = (
+            'must provide one timestep per scalar file\n'
+            f'number of timesteps provided: {len(opt.timesteps)}\n'
+            f'number of scalar files provided: {len(scalar_files)}\n'
+            f'timeteps provided: {opt.timesteps}\n'
+            f'scalar files provided: {scalar_files}'
+            )
+        raise ValueError(msg)
     #end if
 
     # perform jackknife analysis of the fit
@@ -436,11 +472,11 @@ def timestep_fit(args):
         pvals.append('({0} +/- {1})'.format(*stat_strings(pmean[n],perror[n])))
     #end for
 
-    log('\nfit function  : '+opt.fit_function)
-    log('fitted formula: '+func_info.format.format(*pvals))
+    nxs_print('\nfit function  : '+opt.fit_function)
+    nxs_print('fitted formula: '+func_info.format.format(*pvals))
     for pname,pfunc in func_info.params:  # noqa: B007
         pm,pe = stat_strings(*auxres[pname])
-        log('{0:<14}: {1} +/- {2}  Ha\n'.format(pname,pm,pe))
+        nxs_print(f'{pname:<14}: {pm} +/- {pe}  Ha\n')
     #end for
 
     # plot the fit (if available)
@@ -468,7 +504,11 @@ def hubbard_u_fit(args):
     opt = obj(**args.__dict__)
     scalar_files = sorted(opt.scalar_files)
     if opt.fit_function not in fit_functions:
-        error('invalid fitting function: {0}\nvalid options are: {1}'.format(opt.fit_function,sorted(fit_functions.keys())))
+        msg = (
+            f'invalid fitting function: {opt.fit_function}\n'
+            f'valid options are: {sorted(fit_functions.keys())}'
+            )
+        raise ValueError(msg)
     #end if
     # read in scalar energy data
     Edata,Emean,Eerror,scalar_files = process_scalar_files(
@@ -481,38 +521,40 @@ def hubbard_u_fit(args):
     if opt.hubbards is not None:
         parse_list(opt,'hubbards',float)
         if len(Edata)!=len(opt.hubbards):
-            error(
+            msg = (
                 "must provide one hubbard_u value per scalar file\n"
-                "number of hubbard_u provided: {0}\n"
-                "number of scalar files provided: {1}\n"
-                "hubbards provided: {2}\n"
-                "scalar files provided: {3}".format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files)
+                f"number of hubbard_u provided: {len(opt.hubbards)}\n"
+                f"number of scalar files provided: {len(scalar_files)}\n"
+                f"hubbards provided: {opt.hubbards}\n"
+                f"scalar files provided: {scalar_files}"
                 )
+            raise ValueError(msg)
         #end if
         x = opt.hubbards
     elif opt.exx is not None:
         hubbard_u = False
         parse_list(opt,'exx',float)
         if len(Edata)!=len(opt.exx):
-            error(
+            msg = (
                 "must provide one hubbard_u value per scalar file\n"
-                "number of hubbard_u provided: {0}\n"
-                "number of scalar files provided: {1}\n"
-                "hubbards provided: {2}\n"
-                "scalar files provided: {3}".format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files)
+                f"number of hubbard_u provided: {len(opt.hubbards)}\n"
+                f"number of scalar files provided: {len(scalar_files)}\n"
+                f"hubbards provided: {opt.hubbards}\n"
+                f"scalar files provided: {scalar_files}"
                 )
+            raise ValueError(msg)
         #end if
         x = opt.exx
     else:
-        log("\n Please provide either EXX or Hubbard_U values")
+        nxs_print("\n Please provide either EXX or Hubbard_U values")
     #end if
 
     parse_list(opt,'equils',int,len1=True)
     parse_list(opt,'reblock_factors',int,len1=True)
-    
+
     # perform jackknife analysis of the fit
-    
-    pf,pmean,perror,auxres = qmcfit(x,Edata,opt.fit_function) 
+
+    pf,pmean,perror,auxres = qmcfit(x,Edata,opt.fit_function)
 
     func_info = fit_functions[opt.fit_function]
     pvals = []
@@ -520,8 +562,8 @@ def hubbard_u_fit(args):
         pvals.append('({0} +/- {1})'.format(*stat_strings(pmean[n],perror[n])))
     #end for
 
-    log('\nfit function  : '+opt.fit_function)
-    log('fitted formula: '+func_info.format.format(*pvals))
+    nxs_print('\nfit function  : '+opt.fit_function)
+    nxs_print('fitted formula: '+func_info.format.format(*pvals))
     for pname,pfunc in func_info.params:  # noqa: B007
         for i in range(len(auxres[pname][0])):
             pm,pe = stat_strings(*np.array(auxres[pname])[:,i])
@@ -539,7 +581,7 @@ def hubbard_u_fit(args):
             else:
                 param = pname
             #end if
-            log('root {0} {1:<14}: {2} +/- {3} {4}'.format(i+1,param,pm,pe, unit))
+            nxs_print(f'root {i+1} {param:<14}: {pm} +/- {pe} {unit}')
     #end for
     # plot the fit (if available)
 
@@ -570,14 +612,18 @@ def hubbard_u_fit(args):
             plt.xlabel('EXX ratio')
         plt.ylabel('DMC Energy (Ha)')
         plt.show()
-    #end if    
-#end def hubbard_u_fit 
+    #end if
+#end def hubbard_u_fit
 
 def eos_fit(args):
     opt = obj(**args.__dict__)
     scalar_files = sorted(opt.scalar_files)
     if opt.fit_function not in fit_functions:
-        error('invalid fitting function: {0}\nvalid options are: {1}'.format(opt.fit_function,sorted(fit_functions.keys())))
+        msg = (
+            f'invalid fitting function: {opt.fit_function}\n'
+            f'valid options are: {sorted(fit_functions.keys())}'
+            )
+        raise ValueError(msg)
     #end if
     Edata,Emean,Eerror,scalar_files = process_scalar_files(
         scalar_files    = scalar_files,
@@ -589,10 +635,10 @@ def eos_fit(args):
     parse_list(opt,'eos',float)
     parse_list(opt,'equils',int,len1=True)
     parse_list(opt,'reblock_factors',int,len1=True)
-    
+
     # perform jackknife analysis of the fit
     x = opt.eos
-    
+
     jcapture = obj()
     auxfuncs = obj()
     auxres   = obj()
@@ -611,15 +657,15 @@ def eos_fit(args):
     for n in range(len(pmean)):
         pvals.append('({0} +/- {1})'.format(*stat_strings(pmean[n],perror[n])))
     #end for
-    log('\nfit function  : '+opt.fit_function)
-    log('fitted formula: '+func_info.format.format(*pvals))
+    nxs_print('\nfit function  : '+opt.fit_function)
+    nxs_print('fitted formula: '+func_info.format.format(*pvals))
 
     if 'params' in func_info.keys():
         for pname,pfunc in func_info.params:  # noqa: B007
             pm,pe = stat_strings(*np.array(auxres[pname]))
-            log('{0}: {1} +/- {2} '.format(pname,pm,pe))
+            nxs_print(f'{pname}: {pm} +/- {pe} ')
         #end for
-    
+
     # plot the fit (if available)
     if plots_available and not opt.noplot:
         lw = 2
@@ -648,40 +694,40 @@ def eos_fit(args):
         #end if
         plt.ylabel('DMC Energy (Ha)')
         plt.show()
-    #end if              
-#end def eos_fit 
+    #end if
+#end def eos_fit
 
 def parse_args():
-    """This utility provides a fit to the one-dimensional parameter scans of QMC 
+    """This utility provides a fit to the one-dimensional parameter scans of QMC
     observables. Currently, the functionality in place is to fit linear/quadratic polynomial
     fits to the timestep VMC/DMC studies and single parameter optimization of trial wavefunctions
-    using DMC local energies and quadratic, cubic and quartic fits. 
+    using DMC local energies and quadratic, cubic and quartic fits.
     """
-    
+
     parser       = argparse.ArgumentParser(description=parse_args.__doc__,
                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('fit_type', choices=['ts', 'u', 'eos'], default = 'ts',
                         help='One dimensional parameter used to fit QMC local energies. Options are ts for timestep and u for hubbard_u parameter fitting'
-                        ) 
-    valid_fit_functions = set([j for i in all_fit_functions.keys() for j in all_fit_functions[i].keys()])
+                        )
+    valid_fit_functions = {j for i in all_fit_functions.keys() for j in all_fit_functions[i].keys()}
     parser.add_argument('-f','--fit',dest='fit_function',default='linear',
-                        help='Fitting function, options are {0}.'.format(sorted(valid_fit_functions))
-                        )                        
+                        help=f'Fitting function, options are {sorted(valid_fit_functions)}.'
+                        )
     # List of 1-D parameters, mutually exclusive
     parameters = parser.add_mutually_exclusive_group(required=True)
     parameters.add_argument('-t',dest='timesteps',default=None,
                         help='Timesteps corresponding to scalar files, excluding any prior to --series_start'
                         )
-    parameters.add_argument('-u',dest='hubbards',default=None, 
+    parameters.add_argument('-u',dest='hubbards',default=None,
                         help='Hubbard U values (eV)'
                         )
-    parameters.add_argument('--exx',dest='exx',default=None, 
+    parameters.add_argument('--exx',dest='exx',default=None,
                         help='EXX ratios'
-                        )                        
-    parameters.add_argument('--eos',dest='eos',default=None, 
+                        )
+    parameters.add_argument('--eos',dest='eos',default=None,
                         help='Structural parameter for EOS fitting'
-                        )           
+                        )
     parser.add_argument('-s', '--series_start',dest='series_start',type=int, default=None,
                         help='Series number for first DMC run.  Use to exclude prior VMC scalar files if they have been provided'
                         )
@@ -696,7 +742,7 @@ def parse_args():
                        )
     parser.add_argument('scalar_files', nargs='+',
                         help='Scalar files used in the fit. An explicit list of scalar files with space or a wildcard (e.g. dmc*/dmc.s001.scalar.dat) is acceptable.'
-                        ) 
+                        )
 
     args = parser.parse_args()
     return parser, args
@@ -705,7 +751,7 @@ if __name__=='__main__':
     fit_types = sorted(all_fit_functions.keys())
     parser, args = parse_args()
     if len(args.scalar_files) == 0:
-        log('\n'+'Please provide scalar files'+'\n')
+        nxs_print('\n'+'Please provide scalar files'+'\n')
         parser.print_help()
         sys.exit()
     #end if
@@ -714,9 +760,13 @@ if __name__=='__main__':
         fit_functions.clear()
         fit_functions.update(**all_fit_functions[fit_type])
     else:
-        error('unknown fit type: {0}\nvalid options are: {1}'.format(fit_type,fit_types))
+        msg = (
+            f'unknown fit type: {fit_type}\n'
+            f'valid options are: {fit_types}'
+            )
+        raise ValueError(msg)
     #end if
-        
+
     if fit_type=='ts':
         timestep_fit(args)
     elif fit_type == 'u':
@@ -724,6 +774,7 @@ if __name__=='__main__':
     elif fit_type == 'eos':
         eos_fit(args)
     else:
-        error('unsupported fit type: {0}'.format(fit_type))
+        msg = f'unsupported fit type: {fit_type}'
+        raise ValueError(msg)
     #end if
 #end if

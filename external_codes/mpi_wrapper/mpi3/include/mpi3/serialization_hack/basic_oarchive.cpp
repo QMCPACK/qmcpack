@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 //  See http://www.boost.org for updates, documentation, and revision history.
-// NOLINTBEGIN(misc-const-correctness,cppcoreguidelines-avoid-const-or-ref-data-members) external code
+// NOLINTBEGIN(misc-const-correctness,cppcoreguidelines-avoid-const-or-ref-data-members,readability-container-contains,misc-const-correctness) external code
 #include <boost/config.hpp> // msvc 6.0 needs this for warning suppression
 
 #include <boost/assert.hpp>
@@ -138,8 +138,8 @@ class basic_oarchive_impl {
 
     // address of the most recent object serialized as a poiner
     // whose data itself is now pending serialization
-    const void * pending_object;            // NOLINT(modernize-use-default-member-init) third-party code
-    const basic_oserializer * pending_bos;  // NOLINT(modernize-use-default-member-init) third-party code
+    const void * pending_object;            // NOLINT(cppcoreguidelines-use-default-member-init,modernize-use-default-member-init) third-party code
+    const basic_oserializer * pending_bos;  // NOLINT(modernize-use-default-member-init,cppcoreguidelines-use-default-member-init) third-party code
 
     explicit basic_oarchive_impl(unsigned int flags) :
         m_flags(flags),
@@ -468,7 +468,7 @@ basic_oarchive::get_helper_collection(){
 } // namespace detail
 } // namespace archive
 } // namespace boost
-// NOLINTEND(misc-const-correctness,cppcoreguidelines-avoid-const-or-ref-data-members) external code
+// NOLINTEND(misc-const-correctness,cppcoreguidelines-avoid-const-or-ref-data-members,readability-container-contains,misc-const-correctness) external code
 #ifdef BOOST_MSVC
 #pragma warning(pop)
 #endif

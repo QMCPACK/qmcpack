@@ -45,14 +45,15 @@ using reference = wrapper<T&>;
 template<class T>
 struct just :
 	std::conditional<
-		std::is_class<T>::value,
+		std::is_class_v<T>,
 			T,
-			typename std::conditional<std::is_array<T>::value,
-				std::array<typename std::remove_extent<T>::type, std::extent<T>::value>,
+			std::conditional_t<
+				std::is_array_v<T>,
+				std::array<std::remove_extent_t<T>, std::extent_v<T>>,
 				wrapper<T>
-			>::type
-	> /*no ::type here*/ {
-};
+			>
+	> /*no ::type here*/ 
+{};
 
 template<class T>
 using just_t = typename just<T>::type;
@@ -61,12 +62,12 @@ using just_t = typename just<T>::type;
 
 //template<class T>
 //typename just<T>::type& _(T&& t){
-//	return reinterpret_cast<typename just<T>::type&>(std::forward<T>(t));
+//  return reinterpret_cast<typename just<T>::type&>(std::forward<T>(t));
 //}
 
 //template<class T>
 //typename just<T>::type& wrap(T&& t){
-//	return reinterpret_cast<typename just<T>::type&>(std::forward<T>(t));
+//  return reinterpret_cast<typename just<T>::type&>(std::forward<T>(t));
 //}
 
 
@@ -77,7 +78,7 @@ struct just<T&>{// : boost::reference_wrapper<T>{
 	just(T& t) : t_ptr(&t){}
 	typedef just<T&> type;
 	just<T&>& operator=(T const& t){*t_ptr = t;}
-//	typedef std::reference_wrapper<T> type;
+//  typedef std::reference_wrapper<T> type;
 };*/
 
 /*
@@ -96,7 +97,7 @@ struct just<bool>{
 	typedef just<bool> type;
 	just(bool const& d) : impl_(d){}
 	operator bool const&() const{return impl_;}
-//	double& operator+=(double const& d){return impl_+=d;}
+//  double& operator+=(double const& d){return impl_+=d;}
 };
 */
 
@@ -122,38 +123,38 @@ struct just<bool>{
 // class A : boost::just<T>::type {};
 
 // int main() {
-// 	A<int> a;
+//  A<int> a;
 
-// 	A<int[8]> b;
-// 	assert( std::is_class<int[8]>::value == false );
-// 	assert( std::is_array<int[8]>::value == true );
+//  A<int[8]> b;
+//  assert( std::is_class<int[8]>::value == false );
+//  assert( std::is_array<int[8]>::value == true );
 
-// 	{
-// 		double d=5;
-// 		boost::wrapper<double> n(d);
-// 		n+=4;
-// 		std::cout<< n <<std::endl;
-// 		std::cout<< d <<std::endl;
-// 	}
-// 	{
-// 		double d = 5.;
-// 		boost::wrapper<double&> n(d);
-// 		double aa = 6.;
-// 		std::cout<< n <<std::endl;
-// 		n = aa;
-// 		n+= 5.;
-// 		assert(&n == &d);
-// 		std::cout<< n <<std::endl;
-// 		std::cout<< d <<std::endl;
-// 	}
+//  {
+//      double d=5;
+//      boost::wrapper<double> n(d);
+//      n+=4;
+//      std::cout<< n <<std::endl;
+//      std::cout<< d <<std::endl;
+//  }
+//  {
+//      double d = 5.;
+//      boost::wrapper<double&> n(d);
+//      double aa = 6.;
+//      std::cout<< n <<std::endl;
+//      n = aa;
+//      n+= 5.;
+//      assert(&n == &d);
+//      std::cout<< n <<std::endl;
+//      std::cout<< d <<std::endl;
+//  }
 
-// 	{
-// 		double d = 5.;
-// 		std::vector<boost::reference<double>> v3;
-// 		v3.push_back(d);
-// 		v3.push_back(d);
-// 		v3[0] = 4.;
-// 		std::cout << v3[0] << " " << v3[1] << std::endl;
-// 	}
+//  {
+//      double d = 5.;
+//      std::vector<boost::reference<double>> v3;
+//      v3.push_back(d);
+//      v3.push_back(d);
+//      v3[0] = 4.;
+//      std::cout << v3[0] << " " << v3[1] << std::endl;
+//  }
 // }
 // #endif

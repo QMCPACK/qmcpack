@@ -516,6 +516,7 @@ def test_qixml_class_init():
         elements       = tuple,
         text           = str,
         parameters     = tuple,
+        parents        = tuple,
         attribs        = tuple,
         costs          = tuple,
         h5tags         = tuple,
@@ -526,14 +527,17 @@ def test_qixml_class_init():
         defaults       = obj,
         collection_id  = str,
         exp_names      = obj,
+        attribute_aliases = obj,
+        element_aliases = obj,
+        unsupported    = tuple,
         params         = tuple,
         plurals_inv    = obj,
         plurals        = obj,
         expanded_names = obj,
         afqmc_order    = tuple,
         )
-    optional = set(['expanded_names','afqmc_order'])
-    assert(len(attr_types)==21)
+    optional = {'expanded_names','afqmc_order'}
+    assert(len(attr_types)==25)
 
     def valid_name(s):
         v = True
@@ -569,9 +573,255 @@ def test_qixml_class_init():
                 #end if
             #end if
         #end for
+        declared_inputs = set(cls.attributes+cls.parameters+cls.elements)
+        assert(set(cls.unsupported)<=declared_inputs)
     #end for
 
 #end def test_qixml_class_init
+
+
+def test_qixml_live_and_unsupported_parameters(tmp_path):
+    from ..qmcpack_input import QIxml
+    from ..qmcpack_input import QmcpackInput
+    from ..qmcpack_input import atomicbasisset,bspline_builder,checkpoint_element,coefs_mem,determinant,detlist
+    from ..qmcpack_input import dmc,dmc_batch,group,init
+    from ..qmcpack_input import force,hamiltonian,harmonic_extpot,hybrid_optimizer
+    from ..qmcpack_input import linear,linear_batch,mpc,multideterminant,onebodydensitymatrices,optimize
+    from ..qmcpack_input import mcwalkerset,paircorrelation,particleset,pseudo,pseudopotential
+    from ..qmcpack_input import qmc_system_selector,qmcsystem,rpa_jastrow,simulation,simulationcell
+    from ..qmcpack_input import sposet,sposet_builder,sposet_collection,structurefactor,vmc,vmc_batch,walkerlogs
+
+    assert(QIxml.unsupported==())
+    assert(multideterminant.unsupported==('spo_down','fast'))
+    assert(detlist.unsupported==())
+    assert('basisset' not in determinant.unsupported)
+    assert('size' not in determinant.unsupported)
+    assert('cuspinfo' not in determinant.unsupported)
+    assert(pseudo.unsupported==('cutoff',))
+    assert(mpc.unsupported==('ecut','source','target'))
+    assert(force.unsupported==('addionion','weightexp','lrmethod'))
+    assert(structurefactor.unsupported==('report','hdf5','writerho','writeionion'))
+    assert(paircorrelation.unsupported==('debug','sources'))
+    assert('max_relative_change' in linear.unsupported)
+    assert('gpu' not in linear.unsupported)
+    assert('gpu' in vmc.unsupported)
+    assert('target' not in vmc.unsupported)
+    assert('trace' not in vmc.unsupported)
+    assert('trace' in vmc_batch.unsupported)
+    assert('walkers' not in vmc.unsupported)
+    assert('walkers' in vmc_batch.unsupported)
+    assert('walkers' in dmc_batch.unsupported)
+    assert('l2_diffusion' not in dmc.unsupported)
+    assert('reconfiguration' not in dmc.unsupported)
+    assert('reconfiguration' in dmc_batch.unsupported)
+    assert('l2_diffusion' in dmc_batch.unsupported)
+    assert(onebodydensitymatrices.unsupported==('reuse','basis_size','warmup'))
+    assert(mcwalkerset.unsupported==('target','walkers'))
+    assert(qmcsystem.unsupported==('dim',))
+    assert(simulationcell.unsupported==('name','tilematrix','reciprocal','uc_grid'))
+    assert(particleset.unsupported==('charge','source','role','simulationcell'))
+    assert(group.unsupported==('id','mass'))
+    assert(simulation.parents==())
+    assert(group.parents==('particleset',))
+    assert(force.parents==('hamiltonian',))
+
+    obdm = onebodydensitymatrices(
+        type = 'OneBodyDensityMatrices',
+        name = 'OneBodyDensityMatrices',
+        basis = 'spo_ud',
+        volume_normed = False,
+        warmup_samples = 17,
+        )
+    obdm_xml = obdm.write()
+    assert('<parameter name="volume_normed"' in obdm_xml)
+    assert('<parameter name="warmup_samples"' in obdm_xml)
+    assert('>    no' in obdm_xml)
+
+    det_xml = determinant(
+        id = 'updet',
+        size = 2,
+        basisset = 'LCAOBSet',
+        cuspinfo = 'updet.cuspInfo.xml',
+        ).write()
+    assert('size="2"' in det_xml)
+    assert('basisset="LCAOBSet"' in det_xml)
+    assert('cuspInfo="updet.cuspInfo.xml"' in det_xml)
+
+    detlist_xml = detlist(
+        type = 'CSF',
+        size = 2,
+        sortby = 'qchem_coeff',
+        zero_cutoff = 1e-8,
+        ).write()
+    assert('sortby="qchem_coeff"' in detlist_xml)
+    assert('zero_cutoff="1e-08"' in detlist_xml)
+
+    cell = simulationcell(
+        vacuum = 1.5,
+        ewald_grid = 1001,
+        )
+    cell_xml = cell.write()
+    assert('<parameter name="vacuum"' in cell_xml)
+    assert('<parameter name="ewald_grid"' in cell_xml)
+
+    pset = particleset(
+        id = 'e',
+        gpu = 'omptarget',
+        spinor = True,
+        groups = [group(name='u',size=1,charge=-1)],
+        )
+    pset_xml = pset.write()
+    assert('<particleset id="e"' in pset_xml)
+    assert('gpu="omptarget"' in pset_xml)
+    assert('spinor="yes"' in pset_xml)
+
+    init_xml = init(source='ion0',target='e',use_volume=True).write()
+    assert('<init source="ion0" target="e" use_volume="yes"/>' in init_xml)
+
+    basis = atomicbasisset(elementtype='C',expm='yes')
+    assert('elementType="C"' in basis.write())
+    assert('expM="yes"' in basis.write())
+
+    builder = bspline_builder(
+        type = 'bspline',
+        skip_checks = True,
+        check_orb_norm = False,
+        save_coefs = True,
+        sposet = sposet(
+            name = 'spo-u',
+            size = 4,
+            coefs_mem = coefs_mem(distributed_ranks=2,shared_ranks=4),
+            ),
+        )
+    builder_xml = builder.write()
+    assert('skip_checks="yes"' in builder_xml)
+    assert('check_orb_norm="no"' in builder_xml)
+    assert('save_coefs="yes"' in builder_xml)
+    assert('<coefs_mem distributed_ranks="2" shared_ranks="4"/>' in builder_xml)
+
+    pw_xml = sposet_builder(
+        type = 'pw',
+        twistindex = 2,
+        bufferlayer = 1,
+        expand = 3,
+        ).write()
+    assert('<sposet_builder type="pw">' in pw_xml)
+    assert('<parameter name="twistIndex"' in pw_xml)
+    assert('<parameter name="bufferLayer"' in pw_xml)
+
+    collection_xml = sposet_collection(type='heg',source='ion0').write()
+    assert(collection_xml.startswith('<sposet_collection type="heg"'))
+
+    checkpoint_xml = vmc(
+        method = 'vmc',
+        checkpoint = -1,
+        checkpoint_element = checkpoint_element(stride=20),
+        ).write()
+    assert('<qmc method="vmc" checkpoint="-1">' in checkpoint_xml)
+    assert('<checkpoint stride="20"/>' in checkpoint_xml)
+
+    rpa = rpa_jastrow(
+        type = 'rpa',
+        longrange = True,
+        shortrange = False,
+        rs = 2.0,
+        kc = 1.0,
+        )
+    rpa_xml = rpa.write()
+    assert('longrange="yes"' in rpa_xml)
+    assert('shortrange="no"' in rpa_xml)
+    assert('<parameter name="rs"' in rpa_xml)
+    assert('<parameter name="kc"' in rpa_xml)
+
+    pp = pseudopotential(
+        type = 'pseudo',
+        pbc = False,
+        physicalso = True,
+        spin_integrator = 'exact',
+        )
+    pp_xml = pp.write()
+    assert('pbc="no"' in pp_xml)
+    assert('physicalSO="yes"' in pp_xml)
+    assert('spin_integrator="exact"' in pp_xml)
+
+    ham = hamiltonian(
+        name = 'h0',
+        wavefunction = 'psi0',
+        extpot = harmonic_extpot(type='harmonic_ext',mass=1.0,frequency=2.0),
+        estimator = paircorrelation(type='paircorrelation',dr=0.1),
+        )
+    ham_xml = ham.write()
+    assert('wavefunction="psi0"' in ham_xml)
+    assert('<extpot type="harmonic_ext"' in ham_xml)
+    assert('<estimator type="PairCorrelation"' in ham_xml)
+
+    calc = dmc(
+        method = 'dmc',
+        append = 'yes',
+        drift_unr_a = 1.0,
+        maxdisplsq = 4.0,
+        energyupdateinterval = 10,
+        refenergy = -1.0,
+        maxcopy = 2,
+        qmc_system_selector = qmc_system_selector(
+            wavefunction = 'psi1',
+            hamiltonian = 'h1',
+            ),
+        )
+    calc_xml = calc.write()
+    assert('append="yes"' in calc_xml)
+    assert('<parameter name="drift_UNR_a"' in calc_xml)
+    assert('<parameter name="maxDisplSq"' in calc_xml)
+    assert('<parameter name="energyUpdateInterval"' in calc_xml)
+    assert('<parameter name="refEnergy"' in calc_xml)
+    assert('<parameter name="maxCopy"' in calc_xml)
+    assert('<qmcsystem wavefunction="psi1" hamiltonian="h1"/>' in calc_xml)
+
+    selector_file = tmp_path/'qmc_system_selector.xml'
+    selector_file.write_text('''<simulation>
+  <project id="qmc" series="0"/>
+  <qmc method="dmc">
+    <qmcsystem wavefunction="psi1" hamiltonian="h1"/>
+  </qmc>
+</simulation>
+''')
+    selector_input = QmcpackInput(selector_file)
+    selector = selector_input.simulation.qmc.qmc_system_selector
+    assert(selector.wavefunction=='psi1')
+    assert(selector.hamiltonian=='h1')
+
+    opt = linear(
+        method = 'linear',
+        max_relative_cost_change = 5.0,
+        optimize = optimize(
+            method = 'gradient_test',
+            output_param_file = True,
+            finite_diff_delta = 1e-5,
+            ),
+        optimizers = [
+            hybrid_optimizer(num_updates=3,minmethod='adaptive'),
+            hybrid_optimizer(num_updates=2,minmethod='descent'),
+            ],
+        )
+    opt_xml = opt.write()
+    assert('<parameter name="max_relative_cost_change"' in opt_xml)
+    assert('<optimize method="gradient_test">' in opt_xml)
+    assert(opt_xml.count('<optimizer num_updates=')==2)
+    assert('<parameter name="MinMethod"' in opt_xml)
+
+    batched = linear_batch(
+        method = 'linear_batch',
+        **{'options_LMY_.targetExcited':'yes'},
+        )
+    assert('<parameter name="options_LMY_.targetExcited"' in batched.write())
+
+    sim = simulation(
+        walkerlogs = walkerlogs(step_period=4,particle=True,quantiles=False),
+        )
+    sim_xml = sim.write()
+    assert('<walkerlogs step_period="4" particle="yes" quantiles="no"/>' in sim_xml)
+
+#end def test_qixml_live_and_unsupported_parameters
 
 
 
@@ -765,11 +1015,11 @@ def test_compose():
                                         type = 'Array',
                                         coeff = np.array([
                                             -1.488295706, -1.406709163,
-                                            -1.232298155, -0.9391459067, 
-                                            -0.5575491618, -0.2186131788, 
-                                            -0.1463697747, -0.09781208605, 
-                                            -0.06418209044, -0.03977101442, 
-                                            -0.02226362717, -0.009458557456, 
+                                            -1.232298155, -0.9391459067,
+                                            -0.5575491618, -0.2186131788,
+                                            -0.1463697747, -0.09781208605,
+                                            -0.06418209044, -0.03977101442,
+                                            -0.02226362717, -0.009458557456,
                                             -0.002401473122])
                                         ),
                                     ),
@@ -782,12 +1032,12 @@ def test_compose():
                                         id   = 'eV',
                                         type = 'Array',
                                         coeff = np.array([
-                                            -2.88368129, -2.686350256, 
-                                            -2.500947608, -2.096756839, 
-                                            -1.444128943, -0.7686333881, 
+                                            -2.88368129, -2.686350256,
+                                            -2.500947608, -2.096756839,
+                                            -1.444128943, -0.7686333881,
                                             -0.5720610092, -0.4061081504,
-                                            -0.2772741837, -0.1767662649, 
-                                            -0.1010035901, -0.047325819, 
+                                            -0.2772741837, -0.1767662649,
+                                            -0.1010035901, -0.047325819,
                                             -0.01700847314])
                                         ),
                                     ),
@@ -808,12 +1058,12 @@ def test_compose():
                                         id    = 'uu',
                                         type  = 'Array',
                                         coeff = np.array([
-                                            0.3569086717, 0.2751683418, 
-                                            0.2058897032, 0.1520886231, 
-                                            0.111693376, 0.08181917929, 
-                                            0.05977972383, 0.04283213009, 
-                                            0.02968150709, 0.01944788064, 
-                                            0.01196129476, 0.006271327336, 
+                                            0.3569086717, 0.2751683418,
+                                            0.2058897032, 0.1520886231,
+                                            0.111693376, 0.08181917929,
+                                            0.05977972383, 0.04283213009,
+                                            0.02968150709, 0.01944788064,
+                                            0.01196129476, 0.006271327336,
                                             0.002804432275])
                                         ),
                                     ),
@@ -826,12 +1076,12 @@ def test_compose():
                                         id    = 'ud',
                                         type  = 'Array',
                                         coeff = np.array([
-                                            0.529300758, 0.3529320289, 
-                                            0.2365993762, 0.1604582152, 
-                                            0.1128159005, 0.08243318778, 
-                                            0.06023602184, 0.04310552718, 
-                                            0.02984314449, 0.01958170086, 
-                                            0.01186100803, 0.006112206499, 
+                                            0.529300758, 0.3529320289,
+                                            0.2365993762, 0.1604582152,
+                                            0.1128159005, 0.08243318778,
+                                            0.06023602184, 0.04310552718,
+                                            0.02984314449, 0.01958170086,
+                                            0.01186100803, 0.006112206499,
                                             0.002625360754])
                                         ),
                                     ),
@@ -856,18 +1106,18 @@ def test_compose():
                                         type     = 'Array',
                                         optimize = True,
                                         coeff    = np.array([
-                                            -0.0006976974299, -0.001602461137, 
-                                            0.002262076236, -0.001250356792, 
-                                            -0.002453974076, 0.00100226978, 
-                                            -0.008343708726, 0.01062739293, 
-                                            0.01589135522, 0.007887562739, 
-                                            -0.0005580320441, -0.01523126657, 
-                                            -0.009565046782, -0.0009005995139, 
-                                            0.01105399926, -0.0002575705031, 
-                                            -0.01652920678, 0.00747060564, 
-                                            0.01464528142, 0.005133083617, 
-                                            0.006916610617, -0.009683594066, 
-                                            0.001290999707, -0.001322800206, 
+                                            -0.0006976974299, -0.001602461137,
+                                            0.002262076236, -0.001250356792,
+                                            -0.002453974076, 0.00100226978,
+                                            -0.008343708726, 0.01062739293,
+                                            0.01589135522, 0.007887562739,
+                                            -0.0005580320441, -0.01523126657,
+                                            -0.009565046782, -0.0009005995139,
+                                            0.01105399926, -0.0002575705031,
+                                            -0.01652920678, 0.00747060564,
+                                            0.01464528142, 0.005133083617,
+                                            0.006916610617, -0.009683594066,
+                                            0.001290999707, -0.001322800206,
                                             0.003931225142, -0.001163411737])
                                         ),
                                     ),
@@ -883,18 +1133,18 @@ def test_compose():
                                         type     = 'Array',
                                         optimize = True,
                                         coeff    = np.array([
-                                            -0.004166620907, 0.0003869059334, 
-                                            0.01344638104, -7.5215692e-05, 
-                                            -0.006436299048, 0.0008791813519, 
-                                            0.007681280497, -0.006673633544, 
-                                            0.0300621195, 0.00157665002, 
-                                            -0.001657156134, -0.01142258435, 
-                                            -0.02006687607, 0.005271171591, 
-                                            0.01511417522, 0.0008942941789, 
-                                            -0.002018984988, 0.01595864928, 
-                                            0.005244762096, 0.01545262066, 
-                                            -0.006397246289, -0.0072233246, 
-                                            -0.0008063061353, 0.00830708478, 
+                                            -0.004166620907, 0.0003869059334,
+                                            0.01344638104, -7.5215692e-05,
+                                            -0.006436299048, 0.0008791813519,
+                                            0.007681280497, -0.006673633544,
+                                            0.0300621195, 0.00157665002,
+                                            -0.001657156134, -0.01142258435,
+                                            -0.02006687607, 0.005271171591,
+                                            0.01511417522, 0.0008942941789,
+                                            -0.002018984988, 0.01595864928,
+                                            0.005244762096, 0.01545262066,
+                                            -0.006397246289, -0.0072233246,
+                                            -0.0008063061353, 0.00830708478,
                                             0.001242024926, -0.0003962016339])
                                         ),
                                     ),
@@ -910,18 +1160,18 @@ def test_compose():
                                         type     = 'Array',
                                         optimize = True,
                                         coeff    = np.array([
-                                            0.004388200165, 0.001900643263, 
-                                            -0.01549468789, -0.002564479476, 
-                                            0.002118937653, 0.0007437421471, 
-                                            -0.0085007067, 0.009637603236, 
-                                            -0.01717900977, 0.00186285366, 
+                                            0.004388200165, 0.001900643263,
+                                            -0.01549468789, -0.002564479476,
+                                            0.002118937653, 0.0007437421471,
+                                            -0.0085007067, 0.009637603236,
+                                            -0.01717900977, 0.00186285366,
                                             -0.006121695671, 0.01831402072,
-                                            0.006890778761, 0.003340289515, 
-                                            -0.001491823024, -0.001123033117, 
-                                            -0.008713157223, 0.02100098414, 
-                                            -0.03224060809, -0.002479213835, 
-                                            0.001387768485, 0.006636471962, 
-                                            0.0004745014561, 0.001629700016, 
+                                            0.006890778761, 0.003340289515,
+                                            -0.001491823024, -0.001123033117,
+                                            -0.008713157223, 0.02100098414,
+                                            -0.03224060809, -0.002479213835,
+                                            0.001387768485, 0.006636471962,
+                                            0.0004745014561, 0.001629700016,
                                             -0.001615344115, -0.0001680854702])
                                         ),
                                     ),
@@ -937,18 +1187,18 @@ def test_compose():
                                         type     = 'Array',
                                         optimize = True,
                                         coeff    = np.array([
-                                            0.000658573315, 0.005924655484, 
-                                            0.008096696785, 0.002998451182, 
-                                            0.001289481835, 8.390092052e-05, 
-                                            0.0174934698, 0.004082827829, 
-                                            0.001656608224, -0.01638865932, 
-                                            0.002852247319, -0.01043954065, 
-                                            0.006179637761, -0.000652977982, 
-                                            -0.004542989787, -0.0004825008427, 
-                                            0.03569269894, -0.01539236687, 
-                                            0.007843924995, -0.009660462887, 
-                                            -0.01173827315, 0.005074028683, 
-                                            0.001248279616, 0.008752252359, 
+                                            0.000658573315, 0.005924655484,
+                                            0.008096696785, 0.002998451182,
+                                            0.001289481835, 8.390092052e-05,
+                                            0.0174934698, 0.004082827829,
+                                            0.001656608224, -0.01638865932,
+                                            0.002852247319, -0.01043954065,
+                                            0.006179637761, -0.000652977982,
+                                            -0.004542989787, -0.0004825008427,
+                                            0.03569269894, -0.01539236687,
+                                            0.007843924995, -0.009660462887,
+                                            -0.01173827315, 0.005074028683,
+                                            0.001248279616, 0.008752252359,
                                             -0.003457347502, 0.0001174638519])
                                         ),
                                     ),
@@ -961,7 +1211,7 @@ def test_compose():
                     type   = 'generic',
                     target = 'e',
                     pairpots = [
-                        section( 
+                        section(
                             type   = 'coulomb',
                             name   = 'ElecElec',
                             source = 'e',
@@ -1131,12 +1381,11 @@ def test_compose():
 def test_generate():
     register_pseudo_files(['V.opt.xml','O.opt.xml'])
     import numpy as np
-    from ..developer import NexusError,dotdict,obj
-    from ..generic import obj_deprecated
+    from ..developer import dotdict,obj
     from ..physical_system import generate_physical_system
     from ..qmcpack_input import generate_qmcpack_input,spindensity
     from ..qmcpack_input import back_propagation,onerdm
-    
+
     system = generate_physical_system(
         units    = 'A',
         axes     = '''
@@ -1262,7 +1511,7 @@ def test_generate():
         timestep        = 0.005,
         nonlocalmoves   = 'yes',
         )
-    
+
     qi.pluralize()
 
     check_vs_serial_reference(qi,'VO2_M1_afm.in.xml gen')
@@ -1292,7 +1541,7 @@ def test_generate():
             check_paths = False,
             )
         nrule_text = qi_valid_nrule.write_text()
-        assert(nrule_text.count('nrule="{}"'.format(valid_nrule))==2)
+        assert(nrule_text.count(f'nrule="{valid_nrule}"')==2)
     #end for
 
     nrule_maps = [
@@ -1316,10 +1565,9 @@ def test_generate():
         assert('<pseudo elementType="O" href="O.opt.xml" nrule="5"/>' in nrule_text)
     #end for
 
-    for invalid_nrule in (7.0,'4',True,[('V',3),('O',5)],
-                          obj_deprecated(V=3,O=5)):
+    for invalid_nrule in (7.0,'4',True,[('V',3),('O',5)]):
         with pytest.raises(
-            NexusError,
+            TypeError,
             match = 'nrule must be an integer, dict, dotdict, obj, or None',
             ):
             generate_qmcpack_input(
@@ -1334,7 +1582,7 @@ def test_generate():
 
     for invalid_nrule in (-1,0,9):
         with pytest.raises(
-            NexusError,
+            ValueError,
             match = 'nrule must be one of the integers 1 through 8',
             ):
             generate_qmcpack_input(
@@ -1348,15 +1596,15 @@ def test_generate():
     #end for
 
     invalid_nrule_maps = [
-        ({'V':3},'nrule mapping keys must match'),
-        ({'V':3,'O':5,'Fe':4},'nrule mapping keys must match'),
-        ({'V':3,'O':5.0},'nrule mapping values must be integers'),
-        ({'V':3,'O':True},'nrule mapping values must be integers'),
-        ({'V':3,'O':0},'nrule mapping values must be integers from 1 through 8'),
-        ({'V':3,'O':9},'nrule mapping values must be integers from 1 through 8'),
+        ({'V':3},'nrule mapping keys must match', ValueError),
+        ({'V':3,'O':5,'Fe':4},'nrule mapping keys must match', ValueError),
+        ({'V':3,'O':5.0},'nrule mapping values must be integers', TypeError),
+        ({'V':3,'O':True},'nrule mapping values must be integers', TypeError),
+        ({'V':3,'O':0},'nrule mapping values must be integers from 1 through 8', ValueError),
+        ({'V':3,'O':9},'nrule mapping values must be integers from 1 through 8', ValueError),
         ]
-    for invalid_nrule_map,error_message in invalid_nrule_maps:
-        with pytest.raises(NexusError,match=error_message):
+    for invalid_nrule_map, error_message, error_type in invalid_nrule_maps:
+        with pytest.raises(error_type, match=error_message):
             generate_qmcpack_input(
                 input_type  = 'basic',
                 system      = system,
@@ -1395,14 +1643,14 @@ def test_generate():
         eq_blocks        = 80,
         eq_steps         =  5,
         eq_timestep      = 0.02,
-        # dmc inputs     
+        # dmc inputs
         warmupsteps      = 10,
         blocks           = 600,
         steps            =  5,
         timestep         = 0.005,
         nonlocalmoves    = 'yes',
         )
-    
+
     qi.pluralize()
 
     check_vs_serial_reference(qi,'VO2_M1_afm.in.xml batched gen')
@@ -1472,7 +1720,7 @@ def test_read():
     check_vs_serial_reference(qi,'CH4_afqmc.in.xml read')
 
 
-    # test reading mixed integer/float positions 
+    # test reading mixed integer/float positions
     qi = QmcpackInput(TEST_FILES['OH_mixed_pos.in.xml'])
     pos = qi.qmcsystem.particlesets.ion0.position
     assert pos.dtype==float
@@ -1491,7 +1739,7 @@ def test_read():
 def test_qmc_estimator_input_scoping(tmp_path,qmc_method):
     from ..qmcpack_input import QmcpackInput
 
-    qmc_input = '''\
+    qmc_input = f'''\
 <simulation>
   <project id="case" series="5"/>
   <estimators>
@@ -1516,7 +1764,7 @@ def test_qmc_estimator_input_scoping(tmp_path,qmc_method):
     </estimators>
   </qmc>
 </simulation>
-'''.format(qmc_method=qmc_method)
+'''
     filepath = tmp_path / 'qmc_estimators.xml'
     filepath.write_text(qmc_input)
 
@@ -1969,7 +2217,7 @@ def test_incorporate_system():
 
     axes     = qi.get('lattice')
     psi      = qi.get('ion0')
-    
+
     assert(value_eq(axes-shift,axes_ref))
     assert(value_eq(psi.groups.V.position-shift,psi_ref.groups.V.position))
     assert(value_eq(psi.groups.O.position-shift,psi_ref.groups.O.position))
@@ -1999,7 +2247,7 @@ def test_generate_kspace_jastrow():
       </coefficients>
    </correlation>
 </jastrow>
-'''
+'''  # noqa: W291
     text = kjas.write()
     assert text == expect
 #end def test_generate_kspace_jastrow
@@ -2020,13 +2268,13 @@ def test_excited_state():
         elem      = ['C','C'],
         pos       = [[ 0.    ,  0.    ,  0.    ],
                      [ 0.8925,  0.8925,  0.8925]],
-        tiling    = [3,1,3], 
-        kgrid     = (1,1,1), 
-        kshift    = (0,0,0), 
+        tiling    = [3,1,3],
+        kgrid     = (1,1,1),
+        kshift    = (0,0,0),
         C         = 4
         )
-  
-  
+
+
     # test kp_index, band_index format (format="band")
     qmc_optical = generate_qmcpack_input(
         det_format     = 'old',
@@ -2047,7 +2295,7 @@ def test_excited_state():
    <determinant id="downdet" size="36">
       <occupation mode="ground" spindataset="1"/>
    </determinant>
-</slaterdeterminant>'''.strip()
+</slaterdeterminant>'''.strip()  # noqa: W291
 
     text = qmc_optical.get('slaterdeterminant').write().strip()
     assert(text==expect)
@@ -2073,7 +2321,7 @@ def test_excited_state():
    <determinant id="downdet" size="36">
       <occupation mode="ground" spindataset="1"/>
    </determinant>
-</slaterdeterminant>'''.strip()
+</slaterdeterminant>'''.strip()  # noqa: W291
 
     text = qmc_optical.get('slaterdeterminant').write().strip()
     assert(text==expect)
@@ -2261,8 +2509,8 @@ def test_symbolic_excited_state():
         pos       = [[ 0.    ,  0.    ,  0.    ],
                      [ 0.8925,  0.8925,  0.8925]],
         use_prim  = True,    # Use SeeK-path library to identify prim cell
-        tiling    = [2,1,2], 
-        kgrid     = (1,1,1), 
+        tiling    = [2,1,2],
+        kgrid     = (1,1,1),
         kshift    = (0,0,0), # Assumes we study transitions from Gamma. For non-gamma tilings, use kshift appropriately
         #C         = 4
         )
@@ -2272,7 +2520,7 @@ def test_symbolic_excited_state():
         input_type     = 'basic',
         spin_polarized = True,
         system         = dia,
-        excitation     = ['up', 'gamma vb x cb'], 
+        excitation     = ['up', 'gamma vb x cb'],
         jastrows       = [],
         qmc            = 'vmc',
         )
@@ -2286,7 +2534,7 @@ def test_symbolic_excited_state():
    <determinant id="downdet" size="24">
       <occupation mode="ground" spindataset="1"/>
    </determinant>
-</slaterdeterminant>'''.strip()
+</slaterdeterminant>'''.strip()  # noqa: W291
     text = qmc_optical.get('slaterdeterminant').write().strip()
     assert(text==expect)
 
@@ -2296,7 +2544,7 @@ def test_symbolic_excited_state():
         input_type     = 'basic',
         spin_polarized = True,
         system         = dia,
-        excitation     = ['up', 'gamma vb-1 x cb'], 
+        excitation     = ['up', 'gamma vb-1 x cb'],
         jastrows       = [],
         qmc            = 'vmc',
         )
@@ -2310,7 +2558,7 @@ def test_symbolic_excited_state():
    <determinant id="downdet" size="24">
       <occupation mode="ground" spindataset="1"/>
    </determinant>
-</slaterdeterminant>'''.strip()
+</slaterdeterminant>'''.strip()  # noqa: W291
     text = qmc_optical.get('slaterdeterminant').write().strip()
     assert(text==expect)
 
@@ -2320,7 +2568,7 @@ def test_symbolic_excited_state():
         input_type     = 'basic',
         spin_polarized = True,
         system         = dia,
-        excitation     = ['up', 'gamma vb x cb+1'], 
+        excitation     = ['up', 'gamma vb x cb+1'],
         jastrows       = [],
         qmc            = 'vmc',
         )
@@ -2334,7 +2582,7 @@ def test_symbolic_excited_state():
    <determinant id="downdet" size="24">
       <occupation mode="ground" spindataset="1"/>
    </determinant>
-</slaterdeterminant>'''.strip()
+</slaterdeterminant>'''.strip()  # noqa: W291
     text = qmc_optical.get('slaterdeterminant').write().strip()
     assert(text==expect)
 

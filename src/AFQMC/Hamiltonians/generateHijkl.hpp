@@ -101,7 +101,7 @@ void generateHijkl(WALKER_TYPES walker_type,
       }
 #endif
     }
-  TG.Global().all_reduce_in_place_n(DiagHam.origin(), DiagHam.num_elements(), std::plus<>());
+  TG.Global().all_reduce_in_place_n(DiagHam.base(), DiagHam.num_elements(), std::plus<>());
 
   int occi, occj, occk, occl;
   if (reserve_to_fit_)

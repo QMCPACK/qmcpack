@@ -68,7 +68,7 @@ public:
         hdf_walker_output(""),
         DMAverage({0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork({0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
-        denom(iextensions<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()})
+        denom(extents_t<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()})
   {
     app_log() << "  --  Adding Back Propagated Diagonal 2RDM (Diag2RDM) estimator. -- \n";
 
@@ -107,7 +107,7 @@ public:
       dm_size -= NMO * (NMO - 1) / 2;
 
     DMAverage = mpi3CMatrix({nave, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
   template<class MatG, class MatG_host, class HostCVec1, class HostCVec2, class HostCVec3>
@@ -131,7 +131,7 @@ public:
     assert(Xw.size() == nw);
     assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
-    assert(G.extensions() == G_host.extensions());
+    assert(G.extents() == G_host.extents());
 
     using std::get;
     // check structure dimensions
@@ -139,14 +139,14 @@ public:
     {
       if (denom.size() != nw)
       {
-        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
+        denom = mpi3CVector(extents_t<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (get<0>(DMWork.sizes()) != nw || get<1>(DMWork.sizes()) != dm_size)
       {
         DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
-      fill_n(DMWork.origin(), DMWork.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(denom.base(), denom.num_elements(), ComplexType(0.0, 0.0));
+      fill_n(DMWork.base(), DMWork.num_elements(), ComplexType(0.0, 0.0));
     }
     else
     {
@@ -163,7 +163,7 @@ public:
       if (iw % TG.TG_local().size() == TG.TG_local().rank())
       {
         denom[iw] += Xw[iw];
-        ComplexType* ptr(DMWork[iw].origin());
+        ComplexType* ptr(DMWork[iw].base());
         if (walker_type == CLOSED)
         {
           auto&& Gu_(G_host[iw][0]);
@@ -238,7 +238,7 @@ public:
         dump.push(std::string("Average_") + std::to_string(iav));
         std::string padded_num = std::string(n_zero - std::to_string(counter).length(), '0') + std::to_string(counter);
         dump.write(wgt, "weights_" + padded_num);
-        stdCMatrix_ref DM(to_address(DMWork.origin()), {nw, dm_size});
+        stdCMatrix_ref DM(to_address(DMWork.base()), {nw, dm_size});
         dump.write(DM, "diag_two_rdm_" + padded_num);
         dump.pop();
         dump.pop();
@@ -274,7 +274,7 @@ public:
     if (TG.TG_local().root())
     {
       ma::scal(ComplexType(1.0 / block_size), DMAverage);
-      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.origin()), DMAverage.num_elements(), std::plus<>(), 0);
+      TG.TG_heads().reduce_in_place_n(to_address(DMAverage.base()), DMAverage.num_elements(), std::plus<>(), 0);
       if (writer)
       {
         dump.push(std::string("DiagTwoRDM"));
@@ -283,7 +283,7 @@ public:
           dump.push(std::string("Average_") + std::to_string(i));
           std::string padded_iblock =
               std::string(n_zero - std::to_string(iblock).length(), '0') + std::to_string(iblock);
-          stdCVector_ref DMAverage_(to_address(DMAverage[i].origin()), {dm_size});
+          stdCVector_ref DMAverage_(to_address(DMAverage[i].base()), {dm_size});
           dump.write(DMAverage_, "diag_two_rdm_" + padded_iblock);
           dump.write(Wsum[i], "denominator_" + padded_iblock);
           dump.pop();
@@ -292,7 +292,7 @@ public:
       }
     }
     TG.TG_local().barrier();
-    fill_n(DMAverage.origin(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
+    fill_n(DMAverage.base(), DMAverage.num_elements(), ComplexType(0.0, 0.0));
   }
 
 private:

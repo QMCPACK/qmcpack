@@ -44,7 +44,7 @@ def test_settings(tmp_path):
     #end def aux_defaults
 
     def check_settings_core_noncore():
-        nckeys_check = set([
+        nckeys_check = {
                 'command_line','debug', 'dependent_modes', 'emulate',
                 'file_locations', 'generate_only', 'graph_sims', 'indent',
                 'load_images', 'local_directory', 'mode', 'modes', 'monitor',
@@ -52,11 +52,11 @@ def test_settings(tmp_path):
                 'remote_directory', 'results', 'runs',
                 'skip_submit', 'sleep', 'stages', 'stages_set', 'status', 'timeout',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
-                ])
-        nnckeys_check = set([
+                }
+        nnckeys_check = {
                 'basis_dir', 'basissets', 'pseudo_dir'
-                ])
-        setkeys_check = set([
+                }
+        setkeys_check = {
                 'command_line','basis_dir', 'basissets', 'debug',
                 'dependent_modes', 'emulate', 'file_locations', 'generate_only',
                 'graph_sims', 'indent', 'load_images', 'local_directory', 'mode',
@@ -65,13 +65,13 @@ def test_settings(tmp_path):
                 'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status',
                 'timeout',
                 'status_modes', 'status_only', 'trace', 'verbose', 'dynamic'
-                ])
+                }
         setkeys_allowed = setkeys_check | Settings.allowed_vars
 
         nckeys  = set(nexus_core.keys())
         nnckeys = set(nexus_noncore.keys())
         setkeys = set(settings.keys())
-        
+
         assert(nckeys==nckeys_check)
         assert(nnckeys==nnckeys_check)
         assert(setkeys>=setkeys_check)
@@ -119,8 +119,8 @@ def test_settings(tmp_path):
         # other settings objects should be at default also
         aux_defaults()
     #end def_check_empty_settings
-    
-    
+
+
     # check that core settings are at default values
     assert(object_eq(nexus_core,nexus_core_defaults))
     assert(nexus_core.timeout==5*60)

@@ -20,6 +20,9 @@
 namespace boost {
 namespace mpi3 {
 
+struct package_iarchive;
+struct package_oarchive;
+
 namespace detail {
 
 class basic_package_iprimitive {
@@ -69,18 +72,19 @@ class basic_package_oprimitive {
 #endif
 		p_.pack_n(t.address(), t.count());
 	}
-#if 0
-	void save(const boost::archive::object_id_type&){}
-	void save(const boost::archive::object_reference_type&){}
-	void save(const boost::archive::class_id_type&){}
-	void save(const boost::archive::class_id_optional_type&){}
-	basic_memory_oprimitive(size_t& os) : os_(os){}
-#endif
+	// void save(const boost::archive::object_id_type&){}
+	// void save(const boost::archive::object_reference_type&){}
+	// void save(const boost::archive::class_id_type&){}
+	// void save(const boost::archive::class_id_optional_type&){}
+	// basic_memory_oprimitive(size_t& os) : os_(os){}
 	explicit basic_package_oprimitive(mpi3::detail::package& p) : p_{p} {}
 };
 
+template<class Archive> class package_iarchive_impl;
+template<class Archive> class package_oarchive_impl;
+
 template<class Archive>
-class basic_package_iarchive : public boost::archive::detail::common_iarchive<Archive> {
+class basic_package_iarchive : public boost::archive::detail::common_iarchive<Archive> {  // NOLINT(bugprone-crtp-constructor-accessibility) TODO(correaa) understand this warning in clang-tidy 19.1.7
 	friend class boost::archive::detail::interface_iarchive<Archive>;
 	using detail_common_iarchive = boost::archive::detail::common_iarchive<Archive>;
 
@@ -95,13 +99,16 @@ class basic_package_iarchive : public boost::archive::detail::common_iarchive<Ar
 	template<class T>
 	void load_override(T& t) { load_override(t, 0); }
 
- protected:
+ private:
 	explicit basic_package_iarchive(unsigned int flags)
 	: boost::archive::detail::common_iarchive<Archive>(flags) {}
+
+// template<class> friend class package_iarchive_impl;
+ friend class package_iarchive_impl<mpi3::package_iarchive>;
 };
 
 template<class Archive>
-class basic_package_oarchive : public boost::archive::detail::common_oarchive<Archive> {
+class basic_package_oarchive : public boost::archive::detail::common_oarchive<Archive> {  // NOLINT(bugprone-crtp-constructor-accessibility) TODO(correaa) understand this warning in clang-tidy 19.1.7
 	friend class boost::archive::detail::interface_oarchive<Archive>;
 	using detail_common_oarchive = boost::archive::detail::common_oarchive<Archive>;
 
@@ -116,14 +123,15 @@ class basic_package_oarchive : public boost::archive::detail::common_oarchive<Ar
 	}
 	template<class T>
 	void save_override(T& t) { save_override(t, 0); }
-#if 0
-	void save_override(const object_id_type&, int){/* this->This()->newline(); this->detail_common_oarchive::save_override(t, 0);*/}
-	void save_override(const class_id_optional_type&, int){}
-	void save_override(const class_name_type&, int){/*  const std::string s(t); * this->This() << s;*/}
-#endif
+	// void save_override(const object_id_type&, int){/* this->This()->newline(); this->detail_common_oarchive::save_override(t, 0);*/}
+	// void save_override(const class_id_optional_type&, int){}
+	// void save_override(const class_name_type&, int){/*  const std::string s(t); * this->This() << s;*/}
 
+ private:
 	explicit basic_package_oarchive(unsigned int flags)
 	: boost::archive::detail::common_oarchive<Archive>(flags) {}
+
+ friend class package_oarchive_impl<mpi3::package_oarchive>;
 };
 
 template<class Archive>
@@ -251,7 +259,6 @@ class package_oarchive_impl  // NOLINT(fuchsia-multiple-inheritance) follow Boos
 	}
 	//  using package_oarchive_impl<package_oarchive>::save_override;
 
-#if 1
 	// Save all supported datatypes directly
 	template<class T>
 #if(BOOST_VERSION < 106100)
@@ -260,9 +267,8 @@ class package_oarchive_impl  // NOLINT(fuchsia-multiple-inheritance) follow Boos
 	void save(boost::serialization::array_wrapper<T> const& t, unsigned int /*version*/) {
 #endif
 		assert(0);
-	save_override(t, boost::mpl::bool_<true>{});  // std::true_type{});
-}
-#endif
+		save_override(t, boost::mpl::bool_<true>{});  // std::true_type{});
+	}
 
 package_oarchive_impl(mpi3::detail::package& p, unsigned int flags)  // size_t& os, size_t& tokens, unsigned int flags) :
 : basic_package_oprimitive(p), basic_package_oarchive<Archive>(flags) {

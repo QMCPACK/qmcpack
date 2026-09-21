@@ -1,0 +1,65 @@
+# Description of run.
+description="PbTiO3"
+
+
+
+# Wavefunction grid
+wavefunction_grid="16 16 16"
+output_wave_function_file = "/dev/null"
+potential_grid_refinement = "2"
+
+# number of unoccupied states
+preconditioner_threshold = "0.0001"
+
+# Units for bravais_lattice_type and atoms
+#crds_units=
+#"Bohr"
+#"Angstrom"
+
+bravais_lattice_type="Cubic Primitive"
+
+BerryPhase="true"
+BerryPhaseDirection="2"
+# Lattice constants
+a_length="7.3699"
+b_length="7.3699"
+c_length="7.3699"
+
+internal_pseudo_type = "sg15"
+localize_localpp = "false"
+localize_projectors = "false"
+
+kpoint_mesh="4 4 6"
+kpoint_is_shift="1 1 0"
+kpoint_distribution = "1"
+dos_method = "Gaussian"
+
+
+energy_convergence_criterion = "1.00000000e-7"
+
+start_mode="LCAO Start"
+#start_mode="Restart From File"
+
+calculation_mode="NSCF"
+#calculation_mode="Relax Structure"
+
+kohn_sham_solver="davidson"
+subdiag_driver="scalapack"
+charge_mixing_type = "Broyden"
+charge_density_mixing = "0.2"
+kohn_sham_mucycles = "3"
+max_scf_steps="40"
+write_data_period="50"
+
+atomic_coordinate_type="Cell Relative"
+
+
+# List  atomic symbol, coordinates, and movable flag (1 == movable)
+# symbol and coordinates are required, moveable is optional, default is 1
+atoms = "
+  Pb    0.000    0.000    0.010
+  Ti    0.500    0.500    0.500
+  O     0.000    0.500    0.500
+  O     0.500    0.500    0.000
+  O     0.500    0.000    0.500
+"

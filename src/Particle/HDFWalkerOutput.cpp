@@ -25,7 +25,7 @@
 #include <iostream>
 #include <sstream>
 #include "Message/Communicate.h"
-#include "mpi/collectives.h"
+#include "Message/CommOperators.h"
 #include "hdf/hdf_hyperslab.h"
 
 namespace qmcplusplus
@@ -61,9 +61,7 @@ HDFWalkerOutput::HDFWalkerOutput(size_t num_ptcls, const std::string& aroot, Com
       myComm(c),
       currentConfigNumber(0),
       RootName(aroot)
-{
-  block = -1;
-}
+{ block = -1; }
 
 /** Destructor writes the state of random numbers and close the file */
 HDFWalkerOutput::~HDFWalkerOutput() = default;
@@ -119,7 +117,7 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
   }
 
   auto& walker_offsets = W.getWalkerOffsets();
-  number_of_walkers_ = walker_offsets[myComm->size()];
+  number_of_walkers_   = walker_offsets[myComm->size()];
   hout.write(number_of_walkers_, hdf::num_walkers);
 
   if (hout.is_parallel())
@@ -172,7 +170,7 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
       }
       if (!myComm->rank())
         RemoteData[1].resize(wb * walker_offsets[myComm->size()]);
-      mpi::gatherv(*myComm, RemoteData[0], RemoteData[1], counts, displ);
+      myComm->gatherv(RemoteData[0], RemoteData[1], counts, displ);
       // update counts and displ for gathering walker weights
       for (int i = 0; i < myComm->size(); ++i)
       {
@@ -181,7 +179,7 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
       }
       if (!myComm->rank())
         RemoteDataW[1].resize(walker_offsets[myComm->size()]);
-      mpi::gatherv(*myComm, RemoteDataW[0], RemoteDataW[1], counts, displ);
+      myComm->gatherv(RemoteDataW[0], RemoteDataW[1], counts, displ);
     }
     int buffer_id = (myComm->size() > 1) ? 1 : 0;
     {

@@ -41,7 +41,7 @@
 
 
 import numpy as np
-from .developer import DevBase, obj, error
+from .developer import DevBase, obj
 from .hdfreader import HDFgroup
 from .numerics import surface_normals
 
@@ -82,7 +82,11 @@ class Plotter(DevBase):
             iso.contour.auto_contours = False
             iso.contour.contours = contours
         else:
-            self.error('isosurface contours must be an int or list\n  a '+str(type(contours))+' was provided instead')
+            msg = (
+                'isosurface contours must be an int or list\n'
+                '  a '+str(type(contours))+' was provided instead'
+                )
+            raise TypeError(msg)
         #end if
         return
     #end def isosurface
@@ -177,7 +181,12 @@ class QAobject(QAobj_base):
             allowed.sort()
             invalid = list(invalid)
             invalid.sort()
-            error('attempted to set unknown variables\n  unknown variables: {0}\n  valid options are: {1}'.format(invalid,allowed))
+            msg = (
+                'attempted to set unknown variables\n'
+                f'  unknown variables: {invalid}\n'
+                f'  valid options are: {allowed}'
+                )
+            raise ValueError(msg)
         #end if
         for k,v in kwargs.items():
             setattr(QAobj_base,k,v)
@@ -216,17 +225,17 @@ class Checks(DevBase):
         #end if
         valid = self._valid
         if valid:
-            self.log(pad+self._label+' is valid')
+            self.nxs_print(pad+self._label+' is valid')
         else:
-            self.log(pad+self._label+' is invalid')
+            self.nxs_print(pad+self._label+' is invalid')
             for name,value in self.items():
                 if not (isinstance(name,str) and name.startswith('_')):
                     if value in self._exclusions:
-                        self.log(pad2+name+' could not be checked')
+                        self.nxs_print(pad2+name+' could not be checked')
                     elif value:
-                        self.log(pad2+name+' is valid')
+                        self.nxs_print(pad2+name+' is valid')
                     else:
-                        self.log(pad2+name+' is invalid')
+                        self.nxs_print(pad2+name+' is invalid')
                     #end if
                 #end if
             #end for
@@ -256,7 +265,8 @@ class QAdata(QAobject):
             if name in other:
                 self[name] = np.resize(value,np.minimum(value.shape,other[name].shape))
             else:
-                self.error(name+' not found in minsize partner')
+                msg = name+' not found in minsize partner'
+                raise KeyError(msg)
             #end if
         #end for
         #self.sum()
@@ -267,7 +277,8 @@ class QAdata(QAobject):
             if name in other:
                 value += other[name][0:len(value)]
             else:
-                self.error(name+' not found in accumulate partner')
+                msg = name+' not found in accumulate partner'
+                raise KeyError(msg)
             #end if
         #end for
         #self.sum()
@@ -286,7 +297,7 @@ class QAdata(QAobject):
         for value in self.values():
             s+=value.sum()
         #end for
-        print('                sum = {0}'.format(s))
+        print(f'                sum = {s}')
     #end def sum
 #end class QAdata
 
@@ -307,7 +318,8 @@ class QAHDFdata(QAdata):
                 if name in other and isinstance(other[name],HDFgroup):
                     value.minsize(other[name],'value','value_squared')
                 else:
-                    self.error(name+' not found in minsize partner')
+                    msg = name+' not found in minsize partner'
+                    raise KeyError(msg)
                 #end if
             #end if
         #end for
@@ -319,7 +331,8 @@ class QAHDFdata(QAdata):
                 if name in other and isinstance(other[name],HDFgroup):
                     value.accumulate(other[name],'value','value_squared')
                 else:
-                    self.error(name+' not found in accumulate partner')
+                    msg = name+' not found in accumulate partner'
+                    raise KeyError(msg)
                 #end if
             #end if
         #end for
@@ -368,7 +381,7 @@ class QAanalyzer(QAobject):
 
     def vlog(self,msg,n=0):
         if QAanalyzer.verbose_vlog:
-            self.log(msg,n=self.info.nindent+n)
+            self.nxs_print(msg,n=self.info.nindent+n)
         #end if
     #end def vlog
 
@@ -414,7 +427,7 @@ class QAanalyzer(QAobject):
     #    if not callpost:
     #        cls.__dict__[func_name](self,**kwargs)
     #    #end if
-    #    if block_name is None or not self.info[block_name]: 
+    #    if block_name is None or not self.info[block_name]:
     #        for name,value in self.items():
     #            if isinstance(value,QAanalyzer):
     #                value.traverse(value,func_name,block_name,callpost,**kwargs)
@@ -487,7 +500,7 @@ class QAanalyzer(QAobject):
             #end if
         #end for
         if not self.info.analyzed or force:
-            self.vlog('analyzing {0} data'.format(self.__class__.__name__),n=1)
+            self.vlog(f'analyzing {self.__class__.__name__} data',n=1)
             self.analyze_local()
             self.info.analyzed = True
         #end if
@@ -502,7 +515,7 @@ class QAanalyzer(QAobject):
             if isinstance(self[name],QAdata):
                 del self[name]
             #end if
-        #end for                
+        #end for
         for value in self.values():
             if isinstance(value,QAanalyzer):
                 value.remove_data()
@@ -545,7 +558,8 @@ class QAanalyzer(QAobject):
                 if name in other and isinstance(other[name],value.__class__):
                     value.minsize(other[name])
                 else:
-                    self.error('data '+name+' not found in minsize_data partner')
+                    msg = 'data '+name+' not found in minsize_data partner'
+                    raise KeyError(msg)
                 #end if
             #end if
         #end if
@@ -554,21 +568,24 @@ class QAanalyzer(QAobject):
                 if name in other and isinstance(other[name],value.__class__):
                     ovalue = other[name]
                 else:
-                    self.error('analyzer '+name+' not found in minsize_data partner')
+                    msg = 'analyzer '+name+' not found in minsize_data partner'
+                    raise KeyError(msg)
                 #end if
                 value.minsize_data(ovalue)
             elif isinstance(value,QAanalyzerCollection):
                 if name in other and isinstance(other[name],QAanalyzerCollection):
                     ovalue = other[name]
                 else:
-                    self.error('collection '+name+' not found in minsize_data partner')
+                    msg = 'collection '+name+' not found in minsize_data partner'
+                    raise KeyError(msg)
                 #end if
                 for n,v in value.items():
                     if isinstance(v,QAanalyzer):
                         if n in ovalue and isinstance(ovalue[n],v.__class__):
                             ov = ovalue[n]
                         else:
-                            self.error('analyzer '+n+' not found in minsize_data partner collection '+name)
+                            msg = 'analyzer '+n+' not found in minsize_data partner collection '+name
+                            raise KeyError(msg)
                         #end if
                         v.minsize_data(ov)
                     #end if
@@ -585,7 +602,8 @@ class QAanalyzer(QAobject):
                 if name in other and isinstance(other[name],value.__class__):
                     value.accumulate(other[name])
                 else:
-                    self.error('data '+name+' not found in accumulate_data partner')
+                    msg = 'data '+name+' not found in accumulate_data partner'
+                    raise KeyError(msg)
                 #end if
             #end if
         #end if
@@ -594,21 +612,24 @@ class QAanalyzer(QAobject):
                 if name in other and isinstance(other[name],value.__class__):
                     ovalue = other[name]
                 else:
-                    self.error('analyzer '+name+' not found in accumulate_data partner')
+                    msg = 'analyzer '+name+' not found in accumulate_data partner'
+                    raise KeyError(msg)
                 #end if
                 value.accumulate_data(ovalue)
             elif isinstance(value,QAanalyzerCollection):
                 if name in other and isinstance(other[name],QAanalyzerCollection):
                     ovalue = other[name]
                 else:
-                    self.error('collection '+name+' not found in accumulate_data partner')
+                    msg = 'collection '+name+' not found in accumulate_data partner'
+                    raise KeyError(msg)
                 #end if
                 for n,v in value.items():
                     if isinstance(v,QAanalyzer):
                         if n in ovalue and isinstance(ovalue[n],v.__class__):
                             ov = ovalue[n]
                         else:
-                            self.error('analyzer '+n+' not found in accumulate_data partner collection '+name)
+                            msg = 'analyzer '+n+' not found in accumulate_data partner collection '+name
+                            raise KeyError(msg)
                         #end if
                         v.accumulate_data(ov)
                     #end if

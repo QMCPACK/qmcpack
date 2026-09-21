@@ -34,7 +34,7 @@ def test_periodic_table():
 
     for number in atomic_numbers:
         assert(number in ref_atomic_numbers)
-    
+
     ref_carbon_name     = "Carbon"
     ref_carbon_symbol   = "C"
     ref_carbon_number   = 6
@@ -152,7 +152,7 @@ def test_is_element():
         assert(elem.symbol is symbol)
         assert(elem is element)
     #end for
-    
+
     carbon_strs = (
         "C",
         "C1",
@@ -249,21 +249,21 @@ def test_is_element():
 
 
 def test_element_set():
-    ref_set = set([
+    ref_set = {
         Elements.Xx,
         Elements.H,
         Elements.Dy,
         Elements.U,
         Elements.Nh,
-        ])
+        }
 
-    element_set = set([
+    element_set = {
         Elements.Xx,
         Elements.H,  Elements.H,  Elements.H,
         Elements.Dy,
         Elements.U,  Elements.U,  Elements.U,  Elements.U,  Elements.U,
         Elements.Nh, Elements.Nh, Elements.Nh, Elements.Nh,
-        ])
+        }
 
     assert(ref_set == element_set)
 

@@ -1,19 +1,24 @@
-// Copyright 2018-2022 Alfredo A. Correa
+// Copyright 2018-2025 Alfredo A. Correa
 
-#include "../../mpi3/main.hpp"
-#include "../../mpi3/communicator.hpp"
-#if not defined(EXAMPI)
-#include "../../mpi3/ostream.hpp"
+#include <mpi3/communicator.hpp>
+#include <mpi3/environment.hpp>
+#ifndef EXAMPI
+#include <mpi3/ostream.hpp>
 #endif
+
+#include <iostream>
 
 namespace mpi3 = boost::mpi3;
 
-auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int try {
+int main(int argc, char** argv) {  // NOLINT(bugprone-exception-escape)
+	mpi3::environment env(argc, argv);
+
+	auto world = env.world();
 
 	mpi3::communicator third = world/3; // or other division
-	mpi3::communicator leaders = world.keep(third.root()); // same as world.split(third.root()?0:mpi3::undefined);
+	mpi3::communicator const leaders = world.keep(third.root()); // same as world.split(third.root()?0:mpi3::undefined);
 
-#if not defined(EXAMPI)
+#ifndef EXAMPI
 	mpi3::ostream wout(world);
 	wout << "I am 'world' rank "<<world.rank(); 
 	if(third){
@@ -26,8 +31,6 @@ auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) -> int 
 	}else{
 		wout <<" and not in 'leader'";
 	}
-	wout << std::endl;
+	wout << '\n' << std::flush;
 #endif
-
-	return 0;
-} catch(...) {return 1;}
+}

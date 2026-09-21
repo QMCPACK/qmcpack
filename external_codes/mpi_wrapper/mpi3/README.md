@@ -3,13 +3,14 @@
 --->
 [comment]: # (Comment)
 
-# B.MPI3
+# ![B.MPI3](bmpi3.png){width=120px}
+
 *Alfredo A. Correa*
 <correaa@llnl.gov>
 
 [//]: <> (<alfredo.correa@gmail.com>)
 
-B-MPI3 is a C++ library wrapper for version 3.1 of the MPI standard interface that simplifies the utilization and maintenance of MPI code.
+B-MPI3 is a C++ library wrapper for version 3.1 (and up) of the MPI standard interface that simplifies the utilization and maintenance of MPI code.
 B-MPI3 C++ aims to provide a more convenient, powerful and an interface less prone to errors than the standard C-based MPI interface.
 
 B-MPI3 simplifies the utilization of MPI without completely changing the communication model, allowing for a seamless transition from C-MPI.
@@ -18,7 +19,7 @@ B-MPI3 also provides allocators and facilities to manipulate MPI-mediated Remote
 For example, pointers are not utilized directly and it is replaced by an iterator-based interface and most data, in particular custom type objects are serialized automatically into messages by the library.
 B-MPI3 interacts well with the C++ standard library, containers and custom data types (classes).
 
-B.MPI3 is written from [scratch](https://octo-repo-visualization.vercel.app/?repo=llnl%2Fb-mpi3) in C++17 and it has been tested with many standard compliant MPI library implementations and compilers, OpenMPI +1.9, MPICH +3.2.1, MVAPICH, Spectrum MPI, and [ExaMPI](https://github.com/tonyskjellum/ExaMPI), using the following compilers gcc +5.4.1, clang +6.0, PGI 18.04.
+B.MPI3 is written from [scratch](https://octo-repo-visualization.vercel.app/?repo=llnl%2Fb-mpi3) in C++17 and it has been tested with many standard compliant MPI library implementations and compilers, OpenMPI +1.9, MPICH +3.2.1, MVAPICH, Spectrum MPI, [ExaMPI](https://github.com/tonyskjellum/ExaMPI), and Microsoft MPI (Windows) using the following compilers gcc +5.4.1, clang +6.0, PGI 18.04 (or higher versions).
 
 B.MPI3 is not an official Boost library, but is designed following the principles of Boost and the STL.
 B.MPI3 is not a derivative of Boost.MPI and it is unrelated to the, [now deprecated](https://web.archive.org/web/20170421220544/http://blogs.cisco.com/performance/the-mpi-c-bindings-what-happened-and-why/), official MPI-C++ interface.
@@ -34,7 +35,7 @@ B.MPI3 optionally depends on Boost +1.53 for automatic serialization.
 MPI is a large library for run-time parallelism where several paradigms coexist.
 It was is originally designed as standardized and portable message-passing system to work on a wide variety of parallel computing architectures.
 
-The last standard, MPI-3, uses a combination of techniques to achieve parallelism, Message Passing (MP), (Remote Memory Access (RMA) and Shared Memory (SM).
+Since the MPI-3 standard, MPI uses a combination of techniques to achieve parallelism, Message Passing (MP), (Remote Memory Access (RMA) and Shared Memory (SM).
 We try here to give a uniform interface and abstractions for these features by means of wrapper function calls and concepts brought familiar to C++ and the STL.
 
 ## Motivation: The problem with the standard interface
@@ -240,19 +241,23 @@ The functions `::rank` and `::size` allows each process to determine their uniqu
 
 ```cpp
 int mpi3::main(int argc, char* argv[], mpi3::communicator world) {
-    assert(world.size() == 2);
+    assert( world.size() == 2 );
+
 	if(world.rank() == 0) {
-	   std::vector<double> v = {1.,2.,3.};
+	   std::vector<int> v = {1, 2, 3};
 	   world.send(v.begin(), v.end(), 1); // send to rank 1
 	} else if(world.rank() == 1) {
-	   std::vector<double> v(3);
+	   std::vector<int> v(3);
 	   world.receive(v.begin(), v.end(), 0); // receive from rank 1
-	   assert( v == std::vector{1.,2.,3.} );
+
+	   assert(( v == std::vector{1, 2, 3} ));
 	}
+
 	world.barrier(); // synchronize execution here
 	return 0;
 }
 ```
+([live](https://godbolt.org/z/nTEdYKzWe)
 
 Other important functions are `::gather`, `::broadcast` and `::accumulate`. 
 This syntax has a more or less obvious (but simplified) mapping to the standard C-MPI interface.
