@@ -47,10 +47,9 @@ inline void Communicate::gather(T& sb, T& rb, int dest)
 { rb = sb; }
 
 template<typename T>
-inline void Communicate::allgather(T& sb, T& rb, int count)
+inline void Communicate::allgather(T& sb, T& rb)
 {
-  for (size_t i = 0; i < count; i++)
-    rb[i] = sb[i];
+  rb = sb;
 }
 
 template<typename T>

@@ -97,7 +97,7 @@ inline void Communicate::reduce_in_place(T* restrict res, int n)
 
 
 template<typename T>
-inline void Communicate::allgather(T& sb, T& rb, int count)
+inline void Communicate::allgather(T& sb, T& rb)
 {
   if (d_ncontexts == 1)
   {
@@ -106,7 +106,7 @@ inline void Communicate::allgather(T& sb, T& rb, int count)
   }
   qmcplusplus::container_proxy<T> t_in(sb), t_out(rb);
   MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*t_in.data());
-  MPI_Allgather(t_in.data(), count, type_id, t_out.data(), count, type_id, myMPI);
+  MPI_Allgather(t_in.data(), t_in.size(), type_id, t_out.data(), t_in.size(), type_id, myMPI);
 }
 
 template<typename T, typename IT>

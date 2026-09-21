@@ -96,18 +96,19 @@ TEST_CASE("communicate_collectives_complex_matrix_allreduce", "[message][collect
     }
 }
 
-TEST_CASE("communicate_collectives_serial_allgather_count", "[message][collectives]")
+TEST_CASE("communicate_collectives_allgather_count", "[message][collectives]")
 {
   Communicate* comm = OHMMS::Controller;
-  if (comm->size() != 1)
-    return;
 
-  std::vector<int> send{1, 2, 3};
-  std::vector<int> receive{0, 0, -1};
-  comm->allgather(send, receive, 2);
+  std::vector<int> send{1 + comm->rank(), 2 + comm->rank(), 3 + comm->rank()};
+  std::vector<int> receive(send.size() * comm->size(), 0);
+  comm->allgather(send, receive);
 
-  CHECK(receive[0] == 1);
-  CHECK(receive[1] == 2);
-  CHECK(receive[2] == -1);
+  for (int i = 0; i < comm->size(); i++)
+  {
+    CHECK(receive[i * 3 + 0] == 1 + i);
+    CHECK(receive[i * 3 + 1] == 2 + i);
+    CHECK(receive[i * 3 + 2] == 3 + i);
+  }
 }
 } // namespace qmcplusplus
