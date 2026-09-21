@@ -17,7 +17,9 @@
 
 #include <stdexcept>
 
+#include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
+#include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Pools/PooledData.h"
@@ -32,7 +34,6 @@ struct scalar_traits
     DIM = 1
   };
   using real_type  = T;
-  using value_type = T;
   static inline T* get_address(T* a) { return a; }
 };
 
@@ -44,9 +45,31 @@ struct scalar_traits<std::complex<T>>
     DIM = 2
   };
   using real_type  = T;
-  using value_type = std::complex<T>;
   static inline T* get_address(std::complex<T>* a) { return reinterpret_cast<T*>(a); }
 };
+
+template<typename T, unsigned D>
+struct scalar_traits<TinyVector<T, D>>
+{
+  enum
+  {
+    DIM = scalar_traits<T>::DIM * D
+  };
+  using real_type  = typename scalar_traits<T>::real_type;
+  static inline real_type* get_address(TinyVector<T, D>* a) { return scalar_traits<T>::get_address(a->data()); }
+};
+
+template<typename T, unsigned D>
+struct scalar_traits<Tensor<T, D>>
+{
+  enum
+  {
+    DIM = scalar_traits<T>::DIM * D * D
+  };
+  using real_type  = typename scalar_traits<T>::real_type;
+  static inline real_type* get_address(Tensor<T, D>* a) { return scalar_traits<T>::get_address(a->data()); }
+};
+
 
 template<typename T>
 struct container_proxy
@@ -62,34 +85,6 @@ struct container_proxy
   inline pointer data() { return scalar_traits<T>::get_address(&ref); }
 };
 
-template<typename T, unsigned D>
-struct container_proxy<TinyVector<T, D>>
-{
-  enum
-  {
-    DIM = scalar_traits<T>::DIM * D
-  };
-  using pointer = typename scalar_traits<T>::real_type*;
-  TinyVector<T, D>& ref;
-  inline container_proxy(TinyVector<T, D>& a) : ref(a) {}
-  inline size_t size() const { return DIM; }
-  inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
-};
-
-template<typename T, unsigned D>
-struct container_proxy<Tensor<T, D>>
-{
-  enum
-  {
-    DIM = scalar_traits<T>::DIM * D * D
-  };
-  using pointer = typename scalar_traits<T>::real_type*;
-  Tensor<T, D>& ref;
-  inline container_proxy(Tensor<T, D>& a) : ref(a) {}
-  inline size_t size() const { return DIM; }
-  inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
-};
-
 template<typename T>
 struct container_proxy<std::vector<T>>
 {
@@ -100,10 +95,8 @@ struct container_proxy<std::vector<T>>
   using pointer = typename container_proxy<T>::pointer;
   std::vector<T>& ref;
   inline container_proxy(std::vector<T>& a) : ref(a) {}
-  inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
+  inline size_t size() const { return ref.size() * DIM; }
   inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
-
-
 };
 
 template<>
@@ -126,35 +119,18 @@ struct container_proxy<std::vector<bool>>
   inline pointer data() { return &my_copy[0]; }
 };
 
-template<typename T, unsigned D>
-struct container_proxy<std::vector<TinyVector<T, D>>>
-{
-  enum
-  {
-    DIM = D * scalar_traits<T>::DIM
-  };
-  using pointer   = typename container_proxy<T>::pointer;
-  using data_type = std::vector<TinyVector<T, D>>;
-  data_type& ref;
-  inline container_proxy(data_type& a) : ref(a) {}
-  inline size_t size() const { return ref.size() * DIM; }
-  inline pointer data() { return scalar_traits<T>::get_address(ref[0].data()); }
-};
-
-
 template<typename T>
 struct container_proxy<PooledData<T>>
 {
   enum
   {
-    DIM = 1
+    DIM = scalar_traits<T>::DIM
   };
   using pointer = typename container_proxy<T>::pointer;
   PooledData<T>& ref;
   inline container_proxy(PooledData<T>& a) : ref(a) {}
-  inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
-  inline pointer data() { return ref.data(); }
-
+  inline size_t size() const { return ref.size() * DIM; }
+  inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
 };
 
 template<typename T>
@@ -167,7 +143,7 @@ struct container_proxy<Vector<T>>
   using pointer = typename container_proxy<T>::pointer;
   Vector<T>& ref;
   inline container_proxy(Vector<T>& a) : ref(a) {}
-  inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
+  inline size_t size() const { return ref.size() * DIM; }
   inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
 
 };
@@ -182,33 +158,22 @@ struct container_proxy<Matrix<T>>
   using pointer = typename container_proxy<T>::pointer;
   Matrix<T>& ref;
   inline container_proxy(Matrix<T>& a) : ref(a) {}
-  inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
+  inline size_t size() const { return ref.size() * DIM; }
   inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
 
 };
 
 template<typename T, unsigned D>
-struct container_proxy<Vector<TinyVector<T, D>>>
+struct container_proxy<Array<T, D>>
 {
   enum
   {
-    DIM = D * scalar_traits<T>::DIM
+    DIM = scalar_traits<T>::DIM
   };
-  using pointer   = typename container_proxy<T>::pointer;
-  using data_type = Vector<TinyVector<T, D>>;
-  data_type& ref;
-  inline container_proxy(data_type& a) : ref(a) {}
-  inline size_t size() const { return ref.size() * DIM; }
-  inline pointer data() { return scalar_traits<T>::get_address(ref[0].data()); }
-};
-
-template<typename T, unsigned D>
-struct container_proxy<Array<T, D>>
-{
   using pointer = typename container_proxy<T>::pointer;
   Array<T, D>& ref;
   inline container_proxy(Array<T, D>& a) : ref(a) {}
-  inline size_t size() const { return ref.size() * container_proxy<T>::DIM; }
+  inline size_t size() const { return ref.size() * DIM; }
   inline pointer data() { return scalar_traits<T>::get_address(ref.data()); }
 };
 } // namespace qmcplusplus
