@@ -65,13 +65,12 @@
 #====================================================================#
 
 
-import contextlib
+import logging
 import os
 import sys
 import shutil
 import tempfile
 import traceback
-from functools import partial
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -416,6 +415,7 @@ class Simulation(NexusCore):
             self.init_job()
         #end if
         self.post_init()
+        self.logger = logging.getLogger(f"{self.identifier}{self.simid}")
 
         Simulation.all_sims.append(self)
 
@@ -618,6 +618,19 @@ class Simulation(NexusCore):
     def record_timestamp(self,event):
         if event not in self.timestamps:
             self.timestamps[event] = datetime.now().astimezone().isoformat()
+            log_msgs = {
+                "setup":        ("Simulation Setup Completed",  logging.INFO),
+                "sent_files":   ("Simulation Sent Files",       logging.INFO),
+                "submitted":    ("Simulation Submitted",        logging.INFO),
+                "exited_queue": ("Simulation Exited Queue",     logging.INFO),
+                "timed_out":    ("Simulation Reached Timeout!", logging.WARNING),
+                "failed":       ("Simulation Failed!",          logging.ERROR),
+                "finished":     ("Simulation Finished",         logging.INFO),
+                "got_output":   ("Got Simulation Output",       logging.INFO),
+                "analyzed":     ("Exited Queue",                logging.INFO),
+            }
+            msg, level = log_msgs.get(event, (event, logging.INFO))
+            self.logger.log(level, msg)
         #end if
     #end def record_timestamp
 
@@ -2416,7 +2429,7 @@ class DynamicProcess(DevBase):
 
 
 class sim_err_handler:
-    """Context manager for simulation-specific error handling/logging."""
+    """Context manager for simulation-specific error handling/reporting."""
     def __init__(self, sim: Simulation):
         self.sim = sim
         self.logfile = Path(sim.remdir).resolve() / sim.nexus_logfile
@@ -2455,3 +2468,70 @@ class sim_err_handler:
 
         return True
 #end class sim_err_handler
+
+
+class sim_log_handler:
+    """Context manager for simulation-specific logging."""
+
+    def __init__(self, sim: Simulation):
+        self.sim = sim
+        self.logger = sim.logger
+
+        if sim.created_directories:
+            self.logfile = Path(sim.remdir).resolve() / sim.nexus_logfile
+            if not self.logfile.exists():
+                self.logfile.touch()
+
+            self.stream_handler = logging.StreamHandler(sys.stdout)
+            self.file_handler = logging.FileHandler(filename=self.logfile)
+
+            log_fmt = "{asctime}  {filename:>16}:{lineno:<5} - {levelname:<8} {name}: {message}"
+            self.stream_handler.setFormatter(
+                logging.Formatter("    " + log_fmt, style="{")
+            )
+            self.file_handler.setFormatter(
+                logging.Formatter(log_fmt, style="{")
+            )
+
+            self.initialized = True
+        else:
+            self.initialized = False
+
+    def __enter__(self):
+        if not self.initialized:
+            return
+
+        self.original_log_level = self.logger.getEffectiveLevel()
+        self.original_log_handlers = self.logger.handlers
+        for handler in self.original_log_handlers:
+            self.logger.removeHandler(handler)
+
+        if nexus_core.debug:
+            self.logger.setLevel(logging.DEBUG)
+            self.stream_handler.setLevel(logging.DEBUG)
+            self.file_handler.setLevel(logging.DEBUG)
+        # Disabled since currently Nexus's default is verbose=True
+        # elif nexus_core.verbose:
+        #     self.logger.setLevel(logging.INFO)
+        #     self.stream_handler.setLevel(logging.INFO)
+        #     self.file_handler.setLevel(logging.INFO)
+        else:
+            self.logger.setLevel(logging.INFO)
+            self.stream_handler.setLevel(logging.WARNING)
+            self.file_handler.setLevel(logging.INFO)
+
+        self.logger.addHandler(self.stream_handler)
+        self.logger.addHandler(self.file_handler)
+
+    def __exit__(self, *exc_details):
+        if not self.initialized:
+            return
+
+        for handler in self.logger.handlers:
+            self.logger.removeHandler(handler)
+
+        for handler in self.original_log_handlers:
+            self.logger.addHandler(handler)
+
+        self.logger.setLevel(self.original_log_level)
+#end class sim_log_handler

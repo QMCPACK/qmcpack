@@ -18,18 +18,20 @@
 
 
 import os
-from copy import deepcopy
 import shutil
+from copy import deepcopy
+
 import numpy as np
+
+from .developer import NexusError, obj
+from .error_keys import find_error_keys
+from .execute import execute
 from .nexus_base import nexus_core
-from .developer import obj, NexusError
 from .physical_system import PhysicalSystem
 from .pseudoset import PseudoSet
-from .simulation import Simulation, DynamicProcess
-from .pwscf_input import PwscfInput, generate_pwscf_input
 from .pwscf_analyzer import PwscfAnalyzer
-from .execute import execute
-
+from .pwscf_input import PwscfInput, generate_pwscf_input
+from .simulation import DynamicProcess, Simulation
 
 unique_vdw_functionals = (
     'optb86b-vdw',
@@ -350,26 +352,59 @@ class Pwscf(Simulation):
 
 
     def check_sim_status(self):
-        outfile = os.path.join(self.locdir,self.outfile)
-        with open(outfile,'r') as fobj:
-            output = fobj.read()
+        outfile = os.path.join(self.locdir, self.outfile)
+        errfile = os.path.join(self.locdir, self.errfile)
+        out_err_found, out_err_lines = find_error_keys(
+            outfile,
+            operating_system=True,
+            hpc=True,
+            code=True,
+            code_library=True,
+            pwscf=True,
+            return_lines=True,
+            )
 
-        not_converged = 'convergence NOT achieved'  in output
-        time_exceeded = 'Maximum CPU time exceeded' in output
-        user_stop     = 'Program stopped by user request' in output
-        run_finished  = 'JOB DONE' in output
-        restartable = not_converged or time_exceeded or user_stop
+        err_err_found = find_error_keys(
+            errfile,
+            operating_system=True,
+            hpc=True,
+            code=True,
+            code_library=True,
+            pwscf=True,
+            )
+
+        if err_err_found:
+            self.logger.error(f"Error detected in stderr ({errfile})")
+            self.failed = True
+
+        restartable = False
+        if out_err_found:
+            self.logger.error(f"Error detected in stdout ({outfile})")
+            output_errs = "".join(out_err_lines)
+            not_converged    = 'convergence NOT achieved'  in output_errs
+            time_exceeded    = 'Maximum CPU time exceeded' in output_errs
+            user_stop        = 'Program stopped by user request' in output_errs
+            error_in_routine = 'Error in routine' in output_errs
+            restartable      = not_converged or time_exceeded or user_stop
+            failed = (
+                not_converged
+                or time_exceeded
+                or user_stop
+                or error_in_routine
+                or self.failed
+                )
+            self.failed = failed
+
+        run_finished  = 'JOB DONE' in self.outfile_text()
         restart = run_finished and self.restartable and restartable
+        self.finished = run_finished
         if restart:
+            self.logger.info("Run finished before converging and is restartable")
             self.save_attempt()
             self.input.control.restart_mode = 'restart'
             self.reset_indicators()
-        else:
-            error_in_routine = 'Error in routine' in output
-            failed = not_converged or time_exceeded or user_stop
-            failed |= error_in_routine
-            self.finished = run_finished
-            self.failed   = failed
+        elif not run_finished:
+            self.logger.warning("Run finished before converging and is not restartable")
         #end if
     #end def check_sim_status
 
