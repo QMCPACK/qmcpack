@@ -131,17 +131,33 @@ private:
   size_t getFullDataSize() const override;
   void accumulateToData(size_t point, QMCT::RealType weight);
   /// point must initially be the species offset; on success it is the corresponding grid point.
-  struct PeriodicFiniteCellBounds
+  /** These give the conservative bounding box for the custom measurment
+   *  cell in the simulation cell reduced coordinates. See docs for
+   *  getPeriodicCustomMeasurementCellPoint.
+   */
+  struct CustomMeasurementCellBounds
   {
     QMCT::PosType lo;
     QMCT::PosType hi;
   };
 
-  bool getFiniteCellPoint(const QMCT::PosType& position, size_t& point) const;
-  PeriodicFiniteCellBounds getPeriodicFiniteCellBounds() const;
-  bool getPeriodicFiniteCellPoint(const QMCT::PosType& position,
-                                  const PeriodicFiniteCellBounds& bounds,
-                                  size_t& point) const;
+  /** Get the point when simulation cell has open boundary conditions.
+   *  @param position[in]    particle position in native QMCPACK
+   *  @param point[in/out]   the index of the grid point the position is binned into.
+   */
+  bool getCustomMeasurementCellPointForOpenSimulation(const QMCT::PosType& position, size_t& point) const;
+  /** This calculates the CustomMeasurementCellBounds for the custom  measurement cell box.
+   *  We need to do this for each accumulate call because there is no guarantee the simulation cell hasn't changed.
+   */
+  CustomMeasurementCellBounds getCustomMeasurementCellBounds() const;
+  /** Get the point when the simulation cell is periodic and the measurement cell is custom.
+   *  @param position[in]    particle position in native QMCPACK coordinates.
+   *  @param bounds[in]      the conservative bounding box for custom cell
+   *  @param point[in/out]   the index of the grid point the position is binned into.
+   */
+  bool getCustomMeasurementCellPointForPeriodSimulation(const QMCT::PosType& position,
+                                                        const CustomMeasurementCellBounds& bounds,
+                                                        size_t& point) const;
   void reset();
   void report(const std::string& pad);
 
