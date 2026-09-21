@@ -159,7 +159,7 @@ public:
    * @param single source UBspline_3d_d object
    * @param i destination index within the multi-spline structure
    */
-  void set_spline(const UBspline_3d_d& single, int i);
+  void setOneSpline(const UBspline_3d_d& single, int i);
 
 
   /** Evaluate spline values into single-precision arrays

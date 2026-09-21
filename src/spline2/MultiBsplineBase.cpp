@@ -57,13 +57,13 @@ size_t MultiBsplineBase<T>::sizeInByte() const
 }
 
 template<typename T>
-void MultiBsplineBase<T>::set_spline(const UBspline_3d_d& single, int i)
+void MultiBsplineBase<T>::setOneSpline(const UBspline_3d_d& single, int i)
 {
   size_t iblock = 0;
   while (iblock < spline_blocks.size() && i >= offsets_[iblock + 1])
     iblock++;
   if (iblock == spline_blocks.size())
-    throw std::runtime_error("Bug detected in MultiBsplineBase::set_spline i goes out of bound!");
+    throw std::runtime_error("Bug detected in MultiBsplineBase::setOneSpline i goes out of bound!");
 
   auto& multi(*spline_blocks[iblock]);
 

@@ -165,7 +165,7 @@ struct test_splines : public test_splines_base<T, GRID_SIZE, NUM_SPLINES>
     UBspline_3d_d* aspline = create_UBspline_3d_d(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 
     for (int i = 0; i < num_splines; i++)
-      bs.set_spline(*aspline, i);
+      bs.setOneSpline(*aspline, i);
 
     destroy_Bspline(aspline);
 
@@ -219,7 +219,7 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
     UBspline_3d_d* aspline = create_UBspline_3d_d(grid[0], grid[1], grid[2], bc[0], bc[1], bc[2], data.data());
 
     for (int i = 0; i < num_splines; i++)
-      bs.set_spline(*aspline, i);
+      bs.setOneSpline(*aspline, i);
 
     destroy_Bspline(aspline);
 

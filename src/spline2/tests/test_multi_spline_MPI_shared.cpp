@@ -109,7 +109,7 @@ struct test_splines : public test_splines_base<T, GRID_SIZE>
 
     auto offsets = FairDivideAligned<std::vector<size_t>>(num_splines, getAlignment<T>(), comm.size());
     for (int i = offsets[comm.rank()]; i < offsets[comm.rank() + 1]; i++)
-      bs.set_spline(*aspline, i);
+      bs.setOneSpline(*aspline, i);
     comm.barrier();
 
     destroy_Bspline(aspline);
@@ -170,7 +170,7 @@ struct test_splines<T, 5> : public test_splines_base<T, 5>
 
     auto offsets = FairDivideAligned<std::vector<size_t>>(num_splines, getAlignment<T>(), comm.size());
     for (int i = offsets[comm.rank()]; i < offsets[comm.rank() + 1]; i++)
-      bs.set_spline(*aspline, i);
+      bs.setOneSpline(*aspline, i);
     comm.barrier();
 
     destroy_Bspline(aspline);
