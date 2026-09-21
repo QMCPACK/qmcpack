@@ -1276,8 +1276,8 @@ class TracesAnalyzer(QAanalyzer):
             dmc_valid = True
             if len(self.data)>0:
                 scalar_names = set(self.data[0].scalars_by_step.keys())
-                qnames = set(['LocalEnergy','Weight','NumOfWalkers']) & scalar_names
-                weighted = set(['LocalEnergy'])
+                qnames = {'LocalEnergy','Weight','NumOfWalkers'} & scalar_names
+                weighted = {'LocalEnergy'}
                 summed_scalars = obj()
                 for qname in qnames:
                     summed_scalars[qname] = np.zeros(dmc[qname].shape)
@@ -2324,7 +2324,7 @@ class SpaceGridBase(QAobject):
 
         #convert 1x and 1x1 numpy arrays to just numbers
         #convert Nx1 and 1xN numpy arrays to Nx arrays
-        exclude = set(['value','value_squared'])
+        exclude = {'value','value_squared'}
         for k,v in self.items():
             if k[0]!='_' and type(v) is np.ndarray and k not in exclude:
                 sh=v.shape
@@ -2625,7 +2625,7 @@ class RectilinearGrid(SpaceGridBase):
             self[q].mean = init[q].mean.copy()
             self[q].error = init[q].error.copy()
         #end for
-        exclude = set(['point2unit','points2domains','points'])
+        exclude = {'point2unit','points2domains','points'}
         for k,v in init.items():
             if k[0]!='_':
                 vtype = type(v)
@@ -3498,5 +3498,5 @@ def SpaceGrid(init,opts=None):
 #end def SpaceGrid
 SpaceGrid.count = 0
 SpaceGrid.coord_n2s = SpaceGridBase.coord_n2s
-SpaceGrid.rect = set(['cartesian','cylindrical','spherical'])
+SpaceGrid.rect = {'cartesian','cylindrical','spherical'}
 

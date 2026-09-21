@@ -313,7 +313,7 @@ class Simulation(NexusCore):
     @classmethod
     def separate_inputs(cls,kwargs,overlapping_kw=-1,sim_kw=None):
         if overlapping_kw==-1:
-            overlapping_kw = set(['system'])
+            overlapping_kw = {'system'}
         elif overlapping_kw is None:
             overlapping_kw = set()
         #end if
@@ -512,7 +512,7 @@ class Simulation(NexusCore):
             self.path = p
         #end if
         if 'files' in allowed:
-            self.files = set([path_string(f) for f in self.files])
+            self.files = {path_string(f) for f in self.files}
         #end if
         if not isinstance(self.input,(self.input_type,GenericSimulationInput)):
             msg = (
@@ -560,7 +560,7 @@ class Simulation(NexusCore):
             #print '  creating sim {0} in {1}'.format(self.simid,self.locdir)
 
             if self.locdir not in self.sim_directories:
-                self.sim_directories[self.locdir] = set([self.identifier])
+                self.sim_directories[self.locdir] = {self.identifier}
             else:
                 idset = self.sim_directories[self.locdir]
                 if self.identifier not in idset:
@@ -790,7 +790,7 @@ class Simulation(NexusCore):
             dep.sim = sim
             rn = []
             msg = ""
-            app_results = sim.application_results | set(['other'])
+            app_results = sim.application_results | {'other'}
             for name in d[1:]:
                 result_name = self.condense_name(name)
                 if result_name in app_results:
@@ -1605,7 +1605,7 @@ class GenericSimulationInput: # marker class for generic user input
 
 
 class GenericSimulation(Simulation):
-    allowed_inputs = Simulation.allowed_inputs | set(['outfiles'])
+    allowed_inputs = Simulation.allowed_inputs | {'outfiles'}
 
     def __init__(self,**kwargs):
         import os

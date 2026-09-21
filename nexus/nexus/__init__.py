@@ -636,7 +636,7 @@ class Settings(NexusCore):
                 "seekpath":   {"min_ver": "x.x.x", "status": "optional"},
                 }
 
-        nxs_deps = {k:v for k, v in sorted(nxs_deps.items(), key=lambda x: pkg_sort.get(x[0], 1000))}
+        nxs_deps = dict(sorted(nxs_deps.items(), key=lambda x: pkg_sort.get(x[0], 1000)))
 
         available_pkgs = {}
         for module in nxs_deps:

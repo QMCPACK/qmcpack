@@ -64,7 +64,7 @@ def test_old_nexus_unpickle():
     assert(sim_obj.analyzed            is True)
     assert(sim_obj.analyzer_image      == "analyzer.p")
     assert(sim_obj.app_name            == "pw.x")
-    assert(set(sim_obj.app_props)      == set(["serial", "mpi"]))
+    assert(set(sim_obj.app_props)      == {"serial", "mpi"})
     assert(sim_obj.block               is False)
     assert(sim_obj.block_subcascade    is False)
     assert(sim_obj.errfile             == "relax.err")
