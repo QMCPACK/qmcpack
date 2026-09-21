@@ -87,14 +87,13 @@ inline void Communicate::reduce_in_place(T* restrict res, int n)
 {
   if (d_ncontexts == 1)
     return;
-  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*res);
+  auto* addr           = qmcplusplus::scalar_traits<T>::get_address(res);
+  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*addr);
   if (!d_mycontext)
-    MPI_Reduce(MPI_IN_PLACE, res, n, type_id, MPI_SUM, 0, myMPI);
+    MPI_Reduce(MPI_IN_PLACE, addr, n * qmcplusplus::scalar_traits<T>::DIM, type_id, MPI_SUM, 0, myMPI);
   else
-    MPI_Reduce(res, NULL, n, type_id, MPI_SUM, 0, myMPI);
+    MPI_Reduce(addr, NULL, n * qmcplusplus::scalar_traits<T>::DIM, type_id, MPI_SUM, 0, myMPI);
 }
-
-
 
 
 template<typename T>
@@ -153,13 +152,6 @@ inline void Communicate::scatterv(T& sb, T& rb, IT& counts, IT& displ, int sourc
 }
 
 
-
-
-
-
-
-
-
 template<typename T>
 inline void Communicate::allgather(T* sb, T* rb, int count)
 {
@@ -169,13 +161,17 @@ inline void Communicate::allgather(T* sb, T* rb, int count)
       rb[i] = sb[i];
     return;
   }
-  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*sb);
-  MPI_Allgather(sb, count, type_id, rb, count, type_id, myMPI);
+  auto* addr_sb        = qmcplusplus::scalar_traits<T>::get_address(sb);
+  auto* addr_rb        = qmcplusplus::scalar_traits<T>::get_address(rb);
+  MPI_Datatype type_id = qmcplusplus::mpi::get_mpi_datatype(*addr_sb);
+  MPI_Allgather(addr_sb, count * qmcplusplus::scalar_traits<T>::DIM, type_id, addr_rb,
+                count * qmcplusplus::scalar_traits<T>::DIM, type_id, myMPI);
 }
 
 template<typename T, typename IT>
 inline void Communicate::gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest)
 {
+  static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (d_ncontexts == 1)
   {
     std::copy(sb, sb + n, rb);
@@ -221,14 +217,10 @@ inline void Communicate::bcast(std::string& g)
 }
 
 
-
-
-
-
-
 template<typename T, typename TMPI, typename IT>
 inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
 {
+  static_assert(qmcplusplus::scalar_traits<T>::DIM == 1, "Complex types not supported for this method");
   if (!d_mycontext)
     MPI_Gatherv(MPI_IN_PLACE, 0, datatype, buf, counts.data(), displ.data(), datatype, dest, myMPI);
   else
