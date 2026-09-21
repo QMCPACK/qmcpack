@@ -282,7 +282,7 @@ void test_hyperslab()
     remove("dummy_walkers.h5");
 }
 
-void test_double_hyperslab()
+void test_hyperslab()
 {
   auto world = boost::mpi3::environment::get_world_instance();
 
@@ -310,17 +310,12 @@ void test_double_hyperslab()
   }
   dump.push("WalkerSet");
 
-  //double_hyperslab_proxy<Matrix,2> hslab(Data,
   hyperslab_proxy<Matrix, 2> hslab(Data,
                                    std::array<size_t, 2>{static_cast<size_t>(nwtot),
                                                          static_cast<size_t>(nprop_to_safe)},
                                    std::array<size_t, 2>{static_cast<size_t>(nwalk),
                                                          static_cast<size_t>(nprop_to_safe)},
-                                   std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0}); //,
-
-  //                                  std::array<int,2>{nwalk,nprop},
-  //                                  std::array<int,2>{nwalk,nprop_to_safe},
-  //                                  std::array<int,2>{0,0});
+                                   std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0});
   dump.write(hslab, "Walkers");
   dump.close();
   world.barrier();
@@ -337,16 +332,12 @@ void test_double_hyperslab()
     //Matrix DataIn({nwalk,nprop});
     Matrix DataIn({nwalk, nprop_to_safe});
 
-    //double_hyperslab_proxy<Matrix,2> hslab(DataIn,
     hyperslab_proxy<Matrix, 2> hslab(DataIn,
                                      std::array<size_t, 2>{static_cast<size_t>(nwtot),
                                                            static_cast<size_t>(nprop_to_safe)},
                                      std::array<size_t, 2>{static_cast<size_t>(nwalk),
                                                            static_cast<size_t>(nprop_to_safe)},
-                                     std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0}); //,
-    //                                  std::array<int,2>{nwalk,nprop},
-    //                                  std::array<int,2>{nwalk,nprop_to_safe},
-    //                                  std::array<int,2>{0,0});
+                                     std::array<size_t, 2>{static_cast<size_t>(rank * nwalk), 0});
     read.read(hslab, "Walkers");
     read.close();
 
@@ -504,7 +495,7 @@ TEST_CASE("swset_test_serial", "[shared_wset]")
 TEST_CASE("hyperslab_tests", "[shared_wset]")
 {
  // test_hyperslab();
-  test_double_hyperslab();
+  test_hyperslab();
 }
 */
 TEST_CASE("walker_io", "[shared_wset]")
