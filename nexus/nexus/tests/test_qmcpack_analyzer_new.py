@@ -50,6 +50,26 @@ def test_read_scalar_issues_complete_is_independent(monkeypatch):
         assert not issues.complete(allow_nan=True)
 
 
+def test_qmcpack_analyzer_new_argument_errors():
+    from ..qmcpack_analyzer_new import (
+        ReadScalarIssues,
+        qmcpack_analyzer_outfiles,
+        read_scalar_file,
+    )
+
+    issues = ReadScalarIssues()
+    with pytest.raises(ValueError, match='unrecognized scalar-read issue'):
+        issues.add('not_an_issue')
+    with pytest.raises(TypeError, match='allow_nan must be a bool'):
+        issues.complete(allow_nan=1)
+    with pytest.raises(TypeError, match='filepath must be a str'):
+        read_scalar_file(None)
+    with pytest.raises(TypeError, match='issues must be a bool'):
+        read_scalar_file('unused.scalar.dat', issues=1)
+    with pytest.raises(ValueError, match='unrecognized qmc type'):
+        qmcpack_analyzer_outfiles('afqmc', 'qmc', 0)
+
+
 def test_read_scalar_file_header_check_is_independent(monkeypatch, tmp_path):
     from ..qmcpack_analyzer_new import ReadScalarIssues, read_scalar_file
 

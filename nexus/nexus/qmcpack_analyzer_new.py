@@ -32,29 +32,9 @@ class QmcpackScalarInfo(DevBase):
             AvgSentWalkers = 'asw',
             )
 
-        self.inv_aliases = obj(
-            E   = 'LocalEnergy'   ,
-            T   = 'Kinetic'       ,
-            V   = 'LocalPotential',
-            Vee = 'ElecElec'      ,
-            Vei = 'ElecIon'       ,
-            Vii = 'IonIon'        ,
-            Vl  = 'LocalECP'      ,
-            Vnl = 'NonLocalECP'   ,
-            Ev  = 'Variance'      ,
-            E2  = 'LocalEnergy_sq',
-            bw  = 'BlockWeight'   ,
-            bc  = 'BlockCPU'      ,
-            ar  = 'AcceptRatio'   ,
-            eff = 'Efficiency'    ,
-            tt  = 'TotalTime'     ,
-            ts  = 'TotalSamples'  ,
-            de  = 'DiffEff'       ,
-            w   = 'Weight'        ,
-            nw  = 'NumOfWalkers'  ,
-            lf  = 'LivingFraction',
-            asw = 'AvgSentWalkers',
-            )
+        self.inv_aliases = obj()
+        for k,v in self.aliases.items():
+            self.inv_aliases[v] = k
 
         self.nonenergy = {
             'BlockWeight','BlockCPU','AcceptRatio','Efficiency',
@@ -184,7 +164,8 @@ class ReadScalarIssues(DevBase):
     #end def __init__
 
     def add(self,issue):
-        assert issue in self.issues
+        if issue not in self.issues:
+            raise ValueError(f'unrecognized scalar-read issue: {issue}')
         self[issue] = True
     #end def add
 
@@ -217,7 +198,8 @@ class ReadScalarIssues(DevBase):
             completeness.  ``nan_vals`` prevents completeness unless
             ``allow_nan=True``.
         """
-        assert isinstance(allow_nan,bool)
+        if not isinstance(allow_nan,bool):
+            raise TypeError('allow_nan must be a bool')
         incomplete_issues = {
             'no_file',
             'empty_file',
@@ -253,8 +235,10 @@ def read_scalar_file(filepath,
 
     If an unhandled exception is raised, this code needs fixing.
     '''
-    assert isinstance(filepath,str)
-    assert isinstance(issues,bool)
+    if not isinstance(filepath,str):
+        raise TypeError('filepath must be a str')
+    if not isinstance(issues,bool):
+        raise TypeError('issues must be a bool')
     ret_issues = issues
     data   = dict_type()
     issues = ReadScalarIssues(nrows_checked=nrows is not None)
@@ -431,7 +415,8 @@ def read_scalar_file(filepath,
 
 
 def qmcpack_analyzer_outfiles(qmc,prefix,series,group_index=None):
-    assert qmc in {'opt','vmc','dmc'}
+    if qmc not in {'opt','vmc','dmc'}:
+        raise ValueError(f'unrecognized qmc type: {qmc}')
     ss     = 's'+str(series).zfill(3)
     if group_index is None:
         prefix = f'{prefix}.{ss}.'
@@ -462,7 +447,7 @@ class QmcpackInputInfo(DevBase):
         self.qmc_type     = None
         self.prefix       = None
         self.group_index  = None
-        self.series_start = 0
+        self.series_start = None
         self.has_twist    = False
         self.qmc_info     = None
         self.read(filepath)
@@ -473,7 +458,7 @@ class QmcpackInputInfo(DevBase):
             self.error(f'provided qmcpack input file does not exist.\nFilepath: {filepath}')
         # parse filepath
         filename = os.path.split(filepath)[1]
-        ftokens = filename.split('.')
+        ftokens  = filename.split('.')
         group_index = None
         for t in ftokens:
             if t.startswith('g'):
@@ -484,16 +469,16 @@ class QmcpackInputInfo(DevBase):
                 if gi is not None:
                     group_index = gi
                     break
-        self.group_index=group_index
+        self.group_index = group_index
         # parse input
         qi = QmcpackInput(filepath)
         qi.pluralize()
         # prefix, series
+        self.series_start = 0
         project = qi.get('project')
-        if project is None:
-            self.prefix = 'default_project'
-        else:
-            self.prefix = project.id
+        if project is not None:
+            if 'id' in project:
+                self.prefix = project.id
             if 'series' in project:
                 self.series_start = project.series
         # twist
