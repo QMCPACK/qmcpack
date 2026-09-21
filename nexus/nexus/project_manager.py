@@ -64,7 +64,7 @@ class ProjectManager(NexusCore):
 
     def __init__(self):
         modes = nexus_core.modes
-        self.persistent_modes = set([modes.submit,modes.all])
+        self.persistent_modes = {modes.submit,modes.all}
         self.simulations = obj()
         self.cascades = obj()
         self.progressing_cascades = obj()

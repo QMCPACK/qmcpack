@@ -252,7 +252,7 @@ def render_bool(var,T,F):
 #end def render_bool
 
 
-bool_write_types = set([yesno,onezero,truefalse])
+bool_write_types = {yesno,onezero,truefalse}
 
 
 
@@ -1207,7 +1207,7 @@ class QIxml(Names):
         elem = ks & set(self.elements)
         plur = ks & set(self.plurals.keys())
         if self.text is not None:
-            text = ks & set([self.text])
+            text = ks & {self.text}
         else:
             text = set()
         #end if
@@ -1315,7 +1315,7 @@ class QIxml(Names):
             elem = ks & set(self.elements)
             plur = ks & set(self.plurals.keys())
             if self.text is not None:
-                text = ks & set([self.text])
+                text = ks & {self.text}
             else:
                 text = set()
             #end if
@@ -1406,7 +1406,7 @@ class QIxml(Names):
                     print(ms)
                 #end if
             #end if
-            if junk!=set(['analysis']) and junk!=set(['ratio']) and junk!=set(['randmo']) and junk!=set(['printeloc', 'source']) and junk!=set(['warmup_steps']) and junk!=set(['sposet_collection']) and junk!=set(['eigensolve', 'atom']) and junk!=set(['maxweight', 'reweightedvariance', 'unreweightedvariance', 'energy', 'exp0', 'stabilizerscale', 'minmethod', 'alloweddifference', 'stepsize', 'beta', 'minwalkers', 'nstabilizers', 'bigchange', 'usebuffer']) and junk!=set(['loop2']) and junk!=set(['random']) and junk!=set(['max_steps']):
+            if junk!={'analysis'} and junk!={'ratio'} and junk!={'randmo'} and junk!={'printeloc', 'source'} and junk!={'warmup_steps'} and junk!={'sposet_collection'} and junk!={'eigensolve', 'atom'} and junk!={'maxweight', 'reweightedvariance', 'unreweightedvariance', 'energy', 'exp0', 'stabilizerscale', 'minmethod', 'alloweddifference', 'stepsize', 'beta', 'minwalkers', 'nstabilizers', 'bigchange', 'usebuffer'} and junk!={'loop2'} and junk!={'random'} and junk!={'max_steps'}:
                 sys.exit()
             #end if
         #end if
@@ -1981,7 +1981,7 @@ class Param(Names):
     def read(self,xml):
         val = None
         attr = set(xml._attributes.keys())
-        other_attr = attr-set(['name'])
+        other_attr = attr-{'name'}
         if 'name' in attr and len(other_attr)>0:
             oa = obj()
             for a in other_attr:
@@ -4909,7 +4909,7 @@ class QmcpackInput(SimulationInput,Names):
             msg = 'input file has no multideterminant'
             raise FileFormatError(msg)
         dl = md.detlist
-        names = set(list(kwargs.keys()))
+        names = set(kwargs.keys())
         mdc = multideterminant
         md_names = set(mdc.attributes)|set(mdc.parameters)
         dl_names = set(detlist.attributes)|set(detlist.parameters)
@@ -4918,8 +4918,8 @@ class QmcpackInput(SimulationInput,Names):
         if len(invalid)>0:
             msg = (
                 'unrecognized multideterminant parameters encountered.\n'
-                f'  Allowed params are: {list(sorted(allowed_names))}\n'
-                f'You provided:{list(sorted(invalid))}'
+                f'  Allowed params are: {sorted(allowed_names)}\n'
+                f'You provided:{sorted(invalid)}'
                 )
             raise ValueError(msg)
         for name in md_names:
@@ -7323,7 +7323,7 @@ def generate_jastrows(jastrows,system=None,*,return_list=False,check_ions=False)
             raise ValueError(msg)
         #end if
     else:
-        jset = set(['J1','J2','J3'])
+        jset = {'J1','J2','J3'}
         for jastrow in jastrows:
             if isinstance(jastrow,QIxml):
                 jin.append(jastrow)
@@ -7529,8 +7529,8 @@ def generate_jastrows_alt(
 
 
 def generate_jastrow(descriptor,*args,**kwargs):
-    keywords = set(['function','size','rcut','elements','coeff','cusp','ename',
-                    'iname','spins','density','Buu','Bud','opt','system','isize','esize','init'])
+    keywords = {'function','size','rcut','elements','coeff','cusp','ename',
+                'iname','spins','density','Buu','Bud','opt','system','isize','esize','init'}
     if not 'system' in kwargs:
         kwargs['system'] = None
     #end if
@@ -8183,7 +8183,7 @@ def generate_energydensity(
                 msg = (
                     'ion species not found for spherical grid\n'
                     f'species not found: {sorted(missing)}\n'
-                    f'species present: {sorted(set(list(system.structure.elem)))}'
+                    f'species present: {sorted(set(system.structure.elem))}'
                     )
                 raise ValueError(msg)
             #end if
