@@ -27,6 +27,13 @@
 
 namespace qmcplusplus
 {
+/** @brief Traits class to extract the base scalar type and dimensionality of composite fixed-size types.
+ *
+ * scalar_traits recursively resolves nested fixed-size types (e.g., std::complex, TinyVector, Tensor)
+ * to a fundamental scalar type (`real_type`). It computes the total number of fundamental scalars (`DIM`)
+ * within the composite type, and provides a static `get_address()` method to unwrap the underlying
+ * contiguous scalar data pointer for MPI communication.
+ */
 template<class T>
 struct scalar_traits
 {
@@ -72,6 +79,13 @@ struct scalar_traits<Tensor<T, D>>
 };
 
 
+/** @brief A proxy class to adapt dynamically sized containers for MPI communication.
+ *
+ * container_proxy wraps various data containers (e.g., std::vector, Vector, Matrix, Array) and provides
+ * a unified interface (`size()` and `data()`) to extract contiguous scalar buffers for MPI send/receive operations.
+ * By leveraging `scalar_traits`, it automatically handles containers of composite types (like `std::vector<TinyVector<double, 3>>`)
+ * by unwrapping them into flat arrays of fundamental scalar types, calculating the correct total scalar count.
+ */
 template<typename T>
 struct container_proxy
 {
