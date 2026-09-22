@@ -24,6 +24,8 @@ SpinDensityInput::SpinDensityInput(xmlNodePtr cur)
 
   setIfInInput(name_, "name");
   setIfInInput(write_report_, "report");
+  setIfInInput(save_memory_, "save_memory");
+  setIfInInput(folding_, "folding");
   have_dr_     = setIfInInput(dr_, "dr");
   have_corner_ = setIfInInput(corner_, "corner");
   have_center_ = setIfInInput(center_, "center");
@@ -58,11 +60,24 @@ void SpinDensityInput::SpinDensityInputSection::checkParticularValidity()
   if (!has("dr") && !has("grid"))
     throw UniformCommunicateError(error_tag + "must provide dr or grid");
 
+  if (has("folding") && get<bool>("folding") && !has("cell"))
+    throw UniformCommunicateError(error_tag + "folding requires an explicitly defined cell");
+
   if (has("cell"))
   {
-    if (get<std::vector<Real>>("cell").size() != DIM * DIM)
+    const std::vector<Real>& cell_values = get<std::vector<Real>>("cell");
+    if (cell_values.size() != DIM * DIM)
       throw UniformCommunicateError(error_tag + "cell must contain a " + std::to_string(DIM) + " by " +
                                     std::to_string(DIM) + " matrix");
+
+    Tensor<Real, DIM> axes;
+    for (int i = 0; i < DIM; ++i)
+      for (int j = 0; j < DIM; ++j)
+        axes(i, j) = cell_values[i * DIM + j];
+    const Real cell_volume = det(axes);
+    if (!std::isfinite(cell_volume) || cell_volume == 0.0)
+      throw UniformCommunicateError(error_tag + "cell must have a finite, nonzero volume");
+
     if (!has("corner") && !has("center"))
       throw UniformCommunicateError(error_tag + "must provide corner or center with explicitly defined cell");
   }
