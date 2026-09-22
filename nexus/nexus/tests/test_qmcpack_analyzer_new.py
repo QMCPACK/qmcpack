@@ -737,8 +737,14 @@ def test_qmcpack_analyzer_outfiles(qmc, prefix, series, group_index, expected):
          ('dmc.s003.scalar.dat', 'dmc.s003.dmc.dat')),
         ('diamond_gamma/opt/opt.in.xml', 'opt', 'opt', None, 6,
          ('opt.s005.scalar.dat', 'opt.s005.opt.xml', 'opt.s005.vp.h5')),
+        ('diamond_twist/vmc/vmc.g000.twistnum_0.in.xml', 'vmc', 'vmc', 0, 1,
+         ('vmc.g000.s000.scalar.dat',)),
+        ('diamond_twist/vmc/vmc.g001.twistnum_1.in.xml', 'vmc', 'vmc', 1, 1,
+         ('vmc.g001.s000.scalar.dat',)),
         ('diamond_twist/vmc/vmc.g002.twistnum_2.in.xml', 'vmc', 'vmc', 2, 1,
          ('vmc.g002.s000.scalar.dat',)),
+        ('diamond_twist/vmc/vmc.g003.twistnum_3.in.xml', 'vmc', 'vmc', 3, 1,
+         ('vmc.g003.s000.scalar.dat',)),
     ],
 )
 def test_qmcpack_input_info_from_run_inputs(
@@ -754,6 +760,65 @@ def test_qmcpack_input_info_from_run_inputs(
     assert info.has_twist
     assert len(info.qmc_info) == nseries
     assert info.qmc_info[nseries - 1].outfiles == expected_outfiles
+
+
+@pytest.mark.parametrize(
+    'base,relative_path,expected',
+    [
+        (
+            ANALYZER_FILES,
+            'diamond_gamma/vmc/vmc.in.xml',
+            [('vmc', 50, 50, 100, 0.3)],
+        ),
+        (
+            ANALYZER_FILES,
+            'diamond_gamma/dmc/dmc.in.xml',
+            [
+                ('vmc', 30, 100, 10, 0.3),
+                ('dmc', 20, 800, 50, 0.02),
+                ('dmc', 40, 1600, 50, 0.01),
+                ('dmc', 80, 3200, 50, 0.005),
+            ],
+        ),
+        (
+            ANALYZER_FILES,
+            'diamond_gamma/opt/opt.in.xml',
+            [('opt', 300, None, 50, 0.3)] * 6,
+        ),
+        (
+            INPUT_FILES,
+            'VO2_M1_afm.in.xml',
+            [
+                ('vmc', 20, 5, 70, 0.3),
+                ('dmc', 2, 5, 80, 0.02),
+                ('dmc', 10, 5, 600, 0.005),
+            ],
+        ),
+    ],
+)
+def test_qmcpack_input_info_qmc_sections_from_fixtures(
+    base, relative_path, expected
+):
+    from ..qmcpack_analyzer_new import QmcpackInputInfo
+
+    filepath = base / relative_path
+    info = QmcpackInputInfo(str(filepath))
+
+    assert info.filepath == str(filepath)
+    assert list(info.qmc_info) == list(range(len(expected)))
+    for series, expected_values in enumerate(expected):
+        qmc = info.qmc_info[series]
+        qmc_type, warmupsteps, steps, blocks, timestep = expected_values
+        assert qmc.series == series
+        assert qmc.qmc == qmc_type
+        assert qmc.warmupsteps == warmupsteps
+        if steps is None:
+            assert 'steps' not in qmc
+        else:
+            assert qmc.steps == steps
+        assert qmc.blocks == blocks
+        assert qmc.timestep == timestep
+        assert qmc.outfiles[0].endswith(f's{series:03d}.scalar.dat')
 
 
 def test_qmcpack_input_info_from_input_fixture():
@@ -848,6 +913,32 @@ def test_qmcpack_input_info_projectless_input_fixture():
 
     assert info.prefix is None
     assert info.series_start is None
+    assert info.qmc_type is None
+    assert info.qmc_info is None
+
+
+@pytest.mark.parametrize(
+    'relative_path',
+    [
+        'diamond_gamma/opt/opt.s000.opt.xml',
+        'diamond_gamma/opt/opt.s001.opt.xml',
+        'diamond_gamma/opt/opt.s002.opt.xml',
+        'diamond_gamma/opt/opt.s003.opt.xml',
+        'diamond_gamma/opt/opt.s004.opt.xml',
+        'diamond_gamma/opt/opt.s005.opt.xml',
+    ],
+)
+def test_qmcpack_input_info_standalone_element_fixtures(relative_path):
+    from ..qmcpack_analyzer_new import QmcpackInputInfo
+
+    filepath = ANALYZER_FILES / relative_path
+    info = QmcpackInputInfo(str(filepath))
+
+    assert info.filepath == str(filepath)
+    assert info.prefix is None
+    assert info.series_start is None
+    assert info.group_index is None
+    assert info.has_twist is None
     assert info.qmc_type is None
     assert info.qmc_info is None
 
