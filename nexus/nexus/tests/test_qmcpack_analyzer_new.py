@@ -821,7 +821,7 @@ def test_qmcpack_input_info_optimization_method_aliases(tmp_path, method):
     assert info.qmc_info[0].qmc == 'opt'
 
 
-def test_qmcpack_input_info_default_project(tmp_path):
+def test_qmcpack_input_info_projectless_qmc(tmp_path):
     from ..qmcpack_analyzer_new import QmcpackInputInfo
 
     filepath = tmp_path / 'no_project.in.xml'
@@ -835,12 +835,10 @@ def test_qmcpack_input_info_default_project(tmp_path):
 
     info = QmcpackInputInfo(str(filepath))
 
-    assert info.prefix == 'default_project'
+    assert info.prefix is None
     assert info.series_start == 0
     assert info.qmc_type == 'vmc'
-    assert info.qmc_info[0].outfiles == (
-        'default_project.s000.scalar.dat',
-    )
+    assert info.qmc_info[0].outfiles is None
 
 
 def test_qmcpack_input_info_projectless_input_fixture():
@@ -848,7 +846,84 @@ def test_qmcpack_input_info_projectless_input_fixture():
 
     info = QmcpackInputInfo(str(INPUT_FILES / 'OH_mixed_pos.in.xml'))
 
-    assert info.prefix == 'default_project'
-    assert info.series_start == 0
+    assert info.prefix is None
+    assert info.series_start is None
     assert info.qmc_type is None
-    assert len(info.qmc_info) == 0
+    assert info.qmc_info is None
+
+
+@pytest.mark.parametrize(
+    'project,qmc',
+    [
+        ('<project id="bad_series" series="not_an_integer" />',
+         '<qmc method="vmc" />'),
+        ('<project id="missing_method" series="0" />', '<qmc />'),
+        ('<project id="bad_loop" series="0" />',
+         '<loop max="not_an_integer"><qmc method="vmc" /></loop>'),
+        ('<project id="mixed" series="0" />',
+         '<qmc method="vmc" /><qmc />'),
+    ],
+)
+def test_qmcpack_input_info_malformed_qmc_info_is_none(
+    tmp_path, project, qmc
+):
+    from ..qmcpack_analyzer_new import QmcpackInputInfo
+
+    filepath = tmp_path / 'malformed_qmc_info.in.xml'
+    filepath.write_text(
+        '<simulation>\n'
+        f'  {project}\n'
+        f'  {qmc}\n'
+        '</simulation>\n'
+    )
+
+    info = QmcpackInputInfo(str(filepath))
+
+    assert info.qmc_info is None
+    assert info.qmc_type is None
+
+
+def test_qmcpack_input_info_failed_queries_retain_none(monkeypatch):
+    from .. import qmcpack_analyzer_new
+
+    class QueryFailure:
+        def pluralize(self):
+            pass
+
+        def get(self, name):
+            raise RuntimeError(f'cannot query {name}')
+
+    monkeypatch.setattr(
+        qmcpack_analyzer_new, 'QmcpackInput', lambda filepath: QueryFailure()
+    )
+
+    info = qmcpack_analyzer_new.QmcpackInputInfo('query_failure.in.xml')
+
+    assert info.prefix is None
+    assert info.series_start is None
+    assert info.has_twist is None
+    assert info.qmc_info is None
+    assert info.qmc_type is None
+
+
+def test_qmcpack_input_info_loop_check_uses_loop_type(monkeypatch):
+    from .. import qmcpack_analyzer_new
+    from ..developer import obj
+    from ..qmcpack_input import project, simulation, vmc
+
+    calculation = vmc(method='vmc')
+    calculation.max = 3
+    qmc_input = obj(simulation=simulation(
+        project = project(id='typed_loop',series=0),
+        qmc     = calculation,
+    ))
+
+    monkeypatch.setattr(
+        qmcpack_analyzer_new, 'QmcpackInput', lambda filepath: qmc_input
+    )
+
+    info = qmcpack_analyzer_new.QmcpackInputInfo('typed_loop.in.xml')
+
+    assert list(info.qmc_info) == [0]
+    assert info.qmc_info[0].qmc == 'vmc'
+    assert info.qmc_type == 'vmc'

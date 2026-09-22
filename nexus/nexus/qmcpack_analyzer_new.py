@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from nexus.developer import DevBase,obj
-from nexus.qmcpack_input import QmcpackInput
+from nexus.qmcpack_input import QIxml,QmcpackInput,collection,loop,project,simulation
 
 
 class QmcpackScalarInfo(DevBase):
@@ -448,45 +448,54 @@ class QmcpackInputInfo(DevBase):
         self.prefix       = None
         self.group_index  = None
         self.series_start = None
-        self.has_twist    = False
+        self.has_twist    = None
         self.qmc_info     = None
         self.read(filepath)
     #end def __init__
 
     def read(self,filepath):
-        if not os.path.exists(filepath):
-            self.error(f'provided qmcpack input file does not exist.\nFilepath: {filepath}')
-        # parse filepath
-        filename = os.path.split(filepath)[1]
-        ftokens  = filename.split('.')
-        group_index = None
-        for t in ftokens:
-            if t.startswith('g'):
-                try:
-                    gi = int(t[1:])
-                except:
-                    gi = None
-                if gi is not None:
-                    group_index = gi
-                    break
-        self.group_index = group_index
-        # parse input
+        # Construction can still raise if the file itself cannot be read as a
+        # QMCPACK input.  All information extraction after this point is
+        # best-effort and leaves affected attributes at their None defaults.
         qi = QmcpackInput(filepath)
-        qi.pluralize()
+
+        # parse filepath
+        filename = os.path.split(str(filepath))[1]
+        ftokens  = filename.split('.')
+        for token in ftokens:
+            if token.startswith('g') and token[1:].isdigit():
+                self.group_index = int(token[1:])
+                break
+
+        # QmcpackInput can also represent individual input elements.  Only a
+        # full simulation contains the information collected here.
+        if not hasattr(qi,'__contains__') or 'simulation' not in qi:
+            return
+        sim = qi['simulation']
+        if not isinstance(sim,simulation):
+            return
+
         # prefix, series
-        self.series_start = 0
-        project = qi.get('project')
-        if project is not None:
-            if 'id' in project:
-                self.prefix = project.id
-            if 'series' in project:
-                self.series_start = project.series
+        series_query_failed = False
+        qproject = sim['project'] if 'project' in sim else None
+        if qproject is not None and not isinstance(qproject,project):
+            series_query_failed = True
+        elif qproject is not None:
+            if 'id' in qproject and isinstance(qproject.id,str):
+                self.prefix = qproject.id
+            if 'series' in qproject:
+                series_start = qproject.series
+                if isinstance(series_start,(int,np.integer)):
+                    self.series_start = int(series_start)
+                else:
+                    series_query_failed = True
+
         # twist
-        twistnum = qi.get('twistnum')
-        twist    = qi.get('twist')
-        if twistnum is not None or twist is not None:
-            self.has_twist = True
+        twistnum,twist = sim.get(('twistnum','twist'))
+        self.has_twist = twistnum is not None or twist is not None
+
         # qmc method info
+        qmc_info = obj()
         shr = dict(blocks=1,timestep=0.)
         defaults = dict(
             vmc = dict(qmc='vmc',warmupsteps=0  ,steps=1,**shr),
@@ -502,31 +511,96 @@ class QmcpackInputInfo(DevBase):
             dmc          = 'dmc',
             dmc_batch    = 'dmc',
             )
-        series = self.series_start
+
+        #  extract calculation list
+        if 'calculations' in sim:
+            calculations = sim.calculations
+        elif 'qmc' in sim:
+            calculations = sim.qmc
+        else:
+            calculations = None
+        if calculations is None:
+            calculations = ()
+        elif isinstance(calculations,collection):
+            calculations = tuple(calculations)
+        elif isinstance(calculations,QIxml):
+            calculations = (calculations,)
+        else:
+            return
+        if len(calculations)>0 and series_query_failed:
+            return
+        elif len(calculations)>0 and self.series_start is None:
+            self.series_start = 0
+
+        def qmc_from_loop(qmc_loop):
+            '''Expands <loop/> constructs'''
+            if 'max' not in qmc_loop:
+                return None
+            loop_count = qmc_loop.max
+            if (not isinstance(loop_count,(int,np.integer)) or
+                isinstance(loop_count,bool) or loop_count<0):
+                return None
+            if 'calculations' in qmc_loop:
+                loop_qmc = qmc_loop.calculations
+            elif 'qmc' in qmc_loop:
+                loop_qmc = (qmc_loop.qmc,)
+            else:
+                loop_qmc = ()
+            if isinstance(loop_qmc,collection):
+                loop_qmc = tuple(loop_qmc)
+            elif isinstance(loop_qmc,QIxml):
+                loop_qmc = (loop_qmc,)
+            elif not isinstance(loop_qmc,(tuple,list)):
+                return None
+            return tuple(loop_qmc)*int(loop_count)
+        #end def qmc_from_loop
+
         def qinfo_from_qmc(qmc,prefix,series):
+            '''Extract basic info from a qmc input section'''
+            if not isinstance(qmc,QIxml) or 'method' not in qmc:
+                return None
             method = qmc.method
-            if method not in method_types:
-                raise ValueError(f'unrecognized qmc method: {method}')
+            if not isinstance(method,str) or method not in method_types:
+                return None
             qmc_type = method_types[method]
             qinfo = obj(**defaults[qmc_type])
             for k,v in qmc.items():
                 if k in qinfo:
                     qinfo[k] = v
             qinfo.series = series
-            qinfo.outfiles = qmcpack_analyzer_outfiles(qinfo.qmc,prefix,series,self.group_index)
-            return qinfo
-        qmc_info = obj()
-        calculations = qi.get('calculations')
-        if calculations is None:
-            calculations = ()
-        for qmc in calculations:
-            if 'max' in qmc: #loop
-                for calc in qmc.unroll():
-                    qmc_info[series] = qinfo_from_qmc(calc,self.prefix,series)
-                    series += 1
+            if prefix is None:
+                qinfo.outfiles = None
             else:
-                qmc_info[series] = qinfo_from_qmc(qmc,self.prefix,series)
+                qinfo.outfiles = qmcpack_analyzer_outfiles(
+                    qinfo.qmc,prefix,series,self.group_index
+                    )
+            return qinfo
+
+        # extract info from calculations
+        series = self.series_start
+        qmc_info_valid = True
+        for calculation in calculations:
+            if isinstance(calculation,loop):
+                qmc_calculations = qmc_from_loop(calculation)
+                if qmc_calculations is None:
+                    qmc_info_valid = False
+                    break
+            else:
+                qmc_calculations = (calculation,)
+            for qmc in qmc_calculations:
+                qinfo = qinfo_from_qmc(qmc,self.prefix,series)
+                if qinfo is None:
+                    qmc_info_valid = False
+                    break
+                qmc_info[series] = qinfo
                 series += 1
+            if not qmc_info_valid:
+                break
+        if not qmc_info_valid:
+            self.qmc_info = None
+            self.qmc_type = None
+            return
+        # determine the major run type
         qmc_types = set([q.qmc for q in qmc_info.values()])
         if 'dmc' in qmc_types:
             self.qmc_type = 'dmc'
