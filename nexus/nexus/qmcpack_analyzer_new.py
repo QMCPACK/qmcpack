@@ -1,9 +1,15 @@
+##################################################################
+##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
+##################################################################
 
+
+#python standard library imports
 import os
-import numpy as np
+from numbers import Integral
 
-from nexus.developer import DevBase,obj
-from nexus.qmcpack_input import QIxml,QmcpackInput,collection,loop,project,simulation
+#custom library imports
+from .developer import DevBase,obj
+from .qmcpack_input import QIxml,QmcpackInput,collection,loop,project,simulation
 
 
 class QmcpackScalarInfo(DevBase):
@@ -39,9 +45,10 @@ class QmcpackScalarInfo(DevBase):
         self.nonenergy = {
             'BlockWeight','BlockCPU','AcceptRatio','Efficiency',
             'TotalTime','TotalSamples','DiffEff','Weight',
-            'NumOfWalkers','LivingFraction','AvgSentWalkers'}
+            'NumOfWalkers','LivingFraction','AvgSentWalkers',
+            }
 
-        self.integer = {'TotalSamples', 'NumOfWalkers'}
+        self.integer = {'TotalSamples','NumOfWalkers'}
 
         self.constant = {'IonIon','KEcorr','MPC'}
 
@@ -49,8 +56,6 @@ class QmcpackScalarInfo(DevBase):
     #end def __init__
 #end class QmcpackScalarInfo
 scalar_info = QmcpackScalarInfo()
-
-    
 
 
 class ReadScalarIssues(DevBase):
@@ -156,7 +161,7 @@ class ReadScalarIssues(DevBase):
         'corrupt_end',      # trailing rows contain nonnumeric garbage
         )
 
-    def __init__(self,nrows_checked=False):
+    def __init__(self,*,nrows_checked=False):
         for issue in self.issues:
             self[issue] = False
         if not nrows_checked:
@@ -171,7 +176,7 @@ class ReadScalarIssues(DevBase):
 
     def issue_set(self):
         return {issue for issue in self.keys() if self[issue]}
-    #end def issue
+    #end def issue_set
 
     def failed(self):
         issues = self.issue_set()
@@ -179,7 +184,7 @@ class ReadScalarIssues(DevBase):
         return len(issues)>0
     #end def failed
 
-    def complete(self,allow_nan=False):
+    def complete(self,*,allow_nan=False):
         """Return whether the requested number of usable rows is present.
 
         Parameters
@@ -222,19 +227,45 @@ class ReadScalarIssues(DevBase):
 
 
 
-def read_scalar_file(filepath,
-                     issues       = False,
-                     add_variance = False,
-                     remove_index = False,
-                     trim_nan     = True,
-                     nrows        = None,
-                     dict_type    = dict,
-                     ):
-    '''
-    Robustly read scalar.dat or dmc.dat files
+def read_scalar_file(
+    filepath,
+    *,
+    issues       = False,
+    add_variance = False,
+    remove_index = False,
+    trim_nan     = True,
+    nrows        = None,
+    dict_type    = dict,
+    ):
+    """Robustly read a QMCPACK scalar.dat or dmc.dat file.
 
-    If an unhandled exception is raised, this code needs fixing.
-    '''
+    Parameters
+    ----------
+    filepath : str
+        Path to the scalar data file.
+    issues : bool, optional
+        If ``True``, return a :class:`ReadScalarIssues` object with the data.
+    add_variance : bool, optional
+        If ``True``, construct ``Variance`` from ``LocalEnergy_sq`` and
+        ``LocalEnergy`` when both quantities are present.
+    remove_index : bool, optional
+        If ``True``, omit the index column from the returned data.
+    trim_nan : bool, optional
+        If ``True``, remove rows containing non-finite recognized scalar data.
+    nrows : int, optional
+        Expected number of complete, parsable data rows.
+    dict_type : type, optional
+        Mapping type used to hold returned scalar arrays.
+
+    Returns
+    -------
+    data : mapping
+        Parsed recognized scalar columns.
+    issues : ReadScalarIssues
+        Issue information, returned only when ``issues=True``.
+    """
+    import numpy as np
+
     if not isinstance(filepath,str):
         raise TypeError('filepath must be a str')
     if not isinstance(issues,bool):
@@ -251,24 +282,23 @@ def read_scalar_file(filepath,
         issues.add('no_file')
         return ret
     # parse header
-    f = open(filepath,'r')
     var_names        = None
     malformed_header = False
-    for line in f:
-        line = line.strip()
-        if len(line)==0:
-            continue
-        if line.startswith('#'):
-            tokens = line.split()[1:]
-            if len(tokens)==0:
-                malformed_header = True
-                break
+    with open(filepath,'r') as fobj:
+        for line in fobj:
+            line = line.strip()
+            if len(line)==0:
+                continue
+            if line.startswith('#'):
+                tokens = line.split()[1:]
+                if len(tokens)==0:
+                    malformed_header = True
+                    break
+                else:
+                    var_names = tokens
             else:
-                var_names = tokens
-        else:
-            malformed_header = True
-        break
-    f.close()
+                malformed_header = True
+            break
     if malformed_header:
         issues.add('bad_header')
     elif var_names is None:
@@ -279,26 +309,25 @@ def read_scalar_file(filepath,
     # any data beyond it for extraction or nrows validation.
     nvars = len(var_names)
     rows = []
-    f = open(filepath,'r')
-    for line in f:
-        line = line.strip()
-        if len(line)==0 or line[0]=='#':
-            continue
-        tokens = line.split()
-        vals = []
-        parsable = True
-        for t in tokens:
-            try:
-                vals.append(float(t))
-            except:
-                parsable = False
-        rows.append(obj(
-            ncols    = len(tokens),
-            parsable = parsable,
-            complete = parsable and len(tokens)==nvars,
-            values   = vals,
-            ))
-    f.close()
+    with open(filepath,'r') as fobj:
+        for line in fobj:
+            line = line.strip()
+            if len(line)==0 or line[0]=='#':
+                continue
+            tokens = line.split()
+            vals = []
+            parsable = True
+            for token in tokens:
+                try:
+                    vals.append(float(token))
+                except ValueError:
+                    parsable = False
+            rows.append(obj(
+                ncols    = len(tokens),
+                parsable = parsable,
+                complete = parsable and len(tokens)==nvars,
+                values   = vals,
+                ))
     if len(rows)==0:
         issues.add('no_data')
         if nrows is not None and nrows!=0:
@@ -339,15 +368,11 @@ def read_scalar_file(filepath,
     # corruption when complete data resumes, and corrupt-end data otherwise.
     trusted_complete = [n for n,row in enumerate(trusted_rows) if row.complete]
     last_trusted_complete = trusted_complete[-1] if trusted_complete else -1
-    if any(
-        not row.parsable and n<last_trusted_complete
-        for n,row in enumerate(trusted_rows)
-    ):
+    if any(not row.parsable and n<last_trusted_complete
+           for n,row in enumerate(trusted_rows)):
         issues.add('unparsable_vals')
-    if any(
-        not row.parsable and n>last_trusted_complete
-        for n,row in enumerate(trusted_rows)
-    ):
+    if any(not row.parsable and n>last_trusted_complete
+           for n,row in enumerate(trusted_rows)):
         issues.add('corrupt_end')
 
     # Skip exact-width nonnumeric rows, but retain all complete rows up to the
@@ -415,14 +440,15 @@ def read_scalar_file(filepath,
 
 
 def qmcpack_analyzer_outfiles(qmc,prefix,series,group_index=None):
+    """Return expected output filenames for one QMCPACK calculation."""
     if qmc not in {'opt','vmc','dmc'}:
         raise ValueError(f'unrecognized qmc type: {qmc}')
-    ss     = 's'+str(series).zfill(3)
+    series_label = 's'+str(series).zfill(3)
     if group_index is None:
-        prefix = f'{prefix}.{ss}.'
+        prefix = f'{prefix}.{series_label}.'
     else:
-        gs = 'g'+str(group_index).zfill(3)
-        prefix = f'{prefix}.{gs}.{ss}.'        
+        group_label = 'g'+str(group_index).zfill(3)
+        prefix = f'{prefix}.{group_label}.{series_label}.'
     if qmc=='vmc':
         postfixes = ['scalar.dat']
     elif qmc=='dmc':
@@ -436,11 +462,50 @@ def qmcpack_analyzer_outfiles(qmc,prefix,series,group_index=None):
 
 
 class QmcpackInputInfo(DevBase):
-    '''
-    Collects prefix and qmc run info from a QMCPACK input file
+    """Collect analysis information from a QMCPACK input file.
 
-    Lists expected scalar/dmc data and opt param files for the run
-    '''
+    Information extraction is best-effort.  Apart from errors constructing
+    :class:`QmcpackInput` itself, unavailable or malformed input data do not
+    raise exceptions.  The attributes supported by this class retain their
+    initial value of ``None`` when the corresponding information cannot be
+    determined.  In this event, ``incomplete`` is set to ``True``.
+
+    Parameters
+    ----------
+    filepath : str or os.PathLike
+        Path to the QMCPACK input file.
+
+    Attributes
+    ----------
+    filepath : str or os.PathLike
+        Input path supplied at construction.
+    qmc_type : {``'opt'``, ``'vmc'``, ``'dmc'``} or None
+        Major calculation type.  Mixed sequences are classified in the
+        precedence order DMC, optimization, then VMC.
+    prefix : str or None
+        Project identifier used as the output-file prefix.
+    group_index : int or None
+        Group index obtained from a ``gNNN`` component of the input filename.
+    series_start : int or None
+        Initial QMCPACK series number.  A calculation sequence without an
+        explicit project series starts at zero.
+    has_twist : bool or None
+        Whether ``twistnum`` or ``twist`` is present in the simulation input.
+    qmc_info : obj or None
+        Mapping from integer series numbers to per-calculation ``obj``
+        records.  Each record contains ``series``, normalized ``qmc`` type,
+        ``warmupsteps``, ``blocks``, ``timestep``, and ``outfiles``.  VMC and
+        DMC records also contain ``steps``.  Input values override method
+        defaults.  ``outfiles`` is a tuple of expected output filenames, or
+        ``None`` when no project prefix is available.  Loop calculations are
+        expanded in execution order.  If any QMC section is malformed, the
+        complete mapping is unavailable and remains ``None``.
+    incomplete : bool
+        Whether any other attribute initialized by the constructor is
+        ``None`` after reading.  Thus an optional value that is absent, such
+        as ``group_index`` for an ungrouped input, also marks the information
+        as incomplete.
+    """
 
     def __init__(self,filepath):
         self.filepath     = filepath
@@ -450,7 +515,18 @@ class QmcpackInputInfo(DevBase):
         self.series_start = None
         self.has_twist    = None
         self.qmc_info     = None
+        self.incomplete   = False
         self.read(filepath)
+        information = (
+            self.filepath,
+            self.qmc_type,
+            self.prefix,
+            self.group_index,
+            self.series_start,
+            self.has_twist,
+            self.qmc_info,
+            )
+        self.incomplete = any(value is None for value in information)
     #end def __init__
 
     def read(self,filepath):
@@ -485,7 +561,7 @@ class QmcpackInputInfo(DevBase):
                 self.prefix = qproject.id
             if 'series' in qproject:
                 series_start = qproject.series
-                if isinstance(series_start,(int,np.integer)):
+                if isinstance(series_start,Integral):
                     self.series_start = int(series_start)
                 else:
                     series_query_failed = True
@@ -512,7 +588,7 @@ class QmcpackInputInfo(DevBase):
             dmc_batch    = 'dmc',
             )
 
-        #  extract calculation list
+        # extract calculation list
         if 'calculations' in sim:
             calculations = sim.calculations
         elif 'qmc' in sim:
@@ -533,11 +609,11 @@ class QmcpackInputInfo(DevBase):
             self.series_start = 0
 
         def qmc_from_loop(qmc_loop):
-            '''Expands <loop/> constructs'''
+            """Expand a QMCPACK loop element."""
             if 'max' not in qmc_loop:
                 return None
             loop_count = qmc_loop.max
-            if (not isinstance(loop_count,(int,np.integer)) or
+            if (not isinstance(loop_count,Integral) or
                 isinstance(loop_count,bool) or loop_count<0):
                 return None
             if 'calculations' in qmc_loop:
@@ -556,7 +632,7 @@ class QmcpackInputInfo(DevBase):
         #end def qmc_from_loop
 
         def qinfo_from_qmc(qmc,prefix,series):
-            '''Extract basic info from a qmc input section'''
+            """Extract basic information from a QMC input section."""
             if not isinstance(qmc,QIxml) or 'method' not in qmc:
                 return None
             method = qmc.method
@@ -575,6 +651,7 @@ class QmcpackInputInfo(DevBase):
                     qinfo.qmc,prefix,series,self.group_index
                     )
             return qinfo
+        #end def qinfo_from_qmc
 
         # extract info from calculations
         series = self.series_start
@@ -601,7 +678,7 @@ class QmcpackInputInfo(DevBase):
             self.qmc_type = None
             return
         # determine the major run type
-        qmc_types = set([q.qmc for q in qmc_info.values()])
+        qmc_types = {q.qmc for q in qmc_info.values()}
         if 'dmc' in qmc_types:
             self.qmc_type = 'dmc'
         elif 'opt' in qmc_types:
