@@ -62,6 +62,7 @@ void VMC::run()
   resetRun();
   //start the main estimator
   Estimators->start(nBlocks);
+  Estimators->startVMCdat(NumThreads);
   for (int ip = 0; ip < NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -76,6 +77,8 @@ void VMC::run()
   for (int block = 0; block < nBlocks; ++block)
   {
     vmc_loop.start();
+    std::vector<IndexType> previous_accepts(NumThreads, 0);
+    std::vector<IndexType> previous_rejects(NumThreads, 0);
 #pragma omp parallel
     {
       int ip = omp_get_thread_num();
@@ -97,6 +100,20 @@ void VMC::run()
         if (has_collectables)
           wClones[ip]->Collectables *= cnorm;
         Movers[ip]->accumulate(wit, wit_end);
+#pragma omp barrier
+#pragma omp single
+        {
+          IndexType step_accept = 0;
+          IndexType step_reject = 0;
+          for (int i = 0; i < NumThreads; ++i)
+          {
+            step_accept += Movers[i]->nAccept - previous_accepts[i];
+            step_reject += Movers[i]->nReject - previous_rejects[i];
+            previous_accepts[i] = Movers[i]->nAccept;
+            previous_rejects[i] = Movers[i]->nReject;
+          }
+          Estimators->writeVMCdat(now_loc, estimatorClones, step_accept, step_reject);
+        }
         ++now_loc;
         if (Period4WalkerDump && now_loc % Period4WalkerDump == 0)
           wClones[ip]->saveEnsemble(wit, wit_end);
@@ -106,6 +123,7 @@ void VMC::run()
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep += nSteps;
     Estimators->stopBlock(estimatorClones);
+    Estimators->resetVMCdat();
 #if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
 #endif
