@@ -547,13 +547,13 @@ class QmcpackInputInfo(DevBase):
         # full simulation contains the information collected here.
         if not hasattr(qi,'__contains__') or 'simulation' not in qi:
             return
-        sim = qi['simulation']
+        sim = qi.simulation
         if not isinstance(sim,simulation):
             return
 
         # prefix, series
         series_query_failed = False
-        qproject = sim['project'] if 'project' in sim else None
+        qproject = sim.project if 'project' in sim else None
         if qproject is not None and not isinstance(qproject,project):
             series_query_failed = True
         elif qproject is not None:
