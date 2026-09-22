@@ -17,7 +17,7 @@ from .generic import nxs_deprecate
 from .periodic_table import Elements
 from .physical_system import PhysicalSystem
 from .utilities import is_valid_filename
-from .nexus_base import nexus_core
+from .nexus_base import nexus_config
 
 
 def pp_elem_label(
@@ -769,7 +769,7 @@ class PseudoSet(DevBase):
                 msg = f"`extension` must be either None, str, or a collection of str, but is {type(next(iter(extension))).__name__}"
                 raise TypeError(msg)
 
-            extension = set([ext.lower() for ext in extension])
+            extension = {ext.lower() for ext in extension}
         else:
             msg = f"`extension` must be either None, str, or an iterable of str, but is {type(extension).__name__}"
             raise TypeError(msg)
@@ -974,9 +974,9 @@ class PseudoSet(DevBase):
         elif isinstance(extensions, str):
             # Single extension for all codes
             if codes is None:
-                extensions = {code: extensions for code in PseudoSet.known_codes}
+                extensions = dict.fromkeys(PseudoSet.known_codes, extensions)
             else:
-                extensions = {code: extensions for code in codes}
+                extensions = dict.fromkeys(codes, extensions)
         else:
             extensions = PseudoSet._normalize_code_map_keys(extensions)
             if codes is None:
@@ -1025,7 +1025,7 @@ class PseudoSet(DevBase):
         elif all(map(Elements.is_element, code_Zeff_map)):
             # User gave one set of Z valences to apply to all codes
             Zeff_map = deepcopy(code_Zeff_map)
-            code_Zeff_map = {code: Zeff_map for code in extensions}
+            code_Zeff_map = dict.fromkeys(extensions, Zeff_map)
         else:
             code_Zeff_map = PseudoSet._normalize_code_map_keys(code_Zeff_map)
 
@@ -1040,7 +1040,7 @@ class PseudoSet(DevBase):
         if include is None:
             include = {}
         elif isinstance(include, str):
-            include = {code: include for code in extensions}
+            include = dict.fromkeys(extensions, include)
         else:
             include = PseudoSet._normalize_code_map_keys(include)
 
@@ -1055,7 +1055,7 @@ class PseudoSet(DevBase):
         if exclude is None:
             exclude = {}
         elif isinstance(exclude, str):
-            exclude = {code: exclude for code in extensions}
+            exclude = dict.fromkeys(extensions, exclude)
         else:
             exclude = PseudoSet._normalize_code_map_keys(exclude)
 
@@ -1521,8 +1521,8 @@ def generate_pseudoset(
         H: /path/to/pseudo_dir/H.ccECP.gamess
     """
     if pseudo_dir is None and len(codes_psps) == 0:
-        if nexus_core.pseudo_dir is not None:
-            pseudo_dir = Path(nexus_core.pseudo_dir).resolve()
+        if nexus_config.pseudo_dir is not None:
+            pseudo_dir = Path(nexus_config.pseudo_dir).resolve()
         else:
             msg = "Must supply `pseudo_dir` and/or `codes_psps`!"
             raise ValueError(msg)
@@ -1551,7 +1551,7 @@ def generate_pseudoset(
         msg = "When supplying a direct map of codes to pseudos you cannot pass `code`!"
         raise ValueError(msg)
 
-    if not all([isinstance(psps, Collection | Path) for psps in codes_psps.values()]):
+    if not all(isinstance(psps, Collection | Path) for psps in codes_psps.values()):
         msg = "Must supply a directory or collection of file paths for direct map!"
         raise TypeError(msg)
 

@@ -19,8 +19,8 @@
 namespace spline2offload
 {
 /** define evaluate: common to any implementation */
-template<typename T>
-inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
+template<typename ST, typename T>
+inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<ST, 3>::SplineType* restrict spline_m,
                             T x,
                             T y,
                             T z,
@@ -31,7 +31,7 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::Sp
   int ix, iy, iz;
   T a[4], b[4], c[4];
 
-  computeLocationAndFractional(spline_m, x, y, z, ix, iy, iz, a, b, c);
+  spline2::computeLocationAndFractional<ST, T>(spline_m, x, y, z, ix, iy, iz, a, b, c);
 
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
@@ -43,11 +43,11 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::Sp
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
     {
-      const T pre00              = a[i] * b[j];
-      const T* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
-      const T* restrict coefszs  = coefs + zs;
-      const T* restrict coefs2zs = coefs + 2 * zs;
-      const T* restrict coefs3zs = coefs + 3 * zs;
+      const T pre00               = a[i] * b[j];
+      const ST* restrict coefs    = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
+      const ST* restrict coefszs  = coefs + zs;
+      const ST* restrict coefs2zs = coefs + 2 * zs;
+      const ST* restrict coefs3zs = coefs + 3 * zs;
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
@@ -68,9 +68,9 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::Sp
  * @param c interpolation parameter in z
  * @param vals value output location
  */
-template<typename T>
-inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
-                               const T* restrict spline_coefs,
+template<typename ST, typename T>
+inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<ST, 3>::SplineType* restrict spline_m,
+                               const ST* restrict spline_coefs,
                                int ix,
                                int iy,
                                int iz,
@@ -88,7 +88,7 @@ inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>:
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
     {
-      const T* restrict coefs = spline_coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs);
+      const ST* restrict coefs = spline_coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs);
       val += a[i] * b[j] *
           (c[0] * coefs[index] + c[1] * coefs[index + zs] + c[2] * coefs[index + zs * 2] +
            c[3] * coefs[index + zs * 3]);

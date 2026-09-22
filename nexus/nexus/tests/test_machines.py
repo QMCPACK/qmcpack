@@ -435,14 +435,14 @@ def test_workstation_init():
         app_directory   = None,
         app_launcher    = 'mpirun',
         cores           = 16,
-        finished        = set([]),
+        finished        = set(),
         local_directory = None,
         name            = 'wsi',
         process_granularity = 1,
         queue_size      = 16,
-        running         = set([]),
+        running         = set(),
         user            = None,
-        waiting         = set([]),
+        waiting         = set(),
         jobs            = obj(),
         processes       = obj(),
         )
@@ -518,8 +518,8 @@ def test_workstation_scheduling(tmp_path):
 
     assert(j.status==Job.states.waiting)
     assert(j.submitted)
-    assert(ws.waiting==set([j.internal_id]))
-    assert(set(ws.jobs.keys())==set([j.internal_id]))
+    assert(ws.waiting=={j.internal_id})
+    assert(set(ws.jobs.keys())=={j.internal_id})
     assert(id(ws.jobs[j.internal_id])==id(j))
 
 
@@ -533,12 +533,12 @@ def test_workstation_scheduling(tmp_path):
     assert(j.status==Job.states.running)
     assert(isinstance(j.system_id,int))
     assert(len(ws.waiting)==0)
-    assert(ws.running==set([j.internal_id]))
-    assert(set(ws.processes.keys())==set([j.system_id]))
+    assert(ws.running=={j.internal_id})
+    assert(set(ws.processes.keys())=={j.system_id})
     p = ws.processes[j.system_id]
     assert(p.popen.pid==j.system_id)
     assert(id(p.job)==id(j))
-    assert(set(ws.jobs.keys())==set([j.internal_id]))
+    assert(set(ws.jobs.keys())=={j.internal_id})
 
     # allow a moment for all system calls to resolve
     time.sleep(0.1)
@@ -552,8 +552,8 @@ def test_workstation_scheduling(tmp_path):
     assert(j.status==Job.states.finished)
     assert(len(ws.running)==0)
     assert(len(ws.processes)==0)
-    assert(ws.finished==set([j.internal_id]))
-    assert(set(ws.jobs.keys())==set([j.internal_id]))
+    assert(ws.finished=={j.internal_id})
+    assert(set(ws.jobs.keys())=={j.internal_id})
 
 #end def test_workstation_scheduling
 
@@ -580,7 +580,7 @@ def test_workstation_requeue(tmp_path):
     assert(j.system_id==old_pid)
     assert(j.internal_id in ws.jobs)
     assert(id(ws.jobs[j.internal_id])==id(j))
-    assert(ws.waiting==set([j.internal_id]))
+    assert(ws.waiting=={j.internal_id})
     assert(len(ws.running)==0)
     assert(len(ws.processes)==0)
 
@@ -589,8 +589,8 @@ def test_workstation_requeue(tmp_path):
     assert(j.status==Job.states.running)
     assert(j.system_id!=old_pid)
     assert(ws.waiting==set())
-    assert(ws.running==set([j.internal_id]))
-    assert(set(ws.processes.keys())==set([j.system_id]))
+    assert(ws.running=={j.internal_id})
+    assert(set(ws.processes.keys())=={j.system_id})
 
     time.sleep(0.1)
     ws.query_queue()
@@ -598,7 +598,7 @@ def test_workstation_requeue(tmp_path):
     assert(j.finished)
     assert(j.status==Job.states.finished)
     assert(ws.running==set())
-    assert(ws.finished==set([j.internal_id]))
+    assert(ws.finished=={j.internal_id})
     assert(len(ws.processes)==0)
 
 #end def test_workstation_requeue
@@ -623,7 +623,7 @@ def test_supercomputer_init():
         cores           = 281088,
         cores_per_node  = 64,
         cores_per_proc  = 64,
-        finished        = set([]),
+        finished        = set(),
         job_remover     = 'qdel',
         local_directory = None,
         name            = 'theta_init',
@@ -634,10 +634,10 @@ def test_supercomputer_init():
         queue_size      = 1000,
         ram             = 843264,
         ram_per_node    = 192,
-        running         = set([]),
+        running         = set(),
         sub_launcher    = 'qsub',
         user            = None,
-        waiting         = set([]),
+        waiting         = set(),
         jobs            = obj(),
         processes       = obj(),
         system_queue    = obj(),
@@ -723,8 +723,8 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
 
     assert(j.status==Job.states.waiting)
     assert(j.submitted)
-    assert(sc.waiting==set([j.internal_id]))
-    assert(set(sc.jobs.keys())==set([j.internal_id]))
+    assert(sc.waiting=={j.internal_id})
+    assert(set(sc.jobs.keys())=={j.internal_id})
     assert(id(sc.jobs[j.internal_id])==id(j))
 
 
@@ -756,9 +756,9 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     assert(j.status==Job.states.running)
     assert(j.system_id==123)
     assert(len(sc.waiting)==0)
-    assert(sc.running==set([j.internal_id]))
-    assert(set(sc.processes.keys())==set([123]))
-    assert(set(sc.jobs.keys())==set([j.internal_id]))
+    assert(sc.running=={j.internal_id})
+    assert(set(sc.processes.keys())=={123})
+    assert(set(sc.jobs.keys())=={j.internal_id})
 
 
     # allow a moment for all system calls to resolve
@@ -774,8 +774,8 @@ aprun -e OMP_NUM_THREADS=8 -d 8 -cc depth -j 1 -n 16 -N 8 echo run'''
     assert(j.status==Job.states.finished)
     assert(len(sc.running)==0)
     assert(len(sc.processes)==0)
-    assert(sc.finished==set([j.internal_id]))
-    assert(set(sc.jobs.keys())==set([j.internal_id]))
+    assert(sc.finished=={j.internal_id})
+    assert(set(sc.jobs.keys())=={j.internal_id})
 
     # remove test machine
     del Machine.machines["theta_sched"]

@@ -23,7 +23,7 @@ import time
 from typing import ClassVar,Literal,TextIO
 from . import memory
 from .developer import obj, NexusError
-from .nexus_base import NexusCore, nexus_core, dynamic_storage
+from .nexus_base import NexusCore, ShowStatusMode, nexus_config, dynamic_storage
 from .simulation import Simulation, sim_err_handler
 from .machines import Machine,Job
 
@@ -63,8 +63,6 @@ class ProjectManager(NexusCore):
     #end def restore_default_settings
 
     def __init__(self):
-        modes = nexus_core.modes
-        self.persistent_modes = set([modes.submit,modes.all])
         self.simulations = obj()
         self.cascades = obj()
         self.progressing_cascades = obj()
@@ -99,8 +97,8 @@ class ProjectManager(NexusCore):
     def run_project(self,*,status=False,status_only=False):
         self.nxs_print('\nProject starting',n=0)
         self.init_cascades()
-        status_only = status_only or nexus_core.status_only
-        status = status or status_only or nexus_core.status!=nexus_core.status_modes.none
+        status_only = status_only or nexus_config.status_only
+        status = status or status_only or nexus_config.status is not ShowStatusMode.none
         if status:
             self.write_simulation_status()
             if status_only:
@@ -108,8 +106,8 @@ class ProjectManager(NexusCore):
             #end if
         #end if
         self.nxs_print('\nstarting runs:\n'+30*'~',n=1)
-        if nexus_core.dependent_modes <= nexus_core.stages_set:
-            if nexus_core.monitor:
+        if nexus_config.dependent_modes in nexus_config.stages:
+            if nexus_config.monitor:
                 start_time = time.time()
                 ipoll = 0
                 while len(self.progressing_cascades)>0:
@@ -126,9 +124,9 @@ class ProjectManager(NexusCore):
                     self.progress_cascades()
                     self.machine.submit_jobs()
                     self.update_process_ids()
-                    time.sleep(nexus_core.sleep)
+                    time.sleep(nexus_config.sleep)
                     if NexusCore.wrote_something:
-                        if nexus_core.progress_tty:
+                        if nexus_config.progress_tty:
                             self.nxs_print("\n")
                         else:
                             self.nxs_print()
@@ -152,7 +150,7 @@ class ProjectManager(NexusCore):
         self.resolve_file_collisions()
         self.propagate_blockages()
         self.nxs_print('loading cascade images',n=1)
-        if nexus_core.load_images:
+        if nexus_config.load_images:
             self.load_cascades()
         else:
             self.nxs_print('cascades',n=1)
@@ -293,18 +291,17 @@ class ProjectManager(NexusCore):
 
 
     def write_simulation_status(self):
-        status       = nexus_core.status
-        status_modes = nexus_core.status_modes
+        status = nexus_config.status
         self.nxs_print('\ncascade status',n=1)
         self.nxs_print('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
         all_sids = set()
         for sim in self.simulations.values():
             add = False
-            if status==status_modes.active:
+            if status is ShowStatusMode.active:
                 add = sim.active()
-            elif status==status_modes.ready:
+            elif status is ShowStatusMode.ready:
                 add = sim.ready()
-            elif status==status_modes.failed:
+            elif status is ShowStatusMode.failed:
                 add = sim.failed
             else:
                 add = True
@@ -317,7 +314,7 @@ class ProjectManager(NexusCore):
         for isim in sorted(all_sids):
             sim = self.simulations[isim]
             if not sim.bundled:
-                if status==status_modes.active and not sim.active():
+                if status is ShowStatusMode.active and not sim.active():
                     continue
                 #end if
                 self.status_line(sim)
@@ -490,7 +487,7 @@ class DynamicWorkflowManager(NexusCore):
 
     def poll(self,sleep=None):
         if sleep is None:
-            sleep = nexus_core.sleep
+            sleep = nexus_config.sleep
 
         # find and add newly created dynamic process objects
         self.add_new_dyn_procs()
@@ -564,7 +561,7 @@ def workflow_manager(**kw):
         workflow_manager.first = True
     else:
         workflow_manager.first = False
-    if not nexus_core.dynamic:
+    if not nexus_config.dynamic:
         msg = (
             'workflow_manager is only compatible with dynamic workflows.\n'
             'If you intend to use dynamic workflows, please set dynamic=True in settings.'
