@@ -141,7 +141,7 @@ protected:
   /// inject additional barrier and measure load imbalance.
   void measureImbalance(const std::string& tag) const;
   /// end of a block operations. Aggregates statistics across all MPI ranks and write to disk.
-  void endBlock();
+  void endBlock(bool write_vmc_dat = false, int first_vmc_step = 0, int vmc_steps = 0);
 
 public:
   /** Constructor

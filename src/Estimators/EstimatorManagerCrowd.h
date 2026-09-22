@@ -58,6 +58,8 @@ public:
   void startBlock(int steps);
 
   void stopBlock();
+  void recordVMCStep(unsigned long accepted, unsigned long rejected);
+  const std::vector<std::vector<RealType>>& getVMCData() const { return vmc_data_; }
 
   /** Accumulate over all scalar estimators and operator estimators over all walkers in crowd.
    *  Not all estimators make use of all these arguments
@@ -105,6 +107,8 @@ private:
   UPtrVector<ScalarEstimatorBase> scalar_estimators_;
 
   UPtrVector<OperatorEstBase> operator_ests_;
+  RealType vmc_previous_weight_ = 0.0;
+  std::vector<std::vector<RealType>> vmc_data_;
 };
 
 } // namespace qmcplusplus

@@ -63,6 +63,7 @@ public:
   void startRun() {}
   void startBlock(int steps);
   void stopBlock();
+  void recordVMCStep();
 
   EstimatorManagerCrowd& get_estimator_manager_crowd() { return estimator_manager_crowd_; }
   void addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& twf, QMCHamiltonian& hamiltonian);
@@ -146,6 +147,8 @@ private:
   unsigned long n_reject_          = 0;
   unsigned long n_accept_          = 0;
   unsigned long n_nonlocal_accept_ = 0;
+  unsigned long vmc_previous_accept_ = 0;
+  unsigned long vmc_previous_reject_ = 0;
   /** @} */
 };
 

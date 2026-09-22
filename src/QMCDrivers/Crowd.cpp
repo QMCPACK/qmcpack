@@ -80,12 +80,21 @@ void Crowd::startBlock(int num_steps)
   n_reject_ = 0;
   // VMCBatched does no nonlocal moves
   n_nonlocal_accept_ = 0;
+  vmc_previous_accept_ = 0;
+  vmc_previous_reject_ = 0;
   estimator_manager_crowd_.startBlock(num_steps);
   if (wlog_collector_)
     wlog_collector_->startBlock();
 }
 
 void Crowd::stopBlock() { estimator_manager_crowd_.stopBlock(); }
+
+void Crowd::recordVMCStep()
+{
+  estimator_manager_crowd_.recordVMCStep(n_accept_ - vmc_previous_accept_, n_reject_ - vmc_previous_reject_);
+  vmc_previous_accept_ = n_accept_;
+  vmc_previous_reject_ = n_reject_;
+}
 
 void Crowd::setWalkerLogCollector(std::unique_ptr<WalkerLogCollector>&& collector)
 {

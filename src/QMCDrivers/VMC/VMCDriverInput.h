@@ -37,11 +37,13 @@ protected:
    *  there is are code_generation tools in QMCPACK_ROOT/utils/code_tools
    */
   bool use_drift_    = true;
+  bool write_vmc_dat_ = false;
   IndexType samples_ = -1;
   /** @} */
 
 public:
   bool get_use_drift() const { return use_drift_; }
+  bool get_write_vmc_dat() const { return write_vmc_dat_; }
   IndexType get_samples() const { return samples_; }
 
   friend std::ostream& operator<<(std::ostream& o_stream, const VMCDriverInput& vmci);

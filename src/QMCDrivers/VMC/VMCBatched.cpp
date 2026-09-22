@@ -256,7 +256,8 @@ void VMCBatched::runVMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == sft.steps_per_block);
   // For VMC we don't call this method for warmup steps.
-  const bool accumulate_this_step = (step % sft.qmcdrv_input.get_estimator_measurement_period() == 0);
+  const bool accumulate_this_step = sft.vmcdrv_input.get_write_vmc_dat() ||
+      (step % sft.qmcdrv_input.get_estimator_measurement_period() == 0);
   const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
   if (spin_move)
     advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
@@ -264,6 +265,8 @@ void VMCBatched::runVMCStep(int crowd_id,
   else
     advanceWalkers<CoordsType::POS>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
                                     accumulate_this_step);
+  if (sft.vmcdrv_input.get_write_vmc_dat())
+    crowd.recordVMCStep();
 }
 
 void VMCBatched::process(xmlNodePtr node)
@@ -319,6 +322,8 @@ void VMCBatched::run()
   IndexType num_blocks = qmcdriver_input_.get_max_blocks();
   //start the main estimator
   estimator_manager_->startDriverRun();
+  if (vmcdriver_input_.get_write_vmc_dat())
+    estimator_manager_->startVMCdat();
 
   //initialize WalkerLogManager and collectors
   WalkerLogManager wlog_manager(walker_logs_input, allow_walker_logs, get_root_name(), myComm);
@@ -417,7 +422,7 @@ void VMCBatched::run()
       print_mem("VMCBatched after a block", app_debug_stream());
       if (qmcdriver_input_.get_measure_imbalance())
         measureImbalance("Block " + std::to_string(block));
-      endBlock();
+      endBlock(vmcdriver_input_.get_write_vmc_dat(), global_step - steps_per_block_, steps_per_block_);
       wlog_manager.writeBuffers();
       recordBlock(block);
     }

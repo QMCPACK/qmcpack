@@ -161,23 +161,6 @@ public:
    */
   void stopBlock(const std::vector<EstimatorManagerBase*>& m);
 
-  /** Start per-step VMC output. */
-  void startVMCdat(int num_threads);
-
-  ///Reset per-block snapshots after the thread-local estimators are cleared.
-  void resetVMCdat();
-
-  /** Write the scalar-estimator averages accumulated since the previous VMC step.
-   *
-   * The thread-local estimator managers retain their data for the normal
-   * block-level scalar.dat output.  This routine snapshots their accumulated
-   * sums and writes the difference from the preceding snapshot.
-   */
-  void writeVMCdat(int step,
-                   const std::vector<EstimatorManagerBase*>& managers,
-                   int step_accept,
-                   int step_reject);
-
   /** accumulate the measurements
    * @param W walkers
    */
@@ -223,8 +206,6 @@ protected:
   RealType BlockWeight;
   ///file handler to write data
   std::unique_ptr<std::ofstream> Archive;
-  ///file handler for per-step VMC scalar data
-  std::unique_ptr<std::ofstream> vmcStream;
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   ///file handler to write data for debugging
   std::unique_ptr<std::ofstream> DebugArchive;
@@ -268,10 +249,6 @@ protected:
   UPtrVector<EstimatorType> Estimators;
   ///convenient descriptors for hdf5
   std::vector<ObservableHelper> h5desc;
-  ///previous accumulated scalar sums for each OpenMP estimator manager
-  std::vector<std::vector<RealType>> vmc_previous_sums_;
-  std::vector<RealType> vmc_previous_weights_;
-  Timer vmc_timer_;
   /////estimators of composite data
   //CompositeEstimatorSet* CompEstimators;
   ///Timer

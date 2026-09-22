@@ -52,12 +52,35 @@ void EstimatorManagerCrowd::startBlock(int steps)
     uope->startBlock(steps);
   block_num_samples_ = 0.0;
   block_weight_      = 0.0;
+  vmc_previous_weight_ = 0.0;
+  vmc_data_.clear();
+  vmc_data_.reserve(steps);
 }
 
 void EstimatorManagerCrowd::stopBlock()
 {
   for (auto& uope : operator_ests_)
     uope->stopBlock();
+}
+
+void EstimatorManagerCrowd::recordVMCStep(unsigned long accepted, unsigned long rejected)
+{
+  std::vector<RealType> row;
+  auto append_and_clear = [&row](ScalarEstimatorBase& estimator) {
+    for (auto& scalar : estimator.scalars)
+    {
+      row.push_back(scalar.result());
+      scalar.clear();
+    }
+  };
+  append_and_clear(*main_estimator_);
+  for (auto& estimator : scalar_estimators_)
+    append_and_clear(*estimator);
+  row.push_back(block_weight_ - vmc_previous_weight_);
+  row.push_back(static_cast<RealType>(accepted));
+  row.push_back(static_cast<RealType>(rejected));
+  vmc_previous_weight_ = block_weight_;
+  vmc_data_.emplace_back(std::move(row));
 }
 
 

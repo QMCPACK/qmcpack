@@ -207,91 +207,6 @@ void EstimatorManagerBase::start(int blocks, bool record)
   }
 }
 
-void EstimatorManagerBase::startVMCdat(int num_threads)
-{
-  vmc_previous_sums_.assign(num_threads, std::vector<RealType>(BlockAverages.size(), 0.0));
-  vmc_previous_weights_.assign(num_threads, 0.0);
-  vmc_timer_.restart();
-  if (Options[MANAGE])
-  {
-    std::filesystem::path fname(myComm->getName());
-    fname.concat(".vmc.dat");
-    vmcStream = std::make_unique<std::ofstream>(fname);
-    addHeader(*vmcStream);
-  }
-}
-
-void EstimatorManagerBase::resetVMCdat()
-{
-  for (auto& sums : vmc_previous_sums_)
-    std::fill(sums.begin(), sums.end(), 0.0);
-  std::fill(vmc_previous_weights_.begin(), vmc_previous_weights_.end(), 0.0);
-}
-
-void EstimatorManagerBase::writeVMCdat(int step,
-                                       const std::vector<EstimatorManagerBase*>& managers,
-                                       int step_accept,
-                                       int step_reject)
-{
-  assert(static_cast<int>(managers.size()) == static_cast<int>(vmc_previous_sums_.size()));
-
-  // Scalar estimators store weighted sums.  Their accumulation convention in
-  // VMC already normalizes each walker by the global walker count, so summing
-  // thread and MPI-rank contributions produces the step average directly.
-  std::vector<RealType> step_data(BlockAverages.size() + 1, 0.0);
-  for (int ip = 0; ip < managers.size(); ++ip)
-  {
-    const EstimatorManagerBase& manager = *managers[ip];
-    for (int iest = 0; iest < manager.Estimators.size(); ++iest)
-    {
-      const ScalarEstimatorBase& estimator = *manager.Estimators[iest];
-      for (int iscalar = 0; iscalar < estimator.scalars.size(); ++iscalar)
-      {
-        const int index = estimator.FirstIndex + iscalar;
-        const RealType sum = estimator.scalars[iscalar].result();
-        step_data[index] += sum - vmc_previous_sums_[ip][index];
-        vmc_previous_sums_[ip][index] = sum;
-      }
-    }
-    if (manager.Collectables)
-    {
-      const ScalarEstimatorBase& estimator = *manager.Collectables;
-      for (int iscalar = 0; iscalar < estimator.scalars.size(); ++iscalar)
-      {
-        const int index = estimator.FirstIndex + iscalar;
-        const RealType sum = estimator.scalars[iscalar].result();
-        step_data[index] += sum - vmc_previous_sums_[ip][index];
-        vmc_previous_sums_[ip][index] = sum;
-      }
-    }
-    step_data.back() += manager.BlockWeight - vmc_previous_weights_[ip];
-    vmc_previous_weights_[ip] = manager.BlockWeight;
-  }
-
-  // The scalar snapshots do not include BlockWeight.  VMC has a fixed walker
-  // population, so the per-step weight is simply the number of walkers held by
-  // this rank; reduce it along with the scalar columns.
-  myComm->reduce(step_data);
-  BufferType step_properties{vmc_timer_.elapsed(), static_cast<RealType>(step_accept),
-                             static_cast<RealType>(step_reject)};
-  vmc_timer_.restart();
-  myComm->reduce(step_properties);
-
-  if (vmcStream)
-  {
-    *vmcStream << std::setw(10) << step;
-    const int maxobjs = std::min(BlockAverages.size(), max_output_scalar_dat_);
-    for (int i = 0; i < maxobjs; ++i)
-      *vmcStream << std::setw(max_block_avg_name_) << step_data[i];
-    *vmcStream << std::setw(max_block_avg_name_) << step_data.back();
-    *vmcStream << std::setw(max_block_avg_name_)
-               << step_properties[0] / static_cast<RealType>(myComm->size());
-    *vmcStream << std::setw(max_block_avg_name_)
-               << step_properties[1] / (step_properties[1] + step_properties[2]);
-    *vmcStream << std::endl;
-  }
-}
-
 void EstimatorManagerBase::stop(const std::vector<EstimatorManagerBase*> est)
 {
   int num_threads = est.size();
@@ -326,7 +241,6 @@ void EstimatorManagerBase::stop()
 {
   //close any open files
   Archive.reset();
-  vmcStream.reset();
   h_file.close();
 }
 
