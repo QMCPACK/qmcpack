@@ -525,7 +525,7 @@ class Settings(NexusCore):
     qm_package_vars = frozenset({'qprc'})
 
     deprecated_vars = frozenset({
-        'mode', 'verbose', 'debug', 'trace', 'emulate'
+        'mode', 'trace', 'emulate'
         })
 
     nexus_vars = frozenset(NexusConfig.__slots__)
