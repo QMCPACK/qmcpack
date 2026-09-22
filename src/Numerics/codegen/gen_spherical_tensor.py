@@ -2,6 +2,8 @@
 # Generate SoaSphericalTensor using the solid-harmonic derivative recurrence.
 
 import subprocess
+import shutil
+import sys
 from functools import lru_cache
 from pathlib import Path
 
@@ -162,7 +164,7 @@ def gen_recurrence_coefficients():
 def gen_soa_gradient_recurrence():
     """Generate the shared first-derivative recurrence used by VGL and VGH."""
     return """template<typename T>
-inline void SoaSphericalTensor<T>::gradient_recurrence(const int l,
+void SoaSphericalTensor<T>::gradient_recurrence(const int l,
                                                        const int m,
                                                        const T fac,
                                                        const T* restrict lower,
@@ -227,7 +229,7 @@ inline void SoaSphericalTensor<T>::gradient_recurrence(const int l,
 def gen_soa_evaluate_vgh():
     """Generate evaluateVGH by reapplying the shared gradient recurrence."""
     return """template<typename T>
-inline void SoaSphericalTensor<T>::evaluateVGH(T x, T y, T z)
+void SoaSphericalTensor<T>::evaluateVGH(T x, T y, T z)
 {
   // The Hessian is the same recurrence applied a second time to the gradients, and
   // the recurrence consumes unnormalized quantities. Stopping short of normalizing
@@ -299,7 +301,7 @@ inline void SoaSphericalTensor<T>::evaluateVGH(T x, T y, T z)
 
 def gen_soa_evaluate_vghgh():
     return """template<typename T>
-inline void SoaSphericalTensor<T>::evaluateVGHGH(T x, T y, T z)
+void SoaSphericalTensor<T>::evaluateVGHGH(T x, T y, T z)
 {
   throw std::runtime_error("SoaSphericalTensor<T>::evaluateVGHGH(x,y,z):  Not implemented\\n");
 }
@@ -321,17 +323,17 @@ def run_template(template_path, output_path, bodies):
     output_path.write_text(output, encoding="utf-8")
 
 
-def create_soa_spherical_tensor_h():
+def create_soa_spherical_tensor_cpp():
     script_dir = Path(__file__).resolve().parent
-    template_path = script_dir / "SoaSphericalTensor.h.in"
-    output_path = script_dir.parent / "SoaSphericalTensor.h"
+    template_path = script_dir / "SoaSphericalTensor.cpp.in"
+    output_path = script_dir.parent / "SoaSphericalTensor.cpp"
 
     verify_hessian_recurrence()
 
     warning = """/*
  DO NOT MAKE PERMANENT EDITS IN THIS FILE
  This file is generated from src/Numerics/codegen/gen_spherical_tensor.py and
- SoaSphericalTensor.h.in.
+ SoaSphericalTensor.cpp.in.
 
  Edit the template or generator and rerun gen_spherical_tensor.py.
 */
@@ -343,8 +345,11 @@ def create_soa_spherical_tensor_h():
         "evaluate_vghgh": gen_soa_evaluate_vghgh(),
     }
     run_template(template_path, output_path, bodies)
-    subprocess.run(["clang-format", "-i", output_path], check=True)
+    if shutil.which("clang-format"):
+        subprocess.run(["clang-format", "-i", output_path], check=True)
+    else:
+        print("Warning: clang-format executable not found. Skipping formatting.", file=sys.stderr)
 
 
 if __name__ == "__main__":
-    create_soa_spherical_tensor_h()
+    create_soa_spherical_tensor_cpp()
