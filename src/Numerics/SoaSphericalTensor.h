@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2026 QMCPACK developers.
 //
 // File developed by:
 //
@@ -63,14 +63,17 @@ private:
   OffloadVector& factorL_;
   /// factor2L reference
   OffloadVector& factor2L_;
-  ///composite
-  VectorSoaContainer<T, 5> cYlm;
+  ///composite V,Gx,Gy,Gz,[L | Hxx,Hxy,Hxz,Hyy,Hyz,Hzz],
+  ///[Hxxx,Hxxy,Hxxz,Hxyy,Hxyz,Hxzz,Hyyy,Hyyz,Hyzz,Hzzz]
+  VectorSoaContainer<T, 20> cYlm;
 
 public:
   explicit SoaSphericalTensor(const int l_max, bool addsign = false);
 
   SoaSphericalTensor(const SoaSphericalTensor& rhs) = default;
 
+private:
+  PRAGMA_OFFLOAD("omp begin declare target")
   ///compute Ylm for single position
   static void evaluate_bare(T x, T y, T z, T* Ylm, int lmax, const T* factorL, const T* factorLM);
   ///compute Ylm_vgl for single position
@@ -85,6 +88,38 @@ public:
                                const T* normfactor,
                                size_t offset);
 
+  /** compute Ylm and its gradient for a single position, norm_factor NOT applied
+   *
+   * evaluateVGH uses the gradient recurrence which requires unnormalized values.
+   * Anywhere that needs the normed vals can call normalize_vg after evaluateVGL_bare
+   */
+  static void evaluateVGL_bare(const T x,
+                               const T y,
+                               const T z,
+                               T* restrict Ylm_vgl,
+                               int lmax,
+                               const T* factorL,
+                               const T* factorLM,
+                               const T* factor2L,
+                               size_t offset);
+
+  ///apply norm_factor to the value and gradient rows left bare by evaluateVGL_bare
+  static void normalize_vg(T* restrict Ylm_vgl, int nlm, const T* normfactor, size_t offset);
+
+  /** apply the solid-harmonic first-derivative recurrence at (l,m)
+   *
+   * The recurrence writes the derivative of the unnormalized \f$ r^l S_l^m \f$ as a
+   * fixed linear combination of unnormalized l-1 quantities. Because the coefficients
+   * do not depend on position, it applies unchanged to the l-1 harmonics, giving the
+   * gradient, and to the l-1 gradients, giving the Hessian.
+   *
+   * @param lower the unnormalized l-1 quantities, indexed by index(l-1, m)
+   * @param gx, gy, gz derivatives with respect to x, y and z, normfactor NOT applied
+   */
+  static void gradient_recurrence(const int l, const int m, const T fac, const T* restrict lower, T& gx, T& gy, T& gz);
+  PRAGMA_OFFLOAD("omp end declare target")
+
+public:
   ///compute Ylm
   inline void evaluateV(T x, T y, T z, T* Ylm) const
   {
@@ -190,7 +225,11 @@ public:
 
   /** return the starting address of the component
    *
-   * component=0(V), 1(dx), 2(dy), 3(dz), 4(Lap)
+   * evaluateVGL uses 0(V), 1(dx), 2(dy), 3(dz), 4(Lap).
+   * evaluateVGH uses 0(V), 1(dx), 2(dy), 3(dz),
+   * 4(xx), 5(xy), 6(xz), 7(yy), 8(yz), 9(zz).
+   * evaluateVGHGH additionally uses 10(xxx), 11(xxy), 12(xxz), 13(xyy),
+   * 14(xyz), 15(xzz), 16(yyy), 17(yyz), 18(yzz), 19(zzz).
    */
   inline const T* operator[](size_t component) const { return cYlm.data(component); }
 
@@ -282,8 +321,7 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign)
   factorL_.updateTo();
   factor2L_.updateTo();
 }
-
-PRAGMA_OFFLOAD("omp declare target")
+PRAGMA_OFFLOAD("omp begin declare target")
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluate_bare(T x,
                                                  T y,
@@ -384,10 +422,62 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x,
   //for (int i=0; i<Ylm.size(); i++)
   //  Ylm[i]*= norm_factor_[i];
 }
-PRAGMA_OFFLOAD("omp end declare target")
+template<typename T>
+inline void SoaSphericalTensor<T>::evaluateVGL_bare(const T x,
+                                                    const T y,
+                                                    const T z,
+                                                    T* restrict Ylm_vgl,
+                                                    int lmax,
+                                                    const T* factorL,
+                                                    const T* factorLM,
+                                                    const T* factor2L,
+                                                    size_t offset)
+{
+  T* restrict Ylm = Ylm_vgl;
+  evaluate_bare(x, y, z, Ylm, lmax, factorL, factorLM);
 
+  constexpr T czero(0);
+  T* restrict gYlmX = Ylm_vgl + offset * 1;
+  T* restrict gYlmY = Ylm_vgl + offset * 2;
+  T* restrict gYlmZ = Ylm_vgl + offset * 3;
 
-PRAGMA_OFFLOAD("omp declare target")
+  gYlmX[0] = czero;
+  gYlmY[0] = czero;
+  gYlmZ[0] = czero;
+
+  // Calculating Gradient now//
+  for (int l = 1; l <= lmax; l++)
+  {
+    //T fac = ((T) (2*l+1))/(2*l-1);
+    const T fac = factor2L[l];
+    for (int m = -l; m <= l; m++)
+    {
+      T gx, gy, gz;
+      gradient_recurrence(l, m, fac, Ylm, gx, gy, gz);
+      const int lm = index(l, m);
+      gYlmX[lm]    = gx;
+      gYlmY[lm]    = gy;
+      gYlmZ[lm]    = gz;
+    }
+  }
+}
+
+template<typename T>
+inline void SoaSphericalTensor<T>::normalize_vg(T* restrict Ylm_vgl, int nlm, const T* normfactor, size_t offset)
+{
+  T* restrict Ylm   = Ylm_vgl;
+  T* restrict gYlmX = Ylm_vgl + offset * 1;
+  T* restrict gYlmY = Ylm_vgl + offset * 2;
+  T* restrict gYlmZ = Ylm_vgl + offset * 3;
+  for (int i = 0; i < nlm; i++)
+  {
+    const T nf = normfactor[i];
+    Ylm[i] *= nf;
+    gYlmX[i] *= nf;
+    gYlmY[i] *= nf;
+    gYlmZ[i] *= nf;
+  }
+}
 
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGL_impl(const T x,
@@ -401,105 +491,15 @@ inline void SoaSphericalTensor<T>::evaluateVGL_impl(const T x,
                                                     const T* normfactor,
                                                     size_t offset)
 {
-  T* restrict Ylm = Ylm_vgl;
-  // T* restrict Ylm = cYlm.data(0);
-  evaluate_bare(x, y, z, Ylm, lmax, factorL, factorLM);
-  const size_t Nlm = (lmax + 1) * (lmax + 1);
+  const int Nlm = (lmax + 1) * (lmax + 1);
+  evaluateVGL_bare(x, y, z, Ylm_vgl, lmax, factorL, factorLM, factor2L, offset);
+  normalize_vg(Ylm_vgl, Nlm, normfactor, offset);
 
-  constexpr T czero(0);
-  constexpr T ahalf(0.5);
-  T* restrict gYlmX = Ylm_vgl + offset * 1;
-  T* restrict gYlmY = Ylm_vgl + offset * 2;
-  T* restrict gYlmZ = Ylm_vgl + offset * 3;
-  T* restrict lYlm  = Ylm_vgl + offset * 4; // just need to set to zero
-
-  gYlmX[0] = czero;
-  gYlmY[0] = czero;
-  gYlmZ[0] = czero;
-  lYlm[0]  = czero;
-
-  // Calculating Gradient now//
-  for (int l = 1; l <= lmax; l++)
-  {
-    //T fac = ((T) (2*l+1))/(2*l-1);
-    T fac = factor2L[l];
-    for (int m = -l; m <= l; m++)
-    {
-      int lm = index(l - 1, 0);
-      T gx, gy, gz, dpr, dpi, dmr, dmi;
-      const int ma = std::abs(m);
-      const T cp   = std::sqrt(fac * (l - ma - 1) * (l - ma));
-      const T cm   = std::sqrt(fac * (l + ma - 1) * (l + ma));
-      const T c0   = std::sqrt(fac * (l - ma) * (l + ma));
-      gz           = (l > ma) ? c0 * Ylm[lm + m] : czero;
-      if (l > ma + 1)
-      {
-        dpr = cp * Ylm[lm + ma + 1];
-        dpi = cp * Ylm[lm - ma - 1];
-      }
-      else
-      {
-        dpr = czero;
-        dpi = czero;
-      }
-      if (l > 1)
-      {
-        switch (ma)
-        {
-        case 0:
-          dmr = -cm * Ylm[lm + 1];
-          dmi = cm * Ylm[lm - 1];
-          break;
-        case 1:
-          dmr = cm * Ylm[lm];
-          dmi = czero;
-          break;
-        default:
-          dmr = cm * Ylm[lm + ma - 1];
-          dmi = cm * Ylm[lm - ma + 1];
-        }
-      }
-      else
-      {
-        dmr = cm * Ylm[lm];
-        dmi = czero;
-        //dmr = (l==1) ? cm*Ylm[lm]:0.0;
-        //dmi = 0.0;
-      }
-      if (m < 0)
-      {
-        gx = ahalf * (dpi - dmi);
-        gy = -ahalf * (dpr + dmr);
-      }
-      else
-      {
-        gx = ahalf * (dpr - dmr);
-        gy = ahalf * (dpi + dmi);
-      }
-      lm = index(l, m);
-      if (ma)
-      {
-        gYlmX[lm] = normfactor[lm] * gx;
-        gYlmY[lm] = normfactor[lm] * gy;
-        gYlmZ[lm] = normfactor[lm] * gz;
-      }
-      else
-      {
-        gYlmX[lm] = gx;
-        gYlmY[lm] = gy;
-        gYlmZ[lm] = gz;
-      }
-    }
-  }
+  T* restrict lYlm = Ylm_vgl + offset * 4; // just need to set to zero
   for (int i = 0; i < Nlm; i++)
-  {
-    Ylm[i] *= normfactor[i];
     lYlm[i] = 0;
-  }
-  //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= norm_factor_[i];
 }
 PRAGMA_OFFLOAD("omp end declare target")
-
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
 {
@@ -507,17 +507,6 @@ inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
                    cYlm.capacity());
 }
 
-template<typename T>
-inline void SoaSphericalTensor<T>::evaluateVGH(T x, T y, T z)
-{
-  throw std::runtime_error("SoaSphericalTensor<T>::evaluateVGH(x,y,z):  Not implemented\n");
-}
-
-template<typename T>
-inline void SoaSphericalTensor<T>::evaluateVGHGH(T x, T y, T z)
-{
-  throw std::runtime_error("SoaSphericalTensor<T>::evaluateVGHGH(x,y,z):  Not implemented\n");
-}
 
 extern template class SoaSphericalTensor<float>;
 extern template class SoaSphericalTensor<double>;
