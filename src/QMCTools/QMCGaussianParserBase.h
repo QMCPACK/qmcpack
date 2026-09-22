@@ -55,6 +55,7 @@ struct QMCGaussianParserBase
   bool FixValence;
   bool singledetH5;
   bool optDetCoeffs;
+  bool degenerated;
   bool usingCSF;
   bool isSpinor;
   int IonChargeIndex;
