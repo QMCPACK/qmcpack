@@ -62,7 +62,7 @@ std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #ifdef QMC_COMPLEX
   for (int ik = 1; ik < npw; ik++)
   {
-    kpts[ik] = klists.getKptsCartWorking()[ik - 1];
+    kpts[ik] = klists.getKptsCart()[ik - 1];
   }
 #else
   const int nktot = klists.getKpts().size();
@@ -75,7 +75,7 @@ std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if (in_list(jk, mkidx))
       continue;
     // if not, then add this kpoint
-    kpts[ik]  = klists.getKptsCartWorking()[jk];
+    kpts[ik]  = klists.getKptsCart()[jk];
     mkidx[ik] = jmk; // keep track of its minus
     ik++;
     if (ik >= npw)

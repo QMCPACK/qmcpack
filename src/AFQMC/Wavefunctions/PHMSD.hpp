@@ -305,7 +305,7 @@ public:
     using std::get;
     int nw = wset.size();
     if (ovlp.num_elements() != nw)
-      ovlp.reextent(iextensions<1u>{nw});
+      ovlp.reextent(extents_t<1u>{nw});
     if (get<0>(eloc.sizes()) != nw || get<1>(eloc.sizes()) != 3)
       eloc.reextent({nw, 3});
     Energy(wset, eloc, ovlp);
@@ -350,7 +350,7 @@ public:
   {
     int nw = wset.size();
     if (ovlp.num_elements() != nw)
-      ovlp.reextent(iextensions<1u>{nw});
+      ovlp.reextent(extents_t<1u>{nw});
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact, transpose);
   }
 
@@ -422,7 +422,7 @@ public:
   {
     int nw = wset.size();
     if (ovlp.num_elements() != nw)
-      ovlp.reextent(iextensions<1u>{nw});
+      ovlp.reextent(extents_t<1u>{nw});
     MixedDensityMatrix(wset, std::forward<MatG>(G), ovlp, compact_G_for_vbias, transposed_G_for_vbias_);
   }
 
@@ -440,7 +440,7 @@ public:
   {
     int nw = wset.size();
     if (ovlp.num_elements() != nw)
-      ovlp.reextent(iextensions<1u>{nw});
+      ovlp.reextent(extents_t<1u>{nw});
     Overlap(wset, ovlp);
     TG.local_barrier();
     if (TG.getLocalTGRank() == 0)
@@ -546,8 +546,8 @@ public:
     using std::get;
     assert(get<0>(RefOrbMats.sizes()) == ndet);
     assert(get<1>(RefOrbMats.sizes()) == get<1>(A.sizes()));
-    auto&& RefOrbMats_(boost::multi::static_array_cast<ComplexType, ComplexType*>(RefOrbMats));
-    auto&& A_(boost::multi::static_array_cast<ComplexType, Ptr>(A));
+    auto&& RefOrbMats_(RefOrbMats.template static_array_cast<ComplexType, ComplexType*>());
+    auto&& A_(A.template static_array_cast<ComplexType, Ptr>());
     using std::copy_n;
     int n0, n1;
     std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(get<1>(A.sizes())), TG.getNCoresPerTG());

@@ -14,7 +14,7 @@ set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 add_executable(${UTEST_EXE} test_communciate.cpp)
-target_link_libraries(${UTEST_EXE} PUBLIC message catch_main)
+target_link_libraries(${UTEST_EXE} PUBLIC message catch_main containers)
 
 foreach(NUM_RANKS 1 2 3 6 12)
   set(UTEST_NAME_MPI ${UTEST_NAME}-r${NUM_RANKS})
@@ -32,3 +32,6 @@ if(HAVE_MPI)
   # Right now the unified driver mpi tests are hard coded for 3 MPI ranks
   add_unit_test(${UTEST_NAME} 3 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif(HAVE_MPI)
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

@@ -36,7 +36,7 @@ public:
 
   template<class ma>
   walker(ma&& a, const wlk_indices& i_, const wlk_descriptor& d_)
-      : w_(a.base(), iextensions<1u>{a.size()}), indx(i_), desc(d_)
+      : w_(a.base(), extents_t<1u>{a.size()}), indx(i_), desc(d_)
   {
     static_assert(std::decay<ma>::type::dimensionality == 1, "Wrong dimensionality");
   }
@@ -44,9 +44,9 @@ public:
   ~walker() {}
 
   /*
-      walker(walker&& other): w_(other.w_.base(), iextensions<1u>{other.w_.size()}), 
+      walker(walker&& other): w_(other.w_.base(), extents_t<1u>{other.w_.size()}), 
                               indx(other.indx),desc(other.desc)  {} 
-      walker(walker const& other): w_(other.w_.base(),iextensions<1u>{other.w_.size()}), 
+      walker(walker const& other): w_(other.w_.base(),extents_t<1u>{other.w_.size()}), 
                               indx(other.indx),desc(other.desc)  {} 
 */
   // no copy/move assignment

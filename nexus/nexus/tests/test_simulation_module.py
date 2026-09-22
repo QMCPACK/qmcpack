@@ -143,7 +143,7 @@ def get_test_sim(**kwargs):
 
 n_test_workflows = 9
 
-    
+
 def generate_network():
     from numpy.random import randint
 
@@ -165,7 +165,7 @@ def generate_network():
                 deps.append(i)
             #end if
         #end for
-        sims.append(list(sorted(set(deps))))
+        sims.append(sorted(set(deps)))
     #end for
 
     sims_dict = {}
@@ -327,38 +327,38 @@ def get_test_workflow(index,**kwargs):
     elif index==8:
         # larger random network
         network = {
-            0  : [], 
-            1  : [], 
-            2  : [], 
-            3  : [0], 
-            4  : [2], 
-            5  : [0, 2], 
-            6  : [2, 5], 
-            7  : [1], 
-            8  : [1, 5, 7], 
-            9  : [0, 8], 
-            10 : [5], 
-            11 : [0, 10], 
-            12 : [1], 
-            13 : [6, 9, 11], 
-            14 : [2, 4], 
-            15 : [8, 9, 10, 12], 
-            16 : [3], 
-            17 : [7], 
-            18 : [6, 13], 
-            19 : [7, 11, 14], 
-            20 : [8, 16, 17], 
-            21 : [0, 8], 
-            22 : [14], 
-            23 : [2], 
-            24 : [16], 
-            25 : [13, 16, 22, 24], 
-            26 : [6, 10], 
-            27 : [12, 17, 24], 
-            28 : [8], 
-            29 : [10, 12, 23, 26], 
-            30 : [1], 
-            31 : [28], 
+            0  : [],
+            1  : [],
+            2  : [],
+            3  : [0],
+            4  : [2],
+            5  : [0, 2],
+            6  : [2, 5],
+            7  : [1],
+            8  : [1, 5, 7],
+            9  : [0, 8],
+            10 : [5],
+            11 : [0, 10],
+            12 : [1],
+            13 : [6, 9, 11],
+            14 : [2, 4],
+            15 : [8, 9, 10, 12],
+            16 : [3],
+            17 : [7],
+            18 : [6, 13],
+            19 : [7, 11, 14],
+            20 : [8, 16, 17],
+            21 : [0, 8],
+            22 : [14],
+            23 : [2],
+            24 : [16],
+            25 : [13, 16, 22, 24],
+            26 : [6, 10],
+            27 : [12, 17, 24],
+            28 : [8],
+            29 : [10, 12, 23, 26],
+            30 : [1],
+            31 : [28],
             32 : [20],
             }
         sims = make_network(network,**kwargs)
@@ -489,7 +489,7 @@ file2 = "$file.$ext2"
     si_read = input_template(template_filepath)
 
     assert(isinstance(si_read.template,Template))
-    assert(si_read.keywords==set(['a','b','ext1','ext2','file']))
+    assert(si_read.keywords=={'a','b','ext1','ext2','file'})
 
 
     # assign
@@ -551,7 +551,7 @@ file2 = "my_file.dat"
     si_write.assign(**values)
     text = si_write.write()
     assert(text==text_ref)
-    
+
     input_filepath = tmp_path / 'input_file.txt'
     si_write.write(input_filepath)
     assert(input_filepath.read_text()==text_ref)
@@ -618,7 +618,7 @@ c    = $c
     assert(len(si.filenames)==3)
     assert(object_eq(si.filenames,filenames))
 
-    
+
     # init read
     si_init = multi_input_template(
         input1 = ('input_file1.txt',template1_filepath),
@@ -630,9 +630,9 @@ c    = $c
     assert(len(si.filenames)==3)
     assert(object_eq(si.filenames,filenames))
     keywords_ref = dict(
-        input1 = set(['a', 'name']),
-        input2 = set(['b', 'name']),
-        input3 = set(['c', 'name']),
+        input1 = {'a', 'name'},
+        input2 = {'b', 'name'},
+        input3 = {'c', 'name'},
         )
     for name,keyword_set in keywords_ref.items():
         assert(name in si)
@@ -736,11 +736,11 @@ def test_init():
         bundled              = False,
         bundler              = None,
         created_directories  = False,
-        dependency_ids       = set([]),
+        dependency_ids       = set(),
         errfile              = 'sim.err',
         failed               = False,
         fake_sim             = False,
-        files                = set([]),
+        files                = set(),
         finished             = False,
         force_restart        = False,
         force_write          = False,
@@ -772,7 +772,7 @@ def test_init():
         subcascade_finished  = False,
         submitted            = False,
         system               = None,
-        wait_ids             = set([]),
+        wait_ids             = set(),
         dependencies         = obj(),
         dependents           = obj(),
         input                = SimulationInput(),
@@ -797,7 +797,7 @@ def test_init():
     # make a test job
     test_job = job(machine='ws1',app_command='test.x')
 
-    
+
     # minimal non-empty init, tests init_job()
     sm = Simulation(job=test_job)
 
@@ -925,13 +925,13 @@ def test_reset_indicators():
 
     indicators = '''
         got_dependencies
-        setup     
+        setup
         sent_files
-        submitted 
-        finished  
-        failed    
+        submitted
+        finished
+        failed
         got_output
-        analyzed  
+        analyzed
         '''.split()
 
     s = Simulation()
@@ -1645,7 +1645,7 @@ def test_downstream_simids():
     for sname in sorted(sims.keys()):
         s = sims[sname]
         ds_ids = s.downstream_simids()
-        ds_ids_ref = set([sd.simid for sd in downstream_sims[sname]])
+        ds_ids_ref = {sd.simid for sd in downstream_sims[sname]}
         assert(ds_ids==ds_ids_ref)
         n+=1
     #end for
@@ -1659,7 +1659,7 @@ def test_downstream_simids():
 def test_copy_file(tmp_path):
     import os
     from ..simulation import Simulation
-    
+
     opath = tmp_path / 'other'
     if not os.path.exists(opath):
         os.makedirs(opath)
@@ -1677,7 +1677,7 @@ def test_copy_file(tmp_path):
 
     assert(file2.exists())
     assert(file2.read_text().strip()=='text')
-    
+
     Simulation.clear_all_sims()
 #end def test_copy_file
 
@@ -1823,7 +1823,7 @@ a    = $a
 name = "input_name"
 a    = 1
 '''
-    
+
     si = input_template(text=template)
     si.assign(name='input_name',a=1)
 
@@ -1875,7 +1875,7 @@ def test_send_files(tmp_path):
     (tmp_path / data_file1).write_text('data1')
     (tmp_path / data_file2).write_text('data2')
 
-    data_files = [data_file1,data_file2] 
+    data_files = [data_file1,data_file2]
 
     s = get_test_sim(
         files = data_files,
@@ -2254,7 +2254,7 @@ a    = $a
     assert(not s.finished)
     assert(not s.got_output)
     assert(not s.analyzed)
-    assert(s.files==set([s.infile]))
+    assert(s.files=={s.infile})
     assert(s.job.status==1)
     assert(Path(s.locdir).exists())
     assert(Path(s.remdir).exists())
@@ -2273,7 +2273,7 @@ a    = $a
         assert(Path(s.resdir).exists())
         assert(Path(s.imresdir).exists())
     #end if
-    
+
     # check image
     for k in indicators:
         inds[k] = s[k]
@@ -2351,7 +2351,7 @@ a    = $a
     for k in indicators:
         s[k] = inds[k]
 
-    
+
     # attempt third progression
     #   nothing should happen
     sbef = deepcopy(s)
@@ -2638,26 +2638,26 @@ def test_reconstruct_cascade(tmp_path):
 
     def finished(s):
         f = True
-        f &= s.setup            
-        f &= s.sent_files       
-        f &= s.submitted        
-        f &= s.finished         
-        f &= s.failed           
-        f &= s.got_output       
-        f &= s.analyzed         
+        f &= s.setup
+        f &= s.sent_files
+        f &= s.submitted
+        f &= s.finished
+        f &= s.failed
+        f &= s.got_output
+        f &= s.analyzed
         f &= isinstance(s.process_id,int)
         return f
     #end def finished
 
     def empty(s):
         e = True
-        e &= not s.setup            
-        e &= not s.sent_files       
-        e &= not s.submitted        
-        e &= not s.finished         
-        e &= not s.failed           
-        e &= not s.got_output       
-        e &= not s.analyzed         
+        e &= not s.setup
+        e &= not s.sent_files
+        e &= not s.submitted
+        e &= not s.finished
+        e &= not s.failed
+        e &= not s.got_output
+        e &= not s.analyzed
         e &= s.process_id is None
         e &= s.job.system_id is None
         return e
@@ -2689,7 +2689,7 @@ def test_reconstruct_cascade(tmp_path):
     s.sent_files       = True
     s.submitted        = True
     s.process_id       = get_process_id()
-    
+
     for s in sims.values():
         s.create_directories()
         s.save_image()
@@ -2717,8 +2717,8 @@ def test_reconstruct_cascade(tmp_path):
     assert(s.sent_files      )
     assert(s.submitted       )
     assert(s.finished        )
-    assert(not s.failed      )     
-    assert(not s.got_output  )     
+    assert(not s.failed      )
+    assert(not s.got_output  )
     assert(not s.analyzed    )
     assert(s.process_id==4   )
     assert(s.job.system_id is None )
@@ -2730,8 +2730,8 @@ def test_reconstruct_cascade(tmp_path):
     assert(s.sent_files      )
     assert(s.submitted       )
     assert(not s.finished    )
-    assert(not s.failed      )     
-    assert(not s.got_output  )     
+    assert(not s.failed      )
+    assert(not s.got_output  )
     assert(not s.analyzed    )
     assert(s.process_id==5   )
     assert(s.job.system_id==5)
@@ -2799,7 +2799,7 @@ def test_traverse_full_cascade():
             assert(s.finished)
         #end for
     #end for
-    
+
     Simulation.clear_all_sims()
 #end def test_traverse_full_cascade
 
@@ -2858,7 +2858,7 @@ def test_generic_simulation(tmp_path):
     assert(isinstance(sim1,Simulation))
     assert(sim1.outfiles == ['output.txt'])
     assert(isinstance(sim1.input,SimulationInputTemplate))
-    
+
     sim1_input_text = sim1.input.write_text()
     assert(sim1_input_text == script_text)
 
@@ -2872,7 +2872,7 @@ def test_generic_simulation(tmp_path):
     script_file_content = 'print("Hello from file")\n'
     script_file.write_text(script_file_content)
     #end with
-    
+
     # Test 2: GenericSimulation with file path input
     sim2 = generate_simulation(
         identifier = 'test_generic_file',
@@ -2884,7 +2884,7 @@ def test_generic_simulation(tmp_path):
     assert(isinstance(sim2,GenericSimulation))
     assert(sim2.outfiles == ['result.txt'])
     assert(isinstance(sim2.input,SimulationInputTemplate))
-    
+
     sim2_input_text = sim2.input.write_text()
     assert(sim2_input_text == script_file_content)
 

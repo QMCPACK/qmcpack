@@ -7,8 +7,8 @@ from nexus import generate_pwscf
 settings(
     pseudo_dir = '../pseudopotentials',
     results    = '',
-    sleep      = 3,
-    machine    = 'ws16',
+    sleep      = 0.5,
+    machine    = 'ws8',
     )
 
 system = generate_physical_system(
@@ -26,12 +26,12 @@ system = generate_physical_system(
 scf = generate_pwscf(
     identifier   = 'scf',
     path         = 'diamond/scf',
-    job          = job(cores=16,app='pw.x'),
+    job          = job(cores=6,app='pw.x'),
     input_type   = 'generic',
     calculation  = 'scf',
-    input_dft    = 'lda', 
-    ecutwfc      = 200,   
-    conv_thr     = 1e-8, 
+    input_dft    = 'lda',
+    ecutwfc      = 200,
+    conv_thr     = 1e-8,
     system       = system,
     pseudos      = ['C.BFD.upf'],
     kgrid        = (4,4,4),

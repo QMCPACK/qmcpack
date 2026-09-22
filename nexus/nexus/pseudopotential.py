@@ -38,12 +38,12 @@ class Pseudopotential(DevBase):
         #end if
     #end def __init__
 
-    
+
     def transfer_core_from(self,other):
         self.element = other.element
-        self.core    = other.core   
-        self.Zval    = other.Zval   
-        self.Zcore   = other.Zcore  
+        self.core    = other.core
+        self.Zval    = other.Zval
+        self.Zcore   = other.Zcore
     #end def transfer_core_from
 
 
@@ -155,7 +155,7 @@ class SemilocalPP(Pseudopotential):
         #end if
     #end def __init__
 
-    
+
     # test needed
     def transfer_core_from(self,other):
         self.name  = other.name
@@ -490,7 +490,7 @@ class SemilocalPP(Pseudopotential):
         #end for
         return channels
     #end def angular_channels
-        
+
 
     # evaluate r*potential based on a potential component object
     #  component representation is specific to each derived class
@@ -540,7 +540,7 @@ class SemilocalPP(Pseudopotential):
                 'local potential is not present'
                 )
             raise KeyError(msg)
-            
+
         #end if
         vcomp = self.get_component(l)
         ret = self.evaluate_comp(
@@ -1013,7 +1013,7 @@ class SemilocalPP(Pseudopotential):
         #end if
         vL2 = self.evaluate_L2(r,0,rmin-1e-12)
         rng = r>rmin-1e-12
-        r = r[rng] 
+        r = r[rng]
         b = vL2*(2*r**2)
         plt.plot(r,1+b,color+linestyle,label='1+b')
         plt.plot(r,0*r,'r-')
@@ -1031,7 +1031,7 @@ class SemilocalPP(Pseudopotential):
         #end if
     #end def plot_positive_definite
 
-                
+
     def plot_L2(self,*,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None,color=None):
         import matplotlib.pyplot as plt
         color_in = color
@@ -1071,7 +1071,7 @@ class SemilocalPP(Pseudopotential):
             if show:
                 plt.show()
             #end if
-        #end if 
+        #end if
     #end def plot_L2
 
 
@@ -1275,9 +1275,9 @@ class SemilocalPP(Pseudopotential):
 
         header = f'''<?xml version="1.0" encoding="UTF-8"?>
 <pseudo version="0.5">
-  <header symbol="{symbol}" atomic-number="{atomic_number}" zval="{zval}" relativistic="unknown" 
-   polarized="unknown" creator="{creator}" flavor="unknown" 
-   core-corrections="unknown" xc-functional-type="unknown" 
+  <header symbol="{symbol}" atomic-number="{atomic_number}" zval="{zval}" relativistic="unknown"
+   polarized="unknown" creator="{creator}" flavor="unknown"
+   core-corrections="unknown" xc-functional-type="unknown"
    xc-functional-parametrization="unknown"/>
 '''
 
@@ -1508,7 +1508,7 @@ class GaussianPP(SemilocalPP):
             #self.name = lines[i].strip(); i+=1
             i=1 # skip title line
             element = 'Rn' # text does not contain element (must be corrected downstream)
-            lmax    = -1   
+            lmax    = -1
             Zcore = int(lines[i].strip()); i+=1
             while i<len(lines):
                 n = int(lines[i]); i+=1
@@ -1636,7 +1636,7 @@ class GaussianPP(SemilocalPP):
             text += f'{self.element}-PP GEN {self.Zcore} {self.lmax}\n'
             for c in channel_order:
                 channel = self.components[c]
-                text += f'{len(channel)}\n' 
+                text += f'{len(channel)}\n'
                 for i in sorted(channel.keys()):
                     g = channel[i]
                     text += f'{g.coeff:12.8f} {g.rpow} {g.expon:12.8f}\n'
@@ -1654,7 +1654,7 @@ class GaussianPP(SemilocalPP):
             for c in channel_order:
                 channel = self.components[c]
                 text += f'{c} channel\n'
-                text += f'{len(channel)}\n' 
+                text += f'{len(channel)}\n'
                 for i in sorted(channel.keys()):
                     g = channel[i]
                     text += f'{g.rpow} {g.expon:12.8f} {g.coeff:12.8f}\n'
@@ -1705,9 +1705,9 @@ class GaussianPP(SemilocalPP):
                 if c in self.components:
                     channel = self.components[c]
                     if c!=self.local:
-                        text += f'{len(channel)+len(local_channel)}\n' 
+                        text += f'{len(channel)+len(local_channel)}\n'
                     else:
-                        text += f'{len(channel)}\n' 
+                        text += f'{len(channel)}\n'
                     #end if
                     for i in sorted(channel.keys()):
                         g = channel[i]
@@ -1844,7 +1844,7 @@ class GaussianPP(SemilocalPP):
     def append_to_component(self,l,coeff,expon,rpow):
         '''
         This function is used to append a term to a Gaussian ECP component.
-        l: the angular ccomponent that the Gaussian term will be appended to 
+        l: the angular ccomponent that the Gaussian term will be appended to
         coeff, expon, rpow: the coefficient, exponent, and r-power of the Gaussian term
         '''
         if l>self.lmax:
@@ -1878,7 +1878,7 @@ class GaussianPP(SemilocalPP):
     # test needed
     def simplify(self):
         '''This function simplifies the Gaussian ECP.
-        
+
         The simplificactions are as follows:
 
         1. Remove all terms with coefficients that are equal to zero -- unless only one term exists.
@@ -1968,7 +1968,7 @@ class GaussianPP(SemilocalPP):
                             if term_idx in mlist and term_idx not in added:
                                 coeff = 0.0
                                 mod_term = deepcopy(term)
-                                for ti in mlist: 
+                                for ti in mlist:
                                     coeff += self.components[chan_labels[l]][ti].coeff
                                 #end for
                                 if abs(coeff)>1e-12:
@@ -2033,7 +2033,7 @@ class GaussianPP(SemilocalPP):
                 val+=cv*x**ci
             return val
         #end def
-        
+
         def Rs(x,dx,s,c):
             if x+1-s<-dx:
                 return 0-(1-s)
@@ -2068,7 +2068,7 @@ class GaussianPP(SemilocalPP):
             #end for
             A.append(row)
         #end for
-        
+
         A = np.array(A)
         b = np.array([db,1]+[0]*6)
         c = np.linalg.inv(A).dot(b)
@@ -2090,7 +2090,7 @@ class GaussianPP(SemilocalPP):
         #for
         v=np.array(v)
 
-        # 2*r^2*VL2 
+        # 2*r^2*VL2
         if self.lmax>1:
             f = r*r*(v[1]-v[0])
         elif self.lmax==1:
@@ -2099,13 +2099,13 @@ class GaussianPP(SemilocalPP):
             msg = 'Not sure what to do with fully local potential.'
             raise RuntimeError(msg)
         #end if
-            
-        # 2*r^2*V'L2 
+
+        # 2*r^2*V'L2
         fp = [Rs(fr,db,dbs,c) for fr in f]
 
         unboundedness = 0
         for fi,fx in enumerate(f):
-            unboundedness+=(fp[fi]-fx)*(gmax-gmin)/ng 
+            unboundedness+=(fp[fi]-fx)*(gmax-gmin)/ng
         #end for
 
         return unboundedness
@@ -2133,7 +2133,7 @@ class GaussianPP(SemilocalPP):
                 val+=cv*x**ci
             return val
         #end def
-        
+
         def Rs(x,dx,s,c):
             if x+1-s<-dx:
                 return 0-(1-s)
@@ -2143,10 +2143,10 @@ class GaussianPP(SemilocalPP):
                 return poly(x+1-s,c)-(1-s)
         #end def
         class fitClass:
-        
+
             def __init__(self):
                 pass
-        
+
             def gauss_correction(self,x,c1,c2,c3):
                 val = 0
                 for ci,c in enumerate([c1,c2,c3]):
@@ -2154,7 +2154,7 @@ class GaussianPP(SemilocalPP):
                 #end for
                 return val
             #end def
-        
+
             def gauss_correction_2_param(self,x,c1,c2):
                 val = 0
                 for ci,c in enumerate([c1,c2]):
@@ -2162,7 +2162,7 @@ class GaussianPP(SemilocalPP):
                 #end for
                 return val
             #end def
-        
+
             def gauss_correction_1_param(self,x,c1):
                 val = 0
                 for ci,c in enumerate([c1]):
@@ -2170,7 +2170,7 @@ class GaussianPP(SemilocalPP):
                 #end for
                 return val
             #end def
-        
+
         #end class
 
         A=[]
@@ -2199,7 +2199,7 @@ class GaussianPP(SemilocalPP):
             #end for
             A.append(row)
         #end for
-        
+
         A = np.array(A)
         b = np.array([db,1]+[0]*6)
         c = np.linalg.inv(A).dot(b)
@@ -2221,7 +2221,7 @@ class GaussianPP(SemilocalPP):
         #for
         v=np.array(v)
 
-        # 2*r^2*VL2 
+        # 2*r^2*VL2
         if self.lmax>1:
             f = r*r*(v[1]-v[0])
         elif self.lmax==1:
@@ -2230,13 +2230,13 @@ class GaussianPP(SemilocalPP):
             msg = 'Not sure what to do with fully local potential.'
             raise RuntimeError(msg)
         #end if
-            
-        # 2*r^2*V'L2 
+
+        # 2*r^2*V'L2
         fp = [Rs(fr,db,dbs,c) for fr in f]
 
         unboundedness = 0
         for fi,fx in enumerate(f):
-            unboundedness+=(fp[fi]-fx)*(gmax-gmin)/ng 
+            unboundedness+=(fp[fi]-fx)*(gmax-gmin)/ng
         #end for
         #print('\npseudopotential undoundedness: ',undoundedness)
         from scipy.optimize import curve_fit
@@ -2289,7 +2289,7 @@ class GaussianPP(SemilocalPP):
     def transform_to_truncated_L2(self,keep=None,lmax=None,outfile=None,*,inplace=True):
         '''
         This function transforms a Gaussian ECP into a truncated L2 form, i.e., a form
-        for which all channels follow an L2 relationship. For a semi-local ECP, this 
+        for which all channels follow an L2 relationship. For a semi-local ECP, this
         transformation can have a significant negative impact on transferability. For
         an ECP that is already in a trucnated L2 form, the transformation has no affect.
         '''
@@ -2334,7 +2334,7 @@ class GaussianPP(SemilocalPP):
         self.lmax  = lmax
         self.local = chan_labels[lmax]
         if not keep_local:
-            
+
             lm = keep_l_vals[0]
             ln = keep_l_vals[1]
 
@@ -2365,7 +2365,7 @@ class GaussianPP(SemilocalPP):
             #end for
 
         else:
-            
+
             lloc = keep_l_vals[1]
             lm = keep_l_vals[0]
 
@@ -2408,13 +2408,13 @@ class QmcpackPP(SemilocalPP):
             msg = f'cannot read {filepath}, file does not exist'
             raise FileNotFoundError(msg)
         #end if
-        
+
         x = readxml(filepath,contract_names=True)
         x.convert_numeric()
         x.condense()
         x.remove_hidden()
         pp = x.pseudo
-        
+
         h = pp.header
         self.element = h.symbol
         self.Zval    = h.zval

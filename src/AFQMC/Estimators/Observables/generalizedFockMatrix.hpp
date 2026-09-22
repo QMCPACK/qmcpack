@@ -88,7 +88,7 @@ public:
         block_size(bsize),
         nave(nave_),
         counter(0),
-        denom(iextensions<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
+        denom(extents_t<1u>{0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMAverage({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()}),
         DMWork({0, 0, 0}, shared_allocator<ComplexType>{TG.TG_local()})
   {
@@ -139,7 +139,7 @@ public:
     {
       if (denom.size() != nw)
       {
-        denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
+        denom = mpi3CVector(extents_t<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
       if (get<0>(DMWork.sizes()) != 3 || get<1>(DMWork.sizes()) != nw || get<2>(DMWork.sizes()) != dm_size)
       {

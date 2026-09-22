@@ -169,7 +169,7 @@ TEST_CASE("NEEnergyDensityEstimator::AccumulateIntegration", "[estimators]")
   buffer.clear();
   e_den_est.packData(buffer);
   CHECK(buffer[buffer.size() - 1] == Approx(0.0));
-  std::cout << "wrote success\n";
+  app_log() << "wrote success\n";
 }
 
 TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]")
@@ -234,7 +234,7 @@ TEST_CASE("NEEnergyDensityEstimator::Collect", "[estimators]")
   CHECK(summed_grid == Approx(expected_sum));
 
   e_den_est.write(hd);
-  std::cout << "wrote success\n";
+  app_log() << "wrote success\n";
 }
 
 } // namespace qmcplusplus

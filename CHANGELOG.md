@@ -2,6 +2,11 @@
 
 Notable changes to QMCPACK and NEXUS are documented in this file.
 
+## [Unreleased]
+
+* Removed use of legacy NIST-like sparse BLAS Level 2 and Level 3 APIs from MKL in AFQMC due to their removal in the oneAPI 2026 release.
+* Introduce the use of OpenMP offload unified shared memory feature that eliminates device copies of data. Use CMake option QMC_OFFLOAD_USM to opt in.
+
 ## [4.4.0] - 2026-08-31
 
 This QMCPACK release contains numerous feature improvements, bug fixes, and optimizations. An experimental interface to neural

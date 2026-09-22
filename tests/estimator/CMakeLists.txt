@@ -87,3 +87,6 @@ if(add_tests)
     check_forces.py
     vmc.fast.s000.scalar.dat)
 endif()
+
+get_property(CURRENT_TESTS DIRECTORY PROPERTY TESTS)
+add_labels_for_tests("${CURRENT_TESTS}")

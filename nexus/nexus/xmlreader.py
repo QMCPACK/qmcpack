@@ -207,7 +207,7 @@ class XMLelement(DevBase):
             if len(not_present)==0:
                 collection = []
                 for n in range(1,cmax+1):
-                    name = cname+str(n)            
+                    name = cname+str(n)
                     collection.append(self._elements[name])
                     del self._elements[name]
                     del self[name]
@@ -244,7 +244,7 @@ class XMLelement(DevBase):
         #end for
     #end def convert_numeric
 
-                    
+
     def remove_hidden(self):
         for elem in self._elements.values():
             if isinstance(elem,XMLelement):
@@ -295,7 +295,7 @@ class XMLreader(DevBase):
         self.contract_names = contract_names
         self.strip_prefix = strip_prefix
         self.warn = warn
-        
+
         #create the parser
         self.parser = expat.ParserCreate()
         self.parser.buffer_text = True
@@ -398,10 +398,10 @@ class XMLreader(DevBase):
         #end if
 
         # joinable = in joins and no attributes
-        # if in elements and joinable: don't add 
+        # if in elements and joinable: don't add
         # else if not in elements and joinable: add unnumbered
         # else if not in elements: add unnumbered
-        # else: add numbered, if number==1: rename first element 
+        # else: add numbered, if number==1: rename first element
         joinable = name in self.element_joins and len(list(attributes.keys()))==0
         epattern = re.compile(name+r'\d+')
         in_elements=False
@@ -468,7 +468,7 @@ class XMLreader(DevBase):
             else:
                 k = kraw
             #end if
-            
+
             # Check for variables containing invalid characters
             if valid_variable_name(k):
                 kname = cur._escape_name(k)

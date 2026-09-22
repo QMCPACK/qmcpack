@@ -42,9 +42,9 @@ struct h5data_proxy<boost::multi::array<T, 1, Alloc>> : public h5_space_type<T, 
 
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    using iextensions = typename boost::multi::iextensions<1u>;
+    using extents_t = typename boost::multi::extents_t<1u>;
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref.reextent(iextensions{static_cast<boost::multi::ssize_t>(dims[0])});
+      ref.reextent(extents_t{static_cast<boost::multi::ssize_t>(dims[0])});
     return h5d_read(grp, aname, get_address(std::addressof(*ref.base())), xfer_plist);
   }
 
@@ -170,8 +170,8 @@ struct h5data_proxy<boost::multi::array<T, 1, device::device_allocator<T>>> : pu
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref.reextent({dims[0]});
     auto sz           = ref.num_elements();
-    using iextensions = typename boost::multi::iextensions<1u>;
-    boost::multi::array<T, 1> buf(iextensions{sz});
+    using extents_t = typename boost::multi::extents_t<1u>;
+    boost::multi::array<T, 1> buf(extents_t{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
     device::copy_n(buf.data(), sz, ref.base());
     return ret;
@@ -203,8 +203,8 @@ struct h5data_proxy<boost::multi::array<T, 2, device::device_allocator<T>>> : pu
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
       ref.reextent({dims[0], dims[1]});
     auto sz           = ref.num_elements();
-    using iextensions = typename boost::multi::iextensions<1u>;
-    boost::multi::array<T, 1> buf(iextensions{sz});
+    using extents_t = typename boost::multi::extents_t<1u>;
+    boost::multi::array<T, 1> buf(extents_t{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
     device::copy_n(buf.data(), sz, ref.base());
     return ret;
@@ -239,8 +239,8 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, device::device_pointer<T>>> : 
       return false;
     }
     auto sz           = ref.num_elements();
-    using iextensions = typename boost::multi::iextensions<1u>;
-    boost::multi::array<T, 1> buf(iextensions{sz});
+    using extents_t = typename boost::multi::extents_t<1u>;
+    boost::multi::array<T, 1> buf(extents_t{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
     device::copy_n(buf.data(), sz, ref.base());
     return ret;
@@ -281,8 +281,8 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, device::device_pointer<T>>> : 
       return false;
     }
     auto sz           = ref.num_elements();
-    using iextensions = typename boost::multi::iextensions<1u>;
-    boost::multi::array<T, 1> buf(iextensions{sz});
+    using extents_t = typename boost::multi::extents_t<1u>;
+    boost::multi::array<T, 1> buf(extents_t{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
     device::copy_n(buf.data(), sz, ref.base());
     return ret;
@@ -309,7 +309,7 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, device::device_all
     {
       // later on specialize h5d_read for fancy pointers
       auto sz = ref.ref.num_elements();
-      boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extents_type{sz});
+      boost::multi::array<T, 1> buf(boost::multi::extents_t<1u>{sz});
       auto ret = h5d_read(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
                           ref.slab_offset.data(), buf.base(), xfer_plist);
       device::copy_n(buf.data(), sz, ref.ref.base());
@@ -348,7 +348,7 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, device::device
     {
       // later on specialize h5d_read for fancy pointers
       auto sz = ref.ref.num_elements();
-      boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extents_type{sz});
+      boost::multi::array<T, 1> buf(boost::multi::extents_t<1u>{sz});
       auto ret = h5d_read(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
                           ref.slab_offset.data(), buf.base(), xfer_plist);
       device::copy_n(buf.data(), sz, ref.ref.base());

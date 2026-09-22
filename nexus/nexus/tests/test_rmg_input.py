@@ -134,7 +134,7 @@ def generate_serial_references():
         'atoms/atoms' : np.array(['P','P','P','P']),
         'atoms/format' : 'movable',
         'atoms/movable' : np.array([True ,True ,True ,True]),
-        'atoms/positions' : np.array([[0.    ,  0.     , 0.     ], 
+        'atoms/positions' : np.array([[0.    ,  0.     , 0.     ],
                                       [1.6568,  0.     , 1.48364],
                                       [1.6568,  2.13054, 2.18815],
                                       [0.    ,  2.13054, 3.67179]]),
@@ -241,7 +241,7 @@ def generate_serial_references():
                                     True,True,True,True,True,True,True,True,
                                     True,True,True,True,True,True,True,True,
                                     True,True,True,True]),
-        'atoms/positions' : np.array([[15.3293, 12.96  , 19.207 ], 
+        'atoms/positions' : np.array([[15.3293, 12.96  , 19.207 ],
                                       [17.5363, 12.96  , 17.7857],
                                       [13.7313, 15.1732, 19.2251],
                                       [14.4083, 17.2893, 17.8251],
@@ -853,7 +853,7 @@ def test_input_spec():
     assert(documented_count==271)
     assert(len(input_spec.keywords)==284)
 
-    added_keywords = set([
+    added_keywords = {
         'AFM',
         'BerryPhase',
         'BerryPhaseCycle',
@@ -910,20 +910,30 @@ def test_input_spec():
         'use_energy_correction',
         'use_gpu_fd',
         'use_rmm_diis',
-        ])
+        }
     assert(added_keywords <= set(input_spec.keywords.keys()))
 
     assert(input_spec.keywords.AFM.key_type=='boolean')
     assert(input_spec.keywords.adaptive_cmix.max_value==10.0)
     assert(input_spec.keywords.electric_field.key_type=='double array')
-    assert(input_spec.keywords.tddft_mode.allowed==set(
-        ['electric field','point charge','vector potential']))
+    assert(input_spec.keywords.tddft_mode.allowed=={'electric field','point charge','vector potential'})
     assert('Example: 2 means system is missing two electrons' in
            input_spec.keywords.system_charge.description)
     assert(rmg_modes.full_mode('nscf')=='NSCF')
     assert(rmg_modes.full_mode('stm')=='STM')
 
 #end def test_input_spec
+
+
+def test_run_mode():
+    rmg_input = RmgInput()
+    assert rmg_input.run_mode is None
+
+    for short_mode,calculation_mode in rmg_modes.full_calc.items():
+        rmg_input.assign(calculation_mode=calculation_mode)
+        assert rmg_input.run_mode==short_mode
+    #end for
+#end def test_run_mode
 
 
 def test_hubbard_u_records():
@@ -1483,15 +1493,15 @@ def test_generate():
 
     skeys = mkeys & gkeys & kkeys
 
-    skeys_ref = set([
-        'atomic_coordinate_type', 'atoms', 'calculation_mode', 
-        'charge_density_mixing', 'charge_mixing_type', 'compressed_infile', 
-        'compressed_outfile', 'description', 'energy_convergence_criterion', 
-        'kohn_sham_mucycles', 'kohn_sham_solver', 'kpoint_distribution', 
-        'localize_localpp', 'localize_projectors', 'max_scf_steps', 
-        'occupations_type', 'potential_acceleration_constant_step', 
-        'potential_grid_refinement', 'states_count_and_occupation', 
-        'subdiag_driver', 'wavefunction_grid', 'write_data_period'])
+    skeys_ref = {
+        'atomic_coordinate_type', 'atoms', 'calculation_mode',
+        'charge_density_mixing', 'charge_mixing_type', 'compressed_infile',
+        'compressed_outfile', 'description', 'energy_convergence_criterion',
+        'kohn_sham_mucycles', 'kohn_sham_solver', 'kpoint_distribution',
+        'localize_localpp', 'localize_projectors', 'max_scf_steps',
+        'occupations_type', 'potential_acceleration_constant_step',
+        'potential_grid_refinement', 'states_count_and_occupation',
+        'subdiag_driver', 'wavefunction_grid', 'write_data_period'}
 
     assert(skeys==skeys_ref)
 

@@ -22,6 +22,7 @@
 #include "SplineC2C.h"
 #else
 #include "SplineR2R.h"
+#include "spline2/MultiBsplineOffloadMapper.hpp"
 #include "SplineC2R.h"
 #endif
 #include "Message/CommOperators.h"
@@ -78,7 +79,7 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   typename bspline_traits<ST, 3>::BCType xyz_bc[3];
   set_grid(mybuilder->MeshSize, half_g, xyz_grid, xyz_bc);
 
-  const int N = bandgroup.getNumDistinctOrbitals();
+  const int N              = bandgroup.getNumDistinctOrbitals();
   const size_t num_splines = getAlignedSize<ST>(use_duplex_splines_ ? N * 2 : N);
   std::unique_ptr<MultiBsplineBase<ST>> multi_splines_ptr;
 #if defined(HAVE_MPI)
@@ -93,17 +94,21 @@ std::unique_ptr<SPOSet> SplineSetReader<ST>::create_spline_set(const std::string
   app_log() << "MEMORY " << multi_splines.sizeInByte() / (1 << 20) << " MB allocated "
             << "for the coefficients in 3D spline orbital representation" << std::endl;
 
+  std::unique_ptr<MultiBsplineOffloadMapperBase<ST>> offload_mapper;
+  if (use_offload)
+    offload_mapper = std::make_unique<MultiBsplineOffloadMapper<ST>>(*multi_splines_ptr);
+
   std::unique_ptr<BsplineSet> bspline;
 #if defined(QMC_COMPLEX)
   bspline = std::make_unique<SplineC2C<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                            std::move(multi_splines_ptr), use_offload);
+                                            std::move(multi_splines_ptr), std::move(offload_mapper));
 #else
   if (use_duplex_splines_)
     bspline = std::make_unique<SplineC2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                              std::move(multi_splines_ptr), use_offload);
+                                              std::move(multi_splines_ptr), std::move(offload_mapper));
   else
     bspline = std::make_unique<SplineR2R<ST>>(my_name, bandgroup.getNumSPOs(), mybuilder->PrimCell,
-                                              std::move(multi_splines_ptr), use_offload);
+                                              std::move(multi_splines_ptr), std::move(offload_mapper));
 #endif
 
   app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
@@ -220,11 +225,11 @@ void SplineSetReader<ST>::initialize_spline_pio_gather(const int spin,
       oneband.fft_spline(cG, mybuilder->Gvecs[0], mybuilder->primcell_kpoints[ti], rotate);
       if (use_duplex_splines_)
       {
-        multi_splines.set_spline(oneband.get_spline_r(), iorb * 2);
-        multi_splines.set_spline(oneband.get_spline_i(), iorb * 2 + 1);
+        multi_splines.setOneSpline(oneband.get_spline_r(), iorb * 2);
+        multi_splines.setOneSpline(oneband.get_spline_i(), iorb * 2 + 1);
       }
       else
-        multi_splines.set_spline(oneband.get_spline_r(), iorb);
+        multi_splines.setOneSpline(oneband.get_spline_r(), iorb);
     }
 
     {

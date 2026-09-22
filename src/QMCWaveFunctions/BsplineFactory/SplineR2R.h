@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 template<typename T>
-class MultiBsplineOffloadMapper;
+class MultiBsplineOffloadMapperBase;
 
 /** class to match ST real spline with BsplineSet::ValueType (real) SPOs
  * @tparam ST precision of spline
@@ -82,7 +82,7 @@ protected:
   /// multi bspline set
   const std::shared_ptr<MultiBsplineBase<ST>> SplineInst;
   /// multi bspline set offload mapper
-  const std::shared_ptr<MultiBsplineOffloadMapper<ST>> offload_mapper_;
+  const std::shared_ptr<MultiBsplineOffloadMapperBase<ST>> offload_mapper_;
   /// intermediate result vectors
   vContainer_type myV;
   vContainer_type myL;
@@ -95,7 +95,7 @@ public:
             size_t size,
             const Lattice& prim_lattice,
             std::unique_ptr<MultiBsplineBase<ST>>&& multi_spline,
-            bool use_offload = false);
+            std::unique_ptr<MultiBsplineOffloadMapperBase<ST>> mapper = nullptr);
   SplineR2R(const SplineR2R& in);
   virtual std::string getClassName() const override { return "SplineR2R"; }
   virtual std::string getKeyword() const override { return "SplineR2R"; }
