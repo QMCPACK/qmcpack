@@ -567,7 +567,7 @@ class QmcpackInputInfo(DevBase):
 
         # QmcpackInput can also represent individual input elements.  Only a
         # full simulation contains the information collected here.
-        if not hasattr(qi,'__contains__') or 'simulation' not in qi:
+        if 'simulation' not in qi:
             return
         sim = qi.simulation
         if not isinstance(sim,simulation):
