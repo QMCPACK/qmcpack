@@ -31,10 +31,15 @@ public:
 
     void resize(size_t num_walkers);
 
+    /// Immutable zero-valued input used to stage the current particle positions.
     MCCoords<CoordsType::POS> zero_displacements;
-    std::vector<bool> reject_intermediate;
+    /// Immutable false-valued decisions used to reject temporary moves.
+    std::vector<bool> reject_all_intermediate;
+    /// Output scratch; each entry is overwritten before it is read.
     std::vector<bool> move_valid;
+    /// Output scratch; the Hamiltonian overwrites each entry before it is read.
     std::vector<TensorType> diffusion_tensors;
+    /// Output scratch; the Hamiltonian overwrites each entry before it is read.
     std::vector<PosType> drift_corrections;
   };
 

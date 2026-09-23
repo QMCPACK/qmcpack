@@ -18,11 +18,25 @@ TEST_CASE("L2Diffusion workspace and proposal math", "[drivers][l2]")
   L2Diffusion diffusion;
   L2Diffusion::Workspace workspace(2);
   REQUIRE(workspace.zero_displacements.positions.size() == 2);
+  REQUIRE(workspace.reject_all_intermediate.size() == 2);
   REQUIRE(workspace.move_valid.size() == 2);
   REQUIRE(workspace.diffusion_tensors.size() == 2);
   REQUIRE(workspace.drift_corrections.size() == 2);
   for (const PosType& displacement : workspace.zero_displacements.positions)
     CHECK(displacement == PosType(0.0));
+  CHECK(workspace.reject_all_intermediate == std::vector<bool>{false, false});
+
+  workspace.resize(3);
+  REQUIRE(workspace.zero_displacements.positions.size() == 3);
+  REQUIRE(workspace.reject_all_intermediate.size() == 3);
+  REQUIRE(workspace.move_valid.size() == 3);
+  REQUIRE(workspace.diffusion_tensors.size() == 3);
+  REQUIRE(workspace.drift_corrections.size() == 3);
+  for (const PosType& displacement : workspace.zero_displacements.positions)
+    CHECK(displacement == PosType(0.0));
+  CHECK(workspace.reject_all_intermediate == std::vector<bool>{false, false, false});
+
+  workspace.resize(2);
 
   L2Diffusion::TensorType drift_tensor;
   drift_tensor = 0.0;
