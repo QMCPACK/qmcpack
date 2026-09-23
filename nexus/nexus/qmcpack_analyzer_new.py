@@ -6,6 +6,7 @@
 #python standard library imports
 import os
 from numbers import Integral
+import numpy as np
 
 #custom library imports
 from .developer import DevBase,obj
@@ -170,7 +171,8 @@ class ReadScalarIssues(DevBase):
 
     def add(self,issue):
         if issue not in self.issues:
-            raise ValueError(f'unrecognized scalar-read issue: {issue}')
+            msg = f'unrecognized scalar-read issue: {issue}'
+            raise ValueError(msg)
         self[issue] = True
     #end def add
 
@@ -204,7 +206,8 @@ class ReadScalarIssues(DevBase):
             ``allow_nan=True``.
         """
         if not isinstance(allow_nan,bool):
-            raise TypeError('allow_nan must be a bool')
+            msg = 'allow_nan must be a bool'
+            raise TypeError(msg)
         incomplete_issues = {
             'no_file',
             'empty_file',
@@ -264,12 +267,12 @@ def read_scalar_file(
     issues : ReadScalarIssues
         Issue information, returned only when ``issues=True``.
     """
-    import numpy as np
-
     if not isinstance(filepath,str):
-        raise TypeError('filepath must be a str')
+        msg = 'filepath must be a str'
+        raise TypeError(msg)
     if not isinstance(issues,bool):
-        raise TypeError('issues must be a bool')
+        msg = 'issues must be a bool'
+        raise TypeError(msg)
     ret_issues = issues
     data   = dict_type()
     issues = ReadScalarIssues(nrows_checked=nrows is not None)
@@ -440,9 +443,27 @@ def read_scalar_file(
 
 
 def qmcpack_analyzer_outfiles(qmc,prefix,series,group_index=None):
-    """Return expected output filenames for one QMCPACK calculation."""
+    """Return expected output filenames for one QMCPACK calculation.
+
+    Parameters
+    ----------
+    qmc : {``'opt'``, ``'vmc'``, ``'dmc'``}
+        Normalized QMC calculation type.
+    prefix : str
+        Project identifier used as the output-file prefix.
+    series : int
+        QMCPACK series number.
+    group_index : int or None, optional
+        Group number for a grouped run.  The default is ``None``.
+
+    Returns
+    -------
+    outfiles : tuple of str
+        Expected output filenames for the calculation.
+    """
     if qmc not in {'opt','vmc','dmc'}:
-        raise ValueError(f'unrecognized qmc type: {qmc}')
+        msg = f'unrecognized qmc type: {qmc}'
+        raise ValueError(msg)
     series_label = 's'+str(series).zfill(3)
     if group_index is None:
         prefix = f'{prefix}.{series_label}.'

@@ -98,7 +98,7 @@ def test_read_scalar_file_header_check_is_independent(monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize(
-    'relative_path,nrows',
+    ('relative_path','nrows'),
     [
         ('diamond_gamma/vmc/vmc.s000.scalar.dat', 100),
         ('diamond_gamma/dmc/dmc.s000.scalar.dat', 10),
@@ -146,7 +146,7 @@ def test_read_scalar_file_missing():
 
 
 @pytest.mark.parametrize(
-    'contents,nrows,expected',
+    ('contents','nrows','expected'),
     [
         ('', None, {'empty_file', 'nrows_unchecked'}),
         ('index LocalEnergy\n0 -1.0\n', None,
@@ -231,7 +231,7 @@ def test_read_scalar_file_single_column(tmp_path):
 
 
 @pytest.mark.parametrize(
-    'header,rows',
+    ('header','rows'),
     [
         ('# index LocalEnergy Kinetic\n', '0 -1.0\n1 -2.0\n'),
         ('# index LocalEnergy\n', '0 -1.0 2.0\n1 -2.0 3.0\n'),
@@ -561,7 +561,7 @@ def test_read_scalar_file_unparsable_rows_affect_width_check(tmp_path):
 
 
 @pytest.mark.parametrize(
-    'rows,nrows,expected_issues,expected_indices',
+    ('rows','nrows','expected_issues','expected_indices'),
     [
         (
             '0 nonsense 2.0\n1 -2.0 3.0\n',
@@ -602,7 +602,7 @@ def test_read_scalar_file_middle_and_end_corruption_interact(
 
 
 @pytest.mark.parametrize(
-    'rows,nrows,expected_issues,expected_indices',
+    ('rows','nrows','expected_issues','expected_indices'),
     [
         # A lone short final row is a tolerated partial write.
         ('0 -1.0 2.0\n1 -2.0\n', 1, set(), [0.0]),
@@ -693,7 +693,7 @@ def test_read_scalar_file_width_boundary_suppresses_later_issues(tmp_path):
 
 
 @pytest.mark.parametrize(
-    'nrows,expected_issues',
+    ('nrows','expected_issues'),
     [
         (0, {'no_data'}),
         (1, {'no_data', 'incomplete'}),
@@ -717,7 +717,7 @@ def test_read_scalar_file_no_data_and_row_validation_interact(
 
 
 @pytest.mark.parametrize(
-    'rows,trim_nan,expected_issues,expected_indices',
+    ('rows','trim_nan','expected_issues','expected_indices'),
     [
         ('0 nan\n1 nan\n', True, {'nan_vals', 'no_usable_vals'}, []),
         ('0 nan\n1 -2.0\n', True, {'nan_vals'}, [1.0]),
@@ -742,7 +742,7 @@ def test_read_scalar_file_nan_and_usable_value_issues_interact(
 
 
 @pytest.mark.parametrize(
-    'qmc,prefix,series,group_index,expected',
+    ('qmc','prefix','series','group_index','expected'),
     [
         ('vmc', 'vmc', 0, None, ('vmc.s000.scalar.dat',)),
         ('dmc', 'dmc', 3, None,
@@ -760,7 +760,8 @@ def test_qmcpack_analyzer_outfiles(qmc, prefix, series, group_index, expected):
 
 
 @pytest.mark.parametrize(
-    'relative_path,qmc_type,prefix,group_index,nseries,expected_outfiles',
+    ('relative_path','qmc_type','prefix','group_index','nseries',
+     'expected_outfiles'),
     [
         ('diamond_gamma/vmc/vmc.in.xml', 'vmc', 'vmc', None, 1,
          ('vmc.s000.scalar.dat',)),
@@ -796,7 +797,7 @@ def test_qmcpack_input_info_from_run_inputs(
 
 
 @pytest.mark.parametrize(
-    'base,relative_path,expected',
+    ('base','relative_path','expected'),
     [
         (
             ANALYZER_FILES,
@@ -905,7 +906,10 @@ def test_qmcpack_input_info_method_aliases_and_multi_qmc_loop(tmp_path):
 #end def test_qmcpack_input_info_method_aliases_and_multi_qmc_loop
 
 
-@pytest.mark.parametrize('method', ['linear', 'cslinear', 'linear_batch'])
+@pytest.mark.parametrize(
+    ('method',),
+    [('linear',), ('cslinear',), ('linear_batch',)],
+    )
 def test_qmcpack_input_info_optimization_method_aliases(tmp_path, method):
     from ..qmcpack_analyzer_new import QmcpackInputInfo
 
@@ -929,7 +933,7 @@ def test_qmcpack_input_info_optimization_method_aliases(tmp_path, method):
 
 
 @pytest.mark.parametrize(
-    'method,qmc_type',
+    ('method','qmc_type'),
     [
         ('vmc', 'vmc'),
         ('vmc_batch', 'vmc'),
@@ -998,14 +1002,14 @@ def test_qmcpack_input_info_projectless_input_fixture():
 
 
 @pytest.mark.parametrize(
-    'relative_path',
+    ('relative_path',),
     [
-        'diamond_gamma/opt/opt.s000.opt.xml',
-        'diamond_gamma/opt/opt.s001.opt.xml',
-        'diamond_gamma/opt/opt.s002.opt.xml',
-        'diamond_gamma/opt/opt.s003.opt.xml',
-        'diamond_gamma/opt/opt.s004.opt.xml',
-        'diamond_gamma/opt/opt.s005.opt.xml',
+        ('diamond_gamma/opt/opt.s000.opt.xml',),
+        ('diamond_gamma/opt/opt.s001.opt.xml',),
+        ('diamond_gamma/opt/opt.s002.opt.xml',),
+        ('diamond_gamma/opt/opt.s003.opt.xml',),
+        ('diamond_gamma/opt/opt.s004.opt.xml',),
+        ('diamond_gamma/opt/opt.s005.opt.xml',),
         ],
     )
 def test_qmcpack_input_info_standalone_element_fixtures(relative_path):
@@ -1026,7 +1030,7 @@ def test_qmcpack_input_info_standalone_element_fixtures(relative_path):
 
 
 @pytest.mark.parametrize(
-    'project,qmc',
+    ('project','qmc'),
     [
         ('<project id="bad_series" series="not_an_integer" />',
          '<qmc method="vmc" />'),
