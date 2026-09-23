@@ -91,6 +91,7 @@ void Crowd::stopBlock() { estimator_manager_crowd_.stopBlock(); }
 
 void Crowd::recordVMCStep()
 {
+  // Convert cumulative crowd counters to the deltas stored with this step.
   estimator_manager_crowd_.recordVMCStep(n_accept_ - vmc_previous_accept_, n_reject_ - vmc_previous_reject_);
   vmc_previous_accept_ = n_accept_;
   vmc_previous_reject_ = n_reject_;

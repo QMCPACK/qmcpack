@@ -21,6 +21,7 @@ void VMCDriverInput::readXML(xmlNodePtr node)
   std::string use_drift;
   parameter_set_.add(use_drift, "usedrift", {"yes", "no"});
   parameter_set_.add(use_drift, "use_drift", {"yes", "no"});
+  // Batched VMC-only optional per-step scalar output.
   parameter_set_.add(write_vmc_dat_, "vmc_dat", {false});
   parameter_set_.add(samples_, "samples");
   parameter_set_.put(node);

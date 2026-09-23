@@ -52,6 +52,7 @@ void EstimatorManagerCrowd::startBlock(int steps)
     uope->startBlock(steps);
   block_num_samples_ = 0.0;
   block_weight_      = 0.0;
+  // Reset and reserve this crowd's private buffer; no MPI work occurs per step.
   vmc_previous_weight_ = 0.0;
   vmc_data_.clear();
   vmc_data_.reserve(steps);
@@ -65,6 +66,7 @@ void EstimatorManagerCrowd::stopBlock()
 
 void EstimatorManagerCrowd::recordVMCStep(unsigned long accepted, unsigned long rejected)
 {
+  // Preserve raw numerators so block-end reduction can reconstruct both outputs.
   std::vector<RealType> row;
   auto append_and_clear = [&row](ScalarEstimatorBase& estimator) {
     for (auto& scalar : estimator.scalars)
@@ -76,6 +78,7 @@ void EstimatorManagerCrowd::recordVMCStep(unsigned long accepted, unsigned long 
   append_and_clear(*main_estimator_);
   for (auto& estimator : scalar_estimators_)
     append_and_clear(*estimator);
+  // Append quantities not owned by scalar estimators in scalar.dat column order.
   row.push_back(block_weight_ - vmc_previous_weight_);
   row.push_back(static_cast<RealType>(accepted));
   row.push_back(static_cast<RealType>(rejected));

@@ -63,6 +63,7 @@ public:
   void startRun() {}
   void startBlock(int steps);
   void stopBlock();
+  // Snapshot this crowd's scalar data and acceptance deltas for one VMC step.
   void recordVMCStep();
 
   EstimatorManagerCrowd& get_estimator_manager_crowd() { return estimator_manager_crowd_; }

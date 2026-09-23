@@ -248,6 +248,7 @@ private:
   std::unique_ptr<hdf_archive> h_file;
   ///file handler to write data
   std::unique_ptr<std::ofstream> Archive;
+  // Rank-zero stream for optional VMC per-step scalar output.
   std::unique_ptr<std::ofstream> vmc_archive_;
   ///file handler to write data for debugging
   std::unique_ptr<std::ofstream> DebugArchive;

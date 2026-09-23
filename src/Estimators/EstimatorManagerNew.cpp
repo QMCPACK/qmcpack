@@ -255,6 +255,7 @@ void EstimatorManagerNew::stopDriverRun() { h_file.reset(); }
 
 void EstimatorManagerNew::startVMCdat()
 {
+  // Only rank zero owns the ASCII stream; all ranks contribute at block end.
   if (my_comm_->rank() == 0)
   {
     std::filesystem::path fname(my_comm_->getName());
@@ -298,11 +299,13 @@ void EstimatorManagerNew::stopBlockVMC(int first_step, std::vector<RealType>& st
   const int row_width = AverageCache.size() + 3; // scalar numerators, weight, accepts, rejects
   assert(step_data.size() % row_width == 0);
 #ifdef HAVE_MPI
+  // One block-end reduction combines the independently buffered crowd rows.
   my_comm_->comm.reduce_in_place_n(step_data.begin(), step_data.size(), std::plus<>{});
 #endif
 
   if (my_comm_->rank() == 0)
   {
+    // Derive each per-step scalar row and the equivalent block scalar accumulators.
     AverageCache = 0.0;
     FullPrecRealType block_weight = 0.0;
     FullPrecRealType block_accept = 0.0;
@@ -328,6 +331,7 @@ void EstimatorManagerNew::stopBlockVMC(int first_step, std::vector<RealType>& st
       *vmc_archive_ << std::setw(FieldWidth) << weight << std::setw(FieldWidth) << step_cpu
                     << std::setw(FieldWidth) << accepted / (accepted + rejected) << std::endl;
     }
+    // Reuse the reduced VMC data to form the normal scalar.dat/stat.h5 block result.
     AverageCache *= 1.0 / block_weight;
     PropertyCache[weightInd] = block_weight;
     PropertyCache[cpuInd] = block_timer_.elapsed();
