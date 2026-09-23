@@ -294,7 +294,7 @@ void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, 
   RecordCount++;
 }
 
-void EstimatorManagerNew::stopBlockVMC(int first_step, std::vector<RealType>& step_data)
+void EstimatorManagerNew::stopBlockVMC(int first_step, std::vector<FullPrecRealType>& step_data)
 {
   const int row_width = AverageCache.size() + 3; // scalar numerators, weight, accepts, rejects
   assert(step_data.size() % row_width == 0);

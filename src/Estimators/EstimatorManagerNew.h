@@ -124,7 +124,7 @@ public:
 
   /** Reduce one block of raw per-step VMC scalar data, write vmc.dat, and
    * reuse the reduced data for scalar.dat. */
-  void stopBlockVMC(int first_step, std::vector<RealType>& step_data);
+  void stopBlockVMC(int first_step, std::vector<FullPrecRealType>& step_data);
 
   /** At end of block collect the main scalar estimators for the entire rank
    *

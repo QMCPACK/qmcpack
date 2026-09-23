@@ -61,7 +61,7 @@ public:
   // Move this crowd's raw scalar numerators into its thread-local VMC-step buffer.
   void recordVMCStep(unsigned long accepted, unsigned long rejected);
   // Expose the per-step buffer for block-end combination by QMCDriverNew.
-  const std::vector<std::vector<RealType>>& getVMCData() const { return vmc_data_; }
+  const std::vector<std::vector<FullPrecRealType>>& getVMCData() const { return vmc_data_; }
 
   /** Accumulate over all scalar estimators and operator estimators over all walkers in crowd.
    *  Not all estimators make use of all these arguments
@@ -110,9 +110,9 @@ private:
 
   UPtrVector<OperatorEstBase> operator_ests_;
   // Previous cumulative crowd weight, used to form the current step weight.
-  RealType vmc_previous_weight_ = 0.0;
+  FullPrecRealType vmc_previous_weight_ = 0.0;
   // Thread-local raw scalar rows; communication is deferred until block end.
-  std::vector<std::vector<RealType>> vmc_data_;
+  std::vector<std::vector<FullPrecRealType>> vmc_data_;
 };
 
 } // namespace qmcplusplus

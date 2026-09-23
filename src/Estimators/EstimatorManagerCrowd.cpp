@@ -67,7 +67,7 @@ void EstimatorManagerCrowd::stopBlock()
 void EstimatorManagerCrowd::recordVMCStep(unsigned long accepted, unsigned long rejected)
 {
   // Preserve raw numerators so block-end reduction can reconstruct both outputs.
-  std::vector<RealType> row;
+  std::vector<FullPrecRealType> row;
   auto append_and_clear = [&row](ScalarEstimatorBase& estimator) {
     for (auto& scalar : estimator.scalars)
     {
@@ -80,8 +80,8 @@ void EstimatorManagerCrowd::recordVMCStep(unsigned long accepted, unsigned long 
     append_and_clear(*estimator);
   // Append quantities not owned by scalar estimators in scalar.dat column order.
   row.push_back(block_weight_ - vmc_previous_weight_);
-  row.push_back(static_cast<RealType>(accepted));
-  row.push_back(static_cast<RealType>(rejected));
+  row.push_back(static_cast<FullPrecRealType>(accepted));
+  row.push_back(static_cast<FullPrecRealType>(rejected));
   vmc_previous_weight_ = block_weight_;
   vmc_data_.emplace_back(std::move(row));
 }
