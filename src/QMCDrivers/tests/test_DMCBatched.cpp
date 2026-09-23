@@ -75,9 +75,7 @@ TEST_CASE("QMCDriverFactory rejects invalid L2 diffusion configurations for DMCB
     expected_error = "L2 diffusion is not supported for spinor particle sets.";
   }
   SECTION("Hamiltonian without L2 potential")
-  {
-    expected_error = "L2 diffusion was requested, but the Hamiltonian has no L2 potential.";
-  }
+  { expected_error = "L2 diffusion was requested, but the Hamiltonian has no L2 potential."; }
 
   QMCDriverFactory driver_factory(test_project);
   auto das = driver_factory.readSection(node);

@@ -70,7 +70,8 @@ DMCBatched::DMCBatched(const ProjectData& project_data,
   if (use_l2_diffusion_)
   {
     assert(!population_.get_golden_electrons().isSpinor() && "L2 diffusion is not supported for spinor particle sets.");
-    assert(population_.get_golden_hamiltonian().has_L2() && "L2 diffusion was requested, but the Hamiltonian has no L2 potential.");
+    assert(population_.get_golden_hamiltonian().has_L2() &&
+           "L2 diffusion was requested, but the Hamiltonian has no L2 potential.");
   }
 }
 
@@ -473,8 +474,8 @@ void DMCBatched::run()
   //register walker log collectors into the manager
   wlog_manager.startRun(Crowd::getWalkerLogCollectorRefs(crowds_));
 
-  StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_,
-                           steps_per_block_, serializing_crowd_walkers_);
+  StateForThread dmc_state(qmcdriver_input_, *drift_modifier_, *branch_engine_, population_, steps_per_block_,
+                           serializing_crowd_walkers_);
 
   LoopTimer<> dmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
@@ -514,8 +515,8 @@ void DMCBatched::run()
           ? qmcdriver_input_.get_recalculate_properties_period()
           : (qmcdriver_input_.get_max_blocks() + 1) * steps_per_block_;
       dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
-                   ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
-                   : false;
+          ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
+          : false;
 
       for (UPtr<Crowd>& crowd : crowds_)
         crowd->startBlock(steps_per_block_);

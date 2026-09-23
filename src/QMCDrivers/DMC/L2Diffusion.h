@@ -43,17 +43,17 @@ public:
 
   /** Build the L2 drift-diffusion displacement for one particle across a crowd. */
   static void prepareMove(const TauParams<RealType, CoordsType::POS>& taus,
-                   const TWFGrads<CoordsType::POS>& grads_now,
-                   int iat,
-                   const PSdispatcher& ps_dispatcher,
-                   const Hdispatcher& ham_dispatcher,
-                   const RefVectorWithLeader<ParticleSet>& walker_elecs,
-                   const RefVectorWithLeader<QMCHamiltonian>& walker_hamiltonians,
-                   MCCoords<CoordsType::POS>& gaussian_displacements,
-                   MCCoords<CoordsType::POS>& proposed_displacements,
-                   std::vector<RealType>& log_gf,
-                   std::vector<bool>& are_valid,
-                   Workspace& workspace);
+                          const TWFGrads<CoordsType::POS>& grads_now,
+                          int iat,
+                          const PSdispatcher& ps_dispatcher,
+                          const Hdispatcher& ham_dispatcher,
+                          const RefVectorWithLeader<ParticleSet>& walker_elecs,
+                          const RefVectorWithLeader<QMCHamiltonian>& walker_hamiltonians,
+                          MCCoords<CoordsType::POS>& gaussian_displacements,
+                          MCCoords<CoordsType::POS>& proposed_displacements,
+                          std::vector<RealType>& log_gf,
+                          std::vector<bool>& are_valid,
+                          Workspace& workspace);
 
   /** Combine final-move validity with validity of the temporary L2 moves. */
   static void applyMoveValidity(std::vector<bool>& are_valid, const Workspace& workspace);
