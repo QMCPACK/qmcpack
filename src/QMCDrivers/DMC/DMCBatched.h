@@ -48,7 +48,6 @@ public:
   struct StateForThread
   {
     const QMCDriverInput& qmcdrv_input;
-    const L2Diffusion* l2_diffusion;
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
     SFNBranch& branch_engine;
@@ -61,14 +60,12 @@ public:
     const bool serializing_crowd_walkers;
 
     StateForThread(const QMCDriverInput& qmci,
-                   const L2Diffusion* l2,
                    DriftModifierBase& drift_mod,
                    SFNBranch& branch_eng,
                    MCPopulation& pop,
                    const size_t steps_per_block,
                    const bool serializing_crowd_walkers)
         : qmcdrv_input(qmci),
-          l2_diffusion(l2),
           drift_modifier(drift_mod),
           population(pop),
           branch_engine(branch_eng),
@@ -131,7 +128,7 @@ private:
 
   const DMCDriverInput dmcdriver_input_;
   /// Optional L2 drift-diffusion proposal strategy.
-  std::unique_ptr<L2Diffusion> l2_;
+  const bool use_l2_diffusion_;
   /// Per crowd, driver-specific move contexts
   UPtrVector<DMCContextForSteps> step_contexts_;
   /// obtain reference vector of step contexts
